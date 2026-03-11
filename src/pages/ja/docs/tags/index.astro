@@ -7,10 +7,18 @@ import { collectTags } from "@/utils/tags";
 import { t } from "@/config/i18n";
 import { withBase } from "@/utils/base";
 
-const allDocs = await getCollection("docs-ja");
-const docs = import.meta.env.PROD
-  ? allDocs.filter((doc) => !doc.data.draft && !doc.data.unlisted)
-  : allDocs.filter((doc) => !doc.data.unlisted);
+const localeDocs = await getCollection("docs-ja");
+const baseDocs = await getCollection("docs");
+const filterDocs = (docs: typeof localeDocs) => import.meta.env.PROD
+  ? docs.filter((doc) => !doc.data.draft && !doc.data.unlisted)
+  : docs.filter((doc) => !doc.data.unlisted);
+const filteredLocale = filterDocs(localeDocs);
+const filteredBase = filterDocs(baseDocs);
+const localeSlugSet = new Set(filteredLocale.map((d) => d.data.slug ?? toRouteSlug(d.id)));
+const docs = [
+  ...filteredLocale,
+  ...filteredBase.filter((d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id))),
+];
 const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
 const sortedTags = [...tagMap.values()].sort((a, b) => a.tag.localeCompare(b.tag));
 ---
