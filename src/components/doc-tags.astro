@@ -1,7 +1,7 @@
 ---
 import { settings } from "@/config/settings";
 import { t, type Locale } from "@/config/i18n";
-import { docsUrl } from "@/utils/base";
+import { docsUrl, withBase } from "@/utils/base";
 
 interface Props {
   tags: string[];
@@ -17,7 +17,7 @@ const show = settings.docTags && tags.length > 0;
     <span class="text-caption text-muted">{t("doc.tags", locale)}:</span>
     {tags.map((tag) => (
       <a
-        href={locale === "en" ? `/docs/tags/${tag}` : `/${locale}/docs/tags/${tag}`}
+        href={withBase(locale === "en" ? `/docs/tags/${tag}` : `/${locale}/docs/tags/${tag}`)}
         class="inline-block px-hsp-sm py-vsp-2xs text-caption bg-surface border border-muted rounded-full text-accent hover:bg-code-bg hover:border-accent"
       >
         {tag}
