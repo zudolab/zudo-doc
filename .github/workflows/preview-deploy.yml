@@ -68,12 +68,18 @@ jobs:
           echo "name=$DEPLOY_BRANCH" >> "$GITHUB_OUTPUT"
           echo "Deploy branch: $DEPLOY_BRANCH"
 
+      - name: Prepare deploy directory
+        run: |
+          mkdir -p deploy/pj/zudo-doc
+          cp -r dist/. deploy/pj/zudo-doc/
+          echo '/ /pj/zudo-doc/ 302' > deploy/_redirects
+
       - name: Deploy to Cloudflare Pages
         id: deploy
         run: |
           BRANCH="${{ steps.branch.outputs.name }}"
 
-          pnpm exec wrangler pages deploy dist \
+          pnpm exec wrangler pages deploy deploy \
             --project-name=zudo-doc \
             --branch="$BRANCH" \
             --commit-hash="${GITHUB_SHA}" \

@@ -79,7 +79,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: dist-out
-          path: deploy/
+          path: dist-out/
+
+      - name: Prepare deploy directory
+        run: |
+          mkdir -p deploy/pj/zudo-doc
+          cp -r dist-out/. deploy/pj/zudo-doc/
+          echo '/ /pj/zudo-doc/ 302' > deploy/_redirects
 
       - name: Install wrangler
         run: npm install -g wrangler@4
