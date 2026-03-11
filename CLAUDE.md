@@ -42,7 +42,7 @@ src/
 
 - Default to **Astro components** (`.astro`) — zero JS, server-rendered
 - Use **React islands** (`client:load`) only when client-side interactivity is needed
-- Current React islands: `toc.tsx`, `sidebar-toggle.tsx`, `sidebar-category.tsx`
+- Current React islands: `toc.tsx`, `mobile-toc.tsx`, `sidebar-toggle.tsx`, `sidebar-tree.tsx`, `color-scheme-picker.tsx`, `theme-toggle.tsx`, `doc-history.tsx`
 
 ### Content Collections
 

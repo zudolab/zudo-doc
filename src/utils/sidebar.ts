@@ -96,5 +96,9 @@ function resolveItem(
       }
       return tree;
     }
+    default: {
+      const _exhaustive: never = item;
+      return _exhaustive;
+    }
   }
 }

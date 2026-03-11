@@ -22,9 +22,8 @@ export function rehypeCodeTitle() {
       if (!codeEl) return;
 
       const meta =
-        (codeEl.properties?.meta as string) ??
-        (codeEl.data?.meta as string) ??
-        "";
+        String(codeEl.properties?.meta ?? "") ||
+        String((codeEl.data as Record<string, unknown> | undefined)?.meta ?? "");
       const titleMatch = meta.match(/title="([^"]+)"/);
       if (!titleMatch) return;
 

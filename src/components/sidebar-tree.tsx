@@ -142,7 +142,6 @@ function NodeList({
   return (
     <>
       {nodes.map((node, index) => {
-        const isFirst = index === 0;
         const isLast = index === nodes.length - 1;
         return node.children.length > 0 ? (
           <CategoryNode
@@ -150,7 +149,6 @@ function NodeList({
             node={node}
             currentSlug={currentSlug}
             depth={depth}
-            isFirst={isFirst}
             isLast={isLast}
             forceOpen={forceOpen}
           />
@@ -160,7 +158,6 @@ function NodeList({
             node={node}
             currentSlug={currentSlug}
             depth={depth}
-            isFirst={isFirst}
             isLast={isLast}
           />
         );
@@ -205,14 +202,12 @@ function CategoryNode({
   node,
   currentSlug,
   depth,
-  isFirst,
   isLast,
   forceOpen,
 }: {
   node: NavNode;
   currentSlug?: string;
   depth: number;
-  isFirst: boolean;
   isLast: boolean;
   forceOpen: boolean;
 }) {
@@ -328,13 +323,11 @@ function LeafNode({
   node,
   currentSlug,
   depth,
-  isFirst,
   isLast,
 }: {
   node: NavNode;
   currentSlug?: string;
   depth: number;
-  isFirst: boolean;
   isLast: boolean;
 }) {
   if (!node.href) return null;

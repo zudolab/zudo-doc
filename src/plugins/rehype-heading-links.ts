@@ -1,6 +1,7 @@
-import type { Root, Element, ElementContent } from "hast";
+import type { Root, Element } from "hast";
 import GithubSlugger from "github-slugger";
 import { visit } from "unist-util-visit";
+import { extractText } from "./hast-utils";
 
 /**
  * Rehype plugin that adds Docusaurus-style anchor links to headings (h2-h6).
@@ -16,14 +17,6 @@ import { visit } from "unist-util-visit";
  */
 
 const headingTags = new Set(["h2", "h3", "h4", "h5", "h6"]);
-
-function extractText(node: ElementContent): string {
-  if (node.type === "text") return node.value;
-  if (node.type === "element") {
-    return node.children.map((c) => extractText(c)).join("");
-  }
-  return "";
-}
 
 export function rehypeHeadingLinks() {
   return (tree: Root) => {

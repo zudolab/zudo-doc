@@ -91,13 +91,18 @@ export function useActiveHeading(
       );
     }
 
+    let fallbackTimerId: ReturnType<typeof setTimeout> | null = null;
+
     function onScroll() {
-      if (suppressedRef.current) return;
+      if (suppressedRef.current) {
+        // Fallback for browsers without scrollend (Safari < 18)
+        if (fallbackTimerId !== null) clearTimeout(fallbackTimerId);
+        fallbackTimerId = setTimeout(onScrollEnd, 1500);
+        return;
+      }
       if (timerId !== null) clearTimeout(timerId);
       timerId = setTimeout(update, DEBOUNCE_MS);
     }
-
-    let fallbackTimerId: ReturnType<typeof setTimeout> | null = null;
 
     function onScrollEnd() {
       suppressedRef.current = false;
@@ -109,23 +114,14 @@ export function useActiveHeading(
       update();
     }
 
-    function onScrollWhileSuppressed() {
-      // Fallback for browsers without scrollend (Safari < 18)
-      if (!suppressedRef.current) return;
-      if (fallbackTimerId !== null) clearTimeout(fallbackTimerId);
-      fallbackTimerId = setTimeout(onScrollEnd, 1500);
-    }
-
     update();
 
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("scroll", onScrollWhileSuppressed, { passive: true });
     window.addEventListener("resize", onScroll, { passive: true });
     window.addEventListener("scrollend", onScrollEnd, { passive: true });
 
     return () => {
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("scroll", onScrollWhileSuppressed);
       window.removeEventListener("resize", onScroll);
       window.removeEventListener("scrollend", onScrollEnd);
       if (timerId !== null) clearTimeout(timerId);

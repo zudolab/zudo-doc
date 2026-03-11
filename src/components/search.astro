@@ -137,7 +137,8 @@ import { withBase } from "@/utils/base";
 
     connectedCallback() {
       // Set platform-appropriate keyboard shortcut label
-      const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+      const nav = navigator as Navigator & { userAgentData?: { platform: string } };
+      const isMac = /Mac|iPhone|iPad|iPod/.test(nav.userAgentData?.platform ?? navigator.userAgent);
       this.shortcutLabel = isMac ? "\u2318K" : "Ctrl+K";
       const kbdEl = this.querySelector("[data-kbd-shortcut]");
       if (kbdEl) {

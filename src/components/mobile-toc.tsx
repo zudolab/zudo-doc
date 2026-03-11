@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { Heading } from "@/types/heading";
 import clsx from "clsx";
 
@@ -8,7 +8,10 @@ interface MobileTocProps {
 }
 
 export function MobileToc({ headings, title = "On this page" }: MobileTocProps) {
-  const filtered = headings.filter((h) => h.depth >= 2 && h.depth <= 4);
+  const filtered = useMemo(
+    () => headings.filter((h) => h.depth >= 2 && h.depth <= 4),
+    [headings],
+  );
   const [open, setOpen] = useState(false);
 
   if (filtered.length === 0) return <div className="hidden" />;
@@ -43,9 +46,9 @@ export function MobileToc({ headings, title = "On this page" }: MobileTocProps) 
       </button>
       {open && (
         <ul className="border-t border-muted px-hsp-lg py-vsp-xs space-y-vsp-2xs">
-          {filtered.map((heading) => (
+          {filtered.map((heading, index) => (
             <li
-              key={heading.slug}
+              key={`${heading.slug}-${index}`}
               className={clsx(
                 heading.depth === 3 && "ml-hsp-lg",
                 heading.depth === 4 && "ml-hsp-2xl",

@@ -92,12 +92,12 @@
 
   function syncGroup(groupId: string, value: string, source: HTMLDivElement) {
     const others = document.querySelectorAll<HTMLDivElement>(
-      `[data-tabs][data-group-id="${groupId}"]`
+      `[data-tabs][data-group-id="${CSS.escape(groupId)}"]`
     );
     for (const container of others) {
       if (container === source) continue;
       // Only sync if the container has a panel with the selected value
-      const hasPanel = container.querySelector(`.tab-panel[data-tab-value="${value}"]`);
+      const hasPanel = container.querySelector(`.tab-panel[data-tab-value="${CSS.escape(value)}"]`);
       if (hasPanel) {
         activateTab(container, value);
       }
