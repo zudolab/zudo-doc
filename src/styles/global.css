@@ -10,7 +10,7 @@
  * Raw palette: --zd-0 to --zd-15 + bg/fg/sel (injected by ColorSchemeProvider)
  * Tailwind tokens: registered below via @theme
  *
- * Palette slots (standard ANSI mapping):
+ * Palette slots:
  *   0/8:  black / bright-black (surfaces, muted text, borders)
  *   1/9:  red / bright-red
  *   2/10: green / bright-green
