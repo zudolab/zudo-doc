@@ -98,7 +98,7 @@ function resolveItem(
     }
     default: {
       const _exhaustive: never = item;
-      return _exhaustive;
+      throw new Error(`Unhandled sidebar item type: ${JSON.stringify(_exhaustive)}`);
     }
   }
 }
