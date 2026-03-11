@@ -3,6 +3,14 @@ import { settings } from "./settings";
 
 export const lightDarkPairings = [
   { light: "Default Light", dark: "Default Dark", label: "Default" },
+  { light: "GitHub Light", dark: "GitHub Dark", label: "GitHub" },
+  { light: "Catppuccin Latte", dark: "Catppuccin Mocha", label: "Catppuccin" },
+  { light: "Solarized Light", dark: "Solarized Dark", label: "Solarized" },
+  { light: "Rose Pine Dawn", dark: "Rose Pine", label: "Rose Pine" },
+  { light: "Atom One Light", dark: "Atom One Dark", label: "Atom One" },
+  { light: "Everforest Light", dark: "Everforest Dark", label: "Everforest" },
+  { light: "Gruvbox Light", dark: "Gruvbox Dark", label: "Gruvbox" },
+  { light: "Ayu Light", dark: "Ayu Dark", label: "Ayu" },
 ];
 
 export function getActiveScheme(): ColorScheme {
