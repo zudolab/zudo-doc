@@ -41,7 +41,7 @@ const htmlColorAttrs = settings.colorMode
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     {description && <meta name="description" content={description} />}
-    {unlisted && <meta name="robots" content="noindex" />}
+    {(unlisted || settings.noindex) && <meta name="robots" content="noindex, nofollow" />}
     <meta property="og:title" content={fullTitle} />
     {description && <meta property="og:description" content={description} />}
     <ColorSchemeProvider />
