@@ -7,6 +7,8 @@ import { ClientRouter } from "astro:transitions";
 import PageLoadingOverlay from "@/components/page-loading-overlay.astro";
 import { settings } from "@/config/settings";
 import { withBase } from "@/utils/base";
+
+const metaDescription = settings.siteDescription;
 ---
 
 <html lang="en">
@@ -14,10 +16,10 @@ import { withBase } from "@/utils/base";
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{settings.siteName}</title>
-    <meta name="description" content={`${settings.siteName} — ${settings.siteDescription}`} />
+    <meta name="description" content={metaDescription} />
     {settings.noindex && <meta name="robots" content="noindex, nofollow" />}
     <meta property="og:title" content={settings.siteName} />
-    <meta property="og:description" content={`${settings.siteName} — ${settings.siteDescription}`} />
+    <meta property="og:description" content={metaDescription} />
     <ColorSchemeProvider />
     <ClientRouter />
   </head>
