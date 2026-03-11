@@ -1,0 +1,175 @@
+# Preview deployment for preview and expreview/* branches.
+#
+# Triggered on pushes to `preview` and `expreview/**` branches.
+# Builds the Astro docs site and deploys to Cloudflare Pages with a branch name
+# so the preview URL is predictable (e.g. preview.zudo-doc.pages.dev).
+#
+# This is separate from PR preview deploys (handled by pr-checks.yml).
+
+name: Preview Deploy
+
+on:
+  push:
+    branches:
+      - 'preview'
+      - 'expreview/**'
+
+concurrency:
+  group: preview-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  statuses: write
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1: Build and deploy preview
+  # ---------------------------------------------------------------------------
+  build-and-deploy:
+    name: Build and Deploy Preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build site
+        run: pnpm build
+
+      - name: Prepare deploy directory
+        run: |
+          mkdir -p deploy
+          cp -r dist/* deploy/
+
+          # Generate _redirects
+          cat > deploy/_redirects << 'REDIRECTS'
+          / /pj/zudo-doc/ 302
+          REDIRECTS
+          sed -i 's/^[[:space:]]*//' deploy/_redirects
+
+          echo "Deploy directory prepared"
+
+      - name: Determine branch name
+        id: branch
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          # Convert slashes to hyphens (expreview/foo -> expreview-foo)
+          DEPLOY_BRANCH=$(echo "$BRANCH_NAME" | sed 's/\//-/g')
+          echo "name=$DEPLOY_BRANCH" >> "$GITHUB_OUTPUT"
+          echo "Deploy branch: $DEPLOY_BRANCH"
+
+      - name: Install wrangler
+        run: npm install -g wrangler
+
+      - name: Deploy to Cloudflare Pages
+        id: deploy
+        run: |
+          BRANCH="${{ steps.branch.outputs.name }}"
+
+          wrangler pages deploy deploy \
+            --project-name=zudo-doc \
+            --branch="$BRANCH" \
+            --commit-hash=${GITHUB_SHA} \
+            --commit-message="Preview: ${BRANCH} @ ${GITHUB_SHA::7}"
+
+          DEPLOY_URL="https://${BRANCH}.zudo-doc.pages.dev"
+          echo "deploy_url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
+          echo "Preview URL: $DEPLOY_URL"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Set commit status
+        if: always()
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const deployUrl = '${{ steps.deploy.outputs.deploy_url }}';
+            const success = '${{ steps.deploy.outcome }}' === 'success';
+
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: success ? 'success' : 'failure',
+              target_url: deployUrl || `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              description: success ? 'Preview deployment ready' : 'Preview deployment failed',
+              context: 'cloudflare/preview'
+            });
+
+      - name: Comment on associated PR
+        if: success() && steps.deploy.outputs.deploy_url
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const branch = context.ref.replace('refs/heads/', '');
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: `${context.repo.owner}:${branch}`,
+              state: 'open'
+            });
+
+            if (prs.length === 0) {
+              console.log('No open PR found for this branch, skipping comment');
+              return;
+            }
+
+            const pr = prs[0];
+            const deployUrl = '${{ steps.deploy.outputs.deploy_url }}';
+            const shortSha = context.sha.substring(0, 7);
+            const marker = '<!-- cloudflare-preview-comment -->';
+
+            const body = [
+              marker,
+              `## Cloudflare Pages Preview`,
+              '',
+              `Preview deployment is ready.`,
+              '',
+              `| | URL |`,
+              `|---|---|`,
+              `| Preview | ${deployUrl} |`,
+              '',
+              `Built from \`${branch}\` @ \`${shortSha}\``,
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+            });
+
+            const existing = comments.find(c => c.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body,
+              });
+            }
