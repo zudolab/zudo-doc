@@ -23,12 +23,17 @@ permissions:
   contents: read
 
 jobs:
+  detect-runner:
+    uses: ./.github/workflows/detect-runner.yml
+    secrets: inherit
+
   # ---------------------------------------------------------------------------
   # Job 1: Build the Astro docs site
   # ---------------------------------------------------------------------------
   build:
     name: Build
-    runs-on: ubuntu-latest
+    needs: detect-runner
+    runs-on: ${{ needs.detect-runner.outputs.runner }}
     timeout-minutes: 15
 
     steps:
@@ -65,7 +70,7 @@ jobs:
   # ---------------------------------------------------------------------------
   deploy:
     name: Deploy to Cloudflare Pages
-    needs: build
+    needs: [detect-runner, build]
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -95,7 +100,7 @@ jobs:
   # ---------------------------------------------------------------------------
   notify:
     name: Deploy Notification
-    needs: [build, deploy]
+    needs: [detect-runner, build, deploy]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
