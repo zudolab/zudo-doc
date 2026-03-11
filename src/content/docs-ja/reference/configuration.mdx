@@ -1,0 +1,208 @@
+---
+title: 設定
+description: zudo-docのグローバル設定と構成リファレンス。
+sidebar_position: 1
+---
+
+zudo-docは`src/config/`ディレクトリ内の少数のファイルとルートの`astro.config.ts`で設定を行います。
+
+## サイト設定
+
+メインの設定ファイルは`src/config/settings.ts`です：
+
+```ts
+export const settings = {
+  colorScheme: "Dracula",
+  siteName: "zudo-doc",
+  base: "/",
+  docsDir: "src/content/docs",
+  locales: {
+    ja: { label: "JA", dir: "src/content/docs-ja" },
+  },
+  mermaid: true,
+  headerNav: [
+    { label: "Docs", path: "/docs" },
+  ],
+};
+```
+
+### colorScheme
+
+アクティブなカラースキーム名。`src/config/color-schemes.ts`のキーと一致する必要があります。
+
+利用可能な組み込みスキーム：**Dracula**、**Catppuccin Mocha**、**Nord**、**TokyoNight**、**Gruvbox Dark**、**Atom One Dark**など。
+
+<Tip>
+利用可能なスキームの一覧、プレビュー、カスタムスキームの追加手順については[カラースキームガイド](/docs/guides/color-schemes)を参照してください。
+</Tip>
+
+### base
+
+サブディレクトリにデプロイする際のベースパス。サイトがルートドメインではなくサブパスから配信される場合に設定します。
+
+デフォルト：`"/"`
+
+例えば、サイトを`https://example.com/my-docs/`で配信する場合：
+
+```ts
+base: "/my-docs",
+```
+
+すべての内部リンク（サイドバー、ナビゲーション、前後ページ、検索）にはベースパスが自動的にプレフィックスされます。これは[AstroのConfigの`base`オプション](https://docs.astro.build/en/reference/configuration-reference/#base)に直接マッピングされます。
+
+<Note>
+MDXコンテンツ内のインラインMarkdownリンク（例：`[リンクテキスト](/docs/some-page)`）は自動的に書き換えられません。ルート以外のbaseを使用する場合は、コンテンツファイル内で相対リンクを使用してください。
+</Note>
+
+### docsDir
+
+英語ドキュメントのMDXファイルが格納されるディレクトリパス（プロジェクトルートからの相対パス）。Astro 5の`glob()`ローダーを使用するため、任意のディレクトリを指定できます。
+
+デフォルト：`"src/content/docs"`
+
+```ts
+docsDir: "docs",  // プロジェクトルートの./docs/にコンテンツを配置
+```
+
+これはDocusaurusの`docs.path`オプションに似ています — zudo-docをドキュメントがプロジェクトルートレベルにある大規模プロジェクトのドキュメントツールとして使用する場合に便利です。
+
+### locales
+
+追加ロケール設定のマップ。各キーはロケールコードで、値は`label`（言語切り替えの表示名）と`dir`（コンテンツディレクトリパス）を持つオブジェクトです。
+
+デフォルト：`{}`
+
+```ts
+locales: {
+  ja: { label: "JA", dir: "src/content/docs-ja" },
+  ko: { label: "KO", dir: "src/content/docs-ko" },
+},
+```
+
+各ロケールエントリに対して、zudo-docは自動的に：
+- Astroコンテンツコレクション（`docs-{code}`）を作成
+- Astroのi18nルーティングにロケールを登録
+- 言語切り替えに追加
+
+### siteName
+
+ヘッダーに表示され、ページタイトルに使用されるサイト名。ページタイトルは`{ページタイトル} | {siteName}`の形式になります。
+
+### mermaid
+
+Mermaidダイアグラムのサポートを有効にします。`true`の場合、`mermaid`言語識別子を持つフェンスコードブロックがダイアグラムとしてレンダリングされます。`false`の場合、mermaidコードブロックはプレーンコードとして表示されます。
+
+デフォルト：`true`
+
+### math
+
+KaTeX数式レンダリングを有効にします。`true`の場合、インライン数式（`$...$`）、ブロック数式（`$$...$$`）、およびフェンス`math`コードブロックが数式としてレンダリングされます。
+
+デフォルト：`true`
+
+### editUrl
+
+「このページを編集」リンクのベースURL。完全なURLは`editUrl + contentDir + "/" + entryId`として構築されます。編集リンクを無効にするには`false`に設定します。
+
+デフォルト：`"https://github.com/user/repo/edit/main/"`
+
+```ts
+editUrl: "https://github.com/my-org/my-repo/edit/main/",
+// または無効化:
+editUrl: false,
+```
+
+### sitemap
+
+ビルド時に自動`sitemap.xml`生成を有効にします。サイトマップには404を除くすべてのビルド済みHTMLページが含まれます。
+
+デフォルト：`true`
+
+### docMetainfo
+
+ページタイトルの下にメタデータ（作成日、最終更新日、著者）を表示します。日付と著者はビルド時にgit履歴から抽出されます。
+
+デフォルト：`true`
+
+### docTags
+
+ドキュメントページのタグサポートを有効にします。`true`の場合、ページは`tags`フロントマターフィールドを使用でき、タグインデックスページが`/docs/tags/`に生成されます。
+
+デフォルト：`true`
+
+### docHistory
+
+ドキュメントごとのgitリビジョン履歴ビューアを有効にします。`true`の場合、各ドキュメントページに**History**ボタンが表示され、ドキュメントのgitコミット履歴と行単位のdiffビューアを備えたサイドパネルが開きます。
+
+ビルド時に、すべてのコンテンツファイルのgit履歴が抽出され、JSONファイルとして`dist/doc-history/`に保存されます。開発モードでは、履歴はViteミドルウェア経由で動的に配信されます。
+
+デフォルト：`false`
+
+<Tip>
+使用方法の詳細、キーボードショートカット、技術情報については[ドキュメント履歴ガイド](/docs/guides/doc-history)を参照してください。
+</Tip>
+
+### headerNav
+
+サイトヘッダーバーにレンダリングされるナビゲーションリンクの配列。各アイテムは2つのプロパティを持ちます：
+
+| プロパティ | 型 | 説明 |
+|----------|------|-------------|
+| `label` | string | ヘッダーに表示されるテキスト |
+| `path` | string | リンク先のURLパス |
+
+複数のエントリを追加して異なるセクションにリンクできます：
+
+```ts
+headerNav: [
+  { label: "Docs", path: "/docs" },
+  { label: "Blog", path: "/blog" },
+],
+```
+
+## Astro設定
+
+ルートの`astro.config.ts`がビルドパイプラインを制御します：
+
+```ts
+export default defineConfig({
+  output: "static",
+  integrations: [mdx(), react(), searchIndexIntegration()],
+  i18n: {
+    defaultLocale: "en",
+    locales: ["en", ...Object.keys(settings.locales)],
+    routing: { prefixDefaultLocale: false },
+  },
+  vite: {
+    plugins: [tailwindcss()],
+  },
+  markdown: {
+    shikiConfig: { theme: shikiTheme },
+  },
+});
+```
+
+主なポイント：
+
+- **output**：完全な静的HTMLエクスポートのため`"static"`に設定
+- **integrations**：MDXサポート、Reactアイランド、MiniSearch検索インデックス
+- **i18n**：英語（デフォルト、`/docs/...`）と日本語（`/ja/docs/...`）。デフォルトロケールにはURLプレフィックスなし
+- **Tailwind CSS**：Astroインテグレーションではなく`@tailwindcss/vite`プラグイン経由でロード
+- **Shikiテーマ**：アクティブなカラースキームの`shikiTheme`プロパティから自動的に導出 — 手動同期不要
+
+<Note>
+Shikiコードハイライトテーマはカラースキームに紐づいています。設定で`colorScheme`を変更すると、シンタックスハイライトテーマも自動的に更新されます。
+</Note>
+
+## カラースキーム設定
+
+カラースキームは`src/config/color-schemes.ts`で定義されます。各スキームは22のカラープロパティと`shikiTheme`を提供します：
+
+- `background`、`foreground`、`cursor`、`selectionBg`、`selectionFg`
+- `palette` — 16色スロット（`palette[0]`から`palette[15]`）
+- `shikiTheme` — シンタックスハイライト用の対応するShikiテーマ名
+- `semantic`（オプション）— `surface`、`muted`、`accent`、`accentHover`のオーバーライド
+
+<Info>
+カラースキームの追加やカスタマイズの詳細については[カラースキームガイド](/docs/guides/color-schemes)を参照してください。
+</Info>
