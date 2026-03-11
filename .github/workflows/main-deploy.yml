@@ -1,0 +1,147 @@
+# Production deployment workflow for the Astro docs site.
+#
+# Triggered on every push to `main`. The pipeline:
+#   1. Builds the Astro static site
+#   2. Deploys to Cloudflare Pages (production)
+#   3. Sends IFTTT notification with deploy status
+#
+# Concurrency: only one production deploy runs at a time.
+# We do NOT cancel in-progress runs -- the earlier deploy should finish.
+
+name: Production Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  detect-runner:
+    uses: ./.github/workflows/detect-runner.yml
+    secrets: inherit
+
+  # ---------------------------------------------------------------------------
+  # Job 1: Build the Astro docs site
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build
+    needs: detect-runner
+    runs-on: ${{ needs.detect-runner.outputs.runner }}
+    timeout-minutes: 15
+
+    steps:
+      # fetch-depth: 0 is required for docHistoryIntegration (reads git log)
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build site
+        run: pnpm build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-out
+          path: dist/
+          retention-days: 1
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Deploy to Cloudflare Pages (production)
+  # ---------------------------------------------------------------------------
+  deploy:
+    name: Deploy to Cloudflare Pages
+    needs: [detect-runner, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-out
+          path: dist-out/
+
+      - name: Prepare deploy directory
+        run: |
+          mkdir -p deploy/pj/zudo-doc
+          cp -r dist-out/. deploy/pj/zudo-doc/
+          echo '/ /pj/zudo-doc/ 302' > deploy/_redirects
+
+      - name: Install wrangler
+        run: npm install -g wrangler@4
+
+      - name: Deploy to Cloudflare Pages (production)
+        run: |
+          wrangler pages deploy deploy \
+            --project-name=zudo-doc \
+            --branch=main \
+            --commit-hash="${GITHUB_SHA}" \
+            --commit-message="Production deploy: ${GITHUB_SHA}"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Send IFTTT notification with deploy status
+  # ---------------------------------------------------------------------------
+  notify:
+    name: Deploy Notification
+    needs: [detect-runner, build, deploy]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Notify via IFTTT
+        if: env.IFTTT_PROD_NOTIFY != ''
+        env:
+          IFTTT_PROD_NOTIFY: ${{ secrets.IFTTT_PROD_NOTIFY }}
+          RAW_COMMIT_MSG: ${{ github.event.head_commit.message }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
+          GITHUB_SHA_VAL: ${{ github.sha }}
+          SERVER_URL: ${{ github.server_url }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          if [ "$DEPLOY_RESULT" = "success" ]; then
+            STATUS="succeeded"
+          elif [ "$BUILD_RESULT" = "failure" ]; then
+            STATUS="failed (build)"
+          elif [ "$DEPLOY_RESULT" = "failure" ]; then
+            STATUS="failed (deploy)"
+          else
+            STATUS="cancelled"
+          fi
+
+          COMMIT_MSG=$(echo "$RAW_COMMIT_MSG" | head -1 | sed 's/"/\\"/g')
+          SHORT_SHA=$(echo "$GITHUB_SHA_VAL" | cut -c1-7)
+          RUN_URL="${SERVER_URL}/${REPO}/actions/runs/${RUN_ID}"
+
+          curl -sSf --max-time 10 -X POST "$IFTTT_PROD_NOTIFY" \
+            -H 'Content-Type: application/json' \
+            -d "{
+              \"value1\": \"Cloudflare Pages deploy ${STATUS}\",
+              \"value2\": \"${SHORT_SHA} ${COMMIT_MSG}\",
+              \"value3\": \"${RUN_URL}\"
+            }" || echo "::warning::IFTTT notification failed"
