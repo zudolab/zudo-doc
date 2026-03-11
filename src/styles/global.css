@@ -219,6 +219,28 @@ body {
   margin-bottom: var(--spacing-vsp-2xs);
 }
 
+/* ── Heading auto-links ── */
+
+.zd-content :where(h2, h3, h4, h5, h6) .hash-link {
+  text-decoration: none;
+  margin-left: var(--spacing-hsp-sm);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.zd-content :where(h2, h3, h4, h5, h6) .hash-link::after {
+  content: "#";
+  color: var(--color-accent);
+}
+
+.zd-content :where(h2, h3, h4, h5, h6):hover .hash-link {
+  opacity: 1;
+}
+
+.zd-content :where(h2, h3, h4, h5, h6) .hash-link:focus {
+  opacity: 1;
+}
+
 /* Tighten spacing after headings */
 .zd-content :where(h2 + *, h3 + *, h4 + *, h5 + *, h6 + *) {
   margin-top: 0;
