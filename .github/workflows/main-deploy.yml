@@ -19,6 +19,9 @@ concurrency:
   group: production-deploy
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   # ---------------------------------------------------------------------------
   # Job 1: Build the Astro docs site
@@ -26,8 +29,10 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
+      # fetch-depth: 0 is required for docHistoryIntegration (reads git log)
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -62,6 +67,7 @@ jobs:
     name: Deploy to Cloudflare Pages
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Download build artifact
@@ -70,22 +76,15 @@ jobs:
           name: dist-out
           path: deploy/
 
-      - name: Generate _redirects
-        run: |
-          cat > deploy/_redirects << 'REDIRECTS'
-          / /pj/zudo-doc/ 302
-          REDIRECTS
-          sed -i 's/^[[:space:]]*//' deploy/_redirects
-
       - name: Install wrangler
-        run: npm install -g wrangler
+        run: npm install -g wrangler@4
 
       - name: Deploy to Cloudflare Pages (production)
         run: |
           wrangler pages deploy deploy \
             --project-name=zudo-doc \
             --branch=main \
-            --commit-hash=${GITHUB_SHA} \
+            --commit-hash="${GITHUB_SHA}" \
             --commit-message="Production deploy: ${GITHUB_SHA}"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -107,28 +106,31 @@ jobs:
         env:
           IFTTT_PROD_NOTIFY: ${{ secrets.IFTTT_PROD_NOTIFY }}
           RAW_COMMIT_MSG: ${{ github.event.head_commit.message }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
+          GITHUB_SHA_VAL: ${{ github.sha }}
+          SERVER_URL: ${{ github.server_url }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
         run: |
-          BUILD="${{ needs.build.result }}"
-          DEPLOY="${{ needs.deploy.result }}"
-
-          if [ "$DEPLOY" = "success" ]; then
+          if [ "$DEPLOY_RESULT" = "success" ]; then
             STATUS="succeeded"
-          elif [ "$BUILD" = "failure" ]; then
+          elif [ "$BUILD_RESULT" = "failure" ]; then
             STATUS="failed (build)"
-          elif [ "$DEPLOY" = "failure" ]; then
+          elif [ "$DEPLOY_RESULT" = "failure" ]; then
             STATUS="failed (deploy)"
           else
             STATUS="cancelled"
           fi
 
           COMMIT_MSG=$(echo "$RAW_COMMIT_MSG" | head -1 | sed 's/"/\\"/g')
-          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          SHORT_SHA=$(echo "$GITHUB_SHA_VAL" | cut -c1-7)
+          RUN_URL="${SERVER_URL}/${REPO}/actions/runs/${RUN_ID}"
 
-          curl -sf -X POST "$IFTTT_PROD_NOTIFY" \
+          curl -sSf --max-time 10 -X POST "$IFTTT_PROD_NOTIFY" \
             -H 'Content-Type: application/json' \
             -d "{
               \"value1\": \"Cloudflare Pages deploy ${STATUS}\",
               \"value2\": \"${SHORT_SHA} ${COMMIT_MSG}\",
               \"value3\": \"${RUN_URL}\"
-            }"
+            }" || echo "::warning::IFTTT notification failed"
