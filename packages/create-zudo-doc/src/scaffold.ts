@@ -66,7 +66,7 @@ sidebar_position: 1
 
 # Welcome to ${escapedName}
 
-This documentation site was created with [zudo-doc](https://github.com/Takazudo/zudoc).
+This documentation site was created with [zudo-doc](https://github.com/zudolab/zudo-doc).
 
 ## Getting Started
 
@@ -111,7 +111,7 @@ sidebar_position: 1
 
 # ようこそ
 
-このドキュメントサイトは [zudo-doc](https://github.com/Takazudo/zudoc) で作成されました。
+このドキュメントサイトは [zudo-doc](https://github.com/zudolab/zudo-doc) で作成されました。
 `;
     await fs.outputFile(
       path.join(
