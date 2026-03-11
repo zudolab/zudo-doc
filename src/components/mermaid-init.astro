@@ -1,16 +1,49 @@
 <script>
+  /**
+   * Resolve a CSS value to a hex color (#rrggbb).
+   * CSS custom properties return raw values from getComputedStyle (e.g.
+   * "light-dark(#fff, #000)") which mermaid cannot parse. This uses a
+   * temporary element so the browser resolves any CSS function to a
+   * concrete rgb() value, then converts it to hex.
+   */
+  function resolveColor(value: string): string {
+    if (!value) return value;
+    if (/^#[0-9a-fA-F]{3,8}$/.test(value)) return value;
+    const el = document.createElement("div");
+    el.style.display = "none";
+    el.style.color = value;
+    document.body.appendChild(el);
+    const resolved = getComputedStyle(el).color;
+    el.remove();
+    const m = resolved.match(/(\d+)/g);
+    if (m && m.length >= 3) {
+      return (
+        "#" +
+        m
+          .slice(0, 3)
+          .map((n) => Number(n).toString(16).padStart(2, "0"))
+          .join("")
+      );
+    }
+    return value;
+  }
+
   async function initMermaid() {
-    const els = document.querySelectorAll<HTMLElement>("[data-mermaid]:not([data-mermaid-rendered])");
-    if (els.length > 0) {
+    const els = document.querySelectorAll<HTMLElement>(
+      "[data-mermaid]:not([data-mermaid-rendered])",
+    );
+    if (els.length === 0) return;
+
+    try {
       const { default: mermaid } = await import("mermaid");
       const s = getComputedStyle(document.documentElement);
-      const v = (name: string) => s.getPropertyValue(name).trim();
+      const v = (name: string) =>
+        resolveColor(s.getPropertyValue(name).trim());
       mermaid.initialize({
         startOnLoad: false,
         theme: "base",
         themeVariables: {
           darkMode: (() => {
-            // Detect dark mode from background luminance (assumes #RRGGBB hex from color schemes)
             const bg = v("--zd-bg");
             const hex = bg.replace("#", "");
             const r = parseInt(hex.substring(0, 2), 16) / 255;
@@ -34,6 +67,8 @@
       });
       await mermaid.run({ nodes: Array.from(els) });
       els.forEach((el) => el.setAttribute("data-mermaid-rendered", ""));
+    } catch (e) {
+      console.error("[mermaid-init] Failed to render mermaid diagrams:", e);
     }
   }
 
