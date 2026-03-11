@@ -1,4 +1,4 @@
-import type { Root, Element, Text } from "hast";
+import type { Root, Element, ElementContent } from "hast";
 import GithubSlugger from "github-slugger";
 import { visit } from "unist-util-visit";
 
@@ -17,10 +17,10 @@ import { visit } from "unist-util-visit";
 
 const headingTags = new Set(["h2", "h3", "h4", "h5", "h6"]);
 
-function extractText(node: Element | Text): string {
+function extractText(node: ElementContent): string {
   if (node.type === "text") return node.value;
   if (node.type === "element") {
-    return node.children.map((c) => extractText(c as Element | Text)).join("");
+    return node.children.map((c) => extractText(c)).join("");
   }
   return "";
 }
@@ -33,7 +33,7 @@ export function rehypeHeadingLinks() {
       if (!headingTags.has(node.tagName)) return;
 
       const text = node.children
-        .map((c) => extractText(c as Element | Text))
+        .map((c) => extractText(c))
         .join("");
 
       const id =

@@ -233,12 +233,11 @@ body {
   color: var(--color-accent);
 }
 
-.zd-content :where(h2, h3, h4, h5, h6):hover .hash-link {
+.zd-content :where(h2, h3, h4, h5, h6):hover .hash-link,
+.zd-content :where(h2, h3, h4, h5, h6) .hash-link:focus-visible {
   opacity: 1;
-}
-
-.zd-content :where(h2, h3, h4, h5, h6) .hash-link:focus {
-  opacity: 1;
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 /* Tighten spacing after headings */

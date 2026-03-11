@@ -73,7 +73,7 @@ export default defineConfig({
     ],
     rehypePlugins: [
       rehypeCodeTitle,
-      rehypeHeadingLinks,
+      rehypeHeadingLinks, // Must run before Astro's built-in heading ID plugin
       ...(settings.mermaid ? [rehypeMermaid] : []),
       ...(settings.math ? [rehypeKatex] : []),
     ],
