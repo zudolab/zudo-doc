@@ -8,7 +8,7 @@ import PageLoadingOverlay from "@/components/page-loading-overlay.astro";
 import { settings } from "@/config/settings";
 import { withBase } from "@/utils/base";
 
-const metaDescription = settings.siteDescription;
+const ctaNav = settings.headerNav[0] ?? null;
 ---
 
 <html lang="en">
@@ -16,10 +16,10 @@ const metaDescription = settings.siteDescription;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{settings.siteName}</title>
-    <meta name="description" content={metaDescription} />
+    <meta name="description" content={settings.siteDescription} />
     {settings.noindex && <meta name="robots" content="noindex, nofollow" />}
     <meta property="og:title" content={settings.siteName} />
-    <meta property="og:description" content={metaDescription} />
+    <meta property="og:description" content={settings.siteDescription} />
     <ColorSchemeProvider />
     <ClientRouter />
   </head>
@@ -35,12 +35,12 @@ const metaDescription = settings.siteDescription;
         <p class="text-muted mb-vsp-lg text-small">
           {settings.siteDescription}
         </p>
-        {settings.headerNav[0] && (
+        {ctaNav && (
           <a
-            href={withBase(settings.headerNav[0].path)}
+            href={withBase(ctaNav.path)}
             class="inline-block bg-fg text-bg px-hsp-lg py-vsp-xs font-medium hover:underline focus:underline text-center text-small"
           >
-            {settings.headerNav[0].label}
+            {ctaNav.label}
           </a>
         )}
       </div>
@@ -53,12 +53,12 @@ const metaDescription = settings.siteDescription;
           <p class="text-muted mb-vsp-md text-small">
             {settings.siteDescription}
           </p>
-          {settings.headerNav[0] && (
+          {ctaNav && (
             <a
-              href={withBase(settings.headerNav[0].path)}
+              href={withBase(ctaNav.path)}
               class="inline-block bg-fg text-bg px-hsp-lg py-vsp-xs font-medium hover:underline focus:underline text-small"
             >
-              {settings.headerNav[0].label}
+              {ctaNav.label}
             </a>
           )}
         </div>
