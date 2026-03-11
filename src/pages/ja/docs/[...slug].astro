@@ -23,19 +23,49 @@ import DocMetainfo from "@/components/doc-metainfo.astro";
 import DocTags from "@/components/doc-tags.astro";
 
 export async function getStaticPaths() {
-  const allDocs = await getCollection("docs-ja");
+  const localeDocs = await getCollection("docs-ja");
+  const baseDocs = await getCollection("docs");
+
   // In production, exclude drafts. In dev, include them for preview.
-  const docs = import.meta.env.PROD
-    ? allDocs.filter((doc) => !doc.data.draft)
-    : allDocs;
-  const categoryMeta = loadCategoryMeta(getContentDir("ja"));
+  const filterDrafts = <T extends { data: { draft?: boolean } }>(docs: T[]) =>
+    import.meta.env.PROD ? docs.filter((doc) => !doc.data.draft) : docs;
+
+  const filteredLocaleDocs = filterDrafts(localeDocs);
+  const filteredBaseDocs = filterDrafts(baseDocs);
+
+  // Build slug set from locale docs (locale takes priority)
+  const localeSlugSet = new Set(
+    filteredLocaleDocs.map((d) => d.data.slug ?? toRouteSlug(d.id))
+  );
+
+  // Merge: locale docs first, then base docs for missing pages
+  const allDocs = [
+    ...filteredLocaleDocs,
+    ...filteredBaseDocs.filter(
+      (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id))
+    ),
+  ];
+
+  // Track which slugs are fallback (from base collection)
+  const fallbackSlugs = new Set(
+    filteredBaseDocs
+      .filter((d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id)))
+      .map((d) => d.data.slug ?? toRouteSlug(d.id))
+  );
+
+  // Merge category metadata: base first, locale overrides
+  const baseCategoryMeta = loadCategoryMeta(settings.docsDir);
+  const localeCategoryMeta = loadCategoryMeta(getContentDir("ja"));
+  const categoryMeta = new Map([...baseCategoryMeta, ...localeCategoryMeta]);
+
   // Exclude unlisted pages from nav tree
-  const navDocs = docs.filter((doc) => !doc.data.unlisted);
+  const navDocs = allDocs.filter((doc) => !doc.data.unlisted);
   const tree = buildNavTree(navDocs, "ja", categoryMeta);
 
   // Regular doc pages
-  const docPaths = docs.map((entry) => {
+  const docPaths = allDocs.map((entry) => {
     const slug = entry.data.slug ?? toRouteSlug(entry.id);
+    const isFallback = fallbackSlugs.has(slug);
     const navSection = getNavSectionForSlug(slug);
     const subtree = getNavSubtree(tree, navSection);
     const flat = flattenTree(subtree);
@@ -66,6 +96,7 @@ export async function getStaticPaths() {
       params: { slug },
       props: {
         entry,
+        contentDir: isFallback ? settings.docsDir : getContentDir("ja"),
         breadcrumbs: buildBreadcrumbs(tree, slug, "ja"),
         prev: prevNode,
         next: nextNode,
@@ -78,6 +109,7 @@ export async function getStaticPaths() {
     params: { slug: node.slug },
     props: {
       entry: null,
+      contentDir: getContentDir("ja"),
       autoIndex: node,
       breadcrumbs: buildBreadcrumbs(tree, node.slug, "ja"),
       prev: null,
@@ -88,7 +120,7 @@ export async function getStaticPaths() {
   return [...docPaths, ...autoIndexPaths];
 }
 
-const { entry, breadcrumbs = [], prev, next, autoIndex } = Astro.props;
+const { entry, contentDir, breadcrumbs = [], prev, next, autoIndex } = Astro.props;
 
 const components = { Note, Tip, Info, Warning, Danger, CategoryNav, Tabs, TabItem, Details };
 
@@ -136,7 +168,7 @@ const slug = autoIndex ? autoIndex.slug : (entry!.data.slug ?? toRouteSlug(entry
   ) : (
     <Fragment>
       <h1 class="text-heading font-bold mb-vsp-xs">{entry.data.title}</h1>
-      <DocMetainfo filePath={`${getContentDir("ja")}/${entry.id}`} locale="ja" />
+      <DocMetainfo filePath={`${contentDir}/${entry.id}`} locale="ja" />
 
       {entry.data.description && (
         <p class="mt-0 mb-vsp-lg text-subheading text-muted">{entry.data.description}</p>
@@ -148,7 +180,7 @@ const slug = autoIndex ? autoIndex.slug : (entry!.data.slug ?? toRouteSlug(entry
 
       {settings.editUrl && entry && (
         <div class="mt-vsp-xl mb-vsp-md border-t border-muted pt-vsp-md">
-          <EditLink contentDir={getContentDir("ja")} entryId={entry.id} locale="ja" />
+          <EditLink contentDir={contentDir} entryId={entry.id} locale="ja" />
         </div>
       )}
 
