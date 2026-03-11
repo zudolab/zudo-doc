@@ -15,7 +15,7 @@ zudo-doc is designed to be simple and extensible. Start with the basics and add 
 - **Fast dev server** — Vite-powered, pages compile on demand with instant HMR
 - **MDX support** — write documentation with JSX components embedded in Markdown
 - **Tailwind CSS v4** — utility-first styling with a tight design token system
-- **Color scheme presets** — ANSI 16-color palettes (Dracula, Nord, Tokyo Night, and more)
+- **Color scheme support** — themeable 16-color palette with light and dark defaults
 - **Static export** — generates pure HTML, zero JS by default (React islands only where needed)
 - **i18n ready** — English and Japanese routing built in
 - **Minimal base** — extend with your own components and layouts
@@ -28,7 +28,7 @@ If you're coming from Docusaurus, you'll find the MDX workflow familiar but with
 
 zudo-doc uses [Astro's Content Collections](https://docs.astro.build/en/guides/content-collections/) to manage documentation pages. Each `.mdx` file in `src/content/docs/` becomes a page with automatic sidebar navigation, table of contents, and prev/next links.
 
-The color scheme system is based on the ANSI 16-color palette standard — the same palette used by terminal emulators. By swapping a single preset, the entire site's appearance changes.
+The color scheme system uses a 16-color palette. By swapping a single color scheme, the entire site's appearance changes.
 
 ## Quick Start
 

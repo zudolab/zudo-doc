@@ -4,32 +4,27 @@ description: zudo-doc's tight token strategy — spacing, typography, colors, an
 sidebar_position: 2
 ---
 
-zudo-doc uses a **tight token strategy** — all Tailwind defaults are reset and replaced with a small, intentional set of design tokens. This page covers the full system: spacing, typography, colors, border radius, and breakpoints.
+zudo-doc uses a **tight token strategy** — instead of importing the full Tailwind framework, only `preflight` and `utilities` are loaded, skipping the default theme entirely. A small, intentional set of design tokens is defined from scratch. This page covers the full system: spacing, typography, colors, border radius, and breakpoints.
 
 ## Tight Token Strategy
 
 Tailwind CSS ships with hundreds of built-in values — colors, spacing scales, font sizes, and more. In a themeable project, these defaults cause problems: hardcoded values ignore theme changes and create inconsistency.
 
-zudo-doc solves this by resetting defaults with wildcard `initial` resets in `src/styles/global.css`:
+zudo-doc solves this with selective imports in `src/styles/global.css` — only `preflight` (reset) and `utilities` (functional classes) are imported, while the default theme layer is skipped entirely:
 
 ```css
+@import "tailwindcss/preflight";
+@import "tailwindcss/utilities";
+
 @theme {
-  --color-*: initial;
-  --spacing-*: initial;
-  --text-*: initial;
-  --font-*: initial;
-  --font-weight-*: initial;
-  --leading-*: initial;
-  --tracking-*: initial;
-  --radius-*: initial;
-  --shadow-*: initial;
-  --inset-shadow-*: initial;
-  --drop-shadow-*: initial;
-  --breakpoint-*: initial;
+  /* Only define what we need — no resets necessary */
+  --color-bg: var(--zd-bg);
+  --color-fg: var(--zd-fg);
+  /* ... */
 }
 ```
 
-After these resets, only explicitly defined tokens work. Using a reset token (like `p-4` or `bg-gray-500`) produces no effect — the value simply doesn't exist. This gives you a guarantee: **invalid tokens cause build errors or missing styles, not visual bugs**.
+Because the default theme is never loaded, no `--*: initial` reset block is needed. Only explicitly defined tokens in `@theme` work. Using an undefined token (like `p-4` or `bg-gray-500`) produces no effect — the value simply doesn't exist. This gives you a guarantee: **invalid tokens cause build errors or missing styles, not visual bugs**.
 
 <Info>
 This is the core philosophy: define only what the project needs. Every value in the system is intentional, and accidental use of Tailwind defaults is immediately visible.
@@ -158,7 +153,7 @@ See the [Color guide](/docs/guides/color) for full details on the color token sy
 ## Usage Rules
 
 <Warning title="Tailwind defaults are disabled">
-All default Tailwind values are reset to `initial`. Only project-defined tokens work.
+The default Tailwind theme is not imported — only `tailwindcss/preflight` and `tailwindcss/utilities` are loaded. Only project-defined tokens work.
 </Warning>
 
 ### Do
@@ -180,7 +175,7 @@ All default Tailwind values are reset to `initial`. Only project-defined tokens 
 ### Don't
 
 ```html
-<!-- DON'T: Tailwind defaults — these are reset and produce nothing -->
+<!-- DON'T: Tailwind defaults — not defined and produce nothing -->
 <div class="p-4 bg-gray-500 text-sm">Broken</div>
 
 <!-- DON'T: Hardcoded hex — breaks theming -->

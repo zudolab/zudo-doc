@@ -5,7 +5,7 @@ import Breadcrumb from "@/components/breadcrumb.astro";
 import { toRouteSlug } from "@/utils/slug";
 import { collectTags } from "@/utils/tags";
 import { t } from "@/config/i18n";
-import { docsUrl } from "@/utils/base";
+import { docsUrl, withBase } from "@/utils/base";
 
 export async function getStaticPaths() {
   const allDocs = await getCollection("docs");
@@ -29,8 +29,8 @@ const countText = tagInfo.count === 1
 
 <DocLayout title={`${t("doc.taggedWith")}: ${tag}`} currentSlug={`tags/${tag}`}>
   <Breadcrumb slot="breadcrumb" items={[
-    { label: "Docs", href: "/docs" },
-    { label: t("doc.allTags"), href: "/docs/tags" },
+    { label: "Docs", href: withBase("/docs") },
+    { label: t("doc.allTags"), href: withBase("/docs/tags") },
     { label: tag },
   ]} />
   <h1 class="text-heading font-bold mb-vsp-xs">{t("doc.taggedWith")}: {tag}</h1>

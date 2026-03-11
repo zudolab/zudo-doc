@@ -67,13 +67,13 @@ Available in all MDX files without imports (registered globally in doc page):
 
 ## Design Token System
 
-Based on the ANSI 16-color palette standard (Ghostty terminal themes).
+Uses a 16-color palette system.
 
 ### Three-Tier Color Strategy
 
 **Tier 1 — Palette** (injected by `ColorSchemeProvider` on `:root`):
 - `--zd-bg`, `--zd-fg`, `--zd-sel-bg`, `--zd-sel-fg`, `--zd-cursor`
-- `--zd-0` through `--zd-15` (16 ANSI palette slots)
+- `--zd-0` through `--zd-15` (16 palette slots)
 
 **Tier 2 — Semantic tokens** (in `global.css` `@theme`, resolved per scheme):
 - Palette access: `p0`–`p15` → `bg-p0`, `text-p8`, `border-p1`, etc.

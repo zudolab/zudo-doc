@@ -22,6 +22,7 @@
     "astro": "^5.18.0",
     "clsx": "^2.1.1",
     "diff": "^8.0.3",
+    "github-slugger": "^2.0.0",
     "gray-matter": "^4.0.3",
     "katex": "^0.16.38",
     "mermaid": "^11.12.3",

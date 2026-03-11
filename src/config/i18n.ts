@@ -41,6 +41,11 @@ export function detectLocaleFromPath(path: string): Locale {
 /** UI string translations */
 const translations: Record<string, Record<string, string>> = {
   en: {
+    "nav.gettingStarted": "Getting Started",
+    "nav.guides": "Guides",
+    "nav.reference": "Reference",
+    "nav.api": "API",
+    "nav.claude": "Claude",
     "nav.previous": "Previous",
     "nav.next": "Next",
     "toc.title": "On this page",
@@ -60,6 +65,11 @@ const translations: Record<string, Record<string, string>> = {
     "doc.pageCountSingle": "{count} page",
   },
   ja: {
+    "nav.gettingStarted": "はじめに",
+    "nav.guides": "ガイド",
+    "nav.reference": "リファレンス",
+    "nav.api": "API",
+    "nav.claude": "Claude",
     "nav.previous": "前へ",
     "nav.next": "次へ",
     "toc.title": "目次",
@@ -79,6 +89,11 @@ const translations: Record<string, Record<string, string>> = {
     "doc.pageCountSingle": "{count}ページ",
   },
   de: {
+    "nav.gettingStarted": "Erste Schritte",
+    "nav.guides": "Anleitungen",
+    "nav.reference": "Referenz",
+    "nav.api": "API",
+    "nav.claude": "Claude",
     "nav.previous": "Zurück",
     "nav.next": "Weiter",
     "toc.title": "Auf dieser Seite",

@@ -1,5 +1,6 @@
 export interface HeaderNavItem {
   label: string;
+  labelKey?: string;
   path: string;
   categoryMatch?: string;
 }
@@ -43,10 +44,10 @@ export const settings = {
     claudeDir: ".claude",
   } as { claudeDir: string; projectRoot?: string } | false,
   headerNav: [
-    { label: "Getting Started", path: "/docs/getting-started", categoryMatch: "getting-started" },
-    { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
-    { label: "Reference", path: "/docs/reference", categoryMatch: "reference" },
-    { label: "API", path: "/docs/api", categoryMatch: "api" },
-    { label: "Claude", path: "/docs/claude", categoryMatch: "claude" },
+    { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
+    { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
+    { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
+    { label: "API", labelKey: "nav.api", path: "/docs/api", categoryMatch: "api" },
+    { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude" },
   ] satisfies HeaderNavItem[],
 };

@@ -5,13 +5,21 @@ import Breadcrumb from "@/components/breadcrumb.astro";
 import { toRouteSlug } from "@/utils/slug";
 import { collectTags } from "@/utils/tags";
 import { t } from "@/config/i18n";
-import { docsUrl } from "@/utils/base";
+import { docsUrl, withBase } from "@/utils/base";
 
 export async function getStaticPaths() {
-  const allDocs = await getCollection("docs-de");
-  const docs = import.meta.env.PROD
-    ? allDocs.filter((doc) => !doc.data.draft && !doc.data.unlisted)
-    : allDocs.filter((doc) => !doc.data.unlisted);
+  const localeDocs = await getCollection("docs-de");
+  const baseDocs = await getCollection("docs");
+  const filterDocs = (docs: typeof localeDocs) => import.meta.env.PROD
+    ? docs.filter((doc) => !doc.data.draft && !doc.data.unlisted)
+    : docs.filter((doc) => !doc.data.unlisted);
+  const filteredLocale = filterDocs(localeDocs);
+  const filteredBase = filterDocs(baseDocs);
+  const localeSlugSet = new Set(filteredLocale.map((d) => d.data.slug ?? toRouteSlug(d.id)));
+  const docs = [
+    ...filteredLocale,
+    ...filteredBase.filter((d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id))),
+  ];
   const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
 
   return [...tagMap.entries()].map(([tag, info]) => ({
@@ -29,8 +37,8 @@ const countText = tagInfo.count === 1
 
 <DocLayout title={`${t("doc.taggedWith", "de")}: ${tag}`} lang="de" currentSlug={`tags/${tag}`}>
   <Breadcrumb slot="breadcrumb" items={[
-    { label: "Docs", href: "/de/docs" },
-    { label: t("doc.allTags", "de"), href: "/de/docs/tags" },
+    { label: "Docs", href: withBase("/de/docs") },
+    { label: t("doc.allTags", "de"), href: withBase("/de/docs/tags") },
     { label: tag },
   ]} />
   <h1 class="text-heading font-bold mb-vsp-xs">{t("doc.taggedWith", "de")}: {tag}</h1>

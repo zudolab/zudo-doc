@@ -6,7 +6,7 @@ import LanguageSwitcher from "@/components/language-switcher.astro";
 import Search from "@/components/search.astro";
 import { settings } from "@/config/settings";
 import { withBase, stripBase } from "@/utils/base";
-import { defaultLocale, locales, type Locale } from "@/config/i18n";
+import { defaultLocale, locales, t, type Locale } from "@/config/i18n";
 
 interface Props {
   lang?: Locale;
@@ -51,7 +51,7 @@ const pathForMatch = isNonDefaultLocale ? pathWithoutBase.replace(new RegExp(`^/
                 : "text-muted hover:underline focus:underline",
             ]}
           >
-            {item.label}
+            {item.labelKey ? t(item.labelKey, lang) : item.label}
           </a>
         );
       });
