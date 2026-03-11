@@ -31,7 +31,7 @@ export const settings = {
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },
     de: { label: "DE", dir: "src/content/docs-de" },
-  } as Record<string, LocaleConfig>,
+  } satisfies Record<string, LocaleConfig>,
   mermaid: true,
   editUrl: false as string | false,
   siteUrl: "" as string, // e.g. "https://example.com" — required for sitemap absolute URLs

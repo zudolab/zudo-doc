@@ -6,14 +6,21 @@ export const defaultLocale = "en" as const;
 /** All supported locale codes, derived from settings. */
 export const locales = [
   defaultLocale,
-  ...Object.keys(settings.locales),
+  ...(Object.keys(settings.locales) as Array<keyof typeof settings.locales>),
 ] as const;
 export type Locale = (typeof locales)[number];
+
+type LocaleKey = keyof typeof settings.locales;
+
+/** Safely look up a locale in settings.locales. */
+function getLocaleConfig(locale: string) {
+  return (settings.locales as Record<string, (typeof settings.locales)[LocaleKey]>)[locale];
+}
 
 /** Get the content directory for a locale. */
 export function getContentDir(locale: Locale | string): string {
   if (locale === defaultLocale) return settings.docsDir;
-  return settings.locales[locale]?.dir ?? settings.docsDir;
+  return getLocaleConfig(locale)?.dir ?? settings.docsDir;
 }
 
 /** Get the Astro content collection name for a locale. */
@@ -25,7 +32,7 @@ export function getCollectionName(locale: Locale | string): string {
 /** Get the display label for a locale. */
 export function getLocaleLabel(locale: Locale | string): string {
   if (locale === defaultLocale) return "EN";
-  return settings.locales[locale]?.label ?? locale.toUpperCase();
+  return getLocaleConfig(locale)?.label ?? locale.toUpperCase();
 }
 
 /** Detect locale from a URL pathname (after base stripping). */

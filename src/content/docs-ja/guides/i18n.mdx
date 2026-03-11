@@ -1,0 +1,64 @@
+---
+title: "国際化（i18n）"
+description: "ドキュメントに多言語サポートを追加する"
+sidebar_position: 6
+---
+
+zudo-docはAstroの組み込みi18nルーティングを使用して複数の言語をサポートしています。
+
+## 仕組み
+
+- **英語（デフォルト）：** `/docs/...` — コンテンツは`src/content/docs/`に格納
+- **日本語：** `/ja/docs/...` — コンテンツは`src/content/docs-ja/`に格納
+
+サイトヘッダーの言語切り替えで、ユーザーは利用可能な言語を切り替えることができます。
+
+## ディレクトリ構造
+
+日本語ドキュメントは英語のディレクトリ構造をミラーします：
+
+```
+src/content/
+├── docs/
+│   ├── getting-started/
+│   │   ├── introduction.mdx
+│   │   └── installation.mdx
+│   └── guides/
+│       └── writing-docs.mdx
+└── docs-ja/
+    ├── getting-started/
+    │   ├── introduction.mdx
+    │   └── installation.mdx
+    └── guides/
+        └── writing-docs.mdx
+```
+
+## 言語切り替え
+
+言語切り替えはヘッダーの右端に表示されます。現在の言語コード（ENまたはJA）と、別の言語に切り替えるためのリンクが表示されます。切り替えは`/ja/`プレフィックスの追加または削除により、代替URLを自動的に計算します。
+
+## Astro設定
+
+i18nルーティングは`astro.config.ts`で設定されます：
+
+```ts
+i18n: {
+  defaultLocale: "en",
+  locales: ["en", "ja"],
+  routing: {
+    prefixDefaultLocale: false,
+  },
+},
+```
+
+`prefixDefaultLocale: false`により、英語ページは言語プレフィックスなし（`/docs/...`）で配信され、日本語ページは`/ja/`プレフィックス付き（`/ja/docs/...`）で配信されます。
+
+## 新しい言語の追加
+
+新しい言語（例：韓国語）を追加するには：
+
+1. コンテンツディレクトリを作成：`src/content/docs-ko/`
+2. 英語のディレクトリ構造をミラーして翻訳ファイルを配置
+3. `src/pages/ko/docs/[...slug].astro`に新しいページルートを追加
+4. `astro.config.ts`の`locales`配列に`"ko"`を追加
+5. 言語切り替えコンポーネントを新しい言語に対応するよう更新

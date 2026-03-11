@@ -1,20 +1,19 @@
 import type { AstroIntegration } from "astro";
-import { writeFileSync, readdirSync, statSync } from "node:fs";
+import { writeFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { settings } from "../config/settings";
 
 function collectHtmlFiles(dir: string, rootDir: string): string[] {
   const urls: string[] = [];
-  const entries = readdirSync(dir);
+  const entries = readdirSync(dir, { withFileTypes: true });
 
   for (const entry of entries) {
-    const fullPath = join(dir, entry);
-    const stat = statSync(fullPath);
+    const fullPath = join(dir, entry.name);
 
-    if (stat.isDirectory()) {
+    if (entry.isDirectory()) {
       urls.push(...collectHtmlFiles(fullPath, rootDir));
-    } else if (entry.endsWith(".html") && entry !== "404.html") {
+    } else if (entry.name.endsWith(".html") && entry.name !== "404.html") {
       const rel = relative(rootDir, fullPath);
       let urlPath: string;
 
@@ -41,6 +40,10 @@ function collectHtmlFiles(dir: string, rootDir: string): string[] {
   return urls;
 }
 
+function escapeXml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+}
+
 function generateSitemap(urls: string[], siteUrl: string): string {
   const today = new Date().toISOString().split("T")[0];
   const base = siteUrl.replace(/\/$/, "");
@@ -48,7 +51,7 @@ function generateSitemap(urls: string[], siteUrl: string): string {
     .sort()
     .map(
       (url) => `  <url>
-    <loc>${base}${url}</loc>
+    <loc>${escapeXml(base + url)}</loc>
     <lastmod>${today}</lastmod>
   </url>`,
     )

@@ -1,0 +1,115 @@
+---
+title: "/CLAUDE.md"
+description: "/CLAUDE.mdにあるCLAUDE.md"
+sidebar_position: 2
+sidebar_label: "CLAUDE.md"
+---
+
+**パス:** `CLAUDE.md`
+
+# zudo-doc
+
+Astro 5、MDX、Tailwind CSS v4、Reactアイランドで構築された最小限のドキュメントフレームワーク。
+
+## Tech Stack
+
+- **Astro 5** — Content Collectionsを使用した静的サイトジェネレーター
+- **MDX** — `@astrojs/mdx`経由、`docsDir`設定でコンテンツディレクトリを構成可能
+- **Tailwind CSS v4** — `@tailwindcss/vite`経由（`@astrojs/tailwind`ではない）
+- **React 19** — インタラクティブなアイランド専用（TOCスクロールスパイ、サイドバートグル、折りたたみカテゴリ）
+- **Shiki** — 組み込みコードハイライト、アクティブなカラースキームからテーマを設定
+- **TypeScript** — `astro/tsconfigs/strict`による厳格モード
+
+## Commands
+
+- `pnpm dev` — ポート4321の開発サーバー（predevがステイルプロセスをキル）
+- `pnpm build` — `dist/`への静的HTMLエクスポート
+- `pnpm check` — Astro型チェック
+
+## Key Directories
+
+```
+src/
+├── components/          # Astro + Reactコンポーネント
+│   └── admonitions/     # Note, Tip, Info, Warning, Danger
+├── config/              # 設定、カラースキーム
+├── content/
+│   ├── docs/            # 英語MDXコンテンツ
+│   └── docs-ja/         # 日本語MDXコンテンツ（docs/のミラー）
+├── hooks/               # Reactフック（スクロールスパイ）
+├── layouts/             # Astroレイアウト（doc-layout）
+├── pages/               # ファイルベースルーティング
+│   ├── docs/[...slug]   # 英語ドキュメントルート
+│   └── ja/docs/[...slug] # 日本語ドキュメントルート
+└── styles/
+    └── global.css       # デザイントークン（@theme）& Tailwind設定
+```
+
+## Conventions
+
+### Components: Astro vs React
+
+- デフォルトで**Astroコンポーネント**（`.astro`）を使用 — JSゼロ、サーバーレンダリング
+- **Reactアイランド**（`client:load`）はクライアントサイドのインタラクティビティが必要な場合のみ使用
+- 現在のReactアイランド：`toc.tsx`、`mobile-toc.tsx`、`sidebar-toggle.tsx`、`sidebar-tree.tsx`、`color-scheme-picker.tsx`、`theme-toggle.tsx`、`doc-history.tsx`
+
+### Content Collections
+
+- スキーマは`src/content.config.ts`で定義（Zodバリデーション）
+- Astro 5の`glob()`ローダーを使用、設定からの構成可能な`base`ディレクトリ
+- コンテンツディレクトリ：`docsDir`（デフォルト：`src/content/docs`）、`docsJaDir`（デフォルト：`src/content/docs-ja`）
+- 必須フロントマター：`title`（string）
+- オプション：`description`、`sidebar_position`（number）、`category`
+- サイドバー順序は`sidebar_position`で決定
+
+### Admonitions
+
+すべてのMDXファイルでインポート不要で使用可能（ドキュメントページでグローバル登録）：
+`<Note>`、`<Tip>`、`<Info>`、`<Warning>`、`<Danger>` — それぞれオプションの`title`プロパティを受け付けます。
+
+### i18n
+
+- 英語（デフォルト）：`/docs/...` — `docsDir`のコンテンツ（デフォルト：`src/content/docs`）
+- 日本語：`/ja/docs/...` — `docsJaDir`のコンテンツ（デフォルト：`src/content/docs-ja`）
+- `astro.config.ts`で`prefixDefaultLocale: false`として設定
+- 日本語ドキュメントは英語のディレクトリ構造をミラーする必要あり
+
+## Design Token System
+
+16色パレットシステムを使用。
+
+### Three-Tier Color Strategy
+
+**Tier 1 — Palette**（`ColorSchemeProvider`が`:root`に注入）：
+- `--zd-bg`、`--zd-fg`、`--zd-sel-bg`、`--zd-sel-fg`、`--zd-cursor`
+- `--zd-0`から`--zd-15`（16パレットスロット）
+
+**Tier 2 — Semantic tokens**（`global.css`の`@theme`、スキームごとに解決）：
+- パレットアクセス：`p0`–`p15` → `bg-p0`、`text-p8`、`border-p1`など
+- ベース：`bg`、`fg` → `bg-bg`、`text-fg`
+- UI：`surface`、`muted`、`accent`、`accent-hover`、`sel-bg`、`sel-fg`
+- コンテンツ：`code-bg`、`code-fg`、`success`、`danger`、`warning`、`info`
+
+**Tier 3 — Component tokens**（特定のコンポーネントにスコープ）：
+- コンテンツ：`.zd-content`の直接要素スタイリング、`global.css`内（Tier 2を消費）
+
+各ティアは上位ティアのみを参照。
+
+### Color Rules
+
+- Tailwindデフォルトカラー（`bg-gray-500`、`text-blue-600`）は**絶対に使用しない** — `initial`にリセットされる
+- **常に**プロジェクトトークンを使用：`text-fg`、`bg-surface`、`border-muted`、`text-accent`など
+- 標準UIにはセマンティックトークン（`text-accent`、`bg-code-bg`、`text-danger`）を優先
+- セマンティックトークンが適合しない場合のみパレットトークン（`p0`–`p15`）を使用
+
+### Changing Scheme
+
+- `src/config/settings.ts`の`colorScheme`を編集
+- 利用可能：Dracula、Catppuccin Mocha、Nord、TokyoNight、Gruvbox Dark、Atom One Dark
+- `src/config/color-schemes.ts`でスキームを追加（22カラープロパティ + `shikiTheme`）
+
+## CSS
+
+- Tailwind v4：`tailwindcss/preflight` + `tailwindcss/utilities`をインポート（デフォルトテーマなし）
+- `--*: initial`リセット不要 — デフォルトテーマは単にインポートされない
+- コンテンツタイポグラフィ：`global.css`の`.zd-content`クラス（proseプラグインなし — `:where()`セレクターでの直接要素スタイリング）

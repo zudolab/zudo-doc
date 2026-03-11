@@ -223,9 +223,18 @@ function scanDir(baseDir: string, currentDir: string, result: Map<string, Catego
       if (fs.existsSync(categoryFile)) {
         try {
           const raw = fs.readFileSync(categoryFile, "utf-8");
-          const meta: CategoryMeta = JSON.parse(raw);
-          const relativePath = path.relative(baseDir, fullPath);
-          result.set(relativePath, meta);
+          const parsed: unknown = JSON.parse(raw);
+          if (typeof parsed === "object" && parsed !== null) {
+            const obj = parsed as Record<string, unknown>;
+            const meta: CategoryMeta = {
+              label: typeof obj.label === "string" ? obj.label : undefined,
+              position: typeof obj.position === "number" ? obj.position : undefined,
+              description: typeof obj.description === "string" ? obj.description : undefined,
+              sortOrder: obj.sortOrder === "asc" || obj.sortOrder === "desc" ? obj.sortOrder : undefined,
+            };
+            const relativePath = path.relative(baseDir, fullPath);
+            result.set(relativePath, meta);
+          }
         } catch {
           // skip invalid JSON
         }

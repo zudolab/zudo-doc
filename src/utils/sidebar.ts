@@ -96,5 +96,9 @@ function resolveItem(
       }
       return tree;
     }
+    default: {
+      const _exhaustive: never = item;
+      throw new Error(`Unhandled sidebar item type: ${JSON.stringify(_exhaustive)}`);
+    }
   }
 }
