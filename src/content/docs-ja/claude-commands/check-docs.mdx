@@ -1,0 +1,14 @@
+---
+title: "check-docs"
+description: "ドキュメントのリンク切れとフォーマットの問題をチェック"
+sidebar_label: "check-docs"
+---
+
+`src/content/docs/`内のすべてのMDXファイルを以下の観点でレビューします：
+
+1. 内部リンク切れ
+2. フロントマターの欠落（`title`は必須）
+3. 無効なMDX構文（エスケープされていない`<`、`{`、`}`）
+4. インデックスページの`sidebar_position`の欠落
+
+結果をチェックリストとして報告します。
