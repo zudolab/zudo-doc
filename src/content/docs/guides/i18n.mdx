@@ -1,0 +1,64 @@
+---
+title: "Internationalization (i18n)"
+description: "Add multi-language support to your documentation"
+sidebar_position: 6
+---
+
+zudo-doc supports multiple languages using Astro's built-in i18n routing.
+
+## How It Works
+
+- **English (default):** `/docs/...` — content lives in `src/content/docs/`
+- **Japanese:** `/ja/docs/...` — content lives in `src/content/docs-ja/`
+
+The language switcher in the site header lets users toggle between available languages.
+
+## Directory Structure
+
+Japanese docs mirror the English directory structure:
+
+```
+src/content/
+├── docs/
+│   ├── getting-started/
+│   │   ├── introduction.mdx
+│   │   └── installation.mdx
+│   └── guides/
+│       └── writing-docs.mdx
+└── docs-ja/
+    ├── getting-started/
+    │   ├── introduction.mdx
+    │   └── installation.mdx
+    └── guides/
+        └── writing-docs.mdx
+```
+
+## Language Switcher
+
+The language switcher appears in the header's right edge. It shows the current language code (EN or JA) and a link to switch to the alternate language. The switcher automatically computes the alternate URL by adding or removing the `/ja/` prefix.
+
+## Astro Configuration
+
+i18n routing is configured in `astro.config.ts`:
+
+```ts
+i18n: {
+  defaultLocale: "en",
+  locales: ["en", "ja"],
+  routing: {
+    prefixDefaultLocale: false,
+  },
+},
+```
+
+With `prefixDefaultLocale: false`, English pages are served without a language prefix (`/docs/...`) while Japanese pages use the `/ja/` prefix (`/ja/docs/...`).
+
+## Adding a New Language
+
+To add a new language (e.g., Korean):
+
+1. Create a content directory: `src/content/docs-ko/`
+2. Mirror the English directory structure with translated files
+3. Add a new page route at `src/pages/ko/docs/[...slug].astro`
+4. Add `"ko"` to the `locales` array in `astro.config.ts`
+5. Update the language switcher component to support the new language

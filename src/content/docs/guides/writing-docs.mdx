@@ -1,0 +1,131 @@
+---
+title: Writing Docs
+description: How to create and organize documentation pages in zudo-doc.
+sidebar_position: 1
+---
+
+## Creating a Document
+
+Create an `.mdx` file in `src/content/docs/`. Use frontmatter for metadata:
+
+```mdx
+---
+title: My Page
+description: A brief summary of this page.
+sidebar_position: 1
+---
+
+Your content here.
+```
+
+### Frontmatter Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | string | Yes | Page title (shown in sidebar and header) |
+| `description` | string | No | Subtitle shown below the title |
+| `sidebar_position` | number | No | Sort order within category (lower = first) |
+| `sidebar_label` | string | No | Override sidebar display label |
+| `category` | string | No | Reserved for future use |
+| `search_exclude` | boolean | No | Exclude page from search index |
+
+## Directory Structure
+
+Organize docs into categories using directories:
+
+```
+src/content/docs/
+  getting-started/
+    introduction.mdx      # sidebar_position: 1
+    installation.mdx       # sidebar_position: 2
+  guides/
+    writing-docs.mdx       # sidebar_position: 1
+    color-schemes.mdx      # sidebar_position: 2
+    design-system.mdx      # sidebar_position: 3
+```
+
+Each directory becomes a collapsible sidebar category automatically. The category name is derived from the directory name (kebab-case converted to Title Case).
+
+## Admonitions
+
+zudo-doc supports Docusaurus-style admonitions. They are registered globally — no imports needed:
+
+<Note>
+This is a **note** — use it for general information that readers should be aware of.
+</Note>
+
+<Tip>
+This is a **tip** — use it for helpful suggestions and best practices.
+</Tip>
+
+<Info>
+This is an **info** block — use it for additional context or background information.
+</Info>
+
+<Warning>
+This is a **warning** — use it to flag potential issues or things to watch out for.
+</Warning>
+
+<Danger>
+This is a **danger** alert — use it for critical warnings about data loss or breaking changes.
+</Danger>
+
+### Custom Titles
+
+<Note title="Custom Title">
+You can provide a custom title to any admonition using the `title` prop.
+</Note>
+
+### Admonition Syntax
+
+```mdx
+<Note>
+Default note with auto-generated title.
+</Note>
+
+<Warning title="Be Careful">
+Warning with a custom title.
+</Warning>
+```
+
+Each admonition type maps to an ANSI palette slot for its border and title color:
+
+| Type | Palette Slot | Typical Color |
+|------|-------------|---------------|
+| Note | p4 | Blue |
+| Tip | p2 | Green |
+| Info | p6 | Cyan |
+| Warning | p3 | Yellow |
+| Danger | p1 | Red |
+
+## i18n (Internationalization)
+
+zudo-doc supports English and Japanese out of the box:
+
+- **English** (default): `/docs/...` — content in `src/content/docs/`
+- **Japanese**: `/ja/docs/...` — content in `src/content/docs-ja/`
+
+Japanese docs should mirror the English directory structure. A language switcher appears on each page.
+
+## MDX Features
+
+You can use React components in your documentation. Interactive components hydrate as Astro islands — the rest ships as pure HTML with zero JavaScript.
+
+```mdx
+import MyComponent from "@/components/my-component";
+
+<MyComponent client:load />
+```
+
+<Info>
+Use `client:load` for components that need interactivity. Omit it for components that only render static HTML.
+</Info>
+
+## Navigation
+
+zudo-doc automatically generates:
+
+- **Sidebar** — collapsible categories with items sorted by `sidebar_position`
+- **Table of Contents** — right sidebar with h2–h4 headings (visible on wide screens)
+- **Prev/Next links** — bottom navigation between docs
+- **Breadcrumbs** — category path shown above the title

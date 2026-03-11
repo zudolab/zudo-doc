@@ -1,0 +1,311 @@
+---
+title: Color
+description: zudo-doc's three-tier color strategy, ANSI palette, color schemes, and customization.
+sidebar_position: 3
+---
+
+zudo-doc uses a **three-tier color strategy** to keep every color on the site themeable. All Tailwind default colors are reset to `initial` — only project tokens work. This ensures switching a color scheme updates the entire site at once.
+
+## Three-Tier Color Strategy
+
+Colors are organized into three tiers. Each tier only references the tier above it:
+
+| Tier | Name | Purpose | Defined In |
+|------|------|---------|------------|
+| 1 | **Palette** | Raw color values from the active color scheme | `ColorSchemeProvider` → `:root` |
+| 2 | **Semantic** | Design meaning — what each color represents | `src/styles/global.css` `@theme` |
+| 3 | **Component** | Scoped overrides for specific components | `.zd-content` in `global.css` |
+
+This layering means you can:
+
+- **Swap the palette** (change color scheme) → entire site updates
+- **Remap a semantic token** (e.g. make `accent` blue instead of cyan) → every component using `accent` updates
+- **Override a component token** without affecting other components
+
+## Tier 1: The ANSI 16-Color Palette
+
+zudo-doc's color system is built on the **ANSI 16-color palette** — the same standard used by terminal emulators like Ghostty, iTerm2, and Alacritty. Each color scheme provides values for 16 indexed color slots plus background, foreground, and selection colors.
+
+### Palette Slots
+
+| Slot | Name | Bright Slot | Bright Name | Typical Use |
+|------|------|-------------|-------------|-------------|
+| 0 | Black | 8 | Bright Black | Surfaces, muted text, borders |
+| 1 | Red | 9 | Bright Red | Danger, errors |
+| 2 | Green | 10 | Bright Green | Success, tips |
+| 3 | Yellow | 11 | Bright Yellow | Warnings |
+| 4 | Blue | 12 | Bright Blue | Info, notes |
+| 5 | Magenta | 13 | Bright Magenta | Code highlights |
+| 6 | Cyan | 14 | Bright Cyan | Accent, links |
+| 7 | White | 15 | Bright White | Text, bright elements |
+
+<Note>
+The actual colors are **not fixed** — "Red" in Dracula is `#ff5555`, while "Red" in Nord is `#bf616a`. The names are conventions. That's why zudo-doc uses abstract numbered tokens (`p0`–`p15`) instead of color names.
+</Note>
+
+### How Palette Colors Are Injected
+
+The `ColorSchemeProvider` component (`src/components/color-scheme-provider.astro`) reads the active color scheme and injects CSS custom properties on `:root` at build time:
+
+```css
+:root {
+  --zd-bg: #282a36;
+  --zd-fg: #f8f8f2;
+  --zd-cursor: #f8f8f2;
+  --zd-sel-bg: #44475a;
+  --zd-sel-fg: #ffffff;
+  --zd-0: #21222c;   /* palette slot 0 (Black) */
+  --zd-1: #ff5555;   /* palette slot 1 (Red) */
+  /* ... through --zd-15 */
+}
+```
+
+These `--zd-*` properties are the source of truth. Everything downstream — semantic tokens, component tokens, Tailwind utilities — resolves back to them.
+
+## Tier 2: Semantic Tokens
+
+In `src/styles/global.css`, the `@theme` block maps palette properties into Tailwind-compatible tokens with design meaning:
+
+```css
+@theme {
+  --color-*: initial;  /* reset ALL Tailwind defaults */
+
+  /* Base */
+  --color-bg: var(--zd-bg);
+  --color-fg: var(--zd-fg);
+  --color-sel-bg: var(--zd-sel-bg);
+  --color-sel-fg: var(--zd-sel-fg);
+
+  /* Raw palette access (p0–p15) */
+  --color-p0: var(--zd-0);
+  --color-p1: var(--zd-1);
+  /* ... through --color-p15 */
+
+  /* Semantic aliases */
+  --color-surface: var(--zd-surface);
+  --color-muted: var(--zd-muted);
+  --color-accent: var(--zd-accent);
+  --color-accent-hover: var(--zd-accent-hover);
+  --color-code-bg: var(--zd-code-bg);
+  --color-code-fg: var(--zd-code-fg);
+  --color-success: var(--zd-success);
+  --color-danger: var(--zd-danger);
+  --color-warning: var(--zd-warning);
+  --color-info: var(--zd-info);
+}
+```
+
+Once registered in `@theme`, these become standard Tailwind utility classes: `bg-surface`, `text-accent`, `border-muted`, etc.
+
+### Semantic Token Reference
+
+| Token | Default Palette Slot | Usage |
+|-------|---------------------|-------|
+| `bg` | `--zd-bg` | Page background |
+| `fg` | `--zd-fg` | Primary text |
+| `surface` | `p0` (Black) | Panel/sidebar surfaces |
+| `muted` | `p8` (Bright Black) | Muted text, borders, comments |
+| `accent` | `p6` (Cyan) | Links, active states, CTA |
+| `accent-hover` | `p14` (Bright Cyan) | Hover state for accent |
+| `sel-bg` | `--zd-sel-bg` | Selection background |
+| `sel-fg` | `--zd-sel-fg` | Selection foreground |
+| `code-bg` | `p0` (Black) | Code block background |
+| `code-fg` | `p13` (Bright Magenta) | Inline code text |
+| `success` | `p2` (Green) | Success states, confirmations |
+| `danger` | `p1` (Red) | Errors, destructive actions |
+| `warning` | `p3` (Yellow) | Warning messages |
+| `info` | `p4` (Blue) | Informational highlights |
+
+### Per-Scheme Semantic Overrides
+
+Each color scheme can override the default palette-slot mapping via the `semantic` property in `src/config/color-schemes.ts`. For example, Dracula overrides `muted` to a custom gray, and Solarized Light remaps `accent` to magenta:
+
+```ts
+"Solarized Light": {
+  // ...palette, background, foreground...
+  semantic: {
+    accent: "#d33682",     // magenta instead of default cyan
+    accentHover: "#6c71c4",
+    surface: "#f4efdd",
+  },
+},
+```
+
+The resolution logic lives in `src/config/color-scheme-utils.ts` — each semantic property falls back to its default palette slot when not explicitly overridden.
+
+## Tier 3: Component Tokens
+
+Some components define their own color variables that consume Tier 2 semantic tokens. These are internal implementation details.
+
+### Content Typography
+
+The `.zd-content` class provides direct element styling using semantic tokens — no external typography plugin:
+
+```css
+.zd-content {
+  color: var(--color-fg);
+  font-size: var(--text-body);
+  line-height: var(--leading-relaxed);
+}
+
+.zd-content :where(a) {
+  color: var(--color-accent);
+}
+
+.zd-content :where(code:not(pre code)) {
+  color: var(--color-code-fg);
+  background-color: var(--color-code-bg);
+}
+
+.zd-content :where(li::marker) {
+  color: var(--color-muted);
+}
+/* ... */
+```
+
+<Info>
+Tier 3 tokens are internal to their components. When building your own UI, use Tier 2 semantic tokens or Tier 1 palette tokens directly.
+</Info>
+
+## Using Color Tokens
+
+### Prefer semantic tokens
+
+Use semantic tokens for standard UI patterns:
+
+```html
+<!-- Text -->
+<p class="text-fg">Primary text</p>
+<p class="text-muted">Secondary text</p>
+<a class="text-accent hover:text-accent-hover">Link</a>
+
+<!-- Backgrounds -->
+<div class="bg-bg">Page background</div>
+<div class="bg-surface">Panel or sidebar</div>
+
+<!-- Borders -->
+<div class="border border-muted">Bordered element</div>
+```
+
+### Fall back to palette tokens when needed
+
+Use `p0`–`p15` when no semantic token fits — for badges, decorative elements, or status indicators:
+
+```html
+<span class="text-p1">Error text (red)</span>
+<span class="text-p2">Success text (green)</span>
+<span class="text-p3">Warning text (yellow)</span>
+<span class="text-p4">Info text (blue)</span>
+```
+
+## Color Schemes
+
+To change the active color scheme, edit `src/config/settings.ts`:
+
+```ts
+export const settings = {
+  colorScheme: "Dracula",  // Change this
+  siteName: "zudo-doc",
+  // ...
+};
+```
+
+### Available Presets
+
+zudo-doc ships with 40+ color scheme presets including:
+
+- **Dracula** — Purple-accented dark theme
+- **Catppuccin Mocha / Frappe / Macchiato / Latte** — Warm pastel themes
+- **Nord** — Cool blue-gray dark theme
+- **TokyoNight** — Deep blue dark theme
+- **Gruvbox Dark / Light / Material** — Warm retro themes
+- **Atom One Dark / Light** — Neutral themes
+- **Solarized Dark / Light** — Ethan Schoonover's precision themes
+- **Monokai Pro / Remastered / Vivid / Soda** — Monokai variants
+- **Material Ocean / Darker / Dark / Light** — Material Design themes
+- **Rose Pine / Moon / Dawn** — Elegant themes
+- **GitHub Dark / Dimmed / Light** — GitHub-style themes
+- **Everforest Dark / Light** — Nature-inspired themes
+- **Kanagawa Wave / Dragon** — Japanese wave art themes
+- **Nightfox / Carbonfox / Dawnfox / Dayfox / Duskfox** — Fox family themes
+- **Night Owl**, **Poimandres**, **Vesper**, **Doom One**, **Snazzy**, **VS Code Dark+**, and more
+
+See `src/config/color-schemes.ts` for the full list.
+
+## Adding a Custom Color Scheme
+
+Add a new entry to the `colorSchemes` object in `src/config/color-schemes.ts`:
+
+```ts
+"My Theme": {
+  background: "#1a1a2e",
+  foreground: "#e0e0e0",
+  cursor: "#e0e0e0",
+  selectionBg: "#3a3a5e",
+  selectionFg: "#e0e0e0",
+  palette: [
+    "#16213e", "#e74c3c", "#2ecc71", "#f39c12",  // 0-3: Black, Red, Green, Yellow
+    "#3498db", "#9b59b6", "#1abc9c", "#ecf0f1",  // 4-7: Blue, Magenta, Cyan, White
+    "#2c3e50", "#e67e73", "#55d98d", "#f5b041",  // 8-11: Bright Black–Yellow
+    "#5dade2", "#bb8fce", "#48c9b0", "#fdfefe",  // 12-15: Bright Blue–White
+  ],
+  shikiTheme: "one-dark-pro",
+  // Optional: override semantic defaults
+  semantic: {
+    muted: "#7f8c8d",
+    surface: "#1f1f3a",
+  },
+},
+```
+
+The `ColorScheme` interface requires:
+
+- `background`, `foreground`, `cursor`, `selectionBg`, `selectionFg` — base colors
+- `palette` — 16-element tuple (ANSI colors 0–15)
+- `shikiTheme` — a Shiki theme name for syntax highlighting
+- `semantic` (optional) — override default palette-slot mappings for any semantic token
+
+<Tip>
+Ghostty terminal themes use the same ANSI color slots. You can copy values from any Ghostty theme file directly into a new color scheme entry — the palette indices match 1:1.
+</Tip>
+
+## What NOT to Do
+
+<Danger
+  title="Color Anti-Patterns"
+>
+
+**Don't use Tailwind defaults** — they are reset to `initial`:
+
+```html
+<!-- WRONG -->
+<div class="bg-gray-800 text-blue-500">No visible color</div>
+
+<!-- RIGHT -->
+<div class="bg-surface text-accent">Works correctly</div>
+```
+
+**Don't hardcode hex values** — it breaks theming:
+
+```html
+<!-- WRONG -->
+<div class="bg-[#1e1e2e]">Breaks on theme switch</div>
+
+<!-- RIGHT -->
+<div class="bg-p0">Adapts to any theme</div>
+```
+
+**Don't reference component-scoped variables** in your own components:
+
+```css
+/* WRONG — don't use hardcoded colors */
+.my-component {
+  color: #3b82f6;
+}
+
+/* RIGHT — use semantic tokens */
+.my-component {
+  color: var(--color-accent);
+}
+```
+</Danger>

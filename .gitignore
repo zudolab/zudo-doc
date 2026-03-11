@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.astro/
+worktrees/
+__inbox/
+.env
+.env.local
+.env.production
+
+# Generated Claude Code resource docs
+src/content/docs/claude/
+src/content/docs/claude-md/
+src/content/docs/claude-commands/
+src/content/docs/claude-skills/
+src/content/docs/claude-agents/
+test-results/

@@ -1,0 +1,77 @@
+---
+title: Installation
+description: How to install and set up zudo-doc for local development.
+sidebar_position: 2
+---
+
+## Prerequisites
+
+- **Node.js 18+** — required for Astro 5
+- **pnpm** — recommended package manager
+
+<Info>
+You can also use npm or yarn, but this guide uses pnpm for all examples.
+</Info>
+
+## Install
+
+```bash
+git clone https://github.com/Takazudo/zudoc.git my-docs
+cd my-docs
+pnpm install
+```
+
+## Development
+
+```bash
+pnpm dev
+```
+
+The dev server starts on port 4321 with Vite for instant hot module replacement.
+
+<Warning>
+Make sure port 4321 is available. If another process is using it, Astro will automatically pick the next available port.
+</Warning>
+
+## Build
+
+```bash
+pnpm build
+```
+
+This generates static HTML in the `dist/` directory. You can deploy it to any static hosting service.
+
+## Type Checking
+
+```bash
+pnpm check
+```
+
+Runs Astro's built-in type checker with strict TypeScript mode.
+
+<Danger>
+Never commit the `dist/` directory to source control. It is already excluded via `.gitignore`.
+</Danger>
+
+## Project Structure
+
+After installation, your project looks like this:
+
+```
+src/
+├── components/          # Astro + React components
+│   └── admonitions/     # Note, Tip, Info, Warning, Danger
+├── config/
+│   ├── settings.ts      # Site name, active color scheme
+│   ├── color-schemes.ts # All available color presets
+│   └── color-scheme-utils.ts
+├── content/
+│   ├── docs/            # English MDX content
+│   └── docs-ja/         # Japanese MDX content
+├── layouts/             # Page layouts
+├── pages/               # File-based routing
+└── styles/
+    └── global.css       # Design tokens & Tailwind config
+```
+
+See the [Writing Docs](/docs/guides/writing-docs) guide for how to create and organize your documentation pages.

@@ -1,0 +1,190 @@
+---
+title: デザインシステム
+description: zudo-docのタイトトークン戦略 — スペーシング、タイポグラフィ、カラーなど。
+sidebar_position: 2
+---
+
+zudo-docは**タイトトークン戦略**を採用しています。Tailwindのデフォルト値をすべてリセットし、小さく意図的なデザイントークンのセットに置き換えます。このページでは、スペーシング、タイポグラフィ、カラー、角丸、ブレークポイントの全体像を解説します。
+
+## タイトトークン戦略
+
+Tailwind CSSには数百の組み込み値（カラー、スペーシングスケール、フォントサイズなど）が用意されています。テーマ切り替え可能なプロジェクトでは、これらのデフォルト値が問題を引き起こします。ハードコードされた値はテーマ変更を無視し、一貫性を崩します。
+
+zudo-docでは`src/styles/global.css`内でワイルドカードの`initial`リセットを使い、デフォルトを無効化しています:
+
+```css
+@theme {
+  --color-*: initial;
+  --spacing-*: initial;
+  --text-*: initial;
+  --font-*: initial;
+  --font-weight-*: initial;
+  --leading-*: initial;
+  --tracking-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --breakpoint-*: initial;
+}
+```
+
+リセット後は、明示的に定義されたトークンのみが機能します。リセットされたトークン（`p-4`や`bg-gray-500`など）を使っても効果はありません。値自体が存在しないためです。これにより**無効なトークンはビルドエラーやスタイル欠落として現れ、視覚的なバグにはなりません**。
+
+<Info>
+これが核となる設計思想です。プロジェクトに必要なものだけを定義する。システム内のすべての値は意図的であり、Tailwindデフォルトの誤使用はすぐに判明します。
+</Info>
+
+## スペーシング
+
+zudo-docではスペーシングを**水平（hsp）**と**垂直（vsp）**の2軸に分離しています。レイアウトにおいてそれぞれ異なる役割を果たすためです。水平スペーシングはインラインのリズムやガターを制御し、垂直スペーシングはコンテンツの流れやセクション間の余白を制御します。垂直スケールは大きいサイズほど広がり、コンテンツにより多くの余白を与えます。
+
+### 水平スペーシング（hsp）
+
+| トークン | 値 | 使用例 |
+|-------|-------|---------------|
+| `hsp-2xs` | `0.25rem` (4px) | `px-hsp-2xs` |
+| `hsp-xs` | `0.375rem` (6px) | `px-hsp-xs` |
+| `hsp-sm` | `0.5rem` (8px) | `gap-x-hsp-sm` |
+| `hsp-md` | `0.75rem` (12px) | `px-hsp-md` |
+| `hsp-lg` | `1rem` (16px) | `px-hsp-lg` |
+| `hsp-xl` | `1.5rem` (24px) | `px-hsp-xl` |
+| `hsp-2xl` | `2rem` (32px) | `px-hsp-2xl` |
+
+### 垂直スペーシング（vsp）
+
+| トークン | 値 | 使用例 |
+|-------|-------|---------------|
+| `vsp-2xs` | `0.25rem` (4px) | `py-vsp-2xs` |
+| `vsp-xs` | `0.5rem` (8px) | `py-vsp-xs` |
+| `vsp-sm` | `0.75rem` (12px) | `gap-y-vsp-sm` |
+| `vsp-md` | `1rem` (16px) | `py-vsp-md` |
+| `vsp-lg` | `1.5rem` (24px) | `py-vsp-lg` |
+| `vsp-xl` | `2rem` (32px) | `py-vsp-xl` |
+| `vsp-2xl` | `3rem` (48px) | `py-vsp-2xl` |
+
+両軸とも`0`（`0px`）と`px`（`1px`）のユーティリティ値も含まれます。
+
+```html
+<!-- 水平パディング + 垂直パディング -->
+<div class="px-hsp-lg py-vsp-md">非対称なスペーシングのコンテンツ</div>
+
+<!-- 2軸ギャップのグリッド -->
+<div class="grid gap-x-hsp-md gap-y-vsp-lg">グリッドアイテム</div>
+```
+
+<Tip>
+`hsp-lg`は`1rem`ですが`vsp-lg`は`1.5rem`と、垂直軸は大きいサイズほど広がります。これは意図的な設計です。垂直方向の流れには水平方向のリズムより多くの余白が必要です。
+</Tip>
+
+## タイポグラフィ
+
+### フォントサイズ
+
+| トークン | 値 | 使用例 |
+|-------|-------|---------|
+| `caption` | `0.75rem` / 12px | `text-caption` |
+| `small` | `0.875rem` / 14px | `text-small` |
+| `body` | `1rem` / 16px | `text-body` |
+| `subheading` | `1.125rem` / 18px | `text-subheading` |
+| `heading` | `1.875rem` / 30px | `text-heading` |
+| `display` | `3.75rem` / 60px | `text-display` |
+
+### フォントウェイト
+
+| トークン | 値 | 使用例 |
+|-------|-------|---------|
+| `normal` | `400` | `font-normal` |
+| `medium` | `500` | `font-medium` |
+| `semibold` | `600` | `font-semibold` |
+| `bold` | `700` | `font-bold` |
+
+### 行の高さ
+
+| トークン | 値 | 使用例 |
+|-------|-------|---------|
+| `tight` | `1.25` | `leading-tight` |
+| `snug` | `1.375` | `leading-snug` |
+| `normal` | `1.5` | `leading-normal` |
+| `relaxed` | `1.625` | `leading-relaxed` |
+
+### フォントファミリー
+
+| トークン | スタック | 使用例 |
+|-------|-------|---------|
+| `sans` | システムサンセリフスタック | `font-sans` |
+| `mono` | システムモノスペーススタック | `font-mono` |
+
+```html
+<h1 class="text-heading font-bold leading-tight">ページタイトル</h1>
+<p class="text-body font-normal leading-normal">本文テキスト</p>
+<code class="text-small font-mono">インラインコード</code>
+```
+
+## 角丸（Border Radius）
+
+| トークン | 値 | 使用例 |
+|-------|-------|---------|
+| `DEFAULT` | `0.25rem` (4px) | `rounded` |
+| `lg` | `0.5rem` (8px) | `rounded-lg` |
+| `full` | `9999px` | `rounded-full` |
+
+```html
+<button class="rounded bg-accent text-bg">デフォルトの角丸</button>
+<div class="rounded-lg bg-surface">大きめの角丸のカード</div>
+<span class="rounded-full bg-muted">ピルバッジ</span>
+```
+
+## ブレークポイント
+
+| トークン | 値 | 使用例 |
+|-------|-------|---------|
+| `sm` | `640px` | `sm:flex` |
+| `lg` | `1024px` | `lg:grid-cols-2` |
+| `xl` | `1280px` | `xl:max-w-5xl` |
+
+```html
+<div class="px-hsp-sm sm:px-hsp-md lg:px-hsp-lg xl:px-hsp-xl">
+  レスポンシブな水平パディング
+</div>
+```
+
+## カラー
+
+カラーは**3層戦略**を採用しています。生のパレット値（Tier 1）がセマンティックトークン（Tier 2）に流れ込み、さらにコンポーネントスコープのトークン（Tier 3）に供給されます。各層は上の層のみを参照するため、カラースキームを切り替えるとサイト全体が一括で更新されます。
+
+カラートークンシステム、カラースキーム、カスタマイズの詳細は[カラーガイド](/ja/docs/guides/color)を参照してください。
+
+## 使用ルール
+
+<Warning title="Tailwindデフォルトは無効">
+Tailwindのすべてのデフォルト値は`initial`にリセットされています。プロジェクトで定義されたトークンのみが機能します。
+</Warning>
+
+### 推奨
+
+```html
+<!-- セマンティックカラートークン -->
+<p class="text-fg">メインテキスト</p>
+<div class="bg-surface border border-muted">パネル</div>
+<a class="text-accent hover:text-accent-hover">リンク</a>
+
+<!-- スペーシングトークン -->
+<div class="px-hsp-lg py-vsp-md">適切なスペーシング</div>
+<div class="gap-x-hsp-sm gap-y-vsp-md">グリッドギャップ</div>
+
+<!-- タイポグラフィトークン -->
+<h2 class="text-subheading font-semibold leading-tight">見出し</h2>
+```
+
+### 非推奨
+
+```html
+<!-- NG: Tailwindデフォルト — リセット済みで何も表示されない -->
+<div class="p-4 bg-gray-500 text-sm">表示されない</div>
+
+<!-- NG: ハードコードされたhex — テーマ切り替えで壊れる -->
+<div class="bg-[#1e1e2e] text-[#f8f8f2]">テーマ切り替え時に壊れる</div>
+```
+
+すべてのトークンは`src/styles/global.css`で定義されています。このファイルがデザインシステムの唯一の情報源です。

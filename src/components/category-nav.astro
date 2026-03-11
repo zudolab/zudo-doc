@@ -1,0 +1,45 @@
+---
+import { getCollection } from "astro:content";
+import { buildNavTree, findNode, loadCategoryMeta } from "@/utils/docs";
+import { stripBase } from "@/utils/base";
+import { defaultLocale, getCollectionName, getContentDir, detectLocaleFromPath, type Locale } from "@/config/i18n";
+
+interface Props {
+  category: string;
+  lang?: Locale;
+}
+
+const currentPath = Astro.url.pathname;
+const pathWithoutBase = stripBase(currentPath);
+const detectedLang: Locale = detectLocaleFromPath(pathWithoutBase);
+const { category, lang = detectedLang } = Astro.props;
+
+const collectionName = getCollectionName(lang);
+const allDocs = await getCollection(collectionName);
+const contentDir = getContentDir(lang);
+const categoryMeta = loadCategoryMeta(contentDir);
+const tree = buildNavTree(allDocs, lang, categoryMeta);
+
+const categoryNode = findNode(tree, category);
+const children = categoryNode?.children.filter((c) => c.hasPage) ?? [];
+---
+
+{children.length > 0 && (
+  <nav class="mt-vsp-lg mb-vsp-md grid grid-cols-1 gap-x-hsp-lg gap-y-vsp-md sm:grid-cols-2">
+    {children.map((child) => (
+      <a
+        href={child.href}
+        class="group block rounded border border-muted bg-surface px-hsp-lg py-vsp-md"
+      >
+        <span class="font-medium text-accent underline group-hover:underline">
+          {child.label}
+        </span>
+        {child.description && (
+          <span class="mt-vsp-2xs block text-small text-muted group-hover:underline decoration-muted">
+            {child.description}
+          </span>
+        )}
+      </a>
+    ))}
+  </nav>
+)}

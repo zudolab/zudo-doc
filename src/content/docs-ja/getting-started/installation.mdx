@@ -1,0 +1,33 @@
+---
+title: インストール
+sidebar_position: 2
+---
+
+## 前提条件
+
+- Node.js 18+
+- pnpm（推奨）
+
+## インストール
+
+```bash
+git clone https://github.com/Takazudo/zudoc.git my-docs
+cd my-docs
+pnpm install
+```
+
+## 開発
+
+```bash
+pnpm dev
+```
+
+Viteによるインスタントなホットモジュールリプレースメントで開発サーバーが起動します。
+
+## ビルド
+
+```bash
+pnpm build
+```
+
+`dist/` ディレクトリに静的HTMLが生成されます。

@@ -1,0 +1,42 @@
+<script>
+  async function initMermaid() {
+    const els = document.querySelectorAll<HTMLElement>("[data-mermaid]:not([data-mermaid-rendered])");
+    if (els.length > 0) {
+      const { default: mermaid } = await import("mermaid");
+      const s = getComputedStyle(document.documentElement);
+      const v = (name: string) => s.getPropertyValue(name).trim();
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: "base",
+        themeVariables: {
+          darkMode: (() => {
+            // Detect dark mode from background luminance (assumes #RRGGBB hex from color schemes)
+            const bg = v("--zd-bg");
+            const hex = bg.replace("#", "");
+            const r = parseInt(hex.substring(0, 2), 16) / 255;
+            const g = parseInt(hex.substring(2, 4), 16) / 255;
+            const b = parseInt(hex.substring(4, 6), 16) / 255;
+            const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            return Number.isNaN(luminance) ? true : luminance < 0.5;
+          })(),
+          background: "transparent",
+          primaryColor: v("--zd-4"),
+          primaryTextColor: v("--zd-fg"),
+          primaryBorderColor: v("--zd-8"),
+          lineColor: v("--zd-8"),
+          secondaryColor: v("--zd-0"),
+          tertiaryColor: v("--zd-0"),
+          noteBkgColor: v("--zd-0"),
+          noteTextColor: v("--zd-fg"),
+          noteBorderColor: v("--zd-8"),
+          fontFamily: "inherit",
+        },
+      });
+      await mermaid.run({ nodes: Array.from(els) });
+      els.forEach((el) => el.setAttribute("data-mermaid-rendered", ""));
+    }
+  }
+
+  // astro:page-load fires on initial load and after View Transition navigations
+  document.addEventListener("astro:page-load", () => initMermaid());
+</script>

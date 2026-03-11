@@ -1,0 +1,40 @@
+---
+title: "Header Navigation"
+description: "Configure top-level navigation tabs in the header"
+sidebar_position: 5
+---
+
+zudo-doc supports a three-level navigation hierarchy inspired by Docusaurus:
+
+- **Header nav** — top-level tabs in the site header (biggest categories)
+- **Sidebar categories** — collapsible groups in the sidebar (2nd level)
+- **Sidebar items** — individual pages within categories (3rd level)
+
+## Configuration
+
+Define header navigation items in `src/config/settings.ts`:
+
+```ts
+export const settings = {
+  colorScheme: "Dracula",
+  siteName: "zudo-doc",
+  headerNav: [
+    { label: "Docs", path: "/docs" },
+    { label: "Blog", path: "/blog" },
+    { label: "API", path: "/api" },
+  ],
+};
+```
+
+Each item has:
+
+- `label` — the text displayed in the header
+- `path` — the URL path prefix for active state detection
+
+## Active State
+
+A header nav item is considered active when the current page URL starts with the item's `path`. For example, visiting `/docs/guides/writing-docs` activates the "Docs" tab because the URL starts with `/docs`.
+
+## Mobile Behavior
+
+On small screens (`< 640px`), header nav items are hidden to save space. The sidebar toggle provides access to all navigation on mobile.

@@ -1,0 +1,56 @@
+---
+title: Site Search
+description: How search works in zudo-doc and how to configure it.
+sidebar_position: 7
+---
+
+## How Search Works
+
+zudo-doc uses [MiniSearch](https://lucaong.github.io/minisearch/) for full-text site search. A search index is generated from your content files (title, description, and body text) and served as a single JSON file. The browser loads this index and performs all searching client-side — no server or external service required.
+
+## Using Search
+
+Open the search dialog with:
+
+- **Keyboard shortcut**: `Ctrl+K` (Windows/Linux) or `Cmd+K` (macOS)
+- **Search button**: Click the search icon in the header
+
+Type your query and results appear instantly. Click a result to navigate to that page.
+
+## Works Everywhere
+
+Search works in all environments:
+
+- **Dev mode** (`pnpm dev`): The search index is generated on-the-fly via Vite middleware
+- **Production build** (`pnpm build`): The index is written to `search-index.json` alongside the static site
+- **Electron**: Loads the same index file — no special handling needed
+
+<Tip>
+No need to build before testing search. It works immediately with `pnpm dev`.
+</Tip>
+
+## Excluding Pages from Search
+
+Pages with `search_exclude: true`, `draft: true`, or `unlisted: true` in their frontmatter are automatically excluded from the search index.
+
+To explicitly exclude a page, add `search_exclude: true` to its frontmatter:
+
+```mdx
+---
+title: My Internal Page
+search_exclude: true
+---
+```
+
+<Tip>
+This is useful for pages like changelogs, imported content (e.g., CLAUDE.md), or internal-only pages that would clutter search results.
+</Tip>
+
+## Search Features
+
+MiniSearch provides:
+
+- **Fuzzy matching**: Tolerates typos (up to 20% character difference)
+- **Prefix search**: Finds results as you type (e.g., "conf" matches "Configuration")
+- **Field boosting**: Title matches rank 3x higher than body text, descriptions 2x
+- **Instant results**: The full index is loaded once and queried in-memory

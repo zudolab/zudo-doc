@@ -1,0 +1,152 @@
+---
+title: Document History
+description: View git revision history and line-by-line diffs for each documentation page.
+sidebar_position: 8
+---
+
+## Overview
+
+zudo-doc can show the git revision history for each documentation page. When enabled, a **History** button appears on every doc page, opening a side panel where you can browse past revisions and compare any two versions with a line-by-line diff viewer.
+
+This is useful for:
+
+- Reviewing how a document has evolved over time
+- Understanding what changed between revisions
+- Auditing content changes across your documentation
+
+<Note>
+This feature requires that your documentation is tracked in a git repository. History is extracted from git commits that touched each file.
+</Note>
+
+## Enabling Document History
+
+Set `docHistory` to `true` in `src/config/settings.ts`:
+
+```ts
+export const settings = {
+  // ...
+  docHistory: true,
+};
+```
+
+The feature is **disabled by default** to keep builds fast for projects that don't need it.
+
+## Using the History Viewer
+
+Once enabled, each doc page shows a floating **History** button in the bottom-right corner.
+
+### Browsing Revisions
+
+Click the button to open the revision panel. It slides in from the right and shows all git commits that modified the current document, newest first. Each entry displays:
+
+- **Commit hash** (short form)
+- **Date** of the commit
+- **Author** name
+- **Commit message** (first line)
+
+### Comparing Revisions
+
+To view a diff between two revisions:
+
+1. Select **A** (the older revision) by clicking the **A** button next to a commit
+2. Select **B** (the newer revision) by clicking the **B** button next to another commit
+3. Click the **Compare** button
+
+The diff viewer shows a **side-by-side comparison** — the older revision on the left, the newer revision on the right:
+
+- **Green background** — lines added in the newer revision (right side)
+- **Red background** — lines removed from the older revision (left side)
+- **Gray cells** — empty placeholders where one side has no corresponding line
+- **Unchanged lines** — context shown on both sides
+
+<Tip>
+By default, A is set to the second-most-recent commit and B to the most recent, so you can immediately compare the latest change by clicking **Compare**.
+</Tip>
+
+### Keyboard Shortcuts
+
+- **Escape** — closes the history panel
+- The panel also closes automatically when navigating to another page
+
+## How It Works
+
+### Build Mode
+
+During `pnpm build`, an Astro integration extracts git history for every content file and writes JSON files to `dist/doc-history/`. Each JSON file contains the full revision list for a single document, including file content at each commit.
+
+The output structure mirrors the content directory:
+
+```
+dist/doc-history/
+  getting-started.json
+  guides/writing-docs.json
+  guides/color.json
+  ja/getting-started.json      # locale-prefixed
+  ja/guides/writing-docs.json
+```
+
+### Dev Mode
+
+In dev mode (`pnpm dev`), a Vite middleware handles history requests dynamically. When you open the history panel, it runs git commands on the fly — no pre-generation needed. This means history is always up-to-date with your latest commits.
+
+<Warning>
+Build time increases when `docHistory` is enabled because git history must be extracted for every content file. For large documentation sites with many files and deep history, this can add noticeable time to the build. The default limit is **50 revisions** per document.
+</Warning>
+
+### Production Output Size
+
+Since zudo-doc generates fully static sites with no server-side runtime, there is no server available to run `git` commands at request time. Instead, the build step pre-extracts all history data and ships it as static JSON files in the `dist/doc-history/` directory.
+
+Each JSON file contains the **full file content at every revision** (up to 50 commits). This means the total output size scales with:
+
+- Number of documentation files
+- Number of git commits per file
+- Size of each file at each revision
+
+For a small-to-medium documentation site this is typically negligible. For large sites with deep history, the `doc-history/` directory can grow significantly. These files are only fetched on demand (when a user clicks the History button), so they do not affect initial page load — but they do add to your deployment size.
+
+<Tip>
+If deployment size is a concern, consider keeping `docHistory` disabled for production builds (`docHistory: false`) and only using it during local development, where history is served dynamically via a Vite middleware with no pre-generation cost.
+</Tip>
+
+## Localization Support
+
+Document history works with all configured locales. Each locale's content directory produces its own set of history files, prefixed with the locale code:
+
+- English docs: `/doc-history/{slug}.json`
+- Japanese docs: `/doc-history/ja/{slug}.json`
+- German docs: `/doc-history/de/{slug}.json`
+
+The history panel automatically requests the correct locale-specific history based on the current page.
+
+## Technical Details
+
+### Data Format
+
+Each document's history is stored as a JSON file with the following structure:
+
+```ts
+interface DocHistoryData {
+  slug: string;          // Document route path
+  filePath: string;      // File path in the repository
+  entries: Array<{
+    hash: string;        // Full commit hash
+    date: string;        // ISO 8601 date
+    author: string;      // Commit author name
+    message: string;     // Commit message (first line)
+    content: string;     // Full file content at this revision
+  }>;
+}
+```
+
+### Diff Algorithm
+
+The diff viewer uses the [`diff`](https://www.npmjs.com/package/diff) library's `diffLines` function to compute line-level differences between two revisions, displayed in a side-by-side table layout similar to GitHub's split diff view. Adjacent removed and added blocks are paired into the same rows so you can see what changed at a glance.
+
+### Rename Tracking
+
+The history extraction uses `git log --follow` to track file renames. If a document was moved or renamed, its full history (including commits before the rename) is preserved.
+
+<Info>
+The History component is a React island loaded with `client:idle`, meaning it only hydrates after the page becomes idle. This ensures it doesn't impact initial page load performance.
+</Info>
