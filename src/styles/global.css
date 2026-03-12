@@ -495,9 +495,15 @@ pre.astro-code:focus-within .code-buttons {
  * ======================================== */
 
 [data-theme] .shiki,
-[data-theme] .shiki span {
+[data-theme] .shiki span,
+[data-theme] .astro-code,
+[data-theme] .astro-code span {
   color: light-dark(var(--shiki-light), var(--shiki-dark)) !important;
   background-color: light-dark(var(--shiki-light-bg), var(--shiki-dark-bg)) !important;
+  font-style: light-dark(
+    var(--shiki-light-font-style, inherit),
+    var(--shiki-dark-font-style, inherit)
+  );
 }
 
 /* ========================================
