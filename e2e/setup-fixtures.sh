@@ -18,17 +18,39 @@ setup_fixture() {
   # Ensure src directory exists
   mkdir -p "$fixture_dir/src"
 
-  # Symlink framework source directories
-  for dir in components hooks integrations layouts pages plugins styles types utils; do
+  # Symlink framework source directories (no relative imports to config)
+  for dir in components hooks integrations layouts plugins styles types utils; do
     ln -sfn "$REPO_ROOT/src/$dir" "$fixture_dir/src/$dir"
   done
 
-  # Symlink individual config files (not settings.ts — each fixture has its own)
+  # Pages directory: i18n fixture needs DE routes (not in repo root),
+  # so we symlink individual subdirs and copy DE pages from fixture template.
+  # Other fixtures just symlink the whole directory.
+  if [ "$fixture" = "i18n" ]; then
+    rm -rf "$fixture_dir/src/pages"
+    mkdir -p "$fixture_dir/src/pages"
+    for subdir in "$REPO_ROOT"/src/pages/*/; do
+      ln -sfn "$subdir" "$fixture_dir/src/pages/$(basename "$subdir")"
+    done
+    # Symlink top-level page files (404.astro, index.astro)
+    for file in "$REPO_ROOT"/src/pages/*.astro; do
+      ln -sfn "$file" "$fixture_dir/src/pages/$(basename "$file")"
+    done
+    # Copy DE route pages from fixture template
+    if [ -d "$fixture_dir/_pages-de" ]; then
+      cp -r "$fixture_dir/_pages-de/." "$fixture_dir/src/pages/de"
+    fi
+  else
+    ln -sfn "$REPO_ROOT/src/pages" "$fixture_dir/src/pages"
+  fi
+
+  # Copy config files that have relative imports (import { settings } from "./settings")
+  # — symlinking would resolve to the repo root's settings, breaking fixture isolation
   for file in "$REPO_ROOT"/src/config/*.ts; do
     local basename
     basename="$(basename "$file")"
     if [ "$basename" != "settings.ts" ]; then
-      ln -sfn "$file" "$fixture_dir/src/config/$basename"
+      cp -f "$file" "$fixture_dir/src/config/$basename"
     fi
   done
 

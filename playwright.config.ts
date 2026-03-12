@@ -11,28 +11,28 @@ export default defineConfig({
         "cd e2e/fixtures/sidebar && npx astro build && npx astro preview --port 4500",
       url: "http://localhost:4500/",
       reuseExistingServer: true,
-      timeout: 60_000,
+      timeout: 120_000,
     },
     {
       command:
         "cd e2e/fixtures/i18n && npx astro build && npx astro preview --port 4501",
       url: "http://localhost:4501/",
       reuseExistingServer: true,
-      timeout: 60_000,
+      timeout: 120_000,
     },
     {
       command:
         "cd e2e/fixtures/theme && npx astro build && npx astro preview --port 4502",
       url: "http://localhost:4502/",
       reuseExistingServer: true,
-      timeout: 60_000,
+      timeout: 120_000,
     },
     {
       command:
         "cd e2e/fixtures/smoke && npx astro build && npx astro preview --port 4503",
       url: "http://localhost:4503/",
       reuseExistingServer: true,
-      timeout: 60_000,
+      timeout: 120_000,
     },
   ],
   projects: [

@@ -11,7 +11,7 @@ import { getBasePath } from "./helpers";
  * for .mdx files, then mapped to URLs using the base path.
  */
 
-const __dirname2 = dirname(fileURLToPath(import.meta.url));
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Recursively collect MDX file slugs from a content directory
 function collectSlugs(dir: string, prefix = ""): string[] {
@@ -35,7 +35,7 @@ function collectSlugs(dir: string, prefix = ""): string[] {
 }
 
 const BASE = getBasePath();
-const CONTENT = join(__dirname2, "fixtures", "smoke", "src", "content");
+const CONTENT = join(__dirname, "fixtures", "smoke", "src", "content");
 
 // Discover all pages from the smoke fixture content
 const pages: { url: string; label: string }[] = [];
