@@ -65,3 +65,20 @@ jobs:
 
           echo "runner=$RUNNER_LABEL" >> "$GITHUB_OUTPUT"
           echo "Selected runner: $RUNNER_LABEL"
+
+      - name: Notify IFTTT on fallback
+        if: steps.detect.outputs.runner == 'ubuntu-latest' && env.IFTTT_PROD_NOTIFY != ''
+        env:
+          IFTTT_PROD_NOTIFY: ${{ secrets.IFTTT_PROD_NOTIFY }}
+          SERVER_URL: ${{ github.server_url }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          RUN_URL="${SERVER_URL}/${REPO}/actions/runs/${RUN_ID}"
+          curl -sSf --max-time 10 -X POST "$IFTTT_PROD_NOTIFY" \
+            -H 'Content-Type: application/json' \
+            -d "{
+              \"value1\": \"zudo-doc: self-hosted runner offline\",
+              \"value2\": \"Falling back to ubuntu-latest\",
+              \"value3\": \"${RUN_URL}\"
+            }" || echo "::warning::IFTTT notification failed"
