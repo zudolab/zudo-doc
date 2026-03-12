@@ -1,3 +1,4 @@
+import type { CollectionKey } from "astro:content";
 import { settings } from "./settings";
 
 /** Default locale code (always "en", served from docsDir). */
@@ -23,10 +24,15 @@ export function getContentDir(locale: Locale | string): string {
   return getLocaleConfig(locale)?.dir ?? settings.docsDir;
 }
 
-/** Get the Astro content collection name for a locale. */
-export function getCollectionName(locale: Locale | string): string {
+/**
+ * Get the Astro content collection name for a locale.
+ * Returns a CollectionKey so it can be passed directly to getCollection().
+ * The cast is safe because collections are dynamically created in content.config.ts
+ * for every locale in settings.locales.
+ */
+export function getCollectionName(locale: Locale | string): CollectionKey {
   if (locale === defaultLocale) return "docs";
-  return `docs-${locale}`;
+  return `docs-${locale}` as CollectionKey;
 }
 
 /** Get the display label for a locale. */

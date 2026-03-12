@@ -125,13 +125,13 @@ jobs:
           RUN_ID: ${{ github.run_id }}
         run: |
           if [ "$DEPLOY_RESULT" = "success" ]; then
-            STATUS="succeeded"
+            STATUS="zudo-doc deploy succeeded!"
           elif [ "$BUILD_RESULT" = "failure" ]; then
-            STATUS="failed (build)"
+            STATUS="zudo-doc deploy failed (build)"
           elif [ "$DEPLOY_RESULT" = "failure" ]; then
-            STATUS="failed (deploy)"
+            STATUS="zudo-doc deploy failed (deploy)"
           else
-            STATUS="cancelled"
+            STATUS="zudo-doc deploy cancelled"
           fi
 
           COMMIT_MSG=$(echo "$RAW_COMMIT_MSG" | head -1 | sed 's/"/\\"/g')
@@ -141,7 +141,7 @@ jobs:
           curl -sSf --max-time 10 -X POST "$IFTTT_PROD_NOTIFY" \
             -H 'Content-Type: application/json' \
             -d "{
-              \"value1\": \"Cloudflare Pages deploy ${STATUS}\",
+              \"value1\": \"${STATUS}\",
               \"value2\": \"${SHORT_SHA} ${COMMIT_MSG}\",
               \"value3\": \"${RUN_URL}\"
             }" || echo "::warning::IFTTT notification failed"

@@ -214,11 +214,17 @@ function CategoryNode({
   const containsCurrent = subtreeContainsSlug(node, currentSlug);
   const isActive = node.slug === currentSlug;
 
-  const [open, setOpen] = useState(() => {
+  // Initial state must match server render (no sessionStorage access)
+  // to avoid hydration mismatch. Stored state is restored in useEffect below.
+  const [open, setOpen] = useState(containsCurrent);
+
+  // Restore open state from sessionStorage after hydration
+  useEffect(() => {
     const stored = getOpenSet();
-    if (stored.has(node.slug)) return true;
-    return containsCurrent;
-  });
+    if (stored.has(node.slug) && !open) {
+      setOpen(true);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-open category when navigation lands on a descendant
   useEffect(() => {
@@ -259,7 +265,17 @@ function CategoryNode({
   const paddingLeft = padLeft(depth, true);
 
   return (
-    <div className={depth === 0 ? "border-t border-muted" : ""}>
+    <div className={`${depth === 0 ? "border-t border-muted" : ""} ${depth >= 1 && !isLast ? "relative" : ""}`}>
+      {depth >= 1 && !isLast && isExpanded && (
+        <div
+          className="absolute border-l border-solid border-muted z-10"
+          style={{
+            left: connectorLeft(depth),
+            top: 0,
+            bottom: 0,
+          }}
+        />
+      )}
       <div className="relative">
         <ConnectorLines depth={depth} isLast={isLast} />
         <div
@@ -286,7 +302,7 @@ function CategoryNode({
             type="button"
             onClick={toggle}
             className="px-hsp-md py-vsp-xs hover:underline focus:underline"
-            aria-label={isExpanded ? "Collapse" : "Expand"}
+            aria-label={isExpanded ? `Collapse ${node.label}` : `Expand ${node.label}`}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

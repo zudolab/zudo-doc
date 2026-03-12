@@ -1,9 +1,9 @@
 ---
-import { getCollection } from "astro:content";
 import SidebarTree from "@/components/sidebar-tree";
 import { loadCategoryMeta } from "@/utils/docs";
 import { buildSidebarForSection } from "@/utils/sidebar";
 import { defaultLocale, getCollectionName, getContentDir, type Locale } from "@/config/i18n";
+import { getDocsCollection } from "@/utils/get-docs-collection";
 
 interface Props {
   currentSlug?: string;
@@ -13,7 +13,7 @@ interface Props {
 
 const { currentSlug, lang = defaultLocale, navSection } = Astro.props;
 
-const docs = await getCollection(getCollectionName(lang));
+const docs = await getDocsCollection(getCollectionName(lang));
 const contentDir = getContentDir(lang);
 const categoryMeta = loadCategoryMeta(contentDir);
 const nodes = buildSidebarForSection(docs, lang, navSection, categoryMeta);

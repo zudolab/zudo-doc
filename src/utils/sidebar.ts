@@ -4,7 +4,7 @@ import type { NavNode, CategoryMeta } from "@/utils/docs";
 import { buildNavTree, findNode } from "@/utils/docs";
 import { getNavSubtree } from "@/utils/nav-scope";
 import type { Locale } from "@/config/i18n";
-import type { CollectionEntry } from "astro:content";
+import type { DocsEntry } from "@/types/docs-entry";
 
 /**
  * Build sidebar nodes for a given nav section.
@@ -12,7 +12,7 @@ import type { CollectionEntry } from "astro:content";
  * Otherwise fall back to auto-generated tree.
  */
 export function buildSidebarForSection(
-  docs: CollectionEntry<"docs" | `docs-${string}`>[],
+  docs: DocsEntry[],
   lang: Locale,
   categoryMatch?: string,
   categoryMeta?: Map<string, CategoryMeta>,

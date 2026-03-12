@@ -1,4 +1,4 @@
-import type { CollectionEntry } from "astro:content";
+import type { DocsEntry } from "@/types/docs-entry";
 
 export interface TagInfo {
   tag: string;
@@ -7,7 +7,7 @@ export interface TagInfo {
 }
 
 export function collectTags(
-  entries: CollectionEntry<"docs" | `docs-${string}`>[],
+  entries: DocsEntry[],
   slugFn: (id: string, data: { slug?: string }) => string,
 ): Map<string, TagInfo> {
   const tagMap = new Map<string, TagInfo>();

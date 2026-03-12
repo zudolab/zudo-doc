@@ -12,7 +12,8 @@
     "preview": "astro preview",
     "// ── Quality ──────────────────────────────────────": "",
     "check": "astro check",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "b4push": "./scripts/run-b4push.sh"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
