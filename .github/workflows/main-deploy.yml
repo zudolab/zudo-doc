@@ -71,7 +71,7 @@ jobs:
   deploy:
     name: Deploy to Cloudflare Pages
     needs: [detect-runner, build]
-    runs-on: ubuntu-latest
+    runs-on: ${{ needs.detect-runner.outputs.runner }}
     timeout-minutes: 10
 
     steps:
@@ -108,7 +108,7 @@ jobs:
     name: Deploy Notification
     needs: [detect-runner, build, deploy]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: ${{ needs.detect-runner.outputs.runner }}
     timeout-minutes: 5
 
     steps:
