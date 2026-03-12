@@ -1,4 +1,4 @@
-/** Base path is always "/" for test fixtures */
+/** Base path — all test fixtures use base: "/" */
 export function getBasePath(): string {
   return "";
 }

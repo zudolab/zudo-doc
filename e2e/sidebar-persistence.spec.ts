@@ -72,8 +72,8 @@ test.describe("Sidebar category persistence", () => {
     await getCategoryToggle(page, "Sub B").click();
     await expectCategoryOpen(page, "Sub B", true);
 
-    // Navigate to a different page (Writing Docs — a leaf in Guides root)
-    await desktopSidebar(page).getByRole("link", { name: "Writing Docs" }).click();
+    // Navigate to a different page (Page 1 — a leaf in Guides root)
+    await desktopSidebar(page).getByRole("link", { name: "Page 1" }).click();
     await waitForSidebarHydration(page);
 
     // Sub B should still be open (saved to sessionStorage)
@@ -93,8 +93,8 @@ test.describe("Sidebar category persistence", () => {
     await getCategoryToggle(page, "Sub A").click();
     await expectCategoryOpen(page, "Sub A", false);
 
-    // Navigate to Writing Docs
-    await desktopSidebar(page).getByRole("link", { name: "Writing Docs" }).click();
+    // Navigate to Page 1 (a leaf in Guides root)
+    await desktopSidebar(page).getByRole("link", { name: "Page 1" }).click();
     await waitForSidebarHydration(page);
 
     // Sub A should still be closed
@@ -127,16 +127,16 @@ test.describe("Sidebar category persistence", () => {
     await getCategoryToggle(page, "Sub B").click();
     await expectCategoryOpen(page, "Sub B", true);
 
-    // Navigate to Writing Docs (a leaf page)
-    await desktopSidebar(page).getByRole("link", { name: "Writing Docs" }).click();
+    // Navigate to Page 1 (a leaf page in Guides root)
+    await desktopSidebar(page).getByRole("link", { name: "Page 1" }).click();
     await waitForSidebarHydration(page);
 
     // Both Sub A and Sub B should still be open
     await expectCategoryOpen(page, "Sub A", true);
     await expectCategoryOpen(page, "Sub B", true);
 
-    // Navigate to Color (another leaf page)
-    await desktopSidebar(page).getByRole("link", { name: "Color" }).click();
+    // Navigate to Sub A > Test Page 3 (another page within Guides)
+    await desktopSidebar(page).getByRole("link", { name: "Test Page 3" }).click();
     await waitForSidebarHydration(page);
 
     // Both should still be open

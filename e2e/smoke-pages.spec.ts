@@ -37,7 +37,7 @@ function collectSlugs(dir: string, prefix = ""): string[] {
 const BASE = getBasePath();
 const CONTENT = join(__dirname2, "fixtures", "smoke", "src", "content");
 
-// Discover all pages across locales
+// Discover all pages from the smoke fixture content
 const pages: { url: string; label: string }[] = [];
 
 // English docs (default locale, no prefix)
@@ -45,14 +45,9 @@ for (const slug of collectSlugs(join(CONTENT, "docs"))) {
   pages.push({ url: `${BASE}/docs/${slug}`, label: `en: ${slug}` });
 }
 
-// Japanese docs
+// Japanese docs (if present in fixture)
 for (const slug of collectSlugs(join(CONTENT, "docs-ja"))) {
   pages.push({ url: `${BASE}/ja/docs/${slug}`, label: `ja: ${slug}` });
-}
-
-// German docs
-for (const slug of collectSlugs(join(CONTENT, "docs-de"))) {
-  pages.push({ url: `${BASE}/de/docs/${slug}`, label: `de: ${slug}` });
 }
 
 pages.sort((a, b) => a.url.localeCompare(b.url));
