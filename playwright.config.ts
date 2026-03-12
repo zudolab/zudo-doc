@@ -7,7 +7,7 @@ export default defineConfig({
   },
   webServer: {
     command: "pnpm dev",
-    url: "http://localhost:4321",
+    url: "http://localhost:4321/pj/zudo-doc/",
     reuseExistingServer: true,
     timeout: 30_000,
   },

@@ -1,4 +1,6 @@
 import { test, expect, type Page, type Locator } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 /**
  * E2E tests for sidebar category open/close persistence across
@@ -8,6 +10,16 @@ import { test, expect, type Page, type Locator } from "@playwright/test";
  * which categories are expanded. Without this, React islands re-mount
  * on every View Transition and categories collapse.
  */
+
+// Read the base path from settings.ts so URLs work regardless of config
+function getBasePath(): string {
+  const settingsPath = join(process.cwd(), "src", "config", "settings.ts");
+  const content = readFileSync(settingsPath, "utf-8");
+  const match = content.match(/base:\s*["']([^"']+)["']/);
+  return match ? match[1].replace(/\/$/, "") : "";
+}
+
+const BASE = getBasePath();
 
 // Desktop viewport so the sidebar is always visible
 test.use({ viewport: { width: 1280, height: 800 } });
@@ -48,7 +60,7 @@ test.describe("Sidebar category persistence", () => {
   test("auto-opened category stays open after navigating to a page in a different category", async ({
     page,
   }) => {
-    await page.goto("/docs/getting-started/introduction");
+    await page.goto(`${BASE}/docs/getting-started/introduction`);
     await waitForSidebarHydration(page);
 
     // "Getting Started" should be auto-opened (contains current page)
@@ -72,7 +84,7 @@ test.describe("Sidebar category persistence", () => {
   test("manually opened category stays open after page navigation", async ({
     page,
   }) => {
-    await page.goto("/docs/getting-started/introduction");
+    await page.goto(`${BASE}/docs/getting-started/introduction`);
     await waitForSidebarHydration(page);
 
     // Manually open "Reference" category
@@ -90,7 +102,7 @@ test.describe("Sidebar category persistence", () => {
   test("manually closed category stays closed after page navigation", async ({
     page,
   }) => {
-    await page.goto("/docs/getting-started/introduction");
+    await page.goto(`${BASE}/docs/getting-started/introduction`);
     await waitForSidebarHydration(page);
 
     // "Getting Started" is auto-opened. Close it manually.
@@ -107,7 +119,7 @@ test.describe("Sidebar category persistence", () => {
   });
 
   test("sessionStorage key is populated correctly", async ({ page }) => {
-    await page.goto("/docs/getting-started/introduction");
+    await page.goto(`${BASE}/docs/getting-started/introduction`);
     await waitForSidebarHydration(page);
 
     // Wait for useEffect to sync auto-opened state to sessionStorage
@@ -123,7 +135,7 @@ test.describe("Sidebar category persistence", () => {
   test("multiple categories remain open across multiple navigations", async ({
     page,
   }) => {
-    await page.goto("/docs/getting-started/introduction");
+    await page.goto(`${BASE}/docs/getting-started/introduction`);
     await waitForSidebarHydration(page);
 
     // Open Guides and Reference manually
