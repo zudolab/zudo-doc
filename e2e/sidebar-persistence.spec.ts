@@ -1,5 +1,4 @@
 import { test, expect, type Page, type Locator } from "@playwright/test";
-import { getBasePath } from "./helpers";
 import { desktopSidebar, waitForSidebarHydration } from "./sidebar-helpers";
 
 /**
@@ -13,8 +12,6 @@ import { desktopSidebar, waitForSidebarHydration } from "./sidebar-helpers";
  * These tests use the Guides section which has subcategories (Sub A, Sub B).
  * The sidebar is section-scoped — only the current nav section's tree is shown.
  */
-
-const BASE = getBasePath();
 
 /**
  * Helper: find a category toggle button by its label text.
@@ -48,7 +45,7 @@ test.describe("Sidebar category persistence", () => {
     page,
   }) => {
     // Navigate to Sub A > Page 1 — Sub A should auto-open
-    await page.goto(`${BASE}/docs/guides/sub-a/page-1`);
+    await page.goto(`/docs/guides/sub-a/page-1`);
     await waitForSidebarHydration(page);
 
     await expectCategoryOpen(page, "Sub A", true);
@@ -65,7 +62,7 @@ test.describe("Sidebar category persistence", () => {
     page,
   }) => {
     // Start on Sub A > Page 1
-    await page.goto(`${BASE}/docs/guides/sub-a/page-1`);
+    await page.goto(`/docs/guides/sub-a/page-1`);
     await waitForSidebarHydration(page);
 
     // Manually open Sub B
@@ -84,7 +81,7 @@ test.describe("Sidebar category persistence", () => {
     page,
   }) => {
     // Start on Sub A > Page 1 — Sub A auto-opens
-    await page.goto(`${BASE}/docs/guides/sub-a/page-1`);
+    await page.goto(`/docs/guides/sub-a/page-1`);
     await waitForSidebarHydration(page);
 
     await expectCategoryOpen(page, "Sub A", true);
@@ -102,7 +99,7 @@ test.describe("Sidebar category persistence", () => {
   });
 
   test("sessionStorage key is populated correctly", async ({ page }) => {
-    await page.goto(`${BASE}/docs/guides/sub-a/page-1`);
+    await page.goto(`/docs/guides/sub-a/page-1`);
     await waitForSidebarHydration(page);
 
     // Wait for useEffect to sync auto-opened state to sessionStorage
@@ -119,7 +116,7 @@ test.describe("Sidebar category persistence", () => {
     page,
   }) => {
     // Start on Sub A > Page 1
-    await page.goto(`${BASE}/docs/guides/sub-a/page-1`);
+    await page.goto(`/docs/guides/sub-a/page-1`);
     await waitForSidebarHydration(page);
 
     // Sub A is auto-opened, manually open Sub B

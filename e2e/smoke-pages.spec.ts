@@ -2,8 +2,6 @@ import { test, expect } from "@playwright/test";
 import { readdirSync, statSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getBasePath } from "./helpers";
-
 /**
  * Smoke tests: visit every generated page and verify it loads without errors.
  *
@@ -34,7 +32,6 @@ function collectSlugs(dir: string, prefix = ""): string[] {
   return slugs;
 }
 
-const BASE = getBasePath();
 const CONTENT = join(__dirname, "fixtures", "smoke", "src", "content");
 
 // Discover all pages from the smoke fixture content
@@ -42,7 +39,7 @@ const pages: { url: string; label: string }[] = [];
 
 // English docs (default locale, no prefix)
 for (const slug of collectSlugs(join(CONTENT, "docs"))) {
-  pages.push({ url: `${BASE}/docs/${slug}`, label: `en: ${slug}` });
+  pages.push({ url: `/docs/${slug}`, label: `en: ${slug}` });
 }
 
 pages.sort((a, b) => a.url.localeCompare(b.url));

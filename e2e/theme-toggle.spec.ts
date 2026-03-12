@@ -1,6 +1,4 @@
 import { test, expect, type Page } from "@playwright/test";
-import { getBasePath } from "./helpers";
-
 /**
  * E2E tests for theme toggle hydration and persistence.
  *
@@ -12,8 +10,7 @@ import { getBasePath } from "./helpers";
  * sync from the DOM in useEffect.
  */
 
-const BASE = getBasePath();
-const HOME = `${BASE}/`;
+const HOME = "/";
 const STORAGE_KEY = "zudo-doc-theme";
 
 /** Collect React hydration errors from the console during a page visit */
