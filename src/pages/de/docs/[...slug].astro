@@ -1,5 +1,6 @@
 ---
-import { getCollection, render } from "astro:content";
+import { render } from "astro:content";
+import { getDocsCollection } from "@/utils/get-docs-collection";
 import DocLayout from "@/layouts/doc-layout.astro";
 import Note from "@/components/admonitions/note.astro";
 import Tip from "@/components/admonitions/tip.astro";
@@ -24,8 +25,8 @@ import DocTags from "@/components/doc-tags.astro";
 import type { DocsEntry } from "@/types/docs-entry";
 
 export async function getStaticPaths() {
-  const localeDocs = await getCollection("docs-de") as unknown as DocsEntry[];
-  const baseDocs = await getCollection("docs") as unknown as DocsEntry[];
+  const localeDocs = await getDocsCollection("docs-de");
+  const baseDocs = await getDocsCollection("docs");
 
   // In production, exclude drafts. In dev, include them for preview.
   const filterDrafts = (docs: DocsEntry[]) =>

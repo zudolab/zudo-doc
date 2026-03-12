@@ -1,5 +1,5 @@
 ---
-import { getCollection } from "astro:content";
+import { getDocsCollection } from "@/utils/get-docs-collection";
 import DocLayout from "@/layouts/doc-layout.astro";
 import Breadcrumb from "@/components/breadcrumb.astro";
 import { toRouteSlug } from "@/utils/slug";
@@ -8,8 +8,8 @@ import { t } from "@/config/i18n";
 import { withBase } from "@/utils/base";
 import type { DocsEntry } from "@/types/docs-entry";
 
-const localeDocs = await getCollection("docs-de") as unknown as DocsEntry[];
-const baseDocs = await getCollection("docs") as unknown as DocsEntry[];
+const localeDocs = await getDocsCollection("docs-de");
+const baseDocs = await getDocsCollection("docs");
 const filterDocs = (docs: DocsEntry[]) => import.meta.env.PROD
   ? docs.filter((doc) => !doc.data.draft && !doc.data.unlisted)
   : docs.filter((doc) => !doc.data.unlisted);

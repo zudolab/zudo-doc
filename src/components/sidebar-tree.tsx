@@ -302,7 +302,7 @@ function CategoryNode({
             type="button"
             onClick={toggle}
             className="px-hsp-md py-vsp-xs hover:underline focus:underline"
-            aria-label={isExpanded ? "Collapse" : "Expand"}
+            aria-label={isExpanded ? `Collapse ${node.label}` : `Expand ${node.label}`}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

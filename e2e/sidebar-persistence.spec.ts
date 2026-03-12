@@ -1,6 +1,5 @@
 import { test, expect, type Page, type Locator } from "@playwright/test";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { getBasePath } from "./helpers";
 
 /**
  * E2E tests for sidebar category open/close persistence across
@@ -13,14 +12,6 @@ import { join } from "node:path";
  * These tests use the Guides section which has subcategories (Sub A, Sub B).
  * The sidebar is section-scoped — only the current nav section's tree is shown.
  */
-
-// Read the base path from settings.ts so URLs work regardless of config
-function getBasePath(): string {
-  const settingsPath = join(process.cwd(), "src", "config", "settings.ts");
-  const content = readFileSync(settingsPath, "utf-8");
-  const match = content.match(/base:\s*["']([^"']+)["']/);
-  return match ? match[1].replace(/\/$/, "") : "";
-}
 
 const BASE = getBasePath();
 
@@ -42,7 +33,7 @@ async function waitForSidebarHydration(page: Page) {
   await page.waitForFunction(() => {
     const sidebar = document.querySelector("#desktop-sidebar");
     if (!sidebar) return false;
-    const btn = sidebar.querySelector('button[aria-label="Collapse"], button[aria-label="Expand"]');
+    const btn = sidebar.querySelector('button[aria-label^="Collapse"], button[aria-label^="Expand"]');
     if (!btn) return false;
     // React 19 attaches __reactFiber or __reactProps on hydrated elements
     return Object.keys(btn).some(k => k.startsWith("__react"));
@@ -54,25 +45,23 @@ async function waitForSidebarHydration(page: Page) {
  * Returns the Playwright Locator for the toggle button.
  *
  * Sidebar categories render as:
- *   div.flex > [a|button with label] + [button aria-label="Collapse|Expand"]
+ *   div.flex > [a|button with label] + [button aria-label="Collapse <label>|Expand <label>"]
  *
- * We use evaluate() to identify the correct button's test-id,
- * then use a Playwright locator to interact with it.
+ * We find the toggle by matching aria-label that starts with Collapse/Expand
+ * and ends with the category label text.
  */
 function getCategoryToggle(page: Page, label: string): Locator {
   const sidebar = desktopSidebar(page);
-  // Each toggle button shares a parent flex div with the label.
-  // Use XPath to find the toggle button whose parent also contains the label text.
-  // The aria-label on the toggle is either "Collapse" or "Expand".
+  // Match toggle button whose aria-label is "Collapse <label>" or "Expand <label>"
   return sidebar.locator(
-    `xpath=.//button[@aria-label="Collapse" or @aria-label="Expand"][../*[normalize-space(text())="${label}"]]`,
+    `button[aria-label="Collapse ${label}"], button[aria-label="Expand ${label}"]`,
   );
 }
 
 /** Check if a category is open (retries automatically for timing) */
 async function expectCategoryOpen(page: Page, label: string, expected: boolean) {
   const toggle = getCategoryToggle(page, label);
-  const expectedLabel = expected ? "Collapse" : "Expand";
+  const expectedLabel = expected ? `Collapse ${label}` : `Expand ${label}`;
   await expect(toggle).toHaveAttribute("aria-label", expectedLabel, { timeout: 5000 });
 }
 

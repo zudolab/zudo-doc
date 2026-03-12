@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
-import { readdirSync, statSync, readFileSync, existsSync } from "node:fs";
+import { readdirSync, statSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { getBasePath } from "./helpers";
 
 /**
  * Smoke tests: visit every generated page and verify it loads without errors.
@@ -8,14 +9,6 @@ import { join } from "node:path";
  * Pages are discovered by scanning the content directories for .mdx files,
  * then mapped to URLs using the base path from settings.ts.
  */
-
-// Read the base path from settings.ts
-function getBasePath(): string {
-  const settingsPath = join(process.cwd(), "src", "config", "settings.ts");
-  const content = readFileSync(settingsPath, "utf-8");
-  const match = content.match(/base:\s*["']([^"']+)["']/);
-  return match ? match[1].replace(/\/$/, "") : "";
-}
 
 // Recursively collect MDX file slugs from a content directory
 function collectSlugs(dir: string, prefix = ""): string[] {

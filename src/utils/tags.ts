@@ -1,17 +1,9 @@
+import type { DocsEntry } from "@/types/docs-entry";
+
 export interface TagInfo {
   tag: string;
   count: number;
   docs: { slug: string; title: string; description?: string }[];
-}
-
-interface DocsEntry {
-  id: string;
-  data: {
-    title: string;
-    description?: string;
-    tags?: string[];
-    slug?: string;
-  };
 }
 
 export function collectTags(

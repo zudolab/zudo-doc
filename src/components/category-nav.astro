@@ -1,9 +1,8 @@
 ---
-import { getCollection } from "astro:content";
 import { buildNavTree, findNode, loadCategoryMeta } from "@/utils/docs";
 import { stripBase } from "@/utils/base";
 import { getCollectionName, getContentDir, detectLocaleFromPath, type Locale } from "@/config/i18n";
-import type { DocsEntry } from "@/types/docs-entry";
+import { getDocsCollection } from "@/utils/get-docs-collection";
 
 interface Props {
   category: string;
@@ -16,7 +15,7 @@ const detectedLang: Locale = detectLocaleFromPath(pathWithoutBase);
 const { category, lang = detectedLang } = Astro.props;
 
 const collectionName = getCollectionName(lang);
-const allDocs = await getCollection(collectionName) as unknown as DocsEntry[];
+const allDocs = await getDocsCollection(collectionName);
 const contentDir = getContentDir(lang);
 const categoryMeta = loadCategoryMeta(contentDir);
 const tree = buildNavTree(allDocs, lang, categoryMeta);
