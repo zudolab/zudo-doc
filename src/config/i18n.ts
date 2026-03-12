@@ -76,6 +76,8 @@ const translations: Record<string, Record<string, string>> = {
     "doc.noTags": "No tags found.",
     "doc.pageCount": "{count} pages",
     "doc.pageCountSingle": "{count} page",
+    "doc.fallbackNotice":
+      "This page has not been translated yet and is shown in the original language.",
   },
   ja: {
     "nav.gettingStarted": "はじめに",
@@ -100,6 +102,8 @@ const translations: Record<string, Record<string, string>> = {
     "doc.noTags": "タグが見つかりません。",
     "doc.pageCount": "{count}ページ",
     "doc.pageCountSingle": "{count}ページ",
+    "doc.fallbackNotice":
+      "このページはまだ翻訳されていません。原文のまま表示しています。",
   },
   de: {
     "nav.gettingStarted": "Erste Schritte",
@@ -124,6 +128,8 @@ const translations: Record<string, Record<string, string>> = {
     "doc.noTags": "Keine Tags gefunden.",
     "doc.pageCount": "{count} Seiten",
     "doc.pageCountSingle": "{count} Seite",
+    "doc.fallbackNotice":
+      "Diese Seite wurde noch nicht übersetzt und wird in der Originalsprache angezeigt.",
   },
 };
 
