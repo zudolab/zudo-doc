@@ -306,7 +306,17 @@ function CategoryNode({
         </div>
       </div>
       {isExpanded && (
-        <div>
+        <div className="relative">
+          {depth >= 1 && (
+            <div
+              className="absolute border-l-2 border-muted"
+              style={{
+                left: connectorLeft(depth),
+                top: 0,
+                bottom: 0,
+              }}
+            />
+          )}
           <NodeList
             nodes={node.children}
             currentSlug={currentSlug}
