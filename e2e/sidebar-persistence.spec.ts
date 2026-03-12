@@ -9,6 +9,9 @@ import { join } from "node:path";
  * The sidebar uses sessionStorage ("zd-sidebar-open") to remember
  * which categories are expanded. Without this, React islands re-mount
  * on every View Transition and categories collapse.
+ *
+ * These tests use the Guides section which has subcategories (Sub A, Sub B).
+ * The sidebar is section-scoped — only the current nav section's tree is shown.
  */
 
 // Read the base path from settings.ts so URLs work regardless of config
@@ -24,101 +27,117 @@ const BASE = getBasePath();
 // Desktop viewport so the sidebar is always visible
 test.use({ viewport: { width: 1280, height: 800 } });
 
-/** The desktop sidebar aside (visible at lg breakpoint) */
+/** The desktop sidebar aside */
 function desktopSidebar(page: Page): Locator {
   return page.locator("#desktop-sidebar");
 }
 
-/** Wait for the React sidebar island to hydrate */
+/** Wait for the React sidebar island to hydrate and become interactive */
 async function waitForSidebarHydration(page: Page) {
-  // The <nav> element is rendered by React after hydration
-  await desktopSidebar(page).locator("nav").waitFor({ state: "attached" });
+  const sidebar = desktopSidebar(page);
+  await sidebar.locator("nav").waitFor({ state: "attached" });
+  // Wait until React hydration is complete by checking that a toggle button
+  // has a click handler attached (we test this by checking that React's
+  // internal properties exist on the DOM element)
+  await page.waitForFunction(() => {
+    const sidebar = document.querySelector("#desktop-sidebar");
+    if (!sidebar) return false;
+    const btn = sidebar.querySelector('button[aria-label="Collapse"], button[aria-label="Expand"]');
+    if (!btn) return false;
+    // React 19 attaches __reactFiber or __reactProps on hydrated elements
+    return Object.keys(btn).some(k => k.startsWith("__react"));
+  }, null, { timeout: 5000 });
 }
 
 /**
- * Get the expand/collapse toggle button for a category.
- * Categories render as: <div><div class="flex ..."><a|button>{label}</a|button><button aria-label="Collapse|Expand">...</button></div>...</div>
- * We find the link/button with the exact label text, go up to the flex container, then find the toggle.
+ * Helper: find a category toggle button by its label text.
+ * Returns the Playwright Locator for the toggle button.
+ *
+ * Sidebar categories render as:
+ *   div.flex > [a|button with label] + [button aria-label="Collapse|Expand"]
+ *
+ * We use evaluate() to identify the correct button's test-id,
+ * then use a Playwright locator to interact with it.
  */
-function categoryToggle(page: Page, label: string): Locator {
+function getCategoryToggle(page: Page, label: string): Locator {
   const sidebar = desktopSidebar(page);
-  // Find a link or button with the exact category label text
-  const labelEl = sidebar.locator("nav a, nav button", { hasText: label }).filter({ hasText: new RegExp(`^${label}$`) }).first();
-  // The toggle button is a sibling in the same flex container
-  return labelEl.locator("..").getByRole("button", { name: /Collapse|Expand/ });
+  // Each toggle button shares a parent flex div with the label.
+  // Use XPath to find the toggle button whose parent also contains the label text.
+  // The aria-label on the toggle is either "Collapse" or "Expand".
+  return sidebar.locator(
+    `xpath=.//button[@aria-label="Collapse" or @aria-label="Expand"][../*[normalize-space(text())="${label}"]]`,
+  );
 }
 
-/** Check if a category's children are visible by inspecting the toggle button's aria-label */
-async function isCategoryOpen(page: Page, label: string): Promise<boolean> {
-  const toggle = categoryToggle(page, label);
-  const ariaLabel = await toggle.getAttribute("aria-label");
-  return ariaLabel === "Collapse";
+/** Check if a category is open (retries automatically for timing) */
+async function expectCategoryOpen(page: Page, label: string, expected: boolean) {
+  const toggle = getCategoryToggle(page, label);
+  const expectedLabel = expected ? "Collapse" : "Expand";
+  await expect(toggle).toHaveAttribute("aria-label", expectedLabel, { timeout: 5000 });
 }
 
 test.describe("Sidebar category persistence", () => {
-  test("auto-opened category stays open after navigating to a page in a different category", async ({
+  // All tests use the Guides section which has subcategories: Sub A, Sub B
+
+  test("auto-opened subcategory stays open after navigating to a sibling page", async ({
     page,
   }) => {
-    await page.goto(`${BASE}/docs/getting-started/introduction`);
+    // Navigate to Sub A > Page 1 — Sub A should auto-open
+    await page.goto(`${BASE}/docs/guides/sub-a/page-1`);
     await waitForSidebarHydration(page);
 
-    // "Getting Started" should be auto-opened (contains current page)
-    expect(await isCategoryOpen(page, "Getting Started")).toBe(true);
+    await expectCategoryOpen(page, "Sub A", true);
 
-    // Open Guides category
-    await categoryToggle(page, "Guides").click();
-    expect(await isCategoryOpen(page, "Guides")).toBe(true);
+    // Navigate to a sibling page (Page 2)
+    await desktopSidebar(page).getByRole("link", { name: "Test Page 2" }).click();
+    await waitForSidebarHydration(page);
 
-    // Click a page link under Guides
+    // Sub A should still be open
+    await expectCategoryOpen(page, "Sub A", true);
+  });
+
+  test("manually opened subcategory stays open after navigating away", async ({
+    page,
+  }) => {
+    // Start on Sub A > Page 1
+    await page.goto(`${BASE}/docs/guides/sub-a/page-1`);
+    await waitForSidebarHydration(page);
+
+    // Manually open Sub B
+    await getCategoryToggle(page, "Sub B").click();
+    await expectCategoryOpen(page, "Sub B", true);
+
+    // Navigate to a different page (Writing Docs — a leaf in Guides root)
     await desktopSidebar(page).getByRole("link", { name: "Writing Docs" }).click();
     await waitForSidebarHydration(page);
 
-    // After View Transition navigation:
-    // - "Guides" should still be open (contains current page)
-    expect(await isCategoryOpen(page, "Guides")).toBe(true);
-    // - "Getting Started" should still be open (was saved to sessionStorage)
-    expect(await isCategoryOpen(page, "Getting Started")).toBe(true);
+    // Sub B should still be open (saved to sessionStorage)
+    await expectCategoryOpen(page, "Sub B", true);
   });
 
-  test("manually opened category stays open after page navigation", async ({
+  test("manually closed subcategory stays closed after page navigation", async ({
     page,
   }) => {
-    await page.goto(`${BASE}/docs/getting-started/introduction`);
+    // Start on Sub A > Page 1 — Sub A auto-opens
+    await page.goto(`${BASE}/docs/guides/sub-a/page-1`);
     await waitForSidebarHydration(page);
 
-    // Manually open "Reference" category
-    await categoryToggle(page, "Reference").click();
-    expect(await isCategoryOpen(page, "Reference")).toBe(true);
+    await expectCategoryOpen(page, "Sub A", true);
 
-    // Navigate to another page within Getting Started
-    await desktopSidebar(page).getByRole("link", { name: "Installation" }).click();
+    // Close Sub A manually
+    await getCategoryToggle(page, "Sub A").click();
+    await expectCategoryOpen(page, "Sub A", false);
+
+    // Navigate to Writing Docs
+    await desktopSidebar(page).getByRole("link", { name: "Writing Docs" }).click();
     await waitForSidebarHydration(page);
 
-    // "Reference" should still be open (manually toggled, saved to sessionStorage)
-    expect(await isCategoryOpen(page, "Reference")).toBe(true);
-  });
-
-  test("manually closed category stays closed after page navigation", async ({
-    page,
-  }) => {
-    await page.goto(`${BASE}/docs/getting-started/introduction`);
-    await waitForSidebarHydration(page);
-
-    // "Getting Started" is auto-opened. Close it manually.
-    await categoryToggle(page, "Getting Started").click();
-    expect(await isCategoryOpen(page, "Getting Started")).toBe(false);
-
-    // Open Guides and navigate to a page there
-    await categoryToggle(page, "Guides").click();
-    await desktopSidebar(page).getByRole("link", { name: "Components" }).click();
-    await waitForSidebarHydration(page);
-
-    // "Getting Started" should still be closed
-    expect(await isCategoryOpen(page, "Getting Started")).toBe(false);
+    // Sub A should still be closed
+    await expectCategoryOpen(page, "Sub A", false);
   });
 
   test("sessionStorage key is populated correctly", async ({ page }) => {
-    await page.goto(`${BASE}/docs/getting-started/introduction`);
+    await page.goto(`${BASE}/docs/guides/sub-a/page-1`);
     await waitForSidebarHydration(page);
 
     // Wait for useEffect to sync auto-opened state to sessionStorage
@@ -127,36 +146,36 @@ test.describe("Sidebar category persistence", () => {
         const raw = sessionStorage.getItem("zd-sidebar-open");
         return raw ? JSON.parse(raw) : [];
       });
-      expect(stored).toContain("getting-started");
+      expect(stored).toContain("guides");
     }).toPass({ timeout: 5000 });
   });
 
-  test("multiple categories remain open across multiple navigations", async ({
+  test("multiple subcategories remain open across navigations", async ({
     page,
   }) => {
-    await page.goto(`${BASE}/docs/getting-started/introduction`);
+    // Start on Sub A > Page 1
+    await page.goto(`${BASE}/docs/guides/sub-a/page-1`);
     await waitForSidebarHydration(page);
 
-    // Open Guides and Reference manually
-    await categoryToggle(page, "Guides").click();
-    await categoryToggle(page, "Reference").click();
+    // Sub A is auto-opened, manually open Sub B
+    await expectCategoryOpen(page, "Sub A", true);
+    await getCategoryToggle(page, "Sub B").click();
+    await expectCategoryOpen(page, "Sub B", true);
 
-    // Navigate to Guides > Color
+    // Navigate to Writing Docs (a leaf page)
+    await desktopSidebar(page).getByRole("link", { name: "Writing Docs" }).click();
+    await waitForSidebarHydration(page);
+
+    // Both Sub A and Sub B should still be open
+    await expectCategoryOpen(page, "Sub A", true);
+    await expectCategoryOpen(page, "Sub B", true);
+
+    // Navigate to Color (another leaf page)
     await desktopSidebar(page).getByRole("link", { name: "Color" }).click();
     await waitForSidebarHydration(page);
 
-    // All three should be open
-    expect(await isCategoryOpen(page, "Getting Started")).toBe(true);
-    expect(await isCategoryOpen(page, "Guides")).toBe(true);
-    expect(await isCategoryOpen(page, "Reference")).toBe(true);
-
-    // Navigate to Reference > Configuration
-    await desktopSidebar(page).getByRole("link", { name: "Configuration" }).click();
-    await waitForSidebarHydration(page);
-
-    // All three should still be open
-    expect(await isCategoryOpen(page, "Getting Started")).toBe(true);
-    expect(await isCategoryOpen(page, "Guides")).toBe(true);
-    expect(await isCategoryOpen(page, "Reference")).toBe(true);
+    // Both should still be open
+    await expectCategoryOpen(page, "Sub A", true);
+    await expectCategoryOpen(page, "Sub B", true);
   });
 });
