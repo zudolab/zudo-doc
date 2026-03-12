@@ -32,7 +32,7 @@ if (lang !== defaultLocale) {
   );
   docs = [
     ...docs,
-    ...baseDocs.filter((d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id))),
+    ...baseDocs.filter((d) => !d.data.unlisted && !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id))),
   ];
 
   // Merge category metadata: base first, locale overrides
