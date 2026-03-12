@@ -2,6 +2,7 @@
 import { getCollection } from "astro:content";
 import { buildNavTree, flattenTree, loadCategoryMeta } from "@/utils/docs";
 import { defaultLocale, getCollectionName, getContentDir, type Locale } from "@/config/i18n";
+import type { DocsEntry } from "@/types/docs-entry";
 
 interface Props {
   lang?: Locale;
@@ -9,7 +10,7 @@ interface Props {
 
 const { lang = defaultLocale } = Astro.props;
 
-const docs = await getCollection(getCollectionName(lang));
+const docs = await getCollection(getCollectionName(lang)) as unknown as DocsEntry[];
 const contentDir = getContentDir(lang);
 const categoryMeta = loadCategoryMeta(contentDir);
 const tree = buildNavTree(docs, lang, categoryMeta);

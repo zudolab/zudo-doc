@@ -1,4 +1,4 @@
-import type { CollectionEntry } from "astro:content";
+import type { DocsEntry } from "@/types/docs-entry";
 import fs from "node:fs";
 import path from "node:path";
 import { toTitleCase } from "@/utils/slug";
@@ -26,7 +26,7 @@ export interface NavNode {
 interface BuildNode {
   segment: string;
   fullPath: string;
-  doc?: CollectionEntry<"docs" | `docs-${string}`>;
+  doc?: DocsEntry;
   children: Map<string, BuildNode>;
 }
 
@@ -39,7 +39,7 @@ interface BuildNode {
  *   getting-started/intro.mdx → ID "getting-started/intro" (child page)
  */
 export function buildNavTree(
-  docs: CollectionEntry<"docs" | `docs-${string}`>[],
+  docs: DocsEntry[],
   lang: Locale = defaultLocale,
   categoryMeta?: Map<string, CategoryMeta>,
 ): NavNode[] {

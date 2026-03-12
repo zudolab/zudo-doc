@@ -21,13 +21,14 @@ import EditLink from "@/components/edit-link.astro";
 import { settings } from "@/config/settings";
 import DocMetainfo from "@/components/doc-metainfo.astro";
 import DocTags from "@/components/doc-tags.astro";
+import type { DocsEntry } from "@/types/docs-entry";
 
 export async function getStaticPaths() {
-  const localeDocs = await getCollection("docs-de");
-  const baseDocs = await getCollection("docs");
+  const localeDocs = await getCollection("docs-de") as unknown as DocsEntry[];
+  const baseDocs = await getCollection("docs") as unknown as DocsEntry[];
 
   // In production, exclude drafts. In dev, include them for preview.
-  const filterDrafts = <T extends { data: { draft?: boolean } }>(docs: T[]) =>
+  const filterDrafts = (docs: DocsEntry[]) =>
     import.meta.env.PROD ? docs.filter((doc) => !doc.data.draft) : docs;
 
   const filteredLocaleDocs = filterDrafts(localeDocs);
@@ -124,11 +125,11 @@ const { entry, contentDir, breadcrumbs = [], prev, next, autoIndex } = Astro.pro
 
 const components = { Note, Tip, Info, Warning, Danger, CategoryNav, Tabs, TabItem, Details };
 
-let Content: typeof import("astro").AstroComponentFactory | undefined;
+let Content: any;
 let headings: Heading[] = [];
 
 if (entry) {
-  const rendered = await render(entry);
+  const rendered = await render(entry as any);
   Content = rendered.Content;
   headings = rendered.headings;
 }
