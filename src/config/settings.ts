@@ -26,6 +26,7 @@ export const settings = {
     respectPrefersColorScheme: true,
   } as ColorModeConfig | false,
   siteName: "zudo-doc",
+  siteDescription: "A minimal, fast documentation framework built with Astro and MDX." as string,
   base: "/pj/zudo-doc/",
   docsDir: "src/content/docs",
   locales: {
@@ -33,6 +34,7 @@ export const settings = {
     de: { label: "DE", dir: "src/content/docs-de" },
   } satisfies Record<string, LocaleConfig>,
   mermaid: true,
+  noindex: false as boolean, // When true, adds noindex/nofollow to all pages (for internal docs)
   editUrl: false as string | false,
   siteUrl: "" as string, // e.g. "https://example.com" — required for sitemap absolute URLs
   sitemap: true,

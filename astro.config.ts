@@ -50,7 +50,7 @@ export default defineConfig({
     mdx(),
     react(),
     searchIndexIntegration(),
-    ...(settings.sitemap ? [sitemapIntegration()] : []),
+    ...(settings.sitemap && !settings.noindex ? [sitemapIntegration()] : []),
     ...(settings.docHistory ? [docHistoryIntegration()] : []),
     ...(settings.claudeResources
       ? [claudeResourcesIntegration(settings.claudeResources)]

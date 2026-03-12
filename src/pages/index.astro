@@ -7,6 +7,8 @@ import { ClientRouter } from "astro:transitions";
 import PageLoadingOverlay from "@/components/page-loading-overlay.astro";
 import { settings } from "@/config/settings";
 import { withBase } from "@/utils/base";
+
+const ctaNav = settings.headerNav[0] ?? null;
 ---
 
 <html lang="en">
@@ -14,9 +16,10 @@ import { withBase } from "@/utils/base";
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{settings.siteName}</title>
-    <meta name="description" content={`${settings.siteName} — A minimal, fast documentation framework built with Astro and MDX.`} />
+    <meta name="description" content={settings.siteDescription} />
+    {settings.noindex && <meta name="robots" content="noindex, nofollow" />}
     <meta property="og:title" content={settings.siteName} />
-    <meta property="og:description" content={`${settings.siteName} — A minimal, fast documentation framework built with Astro and MDX.`} />
+    <meta property="og:description" content={settings.siteDescription} />
     <ColorSchemeProvider />
     <ClientRouter />
   </head>
@@ -30,14 +33,16 @@ import { withBase } from "@/utils/base";
       <div class="hidden lg:flex w-[18rem] shrink-0 border-r border-muted sticky top-[3.5rem] h-[calc(100vh-3.5rem)] flex-col justify-center px-hsp-2xl">
         <h1 class="text-heading font-bold mb-vsp-xs">{settings.siteName}</h1>
         <p class="text-muted mb-vsp-lg text-small">
-          A minimal, fast documentation framework built with Astro and MDX.
+          {settings.siteDescription}
         </p>
-        <a
-          href={withBase("/docs/getting-started")}
-          class="inline-block bg-fg text-bg px-hsp-lg py-vsp-xs font-medium hover:underline focus:underline text-center text-small"
-        >
-          Get Started
-        </a>
+        {ctaNav && (
+          <a
+            href={withBase(ctaNav.path)}
+            class="inline-block bg-fg text-bg px-hsp-lg py-vsp-xs font-medium hover:underline focus:underline text-center text-small"
+          >
+            {ctaNav.label}
+          </a>
+        )}
       </div>
 
       <!-- Right: header nav categories -->
@@ -46,14 +51,16 @@ import { withBase } from "@/utils/base";
         <div class="lg:hidden mb-vsp-xl">
           <h1 class="text-heading font-bold mb-vsp-xs">{settings.siteName}</h1>
           <p class="text-muted mb-vsp-md text-small">
-            A minimal, fast documentation framework built with Astro and MDX.
+            {settings.siteDescription}
           </p>
-          <a
-            href={withBase("/docs/getting-started")}
-            class="inline-block bg-fg text-bg px-hsp-lg py-vsp-xs font-medium hover:underline focus:underline text-small"
-          >
-            Get Started
-          </a>
+          {ctaNav && (
+            <a
+              href={withBase(ctaNav.path)}
+              class="inline-block bg-fg text-bg px-hsp-lg py-vsp-xs font-medium hover:underline focus:underline text-small"
+            >
+              {ctaNav.label}
+            </a>
+          )}
         </div>
 
         <div class="grid grid-cols-1 gap-vsp-lg sm:grid-cols-2 lg:grid-cols-3">
