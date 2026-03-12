@@ -1,14 +1,17 @@
 import { test, expect } from "@playwright/test";
 import { readdirSync, statSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { getBasePath } from "./helpers";
 
 /**
  * Smoke tests: visit every generated page and verify it loads without errors.
  *
- * Pages are discovered by scanning the content directories for .mdx files,
- * then mapped to URLs using the base path from settings.ts.
+ * Pages are discovered by scanning the smoke fixture's content directories
+ * for .mdx files, then mapped to URLs using the base path.
  */
+
+const __dirname2 = dirname(fileURLToPath(import.meta.url));
 
 // Recursively collect MDX file slugs from a content directory
 function collectSlugs(dir: string, prefix = ""): string[] {
@@ -32,7 +35,7 @@ function collectSlugs(dir: string, prefix = ""): string[] {
 }
 
 const BASE = getBasePath();
-const CONTENT = join(process.cwd(), "src", "content");
+const CONTENT = join(__dirname2, "fixtures", "smoke", "src", "content");
 
 // Discover all pages across locales
 const pages: { url: string; label: string }[] = [];
