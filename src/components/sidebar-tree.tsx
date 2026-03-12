@@ -309,7 +309,7 @@ function CategoryNode({
         <div className="relative">
           {depth >= 1 && (
             <div
-              className="absolute border-l-2 border-muted"
+              className="absolute border-l-[3px] border-muted"
               style={{
                 left: connectorLeft(depth),
                 top: 0,
