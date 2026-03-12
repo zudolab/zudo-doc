@@ -87,12 +87,9 @@ jobs:
           cp -r dist-out/. deploy/pj/zudo-doc/
           echo '/ /pj/zudo-doc/ 302' > deploy/_redirects
 
-      - name: Install wrangler
-        run: npm install -g wrangler@4
-
       - name: Deploy to Cloudflare Pages (production)
         run: |
-          wrangler pages deploy deploy \
+          pnpm dlx wrangler@4 pages deploy deploy \
             --project-name=zudo-doc \
             --branch=main \
             --commit-hash="${GITHUB_SHA}" \
