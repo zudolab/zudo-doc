@@ -1,21 +1,13 @@
-export interface HeaderNavItem {
-  label: string;
-  labelKey?: string;
-  path: string;
-  categoryMatch?: string;
-}
-
-export interface ColorModeConfig {
-  defaultMode: "light" | "dark";
-  lightScheme: string;
-  darkScheme: string;
-  respectPrefersColorScheme: boolean;
-}
-
-export interface LocaleConfig {
-  label: string;
-  dir: string;
-}
+export type {
+  HeaderNavItem,
+  ColorModeConfig,
+  LocaleConfig,
+} from "./settings-types";
+import type {
+  HeaderNavItem,
+  ColorModeConfig,
+  LocaleConfig,
+} from "./settings-types";
 
 export const settings = {
   colorScheme: "Default Dark",
@@ -31,7 +23,6 @@ export const settings = {
   docsDir: "src/content/docs",
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },
-    de: { label: "DE", dir: "src/content/docs-de" },
   } satisfies Record<string, LocaleConfig>,
   mermaid: true,
   noindex: false as boolean, // When true, adds noindex/nofollow to all pages (for internal docs)

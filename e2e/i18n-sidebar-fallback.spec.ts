@@ -1,5 +1,4 @@
 import { test, expect } from "@playwright/test";
-import { getBasePath } from "./helpers";
 import { desktopSidebar, waitForSidebarHydration } from "./sidebar-helpers";
 
 /**
@@ -13,8 +12,6 @@ import { desktopSidebar, waitForSidebarHydration } from "./sidebar-helpers";
  * not in docs-ja or docs-de.
  */
 
-const BASE = getBasePath();
-
 // Desktop viewport so sidebar is always visible
 test.use({ viewport: { width: 1280, height: 800 } });
 
@@ -24,7 +21,7 @@ test.describe("i18n sidebar fallback: JA locale", () => {
   }) => {
     // Navigate to a JA fallback sub-page so the sidebar renders with
     // subcategory toggle buttons (index pages may not have them)
-    await page.goto(`${BASE}/ja/docs/guides/sub-a/page-1`);
+    await page.goto(`/ja/docs/guides/sub-a/page-1`);
     await waitForSidebarHydration(page);
 
     const sidebar = desktopSidebar(page);
@@ -38,7 +35,7 @@ test.describe("i18n sidebar fallback: JA locale", () => {
   test("JA sidebar shows translated pages alongside fallback entries", async ({
     page,
   }) => {
-    await page.goto(`${BASE}/ja/docs/guides/sub-a/page-1`);
+    await page.goto(`/ja/docs/guides/sub-a/page-1`);
     await waitForSidebarHydration(page);
 
     const sidebar = desktopSidebar(page);
@@ -53,7 +50,7 @@ test.describe("i18n sidebar fallback: JA locale", () => {
   test("JA fallback page shows untranslated notice banner", async ({
     page,
   }) => {
-    await page.goto(`${BASE}/ja/docs/guides/sub-a/page-1`);
+    await page.goto(`/ja/docs/guides/sub-a/page-1`);
 
     // The fallback notice banner should be visible
     const banner = page.locator('[role="note"]');
@@ -66,7 +63,7 @@ test.describe("i18n sidebar fallback: JA locale", () => {
   test("JA translated page does NOT show fallback banner", async ({
     page,
   }) => {
-    await page.goto(`${BASE}/ja/docs/guides/writing-docs`);
+    await page.goto(`/ja/docs/guides/writing-docs`);
 
     // No fallback banner should exist on a translated page
     const banner = page.locator('[role="note"]');
@@ -77,7 +74,7 @@ test.describe("i18n sidebar fallback: JA locale", () => {
     const errors: string[] = [];
     page.on("pageerror", (err) => errors.push(err.message));
 
-    await page.goto(`${BASE}/ja/docs/guides/sub-a/page-1`);
+    await page.goto(`/ja/docs/guides/sub-a/page-1`);
 
     // The page should load successfully with a title
     const h1 = page.locator("h1");
@@ -91,7 +88,7 @@ test.describe("i18n sidebar fallback: JA locale", () => {
   test("navigating from JA sidebar to another fallback page works", async ({
     page,
   }) => {
-    await page.goto(`${BASE}/ja/docs/guides/sub-a/page-1`);
+    await page.goto(`/ja/docs/guides/sub-a/page-1`);
     await waitForSidebarHydration(page);
 
     const sidebar = desktopSidebar(page);
@@ -113,7 +110,7 @@ test.describe("i18n sidebar fallback: DE locale", () => {
   test("DE sidebar shows Sub A and Sub B from EN fallback", async ({
     page,
   }) => {
-    await page.goto(`${BASE}/de/docs/guides/sub-a/page-1`);
+    await page.goto(`/de/docs/guides/sub-a/page-1`);
     await waitForSidebarHydration(page);
 
     const sidebar = desktopSidebar(page);
@@ -124,7 +121,7 @@ test.describe("i18n sidebar fallback: DE locale", () => {
   test("DE fallback page shows untranslated notice banner", async ({
     page,
   }) => {
-    await page.goto(`${BASE}/de/docs/guides/sub-a/page-1`);
+    await page.goto(`/de/docs/guides/sub-a/page-1`);
 
     const banner = page.locator('[role="note"]');
     await expect(banner).toBeVisible();
@@ -136,7 +133,7 @@ test.describe("i18n sidebar fallback: DE locale", () => {
 
 test.describe("i18n sidebar fallback: EN locale (no fallback)", () => {
   test("EN pages do NOT show fallback banner", async ({ page }) => {
-    await page.goto(`${BASE}/docs/guides/sub-a/page-1`);
+    await page.goto(`/docs/guides/sub-a/page-1`);
 
     // EN is the default locale — no fallback banner should appear
     const banner = page.locator('[role="note"]');
@@ -144,7 +141,7 @@ test.describe("i18n sidebar fallback: EN locale (no fallback)", () => {
   });
 
   test("EN sidebar shows Sub A and Sub B normally", async ({ page }) => {
-    await page.goto(`${BASE}/docs/guides/sub-a/page-1`);
+    await page.goto(`/docs/guides/sub-a/page-1`);
     await waitForSidebarHydration(page);
 
     const sidebar = desktopSidebar(page);

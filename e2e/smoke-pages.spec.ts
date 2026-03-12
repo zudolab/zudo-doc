@@ -1,14 +1,15 @@
 import { test, expect } from "@playwright/test";
 import { readdirSync, statSync, existsSync } from "node:fs";
-import { join } from "node:path";
-import { getBasePath } from "./helpers";
-
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 /**
  * Smoke tests: visit every generated page and verify it loads without errors.
  *
- * Pages are discovered by scanning the content directories for .mdx files,
- * then mapped to URLs using the base path from settings.ts.
+ * Pages are discovered by scanning the smoke fixture's content directories
+ * for .mdx files, then mapped to URLs using the base path.
  */
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Recursively collect MDX file slugs from a content directory
 function collectSlugs(dir: string, prefix = ""): string[] {
@@ -31,25 +32,14 @@ function collectSlugs(dir: string, prefix = ""): string[] {
   return slugs;
 }
 
-const BASE = getBasePath();
-const CONTENT = join(process.cwd(), "src", "content");
+const CONTENT = join(__dirname, "fixtures", "smoke", "src", "content");
 
-// Discover all pages across locales
+// Discover all pages from the smoke fixture content
 const pages: { url: string; label: string }[] = [];
 
 // English docs (default locale, no prefix)
 for (const slug of collectSlugs(join(CONTENT, "docs"))) {
-  pages.push({ url: `${BASE}/docs/${slug}`, label: `en: ${slug}` });
-}
-
-// Japanese docs
-for (const slug of collectSlugs(join(CONTENT, "docs-ja"))) {
-  pages.push({ url: `${BASE}/ja/docs/${slug}`, label: `ja: ${slug}` });
-}
-
-// German docs
-for (const slug of collectSlugs(join(CONTENT, "docs-de"))) {
-  pages.push({ url: `${BASE}/de/docs/${slug}`, label: `de: ${slug}` });
+  pages.push({ url: `/docs/${slug}`, label: `en: ${slug}` });
 }
 
 pages.sort((a, b) => a.url.localeCompare(b.url));

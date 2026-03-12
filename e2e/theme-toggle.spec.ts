@@ -1,6 +1,4 @@
 import { test, expect, type Page } from "@playwright/test";
-import { getBasePath } from "./helpers";
-
 /**
  * E2E tests for theme toggle hydration and persistence.
  *
@@ -12,8 +10,7 @@ import { getBasePath } from "./helpers";
  * sync from the DOM in useEffect.
  */
 
-const BASE = getBasePath();
-const HOME = `${BASE}/`;
+const HOME = "/";
 const STORAGE_KEY = "zudo-doc-theme";
 
 /** Collect React hydration errors from the console during a page visit */
@@ -122,8 +119,8 @@ test.describe("Theme toggle", () => {
     const toggle = page.locator('button[aria-label*="Switch to"]');
     await expect(toggle).toHaveAttribute("aria-label", "Switch to dark mode", { timeout: 3000 });
 
-    // Navigate to a doc page via the main content card (View Transition)
-    await page.getByRole("link", { name: "Getting Started Browse getting started" }).click();
+    // Navigate to a doc page via sidebar link (View Transition)
+    await page.getByRole("link", { name: "Getting Started" }).first().click();
     await page.waitForURL(/getting-started/);
 
     // Theme should still be light after navigation

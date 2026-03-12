@@ -14,3 +14,24 @@ src/content/docs/claude-commands/
 src/content/docs/claude-skills/
 src/content/docs/claude-agents/
 test-results/
+
+# E2E fixture symlinks and generated files
+e2e/fixtures/*/node_modules
+e2e/fixtures/*/src/components
+e2e/fixtures/*/src/hooks
+e2e/fixtures/*/src/integrations
+e2e/fixtures/*/src/layouts
+e2e/fixtures/*/src/pages
+e2e/fixtures/*/src/plugins
+e2e/fixtures/*/src/styles
+e2e/fixtures/*/src/types
+e2e/fixtures/*/src/utils
+e2e/fixtures/*/src/content.config.ts
+e2e/fixtures/*/src/config/color-scheme-utils.ts
+e2e/fixtures/*/src/config/color-schemes.ts
+e2e/fixtures/*/src/config/i18n.ts
+e2e/fixtures/*/src/config/settings-types.ts
+e2e/fixtures/*/src/config/sidebars.ts
+e2e/fixtures/*/astro.config.ts
+e2e/fixtures/*/.astro
+e2e/fixtures/*/dist
