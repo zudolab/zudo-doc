@@ -259,7 +259,17 @@ function CategoryNode({
   const paddingLeft = padLeft(depth, true);
 
   return (
-    <div className={depth === 0 ? "border-t border-muted" : ""}>
+    <div className={`${depth === 0 ? "border-t border-muted" : ""} ${depth >= 1 && !isLast && isExpanded ? "relative" : ""}`}>
+      {depth >= 1 && !isLast && isExpanded && (
+        <div
+          className="absolute border-l border-solid border-muted z-10"
+          style={{
+            left: connectorLeft(depth),
+            top: 0,
+            bottom: 0,
+          }}
+        />
+      )}
       <div className="relative">
         <ConnectorLines depth={depth} isLast={isLast} />
         <div
@@ -306,17 +316,7 @@ function CategoryNode({
         </div>
       </div>
       {isExpanded && (
-        <div className="relative">
-          {depth >= 1 && (
-            <div
-              className="absolute border-l-[3px] border-muted"
-              style={{
-                left: connectorLeft(depth),
-                top: 0,
-                bottom: 0,
-              }}
-            />
-          )}
+        <div>
           <NodeList
             nodes={node.children}
             currentSlug={currentSlug}
