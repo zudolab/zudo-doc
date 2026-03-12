@@ -1,6 +1,6 @@
 ---
 import SidebarTree from "@/components/sidebar-tree";
-import { loadCategoryMeta } from "@/utils/docs";
+import { loadCategoryMeta, type CategoryMeta } from "@/utils/docs";
 import { buildSidebarForSection } from "@/utils/sidebar";
 import { defaultLocale, getCollectionName, getContentDir, type Locale } from "@/config/i18n";
 import { getDocsCollection } from "@/utils/get-docs-collection";
@@ -22,7 +22,7 @@ const filterDrafts = <T extends { data: { draft?: boolean } }>(items: T[]) =>
   import.meta.env.PROD ? items.filter((item) => !item.data.draft) : items;
 
 let docs = filterDrafts(localeDocs);
-let categoryMeta: Map<string, { label?: string; sidebar_position?: number; description?: string }>;
+let categoryMeta: Map<string, CategoryMeta>;
 
 if (lang !== defaultLocale) {
   // Merge base (EN) docs for fallback entries

@@ -113,6 +113,7 @@ export async function getStaticPaths() {
     props: {
       entry: null,
       contentDir: getContentDir("de"),
+      isFallback: false,
       autoIndex: node,
       breadcrumbs: buildBreadcrumbs(tree, node.slug, "de"),
       prev: null,
@@ -174,7 +175,7 @@ const slug = autoIndex ? autoIndex.slug : (entry!.data.slug ?? toRouteSlug(entry
       <DocMetainfo filePath={`${contentDir}/${entry.id}`} locale="de" />
 
       {isFallback && (
-        <div class="mb-vsp-md border border-info/30 bg-info/5 px-hsp-lg py-vsp-sm text-small text-muted rounded">
+        <div class="mb-vsp-md border border-info/30 bg-info/5 px-hsp-lg py-vsp-sm text-small text-muted rounded" role="status">
           {t("doc.fallbackNotice", "de")}
         </div>
       )}
