@@ -1,5 +1,6 @@
 import { test, expect, type Page, type Locator } from "@playwright/test";
 import { getBasePath } from "./helpers";
+import { desktopSidebar, waitForSidebarHydration } from "./sidebar-helpers";
 
 /**
  * E2E tests for sidebar category open/close persistence across
@@ -14,31 +15,6 @@ import { getBasePath } from "./helpers";
  */
 
 const BASE = getBasePath();
-
-// Desktop viewport so the sidebar is always visible
-test.use({ viewport: { width: 1280, height: 800 } });
-
-/** The desktop sidebar aside */
-function desktopSidebar(page: Page): Locator {
-  return page.locator("#desktop-sidebar");
-}
-
-/** Wait for the React sidebar island to hydrate and become interactive */
-async function waitForSidebarHydration(page: Page) {
-  const sidebar = desktopSidebar(page);
-  await sidebar.locator("nav").waitFor({ state: "attached" });
-  // Wait until React hydration is complete by checking that a toggle button
-  // has a click handler attached (we test this by checking that React's
-  // internal properties exist on the DOM element)
-  await page.waitForFunction(() => {
-    const sidebar = document.querySelector("#desktop-sidebar");
-    if (!sidebar) return false;
-    const btn = sidebar.querySelector('button[aria-label^="Collapse"], button[aria-label^="Expand"]');
-    if (!btn) return false;
-    // React 19 attaches __reactFiber or __reactProps on hydrated elements
-    return Object.keys(btn).some(k => k.startsWith("__react"));
-  }, null, { timeout: 5000 });
-}
 
 /**
  * Helper: find a category toggle button by its label text.

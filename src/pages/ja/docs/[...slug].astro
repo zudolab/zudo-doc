@@ -99,6 +99,7 @@ export async function getStaticPaths() {
       props: {
         entry,
         contentDir: isFallback ? settings.docsDir : getContentDir("ja"),
+        isFallback,
         breadcrumbs: buildBreadcrumbs(tree, slug, "ja"),
         prev: prevNode,
         next: nextNode,
@@ -112,6 +113,7 @@ export async function getStaticPaths() {
     props: {
       entry: null,
       contentDir: getContentDir("ja"),
+      isFallback: false,
       autoIndex: node,
       breadcrumbs: buildBreadcrumbs(tree, node.slug, "ja"),
       prev: null,
@@ -122,7 +124,7 @@ export async function getStaticPaths() {
   return [...docPaths, ...autoIndexPaths];
 }
 
-const { entry, contentDir, breadcrumbs = [], prev, next, autoIndex } = Astro.props;
+const { entry, contentDir, isFallback, breadcrumbs = [], prev, next, autoIndex } = Astro.props;
 
 const components = { Note, Tip, Info, Warning, Danger, CategoryNav, Tabs, TabItem, Details };
 
@@ -171,6 +173,12 @@ const slug = autoIndex ? autoIndex.slug : (entry!.data.slug ?? toRouteSlug(entry
     <Fragment>
       <h1 class="text-heading font-bold mb-vsp-xs">{entry.data.title}</h1>
       <DocMetainfo filePath={`${contentDir}/${entry.id}`} locale="ja" />
+
+      {isFallback && (
+        <div class="mb-vsp-md border border-info/30 bg-info/5 px-hsp-lg py-vsp-sm text-small text-muted rounded" role="note">
+          {t("doc.fallbackNotice", "ja")}
+        </div>
+      )}
 
       {entry.data.description && (
         <p class="mt-0 mb-vsp-lg text-subheading text-muted">{entry.data.description}</p>
