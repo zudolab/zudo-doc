@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const STORAGE_KEY = "zudo-doc-theme";
 
@@ -53,14 +53,19 @@ interface ThemeToggleProps {
 }
 
 export default function ThemeToggle({ defaultMode = "dark" }: ThemeToggleProps) {
-  const [mode, setMode] = useState<"light" | "dark">(() => {
-    if (typeof window === "undefined") return defaultMode;
-    return (
+  // Initial state must match server render to avoid hydration mismatch.
+  // Actual theme is synced from DOM in useEffect below.
+  const [mode, setMode] = useState<"light" | "dark">(defaultMode);
+
+  useEffect(() => {
+    const actual =
       (document.documentElement.getAttribute("data-theme") as
         | "light"
-        | "dark") || defaultMode
-    );
-  });
+        | "dark") || defaultMode;
+    if (actual !== mode) {
+      setMode(actual);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggle() {
     const next = mode === "dark" ? "light" : "dark";
