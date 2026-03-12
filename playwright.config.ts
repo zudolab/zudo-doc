@@ -1,64 +1,23 @@
 import { defineConfig } from "@playwright/test";
 
+const BASE_PORT = 4500;
+const FIXTURES = ["sidebar", "i18n", "theme", "smoke"] as const;
+
 export default defineConfig({
   testDir: "./e2e",
   use: {
-    baseURL: "http://localhost:4500",
+    baseURL: `http://localhost:${BASE_PORT}`,
   },
-  webServer: [
-    {
-      command:
-        "cd e2e/fixtures/sidebar && npx astro build && npx astro preview --port 4500",
-      url: "http://localhost:4500/",
-      reuseExistingServer: true,
-      timeout: 120_000,
-    },
-    {
-      command:
-        "cd e2e/fixtures/i18n && npx astro build && npx astro preview --port 4501",
-      url: "http://localhost:4501/",
-      reuseExistingServer: true,
-      timeout: 120_000,
-    },
-    {
-      command:
-        "cd e2e/fixtures/theme && npx astro build && npx astro preview --port 4502",
-      url: "http://localhost:4502/",
-      reuseExistingServer: true,
-      timeout: 120_000,
-    },
-    {
-      command:
-        "cd e2e/fixtures/smoke && npx astro build && npx astro preview --port 4503",
-      url: "http://localhost:4503/",
-      reuseExistingServer: true,
-      timeout: 120_000,
-    },
-  ],
-  projects: [
-    {
-      name: "sidebar",
-      testDir: "./e2e",
-      testMatch: "sidebar*.spec.ts",
-      use: { baseURL: "http://localhost:4500" },
-    },
-    {
-      name: "i18n",
-      testDir: "./e2e",
-      testMatch: "i18n*.spec.ts",
-      use: { baseURL: "http://localhost:4501" },
-    },
-    {
-      name: "theme",
-      testDir: "./e2e",
-      testMatch: "theme*.spec.ts",
-      use: { baseURL: "http://localhost:4502" },
-    },
-    {
-      name: "smoke",
-      testDir: "./e2e",
-      testMatch: "smoke*.spec.ts",
-      use: { baseURL: "http://localhost:4503" },
-    },
-  ],
+  webServer: FIXTURES.map((name, i) => ({
+    command: `cd e2e/fixtures/${name} && npx astro build && npx astro preview --port ${BASE_PORT + i}`,
+    url: `http://localhost:${BASE_PORT + i}/`,
+    reuseExistingServer: true,
+    timeout: 120_000,
+  })),
+  projects: FIXTURES.map((name, i) => ({
+    name,
+    testDir: "./e2e",
+    testMatch: `${name}*.spec.ts`,
+    use: { baseURL: `http://localhost:${BASE_PORT + i}` },
+  })),
 });

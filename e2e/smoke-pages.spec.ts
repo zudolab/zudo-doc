@@ -45,11 +45,6 @@ for (const slug of collectSlugs(join(CONTENT, "docs"))) {
   pages.push({ url: `${BASE}/docs/${slug}`, label: `en: ${slug}` });
 }
 
-// Japanese docs (if present in fixture)
-for (const slug of collectSlugs(join(CONTENT, "docs-ja"))) {
-  pages.push({ url: `${BASE}/ja/docs/${slug}`, label: `ja: ${slug}` });
-}
-
 pages.sort((a, b) => a.url.localeCompare(b.url));
 
 test.describe("Smoke: all pages load without errors", () => {
