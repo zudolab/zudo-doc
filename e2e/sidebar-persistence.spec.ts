@@ -26,8 +26,7 @@ test.use({ viewport: { width: 1280, height: 800 } });
 
 /** The desktop sidebar aside (visible at lg breakpoint) */
 function desktopSidebar(page: Page): Locator {
-  // The desktop aside is the second one — it has `lg:block` class
-  return page.locator("aside.hidden.lg\\:block");
+  return page.locator("#desktop-sidebar");
 }
 
 /** Wait for the React sidebar island to hydrate */
