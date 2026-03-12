@@ -15,6 +15,7 @@ import { sitemapIntegration } from "./src/integrations/sitemap";
 import { rehypeCodeTitle } from "./src/plugins/rehype-code-title";
 import { rehypeHeadingLinks } from "./src/plugins/rehype-heading-links";
 import { rehypeMermaid } from "./src/plugins/rehype-mermaid";
+import { rehypeStripMdExtension } from "./src/plugins/rehype-strip-md-extension";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 
@@ -74,6 +75,7 @@ export default defineConfig({
     rehypePlugins: [
       rehypeCodeTitle,
       rehypeHeadingLinks, // Must run before Astro's built-in heading ID plugin
+      rehypeStripMdExtension,
       ...(settings.mermaid ? [rehypeMermaid] : []),
       ...(settings.math ? [rehypeKatex] : []),
     ],
