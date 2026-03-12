@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "// ── Core ─────────────────────────────────────────": "",
+    "predev": "lsof -ti :5173 | xargs kill 2>/dev/null; true",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview"
@@ -22,10 +24,5 @@
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
     "vite": "6.3.5"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ]
   }
 }
