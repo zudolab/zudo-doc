@@ -259,7 +259,7 @@ function CategoryNode({
   const paddingLeft = padLeft(depth, true);
 
   return (
-    <div className={`${depth === 0 ? "border-t border-muted" : ""} ${depth >= 1 && !isLast && isExpanded ? "relative" : ""}`}>
+    <div className={`${depth === 0 ? "border-t border-muted" : ""} ${depth >= 1 && !isLast ? "relative" : ""}`}>
       {depth >= 1 && !isLast && isExpanded && (
         <div
           className="absolute border-l border-solid border-muted z-10"
