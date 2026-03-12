@@ -214,11 +214,17 @@ function CategoryNode({
   const containsCurrent = subtreeContainsSlug(node, currentSlug);
   const isActive = node.slug === currentSlug;
 
-  const [open, setOpen] = useState(() => {
+  // Initial state must match server render (no sessionStorage access)
+  // to avoid hydration mismatch. Stored state is restored in useEffect below.
+  const [open, setOpen] = useState(containsCurrent);
+
+  // Restore open state from sessionStorage after hydration
+  useEffect(() => {
     const stored = getOpenSet();
-    if (stored.has(node.slug)) return true;
-    return containsCurrent;
-  });
+    if (stored.has(node.slug) && !open) {
+      setOpen(true);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-open category when navigation lands on a descendant
   useEffect(() => {
