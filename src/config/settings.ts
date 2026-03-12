@@ -31,7 +31,6 @@ export const settings = {
   docsDir: "src/content/docs",
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },
-    de: { label: "DE", dir: "src/content/docs-de" },
   } satisfies Record<string, LocaleConfig>,
   mermaid: true,
   noindex: false as boolean, // When true, adds noindex/nofollow to all pages (for internal docs)
