@@ -1,9 +1,12 @@
 # Pull request quality checks and preview deployment.
 #
-# Triggered on PRs targeting `main`. The pipeline:
-#   1. Builds the Astro docs site
-#   2. Deploys a preview to Cloudflare Pages
-#   3. Posts the preview URL as a PR comment
+# Triggered on PRs targeting `main`. The pipeline mirrors the local
+# `pnpm b4push` script:
+#   1. Type checking (astro check)
+#   2. Build the Astro docs site
+#   3. E2E & smoke tests (Playwright)
+#   4. Deploy a preview to Cloudflare Pages
+#   5. Post the preview URL as a PR comment
 #
 # Concurrency: cancel in-progress runs for the same PR to save resources.
 
@@ -28,7 +31,35 @@ jobs:
     secrets: inherit
 
   # ---------------------------------------------------------------------------
-  # Job 1: Build the Astro docs site
+  # Job 1: Type checking
+  # ---------------------------------------------------------------------------
+  typecheck:
+    name: Type Check
+    needs: detect-runner
+    runs-on: ${{ needs.detect-runner.outputs.runner }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run type checking
+        run: pnpm check
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Build the Astro docs site
   # ---------------------------------------------------------------------------
   build:
     name: Build
@@ -66,7 +97,48 @@ jobs:
           retention-days: 1
 
   # ---------------------------------------------------------------------------
-  # Job 2: Deploy preview and comment on PR
+  # Job 3: E2E & smoke tests
+  # ---------------------------------------------------------------------------
+  e2e:
+    name: E2E Tests
+    needs: detect-runner
+    runs-on: ${{ needs.detect-runner.outputs.runner }}
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm dlx playwright install --with-deps chromium
+
+      - name: Run E2E & smoke tests
+        run: pnpm test:e2e
+
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Job 4: Deploy preview and comment on PR
   # ---------------------------------------------------------------------------
   preview:
     name: Preview Deploy
