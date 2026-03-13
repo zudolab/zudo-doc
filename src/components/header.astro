@@ -24,6 +24,14 @@ const pathForMatch = isNonDefaultLocale ? pathWithoutBase.replace(new RegExp(`^/
 >
   <SidebarToggle client:media="(max-width: 1023px)">
     <slot name="sidebar" />
+    <Fragment slot="bottomContent">
+      {settings.colorMode ? (
+        <ThemeToggle defaultMode={settings.colorMode.defaultMode} client:load />
+      ) : (
+        <ColorSchemePicker client:load />
+      )}
+      {lang && locales.length > 1 && <LanguageSwitcher lang={lang} />}
+    </Fragment>
   </SidebarToggle>
 
   <a href={withBase("/")} class="text-subheading font-bold text-fg hover:underline focus:underline">
@@ -60,11 +68,13 @@ const pathForMatch = isNonDefaultLocale ? pathWithoutBase.replace(new RegExp(`^/
 
   <div class="ml-auto flex items-center gap-x-hsp-md">
     <Search />
-    {settings.colorMode ? (
-      <ThemeToggle defaultMode={settings.colorMode.defaultMode} client:load />
-    ) : (
-      <ColorSchemePicker client:load />
-    )}
-    {lang && locales.length > 1 && <LanguageSwitcher lang={lang} />}
+    <div class="hidden lg:flex items-center gap-x-hsp-md">
+      {settings.colorMode ? (
+        <ThemeToggle defaultMode={settings.colorMode.defaultMode} client:load />
+      ) : (
+        <ColorSchemePicker client:load />
+      )}
+      {lang && locales.length > 1 && <LanguageSwitcher lang={lang} />}
+    </div>
   </div>
 </header>
