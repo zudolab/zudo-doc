@@ -1,0 +1,66 @@
+---
+title: Claude Codeリソース
+description: Claude Codeリソースからドキュメントを自動生成します。
+sidebar_position: 8
+---
+
+## 概要
+
+zudo-docはプロジェクトのClaude Codeリソース — CLAUDE.mdファイル、カスタムコマンド、スキル、エージェント — からドキュメントページを自動的に生成できます。有効にすると、これらは**Claude**ヘッダーナビゲーションセクションに表示されます。
+
+## Claude Resourcesの有効化
+
+`src/config/settings.ts`で`claudeResources`を設定します：
+
+```ts
+claudeResources: {
+  claudeDir: ".claude",
+},
+```
+
+無効にするには`false`に設定します：
+
+```ts
+claudeResources: false,
+```
+
+## 生成されるもの
+
+インテグレーションは`.claude/`ディレクトリをスキャンし、以下のMDXドキュメントページを生成します：
+
+| リソース | ソース | 出力 |
+|----------|--------|--------|
+| CLAUDE.mdファイル | プロジェクトルートとサブディレクトリ | `claude-md/` |
+| コマンド | `.claude/commands/*.md` | `claude-commands/` |
+| スキル | `.claude/skills/*/SKILL.md` | `claude-skills/` |
+| エージェント | `.claude/agents/*.md` | `claude-agents/` |
+
+各リソースタイプには、すべてのアイテムのリストを含むインデックスページと個別の詳細ページが用意されます。
+
+## 仕組み
+
+インテグレーションはビルド時に`astro:config:setup`フックで実行されます：
+
+1. 設定された`.claude/`ディレクトリをスキャン
+2. CLAUDE.mdファイル、コマンド、スキル（リファレンス付き）、エージェントを検出
+3. `src/content/docs/claude-*/`ディレクトリにMDXファイルを生成
+4. これらのファイルはAstroのコンテンツコレクションによって取得され、ドキュメントページとしてレンダリング
+
+生成されたページは**Claude**ヘッダーナビゲーションタブに表示されます。`headerNav`で`categoryMatch: "claude"`を設定して構成します。
+
+<Note>
+生成されたファイルは`src/content/docs/`に書き込まれ、ビルドごとに再作成されます。手動で編集しないでください — 変更は上書きされます。
+</Note>
+
+## 設定オプション
+
+| オプション | 型 | 説明 |
+|--------|------|-------------|
+| `claudeDir` | string | `.claude/`ディレクトリへのパス（プロジェクトルートからの相対パス） |
+| `projectRoot` | string | CLAUDE.mdファイルパスの解決に使用するオプションのプロジェクトルートオーバーライド |
+
+`projectRoot`オプションは、`.claude/`ディレクトリがプロジェクトルートにないモノレポ設定で便利です。
+
+<Tip>
+`references/`サブディレクトリを持つスキルは、そのリファレンスドキュメントが個別のリンクされたページとして含まれるため、バンドルされたナレッジベースを簡単に閲覧できます。
+</Tip>

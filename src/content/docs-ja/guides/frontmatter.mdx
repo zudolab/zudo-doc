@@ -1,0 +1,233 @@
+---
+title: フロントマター
+description: zudo-docドキュメントで利用可能なすべてのフロントマターフィールドの完全なリファレンス。
+sidebar_position: 2
+---
+
+zudo-docのすべてのMDXファイルは`---`で区切られたYAMLフロントマターブロックで始まります。このページでは利用可能なすべてのフィールドを説明します。
+
+## 完全な例
+
+```mdx
+---
+title: My Documentation Page
+description: A comprehensive guide to something important.
+sidebar_position: 3
+sidebar_label: My Page
+tags: [tutorial, setup]
+---
+
+Your content here.
+```
+
+## 最小限の例
+
+必須なのは`title`のみです：
+
+```mdx
+---
+title: Quick Start
+---
+```
+
+## フィールド一覧
+
+| フィールド | 型 | 必須 | デフォルト | 説明 |
+|-------|------|----------|---------|-------------|
+| `title` | string | はい | -- | ページタイトル。見出し、サイドバー、ブラウザタブに表示 |
+| `description` | string | いいえ | -- | タイトル下に表示されるサブタイトル |
+| `sidebar_position` | number | いいえ | `999` | サイドバーカテゴリ内のソート順 |
+| `sidebar_label` | string | いいえ | `title`の値 | サイドバーに表示されるラベルのオーバーライド |
+| `category` | string | いいえ | ディレクトリ名 | 将来の使用のために予約 |
+| `search_exclude` | boolean | いいえ | `false` | ページを検索インデックスから除外 |
+| `tags` | string[] | いいえ | -- | 横断的なナビゲーション用タグ |
+| `draft` | boolean | いいえ | `false` | 本番ビルドから除外（開発時は表示） |
+| `unlisted` | boolean | いいえ | `false` | ビルドされるがサイドバー、検索、検索エンジンから非表示 |
+| `slug` | string | いいえ | ファイルパスから導出 | カスタムURLスラグのオーバーライド |
+| `pagination_next` | string \| null | いいえ | 自動 | 次のページリンクをオーバーライド、`null`で非表示 |
+| `pagination_prev` | string \| null | いいえ | 自動 | 前のページリンクをオーバーライド、`null`で非表示 |
+
+## フィールド詳細
+
+### `title`
+
+- **型：** `string`
+- **必須：** はい
+
+ページタイトル。ページの`h1`見出し、サイドバーナビゲーション、ブラウザタブ、検索結果に表示されます。
+
+```mdx
+---
+title: Getting Started with zudo-doc
+---
+```
+
+### `description`
+
+- **型：** `string`
+- **必須：** いいえ
+
+ページの短い説明またはサブタイトル。レンダリングされたページでタイトルの下に表示されます。SEOメタタグにも使用されます。
+
+```mdx
+---
+title: Installation
+description: How to install and set up zudo-doc for your project.
+---
+```
+
+### `sidebar_position`
+
+- **型：** `number`
+- **必須：** いいえ
+- **デフォルト：** `999`（末尾に表示）
+
+サイドバーカテゴリ内のページのソート順を制御します。小さい数値ほど先に表示されます。
+
+```mdx
+---
+title: Introduction
+sidebar_position: 1
+---
+```
+
+<Tip>
+カテゴリインデックスページ（`index.mdx`）では、`sidebar_position`はカテゴリ全体がサイドバー内の他のカテゴリに対してどこに表示されるかも制御します。
+</Tip>
+
+### `sidebar_label`
+
+- **型：** `string`
+- **必須：** いいえ
+- **デフォルト：** `title`の値
+
+サイドバーナビゲーションに表示されるラベルをオーバーライドします。完全なページタイトルよりも短い、または異なるラベルを表示したい場合に使用します。
+
+```mdx
+---
+title: Configuring Color Schemes and Themes
+sidebar_label: Color Schemes
+---
+```
+
+### `category`
+
+- **型：** `string`
+- **必須：** いいえ
+- **デフォルト：** ディレクトリ構造から導出（最初のディレクトリセグメント）
+
+将来の使用のために予約されています。このフィールドはコンテンツスキーマで定義されていますが、現在はサイドバーやルーティングロジックでは使用されていません。カテゴリは常にディレクトリ構造から導出されます。
+
+<Note>
+ページをカテゴリに整理するには、`src/content/docs/`の下にディレクトリを作成してその中に配置します。ディレクトリ名がカテゴリ名になります。
+</Note>
+
+### `search_exclude`
+
+- **型：** `boolean`
+- **必須：** いいえ
+- **デフォルト：** `false`
+
+`true`に設定すると、ページを検索インデックスから除外します。検索結果に表示すべきでない内部ページ、変更履歴、インポートされたコンテンツに便利です。
+
+```mdx
+---
+title: Internal Changelog
+search_exclude: true
+---
+```
+
+### `tags`
+
+- **型：** `string[]`
+- **必須：** いいえ
+
+横断的なナビゲーション用のタグをページに割り当てます。タグはページにクリック可能なバッジとして表示され、タグインデックスページが`/docs/tags/`と`/docs/tags/[tag]`に自動生成されます。
+
+```mdx
+---
+title: Deploying to Netlify
+tags: [deployment, netlify, hosting]
+---
+```
+
+<Tip>
+タグは、異なるサイドバーカテゴリにまたがる関連ページをグループ化するのに便利です。
+</Tip>
+
+### `draft`
+
+- **型：** `boolean`
+- **必須：** いいえ
+- **デフォルト：** `false`
+
+`true`に設定すると、ページは本番ビルドから完全に除外されます。下書きページはプレビュー目的で開発時（`pnpm dev`）には引き続き表示されます。
+
+```mdx
+---
+title: Upcoming Feature
+draft: true
+---
+```
+
+### `unlisted`
+
+- **型：** `boolean`
+- **必須：** いいえ
+- **デフォルト：** `false`
+
+`true`に設定すると、ページはビルドされてURL経由でアクセス可能ですが、サイドバーナビゲーション、検索インデックス、検索エンジン（`noindex`メタタグ経由）からは非表示になります。
+
+```mdx
+---
+title: Internal Notes
+unlisted: true
+---
+```
+
+### `slug`
+
+- **型：** `string`
+- **必須：** いいえ
+- **デフォルト：** ファイルパスから導出
+
+ページのURLスラグをオーバーライドします。ファイルパスから生成されるURLとは異なるURLにしたい場合に使用します。
+
+```mdx
+---
+title: Getting Started with zudo-doc
+slug: quickstart
+---
+```
+
+このページはファイルの場所から導出されるデフォルトパスの代わりに`/docs/quickstart`でアクセスできるようになります。
+
+### `pagination_next`
+
+- **型：** `string | null`
+- **必須：** いいえ
+- **デフォルト：** サイドバーの順序から自動的に決定
+
+ドキュメントの下部に表示される「次へ」ページリンクをオーバーライドします。ドキュメントパス（例：`"guides/configuration"`）を設定して特定のページにリンクするか、`null`に設定して次のリンクを完全に非表示にします。
+
+```mdx
+---
+title: Final Step
+pagination_next: null
+---
+```
+
+### `pagination_prev`
+
+- **型：** `string | null`
+- **必須：** いいえ
+- **デフォルト：** サイドバーの順序から自動的に決定
+
+ドキュメントの下部に表示される「前へ」ページリンクをオーバーライドします。ドキュメントパス（例：`"getting-started/introduction"`）を設定して特定のページにリンクするか、`null`に設定して前のリンクを完全に非表示にします。
+
+```mdx
+---
+title: Getting Started
+pagination_prev: null
+---
+```

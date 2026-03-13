@@ -1,0 +1,292 @@
+---
+title: Configuration
+description: Global settings and configuration reference for zudo-doc.
+sidebar_position: 1
+---
+
+zudo-doc is configured through a small set of files in the `src/config/` directory and the root `astro.config.ts`.
+
+## Site Settings
+
+The main settings file is `src/config/settings.ts`:
+
+```ts
+export const settings = {
+  colorScheme: "Default Dark",
+  colorMode: {
+    defaultMode: "light",
+    lightScheme: "Default Light",
+    darkScheme: "Default Dark",
+    respectPrefersColorScheme: true,
+  },
+  siteName: "zudo-doc",
+  siteDescription: "A minimal, fast documentation framework...",
+  base: "/",
+  docsDir: "src/content/docs",
+  locales: {
+    ja: { label: "JA", dir: "src/content/docs-ja" },
+  },
+  mermaid: true,
+  noindex: false,
+  editUrl: false,
+  siteUrl: "",
+  sitemap: true,
+  docMetainfo: true,
+  docTags: true,
+  math: true,
+  docHistory: true,
+  claudeResources: {
+    claudeDir: ".claude",
+  },
+  headerNav: [
+    { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
+    { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
+    { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
+  ],
+};
+```
+
+### colorScheme
+
+The active color scheme name. Must match a key in `src/config/color-schemes.ts`.
+
+Available built-in schemes: **Default Dark**, **Default Light**, **Dracula**, **Catppuccin Mocha**, **Nord**, **TokyoNight**, **Gruvbox Dark**, **Atom One Dark**, and many more.
+
+<Tip>
+See the [Color guide](/docs/reference/color) for a full list of available schemes, previews, and instructions on adding custom schemes.
+</Tip>
+
+### colorMode
+
+Configures light/dark mode behavior. Set to `false` to disable color mode switching entirely and use only the scheme specified in `colorScheme`.
+
+When enabled, accepts a `ColorModeConfig` object:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `defaultMode` | `"light"` \| `"dark"` | The initial color mode before any user preference is applied |
+| `lightScheme` | string | Color scheme name to use in light mode |
+| `darkScheme` | string | Color scheme name to use in dark mode |
+| `respectPrefersColorScheme` | boolean | When `true`, automatically matches the user's OS-level light/dark preference |
+
+```ts
+colorMode: {
+  defaultMode: "light",
+  lightScheme: "Default Light",
+  darkScheme: "Default Dark",
+  respectPrefersColorScheme: true,
+},
+// or disable color mode switching:
+colorMode: false,
+```
+
+### base
+
+The base path for deploying to a subdirectory. Set this when your site is served from a subpath rather than the root domain.
+
+Default: `"/"`
+
+For example, to serve the site at `https://example.com/my-docs/`:
+
+```ts
+base: "/my-docs",
+```
+
+All internal links (sidebar, navigation, prev/next, search) are automatically prefixed with the base path. This maps directly to [Astro's `base` config option](https://docs.astro.build/en/reference/configuration-reference/#base).
+
+<Note>
+Inline markdown links within MDX content (e.g., `[link text](/docs/some-page)`) are **not** automatically rewritten. When using a non-root base, use relative links in content files instead.
+</Note>
+
+### docsDir
+
+The directory path (relative to the project root) where English documentation MDX files are stored. This uses Astro 5's `glob()` loader, so it can point to any directory.
+
+Default: `"src/content/docs"`
+
+```ts
+docsDir: "docs",  // content in ./docs/ at project root
+```
+
+This is similar to Docusaurus' `docs.path` option — useful when using zudo-doc as a documentation tool for a larger project where docs live at the project root level.
+
+### locales
+
+A map of additional locale configurations. Each key is a locale code, and the value is an object with `label` (display name for the language switcher) and `dir` (content directory path).
+
+Default: `{}`
+
+```ts
+locales: {
+  ja: { label: "JA", dir: "src/content/docs-ja" },
+  ko: { label: "KO", dir: "src/content/docs-ko" },
+},
+```
+
+For each locale entry, zudo-doc automatically:
+- Creates an Astro content collection (`docs-{code}`)
+- Registers the locale in Astro's i18n routing
+- Adds it to the language switcher
+
+### siteName
+
+The site name displayed in the header and used in page titles. Page titles are formatted as `{page title} | {siteName}`.
+
+### siteDescription
+
+A short description of the site. Used in meta tags for SEO and social sharing.
+
+Default: `""`
+
+### siteUrl
+
+The full base URL of your site (e.g., `"https://example.com"`). Required for generating absolute URLs in the sitemap.
+
+Default: `""`
+
+### noindex
+
+When `true`, adds `noindex` and `nofollow` meta tags to all pages. Useful for internal documentation sites that should not be indexed by search engines.
+
+Default: `false`
+
+### mermaid
+
+Enables Mermaid diagram support. When `true`, fenced code blocks with the `mermaid` language identifier are rendered as diagrams. When `false`, mermaid code blocks are displayed as plain code.
+
+Default: `true`
+
+### math
+
+Enables KaTeX math equation rendering. When `true`, inline math (`$...$`), block math (`$$...$$`), and fenced `math` code blocks are rendered as equations.
+
+Default: `true`
+
+### editUrl
+
+Base URL for "Edit this page" links. The full URL is constructed as `editUrl + contentDir + "/" + entryId`. Set to `false` to disable edit links.
+
+Default: `"https://github.com/user/repo/edit/main/"`
+
+```ts
+editUrl: "https://github.com/my-org/my-repo/edit/main/",
+// or disable:
+editUrl: false,
+```
+
+### sitemap
+
+Enables automatic `sitemap.xml` generation during build. The sitemap includes all built HTML pages except 404.
+
+Default: `true`
+
+### docMetainfo
+
+Shows metadata (created date, last updated date, author) under the page title. Dates and author are extracted from git history at build time.
+
+Default: `true`
+
+### docTags
+
+Enables tag support for documentation pages. When `true`, pages can use the `tags` frontmatter field, and tag index pages are generated at `/docs/tags/`.
+
+Default: `true`
+
+### docHistory
+
+Enables per-document git revision history viewer. When `true`, each doc page shows a **History** button that opens a side panel with the document's git commit history and a line-by-line diff viewer for comparing revisions.
+
+At build time, git history is extracted for every content file and saved as JSON files to `dist/doc-history/`. In dev mode, history is served dynamically via a Vite middleware.
+
+Default: `false`
+
+<Tip>
+See the [Document History guide](/docs/guides/doc-history) for usage details, keyboard shortcuts, and technical information.
+</Tip>
+
+### claudeResources
+
+Configures the Claude Code Resources Viewer, which auto-generates documentation pages from your `.claude/` directory. Set to `false` to disable.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `claudeDir` | string | Path to the `.claude` directory (relative to project root) |
+| `projectRoot` | string (optional) | Project root override for monorepo setups |
+
+```ts
+claudeResources: {
+  claudeDir: ".claude",
+},
+// or disable:
+claudeResources: false,
+```
+
+<Tip>
+See the [Claude Resources guide](/docs/guides/claude-resources) for details on what gets generated and how it works.
+</Tip>
+
+### headerNav
+
+An array of navigation links rendered in the site header bar. Each item supports the following properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `label` | string | Display text shown in the header |
+| `labelKey` | string (optional) | i18n translation key (e.g., `"nav.gettingStarted"`) — overrides `label` when a translation is available |
+| `path` | string | URL path the link navigates to |
+| `categoryMatch` | string (optional) | Links this header tab to a sidebar category. When active, only the matched category's sidebar is shown |
+
+```ts
+headerNav: [
+  { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
+  { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
+  { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
+],
+```
+
+## Astro Configuration
+
+The root `astro.config.ts` controls the build pipeline:
+
+```ts
+export default defineConfig({
+  output: "static",
+  integrations: [mdx(), react(), searchIndexIntegration()],
+  i18n: {
+    defaultLocale: "en",
+    locales: ["en", ...Object.keys(settings.locales)],
+    routing: { prefixDefaultLocale: false },
+  },
+  vite: {
+    plugins: [tailwindcss()],
+  },
+  markdown: {
+    shikiConfig: { theme: shikiTheme },
+  },
+});
+```
+
+Key aspects:
+
+- **output**: Set to `"static"` for full static HTML export
+- **integrations**: MDX support, React islands, and MiniSearch search indexing
+- **i18n**: English (default at `/docs/...`) and Japanese (`/ja/docs/...`). Default locale has no URL prefix
+- **Tailwind CSS**: Loaded via the `@tailwindcss/vite` plugin instead of an Astro integration
+- **Shiki theme**: Automatically derived from the active color scheme's `shikiTheme` property — no manual sync needed
+
+<Note>
+The Shiki code highlighting theme is tied to the color scheme. When you change `colorScheme` in settings, the syntax highlighting theme updates automatically.
+</Note>
+
+## Color Scheme Config
+
+Color schemes are defined in `src/config/color-schemes.ts`. Each scheme provides 22 color properties plus a `shikiTheme`:
+
+- `background`, `foreground`, `cursor`, `selectionBg`, `selectionFg`
+- `palette` — 16 color slots (`palette[0]` through `palette[15]`)
+- `shikiTheme` — matching Shiki theme name for syntax highlighting
+- `semantic` (optional) — overrides for `surface`, `muted`, `accent`, and `accentHover`
+
+<Info>
+For details on adding or customizing color schemes, see the [Color guide](/docs/reference/color).
+</Info>

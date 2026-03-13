@@ -1,7 +1,7 @@
 ---
 title: "国際化（i18n）"
 description: "ドキュメントに多言語サポートを追加する"
-sidebar_position: 6
+sidebar_position: 7
 ---
 
 zudo-docはAstroの組み込みi18nルーティングを使用して複数の言語をサポートしています。
@@ -13,9 +13,31 @@ zudo-docはAstroの組み込みi18nルーティングを使用して複数の言
 
 サイトヘッダーの言語切り替えで、ユーザーは利用可能な言語を切り替えることができます。
 
+## 設定ベースのロケール構成
+
+ロケールは`src/config/settings.ts`で設定します：
+
+```ts
+export const settings = {
+  // ...
+  locales: {
+    ja: { label: "JA", dir: "src/content/docs-ja" },
+  },
+};
+```
+
+各ロケールエントリに対して、zudo-docは自動的に：
+
+- Astroコンテンツコレクション（`docs-{code}`）を作成
+- Astroのi18nルーティングにロケールを登録
+- 適切なページルートを生成
+- 言語切り替えにロケールを追加
+
+つまり、新しいロケールの追加には設定エントリとコンテンツディレクトリのみが必要です — コレクションやルートの手動セットアップは不要です。
+
 ## ディレクトリ構造
 
-日本語ドキュメントは英語のディレクトリ構造をミラーします：
+ローカライズされたドキュメントは英語のディレクトリ構造をミラーします：
 
 ```
 src/content/
@@ -24,18 +46,30 @@ src/content/
 │   │   ├── introduction.mdx
 │   │   └── installation.mdx
 │   └── guides/
-│       └── writing-docs.mdx
+│       └── configuration.mdx
 └── docs-ja/
     ├── getting-started/
     │   ├── introduction.mdx
     │   └── installation.mdx
     └── guides/
-        └── writing-docs.mdx
+        └── configuration.mdx
 ```
 
 ## 言語切り替え
 
 言語切り替えはヘッダーの右端に表示されます。現在の言語コード（ENまたはJA）と、別の言語に切り替えるためのリンクが表示されます。切り替えは`/ja/`プレフィックスの追加または削除により、代替URLを自動的に計算します。
+
+## UI翻訳キー
+
+zudo-docは組み込みUI文字列に翻訳キーシステムを使用しています。キーは名前空間ごとに整理されています：
+
+- `nav.*` — ヘッダーナビゲーションラベル（例：`nav.gettingStarted`、`nav.guides`）
+- `toc.*` — 目次のラベル
+- `search.*` — 検索ダイアログのテキスト
+- `code.*` — コードブロックのUI（コピーボタンなど）
+- `doc.*` — ドキュメントレベルのUI（編集リンク、メタデータラベルなど）
+
+これらのキーにより、コンテンツだけでなくUI全体をすべての設定済み言語でローカライズできます。
 
 ## Astro設定
 
@@ -44,7 +78,7 @@ i18nルーティングは`astro.config.ts`で設定されます：
 ```ts
 i18n: {
   defaultLocale: "en",
-  locales: ["en", "ja"],
+  locales: ["en", ...Object.keys(settings.locales)],
   routing: {
     prefixDefaultLocale: false,
   },
@@ -53,12 +87,26 @@ i18n: {
 
 `prefixDefaultLocale: false`により、英語ページは言語プレフィックスなし（`/docs/...`）で配信され、日本語ページは`/ja/`プレフィックス付き（`/ja/docs/...`）で配信されます。
 
+<Note>
+`astro.config.ts`の`locales`配列は`settings.locales`から自動的に導出されるため、ロケールの管理は一箇所のみで行えます。
+</Note>
+
 ## 新しい言語の追加
 
 新しい言語（例：韓国語）を追加するには：
 
-1. コンテンツディレクトリを作成：`src/content/docs-ko/`
-2. 英語のディレクトリ構造をミラーして翻訳ファイルを配置
-3. `src/pages/ko/docs/[...slug].astro`に新しいページルートを追加
-4. `astro.config.ts`の`locales`配列に`"ko"`を追加
-5. 言語切り替えコンポーネントを新しい言語に対応するよう更新
+1. `settings.ts`にロケールを追加：
+   ```ts
+   locales: {
+     ja: { label: "JA", dir: "src/content/docs-ja" },
+     ko: { label: "KO", dir: "src/content/docs-ko" },
+   },
+   ```
+2. コンテンツディレクトリを作成：`src/content/docs-ko/`
+3. 英語のディレクトリ構造をミラーして翻訳ファイルを配置
+4. `src/pages/ko/docs/[...slug].astro`に新しいページルートを追加（既存のロケールルートからコピー）
+5. 新しいロケール用のUI翻訳を追加
+
+<Tip>
+ステップ1が最も重要です — `settings.ts`にロケールを追加すると、コンテンツコレクションの作成とi18nルーティングの登録が自動的に行われます。残りのステップはコンテンツとページルートを提供します。
+</Tip>
