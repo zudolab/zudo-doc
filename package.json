@@ -23,11 +23,11 @@
     ]
   },
   "dependencies": {
-    "@astrojs/mdx": "^4.3.13",
-    "@astrojs/react": "^4.4.2",
+    "@astrojs/mdx": "^5.0.0",
+    "@astrojs/react": "^5.0.0",
     "@shikijs/transformers": "^4.0.1",
     "@types/hast": "^3.0.4",
-    "astro": "^5.18.0",
+    "astro": "^6.0.4",
     "clsx": "^2.1.1",
     "diff": "^8.0.3",
     "github-slugger": "^2.0.0",
@@ -42,7 +42,7 @@
     "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.6",
+    "@astrojs/check": "^0.9.7",
     "@playwright/test": "^1.58.2",
     "@tailwindcss/vite": "^4.2.1",
     "@types/node": "^25.3.5",
