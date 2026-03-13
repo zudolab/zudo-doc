@@ -10,11 +10,11 @@ import type {
 } from "./settings-types";
 
 export const settings = {
-  colorScheme: "Default Dark",
+  colorScheme: "ZCSS Dark",
   colorMode: {
-    defaultMode: "light",
-    lightScheme: "Default Light",
-    darkScheme: "Default Dark",
+    defaultMode: "dark",
+    lightScheme: "ZCSS Light",
+    darkScheme: "ZCSS Dark",
     respectPrefersColorScheme: true,
   } as ColorModeConfig | false,
   siteName: "zudo-doc",

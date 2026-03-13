@@ -33,6 +33,24 @@ const currentPath = Astro.url.pathname;
 const htmlColorAttrs = settings.colorMode
   ? { "data-theme": settings.colorMode.defaultMode, style: `color-scheme: ${settings.colorMode.defaultMode}` }
   : {};
+const contentAnim = {
+  old: {
+    name: "contentFadeOut",
+    duration: 150,
+    easing: "ease-in",
+    fillMode: "both",
+  },
+  new: {
+    name: "contentFadeIn",
+    duration: 300,
+    easing: "ease-out",
+    fillMode: "both",
+  },
+};
+const contentTransition = {
+  forwards: contentAnim,
+  backwards: contentAnim,
+};
 ---
 
 <html lang={lang} {...htmlColorAttrs}>
@@ -70,7 +88,7 @@ const htmlColorAttrs = settings.colorMode
       <div class="flex-1 min-w-0 flex justify-center">
         <div class="flex w-full max-w-[clamp(50rem,75vw,90rem)] gap-[clamp(1.5rem,3vw,4rem)]">
           <!-- Main content -->
-          <main class="flex-1 min-w-0 px-hsp-xl py-vsp-xl lg:px-hsp-2xl lg:py-vsp-2xl" transition:animate="fade">
+          <main class="flex-1 min-w-0 px-hsp-xl py-vsp-xl lg:px-hsp-2xl lg:py-vsp-2xl" transition:animate={contentTransition}>
             <slot name="breadcrumb" />
             <MobileToc headings={headings} title={t("toc.title", lang)} client:load />
             <article class="zd-content max-w-none">

@@ -28,34 +28,43 @@ export interface ColorScheme {
 }
 
 export const colorSchemes: Record<string, ColorScheme> = {
-  "Default Light": {
-    background: "#ffffff",
-    foreground: "#363a3f",
-    cursor: "#3277c8",
-    selectionBg: "#25282c",
-    selectionFg: "#ffffff",
+  "ZCSS Light": {
+    background: "#f8f8f8",
+    foreground: "#303030",
+    cursor: "oklch(70.4% 0.04 256.788)",
+    selectionBg: "#303030",
+    selectionFg: "#f8f8f8",
     palette: [
-      "#30353a", "#bd4b53", "#266538", "#523711",
-      "#3277c8", "#977acc", "#347c81", "#7d8389",
-      "#656c73", "#9c2d3f", "#327e48", "#654516",
-      "#5b99dc", "#b89ee7", "#4e93a4", "#9ba1a6",
+      "#2a2a2a", "#bd4b53", "#266538", "#7a5218",
+      "#3277c8", "#977acc", "oklch(70.4% 0.04 256.788)", "#707070",
+      "#808080", "#9c2d3f", "#327e48", "#654516",
+      "#5b99dc", "#b89ee7", "oklch(65% 0.027 256.788)", "#989898",
     ],
     shikiTheme: "github-light",
-    semantic: { surface: "#f5f5f5" },
+    semantic: {
+      accent: "oklch(70.4% 0.04 256.788)",
+      accentHover: "oklch(65% 0.027 256.788)",
+      surface: "#eeeeee",
+    },
   },
-  "Default Dark": {
-    background: "#212429",
-    foreground: "#a2aab8",
-    cursor: "#a8aebb",
-    selectionBg: "#323842",
-    selectionFg: "#a7aebc",
+  "ZCSS Dark": {
+    background: "#181818",
+    foreground: "#b8b8b8",
+    cursor: "oklch(70.4% 0.04 256.788)",
+    selectionBg: "#383838",
+    selectionFg: "#e0e0e0",
     palette: [
-      "#1e2024", "#da6871", "#93bb77", "#dfbb77",
-      "#5caae9", "#c074d6", "oklch(70.4% 0.04 256.788)", "#a9aeb7",
-      "#717171", "#da6871", "#93bb77", "#dfbb77",
-      "#5caae9", "#c074d6", "oklch(70.4% 0.04 256.788)", "#a9aeb7",
+      "#1c1c1c", "#da6871", "#93bb77", "#dfbb77",
+      "#5caae9", "#c074d6", "oklch(70.4% 0.04 256.788)", "#a0a0a0",
+      "#888888", "#da6871", "#93bb77", "#dfbb77",
+      "#5caae9", "#c074d6", "oklch(80% 0.057 256.788)", "#b8b8b8",
     ],
-    shikiTheme: "one-dark-pro",
-    semantic: { muted: "#797d86" },
+    shikiTheme: "dracula",
+    semantic: {
+      accent: "oklch(70.4% 0.04 256.788)",
+      accentHover: "oklch(80% 0.057 256.788)",
+      muted: "#888888",
+      surface: "#222222",
+    },
   },
 };
