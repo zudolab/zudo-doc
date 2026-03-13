@@ -82,6 +82,131 @@ sidebar_position: 1
 | Warning | p3               | 黄         |
 | Danger  | p1               | 赤         |
 
+## タブ
+
+`<Tabs>` と `<TabItem>` を使ってタブ付きコンテンツパネルを作成できます。複数言語でのコード表示やプラットフォーム別の手順表示に便利です。
+
+<Tabs>
+  <TabItem label="npm" value="npm" default>
+    ```bash
+    npm install zudo-doc
+    ```
+  </TabItem>
+  <TabItem label="pnpm" value="pnpm">
+    ```bash
+    pnpm add zudo-doc
+    ```
+  </TabItem>
+  <TabItem label="yarn" value="yarn">
+    ```bash
+    yarn add zudo-doc
+    ```
+  </TabItem>
+</Tabs>
+
+### 構文
+
+```mdx
+<Tabs>
+  <TabItem label="npm" value="npm" default>
+    npmタブのコンテンツ。
+  </TabItem>
+  <TabItem label="pnpm" value="pnpm">
+    pnpmタブのコンテンツ。
+  </TabItem>
+</Tabs>
+```
+
+### プロップ
+
+**Tabs:**
+
+| プロップ | 型 | 説明 |
+|------|------|-------------|
+| `groupId` | string | 同じ `groupId` を持つ複数の `<Tabs>` 間でタブ選択を同期（localStorageに保存） |
+
+**TabItem:**
+
+| プロップ | 型 | 説明 |
+|------|------|-------------|
+| `label` | string | タブボタンのテキスト（必須） |
+| `value` | string | 一意の値識別子（デフォルトは `label`） |
+| `default` | boolean | このタブを初期アクティブに設定 |
+
+### タブの同期
+
+`groupId` を使って、同一ページ内の複数タブグループの選択を同期できます：
+
+```mdx
+<Tabs groupId="package-manager">
+  <TabItem label="npm" default>npm install</TabItem>
+  <TabItem label="pnpm">pnpm add</TabItem>
+</Tabs>
+
+<!-- 上のグループと同期 -->
+<Tabs groupId="package-manager">
+  <TabItem label="npm" default>npm run build</TabItem>
+  <TabItem label="pnpm">pnpm build</TabItem>
+</Tabs>
+```
+
+## 折りたたみ（Details）
+
+`<Details>` で折りたたみ可能なコンテンツセクションを作成できます：
+
+<Details title="クリックして展開">
+このコンテンツはデフォルトで非表示になっており、ユーザーがサマリーをクリックすると表示されます。
+
+コードブロックや他のコンポーネントを含む任意のMDXコンテンツを内部に含めることができます。
+</Details>
+
+### 構文
+
+```mdx
+<Details title="任意のタイトル">
+非表示のコンテンツ。
+</Details>
+```
+
+| プロップ | 型 | デフォルト | 説明 |
+|------|------|---------|-------------|
+| `title` | string | `"Details"` | クリック可能なサマリーテキスト |
+
+## 数式
+
+設定で `math` が有効な場合（デフォルト: `true`）、KaTeXを使って数式をレンダリングできます。
+
+### インライン数式
+
+ドル記号1つでインライン数式を表示：`$E = mc^2$` は $E = mc^2$ と表示されます。
+
+### ブロック数式
+
+ドル記号2つでディスプレイ数式を表示：
+
+$$
+\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
+$$
+
+### 構文
+
+```mdx
+インライン: $E = mc^2$
+
+ブロック:
+$$
+\sum_{i=1}^{n} i = \frac{n(n+1)}{2}
+$$
+```
+
+`math` 言語のフェンスドコードブロックも使用できます：
+
+````mdx
+```math
+\nabla \times \mathbf{E} = -\frac{\partial \mathbf{B}}{\partial t}
+```
+````
+
 ## Mermaidダイアグラム
 
 `mermaid`言語のフェンスドコードブロックでダイアグラムを描画できます。Mermaidはオンデマンドで読み込まれるため、Mermaidブロックのないページにはオーバーヘッドがありません。
