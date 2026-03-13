@@ -4,7 +4,7 @@ description: zudo-doc's three-tier color strategy, palette system, color schemes
 sidebar_position: 3
 ---
 
-zudo-doc uses a **three-tier color strategy** to keep every color on the site themeable. The default Tailwind theme is not imported, and the `@theme` block resets the color namespace with `--color-*: initial` before defining project tokens — only project tokens work. This ensures switching a color scheme updates the entire site at once.
+zudo-doc uses a **three-tier color strategy** to keep every color on the site themeable. The default Tailwind theme is not imported — only `preflight` and `utilities` are loaded, so no built-in colors exist. Only project tokens defined in the `@theme` block work. This ensures switching a color scheme updates the entire site at once.
 
 ## Three-Tier Color Strategy
 
@@ -68,8 +68,6 @@ In `src/styles/global.css`, the `@theme` block maps palette properties into Tail
 
 ```css
 @theme {
-  --color-*: initial;  /* reset ALL Tailwind defaults */
-
   /* Base */
   --color-bg: var(--zd-bg);
   --color-fg: var(--zd-fg);
@@ -276,9 +274,9 @@ The `ColorScheme` interface requires:
 **Don't reference component-scoped variables** in your own components:
 
 ```css
-/* WRONG — don't use hardcoded colors */
+/* WRONG — don't reference component-scoped variables */
 .my-component {
-  color: #3b82f6;
+  color: var(--tw-prose-links);
 }
 
 /* RIGHT — use semantic tokens */
