@@ -1,7 +1,7 @@
 ---
 title: "Internationalization (i18n)"
 description: "Add multi-language support to your documentation"
-sidebar_position: 6
+sidebar_position: 7
 ---
 
 zudo-doc supports multiple languages using Astro's built-in i18n routing.
@@ -13,9 +13,31 @@ zudo-doc supports multiple languages using Astro's built-in i18n routing.
 
 The language switcher in the site header lets users toggle between available languages.
 
+## Settings-Based Locale Configuration
+
+Locales are configured in `src/config/settings.ts`:
+
+```ts
+export const settings = {
+  // ...
+  locales: {
+    ja: { label: "JA", dir: "src/content/docs-ja" },
+  },
+};
+```
+
+For each locale entry, zudo-doc automatically:
+
+- Creates an Astro content collection (`docs-{code}`)
+- Registers the locale in Astro's i18n routing
+- Generates the appropriate page routes
+- Adds the locale to the language switcher
+
+This means adding a new locale only requires a settings entry and a content directory — no manual collection or route setup needed.
+
 ## Directory Structure
 
-Japanese docs mirror the English directory structure:
+Localized docs mirror the English directory structure:
 
 ```
 src/content/
@@ -24,18 +46,30 @@ src/content/
 │   │   ├── introduction.mdx
 │   │   └── installation.mdx
 │   └── guides/
-│       └── writing-docs.mdx
+│       └── configuration.mdx
 └── docs-ja/
     ├── getting-started/
     │   ├── introduction.mdx
     │   └── installation.mdx
     └── guides/
-        └── writing-docs.mdx
+        └── configuration.mdx
 ```
 
 ## Language Switcher
 
 The language switcher appears in the header's right edge. It shows the current language code (EN or JA) and a link to switch to the alternate language. The switcher automatically computes the alternate URL by adding or removing the `/ja/` prefix.
+
+## UI Translation Keys
+
+zudo-doc uses a translation key system for built-in UI strings. Keys are organized by namespace:
+
+- `nav.*` — Header navigation labels (e.g., `nav.gettingStarted`, `nav.guides`)
+- `toc.*` — Table of contents labels
+- `search.*` — Search dialog text
+- `code.*` — Code block UI (copy button, etc.)
+- `doc.*` — Document-level UI (edit link, metadata labels, etc.)
+
+These keys allow the entire UI (not just content) to be localized across all configured languages.
 
 ## Astro Configuration
 
@@ -44,7 +78,7 @@ i18n routing is configured in `astro.config.ts`:
 ```ts
 i18n: {
   defaultLocale: "en",
-  locales: ["en", "ja"],
+  locales: ["en", ...Object.keys(settings.locales)],
   routing: {
     prefixDefaultLocale: false,
   },
@@ -53,12 +87,26 @@ i18n: {
 
 With `prefixDefaultLocale: false`, English pages are served without a language prefix (`/docs/...`) while Japanese pages use the `/ja/` prefix (`/ja/docs/...`).
 
+<Note>
+The `locales` array in `astro.config.ts` is automatically derived from `settings.locales`, so you only need to maintain locales in one place.
+</Note>
+
 ## Adding a New Language
 
 To add a new language (e.g., Korean):
 
-1. Create a content directory: `src/content/docs-ko/`
-2. Mirror the English directory structure with translated files
-3. Add a new page route at `src/pages/ko/docs/[...slug].astro`
-4. Add `"ko"` to the `locales` array in `astro.config.ts`
-5. Update the language switcher component to support the new language
+1. Add the locale to `settings.ts`:
+   ```ts
+   locales: {
+     ja: { label: "JA", dir: "src/content/docs-ja" },
+     ko: { label: "KO", dir: "src/content/docs-ko" },
+   },
+   ```
+2. Create a content directory: `src/content/docs-ko/`
+3. Mirror the English directory structure with translated files
+4. Add a new page route at `src/pages/ko/docs/[...slug].astro` (copy from an existing locale route)
+5. Add UI translations for the new locale
+
+<Tip>
+Step 1 is the key step — adding the locale to `settings.ts` automatically creates the content collection and registers the i18n routing. The remaining steps provide the content and page routes.
+</Tip>
