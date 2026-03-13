@@ -40,7 +40,6 @@ export const settings = {
     { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
     { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
     { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
-    { label: "API", labelKey: "nav.api", path: "/docs/api", categoryMatch: "api" },
     { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude" },
   ] satisfies HeaderNavItem[],
 };
