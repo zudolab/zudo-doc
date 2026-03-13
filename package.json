@@ -20,7 +20,10 @@
       "esbuild",
       "sharp",
       "workerd"
-    ]
+    ],
+    "patchedDependencies": {
+      "astro@6.0.4": "patches/astro@6.0.4.patch"
+    }
   },
   "dependencies": {
     "@astrojs/mdx": "^5.0.0",

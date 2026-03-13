@@ -66,16 +66,6 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
-    build: {
-      // Astro 6 + Vite 7: the vite-plugin-astro `load` hook expects compile
-      // metadata to be populated by the `transform` hook first. With Rollup's
-      // default parallel file ops (20), virtual sub-modules (CSS/scripts) can
-      // be loaded before their parent .astro file is transformed. Serializing
-      // file operations eliminates this race condition.
-      rollupOptions: {
-        maxParallelFileOps: 1,
-      },
-    },
   },
   markdown: {
     shikiConfig,
