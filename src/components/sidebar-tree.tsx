@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import type { NavNode } from "@/utils/docs";
 
 const STORAGE_KEY = "zd-sidebar-open";
@@ -91,11 +91,29 @@ function filterTree(nodes: NavNode[], query: string): NavNode[] {
 interface SidebarTreeProps {
   nodes: NavNode[];
   currentSlug?: string;
+  backToMenuHref?: string;
+  backToMenuLabel?: string;
 }
 
-export default function SidebarTree({ nodes, currentSlug }: SidebarTreeProps) {
+export default function SidebarTree({ nodes, currentSlug, backToMenuHref, backToMenuLabel }: SidebarTreeProps) {
   const activeSlug = useActiveSlug(nodes, currentSlug);
   const [query, setQuery] = useState("");
+  const filterRef = useRef<HTMLInputElement>(null);
+
+  // Global shortcut: Cmd+/ (Mac) or Ctrl+/ to focus the filter input
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "/" && (e.metaKey || e.ctrlKey)) {
+        const el = filterRef.current;
+        if (!el || el.offsetParent === null) return; // skip if hidden
+        e.preventDefault();
+        el.focus();
+        el.select();
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const filteredNodes = useMemo(
     () => (query ? filterTree(nodes, query) : nodes),
@@ -104,12 +122,24 @@ export default function SidebarTree({ nodes, currentSlug }: SidebarTreeProps) {
 
   return (
     <nav>
+      {backToMenuHref && (
+        <a
+          href={backToMenuHref}
+          className="flex items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-small text-muted hover:text-fg border-b border-muted"
+        >
+          <svg className="h-[1rem] w-[1rem] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          {backToMenuLabel ?? "Back to main menu"}
+        </a>
+      )}
       <div className="px-hsp-sm py-vsp-xs border-b border-muted">
         <div className="flex items-center gap-hsp-xs bg-surface rounded px-hsp-sm py-vsp-2xs">
           <svg className="h-[14px] w-[14px] text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
+            ref={filterRef}
             type="text"
             placeholder="Filter..."
             value={query}

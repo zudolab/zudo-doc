@@ -1,11 +1,9 @@
 ---
 import SidebarTree from "@/components/sidebar-tree";
-import { loadCategoryMeta, type CategoryMeta } from "@/utils/docs";
 import { buildSidebarForSection } from "@/utils/sidebar";
-import { defaultLocale, getCollectionName, getContentDir, type Locale } from "@/config/i18n";
-import { getDocsCollection } from "@/utils/get-docs-collection";
-import { toRouteSlug } from "@/utils/slug";
-import { settings } from "@/config/settings";
+import { defaultLocale, t, type Locale } from "@/config/i18n";
+import { withBase } from "@/utils/base";
+import { loadLocaleDocs } from "@/utils/locale-docs";
 
 interface Props {
   currentSlug?: string;
@@ -14,36 +12,14 @@ interface Props {
 }
 
 const { currentSlug, lang = defaultLocale, navSection } = Astro.props;
+const isNonDefaultLocale = lang !== defaultLocale;
+const backToMenuHref = navSection ? withBase(isNonDefaultLocale ? `/${lang}/` : "/") : undefined;
+const backToMenuLabel = navSection ? t("nav.backToMenu", lang) : undefined;
 
-const localeDocs = await getDocsCollection(getCollectionName(lang));
-
-// In production, exclude drafts
-const filterDrafts = <T extends { data: { draft?: boolean } }>(items: T[]) =>
-  import.meta.env.PROD ? items.filter((item) => !item.data.draft) : items;
-
-let docs = filterDrafts(localeDocs);
-let categoryMeta: Map<string, CategoryMeta>;
-
-if (lang !== defaultLocale) {
-  // Merge base (EN) docs for fallback entries
-  const baseDocs = filterDrafts(await getDocsCollection("docs"));
-  const localeSlugSet = new Set(
-    docs.map((d) => d.data.slug ?? toRouteSlug(d.id))
-  );
-  docs = [
-    ...docs,
-    ...baseDocs.filter((d) => !d.data.unlisted && !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id))),
-  ];
-
-  // Merge category metadata: base first, locale overrides
-  const baseCategoryMeta = loadCategoryMeta(settings.docsDir);
-  const localeCategoryMeta = loadCategoryMeta(getContentDir(lang));
-  categoryMeta = new Map([...baseCategoryMeta, ...localeCategoryMeta]);
-} else {
-  categoryMeta = loadCategoryMeta(getContentDir(lang));
-}
+const { allDocs, categoryMeta } = await loadLocaleDocs(lang);
+const docs = allDocs.filter((d) => !d.data.unlisted);
 
 const nodes = buildSidebarForSection(docs, lang, navSection, categoryMeta);
 ---
 
-<SidebarTree nodes={nodes} currentSlug={currentSlug} client:load />
+<SidebarTree nodes={nodes} currentSlug={currentSlug} backToMenuHref={backToMenuHref} backToMenuLabel={backToMenuLabel} client:load />
