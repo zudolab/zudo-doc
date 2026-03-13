@@ -41,7 +41,7 @@ function navTreeCacheKey(
   categoryMeta?: Map<string, CategoryMeta>,
 ): string {
   const metaKey = categoryMeta ? [...categoryMeta.keys()].sort().join(";") : "_";
-  return `${lang}:${metaKey}:${docs.map((d) => d.id).join(",")}`;
+  return `${lang}:${metaKey}:${docs.map((d) => d.id).sort().join(",")}`;
 }
 
 /**

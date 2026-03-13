@@ -72,7 +72,6 @@ function SectionCard({
             <button
               type="button"
               onClick={toggle}
-              aria-expanded={hasChildren ? open : undefined}
               className="font-medium text-accent hover:underline text-left"
             >
               {node.label}

@@ -121,6 +121,7 @@ const translations: Record<string, Record<string, string>> = {
     "code.copy": "Code kopieren",
     "code.copied": "Kopiert!",
     "code.wrapToggle": "Zeilenumbruch umschalten",
+    "nav.backToMenu": "Zurück zum Hauptmenü",
     "doc.editPage": "Diese Seite bearbeiten",
     "doc.tags": "Tags",
     "doc.taggedWith": "Seiten mit Tag",

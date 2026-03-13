@@ -103,6 +103,7 @@ export default function SidebarTree({ nodes, currentSlug, backToMenuHref, backTo
   // Global shortcut: Cmd+/ (Mac) or Ctrl+/ to focus the filter input
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if (e.isComposing) return;
       if (e.key === "/" && (e.metaKey || e.ctrlKey)) {
         const el = filterRef.current;
         if (!el || el.offsetParent === null) return; // skip if hidden

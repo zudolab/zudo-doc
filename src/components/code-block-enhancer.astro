@@ -27,7 +27,9 @@
       // Wrap <pre> in a container so buttons stay fixed during horizontal scroll
       const wrapper = document.createElement("div");
       wrapper.className = "code-block-wrapper";
-      pre.parentNode!.insertBefore(wrapper, pre);
+      const parent = pre.parentNode;
+      if (!parent) continue;
+      parent.insertBefore(wrapper, pre);
       wrapper.appendChild(pre);
 
       // Button group (appended to wrapper, not pre)
