@@ -1,10 +1,10 @@
 # zudo-doc
 
-Minimal documentation framework built with Astro 5, MDX, Tailwind CSS v4, and React islands.
+Minimal documentation framework built with Astro 6, MDX, Tailwind CSS v4, and React islands.
 
 ## Tech Stack
 
-- **Astro 5** — static site generator with Content Collections
+- **Astro 6** — static site generator with Content Collections
 - **MDX** — via `@astrojs/mdx`, content directory configurable via `docsDir` setting
 - **Tailwind CSS v4** — via `@tailwindcss/vite` (not `@astrojs/tailwind`)
 - **React 19** — for interactive islands only (TOC scroll spy, sidebar toggle, collapsible categories)

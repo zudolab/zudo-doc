@@ -41,15 +41,17 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - name: Install dependencies
@@ -70,17 +72,19 @@ jobs:
     steps:
       # fetch-depth: 0 is required for docHistoryIntegration (reads git log)
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - name: Install dependencies
@@ -90,7 +94,7 @@ jobs:
         run: pnpm build
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: dist-out
           path: dist/
@@ -107,31 +111,33 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run: pnpm dlx playwright install --with-deps chromium
+        run: pnpm dlx playwright install chromium
 
       - name: Run E2E & smoke tests
         run: pnpm test:e2e
 
       - name: Upload test results
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: playwright-report
           path: playwright-report/
@@ -148,7 +154,7 @@ jobs:
 
     steps:
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: dist-out
           path: dist-out/

@@ -69,3 +69,21 @@ for fixture in sidebar i18n theme smoke; do
 done
 
 echo "All fixtures set up."
+
+# Pre-build all fixtures sequentially to avoid Astro 6 Vite virtual module
+# race conditions. When Playwright launches multiple webServers in parallel,
+# concurrent Astro builds sharing source files via symlinks can hit a race
+# where virtual modules (CSS/scripts) are requested before the parent .astro
+# file's compile metadata is cached. Building sequentially first and then
+# running only `astro preview` in Playwright avoids this entirely.
+echo ""
+echo "Pre-building fixtures sequentially..."
+for fixture in sidebar i18n theme smoke; do
+  echo "  Building: $fixture"
+  (cd "$REPO_ROOT/e2e/fixtures/$fixture" && npx astro build 2>&1) || {
+    echo "  FAILED: $fixture build failed" >&2
+    exit 1
+  }
+  echo "  Built: $fixture"
+done
+echo "All fixtures built."

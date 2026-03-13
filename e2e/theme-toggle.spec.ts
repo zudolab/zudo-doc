@@ -44,8 +44,9 @@ test.describe("Theme toggle", () => {
     const errors = await collectHydrationErrors(page, HOME);
     expect(errors, `Hydration errors: ${errors.join(", ")}`).toHaveLength(0);
 
-    // Toggle button should reflect the stored light theme (offer to switch to dark)
-    const toggle = page.locator('button[aria-label*="Switch to"]');
+    // Toggle button should reflect the stored light theme (offer to switch to dark).
+    // Target the desktop-visible toggle; mobile sidebar also has one inside <header>.
+    const toggle = page.locator('header .ml-auto button[aria-label*="Switch to"]');
     await expect(toggle).toHaveAttribute("aria-label", "Switch to dark mode", { timeout: 3000 });
 
     await context.close();
@@ -64,7 +65,8 @@ test.describe("Theme toggle", () => {
     const errors = await collectHydrationErrors(page, HOME);
     expect(errors, `Hydration errors: ${errors.join(", ")}`).toHaveLength(0);
 
-    const toggle = page.locator('button[aria-label*="Switch to"]');
+    // Target the desktop-visible toggle
+    const toggle = page.locator('header .ml-auto button[aria-label*="Switch to"]');
     await expect(toggle).toHaveAttribute("aria-label", "Switch to light mode", { timeout: 3000 });
 
     await context.close();
@@ -87,7 +89,8 @@ test.describe("Theme toggle", () => {
   }) => {
     await page.goto(HOME, { waitUntil: "load" });
 
-    const toggle = page.locator('button[aria-label*="Switch to"]');
+    // Target the desktop-visible toggle; mobile sidebar also has one inside <header>
+    const toggle = page.locator('header .ml-auto button[aria-label*="Switch to"]');
     const initialLabel = await toggle.getAttribute("aria-label");
 
     // Click the toggle
@@ -116,7 +119,8 @@ test.describe("Theme toggle", () => {
 
     // Visit home page
     await page.goto(HOME, { waitUntil: "load" });
-    const toggle = page.locator('button[aria-label*="Switch to"]');
+    // Target the desktop-visible toggle; mobile sidebar also has one inside <header>
+    const toggle = page.locator('header .ml-auto button[aria-label*="Switch to"]');
     await expect(toggle).toHaveAttribute("aria-label", "Switch to dark mode", { timeout: 3000 });
 
     // Navigate to a doc page via sidebar link (View Transition)
@@ -132,7 +136,7 @@ test.describe("Theme toggle", () => {
     });
     await page.waitForTimeout(1000);
 
-    const toggleAfterNav = page.locator('button[aria-label*="Switch to"]');
+    const toggleAfterNav = page.locator('header .ml-auto button[aria-label*="Switch to"]');
     await expect(toggleAfterNav).toHaveAttribute("aria-label", "Switch to dark mode", { timeout: 3000 });
     expect(errors).toHaveLength(0);
 
