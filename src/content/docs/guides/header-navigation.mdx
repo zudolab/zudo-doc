@@ -1,7 +1,7 @@
 ---
 title: "Header Navigation"
 description: "Configure top-level navigation tabs in the header"
-sidebar_position: 5
+sidebar_position: 4
 ---
 
 zudo-doc supports a three-level navigation hierarchy inspired by Docusaurus:
@@ -16,24 +16,39 @@ Define header navigation items in `src/config/settings.ts`:
 
 ```ts
 export const settings = {
-  colorScheme: "Dracula",
-  siteName: "zudo-doc",
+  // ...
   headerNav: [
-    { label: "Docs", path: "/docs" },
-    { label: "Blog", path: "/blog" },
-    { label: "API", path: "/api" },
+    { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
+    { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
+    { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
   ],
 };
 ```
 
-Each item has:
+Each item supports the following properties:
 
-- `label` — the text displayed in the header
-- `path` — the URL path prefix for active state detection
+| Property | Type | Description |
+|----------|------|-------------|
+| `label` | string | Display text shown in the header |
+| `labelKey` | string (optional) | i18n translation key that overrides `label` when a translation is available |
+| `path` | string | URL path the link navigates to |
+| `categoryMatch` | string (optional) | Links this header tab to a sidebar category |
+
+### `labelKey`
+
+The `labelKey` property enables localized header navigation labels. When set, zudo-doc looks up the key in the current locale's translation file and uses the translated string instead of `label`. If no translation is found, `label` is used as a fallback.
+
+Translation keys follow the `nav.*` namespace convention (e.g., `"nav.gettingStarted"`, `"nav.guides"`).
+
+### `categoryMatch`
+
+The `categoryMatch` property connects a header tab to a specific sidebar category. When a header tab with `categoryMatch` is active, the sidebar filters to show only the pages within that category.
+
+For example, `categoryMatch: "guides"` links the tab to the `guides/` content directory. When a user navigates to any page under `/docs/guides/`, the "Guides" tab becomes active and the sidebar shows only the guides category.
 
 ## Active State
 
-A header nav item is considered active when the current page URL starts with the item's `path`. For example, visiting `/docs/guides/writing-docs` activates the "Docs" tab because the URL starts with `/docs`.
+A header nav item is considered active when the current page URL starts with the item's `path`. For example, visiting `/docs/guides/configuration` activates the "Guides" tab because the URL starts with `/docs/guides`.
 
 ## Mobile Behavior
 

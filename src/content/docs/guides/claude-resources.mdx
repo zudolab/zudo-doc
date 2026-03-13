@@ -1,0 +1,66 @@
+---
+title: Claude Code Resources
+description: Auto-generate documentation from your Claude Code resources.
+sidebar_position: 8
+---
+
+## Overview
+
+zudo-doc can automatically generate documentation pages from your project's Claude Code resources — CLAUDE.md files, custom commands, skills, and agents. When enabled, these appear under the **Claude** header navigation section.
+
+## Enabling Claude Resources
+
+Set `claudeResources` in `src/config/settings.ts`:
+
+```ts
+claudeResources: {
+  claudeDir: ".claude",
+},
+```
+
+Set to `false` to disable:
+
+```ts
+claudeResources: false,
+```
+
+## What Gets Generated
+
+The integration scans your `.claude/` directory and generates MDX documentation pages for:
+
+| Resource | Source | Output |
+|----------|--------|--------|
+| CLAUDE.md files | Project root and subdirectories | `claude-md/` |
+| Commands | `.claude/commands/*.md` | `claude-commands/` |
+| Skills | `.claude/skills/*/SKILL.md` | `claude-skills/` |
+| Agents | `.claude/agents/*.md` | `claude-agents/` |
+
+Each resource type gets its own index page with a list of all items, plus individual detail pages.
+
+## How It Works
+
+The integration runs at build time during the `astro:config:setup` hook:
+
+1. Scans the configured `.claude/` directory
+2. Discovers CLAUDE.md files, commands, skills (with references), and agents
+3. Generates MDX files in `src/content/docs/claude-*/` directories
+4. These files are picked up by Astro's content collections and rendered as documentation pages
+
+The generated pages appear under the **Claude** header navigation tab, configured via `headerNav` with `categoryMatch: "claude"`.
+
+<Note>
+Generated files are written to `src/content/docs/` and are recreated on every build. Do not edit them manually — your changes will be overwritten.
+</Note>
+
+## Configuration Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `claudeDir` | string | Path to the `.claude/` directory (relative to project root) |
+| `projectRoot` | string | Optional project root override for resolving CLAUDE.md file paths |
+
+The `projectRoot` option is useful in monorepo setups where the `.claude/` directory is not at the project root.
+
+<Tip>
+Skills with a `references/` subdirectory will have their reference documents included as separate linked pages, making it easy to browse bundled knowledge bases.
+</Tip>

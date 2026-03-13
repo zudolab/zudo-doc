@@ -1,7 +1,7 @@
 ---
-title: Frontmatter Reference
+title: Frontmatter
 description: Complete reference for all available frontmatter fields in zudo-doc documents.
-sidebar_position: 3
+sidebar_position: 2
 ---
 
 Every MDX file in zudo-doc starts with a YAML frontmatter block delimited by `---`. This page documents all available fields.
@@ -44,6 +44,8 @@ title: Quick Start
 | `draft` | boolean | No | `false` | Exclude from production build (visible in dev) |
 | `unlisted` | boolean | No | `false` | Built but hidden from sidebar, search, and search engines |
 | `slug` | string | No | Derived from file path | Custom URL slug override |
+| `pagination_next` | string \| null | No | Auto | Override next page link, set to `null` to hide |
+| `pagination_prev` | string \| null | No | Auto | Override previous page link, set to `null` to hide |
 
 ## Fields
 
@@ -199,3 +201,33 @@ slug: quickstart
 ```
 
 This page would be accessible at `/docs/quickstart` instead of the default path derived from its file location.
+
+### `pagination_next`
+
+- **Type:** `string | null`
+- **Required:** No
+- **Default:** Automatically determined by sidebar order
+
+Overrides the "Next" page link shown at the bottom of the document. Set to a document path (e.g., `"guides/configuration"`) to link to a specific page, or set to `null` to hide the next link entirely.
+
+```mdx
+---
+title: Final Step
+pagination_next: null
+---
+```
+
+### `pagination_prev`
+
+- **Type:** `string | null`
+- **Required:** No
+- **Default:** Automatically determined by sidebar order
+
+Overrides the "Previous" page link shown at the bottom of the document. Set to a document path (e.g., `"getting-started/introduction"`) to link to a specific page, or set to `null` to hide the previous link entirely.
+
+```mdx
+---
+title: Getting Started
+pagination_prev: null
+---
+```

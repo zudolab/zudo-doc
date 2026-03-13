@@ -1,7 +1,7 @@
 ---
 title: Writing Docs
 description: How to create and organize documentation pages in zudo-doc.
-sidebar_position: 1
+sidebar_position: 3
 ---
 
 ## Creating a Document
@@ -26,8 +26,10 @@ Your content here.
 | `description` | string | No | Subtitle shown below the title |
 | `sidebar_position` | number | No | Sort order within category (lower = first) |
 | `sidebar_label` | string | No | Override sidebar display label |
-| `category` | string | No | Reserved for future use |
-| `search_exclude` | boolean | No | Exclude page from search index |
+
+<Note>
+See the [Frontmatter guide](/docs/guides/frontmatter) for the complete reference of all available fields.
+</Note>
 
 ## Directory Structure
 
@@ -38,10 +40,10 @@ src/content/docs/
   getting-started/
     introduction.mdx      # sidebar_position: 1
     installation.mdx       # sidebar_position: 2
+    writing-docs.mdx       # sidebar_position: 3
   guides/
-    writing-docs.mdx       # sidebar_position: 1
-    color-schemes.mdx      # sidebar_position: 2
-    design-system.mdx      # sidebar_position: 3
+    configuration.mdx      # sidebar_position: 1
+    sidebar.mdx            # sidebar_position: 2
 ```
 
 Each directory becomes a collapsible sidebar category automatically. The category name is derived from the directory name (kebab-case converted to Title Case).
@@ -100,12 +102,11 @@ Each admonition type maps to a palette slot for its border and title color:
 
 ## i18n (Internationalization)
 
-zudo-doc supports English and Japanese out of the box:
+zudo-doc supports English and Japanese out of the box. Japanese docs mirror the English directory structure in `src/content/docs-ja/`.
 
-- **English** (default): `/docs/...` — content in `src/content/docs/`
-- **Japanese**: `/ja/docs/...` — content in `src/content/docs-ja/`
-
-Japanese docs should mirror the English directory structure. A language switcher appears on each page.
+<Tip>
+See the [i18n guide](/docs/guides/i18n) for detailed instructions on managing translations and language routing.
+</Tip>
 
 ## MDX Features
 

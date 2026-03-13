@@ -12,16 +12,37 @@ The main settings file is `src/config/settings.ts`:
 
 ```ts
 export const settings = {
-  colorScheme: "Dracula",
+  colorScheme: "Default Dark",
+  colorMode: {
+    defaultMode: "light",
+    lightScheme: "Default Light",
+    darkScheme: "Default Dark",
+    respectPrefersColorScheme: true,
+  },
   siteName: "zudo-doc",
+  siteDescription: "A minimal, fast documentation framework...",
   base: "/",
   docsDir: "src/content/docs",
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },
   },
   mermaid: true,
+  noindex: false,
+  editUrl: false,
+  siteUrl: "",
+  sitemap: true,
+  docMetainfo: true,
+  docTags: true,
+  math: true,
+  docHistory: true,
+  claudeResources: {
+    claudeDir: ".claude",
+  },
   headerNav: [
-    { label: "Docs", path: "/docs" },
+    { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
+    { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
+    { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
+    { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude" },
   ],
 };
 ```
@@ -30,11 +51,35 @@ export const settings = {
 
 The active color scheme name. Must match a key in `src/config/color-schemes.ts`.
 
-Available built-in schemes: **Dracula**, **Catppuccin Mocha**, **Nord**, **TokyoNight**, **Gruvbox Dark**, **Atom One Dark**, and many more.
+Available built-in schemes: **Default Light** and **Default Dark**. You can add custom schemes in `src/config/color-schemes.ts`.
 
 <Tip>
-See the [Color Schemes guide](/docs/guides/color-schemes) for a full list of available schemes, previews, and instructions on adding custom schemes.
+See the [Color guide](/docs/reference/color) for a full list of available schemes, previews, and instructions on adding custom schemes.
 </Tip>
+
+### colorMode
+
+Configures light/dark mode behavior. Set to `false` to disable color mode switching entirely and use only the scheme specified in `colorScheme`.
+
+When enabled, accepts a `ColorModeConfig` object:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `defaultMode` | `"light"` \| `"dark"` | The initial color mode before any user preference is applied |
+| `lightScheme` | string | Color scheme name to use in light mode |
+| `darkScheme` | string | Color scheme name to use in dark mode |
+| `respectPrefersColorScheme` | boolean | When `true`, automatically matches the user's OS-level light/dark preference |
+
+```ts
+colorMode: {
+  defaultMode: "light",
+  lightScheme: "Default Light",
+  darkScheme: "Default Dark",
+  respectPrefersColorScheme: true,
+},
+// or disable color mode switching:
+colorMode: false,
+```
 
 ### base
 
@@ -56,7 +101,7 @@ Inline markdown links within MDX content (e.g., `[link text](/docs/some-page)`) 
 
 ### docsDir
 
-The directory path (relative to the project root) where English documentation MDX files are stored. This uses Astro 5's `glob()` loader, so it can point to any directory.
+The directory path (relative to the project root) where English documentation MDX files are stored. This uses Astro's `glob()` loader, so it can point to any directory.
 
 Default: `"src/content/docs"`
 
@@ -88,6 +133,24 @@ For each locale entry, zudo-doc automatically:
 
 The site name displayed in the header and used in page titles. Page titles are formatted as `{page title} | {siteName}`.
 
+### siteDescription
+
+A short description of the site. Used in meta tags for SEO and social sharing.
+
+Default: `""`
+
+### siteUrl
+
+The full base URL of your site (e.g., `"https://example.com"`). Required for generating absolute URLs in the sitemap.
+
+Default: `""`
+
+### noindex
+
+When `true`, adds `noindex` and `nofollow` meta tags to all pages. Useful for internal documentation sites that should not be indexed by search engines.
+
+Default: `false`
+
 ### mermaid
 
 Enables Mermaid diagram support. When `true`, fenced code blocks with the `mermaid` language identifier are rendered as diagrams. When `false`, mermaid code blocks are displayed as plain code.
@@ -104,7 +167,7 @@ Default: `true`
 
 Base URL for "Edit this page" links. The full URL is constructed as `editUrl + contentDir + "/" + entryId`. Set to `false` to disable edit links.
 
-Default: `"https://github.com/user/repo/edit/main/"`
+Default: `false` (disabled)
 
 ```ts
 editUrl: "https://github.com/my-org/my-repo/edit/main/",
@@ -136,27 +199,50 @@ Enables per-document git revision history viewer. When `true`, each doc page sho
 
 At build time, git history is extracted for every content file and saved as JSON files to `dist/doc-history/`. In dev mode, history is served dynamically via a Vite middleware.
 
-Default: `false`
+Default: `false` (set to `true` to enable)
 
 <Tip>
 See the [Document History guide](/docs/guides/doc-history) for usage details, keyboard shortcuts, and technical information.
 </Tip>
 
+### claudeResources
+
+Configures the Claude Code Resources Viewer, which auto-generates documentation pages from your `.claude/` directory. Set to `false` to disable.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `claudeDir` | string | Path to the `.claude` directory (relative to project root) |
+| `projectRoot` | string (optional) | Project root override for monorepo setups |
+
+```ts
+claudeResources: {
+  claudeDir: ".claude",
+},
+// or disable:
+claudeResources: false,
+```
+
+<Tip>
+See the [Claude Resources guide](/docs/guides/claude-resources) for details on what gets generated and how it works.
+</Tip>
+
 ### headerNav
 
-An array of navigation links rendered in the site header bar. Each item has two properties:
+An array of navigation links rendered in the site header bar. Each item supports the following properties:
 
 | Property | Type | Description |
 |----------|------|-------------|
 | `label` | string | Display text shown in the header |
+| `labelKey` | string (optional) | i18n translation key (e.g., `"nav.gettingStarted"`) — overrides `label` when a translation is available |
 | `path` | string | URL path the link navigates to |
-
-You can add multiple entries to link to different sections:
+| `categoryMatch` | string (optional) | Links this header tab to a sidebar category. When active, only the matched category's sidebar is shown |
 
 ```ts
 headerNav: [
-  { label: "Docs", path: "/docs" },
-  { label: "Blog", path: "/blog" },
+  { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
+  { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
+  { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
+  { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude" },
 ],
 ```
 
@@ -204,5 +290,5 @@ Color schemes are defined in `src/config/color-schemes.ts`. Each scheme provides
 - `semantic` (optional) — overrides for `surface`, `muted`, `accent`, and `accentHover`
 
 <Info>
-For details on adding or customizing color schemes, see the [Color Schemes guide](/docs/guides/color-schemes).
+For details on adding or customizing color schemes, see the [Color guide](/docs/reference/color).
 </Info>

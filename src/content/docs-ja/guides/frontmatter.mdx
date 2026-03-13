@@ -1,7 +1,7 @@
 ---
-title: フロントマターリファレンス
+title: フロントマター
 description: zudo-docドキュメントで利用可能なすべてのフロントマターフィールドの完全なリファレンス。
-sidebar_position: 3
+sidebar_position: 2
 ---
 
 zudo-docのすべてのMDXファイルは`---`で区切られたYAMLフロントマターブロックで始まります。このページでは利用可能なすべてのフィールドを説明します。
@@ -44,6 +44,8 @@ title: Quick Start
 | `draft` | boolean | いいえ | `false` | 本番ビルドから除外（開発時は表示） |
 | `unlisted` | boolean | いいえ | `false` | ビルドされるがサイドバー、検索、検索エンジンから非表示 |
 | `slug` | string | いいえ | ファイルパスから導出 | カスタムURLスラグのオーバーライド |
+| `pagination_next` | string \| null | いいえ | 自動 | 次のページリンクをオーバーライド、`null`で非表示 |
+| `pagination_prev` | string \| null | いいえ | 自動 | 前のページリンクをオーバーライド、`null`で非表示 |
 
 ## フィールド詳細
 
@@ -199,3 +201,33 @@ slug: quickstart
 ```
 
 このページはファイルの場所から導出されるデフォルトパスの代わりに`/docs/quickstart`でアクセスできるようになります。
+
+### `pagination_next`
+
+- **型：** `string | null`
+- **必須：** いいえ
+- **デフォルト：** サイドバーの順序から自動的に決定
+
+ドキュメントの下部に表示される「次へ」ページリンクをオーバーライドします。ドキュメントパス（例：`"guides/configuration"`）を設定して特定のページにリンクするか、`null`に設定して次のリンクを完全に非表示にします。
+
+```mdx
+---
+title: Final Step
+pagination_next: null
+---
+```
+
+### `pagination_prev`
+
+- **型：** `string | null`
+- **必須：** いいえ
+- **デフォルト：** サイドバーの順序から自動的に決定
+
+ドキュメントの下部に表示される「前へ」ページリンクをオーバーライドします。ドキュメントパス（例：`"getting-started/introduction"`）を設定して特定のページにリンクするか、`null`に設定して前のリンクを完全に非表示にします。
+
+```mdx
+---
+title: Getting Started
+pagination_prev: null
+---
+```
