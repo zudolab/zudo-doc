@@ -40,17 +40,19 @@ jobs:
     steps:
       # fetch-depth: 0 is required for docHistoryIntegration (reads git log)
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - name: Install dependencies
