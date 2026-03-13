@@ -42,6 +42,7 @@ export const settings = {
     { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
     { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
     { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
+    { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude" },
   ],
 };
 ```
@@ -50,7 +51,7 @@ export const settings = {
 
 The active color scheme name. Must match a key in `src/config/color-schemes.ts`.
 
-Available built-in schemes: **Default Dark**, **Default Light**, **Dracula**, **Catppuccin Mocha**, **Nord**, **TokyoNight**, **Gruvbox Dark**, **Atom One Dark**, and many more.
+Available built-in schemes: **Default Light** and **Default Dark**. You can add custom schemes in `src/config/color-schemes.ts`.
 
 <Tip>
 See the [Color guide](/docs/reference/color) for a full list of available schemes, previews, and instructions on adding custom schemes.
@@ -100,7 +101,7 @@ Inline markdown links within MDX content (e.g., `[link text](/docs/some-page)`) 
 
 ### docsDir
 
-The directory path (relative to the project root) where English documentation MDX files are stored. This uses Astro 5's `glob()` loader, so it can point to any directory.
+The directory path (relative to the project root) where English documentation MDX files are stored. This uses Astro's `glob()` loader, so it can point to any directory.
 
 Default: `"src/content/docs"`
 
@@ -166,7 +167,7 @@ Default: `true`
 
 Base URL for "Edit this page" links. The full URL is constructed as `editUrl + contentDir + "/" + entryId`. Set to `false` to disable edit links.
 
-Default: `"https://github.com/user/repo/edit/main/"`
+Default: `false` (disabled)
 
 ```ts
 editUrl: "https://github.com/my-org/my-repo/edit/main/",
@@ -198,7 +199,7 @@ Enables per-document git revision history viewer. When `true`, each doc page sho
 
 At build time, git history is extracted for every content file and saved as JSON files to `dist/doc-history/`. In dev mode, history is served dynamically via a Vite middleware.
 
-Default: `false`
+Default: `false` (set to `true` to enable)
 
 <Tip>
 See the [Document History guide](/docs/guides/doc-history) for usage details, keyboard shortcuts, and technical information.
@@ -241,6 +242,7 @@ headerNav: [
   { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
   { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
   { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
+  { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude" },
 ],
 ```
 

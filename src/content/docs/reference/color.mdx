@@ -40,7 +40,7 @@ zudo-doc's color system uses a **16-color palette**. Each color scheme provides 
 | 7 | White | 15 | Bright White | Text, bright elements |
 
 <Note>
-The actual colors are **not fixed** — "Red" in Dracula is `#ff5555`, while "Red" in Nord is `#bf616a`. The names are conventions. That's why zudo-doc uses abstract numbered tokens (`p0`–`p15`) instead of color names.
+The actual colors are **not fixed** — each color scheme defines its own values for each slot. The names are conventions, not guarantees. That's why zudo-doc uses abstract numbered tokens (`p0`–`p15`) instead of color names.
 </Note>
 
 ### How Palette Colors Are Injected
@@ -118,13 +118,13 @@ Once registered in `@theme`, these become standard Tailwind utility classes: `bg
 
 ### Per-Scheme Semantic Overrides
 
-Each color scheme can override the default palette-slot mapping via the `semantic` property in `src/config/color-schemes.ts`. For example, Dracula overrides `muted` to a custom gray, and Solarized Light remaps `accent` to magenta:
+Each color scheme can override the default palette-slot mapping via the `semantic` property in `src/config/color-schemes.ts`:
 
 ```ts
-"Solarized Light": {
+"My Custom Scheme": {
   // ...palette, background, foreground...
   semantic: {
-    accent: "#d33682",     // magenta instead of default cyan
+    accent: "#d33682",     // override default cyan with magenta
     accentHover: "#6c71c4",
     surface: "#f4efdd",
   },
@@ -204,7 +204,7 @@ To change the active color scheme, edit `src/config/settings.ts`:
 
 ```ts
 export const settings = {
-  colorScheme: "Dracula",  // Change this
+  colorScheme: "Default Dark",  // Change this
   siteName: "zudo-doc",
   // ...
 };
