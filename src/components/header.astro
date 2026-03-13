@@ -34,7 +34,7 @@ const pathForMatch = isNonDefaultLocale ? pathWithoutBase.replace(new RegExp(`^/
     </Fragment>
   </SidebarToggle>
 
-  <a href={withBase("/")} class="text-subheading font-bold text-fg hover:underline focus:underline">
+  <a href={withBase(isNonDefaultLocale ? `/${lang}/` : "/")} class="text-subheading font-bold text-fg hover:underline focus:underline">
     {settings.siteName}
   </a>
 

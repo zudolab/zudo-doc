@@ -75,6 +75,7 @@ const translations: Record<string, Record<string, string>> = {
     "doc.noTags": "No tags found.",
     "doc.pageCount": "{count} pages",
     "doc.pageCountSingle": "{count} page",
+    "nav.backToMenu": "Back to main menu",
     "doc.fallbackNotice":
       "This page has not been translated yet and is shown in the original language.",
   },
@@ -100,6 +101,7 @@ const translations: Record<string, Record<string, string>> = {
     "doc.noTags": "タグが見つかりません。",
     "doc.pageCount": "{count}ページ",
     "doc.pageCountSingle": "{count}ページ",
+    "nav.backToMenu": "メインメニューに戻る",
     "doc.fallbackNotice":
       "このページはまだ翻訳されていません。原文のまま表示しています。",
   },
@@ -116,6 +118,7 @@ const translations: Record<string, Record<string, string>> = {
     "code.copy": "Code kopieren",
     "code.copied": "Kopiert!",
     "code.wrapToggle": "Zeilenumbruch umschalten",
+    "nav.backToMenu": "Zurück zum Hauptmenü",
     "doc.editPage": "Diese Seite bearbeiten",
     "doc.tags": "Tags",
     "doc.taggedWith": "Seiten mit Tag",

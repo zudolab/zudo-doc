@@ -24,7 +24,15 @@
       if (!codeEl) continue;
       const rawCode = codeEl.textContent ?? "";
 
-      // Button group
+      // Wrap <pre> in a container so buttons stay fixed during horizontal scroll
+      const wrapper = document.createElement("div");
+      wrapper.className = "code-block-wrapper";
+      const parent = pre.parentNode;
+      if (!parent) continue;
+      parent.insertBefore(wrapper, pre);
+      wrapper.appendChild(pre);
+
+      // Button group (appended to wrapper, not pre)
       const group = document.createElement("div");
       group.className = "code-buttons";
 
@@ -36,7 +44,7 @@
       const copyBtn = createCopyButton(rawCode);
       group.appendChild(copyBtn);
 
-      pre.appendChild(group);
+      wrapper.appendChild(group);
 
       // Track and observe for overflow changes
       wrapButtons.set(pre, wrapBtn);

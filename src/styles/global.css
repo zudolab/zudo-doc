@@ -398,7 +398,7 @@ body {
  * Code block buttons (copy + word wrap)
  * ======================================== */
 
-pre.astro-code {
+.code-block-wrapper {
   position: relative;
 }
 
@@ -428,10 +428,11 @@ pre.astro-code.word-wrap code {
   gap: var(--spacing-hsp-2xs);
   opacity: 0;
   transition: opacity 0.15s;
+  z-index: 1;
 }
 
-pre.astro-code:hover .code-buttons,
-pre.astro-code:focus-within .code-buttons {
+.code-block-wrapper:hover .code-buttons,
+.code-block-wrapper:focus-within .code-buttons {
   opacity: 1;
 }
 
@@ -444,8 +445,8 @@ pre.astro-code:focus-within .code-buttons {
   padding: 0;
   border: 1px solid var(--color-muted);
   border-radius: var(--radius-lg);
-  background-color: var(--color-code-bg);
-  color: var(--color-muted);
+  background-color: var(--color-surface);
+  color: var(--color-fg);
   cursor: pointer;
   transition:
     color 0.15s,
@@ -625,4 +626,28 @@ pre.astro-code .line .highlighted-word {
 
 .diff-line-empty {
   background-color: color-mix(in oklch, var(--color-muted) 8%, transparent);
+}
+
+/* ========================================
+ * Page transition animations
+ * ======================================== */
+
+@keyframes contentFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes contentFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
