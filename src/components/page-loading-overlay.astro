@@ -1,21 +1,11 @@
 <!--
   Full-page loading overlay shown during Astro View Transitions.
   Uses astro:before-preparation / astro:page-load lifecycle events.
+  Styles are in global.css. Script is in a separate .ts file to avoid
+  Astro 6 Vite virtual module race conditions.
 -->
 <div id="page-loading-overlay" class="page-loading-overlay" aria-hidden="true">
   <span class="page-loading-spinner"></span>
 </div>
 
-<script>
-  document.addEventListener("astro:before-preparation", () => {
-    const overlay = document.getElementById("page-loading-overlay");
-    overlay?.setAttribute("data-visible", "");
-    overlay?.setAttribute("aria-hidden", "false");
-  });
-
-  document.addEventListener("astro:page-load", () => {
-    const overlay = document.getElementById("page-loading-overlay");
-    overlay?.removeAttribute("data-visible");
-    overlay?.setAttribute("aria-hidden", "true");
-  });
-</script>
+<script src="./page-loading-overlay.ts"></script>
