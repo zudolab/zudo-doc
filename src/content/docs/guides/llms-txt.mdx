@@ -95,6 +95,17 @@ When locales are configured, zudo-doc generates separate llms.txt files for each
 
 Each locale's files contain only the pages from that locale's content directory. URLs in each file use the appropriate locale prefix.
 
+## HTML Discovery
+
+When `llmsTxt` is enabled, zudo-doc adds `<link>` tags to the `<head>` of every page, helping AI tools discover the files even when the site is deployed at a subpath:
+
+```html
+<link rel="alternate" type="text/plain" href="/pj/zudo-doc/llms.txt" title="llms.txt" />
+<link rel="alternate" type="text/plain" href="/pj/zudo-doc/llms-full.txt" title="llms-full.txt" />
+```
+
+This supplements the standard path-based discovery (`/llms.txt` at the domain root) which may not work when your site uses a `base` path like `/pj/zudo-doc/`.
+
 ## Dev Mode
 
 The generated files are available during development via Vite middleware. When running `pnpm dev`, requests to `/llms.txt` and `/llms-full.txt` are handled dynamically — no build step needed.

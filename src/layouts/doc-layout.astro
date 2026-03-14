@@ -73,6 +73,12 @@ const contentTransition = {
     {settings.math && (
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.38/dist/katex.min.css" crossorigin="anonymous" />
     )}
+    {settings.llmsTxt && (
+      <Fragment>
+        <link rel="alternate" type="text/plain" href={withBase(lang === defaultLocale ? "/llms.txt" : `/${lang}/llms.txt`)} title="llms.txt" />
+        <link rel="alternate" type="text/plain" href={withBase(lang === defaultLocale ? "/llms-full.txt" : `/${lang}/llms-full.txt`)} title="llms-full.txt" />
+      </Fragment>
+    )}
     <ClientRouter />
   </head>
   <body class="min-h-screen antialiased">
