@@ -11,6 +11,7 @@ import { settings } from "./src/config/settings";
 import { claudeResourcesIntegration } from "./src/integrations/claude-resources";
 import { docHistoryIntegration } from "./src/integrations/doc-history";
 import { searchIndexIntegration } from "./src/integrations/search-index";
+import { llmsTxtIntegration } from "./src/integrations/llms-txt";
 import { sitemapIntegration } from "./src/integrations/sitemap";
 import remarkDirective from "remark-directive";
 import { remarkAdmonitions } from "./src/plugins/remark-admonitions";
@@ -53,6 +54,7 @@ export default defineConfig({
     mdx(),
     react(),
     searchIndexIntegration(),
+    ...(settings.llmsTxt ? [llmsTxtIntegration()] : []),
     ...(settings.sitemap && !settings.noindex ? [sitemapIntegration()] : []),
     ...(settings.docHistory ? [docHistoryIntegration()] : []),
     ...(settings.claudeResources

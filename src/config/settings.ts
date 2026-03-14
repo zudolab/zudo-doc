@@ -31,6 +31,7 @@ export const settings = {
   sitemap: true,
   docMetainfo: true,
   docTags: true,
+  llmsTxt: true,
   math: true,
   docHistory: true,
   claudeResources: {
