@@ -80,7 +80,7 @@ echo ""
 echo "Pre-building fixtures sequentially..."
 for fixture in sidebar i18n theme smoke; do
   echo "  Building: $fixture"
-  (cd "$REPO_ROOT/e2e/fixtures/$fixture" && npx astro build 2>&1) || {
+  (cd "$REPO_ROOT/e2e/fixtures/$fixture" && ./node_modules/.bin/astro build 2>&1) || {
     echo "  FAILED: $fixture build failed" >&2
     exit 1
   }

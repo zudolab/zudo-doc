@@ -146,6 +146,39 @@ function toNavNodes(
   return nodes;
 }
 
+/**
+ * Group "satellite" nodes under their primary node based on slug prefixes.
+ * E.g. with prefix "claude", nodes "claude-md", "claude-commands" get moved
+ * under the "claude" node as children.
+ */
+export function groupSatelliteNodes(tree: NavNode[], prefixes: string[]): NavNode[] {
+  const result = [...tree];
+  for (const prefix of prefixes) {
+    const primaryIdx = result.findIndex((n) => n.slug === prefix);
+    if (primaryIdx < 0) continue;
+    const primary = result[primaryIdx];
+    const satelliteIdxs: number[] = [];
+    for (let i = 0; i < result.length; i++) {
+      if (i !== primaryIdx && result[i].slug.startsWith(`${prefix}-`)) {
+        satelliteIdxs.push(i);
+      }
+    }
+    if (satelliteIdxs.length === 0) continue;
+    const extraChildren: NavNode[] = [];
+    for (const idx of satelliteIdxs) {
+      extraChildren.push(result[idx]);
+    }
+    result[primaryIdx] = {
+      ...primary,
+      children: [...primary.children, ...extraChildren],
+    };
+    for (const idx of satelliteIdxs.reverse()) {
+      result.splice(idx, 1);
+    }
+  }
+  return result;
+}
+
 /** DFS flatten the tree for prev/next navigation. Only includes nodes with pages. */
 export function flattenTree(nodes: NavNode[]): NavNode[] {
   const result: NavNode[] = [];

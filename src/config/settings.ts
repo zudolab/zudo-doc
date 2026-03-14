@@ -12,7 +12,7 @@ import type {
 export const settings = {
   colorScheme: "Default Dark",
   colorMode: {
-    defaultMode: "light",
+    defaultMode: "dark",
     lightScheme: "Default Light",
     darkScheme: "Default Dark",
     respectPrefersColorScheme: true,
