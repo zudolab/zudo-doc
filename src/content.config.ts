@@ -36,15 +36,15 @@ for (const [code, config] of Object.entries(settings.locales)) {
 const versionCollections: Record<string, ReturnType<typeof defineCollection>> = {};
 if (settings.versions) {
   for (const version of settings.versions) {
-    // Main docs for this version
-    versionCollections[`docs-${version.slug}`] = defineCollection({
+    // Main docs for this version (prefixed with "v-" to avoid collision with locale collections)
+    versionCollections[`docs-v-${version.slug}`] = defineCollection({
       loader: glob({ pattern: "**/*.{md,mdx}", base: `./${version.docsDir}` }),
       schema: docsSchema,
     });
     // Locale variants for this version
     if (version.locales) {
       for (const [code, config] of Object.entries(version.locales)) {
-        versionCollections[`docs-${version.slug}-${code}`] = defineCollection({
+        versionCollections[`docs-v-${version.slug}-${code}`] = defineCollection({
           loader: glob({ pattern: "**/*.{md,mdx}", base: `./${config.dir}` }),
           schema: docsSchema,
         });

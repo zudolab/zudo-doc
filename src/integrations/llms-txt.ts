@@ -1,44 +1,9 @@
 import type { AstroIntegration } from "astro";
-import { readFileSync, readdirSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import matter from "gray-matter";
 import { settings } from "../config/settings";
-
-/** Strip markdown formatting to produce plain text */
-function stripMarkdown(md: string): string {
-  return (
-    md
-      // Remove code blocks
-      .replace(/```[\s\S]*?```/g, "")
-      .replace(/`[^`]+`/g, "")
-      // Remove HTML tags
-      .replace(/<[^>]+>/g, "")
-      // Remove headings markers
-      .replace(/^#{1,6}\s+/gm, "")
-      // Remove emphasis/bold markers
-      .replace(/\*{1,3}([^*]+)\*{1,3}/g, "$1")
-      .replace(/_{1,3}([^_]+)_{1,3}/g, "$1")
-      // Remove images (must run before link removal)
-      .replace(/!\[[^\]]*\]\([^)]+\)/g, "")
-      // Remove links but keep text
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-      // Remove blockquote markers
-      .replace(/^>\s+/gm, "")
-      // Remove horizontal rules
-      .replace(/^[-*_]{3,}\s*$/gm, "")
-      // Remove list markers
-      .replace(/^[\s]*[-*+]\s+/gm, "")
-      .replace(/^[\s]*\d+\.\s+/gm, "")
-      // Remove import statements
-      .replace(/^import\s+.*$/gm, "")
-      // Remove export statements
-      .replace(/^export\s+.*$/gm, "")
-      // Collapse whitespace
-      .replace(/\n{3,}/g, "\n\n")
-      .trim()
-  );
-}
+import { stripMarkdown, collectMdFiles, slugToUrl, parseMarkdownFile, isExcluded } from "../utils/content-files";
 
 /** Strip frontmatter, imports, and exports from markdown content (keep structure) */
 function stripFrontmatterAndImports(content: string): string {
@@ -55,46 +20,6 @@ function stripFrontmatterAndImports(content: string): string {
       .replace(/\n{3,}/g, "\n\n")
       .trim()
   );
-}
-
-/** Walk a directory and collect all .md/.mdx files */
-function collectMdFiles(
-  dir: string,
-): Array<{ filePath: string; slug: string }> {
-  const results: Array<{ filePath: string; slug: string }> = [];
-
-  function walk(currentDir: string, baseDir: string): void {
-    let entries;
-    try {
-      entries = readdirSync(currentDir, { withFileTypes: true });
-    } catch {
-      return;
-    }
-    for (const entry of entries) {
-      const fullPath = join(currentDir, entry.name);
-      if (entry.isDirectory()) {
-        walk(fullPath, baseDir);
-      } else if (/\.mdx?$/.test(entry.name) && !entry.name.startsWith("_")) {
-        const rel = fullPath
-          .slice(baseDir.length + 1)
-          .replace(/\.mdx?$/, "")
-          .replace(/\/index$/, "");
-        results.push({ filePath: fullPath, slug: rel });
-      }
-    }
-  }
-
-  walk(dir, dir);
-  return results;
-}
-
-/** Compute a URL from a slug and locale */
-function slugToUrl(slug: string, locale: string | null): string {
-  const base = settings.base.replace(/\/$/, "");
-  if (locale) {
-    return `${base}/${locale}/docs/${slug}`;
-  }
-  return `${base}/docs/${slug}`;
 }
 
 interface DocEntry {
@@ -115,29 +40,26 @@ function buildDocEntries(
   const entries: DocEntry[] = [];
 
   for (const { filePath, slug } of files) {
-    try {
-      const raw = readFileSync(filePath, "utf-8");
-      const { data, content } = matter(raw);
+    const parsed = parseMarkdownFile(filePath);
+    if (!parsed) continue;
+    const { data, content } = parsed;
 
-      // Skip excluded/draft/unlisted pages
-      if (data.search_exclude || data.draft || data.unlisted) continue;
+    // Skip excluded/draft/unlisted pages
+    if (isExcluded(data)) continue;
 
-      let description = data.description ?? "";
-      if (!description) {
-        const stripped = stripMarkdown(content);
-        description = stripped.split("\n").find((l) => l.trim().length > 0) ?? "";
-      }
-
-      entries.push({
-        title: data.title ?? slug,
-        description,
-        url: slugToUrl(slug, locale),
-        content: stripFrontmatterAndImports(content),
-        sidebarPosition: data.sidebar_position,
-      });
-    } catch {
-      // Skip files that can't be parsed
+    let description = data.description ?? "";
+    if (!description) {
+      const stripped = stripMarkdown(content);
+      description = stripped.split("\n").find((l) => l.trim().length > 0) ?? "";
     }
+
+    entries.push({
+      title: data.title ?? slug,
+      description,
+      url: slugToUrl(slug, locale),
+      content: stripFrontmatterAndImports(content),
+      sidebarPosition: data.sidebar_position,
+    });
   }
 
   // Sort by sidebar_position (entries without position go last)

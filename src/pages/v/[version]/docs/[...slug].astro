@@ -22,6 +22,7 @@ import { settings } from "@/config/settings";
 import { versionedDocsUrl } from "@/utils/base";
 import DocMetainfo from "@/components/doc-metainfo.astro";
 import DocTags from "@/components/doc-tags.astro";
+import EditLink from "@/components/edit-link.astro";
 import type { VersionConfig } from "@/config/settings-types";
 
 export async function getStaticPaths() {
@@ -30,7 +31,7 @@ export async function getStaticPaths() {
   const paths = [];
 
   for (const version of settings.versions) {
-    const collectionName = `docs-${version.slug}` as CollectionKey;
+    const collectionName = `docs-v-${version.slug}` as CollectionKey;
     const allDocs = await getDocsCollection(collectionName);
     const docs = import.meta.env.PROD
       ? allDocs.filter((doc) => !doc.data.draft)
@@ -164,6 +165,12 @@ const slug = autoIndex ? autoIndex.slug : (entry!.data.slug ?? toRouteSlug(entry
       {entry?.data?.tags && <DocTags tags={entry.data.tags} locale="en" />}
 
       <Content components={components} />
+
+      {settings.editUrl && entry && (
+        <div class="mt-vsp-xl mb-vsp-md border-t border-muted pt-vsp-md">
+          <EditLink contentDir={versionConfig.docsDir} entryId={entry.id} locale="en" />
+        </div>
+      )}
 
       <nav class="mt-vsp-2xl grid grid-cols-2 gap-hsp-xl">
         {prev ? (

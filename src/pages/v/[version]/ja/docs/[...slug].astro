@@ -17,11 +17,12 @@ import { toRouteSlug } from "@/utils/slug";
 import { buildNavTree, buildBreadcrumbs, flattenTree, findNode, loadCategoryMeta, collectAutoIndexNodes, type NavNode } from "@/utils/docs";
 import type { Heading } from "@/types/heading";
 import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
-import { t, getContentDir } from "@/config/i18n";
+import { t } from "@/config/i18n";
 import { settings } from "@/config/settings";
 import { versionedDocsUrl } from "@/utils/base";
 import DocMetainfo from "@/components/doc-metainfo.astro";
 import DocTags from "@/components/doc-tags.astro";
+import EditLink from "@/components/edit-link.astro";
 import type { VersionConfig } from "@/config/settings-types";
 import type { DocsEntry } from "@/types/docs-entry";
 
@@ -33,10 +34,10 @@ export async function getStaticPaths() {
   for (const version of settings.versions) {
     // Get locale docs for this version (if configured)
     const localeCollectionName = version.locales?.ja
-      ? `docs-${version.slug}-ja`
+      ? `docs-v-${version.slug}-ja`
       : null;
     // Get base version docs as fallback
-    const baseCollectionName = `docs-${version.slug}` as CollectionKey;
+    const baseCollectionName = `docs-v-${version.slug}` as CollectionKey;
 
     const filterDrafts = (docs: DocsEntry[]) =>
       import.meta.env.PROD ? docs.filter((doc) => !doc.data.draft) : docs;
@@ -212,6 +213,12 @@ const slug = autoIndex ? autoIndex.slug : (entry!.data.slug ?? toRouteSlug(entry
       {entry?.data?.tags && <DocTags tags={entry.data.tags} locale="ja" />}
 
       <Content components={components} />
+
+      {settings.editUrl && entry && (
+        <div class="mt-vsp-xl mb-vsp-md border-t border-muted pt-vsp-md">
+          <EditLink contentDir={contentDir} entryId={entry.id} locale="ja" />
+        </div>
+      )}
 
       <nav class="mt-vsp-2xl grid grid-cols-2 gap-hsp-xl">
         {prev ? (
