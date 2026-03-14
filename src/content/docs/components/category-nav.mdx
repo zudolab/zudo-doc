@@ -1,0 +1,64 @@
+---
+title: CategoryNav
+description: An Astro component that renders a grid of child page cards for category index pages.
+sidebar_position: 8
+---
+
+## Overview
+
+`CategoryNav` is an Astro component that automatically lists child pages of a category as a card grid. It is designed for use in category `index.mdx` files to create landing pages that link to all child pages.
+
+<Info>
+This component is **not** globally available in MDX content. Import it in category index files where you need a child page listing.
+</Info>
+
+## Usage
+
+Use `CategoryNav` in a category's `index.mdx` to create a landing page:
+
+```mdx
+---
+title: Getting Started
+sidebar_position: 0
+---
+
+Welcome to the Getting Started section. Choose a topic below to begin.
+
+<CategoryNav category="getting-started" />
+```
+
+Since `CategoryNav` is an Astro component (zero client-side JavaScript), no `client:` directive is needed.
+
+## Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `category` | `string` | (required) | The category slug (e.g., `"guides"`, `"reference"`) |
+| `lang` | `Locale` | auto-detected | Override the locale for the content collection |
+
+The `lang` prop is automatically detected from the current URL path, so you typically don't need to set it.
+
+## Features
+
+- **2-column grid** — displays `sm:grid-cols-2` on desktop, single column on mobile
+- **Card display** — each card shows the page title (as a link) and description (from frontmatter)
+- **Hover effect** — card text underlines on hover for clear interactivity
+- **Auto-excludes index** — the category's own index page is automatically filtered out
+- **Sorted by position** — cards follow `sidebar_position` ordering from frontmatter
+
+## Where to Use
+
+Add `CategoryNav` to any category's `index.mdx` to generate a landing page. For example, the Getting Started section uses it:
+
+```
+src/content/docs/
+  getting-started/
+    index.mdx              ← uses <CategoryNav category="getting-started" />
+    introduction.mdx
+    installation.mdx
+    writing-docs.mdx
+```
+
+## Source
+
+The component is defined at `src/components/category-nav.astro`.
