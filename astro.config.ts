@@ -72,7 +72,7 @@ export default defineConfig({
   markdown: {
     shikiConfig,
     remarkPlugins: [
-      remarkDirective,
+      remarkDirective, // Must run before remarkAdmonitions
       remarkAdmonitions,
       ...(settings.math ? [remarkMath] : []),
     ],
