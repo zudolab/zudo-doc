@@ -11,7 +11,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "// ── Quality ──────────────────────────────────────": "",
-    "check": "astro check",
+    "check": "astro sync && tsc --noEmit",
     "test:e2e": "bash e2e/setup-fixtures.sh && playwright test",
     "b4push": "./scripts/run-b4push.sh"
   },
