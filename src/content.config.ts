@@ -32,4 +32,25 @@ for (const [code, config] of Object.entries(settings.locales)) {
   });
 }
 
-export const collections = { docs, ...localeCollections };
+// Dynamically create collections for each configured version
+const versionCollections: Record<string, ReturnType<typeof defineCollection>> = {};
+if (settings.versions) {
+  for (const version of settings.versions) {
+    // Main docs for this version
+    versionCollections[`docs-${version.slug}`] = defineCollection({
+      loader: glob({ pattern: "**/*.{md,mdx}", base: `./${version.docsDir}` }),
+      schema: docsSchema,
+    });
+    // Locale variants for this version
+    if (version.locales) {
+      for (const [code, config] of Object.entries(version.locales)) {
+        versionCollections[`docs-${version.slug}-${code}`] = defineCollection({
+          loader: glob({ pattern: "**/*.{md,mdx}", base: `./${config.dir}` }),
+          schema: docsSchema,
+        });
+      }
+    }
+  }
+}
+
+export const collections = { docs, ...localeCollections, ...versionCollections };

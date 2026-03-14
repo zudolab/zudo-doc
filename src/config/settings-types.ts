@@ -16,3 +16,16 @@ export interface LocaleConfig {
   label: string;
   dir: string;
 }
+
+export interface VersionConfig {
+  /** Version identifier, used in URL path (e.g., "1.0", "v1") */
+  slug: string;
+  /** Display label (e.g., "1.0.0", "Version 1") */
+  label: string;
+  /** Content directory for this version's English docs */
+  docsDir: string;
+  /** Per-locale content directories for this version */
+  locales?: Record<string, { dir: string }>;
+  /** Banner text shown on versioned pages (e.g., "unmaintained", "unreleased") */
+  banner?: "unmaintained" | "unreleased" | false;
+}
