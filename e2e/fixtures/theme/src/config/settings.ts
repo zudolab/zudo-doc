@@ -5,11 +5,11 @@ import type {
 } from "./settings-types";
 
 export const settings = {
-  colorScheme: "Default Dark",
+  colorScheme: "ZCSS Dark",
   colorMode: {
     defaultMode: "light",
-    lightScheme: "Default Light",
-    darkScheme: "Default Dark",
+    lightScheme: "ZCSS Light",
+    darkScheme: "ZCSS Dark",
     respectPrefersColorScheme: true,
   } satisfies ColorModeConfig as ColorModeConfig | false,
   siteName: "Theme Test",
