@@ -1,0 +1,102 @@
+---
+title: Mermaid Diagrams
+description: Mermaid diagram support for flowcharts, sequence diagrams, and more.
+sidebar_position: 6
+---
+
+Use fenced code blocks with the `mermaid` language to render diagrams. Mermaid is loaded on-demand — pages without mermaid blocks incur no overhead.
+
+## Flowchart
+
+```mermaid
+graph LR
+  A[Start] --> B{Decision}
+  B -->|Yes| C[Action]
+  B -->|No| D[Other Action]
+  C --> E[End]
+  D --> E
+```
+
+Source:
+
+````mdx
+```mermaid
+graph LR
+  A[Start] --> B{Decision}
+  B -->|Yes| C[Action]
+  B -->|No| D[Other Action]
+  C --> E[End]
+  D --> E
+```
+````
+
+## Sequence Diagram
+
+```mermaid
+sequenceDiagram
+  participant User
+  participant App
+  participant API
+  User->>App: Click button
+  App->>API: Fetch data
+  API-->>App: JSON response
+  App-->>User: Render result
+```
+
+Source:
+
+````mdx
+```mermaid
+sequenceDiagram
+  participant User
+  participant App
+  participant API
+  User->>App: Click button
+  App->>API: Fetch data
+  API-->>App: JSON response
+  App-->>User: Render result
+```
+````
+
+## State Diagram
+
+```mermaid
+stateDiagram-v2
+  [*] --> Draft
+  Draft --> Review : Submit
+  Review --> Published : Approve
+  Review --> Draft : Request Changes
+  Published --> Archived : Archive
+  Archived --> [*]
+```
+
+Source:
+
+````mdx
+```mermaid
+stateDiagram-v2
+  [*] --> Draft
+  Draft --> Review : Submit
+  Review --> Published : Approve
+  Review --> Draft : Request Changes
+  Published --> Archived : Archive
+  Archived --> [*]
+```
+````
+
+## Configuration
+
+Mermaid support is controlled by the `mermaid` setting in `src/config/settings.ts`:
+
+```ts
+export const settings = {
+  mermaid: true, // enabled by default
+};
+```
+
+Key features:
+
+- On-demand loading — no overhead for pages without mermaid blocks
+- Enabled via `mermaid: true` in `src/config/settings.ts` (enabled by default)
+
+See the [Mermaid documentation](https://mermaid.js.org/) for all supported diagram types.
