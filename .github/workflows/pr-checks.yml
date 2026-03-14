@@ -152,16 +152,6 @@ jobs:
           name: dist-out
           path: dist-out/
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          dest: ~/setup-pnpm-${{ github.job }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-
       - name: Prepare deploy directory
         run: |
           mkdir -p deploy/pj/zudo-doc
@@ -173,7 +163,7 @@ jobs:
         run: |
           PR_NUMBER="${{ github.event.pull_request.number }}"
 
-          pnpm dlx wrangler@4 pages deploy deploy \
+          npx wrangler@4 pages deploy deploy \
             --project-name=zudo-doc \
             --branch="pr-${PR_NUMBER}" \
             --commit-hash="${GITHUB_SHA}" \
