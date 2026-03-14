@@ -490,17 +490,19 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
 
   return (
     <>
-      {/* Floating history button */}
+      {/* History button */}
       {!isOpen && (
-        <button
-          type="button"
-          onClick={handleOpen}
-          className="doc-history-trigger fixed bottom-[2rem] right-[2rem] z-40 flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-fg hover:border-fg transition-colors"
-          aria-label="View document history"
-        >
-          <HistoryIcon />
-          <span className="text-small">History</span>
-        </button>
+        <div className="flex justify-end mt-vsp-xl">
+          <button
+            type="button"
+            onClick={handleOpen}
+            className="doc-history-trigger flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-fg hover:border-fg transition-colors"
+            aria-label="View document history"
+          >
+            <HistoryIcon />
+            <span className="text-small">History</span>
+          </button>
+        </div>
       )}
 
       {/* Backdrop */}
