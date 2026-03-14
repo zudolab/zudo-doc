@@ -1,0 +1,68 @@
+---
+title: SiteTreeNav
+description: 展開可能なカテゴリでドキュメントツリー全体を表示する、サイトマップ風のグリッドコンポーネント。
+sidebar_position: 7
+---
+
+## 概要
+
+`SiteTreeNav`は、展開可能なカテゴリカードのレスポンシブグリッドでドキュメントツリー全体を表示するReactアイランドコンポーネントです。カテゴリの展開・折りたたみが可能な、サイトマップ形式のドキュメントページ一覧を提供します。
+
+<Info>
+このコンポーネントはMDXコンテンツでグローバルには利用**できません**。Astroページテンプレートで直接インポートする必要があります。[ホームページ](/ja/docs/getting-started)で実際の動作を確認できます。
+</Info>
+
+## ライブデモ
+
+[ホームページ](/)にアクセスすると、ドキュメントツリー全体を表示した`SiteTreeNav`を確認できます。
+
+## 使い方
+
+`SiteTreeNav`は`src/pages/index.astro`でホームページのサイトマップを表示するために使用されています：
+
+```astro
+---
+import { buildNavTree, groupSatelliteNodes } from "@/utils/docs";
+import { loadLocaleDocs } from "@/utils/locale-docs";
+import SiteTreeNav from "@/components/site-tree-nav.tsx";
+import { settings } from "@/config/settings";
+
+const categoryOrder = settings.headerNav
+  .map((n) => n.categoryMatch)
+  .filter((v): v is string => !!v);
+const { allDocs, categoryMeta } = await loadLocaleDocs("en");
+const navDocs = allDocs.filter((doc) => !doc.data.unlisted);
+const tree = buildNavTree(navDocs, "en", categoryMeta);
+const groupedTree = groupSatelliteNodes(tree, categoryOrder);
+---
+
+<SiteTreeNav
+  tree={groupedTree}
+  categoryOrder={categoryOrder}
+  categoryIgnore={["inbox"]}
+  client:idle
+/>
+```
+
+このコンポーネントは展開・折りたたみのインタラクティブ機能にReactステートを使用するため、`client:idle`（または他のAstroクライアントディレクティブ）が必要です。
+
+## プロップ
+
+| プロップ | 型 | デフォルト | 説明 |
+|------|------|---------|-------------|
+| `tree` | `NavNode[]` | （必須） | コンテンツコレクションから構築されたナビゲーションツリー |
+| `categoryOrder` | `string[]` | — | トップレベルカテゴリのカスタム並び順 |
+| `categoryIgnore` | `string[]` | — | ツリーから非表示にするカテゴリスラッグ |
+| `ariaLabel` | `string` | `"Site index"` | nav要素のアクセシビリティラベル |
+
+## 特徴
+
+- **レスポンシブグリッドレイアウト** — `repeat(auto-fill, minmax(min(18rem, 100%), 1fr))`により、モバイルの1カラムからワイドスクリーンの複数カラムまで適応
+- **展開可能なカテゴリ** — 各カテゴリカードは折りたたみ可能で、デフォルトでは開いた状態
+- **階層的なツリー構造** — ネストされたページはインデントとコネクタラインでツリー構造を表示
+- **カテゴリリンク** — トップレベルカテゴリは矢印アイコンとインデックスページへのリンクを表示
+- **リーフページ** — 個別のドキュメントページはクリック可能なリンクとして表示
+
+## ソース
+
+コンポーネントは`src/components/site-tree-nav.tsx`に定義されています。

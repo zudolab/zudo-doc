@@ -1,0 +1,70 @@
+---
+title: CategoryNav
+description: カテゴリインデックスページに子ページのカードグリッドを表示するAstroコンポーネント。
+sidebar_position: 8
+---
+
+## 概要
+
+`CategoryNav`は、カテゴリの子ページをカードグリッドとして自動的に一覧表示するAstroコンポーネントです。カテゴリの`index.mdx`ファイルで使用し、すべての子ページへのリンクを含むランディングページを作成するために設計されています。
+
+<Info>
+`CategoryNav`はすべてのMDXドキュメントページでグローバルに利用できます — インポートは不要です。アドモニションコンポーネント（`Note`、`Tip`など）と同様に、ドキュメントページルートで登録されています。
+</Info>
+
+## ライブデモ
+
+以下は`CategoryNav`で「はじめに」カテゴリを表示した例です：
+
+<CategoryNav category="getting-started" />
+
+## 使い方
+
+カテゴリの`index.mdx`で`CategoryNav`を使用してランディングページを作成します：
+
+```mdx
+---
+title: Getting Started
+sidebar_position: 0
+---
+
+Welcome to the Getting Started section. Choose a topic below to begin.
+
+<CategoryNav category="getting-started" />
+```
+
+`CategoryNav`はAstroコンポーネント（クライアントサイドJavaScriptなし）のため、`client:`ディレクティブは不要です。
+
+## プロップ
+
+| プロップ | 型 | デフォルト | 説明 |
+|------|------|---------|-------------|
+| `category` | `string` | （必須） | カテゴリスラッグ（例：`"guides"`、`"reference"`） |
+| `lang` | `Locale` | 自動検出 | コンテンツコレクションのロケールを上書き |
+
+`lang`プロップは現在のURLパスから自動的に検出されるため、通常は設定する必要はありません。
+
+## 特徴
+
+- **2カラムグリッド** — デスクトップでは`sm:grid-cols-2`、モバイルではシングルカラムで表示
+- **カード表示** — 各カードにはページタイトル（リンク付き）とdescription（frontmatterから取得）を表示
+- **ホバーエフェクト** — ホバー時にdescriptionテキストに下線が表示され、タイトルリンクは常に下線付き
+- **インデックス自動除外** — カテゴリ自身のインデックスページは自動的にフィルタリング
+- **ポジション順ソート** — カードはfrontmatterの`sidebar_position`順に並びます
+
+## 使用場所
+
+任意のカテゴリの`index.mdx`に`CategoryNav`を追加してランディングページを生成できます。例えば、「はじめに」セクションでは以下のように使用されています：
+
+```
+src/content/docs/
+  getting-started/
+    index.mdx              ← <CategoryNav category="getting-started" /> を使用
+    introduction.mdx
+    installation.mdx
+    writing-docs.mdx
+```
+
+## ソース
+
+コンポーネントは`src/components/category-nav.astro`に定義されています。
