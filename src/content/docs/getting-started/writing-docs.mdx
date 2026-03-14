@@ -80,6 +80,20 @@ You can provide a custom title to any admonition using the `title` prop.
 
 ### Admonition Syntax
 
+Two syntaxes are supported. No imports needed for either.
+
+**Directive syntax** (recommended for content authors):
+
+```mdx
+:::note[Optional Title]
+
+Content here.
+
+:::
+```
+
+**JSX component syntax**:
+
 ```mdx
 <Note>
 Default note with auto-generated title.
