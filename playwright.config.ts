@@ -9,9 +9,9 @@ export default defineConfig({
     baseURL: `http://localhost:${BASE_PORT}`,
   },
   webServer: FIXTURES.map((name, i) => ({
-    command: `cd e2e/fixtures/${name} && ./node_modules/.bin/astro preview --port ${BASE_PORT + i}`,
+    command: `cd e2e/fixtures/${name} && npx astro preview --port ${BASE_PORT + i}`,
     url: `http://localhost:${BASE_PORT + i}/`,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
     timeout: 120_000,
   })),
   projects: FIXTURES.map((name, i) => ({

@@ -132,9 +132,6 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm dlx playwright install chromium
 
-      - name: Kill stale preview servers
-        run: for p in 4500 4501 4502 4503; do lsof -ti :"$p" 2>/dev/null | xargs -r kill 2>/dev/null || true; done
-
       - name: Run E2E & smoke tests
         run: pnpm test:e2e
 
