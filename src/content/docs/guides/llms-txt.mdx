@@ -1,0 +1,108 @@
+---
+title: "llms.txt"
+description: "Auto-generate llms.txt and llms-full.txt files for AI-consumable documentation"
+sidebar_position: 8
+---
+
+zudo-doc can automatically generate `llms.txt` and `llms-full.txt` files, making your documentation easily consumable by AI tools and large language models.
+
+<Tip>
+The [llms.txt standard](https://llmstxt.org/) is an emerging convention that helps AI tools discover and read your documentation. Many AI-powered tools already look for these files.
+</Tip>
+
+## How It Works
+
+When enabled, zudo-doc generates two files at build time:
+
+- **`/llms.txt`** — An index listing all documentation pages with their titles, descriptions, and URLs
+- **`/llms-full.txt`** — The full content of all documentation pages combined into a single file
+
+These files provide a machine-friendly view of your documentation that AI tools can consume without parsing HTML.
+
+## Enabling llms.txt
+
+The feature is **enabled by default**. To explicitly control it, set `llmsTxt` in `src/config/settings.ts`:
+
+```ts
+export const settings = {
+  // ...
+  llmsTxt: true,  // enabled by default
+};
+```
+
+To disable it:
+
+```ts
+llmsTxt: false,
+```
+
+## Generated Output
+
+### llms.txt (Index)
+
+The index file lists each documentation page with its title, description, and URL:
+
+```
+# My Documentation
+
+> Site description from settings
+
+## Docs
+
+- [Introduction](/docs/getting-started/introduction): Learn what the project is and how it works.
+- [Configuration](/docs/guides/configuration): Global settings and configuration reference.
+```
+
+### llms-full.txt (Full Content)
+
+The full content file includes the complete text of every documentation page, separated by headings:
+
+```
+# My Documentation
+
+> Site description from settings
+
+## Introduction
+
+Welcome to the project...
+
+## Configuration
+
+The project is configured through...
+```
+
+## Page Exclusion
+
+Pages with any of the following frontmatter fields are automatically excluded from both generated files:
+
+- `draft: true` — Draft pages excluded from build
+- `unlisted: true` — Built but hidden pages
+- `search_exclude: true` — Pages excluded from search
+
+```mdx
+---
+title: Internal Notes
+search_exclude: true
+---
+```
+
+## Multi-Locale Support
+
+When locales are configured, zudo-doc generates separate llms.txt files for each locale:
+
+- **English (default):** `/llms.txt` and `/llms-full.txt`
+- **Japanese:** `/ja/llms.txt` and `/ja/llms-full.txt`
+
+Each locale's files contain only the pages from that locale's content directory. URLs in each file use the appropriate locale prefix.
+
+## Dev Mode
+
+The generated files are available during development via Vite middleware. When running `pnpm dev`, requests to `/llms.txt` and `/llms-full.txt` are handled dynamically — no build step needed.
+
+<Tip>
+No need to build before testing. The llms.txt files work immediately with `pnpm dev`, just like search.
+</Tip>
+
+## Production Build
+
+During `pnpm build`, the files are written to the `dist/` directory as static text files alongside the rest of your site.

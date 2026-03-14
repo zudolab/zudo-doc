@@ -1,0 +1,177 @@
+---
+title: "Versioning"
+description: "Maintain multiple versions of documentation with version-prefixed URLs and a version switcher"
+sidebar_position: 9
+---
+
+zudo-doc supports maintaining multiple versions of your documentation side by side. When versioning is enabled, older (or pre-release) versions are served under version-prefixed URLs, and a version switcher appears in the layout for users to navigate between versions.
+
+## Overview
+
+Versioning lets you:
+
+- Keep the **latest** documentation at `/docs/...` as usual
+- Serve older versions at `/v/{version}/docs/...`
+- Show a **version switcher** so users can navigate between versions
+- Display **version banners** to indicate outdated or unreleased content
+
+## Enabling Versioning
+
+Versioning is **disabled by default**. To enable it, add a `versions` array in `src/config/settings.ts`:
+
+```ts
+export const settings = {
+  // ...
+  versions: [
+    {
+      slug: "1.0",
+      label: "1.0.0",
+      docsDir: "src/content/docs-v1",
+      locales: {
+        ja: { dir: "src/content/docs-v1-ja" },
+      },
+      banner: "unmaintained",
+    },
+  ],
+};
+```
+
+Set `versions` to `false` (or omit it) to disable versioning:
+
+```ts
+versions: false,
+```
+
+## Configuration Reference
+
+Each version entry accepts the following properties:
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `slug` | string | Yes | Version identifier used in URL paths (e.g., `"1.0"`, `"v2"`) |
+| `label` | string | Yes | Display label shown in the version switcher (e.g., `"1.0.0"`) |
+| `docsDir` | string | Yes | Content directory for this version's English docs |
+| `locales` | object | No | Per-locale content directories (same shape as main `locales` setting) |
+| `banner` | `"unmaintained"` \| `"unreleased"` \| `false` | No | Banner type displayed on versioned pages |
+
+## Directory Structure
+
+Each version's content lives in its own directory. The latest (current) version uses the default `docsDir`, while older versions use the directories specified in their configuration:
+
+```
+src/content/
+├── docs/                # Latest version (default)
+├── docs-ja/             # Latest version — Japanese
+├── docs-v1/             # Version 1.0 — English
+├── docs-v1-ja/          # Version 1.0 — Japanese
+├── docs-v0.9/           # Version 0.9 — English
+└── docs-v0.9-ja/        # Version 0.9 — Japanese
+```
+
+<Warning>
+Each version directory must exist and contain valid MDX content files. zudo-doc creates a separate Astro content collection for each version, so missing directories will cause build errors.
+</Warning>
+
+## URL Structure
+
+The latest version is served at the default docs URL. Older versions use a `/v/{slug}/` prefix:
+
+- **Latest:** `/docs/getting-started/introduction`
+- **Version 1.0:** `/v/1.0/docs/getting-started/introduction`
+- **Version 0.9:** `/v/0.9/docs/getting-started/introduction`
+
+With locales, the locale prefix comes after the version prefix:
+
+- **Latest (Japanese):** `/ja/docs/getting-started/introduction`
+- **Version 1.0 (Japanese):** `/v/1.0/ja/docs/getting-started/introduction`
+
+## Version Switcher
+
+When one or more versions are configured, a **version switcher** automatically appears in the site layout. It displays the current version label and provides links to switch between all available versions, including the latest.
+
+The switcher preserves the current page slug when navigating between versions, so users land on the same topic in the selected version.
+
+## Version Banners
+
+Each version can display a banner at the top of every page to inform users about the version's status. Two banner types are available:
+
+### Unmaintained
+
+```ts
+banner: "unmaintained",
+```
+
+Shows a warning-styled banner indicating the user is viewing documentation for an older version, with a link to the latest version.
+
+### Unreleased
+
+```ts
+banner: "unreleased",
+```
+
+Shows an info-styled banner indicating the user is viewing documentation for an unreleased version, with a link to the latest stable version.
+
+### No Banner
+
+```ts
+banner: false,
+```
+
+Disables the banner for that version. This is the default when `banner` is omitted.
+
+<Tip>
+Use `"unmaintained"` for archived versions that are no longer updated, and `"unreleased"` for documentation of upcoming features that haven't shipped yet.
+</Tip>
+
+## Multi-Locale Support
+
+Each version can define its own locale directories, independent of the main locale configuration:
+
+```ts
+versions: [
+  {
+    slug: "1.0",
+    label: "1.0.0",
+    docsDir: "src/content/docs-v1",
+    locales: {
+      ja: { dir: "src/content/docs-v1-ja" },
+    },
+    banner: "unmaintained",
+  },
+],
+```
+
+For each version and locale combination, zudo-doc creates a separate content collection (e.g., `docs-1.0-ja`) and generates the corresponding page routes.
+
+## Creating a New Version
+
+When you're ready to archive the current documentation as a new version:
+
+1. **Copy the current content directory** to a new versioned directory:
+   ```bash
+   cp -r src/content/docs src/content/docs-v2
+   ```
+2. **Copy locale directories** if applicable:
+   ```bash
+   cp -r src/content/docs-ja src/content/docs-v2-ja
+   ```
+3. **Add the version to settings**:
+   ```ts
+   versions: [
+     {
+       slug: "2.0",
+       label: "2.0.0",
+       docsDir: "src/content/docs-v2",
+       locales: {
+         ja: { dir: "src/content/docs-v2-ja" },
+       },
+       banner: "unmaintained",
+     },
+     // ...existing versions
+   ],
+   ```
+4. **Update the current docs** — The files in `src/content/docs/` now represent the latest version. Update them as needed for the new release.
+
+<Note>
+The `versions` array defines older or pre-release versions only. The current/latest version always uses the main `docsDir` and is not listed in the array.
+</Note>
