@@ -23,3 +23,11 @@ export function docsUrl(slug: string, lang: Locale = defaultLocale): string {
   const path = lang === defaultLocale ? `/docs/${slug}` : `/${lang}/docs/${slug}`;
   return withBase(path);
 }
+
+/** Build a versioned docs URL for the given slug, version, and lang. */
+export function versionedDocsUrl(slug: string, versionSlug: string, lang: Locale = defaultLocale): string {
+  const path = lang === defaultLocale
+    ? `/v/${versionSlug}/docs/${slug}`
+    : `/v/${versionSlug}/${lang}/docs/${slug}`;
+  return withBase(path);
+}

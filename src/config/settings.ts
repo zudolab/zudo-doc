@@ -2,11 +2,13 @@ export type {
   HeaderNavItem,
   ColorModeConfig,
   LocaleConfig,
+  VersionConfig,
 } from "./settings-types";
 import type {
   HeaderNavItem,
   ColorModeConfig,
   LocaleConfig,
+  VersionConfig,
 } from "./settings-types";
 
 export const settings = {
@@ -37,6 +39,7 @@ export const settings = {
   claudeResources: {
     claudeDir: ".claude",
   } as { claudeDir: string; projectRoot?: string } | false,
+  versions: false as VersionConfig[] | false,
   headerNav: [
     { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
     { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
