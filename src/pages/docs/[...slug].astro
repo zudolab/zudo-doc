@@ -136,7 +136,7 @@ const slug = autoIndex ? autoIndex.slug : (entry!.data.slug ?? toRouteSlug(entry
   ) : (
     <Fragment>
       <h1 class="text-heading font-bold mb-vsp-xs">{entry.data.title}</h1>
-      <DocMetainfo filePath={`${settings.docsDir}/${entry.id}`} locale="en" />
+      {settings.docMetainfo && <DocMetainfo filePath={`${settings.docsDir}/${entry.id}`} locale="en" />}
 
       {entry.data.description && (
         <p class="mt-0 mb-vsp-lg text-subheading text-muted">{entry.data.description}</p>

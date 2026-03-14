@@ -24,6 +24,7 @@ const isLatest = !currentVersion;
     type="button"
     class="flex items-center gap-hsp-2xs border border-muted rounded px-hsp-sm py-vsp-3xs text-small text-muted hover:border-accent hover:text-accent transition-colors cursor-pointer"
     aria-expanded="false"
+    aria-controls="version-menu"
     data-version-toggle
   >
     <span class="text-caption">{switcherLabel}:</span>
@@ -36,6 +37,7 @@ const isLatest = !currentVersion;
   </button>
 
   <ul
+    id="version-menu"
     class="absolute left-0 top-full z-10 mt-vsp-3xs hidden min-w-[8rem] border border-muted rounded bg-surface shadow-lg"
     data-version-menu
   >

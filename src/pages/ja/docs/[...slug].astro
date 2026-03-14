@@ -173,7 +173,7 @@ const slug = autoIndex ? autoIndex.slug : (entry!.data.slug ?? toRouteSlug(entry
   ) : (
     <Fragment>
       <h1 class="text-heading font-bold mb-vsp-xs">{entry.data.title}</h1>
-      <DocMetainfo filePath={`${contentDir}/${entry.id}`} locale="ja" />
+      {settings.docMetainfo && <DocMetainfo filePath={`${contentDir}/${entry.id}`} locale="ja" />}
 
       {isFallback && (
         <div class="mb-vsp-md border border-info/30 bg-info/5 px-hsp-lg py-vsp-sm text-small text-muted rounded" role="note">

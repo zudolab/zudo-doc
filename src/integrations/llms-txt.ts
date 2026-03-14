@@ -5,17 +5,16 @@ import { fileURLToPath } from "node:url";
 import { settings } from "../config/settings";
 import { stripMarkdown, collectMdFiles, slugToUrl, parseMarkdownFile, isExcluded } from "../utils/content-files";
 
-/** Strip frontmatter, imports, and exports from markdown content (keep structure) */
-function stripFrontmatterAndImports(content: string): string {
+/** Strip imports, exports, and HTML/JSX tags from markdown content (keep structure for LLM consumption) */
+function stripImportsAndJsx(content: string): string {
   return (
     content
       // Remove import statements
       .replace(/^import\s+.*$/gm, "")
       // Remove export statements
       .replace(/^export\s+.*$/gm, "")
-      // Remove JSX/HTML component tags (admonitions, etc.)
-      .replace(/<[A-Z][a-zA-Z]*[^>]*>/g, "")
-      .replace(/<\/[A-Z][a-zA-Z]*>/g, "")
+      // Remove all HTML/JSX tags (both uppercase components and lowercase elements)
+      .replace(/<\/?[a-zA-Z][a-zA-Z0-9]*[^>]*>/g, "")
       // Collapse excessive blank lines
       .replace(/\n{3,}/g, "\n\n")
       .trim()
@@ -57,7 +56,7 @@ function buildDocEntries(
       title: data.title ?? slug,
       description,
       url: slugToUrl(slug, locale, true),
-      content: stripFrontmatterAndImports(content),
+      content: stripImportsAndJsx(content),
       sidebarPosition: data.sidebar_position,
     });
   }
