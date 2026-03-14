@@ -24,17 +24,12 @@ permissions:
   statuses: write
 
 jobs:
-  detect-runner:
-    uses: ./.github/workflows/detect-runner.yml
-    secrets: inherit
-
   # ---------------------------------------------------------------------------
   # Job 1: Build and deploy preview
   # ---------------------------------------------------------------------------
   build-and-deploy:
     name: Build and Deploy Preview
-    needs: detect-runner
-    runs-on: ${{ needs.detect-runner.outputs.runner }}
+    runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
