@@ -1,0 +1,122 @@
+---
+title: タブ
+description: パッケージマネージャーやプラットフォーム固有の手順など、代替コンテンツを表示するためのタブ付きコンテンツパネルです。
+sidebar_position: 3
+---
+
+`<Tabs>` と `<TabItem>` を使用して、タブ付きコンテンツパネルを作成できます。どちらのコンポーネントもグローバルに利用可能で、インポートは不要です。
+
+## 基本的な使い方
+
+<Tabs>
+  <TabItem label="npm" value="npm" default>
+    ```bash
+    npm install zudo-doc
+    ```
+  </TabItem>
+  <TabItem label="pnpm" value="pnpm">
+    ```bash
+    pnpm add zudo-doc
+    ```
+  </TabItem>
+  <TabItem label="yarn" value="yarn">
+    ```bash
+    yarn add zudo-doc
+    ```
+  </TabItem>
+</Tabs>
+
+````mdx
+<Tabs>
+  <TabItem label="npm" value="npm" default>
+    ```bash
+    npm install zudo-doc
+    ```
+  </TabItem>
+  <TabItem label="pnpm" value="pnpm">
+    ```bash
+    pnpm add zudo-doc
+    ```
+  </TabItem>
+  <TabItem label="yarn" value="yarn">
+    ```bash
+    yarn add zudo-doc
+    ```
+  </TabItem>
+</Tabs>
+````
+
+`TabItem` の `default` プロップは、最初にアクティブになるタブを設定します。省略した場合、最初のタブが表示されます。
+
+## 同期タブ
+
+`groupId` を使用すると、同じページ内の複数のタブグループでタブの選択を同期できます。選択されたタブは localStorage に保持されるため、ページ遷移後も維持されます。
+
+<Tabs groupId="lang">
+  <TabItem label="JavaScript" value="js" default>
+    ```js
+    console.log("Hello");
+    ```
+  </TabItem>
+  <TabItem label="TypeScript" value="ts">
+    ```ts
+    console.log("Hello" as string);
+    ```
+  </TabItem>
+</Tabs>
+
+<Tabs groupId="lang">
+  <TabItem label="JavaScript" value="js" default>
+    ```js
+    const sum = (a, b) => a + b;
+    ```
+  </TabItem>
+  <TabItem label="TypeScript" value="ts">
+    ```ts
+    const sum = (a: number, b: number): number => a + b;
+    ```
+  </TabItem>
+</Tabs>
+
+````mdx
+<Tabs groupId="lang">
+  <TabItem label="JavaScript" value="js" default>
+    ```js
+    console.log("Hello");
+    ```
+  </TabItem>
+  <TabItem label="TypeScript" value="ts">
+    ```ts
+    console.log("Hello" as string);
+    ```
+  </TabItem>
+</Tabs>
+
+<!-- 上のグループでタブを選択すると、このグループも同期されます -->
+<Tabs groupId="lang">
+  <TabItem label="JavaScript" value="js" default>
+    ```js
+    const sum = (a, b) => a + b;
+    ```
+  </TabItem>
+  <TabItem label="TypeScript" value="ts">
+    ```ts
+    const sum = (a: number, b: number): number => a + b;
+    ```
+  </TabItem>
+</Tabs>
+````
+
+## Tabs プロップ
+
+| プロップ | 型 | デフォルト | 説明 |
+|------|------|---------|-------------|
+| `groupId` | string | — | 同じ `groupId` を持つグループ間でタブの選択を同期します（localStorage に保持） |
+
+## TabItem プロップ
+
+| プロップ | 型 | デフォルト | 説明 |
+|------|------|---------|-------------|
+| `label` | string | （必須） | タブボタンのテキスト |
+| `value` | string | `label` の値 | タブの一意な識別子 |
+| `default` | boolean | `false` | 最初にアクティブになるタブとして設定 |

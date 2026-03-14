@@ -1,0 +1,118 @@
+---
+title: 数式
+description: インライン、ブロック、フェンスドコードブロックに対応した KaTeX 数式サポートです。
+sidebar_position: 5
+---
+
+設定で `math` が有効になっている場合（デフォルト：`true`）、KaTeX を使用して数式をレンダリングできます。
+
+## インライン数式
+
+テキスト内に数式を埋め込むには、単一のドル記号を使用します。
+
+数式 $E = mc^2$ はインラインで表示されます。
+
+```mdx
+数式 $E = mc^2$ はインラインで表示されます。
+```
+
+## ブロック数式
+
+中央揃えのディスプレイ数式をレンダリングするには、二重のドル記号を使用します。
+
+$$
+\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
+$$
+
+```mdx
+$$
+\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
+$$
+```
+
+## フェンスドコードブロック
+
+`math` 言語識別子を指定したフェンスドコードブロックを使用します。
+
+```math
+\nabla \times \mathbf{E} = -\frac{\partial \mathbf{B}}{\partial t}
+```
+
+````mdx
+```math
+\nabla \times \mathbf{E} = -\frac{\partial \mathbf{B}}{\partial t}
+```
+````
+
+## 設定
+
+数式サポートは `src/config/settings.ts` の `math` 設定で制御されます：
+
+```ts
+export const settings = {
+  // ...
+  math: true, // デフォルトで有効
+};
+```
+
+## その他の例
+
+### 二次方程式の解の公式
+
+$$
+x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+$$
+
+```mdx
+$$
+x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+$$
+```
+
+### 総和
+
+$$
+\sum_{i=1}^{n} i = \frac{n(n+1)}{2}
+$$
+
+```mdx
+$$
+\sum_{i=1}^{n} i = \frac{n(n+1)}{2}
+$$
+```
+
+### 行列
+
+$$
+\begin{bmatrix}
+a & b \\
+c & d
+\end{bmatrix}
+\begin{bmatrix}
+x \\
+y
+\end{bmatrix}
+=
+\begin{bmatrix}
+ax + by \\
+cx + dy
+\end{bmatrix}
+$$
+
+```mdx
+$$
+\begin{bmatrix}
+a & b \\
+c & d
+\end{bmatrix}
+\begin{bmatrix}
+x \\
+y
+\end{bmatrix}
+=
+\begin{bmatrix}
+ax + by \\
+cx + dy
+\end{bmatrix}
+$$
+```
