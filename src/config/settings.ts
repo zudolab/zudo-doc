@@ -39,6 +39,7 @@ export const settings = {
   headerNav: [
     { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
     { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
+    { label: "Components", labelKey: "nav.components", path: "/docs/components", categoryMatch: "components" },
     { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
     { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude" },
   ] satisfies HeaderNavItem[],
