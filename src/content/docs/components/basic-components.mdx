@@ -1,0 +1,165 @@
+---
+title: Basic Components
+description: Standard Markdown and MDX typography elements available in documentation pages.
+sidebar_position: 1
+---
+
+These are the standard Markdown and MDX elements styled through zudo-doc's design token system. No imports are needed.
+
+## Headings
+
+Headings from `h2` to `h4` appear in the table of contents sidebar.
+
+### Heading 3
+
+#### Heading 4
+
+```mdx
+## Heading 2
+### Heading 3
+#### Heading 4
+```
+
+## Text Formatting
+
+**Bold text**, *italic text*, and ~~strikethrough~~. Combine them: ***bold and italic***.
+
+```mdx
+**Bold text**, *italic text*, and ~~strikethrough~~.
+Combine them: ***bold and italic***.
+```
+
+## Inline Code
+
+Use backticks to mark `inline code` within a sentence.
+
+```mdx
+Use backticks to mark `inline code` within a sentence.
+```
+
+## Code Blocks
+
+Fenced code blocks support syntax highlighting via Shiki. Specify the language after the opening backticks.
+
+```ts
+function greet(name: string): string {
+  return `Hello, ${name}!`;
+}
+```
+
+````mdx
+```ts
+function greet(name: string): string {
+  return `Hello, ${name}!`;
+}
+```
+````
+
+### Supported Languages
+
+Shiki supports a wide range of languages. Common ones include:
+
+| Language | Identifier |
+| -------- | ---------- |
+| TypeScript | `ts`, `typescript` |
+| JavaScript | `js`, `javascript` |
+| HTML | `html` |
+| CSS | `css` |
+| JSON | `json` |
+| Bash / Shell | `bash`, `sh`, `shell`, `zsh` |
+| Markdown | `md`, `markdown` |
+| MDX | `mdx` |
+| YAML | `yaml`, `yml` |
+| Python | `python`, `py` |
+| Rust | `rust`, `rs` |
+| Go | `go` |
+| SQL | `sql` |
+| GraphQL | `graphql` |
+| Diff | `diff` |
+| TOML | `toml` |
+| Astro | `astro` |
+| JSX / TSX | `jsx`, `tsx` |
+
+See the [full list of supported languages](https://shiki.style/languages) for all available identifiers.
+
+## Unordered Lists
+
+- First item
+- Second item
+  - Nested item
+  - Another nested item
+    - Deeply nested
+- Third item
+
+```mdx
+- First item
+- Second item
+  - Nested item
+  - Another nested item
+    - Deeply nested
+- Third item
+```
+
+## Ordered Lists
+
+1. First step
+2. Second step
+   1. Sub-step one
+   2. Sub-step two
+3. Third step
+
+```mdx
+1. First step
+2. Second step
+   1. Sub-step one
+   2. Sub-step two
+3. Third step
+```
+
+## Blockquotes
+
+> This is a blockquote. It can span multiple lines
+> and supports **formatting** within it.
+
+```mdx
+> This is a blockquote. It can span multiple lines
+> and supports **formatting** within it.
+```
+
+## Tables
+
+| Feature    | Status      | Notes              |
+| ---------- | ----------- | ------------------ |
+| MDX        | Supported   | Via `@astrojs/mdx` |
+| Shiki      | Built-in    | Code highlighting  |
+| Tailwind   | v4          | Token-based design |
+
+```mdx
+| Feature    | Status      | Notes              |
+| ---------- | ----------- | ------------------ |
+| MDX        | Supported   | Via `@astrojs/mdx` |
+| Shiki      | Built-in    | Code highlighting  |
+| Tailwind   | v4          | Token-based design |
+```
+
+## Links
+
+Internal link: [Getting Started](/docs/getting-started)
+
+External link: [Astro documentation](https://docs.astro.build)
+
+```mdx
+Internal link: [Getting Started](/docs/getting-started)
+
+External link: [Astro documentation](https://docs.astro.build)
+```
+
+## Horizontal Rules
+
+Use three dashes to create a horizontal rule:
+
+---
+
+```mdx
+---
+```

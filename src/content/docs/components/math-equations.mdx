@@ -1,0 +1,118 @@
+---
+title: Math Equations
+description: KaTeX math equation support for inline, block, and fenced code block math.
+sidebar_position: 5
+---
+
+When `math` is enabled in settings (default: `true`), you can render mathematical equations using KaTeX.
+
+## Inline Math
+
+Use single dollar signs to embed math within a line of text.
+
+The formula $E = mc^2$ is inline.
+
+```mdx
+The formula $E = mc^2$ is inline.
+```
+
+## Block Math
+
+Use double dollar signs to render a centered display equation.
+
+$$
+\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
+$$
+
+```mdx
+$$
+\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
+$$
+```
+
+## Fenced Code Block
+
+Use a fenced code block with the `math` language identifier.
+
+```math
+\nabla \times \mathbf{E} = -\frac{\partial \mathbf{B}}{\partial t}
+```
+
+````mdx
+```math
+\nabla \times \mathbf{E} = -\frac{\partial \mathbf{B}}{\partial t}
+```
+````
+
+## Configuration
+
+Math support is controlled by the `math` setting in `src/config/settings.ts`:
+
+```ts
+export const settings = {
+  // ...
+  math: true, // enabled by default
+};
+```
+
+## More Examples
+
+### Quadratic Formula
+
+$$
+x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+$$
+
+```mdx
+$$
+x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+$$
+```
+
+### Summation
+
+$$
+\sum_{i=1}^{n} i = \frac{n(n+1)}{2}
+$$
+
+```mdx
+$$
+\sum_{i=1}^{n} i = \frac{n(n+1)}{2}
+$$
+```
+
+### Matrix
+
+$$
+\begin{bmatrix}
+a & b \\
+c & d
+\end{bmatrix}
+\begin{bmatrix}
+x \\
+y
+\end{bmatrix}
+=
+\begin{bmatrix}
+ax + by \\
+cx + dy
+\end{bmatrix}
+$$
+
+```mdx
+$$
+\begin{bmatrix}
+a & b \\
+c & d
+\end{bmatrix}
+\begin{bmatrix}
+x \\
+y
+\end{bmatrix}
+=
+\begin{bmatrix}
+ax + by \\
+cx + dy
+\end{bmatrix}
+$$
+```

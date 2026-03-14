@@ -1,0 +1,68 @@
+---
+title: SiteTreeNav
+description: A sitemap-like grid component that displays the full documentation tree with expandable categories.
+sidebar_position: 7
+---
+
+## Overview
+
+`SiteTreeNav` is a React island component that renders a responsive grid of expandable category cards showing the full documentation tree. It provides a sitemap-style index of all documentation pages, with categories that can be expanded and collapsed.
+
+<Info>
+This component is **not** globally available in MDX content. It must be imported directly in Astro page templates. See it in action on the [home page](/).
+</Info>
+
+## Live Example
+
+Visit the [home page](/) to see `SiteTreeNav` rendered with the full documentation tree.
+
+## Usage
+
+`SiteTreeNav` is used in `src/pages/index.astro` to display the home page sitemap:
+
+```astro
+---
+import { buildNavTree, groupSatelliteNodes } from "@/utils/docs";
+import { loadLocaleDocs } from "@/utils/locale-docs";
+import SiteTreeNav from "@/components/site-tree-nav.tsx";
+import { settings } from "@/config/settings";
+
+const categoryOrder = settings.headerNav
+  .map((n) => n.categoryMatch)
+  .filter((v): v is string => !!v);
+const { allDocs, categoryMeta } = await loadLocaleDocs("en");
+const navDocs = allDocs.filter((doc) => !doc.data.unlisted);
+const tree = buildNavTree(navDocs, "en", categoryMeta);
+const groupedTree = groupSatelliteNodes(tree, categoryOrder);
+---
+
+<SiteTreeNav
+  tree={groupedTree}
+  categoryOrder={categoryOrder}
+  categoryIgnore={["inbox"]}
+  client:idle
+/>
+```
+
+The component requires `client:idle` (or another Astro client directive) because it uses React state for expand/collapse interactivity.
+
+## Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `tree` | `NavNode[]` | (required) | The navigation tree built from content collection |
+| `categoryOrder` | `string[]` | — | Custom ordering of top-level categories |
+| `categoryIgnore` | `string[]` | — | Category slugs to hide from the tree |
+| `ariaLabel` | `string` | `"Site index"` | Accessibility label for the nav element |
+
+## Features
+
+- **Responsive grid layout** — uses `repeat(auto-fill, minmax(min(18rem, 100%), 1fr))` to adapt from single-column on mobile to multi-column on wider screens
+- **Expandable categories** — each category card is collapsible, open by default
+- **Hierarchical tree** — nested pages are indented with connector lines showing the tree structure
+- **Category links** — top-level categories display an arrow icon and link to their index page
+- **Leaf pages** — individual doc pages are rendered as clickable links
+
+## Source
+
+The component is defined at `src/components/site-tree-nav.tsx`.

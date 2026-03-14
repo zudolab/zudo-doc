@@ -56,6 +56,7 @@ const translations: Record<string, Record<string, string>> = {
   en: {
     "nav.gettingStarted": "Getting Started",
     "nav.guides": "Guides",
+    "nav.components": "Components",
     "nav.reference": "Reference",
     "nav.claude": "Claude",
     "nav.previous": "Previous",
@@ -82,6 +83,7 @@ const translations: Record<string, Record<string, string>> = {
   ja: {
     "nav.gettingStarted": "はじめに",
     "nav.guides": "ガイド",
+    "nav.components": "コンポーネント",
     "nav.reference": "リファレンス",
     "nav.claude": "Claude",
     "nav.previous": "前へ",
@@ -108,6 +110,7 @@ const translations: Record<string, Record<string, string>> = {
   de: {
     "nav.gettingStarted": "Erste Schritte",
     "nav.guides": "Anleitungen",
+    "nav.components": "Komponenten",
     "nav.reference": "Referenz",
     "nav.claude": "Claude",
     "nav.previous": "Zurück",
