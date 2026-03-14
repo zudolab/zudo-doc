@@ -1,0 +1,92 @@
+---
+title: Mermaidダイアグラム
+description: フローチャート、シーケンス図などのMermaidダイアグラムサポート。
+sidebar_position: 6
+---
+
+`mermaid`言語のフェンスドコードブロックでダイアグラムを描画できます。Mermaidはオンデマンドで読み込まれるため、Mermaidブロックのないページにはオーバーヘッドがありません。
+
+## フローチャート
+
+```mermaid
+graph LR
+  A[開始] --> B{判定}
+  B -->|はい| C[アクション]
+  B -->|いいえ| D[別のアクション]
+  C --> E[終了]
+  D --> E
+```
+
+````mdx
+```mermaid
+graph LR
+  A[Start] --> B{Decision}
+  B -->|Yes| C[Action]
+  B -->|No| D[Other Action]
+  C --> E[End]
+  D --> E
+```
+````
+
+## シーケンス図
+
+```mermaid
+sequenceDiagram
+  participant ユーザー
+  participant アプリ
+  participant API
+  ユーザー->>アプリ: ボタンクリック
+  アプリ->>API: データ取得
+  API-->>アプリ: JSONレスポンス
+  アプリ-->>ユーザー: 結果表示
+```
+
+````mdx
+```mermaid
+sequenceDiagram
+  participant User
+  participant App
+  participant API
+  User->>App: Click button
+  App->>API: Fetch data
+  API-->>App: JSON response
+  App-->>User: Render result
+```
+````
+
+## 状態遷移図
+
+```mermaid
+stateDiagram-v2
+  [*] --> Draft
+  Draft --> Review : 提出
+  Review --> Published : 承認
+  Review --> Draft : 変更依頼
+  Published --> Archived : アーカイブ
+  Archived --> [*]
+```
+
+````mdx
+```mermaid
+stateDiagram-v2
+  [*] --> Draft
+  Draft --> Review : Submit
+  Review --> Published : Approve
+  Review --> Draft : Request Changes
+  Published --> Archived : Archive
+  Archived --> [*]
+```
+````
+
+## 設定
+
+Mermaidサポートは`src/config/settings.ts`の`mermaid`設定で制御されます：
+
+```ts
+export const settings = {
+  // ...
+  mermaid: true, // デフォルトで有効
+};
+```
+
+サポートされているダイアグラムの種類については、[Mermaid公式ドキュメント](https://mermaid.js.org/)を参照してください。
