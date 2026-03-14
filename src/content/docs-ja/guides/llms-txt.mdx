@@ -1,0 +1,108 @@
+---
+title: "llms.txt"
+description: "AIが利用しやすいドキュメント用のllms.txtとllms-full.txtファイルを自動生成"
+sidebar_position: 8
+---
+
+zudo-docは`llms.txt`と`llms-full.txt`ファイルを自動生成し、AIツールや大規模言語モデルがドキュメントを容易に利用できるようにします。
+
+<Tip>
+[llms.txt標準](https://llmstxt.org/)は、AIツールがドキュメントを発見・読み取りやすくするための新しい規約です。多くのAIツールがすでにこれらのファイルを参照しています。
+</Tip>
+
+## 仕組み
+
+有効にすると、zudo-docはビルド時に2つのファイルを生成します：
+
+- **`/llms.txt`** — すべてのドキュメントページのタイトル、説明、URLを一覧にしたインデックス
+- **`/llms-full.txt`** — すべてのドキュメントページの全文を1つのファイルにまとめたもの
+
+これらのファイルは、AIツールがHTMLを解析せずに利用できる機械可読形式のドキュメントを提供します。
+
+## llms.txtの有効化
+
+この機能は**デフォルトで有効**です。明示的に制御するには、`src/config/settings.ts`で`llmsTxt`を設定します：
+
+```ts
+export const settings = {
+  // ...
+  llmsTxt: true,  // デフォルトで有効
+};
+```
+
+無効にするには：
+
+```ts
+llmsTxt: false,
+```
+
+## 生成される出力
+
+### llms.txt（インデックス）
+
+インデックスファイルは、各ドキュメントページのタイトル、説明、URLを一覧表示します：
+
+```
+# My Documentation
+
+> Site description from settings
+
+## Docs
+
+- [Introduction](/docs/getting-started/introduction): Learn what the project is and how it works.
+- [Configuration](/docs/guides/configuration): Global settings and configuration reference.
+```
+
+### llms-full.txt（全文）
+
+全文ファイルは、すべてのドキュメントページの完全なテキストを見出しで区切って含みます：
+
+```
+# My Documentation
+
+> Site description from settings
+
+## Introduction
+
+Welcome to the project...
+
+## Configuration
+
+The project is configured through...
+```
+
+## ページの除外
+
+以下のフロントマターフィールドを持つページは、両方の生成ファイルから自動的に除外されます：
+
+- `draft: true` — ビルドから除外される下書きページ
+- `unlisted: true` — ビルドされるが非表示のページ
+- `search_exclude: true` — 検索から除外されるページ
+
+```mdx
+---
+title: Internal Notes
+search_exclude: true
+---
+```
+
+## マルチロケール対応
+
+ロケールが設定されている場合、zudo-docは各ロケールごとに個別のllms.txtファイルを生成します：
+
+- **英語（デフォルト）：** `/llms.txt`と`/llms-full.txt`
+- **日本語：** `/ja/llms.txt`と`/ja/llms-full.txt`
+
+各ロケールのファイルには、そのロケールのコンテンツディレクトリのページのみが含まれます。各ファイル内のURLには適切なロケールプレフィックスが使用されます。
+
+## 開発モード
+
+生成されるファイルはViteミドルウェア経由で開発中も利用可能です。`pnpm dev`実行時、`/llms.txt`と`/llms-full.txt`へのリクエストは動的に処理されます — ビルドステップは不要です。
+
+<Tip>
+テストのためにビルドする必要はありません。llms.txtファイルは検索と同様に`pnpm dev`ですぐに動作します。
+</Tip>
+
+## 本番ビルド
+
+`pnpm build`時、ファイルはサイトの他の部分とともに`dist/`ディレクトリに静的テキストファイルとして出力されます。
