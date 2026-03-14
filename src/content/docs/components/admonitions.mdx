@@ -1,0 +1,141 @@
+---
+title: Admonitions
+description: Callout blocks for highlighting important information with five distinct types.
+sidebar_position: 2
+---
+
+Admonitions are callout blocks for highlighting important information. All five types are globally available — no imports needed.
+
+## Note
+
+<Note>
+This is a note — use it for general information and tips.
+</Note>
+
+<Note title="Custom Title">
+You can customize the title with the `title` prop.
+</Note>
+
+```mdx
+<Note>
+This is a note — use it for general information and tips.
+</Note>
+
+<Note title="Custom Title">
+You can customize the title with the `title` prop.
+</Note>
+```
+
+## Tip
+
+<Tip>
+This is a tip — use it for helpful suggestions and best practices.
+</Tip>
+
+<Tip title="Pro Tip">
+You can customize the title with the `title` prop.
+</Tip>
+
+```mdx
+<Tip>
+This is a tip — use it for helpful suggestions and best practices.
+</Tip>
+
+<Tip title="Pro Tip">
+You can customize the title with the `title` prop.
+</Tip>
+```
+
+## Info
+
+<Info>
+This is an info block — use it for additional context or background information.
+</Info>
+
+<Info title="Did You Know?">
+You can customize the title with the `title` prop.
+</Info>
+
+```mdx
+<Info>
+This is an info block — use it for additional context or background information.
+</Info>
+
+<Info title="Did You Know?">
+You can customize the title with the `title` prop.
+</Info>
+```
+
+## Warning
+
+<Warning>
+This is a warning — use it to flag potential issues or things to watch out for.
+</Warning>
+
+<Warning title="Deprecation Notice">
+You can customize the title with the `title` prop.
+</Warning>
+
+```mdx
+<Warning>
+This is a warning — use it to flag potential issues or things to watch out for.
+</Warning>
+
+<Warning title="Deprecation Notice">
+You can customize the title with the `title` prop.
+</Warning>
+```
+
+## Danger
+
+<Danger>
+This is a danger alert — use it for critical warnings about data loss or breaking changes.
+</Danger>
+
+<Danger title="Breaking Change">
+You can customize the title with the `title` prop.
+</Danger>
+
+```mdx
+<Danger>
+This is a danger alert — use it for critical warnings about data loss or breaking changes.
+</Danger>
+
+<Danger title="Breaking Change">
+You can customize the title with the `title` prop.
+</Danger>
+```
+
+## Directive Syntax
+
+In addition to the JSX component syntax shown above, you can use Docusaurus-style directive syntax. Both syntaxes are globally available — no imports needed.
+
+```mdx
+:::note
+Content here.
+:::
+
+:::warning[Custom Title]
+Content here.
+:::
+```
+
+The directive syntax supports all five types (`note`, `tip`, `info`, `warning`, `danger`) and an optional title in square brackets.
+
+## Props
+
+| Prop | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| `title` | string | No | Type name (e.g., "Note") | Override the default title text |
+
+## Color Reference
+
+Each admonition type uses a distinct palette slot for its border and title color:
+
+| Type | Palette Slot | Typical Color |
+|------|-------------|---------------|
+| Note | p4 | Blue |
+| Tip | p2 | Green |
+| Info | p6 | Cyan |
+| Warning | p3 | Yellow |
+| Danger | p1 | Red |
