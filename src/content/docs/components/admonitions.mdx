@@ -8,119 +8,119 @@ Admonitions are callout blocks for highlighting important information. All five 
 
 ## Note
 
-<Note>
+:::note
 This is a note — use it for general information and tips.
-</Note>
+:::
 
-<Note title="Custom Title">
+:::note[Custom Title]
 Notes are great for calling out important information readers shouldn't miss.
-</Note>
+:::
 
 ```mdx
-<Note>
+:::note
 This is a note — use it for general information and tips.
-</Note>
+:::
 
-<Note title="Custom Title">
+:::note[Custom Title]
 Notes are great for calling out important information readers shouldn't miss.
-</Note>
+:::
 ```
 
 ## Tip
 
-<Tip>
+:::tip
 This is a tip — use it for helpful suggestions and best practices.
-</Tip>
+:::
 
-<Tip title="Pro Tip">
+:::tip[Pro Tip]
 Use keyboard shortcuts to speed up your workflow.
-</Tip>
+:::
 
 ```mdx
-<Tip>
+:::tip
 This is a tip — use it for helpful suggestions and best practices.
-</Tip>
+:::
 
-<Tip title="Pro Tip">
+:::tip[Pro Tip]
 Use keyboard shortcuts to speed up your workflow.
-</Tip>
+:::
 ```
 
 ## Info
 
-<Info>
+:::info
 This is an info block — use it for additional context or background information.
-</Info>
+:::
 
-<Info title="Did You Know?">
+:::info[Did You Know?]
 This feature was introduced in version 2.0.
-</Info>
+:::
 
 ```mdx
-<Info>
+:::info
 This is an info block — use it for additional context or background information.
-</Info>
+:::
 
-<Info title="Did You Know?">
+:::info[Did You Know?]
 This feature was introduced in version 2.0.
-</Info>
+:::
 ```
 
 ## Warning
 
-<Warning>
+:::warning
 This is a warning — use it to flag potential issues or things to watch out for.
-</Warning>
+:::
 
-<Warning title="Deprecation Notice">
+:::warning[Deprecation Notice]
 This API will be removed in the next major version. Please migrate to the new API.
-</Warning>
+:::
 
 ```mdx
-<Warning>
+:::warning
 This is a warning — use it to flag potential issues or things to watch out for.
-</Warning>
+:::
 
-<Warning title="Deprecation Notice">
+:::warning[Deprecation Notice]
 This API will be removed in the next major version. Please migrate to the new API.
-</Warning>
+:::
 ```
 
 ## Danger
 
-<Danger>
+:::danger
 This is a danger alert — use it for critical warnings about data loss or breaking changes.
-</Danger>
-
-<Danger title="Breaking Change">
-Running this command will permanently delete all data. This action cannot be undone.
-</Danger>
-
-```mdx
-<Danger>
-This is a danger alert — use it for critical warnings about data loss or breaking changes.
-</Danger>
-
-<Danger title="Breaking Change">
-Running this command will permanently delete all data. This action cannot be undone.
-</Danger>
-```
-
-## Directive Syntax
-
-In addition to the JSX component syntax shown above, you can use Docusaurus-style directive syntax. Both syntaxes are globally available — no imports needed.
-
-```mdx
-:::note
-Content here.
 :::
 
-:::warning[Custom Title]
-Content here.
+:::danger[Breaking Change]
+Running this command will permanently delete all data. This action cannot be undone.
+:::
+
+```mdx
+:::danger
+This is a danger alert — use it for critical warnings about data loss or breaking changes.
+:::
+
+:::danger[Breaking Change]
+Running this command will permanently delete all data. This action cannot be undone.
 :::
 ```
 
-The directive syntax supports all five types (`note`, `tip`, `info`, `warning`, `danger`) and an optional title in square brackets.
+## Component Syntax
+
+In addition to the directive syntax shown above, you can use JSX component syntax. This is useful when you need more control or are building custom layouts.
+
+```mdx
+<Note>
+Default note with auto-generated title.
+</Note>
+
+<Warning title="Be Careful">
+Warning with a custom title.
+</Warning>
+```
+
+The component syntax supports the same five types (`Note`, `Tip`, `Info`, `Warning`, `Danger`) and an optional `title` prop.
 
 ## Props
 
