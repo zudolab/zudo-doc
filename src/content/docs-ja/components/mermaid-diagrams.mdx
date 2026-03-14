@@ -20,10 +20,10 @@ graph LR
 ````mdx
 ```mermaid
 graph LR
-  A[Start] --> B{Decision}
-  B -->|Yes| C[Action]
-  B -->|No| D[Other Action]
-  C --> E[End]
+  A[開始] --> B{判定}
+  B -->|はい| C[アクション]
+  B -->|いいえ| D[別のアクション]
+  C --> E[終了]
   D --> E
 ```
 ````
@@ -44,13 +44,13 @@ sequenceDiagram
 ````mdx
 ```mermaid
 sequenceDiagram
-  participant User
-  participant App
+  participant ユーザー
+  participant アプリ
   participant API
-  User->>App: Click button
-  App->>API: Fetch data
-  API-->>App: JSON response
-  App-->>User: Render result
+  ユーザー->>アプリ: ボタンクリック
+  アプリ->>API: データ取得
+  API-->>アプリ: JSONレスポンス
+  アプリ-->>ユーザー: 結果表示
 ```
 ````
 
@@ -70,10 +70,10 @@ stateDiagram-v2
 ```mermaid
 stateDiagram-v2
   [*] --> Draft
-  Draft --> Review : Submit
-  Review --> Published : Approve
-  Review --> Draft : Request Changes
-  Published --> Archived : Archive
+  Draft --> Review : 提出
+  Review --> Published : 承認
+  Review --> Draft : 変更依頼
+  Published --> Archived : アーカイブ
   Archived --> [*]
 ```
 ````
