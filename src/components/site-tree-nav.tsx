@@ -1,146 +1,85 @@
 import { useState } from "react";
 import type { NavNode } from "@/utils/docs";
+import { INDENT, connectorLeft, ConnectorLines } from "./tree-nav-shared";
 
-// Indentation — matching sidebar-tree fluid clamp values
-const INDENT = "clamp(0.8rem, 1.2vw, 1.625rem)";
-const CONNECTOR_OFFSET = "clamp(0.2rem, 0.3vw, 0.5rem)";
-const CONNECTOR_WIDTH = "clamp(0.4rem, 0.6vw, 1rem)";
+function CategoryLinkIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="currentColor"
+      viewBox="0 0 103.395 107.049"
+      aria-hidden="true"
+      className="w-[18px] 2xl:w-[24px] shrink-0"
+    >
+      <path d="M5.746 5.74 0 11.49l20.987 20.96C34.126 45.572 41.963 53.45 41.948 53.523c-.012.062-9.456 9.544-20.986 21.07L0 95.55l5.714 5.715c3.142 3.143 5.748 5.715 5.79 5.715s2.63-2.563 5.75-5.696l17.939-18.001c21.867-21.94 29.443-29.599 29.443-29.768 0-.114-.665-.804-5.084-5.275C51.872 40.47 11.71.125 11.565.036 11.525.01 8.906 2.578 5.746 5.74m38.345-.066c-3.132 3.13-5.696 5.71-5.696 5.732-.001.022 2.16 2.185 4.8 4.807 2.641 2.623 8.382 8.338 12.758 12.702 15.38 15.337 23.763 23.641 24.314 24.086.19.153.346.336.346.405 0 .07-1.738 1.847-3.887 3.976a17515 17515 0 0 0-20.35 20.264 19555 19555 0 0 1-17.223 17.158c-.416.409-.757.77-.757.8 0 .083 11.415 11.485 11.457 11.445.235-.22 53.542-53.528 53.542-53.543C103.395 53.472 49.891.02 49.837 0c-.028-.01-2.613 2.543-5.746 5.674" />
+    </svg>
+  );
+}
+
+// site-tree-nav uses wider padding than the narrow sidebar
+const SITE_BASE_PAD = "clamp(0.8rem, 1.5vw, 1.8rem)";
 
 function padLeft(depth: number): string {
-  if (depth === 0) return "clamp(0.4rem, 0.8vw, 1.3rem)";
+  if (depth === 0) return SITE_BASE_PAD;
   return `calc(${depth} * ${INDENT} + 1.25rem + 5px)`;
 }
 
-function connectorLeft(depth: number): string {
-  return `calc(${depth} * ${INDENT} + ${CONNECTOR_OFFSET})`;
+function reorderTree(tree: NavNode[], order: string[]): NavNode[] {
+  const map = new Map(tree.map((node) => [node.slug, node]));
+  const ordered: NavNode[] = [];
+  for (const slug of order) {
+    const node = map.get(slug);
+    if (node) {
+      ordered.push(node);
+      map.delete(slug);
+    }
+  }
+  // append unmatched nodes at end
+  for (const node of map.values()) {
+    ordered.push(node);
+  }
+  return ordered;
 }
 
 interface SiteTreeNavProps {
   tree: NavNode[];
   ariaLabel?: string;
-  expandLabel?: string;
-  collapseLabel?: string;
+  categoryOrder?: string[];
+  categoryIgnore?: string[];
 }
 
 export default function SiteTreeNav({
   tree,
   ariaLabel = "Site index",
-  expandLabel = "Expand",
-  collapseLabel = "Collapse",
+  categoryOrder,
+  categoryIgnore,
 }: SiteTreeNavProps) {
+  let processedTree = tree;
+  if (categoryIgnore) {
+    const ignoreSet = new Set(categoryIgnore);
+    processedTree = processedTree.filter((node) => !ignoreSet.has(node.slug));
+  }
+  if (categoryOrder) {
+    processedTree = reorderTree(processedTree, categoryOrder);
+  }
   return (
-    <nav aria-label={ariaLabel} className="grid grid-cols-1 gap-y-vsp-md">
-      {tree.map((node) => (
-        <SectionCard
-          key={node.slug}
-          node={node}
-          expandLabel={expandLabel}
-          collapseLabel={collapseLabel}
-        />
+    <nav
+      aria-label={ariaLabel}
+      className="grid gap-vsp-md"
+      style={{
+        gridTemplateColumns: "repeat(auto-fill, minmax(min(18rem, 100%), 1fr))",
+      }}
+    >
+      {processedTree.map((node) => (
+        <div key={node.slug} className="min-w-0 border border-muted">
+          {node.children.length > 0 ? (
+            <CategoryNode node={node} depth={0} isLast={true} />
+          ) : (
+            <LeafNode node={node} depth={0} isLast={true} />
+          )}
+        </div>
       ))}
     </nav>
-  );
-}
-
-function SectionCard({
-  node,
-  expandLabel,
-  collapseLabel,
-}: {
-  node: NavNode;
-  expandLabel: string;
-  collapseLabel: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const hasChildren = node.children.length > 0;
-
-  const toggle = () => setOpen((prev) => !prev);
-
-  return (
-    <div className="border border-muted overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center bg-surface">
-        <div className="flex-1 min-w-0 px-hsp-lg py-vsp-md">
-          {node.href ? (
-            <a
-              href={node.href}
-              className="font-medium text-accent hover:underline"
-            >
-              {node.label}
-            </a>
-          ) : (
-            <button
-              type="button"
-              onClick={toggle}
-              className="font-medium text-accent hover:underline text-left"
-            >
-              {node.label}
-            </button>
-          )}
-          {node.description && (
-            <span className="block text-small text-muted mt-vsp-2xs">
-              {node.description}
-            </span>
-          )}
-        </div>
-        {hasChildren && (
-          <button
-            type="button"
-            onClick={toggle}
-            className="px-hsp-lg py-vsp-md text-muted hover:text-fg shrink-0"
-            aria-expanded={open}
-            aria-label={`${open ? collapseLabel : expandLabel} ${node.label}`}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className={`h-[1rem] w-[1rem] transition-transform duration-150 ${open ? "rotate-90" : ""}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </button>
-        )}
-      </div>
-
-      {/* Children — sidebar-style dashed tree */}
-      {open && hasChildren && (
-        <div className="border-t border-muted">
-          <NodeList nodes={node.children} depth={0} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ConnectorLines({ depth, isLast }: { depth: number; isLast: boolean }) {
-  if (depth === 0) return null;
-  const left = connectorLeft(depth);
-  return (
-    <>
-      <div
-        className="absolute border-l border-dashed border-muted"
-        style={{
-          left,
-          top: 0,
-          bottom: isLast ? "50%" : 0,
-        }}
-      />
-      <div
-        className="absolute border-t border-dashed border-muted"
-        style={{
-          left,
-          width: CONNECTOR_WIDTH,
-          top: "50%",
-        }}
-      />
-    </>
   );
 }
 
@@ -178,12 +117,12 @@ function CategoryNode({
   depth: number;
   isLast: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const toggle = () => setOpen((prev) => !prev);
   const paddingLeft = padLeft(depth);
 
   return (
-    <div className={`${depth === 0 ? "border-t border-muted first:border-t-0" : ""} ${depth >= 1 && !isLast ? "relative" : ""}`}>
+    <div className={`${depth >= 1 && !isLast ? "relative" : ""}`}>
       {depth >= 1 && !isLast && open && (
         <div
           className="absolute border-l border-solid border-muted z-10"
@@ -203,8 +142,9 @@ function CategoryNode({
           {node.href ? (
             <a
               href={node.href}
-              className="flex-1 py-vsp-xs text-fg hover:text-accent hover:underline focus:underline"
+              className="flex-1 flex items-center gap-hsp-xs py-vsp-xs text-fg hover:text-accent hover:underline focus:underline"
             >
+              {depth === 0 && <CategoryLinkIcon />}
               {node.label}
             </a>
           ) : (
@@ -219,13 +159,13 @@ function CategoryNode({
           <button
             type="button"
             onClick={toggle}
-            className="px-hsp-md py-vsp-xs hover:underline focus:underline"
+            className="aspect-square flex items-center justify-center w-[1.75rem] border-y border-l border-muted hover:underline focus:underline"
             aria-expanded={open}
             aria-label={open ? `Collapse ${node.label}` : `Expand ${node.label}`}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className={`h-[1rem] w-[1rem] transition-transform duration-150 ${open ? "rotate-90" : ""} text-muted`}
+              className={`h-[0.75rem] w-[0.75rem] transition-transform duration-150 ${open ? "rotate-90" : ""} text-muted`}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -263,7 +203,7 @@ function LeafNode({
   const paddingLeft = padLeft(depth);
 
   return (
-    <div className={isRoot ? "border-t border-muted first:border-t-0" : ""}>
+    <div>
       <div className="relative">
         <ConnectorLines depth={depth} isLast={isLast} />
         <a
