@@ -26,7 +26,7 @@ Use `<Tabs>` and `<TabItem>` to create tabbed content panels. Both components ar
   </TabItem>
 </Tabs>
 
-```mdx
+````mdx
 <Tabs>
   <TabItem label="npm" value="npm" default>
     ```bash
@@ -44,7 +44,7 @@ Use `<Tabs>` and `<TabItem>` to create tabbed content panels. Both components ar
     ```
   </TabItem>
 </Tabs>
-```
+````
 
 The `default` prop on `TabItem` sets which tab is initially active. If omitted, the first tab is shown.
 
@@ -78,7 +78,7 @@ Use `groupId` to sync tab selection across multiple tab groups on the same page.
   </TabItem>
 </Tabs>
 
-```mdx
+````mdx
 <Tabs groupId="lang">
   <TabItem label="JavaScript" value="js" default>
     ```js
@@ -105,18 +105,18 @@ Use `groupId` to sync tab selection across multiple tab groups on the same page.
     ```
   </TabItem>
 </Tabs>
-```
+````
 
 ## Tabs Props
 
-| Prop | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
-| `groupId` | string | No | — | Sync tab selection across groups with the same `groupId` (persisted in localStorage) |
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `groupId` | string | — | Sync tab selection across groups with the same `groupId` (persisted in localStorage) |
 
 ## TabItem Props
 
-| Prop | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
-| `label` | string | Yes | — | Tab button text |
-| `value` | string | No | Value of `label` | Unique identifier for the tab |
-| `default` | boolean | No | `false` | Set as the initially active tab |
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `label` | string | (required) | Tab button text |
+| `value` | string | Value of `label` | Unique identifier for the tab |
+| `default` | boolean | `false` | Set as the initially active tab |

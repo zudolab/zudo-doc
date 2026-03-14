@@ -13,7 +13,7 @@ This is a note — use it for general information and tips.
 </Note>
 
 <Note title="Custom Title">
-You can customize the title with the `title` prop.
+Notes are great for calling out important information readers shouldn't miss.
 </Note>
 
 ```mdx
@@ -22,7 +22,7 @@ This is a note — use it for general information and tips.
 </Note>
 
 <Note title="Custom Title">
-You can customize the title with the `title` prop.
+Notes are great for calling out important information readers shouldn't miss.
 </Note>
 ```
 
@@ -33,7 +33,7 @@ This is a tip — use it for helpful suggestions and best practices.
 </Tip>
 
 <Tip title="Pro Tip">
-You can customize the title with the `title` prop.
+Use keyboard shortcuts to speed up your workflow.
 </Tip>
 
 ```mdx
@@ -42,7 +42,7 @@ This is a tip — use it for helpful suggestions and best practices.
 </Tip>
 
 <Tip title="Pro Tip">
-You can customize the title with the `title` prop.
+Use keyboard shortcuts to speed up your workflow.
 </Tip>
 ```
 
@@ -53,7 +53,7 @@ This is an info block — use it for additional context or background informatio
 </Info>
 
 <Info title="Did You Know?">
-You can customize the title with the `title` prop.
+This feature was introduced in version 2.0.
 </Info>
 
 ```mdx
@@ -62,7 +62,7 @@ This is an info block — use it for additional context or background informatio
 </Info>
 
 <Info title="Did You Know?">
-You can customize the title with the `title` prop.
+This feature was introduced in version 2.0.
 </Info>
 ```
 
@@ -73,7 +73,7 @@ This is a warning — use it to flag potential issues or things to watch out for
 </Warning>
 
 <Warning title="Deprecation Notice">
-You can customize the title with the `title` prop.
+This API will be removed in the next major version. Please migrate to the new API.
 </Warning>
 
 ```mdx
@@ -82,7 +82,7 @@ This is a warning — use it to flag potential issues or things to watch out for
 </Warning>
 
 <Warning title="Deprecation Notice">
-You can customize the title with the `title` prop.
+This API will be removed in the next major version. Please migrate to the new API.
 </Warning>
 ```
 
@@ -93,7 +93,7 @@ This is a danger alert — use it for critical warnings about data loss or break
 </Danger>
 
 <Danger title="Breaking Change">
-You can customize the title with the `title` prop.
+Running this command will permanently delete all data. This action cannot be undone.
 </Danger>
 
 ```mdx
@@ -102,7 +102,7 @@ This is a danger alert — use it for critical warnings about data loss or break
 </Danger>
 
 <Danger title="Breaking Change">
-You can customize the title with the `title` prop.
+Running this command will permanently delete all data. This action cannot be undone.
 </Danger>
 ```
 
@@ -124,18 +124,18 @@ The directive syntax supports all five types (`note`, `tip`, `info`, `warning`, 
 
 ## Props
 
-| Prop | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
-| `title` | string | No | Type name (e.g., "Note") | Override the default title text |
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `title` | string | Type name (e.g., "Note") | Override the default title text |
 
 ## Color Reference
 
-Each admonition type uses a distinct palette slot for its border and title color:
+Each admonition type uses a semantic color token for its border and title color:
 
-| Type | Palette Slot | Typical Color |
-|------|-------------|---------------|
-| Note | p4 | Blue |
-| Tip | p2 | Green |
-| Info | p6 | Cyan |
-| Warning | p3 | Yellow |
-| Danger | p1 | Red |
+| Type | Color Token | Typical Color |
+|------|------------|---------------|
+| Note | accent | Blue |
+| Tip | success | Green |
+| Info | info | Cyan |
+| Warning | warning | Yellow |
+| Danger | danger | Red |
