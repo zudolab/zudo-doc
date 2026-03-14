@@ -46,7 +46,6 @@ const tree = buildNavTree(navDocs, "en", categoryMeta);
           <div
             class="h-[5rem] w-[5rem] lg:h-[7rem] lg:w-[7rem] bg-fg shrink-0"
             style={`-webkit-mask: url(${logoUrl}) center/contain no-repeat; mask: url(${logoUrl}) center/contain no-repeat;`}
-            role="img"
             aria-hidden="true"
           />
           <div>
@@ -54,9 +53,11 @@ const tree = buildNavTree(navDocs, "en", categoryMeta);
             <p class="text-muted text-small mb-vsp-sm">{settings.siteDescription}</p>
             <div class="flex items-center gap-hsp-md text-small">
               {overview && (
-                <a href={overview} class="text-fg underline hover:text-accent">Overview</a>
+                <>
+                  <a href={overview} class="text-fg underline hover:text-accent">Overview</a>
+                  <span class="text-muted">/</span>
+                </>
               )}
-              <span class="text-muted">/</span>
               <a
                 href="https://github.com/zudolab/zudo-doc"
                 class="text-fg underline hover:text-accent"
