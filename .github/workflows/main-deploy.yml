@@ -86,7 +86,7 @@ jobs:
 
       - name: Deploy to Cloudflare Pages (production)
         run: |
-          pnpm dlx wrangler@4 pages deploy deploy \
+          npx wrangler@4 pages deploy deploy \
             --project-name=zudo-doc \
             --branch=main \
             --commit-hash="${GITHUB_SHA}" \
