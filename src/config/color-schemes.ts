@@ -28,7 +28,7 @@ export interface ColorScheme {
 }
 
 export const colorSchemes: Record<string, ColorScheme> = {
-  "ZCSS Light": {
+  "Default Light": {
     background: "#f8f8f8",
     foreground: "#303030",
     cursor: "oklch(70.4% 0.04 256.788)",
@@ -47,7 +47,7 @@ export const colorSchemes: Record<string, ColorScheme> = {
       surface: "#eeeeee",
     },
   },
-  "ZCSS Dark": {
+  "Default Dark": {
     background: "#181818",
     foreground: "#b8b8b8",
     cursor: "oklch(70.4% 0.04 256.788)",

@@ -5,7 +5,7 @@ import type {
 } from "./settings-types";
 
 export const settings = {
-  colorScheme: "ZCSS Dark",
+  colorScheme: "Default Dark",
   colorMode: false as ColorModeConfig | false,
   siteName: "Sidebar Test",
   siteDescription: "Test fixture for sidebar E2E tests" as string,
