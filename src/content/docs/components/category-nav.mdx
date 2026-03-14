@@ -9,7 +9,7 @@ sidebar_position: 8
 `CategoryNav` is an Astro component that automatically lists child pages of a category as a card grid. It is designed for use in category `index.mdx` files to create landing pages that link to all child pages.
 
 <Info>
-This component is **not** globally available in MDX content. Import it in category index files where you need a child page listing.
+`CategoryNav` is globally available in all MDX doc pages — no import needed. It is registered alongside the admonition components (`Note`, `Tip`, etc.) in the doc page route.
 </Info>
 
 ## Usage
@@ -42,7 +42,7 @@ The `lang` prop is automatically detected from the current URL path, so you typi
 
 - **2-column grid** — displays `sm:grid-cols-2` on desktop, single column on mobile
 - **Card display** — each card shows the page title (as a link) and description (from frontmatter)
-- **Hover effect** — card text underlines on hover for clear interactivity
+- **Hover effect** — description text underlines on hover; the title link is always underlined
 - **Auto-excludes index** — the category's own index page is automatically filtered out
 - **Sorted by position** — cards follow `sidebar_position` ordering from frontmatter
 
