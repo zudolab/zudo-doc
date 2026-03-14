@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import matter from "gray-matter";
 import { settings } from "../config/settings";
 
@@ -69,13 +69,14 @@ export function collectMdFiles(
   return results;
 }
 
-/** Compute a URL from a slug and locale */
-export function slugToUrl(slug: string, locale: string | null): string {
+/** Compute a URL from a slug and locale. When absolute is true and siteUrl is configured, returns a full URL. */
+export function slugToUrl(slug: string, locale: string | null, absolute = false): string {
   const base = settings.base.replace(/\/$/, "");
-  if (locale) {
-    return `${base}/${locale}/docs/${slug}`;
+  const path = locale ? `${base}/${locale}/docs/${slug}` : `${base}/docs/${slug}`;
+  if (absolute && settings.siteUrl) {
+    return `${settings.siteUrl.replace(/\/$/, "")}${path}`;
   }
-  return `${base}/docs/${slug}`;
+  return path;
 }
 
 /** Parse a markdown file and return frontmatter + content */

@@ -56,7 +56,7 @@ function buildDocEntries(
     entries.push({
       title: data.title ?? slug,
       description,
-      url: slugToUrl(slug, locale),
+      url: slugToUrl(slug, locale, true),
       content: stripFrontmatterAndImports(content),
       sidebarPosition: data.sidebar_position,
     });

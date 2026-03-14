@@ -97,6 +97,14 @@ const isLatest = !currentVersion;
           toggle.setAttribute("aria-expanded", "false");
         }
       }, { signal });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !menu.classList.contains("hidden")) {
+          menu.classList.add("hidden");
+          toggle.setAttribute("aria-expanded", "false");
+          toggle.focus();
+        }
+      }, { signal });
     });
   }
 
