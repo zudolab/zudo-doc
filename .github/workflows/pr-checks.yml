@@ -26,17 +26,12 @@ permissions:
   pull-requests: write
 
 jobs:
-  detect-runner:
-    uses: ./.github/workflows/detect-runner.yml
-    secrets: inherit
-
   # ---------------------------------------------------------------------------
   # Job 1: Type checking
   # ---------------------------------------------------------------------------
   typecheck:
     name: Type Check
-    needs: detect-runner
-    runs-on: ${{ needs.detect-runner.outputs.runner }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
@@ -65,8 +60,7 @@ jobs:
   # ---------------------------------------------------------------------------
   build:
     name: Build
-    needs: detect-runner
-    runs-on: ${{ needs.detect-runner.outputs.runner }}
+    runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
@@ -105,8 +99,7 @@ jobs:
   # ---------------------------------------------------------------------------
   e2e:
     name: E2E Tests
-    needs: detect-runner
-    runs-on: ${{ needs.detect-runner.outputs.runner }}
+    runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
@@ -148,8 +141,8 @@ jobs:
   # ---------------------------------------------------------------------------
   preview:
     name: Preview Deploy
-    needs: [detect-runner, build]
-    runs-on: ${{ needs.detect-runner.outputs.runner }}
+    needs: [build]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
@@ -170,7 +163,7 @@ jobs:
         run: |
           PR_NUMBER="${{ github.event.pull_request.number }}"
 
-          pnpm dlx wrangler@4 pages deploy deploy \
+          npx wrangler@4 pages deploy deploy \
             --project-name=zudo-doc \
             --branch="pr-${PR_NUMBER}" \
             --commit-hash="${GITHUB_SHA}" \

@@ -23,17 +23,12 @@ permissions:
   contents: read
 
 jobs:
-  detect-runner:
-    uses: ./.github/workflows/detect-runner.yml
-    secrets: inherit
-
   # ---------------------------------------------------------------------------
   # Job 1: Build the Astro docs site
   # ---------------------------------------------------------------------------
   build:
     name: Build
-    needs: detect-runner
-    runs-on: ${{ needs.detect-runner.outputs.runner }}
+    runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
@@ -72,8 +67,8 @@ jobs:
   # ---------------------------------------------------------------------------
   deploy:
     name: Deploy to Cloudflare Pages
-    needs: [detect-runner, build]
-    runs-on: ${{ needs.detect-runner.outputs.runner }}
+    needs: [build]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
@@ -91,7 +86,7 @@ jobs:
 
       - name: Deploy to Cloudflare Pages (production)
         run: |
-          pnpm dlx wrangler@4 pages deploy deploy \
+          npx wrangler@4 pages deploy deploy \
             --project-name=zudo-doc \
             --branch=main \
             --commit-hash="${GITHUB_SHA}" \
@@ -105,9 +100,9 @@ jobs:
   # ---------------------------------------------------------------------------
   notify:
     name: Deploy Notification
-    needs: [detect-runner, build, deploy]
+    needs: [build, deploy]
     if: always()
-    runs-on: ${{ needs.detect-runner.outputs.runner }}
+    runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
