@@ -130,7 +130,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run: pnpm dlx playwright install chromium
+        run: pnpm dlx playwright install --with-deps chromium
 
       - name: Kill stale preview servers
         run: for p in 4500 4501 4502 4503; do lsof -ti :$p | xargs kill 2>/dev/null; done; true
