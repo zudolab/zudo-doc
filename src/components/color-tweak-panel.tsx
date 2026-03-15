@@ -806,11 +806,15 @@ export default function ColorTweakPanel() {
                       }}
                       className="bg-surface text-fg border border-muted px-[4px] py-[2px] hover:border-fg transition-colors"
                       style={{ fontSize: "0.6875rem", borderRadius: "var(--radius-DEFAULT)" }}
+                      title="Build-time only — included in export, not applied live"
                     >
                       {SHIKI_THEMES.map((theme) => (
                         <option key={theme} value={theme}>{theme}</option>
                       ))}
                     </select>
+                    <span className="text-muted shrink-0" style={{ fontSize: "0.5625rem" }}>
+                      export only
+                    </span>
                   </div>
                 </div>
               </div>
