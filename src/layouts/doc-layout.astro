@@ -34,7 +34,18 @@ interface Props {
   hideToc?: boolean;
 }
 
-const { title, description, lang = defaultLocale, currentSlug, headings = [], unlisted = false, currentVersion, versionBanner, hideSidebar = false, hideToc = false } = Astro.props;
+const {
+  title,
+  description,
+  lang = defaultLocale,
+  currentSlug,
+  headings = [],
+  unlisted = false,
+  currentVersion,
+  versionBanner,
+  hideSidebar = false,
+  hideToc = false,
+} = Astro.props;
 const latestUrl = currentSlug ? docsUrl(currentSlug, lang) : undefined;
 const fullTitle = `${title} | ${settings.siteName}`;
 const navSection = currentSlug ? getNavSectionForSlug(currentSlug) : undefined;

@@ -4,6 +4,7 @@ import { buildSidebarForSection } from "@/utils/sidebar";
 import { defaultLocale, t, type Locale } from "@/config/i18n";
 import { withBase } from "@/utils/base";
 import { loadLocaleDocs } from "@/utils/locale-docs";
+import { isNavVisible } from "@/utils/docs";
 import { settings } from "@/config/settings";
 
 interface Props {
@@ -25,7 +26,7 @@ const rootMenuItems = navSection
   : undefined;
 
 const { allDocs, categoryMeta } = await loadLocaleDocs(lang);
-const docs = allDocs.filter((d) => !d.data.unlisted && !d.data.standalone);
+const docs = allDocs.filter(isNavVisible);
 
 const nodes = buildSidebarForSection(docs, lang, navSection, categoryMeta);
 ---

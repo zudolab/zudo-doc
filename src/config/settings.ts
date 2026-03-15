@@ -66,7 +66,7 @@ export const settings = {
       },
     ],
     copyright: `Copyright © ${new Date().getFullYear()} zudolab. Built with zudo-doc.`,
-  } as FooterConfig | false,
+  } satisfies FooterConfig as FooterConfig | false,
   headerNav: [
     { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
     { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },

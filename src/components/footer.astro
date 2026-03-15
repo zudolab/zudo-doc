@@ -14,7 +14,7 @@ const { links, copyright } = footer;
       <div class="grid grid-cols-1 gap-vsp-lg sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(12rem,1fr))]">
         {links.map((column) => (
           <div>
-            <h3 class="text-small font-semibold text-fg mb-vsp-xs">{column.title}</h3>
+            <p class="text-small font-semibold text-fg mb-vsp-xs">{column.title}</p>
             <ul class="list-none p-0">
               {column.items.map((item) => (
                 <li class="mb-vsp-2xs">

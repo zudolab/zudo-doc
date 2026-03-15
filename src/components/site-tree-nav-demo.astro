@@ -1,5 +1,5 @@
 ---
-import { buildNavTree, groupSatelliteNodes } from "@/utils/docs";
+import { buildNavTree, groupSatelliteNodes, isNavVisible } from "@/utils/docs";
 import { loadLocaleDocs } from "@/utils/locale-docs";
 import { stripBase } from "@/utils/base";
 import { detectLocaleFromPath, type Locale } from "@/config/i18n";
@@ -14,7 +14,7 @@ const categoryOrder = settings.headerNav
   .map((n) => n.categoryMatch)
   .filter((v): v is string => !!v);
 const { allDocs, categoryMeta } = await loadLocaleDocs(lang);
-const navDocs = allDocs.filter((doc) => !doc.data.unlisted);
+const navDocs = allDocs.filter(isNavVisible);
 const tree = buildNavTree(navDocs, lang, categoryMeta);
 const groupedTree = groupSatelliteNodes(tree, categoryOrder);
 ---
