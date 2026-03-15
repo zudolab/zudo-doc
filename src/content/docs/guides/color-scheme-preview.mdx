@@ -1,0 +1,67 @@
+---
+title: Color Scheme Preview
+description: How to enable and use the runtime color scheme switcher.
+sidebar_position: 12
+---
+
+## Overview
+
+The color scheme preview adds a dropdown selector to the site header that lets users switch between all available color schemes at runtime. This is useful for previewing different themes without modifying configuration files.
+
+## How It Works
+
+When enabled, a `<select>` dropdown appears in the header (both desktop and mobile views). It lists every color scheme defined in `src/config/color-schemes.ts`. Selecting a scheme:
+
+- Applies the scheme's CSS custom properties to the page immediately
+- Persists the choice in `localStorage` so it survives page reloads and navigation
+- Does not modify any source files — the change is client-side only
+
+## Enabling the Color Scheme Preview
+
+### With create-zudo-doc
+
+The color scheme preview is off by default. To enable it during project creation:
+
+```bash
+pnpm create zudo-doc my-docs --color-scheme-preview
+```
+
+### In an Existing Project
+
+The color scheme preview is controlled by the `colorMode` setting in `src/config/settings.ts`. The header renders one of two controls based on this setting:
+
+- When `colorMode` is configured (an object with `defaultMode`, `lightScheme`, `darkScheme`), the header shows a **light/dark toggle** button instead
+- When `colorMode` is `false`, the header shows the **color scheme picker** dropdown
+
+To enable the color scheme preview in an existing project, set `colorMode` to `false`:
+
+```ts title="src/config/settings.ts"
+export const settings = {
+  colorScheme: "Dracula",
+  colorMode: false,
+  // ...
+};
+```
+
+<Note>
+Setting `colorMode` to `false` disables the light/dark toggle. The site uses a single color scheme mode, and the picker lets users browse all available schemes.
+</Note>
+
+## Interaction with Light/Dark Mode
+
+The color scheme picker and the light/dark theme toggle are mutually exclusive in the header:
+
+- **Light/Dark mode** (`colorMode` is an object): Users toggle between a pre-configured light and dark scheme pair. The `ThemeToggle` component is shown.
+- **Single scheme mode** (`colorMode` is `false`): Users pick from all available schemes via the `ColorSchemePicker` dropdown.
+
+If you want both light/dark toggling and scheme browsing, you would need to customize the header component.
+
+## Available Color Schemes
+
+Color schemes are defined in `src/config/color-schemes.ts`. Each scheme specifies a 16-color palette, background/foreground colors, selection colors, a Shiki code highlighting theme, and optional semantic color overrides.
+
+The `create-zudo-doc` CLI includes up to 40 built-in schemes. You can add custom schemes by adding entries to the `colorSchemes` object in `color-schemes.ts`.
+
+<Tip>
+The color scheme preview is particularly useful during development to quickly evaluate how your content looks across different themes before committing to a final scheme.
+</Tip>
