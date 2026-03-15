@@ -136,7 +136,7 @@ function CategoryNode({
       <div className="relative">
         <ConnectorLines depth={depth} isLast={isLast} widthScale={2} />
         <div
-          className="flex w-full items-center justify-between text-small font-semibold py-[0.15rem] text-fg"
+          className="flex w-full items-center justify-between text-small font-semibold pt-[0.15rem] text-fg"
           style={{ paddingLeft }}
         >
           {node.href ? (
