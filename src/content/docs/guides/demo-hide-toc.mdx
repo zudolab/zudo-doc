@@ -1,0 +1,44 @@
+---
+title: "Demo: Hide Table of Contents"
+description: "Live demonstration of the hide_toc frontmatter option."
+sidebar_position: 101
+hide_sidebar: false
+hide_toc: true
+---
+
+This page demonstrates the `hide_toc: true` frontmatter option. The right-side table of contents is hidden, and the main content area expands to fill the available width.
+
+## What's Happening
+
+The table of contents is hidden on this page. Here is the frontmatter used:
+
+```yaml
+---
+title: "Demo: Hide Table of Contents"
+hide_sidebar: false
+hide_toc: true
+---
+```
+
+## Sidebar Still Visible
+
+The sidebar on the left side is still visible for navigation. Only the right-side table of contents is affected.
+
+## Desktop and Mobile
+
+Both the desktop table of contents (right sidebar) and the mobile table of contents are hidden when `hide_toc: true` is set.
+
+### Subsection Example
+
+This subsection exists to demonstrate that even though the page has headings and subsections, no table of contents is generated.
+
+## When to Use
+
+Use `hide_toc: true` for pages with few headings, short content, or when the extra content width is more valuable than section navigation.
+
+See the [Frontmatter reference](/docs/guides/frontmatter/#hide_toc) for full documentation.
+
+## See Also
+
+- [Demo: Hide Sidebar](/docs/guides/demo-hide-sidebar/) — hides the left sidebar
+- [Demo: Hide Sidebar & Table of Contents](/docs/guides/demo-hide-both/) — hides both panels
