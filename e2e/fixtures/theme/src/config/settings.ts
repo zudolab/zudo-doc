@@ -25,6 +25,7 @@ export const settings = {
   docMetainfo: false,
   docTags: false,
   math: false,
+  colorTweakPanel: true as boolean,
   docHistory: false,
   claudeResources: false as { claudeDir: string; projectRoot?: string } | false,
   headerNav: [
