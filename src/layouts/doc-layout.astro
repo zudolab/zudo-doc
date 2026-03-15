@@ -21,6 +21,7 @@ import VersionSwitcher from "@/components/version-switcher.astro";
 import VersionBanner from "@/components/version-banner.astro";
 import Footer from "@/components/footer.astro";
 import ColorTweakPanel from "@/components/color-tweak-panel";
+import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "@/config/color-scheme-utils";
 
 interface Props {
   title: string;
@@ -86,31 +87,26 @@ const contentTransition = {
     {description && <meta property="og:description" content={description} />}
     <ColorSchemeProvider />
     {settings.colorTweakPanel && (
-      <script is:inline>
+      <script is:inline define:vars={{ tweakSemanticDefaults: SEMANTIC_DEFAULTS, tweakSemanticCss: SEMANTIC_CSS_NAMES }}>
         (function () {
           function applyTweakState() {
             var raw = localStorage.getItem("zudo-doc-tweak-state");
             if (!raw) return;
             try {
               var s = JSON.parse(raw);
-              if (!s.palette || s.palette.length !== 16 || !s.base) return;
+              if (!s.palette || s.palette.length !== 16 || s.background === undefined) return;
               var root = document.documentElement;
               for (var i = 0; i < 16; i++) root.style.setProperty("--zd-" + i, s.palette[i]);
-              var baseMap = [
-                ["background", "--zd-bg"], ["foreground", "--zd-fg"],
-                ["cursor", "--zd-cursor"], ["selectionBg", "--zd-sel-bg"], ["selectionFg", "--zd-sel-fg"]
-              ];
-              for (var b = 0; b < baseMap.length; b++) root.style.setProperty(baseMap[b][1], s.base[baseMap[b][0]]);
-              var semDefaults = {surface:0,muted:8,accent:6,accentHover:14,codeBg:"fg",codeFg:"bg",success:2,danger:1,warning:3,info:4};
-              var semCss = {surface:"--zd-surface",muted:"--zd-muted",accent:"--zd-accent",accentHover:"--zd-accent-hover",codeBg:"--zd-code-bg",codeFg:"--zd-code-fg",success:"--zd-success",danger:"--zd-danger",warning:"--zd-warning",info:"--zd-info"};
-              for (var key in semCss) {
-                var ov = s.semanticOverrides && s.semanticOverrides[key];
-                if (ov) { root.style.setProperty(semCss[key], ov); }
-                else {
-                  var d = semDefaults[key];
-                  var val = d === "bg" ? s.base.background : d === "fg" ? s.base.foreground : s.palette[d];
-                  root.style.setProperty(semCss[key], val);
-                }
+              root.style.setProperty("--zd-bg", s.palette[s.background]);
+              root.style.setProperty("--zd-fg", s.palette[s.foreground]);
+              root.style.setProperty("--zd-cursor", s.palette[s.cursor]);
+              root.style.setProperty("--zd-sel-bg", s.palette[s.selectionBg]);
+              root.style.setProperty("--zd-sel-fg", s.palette[s.selectionFg]);
+              for (var key in tweakSemanticCss) {
+                var m = s.semanticMappings && s.semanticMappings[key];
+                if (m === undefined) m = tweakSemanticDefaults[key];
+                var val = m === "bg" ? s.palette[s.background] : m === "fg" ? s.palette[s.foreground] : s.palette[m];
+                root.style.setProperty(tweakSemanticCss[key], val);
               }
             } catch (e) { localStorage.removeItem("zudo-doc-tweak-state"); }
           }
@@ -170,9 +166,6 @@ const contentTransition = {
             <article class="zd-content max-w-none">
               <slot />
             </article>
-            {settings.docHistory && currentSlug && (
-              <DocHistory slug={currentSlug} locale={lang !== defaultLocale ? lang : undefined} basePath={withBase("/")} client:idle />
-            )}
           </main>
 
           {/* Table of contents */}
@@ -180,6 +173,9 @@ const contentTransition = {
         </div>
       </div>
     </div>
+    {settings.docHistory && currentSlug && (
+      <DocHistory slug={currentSlug} locale={lang !== defaultLocale ? lang : undefined} basePath={withBase("/")} client:idle />
+    )}
     {settings.colorTweakPanel && <ColorTweakPanel client:idle />}
     <Footer />
     <CodeBlockEnhancer />

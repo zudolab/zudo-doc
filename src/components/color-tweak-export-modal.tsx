@@ -3,19 +3,19 @@ import { useState, useEffect, useRef } from "react";
 interface ColorTweakExportModalProps {
   onClose: () => void;
   colorState: {
-    background: string;
-    foreground: string;
-    cursor: string;
-    selectionBg: string;
-    selectionFg: string;
+    background: number;
+    foreground: number;
+    cursor: number;
+    selectionBg: number;
+    selectionFg: number;
     palette: string[];
-    semantic: Record<string, string>;
+    semanticMappings: Record<string, number | "bg" | "fg">;
     shikiTheme: string;
   };
 }
 
 function generateCode(colorState: ColorTweakExportModalProps["colorState"]): string {
-  const { palette, semantic } = colorState;
+  const { palette, semanticMappings } = colorState;
 
   const paletteLines = palette
     .map((c, i) => {
@@ -27,17 +27,20 @@ function generateCode(colorState: ColorTweakExportModalProps["colorState"]): str
     })
     .join("");
 
-  const semanticEntries = Object.entries(semantic);
+  const semanticEntries = Object.entries(semanticMappings);
   const semanticLines = semanticEntries
-    .map(([key, value]) => `    ${key}: "${value}",`)
+    .map(([key, value]) => {
+      if (typeof value === "string") return `    ${key}: "${value}",`;
+      return `    ${key}: ${value},`;
+    })
     .join("\n");
 
   return `{
-  background: "${colorState.background}",
-  foreground: "${colorState.foreground}",
-  cursor: "${colorState.cursor}",
-  selectionBg: "${colorState.selectionBg}",
-  selectionFg: "${colorState.selectionFg}",
+  background: ${colorState.background},
+  foreground: ${colorState.foreground},
+  cursor: ${colorState.cursor},
+  selectionBg: ${colorState.selectionBg},
+  selectionFg: ${colorState.selectionFg},
   palette: [
     ${paletteLines}
   ],
@@ -55,6 +58,7 @@ export default function ColorTweakExportModal({
 }: ColorTweakExportModalProps) {
   const [copyLabel, setCopyLabel] = useState("Copy");
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
   const code = generateCode(colorState);
 
   useEffect(() => {
@@ -75,6 +79,12 @@ export default function ColorTweakExportModal({
     dialog.addEventListener("close", handleClose);
     return () => dialog.removeEventListener("close", handleClose);
   }, [onClose]);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
 
   function handleBackdropClick(e: React.MouseEvent) {
     const dialog = dialogRef.current;
@@ -97,15 +107,16 @@ export default function ColorTweakExportModal({
     } catch {
       setCopyLabel("Failed");
     }
-    setTimeout(() => setCopyLabel("Copy"), 2000);
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = setTimeout(() => setCopyLabel("Copy"), 2000);
   }
 
   return (
     <dialog
       ref={dialogRef}
       onClick={handleBackdropClick}
-      className="mx-hsp-lg max-h-[80vh] w-full max-w-[40rem] overflow-y-auto border border-muted bg-surface p-hsp-xl backdrop:bg-bg/80"
-      style={{ color: "var(--color-fg)" }}
+      className="mx-auto max-h-[80vh] w-full max-w-[40rem] overflow-y-auto border border-muted bg-surface p-hsp-xl backdrop:bg-bg/80"
+      style={{ color: "var(--color-fg)", position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
     >
       <h2 className="mb-vsp-sm text-subheading font-bold text-fg">
         Export Color Scheme

@@ -1,37 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import ColorTweakExportModal from "./color-tweak-export-modal";
 import { colorSchemes, type ColorRef, type ColorScheme } from "@/config/color-schemes";
+import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "@/config/color-scheme-utils";
 import { settings } from "@/config/settings";
 
 const STORAGE_KEY = "zudo-doc-tweak-state";
 const OPEN_KEY = "zudo-doc-tweak-open";
-
-/** Default mapping: semantic token name → palette index (or "bg"/"fg" for codeBg/codeFg) */
-const SEMANTIC_DEFAULTS: Record<string, number | "bg" | "fg"> = {
-  surface: 0,
-  muted: 8,
-  accent: 6,
-  accentHover: 14,
-  codeBg: "fg",
-  codeFg: "bg",
-  success: 2,
-  danger: 1,
-  warning: 3,
-  info: 4,
-};
-
-const SEMANTIC_CSS_NAMES: Record<string, string> = {
-  surface: "--zd-surface",
-  muted: "--zd-muted",
-  accent: "--zd-accent",
-  accentHover: "--zd-accent-hover",
-  codeBg: "--zd-code-bg",
-  codeFg: "--zd-code-fg",
-  success: "--zd-success",
-  danger: "--zd-danger",
-  warning: "--zd-warning",
-  info: "--zd-info",
-};
 
 const SHIKI_THEMES = [
   "dracula",
@@ -246,6 +220,73 @@ function applyFullState(state: TweakState) {
   }
 }
 
+// --- Shared hooks & utilities ---
+
+/** Close popover on outside click, Escape, or ancestor scroll */
+function usePopoverClose(
+  containerRef: React.RefObject<HTMLElement | null>,
+  onClose: () => void,
+  isOpen: boolean,
+) {
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isOpen, onClose, containerRef]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleScroll() { onClose(); }
+    window.addEventListener("scroll", handleScroll, true);
+    return () => window.removeEventListener("scroll", handleScroll, true);
+  }, [isOpen, onClose]);
+}
+
+/** Compute fixed popover position with viewport-aware flip */
+function getFixedPopoverStyle(
+  anchor: HTMLElement | null,
+  estW: number,
+  estH: number,
+  extraStyle?: React.CSSProperties,
+): React.CSSProperties {
+  if (!anchor) return { position: "fixed", zIndex: 70, ...extraStyle };
+  const rect = anchor.getBoundingClientRect();
+  const gap = 4;
+  const pad = 8;
+  const below = window.innerHeight - rect.bottom - pad;
+  const above = rect.top - pad;
+  const flipAbove = below < estH && above > below;
+  let left = rect.left;
+  if (left + estW > window.innerWidth - pad) left = window.innerWidth - pad - estW;
+  if (left < pad) left = pad;
+  const style: React.CSSProperties = {
+    position: "fixed",
+    left,
+    zIndex: 70,
+    borderRadius: "var(--radius-DEFAULT)",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+    ...extraStyle,
+  };
+  if (flipAbove) {
+    style.bottom = window.innerHeight - rect.top + gap;
+  } else {
+    style.top = rect.bottom + gap;
+  }
+  return style;
+}
+
 // --- UI Components ---
 
 function HslPicker({
@@ -268,28 +309,7 @@ function HslPicker({
     setHexInput(color);
   }, [color]);
 
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    }
-    function handleEscape(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    document.addEventListener("mousedown", handleClick);
-    document.addEventListener("keydown", handleEscape);
-    return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [onClose]);
-
-  useEffect(() => {
-    function handleScroll() { onClose(); }
-    window.addEventListener("scroll", handleScroll, true);
-    return () => window.removeEventListener("scroll", handleScroll, true);
-  }, [onClose]);
+  usePopoverClose(containerRef, onClose, true);
 
   function updateFromHsl(newHsl: { h: number; s: number; l: number }) {
     setHsl(newHsl);
@@ -306,35 +326,6 @@ function HslPicker({
     }
   }
 
-  function getStyle(): React.CSSProperties {
-    if (!anchorRef.current) return { position: "fixed", zIndex: 70 };
-    const rect = anchorRef.current.getBoundingClientRect();
-    const gap = 4;
-    const pad = 8;
-    const estW = 240;
-    const estH = 180;
-    const below = window.innerHeight - rect.bottom - pad;
-    const above = rect.top - pad;
-    const flipAbove = below < estH && above > below;
-    let left = rect.left;
-    if (left + estW > window.innerWidth - pad) left = window.innerWidth - pad - estW;
-    if (left < pad) left = pad;
-    const style: React.CSSProperties = {
-      position: "fixed",
-      left,
-      zIndex: 70,
-      width: estW,
-      borderRadius: "var(--radius-DEFAULT)",
-      boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-    };
-    if (flipAbove) {
-      style.bottom = window.innerHeight - rect.top + gap;
-    } else {
-      style.top = rect.bottom + gap;
-    }
-    return style;
-  }
-
   const sliders = [
     { label: "H", value: hsl.h, max: 360, key: "h" as const },
     { label: "S", value: hsl.s, max: 100, key: "s" as const },
@@ -345,7 +336,7 @@ function HslPicker({
     <div
       ref={containerRef}
       className="border border-muted bg-surface p-[8px]"
-      style={getStyle()}
+      style={getFixedPopoverStyle(anchorRef.current, 240, 180, { width: 240 })}
     >
       <div className="flex items-center gap-[6px] mb-[6px]">
         <div
@@ -457,6 +448,7 @@ function PaletteSelector({
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const handleClose = useCallback(() => setIsOpen(false), []);
 
   const resolvedColor =
     value === "bg" ? (background ?? "#000000") :
@@ -468,65 +460,11 @@ function PaletteSelector({
     value === "fg" ? "fg" :
     `p${value}`;
 
-  // Close on click outside
-  useEffect(() => {
-    if (!isOpen) return;
-    function handleClick(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    function handleEscape(e: KeyboardEvent) {
-      if (e.key === "Escape") setIsOpen(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    document.addEventListener("keydown", handleEscape);
-    return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [isOpen]);
-
-  // Close on any ancestor scroll so fixed dropdown doesn't drift
-  useEffect(() => {
-    if (!isOpen) return;
-    function handleScroll() { setIsOpen(false); }
-    window.addEventListener("scroll", handleScroll, true);
-    return () => window.removeEventListener("scroll", handleScroll, true);
-  }, [isOpen]);
+  usePopoverClose(containerRef, handleClose, isOpen);
 
   function select(val: number | "bg" | "fg") {
     onChange(val);
     setIsOpen(false);
-  }
-
-  /** Compute fixed position, flipping above when viewport space is tight */
-  function getDropdownStyle(): React.CSSProperties {
-    if (!buttonRef.current) return { position: "fixed", zIndex: 70 };
-    const rect = buttonRef.current.getBoundingClientRect();
-    const gap = 4;
-    const pad = 8;
-    const estW = 280;
-    const estH = extraOptions ? 110 : 80;
-    const below = window.innerHeight - rect.bottom - pad;
-    const above = rect.top - pad;
-    const flipAbove = below < estH && above > below;
-    let left = rect.left;
-    if (left + estW > window.innerWidth - pad) left = window.innerWidth - pad - estW;
-    if (left < pad) left = pad;
-    const style: React.CSSProperties = {
-      position: "fixed",
-      left,
-      zIndex: 70,
-      borderRadius: "var(--radius-DEFAULT)",
-      boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-    };
-    if (flipAbove) {
-      style.bottom = window.innerHeight - rect.top + gap;
-    } else {
-      style.top = rect.bottom + gap;
-    }
-    return style;
   }
 
   return (
@@ -563,7 +501,7 @@ function PaletteSelector({
           role="listbox"
           aria-label={`${label} color options`}
           className="border border-muted bg-surface p-[6px]"
-          style={getDropdownStyle()}
+          style={getFixedPopoverStyle(buttonRef.current, 280, extraOptions ? 110 : 80)}
         >
           {/* Extra options (bg/fg) */}
           {extraOptions && extraOptions.length > 0 && (
@@ -678,7 +616,7 @@ export default function ColorTweakPanel() {
       return;
     }
     // No saved state — page already has correct colors from ColorSchemeProvider.
-    // Just read scheme data for panel display; don't apply (avoids oklch→hex lossy conversion).
+    // Just read scheme data for panel display; don't apply (avoids oklch->hex lossy conversion).
     setState(initFromScheme());
   }, [open, state]);
 
@@ -696,46 +634,48 @@ export default function ColorTweakPanel() {
   }, [state]);
 
   const persist = useCallback(
-    (next: TweakState) => {
-      setState(next);
-      applyFullState(next);
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        // storage full
-      }
+    (updater: (prev: TweakState) => TweakState) => {
+      setState((prev) => {
+        if (!prev) return prev;
+        const next = updater(prev);
+        applyFullState(next);
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        } catch {
+          // storage full
+        }
+        return next;
+      });
     },
     [],
   );
 
   const handlePaletteChange = useCallback(
     (index: number, hex: string) => {
-      if (!state) return;
-      persist({
-        ...state,
-        palette: state.palette.map((c, i) => (i === index ? hex : c)),
-      });
+      persist((prev) => ({
+        ...prev,
+        palette: prev.palette.map((c, i) => (i === index ? hex : c)),
+      }));
     },
-    [state, persist],
+    [persist],
   );
 
   const handleBaseIndexChange = useCallback(
-    (key: "background" | "foreground" | "cursor" | "selectionBg" | "selectionFg", index: number) => {
-      if (!state) return;
-      persist({ ...state, [key]: index });
+    (key: "background" | "foreground" | "cursor" | "selectionBg" | "selectionFg", val: number | "bg" | "fg") => {
+      if (typeof val !== "number") return;
+      persist((prev) => ({ ...prev, [key]: val }));
     },
-    [state, persist],
+    [persist],
   );
 
   const handleSemanticChange = useCallback(
     (key: string, val: number | "bg" | "fg") => {
-      if (!state) return;
-      persist({
-        ...state,
-        semanticMappings: { ...state.semanticMappings, [key]: val },
-      });
+      persist((prev) => ({
+        ...prev,
+        semanticMappings: { ...prev.semanticMappings, [key]: val },
+      }));
     },
-    [state, persist],
+    [persist],
   );
 
   const handleResetAll = useCallback(() => {
@@ -851,31 +791,31 @@ export default function ColorTweakPanel() {
                     label="bg"
                     value={state.background}
                     palette={state.palette}
-                    onChange={(v) => handleBaseIndexChange("background", v as number)}
+                    onChange={(v) => handleBaseIndexChange("background", v)}
                   />
                   <PaletteSelector
                     label="fg"
                     value={state.foreground}
                     palette={state.palette}
-                    onChange={(v) => handleBaseIndexChange("foreground", v as number)}
+                    onChange={(v) => handleBaseIndexChange("foreground", v)}
                   />
                   <PaletteSelector
                     label="cursor"
                     value={state.cursor}
                     palette={state.palette}
-                    onChange={(v) => handleBaseIndexChange("cursor", v as number)}
+                    onChange={(v) => handleBaseIndexChange("cursor", v)}
                   />
                   <PaletteSelector
                     label="sel-bg"
                     value={state.selectionBg}
                     palette={state.palette}
-                    onChange={(v) => handleBaseIndexChange("selectionBg", v as number)}
+                    onChange={(v) => handleBaseIndexChange("selectionBg", v)}
                   />
                   <PaletteSelector
                     label="sel-fg"
                     value={state.selectionFg}
                     palette={state.palette}
-                    onChange={(v) => handleBaseIndexChange("selectionFg", v as number)}
+                    onChange={(v) => handleBaseIndexChange("selectionFg", v)}
                   />
                   <div className="flex items-center gap-hsp-xs mt-[4px]">
                     <span className="text-fg shrink-0" style={{ fontSize: "0.75rem", minWidth: "4.5rem" }}>
@@ -883,7 +823,10 @@ export default function ColorTweakPanel() {
                     </span>
                     <select
                       value={state.shikiTheme}
-                      onChange={(e) => persist({ ...state, shikiTheme: e.target.value })}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        persist((prev) => ({ ...prev, shikiTheme: val }));
+                      }}
                       className="bg-surface text-fg border border-muted px-[4px] py-[2px] hover:border-fg transition-colors"
                       style={{ fontSize: "0.6875rem", borderRadius: "var(--radius-DEFAULT)" }}
                     >

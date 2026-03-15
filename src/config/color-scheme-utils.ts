@@ -1,6 +1,33 @@
 import { colorSchemes, type ColorScheme, type ColorRef } from "./color-schemes";
 import { settings } from "./settings";
 
+/** Default mapping: semantic token name → palette index (or "bg"/"fg" for codeBg/codeFg) */
+export const SEMANTIC_DEFAULTS: Record<string, number | "bg" | "fg"> = {
+  surface: 0,
+  muted: 8,
+  accent: 6,
+  accentHover: 14,
+  codeBg: "fg",
+  codeFg: "bg",
+  success: 2,
+  danger: 1,
+  warning: 3,
+  info: 4,
+};
+
+export const SEMANTIC_CSS_NAMES: Record<string, string> = {
+  surface: "--zd-surface",
+  muted: "--zd-muted",
+  accent: "--zd-accent",
+  accentHover: "--zd-accent-hover",
+  codeBg: "--zd-code-bg",
+  codeFg: "--zd-code-fg",
+  success: "--zd-success",
+  danger: "--zd-danger",
+  warning: "--zd-warning",
+  info: "--zd-info",
+};
+
 export const lightDarkPairings = [
   { light: "Default Light", dark: "Default Dark", label: "Default" },
 ];
@@ -35,8 +62,8 @@ export function resolveSemanticColors(scheme: ColorScheme) {
     muted: resolveColor(scheme.semantic?.muted, p, p[8]),
     accent: resolveColor(scheme.semantic?.accent, p, p[6]),
     accentHover: resolveColor(scheme.semantic?.accentHover, p, p[14]),
-    codeBg: resolveColor(scheme.semantic?.codeBg, p, scheme.foreground),
-    codeFg: resolveColor(scheme.semantic?.codeFg, p, scheme.background),
+    codeBg: resolveColor(scheme.semantic?.codeBg, p, resolveColor(scheme.foreground, p, p[15])),
+    codeFg: resolveColor(scheme.semantic?.codeFg, p, resolveColor(scheme.background, p, p[0])),
     success: resolveColor(scheme.semantic?.success, p, p[2]),
     danger: resolveColor(scheme.semantic?.danger, p, p[1]),
     warning: resolveColor(scheme.semantic?.warning, p, p[3]),
@@ -48,11 +75,11 @@ export function schemeToCssPairs(scheme: ColorScheme): [string, string][] {
   const p = scheme.palette;
   const sem = resolveSemanticColors(scheme);
   return [
-    ["--zd-bg", scheme.background],
-    ["--zd-fg", scheme.foreground],
+    ["--zd-bg", resolveColor(scheme.background, p, p[0])],
+    ["--zd-fg", resolveColor(scheme.foreground, p, p[15])],
     ["--zd-cursor", resolveColor(scheme.cursor, p, p[6])],
-    ["--zd-sel-bg", resolveColor(scheme.selectionBg, p, scheme.background)],
-    ["--zd-sel-fg", resolveColor(scheme.selectionFg, p, scheme.foreground)],
+    ["--zd-sel-bg", resolveColor(scheme.selectionBg, p, resolveColor(scheme.background, p, p[0]))],
+    ["--zd-sel-fg", resolveColor(scheme.selectionFg, p, resolveColor(scheme.foreground, p, p[15]))],
     ...p.map((color, i) => [`--zd-${i}`, color] as [string, string]),
     ["--zd-surface", sem.surface],
     ["--zd-muted", sem.muted],
