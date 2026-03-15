@@ -1,4 +1,4 @@
-import { colorSchemes, type ColorScheme } from "./color-schemes";
+import { colorSchemes, type ColorScheme, type ColorRef } from "./color-schemes";
 import { settings } from "./settings";
 
 export const lightDarkPairings = [
@@ -13,31 +13,47 @@ export function getActiveScheme(): ColorScheme {
   return scheme;
 }
 
+/** Resolve a ColorRef to a concrete color string.
+ *  - number → palette[value]
+ *  - string → used as-is
+ *  - undefined → fallback */
+export function resolveColor(
+  value: ColorRef | undefined,
+  palette: string[],
+  fallback: string,
+): string {
+  if (value === undefined) return fallback;
+  if (typeof value === "number") return palette[value];
+  return value;
+}
+
 /** Resolve semantic colors with fallbacks to default palette slots */
 export function resolveSemanticColors(scheme: ColorScheme) {
+  const p = scheme.palette;
   return {
-    surface: scheme.semantic?.surface ?? scheme.palette[0],
-    muted: scheme.semantic?.muted ?? scheme.palette[8],
-    accent: scheme.semantic?.accent ?? scheme.palette[6],
-    accentHover: scheme.semantic?.accentHover ?? scheme.palette[14],
-    codeBg: scheme.semantic?.codeBg ?? scheme.foreground,
-    codeFg: scheme.semantic?.codeFg ?? scheme.background,
-    success: scheme.semantic?.success ?? scheme.palette[2],
-    danger: scheme.semantic?.danger ?? scheme.palette[1],
-    warning: scheme.semantic?.warning ?? scheme.palette[3],
-    info: scheme.semantic?.info ?? scheme.palette[4],
+    surface: resolveColor(scheme.semantic?.surface, p, p[0]),
+    muted: resolveColor(scheme.semantic?.muted, p, p[8]),
+    accent: resolveColor(scheme.semantic?.accent, p, p[6]),
+    accentHover: resolveColor(scheme.semantic?.accentHover, p, p[14]),
+    codeBg: resolveColor(scheme.semantic?.codeBg, p, scheme.foreground),
+    codeFg: resolveColor(scheme.semantic?.codeFg, p, scheme.background),
+    success: resolveColor(scheme.semantic?.success, p, p[2]),
+    danger: resolveColor(scheme.semantic?.danger, p, p[1]),
+    warning: resolveColor(scheme.semantic?.warning, p, p[3]),
+    info: resolveColor(scheme.semantic?.info, p, p[4]),
   };
 }
 
 export function schemeToCssPairs(scheme: ColorScheme): [string, string][] {
+  const p = scheme.palette;
   const sem = resolveSemanticColors(scheme);
   return [
     ["--zd-bg", scheme.background],
     ["--zd-fg", scheme.foreground],
-    ["--zd-cursor", scheme.cursor],
-    ["--zd-sel-bg", scheme.selectionBg],
-    ["--zd-sel-fg", scheme.selectionFg],
-    ...scheme.palette.map((color, i) => [`--zd-${i}`, color] as [string, string]),
+    ["--zd-cursor", resolveColor(scheme.cursor, p, p[6])],
+    ["--zd-sel-bg", resolveColor(scheme.selectionBg, p, scheme.background)],
+    ["--zd-sel-fg", resolveColor(scheme.selectionFg, p, scheme.foreground)],
+    ...p.map((color, i) => [`--zd-${i}`, color] as [string, string]),
     ["--zd-surface", sem.surface],
     ["--zd-muted", sem.muted],
     ["--zd-accent", sem.accent],

@@ -1,9 +1,12 @@
+/** A color reference: palette index (number) or direct color value (string) */
+export type ColorRef = number | string;
+
 export interface ColorScheme {
   background: string;
   foreground: string;
-  cursor: string;
-  selectionBg: string;
-  selectionFg: string;
+  cursor: ColorRef;
+  selectionBg: ColorRef;
+  selectionFg: ColorRef;
   palette: [
     string, string, string, string, string, string, string, string,
     string, string, string, string, string, string, string, string,
@@ -12,18 +15,19 @@ export interface ColorScheme {
   /** Optional semantic overrides — when omitted, defaults are used:
    *  surface=palette[0], muted=palette[8], accent=palette[6], accentHover=palette[14]
    *  codeBg=foreground, codeFg=background, success=palette[2], danger=palette[1],
-   *  warning=palette[3], info=palette[4] */
+   *  warning=palette[3], info=palette[4]
+   *  Each field accepts a palette index (number) or a direct color value (string). */
   semantic?: {
-    surface?: string;
-    muted?: string;
-    accent?: string;
-    accentHover?: string;
-    codeBg?: string;
-    codeFg?: string;
-    success?: string;
-    danger?: string;
-    warning?: string;
-    info?: string;
+    surface?: ColorRef;
+    muted?: ColorRef;
+    accent?: ColorRef;
+    accentHover?: ColorRef;
+    codeBg?: ColorRef;
+    codeFg?: ColorRef;
+    success?: ColorRef;
+    danger?: ColorRef;
+    warning?: ColorRef;
+    info?: ColorRef;
   };
 }
 
@@ -31,7 +35,7 @@ export const colorSchemes: Record<string, ColorScheme> = {
   "Default Light": {
     background: "#f8f8f8",
     foreground: "#303030",
-    cursor: "oklch(70.4% 0.04 256.788)",
+    cursor: 6,
     selectionBg: "#303030",
     selectionFg: "#f8f8f8",
     palette: [
@@ -42,15 +46,15 @@ export const colorSchemes: Record<string, ColorScheme> = {
     ],
     shikiTheme: "github-light",
     semantic: {
-      accent: "oklch(70.4% 0.04 256.788)",
-      accentHover: "oklch(65% 0.027 256.788)",
+      accent: 6,
+      accentHover: 14,
       surface: "#eeeeee",
     },
   },
   "Default Dark": {
     background: "#181818",
     foreground: "#b8b8b8",
-    cursor: "oklch(70.4% 0.04 256.788)",
+    cursor: 6,
     selectionBg: "#383838",
     selectionFg: "#e0e0e0",
     palette: [
@@ -61,9 +65,9 @@ export const colorSchemes: Record<string, ColorScheme> = {
     ],
     shikiTheme: "dracula",
     semantic: {
-      accent: "oklch(70.4% 0.04 256.788)",
-      accentHover: "oklch(80% 0.057 256.788)",
-      muted: "#888888",
+      accent: 6,
+      accentHover: 14,
+      muted: 8,
       surface: "#222222",
     },
   },
