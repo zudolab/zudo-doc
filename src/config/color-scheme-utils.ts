@@ -1,5 +1,32 @@
-import { colorSchemes, type ColorScheme } from "./color-schemes";
+import { colorSchemes, type ColorScheme, type ColorRef } from "./color-schemes";
 import { settings } from "./settings";
+
+/** Default mapping: semantic token name → palette index (or "bg"/"fg" for codeBg/codeFg) */
+export const SEMANTIC_DEFAULTS: Record<string, number | "bg" | "fg"> = {
+  surface: 0,
+  muted: 8,
+  accent: 6,
+  accentHover: 14,
+  codeBg: "fg",
+  codeFg: "bg",
+  success: 2,
+  danger: 1,
+  warning: 3,
+  info: 4,
+};
+
+export const SEMANTIC_CSS_NAMES: Record<string, string> = {
+  surface: "--zd-surface",
+  muted: "--zd-muted",
+  accent: "--zd-accent",
+  accentHover: "--zd-accent-hover",
+  codeBg: "--zd-code-bg",
+  codeFg: "--zd-code-fg",
+  success: "--zd-success",
+  danger: "--zd-danger",
+  warning: "--zd-warning",
+  info: "--zd-info",
+};
 
 export const lightDarkPairings = [
   { light: "Default Light", dark: "Default Dark", label: "Default" },
@@ -13,31 +40,47 @@ export function getActiveScheme(): ColorScheme {
   return scheme;
 }
 
+/** Resolve a ColorRef to a concrete color string.
+ *  - number → palette[value]
+ *  - string → used as-is
+ *  - undefined → fallback */
+export function resolveColor(
+  value: ColorRef | undefined,
+  palette: string[],
+  fallback: string,
+): string {
+  if (value === undefined) return fallback;
+  if (typeof value === "number") return palette[value] ?? fallback;
+  return value;
+}
+
 /** Resolve semantic colors with fallbacks to default palette slots */
 export function resolveSemanticColors(scheme: ColorScheme) {
+  const p = scheme.palette;
   return {
-    surface: scheme.semantic?.surface ?? scheme.palette[0],
-    muted: scheme.semantic?.muted ?? scheme.palette[8],
-    accent: scheme.semantic?.accent ?? scheme.palette[6],
-    accentHover: scheme.semantic?.accentHover ?? scheme.palette[14],
-    codeBg: scheme.semantic?.codeBg ?? scheme.foreground,
-    codeFg: scheme.semantic?.codeFg ?? scheme.background,
-    success: scheme.semantic?.success ?? scheme.palette[2],
-    danger: scheme.semantic?.danger ?? scheme.palette[1],
-    warning: scheme.semantic?.warning ?? scheme.palette[3],
-    info: scheme.semantic?.info ?? scheme.palette[4],
+    surface: resolveColor(scheme.semantic?.surface, p, p[0]),
+    muted: resolveColor(scheme.semantic?.muted, p, p[8]),
+    accent: resolveColor(scheme.semantic?.accent, p, p[6]),
+    accentHover: resolveColor(scheme.semantic?.accentHover, p, p[14]),
+    codeBg: resolveColor(scheme.semantic?.codeBg, p, resolveColor(scheme.foreground, p, p[15])),
+    codeFg: resolveColor(scheme.semantic?.codeFg, p, resolveColor(scheme.background, p, p[0])),
+    success: resolveColor(scheme.semantic?.success, p, p[2]),
+    danger: resolveColor(scheme.semantic?.danger, p, p[1]),
+    warning: resolveColor(scheme.semantic?.warning, p, p[3]),
+    info: resolveColor(scheme.semantic?.info, p, p[4]),
   };
 }
 
 export function schemeToCssPairs(scheme: ColorScheme): [string, string][] {
+  const p = scheme.palette;
   const sem = resolveSemanticColors(scheme);
   return [
-    ["--zd-bg", scheme.background],
-    ["--zd-fg", scheme.foreground],
-    ["--zd-cursor", scheme.cursor],
-    ["--zd-sel-bg", scheme.selectionBg],
-    ["--zd-sel-fg", scheme.selectionFg],
-    ...scheme.palette.map((color, i) => [`--zd-${i}`, color] as [string, string]),
+    ["--zd-bg", resolveColor(scheme.background, p, p[0])],
+    ["--zd-fg", resolveColor(scheme.foreground, p, p[15])],
+    ["--zd-cursor", resolveColor(scheme.cursor, p, p[6])],
+    ["--zd-sel-bg", resolveColor(scheme.selectionBg, p, resolveColor(scheme.background, p, p[0]))],
+    ["--zd-sel-fg", resolveColor(scheme.selectionFg, p, resolveColor(scheme.foreground, p, p[15]))],
+    ...p.map((color, i) => [`--zd-${i}`, color] as [string, string]),
     ["--zd-surface", sem.surface],
     ["--zd-muted", sem.muted],
     ["--zd-accent", sem.accent],

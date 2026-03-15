@@ -5,6 +5,7 @@ export interface LightDarkPairing {
 }
 
 export const LIGHT_DARK_PAIRINGS: LightDarkPairing[] = [
+  { light: "Default Light", dark: "Default Dark", label: "Default" },
   { light: "GitHub Light", dark: "GitHub Dark", label: "GitHub" },
   { light: "Catppuccin Latte", dark: "Catppuccin Mocha", label: "Catppuccin" },
   { light: "Solarized Light", dark: "Solarized Dark", label: "Solarized" },
@@ -17,6 +18,7 @@ export const LIGHT_DARK_PAIRINGS: LightDarkPairing[] = [
 
 // All available single schemes (dark ones most popular first)
 export const SINGLE_SCHEMES = [
+  "Default Dark",
   "Dracula",
   "Catppuccin Mocha",
   "GitHub Dark",
@@ -50,6 +52,7 @@ export const SINGLE_SCHEMES = [
   "Gruvbox Material Dark",
   "Kanagawa Dragon",
   // Light schemes
+  "Default Light",
   "GitHub Light",
   "Catppuccin Latte",
   "Solarized Light",
@@ -113,6 +116,12 @@ export const FEATURES: Feature[] = [
     value: "colorSchemePreview",
     label: "Color scheme preview",
     hint: "Runtime scheme switcher in header",
+    default: false,
+  },
+  {
+    value: "colorTweakPanel",
+    label: "Color tweak panel",
+    hint: "Live color editor for designing schemes",
     default: false,
   },
 ];

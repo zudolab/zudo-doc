@@ -69,6 +69,12 @@ export function generateSettingsFile(choices: UserChoices): string {
 
   lines.push(`  mermaid: true,`);
 
+  if (choices.features.includes("colorTweakPanel")) {
+    lines.push(`  colorTweakPanel: true as boolean,`);
+  } else {
+    lines.push(`  colorTweakPanel: false as boolean,`);
+  }
+
   if (choices.features.includes("claudeResources")) {
     lines.push(`  claudeResources: {`);
     lines.push(`    claudeDir: ".claude",`);

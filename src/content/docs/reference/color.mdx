@@ -118,20 +118,36 @@ Once registered in `@theme`, these become standard Tailwind utility classes: `bg
 
 ### Per-Scheme Semantic Overrides
 
-Each color scheme can override the default palette-slot mapping via the `semantic` property in `src/config/color-schemes.ts`:
+Each color scheme can override the default palette-slot mapping via the `semantic` property in `src/config/color-schemes.ts`. Values can be either a **palette index** (number) or a **direct color string**:
 
 ```ts
 "My Custom Scheme": {
   // ...palette, background, foreground...
   semantic: {
-    accent: "#d33682",     // override default cyan with magenta
-    accentHover: "#6c71c4",
-    surface: "#f4efdd",
+    accent: 6,              // use palette[6] — no color duplication
+    accentHover: 14,         // use palette[14]
+    surface: "#f4efdd",      // direct color string (not in palette)
   },
 },
 ```
 
-The resolution logic lives in `src/config/color-scheme-utils.ts` — each semantic property falls back to its default palette slot when not explicitly overridden.
+Using palette indices instead of repeating color strings eliminates duplication and ensures semantic colors stay in sync when palette colors change (e.g., via the [Color Tweak Panel](/docs/guides/color-tweak-panel)).
+
+The same `number | string` type (called `ColorRef`) is also supported for `cursor`, `selectionBg`, and `selectionFg`:
+
+```ts
+"My Theme": {
+  background: "#1a1a2e",
+  foreground: "#e0e0e0",
+  cursor: 6,            // use palette[6] instead of duplicating the color
+  selectionBg: "#3a3a5e",
+  selectionFg: 15,       // use palette[15]
+  palette: [...],
+  shikiTheme: "one-dark-pro",
+},
+```
+
+The resolution logic lives in `src/config/color-scheme-utils.ts` — each property falls back to its default palette slot when not explicitly set.
 
 ## Tier 3: Component Tokens
 
@@ -242,10 +258,11 @@ Add a new entry to the `colorSchemes` object in `src/config/color-schemes.ts`:
 
 The `ColorScheme` interface requires:
 
-- `background`, `foreground`, `cursor`, `selectionBg`, `selectionFg` — base colors
+- `background`, `foreground` — base color strings
+- `cursor`, `selectionBg`, `selectionFg` — `ColorRef` (palette index or color string)
 - `palette` — 16-element tuple (color slots 0–15)
 - `shikiTheme` — a Shiki theme name for syntax highlighting
-- `semantic` (optional) — override default palette-slot mappings for any semantic token
+- `semantic` (optional) — override default palette-slot mappings using `ColorRef` values (palette index or color string)
 
 ## What NOT to Do
 

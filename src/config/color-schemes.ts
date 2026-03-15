@@ -1,9 +1,12 @@
+/** A color reference: palette index (number) or direct color value (string) */
+export type ColorRef = number | string;
+
 export interface ColorScheme {
-  background: string;
-  foreground: string;
-  cursor: string;
-  selectionBg: string;
-  selectionFg: string;
+  background: ColorRef;
+  foreground: ColorRef;
+  cursor: ColorRef;
+  selectionBg: ColorRef;
+  selectionFg: ColorRef;
   palette: [
     string, string, string, string, string, string, string, string,
     string, string, string, string, string, string, string, string,
@@ -12,59 +15,73 @@ export interface ColorScheme {
   /** Optional semantic overrides — when omitted, defaults are used:
    *  surface=palette[0], muted=palette[8], accent=palette[6], accentHover=palette[14]
    *  codeBg=foreground, codeFg=background, success=palette[2], danger=palette[1],
-   *  warning=palette[3], info=palette[4] */
+   *  warning=palette[3], info=palette[4]
+   *  Each field accepts a palette index (number) or a direct color value (string). */
   semantic?: {
-    surface?: string;
-    muted?: string;
-    accent?: string;
-    accentHover?: string;
-    codeBg?: string;
-    codeFg?: string;
-    success?: string;
-    danger?: string;
-    warning?: string;
-    info?: string;
+    surface?: ColorRef;
+    muted?: ColorRef;
+    accent?: ColorRef;
+    accentHover?: ColorRef;
+    codeBg?: ColorRef;
+    codeFg?: ColorRef;
+    success?: ColorRef;
+    danger?: ColorRef;
+    warning?: ColorRef;
+    info?: ColorRef;
   };
 }
 
 export const colorSchemes: Record<string, ColorScheme> = {
   "Default Light": {
-    background: "#f8f8f8",
-    foreground: "#303030",
-    cursor: "oklch(70.4% 0.04 256.788)",
-    selectionBg: "#303030",
-    selectionFg: "#f8f8f8",
+    background: 1,
+    foreground: 0,
+    cursor: 6,
+    selectionBg: 10,
+    selectionFg: 9,
     palette: [
-      "#2a2a2a", "#bd4b53", "#266538", "#7a5218",
-      "#3277c8", "#977acc", "oklch(70.4% 0.04 256.788)", "#707070",
-      "#808080", "#9c2d3f", "#327e48", "#654516",
-      "#5b99dc", "#b89ee7", "oklch(65% 0.027 256.788)", "#989898",
+      "#303030", "#e2ddda", "#266538", "#7a5218",
+      "#3277c8", "#a35e0f", "#90a1b9", "#a83838",
+      "#6b6b6b", "#ece9e9", "#303030", "#654516",
+      "#5b99dc", "#b89ee7", "#8590a0", "#dd3131",
     ],
-    shikiTheme: "github-light",
+    shikiTheme: "catppuccin-latte",
     semantic: {
-      accent: "oklch(70.4% 0.04 256.788)",
-      accentHover: "oklch(65% 0.027 256.788)",
-      surface: "#eeeeee",
+      surface: 9,
+      muted: 8,
+      accent: 5,
+      accentHover: 14,
+      codeBg: 1,
+      codeFg: 10,
+      success: 2,
+      danger: 15,
+      warning: 7,
+      info: 4,
     },
   },
   "Default Dark": {
-    background: "#181818",
-    foreground: "#b8b8b8",
-    cursor: "oklch(70.4% 0.04 256.788)",
-    selectionBg: "#383838",
-    selectionFg: "#e0e0e0",
+    background: 9,
+    foreground: 15,
+    cursor: 6,
+    selectionBg: 10,
+    selectionFg: 11,
     palette: [
       "#1c1c1c", "#da6871", "#93bb77", "#dfbb77",
-      "#5caae9", "#c074d6", "oklch(70.4% 0.04 256.788)", "#a0a0a0",
-      "#888888", "#da6871", "#93bb77", "#dfbb77",
-      "#5caae9", "#c074d6", "oklch(80% 0.057 256.788)", "#b8b8b8",
+      "#5caae9", "#c074d6", "#90a1b9", "#a0a0a0",
+      "#888888", "#181818", "#383838", "#e0e0e0",
+      "#d69a66", "#c074d6", "#a7c0e3", "#b8b8b8",
     ],
-    shikiTheme: "dracula",
+    shikiTheme: "vitesse-dark",
     semantic: {
-      accent: "oklch(70.4% 0.04 256.788)",
-      accentHover: "oklch(80% 0.057 256.788)",
-      muted: "#888888",
-      surface: "#222222",
+      surface: 0,
+      muted: 8,
+      accent: 12,
+      accentHover: 14,
+      codeBg: 10,
+      codeFg: 11,
+      success: 2,
+      danger: 1,
+      warning: 3,
+      info: 4,
     },
   },
 };

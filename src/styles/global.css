@@ -322,7 +322,6 @@ body {
   font-family: var(--font-mono);
   background-color: var(--color-code-bg);
   color: var(--color-code-fg);
-  border: 1px solid var(--color-muted);
   border-radius: var(--radius-DEFAULT);
   padding: 2px var(--spacing-hsp-xs);
 }

@@ -146,6 +146,30 @@ export async function stripFeatures(
     }
   }
 
+  // Strip color tweak panel if not selected
+  if (!choices.features.includes("colorTweakPanel")) {
+    await removeIfExists(targetDir, "src/components/color-tweak-panel.tsx");
+    await removeIfExists(targetDir, "src/components/color-tweak-export-modal.tsx");
+    await removeIfExists(targetDir, "src/utils/color-convert.ts");
+    await removeIfExists(targetDir, "src/utils/export-code.ts");
+    await patchFile(
+      path.join(targetDir, "src/layouts/doc-layout.astro"),
+      [
+        [/import ColorTweakPanel from.*\n/g, ""],
+        [/import \{ SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES \} from.*\n/g, ""],
+        [/\s*\{settings\.colorTweakPanel &&[\s\S]*?<\/script>\s*\n\s*\)\}\s*\n?/g, "\n"],
+        [/\s*\{settings\.colorTweakPanel && <ColorTweakPanel[^]*?\/>\}\s*\n?/g, "\n"],
+      ],
+    );
+    // Remove tweak trigger button from header
+    await patchFile(
+      path.join(targetDir, "src/components/header.astro"),
+      [
+        [/\s*\{settings\.colorTweakPanel &&[\s\S]*?id="color-tweak-trigger"[\s\S]*?\}\}\s*\n?/g, "\n"],
+      ],
+    );
+  }
+
   // TODO: Strip sidebar filter when not selected
   // The sidebar filter is built into sidebar-tree.tsx — stripping requires
   // careful component surgery. For now, the filter is always included.

@@ -13,6 +13,7 @@
     "preview": "astro preview",
     "// ── Quality ──────────────────────────────────────": "",
     "check": "astro sync && tsc --noEmit",
+    "test:unit": "vitest run",
     "test:e2e": "bash e2e/setup-fixtures.sh && playwright test",
     "b4push": "./scripts/run-b4push.sh"
   },
@@ -44,6 +45,7 @@
     "rehype-katex": "^7.0.1",
     "remark-directive": "^4.0.0",
     "remark-math": "^6.0.0",
+    "shiki": "^4.0.2",
     "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
@@ -56,6 +58,7 @@
     "@types/react-dom": "^19.2.3",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
+    "vitest": "^4.1.0",
     "wrangler": "^4.72.0"
   }
 }

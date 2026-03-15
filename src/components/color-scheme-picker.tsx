@@ -27,7 +27,9 @@ export default function ColorSchemePicker() {
     setCurrent(name);
     localStorage.setItem(STORAGE_KEY, name);
     localStorage.setItem(STORAGE_CSS_KEY, JSON.stringify(schemeToCssPairs(scheme)));
+    localStorage.removeItem("zudo-doc-tweak-state");
     applyScheme(scheme);
+    window.dispatchEvent(new CustomEvent("color-scheme-changed"));
   }
 
   return (

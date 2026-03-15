@@ -20,6 +20,8 @@ import type { VersionConfig } from "@/config/settings-types";
 import VersionSwitcher from "@/components/version-switcher.astro";
 import VersionBanner from "@/components/version-banner.astro";
 import Footer from "@/components/footer.astro";
+import ColorTweakPanel from "@/components/color-tweak-panel";
+import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "@/config/color-scheme-utils";
 
 interface Props {
   title: string;
@@ -84,6 +86,35 @@ const contentTransition = {
     <meta property="og:title" content={fullTitle} />
     {description && <meta property="og:description" content={description} />}
     <ColorSchemeProvider />
+    {settings.colorTweakPanel && (
+      <script is:inline define:vars={{ tweakSemanticDefaults: SEMANTIC_DEFAULTS, tweakSemanticCss: SEMANTIC_CSS_NAMES }}>
+        (function () {
+          function applyTweakState() {
+            var raw = localStorage.getItem("zudo-doc-tweak-state");
+            if (!raw) return;
+            try {
+              var s = JSON.parse(raw);
+              if (!s.palette || s.palette.length !== 16 || s.background === undefined) return;
+              var root = document.documentElement;
+              for (var i = 0; i < 16; i++) root.style.setProperty("--zd-" + i, s.palette[i]);
+              root.style.setProperty("--zd-bg", s.palette[s.background]);
+              root.style.setProperty("--zd-fg", s.palette[s.foreground]);
+              root.style.setProperty("--zd-cursor", s.palette[s.cursor]);
+              root.style.setProperty("--zd-sel-bg", s.palette[s.selectionBg]);
+              root.style.setProperty("--zd-sel-fg", s.palette[s.selectionFg]);
+              for (var key in tweakSemanticCss) {
+                var m = s.semanticMappings && s.semanticMappings[key];
+                if (m === undefined) m = tweakSemanticDefaults[key];
+                var val = m === "bg" ? s.palette[s.background] : m === "fg" ? s.palette[s.foreground] : s.palette[m];
+                root.style.setProperty(tweakSemanticCss[key], val);
+              }
+            } catch (e) { localStorage.removeItem("zudo-doc-tweak-state"); }
+          }
+          applyTweakState();
+          document.addEventListener("astro:after-swap", applyTweakState);
+        })();
+      </script>
+    )}
     {settings.math && (
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.38/dist/katex.min.css" crossorigin="anonymous" />
     )}
@@ -145,6 +176,7 @@ const contentTransition = {
         </div>
       </div>
     </div>
+    {settings.colorTweakPanel && <ColorTweakPanel client:only="react" />}
     <Footer />
     <CodeBlockEnhancer />
     <TabsInit />
