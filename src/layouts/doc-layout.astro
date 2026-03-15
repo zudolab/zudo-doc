@@ -166,9 +166,6 @@ const contentTransition = {
             <article class="zd-content max-w-none">
               <slot />
             </article>
-            {settings.docHistory && currentSlug && (
-              <DocHistory slug={currentSlug} locale={lang !== defaultLocale ? lang : undefined} basePath={withBase("/")} client:idle />
-            )}
           </main>
 
           {/* Table of contents */}
@@ -176,6 +173,9 @@ const contentTransition = {
         </div>
       </div>
     </div>
+    {settings.docHistory && currentSlug && (
+      <DocHistory slug={currentSlug} locale={lang !== defaultLocale ? lang : undefined} basePath={withBase("/")} client:idle />
+    )}
     {settings.colorTweakPanel && <ColorTweakPanel client:only="react" />}
     <Footer />
     <CodeBlockEnhancer />
