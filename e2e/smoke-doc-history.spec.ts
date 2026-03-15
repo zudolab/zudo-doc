@@ -28,9 +28,9 @@ test.describe("Doc History: revision panel and diff", () => {
 
     await triggerBtn.click();
 
-    // Panel should become visible (translate-x-0 instead of translate-x-full)
-    const panel = page.locator('[aria-label="Document revision history"]');
-    await expect(panel).toHaveClass(/translate-x-0/, { timeout: 5000 });
+    // Panel should become visible (dialog[open])
+    const panel = page.locator('dialog[aria-label="Document revision history"]');
+    await expect(panel).toHaveAttribute("open", "", { timeout: 5000 });
   });
 
   test("revision list shows 2+ entries after data loads", async ({ page }) => {
@@ -60,8 +60,8 @@ test.describe("Doc History: revision panel and diff", () => {
     await triggerBtn.click();
 
     // Verify panel is open before looking for entries
-    const panel = page.locator('[aria-label="Document revision history"]');
-    await expect(panel).toHaveClass(/translate-x-0/, { timeout: 5000 });
+    const panel = page.locator('dialog[aria-label="Document revision history"]');
+    await expect(panel).toHaveAttribute("open", "", { timeout: 5000 });
 
     // Wait for entries to load (fetch completes and spinner disappears)
     const aButtons = page.locator(
@@ -126,13 +126,13 @@ test.describe("Doc History: revision panel and diff", () => {
     await triggerBtn.click();
 
     // Verify panel is open
-    const panel = page.locator('[aria-label="Document revision history"]');
-    await expect(panel).toHaveClass(/translate-x-0/, { timeout: 5000 });
+    const panel = page.locator('dialog[aria-label="Document revision history"]');
+    await expect(panel).toHaveAttribute("open", "", { timeout: 5000 });
 
-    // Press Escape
+    // Press Escape — native dialog handles this
     await page.keyboard.press("Escape");
 
-    // Panel should close (translate-x-full)
-    await expect(panel).toHaveClass(/translate-x-full/, { timeout: 5000 });
+    // Panel should close (dialog no longer has open attribute)
+    await expect(panel).not.toHaveAttribute("open", { timeout: 5000 });
   });
 });
