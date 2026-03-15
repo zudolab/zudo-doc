@@ -22,7 +22,7 @@ export const settings = {
     respectPrefersColorScheme: true,
   } as ColorModeConfig | false,
   siteName: "zudo-doc",
-  siteDescription: "A minimal, fast documentation framework built with Astro and MDX." as string,
+  siteDescription: "Documentation base framework built with Astro and MDX." as string,
   base: "/pj/zudo-doc/",
   docsDir: "src/content/docs",
   locales: {
