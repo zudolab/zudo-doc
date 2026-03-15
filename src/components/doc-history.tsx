@@ -492,7 +492,7 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
     <>
       {/* History button */}
       {!isOpen && (
-        <div className="flex justify-end mt-vsp-xl px-hsp-xl pb-vsp-xl lg:px-hsp-2xl lg:pb-vsp-2xl">
+        <div className="flex justify-end mt-vsp-xl">
           <button
             type="button"
             onClick={handleOpen}
