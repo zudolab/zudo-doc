@@ -89,14 +89,22 @@ test.describe("Color tweak panel", () => {
     await firstSwatch.click();
 
     // HSL picker popover should appear with H/S/L sliders and hex input.
-    // The popover closes on any scroll event (capture phase), so check all
-    // elements quickly in one pass to avoid Playwright-triggered scroll closing it.
+    // The popover closes on any scroll event (capture phase), so verify all
+    // elements in a single evaluate to avoid Playwright scroll closing the popover.
     const hueSlider = page.getByRole("slider", { name: "Hue" });
     await expect(hueSlider).toBeVisible({ timeout: 3000 });
 
-    // Verify all picker elements are present in the DOM
-    await expect(page.getByRole("slider", { name: "Saturation" })).toBeVisible();
-    await expect(page.getByRole("slider", { name: "Lightness" })).toBeVisible();
+    const pickerElements = await page.evaluate(() => {
+      const hue = document.querySelector('input[aria-label="Hue"]');
+      const sat = document.querySelector('input[aria-label="Saturation"]');
+      const lgt = document.querySelector('input[aria-label="Lightness"]');
+      const hex = document.querySelector('input[aria-label="Hex color value"]');
+      return { hue: !!hue, sat: !!sat, lgt: !!lgt, hex: !!hex };
+    });
+    expect(pickerElements.hue).toBe(true);
+    expect(pickerElements.sat).toBe(true);
+    expect(pickerElements.lgt).toBe(true);
+    expect(pickerElements.hex).toBe(true);
 
     // Close via Escape key
     await page.keyboard.press("Escape");
@@ -145,23 +153,24 @@ test.describe("Color tweak panel", () => {
     await page.goto(DOC_PAGE, { waitUntil: "load" });
     await ensureTweakPanelOpen(page);
 
-    // Modify palette color p0 directly via evaluate to avoid popover detach issues
-    await page.evaluate(() => {
-      // Set --zd-0 inline and update localStorage tweak state
-      document.documentElement.style.setProperty("--zd-0", "#ff0000");
-      const raw = localStorage.getItem("zudo-doc-tweak-state");
-      if (raw) {
-        const state = JSON.parse(raw);
-        state.palette[0] = "#ff0000";
-        localStorage.setItem("zudo-doc-tweak-state", JSON.stringify(state));
-      }
-    });
+    // Use the panel's persist mechanism: click a swatch, change color via hex input.
+    // This exercises the real code path that sets inline styles.
+    const firstSwatch = page.locator('button[title^="p0:"]');
+    await expect(firstSwatch).toBeVisible({ timeout: 5000 });
+    await firstSwatch.click();
 
-    // Verify inline style is set
-    const inlineVar = await page.evaluate(() =>
-      document.documentElement.style.getPropertyValue("--zd-0"),
-    );
-    expect(inlineVar).toBe("#ff0000");
+    // Wait for HSL picker, type a new hex value
+    const hexInput = page.getByLabel("Hex color value");
+    await expect(hexInput).toBeVisible({ timeout: 3000 });
+    await hexInput.fill("#ff0000");
+    // Trigger change by pressing Enter then Escape to close picker
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("Escape");
+
+    // Wait for the inline style to be applied
+    await page.waitForFunction(() => {
+      return document.documentElement.style.getPropertyValue("--zd-0") !== "";
+    }, null, { timeout: 5000 });
 
     // Toggle light/dark mode via theme toggle button
     const toggle = themeToggle(page);
