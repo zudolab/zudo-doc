@@ -1,0 +1,133 @@
+---
+title: create-zudo-doc CLI
+description: create-zudo-doc プロジェクトスキャフォルダーの完全な CLI リファレンス。
+sidebar_position: 10
+---
+
+## 使い方
+
+```bash
+create-zudo-doc [project-name] [options]
+```
+
+フラグなしで実行すると、対話式ウィザードが起動します。すべてのオプションはフラグで指定でき、非対話的（CI/エージェント）に使用できます。
+
+## オプション
+
+### プロジェクト
+
+| フラグ | 説明 | デフォルト |
+|--------|------|-----------|
+| `--name <name>` | プロジェクト名（または最初の位置引数） | `my-docs` |
+| `--lang <code>` | デフォルト言語コード | `en` |
+| `--pm <manager>` | パッケージマネージャー: `pnpm`, `npm`, `yarn`, `bun` | `pnpm` |
+| `--[no-]install` | スキャフォールディング後に依存関係をインストール | プロンプト |
+
+### カラースキーム
+
+| フラグ | 説明 | デフォルト |
+|--------|------|-----------|
+| `--color-scheme-mode <mode>` | `single` または `light-dark` | `light-dark` |
+| `--scheme <name>` | カラースキーム（single モード） | `Dracula` |
+| `--light-scheme <name>` | ライトスキーム（light-dark モード） | `GitHub Light` |
+| `--dark-scheme <name>` | ダークスキーム（light-dark モード） | `GitHub Dark` |
+| `--default-mode <mode>` | `light` または `dark`（light-dark モード） | `dark` |
+| `--[no-]respect-system-preference` | OS のカラースキーム設定を尊重 | `true` |
+
+### 機能
+
+| フラグ | 説明 | デフォルト |
+|--------|------|-----------|
+| `--[no-]i18n` | 多言語対応 | オフ |
+| `--[no-]search` | Pagefind 全文検索 | オン |
+| `--[no-]sidebar-filter` | サイドバーのリアルタイムフィルタリング | オン |
+| `--[no-]claude-resources` | Claude Code ドキュメント生成 | オフ |
+| `--[no-]color-scheme-preview` | ヘッダーでのランタイムスキーム切り替え | オフ |
+
+### 一般
+
+| フラグ | 説明 |
+|--------|------|
+| `-y, --yes` | 未指定オプションにデフォルトを使用し、プロンプトをスキップ |
+| `-h, --help` | ヘルプメッセージを表示 |
+
+## サポート言語
+
+`--lang` フラグは以下の言語コードを受け付けます:
+
+| コード | 言語 |
+|--------|------|
+| `en` | 英語 |
+| `ja` | 日本語 |
+| `zh-cn` | 中国語（簡体字） |
+| `zh-tw` | 中国語（繁体字） |
+| `ko` | 韓国語 |
+| `es` | スペイン語 |
+| `fr` | フランス語 |
+| `de` | ドイツ語 |
+| `pt` | ポルトガル語 |
+
+デフォルト言語は、ルートページ（`/docs/...`）で使用されるロケールを決定します。i18n が有効な場合、セカンダリ言語が自動的に追加されます（デフォルトが英語以外の場合は英語、デフォルトが英語の場合は日本語）。
+
+## 使用例
+
+### 対話モード
+
+```bash
+pnpm create zudo-doc
+```
+
+### すべてデフォルトで非対話的に実行
+
+```bash
+pnpm create zudo-doc my-docs --yes
+```
+
+### Dracula テーマの日本語サイト
+
+```bash
+pnpm create zudo-doc my-docs --lang ja --scheme Dracula --no-i18n --pm pnpm --install
+```
+
+### カスタムスキームの Light/Dark モード
+
+```bash
+pnpm create zudo-doc my-docs \
+  --color-scheme-mode light-dark \
+  --light-scheme "GitHub Light" \
+  --dark-scheme "GitHub Dark" \
+  --default-mode dark \
+  --yes
+```
+
+### CI/自動化での使用
+
+```bash
+pnpm create zudo-doc my-docs \
+  --lang en \
+  --scheme Nord \
+  --no-i18n \
+  --search \
+  --no-claude-resources \
+  --pm pnpm \
+  --install \
+  --yes
+```
+
+## プログラム API
+
+パッケージはプログラム API もエクスポートしています:
+
+```ts
+import { createZudoDoc } from "create-zudo-doc";
+
+await createZudoDoc({
+  projectName: "my-docs",
+  defaultLang: "en",
+  colorSchemeMode: "single",
+  singleScheme: "Dracula",
+  features: ["search", "sidebarFilter"],
+  packageManager: "pnpm",
+  install: true,
+});
+```

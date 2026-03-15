@@ -1,0 +1,133 @@
+---
+title: create-zudo-doc CLI
+description: Complete CLI reference for the create-zudo-doc project scaffolder.
+sidebar_position: 10
+---
+
+## Usage
+
+```bash
+create-zudo-doc [project-name] [options]
+```
+
+When run without flags, the CLI launches an interactive wizard. All options can be specified via flags for non-interactive (CI/agent) usage.
+
+## Options
+
+### Project
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--name <name>` | Project name (or first positional arg) | `my-docs` |
+| `--lang <code>` | Default language code | `en` |
+| `--pm <manager>` | Package manager: `pnpm`, `npm`, `yarn`, `bun` | `pnpm` |
+| `--[no-]install` | Install dependencies after scaffolding | prompt |
+
+### Color Scheme
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--color-scheme-mode <mode>` | `single` or `light-dark` | `light-dark` |
+| `--scheme <name>` | Color scheme (single mode) | `Dracula` |
+| `--light-scheme <name>` | Light scheme (light-dark mode) | `GitHub Light` |
+| `--dark-scheme <name>` | Dark scheme (light-dark mode) | `GitHub Dark` |
+| `--default-mode <mode>` | `light` or `dark` (light-dark mode) | `dark` |
+| `--[no-]respect-system-preference` | Respect OS color scheme preference | `true` |
+
+### Features
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--[no-]i18n` | Multi-language support | off |
+| `--[no-]search` | Pagefind full-text search | on |
+| `--[no-]sidebar-filter` | Real-time sidebar filtering | on |
+| `--[no-]claude-resources` | Claude Code docs generation | off |
+| `--[no-]color-scheme-preview` | Runtime scheme switcher in header | off |
+
+### General
+
+| Flag | Description |
+|------|-------------|
+| `-y, --yes` | Use defaults for unspecified options, skip all prompts |
+| `-h, --help` | Show help message |
+
+## Supported Languages
+
+The `--lang` flag accepts any of the following language codes:
+
+| Code | Language |
+|------|----------|
+| `en` | English |
+| `ja` | Japanese |
+| `zh-cn` | Chinese (Simplified) |
+| `zh-tw` | Chinese (Traditional) |
+| `ko` | Korean |
+| `es` | Spanish |
+| `fr` | French |
+| `de` | German |
+| `pt` | Portuguese |
+
+The default language determines the locale used for root pages (`/docs/...`). When i18n is enabled, a secondary language is added automatically (English when the default is non-English, Japanese when the default is English).
+
+## Examples
+
+### Interactive mode
+
+```bash
+pnpm create zudo-doc
+```
+
+### Non-interactive with all defaults
+
+```bash
+pnpm create zudo-doc my-docs --yes
+```
+
+### Japanese site with Dracula theme
+
+```bash
+pnpm create zudo-doc my-docs --lang ja --scheme Dracula --no-i18n --pm pnpm --install
+```
+
+### Light/dark mode with custom schemes
+
+```bash
+pnpm create zudo-doc my-docs \
+  --color-scheme-mode light-dark \
+  --light-scheme "GitHub Light" \
+  --dark-scheme "GitHub Dark" \
+  --default-mode dark \
+  --yes
+```
+
+### CI/automation usage
+
+```bash
+pnpm create zudo-doc my-docs \
+  --lang en \
+  --scheme Nord \
+  --no-i18n \
+  --search \
+  --no-claude-resources \
+  --pm pnpm \
+  --install \
+  --yes
+```
+
+## Programmatic API
+
+The package also exports a programmatic API:
+
+```ts
+import { createZudoDoc } from "create-zudo-doc";
+
+await createZudoDoc({
+  projectName: "my-docs",
+  defaultLang: "en",
+  colorSchemeMode: "single",
+  singleScheme: "Dracula",
+  features: ["search", "sidebarFilter"],
+  packageManager: "pnpm",
+  install: true,
+});
+```

@@ -60,6 +60,23 @@ export const SINGLE_SCHEMES = [
   "Ayu Light",
 ];
 
+export interface SupportedLang {
+  value: string;
+  label: string;
+}
+
+export const SUPPORTED_LANGS: SupportedLang[] = [
+  { value: "en", label: "English" },
+  { value: "ja", label: "Japanese" },
+  { value: "zh-cn", label: "Chinese (Simplified)" },
+  { value: "zh-tw", label: "Chinese (Traditional)" },
+  { value: "ko", label: "Korean" },
+  { value: "es", label: "Spanish" },
+  { value: "fr", label: "French" },
+  { value: "de", label: "German" },
+  { value: "pt", label: "Portuguese" },
+];
+
 export interface Feature {
   value: string;
   label: string;
@@ -70,9 +87,9 @@ export interface Feature {
 export const FEATURES: Feature[] = [
   {
     value: "i18n",
-    label: "i18n (English + Japanese)",
-    hint: "Multi-language support",
-    default: true,
+    label: "i18n (multi-language)",
+    hint: "Add a secondary language",
+    default: false,
   },
   {
     value: "search",

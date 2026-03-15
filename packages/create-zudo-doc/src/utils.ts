@@ -15,3 +15,8 @@ export function installDependencies(dir: string, pm: string): void {
 export function capitalize(str: string): string {
   return str.replace(/\b\w/g, (c) => c.toUpperCase());
 }
+
+/** Get a short uppercase label for a language code (e.g. "en" → "EN", "zh-cn" → "ZH-CN"). */
+export function getLangLabel(langCode: string): string {
+  return langCode.toUpperCase();
+}
