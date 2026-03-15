@@ -158,8 +158,8 @@ test.describe("Versioning: version switcher interaction", () => {
     const menu = page.locator("main [data-version-menu]");
     const links = menu.locator("a");
 
-    // Should have 2 links: Latest + 1.0.0
-    await expect(links).toHaveCount(2);
+    // Should have 3 links: Latest + 1.0.0 + "All versions"
+    await expect(links).toHaveCount(3);
 
     // First link is "Latest" pointing to current docs
     const latestLink = links.nth(0);
