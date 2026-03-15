@@ -86,6 +86,17 @@ const translations: Record<string, Record<string, string>> = {
     "version.banner.unreleased":
       "You are viewing unreleased documentation.",
     "version.banner.latestLink": "View the latest version",
+    "version.switcher.unavailable": "Not available in this version",
+    "version.page.title": "Documentation Versions",
+    "version.page.latest.title": "Latest Version (Current)",
+    "version.page.latest.description":
+      "The most up-to-date documentation for the latest stable release.",
+    "version.page.latest.link": "View latest docs",
+    "version.page.past.title": "Past Versions",
+    "version.page.past.description":
+      "Documentation for previously released versions.",
+    "version.page.unmaintained": "Unmaintained",
+    "version.page.unreleased": "Unreleased",
   },
   ja: {
     "nav.gettingStarted": "はじめに",
@@ -120,6 +131,17 @@ const translations: Record<string, Record<string, string>> = {
     "version.banner.unreleased":
       "これは未リリースのドキュメントです。",
     "version.banner.latestLink": "最新バージョンを見る",
+    "version.switcher.unavailable": "このバージョンでは利用できません",
+    "version.page.title": "ドキュメントバージョン",
+    "version.page.latest.title": "最新バージョン（現在）",
+    "version.page.latest.description":
+      "最新の安定版リリースのドキュメントです。",
+    "version.page.latest.link": "最新ドキュメントを見る",
+    "version.page.past.title": "過去のバージョン",
+    "version.page.past.description":
+      "以前にリリースされたバージョンのドキュメントです。",
+    "version.page.unmaintained": "メンテナンス終了",
+    "version.page.unreleased": "未リリース",
   },
   de: {
     "nav.gettingStarted": "Erste Schritte",

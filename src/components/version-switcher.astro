@@ -2,19 +2,22 @@
 import { settings } from "@/config/settings";
 import { docsUrl, versionedDocsUrl } from "@/utils/base";
 import { t, defaultLocale, type Locale } from "@/config/i18n";
+import type { VersionAvailability } from "@/utils/version-availability";
 
 interface Props {
   currentVersion?: string;
   currentSlug: string;
   lang?: Locale;
+  availability?: VersionAvailability;
 }
 
-const { currentVersion, currentSlug, lang = defaultLocale } = Astro.props;
+const { currentVersion, currentSlug, lang = defaultLocale, availability } = Astro.props;
 const versions = settings.versions;
 if (!versions) return;
 
 const latestLabel = t("version.latest", lang);
 const switcherLabel = t("version.switcher.label", lang);
+const unavailableLabel = t("version.switcher.unavailable", lang);
 const latestUrl = docsUrl(currentSlug, lang);
 const isLatest = !currentVersion;
 ---
@@ -56,18 +59,28 @@ const isLatest = !currentVersion;
     {versions.map((v) => {
       const vUrl = versionedDocsUrl(currentSlug, v.slug, lang);
       const isActive = currentVersion === v.slug;
+      const isAvailable = !availability || (availability[v.slug]?.has(currentSlug) ?? true);
       return (
         <li>
-          <a
-            href={vUrl}
-            aria-current={isActive ? "page" : undefined}
-            class:list={[
-              "block px-hsp-md py-vsp-3xs text-small hover:bg-accent/10",
-              isActive ? "font-bold text-accent" : "text-fg",
-            ]}
-          >
-            {v.label}
-          </a>
+          {isAvailable ? (
+            <a
+              href={vUrl}
+              aria-current={isActive ? "page" : undefined}
+              class:list={[
+                "block px-hsp-md py-vsp-3xs text-small hover:bg-accent/10",
+                isActive ? "font-bold text-accent" : "text-fg",
+              ]}
+            >
+              {v.label}
+            </a>
+          ) : (
+            <span
+              class="block px-hsp-md py-vsp-3xs text-small text-muted/50 cursor-not-allowed"
+              title={unavailableLabel}
+            >
+              {v.label}
+            </span>
+          )}
         </li>
       );
     })}

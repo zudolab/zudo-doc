@@ -3,17 +3,22 @@ import SidebarToggle from "@/components/sidebar-toggle";
 import ColorSchemePicker from "@/components/color-scheme-picker";
 import ThemeToggle from "@/components/theme-toggle";
 import LanguageSwitcher from "@/components/language-switcher.astro";
+import VersionSwitcher from "@/components/version-switcher.astro";
 import Search from "@/components/search.astro";
 import { settings } from "@/config/settings";
 import { withBase, stripBase } from "@/utils/base";
 import { defaultLocale, locales, t, type Locale } from "@/config/i18n";
+import type { VersionAvailability } from "@/utils/version-availability";
 
 interface Props {
   lang?: Locale;
   currentPath?: string;
+  currentVersion?: string;
+  currentSlug?: string;
+  versionAvailability?: VersionAvailability;
 }
 
-const { lang, currentPath = "" } = Astro.props;
+const { lang, currentPath = "", currentVersion, currentSlug, versionAvailability } = Astro.props;
 const isNonDefaultLocale = lang != null && lang !== defaultLocale;
 const pathWithoutBase = stripBase(currentPath);
 const pathForMatch = isNonDefaultLocale ? pathWithoutBase.replace(new RegExp(`^/${lang}`), "") : pathWithoutBase;
@@ -37,6 +42,12 @@ const pathForMatch = isNonDefaultLocale ? pathWithoutBase.replace(new RegExp(`^/
   <a href={withBase(isNonDefaultLocale ? `/${lang}/` : "/")} class="text-subheading font-bold text-fg hover:underline focus:underline">
     {settings.siteName}
   </a>
+
+  {settings.versions && currentSlug && (
+    <div class="ml-hsp-sm hidden lg:block">
+      <VersionSwitcher currentVersion={currentVersion} currentSlug={currentSlug} lang={lang} availability={versionAvailability} />
+    </div>
+  )}
 
   <nav aria-label="Main" class="ml-hsp-xl hidden items-center gap-x-hsp-2xs whitespace-nowrap lg:flex">
     {(() => {
