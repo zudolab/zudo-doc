@@ -56,19 +56,26 @@ export default function ColorTweakExportModal({
 
   async function handleCopy() {
     let ok = false;
-    try {
-      await navigator.clipboard.writeText(code);
-      ok = true;
-    } catch {
-      // Fallback for modal dialogs or non-HTTPS contexts
+    // Clipboard API needs focus inside the dialog — use fallback
+    // that appends a textarea inside the dialog (within the modal's focus trap)
+    const dialog = dialogRef.current;
+    if (dialog) {
       try {
         const textarea = document.createElement("textarea");
         textarea.value = code;
         textarea.style.cssText = "position:fixed;opacity:0;left:-9999px";
-        document.body.appendChild(textarea);
+        dialog.appendChild(textarea);
+        textarea.focus();
         textarea.select();
         ok = document.execCommand("copy");
-        document.body.removeChild(textarea);
+        dialog.removeChild(textarea);
+      } catch { /* ignore */ }
+    }
+    if (!ok) {
+      // Last resort: try Clipboard API
+      try {
+        await navigator.clipboard.writeText(code);
+        ok = true;
       } catch { /* ignore */ }
     }
     setCopyLabel(ok ? "Copied!" : "Failed");
@@ -81,7 +88,7 @@ export default function ColorTweakExportModal({
       ref={dialogRef}
       onClick={handleBackdropClick}
       className="mx-auto max-h-[80vh] w-full max-w-[40rem] overflow-y-auto border border-muted bg-surface p-hsp-xl backdrop:bg-bg/80"
-      style={{ color: "var(--color-fg)", position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
+      style={{ color: "var(--color-fg)", position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", userSelect: "text" }}
     >
       <h2 className="mb-vsp-sm text-subheading font-bold text-fg">
         Export Color Scheme

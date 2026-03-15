@@ -19,11 +19,17 @@ async function applyShikiTheme(themeName: string): Promise<void> {
     if (lang) langs.add(lang);
   }
 
-  const { createHighlighter } = await import("shiki");
-  const highlighter = await createHighlighter({
-    themes: [themeName],
-    langs: [...langs],
-  });
+  let highlighter: Awaited<ReturnType<typeof import("shiki")["createHighlighter"]>>;
+  try {
+    const { createHighlighter } = await import("shiki");
+    highlighter = await createHighlighter({
+      themes: [themeName],
+      langs: [...langs],
+    });
+  } catch (err) {
+    console.warn(`[tweak] Failed to load Shiki theme "${themeName}":`, err);
+    return;
+  }
 
   for (const pre of codeBlocks) {
     const lang = pre.getAttribute("data-language") || "text";
@@ -31,25 +37,29 @@ async function applyShikiTheme(themeName: string): Promise<void> {
     if (!codeEl) continue;
     const text = codeEl.textContent || "";
 
-    // Generate dual-theme output (same theme for both) so existing
-    // light-dark() CSS picks up the new colors automatically
-    const html = highlighter.codeToHtml(text, {
-      lang,
-      themes: { light: themeName, dark: themeName },
-      defaultColor: false,
-    });
-    const temp = document.createElement("div");
-    temp.innerHTML = html;
-    const newPre = temp.querySelector("pre");
-    if (!newPre) continue;
+    try {
+      // Generate dual-theme output (same theme for both) so existing
+      // light-dark() CSS picks up the new colors automatically
+      const html = highlighter.codeToHtml(text, {
+        lang,
+        themes: { light: themeName, dark: themeName },
+        defaultColor: false,
+      });
+      const temp = document.createElement("div");
+      temp.innerHTML = html;
+      const newPre = temp.querySelector("pre");
+      if (!newPre) continue;
 
-    const newCode = newPre.querySelector("code");
-    if (newCode) codeEl.innerHTML = newCode.innerHTML;
-    // Update CSS custom properties on the <pre> for background
-    const newStyle = newPre.getAttribute("style") || "";
-    for (const prop of ["--shiki-light", "--shiki-dark", "--shiki-light-bg", "--shiki-dark-bg"]) {
-      const match = newStyle.match(new RegExp(`${prop.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}:([^;]+)`));
-      if (match) pre.style.setProperty(prop, match[1].trim());
+      const newCode = newPre.querySelector("code");
+      if (newCode) codeEl.innerHTML = newCode.innerHTML;
+      // Update CSS custom properties on the <pre> for background
+      const newStyle = newPre.getAttribute("style") || "";
+      for (const prop of ["--shiki-light", "--shiki-dark", "--shiki-light-bg", "--shiki-dark-bg"]) {
+        const match = newStyle.match(new RegExp(`${prop.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}:([^;]+)`));
+        if (match) pre.style.setProperty(prop, match[1].trim());
+      }
+    } catch {
+      // Skip blocks with unsupported languages
     }
   }
   highlighter.dispose();
