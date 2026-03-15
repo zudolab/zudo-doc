@@ -118,20 +118,36 @@ zudo-docのカラーシステムは**16色パレット**を採用しています
 
 ### スキームごとのセマンティックオーバーライド
 
-各カラースキームは`src/config/color-schemes.ts`の`semantic`プロパティを通じて、デフォルトのパレットスロットマッピングをオーバーライドできます：
+各カラースキームは`src/config/color-schemes.ts`の`semantic`プロパティを通じて、デフォルトのパレットスロットマッピングをオーバーライドできます。値は**パレットインデックス**（数値）または**直接のカラー文字列**のいずれかです：
 
 ```ts
 "My Custom Scheme": {
   // ...palette, background, foreground...
   semantic: {
-    accent: "#d33682",     // デフォルトのシアンをマゼンタでオーバーライド
-    accentHover: "#6c71c4",
-    surface: "#f4efdd",
+    accent: 6,              // palette[6]を使用 — カラー値の重複なし
+    accentHover: 14,         // palette[14]を使用
+    surface: "#f4efdd",      // 直接のカラー文字列（パレットにない色）
   },
 },
 ```
 
-解決ロジックは`src/config/color-scheme-utils.ts`にあり、各セマンティックプロパティは明示的にオーバーライドされていない場合、デフォルトのパレットスロットにフォールバックします。
+カラー文字列を繰り返す代わりにパレットインデックスを使用することで、重複を排除し、パレットカラーが変更された際（例：[カラー調整パネル](/ja/docs/guides/color-tweak-panel)経由）にセマンティックカラーが同期されるようになります。
+
+同じ`number | string`型（`ColorRef`と呼ばれます）は`cursor`、`selectionBg`、`selectionFg`でもサポートされています：
+
+```ts
+"My Theme": {
+  background: "#1a1a2e",
+  foreground: "#e0e0e0",
+  cursor: 6,            // カラーを重複させる代わりにpalette[6]を使用
+  selectionBg: "#3a3a5e",
+  selectionFg: 15,       // palette[15]を使用
+  palette: [...],
+  shikiTheme: "one-dark-pro",
+},
+```
+
+解決ロジックは`src/config/color-scheme-utils.ts`にあり、各プロパティは明示的に設定されていない場合、デフォルトのパレットスロットにフォールバックします。
 
 ## Tier 3：コンポーネントトークン
 
@@ -242,10 +258,11 @@ zudo-docにはライトテーマとダークテーマのデフォルトが含ま
 
 `ColorScheme`インターフェースに必要なプロパティ：
 
-- `background`、`foreground`、`cursor`、`selectionBg`、`selectionFg` — ベースカラー
+- `background`、`foreground` — ベースカラー文字列
+- `cursor`、`selectionBg`、`selectionFg` — `ColorRef`（パレットインデックスまたはカラー文字列）
 - `palette` — 16要素のタプル（カラースロット 0〜15）
 - `shikiTheme` — シンタックスハイライト用のShikiテーマ名
-- `semantic`（オプション）— セマンティックトークンのデフォルトパレットスロットマッピングをオーバーライド
+- `semantic`（オプション）— `ColorRef`値（パレットインデックスまたはカラー文字列）によるデフォルトパレットスロットマッピングのオーバーライド
 
 ## やってはいけないこと
 

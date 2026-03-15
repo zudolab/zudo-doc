@@ -31,6 +31,7 @@ export const settings = {
   editUrl: false,
   siteUrl: "",
   sitemap: true,
+  colorTweakPanel: true,
   docMetainfo: true,
   docTags: true,
   math: true,
@@ -192,6 +193,16 @@ Default: `true`
 Enables tag support for documentation pages. When `true`, pages can use the `tags` frontmatter field, and tag index pages are generated at `/docs/tags/`.
 
 Default: `true`
+
+### colorTweakPanel
+
+Enables an interactive color scheme tweak panel. When `true`, a palette icon appears in the header and users can open a fixed-position panel at the bottom of the page to edit all 16 palette colors, base theme colors, and semantic token overrides in real-time. Changes are persisted in `localStorage`.
+
+Default: `false` (set to `true` to enable)
+
+<Tip>
+See the [Color Tweak Panel guide](/docs/guides/color-tweak-panel) for usage details and how to export custom color schemes.
+</Tip>
 
 ### docHistory
 

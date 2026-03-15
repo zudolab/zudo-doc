@@ -31,6 +31,7 @@ export const settings = {
   editUrl: false,
   siteUrl: "",
   sitemap: true,
+  colorTweakPanel: true,
   docMetainfo: true,
   docTags: true,
   math: true,
@@ -192,6 +193,16 @@ editUrl: false,
 ドキュメントページのタグサポートを有効にします。`true`の場合、ページは`tags`フロントマターフィールドを使用でき、タグインデックスページが`/docs/tags/`に生成されます。
 
 デフォルト：`true`
+
+### colorTweakPanel
+
+インタラクティブなカラースキーム調整パネルを有効にします。`true`の場合、ヘッダーにパレットアイコンが表示され、ページ下部に固定位置のパネルを開いて16色パレット、ベーステーマカラー、セマンティックトークンのオーバーライドをリアルタイムで編集できます。変更は`localStorage`に保存されます。
+
+デフォルト：`false`（`true`に設定して有効化）
+
+<Tip>
+使用方法の詳細やカスタムカラースキームのエクスポート方法については[カラー調整パネルガイド](/ja/docs/guides/color-tweak-panel)を参照してください。
+</Tip>
 
 ### docHistory
 
