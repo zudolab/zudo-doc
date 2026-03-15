@@ -19,11 +19,13 @@ function generateCode(colorState: ColorTweakExportModalProps["colorState"]): str
 
   const paletteLines = palette
     .map((c, i) => {
-      const suffix = i % 4 === 3 ? "\n" : " ";
-      return `"${c}",${suffix}`;
+      const isRowEnd = i % 4 === 3;
+      const isLast = i === palette.length - 1;
+      if (isRowEnd && !isLast) return `"${c}",\n    `;
+      if (isRowEnd) return `"${c}",`;
+      return `"${c}", `;
     })
-    .join("")
-    .trimEnd();
+    .join("");
 
   const semanticEntries = Object.entries(semantic);
   const semanticLines = semanticEntries
@@ -51,7 +53,7 @@ export default function ColorTweakExportModal({
   onClose,
   colorState,
 }: ColorTweakExportModalProps) {
-  const [copied, setCopied] = useState(false);
+  const [copyLabel, setCopyLabel] = useState("Copy");
   const dialogRef = useRef<HTMLDivElement>(null);
   const code = generateCode(colorState);
 
@@ -78,11 +80,11 @@ export default function ColorTweakExportModal({
   async function handleCopy() {
     try {
       await navigator.clipboard.writeText(code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setCopyLabel("Copied!");
     } catch {
-      // Fallback: select text in the pre element for manual copy
+      setCopyLabel("Failed");
     }
+    setTimeout(() => setCopyLabel("Copy"), 2000);
   }
 
   return (
@@ -111,7 +113,7 @@ export default function ColorTweakExportModal({
             onClick={handleCopy}
             className="border border-muted bg-surface px-hsp-lg py-vsp-2xs text-small text-fg transition-colors hover:border-accent hover:text-accent"
           >
-            {copied ? "Copied!" : "Copy"}
+            {copyLabel}
           </button>
           <button
             onClick={onClose}
