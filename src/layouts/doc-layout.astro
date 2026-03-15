@@ -19,6 +19,7 @@ import { withBase, docsUrl } from "@/utils/base";
 import type { VersionConfig } from "@/config/settings-types";
 import VersionSwitcher from "@/components/version-switcher.astro";
 import VersionBanner from "@/components/version-banner.astro";
+import Footer from "@/components/footer.astro";
 
 interface Props {
   title: string;
@@ -29,9 +30,22 @@ interface Props {
   unlisted?: boolean;
   currentVersion?: string;
   versionBanner?: VersionConfig["banner"];
+  hideSidebar?: boolean;
+  hideToc?: boolean;
 }
 
-const { title, description, lang = defaultLocale, currentSlug, headings = [], unlisted = false, currentVersion, versionBanner } = Astro.props;
+const {
+  title,
+  description,
+  lang = defaultLocale,
+  currentSlug,
+  headings = [],
+  unlisted = false,
+  currentVersion,
+  versionBanner,
+  hideSidebar = false,
+  hideToc = false,
+} = Astro.props;
 const latestUrl = currentSlug ? docsUrl(currentSlug, lang) : undefined;
 const fullTitle = `${title} | ${settings.siteName}`;
 const navSection = currentSlug ? getNavSectionForSlug(currentSlug) : undefined;
@@ -87,19 +101,24 @@ const contentTransition = {
     </Header>
 
     <div class="flex min-h-[calc(100vh-3.5rem)]">
-      <!-- Desktop sidebar -->
-      <aside
-        id="desktop-sidebar"
-        transition:persist={`sidebar-${lang}-${navSection ?? "default"}`}
-        class="hidden lg:block w-[clamp(14rem,20vw,22rem)] shrink-0 border-r border-muted sticky top-[3.5rem] h-[calc(100vh-3.5rem)] overflow-y-auto"
-      >
-        <Sidebar currentSlug={currentSlug} lang={lang} navSection={navSection} />
-      </aside>
+      {/* Desktop sidebar */}
+      {!hideSidebar && (
+        <aside
+          id="desktop-sidebar"
+          transition:persist={`sidebar-${lang}-${navSection ?? "default"}`}
+          class="hidden lg:block w-[clamp(14rem,20vw,22rem)] shrink-0 border-r border-muted sticky top-[3.5rem] h-[calc(100vh-3.5rem)] overflow-y-auto"
+        >
+          <Sidebar currentSlug={currentSlug} lang={lang} navSection={navSection} />
+        </aside>
+      )}
 
-      <!-- Content + TOC wrapper -->
+      {/* Content + TOC wrapper */}
       <div class="flex-1 min-w-0 flex justify-center">
-        <div class="flex w-full max-w-[clamp(50rem,75vw,90rem)] gap-[clamp(1.5rem,3vw,4rem)]">
-          <!-- Main content -->
+        <div class:list={[
+          "flex w-full gap-[clamp(1.5rem,3vw,4rem)]",
+          hideSidebar ? "max-w-[60rem]" : "max-w-[clamp(50rem,75vw,90rem)]",
+        ]}>
+          {/* Main content */}
           <main class="flex-1 min-w-0 px-hsp-xl py-vsp-xl lg:px-hsp-2xl lg:py-vsp-2xl" transition:animate={contentTransition}>
             {settings.versions && currentSlug ? (
               <div class="mb-vsp-sm flex items-center justify-between">
@@ -112,7 +131,7 @@ const contentTransition = {
             {versionBanner && latestUrl && (
               <VersionBanner type={versionBanner} latestUrl={latestUrl} lang={lang} />
             )}
-            <MobileToc headings={headings} title={t("toc.title", lang)} client:load />
+            {!hideToc && <MobileToc headings={headings} title={t("toc.title", lang)} client:load />}
             <article class="zd-content max-w-none">
               <slot />
             </article>
@@ -121,11 +140,12 @@ const contentTransition = {
             )}
           </main>
 
-          <!-- Table of contents -->
-          <Toc headings={headings} client:load />
+          {/* Table of contents */}
+          {!hideToc && <Toc headings={headings} client:load />}
         </div>
       </div>
     </div>
+    <Footer />
     <CodeBlockEnhancer />
     <TabsInit />
     {settings.mermaid && <MermaidInit />}

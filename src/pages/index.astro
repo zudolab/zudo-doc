@@ -5,9 +5,10 @@ import Header from "@/components/header.astro";
 import Sidebar from "@/components/sidebar.astro";
 import { ClientRouter } from "astro:transitions";
 import PageLoadingOverlay from "@/components/page-loading-overlay.astro";
+import Footer from "@/components/footer.astro";
 import { settings } from "@/config/settings";
 import { withBase } from "@/utils/base";
-import { buildNavTree, groupSatelliteNodes } from "@/utils/docs";
+import { buildNavTree, groupSatelliteNodes, isNavVisible } from "@/utils/docs";
 import { loadLocaleDocs } from "@/utils/locale-docs";
 import SiteTreeNav from "@/components/site-tree-nav.tsx";
 
@@ -18,7 +19,7 @@ const categoryOrder = settings.headerNav.map((n) => n.categoryMatch).filter((v):
 
 // Build full nav tree for site index
 const { allDocs, categoryMeta } = await loadLocaleDocs("en");
-const navDocs = allDocs.filter((doc) => !doc.data.unlisted);
+const navDocs = allDocs.filter(isNavVisible);
 const tree = buildNavTree(navDocs, "en", categoryMeta);
 const groupedTree = groupSatelliteNodes(tree, categoryOrder);
 ---
@@ -85,6 +86,7 @@ const groupedTree = groupSatelliteNodes(tree, categoryOrder);
         client:idle
       />
     </main>
+    <Footer />
     <PageLoadingOverlay />
   </body>
 </html>

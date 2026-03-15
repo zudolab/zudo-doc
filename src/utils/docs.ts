@@ -5,6 +5,11 @@ import { toTitleCase } from "@/utils/slug";
 import { docsUrl, withBase } from "@/utils/base";
 import { defaultLocale, type Locale } from "@/config/i18n";
 
+/** Filter predicate: true when a doc should appear in navigation (sidebar, index, sitemap). */
+export function isNavVisible(doc: DocsEntry): boolean {
+  return !doc.data.unlisted && !doc.data.standalone;
+}
+
 export interface CategoryMeta {
   label?: string;
   position?: number;

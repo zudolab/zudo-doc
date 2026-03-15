@@ -13,7 +13,7 @@ import TabItem from "@/components/tab-item.astro";
 import Details from "@/components/details.astro";
 import Breadcrumb from "@/components/breadcrumb.astro";
 import { toRouteSlug } from "@/utils/slug";
-import { buildNavTree, buildBreadcrumbs, flattenTree, findNode, loadCategoryMeta, collectAutoIndexNodes, type NavNode } from "@/utils/docs";
+import { buildNavTree, buildBreadcrumbs, flattenTree, findNode, loadCategoryMeta, collectAutoIndexNodes, isNavVisible, type NavNode } from "@/utils/docs";
 import type { Heading } from "@/types/heading";
 import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
 import { t } from "@/config/i18n";
@@ -31,7 +31,7 @@ export async function getStaticPaths() {
     : allDocs;
   const categoryMeta = loadCategoryMeta(settings.docsDir);
   // Exclude unlisted pages from nav tree
-  const navDocs = docs.filter((doc) => !doc.data.unlisted);
+  const navDocs = docs.filter(isNavVisible);
   const tree = buildNavTree(navDocs, "en", categoryMeta);
 
   // Regular doc pages
@@ -111,6 +111,8 @@ const slug = autoIndex ? autoIndex.slug : (entry!.data.slug ?? toRouteSlug(entry
   currentSlug={slug}
   headings={autoIndex ? [] : headings}
   unlisted={entry?.data?.unlisted}
+  hideSidebar={entry?.data?.hide_sidebar}
+  hideToc={entry?.data?.hide_toc}
 >
   <Breadcrumb slot="breadcrumb" items={breadcrumbs} />
   {autoIndex ? (
