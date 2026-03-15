@@ -87,6 +87,7 @@ const translations: Record<string, Record<string, string>> = {
       "You are viewing unreleased documentation.",
     "version.banner.latestLink": "View the latest version",
     "version.switcher.unavailable": "Not available in this version",
+    "version.switcher.allVersions": "All versions",
     "version.page.title": "Documentation Versions",
     "version.page.latest.title": "Latest Version (Current)",
     "version.page.latest.description":
@@ -134,6 +135,7 @@ const translations: Record<string, Record<string, string>> = {
       "これは未リリースのドキュメントです。",
     "version.banner.latestLink": "最新バージョンを見る",
     "version.switcher.unavailable": "このバージョンでは利用できません",
+    "version.switcher.allVersions": "すべてのバージョン",
     "version.page.title": "ドキュメントバージョン",
     "version.page.latest.title": "最新バージョン（現在）",
     "version.page.latest.description":

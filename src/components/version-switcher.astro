@@ -1,6 +1,6 @@
 ---
 import { settings } from "@/config/settings";
-import { docsUrl, versionedDocsUrl } from "@/utils/base";
+import { docsUrl, versionedDocsUrl, withBase } from "@/utils/base";
 import { t, defaultLocale, type Locale } from "@/config/i18n";
 import type { VersionAvailability } from "@/utils/version-availability";
 
@@ -20,6 +20,9 @@ if (!versions) return;
 const latestLabel = t("version.latest", lang);
 const switcherLabel = t("version.switcher.label", lang);
 const unavailableLabel = t("version.switcher.unavailable", lang);
+const allVersionsLabel = t("version.switcher.allVersions", lang);
+const isNonDefaultLocale = lang !== defaultLocale;
+const versionsPageUrl = withBase(isNonDefaultLocale ? `/${lang}/docs/versions` : "/docs/versions");
 const latestUrl = docsUrl(currentSlug, lang);
 const isLatest = !currentVersion;
 ---
@@ -89,6 +92,14 @@ const isLatest = !currentVersion;
         </li>
       );
     })}
+    <li class="border-t border-muted">
+      <a
+        href={versionsPageUrl}
+        class="block px-hsp-md py-vsp-3xs text-small text-muted hover:bg-accent/10 hover:text-fg"
+      >
+        {allVersionsLabel}
+      </a>
+    </li>
   </ul>
 </div>
 
