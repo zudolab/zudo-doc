@@ -108,6 +108,14 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
   const [query, setQuery] = useState("");
   const [showingRootMenu, setShowingRootMenu] = useState(false);
   const filterRef = useRef<HTMLInputElement>(null);
+  const [filterPlaceholder, setFilterPlaceholder] = useState("Filter...");
+
+  // Detect OS to show appropriate keyboard shortcut in placeholder
+  useEffect(() => {
+    const platform = (navigator as { userAgentData?: { platform: string } }).userAgentData?.platform ?? navigator.platform;
+    const isMac = /mac/i.test(platform);
+    setFilterPlaceholder(isMac ? "Filter... (\u2318/)" : "Filter... (Ctrl+/)");
+  }, []);
 
   // Global shortcut: Cmd+/ (Mac) or Ctrl+/ to focus the filter input
   useEffect(() => {
@@ -180,7 +188,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
           <input
             ref={filterRef}
             type="text"
-            placeholder="Filter..."
+            placeholder={filterPlaceholder}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="bg-transparent text-small outline-none w-full text-fg placeholder:text-muted"
