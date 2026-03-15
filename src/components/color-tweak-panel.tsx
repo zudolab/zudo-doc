@@ -8,6 +8,53 @@ import { hexToHsl, hslToHex } from "@/utils/color-convert";
 const STORAGE_KEY = "zudo-doc-tweak-state";
 const OPEN_KEY = "zudo-doc-tweak-open";
 
+/** Re-highlight all code blocks on the page with a new Shiki theme (lazy-loaded) */
+async function applyShikiTheme(themeName: string): Promise<void> {
+  const codeBlocks = document.querySelectorAll<HTMLPreElement>("pre.astro-code[data-language]");
+  if (codeBlocks.length === 0) return;
+
+  const langs = new Set<string>();
+  for (const pre of codeBlocks) {
+    const lang = pre.getAttribute("data-language");
+    if (lang) langs.add(lang);
+  }
+
+  const { createHighlighter } = await import("shiki");
+  const highlighter = await createHighlighter({
+    themes: [themeName],
+    langs: [...langs],
+  });
+
+  for (const pre of codeBlocks) {
+    const lang = pre.getAttribute("data-language") || "text";
+    const codeEl = pre.querySelector("code");
+    if (!codeEl) continue;
+    const text = codeEl.textContent || "";
+
+    // Generate dual-theme output (same theme for both) so existing
+    // light-dark() CSS picks up the new colors automatically
+    const html = highlighter.codeToHtml(text, {
+      lang,
+      themes: { light: themeName, dark: themeName },
+      defaultColor: false,
+    });
+    const temp = document.createElement("div");
+    temp.innerHTML = html;
+    const newPre = temp.querySelector("pre");
+    if (!newPre) continue;
+
+    const newCode = newPre.querySelector("code");
+    if (newCode) codeEl.innerHTML = newCode.innerHTML;
+    // Update CSS custom properties on the <pre> for background
+    const newStyle = newPre.getAttribute("style") || "";
+    for (const prop of ["--shiki-light", "--shiki-dark", "--shiki-light-bg", "--shiki-dark-bg"]) {
+      const match = newStyle.match(new RegExp(`${prop.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}:([^;]+)`));
+      if (match) pre.style.setProperty(prop, match[1].trim());
+    }
+  }
+  highlighter.dispose();
+}
+
 const SHIKI_THEMES = [
   "dracula",
   "github-light",
@@ -803,18 +850,15 @@ export default function ColorTweakPanel() {
                       onChange={(e) => {
                         const val = e.target.value;
                         persist((prev) => ({ ...prev, shikiTheme: val }));
+                        applyShikiTheme(val);
                       }}
                       className="bg-surface text-fg border border-muted px-[4px] py-[2px] hover:border-fg transition-colors"
                       style={{ fontSize: "0.6875rem", borderRadius: "var(--radius-DEFAULT)" }}
-                      title="Build-time only — included in export, not applied live"
                     >
                       {SHIKI_THEMES.map((theme) => (
                         <option key={theme} value={theme}>{theme}</option>
                       ))}
                     </select>
-                    <span className="text-muted shrink-0" style={{ fontSize: "0.5625rem" }}>
-                      export only
-                    </span>
                   </div>
                 </div>
               </div>
