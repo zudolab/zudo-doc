@@ -71,7 +71,7 @@ export default function SiteTreeNav({
       }}
     >
       {processedTree.map((node) => (
-        <div key={node.slug} className="min-w-0 border border-muted px-hsp-sm py-vsp-2xs">
+        <div key={node.slug} className="min-w-0 border border-muted pl-hsp-sm py-vsp-2xs">
           {node.children.length > 0 ? (
             <CategoryNode node={node} depth={0} isLast={true} />
           ) : (
