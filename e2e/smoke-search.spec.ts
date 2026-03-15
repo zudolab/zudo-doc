@@ -134,6 +134,7 @@ test.describe("Search dialog", () => {
 
     // Verify highlighted text matches query terms (case-insensitive)
     const markTexts = await marks.allTextContents();
+    expect(markTexts.length).toBeGreaterThan(0);
     const queryTerms = ["getting", "started"];
     for (const text of markTexts) {
       const lower = text.toLowerCase();
