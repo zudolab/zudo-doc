@@ -2,8 +2,8 @@
 export type ColorRef = number | string;
 
 export interface ColorScheme {
-  background: string;
-  foreground: string;
+  background: ColorRef;
+  foreground: ColorRef;
   cursor: ColorRef;
   selectionBg: ColorRef;
   selectionFg: ColorRef;
@@ -33,35 +33,42 @@ export interface ColorScheme {
 
 export const colorSchemes: Record<string, ColorScheme> = {
   "Default Light": {
-    background: "#f8f8f8",
-    foreground: "#303030",
+    background: 1,
+    foreground: 0,
     cursor: 6,
-    selectionBg: "#303030",
-    selectionFg: "#f8f8f8",
+    selectionBg: 10,
+    selectionFg: 9,
     palette: [
-      "#2a2a2a", "#bd4b53", "#266538", "#7a5218",
-      "#3277c8", "#977acc", "oklch(70.4% 0.04 256.788)", "#707070",
-      "#808080", "#9c2d3f", "#327e48", "#654516",
-      "#5b99dc", "#b89ee7", "oklch(65% 0.027 256.788)", "#989898",
+      "#303030", "#e2ddda", "#266538", "#7a5218",
+      "#3277c8", "#a35e0f", "#90a1b9", "#a83838",
+      "#6b6b6b", "#e4ded8", "#303030", "#654516",
+      "#5b99dc", "#b89ee7", "#8590a0", "#dd3131",
     ],
     shikiTheme: "github-light",
     semantic: {
-      accent: 6,
+      surface: 9,
+      muted: 8,
+      accent: 5,
       accentHover: 14,
-      surface: "#eeeeee",
+      codeBg: 9,
+      codeFg: 10,
+      success: 2,
+      danger: 15,
+      warning: 7,
+      info: 4,
     },
   },
   "Default Dark": {
-    background: "#181818",
-    foreground: "#b8b8b8",
+    background: 9,
+    foreground: 15,
     cursor: 6,
-    selectionBg: "#383838",
-    selectionFg: "#e0e0e0",
+    selectionBg: 10,
+    selectionFg: 11,
     palette: [
       "#1c1c1c", "#da6871", "#93bb77", "#dfbb77",
-      "#5caae9", "#c074d6", "oklch(70.4% 0.04 256.788)", "#a0a0a0",
-      "#888888", "#da6871", "#93bb77", "#dfbb77",
-      "#5caae9", "#c074d6", "oklch(80% 0.057 256.788)", "#b8b8b8",
+      "#5caae9", "#c074d6", "#90a1b9", "#a0a0a0",
+      "#888888", "#181818", "#383838", "#e0e0e0",
+      "#5caae9", "#c074d6", "#a7c0e3", "#b8b8b8",
     ],
     shikiTheme: "dracula",
     semantic: {

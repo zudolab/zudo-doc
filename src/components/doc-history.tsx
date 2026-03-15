@@ -492,7 +492,7 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
     <>
       {/* History button */}
       {!isOpen && (
-        <div className="flex justify-end mt-vsp-xl">
+        <div className="flex justify-end mt-vsp-xl px-hsp-xl pb-vsp-xl lg:px-hsp-2xl lg:pb-vsp-2xl">
           <button
             type="button"
             onClick={handleOpen}
@@ -514,7 +514,7 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
         />
       )}
 
-      {/* Side panel — 80vw wide */}
+      {/* Side panel */}
       <div
         role="dialog"
         aria-modal={isOpen}
