@@ -43,6 +43,9 @@ title: Quick Start
 | `tags` | string[] | No | -- | Tags for cross-cutting navigation |
 | `draft` | boolean | No | `false` | Exclude from production build (visible in dev) |
 | `unlisted` | boolean | No | `false` | Built but hidden from sidebar, search, and search engines |
+| `hide_sidebar` | boolean | No | `false` | Hide the left sidebar, center content in a narrower container |
+| `hide_toc` | boolean | No | `false` | Hide the right-side table of contents |
+| `standalone` | boolean | No | `false` | Hidden from sidebar nav but still indexed (unlike `unlisted`) |
 | `slug` | string | No | Derived from file path | Custom URL slug override |
 | `pagination_next` | string \| null | No | Auto | Override next page link, set to `null` to hide |
 | `pagination_prev` | string \| null | No | Auto | Override previous page link, set to `null` to hide |
@@ -184,6 +187,67 @@ title: Internal Notes
 unlisted: true
 ---
 ```
+
+### `hide_sidebar`
+
+- **Type:** `boolean`
+- **Required:** No
+- **Default:** `false`
+
+When set to `true`, the left sidebar is hidden on desktop and the content is centered in a narrower container. The mobile hamburger menu still provides access to navigation. Useful for landing pages, standalone articles, or any page where a full-width reading experience is preferred.
+
+```mdx
+---
+title: About This Project
+hide_sidebar: true
+---
+```
+
+### `hide_toc`
+
+- **Type:** `boolean`
+- **Required:** No
+- **Default:** `false`
+
+When set to `true`, the right-side table of contents (section navigation) and the mobile TOC are both hidden. The main content area expands to fill the available width.
+
+```mdx
+---
+title: Changelog
+hide_toc: true
+---
+```
+
+<Tip>
+Combine `hide_sidebar` and `hide_toc` to create a clean, centered reading layout with no navigation panels:
+
+```mdx
+---
+title: About
+hide_sidebar: true
+hide_toc: true
+---
+```
+</Tip>
+
+### `standalone`
+
+- **Type:** `boolean`
+- **Required:** No
+- **Default:** `false`
+
+When set to `true`, the page is hidden from sidebar navigation and site index but remains accessible via its URL and is still indexed by search engines. Unlike `unlisted`, standalone pages do not get a `noindex` meta tag.
+
+```mdx
+---
+title: Terms of Service
+standalone: true
+---
+```
+
+<Note>
+Use `standalone` for pages that should be publicly accessible but don't belong in the documentation navigation (e.g., legal pages, special landing pages). Use `unlisted` when you also want to prevent search engine indexing.
+</Note>
 
 ### `slug`
 
