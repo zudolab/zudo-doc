@@ -111,6 +111,64 @@ import { withBase } from "@/utils/base";
 
   const PAGE_SIZE = 10;
 
+  function escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function escapeRegExp(text: string): string {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function highlightTerms(text: string, query: string): string {
+    const terms = query.trim().split(/\s+/).filter(Boolean).map(escapeRegExp);
+    if (terms.length === 0) return escapeHtml(text);
+    const pattern = new RegExp(`(${terms.join('|')})`, 'gi');
+    return text
+      .split(pattern)
+      .map((segment, i) =>
+        i % 2 === 1
+          ? `<mark>${escapeHtml(segment)}</mark>`
+          : escapeHtml(segment),
+      )
+      .join('');
+  }
+
+  function truncateExcerpt(text: string, query: string, maxLength = 200): string {
+    if (text.length <= maxLength) return text;
+
+    const terms = query.trim().split(/\s+/).filter(Boolean);
+    let firstMatchIndex = -1;
+    const lowerText = text.toLowerCase();
+    for (const term of terms) {
+      const idx = lowerText.indexOf(term.toLowerCase());
+      if (idx !== -1 && (firstMatchIndex === -1 || idx < firstMatchIndex)) {
+        firstMatchIndex = idx;
+      }
+    }
+
+    if (firstMatchIndex === -1) {
+      return text.slice(0, maxLength) + '\u2026';
+    }
+
+    const half = Math.floor(maxLength / 2);
+    let start = Math.max(0, firstMatchIndex - half);
+    let end = start + maxLength;
+
+    if (end > text.length) {
+      end = text.length;
+      start = Math.max(0, end - maxLength);
+    }
+
+    let result = text.slice(start, end);
+    if (start > 0) result = '\u2026' + result;
+    if (end < text.length) result = result + '\u2026';
+    return result;
+  }
+
   class SiteSearch extends HTMLElement {
     private dialog!: HTMLDialogElement;
     private openBtn!: HTMLButtonElement;
@@ -124,6 +182,7 @@ import { withBase } from "@/utils/base";
     private debounceTimer: ReturnType<typeof setTimeout> | null = null;
     private allResults: Array<{ id: string; score: number }> = [];
     private shownCount = 0;
+    private currentQuery = "";
     private shortcutLabel = "";
 
     constructor() {
@@ -255,6 +314,7 @@ import { withBase } from "@/utils/base";
 
     private handleSearch() {
       const query = this.searchInput.value.trim();
+      this.currentQuery = query;
 
       if (!query) {
         this.allResults = [];
@@ -323,7 +383,7 @@ import { withBase } from "@/utils/base";
       const link = document.createElement("a");
       link.href = entry.url;
       link.className = "block font-semibold text-fg hover:text-accent";
-      link.textContent = entry.title;
+      link.innerHTML = highlightTerms(entry.title, this.currentQuery);
       article.appendChild(link);
 
       // Description or body excerpt
@@ -332,10 +392,8 @@ import { withBase } from "@/utils/base";
         const excerpt = document.createElement("p");
         excerpt.className =
           "mt-vsp-2xs text-caption text-muted leading-relaxed";
-        // Highlight matching terms would need query context — show plain excerpt
-        const truncated =
-          text.length > 200 ? text.substring(0, 200) + "..." : text;
-        excerpt.textContent = truncated;
+        const truncated = truncateExcerpt(text, this.currentQuery);
+        excerpt.innerHTML = highlightTerms(truncated, this.currentQuery);
         article.appendChild(excerpt);
       }
 

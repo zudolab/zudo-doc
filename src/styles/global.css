@@ -628,6 +628,14 @@ pre.astro-code .line .highlighted-word {
   background-color: color-mix(in oklch, var(--color-muted) 8%, transparent);
 }
 
+/* ── Search highlight ── */
+mark {
+  background-color: color-mix(in oklch, var(--zd-3) 35%, transparent);
+  color: inherit;
+  padding: 0;
+  border-radius: 2px;
+}
+
 /* ========================================
  * Page transition animations
  * ======================================== */
