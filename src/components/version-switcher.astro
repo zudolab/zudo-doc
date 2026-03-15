@@ -9,9 +9,11 @@ interface Props {
   currentSlug: string;
   lang?: Locale;
   availability?: VersionAvailability;
+  idSuffix?: string;
 }
 
-const { currentVersion, currentSlug, lang = defaultLocale, availability } = Astro.props;
+const { currentVersion, currentSlug, lang = defaultLocale, availability, idSuffix = "" } = Astro.props;
+const menuId = `version-menu${idSuffix ? `-${idSuffix}` : ""}`;
 const versions = settings.versions;
 if (!versions) return;
 
@@ -27,7 +29,7 @@ const isLatest = !currentVersion;
     type="button"
     class="flex items-center gap-hsp-2xs border border-muted rounded px-hsp-sm py-vsp-3xs text-small text-muted hover:border-accent hover:text-accent transition-colors cursor-pointer"
     aria-expanded="false"
-    aria-controls="version-menu"
+    aria-controls={menuId}
     data-version-toggle
   >
     <span class="text-caption">{switcherLabel}:</span>
@@ -40,7 +42,7 @@ const isLatest = !currentVersion;
   </button>
 
   <ul
-    id="version-menu"
+    id={menuId}
     class="absolute left-0 top-full z-10 mt-vsp-3xs hidden min-w-[8rem] border border-muted rounded bg-surface shadow-lg"
     data-version-menu
   >
@@ -74,12 +76,15 @@ const isLatest = !currentVersion;
               {v.label}
             </a>
           ) : (
-            <span
-              class="block px-hsp-md py-vsp-3xs text-small text-muted/50 cursor-not-allowed"
+            <a
+              href={vUrl}
+              aria-disabled="true"
+              tabindex={-1}
+              class="block px-hsp-md py-vsp-3xs text-small text-muted/50 cursor-not-allowed pointer-events-none"
               title={unavailableLabel}
             >
               {v.label}
-            </span>
+            </a>
           )}
         </li>
       );

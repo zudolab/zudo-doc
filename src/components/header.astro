@@ -45,7 +45,7 @@ const pathForMatch = isNonDefaultLocale ? pathWithoutBase.replace(new RegExp(`^/
 
   {settings.versions && currentSlug && (
     <div class="ml-hsp-sm hidden lg:block">
-      <VersionSwitcher currentVersion={currentVersion} currentSlug={currentSlug} lang={lang} availability={versionAvailability} />
+      <VersionSwitcher currentVersion={currentVersion} currentSlug={currentSlug} lang={lang} availability={versionAvailability} idSuffix="header" />
     </div>
   )}
 

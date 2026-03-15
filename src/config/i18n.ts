@@ -97,6 +97,8 @@ const translations: Record<string, Record<string, string>> = {
       "Documentation for previously released versions.",
     "version.page.unmaintained": "Unmaintained",
     "version.page.unreleased": "Unreleased",
+    "version.page.status": "Status",
+    "version.page.docs": "Docs",
   },
   ja: {
     "nav.gettingStarted": "はじめに",
@@ -142,6 +144,8 @@ const translations: Record<string, Record<string, string>> = {
       "以前にリリースされたバージョンのドキュメントです。",
     "version.page.unmaintained": "メンテナンス終了",
     "version.page.unreleased": "未リリース",
+    "version.page.status": "ステータス",
+    "version.page.docs": "ドキュメント",
   },
   de: {
     "nav.gettingStarted": "Erste Schritte",
