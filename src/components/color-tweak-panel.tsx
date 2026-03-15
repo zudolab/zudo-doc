@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import ColorTweakExportModal from "./color-tweak-export-modal";
+import { colorSchemes } from "@/config/color-schemes";
+import { settings } from "@/config/settings";
 
 const STORAGE_KEY = "zudo-doc-tweak-state";
 
@@ -527,7 +529,7 @@ export default function ColorTweakPanel() {
               return [key, override ?? resolveSemanticDefault(key, state.palette, state.base)];
             }),
           ),
-          shikiTheme: "dracula",
+          shikiTheme: String(colorSchemes[settings.colorScheme]?.shikiTheme ?? "dracula"),
         }}
       />
     )}

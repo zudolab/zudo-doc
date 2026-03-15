@@ -23,7 +23,7 @@ export function resolveColor(
   fallback: string,
 ): string {
   if (value === undefined) return fallback;
-  if (typeof value === "number") return palette[value];
+  if (typeof value === "number") return palette[value] ?? fallback;
   return value;
 }
 
