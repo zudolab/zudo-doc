@@ -596,9 +596,19 @@ export default function ColorTweakPanel() {
       window.removeEventListener("toggle-color-tweak-panel", handleToggle);
   }, []);
 
-  // Re-initialize when the color scheme picker changes the scheme
+  // Re-initialize when the color scheme or light/dark mode changes
   useEffect(() => {
     function handleSchemeChange() {
+      // Clear all inline style overrides so the new scheme's <style> tag takes effect
+      for (let i = 0; i < 16; i++) {
+        document.documentElement.style.removeProperty(`--zd-${i}`);
+      }
+      for (const prop of ["--zd-bg", "--zd-fg", "--zd-cursor", "--zd-sel-bg", "--zd-sel-fg"]) {
+        document.documentElement.style.removeProperty(prop);
+      }
+      for (const cssName of Object.values(SEMANTIC_CSS_NAMES)) {
+        document.documentElement.style.removeProperty(cssName);
+      }
       setState(initFromScheme());
     }
     window.addEventListener("color-scheme-changed", handleSchemeChange);
