@@ -55,12 +55,23 @@ export default function ColorTweakExportModal({
   }
 
   async function handleCopy() {
+    let ok = false;
     try {
       await navigator.clipboard.writeText(code);
-      setCopyLabel("Copied!");
+      ok = true;
     } catch {
-      setCopyLabel("Failed");
+      // Fallback for modal dialogs or non-HTTPS contexts
+      try {
+        const textarea = document.createElement("textarea");
+        textarea.value = code;
+        textarea.style.cssText = "position:fixed;opacity:0;left:-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        ok = document.execCommand("copy");
+        document.body.removeChild(textarea);
+      } catch { /* ignore */ }
     }
+    setCopyLabel(ok ? "Copied!" : "Failed");
     if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
     copyTimerRef.current = setTimeout(() => setCopyLabel("Copy"), 2000);
   }
