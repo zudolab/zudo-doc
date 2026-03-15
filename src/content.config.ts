@@ -15,6 +15,9 @@ const docsSchema = z.object({
   pagination_prev: z.string().nullable().optional(), // doc slug or null to hide
   draft: z.boolean().optional(), // Exclude from build entirely
   unlisted: z.boolean().optional(), // Built but noindexed, hidden from sidebar/nav
+  hide_sidebar: z.boolean().optional(), // Hide the left sidebar, center content
+  hide_toc: z.boolean().optional(), // Hide the right-side table of contents
+  standalone: z.boolean().optional(), // Hidden from sidebar nav but still indexed (unlike unlisted)
   slug: z.string().optional(), // Custom URL slug override
 });
 

@@ -62,7 +62,7 @@ export async function getStaticPaths() {
   const categoryMeta = new Map([...baseCategoryMeta, ...localeCategoryMeta]);
 
   // Exclude unlisted pages from nav tree
-  const navDocs = allDocs.filter((doc) => !doc.data.unlisted);
+  const navDocs = allDocs.filter((doc) => !doc.data.unlisted && !doc.data.standalone);
   const tree = buildNavTree(navDocs, "ja", categoryMeta);
 
   // Regular doc pages
@@ -148,6 +148,8 @@ const slug = autoIndex ? autoIndex.slug : (entry!.data.slug ?? toRouteSlug(entry
   currentSlug={slug}
   headings={autoIndex ? [] : headings}
   unlisted={entry?.data?.unlisted}
+  hideSidebar={entry?.data?.hide_sidebar}
+  hideToc={entry?.data?.hide_toc}
 >
   <Breadcrumb slot="breadcrumb" items={breadcrumbs} />
   {autoIndex ? (
