@@ -37,6 +37,7 @@ export const settings = {
   docTags: true,
   llmsTxt: true,
   math: true,
+  colorTweakPanel: true,
   docHistory: true,
   versions: [
     {
