@@ -43,6 +43,9 @@ title: Quick Start
 | `tags` | string[] | いいえ | -- | 横断的なナビゲーション用タグ |
 | `draft` | boolean | いいえ | `false` | 本番ビルドから除外（開発時は表示） |
 | `unlisted` | boolean | いいえ | `false` | ビルドされるがサイドバー、検索、検索エンジンから非表示 |
+| `hide_sidebar` | boolean | いいえ | `false` | 左サイドバーを非表示にし、コンテンツを狭いコンテナに中央揃え |
+| `hide_toc` | boolean | いいえ | `false` | 右側の目次を非表示 |
+| `standalone` | boolean | いいえ | `false` | サイドバーナビゲーションから非表示だがインデックスされる（`unlisted`とは異なる） |
 | `slug` | string | いいえ | ファイルパスから導出 | カスタムURLスラグのオーバーライド |
 | `pagination_next` | string \| null | いいえ | 自動 | 次のページリンクをオーバーライド、`null`で非表示 |
 | `pagination_prev` | string \| null | いいえ | 自動 | 前のページリンクをオーバーライド、`null`で非表示 |
@@ -184,6 +187,77 @@ title: Internal Notes
 unlisted: true
 ---
 ```
+
+### `hide_sidebar`
+
+- **型：** `boolean`
+- **必須：** いいえ
+- **デフォルト：** `false`
+
+`true`に設定すると、デスクトップで左側のサイドバーが非表示になり、コンテンツが狭いコンテナに中央揃えで表示されます。モバイルのハンバーガーメニューからは引き続きナビゲーションにアクセスできます。ランディングページ、スタンドアロンの記事、フルワイドの読書体験が望ましいページに便利です。
+
+```mdx
+---
+title: About This Project
+hide_sidebar: true
+---
+```
+
+<Info>
+[ライブデモ](/ja/docs/guides/layout-demos/hide-sidebar/)でこのレイアウトオプションを実際に確認できます。
+</Info>
+
+### `hide_toc`
+
+- **型：** `boolean`
+- **必須：** いいえ
+- **デフォルト：** `false`
+
+`true`に設定すると、右側の目次（セクションナビゲーション）とモバイルの目次の両方が非表示になります。メインコンテンツエリアが利用可能な幅いっぱいに広がります。
+
+```mdx
+---
+title: Changelog
+hide_toc: true
+---
+```
+
+<Info>
+[ライブデモ](/ja/docs/guides/layout-demos/hide-toc/)でこのレイアウトオプションを実際に確認できます。
+</Info>
+
+<Tip>
+`hide_sidebar`と`hide_toc`を組み合わせて、ナビゲーションパネルのないクリーンでセンタリングされた読みやすいレイアウトを作成できます：
+
+```mdx
+---
+title: About
+hide_sidebar: true
+hide_toc: true
+---
+```
+
+両方のオプションを組み合わせた[ライブデモ](/ja/docs/guides/layout-demos/hide-both/)もご覧ください。
+</Tip>
+
+### `standalone`
+
+- **型：** `boolean`
+- **必須：** いいえ
+- **デフォルト：** `false`
+
+`true`に設定すると、ページはサイドバーナビゲーションとサイトインデックスから非表示になりますが、URL経由でアクセス可能で検索エンジンにインデックスされます。`unlisted`とは異なり、standaloneページには`noindex`メタタグが付きません。
+
+```mdx
+---
+title: Terms of Service
+standalone: true
+---
+```
+
+<Note>
+公開アクセス可能であるべきだがドキュメントナビゲーションには含めたくないページ（利用規約、特別なランディングページなど）には`standalone`を使用します。検索エンジンのインデックスも防ぎたい場合は`unlisted`を使用します。
+</Note>
 
 ### `slug`
 

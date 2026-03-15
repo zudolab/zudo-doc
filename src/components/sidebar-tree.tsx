@@ -405,10 +405,10 @@ function LeafNode({
         <a
           href={node.href}
           className={isRoot
-            ? `block py-[calc(var(--spacing-vsp-xs)+0.15rem)] text-small font-semibold ${
+            ? `block py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-[4px] text-small font-semibold ${
                 isActive ? "bg-fg text-bg" : "text-fg hover:underline focus:underline"
               }`
-            : `block py-vsp-2xs ${isLast ? "pb-vsp-xs" : ""} text-small ${
+            : `block py-vsp-2xs pr-[4px] ${isLast ? "pb-vsp-xs" : ""} text-small ${
                 isActive
                   ? "bg-fg font-medium text-bg"
                   : "text-muted hover:underline focus:underline"

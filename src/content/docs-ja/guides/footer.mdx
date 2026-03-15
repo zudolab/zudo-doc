@@ -1,0 +1,138 @@
+---
+title: フッター
+description: リンクカラム、アイテム、著作権テキストを使用したサイトフッターの設定方法。
+sidebar_position: 13
+---
+
+フッターはすべてのページの下部に表示され、`src/config/settings.ts`の`footer`プロパティで設定できます。複数カラムのリンクレイアウトとオプションの著作権テキストをサポートしています。
+
+## 設定
+
+`src/config/settings.ts`の`footer`プロパティは`FooterConfig`オブジェクトを受け入れます：
+
+```ts
+footer: {
+  links: [
+    {
+      title: "Docs",
+      items: [
+        { label: "Getting Started", href: "/docs/getting-started" },
+        { label: "Guides", href: "/docs/guides" },
+      ],
+    },
+    {
+      title: "Community",
+      items: [
+        { label: "GitHub", href: "https://github.com/zudolab/zudo-doc" },
+      ],
+    },
+  ],
+  copyright: `Copyright © ${new Date().getFullYear()} zudolab. Built with zudo-doc.`,
+} satisfies FooterConfig as FooterConfig | false,
+```
+
+### links
+
+フッターに表示されるカラムの配列です。各カラムは`title`とリンクの`items`配列を持ちます。
+
+| プロパティ | 型 | 説明 |
+|----------|------|-------------|
+| `title` | string | リンクの上に表示されるカラム見出し |
+| `items` | `FooterLinkItem[]` | カラム内のリンクアイテムの配列 |
+
+`items`配列の各アイテムは以下のプロパティを持ちます：
+
+| プロパティ | 型 | 説明 |
+|----------|------|-------------|
+| `label` | string | リンクの表示テキスト |
+| `href` | string | リンク先のURL |
+
+<Tip>
+外部リンク（`http://`または`https://`で始まるURL）は自動的に新しいタブで開き、`rel="noopener noreferrer"`が付与されます。内部リンクはサイトの設定済みベースパスで解決されます。
+</Tip>
+
+### copyright
+
+リンクカラムの下にセンタリングされて表示されるオプションの著作権テキストです。リンクカラムが存在する場合、著作権テキストは上部ボーダーで区切られます。リンクが設定されていない場合は、ボーダーなしで表示されます。
+
+## カラムの追加
+
+`links`配列にオブジェクトを追加することでカラムを増やせます。フッターはレスポンシブグリッドを使用しており、小さい画面ではカラムが縦に積まれ、大きい画面では横に並びます。
+
+```ts
+footer: {
+  links: [
+    {
+      title: "Docs",
+      items: [
+        { label: "Getting Started", href: "/docs/getting-started" },
+        { label: "Guides", href: "/docs/guides" },
+      ],
+    },
+    {
+      title: "Community",
+      items: [
+        { label: "GitHub", href: "https://github.com/zudolab/zudo-doc" },
+        { label: "Discord", href: "https://discord.gg/example" },
+      ],
+    },
+    {
+      title: "More",
+      items: [
+        { label: "Blog", href: "https://example.com/blog" },
+        { label: "Changelog", href: "/docs/changelog" },
+      ],
+    },
+  ],
+  copyright: `Copyright © ${new Date().getFullYear()} My Project.`,
+},
+```
+
+<Note>
+グリッドレイアウトは大画面で`repeat(auto-fit, minmax(12rem, 1fr))`を使用するため、カラムの幅は利用可能なスペースに基づいて自動的に調整されます。
+</Note>
+
+## フッターの無効化
+
+フッターを完全に削除するには、設定で`footer`を`false`に設定します：
+
+```ts
+footer: false as FooterConfig | false,
+```
+
+`false`に設定すると、フッターコンポーネントはどのページにもレンダリングされません。
+
+## TypeScript型
+
+フッターの設定は`src/config/settings-types.ts`で定義されている以下のインターフェースを使用します：
+
+```ts
+interface FooterLinkItem {
+  label: string;
+  href: string;
+}
+
+interface FooterLinkColumn {
+  title: string;
+  items: FooterLinkItem[];
+}
+
+interface FooterConfig {
+  links: FooterLinkColumn[];
+  copyright?: string;
+}
+```
+
+設定の`footer`プロパティは`FooterConfig | false`として型付けされており、設定オブジェクトまたは無効化のための`false`のいずれかを指定できます。
+
+## スタイリング
+
+フッターは一貫したテーマ設定のためにプロジェクトのデザイントークンカラーを使用しています：
+
+- `border-muted` — コンテンツとフッターを区切る上部ボーダー、および著作権の上のディバイダー
+- `bg-surface` — フッターの背景
+- `text-fg` — カラムタイトル
+- `text-muted` — リンクテキストと著作権テキスト
+- `text-accent` — リンクホバー時の色
+
+レイアウトはレスポンシブで、モバイルでは1カラム、小さい画面では2カラム、大きい画面ではauto-fitカラムになります。実装の詳細は`src/components/footer.astro`を参照してください。

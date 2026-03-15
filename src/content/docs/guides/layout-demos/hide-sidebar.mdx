@@ -1,0 +1,41 @@
+---
+title: "Demo: Hide Sidebar"
+sidebar_label: "Hide Sidebar"
+description: "Live demonstration of the hide_sidebar frontmatter option."
+sidebar_position: 1
+hide_sidebar: true
+hide_toc: false
+---
+
+This page demonstrates the `hide_sidebar: true` frontmatter option. Notice that the left sidebar is hidden — the content is centered in a narrower container for a focused reading experience.
+
+## What's Happening
+
+The left sidebar navigation is hidden on this page. Here is the frontmatter used:
+
+```yaml
+---
+title: "Demo: Hide Sidebar"
+hide_sidebar: true
+hide_toc: false
+---
+```
+
+## Table of Contents Still Visible
+
+The table of contents on the right side is still visible, providing quick access to sections on this page. Only the left sidebar is affected.
+
+## Mobile Navigation
+
+On mobile devices, the hamburger menu still provides full navigation access. The `hide_sidebar` option only affects the desktop sidebar.
+
+## When to Use
+
+Use `hide_sidebar: true` for pages where sidebar navigation is a distraction — standalone articles, landing pages, or focused content.
+
+See the [Frontmatter reference](/docs/guides/frontmatter/#hide_sidebar) for full documentation.
+
+## See Also
+
+- [Hide Table of Contents](/docs/guides/layout-demos/hide-toc/) — hides the right-side TOC
+- [Hide Sidebar & Table of Contents](/docs/guides/layout-demos/hide-both/) — hides both panels

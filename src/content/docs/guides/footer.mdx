@@ -1,0 +1,138 @@
+---
+title: Footer
+description: How to configure the site footer with link columns, items, and copyright text.
+sidebar_position: 13
+---
+
+The footer appears at the bottom of every page and is configurable through `src/config/settings.ts` under the `footer` property. It supports a multi-column link layout and optional copyright text.
+
+## Configuration
+
+The `footer` property in `src/config/settings.ts` accepts a `FooterConfig` object:
+
+```ts
+footer: {
+  links: [
+    {
+      title: "Docs",
+      items: [
+        { label: "Getting Started", href: "/docs/getting-started" },
+        { label: "Guides", href: "/docs/guides" },
+      ],
+    },
+    {
+      title: "Community",
+      items: [
+        { label: "GitHub", href: "https://github.com/zudolab/zudo-doc" },
+      ],
+    },
+  ],
+  copyright: `Copyright © ${new Date().getFullYear()} zudolab. Built with zudo-doc.`,
+} satisfies FooterConfig as FooterConfig | false,
+```
+
+### links
+
+An array of columns displayed in the footer. Each column has a `title` and an `items` array of links.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `title` | string | Column heading displayed above the links |
+| `items` | `FooterLinkItem[]` | Array of link items in the column |
+
+Each item in the `items` array has:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `label` | string | Display text for the link |
+| `href` | string | URL the link points to |
+
+<Tip>
+External links (URLs starting with `http://` or `https://`) automatically open in a new tab with `rel="noopener noreferrer"`. Internal links are resolved with the site's configured base path.
+</Tip>
+
+### copyright
+
+Optional copyright text displayed centered below the link columns. When link columns are present, the copyright is separated from them by a top border. When no links are configured, the copyright displays without a border.
+
+## Adding Columns
+
+Add more columns by appending objects to the `links` array. The footer uses a responsive grid — columns stack on small screens and flow horizontally on larger screens.
+
+```ts
+footer: {
+  links: [
+    {
+      title: "Docs",
+      items: [
+        { label: "Getting Started", href: "/docs/getting-started" },
+        { label: "Guides", href: "/docs/guides" },
+      ],
+    },
+    {
+      title: "Community",
+      items: [
+        { label: "GitHub", href: "https://github.com/zudolab/zudo-doc" },
+        { label: "Discord", href: "https://discord.gg/example" },
+      ],
+    },
+    {
+      title: "More",
+      items: [
+        { label: "Blog", href: "https://example.com/blog" },
+        { label: "Changelog", href: "/docs/changelog" },
+      ],
+    },
+  ],
+  copyright: `Copyright © ${new Date().getFullYear()} My Project.`,
+},
+```
+
+<Note>
+The grid layout uses `repeat(auto-fit, minmax(12rem, 1fr))` on large screens, so columns will automatically adjust their width based on available space.
+</Note>
+
+## Disabling the Footer
+
+To remove the footer entirely, set `footer` to `false` in settings:
+
+```ts
+footer: false as FooterConfig | false,
+```
+
+When set to `false`, the footer component is not rendered on any page.
+
+## TypeScript Types
+
+The footer configuration uses these interfaces defined in `src/config/settings-types.ts`:
+
+```ts
+interface FooterLinkItem {
+  label: string;
+  href: string;
+}
+
+interface FooterLinkColumn {
+  title: string;
+  items: FooterLinkItem[];
+}
+
+interface FooterConfig {
+  links: FooterLinkColumn[];
+  copyright?: string;
+}
+```
+
+The `footer` property in settings is typed as `FooterConfig | false`, allowing it to be either a configuration object or `false` to disable.
+
+## Styling
+
+The footer uses the project's design token colors for consistent theming:
+
+- `border-muted` — top border separating the footer from content, and the divider above the copyright
+- `bg-surface` — footer background
+- `text-fg` — column titles
+- `text-muted` — link text and copyright text
+- `text-accent` — link hover color
+
+The layout is responsive: a single column on mobile, two columns on small screens, and auto-fit columns on large screens. See `src/components/footer.astro` for implementation details.
