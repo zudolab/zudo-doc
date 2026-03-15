@@ -40,13 +40,3 @@ export async function getVersionAvailability(): Promise<VersionAvailability> {
   return result;
 }
 
-/**
- * Check if a specific doc slug exists in a given version.
- */
-export function isSlugAvailable(
-  availability: VersionAvailability,
-  versionSlug: string,
-  docSlug: string,
-): boolean {
-  return availability[versionSlug]?.has(docSlug) ?? false;
-}

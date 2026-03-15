@@ -59,7 +59,7 @@ const isLatest = !currentVersion;
     {versions.map((v) => {
       const vUrl = versionedDocsUrl(currentSlug, v.slug, lang);
       const isActive = currentVersion === v.slug;
-      const isAvailable = !availability || (availability[v.slug]?.has(currentSlug) ?? true);
+      const isAvailable = !availability || (availability[v.slug]?.has(currentSlug) ?? false);
       return (
         <li>
           {isAvailable ? (

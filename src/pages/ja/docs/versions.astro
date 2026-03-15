@@ -7,6 +7,7 @@ import { t } from "@/config/i18n";
 const lang = "ja";
 const pageTitle = t("version.page.title", lang);
 const versions = settings.versions || [];
+const defaultDocSlug = settings.headerNav[0]?.path.replace(/^\/docs\//, "") ?? "getting-started";
 ---
 
 <DocLayout title={pageTitle} lang={lang} hideToc hideSidebar>
@@ -17,7 +18,7 @@ const versions = settings.versions || [];
     <h2 class="text-subheading font-bold mb-vsp-xs">{t("version.page.latest.title", lang)}</h2>
     <p class="text-small text-muted mb-vsp-sm">{t("version.page.latest.description", lang)}</p>
     <a
-      href={docsUrl("getting-started", lang)}
+      href={docsUrl(defaultDocSlug, lang)}
       class="inline-flex items-center gap-hsp-xs text-small text-accent underline hover:text-accent-hover"
     >
       {t("version.page.latest.link", lang)}
@@ -63,7 +64,7 @@ const versions = settings.versions || [];
                   </td>
                   <td class="px-hsp-lg py-vsp-sm">
                     <a
-                      href={versionedDocsUrl("getting-started", v.slug, lang)}
+                      href={versionedDocsUrl(defaultDocSlug, v.slug, lang)}
                       class="text-accent underline hover:text-accent-hover"
                     >
                       Docs
