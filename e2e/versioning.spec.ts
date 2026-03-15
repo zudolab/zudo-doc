@@ -7,6 +7,9 @@ import { test, expect } from "@playwright/test";
  * - Latest docs at /docs/getting-started (title: "Getting Started")
  * - Version 1.0 docs at /v/1.0/docs/getting-started (title: "Getting Started (v1)")
  * - Version 1.0 configured with banner: "unmaintained"
+ *
+ * Note: The version switcher renders in both the header and the main content
+ * area. Tests scope selectors to `main` to target the content version switcher.
  */
 
 test.describe("Versioning: latest version pages", () => {
@@ -30,7 +33,7 @@ test.describe("Versioning: latest version pages", () => {
 
   test("version switcher is visible on latest page", async ({ page }) => {
     await page.goto("/docs/getting-started", { waitUntil: "load" });
-    const switcher = page.locator("[data-version-switcher]");
+    const switcher = page.locator("main [data-version-switcher]");
     await expect(switcher).toBeVisible();
   });
 
@@ -38,7 +41,7 @@ test.describe("Versioning: latest version pages", () => {
     page,
   }) => {
     await page.goto("/docs/getting-started", { waitUntil: "load" });
-    const toggle = page.locator("[data-version-toggle]");
+    const toggle = page.locator("main [data-version-toggle]");
     const text = await toggle.textContent();
     expect(text).toContain("Latest");
   });
@@ -90,7 +93,7 @@ test.describe("Versioning: versioned pages", () => {
     page,
   }) => {
     await page.goto("/v/1.0/docs/getting-started", { waitUntil: "load" });
-    const toggle = page.locator("[data-version-toggle]");
+    const toggle = page.locator("main [data-version-toggle]");
     const text = await toggle.textContent();
     expect(text).toContain("1.0.0");
   });
@@ -100,8 +103,8 @@ test.describe("Versioning: version switcher interaction", () => {
   test("clicking toggle opens dropdown menu", async ({ page }) => {
     await page.goto("/docs/getting-started", { waitUntil: "load" });
 
-    const toggle = page.locator("[data-version-toggle]");
-    const menu = page.locator("[data-version-menu]");
+    const toggle = page.locator("main [data-version-toggle]");
+    const menu = page.locator("main [data-version-menu]");
 
     // Menu should be hidden initially
     await expect(menu).toHaveClass(/hidden/);
@@ -117,8 +120,8 @@ test.describe("Versioning: version switcher interaction", () => {
   test("clicking outside closes dropdown menu", async ({ page }) => {
     await page.goto("/docs/getting-started", { waitUntil: "load" });
 
-    const toggle = page.locator("[data-version-toggle]");
-    const menu = page.locator("[data-version-menu]");
+    const toggle = page.locator("main [data-version-toggle]");
+    const menu = page.locator("main [data-version-menu]");
 
     // Open menu
     await toggle.click();
@@ -133,8 +136,8 @@ test.describe("Versioning: version switcher interaction", () => {
   test("Escape key closes dropdown menu", async ({ page }) => {
     await page.goto("/docs/getting-started", { waitUntil: "load" });
 
-    const toggle = page.locator("[data-version-toggle]");
-    const menu = page.locator("[data-version-menu]");
+    const toggle = page.locator("main [data-version-toggle]");
+    const menu = page.locator("main [data-version-menu]");
 
     // Open menu
     await toggle.click();
@@ -149,14 +152,14 @@ test.describe("Versioning: version switcher interaction", () => {
   test("dropdown contains links to all versions", async ({ page }) => {
     await page.goto("/docs/getting-started", { waitUntil: "load" });
 
-    const toggle = page.locator("[data-version-toggle]");
+    const toggle = page.locator("main [data-version-toggle]");
     await toggle.click();
 
-    const menu = page.locator("[data-version-menu]");
+    const menu = page.locator("main [data-version-menu]");
     const links = menu.locator("a");
 
-    // Should have 2 links: Latest + 1.0.0
-    await expect(links).toHaveCount(2);
+    // Should have 3 links: Latest + 1.0.0 + "All versions"
+    await expect(links).toHaveCount(3);
 
     // First link is "Latest" pointing to current docs
     const latestLink = links.nth(0);
@@ -173,11 +176,11 @@ test.describe("Versioning: version switcher interaction", () => {
     await page.goto("/docs/getting-started", { waitUntil: "load" });
 
     // Open version switcher
-    const toggle = page.locator("[data-version-toggle]");
+    const toggle = page.locator("main [data-version-toggle]");
     await toggle.click();
 
     // Click version 1.0.0 link
-    const versionLink = page.locator("[data-version-menu] a").nth(1);
+    const versionLink = page.locator("main [data-version-menu] a").nth(1);
     await versionLink.click();
 
     // Should navigate to versioned page

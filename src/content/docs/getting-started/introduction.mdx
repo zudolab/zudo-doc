@@ -4,7 +4,7 @@ description: Learn what zudo-doc is, its features, and how it works.
 sidebar_position: 1
 ---
 
-Welcome to **zudo-doc** — a minimal, fast documentation framework built with Astro 6 and MDX.
+Welcome to **zudo-doc** — a documentation base framework built with Astro 6 and MDX.
 
 <Note>
 zudo-doc is designed to be simple and extensible. Start with the basics and add features as you need them.
@@ -35,10 +35,22 @@ The color scheme system uses a 16-color palette. By swapping a single color sche
 ## Quick Start
 
 ```bash
+pnpm create zudo-doc my-docs
+cd my-docs
+pnpm install
+pnpm dev
+```
+
+Then open [http://localhost:4321](http://localhost:4321) to see your docs. See the [Installation](/docs/getting-started/installation/) guide for all CLI options and setup details.
+
+<Note title="Want to explore the full project?">
+If you want to explore the full project including these showcase docs, clone the repository directly instead:
+
+```bash
 git clone https://github.com/zudolab/zudo-doc.git my-docs
 cd my-docs
 pnpm install
 pnpm dev
 ```
 
-Then open [http://localhost:4321](http://localhost:4321) to see your docs.
+</Note>

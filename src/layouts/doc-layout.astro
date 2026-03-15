@@ -19,6 +19,7 @@ import { withBase, docsUrl } from "@/utils/base";
 import type { VersionConfig } from "@/config/settings-types";
 import VersionSwitcher from "@/components/version-switcher.astro";
 import VersionBanner from "@/components/version-banner.astro";
+import { getVersionAvailability } from "@/utils/version-availability";
 import Footer from "@/components/footer.astro";
 import ColorTweakPanel from "@/components/color-tweak-panel";
 import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "@/config/color-scheme-utils";
@@ -49,6 +50,7 @@ const {
   hideToc = false,
 } = Astro.props;
 const latestUrl = currentSlug ? docsUrl(currentSlug, lang) : undefined;
+const versionAvailability = settings.versions ? await getVersionAvailability() : undefined;
 const fullTitle = `${title} | ${settings.siteName}`;
 const navSection = currentSlug ? getNavSectionForSlug(currentSlug) : undefined;
 const currentPath = Astro.url.pathname;
@@ -127,7 +129,7 @@ const contentTransition = {
     <ClientRouter />
   </head>
   <body class="min-h-screen antialiased">
-    <Header lang={lang} currentPath={currentPath}>
+    <Header lang={lang} currentPath={currentPath} currentVersion={currentVersion} currentSlug={currentSlug} versionAvailability={versionAvailability}>
       <Sidebar slot="sidebar" currentSlug={currentSlug} lang={lang} navSection={navSection} />
     </Header>
 
@@ -154,7 +156,7 @@ const contentTransition = {
             {settings.versions && currentSlug ? (
               <div class="mb-vsp-sm flex items-center justify-between">
                 <slot name="breadcrumb" />
-                <VersionSwitcher currentVersion={currentVersion} currentSlug={currentSlug} lang={lang} />
+                <VersionSwitcher currentVersion={currentVersion} currentSlug={currentSlug} lang={lang} availability={versionAvailability} />
               </div>
             ) : (
               <slot name="breadcrumb" />

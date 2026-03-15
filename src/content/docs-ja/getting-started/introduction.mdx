@@ -3,7 +3,7 @@ title: はじめに
 sidebar_position: 1
 ---
 
-**zudo-doc** へようこそ — AstroとMDXで構築された、最小限で高速なドキュメントフレームワークです。
+**zudo-doc** へようこそ — AstroとMDXで構築されたドキュメントベースフレームワークです。
 
 ## なぜ zudo-doc？
 
@@ -18,8 +18,22 @@ sidebar_position: 1
 ## クイックスタート
 
 ```bash
+pnpm create zudo-doc my-docs
+cd my-docs
 pnpm install
 pnpm dev
 ```
 
-[http://localhost:4321](http://localhost:4321) を開いてドキュメントを確認してください。
+[http://localhost:4321](http://localhost:4321) を開いてドキュメントを確認してください。CLIのオプションやセットアップの詳細は[インストール](/ja/docs/getting-started/installation/)ガイドをご覧ください。
+
+<Note title="フルプロジェクトを探索したい場合">
+ショーケースドキュメントを含むフルプロジェクトを確認したい場合は、リポジトリを直接クローンしてください：
+
+```bash
+git clone https://github.com/zudolab/zudo-doc.git my-docs
+cd my-docs
+pnpm install
+pnpm dev
+```
+
+</Note>

@@ -31,7 +31,7 @@ test.describe("Sidebar filter", () => {
     await waitForSidebarHydration(page);
 
     const sidebar = desktopSidebar(page);
-    const filterInput = sidebar.locator('input[placeholder="Filter..."]');
+    const filterInput = sidebar.locator('input[placeholder^="Filter"]');
     await expect(filterInput).toBeVisible();
   });
 
@@ -40,7 +40,7 @@ test.describe("Sidebar filter", () => {
     await waitForSidebarHydration(page);
 
     const sidebar = desktopSidebar(page);
-    const filterInput = sidebar.locator('input[placeholder="Filter..."]');
+    const filterInput = sidebar.locator('input[placeholder^="Filter"]');
 
     await filterInput.fill("Sub A");
 
@@ -60,7 +60,7 @@ test.describe("Sidebar filter", () => {
     await waitForSidebarHydration(page);
 
     const sidebar = desktopSidebar(page);
-    const filterInput = sidebar.locator('input[placeholder="Filter..."]');
+    const filterInput = sidebar.locator('input[placeholder^="Filter"]');
 
     // Filter to narrow results
     await filterInput.fill("Sub A");
@@ -82,7 +82,7 @@ test.describe("Sidebar filter", () => {
     await waitForSidebarHydration(page);
 
     const sidebar = desktopSidebar(page);
-    const filterInput = sidebar.locator('input[placeholder="Filter..."]');
+    const filterInput = sidebar.locator('input[placeholder^="Filter"]');
 
     await filterInput.fill("page");
 
@@ -104,7 +104,7 @@ test.describe("Sidebar filter", () => {
     await waitForSidebarHydration(page);
 
     const sidebar = desktopSidebar(page);
-    const filterInput = sidebar.locator('input[placeholder="Filter..."]');
+    const filterInput = sidebar.locator('input[placeholder^="Filter"]');
 
     // Ensure filter input is not focused initially
     await expect(filterInput).not.toBeFocused();
