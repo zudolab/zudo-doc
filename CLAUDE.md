@@ -42,7 +42,7 @@ src/
 
 - Default to **Astro components** (`.astro`) — zero JS, server-rendered
 - Use **React islands** (`client:load`) only when client-side interactivity is needed
-- Current React islands: `toc.tsx`, `mobile-toc.tsx`, `sidebar-toggle.tsx`, `sidebar-tree.tsx`, `color-scheme-picker.tsx`, `theme-toggle.tsx`, `doc-history.tsx`
+- Current React islands: `toc.tsx`, `mobile-toc.tsx`, `sidebar-toggle.tsx`, `sidebar-tree.tsx`, `color-scheme-picker.tsx`, `theme-toggle.tsx`, `doc-history.tsx`, `color-tweak-panel.tsx`, `color-tweak-export-modal.tsx`
 
 ### Content Collections
 
@@ -98,6 +98,14 @@ Each tier only references the tier above it.
 - Edit `colorScheme` in `src/config/settings.ts`
 - Available: Dracula, Catppuccin Mocha, Nord, TokyoNight, Gruvbox Dark, Atom One Dark
 - Add schemes in `src/config/color-schemes.ts` (22 color props + `shikiTheme`)
+- `ColorRef` type: semantic overrides and `cursor`/`selectionBg`/`selectionFg` accept `number | string` — number = palette index, string = direct color
+
+### Color Tweak Panel
+
+- Enabled via `colorTweakPanel: true` in settings
+- Interactive panel at page bottom for live color editing (palette, base, semantic tokens)
+- Export button generates `ColorScheme` TypeScript code for clipboard copy
+- State persisted in `localStorage` (`zudo-doc-tweak-state`)
 
 ## CSS
 
