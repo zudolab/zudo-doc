@@ -1,15 +1,62 @@
 import fs from "fs-extra";
 import path from "path";
 import type { UserChoices } from "./prompts.js";
+import { getSecondaryLang } from "./scaffold.js";
+import { getLangLabel } from "./utils.js";
 
 export async function stripFeatures(
   targetDir: string,
   choices: UserChoices,
 ): Promise<void> {
-  // Strip i18n if not selected
-  if (!choices.features.includes("i18n")) {
+  const defaultLang = choices.defaultLang;
+  const hasI18n = choices.features.includes("i18n");
+
+  // --- Default language patching ---
+  // The template ships with "en" as the default locale. When the user picks a
+  // different default language we need to patch several files.
+  if (defaultLang !== "en") {
+    await patchDefaultLang(targetDir, defaultLang);
+  }
+
+  // --- i18n handling ---
+  if (hasI18n) {
+    // The template has src/pages/ja/ as the secondary-language pages.
+    // We need to ensure the secondary pages directory matches the actual
+    // secondary language for this project.
+    const secondaryLang = getSecondaryLang(defaultLang);
+
+    if (secondaryLang !== "ja") {
+      // Template has ja/ pages — we need to recreate them for the actual secondary lang.
+      // Copy ja/ pages, patch locale refs, then remove the ja/ originals.
+      await createSecondaryPages(targetDir, secondaryLang);
+      await removeIfExists(targetDir, "src/pages/ja");
+      // Also handle versioned locale pages
+      await renameVersionedLocalePages(targetDir, secondaryLang);
+    }
+    // else secondaryLang === "ja" — template pages are already correct
+
+    // Remove template's docs-ja content dir only if secondary lang is not ja
+    // (scaffold already created the correct secondary content dir)
+    if (secondaryLang !== "ja") {
+      await removeIfExists(targetDir, "src/content/docs-ja");
+    }
+
+    // Patch content.config.ts for the secondary language
+    if (secondaryLang !== "ja") {
+      await patchFile(
+        path.join(targetDir, "src/content.config.ts"),
+        [
+          [/"docs-ja"/g, `"docs-${secondaryLang}"`],
+          [/docsJa/g, `docs${toCamelSuffix(secondaryLang)}`],
+        ],
+      );
+    }
+  } else {
+    // Strip i18n entirely
     await removeIfExists(targetDir, "src/pages/ja");
     await removeIfExists(targetDir, "src/content/docs-ja");
+    // Also remove versioned locale pages
+    await removeVersionedLocalePages(targetDir);
     await removeIfExists(targetDir, "src/components/language-switcher.astro");
     await removeI18nFromAstroConfig(targetDir);
     // Remove docsJa collection from content.config.ts
@@ -102,6 +149,176 @@ export async function stripFeatures(
   // TODO: Strip sidebar filter when not selected
   // The sidebar filter is built into sidebar-tree.tsx — stripping requires
   // careful component surgery. For now, the filter is always included.
+}
+
+/**
+ * Patch the template's hardcoded "en" default locale to a different language.
+ * This modifies i18n.ts, astro.config.ts, and the root page files.
+ */
+async function patchDefaultLang(
+  targetDir: string,
+  lang: string,
+): Promise<void> {
+  const label = getLangLabel(lang);
+
+  // Patch src/config/i18n.ts
+  await patchFile(path.join(targetDir, "src/config/i18n.ts"), [
+    // Change: export const defaultLocale = "en" as const;
+    [
+      /export const defaultLocale = "en" as const;/g,
+      `export const defaultLocale = "${lang}" as const;`,
+    ],
+    // Change: if (locale === defaultLocale) return "EN";
+    [
+      /return "EN";/g,
+      `return ${JSON.stringify(label)};`,
+    ],
+  ]);
+
+  // Patch astro.config.ts: defaultLocale
+  await patchFile(path.join(targetDir, "astro.config.ts"), [
+    [/defaultLocale: "en"/g, `defaultLocale: "${lang}"`],
+    [/locales: \["en"/g, `locales: ["${lang}"`],
+  ]);
+
+  // Patch root pages — replace hardcoded "en" locale references
+  // src/pages/index.astro
+  await patchFile(path.join(targetDir, "src/pages/index.astro"), [
+    [/loadLocaleDocs\("en"\)/g, `loadLocaleDocs("${lang}")`],
+    [/buildNavTree\(navDocs, "en"/g, `buildNavTree(navDocs, "${lang}"`],
+    [/<html lang="en">/g, `<html lang="${lang}">`],
+    [/<Header lang="en">/g, `<Header lang="${lang}">`],
+  ]);
+
+  // src/pages/docs/[...slug].astro
+  await patchFile(path.join(targetDir, "src/pages/docs/[...slug].astro"), [
+    [/buildNavTree\(navDocs, "en"/g, `buildNavTree(navDocs, "${lang}"`],
+    [/buildBreadcrumbs\(tree, slug, "en"\)/g, `buildBreadcrumbs(tree, slug, "${lang}")`],
+    [/buildBreadcrumbs\(tree, node\.slug, "en"\)/g, `buildBreadcrumbs(tree, node.slug, "${lang}")`],
+    [/docsUrl\(child\.slug, "en"\)/g, `docsUrl(child.slug, "${lang}")`],
+    [/docsUrl\(doc\.slug, "en"\)/g, `docsUrl(doc.slug, "${lang}")`],
+    [/locale="en"/g, `locale="${lang}"`],
+    [/t\("nav\.previous", "en"\)/g, `t("nav.previous", "${lang}")`],
+    [/t\("nav\.next", "en"\)/g, `t("nav.next", "${lang}")`],
+  ]);
+
+  // src/pages/docs/tags/index.astro — no patching needed.
+  // The English tags/index.astro calls t() without locale arg (defaults to defaultLocale).
+
+  // src/pages/docs/tags/[tag].astro
+  await patchFile(path.join(targetDir, "src/pages/docs/tags/[tag].astro"), [
+    [/docsUrl\(doc\.slug, "en"\)/g, `docsUrl(doc.slug, "${lang}")`],
+  ]);
+}
+
+/**
+ * Create secondary language page files from the template's ja/ pages,
+ * patching locale references to the target secondary language.
+ */
+async function createSecondaryPages(
+  targetDir: string,
+  secondaryLang: string,
+): Promise<void> {
+  const jaDir = path.join(targetDir, "src/pages/ja");
+  const newDir = path.join(targetDir, `src/pages/${secondaryLang}`);
+
+  if (!(await fs.pathExists(jaDir))) return;
+
+  // Copy the ja/ directory structure
+  await fs.copy(jaDir, newDir);
+
+  // Patch all .astro files in the new directory
+  const astroFiles = await findAstroFiles(newDir);
+  for (const file of astroFiles) {
+    await patchFile(file, [
+      // Replace "ja" locale references with the secondary lang
+      [/loadLocaleDocs\("ja"\)/g, `loadLocaleDocs("${secondaryLang}")`],
+      [/buildNavTree\(navDocs, "ja"/g, `buildNavTree(navDocs, "${secondaryLang}"`],
+      [/buildBreadcrumbs\(tree, slug, "ja"\)/g, `buildBreadcrumbs(tree, slug, "${secondaryLang}")`],
+      [/buildBreadcrumbs\(tree, node\.slug, "ja"\)/g, `buildBreadcrumbs(tree, node.slug, "${secondaryLang}")`],
+      [/<html lang="ja">/g, `<html lang="${secondaryLang}">`],
+      [/lang="ja"/g, `lang="${secondaryLang}"`],
+      [/docsUrl\(child\.slug, "ja"\)/g, `docsUrl(child.slug, "${secondaryLang}")`],
+      [/docsUrl\(doc\.slug, "ja"\)/g, `docsUrl(doc.slug, "${secondaryLang}")`],
+      [/locale="ja"/g, `locale="${secondaryLang}"`],
+      [/t\("([^"]+)", "ja"\)/g, `t("$1", "${secondaryLang}")`],
+      [/getContentDir\("ja"\)/g, `getContentDir("${secondaryLang}")`],
+      [/getDocsCollection\("docs-ja"\)/g, `getDocsCollection("docs-${secondaryLang}")`],
+      [/withBase\(`\/ja/g, `withBase(\`/${secondaryLang}`],
+      [/withBase\("\/ja/g, `withBase("/${secondaryLang}`],
+      [/href=\{withBase\("\/ja\//g, `href={withBase("/${secondaryLang}/`],
+    ]);
+  }
+}
+
+/** Rename versioned locale pages from ja/ to the actual secondary language. */
+async function renameVersionedLocalePages(
+  targetDir: string,
+  secondaryLang: string,
+): Promise<void> {
+  const versionDir = path.join(targetDir, "src/pages/v");
+  if (!(await fs.pathExists(versionDir))) return;
+
+  const entries = await fs.readdir(versionDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      const jaDir = path.join(versionDir, entry.name, "ja");
+      const newDir = path.join(versionDir, entry.name, secondaryLang);
+      if (await fs.pathExists(jaDir)) {
+        await fs.copy(jaDir, newDir);
+        await fs.remove(jaDir);
+        // Patch locale refs in the new versioned pages
+        const files = await findAstroFiles(newDir);
+        for (const file of files) {
+          await patchFile(file, [
+            [/locale="ja"/g, `locale="${secondaryLang}"`],
+            [/t\("([^"]+)", "ja"\)/g, `t("$1", "${secondaryLang}")`],
+            [/getContentDir\("ja"\)/g, `getContentDir("${secondaryLang}")`],
+            [/getDocsCollection\("docs-ja"\)/g, `getDocsCollection("docs-${secondaryLang}")`],
+          ]);
+        }
+      }
+    }
+  }
+}
+
+/** Remove locale subdirectories from versioned pages (e.g., v/[version]/ja/). */
+async function removeVersionedLocalePages(targetDir: string): Promise<void> {
+  const versionDir = path.join(targetDir, "src/pages/v");
+  if (!(await fs.pathExists(versionDir))) return;
+
+  const entries = await fs.readdir(versionDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      const jaDir = path.join(versionDir, entry.name, "ja");
+      if (await fs.pathExists(jaDir)) {
+        await fs.remove(jaDir);
+      }
+    }
+  }
+}
+
+/** Recursively find all .astro files in a directory. */
+async function findAstroFiles(dir: string): Promise<string[]> {
+  const results: string[] = [];
+  const entries = await fs.readdir(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...(await findAstroFiles(fullPath)));
+    } else if (entry.name.endsWith(".astro")) {
+      results.push(fullPath);
+    }
+  }
+  return results;
+}
+
+/** Convert a locale code to a valid JS identifier suffix: "zh-cn" → "ZhCn", "en" → "En". */
+function toCamelSuffix(code: string): string {
+  return code
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("");
 }
 
 async function removeIfExists(

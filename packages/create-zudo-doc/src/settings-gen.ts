@@ -1,5 +1,6 @@
 import type { UserChoices } from "./prompts.js";
-import { capitalize } from "./utils.js";
+import { getSecondaryLang } from "./scaffold.js";
+import { capitalize, getLangLabel } from "./utils.js";
 
 export function generateSettingsFile(choices: UserChoices): string {
   const lines: string[] = [];
@@ -53,9 +54,14 @@ export function generateSettingsFile(choices: UserChoices): string {
   );
   lines.push(`  base: "/",`);
   lines.push(`  docsDir: "src/content/docs",`);
+
   if (choices.features.includes("i18n")) {
+    const secondaryLang = getSecondaryLang(choices.defaultLang);
+    const secondaryLabel = getLangLabel(secondaryLang);
     lines.push(`  locales: {`);
-    lines.push(`    ja: { label: "JA", dir: "src/content/docs-ja" },`);
+    lines.push(
+      `    ${secondaryLang}: { label: ${JSON.stringify(secondaryLabel)}, dir: "src/content/docs-${secondaryLang}" },`,
+    );
     lines.push(`  } as Record<string, LocaleConfig>,`);
   } else {
     lines.push(`  locales: {} as Record<string, LocaleConfig>,`);

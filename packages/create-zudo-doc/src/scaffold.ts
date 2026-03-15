@@ -6,6 +6,35 @@ import { generateSettingsFile } from "./settings-gen.js";
 import { stripFeatures } from "./strip.js";
 import { capitalize } from "./utils.js";
 
+/** Determine the secondary language code when i18n is enabled. */
+export function getSecondaryLang(defaultLang: string): string {
+  return defaultLang === "en" ? "ja" : "en";
+}
+
+const STARTER_CONTENT_EN = (siteName: string) => `---
+title: Welcome
+sidebar_position: 1
+---
+
+# Welcome to ${siteName}
+
+This documentation site was created with [zudo-doc](https://github.com/zudolab/zudo-doc).
+
+## Getting Started
+
+Edit the files in \`src/content/docs/\` to add your documentation.
+`;
+
+const STARTER_CONTENT_JA = () => `---
+title: ようこそ
+sidebar_position: 1
+---
+
+# ようこそ
+
+このドキュメントサイトは [zudo-doc](https://github.com/zudolab/zudo-doc) で作成されました。
+`;
+
 export async function scaffold(choices: UserChoices): Promise<void> {
   const targetDir = path.resolve(process.cwd(), choices.projectName);
 
@@ -57,25 +86,34 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     }
   }
 
-  // Create starter content (not copied from template to avoid leaking internal docs)
+  const defaultLang = choices.defaultLang;
   const escapedName = capitalize(choices.projectName.replace(/-/g, " "));
-  const indexContent = `---
-title: Welcome
-sidebar_position: 1
----
 
-# Welcome to ${escapedName}
-
-This documentation site was created with [zudo-doc](https://github.com/zudolab/zudo-doc).
-
-## Getting Started
-
-Edit the files in \`src/content/docs/\` to add your documentation.
-`;
+  // Place primary content in src/content/docs/
+  const primaryContent =
+    defaultLang === "ja"
+      ? STARTER_CONTENT_JA()
+      : STARTER_CONTENT_EN(escapedName);
   await fs.outputFile(
     path.join(targetDir, "src/content/docs/getting-started/index.mdx"),
-    indexContent,
+    primaryContent,
   );
+
+  // When i18n is ON, place secondary language content
+  if (choices.features.includes("i18n")) {
+    const secondaryLang = getSecondaryLang(defaultLang);
+    const secondaryDir = `src/content/docs-${secondaryLang}`;
+    await fs.ensureDir(path.join(targetDir, secondaryDir));
+
+    const secondaryContent =
+      secondaryLang === "ja"
+        ? STARTER_CONTENT_JA()
+        : STARTER_CONTENT_EN(escapedName);
+    await fs.outputFile(
+      path.join(targetDir, `${secondaryDir}/getting-started/index.mdx`),
+      secondaryContent,
+    );
+  }
 
   // Generate settings.ts
   const settingsContent = generateSettingsFile(choices);
@@ -97,30 +135,11 @@ Edit the files in \`src/content/docs/\` to add your documentation.
     ["node_modules", "dist", ".astro", ""].join("\n"),
   );
 
-  // Strip unwanted features
+  // Strip unwanted features and apply defaultLang patching
   await stripFeatures(targetDir, choices);
 
-  // Create content directories
+  // Ensure content directories exist
   await fs.ensureDir(path.join(targetDir, "src/content/docs"));
-  if (choices.features.includes("i18n")) {
-    await fs.ensureDir(path.join(targetDir, "src/content/docs-ja"));
-    const jaIndexContent = `---
-title: ようこそ
-sidebar_position: 1
----
-
-# ようこそ
-
-このドキュメントサイトは [zudo-doc](https://github.com/zudolab/zudo-doc) で作成されました。
-`;
-    await fs.outputFile(
-      path.join(
-        targetDir,
-        "src/content/docs-ja/getting-started/index.mdx",
-      ),
-      jaIndexContent,
-    );
-  }
 }
 
 function generatePackageJson(choices: UserChoices) {

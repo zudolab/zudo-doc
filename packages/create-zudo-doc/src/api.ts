@@ -6,6 +6,8 @@ export type { UserChoices } from "./prompts.js";
 
 export interface CreateOptions {
   projectName: string;
+  /** Default language code (default: "en") */
+  defaultLang?: string;
   colorSchemeMode: "single" | "light-dark";
   singleScheme?: string;
   lightScheme?: string;
@@ -19,7 +21,8 @@ export interface CreateOptions {
 }
 
 export async function createZudoDoc(options: CreateOptions): Promise<string> {
-  const { install = false, ...choices } = options;
+  const { install = false, ...rest } = options;
+  const choices = { ...rest, defaultLang: rest.defaultLang ?? "en" };
   await scaffold(choices);
   const targetDir = path.resolve(process.cwd(), choices.projectName);
   if (install) {

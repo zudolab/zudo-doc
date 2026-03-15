@@ -29,11 +29,24 @@ yarn create zudo-doc
 bunx create-zudo-doc
 ```
 
+For non-interactive usage (CI, automation, AI agents), use `--yes` to accept defaults or pass flags directly:
+
+```bash
+pnpm create zudo-doc my-docs --yes
+pnpm create zudo-doc my-docs --lang ja --scheme Dracula --no-i18n --pm pnpm --install
+```
+
+See the [CLI reference](/docs/reference/create-zudo-doc) for all available flags.
+
 The CLI walks you through the following options:
 
 ### Project Name
 
 Enter a name for your project directory (default: `my-docs`).
+
+### Default Language
+
+Choose the default language for your documentation site. Supported languages include English, Japanese, Chinese (Simplified/Traditional), Korean, Spanish, French, German, and Portuguese.
 
 ### Color Scheme Mode
 
@@ -50,7 +63,7 @@ Select which optional features to include:
 
 | Feature | Default | Description |
 |---------|---------|-------------|
-| i18n (English + Japanese) | On | Multi-language support with mirrored content directories |
+| i18n (multi-language) | Off | Add a secondary language with mirrored content directories |
 | Pagefind search | On | Full-text search across all documentation |
 | Sidebar filter | On | Real-time filtering of sidebar navigation items |
 | Claude Resources | Off | Auto-generated documentation for Claude Code components |
