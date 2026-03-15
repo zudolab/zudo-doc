@@ -27,7 +27,7 @@ Translate documentation between English and Japanese following project-specific 
 
 ### Keep in English (do NOT translate)
 
-- Component names: `<Note>`, `<Tip>`, `<Info>`, `<Warning>`, `<Danger>`
+- Component names: `<Note>`, `<Tip>`, `<Info>`, `<Warning>`, `<Danger>`, `<Tabs>`, `<TabItem>`, `<Details>`
 - Code blocks — code is universal
 - File paths: `src/content/docs/...`, `.claude/skills/...`, etc.
 - CLI commands: `pnpm dev`, `pnpm build`, etc.
@@ -62,17 +62,19 @@ Translate documentation between English and Japanese following project-specific 
 
 1. Read the English source file from `src/content/docs/`
 2. Check if the corresponding Japanese file already exists in `src/content/docs-ja/`
-3. Copy the English file to the equivalent path in `src/content/docs-ja/`
-4. Translate the content following the rules above
-5. Verify internal links point to `/ja/docs/...`
+   - If it exists, read it first — use it as a base and update from the English source rather than overwriting from scratch
+   - If it does not exist, create the file at the equivalent path in `src/content/docs-ja/`
+3. Translate the content following the rules above
+4. Verify internal links point to `/ja/docs/...`
 
 ### Ja→En Translation
 
 1. Read the Japanese source file from `src/content/docs-ja/`
 2. Check if the corresponding English file already exists in `src/content/docs/`
-3. Copy the Japanese file to the equivalent path in `src/content/docs/`
-4. Translate the content following the rules above
-5. Verify internal links point to `/docs/...` (no `/ja/` prefix)
+   - If it exists, read it first — use it as a base and update from the Japanese source rather than overwriting from scratch
+   - If it does not exist, create the file at the equivalent path in `src/content/docs/`
+3. Translate the content following the rules above
+4. Verify internal links point to `/docs/...` (no `/ja/` prefix)
 
 ### Post-Translation Checks
 
