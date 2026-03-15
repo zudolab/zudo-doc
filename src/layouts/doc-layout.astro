@@ -20,6 +20,7 @@ import type { VersionConfig } from "@/config/settings-types";
 import VersionSwitcher from "@/components/version-switcher.astro";
 import VersionBanner from "@/components/version-banner.astro";
 import Footer from "@/components/footer.astro";
+import ColorTweakPanel from "@/components/color-tweak-panel";
 
 interface Props {
   title: string;
@@ -145,6 +146,7 @@ const contentTransition = {
         </div>
       </div>
     </div>
+    {settings.colorTweakPanel && <ColorTweakPanel client:load />}
     <Footer />
     <CodeBlockEnhancer />
     <TabsInit />
