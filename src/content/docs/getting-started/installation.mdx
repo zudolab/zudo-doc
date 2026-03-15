@@ -10,16 +10,73 @@ sidebar_position: 2
 - **pnpm** — recommended package manager
 
 <Info>
-You can also use npm or yarn, but this guide uses pnpm for all examples.
+You can also use npm, yarn, or bun, but this guide uses pnpm for all examples.
 </Info>
 
-## Install
+## Create a New Project
+
+The fastest way to get started is with the `create-zudo-doc` CLI. It scaffolds a new project with an interactive setup wizard.
+
+```bash
+pnpm create zudo-doc
+```
+
+Or with other package managers:
+
+```bash
+npm create zudo-doc
+yarn create zudo-doc
+bunx create-zudo-doc
+```
+
+The CLI walks you through the following options:
+
+### Project Name
+
+Enter a name for your project directory (default: `my-docs`).
+
+### Color Scheme Mode
+
+Choose how your site handles color schemes:
+
+- **Light & Dark (toggle)** — users can switch between light and dark themes. Pick from pre-configured pairings (GitHub, Catppuccin, Solarized, Rosé Pine, Atom One, Everforest, Gruvbox, Ayu) or choose light and dark schemes individually.
+- **Single scheme** — one fixed color scheme for the entire site. Over 30 schemes are available, including Dracula, Nord, TokyoNight, and more.
+
+When using light/dark mode, you can also set the default mode (light or dark) and whether to respect the user's system color scheme preference.
+
+### Features
+
+Select which optional features to include:
+
+| Feature | Default | Description |
+|---------|---------|-------------|
+| i18n (English + Japanese) | On | Multi-language support with mirrored content directories |
+| Pagefind search | On | Full-text search across all documentation |
+| Sidebar filter | On | Real-time filtering of sidebar navigation items |
+| Claude Resources | Off | Auto-generated documentation for Claude Code components |
+| Color scheme preview | Off | Runtime color scheme switcher in the site header |
+
+### Package Manager
+
+Choose your preferred package manager: pnpm (recommended), npm, yarn, or bun. Dependencies are installed automatically after scaffolding.
+
+<Tip>
+The installer generates a `src/config/settings.ts` file with your choices. You can change these settings at any time after project creation.
+</Tip>
+
+## Alternative: Clone the Repository
+
+You can also start by cloning the full repository directly:
 
 ```bash
 git clone https://github.com/zudolab/zudo-doc.git my-docs
 cd my-docs
 pnpm install
 ```
+
+<Note>
+Cloning the repository gives you the complete project including the documentation source and all features enabled. Use this approach if you want to explore the full codebase or contribute to zudo-doc itself.
+</Note>
 
 ## Development
 
