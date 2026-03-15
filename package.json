@@ -8,6 +8,7 @@
     "// ── Core ─────────────────────────────────────────": "",
     "predev": "lsof -ti :4321 | xargs kill 2>/dev/null; true",
     "dev": "astro dev",
+    "dev-network": "astro dev --host 0.0.0.0",
     "build": "astro build",
     "preview": "astro preview",
     "// ── Quality ──────────────────────────────────────": "",
