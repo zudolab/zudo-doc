@@ -112,7 +112,8 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
 
   // Detect OS to show appropriate keyboard shortcut in placeholder
   useEffect(() => {
-    const isMac = navigator.platform.startsWith("Mac");
+    const platform = (navigator as { userAgentData?: { platform: string } }).userAgentData?.platform ?? navigator.platform;
+    const isMac = /mac/i.test(platform);
     setFilterPlaceholder(isMac ? "Filter... (\u2318/)" : "Filter... (Ctrl+/)");
   }, []);
 
