@@ -19,6 +19,7 @@ import { withBase, docsUrl } from "@/utils/base";
 import type { VersionConfig } from "@/config/settings-types";
 import VersionSwitcher from "@/components/version-switcher.astro";
 import VersionBanner from "@/components/version-banner.astro";
+import Footer from "@/components/footer.astro";
 
 interface Props {
   title: string;
@@ -126,6 +127,7 @@ const contentTransition = {
         </div>
       </div>
     </div>
+    {settings.footer && <Footer />}
     <CodeBlockEnhancer />
     <TabsInit />
     {settings.mermaid && <MermaidInit />}

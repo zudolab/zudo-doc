@@ -17,6 +17,21 @@ export interface LocaleConfig {
   dir: string;
 }
 
+export interface FooterLinkItem {
+  label: string;
+  href: string;
+}
+
+export interface FooterLinkColumn {
+  title: string;
+  items: FooterLinkItem[];
+}
+
+export interface FooterConfig {
+  links: FooterLinkColumn[];
+  copyright: string;
+}
+
 export interface VersionConfig {
   /** Version identifier, used in URL path (e.g., "1.0", "v1") */
   slug: string;
