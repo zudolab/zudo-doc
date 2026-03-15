@@ -92,7 +92,7 @@ const contentTransition = {
           if (!raw) return;
           try {
             var s = JSON.parse(raw);
-            if (!s.palette || s.palette.length !== 16) return;
+            if (!s.palette || s.palette.length !== 16 || !s.base) return;
             var root = document.documentElement;
             for (var i = 0; i < 16; i++) root.style.setProperty("--zd-" + i, s.palette[i]);
             var baseMap = [

@@ -176,7 +176,6 @@ function SemanticRow({
   label,
   tokenKey,
   currentColor,
-  defaultColor,
   isOverridden,
   onOverride,
   onReset,
@@ -184,7 +183,6 @@ function SemanticRow({
   label: string;
   tokenKey: string;
   currentColor: string;
-  defaultColor: string;
   isOverridden: boolean;
   onOverride: (hex: string) => void;
   onReset: () => void;
@@ -318,14 +316,6 @@ export default function ColorTweakPanel() {
         ...state,
         palette: state.palette.map((c, i) => (i === index ? hex : c)),
       };
-      // Also update semantic tokens that use this palette index and aren't overridden
-      const newOverrides = { ...next.semanticOverrides };
-      for (const [key, mapping] of Object.entries(SEMANTIC_DEFAULTS)) {
-        if (mapping === index && !newOverrides[key]) {
-          // Will be resolved from palette automatically
-        }
-      }
-      next.semanticOverrides = newOverrides;
       persist(next);
     },
     [state, persist],
@@ -498,7 +488,6 @@ export default function ColorTweakPanel() {
                       label={key}
                       tokenKey={key}
                       currentColor={currentColor}
-                      defaultColor={defaultColor}
                       isOverridden={!!override}
                       onOverride={(hex) => handleSemanticOverride(key, hex)}
                       onReset={() => handleSemanticReset(key)}
