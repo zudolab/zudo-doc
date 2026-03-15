@@ -70,6 +70,26 @@ done
 
 echo "All fixtures set up."
 
+# For smoke fixture: create a local git repo so doc-history integration
+# finds multi-revision history for content files
+echo ""
+echo "Setting up git repo for smoke fixture (doc history)..."
+smoke_dir="$REPO_ROOT/e2e/fixtures/smoke"
+# Clean up any previous git repo (ignore errors if none exists)
+rm -rf "$smoke_dir/.git"
+(
+  cd "$smoke_dir"
+  git init
+  git add src/content/
+  git -c user.email="test@example.com" -c user.name="Test" commit -m "Initial content"
+  # Modify a file to create a second revision
+  echo "" >> src/content/docs/getting-started/index.mdx
+  echo "Updated for history test." >> src/content/docs/getting-started/index.mdx
+  git add -A
+  git -c user.email="test@example.com" -c user.name="Test" commit -m "Update getting started content"
+)
+echo "  Done: smoke git repo"
+
 # Pre-build all fixtures sequentially to avoid Astro 6 Vite virtual module
 # race conditions. When Playwright launches multiple webServers in parallel,
 # concurrent Astro builds sharing source files via symlinks can hit a race

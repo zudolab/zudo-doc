@@ -12,15 +12,15 @@ export const settings = {
   base: "/",
   docsDir: "src/content/docs",
   locales: {} as Record<string, LocaleConfig>,
-  mermaid: false,
+  mermaid: true,
   noindex: true as boolean,
-  editUrl: false as string | false,
+  editUrl: "https://github.com/example/repo/edit/main" as string | false,
   siteUrl: "" as string,
   sitemap: false,
   docMetainfo: false,
   docTags: false,
   math: false,
-  docHistory: false,
+  docHistory: true,
   claudeResources: false as { claudeDir: string; projectRoot?: string } | false,
   headerNav: [
     {
