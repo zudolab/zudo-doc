@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import ColorTweakExportModal from "./color-tweak-export-modal";
 
 const STORAGE_KEY = "zudo-doc-tweak-state";
 
@@ -244,6 +245,7 @@ function SemanticRow({
 
 export default function ColorTweakPanel() {
   const [open, setOpen] = useState(false);
+  const [showExport, setShowExport] = useState(false);
   const [state, setState] = useState<TweakState | null>(null);
 
   // Toggle panel via custom event from header icon
@@ -376,6 +378,7 @@ export default function ColorTweakPanel() {
   if (!open) return null;
 
   return (
+    <>
     <div
       className="fixed bottom-0 left-0 right-0 z-50 border-t border-muted bg-surface"
       style={{ maxHeight: "40vh" }}
@@ -386,6 +389,14 @@ export default function ColorTweakPanel() {
           Color Tweak Panel
         </span>
         <div className="flex items-center gap-hsp-md">
+          <button
+            type="button"
+            onClick={() => setShowExport(true)}
+            className="text-accent hover:text-accent-hover transition-colors"
+            style={{ fontSize: "0.6875rem" }}
+          >
+            Export
+          </button>
           <button
             type="button"
             onClick={handleResetAll}
@@ -500,5 +511,26 @@ export default function ColorTweakPanel() {
         )}
       </div>
     </div>
+    {showExport && state && (
+      <ColorTweakExportModal
+        onClose={() => setShowExport(false)}
+        colorState={{
+          background: state.base.background,
+          foreground: state.base.foreground,
+          cursor: state.base.cursor,
+          selectionBg: state.base.selectionBg,
+          selectionFg: state.base.selectionFg,
+          palette: state.palette,
+          semantic: Object.fromEntries(
+            Object.keys(SEMANTIC_DEFAULTS).map((key) => {
+              const override = state.semanticOverrides[key];
+              return [key, override ?? resolveSemanticDefault(key, state.palette, state.base)];
+            }),
+          ),
+          shikiTheme: "dracula",
+        }}
+      />
+    )}
+    </>
   );
 }
