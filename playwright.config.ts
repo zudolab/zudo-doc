@@ -1,7 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
 const BASE_PORT = 4500;
-const FIXTURES = ["sidebar", "i18n", "theme", "smoke"] as const;
+const FIXTURES = ["sidebar", "i18n", "theme", "smoke", "versioning"] as const;
 
 export default defineConfig({
   testDir: "./e2e",

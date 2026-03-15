@@ -2,11 +2,13 @@ export type {
   HeaderNavItem,
   ColorModeConfig,
   LocaleConfig,
+  VersionConfig,
 } from "./settings-types";
 import type {
   HeaderNavItem,
   ColorModeConfig,
   LocaleConfig,
+  VersionConfig,
 } from "./settings-types";
 
 export const settings = {
@@ -31,8 +33,17 @@ export const settings = {
   sitemap: true,
   docMetainfo: true,
   docTags: true,
+  llmsTxt: true,
   math: true,
   docHistory: true,
+  versions: [
+    {
+      slug: "1.0",
+      label: "1.0.0",
+      docsDir: "src/content/docs-v1",
+      banner: "unmaintained",
+    },
+  ] as VersionConfig[] | false,
   claudeResources: {
     claudeDir: ".claude",
   } as { claudeDir: string; projectRoot?: string } | false,

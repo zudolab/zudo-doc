@@ -79,6 +79,13 @@ const translations: Record<string, Record<string, string>> = {
     "nav.backToMenu": "Back to main menu",
     "doc.fallbackNotice":
       "This page has not been translated yet and is shown in the original language.",
+    "version.latest": "Latest",
+    "version.switcher.label": "Version",
+    "version.banner.unmaintained":
+      "You are viewing documentation for an older version.",
+    "version.banner.unreleased":
+      "You are viewing unreleased documentation.",
+    "version.banner.latestLink": "View the latest version",
   },
   ja: {
     "nav.gettingStarted": "はじめに",
@@ -106,6 +113,13 @@ const translations: Record<string, Record<string, string>> = {
     "nav.backToMenu": "メインメニューに戻る",
     "doc.fallbackNotice":
       "このページはまだ翻訳されていません。原文のまま表示しています。",
+    "version.latest": "最新",
+    "version.switcher.label": "バージョン",
+    "version.banner.unmaintained":
+      "これは旧バージョンのドキュメントです。",
+    "version.banner.unreleased":
+      "これは未リリースのドキュメントです。",
+    "version.banner.latestLink": "最新バージョンを見る",
   },
   de: {
     "nav.gettingStarted": "Erste Schritte",
@@ -133,6 +147,13 @@ const translations: Record<string, Record<string, string>> = {
     "doc.pageCountSingle": "{count} Seite",
     "doc.fallbackNotice":
       "Diese Seite wurde noch nicht übersetzt und wird in der Originalsprache angezeigt.",
+    "version.latest": "Neueste",
+    "version.switcher.label": "Version",
+    "version.banner.unmaintained":
+      "Sie sehen die Dokumentation einer älteren Version.",
+    "version.banner.unreleased":
+      "Sie sehen unveröffentlichte Dokumentation.",
+    "version.banner.latestLink": "Neueste Version anzeigen",
   },
 };
 

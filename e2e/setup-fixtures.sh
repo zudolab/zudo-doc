@@ -64,7 +64,7 @@ setup_fixture() {
   echo "  Done: $fixture"
 }
 
-for fixture in sidebar i18n theme smoke; do
+for fixture in sidebar i18n theme smoke versioning; do
   setup_fixture "$fixture"
 done
 
@@ -78,7 +78,7 @@ echo "All fixtures set up."
 # running only `astro preview` in Playwright avoids this entirely.
 echo ""
 echo "Pre-building fixtures sequentially..."
-for fixture in sidebar i18n theme smoke; do
+for fixture in sidebar i18n theme smoke versioning; do
   echo "  Building: $fixture"
   (cd "$REPO_ROOT/e2e/fixtures/$fixture" && ./node_modules/.bin/astro build 2>&1) || {
     echo "  FAILED: $fixture build failed" >&2

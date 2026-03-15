@@ -15,7 +15,10 @@ import { settings } from "@/config/settings";
 import type { Heading } from "@/types/heading";
 import { getNavSectionForSlug } from "@/utils/nav-scope";
 import { defaultLocale, t, type Locale } from "@/config/i18n";
-import { withBase } from "@/utils/base";
+import { withBase, docsUrl } from "@/utils/base";
+import type { VersionConfig } from "@/config/settings-types";
+import VersionSwitcher from "@/components/version-switcher.astro";
+import VersionBanner from "@/components/version-banner.astro";
 
 interface Props {
   title: string;
@@ -24,9 +27,12 @@ interface Props {
   currentSlug?: string;
   headings?: Heading[];
   unlisted?: boolean;
+  currentVersion?: string;
+  versionBanner?: VersionConfig["banner"];
 }
 
-const { title, description, lang = defaultLocale, currentSlug, headings = [], unlisted = false } = Astro.props;
+const { title, description, lang = defaultLocale, currentSlug, headings = [], unlisted = false, currentVersion, versionBanner } = Astro.props;
+const latestUrl = currentSlug ? docsUrl(currentSlug, lang) : undefined;
 const fullTitle = `${title} | ${settings.siteName}`;
 const navSection = currentSlug ? getNavSectionForSlug(currentSlug) : undefined;
 const currentPath = Astro.url.pathname;
@@ -67,6 +73,12 @@ const contentTransition = {
     {settings.math && (
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.38/dist/katex.min.css" crossorigin="anonymous" />
     )}
+    {settings.llmsTxt && (
+      <Fragment>
+        <link rel="alternate" type="text/plain" href={withBase(lang === defaultLocale ? "/llms.txt" : `/${lang}/llms.txt`)} title="llms.txt" />
+        <link rel="alternate" type="text/plain" href={withBase(lang === defaultLocale ? "/llms-full.txt" : `/${lang}/llms-full.txt`)} title="llms-full.txt" />
+      </Fragment>
+    )}
     <ClientRouter />
   </head>
   <body class="min-h-screen antialiased">
@@ -89,7 +101,17 @@ const contentTransition = {
         <div class="flex w-full max-w-[clamp(50rem,75vw,90rem)] gap-[clamp(1.5rem,3vw,4rem)]">
           <!-- Main content -->
           <main class="flex-1 min-w-0 px-hsp-xl py-vsp-xl lg:px-hsp-2xl lg:py-vsp-2xl" transition:animate={contentTransition}>
-            <slot name="breadcrumb" />
+            {settings.versions && currentSlug ? (
+              <div class="mb-vsp-sm flex items-center justify-between">
+                <slot name="breadcrumb" />
+                <VersionSwitcher currentVersion={currentVersion} currentSlug={currentSlug} lang={lang} />
+              </div>
+            ) : (
+              <slot name="breadcrumb" />
+            )}
+            {versionBanner && latestUrl && (
+              <VersionBanner type={versionBanner} latestUrl={latestUrl} lang={lang} />
+            )}
             <MobileToc headings={headings} title={t("toc.title", lang)} client:load />
             <article class="zd-content max-w-none">
               <slot />
