@@ -85,6 +85,38 @@ const contentTransition = {
     <meta property="og:title" content={fullTitle} />
     {description && <meta property="og:description" content={description} />}
     <ColorSchemeProvider />
+    <script is:inline>
+      (function () {
+        function applyTweakState() {
+          var raw = localStorage.getItem("zudo-doc-tweak-state");
+          if (!raw) return;
+          try {
+            var s = JSON.parse(raw);
+            if (!s.palette || s.palette.length !== 16 || !s.base) return;
+            var root = document.documentElement;
+            for (var i = 0; i < 16; i++) root.style.setProperty("--zd-" + i, s.palette[i]);
+            var baseMap = [
+              ["background", "--zd-bg"], ["foreground", "--zd-fg"],
+              ["cursor", "--zd-cursor"], ["selectionBg", "--zd-sel-bg"], ["selectionFg", "--zd-sel-fg"]
+            ];
+            for (var b = 0; b < baseMap.length; b++) root.style.setProperty(baseMap[b][1], s.base[baseMap[b][0]]);
+            var semDefaults = {surface:0,muted:8,accent:6,accentHover:14,codeBg:"fg",codeFg:"bg",success:2,danger:1,warning:3,info:4};
+            var semCss = {surface:"--zd-surface",muted:"--zd-muted",accent:"--zd-accent",accentHover:"--zd-accent-hover",codeBg:"--zd-code-bg",codeFg:"--zd-code-fg",success:"--zd-success",danger:"--zd-danger",warning:"--zd-warning",info:"--zd-info"};
+            for (var key in semCss) {
+              var ov = s.semanticOverrides && s.semanticOverrides[key];
+              if (ov) { root.style.setProperty(semCss[key], ov); }
+              else {
+                var d = semDefaults[key];
+                var val = d === "bg" ? s.base.background : d === "fg" ? s.base.foreground : s.palette[d];
+                root.style.setProperty(semCss[key], val);
+              }
+            }
+          } catch (e) { localStorage.removeItem("zudo-doc-tweak-state"); }
+        }
+        applyTweakState();
+        document.addEventListener("astro:after-swap", applyTweakState);
+      })();
+    </script>
     {settings.math && (
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.38/dist/katex.min.css" crossorigin="anonymous" />
     )}
@@ -151,6 +183,7 @@ const contentTransition = {
     <CodeBlockEnhancer />
     <TabsInit />
     {settings.mermaid && <MermaidInit />}
+    <ColorTweakPanel client:load />
     <PageLoadingOverlay />
     <script>
       let _sidebarScrollTop = 0;
