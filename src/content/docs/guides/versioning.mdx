@@ -87,9 +87,19 @@ With locales, the locale prefix comes after the version prefix:
 
 ## Version Switcher
 
-When one or more versions are configured, a **version switcher** automatically appears in the site layout. It displays the current version label and provides links to switch between all available versions, including the latest.
+When one or more versions are configured, a **version switcher** automatically appears in both the header bar and the doc content area. It displays the current version label and provides links to switch between all available versions, including the latest.
 
 The switcher preserves the current page slug when navigating between versions, so users land on the same topic in the selected version.
+
+If a page does not exist in an older version, that version's link is automatically **disabled** (greyed out and not clickable) instead of linking to a 404 page. This is determined at build time by scanning each version's content directory.
+
+The dropdown also includes an **"All versions"** link at the bottom, which navigates to the [versions listing page](/docs/versions/).
+
+## Versions Listing Page
+
+A dedicated versions page is automatically generated at `/docs/versions/` (and `/ja/docs/versions/` for Japanese). This page lists all configured versions with their labels, status badges, and documentation links — similar to [Docusaurus' versions page](https://docusaurus.io/versions).
+
+The page is auto-generated from the `versions` array in `settings.ts`. No manual maintenance is needed — adding or removing versions in the configuration automatically updates the listing page.
 
 ## Version Banners
 
