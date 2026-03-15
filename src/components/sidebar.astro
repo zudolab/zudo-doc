@@ -25,7 +25,7 @@ const rootMenuItems = navSection
   : undefined;
 
 const { allDocs, categoryMeta } = await loadLocaleDocs(lang);
-const docs = allDocs.filter((d) => !d.data.unlisted);
+const docs = allDocs.filter((d) => !d.data.unlisted && !d.data.standalone);
 
 const nodes = buildSidebarForSection(docs, lang, navSection, categoryMeta);
 ---

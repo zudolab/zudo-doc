@@ -24,6 +24,16 @@ export function docsUrl(slug: string, lang: Locale = defaultLocale): string {
   return withBase(path);
 }
 
+/** Check if a URL is external (starts with http:// or https://). */
+export function isExternal(href: string): boolean {
+  return href.startsWith("http://") || href.startsWith("https://");
+}
+
+/** Resolve a href: external URLs pass through, internal ones get the base prefix. */
+export function resolveHref(href: string): string {
+  return isExternal(href) ? href : withBase(href);
+}
+
 /** Build a versioned docs URL for the given slug, version, and lang. */
 export function versionedDocsUrl(slug: string, versionSlug: string, lang: Locale = defaultLocale): string {
   const path = lang === defaultLocale

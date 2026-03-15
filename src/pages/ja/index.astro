@@ -18,7 +18,7 @@ const categoryOrder = settings.headerNav.map((n) => n.categoryMatch).filter((v):
 
 // Build full nav tree for site index
 const { allDocs, categoryMeta } = await loadLocaleDocs("ja");
-const navDocs = allDocs.filter((doc) => !doc.data.unlisted);
+const navDocs = allDocs.filter((doc) => !doc.data.unlisted && !doc.data.standalone);
 const tree = buildNavTree(navDocs, "ja", categoryMeta);
 const groupedTree = groupSatelliteNodes(tree, categoryOrder);
 ---

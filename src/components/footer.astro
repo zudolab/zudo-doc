@@ -1,19 +1,11 @@
 ---
 import { settings } from "@/config/settings";
-import { withBase } from "@/utils/base";
+import { isExternal, resolveHref } from "@/utils/base";
 
 const footer = settings.footer;
 if (!footer) return;
 
 const { links, copyright } = footer;
-
-function isExternal(href: string): boolean {
-  return href.startsWith("http://") || href.startsWith("https://");
-}
-
-function resolveHref(href: string): string {
-  return isExternal(href) ? href : withBase(href);
-}
 ---
 
 <footer class="border-t border-muted bg-surface">
@@ -41,7 +33,10 @@ function resolveHref(href: string): string {
       </div>
     )}
     {copyright && (
-      <div class={`text-center text-caption text-muted${links.length > 0 ? " mt-vsp-lg border-t border-muted pt-vsp-md" : ""}`}>
+      <div class:list={[
+        "text-center text-caption text-muted",
+        links.length > 0 && "mt-vsp-lg border-t border-muted pt-vsp-md",
+      ]}>
         {copyright}
       </div>
     )}

@@ -29,7 +29,7 @@ export interface FooterLinkColumn {
 
 export interface FooterConfig {
   links: FooterLinkColumn[];
-  copyright: string;
+  copyright?: string;
 }
 
 export interface VersionConfig {
