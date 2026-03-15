@@ -125,7 +125,7 @@ function CategoryNode({
     <div className={`${depth >= 1 && !isLast ? "relative" : ""}`}>
       {depth >= 1 && !isLast && open && (
         <div
-          className="absolute border-l border-solid border-muted z-10"
+          className="absolute border-l border-dashed border-muted z-10"
           style={{
             left: connectorLeft(depth),
             top: 0,
@@ -134,7 +134,7 @@ function CategoryNode({
         />
       )}
       <div className="relative">
-        <ConnectorLines depth={depth} isLast={isLast} />
+        <ConnectorLines depth={depth} isLast={isLast} widthScale={2} />
         <div
           className="flex w-full items-center justify-between text-small font-semibold py-[0.15rem] text-fg"
           style={{ paddingLeft }}
@@ -205,7 +205,7 @@ function LeafNode({
   return (
     <div>
       <div className="relative">
-        <ConnectorLines depth={depth} isLast={isLast} />
+        <ConnectorLines depth={depth} isLast={isLast} widthScale={2} />
         <a
           href={node.href}
           className={isRoot

@@ -10,9 +10,10 @@ export function connectorLeft(depth: number): string {
   return `calc(${depth} * ${INDENT} + ${CONNECTOR_OFFSET})`;
 }
 
-export function ConnectorLines({ depth, isLast }: { depth: number; isLast: boolean }) {
+export function ConnectorLines({ depth, isLast, widthScale = 1 }: { depth: number; isLast: boolean; widthScale?: number }) {
   if (depth === 0) return null;
   const left = connectorLeft(depth);
+  const width = widthScale === 1 ? CONNECTOR_WIDTH : `calc(${CONNECTOR_WIDTH} * ${widthScale})`;
   return (
     <>
       <div
@@ -27,7 +28,7 @@ export function ConnectorLines({ depth, isLast }: { depth: number; isLast: boole
         className="absolute border-t border-dashed border-muted"
         style={{
           left,
-          width: CONNECTOR_WIDTH,
+          width,
           top: "50%",
         }}
       />
