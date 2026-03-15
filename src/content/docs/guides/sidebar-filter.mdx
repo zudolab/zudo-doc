@@ -1,0 +1,50 @@
+---
+title: Sidebar Filter
+description: How the real-time sidebar filter works and how to configure it.
+sidebar_position: 4
+---
+
+## Overview
+
+The sidebar filter is a text input at the top of the sidebar that filters navigation items in real time as you type. It helps users quickly find pages in large documentation sites without scrolling through the full sidebar tree.
+
+The sidebar filter is enabled by default in projects created with `create-zudo-doc`.
+
+## How It Works
+
+The filter input appears at the top of the sidebar, above the navigation tree. As you type:
+
+- Both category names and individual page titles are matched against your query
+- Matching is case-insensitive
+- When a category name matches, all of its child pages are shown
+- When only child pages match, the parent category is shown with just the matching children
+- All matching categories are automatically expanded during filtering
+- Clearing the input restores the full sidebar tree
+
+## Keyboard Shortcut
+
+Press `Ctrl+/` (Windows/Linux) or `Cmd+/` (macOS) to focus the filter input from anywhere on the page. This works when the sidebar is visible (desktop viewport or mobile sidebar open).
+
+## Enabling or Disabling
+
+### With create-zudo-doc
+
+The sidebar filter is on by default. To disable it during project creation:
+
+```bash
+pnpm create zudo-doc my-docs --no-sidebar-filter
+```
+
+To explicitly enable it:
+
+```bash
+pnpm create zudo-doc my-docs --sidebar-filter
+```
+
+### In an Existing Project
+
+The sidebar filter is built into the `SidebarTree` React component (`src/components/sidebar-tree.tsx`). It is always rendered as part of the sidebar — there is no separate setting in `settings.ts` to toggle it. To remove it from a scaffolded project, you would need to modify the component directly.
+
+<Tip>
+For most documentation sites, the sidebar filter is useful even with a small number of pages. It becomes essential as your content grows beyond a few dozen pages.
+</Tip>
