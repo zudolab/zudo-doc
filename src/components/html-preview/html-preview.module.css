@@ -75,7 +75,6 @@
 .previewArea {
   background: var(--color-surface);
   padding: 1rem;
-  border-bottom: 1px solid var(--color-muted);
 }
 
 .previewContainer {
@@ -90,9 +89,11 @@
   display: block;
   width: 100%;
   border: none;
+  /* Intentional: preview content renders on a white canvas regardless of site
+     theme, matching how HTML appears in a standard browser context. */
   background: #fff;
   border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-fg) 8%, transparent);
 }
 
 /* ── Code section ── */

@@ -18,7 +18,6 @@ function buildSrcdoc(html: string, css?: string): string {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>${preflightCss}</style>
-<style>html, body { height: 100%; }</style>
 ${css ? `<style>${css}</style>` : ""}
 </head>
 <body>${html}</body>
