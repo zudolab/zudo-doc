@@ -72,9 +72,11 @@ export async function getStaticPaths() {
   const localeCategoryMeta = loadCategoryMeta(getContentDir("ja"));
   const categoryMeta = new Map([...baseCategoryMeta, ...localeCategoryMeta]);
 
-  // Exclude unlisted pages from nav tree
+  // Exclude unlisted pages from nav tree (used for sidebar, prev/next)
   const navDocs = allDocs.filter(isNavVisible);
   const tree = buildNavTree(navDocs, "ja", categoryMeta);
+  // Full tree including unlisted pages (used for breadcrumbs)
+  const fullTree = buildNavTree(allDocs, "ja", categoryMeta);
 
   // Regular doc pages
   const docPaths = allDocs.map((entry) => {
@@ -112,7 +114,7 @@ export async function getStaticPaths() {
         entry,
         contentDir: isFallback ? settings.docsDir : getContentDir("ja"),
         isFallback,
-        breadcrumbs: buildBreadcrumbs(tree, slug, "ja"),
+        breadcrumbs: buildBreadcrumbs(fullTree, slug, "ja"),
         prev: prevNode,
         next: nextNode,
       },
@@ -127,7 +129,7 @@ export async function getStaticPaths() {
       contentDir: getContentDir("ja"),
       isFallback: false,
       autoIndex: node,
-      breadcrumbs: buildBreadcrumbs(tree, node.slug, "ja"),
+      breadcrumbs: buildBreadcrumbs(fullTree, node.slug, "ja"),
       prev: null,
       next: null,
     },
