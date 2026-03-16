@@ -113,7 +113,7 @@ export async function stripFeatures(
       path.join(targetDir, "src/components/header.astro"),
       [
         [/import ThemeToggle from.*\n/g, ""],
-        [/\s*\{[\s\S]*?settings\.colorMode &&[\s\S]*?<ThemeToggle[\s\S]*?\/>\s*\n?\s*\)\s*\}\s*\n?/g, "\n"],
+        [/\s*\{\s*\n?\s*settings\.colorMode && \(\s*\n?\s*<ThemeToggle[^]*?\/>\s*\n?\s*\)\s*\n?\s*\}\s*\n?/g, "\n"],
       ],
     );
   }

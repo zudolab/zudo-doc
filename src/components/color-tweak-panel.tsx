@@ -742,14 +742,11 @@ export default function ColorTweakPanel() {
       const scheme = allPresets[name];
       if (!scheme) return;
       const newState = initFromSchemeData(scheme);
-      applyFullState(newState);
+      // Use persist's apply+save pattern, then apply shiki theme
+      persist(() => newState);
       applyShikiTheme(newState.shikiTheme);
-      setState(newState);
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
-      } catch { /* storage full */ }
     },
-    [],
+    [persist],
   );
 
   const handleResetAll = useCallback(() => {
@@ -785,7 +782,12 @@ export default function ColorTweakPanel() {
         <div className="flex items-center gap-hsp-md">
           <select
             onChange={(e) => {
-              if (e.target.value) handleLoadPreset(e.target.value);
+              const name = e.target.value;
+              if (name) {
+                handleLoadPreset(name);
+                // Reset to placeholder so the same preset can be re-selected
+                e.target.value = "";
+              }
             }}
             className="bg-surface text-fg border border-muted px-hsp-xs py-[2px] hover:border-fg transition-colors"
             style={{ fontSize: "0.6875rem", borderRadius: "var(--radius-DEFAULT)", maxWidth: "10rem" }}
