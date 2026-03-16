@@ -346,11 +346,11 @@ function CategoryNode({
       )}
       <div className="relative">
         <ConnectorLines depth={depth} isLast={isLast} />
-        {node.href ? (
-          <div
-            className={`flex w-full items-center justify-between text-small font-semibold pt-[0.15rem] ${isActive ? "bg-fg text-bg" : "text-fg"}`}
-            style={{ paddingLeft }}
-          >
+        <div
+          className={`flex w-full items-center text-small font-semibold pt-[0.15rem] ${isActive ? "bg-fg text-bg" : "text-fg"}`}
+          style={{ paddingLeft }}
+        >
+          {node.href ? (
             <a
               href={node.href}
               aria-current={isActive ? "page" : undefined}
@@ -359,21 +359,7 @@ function CategoryNode({
               {depth === 0 && <CategoryLinkIcon className={isActive ? "text-bg" : ""} />}
               {node.label}
             </a>
-            <button
-              type="button"
-              onClick={toggle}
-              className={`aspect-square flex items-center justify-center w-[1.5rem] border-y border-l hover:underline focus:underline ${isActive ? "border-bg/30" : "border-muted"}`}
-              aria-expanded={isExpanded}
-              aria-label={isExpanded ? `Collapse ${node.label}` : `Expand ${node.label}`}
-            >
-              <ToggleChevron isExpanded={isExpanded} className={isActive ? "text-bg" : "text-muted"} />
-            </button>
-          </div>
-        ) : (
-          <div
-            className={`flex w-full items-center text-small font-semibold pt-[0.15rem] text-fg`}
-            style={{ paddingLeft }}
-          >
+          ) : (
             <button
               type="button"
               onClick={toggle}
@@ -385,8 +371,19 @@ function CategoryNode({
               </span>
               {node.label}
             </button>
-          </div>
-        )}
+          )}
+          {node.href && (
+            <button
+              type="button"
+              onClick={toggle}
+              className={`aspect-square flex items-center justify-center w-[1.5rem] border-y border-l hover:underline focus:underline ${isActive ? "border-bg/30" : "border-muted"}`}
+              aria-expanded={isExpanded}
+              aria-label={isExpanded ? `Collapse ${node.label}` : `Expand ${node.label}`}
+            >
+              <ToggleChevron isExpanded={isExpanded} className={isActive ? "text-bg" : "text-muted"} />
+            </button>
+          )}
+        </div>
       </div>
       {isExpanded && (
         <div>
@@ -425,7 +422,7 @@ function LeafNode({
         <a
           href={node.href}
           className={isRoot
-            ? `block py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-[4px] text-small font-semibold ${
+            ? `flex items-center gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-[4px] text-small font-semibold ${
                 isActive ? "bg-fg text-bg" : "text-fg hover:underline focus:underline"
               }`
             : `block py-vsp-2xs pr-[4px] ${isLast ? "pb-vsp-xs" : ""} text-small ${
@@ -436,6 +433,7 @@ function LeafNode({
           }
           style={{ paddingLeft }}
         >
+          {isRoot && <CategoryLinkIcon className={isActive ? "text-bg" : ""} />}
           {node.label}
         </a>
       </div>
