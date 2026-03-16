@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0.00 0.00 200.00 200.00" width="200" height="200">
   <rect x="0" y="0" width="200" height="200" fill="transparent"/>
   <g fill="none">
-    <g transform="translate(32.37,37.89) rotate(94.73,100.00,100.00)" stroke="#ffffff" stroke-linecap="square" stroke-linejoin="bevel">
+    <g transform="translate(32.37,37.89) rotate(94.73,100.00,100.00)" stroke="#000000" stroke-linecap="square" stroke-linejoin="bevel">
       <path d="M 8.33 14.43 Q 4.17 26.46 16.67 28.87" fill="none" stroke-width="0.5"/>
 <path d="M 16.67 28.87 Q 29.17 26.46 25.00 14.43" fill="none" stroke-width="0.5"/>
 <path d="M 25.00 14.43 Q 16.67 4.81 8.33 14.43" fill="none" stroke-width="0.5"/>
@@ -531,7 +531,7 @@
 <line x1="183.33" y1="221.32" x2="191.67" y2="216.51" stroke-width="0.5"/>
 <line x1="183.33" y1="221.32" x2="175.00" y2="216.51" stroke-width="0.5"/>
     </g>
-    <g transform="translate(26.89,27.63) rotate(305.42,100.00,100.00)" stroke="#ffffff" stroke-linecap="square" stroke-linejoin="bevel">
+    <g transform="translate(26.89,27.63) rotate(305.42,100.00,100.00)" stroke="#000000" stroke-linecap="square" stroke-linejoin="bevel">
       <line x1="10.00" y1="23.09" x2="23.33" y2="23.09" stroke-width="3"/>
 <line x1="23.33" y1="23.09" x2="16.67" y2="11.55" stroke-width="3"/>
 <line x1="16.67" y1="11.55" x2="10.00" y2="23.09" stroke-width="3"/>

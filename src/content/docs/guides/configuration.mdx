@@ -313,7 +313,10 @@ The default logo is a randomly generated geometric pattern created with [`@takaz
 pnpm run generate:logo
 ```
 
-You can also replace `public/img/logo.svg` with any custom SVG file. The logo is rendered as a CSS mask, so only the shape matters — the fill color is controlled by the site's color tokens.
+You can also replace `public/img/logo.svg` with any custom SVG file. The logo is rendered as a CSS mask using the alpha channel, so:
+
+- The SVG **must have a transparent background** — opaque backgrounds render as a filled rectangle
+- The stroke or fill color in the SVG file does not matter; the displayed color is controlled by the site's color tokens
 
 ## Color Scheme Config
 
