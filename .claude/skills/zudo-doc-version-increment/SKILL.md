@@ -1,15 +1,15 @@
 ---
-name: l-version-increment
+name: zudo-doc-version-increment
 description: >-
   Bump package version, generate changelog docs, commit, tag, and create GitHub release. Use when:
-  (1) User says 'version increment', 'bump version', 'release', or 'l-version-increment', (2) User
-  wants to create a new release of this project.
+  (1) User says 'version increment', 'bump version', 'release', or 'zudo-doc-version-increment', (2)
+  User wants to create a new release of this project.
 user-invocable: true
 disable-model-invocation: true
 argument-description: "Optional: major, minor, or patch to skip the proposal step"
 ---
 
-# /l-version-increment
+# /zudo-doc-version-increment
 
 Bump the version, generate changelog doc pages, commit, tag, and create a GitHub release.
 
