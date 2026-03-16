@@ -9,7 +9,9 @@ import SiteTreeNav from "@/components/site-tree-nav.tsx";
 const ctaNav = settings.headerNav[0] ?? null;
 const overview = ctaNav ? withBase(`/ja${ctaNav.path}`) : null;
 const logoUrl = withBase("/img/logo.svg");
-const categoryOrder = settings.headerNav.map((n) => n.categoryMatch).filter((v): v is string => !!v);
+const categoryOrder = settings.headerNav
+  .map((n) => n.categoryMatch)
+  .filter((v): v is string => !!v);
 
 // Build full nav tree for site index
 const { allDocs, categoryMeta } = await loadLocaleDocs("ja");
@@ -26,30 +28,37 @@ const groupedTree = groupSatelliteNodes(tree, categoryOrder);
         class="h-[5rem] w-[5rem] lg:h-[7rem] lg:w-[7rem] bg-fg shrink-0"
         style={`-webkit-mask: url(${logoUrl}) center/contain no-repeat; mask: url(${logoUrl}) center/contain no-repeat;`}
         aria-hidden="true"
-      />
+      >
+      </div>
       <div>
         <h1 class="text-heading font-bold mb-vsp-2xs">{settings.siteName}</h1>
-        <p class="text-muted text-small mb-vsp-sm">{settings.siteDescription}</p>
+        <p class="text-muted text-small mb-vsp-sm">
+          {settings.siteDescription}
+        </p>
         <div class="flex items-center gap-hsp-md text-small">
-          {overview && (
-            <>
-              <a href={overview} class="text-fg underline hover:text-accent">概要</a>
-              <span class="text-muted">/</span>
-            </>
-          )}
+          {
+            overview && (
+              <>
+                <a href={overview} class="text-fg underline hover:text-accent">
+                  概要
+                </a>
+                <span class="text-muted">/</span>
+              </>
+            )
+          }
           <a
             href="https://github.com/zudolab/zudo-doc"
             class="text-fg underline hover:text-accent"
             target="_blank"
-            rel="noopener noreferrer"
-          >GitHub</a>
+            rel="noopener noreferrer">GitHub</a
+          >
           <span class="text-muted">/</span>
           <a
             href="https://x.com/Takazudo"
             class="text-fg underline hover:text-accent"
             target="_blank"
-            rel="noopener noreferrer"
-          >@Takazudo</a>
+            rel="noopener noreferrer">@Takazudo</a
+          >
         </div>
       </div>
     </div>

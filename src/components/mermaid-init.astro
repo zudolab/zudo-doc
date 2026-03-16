@@ -9,12 +9,16 @@
   function resolveColor(value: string): string {
     if (!value) return value;
     if (/^#[0-9a-fA-F]{3}$/.test(value)) {
-      return "#" + value[1] + value[1] + value[2] + value[2] + value[3] + value[3];
+      return (
+        "#" + value[1] + value[1] + value[2] + value[2] + value[3] + value[3]
+      );
     }
     if (/^#[0-9a-fA-F]{6}$/.test(value)) return value;
     if (/^#[0-9a-fA-F]{8}$/.test(value)) return value.slice(0, 7);
     if (/^#[0-9a-fA-F]{4}$/.test(value)) {
-      return "#" + value[1] + value[1] + value[2] + value[2] + value[3] + value[3];
+      return (
+        "#" + value[1] + value[1] + value[2] + value[2] + value[3] + value[3]
+      );
     }
     const el = document.createElement("div");
     el.style.display = "none";
@@ -48,8 +52,7 @@
     try {
       const { default: mermaid } = await import("mermaid");
       const s = getComputedStyle(document.documentElement);
-      const v = (name: string) =>
-        resolveColor(s.getPropertyValue(name).trim());
+      const v = (name: string) => resolveColor(s.getPropertyValue(name).trim());
       mermaid.initialize({
         startOnLoad: false,
         theme: "base",

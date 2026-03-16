@@ -16,10 +16,13 @@ const { html, css, head, js, title, height, defaultOpen } = Astro.props;
 
 const globalConfig = settings.htmlPreview;
 
-const mergedHead = [globalConfig?.head, head].filter(Boolean).join("\n") || undefined;
-const mergedCss = [globalConfig?.css, css].filter(Boolean).join("\n") || undefined;
+const mergedHead =
+  [globalConfig?.head, head].filter(Boolean).join("\n") || undefined;
+const mergedCss =
+  [globalConfig?.css, css].filter(Boolean).join("\n") || undefined;
 const mergedJs = [globalConfig?.js, js].filter(Boolean).join("\n") || undefined;
 ---
+
 <HtmlPreview
   client:visible
   html={html}

@@ -15,7 +15,16 @@ import Details from "@/components/details.astro";
 import HtmlPreview from "@/components/html-preview-wrapper.astro";
 import Breadcrumb from "@/components/breadcrumb.astro";
 import { toRouteSlug } from "@/utils/slug";
-import { buildNavTree, buildBreadcrumbs, flattenTree, findNode, loadCategoryMeta, collectAutoIndexNodes, isNavVisible, type NavNode } from "@/utils/docs";
+import {
+  buildNavTree,
+  buildBreadcrumbs,
+  flattenTree,
+  findNode,
+  loadCategoryMeta,
+  collectAutoIndexNodes,
+  isNavVisible,
+  type NavNode,
+} from "@/utils/docs";
 import type { Heading } from "@/types/heading";
 import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
 import { t } from "@/config/i18n";
@@ -50,27 +59,29 @@ export async function getStaticPaths() {
 
     // Build slug set from locale docs (locale takes priority)
     const localeSlugSet = new Set(
-      localeDocs.map((d) => d.data.slug ?? toRouteSlug(d.id))
+      localeDocs.map((d) => d.data.slug ?? toRouteSlug(d.id)),
     );
 
     // Merge: locale docs first, then base docs for missing pages
     const allDocs = [
       ...localeDocs,
       ...baseDocs.filter(
-        (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id))
+        (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id)),
       ),
     ];
 
     const fallbackSlugs = new Set(
       baseDocs
         .filter((d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id)))
-        .map((d) => d.data.slug ?? toRouteSlug(d.id))
+        .map((d) => d.data.slug ?? toRouteSlug(d.id)),
     );
 
     // Merge category metadata
     const baseCategoryMeta = loadCategoryMeta(version.docsDir);
     const localeDir = version.locales?.ja?.dir;
-    const localeCategoryMeta = localeDir ? loadCategoryMeta(localeDir) : new Map();
+    const localeCategoryMeta = localeDir
+      ? loadCategoryMeta(localeDir)
+      : new Map();
     const categoryMeta = new Map([...baseCategoryMeta, ...localeCategoryMeta]);
 
     const navDocs = allDocs.filter(isNavVisible);
@@ -105,7 +116,9 @@ export async function getStaticPaths() {
         }
       }
 
-      const contentDir = isFallback ? version.docsDir : (localeDir ?? version.docsDir);
+      const contentDir = isFallback
+        ? version.docsDir
+        : (localeDir ?? version.docsDir);
 
       paths.push({
         params: { version: version.slug, slug },
@@ -115,8 +128,18 @@ export async function getStaticPaths() {
           contentDir,
           isFallback,
           breadcrumbs: buildBreadcrumbs(tree, slug, "ja"),
-          prev: prevNode ? { ...prevNode, href: versionedDocsUrl(prevNode.slug, version.slug, "ja") } : null,
-          next: nextNode ? { ...nextNode, href: versionedDocsUrl(nextNode.slug, version.slug, "ja") } : null,
+          prev: prevNode
+            ? {
+                ...prevNode,
+                href: versionedDocsUrl(prevNode.slug, version.slug, "ja"),
+              }
+            : null,
+          next: nextNode
+            ? {
+                ...nextNode,
+                href: versionedDocsUrl(nextNode.slug, version.slug, "ja"),
+              }
+            : null,
         },
       });
     }
@@ -134,7 +157,9 @@ export async function getStaticPaths() {
             ...node,
             children: node.children.map((c: NavNode) => ({
               ...c,
-              href: c.href ? versionedDocsUrl(c.slug, version.slug, "ja") : undefined,
+              href: c.href
+                ? versionedDocsUrl(c.slug, version.slug, "ja")
+                : undefined,
             })),
           },
           breadcrumbs: buildBreadcrumbs(tree, node.slug, "ja"),
@@ -148,10 +173,31 @@ export async function getStaticPaths() {
   return paths;
 }
 
-const { entry, version, contentDir, isFallback, breadcrumbs = [], prev, next, autoIndex } = Astro.props;
+const {
+  entry,
+  version,
+  contentDir,
+  isFallback,
+  breadcrumbs = [],
+  prev,
+  next,
+  autoIndex,
+} = Astro.props;
 const versionConfig = version as VersionConfig;
 
-const components = { Note, Tip, Info, Warning, Danger, CategoryNav, SiteTreeNavDemo, Tabs, TabItem, Details, HtmlPreview };
+const components = {
+  Note,
+  Tip,
+  Info,
+  Warning,
+  Danger,
+  CategoryNav,
+  SiteTreeNavDemo,
+  Tabs,
+  TabItem,
+  Details,
+  HtmlPreview,
+};
 
 let Content: any;
 let headings: Heading[] = [];
@@ -162,7 +208,9 @@ if (entry) {
   headings = rendered.headings;
 }
 
-const slug = autoIndex ? autoIndex.slug : (entry!.data.slug ?? toRouteSlug(entry!.id));
+const slug = autoIndex
+  ? autoIndex.slug
+  : (entry!.data.slug ?? toRouteSlug(entry!.id));
 ---
 
 <DocLayout
@@ -178,75 +226,131 @@ const slug = autoIndex ? autoIndex.slug : (entry!.data.slug ?? toRouteSlug(entry
   versionBanner={versionConfig.banner || undefined}
 >
   <Breadcrumb slot="breadcrumb" items={breadcrumbs} />
-  {autoIndex ? (
-    <Fragment>
-      <h1 class="text-heading font-bold mb-vsp-xs">{autoIndex.label}</h1>
-      {autoIndex.description && (
-        <p class="mt-0 mb-vsp-lg text-subheading text-muted">{autoIndex.description}</p>
-      )}
-      <nav class="grid grid-cols-1 gap-x-hsp-lg gap-y-vsp-md sm:grid-cols-2">
-        {autoIndex.children.filter((c: NavNode) => c.hasPage || c.children.length > 0).map((child: NavNode) => (
-          <a
-            href={child.href ?? versionedDocsUrl(child.slug, versionConfig.slug, "ja")}
-            class="group block border border-muted bg-surface px-hsp-lg py-vsp-md hover:border-accent"
+  {
+    autoIndex ? (
+      <Fragment>
+        <h1 class="text-heading font-bold mb-vsp-xs">{autoIndex.label}</h1>
+        {autoIndex.description && (
+          <p class="mt-0 mb-vsp-lg text-subheading text-muted">
+            {autoIndex.description}
+          </p>
+        )}
+        <nav class="grid grid-cols-1 gap-x-hsp-lg gap-y-vsp-md sm:grid-cols-2">
+          {autoIndex.children
+            .filter((c: NavNode) => c.hasPage || c.children.length > 0)
+            .map((child: NavNode) => (
+              <a
+                href={
+                  child.href ??
+                  versionedDocsUrl(child.slug, versionConfig.slug, "ja")
+                }
+                class="group block border border-muted bg-surface px-hsp-lg py-vsp-md hover:border-accent"
+              >
+                <span class="font-medium text-accent underline group-hover:underline">
+                  {child.label}
+                </span>
+                {child.description && (
+                  <span class="mt-vsp-2xs block text-small text-muted group-hover:underline decoration-muted">
+                    {child.description}
+                  </span>
+                )}
+              </a>
+            ))}
+        </nav>
+      </Fragment>
+    ) : (
+      <Fragment>
+        <h1 class="text-heading font-bold mb-vsp-xs">{entry.data.title}</h1>
+        {settings.docMetainfo && (
+          <DocMetainfo filePath={`${contentDir}/${entry.id}`} locale="ja" />
+        )}
+
+        {isFallback && (
+          <div
+            class="mb-vsp-md border border-info/30 bg-info/5 px-hsp-lg py-vsp-sm text-small text-muted rounded"
+            role="note"
           >
-            <span class="font-medium text-accent underline group-hover:underline">{child.label}</span>
-            {child.description && (
-              <span class="mt-vsp-2xs block text-small text-muted group-hover:underline decoration-muted">{child.description}</span>
-            )}
-          </a>
-        ))}
-      </nav>
-    </Fragment>
-  ) : (
-    <Fragment>
-      <h1 class="text-heading font-bold mb-vsp-xs">{entry.data.title}</h1>
-      {settings.docMetainfo && <DocMetainfo filePath={`${contentDir}/${entry.id}`} locale="ja" />}
+            {t("doc.fallbackNotice", "ja")}
+          </div>
+        )}
 
-      {isFallback && (
-        <div class="mb-vsp-md border border-info/30 bg-info/5 px-hsp-lg py-vsp-sm text-small text-muted rounded" role="note">
-          {t("doc.fallbackNotice", "ja")}
-        </div>
-      )}
+        {entry.data.description && (
+          <p class="mt-0 mb-vsp-lg text-subheading text-muted">
+            {entry.data.description}
+          </p>
+        )}
 
-      {entry.data.description && (
-        <p class="mt-0 mb-vsp-lg text-subheading text-muted">{entry.data.description}</p>
-      )}
+        {entry?.data?.tags && <DocTags tags={entry.data.tags} locale="ja" />}
 
-      {entry?.data?.tags && <DocTags tags={entry.data.tags} locale="ja" />}
+        <Content components={components} />
 
-      <Content components={components} />
+        {settings.editUrl && entry && (
+          <div class="mt-vsp-xl mb-vsp-md border-t border-muted pt-vsp-md">
+            <EditLink contentDir={contentDir} entryId={entry.id} locale="ja" />
+          </div>
+        )}
 
-      {settings.editUrl && entry && (
-        <div class="mt-vsp-xl mb-vsp-md border-t border-muted pt-vsp-md">
-          <EditLink contentDir={contentDir} entryId={entry.id} locale="ja" />
-        </div>
-      )}
-
-      <nav class="mt-vsp-2xl grid grid-cols-2 gap-hsp-xl">
-        {prev ? (
-          <a href={prev.href} class="group border border-muted rounded-lg p-hsp-lg hover:border-accent">
-            <div class="flex items-center gap-hsp-xs text-caption text-muted mb-vsp-2xs">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-[1.125rem] w-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-              <span class="no-underline">{t("nav.previous", "ja")}</span>
-            </div>
-            <p class="text-small font-semibold underline group-hover:text-accent">{prev.label}</p>
-          </a>
-        ) : <div />}
-        {next ? (
-          <a href={next.href} class="group border border-muted rounded-lg p-hsp-lg hover:border-accent text-right">
-            <div class="flex items-center justify-end gap-hsp-xs text-caption text-muted mb-vsp-2xs">
-              <span class="no-underline">{t("nav.next", "ja")}</span>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-[1.125rem] w-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-            <p class="text-small font-semibold underline group-hover:text-accent">{next.label}</p>
-          </a>
-        ) : <div />}
-      </nav>
-    </Fragment>
-  )}
+        <nav class="mt-vsp-2xl grid grid-cols-2 gap-hsp-xl">
+          {prev ? (
+            <a
+              href={prev.href}
+              class="group border border-muted rounded-lg p-hsp-lg hover:border-accent"
+            >
+              <div class="flex items-center gap-hsp-xs text-caption text-muted mb-vsp-2xs">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-[1.125rem] w-[1.125rem]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+                <span class="no-underline">{t("nav.previous", "ja")}</span>
+              </div>
+              <p class="text-small font-semibold underline group-hover:text-accent">
+                {prev.label}
+              </p>
+            </a>
+          ) : (
+            <div />
+          )}
+          {next ? (
+            <a
+              href={next.href}
+              class="group border border-muted rounded-lg p-hsp-lg hover:border-accent text-right"
+            >
+              <div class="flex items-center justify-end gap-hsp-xs text-caption text-muted mb-vsp-2xs">
+                <span class="no-underline">{t("nav.next", "ja")}</span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-[1.125rem] w-[1.125rem]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </div>
+              <p class="text-small font-semibold underline group-hover:text-accent">
+                {next.label}
+              </p>
+            </a>
+          ) : (
+            <div />
+          )}
+        </nav>
+      </Fragment>
+    )
+  }
 </DocLayout>

@@ -20,7 +20,9 @@ const backToMenuLabel = navSection ? t("nav.backToMenu", lang) : undefined;
 // Build root menu items from headerNav (for Docusaurus-style "back to main menu")
 const rootMenuItems = navSection
   ? settings.headerNav.map((item) => ({
-      label: item.labelKey ? t(item.labelKey as Parameters<typeof t>[0], lang) : item.label,
+      label: item.labelKey
+        ? t(item.labelKey as Parameters<typeof t>[0], lang)
+        : item.label,
       href: withBase(isNonDefaultLocale ? `/${lang}${item.path}` : item.path),
     }))
   : undefined;
@@ -31,4 +33,10 @@ const docs = allDocs.filter(isNavVisible);
 const nodes = buildSidebarForSection(docs, lang, navSection, categoryMeta);
 ---
 
-<SidebarTree nodes={nodes} currentSlug={currentSlug} rootMenuItems={rootMenuItems} backToMenuLabel={backToMenuLabel} client:load />
+<SidebarTree
+  nodes={nodes}
+  currentSlug={currentSlug}
+  rootMenuItems={rootMenuItems}
+  backToMenuLabel={backToMenuLabel}
+  client:load
+/>
