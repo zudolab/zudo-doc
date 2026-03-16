@@ -19,7 +19,7 @@ interface HtmlPreviewProps {
   componentJs?: string;
 }
 
-function containsExplicitScript(head?: string, js?: string): boolean {
+function containsScript(head?: string, js?: string): boolean {
   if (js) return true;
   if (head && /<script/i.test(head)) return true;
   return false;
@@ -62,11 +62,7 @@ export default function HtmlPreview({
     () => buildSrcdoc(html, css, head, js),
     [html, css, head, js],
   );
-  // Always allow scripts: Chrome injects built-in scripts (translation,
-  // autofill) into srcdoc iframes, causing console errors without allow-scripts.
-  // Content is author-controlled MDX, so there is no security concern.
-  const hasExplicitScripts = containsExplicitScript(head, js);
-  const syncDelay = hasExplicitScripts ? 300 : 0;
+  const syncDelay = containsScript(head, js) ? 300 : 0;
 
   const codeBlocks = useMemo(
     () => [
@@ -96,7 +92,7 @@ export default function HtmlPreview({
       height={height}
       srcdoc={srcdoc}
       defaultOpen={defaultOpen}
-      sandbox="allow-scripts allow-same-origin"
+      sandbox={undefined}
       syncDelay={syncDelay}
       codeBlocks={codeBlocks}
     />

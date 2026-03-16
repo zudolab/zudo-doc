@@ -11,7 +11,7 @@ export interface PreviewBaseProps {
   title?: string;
   height?: number;
   srcdoc: string;
-  sandbox: string;
+  sandbox?: string;
   syncDelay: number;
   codeBlocks: CodeBlockData[];
   defaultOpen?: boolean;

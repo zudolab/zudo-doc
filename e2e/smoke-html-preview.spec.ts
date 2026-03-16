@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test";
  * E2E tests for HtmlPreview component.
  *
  * Verifies that global CSS from settings.htmlPreview is injected into the
- * iframe, per-component JS executes, and sandbox attributes are set correctly.
+ * iframe, per-component JS executes, and iframes have no sandbox attribute.
  */
 
 const PAGE = "/docs/guides/html-preview-test";
@@ -50,19 +50,16 @@ test.describe("HtmlPreview: global CSS and per-component JS", () => {
     await expect(target).toHaveText("after", { timeout: 10_000 });
   });
 
-  test("all iframes use allow-scripts allow-same-origin sandbox", async ({
-    page,
-  }) => {
+  test("iframes have no sandbox attribute", async ({ page }) => {
     await page.goto(PAGE, { waitUntil: "load" });
 
     const iframes = page.locator("iframe");
-    const cssIframe = iframes.first();
-    await cssIframe.waitFor({ state: "attached", timeout: 10_000 });
+    const first = iframes.first();
+    await first.waitFor({ state: "attached", timeout: 10_000 });
 
-    // Both CSS-only and JS iframes use the same sandbox value
     for (const iframe of await iframes.all()) {
       const sandbox = await iframe.getAttribute("sandbox");
-      expect(sandbox).toBe("allow-scripts allow-same-origin");
+      expect(sandbox).toBeNull();
     }
   });
 });
