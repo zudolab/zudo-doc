@@ -373,7 +373,7 @@ function CategoryNode({
           <button
             type="button"
             onClick={toggle}
-            className={`flex w-full items-center gap-[12px] text-small font-semibold pt-[0.15rem] py-vsp-xs text-fg hover:underline focus:underline`}
+            className={`flex w-full items-center gap-[12px] text-small font-semibold py-vsp-xs text-fg hover:underline focus:underline`}
             style={{ paddingLeft }}
             aria-expanded={isExpanded}
           >
