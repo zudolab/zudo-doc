@@ -1,6 +1,7 @@
 export type {
   HeaderNavItem,
   ColorModeConfig,
+  HtmlPreviewConfig,
   LocaleConfig,
   VersionConfig,
   FooterConfig,
@@ -8,6 +9,7 @@ export type {
 import type {
   HeaderNavItem,
   ColorModeConfig,
+  HtmlPreviewConfig,
   LocaleConfig,
   VersionConfig,
   FooterConfig,
@@ -39,6 +41,7 @@ export const settings = {
   math: true,
   colorTweakPanel: true as boolean,
   docHistory: true,
+  htmlPreview: undefined as HtmlPreviewConfig | undefined,
   versions: [
     {
       slug: "1.0",

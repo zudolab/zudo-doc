@@ -142,19 +142,88 @@ Use the `height` prop to set a fixed iframe height instead of auto-sizing.
   `}
 />
 
+## External Resources
+
+You can inject external resources (CSS frameworks, webfonts, scripts) into previews. Configure globally via `settings.ts` or per-component via props.
+
+### Global Configuration
+
+Set `htmlPreview` in `src/config/settings.ts` to apply resources to all previews:
+
+```ts
+htmlPreview: {
+  head: `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap">`,
+  css: `body { font-family: 'Noto Sans JP', sans-serif; }`,
+  js: `console.log('preview loaded');`,
+}
+```
+
+### Per-Component Props
+
+Use `head` and `js` props to add resources to individual previews. These are merged after global values.
+
+<HtmlPreview
+  title="With JS"
+  html={`
+    <div id="output">Waiting...</div>
+  `}
+  css={`
+    #output {
+      padding: 16px;
+      font-family: system-ui, sans-serif;
+      color: #334155;
+    }
+  `}
+  js={`
+    document.getElementById('output').textContent = 'Hello from JS!';
+  `}
+/>
+
+````mdx
+<HtmlPreview
+  title="With JS"
+  html={`
+    <div id="output">Waiting...</div>
+  `}
+  css={`
+    #output {
+      padding: 16px;
+      font-family: system-ui, sans-serif;
+      color: #334155;
+    }
+  `}
+  js={`
+    document.getElementById('output').textContent = 'Hello from JS!';
+  `}
+/>
+````
+
 ## Props
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `html` | string | (required) | HTML content to render inside the preview iframe |
 | `css` | string | `undefined` | CSS styles applied inside the preview iframe |
+| `head` | string | `undefined` | Raw HTML injected into `<head>` (links, meta, fonts) |
+| `js` | string | `undefined` | JavaScript executed inside the preview iframe |
 | `title` | string | `undefined` | Title displayed in the preview header bar |
 | `height` | number | auto | Fixed iframe height in pixels. When omitted, height auto-adjusts to content |
 | `defaultOpen` | boolean | `false` | Show the source code panel expanded by default |
 
+## Supported Languages
+
+The source code panel uses a lightweight Shiki instance with the following languages:
+
+- `html` — for the HTML and Head panels
+- `css` — for the CSS panel
+- `javascript` — for the JS panel
+
+Unsupported languages fall back to plain text (no highlighting). This is a smaller subset than the [full language list](/docs/components/basic-components#supported-languages) available in standard code blocks.
+
 ## Notes
 
 - The preview renders inside an isolated `<iframe>` with a CSS reset (Tailwind v4 preflight), so styles do not leak in or out.
-- The iframe uses `sandbox="allow-same-origin"` for security — no scripts execute inside the preview.
-- The `html` and `css` props support template literals with indentation. Leading whitespace is automatically stripped (dedented) in the source code display.
+- All previews use `sandbox="allow-scripts allow-same-origin"` — the sandbox still prevents navigation, popups, and form submissions.
+- Global resources from `settings.htmlPreview` are injected before per-component props.
+- The `html`, `css`, and `js` props support template literals with indentation. Leading whitespace is automatically stripped (dedented) in the source code display.
 - Client-side hydration is handled automatically by the component wrapper — no `client:load` directive needed in MDX.

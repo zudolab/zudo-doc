@@ -132,6 +132,7 @@ export default function PreviewBase({
         >
           <span
             className={`text-caption transition-transform duration-200 ${codeOpen ? "rotate-90" : ""}`}
+            aria-hidden="true"
           >
             &#9654;
           </span>

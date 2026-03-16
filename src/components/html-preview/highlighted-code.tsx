@@ -9,7 +9,7 @@ function getHighlighter(): Promise<HighlighterCore> {
       .then(({ createHighlighter }) =>
         createHighlighter({
           themes: ["catppuccin-latte", "vitesse-dark"],
-          langs: ["html", "css"],
+          langs: ["html", "css", "javascript"],
         }),
       )
       .catch((err) => {
@@ -34,18 +34,22 @@ export default function HighlightedCode({
 
   useEffect(() => {
     let cancelled = false;
-    getHighlighter().then((highlighter) => {
-      if (cancelled) return;
-      const lang = highlighter.getLoadedLanguages().includes(language)
-        ? language
-        : "text";
-      const result = highlighter.codeToHtml(code, {
-        lang,
-        themes: { light: "catppuccin-latte", dark: "vitesse-dark" },
-        defaultColor: false,
+    getHighlighter()
+      .then((highlighter) => {
+        if (cancelled) return;
+        const lang = highlighter.getLoadedLanguages().includes(language)
+          ? language
+          : "text";
+        const result = highlighter.codeToHtml(code, {
+          lang,
+          themes: { light: "catppuccin-latte", dark: "vitesse-dark" },
+          defaultColor: false,
+        });
+        setHtml(result);
+      })
+      .catch(() => {
+        // Shiki failed to load — keep showing the plain-text fallback
       });
-      setHtml(result);
-    });
     return () => {
       cancelled = true;
     };
