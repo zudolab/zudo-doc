@@ -133,7 +133,11 @@ function toNavNodes(
         doc?.data.sidebar_label ?? doc?.data.title ?? meta?.label ?? toTitleCase(child.segment),
       description: doc?.data.description ?? meta?.description,
       position: doc?.data.sidebar_position ?? meta?.position ?? 999,
-      href: meta?.noPage ? undefined : doc ? docsUrl(child.fullPath, lang) : (children.length > 0 ? docsUrl(child.fullPath, lang) : undefined),
+      href: meta?.noPage
+        ? undefined
+        : doc || children.length > 0
+          ? docsUrl(child.fullPath, lang)
+          : undefined,
       hasPage: !!doc,
       children,
       sortOrder,

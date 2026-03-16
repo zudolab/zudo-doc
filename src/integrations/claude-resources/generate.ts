@@ -70,14 +70,9 @@ function escapeTitle(s: string): string {
 function listFiles(dir: string): string[] {
   if (!fs.existsSync(dir)) return [];
   return fs
-    .readdirSync(dir)
-    .filter((f) => {
-      try {
-        return fs.statSync(path.join(dir, f)).isFile();
-      } catch {
-        return false;
-      }
-    })
+    .readdirSync(dir, { withFileTypes: true })
+    .filter((d) => d.isFile())
+    .map((d) => d.name)
     .sort();
 }
 
@@ -86,10 +81,13 @@ function writeCategoryMeta(
   label: string,
   position: number,
   description: string,
+  noPage = true,
 ) {
+  const meta: Record<string, unknown> = { label, position, description };
+  if (noPage) meta.noPage = true;
   fs.writeFileSync(
     path.join(outputDir, "_category_.json"),
-    JSON.stringify({ label, position, description, noPage: true }, null, 2) + "\n",
+    JSON.stringify(meta, null, 2) + "\n",
   );
 }
 
@@ -268,14 +266,18 @@ function getSkillFileTree(
 }
 
 function getScriptDescription(filePath: string): string {
-  const topLines = fs.readFileSync(filePath, "utf8").split("\n", 2);
-  // Skip shebang, use second line if available
-  const commentLine = topLines[0].startsWith("#!")
-    ? topLines[1] || ""
-    : topLines[0];
-  // Match # comments (shell/python) or // comments (JS/TS)
-  const match = commentLine.match(/^(?:#|\/\/)\s*(.+)/);
-  return match ? ` — ${match[1]}` : "";
+  try {
+    const topLines = fs.readFileSync(filePath, "utf8").split("\n", 2);
+    // Skip shebang, use second line if available
+    const commentLine = topLines[0].startsWith("#!")
+      ? topLines[1] || ""
+      : topLines[0];
+    // Match # comments (shell/python) or // comments (JS/TS)
+    const match = commentLine.match(/^(?:#|\/\/)\s*(.+)/);
+    return match ? ` — ${match[1]}` : "";
+  } catch {
+    return "";
+  }
 }
 
 function getSkillReferences(
@@ -358,14 +360,14 @@ function generateSkillsDocs(config: ClaudeResourcesConfig): SkillItem[] {
           return `- \`${f}\`${desc}`;
         })
         .join("\n");
-      scriptsSection = `\n\n## Scripts\n\n${scriptItems}\n`;
+      scriptsSection = `## Scripts\n\n${scriptItems}`;
     }
 
     // Assets listing
     let assetsSection = "";
     if (assetFiles.length > 0) {
       const assetItems = assetFiles.map((f) => `- \`${f}\``).join("\n");
-      assetsSection = `\n\n## Assets\n\n${assetItems}\n`;
+      assetsSection = `## Assets\n\n${assetItems}`;
     }
 
     // References section with links to reference pages
@@ -374,7 +376,7 @@ function generateSkillsDocs(config: ClaudeResourcesConfig): SkillItem[] {
       const refLinks = references
         .map((ref) => `- [${ref.title}](./${dir}--${ref.name}/)`)
         .join("\n");
-      referencesSection = `\n\n## References\n\n${refLinks}\n`;
+      referencesSection = `## References\n\n${refLinks}`;
     }
 
     const shortDesc = description.length > 200
@@ -389,7 +391,7 @@ function generateSkillsDocs(config: ClaudeResourcesConfig): SkillItem[] {
       referencesSection,
     ]
       .filter(Boolean)
-      .join("\n");
+      .join("\n\n");
 
     const mdx = `---
 title: "${escapeTitle(name)}"
