@@ -112,3 +112,5 @@ Each tier only references the tier above it.
 - Tailwind v4: imports `tailwindcss/preflight` + `tailwindcss/utilities` (no default theme)
 - No `--*: initial` resets needed — default theme is simply not imported
 - Content typography: `.zd-content` class in `global.css` (no prose plugin — direct element styling with `:where()` selectors)
+- **Component-first strategy**: always use Tailwind utility classes directly in component markup — never create CSS module files or custom CSS class names. The component itself is the abstraction.
+- **Tight token strategy**: prefer existing spacing (`hsp-*`, `vsp-*`), typography (`text-caption`, `text-small`, etc.), and color tokens. Avoid arbitrary values (`text-[0.8rem]`, `py-[0.35rem]`) when an existing token is close enough.

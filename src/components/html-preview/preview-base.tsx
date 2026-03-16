@@ -41,7 +41,7 @@ export default function PreviewBase({
 
   const syncHeight = useCallback(() => {
     const iframe = iframeRef.current;
-    if (!iframe || height) return;
+    if (!iframe || height != null) return;
     try {
       const doc = iframe.contentDocument;
       if (doc?.body) {
@@ -73,7 +73,7 @@ export default function PreviewBase({
 
   // Re-measure height when viewport changes (content reflows)
   useEffect(() => {
-    if (height) return;
+    if (height != null) return;
     const id = setTimeout(syncHeight, 150);
     return () => clearTimeout(id);
   }, [activeViewport, syncHeight, height]);
@@ -85,7 +85,7 @@ export default function PreviewBase({
       {/* Title bar with viewport buttons */}
       <div className="flex items-center justify-between px-hsp-md py-hsp-sm bg-surface border-b border-muted gap-hsp-sm flex-wrap">
         {title && <span className="text-caption font-semibold text-fg">{title}</span>}
-        <div className="flex gap-hsp-2xs">
+        <div className="flex gap-hsp-2xs" role="group" aria-label="Viewport size">
           {VIEWPORTS.map((vp, i) => (
             <button
               key={vp.label}
@@ -131,7 +131,7 @@ export default function PreviewBase({
           aria-expanded={codeOpen}
         >
           <span
-            className={`text-[0.7rem] transition-transform duration-200 ${codeOpen ? "rotate-90" : ""}`}
+            className={`text-caption transition-transform duration-200 ${codeOpen ? "rotate-90" : ""}`}
           >
             &#9654;
           </span>
@@ -141,7 +141,7 @@ export default function PreviewBase({
           <div>
             {codeBlocks.map((block, idx) => (
               <div key={block.title} className={`overflow-x-auto ${idx > 0 ? "border-t border-muted" : ""}`}>
-                <span className="block px-hsp-md py-hsp-xs text-[0.7rem] font-semibold text-muted bg-surface border-b border-muted uppercase tracking-wider">
+                <span className="block px-hsp-md py-hsp-xs text-caption font-semibold text-muted bg-surface border-b border-muted uppercase tracking-wider">
                   {block.title}
                 </span>
                 <HighlightedCode

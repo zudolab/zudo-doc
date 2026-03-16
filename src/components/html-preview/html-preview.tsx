@@ -32,6 +32,13 @@ export default function HtmlPreview({
   defaultOpen,
 }: HtmlPreviewProps): ReactNode {
   const srcdoc = useMemo(() => buildSrcdoc(html, css), [html, css]);
+  const codeBlocks = useMemo(
+    () => [
+      { language: "html", title: "HTML", code: dedent(html) },
+      ...(css ? [{ language: "css", title: "CSS", code: dedent(css) }] : []),
+    ],
+    [html, css],
+  );
 
   return (
     <PreviewBase
@@ -41,12 +48,7 @@ export default function HtmlPreview({
       defaultOpen={defaultOpen}
       sandbox="allow-same-origin"
       syncDelay={0}
-      codeBlocks={[
-        { language: "html", title: "HTML", code: dedent(html) },
-        ...(css
-          ? [{ language: "css", title: "CSS", code: dedent(css) }]
-          : []),
-      ]}
+      codeBlocks={codeBlocks}
     />
   );
 }

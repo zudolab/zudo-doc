@@ -5,12 +5,18 @@ let highlighterPromise: Promise<HighlighterCore> | null = null;
 
 function getHighlighter(): Promise<HighlighterCore> {
   if (!highlighterPromise) {
-    highlighterPromise = import("shiki").then(({ createHighlighter }) =>
-      createHighlighter({
-        themes: ["catppuccin-latte", "vitesse-dark"],
-        langs: ["html", "css"],
-      }),
-    );
+    highlighterPromise = import("shiki")
+      .then(({ createHighlighter }) =>
+        createHighlighter({
+          themes: ["catppuccin-latte", "vitesse-dark"],
+          langs: ["html", "css"],
+        }),
+      )
+      .catch((err) => {
+        // Clear cached rejection so next call retries
+        highlighterPromise = null;
+        throw err;
+      });
   }
   return highlighterPromise;
 }
@@ -47,7 +53,7 @@ export default function HighlightedCode({
 
   if (!html) {
     return (
-      <pre className="m-0 p-hsp-md bg-code-bg text-[0.8rem] leading-relaxed overflow-x-auto">
+      <pre className="m-0 p-hsp-md bg-code-bg text-caption leading-relaxed overflow-x-auto">
         <code className="font-mono whitespace-pre">
           {code}
         </code>
