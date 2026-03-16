@@ -28,6 +28,9 @@ importers:
       astro:
         specifier: ^6.0.4
         version: 6.0.4(patch_hash=8d13f8bf10637ae8cfa995bc18a09e7da49fcba98a46458afc1326be95f68c6d)(@types/node@25.3.5)(jiti@2.6.1)(lightningcss@1.31.1)(rollup@4.59.0)(typescript@5.9.3)(yaml@2.8.2)
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       diff:
         specifier: ^8.0.3
         version: 8.0.3

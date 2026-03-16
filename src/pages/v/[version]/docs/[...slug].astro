@@ -12,7 +12,6 @@ import SiteTreeNavDemo from "@/components/site-tree-nav-demo.astro";
 import Tabs from "@/components/tabs.astro";
 import TabItem from "@/components/tab-item.astro";
 import Details from "@/components/details.astro";
-import HtmlPreview from "@/components/html-preview-wrapper.astro";
 import Breadcrumb from "@/components/breadcrumb.astro";
 import { toRouteSlug } from "@/utils/slug";
 import { buildNavTree, buildBreadcrumbs, flattenTree, findNode, loadCategoryMeta, collectAutoIndexNodes, isNavVisible, type NavNode } from "@/utils/docs";
@@ -110,7 +109,7 @@ export async function getStaticPaths() {
 const { entry, version, breadcrumbs = [], prev, next, autoIndex } = Astro.props;
 const versionConfig = version as VersionConfig;
 
-const components = { Note, Tip, Info, Warning, Danger, CategoryNav, SiteTreeNavDemo, Tabs, TabItem, Details, HtmlPreview };
+const components = { Note, Tip, Info, Warning, Danger, CategoryNav, SiteTreeNavDemo, Tabs, TabItem, Details };
 
 let Content: any;
 let headings: Heading[] = [];
