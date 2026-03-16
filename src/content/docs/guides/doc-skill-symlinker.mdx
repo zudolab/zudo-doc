@@ -1,0 +1,104 @@
+---
+title: Documentation Skill Symlinker
+description: Turn your zudo-doc documentation into a Claude Code knowledge base via a symlinked skill.
+sidebar_position: 9
+---
+
+## Overview
+
+The **doc skill symlinker** creates a [Claude Code skill](https://docs.anthropic.com/en/docs/claude-code/skills) from your documentation content. Once set up, you can invoke the skill inside any Claude Code session to look up your docs — making all your written documentation available as AI context.
+
+This is especially useful when:
+
+- Working on another project that depends on this one
+- Answering questions about configuration, components, or usage patterns
+- Sharing institutional knowledge with your team through Claude Code
+
+## How It Works
+
+The setup script:
+
+1. Creates a `.claude/skills/<skill-name>/` directory in your project
+2. Generates a `SKILL.md` that tells Claude how to use your docs
+3. Symlinks the `src/content/docs/` directory into the skill folder
+4. Symlinks the skill into `~/.claude/skills/` so it's available globally
+
+After setup, the skill appears as a slash command in any Claude Code session.
+
+## Setup
+
+Run the setup script:
+
+```bash
+pnpm run setup:doc-skill
+```
+
+You'll be prompted for a skill name. The default is `<project-name>-wisdom` (e.g., `zudo-doc-wisdom`).
+
+```
+=== zudo-doc Skill Setup ===
+
+Skill name [zudo-doc-wisdom]:
+  Created docs symlink: ...
+  Created docs-ja symlink: ...
+  Generated SKILL.md
+
+Done! Skill 'zudo-doc-wisdom' is ready.
+```
+
+## Using the Skill
+
+Once set up, use the skill in any Claude Code session:
+
+```
+/zudo-doc-wisdom sidebar
+```
+
+Claude will look up the relevant documentation article and use it to answer your question. This works from any project directory — the skill is symlinked globally.
+
+### Example Workflow
+
+Suppose you're building a site with zudo-doc and want to know how to configure the footer:
+
+```
+/zudo-doc-wisdom footer configuration
+```
+
+Claude reads the footer guide from your docs and provides an accurate, documentation-backed answer.
+
+## What Gets Created
+
+After running the setup script, the following files are created:
+
+```
+.claude/skills/<skill-name>/
+├── SKILL.md       # Skill definition with frontmatter and instructions
+├── docs -> src/content/docs/         # Symlink to English docs
+└── docs-ja -> src/content/docs-ja/   # Symlink to Japanese docs (if present)
+```
+
+And a global symlink:
+
+```
+~/.claude/skills/<skill-name> -> .claude/skills/<skill-name>
+```
+
+<Note>
+
+The `.claude/skills/<skill-name>/` directory contains symlinks and a generated `SKILL.md`. It is safe to add to `.gitignore` if you prefer, or commit it to share the skill definition with your team.
+
+</Note>
+
+## Re-running Setup
+
+You can re-run the setup script at any time to regenerate the skill. Existing symlinks are replaced automatically.
+
+```bash
+pnpm run setup:doc-skill
+```
+
+<Tip>
+
+If you rename your project or change the docs directory structure, re-run the setup script to update the skill.
+
+</Tip>

@@ -23,7 +23,9 @@
     "format": "pnpm run format:mdx && pnpm run format:astro",
     "format:check:mdx": "pnpm dlx @takazudo/mdx-formatter --check \"src/content/**/*.{md,mdx}\"",
     "format:check:astro": "prettier --check \"src/**/*.astro\"",
-    "format:check": "pnpm run format:check:mdx && pnpm run format:check:astro"
+    "format:check": "pnpm run format:check:mdx && pnpm run format:check:astro",
+    "// ── Skills ──────────────────────────────────────": "",
+    "setup:doc-skill": "bash scripts/setup-doc-skill.sh"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

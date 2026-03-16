@@ -1,0 +1,54 @@
+---
+title: ドキュメントスキルシムリンカー
+description: zudo-docのドキュメントをClaude Codeのナレッジベースとしてシムリンクで利用可能にします。
+sidebar_position: 9
+---
+
+## 概要
+
+**ドキュメントスキルシムリンカー**は、ドキュメントコンテンツから[Claude Codeスキル](https://docs.anthropic.com/en/docs/claude-code/skills)を作成します。セットアップ後、任意のClaude Codeセッション内でスキルを呼び出してドキュメントを参照できます。
+
+## セットアップ
+
+セットアップスクリプトを実行します:
+
+```bash
+pnpm run setup:doc-skill
+```
+
+スキル名の入力を求められます。デフォルトは `<プロジェクト名>-wisdom`（例: `zudo-doc-wisdom`）です。
+
+## 使い方
+
+セットアップ後、任意のClaude Codeセッションでスキルを使用できます:
+
+```
+/zudo-doc-wisdom sidebar
+```
+
+Claudeが関連するドキュメント記事を検索し、回答に利用します。スキルはグローバルにシムリンクされているため、どのプロジェクトディレクトリからでも動作します。
+
+## 作成されるファイル
+
+セットアップスクリプトを実行すると、以下のファイルが作成されます:
+
+```
+.claude/skills/<skill-name>/
+├── SKILL.md       # スキル定義（フロントマターと指示）
+├── docs -> src/content/docs/         # 英語ドキュメントへのシムリンク
+└── docs-ja -> src/content/docs-ja/   # 日本語ドキュメントへのシムリンク
+```
+
+グローバルシムリンク:
+
+```
+~/.claude/skills/<skill-name> -> .claude/skills/<skill-name>
+```
+
+## 再実行
+
+セットアップスクリプトはいつでも再実行できます。既存のシムリンクは自動的に置き換えられます。
+
+```bash
+pnpm run setup:doc-skill
+```
