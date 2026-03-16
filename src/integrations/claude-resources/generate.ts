@@ -351,17 +351,18 @@ function generateSkillsDocs(config: ClaudeResourcesConfig): SkillItem[] {
       const tree = `\`\`\`\n${getSkillFileTree(dir, subDirs)}\n\`\`\``;
 
       // Collect links to all .md sub-files that get pages
+      // Use ../<dir>/<slug>/ format to avoid trailing-slash ambiguity
       const links: string[] = [];
       for (const ref of references) {
-        links.push(`- [references/${ref.name}.md](./ref-${ref.name}/)`);
+        links.push(`- [references/${ref.name}.md](../${dir}/ref-${ref.name}/)`);
       }
       for (const f of scriptFiles.filter((s) => s.endsWith(".md"))) {
         const slug = f.replace(/\.md$/, "");
-        links.push(`- [scripts/${f}](./script-${slug}/)`);
+        links.push(`- [scripts/${f}](../${dir}/script-${slug}/)`);
       }
       for (const f of assetFiles.filter((a) => a.endsWith(".md"))) {
         const slug = f.replace(/\.md$/, "");
-        links.push(`- [assets/${f}](./asset-${slug}/)`);
+        links.push(`- [assets/${f}](../${dir}/asset-${slug}/)`);
       }
 
       const linkList = links.length > 0 ? `\n\n${links.join("\n")}` : "";
