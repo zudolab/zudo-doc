@@ -69,7 +69,7 @@ export const settings = {
         ],
       },
     ],
-    copyright: `Copyright © ${new Date().getFullYear()} zudolab. Built with zudo-doc.`,
+    copyright: `Copyright © ${new Date().getFullYear()} <a href="https://x.com/Takazudo">Takazudo</a>. Built with <a href="https://zudo-doc.pages.dev/pj/zudo-doc/docs/getting-started/">zudo-doc</a>.`,
   } satisfies FooterConfig as FooterConfig | false,
   headerNav: [
     { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
@@ -77,5 +77,6 @@ export const settings = {
     { label: "Components", labelKey: "nav.components", path: "/docs/components", categoryMatch: "components" },
     { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
     { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude" },
+    { label: "Changelog", labelKey: "nav.changelog", path: "/docs/changelog", categoryMatch: "changelog" },
   ] satisfies HeaderNavItem[],
 };

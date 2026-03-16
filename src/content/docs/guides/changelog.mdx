@@ -1,0 +1,124 @@
+---
+title: Changelog
+description: How to maintain a changelog section in your documentation site.
+sidebar_position: 14
+---
+
+zudo-doc includes a changelog section for tracking release notes and version history. The changelog uses descending sidebar sort so the newest entries always appear at the top.
+
+## Directory Structure
+
+Changelog entries live in a dedicated content directory:
+
+```
+src/content/docs/
+└── changelog/
+    ├── _category_.json    # Category config with desc sort
+    ├── index.mdx          # Category index page
+    ├── 0.2.0.mdx          # Newer entry (sidebar_position: 2)
+    └── 0.1.0.mdx          # Older entry (sidebar_position: 1)
+```
+
+## Category Configuration
+
+The `_category_.json` file configures descending sort order so newer entries appear first in the sidebar:
+
+```json title="_category_.json"
+{
+  "label": "Changelog",
+  "position": 10,
+  "sortOrder": "desc"
+}
+```
+
+With `sortOrder: "desc"`, entries with higher `sidebar_position` values appear first. This means newer versions naturally sort to the top.
+
+## Adding a New Entry
+
+To add a new changelog entry:
+
+1. Create a new MDX file in `src/content/docs/changelog/` named after the version (e.g., `0.2.0.mdx`)
+2. Set the `sidebar_position` to a value higher than the previous entry
+3. Mirror the file in the Japanese content directory (`src/content/docs-ja/changelog/`)
+
+```mdx title="src/content/docs/changelog/0.2.0.mdx"
+---
+title: "0.2.0"
+description: Short summary of this release.
+sidebar_position: 2
+---
+
+Summary of changes in this release.
+
+### Features
+
+- Feature A
+- Feature B
+
+### Bug Fixes
+
+- Fix for issue X
+```
+
+<Tip>
+
+Use incrementing `sidebar_position` values for each new version. Combined with `sortOrder: "desc"` in the category config, this ensures the newest entry always appears at the top of the sidebar.
+
+</Tip>
+
+## Entry Format
+
+Each changelog entry is a standard MDX file. A recommended structure:
+
+- **Title**: The version number (e.g., `"0.2.0"`)
+- **Description**: A brief summary of the release
+- **Content sections**: Features, Bug Fixes, Breaking Changes, etc.
+
+There is no enforced format — use whatever structure fits your project. The examples above follow a common convention similar to [Keep a Changelog](https://keepachangelog.com/).
+
+## Version Bump Script
+
+zudo-doc includes a `scripts/version-bump.sh` script that automates version management:
+
+```bash
+# Bump version and create changelog entry
+./scripts/version-bump.sh 0.2.0
+
+# Bump version, create changelog entry, and snapshot current docs
+./scripts/version-bump.sh 1.0.0 --snapshot
+```
+
+The script performs the following steps:
+
+1. Updates the `version` field in `package.json`
+2. Creates a changelog entry MDX file in both English and Japanese directories
+3. Sets the correct `sidebar_position` automatically (incremented from existing entries)
+
+### Doc Snapshots
+
+When called with `--snapshot`, the script also archives the current documentation as a versioned snapshot before bumping. This integrates with zudo-doc's [versioning system](/docs/guides/versioning):
+
+1. Copies `src/content/docs/` to `src/content/docs-v{old}/`
+2. Copies `src/content/docs-ja/` to `src/content/docs-v{old}-ja/`
+3. Prints the version config entry to add to `src/config/settings.ts`
+
+<Note>
+
+The `--snapshot` flag archives the **old** version's docs, not the new version. After the script runs, `src/content/docs/` represents the new version and the snapshot preserves the previous state.
+
+</Note>
+
+## Header Navigation
+
+The changelog section is linked from the header navigation. This is configured in `src/config/settings.ts`:
+
+```ts
+headerNav: [
+  // ...other items
+  { label: "Changelog", labelKey: "nav.changelog", path: "/docs/changelog", categoryMatch: "changelog" },
+],
+```
+
+## i18n
+
+Mirror changelog entries in the Japanese content directory (`src/content/docs-ja/changelog/`) to provide translated release notes. The `_category_.json` and directory structure should match the English version.
