@@ -179,7 +179,7 @@ describe("generateClaudeResourcesDocs", () => {
       expect(skillPage).toContain("SKILL.md");
     });
 
-    it("skill page has links to sub-files that resolve to existing pages", () => {
+    it("skill page has links to sub-files that resolve correctly from the page URL", () => {
       generateClaudeResourcesDocs({
         claudeDir,
         projectRoot: tmpDir,
@@ -191,13 +191,18 @@ describe("generateClaudeResourcesDocs", () => {
         "utf8",
       );
 
-      // Links use ./<dir>/<subpage> format (nested URL via custom slug)
-      expect(skillPage).toContain("./test-skill/ref-guide");
-      expect(skillPage).toContain("./test-skill/asset-template");
+      // Links use ./<subpage> format (relative to the skill page URL which
+      // already includes the skill dir, e.g. /docs/claude-skills/test-skill/)
+      expect(skillPage).toContain("./ref-guide");
+      expect(skillPage).toContain("./asset-template");
+
+      // Must NOT contain the double-dir pattern ./<dir>/<subpage>
+      expect(skillPage).not.toContain("./test-skill/ref-guide");
+      expect(skillPage).not.toContain("./test-skill/asset-template");
 
       // Each linked sub-page must exist as a generated flat .mdx file
       // The file is flat (test-skill--ref-guide.mdx) but slug is nested
-      const linkPattern = /\]\(\.\/test-skill\/([\w-]+)\)/g;
+      const linkPattern = /\]\(\.\/([\w-]+)\)/g;
       let match;
       while ((match = linkPattern.exec(skillPage)) !== null) {
         const subPage = match[1];
