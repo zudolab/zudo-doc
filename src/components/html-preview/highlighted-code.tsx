@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import type { HighlighterCore } from "shiki";
-import styles from "./html-preview.module.css";
 
 let highlighterPromise: Promise<HighlighterCore> | null = null;
 
@@ -48,8 +47,8 @@ export default function HighlightedCode({
 
   if (!html) {
     return (
-      <pre className={styles.codeBlockPre}>
-        <code className={`${styles.codeBlockCode} language-${language}`}>
+      <pre className="m-0 p-hsp-md bg-code-bg text-[0.8rem] leading-relaxed overflow-x-auto">
+        <code className="font-mono whitespace-pre">
           {code}
         </code>
       </pre>
@@ -58,7 +57,7 @@ export default function HighlightedCode({
 
   return (
     <div
-      className={styles.codeBlockHighlighted}
+      className="zd-html-preview-code"
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

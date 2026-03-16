@@ -1,6 +1,5 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import HighlightedCode from "./highlighted-code";
-import styles from "./html-preview.module.css";
 
 export interface CodeBlockData {
   language: string;
@@ -82,20 +81,20 @@ export default function PreviewBase({
   const containerWidth = VIEWPORTS[activeViewport].width;
 
   return (
-    <div className={styles.wrapper}>
+    <div className="border border-muted rounded-lg overflow-hidden my-vsp-md">
       {/* Title bar with viewport buttons */}
-      <div className={styles.titleBar}>
-        {title && <span className={styles.title}>{title}</span>}
-        <div className={styles.viewportButtons}>
+      <div className="flex items-center justify-between px-hsp-md py-hsp-sm bg-surface border-b border-muted gap-hsp-sm flex-wrap">
+        {title && <span className="text-caption font-semibold text-fg">{title}</span>}
+        <div className="flex gap-hsp-2xs">
           {VIEWPORTS.map((vp, i) => (
             <button
               key={vp.label}
               type="button"
-              className={
+              className={`px-hsp-sm py-hsp-2xs text-caption border rounded-full cursor-pointer transition-[background,color,border-color] duration-150 leading-snug ${
                 i === activeViewport
-                  ? styles.viewportBtnActive
-                  : styles.viewportBtn
-              }
+                  ? "bg-accent text-bg border-accent hover:bg-accent-hover hover:border-accent-hover"
+                  : "bg-transparent text-muted border-muted hover:bg-[color-mix(in_srgb,var(--color-surface)_80%,var(--color-fg)_20%)]"
+              }`}
               aria-pressed={i === activeViewport}
               onClick={() => setActiveViewport(i)}
             >
@@ -106,14 +105,15 @@ export default function PreviewBase({
       </div>
 
       {/* Preview area */}
-      <div className={styles.previewArea}>
+      <div className="bg-surface p-hsp-lg">
         <div
-          className={styles.previewContainer}
+          className="resize-x overflow-auto max-w-full mx-auto"
           style={{ width: containerWidth }}
         >
+          {/* Intentional: white canvas regardless of site theme — matches standard browser context */}
           <iframe
             ref={iframeRef}
-            className={styles.iframe}
+            className="block w-full border-none bg-[#fff] rounded shadow-[0_1px_3px_color-mix(in_srgb,var(--color-fg)_8%,transparent)]"
             srcDoc={srcdoc}
             sandbox={sandbox}
             style={{ height: iframeHeight }}
@@ -123,27 +123,27 @@ export default function PreviewBase({
       </div>
 
       {/* Code section */}
-      <div className={styles.codeSection}>
+      <div className="border-t border-muted">
         <button
           type="button"
-          className={styles.codeToggle}
+          className="flex items-center w-full px-hsp-md py-hsp-sm text-caption font-medium text-muted bg-surface border-none cursor-pointer gap-hsp-xs hover:bg-[color-mix(in_srgb,var(--color-surface)_80%,var(--color-fg)_20%)]"
           onClick={() => setCodeOpen((v) => !v)}
           aria-expanded={codeOpen}
         >
           <span
-            className={
-              codeOpen ? styles.codeToggleIconOpen : styles.codeToggleIcon
-            }
+            className={`text-[0.7rem] transition-transform duration-200 ${codeOpen ? "rotate-90" : ""}`}
           >
             &#9654;
           </span>
           {codeOpen ? "Hide code" : "Show code"}
         </button>
         {codeOpen && (
-          <div className={styles.codeContent}>
-            {codeBlocks.map((block) => (
-              <div key={block.title} className={styles.codeBlock}>
-                <span className={styles.codeBlockTitle}>{block.title}</span>
+          <div>
+            {codeBlocks.map((block, idx) => (
+              <div key={block.title} className={`overflow-x-auto ${idx > 0 ? "border-t border-muted" : ""}`}>
+                <span className="block px-hsp-md py-hsp-xs text-[0.7rem] font-semibold text-muted bg-surface border-b border-muted uppercase tracking-wider">
+                  {block.title}
+                </span>
                 <HighlightedCode
                   code={block.code}
                   language={block.language}

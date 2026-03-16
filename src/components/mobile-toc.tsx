@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import type { Heading } from "@/types/heading";
-import clsx from "clsx";
 
 interface MobileTocProps {
   headings: Heading[];
@@ -28,10 +27,7 @@ export function MobileToc({ headings, title = "On this page" }: MobileTocProps) 
         <svg
           xmlns="http://www.w3.org/2000/svg"
           aria-hidden="true"
-          className={clsx(
-            "h-[1rem] w-[1rem] text-muted transition-transform duration-150",
-            open && "rotate-180",
-          )}
+          className={`h-[1rem] w-[1rem] text-muted transition-transform duration-150 ${open ? "rotate-180" : ""}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -49,10 +45,7 @@ export function MobileToc({ headings, title = "On this page" }: MobileTocProps) 
           {filtered.map((heading, index) => (
             <li
               key={`${heading.slug}-${index}`}
-              className={clsx(
-                heading.depth === 3 && "ml-hsp-lg",
-                heading.depth === 4 && "ml-hsp-2xl",
-              )}
+              className={`${heading.depth === 3 ? "ml-hsp-lg" : ""}${heading.depth === 4 ? "ml-hsp-2xl" : ""}`}
             >
               <a
                 href={`#${heading.slug}`}
