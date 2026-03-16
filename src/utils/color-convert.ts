@@ -16,6 +16,7 @@ export function hexToHsl(hex: string): { h: number; s: number; l: number } {
 }
 
 export function hslToHex(h: number, s: number, l: number): string {
+  h = ((h % 360) + 360) % 360;
   const sn = s / 100;
   const ln = l / 100;
   const c = (1 - Math.abs(2 * ln - 1)) * sn;

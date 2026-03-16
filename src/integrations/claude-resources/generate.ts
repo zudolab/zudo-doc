@@ -159,6 +159,7 @@ title: "${escapeTitle(displayPath)}"
 description: "CLAUDE.md at ${escapeTitle(displayPath)}"
 sidebar_position: ${pos}
 sidebar_label: "${escapeTitle(relPath)}"
+generated: true
 ---
 
 **Path:** \`${relPath}\`
@@ -211,6 +212,7 @@ function generateCommandsDocs(config: ClaudeResourcesConfig): CommandItem[] {
 title: "${escapeTitle(name)}"
 description: "${escapeTitle(description)}"
 sidebar_label: "${escapeTitle(name)}"
+generated: true
 ---
 
 ${escapeForMdx(parsed.content.trim())}
@@ -351,18 +353,19 @@ function generateSkillsDocs(config: ClaudeResourcesConfig): SkillItem[] {
       const tree = `\`\`\`\n${getSkillFileTree(dir, subDirs)}\n\`\`\``;
 
       // Collect links to all .md sub-files that get pages
-      // Links use ./<dir>/<subpage> which resolves correctly from the flat skill page URL
+      // Links use ./<subpage> which resolves correctly from the skill page URL
+      // (the page URL already includes the dir, e.g. /docs/claude-skills/<dir>/)
       const links: string[] = [];
       for (const ref of references) {
-        links.push(`- [references/${ref.name}.md](./${dir}/ref-${ref.name})`);
+        links.push(`- [references/${ref.name}.md](./ref-${ref.name})`);
       }
       for (const f of scriptFiles.filter((s) => s.endsWith(".md"))) {
         const slug = f.replace(/\.md$/, "");
-        links.push(`- [scripts/${f}](./${dir}/script-${slug})`);
+        links.push(`- [scripts/${f}](./script-${slug})`);
       }
       for (const f of assetFiles.filter((a) => a.endsWith(".md"))) {
         const slug = f.replace(/\.md$/, "");
-        links.push(`- [assets/${f}](./${dir}/asset-${slug})`);
+        links.push(`- [assets/${f}](./asset-${slug})`);
       }
 
       const linkList = links.length > 0 ? `\n\n${links.join("\n")}` : "";
@@ -384,6 +387,7 @@ function generateSkillsDocs(config: ClaudeResourcesConfig): SkillItem[] {
 title: "${escapeTitle(name)}"
 description: "${escapeTitle(shortDesc)}"
 sidebar_label: "${escapeTitle(name)}"
+generated: true
 ---
 
 ${body}`;
@@ -401,6 +405,7 @@ ${body}`;
 title: "${escapeTitle(ref.title)}"
 slug: "${subSlug}"
 unlisted: true
+generated: true
 ---
 
 ${escapeForMdx(ref.content.trim())}
@@ -419,7 +424,7 @@ ${escapeForMdx(ref.content.trim())}
       const title = h1Match ? h1Match[1] : slug;
       fs.writeFileSync(
         path.join(outputDir, `${dir}--script-${slug}.mdx`),
-        `---\ntitle: "${escapeTitle(title)}"\nslug: "${subSlug}"\nunlisted: true\n---\n\n${escapeForMdx(raw.trim())}\n`,
+        `---\ntitle: "${escapeTitle(title)}"\nslug: "${subSlug}"\nunlisted: true\ngenerated: true\n---\n\n${escapeForMdx(raw.trim())}\n`,
       );
     }
 
@@ -434,7 +439,7 @@ ${escapeForMdx(ref.content.trim())}
       const title = h1Match ? h1Match[1] : slug;
       fs.writeFileSync(
         path.join(outputDir, `${dir}--asset-${slug}.mdx`),
-        `---\ntitle: "${escapeTitle(title)}"\nslug: "${subSlug}"\nunlisted: true\n---\n\n${escapeForMdx(raw.trim())}\n`,
+        `---\ntitle: "${escapeTitle(title)}"\nslug: "${subSlug}"\nunlisted: true\ngenerated: true\n---\n\n${escapeForMdx(raw.trim())}\n`,
       );
     }
   }
@@ -481,6 +486,7 @@ function generateAgentsDocs(config: ClaudeResourcesConfig): AgentItem[] {
 title: "${escapeTitle(name)}"
 description: "${escapeTitle(description)}"
 sidebar_label: "${escapeTitle(name)}"
+generated: true
 ---
 
 ${modelBadge}
@@ -508,6 +514,7 @@ function generateOverviewIndex(config: ClaudeResourcesConfig) {
 title: "Claude"
 description: "Claude Code configuration reference."
 sidebar_position: 899
+generated: true
 ---
 
 Claude Code configuration reference.

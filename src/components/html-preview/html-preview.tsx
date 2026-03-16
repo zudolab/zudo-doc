@@ -62,7 +62,11 @@ export default function HtmlPreview({
     () => buildSrcdoc(html, css, head, js),
     [html, css, head, js],
   );
-  const syncDelay = containsScript(head, js) ? 300 : 0;
+  const hasScripts = containsScript(head, js);
+  const syncDelay = hasScripts ? 300 : 0;
+  // allow-same-origin is needed alongside allow-scripts so that syncHeight
+  // can access iframe.contentDocument for auto-height measurement
+  const sandboxValue = hasScripts ? "allow-scripts allow-same-origin" : "";
 
   const codeBlocks = useMemo(
     () => [
@@ -92,7 +96,7 @@ export default function HtmlPreview({
       height={height}
       srcdoc={srcdoc}
       defaultOpen={defaultOpen}
-      sandbox={undefined}
+      sandbox={sandboxValue}
       syncDelay={syncDelay}
       codeBlocks={codeBlocks}
     />
