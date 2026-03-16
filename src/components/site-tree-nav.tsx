@@ -142,7 +142,8 @@ function CategoryNode({
           {node.href ? (
             <a
               href={node.href}
-              className="flex-1 flex items-center gap-hsp-xs py-vsp-xs text-fg hover:text-accent hover:underline focus:underline"
+              className="flex-1 flex items-center gap-hsp-xs py-vsp-xs hover:text-accent hover:underline focus:underline"
+              style={{ color: "oklch(0.93 0 0)" }}
             >
               {depth === 0 && <CategoryLinkIcon />}
               {node.label}
