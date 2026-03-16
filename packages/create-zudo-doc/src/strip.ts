@@ -122,6 +122,7 @@ export async function stripFeatures(
   if (!choices.features.includes("colorTweakPanel")) {
     await removeIfExists(targetDir, "src/components/color-tweak-panel.tsx");
     await removeIfExists(targetDir, "src/components/color-tweak-export-modal.tsx");
+    await removeIfExists(targetDir, "src/config/color-tweak-presets.ts");
     await removeIfExists(targetDir, "src/utils/color-convert.ts");
     await removeIfExists(targetDir, "src/utils/export-code.ts");
     await patchFile(

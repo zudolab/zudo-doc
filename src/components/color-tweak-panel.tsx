@@ -6,7 +6,7 @@ import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "@/config/color-scheme-uti
 import { settings } from "@/config/settings";
 import { hexToHsl, hslToHex } from "@/utils/color-convert";
 
-const allPresets: Record<string, ColorScheme> = { ...colorSchemes, ...colorTweakPresets };
+const allPresets: Record<string, ColorScheme> = { ...colorTweakPresets, ...colorSchemes };
 const bundledNames = Object.keys(colorSchemes);
 const presetNames = Object.keys(colorTweakPresets).sort();
 
@@ -158,22 +158,42 @@ function setCssVar(name: string, value: string) {
 }
 
 /** Resolve a ColorRef to a palette index. If it's already a number, use it.
- *  If it's a string, find matching palette color or use fallback index. */
+ *  If it's a string, find matching palette color or nearest match by color distance. */
 function colorRefToIndex(ref: ColorRef | undefined, palette: string[], fallback: number): number {
   if (ref === undefined) return fallback;
   if (typeof ref === "number") return ref;
-  // String: try to find in palette
+  // String: try exact match in palette
   const idx = palette.indexOf(ref);
-  return idx >= 0 ? idx : fallback;
+  if (idx >= 0) return idx;
+  // No exact match — find nearest palette color by RGB distance
+  const refHex = cssColorToHex(ref);
+  const refRgb = hexToRgb(refHex);
+  let bestIdx = fallback;
+  let bestDist = Infinity;
+  for (let i = 0; i < palette.length; i++) {
+    const pHex = cssColorToHex(palette[i]);
+    const pRgb = hexToRgb(pHex);
+    const dist = (refRgb.r - pRgb.r) ** 2 + (refRgb.g - pRgb.g) ** 2 + (refRgb.b - pRgb.b) ** 2;
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
 }
 
-/** Resolve the active scheme name, considering light/dark mode and picker selection */
+/** Parse hex color string to RGB components */
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const h = hex.replace("#", "");
+  return {
+    r: parseInt(h.substring(0, 2), 16) || 0,
+    g: parseInt(h.substring(2, 4), 16) || 0,
+    b: parseInt(h.substring(4, 6), 16) || 0,
+  };
+}
+
+/** Resolve the active scheme name, considering light/dark mode */
 function getActiveSchemeName(): string {
-  // Check if a scheme was explicitly selected via the picker
-  try {
-    const saved = localStorage.getItem("zudo-doc-color-scheme");
-    if (saved && colorSchemes[saved]) return saved;
-  } catch { /* ignore */ }
   // Check light/dark mode
   if (settings.colorMode) {
     const theme = document.documentElement.getAttribute("data-theme");
@@ -204,9 +224,8 @@ function initFromSchemeData(scheme: ColorScheme): TweakState {
     } else if (typeof schemeVal === "number") {
       semanticMappings[key] = schemeVal;
     } else {
-      // String value — find in palette or keep default
-      const idx = scheme.palette.indexOf(schemeVal);
-      semanticMappings[key] = idx >= 0 ? idx : defaultVal;
+      // String value — find in palette or nearest match
+      semanticMappings[key] = colorRefToIndex(schemeVal, scheme.palette, defaultVal);
     }
   }
 
