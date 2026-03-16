@@ -350,23 +350,35 @@ function generateSkillsDocs(config: ClaudeResourcesConfig): SkillItem[] {
       ? `## File Structure\n\n\`\`\`\n${getSkillFileTree(dir, subDirs)}\n\`\`\``
       : "";
 
-    // Scripts listing with first-line comments
+    // Scripts listing — .md files get linked pages, others show filename
     let scriptsSection = "";
     if (scriptFiles.length > 0) {
       const scriptItems = scriptFiles
         .map((f) => {
           const filePath = path.join(skillsDir, dir, "scripts", f);
           const desc = getScriptDescription(filePath);
+          if (f.endsWith(".md")) {
+            const slug = f.replace(/\.md$/, "");
+            return `- [${slug}](./${dir}--script-${slug}/)${desc}`;
+          }
           return `- \`${f}\`${desc}`;
         })
         .join("\n");
       scriptsSection = `## Scripts\n\n${scriptItems}`;
     }
 
-    // Assets listing
+    // Assets listing — .md files get linked pages, others show filename
     let assetsSection = "";
     if (assetFiles.length > 0) {
-      const assetItems = assetFiles.map((f) => `- \`${f}\``).join("\n");
+      const assetItems = assetFiles
+        .map((f) => {
+          if (f.endsWith(".md")) {
+            const slug = f.replace(/\.md$/, "");
+            return `- [${slug}](./${dir}--asset-${slug}/)`;
+          }
+          return `- \`${f}\``;
+        })
+        .join("\n");
       assetsSection = `## Assets\n\n${assetItems}`;
     }
 
@@ -419,6 +431,58 @@ ${escapeForMdx(ref.content.trim())}
       fs.writeFileSync(
         path.join(outputDir, `${dir}--${ref.name}.mdx`),
         refMdx,
+      );
+    }
+
+    // Generate unlisted pages for .md scripts
+    for (const f of scriptFiles.filter((s) => s.endsWith(".md"))) {
+      const slug = f.replace(/\.md$/, "");
+      const content = fs.readFileSync(
+        path.join(skillsDir, dir, "scripts", f),
+        "utf8",
+      );
+      const h1Match = content.match(/^#\s+(.+)$/m);
+      const title = h1Match ? h1Match[1] : slug;
+      const pageMdx = `---
+title: "${escapeTitle(title)}"
+unlisted: true
+---
+
+**Skill:** [${name}](./${dir}/) · **scripts/${f}**
+
+---
+
+${escapeForMdx(content.trim())}
+`;
+      fs.writeFileSync(
+        path.join(outputDir, `${dir}--script-${slug}.mdx`),
+        pageMdx,
+      );
+    }
+
+    // Generate unlisted pages for .md assets
+    for (const f of assetFiles.filter((a) => a.endsWith(".md"))) {
+      const slug = f.replace(/\.md$/, "");
+      const content = fs.readFileSync(
+        path.join(skillsDir, dir, "assets", f),
+        "utf8",
+      );
+      const h1Match = content.match(/^#\s+(.+)$/m);
+      const title = h1Match ? h1Match[1] : slug;
+      const pageMdx = `---
+title: "${escapeTitle(title)}"
+unlisted: true
+---
+
+**Skill:** [${name}](./${dir}/) · **assets/${f}**
+
+---
+
+${escapeForMdx(content.trim())}
+`;
+      fs.writeFileSync(
+        path.join(outputDir, `${dir}--asset-${slug}.mdx`),
+        pageMdx,
       );
     }
   }
