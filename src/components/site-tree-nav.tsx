@@ -210,9 +210,9 @@ function LeafNode({
           href={node.href}
           className={isRoot
             ? "block py-[calc(var(--spacing-vsp-xs)+0.15rem)] text-small font-semibold text-fg hover:text-accent hover:underline focus:underline"
-            : `block py-vsp-2xs ${isLast ? "pb-vsp-xs" : ""} text-small text-fg hover:text-accent hover:underline focus:underline`
+            : `block py-vsp-2xs ${isLast ? "pb-vsp-xs" : ""} text-small hover:text-accent hover:underline focus:underline`
           }
-          style={{ paddingLeft }}
+          style={{ paddingLeft, color: isRoot ? undefined : "oklch(0.93 0 0)" }}
         >
           {node.label}
         </a>
