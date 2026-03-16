@@ -40,7 +40,9 @@ zudo-doc's color system uses a **16-color palette**. Each color scheme provides 
 | 7 | White | 15 | Bright White | Text, bright elements |
 
 <Note>
+
 The actual colors are **not fixed** — each color scheme defines its own values for each slot. The names are conventions, not guarantees. That's why zudo-doc uses abstract numbered tokens (`p0`–`p15`) instead of color names.
+
 </Note>
 
 ### How Palette Colors Are Injected
@@ -180,7 +182,9 @@ The `.zd-content` class provides direct element styling using semantic tokens �
 ```
 
 <Info>
+
 Tier 3 tokens are internal to their components. When building your own UI, use Tier 2 semantic tokens or Tier 1 palette tokens directly.
+
 </Info>
 
 ## Using Color Tokens
@@ -266,9 +270,7 @@ The `ColorScheme` interface requires:
 
 ## What NOT to Do
 
-<Danger
-  title="Color Anti-Patterns"
->
+<Danger title="Color Anti-Patterns">
 
 **Don't use Tailwind defaults** — they are reset to `initial`:
 
@@ -303,4 +305,5 @@ The `ColorScheme` interface requires:
   color: var(--color-accent);
 }
 ```
+
 </Danger>

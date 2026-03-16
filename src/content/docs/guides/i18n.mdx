@@ -1,6 +1,6 @@
 ---
-title: "Internationalization (i18n)"
-description: "Add multi-language support to your documentation"
+title: Internationalization (i18n)
+description: Add multi-language support to your documentation
 sidebar_position: 7
 ---
 
@@ -88,7 +88,9 @@ i18n: {
 With `prefixDefaultLocale: false`, English pages are served without a language prefix (`/docs/...`) while Japanese pages use the `/ja/` prefix (`/ja/docs/...`).
 
 <Note>
+
 The `locales` array in `astro.config.ts` is automatically derived from `settings.locales`, so you only need to maintain locales in one place.
+
 </Note>
 
 ## Adding a New Language
@@ -108,5 +110,7 @@ To add a new language (e.g., Korean):
 5. Add UI translations for the new locale
 
 <Tip>
+
 Step 1 is the key step — adding the locale to `settings.ts` automatically creates the content collection and registers the i18n routing. The remaining steps provide the content and page routes.
+
 </Tip>

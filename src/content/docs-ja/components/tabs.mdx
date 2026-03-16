@@ -9,6 +9,7 @@ sidebar_position: 3
 ## 基本的な使い方
 
 <Tabs>
+
   <TabItem label="npm" value="npm" default>
     ```bash
     npm install zudo-doc
@@ -24,6 +25,7 @@ sidebar_position: 3
     yarn add zudo-doc
     ```
   </TabItem>
+
 </Tabs>
 
 ````mdx
@@ -53,6 +55,7 @@ sidebar_position: 3
 `groupId` を使用すると、同じページ内の複数のタブグループでタブの選択を同期できます。選択されたタブは localStorage に保持されるため、ページ遷移後も維持されます。
 
 <Tabs groupId="lang">
+
   <TabItem label="JavaScript" value="js" default>
     ```js
     console.log("Hello");
@@ -63,9 +66,11 @@ sidebar_position: 3
     console.log("Hello" as string);
     ```
   </TabItem>
+
 </Tabs>
 
 <Tabs groupId="lang">
+
   <TabItem label="JavaScript" value="js" default>
     ```js
     const sum = (a, b) => a + b;
@@ -76,6 +81,7 @@ sidebar_position: 3
     const sum = (a: number, b: number): number => a + b;
     ```
   </TabItem>
+
 </Tabs>
 
 ````mdx

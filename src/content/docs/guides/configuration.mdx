@@ -55,7 +55,9 @@ The active color scheme name. Must match a key in `src/config/color-schemes.ts`.
 Available built-in schemes: **Default Light** and **Default Dark**. You can add custom schemes in `src/config/color-schemes.ts`.
 
 <Tip>
+
 See the [Color guide](/docs/reference/color) for a full list of available schemes, previews, and instructions on adding custom schemes.
+
 </Tip>
 
 ### colorMode
@@ -97,7 +99,9 @@ base: "/my-docs",
 All internal links (sidebar, navigation, prev/next, search) are automatically prefixed with the base path. This maps directly to [Astro's `base` config option](https://docs.astro.build/en/reference/configuration-reference/#base).
 
 <Note>
+
 Inline markdown links within MDX content (e.g., `[link text](/docs/some-page)`) are **not** automatically rewritten. When using a non-root base, use relative links in content files instead.
+
 </Note>
 
 ### docsDir
@@ -201,7 +205,9 @@ Enables an interactive color scheme tweak panel. When `true`, a palette icon app
 Default: `false` (set to `true` to enable)
 
 <Tip>
+
 See the [Color Tweak Panel guide](/docs/guides/color-tweak-panel) for usage details and how to export custom color schemes.
+
 </Tip>
 
 ### docHistory
@@ -213,7 +219,9 @@ At build time, git history is extracted for every content file and saved as JSON
 Default: `false` (set to `true` to enable)
 
 <Tip>
+
 See the [Document History guide](/docs/guides/doc-history) for usage details, keyboard shortcuts, and technical information.
+
 </Tip>
 
 ### claudeResources
@@ -234,7 +242,9 @@ claudeResources: false,
 ```
 
 <Tip>
+
 See the [Claude Resources guide](/docs/guides/claude-resources) for details on what gets generated and how it works.
+
 </Tip>
 
 ### headerNav
@@ -288,7 +298,9 @@ Key aspects:
 - **Shiki theme**: Automatically derived from the active color scheme's `shikiTheme` property — no manual sync needed
 
 <Note>
+
 The Shiki code highlighting theme is tied to the color scheme. When you change `colorScheme` in settings, the syntax highlighting theme updates automatically.
+
 </Note>
 
 ## Color Scheme Config
@@ -301,5 +313,7 @@ Color schemes are defined in `src/config/color-schemes.ts`. Each scheme provides
 - `semantic` (optional) — overrides for `surface`, `muted`, `accent`, and `accentHover`
 
 <Info>
+
 For details on adding or customizing color schemes, see the [Color guide](/docs/reference/color).
+
 </Info>

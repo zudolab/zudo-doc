@@ -49,7 +49,9 @@ The integration runs at build time during the `astro:config:setup` hook:
 The generated pages appear under the **Claude** header navigation tab, configured via `headerNav` with `categoryMatch: "claude"`.
 
 <Note>
+
 Generated files are written to `src/content/docs/` and are recreated on every build. Do not edit them manually — your changes will be overwritten.
+
 </Note>
 
 ## Configuration Options
@@ -62,5 +64,7 @@ Generated files are written to `src/content/docs/` and are recreated on every bu
 The `projectRoot` option is useful in monorepo setups where the `.claude/` directory is not at the project root.
 
 <Tip>
+
 Skills with a `references/` subdirectory will have their reference documents included as separate linked pages, making it easy to browse bundled knowledge bases.
+
 </Tip>

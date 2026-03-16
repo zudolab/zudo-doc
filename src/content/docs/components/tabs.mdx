@@ -1,6 +1,8 @@
 ---
 title: Tabs
-description: Tabbed content panels for showing alternatives like package managers or platform-specific instructions.
+description: >-
+  Tabbed content panels for showing alternatives like package managers or platform-specific
+  instructions.
 sidebar_position: 3
 ---
 
@@ -9,6 +11,7 @@ Use `<Tabs>` and `<TabItem>` to create tabbed content panels. Both components ar
 ## Basic Usage
 
 <Tabs>
+
   <TabItem label="npm" value="npm" default>
     ```bash
     npm install zudo-doc
@@ -24,6 +27,7 @@ Use `<Tabs>` and `<TabItem>` to create tabbed content panels. Both components ar
     yarn add zudo-doc
     ```
   </TabItem>
+
 </Tabs>
 
 ````mdx
@@ -53,6 +57,7 @@ The `default` prop on `TabItem` sets which tab is initially active. If omitted, 
 Use `groupId` to sync tab selection across multiple tab groups on the same page. The selected tab is persisted in localStorage, so it carries across page navigations.
 
 <Tabs groupId="lang">
+
   <TabItem label="JavaScript" value="js" default>
     ```js
     console.log("Hello");
@@ -63,9 +68,11 @@ Use `groupId` to sync tab selection across multiple tab groups on the same page.
     console.log("Hello" as string);
     ```
   </TabItem>
+
 </Tabs>
 
 <Tabs groupId="lang">
+
   <TabItem label="JavaScript" value="js" default>
     ```js
     const sum = (a, b) => a + b;
@@ -76,6 +83,7 @@ Use `groupId` to sync tab selection across multiple tab groups on the same page.
     const sum = (a: number, b: number): number => a + b;
     ```
   </TabItem>
+
 </Tabs>
 
 ````mdx

@@ -22,31 +22,41 @@ export async function getStaticPaths() {
 
 const { tag } = Astro.params;
 const { tagInfo } = Astro.props;
-const countText = tagInfo.count === 1
-  ? t("doc.pageCountSingle").replace("{count}", String(tagInfo.count))
-  : t("doc.pageCount").replace("{count}", String(tagInfo.count));
+const countText =
+  tagInfo.count === 1
+    ? t("doc.pageCountSingle").replace("{count}", String(tagInfo.count))
+    : t("doc.pageCount").replace("{count}", String(tagInfo.count));
 ---
 
 <DocLayout title={`${t("doc.taggedWith")}: ${tag}`} currentSlug={`tags/${tag}`}>
-  <Breadcrumb slot="breadcrumb" items={[
-    { label: "Docs", href: withBase("/docs") },
-    { label: t("doc.allTags"), href: withBase("/docs/tags") },
-    { label: tag },
-  ]} />
+  <Breadcrumb
+    slot="breadcrumb"
+    items={[
+      { label: "Docs", href: withBase("/docs") },
+      { label: t("doc.allTags"), href: withBase("/docs/tags") },
+      { label: tag },
+    ]}
+  />
   <h1 class="text-heading font-bold mb-vsp-xs">{t("doc.taggedWith")}: {tag}</h1>
   <p class="text-muted mb-vsp-lg">{countText}</p>
 
   <nav class="grid grid-cols-1 gap-y-vsp-md">
-    {tagInfo.docs.map((doc) => (
-      <a
-        href={docsUrl(doc.slug, "en")}
-        class="group block border border-muted bg-surface px-hsp-lg py-vsp-md hover:border-accent"
-      >
-        <span class="font-medium text-accent underline group-hover:underline">{doc.title}</span>
-        {doc.description && (
-          <span class="mt-vsp-2xs block text-small text-muted group-hover:underline decoration-muted">{doc.description}</span>
-        )}
-      </a>
-    ))}
+    {
+      tagInfo.docs.map((doc) => (
+        <a
+          href={docsUrl(doc.slug, "en")}
+          class="group block border border-muted bg-surface px-hsp-lg py-vsp-md hover:border-accent"
+        >
+          <span class="font-medium text-accent underline group-hover:underline">
+            {doc.title}
+          </span>
+          {doc.description && (
+            <span class="mt-vsp-2xs block text-small text-muted group-hover:underline decoration-muted">
+              {doc.description}
+            </span>
+          )}
+        </a>
+      ))
+    }
   </nav>
 </DocLayout>

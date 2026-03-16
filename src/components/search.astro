@@ -38,7 +38,9 @@ import { withBase } from "@/utils/base";
       class="flex h-full flex-col overflow-hidden bg-surface sm:rounded-lg sm:border sm:border-muted"
     >
       {/* Search input header */}
-      <div class="flex items-center gap-hsp-sm border-b border-muted px-hsp-lg py-vsp-sm">
+      <div
+        class="flex items-center gap-hsp-sm border-b border-muted px-hsp-lg py-vsp-sm"
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="16"
@@ -86,11 +88,17 @@ import { withBase } from "@/utils/base";
       </div>
 
       {/* Results area */}
-      <div class="flex-1 overflow-y-auto px-hsp-lg py-vsp-md" data-search-results aria-live="polite">
+      <div
+        class="flex-1 overflow-y-auto px-hsp-lg py-vsp-md"
+        data-search-results
+        aria-live="polite"
+      >
         <div class="text-small text-muted" data-search-placeholder>
           <p>Type to search...</p>
           <p class="mt-vsp-md text-caption">
-            <kbd class="rounded border border-muted bg-bg px-hsp-2xs py-[2px] font-mono text-caption" data-kbd-shortcut></kbd> to open search from anywhere
+            <kbd
+              class="rounded border border-muted bg-bg px-hsp-2xs py-[2px] font-mono text-caption"
+              data-kbd-shortcut></kbd> to open search from anywhere
           </p>
         </div>
       </div>
@@ -113,15 +121,15 @@ import { withBase } from "@/utils/base";
 
   function escapeHtml(text: string): string {
     return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
   function escapeRegExp(text: string): string {
-    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
   function parseQueryTerms(query: string): string[] {
@@ -133,7 +141,7 @@ import { withBase } from "@/utils/base";
     if (terms.length === 0) return escapeHtml(text);
     // Sort by length descending so longer terms match before their prefixes
     terms.sort((a, b) => b.length - a.length);
-    const pattern = new RegExp(`(${terms.join('|')})`, 'gi');
+    const pattern = new RegExp(`(${terms.join("|")})`, "gi");
     return text
       .split(pattern)
       .map((segment, i) =>
@@ -141,10 +149,14 @@ import { withBase } from "@/utils/base";
           ? `<mark>${escapeHtml(segment)}</mark>`
           : escapeHtml(segment),
       )
-      .join('');
+      .join("");
   }
 
-  function truncateExcerpt(text: string, query: string, maxLength = 200): string {
+  function truncateExcerpt(
+    text: string,
+    query: string,
+    maxLength = 200,
+  ): string {
     if (text.length <= maxLength) return text;
 
     const terms = parseQueryTerms(query);
@@ -158,7 +170,7 @@ import { withBase } from "@/utils/base";
     }
 
     if (firstMatchIndex === -1) {
-      return text.slice(0, maxLength) + '\u2026';
+      return text.slice(0, maxLength) + "\u2026";
     }
 
     const half = Math.floor(maxLength / 2);
@@ -171,8 +183,8 @@ import { withBase } from "@/utils/base";
     }
 
     let result = text.slice(start, end);
-    if (start > 0) result = '\u2026' + result;
-    if (end < text.length) result = result + '\u2026';
+    if (start > 0) result = "\u2026" + result;
+    if (end < text.length) result = result + "\u2026";
     return result;
   }
 
@@ -203,8 +215,12 @@ import { withBase } from "@/utils/base";
 
     connectedCallback() {
       // Set platform-appropriate keyboard shortcut label
-      const nav = navigator as Navigator & { userAgentData?: { platform: string } };
-      const isMac = /Mac|iPhone|iPad|iPod/.test(nav.userAgentData?.platform ?? navigator.userAgent);
+      const nav = navigator as Navigator & {
+        userAgentData?: { platform: string };
+      };
+      const isMac = /Mac|iPhone|iPad|iPod/.test(
+        nav.userAgentData?.platform ?? navigator.userAgent,
+      );
       this.shortcutLabel = isMac ? "\u2318K" : "Ctrl+K";
       const kbdEl = this.querySelector("[data-kbd-shortcut]");
       if (kbdEl) {
@@ -338,7 +354,10 @@ import { withBase } from "@/utils/base";
       }
 
       const results = this.miniSearch.search(query);
-      this.allResults = results.map((r) => ({ id: r.id as string, score: r.score }));
+      this.allResults = results.map((r) => ({
+        id: r.id as string,
+        score: r.score,
+      }));
       this.shownCount = 0;
 
       if (results.length === 0) {

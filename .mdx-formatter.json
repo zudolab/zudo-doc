@@ -1,0 +1,9 @@
+{
+  "exclude": ["node_modules/**", "dist/**", ".astro/**"],
+  "addEmptyLinesInBlockJsx": {
+    "blockComponents": ["Note", "Tip", "Info", "Warning", "Danger", "Details", "Tabs", "HtmlPreview"]
+  },
+  "formatMultiLineJsx": {
+    "ignoreComponents": ["HtmlPreview"]
+  }
+}

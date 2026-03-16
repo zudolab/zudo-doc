@@ -1,13 +1,15 @@
 ---
-title: "llms.txt"
-description: "AIが利用しやすいドキュメント用のllms.txtとllms-full.txtファイルを自動生成"
+title: llms.txt
+description: AIが利用しやすいドキュメント用のllms.txtとllms-full.txtファイルを自動生成
 sidebar_position: 8
 ---
 
 zudo-docは`llms.txt`と`llms-full.txt`ファイルを自動生成し、AIツールや大規模言語モデルがドキュメントを容易に利用できるようにします。
 
 <Tip>
+
 [llms.txt標準](https://llmstxt.org/)は、AIツールがドキュメントを発見・読み取りやすくするための新しい規約です。多くのAIツールがすでにこれらのファイルを参照しています。
+
 </Tip>
 
 ## 仕組み
@@ -111,7 +113,9 @@ search_exclude: true
 生成されるファイルはViteミドルウェア経由で開発中も利用可能です。`pnpm dev`実行時、`/llms.txt`と`/llms-full.txt`へのリクエストは動的に処理されます — ビルドステップは不要です。
 
 <Tip>
+
 テストのためにビルドする必要はありません。llms.txtファイルは検索と同様に`pnpm dev`ですぐに動作します。
+
 </Tip>
 
 ## 本番ビルド

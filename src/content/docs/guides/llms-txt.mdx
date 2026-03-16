@@ -1,13 +1,15 @@
 ---
-title: "llms.txt"
-description: "Auto-generate llms.txt and llms-full.txt files for AI-consumable documentation"
+title: llms.txt
+description: Auto-generate llms.txt and llms-full.txt files for AI-consumable documentation
 sidebar_position: 8
 ---
 
 zudo-doc can automatically generate `llms.txt` and `llms-full.txt` files, making your documentation easily consumable by AI tools and large language models.
 
 <Tip>
+
 The [llms.txt standard](https://llmstxt.org/) is an emerging convention that helps AI tools discover and read your documentation. Many AI-powered tools already look for these files.
+
 </Tip>
 
 ## How It Works
@@ -111,7 +113,9 @@ This supplements the standard path-based discovery (`/llms.txt` at the domain ro
 The generated files are available during development via Vite middleware. When running `pnpm dev`, requests to `/llms.txt` and `/llms-full.txt` are handled dynamically — no build step needed.
 
 <Tip>
+
 No need to build before testing. The llms.txt files work immediately with `pnpm dev`, just like search.
+
 </Tip>
 
 ## Production Build

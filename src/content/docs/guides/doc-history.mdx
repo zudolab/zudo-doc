@@ -15,7 +15,9 @@ This is useful for:
 - Auditing content changes across your documentation
 
 <Note>
+
 This feature requires that your documentation is tracked in a git repository. History is extracted from git commits that touched each file.
+
 </Note>
 
 ## Enabling Document History
@@ -60,7 +62,9 @@ The diff viewer shows a **side-by-side comparison** — the older revision on th
 - **Unchanged lines** — context shown on both sides
 
 <Tip>
+
 By default, A is set to the second-most-recent commit and B to the most recent, so you can immediately compare the latest change by clicking **Compare**.
+
 </Tip>
 
 ### Keyboard Shortcuts
@@ -90,7 +94,9 @@ dist/doc-history/
 In dev mode (`pnpm dev`), a Vite middleware handles history requests dynamically. When you open the history panel, it runs git commands on the fly — no pre-generation needed. This means history is always up-to-date with your latest commits.
 
 <Warning>
+
 Build time increases when `docHistory` is enabled because git history must be extracted for every content file. For large documentation sites with many files and deep history, this can add noticeable time to the build. The default limit is **50 revisions** per document.
+
 </Warning>
 
 ### Production Output Size
@@ -106,7 +112,9 @@ Each JSON file contains the **full file content at every revision** (up to 50 co
 For a small-to-medium documentation site this is typically negligible. For large sites with deep history, the `doc-history/` directory can grow significantly. These files are only fetched on demand (when a user clicks the History button), so they do not affect initial page load — but they do add to your deployment size.
 
 <Tip>
+
 If deployment size is a concern, consider keeping `docHistory` disabled for production builds (`docHistory: false`) and only using it during local development, where history is served dynamically via a Vite middleware with no pre-generation cost.
+
 </Tip>
 
 ## Localization Support
@@ -148,5 +156,7 @@ The diff viewer uses the [`diff`](https://www.npmjs.com/package/diff) library's 
 The history extraction uses `git log --follow` to track file renames. If a document was moved or renamed, its full history (including commits before the rename) is preserved.
 
 <Info>
+
 The History component is a React island loaded with `client:idle`, meaning it only hydrates after the page becomes idle. This ensures it doesn't impact initial page load performance.
+
 </Info>
