@@ -27,7 +27,8 @@ if [[ ! "$SKILL_NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
 fi
 
 # Resolve the main repo root (handles git worktrees correctly)
-REPO_ROOT="$(git -C "$ROOT_DIR" rev-parse --show-toplevel)"
+# Use the main worktree path so symlinks survive worktree removal
+REPO_ROOT="$(git -C "$ROOT_DIR" worktree list | head -1 | awk '{print $1}')"
 
 SKILL_DIR="$ROOT_DIR/.claude/skills/$SKILL_NAME"
 DOCS_DIR="$ROOT_DIR/src/content/docs"

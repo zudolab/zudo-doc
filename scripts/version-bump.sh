@@ -44,14 +44,14 @@ if [ "${2:-}" = "--snapshot" ]; then
 fi
 
 # Validate version format (semver-like: digits.digits.digits with optional pre-release)
-if ! echo "$NEW_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+'; then
+if ! echo "$NEW_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
   echo "Error: Version must be in semver format (e.g., 0.2.0, 1.0.0)"
   exit 1
 fi
 
 # ── Read current version ─────────────────────────────────────
 
-OLD_VERSION=$(node -p "require('./package.json').version" 2>/dev/null)
+OLD_VERSION=$(node -p "require('$ROOT_DIR/package.json').version" 2>/dev/null)
 echo "Current version: $OLD_VERSION"
 echo "New version:     $NEW_VERSION"
 
@@ -66,9 +66,10 @@ echo ""
 echo "▶ Updating package.json version..."
 node -e "
   const fs = require('fs');
-  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
+  const pkgPath = '$ROOT_DIR/package.json';
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
   pkg.version = '$NEW_VERSION';
-  fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+  fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
 "
 echo "  ✓ package.json updated to $NEW_VERSION"
 
@@ -78,8 +79,9 @@ CHANGELOG_DIR="$ROOT_DIR/src/content/docs/changelog"
 CHANGELOG_JA_DIR="$ROOT_DIR/src/content/docs-ja/changelog"
 
 # Determine sidebar_position: count existing .mdx files (excluding index.mdx)
+# Use high values for descending sort (newest first). Index page uses position 10.
 EXISTING_COUNT=$(find "$CHANGELOG_DIR" -maxdepth 1 -name '*.mdx' ! -name 'index.mdx' 2>/dev/null | wc -l | tr -d ' ')
-SIDEBAR_POS=$((EXISTING_COUNT + 1))
+SIDEBAR_POS=$((1000 + EXISTING_COUNT + 1))
 
 CHANGELOG_FILE="$CHANGELOG_DIR/$NEW_VERSION.mdx"
 CHANGELOG_JA_FILE="$CHANGELOG_JA_DIR/$NEW_VERSION.mdx"
@@ -89,6 +91,9 @@ if [ -f "$CHANGELOG_FILE" ]; then
 else
   echo ""
   echo "▶ Creating changelog entry..."
+
+  mkdir -p "$CHANGELOG_DIR"
+  mkdir -p "$CHANGELOG_JA_DIR"
 
   cat > "$CHANGELOG_FILE" << MDXEOF
 ---
