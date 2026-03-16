@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test";
  * E2E tests for HtmlPreview component.
  *
  * Verifies that global CSS from settings.htmlPreview is injected into the
- * iframe, per-component JS executes, and iframes have no sandbox attribute.
+ * iframe, per-component JS executes, and sandbox attributes are correct.
  */
 
 const PAGE = "/docs/guides/html-preview-test";
@@ -50,16 +50,19 @@ test.describe("HtmlPreview: global CSS and per-component JS", () => {
     await expect(target).toHaveText("after", { timeout: 10_000 });
   });
 
-  test("iframes have no sandbox attribute", async ({ page }) => {
+  test("iframes have correct sandbox attributes", async ({ page }) => {
     await page.goto(PAGE, { waitUntil: "load" });
 
     const iframes = page.locator("iframe");
     const first = iframes.first();
     await first.waitFor({ state: "attached", timeout: 10_000 });
 
-    for (const iframe of await iframes.all()) {
-      const sandbox = await iframe.getAttribute("sandbox");
-      expect(sandbox).toBeNull();
-    }
+    // First iframe (no scripts): maximally restrictive sandbox
+    const firstSandbox = await iframes.nth(0).getAttribute("sandbox");
+    expect(firstSandbox).toBe("");
+
+    // Second iframe (has JS): needs scripts + same-origin for height sync
+    const secondSandbox = await iframes.nth(1).getAttribute("sandbox");
+    expect(secondSandbox).toBe("allow-scripts allow-same-origin");
   });
 });
