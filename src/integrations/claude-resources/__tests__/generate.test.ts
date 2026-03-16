@@ -111,24 +111,15 @@ describe("generateClaudeResourcesDocs", () => {
       }
     });
 
-    it("generates skill as directory with index.mdx", () => {
+    it("generates skill as flat .mdx file", () => {
       generateClaudeResourcesDocs({
         claudeDir,
         projectRoot: tmpDir,
         docsDir,
       });
 
-      const indexPath = path.join(
-        docsDir,
-        "claude-skills",
-        "test-skill",
-        "index.mdx",
-      );
-      expect(fs.existsSync(indexPath)).toBe(true);
-
-      // Should NOT be a flat file
       const flatPath = path.join(docsDir, "claude-skills", "test-skill.mdx");
-      expect(fs.existsSync(flatPath)).toBe(false);
+      expect(fs.existsSync(flatPath)).toBe(true);
     });
   });
 
@@ -159,7 +150,7 @@ describe("generateClaudeResourcesDocs", () => {
       });
 
       const skillPage = fs.readFileSync(
-        path.join(docsDir, "claude-skills", "test-skill", "index.mdx"),
+        path.join(docsDir, "claude-skills", "test-skill.mdx"),
         "utf8",
       );
       const parsed = matter(skillPage);
@@ -177,7 +168,7 @@ describe("generateClaudeResourcesDocs", () => {
       });
 
       const skillPage = fs.readFileSync(
-        path.join(docsDir, "claude-skills", "test-skill", "index.mdx"),
+        path.join(docsDir, "claude-skills", "test-skill.mdx"),
         "utf8",
       );
 
@@ -196,23 +187,22 @@ describe("generateClaudeResourcesDocs", () => {
       });
 
       const skillPage = fs.readFileSync(
-        path.join(docsDir, "claude-skills", "test-skill", "index.mdx"),
+        path.join(docsDir, "claude-skills", "test-skill.mdx"),
         "utf8",
       );
 
-      // Links should use ./ relative format (works with trailingSlash: "always")
-      expect(skillPage).toContain("./ref-guide/");
-      expect(skillPage).toContain("./asset-template/");
+      // Links use ./<dir>--<type>-<name> flat sibling format
+      expect(skillPage).toContain("./test-skill--ref-guide");
+      expect(skillPage).toContain("./test-skill--asset-template");
 
       // Each linked file must actually exist as a generated .mdx file
-      const linkPattern = /\]\(\.\/([\w-]+)\/\)/g;
+      const linkPattern = /\]\(\.\/([\w-]+)\)/g;
       let match;
       while ((match = linkPattern.exec(skillPage)) !== null) {
         const linkedSlug = match[1];
         const targetFile = path.join(
           docsDir,
           "claude-skills",
-          "test-skill",
           `${linkedSlug}.mdx`,
         );
         expect(
@@ -249,12 +239,7 @@ describe("generateClaudeResourcesDocs", () => {
         docsDir,
       });
 
-      const refPage = path.join(
-        docsDir,
-        "claude-skills",
-        "test-skill",
-        "ref-guide.mdx",
-      );
+      const refPage = path.join(docsDir, "claude-skills", "test-skill--ref-guide.mdx");
       expect(fs.existsSync(refPage)).toBe(true);
 
       const parsed = matter(fs.readFileSync(refPage, "utf8"));
@@ -268,12 +253,7 @@ describe("generateClaudeResourcesDocs", () => {
         docsDir,
       });
 
-      const assetPage = path.join(
-        docsDir,
-        "claude-skills",
-        "test-skill",
-        "asset-template.mdx",
-      );
+      const assetPage = path.join(docsDir, "claude-skills", "test-skill--asset-template.mdx");
       expect(fs.existsSync(assetPage)).toBe(true);
 
       const parsed = matter(fs.readFileSync(assetPage, "utf8"));
@@ -287,12 +267,7 @@ describe("generateClaudeResourcesDocs", () => {
         docsDir,
       });
 
-      const scriptPage = path.join(
-        docsDir,
-        "claude-skills",
-        "test-skill",
-        "script-run.mdx",
-      );
+      const scriptPage = path.join(docsDir, "claude-skills", "test-skill--script-run.mdx");
       expect(fs.existsSync(scriptPage)).toBe(false);
     });
 
@@ -304,7 +279,7 @@ describe("generateClaudeResourcesDocs", () => {
       });
 
       const refPage = fs.readFileSync(
-        path.join(docsDir, "claude-skills", "test-skill", "ref-guide.mdx"),
+        path.join(docsDir, "claude-skills", "test-skill--ref-guide.mdx"),
         "utf8",
       );
       const parsed = matter(refPage);

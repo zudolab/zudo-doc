@@ -350,18 +350,18 @@ function generateSkillsDocs(config: ClaudeResourcesConfig): SkillItem[] {
     if (subDirs.length > 0) {
       const tree = `\`\`\`\n${getSkillFileTree(dir, subDirs)}\n\`\`\``;
 
-      // Collect links to all .md sub-files that get pages
+      // Collect links to all .md sub-files that get pages (flat siblings with -- separator)
       const links: string[] = [];
       for (const ref of references) {
-        links.push(`- [references/${ref.name}.md](./ref-${ref.name}/)`);
+        links.push(`- [references/${ref.name}.md](./${dir}--ref-${ref.name})`);
       }
       for (const f of scriptFiles.filter((s) => s.endsWith(".md"))) {
         const slug = f.replace(/\.md$/, "");
-        links.push(`- [scripts/${f}](./script-${slug}/)`);
+        links.push(`- [scripts/${f}](./${dir}--script-${slug})`);
       }
       for (const f of assetFiles.filter((a) => a.endsWith(".md"))) {
         const slug = f.replace(/\.md$/, "");
-        links.push(`- [assets/${f}](./asset-${slug}/)`);
+        links.push(`- [assets/${f}](./${dir}--asset-${slug})`);
       }
 
       const linkList = links.length > 0 ? `\n\n${links.join("\n")}` : "";
@@ -387,12 +387,10 @@ sidebar_label: "${escapeTitle(name)}"
 
 ${body}`;
 
-    // Write main skill page as directory index
-    const skillDir = path.join(outputDir, dir);
-    ensureDir(skillDir);
-    fs.writeFileSync(path.join(skillDir, "index.mdx"), mdx);
+    // Write skill page as flat file
+    fs.writeFileSync(path.join(outputDir, `${dir}.mdx`), mdx);
 
-    // Generate unlisted sub-pages inside skill directory
+    // Generate unlisted sub-pages as flat siblings (-- separator)
     for (const ref of references) {
       const refMdx = `---
 title: "${escapeTitle(ref.title)}"
@@ -401,7 +399,7 @@ unlisted: true
 
 ${escapeForMdx(ref.content.trim())}
 `;
-      fs.writeFileSync(path.join(skillDir, `ref-${ref.name}.mdx`), refMdx);
+      fs.writeFileSync(path.join(outputDir, `${dir}--ref-${ref.name}.mdx`), refMdx);
     }
 
     for (const f of scriptFiles.filter((s) => s.endsWith(".md"))) {
@@ -413,7 +411,7 @@ ${escapeForMdx(ref.content.trim())}
       const h1Match = raw.match(/^#\s+(.+)$/m);
       const title = h1Match ? h1Match[1] : slug;
       fs.writeFileSync(
-        path.join(skillDir, `script-${slug}.mdx`),
+        path.join(outputDir, `${dir}--script-${slug}.mdx`),
         `---\ntitle: "${escapeTitle(title)}"\nunlisted: true\n---\n\n${escapeForMdx(raw.trim())}\n`,
       );
     }
@@ -427,7 +425,7 @@ ${escapeForMdx(ref.content.trim())}
       const h1Match = raw.match(/^#\s+(.+)$/m);
       const title = h1Match ? h1Match[1] : slug;
       fs.writeFileSync(
-        path.join(skillDir, `asset-${slug}.mdx`),
+        path.join(outputDir, `${dir}--asset-${slug}.mdx`),
         `---\ntitle: "${escapeTitle(title)}"\nunlisted: true\n---\n\n${escapeForMdx(raw.trim())}\n`,
       );
     }
