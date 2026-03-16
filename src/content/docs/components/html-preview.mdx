@@ -1,0 +1,229 @@
+---
+title: HtmlPreview
+description: Interactive HTML/CSS preview with viewport switching and collapsible source code display.
+sidebar_position: 9
+---
+
+`<HtmlPreview>` renders live HTML/CSS demos inside an isolated iframe with viewport presets (Mobile / Tablet / Full) and a collapsible source code panel with syntax highlighting. It is globally available in all MDX files without imports.
+
+## Basic Usage
+
+<HtmlPreview
+  title="Basic Box"
+  html={`
+    <div class="box">Hello, world!</div>
+  `}
+  css={`
+    .box {
+      padding: 24px;
+      background: #3b82f6;
+      color: #fff;
+      border-radius: 8px;
+      font-family: system-ui, sans-serif;
+      text-align: center;
+    }
+  `}
+/>
+
+````mdx
+<HtmlPreview
+  title="Basic Box"
+  html={`
+    <div class="box">Hello, world!</div>
+  `}
+  css={`
+    .box {
+      padding: 24px;
+      background: #3b82f6;
+      color: #fff;
+      border-radius: 8px;
+      font-family: system-ui, sans-serif;
+      text-align: center;
+    }
+  `}
+/>
+````
+
+## Responsive Layout
+
+Use the viewport buttons (Mobile / Tablet / Full) to see how content reflows at different widths. Try resizing with the drag handle at the bottom-right of the preview area.
+
+<HtmlPreview
+  title="Responsive Grid"
+  html={`
+    <div class="grid">
+      <div class="card">Card 1</div>
+      <div class="card">Card 2</div>
+      <div class="card">Card 3</div>
+      <div class="card">Card 4</div>
+    </div>
+  `}
+  css={`
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+      padding: 16px;
+      font-family: system-ui, sans-serif;
+    }
+    .card {
+      padding: 20px;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      text-align: center;
+      color: #334155;
+    }
+  `}
+/>
+
+## HTML Only
+
+When no `css` prop is provided, only the HTML source is shown.
+
+<HtmlPreview
+  title="HTML Only"
+  html={`
+    <ul style="font-family: system-ui, sans-serif; padding: 16px;">
+      <li>First item</li>
+      <li>Second item</li>
+      <li>Third item</li>
+    </ul>
+  `}
+/>
+
+## Default Open Code
+
+Use `defaultOpen` to show the source code expanded by default.
+
+<HtmlPreview
+  title="Code Visible by Default"
+  defaultOpen
+  html={`
+    <button class="btn">Click me</button>
+  `}
+  css={`
+    .btn {
+      padding: 10px 20px;
+      background: #8b5cf6;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: system-ui, sans-serif;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: #7c3aed;
+    }
+  `}
+/>
+
+## Fixed Height
+
+Use the `height` prop to set a fixed iframe height instead of auto-sizing.
+
+<HtmlPreview
+  title="Fixed Height (300px)"
+  height={300}
+  html={`
+    <div class="scroll-content">
+      <p>This preview has a fixed height of 300px.</p>
+      <p>Content that exceeds this height will scroll within the iframe.</p>
+    </div>
+  `}
+  css={`
+    .scroll-content {
+      padding: 16px;
+      font-family: system-ui, sans-serif;
+      color: #334155;
+      line-height: 1.6;
+    }
+  `}
+/>
+
+## External Resources
+
+You can inject external resources (CSS frameworks, webfonts, scripts) into previews. Configure globally via `settings.ts` or per-component via props.
+
+### Global Configuration
+
+Set `htmlPreview` in `src/config/settings.ts` to apply resources to all previews:
+
+```ts
+htmlPreview: {
+  head: `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap">`,
+  css: `body { font-family: 'Noto Sans JP', sans-serif; }`,
+  js: `console.log('preview loaded');`,
+}
+```
+
+### Per-Component Props
+
+Use `head` and `js` props to add resources to individual previews. These are merged after global values.
+
+<HtmlPreview
+  title="With JS"
+  html={`
+    <div id="output">Waiting...</div>
+  `}
+  css={`
+    #output {
+      padding: 16px;
+      font-family: system-ui, sans-serif;
+      color: #334155;
+    }
+  `}
+  js={`
+    document.getElementById('output').textContent = 'Hello from JS!';
+  `}
+/>
+
+````mdx
+<HtmlPreview
+  title="With JS"
+  html={`
+    <div id="output">Waiting...</div>
+  `}
+  css={`
+    #output {
+      padding: 16px;
+      font-family: system-ui, sans-serif;
+      color: #334155;
+    }
+  `}
+  js={`
+    document.getElementById('output').textContent = 'Hello from JS!';
+  `}
+/>
+````
+
+## Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `html` | string | (required) | HTML content to render inside the preview iframe |
+| `css` | string | `undefined` | CSS styles applied inside the preview iframe |
+| `head` | string | `undefined` | Raw HTML injected into `<head>` (links, meta, fonts) |
+| `js` | string | `undefined` | JavaScript executed inside the preview iframe |
+| `title` | string | `undefined` | Title displayed in the preview header bar |
+| `height` | number | auto | Fixed iframe height in pixels. When omitted, height auto-adjusts to content |
+| `defaultOpen` | boolean | `false` | Show the source code panel expanded by default |
+
+## Supported Languages
+
+The source code panel uses a lightweight Shiki instance with the following languages:
+
+- `html` — for the HTML and Head panels
+- `css` — for the CSS panel
+- `javascript` — for the JS panel
+
+Unsupported languages fall back to plain text (no highlighting). This is a smaller subset than the [full language list](/docs/components/basic-components#supported-languages) available in standard code blocks.
+
+## Notes
+
+- The preview renders inside an isolated `<iframe>` with a CSS reset (Tailwind v4 preflight), so styles do not leak in or out.
+- Previews run without a `sandbox` attribute. The `srcdoc` content is author-controlled MDX, so no additional isolation is needed.
+- Global resources from `settings.htmlPreview` are injected before per-component props.
+- The `html`, `css`, and `js` props support template literals with indentation. Leading whitespace is automatically stripped (dedented) in the source code display.
+- Client-side hydration is handled automatically by the component wrapper — no `client:load` directive needed in MDX.

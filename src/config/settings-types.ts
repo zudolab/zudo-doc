@@ -32,6 +32,15 @@ export interface FooterConfig {
   copyright?: string;
 }
 
+export interface HtmlPreviewConfig {
+  /** Raw HTML injected into <head> (links, meta, fonts) */
+  head?: string;
+  /** CSS injected as <style> after preflight */
+  css?: string;
+  /** JS injected as <script> before </body> */
+  js?: string;
+}
+
 export interface VersionConfig {
   /** Version identifier, used in URL path (e.g., "1.0", "v1") */
   slug: string;

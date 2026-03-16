@@ -1,0 +1,229 @@
+---
+title: HtmlPreview
+description: ビューポート切り替えとソースコード表示を備えたインタラクティブなHTML/CSSプレビューコンポーネント。
+sidebar_position: 9
+---
+
+`<HtmlPreview>` は、分離された iframe 内で HTML/CSS のライブデモを描画するコンポーネントです。ビューポートプリセット（Mobile / Tablet / Full）とシンタックスハイライト付きの折りたたみ可能なソースコードパネルを備えています。すべての MDX ファイルでインポートなしで使用できます。
+
+## 基本的な使い方
+
+<HtmlPreview
+  title="基本的なボックス"
+  html={`
+    <div class="box">Hello, world!</div>
+  `}
+  css={`
+    .box {
+      padding: 24px;
+      background: #3b82f6;
+      color: #fff;
+      border-radius: 8px;
+      font-family: system-ui, sans-serif;
+      text-align: center;
+    }
+  `}
+/>
+
+````mdx
+<HtmlPreview
+  title="基本的なボックス"
+  html={`
+    <div class="box">Hello, world!</div>
+  `}
+  css={`
+    .box {
+      padding: 24px;
+      background: #3b82f6;
+      color: #fff;
+      border-radius: 8px;
+      font-family: system-ui, sans-serif;
+      text-align: center;
+    }
+  `}
+/>
+````
+
+## レスポンシブレイアウト
+
+ビューポートボタン（Mobile / Tablet / Full）を使って、異なる幅でコンテンツがどのように変化するかを確認できます。プレビュー領域の右下にあるドラッグハンドルでリサイズすることもできます。
+
+<HtmlPreview
+  title="レスポンシブグリッド"
+  html={`
+    <div class="grid">
+      <div class="card">Card 1</div>
+      <div class="card">Card 2</div>
+      <div class="card">Card 3</div>
+      <div class="card">Card 4</div>
+    </div>
+  `}
+  css={`
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+      padding: 16px;
+      font-family: system-ui, sans-serif;
+    }
+    .card {
+      padding: 20px;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      text-align: center;
+      color: #334155;
+    }
+  `}
+/>
+
+## HTML のみ
+
+`css` プロップを指定しない場合は、HTML のソースのみが表示されます。
+
+<HtmlPreview
+  title="HTML のみ"
+  html={`
+    <ul style="font-family: system-ui, sans-serif; padding: 16px;">
+      <li>1つ目の項目</li>
+      <li>2つ目の項目</li>
+      <li>3つ目の項目</li>
+    </ul>
+  `}
+/>
+
+## デフォルトでコードを表示
+
+`defaultOpen` を指定すると、ソースコードが最初から展開された状態で表示されます。
+
+<HtmlPreview
+  title="コード表示状態"
+  defaultOpen
+  html={`
+    <button class="btn">Click me</button>
+  `}
+  css={`
+    .btn {
+      padding: 10px 20px;
+      background: #8b5cf6;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: system-ui, sans-serif;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: #7c3aed;
+    }
+  `}
+/>
+
+## 固定高さ
+
+`height` プロップを使って、自動調整の代わりに iframe の高さを固定できます。
+
+<HtmlPreview
+  title="固定高さ（300px）"
+  height={300}
+  html={`
+    <div class="scroll-content">
+      <p>このプレビューは300pxの固定高さです。</p>
+      <p>高さを超えるコンテンツは iframe 内でスクロールします。</p>
+    </div>
+  `}
+  css={`
+    .scroll-content {
+      padding: 16px;
+      font-family: system-ui, sans-serif;
+      color: #334155;
+      line-height: 1.6;
+    }
+  `}
+/>
+
+## 外部リソース
+
+CSS フレームワーク、Web フォント、スクリプトなどの外部リソースをプレビューに読み込めます。`settings.ts` でグローバルに設定するか、コンポーネントのプロップで個別に指定します。
+
+### グローバル設定
+
+`src/config/settings.ts` で `htmlPreview` を設定すると、すべてのプレビューにリソースが適用されます：
+
+```ts
+htmlPreview: {
+  head: `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap">`,
+  css: `body { font-family: 'Noto Sans JP', sans-serif; }`,
+  js: `console.log('preview loaded');`,
+}
+```
+
+### コンポーネント単位のプロップ
+
+`head` と `js` プロップを使って、個別のプレビューにリソースを追加できます。グローバル設定の後にマージされます。
+
+<HtmlPreview
+  title="JS 付き"
+  html={`
+    <div id="output">待機中...</div>
+  `}
+  css={`
+    #output {
+      padding: 16px;
+      font-family: system-ui, sans-serif;
+      color: #334155;
+    }
+  `}
+  js={`
+    document.getElementById('output').textContent = 'JS から Hello!';
+  `}
+/>
+
+````mdx
+<HtmlPreview
+  title="JS 付き"
+  html={`
+    <div id="output">待機中...</div>
+  `}
+  css={`
+    #output {
+      padding: 16px;
+      font-family: system-ui, sans-serif;
+      color: #334155;
+    }
+  `}
+  js={`
+    document.getElementById('output').textContent = 'JS から Hello!';
+  `}
+/>
+````
+
+## Props
+
+| プロップ | 型 | デフォルト | 説明 |
+|------|------|---------|-------------|
+| `html` | string | （必須） | プレビュー iframe 内に描画する HTML コンテンツ |
+| `css` | string | `undefined` | プレビュー iframe 内に適用する CSS スタイル |
+| `head` | string | `undefined` | `<head>` に挿入する生の HTML（リンク、メタ、フォント） |
+| `js` | string | `undefined` | プレビュー iframe 内で実行する JavaScript |
+| `title` | string | `undefined` | プレビューヘッダーバーに表示するタイトル |
+| `height` | number | auto | iframe の固定高さ（ピクセル）。省略時はコンテンツに合わせて自動調整 |
+| `defaultOpen` | boolean | `false` | ソースコードパネルをデフォルトで展開表示する |
+
+## サポートされている言語
+
+ソースコードパネルは軽量な Shiki インスタンスを使用しており、以下の言語に対応しています：
+
+- `html` — HTML パネルおよび Head パネル
+- `css` — CSS パネル
+- `javascript` — JS パネル
+
+サポートされていない言語はプレーンテキスト（ハイライトなし）にフォールバックします。これは標準のコードブロックで利用可能な[言語一覧](/ja/docs/components/basic-components#サポートされている言語)より小さなサブセットです。
+
+## 注意事項
+
+- プレビューは CSS リセット（Tailwind v4 preflight）を含む分離された `<iframe>` 内で描画されるため、スタイルが外部に漏れることはありません。
+- プレビューは `sandbox` 属性なしで動作します。`srcdoc` の内容は作成者が管理する MDX であるため、追加の分離は不要です。
+- `settings.htmlPreview` のグローバルリソースは、コンポーネント単位のプロップの前に挿入されます。
+- `html`、`css`、`js` プロップはインデント付きのテンプレートリテラルに対応しています。先頭の空白はソースコード表示時に自動的に除去されます。
+- クライアントサイドのハイドレーションはコンポーネントラッパーにより自動的に処理されるため、MDX 内で `client:load` ディレクティブを付ける必要はありません。

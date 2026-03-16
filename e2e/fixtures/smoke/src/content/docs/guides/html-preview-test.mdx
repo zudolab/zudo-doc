@@ -1,0 +1,19 @@
+---
+title: HtmlPreview Test
+sidebar_position: 98
+---
+
+## Global CSS Test
+
+<HtmlPreview
+  title="Global CSS Test"
+  html={`<div class="global-test">Hello</div>`}
+/>
+
+## JS Test
+
+<HtmlPreview
+  title="JS Test"
+  html={`<div id="js-target">before</div>`}
+  js={`document.getElementById('js-target').textContent = 'after';`}
+/>
