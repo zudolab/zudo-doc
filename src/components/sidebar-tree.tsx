@@ -370,16 +370,22 @@ function CategoryNode({
             </button>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={toggle}
-            className={`flex w-full items-center gap-hsp-xs text-small font-semibold pt-[0.15rem] py-vsp-xs text-fg hover:underline focus:underline`}
+          <div
+            className={`flex w-full items-center text-small font-semibold pt-[0.15rem] text-fg`}
             style={{ paddingLeft }}
-            aria-expanded={isExpanded}
           >
-            <ToggleChevron isExpanded={isExpanded} className="text-muted" />
-            {node.label}
-          </button>
+            <button
+              type="button"
+              onClick={toggle}
+              className="flex-1 flex items-center gap-hsp-xs py-vsp-xs hover:underline focus:underline"
+              aria-expanded={isExpanded}
+            >
+              <span className="aspect-square flex items-center justify-center w-[1.5rem] shrink-0 border border-muted">
+                <ToggleChevron isExpanded={isExpanded} className="text-muted" />
+              </span>
+              {node.label}
+            </button>
+          </div>
         )}
       </div>
       {isExpanded && (

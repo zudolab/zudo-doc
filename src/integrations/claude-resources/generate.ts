@@ -496,6 +496,8 @@ sidebar_position: 899
 
 Claude Code configuration reference.
 
+## Resources
+
 <CategoryTreeNav category="claude" />
 `;
   fs.writeFileSync(path.join(outputDir, "index.mdx"), index);
