@@ -267,7 +267,7 @@ const slug = autoIndex
           <DocMetainfo filePath={`${contentDir}/${entry.id}`} locale="ja" />
         )}
 
-        {isFallback && (
+        {isFallback && !entry.data.generated && (
           <div
             class="mb-vsp-md border border-info/30 bg-info/5 px-hsp-lg py-vsp-sm text-small text-muted rounded"
             role="note"

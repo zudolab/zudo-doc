@@ -19,6 +19,7 @@ const docsSchema = z.object({
   hide_toc: z.boolean().optional(), // Hide the right-side table of contents
   standalone: z.boolean().optional(), // Hidden from sidebar nav but still indexed (unlike unlisted)
   slug: z.string().optional(), // Custom URL slug override
+  generated: z.boolean().optional(), // Build-time generated content (skip translation)
 });
 
 const docs = defineCollection({
