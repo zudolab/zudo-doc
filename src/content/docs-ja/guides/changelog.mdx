@@ -1,0 +1,94 @@
+---
+title: 変更履歴
+description: ドキュメントサイトで変更履歴セクションを管理する方法。
+sidebar_position: 14
+---
+
+zudo-docには、リリースノートとバージョン履歴を追跡するための変更履歴セクションが含まれています。変更履歴は降順のサイドバーソートを使用するため、最新のエントリが常に先頭に表示されます。
+
+## ディレクトリ構造
+
+変更履歴のエントリは専用のコンテンツディレクトリに格納されます：
+
+```
+src/content/docs/
+└── changelog/
+    ├── _category_.json    # 降順ソート付きカテゴリ設定
+    ├── index.mdx          # カテゴリインデックスページ
+    ├── 0.2.0.mdx          # 新しいエントリ (sidebar_position: 2)
+    └── 0.1.0.mdx          # 古いエントリ (sidebar_position: 1)
+```
+
+## カテゴリ設定
+
+`_category_.json`ファイルで降順ソートを設定し、新しいエントリがサイドバーの先頭に表示されるようにします：
+
+```json title="_category_.json"
+{
+  "label": "Changelog",
+  "position": 10,
+  "sortOrder": "desc"
+}
+```
+
+`sortOrder: "desc"`を設定すると、`sidebar_position`の値が大きいエントリが先に表示されます。これにより、新しいバージョンが自然に先頭にソートされます。
+
+## 新しいエントリの追加
+
+新しい変更履歴エントリを追加するには：
+
+1. `src/content/docs/changelog/`にバージョン名のMDXファイルを作成（例：`0.2.0.mdx`）
+2. `sidebar_position`を前のエントリより大きい値に設定
+3. 日本語コンテンツディレクトリ（`src/content/docs-ja/changelog/`）にファイルをミラー
+
+```mdx title="src/content/docs/changelog/0.2.0.mdx"
+---
+title: "0.2.0"
+description: このリリースの概要。
+sidebar_position: 2
+---
+
+## 0.2.0
+
+このリリースの変更概要。
+
+### 機能
+
+- 機能A
+- 機能B
+
+### バグ修正
+
+- 問題Xの修正
+```
+
+<Tip>
+
+新しいバージョンごとに`sidebar_position`の値を増やしてください。カテゴリ設定の`sortOrder: "desc"`と組み合わせることで、最新のエントリが常にサイドバーの先頭に表示されます。
+
+</Tip>
+
+## エントリのフォーマット
+
+各変更履歴エントリは標準的なMDXファイルです。推奨される構造：
+
+- **タイトル**：バージョン番号（例：`"0.2.0"`）
+- **説明**：リリースの簡単な概要
+- **コンテンツセクション**：機能、バグ修正、破壊的変更など
+
+強制的なフォーマットはありません。プロジェクトに合った構造を使用してください。上記の例は[Keep a Changelog](https://keepachangelog.com/)に似た一般的な規約に従っています。
+
+## ヘッダーナビゲーション
+
+変更履歴セクションはヘッダーナビゲーションからリンクされています。これは`src/config/settings.ts`で設定されます：
+
+```ts
+headerNav: [
+  // ...その他のアイテム
+  { label: "Changelog", labelKey: "nav.changelog", path: "/docs/changelog", categoryMatch: "changelog" },
+],
+```
+
+## i18n
+
+翻訳されたリリースノートを提供するために、変更履歴エントリを日本語コンテンツディレクトリ（`src/content/docs-ja/changelog/`）にミラーしてください。`_category_.json`とディレクトリ構造は英語版と一致させる必要があります。
