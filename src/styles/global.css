@@ -507,11 +507,12 @@ pre.astro-code.word-wrap code {
   );
 }
 
-/* HtmlPreview component — Shiki code blocks */
+/* HtmlPreview component — Shiki code blocks
+ * Token colors inherit from the global [data-theme] .shiki rule above.
+ * These rules only adjust layout and background for the preview context. */
 .zd-html-preview-code pre.shiki {
   margin: 0;
   padding: 0.75rem;
-  background: var(--color-code-bg) !important;
   font-size: 0.875rem;
   line-height: 1.6;
   overflow-x: auto;
@@ -520,12 +521,6 @@ pre.astro-code.word-wrap code {
 .zd-html-preview-code pre.shiki code {
   font-family: var(--font-mono);
   white-space: pre;
-}
-
-.zd-html-preview-code .shiki,
-.zd-html-preview-code .shiki span {
-  color: light-dark(var(--shiki-light), var(--shiki-dark)) !important;
-  background-color: transparent !important;
 }
 
 /* ========================================
