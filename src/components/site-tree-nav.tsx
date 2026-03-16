@@ -65,6 +65,7 @@ export default function SiteTreeNav({
   return (
     <nav
       aria-label={ariaLabel}
+      data-site-nav
       className="grid gap-vsp-md"
       style={{
         gridTemplateColumns: "repeat(auto-fill, minmax(min(18rem, 100%), 1fr))",
@@ -142,7 +143,7 @@ function CategoryNode({
           {node.href ? (
             <a
               href={node.href}
-              className="flex-1 flex items-center gap-hsp-xs py-vsp-xs text-fg hover:text-accent hover:underline focus:underline"
+              className="flex-1 flex items-center gap-hsp-xs py-vsp-xs text-sel-fg hover:text-accent hover:underline focus:underline"
             >
               {depth === 0 && <CategoryLinkIcon />}
               {node.label}
@@ -209,8 +210,8 @@ function LeafNode({
         <a
           href={node.href}
           className={isRoot
-            ? "block py-[calc(var(--spacing-vsp-xs)+0.15rem)] text-small font-semibold text-fg hover:text-accent hover:underline focus:underline"
-            : `block py-vsp-2xs ${isLast ? "pb-vsp-xs" : ""} text-small text-muted hover:text-accent hover:underline focus:underline`
+            ? "block py-[calc(var(--spacing-vsp-xs)+0.15rem)] text-small font-semibold text-sel-fg hover:text-accent hover:underline focus:underline"
+            : `block py-vsp-2xs ${isLast ? "pb-vsp-xs" : ""} text-small text-sel-fg hover:text-accent hover:underline focus:underline`
           }
           style={{ paddingLeft }}
         >

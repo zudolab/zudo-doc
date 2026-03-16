@@ -114,4 +114,35 @@ test.describe("Search dialog", () => {
     const noResults = page.locator("[data-search-results]").getByText("No results found.");
     await expect(noResults).toBeVisible({ timeout: 10000 });
   });
+
+  test("matched keywords are highlighted with mark elements", async ({ page }) => {
+    await page.goto(DOCS_PAGE, { waitUntil: "load" });
+
+    await page.keyboard.press("Control+k");
+    const input = page.locator("[data-search-input]");
+    await expect(input).toBeFocused({ timeout: 3000 });
+
+    const searchQuery = "Getting Started";
+    await input.fill(searchQuery);
+
+    // Wait for results
+    const results = page.locator("[data-search-results] article");
+    await expect(results.first()).toBeVisible({ timeout: 10000 });
+
+    // Verify mark elements exist in results
+    const marks = page.locator("[data-search-results] article mark");
+    await expect(marks.first()).toBeVisible({ timeout: 5000 });
+
+    // Verify highlighted text matches query terms (case-insensitive)
+    const markTexts = await marks.allTextContents();
+    expect(markTexts.length).toBeGreaterThan(0);
+    const queryTerms = searchQuery.toLowerCase().split(/\s+/);
+    for (const text of markTexts) {
+      const lower = text.toLowerCase();
+      expect(
+        queryTerms.some((term) => lower.includes(term)),
+        `Expected "${text}" to contain one of: ${queryTerms.join(", ")}`,
+      ).toBeTruthy();
+    }
+  });
 });
