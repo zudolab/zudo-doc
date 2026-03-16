@@ -25,7 +25,7 @@
     "format:check:astro": "prettier --check \"src/**/*.astro\"",
     "format:check": "pnpm run format:check:mdx && pnpm run format:check:astro",
     "// ── Assets ───────────────────────────────────────": "",
-    "generate:logo": "pnpm dlx @takazudo/kumiko-gen zudo-doc --size 200 --fg \"#000000\" --bg transparent --out public/img/logo.svg",
+    "generate:logo": "pnpm dlx @takazudo/kumiko-gen \"$(node -p \"require('./package.json').name\")-$(date +%s)\" --size 200 --zoom 5 --stroke-width 0.2 --fg \"#000000\" --bg transparent --out public/img/logo.svg",
     "// ── Skills ──────────────────────────────────────": "",
     "setup:doc-skill": "bash scripts/setup-doc-skill.sh"
   },
