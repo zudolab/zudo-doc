@@ -222,6 +222,67 @@ ${escapeForMdx(parsed.content.trim())}
 // Skills generation
 // ---------------------------------------------------------------------------
 
+function listFiles(dir: string): string[] {
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir)
+    .filter((f) => {
+      try {
+        return fs.statSync(path.join(dir, f)).isFile();
+      } catch {
+        return false;
+      }
+    })
+    .sort();
+}
+
+function getSkillFileTree(
+  skillDir: string,
+  subDirs: { name: string; files: string[] }[],
+): string {
+  const lines: string[] = [`${skillDir}/`];
+
+  type TreeEntry =
+    | { isDir: false; name: string }
+    | { isDir: true; name: string; children: string[] };
+  const entries: TreeEntry[] = [{ isDir: false, name: "SKILL.md" }];
+
+  for (const sub of subDirs) {
+    entries.push({ isDir: true, name: sub.name, children: sub.files });
+  }
+
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
+    const isLast = i === entries.length - 1;
+    const prefix = isLast ? "└── " : "├── ";
+
+    if (!entry.isDir) {
+      lines.push(`${prefix}${entry.name}`);
+    } else {
+      lines.push(`${prefix}${entry.name}/`);
+      for (let j = 0; j < entry.children.length; j++) {
+        const child = entry.children[j];
+        const childIsLast = j === entry.children.length - 1;
+        const continuation = isLast ? "    " : "│   ";
+        const childPrefix = childIsLast ? "└── " : "├── ";
+        lines.push(`${continuation}${childPrefix}${child}`);
+      }
+    }
+  }
+
+  return lines.join("\n");
+}
+
+function getScriptDescription(filePath: string): string {
+  const firstLine = fs.readFileSync(filePath, "utf8").split("\n", 2);
+  // Skip shebang, use second line if available
+  const commentLine = firstLine[0].startsWith("#!")
+    ? firstLine[1] || ""
+    : firstLine[0];
+  const match = commentLine.match(/^#\s*(.+)/);
+  return match ? ` — ${match[1]}` : "";
+}
+
 function getSkillReferences(
   skillsDir: string,
   skillDir: string,
@@ -277,19 +338,42 @@ function generateSkillsDocs(config: ClaudeResourcesConfig): SkillItem[] {
 
     items.push({ name, dir, description, references });
 
-    const hasScripts = fs.existsSync(path.join(skillsDir, dir, "scripts"));
-    const hasAssets = fs.existsSync(path.join(skillsDir, dir, "assets"));
-    const resourceList = [
-      references.length > 0 && "references",
-      hasScripts && "scripts",
-      hasAssets && "assets",
-    ].filter(Boolean);
+    const scriptFiles = listFiles(path.join(skillsDir, dir, "scripts"));
+    const assetFiles = listFiles(path.join(skillsDir, dir, "assets"));
+    const refFiles = references.map((r) => `${r.name}.md`);
 
-    const resourcesNote =
-      resourceList.length > 0
-        ? `> Bundled resources: ${resourceList.join(", ")}\n`
-        : "";
+    // Collect non-empty subdirectories for tree display
+    const subDirs: { name: string; files: string[] }[] = [];
+    if (scriptFiles.length > 0) subDirs.push({ name: "scripts", files: scriptFiles });
+    if (refFiles.length > 0) subDirs.push({ name: "references", files: refFiles });
+    if (assetFiles.length > 0) subDirs.push({ name: "assets", files: assetFiles });
 
+    // File tree section
+    const fileTree = subDirs.length > 0
+      ? `## File Structure\n\n\`\`\`\n${getSkillFileTree(dir, subDirs)}\n\`\`\`\n`
+      : "";
+
+    // Scripts listing with first-line comments
+    let scriptsSection = "";
+    if (scriptFiles.length > 0) {
+      const scriptItems = scriptFiles
+        .map((f) => {
+          const filePath = path.join(skillsDir, dir, "scripts", f);
+          const desc = getScriptDescription(filePath);
+          return `- \`${f}\`${desc}`;
+        })
+        .join("\n");
+      scriptsSection = `\n\n## Scripts\n\n${scriptItems}\n`;
+    }
+
+    // Assets listing
+    let assetsSection = "";
+    if (assetFiles.length > 0) {
+      const assetItems = assetFiles.map((f) => `- \`${f}\``).join("\n");
+      assetsSection = `\n\n## Assets\n\n${assetItems}\n`;
+    }
+
+    // References section with links to reference pages
     let referencesSection = "";
     if (references.length > 0) {
       const refLinks = references
@@ -308,10 +392,10 @@ description: "${escapeTitle(shortDesc)}"
 sidebar_label: "${escapeTitle(name)}"
 ---
 
-${resourcesNote}
+${fileTree}
 
 ${escapeForMdx(parsed.content.trim())}
-${referencesSection}`;
+${scriptsSection}${assetsSection}${referencesSection}`;
 
     fs.writeFileSync(path.join(outputDir, `${dir}.mdx`), mdx);
 
