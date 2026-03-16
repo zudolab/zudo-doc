@@ -107,8 +107,9 @@ Each tier only references the tier above it.
 - Export button generates `ColorScheme` TypeScript code for clipboard copy
 - State persisted in `localStorage` (`zudo-doc-tweak-state`)
 
-## CSS
+## CSS & Components
 
+- Before writing or editing CSS, Tailwind classes, color tokens, or component markup, invoke `/zudo-doc-css-wisdom` to load project-specific rules
 - Tailwind v4: imports `tailwindcss/preflight` + `tailwindcss/utilities` (no default theme)
 - No `--*: initial` resets needed — default theme is simply not imported
 - Content typography: `.zd-content` class in `global.css` (no prose plugin — direct element styling with `:where()` selectors)
