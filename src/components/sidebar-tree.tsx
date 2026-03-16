@@ -373,9 +373,10 @@ function CategoryNode({
           <button
             type="button"
             onClick={toggle}
-            className={`flex w-full items-center gap-[12px] text-small font-semibold py-vsp-xs text-fg hover:underline focus:underline`}
+            className={`flex w-full items-center gap-hsp-md text-small font-semibold py-vsp-xs text-fg hover:underline focus:underline`}
             style={{ paddingLeft }}
             aria-expanded={isExpanded}
+            aria-label={isExpanded ? `Collapse ${node.label}` : `Expand ${node.label}`}
           >
             <span className="aspect-square flex items-center justify-center w-[1.5rem] shrink-0 border border-muted">
               <ToggleChevron isExpanded={isExpanded} className="text-muted" />

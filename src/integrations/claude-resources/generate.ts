@@ -347,7 +347,7 @@ function generateSkillsDocs(config: ClaudeResourcesConfig): SkillItem[] {
 
     // File tree section
     const fileTree = subDirs.length > 0
-      ? `## File Structure\n\n\`\`\`\n${getSkillFileTree(dir, subDirs)}\n\`\`\`\n`
+      ? `## File Structure\n\n\`\`\`\n${getSkillFileTree(dir, subDirs)}\n\`\`\``
       : "";
 
     // Scripts listing with first-line comments
@@ -387,8 +387,8 @@ function generateSkillsDocs(config: ClaudeResourcesConfig): SkillItem[] {
       fileTree,
       escapeForMdx(parsed.content.trim()),
       scriptsSection,
-      assetsSection,
       referencesSection,
+      assetsSection,
     ]
       .filter(Boolean)
       .join("\n\n");
