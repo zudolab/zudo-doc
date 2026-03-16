@@ -89,7 +89,7 @@ function writeCategoryMeta(
 ) {
   fs.writeFileSync(
     path.join(outputDir, "_category_.json"),
-    JSON.stringify({ label, position, description }, null, 2) + "\n",
+    JSON.stringify({ label, position, description, noPage: true }, null, 2) + "\n",
   );
 }
 
