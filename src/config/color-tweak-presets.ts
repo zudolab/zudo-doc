@@ -3,8 +3,8 @@ import type { ColorScheme } from "@/config/color-schemes";
 /**
  * Color scheme presets for the Color Tweak Panel.
  * Restored from PR #1 (topic/color-palette-variations).
- * These are NOT bundled in the main build — they are only loaded
- * at runtime when the user opens the tweak panel scheme chooser.
+ * These are separate from the main `colorSchemes` config to keep
+ * the bundled scheme list small while offering many presets in the tweak panel.
  */
 export const colorTweakPresets: Record<string, ColorScheme> = {
   Dracula: {

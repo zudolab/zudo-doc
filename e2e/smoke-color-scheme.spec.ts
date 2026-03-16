@@ -1,111 +1,64 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * E2E tests for the ColorSchemePicker React island.
+ * E2E tests for the Color Tweak Panel scheme chooser.
  *
- * The smoke fixture has colorMode disabled, so the ColorSchemePicker
- * <select> is rendered instead of ThemeToggle. There are two instances
- * (mobile sidebar + desktop header), so we scope to the desktop one
- * using the lg:flex container.
+ * The tweak panel is enabled in the smoke fixture. The scheme chooser
+ * is a <select> inside the panel that loads color scheme presets.
  */
 
 const DOCS_PAGE = "/docs/getting-started";
 
-// Use desktop viewport so the desktop picker is visible
 test.use({ viewport: { width: 1280, height: 800 } });
 
-/** Locate the desktop color scheme picker (inside the lg:flex header section) */
-function desktopPicker(page: import("@playwright/test").Page) {
-  return page.locator(".lg\\:flex").locator('select[aria-label="Color scheme"]');
+/** Open the tweak panel by clicking the palette icon in the header */
+async function openTweakPanel(page: import("@playwright/test").Page) {
+  const trigger = page.locator("#color-tweak-trigger");
+  await expect(trigger).toBeVisible({ timeout: 5000 });
+  await trigger.click();
+  // Wait for the panel to appear
+  const panel = page.locator('[aria-label="Load color scheme preset"]');
+  await expect(panel).toBeVisible({ timeout: 5000 });
+  return panel;
 }
 
-test.describe("Color scheme picker", () => {
-  test("color scheme select is present with multiple options", async ({ page }) => {
+test.describe("Color tweak panel scheme chooser", () => {
+  test("scheme chooser select is present with multiple options", async ({ page }) => {
     await page.goto(DOCS_PAGE, { waitUntil: "load" });
 
-    const select = desktopPicker(page);
-    await expect(select).toBeVisible({ timeout: 5000 });
-
+    const select = await openTweakPanel(page);
     const optionCount = await select.locator("option").count();
-    expect(optionCount).toBeGreaterThan(1);
+    // Should have the disabled placeholder + at least 2 bundled schemes + presets
+    expect(optionCount).toBeGreaterThan(3);
   });
 
-  test("changing color scheme updates inline CSS vars on :root", async ({
-    page,
-  }) => {
+  test("loading a preset updates CSS vars on :root", async ({ page }) => {
     await page.goto(DOCS_PAGE, { waitUntil: "load" });
 
-    const select = desktopPicker(page);
-    await expect(select).toBeVisible({ timeout: 5000 });
+    const select = await openTweakPanel(page);
 
-    // Pick a specific known scheme that differs from default
-    const options = await select.locator("option").allTextContents();
-    const currentValue = await select.inputValue();
-    const targetScheme = options.find((o) => o !== currentValue);
-    expect(targetScheme).toBeTruthy();
+    // Pick a known preset (Dracula)
+    await select.selectOption("Dracula");
 
-    // Change scheme and verify inline style is applied to :root
-    await select.selectOption(targetScheme!);
-
-    // The applyScheme function sets inline styles on documentElement.
-    // Wait for at least one --zd- property to appear in inline styles.
+    // Wait for CSS variables to be applied
     await page.waitForFunction(() => {
       const style = document.documentElement.style;
       return style.getPropertyValue("--zd-bg") !== "";
     }, null, { timeout: 5000 });
   });
 
-  test("localStorage is set after changing color scheme", async ({ page }) => {
+  test("loading a preset persists tweak state in localStorage", async ({ page }) => {
     await page.goto(DOCS_PAGE, { waitUntil: "load" });
 
-    const select = desktopPicker(page);
-    await expect(select).toBeVisible({ timeout: 5000 });
-
-    const currentValue = await select.inputValue();
-    const options = await select.locator("option").allTextContents();
-    const differentOption = options.find((o) => o !== currentValue);
-    expect(differentOption).toBeTruthy();
-
-    await select.selectOption(differentOption!);
+    const select = await openTweakPanel(page);
+    await select.selectOption("Nord");
 
     const stored = await page.evaluate(() =>
-      localStorage.getItem("zudo-doc-color-scheme"),
+      localStorage.getItem("zudo-doc-tweak-state"),
     );
-    expect(stored).toBe(differentOption);
-  });
+    expect(stored).toBeTruthy();
 
-  test("selected color scheme persists in localStorage after reload", async ({ page }) => {
-    await page.goto(DOCS_PAGE, { waitUntil: "load" });
-
-    const select = desktopPicker(page);
-    await expect(select).toBeVisible({ timeout: 5000 });
-
-    // Pick a scheme and change to it
-    const options = await select.locator("option").allTextContents();
-    const currentValue = await select.inputValue();
-    const targetScheme = options.find((o) => o !== currentValue);
-    expect(targetScheme).toBeTruthy();
-    await select.selectOption(targetScheme!);
-
-    // Verify localStorage is set
-    const stored = await page.evaluate(() =>
-      localStorage.getItem("zudo-doc-color-scheme"),
-    );
-    expect(stored).toBe(targetScheme);
-
-    // Reload the page
-    await page.reload({ waitUntil: "load" });
-
-    // localStorage should still have the selected scheme
-    const storedAfterReload = await page.evaluate(() =>
-      localStorage.getItem("zudo-doc-color-scheme"),
-    );
-    expect(storedAfterReload).toBe(targetScheme);
-
-    // CSS pairs should also be persisted
-    const cssPairs = await page.evaluate(() =>
-      localStorage.getItem("zudo-doc-color-scheme-css"),
-    );
-    expect(cssPairs).toBeTruthy();
+    const parsed = JSON.parse(stored!);
+    expect(parsed.palette).toHaveLength(16);
   });
 });

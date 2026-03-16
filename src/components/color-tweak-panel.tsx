@@ -743,15 +743,13 @@ export default function ColorTweakPanel() {
       if (!scheme) return;
       const newState = initFromSchemeData(scheme);
       applyFullState(newState);
-      if (newState.shikiTheme !== state?.shikiTheme) {
-        applyShikiTheme(newState.shikiTheme);
-      }
+      applyShikiTheme(newState.shikiTheme);
       setState(newState);
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
       } catch { /* storage full */ }
     },
-    [state],
+    [],
   );
 
   const handleResetAll = useCallback(() => {
@@ -788,12 +786,11 @@ export default function ColorTweakPanel() {
           <select
             onChange={(e) => {
               if (e.target.value) handleLoadPreset(e.target.value);
-              e.target.value = "";
             }}
             className="bg-surface text-fg border border-muted px-hsp-xs py-[2px] hover:border-fg transition-colors"
             style={{ fontSize: "0.6875rem", borderRadius: "var(--radius-DEFAULT)", maxWidth: "10rem" }}
             aria-label="Load color scheme preset"
-            value=""
+            defaultValue=""
           >
             <option value="" disabled>Scheme...</option>
             {presetNames.map((name) => (

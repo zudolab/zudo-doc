@@ -103,47 +103,19 @@ export async function stripFeatures(
     await removeIfExists(targetDir, "src/integrations/claude-resources");
   }
 
-  // Strip color scheme preview / unused theme components
-  if (choices.colorSchemeMode === "light-dark") {
-    // In light/dark mode, ThemeToggle replaces ColorSchemePicker
-    if (!choices.features.includes("colorSchemePreview")) {
-      await removeIfExists(targetDir, "src/components/color-scheme-picker.tsx");
-      // Remove ColorSchemePicker import and replace the ternary with just ThemeToggle
-      await patchFile(
-        path.join(targetDir, "src/components/header.astro"),
-        [
-          [/import ColorSchemePicker from.*\n/g, ""],
-          [
-            /\{settings\.colorMode \? \(\s*\n?\s*<ThemeToggle[^]*?\/>\s*\n?\s*\) : \(\s*\n?\s*<ColorSchemePicker[^]*?\/>\s*\n?\s*\)\}/g,
-            "<ThemeToggle defaultMode={settings.colorMode.defaultMode} client:load />",
-          ],
-        ],
-      );
-    }
-  } else {
+  // Strip unused theme components based on color scheme mode.
+  // The header uses `settings.colorMode && (<ThemeToggle ... />)` —
+  // no ColorSchemePicker in header (scheme selection is in the tweak panel).
+  if (choices.colorSchemeMode !== "light-dark") {
     // In single scheme mode, ThemeToggle is never used — remove file + imports + usage
     await removeIfExists(targetDir, "src/components/theme-toggle.tsx");
-    // Replace the ternary with just ColorSchemePicker and remove ThemeToggle import
     await patchFile(
       path.join(targetDir, "src/components/header.astro"),
       [
         [/import ThemeToggle from.*\n/g, ""],
-        [
-          /\{settings\.colorMode \? \(\s*\n?\s*<ThemeToggle[^]*?\/>\s*\n?\s*\) : \(\s*\n?\s*<ColorSchemePicker[^]*?\/>\s*\n?\s*\)\}/g,
-          "<ColorSchemePicker client:load />",
-        ],
+        [/\s*\{[\s\S]*?settings\.colorMode &&[\s\S]*?<ThemeToggle[\s\S]*?\/>\s*\n?\s*\)\s*\}\s*\n?/g, "\n"],
       ],
     );
-    if (!choices.features.includes("colorSchemePreview")) {
-      await removeIfExists(targetDir, "src/components/color-scheme-picker.tsx");
-      await patchFile(
-        path.join(targetDir, "src/components/header.astro"),
-        [
-          [/import ColorSchemePicker from.*\n/g, ""],
-          [/\s*<ColorSchemePicker\s+client:load\s*\/>\s*\n?/g, "\n"],
-        ],
-      );
-    }
   }
 
   // Strip color tweak panel if not selected
