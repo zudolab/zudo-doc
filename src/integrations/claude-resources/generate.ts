@@ -151,24 +151,16 @@ ${escapeForMdx(content.trim())}
     return a.displayPath.localeCompare(b.displayPath);
   });
 
-  // Index page
-  const list = items
-    .map((item) => `- [\`${item.displayPath}\`](./${item.slug}/)`)
-    .join("\n");
-
-  const index = `---
-title: "CLAUDE.md"
-description: "CLAUDE.md files provide project-specific instructions to Claude Code."
-sidebar_position: 900
----
-
-CLAUDE.md files found in this project.
-
-## Files (${items.length})
-
-${list}
-`;
-  fs.writeFileSync(path.join(outputDir, "index.mdx"), index);
+  // Category metadata (replaces index.mdx)
+  const categoryMeta = {
+    label: "CLAUDE.md",
+    position: 900,
+    description: "Project-specific instructions",
+  };
+  fs.writeFileSync(
+    path.join(outputDir, "_category_.json"),
+    JSON.stringify(categoryMeta, null, 2) + "\n",
+  );
   return items;
 }
 
@@ -213,23 +205,16 @@ ${escapeForMdx(parsed.content.trim())}
 
   items.sort((a, b) => a.name.localeCompare(b.name));
 
-  const list = items
-    .map((cmd) => `- [\`/${cmd.name}\`](./${cmd.name}/) — ${cmd.description}`)
-    .join("\n");
-
-  const index = `---
-title: "Commands"
-description: "Claude Code custom slash commands reference."
-sidebar_position: 901
----
-
-Custom slash commands reference.
-
-## Available Commands (${items.length})
-
-${list}
-`;
-  fs.writeFileSync(path.join(outputDir, "index.mdx"), index);
+  // Category metadata (replaces index.mdx)
+  const categoryMeta = {
+    label: "Commands",
+    position: 901,
+    description: "Custom slash commands",
+  };
+  fs.writeFileSync(
+    path.join(outputDir, "_category_.json"),
+    JSON.stringify(categoryMeta, null, 2) + "\n",
+  );
   return items;
 }
 
@@ -352,33 +337,16 @@ ${escapeForMdx(ref.content.trim())}
 
   items.sort((a, b) => a.name.localeCompare(b.name));
 
-  const list = items
-    .map((skill) => {
-      const shortDesc =
-        skill.description.length > 100
-          ? skill.description.substring(0, 100) + "..."
-          : skill.description;
-      const refCount =
-        skill.references.length > 0
-          ? ` (${skill.references.length} refs)`
-          : "";
-      return `- [\`${skill.name}\`](./${skill.dir}/)${refCount} — ${shortDesc}`;
-    })
-    .join("\n");
-
-  const index = `---
-title: "Skills"
-description: "Claude Code skills reference."
-sidebar_position: 902
----
-
-Skills reference.
-
-## Available Skills (${items.length})
-
-${list}
-`;
-  fs.writeFileSync(path.join(outputDir, "index.mdx"), index);
+  // Category metadata (replaces index.mdx)
+  const categoryMeta = {
+    label: "Skills",
+    position: 902,
+    description: "Skill packages",
+  };
+  fs.writeFileSync(
+    path.join(outputDir, "_category_.json"),
+    JSON.stringify(categoryMeta, null, 2) + "\n",
+  );
   return items;
 }
 
@@ -428,26 +396,16 @@ ${escapeForMdx(parsed.content.trim())}
 
   items.sort((a, b) => a.name.localeCompare(b.name));
 
-  const list = items
-    .map((agent) => {
-      const modelInfo = agent.model ? ` (${agent.model})` : "";
-      return `- [\`${agent.name}\`](./${agent.file}/)${modelInfo} — ${agent.description}`;
-    })
-    .join("\n");
-
-  const index = `---
-title: "Agents"
-description: "Claude Code subagents reference."
-sidebar_position: 903
----
-
-Subagents reference.
-
-## Available Agents (${items.length})
-
-${list}
-`;
-  fs.writeFileSync(path.join(outputDir, "index.mdx"), index);
+  // Category metadata (replaces index.mdx)
+  const categoryMeta = {
+    label: "Agents",
+    position: 903,
+    description: "Custom subagents",
+  };
+  fs.writeFileSync(
+    path.join(outputDir, "_category_.json"),
+    JSON.stringify(categoryMeta, null, 2) + "\n",
+  );
   return items;
 }
 
@@ -455,26 +413,10 @@ ${list}
 // Main
 // ---------------------------------------------------------------------------
 
-function generateOverviewIndex(
-  config: ClaudeResourcesConfig,
-  counts: { claudemd: number; commands: number; skills: number; agents: number },
-) {
+function generateOverviewIndex(config: ClaudeResourcesConfig) {
   const outputDir = path.join(config.docsDir, "claude");
   cleanDir(outputDir);
   ensureDir(outputDir);
-
-  const sections = [
-    counts.claudemd > 0 &&
-      `- **[CLAUDE.md](../claude-md/)** (${counts.claudemd}) — Project-specific instructions`,
-    counts.commands > 0 &&
-      `- **[Commands](../claude-commands/)** (${counts.commands}) — Custom slash commands`,
-    counts.skills > 0 &&
-      `- **[Skills](../claude-skills/)** (${counts.skills}) — Skill packages`,
-    counts.agents > 0 &&
-      `- **[Agents](../claude-agents/)** (${counts.agents}) — Custom subagents`,
-  ]
-    .filter(Boolean)
-    .join("\n");
 
   const index = `---
 title: "Claude"
@@ -484,9 +426,7 @@ sidebar_position: 899
 
 Claude Code configuration reference.
 
-## Contents
-
-${sections}
+<CategoryTreeNav category="claude" />
 `;
   fs.writeFileSync(path.join(outputDir, "index.mdx"), index);
 }
@@ -497,14 +437,12 @@ export function generateClaudeResourcesDocs(config: ClaudeResourcesConfig) {
   const skills = generateSkillsDocs(config);
   const agents = generateAgentsDocs(config);
 
-  const counts = {
+  generateOverviewIndex(config);
+
+  return {
     claudemd: claudemds.length,
     commands: commands.length,
     skills: skills.length,
     agents: agents.length,
   };
-
-  generateOverviewIndex(config, counts);
-
-  return counts;
 }
