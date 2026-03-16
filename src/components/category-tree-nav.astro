@@ -2,6 +2,7 @@
 import {
   buildNavTree,
   findNode,
+  groupSatelliteNodes,
   loadCategoryMeta,
   type NavNode,
 } from "@/utils/docs";
@@ -28,7 +29,8 @@ const collectionName = getCollectionName(lang);
 const allDocs = await getDocsCollection(collectionName);
 const contentDir = getContentDir(lang);
 const categoryMeta = loadCategoryMeta(contentDir);
-const tree = buildNavTree(allDocs, lang, categoryMeta);
+const rawTree = buildNavTree(allDocs, lang, categoryMeta);
+const tree = groupSatelliteNodes(rawTree, [category]);
 
 const categoryNode = findNode(tree, category);
 const children =

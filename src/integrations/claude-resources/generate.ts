@@ -67,6 +67,32 @@ function escapeTitle(s: string): string {
   return s.replace(/"/g, '\\"');
 }
 
+function listFiles(dir: string): string[] {
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir)
+    .filter((f) => {
+      try {
+        return fs.statSync(path.join(dir, f)).isFile();
+      } catch {
+        return false;
+      }
+    })
+    .sort();
+}
+
+function writeCategoryMeta(
+  outputDir: string,
+  label: string,
+  position: number,
+  description: string,
+) {
+  fs.writeFileSync(
+    path.join(outputDir, "_category_.json"),
+    JSON.stringify({ label, position, description }, null, 2) + "\n",
+  );
+}
+
 // ---------------------------------------------------------------------------
 // CLAUDE.md discovery
 // ---------------------------------------------------------------------------
@@ -151,16 +177,7 @@ ${escapeForMdx(content.trim())}
     return a.displayPath.localeCompare(b.displayPath);
   });
 
-  // Category metadata (replaces index.mdx)
-  const categoryMeta = {
-    label: "CLAUDE.md",
-    position: 900,
-    description: "Project-specific instructions",
-  };
-  fs.writeFileSync(
-    path.join(outputDir, "_category_.json"),
-    JSON.stringify(categoryMeta, null, 2) + "\n",
-  );
+  writeCategoryMeta(outputDir, "CLAUDE.md", 900, "Project-specific instructions");
   return items;
 }
 
@@ -205,16 +222,7 @@ ${escapeForMdx(parsed.content.trim())}
 
   items.sort((a, b) => a.name.localeCompare(b.name));
 
-  // Category metadata (replaces index.mdx)
-  const categoryMeta = {
-    label: "Commands",
-    position: 901,
-    description: "Custom slash commands",
-  };
-  fs.writeFileSync(
-    path.join(outputDir, "_category_.json"),
-    JSON.stringify(categoryMeta, null, 2) + "\n",
-  );
+  writeCategoryMeta(outputDir, "Commands", 901, "Custom slash commands");
   return items;
 }
 
@@ -222,29 +230,15 @@ ${escapeForMdx(parsed.content.trim())}
 // Skills generation
 // ---------------------------------------------------------------------------
 
-function listFiles(dir: string): string[] {
-  if (!fs.existsSync(dir)) return [];
-  return fs
-    .readdirSync(dir)
-    .filter((f) => {
-      try {
-        return fs.statSync(path.join(dir, f)).isFile();
-      } catch {
-        return false;
-      }
-    })
-    .sort();
-}
+type TreeEntry =
+  | { isDir: false; name: string }
+  | { isDir: true; name: string; children: string[] };
 
 function getSkillFileTree(
   skillDir: string,
   subDirs: { name: string; files: string[] }[],
 ): string {
   const lines: string[] = [`${skillDir}/`];
-
-  type TreeEntry =
-    | { isDir: false; name: string }
-    | { isDir: true; name: string; children: string[] };
   const entries: TreeEntry[] = [{ isDir: false, name: "SKILL.md" }];
 
   for (const sub of subDirs) {
@@ -274,12 +268,13 @@ function getSkillFileTree(
 }
 
 function getScriptDescription(filePath: string): string {
-  const firstLine = fs.readFileSync(filePath, "utf8").split("\n", 2);
+  const topLines = fs.readFileSync(filePath, "utf8").split("\n", 2);
   // Skip shebang, use second line if available
-  const commentLine = firstLine[0].startsWith("#!")
-    ? firstLine[1] || ""
-    : firstLine[0];
-  const match = commentLine.match(/^#\s*(.+)/);
+  const commentLine = topLines[0].startsWith("#!")
+    ? topLines[1] || ""
+    : topLines[0];
+  // Match # comments (shell/python) or // comments (JS/TS)
+  const match = commentLine.match(/^(?:#|\/\/)\s*(.+)/);
   return match ? ` — ${match[1]}` : "";
 }
 
@@ -386,16 +381,23 @@ function generateSkillsDocs(config: ClaudeResourcesConfig): SkillItem[] {
       ? description.substring(0, 200) + "..."
       : description;
 
+    const body = [
+      fileTree,
+      escapeForMdx(parsed.content.trim()),
+      scriptsSection,
+      assetsSection,
+      referencesSection,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
     const mdx = `---
 title: "${escapeTitle(name)}"
 description: "${escapeTitle(shortDesc)}"
 sidebar_label: "${escapeTitle(name)}"
 ---
 
-${fileTree}
-
-${escapeForMdx(parsed.content.trim())}
-${scriptsSection}${assetsSection}${referencesSection}`;
+${body}`;
 
     fs.writeFileSync(path.join(outputDir, `${dir}.mdx`), mdx);
 
@@ -421,16 +423,7 @@ ${escapeForMdx(ref.content.trim())}
 
   items.sort((a, b) => a.name.localeCompare(b.name));
 
-  // Category metadata (replaces index.mdx)
-  const categoryMeta = {
-    label: "Skills",
-    position: 902,
-    description: "Skill packages",
-  };
-  fs.writeFileSync(
-    path.join(outputDir, "_category_.json"),
-    JSON.stringify(categoryMeta, null, 2) + "\n",
-  );
+  writeCategoryMeta(outputDir, "Skills", 902, "Skill packages");
   return items;
 }
 
@@ -480,16 +473,7 @@ ${escapeForMdx(parsed.content.trim())}
 
   items.sort((a, b) => a.name.localeCompare(b.name));
 
-  // Category metadata (replaces index.mdx)
-  const categoryMeta = {
-    label: "Agents",
-    position: 903,
-    description: "Custom subagents",
-  };
-  fs.writeFileSync(
-    path.join(outputDir, "_category_.json"),
-    JSON.stringify(categoryMeta, null, 2) + "\n",
-  );
+  writeCategoryMeta(outputDir, "Agents", 903, "Custom subagents");
   return items;
 }
 
