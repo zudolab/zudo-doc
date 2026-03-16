@@ -50,6 +50,7 @@ const shikiConfig = settings.colorMode
 export default defineConfig({
   output: "static",
   base: settings.base,
+  trailingSlash: "always",
   integrations: [
     mdx(),
     react(),

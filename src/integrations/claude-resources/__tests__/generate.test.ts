@@ -188,7 +188,7 @@ describe("generateClaudeResourcesDocs", () => {
       expect(skillPage).toContain("SKILL.md");
     });
 
-    it("skill page has links to sub-files", () => {
+    it("skill page has links to sub-files that resolve to existing pages", () => {
       generateClaudeResourcesDocs({
         claudeDir,
         projectRoot: tmpDir,
@@ -200,8 +200,26 @@ describe("generateClaudeResourcesDocs", () => {
         "utf8",
       );
 
-      expect(skillPage).toContain("../test-skill/ref-guide/");
-      expect(skillPage).toContain("../test-skill/asset-template/");
+      // Links should use ./ relative format (works with trailingSlash: "always")
+      expect(skillPage).toContain("./ref-guide/");
+      expect(skillPage).toContain("./asset-template/");
+
+      // Each linked file must actually exist as a generated .mdx file
+      const linkPattern = /\]\(\.\/([\w-]+)\/\)/g;
+      let match;
+      while ((match = linkPattern.exec(skillPage)) !== null) {
+        const linkedSlug = match[1];
+        const targetFile = path.join(
+          docsDir,
+          "claude-skills",
+          "test-skill",
+          `${linkedSlug}.mdx`,
+        );
+        expect(
+          fs.existsSync(targetFile),
+          `Link target "${linkedSlug}.mdx" should exist`,
+        ).toBe(true);
+      }
     });
 
     it("agent page has model badge", () => {
