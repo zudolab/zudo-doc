@@ -1,0 +1,64 @@
+---
+title: CategoryTreeNav
+description: An Astro component that renders a nested tree of child page links for category index pages.
+sidebar_position: 9
+---
+
+## Overview
+
+`CategoryTreeNav` is an Astro component that displays child pages of a category as a nested tree of links (`ul > li > ul > li` pattern). It is an alternative to `CategoryNav` which uses a card-grid style — `CategoryTreeNav` is more compact and suited to categories with deeper nesting.
+
+<Info>
+
+`CategoryTreeNav` is globally available in all MDX doc pages — no import needed. It is registered alongside the admonition components (`Note`, `Tip`, etc.) in the doc page route.
+
+</Info>
+
+## Live Example
+
+Here is `CategoryTreeNav` rendering the Getting Started category:
+
+<CategoryTreeNav category="getting-started" />
+
+And here is the Components category:
+
+<CategoryTreeNav category="components" />
+
+## Usage
+
+Use `CategoryTreeNav` in a category's `index.mdx` to create a compact tree-style listing:
+
+```mdx
+---
+title: Getting Started
+sidebar_position: 0
+---
+
+Welcome to the Getting Started section.
+
+<CategoryTreeNav category="getting-started" />
+```
+
+Since `CategoryTreeNav` is an Astro component (zero client-side JavaScript), no `client:` directive is needed.
+
+## Comparison with CategoryNav
+
+| Feature | CategoryNav | CategoryTreeNav |
+|---------|-------------|-----------------|
+| Layout | 2-column card grid | Nested tree list |
+| Description | Shown in each card | Shown inline after title |
+| Nesting | Flat (children only) | Up to 3 levels deep |
+| Best for | Landing pages, overviews | Deep hierarchies, compact listings |
+
+## Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `category` | `string` | (required) | The category slug (e.g., `"guides"`, `"reference"`) |
+| `lang` | `Locale` | auto-detected | Override the locale for the content collection |
+
+The `lang` prop is automatically detected from the current URL path, so you typically don't need to set it.
+
+## Source
+
+The component is defined at `src/components/category-tree-nav.astro`.

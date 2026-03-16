@@ -1,0 +1,64 @@
+---
+title: CategoryTreeNav
+description: カテゴリインデックスページに子ページのネストされたツリーリンクを表示するAstroコンポーネント。
+sidebar_position: 9
+---
+
+## 概要
+
+`CategoryTreeNav`は、カテゴリの子ページをネストされたツリー形式のリンク（`ul > li > ul > li`パターン）で表示するAstroコンポーネントです。カードグリッドスタイルの`CategoryNav`の代替として、より深いネストを持つカテゴリに適したコンパクトな表示を提供します。
+
+<Info>
+
+`CategoryTreeNav`はすべてのMDXドキュメントページでグローバルに利用できます — インポートは不要です。アドモニションコンポーネント（`Note`、`Tip`など）と同様に、ドキュメントページルートで登録されています。
+
+</Info>
+
+## ライブデモ
+
+以下は`CategoryTreeNav`で「はじめに」カテゴリを表示した例です：
+
+<CategoryTreeNav category="getting-started" />
+
+コンポーネントカテゴリの例：
+
+<CategoryTreeNav category="components" />
+
+## 使い方
+
+カテゴリの`index.mdx`で`CategoryTreeNav`を使用してコンパクトなツリー形式のリストを作成します：
+
+```mdx
+---
+title: Getting Started
+sidebar_position: 0
+---
+
+Welcome to the Getting Started section.
+
+<CategoryTreeNav category="getting-started" />
+```
+
+`CategoryTreeNav`はAstroコンポーネント（クライアントサイドJavaScriptなし）のため、`client:`ディレクティブは不要です。
+
+## CategoryNavとの比較
+
+| 特徴 | CategoryNav | CategoryTreeNav |
+|---------|-------------|-----------------|
+| レイアウト | 2カラムカードグリッド | ネストされたツリーリスト |
+| 説明文 | 各カード内に表示 | タイトルの後にインラインで表示 |
+| ネスト | フラット（子のみ） | 最大3階層まで |
+| 最適な用途 | ランディングページ、概要 | 深い階層構造、コンパクトな一覧 |
+
+## プロップ
+
+| プロップ | 型 | デフォルト | 説明 |
+|------|------|---------|-------------|
+| `category` | `string` | （必須） | カテゴリスラッグ（例：`"guides"`、`"reference"`） |
+| `lang` | `Locale` | 自動検出 | コンテンツコレクションのロケールを上書き |
+
+`lang`プロップは現在のURLパスから自動的に検出されるため、通常は設定する必要はありません。
+
+## ソース
+
+コンポーネントは`src/components/category-tree-nav.astro`に定義されています。
