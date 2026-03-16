@@ -29,6 +29,7 @@ export interface FooterLinkColumn {
 
 export interface FooterConfig {
   links: FooterLinkColumn[];
+  /** Copyright text displayed at the bottom of the footer. HTML is supported. */
   copyright?: string;
 }
 

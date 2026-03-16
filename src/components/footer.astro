@@ -44,11 +44,11 @@ const { links, copyright } = footer;
       copyright && (
         <div
           class:list={[
-            "text-center text-caption text-muted",
+            "text-center text-caption text-muted [&_a]:text-accent [&_a]:hover:underline",
             links.length > 0 && "mt-vsp-lg border-t border-muted pt-vsp-md",
           ]}
         >
-          {copyright}
+          <Fragment set:html={copyright} />
         </div>
       )
     }
