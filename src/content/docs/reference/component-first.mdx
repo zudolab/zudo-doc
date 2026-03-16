@@ -1,0 +1,177 @@
+---
+title: Component First Strategy
+description: Why zudo-doc uses components with utility classes instead of custom CSS class names.
+sidebar_position: 2
+---
+
+zudo-doc follows a **component-first strategy**: always express UI as components with Tailwind utility classes. Never create custom CSS class names with separate stylesheets.
+
+## The Problem
+
+When projects use a utility CSS framework alongside a component framework, developers frequently fall back to traditional CSS patterns. Instead of composing utility classes inside components, they create custom CSS class names — `.profile-card`, `.btn-primary`, `.sidebar-nav` — with separate stylesheets or CSS modules.
+
+This creates a fragmented codebase:
+
+- Some components use Tailwind utilities inline
+- Others introduce custom CSS classes with BEM naming or CSS modules
+- Some mix both approaches in the same file
+
+For AI agents, this is a particularly common failure mode. Given a task like "build a profile card," an agent will often generate a `.profile-card` class with a CSS module — the pattern seen most often in training data. Over time, the codebase becomes a patchwork of conflicting styling approaches.
+
+## The Rule
+
+**The component itself is the abstraction.** CSS class names like `.card` or `.btn-primary` are unnecessary — the component handles encapsulation, and utility classes handle styling.
+
+- Need a card? Create a `<Card>` component with utility classes
+- Need a button variant? Create a `<Button variant="primary">` component
+- Need a layout pattern? Create a `<PageLayout>` component
+
+## In zudo-doc
+
+zudo-doc uses **Astro components** (`.astro`) and **React islands** (`.tsx`) with **Tailwind CSS v4** utilities. The same rule applies to both:
+
+### Astro Components
+
+Most UI is server-rendered Astro — zero JavaScript, utility classes inline:
+
+```astro
+<!-- src/components/footer.astro -->
+<footer class="border-t border-muted bg-surface px-hsp-xl py-vsp-xl">
+  <div class="text-center text-caption text-muted">
+    <Fragment set:html={copyright} />
+  </div>
+</footer>
+```
+
+No `.footer` class. No `footer.module.css`. The component **is** the abstraction.
+
+### React Islands
+
+Interactive components use React with `client:load`, same utility approach:
+
+```tsx
+// src/components/sidebar-toggle.tsx
+export function SidebarToggle({ label }: Props) {
+  const [open, setOpen] = useState(false);
+  return (
+    <button
+      className="lg:hidden flex items-center gap-hsp-xs text-fg"
+      onClick={() => setOpen(!open)}
+    >
+      {label}
+    </button>
+  );
+}
+```
+
+### Anti-Pattern
+
+Do **not** create CSS class names in a zudo-doc project:
+
+```css
+/* WRONG — don't create custom CSS classes */
+.profile-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+.profile-card__name {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+```
+
+```astro
+<!-- WRONG — custom class names bypass the design system -->
+<div class="profile-card">
+  <h3 class="profile-card__name">{name}</h3>
+</div>
+```
+
+Instead:
+
+```astro
+<!-- RIGHT — utility classes, the component is the abstraction -->
+<div class="flex gap-hsp-md p-hsp-lg">
+  <h3 class="text-body font-semibold">{name}</h3>
+</div>
+```
+
+## Component Variants via Props
+
+Instead of CSS modifier classes (`.btn--primary`, `.btn--secondary`), use component props:
+
+```tsx
+function Button({ variant = "primary", children }) {
+  const styles = {
+    primary: "bg-accent text-bg hover:bg-accent-hover",
+    secondary: "bg-surface text-fg border border-muted",
+  };
+  return (
+    <button className={`${styles[variant]} font-semibold py-vsp-xs px-hsp-md rounded`}>
+      {children}
+    </button>
+  );
+}
+```
+
+Usage:
+
+```tsx
+<Button variant="primary">Save</Button>
+<Button variant="secondary">Cancel</Button>
+```
+
+No `.btn-primary` class to maintain. The `variant` prop is type-safe, auto-completable, and self-documenting.
+
+## Component Composition
+
+Complex layouts are built by composing smaller components — not by adding more CSS:
+
+```astro
+<div class="divide-y divide-muted">
+  {users.map((user) => (
+    <div class="flex items-center gap-hsp-md py-vsp-sm">
+      <Avatar src={user.avatar} size="sm" />
+      <div class="flex-1 min-w-0">
+        <p class="text-small font-medium text-fg truncate">{user.name}</p>
+        <p class="text-caption text-muted truncate">{user.email}</p>
+      </div>
+    </div>
+  ))}
+</div>
+```
+
+Each piece — `<Avatar>`, the list layout — is a component. No `.user-list__item` or `.user-list__avatar` class names needed.
+
+## Using zudo-doc's Design Tokens
+
+Always use project tokens instead of arbitrary values:
+
+```astro
+<!-- WRONG — arbitrary values bypass the design system -->
+<div class="p-[1.2rem] text-[0.875rem] text-[#6b7280]">
+
+<!-- RIGHT — use design tokens -->
+<div class="p-hsp-md text-small text-muted">
+```
+
+See [Design System](/docs/reference/design-system) for available spacing, typography, and color tokens.
+
+## When Custom CSS Is Acceptable
+
+The **only** place custom CSS belongs in zudo-doc is in `src/styles/global.css`:
+
+- **Content typography** — the `.zd-content` class styles rendered MDX elements (headings, paragraphs, lists) because these elements are generated by the MDX pipeline, not authored as components
+- **Design token definitions** — the `@theme` block that registers Tailwind tokens
+
+Everything else — every component, every layout, every UI element — uses utility classes directly.
+
+## Rules Summary
+
+1. **Always create components** — not CSS classes
+2. **Use utility classes directly** in component markup
+3. **Never create CSS module files** or custom class names
+4. **Use props for variants** — not CSS modifiers
+5. **Compose components** — build complex UI from smaller components, not from more CSS
+6. **Use project tokens** — `text-fg`, `bg-surface`, `p-hsp-md`, not arbitrary values

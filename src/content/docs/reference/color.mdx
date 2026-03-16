@@ -26,22 +26,32 @@ This layering means you can:
 
 zudo-doc's color system uses a **16-color palette**. Each color scheme provides values for 16 indexed color slots plus background, foreground, and selection colors.
 
-### Palette Slots
+### Palette Index Convention
 
-| Slot | Name | Bright Slot | Bright Name | Typical Use |
-|------|------|-------------|-------------|-------------|
-| 0 | Black | 8 | Bright Black | Surfaces, muted text, borders |
-| 1 | Red | 9 | Bright Red | Danger, errors |
-| 2 | Green | 10 | Bright Green | Success, tips |
-| 3 | Yellow | 11 | Bright Yellow | Warnings |
-| 4 | Blue | 12 | Bright Blue | Info, notes |
-| 5 | Magenta | 13 | Bright Magenta | Code highlights |
-| 6 | Cyan | 14 | Bright Cyan | Accent, links |
-| 7 | White | 15 | Bright White | Text, bright elements |
+Every color scheme must follow this standard index mapping. This ensures components and semantic tokens work consistently across all themes:
+
+| Index | Role | Description |
+|-------|------|-------------|
+| p0 | Dark surface | Deepest surface (code blocks, overlays) |
+| p1 | Danger | Red family — errors, destructive actions |
+| p2 | Success | Green family — confirmations, tips |
+| p3 | Warning | Yellow/amber — caution messages |
+| p4 | Info | Blue family — informational highlights |
+| p5 | Accent | Primary interactive color (links, CTA) |
+| p6 | Neutral | Slate/cyan — borders, secondary elements |
+| p7 | Secondary | Muted accent or secondary neutral |
+| p8 | Muted | Gray — borders, secondary text, comments |
+| p9 | Background | Page background |
+| p10 | Surface | Elevated surface (panels, sidebars) |
+| p11 | Text primary | Main body text |
+| p12 | Accent variant | Brighter or alternate accent |
+| p13 | Decorative | Purple/lavender — non-semantic decoration |
+| p14 | Accent hover | Hover state for interactive elements |
+| p15 | Text secondary | Secondary text or muted foreground |
 
 <Note>
 
-The actual colors are **not fixed** — each color scheme defines its own values for each slot. The names are conventions, not guarantees. That's why zudo-doc uses abstract numbered tokens (`p0`–`p15`) instead of color names.
+The actual hex values differ between light and dark schemes, but the **role** of each index stays the same. For example, p1 is always a danger/red color — `#dd3131` in light mode, `#da6871` in dark mode. This consistency is what makes it safe to use palette tokens directly and easy to create new schemes.
 
 </Note>
 
@@ -103,20 +113,20 @@ Once registered in `@theme`, these become standard Tailwind utility classes: `bg
 
 | Token | Default Palette Slot | Usage |
 |-------|---------------------|-------|
-| `bg` | `--zd-bg` | Page background |
-| `fg` | `--zd-fg` | Primary text |
-| `surface` | `p0` (Black) | Panel/sidebar surfaces |
-| `muted` | `p8` (Bright Black) | Muted text, borders, comments |
-| `accent` | `p6` (Cyan) | Links, active states, CTA |
-| `accent-hover` | `p14` (Bright Cyan) | Hover state for accent |
+| `bg` | `--zd-bg` (p9) | Page background |
+| `fg` | `--zd-fg` (p11) | Primary text |
+| `surface` | `p0` (Dark surface) | Panel/sidebar surfaces |
+| `muted` | `p8` (Muted) | Muted text, borders, comments |
+| `accent` | `p5` (Accent) | Links, active states, CTA |
+| `accent-hover` | `p14` (Accent hover) | Hover state for accent |
 | `sel-bg` | `--zd-sel-bg` | Selection background |
 | `sel-fg` | `--zd-sel-fg` | Selection foreground |
-| `code-bg` | `p0` (Black) | Code block background |
-| `code-fg` | `p13` (Bright Magenta) | Inline code text |
-| `success` | `p2` (Green) | Success states, confirmations |
-| `danger` | `p1` (Red) | Errors, destructive actions |
-| `warning` | `p3` (Yellow) | Warning messages |
-| `info` | `p4` (Blue) | Informational highlights |
+| `code-bg` | `p10` (Surface) | Code block background |
+| `code-fg` | `p11` (Text primary) | Inline code text |
+| `success` | `p2` (Success) | Success states, confirmations |
+| `danger` | `p1` (Danger) | Errors, destructive actions |
+| `warning` | `p3` (Warning) | Warning messages |
+| `info` | `p4` (Info) | Informational highlights |
 
 ### Per-Scheme Semantic Overrides
 
@@ -240,29 +250,29 @@ Add a new entry to the `colorSchemes` object in `src/config/color-schemes.ts`:
 
 ```ts
 "My Theme": {
-  background: "#1a1a2e",
-  foreground: "#e0e0e0",
-  cursor: "#e0e0e0",
-  selectionBg: "#3a3a5e",
-  selectionFg: "#e0e0e0",
+  background: 9,
+  foreground: 11,
+  cursor: 6,
+  selectionBg: 10,
+  selectionFg: 11,
   palette: [
-    "#16213e", "#e74c3c", "#2ecc71", "#f39c12",  // 0-3: Black, Red, Green, Yellow
-    "#3498db", "#9b59b6", "#1abc9c", "#ecf0f1",  // 4-7: Blue, Magenta, Cyan, White
-    "#2c3e50", "#e67e73", "#55d98d", "#f5b041",  // 8-11: Bright Black–Yellow
-    "#5dade2", "#bb8fce", "#48c9b0", "#fdfefe",  // 12-15: Bright Blue–White
+    "#16213e", "#e74c3c", "#2ecc71", "#f39c12",  // p0-3: dark surface, danger, success, warning
+    "#3498db", "#9b59b6", "#1abc9c", "#ecf0f1",  // p4-7: info, accent, neutral, secondary
+    "#2c3e50", "#1a1a2e", "#2a2a4e", "#e0e0e0",  // p8-11: muted, background, surface, text
+    "#5dade2", "#bb8fce", "#48c9b0", "#c0c0c0",  // p12-15: accent variant, decorative, hover, text secondary
   ],
   shikiTheme: "one-dark-pro",
   // Optional: override semantic defaults
   semantic: {
-    muted: "#7f8c8d",
-    surface: "#1f1f3a",
+    accent: 12,       // use p12 as accent instead of default p5
+    surface: "#1f1f3a", // direct color string also works
   },
 },
 ```
 
 The `ColorScheme` interface requires:
 
-- `background`, `foreground` — base color strings
+- `background`, `foreground` — `ColorRef` (palette index or color string, typically p9 and p11)
 - `cursor`, `selectionBg`, `selectionFg` — `ColorRef` (palette index or color string)
 - `palette` — 16-element tuple (color slots 0–15)
 - `shikiTheme` — a Shiki theme name for syntax highlighting
