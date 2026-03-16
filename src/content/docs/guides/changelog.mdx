@@ -108,6 +108,33 @@ The `--snapshot` flag archives the **old** version's docs, not the new version. 
 
 </Note>
 
+## Version Bump Skill
+
+For [Claude Code](https://claude.com/claude-code) users, zudo-doc includes a `/zudo-doc-version-bump` skill that orchestrates the entire release workflow. Instead of running the script manually, the skill handles everything end-to-end:
+
+1. Analyzes commits since the last git tag and categorizes them (breaking, features, fixes, other)
+2. Proposes a version bump type (major/minor/patch) based on the changes
+3. Runs `version-bump.sh` to update `package.json` and create changelog entries
+4. Fills in the changelog templates with actual commit details (both EN and JA)
+5. Runs `pnpm b4push` to validate the build
+6. Commits, pushes, and waits for CI
+7. Creates a git tag and GitHub release
+8. Guides you through npm publishing (or skips it for private packages)
+
+```bash
+# Run the skill in Claude Code
+/zudo-doc-version-bump
+
+# Or skip the proposal step by specifying the bump type
+/zudo-doc-version-bump patch
+```
+
+<Note>
+
+The skill requires at least one `v*` tag to exist. If this is the first release, create the initial tag manually: `git tag v0.1.0 && git push --tags`.
+
+</Note>
+
 ## Header Navigation
 
 The changelog section is linked from the header navigation. This is configured in `src/config/settings.ts`:
