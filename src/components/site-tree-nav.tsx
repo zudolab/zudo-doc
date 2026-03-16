@@ -142,8 +142,7 @@ function CategoryNode({
           {node.href ? (
             <a
               href={node.href}
-              className="flex-1 flex items-center gap-hsp-xs py-vsp-xs hover:text-accent hover:underline focus:underline"
-              style={{ color: "oklch(0.93 0 0)" }}
+              className="flex-1 flex items-center gap-hsp-xs py-vsp-xs text-sel-fg hover:text-accent hover:underline focus:underline"
             >
               {depth === 0 && <CategoryLinkIcon />}
               {node.label}
@@ -210,10 +209,10 @@ function LeafNode({
         <a
           href={node.href}
           className={isRoot
-            ? "block py-[calc(var(--spacing-vsp-xs)+0.15rem)] text-small font-semibold text-fg hover:text-accent hover:underline focus:underline"
-            : `block py-vsp-2xs ${isLast ? "pb-vsp-xs" : ""} text-small hover:text-accent hover:underline focus:underline`
+            ? "block py-[calc(var(--spacing-vsp-xs)+0.15rem)] text-small font-semibold text-sel-fg hover:text-accent hover:underline focus:underline"
+            : `block py-vsp-2xs ${isLast ? "pb-vsp-xs" : ""} text-small text-sel-fg hover:text-accent hover:underline focus:underline`
           }
-          style={{ paddingLeft, color: isRoot ? undefined : "oklch(0.93 0 0)" }}
+          style={{ paddingLeft }}
         >
           {node.label}
         </a>

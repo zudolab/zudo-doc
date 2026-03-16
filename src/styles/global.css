@@ -257,12 +257,12 @@ body {
 
 /* ── Links ── */
 
-.zd-content :where(a:not(.block)) {
+.zd-content :where(a:not(.block):not([aria-label="Site index"] *)) {
   color: var(--color-accent);
   text-decoration: underline;
 }
 
-.zd-content :where(a:not(.block):hover) {
+.zd-content :where(a:not(.block):not([aria-label="Site index"] *):hover) {
   color: var(--color-accent-hover);
 }
 
