@@ -1,7 +1,7 @@
 import type { DocsEntry } from "@/types/docs-entry";
 import fs from "node:fs";
 import path from "node:path";
-import { toTitleCase } from "@/utils/slug";
+import { toTitleCase, toRouteSlug } from "@/utils/slug";
 import { docsUrl, withBase } from "@/utils/base";
 import { defaultLocale, type Locale } from "@/config/i18n";
 
@@ -74,7 +74,8 @@ export function buildNavTree(
   };
 
   for (const doc of docs) {
-    const parts = doc.id.split("/");
+    const slug = doc.data.slug ?? toRouteSlug(doc.id);
+    const parts = slug.split("/");
 
     if (parts.length <= 1) {
       // Category index: Astro 5 stripped /index → single segment like "guides"
