@@ -117,7 +117,7 @@ Once registered in `@theme`, these become standard Tailwind utility classes: `bg
 | `fg` | `--zd-fg` (p11) | Primary text |
 | `surface` | `p0` (Dark surface) | Panel/sidebar surfaces |
 | `muted` | `p8` (Muted) | Muted text, borders, comments |
-| `accent` | `p6` (Neutral) | Links, active states, CTA |
+| `accent` | `p5` (Accent) | Links, active states, CTA |
 | `accent-hover` | `p14` (Accent hover) | Hover state for accent |
 | `sel-bg` | `--zd-sel-bg` | Selection background |
 | `sel-fg` | `--zd-sel-fg` | Selection foreground |
@@ -250,29 +250,29 @@ Add a new entry to the `colorSchemes` object in `src/config/color-schemes.ts`:
 
 ```ts
 "My Theme": {
-  background: "#1a1a2e",
-  foreground: "#e0e0e0",
-  cursor: "#e0e0e0",
-  selectionBg: "#3a3a5e",
-  selectionFg: "#e0e0e0",
+  background: 9,
+  foreground: 11,
+  cursor: 6,
+  selectionBg: 10,
+  selectionFg: 11,
   palette: [
-    "#16213e", "#e74c3c", "#2ecc71", "#f39c12",  // 0-3: Black, Red, Green, Yellow
-    "#3498db", "#9b59b6", "#1abc9c", "#ecf0f1",  // 4-7: Blue, Magenta, Cyan, White
-    "#2c3e50", "#e67e73", "#55d98d", "#f5b041",  // 8-11: Bright Black–Yellow
-    "#5dade2", "#bb8fce", "#48c9b0", "#fdfefe",  // 12-15: Bright Blue–White
+    "#16213e", "#e74c3c", "#2ecc71", "#f39c12",  // p0-3: dark surface, danger, success, warning
+    "#3498db", "#9b59b6", "#1abc9c", "#ecf0f1",  // p4-7: info, accent, neutral, secondary
+    "#2c3e50", "#1a1a2e", "#2a2a4e", "#e0e0e0",  // p8-11: muted, background, surface, text
+    "#5dade2", "#bb8fce", "#48c9b0", "#c0c0c0",  // p12-15: accent variant, decorative, hover, text secondary
   ],
   shikiTheme: "one-dark-pro",
   // Optional: override semantic defaults
   semantic: {
-    muted: "#7f8c8d",
-    surface: "#1f1f3a",
+    accent: 12,       // use p12 as accent instead of default p5
+    surface: "#1f1f3a", // direct color string also works
   },
 },
 ```
 
 The `ColorScheme` interface requires:
 
-- `background`, `foreground` — base color strings
+- `background`, `foreground` — `ColorRef` (palette index or color string, typically p9 and p11)
 - `cursor`, `selectionBg`, `selectionFg` — `ColorRef` (palette index or color string)
 - `palette` — 16-element tuple (color slots 0–15)
 - `shikiTheme` — a Shiki theme name for syntax highlighting
