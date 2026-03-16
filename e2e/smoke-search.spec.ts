@@ -122,7 +122,8 @@ test.describe("Search dialog", () => {
     const input = page.locator("[data-search-input]");
     await expect(input).toBeFocused({ timeout: 3000 });
 
-    await input.fill("Getting Started");
+    const searchQuery = "Getting Started";
+    await input.fill(searchQuery);
 
     // Wait for results
     const results = page.locator("[data-search-results] article");
@@ -135,7 +136,6 @@ test.describe("Search dialog", () => {
     // Verify highlighted text matches query terms (case-insensitive)
     const markTexts = await marks.allTextContents();
     expect(markTexts.length).toBeGreaterThan(0);
-    const searchQuery = "Getting Started";
     const queryTerms = searchQuery.toLowerCase().split(/\s+/);
     for (const text of markTexts) {
       const lower = text.toLowerCase();
