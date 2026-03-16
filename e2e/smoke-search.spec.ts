@@ -135,10 +135,14 @@ test.describe("Search dialog", () => {
     // Verify highlighted text matches query terms (case-insensitive)
     const markTexts = await marks.allTextContents();
     expect(markTexts.length).toBeGreaterThan(0);
-    const queryTerms = ["getting", "started"];
+    const searchQuery = "Getting Started";
+    const queryTerms = searchQuery.toLowerCase().split(/\s+/);
     for (const text of markTexts) {
       const lower = text.toLowerCase();
-      expect(queryTerms.some((term) => lower.includes(term))).toBeTruthy();
+      expect(
+        queryTerms.some((term) => lower.includes(term)),
+        `Expected "${text}" to contain one of: ${queryTerms.join(", ")}`,
+      ).toBeTruthy();
     }
   });
 });
