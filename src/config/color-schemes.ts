@@ -50,7 +50,7 @@ export const colorSchemes: Record<string, ColorScheme> = {
       muted: 8,
       accent: 5,
       accentHover: 14,
-      codeBg: 1,
+      codeBg: 9,
       codeFg: 10,
       success: 2,
       danger: 15,
