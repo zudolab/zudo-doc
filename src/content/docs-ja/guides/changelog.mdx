@@ -78,6 +78,38 @@ sidebar_position: 2
 
 強制的なフォーマットはありません。プロジェクトに合った構造を使用してください。上記の例は[Keep a Changelog](https://keepachangelog.com/)に似た一般的な規約に従っています。
 
+## バージョンバンプスクリプト
+
+zudo-docにはバージョン管理を自動化する`scripts/version-bump.sh`スクリプトが含まれています：
+
+```bash
+# バージョンをバンプして変更履歴エントリを作成
+./scripts/version-bump.sh 0.2.0
+
+# バージョンをバンプして変更履歴エントリを作成し、現在のドキュメントをスナップショット
+./scripts/version-bump.sh 1.0.0 --snapshot
+```
+
+スクリプトは以下のステップを実行します：
+
+1. `package.json`の`version`フィールドを更新
+2. 英語と日本語の両方のディレクトリに変更履歴エントリMDXファイルを作成
+3. 正しい`sidebar_position`を自動的に設定（既存エントリからインクリメント）
+
+### ドキュメントスナップショット
+
+`--snapshot`フラグを使用すると、バンプ前に現在のドキュメントをバージョン付きスナップショットとしてアーカイブします。これはzudo-docの[バージョニングシステム](/ja/docs/guides/versioning)と連携します：
+
+1. `src/content/docs/`を`src/content/docs-v{old}/`にコピー
+2. `src/content/docs-ja/`を`src/content/docs-v{old}-ja/`にコピー
+3. `src/config/settings.ts`に追加するバージョン設定エントリを表示
+
+<Note>
+
+`--snapshot`フラグは新しいバージョンではなく、**古い**バージョンのドキュメントをアーカイブします。スクリプト実行後、`src/content/docs/`は新しいバージョンを表し、スナップショットは以前の状態を保持します。
+
+</Note>
+
 ## ヘッダーナビゲーション
 
 変更履歴セクションはヘッダーナビゲーションからリンクされています。これは`src/config/settings.ts`で設定されます：

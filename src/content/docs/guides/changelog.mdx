@@ -78,6 +78,38 @@ Each changelog entry is a standard MDX file. A recommended structure:
 
 There is no enforced format — use whatever structure fits your project. The examples above follow a common convention similar to [Keep a Changelog](https://keepachangelog.com/).
 
+## Version Bump Script
+
+zudo-doc includes a `scripts/version-bump.sh` script that automates version management:
+
+```bash
+# Bump version and create changelog entry
+./scripts/version-bump.sh 0.2.0
+
+# Bump version, create changelog entry, and snapshot current docs
+./scripts/version-bump.sh 1.0.0 --snapshot
+```
+
+The script performs the following steps:
+
+1. Updates the `version` field in `package.json`
+2. Creates a changelog entry MDX file in both English and Japanese directories
+3. Sets the correct `sidebar_position` automatically (incremented from existing entries)
+
+### Doc Snapshots
+
+When called with `--snapshot`, the script also archives the current documentation as a versioned snapshot before bumping. This integrates with zudo-doc's [versioning system](/docs/guides/versioning):
+
+1. Copies `src/content/docs/` to `src/content/docs-v{old}/`
+2. Copies `src/content/docs-ja/` to `src/content/docs-v{old}-ja/`
+3. Prints the version config entry to add to `src/config/settings.ts`
+
+<Note>
+
+The `--snapshot` flag archives the **old** version's docs, not the new version. After the script runs, `src/content/docs/` represents the new version and the snapshot preserves the previous state.
+
+</Note>
+
 ## Header Navigation
 
 The changelog section is linked from the header navigation. This is configured in `src/config/settings.ts`:
