@@ -7,7 +7,8 @@ import { settings } from "@/config/settings";
 import { hexToHsl, hslToHex } from "@/utils/color-convert";
 
 const allPresets: Record<string, ColorScheme> = { ...colorSchemes, ...colorTweakPresets };
-const presetNames = Object.keys(allPresets).sort();
+const bundledNames = Object.keys(colorSchemes);
+const presetNames = Object.keys(colorTweakPresets).sort();
 
 const STORAGE_KEY = "zudo-doc-tweak-state";
 const OPEN_KEY = "zudo-doc-tweak-open";
@@ -795,6 +796,10 @@ export default function ColorTweakPanel() {
             defaultValue=""
           >
             <option value="" disabled>Scheme...</option>
+            {bundledNames.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+            <hr />
             {presetNames.map((name) => (
               <option key={name} value={name}>{name}</option>
             ))}
