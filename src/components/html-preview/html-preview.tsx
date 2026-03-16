@@ -64,6 +64,8 @@ export default function HtmlPreview({
   );
   const hasScripts = containsScript(head, js);
   const syncDelay = hasScripts ? 300 : 0;
+  // allow-same-origin is needed alongside allow-scripts so that syncHeight
+  // can access iframe.contentDocument for auto-height measurement
   const sandboxValue = hasScripts ? "allow-scripts allow-same-origin" : "";
 
   const codeBlocks = useMemo(
