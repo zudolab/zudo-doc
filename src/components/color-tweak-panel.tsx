@@ -1,9 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import ColorTweakExportModal from "./color-tweak-export-modal";
 import { colorSchemes, type ColorRef, type ColorScheme } from "@/config/color-schemes";
+import { colorTweakPresets } from "@/config/color-tweak-presets";
 import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "@/config/color-scheme-utils";
 import { settings } from "@/config/settings";
 import { hexToHsl, hslToHex } from "@/utils/color-convert";
+
+const allPresets: Record<string, ColorScheme> = { ...colorSchemes, ...colorTweakPresets };
+const presetNames = Object.keys(allPresets).sort();
 
 const STORAGE_KEY = "zudo-doc-tweak-state";
 const OPEN_KEY = "zudo-doc-tweak-open";
@@ -66,17 +70,38 @@ async function applyShikiTheme(themeName: string): Promise<void> {
 }
 
 const SHIKI_THEMES = [
-  "dracula",
-  "github-light",
-  "github-dark",
-  "nord",
-  "tokyo-night",
-  "one-dark-pro",
-  "catppuccin-mocha",
+  "ayu-light",
   "catppuccin-latte",
+  "catppuccin-mocha",
+  "dracula",
+  "everforest-dark",
+  "everforest-light",
+  "github-dark",
+  "github-dark-dimmed",
+  "github-light",
   "gruvbox-dark-medium",
-  "min-light",
+  "gruvbox-light-medium",
+  "kanagawa-dragon",
+  "kanagawa-wave",
+  "material-theme-darker",
+  "material-theme-lighter",
+  "material-theme-ocean",
   "min-dark",
+  "min-light",
+  "monokai",
+  "night-owl",
+  "nord",
+  "one-dark-pro",
+  "one-light",
+  "poimandres",
+  "rose-pine",
+  "rose-pine-dawn",
+  "rose-pine-moon",
+  "snazzy-light",
+  "solarized-dark",
+  "solarized-light",
+  "tokyo-night",
+  "vesper",
   "vitesse-dark",
   "vitesse-light",
 ];
@@ -712,6 +737,23 @@ export default function ColorTweakPanel() {
     [persist],
   );
 
+  const handleLoadPreset = useCallback(
+    (name: string) => {
+      const scheme = allPresets[name];
+      if (!scheme) return;
+      const newState = initFromSchemeData(scheme);
+      applyFullState(newState);
+      if (newState.shikiTheme !== state?.shikiTheme) {
+        applyShikiTheme(newState.shikiTheme);
+      }
+      setState(newState);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+      } catch { /* storage full */ }
+    },
+    [state],
+  );
+
   const handleResetAll = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
     // Remove all inline styles to restore CSS-provided values
@@ -743,6 +785,21 @@ export default function ColorTweakPanel() {
           Color Tweak Panel
         </span>
         <div className="flex items-center gap-hsp-md">
+          <select
+            onChange={(e) => {
+              if (e.target.value) handleLoadPreset(e.target.value);
+              e.target.value = "";
+            }}
+            className="bg-surface text-fg border border-muted px-hsp-xs py-[2px] hover:border-fg transition-colors"
+            style={{ fontSize: "0.6875rem", borderRadius: "var(--radius-DEFAULT)", maxWidth: "10rem" }}
+            aria-label="Load color scheme preset"
+            value=""
+          >
+            <option value="" disabled>Scheme...</option>
+            {presetNames.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
           <button
             type="button"
             onClick={() => setShowExport(true)}
