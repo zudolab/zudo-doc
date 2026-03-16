@@ -20,6 +20,12 @@ echo ""
 read -rp "Skill name [$DEFAULT_SKILL_NAME]: " SKILL_NAME
 SKILL_NAME="${SKILL_NAME:-$DEFAULT_SKILL_NAME}"
 
+# Validate skill name (allow only alphanumeric, hyphens, underscores)
+if [[ ! "$SKILL_NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+  echo "Error: Skill name may only contain letters, numbers, hyphens, and underscores."
+  exit 1
+fi
+
 # Resolve the main repo root (handles git worktrees correctly)
 REPO_ROOT="$(git -C "$ROOT_DIR" rev-parse --show-toplevel)"
 
@@ -33,35 +39,42 @@ if [ ! -d "$DOCS_DIR" ]; then
   exit 1
 fi
 
+# Helper: replace a symlink or file at the given path
+ensure_symlink() {
+  local link_path="$1"
+  local target="$2"
+  if [ -L "$link_path" ] || [ -e "$link_path" ]; then
+    rm -rf "$link_path"
+  fi
+  ln -s "$target" "$link_path"
+}
+
 # Create skill directory
 mkdir -p "$SKILL_DIR"
 
 # Create symlink to docs directory inside the skill
-DOCS_LINK="$SKILL_DIR/docs"
-if [ -L "$DOCS_LINK" ] || [ -e "$DOCS_LINK" ]; then
-  rm "$DOCS_LINK"
-fi
-ln -s "$REPO_ROOT/src/content/docs" "$DOCS_LINK"
+ensure_symlink "$SKILL_DIR/docs" "$REPO_ROOT/src/content/docs"
+echo "  Created docs symlink -> $REPO_ROOT/src/content/docs"
 
-echo "  Created docs symlink: $DOCS_LINK -> $REPO_ROOT/src/content/docs"
-
-# Check if Japanese docs exist
+# Check if Japanese docs exist and create symlink
 DOCS_JA_DIR="$ROOT_DIR/src/content/docs-ja"
-if [ -d "$DOCS_JA_DIR" ]; then
-  DOCS_JA_LINK="$SKILL_DIR/docs-ja"
-  if [ -L "$DOCS_JA_LINK" ] || [ -e "$DOCS_JA_LINK" ]; then
-    rm "$DOCS_JA_LINK"
-  fi
-  ln -s "$REPO_ROOT/src/content/docs-ja" "$DOCS_JA_LINK"
-  echo "  Created docs-ja symlink: $DOCS_JA_LINK -> $REPO_ROOT/src/content/docs-ja"
-fi
-
-# Generate SKILL.md
 HAS_JA=""
 if [ -d "$DOCS_JA_DIR" ]; then
   HAS_JA="true"
+  ensure_symlink "$SKILL_DIR/docs-ja" "$REPO_ROOT/src/content/docs-ja"
+  echo "  Created docs-ja symlink -> $REPO_ROOT/src/content/docs-ja"
 fi
 
+# Discover top-level doc categories dynamically
+DOC_TREE=""
+for dir in "$DOCS_DIR"/*/; do
+  [ -d "$dir" ] || continue
+  dirname="$(basename "$dir")"
+  DOC_TREE="${DOC_TREE}- ${dirname}/
+"
+done
+
+# Generate SKILL.md
 cat > "$SKILL_DIR/SKILL.md" << SKILLEOF
 ---
 name: $SKILL_NAME
@@ -90,12 +103,7 @@ Documentation base path: \`$REPO_ROOT/src/content/docs\`
 The documentation is organized in MDX files under \`docs/\`:
 
 \`\`\`
-docs/
-├── getting-started/   # Introduction and setup
-├── guides/            # Feature guides and configuration
-├── components/        # Component documentation
-└── reference/         # API and reference docs
-\`\`\`
+${DOC_TREE}\`\`\`
 
 Browse the \`docs/\` directory to discover available articles. Each \`.mdx\` file
 has YAML frontmatter with \`title\` and \`description\` fields that help identify
@@ -116,17 +124,13 @@ echo "  Generated SKILL.md"
 
 # Symlink into global skills directory
 mkdir -p "$GLOBAL_SKILLS_DIR"
-GLOBAL_LINK="$GLOBAL_SKILLS_DIR/$SKILL_NAME"
-if [ -L "$GLOBAL_LINK" ] || [ -e "$GLOBAL_LINK" ]; then
-  rm "$GLOBAL_LINK"
-fi
-ln -sfn "$SKILL_DIR" "$GLOBAL_LINK"
+ensure_symlink "$GLOBAL_SKILLS_DIR/$SKILL_NAME" "$SKILL_DIR"
 
 echo ""
 echo "Done! Skill '$SKILL_NAME' is ready."
 echo ""
 echo "  Project skill: $SKILL_DIR"
-echo "  Global symlink: $GLOBAL_LINK"
+echo "  Global symlink: $GLOBAL_SKILLS_DIR/$SKILL_NAME"
 echo ""
 echo "You can now use it in Claude Code with: /$SKILL_NAME <topic>"
 echo ""
