@@ -123,9 +123,15 @@ import { withBase } from "@/utils/base";
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
+  function parseQueryTerms(query: string): string[] {
+    return query.trim().split(/\s+/).filter(Boolean);
+  }
+
   function highlightTerms(text: string, query: string): string {
-    const terms = query.trim().split(/\s+/).filter(Boolean).map(escapeRegExp);
+    const terms = parseQueryTerms(query).map(escapeRegExp);
     if (terms.length === 0) return escapeHtml(text);
+    // Sort by length descending so longer terms match before their prefixes
+    terms.sort((a, b) => b.length - a.length);
     const pattern = new RegExp(`(${terms.join('|')})`, 'gi');
     return text
       .split(pattern)
@@ -140,7 +146,7 @@ import { withBase } from "@/utils/base";
   function truncateExcerpt(text: string, query: string, maxLength = 200): string {
     if (text.length <= maxLength) return text;
 
-    const terms = query.trim().split(/\s+/).filter(Boolean);
+    const terms = parseQueryTerms(query);
     let firstMatchIndex = -1;
     const lowerText = text.toLowerCase();
     for (const term of terms) {
