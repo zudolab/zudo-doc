@@ -27,7 +27,9 @@ zudo-doc solves this with selective imports in `src/styles/global.css` — only 
 Because the default theme is never loaded, no `--*: initial` reset block is needed. Only explicitly defined tokens in `@theme` work. Using an undefined token (like `p-4` or `bg-gray-500`) produces no effect — the value simply doesn't exist. This gives you a guarantee: **invalid tokens cause build errors or missing styles, not visual bugs**.
 
 <Info>
+
 This is the core philosophy: define only what the project needs. Every value in the system is intentional, and accidental use of Tailwind defaults is immediately visible.
+
 </Info>
 
 ## Spacing
@@ -69,7 +71,9 @@ Both axes also include `0` (`0px`) and `px` (`1px`) utility values.
 ```
 
 <Tip>
+
 Notice that `hsp-lg` is `1rem` while `vsp-lg` is `1.5rem` — the vertical axis is stretched at larger sizes. This is intentional — vertical flow needs more room than horizontal rhythm.
+
 </Tip>
 
 ## Typography
@@ -153,7 +157,9 @@ See the [Color reference](/docs/reference/color) for full details on the color t
 ## Usage Rules
 
 <Warning title="Tailwind defaults are disabled">
+
 The default Tailwind theme is not imported — only `tailwindcss/preflight` and `tailwindcss/utilities` are loaded. Only project-defined tokens work.
+
 </Warning>
 
 ### Do

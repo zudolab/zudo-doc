@@ -55,7 +55,9 @@ export const settings = {
 利用可能な組み込みスキーム：**Default Light**、**Default Dark**。`src/config/color-schemes.ts`でカスタムスキームを追加できます。
 
 <Tip>
+
 利用可能なスキームの一覧、プレビュー、カスタムスキームの追加手順については[カラーガイド](/ja/docs/reference/color)を参照してください。
+
 </Tip>
 
 ### colorMode
@@ -97,7 +99,9 @@ base: "/my-docs",
 すべての内部リンク（サイドバー、ナビゲーション、前後ページ、検索）にはベースパスが自動的にプレフィックスされます。これは[AstroのConfigの`base`オプション](https://docs.astro.build/en/reference/configuration-reference/#base)に直接マッピングされます。
 
 <Note>
+
 MDXコンテンツ内のインラインMarkdownリンク（例：`[リンクテキスト](/docs/some-page)`）は自動的に書き換えられません。ルート以外のbaseを使用する場合は、コンテンツファイル内で相対リンクを使用してください。
+
 </Note>
 
 ### docsDir
@@ -201,7 +205,9 @@ editUrl: false,
 デフォルト：`false`（`true`に設定して有効化）
 
 <Tip>
+
 使用方法の詳細やカスタムカラースキームのエクスポート方法については[カラー調整パネルガイド](/ja/docs/guides/color-tweak-panel)を参照してください。
+
 </Tip>
 
 ### docHistory
@@ -213,7 +219,9 @@ editUrl: false,
 デフォルト：`false`（`true`に設定して有効化）
 
 <Tip>
+
 使用方法の詳細、キーボードショートカット、技術情報については[ドキュメント履歴ガイド](/ja/docs/guides/doc-history)を参照してください。
+
 </Tip>
 
 ### claudeResources
@@ -234,7 +242,9 @@ claudeResources: false,
 ```
 
 <Tip>
+
 生成される内容と仕組みの詳細については[Claude Codeリソースガイド](/ja/docs/guides/claude-resources)を参照してください。
+
 </Tip>
 
 ### headerNav
@@ -288,7 +298,9 @@ export default defineConfig({
 - **Shikiテーマ**：アクティブなカラースキームの`shikiTheme`プロパティから自動的に導出 — 手動同期不要
 
 <Note>
+
 Shikiコードハイライトテーマはカラースキームに紐づいています。設定で`colorScheme`を変更すると、シンタックスハイライトテーマも自動的に更新されます。
+
 </Note>
 
 ## カラースキーム設定
@@ -301,5 +313,7 @@ Shikiコードハイライトテーマはカラースキームに紐づいてい
 - `semantic`（オプション）— `surface`、`muted`、`accent`、`accentHover`のオーバーライド
 
 <Info>
+
 カラースキームの追加やカスタマイズの詳細については[カラーガイド](/ja/docs/reference/color)を参照してください。
+
 </Info>

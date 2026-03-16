@@ -28,7 +28,9 @@ Your content here.
 | `sidebar_label` | string | No | Override sidebar display label |
 
 <Note>
+
 See the [Frontmatter guide](/docs/guides/frontmatter) for the complete reference of all available fields.
+
 </Note>
 
 ## Directory Structure
@@ -53,29 +55,41 @@ Each directory becomes a collapsible sidebar category automatically. The categor
 zudo-doc supports Docusaurus-style admonitions. They are registered globally — no imports needed:
 
 <Note>
+
 This is a **note** — use it for general information that readers should be aware of.
+
 </Note>
 
 <Tip>
+
 This is a **tip** — use it for helpful suggestions and best practices.
+
 </Tip>
 
 <Info>
+
 This is an **info** block — use it for additional context or background information.
+
 </Info>
 
 <Warning>
+
 This is a **warning** — use it to flag potential issues or things to watch out for.
+
 </Warning>
 
 <Danger>
+
 This is a **danger** alert — use it for critical warnings about data loss or breaking changes.
+
 </Danger>
 
 ### Custom Titles
 
 <Note title="Custom Title">
+
 You can provide a custom title to any admonition using the `title` prop.
+
 </Note>
 
 ### Admonition Syntax
@@ -115,7 +129,9 @@ Each admonition type maps to a palette slot for its border and title color:
 | Danger | p1 | Red |
 
 <Tip>
+
 For a complete list of all available components including admonitions, code blocks, and more, see the [Components](/docs/components/) reference.
+
 </Tip>
 
 ## i18n (Internationalization)
@@ -123,7 +139,9 @@ For a complete list of all available components including admonitions, code bloc
 zudo-doc supports English and Japanese out of the box. Japanese docs mirror the English directory structure in `src/content/docs-ja/`.
 
 <Tip>
+
 See the [i18n guide](/docs/guides/i18n) for detailed instructions on managing translations and language routing.
+
 </Tip>
 
 ## MDX Features
@@ -137,7 +155,9 @@ import MyComponent from "@/components/my-component";
 ```
 
 <Info>
+
 Use `client:load` for components that need interactivity. Omit it for components that only render static HTML.
+
 </Info>
 
 ## Navigation

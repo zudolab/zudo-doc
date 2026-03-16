@@ -18,7 +18,9 @@ sidebar_position: 3
 ```
 
 <Tip>
+
 Always set `sidebar_position` explicitly to control page order. Without it, pages are sorted alphabetically, which may not match your intended reading order.
+
 </Tip>
 
 ## Category Ordering
@@ -71,7 +73,9 @@ sidebar_position: 2
 ```
 
 <Tip>
+
 The `sidebar_label` only affects the sidebar. The page title and heading still use `title`.
+
 </Tip>
 
 ## Directory Structure
@@ -92,7 +96,9 @@ src/content/docs/
 ```
 
 <Note>
+
 The sidebar only supports one level of nesting. Subdirectories within a category directory are not supported.
+
 </Note>
 
 ## Sort Order (Ascending / Descending)
@@ -123,7 +129,9 @@ You can also set `sortOrder` in `src/config/sidebars.ts` for manual sidebar conf
 ```
 
 <Tip>
+
 For changelog-style categories, combine `sortOrder: "desc"` with date-prefixed filenames (e.g., `2026-03-10-release.mdx`) for automatic newest-first ordering without manually setting `sidebar_position`.
+
 </Tip>
 
 ## Ordering Recommendations

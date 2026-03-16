@@ -10,7 +10,9 @@ sidebar_position: 2
 - **pnpm** — recommended package manager
 
 <Info>
+
 You can also use npm, yarn, or bun, but this guide uses pnpm for all examples.
+
 </Info>
 
 ## Create a New Project
@@ -74,7 +76,9 @@ Select which optional features to include:
 Choose your preferred package manager: pnpm (recommended), npm, yarn, or bun. After scaffolding, the CLI will ask whether to install dependencies for you.
 
 <Tip>
+
 The installer generates a `src/config/settings.ts` file with your choices. You can change these settings at any time after project creation.
+
 </Tip>
 
 ## Alternative: Clone the Repository
@@ -88,7 +92,9 @@ pnpm install
 ```
 
 <Note>
+
 Cloning the repository gives you the complete project including the documentation source and all features enabled. Use this approach if you want to explore the full codebase or contribute to zudo-doc itself.
+
 </Note>
 
 ## Development
@@ -100,7 +106,9 @@ pnpm dev
 The dev server starts on port 4321 with Vite for instant hot module replacement.
 
 <Warning>
+
 Make sure port 4321 is available. If another process is using it, Astro will automatically pick the next available port.
+
 </Warning>
 
 ## Build
@@ -120,7 +128,9 @@ pnpm check
 Runs Astro's built-in type checker with strict TypeScript mode.
 
 <Danger>
+
 Never commit the `dist/` directory to source control. It is already excluded via `.gitignore`.
+
 </Danger>
 
 ## Project Structure

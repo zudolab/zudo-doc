@@ -1,6 +1,6 @@
 ---
-title: "Versioning"
-description: "Maintain multiple versions of documentation with version-prefixed URLs and a version switcher"
+title: Versioning
+description: Maintain multiple versions of documentation with version-prefixed URLs and a version switcher
 sidebar_position: 9
 ---
 
@@ -69,7 +69,9 @@ src/content/
 ```
 
 <Warning>
+
 Each version directory must exist and contain valid MDX content files. zudo-doc creates a separate Astro content collection for each version, so missing directories will cause build errors.
+
 </Warning>
 
 ## URL Structure
@@ -130,7 +132,9 @@ banner: false,
 Disables the banner for that version. This is the default when `banner` is omitted.
 
 <Tip>
+
 Use `"unmaintained"` for archived versions that are no longer updated, and `"unreleased"` for documentation of upcoming features that haven't shipped yet.
+
 </Tip>
 
 ## Multi-Locale Support
@@ -183,5 +187,7 @@ When you're ready to archive the current documentation as a new version:
 4. **Update the current docs** — The files in `src/content/docs/` now represent the latest version. Update them as needed for the new release.
 
 <Note>
+
 The `versions` array defines older or pre-release versions only. The current/latest version always uses the main `docsDir` and is not listed in the array.
+
 </Note>

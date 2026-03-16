@@ -95,7 +95,9 @@ sidebar_position: 1
 ```
 
 <Tip>
+
 For category index pages (`index.mdx`), the `sidebar_position` also controls where the entire category appears relative to other categories in the sidebar.
+
 </Tip>
 
 ### `sidebar_label`
@@ -122,7 +124,9 @@ sidebar_label: Color Schemes
 Reserved for future use. This field is defined in the content schema but is not currently used by the sidebar or routing logic. Categories are always derived from the directory structure.
 
 <Note>
+
 Organize pages into categories by placing them in directories under `src/content/docs/`. The directory name becomes the category name.
+
 </Note>
 
 ### `search_exclude`
@@ -155,7 +159,9 @@ tags: [deployment, netlify, hosting]
 ```
 
 <Tip>
+
 Tags are useful for grouping related pages across different sidebar categories.
+
 </Tip>
 
 ### `draft`
@@ -204,7 +210,9 @@ hide_sidebar: true
 ```
 
 <Info>
+
 See the [live demo](/docs/guides/layout-demos/hide-sidebar/) to experience this layout option in action.
+
 </Info>
 
 ### `hide_toc`
@@ -223,10 +231,13 @@ hide_toc: true
 ```
 
 <Info>
+
 See the [live demo](/docs/guides/layout-demos/hide-toc/) to experience this layout option in action.
+
 </Info>
 
 <Tip>
+
 Combine `hide_sidebar` and `hide_toc` to create a clean, centered reading layout with no navigation panels:
 
 ```mdx
@@ -238,6 +249,7 @@ hide_toc: true
 ```
 
 See the [live demo](/docs/guides/layout-demos/hide-both/) to see both options combined.
+
 </Tip>
 
 ### `standalone`
@@ -256,7 +268,9 @@ standalone: true
 ```
 
 <Note>
+
 Use `standalone` for pages that should be publicly accessible but don't belong in the documentation navigation (e.g., legal pages, special landing pages). Use `unlisted` when you also want to prevent search engine indexing.
+
 </Note>
 
 ### `slug`
