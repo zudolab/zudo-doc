@@ -1,15 +1,15 @@
 ---
-name: zudo-doc-version-increment
+name: zudo-doc-version-bump
 description: >-
   Bump package version, generate changelog docs, commit, tag, and create GitHub release. Use when:
-  (1) User says 'version increment', 'bump version', 'release', or 'zudo-doc-version-increment', (2)
-  User wants to create a new release of this project.
+  (1) User says 'version bump', 'bump version', 'release', or 'zudo-doc-version-bump', (2) User
+  wants to create a new release of this project.
 user-invocable: true
 disable-model-invocation: true
 argument-description: "Optional: major, minor, or patch to skip the proposal step"
 ---
 
-# /zudo-doc-version-increment
+# /zudo-doc-version-bump
 
 Bump the version, generate changelog doc pages, commit, tag, and create a GitHub release.
 
@@ -78,18 +78,24 @@ Other Changes:
 
 Only show sections that have entries. **Wait for user confirmation before proceeding.**
 
+If this is a **major** version bump, ask the user whether they want to archive the current docs as a versioned snapshot (i.e. run with `--snapshot`). Explain that this copies the current docs to a versioned directory for the old version.
+
 ## Run version-bump.sh
 
 Run the existing version bump script to update package.json and create changelog entry files:
 
 ```bash
 ./scripts/version-bump.sh {NEW_VERSION}
+# Or with snapshot for major bumps:
+./scripts/version-bump.sh {NEW_VERSION} --snapshot
 ```
 
 This script:
+
 1. Updates `version` in `package.json`
 2. Creates `src/content/docs/changelog/{NEW_VERSION}.mdx` (EN)
 3. Creates `src/content/docs-ja/changelog/{NEW_VERSION}.mdx` (JA)
+4. With `--snapshot`: copies current docs to versioned directories and prints settings.ts entry to add
 
 ## Fill in changelog content
 
@@ -169,10 +175,12 @@ If anything fails, fix the issue and re-run. Do not proceed with committing unti
 
 ## Commit changes
 
-Stage and commit all version bump changes:
+Stage and commit **all** version bump changes — include any files modified by b4push formatting fixes:
 
 ```bash
 git add package.json src/content/docs/changelog/{NEW_VERSION}.mdx src/content/docs-ja/changelog/{NEW_VERSION}.mdx
+# Also stage any other modified files (e.g. formatting fixes from b4push)
+git diff --name-only | xargs git add
 git commit -m "chore: Bump version to v{NEW_VERSION}"
 ```
 
@@ -184,7 +192,9 @@ Push the commits first (without the tag) and wait for CI to pass:
 git push
 ```
 
-Then check CI status with `gh run list --branch main --limit 2`. Poll every 30 seconds until CI shows `completed success`. If CI fails, fix the issue, commit, and push again before proceeding.
+Then check CI status. Use `gh run list --branch main --limit 1 --json status,conclusion,headSha` and verify the `headSha` matches the pushed commit. Poll every 30 seconds, with a **maximum of 10 minutes**. If CI is still running after 10 minutes, ask the user whether to keep waiting or proceed.
+
+If CI fails, investigate the failure with `gh run view <run-id> --log-failed`, fix the issue, commit, and push again.
 
 **Do not tag or publish until CI is green.**
 
@@ -197,10 +207,10 @@ git tag v{NEW_VERSION}
 git push --tags
 ```
 
-After pushing the tag, create a GitHub release. Strip the YAML frontmatter from the changelog MDX file and use the content as release notes:
+After pushing the tag, create a GitHub release. Use `awk` to strip only the YAML frontmatter (first `---` to second `---`) from the changelog file:
 
 ```bash
-NOTES=$(sed '1,/^---$/{ /^---$/!d; /^---$/d; }' src/content/docs/changelog/{NEW_VERSION}.mdx | sed '/^---$/d' | sed '/^$/N;/^\n$/d')
+NOTES=$(awk 'BEGIN{f=0} /^---$/{f++; next} f>=2' src/content/docs/changelog/{NEW_VERSION}.mdx)
 gh release create v{NEW_VERSION} --title "v{NEW_VERSION}" --notes "$NOTES"
 ```
 
@@ -211,7 +221,7 @@ If the package is **not** marked as `"private": true` in `package.json`, tell th
 ```
 The package is ready for npm publishing. Run:
 
-  npm publish
+  pnpm publish
 
 (This requires browser-based 2FA and must be done manually.)
 ```
