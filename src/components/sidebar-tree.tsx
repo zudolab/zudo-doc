@@ -346,33 +346,19 @@ function CategoryNode({
       )}
       <div className="relative">
         <ConnectorLines depth={depth} isLast={isLast} />
-        <div
-          className={`flex w-full items-center text-small font-semibold pt-[0.15rem] ${isActive ? "bg-fg text-bg" : "text-fg"}`}
-          style={{ paddingLeft }}
-        >
-          {node.href ? (
+        {node.href ? (
+          <div
+            className={`flex w-full items-center text-small font-semibold pt-[0.15rem] ${isActive ? "bg-fg text-bg" : "text-fg"}`}
+          >
             <a
               href={node.href}
               aria-current={isActive ? "page" : undefined}
               className={`flex-1 flex items-center gap-hsp-xs py-vsp-xs hover:underline focus:underline ${isActive ? "text-bg" : "text-fg"}`}
+              style={{ paddingLeft }}
             >
               {depth === 0 && <CategoryLinkIcon className={isActive ? "text-bg" : ""} />}
               {node.label}
             </a>
-          ) : (
-            <button
-              type="button"
-              onClick={toggle}
-              className="flex-1 flex items-center gap-[12px] py-vsp-xs hover:underline focus:underline"
-              aria-expanded={isExpanded}
-            >
-              <span className="aspect-square flex items-center justify-center w-[1.5rem] shrink-0 border border-muted">
-                <ToggleChevron isExpanded={isExpanded} className="text-muted" />
-              </span>
-              {node.label}
-            </button>
-          )}
-          {node.href && (
             <button
               type="button"
               onClick={toggle}
@@ -382,8 +368,21 @@ function CategoryNode({
             >
               <ToggleChevron isExpanded={isExpanded} className={isActive ? "text-bg" : "text-muted"} />
             </button>
-          )}
-        </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={toggle}
+            className={`flex w-full items-center gap-[12px] text-small font-semibold pt-[0.15rem] py-vsp-xs text-fg hover:underline focus:underline`}
+            style={{ paddingLeft }}
+            aria-expanded={isExpanded}
+          >
+            <span className="aspect-square flex items-center justify-center w-[1.5rem] shrink-0 border border-muted">
+              <ToggleChevron isExpanded={isExpanded} className="text-muted" />
+            </span>
+            {node.label}
+          </button>
+        )}
       </div>
       {isExpanded && (
         <div>
