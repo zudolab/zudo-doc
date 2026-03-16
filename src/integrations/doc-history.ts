@@ -85,11 +85,14 @@ export function docHistoryIntegration(): AstroIntegration {
                       const sorted = [...dirEntries].sort(
                         ([a], [b]) => (a ? 0 : 1) - (b ? 0 : 1),
                       );
+                      const hasLocalePrefix = sorted.some(
+                        ([k]) => k && requestedSlug.startsWith(`${k}/`),
+                      );
                       for (const [localeKey, contentDir] of sorted) {
                         const prefix = localeKey ? `${localeKey}/` : "";
                         if (
                           (prefix && requestedSlug.startsWith(prefix)) ||
-                          (!prefix && !sorted.some(([k]) => k && requestedSlug.startsWith(`${k}/`)))
+                          (!prefix && !hasLocalePrefix)
                         ) {
                           const slug = prefix
                             ? requestedSlug.slice(prefix.length)

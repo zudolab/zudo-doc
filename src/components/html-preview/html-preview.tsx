@@ -62,8 +62,9 @@ export default function HtmlPreview({
     () => buildSrcdoc(html, css, head, js),
     [html, css, head, js],
   );
-  const syncDelay = containsScript(head, js) ? 300 : 0;
-  const sandboxValue = containsScript(head, js) ? "allow-scripts" : "";
+  const hasScripts = containsScript(head, js);
+  const syncDelay = hasScripts ? 300 : 0;
+  const sandboxValue = hasScripts ? "allow-scripts allow-same-origin" : "";
 
   const codeBlocks = useMemo(
     () => [

@@ -241,16 +241,17 @@ function initFromSchemeData(scheme: ColorScheme): TweakState {
   };
 }
 
-/** Resolve a semantic mapping to an actual color */
+/** Resolve a semantic mapping to an actual color (bounds-checked) */
 function resolveMapping(
   mapping: number | "bg" | "fg",
   palette: string[],
   bgIndex: number,
   fgIndex: number,
 ): string {
-  if (mapping === "bg") return palette[bgIndex] ?? "#000000";
-  if (mapping === "fg") return palette[fgIndex] ?? "#ffffff";
-  return palette[mapping] ?? "#000000";
+  const len = palette.length;
+  if (mapping === "bg") return palette[safeIndex(bgIndex, len)] ?? "#000000";
+  if (mapping === "fg") return palette[safeIndex(fgIndex, len)] ?? "#ffffff";
+  return palette[safeIndex(mapping, len)] ?? "#000000";
 }
 
 /** Load and validate persisted TweakState from localStorage, with shikiTheme backfill */
@@ -286,7 +287,7 @@ function safeIndex(index: number, len: number): number {
 function applyFullState(state: TweakState) {
   const len = state.palette.length;
   // Apply palette
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < len; i++) {
     setCssVar(`--zd-${i}`, state.palette[i]);
   }
   // Apply base colors (all reference palette, bounds-checked)
