@@ -353,15 +353,15 @@ function generateSkillsDocs(config: ClaudeResourcesConfig): SkillItem[] {
       // Collect links to all .md sub-files that get pages
       const links: string[] = [];
       for (const ref of references) {
-        links.push(`- [references/${ref.name}.md](./${dir}--${ref.name}/)`);
+        links.push(`- [references/${ref.name}.md](./ref-${ref.name}/)`);
       }
       for (const f of scriptFiles.filter((s) => s.endsWith(".md"))) {
         const slug = f.replace(/\.md$/, "");
-        links.push(`- [scripts/${f}](./${dir}--script-${slug}/)`);
+        links.push(`- [scripts/${f}](./script-${slug}/)`);
       }
       for (const f of assetFiles.filter((a) => a.endsWith(".md"))) {
         const slug = f.replace(/\.md$/, "");
-        links.push(`- [assets/${f}](./${dir}--asset-${slug}/)`);
+        links.push(`- [assets/${f}](./asset-${slug}/)`);
       }
 
       const linkList = links.length > 0 ? `\n\n${links.join("\n")}` : "";
@@ -387,76 +387,48 @@ sidebar_label: "${escapeTitle(name)}"
 
 ${body}`;
 
-    fs.writeFileSync(path.join(outputDir, `${dir}.mdx`), mdx);
+    // Write main skill page as directory index
+    const skillDir = path.join(outputDir, dir);
+    ensureDir(skillDir);
+    fs.writeFileSync(path.join(skillDir, "index.mdx"), mdx);
 
-    // Generate unlisted reference pages
+    // Generate unlisted sub-pages inside skill directory
     for (const ref of references) {
       const refMdx = `---
 title: "${escapeTitle(ref.title)}"
 unlisted: true
 ---
 
-**Skill:** [${name}](./${dir}/) · **references/${ref.name}.md**
-
----
-
 ${escapeForMdx(ref.content.trim())}
 `;
-      fs.writeFileSync(
-        path.join(outputDir, `${dir}--${ref.name}.mdx`),
-        refMdx,
-      );
+      fs.writeFileSync(path.join(skillDir, `ref-${ref.name}.mdx`), refMdx);
     }
 
-    // Generate unlisted pages for .md scripts
     for (const f of scriptFiles.filter((s) => s.endsWith(".md"))) {
       const slug = f.replace(/\.md$/, "");
-      const content = fs.readFileSync(
+      const raw = fs.readFileSync(
         path.join(skillsDir, dir, "scripts", f),
         "utf8",
       );
-      const h1Match = content.match(/^#\s+(.+)$/m);
+      const h1Match = raw.match(/^#\s+(.+)$/m);
       const title = h1Match ? h1Match[1] : slug;
-      const pageMdx = `---
-title: "${escapeTitle(title)}"
-unlisted: true
----
-
-**Skill:** [${name}](./${dir}/) · **scripts/${f}**
-
----
-
-${escapeForMdx(content.trim())}
-`;
       fs.writeFileSync(
-        path.join(outputDir, `${dir}--script-${slug}.mdx`),
-        pageMdx,
+        path.join(skillDir, `script-${slug}.mdx`),
+        `---\ntitle: "${escapeTitle(title)}"\nunlisted: true\n---\n\n${escapeForMdx(raw.trim())}\n`,
       );
     }
 
-    // Generate unlisted pages for .md assets
     for (const f of assetFiles.filter((a) => a.endsWith(".md"))) {
       const slug = f.replace(/\.md$/, "");
-      const content = fs.readFileSync(
+      const raw = fs.readFileSync(
         path.join(skillsDir, dir, "assets", f),
         "utf8",
       );
-      const h1Match = content.match(/^#\s+(.+)$/m);
+      const h1Match = raw.match(/^#\s+(.+)$/m);
       const title = h1Match ? h1Match[1] : slug;
-      const pageMdx = `---
-title: "${escapeTitle(title)}"
-unlisted: true
----
-
-**Skill:** [${name}](./${dir}/) · **assets/${f}**
-
----
-
-${escapeForMdx(content.trim())}
-`;
       fs.writeFileSync(
-        path.join(outputDir, `${dir}--asset-${slug}.mdx`),
-        pageMdx,
+        path.join(skillDir, `asset-${slug}.mdx`),
+        `---\ntitle: "${escapeTitle(title)}"\nunlisted: true\n---\n\n${escapeForMdx(raw.trim())}\n`,
       );
     }
   }
