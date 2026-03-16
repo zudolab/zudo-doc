@@ -56,11 +56,11 @@ const children =
             )}
             {child.description && (
               <span class="ml-hsp-sm text-small text-muted">
-                — {child.description}
+                : {child.description}
               </span>
             )}
             {child.children.length > 0 && (
-              <ul class="list-none m-0 p-0 pl-hsp-lg border-l border-muted ml-hsp-xs">
+              <ul class="list-none m-0 p-0 pl-hsp-lg ml-hsp-xs">
                 {child.children
                   .filter((c: NavNode) => c.hasPage || c.children.length > 0)
                   .map((grandchild: NavNode) => (
@@ -79,11 +79,11 @@ const children =
                       )}
                       {grandchild.description && (
                         <span class="ml-hsp-sm text-small text-muted">
-                          — {grandchild.description}
+                          : {grandchild.description}
                         </span>
                       )}
                       {grandchild.children.length > 0 && (
-                        <ul class="list-none m-0 p-0 pl-hsp-lg border-l border-muted ml-hsp-xs">
+                        <ul class="list-none m-0 p-0 pl-hsp-lg ml-hsp-xs">
                           {grandchild.children
                             .filter(
                               (c: NavNode) =>
@@ -105,7 +105,7 @@ const children =
                                 )}
                                 {leaf.description && (
                                   <span class="ml-hsp-sm text-small text-muted">
-                                    — {leaf.description}
+                                    : {leaf.description}
                                   </span>
                                 )}
                               </li>

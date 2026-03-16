@@ -114,7 +114,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
   useEffect(() => {
     const platform = (navigator as { userAgentData?: { platform: string } }).userAgentData?.platform ?? navigator.platform;
     const isMac = /mac/i.test(platform);
-    setFilterPlaceholder(isMac ? "Filter... (\u2318/)" : "Filter... (Ctrl+/)");
+    setFilterPlaceholder(isMac ? "Filter... (\u2318 + /)" : "Filter... (Ctrl + /)");
   }, []);
 
   // Global shortcut: Cmd+/ (Mac) or Ctrl+/ to focus the filter input
@@ -180,7 +180,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
           {backToMenuLabel ?? "Back to main menu"}
         </button>
       )}
-      <div className="px-hsp-sm py-vsp-xs border-b border-muted">
+      <div className="px-hsp-sm py-vsp-xs">
         <div className="flex items-center gap-hsp-xs bg-surface rounded px-hsp-sm py-vsp-2xs">
           <svg className="h-[14px] w-[14px] text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
