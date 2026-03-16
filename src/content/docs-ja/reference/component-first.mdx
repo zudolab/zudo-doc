@@ -1,0 +1,107 @@
+---
+title: コンポーネントファースト戦略
+description: zudo-docがカスタムCSSクラス名ではなく、ユーティリティクラスを持つコンポーネントを使用する理由。
+sidebar_position: 2
+---
+
+zudo-docは**コンポーネントファースト戦略**に従います：UIは常にTailwindユーティリティクラスを持つコンポーネントとして表現します。カスタムCSSクラス名を別のスタイルシートで作成することはしません。
+
+## 問題
+
+ユーティリティCSSフレームワークとコンポーネントフレームワークを併用するプロジェクトでは、開発者は従来のCSSパターンに戻りがちです。コンポーネント内でユーティリティクラスを組み合わせる代わりに、`.profile-card`、`.btn-primary`、`.sidebar-nav`といったカスタムCSSクラス名を別のスタイルシートやCSSモジュールで作成します。
+
+これにより、コードベースが断片化します：
+
+- ユーティリティをインラインで使うコンポーネント
+- カスタムCSSクラスを導入するコンポーネント
+- 両方のアプローチを混在させるコンポーネント
+
+## ルール
+
+**コンポーネント自体が抽象化です。** `.card`や`.btn-primary`のようなCSSクラス名は不要です。コンポーネントがカプセル化を、ユーティリティクラスがスタイリングを担当します。
+
+- カードが必要？ → ユーティリティクラスを持つ`<Card>`コンポーネントを作成
+- ボタンバリアント？ → `<Button variant="primary">`コンポーネント
+- レイアウトパターン？ → `<PageLayout>`コンポーネント
+
+## zudo-docでの実践
+
+zudo-docは**Astroコンポーネント**（`.astro`）と**Reactアイランド**（`.tsx`）を**Tailwind CSS v4**ユーティリティとともに使用します。
+
+### Astroコンポーネント
+
+```astro
+<!-- ユーティリティクラスをインラインで使用 -->
+<footer class="border-t border-muted bg-surface px-hsp-xl py-vsp-xl">
+  <div class="text-center text-caption text-muted">
+    <Fragment set:html={copyright} />
+  </div>
+</footer>
+```
+
+`.footer`クラスなし。`footer.module.css`なし。コンポーネント**が**抽象化です。
+
+### アンチパターン
+
+```css
+/* 間違い — カスタムCSSクラスを作成しない */
+.profile-card { display: flex; gap: 1rem; }
+```
+
+```astro
+<!-- 間違い — カスタムクラス名はデザインシステムをバイパスする -->
+<div class="profile-card">...</div>
+
+<!-- 正しい — ユーティリティクラス、コンポーネントが抽象化 -->
+<div class="flex gap-hsp-md p-hsp-lg">...</div>
+```
+
+## バリアントはPropsで
+
+CSSモディファイアクラス（`.btn--primary`）ではなく、コンポーネントプロップスを使用：
+
+```tsx
+function Button({ variant = "primary", children }) {
+  const styles = {
+    primary: "bg-accent text-bg hover:bg-accent-hover",
+    secondary: "bg-surface text-fg border border-muted",
+  };
+  return (
+    <button className={`${styles[variant]} font-semibold py-vsp-xs px-hsp-md rounded`}>
+      {children}
+    </button>
+  );
+}
+```
+
+## デザイントークンを使用
+
+任意の値ではなく、プロジェクトトークンを常に使用：
+
+```astro
+<!-- 間違い — 任意の値はデザインシステムをバイパスする -->
+<div class="p-[1.2rem] text-[0.875rem]">
+
+<!-- 正しい — デザイントークンを使用 -->
+<div class="p-hsp-md text-small text-muted">
+```
+
+利用可能なトークンについては[デザインシステム](/ja/docs/reference/design-system)を参照してください。
+
+## カスタムCSSが許容される場合
+
+zudo-docでカスタムCSSが許容される唯一の場所は`src/styles/global.css`です：
+
+- **コンテンツタイポグラフィ** — `.zd-content`クラスはMDXパイプラインが生成する要素をスタイリング
+- **デザイントークン定義** — Tailwindトークンを登録する`@theme`ブロック
+
+それ以外のすべて（すべてのコンポーネント、レイアウト、UI要素）はユーティリティクラスを直接使用します。
+
+## ルールのまとめ
+
+1. **常にコンポーネントを作成** — CSSクラスではなく
+2. **ユーティリティクラスを直接使用** — コンポーネントマークアップ内で
+3. **CSSモジュールファイルやカスタムクラス名を作成しない**
+4. **バリアントにはプロップスを使用** — CSSモディファイアではなく
+5. **コンポーネントを組み合わせる** — より多くのCSSではなく、小さなコンポーネントから複雑なUIを構築
+6. **プロジェクトトークンを使用** — `text-fg`、`bg-surface`、`p-hsp-md`、任意の値ではなく
