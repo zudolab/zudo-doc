@@ -97,8 +97,6 @@ description: Release notes for $NEW_VERSION.
 sidebar_position: $SIDEBAR_POS
 ---
 
-## $NEW_VERSION
-
 <!-- Add release notes here -->
 
 ### Features
@@ -117,8 +115,6 @@ title: $NEW_VERSION
 description: ${NEW_VERSION}のリリースノート。
 sidebar_position: $SIDEBAR_POS
 ---
-
-## $NEW_VERSION
 
 <!-- リリースノートをここに追加 -->
 

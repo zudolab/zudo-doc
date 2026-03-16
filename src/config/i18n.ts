@@ -157,6 +157,7 @@ const translations: Record<string, Record<string, string>> = {
     "nav.components": "Komponenten",
     "nav.reference": "Referenz",
     "nav.claude": "Claude",
+    "nav.changelog": "Changelog",
     "nav.previous": "Zurück",
     "nav.next": "Weiter",
     "toc.title": "Auf dieser Seite",
