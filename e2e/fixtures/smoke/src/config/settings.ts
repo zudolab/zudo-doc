@@ -1,6 +1,7 @@
 import type {
   HeaderNavItem,
   ColorModeConfig,
+  HtmlPreviewConfig,
   LocaleConfig,
 } from "./settings-types";
 
@@ -21,6 +22,9 @@ export const settings = {
   docTags: false,
   math: false,
   docHistory: true,
+  htmlPreview: {
+    css: `.global-test { border: 3px solid rgb(255, 0, 0); }`,
+  } as HtmlPreviewConfig | undefined,
   claudeResources: false as { claudeDir: string; projectRoot?: string } | false,
   headerNav: [
     {
