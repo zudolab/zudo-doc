@@ -2,13 +2,13 @@ import { colorSchemes, type ColorScheme, type ColorRef } from "./color-schemes";
 import { settings } from "./settings";
 
 /** Default mapping: semantic token name → palette index (or "bg"/"fg" for codeBg/codeFg) */
-export const SEMANTIC_DEFAULTS: Record<string, number | "bg" | "fg"> = {
+export const SEMANTIC_DEFAULTS: Record<string, number> = {
   surface: 0,
   muted: 8,
   accent: 6,
   accentHover: 14,
-  codeBg: "fg",
-  codeFg: "bg",
+  codeBg: 10,
+  codeFg: 11,
   success: 2,
   danger: 1,
   warning: 3,
@@ -62,8 +62,8 @@ export function resolveSemanticColors(scheme: ColorScheme) {
     muted: resolveColor(scheme.semantic?.muted, p, p[8]),
     accent: resolveColor(scheme.semantic?.accent, p, p[6]),
     accentHover: resolveColor(scheme.semantic?.accentHover, p, p[14]),
-    codeBg: resolveColor(scheme.semantic?.codeBg, p, resolveColor(scheme.foreground, p, p[15])),
-    codeFg: resolveColor(scheme.semantic?.codeFg, p, resolveColor(scheme.background, p, p[0])),
+    codeBg: resolveColor(scheme.semantic?.codeBg, p, p[10]),
+    codeFg: resolveColor(scheme.semantic?.codeFg, p, p[11]),
     success: resolveColor(scheme.semantic?.success, p, p[2]),
     danger: resolveColor(scheme.semantic?.danger, p, p[1]),
     warning: resolveColor(scheme.semantic?.warning, p, p[3]),

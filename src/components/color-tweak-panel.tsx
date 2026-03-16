@@ -883,7 +883,6 @@ export default function ColorTweakPanel() {
                 </h3>
                 <div className="grid grid-cols-2 gap-x-hsp-lg gap-y-[4px]">
                   {Object.entries(SEMANTIC_DEFAULTS).map(([key, defaultVal]) => {
-                    const hasBaseOptions = defaultVal === "bg" || defaultVal === "fg";
                     return (
                       <PaletteSelector
                         key={key}
@@ -891,7 +890,6 @@ export default function ColorTweakPanel() {
                         value={state.semanticMappings[key] ?? defaultVal}
                         palette={state.palette}
                         onChange={(v) => handleSemanticChange(key, v)}
-                        extraOptions={hasBaseOptions ? ["bg", "fg"] : undefined}
                         background={state.palette[state.background]}
                         foreground={state.palette[state.foreground]}
                       />
