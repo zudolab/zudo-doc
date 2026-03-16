@@ -1,0 +1,14 @@
+---
+import HtmlPreview from "./html-preview/html-preview";
+
+interface Props {
+  html: string;
+  css?: string;
+  title?: string;
+  height?: number;
+  defaultOpen?: boolean;
+}
+
+const { html, css, title, height, defaultOpen } = Astro.props;
+---
+<HtmlPreview client:load html={html} css={css} title={title} height={height} defaultOpen={defaultOpen} />
