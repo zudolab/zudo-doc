@@ -65,6 +65,7 @@ export default function SiteTreeNav({
   return (
     <nav
       aria-label={ariaLabel}
+      data-site-nav
       className="grid gap-vsp-md"
       style={{
         gridTemplateColumns: "repeat(auto-fill, minmax(min(18rem, 100%), 1fr))",

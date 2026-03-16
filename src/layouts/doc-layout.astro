@@ -51,7 +51,7 @@ const {
 } = Astro.props;
 const latestUrl = currentSlug ? docsUrl(currentSlug, lang) : undefined;
 const versionAvailability = settings.versions ? await getVersionAvailability() : undefined;
-const fullTitle = `${title} | ${settings.siteName}`;
+const fullTitle = title === settings.siteName ? title : `${title} | ${settings.siteName}`;
 const navSection = currentSlug ? getNavSectionForSlug(currentSlug) : undefined;
 const currentPath = Astro.url.pathname;
 const htmlColorAttrs = settings.colorMode
