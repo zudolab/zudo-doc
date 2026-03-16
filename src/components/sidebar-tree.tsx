@@ -16,6 +16,22 @@ function CategoryLinkIcon({ className }: { className?: string }) {
   );
 }
 
+function ToggleChevron({ isExpanded, className }: { isExpanded: boolean; className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className={`h-[0.625rem] w-[0.625rem] shrink-0 transition-transform duration-150 ${isExpanded ? "rotate-90" : ""} ${className ?? ""}`}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+      aria-hidden="true"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+    </svg>
+  );
+}
+
 const STORAGE_KEY = "zd-sidebar-open";
 
 function padLeft(depth: number, forCategory: boolean): string {
@@ -330,11 +346,11 @@ function CategoryNode({
       )}
       <div className="relative">
         <ConnectorLines depth={depth} isLast={isLast} />
-        <div
-          className={`flex w-full items-center justify-between text-small font-semibold pt-[0.15rem] ${isActive ? "bg-fg text-bg" : "text-fg"}`}
-          style={{ paddingLeft }}
-        >
-          {node.href ? (
+        {node.href ? (
+          <div
+            className={`flex w-full items-center justify-between text-small font-semibold pt-[0.15rem] ${isActive ? "bg-fg text-bg" : "text-fg"}`}
+            style={{ paddingLeft }}
+          >
             <a
               href={node.href}
               aria-current={isActive ? "page" : undefined}
@@ -343,38 +359,28 @@ function CategoryNode({
               {depth === 0 && <CategoryLinkIcon className={isActive ? "text-bg" : ""} />}
               {node.label}
             </a>
-          ) : (
             <button
               type="button"
               onClick={toggle}
-              className="flex-1 py-vsp-xs text-left hover:underline focus:underline"
+              className={`aspect-square flex items-center justify-center w-[1.5rem] border-y border-l hover:underline focus:underline ${isActive ? "border-bg/30" : "border-muted"}`}
+              aria-expanded={isExpanded}
+              aria-label={isExpanded ? `Collapse ${node.label}` : `Expand ${node.label}`}
             >
-              {node.label}
+              <ToggleChevron isExpanded={isExpanded} className={isActive ? "text-bg" : "text-muted"} />
             </button>
-          )}
+          </div>
+        ) : (
           <button
             type="button"
             onClick={toggle}
-            className={`aspect-square flex items-center justify-center w-[1.5rem] border-y border-l hover:underline focus:underline ${isActive ? "border-bg/30" : "border-muted"}`}
+            className={`flex w-full items-center gap-hsp-xs text-small font-semibold pt-[0.15rem] py-vsp-xs text-fg hover:underline focus:underline`}
+            style={{ paddingLeft }}
             aria-expanded={isExpanded}
-            aria-label={isExpanded ? `Collapse ${node.label}` : `Expand ${node.label}`}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className={`h-[0.625rem] w-[0.625rem] transition-transform duration-150 ${isExpanded ? "rotate-90" : ""} ${isActive ? "text-bg" : "text-muted"}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
+            <ToggleChevron isExpanded={isExpanded} className="text-muted" />
+            {node.label}
           </button>
-        </div>
+        )}
       </div>
       {isExpanded && (
         <div>
