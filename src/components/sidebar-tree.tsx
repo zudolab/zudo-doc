@@ -377,7 +377,7 @@ function CategoryNode({
             <button
               type="button"
               onClick={toggle}
-              className="flex-1 flex items-center gap-hsp-xs py-vsp-xs hover:underline focus:underline"
+              className="flex-1 flex items-center gap-[5px] py-vsp-xs hover:underline focus:underline"
               aria-expanded={isExpanded}
             >
               <span className="aspect-square flex items-center justify-center w-[1.5rem] shrink-0 border border-muted">
