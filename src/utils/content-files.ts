@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import matter from "gray-matter";
 import { settings } from "../config/settings";
 
@@ -56,8 +56,7 @@ export function collectMdFiles(
       if (entry.isDirectory()) {
         walk(fullPath, baseDir);
       } else if (/\.mdx?$/.test(entry.name) && !entry.name.startsWith("_")) {
-        const rel = fullPath
-          .slice(baseDir.length + 1)
+        const rel = relative(baseDir, fullPath)
           .replace(/\.mdx?$/, "")
           .replace(/\/index$/, "");
         results.push({ filePath: fullPath, slug: rel });
@@ -79,8 +78,20 @@ export function slugToUrl(slug: string, locale: string | null, absolute = false)
   return path;
 }
 
+/** Frontmatter fields used across the project */
+export interface DocFrontmatter {
+  title?: string;
+  description?: string;
+  sidebar_position?: number;
+  category?: string;
+  draft?: boolean;
+  unlisted?: boolean;
+  search_exclude?: boolean;
+  [key: string]: unknown;
+}
+
 /** Parse a markdown file and return frontmatter + content */
-export function parseMarkdownFile(filePath: string): { data: Record<string, any>; content: string } | null {
+export function parseMarkdownFile(filePath: string): { data: DocFrontmatter; content: string } | null {
   try {
     const raw = readFileSync(filePath, "utf-8");
     return matter(raw);
@@ -90,6 +101,6 @@ export function parseMarkdownFile(filePath: string): { data: Record<string, any>
 }
 
 /** Check if a document should be excluded from indexing */
-export function isExcluded(data: Record<string, any>): boolean {
+export function isExcluded(data: DocFrontmatter): boolean {
   return !!(data.search_exclude || data.draft || data.unlisted);
 }

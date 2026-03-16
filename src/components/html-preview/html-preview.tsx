@@ -63,6 +63,7 @@ export default function HtmlPreview({
     [html, css, head, js],
   );
   const syncDelay = containsScript(head, js) ? 300 : 0;
+  const sandboxValue = containsScript(head, js) ? "allow-scripts" : "";
 
   const codeBlocks = useMemo(
     () => [
@@ -92,7 +93,7 @@ export default function HtmlPreview({
       height={height}
       srcdoc={srcdoc}
       defaultOpen={defaultOpen}
-      sandbox={undefined}
+      sandbox={sandboxValue}
       syncDelay={syncDelay}
       codeBlocks={codeBlocks}
     />
