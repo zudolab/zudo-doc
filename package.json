@@ -23,7 +23,9 @@
     "format": "pnpm run format:mdx && pnpm run format:astro",
     "format:check:mdx": "pnpm dlx @takazudo/mdx-formatter --check \"src/content/**/*.{md,mdx}\"",
     "format:check:astro": "prettier --check \"src/**/*.astro\"",
-    "format:check": "pnpm run format:check:mdx && pnpm run format:check:astro"
+    "format:check": "pnpm run format:check:mdx && pnpm run format:check:astro",
+    "// ── Assets ───────────────────────────────────────": "",
+    "generate:logo": "pnpm dlx @takazudo/kumiko-gen zudo-doc --size 200 --fg \"#ffffff\" --bg transparent --out public/img/logo.svg"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

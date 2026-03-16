@@ -303,6 +303,18 @@ The Shiki code highlighting theme is tied to the color scheme. When you change `
 
 </Note>
 
+## Logo
+
+The site logo is displayed on the landing page as a masked SVG shape. The file is located at `public/img/logo.svg`.
+
+The default logo is a randomly generated geometric pattern created with [`@takazudo/kumiko-gen`](https://www.npmjs.com/package/@takazudo/kumiko-gen). To regenerate it with a new random pattern:
+
+```bash
+pnpm run generate:logo
+```
+
+You can also replace `public/img/logo.svg` with any custom SVG file. The logo is rendered as a CSS mask, so only the shape matters — the fill color is controlled by the site's color tokens.
+
 ## Color Scheme Config
 
 Color schemes are defined in `src/config/color-schemes.ts`. Each scheme provides 22 color properties plus a `shikiTheme`:

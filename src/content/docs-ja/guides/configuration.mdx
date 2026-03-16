@@ -303,6 +303,18 @@ Shikiコードハイライトテーマはカラースキームに紐づいてい
 
 </Note>
 
+## ロゴ
+
+サイトロゴはランディングページにマスクされたSVGシェイプとして表示されます。ファイルは`public/img/logo.svg`にあります。
+
+デフォルトのロゴは[`@takazudo/kumiko-gen`](https://www.npmjs.com/package/@takazudo/kumiko-gen)で生成されたランダムな幾何学パターンです。新しいランダムパターンで再生成するには：
+
+```bash
+pnpm run generate:logo
+```
+
+`public/img/logo.svg`を任意のカスタムSVGファイルに置き換えることもできます。ロゴはCSSマスクとしてレンダリングされるため、形状のみが重要です。塗りの色はサイトのカラートークンで制御されます。
+
 ## カラースキーム設定
 
 カラースキームは`src/config/color-schemes.ts`で定義されます。各スキームは22のカラープロパティと`shikiTheme`を提供します：
