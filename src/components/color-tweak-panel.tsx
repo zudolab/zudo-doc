@@ -384,16 +384,16 @@ function HslPicker({
   return (
     <div
       ref={containerRef}
-      className="border border-muted bg-surface p-[8px]"
-      style={getFixedPopoverStyle(anchorRef.current, 240, 180, { width: 240 })}
+      className="border border-muted bg-surface p-[12px]"
+      style={getFixedPopoverStyle(anchorRef.current, 380, 280, { width: 380 })}
     >
-      <div className="flex items-center gap-[6px] mb-[6px]">
+      <div className="flex items-center gap-[10px] mb-[10px]">
         <div
           className="shrink-0 border border-muted"
           style={{
             backgroundColor: hslToHex(hsl.h, hsl.s, hsl.l),
-            width: "2rem",
-            height: "2rem",
+            width: "3.5rem",
+            height: "3.5rem",
             borderRadius: "var(--radius-DEFAULT)",
           }}
         />
@@ -401,15 +401,15 @@ function HslPicker({
           type="text"
           value={hexInput}
           onChange={(e) => handleHexChange(e.target.value)}
-          className="bg-surface text-fg border border-muted px-[4px] py-[2px] font-mono"
-          style={{ fontSize: "0.6875rem", width: "5.5rem", borderRadius: "var(--radius-DEFAULT)" }}
+          className="bg-surface text-fg border border-muted px-[6px] py-[4px] font-mono"
+          style={{ fontSize: "1rem", width: "8rem", borderRadius: "var(--radius-DEFAULT)" }}
           spellCheck={false}
           aria-label="Hex color value"
         />
       </div>
       {sliders.map(({ label, value, max, key }) => (
-        <div key={key} className="flex items-center gap-[4px] mb-[3px]">
-          <span className="text-muted shrink-0" style={{ fontSize: "0.625rem", width: "0.75rem" }}>
+        <div key={key} className="flex items-center gap-[8px] mb-[6px]">
+          <span className="text-muted shrink-0" style={{ fontSize: "0.875rem", width: "1rem" }}>
             {label}
           </span>
           <input
@@ -419,10 +419,10 @@ function HslPicker({
             value={value}
             onChange={(e) => updateFromHsl({ ...hsl, [key]: parseInt(e.target.value, 10) })}
             className="flex-1"
-            style={{ height: "1rem", accentColor: "var(--color-accent)" }}
+            style={{ height: "1.5rem", accentColor: "var(--color-accent)" }}
             aria-label={`${label === "H" ? "Hue" : label === "S" ? "Saturation" : "Lightness"}`}
           />
-          <span className="text-fg shrink-0 text-right" style={{ fontSize: "0.625rem", width: "1.75rem" }}>
+          <span className="text-fg shrink-0 text-right" style={{ fontSize: "0.875rem", width: "2.5rem" }}>
             {value}{key === "h" ? "" : "%"}
           </span>
         </div>
@@ -444,15 +444,15 @@ function ColorSwatch({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const handleClose = useCallback(() => setIsOpen(false), []);
   return (
-    <div className="flex flex-col items-center gap-[2px]">
+    <div className="flex flex-col items-center gap-[4px]">
       <button
         ref={buttonRef}
         type="button"
         className="block border border-muted hover:border-fg transition-colors cursor-pointer"
         style={{
           backgroundColor: color,
-          width: "2rem",
-          height: "2rem",
+          width: "3.5rem",
+          height: "3.5rem",
           borderRadius: "var(--radius-DEFAULT)",
         }}
         onClick={() => setIsOpen((prev) => !prev)}
@@ -468,7 +468,7 @@ function ColorSwatch({
       )}
       <span
         className="text-muted select-none"
-        style={{ fontSize: "0.625rem", lineHeight: 1 }}
+        style={{ fontSize: "0.875rem", lineHeight: 1 }}
       >
         {label}
       </span>
@@ -517,16 +517,16 @@ function PaletteSelector({
   }
 
   return (
-    <div className="flex items-center gap-hsp-xs" ref={containerRef} style={{ position: "relative" }}>
-      <span className="text-fg shrink-0" style={{ fontSize: "0.75rem", minWidth: "4.5rem" }}>
+    <div className="flex items-center gap-hsp-sm" ref={containerRef} style={{ position: "relative" }}>
+      <span className="text-fg shrink-0" style={{ fontSize: "1rem", minWidth: "5.5rem" }}>
         {label}
       </span>
       <button
         ref={buttonRef}
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex items-center gap-[4px] border border-muted bg-surface px-[4px] py-[2px] hover:border-fg transition-colors"
-        style={{ fontSize: "0.6875rem", borderRadius: "var(--radius-DEFAULT)" }}
+        className="flex items-center gap-[6px] border border-muted bg-surface px-[6px] py-[4px] hover:border-fg transition-colors"
+        style={{ fontSize: "1rem", borderRadius: "var(--radius-DEFAULT)" }}
         aria-label={`${label}: ${valueLabel}`}
         aria-expanded={isOpen}
       >
@@ -534,13 +534,13 @@ function PaletteSelector({
           className="shrink-0 border border-muted"
           style={{
             backgroundColor: resolvedColor,
-            width: "0.875rem",
-            height: "0.875rem",
+            width: "1.5rem",
+            height: "1.5rem",
             borderRadius: "2px",
           }}
         />
         <span className="text-fg">{valueLabel}</span>
-        <svg className="text-muted" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg className="text-muted" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M6 9l6 6 6-6" />
         </svg>
       </button>
@@ -549,12 +549,12 @@ function PaletteSelector({
         <div
           role="listbox"
           aria-label={`${label} color options`}
-          className="border border-muted bg-surface p-[6px]"
-          style={getFixedPopoverStyle(buttonRef.current, 280, extraOptions ? 110 : 80)}
+          className="border border-muted bg-surface p-[10px]"
+          style={getFixedPopoverStyle(buttonRef.current, 440, extraOptions ? 160 : 120)}
         >
           {/* Extra options (bg/fg) */}
           {extraOptions && extraOptions.length > 0 && (
-            <div className="flex gap-[3px] mb-[4px] pb-[4px] border-b border-muted">
+            <div className="flex gap-[6px] mb-[8px] pb-[8px] border-b border-muted">
               {extraOptions.map((opt) => {
                 const optColor = opt === "bg" ? (background ?? "#000000") : (foreground ?? "#ffffff");
                 const isSelected = value === opt;
@@ -565,15 +565,15 @@ function PaletteSelector({
                     role="option"
                     aria-selected={isSelected}
                     onClick={() => select(opt)}
-                    className={`flex items-center gap-[4px] px-[6px] py-[2px] transition-colors ${isSelected ? "bg-accent/20" : "hover:bg-fg/10"}`}
-                    style={{ borderRadius: "3px", fontSize: "0.6875rem" }}
+                    className={`flex items-center gap-[6px] px-[8px] py-[4px] transition-colors ${isSelected ? "bg-accent/20" : "hover:bg-fg/10"}`}
+                    style={{ borderRadius: "4px", fontSize: "1rem" }}
                   >
                     <div
                       style={{
                         backgroundColor: optColor,
-                        width: "1rem",
-                        height: "1rem",
-                        borderRadius: "2px",
+                        width: "1.75rem",
+                        height: "1.75rem",
+                        borderRadius: "3px",
                         border: "1px solid var(--color-muted)",
                       }}
                     />
@@ -584,7 +584,7 @@ function PaletteSelector({
             </div>
           )}
           {/* Palette grid */}
-          <div className="grid grid-cols-8 gap-[3px]">
+          <div className="grid grid-cols-8 gap-[5px]">
             {palette.map((color, i) => {
               const isSelected = value === i;
               return (
@@ -595,12 +595,12 @@ function PaletteSelector({
                   aria-selected={isSelected}
                   onClick={() => select(i)}
                   title={`p${i}: ${color}`}
-                  className={`transition-colors ${isSelected ? "ring-1 ring-accent" : "hover:ring-1 hover:ring-fg"}`}
+                  className={`transition-colors ${isSelected ? "ring-2 ring-accent" : "hover:ring-2 hover:ring-fg"}`}
                   style={{
                     backgroundColor: color,
-                    width: "1.75rem",
-                    height: "1.75rem",
-                    borderRadius: "2px",
+                    width: "3rem",
+                    height: "3rem",
+                    borderRadius: "3px",
                     border: "1px solid var(--color-muted)",
                   }}
                 />
@@ -772,14 +772,14 @@ export default function ColorTweakPanel() {
     <>
     <div
       className="fixed bottom-0 left-0 right-0 z-50 border-t border-muted bg-surface lg:left-auto lg:border-l"
-      style={{ maxHeight: "40vh" }}
+      style={{ maxHeight: "60vh" }}
     >
       {/* Header bar */}
-      <div className="flex items-center justify-between px-hsp-lg py-vsp-2xs border-b border-muted">
-        <span className="text-fg font-semibold" style={{ fontSize: "0.75rem" }}>
+      <div className="flex items-center justify-between px-hsp-xl py-vsp-xs border-b border-muted">
+        <span className="text-fg font-semibold" style={{ fontSize: "1rem" }}>
           Color Tweak Panel
         </span>
-        <div className="flex items-center gap-hsp-md">
+        <div className="flex items-center gap-hsp-lg">
           <select
             onChange={(e) => {
               const name = e.target.value;
@@ -789,8 +789,8 @@ export default function ColorTweakPanel() {
                 e.target.value = "";
               }
             }}
-            className="bg-surface text-fg border border-muted px-hsp-xs py-[2px] hover:border-fg transition-colors"
-            style={{ fontSize: "0.6875rem", borderRadius: "var(--radius-DEFAULT)", maxWidth: "10rem" }}
+            className="bg-surface text-fg border border-muted px-hsp-sm py-[4px] hover:border-fg transition-colors"
+            style={{ fontSize: "1rem", borderRadius: "var(--radius-DEFAULT)", maxWidth: "14rem" }}
             aria-label="Load color scheme preset"
             defaultValue=""
           >
@@ -803,7 +803,7 @@ export default function ColorTweakPanel() {
             type="button"
             onClick={() => setShowExport(true)}
             className="text-accent hover:text-accent-hover transition-colors"
-            style={{ fontSize: "0.6875rem" }}
+            style={{ fontSize: "1rem" }}
           >
             Export
           </button>
@@ -811,7 +811,7 @@ export default function ColorTweakPanel() {
             type="button"
             onClick={handleResetAll}
             className="text-accent hover:text-accent-hover transition-colors"
-            style={{ fontSize: "0.6875rem" }}
+            style={{ fontSize: "1rem" }}
           >
             Reset all
           </button>
@@ -823,8 +823,8 @@ export default function ColorTweakPanel() {
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
+              width="24"
+              height="24"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -841,8 +841,8 @@ export default function ColorTweakPanel() {
 
       {/* Content */}
       <div
-        className="overflow-y-auto px-hsp-lg py-vsp-xs"
-        style={{ maxHeight: "calc(40vh - 2.5rem)" }}
+        className="overflow-y-auto px-hsp-xl py-vsp-sm"
+        style={{ maxHeight: "calc(60vh - 3.5rem)" }}
       >
         {state && (
           <div className="flex flex-col gap-vsp-sm lg:flex-row lg:gap-hsp-xl">
@@ -850,11 +850,11 @@ export default function ColorTweakPanel() {
             <div className="shrink-0">
               <h3
                 className="text-muted font-semibold mb-vsp-2xs"
-                style={{ fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.05em" }}
+                style={{ fontSize: "1rem", textTransform: "uppercase", letterSpacing: "0.05em" }}
               >
                 Palette
               </h3>
-              <div className="grid grid-cols-8 gap-hsp-xs">
+              <div className="grid grid-cols-8 gap-hsp-sm">
                 {state.palette.map((color, i) => (
                   <ColorSwatch
                     key={i}
@@ -872,11 +872,11 @@ export default function ColorTweakPanel() {
               <div className="shrink-0">
                 <h3
                   className="text-muted font-semibold mb-vsp-2xs"
-                  style={{ fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.05em" }}
+                  style={{ fontSize: "1rem", textTransform: "uppercase", letterSpacing: "0.05em" }}
                 >
                   Base
                 </h3>
-                <div className="flex flex-col gap-[4px]">
+                <div className="flex flex-col gap-[8px]">
                   <PaletteSelector
                     label="bg"
                     value={state.background}
@@ -907,8 +907,8 @@ export default function ColorTweakPanel() {
                     palette={state.palette}
                     onChange={(v) => handleBaseIndexChange("selectionFg", v)}
                   />
-                  <div className="flex items-center gap-hsp-xs mt-[4px]">
-                    <span className="text-fg shrink-0" style={{ fontSize: "0.75rem", minWidth: "4.5rem" }}>
+                  <div className="flex items-center gap-hsp-sm mt-[8px]">
+                    <span className="text-fg shrink-0" style={{ fontSize: "1rem", minWidth: "5.5rem" }}>
                       shikiTheme
                     </span>
                     <select
@@ -918,8 +918,8 @@ export default function ColorTweakPanel() {
                         persist((prev) => ({ ...prev, shikiTheme: val }));
                         applyShikiTheme(val);
                       }}
-                      className="bg-surface text-fg border border-muted px-[4px] py-[2px] hover:border-fg transition-colors"
-                      style={{ fontSize: "0.6875rem", borderRadius: "var(--radius-DEFAULT)" }}
+                      className="bg-surface text-fg border border-muted px-[6px] py-[4px] hover:border-fg transition-colors"
+                      style={{ fontSize: "1rem", borderRadius: "var(--radius-DEFAULT)" }}
                     >
                       {SHIKI_THEMES.map((theme) => (
                         <option key={theme} value={theme}>{theme}</option>
@@ -933,11 +933,11 @@ export default function ColorTweakPanel() {
               <div className="shrink-0">
                 <h3
                   className="text-muted font-semibold mb-vsp-2xs"
-                  style={{ fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.05em" }}
+                  style={{ fontSize: "1rem", textTransform: "uppercase", letterSpacing: "0.05em" }}
                 >
                   Semantic Tokens
                 </h3>
-                <div className="grid grid-cols-2 gap-x-hsp-lg gap-y-[4px]">
+                <div className="grid grid-cols-2 gap-x-hsp-xl gap-y-[8px]">
                   {Object.entries(SEMANTIC_DEFAULTS).map(([key, defaultVal]) => {
                     return (
                       <PaletteSelector
