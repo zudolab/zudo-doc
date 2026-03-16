@@ -345,50 +345,27 @@ function generateSkillsDocs(config: ClaudeResourcesConfig): SkillItem[] {
     if (refFiles.length > 0) subDirs.push({ name: "references", files: refFiles });
     if (assetFiles.length > 0) subDirs.push({ name: "assets", files: assetFiles });
 
-    // File tree section
-    const fileTree = subDirs.length > 0
-      ? `## File Structure\n\n\`\`\`\n${getSkillFileTree(dir, subDirs)}\n\`\`\``
-      : "";
+    // File tree + links to renderable .md sub-files
+    let fileStructureSection = "";
+    if (subDirs.length > 0) {
+      const tree = `\`\`\`\n${getSkillFileTree(dir, subDirs)}\n\`\`\``;
 
-    // Scripts listing — .md files get linked pages, others show filename
-    let scriptsSection = "";
-    if (scriptFiles.length > 0) {
-      const scriptItems = scriptFiles
-        .map((f) => {
-          const filePath = path.join(skillsDir, dir, "scripts", f);
-          const desc = getScriptDescription(filePath);
-          if (f.endsWith(".md")) {
-            const slug = f.replace(/\.md$/, "");
-            return `- [${slug}](./${dir}--script-${slug}/)${desc}`;
-          }
-          return `- \`${f}\`${desc}`;
-        })
-        .join("\n");
-      scriptsSection = `## Scripts\n\n${scriptItems}`;
-    }
+      // Collect links to all .md sub-files that get pages
+      const links: string[] = [];
+      for (const ref of references) {
+        links.push(`- [references/${ref.name}.md](./${dir}--${ref.name}/)`);
+      }
+      for (const f of scriptFiles.filter((s) => s.endsWith(".md"))) {
+        const slug = f.replace(/\.md$/, "");
+        links.push(`- [scripts/${f}](./${dir}--script-${slug}/)`);
+      }
+      for (const f of assetFiles.filter((a) => a.endsWith(".md"))) {
+        const slug = f.replace(/\.md$/, "");
+        links.push(`- [assets/${f}](./${dir}--asset-${slug}/)`);
+      }
 
-    // Assets listing — .md files get linked pages, others show filename
-    let assetsSection = "";
-    if (assetFiles.length > 0) {
-      const assetItems = assetFiles
-        .map((f) => {
-          if (f.endsWith(".md")) {
-            const slug = f.replace(/\.md$/, "");
-            return `- [${slug}](./${dir}--asset-${slug}/)`;
-          }
-          return `- \`${f}\``;
-        })
-        .join("\n");
-      assetsSection = `## Assets\n\n${assetItems}`;
-    }
-
-    // References section with links to reference pages
-    let referencesSection = "";
-    if (references.length > 0) {
-      const refLinks = references
-        .map((ref) => `- [${ref.title}](./${dir}--${ref.name}/)`)
-        .join("\n");
-      referencesSection = `## References\n\n${refLinks}`;
+      const linkList = links.length > 0 ? `\n\n${links.join("\n")}` : "";
+      fileStructureSection = `## File Structure\n\n${tree}${linkList}`;
     }
 
     const shortDesc = description.length > 200
@@ -396,11 +373,8 @@ function generateSkillsDocs(config: ClaudeResourcesConfig): SkillItem[] {
       : description;
 
     const body = [
-      fileTree,
+      fileStructureSection,
       escapeForMdx(parsed.content.trim()),
-      scriptsSection,
-      referencesSection,
-      assetsSection,
     ]
       .filter(Boolean)
       .join("\n\n");
@@ -415,14 +389,14 @@ ${body}`;
 
     fs.writeFileSync(path.join(outputDir, `${dir}.mdx`), mdx);
 
-    // Generate reference pages
+    // Generate unlisted reference pages
     for (const ref of references) {
       const refMdx = `---
 title: "${escapeTitle(ref.title)}"
-sidebar_label: "${escapeTitle(ref.title)}"
+unlisted: true
 ---
 
-**Skill:** [${name}](./${dir}/)
+**Skill:** [${name}](./${dir}/) · **references/${ref.name}.md**
 
 ---
 
