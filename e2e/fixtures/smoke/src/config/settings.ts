@@ -21,6 +21,7 @@ export const settings = {
   docMetainfo: false,
   docTags: false,
   math: false,
+  colorTweakPanel: true as boolean,
   docHistory: true,
   htmlPreview: {
     css: `.global-test { border: 3px solid rgb(255, 0, 0); }`,
