@@ -3,7 +3,7 @@ set -euo pipefail
 
 START_TIME=$(date +%s)
 FAILURES=()
-TOTAL_STEPS=4
+TOTAL_STEPS=5
 CURRENT_STEP=0
 
 step() {
@@ -43,7 +43,15 @@ else
   fail "Build"
 fi
 
-# ── Step 4: E2E & smoke tests ────────────────────────
+# ── Step 4: Link check ────────────────────────────────
+step "Link check (check-links)"
+if (cd "$ROOT_DIR" && pnpm run check:links); then
+  pass "Link check passed"
+else
+  fail "Link check"
+fi
+
+# ── Step 5: E2E & smoke tests ────────────────────────
 step "E2E & smoke tests (playwright)"
 if (cd "$ROOT_DIR" && pnpm test:e2e); then
   pass "E2E & smoke tests passed"
