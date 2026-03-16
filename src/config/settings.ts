@@ -77,5 +77,6 @@ export const settings = {
     { label: "Components", labelKey: "nav.components", path: "/docs/components", categoryMatch: "components" },
     { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
     { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude" },
+    { label: "Changelog", labelKey: "nav.changelog", path: "/docs/changelog", categoryMatch: "changelog" },
   ] satisfies HeaderNavItem[],
 };
