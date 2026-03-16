@@ -15,11 +15,20 @@
     "check": "astro sync && tsc --noEmit",
     "test:unit": "vitest run",
     "test:e2e": "bash e2e/setup-fixtures.sh && playwright test",
-    "b4push": "./scripts/run-b4push.sh"
+    "b4push": "./scripts/run-b4push.sh",
+    "// ── Formatting ───────────────────────────────────": "",
+    "prepare": "lefthook install --reset-hooks-path",
+    "format:mdx": "pnpm dlx @takazudo/mdx-formatter --write \"src/content/**/*.{md,mdx}\"",
+    "format:astro": "prettier --write \"src/**/*.astro\"",
+    "format": "pnpm run format:mdx && pnpm run format:astro",
+    "format:check:mdx": "pnpm dlx @takazudo/mdx-formatter --check \"src/content/**/*.{md,mdx}\"",
+    "format:check:astro": "prettier --check \"src/**/*.astro\"",
+    "format:check": "pnpm run format:check:mdx && pnpm run format:check:astro"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild",
+      "lefthook",
       "sharp",
       "workerd"
     ],
@@ -56,6 +65,9 @@
     "@types/node": "^25.3.5",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "lefthook": "^2.1.4",
+    "prettier": "^3.8.1",
+    "prettier-plugin-astro": "^0.14.1",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
     "vitest": "^4.1.0",

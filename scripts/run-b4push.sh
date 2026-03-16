@@ -3,7 +3,7 @@ set -euo pipefail
 
 START_TIME=$(date +%s)
 FAILURES=()
-TOTAL_STEPS=3
+TOTAL_STEPS=4
 CURRENT_STEP=0
 
 step() {
@@ -19,7 +19,15 @@ fail() { echo "❌ $1"; FAILURES+=("$1"); }
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
-# ── Step 1: Type checking ────────────────────────────
+# ── Step 1: Format check ─────────────────────────────
+step "Format check"
+if (cd "$ROOT_DIR" && pnpm run format:check); then
+  pass "Format check passed"
+else
+  fail "Format check"
+fi
+
+# ── Step 2: Type checking ────────────────────────────
 step "Type checking (astro check)"
 if (cd "$ROOT_DIR" && pnpm check); then
   pass "Type checking passed"
@@ -27,7 +35,7 @@ else
   fail "Type checking"
 fi
 
-# ── Step 2: Build ────────────────────────────────────
+# ── Step 3: Build ────────────────────────────────────
 step "Build (astro build)"
 if (cd "$ROOT_DIR" && pnpm build); then
   pass "Build passed"
@@ -35,7 +43,7 @@ else
   fail "Build"
 fi
 
-# ── Step 3: E2E & smoke tests ────────────────────────
+# ── Step 4: E2E & smoke tests ────────────────────────
 step "E2E & smoke tests (playwright)"
 if (cd "$ROOT_DIR" && pnpm test:e2e); then
   pass "E2E & smoke tests passed"
