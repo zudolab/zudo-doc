@@ -50,7 +50,6 @@ async function main() {
   if (args.search !== undefined) featureFlags.search = args.search;
   if (args.sidebarFilter !== undefined) featureFlags.sidebarFilter = args.sidebarFilter;
   if (args.claudeResources !== undefined) featureFlags.claudeResources = args.claudeResources;
-  if (args.colorSchemePreview !== undefined) featureFlags.colorSchemePreview = args.colorSchemePreview;
   if (Object.keys(featureFlags).length > 0) {
     prefilled.features = featureFlags;
   }

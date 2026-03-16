@@ -1,6 +1,5 @@
 ---
 import SidebarToggle from "@/components/sidebar-toggle";
-import ColorSchemePicker from "@/components/color-scheme-picker";
 import ThemeToggle from "@/components/theme-toggle";
 import LanguageSwitcher from "@/components/language-switcher.astro";
 import VersionSwitcher from "@/components/version-switcher.astro";
@@ -39,13 +38,11 @@ const pathForMatch = isNonDefaultLocale
     <slot name="sidebar" />
     <Fragment slot="bottomContent">
       {
-        settings.colorMode ? (
+        settings.colorMode && (
           <ThemeToggle
             defaultMode={settings.colorMode.defaultMode}
             client:load
           />
-        ) : (
-          <ColorSchemePicker client:load />
         )
       }
       {lang && locales.length > 1 && <LanguageSwitcher lang={lang} />}
@@ -141,13 +138,11 @@ const pathForMatch = isNonDefaultLocale
     <Search />
     <div class="hidden lg:flex items-center gap-x-hsp-md">
       {
-        settings.colorMode ? (
+        settings.colorMode && (
           <ThemeToggle
             defaultMode={settings.colorMode.defaultMode}
             client:load
           />
-        ) : (
-          <ColorSchemePicker client:load />
         )
       }
       {lang && locales.length > 1 && <LanguageSwitcher lang={lang} />}

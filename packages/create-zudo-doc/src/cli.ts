@@ -15,7 +15,6 @@ export interface CliArgs {
   search?: boolean;
   sidebarFilter?: boolean;
   claudeResources?: boolean;
-  colorSchemePreview?: boolean;
   pm?: "pnpm" | "npm" | "yarn" | "bun";
   install?: boolean;
   yes?: boolean;
@@ -80,9 +79,6 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
   if (wasPassed("claude-resources")) {
     args.claudeResources = raw["claude-resources"] !== false;
   }
-  if (wasPassed("color-scheme-preview")) {
-    args.colorSchemePreview = raw["color-scheme-preview"] !== false;
-  }
   if (wasPassed("install")) args.install = raw["install"] !== false;
   if (raw.yes || raw.y) args.yes = true;
   if (raw.help || raw.h) args.help = true;
@@ -110,7 +106,6 @@ ${pc.bold("Options:")}
   --[no-]search                Pagefind full-text search
   --[no-]sidebar-filter        Sidebar filter
   --[no-]claude-resources      Claude Code docs generation
-  --[no-]color-scheme-preview  Runtime scheme switcher in header
   --pm <manager>               pnpm | npm | yarn | bun
   --[no-]install               Install dependencies after scaffolding
   -y, --yes                    Use defaults for unspecified options, skip prompts

@@ -113,12 +113,6 @@ export const FEATURES: Feature[] = [
     default: false,
   },
   {
-    value: "colorSchemePreview",
-    label: "Color scheme preview",
-    hint: "Runtime scheme switcher in header",
-    default: false,
-  },
-  {
     value: "colorTweakPanel",
     label: "Color tweak panel",
     hint: "Live color editor for designing schemes",

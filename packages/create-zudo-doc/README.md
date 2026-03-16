@@ -43,7 +43,6 @@ pnpm create zudo-doc my-docs --lang ja --scheme Dracula --no-i18n --pm pnpm --in
 --[no-]search                Pagefind full-text search
 --[no-]sidebar-filter        Sidebar filter
 --[no-]claude-resources      Claude Code docs generation
---[no-]color-scheme-preview  Runtime scheme switcher
 --pm <manager>               pnpm | npm | yarn | bun
 --[no-]install               Install dependencies after scaffolding
 -y, --yes                    Use defaults, skip prompts
