@@ -191,23 +191,24 @@ describe("generateClaudeResourcesDocs", () => {
         "utf8",
       );
 
-      // Links use ./<dir>--<type>-<name> flat sibling format
-      expect(skillPage).toContain("./test-skill--ref-guide");
-      expect(skillPage).toContain("./test-skill--asset-template");
+      // Links use ./<dir>/<subpage> format (nested URL via custom slug)
+      expect(skillPage).toContain("./test-skill/ref-guide");
+      expect(skillPage).toContain("./test-skill/asset-template");
 
-      // Each linked file must actually exist as a generated .mdx file
-      const linkPattern = /\]\(\.\/([\w-]+)\)/g;
+      // Each linked sub-page must exist as a generated flat .mdx file
+      // The file is flat (test-skill--ref-guide.mdx) but slug is nested
+      const linkPattern = /\]\(\.\/test-skill\/([\w-]+)\)/g;
       let match;
       while ((match = linkPattern.exec(skillPage)) !== null) {
-        const linkedSlug = match[1];
+        const subPage = match[1];
         const targetFile = path.join(
           docsDir,
           "claude-skills",
-          `${linkedSlug}.mdx`,
+          `test-skill--${subPage}.mdx`,
         );
         expect(
           fs.existsSync(targetFile),
-          `Link target "${linkedSlug}.mdx" should exist`,
+          `Link target "test-skill--${subPage}.mdx" should exist`,
         ).toBe(true);
       }
     });
@@ -269,6 +270,21 @@ describe("generateClaudeResourcesDocs", () => {
 
       const scriptPage = path.join(docsDir, "claude-skills", "test-skill--script-run.mdx");
       expect(fs.existsSync(scriptPage)).toBe(false);
+    });
+
+    it("sub-pages have custom slug for nested breadcrumbs", () => {
+      generateClaudeResourcesDocs({
+        claudeDir,
+        projectRoot: tmpDir,
+        docsDir,
+      });
+
+      const refPage = fs.readFileSync(
+        path.join(docsDir, "claude-skills", "test-skill--ref-guide.mdx"),
+        "utf8",
+      );
+      const parsed = matter(refPage);
+      expect(parsed.data.slug).toBe("claude-skills/test-skill/ref-guide");
     });
 
     it("reference page content is correct", () => {
