@@ -27,7 +27,7 @@ footer: {
       ],
     },
   ],
-  copyright: `Copyright © ${new Date().getFullYear()} zudolab. Built with zudo-doc.`,
+  copyright: `Copyright © ${new Date().getFullYear()} <a href="https://example.com">Your Name</a>. Built with <a href="https://zudo-doc.pages.dev/">zudo-doc</a>.`,
 } satisfies FooterConfig as FooterConfig | false,
 ```
 
@@ -56,6 +56,12 @@ footer: {
 ### copyright
 
 リンクカラムの下にセンタリングされて表示されるオプションの著作権テキストです。リンクカラムが存在する場合、著作権テキストは上部ボーダーで区切られます。リンクが設定されていない場合は、ボーダーなしで表示されます。
+
+著作権フィールドは**HTMLコンテンツ**をサポートしています。`<a>`タグを使用してリンクを含めることができます。著作権内のリンクは自動的に`text-accent`カラーとアンダーラインでスタイリングされます。
+
+```ts
+copyright: `Copyright © ${new Date().getFullYear()} <a href="https://example.com">Your Name</a>. Built with <a href="https://zudo-doc.pages.dev/">zudo-doc</a>.`,
+```
 
 ## カラムの追加
 
@@ -86,7 +92,7 @@ footer: {
       ],
     },
   ],
-  copyright: `Copyright © ${new Date().getFullYear()} My Project.`,
+  copyright: `Copyright © ${new Date().getFullYear()} <a href="https://example.com">My Project</a>.`,
 },
 ```
 

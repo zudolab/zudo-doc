@@ -27,7 +27,7 @@ footer: {
       ],
     },
   ],
-  copyright: `Copyright © ${new Date().getFullYear()} zudolab. Built with zudo-doc.`,
+  copyright: `Copyright © ${new Date().getFullYear()} <a href="https://example.com">Your Name</a>. Built with <a href="https://zudo-doc.pages.dev/">zudo-doc</a>.`,
 } satisfies FooterConfig as FooterConfig | false,
 ```
 
@@ -56,6 +56,12 @@ External links (URLs starting with `http://` or `https://`) automatically open i
 ### copyright
 
 Optional copyright text displayed centered below the link columns. When link columns are present, the copyright is separated from them by a top border. When no links are configured, the copyright displays without a border.
+
+The copyright field supports **HTML content** — you can include `<a>` tags for links. Links in the copyright are automatically styled with `text-accent` color and underlined.
+
+```ts
+copyright: `Copyright © ${new Date().getFullYear()} <a href="https://example.com">Your Name</a>. Built with <a href="https://zudo-doc.pages.dev/">zudo-doc</a>.`,
+```
 
 ## Adding Columns
 
@@ -86,7 +92,7 @@ footer: {
       ],
     },
   ],
-  copyright: `Copyright © ${new Date().getFullYear()} My Project.`,
+  copyright: `Copyright © ${new Date().getFullYear()} <a href="https://example.com">My Project</a>.`,
 },
 ```
 
