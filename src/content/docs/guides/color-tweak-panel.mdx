@@ -69,11 +69,14 @@ The export workflow lets you design a scheme visually in the browser, then save 
 
 </Tip>
 
-## Interaction with Color Scheme Picker
+## Scheme Chooser
 
-The tweak panel and the [Color Scheme Preview](/docs/guides/color-scheme-preview) picker work independently:
+The panel header bar includes a **"Scheme..."** dropdown that lets you browse and load from 50+ preset color schemes (Dracula, Nord, Solarized, Catppuccin, and many more).
 
-- The **scheme picker** switches between pre-defined schemes
-- The **tweak panel** modifies individual color values of the currently active scheme
+Selecting a preset:
 
-If you switch schemes via the picker, the tweak panel will read the new scheme's values on next open. Tweak state in `localStorage` takes precedence over the active scheme until you click **Reset all**.
+- Loads all of the preset's palette, base, and semantic colors into the tweak state
+- Applies the colors to the page immediately
+- After loading a preset, you can further tweak individual colors as needed
+
+Click **Reset all** in the panel header to discard all tweaks and restore the original scheme from `src/config/settings.ts`.
