@@ -41,9 +41,11 @@ export async function getStaticPaths() {
     ? allDocs.filter((doc) => !doc.data.draft)
     : allDocs;
   const categoryMeta = loadCategoryMeta(settings.docsDir);
-  // Exclude unlisted pages from nav tree
+  // Exclude unlisted pages from nav tree (used for sidebar, prev/next)
   const navDocs = docs.filter(isNavVisible);
   const tree = buildNavTree(navDocs, "en", categoryMeta);
+  // Full tree including unlisted pages (used for breadcrumbs)
+  const fullTree = buildNavTree(docs, "en", categoryMeta);
 
   // Regular doc pages
   const docPaths = docs.map((entry) => {
@@ -78,7 +80,7 @@ export async function getStaticPaths() {
       params: { slug },
       props: {
         entry,
-        breadcrumbs: buildBreadcrumbs(tree, slug, "en"),
+        breadcrumbs: buildBreadcrumbs(fullTree, slug, "en"),
         prev: prevNode,
         next: nextNode,
       },
@@ -91,7 +93,7 @@ export async function getStaticPaths() {
     props: {
       entry: null,
       autoIndex: node,
-      breadcrumbs: buildBreadcrumbs(tree, node.slug, "en"),
+      breadcrumbs: buildBreadcrumbs(fullTree, node.slug, "en"),
       prev: null,
       next: null,
     },

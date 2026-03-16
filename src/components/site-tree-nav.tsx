@@ -17,7 +17,7 @@ function CategoryLinkIcon() {
 }
 
 // site-tree-nav uses wider padding than the narrow sidebar
-const SITE_BASE_PAD = "clamp(0.8rem, 1.5vw, 1.8rem)";
+const SITE_BASE_PAD = "clamp(0.5rem, 0.8vw, 1rem)";
 
 function padLeft(depth: number): string {
   if (depth === 0) return SITE_BASE_PAD;

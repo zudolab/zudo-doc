@@ -1,7 +1,7 @@
 import type { DocsEntry } from "@/types/docs-entry";
 import fs from "node:fs";
 import path from "node:path";
-import { toTitleCase } from "@/utils/slug";
+import { toTitleCase, toRouteSlug } from "@/utils/slug";
 import { docsUrl, withBase } from "@/utils/base";
 import { defaultLocale, type Locale } from "@/config/i18n";
 
@@ -15,6 +15,7 @@ export interface CategoryMeta {
   position?: number;
   description?: string;
   sortOrder?: "asc" | "desc";
+  noPage?: boolean;
 }
 
 export interface NavNode {
@@ -73,7 +74,8 @@ export function buildNavTree(
   };
 
   for (const doc of docs) {
-    const parts = doc.id.split("/");
+    const slug = doc.data.slug ?? toRouteSlug(doc.id);
+    const parts = slug.split("/");
 
     if (parts.length <= 1) {
       // Category index: Astro 5 stripped /index → single segment like "guides"
@@ -132,7 +134,11 @@ function toNavNodes(
         doc?.data.sidebar_label ?? doc?.data.title ?? meta?.label ?? toTitleCase(child.segment),
       description: doc?.data.description ?? meta?.description,
       position: doc?.data.sidebar_position ?? meta?.position ?? 999,
-      href: doc ? docsUrl(child.fullPath, lang) : (children.length > 0 ? docsUrl(child.fullPath, lang) : undefined),
+      href: meta?.noPage
+        ? undefined
+        : doc || children.length > 0
+          ? docsUrl(child.fullPath, lang)
+          : undefined,
       hasPage: !!doc,
       children,
       sortOrder,
@@ -200,11 +206,12 @@ function flattenInto(nodes: NavNode[], acc: NavNode[]): void {
   }
 }
 
-/** Collect all category nodes that have children but no page (no index.mdx). */
+/** Collect all category nodes that have children but no page (no index.mdx).
+ *  Nodes without href (e.g. noPage categories) are skipped — they are toggle-only. */
 export function collectAutoIndexNodes(nodes: NavNode[]): NavNode[] {
   const result: NavNode[] = [];
   for (const node of nodes) {
-    if (!node.hasPage && node.children.length > 0) {
+    if (!node.hasPage && node.children.length > 0 && node.href) {
       result.push(node);
     }
     result.push(...collectAutoIndexNodes(node.children));
@@ -293,6 +300,7 @@ function scanDir(baseDir: string, currentDir: string, result: Map<string, Catego
               position: typeof obj.position === "number" ? obj.position : undefined,
               description: typeof obj.description === "string" ? obj.description : undefined,
               sortOrder: obj.sortOrder === "asc" || obj.sortOrder === "desc" ? obj.sortOrder : undefined,
+              noPage: obj.noPage === true ? true : undefined,
             };
             const relativePath = path.relative(baseDir, fullPath);
             result.set(relativePath, meta);
