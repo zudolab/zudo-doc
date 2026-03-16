@@ -154,7 +154,7 @@ const contentTransition = {
           {/* Main content */}
           <main class="flex-1 min-w-0 px-hsp-xl py-vsp-xl lg:px-hsp-2xl lg:py-vsp-2xl" transition:animate={contentTransition}>
             {settings.versions && currentSlug ? (
-              <div class="mb-vsp-sm flex items-center justify-between">
+              <div class="mb-vsp-sm flex flex-col items-start gap-vsp-xs sm:flex-row sm:items-center sm:justify-between [&_nav]:mb-0">
                 <slot name="breadcrumb" />
                 <VersionSwitcher currentVersion={currentVersion} currentSlug={currentSlug} lang={lang} availability={versionAvailability} />
               </div>
