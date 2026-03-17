@@ -2,8 +2,43 @@ export const prerender = false;
 
 import type { APIRoute } from "astro";
 import { spawn } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
 import type { ChatMessage } from "../../types/ai-chat";
+
+let docsContextCache: string | null = null;
+
+function loadDocsContext(): string {
+  if (docsContextCache !== null) return docsContextCache;
+  try {
+    // In server mode, the client assets are at dist/client/
+    const distDir = fileURLToPath(new URL("../../client", import.meta.url));
+    const content = readFileSync(join(distDir, "llms-full.txt"), "utf-8");
+    docsContextCache = content;
+    return content;
+  } catch {
+    // Fallback: try without client/ prefix (varies by adapter mode)
+    try {
+      const distDir = fileURLToPath(new URL("../..", import.meta.url));
+      const content = readFileSync(join(distDir, "llms-full.txt"), "utf-8");
+      docsContextCache = content;
+      return content;
+    } catch {
+      docsContextCache = "";
+      return "";
+    }
+  }
+}
+
+function buildSystemPrompt(): string {
+  const docsContext = loadDocsContext();
+  const base =
+    "You are a helpful documentation assistant for zudo-doc. Answer questions about the documentation concisely and accurately.";
+  if (!docsContext) return base;
+  return `${base}\n\nHere is the full documentation content for reference:\n\n${docsContext}`;
+}
 
 function jsonResponse(data: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -27,12 +62,22 @@ async function handleLocalMode(
   message: string,
   history: ChatMessage[],
 ): Promise<string> {
+  const systemPrompt = buildSystemPrompt();
   const contextPrompt = buildPrompt(message, history);
 
   return new Promise((resolve, reject) => {
     const proc = spawn(
       "claude",
-      ["-p", "--model", "haiku", "--max-budget-usd", "0.50", contextPrompt],
+      [
+        "-p",
+        "--model",
+        "haiku",
+        "--max-budget-usd",
+        "0.50",
+        "--system-prompt",
+        systemPrompt,
+        contextPrompt,
+      ],
       { stdio: ["pipe", "pipe", "pipe"] },
     );
 
@@ -70,8 +115,7 @@ async function handleRemoteMode(
   const response = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 2048,
-    system:
-      "You are a helpful documentation assistant for zudo-doc. Answer questions about the documentation concisely.",
+    system: buildSystemPrompt(),
     messages,
   });
 
