@@ -112,10 +112,11 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
   }
 
   function formatContent(content: string) {
-    return content.split("\n").map((line, i) => (
+    const lines = content.split("\n");
+    return lines.map((line, i) => (
       <span key={i}>
         {line}
-        {i < content.split("\n").length - 1 && <br />}
+        {i < lines.length - 1 && <br />}
       </span>
     ));
   }
@@ -188,11 +189,7 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
         {loading && (
           <div className="mb-vsp-xs flex justify-start">
             <div className="rounded-sm bg-bg px-hsp-md py-vsp-2xs text-small text-muted">
-              <span className="inline-flex gap-x-hsp-2xs">
-                <span className="animate-bounce">.</span>
-                <span className="animate-bounce [animation-delay:0.15s]">.</span>
-                <span className="animate-bounce [animation-delay:0.3s]">.</span>
-              </span>
+              Thinking...
             </div>
           </div>
         )}

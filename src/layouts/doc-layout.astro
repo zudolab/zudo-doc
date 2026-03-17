@@ -180,7 +180,7 @@ const contentTransition = {
         </div>
       </div>
     </div>
-    <AiChatModal basePath={withBase("/")} client:load />
+    {settings.aiAssistant && <AiChatModal basePath={withBase("/")} client:load />}
     {settings.colorTweakPanel && <ColorTweakPanel client:only="react" />}
     <Footer />
     <CodeBlockEnhancer />

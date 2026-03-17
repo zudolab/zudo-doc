@@ -5,6 +5,13 @@ import { spawn } from "node:child_process";
 import Anthropic from "@anthropic-ai/sdk";
 import type { ChatMessage } from "../../types/ai-chat";
 
+function jsonResponse(data: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
 function buildPrompt(message: string, history: ChatMessage[]): string {
   if (history.length === 0) {
     return message;
@@ -73,51 +80,54 @@ async function handleRemoteMode(
 }
 
 export const POST: APIRoute = async ({ request }) => {
-  const { message, history } = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ error: "Invalid JSON in request body" }, 400);
+  }
+
+  const { message, history } = body as {
+    message: unknown;
+    history: unknown;
+  };
+
+  if (typeof message !== "string" || !message.trim()) {
+    return jsonResponse({ error: "message must be a non-empty string" }, 400);
+  }
+
+  if (!Array.isArray(history)) {
+    return jsonResponse({ error: "history must be an array" }, 400);
+  }
+
+  const validHistory = history.filter(
+    (h: unknown): h is ChatMessage =>
+      typeof h === "object" &&
+      h !== null &&
+      "role" in h &&
+      "content" in h &&
+      (h.role === "user" || h.role === "assistant") &&
+      typeof h.content === "string",
+  );
 
   const mode = import.meta.env.AI_CHAT_MODE || "mock";
 
-  let response: string;
+  try {
+    let response: string;
 
-  if (mode === "local") {
-    try {
-      response = await handleLocalMode(message, history);
-    } catch (err) {
-      return new Response(
-        JSON.stringify({
-          error: err instanceof Error ? err.message : "Local mode failed",
-        }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
+    if (mode === "local") {
+      response = await handleLocalMode(message, validHistory);
+    } else if (mode === "remote") {
+      response = await handleRemoteMode(message, validHistory);
+    } else {
+      return jsonResponse({ error: "AI chat mode not configured" }, 500);
     }
-  } else if (mode === "remote") {
-    try {
-      response = await handleRemoteMode(message, history);
-    } catch (err) {
-      return new Response(
-        JSON.stringify({
-          error: err instanceof Error ? err.message : "Remote mode failed",
-        }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
-    }
-  } else {
-    return new Response(
-      JSON.stringify({ error: "AI chat mode not configured" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      },
+
+    return jsonResponse({ response });
+  } catch (err) {
+    return jsonResponse(
+      { error: err instanceof Error ? err.message : "AI chat request failed" },
+      500,
     );
   }
-
-  return new Response(JSON.stringify({ response }), {
-    headers: { "Content-Type": "application/json" },
-  });
 };

@@ -135,32 +135,34 @@ const pathForMatch = isNonDefaultLocale
         </button>
       )
     }
-    <button
-      id="ai-chat-trigger"
-      type="button"
-      class="flex items-center justify-center text-muted transition-colors hover:text-fg"
-      aria-label="Open AI assistant"
-      onclick="window.dispatchEvent(new CustomEvent('toggle-ai-chat'))"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-      >
-        <path
-          d="M12 2a4 4 0 0 0-4 4v1a4 4 0 0 0-4 4v1a4 4 0 0 0 2 3.46V18a4 4 0 0 0 4 4h4a4 4 0 0 0 4-4v-2.54A4 4 0 0 0 20 12v-1a4 4 0 0 0-4-4V6a4 4 0 0 0-4-4z"
-        ></path>
-        <path d="M8 12h8"></path>
-        <path d="M9 16h6"></path>
-      </svg>
-    </button>
+    {
+      settings.aiAssistant && (
+        <button
+          id="ai-chat-trigger"
+          type="button"
+          class="flex items-center justify-center text-muted transition-colors hover:text-fg"
+          aria-label="Open AI assistant"
+          onclick="window.dispatchEvent(new CustomEvent('toggle-ai-chat'))"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 2a4 4 0 0 0-4 4v1a4 4 0 0 0-4 4v1a4 4 0 0 0 2 3.46V18a4 4 0 0 0 4 4h4a4 4 0 0 0 4-4v-2.54A4 4 0 0 0 20 12v-1a4 4 0 0 0-4-4V6a4 4 0 0 0-4-4z" />
+            <path d="M8 12h8" />
+            <path d="M9 16h6" />
+          </svg>
+        </button>
+      )
+    }
     <Search />
     <div class="hidden lg:flex items-center gap-x-hsp-md">
       {
