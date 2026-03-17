@@ -77,7 +77,7 @@ export function extractHtmlLinks(html) {
 // --- Link Resolution ---
 
 export async function resolveLink(href, distDir, basePath = "/", fileDir = "") {
-  const clean = href.split("#")[0];
+  const clean = href.split("#")[0].split("?")[0];
   if (!clean) return true;
 
   let absolute = clean;

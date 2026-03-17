@@ -176,6 +176,22 @@ describe("check-links", () => {
       ).toBe(false);
     });
 
+    it("strips query string before checking", async () => {
+      mkdirSync(join(tmpDir, "docs", "foo"), { recursive: true });
+      writeFileSync(join(tmpDir, "docs", "foo", "index.html"), "");
+      expect(
+        await resolveLink("/pj/zudo-doc/docs/foo?q=1", tmpDir, BASE),
+      ).toBe(true);
+    });
+
+    it("strips both query string and fragment before checking", async () => {
+      mkdirSync(join(tmpDir, "docs", "foo"), { recursive: true });
+      writeFileSync(join(tmpDir, "docs", "foo", "index.html"), "");
+      expect(
+        await resolveLink("/pj/zudo-doc/docs/foo?q=1#section", tmpDir, BASE),
+      ).toBe(true);
+    });
+
     it("strips fragment before checking", async () => {
       mkdirSync(join(tmpDir, "docs", "foo"), { recursive: true });
       writeFileSync(join(tmpDir, "docs", "foo", "index.html"), "");
