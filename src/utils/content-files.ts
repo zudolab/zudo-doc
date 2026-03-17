@@ -71,10 +71,7 @@ export function collectMdFiles(
 /** Compute a URL from a slug and locale. When absolute is true and siteUrl is configured, returns a full URL. */
 export function slugToUrl(slug: string, locale: string | null, absolute = false): string {
   const base = settings.base.replace(/\/$/, "");
-  let path = locale ? `${base}/${locale}/docs/${slug}` : `${base}/docs/${slug}`;
-  if (settings.trailingSlash && !path.endsWith("/")) {
-    path += "/";
-  }
+  const path = locale ? `${base}/${locale}/docs/${slug}` : `${base}/docs/${slug}`;
   if (absolute && settings.siteUrl) {
     return `${settings.siteUrl.replace(/\/$/, "")}${path}`;
   }
