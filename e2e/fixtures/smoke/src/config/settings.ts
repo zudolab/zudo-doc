@@ -21,6 +21,7 @@ export const settings = {
   docMetainfo: false,
   docTags: false,
   math: false,
+  aiAssistant: true as boolean,
   colorTweakPanel: true as boolean,
   docHistory: true,
   htmlPreview: {

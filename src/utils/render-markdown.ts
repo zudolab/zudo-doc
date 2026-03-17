@@ -12,22 +12,29 @@ function escapeHtml(str: string): string {
 }
 
 function renderInline(text: string): string {
-  return (
-    text
-      // bold: **text** or __text__
-      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-      .replace(/__(.+?)__/g, "<strong>$1</strong>")
-      // italic: *text* or _text_ (not inside words for _)
-      .replace(/\*(.+?)\*/g, "<em>$1</em>")
-      .replace(/(?<!\w)_(.+?)_(?!\w)/g, "<em>$1</em>")
-      // inline code: `code`
-      .replace(/`([^`]+)`/g, "<code>$1</code>")
-      // links: [text](url)
-      .replace(
-        /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
-        '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>',
-      )
-  );
+  // Extract inline code first so bold/italic don't process inside backticks
+  const codeSpans: string[] = [];
+  let processed = text.replace(/`([^`]+)`/g, (_match, code) => {
+    const idx = codeSpans.length;
+    codeSpans.push(`<code>${code}</code>`);
+    return `%%CODE_${idx}%%`;
+  });
+
+  processed = processed
+    // bold: **text** or __text__
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/__(.+?)__/g, "<strong>$1</strong>")
+    // italic: *text* or _text_ (not inside words for _)
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+    .replace(/(?<!\w)_(.+?)_(?!\w)/g, "<em>$1</em>")
+    // links: [text](url)
+    .replace(
+      /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>',
+    );
+
+  // Restore inline code spans
+  return processed.replace(/%%CODE_(\d+)%%/g, (_match, idx) => codeSpans[parseInt(idx, 10)]);
 }
 
 export function renderMarkdown(src: string): string {

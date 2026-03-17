@@ -32,12 +32,13 @@ function loadDocsContext(): string {
   }
 }
 
+const SYSTEM_PROMPT_BASE =
+  "You are a helpful documentation assistant for zudo-doc. Answer questions about the documentation concisely and accurately.";
+
 function buildSystemPrompt(): string {
   const docsContext = loadDocsContext();
-  const base =
-    "You are a helpful documentation assistant for zudo-doc. Answer questions about the documentation concisely and accurately.";
-  if (!docsContext) return base;
-  return `${base}\n\nHere is the full documentation content for reference:\n\n${docsContext}`;
+  if (!docsContext) return SYSTEM_PROMPT_BASE;
+  return `${SYSTEM_PROMPT_BASE}\n\nHere is the full documentation content for reference:\n\n${docsContext}`;
 }
 
 function jsonResponse(data: Record<string, unknown>, status = 200) {
@@ -64,8 +65,18 @@ async function handleLocalMode(
   message: string,
   history: ChatMessage[],
 ): Promise<string> {
-  const systemPrompt = buildSystemPrompt();
+  const docsContext = loadDocsContext();
   const contextPrompt = buildPrompt(message, history);
+
+  // Build stdin input: docs context (if any) + user prompt
+  // This avoids ARG_MAX limits — only short flags go on the command line
+  const stdinParts: string[] = [];
+  if (docsContext) {
+    stdinParts.push(
+      `<documentation>\n${docsContext}\n</documentation>\n\nBased on the documentation above, answer the following:\n`,
+    );
+  }
+  stdinParts.push(contextPrompt);
 
   return new Promise((resolve, reject) => {
     const proc = spawn(
@@ -77,13 +88,12 @@ async function handleLocalMode(
         "--max-budget-usd",
         "0.50",
         "--system-prompt",
-        systemPrompt,
+        SYSTEM_PROMPT_BASE,
       ],
       { stdio: ["pipe", "pipe", "pipe"] },
     );
 
-    // Feed the user prompt via stdin to avoid ARG_MAX limits
-    proc.stdin.write(contextPrompt);
+    proc.stdin.write(stdinParts.join("\n"));
     proc.stdin.end();
 
     let output = "";

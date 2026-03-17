@@ -92,11 +92,13 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
 
       if (!res.ok) {
         setError(data.error || "Something went wrong");
-      } else {
+      } else if (typeof data.response === "string" && data.response) {
         setMessages((prev) => [
           ...prev,
           { role: "assistant", content: data.response },
         ]);
+      } else {
+        setError("Received an empty or invalid response");
       }
     } catch {
       setError("Failed to connect to the AI assistant");
