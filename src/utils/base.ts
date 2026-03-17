@@ -4,10 +4,30 @@ import { defaultLocale, type Locale } from "@/config/i18n";
 /** Normalized base path with no trailing slash (empty string when "/"). */
 export const normalizedBase = settings.base.replace(/\/+$/, "");
 
+/**
+ * Append a trailing slash to page URLs when `settings.trailingSlash` is true.
+ * Skips paths that already end with `/`, contain a file extension, or have a
+ * query string / fragment before the slash would be inserted.
+ */
+export function applyTrailingSlash(url: string): string {
+  if (!settings.trailingSlash) return url;
+  if (url.endsWith("/")) return url;
+  // Split off query string and fragment
+  const suffixIdx = url.search(/[?#]/);
+  const pathPart = suffixIdx >= 0 ? url.slice(0, suffixIdx) : url;
+  const suffix = suffixIdx >= 0 ? url.slice(suffixIdx) : "";
+  // Don't add to paths with file extensions (e.g. .svg, .txt, .json)
+  if (/\.\w+$/.test(pathPart)) return url;
+  return pathPart + "/" + suffix;
+}
+
 /** Prefix a path with the configured base directory. */
 export function withBase(path: string): string {
-  if (normalizedBase === "") return path;
-  return `${normalizedBase}${path.startsWith("/") ? path : `/${path}`}`;
+  const raw =
+    normalizedBase === ""
+      ? path
+      : `${normalizedBase}${path.startsWith("/") ? path : `/${path}`}`;
+  return applyTrailingSlash(raw);
 }
 
 /** Strip the base prefix from a URL pathname. */

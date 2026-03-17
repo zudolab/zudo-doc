@@ -26,6 +26,7 @@ export const settings = {
   siteName: "zudo-doc",
   siteDescription: "Documentation base framework built with Astro and MDX." as string,
   base: "/pj/zudo-doc/",
+  trailingSlash: true as boolean,
   docsDir: "src/content/docs",
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },
