@@ -22,6 +22,7 @@ export const settings = {
   siteName: "zudo-doc",
   siteDescription: "Documentation base framework...",
   base: "/",
+  trailingSlash: false,
   docsDir: "src/content/docs",
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },
@@ -101,6 +102,22 @@ All internal links (sidebar, navigation, prev/next, search) are automatically pr
 <Note>
 
 Inline markdown links within MDX content (e.g., `[link text](/docs/some-page)`) are **not** automatically rewritten. When using a non-root base, use relative links in content files instead.
+
+</Note>
+
+### trailingSlash
+
+Controls whether URLs end with a trailing slash. When `true`, all internal links are generated with a trailing slash (e.g., `/docs/guides/` instead of `/docs/guides`). This also sets Astro's [`trailingSlash`](https://docs.astro.build/en/reference/configuration-reference/#trailingslash) to `"always"` or `"never"` accordingly.
+
+Default: `false`
+
+```ts
+trailingSlash: true,
+```
+
+<Note>
+
+Some hosting platforms (e.g., AWS Amplify, Cloudflare Pages) work better with trailing slashes enabled. If you experience 404 errors on page navigation, try setting this to `true`.
 
 </Note>
 

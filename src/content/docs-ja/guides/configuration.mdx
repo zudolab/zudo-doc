@@ -22,6 +22,7 @@ export const settings = {
   siteName: "zudo-doc",
   siteDescription: "Documentation base framework...",
   base: "/",
+  trailingSlash: false,
   docsDir: "src/content/docs",
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },
@@ -101,6 +102,22 @@ base: "/my-docs",
 <Note>
 
 MDXコンテンツ内のインラインMarkdownリンク（例：`[リンクテキスト](/docs/some-page)`）は自動的に書き換えられません。ルート以外のbaseを使用する場合は、コンテンツファイル内で相対リンクを使用してください。
+
+</Note>
+
+### trailingSlash
+
+URLの末尾にトレイリングスラッシュを付けるかどうかを制御します。`true`の場合、すべての内部リンクがトレイリングスラッシュ付きで生成されます（例：`/docs/guides`ではなく`/docs/guides/`）。これにより、Astroの[`trailingSlash`](https://docs.astro.build/en/reference/configuration-reference/#trailingslash)も`"always"`または`"never"`に設定されます。
+
+デフォルト：`false`
+
+```ts
+trailingSlash: true,
+```
+
+<Note>
+
+一部のホスティングプラットフォーム（AWS Amplify、Cloudflare Pagesなど）ではトレイリングスラッシュを有効にした方がうまく動作します。ページ遷移時に404エラーが発生する場合は、`true`に設定してみてください。
 
 </Note>
 
