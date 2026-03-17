@@ -81,6 +81,9 @@ async function handleLocalMode(
       { stdio: ["pipe", "pipe", "pipe"] },
     );
 
+    // claude -p reads stdin when piped; close it so it uses the CLI argument
+    proc.stdin.end();
+
     let output = "";
     let error = "";
 
@@ -89,6 +92,10 @@ async function handleLocalMode(
     });
     proc.stderr.on("data", (data: Buffer) => {
       error += data.toString();
+    });
+
+    proc.on("error", (err) => {
+      reject(new Error(`Failed to spawn claude: ${err.message}`));
     });
 
     proc.on("close", (code) => {
