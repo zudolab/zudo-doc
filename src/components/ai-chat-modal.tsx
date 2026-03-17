@@ -125,7 +125,7 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
     <dialog
       ref={dialogRef}
       onClick={handleBackdropClick}
-      className="m-auto h-[min(80vh,40rem)] w-[min(90vw,32rem)] border border-muted bg-surface p-0 text-fg backdrop:bg-bg/80 lg:rounded-[0.75rem]"
+      className="m-0 h-dvh w-dvw border-none bg-surface p-0 text-fg backdrop:bg-bg/80 sm:m-auto sm:h-[90vh] sm:w-[90vw] sm:max-w-[52.5rem] sm:border sm:border-muted sm:rounded-[0.75rem]"
     >
       <div className="flex h-full flex-col">
         {/* Header */}
