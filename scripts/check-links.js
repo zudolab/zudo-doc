@@ -17,9 +17,17 @@ const __dirname = fileURLToPath(new URL(".", import.meta.url));
 // --- Utilities ---
 
 export async function parseBasePath(settingsPath) {
-  const content = await readFile(settingsPath, "utf-8");
+  let content;
+  try {
+    content = await readFile(settingsPath, "utf-8");
+  } catch {
+    console.error(`Warning: Could not read ${settingsPath}, using base "/"`);
+    return "/";
+  }
   const match = content.match(/base:\s*["']([^"']*)["']/);
-  return match ? match[1] : "/";
+  const base = match ? match[1] : "/";
+  // Ensure trailing slash for consistent prefix matching
+  return base !== "/" && !base.endsWith("/") ? base + "/" : base;
 }
 
 async function fileExists(filePath) {

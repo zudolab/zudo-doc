@@ -47,6 +47,17 @@ describe("check-links", () => {
       writeFileSync(file, `export const settings = {};`);
       expect(await parseBasePath(file)).toBe("/");
     });
+
+    it("normalizes base without trailing slash", async () => {
+      const file = join(tmpDir, "settings.ts");
+      writeFileSync(file, `export const settings = { base: "/app" };`);
+      expect(await parseBasePath(file)).toBe("/app/");
+    });
+
+    it("returns / when settings file is missing", async () => {
+      const result = await parseBasePath(join(tmpDir, "nonexistent.ts"));
+      expect(result).toBe("/");
+    });
   });
 
   // --- collectFiles ---
