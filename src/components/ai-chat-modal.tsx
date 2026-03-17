@@ -9,6 +9,7 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -36,6 +37,8 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
     const dialog = dialogRef.current;
     if (!dialog) return;
     function handleClose() {
+      abortRef.current?.abort();
+      abortRef.current = null;
       setMessages([]);
       setInput("");
       setError(null);
@@ -70,11 +73,14 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
     if (!trimmed || loading) return;
 
     const userMessage: ChatMessage = { role: "user", content: trimmed };
-    const updatedMessages = [...messages, userMessage];
-    setMessages(updatedMessages);
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setError(null);
     setLoading(true);
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     try {
       const base = basePath.replace(/\/+$/, "");
@@ -85,6 +91,7 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
           message: trimmed,
           history: messages,
         }),
+        signal: controller.signal,
       });
 
       const data = await res.json();
@@ -97,7 +104,8 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
           { role: "assistant", content: data.response },
         ]);
       }
-    } catch {
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
       setError("Failed to connect to the AI assistant");
     } finally {
       setLoading(false);
@@ -112,10 +120,11 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
   }
 
   function formatContent(content: string) {
-    return content.split("\n").map((line, i) => (
+    const lines = content.split("\n");
+    return lines.map((line, i) => (
       <span key={i}>
         {line}
-        {i < content.split("\n").length - 1 && <br />}
+        {i < lines.length - 1 && <br />}
       </span>
     ));
   }
