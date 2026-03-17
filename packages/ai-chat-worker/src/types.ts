@@ -22,7 +22,17 @@ export interface ChatErrorResponse {
 }
 
 // Claude API types (raw fetch, no SDK)
+export interface ClaudeTextBlock {
+  type: "text";
+  text: string;
+}
+
+export interface ClaudeOtherBlock {
+  type: "tool_use" | "tool_result";
+  [key: string]: unknown;
+}
+
 export interface ClaudeResponse {
-  content: Array<{ type: "text"; text: string } | { type: string }>;
+  content: Array<ClaudeTextBlock | ClaudeOtherBlock>;
   stop_reason: string;
 }

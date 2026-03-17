@@ -2,6 +2,9 @@ import type { Env, ChatMessage, ClaudeResponse } from "./types";
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
+// Best-effort in-memory cache. Workers isolates are ephemeral, so this
+// cache lifetime is unpredictable — it simply avoids refetching on every
+// request within the same isolate's lifespan.
 let cachedDocsContext: string | null = null;
 let cachedAt = 0;
 

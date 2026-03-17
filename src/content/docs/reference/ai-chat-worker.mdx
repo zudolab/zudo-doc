@@ -61,7 +61,7 @@ The `response` field contains the assistant's reply as a markdown string.
 | ------ | ------------------------------ |
 | 400    | Invalid JSON body              |
 | 400    | `message` is not a non-empty string |
-| 400    | `history` is not an array      |
+| 405    | Request method is not POST     |
 | 500    | Anthropic API call failed      |
 
 ## Environment Setup
@@ -93,7 +93,7 @@ npx wrangler secret put ANTHROPIC_API_KEY
 ```sh
 cd packages/ai-chat-worker
 pnpm install
-pnpm deploy
+pnpm run deploy
 ```
 
 ### CI/CD
@@ -123,8 +123,12 @@ The built-in [AI Assistant](/docs/guides/ai-assistant) runs as part of the Astro
 ```
 packages/ai-chat-worker/
 ├── src/
-│   └── index.ts          # Worker entry point
+│   ├── index.ts          # Worker entry point
+│   ├── claude.ts         # Claude API integration + docs context fetching
+│   ├── cors.ts           # CORS header handling
+│   └── types.ts          # Type definitions
 ├── wrangler.toml         # Cloudflare Worker configuration
 ├── package.json
-└── tsconfig.json
+├── tsconfig.json
+└── README.md
 ```

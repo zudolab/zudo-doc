@@ -2,6 +2,8 @@ import type { Env, ChatRequest, ChatMessage } from "./types";
 import { corsHeaders, handleOptions } from "./cors";
 import { callClaude } from "./claude";
 
+const MAX_HISTORY_LENGTH = 50;
+
 function jsonResponse(
   body: Record<string, unknown>,
   status: number,
@@ -52,7 +54,7 @@ export default {
       }
 
       const history = Array.isArray(body.history)
-        ? body.history.filter(isValidMessage)
+        ? body.history.filter(isValidMessage).slice(-MAX_HISTORY_LENGTH)
         : [];
 
       const response = await callClaude(body.message, history, env);
