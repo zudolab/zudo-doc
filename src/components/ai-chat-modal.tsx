@@ -125,18 +125,20 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
     <dialog
       ref={dialogRef}
       onClick={handleBackdropClick}
-      className="m-0 h-full w-full border border-muted bg-surface p-0 backdrop:bg-bg/80 lg:m-auto lg:h-[min(80vh,48rem)] lg:w-[min(90vw,40rem)] lg:rounded-sm"
+      className="m-0 border-none bg-transparent p-0 backdrop:bg-bg/80"
       style={{
-        color: "var(--color-fg)",
         position: "fixed",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
+        inset: 0,
+        width: "100vw",
+        height: "100vh",
         maxWidth: "none",
         maxHeight: "none",
       }}
     >
-      <div className="flex h-full flex-col">
+      <div
+        className="ml-auto mr-0 flex h-full w-full flex-col border-l border-muted bg-surface lg:w-[min(90vw,28rem)]"
+        style={{ color: "var(--color-fg)" }}
+      >
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-muted px-hsp-lg py-vsp-xs">
           <h2 className="text-subheading font-bold text-fg">AI Assistant</h2>
@@ -167,7 +169,7 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-hsp-lg py-vsp-sm">
           {messages.length === 0 && !loading && (
-            <p className="text-center text-small text-muted">
+            <p className="py-vsp-xl text-center text-small text-muted">
               Ask a question about the documentation.
             </p>
           )}
@@ -177,10 +179,10 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
               className={`mb-vsp-xs flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[80%] rounded-sm px-hsp-md py-vsp-2xs text-small ${
+                className={`max-w-[85%] px-hsp-md py-vsp-2xs text-small leading-relaxed ${
                   msg.role === "user"
-                    ? "bg-accent text-bg"
-                    : "bg-bg text-fg"
+                    ? "rounded-t-[1rem] rounded-bl-[1rem] rounded-br-[0.25rem] bg-accent text-bg"
+                    : "rounded-t-[1rem] rounded-br-[1rem] rounded-bl-[0.25rem] bg-bg text-fg"
                 }`}
               >
                 {formatContent(msg.content)}
@@ -189,13 +191,13 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
           ))}
           {loading && (
             <div className="mb-vsp-xs flex justify-start">
-              <div className="rounded-sm bg-bg px-hsp-md py-vsp-2xs text-small text-muted">
+              <div className="rounded-t-[1rem] rounded-br-[1rem] rounded-bl-[0.25rem] bg-bg px-hsp-md py-vsp-2xs text-small text-muted">
                 Thinking...
               </div>
             </div>
           )}
           {error && (
-            <div className="mb-vsp-xs rounded-sm border border-danger bg-bg px-hsp-md py-vsp-2xs text-small text-danger">
+            <div className="mb-vsp-xs rounded-[0.75rem] border border-danger bg-bg px-hsp-md py-vsp-2xs text-small text-danger">
               {error}
             </div>
           )}
@@ -213,16 +215,30 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
               onKeyDown={handleKeyDown}
               disabled={loading}
               placeholder="Type your message..."
-              className="flex-1 border border-muted bg-bg px-hsp-md py-vsp-2xs text-small text-fg placeholder:text-muted focus:border-accent focus:outline-none disabled:opacity-50"
+              className="flex-1 rounded-full border border-muted bg-bg px-hsp-lg py-vsp-2xs text-small text-fg placeholder:text-muted focus:border-accent focus:outline-none disabled:opacity-50"
             />
             <button
               type="button"
               onClick={sendMessage}
               disabled={loading || !input.trim()}
-              className="flex items-center justify-center border border-muted bg-accent px-hsp-md py-vsp-2xs text-small text-bg transition-colors hover:bg-accent-hover disabled:opacity-50"
+              className="flex h-[2rem] w-[2rem] shrink-0 items-center justify-center rounded-full bg-accent text-bg transition-colors hover:bg-accent-hover disabled:opacity-50"
               aria-label="Send message"
             >
-              Send
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <line x1="22" y1="2" x2="11" y2="13" />
+                <polygon points="22 2 15 22 11 13 2 9 22 2" />
+              </svg>
             </button>
           </div>
         </div>
