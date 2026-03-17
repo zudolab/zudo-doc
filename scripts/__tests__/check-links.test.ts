@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   parseBasePath,
+  parseContentDirs,
   extractHtmlLinks,
   resolveLink,
   extractMdxAbsoluteLinks,
@@ -46,6 +47,42 @@ describe("check-links", () => {
       const file = join(tmpDir, "settings.ts");
       writeFileSync(file, `export const settings = {};`);
       expect(await parseBasePath(file)).toBe("/");
+    });
+  });
+
+  // --- parseContentDirs ---
+
+  describe("parseContentDirs", () => {
+    it("extracts docsDir and locale dirs from settings", async () => {
+      const file = join(tmpDir, "settings.ts");
+      writeFileSync(
+        file,
+        `export const settings = {\n  docsDir: "src/content/docs",\n  docsJaDir: "src/content/docs-ja",\n};`,
+      );
+      const result = await parseContentDirs(file);
+      expect(result.docsDir).toBe("src/content/docs");
+      expect(result.localeDirs).toEqual(["src/content/docs-ja"]);
+    });
+
+    it("returns defaults when no docsDir is specified", async () => {
+      const file = join(tmpDir, "settings.ts");
+      writeFileSync(file, `export const settings = {};`);
+      const result = await parseContentDirs(file);
+      expect(result.docsDir).toBe("src/content/docs");
+      expect(result.localeDirs).toEqual([]);
+    });
+
+    it("extracts multiple locale dirs", async () => {
+      const file = join(tmpDir, "settings.ts");
+      writeFileSync(
+        file,
+        `export const settings = {\n  docsDir: "src/content/docs",\n  docsJaDir: "src/content/docs-ja",\n  docsZhDir: "src/content/docs-zh",\n};`,
+      );
+      const result = await parseContentDirs(file);
+      expect(result.localeDirs).toEqual([
+        "src/content/docs-ja",
+        "src/content/docs-zh",
+      ]);
     });
   });
 
@@ -129,6 +166,31 @@ describe("check-links", () => {
       expect(extractHtmlLinks(html)).toEqual([
         { href: "/a", line: 1 },
         { href: "/b", line: 1 },
+      ]);
+    });
+
+    it("skips data: URIs", () => {
+      expect(
+        extractHtmlLinks(`<a href="data:text/html,<h1>Hi</h1>">D</a>`),
+      ).toEqual([]);
+    });
+
+    it("skips tel: URIs", () => {
+      expect(extractHtmlLinks(`<a href="tel:+1234567890">Call</a>`)).toEqual(
+        [],
+      );
+    });
+
+    it("extracts single-quoted href attributes", () => {
+      const html = `<a href='/foo'>F</a>`;
+      expect(extractHtmlLinks(html)).toEqual([{ href: "/foo", line: 1 }]);
+    });
+
+    it("handles mixed single and double quoted hrefs", () => {
+      const html = `<a href="/a">A</a>\n<a href='/b'>B</a>`;
+      expect(extractHtmlLinks(html)).toEqual([
+        { href: "/a", line: 1 },
+        { href: "/b", line: 2 },
       ]);
     });
   });
@@ -300,6 +362,35 @@ describe("check-links", () => {
     it("does not match partial paths like /documentary/", () => {
       const content = `[link](/documentary/something)`;
       expect(extractMdxAbsoluteLinks(content)).toEqual([]);
+    });
+
+    it("skips links inside fenced code blocks", () => {
+      const content = [
+        "[before](/docs/visible)",
+        "```js",
+        "[inside](/docs/hidden)",
+        "```",
+        "[after](/docs/also-visible)",
+      ].join("\n");
+      const result = extractMdxAbsoluteLinks(content);
+      expect(result).toEqual([
+        { href: "/docs/visible", line: 1 },
+        { href: "/docs/also-visible", line: 5 },
+      ]);
+    });
+
+    it("skips links inside multiple code blocks", () => {
+      const content = [
+        "```",
+        "[a](/docs/hidden1)",
+        "```",
+        "[b](/docs/visible)",
+        "```tsx",
+        '[c](/docs/hidden2)',
+        "```",
+      ].join("\n");
+      const result = extractMdxAbsoluteLinks(content);
+      expect(result).toEqual([{ href: "/docs/visible", line: 4 }]);
     });
   });
 

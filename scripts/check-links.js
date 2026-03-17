@@ -22,6 +22,24 @@ export async function parseBasePath(settingsPath) {
   return match ? match[1] : "/";
 }
 
+export async function parseContentDirs(settingsPath) {
+  const content = await readFile(settingsPath, "utf-8");
+
+  // Extract docsDir
+  const docsDirMatch = content.match(/docsDir:\s*["']([^"']*)["']/);
+  const docsDir = docsDirMatch ? docsDirMatch[1] : "src/content/docs";
+
+  // Extract locale content dirs (e.g. docsJaDir)
+  const localeDirs = [];
+  const localeRegex = /docs[A-Z][a-z]+Dir:\s*["']([^"']*)["']/g;
+  let localeMatch;
+  while ((localeMatch = localeRegex.exec(content)) !== null) {
+    localeDirs.push(localeMatch[1]);
+  }
+
+  return { docsDir, localeDirs };
+}
+
 async function fileExists(filePath) {
   try {
     await access(filePath);
@@ -59,17 +77,24 @@ export async function collectFiles(dir, extensions) {
 
 export function extractHtmlLinks(html) {
   const links = [];
-  const regex = /<a\s[^>]*?href="([^"]*)"[^>]*>/gi;
+  const regex = /<a\s[^>]*?href=(?:"([^"]*)"|'([^']*)')[^>]*>/gi;
   let match;
+  let lastIndex = 0;
+  let currentLine = 1;
   while ((match = regex.exec(html)) !== null) {
-    const href = match[1];
+    const href = match[1] || match[2];
     if (/^https?:\/\//i.test(href)) continue;
     if (/^#/.test(href)) continue;
     if (/^mailto:/i.test(href)) continue;
     if (/^javascript:/i.test(href)) continue;
+    if (/^data:/i.test(href)) continue;
+    if (/^tel:/i.test(href)) continue;
 
-    const line = html.substring(0, match.index).split("\n").length;
-    links.push({ href, line });
+    for (let i = lastIndex; i < match.index; i++) {
+      if (html[i] === '\n') currentLine++;
+    }
+    lastIndex = match.index;
+    links.push({ href, line: currentLine });
   }
   return links;
 }
@@ -118,9 +143,16 @@ export async function resolveLink(href, distDir, basePath = "/", fileDir = "") {
 export function extractMdxAbsoluteLinks(content) {
   const issues = [];
   const lines = content.split("\n");
+  let inCodeBlock = false;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+
+    if (/^```/.test(line.trimStart())) {
+      inCodeBlock = !inCodeBlock;
+      continue;
+    }
+    if (inCodeBlock) continue;
 
     // Markdown link syntax: [text](/docs/...) or [text](/ja/docs/...)
     const mdRegex = /\]\((\/(?:ja\/)?docs\/[^)]*)\)/g;
@@ -144,14 +176,26 @@ export function extractMdxAbsoluteLinks(content) {
 export async function checkHtmlLinks(distDir, rootDir, basePath = "/", excludePatterns = []) {
   const broken = [];
   const htmlFiles = await collectFiles(distDir, [".html"]);
+  const cache = new Map();
 
   for (const file of htmlFiles) {
     const content = await readFile(file, "utf-8");
     const links = extractHtmlLinks(content);
+    const fileDir = dirname(file);
 
     for (const { href, line } of links) {
       if (excludePatterns.some((p) => p.test(href))) continue;
-      const exists = await resolveLink(href, distDir, basePath, dirname(file));
+
+      // Cache key: absolute links use href only; relative links include fileDir
+      const cacheKey = href.startsWith("/") ? href : `${fileDir}:${href}`;
+      let exists;
+      if (cache.has(cacheKey)) {
+        exists = cache.get(cacheKey);
+      } else {
+        exists = await resolveLink(href, distDir, basePath, fileDir);
+        cache.set(cacheKey, exists);
+      }
+
       if (!exists) {
         broken.push({ file: relative(rootDir, file), line, href });
       }
@@ -241,15 +285,12 @@ async function main() {
   // Exclude versioned docs links — version content may be incomplete
   const excludePatterns = [/\/v\/[^/]+\//];
 
+  const { docsDir, localeDirs } = await parseContentDirs(settingsPath);
+  const contentDirs = [join(rootDir, docsDir), ...localeDirs.map((d) => join(rootDir, d))];
+
   const [brokenLinks, mdxWarnings] = await Promise.all([
     checkHtmlLinks(distDir, rootDir, basePath, excludePatterns),
-    checkMdxLinks(
-      [
-        join(rootDir, "src", "content", "docs"),
-        join(rootDir, "src", "content", "docs-ja"),
-      ],
-      rootDir,
-    ),
+    checkMdxLinks(contentDirs, rootDir),
   ]);
 
   console.log(formatReport(brokenLinks, mdxWarnings));
