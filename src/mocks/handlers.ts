@@ -12,12 +12,7 @@ const mockResponses = [
 let responseIndex = 0;
 
 export const handlers = [
-  http.post("*/api/ai-chat", async ({ request }) => {
-    const body = (await request.json()) as {
-      message: string;
-      history: { role: string; content: string }[];
-    };
-
+  http.post("*/api/ai-chat", async () => {
     // Simulate network delay (1-2 seconds)
     await delay(1000 + Math.random() * 1000);
 
