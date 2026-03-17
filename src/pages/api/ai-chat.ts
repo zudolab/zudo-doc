@@ -164,7 +164,10 @@ export const POST: APIRoute = async ({ request }) => {
     } else if (mode === "remote") {
       response = await handleRemoteMode(message, validHistory);
     } else {
-      return jsonResponse({ error: "AI chat mode not configured" }, 500);
+      return jsonResponse({
+        error:
+          'AI chat mode not configured. Set AI_CHAT_MODE to "local" or "remote" in your environment.',
+      }, 500);
     }
 
     return jsonResponse({ response });
