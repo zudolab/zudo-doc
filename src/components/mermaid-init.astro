@@ -67,15 +67,23 @@
             return Number.isNaN(luminance) ? true : luminance < 0.5;
           })(),
           background: "transparent",
-          primaryColor: v("--zd-bg"),
-          primaryTextColor: v("--zd-fg"),
-          primaryBorderColor: v("--zd-8"),
-          lineColor: v("--zd-8"),
-          secondaryColor: v("--zd-0"),
-          tertiaryColor: v("--zd-0"),
-          noteBkgColor: v("--zd-0"),
-          noteTextColor: v("--zd-fg"),
-          noteBorderColor: v("--zd-8"),
+          primaryColor: v("--zd-mermaid-node-bg"),
+          primaryTextColor: v("--zd-mermaid-text"),
+          primaryBorderColor: v("--zd-mermaid-line"),
+          lineColor: v("--zd-mermaid-line"),
+          secondaryColor: v("--zd-mermaid-note-bg"),
+          tertiaryColor: v("--zd-mermaid-note-bg"),
+          // Edge / transition labels
+          edgeLabelBackground: v("--zd-mermaid-label-bg"),
+          labelTextColor: v("--zd-mermaid-text"),
+          transitionColor: v("--zd-mermaid-line"),
+          transitionLabelColor: v("--zd-mermaid-text"),
+          // State diagram
+          stateLabelColor: v("--zd-mermaid-text"),
+          // Notes
+          noteBkgColor: v("--zd-mermaid-note-bg"),
+          noteTextColor: v("--zd-mermaid-text"),
+          noteBorderColor: v("--zd-mermaid-line"),
           fontFamily: "inherit",
         },
       });
@@ -86,6 +94,27 @@
     }
   }
 
+  /** Re-render all mermaid diagrams (clear rendered state so initMermaid picks them up). */
+  function reinitMermaid() {
+    document.querySelectorAll("[data-mermaid-rendered]").forEach((el) => {
+      el.removeAttribute("data-mermaid-rendered");
+      // Remove rendered SVG so mermaid regenerates from source text
+      const svg = el.querySelector("svg");
+      if (svg) svg.remove();
+    });
+    initMermaid();
+  }
+
   // astro:page-load fires on initial load and after View Transition navigations
   document.addEventListener("astro:page-load", () => initMermaid());
+
+  // Re-render mermaid when color tweak panel changes CSS custom properties (debounced)
+  let tweakTimer: ReturnType<typeof setTimeout> | undefined;
+  new MutationObserver(() => {
+    clearTimeout(tweakTimer);
+    tweakTimer = setTimeout(reinitMermaid, 300);
+  }).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["style"],
+  });
 </script>

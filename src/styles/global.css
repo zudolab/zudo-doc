@@ -61,6 +61,11 @@
   --color-danger: var(--zd-danger);
   --color-warning: var(--zd-warning);
   --color-info: var(--zd-info);
+  --color-mermaid-node-bg: var(--zd-mermaid-node-bg);
+  --color-mermaid-text: var(--zd-mermaid-text);
+  --color-mermaid-line: var(--zd-mermaid-line);
+  --color-mermaid-label-bg: var(--zd-mermaid-label-bg);
+  --color-mermaid-note-bg: var(--zd-mermaid-note-bg);
 
   /* ========================================
    * Spacing — hsp (horizontal) + vsp (vertical)
@@ -574,6 +579,12 @@ pre.astro-code .line .highlighted-word {
 .zd-content .mermaid svg {
   max-width: 100%;
   height: auto;
+  overflow: visible;
+}
+
+/* Prevent mermaid edge labels from clipping text (foreignObject uses overflow:hidden) */
+.zd-content .mermaid foreignObject {
+  overflow: visible;
 }
 
 /* KaTeX math equations */

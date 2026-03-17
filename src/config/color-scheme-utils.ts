@@ -13,6 +13,11 @@ export const SEMANTIC_DEFAULTS: Record<string, number> = {
   danger: 1,
   warning: 3,
   info: 4,
+  mermaidNodeBg: 9,
+  mermaidText: 11,
+  mermaidLine: 8,
+  mermaidLabelBg: 10,
+  mermaidNoteBg: 0,
 };
 
 export const SEMANTIC_CSS_NAMES: Record<string, string> = {
@@ -26,6 +31,11 @@ export const SEMANTIC_CSS_NAMES: Record<string, string> = {
   danger: "--zd-danger",
   warning: "--zd-warning",
   info: "--zd-info",
+  mermaidNodeBg: "--zd-mermaid-node-bg",
+  mermaidText: "--zd-mermaid-text",
+  mermaidLine: "--zd-mermaid-line",
+  mermaidLabelBg: "--zd-mermaid-label-bg",
+  mermaidNoteBg: "--zd-mermaid-note-bg",
 };
 
 export const lightDarkPairings = [
@@ -68,6 +78,11 @@ export function resolveSemanticColors(scheme: ColorScheme) {
     danger: resolveColor(scheme.semantic?.danger, p, p[1]),
     warning: resolveColor(scheme.semantic?.warning, p, p[3]),
     info: resolveColor(scheme.semantic?.info, p, p[4]),
+    mermaidNodeBg: resolveColor(scheme.semantic?.mermaidNodeBg, p, p[9]),
+    mermaidText: resolveColor(scheme.semantic?.mermaidText, p, p[11]),
+    mermaidLine: resolveColor(scheme.semantic?.mermaidLine, p, p[8]),
+    mermaidLabelBg: resolveColor(scheme.semantic?.mermaidLabelBg, p, p[10]),
+    mermaidNoteBg: resolveColor(scheme.semantic?.mermaidNoteBg, p, p[0]),
   };
 }
 
@@ -91,6 +106,11 @@ export function schemeToCssPairs(scheme: ColorScheme): [string, string][] {
     ["--zd-danger", sem.danger],
     ["--zd-warning", sem.warning],
     ["--zd-info", sem.info],
+    ["--zd-mermaid-node-bg", sem.mermaidNodeBg],
+    ["--zd-mermaid-text", sem.mermaidText],
+    ["--zd-mermaid-line", sem.mermaidLine],
+    ["--zd-mermaid-label-bg", sem.mermaidLabelBg],
+    ["--zd-mermaid-note-bg", sem.mermaidNoteBg],
   ];
 }
 
