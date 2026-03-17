@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import type { ChatMessage } from "@/types/ai-chat";
+import { renderMarkdown } from "@/utils/render-markdown";
 
 interface AiChatModalProps {
   basePath: string;
@@ -111,16 +112,6 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
     }
   }
 
-  function formatContent(content: string) {
-    const lines = content.split("\n");
-    return lines.map((line, i) => (
-      <span key={i}>
-        {line}
-        {i < lines.length - 1 && <br />}
-      </span>
-    ));
-  }
-
   return (
     <dialog
       ref={dialogRef}
@@ -167,15 +158,16 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
               key={i}
               className={`mb-vsp-xs flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
-              <div
-                className={`max-w-[85%] px-hsp-md py-vsp-2xs text-small leading-relaxed ${
-                  msg.role === "user"
-                    ? "rounded-t-[1rem] rounded-bl-[1rem] rounded-br-[0.25rem] bg-accent text-bg"
-                    : "rounded-t-[1rem] rounded-br-[1rem] rounded-bl-[0.25rem] bg-bg text-fg"
-                }`}
-              >
-                {formatContent(msg.content)}
-              </div>
+              {msg.role === "user" ? (
+                <div className="max-w-[85%] rounded-t-[1rem] rounded-bl-[1rem] rounded-br-[0.25rem] bg-accent px-hsp-md py-vsp-2xs text-small leading-relaxed text-bg">
+                  {msg.content}
+                </div>
+              ) : (
+                <div
+                  className="ai-chat-md max-w-[85%] rounded-t-[1rem] rounded-br-[1rem] rounded-bl-[0.25rem] bg-bg px-hsp-md py-vsp-2xs text-small leading-relaxed text-fg"
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
+                />
+              )}
             </div>
           ))}
           {loading && (

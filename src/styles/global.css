@@ -656,6 +656,80 @@ pre.astro-code .line .highlighted-word {
  * Page transition animations
  * ======================================== */
 
+/* ========================================
+ * AI Chat markdown (.ai-chat-md)
+ *
+ * Compact typography for chat bubbles.
+ * ======================================== */
+
+.ai-chat-md :where(p) {
+  margin: 0 0 var(--spacing-vsp-2xs);
+}
+
+.ai-chat-md :where(p:last-child) {
+  margin-bottom: 0;
+}
+
+.ai-chat-md :where(strong) {
+  font-weight: var(--font-weight-bold);
+}
+
+.ai-chat-md :where(em) {
+  font-style: italic;
+}
+
+.ai-chat-md :where(a) {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+.ai-chat-md :where(a:hover) {
+  color: var(--color-accent-hover);
+}
+
+.ai-chat-md :where(code:not(pre code)) {
+  font-size: 0.9em;
+  background: color-mix(in oklch, var(--color-muted) 20%, transparent);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+}
+
+.ai-chat-md :where(pre) {
+  font-size: var(--text-caption);
+  line-height: var(--leading-relaxed);
+  background: var(--color-code-bg);
+  color: var(--color-code-fg);
+  padding: var(--spacing-vsp-2xs) var(--spacing-hsp-sm);
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: var(--spacing-vsp-2xs) 0;
+}
+
+.ai-chat-md :where(pre code) {
+  background: transparent;
+  padding: 0;
+  font-size: inherit;
+}
+
+.ai-chat-md :where(ul) {
+  list-style-type: disc;
+  padding-left: var(--spacing-hsp-lg);
+  margin: var(--spacing-vsp-2xs) 0;
+}
+
+.ai-chat-md :where(li) {
+  margin-bottom: 0.15em;
+}
+
+.ai-chat-md :where(li::marker) {
+  color: var(--color-muted);
+}
+
+.ai-chat-md :where(h4, h5, h6) {
+  font-weight: var(--font-weight-bold);
+  margin: var(--spacing-vsp-xs) 0 var(--spacing-vsp-2xs);
+}
+
 @keyframes contentFadeIn {
   from {
     opacity: 0;
