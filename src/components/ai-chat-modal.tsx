@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { ChatMessage } from "@/types/ai-chat";
 import { renderMarkdown } from "@/utils/render-markdown";
 
@@ -147,7 +147,7 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-hsp-lg py-vsp-sm">
+        <div className="flex-1 overflow-y-auto px-hsp-lg py-vsp-sm" aria-live="polite">
           {messages.length === 0 && !loading && (
             <p className="py-vsp-xl text-center text-small text-muted">
               Ask a question about the documentation.

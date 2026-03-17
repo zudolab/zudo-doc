@@ -58,6 +58,8 @@ function buildPrompt(message: string, history: ChatMessage[]): string {
   return contextLines.join("\n\n");
 }
 
+const LOCAL_TIMEOUT_MS = 60_000;
+
 async function handleLocalMode(
   message: string,
   history: ChatMessage[],
@@ -76,16 +78,25 @@ async function handleLocalMode(
         "0.50",
         "--system-prompt",
         systemPrompt,
-        contextPrompt,
       ],
       { stdio: ["pipe", "pipe", "pipe"] },
     );
 
-    // claude -p reads stdin when piped; close it so it uses the CLI argument
+    // Feed the user prompt via stdin to avoid ARG_MAX limits
+    proc.stdin.write(contextPrompt);
     proc.stdin.end();
 
     let output = "";
     let error = "";
+    let settled = false;
+
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        proc.kill();
+        reject(new Error("claude CLI timed out after 60 seconds"));
+      }
+    }, LOCAL_TIMEOUT_MS);
 
     proc.stdout.on("data", (data: Buffer) => {
       output += data.toString();
@@ -95,12 +106,20 @@ async function handleLocalMode(
     });
 
     proc.on("error", (err) => {
-      reject(new Error(`Failed to spawn claude: ${err.message}`));
+      if (!settled) {
+        settled = true;
+        clearTimeout(timer);
+        reject(new Error(`Failed to spawn claude: ${err.message}`));
+      }
     });
 
     proc.on("close", (code) => {
-      if (code === 0) resolve(output.trim());
-      else reject(new Error(`claude exited with code ${code}: ${error}`));
+      if (!settled) {
+        settled = true;
+        clearTimeout(timer);
+        if (code === 0) resolve(output.trim());
+        else reject(new Error(`claude exited with code ${code}: ${error}`));
+      }
     });
   });
 }

@@ -717,6 +717,12 @@ pre.astro-code .line .highlighted-word {
   margin: var(--spacing-vsp-2xs) 0;
 }
 
+.ai-chat-md :where(ol) {
+  list-style-type: decimal;
+  padding-left: var(--spacing-hsp-lg);
+  margin: var(--spacing-vsp-2xs) 0;
+}
+
 .ai-chat-md :where(li) {
   margin-bottom: 0.15em;
 }

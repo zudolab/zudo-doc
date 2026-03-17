@@ -67,6 +67,16 @@ export function renderMarkdown(src: string): string {
         return `<ul>${items}</ul>`;
       }
 
+      // Ordered list (lines starting with 1. 2. etc.)
+      if (/^\d+\. /m.test(trimmed)) {
+        const items = trimmed
+          .split("\n")
+          .filter((l) => /^\d+\. /.test(l.trim()))
+          .map((l) => `<li>${renderInline(l.trim().replace(/^\d+\. /, ""))}</li>`)
+          .join("");
+        return `<ol>${items}</ol>`;
+      }
+
       // Heading (# to ###)
       const headingMatch = trimmed.match(/^(#{1,3}) (.+)$/);
       if (headingMatch) {
