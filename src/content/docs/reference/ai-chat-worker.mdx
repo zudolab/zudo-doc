@@ -42,7 +42,7 @@ interface ChatMessage {
 
 | Field     | Type             | Required | Description                                                              |
 | --------- | ---------------- | -------- | ------------------------------------------------------------------------ |
-| `message` | `string`         | Yes      | The user's current message. Must be non-empty.                           |
+| `message` | `string`         | Yes      | The user's current message. Must be non-empty, max 4000 characters.      |
 | `history` | `ChatMessage[]`  | Yes      | Previous conversation messages. Invalid entries are filtered out silently. |
 
 ### Success Response (200)
@@ -61,6 +61,7 @@ The `response` field contains the assistant's reply as a markdown string.
 | ------ | ------------------------------ |
 | 400    | Invalid JSON body              |
 | 400    | `message` is not a non-empty string |
+| 400    | `message` exceeds 4000 character limit |
 | 400    | Message rejected by input screening |
 | 405    | Request method is not POST     |
 | 429    | Rate limit exceeded (includes `Retry-After` header) |
@@ -68,7 +69,7 @@ The `response` field contains the assistant's reply as a markdown string.
 
 ## Security
 
-The Worker includes two layers of defense against prompt injection attacks:
+The Worker includes layered defenses against prompt injection and abuse:
 
 ### Hardened System Prompt
 
@@ -82,6 +83,14 @@ The system prompt uses XML tags (`<rules>`, `<documentation>`) to clearly separa
 ### Input Screening
 
 Before a message reaches Claude, a lightweight regex-based filter (`src/input-screen.ts`) checks for common prompt injection patterns such as requests to ignore previous instructions, reveal configuration, or bypass restrictions. Matched messages are rejected with a 400 response. This filter runs before rate limiting so that injection attempts do not consume the caller's rate limit quota.
+
+### API Key Isolation
+
+The `ANTHROPIC_API_KEY` is stored as a Cloudflare Worker secret and never included in the prompt context. Claude cannot leak what it does not know.
+
+### Message Length Limit
+
+Messages are capped at 4000 characters. Longer messages are rejected with a 400 response before reaching the Claude API.
 
 ## Environment Setup
 
@@ -175,16 +184,6 @@ Required GitHub secrets:
 - `CLOUDFLARE_ACCOUNT_ID` — Your Cloudflare account ID
 
 The workflow can also be triggered manually via `workflow_dispatch`.
-
-## Security
-
-### Prompt Injection Defense
-
-The Worker includes layered defenses against prompt injection attacks:
-
-- **Hardened system prompt** — uses XML-tagged context separation (`<rules>`, `<documentation>`) with explicit guardrails instructing the model to stay on-topic and never reveal configuration
-- **Input screening** — regex-based pre-filter (`src/input-screen.ts`) rejects messages matching common injection patterns before they reach Claude. Screened requests return a generic 400 error without revealing the detection
-- **API key isolation** — the `ANTHROPIC_API_KEY` is stored as a Worker secret, never included in the prompt context
 
 ## Relationship to AI Assistant
 

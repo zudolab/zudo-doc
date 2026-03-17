@@ -69,10 +69,12 @@ Includes `Retry-After` header with seconds until the limit resets.
 
 ## Security
 
-The Worker includes prompt injection defenses:
+The Worker includes layered defenses against prompt injection and abuse:
 
 - **Hardened system prompt** — XML-tagged context separation with explicit guardrails that instruct the model to stay on-topic and never reveal configuration
 - **Input screening** — regex-based pre-filter in `src/input-screen.ts` that rejects messages matching common prompt injection patterns before they reach Claude
+- **API key isolation** — the key is stored as a Worker secret, never in the prompt context
+- **Message length limit** — messages capped at 4000 characters
 
 ## Rate Limiting
 
