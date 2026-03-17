@@ -66,6 +66,10 @@
   --color-mermaid-line: var(--zd-mermaid-line);
   --color-mermaid-label-bg: var(--zd-mermaid-label-bg);
   --color-mermaid-note-bg: var(--zd-mermaid-note-bg);
+  --color-chat-user-bg: var(--zd-chat-user-bg);
+  --color-chat-user-text: var(--zd-chat-user-text);
+  --color-chat-assistant-bg: var(--zd-chat-assistant-bg);
+  --color-chat-assistant-text: var(--zd-chat-assistant-text);
 
   /* ========================================
    * Spacing — hsp (horizontal) + vsp (vertical)

@@ -161,12 +161,12 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
               className={`mb-vsp-xs flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
               {msg.role === "user" ? (
-                <div className="max-w-[85%] rounded-t-[1rem] rounded-bl-[1rem] rounded-br-[0.25rem] bg-accent px-hsp-md py-vsp-2xs text-small leading-relaxed text-bg">
+                <div className="max-w-[85%] rounded-t-[1rem] rounded-bl-[1rem] rounded-br-[0.25rem] bg-chat-user-bg px-hsp-md py-vsp-2xs text-small leading-relaxed text-chat-user-text">
                   {msg.content}
                 </div>
               ) : (
                 <div
-                  className="ai-chat-md max-w-[85%] rounded-t-[1rem] rounded-br-[1rem] rounded-bl-[0.25rem] bg-bg px-hsp-md py-vsp-2xs text-small leading-relaxed text-fg"
+                  className="ai-chat-md max-w-[85%] rounded-t-[1rem] rounded-br-[1rem] rounded-bl-[0.25rem] bg-chat-assistant-bg px-hsp-md py-vsp-2xs text-small leading-relaxed text-chat-assistant-text"
                   dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
                 />
               )}
@@ -174,7 +174,7 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
           ))}
           {loading && (
             <div className="mb-vsp-xs flex justify-start">
-              <div className="rounded-t-[1rem] rounded-br-[1rem] rounded-bl-[0.25rem] bg-bg px-hsp-md py-vsp-2xs text-small text-muted">
+              <div className="rounded-t-[1rem] rounded-br-[1rem] rounded-bl-[0.25rem] bg-chat-assistant-bg px-hsp-md py-vsp-2xs text-small text-muted">
                 Thinking...
               </div>
             </div>
