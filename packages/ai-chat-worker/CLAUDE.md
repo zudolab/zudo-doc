@@ -52,4 +52,4 @@ See `README.md` for full setup instructions (vars, secrets, KV namespace).
 - Error responses use `{ error: string }` format
 - Rate limit uses `cf-connecting-ip` for client IP
 - History capped at 50 messages to limit API cost
-- KV keys use bucket pattern: `rate:{window}:{ip}:{bucket}` with TTL = 2x window
+- KV keys use bucket pattern: `rate:min:{ip}:{bucket}` / `rate:day:{ip}:{bucket}` with TTL = 2x window
