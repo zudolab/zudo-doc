@@ -106,6 +106,28 @@ The Worker enforces per-IP rate limits using the `cf-connecting-ip` header provi
 - **Invalid config** — non-numeric values for `RATE_LIMIT_PER_MINUTE` or `RATE_LIMIT_PER_DAY` fall back to the defaults (10/min, 100/day)
 - **429 response** — includes a `Retry-After` header (seconds until the current window resets), exposed via CORS for browser access
 
+### Audit Logging
+
+Every chat interaction is logged to KV for security analysis. This enables detection of prompt injection attempts and abuse patterns.
+
+**Logged fields:**
+
+| Field | Description |
+| ----- | ----------- |
+| `timestamp` | ISO 8601 timestamp |
+| `ipHash` | SHA-256 hash of the client IP (raw IP is never stored) |
+| `message` | User's message, truncated to 500 characters |
+| `responsePreview` | First 200 characters of the response |
+| `blocked` | Whether the request was rejected |
+| `blockReason` | `"rate_limit"` or `"invalid_input"` (when blocked) |
+
+**Storage details:**
+
+- Uses the same `RATE_LIMIT` KV namespace with `audit:` key prefix (separate from `rate:` keys)
+- Logs expire automatically after 7 days
+- Logging is fire-and-forget — failures do not affect the API response
+- IP addresses are hashed with SHA-256 via the Web Crypto API before storage
+
 ### Secrets
 
 Add the Anthropic API key as a Cloudflare Worker secret:
@@ -153,6 +175,7 @@ The built-in [AI Assistant](/docs/guides/ai-assistant) runs as part of the Astro
 packages/ai-chat-worker/
 ├── src/
 │   ├── index.ts          # Worker entry point
+│   ├── audit-log.ts      # Audit logging + IP hashing
 │   ├── claude.ts         # Claude API integration + docs context fetching
 │   ├── cors.ts           # CORS header handling
 │   ├── rate-limit.ts     # Per-IP rate limiting via KV

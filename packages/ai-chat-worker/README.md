@@ -79,3 +79,25 @@ Per-IP rate limiting via Cloudflare KV. Uses `cf-connecting-ip` header for clien
 Configure in `wrangler.toml` `[vars]` section. Invalid values fall back to the defaults.
 
 The limiter is best-effort (KV is eventually consistent). On KV errors, requests are allowed through — chat availability takes priority over strict enforcement.
+
+## Audit Logging
+
+Every chat interaction is logged to KV for security analysis (prompt injection detection, abuse pattern identification).
+
+### What's Logged
+
+| Field | Description |
+|-------|-------------|
+| `timestamp` | ISO 8601 timestamp |
+| `ipHash` | SHA-256 hash of the client IP (privacy-preserving) |
+| `message` | User's message (truncated to 500 chars) |
+| `responsePreview` | First 200 chars of the response |
+| `blocked` | Whether the request was blocked |
+| `blockReason` | `"rate_limit"` or `"invalid_input"` (if blocked) |
+
+### Storage
+
+- Stored in the same `RATE_LIMIT` KV namespace with `audit:` key prefix
+- Logs expire automatically after 7 days
+- Logging is fire-and-forget — failures don't affect the response
+- IP addresses are never stored in plain text

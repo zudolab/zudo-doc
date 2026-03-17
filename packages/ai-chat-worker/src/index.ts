@@ -2,6 +2,7 @@ import type { Env, ChatRequest, ChatMessage } from "./types";
 import { corsHeaders, handleOptions } from "./cors";
 import { callClaude } from "./claude";
 import { checkRateLimit } from "./rate-limit";
+import { hashIp, logChat } from "./audit-log";
 
 const MAX_HISTORY_LENGTH = 50;
 
@@ -44,6 +45,9 @@ export default {
       return jsonResponse({ error: "Not found" }, 404);
     }
 
+    const clientIp = request.headers.get("cf-connecting-ip") || "unknown";
+    const ipHash = await hashIp(clientIp);
+
     try {
       let body: ChatRequest;
       try {
@@ -53,18 +57,40 @@ export default {
       }
 
       if (!body.message || typeof body.message !== "string") {
+        logChat(
+          {
+            timestamp: new Date().toISOString(),
+            ipHash,
+            message: "",
+            responsePreview: "",
+            blocked: true,
+            blockReason: "invalid_input",
+          },
+          env,
+        );
         return jsonResponse({ error: "message is required" }, 400);
       }
 
       // Rate limit after validation so bad requests don't consume quota
-      const clientIp = request.headers.get("cf-connecting-ip") || "unknown";
       const rateLimit = await checkRateLimit(clientIp, env);
       if (!rateLimit.allowed) {
-        return jsonResponse(
+        const rateLimitResponse = jsonResponse(
           { error: "Too many requests" },
           429,
           { "Retry-After": String(rateLimit.retryAfter ?? 60) },
         );
+        logChat(
+          {
+            timestamp: new Date().toISOString(),
+            ipHash,
+            message: body.message.slice(0, 500),
+            responsePreview: "",
+            blocked: true,
+            blockReason: "rate_limit",
+          },
+          env,
+        );
+        return rateLimitResponse;
       }
 
       const history = Array.isArray(body.history)
@@ -72,6 +98,16 @@ export default {
         : [];
 
       const response = await callClaude(body.message, history, env);
+      logChat(
+        {
+          timestamp: new Date().toISOString(),
+          ipHash,
+          message: body.message.slice(0, 500),
+          responsePreview: response.slice(0, 200),
+          blocked: false,
+        },
+        env,
+      );
       return jsonResponse({ response }, 200);
     } catch (err) {
       console.error(
