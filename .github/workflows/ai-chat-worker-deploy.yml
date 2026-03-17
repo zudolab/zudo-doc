@@ -13,6 +13,10 @@ on:
       - 'packages/ai-chat-worker/**'
   workflow_dispatch:
 
+concurrency:
+  group: ai-chat-worker-deploy
+  cancel-in-progress: false
+
 permissions:
   contents: read
 

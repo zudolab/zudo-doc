@@ -97,13 +97,7 @@ For the full endpoint specification (request/response types, error codes, enviro
 
 ## Cloudflare Worker (Standalone API)
 
-For deploying the chat API as a standalone Cloudflare Worker (separate from the Astro site), see the [`packages/ai-chat-worker/`](/docs/reference/ai-chat-worker) sub-package. This option is useful when:
-
-- You want to host the chat API independently from the documentation site
-- You're deploying the docs as a static site (no server-side rendering)
-- You want to use Cloudflare Workers runtime
-
-The Worker fetches `llms-full.txt` from your deployed documentation site and uses it as context for Claude API calls.
+For deploying the chat API as a standalone Cloudflare Worker (separate from the Astro site), see the [`packages/ai-chat-worker/`](/docs/reference/ai-chat-worker) sub-package. The Worker fetches `llms-full.txt` from your deployed documentation site and uses it as context for Claude API calls — useful when you want to host the API independently or deploy the docs as a static site.
 
 ## File Structure
 
