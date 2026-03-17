@@ -23,6 +23,7 @@ src/
 ├── audit-log.ts      # Audit logging + IP hashing via Web Crypto
 ├── claude.ts         # Claude API call + docs context fetching/caching
 ├── cors.ts           # CORS headers (exposes Retry-After)
+├── input-screen.ts   # Prompt injection input screening
 ├── rate-limit.ts     # Per-IP rate limiting via KV
 └── types.ts          # Env, request/response, Claude API types
 ```
@@ -33,9 +34,10 @@ src/
 2. Method + path check → 405/404
 3. Hash client IP (SHA-256 via Web Crypto) → `audit-log.ts`
 4. JSON parse + message validation → 400 (audit logged as `invalid_input`)
-5. Rate limit check (after validation, so bad requests don't consume quota) → 429 (audit logged as `rate_limit`)
-6. Fetch `llms-full.txt` from docs site (cached in-memory, best-effort) → `claude.ts`
-7. Call Claude API with docs context as system prompt → response (audit logged)
+5. Prompt injection screening → 400 (rejects obvious injection attempts before they consume rate limit quota; audit logged)
+6. Rate limit check → 429 (audit logged as `rate_limit`)
+7. Fetch `llms-full.txt` from docs site (cached in-memory, best-effort) → `claude.ts`
+8. Call Claude API with hardened system prompt (XML-tagged context + explicit guardrails) → response (audit logged)
 
 ### Key Design Decisions
 
@@ -44,6 +46,8 @@ src/
 - **Best-effort caching** — module-level cache for `llms-full.txt` is ephemeral (Workers isolates are recycled)
 - **Rate limit after validation** — invalid requests don't consume the caller's quota
 - **Fire-and-forget audit logging** — every interaction logged to KV (`audit:` prefix) with 7-day TTL; IPs stored as SHA-256 hashes for privacy
+- **Prompt hardening** — system prompt uses XML tags for context separation and explicit guardrails against off-topic / injection attempts
+- **Input screening** — regex pre-filter catches common prompt injection patterns before reaching the Claude API
 
 ## Configuration
 
