@@ -5,7 +5,15 @@ Cloudflare Worker that serves as an AI chat API endpoint for zudo-doc. Uses Clau
 ## Setup
 
 1. Set the `DOCS_SITE_URL` variable in `wrangler.toml` to your deployed docs site URL
-2. Add your Anthropic API key as a secret:
+2. Create a KV namespace for rate limiting:
+
+```bash
+wrangler kv namespace create RATE_LIMIT
+```
+
+Update the `id` in `wrangler.toml` with the returned namespace ID.
+
+3. Add your Anthropic API key as a secret:
 
 ```bash
 wrangler secret put ANTHROPIC_API_KEY
@@ -48,3 +56,22 @@ Response:
   "response": "To add a new page, create an MDX file in..."
 }
 ```
+
+Rate limited response (429):
+
+```json
+{
+  "error": "Too many requests"
+}
+```
+
+Includes `Retry-After` header with seconds until the limit resets.
+
+## Rate Limiting
+
+Per-IP rate limiting via Cloudflare KV. Configure in `wrangler.toml`:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `RATE_LIMIT_PER_MINUTE` | `10` | Max requests per IP per minute |
+| `RATE_LIMIT_PER_DAY` | `100` | Max requests per IP per day |

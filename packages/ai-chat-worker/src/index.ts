@@ -1,6 +1,7 @@
 import type { Env, ChatRequest, ChatMessage } from "./types";
 import { corsHeaders, handleOptions } from "./cors";
 import { callClaude } from "./claude";
+import { checkRateLimit } from "./rate-limit";
 
 const MAX_HISTORY_LENGTH = 50;
 
@@ -39,6 +40,23 @@ export default {
     const url = new URL(request.url);
     if (url.pathname !== "/") {
       return jsonResponse({ error: "Not found" }, 404);
+    }
+
+    // Rate limit by client IP
+    const clientIp = request.headers.get("cf-connecting-ip") || "unknown";
+    const rateLimit = await checkRateLimit(clientIp, env);
+    if (!rateLimit.allowed) {
+      return new Response(
+        JSON.stringify({ error: "Too many requests" }),
+        {
+          status: 429,
+          headers: {
+            "Content-Type": "application/json",
+            "Retry-After": String(rateLimit.retryAfter ?? 60),
+            ...corsHeaders(),
+          },
+        },
+      );
     }
 
     try {
