@@ -1,4 +1,4 @@
-import type { Env, ChatMessage, ClaudeMessage, ClaudeResponse } from "./types";
+import type { Env, ChatMessage, ClaudeResponse } from "./types";
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
@@ -33,13 +33,8 @@ ${docsContent}`;
 function buildMessages(
   history: ChatMessage[],
   currentMessage: string,
-): ClaudeMessage[] {
-  const messages: ClaudeMessage[] = history.map((msg) => ({
-    role: msg.role,
-    content: msg.content,
-  }));
-  messages.push({ role: "user", content: currentMessage });
-  return messages;
+): ChatMessage[] {
+  return [...history, { role: "user" as const, content: currentMessage }];
 }
 
 export async function callClaude(

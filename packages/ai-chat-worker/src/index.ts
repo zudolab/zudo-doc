@@ -30,17 +30,22 @@ export default {
       return handleOptions();
     }
 
-    const url = new URL(request.url);
+    if (request.method !== "POST") {
+      return jsonResponse({ error: "Method not allowed" }, 405);
+    }
 
-    if (request.method !== "POST" || url.pathname !== "/") {
-      return jsonResponse(
-        { error: request.method !== "POST" ? "Method not allowed" : "Not found" },
-        request.method !== "POST" ? 405 : 404,
-      );
+    const url = new URL(request.url);
+    if (url.pathname !== "/") {
+      return jsonResponse({ error: "Not found" }, 404);
     }
 
     try {
-      const body = (await request.json()) as ChatRequest;
+      let body: ChatRequest;
+      try {
+        body = (await request.json()) as ChatRequest;
+      } catch {
+        return jsonResponse({ error: "Invalid JSON body" }, 400);
+      }
 
       if (!body.message || typeof body.message !== "string") {
         return jsonResponse({ error: "message is required" }, 400);
@@ -53,10 +58,11 @@ export default {
       const response = await callClaude(body.message, history, env);
       return jsonResponse({ response }, 200);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Internal server error";
-      console.error("Chat endpoint error:", message);
-      return jsonResponse({ error: message }, 500);
+      console.error(
+        "Chat endpoint error:",
+        err instanceof Error ? err.message : err,
+      );
+      return jsonResponse({ error: "Internal server error" }, 500);
     }
   },
 } satisfies ExportedHandler<Env>;

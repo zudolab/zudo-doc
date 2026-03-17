@@ -22,11 +22,6 @@ export interface ChatErrorResponse {
 }
 
 // Claude API types (raw fetch, no SDK)
-export interface ClaudeMessage {
-  role: "user" | "assistant";
-  content: string;
-}
-
 export interface ClaudeResponse {
   content: Array<{ type: "text"; text: string } | { type: string }>;
   stop_reason: string;
