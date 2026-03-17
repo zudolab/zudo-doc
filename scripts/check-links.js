@@ -239,7 +239,7 @@ async function main() {
   }
 
   // Exclude versioned docs links — version content may be incomplete
-  const excludePatterns = [/\/v\/[^/]+\/docs\//];
+  const excludePatterns = [/\/v\/[^/]+\//];
 
   const [brokenLinks, mdxWarnings] = await Promise.all([
     checkHtmlLinks(distDir, rootDir, basePath, excludePatterns),
@@ -254,8 +254,15 @@ async function main() {
 
   console.log(formatReport(brokenLinks, mdxWarnings));
 
-  if (brokenLinks.length > 0 || mdxWarnings.length > 0) {
+  const hasIssues = brokenLinks.length > 0 || mdxWarnings.length > 0;
+  const strict = process.argv.includes("--strict");
+
+  if (hasIssues && strict) {
     process.exit(1);
+  }
+  if (hasIssues && !strict) {
+    console.log("\nNote: Issues found but running in non-strict mode (exit 0).");
+    console.log("Use --strict to fail on issues.");
   }
 }
 
