@@ -54,6 +54,8 @@ jobs:
 
       - name: Build site
         run: pnpm build
+        env:
+          PUBLIC_ENABLE_MOCKS: "true"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v7

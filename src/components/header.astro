@@ -51,7 +51,7 @@ const pathForMatch = isNonDefaultLocale
 
   <a
     href={withBase(isNonDefaultLocale ? `/${lang}/` : "/")}
-    class="text-subheading font-bold text-fg hover:underline focus:underline"
+    class="whitespace-nowrap text-subheading font-bold text-fg hover:underline focus:underline"
   >
     {settings.siteName}
   </a>
@@ -131,6 +131,29 @@ const pathForMatch = isNonDefaultLocale
             <circle cx="8.5" cy="7.5" r="2.5" />
             <circle cx="6.5" cy="12.5" r="2.5" />
             <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
+          </svg>
+        </button>
+      )
+    }
+    {
+      settings.aiAssistant && (
+        <button
+          id="ai-chat-trigger"
+          type="button"
+          class="flex items-center justify-center text-muted transition-colors hover:text-fg"
+          aria-label="Open AI assistant"
+          onclick="window.dispatchEvent(new CustomEvent('toggle-ai-chat'))"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path d="M9.5 2.5Q10.5 11.5 18 13Q10.5 14.5 9.5 23.5Q8.5 14.5 1 13Q8.5 11.5 9.5 2.5Z" />
+            <path d="M19 0.5Q19.5 4 23.5 5Q19.5 6 19 9.5Q18.5 6 14.5 5Q18.5 4 19 0.5Z" />
           </svg>
         </button>
       )

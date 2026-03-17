@@ -27,6 +27,15 @@ export interface ColorScheme {
     danger?: ColorRef;
     warning?: ColorRef;
     info?: ColorRef;
+    mermaidNodeBg?: ColorRef;
+    mermaidText?: ColorRef;
+    mermaidLine?: ColorRef;
+    mermaidLabelBg?: ColorRef;
+    mermaidNoteBg?: ColorRef;
+    chatUserBg?: ColorRef;
+    chatUserText?: ColorRef;
+    chatAssistantBg?: ColorRef;
+    chatAssistantText?: ColorRef;
   };
 }
 

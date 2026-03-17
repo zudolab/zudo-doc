@@ -1,7 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { readFileSync } from "node:fs";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { readDistFile } from "./smoke-dist-helper";
 
 /**
  * Verify that admonition directives (:::note, :::tip, etc.) are correctly
@@ -9,21 +7,10 @@ import { fileURLToPath } from "node:url";
  * HTML files directly — no browser needed.
  */
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const DIST = join(
-  __dirname,
-  "fixtures",
-  "smoke",
-  "dist",
-  "docs",
-  "guides",
-  "admonitions-test",
-);
-
 let html: string;
 
 test.beforeAll(() => {
-  html = readFileSync(join(DIST, "index.html"), "utf-8");
+  html = readDistFile("docs/guides/admonitions-test/index.html");
 });
 
 test.describe("Admonitions: directive syntax renders correctly", () => {

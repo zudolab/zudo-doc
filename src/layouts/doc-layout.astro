@@ -22,6 +22,8 @@ import VersionBanner from "@/components/version-banner.astro";
 import { getVersionAvailability } from "@/utils/version-availability";
 import Footer from "@/components/footer.astro";
 import ColorTweakPanel from "@/components/color-tweak-panel";
+import AiChatModal from "@/components/ai-chat-modal";
+import MockInit from "@/components/mock-init";
 import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "@/config/color-scheme-utils";
 
 interface Props {
@@ -178,11 +180,13 @@ const contentTransition = {
         </div>
       </div>
     </div>
+    {settings.aiAssistant && <AiChatModal basePath={withBase("/")} client:load />}
     {settings.colorTweakPanel && <ColorTweakPanel client:only="react" />}
     <Footer />
     <CodeBlockEnhancer />
     <TabsInit />
     {settings.mermaid && <MermaidInit />}
+    {import.meta.env.PUBLIC_ENABLE_MOCKS === "true" && settings.aiAssistant && <MockInit client:only="react" />}
     <PageLoadingOverlay />
     <script>
       let _sidebarScrollTop = 0;
