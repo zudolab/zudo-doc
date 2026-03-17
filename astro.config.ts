@@ -50,6 +50,7 @@ const shikiConfig = settings.colorMode
 
 export default defineConfig({
   output: "static",
+  trailingSlash: settings.trailingSlash ? "always" : "never",
   ...(settings.aiAssistant ? { adapter: node({ mode: "standalone" }) } : {}),
   base: settings.base,
   integrations: [
