@@ -1,0 +1,130 @@
+---
+title: AI Chat Worker (Cloudflare)
+sidebar_position: 6
+---
+
+Standalone Cloudflare Worker that provides an AI chat API endpoint, independent of the Astro documentation site.
+
+## Overview
+
+The AI Chat Worker is a sub-package at `packages/ai-chat-worker/` that deploys as a Cloudflare Worker. It provides the same chat functionality as the built-in [AI Assistant API](/docs/reference/ai-assistant-api), but runs as a standalone service on Cloudflare Workers runtime.
+
+This is useful when:
+
+- You want to host the chat API independently from the documentation site
+- You're deploying the docs as a static site (no server-side rendering)
+- You want to use Cloudflare Workers runtime for the API backend
+
+The Worker fetches `llms-full.txt` from your deployed documentation site and uses it as context for Claude API calls.
+
+## Endpoint
+
+```
+POST /
+Content-Type: application/json
+```
+
+The Worker responds at its root URL.
+
+### Request Body
+
+```ts
+interface AiChatRequest {
+  message: string;
+  history: ChatMessage[];
+}
+
+interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+```
+
+| Field     | Type             | Required | Description                                                              |
+| --------- | ---------------- | -------- | ------------------------------------------------------------------------ |
+| `message` | `string`         | Yes      | The user's current message. Must be non-empty.                           |
+| `history` | `ChatMessage[]`  | Yes      | Previous conversation messages. Invalid entries are filtered out silently. |
+
+### Success Response (200)
+
+```ts
+interface AiChatResponse {
+  response: string;
+}
+```
+
+The `response` field contains the assistant's reply as a markdown string.
+
+### Error Responses
+
+| Status | Condition                      |
+| ------ | ------------------------------ |
+| 400    | Invalid JSON body              |
+| 400    | `message` is not a non-empty string |
+| 400    | `history` is not an array      |
+| 500    | Anthropic API call failed      |
+
+## Environment Setup
+
+### Variables
+
+Set `DOCS_SITE_URL` in `wrangler.toml` to point at your deployed documentation site:
+
+```toml title="packages/ai-chat-worker/wrangler.toml"
+[vars]
+DOCS_SITE_URL = "https://your-docs-site.example.com"
+```
+
+The Worker fetches `${DOCS_SITE_URL}/llms-full.txt` to load documentation context.
+
+### Secrets
+
+Add the Anthropic API key as a Cloudflare Worker secret:
+
+```sh
+cd packages/ai-chat-worker
+npx wrangler secret put ANTHROPIC_API_KEY
+```
+
+## Deployment
+
+### Manual
+
+```sh
+cd packages/ai-chat-worker
+pnpm install
+pnpm deploy
+```
+
+### CI/CD
+
+The repository includes a GitHub Actions workflow (`.github/workflows/ai-chat-worker-deploy.yml`) that automatically deploys the Worker on push to `main` when files in `packages/ai-chat-worker/` change.
+
+Required GitHub secrets:
+
+- `CLOUDFLARE_API_TOKEN` — Cloudflare API token with Workers write permission
+- `CLOUDFLARE_ACCOUNT_ID` — Your Cloudflare account ID
+
+The workflow can also be triggered manually via `workflow_dispatch`.
+
+## Relationship to AI Assistant
+
+The built-in [AI Assistant](/docs/guides/ai-assistant) runs as part of the Astro site using the `@astrojs/node` adapter. The AI Chat Worker is a standalone alternative that provides the same chat capability without requiring server-side rendering in the docs site.
+
+| Feature                    | Built-in AI Assistant        | AI Chat Worker             |
+| -------------------------- | ---------------------------- | -------------------------- |
+| Runtime                    | Node.js (Astro SSR)          | Cloudflare Workers         |
+| Deployment                 | Part of the docs site        | Independent service        |
+| Docs site requirement      | Hybrid mode (SSR)            | Static site is sufficient  |
+| Documentation context      | Loaded from local file       | Fetched from deployed site |
+
+## Sub-Package Location
+
+```
+packages/ai-chat-worker/
+├── src/
+│   └── index.ts          # Worker entry point
+├── wrangler.toml         # Cloudflare Worker configuration
+├── package.json
+└── tsconfig.json
+```

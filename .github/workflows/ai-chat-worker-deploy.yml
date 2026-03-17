@@ -1,0 +1,52 @@
+# Deploy the AI Chat Worker to Cloudflare Workers.
+#
+# Triggered on push to `main` when files in packages/ai-chat-worker/ change,
+# or manually via workflow_dispatch.
+
+name: AI Chat Worker Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/ai-chat-worker/**'
+  workflow_dispatch:
+
+concurrency:
+  group: ai-chat-worker-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy AI Chat Worker
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy Worker
+        working-directory: packages/ai-chat-worker
+        run: pnpm deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
