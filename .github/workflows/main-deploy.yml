@@ -83,7 +83,12 @@ jobs:
       - name: Prepare deploy directory
         run: |
           mkdir -p deploy/pj/zudo-doc
-          cp -r dist-out/. deploy/pj/zudo-doc/
+          # When aiAssistant is enabled, Astro outputs static files to dist/client/
+          if [ -d dist-out/client ]; then
+            cp -r dist-out/client/. deploy/pj/zudo-doc/
+          else
+            cp -r dist-out/. deploy/pj/zudo-doc/
+          fi
           echo '/ /pj/zudo-doc/ 302' > deploy/_redirects
 
       - name: Deploy to Cloudflare Pages (production)
