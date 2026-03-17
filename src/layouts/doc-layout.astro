@@ -186,7 +186,7 @@ const contentTransition = {
     <CodeBlockEnhancer />
     <TabsInit />
     {settings.mermaid && <MermaidInit />}
-    {import.meta.env.DEV && settings.aiAssistant && <MockInit client:only="react" />}
+    {import.meta.env.PUBLIC_ENABLE_MOCKS === "true" && settings.aiAssistant && <MockInit client:only="react" />}
     <PageLoadingOverlay />
     <script>
       let _sidebarScrollTop = 0;

@@ -86,6 +86,8 @@ jobs:
 
       - name: Build site
         run: pnpm build
+        env:
+          PUBLIC_ENABLE_MOCKS: "true"
 
       - name: Check links
         run: pnpm run check:links
