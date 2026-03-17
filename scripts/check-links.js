@@ -141,7 +141,7 @@ export function extractMdxAbsoluteLinks(content) {
 
 // --- Main Check Functions ---
 
-export async function checkHtmlLinks(distDir, rootDir, basePath = "/") {
+export async function checkHtmlLinks(distDir, rootDir, basePath = "/", excludePatterns = []) {
   const broken = [];
   const htmlFiles = await collectFiles(distDir, [".html"]);
 
@@ -150,6 +150,7 @@ export async function checkHtmlLinks(distDir, rootDir, basePath = "/") {
     const links = extractHtmlLinks(content);
 
     for (const { href, line } of links) {
+      if (excludePatterns.some((p) => p.test(href))) continue;
       const exists = await resolveLink(href, distDir, basePath, dirname(file));
       if (!exists) {
         broken.push({ file: relative(rootDir, file), line, href });
@@ -237,8 +238,11 @@ async function main() {
     process.exit(1);
   }
 
+  // Exclude versioned docs links — version content may be incomplete
+  const excludePatterns = [/\/v\/[^/]+\/docs\//];
+
   const [brokenLinks, mdxWarnings] = await Promise.all([
-    checkHtmlLinks(distDir, rootDir, basePath),
+    checkHtmlLinks(distDir, rootDir, basePath, excludePatterns),
     checkMdxLinks(
       [
         join(rootDir, "src", "content", "docs"),
