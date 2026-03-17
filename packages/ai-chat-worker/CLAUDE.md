@@ -44,23 +44,7 @@ src/
 
 ## Configuration
 
-### wrangler.toml vars
-
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `DOCS_SITE_URL` | — | Deployed docs site URL (fetches `/llms-full.txt`) |
-| `RATE_LIMIT_PER_MINUTE` | `10` | Per-IP burst limit |
-| `RATE_LIMIT_PER_DAY` | `100` | Per-IP daily cost cap |
-
-### Secrets (via `wrangler secret put`)
-
-- `ANTHROPIC_API_KEY`
-
-### KV Namespace
-
-- Binding: `RATE_LIMIT`
-- Create via: `wrangler kv namespace create RATE_LIMIT`
-- Update `id` in `wrangler.toml`
+See `README.md` for full setup instructions (vars, secrets, KV namespace).
 
 ## Conventions
 

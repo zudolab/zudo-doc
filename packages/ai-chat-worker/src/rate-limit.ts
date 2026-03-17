@@ -19,7 +19,7 @@ const DEFAULT_PER_DAY = 100;
 
 function parseLimit(value: string | undefined, fallback: number): number {
   const parsed = parseInt(value || String(fallback), 10);
-  return Number.isNaN(parsed) ? fallback : parsed;
+  return Number.isNaN(parsed) || parsed <= 0 ? fallback : parsed;
 }
 
 // KV read-check-write is not atomic — concurrent requests from the same IP
@@ -56,15 +56,16 @@ export async function checkRateLimit(
 
   if (minCount >= perMinute) {
     const secondsIntoMinute = Math.floor((now % MS_PER_MINUTE) / 1000);
-    return { allowed: false, retryAfter: SECONDS_PER_MINUTE - secondsIntoMinute };
+    return { allowed: false, retryAfter: Math.max(1, SECONDS_PER_MINUTE - secondsIntoMinute) };
   }
 
   if (dayCount >= perDay) {
     const secondsIntoDay = Math.floor((now % MS_PER_DAY) / 1000);
-    return { allowed: false, retryAfter: SECONDS_PER_DAY - secondsIntoDay };
+    return { allowed: false, retryAfter: Math.max(1, SECONDS_PER_DAY - secondsIntoDay) };
   }
 
-  // Increment both counters (fire-and-forget — don't block the response)
+  // Increment both counters. Awaited so counts are written before the next
+  // request from this IP is checked. Errors are caught and logged.
   try {
     await Promise.all([
       env.RATE_LIMIT.put(minKey, String(minCount + 1), { expirationTtl: MINUTE_KEY_TTL }),

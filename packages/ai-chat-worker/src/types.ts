@@ -2,8 +2,8 @@ export interface Env {
   ANTHROPIC_API_KEY: string;
   DOCS_SITE_URL: string;
   RATE_LIMIT: KVNamespace;
-  RATE_LIMIT_PER_MINUTE: string;
-  RATE_LIMIT_PER_DAY: string;
+  RATE_LIMIT_PER_MINUTE?: string;
+  RATE_LIMIT_PER_DAY?: string;
 }
 
 export interface ChatMessage {
