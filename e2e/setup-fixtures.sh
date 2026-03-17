@@ -30,7 +30,11 @@ setup_fixture() {
     rm -rf "$fixture_dir/src/pages"
     mkdir -p "$fixture_dir/src/pages"
     for subdir in "$REPO_ROOT"/src/pages/*/; do
-      ln -sfn "$subdir" "$fixture_dir/src/pages/$(basename "$subdir")"
+      local dirname
+      dirname="$(basename "$subdir")"
+      if [ "$dirname" != "api" ]; then
+        ln -sfn "$subdir" "$fixture_dir/src/pages/$dirname"
+      fi
     done
     # Symlink top-level page files (404.astro, index.astro)
     for file in "$REPO_ROOT"/src/pages/*.astro; do
@@ -41,7 +45,16 @@ setup_fixture() {
       cp -r "$fixture_dir/_pages-de/." "$fixture_dir/src/pages/de"
     fi
   else
-    ln -sfn "$REPO_ROOT/src/pages" "$fixture_dir/src/pages"
+    # Symlink pages directory, but exclude api/ (which requires adapter)
+    rm -rf "$fixture_dir/src/pages"
+    mkdir -p "$fixture_dir/src/pages"
+    for item in "$REPO_ROOT"/src/pages/*; do
+      local itemname
+      itemname="$(basename "$item")"
+      if [ "$itemname" != "api" ]; then
+        ln -sfn "$item" "$fixture_dir/src/pages/$itemname"
+      fi
+    done
   fi
 
   # Copy config files that have relative imports (import { settings } from "./settings")

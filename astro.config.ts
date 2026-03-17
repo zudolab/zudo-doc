@@ -50,7 +50,7 @@ const shikiConfig = settings.colorMode
 
 export default defineConfig({
   output: "static",
-  adapter: node({ mode: "standalone" }),
+  ...(settings.aiAssistant ? { adapter: node({ mode: "standalone" }) } : {}),
   base: settings.base,
   integrations: [
     mdx(),
