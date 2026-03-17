@@ -31,7 +31,7 @@ function isValidMessage(msg: unknown): msg is ChatMessage {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     if (request.method === "OPTIONS") {
       return handleOptions();
     }
@@ -57,16 +57,18 @@ export default {
       }
 
       if (!body.message || typeof body.message !== "string") {
-        logChat(
-          {
-            timestamp: new Date().toISOString(),
-            ipHash,
-            message: "",
-            responsePreview: "",
-            blocked: true,
-            blockReason: "invalid_input",
-          },
-          env,
+        ctx.waitUntil(
+          logChat(
+            {
+              timestamp: new Date().toISOString(),
+              ipHash,
+              message: "",
+              responsePreview: "",
+              blocked: true,
+              blockReason: "invalid_input",
+            },
+            env,
+          ),
         );
         return jsonResponse({ error: "message is required" }, 400);
       }
@@ -79,16 +81,18 @@ export default {
           429,
           { "Retry-After": String(rateLimit.retryAfter ?? 60) },
         );
-        logChat(
-          {
-            timestamp: new Date().toISOString(),
-            ipHash,
-            message: body.message.slice(0, 500),
-            responsePreview: "",
-            blocked: true,
-            blockReason: "rate_limit",
-          },
-          env,
+        ctx.waitUntil(
+          logChat(
+            {
+              timestamp: new Date().toISOString(),
+              ipHash,
+              message: body.message.slice(0, 500),
+              responsePreview: "",
+              blocked: true,
+              blockReason: "rate_limit",
+            },
+            env,
+          ),
         );
         return rateLimitResponse;
       }
@@ -98,15 +102,17 @@ export default {
         : [];
 
       const response = await callClaude(body.message, history, env);
-      logChat(
-        {
-          timestamp: new Date().toISOString(),
-          ipHash,
-          message: body.message.slice(0, 500),
-          responsePreview: response.slice(0, 200),
-          blocked: false,
-        },
-        env,
+      ctx.waitUntil(
+        logChat(
+          {
+            timestamp: new Date().toISOString(),
+            ipHash,
+            message: body.message.slice(0, 500),
+            responsePreview: response.slice(0, 200),
+            blocked: false,
+          },
+          env,
+        ),
       );
       return jsonResponse({ response }, 200);
     } catch (err) {
