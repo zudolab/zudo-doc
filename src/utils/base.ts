@@ -16,8 +16,11 @@ export function applyTrailingSlash(url: string): string {
   const suffixIdx = url.search(/[?#]/);
   const pathPart = suffixIdx >= 0 ? url.slice(0, suffixIdx) : url;
   const suffix = suffixIdx >= 0 ? url.slice(suffixIdx) : "";
-  // Don't add to paths with file extensions (e.g. .svg, .txt, .json)
-  if (/\.\w+$/.test(pathPart)) return url;
+  if (pathPart.endsWith("/")) return url;
+  // Check file extension on the last path segment only, requiring the extension
+  // to start with a letter to avoid false positives on version-like paths (e.g. /docs/v2.0)
+  const lastSegment = pathPart.split("/").pop() ?? "";
+  if (/\.[a-zA-Z]\w*$/.test(lastSegment)) return url;
   return pathPart + "/" + suffix;
 }
 
