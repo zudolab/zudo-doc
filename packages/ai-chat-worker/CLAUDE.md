@@ -22,6 +22,7 @@ src/
 ├── index.ts          # Worker entry — routing, validation, CORS
 ├── claude.ts         # Claude API call + docs context fetching/caching
 ├── cors.ts           # CORS headers (exposes Retry-After)
+├── input-screen.ts   # Prompt injection input screening
 ├── rate-limit.ts     # Per-IP rate limiting via KV
 └── types.ts          # Env, request/response, Claude API types
 ```
@@ -31,9 +32,10 @@ src/
 1. CORS preflight → `cors.ts`
 2. Method + path check → 405/404
 3. JSON parse + message validation → 400
-4. Rate limit check (after validation, so bad requests don't consume quota) → 429
-5. Fetch `llms-full.txt` from docs site (cached in-memory, best-effort) → `claude.ts`
-6. Call Claude API with docs context as system prompt → response
+4. Prompt injection screening → 400 (rejects obvious injection attempts before they consume rate limit quota)
+5. Rate limit check (after validation, so bad requests don't consume quota) → 429
+6. Fetch `llms-full.txt` from docs site (cached in-memory, best-effort) → `claude.ts`
+7. Call Claude API with hardened system prompt (XML-tagged context + explicit guardrails) → response
 
 ### Key Design Decisions
 
@@ -41,6 +43,8 @@ src/
 - **Fail-open rate limiting** — KV errors allow requests through (chat availability > strict enforcement)
 - **Best-effort caching** — module-level cache for `llms-full.txt` is ephemeral (Workers isolates are recycled)
 - **Rate limit after validation** — invalid requests don't consume the caller's quota
+- **Prompt hardening** — system prompt uses XML tags for context separation and explicit guardrails against off-topic / injection attempts
+- **Input screening** — regex pre-filter catches common prompt injection patterns before reaching the Claude API
 
 ## Configuration
 

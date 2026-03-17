@@ -61,9 +61,27 @@ The `response` field contains the assistant's reply as a markdown string.
 | ------ | ------------------------------ |
 | 400    | Invalid JSON body              |
 | 400    | `message` is not a non-empty string |
+| 400    | Message rejected by input screening |
 | 405    | Request method is not POST     |
 | 429    | Rate limit exceeded (includes `Retry-After` header) |
 | 500    | Anthropic API call failed      |
+
+## Security
+
+The Worker includes two layers of defense against prompt injection attacks:
+
+### Hardened System Prompt
+
+The system prompt uses XML tags (`<rules>`, `<documentation>`) to clearly separate instructions from user-supplied content. Explicit guardrails instruct the model to:
+
+- Only answer questions about the provided documentation
+- Never reveal system instructions, configuration, or API keys
+- Reject attempts to override its instructions
+- Redirect off-topic questions back to documentation
+
+### Input Screening
+
+Before a message reaches Claude, a lightweight regex-based filter (`src/input-screen.ts`) checks for common prompt injection patterns such as requests to ignore previous instructions, reveal configuration, or bypass restrictions. Matched messages are rejected with a 400 response. This filter runs before rate limiting so that injection attempts do not consume the caller's rate limit quota.
 
 ## Environment Setup
 
@@ -136,6 +154,16 @@ Required GitHub secrets:
 
 The workflow can also be triggered manually via `workflow_dispatch`.
 
+## Security
+
+### Prompt Injection Defense
+
+The Worker includes layered defenses against prompt injection attacks:
+
+- **Hardened system prompt** — uses XML-tagged context separation (`<rules>`, `<documentation>`) with explicit guardrails instructing the model to stay on-topic and never reveal configuration
+- **Input screening** — regex-based pre-filter (`src/input-screen.ts`) rejects messages matching common injection patterns before they reach Claude. Screened requests return a generic 400 error without revealing the detection
+- **API key isolation** — the `ANTHROPIC_API_KEY` is stored as a Worker secret, never included in the prompt context
+
 ## Relationship to AI Assistant
 
 The built-in [AI Assistant](/docs/guides/ai-assistant) runs as part of the Astro site using the `@astrojs/node` adapter. The AI Chat Worker is a standalone alternative that provides the same chat capability without requiring server-side rendering in the docs site.
@@ -155,6 +183,7 @@ packages/ai-chat-worker/
 │   ├── index.ts          # Worker entry point
 │   ├── claude.ts         # Claude API integration + docs context fetching
 │   ├── cors.ts           # CORS header handling
+│   ├── input-screen.ts   # Prompt injection input screening
 │   ├── rate-limit.ts     # Per-IP rate limiting via KV
 │   └── types.ts          # Type definitions
 ├── wrangler.toml         # Cloudflare Worker configuration

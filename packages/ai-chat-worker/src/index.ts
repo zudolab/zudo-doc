@@ -1,6 +1,7 @@
 import type { Env, ChatRequest, ChatMessage } from "./types";
 import { corsHeaders, handleOptions } from "./cors";
 import { callClaude } from "./claude";
+import { screenInput } from "./input-screen";
 import { checkRateLimit } from "./rate-limit";
 
 const MAX_HISTORY_LENGTH = 50;
@@ -54,6 +55,16 @@ export default {
 
       if (!body.message || typeof body.message !== "string") {
         return jsonResponse({ error: "message is required" }, 400);
+      }
+
+      // Screen for prompt injection before rate limiting so attempts don't
+      // consume the caller's rate limit quota
+      const screen = screenInput(body.message);
+      if (!screen.safe) {
+        return jsonResponse(
+          { error: "I can only help with questions about the documentation." },
+          400,
+        );
       }
 
       // Rate limit after validation so bad requests don't consume quota

@@ -67,6 +67,13 @@ Rate limited response (429):
 
 Includes `Retry-After` header with seconds until the limit resets.
 
+## Security
+
+The Worker includes prompt injection defenses:
+
+- **Hardened system prompt** — XML-tagged context separation with explicit guardrails that instruct the model to stay on-topic and never reveal configuration
+- **Input screening** — regex-based pre-filter in `src/input-screen.ts` that rejects messages matching common prompt injection patterns before they reach Claude
+
 ## Rate Limiting
 
 Per-IP rate limiting via Cloudflare KV. Uses `cf-connecting-ip` header for client identification.
