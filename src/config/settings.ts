@@ -39,6 +39,7 @@ export const settings = {
   docTags: true,
   llmsTxt: true,
   math: true,
+  aiAssistant: true as boolean,
   colorTweakPanel: true as boolean,
   docHistory: true,
   htmlPreview: undefined as HtmlPreviewConfig | undefined,

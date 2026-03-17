@@ -44,7 +44,9 @@
     }
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.79.0",
     "@astrojs/mdx": "^5.0.0",
+    "@astrojs/node": "^10.0.2",
     "@astrojs/react": "^5.0.0",
     "@shikijs/transformers": "^4.0.1",
     "@types/hast": "^3.0.4",

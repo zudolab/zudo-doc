@@ -1,4 +1,5 @@
 import { defineConfig } from "astro/config";
+import node from "@astrojs/node";
 import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import {
@@ -49,6 +50,7 @@ const shikiConfig = settings.colorMode
 
 export default defineConfig({
   output: "static",
+  adapter: node({ mode: "standalone" }),
   base: settings.base,
   integrations: [
     mdx(),
