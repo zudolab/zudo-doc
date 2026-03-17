@@ -125,20 +125,20 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
     <dialog
       ref={dialogRef}
       onClick={handleBackdropClick}
-      className="m-0 border-none bg-transparent p-0 backdrop:bg-bg/80"
+      className="m-auto border border-muted bg-surface p-0 backdrop:bg-bg/80 lg:rounded-[0.75rem]"
       style={{
+        color: "var(--color-fg)",
         position: "fixed",
-        inset: 0,
-        width: "100vw",
-        height: "100vh",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: "min(90vw, 32rem)",
+        height: "min(80vh, 40rem)",
         maxWidth: "none",
         maxHeight: "none",
       }}
     >
-      <div
-        className="ml-auto mr-0 flex h-full w-full flex-col border-l border-muted bg-surface lg:w-[min(90vw,28rem)]"
-        style={{ color: "var(--color-fg)" }}
-      >
+      <div className="flex h-full flex-col">
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-muted px-hsp-lg py-vsp-xs">
           <h2 className="text-subheading font-bold text-fg">AI Assistant</h2>
