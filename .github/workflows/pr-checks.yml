@@ -3,7 +3,7 @@
 # Triggered on PRs targeting `main`. The pipeline mirrors the local
 # `pnpm b4push` script:
 #   1. Type checking (astro check)
-#   2. Build the Astro docs site
+#   2. Build the Astro docs site + check links
 #   3. E2E & smoke tests (Playwright)
 #   4. Deploy a preview to Cloudflare Pages
 #   5. Post the preview URL as a PR comment
@@ -86,6 +86,9 @@ jobs:
 
       - name: Build site
         run: pnpm build
+
+      - name: Check links
+        run: pnpm run check:links
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v7

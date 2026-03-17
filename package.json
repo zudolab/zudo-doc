@@ -17,6 +17,7 @@
     "check": "astro sync && tsc --noEmit",
     "test:unit": "vitest run",
     "test:e2e": "bash e2e/setup-fixtures.sh && playwright test",
+    "check:links": "node scripts/check-links.js",
     "b4push": "./scripts/run-b4push.sh",
     "// ── Formatting ───────────────────────────────────": "",
     "prepare": "lefthook install --reset-hooks-path",
