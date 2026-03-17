@@ -137,7 +137,7 @@ Every chat interaction is logged to KV for security analysis. This enables detec
 | `message` | User's message, truncated to 500 characters |
 | `responsePreview` | First 200 characters of the response |
 | `blocked` | Whether the request was rejected |
-| `blockReason` | `"rate_limit"` or `"invalid_input"` (when blocked) |
+| `blockReason` | `"rate_limit"`, `"invalid_input"`, or `"prompt_injection"` (when blocked) |
 
 **Storage details:**
 

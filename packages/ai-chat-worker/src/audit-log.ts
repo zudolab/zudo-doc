@@ -1,12 +1,14 @@
 import type { Env } from "./types";
 
+export type BlockReason = "rate_limit" | "invalid_input" | "prompt_injection";
+
 export interface AuditLogEntry {
   timestamp: string;
   ipHash: string;
   message: string;
   responsePreview: string;
   blocked: boolean;
-  blockReason?: string;
+  blockReason?: BlockReason;
 }
 
 export async function hashIp(ip: string): Promise<string> {

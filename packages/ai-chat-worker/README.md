@@ -100,7 +100,7 @@ Every chat interaction is logged to KV for security analysis (prompt injection d
 | `message` | User's message (truncated to 500 chars) |
 | `responsePreview` | First 200 chars of the response |
 | `blocked` | Whether the request was blocked |
-| `blockReason` | `"rate_limit"` or `"invalid_input"` (if blocked) |
+| `blockReason` | `"rate_limit"`, `"invalid_input"`, or `"prompt_injection"` (if blocked) |
 
 ### Storage
 

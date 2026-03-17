@@ -30,7 +30,7 @@ function parseLimit(value: string | undefined, fallback: number): number {
 // outage doesn't take down the chat API entirely.
 
 export async function checkRateLimit(
-  ip: string,
+  ipHash: string,
   env: Env,
 ): Promise<RateLimitResult> {
   const now = Date.now();
@@ -39,8 +39,8 @@ export async function checkRateLimit(
 
   const minBucket = Math.floor(now / MS_PER_MINUTE);
   const dayBucket = Math.floor(now / MS_PER_DAY);
-  const minKey = `rate:min:${ip}:${minBucket}`;
-  const dayKey = `rate:day:${ip}:${dayBucket}`;
+  const minKey = `rate:min:${ipHash}:${minBucket}`;
+  const dayKey = `rate:day:${ipHash}:${dayBucket}`;
 
   let minCount: number;
   let dayCount: number;

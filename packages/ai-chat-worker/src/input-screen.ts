@@ -11,8 +11,7 @@ const INJECTION_PATTERNS = [
   /api[_\s]?key/i,
   /anthropic[_\s]?key/i,
   /secret[_\s]?key/i,
-  /ANTHROPIC_API_KEY/,
-  /\bDAN\b/,
+  /\bDAN\s+mode\b/i,
   /act\s+as\s+(if\s+)?(you\s+)?(have\s+)?(no|without)\s+(restrictions?|rules?|limits?)/i,
   /pretend\s+(you\s+)?(are|were)\s+(not|no longer)\s+(bound|restricted)/i,
 ];
