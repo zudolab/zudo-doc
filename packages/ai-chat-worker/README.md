@@ -69,9 +69,13 @@ Includes `Retry-After` header with seconds until the limit resets.
 
 ## Rate Limiting
 
-Per-IP rate limiting via Cloudflare KV. Configure in `wrangler.toml`:
+Per-IP rate limiting via Cloudflare KV. Uses `cf-connecting-ip` header for client identification.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `RATE_LIMIT_PER_MINUTE` | `10` | Max requests per IP per minute |
 | `RATE_LIMIT_PER_DAY` | `100` | Max requests per IP per day |
+
+Configure in `wrangler.toml` `[vars]` section. Invalid values fall back to the defaults.
+
+The limiter is best-effort (KV is eventually consistent). On KV errors, requests are allowed through — chat availability takes priority over strict enforcement.

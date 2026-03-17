@@ -97,6 +97,15 @@ npx wrangler kv namespace create RATE_LIMIT
 
 Update the `id` in `wrangler.toml` `[[kv_namespaces]]` with the returned namespace ID.
 
+### Rate Limiting Behavior
+
+The Worker enforces per-IP rate limits using the `cf-connecting-ip` header provided by Cloudflare.
+
+- **Best-effort enforcement** — KV reads and writes are not atomic, so concurrent requests from the same IP may slightly exceed the configured limits
+- **Fail-open** — if KV is unavailable (outage, misconfiguration), requests are allowed through. Chat availability takes priority over strict rate enforcement
+- **Invalid config** — non-numeric values for `RATE_LIMIT_PER_MINUTE` or `RATE_LIMIT_PER_DAY` fall back to the defaults (10/min, 100/day)
+- **429 response** — includes a `Retry-After` header (seconds until the current window resets), exposed via CORS for browser access
+
 ### Secrets
 
 Add the Anthropic API key as a Cloudflare Worker secret:
