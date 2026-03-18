@@ -79,7 +79,7 @@ test.describe("Color tweak panel", () => {
     await expect(page.getByText("Color Tweak Panel")).toBeVisible({ timeout: 5000 });
   });
 
-  test("HSL picker opens from color swatch", async ({ page }) => {
+  test("HSL picker opens from color swatch @local-only", async ({ page }) => {
     await page.goto(DOC_PAGE, { waitUntil: "load" });
     await ensureTweakPanelOpen(page);
 

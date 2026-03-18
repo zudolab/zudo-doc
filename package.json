@@ -19,6 +19,7 @@
     "check": "astro sync && tsc --noEmit",
     "test:unit": "vitest run",
     "test:e2e": "bash e2e/setup-fixtures.sh && playwright test",
+    "test:e2e:ci": "bash e2e/setup-fixtures.sh && playwright test --grep-invert @local-only",
     "check:links": "node scripts/check-links.js",
     "b4push": "./scripts/run-b4push.sh",
     "// ── Formatting ───────────────────────────────────": "",

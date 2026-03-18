@@ -174,7 +174,7 @@ jobs:
         run: pnpm dlx playwright install chromium
 
       - name: Run E2E & smoke tests
-        run: pnpm test:e2e
+        run: pnpm test:e2e:ci
 
       - name: Upload test results
         if: ${{ !cancelled() }}

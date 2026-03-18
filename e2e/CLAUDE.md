@@ -56,9 +56,21 @@ The smoke fixture also initializes a git repo for doc-history testing (2 commits
 
 ```bash
 pnpm test:e2e                                           # Full suite (setup + all tests)
+pnpm test:e2e:ci                                        # CI suite (skips @local-only tests)
 npx playwright test e2e/smoke-search.spec.ts --project smoke  # Single test file
 npx playwright test --project smoke                      # All tests for one fixture
 ```
+
+## `@local-only` Tag
+
+Tests that are too specific for CI (flaky DOM operations, timing-sensitive UI checks) can be tagged `@local-only` in the test title:
+
+```typescript
+test("HSL picker opens from color swatch @local-only", async ({ page }) => { ... });
+```
+
+- `pnpm test:e2e` — runs everything (local dev, `b4push`)
+- `pnpm test:e2e:ci` — skips `@local-only` tests (CI workflows)
 
 ## Sidebar Test Helper
 
