@@ -15,17 +15,16 @@ interface Props {
 
 const { currentSlug, lang = defaultLocale, navSection } = Astro.props;
 const isNonDefaultLocale = lang !== defaultLocale;
+const isTopPage = !currentSlug;
 const backToMenuLabel = navSection ? t("nav.backToMenu", lang) : undefined;
 
-// Build root menu items from headerNav (for Docusaurus-style "back to main menu")
-const rootMenuItems = navSection
-  ? settings.headerNav.map((item) => ({
-      label: item.labelKey
-        ? t(item.labelKey as Parameters<typeof t>[0], lang)
-        : item.label,
-      href: withBase(isNonDefaultLocale ? `/${lang}${item.path}` : item.path),
-    }))
-  : undefined;
+// Build root menu items from headerNav (always needed — top page and "back to menu")
+const rootMenuItems = settings.headerNav.map((item) => ({
+  label: item.labelKey
+    ? t(item.labelKey as Parameters<typeof t>[0], lang)
+    : item.label,
+  href: withBase(isNonDefaultLocale ? `/${lang}${item.path}` : item.path),
+}));
 
 const { allDocs, categoryMeta } = await loadLocaleDocs(lang);
 const docs = allDocs.filter(isNavVisible);
@@ -38,5 +37,6 @@ const nodes = buildSidebarForSection(docs, lang, navSection, categoryMeta);
   currentSlug={currentSlug}
   rootMenuItems={rootMenuItems}
   backToMenuLabel={backToMenuLabel}
+  isTopPage={isTopPage}
   client:load
 />

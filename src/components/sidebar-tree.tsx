@@ -103,9 +103,10 @@ interface SidebarTreeProps {
   currentSlug?: string;
   rootMenuItems?: RootMenuItem[];
   backToMenuLabel?: string;
+  isTopPage?: boolean;
 }
 
-export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToMenuLabel }: SidebarTreeProps) {
+export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToMenuLabel, isTopPage }: SidebarTreeProps) {
   const activeSlug = useActiveSlug(nodes, currentSlug);
   const [query, setQuery] = useState("");
   const [showingRootMenu, setShowingRootMenu] = useState(false);
@@ -154,6 +155,24 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
           </svg>
           {backToMenuLabel ?? "Back to main menu"}
         </button>
+        {rootMenuItems.map((item) => (
+          <a
+            key={item.href}
+            href={item.href}
+            className="flex items-center gap-hsp-xs border-t border-muted px-hsp-sm py-vsp-xs text-small font-semibold text-fg hover:text-accent hover:underline"
+          >
+            <CategoryLinkIcon className="w-[14px]" />
+            {item.label}
+          </a>
+        ))}
+      </nav>
+    );
+  }
+
+  // Top page: show only header nav links, no doc tree or filter
+  if (isTopPage && rootMenuItems) {
+    return (
+      <nav>
         {rootMenuItems.map((item) => (
           <a
             key={item.href}
