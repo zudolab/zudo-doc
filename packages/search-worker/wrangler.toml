@@ -1,0 +1,12 @@
+name = "zudo-doc-search"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+[vars]
+DOCS_SITE_URL = "https://your-docs-site.pages.dev"
+RATE_LIMIT_PER_MINUTE = "60"
+RATE_LIMIT_PER_DAY = "1000"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "placeholder-create-via-wrangler-kv-namespace-create"
