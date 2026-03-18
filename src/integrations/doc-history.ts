@@ -1,6 +1,24 @@
 import type { AstroIntegration } from "astro";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { settings } from "../config/settings";
+import { collectContentFiles, getDocHistory } from "../utils/doc-history";
 
 const DOC_HISTORY_SERVER_PORT = 4322;
+
+/** Build list of [localeKey | null, absoluteDir] pairs from settings */
+function getContentDirEntries(): Array<[string | null, string]> {
+  const entries: Array<[string | null, string]> = [
+    [null, resolve(settings.docsDir)],
+  ];
+  if (settings.locales) {
+    for (const [key, locale] of Object.entries(settings.locales)) {
+      entries.push([key, resolve(locale.dir)]);
+    }
+  }
+  return entries;
+}
 
 export function docHistoryIntegration(): AstroIntegration {
   return {
@@ -67,19 +85,42 @@ export function docHistoryIntegration(): AstroIntegration {
         });
       },
 
-      "astro:build:done": async ({ logger }) => {
-        // Doc history JSONs are generated separately:
-        //   - CI: @zudo-doc/doc-history-server generate (build-history job)
-        //   - Local: set SKIP_DOC_HISTORY=1 or run the server package manually
+      "astro:build:done": async ({ dir, logger }) => {
+        // CI uses SKIP_DOC_HISTORY=1 when the separate build-history job
+        // handles generation via @zudo-doc/doc-history-server CLI.
         if (process.env.SKIP_DOC_HISTORY === "1") {
           logger.info("Skipping doc history generation (SKIP_DOC_HISTORY=1)");
-        } else {
-          logger.warn(
-            "Doc history not generated during build. " +
-              "Set SKIP_DOC_HISTORY=1 to suppress this warning, " +
-              "or use @zudo-doc/doc-history-server to generate history JSONs separately.",
-          );
+          return;
         }
+
+        // Fallback: generate inline (for local builds and E2E tests)
+        const outDir = fileURLToPath(dir);
+        const historyDir = join(outDir, "doc-history");
+        mkdirSync(historyDir, { recursive: true });
+
+        const dirEntries = getContentDirEntries();
+        let totalFiles = 0;
+
+        for (const [localeKey, contentDir] of dirEntries) {
+          const files = collectContentFiles(contentDir);
+          for (const { filePath, slug } of files) {
+            try {
+              const history = getDocHistory(filePath, slug);
+              const prefixedSlug = localeKey ? `${localeKey}/${slug}` : slug;
+              const jsonPath = join(historyDir, `${prefixedSlug}.json`);
+              mkdirSync(dirname(jsonPath), { recursive: true });
+              writeFileSync(jsonPath, JSON.stringify(history));
+              totalFiles++;
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : String(err);
+              logger.warn(`Skipped history for ${slug}: ${msg}`);
+            }
+          }
+        }
+
+        logger.info(
+          `Generated doc history for ${totalFiles} files in doc-history/`,
+        );
       },
     },
   };
