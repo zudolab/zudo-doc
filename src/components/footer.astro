@@ -1,11 +1,25 @@
 ---
 import { settings } from "@/config/settings";
 import { isExternal, resolveHref } from "@/utils/base";
+import { defaultLocale, type Locale } from "@/config/i18n";
+
+interface Props {
+  lang?: Locale;
+}
+
+const { lang = defaultLocale } = Astro.props;
 
 const footer = settings.footer;
 if (!footer) return;
 
 const { links, copyright } = footer;
+
+/** Prefix internal hrefs with locale path for non-default locales. */
+function localizeHref(href: string): string {
+  if (isExternal(href)) return href;
+  if (lang !== defaultLocale) return resolveHref(`/${lang}${href}`);
+  return resolveHref(href);
+}
 ---
 
 <footer class="border-t border-muted bg-surface">
@@ -18,19 +32,19 @@ const { links, copyright } = footer;
           {links.map((column) => (
             <div>
               <p class="text-small font-semibold text-fg mb-vsp-xs">
-                {column.title}
+                {column.locales?.[lang]?.title ?? column.title}
               </p>
               <ul class="list-none p-0">
                 {column.items.map((item) => (
                   <li class="mb-vsp-2xs">
                     <a
-                      href={resolveHref(item.href)}
+                      href={localizeHref(item.href)}
                       class="text-caption text-muted hover:text-accent hover:underline"
                       {...(isExternal(item.href)
                         ? { target: "_blank", rel: "noopener noreferrer" }
                         : {})}
                     >
-                      {item.label}
+                      {item.locales?.[lang]?.label ?? item.label}
                     </a>
                   </li>
                 ))}

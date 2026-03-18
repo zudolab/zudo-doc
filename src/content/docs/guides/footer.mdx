@@ -112,6 +112,41 @@ footer: false as FooterConfig | false,
 
 When set to `false`, the footer component is not rendered on any page.
 
+## i18n (Localized Labels)
+
+Footer columns and link items support locale-specific overrides via the optional `locales` field. When a page is rendered for a non-default locale, the footer resolves localized titles and labels automatically. Internal link hrefs are also prefixed with the locale path (e.g. `/ja/docs/guides`).
+
+```ts
+footer: {
+  links: [
+    {
+      title: "Docs",
+      locales: { ja: { title: "ドキュメント" } },
+      items: [
+        {
+          label: "Getting Started",
+          href: "/docs/getting-started",
+          locales: { ja: { label: "はじめに" } },
+        },
+        {
+          label: "Guides",
+          href: "/docs/guides",
+          locales: { ja: { label: "ガイド" } },
+        },
+      ],
+    },
+  ],
+},
+```
+
+Each `FooterLinkColumn` accepts an optional `locales` field with per-locale `{ title }` overrides. Each `FooterLinkItem` accepts an optional `locales` field with per-locale `{ label }` overrides. When no locale override exists, the default `title` or `label` is used.
+
+<Tip>
+
+External links are never locale-prefixed — only internal hrefs (those that don't start with `http://` or `https://`) get the locale prefix.
+
+</Tip>
+
 ## TypeScript Types
 
 The footer configuration uses these interfaces defined in `src/config/settings-types.ts`:
@@ -120,11 +155,13 @@ The footer configuration uses these interfaces defined in `src/config/settings-t
 interface FooterLinkItem {
   label: string;
   href: string;
+  locales?: Record<string, { label: string }>;
 }
 
 interface FooterLinkColumn {
   title: string;
   items: FooterLinkItem[];
+  locales?: Record<string, { title: string }>;
 }
 
 interface FooterConfig {

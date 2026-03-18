@@ -69,6 +69,10 @@ src/
 Available in all MDX files without imports (registered globally in doc page):
 `<Note>`, `<Tip>`, `<Info>`, `<Warning>`, `<Danger>` — each accepts optional `title` prop.
 
+### Terminology: "Update docs"
+
+When we say "update docs" or "update our doc," it means updating the **showcase documentation** content in `src/content/docs/` (English) and `src/content/docs-ja/` (Japanese). Since zudo-doc is a documentation framework, its own content directories serve as the default showcase. These are the pages visible when running `pnpm dev`.
+
 ### i18n
 
 - English (default): `/docs/...` — content in `docsDir` (default: `src/content/docs`)

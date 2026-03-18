@@ -59,13 +59,15 @@ export const settings = {
     links: [
       {
         title: "Docs",
+        locales: { ja: { title: "ドキュメント" } },
         items: [
-          { label: "Getting Started", href: "/docs/getting-started" },
-          { label: "Guides", href: "/docs/guides" },
+          { label: "Getting Started", href: "/docs/getting-started", locales: { ja: { label: "はじめに" } } },
+          { label: "Guides", href: "/docs/guides", locales: { ja: { label: "ガイド" } } },
         ],
       },
       {
         title: "Community",
+        locales: { ja: { title: "コミュニティ" } },
         items: [
           { label: "GitHub", href: "https://github.com/zudolab/zudo-doc" },
         ],
