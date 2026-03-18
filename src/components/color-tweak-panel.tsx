@@ -12,6 +12,49 @@ const presetNames = Object.keys(colorTweakPresets).sort();
 
 const STORAGE_KEY = "zudo-doc-tweak-state";
 const OPEN_KEY = "zudo-doc-tweak-open";
+const POSITION_KEY = "zudo-doc-tweak-position";
+
+interface PanelPosition {
+  top: number;
+  right: number;
+}
+
+const DEFAULT_POSITION: PanelPosition = { top: 60, right: 20 };
+
+function loadPosition(): PanelPosition {
+  try {
+    const saved = localStorage.getItem(POSITION_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved) as PanelPosition;
+      if (typeof parsed.top === "number" && typeof parsed.right === "number") {
+        return parsed;
+      }
+    }
+  } catch { /* ignore */ }
+  return DEFAULT_POSITION;
+}
+
+function savePosition(pos: PanelPosition) {
+  try {
+    localStorage.setItem(POSITION_KEY, JSON.stringify(pos));
+  } catch { /* ignore */ }
+}
+
+/** Keep at least VISIBLE_MIN px of the panel on-screen so the user can grab it back. */
+const VISIBLE_MIN = 60;
+
+function clampPosition(top: number, right: number, panelWidth: number): PanelPosition {
+  // Horizontal: allow panel to extend past left/right edges
+  const minRight = -(panelWidth - VISIBLE_MIN);
+  const maxRight = window.innerWidth - VISIBLE_MIN;
+  // Vertical: allow panel to extend past top/bottom edges
+  const minTop = -(VISIBLE_MIN / 2);
+  const maxTop = window.innerHeight - VISIBLE_MIN;
+  return {
+    top: Math.max(minTop, Math.min(top, maxTop)),
+    right: Math.max(minRight, Math.min(right, maxRight)),
+  };
+}
 
 /** Re-highlight all code blocks on the page with a new Shiki theme (lazy-loaded) */
 async function applyShikiTheme(themeName: string): Promise<void> {
@@ -653,12 +696,22 @@ export default function ColorTweakPanel() {
   const [open, setOpen] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [state, setState] = useState<TweakState | null>(null);
+  const [position, setPosition] = useState<PanelPosition>(DEFAULT_POSITION);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const positionRef = useRef<PanelPosition>(DEFAULT_POSITION);
+  // Keep ref in sync with state for use in drag handlers (avoids stale closure)
+  positionRef.current = position;
+  // Track active drag listeners for cleanup on unmount
+  const dragCleanupRef = useRef<(() => void) | null>(null);
 
-  // Restore open state from localStorage after mount (avoids SSR hydration mismatch)
+  // Restore open state and position from localStorage after mount (avoids SSR hydration mismatch)
   useEffect(() => {
     try {
       if (localStorage.getItem(OPEN_KEY) === "1") setOpen(true);
     } catch { /* ignore */ }
+    const loaded = loadPosition();
+    setPosition(loaded);
+    positionRef.current = loaded;
   }, []);
 
   // Persist open state
@@ -712,6 +765,59 @@ export default function ColorTweakPanel() {
     // Just read scheme data for panel display; don't apply (avoids oklch->hex lossy conversion).
     setState(initFromScheme());
   }, [open, state]);
+
+  // Drag handler for panel header (stable — reads position from ref)
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    // Skip if target is a button, select, or inside one
+    const target = e.target as HTMLElement;
+    if (target.closest("button, select, option")) return;
+    e.preventDefault();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startRight = positionRef.current.right;
+    const startTop = positionRef.current.top;
+    const panelWidth = panelRef.current?.offsetWidth ?? 560;
+
+    function onMouseMove(ev: MouseEvent) {
+      const deltaX = ev.clientX - startX;
+      const deltaY = ev.clientY - startY;
+      const clamped = clampPosition(startTop + deltaY, startRight - deltaX, panelWidth);
+      setPosition(clamped);
+    }
+
+    function onMouseUp() {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+      dragCleanupRef.current = null;
+      savePosition(positionRef.current);
+    }
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+    dragCleanupRef.current = () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
+
+  // Clean up drag listeners on unmount
+  useEffect(() => {
+    return () => { dragCleanupRef.current?.(); };
+  }, []);
+
+  // Re-clamp position on window resize
+  useEffect(() => {
+    function handleResize() {
+      const panelWidth = panelRef.current?.offsetWidth ?? 560;
+      setPosition((prev) => {
+        const clamped = clampPosition(prev.top, prev.right, panelWidth);
+        savePosition(clamped);
+        return clamped;
+      });
+    }
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Re-apply tweak state after View Transition page swaps
   useEffect(() => {
@@ -805,26 +911,62 @@ export default function ColorTweakPanel() {
   return (
     <>
     <div
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-muted bg-surface lg:left-auto lg:border-l"
-      style={{ maxHeight: "60vh" }}
+      ref={panelRef}
+      className="fixed z-50 border border-muted bg-surface"
+      style={{
+        width: "min(560px, calc(100vw - 40px))",
+        maxHeight: "calc(100vh - 80px)",
+        top: position.top,
+        right: position.right,
+        borderRadius: "var(--radius-DEFAULT)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.25)",
+      }}
     >
-      {/* Header bar */}
-      <div className="flex items-center justify-between px-hsp-xl py-vsp-xs border-b border-muted">
-        <span className="text-fg font-semibold" style={{ fontSize: "1rem" }}>
-          Color Tweak Panel
-        </span>
-        <div className="flex items-center gap-hsp-lg">
+      {/* Header bar (draggable) — two rows */}
+      <div
+        className="border-b border-muted"
+        style={{ cursor: "move" }}
+        onMouseDown={handleDragStart}
+      >
+        {/* Row 1: title + close */}
+        <div className="flex items-center justify-between px-hsp-xl pt-vsp-xs">
+          <span className="text-fg font-semibold" style={{ fontSize: "1rem" }}>
+            Color Tweak Panel
+          </span>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="text-muted hover:text-fg transition-colors"
+            aria-label="Close panel"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+        </div>
+        {/* Row 2: scheme selector + actions */}
+        <div className="flex items-center gap-hsp-md px-hsp-xl pb-vsp-xs pt-vsp-2xs">
           <select
             onChange={(e) => {
               const name = e.target.value;
               if (name) {
                 handleLoadPreset(name);
-                // Reset to placeholder so the same preset can be re-selected
                 e.target.value = "";
               }
             }}
-            className="bg-surface text-fg border border-muted px-hsp-sm py-[4px] hover:border-fg transition-colors"
-            style={{ fontSize: "1rem", borderRadius: "var(--radius-DEFAULT)", maxWidth: "14rem" }}
+            className="bg-surface text-fg border border-muted px-hsp-sm py-[3px] hover:border-fg transition-colors"
+            style={{ fontSize: "0.875rem", borderRadius: "var(--radius-DEFAULT)", maxWidth: "14rem" }}
             aria-label="Load color scheme preset"
             defaultValue=""
           >
@@ -841,7 +983,7 @@ export default function ColorTweakPanel() {
             type="button"
             onClick={() => setShowExport(true)}
             className="text-accent hover:text-accent-hover transition-colors"
-            style={{ fontSize: "1rem" }}
+            style={{ fontSize: "0.875rem" }}
           >
             Export
           </button>
@@ -849,30 +991,9 @@ export default function ColorTweakPanel() {
             type="button"
             onClick={handleResetAll}
             className="text-accent hover:text-accent-hover transition-colors"
-            style={{ fontSize: "1rem" }}
+            style={{ fontSize: "0.875rem" }}
           >
             Reset all
-          </button>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="text-muted hover:text-fg transition-colors"
-            aria-label="Close panel"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M18 6 6 18" />
-              <path d="m6 6 12 12" />
-            </svg>
           </button>
         </div>
       </div>
@@ -880,10 +1001,10 @@ export default function ColorTweakPanel() {
       {/* Content */}
       <div
         className="overflow-y-auto px-hsp-xl py-vsp-sm"
-        style={{ maxHeight: "calc(60vh - 3.5rem)" }}
+        style={{ maxHeight: "calc(100vh - 80px - 5rem)" }}
       >
         {state && (
-          <div className="flex flex-col gap-vsp-sm lg:flex-row lg:gap-hsp-xl">
+          <div className="flex flex-col gap-vsp-sm">
             {/* Section A: Raw Palette */}
             <div className="shrink-0">
               <h3
@@ -904,8 +1025,8 @@ export default function ColorTweakPanel() {
               </div>
             </div>
 
-            {/* Base + Semantic wrapper: 2-col at md, dissolves into outer row at lg */}
-            <div className="flex flex-col gap-vsp-sm md:flex-row md:gap-hsp-xl lg:contents">
+            {/* Base + Semantic wrapper */}
+            <div className="flex flex-col gap-vsp-sm md:flex-row md:gap-hsp-xl">
               {/* Section B: Base Theme */}
               <div className="shrink-0">
                 <h3

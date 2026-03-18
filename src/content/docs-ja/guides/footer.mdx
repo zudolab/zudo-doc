@@ -112,6 +112,41 @@ footer: false as FooterConfig | false,
 
 `false`に設定すると、フッターコンポーネントはどのページにもレンダリングされません。
 
+## i18n（ローカライズされたラベル）
+
+フッターのカラムとリンクアイテムは、オプションの`locales`フィールドによるロケール固有のオーバーライドをサポートしています。デフォルト以外のロケールでページがレンダリングされると、フッターはローカライズされたタイトルとラベルを自動的に解決します。内部リンクのhrefにもロケールパスが付与されます（例：`/ja/docs/guides`）。
+
+```ts
+footer: {
+  links: [
+    {
+      title: "Docs",
+      locales: { ja: { title: "ドキュメント" } },
+      items: [
+        {
+          label: "Getting Started",
+          href: "/docs/getting-started",
+          locales: { ja: { label: "はじめに" } },
+        },
+        {
+          label: "Guides",
+          href: "/docs/guides",
+          locales: { ja: { label: "ガイド" } },
+        },
+      ],
+    },
+  ],
+},
+```
+
+各`FooterLinkColumn`は、ロケールごとの`{ title }`オーバーライドを持つオプションの`locales`フィールドを受け入れます。各`FooterLinkItem`は、ロケールごとの`{ label }`オーバーライドを持つオプションの`locales`フィールドを受け入れます。ロケールオーバーライドが存在しない場合、デフォルトの`title`または`label`が使用されます。
+
+<Tip>
+
+外部リンクにはロケールプレフィックスは付与されません。`http://`または`https://`で始まらない内部hrefのみがロケールプレフィックスを受け取ります。
+
+</Tip>
+
 ## TypeScript型
 
 フッターの設定は`src/config/settings-types.ts`で定義されている以下のインターフェースを使用します：
@@ -120,11 +155,13 @@ footer: false as FooterConfig | false,
 interface FooterLinkItem {
   label: string;
   href: string;
+  locales?: Record<string, { label: string }>;
 }
 
 interface FooterLinkColumn {
   title: string;
   items: FooterLinkItem[];
+  locales?: Record<string, { title: string }>;
 }
 
 interface FooterConfig {

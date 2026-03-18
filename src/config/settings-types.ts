@@ -20,11 +20,13 @@ export interface LocaleConfig {
 export interface FooterLinkItem {
   label: string;
   href: string;
+  locales?: Record<string, { label: string }>;
 }
 
 export interface FooterLinkColumn {
   title: string;
   items: FooterLinkItem[];
+  locales?: Record<string, { title: string }>;
 }
 
 export interface FooterConfig {
