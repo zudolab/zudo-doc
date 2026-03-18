@@ -146,6 +146,67 @@ export async function stripFeatures(
   // TODO: Strip sidebar filter when not selected
   // The sidebar filter is built into sidebar-tree.tsx — stripping requires
   // careful component surgery. For now, the filter is always included.
+
+  // --- Strip imports for features disabled by default in generated projects ---
+  // The template astro.config.ts is copied from the monorepo root and has ALL
+  // imports. We must strip imports for features that are always off by default
+  // to avoid referencing packages not in the generated package.json.
+  await patchFile(path.join(targetDir, "astro.config.ts"), [
+    // Math (always false by default)
+    [/import remarkMath from "remark-math";\n/g, ""],
+    [/import rehypeKatex from "rehype-katex";\n/g, ""],
+    [/\s*\.\.\.\(settings\.math \? \[remarkMath\] : \[\]\),?\n?/g, "\n"],
+    [/\s*\.\.\.\(settings\.math \? \[rehypeKatex\] : \[\]\),?\n?/g, "\n"],
+    // AI assistant / @astrojs/node adapter (always false by default)
+    [/import node from "@astrojs\/node";\n/g, ""],
+    [
+      /\s*\.\.\.\(settings\.aiAssistant \? \{ adapter: node\(\{ mode: "standalone" \}\) \} : \{\}\),?\n?/g,
+      "\n",
+    ],
+    // Doc history integration (always false by default)
+    [
+      /import \{ docHistoryIntegration \} from "\.\/src\/integrations\/doc-history";\n/g,
+      "",
+    ],
+    [
+      /\s*\.\.\.\(settings\.docHistory \? \[docHistoryIntegration\(\)\] : \[\]\),?\n?/g,
+      "\n",
+    ],
+    // LLMs.txt integration (always false by default)
+    [
+      /import \{ llmsTxtIntegration \} from "\.\/src\/integrations\/llms-txt";\n/g,
+      "",
+    ],
+    [
+      /\s*\.\.\.\(settings\.llmsTxt \? \[llmsTxtIntegration\(\)\] : \[\]\),?\n?/g,
+      "\n",
+    ],
+    // Sitemap integration (disabled — needs siteUrl)
+    [
+      /import \{ sitemapIntegration \} from "\.\/src\/integrations\/sitemap";\n/g,
+      "",
+    ],
+    [
+      /\s*\.\.\.\(settings\.sitemap && !settings\.noindex \? \[sitemapIntegration\(\)\] : \[\]\),?\n?/g,
+      "\n",
+    ],
+    // trailingSlash config line (false by default)
+    [
+      /\s*trailingSlash: settings\.trailingSlash \? "always" : "never",\n/g,
+      "\n",
+    ],
+  ]);
+
+  // Remove integration files for disabled features
+  await removeIfExists(targetDir, "src/integrations/doc-history.ts");
+  await removeIfExists(targetDir, "src/integrations/llms-txt.ts");
+  await removeIfExists(targetDir, "src/integrations/sitemap.ts");
+
+  // Remove AI chat components (aiAssistant is false by default)
+  await removeIfExists(targetDir, "src/components/ai-chat-modal.tsx");
+
+  // Remove doc-history component (docHistory is false by default)
+  await removeIfExists(targetDir, "src/components/doc-history.tsx");
 }
 
 /**

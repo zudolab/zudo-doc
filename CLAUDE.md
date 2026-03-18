@@ -90,6 +90,17 @@ Production (`main-deploy.yml`) and PR (`pr-checks.yml`) workflows use parallel b
 
 E2E tests run with full clone and inline doc-history generation (no `SKIP_DOC_HISTORY`).
 
+## Feature Change Checklist
+
+When adding or removing a feature from zudo-doc, update the `create-zudo-doc` generator to stay in sync:
+
+1. **`src/config/settings.ts`** — Add/remove the setting field
+2. **`packages/create-zudo-doc/src/settings-gen.ts`** — Add/remove the setting in generated output
+3. **`packages/create-zudo-doc/src/scaffold.ts`** — Add/remove dependencies in `generatePackageJson()`
+4. **`packages/create-zudo-doc/src/strip.ts`** — Add/remove import stripping and file removal for the feature
+5. **`packages/create-zudo-doc/src/__tests__/scaffold.test.ts`** — Update tests
+6. Run `/l-sync-create-zudo-doc` to verify no drift remains
+
 ## Design Tokens & CSS
 
 See `src/CLAUDE.md` for design token system (three-tier color strategy, color rules, scheme configuration) and CSS conventions (component-first strategy, tight token strategy).

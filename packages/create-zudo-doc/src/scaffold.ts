@@ -152,6 +152,7 @@ function generatePackageJson(choices: UserChoices) {
     "@shikijs/transformers": "^4.0.0",
     clsx: "^2.1.0",
     "gray-matter": "^4.0.0",
+    "remark-directive": "^3.0.0",
     "unist-util-visit": "^5.1.0",
   };
 
@@ -166,6 +167,7 @@ function generatePackageJson(choices: UserChoices) {
   };
 
   if (choices.features.includes("search")) {
+    deps["minisearch"] = "^7.2.0";
     devDeps["pagefind"] = "^1.4.0";
   }
 
