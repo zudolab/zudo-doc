@@ -15,7 +15,6 @@ interface Props {
 
 const { currentSlug, lang = defaultLocale, navSection } = Astro.props;
 const isNonDefaultLocale = lang !== defaultLocale;
-const isTopPage = !currentSlug;
 const backToMenuLabel = navSection ? t("nav.backToMenu", lang) : undefined;
 
 // Build root menu items from headerNav (always needed — top page and "back to menu")
@@ -37,6 +36,5 @@ const nodes = buildSidebarForSection(docs, lang, navSection, categoryMeta);
   currentSlug={currentSlug}
   rootMenuItems={rootMenuItems}
   backToMenuLabel={backToMenuLabel}
-  isTopPage={isTopPage}
   client:load
 />

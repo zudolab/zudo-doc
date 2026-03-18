@@ -103,10 +103,9 @@ interface SidebarTreeProps {
   currentSlug?: string;
   rootMenuItems?: RootMenuItem[];
   backToMenuLabel?: string;
-  isTopPage?: boolean;
 }
 
-export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToMenuLabel, isTopPage }: SidebarTreeProps) {
+export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToMenuLabel }: SidebarTreeProps) {
   const activeSlug = useActiveSlug(nodes, currentSlug);
   const [query, setQuery] = useState("");
   const [showingRootMenu, setShowingRootMenu] = useState(false);
@@ -169,8 +168,9 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
     );
   }
 
-  // Top page: show only header nav links, no doc tree or filter
-  if (isTopPage && rootMenuItems) {
+  // Top page: show only header nav links, no doc tree or filter.
+  // Derived from activeSlug (runtime-synced) so it stays correct across View Transitions.
+  if (!activeSlug && rootMenuItems) {
     return (
       <nav>
         {rootMenuItems.map((item) => (
