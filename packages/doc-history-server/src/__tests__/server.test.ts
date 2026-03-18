@@ -37,8 +37,18 @@ const { startServer } = await import("../server.js");
 
 let server: http.Server;
 let baseUrl: string;
+let refreshInterval: ReturnType<typeof setInterval>;
 
 beforeAll(async () => {
+  // Capture the setInterval created by startServer so we can clear it
+  const originalSetInterval = globalThis.setInterval;
+  vi.spyOn(globalThis, "setInterval").mockImplementation(
+    (...args: Parameters<typeof setInterval>) => {
+      refreshInterval = originalSetInterval(...args);
+      return refreshInterval;
+    },
+  );
+
   // Intercept createServer to capture the server instance
   const originalCreateServer = http.createServer;
   vi.spyOn(http, "createServer").mockImplementation(
@@ -81,13 +91,23 @@ beforeAll(async () => {
 
   await ready;
 
+  // Verify server started successfully
+  if (!baseUrl) {
+    throw new Error("Server failed to bind — baseUrl was not assigned");
+  }
+
   // Restore mocks used only for setup
   vi.mocked(http.createServer).mockRestore();
   vi.mocked(http.Server.prototype.listen).mockRestore();
+  vi.mocked(globalThis.setInterval).mockRestore();
   vi.mocked(console.log).mockRestore();
 });
 
 afterAll(() => {
+  // Clear the file-index refresh interval to prevent open handles
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+  }
   if (server) {
     server.close();
   }

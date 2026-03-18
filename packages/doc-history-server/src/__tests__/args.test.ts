@@ -1,18 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { parseCliArgs, parseServerArgs } from "../args.js";
 
+beforeEach(() => {
+  vi.spyOn(process, "exit").mockImplementation((code) => {
+    throw new Error(`process.exit(${code})`);
+  });
+  vi.spyOn(console, "error").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe("parseCliArgs", () => {
-  beforeEach(() => {
-    vi.spyOn(process, "exit").mockImplementation((code) => {
-      throw new Error(`process.exit(${code})`);
-    });
-    vi.spyOn(console, "error").mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it("parses valid args correctly", () => {
     const result = parseCliArgs([
       "--content-dir",
@@ -122,22 +122,13 @@ describe("parseCliArgs", () => {
         "--unknown-flag",
       ]),
     ).toThrow("process.exit(1)");
-    expect(console.error).toHaveBeenCalledWith("Unknown option: --unknown-flag");
+    expect(console.error).toHaveBeenCalledWith(
+      "Unknown option: --unknown-flag",
+    );
   });
 });
 
 describe("parseServerArgs", () => {
-  beforeEach(() => {
-    vi.spyOn(process, "exit").mockImplementation((code) => {
-      throw new Error(`process.exit(${code})`);
-    });
-    vi.spyOn(console, "error").mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it("parses valid args with port", () => {
     const result = parseServerArgs([
       "--content-dir",
