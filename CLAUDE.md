@@ -13,13 +13,21 @@ Minimal documentation framework built with Astro 6, MDX, Tailwind CSS v4, and Re
 
 ## Commands
 
-- `pnpm dev` — dev server on port 4321 (predev kills stale processes)
+- `pnpm dev` — runs Astro dev server (port 4321) and doc-history-server (port 4322) concurrently (predev kills stale processes)
+- `pnpm dev:astro` — Astro dev server only (port 4321)
+- `pnpm dev:history` — doc history API server only (port 4322)
 - `pnpm build` — static HTML export to `dist/`
 - `pnpm check` — Astro type checking
 
 ## Key Directories
 
 ```
+packages/
+├── ai-chat-worker/       # CF Worker for AI chat API
+├── search-worker/        # CF Worker for search API
+├── doc-history-server/   # Doc history REST API + CLI generator
+└── create-zudo-doc/      # CLI scaffold tool
+
 src/
 ├── components/          # Astro + React components
 │   └── admonitions/     # Note, Tip, Info, Warning, Danger
