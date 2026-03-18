@@ -7,8 +7,10 @@
   "packageManager": "pnpm@10.30.3+sha512.c961d1e0a2d8e354ecaa5166b822516668b7f44cb5bd95122d590dd81922f606f5473b6d23ec4a5be05e7fcd18e8488d47d978bbe981872f1145d06e9a740017",
   "scripts": {
     "// ── Core ─────────────────────────────────────────": "",
-    "predev": "lsof -ti :4321 | xargs kill 2>/dev/null; true",
-    "dev": "astro dev",
+    "predev": "lsof -ti :4321 -ti :4322 | xargs kill 2>/dev/null; true",
+    "dev": "run-p dev:astro dev:history",
+    "dev:astro": "astro dev",
+    "dev:history": "pnpm --filter @zudo-doc/doc-history-server dev -- --port 4322 --content-dir src/content/docs --locale ja:src/content/docs-ja",
     "dev:network": "astro dev --host 0.0.0.0",
     "dev:stable": "node scripts/dev-stable.js",
     "build": "astro build",
@@ -81,6 +83,7 @@
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
     "vitest": "^4.1.0",
+    "npm-run-all2": "^7.0.2",
     "wrangler": "^4.72.0"
   },
   "msw": {
