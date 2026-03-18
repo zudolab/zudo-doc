@@ -37,38 +37,33 @@ function sendJson(res: ServerResponse, status: number, data: unknown): void {
   res.end(JSON.stringify(data));
 }
 
+/** Build a slug→filePath lookup map from content directories */
+function buildFileIndex(
+  dirEntries: Array<[string | null, string]>,
+): Map<string, { filePath: string; slug: string }> {
+  const index = new Map<string, { filePath: string; slug: string }>();
+  for (const [localeKey, contentDir] of dirEntries) {
+    const files = collectContentFiles(contentDir);
+    for (const file of files) {
+      const prefixedSlug = localeKey ? `${localeKey}/${file.slug}` : file.slug;
+      index.set(prefixedSlug, file);
+    }
+  }
+  return index;
+}
+
 /** Handle a doc-history request */
 function handleDocHistory(
   requestedSlug: string,
-  dirEntries: Array<[string | null, string]>,
+  fileIndex: Map<string, { filePath: string; slug: string }>,
   maxEntries: number,
   res: ServerResponse,
 ): void {
-  // Check locale-prefixed entries first, then default (empty prefix)
-  const sorted = [...dirEntries].sort(
-    ([a], [b]) => (a ? 0 : 1) - (b ? 0 : 1),
-  );
-  const hasLocalePrefix = sorted.some(
-    ([k]) => k && requestedSlug.startsWith(`${k}/`),
-  );
-
-  for (const [localeKey, contentDir] of sorted) {
-    const prefix = localeKey ? `${localeKey}/` : "";
-    if (
-      (prefix && requestedSlug.startsWith(prefix)) ||
-      (!prefix && !hasLocalePrefix)
-    ) {
-      const slug = prefix
-        ? requestedSlug.slice(prefix.length)
-        : requestedSlug;
-      const files = collectContentFiles(contentDir);
-      const found = files.find((f) => f.slug === slug);
-      if (found) {
-        const history = getDocHistory(found.filePath, found.slug, maxEntries);
-        sendJson(res, 200, history);
-        return;
-      }
-    }
+  const found = fileIndex.get(requestedSlug);
+  if (found) {
+    const history = getDocHistory(found.filePath, found.slug, maxEntries);
+    sendJson(res, 200, history);
+    return;
   }
 
   sendJson(res, 404, { error: `No doc found for slug: ${requestedSlug}` });
@@ -78,6 +73,8 @@ function handleDocHistory(
 export function startServer(options: ServerOptions): void {
   const { port, contentDir, locales, maxEntries } = options;
   const dirEntries = getContentDirEntries(contentDir, locales);
+  const fileIndex = buildFileIndex(dirEntries);
+  console.log(`Indexed ${fileIndex.size} documents`);
 
   const server = createServer((req: IncomingMessage, res: ServerResponse) => {
     const url = req.url ?? "";
@@ -101,7 +98,7 @@ export function startServer(options: ServerOptions): void {
     if (match) {
       try {
         const requestedSlug = decodeURIComponent(match[1]);
-        handleDocHistory(requestedSlug, dirEntries, maxEntries, res);
+        handleDocHistory(requestedSlug, fileIndex, maxEntries, res);
       } catch (err) {
         sendJson(res, 500, {
           error: err instanceof Error ? err.message : "Internal error",
