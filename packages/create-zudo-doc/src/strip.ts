@@ -146,6 +146,83 @@ export async function stripFeatures(
   // TODO: Strip sidebar filter when not selected
   // The sidebar filter is built into sidebar-tree.tsx — stripping requires
   // careful component surgery. For now, the filter is always included.
+
+  // --- Strip imports for features disabled by default in generated projects ---
+  // The template astro.config.ts is copied from the monorepo root and has ALL
+  // imports. We must strip imports for features that are always off by default
+  // to avoid referencing packages not in the generated package.json.
+
+  // Strip math-related imports and plugin usage (math is always false by default)
+  await patchFile(path.join(targetDir, "astro.config.ts"), [
+    [/import remarkMath from "remark-math";\n/g, ""],
+    [/import rehypeKatex from "rehype-katex";\n/g, ""],
+    [/\s*\.\.\.\(settings\.math \? \[remarkMath\] : \[\]\),?\n?/g, "\n"],
+    [/\s*\.\.\.\(settings\.math \? \[rehypeKatex\] : \[\]\),?\n?/g, "\n"],
+  ]);
+
+  // Strip AI assistant (@astrojs/node adapter) — disabled by default
+  await patchFile(path.join(targetDir, "astro.config.ts"), [
+    [/import node from "@astrojs\/node";\n/g, ""],
+    [
+      /\s*\.\.\.\(settings\.aiAssistant \? \{ adapter: node\(\{ mode: "standalone" \}\) \} : \{\}\),?\n?/g,
+      "\n",
+    ],
+  ]);
+
+  // Strip doc history integration — disabled by default
+  await patchFile(path.join(targetDir, "astro.config.ts"), [
+    [
+      /import \{ docHistoryIntegration \} from "\.\/src\/integrations\/doc-history";\n/g,
+      "",
+    ],
+    [
+      /\s*\.\.\.\(settings\.docHistory \? \[docHistoryIntegration\(\)\] : \[\]\),?\n?/g,
+      "\n",
+    ],
+  ]);
+
+  // Strip llms.txt integration — disabled by default
+  await patchFile(path.join(targetDir, "astro.config.ts"), [
+    [
+      /import \{ llmsTxtIntegration \} from "\.\/src\/integrations\/llms-txt";\n/g,
+      "",
+    ],
+    [
+      /\s*\.\.\.\(settings\.llmsTxt \? \[llmsTxtIntegration\(\)\] : \[\]\),?\n?/g,
+      "\n",
+    ],
+  ]);
+
+  // Strip sitemap integration — disabled by default (needs siteUrl)
+  await patchFile(path.join(targetDir, "astro.config.ts"), [
+    [
+      /import \{ sitemapIntegration \} from "\.\/src\/integrations\/sitemap";\n/g,
+      "",
+    ],
+    [
+      /\s*\.\.\.\(settings\.sitemap && !settings\.noindex \? \[sitemapIntegration\(\)\] : \[\]\),?\n?/g,
+      "\n",
+    ],
+  ]);
+
+  // Strip trailingSlash config line (trailingSlash is false by default)
+  await patchFile(path.join(targetDir, "astro.config.ts"), [
+    [
+      /\s*trailingSlash: settings\.trailingSlash \? "always" : "never",\n/g,
+      "\n",
+    ],
+  ]);
+
+  // Remove integration files for disabled features
+  await removeIfExists(targetDir, "src/integrations/doc-history.ts");
+  await removeIfExists(targetDir, "src/integrations/llms-txt.ts");
+  await removeIfExists(targetDir, "src/integrations/sitemap.ts");
+
+  // Remove AI chat components (aiAssistant is false by default)
+  await removeIfExists(targetDir, "src/components/ai-chat-modal.tsx");
+
+  // Remove doc-history component (docHistory is false by default)
+  await removeIfExists(targetDir, "src/components/doc-history.tsx");
 }
 
 /**

@@ -5,34 +5,36 @@ import { capitalize, getLangLabel } from "./utils.js";
 export function generateSettingsFile(choices: UserChoices): string {
   const lines: string[] = [];
 
-  lines.push(`export interface HeaderNavItem {`);
-  lines.push(`  label: string;`);
-  lines.push(`  path: string;`);
-  lines.push(`  categoryMatch?: string;`);
-  lines.push(`}`);
-  lines.push(``);
-
-  lines.push(`export interface ColorModeConfig {`);
-  lines.push(`  defaultMode: "light" | "dark";`);
-  lines.push(`  lightScheme: string;`);
-  lines.push(`  darkScheme: string;`);
-  lines.push(`  respectPrefersColorScheme: boolean;`);
-  lines.push(`}`);
-  lines.push(``);
-
-  lines.push(`export interface LocaleConfig {`);
-  lines.push(`  label: string;`);
-  lines.push(`  dir: string;`);
-  lines.push(`}`);
+  // Import types from settings-types (copied from template src/config/)
+  lines.push(`export type {`);
+  lines.push(`  HeaderNavItem,`);
+  lines.push(`  ColorModeConfig,`);
+  lines.push(`  HtmlPreviewConfig,`);
+  lines.push(`  LocaleConfig,`);
+  lines.push(`  VersionConfig,`);
+  lines.push(`  FooterConfig,`);
+  lines.push(`} from "./settings-types";`);
+  lines.push(`import type {`);
+  lines.push(`  HeaderNavItem,`);
+  lines.push(`  ColorModeConfig,`);
+  lines.push(`  HtmlPreviewConfig,`);
+  lines.push(`  LocaleConfig,`);
+  lines.push(`  VersionConfig,`);
+  lines.push(`  FooterConfig,`);
+  lines.push(`} from "./settings-types";`);
   lines.push(``);
 
   lines.push(`export const settings = {`);
 
   if (choices.colorSchemeMode === "single") {
-    lines.push(`  colorScheme: ${JSON.stringify(choices.singleScheme ?? "Dracula")},`);
+    lines.push(
+      `  colorScheme: ${JSON.stringify(choices.singleScheme ?? "Dracula")},`,
+    );
     lines.push(`  colorMode: false as ColorModeConfig | false,`);
   } else {
-    lines.push(`  colorScheme: ${JSON.stringify(choices.darkScheme ?? "GitHub Dark")},`);
+    lines.push(
+      `  colorScheme: ${JSON.stringify(choices.darkScheme ?? "GitHub Dark")},`,
+    );
     lines.push(`  colorMode: {`);
     lines.push(
       `    defaultMode: ${JSON.stringify(choices.defaultMode ?? "dark")},`,
@@ -52,7 +54,12 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(
     `  siteName: ${JSON.stringify(capitalize(choices.projectName.replace(/-/g, " ")))},`,
   );
+  lines.push(`  siteDescription: "" as string,`);
   lines.push(`  base: "/",`);
+  lines.push(`  trailingSlash: false as boolean,`);
+  lines.push(`  noindex: false as boolean,`);
+  lines.push(`  editUrl: false as string | false,`);
+  lines.push(`  siteUrl: "" as string,`);
   lines.push(`  docsDir: "src/content/docs",`);
 
   if (choices.features.includes("i18n")) {
@@ -68,12 +75,24 @@ export function generateSettingsFile(choices: UserChoices): string {
   }
 
   lines.push(`  mermaid: true,`);
+  lines.push(`  sitemap: true,`);
+  lines.push(`  docMetainfo: false,`);
+  lines.push(`  docTags: false,`);
+  lines.push(`  llmsTxt: false,`);
+  lines.push(`  math: false,`);
+  lines.push(`  aiAssistant: false as boolean,`);
+  lines.push(`  docHistory: false,`);
 
   if (choices.features.includes("colorTweakPanel")) {
     lines.push(`  colorTweakPanel: true as boolean,`);
   } else {
     lines.push(`  colorTweakPanel: false as boolean,`);
   }
+
+  lines.push(
+    `  htmlPreview: undefined as HtmlPreviewConfig | undefined,`,
+  );
+  lines.push(`  versions: false as VersionConfig[] | false,`);
 
   if (choices.features.includes("claudeResources")) {
     lines.push(`  claudeResources: {`);
@@ -87,6 +106,8 @@ export function generateSettingsFile(choices: UserChoices): string {
     );
   }
 
+  lines.push(`  footer: false as FooterConfig | false,`);
+
   lines.push(`  headerNav: [`);
   lines.push(
     `    { label: "Getting Started", path: "/docs/getting-started", categoryMatch: "getting-started" },`,
@@ -96,4 +117,3 @@ export function generateSettingsFile(choices: UserChoices): string {
 
   return lines.join("\n") + "\n";
 }
-

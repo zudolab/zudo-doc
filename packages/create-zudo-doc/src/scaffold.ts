@@ -152,6 +152,8 @@ function generatePackageJson(choices: UserChoices) {
     "@shikijs/transformers": "^4.0.0",
     clsx: "^2.1.0",
     "gray-matter": "^4.0.0",
+    minisearch: "^7.2.0",
+    "remark-directive": "^3.0.0",
     "unist-util-visit": "^5.1.0",
   };
 
