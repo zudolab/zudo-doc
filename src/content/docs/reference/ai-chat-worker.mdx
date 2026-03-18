@@ -42,7 +42,7 @@ interface ChatMessage {
 
 | Field     | Type             | Required | Description                                                              |
 | --------- | ---------------- | -------- | ------------------------------------------------------------------------ |
-| `message` | `string`         | Yes      | The user's current message. Must be non-empty.                           |
+| `message` | `string`         | Yes      | The user's current message. Must be non-empty, max 4000 characters.      |
 | `history` | `ChatMessage[]`  | Yes      | Previous conversation messages. Invalid entries are filtered out silently. |
 
 ### Success Response (200)
@@ -61,8 +61,36 @@ The `response` field contains the assistant's reply as a markdown string.
 | ------ | ------------------------------ |
 | 400    | Invalid JSON body              |
 | 400    | `message` is not a non-empty string |
+| 400    | `message` exceeds 4000 character limit |
+| 400    | Message rejected by input screening |
 | 405    | Request method is not POST     |
+| 429    | Rate limit exceeded (includes `Retry-After` header) |
 | 500    | Anthropic API call failed      |
+
+## Security
+
+The Worker includes layered defenses against prompt injection and abuse:
+
+### Hardened System Prompt
+
+The system prompt uses XML tags (`<rules>`, `<documentation>`) to clearly separate instructions from user-supplied content. Explicit guardrails instruct the model to:
+
+- Only answer questions about the provided documentation
+- Never reveal system instructions, configuration, or API keys
+- Reject attempts to override its instructions
+- Redirect off-topic questions back to documentation
+
+### Input Screening
+
+Before a message reaches Claude, a lightweight regex-based filter (`src/input-screen.ts`) checks for common prompt injection patterns such as requests to ignore previous instructions, reveal configuration, or bypass restrictions. Matched messages are rejected with a 400 response. This filter runs before rate limiting so that injection attempts do not consume the caller's rate limit quota.
+
+### API Key Isolation
+
+The `ANTHROPIC_API_KEY` is stored as a Cloudflare Worker secret and never included in the prompt context. Claude cannot leak what it does not know.
+
+### Message Length Limit
+
+Messages are capped at 4000 characters. Longer messages are rejected with a 400 response before reaching the Claude API.
 
 ## Environment Setup
 
@@ -73,9 +101,59 @@ Set `DOCS_SITE_URL` in `wrangler.toml` to point at your deployed documentation s
 ```toml title="packages/ai-chat-worker/wrangler.toml"
 [vars]
 DOCS_SITE_URL = "https://your-docs-site.example.com"
+RATE_LIMIT_PER_MINUTE = "10"
+RATE_LIMIT_PER_DAY = "100"
 ```
 
+| Variable | Default | Description |
+| -------- | ------- | ----------- |
+| `DOCS_SITE_URL` | — | Your deployed documentation site URL |
+| `RATE_LIMIT_PER_MINUTE` | `10` | Max requests per IP per minute |
+| `RATE_LIMIT_PER_DAY` | `100` | Max requests per IP per day |
+
 The Worker fetches `${DOCS_SITE_URL}/llms-full.txt` to load documentation context.
+
+### KV Namespace
+
+Rate limiting uses a Cloudflare KV namespace. Create it before deploying:
+
+```sh
+cd packages/ai-chat-worker
+npx wrangler kv namespace create RATE_LIMIT
+```
+
+Update the `id` in `wrangler.toml` `[[kv_namespaces]]` with the returned namespace ID.
+
+### Rate Limiting Behavior
+
+The Worker enforces per-IP rate limits using the `cf-connecting-ip` header provided by Cloudflare.
+
+- **Best-effort enforcement** — KV reads and writes are not atomic, so concurrent requests from the same IP may slightly exceed the configured limits
+- **Fail-open** — if KV is unavailable (outage, misconfiguration), requests are allowed through. Chat availability takes priority over strict rate enforcement
+- **Invalid config** — non-numeric values for `RATE_LIMIT_PER_MINUTE` or `RATE_LIMIT_PER_DAY` fall back to the defaults (10/min, 100/day)
+- **429 response** — includes a `Retry-After` header (seconds until the current window resets), exposed via CORS for browser access
+
+### Audit Logging
+
+Every chat interaction is logged to KV for security analysis. This enables detection of prompt injection attempts and abuse patterns.
+
+**Logged fields:**
+
+| Field | Description |
+| ----- | ----------- |
+| `timestamp` | ISO 8601 timestamp |
+| `ipHash` | SHA-256 hash of the client IP (raw IP is never stored) |
+| `message` | User's message, truncated to 500 characters |
+| `responsePreview` | First 200 characters of the response |
+| `blocked` | Whether the request was rejected |
+| `blockReason` | `"rate_limit"`, `"invalid_input"`, or `"prompt_injection"` (when blocked) |
+
+**Storage details:**
+
+- Uses the same `RATE_LIMIT` KV namespace with `audit:` key prefix (separate from `rate:` keys)
+- Logs expire automatically after 7 days
+- Logging is fire-and-forget — failures do not affect the API response
+- IP addresses are hashed with SHA-256 via the Web Crypto API before storage
 
 ### Secrets
 
@@ -124,8 +202,11 @@ The built-in [AI Assistant](/docs/guides/ai-assistant) runs as part of the Astro
 packages/ai-chat-worker/
 ├── src/
 │   ├── index.ts          # Worker entry point
+│   ├── audit-log.ts      # Audit logging + IP hashing
 │   ├── claude.ts         # Claude API integration + docs context fetching
 │   ├── cors.ts           # CORS header handling
+│   ├── input-screen.ts   # Prompt injection input screening
+│   ├── rate-limit.ts     # Per-IP rate limiting via KV
 │   └── types.ts          # Type definitions
 ├── wrangler.toml         # Cloudflare Worker configuration
 ├── package.json
