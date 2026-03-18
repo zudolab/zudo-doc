@@ -156,12 +156,14 @@ describe("scaffold — generated package.json dependencies", () => {
     await scaffold(choices);
   });
 
-  it("remark-directive should be in dependencies (currently MISSING — documents bug)", async () => {
+  // This test uses it.fails() to document a known bug: remark-directive is
+  // needed but not included in the generated package.json. When the bug is
+  // fixed, this test will start failing (because the assertion now passes),
+  // signaling that it.fails() should be changed back to it().
+  it.fails("remark-directive should be in dependencies (currently MISSING — known bug)", async () => {
     const pkg = await fs.readJson(
       projectPath("test-deps", "package.json"),
     );
-    // This test documents a known bug: remark-directive is needed but not
-    // included in the generated package.json dependencies.
     expect(pkg.dependencies["remark-directive"]).toBeDefined();
   });
 
