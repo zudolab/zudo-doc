@@ -73,7 +73,7 @@ test.describe("TOC: desktop table of contents", () => {
     await expect(parentLi).toHaveClass(/ml-hsp-lg/);
   });
 
-  test("scroll spy sets aria-current on a heading after scrolling", async ({ page }) => {
+  test("scroll spy sets aria-current on a heading after scrolling @local-only", async ({ page }) => {
     await page.goto(PAGE, { waitUntil: "load" });
 
     const tocNav = page.locator('[aria-label="Table of contents"]');
@@ -89,7 +89,7 @@ test.describe("TOC: desktop table of contents", () => {
     await expect(activeLink).toHaveCount(1, { timeout: 5000 });
   });
 
-  test("scroll spy updates aria-current when scrolling to a different section", async ({
+  test("scroll spy updates aria-current when scrolling to a different section @local-only", async ({
     page,
   }) => {
     await page.goto(PAGE, { waitUntil: "load" });

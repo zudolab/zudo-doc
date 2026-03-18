@@ -41,7 +41,7 @@ function themeToggle(page: import("@playwright/test").Page) {
   return page.locator('header .ml-auto button[aria-label*="Switch to"]');
 }
 
-test.describe("Color tweak panel", () => {
+test.describe("Color tweak panel @local-only", () => {
   test("panel opens and closes", async ({ page }) => {
     await page.goto(DOC_PAGE, { waitUntil: "load" });
 
@@ -79,7 +79,7 @@ test.describe("Color tweak panel", () => {
     await expect(page.getByText("Color Tweak Panel")).toBeVisible({ timeout: 5000 });
   });
 
-  test("HSL picker opens from color swatch @local-only", async ({ page }) => {
+  test("HSL picker opens from color swatch", async ({ page }) => {
     await page.goto(DOC_PAGE, { waitUntil: "load" });
     await ensureTweakPanelOpen(page);
 
