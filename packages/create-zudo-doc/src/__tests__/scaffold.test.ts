@@ -250,3 +250,58 @@ describe("scaffold — generated settings.ts content", () => {
     expect(content).toContain("colorTweakPanel: true");
   });
 });
+
+describe("drift detection — generator vs main project settings", () => {
+  /**
+   * This test catches feature drift between the main project's settings.ts
+   * and what the generator produces. If a new setting is added to the main
+   * project but not to settings-gen.ts, this test will fail.
+   */
+  it("generated settings.ts has all fields from the main settings.ts", async () => {
+    // Read the main project's settings.ts to extract field names
+    const mainSettingsPath = path.resolve(
+      __dirname,
+      "../../../../src/config/settings.ts",
+    );
+    const mainSettings = await fs.readFile(mainSettingsPath, "utf-8");
+
+    // Extract top-level field names from `export const settings = { ... }`
+    const settingsBlock = mainSettings.slice(
+      mainSettings.indexOf("export const settings = {"),
+    );
+    // Match field names at 2-space indent (top-level settings object keys)
+    const fieldPattern = /^ {2}(\w+)\s*:/gm;
+    const mainFields: string[] = [];
+    let match: RegExpExecArray | null;
+    while ((match = fieldPattern.exec(settingsBlock)) !== null) {
+      mainFields.push(match[1]!);
+    }
+
+    expect(mainFields.length).toBeGreaterThan(10); // Sanity check
+
+    // Scaffold a minimal project and read generated settings
+    const choices: UserChoices = {
+      projectName: "test-drift",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "sidebarFilter"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const generated = await fs.readFile(
+      projectPath("test-drift", "src/config/settings.ts"),
+      "utf-8",
+    );
+
+    // Check that every field in the main settings exists in the generated output
+    const missingFields = mainFields.filter(
+      (field) => !generated.includes(`${field}:`),
+    );
+    expect(
+      missingFields,
+      `Generator is missing settings fields: ${missingFields.join(", ")}. ` +
+        `Update packages/create-zudo-doc/src/settings-gen.ts or run /l-sync-create-zudo-doc`,
+    ).toEqual([]);
+  });
+});
