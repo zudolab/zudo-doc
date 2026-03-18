@@ -28,7 +28,7 @@ async function collectHydrationErrors(page: Page, url: string): Promise<string[]
   return errors;
 }
 
-test.describe("Theme toggle", () => {
+test.describe("Theme toggle @local-only", () => {
   test("no hydration error when stored theme is light (differs from SSR default)", async ({
     browser,
   }) => {

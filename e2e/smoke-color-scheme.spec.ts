@@ -22,7 +22,7 @@ async function openTweakPanel(page: import("@playwright/test").Page) {
   return panel;
 }
 
-test.describe("Color tweak panel scheme chooser", () => {
+test.describe("Color tweak panel scheme chooser @local-only", () => {
   test("scheme chooser select is present with multiple options", async ({ page }) => {
     await page.goto(DOCS_PAGE, { waitUntil: "load" });
 

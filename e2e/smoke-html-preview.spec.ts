@@ -9,7 +9,7 @@ import { test, expect } from "@playwright/test";
 
 const PAGE = "/docs/guides/html-preview-test";
 
-test.describe("HtmlPreview: global CSS and per-component JS", () => {
+test.describe("HtmlPreview: global CSS and per-component JS @local-only", () => {
   test("global CSS is injected into iframe srcdoc", async ({ page }) => {
     await page.goto(PAGE, { waitUntil: "load" });
 

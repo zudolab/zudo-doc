@@ -11,7 +11,7 @@ import { test, expect } from "@playwright/test";
 
 const PAGE = "/docs/getting-started";
 
-test.describe("Doc History: revision panel and diff", () => {
+test.describe("Doc History: revision panel and diff @local-only", () => {
   test("history trigger button is present", async ({ page }) => {
     await page.goto(PAGE, { waitUntil: "load" });
 

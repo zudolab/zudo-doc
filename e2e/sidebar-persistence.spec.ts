@@ -38,7 +38,7 @@ async function expectCategoryOpen(page: Page, label: string, expected: boolean) 
   await expect(toggle).toHaveAttribute("aria-label", expectedLabel, { timeout: 5000 });
 }
 
-test.describe("Sidebar category persistence", () => {
+test.describe("Sidebar category persistence @local-only", () => {
   // All tests use the Guides section which has subcategories: Sub A, Sub B
 
   test("auto-opened subcategory stays open after navigating to a sibling page", async ({

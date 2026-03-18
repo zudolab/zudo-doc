@@ -41,7 +41,7 @@ function themeToggle(page: import("@playwright/test").Page) {
   return page.locator('header .ml-auto button[aria-label*="Switch to"]');
 }
 
-test.describe("Color tweak panel", () => {
+test.describe("Color tweak panel @local-only", () => {
   test("panel opens and closes", async ({ page }) => {
     await page.goto(DOC_PAGE, { waitUntil: "load" });
 

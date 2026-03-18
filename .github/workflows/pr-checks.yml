@@ -3,10 +3,11 @@
 # Triggered on PRs targeting `main`. The pipeline mirrors the local
 # `pnpm b4push` script:
 #   1. Type checking (astro check)
-#   2. Build the Astro docs site + check links
-#   3. E2E & smoke tests (Playwright)
-#   4. Deploy a preview to Cloudflare Pages
-#   5. Post the preview URL as a PR comment
+#   2. Build the Astro docs site (shallow clone, skips doc history)
+#   3. Build doc history JSONs (full clone, standalone server package)
+#   4. E2E & smoke tests (Playwright)
+#   5. Merge artifacts and deploy a preview to Cloudflare Pages
+#   6. Post the preview URL as a PR comment
 #
 # Concurrency: cancel in-progress runs for the same PR to save resources.
 
@@ -56,15 +57,58 @@ jobs:
         run: pnpm check
 
   # ---------------------------------------------------------------------------
-  # Job 2: Build the Astro docs site
+  # Job 2: Build the Astro docs site (shallow clone — fast)
   # ---------------------------------------------------------------------------
-  build:
-    name: Build
+  build-site:
+    name: Build Site
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
-      # fetch-depth: 0 is required for docHistoryIntegration (reads git log)
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build site
+        run: pnpm build
+        env:
+          SKIP_DOC_HISTORY: "1"
+          PUBLIC_ENABLE_MOCKS: "true"
+
+      - name: Check links
+        run: pnpm run check:links
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-out
+          path: dist/
+          retention-days: 1
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Build doc history JSONs (full clone — only this job needs it)
+  # ---------------------------------------------------------------------------
+  build-history:
+    name: Build Doc History
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
       - name: Checkout repository
         uses: actions/checkout@v5
         with:
@@ -84,23 +128,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build site
-        run: pnpm build
-        env:
-          PUBLIC_ENABLE_MOCKS: "true"
+      - name: Generate doc history
+        run: |
+          pnpm --filter @zudo-doc/doc-history-server generate \
+            --content-dir ../../src/content/docs \
+            --locale ja:../../src/content/docs-ja \
+            --out-dir ../../doc-history-out
 
-      - name: Check links
-        run: pnpm run check:links
-
-      - name: Upload build artifact
+      - name: Upload doc history artifact
         uses: actions/upload-artifact@v7
         with:
-          name: dist-out
-          path: dist/
+          name: doc-history-out
+          path: doc-history-out/
           retention-days: 1
 
   # ---------------------------------------------------------------------------
-  # Job 3: E2E & smoke tests
+  # Job 4: E2E & smoke tests
   # ---------------------------------------------------------------------------
   e2e:
     name: E2E Tests
@@ -131,7 +174,7 @@ jobs:
         run: pnpm dlx playwright install chromium
 
       - name: Run E2E & smoke tests
-        run: pnpm test:e2e
+        run: pnpm test:e2e:ci
 
       - name: Upload test results
         if: ${{ !cancelled() }}
@@ -142,20 +185,27 @@ jobs:
           retention-days: 7
 
   # ---------------------------------------------------------------------------
-  # Job 4: Deploy preview and comment on PR
+  # Job 5: Deploy preview and comment on PR
   # ---------------------------------------------------------------------------
   preview:
     name: Preview Deploy
-    needs: [build]
+    needs: [build-site, build-history]
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
-      - name: Download build artifact
+      - name: Download site artifact
         uses: actions/download-artifact@v7
         with:
           name: dist-out
           path: dist-out/
+
+      - name: Download doc history artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: doc-history-out
+          path: doc-history-out/
+        continue-on-error: true
 
       - name: Prepare deploy directory
         run: |
@@ -165,6 +215,11 @@ jobs:
             cp -r dist-out/client/. deploy/pj/zudo-doc/
           else
             cp -r dist-out/. deploy/pj/zudo-doc/
+          fi
+          # Merge doc history JSONs into the deploy directory (if available)
+          if [ -d doc-history-out ] && [ "$(ls -A doc-history-out 2>/dev/null)" ]; then
+            mkdir -p deploy/pj/zudo-doc/doc-history
+            cp -r doc-history-out/. deploy/pj/zudo-doc/doc-history/
           fi
           echo '/ /pj/zudo-doc/ 302' > deploy/_redirects
 

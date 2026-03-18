@@ -1,9 +1,10 @@
 # Production deployment workflow for the Astro docs site.
 #
 # Triggered on every push to `main`. The pipeline:
-#   1. Builds the Astro static site
-#   2. Deploys to Cloudflare Pages (production)
-#   3. Sends IFTTT notification with deploy status
+#   1. Builds the Astro static site (shallow clone, skips doc history)
+#   2. Builds doc history JSONs (full clone, standalone server package)
+#   3. Merges both artifacts and deploys to Cloudflare Pages (production)
+#   4. Sends IFTTT notification with deploy status
 #
 # Concurrency: only one production deploy runs at a time.
 # We do NOT cancel in-progress runs -- the earlier deploy should finish.
@@ -24,15 +25,55 @@ permissions:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # Job 1: Build the Astro docs site
+  # Job 1: Build the Astro docs site (shallow clone — fast)
   # ---------------------------------------------------------------------------
-  build:
-    name: Build
+  build-site:
+    name: Build Site
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
-      # fetch-depth: 0 is required for docHistoryIntegration (reads git log)
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build site
+        run: pnpm build
+        env:
+          SKIP_DOC_HISTORY: "1"
+          PUBLIC_ENABLE_MOCKS: "true"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-out
+          path: dist/
+          retention-days: 1
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Build doc history JSONs (full clone — only this job needs it)
+  # ---------------------------------------------------------------------------
+  build-history:
+    name: Build Doc History
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
       - name: Checkout repository
         uses: actions/checkout@v5
         with:
@@ -52,33 +93,42 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build site
-        run: pnpm build
-        env:
-          PUBLIC_ENABLE_MOCKS: "true"
+      - name: Generate doc history
+        run: |
+          pnpm --filter @zudo-doc/doc-history-server generate \
+            --content-dir ../../src/content/docs \
+            --locale ja:../../src/content/docs-ja \
+            --out-dir ../../doc-history-out
 
-      - name: Upload build artifact
+      - name: Upload doc history artifact
         uses: actions/upload-artifact@v7
         with:
-          name: dist-out
-          path: dist/
+          name: doc-history-out
+          path: doc-history-out/
           retention-days: 1
 
   # ---------------------------------------------------------------------------
-  # Job 2: Deploy to Cloudflare Pages (production)
+  # Job 3: Deploy to Cloudflare Pages (production)
   # ---------------------------------------------------------------------------
   deploy:
     name: Deploy to Cloudflare Pages
-    needs: [build]
+    needs: [build-site, build-history]
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
-      - name: Download build artifact
+      - name: Download site artifact
         uses: actions/download-artifact@v7
         with:
           name: dist-out
           path: dist-out/
+
+      - name: Download doc history artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: doc-history-out
+          path: doc-history-out/
+        continue-on-error: true
 
       - name: Prepare deploy directory
         run: |
@@ -88,6 +138,11 @@ jobs:
             cp -r dist-out/client/. deploy/pj/zudo-doc/
           else
             cp -r dist-out/. deploy/pj/zudo-doc/
+          fi
+          # Merge doc history JSONs into the deploy directory (if available)
+          if [ -d doc-history-out ] && [ "$(ls -A doc-history-out 2>/dev/null)" ]; then
+            mkdir -p deploy/pj/zudo-doc/doc-history
+            cp -r doc-history-out/. deploy/pj/zudo-doc/doc-history/
           fi
           echo '/ /pj/zudo-doc/ 302' > deploy/_redirects
 
@@ -103,11 +158,11 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   # ---------------------------------------------------------------------------
-  # Job 3: Send IFTTT notification with deploy status
+  # Job 4: Send IFTTT notification with deploy status
   # ---------------------------------------------------------------------------
   notify:
     name: Deploy Notification
-    needs: [build, deploy]
+    needs: [build-site, build-history, deploy]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -118,7 +173,8 @@ jobs:
         env:
           IFTTT_PROD_NOTIFY: ${{ secrets.IFTTT_PROD_NOTIFY }}
           RAW_COMMIT_MSG: ${{ github.event.head_commit.message }}
-          BUILD_RESULT: ${{ needs.build.result }}
+          BUILD_SITE_RESULT: ${{ needs.build-site.result }}
+          BUILD_HISTORY_RESULT: ${{ needs.build-history.result }}
           DEPLOY_RESULT: ${{ needs.deploy.result }}
           GITHUB_SHA_VAL: ${{ github.sha }}
           SERVER_URL: ${{ github.server_url }}
@@ -127,8 +183,10 @@ jobs:
         run: |
           if [ "$DEPLOY_RESULT" = "success" ]; then
             STATUS="zudo-doc deploy succeeded!"
-          elif [ "$BUILD_RESULT" = "failure" ]; then
-            STATUS="zudo-doc deploy failed (build)"
+          elif [ "$BUILD_SITE_RESULT" = "failure" ]; then
+            STATUS="zudo-doc deploy failed (site build)"
+          elif [ "$BUILD_HISTORY_RESULT" = "failure" ]; then
+            STATUS="zudo-doc deploy failed (history build)"
           elif [ "$DEPLOY_RESULT" = "failure" ]; then
             STATUS="zudo-doc deploy failed (deploy)"
           else

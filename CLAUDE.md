@@ -13,13 +13,24 @@ Minimal documentation framework built with Astro 6, MDX, Tailwind CSS v4, and Re
 
 ## Commands
 
-- `pnpm dev` — dev server on port 4321 (predev kills stale processes)
+- `pnpm dev` — runs Astro dev server (port 4321) and doc-history-server (port 4322) concurrently via `run-p` (predev kills stale processes)
+- `pnpm dev:astro` — Astro dev server only (port 4321)
+- `pnpm dev:history` — doc history API server only (port 4322)
+- `pnpm dev:stable` — alternative build-then-serve dev mode (avoids HMR crashes on content file add/remove)
+- `pnpm dev:network` — Astro dev server with `--host 0.0.0.0` for LAN access
 - `pnpm build` — static HTML export to `dist/`
 - `pnpm check` — Astro type checking
+- `pnpm b4push` — pre-push validation: format check → typecheck → build → link check → E2E tests
 
 ## Key Directories
 
 ```
+packages/
+├── ai-chat-worker/       # CF Worker for AI chat API
+├── search-worker/        # CF Worker for search API
+├── doc-history-server/   # Doc history REST API + CLI generator
+└── create-zudo-doc/      # CLI scaffold tool
+
 src/
 ├── components/          # Astro + React components
 │   └── admonitions/     # Note, Tip, Info, Warning, Danger
@@ -64,6 +75,16 @@ Available in all MDX files without imports (registered globally in doc page):
 - Japanese: `/ja/docs/...` — content in `docsJaDir` (default: `src/content/docs-ja`)
 - Configured in `astro.config.ts` with `prefixDefaultLocale: false`
 - Japanese docs should mirror the English directory structure
+
+## CI Pipeline
+
+Production (`main-deploy.yml`) and PR (`pr-checks.yml`) workflows use parallel build jobs:
+
+- **build-site** — shallow clone (`fetch-depth: 1`), `SKIP_DOC_HISTORY=1 pnpm build`
+- **build-history** — full clone (`fetch-depth: 0`), `@zudo-doc/doc-history-server generate`
+- **deploy/preview** — merges both artifacts, deploys to Cloudflare Pages
+
+E2E tests run with full clone and inline doc-history generation (no `SKIP_DOC_HISTORY`).
 
 ## Design Tokens & CSS
 
