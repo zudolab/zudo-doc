@@ -17,7 +17,10 @@ const { links, copyright } = footer;
 /** Prefix internal hrefs with locale path for non-default locales. */
 function localizeHref(href: string): string {
   if (isExternal(href)) return href;
-  if (lang !== defaultLocale) return resolveHref(`/${lang}${href}`);
+  if (lang !== defaultLocale) {
+    const path = href.startsWith("/") ? href : `/${href}`;
+    return resolveHref(`/${lang}${path}`);
+  }
   return resolveHref(href);
 }
 ---

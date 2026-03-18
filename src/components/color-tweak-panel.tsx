@@ -43,7 +43,7 @@ function savePosition(pos: PanelPosition) {
 /** Keep at least VISIBLE_MIN px of the panel on-screen so the user can grab it back. */
 const VISIBLE_MIN = 60;
 
-function clampPosition(top: number, right: number, panelWidth: number, _panelHeight: number): PanelPosition {
+function clampPosition(top: number, right: number, panelWidth: number): PanelPosition {
   // Horizontal: allow panel to extend past left/right edges
   const minRight = -(panelWidth - VISIBLE_MIN);
   const maxRight = window.innerWidth - VISIBLE_MIN;
@@ -698,14 +698,20 @@ export default function ColorTweakPanel() {
   const [state, setState] = useState<TweakState | null>(null);
   const [position, setPosition] = useState<PanelPosition>(DEFAULT_POSITION);
   const panelRef = useRef<HTMLDivElement>(null);
-  const isDragging = useRef(false);
+  const positionRef = useRef<PanelPosition>(DEFAULT_POSITION);
+  // Keep ref in sync with state for use in drag handlers (avoids stale closure)
+  positionRef.current = position;
+  // Track active drag listeners for cleanup on unmount
+  const dragCleanupRef = useRef<(() => void) | null>(null);
 
   // Restore open state and position from localStorage after mount (avoids SSR hydration mismatch)
   useEffect(() => {
     try {
       if (localStorage.getItem(OPEN_KEY) === "1") setOpen(true);
     } catch { /* ignore */ }
-    setPosition(loadPosition());
+    const loaded = loadPosition();
+    setPosition(loaded);
+    positionRef.current = loaded;
   }, []);
 
   // Persist open state
@@ -760,45 +766,58 @@ export default function ColorTweakPanel() {
     setState(initFromScheme());
   }, [open, state]);
 
-  // Drag handler for panel header
+  // Drag handler for panel header (stable — reads position from ref)
   const handleDragStart = useCallback((e: React.MouseEvent) => {
     // Skip if target is a button, select, or inside one
     const target = e.target as HTMLElement;
     if (target.closest("button, select, option")) return;
     e.preventDefault();
-    isDragging.current = true;
     const startX = e.clientX;
     const startY = e.clientY;
-    const startRight = position.right;
-    const startTop = position.top;
-    const panelEl = panelRef.current;
-    const panelWidth = panelEl?.offsetWidth ?? 480;
-    const panelHeight = panelEl?.offsetHeight ?? 400;
+    const startRight = positionRef.current.right;
+    const startTop = positionRef.current.top;
+    const panelWidth = panelRef.current?.offsetWidth ?? 560;
 
     function onMouseMove(ev: MouseEvent) {
       const deltaX = ev.clientX - startX;
       const deltaY = ev.clientY - startY;
-      // right decreases as mouse moves right
-      const newRight = startRight - deltaX;
-      const newTop = startTop + deltaY;
-      const clamped = clampPosition(newTop, newRight, panelWidth, panelHeight);
+      const clamped = clampPosition(startTop + deltaY, startRight - deltaX, panelWidth);
       setPosition(clamped);
     }
 
     function onMouseUp() {
-      isDragging.current = false;
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseup", onMouseUp);
-      // Save final position
-      setPosition((prev) => {
-        savePosition(prev);
-        return prev;
-      });
+      dragCleanupRef.current = null;
+      savePosition(positionRef.current);
     }
 
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
-  }, [position.right, position.top]);
+    dragCleanupRef.current = () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
+
+  // Clean up drag listeners on unmount
+  useEffect(() => {
+    return () => { dragCleanupRef.current?.(); };
+  }, []);
+
+  // Re-clamp position on window resize
+  useEffect(() => {
+    function handleResize() {
+      const panelWidth = panelRef.current?.offsetWidth ?? 560;
+      setPosition((prev) => {
+        const clamped = clampPosition(prev.top, prev.right, panelWidth);
+        savePosition(clamped);
+        return clamped;
+      });
+    }
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Re-apply tweak state after View Transition page swaps
   useEffect(() => {
@@ -895,7 +914,7 @@ export default function ColorTweakPanel() {
       ref={panelRef}
       className="fixed z-50 border border-muted bg-surface"
       style={{
-        width: 560,
+        width: "min(560px, calc(100vw - 40px))",
         maxHeight: "calc(100vh - 80px)",
         top: position.top,
         right: position.right,
@@ -982,7 +1001,7 @@ export default function ColorTweakPanel() {
       {/* Content */}
       <div
         className="overflow-y-auto px-hsp-xl py-vsp-sm"
-        style={{ maxHeight: "calc(100vh - 80px - 3.5rem)" }}
+        style={{ maxHeight: "calc(100vh - 80px - 5rem)" }}
       >
         {state && (
           <div className="flex flex-col gap-vsp-sm">
