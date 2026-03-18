@@ -1,0 +1,12 @@
+name = "zudo-doc-ai-chat"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+[vars]
+DOCS_SITE_URL = "https://your-docs-site.pages.dev"
+RATE_LIMIT_PER_MINUTE = "10"
+RATE_LIMIT_PER_DAY = "100"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "placeholder-create-via-wrangler-kv-namespace-create"
