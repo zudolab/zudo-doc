@@ -4,8 +4,12 @@ import type { Env, SearchIndexEntry, SearchResult } from "./types";
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 
+/** Cache TTL: 5 minutes (in ms) */
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
 let cachedPromise: Promise<MiniSearch<SearchIndexEntry>> | null = null;
 let cachedUrl: string | null = null;
+let cachedAt = 0;
 
 function normalizeBaseUrl(raw: string): string {
   return raw.replace(/\/+$/, "");
@@ -32,16 +36,19 @@ async function buildIndex(url: string): Promise<MiniSearch<SearchIndexEntry>> {
 
 function getIndex(env: Env): Promise<MiniSearch<SearchIndexEntry>> {
   const url = `${normalizeBaseUrl(env.DOCS_SITE_URL)}/search-index.json`;
+  const now = Date.now();
 
-  if (cachedPromise && cachedUrl === url) {
+  if (cachedPromise && cachedUrl === url && now - cachedAt < CACHE_TTL_MS) {
     return cachedPromise;
   }
 
   cachedUrl = url;
+  cachedAt = now;
   cachedPromise = buildIndex(url).catch((err) => {
     // Reset cache on failure so next request retries
     cachedPromise = null;
     cachedUrl = null;
+    cachedAt = 0;
     throw err;
   });
   return cachedPromise;

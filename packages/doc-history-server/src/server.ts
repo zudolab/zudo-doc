@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { resolve } from "node:path";
 import { collectContentFiles, getDocHistory } from "./git-history.js";
+import { getContentDirEntries } from "./shared.js";
 
 export interface ServerOptions {
   port: number;
@@ -9,19 +10,8 @@ export interface ServerOptions {
   maxEntries: number;
 }
 
-/** Build list of [localeKey | null, absoluteDir] pairs */
-function getContentDirEntries(
-  contentDir: string,
-  locales: Array<{ key: string; dir: string }>,
-): Array<[string | null, string]> {
-  const entries: Array<[string | null, string]> = [
-    [null, resolve(contentDir)],
-  ];
-  for (const locale of locales) {
-    entries.push([locale.key, resolve(locale.dir)]);
-  }
-  return entries;
-}
+/** Interval (ms) at which the file index is refreshed to pick up new/renamed files */
+const FILE_INDEX_REFRESH_MS = 10_000;
 
 /** Set CORS headers for local dev */
 function setCorsHeaders(res: ServerResponse): void {
@@ -73,8 +63,17 @@ function handleDocHistory(
 export function startServer(options: ServerOptions): void {
   const { port, contentDir, locales, maxEntries } = options;
   const dirEntries = getContentDirEntries(contentDir, locales);
-  const fileIndex = buildFileIndex(dirEntries);
+  let fileIndex = buildFileIndex(dirEntries);
   console.log(`Indexed ${fileIndex.size} documents`);
+
+  // Periodically refresh file index to pick up new/renamed files during dev
+  setInterval(() => {
+    try {
+      fileIndex = buildFileIndex(dirEntries);
+    } catch {
+      // Ignore refresh errors — keep using the last good index
+    }
+  }, FILE_INDEX_REFRESH_MS);
 
   const server = createServer((req: IncomingMessage, res: ServerResponse) => {
     const url = req.url ?? "";

@@ -165,7 +165,9 @@ export function getDocHistory(
     const content = getFileAtCommit(hash, filePath);
     return { ...info, content };
   });
-  return { slug, filePath, entries };
+  // Store repo-relative path to avoid leaking absolute server paths
+  const relPath = filePath.startsWith("/") ? toRepoRelative(filePath) : filePath;
+  return { slug, filePath: relPath, entries };
 }
 
 /**
