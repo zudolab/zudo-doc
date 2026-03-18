@@ -68,17 +68,18 @@ export function docHistoryIntegration(): AstroIntegration {
       },
 
       "astro:build:done": async ({ logger }) => {
+        // Doc history JSONs are generated separately:
+        //   - CI: @zudo-doc/doc-history-server generate (build-history job)
+        //   - Local: set SKIP_DOC_HISTORY=1 or run the server package manually
         if (process.env.SKIP_DOC_HISTORY === "1") {
           logger.info("Skipping doc history generation (SKIP_DOC_HISTORY=1)");
-          return;
+        } else {
+          logger.warn(
+            "Doc history not generated during build. " +
+              "Set SKIP_DOC_HISTORY=1 to suppress this warning, " +
+              "or use @zudo-doc/doc-history-server to generate history JSONs separately.",
+          );
         }
-
-        // In the new architecture, CI generates doc-history JSONs via
-        // the standalone @zudo-doc/doc-history-server package.
-        // This hook is kept as a no-op for backward compatibility.
-        logger.info(
-          "Doc history generation is handled by @zudo-doc/doc-history-server in CI",
-        );
       },
     },
   };
