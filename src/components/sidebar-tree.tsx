@@ -168,6 +168,25 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
     );
   }
 
+  // Top page: show only header nav links, no doc tree or filter.
+  // Derived from activeSlug (runtime-synced) so it stays correct across View Transitions.
+  if (!activeSlug && rootMenuItems) {
+    return (
+      <nav>
+        {rootMenuItems.map((item) => (
+          <a
+            key={item.href}
+            href={item.href}
+            className="flex items-center gap-hsp-xs border-t border-muted px-hsp-sm py-vsp-xs text-small font-semibold text-fg hover:text-accent hover:underline"
+          >
+            <CategoryLinkIcon className="w-[14px]" />
+            {item.label}
+          </a>
+        ))}
+      </nav>
+    );
+  }
+
   return (
     <nav>
       {rootMenuItems && (
