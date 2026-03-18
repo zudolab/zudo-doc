@@ -151,26 +151,19 @@ export async function stripFeatures(
   // The template astro.config.ts is copied from the monorepo root and has ALL
   // imports. We must strip imports for features that are always off by default
   // to avoid referencing packages not in the generated package.json.
-
-  // Strip math-related imports and plugin usage (math is always false by default)
   await patchFile(path.join(targetDir, "astro.config.ts"), [
+    // Math (always false by default)
     [/import remarkMath from "remark-math";\n/g, ""],
     [/import rehypeKatex from "rehype-katex";\n/g, ""],
     [/\s*\.\.\.\(settings\.math \? \[remarkMath\] : \[\]\),?\n?/g, "\n"],
     [/\s*\.\.\.\(settings\.math \? \[rehypeKatex\] : \[\]\),?\n?/g, "\n"],
-  ]);
-
-  // Strip AI assistant (@astrojs/node adapter) — disabled by default
-  await patchFile(path.join(targetDir, "astro.config.ts"), [
+    // AI assistant / @astrojs/node adapter (always false by default)
     [/import node from "@astrojs\/node";\n/g, ""],
     [
       /\s*\.\.\.\(settings\.aiAssistant \? \{ adapter: node\(\{ mode: "standalone" \}\) \} : \{\}\),?\n?/g,
       "\n",
     ],
-  ]);
-
-  // Strip doc history integration — disabled by default
-  await patchFile(path.join(targetDir, "astro.config.ts"), [
+    // Doc history integration (always false by default)
     [
       /import \{ docHistoryIntegration \} from "\.\/src\/integrations\/doc-history";\n/g,
       "",
@@ -179,10 +172,7 @@ export async function stripFeatures(
       /\s*\.\.\.\(settings\.docHistory \? \[docHistoryIntegration\(\)\] : \[\]\),?\n?/g,
       "\n",
     ],
-  ]);
-
-  // Strip llms.txt integration — disabled by default
-  await patchFile(path.join(targetDir, "astro.config.ts"), [
+    // LLMs.txt integration (always false by default)
     [
       /import \{ llmsTxtIntegration \} from "\.\/src\/integrations\/llms-txt";\n/g,
       "",
@@ -191,10 +181,7 @@ export async function stripFeatures(
       /\s*\.\.\.\(settings\.llmsTxt \? \[llmsTxtIntegration\(\)\] : \[\]\),?\n?/g,
       "\n",
     ],
-  ]);
-
-  // Strip sitemap integration — disabled by default (needs siteUrl)
-  await patchFile(path.join(targetDir, "astro.config.ts"), [
+    // Sitemap integration (disabled — needs siteUrl)
     [
       /import \{ sitemapIntegration \} from "\.\/src\/integrations\/sitemap";\n/g,
       "",
@@ -203,10 +190,7 @@ export async function stripFeatures(
       /\s*\.\.\.\(settings\.sitemap && !settings\.noindex \? \[sitemapIntegration\(\)\] : \[\]\),?\n?/g,
       "\n",
     ],
-  ]);
-
-  // Strip trailingSlash config line (trailingSlash is false by default)
-  await patchFile(path.join(targetDir, "astro.config.ts"), [
+    // trailingSlash config line (false by default)
     [
       /\s*trailingSlash: settings\.trailingSlash \? "always" : "never",\n/g,
       "\n",

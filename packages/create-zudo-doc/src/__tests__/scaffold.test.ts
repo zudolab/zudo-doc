@@ -156,12 +156,10 @@ describe("scaffold — generated package.json dependencies", () => {
     await scaffold(choices);
   });
 
-  it("remark-directive should be in dependencies (currently MISSING — documents bug)", async () => {
+  it("includes remark-directive in dependencies", async () => {
     const pkg = await fs.readJson(
       projectPath("test-deps", "package.json"),
     );
-    // This test documents a known bug: remark-directive is needed but not
-    // included in the generated package.json dependencies.
     expect(pkg.dependencies["remark-directive"]).toBeDefined();
   });
 

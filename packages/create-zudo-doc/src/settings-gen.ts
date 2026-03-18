@@ -75,7 +75,7 @@ export function generateSettingsFile(choices: UserChoices): string {
   }
 
   lines.push(`  mermaid: true,`);
-  lines.push(`  sitemap: true,`);
+  lines.push(`  sitemap: false,`);
   lines.push(`  docMetainfo: false,`);
   lines.push(`  docTags: false,`);
   lines.push(`  llmsTxt: false,`);
