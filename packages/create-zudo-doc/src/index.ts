@@ -95,6 +95,9 @@ async function main() {
   let shouldInstall: boolean;
   if (args.install !== undefined) {
     shouldInstall = args.install;
+  } else if (args.yes) {
+    // In non-interactive mode, default to installing dependencies
+    shouldInstall = true;
   } else {
     const result = await p.confirm({
       message: "Install dependencies?",
