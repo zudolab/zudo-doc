@@ -60,8 +60,8 @@ async function main() {
     prefilled.defaultLang ??= "en";
     prefilled.colorSchemeMode ??= "light-dark";
     if (prefilled.colorSchemeMode === "light-dark") {
-      prefilled.lightScheme ??= "GitHub Light";
-      prefilled.darkScheme ??= "GitHub Dark";
+      prefilled.lightScheme ??= "Default Light";
+      prefilled.darkScheme ??= "Default Dark";
       prefilled.defaultMode ??= "dark";
       prefilled.respectPrefersColorScheme ??= true;
     } else {
