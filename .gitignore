@@ -7,6 +7,9 @@ __inbox/
 .env.local
 .env.production
 
+# MSW service worker (auto-generated, dev-only)
+public/mockServiceWorker.js
+
 # Generated Claude Code resource docs
 src/content/docs/claude/
 src/content/docs/claude-md/

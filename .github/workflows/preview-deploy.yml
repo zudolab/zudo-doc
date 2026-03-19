@@ -55,8 +55,6 @@ jobs:
 
       - name: Build site
         run: pnpm build
-        env:
-          PUBLIC_ENABLE_MOCKS: "true"
 
       - name: Determine branch name
         id: branch

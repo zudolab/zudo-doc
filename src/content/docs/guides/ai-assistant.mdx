@@ -75,19 +75,31 @@ The dialog is a React island (`src/components/ai-chat-modal.tsx`) using the nati
 - Backdrop click or Escape to close
 - Conversation resets on close
 
-## MSW Mock (Development)
+## MSW Mock (Development Only)
 
-For UI development without a real backend, enable MSW (Mock Service Worker):
+For UI development without a real backend, enable MSW (Mock Service Worker). MSW is **dev-only** — it never runs in production builds.
 
-```env title=".env"
-PUBLIC_ENABLE_MOCKS=true
-```
+**Setup:**
 
-The mock handler (`src/mocks/handlers.ts`) cycles through predefined documentation-themed responses with a simulated 1-2 second delay. This is useful for styling and testing the chat UI without consuming API credits.
+1. Generate the service worker file (one-time):
+
+   ```bash
+   npx msw init public/ --save
+   ```
+
+2. Set the environment variable:
+
+   ```env title=".env"
+   PUBLIC_ENABLE_MOCKS=true
+   ```
+
+3. Run the dev server (`pnpm dev`).
+
+The mock handler (`src/mocks/handlers.ts`) returns a predefined response with a simulated delay. This is useful for styling and testing the chat UI without consuming API credits.
 
 <Note>
 
-MSW requires `aiAssistant: true` in settings. The mock service worker file (`public/mockServiceWorker.js`) must exist in the public directory.
+MSW requires `aiAssistant: true` in settings. The generated `public/mockServiceWorker.js` file is gitignored — each developer generates it locally.
 
 </Note>
 
