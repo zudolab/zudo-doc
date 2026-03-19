@@ -208,13 +208,22 @@ export async function stripFeatures(
   await patchFile(
     path.join(targetDir, "src/layouts/doc-layout.astro"),
     [
+      [/import AiChatModal from.*\n/g, ""],
       [/import MockInit from.*\n/g, ""],
-      [/\s*\{import\.meta\.env\.DEV && import\.meta\.env\.PUBLIC_ENABLE_MOCKS[^}]*<MockInit[^}]*\/>\}\s*\n?/g, "\n"],
+      [/\s*\{settings\.aiAssistant && <AiChatModal.*\/>\}\s*\n?/g, "\n"],
+      [/\s*\{import\.meta\.env\.DEV && import\.meta\.env\.PUBLIC_ENABLE_MOCKS.*<MockInit.*\/>\}\s*\n?/g, "\n"],
     ],
   );
 
   // Remove doc-history component (docHistory is false by default)
   await removeIfExists(targetDir, "src/components/doc-history.tsx");
+  await patchFile(
+    path.join(targetDir, "src/layouts/doc-layout.astro"),
+    [
+      [/import \{ DocHistory \} from.*\n/g, ""],
+      [/\s*\{settings\.docHistory && currentSlug &&[\s\S]*?\/>\s*\n\s*\)\}\s*\n?/g, "\n"],
+    ],
+  );
 }
 
 /**

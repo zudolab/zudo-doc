@@ -92,12 +92,30 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     ).toBe(false);
   });
 
-  it("doc-layout does not reference MockInit (aiAssistant off by default)", async () => {
+  it("does NOT include ai-chat-modal component (aiAssistant off by default)", async () => {
+    expect(
+      await fs.pathExists(
+        projectPath("test-minimal", "src/components/ai-chat-modal.tsx"),
+      ),
+    ).toBe(false);
+  });
+
+  it("does NOT include doc-history component (docHistory off by default)", async () => {
+    expect(
+      await fs.pathExists(
+        projectPath("test-minimal", "src/components/doc-history.tsx"),
+      ),
+    ).toBe(false);
+  });
+
+  it("doc-layout does not reference MockInit, AiChatModal, or DocHistory (disabled by default)", async () => {
     const layout = await fs.readFile(
       projectPath("test-minimal", "src/layouts/doc-layout.astro"),
       "utf-8",
     );
     expect(layout).not.toContain("MockInit");
+    expect(layout).not.toContain("AiChatModal");
+    expect(layout).not.toContain("DocHistory");
   });
 });
 
