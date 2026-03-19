@@ -83,6 +83,22 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
       await fs.pathExists(projectPath("test-minimal", "src/content/docs-ja")),
     ).toBe(false);
   });
+
+  it("does NOT include mock-init component (aiAssistant off by default)", async () => {
+    expect(
+      await fs.pathExists(
+        projectPath("test-minimal", "src/components/mock-init.tsx"),
+      ),
+    ).toBe(false);
+  });
+
+  it("doc-layout does not reference MockInit (aiAssistant off by default)", async () => {
+    const layout = await fs.readFile(
+      projectPath("test-minimal", "src/layouts/doc-layout.astro"),
+      "utf-8",
+    );
+    expect(layout).not.toContain("MockInit");
+  });
 });
 
 describe("scaffold — full features (i18n, light-dark, all features)", () => {

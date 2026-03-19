@@ -202,8 +202,16 @@ export async function stripFeatures(
   await removeIfExists(targetDir, "src/integrations/llms-txt.ts");
   await removeIfExists(targetDir, "src/integrations/sitemap.ts");
 
-  // Remove AI chat components (aiAssistant is false by default)
+  // Remove AI chat and MSW mock components (aiAssistant is false by default)
   await removeIfExists(targetDir, "src/components/ai-chat-modal.tsx");
+  await removeIfExists(targetDir, "src/components/mock-init.tsx");
+  await patchFile(
+    path.join(targetDir, "src/layouts/doc-layout.astro"),
+    [
+      [/import MockInit from.*\n/g, ""],
+      [/\s*\{import\.meta\.env\.DEV && import\.meta\.env\.PUBLIC_ENABLE_MOCKS[^}]*<MockInit[^}]*\/>\}\s*\n?/g, "\n"],
+    ],
+  );
 
   // Remove doc-history component (docHistory is false by default)
   await removeIfExists(targetDir, "src/components/doc-history.tsx");
