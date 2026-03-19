@@ -101,6 +101,16 @@ export async function stripFeatures(
   // Strip Claude Resources if not selected
   if (!choices.features.includes("claudeResources")) {
     await removeIfExists(targetDir, "src/integrations/claude-resources");
+    await patchFile(path.join(targetDir, "astro.config.ts"), [
+      [
+        /import \{ claudeResourcesIntegration \} from "\.\/src\/integrations\/claude-resources";\n/g,
+        "",
+      ],
+      [
+        /\s*\.\.\.\(settings\.claudeResources\s*\n?\s*\? \[claudeResourcesIntegration\(settings\.claudeResources\)\]\s*\n?\s*: \[\]\),?\n?/g,
+        "\n",
+      ],
+    ]);
   }
 
   // Strip unused theme components based on color scheme mode.
