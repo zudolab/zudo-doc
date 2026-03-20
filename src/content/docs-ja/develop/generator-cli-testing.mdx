@@ -1,0 +1,113 @@
+---
+title: ジェネレーターCLIテスト
+description: Claude Codeスキルを使ったcreate-zudo-docジェネレーターCLIのテスト方法。
+sidebar_position: 2
+---
+
+# ジェネレーターCLIテスト
+
+`create-zudo-doc`ジェネレーターCLIは、さまざまな機能の組み合わせで新しいzudo-docプロジェクトを生成します。テストでは、各組み合わせがビルド・実行でき、正しいファイルと設定が生成されることを検証します。
+
+2つのClaude Codeスキルでこのワークフローを自動化しています：
+
+| スキル | 目的 |
+|--------|------|
+| `/l-generator-cli-tester <pattern>` | 単一の生成パターンをテスト |
+| `/l-run-generator-cli-whole-test` | 全9パターンを実行し、バグを修正して検証 |
+
+## テストパターン
+
+各パターンは異なる機能の組み合わせを有効にします：
+
+| パターン | 説明 |
+|----------|------|
+| `barebone` | すべてOFF — 最小構成 |
+| `search` | 検索のみ有効 |
+| `i18n` | i18nのみ有効 |
+| `sidebar-filter` | サイドバーフィルターのみ有効 |
+| `claude-resources` | Claude Resourcesのみ有効 |
+| `color-tweak-panel` | カラー調整パネルのみ有効（API使用） |
+| `light-dark` | ライト・ダークカラースキームモード |
+| `lang-ja` | デフォルト言語を日本語に設定 |
+| `all-features` | すべてON |
+
+## テストの実行
+
+### 全テストスイート
+
+全9パターンをエンドツーエンドで実行し、失敗を自動修正して検証します：
+
+```
+/l-run-generator-cli-whole-test
+```
+
+ヘッドレスブラウザによるレンダリングチェック付き：
+
+```
+/l-run-generator-cli-whole-test --headless
+```
+
+### 単一パターン
+
+1つのパターンを個別にテストします：
+
+```
+/l-generator-cli-tester barebone
+/l-generator-cli-tester all-features --headless
+```
+
+## 各テストのチェック内容
+
+各パターンは以下のステップを実行します：
+
+1. **スキャフォールド** — パターン固有のフラグでジェネレーターCLI（またはプログラマティックAPI）を実行
+2. **インストール** — 生成されたプロジェクトで`pnpm install`
+3. **ビルド** — `pnpm build`で静的エクスポートの成功を検証
+4. **開発サーバー** — `pnpm dev`を起動し、8秒待ってプロセスがまだ実行中か確認
+5. **ファイル検証** — 有効な機能に基づいて、期待されるファイルの存在/不在を確認
+6. **設定検証** — 生成された`settings.ts`を読み、正しい値を確認
+7. **ショーケース比較** — 生成されたコードをメインのzudo-docショーケースと比較
+8. **ヘッドレスブラウザ**（`--headless`使用時） — 実際のブラウザでページをレンダリングし、JSエラーを確認、視覚要素（検索アイコン、言語切り替え、テーマトグルなど）を検証
+
+## バグ修正ワークフロー
+
+`/l-run-generator-cli-whole-test`スキルには構造化されたバグ修正フェーズがあります：
+
+1. **フェーズ1** — 全9パターンを実行し、結果を収集
+2. **フェーズ2** — 各失敗について：
+- どのステップで失敗したか（スキャフォールド、ビルド、開発、機能チェック）を診断
+- 関連するジェネレーターソースファイルを読む
+- 最小限の修正を適用
+- CLIを再ビルドし、失敗パターンを再テスト
+- 各修正を個別にコミット
+3. **フェーズ3** — 全9パターンを最初から再実行し、リグレッションがないことを確認
+4. **フェーズ4** — サマリーレポートを出力
+
+### よくある失敗パターン
+
+| 失敗内容 | 原因 | 修正対象 |
+|----------|------|----------|
+| ビルド時にモジュールが見つからない | 生成された`package.json`に依存関係がない | `scaffold.ts` — `generatePackageJson()` |
+| インポートが見つからない | 無効化された機能のインポートが除去されていない | `strip.ts` |
+| settings.tsの型エラー | 設定フィールドが不足または不正 | `settings-gen.ts` |
+| コンポーネントが除去済みコンポーネントを参照 | テンプレートの使用箇所が除去されていない | `strip.ts`のパッチパターン |
+| 不要な機能ファイルが残っている | ストリップ時にファイルが削除されていない | `strip.ts` |
+
+## 主要なジェネレーターファイル
+
+| ファイル | 役割 |
+|----------|------|
+| `packages/create-zudo-doc/src/scaffold.ts` | テンプレートのコピー、`package.json`の生成 |
+| `packages/create-zudo-doc/src/strip.ts` | オプションに基づく機能/インポートの除去 |
+| `packages/create-zudo-doc/src/settings-gen.ts` | `settings.ts`の生成 |
+| `packages/create-zudo-doc/src/constants.ts` | 機能定義、カラースキームリスト |
+| `packages/create-zudo-doc/src/cli.ts` | CLI引数のパース |
+| `packages/create-zudo-doc/src/api.ts` | プログラマティックAPI |
+
+## 注意事項
+
+- テストディレクトリは`__inbox/`（gitignored）に作成され、リポジトリを汚染しません
+- `barebone`パターンがベースライン — 失敗した場合、他のテストの前に修正してください
+- `colorTweakPanel`にはCLIフラグがありません — 使用するパターン（`color-tweak-panel`、`all-features`）はプログラマティックAPIを使用します
+- `--headless`フラグはプロセスレベルのチェックに加えて、ブラウザレベルのレンダリングチェックを追加します
+- テスト前と各修正後には必ずCLIを再ビルド（`packages/create-zudo-doc`で`pnpm build`）してください
