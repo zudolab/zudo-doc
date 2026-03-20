@@ -31,35 +31,19 @@ If the build fails, fix the TypeScript errors first before proceeding.
 
 Run each pattern by invoking `/l-generator-cli-tester <pattern>`. Start with `barebone` as the baseline.
 
-### Test order and pattern definitions
+### Test order
 
-1. **`barebone`** — Baseline: all optional features OFF. Must pass first.
-- CLI flags: `--no-i18n --no-search --no-sidebar-filter --no-claude-resources --color-scheme-mode single --yes`
-- This is the simplest case. If this fails, fix it before testing anything else.
+Run in this order (CLI flags and details are defined in `/l-generator-cli-tester`):
 
-2. **`search`** — Search enabled (default on), everything else off.
-- CLI flags: `--search --no-i18n --no-sidebar-filter --no-claude-resources --color-scheme-mode single --yes`
-
-3. **`i18n`** — i18n enabled, defaults for everything else.
-- CLI flags: `--i18n --no-search --no-sidebar-filter --no-claude-resources --color-scheme-mode single --yes`
-
-4. **`sidebar-filter`** — Sidebar filter enabled (default on), everything else off.
-- CLI flags: `--sidebar-filter --no-i18n --no-search --no-claude-resources --color-scheme-mode single --yes`
-
-5. **`claude-resources`** — Claude Resources enabled, everything else off.
-- CLI flags: `--claude-resources --no-i18n --no-search --no-sidebar-filter --color-scheme-mode single --yes`
-
-6. **`color-tweak-panel`** — Color tweak panel enabled, everything else off.
-- Tests the `colorTweakPanel` feature toggle.
-
-7. **`light-dark`** — Light-dark color scheme mode.
-- CLI flags: `--color-scheme-mode light-dark --light-scheme "Default Light" --dark-scheme "Default Dark" --no-i18n --yes`
-
-8. **`lang-ja`** — Japanese as default language.
-- CLI flags: `--lang ja --no-i18n --color-scheme-mode single --yes`
-
-9. **`all-features`** — Every feature enabled + light-dark mode. Maximum complexity.
-- CLI flags: `--i18n --search --sidebar-filter --claude-resources --color-scheme-mode light-dark --light-scheme "Default Light" --dark-scheme "Default Dark" --yes`
+1. **`barebone`** — All optional features OFF. Must pass first — if this fails, fix it before testing others.
+2. **`search`** — Only search enabled
+3. **`i18n`** — Only i18n enabled
+4. **`sidebar-filter`** — Only sidebar filter enabled
+5. **`claude-resources`** — Only Claude Resources enabled
+6. **`color-tweak-panel`** — Only color tweak panel enabled (uses API, no CLI flag)
+7. **`light-dark`** — Light-dark color scheme mode
+8. **`lang-ja`** — Japanese as default language
+9. **`all-features`** — Everything ON, maximum complexity (uses API)
 
 ### Running each pattern
 
