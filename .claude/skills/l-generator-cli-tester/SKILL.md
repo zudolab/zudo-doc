@@ -13,9 +13,14 @@ Test a single `create-zudo-doc` CLI generation pattern by scaffolding a project,
 
 ```
 /l-generator-cli-tester <pattern>
+/l-generator-cli-tester <pattern> --headless
 ```
 
 Where `<pattern>` is one of the test patterns listed below.
+
+### Options
+
+- `--headless` — After standard checks, also run headless browser verification using `/headless-browser` to confirm pages actually render (Step 8.5). Without this flag, headless checks are skipped.
 
 ## Test Patterns
 
@@ -380,6 +385,58 @@ For the feature being tested, briefly compare the generated project against the 
 
 This is a sanity check, not a full diff. Focus on the feature under test.
 
+## Step 8.5: Headless Browser Check (only with `--headless`)
+
+**Skip this step unless `--headless` was passed.**
+
+Start the dev server and use `/headless-browser` (Tier 1: headless-check.js) to verify pages actually render in a browser.
+
+### 8.5a. Start dev server
+
+```bash
+cd __inbox/generator-test-<pattern>/test-project
+npx astro dev --port 14350 &
+DEV_PID=$!
+sleep 6
+```
+
+### 8.5b. Check pages with headless browser
+
+Check the index page and a docs page:
+
+```bash
+HC=~/.claude/skills/headless-browser/scripts/headless-check.js
+node $HC --url "http://localhost:14350/" --screenshot viewport --no-block-resources
+node $HC --url "http://localhost:14350/docs/getting-started" --screenshot viewport --no-block-resources
+```
+
+For **i18n** and **all-features** patterns, also check the Japanese page:
+
+```bash
+node $HC --url "http://localhost:14350/ja/docs/getting-started" --screenshot viewport --no-block-resources
+```
+
+### 8.5c. Verify results
+
+- All pages should return `statusCode: 200`
+- `pageErrors` should be empty (no JS errors)
+- `networkErrors.failedRequests` — ignore `net::ERR_ABORTED` (Vite HMR re-optimization, normal in dev). Flag any other failures.
+- **Read the screenshots** with the Read tool and visually confirm:
+  - **search**: search icon (magnifying glass) visible in header
+  - **i18n**: "EN / JA" language switcher in header
+  - **light-dark**: theme toggle icon in header
+  - **color-tweak-panel**: color tweak icon in header
+  - **claude-resources**: page renders without errors
+  - **all-features**: all icons present (search, theme toggle, language switcher, color tweak)
+  - **barebone**: no extra icons in header (no search, no theme toggle, no language switcher)
+  - **lang-ja**: Japanese content ("ようこそ" title)
+
+### 8.5d. Kill dev server
+
+```bash
+kill $DEV_PID 2>/dev/null; wait $DEV_PID 2>/dev/null
+```
+
 ## Step 9: Clean Up
 
 ```bash
@@ -405,6 +462,8 @@ Provide a clear pass/fail report:
   - [list any mismatches]
 ### Showcase Comparison: PASS/FAIL
   - [notes]
+### Headless Browser: PASS/FAIL/SKIPPED
+  - [only if --headless was passed]
 
 ### Overall: PASS/FAIL
 ```
@@ -416,5 +475,6 @@ Provide a clear pass/fail report:
 - Use `--no-install` with CLI to prevent auto-install, then install manually for better error visibility
 - Sidebar filter stripping is TODO — the filter is always included regardless of the `--sidebar-filter` flag
 - `colorTweakPanel` has no CLI flag — use the API approach for `color-tweak-panel` and `all-features` patterns
-- The dev server smoke test uses `dev:astro` (Astro only, no doc-history-server dependency)
+- The dev server smoke test uses `pnpm dev` (generated projects have a single `dev` script)
 - If any step fails, still report all steps attempted before stopping
+- The `--headless` flag enables Step 8.5 (headless browser visual check). Without it, only process-level checks are performed

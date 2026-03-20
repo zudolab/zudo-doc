@@ -17,6 +17,10 @@ Run ALL `create-zudo-doc` generator patterns end-to-end, fix any failures, and v
 - After adding/removing features from the main zudo-doc project
 - User says "run all generator tests", "whole test", "l-run-generator-cli-whole-test"
 
+### Options
+
+- `--headless` — Pass `--headless` to each `/l-generator-cli-tester` invocation, enabling headless browser checks (visual rendering verification via `/headless-browser`). Without this flag, only process-level checks are performed.
+
 ## Prerequisites
 
 Build the CLI before testing:
@@ -51,9 +55,10 @@ For each pattern, invoke the companion skill:
 
 ```
 /l-generator-cli-tester <pattern>
+/l-generator-cli-tester <pattern> --headless   # if --headless was passed to this skill
 ```
 
-This skill handles scaffold generation, `pnpm install`, `pnpm build`, `pnpm dev` smoke test, and feature verification for one pattern.
+This skill handles scaffold generation, `pnpm install`, `pnpm build`, `pnpm dev` smoke test, feature verification, and optionally headless browser rendering checks for one pattern.
 
 ### Collect results
 
