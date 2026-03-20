@@ -81,7 +81,7 @@ export async function stripFeatures(
   // Strip search if not selected
   if (!choices.features.includes("search")) {
     await removeIfExists(targetDir, "src/components/search.astro");
-    await removeIfExists(targetDir, "src/integrations/pagefind.ts");
+    await removeIfExists(targetDir, "src/integrations/search-index.ts");
     await patchFile(
       path.join(targetDir, "src/components/header.astro"),
       [
@@ -92,8 +92,8 @@ export async function stripFeatures(
     await patchFile(
       path.join(targetDir, "astro.config.ts"),
       [
-        [/import.*pagefindIntegration.*\n/g, ""],
-        [/\s*pagefindIntegration\(\),?\n?/g, "\n"],
+        [/import.*searchIndexIntegration.*\n/g, ""],
+        [/\s*searchIndexIntegration\(\),?\n?/g, "\n"],
       ],
     );
   }
