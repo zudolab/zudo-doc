@@ -1,0 +1,108 @@
+---
+title: Generator CLI Testing
+description: How to test the create-zudo-doc generator CLI with Claude Code skills.
+sidebar_position: 2
+---
+
+# Generator CLI Testing
+
+The `create-zudo-doc` generator CLI scaffolds new zudo-doc projects with various feature combinations. Testing it requires verifying that each combination builds, runs, and produces the correct files and settings.
+
+Two Claude Code skills automate this workflow:
+
+| Skill | Purpose |
+|-------|---------|
+| `/l-generator-cli-tester <pattern>` | Test a single generation pattern |
+| `/l-run-generator-cli-whole-test` | Run all 9 patterns, fix bugs, verify everything passes |
+
+## Test Patterns
+
+Each pattern enables a different feature combination:
+
+| Pattern | Description |
+|---------|-------------|
+| `barebone` | Everything OFF — minimal project |
+| `search` | Only search enabled |
+| `i18n` | Only i18n enabled |
+| `sidebar-filter` | Only sidebar filter enabled |
+| `claude-resources` | Only Claude Resources enabled |
+| `color-tweak-panel` | Only color tweak panel enabled (uses API) |
+| `light-dark` | Light-dark color scheme mode |
+| `lang-ja` | Japanese as default language |
+| `all-features` | Everything ON |
+
+## Running Tests
+
+### Full test suite
+
+Run all 9 patterns end-to-end, automatically fix any failures, and verify:
+
+```
+/l-run-generator-cli-whole-test
+```
+
+With headless browser rendering checks:
+
+```
+/l-run-generator-cli-whole-test --headless
+```
+
+### Single pattern
+
+Test one pattern in isolation:
+
+```
+/l-generator-cli-tester barebone
+/l-generator-cli-tester all-features --headless
+```
+
+## What Each Test Checks
+
+Each pattern goes through these steps:
+
+1. **Scaffold** — Run the generator CLI (or programmatic API) with pattern-specific flags
+2. **Install** — `pnpm install` in the generated project
+3. **Build** — `pnpm build` to verify static export succeeds
+4. **Dev server** — Start `pnpm dev`, wait 8 seconds, verify the process is still running
+5. **File verification** — Check expected files are present/absent based on enabled features
+6. **Settings verification** — Read the generated `settings.ts` and confirm correct values
+7. **Showcase comparison** — Compare generated code against the main zudo-doc showcase
+8. **Headless browser** (with `--headless`) — Render pages in a real browser, check for JS errors, verify visual elements (search icon, language switcher, theme toggle, etc.)
+
+## The Bug-Fix Workflow
+
+The `/l-run-generator-cli-whole-test` skill has a structured bug-fix phase:
+
+1. **Phase 1** — Run all 9 patterns and collect results
+2. **Phase 2** — For each failure: diagnose which step failed, read the relevant generator source file, apply a minimal fix, rebuild the CLI and re-test the failing pattern, then commit each fix individually
+3. **Phase 3** — Re-run all 9 patterns from scratch to ensure no regressions
+4. **Phase 4** — Output a summary report
+
+### Common failure categories
+
+| Failure | Likely cause | Fix location |
+|---------|-------------|--------------|
+| Missing module at build time | Dependency not in generated `package.json` | `scaffold.ts` — `generatePackageJson()` |
+| Import not found | Import not stripped for disabled feature | `strip.ts` |
+| Type error in settings.ts | Settings field missing or wrong | `settings-gen.ts` |
+| Component references stripped component | Template usage not stripped | `strip.ts` patch patterns |
+| Feature file exists when it shouldn't | File not removed during stripping | `strip.ts` |
+
+## Key Generator Files
+
+| File | Role |
+|------|------|
+| `packages/create-zudo-doc/src/scaffold.ts` | Copies template, generates `package.json` |
+| `packages/create-zudo-doc/src/strip.ts` | Removes features/imports based on options |
+| `packages/create-zudo-doc/src/settings-gen.ts` | Generates `settings.ts` |
+| `packages/create-zudo-doc/src/constants.ts` | Feature definitions, color scheme lists |
+| `packages/create-zudo-doc/src/cli.ts` | CLI argument parsing |
+| `packages/create-zudo-doc/src/api.ts` | Programmatic API |
+
+## Notes
+
+- Test directories are created under `__inbox/` (gitignored) to avoid polluting the repo
+- The `barebone` pattern is the baseline — if it fails, fix it before testing others
+- `colorTweakPanel` has no CLI flag — patterns using it (`color-tweak-panel`, `all-features`) use the programmatic API
+- The `--headless` flag adds browser-level rendering checks on top of process-level checks
+- Always rebuild the CLI (`pnpm build` in `packages/create-zudo-doc`) before testing and after each fix
