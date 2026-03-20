@@ -74,12 +74,7 @@ Each pattern goes through these steps:
 The `/l-run-generator-cli-whole-test` skill has a structured bug-fix phase:
 
 1. **Phase 1** — Run all 9 patterns and collect results
-2. **Phase 2** — For each failure:
-- Diagnose which step failed (scaffold, build, dev, or feature check)
-- Read the relevant generator source file
-- Apply a minimal fix
-- Rebuild the CLI and re-test the failing pattern
-- Commit each fix individually
+2. **Phase 2** — For each failure: diagnose which step failed, read the relevant generator source file, apply a minimal fix, rebuild the CLI and re-test the failing pattern, then commit each fix individually
 3. **Phase 3** — Re-run all 9 patterns from scratch to ensure no regressions
 4. **Phase 4** — Output a summary report
 
