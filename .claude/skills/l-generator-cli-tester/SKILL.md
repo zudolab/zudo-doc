@@ -33,9 +33,10 @@ Where `<pattern>` is one of the test patterns listed below.
 
 ## Step 0: Build the CLI
 
-Before running any test, build the CLI:
+Before running any test, set `REPO_ROOT` and build the CLI:
 
 ```bash
+REPO_ROOT=$(git rev-parse --show-toplevel)
 cd packages/create-zudo-doc && pnpm build
 ```
 
@@ -184,7 +185,7 @@ Start the dev server, wait for startup, check it didn't crash, then kill it:
 
 ```bash
 cd __inbox/generator-test-<pattern>/test-project && \
-  timeout 15 pnpm dev:astro 2>&1 &
+  timeout 15 pnpm dev 2>&1 &
 DEV_PID=$!
 sleep 8
 if kill -0 $DEV_PID 2>/dev/null; then
@@ -382,7 +383,7 @@ This is a sanity check, not a full diff. Focus on the feature under test.
 ## Step 9: Clean Up
 
 ```bash
-rm -rf ./\__inbox/generator-test-<pattern>
+rm -rf ./__inbox/generator-test-<pattern>
 ```
 
 Always use relative path with `./` prefix for cleanup.
