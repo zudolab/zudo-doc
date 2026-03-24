@@ -80,7 +80,7 @@ export default defineConfig({
     remarkPlugins: [
       remarkDirective, // Must run before remarkAdmonitions
       remarkAdmonitions,
-      remarkResolveMarkdownLinks({
+      [remarkResolveMarkdownLinks, {
         rootDir: new URL(".", import.meta.url).pathname,
         docsDir: settings.docsDir,
         locales: Object.fromEntries(
@@ -92,7 +92,7 @@ export default defineConfig({
         base: settings.base,
         trailingSlash: settings.trailingSlash,
         onBrokenLinks: settings.onBrokenMarkdownLinks,
-      }),
+      }],
       ...(settings.math ? [remarkMath] : []),
     ],
     rehypePlugins: [

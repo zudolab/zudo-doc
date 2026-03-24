@@ -90,7 +90,7 @@ export async function scaffold(choices: UserChoices): Promise<void> {
   const pluginsDest = path.join(targetDir, "src/plugins");
   if (await fs.pathExists(pluginsSrc)) {
     await fs.copy(pluginsSrc, pluginsDest, {
-      filter: (src) => !src.includes("__tests__") && !src.endsWith("/index.ts"),
+      filter: (src) => !src.includes("__tests__") && path.basename(src) !== "index.ts",
     });
   }
 
@@ -171,6 +171,8 @@ function generatePackageJson(choices: UserChoices) {
 
     typescript: "^5.9.0",
     "@astrojs/check": "^0.9.0",
+    "@types/hast": "^3.0.4",
+    "@types/mdast": "^4.0.4",
     "@types/node": "^22.0.0",
     "@types/react": "^19.2.0",
   };
