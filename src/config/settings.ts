@@ -40,6 +40,7 @@ export const settings = {
   docTags: true,
   llmsTxt: true,
   math: true,
+  onBrokenMarkdownLinks: "warn" as "warn" | "error" | "ignore",
   aiAssistant: true as boolean,
   colorTweakPanel: true as boolean,
   docHistory: true,
