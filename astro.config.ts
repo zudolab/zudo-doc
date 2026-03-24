@@ -1,4 +1,5 @@
 import { defineConfig } from "astro/config";
+import { fileURLToPath } from "node:url";
 import node from "@astrojs/node";
 import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
@@ -81,7 +82,7 @@ export default defineConfig({
       remarkDirective, // Must run before remarkAdmonitions
       remarkAdmonitions,
       [remarkResolveMarkdownLinks, {
-        rootDir: new URL(".", import.meta.url).pathname,
+        rootDir: fileURLToPath(new URL(".", import.meta.url)),
         docsDir: settings.docsDir,
         locales: Object.fromEntries(
           Object.entries(settings.locales).map(([code, config]) => [code, { dir: config.dir }])

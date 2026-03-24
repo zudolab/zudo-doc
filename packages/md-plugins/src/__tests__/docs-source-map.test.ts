@@ -98,6 +98,14 @@ describe("buildDocsSourceMap", () => {
     expect(map.get(absFile)).toBe("/docs/");
   });
 
+  it("maps root index.mdx without trailing slash", () => {
+    touch(rootDir, "src/content/docs/index.mdx");
+
+    const map = buildDocsSourceMap(baseOptions({ trailingSlash: false }));
+    const absFile = resolve(rootDir, "src/content/docs/index.mdx");
+    expect(map.get(absFile)).toBe("/docs");
+  });
+
   it("handles missing directory gracefully", () => {
     const map = buildDocsSourceMap(
       baseOptions({

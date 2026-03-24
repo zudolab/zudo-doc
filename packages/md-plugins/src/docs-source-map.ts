@@ -29,9 +29,15 @@ export function buildDocsSourceMap(
   const normalizedBase = base.replace(/\/+$/, "");
 
   function applyTS(url: string): string {
-    if (!trailingSlash) return url;
-    if (url.endsWith("/")) return url;
-    return url + "/";
+    if (trailingSlash) {
+      if (url.endsWith("/")) return url;
+      return url + "/";
+    }
+    // Strip trailing slashes when trailingSlash is false (except root "/")
+    if (url !== "/" && url.endsWith("/")) {
+      return url.replace(/\/+$/, "");
+    }
+    return url;
   }
 
   function withBase(path: string): string {
