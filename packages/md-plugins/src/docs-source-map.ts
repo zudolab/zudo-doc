@@ -1,5 +1,5 @@
 import { readdirSync } from "node:fs";
-import { resolve, join } from "node:path";
+import { resolve } from "node:path";
 
 export interface DocsSourceMapOptions {
   /** Absolute root directory of the project */

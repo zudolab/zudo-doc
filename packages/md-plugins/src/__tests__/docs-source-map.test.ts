@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdirSync, writeFileSync, rmSync } from "node:fs";
-import { resolve, join } from "node:path";
+import { resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { buildDocsSourceMap, type DocsSourceMapOptions } from "../docs-source-map";
 
