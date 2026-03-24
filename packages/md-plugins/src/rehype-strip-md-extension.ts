@@ -1,5 +1,6 @@
 import type { Root, Element } from 'hast';
 import { visit } from 'unist-util-visit';
+import { isExternal } from './url-utils';
 
 /**
  * Rehype plugin that strips .md and .mdx extensions from relative link hrefs.
@@ -16,7 +17,7 @@ export function rehypeStripMdExtension() {
       if (typeof href !== 'string') return;
 
       // Only process relative links (not http://, https://, mailto:, #, etc.)
-      if (/^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('#')) return;
+      if (isExternal(href) || href.startsWith('#')) return;
 
       // Strip .md or .mdx extension (with optional hash fragment)
       const replaced = href.replace(

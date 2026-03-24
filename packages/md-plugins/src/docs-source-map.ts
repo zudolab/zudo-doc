@@ -58,19 +58,23 @@ export function buildDocsSourceMap(
       // Convert file path to slug: strip extension, strip /index suffix
       const slug = file
         .replace(/\.(md|mdx)$/, "")
-        .replace(/\/index$/, "")
-        .replace(/\\index$/, "") // Windows
-        .replace(/\\/g, "/"); // Windows path sep
+        .replace(/(^|\/)index$/, "$1") // Strip index (root or nested)
+        .replace(/(^|\\)index$/, "$1") // Windows
+        .replace(/\\/g, "/") // Windows path sep
+        .replace(/\/$/, ""); // Trailing slash from index strip
       const url = withBase(`${urlPrefix}/${slug}`);
       map.set(absFile, url);
 
       // Also register with alternative extension for cross-referencing
       // e.g., if file is foo.mdx, also register foo.md → same URL
+      // Only set if not already registered (avoid shadowing a real file)
       const altExt = file.endsWith(".mdx")
         ? file.replace(/\.mdx$/, ".md")
         : file.replace(/\.md$/, ".mdx");
       const altFile = resolve(absDir, altExt);
-      map.set(altFile, url);
+      if (!map.has(altFile)) {
+        map.set(altFile, url);
+      }
     }
   }
 

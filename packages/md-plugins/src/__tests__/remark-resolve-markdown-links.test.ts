@@ -1,24 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
-import { tmpdir } from "node:os";
 import type { Root, Link, Paragraph, Definition } from "mdast";
 import { remarkResolveMarkdownLinks } from "../remark-resolve-markdown-links";
-
-function createTempProject(): string {
-  const dir = resolve(
-    tmpdir(),
-    `md-plugins-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-  );
-  mkdirSync(dir, { recursive: true });
-  return dir;
-}
-
-function touch(base: string, filePath: string): void {
-  const full = resolve(base, filePath);
-  mkdirSync(resolve(full, ".."), { recursive: true });
-  writeFileSync(full, "# Test");
-}
+import { createTempProject, touch, cleanupTempProject } from "./test-helpers";
 
 function makeLink(url: string): Link {
   return { type: "link", url, children: [{ type: "text", value: "link" }] };
@@ -50,7 +34,7 @@ describe("remarkResolveMarkdownLinks", () => {
   });
 
   afterEach(() => {
-    rmSync(rootDir, { recursive: true, force: true });
+    cleanupTempProject(rootDir);
   });
 
   function baseOptions() {
@@ -126,6 +110,22 @@ describe("remarkResolveMarkdownLinks", () => {
     plugin(tree, file);
 
     expect(link.url).toBe("/docs/guides/other-doc/?query=1");
+  });
+
+  it("preserves combined query string and hash", () => {
+    touch(rootDir, "src/content/docs/guides/other-doc.md");
+    touch(rootDir, "src/content/docs/guides/current.mdx");
+
+    const link = makeLink("./other-doc.md?version=2#section");
+    const tree = makeTree(link);
+    const file = {
+      path: resolve(rootDir, "src/content/docs/guides/current.mdx"),
+    };
+
+    const plugin = remarkResolveMarkdownLinks(baseOptions());
+    plugin(tree, file);
+
+    expect(link.url).toBe("/docs/guides/other-doc/?version=2#section");
   });
 
   it("does not modify external links", () => {

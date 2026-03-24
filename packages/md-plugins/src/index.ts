@@ -11,5 +11,6 @@ export { rehypeStripMdExtension } from "./rehype-strip-md-extension";
 
 // Utilities
 export { extractText } from "./hast-utils";
+export { isExternal } from "./url-utils";
 export { buildDocsSourceMap } from "./docs-source-map";
 export type { DocsSourceMapOptions } from "./docs-source-map";

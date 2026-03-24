@@ -2,15 +2,11 @@ import type { Root, Link, Definition, Node } from "mdast";
 import { visit } from "unist-util-visit";
 import { resolve, dirname } from "node:path";
 import { buildDocsSourceMap, type DocsSourceMapOptions } from "./docs-source-map";
+import { isExternal } from "./url-utils";
 
 export interface ResolveMarkdownLinksOptions extends DocsSourceMapOptions {
   /** Behavior on broken links: 'warn' (default), 'error', 'ignore' */
   onBrokenLinks?: "warn" | "error" | "ignore";
-}
-
-/** Check if a URL is external */
-function isExternal(url: string): boolean {
-  return /^[a-z][a-z0-9+.-]*:/i.test(url);
 }
 
 /** Check if URL has a markdown extension */
@@ -48,14 +44,12 @@ function parseUrl(url: string): {
 export function remarkResolveMarkdownLinks(
   options: ResolveMarkdownLinksOptions,
 ) {
-  let sourceMap: Map<string, string> | null = null;
   const onBrokenLinks = options.onBrokenLinks ?? "warn";
 
   return (tree: Root, file: { path?: string }) => {
-    // Build source map lazily on first call
-    if (!sourceMap) {
-      sourceMap = buildDocsSourceMap(options);
-    }
+    // Rebuild source map on every call so new/removed files are picked up
+    // during dev server. The filesystem scan is fast (~1ms for typical doc sites).
+    const sourceMap = buildDocsSourceMap(options);
 
     const currentFilePath = file.path;
     if (!currentFilePath) return;
@@ -82,7 +76,7 @@ export function remarkResolveMarkdownLinks(
       const resolvedPath = resolve(currentDir, pathname);
 
       // Look up in source map
-      const resolvedUrl = sourceMap!.get(resolvedPath);
+      const resolvedUrl = sourceMap.get(resolvedPath);
 
       if (resolvedUrl) {
         linkNode.url = resolvedUrl + search + hash;
