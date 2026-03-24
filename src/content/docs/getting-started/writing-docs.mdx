@@ -29,7 +29,7 @@ Your content here.
 
 <Note>
 
-See the [Frontmatter guide](/docs/guides/frontmatter) for the complete reference of all available fields.
+See the [Frontmatter guide](../guides/frontmatter.mdx) for the complete reference of all available fields.
 
 </Note>
 
@@ -49,6 +49,37 @@ src/content/docs/
 ```
 
 Each directory becomes a collapsible sidebar category automatically. The category name is derived from the directory name (kebab-case converted to Title Case).
+
+## Linking Between Documents
+
+You can link to other documents using **relative file paths**:
+
+```mdx
+[Installation guide](./installation.mdx)
+[Frontmatter reference](../guides/frontmatter.mdx)
+[Back to index](./index.mdx)
+```
+
+These relative paths are automatically resolved to the correct URLs at build time. The `.md`/`.mdx` extension is required for the link resolver to work — it distinguishes file links from URL links.
+
+You can also include anchors and query strings:
+
+```mdx
+[Frontmatter fields](../guides/frontmatter.mdx#required-fields)
+```
+
+<Tip>
+
+Relative links are validated during build. If a linked file doesn't exist, you'll see a warning in the build output. This helps catch broken links early.
+
+</Tip>
+
+For external links or links to non-document pages, use regular URLs:
+
+```mdx
+[Astro docs](https://docs.astro.build)
+[API reference](/api/v1)
+```
 
 ## Admonitions
 

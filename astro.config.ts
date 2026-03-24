@@ -16,6 +16,7 @@ import { llmsTxtIntegration } from "./src/integrations/llms-txt";
 import { sitemapIntegration } from "./src/integrations/sitemap";
 import remarkDirective from "remark-directive";
 import { remarkAdmonitions } from "./src/plugins/remark-admonitions";
+import { remarkResolveMarkdownLinks } from "./src/plugins/remark-resolve-markdown-links";
 import { rehypeCodeTitle } from "./src/plugins/rehype-code-title";
 import { rehypeHeadingLinks } from "./src/plugins/rehype-heading-links";
 import { rehypeMermaid } from "./src/plugins/rehype-mermaid";
@@ -79,6 +80,19 @@ export default defineConfig({
     remarkPlugins: [
       remarkDirective, // Must run before remarkAdmonitions
       remarkAdmonitions,
+      remarkResolveMarkdownLinks({
+        rootDir: new URL(".", import.meta.url).pathname,
+        docsDir: settings.docsDir,
+        locales: Object.fromEntries(
+          Object.entries(settings.locales).map(([code, config]) => [code, { dir: config.dir }])
+        ),
+        versions: settings.versions
+          ? settings.versions.map((v) => ({ slug: v.slug, docsDir: v.docsDir }))
+          : false,
+        base: settings.base,
+        trailingSlash: settings.trailingSlash,
+        onBrokenLinks: settings.onBrokenMarkdownLinks,
+      }),
       ...(settings.math ? [remarkMath] : []),
     ],
     rehypePlugins: [
