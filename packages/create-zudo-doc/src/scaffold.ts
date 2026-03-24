@@ -90,7 +90,7 @@ export async function scaffold(choices: UserChoices): Promise<void> {
   const pluginsDest = path.join(targetDir, "src/plugins");
   if (await fs.pathExists(pluginsSrc)) {
     await fs.copy(pluginsSrc, pluginsDest, {
-      filter: (src) => !src.includes("__tests__"),
+      filter: (src) => !src.includes("__tests__") && !src.endsWith("/index.ts"),
     });
   }
 
