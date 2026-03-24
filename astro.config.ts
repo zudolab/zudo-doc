@@ -99,7 +99,7 @@ export default defineConfig({
     rehypePlugins: [
       rehypeCodeTitle,
       rehypeHeadingLinks, // Must run before Astro's built-in heading ID plugin
-      rehypeStripMdExtension,
+      rehypeStripMdExtension, // Strips .md/.mdx from raw HTML <a> tags (remark plugin handles mdast links)
       ...(settings.mermaid ? [rehypeMermaid] : []),
       ...(settings.math ? [rehypeKatex] : []),
     ],
