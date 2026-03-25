@@ -147,6 +147,7 @@ locales: {
 ```
 
 For each locale entry, zudo-doc automatically:
+
 - Creates an Astro content collection (`docs-{code}`)
 - Registers the locale in Astro's i18n routing
 - Adds it to the language switcher
@@ -309,7 +310,7 @@ export default defineConfig({
 Key aspects:
 
 - **output**: Set to `"static"` for full static HTML export
-- **integrations**: MDX support, React islands, and MiniSearch search indexing
+- **integrations**: MDX support, Preact islands, and MiniSearch search indexing
 - **i18n**: English (default at `/docs/...`) and Japanese (`/ja/docs/...`). Default locale has no URL prefix
 - **Tailwind CSS**: Loaded via the `@tailwindcss/vite` plugin instead of an Astro integration
 - **Shiki theme**: Automatically derived from the active color scheme's `shikiTheme` property — no manual sync needed
