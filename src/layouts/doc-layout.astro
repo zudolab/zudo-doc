@@ -198,12 +198,12 @@ const contentTransition = {
       </div>
     </div>
     {settings.aiAssistant && <AiChatModal basePath={withBase("/")} client:load />}
-    {settings.colorTweakPanel && <ColorTweakPanel client:only="react" />}
+    {settings.colorTweakPanel && <ColorTweakPanel client:only="preact" />}
     <Footer lang={lang} />
     <CodeBlockEnhancer />
     <TabsInit />
     {settings.mermaid && <MermaidInit />}
-    {import.meta.env.DEV && import.meta.env.PUBLIC_ENABLE_MOCKS === "true" && settings.aiAssistant && <MockInit client:only="react" />}
+    {import.meta.env.DEV && import.meta.env.PUBLIC_ENABLE_MOCKS === "true" && settings.aiAssistant && <MockInit client:only="preact" />}
     <PageLoadingOverlay />
     <script>
       let _sidebarScrollTop = 0;

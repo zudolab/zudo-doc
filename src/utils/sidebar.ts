@@ -86,6 +86,7 @@ function resolveItem(
           href: undefined,
           children,
           sortOrder: item.sortOrder,
+          collapsed: item.collapsed,
         },
       ];
     }

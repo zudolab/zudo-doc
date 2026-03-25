@@ -6,29 +6,22 @@ export function desktopSidebar(page: Page): Locator {
 }
 
 /**
- * Wait for the React sidebar island to hydrate and become interactive.
+ * Wait for the Preact sidebar island to hydrate and become interactive.
  *
- * Checks that a toggle button (Collapse/Expand) has React internal
- * properties, indicating hydration is complete.
+ * Waits for the sidebar nav and a category toggle button to be present
+ * in the DOM, indicating the island has rendered and hydrated.
  */
 export async function waitForSidebarHydration(page: Page) {
   const sidebar = desktopSidebar(page);
   await sidebar.locator("nav").waitFor({ state: "attached" });
-  // Wait until React hydration is complete by checking that a toggle button
-  // has a click handler attached (we test this by checking that React's
-  // internal properties exist on the DOM element)
-  await page.waitForFunction(
-    () => {
-      const sidebar = document.querySelector("#desktop-sidebar");
-      if (!sidebar) return false;
-      const btn = sidebar.querySelector(
-        'button[aria-label^="Collapse"], button[aria-label^="Expand"]',
-      );
-      if (!btn) return false;
-      // React 19 attaches __reactFiber or __reactProps on hydrated elements
-      return Object.keys(btn).some((k) => k.startsWith("__react"));
-    },
-    null,
-    { timeout: 5000 },
-  );
+  // Wait for a category toggle button to appear in the DOM.
+  // We use "attached" (not "visible") because the button may be inside
+  // a collapsed section or have CSS that makes it not visually visible
+  // while still being functional after hydration.
+  await sidebar
+    .locator(
+      'button[aria-label^="Collapse"], button[aria-label^="Expand"]',
+    )
+    .first()
+    .waitFor({ state: "attached", timeout: 5000 });
 }

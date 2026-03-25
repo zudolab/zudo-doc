@@ -294,6 +294,89 @@ describe("scaffold — generated settings.ts content", () => {
   });
 });
 
+describe("scaffold — plugin copying and settings", () => {
+  const choices: UserChoices = {
+    projectName: "test-minimal",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "sidebarFilter"],
+    packageManager: "pnpm",
+  };
+
+  beforeEach(async () => {
+    await scaffold(choices);
+  });
+
+  it("copies plugin files to src/plugins/", async () => {
+    const pluginFiles = [
+      "remark-resolve-markdown-links.ts",
+      "docs-source-map.ts",
+      "remark-admonitions.ts",
+      "url-utils.ts",
+      "hast-utils.ts",
+      "rehype-code-title.ts",
+      "rehype-heading-links.ts",
+      "rehype-mermaid.ts",
+      "rehype-strip-md-extension.ts",
+    ];
+    for (const file of pluginFiles) {
+      expect(
+        await fs.pathExists(
+          projectPath("test-minimal", "src/plugins", file),
+        ),
+        `expected src/plugins/${file} to exist`,
+      ).toBe(true);
+    }
+  });
+
+  it("does NOT copy __tests__/ directory to src/plugins/", async () => {
+    expect(
+      await fs.pathExists(
+        projectPath("test-minimal", "src/plugins/__tests__"),
+      ),
+    ).toBe(false);
+  });
+
+  it("does NOT copy index.ts to src/plugins/", async () => {
+    expect(
+      await fs.pathExists(
+        projectPath("test-minimal", "src/plugins/index.ts"),
+      ),
+    ).toBe(false);
+  });
+
+  it("generated settings.ts contains onBrokenMarkdownLinks set to warn", async () => {
+    const content = await fs.readFile(
+      projectPath("test-minimal", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("onBrokenMarkdownLinks");
+    expect(content).toContain('"warn"');
+  });
+
+  it("includes github-slugger in dependencies", async () => {
+    const pkg = await fs.readJson(
+      projectPath("test-minimal", "package.json"),
+    );
+    expect(pkg.dependencies["github-slugger"]).toBeDefined();
+  });
+
+  it("includes @types/hast in devDependencies", async () => {
+    const pkg = await fs.readJson(
+      projectPath("test-minimal", "package.json"),
+    );
+    expect(pkg.devDependencies["@types/hast"]).toBeDefined();
+  });
+
+  it("includes @types/mdast in devDependencies", async () => {
+    const pkg = await fs.readJson(
+      projectPath("test-minimal", "package.json"),
+    );
+    expect(pkg.devDependencies["@types/mdast"]).toBeDefined();
+  });
+});
+
 describe("drift detection — generator vs main project settings", () => {
   /**
    * This test catches feature drift between the main project's settings.ts

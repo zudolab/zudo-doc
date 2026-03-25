@@ -59,7 +59,7 @@ Uses `claude-haiku-4-5-20251001` for fast, low-cost responses.
 
 ## Chat Dialog
 
-The dialog is a React island (`src/components/ai-chat-modal.tsx`) using the native `<dialog>` element.
+The dialog is a Preact island (`src/components/ai-chat-modal.tsx`) using the native `<dialog>` element.
 
 ### Layout
 
@@ -116,7 +116,7 @@ For deploying the chat API as a standalone Cloudflare Worker (separate from the 
 ```
 src/
 ├── components/
-│   ├── ai-chat-modal.tsx       # React island — chat dialog UI
+│   ├── ai-chat-modal.tsx       # Preact island — chat dialog UI
 │   └── mock-init.tsx           # MSW initializer (dev only)
 ├── mocks/
 │   ├── handlers.ts             # MSW mock response handlers

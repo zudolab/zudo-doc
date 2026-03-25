@@ -58,3 +58,31 @@ MiniSearch provides:
 - **Prefix search**: Finds results as you type (e.g., "conf" matches "Configuration")
 - **Field boosting**: Title matches rank 3x higher than body text, descriptions 2x
 - **Instant results**: The full index is loaded once and queried in-memory
+
+## Server-Side Search (Search Worker)
+
+For large documentation bases or programmatic API access, zudo-doc provides an optional **Search Worker** -- a Cloudflare Worker that runs MiniSearch server-side.
+
+### When to Use the Search Worker
+
+The built-in client-side search works well for small-to-medium documentation sites. The Search Worker becomes useful when:
+
+- **Large index size** -- the full `search-index.json` is too large for comfortable browser download
+- **API consumers** -- bots, CLI tools, or integrations need search access without a browser
+- **Server-side processing** -- you want to keep the search index off the client
+
+### How It Works
+
+The Search Worker fetches the same `search-index.json` from your deployed site and caches it with a 5-minute TTL. It uses identical MiniSearch configuration (prefix, fuzzy, boost settings), so results are consistent with client-side search.
+
+### Comparison
+
+| Feature                    | Client-Side Search (built-in) | Search Worker              |
+| -------------------------- | ----------------------------- | -------------------------- |
+| Runtime                    | Browser (in-memory)           | Cloudflare Workers         |
+| Setup required             | None (enabled by default)     | Cloudflare account + KV    |
+| Index download             | Full index sent to browser    | Index stays server-side    |
+| Best for                   | Small-to-medium doc bases     | Large doc bases, API consumers |
+| Latency                    | Instant (local)               | Network round-trip         |
+
+For setup instructions, API documentation, and deployment details, see the [Search Worker API reference](/docs/reference/search-worker).

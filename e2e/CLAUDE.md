@@ -17,6 +17,7 @@ Configured in `playwright.config.ts`. Each fixture runs `astro preview` on its p
 ## Adding Tests
 
 **No new fixture needed in most cases.** The `testMatch` pattern is `${name}*.spec.ts`, so:
+
 - `smoke-search.spec.ts` automatically runs against the smoke fixture
 - `sidebar-filter.spec.ts` automatically runs against the sidebar fixture
 
@@ -27,6 +28,7 @@ To add content for tests: add MDX files to the fixture's `src/content/docs/` dir
 ## Two Test Patterns
 
 **Static HTML tests** (no browser needed) — read pre-built `dist/` with `readFileSync`:
+
 ```typescript
 import { readFileSync } from "node:fs";
 const html = readDistFile("docs/some-page/index.html");
@@ -34,6 +36,7 @@ expect(html).toContain("expected string");
 ```
 
 **Browser tests** — use Playwright `page` fixture for interactive features:
+
 ```typescript
 test("feature works", async ({ page }) => {
   await page.goto("/docs/some-page");
@@ -44,6 +47,7 @@ test("feature works", async ({ page }) => {
 ## Fixture Setup Pipeline (`setup-fixtures.sh`)
 
 Each fixture shares framework source from repo root via **symlinks**, but has its own content and settings:
+
 - **Symlinked**: `components/`, `hooks/`, `integrations/`, `layouts/`, `plugins/`, `styles/`, `types/`, `utils/`, `node_modules/`
 - **Copied** (has relative imports): `astro.config.ts`, `content.config.ts`, `src/config/*.ts` (except `settings.ts`)
 - **Fixture-specific**: `src/config/settings.ts`, `src/content/docs/`
@@ -74,4 +78,4 @@ test("HSL picker opens from color swatch @local-only", async ({ page }) => { ...
 
 ## Sidebar Test Helper
 
-`e2e/sidebar-helpers.ts` exports `desktopSidebar(page)` and `waitForSidebarHydration(page)` for tests that interact with the sidebar React island.
+`e2e/sidebar-helpers.ts` exports `desktopSidebar(page)` and `waitForSidebarHydration(page)` for tests that interact with the sidebar Preact island.

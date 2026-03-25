@@ -154,9 +154,8 @@ function generatePackageJson(choices: UserChoices) {
   const deps: Record<string, string> = {
     astro: "^5.18.0",
     "@astrojs/mdx": "^4.3.0",
-    "@astrojs/react": "^4.4.0",
-    react: "^19.2.0",
-    "react-dom": "^19.2.0",
+    "@astrojs/preact": "^4.1.0",
+    preact: "^10.26.0",
     "@shikijs/transformers": "^4.0.0",
     clsx: "^2.1.0",
     "gray-matter": "^4.0.0",
@@ -174,7 +173,7 @@ function generatePackageJson(choices: UserChoices) {
     "@types/hast": "^3.0.4",
     "@types/mdast": "^4.0.4",
     "@types/node": "^22.0.0",
-    "@types/react": "^19.2.0",
+    "@types/react": "^19.2.0", // needed for preact/compat type resolution
   };
 
   if (choices.features.includes("search")) {
