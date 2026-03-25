@@ -74,9 +74,17 @@ By default, A is set to the second-most-recent commit and B to the most recent, 
 
 ## How It Works
 
+Git history extraction is handled by a standalone package: `@zudo-doc/doc-history-server` (located at `packages/doc-history-server/`). This package operates in two modes, one for development and one for production builds.
+
 ### Build Mode
 
-During `pnpm build`, an Astro integration extracts git history for every content file and writes JSON files to `dist/doc-history/`. Each JSON file contains the full revision list for a single document, including file content at each commit.
+In production, a standalone CLI generator batch-processes all content files and writes JSON history files to `dist/doc-history/`. This runs as an independent CI job, parallel to the Astro site build:
+
+- **build-site** job: shallow clone, builds the Astro site with `SKIP_DOC_HISTORY=1`
+- **build-history** job: full clone, runs `@zudo-doc/doc-history-server generate`
+- **deploy** job: merges both artifacts and deploys
+
+This parallel strategy reduces total CI build time because the history generation (which requires a full git clone and walks every commit) runs independently of the Astro build.
 
 The output structure mirrors the content directory:
 
@@ -91,7 +99,9 @@ dist/doc-history/
 
 ### Dev Mode
 
-In dev mode (`pnpm dev`), a Vite middleware handles history requests dynamically. When you open the history panel, it runs git commands on the fly — no pre-generation needed. This means history is always up-to-date with your latest commits.
+In dev mode (`pnpm dev`), the doc-history-server runs as a standalone REST API server on port 4322, launched concurrently with the Astro dev server via `run-p`. An Astro integration proxies `/doc-history/*` requests from the browser to this server.
+
+When you open the history panel, it runs git commands on the fly -- no pre-generation needed. The server's file index refreshes every 10 seconds, so new or renamed files are picked up automatically. This means history is always up-to-date with your latest commits.
 
 <Warning>
 
@@ -113,7 +123,7 @@ For a small-to-medium documentation site this is typically negligible. For large
 
 <Tip>
 
-If deployment size is a concern, consider keeping `docHistory` disabled for production builds (`docHistory: false`) and only using it during local development, where history is served dynamically via a Vite middleware with no pre-generation cost.
+If deployment size is a concern, consider keeping `docHistory` disabled for production builds (`docHistory: false`) and only using it during local development, where history is served dynamically by the doc-history-server with no pre-generation cost.
 
 </Tip>
 
@@ -160,3 +170,13 @@ The history extraction uses `git log --follow` to track file renames. If a docum
 The History component is a React island loaded with `client:idle`, meaning it only hydrates after the page becomes idle. This ensures it doesn't impact initial page load performance.
 
 </Info>
+
+## The doc-history-server Package
+
+The history extraction logic lives in a standalone package (`packages/doc-history-server/`) rather than inside the Astro build pipeline. This design enables:
+
+- **Parallel CI builds** -- history generation and site build run as independent jobs
+- **Independent development** -- the server can be developed, tested, and versioned separately
+- **Flexible usage** -- the same package provides both a dev server and a CI generator
+
+For full details on the REST API endpoints, CLI arguments, data types, and architecture, see the [Doc History Server reference](/docs/reference/doc-history-server).
