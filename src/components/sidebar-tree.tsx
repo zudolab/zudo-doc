@@ -294,14 +294,14 @@ function CategoryNode({
   // Restore open state from sessionStorage after hydration
   useEffect(() => {
     const stored = getOpenSet();
-    if (stored.has(node.slug) && !open) {
+    if (stored.has(node.slug) && !open && !node.collapsed) {
       setOpen(true);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-open category when navigation lands on a descendant
   useEffect(() => {
-    if (subtreeContainsSlug(node, currentSlug) && !open) {
+    if (subtreeContainsSlug(node, currentSlug) && !open && !node.collapsed) {
       setOpen(true);
       const stored = getOpenSet();
       stored.add(node.slug);
