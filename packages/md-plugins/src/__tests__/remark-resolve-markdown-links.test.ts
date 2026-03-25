@@ -308,7 +308,6 @@ describe("remarkResolveMarkdownLinks", () => {
       touch(rootDir, "src/content/docs/guides/my doc.mdx");
       touch(rootDir, "src/content/docs/guides/current.mdx");
 
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
       const link = makeLink("./my%20doc.mdx");
       const tree = makeTree(link);
       const file = {
@@ -323,7 +322,6 @@ describe("remarkResolveMarkdownLinks", () => {
       plugin(tree, file);
 
       expect(link.url).toBe("./my%20doc.mdx");
-      warnSpy.mockRestore();
     });
 
     it("resolves links with spaces to files with spaces", () => {
