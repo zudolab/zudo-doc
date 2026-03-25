@@ -239,4 +239,105 @@ describe("remarkResolveMarkdownLinks", () => {
 
     expect(def.url).toBe("/docs/guides/other-doc/");
   });
+
+  describe("non-default configs", () => {
+    it("resolves links with custom base path", () => {
+      touch(rootDir, "src/content/docs/guides/getting-started.mdx");
+      touch(rootDir, "src/content/docs/guides/other-doc.mdx");
+
+      const link = makeLink("./other-doc.mdx");
+      const tree = makeTree(link);
+      const file = {
+        path: resolve(rootDir, "src/content/docs/guides/getting-started.mdx"),
+      };
+
+      const plugin = remarkResolveMarkdownLinks({
+        ...baseOptions(),
+        base: "/pj/zudo-doc/",
+      });
+      plugin(tree, file);
+
+      expect(link.url).toBe("/pj/zudo-doc/docs/guides/other-doc/");
+    });
+
+    it("resolves links within Japanese locale docs", () => {
+      touch(rootDir, "src/content/docs-ja/guides/getting-started.mdx");
+      touch(rootDir, "src/content/docs-ja/guides/other-doc.mdx");
+
+      const link = makeLink("./other-doc.mdx");
+      const tree = makeTree(link);
+      const file = {
+        path: resolve(
+          rootDir,
+          "src/content/docs-ja/guides/getting-started.mdx",
+        ),
+      };
+
+      const plugin = remarkResolveMarkdownLinks({
+        ...baseOptions(),
+        locales: { ja: { dir: "src/content/docs-ja" } },
+      });
+      plugin(tree, file);
+
+      expect(link.url).toBe("/ja/docs/guides/other-doc/");
+    });
+
+    it("resolves links in versioned docs", () => {
+      touch(rootDir, "src/content/docs-v1/guides/getting-started.mdx");
+      touch(rootDir, "src/content/docs-v1/guides/other-doc.mdx");
+
+      const link = makeLink("./other-doc.mdx");
+      const tree = makeTree(link);
+      const file = {
+        path: resolve(
+          rootDir,
+          "src/content/docs-v1/guides/getting-started.mdx",
+        ),
+      };
+
+      const plugin = remarkResolveMarkdownLinks({
+        ...baseOptions(),
+        versions: [{ slug: "1.0", docsDir: "src/content/docs-v1" }],
+      });
+      plugin(tree, file);
+
+      expect(link.url).toBe("/v/1.0/docs/guides/other-doc/");
+    });
+
+    it("does not resolve URL-encoded links to files with spaces", () => {
+      touch(rootDir, "src/content/docs/guides/my doc.mdx");
+      touch(rootDir, "src/content/docs/guides/current.mdx");
+
+      const link = makeLink("./my%20doc.mdx");
+      const tree = makeTree(link);
+      const file = {
+        path: resolve(rootDir, "src/content/docs/guides/current.mdx"),
+      };
+
+      // %20 is not decoded, so the link won't match "my doc.mdx"
+      const plugin = remarkResolveMarkdownLinks({
+        ...baseOptions(),
+        onBrokenLinks: "ignore",
+      });
+      plugin(tree, file);
+
+      expect(link.url).toBe("./my%20doc.mdx");
+    });
+
+    it("resolves links with spaces to files with spaces", () => {
+      touch(rootDir, "src/content/docs/guides/my doc.mdx");
+      touch(rootDir, "src/content/docs/guides/current.mdx");
+
+      const link = makeLink("./my doc.mdx");
+      const tree = makeTree(link);
+      const file = {
+        path: resolve(rootDir, "src/content/docs/guides/current.mdx"),
+      };
+
+      const plugin = remarkResolveMarkdownLinks(baseOptions());
+      plugin(tree, file);
+
+      expect(link.url).toBe("/docs/guides/my doc/");
+    });
+  });
 });
