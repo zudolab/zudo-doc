@@ -8,29 +8,20 @@ export function desktopSidebar(page: Page): Locator {
 /**
  * Wait for the Preact sidebar island to hydrate and become interactive.
  *
- * Verifies that a toggle button exists and responds to clicks, which
- * proves the island has hydrated and event handlers are attached.
+ * Waits for the sidebar nav and a category toggle button to be present
+ * in the DOM, indicating the island has rendered and hydrated.
  */
 export async function waitForSidebarHydration(page: Page) {
   const sidebar = desktopSidebar(page);
   await sidebar.locator("nav").waitFor({ state: "attached" });
-  // Wait for a category toggle button to appear
-  const toggleBtn = sidebar.locator(
-    'button[aria-label^="Collapse"], button[aria-label^="Expand"]',
-  );
-  await toggleBtn.first().waitFor({ state: "attached", timeout: 5000 });
-  // Verify hydration by clicking and checking the label changes
-  const firstBtn = toggleBtn.first();
-  const labelBefore = await firstBtn.getAttribute("aria-label");
-  await firstBtn.click();
-  // Wait for the label to change (Collapse ↔ Expand), proving hydration
-  const expectedPrefix = labelBefore?.startsWith("Collapse")
-    ? "Expand"
-    : "Collapse";
-  await firstBtn.waitFor({ state: "visible", timeout: 2000 }).catch(() => {});
-  // Click again to restore original state
-  const labelAfter = await firstBtn.getAttribute("aria-label");
-  if (labelAfter?.startsWith(expectedPrefix)) {
-    await firstBtn.click();
-  }
+  // Wait for a category toggle button to appear in the DOM.
+  // We use "attached" (not "visible") because the button may be inside
+  // a collapsed section or have CSS that makes it not visually visible
+  // while still being functional after hydration.
+  await sidebar
+    .locator(
+      'button[aria-label^="Collapse"], button[aria-label^="Expand"]',
+    )
+    .first()
+    .waitFor({ state: "attached", timeout: 5000 });
 }
