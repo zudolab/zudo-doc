@@ -147,6 +147,7 @@ locales: {
 ```
 
 For each locale entry, zudo-doc automatically:
+
 - Creates an Astro content collection (`docs-{code}`)
 - Registers the locale in Astro's i18n routing
 - Adds it to the language switcher
@@ -231,7 +232,7 @@ See the [Color Tweak Panel guide](/docs/guides/color-tweak-panel) for usage deta
 
 Enables per-document git revision history viewer. When `true`, each doc page shows a **History** button that opens a side panel with the document's git commit history and a line-by-line diff viewer for comparing revisions.
 
-At build time, git history is extracted for every content file and saved as JSON files to `dist/doc-history/`. In dev mode, history is served dynamically via a Vite middleware.
+In dev mode, history is served by the standalone `@zudo-doc/doc-history-server` package running on port 4322. In production, a CLI generator creates static JSON files during CI. See the [Doc History Server reference](/docs/reference/doc-history-server) for details on the server and CLI.
 
 Default: `false` (set to `true` to enable)
 
