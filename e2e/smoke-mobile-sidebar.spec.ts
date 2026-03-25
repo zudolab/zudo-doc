@@ -75,9 +75,12 @@ test.describe("Mobile sidebar", () => {
     await hamburger.click();
     await expect(page.locator('button[aria-label="Close sidebar"]')).toBeVisible();
 
-    // Check that body overflow is hidden
-    const overflow = await page.evaluate(() => document.body.style.overflow);
-    expect(overflow).toBe("hidden");
+    // Wait for the useEffect to set body overflow to hidden
+    await page.waitForFunction(
+      () => document.body.style.overflow === "hidden",
+      null,
+      { timeout: 5000 },
+    );
   });
 
   test("clicking a navigation link closes sidebar and navigates", async ({ page }) => {

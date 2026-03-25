@@ -14,8 +14,10 @@ export function desktopSidebar(page: Page): Locator {
 export async function waitForSidebarHydration(page: Page) {
   const sidebar = desktopSidebar(page);
   await sidebar.locator("nav").waitFor({ state: "attached" });
-  // Wait until Preact hydration is complete by checking that a toggle button
-  // has framework internal properties on the DOM element
+  // Wait until framework hydration is complete by checking that a toggle
+  // button has framework-internal properties attached to the DOM element.
+  // Both React and Preact add underscore-prefixed properties (__reactFiber,
+  // __k, __c, etc.) that don't exist on vanilla DOM elements.
   await page.waitForFunction(
     () => {
       const sidebar = document.querySelector("#desktop-sidebar");
@@ -24,11 +26,7 @@ export async function waitForSidebarHydration(page: Page) {
         'button[aria-label^="Collapse"], button[aria-label^="Expand"]',
       );
       if (!btn) return false;
-      // Preact (compat) attaches __preactattr_ or __reactFiber/__reactProps
-      const keys = Object.keys(btn);
-      return keys.some(
-        (k) => k.startsWith("__preact") || k.startsWith("__react"),
-      );
+      return Object.keys(btn).some((k) => k.startsWith("__"));
     },
     null,
     { timeout: 5000 },
