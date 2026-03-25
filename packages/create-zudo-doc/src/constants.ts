@@ -118,4 +118,10 @@ export const FEATURES: Feature[] = [
     hint: "Live color editor for designing schemes",
     default: false,
   },
+  {
+    value: "sidebarResizer",
+    label: "Sidebar resizer",
+    hint: "Draggable sidebar width",
+    default: false,
+  },
 ];

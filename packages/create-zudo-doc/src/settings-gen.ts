@@ -90,6 +90,12 @@ export function generateSettingsFile(choices: UserChoices): string {
     lines.push(`  colorTweakPanel: false as boolean,`);
   }
 
+  if (choices.features.includes("sidebarResizer")) {
+    lines.push(`  sidebarResizer: true as boolean,`);
+  } else {
+    lines.push(`  sidebarResizer: false as boolean,`);
+  }
+
   lines.push(
     `  htmlPreview: undefined as HtmlPreviewConfig | undefined,`,
   );
