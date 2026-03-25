@@ -1,4 +1,5 @@
 import { defineConfig } from "astro/config";
+import { fileURLToPath } from "node:url";
 import node from "@astrojs/node";
 import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
@@ -16,6 +17,7 @@ import { llmsTxtIntegration } from "./src/integrations/llms-txt";
 import { sitemapIntegration } from "./src/integrations/sitemap";
 import remarkDirective from "remark-directive";
 import { remarkAdmonitions } from "./src/plugins/remark-admonitions";
+import { remarkResolveMarkdownLinks } from "./src/plugins/remark-resolve-markdown-links";
 import { rehypeCodeTitle } from "./src/plugins/rehype-code-title";
 import { rehypeHeadingLinks } from "./src/plugins/rehype-heading-links";
 import { rehypeMermaid } from "./src/plugins/rehype-mermaid";
@@ -79,12 +81,25 @@ export default defineConfig({
     remarkPlugins: [
       remarkDirective, // Must run before remarkAdmonitions
       remarkAdmonitions,
+      [remarkResolveMarkdownLinks, {
+        rootDir: fileURLToPath(new URL(".", import.meta.url)),
+        docsDir: settings.docsDir,
+        locales: Object.fromEntries(
+          Object.entries(settings.locales).map(([code, config]) => [code, { dir: config.dir }])
+        ),
+        versions: settings.versions
+          ? settings.versions.map((v) => ({ slug: v.slug, docsDir: v.docsDir }))
+          : false,
+        base: settings.base,
+        trailingSlash: settings.trailingSlash,
+        onBrokenLinks: settings.onBrokenMarkdownLinks,
+      }],
       ...(settings.math ? [remarkMath] : []),
     ],
     rehypePlugins: [
       rehypeCodeTitle,
       rehypeHeadingLinks, // Must run before Astro's built-in heading ID plugin
-      rehypeStripMdExtension,
+      rehypeStripMdExtension, // Strips .md/.mdx from raw HTML <a> tags (remark plugin handles mdast links)
       ...(settings.mermaid ? [rehypeMermaid] : []),
       ...(settings.math ? [rehypeKatex] : []),
     ],

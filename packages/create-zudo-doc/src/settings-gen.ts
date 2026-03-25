@@ -80,6 +80,7 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  docTags: false,`);
   lines.push(`  llmsTxt: false,`);
   lines.push(`  math: false,`);
+  lines.push(`  onBrokenMarkdownLinks: "warn" as "warn" | "error" | "ignore",`);
   lines.push(`  aiAssistant: false as boolean,`);
   lines.push(`  docHistory: false,`);
 

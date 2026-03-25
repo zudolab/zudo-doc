@@ -27,6 +27,7 @@ Minimal documentation framework built with Astro 6, MDX, Tailwind CSS v4, and Re
 ```
 packages/
 ├── ai-chat-worker/       # CF Worker for AI chat API
+├── md-plugins/           # Shared remark/rehype plugins (link resolver, admonitions, etc.)
 ├── search-worker/        # CF Worker for search API
 ├── doc-history-server/   # Doc history REST API + CLI generator
 └── create-zudo-doc/      # CLI scaffold tool
