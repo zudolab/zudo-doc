@@ -252,11 +252,26 @@ const contentTransition = {
             document.documentElement.style.cursor = "col-resize";
             document.documentElement.style.userSelect = "none";
 
+            // Ghost line — cheap to move (no reflow), shows target position
+            const ghost = document.createElement("div");
+            Object.assign(ghost.style, {
+              position: "fixed",
+              top: "0",
+              width: "2px",
+              height: "100vh",
+              background: "var(--zd-accent, rgba(128,128,128,0.5))",
+              pointerEvents: "none",
+              zIndex: "9999",
+            });
+            const sidebarRect = sidebar!.getBoundingClientRect();
+            const sidebarLeft = sidebarRect.left;
+            ghost.style.left = (sidebarLeft + sidebarRect.width) + "px";
+            document.body.appendChild(ghost);
+            let targetWidth = 0;
+
             const onMove = (ev: PointerEvent) => {
-              const rect = sidebar!.getBoundingClientRect();
-              let newWidth = ev.clientX - rect.left;
-              newWidth = Math.max(192, Math.min(448, newWidth));
-              document.documentElement.style.setProperty("--zd-sidebar-w", newWidth + "px");
+              targetWidth = Math.max(192, Math.min(448, ev.clientX - sidebarLeft));
+              ghost.style.left = (sidebarLeft + targetWidth) + "px";
             };
 
             const onUp = (ev: PointerEvent) => {
@@ -265,8 +280,11 @@ const contentTransition = {
               handle.style.background = "";
               document.documentElement.style.cursor = "";
               document.documentElement.style.userSelect = "";
-              const computed = sidebar!.getBoundingClientRect().width;
-              localStorage.setItem("zudo-doc-sidebar-width", String(Math.round(computed)));
+              ghost.remove();
+              if (targetWidth > 0) {
+                document.documentElement.style.setProperty("--zd-sidebar-w", targetWidth + "px");
+                localStorage.setItem("zudo-doc-sidebar-width", String(Math.round(targetWidth)));
+              }
               handle.removeEventListener("pointermove", onMove);
               handle.removeEventListener("pointerup", onUp);
             };
