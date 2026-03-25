@@ -117,6 +117,15 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     expect(layout).not.toContain("AiChatModal");
     expect(layout).not.toContain("DocHistory");
   });
+
+  it("doc-layout does not reference sidebar resizer (disabled by default)", async () => {
+    const layout = await fs.readFile(
+      projectPath("test-minimal", "src/layouts/doc-layout.astro"),
+      "utf-8",
+    );
+    expect(layout).not.toContain("initSidebarResizer");
+    expect(layout).not.toContain("zudo-doc-sidebar-width");
+  });
 });
 
 describe("scaffold — full features (i18n, light-dark, all features)", () => {

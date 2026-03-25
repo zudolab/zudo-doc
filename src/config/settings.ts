@@ -43,6 +43,7 @@ export const settings = {
   onBrokenMarkdownLinks: "warn" as "warn" | "error" | "ignore",
   aiAssistant: true as boolean,
   colorTweakPanel: true as boolean,
+  sidebarResizer: true as boolean,
   docHistory: true,
   htmlPreview: undefined as HtmlPreviewConfig | undefined,
   versions: [
