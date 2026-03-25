@@ -126,4 +126,59 @@ describe("buildDocsSourceMap", () => {
     expect(map.get(mdxFile)).toBe("/docs/guide/");
     expect(map.get(mdFile)).toBe("/docs/guide/");
   });
+
+  describe("non-default configs", () => {
+    it("applies base path to locale directory files", () => {
+      touch(
+        rootDir,
+        "src/content/docs-ja/getting-started/installation.mdx",
+      );
+
+      const map = buildDocsSourceMap(
+        baseOptions({
+          base: "/pj/zudo-doc/",
+          locales: { ja: { dir: "src/content/docs-ja" } },
+        }),
+      );
+      const absFile = resolve(
+        rootDir,
+        "src/content/docs-ja/getting-started/installation.mdx",
+      );
+      expect(map.get(absFile)).toBe(
+        "/pj/zudo-doc/ja/docs/getting-started/installation/",
+      );
+    });
+
+    it("applies base path to versioned directory files", () => {
+      touch(
+        rootDir,
+        "src/content/docs-v1/getting-started/installation.mdx",
+      );
+
+      const map = buildDocsSourceMap(
+        baseOptions({
+          base: "/pj/zudo-doc/",
+          versions: [{ slug: "1.0", docsDir: "src/content/docs-v1" }],
+        }),
+      );
+      const absFile = resolve(
+        rootDir,
+        "src/content/docs-v1/getting-started/installation.mdx",
+      );
+      expect(map.get(absFile)).toBe(
+        "/pj/zudo-doc/v/1.0/docs/getting-started/installation/",
+      );
+    });
+
+    it("maps files with spaces in names", () => {
+      touch(rootDir, "src/content/docs/guides/my doc.mdx");
+
+      const map = buildDocsSourceMap(baseOptions());
+      const absFile = resolve(
+        rootDir,
+        "src/content/docs/guides/my doc.mdx",
+      );
+      expect(map.get(absFile)).toBe("/docs/guides/my doc/");
+    });
+  });
 });
