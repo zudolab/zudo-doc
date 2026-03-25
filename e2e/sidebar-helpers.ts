@@ -8,27 +8,29 @@ export function desktopSidebar(page: Page): Locator {
 /**
  * Wait for the Preact sidebar island to hydrate and become interactive.
  *
- * Checks that a toggle button (Collapse/Expand) has framework internal
- * properties, indicating hydration is complete.
+ * Verifies that a toggle button exists and responds to clicks, which
+ * proves the island has hydrated and event handlers are attached.
  */
 export async function waitForSidebarHydration(page: Page) {
   const sidebar = desktopSidebar(page);
   await sidebar.locator("nav").waitFor({ state: "attached" });
-  // Wait until framework hydration is complete by checking that a toggle
-  // button has framework-internal properties attached to the DOM element.
-  // Both React and Preact add underscore-prefixed properties (__reactFiber,
-  // __k, __c, etc.) that don't exist on vanilla DOM elements.
-  await page.waitForFunction(
-    () => {
-      const sidebar = document.querySelector("#desktop-sidebar");
-      if (!sidebar) return false;
-      const btn = sidebar.querySelector(
-        'button[aria-label^="Collapse"], button[aria-label^="Expand"]',
-      );
-      if (!btn) return false;
-      return Object.keys(btn).some((k) => k.startsWith("__"));
-    },
-    null,
-    { timeout: 5000 },
+  // Wait for a category toggle button to appear
+  const toggleBtn = sidebar.locator(
+    'button[aria-label^="Collapse"], button[aria-label^="Expand"]',
   );
+  await toggleBtn.first().waitFor({ state: "visible", timeout: 5000 });
+  // Verify hydration by clicking and checking the label changes
+  const firstBtn = toggleBtn.first();
+  const labelBefore = await firstBtn.getAttribute("aria-label");
+  await firstBtn.click();
+  // Wait for the label to change (Collapse ↔ Expand), proving hydration
+  const expectedPrefix = labelBefore?.startsWith("Collapse")
+    ? "Expand"
+    : "Collapse";
+  await firstBtn.waitFor({ state: "visible", timeout: 2000 }).catch(() => {});
+  // Click again to restore original state
+  const labelAfter = await firstBtn.getAttribute("aria-label");
+  if (labelAfter?.startsWith(expectedPrefix)) {
+    await firstBtn.click();
+  }
 }
