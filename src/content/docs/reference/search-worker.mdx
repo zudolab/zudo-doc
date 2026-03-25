@@ -1,0 +1,198 @@
+---
+title: Search Worker API
+sidebar_position: 80
+---
+
+Standalone Cloudflare Worker that provides a server-side search API for zudo-doc, designed for large documentation bases or API consumers.
+
+## Overview
+
+The Search Worker is a sub-package at `packages/search-worker/` that deploys as a Cloudflare Worker. It uses the same [MiniSearch](https://lucaong.github.io/minisearch/) engine and search index as the built-in client-side search, but runs server-side on Cloudflare Workers runtime.
+
+This is useful when:
+
+- Your documentation base is too large for comfortable client-side search (the full index must be downloaded to the browser)
+- You want to provide a search API for external consumers (bots, integrations, CLI tools)
+- You need server-side search for programmatic access
+
+The Worker fetches `search-index.json` from your deployed documentation site and caches it in memory with a 5-minute TTL.
+
+<Note>
+
+The Search Worker is an **additive option**, not a replacement. The primary search experience remains client-side MiniSearch via the search dialog (`Ctrl+K` / `Cmd+K`). See [When to Use Each](#when-to-use-each) for guidance.
+
+</Note>
+
+## Endpoint
+
+```
+POST /
+Content-Type: application/json
+```
+
+The Worker responds at its root URL.
+
+### Request Body
+
+```ts
+interface SearchRequest {
+  query: string;
+  limit?: number;
+}
+```
+
+| Field   | Type     | Required | Description                                               |
+| ------- | -------- | -------- | --------------------------------------------------------- |
+| `query` | `string` | Yes      | Search query string. Must be non-empty, max 500 characters. |
+| `limit` | `number` | No       | Maximum results to return. Default: 20, max: 100.         |
+
+### Success Response (200)
+
+```ts
+interface SearchResponse {
+  results: SearchResult[];
+  query: string;
+  total: number;
+}
+
+interface SearchResult {
+  id: string;
+  title: string;
+  url: string;
+  description: string;
+  score: number;
+}
+```
+
+Example:
+
+```json
+{
+  "results": [
+    {
+      "id": "guides/adding-pages",
+      "title": "Adding Pages",
+      "url": "/docs/guides/adding-pages",
+      "description": "Learn how to add new documentation pages",
+      "score": 12.5
+    }
+  ],
+  "query": "how to add a page",
+  "total": 3
+}
+```
+
+### Error Responses
+
+| Status | Condition                                |
+| ------ | ---------------------------------------- |
+| 400    | Invalid JSON body                        |
+| 400    | `query` is not a non-empty string        |
+| 400    | `query` exceeds 500 character limit      |
+| 404    | Request path is not `/`                  |
+| 405    | Request method is not POST               |
+| 429    | Rate limit exceeded (includes `Retry-After` header) |
+| 500    | Internal server error (index fetch failed, etc.)     |
+
+All error responses use the format `{ "error": string }`.
+
+## Environment Setup
+
+### Variables
+
+Set `DOCS_SITE_URL` in `wrangler.toml` to point at your deployed documentation site:
+
+```toml title="packages/search-worker/wrangler.toml"
+[vars]
+DOCS_SITE_URL = "https://your-docs-site.example.com"
+RATE_LIMIT_PER_MINUTE = "60"
+RATE_LIMIT_PER_DAY = "1000"
+```
+
+| Variable | Default | Description |
+| -------- | ------- | ----------- |
+| `DOCS_SITE_URL` | -- | Your deployed documentation site URL |
+| `RATE_LIMIT_PER_MINUTE` | `60` | Max requests per IP per minute |
+| `RATE_LIMIT_PER_DAY` | `1000` | Max requests per IP per day |
+
+The Worker fetches `${DOCS_SITE_URL}/search-index.json` to load the search index.
+
+### KV Namespace
+
+Rate limiting uses a Cloudflare KV namespace. Create it before deploying:
+
+```sh
+cd packages/search-worker
+npx wrangler kv namespace create RATE_LIMIT
+```
+
+Update the `id` in `wrangler.toml` `[[kv_namespaces]]` with the returned namespace ID.
+
+### Rate Limiting Behavior
+
+The Worker enforces per-IP rate limits using the `cf-connecting-ip` header provided by Cloudflare.
+
+- **Best-effort enforcement** -- KV reads and writes are not atomic, so concurrent requests from the same IP may slightly exceed the configured limits
+- **Fail-open** -- if KV is unavailable (outage, misconfiguration), requests are allowed through. Search availability takes priority over strict rate enforcement
+- **Invalid config** -- non-numeric values for `RATE_LIMIT_PER_MINUTE` or `RATE_LIMIT_PER_DAY` fall back to the defaults (60/min, 1000/day)
+- **429 response** -- includes a `Retry-After` header (seconds until the current window resets), exposed via CORS for browser access
+
+## Deployment
+
+### Manual
+
+```sh
+cd packages/search-worker
+pnpm install
+pnpm run deploy
+```
+
+### CI/CD
+
+You can add a GitHub Actions workflow similar to the AI Chat Worker deployment. The workflow should deploy the Worker on push to `main` when files in `packages/search-worker/` change.
+
+Required GitHub secrets:
+
+- `CLOUDFLARE_API_TOKEN` -- Cloudflare API token with Workers write permission
+- `CLOUDFLARE_ACCOUNT_ID` -- Your Cloudflare account ID
+
+## When to Use Each
+
+| Feature                    | Client-Side Search (built-in) | Search Worker              |
+| -------------------------- | ----------------------------- | -------------------------- |
+| Runtime                    | Browser (in-memory)           | Cloudflare Workers         |
+| Deployment                 | Part of the docs site         | Independent service        |
+| Index download             | Full index sent to browser    | Index stays server-side    |
+| Best for                   | Small-to-medium doc bases     | Large doc bases, API consumers |
+| Setup required             | None (enabled by default)     | Cloudflare account + KV    |
+| Latency                    | Instant (local)               | Network round-trip         |
+| Search config              | `prefix: true, fuzzy: 0.2, boost: { title: 3, description: 2 }` | Same |
+
+Both use the same search index (`search-index.json`) and the same MiniSearch configuration, so results are consistent.
+
+## Request Flow
+
+1. CORS preflight handling
+2. Method check (POST only) and path check (`/` only)
+3. JSON parse and query validation (required, max 500 chars)
+4. Client IP hashed with SHA-256 via Web Crypto API
+5. Rate limit check against KV
+6. Fetch `search-index.json` from docs site (cached with 5-minute TTL)
+7. MiniSearch query with prefix, fuzzy, and boost settings
+8. Return results
+
+## Sub-Package Location
+
+```
+packages/search-worker/
+├── src/
+│   ├── index.ts        # Worker entry point — routing, validation, CORS
+│   ├── cors.ts         # CORS header handling
+│   ├── rate-limit.ts   # Per-IP rate limiting via KV
+│   ├── search.ts       # MiniSearch index loader + search logic
+│   └── types.ts        # Type definitions
+├── wrangler.toml       # Cloudflare Worker configuration
+├── package.json
+├── tsconfig.json
+└── README.md
+```

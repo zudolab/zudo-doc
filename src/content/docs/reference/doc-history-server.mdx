@@ -1,0 +1,192 @@
+---
+title: Doc History Server
+sidebar_position: 90
+---
+
+Standalone package for serving and generating document git history, with dual modes: REST API server for local development and CLI batch generator for CI builds.
+
+## Overview
+
+The Doc History Server is a sub-package at `packages/doc-history-server/` that handles all git history extraction for the [Document History](/docs/guides/doc-history) feature. It was extracted from the Astro build pipeline to decouple expensive git operations from the site build.
+
+It operates in two modes:
+
+- **Server mode** -- runs an HTTP server during local development, serving history on demand
+- **CLI mode** -- batch-generates all history JSON files for production builds in CI
+
+This separation enables a parallel CI strategy where the Astro site build and history generation run as independent jobs, reducing total build time.
+
+## Server Mode (Local Development)
+
+The server runs on a configurable port (default 4322) and serves document history via a REST API. In the standard `pnpm dev` setup, Astro and the doc-history-server run concurrently via `run-p`.
+
+### Starting the Server
+
+```sh
+pnpm dev -- --content-dir src/content/docs --locale ja:src/content/docs-ja --port 4322
+```
+
+### Endpoints
+
+#### GET /doc-history/\{slug\}.json
+
+Returns the full git history for a document.
+
+```
+GET /doc-history/guides/writing-docs.json
+```
+
+#### GET /doc-history/\{locale\}/\{slug\}.json
+
+Returns history for a localized document.
+
+```
+GET /doc-history/ja/guides/writing-docs.json
+```
+
+#### GET /health
+
+Health check endpoint.
+
+```json
+{ "status": "ok" }
+```
+
+### Server Options
+
+| Flag | Required | Default | Description |
+| ---- | -------- | ------- | ----------- |
+| `--content-dir` | Yes | -- | Content directory to scan for documents |
+| `--locale <key>:<dir>` | No | -- | Additional locale directory (repeatable) |
+| `--port` | No | `4322` | HTTP server port |
+| `--max-entries` | No | `50` | Maximum git commits per document |
+
+### Server Behavior
+
+- File index refreshes every 10 seconds, automatically picking up new or renamed files
+- CORS headers are included for cross-origin dev access
+- Requests for unknown slugs return 404 with `{ "error": "No doc found for slug: ..." }`
+
+### Astro Integration
+
+In dev mode, the Astro integration at `src/integrations/doc-history.ts` proxies `/doc-history/*` requests to this server. This means the history panel in the browser transparently fetches from the standalone server through the Astro dev server.
+
+The root `pnpm dev` command runs both Astro (port 4321) and the doc-history-server (port 4322) concurrently using `run-p`.
+
+## CLI Mode (CI Builds)
+
+The CLI generates static JSON files for all documents, intended for CI pipelines.
+
+### Usage
+
+```sh
+pnpm generate -- --content-dir src/content/docs --locale ja:src/content/docs-ja --out-dir dist/doc-history
+```
+
+### CLI Options
+
+| Flag | Required | Default | Description |
+| ---- | -------- | ------- | ----------- |
+| `--content-dir` | Yes | -- | Content directory to scan |
+| `--locale <key>:<dir>` | No | -- | Additional locale directory (repeatable) |
+| `--out-dir` | Yes | -- | Output directory for generated JSON files |
+| `--max-entries` | No | `50` | Maximum git commits per document |
+
+### CI Pipeline Integration
+
+The CI pipeline runs history generation as a parallel job alongside the Astro site build:
+
+- **build-site** job: shallow clone (`fetch-depth: 1`), builds the Astro site with `SKIP_DOC_HISTORY=1`
+- **build-history** job: full clone (`fetch-depth: 0`), runs `@zudo-doc/doc-history-server generate`
+- **deploy** job: merges both artifacts and deploys to Cloudflare Pages
+
+This parallelization is possible because the history generation is fully independent of the Astro build.
+
+<Tip>
+
+The `build-history` job requires a full git clone (`fetch-depth: 0`) because it needs the complete commit history to extract revision data. The `build-site` job can use a shallow clone since it only needs the current file contents.
+
+</Tip>
+
+## Data Format
+
+### DocHistoryEntry
+
+A single git revision entry for a document:
+
+```ts
+interface DocHistoryEntry {
+  /** Full commit hash (use .slice(0, 7) for display) */
+  hash: string;
+  /** ISO 8601 date string */
+  date: string;
+  /** Commit author name */
+  author: string;
+  /** First line of commit message */
+  message: string;
+  /** Full file content at this revision */
+  content: string;
+}
+```
+
+### DocHistoryData
+
+Complete history data for a single document:
+
+```ts
+interface DocHistoryData {
+  /** Document slug (route path) */
+  slug: string;
+  /** Relative file path in the repository */
+  filePath: string;
+  /** Git revision entries, newest first */
+  entries: DocHistoryEntry[];
+}
+```
+
+### Output Structure
+
+Generated files mirror the content directory structure:
+
+```
+dist/doc-history/
+  getting-started.json
+  guides/writing-docs.json
+  guides/color.json
+  ja/getting-started.json
+  ja/guides/writing-docs.json
+```
+
+## Architecture
+
+### Git Operations
+
+History extraction uses synchronous git calls (`execFileSync`) for:
+
+- `git log` -- commit listing with `--follow` for rename tracking
+- `git show` -- file content at each revision
+
+The `--follow` flag tracks file history across renames with multiple fallback strategies, so documents that have been moved or renamed retain their complete history.
+
+### Key Design Decisions
+
+- **Synchronous git** -- `execFileSync` is acceptable for the dev server (same-process, sequential). The CI CLI is inherently sequential as well
+- **Repo-relative paths** -- API responses use relative file paths to avoid leaking absolute server paths
+- **Standalone package** -- decoupled from Astro to enable parallel CI builds and independent versioning
+
+## Sub-Package Location
+
+```
+packages/doc-history-server/
+├── src/
+│   ├── index.ts        # Server entry — parses args, starts HTTP server
+│   ├── cli.ts          # CLI entry — parses args, batch generates JSONs
+│   ├── args.ts         # Shared argument parsing with bounds checking
+│   ├── server.ts       # HTTP server (REST API endpoints)
+│   ├── git-history.ts  # Core git logic (log, show, follow, rename tracking)
+│   ├── shared.ts       # Shared helpers (getContentDirEntries)
+│   └── types.ts        # DocHistoryEntry, DocHistoryData types
+├── package.json
+├── tsconfig.json
+└── README.md
+```
