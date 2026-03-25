@@ -1,13 +1,13 @@
 # zudo-doc
 
-Minimal documentation framework built with Astro 6, MDX, Tailwind CSS v4, and React islands.
+Minimal documentation framework built with Astro 6, MDX, Tailwind CSS v4, and Preact islands.
 
 ## Tech Stack
 
 - **Astro 6** — static site generator with Content Collections
 - **MDX** — via `@astrojs/mdx`, content directory configurable via `docsDir` setting
 - **Tailwind CSS v4** — via `@tailwindcss/vite` (not `@astrojs/tailwind`)
-- **React 19** — for interactive islands only (TOC scroll spy, sidebar toggle, collapsible categories)
+- **Preact** — for interactive islands only (TOC scroll spy, sidebar toggle, collapsible categories), with compat mode for React API compatibility
 - **Shiki** — built-in code highlighting, theme set from active color scheme
 - **TypeScript** — strict mode via `astro/tsconfigs/strict`
 
@@ -33,13 +33,13 @@ packages/
 └── create-zudo-doc/      # CLI scaffold tool
 
 src/
-├── components/          # Astro + React components
+├── components/          # Astro + Preact components
 │   └── admonitions/     # Note, Tip, Info, Warning, Danger
 ├── config/              # Settings, color schemes
 ├── content/
 │   ├── docs/            # English MDX content
 │   └── docs-ja/         # Japanese MDX content (mirrors docs/)
-├── hooks/               # React hooks (scroll spy)
+├── hooks/               # Preact hooks (scroll spy)
 ├── layouts/             # Astro layouts (doc-layout)
 ├── pages/               # File-based routing
 │   ├── docs/[...slug]   # English doc routes
@@ -50,11 +50,12 @@ src/
 
 ## Conventions
 
-### Components: Astro vs React
+### Components: Astro vs Preact
 
 - Default to **Astro components** (`.astro`) — zero JS, server-rendered
-- Use **React islands** (`client:load`) only when client-side interactivity is needed
-- Current React islands: `toc.tsx`, `mobile-toc.tsx`, `sidebar-toggle.tsx`, `sidebar-tree.tsx`, `theme-toggle.tsx`, `doc-history.tsx`, `color-tweak-panel.tsx`, `color-tweak-export-modal.tsx`
+- Use **Preact islands** (`client:load`) only when client-side interactivity is needed
+- Preact runs in compat mode (`@astrojs/preact` with `compat: true`), so components can use React-style imports and APIs
+- Current Preact islands: `toc.tsx`, `mobile-toc.tsx`, `sidebar-toggle.tsx`, `sidebar-tree.tsx`, `theme-toggle.tsx`, `doc-history.tsx`, `color-tweak-panel.tsx`, `color-tweak-export-modal.tsx`
 
 ### Content Collections
 

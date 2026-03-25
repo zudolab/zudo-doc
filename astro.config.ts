@@ -2,7 +2,7 @@ import { defineConfig } from "astro/config";
 import { fileURLToPath } from "node:url";
 import node from "@astrojs/node";
 import mdx from "@astrojs/mdx";
-import react from "@astrojs/react";
+import preact from "@astrojs/preact";
 import {
   transformerMetaHighlight,
   transformerMetaWordHighlight,
@@ -57,7 +57,7 @@ export default defineConfig({
   base: settings.base,
   integrations: [
     mdx(),
-    react(),
+    preact({ compat: true }),
     searchIndexIntegration(),
     ...(settings.llmsTxt ? [llmsTxtIntegration()] : []),
     ...(settings.sitemap && !settings.noindex ? [sitemapIntegration()] : []),
