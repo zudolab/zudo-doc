@@ -260,7 +260,7 @@ describe("remarkResolveMarkdownLinks", () => {
       expect(link.url).toBe("/pj/zudo-doc/docs/guides/other-doc/");
     });
 
-    it("resolves cross-locale links from Japanese docs", () => {
+    it("resolves links within Japanese locale docs", () => {
       touch(rootDir, "src/content/docs-ja/guides/getting-started.mdx");
       touch(rootDir, "src/content/docs-ja/guides/other-doc.mdx");
 
