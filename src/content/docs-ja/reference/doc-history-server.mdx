@@ -1,0 +1,192 @@
+---
+title: Doc History Server
+sidebar_position: 90
+---
+
+ドキュメントのgit履歴の配信と生成のためのスタンドアロンパッケージです。ローカル開発用のREST APIサーバーとCIビルド用のCLIバッチジェネレーターの2つのモードを持ちます。
+
+## 概要
+
+Doc History Serverは`packages/doc-history-server/`にあるサブパッケージで、[ドキュメント履歴](/ja/docs/guides/doc-history)機能のすべてのgit履歴抽出を処理します。コストの高いgit操作をサイトビルドから分離するために、Astroビルドパイプラインから抽出されました。
+
+2つのモードで動作します：
+
+- **サーバーモード** -- ローカル開発時にHTTPサーバーを実行し、オンデマンドで履歴を配信
+- **CLIモード** -- CIの本番ビルドですべての履歴JSONファイルをバッチ生成
+
+この分離により、AstroサイトビルドとHIstory生成を独立したジョブとして実行する並列CI戦略が可能になり、合計ビルド時間を短縮します。
+
+## サーバーモード（ローカル開発）
+
+サーバーは設定可能なポート（デフォルト4322）で実行され、REST API経由でドキュメント履歴を配信します。標準の`pnpm dev`セットアップでは、Astroとdoc-history-serverが`run-p`を使用して同時に実行されます。
+
+### サーバーの起動
+
+```sh
+pnpm dev -- --content-dir src/content/docs --locale ja:src/content/docs-ja --port 4322
+```
+
+### エンドポイント
+
+#### GET /doc-history/\{slug\}.json
+
+ドキュメントの完全なgit履歴を返します。
+
+```
+GET /doc-history/guides/writing-docs.json
+```
+
+#### GET /doc-history/\{locale\}/\{slug\}.json
+
+ローカライズされたドキュメントの履歴を返します。
+
+```
+GET /doc-history/ja/guides/writing-docs.json
+```
+
+#### GET /health
+
+ヘルスチェックエンドポイント。
+
+```json
+{ "status": "ok" }
+```
+
+### サーバーオプション
+
+| フラグ | 必須 | デフォルト | 説明 |
+| ------ | ---- | ---------- | ---- |
+| `--content-dir` | はい | -- | スキャンするコンテンツディレクトリ |
+| `--locale <key>:<dir>` | いいえ | -- | 追加のロケールディレクトリ（繰り返し可） |
+| `--port` | いいえ | `4322` | HTTPサーバーポート |
+| `--max-entries` | いいえ | `50` | ドキュメントあたりの最大gitコミット数 |
+
+### サーバーの動作
+
+- ファイルインデックスは10秒ごとにリフレッシュされ、新しいファイルやリネームされたファイルを自動的に検出します
+- クロスオリジン開発アクセス用のCORSヘッダーが含まれます
+- 不明なスラッグへのリクエストは`{ "error": "No doc found for slug: ..." }`とともに404を返します
+
+### Astroインテグレーション
+
+開発モードでは、`src/integrations/doc-history.ts`にあるAstroインテグレーションが`/doc-history/*`リクエストをこのサーバーにプロキシします。これにより、ブラウザの履歴パネルはAstro開発サーバーを通じてスタンドアロンサーバーから透過的に取得します。
+
+ルートの`pnpm dev`コマンドは、`run-p`を使用してAstro（ポート4321）とdoc-history-server（ポート4322）を同時に実行します。
+
+## CLIモード（CIビルド）
+
+CLIはすべてのドキュメントの静的JSONファイルを生成します。CIパイプライン向けです。
+
+### 使い方
+
+```sh
+pnpm generate -- --content-dir src/content/docs --locale ja:src/content/docs-ja --out-dir dist/doc-history
+```
+
+### CLIオプション
+
+| フラグ | 必須 | デフォルト | 説明 |
+| ------ | ---- | ---------- | ---- |
+| `--content-dir` | はい | -- | スキャンするコンテンツディレクトリ |
+| `--locale <key>:<dir>` | いいえ | -- | 追加のロケールディレクトリ（繰り返し可） |
+| `--out-dir` | はい | -- | 生成されたJSONファイルの出力ディレクトリ |
+| `--max-entries` | いいえ | `50` | ドキュメントあたりの最大gitコミット数 |
+
+### CIパイプライン統合
+
+CIパイプラインはAstroサイトビルドと並行して履歴生成を実行します：
+
+- **build-site**ジョブ：シャロークローン（`fetch-depth: 1`）、`SKIP_DOC_HISTORY=1`でAstroサイトをビルド
+- **build-history**ジョブ：フルクローン（`fetch-depth: 0`）、`@zudo-doc/doc-history-server generate`を実行
+- **deploy**ジョブ：両方のアーティファクトをマージしてCloudflare Pagesにデプロイ
+
+この並列化は、履歴生成がAstroビルドから完全に独立しているため可能です。
+
+<Tip>
+
+`build-history`ジョブはリビジョンデータを抽出するために完全なコミット履歴が必要なため、フルgitクローン（`fetch-depth: 0`）が必要です。`build-site`ジョブは現在のファイル内容のみ必要なため、シャロークローンを使用できます。
+
+</Tip>
+
+## データ形式
+
+### DocHistoryEntry
+
+ドキュメントの単一のgitリビジョンエントリ：
+
+```ts
+interface DocHistoryEntry {
+  /** 完全なコミットハッシュ（表示には.slice(0, 7)を使用） */
+  hash: string;
+  /** ISO 8601形式の日付文字列 */
+  date: string;
+  /** コミット著者名 */
+  author: string;
+  /** コミットメッセージの1行目 */
+  message: string;
+  /** このリビジョンでの完全なファイル内容 */
+  content: string;
+}
+```
+
+### DocHistoryData
+
+単一ドキュメントの完全な履歴データ：
+
+```ts
+interface DocHistoryData {
+  /** ドキュメントスラッグ（ルートパス） */
+  slug: string;
+  /** リポジトリ内の相対ファイルパス */
+  filePath: string;
+  /** gitリビジョンエントリ（新しい順） */
+  entries: DocHistoryEntry[];
+}
+```
+
+### 出力構造
+
+生成されるファイルはコンテンツディレクトリ構造をミラーします：
+
+```
+dist/doc-history/
+  getting-started.json
+  guides/writing-docs.json
+  guides/color.json
+  ja/getting-started.json
+  ja/guides/writing-docs.json
+```
+
+## アーキテクチャ
+
+### Git操作
+
+履歴抽出は以下の同期gitコール（`execFileSync`）を使用します：
+
+- `git log` -- `--follow`によるリネーム追跡を含むコミットリスト
+- `git show` -- 各リビジョンでのファイル内容
+
+`--follow`フラグは複数のフォールバック戦略によるリネーム追跡を行うため、移動やリネームされたドキュメントでも完全な履歴が保持されます。
+
+### 主要な設計判断
+
+- **同期git** -- `execFileSync`は開発サーバー（同一プロセス、逐次処理）で問題ありません。CI CLIも本質的に逐次処理です
+- **リポジトリ相対パス** -- APIレスポンスは絶対サーバーパスの漏洩を避けるために相対ファイルパスを使用します
+- **スタンドアロンパッケージ** -- 並列CIビルドと独立したバージョニングを可能にするためにAstroから分離されています
+
+## サブパッケージの場所
+
+```
+packages/doc-history-server/
+├── src/
+│   ├── index.ts        # サーバーエントリー — 引数解析、HTTPサーバー起動
+│   ├── cli.ts          # CLIエントリー — 引数解析、JSONバッチ生成
+│   ├── args.ts         # 境界チェック付き共有引数解析
+│   ├── server.ts       # HTTPサーバー（REST APIエンドポイント）
+│   ├── git-history.ts  # コアgitロジック（log、show、follow、リネーム追跡）
+│   ├── shared.ts       # 共有ヘルパー（getContentDirEntries）
+│   └── types.ts        # DocHistoryEntry、DocHistoryData型
+├── package.json
+├── tsconfig.json
+└── README.md
+```

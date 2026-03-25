@@ -1,0 +1,198 @@
+---
+title: Search Worker API
+sidebar_position: 80
+---
+
+大規模なドキュメントベースやAPIコンシューマー向けに、サーバーサイド検索APIを提供するスタンドアロンのCloudflare Workerです。
+
+## 概要
+
+Search Workerは`packages/search-worker/`にあるサブパッケージで、Cloudflare Workerとしてデプロイされます。組み込みのクライアントサイド検索と同じ[MiniSearch](https://lucaong.github.io/minisearch/)エンジンと検索インデックスを使用しますが、Cloudflare Workersランタイム上でサーバーサイドで実行されます。
+
+これは以下の場合に便利です：
+
+- ドキュメントベースがクライアントサイド検索では大きすぎる場合（フルインデックスをブラウザにダウンロードする必要がある）
+- 外部コンシューマー（ボット、インテグレーション、CLIツール）に検索APIを提供したい場合
+- プログラムによるアクセスのためにサーバーサイド検索が必要な場合
+
+Workerはデプロイ済みのドキュメントサイトから`search-index.json`を取得し、5分のTTLでメモリにキャッシュします。
+
+<Note>
+
+Search Workerは既存の検索の**追加オプション**であり、置き換えではありません。主要な検索体験は検索ダイアログ（`Ctrl+K` / `Cmd+K`）を通じたクライアントサイドMiniSearchのままです。使い分けについては[使い分けガイド](#使い分けガイド)を参照してください。
+
+</Note>
+
+## エンドポイント
+
+```
+POST /
+Content-Type: application/json
+```
+
+WorkerはルートURLで応答します。
+
+### リクエストボディ
+
+```ts
+interface SearchRequest {
+  query: string;
+  limit?: number;
+}
+```
+
+| フィールド | 型       | 必須 | 説明                                                    |
+| ---------- | -------- | ---- | ------------------------------------------------------- |
+| `query`    | `string` | はい | 検索クエリ文字列。空でないこと、最大500文字。            |
+| `limit`    | `number` | いいえ | 返却する最大結果数。デフォルト：20、最大：100。        |
+
+### 成功レスポンス (200)
+
+```ts
+interface SearchResponse {
+  results: SearchResult[];
+  query: string;
+  total: number;
+}
+
+interface SearchResult {
+  id: string;
+  title: string;
+  url: string;
+  description: string;
+  score: number;
+}
+```
+
+例：
+
+```json
+{
+  "results": [
+    {
+      "id": "guides/adding-pages",
+      "title": "Adding Pages",
+      "url": "/docs/guides/adding-pages",
+      "description": "Learn how to add new documentation pages",
+      "score": 12.5
+    }
+  ],
+  "query": "how to add a page",
+  "total": 3
+}
+```
+
+### エラーレスポンス
+
+| ステータス | 条件                                    |
+| ---------- | --------------------------------------- |
+| 400        | 無効なJSONボディ                        |
+| 400        | `query`が空でない文字列ではない         |
+| 400        | `query`が500文字の制限を超えている      |
+| 404        | リクエストパスが`/`ではない             |
+| 405        | リクエストメソッドがPOSTではない        |
+| 429        | レート制限超過（`Retry-After`ヘッダーを含む） |
+| 500        | 内部サーバーエラー（インデックス取得失敗等）  |
+
+すべてのエラーレスポンスは`{ "error": string }`形式を使用します。
+
+## 環境設定
+
+### 変数
+
+`wrangler.toml`で`DOCS_SITE_URL`をデプロイ済みのドキュメントサイトに設定します：
+
+```toml title="packages/search-worker/wrangler.toml"
+[vars]
+DOCS_SITE_URL = "https://your-docs-site.example.com"
+RATE_LIMIT_PER_MINUTE = "60"
+RATE_LIMIT_PER_DAY = "1000"
+```
+
+| 変数 | デフォルト | 説明 |
+| ---- | ---------- | ---- |
+| `DOCS_SITE_URL` | -- | デプロイ済みのドキュメントサイトURL |
+| `RATE_LIMIT_PER_MINUTE` | `60` | IPあたりの1分間の最大リクエスト数 |
+| `RATE_LIMIT_PER_DAY` | `1000` | IPあたりの1日の最大リクエスト数 |
+
+Workerは`${DOCS_SITE_URL}/search-index.json`から検索インデックスを取得します。
+
+### KV名前空間
+
+レート制限にはCloudflare KV名前空間を使用します。デプロイ前に作成してください：
+
+```sh
+cd packages/search-worker
+npx wrangler kv namespace create RATE_LIMIT
+```
+
+返却された名前空間IDで`wrangler.toml`の`[[kv_namespaces]]`の`id`を更新します。
+
+### レート制限の動作
+
+WorkerはCloudflareが提供する`cf-connecting-ip`ヘッダーを使用して、IPごとのレート制限を適用します。
+
+- **ベストエフォート適用** -- KVの読み書きはアトミックではないため、同じIPからの同時リクエストが設定された制限をわずかに超える場合があります
+- **フェイルオープン** -- KVが利用不可（障害、設定ミス）の場合、リクエストは許可されます。検索の可用性が厳密なレート制限より優先されます
+- **無効な設定** -- `RATE_LIMIT_PER_MINUTE`または`RATE_LIMIT_PER_DAY`の非数値はデフォルト（60/分、1000/日）にフォールバックします
+- **429レスポンス** -- `Retry-After`ヘッダー（現在のウィンドウがリセットされるまでの秒数）を含み、CORSを通じてブラウザアクセスに公開されます
+
+## デプロイ
+
+### 手動
+
+```sh
+cd packages/search-worker
+pnpm install
+pnpm run deploy
+```
+
+### CI/CD
+
+AI Chat Workerのデプロイと同様のGitHub Actionsワークフローを追加できます。`packages/search-worker/`内のファイルが変更された場合に`main`へのプッシュでWorkerをデプロイするワークフローを設定します。
+
+必要なGitHubシークレット：
+
+- `CLOUDFLARE_API_TOKEN` -- Workers書き込み権限を持つCloudflare APIトークン
+- `CLOUDFLARE_ACCOUNT_ID` -- CloudflareアカウントID
+
+## 使い分けガイド
+
+| 機能                     | クライアントサイド検索（組み込み） | Search Worker              |
+| ------------------------ | ---------------------------------- | -------------------------- |
+| ランタイム               | ブラウザ（インメモリ）             | Cloudflare Workers         |
+| デプロイ                 | ドキュメントサイトの一部           | 独立したサービス           |
+| インデックスダウンロード | フルインデックスをブラウザに送信   | インデックスはサーバーサイドに留まる |
+| 最適な用途               | 小〜中規模のドキュメント           | 大規模なドキュメント、APIコンシューマー |
+| セットアップ             | 不要（デフォルトで有効）           | Cloudflareアカウント + KV  |
+| レイテンシ               | 即時（ローカル）                   | ネットワークラウンドトリップ |
+| 検索設定                 | `prefix: true, fuzzy: 0.2, boost: { title: 3, description: 2 }` | 同一 |
+
+両方とも同じ検索インデックス（`search-index.json`）と同じMiniSearch設定を使用するため、結果は一貫しています。
+
+## リクエストフロー
+
+1. CORSプリフライトの処理
+2. メソッドチェック（POSTのみ）とパスチェック（`/`のみ）
+3. JSONパースとクエリバリデーション（必須、最大500文字）
+4. Web Crypto APIによるSHA-256でクライアントIPをハッシュ化
+5. KVに対するレート制限チェック
+6. ドキュメントサイトから`search-index.json`を取得（5分TTLでキャッシュ）
+7. プレフィックス、ファジー、ブースト設定でMiniSearchクエリを実行
+8. 結果を返却
+
+## サブパッケージの場所
+
+```
+packages/search-worker/
+├── src/
+│   ├── index.ts        # Workerエントリーポイント — ルーティング、バリデーション、CORS
+│   ├── cors.ts         # CORSヘッダー処理
+│   ├── rate-limit.ts   # KVによるIPごとのレート制限
+│   ├── search.ts       # MiniSearchインデックスローダー + 検索ロジック
+│   └── types.ts        # 型定義
+├── wrangler.toml       # Cloudflare Worker設定
+├── package.json
+├── tsconfig.json
+└── README.md
+```
