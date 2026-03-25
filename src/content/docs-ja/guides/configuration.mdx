@@ -147,6 +147,7 @@ locales: {
 ```
 
 各ロケールエントリに対して、zudo-docは自動的に：
+
 - Astroコンテンツコレクション（`docs-{code}`）を作成
 - Astroのi18nルーティングにロケールを登録
 - 言語切り替えに追加
@@ -309,7 +310,7 @@ export default defineConfig({
 主なポイント：
 
 - **output**：完全な静的HTMLエクスポートのため`"static"`に設定
-- **integrations**：MDXサポート、Reactアイランド、MiniSearch検索インデックス
+- **integrations**：MDXサポート、Preactアイランド（compatモード）、MiniSearch検索インデックス
 - **i18n**：英語（デフォルト、`/docs/...`）と日本語（`/ja/docs/...`）。デフォルトロケールにはURLプレフィックスなし
 - **Tailwind CSS**：Astroインテグレーションではなく`@tailwindcss/vite`プラグイン経由でロード
 - **Shikiテーマ**：アクティブなカラースキームの`shikiTheme`プロパティから自動的に導出 — 手動同期不要
