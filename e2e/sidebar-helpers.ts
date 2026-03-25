@@ -18,7 +18,7 @@ export async function waitForSidebarHydration(page: Page) {
   const toggleBtn = sidebar.locator(
     'button[aria-label^="Collapse"], button[aria-label^="Expand"]',
   );
-  await toggleBtn.first().waitFor({ state: "visible", timeout: 5000 });
+  await toggleBtn.first().waitFor({ state: "attached", timeout: 5000 });
   // Verify hydration by clicking and checking the label changes
   const firstBtn = toggleBtn.first();
   const labelBefore = await firstBtn.getAttribute("aria-label");
