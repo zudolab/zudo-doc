@@ -14,6 +14,9 @@ export interface CliArgs {
   i18n?: boolean;
   search?: boolean;
   sidebarFilter?: boolean;
+  colorTweakPanel?: boolean;
+  sidebarResizer?: boolean;
+  versioning?: boolean;
   claudeResources?: boolean;
   pm?: "pnpm" | "npm" | "yarn" | "bun";
   install?: boolean;
@@ -76,6 +79,15 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
   if (wasPassed("sidebar-filter")) {
     args.sidebarFilter = raw["sidebar-filter"] !== false;
   }
+  if (wasPassed("color-tweak-panel")) {
+    args.colorTweakPanel = raw["color-tweak-panel"] !== false;
+  }
+  if (wasPassed("sidebar-resizer")) {
+    args.sidebarResizer = raw["sidebar-resizer"] !== false;
+  }
+  if (wasPassed("versioning")) {
+    args.versioning = raw["versioning"] !== false;
+  }
   if (wasPassed("claude-resources")) {
     args.claudeResources = raw["claude-resources"] !== false;
   }
@@ -105,6 +117,9 @@ ${pc.bold("Options:")}
   --[no-]i18n                  Multi-language support
   --[no-]search                Pagefind full-text search
   --[no-]sidebar-filter        Sidebar filter
+  --[no-]color-tweak-panel     Live color editor for designing schemes
+  --[no-]sidebar-resizer       Draggable sidebar width
+  --[no-]versioning            Multi-version documentation support
   --[no-]claude-resources      Claude Code docs generation
   --pm <manager>               pnpm | npm | yarn | bun
   --[no-]install               Install dependencies after scaffolding

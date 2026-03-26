@@ -124,4 +124,10 @@ export const FEATURES: Feature[] = [
     hint: "Draggable sidebar width",
     default: false,
   },
+  {
+    value: "versioning",
+    label: "Versioning",
+    hint: "Multi-version documentation support",
+    default: false,
+  },
 ];

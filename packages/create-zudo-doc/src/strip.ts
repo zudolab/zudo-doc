@@ -171,6 +171,46 @@ export async function stripFeatures(
     );
   }
 
+  // Strip versioning if not selected
+  if (!choices.features.includes("versioning")) {
+    await removeIfExists(targetDir, "src/pages/v");
+    await removeIfExists(targetDir, "src/components/version-switcher.astro");
+    await removeIfExists(targetDir, "src/components/version-banner.astro");
+    await removeIfExists(targetDir, "src/components/versions-page-content.astro");
+    await removeIfExists(targetDir, "src/utils/version-availability.ts");
+    // Remove version imports and usage from doc-layout
+    await patchFile(
+      path.join(targetDir, "src/layouts/doc-layout.astro"),
+      [
+        [/import VersionSwitcher from.*\n/g, ""],
+        [/import VersionBanner from.*\n/g, ""],
+        [/import \{ getVersionAvailability \} from.*\n/g, ""],
+        // Remove versionAvailability computation
+        [/const versionAvailability = settings\.versions \? await getVersionAvailability\(\) : undefined;\n/g, ""],
+        // Remove versionAvailability prop from Header call
+        [/ versionAvailability=\{versionAvailability\}/g, ""],
+        // Replace the version switcher ternary block with just the breadcrumb slot
+        [/\s*\{settings\.versions && currentSlug \? \([\s\S]*?<VersionSwitcher[\s\S]*?\/>\s*\n\s*<\/div>\s*\n\s*\) : \(\s*\n\s*<slot name="breadcrumb" \/>\s*\n\s*\)\}/g, "\n            <slot name=\"breadcrumb\" />"],
+        // Remove version banner block
+        [/\s*\{versionBanner && latestUrl && \(\s*\n\s*<VersionBanner[^]*?\/>\s*\n\s*\)\}/g, ""],
+      ],
+    );
+    // Remove version switcher and related version props from header
+    await patchFile(
+      path.join(targetDir, "src/components/header.astro"),
+      [
+        [/import VersionSwitcher from.*\n/g, ""],
+        [/import type \{ VersionAvailability \} from.*\n/g, ""],
+        // Remove versionAvailability from Props interface (type no longer imported)
+        [/\s*versionAvailability\?: VersionAvailability;\n/g, ""],
+        // Remove versionAvailability from destructuring
+        [/\s*versionAvailability,\n/g, ""],
+        // Remove the { settings.versions && (<div>...</div>) } block (including outer braces)
+        [/\s*\{\s*\n\s*settings\.versions && \(\s*\n\s*<div class="hidden lg:block">\s*\n\s*<VersionSwitcher[\s\S]*?\/>\s*\n\s*<\/div>\s*\n\s*\)\s*\n\s*\}\s*\n?/g, "\n"],
+      ],
+    );
+  }
+
   // TODO: Strip sidebar filter when not selected
   // The sidebar filter is built into sidebar-tree.tsx — stripping requires
   // careful component surgery. For now, the filter is always included.
