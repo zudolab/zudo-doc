@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 
 // ── Data ──
 
@@ -187,9 +187,13 @@ function PresetModal({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-  const output = showCli
-    ? buildCliCommand(state)
-    : JSON.stringify(buildJson(state), null, 2);
+  const output = useMemo(
+    () =>
+      showCli
+        ? buildCliCommand(state)
+        : JSON.stringify(buildJson(state), null, 2),
+    [showCli, state],
+  );
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -326,7 +330,7 @@ export default function PresetGenerator() {
     packageManager: "pnpm",
   });
 
-  const [showModal, setShowModal] = useState(false);
+  const [modalState, setModalState] = useState<FormState | null>(null);
 
   const update = useCallback(
     <K extends keyof FormState>(key: K, value: FormState[K]) => {
@@ -561,7 +565,7 @@ export default function PresetGenerator() {
       {/* Generate Button */}
       <div className="mt-vsp-xs">
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => setModalState({ ...state })}
           className="border border-accent bg-surface px-hsp-xl py-vsp-2xs text-small font-semibold text-accent transition-colors hover:bg-bg hover:text-accent-hover"
         >
           Generate Preset
@@ -569,8 +573,8 @@ export default function PresetGenerator() {
       </div>
 
       {/* Modal */}
-      {showModal && (
-        <PresetModal state={state} onClose={() => setShowModal(false)} />
+      {modalState && (
+        <PresetModal state={modalState} onClose={() => setModalState(null)} />
       )}
     </div>
   );
