@@ -149,25 +149,25 @@ const contentTransition = {
       <Sidebar slot="sidebar" currentSlug={currentSlug} lang={lang} navSection={navSection} currentVersion={currentVersion} />
     </Header>
 
-    <div class="flex min-h-[calc(100vh-3.5rem)]">
-      {/* Desktop sidebar */}
-      {!hideSidebar && (
-        <aside
-          id="desktop-sidebar"
-          transition:persist={`sidebar-${lang}-${navSection ?? "default"}`}
-          class:list={[
-            "hidden lg:block shrink-0 border-r border-muted sticky top-[3.5rem] h-[calc(100vh-3.5rem)] overflow-y-auto",
-            settings.sidebarResizer
-              ? "w-[var(--zd-sidebar-w,clamp(14rem,20vw,22rem))] relative"
-              : "w-[clamp(14rem,20vw,22rem)]",
-          ]}
-        >
-          <Sidebar currentSlug={currentSlug} lang={lang} navSection={navSection} currentVersion={currentVersion} />
-        </aside>
-      )}
+    {/* Desktop sidebar - fixed, outside content flow */}
+    {!hideSidebar && (
+      <aside
+        id="desktop-sidebar"
+        transition:persist={`sidebar-${lang}-${navSection ?? "default"}`}
+        class:list={[
+          "hidden lg:block fixed top-[3.5rem] left-0 z-30 h-[calc(100vh-3.5rem)] overflow-y-auto bg-bg border-r border-muted",
+          settings.sidebarResizer
+            ? "w-[var(--zd-sidebar-w,clamp(14rem,20vw,22rem))] relative"
+            : "w-[var(--zd-sidebar-w,clamp(14rem,20vw,22rem))]",
+        ]}
+      >
+        <Sidebar currentSlug={currentSlug} lang={lang} navSection={navSection} currentVersion={currentVersion} />
+      </aside>
+    )}
 
-      {/* Content + TOC wrapper */}
-      <div class="flex-1 min-w-0 flex justify-center">
+    {/* Content margin wrapper - pushes content right of fixed sidebar */}
+    <div class:list={[!hideSidebar && "lg:ml-[var(--zd-sidebar-w,clamp(14rem,20vw,22rem))]"]}>
+      <div class="flex min-h-[calc(100vh-3.5rem)] justify-center">
         <div class:list={[
           "flex w-full gap-[clamp(1.5rem,3vw,4rem)]",
           hideSidebar ? "max-w-[80rem]" : "max-w-[clamp(50rem,75vw,90rem)]",
@@ -198,10 +198,10 @@ const contentTransition = {
           {!hideToc && <Toc headings={headings} client:load />}
         </div>
       </div>
+      <Footer lang={lang} />
     </div>
     {settings.aiAssistant && <AiChatModal basePath={withBase("/")} client:load />}
     {settings.colorTweakPanel && <ColorTweakPanel client:only="preact" />}
-    <Footer lang={lang} />
     <CodeBlockEnhancer />
     <TabsInit />
     {settings.mermaid && <MermaidInit />}
