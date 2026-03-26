@@ -123,8 +123,10 @@ const contentTransition = {
       <script is:inline>
         (function () {
           function applySidebarWidth() {
-            var w = localStorage.getItem("zudo-doc-sidebar-width");
-            if (w) document.documentElement.style.setProperty("--zd-sidebar-w", w + "px");
+            try {
+              var w = localStorage.getItem("zudo-doc-sidebar-width");
+              if (w && !isNaN(Number(w))) document.documentElement.style.setProperty("--zd-sidebar-w", w + "px");
+            } catch (e) {}
           }
           applySidebarWidth();
           document.addEventListener("astro:after-swap", applySidebarWidth);
@@ -274,23 +276,35 @@ const contentTransition = {
               ghost.style.left = (sidebarLeft + targetWidth) + "px";
             };
 
-            const onUp = (ev: PointerEvent) => {
-              handle.releasePointerCapture(ev.pointerId);
+            const cleanup = () => {
               dragging = false;
               handle.style.background = "";
               document.documentElement.style.cursor = "";
               document.documentElement.style.userSelect = "";
               ghost.remove();
-              if (targetWidth > 0) {
-                document.documentElement.style.setProperty("--zd-sidebar-w", targetWidth + "px");
-                localStorage.setItem("zudo-doc-sidebar-width", String(Math.round(targetWidth)));
-              }
               handle.removeEventListener("pointermove", onMove);
               handle.removeEventListener("pointerup", onUp);
+              handle.removeEventListener("pointercancel", onCancel);
+              handle.removeEventListener("lostpointercapture", onCancel);
+            };
+
+            const onUp = (ev: PointerEvent) => {
+              handle.releasePointerCapture(ev.pointerId);
+              cleanup();
+              if (targetWidth > 0) {
+                document.documentElement.style.setProperty("--zd-sidebar-w", targetWidth + "px");
+                try { localStorage.setItem("zudo-doc-sidebar-width", String(Math.round(targetWidth))); } catch (e) {}
+              }
+            };
+
+            const onCancel = () => {
+              cleanup();
             };
 
             handle.addEventListener("pointermove", onMove);
             handle.addEventListener("pointerup", onUp);
+            handle.addEventListener("pointercancel", onCancel);
+            handle.addEventListener("lostpointercapture", onCancel);
           });
 
           sidebar.appendChild(handle);
