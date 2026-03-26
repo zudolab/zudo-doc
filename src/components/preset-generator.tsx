@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 
 // ── Data ──
+// Keep in sync with packages/create-zudo-doc/src/constants.ts
 
 const SINGLE_SCHEMES = [
   "Default Dark",
@@ -129,13 +130,14 @@ function buildJson(state: FormState): Record<string, unknown> {
 function buildCliCommand(state: FormState): string {
   const pm = state.packageManager;
   const name = state.projectName || "my-docs";
-  const parts = [`${pm} create zudo-doc ${name}`];
+  const quotedName = /\s/.test(name) ? `"${name}"` : name;
+  const parts = [`${pm} create zudo-doc ${quotedName}`];
 
   parts.push(`--lang ${state.defaultLang}`);
   parts.push(`--color-scheme-mode ${state.colorSchemeMode}`);
 
   if (state.colorSchemeMode === "single") {
-    parts.push(`--single-scheme "${state.singleScheme}"`);
+    parts.push(`--scheme "${state.singleScheme}"`);
   } else {
     parts.push(`--light-scheme "${state.lightScheme}"`);
     parts.push(`--dark-scheme "${state.darkScheme}"`);
@@ -172,8 +174,6 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 
 const inputClass =
   "w-full border border-muted bg-bg text-fg px-hsp-sm py-vsp-2xs text-small focus:border-accent focus:outline-none";
-
-const selectClass = inputClass;
 
 function PresetModal({
   state,
@@ -357,6 +357,7 @@ export default function PresetGenerator() {
           type="text"
           value={state.projectName}
           placeholder="my-docs"
+          aria-label="Project name"
           onChange={(e) =>
             update("projectName", (e.target as HTMLInputElement).value)
           }
@@ -369,10 +370,11 @@ export default function PresetGenerator() {
         <SectionHeading>Default Language</SectionHeading>
         <select
           value={state.defaultLang}
+          aria-label="Default language"
           onChange={(e) =>
             update("defaultLang", (e.target as HTMLSelectElement).value)
           }
-          className={selectClass}
+          className={inputClass}
         >
           {SUPPORTED_LANGS.map((lang) => (
             <option key={lang.value} value={lang.value}>
@@ -417,10 +419,11 @@ export default function PresetGenerator() {
         {state.colorSchemeMode === "single" ? (
           <select
             value={state.singleScheme}
+            aria-label="Color scheme"
             onChange={(e) =>
               update("singleScheme", (e.target as HTMLSelectElement).value)
             }
-            className={selectClass}
+            className={inputClass}
           >
             {SINGLE_SCHEMES.map((s) => (
               <option key={s} value={s}>
@@ -442,7 +445,7 @@ export default function PresetGenerator() {
                     (e.target as HTMLSelectElement).value,
                   )
                 }
-                className={selectClass}
+                className={inputClass}
               >
                 {LIGHT_SCHEMES.map((s) => (
                   <option key={s} value={s}>
@@ -460,7 +463,7 @@ export default function PresetGenerator() {
                 onChange={(e) =>
                   update("darkScheme", (e.target as HTMLSelectElement).value)
                 }
-                className={selectClass}
+                className={inputClass}
               >
                 {DARK_SCHEMES.map((s) => (
                   <option key={s} value={s}>
@@ -549,10 +552,11 @@ export default function PresetGenerator() {
         <SectionHeading>Package Manager</SectionHeading>
         <select
           value={state.packageManager}
+          aria-label="Package manager"
           onChange={(e) =>
             update("packageManager", (e.target as HTMLSelectElement).value)
           }
-          className={selectClass}
+          className={inputClass}
         >
           {PACKAGE_MANAGERS.map((pm) => (
             <option key={pm} value={pm}>
