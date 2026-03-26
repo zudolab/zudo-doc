@@ -76,7 +76,7 @@ The link checker runs as Step 4 of 5 in the pre-push validation (`pnpm b4push`):
 
 ### In CI
 
-The link checker runs in the `build-site` job of both the PR checks (`pr-checks.yml`) and production deploy (`main-deploy.yml`) workflows, immediately after `pnpm build`.
+The link checker runs in the `build-site` job of the PR checks workflow (`pr-checks.yml`), immediately after `pnpm build`.
 
 ## Output
 
@@ -110,4 +110,4 @@ The link checker reads its configuration from `src/config/settings.ts`:
 
 - **`base`** — The site's base path, used to strip prefixes when resolving links
 - **`docsDir`** — Primary content directory for MDX source scanning
-- **`docsJaDir`** (and other locale dirs) — Additional content directories for MDX source scanning
+- **`locales`** — Locale configurations with `dir` fields pointing to additional content directories for MDX source scanning (e.g., `locales: { ja: { dir: "src/content/docs-ja" } }`)

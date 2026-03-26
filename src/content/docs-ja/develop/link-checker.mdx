@@ -76,7 +76,7 @@ pnpm check:links --strict
 
 ### CI内での実行
 
-リンクチェッカーはPRチェック（`pr-checks.yml`）と本番デプロイ（`main-deploy.yml`）の両ワークフローの`build-site`ジョブで、`pnpm build`の直後に実行されます。
+リンクチェッカーはPRチェックワークフロー（`pr-checks.yml`）の`build-site`ジョブで、`pnpm build`の直後に実行されます。
 
 ## 出力
 
@@ -110,4 +110,4 @@ Checking links (base: /pj/zudo-doc/)...
 
 - **`base`** — サイトのベースパス。リンク解決時のプレフィックス除去に使用
 - **`docsDir`** — MDXソーススキャンのプライマリコンテンツディレクトリ
-- **`docsJaDir`**（およびその他のロケールディレクトリ） — MDXソーススキャンの追加コンテンツディレクトリ
+- **`locales`** — ロケール設定。`dir`フィールドでMDXソーススキャンの追加コンテンツディレクトリを指定（例：`locales: { ja: { dir: "src/content/docs-ja" } }`）
