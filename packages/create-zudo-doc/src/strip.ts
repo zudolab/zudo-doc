@@ -162,11 +162,6 @@ export async function stripFeatures(
         [/\s*\{settings\.sidebarResizer &&[\s\S]*?applySidebarWidth[\s\S]*?<\/script>\s*\n\s*\)\}\s*\n?/g, "\n"],
         // Remove body module script block
         [/\s*\{settings\.sidebarResizer &&[\s\S]*?initSidebarResizer[\s\S]*?<\/script>\s*\n\s*\)\}\s*\n?/g, "\n"],
-        // Revert sidebar class to static clamp (replace the class:list with simple class)
-        [
-          /class:list=\{\[\s*\n\s*"hidden lg:block shrink-0 border-r border-muted sticky top-\[3\.5rem\] h-\[calc\(100vh-3\.5rem\)\] overflow-y-auto",\s*\n\s*settings\.sidebarResizer\s*\n\s*\? "w-\[var\(--zd-sidebar-w,clamp\(14rem,20vw,22rem\)\)\] relative"\s*\n\s*: "w-\[clamp\(14rem,20vw,22rem\)\]",\s*\n\s*\]\}/g,
-          'class="hidden lg:block w-[clamp(14rem,20vw,22rem)] shrink-0 border-r border-muted sticky top-[3.5rem] h-[calc(100vh-3.5rem)] overflow-y-auto"',
-        ],
       ],
     );
   }

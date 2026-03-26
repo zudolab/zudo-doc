@@ -153,20 +153,16 @@ const contentTransition = {
     {!hideSidebar && (
       <aside
         id="desktop-sidebar"
+        aria-label="Documentation sidebar"
         transition:persist={`sidebar-${lang}-${navSection ?? "default"}`}
-        class:list={[
-          "hidden lg:block fixed top-[3.5rem] left-0 z-30 h-[calc(100vh-3.5rem)] overflow-y-auto bg-bg border-r border-muted",
-          settings.sidebarResizer
-            ? "w-[var(--zd-sidebar-w,clamp(14rem,20vw,22rem))] relative"
-            : "w-[var(--zd-sidebar-w,clamp(14rem,20vw,22rem))]",
-        ]}
+        class="hidden lg:block fixed top-[3.5rem] left-0 z-30 w-[var(--zd-sidebar-w)] h-[calc(100vh-3.5rem)] overflow-y-auto bg-bg border-r border-muted"
       >
         <Sidebar currentSlug={currentSlug} lang={lang} navSection={navSection} currentVersion={currentVersion} />
       </aside>
     )}
 
     {/* Content margin wrapper - pushes content right of fixed sidebar */}
-    <div class:list={[!hideSidebar && "lg:ml-[var(--zd-sidebar-w,clamp(14rem,20vw,22rem))]"]}>
+    <div class:list={[!hideSidebar && "lg:ml-[var(--zd-sidebar-w)]"]}>
       <div class="flex min-h-[calc(100vh-3.5rem)] justify-center">
         <div class:list={[
           "flex w-full gap-[clamp(1.5rem,3vw,4rem)]",
