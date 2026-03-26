@@ -438,6 +438,7 @@ export default function PresetGenerator() {
               </label>
               <select
                 value={state.lightScheme}
+                aria-label="Light scheme"
                 onChange={(e) =>
                   update(
                     "lightScheme",
@@ -459,6 +460,7 @@ export default function PresetGenerator() {
               </label>
               <select
                 value={state.darkScheme}
+                aria-label="Dark scheme"
                 onChange={(e) =>
                   update("darkScheme", (e.target as HTMLSelectElement).value)
                 }

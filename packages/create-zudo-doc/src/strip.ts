@@ -148,7 +148,7 @@ export async function stripFeatures(
     await patchFile(
       path.join(targetDir, "src/components/header.astro"),
       [
-        [/\s*\{settings\.colorTweakPanel &&[\s\S]*?id="color-tweak-trigger"[\s\S]*?\}\}\s*\n?/g, "\n"],
+        [/\s*\{\s*\n\s*settings\.colorTweakPanel && \([\s\S]*?id="color-tweak-trigger"[\s\S]*?\)\s*\n\s*\}\s*\n?/g, "\n"],
       ],
     );
   }
@@ -283,6 +283,9 @@ export async function stripFeatures(
       [/\s*\{import\.meta\.env\.DEV && import\.meta\.env\.PUBLIC_ENABLE_MOCKS.*<MockInit.*\/>\}\s*\n?/g, "\n"],
     ],
   );
+
+  // Remove preset generator (not needed in generated projects — it's a zudo-doc showcase component)
+  await removeIfExists(targetDir, "src/components/preset-generator.tsx");
 
   // Remove doc-history component (docHistory is false by default)
   await removeIfExists(targetDir, "src/components/doc-history.tsx");
