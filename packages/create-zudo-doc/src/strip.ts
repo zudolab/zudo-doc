@@ -148,7 +148,7 @@ export async function stripFeatures(
     await patchFile(
       path.join(targetDir, "src/components/header.astro"),
       [
-        [/\s*\{settings\.colorTweakPanel &&[\s\S]*?id="color-tweak-trigger"[\s\S]*?\}\}\s*\n?/g, "\n"],
+        [/\s*\{\s*\n\s*settings\.colorTweakPanel && \([\s\S]*?id="color-tweak-trigger"[\s\S]*?\)\s*\n\s*\}\s*\n?/g, "\n"],
       ],
     );
   }
@@ -167,6 +167,46 @@ export async function stripFeatures(
           /class:list=\{\[\s*\n\s*"hidden lg:block shrink-0 border-r border-muted sticky top-\[3\.5rem\] h-\[calc\(100vh-3\.5rem\)\] overflow-y-auto",\s*\n\s*settings\.sidebarResizer\s*\n\s*\? "w-\[var\(--zd-sidebar-w,clamp\(14rem,20vw,22rem\)\)\] relative"\s*\n\s*: "w-\[clamp\(14rem,20vw,22rem\)\]",\s*\n\s*\]\}/g,
           'class="hidden lg:block w-[clamp(14rem,20vw,22rem)] shrink-0 border-r border-muted sticky top-[3.5rem] h-[calc(100vh-3.5rem)] overflow-y-auto"',
         ],
+      ],
+    );
+  }
+
+  // Strip versioning if not selected
+  if (!choices.features.includes("versioning")) {
+    await removeIfExists(targetDir, "src/pages/v");
+    await removeIfExists(targetDir, "src/components/version-switcher.astro");
+    await removeIfExists(targetDir, "src/components/version-banner.astro");
+    await removeIfExists(targetDir, "src/components/versions-page-content.astro");
+    await removeIfExists(targetDir, "src/utils/version-availability.ts");
+    // Remove version imports and usage from doc-layout
+    await patchFile(
+      path.join(targetDir, "src/layouts/doc-layout.astro"),
+      [
+        [/import VersionSwitcher from.*\n/g, ""],
+        [/import VersionBanner from.*\n/g, ""],
+        [/import \{ getVersionAvailability \} from.*\n/g, ""],
+        // Remove versionAvailability computation
+        [/const versionAvailability = settings\.versions \? await getVersionAvailability\(\) : undefined;\n/g, ""],
+        // Remove versionAvailability prop from Header call
+        [/ versionAvailability=\{versionAvailability\}/g, ""],
+        // Replace the version switcher ternary block with just the breadcrumb slot
+        [/\s*\{settings\.versions && currentSlug \? \([\s\S]*?<VersionSwitcher[\s\S]*?\/>\s*\n\s*<\/div>\s*\n\s*\) : \(\s*\n\s*<slot name="breadcrumb" \/>\s*\n\s*\)\}/g, "\n            <slot name=\"breadcrumb\" />"],
+        // Remove version banner block
+        [/\s*\{versionBanner && latestUrl && \(\s*\n\s*<VersionBanner[^]*?\/>\s*\n\s*\)\}/g, ""],
+      ],
+    );
+    // Remove version switcher and related version props from header
+    await patchFile(
+      path.join(targetDir, "src/components/header.astro"),
+      [
+        [/import VersionSwitcher from.*\n/g, ""],
+        [/import type \{ VersionAvailability \} from.*\n/g, ""],
+        // Remove versionAvailability from Props interface (type no longer imported)
+        [/\s*versionAvailability\?: VersionAvailability;\n/g, ""],
+        // Remove versionAvailability from destructuring
+        [/\s*versionAvailability,\n/g, ""],
+        // Remove the { settings.versions && (<div>...</div>) } block (including outer braces)
+        [/\s*\{\s*\n\s*settings\.versions && \(\s*\n\s*<div class="hidden lg:block">\s*\n\s*<VersionSwitcher[\s\S]*?\/>\s*\n\s*<\/div>\s*\n\s*\)\s*\n\s*\}\s*\n?/g, "\n"],
       ],
     );
   }
@@ -243,6 +283,9 @@ export async function stripFeatures(
       [/\s*\{import\.meta\.env\.DEV && import\.meta\.env\.PUBLIC_ENABLE_MOCKS.*<MockInit.*\/>\}\s*\n?/g, "\n"],
     ],
   );
+
+  // Remove preset generator (not needed in generated projects — it's a zudo-doc showcase component)
+  await removeIfExists(targetDir, "src/components/preset-generator.tsx");
 
   // Remove doc-history component (docHistory is false by default)
   await removeIfExists(targetDir, "src/components/doc-history.tsx");

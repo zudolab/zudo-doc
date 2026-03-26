@@ -49,6 +49,9 @@ async function main() {
   if (args.i18n !== undefined) featureFlags.i18n = args.i18n;
   if (args.search !== undefined) featureFlags.search = args.search;
   if (args.sidebarFilter !== undefined) featureFlags.sidebarFilter = args.sidebarFilter;
+  if (args.colorTweakPanel !== undefined) featureFlags.colorTweakPanel = args.colorTweakPanel;
+  if (args.sidebarResizer !== undefined) featureFlags.sidebarResizer = args.sidebarResizer;
+  if (args.versioning !== undefined) featureFlags.versioning = args.versioning;
   if (args.claudeResources !== undefined) featureFlags.claudeResources = args.claudeResources;
   if (Object.keys(featureFlags).length > 0) {
     prefilled.features = featureFlags;

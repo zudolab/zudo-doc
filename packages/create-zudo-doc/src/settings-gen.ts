@@ -99,7 +99,12 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(
     `  htmlPreview: undefined as HtmlPreviewConfig | undefined,`,
   );
-  lines.push(`  versions: false as VersionConfig[] | false,`);
+
+  if (choices.features.includes("versioning")) {
+    lines.push(`  versions: [] as VersionConfig[],`);
+  } else {
+    lines.push(`  versions: false as VersionConfig[] | false,`);
+  }
 
   if (choices.features.includes("claudeResources")) {
     lines.push(`  claudeResources: {`);
