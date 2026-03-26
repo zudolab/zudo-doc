@@ -1,0 +1,113 @@
+---
+title: リンクチェッカー
+description: ビルド後の内部リンクを検証するリンクチェッカー。ビルド済みHTMLとMDXソースファイルを対象にします。
+sidebar_position: 3
+---
+
+# リンクチェッカー
+
+zudo-docには、サイトビルド後に2種類の検証を行う組み込みリンクチェッカー（`scripts/check-links.js`）が含まれています。
+
+## チェック内容
+
+### モード1: ビルド済みHTMLスキャン
+
+`dist/`内のすべての`.html`ファイルをスキャンし、内部`<a href="...">`リンクの各ターゲットがディスク上に存在するかを検証します。以下を処理します：
+
+- ベースパスの除去（例：`/pj/zudo-doc/docs/foo` → `docs/foo`）
+- 末尾スラッシュの解決（`docs/foo/` → `docs/foo/index.html`）
+- 拡張子の解決（`docs/foo` → `docs/foo/index.html`または`docs/foo.html`）
+- 解決前のクエリ文字列とフラグメントの除去
+- ファイルのディレクトリに対する相対リンクの解決
+- パフォーマンスのための解決済みパスのキャッシュ
+
+スキップされるリンク（チェック対象外）：
+
+- 外部URL（`https://`、`http://`）
+- アンカーのみのリンク（`#section`）
+- `mailto:`、`javascript:`、`data:`、`tel:` URI
+- バージョン付きドキュメントリンク（`/v/*/`） — バージョンコンテンツが不完全な場合があるため
+
+### モード2: MDXソーススキャン
+
+設定されたコンテンツディレクトリ内のすべての`.mdx`および`.md`ファイルをスキャンし、ベースパスをバイパスする絶対リンクを検出します。以下のようなリンクが対象です：
+
+```mdx
+<!-- これらはフラグされます — ベースパスをバイパスしています -->
+[guide](/docs/guides/foo)
+<a href="/ja/docs/guides/foo">link</a>
+
+<!-- これらは問題ありません — 相対パスを使用しています -->
+[guide](./foo.mdx)
+[guide](../other/bar.mdx)
+```
+
+ベースパスが設定されている場合（例：`/pj/zudo-doc/`）、`/docs/`や`/ja/docs/`で始まる絶対リンクはベースパスのプレフィックスが欠けているため壊れます。MDXソーススキャンは、これらが本番環境で壊れたリンクになる前に検出します。
+
+フェンスドコードブロック内のリンクは無視されます。
+
+## リンクチェッカーの実行
+
+### 単独実行
+
+まずサイトをビルドし、チェッカーを実行します：
+
+```bash
+pnpm build && pnpm check:links
+```
+
+### `--strict`フラグ
+
+デフォルトでは、問題が見つかってもチェッカーは終了コード0で終了します（非strictモード）。問題発見時に失敗させるには`--strict`を使用します：
+
+```bash
+pnpm check:links --strict
+```
+
+### b4pushの一部として
+
+リンクチェッカーはプッシュ前検証（`pnpm b4push`）の5ステップ中ステップ4で実行されます：
+
+1. フォーマットチェック
+2. 型チェック
+3. ビルド
+4. **リンクチェック**
+5. E2Eテスト
+
+### CI内での実行
+
+リンクチェッカーはPRチェック（`pr-checks.yml`）と本番デプロイ（`main-deploy.yml`）の両ワークフローの`build-site`ジョブで、`pnpm build`の直後に実行されます。
+
+## 出力
+
+問題がない場合：
+
+```
+Checking links (base: /pj/zudo-doc/)...
+
+✓ No broken links or absolute path issues found
+```
+
+問題がある場合：
+
+```
+Checking links (base: /pj/zudo-doc/)...
+
+=== Broken Links in Built HTML ===
+  dist/docs/page/index.html:42  /pj/zudo-doc/docs/missing-page
+
+=== Absolute Links Bypassing Base Path (MDX Source) ===
+  src/content/docs/guides/test.mdx:15  /docs/guides/foo
+
+✗ Found 1 broken link and 1 absolute path warning
+```
+
+各エントリはファイルパス、行番号、問題のあるhrefを表示します。
+
+## 設定
+
+リンクチェッカーは`src/config/settings.ts`から設定を読み取ります：
+
+- **`base`** — サイトのベースパス。リンク解決時のプレフィックス除去に使用
+- **`docsDir`** — MDXソーススキャンのプライマリコンテンツディレクトリ
+- **`docsJaDir`**（およびその他のロケールディレクトリ） — MDXソーススキャンの追加コンテンツディレクトリ

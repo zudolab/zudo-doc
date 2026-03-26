@@ -1,0 +1,113 @@
+---
+title: Link Checker
+description: Post-build broken link checker that validates internal links in built HTML and MDX source files.
+sidebar_position: 3
+---
+
+# Link Checker
+
+zudo-doc includes a built-in link checker (`scripts/check-links.js`) that runs two types of validation after the site is built.
+
+## What It Checks
+
+### Mode 1: Built HTML scan
+
+Scans all `.html` files in `dist/` for internal `<a href="...">` links and verifies each target exists on disk. It handles:
+
+- Base path stripping (e.g., `/pj/zudo-doc/docs/foo` → `docs/foo`)
+- Trailing slash resolution (`docs/foo/` → `docs/foo/index.html`)
+- Extension resolution (`docs/foo` → `docs/foo/index.html` or `docs/foo.html`)
+- Query string and fragment stripping before resolution
+- Relative link resolution against the file's directory
+- Caching resolved paths for performance
+
+Links that are skipped (not checked):
+
+- External URLs (`https://`, `http://`)
+- Anchor-only links (`#section`)
+- `mailto:`, `javascript:`, `data:`, `tel:` URIs
+- Versioned docs links (`/v/*/`) — version content may be incomplete
+
+### Mode 2: MDX source scan
+
+Scans all `.mdx` and `.md` files in the configured content directories for absolute links that bypass the base path. This catches links like:
+
+```mdx
+<!-- These are flagged — they bypass the base path -->
+[guide](/docs/guides/foo)
+<a href="/ja/docs/guides/foo">link</a>
+
+<!-- These are fine — they use relative paths -->
+[guide](./foo.mdx)
+[guide](../other/bar.mdx)
+```
+
+When a base path is configured (e.g., `/pj/zudo-doc/`), absolute links starting with `/docs/` or `/ja/docs/` will break because they're missing the base path prefix. The MDX source scan catches these before they become broken links in production.
+
+Links inside fenced code blocks are ignored.
+
+## Running the Link Checker
+
+### Standalone
+
+Build the site first, then run the checker:
+
+```bash
+pnpm build && pnpm check:links
+```
+
+### With `--strict` flag
+
+By default, the checker exits with code 0 even when issues are found (non-strict mode). Use `--strict` to fail on issues:
+
+```bash
+pnpm check:links --strict
+```
+
+### As part of b4push
+
+The link checker runs as Step 4 of 5 in the pre-push validation (`pnpm b4push`):
+
+1. Format check
+2. Type checking
+3. Build
+4. **Link check**
+5. E2E tests
+
+### In CI
+
+The link checker runs in the `build-site` job of both the PR checks (`pr-checks.yml`) and production deploy (`main-deploy.yml`) workflows, immediately after `pnpm build`.
+
+## Output
+
+When no issues are found:
+
+```
+Checking links (base: /pj/zudo-doc/)...
+
+✓ No broken links or absolute path issues found
+```
+
+When issues are found:
+
+```
+Checking links (base: /pj/zudo-doc/)...
+
+=== Broken Links in Built HTML ===
+  dist/docs/page/index.html:42  /pj/zudo-doc/docs/missing-page
+
+=== Absolute Links Bypassing Base Path (MDX Source) ===
+  src/content/docs/guides/test.mdx:15  /docs/guides/foo
+
+✗ Found 1 broken link and 1 absolute path warning
+```
+
+Each entry shows the file path, line number, and the problematic href.
+
+## Configuration
+
+The link checker reads its configuration from `src/config/settings.ts`:
+
+- **`base`** — The site's base path, used to strip prefixes when resolving links
+- **`docsDir`** — Primary content directory for MDX source scanning
+- **`docsJaDir`** (and other locale dirs) — Additional content directories for MDX source scanning
