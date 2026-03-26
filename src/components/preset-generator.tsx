@@ -81,8 +81,9 @@ const FEATURES = [
   { value: "search", label: "Pagefind search", cliFlag: "search", default: true },
   { value: "sidebarFilter", label: "Sidebar filter", cliFlag: "sidebar-filter", default: true },
   { value: "claudeResources", label: "Claude Resources", cliFlag: "claude-resources", default: false },
-  { value: "colorTweakPanel", label: "Color tweak panel", cliFlag: null, default: false },
-  { value: "sidebarResizer", label: "Sidebar resizer", cliFlag: null, default: false },
+  { value: "colorTweakPanel", label: "Color tweak panel", cliFlag: "color-tweak-panel", default: false },
+  { value: "sidebarResizer", label: "Sidebar resizer", cliFlag: "sidebar-resizer", default: false },
+  { value: "versioning", label: "Versioning", cliFlag: "versioning", default: false },
 ] as const;
 
 const PACKAGE_MANAGERS = ["pnpm", "npm", "yarn", "bun"] as const;
@@ -149,9 +150,7 @@ function buildCliCommand(state: FormState): string {
     }
   }
 
-  // Only include features that have CLI flags
   for (const feat of FEATURES) {
-    if (feat.cliFlag === null) continue;
     const enabled = state.features.includes(feat.value);
     parts.push(enabled ? `--${feat.cliFlag}` : `--no-${feat.cliFlag}`);
   }
@@ -537,11 +536,6 @@ export default function PresetGenerator() {
                 className="accent-accent"
               />
               {feat.label}
-              {feat.cliFlag === null && (
-                <span className="text-caption text-muted">
-                  (JSON only — no CLI flag)
-                </span>
-              )}
             </label>
           ))}
         </div>
