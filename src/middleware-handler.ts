@@ -1,6 +1,6 @@
 type MiddlewareContext = {
   request: { url: string };
-  redirect: (url: string, status: number) => Response;
+  redirect: (url: string, status?: 300 | 301 | 302 | 303 | 304 | 307 | 308) => Response;
 };
 
 type MiddlewareNext = () => Response | Promise<Response>;
