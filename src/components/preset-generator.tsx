@@ -277,9 +277,9 @@ function PresetModal({
         userSelect: "text",
       }}
     >
-      <h2 className="mb-vsp-sm text-subheading font-bold text-fg">
+      <div className="mb-vsp-sm text-subheading font-bold text-fg">
         Generated Preset
-      </h2>
+      </div>
 
       <label className="mb-vsp-sm flex items-center gap-x-hsp-sm text-small text-fg">
         <input
