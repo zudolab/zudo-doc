@@ -64,7 +64,7 @@ const activeNavPath = settings.headerNav
 
   <nav
     aria-label="Main"
-    class="ml-hsp-xl hidden items-center gap-x-hsp-2xs whitespace-nowrap lg:flex min-w-0"
+    class="relative ml-hsp-xl hidden min-w-0 flex-1 items-center gap-x-hsp-2xs whitespace-nowrap lg:flex"
     data-header-nav
   >
     {
@@ -202,12 +202,7 @@ const activeNavPath = settings.headerNav
   function initNavOverflow() {
     cleanupNavOverflow?.();
 
-    const header = document.querySelector<HTMLElement>("[data-header]");
-    const logo = document.querySelector<HTMLElement>("[data-header-logo]");
     const nav = document.querySelector<HTMLElement>("[data-header-nav]");
-    const rightGroup = document.querySelector<HTMLElement>(
-      "[data-header-right]",
-    );
     const moreContainer =
       document.querySelector<HTMLElement>("[data-nav-more]");
     const moreMenu = document.querySelector<HTMLElement>(
@@ -216,96 +211,66 @@ const activeNavPath = settings.headerNav
     const moreToggle = document.querySelector<HTMLButtonElement>(
       "[data-nav-more-toggle]",
     );
-    if (
-      !header ||
-      !logo ||
-      !nav ||
-      !rightGroup ||
-      !moreContainer ||
-      !moreMenu ||
-      !moreToggle
-    )
-      return;
+    if (!nav || !moreContainer || !moreMenu || !moreToggle) return;
 
     const items = Array.from(
       nav.querySelectorAll<HTMLAnchorElement>(":scope > [data-nav-item]"),
     );
     if (items.length === 0) return;
 
-    // Measure each item's natural width once (all visible, before any hiding)
-    const itemWidths: number[] = [];
-    items.forEach((el) => {
-      el.style.display = "";
-    });
-    moreContainer.style.display = "none";
-    items.forEach((el) => {
-      itemWidths.push(el.offsetWidth);
-    });
-
-    // Measure the "..." button width
-    moreContainer.style.display = "";
-    const moreWidth = moreContainer.offsetWidth;
-    moreContainer.style.display = "none";
-
-    // Get the nav gap from computed style
-    const navGap = parseFloat(getComputedStyle(nav).columnGap) || 0;
-
-    // Get header horizontal padding
-    const headerStyle = getComputedStyle(header);
-    const headerPadX =
-      parseFloat(headerStyle.paddingLeft) +
-      parseFloat(headerStyle.paddingRight);
-
-    // Get nav left margin
-    const navMarginLeft = parseFloat(getComputedStyle(nav).marginLeft) || 0;
-
     const controller = new AbortController();
 
     function update() {
-      // Reset: show all items, hide "..."
+      // Reset: show everything for measurement
       items.forEach((el) => {
         el.style.display = "";
       });
-      moreContainer!.style.display = "none";
+      moreContainer!.style.display = "";
       moreMenu!.innerHTML = "";
       moreMenu!.classList.add("hidden");
       moreToggle!.setAttribute("aria-expanded", "false");
 
-      // Calculate available width for nav items
-      const headerW = header!.clientWidth;
-      const logoW = logo!.offsetWidth;
-      const rightW = rightGroup!.offsetWidth;
-      const available = headerW - headerPadX - logoW - navMarginLeft - rightW;
+      // Measure widths each time (accurate after font loading)
+      const itemWidths = items.map((el) => el.offsetWidth);
+      const moreWidth = moreContainer!.offsetWidth;
+      const navGap = parseFloat(getComputedStyle(nav!).columnGap) || 0;
 
-      if (available <= 0) return;
+      // With flex-1 on nav, clientWidth reflects the flex-allocated space
+      const available = nav!.clientWidth;
 
-      // Greedy fill: add items until budget exhausted
+      if (available <= 0) {
+        moreContainer!.style.display = "none";
+        return;
+      }
+
+      // Check if all items fit without "..."
+      let total = 0;
+      for (let i = 0; i < itemWidths.length; i++) {
+        total += itemWidths[i] + (i > 0 ? navGap : 0);
+      }
+
+      if (total <= available) {
+        moreContainer!.style.display = "none";
+        return;
+      }
+
+      // Greedy fill: find how many items fit alongside "..."
       let used = 0;
-      let cutoffIndex = items.length; // all fit by default
+      let cutoffIndex = 0;
 
       for (let i = 0; i < items.length; i++) {
         const w = itemWidths[i] + (i > 0 ? navGap : 0);
-        // Check if this item fits. If not all items will fit, reserve space for "..."
-        const remaining = items.length - i - 1;
-        const needMore = remaining > 0;
-        const budget = needMore ? available - moreWidth - navGap : available;
-
-        if (used + w > budget) {
-          cutoffIndex = i;
-          break;
-        }
+        if (used + w > available - moreWidth - navGap) break;
         used += w;
+        cutoffIndex = i + 1;
       }
-
-      if (cutoffIndex >= items.length) return; // all fit
 
       // Hide overflowed items
       for (let i = cutoffIndex; i < items.length; i++) {
         items[i].style.display = "none";
       }
 
-      // Show "..." and populate dropdown
-      moreContainer!.style.display = "";
+      // Populate dropdown
       for (let i = cutoffIndex; i < items.length; i++) {
         const el = items[i];
         const li = document.createElement("li");
@@ -356,7 +321,13 @@ const activeNavPath = settings.headerNav
       { signal: controller.signal },
     );
 
-    window.addEventListener("resize", update, { signal: controller.signal });
+    // ResizeObserver on nav catches: window resize, client component mounting
+    const ro = new ResizeObserver(update);
+    ro.observe(nav);
+    controller.signal.addEventListener("abort", () => ro.disconnect());
+
+    // Recalculate after fonts load (item widths may change)
+    document.fonts.ready.then(update);
 
     update();
 
