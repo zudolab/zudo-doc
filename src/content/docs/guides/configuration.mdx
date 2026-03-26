@@ -121,6 +121,8 @@ Some hosting platforms (e.g., AWS Amplify, Cloudflare Pages) work better with tr
 
 </Note>
 
+When enabled, a middleware automatically redirects URLs without a trailing slash to their trailing-slash version with a **301 redirect** (e.g., `/docs/guides` → `/docs/guides/`). This ensures consistent URLs during development, since Astro's dev server does not perform this redirect on its own. Static assets (files with extensions like `.js`, `.css`, `.png`) and Astro internal paths (`/_astro/`, `/_image`) are excluded from the redirect.
+
 ### docsDir
 
 The directory path (relative to the project root) where English documentation MDX files are stored. This uses Astro's `glob()` loader, so it can point to any directory.
