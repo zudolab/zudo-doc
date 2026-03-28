@@ -34,6 +34,13 @@ export const settings = {
       path: "/docs/getting-started",
       categoryMatch: "getting-started",
     },
-    { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
+    {
+      label: "Learn",
+      path: "/docs/guides",
+      categoryMatch: "guides",
+      children: [
+        { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
+      ],
+    },
   ] satisfies HeaderNavItem[],
 };

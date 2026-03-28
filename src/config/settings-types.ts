@@ -3,6 +3,7 @@ export interface HeaderNavItem {
   labelKey?: string;
   path: string;
   categoryMatch?: string;
+  children?: HeaderNavItem[];
 }
 
 export interface ColorModeConfig {
