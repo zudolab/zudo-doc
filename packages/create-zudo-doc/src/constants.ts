@@ -125,6 +125,12 @@ export const FEATURES: Feature[] = [
     default: false,
   },
   {
+    value: "sidebarToggle",
+    label: "Sidebar toggle",
+    hint: "Show/hide desktop sidebar",
+    default: false,
+  },
+  {
     value: "versioning",
     label: "Versioning",
     hint: "Multi-version documentation support",
