@@ -55,7 +55,7 @@ test.describe("Header dropdown navigation", () => {
     const childLink = dropdown.locator(":scope > div a").first();
     await childLink.click();
 
-    await page.waitForURL("**/docs/guides/**");
+    await page.waitForURL(/\/docs\/guides/);
   });
 
   test("dropdown opens on focus-within (keyboard)", async ({ page }) => {

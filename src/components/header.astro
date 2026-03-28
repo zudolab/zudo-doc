@@ -145,6 +145,7 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
                     return (
                       <a
                         href={childHref}
+                        data-active={childActive ? "" : undefined}
                         class:list={[
                           "block px-hsp-md py-vsp-3xs text-small hover:bg-accent/10 hover:underline",
                           childActive ? "font-bold text-accent" : "text-fg",
@@ -383,7 +384,7 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
             const a = document.createElement("a");
             a.href = child.href;
             a.textContent = child.textContent?.trim() || "";
-            const isChildActive = child.classList.contains("font-bold");
+            const isChildActive = child.hasAttribute("data-active");
             a.className = isChildActive
               ? "block pl-hsp-xl pr-hsp-md py-vsp-3xs text-small font-bold text-accent hover:bg-accent/10"
               : "block pl-hsp-xl pr-hsp-md py-vsp-3xs text-small text-muted hover:bg-accent/10 hover:text-fg";
@@ -430,28 +431,23 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
       { signal: controller.signal },
     );
 
+    // Unified Escape handler: overflow menu takes priority, then CSS dropdowns
     document.addEventListener(
       "keydown",
       (e) => {
-        if (e.key === "Escape" && !moreMenu.classList.contains("hidden")) {
+        if (e.key !== "Escape") return;
+        // Priority 1: close overflow "..." menu if open
+        if (!moreMenu.classList.contains("hidden")) {
           moreMenu.classList.add("hidden");
           moreToggle.setAttribute("aria-expanded", "false");
           moreToggle.focus();
+          return;
         }
-      },
-      { signal: controller.signal },
-    );
-
-    // Escape key closes CSS-only dropdowns by blurring the active element
-    document.addEventListener(
-      "keydown",
-      (e) => {
-        if (e.key === "Escape") {
-          const active = document.activeElement as HTMLElement | null;
-          const dropdown = active?.closest("[data-nav-item-dropdown]");
-          if (dropdown) {
-            active?.blur();
-          }
+        // Priority 2: close CSS-only dropdown by blurring
+        const active = document.activeElement as HTMLElement | null;
+        const dropdown = active?.closest("[data-nav-item-dropdown]");
+        if (dropdown) {
+          active?.blur();
         }
       },
       { signal: controller.signal },

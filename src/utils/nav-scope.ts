@@ -2,6 +2,20 @@ import { settings } from "@/config/settings";
 import type { NavNode } from "@/utils/docs";
 export type { HeaderNavItem } from "@/config/settings";
 
+/** Collect all categoryMatch strings from headerNav, including children (ordered). */
+export function getCategoryOrder(): string[] {
+  return settings.headerNav.flatMap((item) => {
+    const matches: string[] = [];
+    if (item.categoryMatch) matches.push(item.categoryMatch);
+    if (item.children) {
+      for (const child of item.children) {
+        if (child.categoryMatch) matches.push(child.categoryMatch);
+      }
+    }
+    return matches;
+  });
+}
+
 /** Collect all categoryMatch values from headerNav, including children. */
 function allCategoryMatches(): Array<{ categoryMatch: string }> {
   return settings.headerNav.flatMap((item) => {
