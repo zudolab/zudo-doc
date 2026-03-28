@@ -126,6 +126,23 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     expect(layout).not.toContain("initSidebarResizer");
     expect(layout).not.toContain("zudo-doc-sidebar-width");
   });
+
+  it("does NOT include desktop-sidebar-toggle component (sidebarToggle off by default)", async () => {
+    expect(
+      await fs.pathExists(
+        projectPath("test-minimal", "src/components/desktop-sidebar-toggle.tsx"),
+      ),
+    ).toBe(false);
+  });
+
+  it("doc-layout does not reference sidebar toggle (disabled by default)", async () => {
+    const layout = await fs.readFile(
+      projectPath("test-minimal", "src/layouts/doc-layout.astro"),
+      "utf-8",
+    );
+    expect(layout).not.toContain("DesktopSidebarToggle");
+    expect(layout).not.toContain("zudo-doc-sidebar-visible");
+  });
 });
 
 describe("scaffold — full features (i18n, light-dark, all features)", () => {

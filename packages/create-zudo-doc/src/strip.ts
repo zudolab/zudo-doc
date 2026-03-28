@@ -153,6 +153,22 @@ export async function stripFeatures(
     );
   }
 
+  // Strip sidebar toggle if not selected
+  if (!choices.features.includes("sidebarToggle")) {
+    await removeIfExists(targetDir, "src/components/desktop-sidebar-toggle.tsx");
+    await patchFile(
+      path.join(targetDir, "src/layouts/doc-layout.astro"),
+      [
+        // Remove import
+        [/import DesktopSidebarToggle from.*\n/g, ""],
+        // Remove head inline script block
+        [/\s*\{settings\.sidebarToggle &&[\s\S]*?__zdSidebarApplied[\s\S]*?<\/script>\s*\n\s*\)\}\s*\n?/g, "\n"],
+        // Remove toggle component usage
+        [/\s*\{!hideSidebar && settings\.sidebarToggle &&[\s\S]*?<DesktopSidebarToggle[\s\S]*?\/>\s*\n\s*\)\}\s*\n?/g, "\n"],
+      ],
+    );
+  }
+
   // Strip sidebar resizer if not selected
   if (!choices.features.includes("sidebarResizer")) {
     await patchFile(

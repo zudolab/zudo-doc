@@ -96,6 +96,12 @@ export function generateSettingsFile(choices: UserChoices): string {
     lines.push(`  sidebarResizer: false as boolean,`);
   }
 
+  if (choices.features.includes("sidebarToggle")) {
+    lines.push(`  sidebarToggle: true as boolean,`);
+  } else {
+    lines.push(`  sidebarToggle: false as boolean,`);
+  }
+
   lines.push(
     `  htmlPreview: undefined as HtmlPreviewConfig | undefined,`,
   );
