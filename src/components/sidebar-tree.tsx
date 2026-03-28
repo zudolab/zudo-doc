@@ -96,6 +96,50 @@ function filterTree(nodes: NavNode[], query: string): NavNode[] {
 interface RootMenuItem {
   label: string;
   href: string;
+  children?: RootMenuItem[];
+}
+
+function RootMenuItemEntry({ item }: { item: RootMenuItem }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasChildren = item.children && item.children.length > 0;
+
+  return (
+    <div className="border-t border-muted">
+      <div className="flex items-center">
+        <a
+          href={item.href}
+          className="flex flex-1 items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-small font-semibold text-fg hover:text-accent hover:underline"
+        >
+          <CategoryLinkIcon className="w-[14px]" />
+          {item.label}
+        </a>
+        {hasChildren && (
+          <button
+            type="button"
+            onClick={() => setExpanded((prev) => !prev)}
+            className="flex items-center justify-center px-hsp-sm py-vsp-xs text-muted hover:text-fg"
+            aria-expanded={expanded}
+            aria-label={expanded ? `Collapse ${item.label}` : `Expand ${item.label}`}
+          >
+            <ToggleChevron isExpanded={expanded} className="text-muted" />
+          </button>
+        )}
+      </div>
+      {hasChildren && expanded && (
+        <div className="pb-vsp-xs">
+          {item.children!.map((child) => (
+            <a
+              key={child.href}
+              href={child.href}
+              className="block pl-hsp-xl pr-hsp-sm py-vsp-2xs text-small text-muted hover:text-accent hover:underline"
+            >
+              {child.label}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 interface SidebarTreeProps {
@@ -155,14 +199,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
           {backToMenuLabel ?? "Back to main menu"}
         </button>
         {rootMenuItems.map((item) => (
-          <a
-            key={item.href}
-            href={item.href}
-            className="flex items-center gap-hsp-xs border-t border-muted px-hsp-sm py-vsp-xs text-small font-semibold text-fg hover:text-accent hover:underline"
-          >
-            <CategoryLinkIcon className="w-[14px]" />
-            {item.label}
-          </a>
+          <RootMenuItemEntry key={item.href} item={item} />
         ))}
       </nav>
     );
@@ -174,14 +211,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
     return (
       <nav>
         {rootMenuItems.map((item) => (
-          <a
-            key={item.href}
-            href={item.href}
-            className="flex items-center gap-hsp-xs border-t border-muted px-hsp-sm py-vsp-xs text-small font-semibold text-fg hover:text-accent hover:underline"
-          >
-            <CategoryLinkIcon className="w-[14px]" />
-            {item.label}
-          </a>
+          <RootMenuItemEntry key={item.href} item={item} />
         ))}
       </nav>
     );

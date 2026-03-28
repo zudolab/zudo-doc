@@ -34,6 +34,16 @@ const rootMenuItems = settings.headerNav.map((item) => ({
       ? `/${lang}${versionPrefix}${item.path}`
       : `${versionPrefix}${item.path}`,
   ),
+  children: item.children?.map((child) => ({
+    label: child.labelKey
+      ? t(child.labelKey as Parameters<typeof t>[0], lang)
+      : child.label,
+    href: withBase(
+      isNonDefaultLocale
+        ? `/${lang}${versionPrefix}${child.path}`
+        : `${versionPrefix}${child.path}`,
+    ),
+  })),
 }));
 
 const { allDocs, categoryMeta } = await loadLocaleDocs(lang);

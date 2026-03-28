@@ -174,7 +174,7 @@ const contentTransition = {
         id="desktop-sidebar"
         aria-label="Documentation sidebar"
         transition:persist={`sidebar-${lang}-${navSection ?? "default"}`}
-        class="hidden lg:block fixed top-[3.5rem] left-0 z-30 w-[var(--zd-sidebar-w)] h-[calc(100vh-3.5rem)] overflow-y-auto bg-bg border-r border-muted"
+        class="hidden lg:block fixed top-[3.5rem] left-0 z-30 w-[var(--zd-sidebar-w)] h-[calc(100vh-3.5rem)] overflow-y-auto bg-bg border-r border-muted pb-vsp-xl"
       >
         <Sidebar currentSlug={currentSlug} lang={lang} navSection={navSection} currentVersion={currentVersion} />
       </aside>
