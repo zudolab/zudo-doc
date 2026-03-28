@@ -132,7 +132,7 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
                 </svg>
               </a>
               <div class="absolute left-0 top-full z-50 hidden group-hover:block group-focus-within:block pt-vsp-3xs">
-                <div class="min-w-[10rem] border border-muted rounded bg-surface shadow-lg">
+                <div class="min-w-[10rem] border border-muted rounded bg-surface shadow-lg py-vsp-3xs">
                   {item.children.map((child) => {
                     const childHref = withBase(
                       isNonDefaultLocale
@@ -148,7 +148,7 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
                         href={childHref}
                         data-active={childActive ? "" : undefined}
                         class:list={[
-                          "block px-hsp-md py-vsp-3xs text-small hover:bg-accent/10 hover:underline",
+                          "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 hover:underline",
                           childActive ? "font-bold text-accent" : "text-fg",
                         ]}
                       >
