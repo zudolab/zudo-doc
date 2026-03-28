@@ -10,9 +10,16 @@ const currentPath = Astro.url.pathname;
 const pathWithoutBase = stripBase(currentPath);
 const lang: Locale = detectLocaleFromPath(pathWithoutBase);
 
-const categoryOrder = settings.headerNav
-  .map((n) => n.categoryMatch)
-  .filter((v): v is string => !!v);
+const categoryOrder = settings.headerNav.flatMap((n) => {
+  const matches: string[] = [];
+  if (n.categoryMatch) matches.push(n.categoryMatch);
+  if (n.children) {
+    for (const child of n.children) {
+      if (child.categoryMatch) matches.push(child.categoryMatch);
+    }
+  }
+  return matches;
+});
 const { allDocs, categoryMeta } = await loadLocaleDocs(lang);
 const navDocs = allDocs.filter(isNavVisible);
 const tree = buildNavTree(navDocs, lang, categoryMeta);

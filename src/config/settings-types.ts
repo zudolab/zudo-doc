@@ -1,9 +1,12 @@
-export interface HeaderNavItem {
+export interface HeaderNavChildItem {
   label: string;
   labelKey?: string;
   path: string;
   categoryMatch?: string;
-  children?: HeaderNavItem[];
+}
+
+export interface HeaderNavItem extends HeaderNavChildItem {
+  children?: HeaderNavChildItem[];
 }
 
 export interface ColorModeConfig {

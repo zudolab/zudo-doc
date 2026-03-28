@@ -1,4 +1,5 @@
 export type {
+  HeaderNavChildItem,
   HeaderNavItem,
   ColorModeConfig,
   HtmlPreviewConfig,

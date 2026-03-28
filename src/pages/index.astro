@@ -9,9 +9,16 @@ import SiteTreeNav from "@/components/site-tree-nav.tsx";
 const ctaNav = settings.headerNav[0] ?? null;
 const overview = ctaNav ? withBase(ctaNav.path) : null;
 const logoUrl = withBase("/img/logo.svg");
-const categoryOrder = settings.headerNav
-  .map((n) => n.categoryMatch)
-  .filter((v): v is string => !!v);
+const categoryOrder = settings.headerNav.flatMap((n) => {
+  const matches: string[] = [];
+  if (n.categoryMatch) matches.push(n.categoryMatch);
+  if (n.children) {
+    for (const child of n.children) {
+      if (child.categoryMatch) matches.push(child.categoryMatch);
+    }
+  }
+  return matches;
+});
 
 // Build full nav tree for site index
 const { allDocs, categoryMeta } = await loadLocaleDocs("en");

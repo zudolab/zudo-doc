@@ -103,6 +103,7 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
               <a
                 href={href}
                 aria-current={isActive ? "page" : undefined}
+                aria-haspopup="true"
                 class:list={[
                   "flex items-center gap-x-hsp-2xs px-hsp-md py-vsp-2xs text-small font-medium transition-colors",
                   isActive
@@ -382,8 +383,10 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
             const a = document.createElement("a");
             a.href = child.href;
             a.textContent = child.textContent?.trim() || "";
-            a.className =
-              "block pl-hsp-xl pr-hsp-md py-vsp-3xs text-small text-muted hover:bg-accent/10 hover:text-fg";
+            const isChildActive = child.classList.contains("font-bold");
+            a.className = isChildActive
+              ? "block pl-hsp-xl pr-hsp-md py-vsp-3xs text-small font-bold text-accent hover:bg-accent/10"
+              : "block pl-hsp-xl pr-hsp-md py-vsp-3xs text-small text-muted hover:bg-accent/10 hover:text-fg";
             li.appendChild(a);
             moreMenu!.appendChild(li);
           });
@@ -434,6 +437,21 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
           moreMenu.classList.add("hidden");
           moreToggle.setAttribute("aria-expanded", "false");
           moreToggle.focus();
+        }
+      },
+      { signal: controller.signal },
+    );
+
+    // Escape key closes CSS-only dropdowns by blurring the active element
+    document.addEventListener(
+      "keydown",
+      (e) => {
+        if (e.key === "Escape") {
+          const active = document.activeElement as HTMLElement | null;
+          const dropdown = active?.closest("[data-nav-item-dropdown]");
+          if (dropdown) {
+            active?.blur();
+          }
         }
       },
       { signal: controller.signal },

@@ -7,6 +7,7 @@ export function generateSettingsFile(choices: UserChoices): string {
 
   // Import types from settings-types (copied from template src/config/)
   lines.push(`export type {`);
+  lines.push(`  HeaderNavChildItem,`);
   lines.push(`  HeaderNavItem,`);
   lines.push(`  ColorModeConfig,`);
   lines.push(`  HtmlPreviewConfig,`);
