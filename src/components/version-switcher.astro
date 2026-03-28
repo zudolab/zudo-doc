@@ -67,7 +67,7 @@ const isLatest = !currentVersion;
 
   <ul
     id={menuId}
-    class="absolute right-0 top-full z-10 mt-vsp-3xs hidden min-w-[8rem] border border-muted rounded bg-surface shadow-lg whitespace-nowrap"
+    class="absolute right-0 top-full z-10 mt-vsp-3xs hidden min-w-[8rem] border border-muted rounded bg-surface shadow-lg whitespace-nowrap py-vsp-3xs"
     data-version-menu
   >
     <li>
@@ -75,7 +75,7 @@ const isLatest = !currentVersion;
         href={latestUrl}
         aria-current={isLatest ? "page" : undefined}
         class:list={[
-          "block px-hsp-md py-vsp-3xs text-small hover:bg-accent/10",
+          "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10",
           isLatest ? "font-bold text-accent" : "text-fg",
         ]}
       >
@@ -99,7 +99,7 @@ const isLatest = !currentVersion;
                 href={vUrl}
                 aria-current={isActive ? "page" : undefined}
                 class:list={[
-                  "block px-hsp-md py-vsp-3xs text-small hover:bg-accent/10",
+                  "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10",
                   isActive ? "font-bold text-accent" : "text-fg",
                 ]}
               >
@@ -110,7 +110,7 @@ const isLatest = !currentVersion;
                 href={vUrl}
                 aria-disabled="true"
                 tabindex={-1}
-                class="block px-hsp-md py-vsp-3xs text-small text-muted/50 cursor-not-allowed pointer-events-none"
+                class="block px-hsp-md py-vsp-2xs text-small text-muted/50 cursor-not-allowed pointer-events-none"
                 title={unavailableLabel}
               >
                 {v.label}
@@ -123,7 +123,7 @@ const isLatest = !currentVersion;
     <li class="border-t border-muted">
       <a
         href={versionsPageUrl}
-        class="block px-hsp-md py-vsp-3xs text-small text-muted hover:bg-accent/10 hover:text-fg"
+        class="block px-hsp-md py-vsp-2xs text-small text-muted hover:bg-accent/10 hover:text-fg"
       >
         {allVersionsLabel}
       </a>
