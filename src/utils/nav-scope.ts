@@ -16,40 +16,21 @@ export function getCategoryOrder(): string[] {
   });
 }
 
-/** Collect all categoryMatch values from headerNav, including children. */
-function allCategoryMatches(): Array<{ categoryMatch: string }> {
-  return settings.headerNav.flatMap((item) => {
-    const matches: Array<{ categoryMatch: string }> = [];
-    if (item.categoryMatch) matches.push({ categoryMatch: item.categoryMatch });
-    if (item.children) {
-      for (const child of item.children) {
-        if (child.categoryMatch) matches.push({ categoryMatch: child.categoryMatch });
-      }
-    }
-    return matches;
-  });
-}
-
 /**
  * Given a doc's slug (e.g. "getting-started/introduction" or "claude-agents/doc-reviewer"),
  * return the categoryMatch value of the headerNav item it belongs to.
  */
 export function getNavSectionForSlug(slug: string): string | undefined {
   const topCategory = slug.split("/")[0] ?? "";
+  const all = getCategoryOrder();
 
-  // First pass: find explicit matchers (not "!") from all items including children
-  const all = allCategoryMatches();
+  // First pass: find explicit matchers (not "!")
   const explicitMatches = all.filter(
-    (item) =>
-      item.categoryMatch !== "!" &&
-      topCategory.startsWith(item.categoryMatch),
+    (cm) => cm !== "!" && topCategory.startsWith(cm),
   );
   if (explicitMatches.length > 0) {
     // Longest prefix match wins
-    const best = explicitMatches.sort(
-      (a, b) => b.categoryMatch.length - a.categoryMatch.length,
-    )[0];
-    return best.categoryMatch;
+    return explicitMatches.sort((a, b) => b.length - a.length)[0];
   }
 
   // Second pass: return the default ("!") matcher
@@ -72,9 +53,7 @@ export function getNavSubtree(
   if (!categoryMatch) return tree;
 
   if (categoryMatch === "!") {
-    const explicitPrefixes = allCategoryMatches()
-      .filter((item) => item.categoryMatch !== "!")
-      .map((item) => item.categoryMatch);
+    const explicitPrefixes = getCategoryOrder().filter((cm) => cm !== "!");
     return tree.filter(
       (node) => !explicitPrefixes.some((prefix) => node.slug.startsWith(prefix)),
     );

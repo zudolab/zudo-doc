@@ -104,6 +104,7 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
                 href={href}
                 aria-current={isActive ? "page" : undefined}
                 aria-haspopup="true"
+                aria-expanded="false"
                 class:list={[
                   "flex items-center gap-x-hsp-2xs px-hsp-md py-vsp-2xs text-small font-medium transition-colors",
                   isActive
@@ -452,6 +453,35 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
       },
       { signal: controller.signal },
     );
+
+    // Toggle aria-expanded on dropdown triggers for screen readers
+    const dropdowns = nav.querySelectorAll<HTMLElement>(
+      "[data-nav-item-dropdown]",
+    );
+    for (const dd of dropdowns) {
+      const trigger = dd.querySelector<HTMLElement>(":scope > a");
+      if (!trigger) continue;
+      const setExpanded = (v: boolean) =>
+        trigger.setAttribute("aria-expanded", String(v));
+      dd.addEventListener("mouseenter", () => setExpanded(true), {
+        signal: controller.signal,
+      });
+      dd.addEventListener("mouseleave", () => setExpanded(false), {
+        signal: controller.signal,
+      });
+      dd.addEventListener("focusin", () => setExpanded(true), {
+        signal: controller.signal,
+      });
+      dd.addEventListener(
+        "focusout",
+        (e) => {
+          if (!dd.contains((e as FocusEvent).relatedTarget as Node)) {
+            setExpanded(false);
+          }
+        },
+        { signal: controller.signal },
+      );
+    }
 
     // ResizeObserver on nav catches: window resize, client component mounting
     const ro = new ResizeObserver(update);
