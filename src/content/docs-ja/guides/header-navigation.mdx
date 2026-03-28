@@ -46,10 +46,55 @@ export const settings = {
 
 例えば、`categoryMatch: "guides"`はタブを`guides/`コンテンツディレクトリにリンクします。ユーザーが`/docs/guides/`配下のページに移動すると、「Guides」タブがアクティブになり、サイドバーにはguidesカテゴリのみが表示されます。
 
+## ネストナビゲーション（ドロップダウン）
+
+`HeaderNavItem`はオプションの`children`プロパティをサポートしており、親アイテムの下にドロップダウンメニューを作成します。ネストは1階層のみサポートされており、ネスト内のさらなるネストはできません。
+
+親アイテムは引き続きクリック可能なリンクとして機能し、自身の`path`に遷移します。ドロップダウンは親リンクを置き換えることなく、関連するサブページへのクイックアクセスを提供します。
+
+各子アイテムは通常のナビゲーションアイテムと同じプロパティをサポートします：`label`、`labelKey`、`path`、`categoryMatch`。
+
+### 設定
+
+```ts
+export const settings = {
+  // ...
+  headerNav: [
+    { label: "Getting Started", path: "/docs/getting-started", categoryMatch: "getting-started" },
+    {
+      label: "Learn",
+      labelKey: "nav.learn",
+      path: "/docs/guides",
+      categoryMatch: "guides",
+      children: [
+        { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
+        { label: "Components", labelKey: "nav.components", path: "/docs/components", categoryMatch: "components" },
+      ],
+    },
+    { label: "Reference", path: "/docs/reference", categoryMatch: "reference" },
+  ],
+};
+```
+
+### プロパティ
+
+| プロパティ | 型 | 説明 |
+|----------|------|-------------|
+| `children` | `HeaderNavItem[]`（オプション） | ドロップダウンメニューとして表示される子ナビゲーションアイテムの配列 |
+
+### 動作
+
+- **デスクトップ**：ドロップダウンはホバーで開き、マウスがメニュー領域から離れると閉じます。
+- **キーボード**：ドロップダウンはトリガーがフォーカスを受けた時に開きます（`focus-within`経由）。マウスなしでも完全にアクセス可能です。
+- **モバイル**：ネストアイテムはモバイルサイドバーメニューで展開可能なグループとして表示されます。
+- **オーバーフロー**：ドロップダウンの親がオーバーフロー「...」メニューに移動された場合、子アイテムはインデントされたサブアイテムとして表示されます。
+
 ## アクティブ状態
 
-現在のページURLがアイテムの`path`で始まる場合、そのヘッダーナビゲーションアイテムがアクティブとみなされます。例えば、`/docs/guides/configuration`にアクセスすると、URLが`/docs/guides`で始まるため「Guides」タブがアクティブになります。
+現在のページURLがアイテムの`path`で始まる場合、そのヘッダーナビゲーションアイテムがアクティブとみなされます。現在のページが子アイテムの`path`にマッチする場合、親アイテムもアクティブとして表示されます。
+
+例えば、`/docs/guides/configuration`にアクセスすると、URLが`/docs/guides`で始まるため「Guides」タブがアクティブになります。
 
 ## モバイル動作
 
-小さな画面（`< 640px`）では、スペースを節約するためにヘッダーナビゲーションアイテムは非表示になります。モバイルではサイドバートグルですべてのナビゲーションにアクセスできます。
+小さな画面（`< 640px`）では、スペースを節約するためにヘッダーナビゲーションアイテムは非表示になります。モバイルではサイドバートグルですべてのナビゲーションにアクセスできます。ネストナビゲーションアイテムはモバイルサイドバーで展開可能なグループとして表示されます。
