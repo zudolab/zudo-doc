@@ -1,31 +1,46 @@
 ---
 title: Header Navigation
-description: Configure top-level navigation tabs in the header
+description: Configure header navigation tabs with optional nested dropdown menus
 sidebar_position: 4
 ---
 
-zudo-doc supports a three-level navigation hierarchy inspired by Docusaurus:
+zudo-doc supports a navigation hierarchy inspired by Docusaurus:
 
-- **Header nav** — top-level tabs in the site header (biggest categories)
-- **Sidebar categories** — collapsible groups in the sidebar (2nd level)
-- **Sidebar items** — individual pages within categories (3rd level)
+- **Header nav** — top-level tabs in the site header, with optional dropdown menus
+- **Sidebar categories** — collapsible groups in the sidebar
+- **Sidebar items** — individual pages within categories
 
 ## Configuration
 
-Define header navigation items in `src/config/settings.ts`:
+Define header navigation items in `src/config/settings.ts`. Items can be flat links or dropdown parents with nested children:
 
 ```ts
 export const settings = {
   // ...
   headerNav: [
+    // Flat link (no dropdown)
     { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
-    { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
+
+    // Dropdown parent with children
+    {
+      label: "Learn",
+      labelKey: "nav.learn",
+      path: "/docs/guides",
+      categoryMatch: "guides",
+      children: [
+        { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
+        { label: "Components", labelKey: "nav.components", path: "/docs/components", categoryMatch: "components" },
+      ],
+    },
+
     { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
   ],
 };
 ```
 
-Each item supports the following properties:
+## Properties
+
+### `HeaderNavItem`
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -33,6 +48,18 @@ Each item supports the following properties:
 | `labelKey` | string (optional) | i18n translation key that overrides `label` when a translation is available |
 | `path` | string | URL path the link navigates to |
 | `categoryMatch` | string (optional) | Links this header tab to a sidebar category |
+| `children` | `HeaderNavChildItem[]` (optional) | Child nav items displayed as a dropdown menu (one level only) |
+
+### `HeaderNavChildItem`
+
+Child items use the same properties as `HeaderNavItem` except they cannot have their own `children`. This enforces a single level of nesting at the type level.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `label` | string | Display text shown in the dropdown |
+| `labelKey` | string (optional) | i18n translation key |
+| `path` | string | URL path the link navigates to |
+| `categoryMatch` | string (optional) | Links this child to a sidebar category |
 
 ### `labelKey`
 
@@ -46,55 +73,23 @@ The `categoryMatch` property connects a header tab to a specific sidebar categor
 
 For example, `categoryMatch: "guides"` links the tab to the `guides/` content directory. When a user navigates to any page under `/docs/guides/`, the "Guides" tab becomes active and the sidebar shows only the guides category.
 
-## Nested Navigation (Dropdowns)
+Children can also have `categoryMatch`. For example, placing `categoryMatch: "components"` on a child ensures that visiting `/docs/components/` activates the parent dropdown and filters the sidebar to the components section.
 
-`HeaderNavItem` supports an optional `children` property that creates a dropdown menu beneath the parent item. Only one level of nesting is supported — nested-nested dropdowns are not allowed.
+## Dropdown Behavior
 
-The parent item remains a clickable link that navigates to its own `path`. The dropdown provides quick access to related sub-pages without replacing the parent link.
+Items with `children` render as dropdown menus. The parent item itself remains a clickable link — clicking it navigates to its `path`. The dropdown provides quick access to related sub-pages.
 
-Each child item supports the same properties as a regular nav item: `label`, `labelKey`, `path`, and `categoryMatch`.
-
-### Configuration
-
-```ts
-export const settings = {
-  // ...
-  headerNav: [
-    { label: "Getting Started", path: "/docs/getting-started", categoryMatch: "getting-started" },
-    {
-      label: "Learn",
-      labelKey: "nav.learn",
-      path: "/docs/guides",
-      categoryMatch: "guides",
-      children: [
-        { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
-        { label: "Components", labelKey: "nav.components", path: "/docs/components", categoryMatch: "components" },
-      ],
-    },
-    { label: "Reference", path: "/docs/reference", categoryMatch: "reference" },
-  ],
-};
-```
-
-### Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `children` | `HeaderNavChildItem[]` (optional) | Array of child nav items displayed as a dropdown menu. Child items cannot have their own `children` (one level only). |
-
-### Behavior
-
-- **Desktop**: the dropdown opens on hover and closes when the mouse leaves the menu area.
-- **Keyboard**: the dropdown opens when the trigger receives focus (via `focus-within`), making it fully accessible without a mouse.
-- **Mobile**: nested items appear as expandable groups in the mobile sidebar menu.
-- **Overflow**: when a dropdown parent is moved to the overflow "..." menu, its children are shown as indented sub-items.
+- **Desktop**: opens on hover and closes when the mouse leaves the menu area. A small chevron indicates the dropdown.
+- **Keyboard**: opens when the trigger receives focus (via `focus-within`). Press Escape to close. Fully accessible without a mouse.
+- **Mobile**: nested items appear as expandable groups in the mobile sidebar menu, with a toggle chevron to expand/collapse children.
+- **Overflow**: when the browser window is narrow and a dropdown parent is moved to the overflow "..." menu, its children are shown as indented sub-items.
 
 ## Active State
 
 A header nav item is considered active when the current page URL starts with the item's `path`. If the current page matches any child item's `path`, the parent item also shows as active.
 
-For example, visiting `/docs/guides/configuration` activates the "Guides" tab because the URL starts with `/docs/guides`.
+For example, visiting `/docs/components/admonitions` activates the "Learn" dropdown because `/docs/components` matches one of its children.
 
 ## Mobile Behavior
 
-On small screens (`< 640px`), header nav items are hidden to save space. The sidebar toggle provides access to all navigation on mobile. Nested navigation items appear as expandable groups in the mobile sidebar.
+On small screens (`< 1024px`), the desktop header nav is hidden. The sidebar toggle provides access to all navigation on mobile. Nested navigation items appear as expandable groups in the mobile sidebar — tap the chevron to expand/collapse children.

@@ -1,31 +1,46 @@
 ---
 title: ヘッダーナビゲーション
-description: ヘッダーのトップレベルナビゲーションタブの設定
+description: ドロップダウンメニュー対応のヘッダーナビゲーションタブの設定
 sidebar_position: 4
 ---
 
-zudo-docはDocusaurusにインスパイアされた3レベルのナビゲーション階層をサポートしています：
+zudo-docはDocusaurusにインスパイアされたナビゲーション階層をサポートしています：
 
-- **ヘッダーナビゲーション** — サイトヘッダーのトップレベルタブ（最大カテゴリ）
-- **サイドバーカテゴリ** — サイドバーの折りたたみ可能なグループ（第2レベル）
-- **サイドバーアイテム** — カテゴリ内の個別ページ（第3レベル）
+- **ヘッダーナビゲーション** — サイトヘッダーのトップレベルタブ。オプションでドロップダウンメニューを含む
+- **サイドバーカテゴリ** — サイドバーの折りたたみ可能なグループ
+- **サイドバーアイテム** — カテゴリ内の個別ページ
 
 ## 設定
 
-`src/config/settings.ts`でヘッダーナビゲーションアイテムを定義します：
+`src/config/settings.ts`でヘッダーナビゲーションアイテムを定義します。アイテムはフラットリンクまたはネストされた子を持つドロップダウン親のいずれかです：
 
 ```ts
 export const settings = {
   // ...
   headerNav: [
+    // フラットリンク（ドロップダウンなし）
     { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
-    { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
+
+    // 子を持つドロップダウン親
+    {
+      label: "Learn",
+      labelKey: "nav.learn",
+      path: "/docs/guides",
+      categoryMatch: "guides",
+      children: [
+        { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
+        { label: "Components", labelKey: "nav.components", path: "/docs/components", categoryMatch: "components" },
+      ],
+    },
+
     { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
   ],
 };
 ```
 
-各アイテムは以下のプロパティをサポートします：
+## プロパティ
+
+### `HeaderNavItem`
 
 | プロパティ | 型 | 説明 |
 |----------|------|-------------|
@@ -33,6 +48,18 @@ export const settings = {
 | `labelKey` | string（オプション） | 翻訳が利用可能な場合に`label`をオーバーライドするi18n翻訳キー |
 | `path` | string | リンク先のURLパス |
 | `categoryMatch` | string（オプション） | このヘッダータブをサイドバーカテゴリにリンク |
+| `children` | `HeaderNavChildItem[]`（オプション） | ドロップダウンメニューとして表示される子ナビゲーションアイテム（1階層のみ） |
+
+### `HeaderNavChildItem`
+
+子アイテムは`HeaderNavItem`と同じプロパティを使用しますが、独自の`children`を持つことはできません。これにより型レベルで1階層のネストが強制されます。
+
+| プロパティ | 型 | 説明 |
+|----------|------|-------------|
+| `label` | string | ドロップダウンに表示されるテキスト |
+| `labelKey` | string（オプション） | i18n翻訳キー |
+| `path` | string | リンク先のURLパス |
+| `categoryMatch` | string（オプション） | この子アイテムをサイドバーカテゴリにリンク |
 
 ### `labelKey`
 
@@ -46,55 +73,23 @@ export const settings = {
 
 例えば、`categoryMatch: "guides"`はタブを`guides/`コンテンツディレクトリにリンクします。ユーザーが`/docs/guides/`配下のページに移動すると、「Guides」タブがアクティブになり、サイドバーにはguidesカテゴリのみが表示されます。
 
-## ネストナビゲーション（ドロップダウン）
+子アイテムにも`categoryMatch`を設定できます。例えば、子に`categoryMatch: "components"`を設定すると、`/docs/components/`にアクセスした際に親ドロップダウンがアクティブになり、サイドバーがコンポーネントセクションにフィルタリングされます。
 
-`HeaderNavItem`はオプションの`children`プロパティをサポートしており、親アイテムの下にドロップダウンメニューを作成します。ネストは1階層のみサポートされており、ネスト内のさらなるネストはできません。
+## ドロップダウンの動作
 
-親アイテムは引き続きクリック可能なリンクとして機能し、自身の`path`に遷移します。ドロップダウンは親リンクを置き換えることなく、関連するサブページへのクイックアクセスを提供します。
+`children`を持つアイテムはドロップダウンメニューとして表示されます。親アイテム自体は引き続きクリック可能なリンクとして機能し、クリックすると`path`に遷移します。ドロップダウンは関連するサブページへのクイックアクセスを提供します。
 
-各子アイテムは通常のナビゲーションアイテムと同じプロパティをサポートします：`label`、`labelKey`、`path`、`categoryMatch`。
-
-### 設定
-
-```ts
-export const settings = {
-  // ...
-  headerNav: [
-    { label: "Getting Started", path: "/docs/getting-started", categoryMatch: "getting-started" },
-    {
-      label: "Learn",
-      labelKey: "nav.learn",
-      path: "/docs/guides",
-      categoryMatch: "guides",
-      children: [
-        { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
-        { label: "Components", labelKey: "nav.components", path: "/docs/components", categoryMatch: "components" },
-      ],
-    },
-    { label: "Reference", path: "/docs/reference", categoryMatch: "reference" },
-  ],
-};
-```
-
-### プロパティ
-
-| プロパティ | 型 | 説明 |
-|----------|------|-------------|
-| `children` | `HeaderNavChildItem[]`（オプション） | ドロップダウンメニューとして表示される子ナビゲーションアイテムの配列。子アイテムは独自の`children`を持てません（1階層のみ）。 |
-
-### 動作
-
-- **デスクトップ**：ドロップダウンはホバーで開き、マウスがメニュー領域から離れると閉じます。
-- **キーボード**：ドロップダウンはトリガーがフォーカスを受けた時に開きます（`focus-within`経由）。マウスなしでも完全にアクセス可能です。
-- **モバイル**：ネストアイテムはモバイルサイドバーメニューで展開可能なグループとして表示されます。
-- **オーバーフロー**：ドロップダウンの親がオーバーフロー「...」メニューに移動された場合、子アイテムはインデントされたサブアイテムとして表示されます。
+- **デスクトップ**：ホバーで開き、マウスがメニュー領域から離れると閉じます。小さなシェブロンがドロップダウンを示します。
+- **キーボード**：トリガーがフォーカスを受けた時に開きます（`focus-within`経由）。Escapeキーで閉じます。マウスなしでも完全にアクセス可能です。
+- **モバイル**：ネストアイテムはモバイルサイドバーメニューで展開可能なグループとして表示され、シェブロンをタップして子を展開/折りたたみできます。
+- **オーバーフロー**：ブラウザウィンドウが狭くドロップダウンの親がオーバーフロー「...」メニューに移動された場合、子アイテムはインデントされたサブアイテムとして表示されます。
 
 ## アクティブ状態
 
 現在のページURLがアイテムの`path`で始まる場合、そのヘッダーナビゲーションアイテムがアクティブとみなされます。現在のページが子アイテムの`path`にマッチする場合、親アイテムもアクティブとして表示されます。
 
-例えば、`/docs/guides/configuration`にアクセスすると、URLが`/docs/guides`で始まるため「Guides」タブがアクティブになります。
+例えば、`/docs/components/admonitions`にアクセスすると、`/docs/components`が子アイテムの一つにマッチするため「Learn」ドロップダウンがアクティブになります。
 
 ## モバイル動作
 
-小さな画面（`< 640px`）では、スペースを節約するためにヘッダーナビゲーションアイテムは非表示になります。モバイルではサイドバートグルですべてのナビゲーションにアクセスできます。ネストナビゲーションアイテムはモバイルサイドバーで展開可能なグループとして表示されます。
+小さな画面（`< 1024px`）では、デスクトップヘッダーナビゲーションは非表示になります。モバイルではサイドバートグルですべてのナビゲーションにアクセスできます。ネストナビゲーションアイテムはモバイルサイドバーで展開可能なグループとして表示されます。シェブロンをタップして子を展開/折りたたみできます。
