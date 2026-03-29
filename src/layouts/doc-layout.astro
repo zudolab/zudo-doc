@@ -256,12 +256,6 @@ const contentTransition = {
             return raw ? parseFloat(raw) || MIN_W : MIN_W;
           }
 
-          function applyWidth(w: number) {
-            document.documentElement.style.setProperty(CSS_PROP, w + "px");
-            try { localStorage.setItem(LS_KEY, String(Math.round(w))); } catch (e) {}
-            handle.setAttribute("aria-valuenow", String(Math.round(w)));
-          }
-
           const handle = document.createElement("div");
           handle.setAttribute("data-sidebar-resizer", "");
           handle.setAttribute("tabindex", "0");
@@ -280,14 +274,27 @@ const contentTransition = {
             cursor: "col-resize",
             zIndex: "10",
             transition: "background 0.15s",
-            outline: "none",
           });
+
+          let dragging = false;
+
+          function applyWidth(w: number) {
+            document.documentElement.style.setProperty(CSS_PROP, w + "px");
+            try { localStorage.setItem(LS_KEY, String(Math.round(w))); } catch (e) {}
+            handle.setAttribute("aria-valuenow", String(Math.round(w)));
+          }
 
           handle.addEventListener("focus", () => {
             handle.style.background = "var(--zd-accent, rgba(128,128,128,0.3))";
+            handle.style.outline = "2px solid var(--zd-accent, #666)";
+            handle.style.outlineOffset = "1px";
           });
           handle.addEventListener("blur", () => {
-            if (!dragging) handle.style.background = "";
+            if (!dragging) {
+              handle.style.background = "";
+              handle.style.outline = "";
+              handle.style.outlineOffset = "";
+            }
           });
 
           handle.addEventListener("keydown", (e: KeyboardEvent) => {
@@ -318,8 +325,6 @@ const contentTransition = {
           handle.addEventListener("mouseleave", () => {
             if (!dragging) handle.style.background = "";
           });
-
-          let dragging = false;
 
           handle.addEventListener("pointerdown", (e: PointerEvent) => {
             e.preventDefault();
