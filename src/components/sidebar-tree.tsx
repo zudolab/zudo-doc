@@ -161,13 +161,14 @@ interface SidebarTreeProps {
 
 function SidebarFooter({ links, themeDefaultMode }: { links?: LocaleLink[]; themeDefaultMode?: "light" | "dark" }) {
   return (
-    <div className="lg:hidden flex items-center gap-hsp-md border-t border-muted px-hsp-sm py-vsp-xs pb-[200px] text-small">
+    // pb-[50vh] provides scroll room so the footer doesn't sit at the very bottom of the viewport
+    <div className="lg:hidden flex items-center gap-hsp-md border-t border-muted px-hsp-sm py-vsp-xs pb-[50vh] text-small">
       {themeDefaultMode && <ThemeToggle defaultMode={themeDefaultMode} />}
       {links && links.map((link, i) => (
         <span key={link.href} className="flex items-center gap-hsp-xs">
           {i > 0 && <span className="text-muted">/</span>}
           {link.active ? (
-            <span aria-current="true" className="font-medium text-fg">{link.label}</span>
+            <span aria-current="page" className="font-medium text-fg">{link.label}</span>
           ) : (
             <a href={link.href} lang={link.code} className="text-muted hover:text-fg">
               {link.label}
@@ -184,6 +185,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
   const [query, setQuery] = useState("");
   const [showingRootMenu, setShowingRootMenu] = useState(false);
   const filterRef = useRef<HTMLInputElement>(null);
+  const footer = (localeLinks || themeDefaultMode) ? <SidebarFooter links={localeLinks} themeDefaultMode={themeDefaultMode} /> : null;
   const [filterPlaceholder, setFilterPlaceholder] = useState("Filter...");
 
   // Detect OS to show appropriate keyboard shortcut in placeholder
@@ -231,7 +233,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
         {rootMenuItems.map((item) => (
           <RootMenuItemEntry key={item.href} item={item} />
         ))}
-        {(localeLinks || themeDefaultMode) && <SidebarFooter links={localeLinks} themeDefaultMode={themeDefaultMode} />}
+        {footer}
       </nav>
     );
   }
@@ -244,7 +246,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
         {rootMenuItems.map((item) => (
           <RootMenuItemEntry key={item.href} item={item} />
         ))}
-        {(localeLinks || themeDefaultMode) && <SidebarFooter links={localeLinks} themeDefaultMode={themeDefaultMode} />}
+        {footer}
       </nav>
     );
   }
@@ -284,7 +286,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
         depth={0}
         forceOpen={!!query}
       />
-      {(localeLinks || themeDefaultMode) && <SidebarFooter links={localeLinks} themeDefaultMode={themeDefaultMode} />}
+      {footer}
     </nav>
   );
 }

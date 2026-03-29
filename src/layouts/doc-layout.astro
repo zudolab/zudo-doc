@@ -251,10 +251,12 @@ const contentTransition = {
           const LS_KEY = "zudo-doc-sidebar-width";
           const CSS_PROP = "--zd-sidebar-w";
 
-          function getCurrentWidth(): number {
+          function readCurrentWidth(): number {
             const raw = getComputedStyle(document.documentElement).getPropertyValue(CSS_PROP);
             return raw ? parseFloat(raw) || MIN_W : MIN_W;
           }
+
+          let cachedWidth = readCurrentWidth();
 
           const handle = document.createElement("div");
           handle.setAttribute("data-sidebar-resizer", "");
@@ -279,26 +281,35 @@ const contentTransition = {
           let dragging = false;
 
           function applyWidth(w: number) {
+            cachedWidth = w;
             document.documentElement.style.setProperty(CSS_PROP, w + "px");
             try { localStorage.setItem(LS_KEY, String(Math.round(w))); } catch (e) {}
             handle.setAttribute("aria-valuenow", String(Math.round(w)));
           }
 
+          let focused = false;
+
+          function updateHandleVisual() {
+            if (dragging || focused) {
+              handle.style.background = "var(--zd-accent, rgba(128,128,128,0.3))";
+            } else {
+              handle.style.background = "";
+            }
+            handle.style.outline = focused && !dragging ? "2px solid var(--zd-accent, #666)" : "";
+            handle.style.outlineOffset = focused && !dragging ? "1px" : "";
+          }
+
           handle.addEventListener("focus", () => {
-            handle.style.background = "var(--zd-accent, rgba(128,128,128,0.3))";
-            handle.style.outline = "2px solid var(--zd-accent, #666)";
-            handle.style.outlineOffset = "1px";
+            focused = true;
+            updateHandleVisual();
           });
           handle.addEventListener("blur", () => {
-            if (!dragging) {
-              handle.style.background = "";
-              handle.style.outline = "";
-              handle.style.outlineOffset = "";
-            }
+            focused = false;
+            updateHandleVisual();
           });
 
           handle.addEventListener("keydown", (e: KeyboardEvent) => {
-            let w = getCurrentWidth();
+            let w = cachedWidth;
             switch (e.key) {
               case "ArrowLeft":
                 w = Math.max(MIN_W, w - STEP);
@@ -320,17 +331,17 @@ const contentTransition = {
           });
 
           handle.addEventListener("mouseenter", () => {
-            if (!dragging) handle.style.background = "var(--zd-accent, rgba(128,128,128,0.3))";
+            if (!dragging && !focused) handle.style.background = "var(--zd-accent, rgba(128,128,128,0.3))";
           });
           handle.addEventListener("mouseleave", () => {
-            if (!dragging) handle.style.background = "";
+            if (!dragging && !focused) handle.style.background = "";
           });
 
           handle.addEventListener("pointerdown", (e: PointerEvent) => {
             e.preventDefault();
             handle.setPointerCapture(e.pointerId);
             dragging = true;
-            handle.style.background = "var(--zd-accent, rgba(128,128,128,0.3))";
+            updateHandleVisual();
             document.documentElement.style.cursor = "col-resize";
             document.documentElement.style.userSelect = "none";
 
@@ -358,7 +369,7 @@ const contentTransition = {
 
             const cleanup = () => {
               dragging = false;
-              handle.style.background = "";
+              updateHandleVisual();
               document.documentElement.style.cursor = "";
               document.documentElement.style.userSelect = "";
               ghost.remove();

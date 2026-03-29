@@ -75,8 +75,8 @@ export function navHref(
 /** Build a locale-switched path from the current page path. */
 export function getPathForLocale(
   path: string,
-  currentLang: string,
-  targetLang: string,
+  currentLang: Locale,
+  targetLang: Locale,
 ): string {
   let relativePath = stripBase(path);
   if (currentLang !== defaultLocale) {
