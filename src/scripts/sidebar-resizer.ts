@@ -9,6 +9,7 @@ export function initSidebarResizer() {
   const CSS_PROP = "--zd-sidebar-w";
   const ACCENT_BG = "var(--zd-accent, rgba(128,128,128,0.3))";
   const ACCENT_OUTLINE = "2px solid var(--zd-accent, rgba(128,128,128,0.5))";
+  const ACCENT_GHOST = "var(--zd-accent, rgba(128,128,128,0.5))";
 
   function readCurrentWidth(): number {
     const raw = getComputedStyle(document.documentElement).getPropertyValue(CSS_PROP);
@@ -42,7 +43,7 @@ export function initSidebarResizer() {
   function applyWidth(w: number) {
     cachedWidth = Math.max(MIN_W, Math.min(MAX_W, w));
     document.documentElement.style.setProperty(CSS_PROP, cachedWidth + "px");
-    try { localStorage.setItem(LS_KEY, String(Math.round(cachedWidth))); } catch (e) {}
+    try { localStorage.setItem(LS_KEY, String(Math.round(cachedWidth))); } catch {}
     handle.setAttribute("aria-valuenow", String(Math.round(cachedWidth)));
   }
 
@@ -111,11 +112,11 @@ export function initSidebarResizer() {
       top: "0",
       width: "2px",
       height: "100vh",
-      background: "var(--zd-accent, rgba(128,128,128,0.5))",
+      background: ACCENT_GHOST,
       pointerEvents: "none",
       zIndex: "9999",
     });
-    const sidebarRect = sidebar!.getBoundingClientRect();
+    const sidebarRect = sidebar.getBoundingClientRect();
     const sidebarLeft = sidebarRect.left;
     ghost.style.left = (sidebarLeft + sidebarRect.width) + "px";
     document.body.appendChild(ghost);

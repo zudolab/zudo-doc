@@ -1,27 +1,13 @@
 ---
-import { getPathForLocale } from "@/utils/base";
-import {
-  defaultLocale,
-  locales,
-  getLocaleLabel,
-  type Locale,
-} from "@/config/i18n";
-import type { LocaleLink } from "@/types/locale";
+import { buildLocaleLinks } from "@/utils/base";
+import { defaultLocale, type Locale } from "@/config/i18n";
 
 interface Props {
   lang?: Locale;
 }
 
 const { lang = defaultLocale } = Astro.props;
-const currentPath = Astro.url.pathname;
-
-// Build typed locale links — same shape used by Preact SidebarFooter
-const localeLinks: LocaleLink[] = locales.map((code) => ({
-  code,
-  label: getLocaleLabel(code),
-  href: getPathForLocale(currentPath, lang, code),
-  active: code === lang,
-}));
+const localeLinks = buildLocaleLinks(Astro.url.pathname, lang);
 ---
 
 {
