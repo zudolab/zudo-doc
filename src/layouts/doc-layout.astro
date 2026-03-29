@@ -245,8 +245,32 @@ const contentTransition = {
           const sidebar = document.getElementById("desktop-sidebar");
           if (!sidebar || sidebar.querySelector("[data-sidebar-resizer]")) return;
 
+          const MIN_W = 192;
+          const MAX_W = 448;
+          const STEP = 10;
+          const LS_KEY = "zudo-doc-sidebar-width";
+          const CSS_PROP = "--zd-sidebar-w";
+
+          function getCurrentWidth(): number {
+            const raw = getComputedStyle(document.documentElement).getPropertyValue(CSS_PROP);
+            return raw ? parseFloat(raw) || MIN_W : MIN_W;
+          }
+
+          function applyWidth(w: number) {
+            document.documentElement.style.setProperty(CSS_PROP, w + "px");
+            try { localStorage.setItem(LS_KEY, String(Math.round(w))); } catch (e) {}
+            handle.setAttribute("aria-valuenow", String(Math.round(w)));
+          }
+
           const handle = document.createElement("div");
           handle.setAttribute("data-sidebar-resizer", "");
+          handle.setAttribute("tabindex", "0");
+          handle.setAttribute("role", "separator");
+          handle.setAttribute("aria-orientation", "vertical");
+          handle.setAttribute("aria-label", "Resize sidebar");
+          handle.setAttribute("aria-valuemin", String(MIN_W));
+          handle.setAttribute("aria-valuemax", String(MAX_W));
+          handle.setAttribute("aria-valuenow", String(Math.round(getCurrentWidth())));
           Object.assign(handle.style, {
             position: "absolute",
             top: "0",
@@ -256,6 +280,36 @@ const contentTransition = {
             cursor: "col-resize",
             zIndex: "10",
             transition: "background 0.15s",
+            outline: "none",
+          });
+
+          handle.addEventListener("focus", () => {
+            handle.style.background = "var(--zd-accent, rgba(128,128,128,0.3))";
+          });
+          handle.addEventListener("blur", () => {
+            if (!dragging) handle.style.background = "";
+          });
+
+          handle.addEventListener("keydown", (e: KeyboardEvent) => {
+            let w = getCurrentWidth();
+            switch (e.key) {
+              case "ArrowLeft":
+                w = Math.max(MIN_W, w - STEP);
+                break;
+              case "ArrowRight":
+                w = Math.min(MAX_W, w + STEP);
+                break;
+              case "Home":
+                w = MIN_W;
+                break;
+              case "End":
+                w = MAX_W;
+                break;
+              default:
+                return;
+            }
+            e.preventDefault();
+            applyWidth(w);
           });
 
           handle.addEventListener("mouseenter", () => {
@@ -293,7 +347,7 @@ const contentTransition = {
             let targetWidth = 0;
 
             const onMove = (ev: PointerEvent) => {
-              targetWidth = Math.max(192, Math.min(448, ev.clientX - sidebarLeft));
+              targetWidth = Math.max(MIN_W, Math.min(MAX_W, ev.clientX - sidebarLeft));
               ghost.style.left = (sidebarLeft + targetWidth) + "px";
             };
 
@@ -313,8 +367,7 @@ const contentTransition = {
               handle.releasePointerCapture(ev.pointerId);
               cleanup();
               if (targetWidth > 0) {
-                document.documentElement.style.setProperty("--zd-sidebar-w", targetWidth + "px");
-                try { localStorage.setItem("zudo-doc-sidebar-width", String(Math.round(targetWidth))); } catch (e) {}
+                applyWidth(targetWidth);
               }
             };
 
