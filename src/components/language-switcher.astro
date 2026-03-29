@@ -6,6 +6,8 @@ import {
   getLocaleLabel,
   type Locale,
 } from "@/config/i18n";
+// Locale link shape mirrors LocaleLink from @/types/locale
+// (rendering stays in Astro template; type shared with Preact SidebarFooter)
 
 interface Props {
   lang?: Locale;
