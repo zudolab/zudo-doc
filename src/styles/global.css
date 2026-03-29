@@ -139,6 +139,7 @@
 }
 
 :root {
+  /* Default responsive range; sidebar-resizer.ts allows 192–448px for explicit resizing */
   --zd-sidebar-w: clamp(14rem, 20vw, 22rem);
 }
 
