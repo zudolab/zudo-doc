@@ -138,7 +138,7 @@ export const FEATURES: Feature[] = [
   },
   {
     value: "docHistory",
-    label: "Document History",
+    label: "Document history",
     hint: "Show document edit history",
     default: false,
   },
@@ -150,7 +150,7 @@ export const FEATURES: Feature[] = [
   },
   {
     value: "skillSymlinker",
-    label: "Skill Symlinker",
+    label: "Skill symlinker",
     hint: "Symlink documentation skills",
     default: false,
   },

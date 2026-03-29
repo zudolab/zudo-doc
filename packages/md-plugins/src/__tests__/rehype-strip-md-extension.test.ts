@@ -59,6 +59,16 @@ describe("rehypeStripMdExtension", () => {
     it("../guides/setup → ../guides/setup/", () => {
       expect(processHref("../guides/setup")).toBe("../guides/setup/");
     });
+
+    it("./other-doc?tab=api → ./other-doc/?tab=api", () => {
+      expect(processHref("./other-doc?tab=api")).toBe("./other-doc/?tab=api");
+    });
+
+    it("./other-doc?tab=api#section → ./other-doc/?tab=api#section", () => {
+      expect(processHref("./other-doc?tab=api#section")).toBe(
+        "./other-doc/?tab=api#section",
+      );
+    });
   });
 
   describe("does not modify links that should stay unchanged", () => {

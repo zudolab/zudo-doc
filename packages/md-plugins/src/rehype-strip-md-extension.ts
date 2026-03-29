@@ -34,15 +34,18 @@ export function rehypeStripMdExtension() {
       // For relative links where Astro already stripped .md:
       // add trailing slash if missing and the last segment has no file extension
       if (newHref === href && (newHref.startsWith('./') || newHref.startsWith('../'))) {
-        const hashIdx = newHref.indexOf('#');
-        const path = hashIdx >= 0 ? newHref.slice(0, hashIdx) : newHref;
-        const hash = hashIdx >= 0 ? newHref.slice(hashIdx) : '';
+        // Split off query string and hash fragment
+        const qIdx = newHref.indexOf('?');
+        const hIdx = newHref.indexOf('#');
+        const suffixIdx = qIdx >= 0 ? qIdx : hIdx >= 0 ? hIdx : -1;
+        const path = suffixIdx >= 0 ? newHref.slice(0, suffixIdx) : newHref;
+        const suffix = suffixIdx >= 0 ? newHref.slice(suffixIdx) : '';
 
         if (!path.endsWith('/')) {
           const lastSegment = path.split('/').pop() || '';
           // Only add slash if there's no file extension (like .png, .pdf, etc.)
           if (!/\.[a-zA-Z]\w*$/.test(lastSegment)) {
-            newHref = path + '/' + hash;
+            newHref = path + '/' + suffix;
           }
         }
       }
