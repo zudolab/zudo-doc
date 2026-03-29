@@ -60,10 +60,11 @@ export function resolveHref(href: string): string {
 /** Build a localized, versioned nav href. */
 export function navHref(
   path: string,
-  lang: string | undefined,
-  isNonDefaultLocale: boolean,
-  versionPrefix: string,
+  lang: Locale | undefined,
+  currentVersion: string | undefined,
 ): string {
+  const isNonDefaultLocale = lang != null && lang !== defaultLocale;
+  const versionPrefix = currentVersion ? `/v/${currentVersion}` : "";
   return withBase(
     isNonDefaultLocale
       ? `/${lang}${versionPrefix}${path}`

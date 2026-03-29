@@ -85,13 +85,7 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
     {
       settings.headerNav.map((item) => {
         const isActive = isNavItemActive(item);
-        const versionPrefix = currentVersion ? `/v/${currentVersion}` : "";
-        const href = navHref(
-          item.path,
-          lang,
-          isNonDefaultLocale,
-          versionPrefix,
-        );
+        const href = navHref(item.path, lang, currentVersion);
         const label = item.labelKey ? t(item.labelKey, lang) : item.label;
 
         if (item.children && item.children.length > 0) {
@@ -135,12 +129,7 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
               <div class="absolute left-0 top-full z-50 hidden group-hover:block group-focus-within:block pt-vsp-3xs">
                 <div class="min-w-[10rem] border border-muted rounded bg-surface shadow-lg py-vsp-3xs">
                   {item.children.map((child) => {
-                    const childHref = navHref(
-                      child.path,
-                      lang,
-                      isNonDefaultLocale,
-                      versionPrefix,
-                    );
+                    const childHref = navHref(child.path, lang, currentVersion);
                     const childLabel = child.labelKey
                       ? t(child.labelKey, lang)
                       : child.label;

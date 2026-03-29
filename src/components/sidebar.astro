@@ -20,21 +20,19 @@ const {
   navSection,
   currentVersion,
 } = Astro.props;
-const isNonDefaultLocale = lang !== defaultLocale;
 const backToMenuLabel = navSection ? t("nav.backToMenu", lang) : undefined;
 
 // Build root menu items from headerNav (always needed — top page and "back to menu")
-const versionPrefix = currentVersion ? `/v/${currentVersion}` : "";
 const rootMenuItems = settings.headerNav.map((item) => ({
   label: item.labelKey
     ? t(item.labelKey as Parameters<typeof t>[0], lang)
     : item.label,
-  href: navHref(item.path, lang, isNonDefaultLocale, versionPrefix),
+  href: navHref(item.path, lang, currentVersion),
   children: item.children?.map((child) => ({
     label: child.labelKey
       ? t(child.labelKey as Parameters<typeof t>[0], lang)
       : child.label,
-    href: navHref(child.path, lang, isNonDefaultLocale, versionPrefix),
+    href: navHref(child.path, lang, currentVersion),
   })),
 }));
 
