@@ -83,7 +83,14 @@ const FEATURES = [
   { value: "claudeResources", label: "Claude Resources", cliFlag: "claude-resources", default: false },
   { value: "colorTweakPanel", label: "Color tweak panel", cliFlag: "color-tweak-panel", default: false },
   { value: "sidebarResizer", label: "Sidebar resizer", cliFlag: "sidebar-resizer", default: false },
+  { value: "sidebarToggle", label: "Sidebar toggle", cliFlag: "sidebar-toggle", default: false },
   { value: "versioning", label: "Versioning", cliFlag: "versioning", default: false },
+  { value: "docHistory", label: "Document History", cliFlag: "doc-history", default: false },
+  { value: "llmsTxt", label: "llms.txt", cliFlag: "llms-txt", default: false },
+  { value: "skillSymlinker", label: "Skill Symlinker", cliFlag: "skill-symlinker", default: false },
+  { value: "footerNavGroup", label: "Footer nav group", cliFlag: "footer-nav-group", default: false },
+  { value: "footerCopyright", label: "Footer copyright", cliFlag: "footer-copyright", default: false },
+  { value: "changelog", label: "Changelog", cliFlag: "changelog", default: false },
 ] as const;
 
 const PACKAGE_MANAGERS = ["pnpm", "npm", "yarn", "bun"] as const;
@@ -124,6 +131,21 @@ function buildJson(state: FormState): Record<string, unknown> {
   }
 
   base.features = state.features;
+
+  if (state.features.includes("footerNavGroup")) {
+    base.footerNavGroup = [
+      {
+        title: "Resources",
+        items: [{ label: "GitHub", href: "https://github.com" }],
+      },
+    ];
+  }
+
+  if (state.features.includes("footerCopyright")) {
+    base.footerCopyright =
+      "Copyright \u00A9 2026 John Doh. Built with zudo-doc.";
+  }
+
   base.packageManager = state.packageManager;
   return base;
 }
@@ -540,6 +562,14 @@ export default function PresetGenerator() {
               {feat.label}
             </label>
           ))}
+          <label className="flex items-center gap-x-hsp-xs text-small text-muted cursor-not-allowed opacity-50">
+            <input
+              type="checkbox"
+              disabled
+              className="accent-accent"
+            />
+            AI Assistant (under development)
+          </label>
         </div>
       </section>
 

@@ -16,8 +16,15 @@ export interface CliArgs {
   sidebarFilter?: boolean;
   colorTweakPanel?: boolean;
   sidebarResizer?: boolean;
+  sidebarToggle?: boolean;
   versioning?: boolean;
   claudeResources?: boolean;
+  docHistory?: boolean;
+  llmsTxt?: boolean;
+  skillSymlinker?: boolean;
+  footerNavGroup?: boolean;
+  footerCopyright?: boolean;
+  changelog?: boolean;
   pm?: "pnpm" | "npm" | "yarn" | "bun";
   install?: boolean;
   yes?: boolean;
@@ -91,6 +98,27 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
   if (wasPassed("claude-resources")) {
     args.claudeResources = raw["claude-resources"] !== false;
   }
+  if (wasPassed("sidebar-toggle")) {
+    args.sidebarToggle = raw["sidebar-toggle"] !== false;
+  }
+  if (wasPassed("doc-history")) {
+    args.docHistory = raw["doc-history"] !== false;
+  }
+  if (wasPassed("llms-txt")) {
+    args.llmsTxt = raw["llms-txt"] !== false;
+  }
+  if (wasPassed("skill-symlinker")) {
+    args.skillSymlinker = raw["skill-symlinker"] !== false;
+  }
+  if (wasPassed("footer-nav-group")) {
+    args.footerNavGroup = raw["footer-nav-group"] !== false;
+  }
+  if (wasPassed("footer-copyright")) {
+    args.footerCopyright = raw["footer-copyright"] !== false;
+  }
+  if (wasPassed("changelog")) {
+    args.changelog = raw["changelog"] !== false;
+  }
   if (wasPassed("install")) args.install = raw["install"] !== false;
   if (raw.yes || raw.y) args.yes = true;
   if (raw.help || raw.h) args.help = true;
@@ -119,8 +147,15 @@ ${pc.bold("Options:")}
   --[no-]sidebar-filter        Sidebar filter
   --[no-]color-tweak-panel     Live color editor for designing schemes
   --[no-]sidebar-resizer       Draggable sidebar width
+  --[no-]sidebar-toggle        Show/hide desktop sidebar
   --[no-]versioning            Multi-version documentation support
   --[no-]claude-resources      Claude Code docs generation
+  --[no-]doc-history           Document edit history
+  --[no-]llms-txt              Generate llms.txt for LLM consumption
+  --[no-]skill-symlinker       Symlink documentation skills
+  --[no-]footer-nav-group      Navigation links in the footer
+  --[no-]footer-copyright      Copyright notice in the footer
+  --[no-]changelog             Changelog page
   --pm <manager>               pnpm | npm | yarn | bun
   --[no-]install               Install dependencies after scaffolding
   -y, --yes                    Use defaults for unspecified options, skip prompts
