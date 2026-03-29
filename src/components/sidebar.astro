@@ -8,7 +8,7 @@ import {
   getLocaleLabel,
   type Locale,
 } from "@/config/i18n";
-import { withBase, stripBase, versionedDocsUrl } from "@/utils/base";
+import { withBase, getPathForLocale, versionedDocsUrl } from "@/utils/base";
 import { loadLocaleDocs } from "@/utils/locale-docs";
 import { isNavVisible, type NavNode } from "@/utils/docs";
 import { settings } from "@/config/settings";
@@ -91,20 +91,12 @@ const nodes = currentVersion
 const currentPath = Astro.url.pathname;
 const localeLinks =
   locales.length > 1
-    ? locales.map((code) => {
-        let relativePath = stripBase(currentPath);
-        if (lang !== defaultLocale) {
-          relativePath = relativePath.replace(new RegExp(`^/${lang}/`), "/");
-        }
-        if (code !== defaultLocale) {
-          relativePath = `/${code}${relativePath}`;
-        }
-        return {
-          label: getLocaleLabel(code),
-          href: withBase(relativePath),
-          active: code === lang,
-        };
-      })
+    ? locales.map((code) => ({
+        code,
+        label: getLocaleLabel(code),
+        href: getPathForLocale(currentPath, lang, code),
+        active: code === lang,
+      }))
     : undefined;
 ---
 

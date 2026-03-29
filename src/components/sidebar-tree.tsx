@@ -144,6 +144,7 @@ function RootMenuItemEntry({ item }: { item: RootMenuItem }) {
 }
 
 interface LocaleLink {
+  code: string;
   label: string;
   href: string;
   active: boolean;
@@ -166,9 +167,9 @@ function SidebarFooter({ links, themeDefaultMode }: { links?: LocaleLink[]; them
         <span key={link.href} className="flex items-center gap-hsp-xs">
           {i > 0 && <span className="text-muted">/</span>}
           {link.active ? (
-            <span className="font-medium text-fg">{link.label}</span>
+            <span aria-current="true" className="font-medium text-fg">{link.label}</span>
           ) : (
-            <a href={link.href} className="text-muted hover:text-fg">
+            <a href={link.href} lang={link.code} className="text-muted hover:text-fg">
               {link.label}
             </a>
           )}
