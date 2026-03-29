@@ -1,0 +1,206 @@
+---
+title: ナビゲーション構造の設計
+description: ヘッダーナビゲーションとサイドバーカテゴリの整理方法
+sidebar_position: 3.5
+---
+
+## 概要
+
+zudo-doc は **3 階層のナビゲーション構造** でコンテンツを整理します。
+
+1. **ヘッダーナビゲーション** — サイト全体に表示される、最も広い最上位カテゴリ
+2. **サイドバー** — 各ヘッダーナビセクション内の次のレベルの分類
+3. **サイドバーのネストカテゴリ** — サイドバーセクション内の詳細なサブカテゴリ
+
+各レベルはスコープを絞り込みます。ヘッダーはサイトの全体像を示し、サイドバーはセクションを論理的なグループに分け、ネストカテゴリは必要に応じて細かい構造を追加します。
+
+## ヘッダーナビゲーションのルール
+
+ヘッダーナビゲーションは最上位のレベルです。サイトの主要セクションを定義する、最も広いカテゴリのみを含めてください。
+
+- **簡潔にする** — 3〜6 項目を目安にしましょう。それ以上はユーザーを圧倒し、ヘッダーが煩雑になります。
+- **ドロップダウンは控えめに** — 密接に関連するセクションをまとめる場合のみ使用します（例：「学習」に「ガイド」と「コンポーネント」を含める）。
+- **各項目はコンテンツディレクトリに対応** — 設定の `categoryMatch` フィールドがヘッダー項目をそのセクションのサイドバーコンテンツにリンクします。
+
+<Tip>
+
+設定の詳細は [ヘッダーナビゲーション](../guides/header-navigation.mdx) を参照してください。
+
+</Tip>
+
+### ヘッダー設定の例
+
+```ts
+// src/config/settings.ts
+export const settings = {
+  headerNav: [
+    { label: "Getting Started", path: "/docs/getting-started", categoryMatch: "getting-started" },
+    {
+      label: "Learn",
+      path: "/docs/guides",
+      categoryMatch: "guides",
+      children: [
+        { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
+        { label: "Components", path: "/docs/components", categoryMatch: "components" },
+      ],
+    },
+    { label: "Reference", path: "/docs/reference", categoryMatch: "reference" },
+  ],
+};
+```
+
+## サイドバー構造のルール
+
+サイドバーは、各ヘッダーナビセクション内の次のレベルの分類を提供します。ディレクトリ構造から自動的に生成されます。
+
+- **カテゴリにはディレクトリを使う** — 各ディレクトリが折りたたみ可能なサイドバーグループになります。
+- **各カテゴリディレクトリに `index.mdx` を用意する** — カテゴリのランディングページとして機能し、`sidebar_position` を設定します。
+- **ネストは 2〜3 レベルまで** — 深いネストはナビゲーションしづらく、コンテンツの再編成が必要なサインです。
+- **すべてのページに `sidebar_position` を設定する** — アルファベット順のデフォルトに頼らず、予測可能な順序を確保します。
+
+<Tip>
+
+設定の詳細は [サイドバー](../guides/sidebar.mdx) を参照してください。
+
+</Tip>
+
+### ディレクトリからサイドバーへのマッピング
+
+```
+src/content/docs/guides/        ← サイドバーカテゴリ「Guides」
+├── index.mdx                   ← カテゴリランディング（sidebar_position: 0）
+├── configuration.mdx           ← sidebar_position: 1
+├── sidebar.mdx                 ← sidebar_position: 2
+└── header-navigation.mdx       ← sidebar_position: 3
+```
+
+各 `.mdx` ファイルがサイドバー項目として表示されます。サブディレクトリはネストされた折りたたみ可能なカテゴリになります。
+
+## 具体的な実例
+
+**ゲーム攻略 Wiki** を構築する場合のナビゲーション構造です。
+
+### ナビゲーション計画
+
+```
+ヘッダーナビ:
+├── ホーム
+├── プラットフォーム        ← ドロップダウン
+│   ├── Xbox
+│   ├── PlayStation
+│   └── Nintendo
+├── ジャンル                ← ドロップダウン
+│   ├── RPG
+│   ├── アクション
+│   └── ストラテジー
+└── コミュニティ
+```
+
+ユーザーが Platforms ドロップダウンで「Xbox」をクリックすると、サイドバーは以下のように表示されます。
+
+```
+サイドバー（Xbox セクション）:
+├── 概要（index）
+├── ハードウェア
+│   ├── Xbox Series X
+│   ├── Xbox Series S
+│   └── アクセサリ
+├── ゲーム
+│   ├── Halo Infinite
+│   ├── Forza Horizon 5
+│   └── Starfield
+└── サービス
+    ├── Game Pass
+    └── Xbox Live
+```
+
+### ゲーム Wiki のヘッダー設定
+
+```ts
+// src/config/settings.ts
+export const settings = {
+  headerNav: [
+    { label: "Home", path: "/docs/home", categoryMatch: "home" },
+    {
+      label: "Platforms",
+      path: "/docs/platforms/xbox",
+      categoryMatch: "platforms",
+      children: [
+        { label: "Xbox", path: "/docs/platforms/xbox", categoryMatch: "platforms/xbox" },
+        { label: "PlayStation", path: "/docs/platforms/playstation", categoryMatch: "platforms/playstation" },
+        { label: "Nintendo", path: "/docs/platforms/nintendo", categoryMatch: "platforms/nintendo" },
+      ],
+    },
+    {
+      label: "Genres",
+      path: "/docs/genres/rpg",
+      categoryMatch: "genres",
+      children: [
+        { label: "RPG", path: "/docs/genres/rpg", categoryMatch: "genres/rpg" },
+        { label: "Action", path: "/docs/genres/action", categoryMatch: "genres/action" },
+        { label: "Strategy", path: "/docs/genres/strategy", categoryMatch: "genres/strategy" },
+      ],
+    },
+    { label: "Community", path: "/docs/community", categoryMatch: "community" },
+  ],
+};
+```
+
+### ゲーム Wiki のディレクトリ構造
+
+```
+src/content/docs/
+├── home/
+│   └── index.mdx
+├── platforms/
+│   └── xbox/
+│       ├── index.mdx                  ← 「概要」
+│       ├── hardware/
+│       │   ├── index.mdx
+│       │   ├── xbox-series-x.mdx
+│       │   ├── xbox-series-s.mdx
+│       │   └── accessories.mdx
+│       ├── games/
+│       │   ├── index.mdx
+│       │   ├── halo-infinite.mdx
+│       │   ├── forza-horizon-5.mdx
+│       │   └── starfield.mdx
+│       └── services/
+│           ├── index.mdx
+│           ├── game-pass.mdx
+│           └── xbox-live.mdx
+├── genres/
+│   ├── rpg/
+│   │   └── ...
+│   ├── action/
+│   │   └── ...
+│   └── strategy/
+│       └── ...
+└── community/
+    └── index.mdx
+```
+
+## よくある間違い
+
+<Warning>
+
+ナビゲーション設定で避けるべき落とし穴です。
+
+</Warning>
+
+- **ヘッダーに詰め込みすぎる** — ヘッダーには広いカテゴリだけを置きましょう。10 個以上の項目がある場合、ほとんどはサイドバーに属します。
+- **深すぎるサイドバーのネスト** — 3 レベル以上のネストはコンテンツを見つけにくくします。別のヘッダーナビセクションに分割してフラットにしましょう。
+- **無関係なトピックの混在** — 各サイドバーセクションは一貫したエリアをカバーするべきです。「ハードウェア」と「コミュニティイベント」が同じサイドバーにある場合は、ヘッダーカテゴリを見直しましょう。
+- **`sidebar_position` の未設定** — 設定しないとページがアルファベット順にソートされ、混乱を招くことが多いです。予測可能なナビゲーションのために必ず `sidebar_position` を設定しましょう。
+- **カテゴリディレクトリに `index.mdx` がない** — index がないとカテゴリにランディングページがなく、サイドバーに正しく表示されない場合があります。
+
+## AI ツールによるセットアップのヒント
+
+AI ツールで zudo-doc のサイト構造を生成する際は、以下のルールに従って一貫した結果を得てください。
+
+- **階層構造を厳密に守る** — ヘッダーナビは広いカテゴリ、サイドバーはサブカテゴリ、ネストディレクトリはさらなる詳細。レベルを飛ばさないでください。
+- **ヘッダーナビには広いカテゴリのみ** — 個別のページをヘッダーに追加したくなる誘惑に負けないでください。それはサイドバーの役割です。
+- **`categoryMatch` の値を実際のディレクトリ名と一致させる** — `categoryMatch: "guides"` は `src/content/docs/guides/` ディレクトリに対応する必要があります。
+- **すべてのカテゴリディレクトリに `index.mdx` を必ず作成する** — カテゴリに適切なランディングページとサイドバーエントリを確保します。
+- **すべてのページとインデックスに `sidebar_position` を設定する** — AI ツールが最も忘れやすいポイントで、予測不可能な順序につながります。
+- **ディレクトリとファイル名にケバブケースを使う** — 一貫した命名でプラットフォーム間の大文字小文字の問題を回避します。

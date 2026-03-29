@@ -1,0 +1,206 @@
+---
+title: How to Structure Navigations
+description: Best practices for organizing header navigation and sidebar categories
+sidebar_position: 3.5
+---
+
+## Overview
+
+zudo-doc uses a **3-level navigation hierarchy** to organize content:
+
+1. **Header navigation** — the broadest, top-level categories visible across the entire site
+2. **Sidebar** — the next level of categorization within each header nav section
+3. **Nested sidebar categories** — detailed subcategories inside sidebar sections
+
+Each level narrows the scope. The header gives users a high-level map of the site, the sidebar breaks a section into logical groups, and nested categories add fine-grained structure where needed.
+
+## Header Navigation Rules
+
+The header navigation is the topmost level. It should contain only the broadest categories that define your site's major sections.
+
+- **Keep it concise** — aim for 3–6 items. More than that overwhelms users and clutters the header.
+- **Use dropdowns sparingly** — only for closely related sections that belong under a single umbrella (e.g., "Learn" containing "Guides" and "Components").
+- **Each item maps to a content directory** — the `categoryMatch` field in your config links a header item to the sidebar content for that section.
+
+<Tip>
+
+For configuration details, see [Header Navigation](../guides/header-navigation.mdx).
+
+</Tip>
+
+### Example Header Config
+
+```ts
+// src/config/settings.ts
+export const settings = {
+  headerNav: [
+    { label: "Getting Started", path: "/docs/getting-started", categoryMatch: "getting-started" },
+    {
+      label: "Learn",
+      path: "/docs/guides",
+      categoryMatch: "guides",
+      children: [
+        { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
+        { label: "Components", path: "/docs/components", categoryMatch: "components" },
+      ],
+    },
+    { label: "Reference", path: "/docs/reference", categoryMatch: "reference" },
+  ],
+};
+```
+
+## Sidebar Structure Rules
+
+The sidebar provides the next level of categorization within each header nav section. It is generated automatically from your directory structure.
+
+- **Use directories for categories** — each directory becomes a collapsible sidebar group.
+- **Every category directory should have an `index.mdx`** — this serves as the landing page for that category and sets its `sidebar_position`.
+- **Keep nesting to 2–3 levels max** — deeply nested sidebars are hard to navigate and often signal that content needs reorganization.
+- **Set `sidebar_position` on every page** — this ensures predictable ordering instead of relying on alphabetical defaults.
+
+<Tip>
+
+For configuration details, see [Sidebar](../guides/sidebar.mdx).
+
+</Tip>
+
+### Directory-to-Sidebar Mapping
+
+```
+src/content/docs/guides/        ← sidebar category "Guides"
+├── index.mdx                   ← category landing (sidebar_position: 0)
+├── configuration.mdx           ← sidebar_position: 1
+├── sidebar.mdx                 ← sidebar_position: 2
+└── header-navigation.mdx       ← sidebar_position: 3
+```
+
+Each `.mdx` file appears as a sidebar item. Subdirectories become nested collapsible categories.
+
+## Concrete Real-World Example
+
+Imagine building a **gaming wiki**. Here is how you would structure the navigation:
+
+### Navigation Plan
+
+```
+Header Nav:
+├── Home
+├── Platforms              ← dropdown
+│   ├── Xbox
+│   ├── PlayStation
+│   └── Nintendo
+├── Genres                 ← dropdown
+│   ├── RPG
+│   ├── Action
+│   └── Strategy
+└── Community
+```
+
+When a user clicks "Xbox" in the Platforms dropdown, the sidebar shows:
+
+```
+Sidebar (Xbox section):
+├── Overview (index)
+├── Hardware
+│   ├── Xbox Series X
+│   ├── Xbox Series S
+│   └── Accessories
+├── Games
+│   ├── Halo Infinite
+│   ├── Forza Horizon 5
+│   └── Starfield
+└── Services
+    ├── Game Pass
+    └── Xbox Live
+```
+
+### Header Config for Gaming Wiki
+
+```ts
+// src/config/settings.ts
+export const settings = {
+  headerNav: [
+    { label: "Home", path: "/docs/home", categoryMatch: "home" },
+    {
+      label: "Platforms",
+      path: "/docs/platforms/xbox",
+      categoryMatch: "platforms",
+      children: [
+        { label: "Xbox", path: "/docs/platforms/xbox", categoryMatch: "platforms/xbox" },
+        { label: "PlayStation", path: "/docs/platforms/playstation", categoryMatch: "platforms/playstation" },
+        { label: "Nintendo", path: "/docs/platforms/nintendo", categoryMatch: "platforms/nintendo" },
+      ],
+    },
+    {
+      label: "Genres",
+      path: "/docs/genres/rpg",
+      categoryMatch: "genres",
+      children: [
+        { label: "RPG", path: "/docs/genres/rpg", categoryMatch: "genres/rpg" },
+        { label: "Action", path: "/docs/genres/action", categoryMatch: "genres/action" },
+        { label: "Strategy", path: "/docs/genres/strategy", categoryMatch: "genres/strategy" },
+      ],
+    },
+    { label: "Community", path: "/docs/community", categoryMatch: "community" },
+  ],
+};
+```
+
+### Directory Structure for Gaming Wiki
+
+```
+src/content/docs/
+├── home/
+│   └── index.mdx
+├── platforms/
+│   └── xbox/
+│       ├── index.mdx                  ← "Overview"
+│       ├── hardware/
+│       │   ├── index.mdx
+│       │   ├── xbox-series-x.mdx
+│       │   ├── xbox-series-s.mdx
+│       │   └── accessories.mdx
+│       ├── games/
+│       │   ├── index.mdx
+│       │   ├── halo-infinite.mdx
+│       │   ├── forza-horizon-5.mdx
+│       │   └── starfield.mdx
+│       └── services/
+│           ├── index.mdx
+│           ├── game-pass.mdx
+│           └── xbox-live.mdx
+├── genres/
+│   ├── rpg/
+│   │   └── ...
+│   ├── action/
+│   │   └── ...
+│   └── strategy/
+│       └── ...
+└── community/
+    └── index.mdx
+```
+
+## Common Mistakes
+
+<Warning>
+
+Avoid these pitfalls when setting up navigation:
+
+</Warning>
+
+- **Putting everything in the header** — the header should have only broad categories. If you have 10+ items, most of them belong in the sidebar instead.
+- **Deeply nested sidebars** — more than 3 levels of nesting makes content hard to find. Flatten your structure by splitting into separate header nav sections.
+- **Mixing unrelated topics in one sidebar section** — each sidebar section should cover a cohesive area. If "Hardware" and "Community Events" end up in the same sidebar, reconsider your header categories.
+- **Missing `sidebar_position`** — without it, pages sort alphabetically which often produces a confusing order. Always set `sidebar_position` for predictable navigation.
+- **Missing `index.mdx` in category directories** — without an index, the category has no landing page and may not appear correctly in the sidebar.
+
+## Tips for AI-Assisted Setup
+
+When using AI tools to generate zudo-doc site structures, follow these rules for consistent results:
+
+- **Follow the hierarchy strictly** — header nav for broad categories, sidebar for subcategories, nested directories for further detail. Never skip a level.
+- **Keep header nav items to broad categories only** — resist the urge to add specific pages to the header. That is what the sidebar is for.
+- **Match `categoryMatch` values to actual directory names** — a `categoryMatch: "guides"` must correspond to a `src/content/docs/guides/` directory.
+- **Always create `index.mdx` for every category directory** — this ensures the category has a proper landing page and sidebar entry.
+- **Set `sidebar_position` on every page and index** — this is the most common thing AI tools forget, leading to unpredictable ordering.
+- **Use kebab-case for directory and file names** — consistent naming avoids case-sensitivity issues across platforms.
