@@ -266,7 +266,7 @@ const contentTransition = {
           handle.setAttribute("aria-label", "Resize sidebar");
           handle.setAttribute("aria-valuemin", String(MIN_W));
           handle.setAttribute("aria-valuemax", String(MAX_W));
-          handle.setAttribute("aria-valuenow", String(Math.round(getCurrentWidth())));
+          handle.setAttribute("aria-valuenow", String(Math.round(cachedWidth)));
           Object.assign(handle.style, {
             position: "absolute",
             top: "0",

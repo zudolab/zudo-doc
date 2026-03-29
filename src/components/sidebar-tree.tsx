@@ -168,7 +168,7 @@ function SidebarFooter({ links, themeDefaultMode }: { links?: LocaleLink[]; them
         <span key={link.href} className="flex items-center gap-hsp-xs">
           {i > 0 && <span className="text-muted">/</span>}
           {link.active ? (
-            <span aria-current="page" className="font-medium text-fg">{link.label}</span>
+            <span aria-current="true" className="font-medium text-fg">{link.label}</span>
           ) : (
             <a href={link.href} lang={link.code} className="text-muted hover:text-fg">
               {link.label}
@@ -185,7 +185,6 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
   const [query, setQuery] = useState("");
   const [showingRootMenu, setShowingRootMenu] = useState(false);
   const filterRef = useRef<HTMLInputElement>(null);
-  const footer = (localeLinks || themeDefaultMode) ? <SidebarFooter links={localeLinks} themeDefaultMode={themeDefaultMode} /> : null;
   const [filterPlaceholder, setFilterPlaceholder] = useState("Filter...");
 
   // Detect OS to show appropriate keyboard shortcut in placeholder
@@ -214,6 +213,11 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
   const filteredNodes = useMemo(
     () => (query ? filterTree(nodes, query) : nodes),
     [nodes, query],
+  );
+
+  const footer = useMemo(
+    () => (localeLinks || themeDefaultMode) ? <SidebarFooter links={localeLinks} themeDefaultMode={themeDefaultMode} /> : null,
+    [localeLinks, themeDefaultMode],
   );
 
   // Root menu view: show headerNav items as a simple list (Docusaurus-style)
