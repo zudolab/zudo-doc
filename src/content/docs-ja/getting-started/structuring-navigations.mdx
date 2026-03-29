@@ -96,7 +96,7 @@ src/content/docs/guides/        ← サイドバーカテゴリ「Guides」
 └── コミュニティ
 ```
 
-ユーザーが Platforms ドロップダウンで「Xbox」をクリックすると、サイドバーは以下のように表示されます。
+ユーザーが「プラットフォーム」ドロップダウンで「Xbox」をクリックすると、サイドバーは以下のように表示されます。
 
 ```
 サイドバー（Xbox セクション）:
@@ -116,6 +116,8 @@ src/content/docs/guides/        ← サイドバーカテゴリ「Guides」
 
 ### ゲーム Wiki のヘッダー設定
 
+`categoryMatch` の値は **単一のトップレベルディレクトリ名** である必要があります。フレームワークは現在の URL の最初のパスセグメントのみを照合してアクティブ状態を解決します。
+
 ```ts
 // src/config/settings.ts
 export const settings = {
@@ -123,22 +125,22 @@ export const settings = {
     { label: "Home", path: "/docs/home", categoryMatch: "home" },
     {
       label: "Platforms",
-      path: "/docs/platforms/xbox",
-      categoryMatch: "platforms",
+      path: "/docs/xbox",
+      categoryMatch: "xbox",
       children: [
-        { label: "Xbox", path: "/docs/platforms/xbox", categoryMatch: "platforms/xbox" },
-        { label: "PlayStation", path: "/docs/platforms/playstation", categoryMatch: "platforms/playstation" },
-        { label: "Nintendo", path: "/docs/platforms/nintendo", categoryMatch: "platforms/nintendo" },
+        { label: "Xbox", path: "/docs/xbox", categoryMatch: "xbox" },
+        { label: "PlayStation", path: "/docs/playstation", categoryMatch: "playstation" },
+        { label: "Nintendo", path: "/docs/nintendo", categoryMatch: "nintendo" },
       ],
     },
     {
       label: "Genres",
-      path: "/docs/genres/rpg",
-      categoryMatch: "genres",
+      path: "/docs/rpg",
+      categoryMatch: "rpg",
       children: [
-        { label: "RPG", path: "/docs/genres/rpg", categoryMatch: "genres/rpg" },
-        { label: "Action", path: "/docs/genres/action", categoryMatch: "genres/action" },
-        { label: "Strategy", path: "/docs/genres/strategy", categoryMatch: "genres/strategy" },
+        { label: "RPG", path: "/docs/rpg", categoryMatch: "rpg" },
+        { label: "Action", path: "/docs/action", categoryMatch: "action" },
+        { label: "Strategy", path: "/docs/strategy", categoryMatch: "strategy" },
       ],
     },
     { label: "Community", path: "/docs/community", categoryMatch: "community" },
@@ -148,34 +150,38 @@ export const settings = {
 
 ### ゲーム Wiki のディレクトリ構造
 
+各プラットフォームとジャンルが独自のトップレベルディレクトリを持つことで、`categoryMatch` が URL の最初のセグメントと正しく対応します。
+
 ```
 src/content/docs/
 ├── home/
 │   └── index.mdx
-├── platforms/
-│   └── xbox/
-│       ├── index.mdx                  ← 「概要」
-│       ├── hardware/
-│       │   ├── index.mdx
-│       │   ├── xbox-series-x.mdx
-│       │   ├── xbox-series-s.mdx
-│       │   └── accessories.mdx
-│       ├── games/
-│       │   ├── index.mdx
-│       │   ├── halo-infinite.mdx
-│       │   ├── forza-horizon-5.mdx
-│       │   └── starfield.mdx
-│       └── services/
-│           ├── index.mdx
-│           ├── game-pass.mdx
-│           └── xbox-live.mdx
-├── genres/
-│   ├── rpg/
-│   │   └── ...
-│   ├── action/
-│   │   └── ...
-│   └── strategy/
-│       └── ...
+├── xbox/
+│   ├── index.mdx                  ← 「概要」
+│   ├── hardware/
+│   │   ├── index.mdx
+│   │   ├── xbox-series-x.mdx
+│   │   ├── xbox-series-s.mdx
+│   │   └── accessories.mdx
+│   ├── games/
+│   │   ├── index.mdx
+│   │   ├── halo-infinite.mdx
+│   │   ├── forza-horizon-5.mdx
+│   │   └── starfield.mdx
+│   └── services/
+│       ├── index.mdx
+│       ├── game-pass.mdx
+│       └── xbox-live.mdx
+├── playstation/
+│   └── index.mdx
+├── nintendo/
+│   └── index.mdx
+├── rpg/
+│   └── ...
+├── action/
+│   └── ...
+├── strategy/
+│   └── ...
 └── community/
     └── index.mdx
 ```
@@ -186,13 +192,14 @@ src/content/docs/
 
 ナビゲーション設定で避けるべき落とし穴です。
 
-</Warning>
-
 - **ヘッダーに詰め込みすぎる** — ヘッダーには広いカテゴリだけを置きましょう。10 個以上の項目がある場合、ほとんどはサイドバーに属します。
 - **深すぎるサイドバーのネスト** — 3 レベル以上のネストはコンテンツを見つけにくくします。別のヘッダーナビセクションに分割してフラットにしましょう。
 - **無関係なトピックの混在** — 各サイドバーセクションは一貫したエリアをカバーするべきです。「ハードウェア」と「コミュニティイベント」が同じサイドバーにある場合は、ヘッダーカテゴリを見直しましょう。
 - **`sidebar_position` の未設定** — 設定しないとページがアルファベット順にソートされ、混乱を招くことが多いです。予測可能なナビゲーションのために必ず `sidebar_position` を設定しましょう。
 - **カテゴリディレクトリに `index.mdx` がない** — index がないとカテゴリにランディングページがなく、サイドバーに正しく表示されない場合があります。
+- **`categoryMatch` に複数セグメントの値を使う**（例：`"platforms/xbox"`）— `categoryMatch` は単一のトップレベルディレクトリ名でなければなりません。複数セグメントの値はヘッダーナビのアクティブ状態ハイライトを壊します。
+
+</Warning>
 
 ## AI ツールによるセットアップのヒント
 

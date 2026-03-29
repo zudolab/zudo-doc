@@ -116,6 +116,8 @@ Sidebar (Xbox section):
 
 ### Header Config for Gaming Wiki
 
+Each `categoryMatch` value must be a **single top-level directory name** — the framework resolves active state by matching only the first path segment of the current URL.
+
 ```ts
 // src/config/settings.ts
 export const settings = {
@@ -123,22 +125,22 @@ export const settings = {
     { label: "Home", path: "/docs/home", categoryMatch: "home" },
     {
       label: "Platforms",
-      path: "/docs/platforms/xbox",
-      categoryMatch: "platforms",
+      path: "/docs/xbox",
+      categoryMatch: "xbox",
       children: [
-        { label: "Xbox", path: "/docs/platforms/xbox", categoryMatch: "platforms/xbox" },
-        { label: "PlayStation", path: "/docs/platforms/playstation", categoryMatch: "platforms/playstation" },
-        { label: "Nintendo", path: "/docs/platforms/nintendo", categoryMatch: "platforms/nintendo" },
+        { label: "Xbox", path: "/docs/xbox", categoryMatch: "xbox" },
+        { label: "PlayStation", path: "/docs/playstation", categoryMatch: "playstation" },
+        { label: "Nintendo", path: "/docs/nintendo", categoryMatch: "nintendo" },
       ],
     },
     {
       label: "Genres",
-      path: "/docs/genres/rpg",
-      categoryMatch: "genres",
+      path: "/docs/rpg",
+      categoryMatch: "rpg",
       children: [
-        { label: "RPG", path: "/docs/genres/rpg", categoryMatch: "genres/rpg" },
-        { label: "Action", path: "/docs/genres/action", categoryMatch: "genres/action" },
-        { label: "Strategy", path: "/docs/genres/strategy", categoryMatch: "genres/strategy" },
+        { label: "RPG", path: "/docs/rpg", categoryMatch: "rpg" },
+        { label: "Action", path: "/docs/action", categoryMatch: "action" },
+        { label: "Strategy", path: "/docs/strategy", categoryMatch: "strategy" },
       ],
     },
     { label: "Community", path: "/docs/community", categoryMatch: "community" },
@@ -148,34 +150,38 @@ export const settings = {
 
 ### Directory Structure for Gaming Wiki
 
+Each platform and genre gets its own top-level directory so that `categoryMatch` matches the first URL segment correctly:
+
 ```
 src/content/docs/
 ├── home/
 │   └── index.mdx
-├── platforms/
-│   └── xbox/
-│       ├── index.mdx                  ← "Overview"
-│       ├── hardware/
-│       │   ├── index.mdx
-│       │   ├── xbox-series-x.mdx
-│       │   ├── xbox-series-s.mdx
-│       │   └── accessories.mdx
-│       ├── games/
-│       │   ├── index.mdx
-│       │   ├── halo-infinite.mdx
-│       │   ├── forza-horizon-5.mdx
-│       │   └── starfield.mdx
-│       └── services/
-│           ├── index.mdx
-│           ├── game-pass.mdx
-│           └── xbox-live.mdx
-├── genres/
-│   ├── rpg/
-│   │   └── ...
-│   ├── action/
-│   │   └── ...
-│   └── strategy/
-│       └── ...
+├── xbox/
+│   ├── index.mdx                  ← "Overview"
+│   ├── hardware/
+│   │   ├── index.mdx
+│   │   ├── xbox-series-x.mdx
+│   │   ├── xbox-series-s.mdx
+│   │   └── accessories.mdx
+│   ├── games/
+│   │   ├── index.mdx
+│   │   ├── halo-infinite.mdx
+│   │   ├── forza-horizon-5.mdx
+│   │   └── starfield.mdx
+│   └── services/
+│       ├── index.mdx
+│       ├── game-pass.mdx
+│       └── xbox-live.mdx
+├── playstation/
+│   └── index.mdx
+├── nintendo/
+│   └── index.mdx
+├── rpg/
+│   └── ...
+├── action/
+│   └── ...
+├── strategy/
+│   └── ...
 └── community/
     └── index.mdx
 ```
@@ -186,13 +192,14 @@ src/content/docs/
 
 Avoid these pitfalls when setting up navigation:
 
-</Warning>
-
 - **Putting everything in the header** — the header should have only broad categories. If you have 10+ items, most of them belong in the sidebar instead.
 - **Deeply nested sidebars** — more than 3 levels of nesting makes content hard to find. Flatten your structure by splitting into separate header nav sections.
 - **Mixing unrelated topics in one sidebar section** — each sidebar section should cover a cohesive area. If "Hardware" and "Community Events" end up in the same sidebar, reconsider your header categories.
 - **Missing `sidebar_position`** — without it, pages sort alphabetically which often produces a confusing order. Always set `sidebar_position` for predictable navigation.
 - **Missing `index.mdx` in category directories** — without an index, the category has no landing page and may not appear correctly in the sidebar.
+- **Using multi-segment `categoryMatch` values** (e.g. `"platforms/xbox"`) — `categoryMatch` must be a single top-level directory name. Multi-segment values break active-state highlighting in the header nav.
+
+</Warning>
 
 ## Tips for AI-Assisted Setup
 
