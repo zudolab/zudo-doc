@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import type { NavNode } from "@/utils/docs";
+import type { LocaleLink } from "@/types/locale";
 import { INDENT, BASE_PAD, connectorLeft, ConnectorLines, CategoryLinkIcon } from "./tree-nav-shared";
+import ThemeToggle from "@/components/theme-toggle";
 
 function ToggleChevron({ isExpanded, className }: { isExpanded: boolean; className?: string }) {
   return (
@@ -147,9 +149,33 @@ interface SidebarTreeProps {
   currentSlug?: string;
   rootMenuItems?: RootMenuItem[];
   backToMenuLabel?: string;
+  localeLinks?: LocaleLink[];
+  themeDefaultMode?: "light" | "dark";
 }
 
-export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToMenuLabel }: SidebarTreeProps) {
+function SidebarFooter({ links, themeDefaultMode }: { links?: LocaleLink[]; themeDefaultMode?: "light" | "dark" }) {
+  if (!links && !themeDefaultMode) return null;
+  return (
+    // pb-[50vh] provides scroll room so the footer doesn't sit at the very bottom of the viewport
+    <div className="lg:hidden flex items-center gap-hsp-md border-t border-muted px-hsp-sm py-vsp-xs pb-[50vh] text-small">
+      {themeDefaultMode && <ThemeToggle defaultMode={themeDefaultMode} />}
+      {links && links.map((link, i) => (
+        <span key={link.href} className="flex items-center gap-hsp-xs">
+          {i > 0 && <span className="text-muted">/</span>}
+          {link.active ? (
+            <span aria-current="true" className="font-medium text-fg">{link.label}</span>
+          ) : (
+            <a href={link.href} lang={link.code} className="text-muted hover:text-fg">
+              {link.label}
+            </a>
+          )}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToMenuLabel, localeLinks, themeDefaultMode }: SidebarTreeProps) {
   const activeSlug = useActiveSlug(nodes, currentSlug);
   const [query, setQuery] = useState("");
   const [showingRootMenu, setShowingRootMenu] = useState(false);
@@ -184,6 +210,11 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
     [nodes, query],
   );
 
+  const footer = useMemo(
+    () => (localeLinks || themeDefaultMode) ? <SidebarFooter links={localeLinks} themeDefaultMode={themeDefaultMode} /> : null,
+    [localeLinks, themeDefaultMode],
+  );
+
   // Root menu view: show headerNav items as a simple list (Docusaurus-style)
   if (showingRootMenu && rootMenuItems) {
     return (
@@ -201,6 +232,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
         {rootMenuItems.map((item) => (
           <RootMenuItemEntry key={item.href} item={item} />
         ))}
+        {footer}
       </nav>
     );
   }
@@ -213,6 +245,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
         {rootMenuItems.map((item) => (
           <RootMenuItemEntry key={item.href} item={item} />
         ))}
+        {footer}
       </nav>
     );
   }
@@ -252,6 +285,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
         depth={0}
         forceOpen={!!query}
       />
+      {footer}
     </nav>
   );
 }
@@ -456,6 +490,7 @@ function LeafNode({
         <ConnectorLines depth={depth} isLast={isLast} />
         <a
           href={node.href}
+          aria-current={isActive ? "page" : undefined}
           className={isRoot
             ? `flex items-center gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-[4px] text-small font-semibold ${
                 isActive ? "bg-fg text-bg" : "text-fg hover:underline focus:underline"

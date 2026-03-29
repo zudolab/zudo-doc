@@ -2,10 +2,9 @@ import { useState, useEffect } from "react";
 
 interface SidebarToggleProps {
   children: React.ReactNode;
-  bottomContent?: React.ReactNode;
 }
 
-export default function SidebarToggle({ children, bottomContent }: SidebarToggleProps) {
+export default function SidebarToggle({ children }: SidebarToggleProps) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -91,11 +90,6 @@ export default function SidebarToggle({ children, bottomContent }: SidebarToggle
         <div className="flex-1 overflow-y-auto">
           {children}
         </div>
-        {bottomContent && (
-          <div className="border-t border-muted px-hsp-lg py-vsp-md flex items-center gap-x-hsp-md">
-            {bottomContent}
-          </div>
-        )}
       </aside>
     </>
   );

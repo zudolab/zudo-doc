@@ -180,6 +180,7 @@ export async function stripFeatures(
         [/\s*\{settings\.sidebarResizer &&[\s\S]*?initSidebarResizer[\s\S]*?<\/script>\s*\n\s*\)\}\s*\n?/g, "\n"],
       ],
     );
+    await removeIfExists(targetDir, "src/scripts/sidebar-resizer.ts");
   }
 
   // Strip versioning if not selected

@@ -1,8 +1,8 @@
 ---
 import SidebarTree from "@/components/sidebar-tree";
 import { buildSidebarForSection } from "@/utils/sidebar";
-import { defaultLocale, t, type Locale } from "@/config/i18n";
-import { withBase, versionedDocsUrl } from "@/utils/base";
+import { defaultLocale, locales, t, type Locale } from "@/config/i18n";
+import { buildLocaleLinks, versionedDocsUrl, navHref } from "@/utils/base";
 import { loadLocaleDocs } from "@/utils/locale-docs";
 import { isNavVisible, type NavNode } from "@/utils/docs";
 import { settings } from "@/config/settings";
@@ -20,29 +20,19 @@ const {
   navSection,
   currentVersion,
 } = Astro.props;
-const isNonDefaultLocale = lang !== defaultLocale;
 const backToMenuLabel = navSection ? t("nav.backToMenu", lang) : undefined;
 
 // Build root menu items from headerNav (always needed — top page and "back to menu")
-const versionPrefix = currentVersion ? `/v/${currentVersion}` : "";
 const rootMenuItems = settings.headerNav.map((item) => ({
   label: item.labelKey
     ? t(item.labelKey as Parameters<typeof t>[0], lang)
     : item.label,
-  href: withBase(
-    isNonDefaultLocale
-      ? `/${lang}${versionPrefix}${item.path}`
-      : `${versionPrefix}${item.path}`,
-  ),
+  href: navHref(item.path, lang, currentVersion),
   children: item.children?.map((child) => ({
     label: child.labelKey
       ? t(child.labelKey as Parameters<typeof t>[0], lang)
       : child.label,
-    href: withBase(
-      isNonDefaultLocale
-        ? `/${lang}${versionPrefix}${child.path}`
-        : `${versionPrefix}${child.path}`,
-    ),
+    href: navHref(child.path, lang, currentVersion),
   })),
 }));
 
@@ -80,6 +70,10 @@ const rawNodes = buildSidebarForSection(docs, lang, navSection, categoryMeta);
 const nodes = currentVersion
   ? remapVersionedHrefs(rawNodes, currentVersion, lang)
   : rawNodes;
+
+// Build locale switcher links for mobile sidebar
+const localeLinks =
+  locales.length > 1 ? buildLocaleLinks(Astro.url.pathname, lang) : undefined;
 ---
 
 <SidebarTree
@@ -87,5 +81,9 @@ const nodes = currentVersion
   currentSlug={currentSlug}
   rootMenuItems={rootMenuItems}
   backToMenuLabel={backToMenuLabel}
+  localeLinks={localeLinks}
+  themeDefaultMode={settings.colorMode
+    ? settings.colorMode.defaultMode
+    : undefined}
   client:load
 />

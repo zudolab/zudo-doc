@@ -19,7 +19,7 @@ setup_fixture() {
   mkdir -p "$fixture_dir/src"
 
   # Symlink framework source directories (no relative imports to config)
-  for dir in components hooks integrations layouts plugins styles types utils; do
+  for dir in components hooks integrations layouts plugins scripts styles types utils; do
     ln -sfn "$REPO_ROOT/src/$dir" "$fixture_dir/src/$dir"
   done
 
