@@ -1,9 +1,16 @@
-import { describe, it, expect } from "vitest";
-import { navHref, getPathForLocale } from "../base";
+import { describe, it, expect, beforeAll } from "vitest";
+import { navHref, getPathForLocale, normalizedBase } from "../base";
+import { settings } from "@/config/settings";
+import { defaultLocale } from "@/config/i18n";
 
-// settings.base = "/pj/zudo-doc/" → normalizedBase = "/pj/zudo-doc"
-// settings.trailingSlash = true
-// defaultLocale = "en"
+// Guard: all test expectations are hard-coded against these settings values.
+// If they change, tests will fail with a clear message here instead of cryptic
+// assertion diffs throughout.
+beforeAll(() => {
+  expect(normalizedBase).toBe("/pj/zudo-doc");
+  expect(settings.trailingSlash).toBe(true);
+  expect(defaultLocale).toBe("en");
+});
 
 describe("navHref", () => {
   describe("default locale (en), no version", () => {
