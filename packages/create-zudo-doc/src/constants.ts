@@ -136,4 +136,40 @@ export const FEATURES: Feature[] = [
     hint: "Multi-version documentation support",
     default: false,
   },
+  {
+    value: "docHistory",
+    label: "Document History",
+    hint: "Show document edit history",
+    default: false,
+  },
+  {
+    value: "llmsTxt",
+    label: "llms.txt",
+    hint: "Generate llms.txt for LLM consumption",
+    default: false,
+  },
+  {
+    value: "skillSymlinker",
+    label: "Skill Symlinker",
+    hint: "Symlink documentation skills",
+    default: false,
+  },
+  {
+    value: "footerNavGroup",
+    label: "Footer nav group",
+    hint: "Navigation links in the footer",
+    default: false,
+  },
+  {
+    value: "footerCopyright",
+    label: "Footer copyright",
+    hint: "Copyright notice in the footer",
+    default: false,
+  },
+  {
+    value: "changelog",
+    label: "Changelog",
+    hint: "Changelog page",
+    default: false,
+  },
 ];
