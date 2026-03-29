@@ -250,6 +250,8 @@ const contentTransition = {
           const STEP = 10;
           const LS_KEY = "zudo-doc-sidebar-width";
           const CSS_PROP = "--zd-sidebar-w";
+          const ACCENT_BG = "var(--zd-accent, rgba(128,128,128,0.3))";
+          const ACCENT_OUTLINE = "2px solid var(--zd-accent, rgba(128,128,128,0.5))";
 
           function readCurrentWidth(): number {
             const raw = getComputedStyle(document.documentElement).getPropertyValue(CSS_PROP);
@@ -281,21 +283,21 @@ const contentTransition = {
           let dragging = false;
 
           function applyWidth(w: number) {
-            cachedWidth = w;
-            document.documentElement.style.setProperty(CSS_PROP, w + "px");
-            try { localStorage.setItem(LS_KEY, String(Math.round(w))); } catch (e) {}
-            handle.setAttribute("aria-valuenow", String(Math.round(w)));
+            cachedWidth = Math.max(MIN_W, Math.min(MAX_W, w));
+            document.documentElement.style.setProperty(CSS_PROP, cachedWidth + "px");
+            try { localStorage.setItem(LS_KEY, String(Math.round(cachedWidth))); } catch (e) {}
+            handle.setAttribute("aria-valuenow", String(Math.round(cachedWidth)));
           }
 
           let focused = false;
 
           function updateHandleVisual() {
             if (dragging || focused) {
-              handle.style.background = "var(--zd-accent, rgba(128,128,128,0.3))";
+              handle.style.background = ACCENT_BG;
             } else {
               handle.style.background = "";
             }
-            handle.style.outline = focused && !dragging ? "2px solid var(--zd-accent, #666)" : "";
+            handle.style.outline = focused && !dragging ? ACCENT_OUTLINE : "";
             handle.style.outlineOffset = focused && !dragging ? "1px" : "";
           }
 
@@ -331,7 +333,7 @@ const contentTransition = {
           });
 
           handle.addEventListener("mouseenter", () => {
-            if (!dragging && !focused) handle.style.background = "var(--zd-accent, rgba(128,128,128,0.3))";
+            if (!dragging && !focused) handle.style.background = ACCENT_BG;
           });
           handle.addEventListener("mouseleave", () => {
             if (!dragging && !focused) handle.style.background = "";

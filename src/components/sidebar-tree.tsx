@@ -160,6 +160,7 @@ interface SidebarTreeProps {
 }
 
 function SidebarFooter({ links, themeDefaultMode }: { links?: LocaleLink[]; themeDefaultMode?: "light" | "dark" }) {
+  if (!links && !themeDefaultMode) return null;
   return (
     // pb-[50vh] provides scroll room so the footer doesn't sit at the very bottom of the viewport
     <div className="lg:hidden flex items-center gap-hsp-md border-t border-muted px-hsp-sm py-vsp-xs pb-[50vh] text-small">
