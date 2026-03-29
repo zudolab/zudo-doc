@@ -72,6 +72,22 @@ export function navHref(
   );
 }
 
+/** Build a locale-switched path from the current page path. */
+export function getPathForLocale(
+  path: string,
+  currentLang: string,
+  targetLang: string,
+): string {
+  let relativePath = stripBase(path);
+  if (currentLang !== defaultLocale) {
+    relativePath = relativePath.replace(new RegExp(`^/${currentLang}/`), "/");
+  }
+  if (targetLang !== defaultLocale) {
+    relativePath = `/${targetLang}${relativePath}`;
+  }
+  return withBase(relativePath);
+}
+
 /** Build a versioned docs URL for the given slug, version, and lang. */
 export function versionedDocsUrl(slug: string, versionSlug: string, lang: Locale = defaultLocale): string {
   const path = lang === defaultLocale

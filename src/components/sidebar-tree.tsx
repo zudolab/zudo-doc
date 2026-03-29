@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import type { NavNode } from "@/utils/docs";
 import { INDENT, BASE_PAD, connectorLeft, ConnectorLines, CategoryLinkIcon } from "./tree-nav-shared";
+import ThemeToggle from "@/components/theme-toggle";
 
 function ToggleChevron({ isExpanded, className }: { isExpanded: boolean; className?: string }) {
   return (
@@ -142,14 +143,43 @@ function RootMenuItemEntry({ item }: { item: RootMenuItem }) {
   );
 }
 
+interface LocaleLink {
+  code: string;
+  label: string;
+  href: string;
+  active: boolean;
+}
+
 interface SidebarTreeProps {
   nodes: NavNode[];
   currentSlug?: string;
   rootMenuItems?: RootMenuItem[];
   backToMenuLabel?: string;
+  localeLinks?: LocaleLink[];
+  themeDefaultMode?: "light" | "dark";
 }
 
-export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToMenuLabel }: SidebarTreeProps) {
+function SidebarFooter({ links, themeDefaultMode }: { links?: LocaleLink[]; themeDefaultMode?: "light" | "dark" }) {
+  return (
+    <div className="lg:hidden flex items-center gap-hsp-md border-t border-muted px-hsp-sm py-vsp-xs pb-[200px] text-small">
+      {themeDefaultMode && <ThemeToggle defaultMode={themeDefaultMode} />}
+      {links && links.map((link, i) => (
+        <span key={link.href} className="flex items-center gap-hsp-xs">
+          {i > 0 && <span className="text-muted">/</span>}
+          {link.active ? (
+            <span aria-current="true" className="font-medium text-fg">{link.label}</span>
+          ) : (
+            <a href={link.href} lang={link.code} className="text-muted hover:text-fg">
+              {link.label}
+            </a>
+          )}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToMenuLabel, localeLinks, themeDefaultMode }: SidebarTreeProps) {
   const activeSlug = useActiveSlug(nodes, currentSlug);
   const [query, setQuery] = useState("");
   const [showingRootMenu, setShowingRootMenu] = useState(false);
@@ -201,6 +231,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
         {rootMenuItems.map((item) => (
           <RootMenuItemEntry key={item.href} item={item} />
         ))}
+        {(localeLinks || themeDefaultMode) && <SidebarFooter links={localeLinks} themeDefaultMode={themeDefaultMode} />}
       </nav>
     );
   }
@@ -213,6 +244,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
         {rootMenuItems.map((item) => (
           <RootMenuItemEntry key={item.href} item={item} />
         ))}
+        {(localeLinks || themeDefaultMode) && <SidebarFooter links={localeLinks} themeDefaultMode={themeDefaultMode} />}
       </nav>
     );
   }
@@ -252,6 +284,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
         depth={0}
         forceOpen={!!query}
       />
+      {(localeLinks || themeDefaultMode) && <SidebarFooter links={localeLinks} themeDefaultMode={themeDefaultMode} />}
     </nav>
   );
 }

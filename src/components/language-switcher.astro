@@ -1,5 +1,5 @@
 ---
-import { withBase, stripBase } from "@/utils/base";
+import { getPathForLocale } from "@/utils/base";
 import {
   defaultLocale,
   locales,
@@ -13,23 +13,6 @@ interface Props {
 
 const { lang = defaultLocale } = Astro.props;
 const currentPath = Astro.url.pathname;
-
-function getPathForLocale(
-  path: string,
-  currentLang: string,
-  targetLang: string,
-): string {
-  let relativePath = stripBase(path);
-  // Strip current locale prefix if not default
-  if (currentLang !== defaultLocale) {
-    relativePath = relativePath.replace(new RegExp(`^/${currentLang}/`), "/");
-  }
-  // Add target locale prefix if not default
-  if (targetLang !== defaultLocale) {
-    relativePath = `/${targetLang}${relativePath}`;
-  }
-  return withBase(relativePath);
-}
 ---
 
 {

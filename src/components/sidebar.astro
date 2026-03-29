@@ -1,8 +1,14 @@
 ---
 import SidebarTree from "@/components/sidebar-tree";
 import { buildSidebarForSection } from "@/utils/sidebar";
-import { defaultLocale, t, type Locale } from "@/config/i18n";
-import { versionedDocsUrl, navHref } from "@/utils/base";
+import {
+  defaultLocale,
+  locales,
+  t,
+  getLocaleLabel,
+  type Locale,
+} from "@/config/i18n";
+import { getPathForLocale, versionedDocsUrl, navHref } from "@/utils/base";
 import { loadLocaleDocs } from "@/utils/locale-docs";
 import { isNavVisible, type NavNode } from "@/utils/docs";
 import { settings } from "@/config/settings";
@@ -70,6 +76,18 @@ const rawNodes = buildSidebarForSection(docs, lang, navSection, categoryMeta);
 const nodes = currentVersion
   ? remapVersionedHrefs(rawNodes, currentVersion, lang)
   : rawNodes;
+
+// Build locale switcher links for mobile sidebar
+const currentPath = Astro.url.pathname;
+const localeLinks =
+  locales.length > 1
+    ? locales.map((code) => ({
+        code,
+        label: getLocaleLabel(code),
+        href: getPathForLocale(currentPath, lang, code),
+        active: code === lang,
+      }))
+    : undefined;
 ---
 
 <SidebarTree
@@ -77,5 +95,9 @@ const nodes = currentVersion
   currentSlug={currentSlug}
   rootMenuItems={rootMenuItems}
   backToMenuLabel={backToMenuLabel}
+  localeLinks={localeLinks}
+  themeDefaultMode={settings.colorMode
+    ? settings.colorMode.defaultMode
+    : undefined}
   client:load
 />
