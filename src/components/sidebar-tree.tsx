@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import type { NavNode } from "@/utils/docs";
+import type { LocaleLink } from "@/types/locale";
 import { INDENT, BASE_PAD, connectorLeft, ConnectorLines, CategoryLinkIcon } from "./tree-nav-shared";
 import ThemeToggle from "@/components/theme-toggle";
 
@@ -141,13 +142,6 @@ function RootMenuItemEntry({ item }: { item: RootMenuItem }) {
       )}
     </div>
   );
-}
-
-interface LocaleLink {
-  code: string;
-  label: string;
-  href: string;
-  active: boolean;
 }
 
 interface SidebarTreeProps {
