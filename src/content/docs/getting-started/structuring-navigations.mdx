@@ -14,6 +14,26 @@ zudo-doc uses a **3-level navigation hierarchy** to organize content:
 
 Each level narrows the scope. The header gives users a high-level map of the site, the sidebar breaks a section into logical groups, and nested categories add fine-grained structure where needed.
 
+## File Structure = Navigation Structure
+
+<Note title="Key Principle">
+
+In zudo-doc, **your file and directory structure directly becomes your navigation**. There is no separate navigation config to maintain — the sidebar is generated from your `src/content/docs/` directory tree, and header nav items map to top-level directories via `categoryMatch`.
+
+This means you can understand the entire site navigation just by looking at the file tree. It is equally intuitive for humans reading the repo and for AI tools generating content.
+
+</Note>
+
+**Keep your file structure and navigation structure tightly coupled.** If you want a sidebar category called "Hardware," create a `hardware/` directory. If you want a header nav item for "Guides," create a `guides/` directory and set `categoryMatch: "guides"`. The directory name, the URL path, and the nav label should all align.
+
+This tight coupling is the recommended approach because:
+
+- **Predictability** — you always know where a page will appear in the navigation by looking at where the file lives
+- **No drift** — there is no separate config that can get out of sync with the actual content
+- **AI-friendly** — AI tools can reliably generate correct navigation by following the directory structure convention
+
+While zudo-doc supports advanced configuration for complex cases (custom sidebar labels, sort overrides, nested dropdowns), the default behavior — directories become categories, files become pages — covers most needs. Start simple and only add complexity when the default mapping is not enough.
+
 ## Header Navigation Rules
 
 The header navigation is the topmost level. It should contain only the broadest categories that define your site's major sections.
