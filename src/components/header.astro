@@ -5,7 +5,7 @@ import LanguageSwitcher from "@/components/language-switcher.astro";
 import VersionSwitcher from "@/components/version-switcher.astro";
 import Search from "@/components/search.astro";
 import { settings } from "@/config/settings";
-import { withBase, stripBase } from "@/utils/base";
+import { withBase, stripBase, navHref } from "@/utils/base";
 import { defaultLocale, locales, t, type Locale } from "@/config/i18n";
 import type { VersionAvailability } from "@/utils/version-availability";
 
@@ -86,10 +86,11 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
       settings.headerNav.map((item) => {
         const isActive = isNavItemActive(item);
         const versionPrefix = currentVersion ? `/v/${currentVersion}` : "";
-        const href = withBase(
-          isNonDefaultLocale
-            ? `/${lang}${versionPrefix}${item.path}`
-            : `${versionPrefix}${item.path}`,
+        const href = navHref(
+          item.path,
+          lang,
+          isNonDefaultLocale,
+          versionPrefix,
         );
         const label = item.labelKey ? t(item.labelKey, lang) : item.label;
 
@@ -134,10 +135,11 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
               <div class="absolute left-0 top-full z-50 hidden group-hover:block group-focus-within:block pt-vsp-3xs">
                 <div class="min-w-[10rem] border border-muted rounded bg-surface shadow-lg py-vsp-3xs">
                   {item.children.map((child) => {
-                    const childHref = withBase(
-                      isNonDefaultLocale
-                        ? `/${lang}${versionPrefix}${child.path}`
-                        : `${versionPrefix}${child.path}`,
+                    const childHref = navHref(
+                      child.path,
+                      lang,
+                      isNonDefaultLocale,
+                      versionPrefix,
                     );
                     const childLabel = child.labelKey
                       ? t(child.labelKey, lang)

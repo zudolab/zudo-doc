@@ -57,6 +57,20 @@ export function resolveHref(href: string): string {
   return isExternal(href) ? href : withBase(href);
 }
 
+/** Build a localized, versioned nav href. */
+export function navHref(
+  path: string,
+  lang: string | undefined,
+  isNonDefaultLocale: boolean,
+  versionPrefix: string,
+): string {
+  return withBase(
+    isNonDefaultLocale
+      ? `/${lang}${versionPrefix}${path}`
+      : `${versionPrefix}${path}`,
+  );
+}
+
 /** Build a versioned docs URL for the given slug, version, and lang. */
 export function versionedDocsUrl(slug: string, versionSlug: string, lang: Locale = defaultLocale): string {
   const path = lang === defaultLocale

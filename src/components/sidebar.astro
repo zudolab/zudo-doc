@@ -2,7 +2,7 @@
 import SidebarTree from "@/components/sidebar-tree";
 import { buildSidebarForSection } from "@/utils/sidebar";
 import { defaultLocale, t, type Locale } from "@/config/i18n";
-import { withBase, versionedDocsUrl } from "@/utils/base";
+import { versionedDocsUrl, navHref } from "@/utils/base";
 import { loadLocaleDocs } from "@/utils/locale-docs";
 import { isNavVisible, type NavNode } from "@/utils/docs";
 import { settings } from "@/config/settings";
@@ -29,20 +29,12 @@ const rootMenuItems = settings.headerNav.map((item) => ({
   label: item.labelKey
     ? t(item.labelKey as Parameters<typeof t>[0], lang)
     : item.label,
-  href: withBase(
-    isNonDefaultLocale
-      ? `/${lang}${versionPrefix}${item.path}`
-      : `${versionPrefix}${item.path}`,
-  ),
+  href: navHref(item.path, lang, isNonDefaultLocale, versionPrefix),
   children: item.children?.map((child) => ({
     label: child.labelKey
       ? t(child.labelKey as Parameters<typeof t>[0], lang)
       : child.label,
-    href: withBase(
-      isNonDefaultLocale
-        ? `/${lang}${versionPrefix}${child.path}`
-        : `${versionPrefix}${child.path}`,
-    ),
+    href: navHref(child.path, lang, isNonDefaultLocale, versionPrefix),
   })),
 }));
 
