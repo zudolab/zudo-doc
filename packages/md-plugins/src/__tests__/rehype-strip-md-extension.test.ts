@@ -98,4 +98,13 @@ describe("rehypeStripMdExtension", () => {
       );
     });
   });
+
+  describe("edge cases: .md with query string (handled by remark plugin upstream)", () => {
+    // The regex /.mdx?(#.*)?$/ does not match .md followed by a query string.
+    // In practice, the remark-resolve-markdown-links plugin handles these links
+    // before rehype runs, so this edge case is not hit in normal usage.
+    it("./doc.md?tab=api — not matched by regex (remark handles upstream)", () => {
+      expect(processHref("./doc.md?tab=api")).toBe("./doc.md?tab=api");
+    });
+  });
 });

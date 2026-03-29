@@ -131,21 +131,6 @@ function buildJson(state: FormState): Record<string, unknown> {
   }
 
   base.features = state.features;
-
-  if (state.features.includes("footerNavGroup")) {
-    base.footerNavGroup = [
-      {
-        title: "Resources",
-        items: [{ label: "GitHub", href: "https://github.com" }],
-      },
-    ];
-  }
-
-  if (state.features.includes("footerCopyright")) {
-    base.footerCopyright =
-      "Copyright \u00A9 2026 John Doh. Built with zudo-doc.";
-  }
-
   base.packageManager = state.packageManager;
   return base;
 }
