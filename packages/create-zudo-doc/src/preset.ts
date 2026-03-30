@@ -23,48 +23,52 @@ export function loadPreset(pathOrStdin: string): PartialChoices {
     raw = fs.readFileSync(pathOrStdin, "utf8");
   }
 
-  const json: PresetJson = JSON.parse(raw);
+  const json: unknown = JSON.parse(raw);
   const error = validatePreset(json);
   if (error) {
     throw new Error(error);
   }
-  return presetToChoices(json);
+  return presetToChoices(json as PresetJson);
 }
 
 const VALID_LANGS = new Set(SUPPORTED_LANGS.map((l) => l.value));
 const VALID_SCHEMES = new Set(SINGLE_SCHEMES);
 const VALID_PMS = new Set(["pnpm", "npm", "yarn", "bun"]);
 
-export function validatePreset(json: PresetJson): string | null {
-  if (json.features !== undefined && !Array.isArray(json.features)) {
+export function validatePreset(json: unknown): string | null {
+  if (json === null || typeof json !== "object" || Array.isArray(json)) {
+    return "Preset must be a JSON object";
+  }
+  const p = json as PresetJson;
+  if (p.features !== undefined && !Array.isArray(p.features)) {
     return `"features" must be an array in preset`;
   }
-  if (json.defaultLang && !VALID_LANGS.has(json.defaultLang)) {
-    return `Invalid language "${json.defaultLang}" in preset`;
+  if (p.defaultLang && !VALID_LANGS.has(p.defaultLang)) {
+    return `Invalid language "${p.defaultLang}" in preset`;
   }
-  if (json.colorSchemeMode && !["single", "light-dark"].includes(json.colorSchemeMode)) {
-    return `Invalid colorSchemeMode "${json.colorSchemeMode}" in preset`;
+  if (p.colorSchemeMode && !["single", "light-dark"].includes(p.colorSchemeMode)) {
+    return `Invalid colorSchemeMode "${p.colorSchemeMode}" in preset`;
   }
-  if (json.singleScheme && !VALID_SCHEMES.has(json.singleScheme)) {
-    return `Unknown color scheme "${json.singleScheme}" in preset`;
+  if (p.singleScheme && !VALID_SCHEMES.has(p.singleScheme)) {
+    return `Unknown color scheme "${p.singleScheme}" in preset`;
   }
-  if (json.lightScheme && !VALID_SCHEMES.has(json.lightScheme)) {
-    return `Unknown light scheme "${json.lightScheme}" in preset`;
+  if (p.lightScheme && !VALID_SCHEMES.has(p.lightScheme)) {
+    return `Unknown light scheme "${p.lightScheme}" in preset`;
   }
-  if (json.darkScheme && !VALID_SCHEMES.has(json.darkScheme)) {
-    return `Unknown dark scheme "${json.darkScheme}" in preset`;
+  if (p.darkScheme && !VALID_SCHEMES.has(p.darkScheme)) {
+    return `Unknown dark scheme "${p.darkScheme}" in preset`;
   }
-  if (json.defaultMode && !["light", "dark"].includes(json.defaultMode)) {
-    return `Invalid defaultMode "${json.defaultMode}" in preset`;
+  if (p.defaultMode && !["light", "dark"].includes(p.defaultMode)) {
+    return `Invalid defaultMode "${p.defaultMode}" in preset`;
   }
-  if (json.packageManager && !VALID_PMS.has(json.packageManager)) {
-    return `Invalid packageManager "${json.packageManager}" in preset`;
+  if (p.packageManager && !VALID_PMS.has(p.packageManager)) {
+    return `Invalid packageManager "${p.packageManager}" in preset`;
   }
   // Cross-field validation
-  if (json.colorSchemeMode === "single" && (json.lightScheme || json.darkScheme)) {
+  if (p.colorSchemeMode === "single" && (p.lightScheme || p.darkScheme)) {
     return `lightScheme/darkScheme are only valid with colorSchemeMode "light-dark"`;
   }
-  if (json.colorSchemeMode === "light-dark" && json.singleScheme) {
+  if (p.colorSchemeMode === "light-dark" && p.singleScheme) {
     return `singleScheme is only valid with colorSchemeMode "single"`;
   }
   return null;
