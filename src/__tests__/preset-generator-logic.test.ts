@@ -93,6 +93,8 @@ describe("buildCliCommand", () => {
     expect(cmd).not.toContain("--light-scheme");
     expect(cmd).not.toContain("--dark-scheme");
     expect(cmd).not.toContain("--default-mode");
+    expect(cmd).not.toContain("--respect-system-preference");
+    expect(cmd).not.toContain("--no-respect-system-preference");
   });
 
   it("light-dark mode includes scheme flags", () => {

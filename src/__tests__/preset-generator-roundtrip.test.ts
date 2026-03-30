@@ -55,6 +55,15 @@ function verifyRoundtrip(state: FormState) {
   expect(parsed.pm).toBe(state.packageManager);
   expect(parsed.yes).toBe(true);
 
+  if (state.colorSchemeMode === "single") {
+    expect(parsed.scheme).toBe(state.singleScheme);
+  } else {
+    expect(parsed.lightScheme).toBe(state.lightScheme);
+    expect(parsed.darkScheme).toBe(state.darkScheme);
+    expect(parsed.defaultMode).toBe(state.defaultMode);
+    expect(parsed.respectSystemPreference).toBe(state.respectPrefersColorScheme);
+  }
+
   for (const f of FEATURES) {
     const expected = state.features.includes(f.value);
     expect(
@@ -93,6 +102,22 @@ describe("roundtrip: buildCliCommand → parseArgs", () => {
 
   it("project name with spaces", () => {
     verifyRoundtrip(makeState({ projectName: "my cool docs" }));
+  });
+
+  it("scheme name with special characters (VS Code Dark+)", () => {
+    verifyRoundtrip(makeState({
+      colorSchemeMode: "single",
+      singleScheme: "VS Code Dark+",
+    }));
+  });
+
+  it("light-dark scheme names with spaces roundtrip correctly", () => {
+    verifyRoundtrip(makeState({
+      colorSchemeMode: "light-dark",
+      lightScheme: "Solarized Light",
+      darkScheme: "Solarized Dark Higher Contrast",
+      respectPrefersColorScheme: false,
+    }));
   });
 
   describe("each feature individually", () => {

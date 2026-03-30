@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { parseArgs } from "../cli.js";
+import { parseArgs, type CliArgs } from "../cli.js";
+import { FEATURES } from "../constants.js";
 
 describe("parseArgs", () => {
   describe("project name", () => {
@@ -47,22 +48,14 @@ describe("parseArgs", () => {
   });
 
   describe("boolean feature flags — enabled", () => {
-    const featureFlags: [string, keyof ReturnType<typeof parseArgs>][] = [
-      ["i18n", "i18n"],
-      ["search", "search"],
-      ["sidebar-filter", "sidebarFilter"],
-      ["claude-resources", "claudeResources"],
-      ["color-tweak-panel", "colorTweakPanel"],
-      ["sidebar-resizer", "sidebarResizer"],
-      ["sidebar-toggle", "sidebarToggle"],
-      ["versioning", "versioning"],
-      ["doc-history", "docHistory"],
-      ["llms-txt", "llmsTxt"],
-      ["skill-symlinker", "skillSymlinker"],
-      ["footer-nav-group", "footerNavGroup"],
-      ["footer-copyright", "footerCopyright"],
-      ["changelog", "changelog"],
-    ];
+    // Derive from FEATURES constant so new features are auto-covered
+    function camelToKebab(s: string): string {
+      return s.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase());
+    }
+    const featureFlags: [string, keyof CliArgs][] = FEATURES.map((f) => [
+      camelToKebab(f.value),
+      f.value as keyof CliArgs,
+    ]);
 
     it.each(featureFlags)(
       "--%s sets %s to true",
@@ -84,20 +77,12 @@ describe("parseArgs", () => {
   describe("omitted flags are undefined", () => {
     it("all feature flags undefined when not passed", () => {
       const result = parseArgs([]);
-      expect(result.i18n).toBeUndefined();
-      expect(result.search).toBeUndefined();
-      expect(result.sidebarFilter).toBeUndefined();
-      expect(result.claudeResources).toBeUndefined();
-      expect(result.colorTweakPanel).toBeUndefined();
-      expect(result.sidebarResizer).toBeUndefined();
-      expect(result.sidebarToggle).toBeUndefined();
-      expect(result.versioning).toBeUndefined();
-      expect(result.docHistory).toBeUndefined();
-      expect(result.llmsTxt).toBeUndefined();
-      expect(result.skillSymlinker).toBeUndefined();
-      expect(result.footerNavGroup).toBeUndefined();
-      expect(result.footerCopyright).toBeUndefined();
-      expect(result.changelog).toBeUndefined();
+      for (const f of FEATURES) {
+        expect(
+          result[f.value as keyof CliArgs],
+          `${f.value} should be undefined when not passed`,
+        ).toBeUndefined();
+      }
     });
   });
 
