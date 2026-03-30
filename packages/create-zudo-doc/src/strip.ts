@@ -298,10 +298,14 @@ export async function stripFeatures(
   }
   await removeIfExists(targetDir, "src/integrations/sitemap.ts");
 
-  // Remove AI chat API route, components, and MSW mock (aiAssistant is false by default)
+  // Remove AI chat API route, components, types, utils, and MSW mocks
+  // (aiAssistant is always false in generated projects)
   await removeIfExists(targetDir, "src/pages/api/ai-chat.ts");
   await removeIfExists(targetDir, "src/components/ai-chat-modal.tsx");
   await removeIfExists(targetDir, "src/components/mock-init.tsx");
+  await removeIfExists(targetDir, "src/types/ai-chat.ts");
+  await removeIfExists(targetDir, "src/utils/render-markdown.ts");
+  await removeIfExists(targetDir, "src/mocks");
   await patchFile(
     path.join(targetDir, "src/layouts/doc-layout.astro"),
     [
@@ -309,6 +313,50 @@ export async function stripFeatures(
       [/import MockInit from.*\n/g, ""],
       [/\s*\{settings\.aiAssistant && <AiChatModal.*\/>\}\s*\n?/g, "\n"],
       [/\s*\{import\.meta\.env\.DEV && import\.meta\.env\.PUBLIC_ENABLE_MOCKS.*<MockInit.*\/>\}\s*\n?/g, "\n"],
+    ],
+  );
+  // Remove AI chat trigger button from header
+  await patchFile(
+    path.join(targetDir, "src/components/header.astro"),
+    [
+      [/\s*\{\s*\n\s*settings\.aiAssistant && \([\s\S]*?id="ai-chat-trigger"[\s\S]*?\)\s*\n\s*\}\s*\n?/g, "\n"],
+    ],
+  );
+  // Remove AI chat CSS tokens and .ai-chat-md styles from global.css
+  await patchFile(
+    path.join(targetDir, "src/styles/global.css"),
+    [
+      [/\s*--color-chat-user-bg:.*\n/g, ""],
+      [/\s*--color-chat-user-text:.*\n/g, ""],
+      [/\s*--color-chat-assistant-bg:.*\n/g, ""],
+      [/\s*--color-chat-assistant-text:.*\n/g, ""],
+      // Remove entire AI Chat markdown section (comment + all .ai-chat-md rules)
+      [/\/\* =+\n \* AI Chat markdown[\s\S]*?\n\n(?=\/\* =+\n)/g, ""],
+    ],
+  );
+  // Remove chat semantic entries from color-scheme-utils.ts
+  await patchFile(
+    path.join(targetDir, "src/config/color-scheme-utils.ts"),
+    [
+      [/\s*chatUserBg:.*\n/g, ""],
+      [/\s*chatUserText:.*\n/g, ""],
+      [/\s*chatAssistantBg:.*\n/g, ""],
+      [/\s*chatAssistantText:.*\n/g, ""],
+      // Also remove CSS variable pairs in schemeToCssPairs
+      [/\s*\["--zd-chat-user-bg".*\n/g, ""],
+      [/\s*\["--zd-chat-user-text".*\n/g, ""],
+      [/\s*\["--zd-chat-assistant-bg".*\n/g, ""],
+      [/\s*\["--zd-chat-assistant-text".*\n/g, ""],
+    ],
+  );
+  // Remove chat semantic fields from ColorScheme interface
+  await patchFile(
+    path.join(targetDir, "src/config/color-schemes.ts"),
+    [
+      [/\s*chatUserBg\?: ColorRef;\n/g, ""],
+      [/\s*chatUserText\?: ColorRef;\n/g, ""],
+      [/\s*chatAssistantBg\?: ColorRef;\n/g, ""],
+      [/\s*chatAssistantText\?: ColorRef;\n/g, ""],
     ],
   );
 
