@@ -15,7 +15,7 @@ export interface PresetJson {
   packageManager?: "pnpm" | "npm" | "yarn" | "bun";
 }
 
-export async function loadPreset(pathOrStdin: string): Promise<PartialChoices> {
+export function loadPreset(pathOrStdin: string): PartialChoices {
   let raw: string;
   if (pathOrStdin === "-") {
     raw = fs.readFileSync(0, "utf8");
@@ -26,6 +26,8 @@ export async function loadPreset(pathOrStdin: string): Promise<PartialChoices> {
   const json: PresetJson = JSON.parse(raw);
   return presetToChoices(json);
 }
+
+const KNOWN_FEATURES = new Set(FEATURES.map((f) => f.value));
 
 export function presetToChoices(json: PresetJson): PartialChoices {
   const choices: PartialChoices = {};
@@ -43,6 +45,13 @@ export function presetToChoices(json: PresetJson): PartialChoices {
   if (json.packageManager) choices.packageManager = json.packageManager;
 
   if (json.features) {
+    // Warn about unrecognized feature names
+    for (const name of json.features) {
+      if (!KNOWN_FEATURES.has(name)) {
+        console.warn(`Warning: unknown feature "${name}" in preset — ignored`);
+      }
+    }
+
     const featureMap: Partial<Record<string, boolean>> = {};
     for (const f of FEATURES) {
       featureMap[f.value] = json.features.includes(f.value);

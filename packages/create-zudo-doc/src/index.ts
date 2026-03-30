@@ -33,7 +33,7 @@ async function main() {
   // Load preset if provided (base layer — CLI flags override below)
   if (args.preset) {
     try {
-      const presetChoices = await loadPreset(args.preset);
+      const presetChoices = loadPreset(args.preset);
       Object.assign(prefilled, presetChoices);
     } catch (err) {
       p.log.error(
@@ -76,7 +76,7 @@ async function main() {
   if (args.footerCopyright !== undefined) featureFlags.footerCopyright = args.footerCopyright;
   if (args.changelog !== undefined) featureFlags.changelog = args.changelog;
   if (Object.keys(featureFlags).length > 0) {
-    prefilled.features = featureFlags;
+    prefilled.features = { ...prefilled.features, ...featureFlags };
   }
 
   // With --yes or --preset: fill all unspecified options with defaults
@@ -120,7 +120,7 @@ async function main() {
   let shouldInstall: boolean;
   if (args.install !== undefined) {
     shouldInstall = args.install;
-  } else if (args.yes) {
+  } else if (args.yes || args.preset) {
     // In non-interactive mode, default to installing dependencies
     shouldInstall = true;
   } else {
