@@ -85,6 +85,7 @@ export interface Feature {
   label: string;
   hint: string;
   default: boolean;
+  cliFlag: string;
 }
 
 export const FEATURES: Feature[] = [
@@ -93,83 +94,97 @@ export const FEATURES: Feature[] = [
     label: "i18n (multi-language)",
     hint: "Add a secondary language",
     default: false,
+    cliFlag: "i18n",
   },
   {
     value: "search",
     label: "Pagefind search",
     hint: "Full-text search",
     default: true,
+    cliFlag: "search",
   },
   {
     value: "sidebarFilter",
     label: "Sidebar filter",
     hint: "Real-time sidebar filtering",
     default: true,
+    cliFlag: "sidebar-filter",
   },
   {
     value: "claudeResources",
     label: "Claude Resources",
     hint: "Auto-generate Claude Code docs",
     default: false,
+    cliFlag: "claude-resources",
   },
   {
     value: "colorTweakPanel",
     label: "Color tweak panel",
     hint: "Live color editor for designing schemes",
     default: false,
+    cliFlag: "color-tweak-panel",
   },
   {
     value: "sidebarResizer",
     label: "Sidebar resizer",
     hint: "Draggable sidebar width",
     default: false,
+    cliFlag: "sidebar-resizer",
   },
   {
     value: "sidebarToggle",
     label: "Sidebar toggle",
     hint: "Show/hide desktop sidebar",
     default: false,
+    cliFlag: "sidebar-toggle",
   },
   {
     value: "versioning",
     label: "Versioning",
     hint: "Multi-version documentation support",
     default: false,
+    cliFlag: "versioning",
   },
   {
     value: "docHistory",
     label: "Document history",
     hint: "Show document edit history",
     default: false,
+    cliFlag: "doc-history",
   },
   {
     value: "llmsTxt",
     label: "llms.txt",
     hint: "Generate llms.txt for LLM consumption",
     default: false,
+    cliFlag: "llms-txt",
   },
   {
     value: "skillSymlinker",
     label: "Skill symlinker",
     hint: "Symlink documentation skills",
     default: false,
+    cliFlag: "skill-symlinker",
   },
   {
     value: "footerNavGroup",
     label: "Footer nav group",
     hint: "Navigation links in the footer",
     default: false,
+    cliFlag: "footer-nav-group",
   },
   {
     value: "footerCopyright",
     label: "Footer copyright",
     hint: "Copyright notice in the footer",
     default: false,
+    cliFlag: "footer-copyright",
   },
   {
     value: "changelog",
     label: "Changelog",
     hint: "Changelog page",
     default: false,
+    cliFlag: "changelog",
   },
 ];

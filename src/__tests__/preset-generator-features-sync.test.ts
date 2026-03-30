@@ -29,6 +29,12 @@ describe("FEATURES drift detection", () => {
     expect(uiDefaults).toEqual(cliDefaults);
   });
 
+  it("same cliFlag fields", () => {
+    const uiFlags = UI_FEATURES.map((f) => ({ value: f.value, cliFlag: f.cliFlag }));
+    const cliFlags = CLI_FEATURES.map((f) => ({ value: f.value, cliFlag: f.cliFlag }));
+    expect(uiFlags).toEqual(cliFlags);
+  });
+
   describe("every cliFlag has a working parseArgs handler", () => {
     it.each(UI_FEATURES.map((f) => [f.value, f.cliFlag]))(
       "--%s flag is parsed by CLI",

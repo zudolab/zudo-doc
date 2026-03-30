@@ -1,6 +1,6 @@
 import minimist from "minimist";
 import pc from "picocolors";
-import { SINGLE_SCHEMES, SUPPORTED_LANGS } from "./constants.js";
+import { FEATURES, SINGLE_SCHEMES, SUPPORTED_LANGS } from "./constants.js";
 
 export interface CliArgs {
   name?: string;
@@ -81,44 +81,14 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
   if (wasPassed("respect-system-preference")) {
     args.respectSystemPreference = raw["respect-system-preference"] !== false;
   }
-  if (wasPassed("i18n")) args.i18n = raw["i18n"] !== false;
-  if (wasPassed("search")) args.search = raw["search"] !== false;
-  if (wasPassed("sidebar-filter")) {
-    args.sidebarFilter = raw["sidebar-filter"] !== false;
+
+  // Feature flags — driven by FEATURES constant
+  for (const f of FEATURES) {
+    if (wasPassed(f.cliFlag)) {
+      (args as Record<string, unknown>)[f.value] = raw[f.cliFlag] !== false;
+    }
   }
-  if (wasPassed("color-tweak-panel")) {
-    args.colorTweakPanel = raw["color-tweak-panel"] !== false;
-  }
-  if (wasPassed("sidebar-resizer")) {
-    args.sidebarResizer = raw["sidebar-resizer"] !== false;
-  }
-  if (wasPassed("versioning")) {
-    args.versioning = raw["versioning"] !== false;
-  }
-  if (wasPassed("claude-resources")) {
-    args.claudeResources = raw["claude-resources"] !== false;
-  }
-  if (wasPassed("sidebar-toggle")) {
-    args.sidebarToggle = raw["sidebar-toggle"] !== false;
-  }
-  if (wasPassed("doc-history")) {
-    args.docHistory = raw["doc-history"] !== false;
-  }
-  if (wasPassed("llms-txt")) {
-    args.llmsTxt = raw["llms-txt"] !== false;
-  }
-  if (wasPassed("skill-symlinker")) {
-    args.skillSymlinker = raw["skill-symlinker"] !== false;
-  }
-  if (wasPassed("footer-nav-group")) {
-    args.footerNavGroup = raw["footer-nav-group"] !== false;
-  }
-  if (wasPassed("footer-copyright")) {
-    args.footerCopyright = raw["footer-copyright"] !== false;
-  }
-  if (wasPassed("changelog")) {
-    args.changelog = raw["changelog"] !== false;
-  }
+
   if (wasPassed("install")) args.install = raw["install"] !== false;
   if (raw.yes || raw.y) args.yes = true;
   if (raw.help || raw.h) args.help = true;
@@ -128,6 +98,9 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
 
 export function printHelp(): void {
   const langList = SUPPORTED_LANGS.map((l) => l.value).join(", ");
+  const featureHelp = FEATURES.map(
+    (f) => `  --[no-]${f.cliFlag.padEnd(22)} ${f.hint}`,
+  ).join("\n");
   console.log(`
 ${pc.bold("Usage:")} create-zudo-doc [project-name] [options]
 
@@ -142,20 +115,7 @@ ${pc.bold("Options:")}
   --default-mode <mode>        light | dark (light-dark mode)
   --[no-]respect-system-preference
                                Respect OS color scheme preference
-  --[no-]i18n                  Multi-language support
-  --[no-]search                Pagefind full-text search
-  --[no-]sidebar-filter        Sidebar filter
-  --[no-]color-tweak-panel     Live color editor for designing schemes
-  --[no-]sidebar-resizer       Draggable sidebar width
-  --[no-]sidebar-toggle        Show/hide desktop sidebar
-  --[no-]versioning            Multi-version documentation support
-  --[no-]claude-resources      Claude Code docs generation
-  --[no-]doc-history           Document edit history
-  --[no-]llms-txt              Generate llms.txt for LLM consumption
-  --[no-]skill-symlinker       Symlink documentation skills
-  --[no-]footer-nav-group      Navigation links in the footer
-  --[no-]footer-copyright      Copyright notice in the footer
-  --[no-]changelog             Changelog page
+${featureHelp}
   --pm <manager>               pnpm | npm | yarn | bun
   --[no-]install               Install dependencies after scaffolding
   -y, --yes                    Use defaults for unspecified options, skip prompts
