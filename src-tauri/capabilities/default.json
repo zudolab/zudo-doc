@@ -1,0 +1,11 @@
+{
+  "identifier": "default",
+  "description": "Default capabilities for the main window",
+  "windows": ["main"],
+  "remote": {
+    "urls": ["http://localhost:4321/*", "http://localhost:4893/*"]
+  },
+  "permissions": [
+    "core:default"
+  ]
+}
