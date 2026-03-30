@@ -35,6 +35,30 @@ sidebar_position: 1
 このドキュメントサイトは [zudo-doc](https://github.com/zudolab/zudo-doc) で作成されました。
 `;
 
+const CHANGELOG_CONTENT_EN = () => `---
+title: Changelog
+sidebar_position: 99
+---
+
+# Changelog
+
+## Unreleased
+
+- Initial release
+`;
+
+const CHANGELOG_CONTENT_JA = () => `---
+title: 変更履歴
+sidebar_position: 99
+---
+
+# 変更履歴
+
+## 未リリース
+
+- 初回リリース
+`;
+
 export async function scaffold(choices: UserChoices): Promise<void> {
   const targetDir = path.resolve(process.cwd(), choices.projectName);
 
@@ -85,6 +109,15 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     }
   }
 
+  // Copy skill symlinker script when enabled
+  if (choices.features.includes("skillSymlinker")) {
+    const scriptSrc = path.join(templateRoot, "scripts/setup-doc-skill.sh");
+    const scriptDest = path.join(targetDir, "scripts/setup-doc-skill.sh");
+    if (await fs.pathExists(scriptSrc)) {
+      await fs.copy(scriptSrc, scriptDest);
+    }
+  }
+
   // Copy plugin implementations from the package (not re-exports from src/plugins/)
   const pluginsSrc = path.join(templateRoot, "packages/md-plugins/src");
   const pluginsDest = path.join(targetDir, "src/plugins");
@@ -121,6 +154,31 @@ export async function scaffold(choices: UserChoices): Promise<void> {
       path.join(targetDir, `${secondaryDir}/getting-started/index.mdx`),
       secondaryContent,
     );
+  }
+
+  // When changelog is ON, create a starter changelog page
+  if (choices.features.includes("changelog")) {
+    const changelogContent =
+      defaultLang === "ja" ? CHANGELOG_CONTENT_JA() : CHANGELOG_CONTENT_EN();
+    await fs.outputFile(
+      path.join(targetDir, "src/content/docs/changelog/index.mdx"),
+      changelogContent,
+    );
+
+    if (choices.features.includes("i18n")) {
+      const secondaryLang = getSecondaryLang(defaultLang);
+      const secondaryChangelogContent =
+        secondaryLang === "ja"
+          ? CHANGELOG_CONTENT_JA()
+          : CHANGELOG_CONTENT_EN();
+      await fs.outputFile(
+        path.join(
+          targetDir,
+          `src/content/docs-${secondaryLang}/changelog/index.mdx`,
+        ),
+        secondaryChangelogContent,
+      );
+    }
   }
 
   // Generate settings.ts
@@ -181,12 +239,20 @@ function generatePackageJson(choices: UserChoices) {
     devDeps["pagefind"] = "^1.4.0";
   }
 
+  if (choices.features.includes("docHistory")) {
+    deps["diff"] = "^8.0.3";
+  }
+
   const scripts: Record<string, string> = {
     dev: "astro dev",
     build: "astro build",
     preview: "astro preview",
     check: "astro check",
   };
+
+  if (choices.features.includes("skillSymlinker")) {
+    scripts["setup:doc-skill"] = "bash scripts/setup-doc-skill.sh";
+  }
 
   return {
     name: choices.projectName,

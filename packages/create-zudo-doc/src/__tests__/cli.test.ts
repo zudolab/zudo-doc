@@ -49,11 +49,8 @@ describe("parseArgs", () => {
 
   describe("boolean feature flags — enabled", () => {
     // Derive from FEATURES constant so new features are auto-covered
-    function camelToKebab(s: string): string {
-      return s.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase());
-    }
     const featureFlags: [string, keyof CliArgs][] = FEATURES.map((f) => [
-      camelToKebab(f.value),
+      f.cliFlag,
       f.value as keyof CliArgs,
     ]);
 
