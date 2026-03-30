@@ -12,6 +12,8 @@ create-zudo-doc [project-name] [options]
 
 When run without flags, the CLI launches an interactive wizard. All options can be specified via flags for non-interactive (CI/agent) usage.
 
+You can also use the [Setup Preset Generator](/docs/getting-started/setup-preset-generator) to interactively build a configuration and copy it as a JSON preset or CLI command.
+
 ## Options
 
 ### Project
@@ -41,7 +43,25 @@ When run without flags, the CLI launches an interactive wizard. All options can 
 | `--[no-]i18n` | Multi-language support | off |
 | `--[no-]search` | Pagefind full-text search | on |
 | `--[no-]sidebar-filter` | Real-time sidebar filtering | on |
+| `--[no-]color-tweak-panel` | Live color editor for designing schemes | off |
+| `--[no-]sidebar-resizer` | Draggable sidebar width | off |
+| `--[no-]sidebar-toggle` | Show/hide desktop sidebar | off |
+| `--[no-]versioning` | Multi-version documentation support | off |
 | `--[no-]claude-resources` | Claude Code docs generation | off |
+| `--[no-]doc-history` | Document edit history | off |
+| `--[no-]llms-txt` | Generate llms.txt for LLM consumption | off |
+| `--[no-]skill-symlinker` | Symlink documentation skills | off |
+| `--[no-]footer-nav-group` | Navigation links in the footer | off |
+| `--[no-]footer-copyright` | Copyright notice in the footer | off |
+| `--[no-]changelog` | Changelog page | off |
+
+### Preset
+
+| Flag | Description |
+|------|-------------|
+| `--preset <path>` | Load settings from a JSON preset file (use `"-"` for stdin) |
+
+The `--preset` flag accepts the JSON output from the [Setup Preset Generator](/docs/getting-started/setup-preset-generator). When a preset is loaded, all prompts are skipped (same as `--yes`). Individual CLI flags override preset values.
 
 ### General
 
@@ -99,6 +119,20 @@ pnpm create zudo-doc my-docs \
   --yes
 ```
 
+### Using a preset file
+
+Generate a preset JSON from the [Setup Preset Generator](/docs/getting-started/setup-preset-generator), save it to a file, then pass it to the CLI:
+
+```bash
+pnpm create zudo-doc --preset setup.json --install
+```
+
+Or pipe JSON directly via stdin:
+
+```bash
+cat setup.json | pnpm create zudo-doc --preset - --install
+```
+
 ### CI/automation usage
 
 ```bash
@@ -115,7 +149,7 @@ pnpm create zudo-doc my-docs \
 
 ## Programmatic API
 
-The package also exports a programmatic API:
+The package also exports a programmatic API. The options object uses the same shape as the JSON preset:
 
 ```ts
 import { createZudoDoc } from "create-zudo-doc";
@@ -123,9 +157,19 @@ import { createZudoDoc } from "create-zudo-doc";
 await createZudoDoc({
   projectName: "my-docs",
   defaultLang: "en",
-  colorSchemeMode: "single",
-  singleScheme: "Dracula",
-  features: ["search", "sidebarFilter"],
+  colorSchemeMode: "light-dark",
+  lightScheme: "GitHub Light",
+  darkScheme: "GitHub Dark",
+  defaultMode: "dark",
+  respectPrefersColorScheme: true,
+  features: [
+    "search",
+    "sidebarFilter",
+    "sidebarResizer",
+    "sidebarToggle",
+    "docHistory",
+    "footerCopyright",
+  ],
   packageManager: "pnpm",
   install: true,
 });
