@@ -3,13 +3,13 @@ import path from "path";
 import { fileURLToPath } from "url";
 import type { UserChoices } from "./prompts.js";
 import { generateSettingsFile } from "./settings-gen.js";
-import { stripFeatures } from "./strip.js";
-import { capitalize } from "./utils.js";
+import { generateAstroConfig } from "./astro-config-gen.js";
+import { generateContentConfig } from "./content-config-gen.js";
+import { composeFeatures } from "./compose.js";
+import { featureModules } from "./features/index.js";
+import { capitalize, getSecondaryLang, patchDefaultLang } from "./utils.js";
 
-/** Determine the secondary language code when i18n is enabled. */
-export function getSecondaryLang(defaultLang: string): string {
-  return defaultLang === "en" ? "ja" : "en";
-}
+export { getSecondaryLang };
 
 const STARTER_CONTENT_EN = (siteName: string) => `---
 title: Welcome
@@ -71,60 +71,30 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     }
   }
 
-  // Resolve template root using fileURLToPath for cross-platform support.
-  // Check for bundled template first, fall back to monorepo root for local dev.
+  // Resolve template directories
   const pkgRoot = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
     "..", // from dist/ up to packages/create-zudo-doc
   );
-  const bundledTemplate = path.join(pkgRoot, "template");
-  const monorepoRoot = path.resolve(pkgRoot, "../..");
-  const templateRoot = (await fs.pathExists(bundledTemplate))
-    ? bundledTemplate
-    : monorepoRoot;
+  const templatesDir = path.join(pkgRoot, "templates");
+  const baseDir = path.join(templatesDir, "base");
+  const featuresDir = path.join(templatesDir, "features");
 
-  // Copy template files (exclude content — we create starter content below)
-  const filesToCopy = [
-    "src/components",
-    "src/config",
-    "src/hooks",
-    "src/integrations",
-    "src/layouts",
-    "src/pages",
-    "src/styles",
-    "src/types",
-    "src/utils",
-    "src/content.config.ts",
-    "astro.config.ts",
-    "tsconfig.json",
-  ];
+  // For skillSymlinker, we still need the monorepo root for the script
+  const monorepoRoot = path.resolve(pkgRoot, "../..");
 
   await fs.ensureDir(targetDir);
 
-  for (const file of filesToCopy) {
-    const src = path.join(templateRoot, file);
-    const dest = path.join(targetDir, file);
-    if (await fs.pathExists(src)) {
-      await fs.copy(src, dest);
-    }
-  }
+  // 1. Copy base template
+  await fs.copy(baseDir, targetDir);
 
-  // Copy skill symlinker script when enabled
+  // 2. Copy skill symlinker script when enabled
   if (choices.features.includes("skillSymlinker")) {
-    const scriptSrc = path.join(templateRoot, "scripts/setup-doc-skill.sh");
+    const scriptSrc = path.join(monorepoRoot, "scripts/setup-doc-skill.sh");
     const scriptDest = path.join(targetDir, "scripts/setup-doc-skill.sh");
     if (await fs.pathExists(scriptSrc)) {
       await fs.copy(scriptSrc, scriptDest);
     }
-  }
-
-  // Copy plugin implementations from the package (not re-exports from src/plugins/)
-  const pluginsSrc = path.join(templateRoot, "packages/md-plugins/src");
-  const pluginsDest = path.join(targetDir, "src/plugins");
-  if (await fs.pathExists(pluginsSrc)) {
-    await fs.copy(pluginsSrc, pluginsDest, {
-      filter: (src) => !src.includes("__tests__") && path.basename(src) !== "index.ts",
-    });
   }
 
   const defaultLang = choices.defaultLang;
@@ -181,28 +151,45 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     }
   }
 
-  // Generate settings.ts
+  // 3. Generate programmatic files
   const settingsContent = generateSettingsFile(choices);
   await fs.outputFile(
     path.join(targetDir, "src/config/settings.ts"),
     settingsContent,
   );
 
-  // Generate package.json
+  const astroConfigContent = generateAstroConfig(choices);
+  await fs.outputFile(
+    path.join(targetDir, "astro.config.ts"),
+    astroConfigContent,
+  );
+
+  const contentConfigContent = generateContentConfig(choices);
+  await fs.outputFile(
+    path.join(targetDir, "src/content.config.ts"),
+    contentConfigContent,
+  );
+
   const pkg = generatePackageJson(choices);
   await fs.outputFile(
     path.join(targetDir, "package.json"),
     JSON.stringify(pkg, null, 2) + "\n",
   );
 
-  // Create .gitignore
   await fs.outputFile(
     path.join(targetDir, ".gitignore"),
     ["node_modules", "dist", ".astro", ""].join("\n"),
   );
 
-  // Strip unwanted features and apply defaultLang patching
-  await stripFeatures(targetDir, choices);
+  // 4. Compose features (copy feature files + inject into shared files)
+  await composeFeatures(targetDir, choices, featureModules, featuresDir);
+
+  // 5. Handle default language patching for non-i18n projects
+  if (!choices.features.includes("i18n") && choices.defaultLang !== "en") {
+    // The i18n feature handles its own language patching via postProcess.
+    // For non-i18n projects, we still need to patch the default locale.
+    await patchDefaultLang(targetDir, choices.defaultLang);
+  }
 
   // Ensure content directories exist
   await fs.ensureDir(path.join(targetDir, "src/content/docs"));
@@ -264,3 +251,4 @@ function generatePackageJson(choices: UserChoices) {
     devDependencies: devDeps,
   };
 }
+

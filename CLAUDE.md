@@ -98,10 +98,12 @@ When adding or removing a feature from zudo-doc, update the `create-zudo-doc` ge
 
 1. **`src/config/settings.ts`** — Add/remove the setting field
 2. **`packages/create-zudo-doc/src/settings-gen.ts`** — Add/remove the setting in generated output
-3. **`packages/create-zudo-doc/src/scaffold.ts`** — Add/remove dependencies in `generatePackageJson()`
-4. **`packages/create-zudo-doc/src/strip.ts`** — Add/remove import stripping and file removal for the feature
-5. **`packages/create-zudo-doc/src/__tests__/scaffold.test.ts`** — Update tests
-6. Run `/l-sync-create-zudo-doc` to verify no drift remains
+3. **`packages/create-zudo-doc/src/features/<name>.ts`** — Create/update feature module with injections
+4. **`packages/create-zudo-doc/templates/features/<name>/files/`** — Add/remove feature-specific files
+5. **`packages/create-zudo-doc/src/astro-config-gen.ts`** — Add/remove conditional imports/integrations if feature affects astro config
+6. **`packages/create-zudo-doc/src/scaffold.ts`** — Add/remove dependencies in `generatePackageJson()`
+7. **`packages/create-zudo-doc/src/__tests__/scaffold.test.ts`** — Update tests
+8. Run `/l-sync-create-zudo-doc` to verify no drift remains
 
 ## Design Tokens & CSS
 
