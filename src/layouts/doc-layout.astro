@@ -25,6 +25,7 @@ import ColorTweakPanel from "@/components/color-tweak-panel";
 import AiChatModal from "@/components/ai-chat-modal";
 import MockInit from "@/components/mock-init";
 import DesktopSidebarToggle from "@/components/desktop-sidebar-toggle";
+import FindInPageInit from "@/components/find-in-page-init";
 import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "@/config/color-scheme-utils";
 
 interface Props {
@@ -227,6 +228,7 @@ const contentTransition = {
     <TabsInit />
     {settings.mermaid && <MermaidInit />}
     {import.meta.env.DEV && import.meta.env.PUBLIC_ENABLE_MOCKS === "true" && settings.aiAssistant && <MockInit client:only="preact" />}
+    <FindInPageInit client:load />
     <PageLoadingOverlay />
     <script>
       let _sidebarScrollTop = 0;
