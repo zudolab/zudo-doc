@@ -311,6 +311,322 @@ describe("scaffold — generated settings.ts content", () => {
   });
 });
 
+describe("scaffold — docHistory feature", () => {
+  it("settings have docHistory: true when enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-dh-on",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "docHistory"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-dh-on", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("docHistory: true");
+  });
+
+  it("keeps doc-history integration when enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-dh-int",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "docHistory"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath("test-dh-int", "src/integrations/doc-history.ts"),
+      ),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(
+        projectPath("test-dh-int", "src/components/doc-history.tsx"),
+      ),
+    ).toBe(true);
+    const config = await fs.readFile(
+      projectPath("test-dh-int", "astro.config.ts"),
+      "utf-8",
+    );
+    expect(config).toContain("docHistoryIntegration");
+  });
+
+  it("settings have docHistory: false when disabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-dh-off",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-dh-off", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("docHistory: false");
+  });
+});
+
+describe("scaffold — llmsTxt feature", () => {
+  it("settings have llmsTxt: true when enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-llms-on",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "llmsTxt"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-llms-on", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("llmsTxt: true");
+  });
+
+  it("keeps llms-txt integration when enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-llms-int",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "llmsTxt"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath("test-llms-int", "src/integrations/llms-txt.ts"),
+      ),
+    ).toBe(true);
+    const config = await fs.readFile(
+      projectPath("test-llms-int", "astro.config.ts"),
+      "utf-8",
+    );
+    expect(config).toContain("llmsTxtIntegration");
+  });
+
+  it("settings have llmsTxt: false when disabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-llms-off",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-llms-off", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("llmsTxt: false");
+  });
+});
+
+describe("scaffold — footer features", () => {
+  it("generates footer with links when footerNavGroup is enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-footer-nav",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "footerNavGroup"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-footer-nav", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("footer: {");
+    expect(content).toContain('title: "Docs"');
+    expect(content).toContain("Getting Started");
+    expect(content).not.toContain("copyright:");
+  });
+
+  it("generates footer with copyright when footerCopyright is enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-footer-cr",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "footerCopyright"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-footer-cr", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("footer: {");
+    expect(content).toContain("copyright:");
+    expect(content).toContain("links: [],");
+  });
+
+  it("generates footer with both links and copyright", async () => {
+    const choices: UserChoices = {
+      projectName: "test-footer-both",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "footerNavGroup", "footerCopyright"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-footer-both", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("footer: {");
+    expect(content).toContain('title: "Docs"');
+    expect(content).toContain("copyright:");
+  });
+
+  it("sets footer: false and strips component when disabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-footer-off",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-footer-off", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("footer: false");
+    expect(
+      await fs.pathExists(
+        projectPath("test-footer-off", "src/components/footer.astro"),
+      ),
+    ).toBe(false);
+    const layout = await fs.readFile(
+      projectPath("test-footer-off", "src/layouts/doc-layout.astro"),
+      "utf-8",
+    );
+    expect(layout).not.toContain("Footer");
+  });
+
+  it("keeps footer component when footer is enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-footer-keep",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "footerNavGroup"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath("test-footer-keep", "src/components/footer.astro"),
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("scaffold — changelog feature", () => {
+  it("headerNav includes Changelog and creates starter content when enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-changelog-on",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "changelog"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-changelog-on", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("Changelog");
+    expect(content).toContain("/docs/changelog");
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-changelog-on",
+          "src/content/docs/changelog/index.mdx",
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it("headerNav does NOT include Changelog when disabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-no-clog",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-no-clog", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).not.toContain("/docs/changelog");
+  });
+});
+
+describe("scaffold — skillSymlinker feature", () => {
+  it("copies setup-doc-skill.sh and adds npm script when enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-symlinker-on",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "skillSymlinker"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath("test-symlinker-on", "scripts/setup-doc-skill.sh"),
+      ),
+    ).toBe(true);
+    const pkg = await fs.readJson(
+      projectPath("test-symlinker-on", "package.json"),
+    );
+    expect(pkg.scripts["setup:doc-skill"]).toBe(
+      "bash scripts/setup-doc-skill.sh",
+    );
+  });
+
+  it("does NOT include setup-doc-skill.sh when disabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-symlinker-off",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath("test-symlinker-off", "scripts/setup-doc-skill.sh"),
+      ),
+    ).toBe(false);
+    const pkg = await fs.readJson(
+      projectPath("test-symlinker-off", "package.json"),
+    );
+    expect(pkg.scripts["setup:doc-skill"]).toBeUndefined();
+  });
+});
+
 describe("scaffold — plugin copying and settings", () => {
   const choices: UserChoices = {
     projectName: "test-minimal",
