@@ -83,17 +83,20 @@ sidebar_position: 2
 | 失敗内容 | 原因 | 修正対象 |
 |----------|------|----------|
 | ビルド時にモジュールが見つからない | 生成された`package.json`に依存関係がない | `scaffold.ts` — `generatePackageJson()` |
-| インポートが見つからない | 無効化された機能のインポートが除去されていない | `strip.ts` |
+| astro.configでインポートが見つからない | 機能のインテグレーションが含まれていない | `astro-config-gen.ts` |
 | settings.tsの型エラー | 設定フィールドが不足または不正 | `settings-gen.ts` |
-| コンポーネントが除去済みコンポーネントを参照 | テンプレートの使用箇所が除去されていない | `strip.ts`のパッチパターン |
-| 不要な機能ファイルが残っている | ストリップ時にファイルが削除されていない | `strip.ts` |
+| 機能コンポーネントが見つからない | 機能モジュールのファイルコピーまたはアンカー不一致 | `features/*.ts`または`templates/features/*/files/` |
+| アンカーが出力に残っている | injectionアンカーが未クリーンアップ | `compose.ts` — `cleanAnchors()` |
 
 ## 主要なジェネレーターファイル
 
 | ファイル | 役割 |
 |----------|------|
-| `packages/create-zudo-doc/src/scaffold.ts` | テンプレートのコピー、`package.json`の生成 |
-| `packages/create-zudo-doc/src/strip.ts` | オプションに基づく機能/インポートの除去 |
+| `packages/create-zudo-doc/src/scaffold.ts` | パイプライン統括: ベースコピー、設定生成、機能合成 |
+| `packages/create-zudo-doc/src/compose.ts` | 合成エンジン: injection、アンカークリーンアップ、機能解決 |
+| `packages/create-zudo-doc/src/features/*.ts` | 各機能のinjection定義モジュール |
+| `packages/create-zudo-doc/src/astro-config-gen.ts` | `astro.config.ts`のプログラマティック生成 |
+| `packages/create-zudo-doc/src/content-config-gen.ts` | `content.config.ts`のプログラマティック生成 |
 | `packages/create-zudo-doc/src/settings-gen.ts` | `settings.ts`の生成 |
 | `packages/create-zudo-doc/src/constants.ts` | 機能定義、カラースキームリスト |
 | `packages/create-zudo-doc/src/cli.ts` | CLI引数のパース |
