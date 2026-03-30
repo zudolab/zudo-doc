@@ -1,6 +1,5 @@
 import type { UserChoices } from "./prompts.js";
-import { getSecondaryLang } from "./scaffold.js";
-import { capitalize, getLangLabel } from "./utils.js";
+import { capitalize, getLangLabel, getSecondaryLang } from "./utils.js";
 
 export function generateSettingsFile(choices: UserChoices): string {
   const lines: string[] = [];
