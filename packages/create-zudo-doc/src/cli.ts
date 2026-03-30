@@ -25,6 +25,7 @@ export interface CliArgs {
   footerNavGroup?: boolean;
   footerCopyright?: boolean;
   changelog?: boolean;
+  preset?: string;
   pm?: "pnpm" | "npm" | "yarn" | "bun";
   install?: boolean;
   yes?: boolean;
@@ -41,6 +42,7 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
       "light-scheme",
       "dark-scheme",
       "default-mode",
+      "preset",
       "pm",
     ],
     // Do NOT declare booleans here — minimist would default them to false,
@@ -75,6 +77,7 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
   if (raw["light-scheme"]) args.lightScheme = raw["light-scheme"];
   if (raw["dark-scheme"]) args.darkScheme = raw["dark-scheme"];
   if (raw["default-mode"]) args.defaultMode = raw["default-mode"];
+  if (raw.preset) args.preset = raw.preset;
   if (raw.pm) args.pm = raw.pm;
 
   // Boolean flags — only set if explicitly passed in argv
@@ -116,6 +119,7 @@ ${pc.bold("Options:")}
   --[no-]respect-system-preference
                                Respect OS color scheme preference
 ${featureHelp}
+  --preset <path>              Load settings from a JSON preset file (use "-" for stdin)
   --pm <manager>               pnpm | npm | yarn | bun
   --[no-]install               Install dependencies after scaffolding
   -y, --yes                    Use defaults for unspecified options, skip prompts

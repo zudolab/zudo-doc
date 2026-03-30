@@ -3,6 +3,7 @@ import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { parseArgs, printHelp, validateArgs } from "./cli.js";
 import { FEATURES } from "./constants.js";
+import { loadPreset } from "./preset.js";
 import { runPrompts, type PartialChoices } from "./prompts.js";
 import { scaffold } from "./scaffold.js";
 import { installDependencies } from "./utils.js";
@@ -26,9 +27,23 @@ async function main() {
   console.log();
   p.intro(pc.bgCyan(pc.black(" create-zudo-doc ")));
 
-  // Build PartialChoices from CLI args
+  // Build PartialChoices: preset first, then CLI args override
   const prefilled: PartialChoices = {};
 
+  // Load preset if provided (base layer — CLI flags override below)
+  if (args.preset) {
+    try {
+      const presetChoices = loadPreset(args.preset);
+      Object.assign(prefilled, presetChoices);
+    } catch (err) {
+      p.log.error(
+        `Failed to load preset: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      process.exit(1);
+    }
+  }
+
+  // CLI args override preset values
   if (args.name) prefilled.projectName = args.name;
   if (args.lang) prefilled.defaultLang = args.lang;
   if (args.colorSchemeMode) prefilled.colorSchemeMode = args.colorSchemeMode;
@@ -51,11 +66,11 @@ async function main() {
     if (val !== undefined) featureFlags[f.value] = val as boolean;
   }
   if (Object.keys(featureFlags).length > 0) {
-    prefilled.features = featureFlags;
+    prefilled.features = { ...prefilled.features, ...featureFlags };
   }
 
-  // With --yes: fill all unspecified options with defaults
-  if (args.yes) {
+  // With --yes or --preset: fill all unspecified options with defaults
+  if (args.yes || args.preset) {
     prefilled.projectName ??= "my-docs";
     prefilled.defaultLang ??= "en";
     prefilled.colorSchemeMode ??= "light-dark";
@@ -95,7 +110,7 @@ async function main() {
   let shouldInstall: boolean;
   if (args.install !== undefined) {
     shouldInstall = args.install;
-  } else if (args.yes) {
+  } else if (args.yes || args.preset) {
     // In non-interactive mode, default to installing dependencies
     shouldInstall = true;
   } else {
