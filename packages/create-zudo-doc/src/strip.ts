@@ -231,7 +231,7 @@ export async function stripFeatures(
   // The template astro.config.ts is copied from the monorepo root and has ALL
   // imports. We must strip imports for features that are always off by default
   // to avoid referencing packages not in the generated package.json.
-  await patchFile(path.join(targetDir, "astro.config.ts"), [
+  const astroConfigPatches: [RegExp, string][] = [
     // Math (always false by default)
     [/import remarkMath from "remark-math";\n/g, ""],
     [/import rehypeKatex from "rehype-katex";\n/g, ""],
@@ -241,24 +241,6 @@ export async function stripFeatures(
     [/import node from "@astrojs\/node";\n/g, ""],
     [
       /\s*\.\.\.\(settings\.aiAssistant \? \{ adapter: node\(\{ mode: "standalone" \}\) \} : \{\}\),?\n?/g,
-      "\n",
-    ],
-    // Doc history integration (always false by default)
-    [
-      /import \{ docHistoryIntegration \} from "\.\/src\/integrations\/doc-history";\n/g,
-      "",
-    ],
-    [
-      /\s*\.\.\.\(settings\.docHistory \? \[docHistoryIntegration\(\)\] : \[\]\),?\n?/g,
-      "\n",
-    ],
-    // LLMs.txt integration (always false by default)
-    [
-      /import \{ llmsTxtIntegration \} from "\.\/src\/integrations\/llms-txt";\n/g,
-      "",
-    ],
-    [
-      /\s*\.\.\.\(settings\.llmsTxt \? \[llmsTxtIntegration\(\)\] : \[\]\),?\n?/g,
       "\n",
     ],
     // Sitemap integration (disabled — needs siteUrl)
@@ -275,11 +257,45 @@ export async function stripFeatures(
       /\s*trailingSlash: settings\.trailingSlash \? "always" : "never",\n/g,
       "\n",
     ],
-  ]);
+  ];
+
+  // Conditionally strip doc history integration
+  if (!choices.features.includes("docHistory")) {
+    astroConfigPatches.push(
+      [
+        /import \{ docHistoryIntegration \} from "\.\/src\/integrations\/doc-history";\n/g,
+        "",
+      ],
+      [
+        /\s*\.\.\.\(settings\.docHistory \? \[docHistoryIntegration\(\)\] : \[\]\),?\n?/g,
+        "\n",
+      ],
+    );
+  }
+
+  // Conditionally strip LLMs.txt integration
+  if (!choices.features.includes("llmsTxt")) {
+    astroConfigPatches.push(
+      [
+        /import \{ llmsTxtIntegration \} from "\.\/src\/integrations\/llms-txt";\n/g,
+        "",
+      ],
+      [
+        /\s*\.\.\.\(settings\.llmsTxt \? \[llmsTxtIntegration\(\)\] : \[\]\),?\n?/g,
+        "\n",
+      ],
+    );
+  }
+
+  await patchFile(path.join(targetDir, "astro.config.ts"), astroConfigPatches);
 
   // Remove integration files for disabled features
-  await removeIfExists(targetDir, "src/integrations/doc-history.ts");
-  await removeIfExists(targetDir, "src/integrations/llms-txt.ts");
+  if (!choices.features.includes("docHistory")) {
+    await removeIfExists(targetDir, "src/integrations/doc-history.ts");
+  }
+  if (!choices.features.includes("llmsTxt")) {
+    await removeIfExists(targetDir, "src/integrations/llms-txt.ts");
+  }
   await removeIfExists(targetDir, "src/integrations/sitemap.ts");
 
   // Remove AI chat API route, components, and MSW mock (aiAssistant is false by default)
@@ -299,15 +315,33 @@ export async function stripFeatures(
   // Remove preset generator (not needed in generated projects — it's a zudo-doc showcase component)
   await removeIfExists(targetDir, "src/components/preset-generator.tsx");
 
-  // Remove doc-history component (docHistory is false by default)
-  await removeIfExists(targetDir, "src/components/doc-history.tsx");
-  await patchFile(
-    path.join(targetDir, "src/layouts/doc-layout.astro"),
-    [
-      [/import \{ DocHistory \} from.*\n/g, ""],
-      [/\s*\{settings\.docHistory && currentSlug &&[\s\S]*?\/>\s*\n\s*\)\}\s*\n?/g, "\n"],
-    ],
-  );
+  // Strip doc-history when not selected
+  if (!choices.features.includes("docHistory")) {
+    await removeIfExists(targetDir, "src/components/doc-history.tsx");
+    await patchFile(
+      path.join(targetDir, "src/layouts/doc-layout.astro"),
+      [
+        [/import \{ DocHistory \} from.*\n/g, ""],
+        [/\s*\{settings\.docHistory && currentSlug &&[\s\S]*?\/>\s*\n\s*\)\}\s*\n?/g, "\n"],
+      ],
+    );
+  }
+
+  // Strip footer when neither footerNavGroup nor footerCopyright is selected
+  if (
+    !choices.features.includes("footerNavGroup") &&
+    !choices.features.includes("footerCopyright")
+  ) {
+    await removeIfExists(targetDir, "src/components/footer.astro");
+    await patchFile(
+      path.join(targetDir, "src/layouts/doc-layout.astro"),
+      [
+        [/import Footer from.*footer\.astro.*\n/g, ""],
+        [/\s*<Footer.*\/>\s*\n?/g, "\n"],
+      ],
+    );
+  }
+
 }
 
 /**

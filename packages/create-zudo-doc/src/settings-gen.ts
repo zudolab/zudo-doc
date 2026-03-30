@@ -79,11 +79,19 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  sitemap: false,`);
   lines.push(`  docMetainfo: false,`);
   lines.push(`  docTags: false,`);
-  lines.push(`  llmsTxt: false,`);
+  if (choices.features.includes("llmsTxt")) {
+    lines.push(`  llmsTxt: true,`);
+  } else {
+    lines.push(`  llmsTxt: false,`);
+  }
   lines.push(`  math: false,`);
   lines.push(`  onBrokenMarkdownLinks: "warn" as "warn" | "error" | "ignore",`);
   lines.push(`  aiAssistant: false as boolean,`);
-  lines.push(`  docHistory: false,`);
+  if (choices.features.includes("docHistory")) {
+    lines.push(`  docHistory: true,`);
+  } else {
+    lines.push(`  docHistory: false,`);
+  }
 
   if (choices.features.includes("colorTweakPanel")) {
     lines.push(`  colorTweakPanel: true as boolean,`);
@@ -125,12 +133,44 @@ export function generateSettingsFile(choices: UserChoices): string {
     );
   }
 
-  lines.push(`  footer: false as FooterConfig | false,`);
+  if (
+    choices.features.includes("footerNavGroup") ||
+    choices.features.includes("footerCopyright")
+  ) {
+    lines.push(`  footer: {`);
+    if (choices.features.includes("footerNavGroup")) {
+      lines.push(`    links: [`);
+      lines.push(`      {`);
+      lines.push(`        title: "Docs",`);
+      lines.push(`        items: [`);
+      lines.push(
+        `          { label: "Getting Started", href: "/docs/getting-started" },`,
+      );
+      lines.push(`        ],`);
+      lines.push(`      },`);
+      lines.push(`    ],`);
+    } else {
+      lines.push(`    links: [],`);
+    }
+    if (choices.features.includes("footerCopyright")) {
+      lines.push(
+        `    copyright: "Copyright © ${new Date().getFullYear()} Your Name. Built with zudo-doc.",`,
+      );
+    }
+    lines.push(`  } satisfies FooterConfig as FooterConfig | false,`);
+  } else {
+    lines.push(`  footer: false as FooterConfig | false,`);
+  }
 
   lines.push(`  headerNav: [`);
   lines.push(
     `    { label: "Getting Started", path: "/docs/getting-started", categoryMatch: "getting-started" },`,
   );
+  if (choices.features.includes("changelog")) {
+    lines.push(
+      `    { label: "Changelog", path: "/docs/changelog", categoryMatch: "changelog" },`,
+    );
+  }
   lines.push(`  ] satisfies HeaderNavItem[],`);
   lines.push(`};`);
 
