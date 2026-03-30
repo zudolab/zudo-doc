@@ -2,12 +2,6 @@ import type { FeatureModule } from "../compose.js";
 
 export const docHistoryFeature: FeatureModule = () => ({
   name: "docHistory",
-  files: [
-    "src/components/doc-history.tsx",
-    "src/integrations/doc-history.ts",
-    "src/types/doc-history.ts",
-    "src/utils/doc-history.ts",
-  ],
   injections: [
     {
       file: "src/layouts/doc-layout.astro",

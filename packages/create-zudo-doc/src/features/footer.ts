@@ -2,7 +2,6 @@ import type { FeatureModule } from "../compose.js";
 
 export const footerFeature: FeatureModule = () => ({
   name: "footer",
-  files: ["src/components/footer.astro"],
   injections: [
     {
       file: "src/layouts/doc-layout.astro",

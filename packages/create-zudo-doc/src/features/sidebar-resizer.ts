@@ -2,7 +2,6 @@ import type { FeatureModule } from "../compose.js";
 
 export const sidebarResizerFeature: FeatureModule = () => ({
   name: "sidebarResizer",
-  files: ["src/scripts/sidebar-resizer.ts"],
   injections: [
     {
       file: "src/layouts/doc-layout.astro",

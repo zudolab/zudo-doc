@@ -3,7 +3,6 @@
  *
  * Each module is a FeatureModule function that returns a FeatureDefinition
  * based on user choices. The definition includes:
- * - files: feature-specific files to copy
  * - injections: code to inject into shared files at anchor points
  * - postProcess: optional hook for complex transformations
  */

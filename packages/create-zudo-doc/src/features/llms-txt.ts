@@ -2,7 +2,6 @@ import type { FeatureModule } from "../compose.js";
 
 export const llmsTxtFeature: FeatureModule = () => ({
   name: "llmsTxt",
-  files: ["src/integrations/llms-txt.ts"],
   injections: [
     {
       file: "src/layouts/doc-layout.astro",

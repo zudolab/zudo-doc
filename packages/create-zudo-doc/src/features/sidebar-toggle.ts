@@ -2,7 +2,6 @@ import type { FeatureModule } from "../compose.js";
 
 export const sidebarToggleFeature: FeatureModule = () => ({
   name: "sidebarToggle",
-  files: ["src/components/desktop-sidebar-toggle.tsx"],
   injections: [
     {
       file: "src/layouts/doc-layout.astro",

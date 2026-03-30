@@ -7,12 +7,9 @@ import { generateAstroConfig } from "./astro-config-gen.js";
 import { generateContentConfig } from "./content-config-gen.js";
 import { composeFeatures } from "./compose.js";
 import { featureModules } from "./features/index.js";
-import { capitalize } from "./utils.js";
+import { capitalize, getSecondaryLang, patchDefaultLang } from "./utils.js";
 
-/** Determine the secondary language code when i18n is enabled. */
-export function getSecondaryLang(defaultLang: string): string {
-  return defaultLang === "en" ? "ja" : "en";
-}
+export { getSecondaryLang };
 
 const STARTER_CONTENT_EN = (siteName: string) => `---
 title: Welcome
@@ -191,7 +188,7 @@ export async function scaffold(choices: UserChoices): Promise<void> {
   if (!choices.features.includes("i18n") && choices.defaultLang !== "en") {
     // The i18n feature handles its own language patching via postProcess.
     // For non-i18n projects, we still need to patch the default locale.
-    await patchDefaultLangNonI18n(targetDir, choices.defaultLang);
+    await patchDefaultLang(targetDir, choices.defaultLang);
   }
 
   // Ensure content directories exist
@@ -255,56 +252,3 @@ function generatePackageJson(choices: UserChoices) {
   };
 }
 
-/**
- * Patch default locale references in page files for non-i18n projects.
- * When i18n is enabled, the i18n feature module handles this via postProcess.
- */
-async function patchDefaultLangNonI18n(
-  targetDir: string,
-  lang: string,
-): Promise<void> {
-  const { getLangLabel } = await import("./utils.js");
-  const label = getLangLabel(lang);
-
-  await patchFile(path.join(targetDir, "src/config/i18n.ts"), [
-    [/export const defaultLocale = "en" as const;/g, `export const defaultLocale = "${lang}" as const;`],
-    [/return "EN";/g, `return ${JSON.stringify(label)};`],
-  ]);
-
-  await patchFile(path.join(targetDir, "src/pages/index.astro"), [
-    [/loadLocaleDocs\("en"\)/g, `loadLocaleDocs("${lang}")`],
-    [/buildNavTree\(navDocs, "en"/g, `buildNavTree(navDocs, "${lang}"`],
-    [/lang="en"/g, `lang="${lang}"`],
-  ]);
-
-  await patchFile(path.join(targetDir, "src/pages/404.astro"), [
-    [/lang="en"/g, `lang="${lang}"`],
-  ]);
-
-  await patchFile(path.join(targetDir, "src/pages/docs/[...slug].astro"), [
-    [/buildNavTree\(navDocs, "en"/g, `buildNavTree(navDocs, "${lang}"`],
-    [/buildBreadcrumbs\(tree, slug, "en"\)/g, `buildBreadcrumbs(tree, slug, "${lang}")`],
-    [/buildBreadcrumbs\(tree, node\.slug, "en"\)/g, `buildBreadcrumbs(tree, node.slug, "${lang}")`],
-    [/docsUrl\(child\.slug, "en"\)/g, `docsUrl(child.slug, "${lang}")`],
-    [/docsUrl\(doc\.slug, "en"\)/g, `docsUrl(doc.slug, "${lang}")`],
-    [/locale="en"/g, `locale="${lang}"`],
-    [/t\("nav\.previous", "en"\)/g, `t("nav.previous", "${lang}")`],
-    [/t\("nav\.next", "en"\)/g, `t("nav.next", "${lang}")`],
-  ]);
-
-  await patchFile(path.join(targetDir, "src/pages/docs/tags/[tag].astro"), [
-    [/docsUrl\(doc\.slug, "en"\)/g, `docsUrl(doc.slug, "${lang}")`],
-  ]);
-}
-
-async function patchFile(
-  filePath: string,
-  replacements: [RegExp, string][],
-): Promise<void> {
-  if (!(await fs.pathExists(filePath))) return;
-  let content = await fs.readFile(filePath, "utf-8");
-  for (const [pattern, replacement] of replacements) {
-    content = content.replace(pattern, replacement);
-  }
-  await fs.writeFile(filePath, content);
-}

@@ -29,12 +29,6 @@ export interface Injection {
 export interface FeatureDefinition {
   /** Feature key (matches constants.ts value or internal name) */
   name: string;
-  /**
-   * Files to copy from the feature's `files/` directory into the target.
-   * Paths are relative to the feature's `files/` dir and mirror the project
-   * structure (e.g. `src/components/search.astro`).
-   */
-  files: string[];
   /** Injection instructions for shared/base files */
   injections: Injection[];
   /** Other feature names this feature depends on (optional) */

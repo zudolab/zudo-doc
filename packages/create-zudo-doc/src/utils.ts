@@ -20,3 +20,61 @@ export function capitalize(str: string): string {
 export function getLangLabel(langCode: string): string {
   return langCode.toUpperCase();
 }
+
+/** Determine the secondary language code when i18n is enabled. */
+export function getSecondaryLang(defaultLang: string): string {
+  return defaultLang === "en" ? "ja" : "en";
+}
+
+/** Apply a list of regex replacements to a file (if it exists). */
+export async function patchFile(
+  filePath: string,
+  replacements: [RegExp, string][],
+): Promise<void> {
+  const fs = await import("fs-extra");
+  if (!(await fs.pathExists(filePath))) return;
+  let content = await fs.readFile(filePath, "utf-8");
+  for (const [pattern, replacement] of replacements) {
+    content = content.replace(pattern, replacement);
+  }
+  await fs.writeFile(filePath, content);
+}
+
+/** Patch default locale references in page files. */
+export async function patchDefaultLang(
+  targetDir: string,
+  lang: string,
+): Promise<void> {
+  const path = await import("path");
+  const label = getLangLabel(lang);
+
+  await patchFile(path.join(targetDir, "src/config/i18n.ts"), [
+    [/export const defaultLocale = "en" as const;/g, `export const defaultLocale = "${lang}" as const;`],
+    [/return "EN";/g, `return ${JSON.stringify(label)};`],
+  ]);
+
+  await patchFile(path.join(targetDir, "src/pages/index.astro"), [
+    [/loadLocaleDocs\("en"\)/g, `loadLocaleDocs("${lang}")`],
+    [/buildNavTree\(navDocs, "en"/g, `buildNavTree(navDocs, "${lang}"`],
+    [/lang="en"/g, `lang="${lang}"`],
+  ]);
+
+  await patchFile(path.join(targetDir, "src/pages/404.astro"), [
+    [/lang="en"/g, `lang="${lang}"`],
+  ]);
+
+  await patchFile(path.join(targetDir, "src/pages/docs/[...slug].astro"), [
+    [/buildNavTree\(navDocs, "en"/g, `buildNavTree(navDocs, "${lang}"`],
+    [/buildBreadcrumbs\(tree, slug, "en"\)/g, `buildBreadcrumbs(tree, slug, "${lang}")`],
+    [/buildBreadcrumbs\(tree, node\.slug, "en"\)/g, `buildBreadcrumbs(tree, node.slug, "${lang}")`],
+    [/docsUrl\(child\.slug, "en"\)/g, `docsUrl(child.slug, "${lang}")`],
+    [/docsUrl\(doc\.slug, "en"\)/g, `docsUrl(doc.slug, "${lang}")`],
+    [/locale="en"/g, `locale="${lang}"`],
+    [/t\("nav\.previous", "en"\)/g, `t("nav.previous", "${lang}")`],
+    [/t\("nav\.next", "en"\)/g, `t("nav.next", "${lang}")`],
+  ]);
+
+  await patchFile(path.join(targetDir, "src/pages/docs/tags/[tag].astro"), [
+    [/docsUrl\(doc\.slug, "en"\)/g, `docsUrl(doc.slug, "${lang}")`],
+  ]);
+}

@@ -232,17 +232,14 @@ describe("resolveSelectedFeatures", () => {
   const mockModules: Record<string, FeatureModule> = {
     search: () => ({
       name: "search",
-      files: ["src/components/search.astro"],
       injections: [],
     }),
     footer: () => ({
       name: "footer",
-      files: ["src/components/footer.astro"],
       injections: [],
     }),
     docHistory: () => ({
       name: "docHistory",
-      files: ["src/components/doc-history.tsx"],
       injections: [],
     }),
   };
@@ -288,8 +285,8 @@ describe("resolveSelectedFeatures", () => {
 describe("validateDependencies", () => {
   it("passes when all dependencies are satisfied", () => {
     const features = [
-      { name: "a", files: [], injections: [] },
-      { name: "b", files: [], injections: [], dependencies: ["a"] },
+      { name: "a", injections: [] },
+      { name: "b", injections: [], dependencies: ["a"] },
     ];
     expect(() =>
       validateDependencies(features, new Set(["a", "b"])),
@@ -298,7 +295,7 @@ describe("validateDependencies", () => {
 
   it("throws when a dependency is missing", () => {
     const features = [
-      { name: "b", files: [], injections: [], dependencies: ["a"] },
+      { name: "b", injections: [], dependencies: ["a"] },
     ];
     expect(() => validateDependencies(features, new Set(["b"]))).toThrow(
       /Feature "b" requires "a"/,
@@ -307,8 +304,8 @@ describe("validateDependencies", () => {
 
   it("passes when features have no dependencies", () => {
     const features = [
-      { name: "a", files: [], injections: [] },
-      { name: "b", files: [], injections: [] },
+      { name: "a", injections: [] },
+      { name: "b", injections: [] },
     ];
     expect(() =>
       validateDependencies(features, new Set(["a", "b"])),

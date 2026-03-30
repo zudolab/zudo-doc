@@ -2,13 +2,6 @@ import type { FeatureModule } from "../compose.js";
 
 export const colorTweakPanelFeature: FeatureModule = () => ({
   name: "colorTweakPanel",
-  files: [
-    "src/components/color-tweak-panel.tsx",
-    "src/components/color-tweak-export-modal.tsx",
-    "src/config/color-tweak-presets.ts",
-    "src/utils/color-convert.ts",
-    "src/utils/export-code.ts",
-  ],
   injections: [
     {
       file: "src/layouts/doc-layout.astro",
@@ -55,11 +48,6 @@ import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "@/config/color-scheme-uti
       anchor: "<!-- @slot:doc-layout:body-end-components -->",
       content: '    {settings.colorTweakPanel && <ColorTweakPanel client:only="preact" />}',
       position: "after",
-    },
-    {
-      file: "src/components/header.astro",
-      anchor: "// @slot:header:imports",
-      content: 'import { settings } from "@/config/settings";',
     },
     {
       file: "src/components/header.astro",

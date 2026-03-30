@@ -2,15 +2,10 @@ import fs from "fs-extra";
 import path from "path";
 import type { FeatureModule } from "../compose.js";
 import type { UserChoices } from "../prompts.js";
-import { getSecondaryLang } from "../scaffold.js";
-import { getLangLabel } from "../utils.js";
+import { getSecondaryLang, patchDefaultLang, patchFile } from "../utils.js";
 
 export const i18nFeature: FeatureModule = (choices) => ({
   name: "i18n",
-  files: [
-    "src/components/language-switcher.astro",
-    // Secondary language pages are copied from template and patched in postProcess
-  ],
   injections: [
     {
       file: "src/components/header.astro",
@@ -44,45 +39,7 @@ import { locales } from "@/config/i18n";`,
   },
 });
 
-// --- Helpers extracted from strip.ts ---
-
-async function patchDefaultLang(
-  targetDir: string,
-  lang: string,
-): Promise<void> {
-  const label = getLangLabel(lang);
-
-  await patchFile(path.join(targetDir, "src/config/i18n.ts"), [
-    [/export const defaultLocale = "en" as const;/g, `export const defaultLocale = "${lang}" as const;`],
-    [/return "EN";/g, `return ${JSON.stringify(label)};`],
-  ]);
-
-  // Patch root pages
-  await patchFile(path.join(targetDir, "src/pages/index.astro"), [
-    [/loadLocaleDocs\("en"\)/g, `loadLocaleDocs("${lang}")`],
-    [/buildNavTree\(navDocs, "en"/g, `buildNavTree(navDocs, "${lang}"`],
-    [/lang="en"/g, `lang="${lang}"`],
-  ]);
-
-  await patchFile(path.join(targetDir, "src/pages/404.astro"), [
-    [/lang="en"/g, `lang="${lang}"`],
-  ]);
-
-  await patchFile(path.join(targetDir, "src/pages/docs/[...slug].astro"), [
-    [/buildNavTree\(navDocs, "en"/g, `buildNavTree(navDocs, "${lang}"`],
-    [/buildBreadcrumbs\(tree, slug, "en"\)/g, `buildBreadcrumbs(tree, slug, "${lang}")`],
-    [/buildBreadcrumbs\(tree, node\.slug, "en"\)/g, `buildBreadcrumbs(tree, node.slug, "${lang}")`],
-    [/docsUrl\(child\.slug, "en"\)/g, `docsUrl(child.slug, "${lang}")`],
-    [/docsUrl\(doc\.slug, "en"\)/g, `docsUrl(doc.slug, "${lang}")`],
-    [/locale="en"/g, `locale="${lang}"`],
-    [/t\("nav\.previous", "en"\)/g, `t("nav.previous", "${lang}")`],
-    [/t\("nav\.next", "en"\)/g, `t("nav.next", "${lang}")`],
-  ]);
-
-  await patchFile(path.join(targetDir, "src/pages/docs/tags/[tag].astro"), [
-    [/docsUrl\(doc\.slug, "en"\)/g, `docsUrl(doc.slug, "${lang}")`],
-  ]);
-}
+// --- i18n-specific helpers ---
 
 async function createSecondaryPages(
   targetDir: string,
@@ -138,14 +95,3 @@ async function removeIfExists(base: string, relativePath: string): Promise<void>
   }
 }
 
-async function patchFile(
-  filePath: string,
-  replacements: [RegExp, string][],
-): Promise<void> {
-  if (!(await fs.pathExists(filePath))) return;
-  let content = await fs.readFile(filePath, "utf-8");
-  for (const [pattern, replacement] of replacements) {
-    content = content.replace(pattern, replacement);
-  }
-  await fs.writeFile(filePath, content);
-}

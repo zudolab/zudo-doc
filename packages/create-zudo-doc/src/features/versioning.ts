@@ -2,14 +2,6 @@ import type { FeatureModule } from "../compose.js";
 
 export const versioningFeature: FeatureModule = () => ({
   name: "versioning",
-  files: [
-    "src/components/version-switcher.astro",
-    "src/components/version-banner.astro",
-    "src/components/versions-page-content.astro",
-    "src/utils/version-availability.ts",
-    "src/pages/docs/versions.astro",
-    "src/pages/v",
-  ],
   injections: [
     // --- doc-layout imports ---
     {
