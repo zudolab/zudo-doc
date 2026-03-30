@@ -241,6 +241,11 @@ function generatePackageJson(choices: UserChoices) {
     scripts["setup:doc-skill"] = "bash scripts/setup-doc-skill.sh";
   }
 
+  if (choices.features.includes("tauri")) {
+    scripts["dev:tauri"] = "cargo tauri dev";
+    scripts["build:tauri"] = `${choices.packageManager === "npm" ? "npm run" : choices.packageManager} build && cargo tauri build`;
+  }
+
   return {
     name: choices.projectName,
     version: "0.0.1",
