@@ -36,6 +36,9 @@ const VALID_SCHEMES = new Set(SINGLE_SCHEMES);
 const VALID_PMS = new Set(["pnpm", "npm", "yarn", "bun"]);
 
 export function validatePreset(json: PresetJson): string | null {
+  if (json.features !== undefined && !Array.isArray(json.features)) {
+    return `"features" must be an array in preset`;
+  }
   if (json.defaultLang && !VALID_LANGS.has(json.defaultLang)) {
     return `Invalid language "${json.defaultLang}" in preset`;
   }
@@ -56,6 +59,13 @@ export function validatePreset(json: PresetJson): string | null {
   }
   if (json.packageManager && !VALID_PMS.has(json.packageManager)) {
     return `Invalid packageManager "${json.packageManager}" in preset`;
+  }
+  // Cross-field validation
+  if (json.colorSchemeMode === "single" && (json.lightScheme || json.darkScheme)) {
+    return `lightScheme/darkScheme are only valid with colorSchemeMode "light-dark"`;
+  }
+  if (json.colorSchemeMode === "light-dark" && json.singleScheme) {
+    return `singleScheme is only valid with colorSchemeMode "single"`;
   }
   return null;
 }
