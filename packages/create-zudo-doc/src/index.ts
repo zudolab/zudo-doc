@@ -53,6 +53,13 @@ async function main() {
   if (args.sidebarResizer !== undefined) featureFlags.sidebarResizer = args.sidebarResizer;
   if (args.versioning !== undefined) featureFlags.versioning = args.versioning;
   if (args.claudeResources !== undefined) featureFlags.claudeResources = args.claudeResources;
+  if (args.sidebarToggle !== undefined) featureFlags.sidebarToggle = args.sidebarToggle;
+  if (args.docHistory !== undefined) featureFlags.docHistory = args.docHistory;
+  if (args.llmsTxt !== undefined) featureFlags.llmsTxt = args.llmsTxt;
+  if (args.skillSymlinker !== undefined) featureFlags.skillSymlinker = args.skillSymlinker;
+  if (args.footerNavGroup !== undefined) featureFlags.footerNavGroup = args.footerNavGroup;
+  if (args.footerCopyright !== undefined) featureFlags.footerCopyright = args.footerCopyright;
+  if (args.changelog !== undefined) featureFlags.changelog = args.changelog;
   if (Object.keys(featureFlags).length > 0) {
     prefilled.features = featureFlags;
   }

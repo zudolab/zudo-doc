@@ -2,6 +2,10 @@ export function initSidebarResizer() {
   const sidebar = document.getElementById("desktop-sidebar");
   if (!sidebar || sidebar.querySelector("[data-sidebar-resizer]")) return;
 
+  // Resizer allows a wider range (192–448px) than the CSS default
+  // (clamp(14rem, 20vw, 22rem) = 224–352px at 16px base).
+  // CSS provides the responsive initial width; the resizer lets users
+  // go beyond that range when explicitly dragging or using keyboard arrows.
   const MIN_W = 192;
   const MAX_W = 448;
   const STEP = 10;
