@@ -239,6 +239,10 @@ function generatePackageJson(choices: UserChoices) {
     devDeps["pagefind"] = "^1.4.0";
   }
 
+  if (choices.features.includes("docHistory")) {
+    deps["diff"] = "^8.0.3";
+  }
+
   const scripts: Record<string, string> = {
     dev: "astro dev",
     build: "astro build",
