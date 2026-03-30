@@ -1,5 +1,5 @@
 import fs from "fs";
-import { FEATURES } from "./constants.js";
+import { FEATURES, SINGLE_SCHEMES, SUPPORTED_LANGS } from "./constants.js";
 import type { PartialChoices } from "./prompts.js";
 
 export interface PresetJson {
@@ -24,7 +24,40 @@ export function loadPreset(pathOrStdin: string): PartialChoices {
   }
 
   const json: PresetJson = JSON.parse(raw);
+  const error = validatePreset(json);
+  if (error) {
+    throw new Error(error);
+  }
   return presetToChoices(json);
+}
+
+const VALID_LANGS = new Set(SUPPORTED_LANGS.map((l) => l.value));
+const VALID_SCHEMES = new Set(SINGLE_SCHEMES);
+const VALID_PMS = new Set(["pnpm", "npm", "yarn", "bun"]);
+
+export function validatePreset(json: PresetJson): string | null {
+  if (json.defaultLang && !VALID_LANGS.has(json.defaultLang)) {
+    return `Invalid language "${json.defaultLang}" in preset`;
+  }
+  if (json.colorSchemeMode && !["single", "light-dark"].includes(json.colorSchemeMode)) {
+    return `Invalid colorSchemeMode "${json.colorSchemeMode}" in preset`;
+  }
+  if (json.singleScheme && !VALID_SCHEMES.has(json.singleScheme)) {
+    return `Unknown color scheme "${json.singleScheme}" in preset`;
+  }
+  if (json.lightScheme && !VALID_SCHEMES.has(json.lightScheme)) {
+    return `Unknown light scheme "${json.lightScheme}" in preset`;
+  }
+  if (json.darkScheme && !VALID_SCHEMES.has(json.darkScheme)) {
+    return `Unknown dark scheme "${json.darkScheme}" in preset`;
+  }
+  if (json.defaultMode && !["light", "dark"].includes(json.defaultMode)) {
+    return `Invalid defaultMode "${json.defaultMode}" in preset`;
+  }
+  if (json.packageManager && !VALID_PMS.has(json.packageManager)) {
+    return `Invalid packageManager "${json.packageManager}" in preset`;
+  }
+  return null;
 }
 
 const KNOWN_FEATURES = new Set(FEATURES.map((f) => f.value));
