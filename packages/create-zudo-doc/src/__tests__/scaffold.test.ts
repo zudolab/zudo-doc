@@ -727,7 +727,7 @@ describe("scaffold — CLAUDE.md generation", () => {
     );
     expect(content).toContain("# Test Claudemd");
     expect(content).toContain("zudo-doc");
-    expect(content).toContain("Astro");
+    expect(content).toContain("**Astro**");
     expect(content).toContain("pnpm dev");
     expect(content).toContain("pnpm build");
     expect(content).toContain("docs/            # MDX content");
@@ -802,8 +802,8 @@ describe("scaffold — CLAUDE.md generation", () => {
       projectPath("test-claudemd-npm", "CLAUDE.md"),
       "utf-8",
     );
-    expect(content).toContain("npm dev");
-    expect(content).toContain("npm build");
+    expect(content).toContain("npm run dev");
+    expect(content).toContain("npm run build");
     expect(content).not.toContain("pnpm");
   });
 });

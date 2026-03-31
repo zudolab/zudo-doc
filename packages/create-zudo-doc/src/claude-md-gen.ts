@@ -1,6 +1,11 @@
 import type { UserChoices } from "./prompts.js";
 import { capitalize } from "./utils.js";
 
+function runCmd(pm: string, script: string): string {
+  if (pm === "npm") return `npm run ${script}`;
+  return `${pm} ${script}`;
+}
+
 export function generateCLAUDEFile(choices: UserChoices): string {
   const siteName = capitalize(choices.projectName.replace(/-/g, " "));
   const lines: string[] = [];
@@ -15,7 +20,7 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   // Tech stack
   lines.push(`## Tech Stack`);
   lines.push(``);
-  lines.push(`- **Astro 6** — static site generator with Content Collections`);
+  lines.push(`- **Astro** — static site generator with Content Collections`);
   lines.push(`- **MDX** — content format via \`@astrojs/mdx\``);
   lines.push(
     `- **Tailwind CSS v4** — via \`@tailwindcss/vite\` (not \`@astrojs/tailwind\`)`,
@@ -29,11 +34,10 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   // Commands
   lines.push(`## Commands`);
   lines.push(``);
-  lines.push(`- \`${choices.packageManager} dev\` — Astro dev server (port 4321)`);
-  lines.push(`- \`${choices.packageManager} build\` — static HTML export to \`dist/\``);
-  lines.push(
-    `- \`${choices.packageManager} check\` — Astro type checking`,
-  );
+  const pm = choices.packageManager;
+  lines.push(`- \`${runCmd(pm, "dev")}\` — Astro dev server (port 4321)`);
+  lines.push(`- \`${runCmd(pm, "build")}\` — static HTML export to \`dist/\``);
+  lines.push(`- \`${runCmd(pm, "check")}\` — Astro type checking`);
   lines.push(``);
 
   // Key directories
