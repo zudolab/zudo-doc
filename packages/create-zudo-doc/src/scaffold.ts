@@ -243,7 +243,8 @@ function generatePackageJson(choices: UserChoices) {
 
   if (choices.features.includes("tauri")) {
     scripts["dev:tauri"] = "cargo tauri dev";
-    scripts["build:tauri"] = `${choices.packageManager === "npm" ? "npm run" : choices.packageManager} build && cargo tauri build`;
+    const runCmd = choices.packageManager === "npm" || choices.packageManager === "bun" ? `${choices.packageManager} run` : choices.packageManager;
+    scripts["build:tauri"] = `${runCmd} build && cargo tauri build`;
   }
 
   return {
