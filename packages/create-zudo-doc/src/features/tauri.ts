@@ -41,7 +41,7 @@ export const tauriFeature: FeatureModule = (choices) => ({
       await fs.writeFile(cargoPath, content);
     }
 
-    // Patch tauri.conf.json productName and identifier
+    // Patch tauri.conf.json productName, identifier, and beforeDevCommand
     const confPath = path.join(targetDir, "src-tauri/tauri.conf.json");
     if (await fs.pathExists(confPath)) {
       let content = await fs.readFile(confPath, "utf-8");
@@ -52,6 +52,9 @@ export const tauriFeature: FeatureModule = (choices) => ({
       const identifier = `com.example.${choices.projectName.replace(/[^a-zA-Z0-9-]/g, "-")}`;
       content = content.replace(/"productName": "ZudoDoc"/, `"productName": "${productName}"`);
       content = content.replace(/"identifier": "com.zudolab.zudo-doc"/, `"identifier": "${identifier}"`);
+      // Patch beforeDevCommand for the chosen package manager
+      const devCmd = choices.packageManager === "npm" ? "npm run dev" : `${choices.packageManager} dev`;
+      content = content.replace(/"beforeDevCommand": "pnpm dev"/, `"beforeDevCommand": "${devCmd}"`);
       await fs.writeFile(confPath, content);
     }
 

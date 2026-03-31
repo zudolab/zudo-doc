@@ -12,13 +12,14 @@ use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 use tower_http::services::ServeDir;
 
-const PORT: u16 = 4893;
+const DEFAULT_PORT: u16 = 4893;
 const DEV_PORT: u16 = 4321;
 const DOCS_PATH: &str = "/";
 const IS_DEV: bool = cfg!(debug_assertions);
 
 struct AppState {
     zoom: Mutex<f64>,
+    port: u16,
 }
 
 // ── Helpers ───────────────────────────────────────
@@ -35,32 +36,9 @@ fn dist_dir() -> std::path::PathBuf {
     project_dir().join("dist")
 }
 
-fn docs_url() -> String {
-    let port = if IS_DEV { DEV_PORT } else { PORT };
-    format!("http://localhost:{port}{DOCS_PATH}")
-}
-
-// ── Port cleanup ─────────────────────────────────
-
-fn kill_port() {
-    if let Ok(output) = Command::new("lsof")
-        .args(["-ti", &format!(":{PORT}")])
-        .output()
-    {
-        let pids = String::from_utf8_lossy(&output.stdout);
-        for line in pids.trim().lines() {
-            if let Ok(pid) = line.trim().parse::<i32>() {
-                #[cfg(unix)]
-                unsafe {
-                    libc::kill(pid, libc::SIGTERM);
-                }
-                let _ = pid;
-            }
-        }
-        if !pids.trim().is_empty() {
-            thread::sleep(Duration::from_millis(500));
-        }
-    }
+fn docs_url(port: u16) -> String {
+    let p = if IS_DEV { DEV_PORT } else { port };
+    format!("http://localhost:{p}{DOCS_PATH}")
 }
 
 // ── Static file server ──────────────────────────
@@ -73,8 +51,13 @@ async fn ready_handler() -> impl IntoResponse {
     }
 }
 
-fn start_server() {
-    thread::spawn(|| {
+/// Try to bind a TCP listener on the given port, or fall back to port 0 (OS-assigned).
+/// Returns the actual port the server is listening on.
+fn start_server(preferred_port: u16) -> u16 {
+    use std::sync::mpsc;
+    let (tx, rx) = mpsc::channel();
+
+    thread::spawn(move || {
         let rt = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
@@ -84,26 +67,35 @@ fn start_server() {
             let app = Router::new()
                 .route("/___ready", get(ready_handler))
                 .fallback_service(ServeDir::new(&dist));
-            let addr = format!("127.0.0.1:{PORT}");
+
+            // Try preferred port first, then fall back to OS-assigned
+            let addr = format!("127.0.0.1:{preferred_port}");
             let listener = match tokio::net::TcpListener::bind(&addr).await {
                 Ok(l) => l,
-                Err(e) => {
-                    eprintln!("Failed to bind {addr}: {e}");
-                    return;
+                Err(_) => {
+                    eprintln!("Port {preferred_port} in use, using OS-assigned port");
+                    tokio::net::TcpListener::bind("127.0.0.1:0")
+                        .await
+                        .expect("Failed to bind any port")
                 }
             };
+            let actual_port = listener.local_addr().unwrap().port();
+            let _ = tx.send(actual_port);
+
             if let Err(e) = axum::serve(listener, app).await {
                 eprintln!("Server error: {e}");
             }
         });
     });
+
+    rx.recv().expect("Failed to receive port from server thread")
 }
 
 // ── Readiness polling ────────────────────────────
 
-fn wait_for_ready(timeout: Duration) {
+fn wait_for_ready(port: u16, timeout: Duration) {
     let start = Instant::now();
-    let url = format!("http://localhost:{PORT}/___ready");
+    let url = format!("http://localhost:{port}/___ready");
     while start.elapsed() < timeout {
         if let Ok(output) = Command::new("curl")
             .args(["-s", "-o", "/dev/null", "-w", "%{http_code}", &url])
@@ -121,9 +113,11 @@ fn wait_for_ready(timeout: Duration) {
 // ── Refresh / Zoom ───────────────────────────────
 
 fn do_refresh(app_handle: &AppHandle) {
+    let state = app_handle.state::<AppState>();
+    let port = state.port;
     if let Some(w) = app_handle.get_webview_window("main") {
         let _ = w.navigate(
-            docs_url()
+            docs_url(port)
                 .parse()
                 .expect("BUG: docs_url produced an invalid URL"),
         );
@@ -141,13 +135,15 @@ fn apply_zoom(app_handle: &AppHandle, level: f64) {
 // ── Main ──────────────────────────────────────────
 
 fn main() {
-    if !IS_DEV {
-        kill_port();
-        start_server();
-    }
+    let actual_port = if IS_DEV {
+        DEV_PORT
+    } else {
+        start_server(DEFAULT_PORT)
+    };
 
     let app_state = AppState {
         zoom: Mutex::new(1.0),
+        port: actual_port,
     };
 
     tauri::Builder::default()
@@ -237,7 +233,7 @@ fn main() {
 
             // ── Window ──
             if IS_DEV {
-                let url: tauri::Url = docs_url()
+                let url: tauri::Url = docs_url(actual_port)
                     .parse()
                     .expect("BUG: docs_url produced an invalid URL");
                 WebviewWindowBuilder::new(app, "main", WebviewUrl::External(url))
@@ -253,9 +249,9 @@ fn main() {
 
                 let handle = app.handle().clone();
                 thread::spawn(move || {
-                    wait_for_ready(Duration::from_secs(30));
+                    wait_for_ready(actual_port, Duration::from_secs(30));
                     if let Some(w) = handle.get_webview_window("main") {
-                        let url: tauri::Url = docs_url()
+                        let url: tauri::Url = docs_url(actual_port)
                             .parse()
                             .expect("BUG: docs_url produced an invalid URL");
                         let _ = w.navigate(url);

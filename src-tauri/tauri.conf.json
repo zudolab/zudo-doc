@@ -4,7 +4,7 @@
   "identifier": "com.zudolab.zudo-doc",
   "build": {
     "frontendDist": "./frontend",
-    "beforeDevCommand": "pnpm dev:astro",
+    "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:4321/"
   },
   "app": {
