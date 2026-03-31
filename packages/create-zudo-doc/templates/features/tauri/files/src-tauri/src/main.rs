@@ -30,7 +30,7 @@ fn do_refresh(app_handle: &AppHandle) {
                     .expect("BUG: dev_url produced an invalid URL"),
             );
         } else {
-            let _ = w.navigate(WebviewUrl::default().into());
+            let _ = w.eval("window.location.reload()");
         }
     }
 }
