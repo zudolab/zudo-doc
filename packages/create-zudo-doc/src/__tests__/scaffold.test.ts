@@ -710,6 +710,104 @@ describe("scaffold — plugin copying and settings", () => {
   });
 });
 
+describe("scaffold — CLAUDE.md generation", () => {
+  it("creates CLAUDE.md with project name and tech stack", async () => {
+    const choices: UserChoices = {
+      projectName: "test-claudemd",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "sidebarFilter"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-claudemd", "CLAUDE.md"),
+      "utf-8",
+    );
+    expect(content).toContain("# Test Claudemd");
+    expect(content).toContain("zudo-doc");
+    expect(content).toContain("**Astro**");
+    expect(content).toContain("pnpm dev");
+    expect(content).toContain("pnpm build");
+    expect(content).toContain("docs/            # MDX content");
+  });
+
+  it("includes i18n section when i18n is enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-claudemd-i18n",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["i18n", "search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-claudemd-i18n", "CLAUDE.md"),
+      "utf-8",
+    );
+    expect(content).toContain("## i18n");
+    expect(content).toContain("docs-ja");
+  });
+
+  it("does NOT include i18n section when i18n is disabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-claudemd-noi18n",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-claudemd-noi18n", "CLAUDE.md"),
+      "utf-8",
+    );
+    expect(content).not.toContain("## i18n");
+  });
+
+  it("lists enabled features", async () => {
+    const choices: UserChoices = {
+      projectName: "test-claudemd-features",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "docHistory", "llmsTxt"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-claudemd-features", "CLAUDE.md"),
+      "utf-8",
+    );
+    expect(content).toContain("## Enabled Features");
+    expect(content).toContain("**search**");
+    expect(content).toContain("**docHistory**");
+    expect(content).toContain("**llmsTxt**");
+  });
+
+  it("uses the correct package manager in commands", async () => {
+    const choices: UserChoices = {
+      projectName: "test-claudemd-npm",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "npm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-claudemd-npm", "CLAUDE.md"),
+      "utf-8",
+    );
+    expect(content).toContain("npm run dev");
+    expect(content).toContain("npm run build");
+    expect(content).not.toContain("pnpm");
+  });
+});
+
 describe("drift detection — generator vs main project settings", () => {
   /**
    * This test catches feature drift between the main project's settings.ts

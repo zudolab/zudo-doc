@@ -5,6 +5,7 @@ import type { UserChoices } from "./prompts.js";
 import { generateSettingsFile } from "./settings-gen.js";
 import { generateAstroConfig } from "./astro-config-gen.js";
 import { generateContentConfig } from "./content-config-gen.js";
+import { generateCLAUDEFile } from "./claude-md-gen.js";
 import { composeFeatures } from "./compose.js";
 import { featureModules } from "./features/index.js";
 import { capitalize, getSecondaryLang, patchDefaultLang } from "./utils.js";
@@ -180,6 +181,9 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     path.join(targetDir, ".gitignore"),
     ["node_modules", "dist", ".astro", ""].join("\n"),
   );
+
+  const claudeContent = generateCLAUDEFile(choices);
+  await fs.outputFile(path.join(targetDir, "CLAUDE.md"), claudeContent);
 
   // 4. Compose features (copy feature files + inject into shared files)
   await composeFeatures(targetDir, choices, featureModules, featuresDir);
