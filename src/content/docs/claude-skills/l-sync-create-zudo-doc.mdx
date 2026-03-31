@@ -15,10 +15,9 @@ The generator uses **additive composition** — not copy-then-strip:
 
 1. A minimal **base template** (`templates/base/`) is copied first
 2. **Programmatic generators** create config files from user choices (`astro-config-gen.ts`, `content-config-gen.ts`, `settings-gen.ts`)
-3. **Feature modules** (`src/features/*.ts`) inject code into anchor points (`@slot:`) in shared files
+3. **Feature modules** (`src/features/*.ts`) inject code into anchor points (`@slot:`) in shared files and copy feature-specific files
 4. `compose.ts` orchestrates feature file copying, injection, and anchor cleanup
-
-Features are only **added**, never stripped. Dead code cannot exist by design.
+5. Some features have **postProcess hooks** that mutate or remove generated files (e.g., `i18n.ts` patches locale strings and may delete `src/pages/ja/`)
 
 ## When to Use
 
@@ -65,24 +64,25 @@ For each integration in the main astro.config.ts, verify that either:
 
 Check that features in the main project have corresponding feature modules:
 
-- **Main**: `src/components/*.tsx`, `src/integrations/*.ts` — interactive islands and integrations
-- **Generator**: `packages/create-zudo-doc/src/features/*.ts` — feature modules with injections
+- **Main**: Feature-gated files across `src/components/`, `src/integrations/`, `src/pages/`, `src/config/`, `src/utils/`, `src/scripts/`, `src/hooks/`
+- **Generator**: `packages/create-zudo-doc/src/features/*.ts` — feature modules with injections and postProcess hooks
 - **Templates**: `packages/create-zudo-doc/templates/features/*/files/` — feature-specific files
 
-For each feature-gated component/integration in the main project, verify:
+For each feature-gated file in the main project, verify:
 
 1. A feature module exists in `src/features/`
 2. The feature's files are in `templates/features/<name>/files/`
 3. Injection anchors (`@slot:`) exist in the base template for the feature's injections
+4. If the feature has a `postProcess` hook, verify the mutations it performs still match the main project's behavior
 
 ### 1e. Base template drift
 
 Compare shared files between the main project and the base template:
 
-- **Main**: `src/components/`, `src/layouts/`, `src/pages/`, `src/plugins/`
+- **Main**: `src/components/`, `src/config/`, `src/hooks/`, `src/layouts/`, `src/pages/`, `src/plugins/`, `src/scripts/`, `src/styles/`, `src/types/`, `src/utils/`
 - **Template**: `packages/create-zudo-doc/templates/base/`
 
-Check that non-feature-specific files in the base template reflect the latest changes from the main project (layout updates, plugin changes, etc.).
+Check that non-feature-specific files in the base template reflect the latest changes from the main project (layout updates, plugin changes, utility functions, type definitions, etc.).
 
 ## Step 2: Report Findings
 
