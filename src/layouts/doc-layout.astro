@@ -9,6 +9,7 @@ import ColorSchemeProvider from "@/components/color-scheme-provider.astro";
 import CodeBlockEnhancer from "@/components/code-block-enhancer.astro";
 import TabsInit from "@/components/tabs-init.astro";
 import MermaidInit from "@/components/mermaid-init.astro";
+import D2Init from "@/components/d2-init.astro";
 import PageLoadingOverlay from "@/components/page-loading-overlay.astro";
 import { ClientRouter } from "astro:transitions";
 import { settings } from "@/config/settings";
@@ -226,6 +227,7 @@ const contentTransition = {
     <CodeBlockEnhancer />
     <TabsInit />
     {settings.mermaid && <MermaidInit />}
+    {settings.d2 && import.meta.env.DEV && <D2Init />}
     {import.meta.env.DEV && import.meta.env.PUBLIC_ENABLE_MOCKS === "true" && settings.aiAssistant && <MockInit client:only="preact" />}
     <PageLoadingOverlay />
     <script>

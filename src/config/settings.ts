@@ -33,6 +33,8 @@ export const settings = {
     ja: { label: "JA", dir: "src/content/docs-ja" },
   } satisfies Record<string, LocaleConfig>,
   mermaid: true,
+  d2: true,
+  d2BuildMode: "wasm" as "wasm" | "cli",
   noindex: false as boolean, // When true, adds noindex/nofollow to all pages (for internal docs)
   editUrl: false as string | false,
   siteUrl: "" as string, // e.g. "https://example.com" — required for sitemap absolute URLs

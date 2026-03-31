@@ -1,0 +1,114 @@
+---
+title: D2 Diagrams
+description: D2 diagram support for architecture, flow, and system diagrams with per-element styling.
+sidebar_position: 7
+---
+
+Use fenced code blocks with the `d2` language to render diagrams. D2 provides better layout control and per-element styling compared to Mermaid.
+
+## Basic Flow
+
+```d2
+web: Web App
+api: API Server
+db: Database
+
+web -> api: HTTP requests
+api -> db: SQL queries
+db -> api: Results
+api -> web: JSON responses
+```
+
+````mdx
+```d2
+
+web: Web App
+api: API Server
+db: Database
+
+web -> api: HTTP requests
+api -> db: SQL queries
+db -> api: Results
+api -> web: JSON responses
+
+```
+````
+
+## Architecture Diagram
+
+```d2
+direction: right
+
+frontend: Frontend {
+  react: React App
+  next: Next.js SSR
+}
+
+backend: Backend {
+  api: REST API
+  worker: Background Worker
+}
+
+data: Data Layer {
+  pg: PostgreSQL
+  redis: Redis Cache
+}
+
+frontend.react -> backend.api: API calls
+frontend.next -> backend.api: SSR data fetch
+backend.api -> data.pg: Queries
+backend.api -> data.redis: Cache
+backend.worker -> data.pg: Batch jobs
+```
+
+## Styled Nodes
+
+D2 supports per-element styling with `style` properties:
+
+```d2
+server: Production Server {
+  style.fill: "#1a1a2e"
+  style.stroke: "#e94560"
+  style.font-color: "#eaeaea"
+  style.border-radius: 8
+}
+
+client: Browser Client {
+  style.fill: "#16213e"
+  style.stroke: "#0f3460"
+  style.font-color: "#eaeaea"
+  style.border-radius: 8
+}
+
+client -> server: HTTPS {
+  style.stroke: "#e94560"
+  style.stroke-width: 2
+}
+```
+
+## Configuration
+
+D2 diagrams are rendered differently in dev and build modes:
+
+- **Dev mode**: Client-side WASM rendering via `@terrastruct/d2` for instant feedback
+- **Build mode**: Static SVG generation via `astro-d2`
+
+Settings in `src/config/settings.ts`:
+
+```ts
+d2: true,                // Enable D2 support
+d2BuildMode: "wasm",     // "wasm" (no CLI needed) or "cli" (requires D2 CLI)
+```
+
+### Layout Engines
+
+D2 supports two layout engines (WASM-compatible):
+
+- **`elk`** (default) — hierarchical layout, good for most diagrams
+- **`dagre`** — simpler layout, faster rendering
+
+<Note>
+
+The `tala` layout engine is only available with the D2 CLI, not in WASM mode. If using `d2BuildMode: "wasm"`, only `elk` and `dagre` are supported.
+
+</Note>

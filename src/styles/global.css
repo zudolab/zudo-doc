@@ -66,6 +66,11 @@
   --color-mermaid-line: var(--zd-mermaid-line);
   --color-mermaid-label-bg: var(--zd-mermaid-label-bg);
   --color-mermaid-note-bg: var(--zd-mermaid-note-bg);
+  --color-d2-node-bg: var(--zd-d2-node-bg);
+  --color-d2-text: var(--zd-d2-text);
+  --color-d2-stroke: var(--zd-d2-stroke);
+  --color-d2-line: var(--zd-d2-line);
+  --color-d2-accent: var(--zd-d2-accent);
   --color-chat-user-bg: var(--zd-chat-user-bg);
   --color-chat-user-text: var(--zd-chat-user-text);
   --color-chat-assistant-bg: var(--zd-chat-assistant-bg);
@@ -593,6 +598,24 @@ pre.astro-code .line .highlighted-word {
 
 /* Prevent mermaid edge labels from clipping text (foreignObject uses overflow:hidden) */
 .zd-content .mermaid foreignObject {
+  overflow: visible;
+}
+
+/* ========================================
+ * D2 diagrams
+ * ======================================== */
+
+.zd-content .d2-diagram {
+  @apply my-vsp-lg flex justify-center;
+}
+
+.zd-content .d2-diagram svg {
+  max-width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.zd-content .d2-diagram foreignObject {
   overflow: visible;
 }
 

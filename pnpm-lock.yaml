@@ -28,6 +28,9 @@ importers:
       '@shikijs/transformers':
         specifier: ^4.0.1
         version: 4.0.1
+      '@terrastruct/d2':
+        specifier: ^0.1.33
+        version: 0.1.33
       '@types/hast':
         specifier: ^3.0.4
         version: 3.0.4
@@ -37,6 +40,9 @@ importers:
       astro:
         specifier: ^6.0.4
         version: 6.0.4(patch_hash=8d13f8bf10637ae8cfa995bc18a09e7da49fcba98a46458afc1326be95f68c6d)(@types/node@25.3.5)(jiti@2.6.1)(lightningcss@1.31.1)(rollup@4.59.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      astro-d2:
+        specifier: ^0.10.0
+        version: 0.10.0(astro@6.0.4(patch_hash=8d13f8bf10637ae8cfa995bc18a09e7da49fcba98a46458afc1326be95f68c6d)(@types/node@25.3.5)(jiti@2.6.1)(lightningcss@1.31.1)(rollup@4.59.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2))
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -1612,6 +1618,9 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7
 
+  '@terrastruct/d2@0.1.33':
+    resolution: {integrity: sha512-eK5hyfGIJFolC7sUsiKvWdY9xGFctTe3d+PSijo09IYDso8psztC+A4SammizXtlwYZpnnW0AtDjfBYauceSeA==}
+
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
 
@@ -1941,6 +1950,12 @@ packages:
   astring@1.9.0:
     resolution: {integrity: sha512-LElXdjswlqjWrPpJFg1Fx4wpkOCxj1TDHlSV4PlaRxHGWko024xICaa97ZkMfs6DRKlCguiAI+rbXv5GWwXIkg==}
     hasBin: true
+
+  astro-d2@0.10.0:
+    resolution: {integrity: sha512-KL2N3BcPvuk7orPJsXVeMVMYd70eimLdxslbwR6M80hXIDj6EWd0SAJlx961qepIvXMwh3FxKkb6S6sWYuRjBA==}
+    engines: {node: '>=22.12.0'}
+    peerDependencies:
+      astro: '>=6.0.0'
 
   astro@6.0.4:
     resolution: {integrity: sha512-1piLJCPTL/x7AMO2cjVFSTFyRqKuC3W8sSEySCt1aJio+p/wGs5H3K+Xr/rE9ftKtknLUtjxCqCE7/0NsXfGpQ==}
@@ -5545,6 +5560,8 @@ snapshots:
       tailwindcss: 4.2.1
       vite: 7.3.1(@types/node@25.3.5)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)(yaml@2.8.2)
 
+  '@terrastruct/d2@0.1.33': {}
+
   '@types/babel__core@7.20.5':
     dependencies:
       '@babel/parser': 7.29.0
@@ -5968,6 +5985,14 @@ snapshots:
   assertion-error@2.0.1: {}
 
   astring@1.9.0: {}
+
+  astro-d2@0.10.0(astro@6.0.4(patch_hash=8d13f8bf10637ae8cfa995bc18a09e7da49fcba98a46458afc1326be95f68c6d)(@types/node@25.3.5)(jiti@2.6.1)(lightningcss@1.31.1)(rollup@4.59.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)):
+    dependencies:
+      '@terrastruct/d2': 0.1.33
+      astro: 6.0.4(patch_hash=8d13f8bf10637ae8cfa995bc18a09e7da49fcba98a46458afc1326be95f68c6d)(@types/node@25.3.5)(jiti@2.6.1)(lightningcss@1.31.1)(rollup@4.59.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      hast-util-from-html: 2.0.3
+      hast-util-to-html: 9.0.5
+      unist-util-visit: 5.1.0
 
   astro@6.0.4(patch_hash=8d13f8bf10637ae8cfa995bc18a09e7da49fcba98a46458afc1326be95f68c6d)(@types/node@25.3.5)(jiti@2.6.1)(lightningcss@1.31.1)(rollup@4.59.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2):
     dependencies:

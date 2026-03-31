@@ -1,0 +1,152 @@
+<script>
+  /**
+   * Resolve a CSS value to a hex color (#rrggbb).
+   * Handles CSS custom properties and light-dark() functions that D2 cannot parse.
+   */
+  function resolveColor(value: string): string {
+    if (!value) return value;
+    if (/^#[0-9a-fA-F]{3}$/.test(value)) {
+      return (
+        "#" + value[1] + value[1] + value[2] + value[2] + value[3] + value[3]
+      );
+    }
+    if (/^#[0-9a-fA-F]{6}$/.test(value)) return value;
+    if (/^#[0-9a-fA-F]{8}$/.test(value)) return value.slice(0, 7);
+    if (/^#[0-9a-fA-F]{4}$/.test(value)) {
+      return (
+        "#" + value[1] + value[1] + value[2] + value[2] + value[3] + value[3]
+      );
+    }
+    const el = document.createElement("div");
+    el.style.display = "none";
+    el.style.color = value;
+    document.body.appendChild(el);
+    let resolved: string;
+    try {
+      resolved = getComputedStyle(el).color;
+    } finally {
+      el.remove();
+    }
+    const m = resolved.match(/(\d+)/g);
+    if (m && m.length >= 3) {
+      return (
+        "#" +
+        m
+          .slice(0, 3)
+          .map((n) => Number(n).toString(16).padStart(2, "0"))
+          .join("")
+      );
+    }
+    return value;
+  }
+
+  /** Detect dark mode from background luminance */
+  function isDarkMode(): boolean {
+    const s = getComputedStyle(document.documentElement);
+    const bg = resolveColor(s.getPropertyValue("--zd-bg").trim());
+    const hex = bg.replace("#", "");
+    const r = parseInt(hex.substring(0, 2), 16) / 255;
+    const g = parseInt(hex.substring(2, 4), 16) / 255;
+    const b = parseInt(hex.substring(4, 6), 16) / 255;
+    const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    return Number.isNaN(luminance) ? true : luminance < 0.5;
+  }
+
+  /** Read D2 semantic CSS vars and build a theme-overrides vars block */
+  function buildThemeOverrides(): string {
+    const s = getComputedStyle(document.documentElement);
+    const v = (name: string) => resolveColor(s.getPropertyValue(name).trim());
+    const nodeBg = v("--zd-d2-node-bg");
+    const text = v("--zd-d2-text");
+    const stroke = v("--zd-d2-stroke");
+    const line = v("--zd-d2-line");
+    const accent = v("--zd-d2-accent");
+
+    const dark = isDarkMode();
+    const themeId = dark ? 200 : 0;
+    const overrides = [
+      `      N1: "${nodeBg}"`,
+      `      N7: "${text}"`,
+      `      B1: "${stroke}"`,
+      `      N4: "${line}"`,
+      `      B2: "${accent}"`,
+    ].join("\n");
+
+    return [
+      "vars: {",
+      "  d2-config: {",
+      `    theme-id: ${themeId}`,
+      "    theme-overrides: {",
+      overrides,
+      "    }",
+      "  }",
+      "}",
+    ].join("\n");
+  }
+
+  async function initD2() {
+    const els = document.querySelectorAll<HTMLElement>(
+      "[data-d2]:not([data-d2-rendered])",
+    );
+    if (els.length === 0) return;
+
+    try {
+      const { D2 } = await import("@terrastruct/d2");
+      const d2 = new D2();
+      const themeOverrides = buildThemeOverrides();
+
+      for (const el of els) {
+        // Decode HTML entities back to raw D2 source
+        const tmp = document.createElement("textarea");
+        tmp.innerHTML = el.innerHTML;
+        let source = tmp.value;
+        if (!source.trim()) continue;
+
+        // Inject theme overrides if source doesn't already have vars block
+        if (!/^\s*vars\s*:\s*\{/m.test(source)) {
+          source = themeOverrides + "\n\n" + source;
+        }
+
+        try {
+          const compiled = await d2.compile(source, { layout: "elk" });
+          const svg = await d2.render(compiled.diagram, {
+            ...compiled.renderOptions,
+            pad: 20,
+            noXMLTag: true,
+          });
+          el.innerHTML = svg;
+          el.setAttribute("data-d2-rendered", "");
+        } catch (e) {
+          console.error("[d2-init] Failed to render D2 diagram:", e);
+          el.innerHTML = `<pre style="color:red;font-size:0.8em">D2 render error: ${e}</pre><pre>${source}</pre>`;
+          el.setAttribute("data-d2-rendered", "");
+        }
+      }
+    } catch (e) {
+      console.error("[d2-init] Failed to load @terrastruct/d2:", e);
+    }
+  }
+
+  /** Re-render all D2 diagrams (clear rendered state so initD2 picks them up). */
+  function reinitD2() {
+    document.querySelectorAll("[data-d2-rendered]").forEach((el) => {
+      el.removeAttribute("data-d2-rendered");
+      const svg = el.querySelector("svg");
+      if (svg) svg.remove();
+    });
+    initD2();
+  }
+
+  // astro:page-load fires on initial load and after View Transition navigations
+  document.addEventListener("astro:page-load", () => initD2());
+
+  // Re-render D2 when color tweak panel changes CSS custom properties (debounced)
+  let d2TweakTimer: ReturnType<typeof setTimeout> | undefined;
+  new MutationObserver(() => {
+    clearTimeout(d2TweakTimer);
+    d2TweakTimer = setTimeout(reinitD2, 300);
+  }).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["style", "class", "data-theme"],
+  });
+</script>
