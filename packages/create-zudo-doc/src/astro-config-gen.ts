@@ -64,10 +64,19 @@ export function generateAstroConfig(choices: UserChoices): string {
     `import { rehypeHeadingLinks } from "./src/plugins/rehype-heading-links";`,
   );
   lines.push(`import { rehypeMermaid } from "./src/plugins/rehype-mermaid";`);
+  lines.push(`import { rehypeD2 } from "./src/plugins/rehype-d2";`);
   lines.push(
     `import { rehypeStripMdExtension } from "./src/plugins/rehype-strip-md-extension";`,
   );
+  lines.push(
+    `import { remarkD2Client } from "./src/plugins/remark-d2-client";`,
+  );
+  lines.push(
+    `import { remarkD2ThemeInject } from "./src/plugins/remark-d2-theme-inject";`,
+  );
 
+  lines.push(``);
+  lines.push(`const isDev = import.meta.env?.DEV ?? process.argv.includes("dev");`);
   lines.push(``);
 
   // --- Shiki config ---
@@ -116,6 +125,18 @@ export function generateAstroConfig(choices: UserChoices): string {
 
   lines.push(``);
 
+  // --- D2 integration (build mode) ---
+  lines.push(`const astroD2Integration = settings.d2 && !isDev`);
+  lines.push(`  ? [(await import("astro-d2")).default({`);
+  lines.push(`      theme: { default: "0", dark: "200" },`);
+  lines.push(`      layout: "elk",`);
+  lines.push(`      pad: 20,`);
+  lines.push(`      skipGeneration: !!process.env.CI,`);
+  lines.push(`      ...(settings.d2BuildMode === "wasm" ? { experimental: { useD2js: true } } : {}),`);
+  lines.push(`    })]`);
+  lines.push(`  : [];`);
+  lines.push(``);
+
   // --- Config object ---
   lines.push(`export default defineConfig({`);
   lines.push(`  output: "static",`);
@@ -123,6 +144,7 @@ export function generateAstroConfig(choices: UserChoices): string {
 
   // Integrations
   const integrations: string[] = [];
+  integrations.push(`    ...astroD2Integration`);
   integrations.push(`    mdx()`);
   integrations.push(`    preact({ compat: true })`);
   if (hasSearch) integrations.push(`    searchIndexIntegration()`);
@@ -163,6 +185,8 @@ export function generateAstroConfig(choices: UserChoices): string {
   lines.push(`  markdown: {`);
   lines.push(`    shikiConfig,`);
   lines.push(`    remarkPlugins: [`);
+  lines.push(`      ...(settings.d2 && isDev ? [remarkD2Client] : []),`);
+  lines.push(`      ...(settings.d2 && !isDev ? [remarkD2ThemeInject] : []),`);
   lines.push(`      remarkDirective,`);
   lines.push(`      remarkAdmonitions,`);
   lines.push(`      [remarkResolveMarkdownLinks, {`);
@@ -190,6 +214,7 @@ export function generateAstroConfig(choices: UserChoices): string {
   lines.push(`      rehypeHeadingLinks,`);
   lines.push(`      rehypeStripMdExtension,`);
   lines.push(`      ...(settings.mermaid ? [rehypeMermaid] : []),`);
+  lines.push(`      ...(settings.d2 ? [rehypeD2] : []),`);
   lines.push(`    ],`);
   lines.push(`  },`);
 
