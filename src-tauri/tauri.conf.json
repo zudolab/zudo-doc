@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "identifier": "com.zudolab.zudo-doc",
   "build": {
-    "frontendDist": "./frontend",
+    "frontendDist": "../dist",
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:4321/"
   },
