@@ -61,7 +61,8 @@ const astroD2Integration = settings.d2 && !isDev
       theme: { default: "0", dark: "200" },
       layout: "elk",
       pad: 20,
-      skipGeneration: !!process.env.CI,
+      // skipGeneration only for CLI mode with committed SVGs; WASM always generates
+      ...(settings.d2BuildMode === "cli" ? { skipGeneration: !!process.env.CI } : {}),
       ...(settings.d2BuildMode === "wasm" ? { experimental: { useD2js: true } } : {}),
     })]
   : [];

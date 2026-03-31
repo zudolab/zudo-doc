@@ -96,13 +96,19 @@
       const themeOverrides = buildThemeOverrides();
 
       for (const el of els) {
-        // Decode HTML entities back to raw D2 source
-        const tmp = document.createElement("textarea");
-        tmp.innerHTML = el.innerHTML;
-        let source = tmp.value;
-        if (!source.trim()) continue;
+        // Read original source — either from saved attribute or from current content
+        let rawSource = el.getAttribute("data-d2-source");
+        if (!rawSource) {
+          // First render: decode HTML entities and save original source
+          const tmp = document.createElement("textarea");
+          tmp.innerHTML = el.innerHTML;
+          rawSource = tmp.value;
+          el.setAttribute("data-d2-source", rawSource);
+        }
+        if (!rawSource.trim()) continue;
 
         // Inject theme overrides if source doesn't already have vars block
+        let source = rawSource;
         if (!/^\s*vars\s*:\s*\{/m.test(source)) {
           source = themeOverrides + "\n\n" + source;
         }
@@ -131,8 +137,7 @@
   function reinitD2() {
     document.querySelectorAll("[data-d2-rendered]").forEach((el) => {
       el.removeAttribute("data-d2-rendered");
-      const svg = el.querySelector("svg");
-      if (svg) svg.remove();
+      // Source is preserved in data-d2-source — initD2 reads from there
     });
     initD2();
   }

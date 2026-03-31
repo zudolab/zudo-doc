@@ -131,7 +131,7 @@ export function generateAstroConfig(choices: UserChoices): string {
   lines.push(`      theme: { default: "0", dark: "200" },`);
   lines.push(`      layout: "elk",`);
   lines.push(`      pad: 20,`);
-  lines.push(`      skipGeneration: !!process.env.CI,`);
+  lines.push(`      ...(settings.d2BuildMode === "cli" ? { skipGeneration: !!process.env.CI } : {}),`);
   lines.push(`      ...(settings.d2BuildMode === "wasm" ? { experimental: { useD2js: true } } : {}),`);
   lines.push(`    })]`);
   lines.push(`  : [];`);
