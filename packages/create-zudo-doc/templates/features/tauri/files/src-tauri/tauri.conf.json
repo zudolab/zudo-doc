@@ -14,7 +14,7 @@
     }
   },
   "bundle": {
-    "active": true,
+    "active": false,
     "targets": "all",
     "icon": [],
     "category": "DeveloperTool",
