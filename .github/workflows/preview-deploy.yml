@@ -80,11 +80,18 @@ jobs:
         run: |
           BRANCH="${{ steps.branch.outputs.name }}"
 
-          pnpm exec wrangler pages deploy deploy \
-            --project-name=zudo-doc \
-            --branch="$BRANCH" \
-            --commit-hash="${GITHUB_SHA}" \
-            --commit-message="Preview: ${BRANCH} @ ${GITHUB_SHA:0:7}"
+          for attempt in 1 2 3; do
+            if pnpm exec wrangler pages deploy deploy \
+              --project-name=zudo-doc \
+              --branch="$BRANCH" \
+              --commit-hash="${GITHUB_SHA}" \
+              --commit-message="Preview: ${BRANCH} @ ${GITHUB_SHA:0:7}"; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then exit 1; fi
+            echo "::warning::Deploy attempt $attempt failed, retrying in 10s..."
+            sleep 10
+          done
 
           DEPLOY_URL="https://${BRANCH}.zudo-doc.pages.dev"
           echo "deploy_url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
