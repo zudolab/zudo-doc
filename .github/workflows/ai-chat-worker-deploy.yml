@@ -45,7 +45,13 @@ jobs:
 
       - name: Deploy Worker
         working-directory: packages/ai-chat-worker
-        run: pnpm run deploy
+        run: |
+          for attempt in 1 2 3; do
+            if pnpm run deploy; then break; fi
+            if [ "$attempt" -eq 3 ]; then exit 1; fi
+            echo "::warning::Deploy attempt $attempt failed, retrying in 10s..."
+            sleep 10
+          done
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
