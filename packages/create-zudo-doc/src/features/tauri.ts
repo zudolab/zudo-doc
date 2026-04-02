@@ -53,7 +53,10 @@ export const tauriFeature: FeatureModule = (choices) => ({
       content = content.replace(/"productName": "ZudoDoc"/, `"productName": "${productName}"`);
       content = content.replace(/"identifier": "com.zudolab.zudo-doc"/, `"identifier": "${identifier}"`);
       // Patch beforeDevCommand for the chosen package manager
-      const devCmd = choices.packageManager === "npm" ? "npm run dev" : `${choices.packageManager} dev`;
+      const devCmd =
+        choices.packageManager === "npm" || choices.packageManager === "bun"
+          ? `${choices.packageManager} run dev`
+          : `${choices.packageManager} dev`;
       content = content.replace(/"beforeDevCommand": "pnpm dev"/, `"beforeDevCommand": "${devCmd}"`);
       await fs.writeFile(confPath, content);
     }
