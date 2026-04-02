@@ -627,6 +627,108 @@ describe("scaffold — skillSymlinker feature", () => {
   });
 });
 
+describe("scaffold — tauri feature", () => {
+  it("generates src-tauri/ and find-in-page when tauri is enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-tauri",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "tauri"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+
+    // src-tauri/ directory exists with key files
+    expect(
+      await fs.pathExists(projectPath("test-tauri", "src-tauri/Cargo.toml")),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(projectPath("test-tauri", "src-tauri/src/main.rs")),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(
+        projectPath("test-tauri", "src-tauri/tauri.conf.json"),
+      ),
+    ).toBe(true);
+
+    // Find-in-page components exist
+    expect(
+      await fs.pathExists(
+        projectPath("test-tauri", "src/utils/find-in-page.ts"),
+      ),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(
+        projectPath("test-tauri", "src/components/find-in-page-init.tsx"),
+      ),
+    ).toBe(true);
+
+    // package.json has tauri scripts
+    const pkg = await fs.readJson(
+      projectPath("test-tauri", "package.json"),
+    );
+    expect(pkg.scripts["dev:tauri"]).toBe("cargo tauri dev");
+    expect(pkg.scripts["build:tauri"]).toContain("cargo tauri build");
+
+    // Cargo.toml has project name patched
+    const cargo = await fs.readFile(
+      projectPath("test-tauri", "src-tauri/Cargo.toml"),
+      "utf-8",
+    );
+    expect(cargo).toContain('name = "test-tauri"');
+
+    // tauri.conf.json has patched productName
+    const conf = await fs.readFile(
+      projectPath("test-tauri", "src-tauri/tauri.conf.json"),
+      "utf-8",
+    );
+    expect(conf).not.toContain('"ZudoDoc"');
+
+    // Layout has FindInPageInit
+    const layout = await fs.readFile(
+      projectPath("test-tauri", "src/layouts/doc-layout.astro"),
+      "utf-8",
+    );
+    expect(layout).toContain("FindInPageInit");
+
+    // .gitignore has tauri entries
+    const gitignore = await fs.readFile(
+      projectPath("test-tauri", ".gitignore"),
+      "utf-8",
+    );
+    expect(gitignore).toContain("src-tauri/target");
+  });
+
+  it("does NOT generate src-tauri/ when tauri is disabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-no-tauri",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+
+    expect(
+      await fs.pathExists(
+        projectPath("test-no-tauri", "src-tauri/Cargo.toml"),
+      ),
+    ).toBe(false);
+    expect(
+      await fs.pathExists(
+        projectPath("test-no-tauri", "src/utils/find-in-page.ts"),
+      ),
+    ).toBe(false);
+
+    const pkg = await fs.readJson(
+      projectPath("test-no-tauri", "package.json"),
+    );
+    expect(pkg.scripts["dev:tauri"]).toBeUndefined();
+  });
+});
+
 describe("scaffold — plugin copying and settings", () => {
   const choices: UserChoices = {
     projectName: "test-minimal",

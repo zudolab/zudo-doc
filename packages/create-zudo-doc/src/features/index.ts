@@ -18,6 +18,7 @@ import { claudeResourcesFeature } from "./claude-resources.js";
 import { colorTweakPanelFeature } from "./color-tweak-panel.js";
 import { i18nFeature } from "./i18n.js";
 import { versioningFeature } from "./versioning.js";
+import { tauriFeature } from "./tauri.js";
 
 /**
  * All feature modules keyed by their feature name.
@@ -35,6 +36,7 @@ export const featureModules: Record<string, FeatureModule> = {
   versioning: versioningFeature,
   docHistory: docHistoryFeature,
   llmsTxt: llmsTxtFeature,
+  tauri: tauriFeature,
   // skillSymlinker — handled in scaffold.ts
   footer: footerFeature, // pseudo-feature: triggered by footerNavGroup or footerCopyright
   // changelog — handled in scaffold.ts

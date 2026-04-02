@@ -167,6 +167,13 @@ export const FEATURES: Feature[] = [
     cliFlag: "skill-symlinker",
   },
   {
+    value: "tauri",
+    label: "Tauri desktop app",
+    hint: "macOS desktop wrapper with in-page search",
+    default: false,
+    cliFlag: "tauri",
+  },
+  {
     value: "footerNavGroup",
     label: "Footer nav group",
     hint: "Navigation links in the footer",

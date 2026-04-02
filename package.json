@@ -13,7 +13,9 @@
     "dev:history": "pnpm --filter @zudo-doc/doc-history-server dev -- --port 4322 --content-dir src/content/docs --locale ja:src/content/docs-ja",
     "dev:network": "astro dev --host 0.0.0.0",
     "dev:stable": "node scripts/dev-stable.js",
+    "dev:tauri": "cargo tauri dev",
     "build": "astro build",
+    "build:tauri": "pnpm build && cargo tauri build",
     "preview": "astro preview",
     "// ── Quality ──────────────────────────────────────": "",
     "check": "astro sync && tsc --noEmit",
@@ -71,7 +73,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.7",
-    "@playwright/test": "^1.58.2",
+    "@playwright/test": "1.58.2",
     "@tailwindcss/vite": "^4.2.1",
     "@types/mdast": "^4.0.4",
     "@types/node": "^25.3.5",

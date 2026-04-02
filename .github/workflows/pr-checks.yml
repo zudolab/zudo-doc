@@ -145,6 +145,13 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    container:
+      # renovate: datasource=docker depName=mcr.microsoft.com/playwright versioning=docker
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --user 1001 --ipc=host
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Checkout repository
@@ -164,9 +171,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Install Playwright browsers
-        run: pnpm dlx playwright install chromium
 
       - name: Run E2E & smoke tests
         run: pnpm test:e2e:ci
