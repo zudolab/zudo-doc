@@ -1,0 +1,23 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/(^|/)\\.github/workflows/.+\\.ya?ml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+) versioning=(?<versioning>\\S+)\\s+image:\\s+\\S+:(?<currentValue>v[\\d.]+-\\w+)"
+      ]
+    }
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": [
+        "@playwright/test",
+        "mcr.microsoft.com/playwright"
+      ],
+      "groupName": "playwright",
+      "separateMajorMinor": false
+    }
+  ]
+}
