@@ -113,10 +113,12 @@ jobs:
 
     steps:
       - name: Restore build output from cache
+        id: restore-site
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: dist/
           key: build-site-${{ github.run_id }}
+          fail-on-cache-miss: true
 
       - name: Restore doc history from cache
         id: restore-history
