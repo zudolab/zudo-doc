@@ -4,6 +4,7 @@ use std::sync::Mutex;
 use std::thread;
 
 use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
+use tauri::webview::PageLoadEvent;
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 
 const DEV_PORT: u16 = 4321;
@@ -138,22 +139,65 @@ fn main() {
             // ── Window ──
             // Dev: connect to Astro dev server via devUrl
             // Production: Tauri serves embedded dist/ files via frontendDist
-            if IS_DEV {
-                let url: tauri::Url = dev_url()
-                    .parse()
-                    .expect("BUG: dev_url produced an invalid URL");
-                WebviewWindowBuilder::new(app, "main", WebviewUrl::External(url))
-                    .title("ZudoDoc")
-                    .inner_size(1200.0, 800.0)
-                    .build()?;
+            let initial_url = if IS_DEV {
+                WebviewUrl::External(
+                    dev_url()
+                        .parse()
+                        .expect("BUG: dev_url produced an invalid URL"),
+                )
             } else {
-                WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
+                WebviewUrl::default()
+            };
+
+            let window =
+                WebviewWindowBuilder::new(app, "main", initial_url)
                     .title("ZudoDoc")
                     .inner_size(1200.0, 800.0)
+                    .visible(false)
+                    .on_navigation(|url| {
+                        let s = url.as_str();
+                        if s.starts_with("http://localhost")
+                            || s.starts_with("https://localhost")
+                            || s.starts_with("tauri://")
+                        {
+                            return true;
+                        }
+                        if s.starts_with("http://") || s.starts_with("https://") {
+                            let owned = s.to_string();
+                            std::thread::spawn(move || {
+                                let _ = open::that(owned);
+                            });
+                            return false;
+                        }
+                        false
+                    })
                     .build()?;
-            }
+
+            // Show window after page loads to avoid white flash
+            let win = window.clone();
+            window.on_window_event(move |event| {
+                if let tauri::WindowEvent::Focused(true) = event {
+                    if !win.is_visible().unwrap_or(false) {
+                        let _ = win.show();
+                    }
+                }
+            });
+
+            // Fallback: show after a short delay if focus event doesn't fire
+            let win = window.clone();
+            thread::spawn(move || {
+                thread::sleep(std::time::Duration::from_millis(500));
+                let _ = win.show();
+            });
 
             Ok(())
+        })
+        .on_page_load(|webview, payload| {
+            if webview.label() == "main"
+                && matches!(payload.event(), PageLoadEvent::Finished)
+            {
+                let _ = webview.window().show();
+            }
         })
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
