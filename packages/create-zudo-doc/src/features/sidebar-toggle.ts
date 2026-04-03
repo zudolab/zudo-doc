@@ -4,6 +4,21 @@ export const sidebarToggleFeature: FeatureModule = () => ({
   name: "sidebarToggle",
   injections: [
     {
+      file: "src/styles/global.css",
+      anchor: "/* @slot:global-css:feature-styles */",
+      content: `/* Sidebar toggle button — left position uses CSS variable */
+@media (min-width: 1024px) {
+  .zd-desktop-sidebar-toggle {
+    left: var(--zd-sidebar-w);
+  }
+
+  html[data-sidebar-hidden] .zd-desktop-sidebar-toggle {
+    left: 0;
+  }
+}`,
+      position: "after",
+    },
+    {
       file: "src/layouts/doc-layout.astro",
       anchor: "// @slot:doc-layout:imports",
       content: 'import DesktopSidebarToggle from "@/components/desktop-sidebar-toggle";',
