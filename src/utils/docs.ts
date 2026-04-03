@@ -48,11 +48,23 @@ function navTreeCacheKey(
   lang: Locale,
   categoryMeta?: Map<string, CategoryMeta>,
 ): string {
-  const metaKey = categoryMeta ? [...categoryMeta.keys()].sort().join(";") : "_";
+  const metaKey = categoryMeta
+    ? JSON.stringify([...categoryMeta.entries()].sort(([a], [b]) => a.localeCompare(b)))
+    : "_";
   return `${lang}:${metaKey}:${docs
     .map((d) => {
-      const fm = d.data;
-      return `${d.id}|${fm.sidebar_position ?? ""}|${fm.sidebar_label ?? ""}|${fm.title}|${fm.unlisted ?? ""}|${fm.standalone ?? ""}|${fm.slug ?? ""}`;
+      const { sidebar_position, sidebar_label, title, description, unlisted, standalone, slug } =
+        d.data;
+      return JSON.stringify([
+        d.id,
+        sidebar_position,
+        sidebar_label,
+        title,
+        description,
+        unlisted,
+        standalone,
+        slug,
+      ]);
     })
     .sort()
     .join(",")}`;
