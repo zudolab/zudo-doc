@@ -62,14 +62,6 @@ src/
 - Schema defined in `src/content.config.ts` (Zod validation)
 - Uses Astro 5 `glob()` loader with configurable `base` directory from settings
 - Content directories: `docsDir` (default: `src/content/docs`), `docsJaDir` (default: `src/content/docs-ja`)
-- Required frontmatter: `title` (string)
-- Optional: `description`, `sidebar_position` (number), `category`
-- Sidebar order is driven by `sidebar_position`
-
-### Admonitions
-
-Available in all MDX files without imports (registered globally in doc page):
-`<Note>`, `<Tip>`, `<Info>`, `<Warning>`, `<Danger>` — each accepts optional `title` prop.
 
 ### Terminology: "Update docs"
 
@@ -81,6 +73,72 @@ When we say "update docs" or "update our doc," it means updating the **showcase 
 - Japanese: `/ja/docs/...` — content in `docsJaDir` (default: `src/content/docs-ja`)
 - Configured in `astro.config.ts` with `prefixDefaultLocale: false`
 - Japanese docs should mirror the English directory structure
+- **Bilingual rule**: When creating or updating any doc page, update both EN and JA versions. Keep code blocks identical -- only translate prose.
+- **Exception**: Pages with `generated: true` in frontmatter do not require Japanese translations.
+
+## Writing Docs
+
+### Frontmatter Fields
+
+Schema in `src/content.config.ts`. Required: `title` (string). Key optional fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `sidebar_position` | number | Sort order within category (lower = higher). Always set this |
+| `description` | string | Subtitle below the title |
+| `sidebar_label` | string | Custom sidebar text (overrides `title`) |
+| `tags` | string[] | Cross-category grouping |
+| `draft` | boolean | Exclude from build entirely |
+| `unlisted` | boolean | Built but hidden from sidebar/nav |
+| `generated` | boolean | Build-time generated content (skip translation) |
+| `hide_sidebar` | boolean | Hide left sidebar |
+| `hide_toc` | boolean | Hide right-side TOC |
+
+### Content Rules
+
+- **No h1 in content**: The frontmatter `title` renders as the page h1. Start with `## h2`.
+- **Always set `sidebar_position`**: Without it, pages sort alphabetically.
+- **Kebab-case file names**: Use `my-article.mdx`, not `myArticle.mdx`.
+
+### Admonitions
+
+Available in all MDX files without imports (registered globally in doc page).
+
+**Directive syntax**: `:::note[Title]` ... `:::`
+
+**JSX syntax**: `<Note>`, `<Tip>`, `<Info>`, `<Warning>`, `<Danger>` — each accepts optional `title` prop.
+
+### Linking Between Docs
+
+Use relative file paths with `.mdx` extension:
+
+```markdown
+[Link text](./sibling-page.mdx)
+[Link text](../other-category/page.mdx#anchor)
+```
+
+### Navigation Structure
+
+Navigation is filesystem-driven. Directory structure becomes sidebar navigation.
+
+- Pages ordered by `sidebar_position` (ascending)
+- Category index pages (`index.mdx`) control category position
+- `_category_.json` for category-level metadata (label, position, noPage)
+- Header nav defined in `src/config/settings.ts` via `headerNav` with `categoryMatch`
+
+### Content Creation Workflow
+
+1. Create English `.mdx` file under `src/content/docs/` with `title` and `sidebar_position`
+2. Write content starting with `## h2` headings (not `# h1`)
+3. Create matching Japanese file under `src/content/docs-ja/`
+4. Keep code blocks and `<HtmlPreview>` blocks identical -- only translate prose
+5. Run `pnpm format:md` then `pnpm build` to verify
+
+## Doc Skill (setup-doc-skill)
+
+The doc-skill (`scripts/setup-doc-skill.sh`) generates `.claude/skills/<name>/SKILL.md` and symlinks docs into it. It is gitignored -- do NOT track the generated SKILL.md in git. Run `pnpm setup:doc-skill` to regenerate. To update the skill template, edit `scripts/setup-doc-skill.sh`.
+
+This script is also the **source template** copied to downstream projects by `create-zudo-doc` when the `skillSymlinker` feature is enabled.
 
 ## CI Pipeline
 
