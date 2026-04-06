@@ -170,7 +170,7 @@ export function generateSettingsFile(choices: UserChoices): string {
       `    { label: "Changelog", path: "/docs/changelog", categoryMatch: "changelog" },`,
     );
   }
-  lines.push(`  ] satisfies HeaderNavItem[],`);
+  lines.push(`  ] as HeaderNavItem[],`);
   lines.push(`};`);
 
   return lines.join("\n") + "\n";

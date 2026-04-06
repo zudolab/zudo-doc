@@ -95,5 +95,5 @@ export const settings = {
     { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude" },
     { label: "Changelog", labelKey: "nav.changelog", path: "/docs/changelog", categoryMatch: "changelog" },
     { label: "Develop", labelKey: "nav.develop", path: "/docs/develop", categoryMatch: "develop" },
-  ] satisfies HeaderNavItem[],
+  ] as HeaderNavItem[],
 };

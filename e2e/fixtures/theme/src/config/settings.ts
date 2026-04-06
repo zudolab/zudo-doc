@@ -34,5 +34,5 @@ export const settings = {
       path: "/docs/getting-started",
       categoryMatch: "getting-started",
     },
-  ] satisfies HeaderNavItem[],
+  ] as HeaderNavItem[],
 };
