@@ -67,6 +67,27 @@ Uses the same three-tier approach as colors: abstract scale → semantic roles �
 
 To add a new font size: add the raw value to Tier 1, then create a semantic token in Tier 2 that references it.
 
+## Two-Tier Size Strategy
+
+Element dimensions (icons, toggles, etc.) follow a two-tier approach:
+
+**Tier 1 — Semantic tokens** (in `global.css` `@theme`): shared design decisions with meaningful names.
+
+- Icon sizes: `icon-xs` (12px), `icon-sm` (16px), `icon-md` (20px), `icon-lg` (24px)
+- Usage: `w-icon-sm h-icon-sm`, `w-icon-md h-icon-md`, etc.
+- Add new tokens only when a size is used in 2+ unrelated components with the same semantic role
+
+**Tier 2 — Arbitrary values**: one-off component dimensions that don't recur.
+
+- Example: `w-[1.575rem]` for a breadcrumb home icon, `h-[3rem]` for a toggle button height
+- Keep as arbitrary values until the pattern recurs enough to justify a token
+
+**Rules:**
+
+- No abstract numeric scale (no `size-4`, `size-8`) — semantic names only
+- Tokenize when 2+ components share the same size for the same purpose (e.g., "standard icon")
+- Keep arbitrary values for layout dimensions, modal sizes, and component-specific one-offs
+
 ## CSS & Components
 
 - Before writing or editing CSS, Tailwind classes, color tokens, or component markup, invoke `/zudo-doc-css-wisdom` to load project-specific rules
