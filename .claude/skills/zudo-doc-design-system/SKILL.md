@@ -1,9 +1,6 @@
 ---
 name: zudo-doc-css-wisdom
-description: >-
-  Project-specific CSS and component rules for zudo-doc. Must be consulted before writing or editing
-  CSS, Tailwind classes, color tokens, or component markup in this project. Covers: component-first
-  strategy, design token system, three-tier color architecture, and palette index convention.
+description: "Project-specific CSS and component rules for zudo-doc. Must be consulted before writing or editing CSS, Tailwind classes, color tokens, or component markup in this project. Covers: component-first strategy, design token system, three-tier color architecture, and palette index convention."
 user-invocable: true
 argument-hint: "[topic: tokens, colors, component-first, palette]"
 ---
