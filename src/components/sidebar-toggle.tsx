@@ -72,8 +72,7 @@ export default function SidebarToggle({ children }: SidebarToggleProps) {
       {/* Backdrop overlay - mobile only */}
       {open && (
         <div
-          className="fixed inset-0 z-30 lg:hidden"
-          style={{ backgroundColor: "rgba(0, 0, 0, 0.3)" }}
+          className="fixed inset-0 z-30 bg-overlay/30 lg:hidden"
           onClick={() => setOpen(false)}
         />
       )}

@@ -27,9 +27,13 @@ Each tier only references the tier above it.
 ### Color Rules
 
 - **NEVER** use Tailwind default colors (`bg-gray-500`, `text-blue-600`) — they are reset to `initial`
+- **NEVER** use hardcoded color values (`rgba()`, `#hex`, `rgb()`) — use semantic tokens or `color-mix()` with tokens
 - **ALWAYS** use project tokens: `text-fg`, `bg-surface`, `border-muted`, `text-accent`, etc.
 - Prefer semantic tokens (`text-accent`, `bg-code-bg`, `text-danger`) for standard UI
 - Use palette tokens (`p0`–`p15`) only when no semantic token fits
+- For overlays/backdrops: use `bg-overlay/{opacity}` (e.g., `bg-overlay/50`) or `color-mix(in oklch, var(--color-overlay) 50%, transparent)` in CSS
+- For highlights (search, find-in-page): use `color-mix()` with `var(--color-warning)` at varying opacity levels
+- Acceptable exceptions: CSS fallback values (`var(--color-fg, #fff)`), color manipulation code (e.g., color-tweak-panel), intentional theme-independent colors (e.g., white iframe canvas with a comment explaining why)
 
 ### Changing Scheme
 

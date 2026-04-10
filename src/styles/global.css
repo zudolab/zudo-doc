@@ -61,6 +61,8 @@
   --color-danger: var(--zd-danger);
   --color-warning: var(--zd-warning);
   --color-info: var(--zd-info);
+  /* Overlay is intentionally theme-independent (always dark, not scheme-driven) */
+  --color-overlay: #000;
   --color-mermaid-node-bg: var(--zd-mermaid-node-bg);
   --color-mermaid-text: var(--zd-mermaid-text);
   --color-mermaid-line: var(--zd-mermaid-line);
@@ -694,18 +696,18 @@ pre.astro-code .line .highlighted-word {
 
 /* ── Find-in-page highlight ── */
 .find-match {
-  background-color: rgba(255, 200, 0, 0.4);
+  background-color: color-mix(in oklch, var(--color-warning) 40%, transparent);
   border-radius: 2px;
 }
 .find-match-active {
-  background-color: rgba(255, 150, 0, 0.7);
+  background-color: color-mix(in oklch, var(--color-warning) 70%, transparent);
   border-radius: 2px;
-  outline: 2px solid rgba(255, 150, 0, 0.9);
+  outline: 2px solid color-mix(in oklch, var(--color-warning) 90%, transparent);
 }
 
 /* ── Search highlight ── */
 [data-search-results] mark {
-  background-color: color-mix(in oklch, var(--color-p3) 35%, transparent);
+  background-color: color-mix(in oklch, var(--color-warning) 35%, transparent);
   color: inherit;
   padding: 0;
   border-radius: 2px;
