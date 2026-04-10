@@ -187,16 +187,16 @@ body {
 /* ── Flow spacing (vertical rhythm) ── */
 
 .zd-content :where(> * + *) {
-  margin-top: var(--spacing-vsp-md);
+  margin-top: var(--flow-space, var(--spacing-vsp-md));
 }
 
 /* ── Headings ── */
 
 .zd-content :where(h2) {
+  --flow-space: var(--spacing-vsp-2xl);
   font-size: var(--text-subheading);
   font-weight: var(--font-weight-bold);
   line-height: var(--leading-tight);
-  margin-top: var(--spacing-vsp-2xl);
   margin-bottom: var(--spacing-vsp-xs);
   padding-top: var(--spacing-vsp-sm);
   border-top: 3px solid transparent;
@@ -204,10 +204,10 @@ body {
 }
 
 .zd-content :where(h3) {
+  --flow-space: var(--spacing-vsp-xl);
   font-size: var(--text-body);
   font-weight: var(--font-weight-bold);
   line-height: var(--leading-snug);
-  margin-top: var(--spacing-vsp-xl);
   margin-bottom: var(--spacing-vsp-xs);
   padding-top: var(--spacing-vsp-xs);
   border-top: 2px solid transparent;
@@ -215,10 +215,10 @@ body {
 }
 
 .zd-content :where(h4) {
+  --flow-space: var(--spacing-vsp-lg);
   font-size: var(--text-body);
   font-weight: var(--font-weight-semibold);
   line-height: var(--leading-snug);
-  margin-top: var(--spacing-vsp-lg);
   margin-bottom: var(--spacing-vsp-xs);
   padding-top: var(--spacing-vsp-xs);
   border-top: 1px solid transparent;
@@ -226,11 +226,26 @@ body {
 }
 
 .zd-content :where(h5, h6) {
+  --flow-space: var(--spacing-vsp-md);
   font-size: var(--text-small);
   font-weight: var(--font-weight-semibold);
   line-height: var(--leading-snug);
-  margin-top: var(--spacing-vsp-md);
   margin-bottom: var(--spacing-vsp-2xs);
+}
+
+/* Consecutive headings: tighten to avoid accumulated whitespace */
+.zd-content :where(h2, h3, h4, h5, h6) + :where(h2, h3, h4, h5, h6) {
+  --flow-space: var(--spacing-vsp-xs);
+}
+
+/* Content immediately after a heading: remove extra top spacing */
+.zd-content :where(h2, h3, h4, h5, h6) + :where(:not(h2, h3, h4, h5, h6)) {
+  --flow-space: 0;
+}
+
+/* First child never needs top margin */
+.zd-content > :first-child {
+  margin-top: 0;
 }
 
 /* ── Heading auto-links ── */
@@ -255,11 +270,6 @@ body {
   opacity: 1;
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
-}
-
-/* Tighten spacing after headings */
-.zd-content :where(h2 + *, h3 + *, h4 + *, h5 + *, h6 + *) {
-  margin-top: 0;
 }
 
 /* ── Paragraphs ── */
