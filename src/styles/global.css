@@ -110,6 +110,7 @@
    * ======================================== */
 
   /* ── Tier 2: Semantic font-size tokens (reference Tier 1 scale only) ── */
+  --text-micro:      var(--text-scale-2xs);  /* 12px — compact panel labels, color swatch annotations */
   --text-caption:    var(--text-scale-xs);   /* labels, timestamps */
   --text-small:      var(--text-scale-sm);   /* secondary text, nav items */
   --text-body:       var(--text-scale-md);   /* paragraphs, default */
