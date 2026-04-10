@@ -57,10 +57,10 @@ export function FindBar({ visible, onClose, findInPage, containerSelector }: Fin
   if (!visible) return null;
 
   return (
-    <div className="fixed top-[3.5rem] right-0 z-50 flex items-center gap-2 py-1.5 px-3 bg-surface border-b border-l border-muted rounded-bl-lg shadow-md">
+    <div className="fixed top-[3.5rem] right-0 z-50 flex items-center gap-hsp-sm py-hsp-xs px-hsp-md bg-surface border-b border-l border-muted rounded-bl-lg shadow-md">
       <input
         ref={inputRef}
-        className="w-48 py-1 px-2 rounded text-small bg-bg border border-muted text-fg outline-none focus:border-accent"
+        className="w-48 py-[4px] px-hsp-sm rounded text-small bg-bg border border-muted text-fg outline-none focus:border-accent"
         type="text"
         value={query}
         placeholder="Find in page..."
@@ -76,7 +76,7 @@ export function FindBar({ visible, onClose, findInPage, containerSelector }: Fin
       </span>
       <button
         type="button"
-        className="py-0.5 px-2 rounded text-caption bg-bg border border-muted text-fg hover:bg-surface"
+        className="py-hsp-2xs px-hsp-sm rounded text-caption bg-bg border border-muted text-fg hover:bg-surface"
         onClick={() => {
           const result = findInPage.prev();
           setMatchInfo(toMatchInfo(result));
@@ -87,7 +87,7 @@ export function FindBar({ visible, onClose, findInPage, containerSelector }: Fin
       </button>
       <button
         type="button"
-        className="py-0.5 px-2 rounded text-caption bg-bg border border-muted text-fg hover:bg-surface"
+        className="py-hsp-2xs px-hsp-sm rounded text-caption bg-bg border border-muted text-fg hover:bg-surface"
         onClick={() => {
           const result = findInPage.next();
           setMatchInfo(toMatchInfo(result));
@@ -98,7 +98,7 @@ export function FindBar({ visible, onClose, findInPage, containerSelector }: Fin
       </button>
       <button
         type="button"
-        className="py-0.5 px-2 rounded text-caption bg-bg border border-muted text-fg hover:bg-surface"
+        className="py-hsp-2xs px-hsp-sm rounded text-caption bg-bg border border-muted text-fg hover:bg-surface"
         onClick={onClose}
         title="Close (Esc)"
       >

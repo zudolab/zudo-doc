@@ -1,0 +1,22 @@
+{
+  "prohibited": [
+    "p-{n}", "px-{n}", "py-{n}", "pt-{n}", "pr-{n}", "pb-{n}", "pl-{n}",
+    "m-{n}", "mx-{n}", "my-{n}", "mt-{n}", "mr-{n}", "mb-{n}", "ml-{n}",
+    "gap-{n}", "gap-x-{n}", "gap-y-{n}", "space-x-{n}", "space-y-{n}",
+    "inset-{n}", "top-{n}", "right-{n}", "bottom-{n}", "left-{n}",
+    "bg-{color}-{shade}", "text-{color}-{shade}", "border-{color}-{shade}",
+    "ring-{color}-{shade}", "outline-{color}-{shade}", "divide-{color}-{shade}",
+    "from-{color}-{shade}", "via-{color}-{shade}", "to-{color}-{shade}",
+    "fill-{color}-{shade}", "stroke-{color}-{shade}"
+  ],
+  "allowed": ["p-0", "m-0", "gap-0", "p-px"],
+  "ignore": [
+    "src/content/**",
+    "packages/create-zudo-doc/templates/**",
+    "**/*.test.*"
+  ],
+  "patterns": [
+    "src/**/*.{tsx,jsx,astro}",
+    "packages/**/*.{tsx,jsx,astro}"
+  ]
+}

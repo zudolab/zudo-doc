@@ -35,7 +35,9 @@
     "// ── Assets ───────────────────────────────────────": "",
     "generate:logo": "pnpm dlx @takazudo/kumiko-gen \"$(node -p \"require('./package.json').name\")-$(date +%s)\" --size 200 --zoom 5 --stroke-width 0.2 --fg \"#000000\" --bg transparent --out public/img/logo.svg",
     "// ── Skills ──────────────────────────────────────": "",
-    "setup:doc-skill": "bash scripts/setup-doc-skill.sh"
+    "setup:doc-skill": "bash scripts/setup-doc-skill.sh",
+    "// ── Linting ─────────────────────────────────────": "",
+    "lint:tokens": "design-token-lint"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -51,11 +53,11 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.79.0",
     "@astrojs/mdx": "^5.0.0",
-    "@zudo-doc/md-plugins": "workspace:*",
     "@astrojs/node": "^10.0.2",
     "@astrojs/preact": "^5.0.0",
     "@shikijs/transformers": "^4.0.1",
     "@types/hast": "^3.0.4",
+    "@zudo-doc/md-plugins": "workspace:*",
     "astro": "^6.0.4",
     "clsx": "^2.1.1",
     "diff": "^8.0.3",
@@ -78,6 +80,7 @@
     "@types/mdast": "^4.0.4",
     "@types/node": "^25.3.5",
     "@types/react": "^19.2.14",
+    "@zudolab/design-token-lint": "file:./vendor/design-token-lint",
     "lefthook": "^2.1.4",
     "msw": "^2.12.12",
     "npm-run-all2": "^7.0.2",
