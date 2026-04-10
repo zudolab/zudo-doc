@@ -7,16 +7,19 @@ Uses a 16-color palette system.
 ### Three-Tier Color Strategy
 
 **Tier 1 — Palette** (injected by `ColorSchemeProvider` on `:root`):
+
 - `--zd-bg`, `--zd-fg`, `--zd-sel-bg`, `--zd-sel-fg`, `--zd-cursor`
 - `--zd-0` through `--zd-15` (16 palette slots)
 
 **Tier 2 — Semantic tokens** (in `global.css` `@theme`, resolved per scheme):
+
 - Palette access: `p0`–`p15` → `bg-p0`, `text-p8`, `border-p1`, etc.
 - Base: `bg`, `fg` → `bg-bg`, `text-fg`
 - UI: `surface`, `muted`, `accent`, `accent-hover`, `sel-bg`, `sel-fg`
 - Content: `code-bg`, `code-fg`, `success`, `danger`, `warning`, `info`
 
 **Tier 3 — Component tokens** (scoped to specific components):
+
 - Content: `.zd-content` direct element styling in `global.css` (consumes Tier 2)
 
 Each tier only references the tier above it.
@@ -41,6 +44,27 @@ Each tier only references the tier above it.
 - Interactive panel at page bottom for live color editing (palette, base, semantic tokens)
 - Export button generates `ColorScheme` TypeScript code for clipboard copy
 - State persisted in `localStorage` (`zudo-doc-tweak-state`)
+
+## Two-Tier Size Strategy
+
+Element dimensions (icons, toggles, etc.) follow a two-tier approach:
+
+**Tier 1 — Semantic tokens** (in `global.css` `@theme`): shared design decisions with meaningful names.
+
+- Icon sizes: `icon-xs` (12px), `icon-sm` (16px), `icon-md` (20px), `icon-lg` (24px)
+- Usage: `w-icon-sm h-icon-sm`, `w-icon-md h-icon-md`, etc.
+- Add new tokens only when a size is used in 2+ unrelated components with the same semantic role
+
+**Tier 2 — Arbitrary values**: one-off component dimensions that don't recur.
+
+- Example: `w-[1.575rem]` for a breadcrumb home icon, `h-[3rem]` for a toggle button height
+- Keep as arbitrary values until the pattern recurs enough to justify a token
+
+**Rules:**
+
+- No abstract numeric scale (no `size-4`, `size-8`) — semantic names only
+- Tokenize when 2+ components share the same size for the same purpose (e.g., "standard icon")
+- Keep arbitrary values for layout dimensions, modal sizes, and component-specific one-offs
 
 ## CSS & Components
 

@@ -96,6 +96,14 @@
   --spacing-vsp-2xl: 3.5rem;     /* 56px — page-level gap */
 
   /* ========================================
+   * Element sizes — semantic icon dimensions
+   * ======================================== */
+  --spacing-icon-xs: 0.75rem;    /* 12px — inline meta icons, chevrons */
+  --spacing-icon-sm: 1rem;       /* 16px — standard UI icons */
+  --spacing-icon-md: 1.25rem;    /* 20px — medium emphasis icons */
+  --spacing-icon-lg: 1.5rem;     /* 24px — large / mobile icons */
+
+  /* ========================================
    * Typography
    * ======================================== */
 

@@ -39,7 +39,7 @@ export default function SidebarToggle({ children }: SidebarToggleProps) {
         {open ? (
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-[1.5rem] w-[1.5rem]"
+            className="h-icon-lg w-icon-lg"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -54,7 +54,7 @@ export default function SidebarToggle({ children }: SidebarToggleProps) {
         ) : (
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-[1.5rem] w-[1.5rem]"
+            className="h-icon-lg w-icon-lg"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
