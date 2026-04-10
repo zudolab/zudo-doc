@@ -61,6 +61,8 @@
   --color-danger: var(--zd-danger);
   --color-warning: var(--zd-warning);
   --color-info: var(--zd-info);
+  /* Overlay is intentionally theme-independent (always dark, not scheme-driven) */
+  --color-overlay: #000;
   --color-mermaid-node-bg: var(--zd-mermaid-node-bg);
   --color-mermaid-text: var(--zd-mermaid-text);
   --color-mermaid-line: var(--zd-mermaid-line);
@@ -96,16 +98,25 @@
   --spacing-vsp-2xl: 3.5rem;     /* 56px — page-level gap */
 
   /* ========================================
+   * Element sizes — semantic icon dimensions
+   * ======================================== */
+  --spacing-icon-xs: 0.75rem;    /* 12px — inline meta icons, chevrons */
+  --spacing-icon-sm: 1rem;       /* 16px — standard UI icons */
+  --spacing-icon-md: 1.25rem;    /* 20px — medium emphasis icons */
+  --spacing-icon-lg: 1.5rem;     /* 24px — large / mobile icons */
+
+  /* ========================================
    * Typography
    * ======================================== */
 
-  /* Font sizes (6 steps) */
-  --text-caption: 0.875rem;      /* 14px — labels, timestamps */
-  --text-small: 1rem;            /* 16px — secondary text, nav items */
-  --text-body: 1.2rem;           /* 19.2px — paragraphs, default */
-  --text-subheading: 1.4rem;     /* 22.4px — card titles, section labels */
-  --text-heading: 3rem;          /* 48px — page headings */
-  --text-display: 3.75rem;       /* 60px — hero text */
+  /* ── Tier 2: Semantic font-size tokens (reference Tier 1 scale only) ── */
+  --text-micro:      var(--text-scale-2xs);  /* 12px — compact panel labels, color swatch annotations */
+  --text-caption:    var(--text-scale-xs);   /* labels, timestamps */
+  --text-small:      var(--text-scale-sm);   /* secondary text, nav items */
+  --text-body:       var(--text-scale-md);   /* paragraphs, default */
+  --text-subheading: var(--text-scale-lg);   /* card titles, section labels */
+  --text-heading:    var(--text-scale-xl);   /* page headings */
+  --text-display:    var(--text-scale-2xl);  /* hero text */
 
   /* Font families */
   --font-sans: system-ui, sans-serif;
@@ -141,6 +152,16 @@
 :root {
   /* Default responsive range; sidebar-resizer.ts allows 192–448px for explicit resizing */
   --zd-sidebar-w: clamp(14rem, 20vw, 22rem);
+
+  /* ── Tier 1: Abstract font-size scale (raw values — NOT for direct component use) ── */
+  /* Used only as a source of truth for Tier 2 semantic tokens above. */
+  --text-scale-2xs: 0.75rem;    /* 12px */
+  --text-scale-xs:  0.875rem;   /* 14px */
+  --text-scale-sm:  1rem;       /* 16px */
+  --text-scale-md:  1.2rem;     /* 19.2px */
+  --text-scale-lg:  1.4rem;     /* 22.4px */
+  --text-scale-xl:  3rem;       /* 48px */
+  --text-scale-2xl: 3.75rem;    /* 60px */
 }
 
 /* ========================================
@@ -186,51 +207,62 @@ body {
 
 /* ── Flow spacing (vertical rhythm) ── */
 
-.zd-content :where(> * + *) {
-  margin-top: var(--spacing-vsp-md);
+.zd-content > :where(* + *) {
+  margin-top: var(--flow-space, var(--spacing-vsp-md));
 }
 
 /* ── Headings ── */
 
 .zd-content :where(h2) {
+  --flow-space: var(--spacing-vsp-2xl);
   font-size: var(--text-subheading);
   font-weight: var(--font-weight-bold);
   line-height: var(--leading-tight);
-  margin-top: var(--spacing-vsp-2xl);
-  margin-bottom: var(--spacing-vsp-xs);
   padding-top: var(--spacing-vsp-sm);
   border-top: 3px solid transparent;
   border-image: linear-gradient(to right, var(--color-fg), transparent) 1;
 }
 
 .zd-content :where(h3) {
+  --flow-space: var(--spacing-vsp-xl);
   font-size: var(--text-body);
   font-weight: var(--font-weight-bold);
   line-height: var(--leading-snug);
-  margin-top: var(--spacing-vsp-xl);
-  margin-bottom: var(--spacing-vsp-xs);
   padding-top: var(--spacing-vsp-xs);
   border-top: 2px solid transparent;
   border-image: linear-gradient(to right, var(--color-muted), transparent) 1;
 }
 
 .zd-content :where(h4) {
+  --flow-space: var(--spacing-vsp-lg);
   font-size: var(--text-body);
   font-weight: var(--font-weight-semibold);
   line-height: var(--leading-snug);
-  margin-top: var(--spacing-vsp-lg);
-  margin-bottom: var(--spacing-vsp-xs);
   padding-top: var(--spacing-vsp-xs);
   border-top: 1px solid transparent;
   border-image: linear-gradient(to right, var(--color-muted), transparent) 1;
 }
 
 .zd-content :where(h5, h6) {
+  --flow-space: var(--spacing-vsp-md);
   font-size: var(--text-small);
   font-weight: var(--font-weight-semibold);
   line-height: var(--leading-snug);
-  margin-top: var(--spacing-vsp-md);
-  margin-bottom: var(--spacing-vsp-2xs);
+}
+
+/* Consecutive headings: tighten to avoid accumulated whitespace */
+.zd-content :where(h2, h3, h4, h5, h6) + :where(h2, h3, h4, h5, h6) {
+  --flow-space: var(--spacing-vsp-xs);
+}
+
+/* Content immediately after a heading: tight gap (replaces heading margin-bottom) */
+.zd-content :where(h2, h3, h4, h5, h6) + :where(:not(h2, h3, h4, h5, h6)) {
+  --flow-space: var(--spacing-vsp-xs);
+}
+
+/* First child never needs top margin */
+.zd-content > :first-child {
+  margin-top: 0;
 }
 
 /* ── Heading auto-links ── */
@@ -257,18 +289,6 @@ body {
   outline-offset: 2px;
 }
 
-/* Tighten spacing after headings */
-.zd-content :where(h2 + *, h3 + *, h4 + *, h5 + *, h6 + *) {
-  margin-top: 0;
-}
-
-/* ── Paragraphs ── */
-
-.zd-content :where(p) {
-  margin-top: 0;
-  margin-bottom: var(--spacing-vsp-md);
-}
-
 /* ── Links ── */
 
 .zd-content :where(a:not(.block):not([data-site-nav] *)) {
@@ -292,13 +312,11 @@ body {
 .zd-content :where(ul) {
   list-style-type: disc;
   padding-left: var(--spacing-hsp-xl);
-  margin-bottom: var(--spacing-vsp-md);
 }
 
 .zd-content :where(ol) {
   list-style-type: decimal;
   padding-left: var(--spacing-hsp-xl);
-  margin-bottom: var(--spacing-vsp-md);
 }
 
 .zd-content :where(li) {
@@ -321,7 +339,6 @@ body {
   padding-left: var(--spacing-hsp-lg);
   color: var(--color-muted);
   font-style: italic;
-  margin-bottom: var(--spacing-vsp-md);
 }
 
 .zd-content :where(blockquote p) {
@@ -347,7 +364,6 @@ body {
   line-height: var(--leading-relaxed);
   border: 1px solid var(--color-muted);
   padding: var(--spacing-vsp-sm) var(--spacing-hsp-lg);
-  margin-bottom: var(--spacing-vsp-md);
   overflow-x: auto;
 }
 
@@ -365,7 +381,6 @@ body {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--text-small);
-  margin-bottom: var(--spacing-vsp-md);
 }
 
 .zd-content :where(th),
@@ -666,18 +681,18 @@ pre.astro-code .line .highlighted-word {
 
 /* ── Find-in-page highlight ── */
 .find-match {
-  background-color: rgba(255, 200, 0, 0.4);
+  background-color: color-mix(in oklch, var(--color-warning) 40%, transparent);
   border-radius: 2px;
 }
 .find-match-active {
-  background-color: rgba(255, 150, 0, 0.7);
+  background-color: color-mix(in oklch, var(--color-warning) 70%, transparent);
   border-radius: 2px;
-  outline: 2px solid rgba(255, 150, 0, 0.9);
+  outline: 2px solid color-mix(in oklch, var(--color-warning) 90%, transparent);
 }
 
 /* ── Search highlight ── */
 [data-search-results] mark {
-  background-color: color-mix(in oklch, var(--color-p3) 35%, transparent);
+  background-color: color-mix(in oklch, var(--color-warning) 35%, transparent);
   color: inherit;
   padding: 0;
   border-radius: 2px;

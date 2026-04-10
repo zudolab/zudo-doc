@@ -1,0 +1,1 @@
+{"version":3,"file":"extractor.d.ts","sourceRoot":"","sources":["../src/extractor.ts"],"names":[],"mappings":"AAAA;;;;;;;;GAQG;AAEH,MAAM,WAAW,cAAc;IAC7B,SAAS,EAAE,MAAM,CAAC;IAClB,IAAI,EAAE,MAAM,CAAC;CACd;AAgBD;;GAEG;AACH,wBAAgB,cAAc,CAAC,OAAO,EAAE,MAAM,GAAG,cAAc,EAAE,CAuEhE"}

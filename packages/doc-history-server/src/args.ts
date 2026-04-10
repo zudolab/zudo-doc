@@ -73,6 +73,7 @@ export function parseCommonArgs(
         break;
       }
       default:
+        if (flag === "--") break; // pnpm passes "--" as arg separator; skip it
         if (!extra.onFlag(flag, next)) {
           if (flag.startsWith("--")) {
             console.error(`Unknown option: ${flag}`);

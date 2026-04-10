@@ -3,7 +3,7 @@ set -euo pipefail
 
 START_TIME=$(date +%s)
 FAILURES=()
-TOTAL_STEPS=5
+TOTAL_STEPS=6
 CURRENT_STEP=0
 
 step() {
@@ -27,7 +27,15 @@ else
   fail "Format check"
 fi
 
-# ── Step 2: Type checking ────────────────────────────
+# ── Step 2: Design token lint ───────────────────────
+step "Design token lint"
+if (cd "$ROOT_DIR" && pnpm lint:tokens); then
+  pass "Design token lint passed"
+else
+  fail "Design token lint"
+fi
+
+# ── Step 3: Type checking ────────────────────────────
 step "Type checking (astro check)"
 if (cd "$ROOT_DIR" && pnpm check); then
   pass "Type checking passed"
@@ -35,7 +43,7 @@ else
   fail "Type checking"
 fi
 
-# ── Step 3: Build ────────────────────────────────────
+# ── Step 4: Build ────────────────────────────────────
 step "Build (astro build)"
 if (cd "$ROOT_DIR" && pnpm build); then
   pass "Build passed"
@@ -43,7 +51,7 @@ else
   fail "Build"
 fi
 
-# ── Step 4: Link check ────────────────────────────────
+# ── Step 5: Link check ────────────────────────────────
 step "Link check (check-links)"
 if (cd "$ROOT_DIR" && pnpm run check:links); then
   pass "Link check passed"
@@ -51,7 +59,7 @@ else
   fail "Link check"
 fi
 
-# ── Step 5: E2E & smoke tests ────────────────────────
+# ── Step 6: E2E & smoke tests ────────────────────────
 step "E2E & smoke tests (playwright)"
 if (cd "$ROOT_DIR" && pnpm test:e2e); then
   pass "E2E & smoke tests passed"
