@@ -207,7 +207,7 @@ body {
 
 /* ── Flow spacing (vertical rhythm) ── */
 
-.zd-content :where(> * + *) {
+.zd-content > :where(* + *) {
   margin-top: var(--flow-space, var(--spacing-vsp-md));
 }
 
@@ -218,7 +218,6 @@ body {
   font-size: var(--text-subheading);
   font-weight: var(--font-weight-bold);
   line-height: var(--leading-tight);
-  margin-bottom: var(--spacing-vsp-xs);
   padding-top: var(--spacing-vsp-sm);
   border-top: 3px solid transparent;
   border-image: linear-gradient(to right, var(--color-fg), transparent) 1;
@@ -229,7 +228,6 @@ body {
   font-size: var(--text-body);
   font-weight: var(--font-weight-bold);
   line-height: var(--leading-snug);
-  margin-bottom: var(--spacing-vsp-xs);
   padding-top: var(--spacing-vsp-xs);
   border-top: 2px solid transparent;
   border-image: linear-gradient(to right, var(--color-muted), transparent) 1;
@@ -240,7 +238,6 @@ body {
   font-size: var(--text-body);
   font-weight: var(--font-weight-semibold);
   line-height: var(--leading-snug);
-  margin-bottom: var(--spacing-vsp-xs);
   padding-top: var(--spacing-vsp-xs);
   border-top: 1px solid transparent;
   border-image: linear-gradient(to right, var(--color-muted), transparent) 1;
@@ -251,7 +248,6 @@ body {
   font-size: var(--text-small);
   font-weight: var(--font-weight-semibold);
   line-height: var(--leading-snug);
-  margin-bottom: var(--spacing-vsp-2xs);
 }
 
 /* Consecutive headings: tighten to avoid accumulated whitespace */
@@ -259,9 +255,9 @@ body {
   --flow-space: var(--spacing-vsp-xs);
 }
 
-/* Content immediately after a heading: remove extra top spacing */
+/* Content immediately after a heading: tight gap (replaces heading margin-bottom) */
 .zd-content :where(h2, h3, h4, h5, h6) + :where(:not(h2, h3, h4, h5, h6)) {
-  --flow-space: 0;
+  --flow-space: var(--spacing-vsp-xs);
 }
 
 /* First child never needs top margin */
@@ -293,13 +289,6 @@ body {
   outline-offset: 2px;
 }
 
-/* ── Paragraphs ── */
-
-.zd-content :where(p) {
-  margin-top: 0;
-  margin-bottom: var(--spacing-vsp-md);
-}
-
 /* ── Links ── */
 
 .zd-content :where(a:not(.block):not([data-site-nav] *)) {
@@ -323,13 +312,11 @@ body {
 .zd-content :where(ul) {
   list-style-type: disc;
   padding-left: var(--spacing-hsp-xl);
-  margin-bottom: var(--spacing-vsp-md);
 }
 
 .zd-content :where(ol) {
   list-style-type: decimal;
   padding-left: var(--spacing-hsp-xl);
-  margin-bottom: var(--spacing-vsp-md);
 }
 
 .zd-content :where(li) {
@@ -352,7 +339,6 @@ body {
   padding-left: var(--spacing-hsp-lg);
   color: var(--color-muted);
   font-style: italic;
-  margin-bottom: var(--spacing-vsp-md);
 }
 
 .zd-content :where(blockquote p) {
@@ -378,7 +364,6 @@ body {
   line-height: var(--leading-relaxed);
   border: 1px solid var(--color-muted);
   padding: var(--spacing-vsp-sm) var(--spacing-hsp-lg);
-  margin-bottom: var(--spacing-vsp-md);
   overflow-x: auto;
 }
 
@@ -396,7 +381,6 @@ body {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--text-small);
-  margin-bottom: var(--spacing-vsp-md);
 }
 
 .zd-content :where(th),
