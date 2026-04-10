@@ -96,8 +96,8 @@ importers:
         specifier: ^19.2.14
         version: 19.2.14
       '@zudolab/design-token-lint':
-        specifier: file:/tmp/zdtl/packages/design-token-lint
-        version: file:../../../../../../../tmp/zdtl/packages/design-token-lint
+        specifier: file:./vendor/design-token-lint
+        version: file:vendor/design-token-lint
       lefthook:
         specifier: ^2.1.4
         version: 2.1.4
@@ -1888,8 +1888,8 @@ packages:
   '@vscode/l10n@0.0.18':
     resolution: {integrity: sha512-KYSIHVmslkaCDyw013pphY+d7x1qV8IZupYfeIfzNA+nsaWHbn5uPuQRvdRFsa9zFzGeudPuoGoZ1Op4jrJXIQ==}
 
-  '@zudolab/design-token-lint@file:../../../../../../../tmp/zdtl/packages/design-token-lint':
-    resolution: {directory: ../../../../../../../tmp/zdtl/packages/design-token-lint, type: directory}
+  '@zudolab/design-token-lint@file:vendor/design-token-lint':
+    resolution: {directory: vendor/design-token-lint, type: directory}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -5978,7 +5978,7 @@ snapshots:
 
   '@vscode/l10n@0.0.18': {}
 
-  '@zudolab/design-token-lint@file:../../../../../../../tmp/zdtl/packages/design-token-lint':
+  '@zudolab/design-token-lint@file:vendor/design-token-lint':
     dependencies:
       chalk: 5.6.2
       glob: 11.1.0

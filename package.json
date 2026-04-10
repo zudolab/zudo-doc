@@ -80,7 +80,7 @@
     "@types/mdast": "^4.0.4",
     "@types/node": "^25.3.5",
     "@types/react": "^19.2.14",
-    "@zudolab/design-token-lint": "file:/tmp/zdtl/packages/design-token-lint",
+    "@zudolab/design-token-lint": "file:./vendor/design-token-lint",
     "lefthook": "^2.1.4",
     "msw": "^2.12.12",
     "npm-run-all2": "^7.0.2",
