@@ -99,13 +99,13 @@
    * Typography
    * ======================================== */
 
-  /* Font sizes (6 steps) */
-  --text-caption: 0.875rem;      /* 14px — labels, timestamps */
-  --text-small: 1rem;            /* 16px — secondary text, nav items */
-  --text-body: 1.2rem;           /* 19.2px — paragraphs, default */
-  --text-subheading: 1.4rem;     /* 22.4px — card titles, section labels */
-  --text-heading: 3rem;          /* 48px — page headings */
-  --text-display: 3.75rem;       /* 60px — hero text */
+  /* ── Tier 2: Semantic font-size tokens (reference Tier 1 scale only) ── */
+  --text-caption:    var(--text-scale-xs);   /* labels, timestamps */
+  --text-small:      var(--text-scale-sm);   /* secondary text, nav items */
+  --text-body:       var(--text-scale-md);   /* paragraphs, default */
+  --text-subheading: var(--text-scale-lg);   /* card titles, section labels */
+  --text-heading:    var(--text-scale-xl);   /* page headings */
+  --text-display:    var(--text-scale-2xl);  /* hero text */
 
   /* Font families */
   --font-sans: system-ui, sans-serif;
@@ -141,6 +141,16 @@
 :root {
   /* Default responsive range; sidebar-resizer.ts allows 192–448px for explicit resizing */
   --zd-sidebar-w: clamp(14rem, 20vw, 22rem);
+
+  /* ── Tier 1: Abstract font-size scale (raw values — NOT for direct component use) ── */
+  /* Used only as a source of truth for Tier 2 semantic tokens above. */
+  --text-scale-2xs: 0.75rem;    /* 12px */
+  --text-scale-xs:  0.875rem;   /* 14px */
+  --text-scale-sm:  1rem;       /* 16px */
+  --text-scale-md:  1.2rem;     /* 19.2px */
+  --text-scale-lg:  1.4rem;     /* 22.4px */
+  --text-scale-xl:  3rem;       /* 48px */
+  --text-scale-2xl: 3.75rem;    /* 60px */
 }
 
 /* ========================================
