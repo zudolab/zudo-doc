@@ -6,8 +6,12 @@
 #   2. Build the Astro docs site (shallow clone, skips doc history)
 #   3. Build doc history JSONs (full clone, standalone server package)
 #   4. E2E & smoke tests (Playwright)
-#   5. Merge artifacts and deploy a preview to Cloudflare Pages
+#   5. Merge build outputs and deploy a preview to Cloudflare Pages
 #   6. Post the preview URL as a PR comment
+#
+# Inter-job data sharing uses actions/cache (not upload-artifact) to avoid
+# Actions storage accumulation. Cache keys are scoped to github.run_id so
+# each run gets a fresh, unique cache that won't be reused by other runs.
 #
 # Concurrency: cancel in-progress runs for the same PR to save resources.
 
@@ -90,12 +94,11 @@ jobs:
       - name: Check links
         run: pnpm run check:links
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+      - name: Cache site build output
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          name: dist-out
           path: dist/
-          retention-days: 1
+          key: dist-${{ github.run_id }}
 
   # ---------------------------------------------------------------------------
   # Job 3: Build doc history JSONs (full clone — only this job needs it)
@@ -131,12 +134,11 @@ jobs:
             --locale ja:../../src/content/docs-ja \
             --out-dir ../../doc-history-out
 
-      - name: Upload doc history artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+      - name: Cache doc history output
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          name: doc-history-out
           path: doc-history-out/
-          retention-days: 1
+          key: doc-history-${{ github.run_id }}
 
   # ---------------------------------------------------------------------------
   # Job 4: E2E & smoke tests
@@ -176,12 +178,12 @@ jobs:
         run: pnpm test:e2e:ci
 
       - name: Upload test results
-        if: ${{ !cancelled() }}
+        if: ${{ failure() }}
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: playwright-report
           path: playwright-report/
-          retention-days: 7
+          retention-days: 1
 
   # ---------------------------------------------------------------------------
   # Job 5: Deploy preview and comment on PR
@@ -193,27 +195,27 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Download site artifact
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+      - name: Restore site build cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          name: dist-out
-          path: dist-out/
+          path: dist/
+          key: dist-${{ github.run_id }}
+          fail-on-cache-miss: true
 
-      - name: Download doc history artifact
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+      - name: Restore doc history cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          name: doc-history-out
           path: doc-history-out/
-        continue-on-error: true
+          key: doc-history-${{ github.run_id }}
 
       - name: Prepare deploy directory
         run: |
           mkdir -p deploy/pj/zudo-doc
           # When aiAssistant is enabled, Astro outputs static files to dist/client/
-          if [ -d dist-out/client ]; then
-            cp -r dist-out/client/. deploy/pj/zudo-doc/
+          if [ -d dist/client ]; then
+            cp -r dist/client/. deploy/pj/zudo-doc/
           else
-            cp -r dist-out/. deploy/pj/zudo-doc/
+            cp -r dist/. deploy/pj/zudo-doc/
           fi
           # Merge doc history JSONs into the deploy directory (if available)
           if [ -d doc-history-out ] && [ "$(ls -A doc-history-out 2>/dev/null)" ]; then
