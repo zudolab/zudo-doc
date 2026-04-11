@@ -96,4 +96,4 @@ When adding a feature to the main zudo-doc project that the generator should sup
 8. **`src/settings-gen.ts`** — Add the setting field to generated `settings.ts`
 9. **`src/__tests__/scaffold.test.ts`** — Update tests
 
-After changes, run `/l-sync-create-zudo-doc` to verify no drift remains between the main project and the generator.
+After changes, run `/l-update-generator` to verify no drift remains between the main project and the generator.

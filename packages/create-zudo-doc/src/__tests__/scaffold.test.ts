@@ -1006,7 +1006,7 @@ describe("drift detection — generator vs main project settings", () => {
     expect(
       missingFields,
       `Generator is missing settings fields: ${missingFields.join(", ")}. ` +
-        `Update packages/create-zudo-doc/src/settings-gen.ts or run /l-sync-create-zudo-doc`,
+        `Update packages/create-zudo-doc/src/settings-gen.ts or run /l-update-generator`,
     ).toEqual([]);
   });
 });
