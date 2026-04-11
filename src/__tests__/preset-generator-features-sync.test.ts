@@ -7,7 +7,7 @@ describe("FEATURES drift detection", () => {
   it("same count of features in UI and CLI", () => {
     expect(
       UI_FEATURES.length,
-      `UI has ${UI_FEATURES.length} features, CLI has ${CLI_FEATURES.length}. Run /l-sync-create-zudo-doc`,
+      `UI has ${UI_FEATURES.length} features, CLI has ${CLI_FEATURES.length}. Run /l-update-generator`,
     ).toBe(CLI_FEATURES.length);
   });
 

@@ -118,6 +118,13 @@ export const FEATURES: Feature[] = [
     cliFlag: "claude-resources",
   },
   {
+    value: "claudeSkills",
+    label: "Claude skills (user-facing)",
+    hint: "Ship zudo-doc-* Claude Code skills (design-system, translate, version-bump)",
+    default: false,
+    cliFlag: "claude-skills",
+  },
+  {
     value: "colorTweakPanel",
     label: "Color tweak panel",
     hint: "Live color editor for designing schemes",

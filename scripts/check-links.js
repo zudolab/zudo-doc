@@ -22,6 +22,12 @@ export async function parseBasePath(settingsPath) {
   return match ? match[1] : "/";
 }
 
+export async function parseTrailingSlash(settingsPath) {
+  const content = await readFile(settingsPath, "utf-8");
+  const match = content.match(/trailingSlash:\s*(true|false)/);
+  return match ? match[1] === "true" : false;
+}
+
 export async function parseContentDirs(settingsPath) {
   const content = await readFile(settingsPath, "utf-8");
 
@@ -101,9 +107,16 @@ export function extractHtmlLinks(html) {
 
 // --- Link Resolution ---
 
-export async function resolveLink(href, distDir, basePath = "/", fileDir = "") {
+/**
+ * Resolve a link and return its resolution type:
+ *   'root'           — empty path or resolves to the site root (always valid)
+ *   'file'           — resolved to a file with an extension or a .html file
+ *   'directoryIndex' — resolved via dir/index.html (page link without trailing slash)
+ *   'missing'        — target does not exist
+ */
+export async function resolveLinkDetail(href, distDir, basePath = "/", fileDir = "") {
   const clean = href.split("#")[0].split("?")[0];
-  if (!clean) return true;
+  if (!clean) return "root";
 
   let absolute = clean;
 
@@ -121,21 +134,29 @@ export async function resolveLink(href, distDir, basePath = "/", fileDir = "") {
   }
 
   const relPath = stripped.startsWith("/") ? stripped.slice(1) : stripped;
-  if (!relPath) return true;
+  if (!relPath) return "root";
 
   // Has file extension → check exact path
   if (extname(relPath)) {
-    return fileExists(join(distDir, relPath));
+    const exists = await fileExists(join(distDir, relPath));
+    return exists ? "file" : "missing";
   }
 
   // Ends with / → check index.html inside
   if (relPath.endsWith("/")) {
-    return fileExists(join(distDir, relPath, "index.html"));
+    const exists = await fileExists(join(distDir, relPath, "index.html"));
+    return exists ? "directoryIndex" : "missing";
   }
 
   // No extension, no trailing slash → try dir/index.html then .html
-  if (await fileExists(join(distDir, relPath, "index.html"))) return true;
-  return fileExists(join(distDir, relPath + ".html"));
+  if (await fileExists(join(distDir, relPath, "index.html"))) return "directoryIndex";
+  if (await fileExists(join(distDir, relPath + ".html"))) return "file";
+  return "missing";
+}
+
+export async function resolveLink(href, distDir, basePath = "/", fileDir = "") {
+  const type = await resolveLinkDetail(href, distDir, basePath, fileDir);
+  return type !== "missing";
 }
 
 // --- MDX Source Scan ---
@@ -205,6 +226,51 @@ export async function checkHtmlLinks(distDir, rootDir, basePath = "/", excludePa
   return broken;
 }
 
+export async function checkTrailingSlashLinks(distDir, rootDir, basePath = "/", excludePatterns = []) {
+  const warnings = [];
+  const htmlFiles = await collectFiles(distDir, [".html"]);
+  const cache = new Map();
+
+  for (const file of htmlFiles) {
+    const content = await readFile(file, "utf-8");
+    const links = extractHtmlLinks(content);
+    const fileDir = dirname(file);
+
+    for (const { href, line } of links) {
+      if (excludePatterns.some((p) => p.test(href))) continue;
+
+      // Extract path portion (strip query string and fragment)
+      const pathPart = href.split("#")[0].split("?")[0];
+
+      // Skip root-like paths: empty, "/", ".", "./"
+      if (!pathPart || pathPart === "/" || pathPart === "." || pathPart === "./") continue;
+
+      // Skip links that already have a trailing slash
+      if (pathPart.endsWith("/")) continue;
+
+      // Skip links with file extensions (assets)
+      if (extname(pathPart)) continue;
+
+      // Cache key: absolute links use href only; relative links include fileDir
+      const cacheKey = href.startsWith("/") ? href : `${fileDir}:${href}`;
+      let type;
+      if (cache.has(cacheKey)) {
+        type = cache.get(cacheKey);
+      } else {
+        type = await resolveLinkDetail(href, distDir, basePath, fileDir);
+        cache.set(cacheKey, type);
+      }
+
+      // Only warn for links that resolve to a directory index (page links missing trailing slash)
+      if (type === "directoryIndex") {
+        warnings.push({ file: relative(rootDir, file), line, href });
+      }
+    }
+  }
+
+  return warnings;
+}
+
 export async function checkMdxLinks(contentDirs, rootDir) {
   const warnings = [];
 
@@ -227,7 +293,7 @@ export async function checkMdxLinks(contentDirs, rootDir) {
 
 // --- Report ---
 
-export function formatReport(brokenLinks, mdxWarnings) {
+export function formatReport(brokenLinks, mdxWarnings, trailingSlashWarnings = []) {
   const lines = [];
 
   if (brokenLinks.length > 0) {
@@ -246,7 +312,15 @@ export function formatReport(brokenLinks, mdxWarnings) {
     lines.push("");
   }
 
-  const total = brokenLinks.length + mdxWarnings.length;
+  if (trailingSlashWarnings.length > 0) {
+    lines.push("=== Links Missing Trailing Slash ===");
+    for (const { file, line, href } of trailingSlashWarnings) {
+      lines.push(`  ${file}:${line}  ${href}`);
+    }
+    lines.push("");
+  }
+
+  const total = brokenLinks.length + mdxWarnings.length + trailingSlashWarnings.length;
   if (total > 0) {
     const parts = [];
     if (brokenLinks.length > 0) {
@@ -257,6 +331,11 @@ export function formatReport(brokenLinks, mdxWarnings) {
     if (mdxWarnings.length > 0) {
       parts.push(
         `${mdxWarnings.length} absolute path warning${mdxWarnings.length === 1 ? "" : "s"}`,
+      );
+    }
+    if (trailingSlashWarnings.length > 0) {
+      parts.push(
+        `${trailingSlashWarnings.length} trailing slash warning${trailingSlashWarnings.length === 1 ? "" : "s"}`,
       );
     }
     lines.push(`✗ Found ${parts.join(" and ")}`);
@@ -273,9 +352,10 @@ async function main() {
   const rootDir = resolve(__dirname, "..");
   const settingsPath = join(rootDir, "src", "config", "settings.ts");
   const basePath = await parseBasePath(settingsPath);
+  const trailingSlash = await parseTrailingSlash(settingsPath);
   const distDir = join(rootDir, "dist");
 
-  console.log(`Checking links (base: ${basePath})...\n`);
+  console.log(`Checking links (base: ${basePath}, trailingSlash: ${trailingSlash})...\n`);
 
   if (!(await fileExists(distDir))) {
     console.error("Error: dist/ directory not found. Run 'pnpm build' first.");
@@ -288,14 +368,20 @@ async function main() {
   const { docsDir, localeDirs } = await parseContentDirs(settingsPath);
   const contentDirs = [join(rootDir, docsDir), ...localeDirs.map((d) => join(rootDir, d))];
 
-  const [brokenLinks, mdxWarnings] = await Promise.all([
+  const checks = [
     checkHtmlLinks(distDir, rootDir, basePath, excludePatterns),
     checkMdxLinks(contentDirs, rootDir),
-  ]);
+  ];
 
-  console.log(formatReport(brokenLinks, mdxWarnings));
+  if (trailingSlash) {
+    checks.push(checkTrailingSlashLinks(distDir, rootDir, basePath, excludePatterns));
+  }
 
-  const hasIssues = brokenLinks.length > 0 || mdxWarnings.length > 0;
+  const [brokenLinks, mdxWarnings, trailingSlashWarnings = []] = await Promise.all(checks);
+
+  console.log(formatReport(brokenLinks, mdxWarnings, trailingSlashWarnings));
+
+  const hasIssues = brokenLinks.length > 0 || mdxWarnings.length > 0 || trailingSlashWarnings.length > 0;
   const strict = process.argv.includes("--strict");
 
   if (hasIssues && strict) {

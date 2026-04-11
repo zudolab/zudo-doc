@@ -156,19 +156,40 @@ fn main() {
                     .visible(false)
                     .on_navigation(|url| {
                         let s = url.as_str();
+                        // Allow internal schemes and the local dev / bundled app origins.
+                        // - http://localhost, https://localhost          : Astro dev server
+                        // - tauri://                                     : bundled app (macOS/Linux)
+                        // - http://tauri.localhost, https://tauri.localhost
+                        //                                                : bundled app (Windows)
+                        // - asset://                                     : Tauri asset protocol
+                        // - data:                                        : inline data URLs
                         if s.starts_with("http://localhost")
                             || s.starts_with("https://localhost")
+                            || s.starts_with("http://tauri.localhost")
+                            || s.starts_with("https://tauri.localhost")
                             || s.starts_with("tauri://")
+                            || s.starts_with("asset://")
+                            || s.starts_with("data:")
                         {
                             return true;
                         }
+                        // External http/https links -> default OS browser.
                         if s.starts_with("http://") || s.starts_with("https://") {
                             let owned = s.to_string();
-                            std::thread::spawn(move || {
+                            tauri::async_runtime::spawn_blocking(move || {
                                 let _ = open::that(owned);
                             });
                             return false;
                         }
+                        // mailto: -> default mail client.
+                        if s.starts_with("mailto:") {
+                            let owned = s.to_string();
+                            tauri::async_runtime::spawn_blocking(move || {
+                                let _ = open::that(owned);
+                            });
+                            return false;
+                        }
+                        // Block any other scheme (javascript:, file:, etc.).
                         false
                     })
                     .build()?;

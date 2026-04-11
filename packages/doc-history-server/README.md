@@ -1,36 +1,70 @@
 # @zudo-doc/doc-history-server
 
-Standalone package for serving and generating doc history from git.
+Standalone package for extracting and serving git history of documentation files. Has two modes: an HTTP server for local development and a CLI generator for CI builds.
+
+The history extraction logic was extracted from the Astro build pipeline so that expensive `git log --follow` calls do not block the main build, enabling a parallel CI strategy.
 
 ## Modes
 
-### REST API Server (local dev)
+### Server mode (local development)
+
+Runs an HTTP server that serves history on demand. Used by `pnpm dev` at the repository root, which starts both Astro and this server concurrently via `run-p`.
 
 ```bash
-pnpm dev -- --content-dir src/content/docs --locale ja:src/content/docs-ja --port 4322
+pnpm dev -- \
+  --content-dir src/content/docs \
+  --locale ja:src/content/docs-ja \
+  --port 4322
 ```
 
-Endpoints:
+| Flag               | Required | Default | Description                                   |
+| ------------------ | -------- | ------- | --------------------------------------------- |
+| `--content-dir`    | Yes      | —       | Primary content directory to scan             |
+| `--locale <k>:<d>` | No       | —       | Extra locale directory (repeatable)           |
+| `--port`           | No       | `4322`  | HTTP port                                     |
+| `--max-entries`    | No       | `50`    | Max commits to include per file               |
 
-- `GET /doc-history/{slug}.json` — History for a doc
-- `GET /doc-history/{locale}/{slug}.json` — History for a localized doc
+#### Endpoints
+
+- `GET /doc-history/{slug}.json` — Full history for a document
+- `GET /doc-history/{locale}/{slug}.json` — History for a localized document
 - `GET /health` — Health check
 
-### CLI Generator (CI builds)
+The file index is refreshed every 10 seconds so newly added or renamed files are picked up without restarting the server. All responses include CORS headers for cross-origin dev access.
+
+### CLI mode (CI builds)
+
+Generates static `{slug}.json` files into an output directory. Used by the `build-history` CI job, which runs in parallel with the `build-site` Astro build.
 
 ```bash
-pnpm generate -- --content-dir src/content/docs --locale ja:src/content/docs-ja --out-dir dist/doc-history
+pnpm generate -- \
+  --content-dir src/content/docs \
+  --locale ja:src/content/docs-ja \
+  --out-dir dist/doc-history
 ```
 
-Options:
+| Flag               | Required | Default | Description                               |
+| ------------------ | -------- | ------- | ----------------------------------------- |
+| `--content-dir`    | Yes      | —       | Primary content directory to scan         |
+| `--locale <k>:<d>` | No       | —       | Extra locale directory (repeatable)       |
+| `--out-dir`        | Yes      | —       | Output directory for the generated JSONs  |
+| `--max-entries`    | No       | `50`    | Max commits to include per file           |
 
-- `--content-dir <path>` — Content directory to scan (required)
-- `--locale <key>:<dir>` — Additional locale directories (repeatable)
-- `--out-dir <path>` — Output directory for JSON files (required)
-- `--max-entries <n>` — Max commits per file (default 50)
+## Astro integration
+
+In dev mode, the Astro integration at `src/integrations/doc-history.ts` proxies `/doc-history/*` requests to this server. In build mode, the integration falls back to inline generation unless `SKIP_DOC_HISTORY=1` is set — which is the case in the CI `build-site` job so that the Astro build completes fast while the CLI `build-history` job generates the JSONs in parallel.
 
 ## Build
 
 ```bash
 pnpm build
 ```
+
+Uses `tsup` to emit ESM output + DTS into `dist/`.
+
+## Design notes
+
+- **Synchronous git** — uses `execFileSync` for `git log` calls. The dev server is single-user and CI is inherently sequential, so async streaming is not needed.
+- **Repo-relative paths** — responses use relative file paths to avoid leaking absolute server paths.
+- **`--follow` for renames** — file history is tracked across renames with multiple fallback strategies.
+- **pnpm --filter CWD** — when run via `pnpm --filter`, the CWD is this package dir, so content paths passed from CI need `../../` prefix for repo-relative resolution.

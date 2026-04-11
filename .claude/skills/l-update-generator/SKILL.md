@@ -1,9 +1,9 @@
 ---
-name: l-sync-create-zudo-doc
-description: Detect and fix drift between the main zudo-doc project and the create-zudo-doc generator CLI. Use when adding/removing features, or to verify the generator stays in sync.
+name: l-update-generator
+description: "Detect and fix drift between the main zudo-doc project and the create-zudo-doc generator CLI. Use when adding/removing features, or to verify the generator stays in sync. Also triggered by \"update generator\", \"sync generator\", \"l-update-generator\", \"l-sync-create-zudo-doc\"."
 ---
 
-# Sync create-zudo-doc Generator
+# Update create-zudo-doc Generator
 
 Detect and fix drift between the main zudo-doc project and the `create-zudo-doc` CLI generator.
 
@@ -22,7 +22,7 @@ The generator uses **additive composition** — not copy-then-strip:
 - After adding or removing a feature from zudo-doc
 - When the drift-detection test fails
 - Periodically to verify generator health
-- User says "sync generator", "check generator drift", "l-sync-create-zudo-doc"
+- User says "update generator", "sync generator", "check generator drift", "l-update-generator", or the old name "l-sync-create-zudo-doc"
 
 ## Step 1: Analyze Drift
 

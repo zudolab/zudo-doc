@@ -19,9 +19,11 @@ export interface CliArgs {
   sidebarToggle?: boolean;
   versioning?: boolean;
   claudeResources?: boolean;
+  claudeSkills?: boolean;
   docHistory?: boolean;
   llmsTxt?: boolean;
   skillSymlinker?: boolean;
+  tauri?: boolean;
   footerNavGroup?: boolean;
   footerCopyright?: boolean;
   changelog?: boolean;
