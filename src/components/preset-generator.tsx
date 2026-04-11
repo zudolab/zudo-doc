@@ -265,7 +265,7 @@ export default function PresetGenerator() {
   }, []);
 
   return (
-    <div className="flex flex-col gap-y-vsp-lg">
+    <div className="flex flex-col gap-y-vsp-xl">
       {/* Project Name */}
       <section>
         <SectionHeading>Project Name</SectionHeading>
