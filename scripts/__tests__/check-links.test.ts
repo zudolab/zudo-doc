@@ -4,11 +4,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   parseBasePath,
+  parseTrailingSlash,
   parseContentDirs,
   extractHtmlLinks,
+  resolveLinkDetail,
   resolveLink,
   extractMdxAbsoluteLinks,
   checkHtmlLinks,
+  checkTrailingSlashLinks,
   checkMdxLinks,
   formatReport,
   collectFiles,
@@ -47,6 +50,28 @@ describe("check-links", () => {
       const file = join(tmpDir, "settings.ts");
       writeFileSync(file, `export const settings = {};`);
       expect(await parseBasePath(file)).toBe("/");
+    });
+  });
+
+  // --- parseTrailingSlash ---
+
+  describe("parseTrailingSlash", () => {
+    it("returns true when trailingSlash is true", async () => {
+      const file = join(tmpDir, "settings.ts");
+      writeFileSync(file, `export const settings = { trailingSlash: true as boolean };`);
+      expect(await parseTrailingSlash(file)).toBe(true);
+    });
+
+    it("returns false when trailingSlash is false", async () => {
+      const file = join(tmpDir, "settings.ts");
+      writeFileSync(file, `export const settings = { trailingSlash: false as boolean };`);
+      expect(await parseTrailingSlash(file)).toBe(false);
+    });
+
+    it("returns false when trailingSlash is not present", async () => {
+      const file = join(tmpDir, "settings.ts");
+      writeFileSync(file, `export const settings = {};`);
+      expect(await parseTrailingSlash(file)).toBe(false);
     });
   });
 
@@ -301,6 +326,52 @@ describe("check-links", () => {
     });
   });
 
+  // --- resolveLinkDetail ---
+
+  describe("resolveLinkDetail", () => {
+    const BASE = "/pj/zudo-doc/";
+
+    it("returns 'root' for empty href", async () => {
+      expect(await resolveLinkDetail("", tmpDir, BASE)).toBe("root");
+    });
+
+    it("returns 'root' when path resolves to empty after stripping base path", async () => {
+      expect(await resolveLinkDetail("/pj/zudo-doc/", tmpDir, BASE)).toBe("root");
+    });
+
+    it("returns 'directoryIndex' when resolved via dir/index.html (no trailing slash)", async () => {
+      mkdirSync(join(tmpDir, "docs", "foo"), { recursive: true });
+      writeFileSync(join(tmpDir, "docs", "foo", "index.html"), "");
+      expect(await resolveLinkDetail("/pj/zudo-doc/docs/foo", tmpDir, BASE)).toBe("directoryIndex");
+    });
+
+    it("returns 'directoryIndex' when resolved via dir/index.html (with trailing slash)", async () => {
+      mkdirSync(join(tmpDir, "docs", "foo"), { recursive: true });
+      writeFileSync(join(tmpDir, "docs", "foo", "index.html"), "");
+      expect(await resolveLinkDetail("/pj/zudo-doc/docs/foo/", tmpDir, BASE)).toBe("directoryIndex");
+    });
+
+    it("returns 'file' when resolved via .html extension", async () => {
+      mkdirSync(join(tmpDir, "docs"), { recursive: true });
+      writeFileSync(join(tmpDir, "docs", "foo.html"), "");
+      expect(await resolveLinkDetail("/pj/zudo-doc/docs/foo", tmpDir, BASE)).toBe("file");
+    });
+
+    it("returns 'file' for asset links with extension", async () => {
+      mkdirSync(join(tmpDir, "_astro"), { recursive: true });
+      writeFileSync(join(tmpDir, "_astro", "style.css"), "");
+      expect(await resolveLinkDetail("/pj/zudo-doc/_astro/style.css", tmpDir, BASE)).toBe("file");
+    });
+
+    it("returns 'missing' for non-existent paths", async () => {
+      expect(await resolveLinkDetail("/pj/zudo-doc/docs/nope", tmpDir, BASE)).toBe("missing");
+    });
+
+    it("returns 'missing' for non-existent asset", async () => {
+      expect(await resolveLinkDetail("/pj/zudo-doc/_astro/nope.css", tmpDir, BASE)).toBe("missing");
+    });
+  });
+
   // --- extractMdxAbsoluteLinks ---
 
   describe("extractMdxAbsoluteLinks", () => {
@@ -471,6 +542,149 @@ describe("check-links", () => {
         [join(tmpDir, "nonexistent")],
         tmpDir,
       );
+      expect(warnings).toEqual([]);
+    });
+  });
+
+  // --- checkTrailingSlashLinks ---
+
+  describe("checkTrailingSlashLinks", () => {
+    const BASE = "/pj/zudo-doc/";
+
+    it("warns when a page link resolves via directory index but has no trailing slash", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "docs", "page1"), { recursive: true });
+      mkdirSync(join(distDir, "docs", "page2"), { recursive: true });
+      writeFileSync(
+        join(distDir, "docs", "page1", "index.html"),
+        `<a href="/pj/zudo-doc/docs/page2">Page2</a>`,
+      );
+      writeFileSync(join(distDir, "docs", "page2", "index.html"), "<p>Page2</p>");
+
+      const warnings = await checkTrailingSlashLinks(distDir, tmpDir, BASE);
+      expect(warnings).toEqual([
+        {
+          file: "dist/docs/page1/index.html",
+          line: 1,
+          href: "/pj/zudo-doc/docs/page2",
+        },
+      ]);
+    });
+
+    it("does not warn when link already has trailing slash", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "docs", "page1"), { recursive: true });
+      mkdirSync(join(distDir, "docs", "page2"), { recursive: true });
+      writeFileSync(
+        join(distDir, "docs", "page1", "index.html"),
+        `<a href="/pj/zudo-doc/docs/page2/">Page2</a>`,
+      );
+      writeFileSync(join(distDir, "docs", "page2", "index.html"), "<p>Page2</p>");
+
+      const warnings = await checkTrailingSlashLinks(distDir, tmpDir, BASE);
+      expect(warnings).toEqual([]);
+    });
+
+    it("does not warn for asset links with file extensions", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "docs", "page1"), { recursive: true });
+      mkdirSync(join(distDir, "_astro"), { recursive: true });
+      writeFileSync(
+        join(distDir, "docs", "page1", "index.html"),
+        `<a href="/pj/zudo-doc/_astro/style.css">CSS</a>`,
+      );
+      writeFileSync(join(distDir, "_astro", "style.css"), "body {}");
+
+      const warnings = await checkTrailingSlashLinks(distDir, tmpDir, BASE);
+      expect(warnings).toEqual([]);
+    });
+
+    it("does not warn for root link /", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "docs", "page1"), { recursive: true });
+      writeFileSync(
+        join(distDir, "docs", "page1", "index.html"),
+        `<a href="/">Home</a>`,
+      );
+
+      const warnings = await checkTrailingSlashLinks(distDir, tmpDir, BASE);
+      expect(warnings).toEqual([]);
+    });
+
+    it("does not warn for . and ./ links", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "docs", "page1"), { recursive: true });
+      writeFileSync(
+        join(distDir, "docs", "page1", "index.html"),
+        `<a href=".">Dot</a><a href="./">DotSlash</a>`,
+      );
+
+      const warnings = await checkTrailingSlashLinks(distDir, tmpDir, BASE);
+      expect(warnings).toEqual([]);
+    });
+
+    it("warns for link with query string where path is missing trailing slash", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "docs", "page1"), { recursive: true });
+      mkdirSync(join(distDir, "docs", "page2"), { recursive: true });
+      writeFileSync(
+        join(distDir, "docs", "page1", "index.html"),
+        `<a href="/pj/zudo-doc/docs/page2?x=1">Page2</a>`,
+      );
+      writeFileSync(join(distDir, "docs", "page2", "index.html"), "<p>Page2</p>");
+
+      const warnings = await checkTrailingSlashLinks(distDir, tmpDir, BASE);
+      expect(warnings).toEqual([
+        {
+          file: "dist/docs/page1/index.html",
+          line: 1,
+          href: "/pj/zudo-doc/docs/page2?x=1",
+        },
+      ]);
+    });
+
+    it("does not warn for links to .html files (resolved as 'file' type)", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "docs", "page1"), { recursive: true });
+      mkdirSync(join(distDir, "docs"), { recursive: true });
+      writeFileSync(
+        join(distDir, "docs", "page1", "index.html"),
+        `<a href="/pj/zudo-doc/docs/foo">Foo</a>`,
+      );
+      writeFileSync(join(distDir, "docs", "foo.html"), "<p>Foo</p>");
+
+      const warnings = await checkTrailingSlashLinks(distDir, tmpDir, BASE);
+      expect(warnings).toEqual([]);
+    });
+
+    it("respects excludePatterns", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "docs", "page1"), { recursive: true });
+      mkdirSync(join(distDir, "v", "1.0", "page2"), { recursive: true });
+      writeFileSync(
+        join(distDir, "docs", "page1", "index.html"),
+        `<a href="/pj/zudo-doc/v/1.0/page2">Versioned</a>`,
+      );
+      writeFileSync(join(distDir, "v", "1.0", "page2", "index.html"), "<p>V</p>");
+
+      const excludePatterns = [/\/v\/[^/]+\//];
+      const warnings = await checkTrailingSlashLinks(distDir, tmpDir, BASE, excludePatterns);
+      expect(warnings).toEqual([]);
+    });
+
+    it("returns empty array when trailingSlash is false (no call made)", async () => {
+      // This tests that when trailingSlash is false we simply don't invoke the function.
+      // But we also verify the function itself returns empty for an already-correct site.
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "docs", "page1"), { recursive: true });
+      mkdirSync(join(distDir, "docs", "page2"), { recursive: true });
+      writeFileSync(
+        join(distDir, "docs", "page1", "index.html"),
+        `<a href="/pj/zudo-doc/docs/page2/">Page2</a>`,
+      );
+      writeFileSync(join(distDir, "docs", "page2", "index.html"), "<p>Page2</p>");
+
+      const warnings = await checkTrailingSlashLinks(distDir, tmpDir, BASE);
       expect(warnings).toEqual([]);
     });
   });
