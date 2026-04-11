@@ -82,7 +82,7 @@ const PACKAGE_MANAGERS = ["pnpm", "npm", "yarn", "bun"] as const;
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="mb-vsp-2xs text-small font-semibold text-fg">
+    <h3 className="mb-vsp-xs text-small font-semibold text-fg">
       {children}
     </h3>
   );
@@ -265,7 +265,7 @@ export default function PresetGenerator() {
   }, []);
 
   return (
-    <div className="flex flex-col gap-y-vsp-md">
+    <div className="flex flex-col gap-y-vsp-lg">
       {/* Project Name */}
       <section>
         <SectionHeading>Project Name</SectionHeading>
@@ -442,7 +442,7 @@ export default function PresetGenerator() {
       {/* Features */}
       <section>
         <SectionHeading>Features</SectionHeading>
-        <div className="flex flex-col gap-y-vsp-2xs">
+        <div className="flex flex-col gap-y-vsp-xs">
           {FEATURES.map((feat) => (
             <label
               key={feat.value}
