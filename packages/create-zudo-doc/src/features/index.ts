@@ -38,6 +38,7 @@ export const featureModules: Record<string, FeatureModule> = {
   llmsTxt: llmsTxtFeature,
   tauri: tauriFeature,
   // skillSymlinker — handled in scaffold.ts
+  // claudeSkills — handled in scaffold.ts (copies zudo-doc-* skills from monorepo)
   footer: footerFeature, // pseudo-feature: triggered by footerNavGroup or footerCopyright
   // changelog — handled in scaffold.ts
 };
