@@ -3,8 +3,12 @@
 # Triggered on every push to `main`. The pipeline:
 #   1. Builds the Astro static site (shallow clone, skips doc history)
 #   2. Builds doc history JSONs (full clone, standalone server package)
-#   3. Merges both artifacts and deploys to Cloudflare Pages (production)
+#   3. Merges both build outputs and deploys to Cloudflare Pages (production)
 #   4. Sends IFTTT notification with deploy status
+#
+# Inter-job data sharing uses actions/cache (not upload-artifact) to avoid
+# Actions storage accumulation. Cache keys are scoped to github.run_id so
+# each run gets a fresh, unique cache that won't be reused by other runs.
 #
 # Concurrency: only one production deploy runs at a time.
 # We do NOT cancel in-progress runs -- the earlier deploy should finish.
@@ -56,12 +60,11 @@ jobs:
         env:
           SKIP_DOC_HISTORY: "1"
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+      - name: Cache site build output
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          name: dist-out
           path: dist/
-          retention-days: 1
+          key: dist-${{ github.run_id }}
 
   # ---------------------------------------------------------------------------
   # Job 2: Build doc history JSONs (full clone — only this job needs it)
@@ -97,12 +100,11 @@ jobs:
             --locale ja:../../src/content/docs-ja \
             --out-dir ../../doc-history-out
 
-      - name: Upload doc history artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+      - name: Cache doc history output
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          name: doc-history-out
           path: doc-history-out/
-          retention-days: 1
+          key: doc-history-${{ github.run_id }}
 
   # ---------------------------------------------------------------------------
   # Job 3: Deploy to Cloudflare Pages (production)
@@ -114,27 +116,27 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Download site artifact
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+      - name: Restore site build cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          name: dist-out
-          path: dist-out/
+          path: dist/
+          key: dist-${{ github.run_id }}
+          fail-on-cache-miss: true
 
-      - name: Download doc history artifact
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+      - name: Restore doc history cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          name: doc-history-out
           path: doc-history-out/
-        continue-on-error: true
+          key: doc-history-${{ github.run_id }}
 
       - name: Prepare deploy directory
         run: |
           mkdir -p deploy/pj/zudo-doc
           # When aiAssistant is enabled, Astro outputs static files to dist/client/
-          if [ -d dist-out/client ]; then
-            cp -r dist-out/client/. deploy/pj/zudo-doc/
+          if [ -d dist/client ]; then
+            cp -r dist/client/. deploy/pj/zudo-doc/
           else
-            cp -r dist-out/. deploy/pj/zudo-doc/
+            cp -r dist/. deploy/pj/zudo-doc/
           fi
           # Merge doc history JSONs into the deploy directory (if available)
           if [ -d doc-history-out ] && [ "$(ls -A doc-history-out 2>/dev/null)" ]; then
