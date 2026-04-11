@@ -627,6 +627,52 @@ describe("scaffold — skillSymlinker feature", () => {
   });
 });
 
+describe("scaffold — claudeSkills feature", () => {
+  it("ships user-facing zudo-doc-* skills when enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-claude-skills-on",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "claudeSkills"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    // The three user-facing skill dirs are present
+    for (const skill of [
+      "zudo-doc-design-system",
+      "zudo-doc-translate",
+      "zudo-doc-version-bump",
+    ]) {
+      expect(
+        await fs.pathExists(
+          projectPath("test-claude-skills-on", `.claude/skills/${skill}/SKILL.md`),
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("does NOT ship zudo-doc-* skills when disabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-claude-skills-off",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-claude-skills-off",
+          ".claude/skills/zudo-doc-design-system",
+        ),
+      ),
+    ).toBe(false);
+  });
+});
+
 describe("scaffold — tauri feature", () => {
   it("generates src-tauri/ and find-in-page when tauri is enabled", async () => {
     const choices: UserChoices = {

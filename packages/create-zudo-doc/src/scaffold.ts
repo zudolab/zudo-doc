@@ -98,6 +98,24 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     }
   }
 
+  // 2b. Copy user-facing Claude Code skills when enabled
+  // Ships the curated zudo-doc-* skills (design-system, translate, version-bump)
+  // from the monorepo's .claude/skills/ into the user's .claude/skills/.
+  if (choices.features.includes("claudeSkills")) {
+    const userFacingSkills = [
+      "zudo-doc-design-system",
+      "zudo-doc-translate",
+      "zudo-doc-version-bump",
+    ];
+    for (const skill of userFacingSkills) {
+      const skillSrc = path.join(monorepoRoot, ".claude/skills", skill);
+      const skillDest = path.join(targetDir, ".claude/skills", skill);
+      if (await fs.pathExists(skillSrc)) {
+        await fs.copy(skillSrc, skillDest);
+      }
+    }
+  }
+
   const defaultLang = choices.defaultLang;
   const escapedName = capitalize(choices.projectName.replace(/-/g, " "));
 
