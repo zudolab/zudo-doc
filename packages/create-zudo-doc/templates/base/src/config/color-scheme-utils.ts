@@ -18,6 +18,11 @@ export const SEMANTIC_DEFAULTS: Record<string, number> = {
   mermaidLine: 8,
   mermaidLabelBg: 10,
   mermaidNoteBg: 0,
+  d2NodeBg: 9,
+  d2Text: 11,
+  d2Stroke: 5,
+  d2Line: 8,
+  d2Accent: 14,
 };
 
 export const SEMANTIC_CSS_NAMES: Record<string, string> = {
@@ -36,6 +41,11 @@ export const SEMANTIC_CSS_NAMES: Record<string, string> = {
   mermaidLine: "--zd-mermaid-line",
   mermaidLabelBg: "--zd-mermaid-label-bg",
   mermaidNoteBg: "--zd-mermaid-note-bg",
+  d2NodeBg: "--zd-d2-node-bg",
+  d2Text: "--zd-d2-text",
+  d2Stroke: "--zd-d2-stroke",
+  d2Line: "--zd-d2-line",
+  d2Accent: "--zd-d2-accent",
 };
 
 export const lightDarkPairings = [
@@ -83,6 +93,11 @@ export function resolveSemanticColors(scheme: ColorScheme) {
     mermaidLine: resolveColor(scheme.semantic?.mermaidLine, p, p[8]),
     mermaidLabelBg: resolveColor(scheme.semantic?.mermaidLabelBg, p, p[10]),
     mermaidNoteBg: resolveColor(scheme.semantic?.mermaidNoteBg, p, p[0]),
+    d2NodeBg: resolveColor(scheme.semantic?.d2NodeBg, p, p[9]),
+    d2Text: resolveColor(scheme.semantic?.d2Text, p, p[11]),
+    d2Stroke: resolveColor(scheme.semantic?.d2Stroke, p, p[5]),
+    d2Line: resolveColor(scheme.semantic?.d2Line, p, p[8]),
+    d2Accent: resolveColor(scheme.semantic?.d2Accent, p, p[14]),
   };
 }
 
@@ -111,6 +126,11 @@ export function schemeToCssPairs(scheme: ColorScheme): [string, string][] {
     ["--zd-mermaid-line", sem.mermaidLine],
     ["--zd-mermaid-label-bg", sem.mermaidLabelBg],
     ["--zd-mermaid-note-bg", sem.mermaidNoteBg],
+    ["--zd-d2-node-bg", sem.d2NodeBg],
+    ["--zd-d2-text", sem.d2Text],
+    ["--zd-d2-stroke", sem.d2Stroke],
+    ["--zd-d2-line", sem.d2Line],
+    ["--zd-d2-accent", sem.d2Accent],
   ];
 }
 

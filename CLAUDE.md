@@ -8,6 +8,7 @@ Minimal documentation framework built with Astro 6, MDX, Tailwind CSS v4, and Pr
 - **MDX** — via `@astrojs/mdx`, content directory configurable via `docsDir` setting
 - **Tailwind CSS v4** — via `@tailwindcss/vite` (not `@astrojs/tailwind`)
 - **Preact** — for interactive islands only (TOC scroll spy, sidebar toggle, collapsible categories), with compat mode for React API compatibility
+- **D2** — diagram language with per-element styling, rendered via `@terrastruct/d2` WASM (dev) and `astro-d2` (build)
 - **Shiki** — built-in code highlighting, theme set from active color scheme
 - **TypeScript** — strict mode via `astro/tsconfigs/strict`
 

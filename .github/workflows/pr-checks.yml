@@ -90,12 +90,11 @@ jobs:
       - name: Check links
         run: pnpm run check:links
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+      - name: Save build output to cache
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          name: dist-out
           path: dist/
-          retention-days: 1
+          key: build-site-${{ github.run_id }}
 
   # ---------------------------------------------------------------------------
   # Job 3: Build doc history JSONs (full clone — only this job needs it)
@@ -131,12 +130,11 @@ jobs:
             --locale ja:../../src/content/docs-ja \
             --out-dir ../../doc-history-out
 
-      - name: Upload doc history artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+      - name: Save doc history to cache
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          name: doc-history-out
           path: doc-history-out/
-          retention-days: 1
+          key: build-history-${{ github.run_id }}
 
   # ---------------------------------------------------------------------------
   # Job 4: E2E & smoke tests
@@ -193,27 +191,29 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Download site artifact
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+      - name: Restore build output from cache
+        id: restore-site
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          name: dist-out
-          path: dist-out/
+          path: dist/
+          key: build-site-${{ github.run_id }}
+          fail-on-cache-miss: true
 
-      - name: Download doc history artifact
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+      - name: Restore doc history from cache
+        id: restore-history
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          name: doc-history-out
           path: doc-history-out/
-        continue-on-error: true
+          key: build-history-${{ github.run_id }}
 
       - name: Prepare deploy directory
         run: |
           mkdir -p deploy/pj/zudo-doc
           # When aiAssistant is enabled, Astro outputs static files to dist/client/
-          if [ -d dist-out/client ]; then
-            cp -r dist-out/client/. deploy/pj/zudo-doc/
+          if [ -d dist/client ]; then
+            cp -r dist/client/. deploy/pj/zudo-doc/
           else
-            cp -r dist-out/. deploy/pj/zudo-doc/
+            cp -r dist/. deploy/pj/zudo-doc/
           fi
           # Merge doc history JSONs into the deploy directory (if available)
           if [ -d doc-history-out ] && [ "$(ls -A doc-history-out 2>/dev/null)" ]; then
@@ -227,11 +227,18 @@ jobs:
         run: |
           PR_NUMBER="${{ github.event.pull_request.number }}"
 
-          npx wrangler@4 pages deploy deploy \
-            --project-name=zudo-doc \
-            --branch="pr-${PR_NUMBER}" \
-            --commit-hash="${GITHUB_SHA}" \
-            --commit-message="Preview: PR #${PR_NUMBER}"
+          for attempt in 1 2 3; do
+            if npx wrangler@4 pages deploy deploy \
+              --project-name=zudo-doc \
+              --branch="pr-${PR_NUMBER}" \
+              --commit-hash="${GITHUB_SHA}" \
+              --commit-message="Preview: PR #${PR_NUMBER}"; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then exit 1; fi
+            echo "::warning::Deploy attempt $attempt failed, retrying in 10s..."
+            sleep 10
+          done
 
           DEPLOY_URL="https://pr-${PR_NUMBER}.zudo-doc.pages.dev"
           echo "deploy_url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"

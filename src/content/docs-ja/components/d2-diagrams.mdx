@@ -1,0 +1,99 @@
+---
+title: D2 ダイアグラム
+description: D2ダイアグラム言語によるアーキテクチャ図、フロー図、システム図の描画機能。
+sidebar_position: 7
+---
+
+`d2` 言語を指定したフェンスコードブロックでダイアグラムを描画できます。D2はMermaidと比較して、より柔軟なレイアウト制御と要素ごとのスタイリングが可能です。
+
+## 基本的なフロー
+
+```d2
+web: Web App
+api: API Server
+db: Database
+
+web -> api: HTTP requests
+api -> db: SQL queries
+db -> api: Results
+api -> web: JSON responses
+```
+
+## アーキテクチャ図
+
+```d2
+direction: right
+
+frontend: Frontend {
+  react: React App
+  next: Next.js SSR
+}
+
+backend: Backend {
+  api: REST API
+  worker: Background Worker
+}
+
+data: Data Layer {
+  pg: PostgreSQL
+  redis: Redis Cache
+}
+
+frontend.react -> backend.api: API calls
+frontend.next -> backend.api: SSR data fetch
+backend.api -> data.pg: Queries
+backend.api -> data.redis: Cache
+backend.worker -> data.pg: Batch jobs
+```
+
+## スタイル付きノード
+
+D2は `style` プロパティによる要素ごとのスタイリングをサポートしています：
+
+```d2
+server: Production Server {
+  style.fill: "#1a1a2e"
+  style.stroke: "#e94560"
+  style.font-color: "#eaeaea"
+  style.border-radius: 8
+}
+
+client: Browser Client {
+  style.fill: "#16213e"
+  style.stroke: "#0f3460"
+  style.font-color: "#eaeaea"
+  style.border-radius: 8
+}
+
+client -> server: HTTPS {
+  style.stroke: "#e94560"
+  style.stroke-width: 2
+}
+```
+
+## 設定
+
+D2ダイアグラムは開発モードとビルドモードで異なるレンダリング方式を使用します：
+
+- **開発モード**: `@terrastruct/d2` WASMによるクライアントサイドレンダリング
+- **ビルドモード**: `astro-d2` による静的SVG生成
+
+`src/config/settings.ts` での設定：
+
+```ts
+d2: true,                // D2サポートを有効化
+d2BuildMode: "wasm",     // "wasm"（CLIインストール不要）または "cli"（D2 CLIが必要）
+```
+
+### レイアウトエンジン
+
+D2はWASM互換の2つのレイアウトエンジンをサポートしています：
+
+- **`elk`**（デフォルト）— 階層的レイアウト、ほとんどの図に適合
+- **`dagre`** — シンプルなレイアウト、高速なレンダリング
+
+<Note>
+
+`tala` レイアウトエンジンはD2 CLIでのみ利用可能で、WASMモードでは使用できません。`d2BuildMode: "wasm"` の場合、`elk` と `dagre` のみサポートされます。
+
+</Note>

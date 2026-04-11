@@ -234,6 +234,10 @@ function generatePackageJson(choices: UserChoices) {
     deps["diff"] = "^8.0.3";
   }
 
+  // D2 deps are always included (setting controls activation, not installation)
+  deps["astro-d2"] = "^0.10.0";
+  deps["@terrastruct/d2"] = "^0.1.33";
+
   const scripts: Record<string, string> = {
     dev: "astro dev",
     build: "astro build",

@@ -32,6 +32,11 @@ export interface ColorScheme {
     mermaidLine?: ColorRef;
     mermaidLabelBg?: ColorRef;
     mermaidNoteBg?: ColorRef;
+    d2NodeBg?: ColorRef;
+    d2Text?: ColorRef;
+    d2Stroke?: ColorRef;
+    d2Line?: ColorRef;
+    d2Accent?: ColorRef;
   };
 }
 

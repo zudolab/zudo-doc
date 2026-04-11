@@ -75,6 +75,8 @@ export function generateSettingsFile(choices: UserChoices): string {
   }
 
   lines.push(`  mermaid: true,`);
+  lines.push(`  d2: false,`);
+  lines.push(`  d2BuildMode: "wasm" as "wasm" | "cli",`);
   lines.push(`  sitemap: false,`);
   lines.push(`  docMetainfo: false,`);
   lines.push(`  docTags: false,`);

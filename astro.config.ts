@@ -24,6 +24,11 @@ import { rehypeMermaid } from "./src/plugins/rehype-mermaid";
 import { rehypeStripMdExtension } from "./src/plugins/rehype-strip-md-extension";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import { rehypeD2 } from "./src/plugins/rehype-d2";
+import { remarkD2Client } from "./src/plugins/remark-d2-client";
+import { remarkD2ThemeInject } from "./src/plugins/remark-d2-theme-inject";
+
+const isDev = import.meta.env?.DEV ?? process.argv.includes("dev");
 
 const activeScheme = colorSchemes[settings.colorScheme];
 const shikiTheme = activeScheme?.shikiTheme ?? "dracula";
@@ -50,12 +55,25 @@ const shikiConfig = settings.colorMode
       transformers: shikiTransformers,
     };
 
+// astro-d2 is conditionally imported only for build mode
+const astroD2Integration = settings.d2 && !isDev
+  ? [(await import("astro-d2")).default({
+      theme: { default: "0", dark: "200" },
+      layout: "elk",
+      pad: 20,
+      // skipGeneration only for CLI mode with committed SVGs; WASM always generates
+      ...(settings.d2BuildMode === "cli" ? { skipGeneration: !!process.env.CI } : {}),
+      ...(settings.d2BuildMode === "wasm" ? { experimental: { useD2js: true } } : {}),
+    })]
+  : [];
+
 export default defineConfig({
   output: "static",
   trailingSlash: settings.trailingSlash ? "always" : "never",
   ...(settings.aiAssistant ? { adapter: node({ mode: "standalone" }) } : {}),
   base: settings.base,
   integrations: [
+    ...astroD2Integration,
     mdx(),
     preact({ compat: true }),
     searchIndexIntegration(),
@@ -79,6 +97,10 @@ export default defineConfig({
   markdown: {
     shikiConfig,
     remarkPlugins: [
+      // D2: In dev mode, transform code blocks for client-side WASM rendering (before Shiki)
+      // In build mode, inject theme overrides before astro-d2 processes blocks
+      ...(settings.d2 && isDev ? [remarkD2Client] : []),
+      ...(settings.d2 && !isDev ? [remarkD2ThemeInject] : []),
       remarkDirective, // Must run before remarkAdmonitions
       remarkAdmonitions,
       [remarkResolveMarkdownLinks, {
@@ -101,6 +123,7 @@ export default defineConfig({
       rehypeHeadingLinks, // Must run before Astro's built-in heading ID plugin
       rehypeStripMdExtension, // Strips .md/.mdx from raw HTML <a> tags (remark plugin handles mdast links)
       ...(settings.mermaid ? [rehypeMermaid] : []),
+      ...(settings.d2 ? [rehypeD2] : []),
       ...(settings.math ? [rehypeKatex] : []),
     ],
   },
