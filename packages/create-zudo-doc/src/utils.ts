@@ -1,4 +1,6 @@
 import { execSync } from "child_process";
+import fs from "fs-extra";
+import path from "path";
 
 export function installDependencies(dir: string, pm: string): void {
   const commands: Record<string, string> = {
@@ -31,7 +33,6 @@ export async function patchFile(
   filePath: string,
   replacements: [RegExp, string][],
 ): Promise<void> {
-  const fs = await import("fs-extra");
   if (!(await fs.pathExists(filePath))) return;
   let content = await fs.readFile(filePath, "utf-8");
   for (const [pattern, replacement] of replacements) {
@@ -45,7 +46,6 @@ export async function patchDefaultLang(
   targetDir: string,
   lang: string,
 ): Promise<void> {
-  const path = await import("path");
   const label = getLangLabel(lang);
 
   await patchFile(path.join(targetDir, "src/config/i18n.ts"), [
