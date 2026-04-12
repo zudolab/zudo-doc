@@ -24,6 +24,7 @@ import { rehypeMermaid } from "./src/plugins/rehype-mermaid";
 import { rehypeStripMdExtension } from "./src/plugins/rehype-strip-md-extension";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import remarkCjkFriendly from "remark-cjk-friendly";
 
 const activeScheme = colorSchemes[settings.colorScheme];
 const shikiTheme = activeScheme?.shikiTheme ?? "dracula";
@@ -95,6 +96,7 @@ export default defineConfig({
         onBrokenLinks: settings.onBrokenMarkdownLinks,
       }],
       ...(settings.math ? [remarkMath] : []),
+      ...(settings.cjkFriendly ? [remarkCjkFriendly] : []),
     ],
     rehypePlugins: [
       rehypeCodeTitle,
