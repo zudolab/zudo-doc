@@ -1,0 +1,67 @@
+---
+title: CJK-Friendly Markdown
+sidebar_position: 4
+description: Fix bold/italic rendering near CJK punctuation
+---
+
+## The Problem
+
+Standard CommonMark has a known issue with emphasis (bold and italic) adjacent to CJK (Chinese, Japanese, Korean) punctuation. Consider this Markdown source:
+
+```md
+**テスト。**テスト
+```
+
+Without the fix, this renders literally as `**テスト。**テスト` — the bold markers are not recognized. The same problem affects other CJK punctuation characters and also applies to italic (`*` and `_`).
+
+## Root Cause
+
+The CommonMark spec classifies certain characters as "Unicode punctuation" for the purpose of emphasis parsing. CJK punctuation such as `。` (ideographic period) falls into this category. The spec's flanking rules then prevent an emphasis delimiter from opening when it is directly followed by punctuation, which means the closing `**` cannot match the opening `**`.
+
+Affected characters include, but are not limited to:
+
+| Character | Description |
+|-----------|-------------|
+| `。` | Ideographic full stop |
+| `、` | Ideographic comma |
+| `」` | Right corner bracket (closing) |
+| `）` | Fullwidth right parenthesis |
+| `』` | White right corner bracket |
+| `】` | Right black lenticular bracket |
+| `》` | Right double angle bracket |
+
+Any CJK closing punctuation appearing immediately before `**`, `*`, `__`, or `_` can trigger the issue.
+
+## How remark-cjk-friendly Fixes It
+
+The [`remark-cjk-friendly`](https://github.com/tats-u/remark-cjk-friendly) plugin patches the emphasis parsing rules in `micromark` so that CJK punctuation is **not** treated as Unicode punctuation for flanking detection. This lets bold and italic work correctly when adjacent to CJK text, matching the intuitive expectation.
+
+### Before and After
+
+Input Markdown:
+
+```md
+**テスト。**テスト
+```
+
+| | Output |
+|---|--------|
+| Without plugin | `**テスト。**テスト` (rendered literally) |
+| With plugin | **テスト。**テスト (bold applied correctly) |
+
+The same fix applies to italic markers and all affected CJK punctuation characters.
+
+## Enabling and Disabling
+
+The plugin is controlled by the `cjkFriendly` setting in `src/config/settings.ts`:
+
+```ts
+export const settings = {
+  // ...
+  cjkFriendly: true,   // set to false to disable
+};
+```
+
+When `cjkFriendly` is `true` (the default), `remark-cjk-friendly` is added to the MDX remark plugin chain automatically. Set it to `false` if your content is English-only and you prefer the standard CommonMark behavior.
+
+You can also configure this option when scaffolding a new project with the [Setup Preset Generator](/docs/getting-started/setup-preset-generator) or the [create-zudo-doc CLI](/docs/reference/create-zudo-doc) using `--cjk-friendly` / `--no-cjk-friendly`.

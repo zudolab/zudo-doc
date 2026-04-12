@@ -243,6 +243,7 @@ export default function PresetGenerator() {
     defaultMode: "dark",
     respectPrefersColorScheme: true,
     features: FEATURES.filter((f) => f.default).map((f) => f.value),
+    cjkFriendly: true,
     packageManager: "pnpm",
   });
 
@@ -466,6 +467,22 @@ export default function PresetGenerator() {
             AI Assistant (under development)
           </label>
         </div>
+      </section>
+
+      {/* CJK Friendly */}
+      <section>
+        <SectionHeading>Markdown Options</SectionHeading>
+        <label className="flex items-center gap-x-hsp-xs text-small text-fg">
+          <input
+            type="checkbox"
+            checked={state.cjkFriendly}
+            onChange={(e) =>
+              update("cjkFriendly", (e.target as HTMLInputElement).checked)
+            }
+            className="accent-accent"
+          />
+          CJK-friendly bold/italic (for Japanese, Chinese, Korean content)
+        </label>
       </section>
 
       {/* Package Manager */}
