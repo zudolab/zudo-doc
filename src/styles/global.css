@@ -311,12 +311,12 @@ body {
 
 .zd-content :where(ul) {
   list-style-type: disc;
-  padding-left: var(--spacing-hsp-xl);
+  padding-left: calc(var(--spacing-hsp-xl) + 4px);
 }
 
 .zd-content :where(ol) {
   list-style-type: decimal;
-  padding-left: var(--spacing-hsp-xl);
+  padding-left: calc(var(--spacing-hsp-xl) + 4px);
 }
 
 .zd-content :where(li) {
