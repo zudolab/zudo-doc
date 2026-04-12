@@ -265,6 +265,11 @@ body {
   margin-top: 0;
 }
 
+/* Flow spacing inside nested sections (e.g., preset generator) */
+.zd-content .zd-preset-gen :where(section) > :where(* + *) {
+  margin-top: var(--flow-space, var(--spacing-vsp-md));
+}
+
 /* ── Heading auto-links ── */
 
 .zd-content :where(h2, h3, h4, h5, h6) .hash-link {
