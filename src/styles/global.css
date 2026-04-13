@@ -265,9 +265,23 @@ body {
   margin-top: 0;
 }
 
+/* astro-island uses display:contents which absorbs margin — give it a box */
+.zd-content > :where(astro-island) {
+  display: block;
+}
+
 /* Flow spacing inside nested sections (e.g., preset generator) */
 .zd-content .zd-preset-gen :where(section) > :where(* + *) {
   margin-top: var(--flow-space, var(--spacing-vsp-md));
+}
+
+/* Reset prose heading decorations inside preset generator */
+.zd-preset-gen :where(h3) {
+  font-size: var(--text-small);
+  font-weight: var(--font-weight-semibold);
+  padding-top: 0;
+  border-top: none;
+  border-image: none;
 }
 
 /* ── Heading auto-links ── */
