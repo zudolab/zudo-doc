@@ -7,7 +7,7 @@ Minimal documentation framework built with Astro 6, MDX, Tailwind CSS v4, and Pr
 - **Astro 6** — static site generator with Content Collections
 - **MDX** — via `@astrojs/mdx`, content directory configurable via `docsDir` setting
 - **Tailwind CSS v4** — via `@tailwindcss/vite` (not `@astrojs/tailwind`)
-- **Preact** — for interactive islands only (TOC scroll spy, sidebar toggle, collapsible categories), with compat mode for React API compatibility
+- **Preact** — for interactive islands (TOC scroll spy, sidebar toggle, collapsible categories) and server-rendered content typography components, with compat mode for React API compatibility
 - **Shiki** — built-in code highlighting, theme set from active color scheme
 - **TypeScript** — strict mode via `astro/tsconfigs/strict`
 
@@ -34,7 +34,8 @@ packages/
 
 src/
 ├── components/          # Astro + Preact components
-│   └── admonitions/     # Note, Tip, Info, Warning, Danger
+│   ├── admonitions/     # Note, Tip, Info, Warning, Danger
+│   └── content/         # MDX element overrides (server-rendered, no client JS)
 ├── config/              # Settings, color schemes
 ├── content/
 │   ├── docs/            # English MDX content
@@ -56,6 +57,7 @@ src/
 - Use **Preact islands** (`client:load`) only when client-side interactivity is needed
 - Preact runs in compat mode (`@astrojs/preact` with `compat: true`), so components can use React-style imports and APIs
 - Current Preact islands: `toc.tsx`, `mobile-toc.tsx`, `sidebar-toggle.tsx`, `sidebar-tree.tsx`, `theme-toggle.tsx`, `doc-history.tsx`, `color-tweak-panel.tsx`, `color-tweak-export-modal.tsx`
+- Content typography components (`src/components/content/`): Preact function components (no `client:` directive — server-rendered, zero JS) that override HTML elements in MDX via `<Content components={...} />`. Includes: headings (h2-h4), paragraph, link, strong, blockquote, lists (ul/ol), table.
 
 ### Content Collections
 
