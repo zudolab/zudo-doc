@@ -1,0 +1,111 @@
+---
+title: デプロイ
+description: GitHub Actions CI/CDを使用してzudo-docサイトをCloudflare Pagesにデプロイする。
+sidebar_position: 18
+---
+
+## 概要
+
+zudo-docは完全な静的サイトジェネレーターです。`pnpm build`の出力はHTML、CSS、JavaScriptファイルのディレクトリであり、どこでもデプロイできます。デフォルトのデプロイ先は**Cloudflare Pages**で、CI/CDの自動化にはGitHub Actionsを使用します。
+
+CIパイプラインは合計ビルド時間を短縮するために並列ジョブに分割されています。サイト生成とドキュメント履歴の抽出は独立したジョブとして実行され、デプロイ前にマージされます。
+
+## Cloudflare Pages
+
+ビルドされたサイトは`wrangler pages deploy`を使用してCloudflare Pagesにデプロイされます。デプロイアーティファクトには以下が含まれます：
+
+- Astroのビルド出力（`dist/`）
+- 事前生成されたdocヒストリーJSONファイル（`docHistory`が有効な場合）
+- `/`からサイトのベースパスへのリダイレクトルール
+
+<Info>
+
+`/`からのリダイレクトはビルド出力に含まれる静的な`_redirects`ファイルです。Cloudflare Pagesがネイティブに処理するため、Workerやサーバーロジックは不要です。
+
+</Info>
+
+## CIパイプラインの構造
+
+プロジェクトでは2つのGitHub Actionsワークフローを使用します。
+
+### 本番環境（`main-deploy.yml`）
+
+`main`へのプッシュでトリガーされます。4つのジョブが実行されます：
+
+1. **build-site** — シャロークローン（`fetch-depth: 1`）、`SKIP_DOC_HISTORY=1 pnpm build`でAstroサイトをビルド
+2. **build-history** — フルクローン（`fetch-depth: 0`）、`@zudo-doc/doc-history-server generate`を実行してすべてのコンテンツファイルのgit履歴を事前抽出
+3. **deploy** — サイトと履歴のアーティファクトをマージし、Cloudflare Pages（本番環境）にデプロイ
+4. **notify** — デプロイステータスをIFTTTウェブフックで通知
+
+**コンカレンシー:** `group: production-deploy, cancel-in-progress: false` — 先行するデプロイはキャンセルされずに完了が許可されます。
+
+### PRチェック（`pr-checks.yml`）
+
+`main`を対象としたプルリクエストでトリガーされます。5つのジョブが実行されます：
+
+1. **typecheck** — `pnpm check`を実行（Astro型チェック）
+2. **build-site** — シャロークローン、`SKIP_DOC_HISTORY=1 pnpm build`、その後`check:links`
+3. **build-history** — フルクローン、docヒストリーの生成
+4. **e2e** — Playwrightエンドツーエンドテストを実行（フルクローン、`SKIP_DOC_HISTORY`なしで履歴をインラインに埋め込み）
+5. **preview** — アーティファクトをマージしてCloudflare Pagesにプレビューをデプロイ、PRコメントとしてURLを投稿
+
+**コンカレンシー:** `group: pr-checks-{pr-number}, cancel-in-progress: true` — 古い実行はCIの消費を節約するためにキャンセルされます。
+
+### プレビューデプロイ
+
+各PRは以下のURLにプレビューデプロイを取得します：
+
+```
+https://pr-{number}.zudo-doc.pages.dev
+```
+
+URLは**preview**ジョブによってPRのコメントとして自動的に投稿されます。
+
+## SKIP_DOC_HISTORY
+
+`SKIP_DOC_HISTORY=1`が設定されると、Astroインテグレーションはビルド中のインライン履歴生成をスキップします。このフラグが必要な理由は、履歴生成にフルgitクローンが必要でありすべてのコミットを走査するため、メインビルドジョブ内で実行するには時間がかかりすぎるためです。
+
+| コンテキスト | 値 | 理由 |
+|---|---|---|
+| CI `build-site`ジョブ | `SKIP_DOC_HISTORY=1` | 履歴は独立した`build-history`ジョブが生成する |
+| CI `e2e`ジョブ | 未設定 | E2Eテストはインラインで履歴機能を検証する |
+| ローカル`pnpm build` | 未設定 | 履歴はビルド出力に直接埋め込まれる |
+
+<Tip>
+
+`SKIP_DOC_HISTORY=1`なしでローカルで`pnpm build`を実行すると、履歴生成がインラインで実行されます。遅くなりますが、独立した履歴アーティファクトなしで動作する自己完結型の`dist/`が生成されます。
+
+</Tip>
+
+## ジョブ間のデータ共有
+
+ビルドアーティファクトは`actions/upload-artifact`ではなく**`actions/cache`**を使用してジョブ間で共有されます。キャッシュキーはクロスラン汚染を防ぐために`github.run_id`にスコープされています：
+
+```yaml
+key: dist-${{ github.run_id }}
+key: doc-history-${{ github.run_id }}
+```
+
+**deploy**（または**preview**）ジョブは両方のキャッシュを復元し、`wrangler pages deploy`を呼び出す前に`dist/`ディレクトリをマージします。
+
+<Note>
+
+ジョブ間のデータ転送に`actions/cache`を使用すること（アーティファクトではなく）は、大きなZIPアーカイブのアップロードとダウンロードのオーバーヘッドを回避します。キャッシュエントリは一時的なイントラランデータに対してより効率的です。
+
+</Note>
+
+## 必要なシークレット
+
+リポジトリの**Settings → Secrets and variables → Actions**で設定します：
+
+| シークレット | 説明 |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | Pagesデプロイ権限を持つCloudflare APIトークン |
+| `CLOUDFLARE_ACCOUNT_ID` | CloudflareアカウントID |
+| `IFTTT_PROD_NOTIFY` | デプロイ通知用のIFTTTウェブフックURL（オプション） |
+
+<Warning>
+
+`CLOUDFLARE_API_TOKEN`には**Cloudflare Pages: Edit**権限が必要です。アカウント全体へのアクセス権限を付与するのではなく、特定のPagesプロジェクトにスコープすることを推奨します。
+
+</Warning>
