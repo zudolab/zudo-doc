@@ -123,6 +123,22 @@ trailingSlash: true,
 
 有効にすると、ミドルウェアがトレイリングスラッシュなしのURLをトレイリングスラッシュ付きのURLへ**301リダイレクト**します（例：`/docs/guides` → `/docs/guides/`）。Astroの開発サーバーはこのリダイレクトを自動的に行わないため、開発時でも一貫したURLを保証します。静的アセット（`.js`、`.css`、`.png`などの拡張子を持つファイル）やAstro内部パス（`/_astro/`、`/_image`）はリダイレクトの対象外です。
 
+### onBrokenMarkdownLinks
+
+ビルド中に壊れた内部マークダウンリンクをどのように処理するかを制御します。zudo-docのリンクリゾルバープラグインが解決する相対 `[テキスト](./page.mdx)` リンクに適用されます。
+
+- `"warn"` — 警告をログに出力しますが、ビルドは継続します
+- `"error"` — エラーをスローしてビルドを失敗させます
+- `"ignore"` — 壊れたリンクを出力なしで無視します
+
+型：`"warn" | "error" | "ignore"`
+
+デフォルト：`"warn"`
+
+```ts
+onBrokenMarkdownLinks: "error", // 壊れたリンクでビルドを失敗させる
+```
+
 ### docsDir
 
 英語ドキュメントのMDXファイルが格納されるディレクトリパス（プロジェクトルートからの相対パス）。Astroの`glob()`ローダーを使用するため、任意のディレクトリを指定できます。
@@ -153,6 +169,43 @@ locales: {
 - Astroコンテンツコレクション（`docs-{code}`）を作成
 - Astroのi18nルーティングにロケールを登録
 - 言語切り替えに追加
+
+### versions
+
+マルチバージョンドキュメントを設定します。`VersionConfig`オブジェクトの配列を設定すると、zudo-docはバージョン管理されたコンテンツコレクションを作成し、サイドバーにバージョン切り替えを追加します。各バージョンのセクションは`/v/{slug}/docs/`でアクセスできます。バージョン管理を無効にするには`false`を設定します。
+
+型：`VersionConfig[] | false`
+
+デフォルト：`false`
+
+各`VersionConfig`オブジェクトは以下のプロパティを受け入れます：
+
+| プロパティ | 型 | 説明 |
+|----------|------|-------------|
+| `slug` | string | URLパスに使用するバージョン識別子（例：`"1.0"`、`"v1"`） |
+| `label` | string | バージョン切り替えに表示されるラベル（例：`"1.0.0"`） |
+| `docsDir` | string | このバージョンの英語ドキュメントのコンテンツディレクトリパス |
+| `locales` | Record（オプション） | このバージョンのロケール別コンテンツディレクトリ（`{ ja: { dir: "..." } }`） |
+| `banner` | `"unmaintained"` \| `"unreleased"` \| `false`（オプション） | このバージョンのすべてのページに表示されるバナー |
+
+```ts
+versions: [
+  {
+    slug: "1.0",
+    label: "1.0.0",
+    docsDir: "src/content/docs-v1",
+    banner: "unmaintained",
+  },
+],
+// またはバージョン管理を無効化:
+versions: false,
+```
+
+<Tip>
+
+バージョン切り替えの仕組みやメンテナンス終了・未リリースバージョンのバナー設定については[バージョン管理ガイド](/ja/docs/guides/versioning)を参照してください。
+
+</Tip>
 
 ### siteName
 
@@ -188,6 +241,18 @@ KaTeX数式レンダリングを有効にします。`true`の場合、インラ
 
 デフォルト：`true`
 
+### cjkFriendly
+
+CJKフレンドリーなタイポグラフィ調整を有効にします。`true`の場合、ドキュメント全体の中国語、日本語、韓国語テキストに対して改善された改行およびワードラップの動作を適用します。
+
+型：`boolean`
+
+デフォルト：`false`
+
+```ts
+cjkFriendly: true,
+```
+
 ### editUrl
 
 「このページを編集」リンクのベースURL。完全なURLは`editUrl + contentDir + "/" + entryId`として構築されます。編集リンクを無効にするには`false`に設定します。
@@ -205,6 +270,18 @@ editUrl: false,
 ビルド時に自動`sitemap.xml`生成を有効にします。サイトマップには404を除くすべてのビルド済みHTMLページが含まれます。
 
 デフォルト：`true`
+
+### llmsTxt
+
+ビルド時に自動`llms.txt`生成を有効にします。`true`の場合、すべてのドキュメントページをタイトルと説明とともにリスト化した`llms.txt`ファイルがサイトルートに生成されます。このファイルは[llms.txt仕様](https://llmstxt.org/)に従っており、AIアシスタントがドキュメントコンテンツを発見・インデックス化するのに役立ちます。
+
+型：`boolean`
+
+デフォルト：`false`
+
+```ts
+llmsTxt: true,
+```
 
 ### docMetainfo
 
@@ -230,17 +307,87 @@ editUrl: false,
 
 </Tip>
 
+### aiAssistant
+
+AIアシスタントチャットウィジェットを有効にします。`true`の場合、ページにチャットボタンが表示され、ドキュメントに関する質問に答えるAI搭載のアシスタントが開きます。設定済みの`ai-chat-worker` Cloudflare Workerバックエンドが必要です。
+
+型：`boolean`
+
+デフォルト：`false`
+
+```ts
+aiAssistant: true,
+```
+
+### sidebarToggle
+
+サイドバー折り畳みトグルを有効にします。`true`の場合、サイドバーヘッダーのボタンでユーザーがサイドバーを完全に折り畳むことができ、コンテンツの水平スペースが広がります。折り畳み状態は`localStorage`に保存されます。
+
+型：`boolean`
+
+デフォルト：`false`
+
+```ts
+sidebarToggle: true,
+```
+
+### sidebarResizer
+
+サイドバー幅のリサイズを有効にします。`true`の場合、サイドバーの右端にドラッグハンドルが表示され、ユーザーがサイドバー幅をドラッグして調整できます。リサイズ後の幅は`localStorage`に保存されます。
+
+型：`boolean`
+
+デフォルト：`false`
+
+```ts
+sidebarResizer: true,
+```
+
 ### docHistory
 
 ドキュメントごとのgitリビジョン履歴ビューアを有効にします。`true`の場合、各ドキュメントページに**History**ボタンが表示され、ドキュメントのgitコミット履歴と行単位のdiffビューアを備えたサイドパネルが開きます。
 
-ビルド時に、すべてのコンテンツファイルのgit履歴が抽出され、JSONファイルとして`dist/doc-history/`に保存されます。開発モードでは、履歴はViteミドルウェア経由で動的に配信されます。
+開発モードでは、履歴はポート4322で動作するスタンドアロンの`@zudo-doc/doc-history-server`パッケージが配信します。本番環境では、CLIジェネレーターがCI中に静的JSONファイルを生成します。サーバーとCLIの詳細については[Doc History Serverリファレンス](/ja/docs/reference/doc-history-server)を参照してください。
 
 デフォルト：`false`（`true`に設定して有効化）
 
 <Tip>
 
 使用方法の詳細、キーボードショートカット、技術情報については[ドキュメント履歴ガイド](/ja/docs/guides/doc-history)を参照してください。
+
+</Tip>
+
+### htmlPreview
+
+`<HtmlPreview>`コンポーネントのグローバル設定です。設定すると、指定した`head`、`css`、`js`がサイト上のすべての`<HtmlPreview>` iframeに注入されます。共有フォント、デザインシステムのスタイルシート、ユーティリティスクリプトを各コンポーネントデモで繰り返すことなく読み込む際に便利です。
+
+グローバル注入を無効にするには`undefined`（デフォルト）に設定します。
+
+型：`HtmlPreviewConfig | undefined`
+
+デフォルト：`undefined`
+
+`HtmlPreviewConfig`オブジェクトは以下のプロパティを受け入れます：
+
+| プロパティ | 型 | 説明 |
+|----------|------|-------------|
+| `head` | string（オプション） | `<head>`に注入される生のHTML（例：フォントやアイコンライブラリの`<link>`タグ） |
+| `css` | string（オプション） | プリフライトリセット後に`<style>`ブロックとして注入されるCSS |
+| `js` | string（オプション） | `</body>`の前に`<script>`ブロックとして注入されるJavaScript |
+
+```ts
+htmlPreview: {
+  head: `<link rel="stylesheet" href="https://example.com/design-system.css">`,
+  css: `body { font-family: sans-serif; }`,
+  js: `console.log("HtmlPreview loaded")`,
+},
+// またはグローバル注入を無効化:
+htmlPreview: undefined,
+```
+
+<Tip>
+
+個々の`<HtmlPreview>`ブロックは、独自の`head`、`css`、または`js`プロパティを渡すことでグローバル設定を拡張できます — 値はグローバル設定に上書きではなく追加されます。
 
 </Tip>
 
@@ -266,6 +413,58 @@ claudeResources: false,
 生成される内容と仕組みの詳細については[Claude Codeリソースガイド](/ja/docs/guides/claude-resources)を参照してください。
 
 </Tip>
+
+### footer
+
+サイトフッターを設定します。`FooterConfig`オブジェクトを設定すると、リンク列とオプションの著作権テキストを含むフッターがレンダリングされます。フッターを完全に無効にするには`false`を設定します。
+
+型：`FooterConfig | false`
+
+デフォルト：`false`
+
+`FooterConfig`オブジェクトは以下を受け入れます：
+
+| プロパティ | 型 | 説明 |
+|----------|------|-------------|
+| `links` | `FooterLinkColumn[]` | フッターに表示されるリンク列の配列 |
+| `copyright` | string（オプション） | 下部に表示される著作権テキスト。HTMLをサポート |
+
+各`FooterLinkColumn`：
+
+| プロパティ | 型 | 説明 |
+|----------|------|-------------|
+| `title` | string | 列の見出し |
+| `items` | `FooterLinkItem[]` | この列のリンクの配列 |
+| `locales` | Record（オプション） | ロケール別タイトルのオーバーライド（例：`{ ja: { title: "ドキュメント" } }`） |
+
+各`FooterLinkItem`：
+
+| プロパティ | 型 | 説明 |
+|----------|------|-------------|
+| `label` | string | リンクの表示テキスト |
+| `href` | string | リンクURL |
+| `locales` | Record（オプション） | ロケール別ラベルのオーバーライド（例：`{ ja: { label: "はじめに" } }`） |
+
+```ts
+footer: {
+  links: [
+    {
+      title: "Docs",
+      locales: { ja: { title: "ドキュメント" } },
+      items: [
+        { label: "Getting Started", href: "/docs/getting-started", locales: { ja: { label: "はじめに" } } },
+      ],
+    },
+    {
+      title: "Community",
+      items: [{ label: "GitHub", href: "https://github.com/my-org/my-repo" }],
+    },
+  ],
+  copyright: `Copyright © ${new Date().getFullYear()} Your Name.`,
+},
+// またはフッターを無効化:
+footer: false,
+```
 
 ### headerNav
 
