@@ -123,6 +123,22 @@ Some hosting platforms (e.g., AWS Amplify, Cloudflare Pages) work better with tr
 
 When enabled, a middleware automatically redirects URLs without a trailing slash to their trailing-slash version with a **301 redirect** (e.g., `/docs/guides` → `/docs/guides/`). This ensures consistent URLs during development, since Astro's dev server does not perform this redirect on its own. Static assets (files with extensions like `.js`, `.css`, `.png`) and Astro internal paths (`/_astro/`, `/_image`) are excluded from the redirect.
 
+### onBrokenMarkdownLinks
+
+Controls how broken internal markdown links are handled during the build. This applies to relative `[text](./page.mdx)` links resolved by zudo-doc's link resolver plugin.
+
+- `"warn"` — logs a warning but continues the build
+- `"error"` — throws an error and fails the build
+- `"ignore"` — silently skips broken links without any output
+
+Type: `"warn" | "error" | "ignore"`
+
+Default: `"warn"`
+
+```ts
+onBrokenMarkdownLinks: "error", // fail the build on broken links
+```
+
 ### docsDir
 
 The directory path (relative to the project root) where English documentation MDX files are stored. This uses Astro's `glob()` loader, so it can point to any directory.
@@ -153,6 +169,43 @@ For each locale entry, zudo-doc automatically:
 - Creates an Astro content collection (`docs-{code}`)
 - Registers the locale in Astro's i18n routing
 - Adds it to the language switcher
+
+### versions
+
+Configures multi-version documentation. When set to an array of `VersionConfig` objects, zudo-doc creates versioned content collections and adds a version switcher to the sidebar. Each versioned section is accessible at `/v/{slug}/docs/`. Set to `false` to disable versioning.
+
+Type: `VersionConfig[] | false`
+
+Default: `false`
+
+Each `VersionConfig` object accepts:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `slug` | string | Version identifier used in the URL path (e.g., `"1.0"`, `"v1"`) |
+| `label` | string | Display label shown in the version switcher (e.g., `"1.0.0"`) |
+| `docsDir` | string | Content directory path for this version's English docs |
+| `locales` | Record (optional) | Per-locale content directories for this version (`{ ja: { dir: "..." } }`) |
+| `banner` | `"unmaintained"` \| `"unreleased"` \| `false` (optional) | Banner shown on all pages in this version |
+
+```ts
+versions: [
+  {
+    slug: "1.0",
+    label: "1.0.0",
+    docsDir: "src/content/docs-v1",
+    banner: "unmaintained",
+  },
+],
+// or disable versioning:
+versions: false,
+```
+
+<Tip>
+
+See the [Versioning guide](/docs/guides/versioning) for details on how version switching works and how to configure banners for unmaintained or unreleased versions.
+
+</Tip>
 
 ### siteName
 
@@ -188,6 +241,18 @@ Enables KaTeX math equation rendering. When `true`, inline math (`$...$`), block
 
 Default: `true`
 
+### cjkFriendly
+
+Enables CJK-friendly typography adjustments. When `true`, applies improved line-breaking and word-wrap behavior for Chinese, Japanese, and Korean text throughout the documentation.
+
+Type: `boolean`
+
+Default: `false`
+
+```ts
+cjkFriendly: true,
+```
+
 ### editUrl
 
 Base URL for "Edit this page" links. The full URL is constructed as `editUrl + contentDir + "/" + entryId`. Set to `false` to disable edit links.
@@ -205,6 +270,18 @@ editUrl: false,
 Enables automatic `sitemap.xml` generation during build. The sitemap includes all built HTML pages except 404.
 
 Default: `true`
+
+### llmsTxt
+
+Enables automatic `llms.txt` generation during build. When `true`, an `llms.txt` file is generated at the site root listing all documentation pages with their titles and descriptions. This file follows the [llms.txt specification](https://llmstxt.org/) and helps AI assistants discover and index your documentation content.
+
+Type: `boolean`
+
+Default: `false`
+
+```ts
+llmsTxt: true,
+```
 
 ### docMetainfo
 
@@ -230,6 +307,42 @@ See the [Color Tweak Panel guide](/docs/guides/color-tweak-panel) for usage deta
 
 </Tip>
 
+### aiAssistant
+
+Enables the AI assistant chat widget. When `true`, a chat button appears in the page that opens an AI-powered assistant for answering questions about your documentation. Requires a configured `ai-chat-worker` Cloudflare Worker backend.
+
+Type: `boolean`
+
+Default: `false`
+
+```ts
+aiAssistant: true,
+```
+
+### sidebarToggle
+
+Enables the sidebar collapse toggle. When `true`, a button in the sidebar header allows users to collapse the sidebar entirely, giving more horizontal space for content. The collapsed state is persisted in `localStorage`.
+
+Type: `boolean`
+
+Default: `false`
+
+```ts
+sidebarToggle: true,
+```
+
+### sidebarResizer
+
+Enables sidebar width resizing. When `true`, a drag handle appears at the sidebar's right edge, allowing users to drag and resize the sidebar width. The resized width is persisted in `localStorage`.
+
+Type: `boolean`
+
+Default: `false`
+
+```ts
+sidebarResizer: true,
+```
+
 ### docHistory
 
 Enables per-document git revision history viewer. When `true`, each doc page shows a **History** button that opens a side panel with the document's git commit history and a line-by-line diff viewer for comparing revisions.
@@ -241,6 +354,40 @@ Default: `false` (set to `true` to enable)
 <Tip>
 
 See the [Document History guide](/docs/guides/doc-history) for usage details, keyboard shortcuts, and technical information.
+
+</Tip>
+
+### htmlPreview
+
+Global configuration for the `<HtmlPreview>` component. When set, the provided `head`, `css`, and `js` are injected into every `<HtmlPreview>` iframe on the site — useful for loading shared fonts, a design system stylesheet, or utility scripts without repeating them on each component demo.
+
+Set to `undefined` (the default) to disable global injection.
+
+Type: `HtmlPreviewConfig | undefined`
+
+Default: `undefined`
+
+The `HtmlPreviewConfig` object accepts:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `head` | string (optional) | Raw HTML injected into `<head>` (e.g., `<link>` tags for fonts or icon libraries) |
+| `css` | string (optional) | CSS injected as a `<style>` block after preflight reset |
+| `js` | string (optional) | JavaScript injected as a `<script>` block before `</body>` |
+
+```ts
+htmlPreview: {
+  head: `<link rel="stylesheet" href="https://example.com/design-system.css">`,
+  css: `body { font-family: sans-serif; }`,
+  js: `console.log("HtmlPreview loaded")`,
+},
+// or disable global injection:
+htmlPreview: undefined,
+```
+
+<Tip>
+
+Individual `<HtmlPreview>` blocks can extend the global config by passing their own `head`, `css`, or `js` props — they are appended to the global values, not replaced.
 
 </Tip>
 
@@ -266,6 +413,58 @@ claudeResources: false,
 See the [Claude Resources guide](/docs/guides/claude-resources) for details on what gets generated and how it works.
 
 </Tip>
+
+### footer
+
+Configures the site footer. When set to a `FooterConfig` object, renders a footer with link columns and optional copyright text. Set to `false` to disable the footer entirely.
+
+Type: `FooterConfig | false`
+
+Default: `false`
+
+The `FooterConfig` object accepts:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `links` | `FooterLinkColumn[]` | Array of link columns displayed in the footer |
+| `copyright` | string (optional) | Copyright text shown at the bottom. HTML is supported |
+
+Each `FooterLinkColumn`:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `title` | string | Column heading |
+| `items` | `FooterLinkItem[]` | Array of links in this column |
+| `locales` | Record (optional) | Per-locale title overrides (e.g., `{ ja: { title: "ドキュメント" } }`) |
+
+Each `FooterLinkItem`:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `label` | string | Link display text |
+| `href` | string | Link URL |
+| `locales` | Record (optional) | Per-locale label overrides (e.g., `{ ja: { label: "はじめに" } }`) |
+
+```ts
+footer: {
+  links: [
+    {
+      title: "Docs",
+      locales: { ja: { title: "ドキュメント" } },
+      items: [
+        { label: "Getting Started", href: "/docs/getting-started", locales: { ja: { label: "はじめに" } } },
+      ],
+    },
+    {
+      title: "Community",
+      items: [{ label: "GitHub", href: "https://github.com/my-org/my-repo" }],
+    },
+  ],
+  copyright: `Copyright © ${new Date().getFullYear()} Your Name.`,
+},
+// or disable footer:
+footer: false,
+```
 
 ### headerNav
 
