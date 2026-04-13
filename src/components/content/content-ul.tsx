@@ -4,13 +4,13 @@ type Props = {
   [key: string]: any;
 };
 
-// 2em indent: enough room for 2-digit markers like "66." (#244)
+// 2em indent via inline style — Tailwind v4 does not generate arbitrary values from these TSX files (#244)
 export function ContentUl({ children, className, ...rest }: Props) {
   return (
     <ul
+      {...rest}
       className={`list-disc${className ? ` ${className}` : ''}`}
       style={{ paddingLeft: '2em' }}
-      {...rest}
     >
       {children}
     </ul>
