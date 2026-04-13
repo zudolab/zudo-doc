@@ -10,8 +10,8 @@ export function ContentOl({ children, className, ...rest }: Props) {
   return (
     <ol
       {...rest}
-      className={`list-decimal${className ? ` ${className}` : ''}`}
-      style={{ paddingLeft: '2em' }}
+      className={className || undefined}
+      style={{ paddingLeft: '2em', listStyleType: 'decimal' }}
     >
       {children}
     </ol>
