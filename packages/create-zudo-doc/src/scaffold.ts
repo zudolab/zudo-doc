@@ -227,6 +227,7 @@ function generatePackageJson(choices: UserChoices) {
     clsx: "^2.1.0",
     "gray-matter": "^4.0.0",
     "github-slugger": "^2.0.0",
+    "remark-cjk-friendly": "^2.0.1",
     "remark-directive": "^3.0.0",
     "unist-util-visit": "^5.1.0",
   };

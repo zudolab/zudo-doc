@@ -313,6 +313,7 @@ body {
 }
 
 /* ── Lists ── */
+/* +4px nudge: hsp-xl (24px) is slightly too tight for disc/decimal markers (#222) */
 
 .zd-content :where(ul) {
   list-style-type: disc;

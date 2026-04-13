@@ -84,8 +84,6 @@ export function buildCliCommand(state: FormState): string {
     parts.push(enabled ? `--${feat.cliFlag}` : `--no-${feat.cliFlag}`);
   }
 
-  parts.push(state.cjkFriendly ? "--cjk-friendly" : "--no-cjk-friendly");
-
   parts.push(`--pm ${pm}`);
   parts.push("--yes");
 
