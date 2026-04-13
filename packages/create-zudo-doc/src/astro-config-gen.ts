@@ -50,6 +50,7 @@ export function generateAstroConfig(choices: UserChoices): string {
     );
   }
 
+  lines.push(`import remarkCjkFriendly from "remark-cjk-friendly";`);
   lines.push(`import remarkDirective from "remark-directive";`);
   lines.push(
     `import { remarkAdmonitions } from "./src/plugins/remark-admonitions";`,
@@ -184,6 +185,7 @@ export function generateAstroConfig(choices: UserChoices): string {
   lines.push(`        trailingSlash: settings.trailingSlash,`);
   lines.push(`        onBrokenLinks: settings.onBrokenMarkdownLinks,`);
   lines.push(`      }],`);
+  lines.push(`      ...(settings.cjkFriendly ? [remarkCjkFriendly] : []),`);
   lines.push(`    ],`);
   lines.push(`    rehypePlugins: [`);
   lines.push(`      rehypeCodeTitle,`);

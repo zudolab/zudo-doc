@@ -31,6 +31,7 @@ export interface FormState {
   defaultMode: "light" | "dark";
   respectPrefersColorScheme: boolean;
   features: string[];
+  cjkFriendly: boolean;
   packageManager: string;
 }
 
@@ -51,6 +52,7 @@ export function buildJson(state: FormState): Record<string, unknown> {
   }
 
   base.features = state.features;
+  base.cjkFriendly = state.cjkFriendly;
   base.packageManager = state.packageManager;
   return base;
 }

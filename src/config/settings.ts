@@ -41,6 +41,7 @@ export const settings = {
   docTags: true,
   llmsTxt: true,
   math: true,
+  cjkFriendly: true as boolean,
   onBrokenMarkdownLinks: "warn" as "warn" | "error" | "ignore",
   aiAssistant: true as boolean,
   colorTweakPanel: true as boolean,

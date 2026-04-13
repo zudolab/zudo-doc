@@ -265,6 +265,11 @@ body {
   margin-top: 0;
 }
 
+/* Flow spacing inside nested sections (e.g., preset generator) */
+.zd-content .zd-preset-gen :where(section) > :where(* + *) {
+  margin-top: var(--flow-space, var(--spacing-vsp-md));
+}
+
 /* ── Heading auto-links ── */
 
 .zd-content :where(h2, h3, h4, h5, h6) .hash-link {
@@ -308,15 +313,16 @@ body {
 }
 
 /* ── Lists ── */
+/* +4px nudge: hsp-xl (24px) is slightly too tight for disc/decimal markers (#222) */
 
 .zd-content :where(ul) {
   list-style-type: disc;
-  padding-left: var(--spacing-hsp-xl);
+  padding-left: calc(var(--spacing-hsp-xl) + 4px);
 }
 
 .zd-content :where(ol) {
   list-style-type: decimal;
-  padding-left: var(--spacing-hsp-xl);
+  padding-left: calc(var(--spacing-hsp-xl) + 4px);
 }
 
 .zd-content :where(li) {
