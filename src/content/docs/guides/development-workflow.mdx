@@ -1,0 +1,93 @@
+---
+title: Development Workflow
+description: Development commands, build tools, and component development patterns for zudo-doc.
+sidebar_position: 17
+---
+
+## Development Commands
+
+These commands start the local development servers.
+
+| Command | What it does |
+|---|---|
+| `pnpm dev` | Runs Astro dev server (port 4321) and doc-history-server (port 4322) concurrently |
+| `pnpm dev:astro` | Astro dev server only (port 4321) |
+| `pnpm dev:history` | Doc history API server only (port 4322) |
+| `pnpm dev:stable` | Alternative build-then-serve mode (avoids HMR crashes on content file add/remove) |
+| `pnpm dev:network` | Astro dev server with `--host 0.0.0.0` for LAN access |
+
+<Tip>
+
+Use `pnpm dev:stable` when you're adding or removing content files frequently. Standard `pnpm dev` can crash on file system changes due to Vite HMR.
+
+</Tip>
+
+## Build & Quality Commands
+
+| Command | What it does |
+|---|---|
+| `pnpm build` | Static HTML export to `dist/` |
+| `pnpm check` | Astro type checking |
+| `pnpm b4push` | Pre-push validation: format check → typecheck → build → link check → E2E tests |
+| `pnpm format` | Format MDX and Astro files |
+| `pnpm test:unit` | Run unit tests (Vitest) |
+| `pnpm test:e2e` | Run E2E tests (Playwright) |
+
+<Note>
+
+Run `pnpm b4push` before pushing to verify the full site builds, all links resolve, and E2E tests pass. This catches broken cross-doc links and TypeScript errors that the dev server tolerates.
+
+</Note>
+
+## Component Development
+
+zudo-doc uses three component tiers. Choose the right tier based on what your component needs to do.
+
+### Astro Components
+
+`.astro` files are the default choice — zero JavaScript, server-rendered at build time.
+
+Use Astro components for:
+
+- Layout wrappers
+- Static UI elements (headers, footers, sidebars)
+- Anything that doesn't require user interaction
+
+### Preact Islands
+
+`client:load` islands are used only when client-side interactivity is required. Preact runs in compat mode (`@astrojs/preact` with `compat: true`), so components can use React-style imports and APIs.
+
+Current islands in the project: `toc.tsx`, `mobile-toc.tsx`, `sidebar-toggle.tsx`, `sidebar-tree.tsx`, `theme-toggle.tsx`, `doc-history.tsx`, `color-tweak-panel.tsx`, `color-tweak-export-modal.tsx`.
+
+Use Preact islands for:
+
+- Scroll spy (TOC highlighting)
+- Toggle/drawer components
+- Live editing panels
+
+### Content Typography Components
+
+These live in `src/components/content/` and are Preact function components **without** a `client:` directive — they are server-rendered with zero client JavaScript. They override standard HTML elements in MDX via `<Content components={...} />`.
+
+Current overrides: headings (h2–h4), paragraph, link, strong, blockquote, lists (ul/ol), table.
+
+Use content typography components when you need to apply project design tokens to standard MDX prose elements.
+
+## Content Development Cycle
+
+Follow these steps when adding new documentation pages:
+
+1. Create a `.mdx` file under `src/content/docs/` with `title` and `sidebar_position` in the frontmatter.
+2. Write content starting with `## h2` headings. Do not add `# h1` — the frontmatter `title` renders as the page h1.
+3. Create a matching file under `src/content/docs-ja/` with translated prose.
+4. Keep all code blocks identical between EN and JA — only translate the surrounding prose.
+5. Run `pnpm format:mdx` to format MDX files.
+6. Run `pnpm build` to verify the site builds correctly.
+
+<Tip>
+
+Always set `sidebar_position` in frontmatter. Without it, pages sort alphabetically, which is rarely the intended order.
+
+</Tip>
+
+See the [Frontmatter reference](./frontmatter.mdx) for all available frontmatter fields.
