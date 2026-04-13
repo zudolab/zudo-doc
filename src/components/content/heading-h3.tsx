@@ -13,7 +13,6 @@ export function HeadingH3({ id, children, ...rest }: Props) {
       className="text-body font-bold leading-snug pt-vsp-xs border-t-[2px] border-transparent"
       style={
         {
-          '--flow-space': 'var(--spacing-vsp-xl)',
           borderImage: 'linear-gradient(to right, var(--color-muted), transparent) 1',
         } as CSSProperties
       }
