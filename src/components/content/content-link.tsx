@@ -6,8 +6,9 @@ type Props = {
 };
 
 export function ContentLink({ href, className, children, ...rest }: Props) {
-  // Block links should render without content link styling
-  if (className && className.split(' ').includes('block')) {
+  // Block links and hash-links (heading anchors) should render without content link styling
+  const classes = className ? className.split(' ') : [];
+  if (classes.includes('block') || classes.includes('hash-link')) {
     return (
       <a href={href} className={className} {...rest}>
         {children}
