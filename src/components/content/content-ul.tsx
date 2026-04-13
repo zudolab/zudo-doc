@@ -9,8 +9,8 @@ export function ContentUl({ children, className, ...rest }: Props) {
   return (
     <ul
       {...rest}
-      className={`list-disc${className ? ` ${className}` : ''}`}
-      style={{ paddingLeft: '2em' }}
+      className={className || undefined}
+      style={{ paddingLeft: '2em', listStyleType: 'disc' }}
     >
       {children}
     </ul>
