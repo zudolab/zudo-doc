@@ -36,6 +36,7 @@
     "generate:logo": "pnpm dlx @takazudo/kumiko-gen \"$(node -p \"require('./package.json').name\")-$(date +%s)\" --size 200 --zoom 5 --stroke-width 0.2 --fg \"#000000\" --bg transparent --out public/img/logo.svg",
     "// ── Skills ──────────────────────────────────────": "",
     "setup:doc-skill": "bash scripts/setup-doc-skill.sh",
+    "setup:zudo-doc-wisdom": "bash scripts/setup-zudo-doc-wisdom.sh",
     "// ── Linting ─────────────────────────────────────": "",
     "lint:tokens": "design-token-lint"
   },
