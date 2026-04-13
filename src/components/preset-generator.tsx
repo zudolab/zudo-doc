@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { FEATURES, buildJson, buildCliCommand, type FormState } from "../lib/preset-generator-logic";
+import { HeadingH3 } from "./content/heading-h3";
 
 // ── Data ──
 
@@ -82,9 +83,9 @@ const PACKAGE_MANAGERS = ["pnpm", "npm", "yarn", "bun"] as const;
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="mb-vsp-xs text-small font-semibold text-fg">
+    <HeadingH3 className="mb-vsp-xs">
       {children}
-    </h3>
+    </HeadingH3>
   );
 }
 
