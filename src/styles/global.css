@@ -213,34 +213,18 @@ body {
 
 /* ── Headings ── */
 
+/* Heading flow-space (structural — consumed by flow spacing system) */
+
 .zd-content :where(h2) {
   --flow-space: var(--spacing-vsp-2xl);
-  font-size: var(--text-subheading);
-  font-weight: var(--font-weight-bold);
-  line-height: var(--leading-tight);
-  padding-top: var(--spacing-vsp-sm);
-  border-top: 3px solid transparent;
-  border-image: linear-gradient(to right, var(--color-fg), transparent) 1;
 }
 
 .zd-content :where(h3) {
   --flow-space: var(--spacing-vsp-xl);
-  font-size: var(--text-body);
-  font-weight: var(--font-weight-bold);
-  line-height: var(--leading-snug);
-  padding-top: var(--spacing-vsp-xs);
-  border-top: 2px solid transparent;
-  border-image: linear-gradient(to right, var(--color-muted), transparent) 1;
 }
 
 .zd-content :where(h4) {
   --flow-space: var(--spacing-vsp-lg);
-  font-size: var(--text-body);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--leading-snug);
-  padding-top: var(--spacing-vsp-xs);
-  border-top: 1px solid transparent;
-  border-image: linear-gradient(to right, var(--color-muted), transparent) 1;
 }
 
 .zd-content :where(h5, h6) {
@@ -301,34 +285,13 @@ body {
 
 /* ── Links ── */
 
-.zd-content :where(a:not(.block):not([data-site-nav] *)) {
-  color: var(--color-accent);
-  text-decoration: underline;
-}
-
-.zd-content :where(a:not(.block):not([data-site-nav] *):hover) {
-  color: var(--color-accent-hover);
-}
-
-/* ── Bold / Strong ── */
-
-.zd-content :where(strong) {
-  font-weight: var(--font-weight-bold);
-  color: var(--color-fg);
+/* Link reset inside site-nav (component can't detect ancestor context) */
+.zd-content [data-site-nav] a {
+  color: inherit;
+  text-decoration: none;
 }
 
 /* ── Lists ── */
-/* +4px nudge: hsp-xl (24px) is slightly too tight for disc/decimal markers (#222) */
-
-.zd-content :where(ul) {
-  list-style-type: disc;
-  padding-left: calc(var(--spacing-hsp-xl) + 4px);
-}
-
-.zd-content :where(ol) {
-  list-style-type: decimal;
-  padding-left: calc(var(--spacing-hsp-xl) + 4px);
-}
 
 .zd-content :where(li) {
   margin-bottom: var(--spacing-vsp-xs);
@@ -344,13 +307,8 @@ body {
 }
 
 /* ── Blockquotes ── */
-
-.zd-content :where(blockquote) {
-  border-left: 3px solid var(--color-muted);
-  padding-left: var(--spacing-hsp-lg);
-  color: var(--color-muted);
-  font-style: italic;
-}
+/* blockquote base styles live in ContentBlockquote component; keep nested p rule
+   here because MDX renders <p> children independently (component can't style them) */
 
 .zd-content :where(blockquote p) {
   margin-bottom: var(--spacing-vsp-xs);
@@ -387,12 +345,6 @@ body {
 }
 
 /* ── Tables ── */
-
-.zd-content :where(table) {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--text-small);
-}
 
 .zd-content :where(th),
 .zd-content :where(td) {
