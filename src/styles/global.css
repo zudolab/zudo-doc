@@ -277,8 +277,10 @@ body {
 
 /* Reset prose heading decorations inside preset generator */
 .zd-preset-gen :where(h3) {
+  --flow-space: initial;
   font-size: var(--text-small);
   font-weight: var(--font-weight-semibold);
+  line-height: var(--leading-relaxed);
   padding-top: 0;
   border-top: none;
   border-image: none;
