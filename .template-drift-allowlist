@@ -7,6 +7,11 @@ src/plugins/rehype-strip-md-extension.ts
 src/plugins/remark-admonitions.ts
 src/plugins/remark-resolve-markdown-links.ts
 
+# Plugin utilities — template-only files (production uses @zudo-doc/md-plugins)
+src/plugins/docs-source-map.ts
+src/plugins/hast-utils.ts
+src/plugins/url-utils.ts
+
 # Slot-based files — templates use @slot: injection anchors,
 # production has features inlined
 src/components/header.astro
