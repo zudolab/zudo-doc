@@ -38,7 +38,8 @@
     "setup:doc-skill": "bash scripts/setup-doc-skill.sh",
     "setup:zudo-doc-wisdom": "bash scripts/setup-zudo-doc-wisdom.sh",
     "// ── Linting ─────────────────────────────────────": "",
-    "lint:tokens": "design-token-lint"
+    "lint:tokens": "design-token-lint",
+    "check:template-drift": "bash scripts/check-template-drift.sh"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

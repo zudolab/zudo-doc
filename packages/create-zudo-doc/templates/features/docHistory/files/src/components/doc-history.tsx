@@ -29,7 +29,7 @@ function HistoryIcon() {
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-[1.25rem] w-[1.25rem]"
+      className="h-icon-md w-icon-md"
     >
       <circle cx="12" cy="12" r="10" />
       <polyline points="12 6 12 12 16 14" />
@@ -47,7 +47,7 @@ function CloseIcon() {
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-[1.25rem] w-[1.25rem]"
+      className="h-icon-md w-icon-md"
     >
       <path d="M18 6L6 18M6 6l12 12" />
     </svg>
@@ -64,7 +64,7 @@ function ArrowLeftIcon() {
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-[1rem] w-[1rem]"
+      className="h-icon-sm w-icon-sm"
     >
       <path d="M19 12H5M12 19l-7-7 7-7" />
     </svg>

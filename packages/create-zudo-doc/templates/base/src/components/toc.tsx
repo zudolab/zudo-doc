@@ -20,14 +20,14 @@ export function Toc({ headings }: TocProps) {
     <nav
       aria-label="Table of contents"
       className={clsx(
-        "hidden xl:block",
+        "hidden xl:flex flex-col",
         "w-[280px] shrink-0",
         "sticky top-[3.5rem] self-start z-10",
         "pt-vsp-xl lg:pt-vsp-2xl",
-        "max-h-[calc(100vh-3.5rem)] overflow-y-auto",
+        "h-[calc(100vh-3.5rem)]",
       )}
     >
-      <ul className="border-l border-muted pl-hsp-lg">
+      <ul className="border-l border-muted pl-hsp-lg overflow-y-auto flex-1 min-h-0">
         {filtered.map((heading, index) => {
           const isActive = heading.slug === activeId;
           return (

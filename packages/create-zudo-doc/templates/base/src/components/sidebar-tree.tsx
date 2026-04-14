@@ -224,7 +224,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
           onClick={() => setShowingRootMenu(false)}
           className="flex w-full items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-small text-muted hover:text-fg border-b border-muted"
         >
-          <svg className="h-[1rem] w-[1rem] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="h-icon-sm w-icon-sm shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
           {backToMenuLabel ?? "Back to main menu"}
@@ -258,7 +258,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
           onClick={() => setShowingRootMenu(true)}
           className="lg:hidden flex w-full items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-small text-muted hover:text-fg border-b border-muted"
         >
-          <svg className="h-[1rem] w-[1rem] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="h-icon-sm w-icon-sm shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
           {backToMenuLabel ?? "Back to main menu"}
@@ -484,8 +484,18 @@ function LeafNode({
   const isRoot = depth === 0;
   const paddingLeft = padLeft(depth, isRoot);
 
+  // For nested last leaves, add visual breathing space as margin on the outer wrapper
+  // rather than padding on the anchor — padding would grow the row box and throw off
+  // the ConnectorLines geometry (which uses bottom: 50% of the row to land the horizontal
+  // connector at the label midpoint).
+  const outerClass = isRoot
+    ? "border-t border-muted"
+    : !isRoot && isLast
+      ? "pb-vsp-md"
+      : "";
+
   return (
-    <div className={isRoot ? "border-t border-muted" : ""}>
+    <div className={outerClass}>
       <div className="relative">
         <ConnectorLines depth={depth} isLast={isLast} />
         <a
@@ -495,7 +505,7 @@ function LeafNode({
             ? `flex items-center gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-[4px] text-small font-semibold ${
                 isActive ? "bg-fg text-bg" : "text-fg hover:underline focus:underline"
               }`
-            : `block py-vsp-2xs pr-[4px] ${isLast ? "pb-vsp-xs" : ""} text-small ${
+            : `block py-vsp-2xs pr-[4px] text-small ${
                 isActive
                   ? "bg-fg font-medium text-bg"
                   : "text-muted hover:underline focus:underline"

@@ -2,6 +2,7 @@
 #
 # Triggered on PRs targeting `main`. The pipeline mirrors the local
 # `pnpm b4push` script:
+#   0. Template drift check (no install needed — pure shell)
 #   1. Type checking (astro check)
 #   2. Build the Astro docs site (shallow clone, skips doc history)
 #   3. Build doc history JSONs (full clone, standalone server package)
@@ -31,6 +32,19 @@ permissions:
   pull-requests: write
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # Job 0: Template drift check (lightweight, no pnpm install needed)
+  # ---------------------------------------------------------------------------
+  check-template-drift:
+    name: Template Drift Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Check template drift
+        run: bash scripts/check-template-drift.sh
+
   # ---------------------------------------------------------------------------
   # Job 1: Type checking
   # ---------------------------------------------------------------------------

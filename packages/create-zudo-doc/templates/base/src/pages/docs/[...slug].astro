@@ -13,6 +13,7 @@ import Tabs from "@/components/tabs.astro";
 import TabItem from "@/components/tab-item.astro";
 import Details from "@/components/details.astro";
 import HtmlPreview from "@/components/html-preview-wrapper.astro";
+import { htmlOverrides } from "@/components/content/component-map";
 import Breadcrumb from "@/components/breadcrumb.astro";
 import { toRouteSlug } from "@/utils/slug";
 import {
@@ -105,6 +106,7 @@ export async function getStaticPaths() {
 const { entry, breadcrumbs = [], prev, next, autoIndex } = Astro.props;
 
 const components = {
+  ...htmlOverrides,
   Note,
   Tip,
   Info,

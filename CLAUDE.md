@@ -20,7 +20,7 @@ Minimal documentation framework built with Astro 6, MDX, Tailwind CSS v4, and Pr
 - `pnpm dev:network` — Astro dev server with `--host 0.0.0.0` for LAN access
 - `pnpm build` — static HTML export to `dist/`
 - `pnpm check` — Astro type checking
-- `pnpm b4push` — pre-push validation: format check → typecheck → build → link check → E2E tests
+- `pnpm b4push` — pre-push validation: format check → template drift check → typecheck → build → link check → E2E tests
 
 ## Key Directories
 
@@ -177,6 +177,8 @@ When adding or removing a feature from zudo-doc, update the `create-zudo-doc` ge
 6. **`packages/create-zudo-doc/src/scaffold.ts`** — Add/remove dependencies in `generatePackageJson()`
 7. **`packages/create-zudo-doc/src/__tests__/scaffold.test.ts`** — Update tests
 8. Run `/l-update-generator` to verify no drift remains
+
+**Important**: This checklist also applies to incremental improvements (CSS token migrations, icon sizing, spacing changes, etc.) — not just new features. If you change a file that has a template counterpart, update the template too. Run `pnpm check:template-drift` to verify (note: allowlisted files like `global.css`, `header.astro`, and `doc-layout.astro` are excluded from automated checks and need manual review).
 
 ## Design Tokens & CSS
 

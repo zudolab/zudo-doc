@@ -24,6 +24,8 @@ The generator uses **additive composition** — not copy-then-strip:
 - Periodically to verify generator health
 - User says "update generator", "sync generator", "check generator drift", "l-update-generator", or the old name "l-sync-create-zudo-doc"
 
+**Quick pre-check**: Run `pnpm check:template-drift` first to get an automated summary of base template drift. Then proceed with the full workflow below for settings, dependency, astro config, and feature composition drift.
+
 ## Step 1: Analyze Drift
 
 Compare the main project's source files with what the generator produces.
@@ -81,6 +83,10 @@ Compare shared files between the main project and the base template:
 - **Template**: `packages/create-zudo-doc/templates/base/`
 
 Check that non-feature-specific files in the base template reflect the latest changes from the main project (layout updates, plugin changes, utility functions, type definitions, etc.).
+
+**Automated first check**: Run `pnpm check:template-drift` before doing manual analysis. This runs `scripts/check-template-drift.sh` and quickly identifies files that differ between the main project and the base template.
+
+**Allowlist note**: Some files are listed in `.template-drift-allowlist` (e.g., `global.css`, `header.astro`, `doc-layout.astro`) and are skipped entirely by the automated script because they contain slot sections that intentionally differ. These files **still require manual review** — check that any non-slot-section changes in the main project are reflected in the template counterpart.
 
 ## Step 2: Report Findings
 
