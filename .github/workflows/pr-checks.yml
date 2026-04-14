@@ -2,6 +2,7 @@
 #
 # Triggered on PRs targeting `main`. The pipeline mirrors the local
 # `pnpm b4push` script:
+#   0. Template drift check (no install needed — pure shell)
 #   1. Type checking (astro check)
 #   2. Build the Astro docs site (shallow clone, skips doc history)
 #   3. Build doc history JSONs (full clone, standalone server package)
