@@ -1,0 +1,14 @@
+# Plugin re-exports — generated projects use inline implementations,
+# production re-exports from @zudo-doc/md-plugins
+src/plugins/rehype-code-title.ts
+src/plugins/rehype-heading-links.ts
+src/plugins/rehype-mermaid.ts
+src/plugins/rehype-strip-md-extension.ts
+src/plugins/remark-admonitions.ts
+src/plugins/remark-resolve-markdown-links.ts
+
+# Slot-based files — templates use @slot: injection anchors,
+# production has features inlined
+src/components/header.astro
+src/layouts/doc-layout.astro
+src/styles/global.css
