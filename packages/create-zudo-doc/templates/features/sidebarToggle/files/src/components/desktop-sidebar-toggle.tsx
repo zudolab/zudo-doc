@@ -42,7 +42,7 @@ export default function DesktopSidebarToggle() {
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-[1rem] w-[1rem]"
+        className="h-icon-sm w-icon-sm"
         aria-hidden="true"
         fill="none"
         viewBox="0 0 24 24"
