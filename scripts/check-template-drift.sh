@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if ((BASH_VERSINFO[0] < 4)); then
+  echo "Error: bash 4+ is required (found bash $BASH_VERSION)." >&2
+  echo "On macOS, install via: brew install bash" >&2
+  exit 1
+fi
+
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ALLOWLIST="$ROOT_DIR/.template-drift-allowlist"
 
@@ -49,7 +55,7 @@ BASE_DIR="$ROOT_DIR/packages/create-zudo-doc/templates/base"
 while IFS= read -r -d '' template_file; do
   prod_path="${template_file#"$BASE_DIR/"}"
   check_pair "$template_file" "$prod_path"
-done < <(find "$BASE_DIR" -type f -print0)
+done < <(find "$BASE_DIR" -type f -print0 | sort -z)
 
 echo "Checking feature template files..."
 
@@ -62,7 +68,7 @@ for feature_dir in "$FEATURES_DIR"/*/; do
   while IFS= read -r -d '' template_file; do
     prod_path="${template_file#"$files_dir/"}"
     check_pair "$template_file" "$prod_path"
-  done < <(find "$files_dir" -type f -print0)
+  done < <(find "$files_dir" -type f -print0 | sort -z)
 done
 
 echo ""
