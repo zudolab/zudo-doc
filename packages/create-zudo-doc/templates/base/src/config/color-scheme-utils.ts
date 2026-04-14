@@ -18,6 +18,10 @@ export const SEMANTIC_DEFAULTS: Record<string, number> = {
   mermaidLine: 8,
   mermaidLabelBg: 10,
   mermaidNoteBg: 0,
+  chatUserBg: 5,
+  chatUserText: 9,
+  chatAssistantBg: 9,
+  chatAssistantText: 11,
 };
 
 export const SEMANTIC_CSS_NAMES: Record<string, string> = {
@@ -36,6 +40,10 @@ export const SEMANTIC_CSS_NAMES: Record<string, string> = {
   mermaidLine: "--zd-mermaid-line",
   mermaidLabelBg: "--zd-mermaid-label-bg",
   mermaidNoteBg: "--zd-mermaid-note-bg",
+  chatUserBg: "--zd-chat-user-bg",
+  chatUserText: "--zd-chat-user-text",
+  chatAssistantBg: "--zd-chat-assistant-bg",
+  chatAssistantText: "--zd-chat-assistant-text",
 };
 
 export const lightDarkPairings = [
@@ -83,6 +91,10 @@ export function resolveSemanticColors(scheme: ColorScheme) {
     mermaidLine: resolveColor(scheme.semantic?.mermaidLine, p, p[8]),
     mermaidLabelBg: resolveColor(scheme.semantic?.mermaidLabelBg, p, p[10]),
     mermaidNoteBg: resolveColor(scheme.semantic?.mermaidNoteBg, p, p[0]),
+    chatUserBg: resolveColor(scheme.semantic?.chatUserBg, p, p[5]),
+    chatUserText: resolveColor(scheme.semantic?.chatUserText, p, p[9]),
+    chatAssistantBg: resolveColor(scheme.semantic?.chatAssistantBg, p, p[9]),
+    chatAssistantText: resolveColor(scheme.semantic?.chatAssistantText, p, p[11]),
   };
 }
 
@@ -111,6 +123,10 @@ export function schemeToCssPairs(scheme: ColorScheme): [string, string][] {
     ["--zd-mermaid-line", sem.mermaidLine],
     ["--zd-mermaid-label-bg", sem.mermaidLabelBg],
     ["--zd-mermaid-note-bg", sem.mermaidNoteBg],
+    ["--zd-chat-user-bg", sem.chatUserBg],
+    ["--zd-chat-user-text", sem.chatUserText],
+    ["--zd-chat-assistant-bg", sem.chatAssistantBg],
+    ["--zd-chat-assistant-text", sem.chatAssistantText],
   ];
 }
 
