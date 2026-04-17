@@ -2,6 +2,7 @@
 # production re-exports from @zudo-doc/md-plugins
 src/plugins/rehype-code-title.ts
 src/plugins/rehype-heading-links.ts
+src/plugins/rehype-image-enlarge.ts
 src/plugins/rehype-mermaid.ts
 src/plugins/rehype-strip-md-extension.ts
 src/plugins/remark-admonitions.ts
