@@ -20,7 +20,7 @@ sidebar_position: 10
 
 ## 拡大を無効化する（オプトアウト）
 
-幅が大きい画像でも、特定の画像だけ拡大ボタンを無効にしたい場合は、Markdown のタイトル属性に `"no-enlarge"` を指定します。
+幅が大きい画像でも、特定の画像だけ拡大ボタンを無効にしたい場合は、Markdown のタイトル属性に `"no-enlarge"` を指定します。title 属性はレンダリング後の `<img>` からも削除されるため、ブラウザのツールチップには表示されません。
 
 ```md
 ![alt text](./image.png "no-enlarge")
@@ -32,8 +32,12 @@ sidebar_position: 10
 
 この機能は 2 つの部分で構成されています。
 
-- **ビルド時** — rehype プラグインが、段落内の単独 `<img>` を `<figure class="zd-enlargeable">` でラップし、非表示の `<button class="zd-enlarge-btn">` を注入します。
-- **実行時** — Preact アイランド（`ImageEnlarge`）が `ResizeObserver` を使用して `naturalWidth` と `clientWidth × devicePixelRatio` を比較し、ボタンの `hidden` 属性を切り替えます。ボタンをクリックすると、画像が `<dialog>` で開きます。
+- **ビルド時** — rehype プラグインが、段落内で単独の `<img>` を `<figure class="zd-enlargeable">` でラップし、非表示の `<button class="zd-enlarge-btn">` を注入します。インラインテキストと混在する画像はラップされません。
+- **実行時** — Preact アイランド（`ImageEnlarge`）が `ResizeObserver` を使用して `naturalWidth` と `clientWidth × devicePixelRatio` を比較し、ボタンの `hidden` 属性を切り替えます。ボタンをクリックすると、画像が `<dialog>` で開きます。**ESC** キーを押すか、画像の外側をクリックすると閉じられます。
+
+:::note
+高 DPI ディスプレイ（例：2× Retina）では、デバイスピクセル比を考慮して拡大ボタンの表示判定が行われます。2000 px の画像が 2× 画面で 1000 CSS px にレンダリングされる場合、`2000 ≤ 1000 × 2` となるため、ボタンは表示されません。
+:::
 
 ## 設定
 
