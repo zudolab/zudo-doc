@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import type { Root, Element, ElementContent, Text } from "hast";
+import type { Root, Element, ElementContent, Text, Properties } from "hast";
 import { rehypeImageEnlarge } from "../rehype-image-enlarge";
 
-function makeImg(props: Record<string, unknown> = {}): Element {
+function makeImg(props: Properties = {}): Element {
   return { type: "element", tagName: "img", properties: props, children: [] };
 }
 
@@ -31,6 +31,7 @@ describe("rehypeImageEnlarge", () => {
     const figure = tree.children[0] as Element;
     expect(figure.tagName).toBe("figure");
     expect(figure.properties?.className).toContain("zd-enlargeable");
+    expect(figure.children).toHaveLength(2);
     expect((figure.children[0] as Element).tagName).toBe("img");
     expect((figure.children[1] as Element).tagName).toBe("button");
     expect((figure.children[1] as Element).properties?.hidden).toBe(true);
@@ -40,14 +41,23 @@ describe("rehypeImageEnlarge", () => {
     const img = makeImg();
     const tree = makeTree(makeP(text("\n  "), img, text("\n")));
     runPlugin(tree);
-    expect((tree.children[0] as Element).tagName).toBe("figure");
+    const figure = tree.children[0] as Element;
+    expect(figure.tagName).toBe("figure");
+    expect(figure.properties?.className).toContain("zd-enlargeable");
+    expect((figure.children[0] as Element).tagName).toBe("img");
+    expect((figure.children[1] as Element).tagName).toBe("button");
   });
 
   it("Case B — inline in paragraph: <p>text <img> more</p> → unchanged", () => {
     const img = makeImg();
-    const tree = makeTree(makeP(text("text "), img, text(" more")));
+    const t1 = text("text ");
+    const t2 = text(" more");
+    const p = makeP(t1, img, t2);
+    const tree = makeTree(p);
     runPlugin(tree);
     expect((tree.children[0] as Element).tagName).toBe("p");
+    expect(p.children).toHaveLength(3);
+    expect(p.children[1]).toBe(img);
   });
 
   it("Case B — inline in heading: <h2><img></h2> → unchanged", () => {
@@ -61,6 +71,7 @@ describe("rehypeImageEnlarge", () => {
     const tree = makeTree(h2);
     runPlugin(tree);
     expect((tree.children[0] as Element).tagName).toBe("h2");
+    expect(h2.children[0]).toBe(img);
   });
 
   it("Case C — linked: <p><a><img></a></p> → unchanged", () => {
@@ -71,9 +82,12 @@ describe("rehypeImageEnlarge", () => {
       properties: {},
       children: [img],
     };
-    const tree = makeTree(makeP(a));
+    const p = makeP(a);
+    const tree = makeTree(p);
     runPlugin(tree);
     expect((tree.children[0] as Element).tagName).toBe("p");
+    expect(p.children[0]).toBe(a);
+    expect(a.children[0]).toBe(img);
   });
 
   it("Case D — picture: <p><picture><img></picture></p> → unchanged", () => {
@@ -84,17 +98,22 @@ describe("rehypeImageEnlarge", () => {
       properties: {},
       children: [img],
     };
-    const tree = makeTree(makeP(picture));
+    const p = makeP(picture);
+    const tree = makeTree(p);
     runPlugin(tree);
     expect((tree.children[0] as Element).tagName).toBe("p");
+    expect(p.children[0]).toBe(picture);
+    expect(picture.children[0]).toBe(img);
   });
 
   it('Opt-out exact: <p><img title="no-enlarge"></p> → no wrap AND title attr removed', () => {
-    const img = makeImg({ title: "no-enlarge" });
+    const img = makeImg({ title: "no-enlarge", src: "/x.jpg", alt: "x" });
     const tree = makeTree(makeP(img));
     runPlugin(tree);
     expect((tree.children[0] as Element).tagName).toBe("p");
     expect(img.properties?.title).toBeUndefined();
+    expect(img.properties?.src).toBe("/x.jpg");
+    expect(img.properties?.alt).toBe("x");
   });
 
   it('Opt-out loose NOT triggered: <p><img title="no-enlarge-extra"></p> → wrapped normally', () => {
@@ -121,7 +140,9 @@ describe("rehypeImageEnlarge", () => {
     const tree = makeTree(figure);
     runPlugin(tree);
     expect(tree.children[0]).toBe(figure);
-    expect((tree.children[0] as Element).children).toHaveLength(2);
+    expect(figure.children[0]).toBe(img);
+    expect(figure.children[1]).toBe(button);
+    expect(figure.children).toHaveLength(2);
   });
 
   it("Idempotency across runs: second run does NOT add second figure/button", () => {
@@ -132,6 +153,8 @@ describe("rehypeImageEnlarge", () => {
     const topLevel = tree.children[0] as Element;
     expect(topLevel.tagName).toBe("figure");
     expect(topLevel.children).toHaveLength(2);
+    expect((topLevel.children[0] as Element).tagName).toBe("img");
+    expect((topLevel.children[1] as Element).tagName).toBe("button");
   });
 
   it("Attributes preserved: src, alt, width, height, srcSet, sizes, className, data-*", () => {
@@ -147,7 +170,10 @@ describe("rehypeImageEnlarge", () => {
     });
     const tree = makeTree(makeP(img));
     runPlugin(tree);
-    const resultImg = (tree.children[0] as Element).children[0] as Element;
+    const figure = tree.children[0] as Element;
+    expect(figure.tagName).toBe("figure");
+    expect((figure.children[1] as Element).tagName).toBe("button");
+    const resultImg = figure.children[0] as Element;
     expect(resultImg.properties?.src).toBe("/img/photo.jpg");
     expect(resultImg.properties?.alt).toBe("A photo");
     expect(resultImg.properties?.width).toBe(800);
@@ -168,8 +194,10 @@ describe("rehypeImageEnlarge", () => {
     expect(button.properties?.type).toBe("button");
     expect(button.properties?.hidden).toBe(true);
     expect(button.properties?.ariaLabel).toBeTruthy();
-    expect(
-      button.children.some((c) => (c as Element).tagName === "svg"),
-    ).toBe(true);
+    const svg = button.children.find(
+      (c) => (c as Element).tagName === "svg",
+    ) as Element;
+    expect(svg).toBeDefined();
+    expect(svg.children.length).toBeGreaterThan(0);
   });
 });
