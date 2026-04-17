@@ -162,14 +162,19 @@ For each version and locale combination, zudo-doc creates a separate content col
 When you're ready to archive the current documentation as a new version:
 
 1. **Copy the current content directory** to a new versioned directory:
+
    ```bash
    cp -r src/content/docs src/content/docs-v2
    ```
+
 2. **Copy locale directories** if applicable:
+
    ```bash
    cp -r src/content/docs-ja src/content/docs-v2-ja
    ```
+
 3. **Add the version to settings**:
+
    ```ts
    versions: [
      {
@@ -184,6 +189,7 @@ When you're ready to archive the current documentation as a new version:
      // ...existing versions
    ],
    ```
+
 4. **Update the current docs** — The files in `src/content/docs/` now represent the latest version. Update them as needed for the new release.
 
 <Note>

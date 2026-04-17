@@ -98,12 +98,14 @@ The `locales` array in `astro.config.ts` is automatically derived from `settings
 To add a new language (e.g., Korean):
 
 1. Add the locale to `settings.ts`:
+
    ```ts
    locales: {
      ja: { label: "JA", dir: "src/content/docs-ja" },
      ko: { label: "KO", dir: "src/content/docs-ko" },
    },
    ```
+
 2. Create a content directory: `src/content/docs-ko/`
 3. Mirror the English directory structure with translated files
 4. Add a new page route at `src/pages/ko/docs/[...slug].astro` (copy from an existing locale route)
