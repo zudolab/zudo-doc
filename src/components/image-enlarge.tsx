@@ -105,7 +105,7 @@ export default function ImageEnlarge() {
           <img
             src={imgData.currentSrc || imgData.src}
             srcSet={imgData.srcset}
-            sizes={imgData.sizes}
+            sizes={imgData.srcset ? "100vw" : undefined}
             alt={imgData.alt}
             className="block max-h-[85vh] max-w-[85vw] object-contain"
           />
