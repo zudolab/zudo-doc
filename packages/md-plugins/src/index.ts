@@ -6,6 +6,7 @@ export type { ResolveMarkdownLinksOptions } from "./remark-resolve-markdown-link
 // Rehype plugins
 export { rehypeCodeTitle } from "./rehype-code-title";
 export { rehypeHeadingLinks } from "./rehype-heading-links";
+export { rehypeImageEnlarge } from "./rehype-image-enlarge";
 export { rehypeMermaid } from "./rehype-mermaid";
 export { rehypeStripMdExtension } from "./rehype-strip-md-extension";
 
