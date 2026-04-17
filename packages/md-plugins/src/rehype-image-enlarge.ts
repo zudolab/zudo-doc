@@ -34,7 +34,8 @@ function makeEnlargeButton(): Element {
           strokeWidth: "2",
           strokeLinecap: "round",
           strokeLinejoin: "round",
-          ariaHidden: "true",
+          focusable: false,
+          ariaHidden: true,
         },
         children: [
           {
