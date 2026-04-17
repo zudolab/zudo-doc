@@ -13,6 +13,7 @@ export function generateAstroConfig(choices: UserChoices): string {
   const hasDocHistory = choices.features.includes("docHistory");
   const hasLlmsTxt = choices.features.includes("llmsTxt");
   const hasClaudeResources = choices.features.includes("claudeResources");
+  const hasImageEnlarge = choices.features.includes("imageEnlarge");
 
   const lines: string[] = [];
 
@@ -68,6 +69,11 @@ export function generateAstroConfig(choices: UserChoices): string {
   lines.push(
     `import { rehypeStripMdExtension } from "./src/plugins/rehype-strip-md-extension";`,
   );
+  if (hasImageEnlarge) {
+    lines.push(
+      `import { rehypeImageEnlarge } from "./src/plugins/rehype-image-enlarge";`,
+    );
+  }
 
   lines.push(``);
 
@@ -192,6 +198,9 @@ export function generateAstroConfig(choices: UserChoices): string {
   lines.push(`      rehypeHeadingLinks,`);
   lines.push(`      rehypeStripMdExtension,`);
   lines.push(`      ...(settings.mermaid ? [rehypeMermaid] : []),`);
+  if (hasImageEnlarge) {
+    lines.push(`      ...(settings.imageEnlarge ? [rehypeImageEnlarge] : []),`);
+  }
   lines.push(`    ],`);
   lines.push(`  },`);
 
