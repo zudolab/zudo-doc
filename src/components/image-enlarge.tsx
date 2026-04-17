@@ -14,7 +14,91 @@ export default function ImageEnlarge() {
   const [imgData, setImgData] = useState<ImageData | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
-  // Delegated click handler — T5b will add eligibility checks here before setImgData
+  // Eligibility detection: toggle .zd-enlarge-btn[hidden] per image
+  useEffect(() => {
+    const resizeObservers = new Map<HTMLImageElement, ResizeObserver>();
+    let mutationObserver: MutationObserver | null = null;
+    let resizeTimer = 0;
+
+    function evaluateEligibility(img: HTMLImageElement) {
+      const container = img.closest(".zd-enlargeable");
+      if (!container) return;
+      const btn = container.querySelector(".zd-enlarge-btn") as HTMLElement | null;
+      if (!btn) return;
+      const eligible = img.naturalWidth > img.clientWidth * window.devicePixelRatio;
+      if (eligible) {
+        btn.removeAttribute("hidden");
+      } else {
+        btn.setAttribute("hidden", "");
+      }
+    }
+
+    function observeImage(img: HTMLImageElement) {
+      if (resizeObservers.has(img)) return;
+      const ro = new ResizeObserver(() => evaluateEligibility(img));
+      ro.observe(img);
+      resizeObservers.set(img, ro);
+      if (img.complete) {
+        evaluateEligibility(img);
+      } else {
+        img.addEventListener("load", () => evaluateEligibility(img), { once: true });
+      }
+    }
+
+    function scanContent() {
+      const scope = document.querySelector("main .zd-content");
+      if (!scope) return;
+      scope.querySelectorAll<HTMLImageElement>(".zd-enlargeable img").forEach(observeImage);
+    }
+
+    function startObserving() {
+      const scope = document.querySelector("main .zd-content");
+      if (scope) {
+        mutationObserver = new MutationObserver((mutations) => {
+          for (const mutation of mutations) {
+            for (const node of mutation.addedNodes) {
+              if (!(node instanceof Element)) continue;
+              if (node.matches(".zd-enlargeable")) {
+                node.querySelectorAll<HTMLImageElement>("img").forEach(observeImage);
+              }
+              node.querySelectorAll<HTMLImageElement>(".zd-enlargeable img").forEach(observeImage);
+            }
+          }
+        });
+        mutationObserver.observe(scope, { childList: true, subtree: true });
+      }
+      scanContent();
+    }
+
+    function handleWindowResize() {
+      clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        resizeObservers.forEach((_, img) => evaluateEligibility(img));
+      }, 150);
+    }
+
+    function handleAfterSwap() {
+      resizeObservers.forEach((ro) => ro.disconnect());
+      resizeObservers.clear();
+      mutationObserver?.disconnect();
+      mutationObserver = null;
+      startObserving();
+    }
+
+    startObserving();
+    window.addEventListener("resize", handleWindowResize);
+    document.addEventListener("astro:after-swap", handleAfterSwap);
+
+    return () => {
+      resizeObservers.forEach((ro) => ro.disconnect());
+      resizeObservers.clear();
+      mutationObserver?.disconnect();
+      window.removeEventListener("resize", handleWindowResize);
+      document.removeEventListener("astro:after-swap", handleAfterSwap);
+      clearTimeout(resizeTimer);
+    };
+  }, []);
+
   useEffect(() => {
     function handleDocumentClick(e: MouseEvent) {
       const target = e.target as Element;
