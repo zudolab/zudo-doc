@@ -26,7 +26,6 @@ import AiChatModal from "@/components/ai-chat-modal";
 import MockInit from "@/components/mock-init";
 import DesktopSidebarToggle from "@/components/desktop-sidebar-toggle";
 import FindInPageInit from "@/components/find-in-page-init";
-import ImageEnlarge from "@/components/image-enlarge";
 import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "@/config/color-scheme-utils";
 
 interface Props {
@@ -225,7 +224,6 @@ const contentTransition = {
     </div>
     {settings.aiAssistant && <AiChatModal basePath={withBase("/")} client:load />}
     {settings.colorTweakPanel && <ColorTweakPanel client:only="preact" />}
-    <ImageEnlarge client:load />
     <CodeBlockEnhancer />
     <TabsInit />
     {settings.mermaid && <MermaidInit />}
