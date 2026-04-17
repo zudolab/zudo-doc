@@ -23,6 +23,7 @@ export const settings = {
   math: false,
   aiAssistant: true as boolean,
   colorTweakPanel: true as boolean,
+  imageEnlarge: true as boolean,
   docHistory: true,
   htmlPreview: {
     css: `.global-test { border: 3px solid rgb(255, 0, 0); }`,

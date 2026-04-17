@@ -1,0 +1,41 @@
+---
+title: Image Enlarge Test
+sidebar_position: 99
+hide_toc: true
+---
+
+## Oversized image
+
+This image is 2000px wide, constrained to 600px display width, so the enlarge button should appear.
+
+<div style="width: 600px">
+
+  ![oversized image](/test-images/large.png)
+
+</div>
+
+## Medium image (for DPR test)
+
+This 1200px-wide image displayed at 700px. Button shows at DPR=1 (1200>700) but not DPR=2 (1200≤1400).
+
+<div style="width: 700px">
+
+  ![medium image](/test-images/medium.png)
+
+</div>
+
+## Small image
+
+This image is 300px wide and should NOT get the enlarge button (naturalWidth=clientWidth).
+
+![small image](/test-images/small.png)
+
+## Inline image
+
+Some text before ![inline image](/test-images/inline.png) and some text after.
+
+## Opt-out image
+
+This image has title="no-enlarge" and should NOT be wrapped.
+
+![opt-out](/test-images/optout.png "no-enlarge")
