@@ -188,6 +188,13 @@ export const FEATURES: Feature[] = [
     cliFlag: "footer-nav-group",
   },
   {
+    value: "imageEnlarge",
+    label: "Image enlarge",
+    hint: "Click-to-enlarge for oversized markdown images",
+    default: true,
+    cliFlag: "image-enlarge",
+  },
+  {
     value: "footerCopyright",
     label: "Footer copyright",
     hint: "Copyright notice in the footer",
