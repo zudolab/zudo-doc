@@ -956,6 +956,162 @@ describe("scaffold — CLAUDE.md generation", () => {
   });
 });
 
+describe("scaffold — imageEnlarge feature", () => {
+  it("settings have imageEnlarge: true when enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-ie-on",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "imageEnlarge"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-ie-on", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("imageEnlarge: true");
+  });
+
+  it("settings have imageEnlarge: false when feature not selected", async () => {
+    const choices: UserChoices = {
+      projectName: "test-ie-off",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-ie-off", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("imageEnlarge: false");
+  });
+
+  it("island file src/components/image-enlarge.tsx exists when enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-ie-island-on",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "imageEnlarge"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath("test-ie-island-on", "src/components/image-enlarge.tsx"),
+      ),
+    ).toBe(true);
+  });
+
+  it("island file src/components/image-enlarge.tsx absent when disabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-ie-island-off",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath("test-ie-island-off", "src/components/image-enlarge.tsx"),
+      ),
+    ).toBe(false);
+  });
+
+  it("rehype-image-enlarge.ts always present in src/plugins/ (base template file)", async () => {
+    const choices: UserChoices = {
+      projectName: "test-ie-plugin",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath("test-ie-plugin", "src/plugins/rehype-image-enlarge.ts"),
+      ),
+    ).toBe(true);
+  });
+
+  it("astro.config.ts wires rehypeImageEnlarge when enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-ie-astro-on",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "imageEnlarge"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const config = await fs.readFile(
+      projectPath("test-ie-astro-on", "astro.config.ts"),
+      "utf-8",
+    );
+    expect(config).toContain("rehypeImageEnlarge");
+    expect(config).toContain("settings.imageEnlarge");
+  });
+
+  it("astro.config.ts does not wire rehypeImageEnlarge when disabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-ie-astro-off",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const config = await fs.readFile(
+      projectPath("test-ie-astro-off", "astro.config.ts"),
+      "utf-8",
+    );
+    expect(config).not.toContain("rehypeImageEnlarge");
+  });
+
+  it("doc-layout references ImageEnlarge when enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-ie-layout-on",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "imageEnlarge"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const layout = await fs.readFile(
+      projectPath("test-ie-layout-on", "src/layouts/doc-layout.astro"),
+      "utf-8",
+    );
+    expect(layout).toContain("ImageEnlarge");
+  });
+
+  it("doc-layout does not reference ImageEnlarge when disabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-ie-layout-off",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const layout = await fs.readFile(
+      projectPath("test-ie-layout-off", "src/layouts/doc-layout.astro"),
+      "utf-8",
+    );
+    expect(layout).not.toContain("ImageEnlarge");
+  });
+});
+
 describe("drift detection — generator vs main project settings", () => {
   /**
    * This test catches feature drift between the main project's settings.ts

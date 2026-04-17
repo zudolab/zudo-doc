@@ -19,6 +19,7 @@ import { colorTweakPanelFeature } from "./color-tweak-panel.js";
 import { i18nFeature } from "./i18n.js";
 import { versioningFeature } from "./versioning.js";
 import { tauriFeature } from "./tauri.js";
+import { imageEnlargeFeature } from "./image-enlarge.js";
 
 /**
  * All feature modules keyed by their feature name.
@@ -37,6 +38,7 @@ export const featureModules: Record<string, FeatureModule> = {
   docHistory: docHistoryFeature,
   llmsTxt: llmsTxtFeature,
   tauri: tauriFeature,
+  imageEnlarge: imageEnlargeFeature,
   // skillSymlinker — handled in scaffold.ts
   // claudeSkills — handled in scaffold.ts (copies zudo-doc-* skills from monorepo)
   footer: footerFeature, // pseudo-feature: triggered by footerNavGroup or footerCopyright

@@ -19,12 +19,14 @@ graph LR
 
 ````mdx
 ```mermaid
+
 graph LR
   A[開始] --> B{判定}
   B -->|はい| C[アクション]
   B -->|いいえ| D[別のアクション]
   C --> E[終了]
   D --> E
+
 ```
 ````
 
@@ -43,6 +45,7 @@ sequenceDiagram
 
 ````mdx
 ```mermaid
+
 sequenceDiagram
   participant ユーザー
   participant アプリ
@@ -51,6 +54,7 @@ sequenceDiagram
   アプリ->>API: データ取得
   API-->>アプリ: JSONレスポンス
   アプリ-->>ユーザー: 結果表示
+
 ```
 ````
 
@@ -68,6 +72,7 @@ stateDiagram-v2
 
 ````mdx
 ```mermaid
+
 stateDiagram-v2
   [*] --> Draft
   Draft --> Review : 提出
@@ -75,6 +80,7 @@ stateDiagram-v2
   Review --> Draft : 変更依頼
   Published --> Archived : アーカイブ
   Archived --> [*]
+
 ```
 ````
 

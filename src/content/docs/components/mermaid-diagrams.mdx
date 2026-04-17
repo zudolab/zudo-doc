@@ -19,12 +19,14 @@ graph LR
 
 ````mdx
 ```mermaid
+
 graph LR
   A[Start] --> B{Decision}
   B -->|Yes| C[Action]
   B -->|No| D[Other Action]
   C --> E[End]
   D --> E
+
 ```
 ````
 
@@ -43,6 +45,7 @@ sequenceDiagram
 
 ````mdx
 ```mermaid
+
 sequenceDiagram
   participant User
   participant App
@@ -51,6 +54,7 @@ sequenceDiagram
   App->>API: Fetch data
   API-->>App: JSON response
   App-->>User: Render result
+
 ```
 ````
 
@@ -68,6 +72,7 @@ stateDiagram-v2
 
 ````mdx
 ```mermaid
+
 stateDiagram-v2
   [*] --> Draft
   Draft --> Review : Submit
@@ -75,6 +80,7 @@ stateDiagram-v2
   Review --> Draft : Request Changes
   Published --> Archived : Archive
   Archived --> [*]
+
 ```
 ````
 

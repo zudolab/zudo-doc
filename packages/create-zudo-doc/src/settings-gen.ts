@@ -111,6 +111,12 @@ export function generateSettingsFile(choices: UserChoices): string {
     lines.push(`  sidebarToggle: false as boolean,`);
   }
 
+  if (choices.features.includes("imageEnlarge")) {
+    lines.push(`  imageEnlarge: true as boolean,`);
+  } else {
+    lines.push(`  imageEnlarge: false as boolean,`);
+  }
+
   lines.push(
     `  htmlPreview: undefined as HtmlPreviewConfig | undefined,`,
   );

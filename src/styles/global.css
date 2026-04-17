@@ -162,6 +162,8 @@
   --text-scale-lg:  1.4rem;     /* 22.4px */
   --text-scale-xl:  3rem;       /* 48px */
   --text-scale-2xl: 3.75rem;    /* 60px */
+
+  --default-transition-duration: 150ms;
 }
 
 /* ========================================
@@ -779,6 +781,49 @@ pre.astro-code .line .highlighted-word {
   html[data-sidebar-hidden] .zd-desktop-sidebar-toggle {
     left: 0;
   }
+}
+
+/* ========================================
+ * Image enlarge (.zd-enlargeable)
+ * ======================================== */
+
+.zd-enlargeable {
+  position: relative;
+  display: block;
+  margin: 0;
+}
+
+.zd-enlargeable img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.zd-enlarge-btn {
+  position: absolute;
+  top: var(--spacing-vsp-xs);
+  right: var(--spacing-hsp-xs);
+  width: var(--spacing-icon-sm);
+  height: var(--spacing-icon-sm);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-DEFAULT);
+  background: color-mix(in oklch, var(--color-overlay) 80%, transparent);
+  color: var(--color-bg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  transition: opacity var(--default-transition-duration);
+}
+
+.zd-enlarge-btn[hidden] {
+  display: none !important;
+}
+
+dialog.zd-enlarge-dialog::backdrop {
+  background: color-mix(in oklch, var(--color-overlay) 80%, transparent);
 }
 
 /* ========================================

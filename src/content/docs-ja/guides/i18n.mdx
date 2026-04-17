@@ -98,12 +98,14 @@ i18n: {
 新しい言語（例：韓国語）を追加するには：
 
 1. `settings.ts`にロケールを追加：
+
    ```ts
    locales: {
      ja: { label: "JA", dir: "src/content/docs-ja" },
      ko: { label: "KO", dir: "src/content/docs-ko" },
    },
    ```
+
 2. コンテンツディレクトリを作成：`src/content/docs-ko/`
 3. 英語のディレクトリ構造をミラーして翻訳ファイルを配置
 4. `src/pages/ko/docs/[...slug].astro`に新しいページルートを追加（既存のロケールルートからコピー）
