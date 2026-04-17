@@ -1,0 +1,52 @@
+---
+title: Image Enlarge
+description: Automatically adds a fullscreen-expand button to images that are wider than their rendered column.
+sidebar_position: 10
+---
+
+When an image's intrinsic width is greater than its rendered width (accounting for device pixel ratio), a small expand button appears in the corner. Clicking it opens the image in a fullscreen dialog.
+
+## Wide Image — Button Appears
+
+The image below is 2400 px wide, so it is larger than the typical content column. The expand button becomes visible once the browser measures the rendered size.
+
+![A wide placeholder image](./image-wide.png)
+
+## Small Image — No Button
+
+This image is only 300 px wide, which fits inside the column. The expand button stays hidden because the image is not larger than its container.
+
+![A small placeholder image](./image-small.png)
+
+## Opt-Out
+
+Add `"no-enlarge"` as the Markdown title attribute to disable the expand button for a specific image, even if it is wide enough to qualify. The title attribute is also stripped from the rendered `<img>` so it never shows as a browser tooltip.
+
+```md
+![alt text](./image.png "no-enlarge")
+```
+
+![A wide image with opt-out applied](./image-opt-out.png "no-enlarge")
+
+## How It Works
+
+The feature has two parts:
+
+- **Build-time** — a rehype plugin wraps each lone `<img>` inside a paragraph in a `<figure class="zd-enlargeable">` and injects a hidden `<button class="zd-enlarge-btn">`. Images mixed with surrounding inline text are not wrapped.
+- **Runtime** — a Preact island (`ImageEnlarge`) uses `ResizeObserver` to compare `naturalWidth` against `clientWidth × devicePixelRatio` and toggles the button's `hidden` attribute accordingly. Clicking the button opens the image in a `<dialog>`. Press **ESC** or click outside the image to close it.
+
+:::note
+On high-DPI displays (e.g. 2× retina), eligibility accounts for device pixel ratio. A 2000 px image rendered at 1000 CSS px on a 2× screen is **not** eligible because `2000 ≤ 1000 × 2`.
+:::
+
+## Settings
+
+Image enlarge is enabled in `src/config/settings.ts`:
+
+```ts
+export const settings = {
+  imageEnlarge: true,
+};
+```
+
+Set `imageEnlarge: false` to disable the feature entirely.
