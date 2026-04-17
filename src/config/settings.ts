@@ -47,6 +47,7 @@ export const settings = {
   colorTweakPanel: true as boolean,
   sidebarResizer: true as boolean,
   sidebarToggle: true as boolean,
+  imageEnlarge: true as boolean,
   docHistory: true,
   htmlPreview: undefined as HtmlPreviewConfig | undefined,
   versions: [
