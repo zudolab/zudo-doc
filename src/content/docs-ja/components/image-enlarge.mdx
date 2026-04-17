@@ -1,0 +1,48 @@
+---
+title: 画像拡大表示
+description: レンダリング幅より広い画像に、自動でフルスクリーン拡大ボタンを追加します。
+sidebar_position: 10
+---
+
+画像の本来の幅がレンダリング幅（デバイスピクセル比を考慮）より大きい場合、隅に小さな拡大ボタンが表示されます。クリックすると、画像がフルスクリーンダイアログで開きます。
+
+## 横幅の広い画像 — ボタンが表示される
+
+以下の画像は 2400 px 幅で、一般的なコンテンツカラムより大きいサイズです。ブラウザがレンダリングサイズを計測すると、拡大ボタンが表示されます。
+
+![横幅の広いプレースホルダー画像](./image-wide.png)
+
+## 小さな画像 — ボタンは表示されない
+
+この画像は 300 px 幅で、コンテンツカラムに収まります。画像がコンテナより大きくないため、拡大ボタンは非表示のままです。
+
+![小さなプレースホルダー画像](./image-small.png)
+
+## 拡大を無効化する（オプトアウト）
+
+幅が大きい画像でも、特定の画像だけ拡大ボタンを無効にしたい場合は、Markdown のタイトル属性に `"no-enlarge"` を指定します。
+
+```md
+![alt text](./image.png "no-enlarge")
+```
+
+![オプトアウトを適用した横幅の広い画像](./image-opt-out.png "no-enlarge")
+
+## 動作の仕組み
+
+この機能は 2 つの部分で構成されています。
+
+- **ビルド時** — rehype プラグインが、段落内の単独 `<img>` を `<figure class="zd-enlargeable">` でラップし、非表示の `<button class="zd-enlarge-btn">` を注入します。
+- **実行時** — Preact アイランド（`ImageEnlarge`）が `ResizeObserver` を使用して `naturalWidth` と `clientWidth × devicePixelRatio` を比較し、ボタンの `hidden` 属性を切り替えます。ボタンをクリックすると、画像が `<dialog>` で開きます。
+
+## 設定
+
+画像拡大表示は `src/config/settings.ts` で有効にします。
+
+```ts
+export const settings = {
+  imageEnlarge: true,
+};
+```
+
+`imageEnlarge: false` に設定すると、機能全体を無効にできます。
