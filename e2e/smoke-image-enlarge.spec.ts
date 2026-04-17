@@ -47,9 +47,8 @@ test.describe("Image Enlarge: static HTML structure", () => {
 
   test("opt-out: no zd-enlarge-btn follows the opt-out image", () => {
     const optoutSection = html.match(/<img[^>]*alt="opt-out"[^>]*>[\s\S]{0,200}/);
-    if (optoutSection) {
-      expect(optoutSection[0]).not.toContain("zd-enlarge-btn");
-    }
+    expect(optoutSection).not.toBeNull();
+    expect(optoutSection![0]).not.toContain("zd-enlarge-btn");
   });
 
   test("opt-out: img tag for opt-out image has NO title attribute (plugin stripped it)", () => {
@@ -103,9 +102,8 @@ test.describe("Image Enlarge: browser behavior @local-only", () => {
   test("DPR=2: button stays hidden for 1200px image (naturalWidth=1200 ≤ clientWidth*2=1240)", async ({
     browser,
   }) => {
-    // With naturalWidth=1200 and DPR=2:
-    // clientWidth≈620 (1200px image in 700px div minus figure default margins)
-    // 1200 > 620*2=1240 → FALSE → button stays hidden
+    // naturalWidth=1200, clientWidth≈620 (700px div minus ~80px browser figure margins)
+    // DPR=2: 1200 > 620*2=1240 → FALSE → button stays hidden
     const ctx = await browser.newContext({
       viewport: { width: 1280, height: 800 },
       deviceScaleFactor: 2,
@@ -187,13 +185,15 @@ test.describe("Image Enlarge: browser behavior @local-only", () => {
 
   test("client-side navigation away and back: enlarge button still works", async ({ page }) => {
     await page.goto(PAGE, { waitUntil: "networkidle" });
-
-    // Navigate to another page
-    await page.goto("/docs/getting-started", { waitUntil: "networkidle" });
-
-    // Navigate back
-    await page.goto(PAGE, { waitUntil: "networkidle" });
     await applyImageConstraints(page);
+
+    // Simulate astro:after-swap (the event the component listens to for re-init)
+    // This tests that handleAfterSwap clears old observers and re-scans content
+    await page.evaluate(() => document.dispatchEvent(new Event("astro:after-swap")));
+    await page.waitForTimeout(300); // let observers re-register and evaluate
+    // Trigger resize so new observers re-evaluate eligibility after re-init
+    await page.evaluate(() => window.dispatchEvent(new Event("resize")));
+    await page.waitForTimeout(400);
 
     const figure = page.locator("figure.zd-enlargeable").first();
     const btn = figure.locator(".zd-enlarge-btn");
