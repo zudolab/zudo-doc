@@ -206,6 +206,68 @@ test.describe("Image Enlarge: browser behavior @local-only", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Level 4: Two-layer CSS sanity (non-@local-only — runs in CI)
+// ---------------------------------------------------------------------------
+
+// The smoke fixture's CSS is not bundled as a static asset (it lives in the
+// SSR entry). This helper injects the button token bridge and component CSS
+// that mirrors global.css so getComputedStyle resolves correctly.
+async function applyEnlargeButtonCss(page: Page) {
+  await page.addStyleTag({
+    content: `
+      :root {
+        --color-image-overlay-bg: var(--zd-image-overlay-bg);
+        --color-image-overlay-fg: var(--zd-image-overlay-fg);
+      }
+      .zd-enlarge-btn { background: transparent; }
+      .zd-enlarge-btn::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: color-mix(in oklch, var(--color-image-overlay-bg) 80%, transparent);
+      }
+      .zd-enlarge-btn > svg { color: var(--color-image-overlay-fg); }
+    `,
+  });
+}
+
+test.describe("Image Enlarge: two-layer button CSS", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("enlarge button ::before has non-transparent background; svg color is set; button bg is transparent", async ({
+    page,
+  }) => {
+    await page.goto(PAGE, { waitUntil: "networkidle" });
+    await applyEnlargeButtonCss(page);
+    await applyImageConstraints(page);
+
+    const figure = page.locator("figure.zd-enlargeable").first();
+    const btn = figure.locator(".zd-enlarge-btn");
+    await expect(btn).toBeVisible({ timeout: 3000 });
+
+    // ::before background should be non-transparent (image-overlay-bg token via color-mix)
+    const beforeBg = await btn.evaluate((el) =>
+      getComputedStyle(el, "::before").backgroundColor,
+    );
+    expect(beforeBg).toBeTruthy();
+    expect(beforeBg).not.toBe("rgba(0, 0, 0, 0)");
+    expect(beforeBg).not.toBe("transparent");
+
+    // SVG color should be the image-overlay-fg token value (not the UA-inherited black)
+    const svgColor = await btn.evaluate((el) => {
+      const svg = el.querySelector("svg");
+      return svg ? getComputedStyle(svg).color : "";
+    });
+    expect(svgColor).toBeTruthy();
+    expect(svgColor).not.toBe("rgb(0, 0, 0)");
+
+    // Button's own background should be transparent (background lives on ::before)
+    const btnBg = await btn.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(btnBg).toBe("rgba(0, 0, 0, 0)");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Level 4: No-JS assertions
 // ---------------------------------------------------------------------------
 

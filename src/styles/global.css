@@ -63,6 +63,8 @@
   --color-info: var(--zd-info);
   /* Overlay is intentionally theme-independent (always dark, not scheme-driven) */
   --color-overlay: #000;
+  --color-image-overlay-bg: var(--zd-image-overlay-bg);
+  --color-image-overlay-fg: var(--zd-image-overlay-fg);
   --color-mermaid-node-bg: var(--zd-mermaid-node-bg);
   --color-mermaid-text: var(--zd-mermaid-text);
   --color-mermaid-line: var(--zd-mermaid-line);
@@ -803,19 +805,38 @@ pre.astro-code .line .highlighted-word {
   position: absolute;
   top: var(--spacing-vsp-xs);
   right: var(--spacing-hsp-xs);
-  width: var(--spacing-icon-sm);
-  height: var(--spacing-icon-sm);
-  padding: 0;
-  border: none;
-  border-radius: var(--radius-DEFAULT);
-  background: color-mix(in oklch, var(--color-overlay) 80%, transparent);
-  color: var(--color-bg);
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: var(--spacing-vsp-2xs) var(--spacing-hsp-sm);
+  border: none;
+  border-radius: var(--radius-DEFAULT);
+  background: transparent;
+  cursor: pointer;
   z-index: 1;
   transition: opacity var(--default-transition-duration);
+}
+
+.zd-enlarge-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: color-mix(in oklch, var(--color-image-overlay-bg) 80%, transparent);
+  z-index: 0;
+}
+
+.zd-enlarge-btn > svg {
+  position: relative;
+  z-index: 1;
+  width: var(--spacing-icon-sm);
+  height: var(--spacing-icon-sm);
+  color: var(--color-image-overlay-fg);
+  fill: currentColor;
+}
+
+.zd-enlarge-btn:hover {
+  opacity: 0.8;
 }
 
 .zd-enlarge-btn[hidden] {
@@ -824,6 +845,41 @@ pre.astro-code .line .highlighted-word {
 
 dialog.zd-enlarge-dialog::backdrop {
   background: color-mix(in oklch, var(--color-overlay) 80%, transparent);
+}
+
+.zd-enlarge-dialog-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-vsp-xs) var(--spacing-hsp-sm);
+  border: none;
+  border-radius: var(--radius-DEFAULT);
+  background: transparent;
+  cursor: pointer;
+  z-index: 1;
+  transition: opacity var(--default-transition-duration);
+}
+
+.zd-enlarge-dialog-close:hover {
+  opacity: 0.8;
+}
+
+.zd-enlarge-dialog-close::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: color-mix(in oklch, var(--color-image-overlay-bg) 80%, transparent);
+  z-index: 0;
+}
+
+.zd-enlarge-dialog-close > svg {
+  position: relative;
+  z-index: 1;
+  width: var(--spacing-icon-md);
+  height: var(--spacing-icon-md);
+  color: var(--color-image-overlay-fg);
+  fill: currentColor;
 }
 
 /* ========================================

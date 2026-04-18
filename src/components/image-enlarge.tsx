@@ -194,11 +194,14 @@ export default function ImageEnlarge() {
             className="block max-h-[85vh] max-w-[85vw] object-contain"
           />
           <button
+            type="button"
             onClick={() => dialogRef.current?.close()}
-            className="absolute right-0 top-0 border border-muted bg-surface px-hsp-lg py-vsp-2xs text-small text-muted transition-colors hover:border-fg hover:text-fg"
+            className="zd-enlarge-dialog-close absolute right-0 top-0"
             aria-label="Close enlarged image"
           >
-            ×
+            <svg viewBox="0 0 161.03 161.03" fill="currentColor" aria-hidden="true" focusable="false">
+              <polygon points="161.03 10.27 150.76 0 80.51 70.24 10.27 0 0 10.27 70.24 80.51 0 150.76 10.27 161.03 80.51 90.78 150.76 161.03 161.03 150.76 90.78 80.51 161.03 10.27" />
+            </svg>
           </button>
         </div>
       )}

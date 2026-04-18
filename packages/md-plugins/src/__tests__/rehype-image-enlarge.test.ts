@@ -184,7 +184,7 @@ describe("rehypeImageEnlarge", () => {
     expect(resultImg.properties?.dataFoo).toBe("bar");
   });
 
-  it("Button shape: type='button', hidden, aria-label, SVG child present", () => {
+  it("Button shape: type='button', hidden, aria-label, SVG with polygon children", () => {
     const img = makeImg();
     const tree = makeTree(makeP(img));
     runPlugin(tree);
@@ -198,6 +198,12 @@ describe("rehypeImageEnlarge", () => {
       (c) => (c as Element).tagName === "svg",
     ) as Element;
     expect(svg).toBeDefined();
-    expect(svg.children.length).toBeGreaterThan(0);
+    expect(svg.properties?.viewBox).toBe("0 0 38.99 38.99");
+    expect(svg.properties?.fill).toBe("currentColor");
+    expect(svg.properties?.focusable).toBe("false");
+    const polygons = svg.children.filter(
+      (c) => (c as Element).tagName === "polygon",
+    );
+    expect(polygons).toHaveLength(4);
   });
 });
