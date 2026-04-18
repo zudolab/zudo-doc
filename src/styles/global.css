@@ -63,6 +63,8 @@
   --color-info: var(--zd-info);
   /* Overlay is intentionally theme-independent (always dark, not scheme-driven) */
   --color-overlay: #000;
+  --color-image-overlay-bg: var(--zd-image-overlay-bg);
+  --color-image-overlay-fg: var(--zd-image-overlay-fg);
   --color-mermaid-node-bg: var(--zd-mermaid-node-bg);
   --color-mermaid-text: var(--zd-mermaid-text);
   --color-mermaid-line: var(--zd-mermaid-line);
