@@ -200,9 +200,10 @@ describe("rehypeImageEnlarge", () => {
     expect(svg).toBeDefined();
     expect(svg.properties?.viewBox).toBe("0 0 38.99 38.99");
     expect(svg.properties?.fill).toBe("currentColor");
-    const hasPolygon = svg.children.some(
+    expect(svg.properties?.focusable).toBe("false");
+    const polygons = svg.children.filter(
       (c) => (c as Element).tagName === "polygon",
     );
-    expect(hasPolygon).toBe(true);
+    expect(polygons).toHaveLength(4);
   });
 });

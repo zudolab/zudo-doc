@@ -56,6 +56,10 @@ export const imageEnlargeFeature: FeatureModule = () => ({
   fill: currentColor;
 }
 
+.zd-enlarge-btn:hover {
+  opacity: 0.8;
+}
+
 .zd-enlarge-btn[hidden] {
   display: none !important;
 }
@@ -65,7 +69,6 @@ dialog.zd-enlarge-dialog::backdrop {
 }
 
 .zd-enlarge-dialog-close {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;

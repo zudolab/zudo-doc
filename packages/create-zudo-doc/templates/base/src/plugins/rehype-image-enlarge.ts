@@ -28,7 +28,7 @@ function makeEnlargeButton(): Element {
         properties: {
           viewBox: "0 0 38.99 38.99",
           fill: "currentColor",
-          focusable: false,
+          focusable: "false",
           ariaHidden: true,
         },
         children: [
