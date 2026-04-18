@@ -26,40 +26,46 @@ function makeEnlargeButton(): Element {
         type: "element",
         tagName: "svg",
         properties: {
-          width: "16",
-          height: "16",
-          viewBox: "0 0 24 24",
-          fill: "none",
-          stroke: "currentColor",
-          strokeWidth: "2",
-          strokeLinecap: "round",
-          strokeLinejoin: "round",
+          viewBox: "0 0 38.99 38.99",
+          fill: "currentColor",
           focusable: false,
           ariaHidden: true,
         },
         children: [
           {
             type: "element",
-            tagName: "polyline",
-            properties: { points: "15 3 21 3 21 9" },
+            tagName: "polygon",
+            properties: {
+              points:
+                "16.2 13.74 5.92 3.47 11.2 3.47 11.2 0 3.47 0 0 0 0 3.47 0 11.2 3.47 11.2 3.47 5.92 13.74 16.2 16.2 13.74",
+            },
             children: [],
           },
           {
             type: "element",
-            tagName: "polyline",
-            properties: { points: "9 21 3 21 3 15" },
+            tagName: "polygon",
+            properties: {
+              points:
+                "25.24 16.2 35.52 5.92 35.52 11.2 38.99 11.2 38.99 3.47 38.99 0 35.52 0 27.79 0 27.79 3.47 33.07 3.47 22.79 13.74 25.24 16.2",
+            },
             children: [],
           },
           {
             type: "element",
-            tagName: "line",
-            properties: { x1: "21", y1: "3", x2: "14", y2: "10" },
+            tagName: "polygon",
+            properties: {
+              points:
+                "22.79 25.24 33.07 35.52 27.79 35.52 27.79 38.99 35.52 38.99 38.99 38.99 38.99 35.52 38.99 27.79 35.52 27.79 35.52 33.07 25.24 22.79 22.79 25.24",
+            },
             children: [],
           },
           {
             type: "element",
-            tagName: "line",
-            properties: { x1: "3", y1: "21", x2: "10", y2: "14" },
+            tagName: "polygon",
+            properties: {
+              points:
+                "13.74 22.79 3.47 33.07 3.47 27.79 0 27.79 0 35.52 0 38.99 3.47 38.99 11.2 38.99 11.2 35.52 5.92 35.52 16.2 25.24 13.74 22.79",
+            },
             children: [],
           },
         ],
