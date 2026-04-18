@@ -36,6 +36,9 @@ export interface ColorScheme {
     chatUserText?: ColorRef;
     chatAssistantBg?: ColorRef;
     chatAssistantText?: ColorRef;
+    /** UI chrome over user images — enlarge/close overlay buttons */
+    imageOverlayBg?: ColorRef;
+    imageOverlayFg?: ColorRef;
   };
 }
 
@@ -86,6 +89,8 @@ export const colorSchemes: Record<string, ColorScheme> = {
       danger: 1,
       warning: 3,
       info: 4,
+      imageOverlayBg: 11,
+      imageOverlayFg: 10,
     },
   },
   "Default Dark": {
@@ -112,6 +117,8 @@ export const colorSchemes: Record<string, ColorScheme> = {
       danger: 1,
       warning: 3,
       info: 4,
+      imageOverlayBg: 0,
+      imageOverlayFg: 11,
     },
   },
 };
