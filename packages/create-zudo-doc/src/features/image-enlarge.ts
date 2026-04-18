@@ -50,6 +50,7 @@ dialog.zd-enlarge-dialog::backdrop {
 }
 
 .zd-enlarge-dialog-close {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -60,6 +61,10 @@ dialog.zd-enlarge-dialog::backdrop {
   cursor: pointer;
   z-index: 1;
   transition: opacity var(--default-transition-duration);
+}
+
+.zd-enlarge-dialog-close:hover {
+  opacity: 0.8;
 }
 
 .zd-enlarge-dialog-close::before {
