@@ -50,3 +50,26 @@ export const settings = {
 ```
 
 `imageEnlarge: false` に設定すると、機能全体を無効にできます。
+
+## オーバーレイ色のカスタマイズ
+
+拡大ボタンとダイアログの閉じるボタンは、外観を制御するトークンペアを共有しています。
+
+- `image-overlay-bg` — アイコンの背後に 80% の不透明度で描画される背景レイヤーの色。
+- `image-overlay-fg` — 背景の上に 100% の不透明度で描画されるアイコンの色。
+
+適切なオーバーレイ色はコンテンツ画像に依存し、サイトによって異なります。デフォルト値はほとんどのケースで機能しますが、3 層カラー戦略（[Color](../reference/color.mdx) を参照）に従い、任意のカラースキームで上書きできます。
+
+```ts
+// src/config/color-schemes.ts
+"My Scheme": {
+  // ...palette, background, foreground, ...
+  semantic: {
+    imageOverlayBg: 0,    // palette index — deep surface
+    imageOverlayFg: 11,   // palette index — light text
+    // or a direct color string: imageOverlayBg: "#222"
+  },
+},
+```
+
+Color Tweak Panel（有効時）を使えば、コードを編集せずにこれらのトークンをライブで調整できます。

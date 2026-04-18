@@ -50,3 +50,26 @@ export const settings = {
 ```
 
 Set `imageEnlarge: false` to disable the feature entirely.
+
+## Customizing overlay colors
+
+The enlarge button and the dialog's close button share a single token pair that controls their appearance:
+
+- `image-overlay-bg` — bg layer color, rendered at 80% opacity behind the icon.
+- `image-overlay-fg` — icon color, rendered at 100% opacity on top of the bg.
+
+The right overlay color depends on the content photos, which vary between sites. The default values work for most cases, but any color scheme can override them per the three-tier color strategy (see [Color](../reference/color.mdx)):
+
+```ts
+// src/config/color-schemes.ts
+"My Scheme": {
+  // ...palette, background, foreground, ...
+  semantic: {
+    imageOverlayBg: 0,    // palette index — deep surface
+    imageOverlayFg: 11,   // palette index — light text
+    // or a direct color string: imageOverlayBg: "#222"
+  },
+},
+```
+
+The Color Tweak Panel (when enabled) exposes these tokens for live tweaking without editing code.
