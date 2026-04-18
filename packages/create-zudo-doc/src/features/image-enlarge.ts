@@ -42,7 +42,6 @@ export const imageEnlargeFeature: FeatureModule = () => ({
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: inherit;
   background: color-mix(in oklch, var(--color-image-overlay-bg) 80%, transparent);
   z-index: 0;
 }
@@ -88,7 +87,6 @@ dialog.zd-enlarge-dialog::backdrop {
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: inherit;
   background: color-mix(in oklch, var(--color-image-overlay-bg) 80%, transparent);
   z-index: 0;
 }
