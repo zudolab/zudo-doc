@@ -13,7 +13,8 @@ export const imageEnlargeFeature: FeatureModule = () => ({
 .zd-enlargeable {
   position: relative;
   display: block;
-  margin: 0;
+  margin-inline: 0;
+  margin-block-end: 0;
 }
 
 .zd-enlargeable img {
@@ -24,14 +25,13 @@ export const imageEnlargeFeature: FeatureModule = () => ({
 
 .zd-enlarge-btn {
   position: absolute;
-  top: var(--spacing-vsp-xs);
-  right: var(--spacing-hsp-xs);
+  top: var(--spacing-image-overlay-inset);
+  right: var(--spacing-image-overlay-inset);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-vsp-2xs) var(--spacing-hsp-sm);
+  padding: var(--spacing-image-overlay-inset);
   border: none;
-  border-radius: var(--radius-DEFAULT);
   background: transparent;
   cursor: pointer;
   z-index: 1;
@@ -72,9 +72,8 @@ dialog.zd-enlarge-dialog::backdrop {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-vsp-xs) var(--spacing-hsp-sm);
+  padding: var(--spacing-image-overlay-inset);
   border: none;
-  border-radius: var(--radius-DEFAULT);
   background: transparent;
   cursor: pointer;
   z-index: 1;
