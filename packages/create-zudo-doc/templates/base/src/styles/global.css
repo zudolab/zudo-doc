@@ -104,6 +104,9 @@
   --spacing-icon-md: 1.25rem;    /* 20px — medium emphasis icons */
   --spacing-icon-lg: 1.5rem;     /* 24px — large / mobile icons */
 
+  /* Image overlay button chrome */
+  --spacing-image-overlay-inset: 0.5rem;  /* 8px — overlay button corner inset + internal padding */
+
   /* ========================================
    * Typography
    * ======================================== */
