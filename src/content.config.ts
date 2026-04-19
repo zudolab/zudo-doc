@@ -3,24 +3,26 @@ import { z } from "astro/zod";
 import { glob } from "astro/loaders";
 import { settings } from "./config/settings";
 
-const docsSchema = z.object({
-  title: z.string(),
-  description: z.string().optional(),
-  category: z.string().optional(),
-  sidebar_position: z.number().optional(),
-  sidebar_label: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-  search_exclude: z.boolean().optional(),
-  pagination_next: z.string().nullable().optional(), // doc slug or null to hide
-  pagination_prev: z.string().nullable().optional(), // doc slug or null to hide
-  draft: z.boolean().optional(), // Exclude from build entirely
-  unlisted: z.boolean().optional(), // Built but noindexed, hidden from sidebar/nav
-  hide_sidebar: z.boolean().optional(), // Hide the left sidebar, center content
-  hide_toc: z.boolean().optional(), // Hide the right-side table of contents
-  standalone: z.boolean().optional(), // Hidden from sidebar nav but still indexed (unlike unlisted)
-  slug: z.string().optional(), // Custom URL slug override
-  generated: z.boolean().optional(), // Build-time generated content (skip translation)
-});
+const docsSchema = z
+  .object({
+    title: z.string(),
+    description: z.string().optional(),
+    category: z.string().optional(),
+    sidebar_position: z.number().optional(),
+    sidebar_label: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    search_exclude: z.boolean().optional(),
+    pagination_next: z.string().nullable().optional(), // doc slug or null to hide
+    pagination_prev: z.string().nullable().optional(), // doc slug or null to hide
+    draft: z.boolean().optional(), // Exclude from build entirely
+    unlisted: z.boolean().optional(), // Built but noindexed, hidden from sidebar/nav
+    hide_sidebar: z.boolean().optional(), // Hide the left sidebar, center content
+    hide_toc: z.boolean().optional(), // Hide the right-side table of contents
+    standalone: z.boolean().optional(), // Hidden from sidebar nav but still indexed (unlike unlisted)
+    slug: z.string().optional(), // Custom URL slug override
+    generated: z.boolean().optional(), // Build-time generated content (skip translation)
+  })
+  .passthrough(); // Allow custom frontmatter keys (e.g. author, status) to pass through for frontmatter preview
 
 const docs = defineCollection({
   loader: glob({ pattern: "**/*.{md,mdx}", base: `./${settings.docsDir}` }),
