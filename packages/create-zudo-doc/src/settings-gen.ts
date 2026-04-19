@@ -10,6 +10,7 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  HeaderNavItem,`);
   lines.push(`  ColorModeConfig,`);
   lines.push(`  HtmlPreviewConfig,`);
+  lines.push(`  FrontmatterPreviewConfig,`);
   lines.push(`  LocaleConfig,`);
   lines.push(`  VersionConfig,`);
   lines.push(`  FooterConfig,`);
@@ -18,6 +19,7 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  HeaderNavItem,`);
   lines.push(`  ColorModeConfig,`);
   lines.push(`  HtmlPreviewConfig,`);
+  lines.push(`  FrontmatterPreviewConfig,`);
   lines.push(`  LocaleConfig,`);
   lines.push(`  VersionConfig,`);
   lines.push(`  FooterConfig,`);
@@ -78,6 +80,9 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  sitemap: false,`);
   lines.push(`  docMetainfo: false,`);
   lines.push(`  docTags: false,`);
+  lines.push(
+    `  frontmatterPreview: false as FrontmatterPreviewConfig | false,`,
+  );
   if (choices.features.includes("llmsTxt")) {
     lines.push(`  llmsTxt: true,`);
   } else {

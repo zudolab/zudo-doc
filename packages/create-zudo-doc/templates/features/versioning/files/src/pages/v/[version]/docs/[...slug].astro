@@ -34,6 +34,7 @@ import { settings } from "@/config/settings";
 import { versionedDocsUrl } from "@/utils/base";
 import DocMetainfo from "@/components/doc-metainfo.astro";
 import DocTags from "@/components/doc-tags.astro";
+import FrontmatterPreview from "@/components/frontmatter-preview.astro";
 import EditLink from "@/components/edit-link.astro";
 import type { VersionConfig } from "@/config/settings-types";
 
@@ -221,6 +222,10 @@ const slug = autoIndex
         )}
 
         {entry?.data?.tags && <DocTags tags={entry.data.tags} locale="en" />}
+
+        {settings.frontmatterPreview && entry && (
+          <FrontmatterPreview data={entry.data} locale="en" />
+        )}
 
         <Content components={components} />
 
