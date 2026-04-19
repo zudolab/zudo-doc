@@ -48,6 +48,19 @@ export interface HtmlPreviewConfig {
   js?: string;
 }
 
+export interface FrontmatterPreviewConfig {
+  /**
+   * Completely replaces the default ignore list.
+   * When set, `extraIgnoreKeys` is ignored.
+   */
+  ignoreKeys?: string[];
+  /**
+   * Additional keys to ignore on top of the defaults.
+   * Has no effect when `ignoreKeys` is also set.
+   */
+  extraIgnoreKeys?: string[];
+}
+
 export interface VersionConfig {
   /** Version identifier, used in URL path (e.g., "1.0", "v1") */
   slug: string;

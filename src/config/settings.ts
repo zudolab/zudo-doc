@@ -6,6 +6,7 @@ export type {
   LocaleConfig,
   VersionConfig,
   FooterConfig,
+  FrontmatterPreviewConfig,
 } from "./settings-types";
 import type {
   HeaderNavItem,
@@ -14,6 +15,7 @@ import type {
   LocaleConfig,
   VersionConfig,
   FooterConfig,
+  FrontmatterPreviewConfig,
 } from "./settings-types";
 
 export const settings = {
@@ -48,6 +50,7 @@ export const settings = {
   sidebarResizer: true as boolean,
   sidebarToggle: true as boolean,
   imageEnlarge: true as boolean,
+  frontmatterPreview: {} satisfies FrontmatterPreviewConfig as FrontmatterPreviewConfig | false,
   docHistory: true,
   htmlPreview: undefined as HtmlPreviewConfig | undefined,
   versions: [
