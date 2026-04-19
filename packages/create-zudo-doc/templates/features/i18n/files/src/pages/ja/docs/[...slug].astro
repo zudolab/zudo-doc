@@ -35,6 +35,7 @@ import EditLink from "@/components/edit-link.astro";
 import { settings } from "@/config/settings";
 import DocMetainfo from "@/components/doc-metainfo.astro";
 import DocTags from "@/components/doc-tags.astro";
+import FrontmatterPreview from "@/components/frontmatter-preview.astro";
 import type { DocsEntry } from "@/types/docs-entry";
 
 export async function getStaticPaths() {
@@ -242,6 +243,10 @@ const slug = autoIndex
         )}
 
         {entry?.data?.tags && <DocTags tags={entry.data.tags} locale="ja" />}
+
+        {settings.frontmatterPreview && entry && (
+          <FrontmatterPreview data={entry.data} locale="ja" />
+        )}
 
         <Content components={components} />
 

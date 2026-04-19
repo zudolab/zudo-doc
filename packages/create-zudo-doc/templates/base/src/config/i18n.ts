@@ -82,6 +82,9 @@ const translations: Record<string, Record<string, string>> = {
     "nav.backToMenu": "Back to main menu",
     "doc.fallbackNotice":
       "This page has not been translated yet and is shown in the original language.",
+    "frontmatter.preview.title": "Frontmatter",
+    "frontmatter.preview.keyCol": "Key",
+    "frontmatter.preview.valueCol": "Value",
     "version.latest": "Latest",
     "version.switcher.label": "Version",
     "version.banner.unmaintained":
@@ -133,6 +136,9 @@ const translations: Record<string, Record<string, string>> = {
     "nav.backToMenu": "メインメニューに戻る",
     "doc.fallbackNotice":
       "このページはまだ翻訳されていません。原文のまま表示しています。",
+    "frontmatter.preview.title": "フロントマター",
+    "frontmatter.preview.keyCol": "キー",
+    "frontmatter.preview.valueCol": "値",
     "version.latest": "最新",
     "version.switcher.label": "バージョン",
     "version.banner.unmaintained":
@@ -184,6 +190,9 @@ const translations: Record<string, Record<string, string>> = {
     "doc.pageCountSingle": "{count} Seite",
     "doc.fallbackNotice":
       "Diese Seite wurde noch nicht übersetzt und wird in der Originalsprache angezeigt.",
+    "frontmatter.preview.title": "Frontmatter",
+    "frontmatter.preview.keyCol": "Schlüssel",
+    "frontmatter.preview.valueCol": "Wert",
     "version.latest": "Neueste",
     "version.switcher.label": "Version",
     "version.banner.unmaintained":
