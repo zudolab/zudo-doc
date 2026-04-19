@@ -42,7 +42,7 @@ export function generateContentConfig(choices: UserChoices): string {
   lines.push(`  standalone: z.boolean().optional(),`);
   lines.push(`  slug: z.string().optional(),`);
   lines.push(`  generated: z.boolean().optional(),`);
-  lines.push(`});`);
+  lines.push(`}).passthrough();`);
   lines.push(``);
 
   // --- Base docs collection ---
