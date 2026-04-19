@@ -3,6 +3,7 @@ import type {
   ColorModeConfig,
   HtmlPreviewConfig,
   LocaleConfig,
+  FrontmatterPreviewConfig,
 } from "./settings-types";
 
 export const settings = {
@@ -24,6 +25,7 @@ export const settings = {
   aiAssistant: true as boolean,
   colorTweakPanel: true as boolean,
   imageEnlarge: true as boolean,
+  frontmatterPreview: {} as FrontmatterPreviewConfig,
   docHistory: true,
   htmlPreview: {
     css: `.global-test { border: 3px solid rgb(255, 0, 0); }`,
