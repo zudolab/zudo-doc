@@ -60,6 +60,11 @@ describe("generateContentConfig", () => {
     expect(result).toContain("slug: z.string().optional()");
   });
 
+  it("preserves unknown frontmatter keys via .passthrough()", () => {
+    const result = generateContentConfig(baseChoices);
+    expect(result).toContain(".passthrough()");
+  });
+
   it("includes version locale variants in version collections", () => {
     const choices = { ...baseChoices, features: ["versioning"] };
     const result = generateContentConfig(choices);

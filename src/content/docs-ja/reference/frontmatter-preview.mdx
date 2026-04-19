@@ -1,0 +1,103 @@
+---
+title: フロントマタープレビュー
+description: カスタムフロントマターフィールドをページタイトルの下にメタデータテーブルとして自動表示します。
+sidebar_position: 7
+author: zudo-doc
+status: stable
+---
+
+フロントマタープレビューブロックは、ドキュメントに無視されていないフロントマターキーが含まれている場合、ページタイトルの下に自動的に表示されます。カスタムフィールドをコンパクトなキー/値テーブルとしてレンダリングし、著者情報、ステータス、バージョンなどのドキュメントメタデータを本文中に埋め込まずに表示するのに便利です。
+
+このページ自体がその機能のデモです。上部に表示されている `author` と `status` フィールドは、このページ自身のフロントマターで宣言されています。
+
+## ブロックが表示される条件
+
+フィルタリングを経て少なくとも1つのフロントマターキーが残った場合のみブロックが表示されます。フレームワーク管理のキー（`title`、`description`、`sidebar_position`、`tags` など）はデフォルトで除外されます。すべてのキーが無視リストに含まれている場合は何も表示されません。
+
+`src/config/settings.ts` で `frontmatterPreview: false` を設定すると、すべてのページでこの機能を無効にできます。
+
+## デフォルト無視リスト
+
+以下のキーはデフォルトで無視されます。これらはコンテンツスキームで定義されたすべてのフィールドに対応しており、再表示しても冗長になるだけです。
+
+| キー | 理由 |
+|-----|------|
+| `title` | ページの `h1` としてレンダリング |
+| `description` | タイトルの下にサブタイトルとして表示 |
+| `sidebar_position` | ナビゲーション内部メタデータ |
+| `sidebar_label` | ナビゲーション内部メタデータ |
+| `category` | ナビゲーション内部メタデータ |
+| `tags` | タグバッジとして別途レンダリング |
+| `search_exclude` | ビルド時フラグ |
+| `pagination_next` | ビルド時フラグ |
+| `pagination_prev` | ビルド時フラグ |
+| `draft` | ビルド時フラグ |
+| `unlisted` | ビルド時フラグ |
+| `hide_sidebar` | レイアウトフラグ |
+| `hide_toc` | レイアウトフラグ |
+| `standalone` | レイアウトフラグ |
+| `slug` | URL オーバーライド |
+| `generated` | ビルド時フラグ |
+
+このリストにないキーは自動的に表示されます。
+
+## 無視リストのカスタマイズ
+
+`src/config/settings.ts` の `frontmatterPreview` 設定には、互いに排他的な2つの設定があります。
+
+### `extraIgnoreKeys` — デフォルトを拡張する
+
+デフォルト設定を破棄せずにキーを無視リストに追加します。プロジェクト全体で非表示にしたいカスタムフロントマターフィールドがある場合に使用します。
+
+```ts
+frontmatterPreview: {
+  extraIgnoreKeys: ["reviewed_by", "internal_id"],
+},
+```
+
+### `ignoreKeys` — デフォルトを置き換える
+
+組み込みの無視リストを完全に置き換えます。非表示にするキーを完全に制御したい場合に使用します。`ignoreKeys` が存在する場合、`extraIgnoreKeys` は無視されます。
+
+```ts
+frontmatterPreview: {
+  ignoreKeys: ["title", "description", "sidebar_position"],
+},
+```
+
+<Warning>
+
+`ignoreKeys` を使用する際に標準スキーマキーを含めないと、`draft` や `unlisted` などのフレームワーク内部フィールドがテーブルに表示される可能性があります。ほとんどの場合、`extraIgnoreKeys` を使用する方が安全です。
+
+</Warning>
+
+## 機能を無効にする
+
+`frontmatterPreview: false` を設定すると、すべてのページからブロックを一括削除できます。
+
+```ts
+frontmatterPreview: false,
+```
+
+## 使用例
+
+次のフロントマターは `author` と `status` が表示されるプレビューテーブルを生成します。`title`、`description`、`sidebar_position` はフィルタリングされます。
+
+```mdx
+---
+title: My Release Notes
+description: What changed in v2.
+sidebar_position: 5
+author: Jane Doe
+status: released
+---
+```
+
+レンダリングされたテーブル：
+
+| キー | 値 |
+|-----|---|
+| `author` | Jane Doe |
+| `status` | released |
+
+完全な設定リファレンスについては、[設定 — frontmatterPreview](../guides/configuration.mdx#frontmatterpreview) を参照してください。

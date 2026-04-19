@@ -1,0 +1,103 @@
+---
+title: Frontmatter Preview
+description: Automatically display custom frontmatter fields as a metadata table beneath the page title.
+sidebar_position: 7
+author: zudo-doc
+status: stable
+---
+
+The frontmatter preview block appears automatically below the page title whenever a document contains non-ignored frontmatter keys. It renders those custom fields as a compact key/value table — useful for surfacing document metadata such as authorship, status, or version without embedding it inline in the prose.
+
+This very page demonstrates the feature: the `author` and `status` fields you see rendered above were declared in its own frontmatter.
+
+## When the Block Appears
+
+The block appears only when at least one frontmatter key survives filtering. Framework-managed keys (`title`, `description`, `sidebar_position`, `tags`, etc.) are stripped by default. If every key is on the ignore list, nothing is rendered.
+
+Set `frontmatterPreview: false` in `src/config/settings.ts` to disable the feature entirely for all pages.
+
+## Default Ignore List
+
+The following keys are ignored by default. They correspond to every field defined in the content schema and would be redundant to show again:
+
+| Key | Reason |
+|-----|--------|
+| `title` | Rendered as the page `h1` |
+| `description` | Shown as a subtitle below the title |
+| `sidebar_position` | Internal navigation metadata |
+| `sidebar_label` | Internal navigation metadata |
+| `category` | Internal navigation metadata |
+| `tags` | Rendered separately as tag badges |
+| `search_exclude` | Build-time flag |
+| `pagination_next` | Build-time flag |
+| `pagination_prev` | Build-time flag |
+| `draft` | Build-time flag |
+| `unlisted` | Build-time flag |
+| `hide_sidebar` | Layout flag |
+| `hide_toc` | Layout flag |
+| `standalone` | Layout flag |
+| `slug` | URL override |
+| `generated` | Build-time flag |
+
+Any key not in this list will be shown automatically.
+
+## Customizing the Ignore List
+
+The `frontmatterPreview` setting in `src/config/settings.ts` accepts two mutually exclusive knobs.
+
+### `extraIgnoreKeys` — extend the defaults
+
+Add keys to the ignore list without discarding the defaults. Use this when you have a project-wide custom frontmatter field that should remain hidden everywhere:
+
+```ts
+frontmatterPreview: {
+  extraIgnoreKeys: ["reviewed_by", "internal_id"],
+},
+```
+
+### `ignoreKeys` — replace the defaults
+
+Completely replaces the built-in ignore list. Use this when you want full control over which keys are hidden. When `ignoreKeys` is present, `extraIgnoreKeys` is ignored.
+
+```ts
+frontmatterPreview: {
+  ignoreKeys: ["title", "description", "sidebar_position"],
+},
+```
+
+<Warning>
+
+Using `ignoreKeys` without including the standard schema keys can expose framework-internal fields like `draft` or `unlisted` in the rendered table. In most cases, `extraIgnoreKeys` is the safer choice.
+
+</Warning>
+
+## Disable the Feature
+
+Set `frontmatterPreview: false` to remove the block from all pages at once:
+
+```ts
+frontmatterPreview: false,
+```
+
+## Example
+
+The following frontmatter produces a preview table with `author` and `status` visible, while `title`, `description`, and `sidebar_position` are filtered out:
+
+```mdx
+---
+title: My Release Notes
+description: What changed in v2.
+sidebar_position: 5
+author: Jane Doe
+status: released
+---
+```
+
+The rendered table shows:
+
+| Key | Value |
+|-----|-------|
+| `author` | Jane Doe |
+| `status` | released |
+
+For the full configuration reference, see [Configuration — frontmatterPreview](../guides/configuration.mdx#frontmatterpreview).

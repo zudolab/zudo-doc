@@ -956,6 +956,66 @@ describe("scaffold — CLAUDE.md generation", () => {
   });
 });
 
+describe("scaffold — frontmatterPreview setting", () => {
+  it("generated settings.ts contains frontmatterPreview: false by default", async () => {
+    const choices: UserChoices = {
+      projectName: "test-fp-default",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-fp-default", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("frontmatterPreview:");
+    expect(content).toContain("FrontmatterPreviewConfig | false");
+  });
+
+  it("frontmatter-preview.astro component exists in base template", async () => {
+    const choices: UserChoices = {
+      projectName: "test-fp-component",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-fp-component",
+          "src/components/frontmatter-preview.astro",
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it("frontmatter-preview-defaults.ts exists in base template", async () => {
+    const choices: UserChoices = {
+      projectName: "test-fp-defaults",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-fp-defaults",
+          "src/config/frontmatter-preview-defaults.ts",
+        ),
+      ),
+    ).toBe(true);
+  });
+});
+
 describe("scaffold — imageEnlarge feature", () => {
   it("settings have imageEnlarge: true when enabled", async () => {
     const choices: UserChoices = {

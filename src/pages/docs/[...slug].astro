@@ -34,6 +34,7 @@ import { docsUrl } from "@/utils/base";
 import EditLink from "@/components/edit-link.astro";
 import DocMetainfo from "@/components/doc-metainfo.astro";
 import DocTags from "@/components/doc-tags.astro";
+import FrontmatterPreview from "@/components/frontmatter-preview.astro";
 
 export async function getStaticPaths() {
   const allDocs = await getCollection("docs");
@@ -191,6 +192,10 @@ const slug = autoIndex
         )}
 
         {entry?.data?.tags && <DocTags tags={entry.data.tags} locale="en" />}
+
+        {settings.frontmatterPreview && entry && (
+          <FrontmatterPreview data={entry.data} locale="en" />
+        )}
 
         <Content components={components} />
 
