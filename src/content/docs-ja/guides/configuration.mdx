@@ -35,6 +35,7 @@ export const settings = {
   colorTweakPanel: true,
   docMetainfo: true,
   docTags: true,
+  frontmatterPreview: {},
   math: true,
   docHistory: true,
   claudeResources: {
@@ -294,6 +295,40 @@ llmsTxt: true,
 ドキュメントページのタグサポートを有効にします。`true`の場合、ページは`tags`フロントマターフィールドを使用でき、タグインデックスページが`/docs/tags/`に生成されます。
 
 デフォルト：`true`
+
+### frontmatterPreview
+
+カスタムフロントマターフィールドをページタイトルの直下にコンパクトなキー/値テーブルとして表示します。フレームワーク管理のキー（`title`、`description`、`sidebar_position` など）はデフォルトで非表示になるため、プロジェクト固有のメタデータのみが表示されます。すべてのページでブロックを無効にするには `false` を設定します。
+
+型：`FrontmatterPreviewConfig | false`
+
+デフォルト：`{}`（組み込み無視リストで有効）
+
+`FrontmatterPreviewConfig` オブジェクトは以下を受け入れます：
+
+| プロパティ | 型 | 説明 |
+|----------|------|-------------|
+| `ignoreKeys` | `string[]`（オプション） | デフォルトの無視リストを完全に置き換えます。設定すると `extraIgnoreKeys` は無視されます |
+| `extraIgnoreKeys` | `string[]`（オプション） | デフォルトに加えて無視する追加キーです。`ignoreKeys` が設定されている場合は効果がありません |
+
+```ts
+// Extend the default list:
+frontmatterPreview: {
+  extraIgnoreKeys: ["reviewed_by", "internal_id"],
+},
+// Replace the default list entirely:
+frontmatterPreview: {
+  ignoreKeys: ["title", "description", "sidebar_position"],
+},
+// Disable:
+frontmatterPreview: false,
+```
+
+<Tip>
+
+完全なデフォルト無視リストとライブデモについては、[フロントマタープレビューリファレンス](../reference/frontmatter-preview.mdx) を参照してください。
+
+</Tip>
 
 ### colorTweakPanel
 

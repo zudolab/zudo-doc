@@ -35,6 +35,7 @@ export const settings = {
   colorTweakPanel: true,
   docMetainfo: true,
   docTags: true,
+  frontmatterPreview: {},
   math: true,
   docHistory: true,
   claudeResources: {
@@ -294,6 +295,40 @@ Default: `true`
 Enables tag support for documentation pages. When `true`, pages can use the `tags` frontmatter field, and tag index pages are generated at `/docs/tags/`.
 
 Default: `true`
+
+### frontmatterPreview
+
+Displays custom frontmatter fields as a compact key/value table directly beneath the page title. Framework-managed keys (`title`, `description`, `sidebar_position`, etc.) are hidden by default so only project-specific metadata is shown. Set to `false` to disable the block on all pages.
+
+Type: `FrontmatterPreviewConfig | false`
+
+Default: `{}` (enabled with built-in ignore list)
+
+The `FrontmatterPreviewConfig` object accepts:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `ignoreKeys` | `string[]` (optional) | Completely replaces the default ignore list. When set, `extraIgnoreKeys` is ignored |
+| `extraIgnoreKeys` | `string[]` (optional) | Additional keys to ignore on top of the defaults. Has no effect when `ignoreKeys` is also set |
+
+```ts
+// Extend the default list:
+frontmatterPreview: {
+  extraIgnoreKeys: ["reviewed_by", "internal_id"],
+},
+// Replace the default list entirely:
+frontmatterPreview: {
+  ignoreKeys: ["title", "description", "sidebar_position"],
+},
+// Disable:
+frontmatterPreview: false,
+```
+
+<Tip>
+
+See the [Frontmatter Preview reference](../reference/frontmatter-preview.mdx) for the full default ignore list and a live demo.
+
+</Tip>
 
 ### colorTweakPanel
 
