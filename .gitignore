@@ -35,6 +35,7 @@ e2e/fixtures/*/src/integrations
 e2e/fixtures/*/src/layouts
 e2e/fixtures/*/src/pages
 e2e/fixtures/*/src/plugins
+e2e/fixtures/*/src/scripts
 e2e/fixtures/*/src/styles
 e2e/fixtures/*/src/types
 e2e/fixtures/*/src/utils
