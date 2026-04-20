@@ -168,6 +168,45 @@ describe("tags-audit — --fix byte-stable rewrite", () => {
     expect(content).toContain("tags: [type:tutorial, ai]");
   });
 
+  it("rewrites aliases while preserving CRLF line endings", () => {
+    const original =
+      "---\r\n" +
+      "title: X\r\n" +
+      "tags:\r\n" +
+      "  - tutorials\r\n" +
+      "  - ai\r\n" +
+      "---\r\n" +
+      "\r\n" +
+      "Body.\r\n";
+    const rewrites = new Map([["tutorials", "type:tutorial"]]);
+    const { content, changed } = rewriteAliasesByteStable(original, rewrites);
+    expect(changed).toBe(true);
+    expect(content).toContain("  - type:tutorial\r\n");
+    // Every original line ending must stay CRLF; we never want to silently
+    // collapse to LF when editing a Windows-authored file.
+    expect(content.match(/\r\n/g)?.length).toBe(original.match(/\r\n/g)?.length);
+  });
+
+  it("rewrites quoted block-style aliases and preserves the quote style", () => {
+    const original = "---\n" + 'title: X\n' + "tags:\n" + '  - "tutorials"\n' + "---\n";
+    const { content, changed } = rewriteAliasesByteStable(
+      original,
+      new Map([["tutorials", "type:tutorial"]]),
+    );
+    expect(changed).toBe(true);
+    expect(content).toContain('  - "type:tutorial"');
+  });
+
+  it("is a no-op on an empty flow-style tags array", () => {
+    const original = "---\ntitle: X\ntags: []\n---\n\nBody.\n";
+    const { content, changed } = rewriteAliasesByteStable(
+      original,
+      new Map([["tutorials", "type:tutorial"]]),
+    );
+    expect(changed).toBe(false);
+    expect(content).toBe(original);
+  });
+
   it("is a no-op when no alias matches", () => {
     const original =
       "---\n" + "title: X\n" + "tags:\n  - ai\n" + "---\n" + "\n" + "Body.\n";

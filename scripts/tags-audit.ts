@@ -347,7 +347,9 @@ export function rewriteAliasesByteStable(
             }
             return line;
           }
-          const trimmed = bare.replace(/[ \t]+$/, "");
+          // Trailing whitespace includes \r for CRLF line endings — strip it
+          // before the lookup, preserve it in the emitted line.
+          const trimmed = bare.replace(/[ \t\r]+$/, "");
           const trailing = bare.slice(trimmed.length);
           const target = rewrites.get(trimmed);
           if (target && target !== trimmed) {
