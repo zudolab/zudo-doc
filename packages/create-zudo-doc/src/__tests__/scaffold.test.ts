@@ -1189,6 +1189,168 @@ describe("scaffold — imageEnlarge feature", () => {
   });
 });
 
+describe("scaffold — tagGovernance feature", () => {
+  it("settings emit warn + tagVocabulary=true when enabled, and scripts+devDeps are added", async () => {
+    const choices: UserChoices = {
+      projectName: "test-tag-gov-on",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "tagGovernance"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+
+    const settings = await fs.readFile(
+      projectPath("test-tag-gov-on", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(settings).toContain('tagGovernance: "warn"');
+    expect(settings).toContain("tagVocabulary: true");
+
+    // Scripts shipped by the feature
+    expect(
+      await fs.pathExists(
+        projectPath("test-tag-gov-on", "scripts/tags-audit.ts"),
+      ),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(
+        projectPath("test-tag-gov-on", "scripts/tags-suggest.ts"),
+      ),
+    ).toBe(true);
+
+    // package.json has scripts + devDeps
+    const pkg = await fs.readJson(
+      projectPath("test-tag-gov-on", "package.json"),
+    );
+    expect(pkg.scripts["tags:audit"]).toBe("tsx scripts/tags-audit.ts");
+    expect(pkg.scripts["tags:suggest"]).toBe("tsx scripts/tags-suggest.ts");
+    for (const dep of [
+      "string-similarity",
+      "pluralize",
+      "picocolors",
+      "@inquirer/prompts",
+      "tsx",
+    ]) {
+      expect(pkg.devDependencies[dep], `expected devDep ${dep}`).toBeDefined();
+    }
+    // gray-matter ships unconditionally as a runtime dep
+    expect(pkg.dependencies["gray-matter"]).toBeDefined();
+  });
+
+  it("settings emit off + tagVocabulary=false when disabled, no scripts emitted", async () => {
+    const choices: UserChoices = {
+      projectName: "test-tag-gov-off",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+
+    const settings = await fs.readFile(
+      projectPath("test-tag-gov-off", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(settings).toContain('tagGovernance: "off"');
+    expect(settings).toContain("tagVocabulary: false");
+
+    expect(
+      await fs.pathExists(
+        projectPath("test-tag-gov-off", "scripts/tags-audit.ts"),
+      ),
+    ).toBe(false);
+    expect(
+      await fs.pathExists(
+        projectPath("test-tag-gov-off", "scripts/tags-suggest.ts"),
+      ),
+    ).toBe(false);
+
+    const pkg = await fs.readJson(
+      projectPath("test-tag-gov-off", "package.json"),
+    );
+    expect(pkg.scripts["tags:audit"]).toBeUndefined();
+    expect(pkg.scripts["tags:suggest"]).toBeUndefined();
+    expect(pkg.devDependencies["string-similarity"]).toBeUndefined();
+    expect(pkg.devDependencies["pluralize"]).toBeUndefined();
+    expect(pkg.devDependencies["@inquirer/prompts"]).toBeUndefined();
+  });
+});
+
+describe("scaffold — footerTaglist feature", () => {
+  it("emits taglist block inside footer when enabled (with tagGovernance)", async () => {
+    const choices: UserChoices = {
+      projectName: "test-footer-taglist-on",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "tagGovernance", "footerTaglist"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+
+    const settings = await fs.readFile(
+      projectPath("test-footer-taglist-on", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(settings).toContain("footer: {");
+    expect(settings).toContain("taglist: {");
+    expect(settings).toContain("enabled: true");
+    expect(settings).toContain('groupBy: "group"');
+
+    // Footer component is installed because footerTaglist activates the pseudo-feature.
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-footer-taglist-on",
+          "src/components/footer.astro",
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it("does NOT emit taglist block when disabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-footer-taglist-off",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "tagGovernance"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const settings = await fs.readFile(
+      projectPath("test-footer-taglist-off", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(settings).not.toContain("taglist: {");
+  });
+});
+
+describe("scaffold — vanilla output (both tag flags off)", () => {
+  it("produces footer: false and tagGovernance: off", async () => {
+    const choices: UserChoices = {
+      projectName: "test-vanilla-tags",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const settings = await fs.readFile(
+      projectPath("test-vanilla-tags", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(settings).toContain('tagGovernance: "off"');
+    expect(settings).toContain("tagVocabulary: false");
+    expect(settings).toContain("footer: false");
+    expect(settings).not.toContain("taglist: {");
+  });
+});
+
 describe("drift detection — generator vs main project settings", () => {
   /**
    * This test catches feature drift between the main project's settings.ts
