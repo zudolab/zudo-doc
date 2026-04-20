@@ -101,7 +101,7 @@ const tagCount = collectTags(
         <h2 class="text-subheading font-bold mb-vsp-md">
           {t("doc.allTags", "en")}
         </h2>
-        <TagNav variant="all" locale="en" />
+        <TagNav variant="all" docs={tagDocs} locale="en" />
       </section>
     )
   }

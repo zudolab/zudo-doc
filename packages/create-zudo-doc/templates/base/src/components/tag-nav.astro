@@ -10,10 +10,11 @@ import type { DocsEntry } from "@/types/docs-entry";
 interface Props {
   variant: "all" | "page";
   tags?: string[];
+  docs?: DocsEntry[];
   locale?: Locale;
 }
 
-const { variant, tags = [], locale = "en" } = Astro.props;
+const { variant, tags = [], docs: docsProp, locale = "en" } = Astro.props;
 
 let sortedTags: { tag: string; count: number }[] = [];
 
@@ -24,7 +25,11 @@ if (settings.docTags && variant === "all") {
       : docs.filter((doc) => !doc.data.unlisted);
 
   let docs: DocsEntry[];
-  if (locale === defaultLocale) {
+  if (docsProp) {
+    // Caller supplied a pre-filtered list (e.g. homepage uses isNavVisible to
+    // exclude standalone pages). Respect it verbatim — no extra filtering.
+    docs = docsProp;
+  } else if (locale === defaultLocale) {
     const allDocs = await getDocsCollection("docs");
     docs = filterDocs(allDocs);
   } else {
