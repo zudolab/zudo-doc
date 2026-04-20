@@ -191,8 +191,6 @@ const slug = autoIndex
           </p>
         )}
 
-        {entry?.data?.tags && <DocTags tags={entry.data.tags} locale="en" />}
-
         {settings.frontmatterPreview && entry && (
           <FrontmatterPreview data={entry.data} locale="en" />
         )}
@@ -208,6 +206,8 @@ const slug = autoIndex
             />
           </div>
         )}
+
+        {entry?.data?.tags && <DocTags tags={entry.data.tags} locale="en" />}
 
         <nav class="mt-vsp-2xl grid grid-cols-2 gap-hsp-xl">
           {prev ? (
