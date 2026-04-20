@@ -1,0 +1,92 @@
+---
+title: Tags
+description: Cross-cutting navigation for documentation pages.
+sidebar_position: 5
+tags:
+  - content
+---
+
+## Overview
+
+Tags provide a **cross-cutting** way to group documentation pages that share a topic, even when they live in different sidebar categories. A page about deployment under Guides and a troubleshooting page under Reference can both carry the `deployment` tag, so readers exploring that topic find them together.
+
+Use tags when:
+
+- A topic spans multiple categories (e.g., `deployment`, `i18n`, `accessibility`).
+- You want readers to discover related pages that would not naturally appear side-by-side in the sidebar.
+- You are adding secondary navigation without restructuring directories.
+
+Tags are a complement to — not a replacement for — the sidebar. The sidebar reflects structure; tags reflect topic.
+
+## Adding Tags
+
+Declare tags in the page's frontmatter as an array of strings:
+
+```mdx
+---
+title: Deploying to Cloudflare Pages
+sidebar_position: 3
+tags: [deployment, hosting]
+---
+```
+
+A single page can carry any number of tags. Tags are case-sensitive strings, so pick a form and stick with it (see [Naming Conventions](#naming-conventions) below).
+
+## Where Tags Appear
+
+Tags surface in three places across the built site.
+
+### Per-Page Badge Row
+
+Every page with one or more tags renders a row of tag badges directly above the previous/next pager at the bottom of the content. Each badge links to that tag's index page. This is powered by the `DocTags` component (`TagNav` with `variant="page"`).
+
+### Homepage "All Tags" Section
+
+When `settings.docTags` is `true` and at least one tagged page exists in the current locale, the homepage shows an "All Tags" section listing every tag in use, each linked to its tag index page. If no pages are tagged, the section is hidden automatically.
+
+### Tag Index and Per-Tag Pages
+
+- [/docs/tags/](/docs/tags/) — the global tag index, listing every tag with a page count.
+- `/docs/tags/[tag]` — one page per tag, listing every page that carries that tag.
+
+Both routes are generated automatically from frontmatter; you do not create them by hand.
+
+## Naming Conventions
+
+Consistent tag names keep the tag index tidy and prevent near-duplicates like `deployment` and `Deployment` showing up as separate tags.
+
+- **Lowercase** — treat tags as slugs, not display text.
+- **Kebab-case** for multi-word tags — `color-scheme`, not `colorScheme` or `color_scheme`.
+- **Short and specific** — prefer `i18n` over `internationalization-and-localization`.
+- **Consistent across locales** — use the same tag slug in EN and JA frontmatter (see below).
+
+<Tip>
+
+Before introducing a new tag, skim the existing tag index at [/docs/tags/](/docs/tags/) to see whether a suitable tag already exists.
+
+</Tip>
+
+## i18n Behavior
+
+Tags are **shared identifiers** across locales, not translated labels.
+
+- The same tag slug appears in both EN and JA frontmatter — e.g., `tags: [deployment]` in both files.
+- Each locale has its own tag index. The EN route `/docs/tags/deployment` lists EN pages. The JA route `/ja/docs/tags/deployment` lists JA-translated pages first and **falls back to the EN page** for any slug that has not yet been translated — so untranslated EN docs still appear under the JA tag page rather than silently disappearing.
+- **Do not translate tag slugs.** Translating `deployment` to `デプロイ` in the JA file would split the tag into two unrelated buckets and break the cross-locale model.
+
+If you need a locale-specific display label for a tag, that is a future enhancement — today, the slug is both the identifier and the label.
+
+## Configuration
+
+Tag rendering is controlled by the `docTags` setting in `src/config/settings.ts`. When enabled (the default), the per-page tag badge row and the "All Tags" homepage section are rendered. When set to `false`, those surfaces are hidden — but the `/docs/tags/` index and `/docs/tags/[tag]` pages are still built and remain reachable by URL.
+
+See [Configuration](./configuration.mdx) for the full settings reference.
+
+## Related Frontmatter Fields
+
+A couple of other frontmatter fields interact with tag navigation:
+
+- **`unlisted: true`** — unlisted pages are excluded from tag indexes (they don't appear under `/docs/tags/[tag]`) and from the homepage "All Tags" section, matching their exclusion from the sidebar. The tag badge row still renders on the unlisted page itself when accessed directly by URL.
+- **`draft: true`** — draft pages are excluded from the production build entirely, so they never appear on any tag page in production.
+
+For the full list of fields, see [Frontmatter](./frontmatter.mdx#tags).

@@ -2,6 +2,8 @@
 title: Color
 description: "zudo-doc's three-tier color strategy, palette system, color schemes, and customization."
 sidebar_position: 3
+tags:
+  - design-system
 ---
 
 zudo-doc uses a **three-tier color strategy** to keep every color on the site themeable. The default Tailwind theme is not imported, and the `@theme` block resets the color namespace with `--color-*: initial` before defining project tokens — only project tokens work. This ensures switching a color scheme updates the entire site at once.
