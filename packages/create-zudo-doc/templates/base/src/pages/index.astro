@@ -6,6 +6,10 @@ import { buildNavTree, groupSatelliteNodes, isNavVisible } from "@/utils/docs";
 import { loadLocaleDocs } from "@/utils/locale-docs";
 import { getCategoryOrder } from "@/utils/nav-scope";
 import SiteTreeNav from "@/components/site-tree-nav.tsx";
+import { collectTags } from "@/utils/tags";
+import TagNav from "@/components/tag-nav.astro";
+import { toRouteSlug } from "@/utils/slug";
+import { t } from "@/config/i18n";
 
 const ctaNav = settings.headerNav[0] ?? null;
 const overview = ctaNav ? withBase(ctaNav.path) : null;
@@ -17,6 +21,13 @@ const { allDocs, categoryMeta } = await loadLocaleDocs("en");
 const navDocs = allDocs.filter(isNavVisible);
 const tree = buildNavTree(navDocs, "en", categoryMeta);
 const groupedTree = groupSatelliteNodes(tree, categoryOrder);
+const tagDocs = import.meta.env.PROD
+  ? navDocs.filter((d) => !d.data.draft)
+  : navDocs;
+const tagCount = collectTags(
+  tagDocs,
+  (id, data) => data.slug ?? toRouteSlug(id),
+).size;
 ---
 
 <DocLayout title={settings.siteName} lang="en" hideSidebar hideToc>
@@ -83,4 +94,15 @@ const groupedTree = groupSatelliteNodes(tree, categoryOrder);
     categoryIgnore={["inbox"]}
     client:idle
   />
+
+  {
+    settings.docTags && tagCount > 0 && (
+      <section class="mt-vsp-xl">
+        <h2 class="text-subheading font-bold mb-vsp-md">
+          {t("doc.allTags", "en")}
+        </h2>
+        <TagNav variant="all" locale="en" />
+      </section>
+    )
+  }
 </DocLayout>
