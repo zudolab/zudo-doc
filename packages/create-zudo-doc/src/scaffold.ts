@@ -223,10 +223,12 @@ function generatePackageJson(choices: UserChoices) {
     "@astrojs/mdx": "^4.3.0",
     "@astrojs/preact": "^4.1.0",
     preact: "^10.26.0",
+    shiki: "^4.0.2",
     "@shikijs/transformers": "^4.0.0",
     clsx: "^2.1.0",
     "gray-matter": "^4.0.0",
     "github-slugger": "^2.0.0",
+    mermaid: "^11.12.3",
     "remark-cjk-friendly": "^2.0.1",
     "remark-directive": "^3.0.0",
     "unist-util-visit": "^5.1.0",
@@ -253,12 +255,29 @@ function generatePackageJson(choices: UserChoices) {
     deps["diff"] = "^8.0.3";
   }
 
+  if (choices.features.includes("tagGovernance")) {
+    // gray-matter is already in `deps` unconditionally (base template uses it),
+    // so we only add the tooling deps specific to tags:audit / tags:suggest.
+    devDeps["string-similarity"] = "^4.0.4";
+    devDeps["@types/string-similarity"] = "^4.0.2";
+    devDeps["pluralize"] = "^8.0.0";
+    devDeps["@types/pluralize"] = "^0.0.33";
+    devDeps["picocolors"] = "^1.1.1";
+    devDeps["@inquirer/prompts"] = "^8.4.2";
+    devDeps["tsx"] = "^4.21.0";
+  }
+
   const scripts: Record<string, string> = {
     dev: "astro dev",
     build: "astro build",
     preview: "astro preview",
     check: "astro check",
   };
+
+  if (choices.features.includes("tagGovernance")) {
+    scripts["tags:audit"] = "tsx scripts/tags-audit.ts";
+    scripts["tags:suggest"] = "tsx scripts/tags-suggest.ts";
+  }
 
   if (choices.features.includes("skillSymlinker")) {
     scripts["setup:doc-skill"] = "bash scripts/setup-doc-skill.sh";

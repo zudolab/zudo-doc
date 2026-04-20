@@ -208,4 +208,18 @@ export const FEATURES: Feature[] = [
     default: false,
     cliFlag: "changelog",
   },
+  {
+    value: "tagGovernance",
+    label: "Tag governance",
+    hint: "Vocabulary-aware tag audit + suggest scripts",
+    default: true,
+    cliFlag: "tag-governance",
+  },
+  {
+    value: "footerTaglist",
+    label: "Footer taglist",
+    hint: "Grouped tag index in the footer (requires tagGovernance)",
+    default: false,
+    cliFlag: "footer-taglist",
+  },
 ];
