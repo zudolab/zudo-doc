@@ -46,8 +46,8 @@ tags: [deployment, hosting]
 
 ### タグインデックスとタグごとのページ
 
-- [/docs/tags/](/docs/tags/) — 利用中のタグとページ数を一覧表示するグローバルなタグインデックス。
-- `/docs/tags/[tag]` — タグごとに 1 ページ。そのタグが付いたすべてのページを一覧表示します。
+- [/ja/docs/tags/](/ja/docs/tags/) — 利用中のタグとページ数を一覧表示するグローバルなタグインデックス。
+- `/ja/docs/tags/[tag]` — タグごとに 1 ページ。そのタグが付いたすべてのページを一覧表示します。
 
 これらのルートは frontmatter から自動生成されるため、手動で作る必要はありません。
 
@@ -62,7 +62,7 @@ tags: [deployment, hosting]
 
 <Tip>
 
-新しいタグを導入する前に、[/docs/tags/](/docs/tags/) のインデックスを眺めて、近い意味のタグがすでに存在しないか確認します。
+新しいタグを導入する前に、[/ja/docs/tags/](/ja/docs/tags/) のインデックスを眺めて、近い意味のタグがすでに存在しないか確認します。
 
 </Tip>
 
@@ -78,7 +78,7 @@ tags: [deployment, hosting]
 
 ## 設定
 
-タグの表示は `src/config/settings.ts` の `docTags` 設定で制御します。有効（デフォルト）のときは、ページ下部のタグバッジ列とホームページの「All Tags」セクションが描画されます。`false` にするとこれらの表示は非表示になりますが、`/docs/tags/` のインデックスや `/docs/tags/[tag]` のページはビルドされ、URL から直接アクセスすればそのまま到達できます。
+タグの表示は `src/config/settings.ts` の `docTags` 設定で制御します。有効（デフォルト）のときは、ページ下部のタグバッジ列とホームページの「All Tags」セクションが描画されます。`false` にするとこれらの表示は非表示になりますが、`/ja/docs/tags/` のインデックスや `/ja/docs/tags/[tag]` のページはビルドされ、URL から直接アクセスすればそのまま到達できます。
 
 詳細は[Configuration](./configuration.mdx)を参照してください。
 
@@ -86,7 +86,7 @@ tags: [deployment, hosting]
 
 タグナビゲーションと相互作用する frontmatter フィールドがいくつかあります。
 
-- **`unlisted: true`** — unlisted のページは、サイドバーから除外されるのと同様に、タグインデックス（`/docs/tags/[tag]` の一覧）やホームページの「All Tags」セクションから除外されます。ただし、ページ自体を URL から直接開いた場合、そのページ下部のタグバッジ列は引き続き表示されます。
+- **`unlisted: true`** — unlisted のページは、サイドバーから除外されるのと同様に、タグインデックス（`/ja/docs/tags/[tag]` の一覧）やホームページの「All Tags」セクションから除外されます。ただし、ページ自体を URL から直接開いた場合、そのページ下部のタグバッジ列は引き続き表示されます。
 - **`draft: true`** — draft のページは本番ビルドから完全に除外されるため、本番環境ではいずれのタグページにも表示されません。
 
 フィールド全体の一覧は [Frontmatter](./frontmatter.mdx#tags) を参照してください。
