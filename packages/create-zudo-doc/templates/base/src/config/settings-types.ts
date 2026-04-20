@@ -61,6 +61,8 @@ export interface FrontmatterPreviewConfig {
   extraIgnoreKeys?: string[];
 }
 
+export type TagPlacement = "after-title" | "before-pager";
+
 export interface VersionConfig {
   /** Version identifier, used in URL path (e.g., "1.0", "v1") */
   slug: string;

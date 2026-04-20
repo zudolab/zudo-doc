@@ -1,15 +1,25 @@
 ---
 import TagNav from "./tag-nav.astro";
+import { settings } from "@/config/settings";
 import type { Locale } from "@/config/i18n";
+import type { TagPlacement } from "@/config/settings-types";
 
 interface Props {
   tags: string[];
   locale?: Locale;
+  placement: TagPlacement;
 }
 
-const { tags, locale = "en" } = Astro.props;
+const { tags, locale = "en", placement } = Astro.props;
+
+const spacingClass =
+  placement === "after-title" ? "mt-0 mb-vsp-md" : "mt-vsp-xl mb-0";
 ---
 
-<div class="mt-vsp-xl mb-0">
-  <TagNav variant="page" tags={tags} locale={locale} />
-</div>
+{
+  settings.docTags && tags.length > 0 && (
+    <div class={spacingClass}>
+      <TagNav variant="page" tags={tags} locale={locale} />
+    </div>
+  )
+}
