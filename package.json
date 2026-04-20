@@ -40,7 +40,9 @@
     "// ── Linting ─────────────────────────────────────": "",
     "lint:tokens": "design-token-lint",
     "check:template-drift": "bash scripts/check-template-drift.sh",
-    "tags:audit": "tsx scripts/tags-audit.ts"
+    "// ── Tags ────────────────────────────────────────": "",
+    "tags:audit": "tsx scripts/tags-audit.ts",
+    "tags:suggest": "tsx scripts/tags-suggest.ts"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -79,6 +81,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.7",
+    "@inquirer/prompts": "^8.4.2",
     "@playwright/test": "1.58.2",
     "@tailwindcss/vite": "^4.2.1",
     "@types/mdast": "^4.0.4",
