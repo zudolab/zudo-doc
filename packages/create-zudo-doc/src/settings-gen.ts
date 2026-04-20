@@ -15,6 +15,8 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  VersionConfig,`);
   lines.push(`  FooterConfig,`);
   lines.push(`  TagPlacement,`);
+  lines.push(`  TagGovernanceMode,`);
+  lines.push(`  TagVocabularyEntry,`);
   lines.push(`} from "./settings-types";`);
   lines.push(`import type {`);
   lines.push(`  HeaderNavItem,`);
@@ -25,6 +27,7 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  VersionConfig,`);
   lines.push(`  FooterConfig,`);
   lines.push(`  TagPlacement,`);
+  lines.push(`  TagGovernanceMode,`);
   lines.push(`} from "./settings-types";`);
   lines.push(``);
 
@@ -83,6 +86,8 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  docMetainfo: false,`);
   lines.push(`  docTags: false,`);
   lines.push(`  tagPlacement: "after-title" as TagPlacement,`);
+  lines.push(`  tagGovernance: "off" as TagGovernanceMode,`);
+  lines.push(`  tagVocabulary: false as boolean,`);
   lines.push(
     `  frontmatterPreview: false as FrontmatterPreviewConfig | false,`,
   );
