@@ -27,6 +27,8 @@ export interface CliArgs {
   footerNavGroup?: boolean;
   footerCopyright?: boolean;
   changelog?: boolean;
+  tagGovernance?: boolean;
+  footerTaglist?: boolean;
   preset?: string;
   pm?: "pnpm" | "npm" | "yarn" | "bun";
   install?: boolean;
