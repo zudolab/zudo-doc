@@ -20,7 +20,7 @@ Minimal documentation framework built with Astro 6, MDX, Tailwind CSS v4, and Pr
 - `pnpm dev:network` — Astro dev server with `--host 0.0.0.0` for LAN access
 - `pnpm build` — static HTML export to `dist/`
 - `pnpm check` — Astro type checking
-- `pnpm b4push` — pre-push validation: format check → template drift check → typecheck → build → link check → E2E tests
+- `pnpm b4push` — pre-push validation: format check → template drift check → tags audit (`tags:audit --ci`) → design token lint → typecheck → build → link check → E2E tests
 
 ## Key Directories
 

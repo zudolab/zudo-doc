@@ -39,7 +39,8 @@
     "setup:zudo-doc-wisdom": "bash scripts/setup-zudo-doc-wisdom.sh",
     "// ── Linting ─────────────────────────────────────": "",
     "lint:tokens": "design-token-lint",
-    "check:template-drift": "bash scripts/check-template-drift.sh"
+    "check:template-drift": "bash scripts/check-template-drift.sh",
+    "tags:audit": "tsx scripts/tags-audit.ts"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -82,15 +83,21 @@
     "@tailwindcss/vite": "^4.2.1",
     "@types/mdast": "^4.0.4",
     "@types/node": "^25.3.5",
+    "@types/pluralize": "^0.0.33",
     "@types/react": "^19.2.14",
+    "@types/string-similarity": "^4.0.2",
     "@zudolab/design-token-lint": "file:./vendor/design-token-lint",
     "lefthook": "^2.1.4",
     "msw": "^2.12.12",
     "npm-run-all2": "^7.0.2",
+    "picocolors": "^1.1.1",
+    "pluralize": "^8.0.0",
     "prettier": "^3.8.1",
     "prettier-plugin-astro": "^0.14.1",
     "sharp": "^0.34.5",
+    "string-similarity": "^4.0.4",
     "tailwindcss": "^4.2.1",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.1.0",
     "wrangler": "^4.72.0"

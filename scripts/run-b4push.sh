@@ -1,9 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Step order (cheap → expensive):
+#   1. Format check
+#   2. Template drift check
+#   3. Tags audit (--ci)
+#   4. Design token lint
+#   5. Type checking
+#   6. Build
+#   7. Link check
+#   8. E2E & smoke tests
+
 START_TIME=$(date +%s)
 FAILURES=()
-TOTAL_STEPS=7
+TOTAL_STEPS=8
 CURRENT_STEP=0
 
 step() {
@@ -35,7 +45,15 @@ else
   fail "Template drift check"
 fi
 
-# ── Step 3: Design token lint ───────────────────────
+# ── Step 3: Tags audit ───────────────────────────────
+step "Tags audit (tags:audit --ci)"
+if (cd "$ROOT_DIR" && pnpm tags:audit --ci); then
+  pass "Tags audit passed"
+else
+  fail "Tags audit"
+fi
+
+# ── Step 4: Design token lint ───────────────────────
 step "Design token lint"
 if (cd "$ROOT_DIR" && pnpm lint:tokens); then
   pass "Design token lint passed"
@@ -43,7 +61,7 @@ else
   fail "Design token lint"
 fi
 
-# ── Step 4: Type checking ────────────────────────────
+# ── Step 5: Type checking ────────────────────────────
 step "Type checking (astro check)"
 if (cd "$ROOT_DIR" && pnpm check); then
   pass "Type checking passed"
@@ -51,7 +69,7 @@ else
   fail "Type checking"
 fi
 
-# ── Step 5: Build ────────────────────────────────────
+# ── Step 6: Build ────────────────────────────────────
 step "Build (astro build)"
 if (cd "$ROOT_DIR" && pnpm build); then
   pass "Build passed"
@@ -59,7 +77,7 @@ else
   fail "Build"
 fi
 
-# ── Step 6: Link check ────────────────────────────────
+# ── Step 7: Link check ────────────────────────────────
 step "Link check (check-links)"
 if (cd "$ROOT_DIR" && pnpm run check:links); then
   pass "Link check passed"
@@ -67,7 +85,7 @@ else
   fail "Link check"
 fi
 
-# ── Step 7: E2E & smoke tests ────────────────────────
+# ── Step 8: E2E & smoke tests ────────────────────────
 step "E2E & smoke tests (playwright)"
 if (cd "$ROOT_DIR" && pnpm test:e2e); then
   pass "E2E & smoke tests passed"
