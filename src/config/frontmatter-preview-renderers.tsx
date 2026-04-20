@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { ComponentType } from "preact/compat";
 import type { Locale } from "@/config/i18n";
 
@@ -27,6 +28,26 @@ export interface FrontmatterRendererProps {
   locale?: Locale;
 }
 
+type PillColor = "danger" | "success" | "warning" | "info" | "muted";
+
+const pillColorClass: Record<PillColor, string> = {
+  danger: "bg-danger text-fg",
+  success: "bg-success text-fg",
+  warning: "bg-warning text-fg",
+  info: "bg-info text-fg",
+  muted: "bg-surface text-muted border border-muted",
+};
+
+function Pill({ children, color }: { children: ReactNode; color: PillColor }) {
+  return (
+    <span
+      className={`inline-block px-hsp-sm py-vsp-2xs text-caption rounded-full ${pillColorClass[color]}`}
+    >
+      {children}
+    </span>
+  );
+}
+
 /**
  * Per-key custom renderer map for the frontmatter-preview component.
  *
@@ -41,4 +62,25 @@ export interface FrontmatterRendererProps {
 export const frontmatterRenderers: Record<
   string,
   ComponentType<FrontmatterRendererProps>
-> = {};
+> = {
+  discount: ({ value }) => {
+    if (value !== true) return null;
+    return <Pill color="danger">ON SALE</Pill>;
+  },
+
+  status: ({ value }) => {
+    if (typeof value !== "string") return <span>{String(value)}</span>;
+    if (value === "stable") return <Pill color="success">{value}</Pill>;
+    if (value === "beta") return <Pill color="warning">{value}</Pill>;
+    if (value === "draft") return <Pill color="muted">{value}</Pill>;
+    return <span>{value}</span>;
+  },
+
+  difficulty: ({ value }) => {
+    if (typeof value !== "string") return <span>{String(value)}</span>;
+    if (value === "beginner") return <Pill color="success">{value}</Pill>;
+    if (value === "intermediate") return <Pill color="info">{value}</Pill>;
+    if (value === "advanced") return <Pill color="warning">{value}</Pill>;
+    return <span>{value}</span>;
+  },
+};
