@@ -253,12 +253,29 @@ function generatePackageJson(choices: UserChoices) {
     deps["diff"] = "^8.0.3";
   }
 
+  if (choices.features.includes("tagGovernance")) {
+    // gray-matter is already in `deps` unconditionally (base template uses it),
+    // so we only add the tooling deps specific to tags:audit / tags:suggest.
+    devDeps["string-similarity"] = "^4.0.4";
+    devDeps["@types/string-similarity"] = "^4.0.2";
+    devDeps["pluralize"] = "^8.0.0";
+    devDeps["@types/pluralize"] = "^0.0.33";
+    devDeps["picocolors"] = "^1.1.1";
+    devDeps["@inquirer/prompts"] = "^8.4.2";
+    devDeps["tsx"] = "^4.21.0";
+  }
+
   const scripts: Record<string, string> = {
     dev: "astro dev",
     build: "astro build",
     preview: "astro preview",
     check: "astro check",
   };
+
+  if (choices.features.includes("tagGovernance")) {
+    scripts["tags:audit"] = "tsx scripts/tags-audit.ts";
+    scripts["tags:suggest"] = "tsx scripts/tags-suggest.ts";
+  }
 
   if (choices.features.includes("skillSymlinker")) {
     scripts["setup:doc-skill"] = "bash scripts/setup-doc-skill.sh";
