@@ -293,6 +293,23 @@ describe("scaffold — generated settings.ts content", () => {
     expect(content).toContain("docs-ja");
   });
 
+  it("tagPlacement: generated settings default to after-title", async () => {
+    const choices: UserChoices = {
+      projectName: "test-settings-tag-placement",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-settings-tag-placement", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain('tagPlacement: "after-title"');
+  });
+
   it("colorTweakPanel: settings reflect panel enabled", async () => {
     const choices: UserChoices = {
       projectName: "test-settings-tweak",

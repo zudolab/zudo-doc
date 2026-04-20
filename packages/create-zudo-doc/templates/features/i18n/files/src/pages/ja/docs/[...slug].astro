@@ -236,6 +236,10 @@ const slug = autoIndex
           </div>
         )}
 
+        {entry?.data?.tags && settings.tagPlacement === "after-title" && (
+          <DocTags tags={entry.data.tags} locale="ja" placement="after-title" />
+        )}
+
         {entry.data.description && (
           <p class="mt-0 mb-vsp-lg text-subheading text-muted">
             {entry.data.description}
@@ -254,7 +258,13 @@ const slug = autoIndex
           </div>
         )}
 
-        {entry?.data?.tags && <DocTags tags={entry.data.tags} locale="ja" />}
+        {entry?.data?.tags && settings.tagPlacement === "before-pager" && (
+          <DocTags
+            tags={entry.data.tags}
+            locale="ja"
+            placement="before-pager"
+          />
+        )}
 
         <nav class="mt-vsp-2xl grid grid-cols-2 gap-hsp-xl">
           {prev ? (
