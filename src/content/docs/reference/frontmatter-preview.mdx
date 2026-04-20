@@ -4,6 +4,8 @@ description: Automatically display custom frontmatter fields as a metadata table
 sidebar_position: 7
 author: zudo-doc
 status: stable
+discount: true
+difficulty: beginner
 ---
 
 The frontmatter preview block appears automatically below the page title whenever a document contains non-ignored frontmatter keys. It renders those custom fields as a compact key/value table — useful for surfacing document metadata such as authorship, status, or version without embedding it inline in the prose.
@@ -101,3 +103,56 @@ The rendered table shows:
 | `status` | released |
 
 For the full configuration reference, see [Configuration — frontmatterPreview](../guides/configuration.mdx#frontmatterpreview).
+
+## Custom Renderers
+
+By default, frontmatter values render as plain text. To replace a value with a styled component — a colored pill, a link, an icon — register a custom renderer in `src/config/frontmatter-preview-renderers.tsx`.
+
+### Component contract
+
+Each renderer is a Preact component that receives `FrontmatterRendererProps`:
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `value` | `NonNullable<unknown>` | The frontmatter value (null/undefined values are never passed) |
+| `entryKey` | `string` | The frontmatter key name |
+| `data` | `Record<string, unknown>` | Full frontmatter of the current page |
+| `locale` | `Locale \| undefined` | Active locale |
+
+### Registering a renderer
+
+Open `src/config/frontmatter-preview-renderers.tsx` and add a key to the exported `frontmatterRenderers` map. Each value is a component function that receives `FrontmatterRendererProps` and returns JSX or `null`:
+
+```tsx
+discount: ({ value }) => {
+  if (value !== true) return null;
+  return (
+    <span className="inline-block px-hsp-sm py-vsp-2xs text-caption rounded-full bg-danger text-fg">
+      ON SALE
+    </span>
+  );
+},
+```
+
+This page's own frontmatter includes `discount: true`, `status: "stable"`, and `difficulty: "beginner"` — the metadata table at the top of this page shows them rendered as colored pills.
+
+### Ignore-list precedence
+
+A renderer registered for an ignored key has no effect. The ignore list is applied _before_ renderer lookup — if a key is suppressed, the row is never rendered and the renderer is never called.
+
+To surface a framework-managed key (such as `draft`) with a custom renderer, first remove it from the ignore list in `src/config/settings.ts`:
+
+```ts
+frontmatterPreview: {
+  // Must explicitly list all keys to keep hidden — ignoreKeys replaces the defaults
+  ignoreKeys: ["title", "description", "sidebar_position", "tags"],
+},
+```
+
+<Warning>
+
+`ignoreKeys` replaces the entire default ignore list. Omitting standard schema keys like `tags`, `slug`, or `unlisted` will expose them in the preview table. In most cases, use `extraIgnoreKeys` to extend the defaults instead.
+
+</Warning>
+
+Register your renderers in `src/config/frontmatter-preview-renderers.tsx` in your project. The empty map ships by default.

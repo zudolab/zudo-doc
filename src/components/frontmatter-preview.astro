@@ -2,6 +2,7 @@
 import { settings } from "@/config/settings";
 import { DEFAULT_FRONTMATTER_IGNORE_KEYS } from "@/config/frontmatter-preview-defaults";
 import { t, type Locale } from "@/config/i18n";
+import { frontmatterRenderers } from "@/config/frontmatter-preview-renderers";
 
 interface Props {
   data: Record<string, unknown>;
@@ -61,19 +62,27 @@ function renderValue(v: unknown): { text?: string; code?: string } {
           </thead>
           <tbody>
             {entries.map(([key, value]) => {
-              const rendered = renderValue(value);
+              const Renderer = frontmatterRenderers[key];
+              const rendered = Renderer ? undefined : renderValue(value);
               return (
                 <tr class="border-b border-muted">
                   <td class="px-hsp-md py-vsp-2xs text-muted font-mono align-top">
                     {key}
                   </td>
                   <td class="px-hsp-md py-vsp-2xs text-fg break-words align-top">
-                    {rendered.code !== undefined ? (
+                    {Renderer ? (
+                      <Renderer
+                        value={value}
+                        entryKey={key}
+                        data={data}
+                        locale={locale}
+                      />
+                    ) : rendered?.code !== undefined ? (
                       <code class="bg-code-bg text-code-fg px-hsp-xs py-0 rounded text-micro font-mono">
                         {rendered.code}
                       </code>
                     ) : (
-                      rendered.text
+                      rendered?.text
                     )}
                   </td>
                 </tr>

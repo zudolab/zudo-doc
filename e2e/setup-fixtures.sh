@@ -59,7 +59,8 @@ setup_fixture() {
 
   # Copy config files that have relative imports (import { settings } from "./settings")
   # — symlinking would resolve to the repo root's settings, breaking fixture isolation
-  for file in "$REPO_ROOT"/src/config/*.ts; do
+  for file in "$REPO_ROOT"/src/config/*.ts "$REPO_ROOT"/src/config/*.tsx; do
+    [ -e "$file" ] || continue
     local basename
     basename="$(basename "$file")"
     if [ "$basename" != "settings.ts" ]; then

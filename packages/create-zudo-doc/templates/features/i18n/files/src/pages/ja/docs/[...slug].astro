@@ -242,8 +242,6 @@ const slug = autoIndex
           </p>
         )}
 
-        {entry?.data?.tags && <DocTags tags={entry.data.tags} locale="ja" />}
-
         {settings.frontmatterPreview && entry && (
           <FrontmatterPreview data={entry.data} locale="ja" />
         )}
@@ -255,6 +253,8 @@ const slug = autoIndex
             <EditLink contentDir={contentDir} entryId={entry.id} locale="ja" />
           </div>
         )}
+
+        {entry?.data?.tags && <DocTags tags={entry.data.tags} locale="ja" />}
 
         <nav class="mt-vsp-2xl grid grid-cols-2 gap-hsp-xl">
           {prev ? (
