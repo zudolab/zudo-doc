@@ -69,14 +69,14 @@ Before introducing a new tag, skim the existing tag index at [/docs/tags/](/docs
 Tags are **shared identifiers** across locales, not translated labels.
 
 - The same tag slug appears in both EN and JA frontmatter — e.g., `tags: [deployment]` in both files.
-- Each locale has its own tag index: `/docs/tags/deployment` lists EN pages, `/ja/docs/tags/deployment` lists JA pages.
+- Each locale has its own tag index. The EN route `/docs/tags/deployment` lists EN pages. The JA route `/ja/docs/tags/deployment` lists JA-translated pages first and **falls back to the EN page** for any slug that has not yet been translated — so untranslated EN docs still appear under the JA tag page rather than silently disappearing.
 - **Do not translate tag slugs.** Translating `deployment` to `デプロイ` in the JA file would split the tag into two unrelated buckets and break the cross-locale model.
 
 If you need a locale-specific display label for a tag, that is a future enhancement — today, the slug is both the identifier and the label.
 
 ## Configuration
 
-Tag support is controlled by the `docTags` setting in `src/config/settings.ts`. When enabled (the default), tag badges, the "All Tags" homepage section, and the `/docs/tags/...` routes are all built. When disabled, tags in frontmatter are parsed but not rendered anywhere.
+Tag rendering is controlled by the `docTags` setting in `src/config/settings.ts`. When enabled (the default), the per-page tag badge row and the "All Tags" homepage section are rendered. When set to `false`, those surfaces are hidden — but the `/docs/tags/` index and `/docs/tags/[tag]` pages are still built and remain reachable by URL.
 
 See [Configuration](./configuration.mdx) for the full settings reference.
 
@@ -84,7 +84,7 @@ See [Configuration](./configuration.mdx) for the full settings reference.
 
 A couple of other frontmatter fields interact with tag navigation:
 
-- **`unlisted: true`** — pages marked unlisted are excluded from tag indexes and the per-page badge row, matching their exclusion from the sidebar.
+- **`unlisted: true`** — unlisted pages are excluded from tag indexes (they don't appear under `/docs/tags/[tag]`) and from the homepage "All Tags" section, matching their exclusion from the sidebar. The tag badge row still renders on the unlisted page itself when accessed directly by URL.
 - **`draft: true`** — draft pages are excluded from the production build entirely, so they never appear on any tag page in production.
 
 For the full list of fields, see [Frontmatter](./frontmatter.mdx#tags).
