@@ -18,3 +18,8 @@ src/plugins/url-utils.ts
 src/components/header.astro
 src/layouts/doc-layout.astro
 src/styles/global.css
+
+# Showcase-specific renderers — source ships discount/status/difficulty examples
+# for the zudo-doc showcase only; template ships an empty map so downstream users
+# can add their own renderers without inheriting unrelated examples
+src/config/frontmatter-preview-renderers.tsx
