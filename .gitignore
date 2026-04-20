@@ -46,6 +46,7 @@ e2e/fixtures/*/src/config/color-tweak-presets.ts
 e2e/fixtures/*/src/config/i18n.ts
 e2e/fixtures/*/src/config/settings-types.ts
 e2e/fixtures/*/src/config/frontmatter-preview-defaults.ts
+e2e/fixtures/*/src/config/frontmatter-preview-renderers.tsx
 e2e/fixtures/*/src/config/sidebars.ts
 e2e/fixtures/*/astro.config.ts
 e2e/fixtures/*/.astro
