@@ -2,6 +2,24 @@ import { defineCollection } from "astro:content";
 import { z } from "astro/zod";
 import { glob } from "astro/loaders";
 import { settings } from "./config/settings";
+import { tagVocabulary } from "./config/tag-vocabulary";
+
+// Build the `tags` schema based on governance mode. `"strict"` tightens to a
+// z.enum of every canonical id plus every alias (content still uses aliases
+// verbatim — resolution happens at the aggregation layer, after parsing).
+function buildTagsSchema() {
+  const vocabularyActive = settings.tagVocabulary && settings.tagGovernance === "strict";
+  if (!vocabularyActive) return z.array(z.string()).optional();
+  const allowed = new Set<string>();
+  for (const entry of tagVocabulary) {
+    allowed.add(entry.id);
+    for (const alias of entry.aliases ?? []) allowed.add(alias);
+  }
+  const allowedList = [...allowed];
+  if (allowedList.length === 0) return z.array(z.string()).optional();
+  const [first, ...rest] = allowedList;
+  return z.array(z.enum([first, ...rest] as [string, ...string[]])).optional();
+}
 
 const docsSchema = z
   .object({
@@ -10,7 +28,7 @@ const docsSchema = z
     category: z.string().optional(),
     sidebar_position: z.number().optional(),
     sidebar_label: z.string().optional(),
-    tags: z.array(z.string()).optional(),
+    tags: buildTagsSchema(),
     search_exclude: z.boolean().optional(),
     pagination_next: z.string().nullable().optional(), // doc slug or null to hide
     pagination_prev: z.string().nullable().optional(), // doc slug or null to hide

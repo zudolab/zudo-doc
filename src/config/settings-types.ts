@@ -63,6 +63,8 @@ export interface FrontmatterPreviewConfig {
 
 export type TagPlacement = "after-title" | "before-pager";
 
+export type { TagGovernanceMode, TagVocabularyEntry } from "./tag-vocabulary-types";
+
 export interface VersionConfig {
   /** Version identifier, used in URL path (e.g., "1.0", "v1") */
   slug: string;
