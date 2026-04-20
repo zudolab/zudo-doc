@@ -15,6 +15,8 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  VersionConfig,`);
   lines.push(`  FooterConfig,`);
   lines.push(`  TagPlacement,`);
+  lines.push(`  TagGovernanceMode,`);
+  lines.push(`  TagVocabularyEntry,`);
   lines.push(`} from "./settings-types";`);
   lines.push(`import type {`);
   lines.push(`  HeaderNavItem,`);
@@ -25,6 +27,7 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  VersionConfig,`);
   lines.push(`  FooterConfig,`);
   lines.push(`  TagPlacement,`);
+  lines.push(`  TagGovernanceMode,`);
   lines.push(`} from "./settings-types";`);
   lines.push(``);
 
@@ -83,6 +86,13 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  docMetainfo: false,`);
   lines.push(`  docTags: false,`);
   lines.push(`  tagPlacement: "after-title" as TagPlacement,`);
+  if (choices.features.includes("tagGovernance")) {
+    lines.push(`  tagGovernance: "warn" as TagGovernanceMode,`);
+    lines.push(`  tagVocabulary: true as boolean,`);
+  } else {
+    lines.push(`  tagGovernance: "off" as TagGovernanceMode,`);
+    lines.push(`  tagVocabulary: false as boolean,`);
+  }
   lines.push(
     `  frontmatterPreview: false as FrontmatterPreviewConfig | false,`,
   );
@@ -149,7 +159,8 @@ export function generateSettingsFile(choices: UserChoices): string {
 
   if (
     choices.features.includes("footerNavGroup") ||
-    choices.features.includes("footerCopyright")
+    choices.features.includes("footerCopyright") ||
+    choices.features.includes("footerTaglist")
   ) {
     lines.push(`  footer: {`);
     if (choices.features.includes("footerNavGroup")) {
@@ -170,6 +181,12 @@ export function generateSettingsFile(choices: UserChoices): string {
       lines.push(
         `    copyright: "Copyright © ${new Date().getFullYear()} Your Name. Built with zudo-doc.",`,
       );
+    }
+    if (choices.features.includes("footerTaglist")) {
+      lines.push(`    taglist: {`);
+      lines.push(`      enabled: true,`);
+      lines.push(`      groupBy: "group",`);
+      lines.push(`    },`);
     }
     lines.push(`  } satisfies FooterConfig as FooterConfig | false,`);
   } else {

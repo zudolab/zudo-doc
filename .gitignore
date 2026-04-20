@@ -19,6 +19,9 @@ src/content/docs/claude-agents/
 test-results/
 .playwright-cli/
 
+# tags:suggest --batch output (developer-opt-in, not committed)
+.tag-suggestions.jsonl
+
 # Generated zudo-doc-wisdom skill (machine-specific symlinks)
 .claude/skills/zudo-doc-wisdom/SKILL.md
 .claude/skills/zudo-doc-wisdom/docs

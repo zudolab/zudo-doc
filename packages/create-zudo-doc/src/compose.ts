@@ -182,11 +182,13 @@ export function resolveSelectedFeatures(
   const selected: FeatureDefinition[] = [];
 
   for (const [name, moduleFn] of Object.entries(featureModules)) {
-    // Special case: footer is activated by either footerNavGroup or footerCopyright
+    // Special case: footer is activated by footerNavGroup, footerCopyright,
+    // or footerTaglist (the taglist renders inside the same footer grid).
     if (name === "footer") {
       if (
         choices.features.includes("footerNavGroup") ||
-        choices.features.includes("footerCopyright")
+        choices.features.includes("footerCopyright") ||
+        choices.features.includes("footerTaglist")
       ) {
         selected.push(moduleFn(choices));
       }

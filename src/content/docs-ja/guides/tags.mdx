@@ -89,6 +89,15 @@ tags: [deployment, hosting]
 
 詳細は[Configuration](./configuration.mdx)を参照してください。
 
+## チームプロジェクトへのスケール
+
+著者が片手で数えきれなくなると、自由記述のタグはドリフトし始めます。zudo-doc はドキュメントベースが大きくなってもタグインデックスを整えておくためのボキャブラリ対応ガバナンスワークフローを備えています。
+
+- [タグガバナンス](./tag-governance.mdx) — 正規ボキャブラリを整備し、`tagGovernance: "warn" | "strict"`で強制する。
+- [タグ監査](./tags-audit.mdx) — `pnpm tags:audit`が unknown、deprecation、エイリアス、ニアデュプリケート、オーファンを報告する。エイリアスはバイト安定な`--fix`で書き換えられ、`--ci`で`pnpm b4push`と連携できる。
+- [タグサジェスト](./tags-suggest.mdx) — 新しいページに正規タグを提案するオプション機能(`pnpm tags:suggest`)。
+- [フッタータグリスト](./footer-taglist.mdx) — ボキャブラリを読者向けに公開するオプトインのフッターカラム。
+
 ## 関連する frontmatter フィールド
 
 タグナビゲーションと相互作用する frontmatter フィールドがいくつかあります。

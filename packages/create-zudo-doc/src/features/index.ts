@@ -20,6 +20,8 @@ import { i18nFeature } from "./i18n.js";
 import { versioningFeature } from "./versioning.js";
 import { tauriFeature } from "./tauri.js";
 import { imageEnlargeFeature } from "./image-enlarge.js";
+import { tagGovernanceFeature } from "./tag-governance.js";
+import { footerTaglistFeature } from "./footer-taglist.js";
 
 /**
  * All feature modules keyed by their feature name.
@@ -41,6 +43,8 @@ export const featureModules: Record<string, FeatureModule> = {
   imageEnlarge: imageEnlargeFeature,
   // skillSymlinker — handled in scaffold.ts
   // claudeSkills — handled in scaffold.ts (copies zudo-doc-* skills from monorepo)
-  footer: footerFeature, // pseudo-feature: triggered by footerNavGroup or footerCopyright
+  tagGovernance: tagGovernanceFeature,
+  footerTaglist: footerTaglistFeature,
+  footer: footerFeature, // pseudo-feature: triggered by footerNavGroup, footerCopyright, or footerTaglist
   // changelog — handled in scaffold.ts
 };

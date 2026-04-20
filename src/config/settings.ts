@@ -8,6 +8,8 @@ export type {
   FooterConfig,
   FrontmatterPreviewConfig,
   TagPlacement,
+  TagGovernanceMode,
+  TagVocabularyEntry,
 } from "./settings-types";
 import type {
   HeaderNavItem,
@@ -18,6 +20,7 @@ import type {
   FooterConfig,
   FrontmatterPreviewConfig,
   TagPlacement,
+  TagGovernanceMode,
 } from "./settings-types";
 
 export const settings = {
@@ -44,6 +47,32 @@ export const settings = {
   docMetainfo: true,
   docTags: true,
   tagPlacement: "after-title" as TagPlacement,
+  /**
+   * Tag governance enforcement level.
+   *
+   * - `"off"`    — no vocabulary-aware enforcement (pre-vocabulary behaviour).
+   * - `"warn"`   — tag audit reports unknown tags but the build still passes.
+   * - `"strict"` — unknown tags fail `pnpm check` / `pnpm build` via Zod.
+   *
+   * Orthogonal to `tagVocabulary`. `tagGovernance` controls the enforcement
+   * level when the vocabulary is consulted; `tagVocabulary` controls whether
+   * it is consulted at all.
+   */
+  tagGovernance: "warn" as TagGovernanceMode,
+  /**
+   * Whether `tag-vocabulary.ts` is consulted at runtime.
+   *
+   * - `true`  — alias rewrites, deprecation filtering, and grouped-footer
+   *             rendering are active. Governance level is decided by
+   *             `tagGovernance`.
+   * - `false` — the vocabulary file is ignored entirely, regardless of
+   *             `tagGovernance`. Tags stay completely loose. Useful to keep
+   *             the vocabulary file in the repo while temporarily running
+   *             unfiltered.
+   *
+   * Orthogonal to `tagGovernance`. Defaults are `true` / `"warn"`.
+   */
+  tagVocabulary: true as boolean,
   llmsTxt: true,
   math: true,
   cjkFriendly: true as boolean,
@@ -86,6 +115,30 @@ export const settings = {
       },
     ],
     copyright: `Copyright © ${new Date().getFullYear()} <a href="https://x.com/Takazudo">Takazudo</a>. Built with <a href="https://zudo-doc.pages.dev/pj/zudo-doc/docs/getting-started/">zudo-doc</a>.`,
+    /**
+     * Opt-in footer tag index. Leave `enabled: false` (or omit the block
+     * entirely) to render the footer unchanged from today.
+     *
+     * When `groupBy: "group"`, one column is rendered per vocabulary `group`
+     * (in declaration order from `tag-vocabulary.ts`). When `groupBy: "flat"`,
+     * a single alphabetised column is rendered with the title `taglist.title`.
+     * If the vocabulary is inactive, `groupBy` falls back to `"flat"`.
+     *
+     * Example:
+     *
+     *   taglist: {
+     *     enabled: true,
+     *     title: "Tags",
+     *     groupBy: "group",
+     *     groupTitles: { topic: "By topic", type: "By type", level: "By level" },
+     *     locales: {
+     *       ja: {
+     *         title: "タグ",
+     *         groupTitles: { topic: "トピック別", type: "種類別", level: "レベル別" },
+     *       },
+     *     },
+     *   },
+     */
   } satisfies FooterConfig as FooterConfig | false,
   headerNav: [
     { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },

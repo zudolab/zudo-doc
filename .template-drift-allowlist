@@ -23,3 +23,8 @@ src/styles/global.css
 # for the zudo-doc showcase only; template ships an empty map so downstream users
 # can add their own renderers without inheriting unrelated examples
 src/config/frontmatter-preview-renderers.tsx
+
+# Showcase-specific tag vocabulary — source ships the starter vocabulary for
+# the zudo-doc showcase docs; template ships an empty array so downstream
+# projects define their own taxonomy without inheriting unrelated ids
+src/config/tag-vocabulary.ts

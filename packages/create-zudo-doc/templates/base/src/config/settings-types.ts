@@ -33,10 +33,50 @@ export interface FooterLinkColumn {
   locales?: Record<string, { title: string }>;
 }
 
+/**
+ * Per-locale overrides for the footer taglist labels.
+ *
+ * `title`        — overrides `taglist.title` on this locale.
+ * `groupTitles`  — per-group title overrides keyed by vocabulary `group`.
+ */
+export interface FooterTaglistLocaleConfig {
+  title?: string;
+  groupTitles?: Record<string, string>;
+}
+
+/**
+ * Opt-in footer tag index.
+ *
+ * Renders one or more columns of tag links inside the existing footer grid.
+ * Off by default: when `enabled: false` (or the field is omitted entirely),
+ * the footer renders unchanged.
+ *
+ * - `groupBy: "group"` — one column per vocabulary `group`, in the order the
+ *   groups first appear in `tag-vocabulary.ts`. Each column's title comes from
+ *   `groupTitles[group]`, falling back to a capitalised version of the group
+ *   name.
+ * - `groupBy: "flat"` — a single column titled `title` listing every tag
+ *   alphabetically. This is also the fallback used when the vocabulary is
+ *   inactive (`tagVocabulary: false` or `tagGovernance: "off"`).
+ */
+export interface FooterTaglistConfig {
+  enabled: boolean;
+  /** Column title used in flat mode (and as fallback for ungrouped tags). */
+  title?: string;
+  /** Default `"group"` when the vocabulary is active, otherwise forced to `"flat"`. */
+  groupBy?: "group" | "flat";
+  /** English (default-locale) group titles, e.g. `{ type: "By type" }`. */
+  groupTitles?: Record<string, string>;
+  /** Locale-specific overrides for `title` and `groupTitles`. */
+  locales?: Record<string, FooterTaglistLocaleConfig>;
+}
+
 export interface FooterConfig {
   links: FooterLinkColumn[];
   /** Copyright text displayed at the bottom of the footer. HTML is supported. */
   copyright?: string;
+  /** Opt-in footer tag index. Off by default. */
+  taglist?: FooterTaglistConfig;
 }
 
 export interface HtmlPreviewConfig {
@@ -62,6 +102,8 @@ export interface FrontmatterPreviewConfig {
 }
 
 export type TagPlacement = "after-title" | "before-pager";
+
+export type { TagGovernanceMode, TagVocabularyEntry } from "./tag-vocabulary-types";
 
 export interface VersionConfig {
   /** Version identifier, used in URL path (e.g., "1.0", "v1") */

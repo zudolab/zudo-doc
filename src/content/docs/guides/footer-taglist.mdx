@@ -1,0 +1,89 @@
+---
+title: Footer Taglist
+description: Surface the tag vocabulary to readers via an opt-in column block in the site footer.
+sidebar_position: 5.4
+tags:
+  - content
+  - customization
+  - type:guide
+---
+
+## Overview
+
+The footer taglist is an optional index of tags rendered inside the existing footer grid. It gives readers a persistent way to reach every tag page without leaving the current doc.
+
+It is **off by default** — the footer looks the same as before until `footer.taglist.enabled` is set to `true` in `src/config/settings.ts`. Nothing about the per-page tag badge row or the homepage "All Tags" section changes.
+
+## Enabling
+
+Add a `taglist` block to the existing `footer` config:
+
+```ts
+footer: {
+  links: [
+    // ...existing footer link columns
+  ],
+  copyright: `Copyright © ${new Date().getFullYear()} Your Project.`,
+  taglist: {
+    enabled: true,
+    title: "Tags",
+    groupBy: "group",
+    groupTitles: {
+      topic: "By topic",
+      type: "By type",
+      level: "By level",
+    },
+    locales: {
+      ja: {
+        title: "タグ",
+        groupTitles: {
+          topic: "トピック別",
+          type: "種類別",
+          level: "レベル別",
+        },
+      },
+    },
+  },
+},
+```
+
+Each field is optional except `enabled`. Sensible defaults take over for anything you omit.
+
+## `groupBy: "group"` vs `"flat"`
+
+The taglist can render in two modes.
+
+- **`groupBy: "group"`** — one column per vocabulary `group`, in the order the groups first appear in [`src/config/tag-vocabulary.ts`](./tag-governance.mdx). This is the default whenever the vocabulary is active (`tagVocabulary: true` and `tagGovernance !== "off"`). Each column's title comes from `groupTitles[<group>]`, falling back to a capitalised version of the group name (`topic` → `Topic`).
+- **`groupBy: "flat"`** — a single alphabetised column titled `title`. Forced when the vocabulary is inactive, and a useful choice when you have fewer than a handful of tags and grouping would look sparse.
+
+Pick `"group"` once you have enough tags that a grouped view actually separates topics from types. Stick with `"flat"` until then.
+
+## Locale Overrides
+
+Column titles are the only strings the taglist shows, so locale overrides stay small. The `locales` map keys on locale code (matching [`locales` in settings](./configuration.mdx)):
+
+```ts
+taglist: {
+  enabled: true,
+  title: "Tags",
+  groupTitles: { topic: "By topic", type: "By type", level: "By level" },
+  locales: {
+    ja: {
+      title: "タグ",
+      groupTitles: { topic: "トピック別", type: "種類別", level: "レベル別" },
+    },
+  },
+},
+```
+
+Only keys present in the locale object override the default-locale strings; missing keys fall back. Tag ids themselves are **not** translated — see the [i18n section of the tags guide](./tags.mdx#i18n-behavior) for the reasoning.
+
+## What Readers See
+
+Every vocabulary tag that at least one non-draft, non-unlisted page references appears as a link to that tag's index page (`/docs/tags/<id>/` or `/{locale}/docs/tags/<id>/`). Deprecated entries are skipped. Empty groups collapse — you only pay for the columns you fill.
+
+## Related
+
+- [Tag governance](./tag-governance.mdx) — the vocabulary and group declarations that shape the taglist.
+- [Tags](./tags.mdx) — the per-page tag badge row and homepage tag index.
+- [Footer](./footer.mdx) — the rest of the footer configuration.
