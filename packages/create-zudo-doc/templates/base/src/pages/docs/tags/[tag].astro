@@ -47,6 +47,7 @@ const countText =
   <p class="text-muted mb-vsp-lg">{countText}</p>
 
   <DocCardGrid
+    ariaLabel={`${t("doc.taggedWith")}: ${tag}`}
     items={tagInfo.docs.map((doc) => ({
       href: docsUrl(doc.slug, "en"),
       title: doc.title,

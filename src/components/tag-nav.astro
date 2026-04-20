@@ -64,13 +64,22 @@ function tagHref(tag: string) {
 ---
 
 {
+  /*
+  Pointed chip uses two stacked clip-path polygons to fake a 1px border:
+  outer span is the border color, inner span is the fill inset by 1px.
+  The inner clip-path matches the outer but offset by 1px on every edge,
+  hence `calc(100% - 17px)` (outer 16 + 1px rim) and
+  `calc(100% - 13px)` (outer 12 + 1px rim) on the page variant.
+*/
+}
+{
   settings.docTags && variant === "all" && sortedTags.length > 0 && (
     <ul class="flex flex-wrap gap-x-hsp-xs gap-y-vsp-xs">
       {sortedTags.map(({ tag, count }) => (
         <li class="inline-flex whitespace-nowrap">
           <a
             href={tagHref(tag)}
-            aria-label={`Docs tagged ${tag}`}
+            aria-label={`${t("doc.taggedWith", locale)}: ${tag}`}
             class="group relative inline-flex no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             <span
@@ -98,7 +107,7 @@ function tagHref(tag: string) {
       {tags.map((tag) => (
         <a
           href={tagHref(tag)}
-          aria-label={`Docs tagged ${tag}`}
+          aria-label={`${t("doc.taggedWith", locale)}: ${tag}`}
           class="group relative inline-flex no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           <span
