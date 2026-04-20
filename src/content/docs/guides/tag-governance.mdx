@@ -1,0 +1,105 @@
+---
+title: Tag Governance
+description: Scale tagging from a handful of pages to hundreds by curating a vocabulary and enforcing it at build time.
+sidebar_position: 5.1
+tags:
+  - content
+  - type:guide
+---
+
+## Why Governance
+
+A free-form tag list is fine for the first ten pages. By the hundredth, you will have `deployment`, `Deployment`, `deploy`, and `deploys` all pointing at the same topic — splitting your tag index into useless near-duplicates and making discovery worse, not better.
+
+Tag governance fixes this by promoting the project's tag set to a **canonical vocabulary** defined in `src/config/tag-vocabulary.ts`. Every tag used in frontmatter is validated against this file. Typos and drift surface as audit findings; legitimate additions are intentional edits to the vocabulary.
+
+The goal is to keep discovery sharp as the doc base grows. Start loose; tighten as you scale.
+
+## The Vocabulary File
+
+`src/config/tag-vocabulary.ts` is an array of `TagVocabularyEntry` objects. Each entry declares a canonical tag id, an optional display label, a group, and any aliases content is allowed to use:
+
+```ts
+{
+  id: "deployment",
+  label: "Deployment",
+  description: "Hosting, CI, and release workflows.",
+  group: "topic",
+  aliases: ["deploy", "deploys"],
+}
+```
+
+To phase out a tag without breaking existing pages, either mark it deprecated or redirect it to a replacement. Never silently delete an entry — see the inline comments in `src/config/tag-vocabulary.ts` for the full phase-out contract.
+
+### Extending the Vocabulary in Your Project
+
+After scaffolding with `create-zudo-doc`, **`tag-vocabulary.ts` belongs to your project.** It is a normal source file, not a framework internal. Edit it directly — no forking or monkey-patching required. A typical addition looks like this:
+
+```ts
+export const tagVocabulary: readonly TagVocabularyEntry[] = [
+  // ...existing entries
+
+  {
+    id: "topic:auth",
+    label: "Auth",
+    description: "Authentication, sessions, SSO.",
+    group: "topic",
+  },
+  {
+    id: "type:runbook",
+    label: "Runbook",
+    description: "Incident response and on-call procedures.",
+    group: "type",
+  },
+];
+```
+
+After editing, run [`pnpm tags:audit`](./tags-audit.mdx) to verify nothing unexpected broke, and add tags to pages the usual way:
+
+```mdx
+---
+title: OAuth 2.0 Setup
+tags: [topic:auth, type:runbook]
+---
+```
+
+## Two Orthogonal Settings
+
+Governance is controlled by two independent settings in `src/config/settings.ts`:
+
+| Setting          | Type      | Purpose                                                                                    |
+| ---------------- | --------- | ------------------------------------------------------------------------------------------ |
+| `tagVocabulary`  | `boolean` | Whether the vocabulary file is consulted at all (alias resolution, deprecation, grouping). |
+| `tagGovernance`  | `"off" \| "warn" \| "strict"` | Enforcement level when the vocabulary is consulted.                                        |
+
+They are **orthogonal**. `tagVocabulary: false` disables vocabulary entirely, regardless of `tagGovernance`. Leave `tagVocabulary: true` (the default) and tune enforcement via `tagGovernance`.
+
+### The Three Modes
+
+- `"off"` — vocabulary-aware enforcement is skipped. Tags stay completely loose. Useful for legacy migrations or prototypes.
+- `"warn"` (default) — `pnpm tags:audit` reports unknown tags, deprecations, and near-duplicates, but `pnpm build` still passes. Fixes can land at your own pace.
+- `"strict"` — unknown tags fail Zod validation at `pnpm check` / `pnpm build` time. The vocabulary becomes the single source of truth.
+
+### Recommended Escalation Path
+
+1. **Seed the vocabulary** from the tags you already use — `tag-vocabulary.ts` ships pre-filled with every tag that appears in the default showcase content.
+2. **Run `warn` until the audit is clean.** Fix unknowns, resolve aliases with `pnpm tags:audit --fix`, and retire near-duplicates by adding them as aliases of the canonical id.
+3. **Flip to `strict`** once the audit is green. From that point on, new tags require a matching vocabulary entry — which is exactly the friction you want to prevent drift.
+
+Adopt `strict` as soon as the backlog is empty; the earlier the constraint is in place, the cheaper it stays.
+
+## Faceted Tag Pattern
+
+Flat tag soups (`deployment`, `advanced`, `tutorial`, `i18n`, ...) scale poorly because the reader cannot tell what a tag answers. A faceted prefix names the axis:
+
+- `type:` — what kind of page is it? `type:guide`, `type:reference`, `type:tutorial`, `type:runbook`.
+- `level:` — who is it for? `level:beginner`, `level:advanced`.
+- `topic:` — what subject does it cover? `topic:auth`, `topic:ai`, `topic:search`.
+
+The default vocabulary uses this pattern for `type:*` and `level:*` facets. You can extend it with your own `topic:*` entries, or introduce new facets (`product:*`, `team:*`) as your doc base grows. Facets stay separate in the grouped footer taglist — see [Footer taglist](./footer-taglist.mdx).
+
+## Next Steps
+
+- [Tag audit](./tags-audit.mdx) — what `pnpm tags:audit` reports and how to read it.
+- [Tag suggestions](./tags-suggest.mdx) — opt-in local LLM suggester for new pages.
+- [Footer taglist](./footer-taglist.mdx) — surface the vocabulary to readers.

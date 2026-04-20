@@ -1,0 +1,105 @@
+---
+title: タグガバナンス
+description: ボキャブラリを整備しビルド時に検証することで、数ページから数百ページまでタグ付けをスケールさせる。
+sidebar_position: 5.1
+tags:
+  - content
+  - type:guide
+---
+
+## なぜガバナンスが必要か
+
+最初の10ページほどであれば、自由記述のタグリストで十分です。しかし100ページを超えた頃には、`deployment`、`Deployment`、`deploy`、`deploys`が同じトピックを指しているのに別々のタグとして扱われるようになります。その結果、タグインデックスは役に立たないほぼ重複したエントリで分断され、発見性は向上するどころか悪化します。
+
+タグガバナンスは、プロジェクトのタグセットを`src/config/tag-vocabulary.ts`で定義された**正規ボキャブラリ**に格上げすることでこの問題を解決します。フロントマターで使われるすべてのタグはこのファイルに対して検証されます。タイポやドリフトは監査結果として表面化し、正当な追加はボキャブラリへの意図的な編集となります。
+
+目的は、ドキュメントベースが成長するなかで発見性を鋭く保つことです。緩く始めて、スケールに合わせて締めていきます。
+
+## ボキャブラリファイル
+
+`src/config/tag-vocabulary.ts`は`TagVocabularyEntry`オブジェクトの配列です。各エントリは正規タグ id、任意の表示ラベル、グループ、そしてコンテンツ側で使用を許可するエイリアスを宣言します。
+
+```ts
+{
+  id: "deployment",
+  label: "Deployment",
+  description: "Hosting, CI, and release workflows.",
+  group: "topic",
+  aliases: ["deploy", "deploys"],
+}
+```
+
+既存ページを壊さずにタグを段階的に廃止するには、deprecated としてマークするか、代替タグへリダイレクトします。エントリを黙って削除してはいけません。フェーズアウト契約の全文は`src/config/tag-vocabulary.ts`のインラインコメントを参照してください。
+
+### プロジェクト側でボキャブラリを拡張する
+
+`create-zudo-doc`でスキャフォールドしたあとは、**`tag-vocabulary.ts`はあなたのプロジェクトのものです。** フレームワーク内部ではなく普通のソースファイルです。フォークやモンキーパッチは不要で、直接編集してください。典型的な追加は次のような形になります。
+
+```ts
+export const tagVocabulary: readonly TagVocabularyEntry[] = [
+  // ...existing entries
+
+  {
+    id: "topic:auth",
+    label: "Auth",
+    description: "Authentication, sessions, SSO.",
+    group: "topic",
+  },
+  {
+    id: "type:runbook",
+    label: "Runbook",
+    description: "Incident response and on-call procedures.",
+    group: "type",
+  },
+];
+```
+
+編集後は[`pnpm tags:audit`](./tags-audit.mdx)を実行して想定外の破壊がないか確認し、通常どおりページにタグを付けます。
+
+```mdx
+---
+title: OAuth 2.0 Setup
+tags: [topic:auth, type:runbook]
+---
+```
+
+## 独立した2つの設定
+
+ガバナンスは`src/config/settings.ts`にある独立した2つの設定で制御します。
+
+| 設定             | 型        | 目的                                                                                                   |
+| ---------------- | --------- | ------------------------------------------------------------------------------------------------------ |
+| `tagVocabulary`  | `boolean` | ボキャブラリファイルを参照するかどうか(エイリアス解決、deprecation、グルーピング)。                    |
+| `tagGovernance`  | `"off" \| "warn" \| "strict"` | ボキャブラリが参照される場合の検証レベル。                                                             |
+
+この2つは**直交しています**。`tagVocabulary: false`にすると`tagGovernance`の値に関わらずボキャブラリは完全に無効になります。通常はデフォルトの`tagVocabulary: true`のままにし、`tagGovernance`で強度を調整します。
+
+### 3つのモード
+
+- `"off"` — ボキャブラリを用いた検証を行いません。タグは完全に緩いままです。レガシー移行やプロトタイプで有用です。
+- `"warn"`(デフォルト) — `pnpm tags:audit`が未知タグ、deprecation、ニアデュプリケートを報告しますが、`pnpm build`は通過します。修正は自分のペースで進められます。
+- `"strict"` — 未知タグは`pnpm check` / `pnpm build`時に Zod バリデーションで落ちます。ボキャブラリが唯一の真実となります。
+
+### 推奨エスカレーションパス
+
+1. **すでに使っているタグからボキャブラリをシードする。** デフォルトのショーケースコンテンツに登場するすべてのタグは`tag-vocabulary.ts`に最初から入っています。
+2. **監査がクリーンになるまで`warn`で運用する。** unknown を解消し、`pnpm tags:audit --fix`でエイリアスを書き換え、ニアデュプリケートは正規 id のエイリアスとして吸収します。
+3. **監査がグリーンになったら`strict`に切り替える。** 以降、新しいタグには必ずボキャブラリエントリが必要になります——ドリフトを防ぐためにちょうど良い摩擦です。
+
+バックログが空になり次第`strict`を採用してください。制約が入るのは早ければ早いほど安価です。
+
+## ファセットタグのパターン
+
+フラットなタグの海(`deployment`、`advanced`、`tutorial`、`i18n`……)はスケールしません。読者からはタグが何を答えるのかが判別できないからです。ファセットプレフィックスは軸の名前を明示します。
+
+- `type:` — どんな種類のページか? `type:guide`、`type:reference`、`type:tutorial`、`type:runbook`。
+- `level:` — 誰向けか? `level:beginner`、`level:advanced`。
+- `topic:` — どのテーマを扱うか? `topic:auth`、`topic:ai`、`topic:search`。
+
+デフォルトのボキャブラリは`type:*`と`level:*`のファセットにこのパターンを使っています。独自の`topic:*`エントリを足したり、ドキュメントベースが育ったら新しいファセット(`product:*`、`team:*`)を導入したりできます。ファセットはグループ化されたフッタータグリストで別々に並びます——[フッタータグリスト](./footer-taglist.mdx)を参照してください。
+
+## 次のステップ
+
+- [タグ監査](./tags-audit.mdx) — `pnpm tags:audit`が何を報告し、どう読み解くか。
+- [タグサジェスト](./tags-suggest.mdx) — 新しいページ向けのオプトインなローカル LLM サジェスター。
+- [フッタータグリスト](./footer-taglist.mdx) — ボキャブラリを読者向けに表示する。
