@@ -298,6 +298,23 @@ llmsTxt: true,
 
 デフォルト：`true`
 
+### tagPlacement
+
+ドキュメントページに表示されるタグバッジ列の位置を制御します。
+
+型：`"after-title" | "before-pager"`
+
+デフォルト：`"after-title"`
+
+- `"after-title"` — ページタイトルの直下、本文の上にバッジ列を表示します。
+- `"before-pager"` — コンテンツの末尾、前後ページャーのすぐ上にバッジ列を表示します。
+
+```ts
+tagPlacement: "before-pager",
+```
+
+`docTags` が `false` の場合、またはページにタグが付いていない場合は効果がありません。
+
 ### frontmatterPreview
 
 カスタムフロントマターフィールドをページタイトルの直下にコンパクトなキー/値テーブルとして表示します。フレームワーク管理のキー（`title`、`description`、`sidebar_position` など）はデフォルトで非表示になるため、プロジェクト固有のメタデータのみが表示されます。すべてのページでブロックを無効にするには `false` を設定します。

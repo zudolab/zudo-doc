@@ -298,6 +298,23 @@ See the [Tags guide](./tags.mdx) for a full walkthrough.
 
 Default: `true`
 
+### tagPlacement
+
+Controls where the per-page tag badge row renders on doc pages.
+
+Type: `"after-title" | "before-pager"`
+
+Default: `"after-title"`
+
+- `"after-title"` — the badge row appears directly below the page title, above the main content.
+- `"before-pager"` — the badge row appears at the bottom of the content, immediately above the previous/next pager.
+
+```ts
+tagPlacement: "before-pager",
+```
+
+Has no effect when `docTags` is `false` or when a page carries no tags.
+
 ### frontmatterPreview
 
 Displays custom frontmatter fields as a compact key/value table directly beneath the page title. Framework-managed keys (`title`, `description`, `sidebar_position`, etc.) are hidden by default so only project-specific metadata is shown. Set to `false` to disable the block on all pages.
