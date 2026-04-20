@@ -279,13 +279,15 @@ const slug = autoIndex
           </div>
         )}
 
+        {entry?.data?.tags && settings.tagPlacement === "after-title" && (
+          <DocTags tags={entry.data.tags} locale="ja" placement="after-title" />
+        )}
+
         {entry.data.description && (
           <p class="mt-0 mb-vsp-lg text-subheading text-muted">
             {entry.data.description}
           </p>
         )}
-
-        {entry?.data?.tags && <DocTags tags={entry.data.tags} locale="ja" />}
 
         {settings.frontmatterPreview && entry && (
           <FrontmatterPreview data={entry.data} locale="ja" />
@@ -297,6 +299,14 @@ const slug = autoIndex
           <div class="mt-vsp-xl mb-vsp-md border-t border-muted pt-vsp-md">
             <EditLink contentDir={contentDir} entryId={entry.id} locale="ja" />
           </div>
+        )}
+
+        {entry?.data?.tags && settings.tagPlacement === "before-pager" && (
+          <DocTags
+            tags={entry.data.tags}
+            locale="ja"
+            placement="before-pager"
+          />
         )}
 
         <nav class="mt-vsp-2xl grid grid-cols-2 gap-hsp-xl">

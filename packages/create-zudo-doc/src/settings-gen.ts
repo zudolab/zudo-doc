@@ -14,6 +14,7 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  LocaleConfig,`);
   lines.push(`  VersionConfig,`);
   lines.push(`  FooterConfig,`);
+  lines.push(`  TagPlacement,`);
   lines.push(`} from "./settings-types";`);
   lines.push(`import type {`);
   lines.push(`  HeaderNavItem,`);
@@ -23,6 +24,7 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  LocaleConfig,`);
   lines.push(`  VersionConfig,`);
   lines.push(`  FooterConfig,`);
+  lines.push(`  TagPlacement,`);
   lines.push(`} from "./settings-types";`);
   lines.push(``);
 
@@ -80,6 +82,7 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  sitemap: false,`);
   lines.push(`  docMetainfo: false,`);
   lines.push(`  docTags: false,`);
+  lines.push(`  tagPlacement: "after-title" as TagPlacement,`);
   lines.push(
     `  frontmatterPreview: false as FrontmatterPreviewConfig | false,`,
   );
