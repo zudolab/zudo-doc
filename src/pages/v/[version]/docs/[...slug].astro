@@ -215,13 +215,15 @@ const slug = autoIndex
           />
         )}
 
+        {entry?.data?.tags && settings.tagPlacement === "after-title" && (
+          <DocTags tags={entry.data.tags} locale="en" placement="after-title" />
+        )}
+
         {entry.data.description && (
           <p class="mt-0 mb-vsp-lg text-subheading text-muted">
             {entry.data.description}
           </p>
         )}
-
-        {entry?.data?.tags && <DocTags tags={entry.data.tags} locale="en" />}
 
         {settings.frontmatterPreview && entry && (
           <FrontmatterPreview data={entry.data} locale="en" />
@@ -237,6 +239,14 @@ const slug = autoIndex
               locale="en"
             />
           </div>
+        )}
+
+        {entry?.data?.tags && settings.tagPlacement === "before-pager" && (
+          <DocTags
+            tags={entry.data.tags}
+            locale="en"
+            placement="before-pager"
+          />
         )}
 
         <nav class="mt-vsp-2xl grid grid-cols-2 gap-hsp-xl">
