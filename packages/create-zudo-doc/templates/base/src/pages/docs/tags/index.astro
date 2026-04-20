@@ -15,7 +15,12 @@ const docs = import.meta.env.PROD
 const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
 ---
 
-<DocLayout title={t("doc.allTags")} currentSlug="tags">
+<DocLayout
+  title={t("doc.allTags")}
+  currentSlug="tags"
+  hideSidebar={true}
+  hideToc={true}
+>
   <Breadcrumb
     slot="breadcrumb"
     items={[

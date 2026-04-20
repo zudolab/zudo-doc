@@ -28,7 +28,12 @@ const countText =
     : t("doc.pageCount").replace("{count}", String(tagInfo.count));
 ---
 
-<DocLayout title={`${t("doc.taggedWith")}: ${tag}`} currentSlug={`tags/${tag}`}>
+<DocLayout
+  title={`${t("doc.taggedWith")}: ${tag}`}
+  currentSlug={`tags/${tag}`}
+  hideSidebar={true}
+  hideToc={true}
+>
   <Breadcrumb
     slot="breadcrumb"
     items={[
