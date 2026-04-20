@@ -1,0 +1,89 @@
+---
+title: フッタータグリスト
+description: サイトフッターのカラムブロックとしてタグボキャブラリを読者に公開するオプトイン機能。
+sidebar_position: 5.4
+tags:
+  - content
+  - customization
+  - type:guide
+---
+
+## 概要
+
+フッタータグリストは、既存のフッターグリッドの中にレンダリングされるタグの索引です。読者は今開いているドキュメントから離れずに、常にすべてのタグページへアクセスできるようになります。
+
+この機能は**デフォルトでオフ**です。`src/config/settings.ts`で`footer.taglist.enabled`を`true`にするまで、フッターの見た目は従来と変わりません。ページごとのタグバッジ行やトップページの"All Tags"セクションも影響を受けません。
+
+## 有効化
+
+既存の`footer`設定に`taglist`ブロックを追加します。
+
+```ts
+footer: {
+  links: [
+    // ...existing footer link columns
+  ],
+  copyright: `Copyright © ${new Date().getFullYear()} Your Project.`,
+  taglist: {
+    enabled: true,
+    title: "Tags",
+    groupBy: "group",
+    groupTitles: {
+      topic: "By topic",
+      type: "By type",
+      level: "By level",
+    },
+    locales: {
+      ja: {
+        title: "タグ",
+        groupTitles: {
+          topic: "トピック別",
+          type: "種類別",
+          level: "レベル別",
+        },
+      },
+    },
+  },
+},
+```
+
+`enabled`以外のフィールドはすべて任意です。省略した項目には妥当なデフォルトが適用されます。
+
+## `groupBy: "group"`と`"flat"`
+
+タグリストは2つのモードでレンダリングできます。
+
+- **`groupBy: "group"`** — ボキャブラリの`group`ごとに1カラム。順序は[`src/config/tag-vocabulary.ts`](./tag-governance.mdx)でその group が最初に登場する順です。ボキャブラリが有効なとき(`tagVocabulary: true`かつ`tagGovernance !== "off"`)のデフォルトです。各カラムのタイトルは`groupTitles[<group>]`から取られ、未指定なら group 名を先頭大文字にしたもの(`topic` → `Topic`)にフォールバックします。
+- **`groupBy: "flat"`** — `title`を見出しにした単一のアルファベット順カラム。ボキャブラリが無効のときは強制的にこれになります。タグがほんの少ししかなくグループ表示ではスカスカになる場合にも便利です。
+
+タグが増えてグループ表示で topic と type が実際に分離されるようになったら`"group"`へ切り替えます。それまでは`"flat"`で十分です。
+
+## ロケールオーバーライド
+
+タグリストが表示する文字列はカラムタイトルだけなので、ロケールオーバーライドは小さく保てます。`locales`マップは[設定の`locales`](./configuration.mdx)と同じロケールコードをキーにします。
+
+```ts
+taglist: {
+  enabled: true,
+  title: "Tags",
+  groupTitles: { topic: "By topic", type: "By type", level: "By level" },
+  locales: {
+    ja: {
+      title: "タグ",
+      groupTitles: { topic: "トピック別", type: "種類別", level: "レベル別" },
+    },
+  },
+},
+```
+
+ロケールオブジェクトに存在するキーだけがデフォルトロケールの文字列を上書きし、無いキーはフォールバックします。タグ id そのものは**翻訳されません**——理由は[tags ガイドの i18n セクション](./tags.mdx#i18n-behavior)を参照してください。
+
+## 読者に見える内容
+
+少なくとも1つのドラフトでも unlisted でもないページから参照されているボキャブラリタグは、そのタグのインデックスページ(`/docs/tags/<id>/`または`/{locale}/docs/tags/<id>/`)へのリンクとして表示されます。deprecated エントリはスキップされます。空のグループは折りたたまれ、埋めたカラムぶんだけ場所を取ります。
+
+## 関連
+
+- [タグガバナンス](./tag-governance.mdx) — タグリストを形作るボキャブラリと group 宣言。
+- [タグ](./tags.mdx) — ページごとのタグバッジ行とトップページのタグインデックス。
+- [フッター](./footer.mdx) — フッター設定の残りの部分。

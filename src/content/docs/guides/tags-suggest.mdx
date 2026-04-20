@@ -1,0 +1,78 @@
+---
+title: Tag Suggestions
+description: Opt-in local-LLM suggester that proposes up to three canonical tags for a doc from the project vocabulary.
+sidebar_position: 5.3
+tags:
+  - content
+  - type:guide
+---
+
+## Opt-in, Not Automatic
+
+`pnpm tags:suggest` is a developer-facing helper, not part of the build. It reads one or more doc files, asks a locally-running LLM to propose up to three tag ids from the project vocabulary, and either shows them in an interactive prompt or appends them to a JSON Lines file for batch review.
+
+Three deliberate choices about this tool:
+
+- **Local model, no cloud.** The prompt and the doc body never leave your machine.
+- **Vocabulary-aware.** The full `tag-vocabulary.ts` is passed to the model as context, so suggestions always come from the canonical set.
+- **Never in CI.** Suggestions are advisory. The tool is not wired into `pnpm b4push`, `pnpm build`, or any pre-commit hook.
+
+If you want stricter enforcement, that's what [`tagGovernance: "strict"`](./tag-governance.mdx) and [`pnpm tags:audit`](./tags-audit.mdx) are for.
+
+## Ollama Setup
+
+The suggester talks to a local [Ollama](https://ollama.com/) daemon over HTTP.
+
+1. Install Ollama from [ollama.com](https://ollama.com/).
+2. Pull a model:
+
+   ```sh
+   ollama pull qwen2.5:7b
+   ```
+
+3. Make sure the daemon is reachable at `http://localhost:11434` (the default).
+
+The default model is `qwen2.5:7b` — a reasonable balance of quality, speed, and disk footprint (~5 GB). Override with `--model`:
+
+```sh
+pnpm tags:suggest --model llama3.1:8b src/content/docs/guides/i18n.mdx
+```
+
+Lighter models (`qwen2.5:3b`, `llama3.2:3b`) are faster but noisier. The tool will exit non-zero if the daemon is unreachable or returns unusable output.
+
+## Interactive Flow
+
+The default (TTY) flow reviews one file at a time:
+
+```sh
+pnpm tags:suggest src/content/docs/guides/deployment.mdx
+```
+
+The suggester prints the current tags, the LLM's suggested ids, and a y/n prompt to accept. Accepted suggestions are written back to the file's frontmatter; rejected suggestions are discarded. This is the flow for routine authoring.
+
+## Batch Flow
+
+For larger jobs or non-TTY contexts (CI, editor plugins, piped stdin), pass `--batch`:
+
+```sh
+pnpm tags:suggest --batch src/content/docs/guides/*.mdx
+```
+
+Suggestions are appended to `.tag-suggestions.jsonl` at the repo root — one JSON object per file containing `file`, `current`, and `suggested`. Nothing is written to the doc files. Review the JSONL, apply what looks good by hand (or script it), and delete the file when done.
+
+`--batch` also auto-engages when stdout is not a TTY, so piping or redirecting to a log file does the right thing by default.
+
+## Why Pass the Vocabulary as Context
+
+The whole `tag-vocabulary.ts` — ids, labels, descriptions, groups — is included in the prompt every time the suggester runs. That's the single biggest factor in output quality:
+
+- The model picks from the canonical set, so you don't waste a round trip filtering unknowns.
+- Group and description context lets the model distinguish close topics (`content` vs `customization`).
+- Adding a new vocabulary entry is the primary way to "teach" the tool about a new facet — no fine-tuning, no embeddings store.
+
+The doc body is truncated to 1500 characters to keep the prompt small. Most frontmatter-driven suggestion lives in the first page or two of prose, so the truncation is rarely limiting.
+
+## Related
+
+- [Tag governance](./tag-governance.mdx) — defining the vocabulary the suggester draws from.
+- [Tag audit](./tags-audit.mdx) — what catches suggestions that slip through.

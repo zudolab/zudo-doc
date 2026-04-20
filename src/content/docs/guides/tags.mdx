@@ -89,6 +89,15 @@ Tag rendering is controlled by the `docTags` setting in `src/config/settings.ts`
 
 See [Configuration](./configuration.mdx) for the full settings reference.
 
+## Scaling to a Team Project
+
+Once a doc base has more than a handful of authors, free-form tags drift. zudo-doc ships a vocabulary-aware governance workflow to keep the tag index tidy as the project grows:
+
+- [Tag governance](./tag-governance.mdx) — curate a canonical vocabulary and enforce it via `tagGovernance: "warn" | "strict"`.
+- [Tag audit](./tags-audit.mdx) — `pnpm tags:audit` reports unknowns, deprecations, aliases, near-duplicates, and orphans, with a byte-stable `--fix` for alias rewrites and `--ci` integration for `pnpm b4push`.
+- [Tag suggestions](./tags-suggest.mdx) — optional local-LLM helper (`pnpm tags:suggest`) that proposes canonical tags for new pages.
+- [Footer taglist](./footer-taglist.mdx) — opt-in footer column that surfaces the vocabulary to readers.
+
 ## Related Frontmatter Fields
 
 A couple of other frontmatter fields interact with tag navigation:

@@ -1,0 +1,66 @@
+---
+title: Tag Audit
+description: Inspect every frontmatter tag against the project vocabulary — unknowns, deprecations, aliases, near-duplicates, and orphans.
+sidebar_position: 5.2
+tags:
+  - content
+  - type:guide
+---
+
+## What the Audit Reports
+
+`pnpm tags:audit` walks `src/content/docs/**` and every configured locale directory, collects the `tags:` arrays from each page's frontmatter, and reports five kinds of finding against `src/config/tag-vocabulary.ts`.
+
+- **Unknown tags** — the string is neither a canonical id nor an alias. Either add a vocabulary entry, or remove the tag from the page. Under [`tagGovernance: "strict"`](./tag-governance.mdx), unknowns fail the build.
+- **Deprecated tags** — the id resolves to an entry marked `deprecated`. If the entry has a `redirect`, the reader's traffic still resolves to the replacement; you should still update the content.
+- **Alias usage** — the string is a known alias, not the canonical id. The page will render correctly but drift away from canonical form. Fix in-place with `--fix`.
+- **Near-duplicates** — two distinct canonical tags that look like variants of each other (high string similarity, or the same singular form). Usually a vocabulary problem: pick one, make the other an alias.
+- **Orphan vocabulary entries** — vocabulary ids that no page references. Consider retiring them via `deprecated: true`.
+
+A clean run prints `✓ No tag issues found`.
+
+## Reading the Report
+
+The default output is colorized text grouped by category. For machine consumption, pass `--json`:
+
+```sh
+pnpm tags:audit --json > audit.json
+```
+
+The JSON payload is an `AuditReport` with `unknowns`, `deprecated`, `aliases`, `nearDuplicates`, `orphans`, `filesScanned`, and a canonical-id `frequency` map. This is what CI dashboards and auto-fix tools should consume.
+
+## `--fix`: Byte-Stable Alias Rewrites
+
+`pnpm tags:audit --fix` rewrites alias tags to their canonical id directly in the frontmatter, one file at a time:
+
+```sh
+pnpm tags:audit --fix
+```
+
+Behaviour worth knowing:
+
+- **Only aliases are rewritten.** Unknown tags, deprecated tags, and near-duplicates are never touched — those require editorial decisions, not search-and-replace.
+- **Byte-stable outside the tags block.** The rewrite preserves every other byte of the file, including indentation style, quoting, and line endings (both LF and CRLF).
+- **Both YAML sequence styles are supported** — flow (`tags: [foo, bar]`) and block (`tags:\n  - foo`).
+
+Run `--fix` on a clean working tree, then review the diff before committing.
+
+## CI Integration via `b4push`
+
+The project's pre-push validation script ([`pnpm b4push`](./development-workflow.mdx)) runs the audit with `--ci`:
+
+```sh
+pnpm tags:audit --ci
+```
+
+`--ci` forces a non-zero exit on any **hard issue** (unknowns or deprecations) regardless of the configured `tagGovernance` mode. This means:
+
+- Under `tagGovernance: "warn"` — `pnpm build` still passes with unknowns present (intentional, so migrations aren't blocked), but `pnpm b4push` refuses to push them.
+- Under `tagGovernance: "strict"` — the build already fails on unknowns; `--ci` keeps b4push aligned when enforcement is later relaxed.
+
+This two-layer setup — lenient build, strict push — is the sweet spot for multi-author doc bases: drafts can experiment locally without fighting Zod, but no broken tags make it onto `main`.
+
+## Related
+
+- [Tag governance](./tag-governance.mdx) — vocabulary file, governance modes, the faceted tag pattern.
+- [Tag suggestions](./tags-suggest.mdx) — opt-in LLM helper for picking canonical tags on new pages.
