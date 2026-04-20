@@ -176,7 +176,9 @@ const hasColumns = links.length > 0 || taglistColumns.length > 0;
                       class="text-caption text-muted hover:text-accent hover:underline"
                     >
                       #{tag}
-                      <span class="opacity-60">&nbsp;({count})</span>
+                      <span class="opacity-60" aria-hidden="true">
+                        &nbsp;({count})
+                      </span>
                     </a>
                   </li>
                 ))}
