@@ -38,7 +38,14 @@ Tags surface in three places across the built site.
 
 ### Per-Page Badge Row
 
-Every page with one or more tags renders a row of tag badges directly above the previous/next pager at the bottom of the content. Each badge links to that tag's index page. This is powered by the `DocTags` component (`TagNav` with `variant="page"`).
+Every page with one or more tags renders a row of tag badges that links each badge to its tag index page. This is powered by the `DocTags` component (`TagNav` with `variant="page"`).
+
+The row can appear in one of two positions, chosen by the [`tagPlacement`](./configuration.mdx#tagplacement) setting:
+
+- `"after-title"` (default) — the badge row sits directly below the page title, above the main content. Use this when tags describe the page at a glance and should be visible without scrolling.
+- `"before-pager"` — the badge row sits at the bottom of the content, immediately above the previous/next pager. Use this when tags are reference metadata that readers reach for after finishing the page.
+
+Only one placement is active at a time; the setting is global.
 
 ### Homepage "All Tags" Section
 
