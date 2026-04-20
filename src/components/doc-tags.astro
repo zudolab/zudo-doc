@@ -3,6 +3,7 @@ import TagNav from "./tag-nav.astro";
 import { settings } from "@/config/settings";
 import type { Locale } from "@/config/i18n";
 import type { TagPlacement } from "@/config/settings-types";
+import { resolvePageTags } from "@/utils/tags";
 
 interface Props {
   tags: string[];
@@ -12,14 +13,16 @@ interface Props {
 
 const { tags, locale = "en", placement } = Astro.props;
 
+const resolvedTags = resolvePageTags(tags);
+
 const spacingClass =
   placement === "after-title" ? "mt-0 mb-vsp-md" : "mt-vsp-xl mb-0";
 ---
 
 {
-  settings.docTags && tags.length > 0 && (
+  settings.docTags && resolvedTags.length > 0 && (
     <div class={spacingClass}>
-      <TagNav variant="page" tags={tags} locale={locale} />
+      <TagNav variant="page" tags={resolvedTags} locale={locale} />
     </div>
   )
 }
