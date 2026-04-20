@@ -1,0 +1,91 @@
+---
+import { settings } from "@/config/settings";
+import { t, defaultLocale, type Locale } from "@/config/i18n";
+import { withBase } from "@/utils/base";
+import { collectTags } from "@/utils/tags";
+import { getDocsCollection } from "@/utils/get-docs-collection";
+import { toRouteSlug } from "@/utils/slug";
+import type { DocsEntry } from "@/types/docs-entry";
+
+interface Props {
+  variant: "all" | "page";
+  tags?: string[];
+  locale?: Locale;
+}
+
+const { variant, tags = [], locale = "en" } = Astro.props;
+
+let sortedTags: { tag: string; count: number }[] = [];
+
+if (settings.docTags && variant === "all") {
+  const filterDocs = (docs: DocsEntry[]) =>
+    import.meta.env.PROD
+      ? docs.filter((doc) => !doc.data.draft && !doc.data.unlisted)
+      : docs.filter((doc) => !doc.data.unlisted);
+
+  let docs: DocsEntry[];
+  if (locale === defaultLocale) {
+    const allDocs = await getDocsCollection("docs");
+    docs = filterDocs(allDocs);
+  } else {
+    const localeDocs = await getDocsCollection(`docs-${locale}`);
+    const baseDocs = await getDocsCollection("docs");
+    const filteredLocale = filterDocs(localeDocs);
+    const filteredBase = filterDocs(baseDocs);
+    const localeSlugSet = new Set(
+      filteredLocale.map((d) => d.data.slug ?? toRouteSlug(d.id)),
+    );
+    docs = [
+      ...filteredLocale,
+      ...filteredBase.filter(
+        (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id)),
+      ),
+    ];
+  }
+
+  const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
+  sortedTags = [...tagMap.values()].sort((a, b) =>
+    a.tag.localeCompare(b.tag, locale),
+  );
+}
+
+function tagHref(tag: string) {
+  const path =
+    locale === defaultLocale
+      ? `/docs/tags/${tag}`
+      : `/${locale}/docs/tags/${tag}`;
+  return withBase(path);
+}
+---
+
+{
+  settings.docTags && variant === "all" && sortedTags.length > 0 && (
+    <div class="flex flex-wrap gap-hsp-sm">
+      {sortedTags.map(({ tag, count }) => (
+        <a
+          href={tagHref(tag)}
+          class="inline-flex items-center gap-hsp-2xs px-hsp-md py-vsp-xs bg-surface border border-muted rounded-full text-fg hover:border-accent hover:text-accent"
+        >
+          <span>{tag}</span>
+          <span class="text-caption text-muted">({count})</span>
+        </a>
+      ))}
+    </div>
+  )
+}
+
+{
+  settings.docTags && variant === "page" && tags.length > 0 && (
+    <div class="mt-vsp-md mb-vsp-lg flex flex-wrap items-center gap-hsp-xs">
+      <span class="text-caption text-muted">{t("doc.tags", locale)}:</span>
+      {tags.map((tag) => (
+        <a
+          href={tagHref(tag)}
+          class="inline-block px-hsp-sm py-vsp-2xs text-caption bg-surface border border-muted rounded-full text-accent hover:bg-code-bg hover:border-accent"
+        >
+          {tag}
+        </a>
+      ))}
+    </div>
+  )
+}
