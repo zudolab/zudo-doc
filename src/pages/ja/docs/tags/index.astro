@@ -29,7 +29,13 @@ const docs = [
 const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
 ---
 
-<DocLayout title={t("doc.allTags", "ja")} lang="ja" currentSlug="tags">
+<DocLayout
+  title={t("doc.allTags", "ja")}
+  lang="ja"
+  currentSlug="tags"
+  hideSidebar={true}
+  hideToc={true}
+>
   <Breadcrumb
     slot="breadcrumb"
     items={[
