@@ -7,6 +7,7 @@ export type {
   VersionConfig,
   FooterConfig,
   FrontmatterPreviewConfig,
+  TagPlacement,
 } from "./settings-types";
 import type {
   HeaderNavItem,
@@ -16,6 +17,7 @@ import type {
   VersionConfig,
   FooterConfig,
   FrontmatterPreviewConfig,
+  TagPlacement,
 } from "./settings-types";
 
 export const settings = {
@@ -41,6 +43,7 @@ export const settings = {
   sitemap: true,
   docMetainfo: true,
   docTags: true,
+  tagPlacement: "after-title" as TagPlacement,
   llmsTxt: true,
   math: true,
   cjkFriendly: true as boolean,
