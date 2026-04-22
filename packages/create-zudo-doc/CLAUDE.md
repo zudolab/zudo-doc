@@ -71,7 +71,7 @@ Two Claude Code skills test the full scaffold-build-run cycle:
 | `i18n` | Only i18n enabled |
 | `sidebar-filter` | Only sidebar filter enabled |
 | `claude-resources` | Only Claude Resources enabled |
-| `color-tweak-panel` | Only color tweak panel enabled (API only, no CLI flag) |
+| `design-token-panel` | Only design token panel enabled (API only, no CLI flag) |
 | `light-dark` | Light-dark color scheme mode |
 | `lang-ja` | Japanese as default language |
 | `all-features` | Everything ON |

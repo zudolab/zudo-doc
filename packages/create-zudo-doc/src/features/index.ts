@@ -15,7 +15,7 @@ import { sidebarToggleFeature } from "./sidebar-toggle.js";
 import { docHistoryFeature } from "./doc-history.js";
 import { llmsTxtFeature } from "./llms-txt.js";
 import { claudeResourcesFeature } from "./claude-resources.js";
-import { colorTweakPanelFeature } from "./color-tweak-panel.js";
+import { designTokenPanelFeature } from "./design-token-panel.js";
 import { i18nFeature } from "./i18n.js";
 import { versioningFeature } from "./versioning.js";
 import { tauriFeature } from "./tauri.js";
@@ -33,7 +33,7 @@ export const featureModules: Record<string, FeatureModule> = {
   search: searchFeature,
   // sidebarFilter — built into sidebar-tree.tsx, stays in base
   claudeResources: claudeResourcesFeature,
-  colorTweakPanel: colorTweakPanelFeature,
+  designTokenPanel: designTokenPanelFeature,
   sidebarResizer: sidebarResizerFeature,
   sidebarToggle: sidebarToggleFeature,
   versioning: versioningFeature,
