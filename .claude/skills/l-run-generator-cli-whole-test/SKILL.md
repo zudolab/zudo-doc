@@ -1,9 +1,6 @@
 ---
 name: l-run-generator-cli-whole-test
-description: >-
-  Run all create-zudo-doc CLI generation tests and fix bugs. Invokes /l-generator-cli-tester for
-  each pattern, collects results, fixes failures, and verifies all patterns pass. Use for
-  comprehensive generator validation.
+description: Run all create-zudo-doc CLI generation tests and fix bugs. Invokes /l-generator-cli-tester for each pattern, collects results, fixes failures, and verifies all patterns pass. Use for comprehensive generator validation.
 ---
 
 # Generator CLI Whole Test Runner
@@ -44,7 +41,7 @@ Run in this order (CLI flags and details are defined in `/l-generator-cli-tester
 3. **`i18n`** — Only i18n enabled
 4. **`sidebar-filter`** — Only sidebar filter enabled
 5. **`claude-resources`** — Only Claude Resources enabled
-6. **`color-tweak-panel`** — Only color tweak panel enabled (uses API, no CLI flag)
+6. **`design-token-panel`** — Only design token panel enabled (uses API, no CLI flag)
 7. **`light-dark`** — Light-dark color scheme mode
 8. **`lang-ja`** — Japanese as default language
 9. **`all-features`** — Everything ON, maximum complexity (uses API)
@@ -133,6 +130,7 @@ fix(create-zudo-doc): fix <pattern> generation — <brief description>
 ```
 
 Examples:
+
 - `fix(create-zudo-doc): fix barebone generation — strip remark-directive import when unused`
 - `fix(create-zudo-doc): fix i18n generation — add missing content.config.ts patching`
 - `fix(create-zudo-doc): fix light-dark generation — include theme-toggle.tsx in dependencies`
@@ -151,7 +149,7 @@ Run every pattern again from scratch to ensure fixes didn't break other patterns
 /l-generator-cli-tester i18n
 /l-generator-cli-tester sidebar-filter
 /l-generator-cli-tester claude-resources
-/l-generator-cli-tester color-tweak-panel
+/l-generator-cli-tester design-token-panel
 /l-generator-cli-tester light-dark
 /l-generator-cli-tester lang-ja
 /l-generator-cli-tester all-features
@@ -187,7 +185,7 @@ Output a final report:
 | i18n               | PASS      | PASS        | ok     |
 | sidebar-filter     | PASS      | PASS        | ok     |
 | claude-resources   | FAIL      | PASS        | fixed  |
-| color-tweak-panel  | PASS      | PASS        | ok     |
+| design-token-panel  | PASS      | PASS        | ok     |
 | light-dark         | PASS      | PASS        | ok     |
 | lang-ja            | PASS      | PASS        | ok     |
 | all-features       | FAIL      | PASS        | fixed  |

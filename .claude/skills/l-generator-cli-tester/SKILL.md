@@ -1,8 +1,6 @@
 ---
 name: l-generator-cli-tester
-description: >-
-  Test a single create-zudo-doc CLI generation pattern. Scaffolds a project, builds it, starts dev
-  server, and verifies expected features. Use when testing generator output for a specific pattern.
+description: Test a single create-zudo-doc CLI generation pattern. Scaffolds a project, builds it, starts dev server, and verifies expected features. Use when testing generator output for a specific pattern.
 ---
 
 # Generator CLI Pattern Tester
@@ -31,7 +29,7 @@ Where `<pattern>` is one of the test patterns listed below.
 | `i18n` | Only i18n enabled |
 | `sidebar-filter` | Only sidebar filter enabled |
 | `claude-resources` | Only claude resources enabled |
-| `color-tweak-panel` | Only color tweak panel enabled (uses API) |
+| `design-token-panel` | Only design token panel enabled (uses API) |
 | `light-dark` | Light-dark color mode |
 | `lang-ja` | Japanese as default language |
 | `all-features` | Everything ON |
@@ -106,19 +104,19 @@ cd __inbox/generator-test-claude-resources && \
   --color-scheme-mode single --scheme "Default Dark" --no-install
 ```
 
-**color-tweak-panel:**
+**design-token-panel:**
 
-> `colorTweakPanel` has NO CLI flag. Use the programmatic API instead:
+> `designTokenPanel` has NO CLI flag. Use the programmatic API instead:
 
 ```bash
-cd __inbox/generator-test-color-tweak-panel && \
+cd __inbox/generator-test-design-token-panel && \
   node --input-type=module -e "
 import { createZudoDoc } from '$REPO_ROOT/packages/create-zudo-doc/dist/api.js';
 await createZudoDoc({
   projectName: 'test-project',
   colorSchemeMode: 'single',
   singleScheme: 'Default Dark',
-  features: ['colorTweakPanel'],
+  features: ['designTokenPanel'],
   packageManager: 'pnpm',
   install: false,
 });
@@ -158,7 +156,7 @@ await createZudoDoc({
   darkScheme: 'Default Dark',
   defaultMode: 'dark',
   respectPrefersColorScheme: true,
-  features: ['i18n', 'search', 'sidebarFilter', 'claudeResources', 'colorTweakPanel'],
+  features: ['i18n', 'search', 'sidebarFilter', 'claudeResources', 'designTokenPanel'],
   packageManager: 'pnpm',
   install: false,
 });
@@ -166,7 +164,7 @@ console.log('Scaffolding complete.');
 "
 ```
 
-> Note: `all-features` uses the API because `colorTweakPanel` has no CLI flag.
+> Note: `all-features` uses the API because `designTokenPanel` has no CLI flag.
 
 ## Step 3: Install Dependencies
 
@@ -224,7 +222,7 @@ Use these tables to verify. Check each file with `test -e <path>`.
 | `src/content/docs-ja/` | ABSENT |
 | `src/integrations/claude-resources/` | ABSENT |
 | `src/components/theme-toggle.tsx` | ABSENT |
-| `src/components/color-tweak-panel.tsx` | ABSENT |
+| `src/components/design-token-tweak/index.tsx` | ABSENT |
 | `src/components/color-tweak-export-modal.tsx` | ABSENT |
 | `src/components/doc-history.tsx` | ABSENT |
 | `src/components/ai-chat-modal.tsx` | ABSENT |
@@ -244,7 +242,7 @@ Use these tables to verify. Check each file with `test -e <path>`.
 | `src/components/language-switcher.astro` | ABSENT |
 | `src/integrations/claude-resources/` | ABSENT |
 | `src/components/theme-toggle.tsx` | ABSENT |
-| `src/components/color-tweak-panel.tsx` | ABSENT |
+| `src/components/design-token-tweak/index.tsx` | ABSENT |
 
 **i18n:**
 
@@ -256,7 +254,7 @@ Use these tables to verify. Check each file with `test -e <path>`.
 | `src/content/docs-ja/` | PRESENT |
 | `src/integrations/claude-resources/` | ABSENT |
 | `src/components/theme-toggle.tsx` | ABSENT |
-| `src/components/color-tweak-panel.tsx` | ABSENT |
+| `src/components/design-token-tweak/index.tsx` | ABSENT |
 
 **sidebar-filter:**
 
@@ -266,7 +264,7 @@ Use these tables to verify. Check each file with `test -e <path>`.
 | `src/components/sidebar-tree.tsx` | PRESENT |
 | `src/components/language-switcher.astro` | ABSENT |
 | `src/components/theme-toggle.tsx` | ABSENT |
-| `src/components/color-tweak-panel.tsx` | ABSENT |
+| `src/components/design-token-tweak/index.tsx` | ABSENT |
 
 **claude-resources:**
 
@@ -276,13 +274,13 @@ Use these tables to verify. Check each file with `test -e <path>`.
 | `src/components/search.astro` | ABSENT |
 | `src/components/language-switcher.astro` | ABSENT |
 | `src/components/theme-toggle.tsx` | ABSENT |
-| `src/components/color-tweak-panel.tsx` | ABSENT |
+| `src/components/design-token-tweak/index.tsx` | ABSENT |
 
-**color-tweak-panel:**
+**design-token-panel:**
 
 | File | Expected |
 |------|----------|
-| `src/components/color-tweak-panel.tsx` | PRESENT |
+| `src/components/design-token-tweak/index.tsx` | PRESENT |
 | `src/components/color-tweak-export-modal.tsx` | PRESENT |
 | `src/config/color-tweak-presets.ts` | PRESENT |
 | `src/utils/color-convert.ts` | PRESENT |
@@ -298,7 +296,7 @@ Use these tables to verify. Check each file with `test -e <path>`.
 | `src/components/theme-toggle.tsx` | PRESENT |
 | `src/components/search.astro` | ABSENT |
 | `src/components/language-switcher.astro` | ABSENT |
-| `src/components/color-tweak-panel.tsx` | ABSENT |
+| `src/components/design-token-tweak/index.tsx` | ABSENT |
 
 **lang-ja:**
 
@@ -320,7 +318,7 @@ Use these tables to verify. Check each file with `test -e <path>`.
 | `src/content/docs-ja/` | PRESENT |
 | `src/integrations/claude-resources/` | PRESENT |
 | `src/components/theme-toggle.tsx` | PRESENT |
-| `src/components/color-tweak-panel.tsx` | PRESENT |
+| `src/components/design-token-tweak/index.tsx` | PRESENT |
 | `src/components/color-tweak-export-modal.tsx` | PRESENT |
 | `src/config/color-tweak-presets.ts` | PRESENT |
 
@@ -335,7 +333,7 @@ Read `__inbox/generator-test-<pattern>/test-project/src/config/settings.ts` and 
 - `colorScheme: "Default Dark"`
 - `colorMode: false`
 - `locales: {}` (empty)
-- `colorTweakPanel: false`
+- `designTokenPanel: false`
 - `claudeResources: false`
 
 **search:**
@@ -355,9 +353,9 @@ Read `__inbox/generator-test-<pattern>/test-project/src/config/settings.ts` and 
 
 - `claudeResources:` should be truthy (object with `claudeDir`)
 
-**color-tweak-panel:**
+**design-token-panel:**
 
-- `colorTweakPanel: true`
+- `designTokenPanel: true`
 
 **light-dark:**
 
@@ -374,7 +372,7 @@ Read `__inbox/generator-test-<pattern>/test-project/src/config/settings.ts` and 
 - `colorMode:` should be an object (light-dark mode)
 - `locales:` should contain `ja` entry
 - `claudeResources:` should be truthy
-- `colorTweakPanel: true`
+- `designTokenPanel: true`
 
 ## Step 8: Compare Against Showcase
 
@@ -425,7 +423,7 @@ node $HC --url "http://localhost:14350/ja/docs/getting-started" --screenshot vie
   - **search**: search icon (magnifying glass) visible in header
   - **i18n**: "EN / JA" language switcher in header
   - **light-dark**: theme toggle icon in header
-  - **color-tweak-panel**: color tweak icon in header
+  - **design-token-panel**: design token icon in header
   - **claude-resources**: page renders without errors
   - **all-features**: all icons present (search, theme toggle, language switcher, color tweak)
   - **barebone**: no extra icons in header (no search, no theme toggle, no language switcher)
@@ -471,10 +469,10 @@ Provide a clear pass/fail report:
 ## Important Notes
 
 - Always `cd` back to the repo root between major steps (use absolute paths)
-- The `--yes` flag auto-fills all unspecified options with defaults. Feature defaults with `--yes`: search=true, sidebarFilter=true, i18n=false, claudeResources=false, colorTweakPanel=false
+- The `--yes` flag auto-fills all unspecified options with defaults. Feature defaults with `--yes`: search=true, sidebarFilter=true, i18n=false, claudeResources=false, designTokenPanel=false
 - Use `--no-install` with CLI to prevent auto-install, then install manually for better error visibility
 - Sidebar filter stripping is TODO — the filter is always included regardless of the `--sidebar-filter` flag
-- `colorTweakPanel` has no CLI flag — use the API approach for `color-tweak-panel` and `all-features` patterns
+- `designTokenPanel` has no CLI flag — use the API approach for `design-token-panel` and `all-features` patterns
 - The dev server smoke test uses `pnpm dev` (generated projects have a single `dev` script)
 - If any step fails, still report all steps attempted before stopping
 - The `--headless` flag enables Step 8.5 (headless browser visual check). Without it, only process-level checks are performed

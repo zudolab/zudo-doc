@@ -126,7 +126,7 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   const featureDescriptions: Record<string, string> = {
     search: "Full-text search via Pagefind",
     sidebarFilter: "Real-time sidebar filtering",
-    colorTweakPanel: "Live color editor for designing color schemes",
+    designTokenPanel: "Interactive tabbed panel for tweaking spacing, font, size, and color tokens",
     sidebarResizer: "Draggable sidebar width",
     sidebarToggle: "Show/hide desktop sidebar",
     versioning: "Multi-version documentation support",

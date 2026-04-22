@@ -159,7 +159,7 @@ describe("scaffold — full features (i18n, light-dark, all features)", () => {
       "search",
       "sidebarFilter",
       "claudeResources",
-      "colorTweakPanel",
+      "designTokenPanel",
     ],
     packageManager: "pnpm",
   };
@@ -193,10 +193,10 @@ describe("scaffold — full features (i18n, light-dark, all features)", () => {
     ).toBe(true);
   });
 
-  it("includes color tweak panel component", async () => {
+  it("includes design token tweak panel component", async () => {
     expect(
       await fs.pathExists(
-        projectPath("test-full", "src/components/color-tweak-panel.tsx"),
+        projectPath("test-full", "src/components/design-token-tweak/index.tsx"),
       ),
     ).toBe(true);
   });
@@ -310,13 +310,13 @@ describe("scaffold — generated settings.ts content", () => {
     expect(content).toContain('tagPlacement: "after-title"');
   });
 
-  it("colorTweakPanel: settings reflect panel enabled", async () => {
+  it("designTokenPanel: settings reflect panel enabled and keep the deprecated alias", async () => {
     const choices: UserChoices = {
       projectName: "test-settings-tweak",
       defaultLang: "en",
       colorSchemeMode: "single",
       singleScheme: "Default Dark",
-      features: ["search", "colorTweakPanel"],
+      features: ["search", "designTokenPanel"],
       packageManager: "pnpm",
     };
     await scaffold(choices);
@@ -324,7 +324,10 @@ describe("scaffold — generated settings.ts content", () => {
       projectPath("test-settings-tweak", "src/config/settings.ts"),
       "utf-8",
     );
-    expect(content).toContain("colorTweakPanel: true");
+    expect(content).toContain("designTokenPanel: true");
+    // Back-compat alias should still be emitted for one release so existing
+    // projects that reference `settings.colorTweakPanel` keep compiling.
+    expect(content).toContain("colorTweakPanel: undefined");
   });
 });
 

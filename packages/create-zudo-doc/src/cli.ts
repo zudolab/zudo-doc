@@ -14,7 +14,7 @@ export interface CliArgs {
   i18n?: boolean;
   search?: boolean;
   sidebarFilter?: boolean;
-  colorTweakPanel?: boolean;
+  designTokenPanel?: boolean;
   sidebarResizer?: boolean;
   sidebarToggle?: boolean;
   versioning?: boolean;

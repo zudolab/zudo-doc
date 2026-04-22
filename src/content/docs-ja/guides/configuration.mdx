@@ -32,7 +32,7 @@ export const settings = {
   editUrl: false,
   siteUrl: "",
   sitemap: true,
-  colorTweakPanel: true,
+  designTokenPanel: true,
   docMetainfo: true,
   docTags: true,
   frontmatterPreview: {},
@@ -349,15 +349,15 @@ frontmatterPreview: false,
 
 </Tip>
 
-### colorTweakPanel
+### designTokenPanel
 
-インタラクティブなカラースキーム調整パネルを有効にします。`true`の場合、ヘッダーにパレットアイコンが表示され、ページ下部に固定位置のパネルを開いて16色パレット、ベーステーマカラー、セマンティックトークンのオーバーライドをリアルタイムで編集できます。変更は`localStorage`に保存されます。
+インタラクティブなDesign Token Panelを有効にします。`true`の場合、ヘッダーにパレットアイコンが表示され、タブ型のパネルを開いてスペーシング・フォント・サイズ・カラーの各トークンをリアルタイムで編集できます。変更は`localStorage`に保存され、JSONとしてエクスポート／インポートできます。
 
 デフォルト：`false`（`true`に設定して有効化）
 
 <Tip>
 
-使用方法の詳細やカスタムカラースキームのエクスポート方法については[カラー調整パネルガイド](/ja/docs/guides/color-tweak-panel)を参照してください。
+4つのタブ構成やJSONエクスポートワークフロー、非推奨エイリアス`colorTweakPanel`については[Design Token Panelリファレンス](../reference/design-token-panel.mdx)を参照してください。
 
 </Tip>
 

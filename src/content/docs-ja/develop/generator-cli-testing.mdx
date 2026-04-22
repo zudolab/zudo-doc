@@ -26,7 +26,7 @@ sidebar_position: 2
 | `i18n` | i18nのみ有効 |
 | `sidebar-filter` | サイドバーフィルターのみ有効 |
 | `claude-resources` | Claude Resourcesのみ有効 |
-| `color-tweak-panel` | カラー調整パネルのみ有効（API使用） |
+| `design-token-panel` | Design Token Panelのみ有効（API使用） |
 | `light-dark` | ライト・ダークカラースキームモード |
 | `lang-ja` | デフォルト言語を日本語に設定 |
 | `all-features` | すべてON |
@@ -106,6 +106,6 @@ sidebar_position: 2
 
 - テストディレクトリは`__inbox/`（gitignored）に作成され、リポジトリを汚染しません
 - `barebone`パターンがベースライン — 失敗した場合、他のテストの前に修正してください
-- `colorTweakPanel`にはCLIフラグがありません — 使用するパターン（`color-tweak-panel`、`all-features`）はプログラマティックAPIを使用します
+- `designTokenPanel` は `--design-token-panel` CLIフラグとしても利用可能ですが、`design-token-panel` や `all-features` などのパターンは他のテストパターンとの一貫性のためプログラマティックAPIで駆動しています
 - `--headless`フラグはプロセスレベルのチェックに加えて、ブラウザレベルのレンダリングチェックを追加します
 - テスト前と各修正後には必ずCLIを再ビルド（`packages/create-zudo-doc`で`pnpm build`）してください
