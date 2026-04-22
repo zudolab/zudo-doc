@@ -125,11 +125,11 @@ export const FEATURES: Feature[] = [
     cliFlag: "claude-skills",
   },
   {
-    value: "colorTweakPanel",
-    label: "Color tweak panel",
-    hint: "Live color editor for designing schemes",
+    value: "designTokenPanel",
+    label: "Design Token Panel",
+    hint: "Interactive tabbed panel for tweaking spacing, font, size, and color tokens",
     default: false,
-    cliFlag: "color-tweak-panel",
+    cliFlag: "design-token-panel",
   },
   {
     value: "sidebarResizer",

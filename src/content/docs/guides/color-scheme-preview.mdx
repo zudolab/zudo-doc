@@ -1,6 +1,6 @@
 ---
 title: Color Scheme Preview
-description: How to browse and preview color schemes using the Color Tweak Panel.
+description: "How to browse and preview color schemes using the Design Token Panel's Color tab."
 sidebar_position: 12
 tags:
   - design-system
@@ -8,31 +8,31 @@ tags:
 
 ## Overview
 
-The color scheme preview lets you browse 50+ preset color schemes and apply them to your site in real-time. This functionality is built into the Color Tweak Panel via a "Scheme..." dropdown in the panel header bar.
+The color scheme preview lets you browse 50+ preset color schemes and apply them to your site in real-time. This functionality lives on the **Color** tab of the [Design Token Panel](/docs/reference/design-token-panel), via a "Scheme..." dropdown in the tab header.
 
 ## How It Works
 
-When the Color Tweak Panel is enabled, a **"Scheme..."** dropdown appears in the panel header bar. It lists all available preset schemes. Selecting a scheme:
+When the Design Token Panel is enabled, switch to the **Color** tab and use the **"Scheme..."** dropdown. It lists all available preset schemes. Selecting a scheme:
 
 - Loads all of the preset's palette, base, and semantic colors into the tweak state
 - Applies the colors to the page immediately
 - Persists the choice in `localStorage` so it survives page reloads and navigation
 - Does not modify any source files — the change is client-side only
 
-After loading a preset, you can further tweak individual colors as needed using the panel's color pickers.
+After loading a preset, you can further tweak individual colors as needed using the tab's color pickers.
 
-## Enabling the Color Tweak Panel
+## Enabling the Design Token Panel
 
-Set `colorTweakPanel` to `true` in `src/config/settings.ts`:
+Set `designTokenPanel` to `true` in `src/config/settings.ts`:
 
 ```ts title="src/config/settings.ts"
 export const settings = {
-  colorTweakPanel: true,
+  designTokenPanel: true,
   // ...
 };
 ```
 
-When enabled, a palette icon appears in the header bar. Clicking it toggles the panel open/closed. The "Scheme..." dropdown is in the panel header.
+When enabled, a palette icon appears in the header bar. Clicking it toggles the panel open/closed. The "Scheme..." dropdown is on the **Color** tab.
 
 ## Available Color Schemes
 
@@ -50,4 +50,4 @@ The scheme preview is particularly useful during development to quickly evaluate
 
 ## See Also
 
-- [Color Tweak Panel](/docs/guides/color-tweak-panel) — for interactive editing of individual palette colors and semantic tokens in the browser
+- [Design Token Panel](/docs/reference/design-token-panel) — interactive tabbed editor for spacing, font, size, and color tokens

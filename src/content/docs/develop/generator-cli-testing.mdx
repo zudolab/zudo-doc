@@ -26,7 +26,7 @@ Each pattern enables a different feature combination:
 | `i18n` | Only i18n enabled |
 | `sidebar-filter` | Only sidebar filter enabled |
 | `claude-resources` | Only Claude Resources enabled |
-| `color-tweak-panel` | Only color tweak panel enabled (uses API) |
+| `design-token-panel` | Only design token panel enabled (uses API) |
 | `light-dark` | Light-dark color scheme mode |
 | `lang-ja` | Japanese as default language |
 | `all-features` | Everything ON |
@@ -106,6 +106,6 @@ The `/l-run-generator-cli-whole-test` skill has a structured bug-fix phase:
 
 - Test directories are created under `__inbox/` (gitignored) to avoid polluting the repo
 - The `barebone` pattern is the baseline — if it fails, fix it before testing others
-- `colorTweakPanel` has no CLI flag — patterns using it (`color-tweak-panel`, `all-features`) use the programmatic API
+- `designTokenPanel` is exposed as the `--design-token-panel` CLI flag, but patterns like `design-token-panel` and `all-features` drive it through the programmatic API for consistency with the other test patterns
 - The `--headless` flag adds browser-level rendering checks on top of process-level checks
 - Always rebuild the CLI (`pnpm build` in `packages/create-zudo-doc`) before testing and after each fix

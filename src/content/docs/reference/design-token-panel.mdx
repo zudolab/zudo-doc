@@ -1,0 +1,148 @@
+---
+title: Design Token Panel
+description: Interactive tabbed panel for live-tweaking spacing, font, size, and color tokens — plus a JSON export/import workflow you can hand to an AI.
+sidebar_position: 8
+tags:
+  - design-system
+---
+
+The Design Token Panel is an in-page editor for every design token the theme ships with. It replaces the old single-purpose Color Tweak Panel with a tabbed UI that covers the four token families — **Spacing**, **Font**, **Size**, and **Color** — and adds a unified JSON export/import workflow so you can round-trip a whole design through an AI assistant and back.
+
+## Enabling the Panel
+
+Set `designTokenPanel` to `true` in `src/config/settings.ts`:
+
+```ts title="src/config/settings.ts"
+export const settings = {
+  designTokenPanel: true,
+  // ...
+};
+```
+
+When enabled, a palette icon appears in the header (to the left of the search icon). Clicking it toggles the panel open/closed; the same keyboard shortcut that opened the old Color Tweak Panel still works.
+
+<Note>
+
+`designTokenPanel` replaces the previous `colorTweakPanel` setting. The old key is still accepted as a deprecated alias for one release — set either one to `true` and the panel is enabled. New projects should use `designTokenPanel`.
+
+</Note>
+
+## The Four Tabs
+
+The panel is divided into four tabs, each focused on a single token family. Tabs expose nothing but the tokens they own — you never have to scroll past colors to reach spacing.
+
+### Spacing
+
+Sliders for the horizontal (`hsp-*`) and vertical (`vsp-*`) spacing scale. Each step (`3xs` → `2xl`) has its own slider with a live preview strip that shrinks and grows as you drag. Values are clamped to sensible minimums so layouts never collapse.
+
+### Font
+
+Controls for the typography scale:
+
+- Font family selector (stack preset or custom)
+- Raw scale tokens (`2xs` → `2xl`) via numeric text inputs with CSS-value sanitization
+- Semantic role mapping (`caption`, `body`, `heading`, …) that maps each role back to a scale step
+
+The font family input accepts any valid CSS `font-family` value, including multi-stack fallbacks. Invalid values (unbalanced quotes, raw JavaScript, etc.) are rejected on change so pasted snippets cannot break the page.
+
+### Size
+
+Pill-style sliders for the semantic icon-size tokens (`icon-xs` → `icon-lg`) and any component dimensions that graduated from arbitrary values to semantic tokens. Each slider snaps to the px value expected by the two-tier size strategy.
+
+### Color
+
+The Color tab is the previous Color Tweak Panel, now scoped to its own tab. It contains:
+
+- The 16-color palette (`p0`–`p15`)
+- Base theme colors (`bg`, `fg`, `cursor`, `sel-bg`, `sel-fg`)
+- Semantic token overrides (`accent`, `code-bg`, `success`, `danger`, …)
+- The **Scheme…** dropdown that loads any of the 50+ bundled presets
+
+## Keyboard Accessibility
+
+The tab strip implements the standard WAI-ARIA tabs pattern:
+
+| Key | Action |
+|---|---|
+| `←` / `→` | Move focus to the previous / next tab |
+| `Home` | Focus the first tab |
+| `End` | Focus the last tab |
+| `Enter` / `Space` | Activate the focused tab |
+
+Tabs use automatic activation — moving focus with the arrow keys also switches the panel. Within each tab, all sliders, selects, and text inputs are reachable via `Tab`, and every control exposes a visible focus ring.
+
+## JSON Export — diff-only by default
+
+Click **Export** in the panel header to open the export modal. The modal shows a single JSON document describing every tab's current state.
+
+By default the export is a **diff against the defaults** — only tokens you have actually changed are included. Untouched families are omitted entirely, and within a changed family only the individual tokens you edited are kept. The result is small, easy to diff, and stable enough to paste into a commit.
+
+```json
+{
+  "version": 2,
+  "spacing": {
+    "hsp": { "md": "1.25rem" }
+  },
+  "color": {
+    "palette": {
+      "6": "#7aa2f7"
+    },
+    "semanticMappings": {
+      "accent": 6
+    }
+  }
+}
+```
+
+Flip the **Show defaults too** toggle in the modal header to emit the full token tree (every family, every token, including untouched defaults). Use this form when you want a complete snapshot to hand to a designer or AI that does not know your theme.
+
+## Load-from-JSON
+
+The **Load…** button opens the import modal. Paste a JSON document — either from an earlier export or one produced by an AI — and the panel:
+
+1. Validates the shape (version, known keys, well-formed values).
+2. Reports any unknown keys or malformed values as non-fatal warnings.
+3. Merges the document over the current defaults. Missing tokens keep their defaults, explicit tokens override them.
+4. Persists the result to `localStorage` and re-applies every CSS custom property immediately.
+
+Invalid JSON is rejected with a specific error message; partial imports (e.g. a JSON that only changes `spacing.hsp.md`) are a first-class use case.
+
+## AI Workflow
+
+The diff-only export and Load-from-JSON together enable a simple round-trip with any chat-based AI:
+
+1. **Tweak** anything you want to hand off — or leave the panel untouched.
+2. **Export** the diff and copy the JSON.
+3. **Paste** the JSON into an AI chat with a natural-language request, for example:
+
+   > Here is my current design token diff. Rework this into a warmer, higher-contrast typographic scale while keeping the color palette untouched, and return only the JSON.
+
+4. **Paste** the AI's response into **Load…**.
+5. The panel validates, merges, and applies the new tokens instantly. Hit **Reset all** in the panel header to roll back if you don't like the result.
+
+Because the default export is a diff, the AI only sees the tokens you care about — it doesn't have to reason around dozens of unchanged defaults. Turn on **Show defaults too** only when the AI needs the complete picture (for example, producing a new theme from scratch).
+
+## Persistence and Migration
+
+State is persisted to `localStorage` under the key `zudo-doc-tweak-state-v2`. The v2 format is a single object containing every tab's state side-by-side, so a single read restores the whole panel.
+
+Older projects that persisted the v1 Color-Tweak state under `zudo-doc-tweak-state` are migrated automatically:
+
+- On load, the panel reads v2 first. If absent, it falls back to parsing the v1 state (which only contained color tokens) and promotes it into the v2 color tab.
+- The FOUC-prevention script injected into `<head>` by `doc-layout.astro` performs the same v2-then-v1 lookup so saved colors apply before first paint on old devices too.
+- Clicking **Reset all** in the panel header clears both keys, restoring the color scheme declared in `src/config/settings.ts`.
+
+## Settings Reference
+
+| Setting | Type | Description |
+|---|---|---|
+| `designTokenPanel` | `boolean` | Enables the panel. Default `false`. |
+| `colorTweakPanel` | `boolean \| undefined` | **Deprecated** alias for `designTokenPanel`. When either is truthy the panel is enabled. Will be removed in a future release. |
+
+The tokens themselves — spacing scale, font scale, icon sizes, palette — are still configured in `src/styles/global.css` (`@theme`) and `src/config/color-schemes.ts`. The panel only tweaks the in-browser copy of those tokens; it never writes to source files.
+
+<Tip>
+
+When you've found a combination you like, export the diff and paste it into a commit message or design doc — it's the smallest reproducible description of the change you just made.
+
+</Tip>
