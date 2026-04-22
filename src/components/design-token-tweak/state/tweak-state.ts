@@ -1,6 +1,7 @@
 import { colorSchemes, type ColorRef, type ColorScheme } from "@/config/color-schemes";
 import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "@/config/color-scheme-utils";
 import { settings } from "@/config/settings";
+import { SPACING_TOKENS, type TokenDef } from "../tokens/manifest";
 
 /**
  * Storage keys
@@ -174,11 +175,27 @@ export interface ColorTweakState {
 }
 
 /**
- * Unified panel state. Currently only the Color tab has a sub-state; future
- * tabs (Sub 2/3/4) will extend this.
+ * Per-token override map. Keys are `TokenDef.id` (e.g. `"hsp-sm"`); values are
+ * raw CSS length strings (e.g. `"0.75rem"`). Only overridden tokens appear in
+ * the map — absent keys mean "use the stylesheet default".
+ */
+export type TokenOverrides = Record<string, string>;
+
+/**
+ * Unified panel state. Each tab owns its own sub-state so they can evolve
+ * independently; Sub 3/4 will populate `font` and `size` with the same
+ * `TokenOverrides` shape.
  */
 export interface TweakState {
   color: ColorTweakState;
+  spacing: TokenOverrides;
+  font: TokenOverrides;
+  size: TokenOverrides;
+}
+
+/** Produce an empty overrides map — `TweakState` defaults for new tabs. */
+export function emptyOverrides(): TokenOverrides {
+  return {};
 }
 
 /** Convert any CSS color to hex using a canvas (cached context) */
@@ -333,9 +350,34 @@ export function applyColorState(state: ColorTweakState) {
   }
 }
 
-/** Apply full unified TweakState (currently only color sub-state exists). */
+/**
+ * Apply a `TokenOverrides` map for a given manifest — writes inline
+ * `--css-var: value` on `:root` for every overridden token, and removes the
+ * inline property for tokens absent from the map (so the stylesheet default
+ * comes back).
+ *
+ * Read-only tokens are skipped in both directions: they are informational rows
+ * in the UI and are never written to storage.
+ */
+export function applyTokenOverrides(
+  tokens: readonly TokenDef[],
+  overrides: TokenOverrides,
+) {
+  for (const t of tokens) {
+    if (t.readonly) continue;
+    const v = overrides[t.id];
+    if (typeof v === "string" && v.length > 0) {
+      setCssVar(t.cssVar, v);
+    } else {
+      document.documentElement.style.removeProperty(t.cssVar);
+    }
+  }
+}
+
+/** Apply full unified TweakState — Color + Spacing (Font/Size come later). */
 export function applyFullState(state: TweakState) {
   applyColorState(state.color);
+  applyTokenOverrides(SPACING_TOKENS, state.spacing);
 }
 
 /** Strip all tweak-applied inline CSS variables so the stylesheet-provided
@@ -349,6 +391,11 @@ export function clearAppliedStyles() {
   }
   for (const cssName of Object.values(SEMANTIC_CSS_NAMES)) {
     document.documentElement.style.removeProperty(cssName);
+  }
+  // Spacing tokens too — same contract as color: wipe any inline overrides.
+  for (const t of SPACING_TOKENS) {
+    if (t.readonly) continue;
+    document.documentElement.style.removeProperty(t.cssVar);
   }
 }
 
@@ -414,6 +461,19 @@ export interface StorageLike {
   removeItem(key: string): void;
 }
 
+/** Narrow a stored value into a `TokenOverrides` map.
+ *  Accepts any plain object whose values are strings; unknown keys pass
+ *  through so we don't silently drop overrides when the manifest grows at
+ *  runtime (they'll just be ignored by `applyTokenOverrides`). */
+function hydrateOverrides(raw: unknown): TokenOverrides {
+  if (!raw || typeof raw !== "object") return {};
+  const out: TokenOverrides = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof v === "string") out[k] = v;
+  }
+  return out;
+}
+
 export function loadPersistedState(
   storage: StorageLike = localStorage,
   colorDefaults?: ColorTweakState,
@@ -423,10 +483,17 @@ export function loadPersistedState(
   if (rawV2 !== null) {
     const parsed = safeParse(rawV2);
     if (parsed && typeof parsed === "object") {
-      const obj = parsed as { color?: unknown };
+      const obj = parsed as { color?: unknown; spacing?: unknown; font?: unknown; size?: unknown };
       if (obj.color && isValidColorShape(obj.color)) {
         const defaults = colorDefaults ?? tryInitColorFromScheme();
-        return { color: hydrateColorState(obj.color as Partial<ColorTweakState>, defaults) };
+        return {
+          color: hydrateColorState(obj.color as Partial<ColorTweakState>, defaults),
+          // New sections added after v1 migration — tolerate their absence so
+          // older v2 payloads (Color-only) still load cleanly.
+          spacing: hydrateOverrides(obj.spacing),
+          font: hydrateOverrides(obj.font),
+          size: hydrateOverrides(obj.size),
+        };
       }
     }
     // v2 present but malformed — warn and fall through to v1 check
@@ -445,7 +512,12 @@ export function loadPersistedState(
         partial.shikiTheme = defaults.shikiTheme;
       }
       const color = hydrateColorState(partial, defaults);
-      const migrated: TweakState = { color };
+      const migrated: TweakState = {
+        color,
+        spacing: emptyOverrides(),
+        font: emptyOverrides(),
+        size: emptyOverrides(),
+      };
       try {
         storage.setItem(STORAGE_KEY_V2, JSON.stringify(migrated));
         storage.removeItem(STORAGE_KEY_V1);

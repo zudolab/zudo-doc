@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import DesignTokenExportModal from "./export-modal";
 import ColorTab from "./tabs/color-tab";
+import SpacingTab from "./tabs/spacing-tab";
 import { usePersist } from "./state/persist";
 import {
   type TweakState,
@@ -11,6 +12,7 @@ import {
   clampPosition,
   clearAppliedStyles,
   clearPersistedState,
+  emptyOverrides,
   initColorFromScheme,
   loadPersistedState,
   loadPosition,
@@ -82,7 +84,7 @@ export default function DesignTokenTweakPanel() {
   // Track active drag listeners for cleanup on unmount
   const dragCleanupRef = useRef<(() => void) | null>(null);
 
-  const { persistColor } = usePersist(setState);
+  const { persistColor, persistSpacing } = usePersist(setState);
 
   // Restore open state and position from localStorage after mount (avoids SSR hydration mismatch)
   useEffect(() => {
@@ -122,7 +124,12 @@ export default function DesignTokenTweakPanel() {
     function handleSchemeChange() {
       // Clear all inline style overrides so the new scheme's <style> tag takes effect
       clearAppliedStyles();
-      setState({ color: initColorFromScheme() });
+      setState({
+        color: initColorFromScheme(),
+        spacing: emptyOverrides(),
+        font: emptyOverrides(),
+        size: emptyOverrides(),
+      });
     }
     window.addEventListener("color-scheme-changed", handleSchemeChange);
     return () =>
@@ -140,7 +147,12 @@ export default function DesignTokenTweakPanel() {
     }
     // No saved state — page already has correct colors from ColorSchemeProvider.
     // Just read scheme data for panel display; don't apply (avoids oklch->hex lossy conversion).
-    setState({ color: initColorFromScheme() });
+    setState({
+      color: initColorFromScheme(),
+      spacing: emptyOverrides(),
+      font: emptyOverrides(),
+      size: emptyOverrides(),
+    });
   }, [open, state]);
 
   // Drag handler for panel header (stable — reads position from ref)
@@ -217,7 +229,12 @@ export default function DesignTokenTweakPanel() {
   const handleResetAll = useCallback(() => {
     clearPersistedState();
     clearAppliedStyles();
-    setState({ color: initColorFromScheme() });
+    setState({
+      color: initColorFromScheme(),
+      spacing: emptyOverrides(),
+      font: emptyOverrides(),
+      size: emptyOverrides(),
+    });
   }, []);
 
   // --- Tab keyboard navigation (WAI-ARIA tablist pattern) ---
@@ -363,7 +380,10 @@ export default function DesignTokenTweakPanel() {
                 {tab.id === "color" && state && (
                   <ColorTab state={state.color} persistColor={persistColor} />
                 )}
-                {tab.id !== "color" && isSelected && (
+                {tab.id === "spacing" && state && (
+                  <SpacingTab state={state.spacing} persistSpacing={persistSpacing} />
+                )}
+                {(tab.id === "font" || tab.id === "size") && isSelected && (
                   <div className="py-vsp-md text-muted" style={{ fontSize: "0.875rem" }}>
                     {tab.label} controls are coming in a future sub-issue.
                   </div>
