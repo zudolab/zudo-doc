@@ -224,6 +224,9 @@ const resultCountTemplate = t("search.resultCount", lang);
     private currentQuery = "";
     private shortcutLabel = "";
     private resultCountTemplate = "";
+    private observer: IntersectionObserver | null = null;
+    private sentinel: HTMLElement | null = null;
+    private isLoadingBatch = false;
 
     constructor() {
       super();
@@ -301,6 +304,7 @@ const resultCountTemplate = t("search.resultCount", lang);
         clearTimeout(this.debounceTimer);
         this.debounceTimer = null;
       }
+      this.teardownSentinel();
     }
 
     open() {
@@ -315,6 +319,7 @@ const resultCountTemplate = t("search.resultCount", lang);
         clearTimeout(this.debounceTimer);
         this.debounceTimer = null;
       }
+      this.teardownSentinel();
       this.dialog.close();
       document.documentElement.style.overflow = "";
     }
@@ -396,6 +401,7 @@ const resultCountTemplate = t("search.resultCount", lang);
       this.currentQuery = query;
 
       if (!query) {
+        this.teardownSentinel();
         this.allResults = [];
         this.shownCount = 0;
         this.resultsContainer.innerHTML = this.placeholderHtml();
@@ -404,6 +410,7 @@ const resultCountTemplate = t("search.resultCount", lang);
       }
 
       if (!this.miniSearch) {
+        this.teardownSentinel();
         this.resultsContainer.innerHTML =
           '<p class="text-small text-muted">Loading search index...</p>';
         this.loadIndex();
@@ -418,6 +425,9 @@ const resultCountTemplate = t("search.resultCount", lang);
       this.shownCount = 0;
       this.updateHitCountUI();
 
+      // Query replaced — always tear down the previous observer before re-rendering
+      this.teardownSentinel();
+
       if (results.length === 0) {
         this.resultsContainer.innerHTML =
           '<p class="text-small text-muted">No results found.</p>';
@@ -426,36 +436,91 @@ const resultCountTemplate = t("search.resultCount", lang);
 
       this.resultsContainer.innerHTML = "";
       this.loadMore();
+      if (this.shownCount < this.allResults.length) {
+        this.setupSentinel();
+      }
     }
 
     private loadMore() {
+      if (this.isLoadingBatch) return;
+      if (this.shownCount >= this.allResults.length) return;
+      this.isLoadingBatch = true;
+
       const nextBatch = this.allResults.slice(
         this.shownCount,
         this.shownCount + PAGE_SIZE,
       );
-      if (nextBatch.length === 0) return;
 
       for (const result of nextBatch) {
         const entry = this.entryMap.get(result.id);
         if (!entry) continue;
-        this.resultsContainer.appendChild(this.renderResult(entry));
+        const article = this.renderResult(entry);
+        // Keep the sentinel anchored at the end of the list so the observer
+        // continues to watch it across batches.
+        if (
+          this.sentinel &&
+          this.sentinel.parentNode === this.resultsContainer
+        ) {
+          this.resultsContainer.insertBefore(article, this.sentinel);
+        } else {
+          this.resultsContainer.appendChild(article);
+        }
       }
 
       this.shownCount += nextBatch.length;
 
-      // Remove existing "load more" button
-      this.resultsContainer.querySelector("[data-load-more]")?.remove();
+      if (this.shownCount >= this.allResults.length) {
+        // Nothing left to load — remove sentinel + observer from the DOM.
+        this.teardownSentinel();
+      }
 
-      // Add "load more" if there are more results
-      if (this.shownCount < this.allResults.length) {
-        const remaining = this.allResults.length - this.shownCount;
-        const btn = document.createElement("button");
-        btn.setAttribute("data-load-more", "");
-        btn.className =
-          "mt-vsp-md w-full rounded border border-muted bg-surface px-hsp-md py-vsp-xs text-small text-accent hover:border-accent";
-        btn.textContent = `Load more (${remaining} remaining)`;
-        btn.addEventListener("click", () => this.loadMore());
-        this.resultsContainer.appendChild(btn);
+      this.isLoadingBatch = false;
+    }
+
+    /**
+     * Attach a 1px sentinel at the end of the results container and observe it
+     * with IntersectionObserver. When it enters the scroll viewport we trigger
+     * loadMore(). Constructed once per query and reused across batches; use
+     * teardownSentinel() to detach.
+     *
+     * Sentinel is `1px` (not `0px`) because some browsers refuse to fire
+     * intersections on zero-area targets.
+     */
+    private setupSentinel() {
+      this.teardownSentinel();
+
+      const sentinel = document.createElement("div");
+      sentinel.setAttribute("data-search-sentinel", "");
+      sentinel.setAttribute("aria-hidden", "true");
+      sentinel.style.height = "1px";
+      sentinel.style.width = "100%";
+      this.resultsContainer.appendChild(sentinel);
+      this.sentinel = sentinel;
+
+      this.observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              this.loadMore();
+            }
+          }
+        },
+        {
+          root: this.resultsContainer,
+          rootMargin: "200px 0px",
+        },
+      );
+      this.observer.observe(sentinel);
+    }
+
+    private teardownSentinel() {
+      if (this.observer) {
+        this.observer.disconnect();
+        this.observer = null;
+      }
+      if (this.sentinel) {
+        this.sentinel.remove();
+        this.sentinel = null;
       }
     }
 
