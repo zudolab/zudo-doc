@@ -23,7 +23,9 @@ export type TokenGroup =
   | "line-height"
   | "font-weight"
   | "font-family"
-  | "font-scale";
+  | "font-scale"
+  | "radius"
+  | "transition";
 
 /**
  * Control kind for a token row.
@@ -65,6 +67,20 @@ export interface TokenDef {
   options?: readonly string[];
   /** Hide behind the per-tab Advanced `<details>` disclosure (font tab). */
   advanced?: true;
+  /**
+   * Opt-in "Pill" toggle. When present the control shows a checkbox that flips
+   * between `value` (checked — e.g. `9999px` for full-radius pills) and a
+   * slider-editable custom value (unchecked). Currently used for
+   * `--radius-full`, where a slider alone can't meaningfully drive a 9999px
+   * sentinel.
+   */
+  pill?: {
+    /** CSS string applied when the pill checkbox is ON. */
+    value: string;
+    /** CSS string the slider falls back to when the pill is toggled OFF and
+     *  there is no prior custom value yet. */
+    customDefault: string;
+  };
 }
 
 /**
@@ -162,7 +178,52 @@ export const FONT_TOKENS: readonly TokenDef[] = [
   { id: "text-scale-2xl", cssVar: "--text-scale-2xl", label: "text-scale-2xl", group: "font-scale", default: "3.75rem",  min: 0.5, max: 5, step: 0.05, unit: "rem", advanced: true },
 ] as const;
 
-export const SIZE_TOKENS: readonly TokenDef[] = [] as const;
+/**
+ * Size tokens from `global.css`.
+ *
+ * Coverage (audit 2026-04): every non-breakpoint size-category custom property.
+ * Breakpoints (`--breakpoint-sm/lg/xl`) are intentionally omitted — live-
+ * changing them causes layout thrash mid-drag and adds no real tweak value.
+ *
+ * Radius defaults use `px` (matches the 0–100 slider in the sub-issue spec),
+ * even though `global.css` expresses them in `rem` — the browser accepts both.
+ *
+ * `--radius-full` is special: its design default (`9999px`) is an intentional
+ * sentinel that a 0–100 slider can't reach, so it carries a `pill` toggle. The
+ * checkbox reapplies the sentinel; unchecking drops back to a slider-editable
+ * custom value.
+ */
+export const SIZE_TOKENS: readonly TokenDef[] = [
+  // --- Radius ---
+  { id: "radius-DEFAULT", cssVar: "--radius-DEFAULT", label: "radius-DEFAULT", group: "radius", default: "4px", min: 0, max: 100, step: 1, unit: "px" },
+  { id: "radius-lg",      cssVar: "--radius-lg",      label: "radius-lg",      group: "radius", default: "8px", min: 0, max: 100, step: 1, unit: "px" },
+  {
+    id: "radius-full",
+    cssVar: "--radius-full",
+    label: "radius-full",
+    group: "radius",
+    default: "9999px",
+    min: 0,
+    max: 100,
+    step: 1,
+    unit: "px",
+    pill: { value: "9999px", customDefault: "16px" },
+  },
+
+  // --- Transitions ---
+  {
+    id: "default-transition-duration",
+    cssVar: "--default-transition-duration",
+    label: "default-transition-duration",
+    group: "transition",
+    default: "150ms",
+    min: 0,
+    max: 1000,
+    step: 10,
+    unit: "ms",
+  },
+] as const;
+
 export const COLOR_TOKENS: readonly TokenDef[] = [] as const;
 
 /** Convenience: build a lookup map keyed by token id. */
@@ -189,6 +250,8 @@ export const GROUP_TITLES: Record<TokenGroup, string> = {
   "font-weight": "FONT WEIGHTS",
   "font-family": "FONT FAMILIES",
   "font-scale": "ADVANCED — SCALE (TIER 1)",
+  radius: "BORDER RADIUS",
+  transition: "TRANSITIONS",
 };
 
 /** Stable display order of groups within the Spacing tab. */
@@ -202,6 +265,9 @@ export const FONT_GROUP_ORDER: readonly TokenGroup[] = [
   "font-weight",
   "font-family",
 ] as const;
+
+/** Stable display order of size-tab groups. */
+export const SIZE_GROUP_ORDER: readonly TokenGroup[] = ["radius", "transition"] as const;
 
 // --- Value parsing helpers (shared across controls + persist) ---
 
