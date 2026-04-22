@@ -402,17 +402,26 @@ import { withBase } from "@/utils/base";
     }
 
     private renderResult(entry: SearchEntry): HTMLElement {
+      // Break out of the container's px-hsp-lg so the click area is edge-to-edge.
+      // The <a> re-adds px-hsp-lg internally so text content keeps the same indent.
       const article = document.createElement("article");
-      article.className = "border-b border-muted py-vsp-sm";
+      article.className = "-mx-hsp-lg border-b border-muted";
 
-      // Title link
+      // Full-row link wraps title + (optional) description.
+      // Title is the first text inside so screen readers announce it first;
+      // no aria-label so the description is read as supplementary context.
       const link = document.createElement("a");
       link.href = entry.url;
-      link.className = "block font-semibold text-fg hover:text-accent";
-      link.innerHTML = highlightTerms(entry.title, this.currentQuery);
-      article.appendChild(link);
+      link.className =
+        "group block px-hsp-lg py-vsp-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
-      // Description or body excerpt
+      // Title (phrasing) — primary accessible name, hover color via group-hover
+      const title = document.createElement("span");
+      title.className = "font-semibold text-fg group-hover:text-accent";
+      title.innerHTML = highlightTerms(entry.title, this.currentQuery);
+      link.appendChild(title);
+
+      // Description or body excerpt (optional, flow content inside <a>)
       const text = entry.description || entry.body;
       if (text) {
         const excerpt = document.createElement("p");
@@ -420,9 +429,10 @@ import { withBase } from "@/utils/base";
           "mt-vsp-2xs text-caption text-muted leading-relaxed";
         const truncated = truncateExcerpt(text, this.currentQuery);
         excerpt.innerHTML = highlightTerms(truncated, this.currentQuery);
-        article.appendChild(excerpt);
+        link.appendChild(excerpt);
       }
 
+      article.appendChild(link);
       return article;
     }
   }
