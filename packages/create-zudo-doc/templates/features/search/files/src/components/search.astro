@@ -446,35 +446,39 @@ const resultCountTemplate = t("search.resultCount", lang);
       if (this.shownCount >= this.allResults.length) return;
       this.isLoadingBatch = true;
 
-      const nextBatch = this.allResults.slice(
-        this.shownCount,
-        this.shownCount + PAGE_SIZE,
-      );
+      try {
+        const nextBatch = this.allResults.slice(
+          this.shownCount,
+          this.shownCount + PAGE_SIZE,
+        );
 
-      for (const result of nextBatch) {
-        const entry = this.entryMap.get(result.id);
-        if (!entry) continue;
-        const article = this.renderResult(entry);
-        // Keep the sentinel anchored at the end of the list so the observer
-        // continues to watch it across batches.
-        if (
-          this.sentinel &&
-          this.sentinel.parentNode === this.resultsContainer
-        ) {
-          this.resultsContainer.insertBefore(article, this.sentinel);
-        } else {
-          this.resultsContainer.appendChild(article);
+        for (const result of nextBatch) {
+          const entry = this.entryMap.get(result.id);
+          if (!entry) continue;
+          const article = this.renderResult(entry);
+          // Keep the sentinel anchored at the end of the list so the observer
+          // continues to watch it across batches.
+          if (
+            this.sentinel &&
+            this.sentinel.parentNode === this.resultsContainer
+          ) {
+            this.resultsContainer.insertBefore(article, this.sentinel);
+          } else {
+            this.resultsContainer.appendChild(article);
+          }
         }
+
+        this.shownCount += nextBatch.length;
+
+        if (this.shownCount >= this.allResults.length) {
+          // Nothing left to load — remove sentinel + observer from the DOM.
+          this.teardownSentinel();
+        }
+      } finally {
+        // Always clear the guard so a stray exception doesn't permanently
+        // wedge lazy-loading.
+        this.isLoadingBatch = false;
       }
-
-      this.shownCount += nextBatch.length;
-
-      if (this.shownCount >= this.allResults.length) {
-        // Nothing left to load — remove sentinel + observer from the DOM.
-        this.teardownSentinel();
-      }
-
-      this.isLoadingBatch = false;
     }
 
     /**
