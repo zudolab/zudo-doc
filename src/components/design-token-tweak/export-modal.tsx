@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { generateCode, type ExportColorState } from "@/utils/export-code";
 
-interface ColorTweakExportModalProps {
+interface DesignTokenExportModalProps {
   onClose: () => void;
   colorState: ExportColorState;
 }
 
-export default function ColorTweakExportModal({
+export default function DesignTokenExportModal({
   onClose,
   colorState,
-}: ColorTweakExportModalProps) {
+}: DesignTokenExportModalProps) {
   const [copyLabel, setCopyLabel] = useState("Copy");
   const dialogRef = useRef<HTMLDialogElement>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
