@@ -39,6 +39,9 @@ export interface ColorScheme {
     /** UI chrome over user images — enlarge/close overlay buttons */
     imageOverlayBg?: ColorRef;
     imageOverlayFg?: ColorRef;
+    /** <mark> highlight for matched keywords in search results */
+    matchedKeywordBg?: ColorRef;
+    matchedKeywordFg?: ColorRef;
   };
 }
 
@@ -91,6 +94,8 @@ export const colorSchemes: Record<string, ColorScheme> = {
       info: 4,
       imageOverlayBg: 11,
       imageOverlayFg: 10,
+      matchedKeywordBg: "#fff59d",
+      matchedKeywordFg: "#000000",
     },
   },
   "Default Dark": {
@@ -119,6 +124,8 @@ export const colorSchemes: Record<string, ColorScheme> = {
       info: 4,
       imageOverlayBg: 0,
       imageOverlayFg: 11,
+      matchedKeywordBg: "#fff59d",
+      matchedKeywordFg: "#000000",
     },
   },
 };
