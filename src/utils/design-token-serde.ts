@@ -350,11 +350,16 @@ function deserializeColor(
   let palette = [...baseline.palette];
   if (Array.isArray(c.palette)) {
     const parsed = c.palette.filter((v): v is string => typeof v === "string");
-    if (parsed.length === 16) {
+    if (parsed.length === 16 && parsed.length === c.palette.length) {
       palette = parsed;
     } else if (c.palette.length > 0) {
+      // Either the wrong array length OR 16 entries but some weren't strings.
+      const detail =
+        parsed.length < c.palette.length
+          ? `${c.palette.length - parsed.length} non-string entries dropped, leaving ${parsed.length}`
+          : `${c.palette.length} entries`;
       warnings.push(
-        `color.palette has ${c.palette.length} entries; expected 16. Palette ignored.`,
+        `color.palette: expected 16 string entries; got ${detail}. Palette ignored.`,
       );
     }
   }

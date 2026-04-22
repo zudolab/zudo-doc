@@ -235,4 +235,22 @@ describe("deserialize", () => {
     expect(state.color.palette).toEqual(COLOR_BASELINE.palette);
     expect(warnings.some((w) => w.includes("palette"))).toBe(true);
   });
+
+  it("warns when palette has 16 entries but some aren't strings", () => {
+    // Craft a 16-long array whose 3rd slot is a number — previously this fell
+    // back silently because the length check was looser.
+    const rawPalette: unknown[] = Array.from({ length: 16 }, (_, i) =>
+      i === 2 ? 42 : `#${i.toString(16).padStart(2, "0").repeat(3)}`,
+    );
+    const payload = {
+      $schema: DESIGN_TOKEN_SCHEMA,
+      exportedAt: new Date().toISOString(),
+      color: { palette: rawPalette },
+    };
+    const { state, warnings } = deserialize(payload, {
+      colorDefaults: COLOR_BASELINE,
+    });
+    expect(state.color.palette).toEqual(COLOR_BASELINE.palette);
+    expect(warnings.some((w) => w.includes("non-string"))).toBe(true);
+  });
 });

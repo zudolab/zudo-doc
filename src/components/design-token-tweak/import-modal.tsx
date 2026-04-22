@@ -116,13 +116,38 @@ export default function DesignTokenImportModal({
 
       onLoad(state);
 
-      const noteText =
-        unknownTokens.length > 0
-          ? `Loaded. ${unknownTokens.length} unknown token${
-              unknownTokens.length === 1 ? "" : "s"
-            } ignored — see console for the list.`
-          : "Loaded.";
-      setNote({ kind: "info", text: noteText });
+      // "Nothing applied" = every spacing/font/size override landed in
+      // unknownTokens (so the payload had data but nothing mapped), AND the
+      // color block didn't change anything either. Surface a stronger warning
+      // so the user isn't left thinking the import silently succeeded.
+      const appliedCount =
+        Object.keys(state.spacing).length +
+        Object.keys(state.font).length +
+        Object.keys(state.size).length;
+      const colorLooksUntouched =
+        !parsed ||
+        typeof parsed !== "object" ||
+        (parsed as Record<string, unknown>).color === undefined;
+      const nothingApplied =
+        appliedCount === 0 && colorLooksUntouched && unknownTokens.length > 0;
+
+      if (nothingApplied) {
+        setNote({
+          kind: "error",
+          text: `Nothing applied — all ${unknownTokens.length} token${
+            unknownTokens.length === 1 ? "" : "s"
+          } in the payload were unknown. See console for the list.`,
+        });
+      } else if (unknownTokens.length > 0) {
+        setNote({
+          kind: "info",
+          text: `Loaded. ${unknownTokens.length} unknown token${
+            unknownTokens.length === 1 ? "" : "s"
+          } ignored — see console for the list.`,
+        });
+      } else {
+        setNote({ kind: "info", text: "Loaded." });
+      }
     } catch (err) {
       if (err instanceof DesignTokenSchemaError) {
         if (err.reason === "schema-mismatch") {
