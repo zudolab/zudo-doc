@@ -74,6 +74,8 @@
   --color-chat-user-text: var(--zd-chat-user-text);
   --color-chat-assistant-bg: var(--zd-chat-assistant-bg);
   --color-chat-assistant-text: var(--zd-chat-assistant-text);
+  --color-matched-keyword-bg: var(--zd-matched-keyword-bg);
+  --color-matched-keyword-fg: var(--zd-matched-keyword-fg);
 
   /* ========================================
    * Spacing — hsp (horizontal) + vsp (vertical)
@@ -663,8 +665,8 @@ pre.astro-code .line .highlighted-word {
 
 /* ── Search highlight ── */
 [data-search-results] mark {
-  background-color: color-mix(in oklch, var(--color-warning) 35%, transparent);
-  color: inherit;
+  background-color: var(--color-matched-keyword-bg);
+  color: var(--color-matched-keyword-fg);
   padding: 0;
   border-radius: 2px;
 }
