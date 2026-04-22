@@ -58,6 +58,13 @@ The Color tab is the previous Color Tweak Panel, now scoped to its own tab. It c
 - Semantic token overrides (`accent`, `code-bg`, `success`, `danger`, …)
 - The **Scheme…** dropdown that loads any of the 50+ bundled presets
 
+#### Matched-keyword tokens
+
+Two semantic color tokens drive how matched keywords are highlighted. They live alongside the other semantic overrides in the Color tab and are consumed by `src/components/search.astro` to style hits in the search UI.
+
+- `matchedKeywordBg` — background color painted behind a matched keyword.
+- `matchedKeywordFg` — foreground (text) color of the matched keyword on top of that background.
+
 ## Keyboard Accessibility
 
 The tab strip implements the standard WAI-ARIA tabs pattern:
