@@ -35,12 +35,15 @@ export default function SpacingTab({ state, persistSpacing }: SpacingTabProps) {
   }, [persistSpacing]);
 
   // Group tokens once so the render loop stays cheap and the display order
-  // stays stable across re-renders.
+  // stays stable across re-renders. We key by the extended `TokenGroup` union
+  // (which also includes font-* groups that aren't used in this tab).
   const grouped = useMemo(() => {
-    const out: Record<TokenGroup, TokenDef[]> = {
-      hsp: [], vsp: [], icon: [], layout: [],
-    };
-    for (const t of SPACING_TOKENS) out[t.group].push(t);
+    const out = new Map<TokenGroup, TokenDef[]>();
+    for (const t of SPACING_TOKENS) {
+      const arr = out.get(t.group) ?? [];
+      arr.push(t);
+      out.set(t.group, arr);
+    }
     return out;
   }, []);
 
@@ -59,8 +62,8 @@ export default function SpacingTab({ state, persistSpacing }: SpacingTabProps) {
       </div>
 
       {GROUP_ORDER.map((group) => {
-        const tokens = grouped[group];
-        if (tokens.length === 0) return null;
+        const tokens = grouped.get(group);
+        if (!tokens || tokens.length === 0) return null;
         return (
           <section key={group} className="shrink-0">
             <h3

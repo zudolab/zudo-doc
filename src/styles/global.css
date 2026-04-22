@@ -336,6 +336,7 @@ body {
 /* ── Code blocks (pre) ── */
 
 .zd-content :where(pre) {
+  font-family: var(--font-mono);
   font-size: var(--text-small);
   line-height: var(--leading-relaxed);
   border: 1px solid var(--color-muted);
@@ -711,6 +712,7 @@ pre.astro-code .line .highlighted-word {
 }
 
 .ai-chat-md :where(pre) {
+  font-family: var(--font-mono);
   font-size: var(--text-caption);
   line-height: var(--leading-relaxed);
   background: var(--color-code-bg);
