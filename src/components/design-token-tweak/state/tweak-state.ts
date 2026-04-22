@@ -1,7 +1,7 @@
 import { colorSchemes, type ColorRef, type ColorScheme } from "@/config/color-schemes";
 import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "@/config/color-scheme-utils";
 import { settings } from "@/config/settings";
-import { SPACING_TOKENS, type TokenDef } from "../tokens/manifest";
+import { SIZE_TOKENS, SPACING_TOKENS, type TokenDef } from "../tokens/manifest";
 
 /**
  * Storage keys
@@ -374,10 +374,11 @@ export function applyTokenOverrides(
   }
 }
 
-/** Apply full unified TweakState — Color + Spacing (Font/Size come later). */
+/** Apply full unified TweakState — Color + Spacing + Size (Font comes later). */
 export function applyFullState(state: TweakState) {
   applyColorState(state.color);
   applyTokenOverrides(SPACING_TOKENS, state.spacing);
+  applyTokenOverrides(SIZE_TOKENS, state.size);
 }
 
 /** Strip all tweak-applied inline CSS variables so the stylesheet-provided
@@ -394,6 +395,11 @@ export function clearAppliedStyles() {
   }
   // Spacing tokens too — same contract as color: wipe any inline overrides.
   for (const t of SPACING_TOKENS) {
+    if (t.readonly) continue;
+    document.documentElement.style.removeProperty(t.cssVar);
+  }
+  // Size tokens (radius, transitions, ...) — same contract.
+  for (const t of SIZE_TOKENS) {
     if (t.readonly) continue;
     document.documentElement.style.removeProperty(t.cssVar);
   }

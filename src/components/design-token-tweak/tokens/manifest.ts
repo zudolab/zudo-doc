@@ -14,7 +14,13 @@
  * companion unit test (`__tests__/token-manifest.test.ts`).
  */
 
-export type TokenGroup = "hsp" | "vsp" | "icon" | "layout";
+export type TokenGroup =
+  | "hsp"
+  | "vsp"
+  | "icon"
+  | "layout"
+  | "radius"
+  | "transition";
 
 export interface TokenDef {
   /** Stable id used as the Record key in persisted state (e.g. `hsp-2xs`). */
@@ -37,6 +43,20 @@ export interface TokenDef {
   unit: string;
   /** Read-only tokens are displayed but not editable (e.g. `clamp()` expressions). */
   readonly?: true;
+  /**
+   * Opt-in "Pill" toggle. When present the control shows a checkbox that flips
+   * between `value` (checked — e.g. `9999px` for full-radius pills) and a
+   * slider-editable custom value (unchecked). Currently used for
+   * `--radius-full`, where a slider alone can't meaningfully drive a 9999px
+   * sentinel.
+   */
+  pill?: {
+    /** CSS string applied when the pill checkbox is ON. */
+    value: string;
+    /** CSS string the slider falls back to when the pill is toggled OFF and
+     *  there is no prior custom value yet. */
+    customDefault: string;
+  };
 }
 
 /**
@@ -82,9 +102,52 @@ export const SPACING_TOKENS: readonly TokenDef[] = [
   { id: "sidebar-w",  cssVar: "--zd-sidebar-w", label: "sidebar-w", group: "layout", default: "clamp(14rem, 20vw, 22rem)", min: 0, max: 0, step: 1, unit: "", readonly: true },
 ] as const;
 
-export const FONT_TOKENS: readonly TokenDef[] = [] as const;
-export const SIZE_TOKENS: readonly TokenDef[] = [] as const;
-export const COLOR_TOKENS: readonly TokenDef[] = [] as const;
+
+/**
+ * Size tokens from `global.css`.
+ *
+ * Coverage (audit 2026-04): every non-breakpoint size-category custom property.
+ * Breakpoints (`--breakpoint-sm/lg/xl`) are intentionally omitted — live-
+ * changing them causes layout thrash mid-drag and adds no real tweak value.
+ *
+ * Radius defaults use `px` (matches the 0–100 slider in the sub-issue spec),
+ * even though `global.css` expresses them in `rem` — the browser accepts both.
+ *
+ * `--radius-full` is special: its design default (`9999px`) is an intentional
+ * sentinel that a 0–100 slider can't reach, so it carries a `pill` toggle. The
+ * checkbox reapplies the sentinel; unchecking drops back to a slider-editable
+ * custom value.
+ */
+export const SIZE_TOKENS: readonly TokenDef[] = [
+  // --- Radius ---
+  { id: "radius-DEFAULT", cssVar: "--radius-DEFAULT", label: "radius-DEFAULT", group: "radius", default: "4px", min: 0, max: 100, step: 1, unit: "px" },
+  { id: "radius-lg",      cssVar: "--radius-lg",      label: "radius-lg",      group: "radius", default: "8px", min: 0, max: 100, step: 1, unit: "px" },
+  {
+    id: "radius-full",
+    cssVar: "--radius-full",
+    label: "radius-full",
+    group: "radius",
+    default: "9999px",
+    min: 0,
+    max: 100,
+    step: 1,
+    unit: "px",
+    pill: { value: "9999px", customDefault: "16px" },
+  },
+
+  // --- Transitions ---
+  {
+    id: "default-transition-duration",
+    cssVar: "--default-transition-duration",
+    label: "default-transition-duration",
+    group: "transition",
+    default: "150ms",
+    min: 0,
+    max: 1000,
+    step: 10,
+    unit: "ms",
+  },
+] as const;
 
 /** Convenience: build a lookup map keyed by token id. */
 export function buildTokenIndex(
@@ -105,10 +168,15 @@ export const GROUP_TITLES: Record<TokenGroup, string> = {
   vsp: "VERTICAL SPACING (VSP)",
   icon: "ICONS",
   layout: "LAYOUT",
+  radius: "BORDER RADIUS",
+  transition: "TRANSITIONS",
 };
 
-/** Stable display order of groups within a tab. */
+/** Stable display order of spacing-tab groups. */
 export const GROUP_ORDER: readonly TokenGroup[] = ["hsp", "vsp", "icon", "layout"] as const;
+
+/** Stable display order of size-tab groups. */
+export const SIZE_GROUP_ORDER: readonly TokenGroup[] = ["radius", "transition"] as const;
 
 // --- Value parsing helpers (shared across controls + persist) ---
 
