@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import DesignTokenExportModal from "./export-modal";
+import DesignTokenImportModal from "./import-modal";
 import ColorTab from "./tabs/color-tab";
 import FontTab from "./tabs/font-tab";
 import SizeTab from "./tabs/size-tab";
@@ -18,6 +19,7 @@ import {
   initColorFromScheme,
   loadPersistedState,
   loadPosition,
+  savePersistedState,
   savePosition,
 } from "./state/tweak-state";
 
@@ -69,6 +71,7 @@ function computePanelSize(viewportW: number, viewportH: number): {
 export default function DesignTokenTweakPanel() {
   const [open, setOpen] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [state, setState] = useState<TweakState | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>(DEFAULT_TAB);
   const [position, setPosition] = useState<PanelPosition>(DEFAULT_POSITION);
@@ -228,6 +231,15 @@ export default function DesignTokenTweakPanel() {
     return () => document.removeEventListener("astro:after-swap", handleSwap);
   }, [state]);
 
+  const handleLoadFromJson = useCallback((loaded: TweakState) => {
+    // Replace the panel state with the loaded tweak, apply CSS vars, persist
+    // to localStorage (v2). Unknown tokens have already been filtered out by
+    // deserialize().
+    applyFullState(loaded);
+    savePersistedState(loaded);
+    setState(loaded);
+  }, []);
+
   const handleResetAll = useCallback(() => {
     clearPersistedState();
     clearAppliedStyles();
@@ -300,6 +312,14 @@ export default function DesignTokenTweakPanel() {
             style={{ fontSize: "0.75rem" }}
           >
             Export
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowImport(true)}
+            className="text-accent hover:text-accent-hover transition-colors"
+            style={{ fontSize: "0.75rem" }}
+          >
+            Load from JSON…
           </button>
           <button
             type="button"
@@ -400,16 +420,16 @@ export default function DesignTokenTweakPanel() {
       {showExport && state && (
         <DesignTokenExportModal
           onClose={() => setShowExport(false)}
-          colorState={{
-            background: state.color.background,
-            foreground: state.color.foreground,
-            cursor: state.color.cursor,
-            selectionBg: state.color.selectionBg,
-            selectionFg: state.color.selectionFg,
-            palette: state.color.palette,
-            semanticMappings: state.color.semanticMappings,
-            shikiTheme: state.color.shikiTheme,
-          }}
+          state={state}
+          colorDefaults={initColorFromScheme()}
+        />
+      )}
+
+      {showImport && state && (
+        <DesignTokenImportModal
+          onClose={() => setShowImport(false)}
+          onLoad={handleLoadFromJson}
+          colorDefaults={initColorFromScheme()}
         />
       )}
     </>

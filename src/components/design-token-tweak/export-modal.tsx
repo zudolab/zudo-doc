@@ -1,19 +1,58 @@
-import { useState, useEffect, useRef } from "react";
-import { generateCode, type ExportColorState } from "@/utils/export-code";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { serialize } from "@/utils/design-token-serde";
+import {
+  type ColorTweakState,
+  type TweakState,
+  initColorFromSchemeData,
+} from "./state/tweak-state";
+import { colorSchemes } from "@/config/color-schemes";
 
 interface DesignTokenExportModalProps {
   onClose: () => void;
-  colorState: ExportColorState;
+  /** Full unified tweak state — the modal serializes all four categories. */
+  state: TweakState;
+  /** Color baseline used for diff-only output. Optional: callers without DOM
+   *  access (tests) can omit and we'll treat the entire color block as changed. */
+  colorDefaults?: ColorTweakState;
+}
+
+const EXPORT_FILENAME_HINT = "zudo-doc-tokens.json";
+
+/** Resolve a color baseline for diff-only serialization. */
+function resolveColorDefaults(
+  fallback: ColorTweakState,
+  explicit?: ColorTweakState,
+): ColorTweakState {
+  if (explicit) return explicit;
+  // No explicit defaults → pick the first scheme so we still produce a
+  // sensible baseline shape. This path is only hit in edge cases; the panel
+  // always passes explicit defaults.
+  const firstScheme = Object.values(colorSchemes)[0];
+  if (firstScheme) return initColorFromSchemeData(firstScheme);
+  return fallback;
 }
 
 export default function DesignTokenExportModal({
   onClose,
-  colorState,
+  state,
+  colorDefaults,
 }: DesignTokenExportModalProps) {
   const [copyLabel, setCopyLabel] = useState("Copy");
+  const [includeDefaults, setIncludeDefaults] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
-  const code = generateCode(colorState);
+
+  // Memo the serialized JSON so flipping the toggle doesn't rebuild on every
+  // re-render; `exportedAt` intentionally refreshes when the toggle flips so
+  // the displayed timestamp reflects "when you clicked copy".
+  const code = useMemo(() => {
+    const baseline = resolveColorDefaults(state.color, colorDefaults);
+    const json = serialize(state, {
+      includeDefaults,
+      colorDefaults: baseline,
+    });
+    return JSON.stringify(json, null, 2);
+  }, [state, colorDefaults, includeDefaults]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -56,8 +95,8 @@ export default function DesignTokenExportModal({
 
   async function handleCopy() {
     let ok = false;
-    // Clipboard API needs focus inside the dialog — use fallback
-    // that appends a textarea inside the dialog (within the modal's focus trap)
+    // Clipboard API needs focus inside the dialog — use a dialog-scoped
+    // textarea fallback that works even inside Safari's <dialog> focus trap.
     const dialog = dialogRef.current;
     if (dialog) {
       try {
@@ -87,12 +126,26 @@ export default function DesignTokenExportModal({
     <dialog
       ref={dialogRef}
       onClick={handleBackdropClick}
-      className="mx-auto max-h-[80vh] w-full max-w-[40rem] overflow-y-auto border border-muted bg-surface p-hsp-xl backdrop:bg-bg/80"
+      className="mx-auto max-h-[80vh] w-full max-w-[46rem] overflow-y-auto border border-muted bg-surface p-hsp-xl backdrop:bg-bg/80"
       style={{ color: "var(--color-fg)", position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", userSelect: "text" }}
     >
       <h2 className="mb-vsp-sm text-subheading font-bold text-fg">
-        Export Color Scheme
+        Export Design Tokens
       </h2>
+
+      <p className="mb-vsp-xs text-small text-muted">
+        Save as <code className="text-fg">{EXPORT_FILENAME_HINT}</code> to feed
+        this blob back into the panel (or hand to an AI assistant).
+      </p>
+
+      <label className="mb-vsp-xs flex items-center gap-x-hsp-sm text-small text-fg">
+        <input
+          type="checkbox"
+          checked={includeDefaults}
+          onChange={(e) => setIncludeDefaults(e.currentTarget.checked)}
+        />
+        Show defaults too
+      </label>
 
       <pre className="overflow-x-auto border border-muted bg-code-bg p-hsp-lg text-small text-code-fg">
         <code>{code}</code>
@@ -100,12 +153,14 @@ export default function DesignTokenExportModal({
 
       <div className="mt-vsp-sm flex items-center gap-x-hsp-md">
         <button
+          type="button"
           onClick={handleCopy}
           className="border border-muted bg-surface px-hsp-lg py-vsp-2xs text-small text-fg transition-colors hover:border-accent hover:text-accent"
         >
           {copyLabel}
         </button>
         <button
+          type="button"
           onClick={() => dialogRef.current?.close()}
           className="border border-muted bg-surface px-hsp-lg py-vsp-2xs text-small text-muted transition-colors hover:border-fg hover:text-fg"
         >
