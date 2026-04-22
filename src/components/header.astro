@@ -182,13 +182,13 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
     data-header-right
   >
     {
-      settings.colorTweakPanel && (
+      (settings.designTokenPanel || settings.colorTweakPanel) && (
         <button
-          id="color-tweak-trigger"
+          id="design-token-trigger"
           type="button"
           class="flex items-center justify-center text-muted transition-colors hover:text-fg"
-          aria-label="Toggle color tweak panel"
-          onclick="window.dispatchEvent(new CustomEvent('toggle-color-tweak-panel'))"
+          aria-label="Toggle design token panel"
+          onclick="window.dispatchEvent(new CustomEvent('toggle-design-token-panel'))"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
