@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import DesignTokenExportModal from "./export-modal";
 import ColorTab from "./tabs/color-tab";
+import FontTab from "./tabs/font-tab";
 import SpacingTab from "./tabs/spacing-tab";
 import { usePersist } from "./state/persist";
 import {
@@ -84,7 +85,7 @@ export default function DesignTokenTweakPanel() {
   // Track active drag listeners for cleanup on unmount
   const dragCleanupRef = useRef<(() => void) | null>(null);
 
-  const { persistColor, persistSpacing } = usePersist(setState);
+  const { persistColor, persistSpacing, persistFont } = usePersist(setState);
 
   // Restore open state and position from localStorage after mount (avoids SSR hydration mismatch)
   useEffect(() => {
@@ -383,7 +384,10 @@ export default function DesignTokenTweakPanel() {
                 {tab.id === "spacing" && state && (
                   <SpacingTab state={state.spacing} persistSpacing={persistSpacing} />
                 )}
-                {(tab.id === "font" || tab.id === "size") && isSelected && (
+                {tab.id === "font" && state && (
+                  <FontTab state={state.font} persistFont={persistFont} />
+                )}
+                {tab.id === "size" && isSelected && (
                   <div className="py-vsp-md text-muted" style={{ fontSize: "0.875rem" }}>
                     {tab.label} controls are coming in a future sub-issue.
                   </div>

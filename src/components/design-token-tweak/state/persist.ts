@@ -45,9 +45,17 @@ export function usePersist(setState: SetState<TweakState>) {
     [persist],
   );
 
-  return { persist, persistColor, persistSpacing };
+  const persistFont = useCallback(
+    (updater: (prev: TokenOverrides) => TokenOverrides) => {
+      persist((prev) => ({ ...prev, font: updater(prev.font) }));
+    },
+    [persist],
+  );
+
+  return { persist, persistColor, persistSpacing, persistFont };
 }
 
 export type Persist = ReturnType<typeof usePersist>["persist"];
 export type PersistColor = ReturnType<typeof usePersist>["persistColor"];
 export type PersistSpacing = ReturnType<typeof usePersist>["persistSpacing"];
+export type PersistFont = ReturnType<typeof usePersist>["persistFont"];

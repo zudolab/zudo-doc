@@ -14,7 +14,29 @@
  * companion unit test (`__tests__/token-manifest.test.ts`).
  */
 
-export type TokenGroup = "hsp" | "vsp" | "icon" | "layout";
+export type TokenGroup =
+  | "hsp"
+  | "vsp"
+  | "icon"
+  | "layout"
+  | "font-size"
+  | "line-height"
+  | "font-weight"
+  | "font-family"
+  | "font-scale";
+
+/**
+ * Control kind for a token row.
+ *
+ * - `"slider"` — default; numeric range input paired with a number field.
+ * - `"select"` — native `<select>` with `options` (e.g. font-weight 100..900).
+ * - `"text"`   — free-form text input (e.g. font-family CSS string).
+ *
+ * `min`/`max`/`step`/`unit` are only meaningful for the slider control. They
+ * stay on the interface with zero defaults for non-slider rows so the manifest
+ * shape stays uniform.
+ */
+export type TokenControl = "slider" | "select" | "text";
 
 export interface TokenDef {
   /** Stable id used as the Record key in persisted state (e.g. `hsp-2xs`). */
@@ -37,6 +59,12 @@ export interface TokenDef {
   unit: string;
   /** Read-only tokens are displayed but not editable (e.g. `clamp()` expressions). */
   readonly?: true;
+  /** Which control renders this token. Defaults to `"slider"` when absent. */
+  control?: TokenControl;
+  /** Select options — only used when `control === "select"`. */
+  options?: readonly string[];
+  /** Hide behind the per-tab Advanced `<details>` disclosure (font tab). */
+  advanced?: true;
 }
 
 /**
@@ -82,7 +110,58 @@ export const SPACING_TOKENS: readonly TokenDef[] = [
   { id: "sidebar-w",  cssVar: "--zd-sidebar-w", label: "sidebar-w", group: "layout", default: "clamp(14rem, 20vw, 22rem)", min: 0, max: 0, step: 1, unit: "", readonly: true },
 ] as const;
 
-export const FONT_TOKENS: readonly TokenDef[] = [] as const;
+/**
+ * Font tokens from `global.css`.
+ *
+ * Tier 2 semantic tokens (sizes, line-heights, weights, families) are exposed
+ * as primary rows; Tier 1 abstract scale (`--text-scale-*`) is surfaced under
+ * an Advanced disclosure so designers who tweak the scale see the tokens that
+ * the semantic sizes resolve from.
+ *
+ * Defaults mirror `global.css` resolved values: font-size tokens are recorded
+ * as their resolved rem (`--text-body` → `1.2rem`) rather than their `var()`
+ * reference, so the slider can display a concrete number on first open.
+ */
+const FONT_WEIGHT_OPTIONS = [
+  "100", "200", "300", "400", "500", "600", "700", "800", "900",
+] as const;
+
+export const FONT_TOKENS: readonly TokenDef[] = [
+  // --- Font sizes (Tier 2 semantic) ---
+  { id: "text-micro",      cssVar: "--text-micro",      label: "text-micro",      group: "font-size", default: "0.75rem",  min: 0.5, max: 5, step: 0.05, unit: "rem" },
+  { id: "text-caption",    cssVar: "--text-caption",    label: "text-caption",    group: "font-size", default: "0.875rem", min: 0.5, max: 5, step: 0.05, unit: "rem" },
+  { id: "text-small",      cssVar: "--text-small",      label: "text-small",      group: "font-size", default: "1rem",     min: 0.5, max: 5, step: 0.05, unit: "rem" },
+  { id: "text-body",       cssVar: "--text-body",       label: "text-body",       group: "font-size", default: "1.2rem",   min: 0.5, max: 5, step: 0.05, unit: "rem" },
+  { id: "text-subheading", cssVar: "--text-subheading", label: "text-subheading", group: "font-size", default: "1.4rem",   min: 0.5, max: 5, step: 0.05, unit: "rem" },
+  { id: "text-heading",    cssVar: "--text-heading",    label: "text-heading",    group: "font-size", default: "3rem",     min: 0.5, max: 5, step: 0.05, unit: "rem" },
+  { id: "text-display",    cssVar: "--text-display",    label: "text-display",    group: "font-size", default: "3.75rem",  min: 0.5, max: 5, step: 0.05, unit: "rem" },
+
+  // --- Line heights (unitless) ---
+  { id: "leading-tight",   cssVar: "--leading-tight",   label: "leading-tight",   group: "line-height", default: "1.25",  min: 1, max: 3, step: 0.05, unit: "" },
+  { id: "leading-snug",    cssVar: "--leading-snug",    label: "leading-snug",    group: "line-height", default: "1.375", min: 1, max: 3, step: 0.05, unit: "" },
+  { id: "leading-normal",  cssVar: "--leading-normal",  label: "leading-normal",  group: "line-height", default: "1.5",   min: 1, max: 3, step: 0.05, unit: "" },
+  { id: "leading-relaxed", cssVar: "--leading-relaxed", label: "leading-relaxed", group: "line-height", default: "1.625", min: 1, max: 3, step: 0.05, unit: "" },
+
+  // --- Font weights (select) ---
+  { id: "font-weight-normal",   cssVar: "--font-weight-normal",   label: "font-weight-normal",   group: "font-weight", default: "400", min: 0, max: 0, step: 1, unit: "", control: "select", options: FONT_WEIGHT_OPTIONS },
+  { id: "font-weight-medium",   cssVar: "--font-weight-medium",   label: "font-weight-medium",   group: "font-weight", default: "500", min: 0, max: 0, step: 1, unit: "", control: "select", options: FONT_WEIGHT_OPTIONS },
+  { id: "font-weight-semibold", cssVar: "--font-weight-semibold", label: "font-weight-semibold", group: "font-weight", default: "600", min: 0, max: 0, step: 1, unit: "", control: "select", options: FONT_WEIGHT_OPTIONS },
+  { id: "font-weight-bold",     cssVar: "--font-weight-bold",     label: "font-weight-bold",     group: "font-weight", default: "700", min: 0, max: 0, step: 1, unit: "", control: "select", options: FONT_WEIGHT_OPTIONS },
+
+  // --- Font families (text input) ---
+  { id: "font-sans", cssVar: "--font-sans", label: "font-sans", group: "font-family", default: "system-ui, sans-serif",    min: 0, max: 0, step: 1, unit: "", control: "text" },
+  { id: "font-mono", cssVar: "--font-mono", label: "font-mono", group: "font-family", default: "ui-monospace, monospace",  min: 0, max: 0, step: 1, unit: "", control: "text" },
+
+  // --- Advanced: Tier 1 abstract scale (reveals behind <details>) ---
+  { id: "text-scale-2xs", cssVar: "--text-scale-2xs", label: "text-scale-2xs", group: "font-scale", default: "0.75rem",  min: 0.5, max: 5, step: 0.05, unit: "rem", advanced: true },
+  { id: "text-scale-xs",  cssVar: "--text-scale-xs",  label: "text-scale-xs",  group: "font-scale", default: "0.875rem", min: 0.5, max: 5, step: 0.05, unit: "rem", advanced: true },
+  { id: "text-scale-sm",  cssVar: "--text-scale-sm",  label: "text-scale-sm",  group: "font-scale", default: "1rem",     min: 0.5, max: 5, step: 0.05, unit: "rem", advanced: true },
+  { id: "text-scale-md",  cssVar: "--text-scale-md",  label: "text-scale-md",  group: "font-scale", default: "1.2rem",   min: 0.5, max: 5, step: 0.05, unit: "rem", advanced: true },
+  { id: "text-scale-lg",  cssVar: "--text-scale-lg",  label: "text-scale-lg",  group: "font-scale", default: "1.4rem",   min: 0.5, max: 5, step: 0.05, unit: "rem", advanced: true },
+  { id: "text-scale-xl",  cssVar: "--text-scale-xl",  label: "text-scale-xl",  group: "font-scale", default: "3rem",     min: 0.5, max: 5, step: 0.05, unit: "rem", advanced: true },
+  { id: "text-scale-2xl", cssVar: "--text-scale-2xl", label: "text-scale-2xl", group: "font-scale", default: "3.75rem",  min: 0.5, max: 5, step: 0.05, unit: "rem", advanced: true },
+] as const;
+
 export const SIZE_TOKENS: readonly TokenDef[] = [] as const;
 export const COLOR_TOKENS: readonly TokenDef[] = [] as const;
 
@@ -105,10 +184,24 @@ export const GROUP_TITLES: Record<TokenGroup, string> = {
   vsp: "VERTICAL SPACING (VSP)",
   icon: "ICONS",
   layout: "LAYOUT",
+  "font-size": "FONT SIZES",
+  "line-height": "LINE HEIGHTS",
+  "font-weight": "FONT WEIGHTS",
+  "font-family": "FONT FAMILIES",
+  "font-scale": "ADVANCED — SCALE (TIER 1)",
 };
 
-/** Stable display order of groups within a tab. */
+/** Stable display order of groups within the Spacing tab. */
 export const GROUP_ORDER: readonly TokenGroup[] = ["hsp", "vsp", "icon", "layout"] as const;
+
+/** Stable display order of primary groups within the Font tab.
+ *  The `font-scale` group is rendered separately under an Advanced disclosure. */
+export const FONT_GROUP_ORDER: readonly TokenGroup[] = [
+  "font-size",
+  "line-height",
+  "font-weight",
+  "font-family",
+] as const;
 
 // --- Value parsing helpers (shared across controls + persist) ---
 
