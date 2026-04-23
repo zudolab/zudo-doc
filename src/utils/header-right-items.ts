@@ -1,0 +1,32 @@
+import { settings } from "@/config/settings";
+import type { HeaderRightItem } from "@/config/settings-types";
+
+function isDesignTokenPanelEnabled(): boolean {
+  return Boolean(settings.designTokenPanel || settings.colorTweakPanel);
+}
+
+export function filterHeaderRightItems(
+  items: HeaderRightItem[],
+): HeaderRightItem[] {
+  return items.filter((item) => {
+    if (item.type === "trigger") {
+      if (item.trigger === "design-token-panel") {
+        return isDesignTokenPanelEnabled();
+      }
+      if (item.trigger === "ai-chat") {
+        return Boolean(settings.aiAssistant);
+      }
+    }
+
+    if (item.type === "component") {
+      if (item.component === "version-switcher") {
+        return Boolean(settings.versions);
+      }
+      if (item.component === "github-link") {
+        return Boolean(settings.githubUrl);
+      }
+    }
+
+    return true;
+  });
+}

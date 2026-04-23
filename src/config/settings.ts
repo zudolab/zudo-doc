@@ -1,24 +1,28 @@
 export type {
   HeaderNavChildItem,
   HeaderNavItem,
+  HeaderRightItem,
   ColorModeConfig,
   HtmlPreviewConfig,
   LocaleConfig,
   VersionConfig,
   FooterConfig,
   FrontmatterPreviewConfig,
+  BodyFootUtilAreaConfig,
   TagPlacement,
   TagGovernanceMode,
   TagVocabularyEntry,
 } from "./settings-types";
 import type {
   HeaderNavItem,
+  HeaderRightItem,
   ColorModeConfig,
   HtmlPreviewConfig,
   LocaleConfig,
   VersionConfig,
   FooterConfig,
   FrontmatterPreviewConfig,
+  BodyFootUtilAreaConfig,
   TagPlacement,
   TagGovernanceMode,
 } from "./settings-types";
@@ -42,6 +46,7 @@ export const settings = {
   mermaid: true,
   noindex: false as boolean, // When true, adds noindex/nofollow to all pages (for internal docs)
   editUrl: false as string | false,
+  githubUrl: "https://github.com/zudolab/zudo-doc" as string | false,
   siteUrl: "" as string, // e.g. "https://example.com" — required for sitemap absolute URLs
   sitemap: true,
   docMetainfo: true,
@@ -98,6 +103,10 @@ export const settings = {
   imageEnlarge: true as boolean,
   frontmatterPreview: {} satisfies FrontmatterPreviewConfig as FrontmatterPreviewConfig | false,
   docHistory: true,
+  bodyFootUtilArea: {
+    docHistory: true,
+    viewSourceLink: true,
+  } satisfies BodyFootUtilAreaConfig as BodyFootUtilAreaConfig | false,
   htmlPreview: undefined as HtmlPreviewConfig | undefined,
   versions: [
     {
@@ -171,4 +180,12 @@ export const settings = {
     { label: "Changelog", labelKey: "nav.changelog", path: "/docs/changelog", categoryMatch: "changelog" },
     { label: "Develop", labelKey: "nav.develop", path: "/docs/develop", categoryMatch: "develop" },
   ] as HeaderNavItem[],
+  headerRightItems: [
+    { type: "trigger", trigger: "design-token-panel" },
+    { type: "trigger", trigger: "ai-chat" },
+    { type: "component", component: "version-switcher" },
+    { type: "component", component: "github-link" },
+    { type: "component", component: "theme-toggle" },
+    { type: "component", component: "language-switcher" },
+  ] as HeaderRightItem[],
 };
