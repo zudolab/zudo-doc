@@ -315,6 +315,10 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
           );
         }
 
+        if (item.type === "component" && item.component === "search") {
+          return <Search />;
+        }
+
         if (item.type === "link") {
           const label = item.label ?? item.ariaLabel;
           const isExternal = /^https?:\/\//.test(item.href);
@@ -355,7 +359,6 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
         return null;
       })
     }
-    <Search />
   </div>
 </header>
 

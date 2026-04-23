@@ -181,11 +181,12 @@ export const settings = {
     { label: "Develop", labelKey: "nav.develop", path: "/docs/develop", categoryMatch: "develop" },
   ] as HeaderNavItem[],
   headerRightItems: [
+    { type: "component", component: "version-switcher" },
     { type: "trigger", trigger: "design-token-panel" },
     { type: "trigger", trigger: "ai-chat" },
-    { type: "component", component: "version-switcher" },
     { type: "component", component: "github-link" },
     { type: "component", component: "theme-toggle" },
+    { type: "component", component: "search" },
     { type: "component", component: "language-switcher" },
   ] as HeaderRightItem[],
 };
