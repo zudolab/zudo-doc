@@ -151,7 +151,7 @@ const hasColumns = links.length > 0 || taglistColumns.length > 0;
                   <li class="mb-vsp-2xs">
                     <a
                       href={localizeHref(item.href)}
-                      class="text-caption text-muted hover:text-accent hover:underline"
+                      class="text-caption text-muted hover:text-accent hover:underline focus-visible:underline"
                       {...(isExternal(item.href)
                         ? { target: "_blank", rel: "noopener noreferrer" }
                         : {})}
@@ -173,7 +173,7 @@ const hasColumns = links.length > 0 || taglistColumns.length > 0;
                   <li class="mb-vsp-2xs">
                     <a
                       href={tagHref(tag)}
-                      class="text-caption text-muted hover:text-accent hover:underline"
+                      class="text-caption text-muted hover:text-accent hover:underline focus-visible:underline"
                     >
                       #{tag}
                       <span class="opacity-60" aria-hidden="true">
