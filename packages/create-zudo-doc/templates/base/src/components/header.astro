@@ -278,7 +278,7 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
             a.textContent =
               parentLink.textContent?.trim().replace(/\s+/g, " ") || "";
             a.className =
-              "block px-hsp-md py-vsp-2xs text-small font-bold hover:bg-accent/10 text-fg";
+              "block px-hsp-md py-vsp-2xs text-small font-bold hover:bg-accent/10 hover:underline focus-visible:underline text-fg";
             if (parentLink.getAttribute("aria-current") === "page") {
               a.className += " text-accent";
             }
@@ -292,8 +292,8 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
             a.textContent = child.textContent?.trim() || "";
             const isChildActive = child.hasAttribute("data-active");
             a.className = isChildActive
-              ? "block pl-hsp-xl pr-hsp-md py-vsp-2xs text-small font-bold text-accent hover:bg-accent/10"
-              : "block pl-hsp-xl pr-hsp-md py-vsp-2xs text-small text-muted hover:bg-accent/10 hover:text-fg";
+              ? "block pl-hsp-xl pr-hsp-md py-vsp-2xs text-small font-bold text-accent hover:bg-accent/10 hover:underline focus-visible:underline"
+              : "block pl-hsp-xl pr-hsp-md py-vsp-2xs text-small text-muted hover:bg-accent/10 hover:text-fg hover:underline focus-visible:underline";
             li.appendChild(a);
             moreMenu!.appendChild(li);
           });
@@ -305,7 +305,7 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
           a.href = anchor.href;
           a.textContent = anchor.textContent?.trim() || "";
           a.className =
-            "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 text-fg";
+            "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 hover:underline focus-visible:underline text-fg";
           if (anchor.getAttribute("aria-current") === "page") {
             a.className += " font-bold text-accent";
           }
