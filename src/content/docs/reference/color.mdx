@@ -106,6 +106,10 @@ In `src/styles/global.css`, the `@theme` block maps palette properties into Tail
   --color-danger: var(--zd-danger);
   --color-warning: var(--zd-warning);
   --color-info: var(--zd-info);
+
+  /* Search highlight (dedicated, live-editable in Design Token Panel) */
+  --color-matched-keyword-bg: var(--zd-matched-keyword-bg);
+  --color-matched-keyword-fg: var(--zd-matched-keyword-fg);
 }
 ```
 
@@ -127,8 +131,10 @@ Once registered in `@theme`, these become standard Tailwind utility classes: `bg
 | `code-fg` | `p11` (Text primary) | Inline code text |
 | `success` | `p2` (Success) | Success states, confirmations |
 | `danger` | `p1` (Danger) | Errors, destructive actions |
-| `warning` | `p3` (Warning) | Warning messages |
+| `warning` | `p3` (Warning) | Warning messages, admonitions, find-in-page highlight |
 | `info` | `p4` (Info) | Informational highlights |
+| `matched-keyword-bg` | `p3` (Warning family) | Search result `<mark>` background — dedicated token, live-editable in Design Token Panel |
+| `matched-keyword-fg` | `p11` (Text primary) | Search result `<mark>` foreground — paired with `matched-keyword-bg` |
 
 ### Per-Scheme Semantic Overrides
 
@@ -162,6 +168,15 @@ The same `number | string` type (called `ColorRef`) is also supported for `curso
 ```
 
 The resolution logic lives in `src/config/color-scheme-utils.ts` — each property falls back to its default palette slot when not explicitly set.
+
+### Search & highlight tokens (role-split)
+
+Highlight roles are deliberately split across dedicated semantic tokens — reusing one token across unrelated highlight UIs is an anti-pattern.
+
+- `matched-keyword-bg` / `matched-keyword-fg` drive the search panel `<mark>` element. Because they are dedicated tokens (not a `color-mix()` of another role), the [Design Token Panel](./design-token-panel.mdx) swatch is the single source of truth for the highlight color — what you see on the swatch is what the highlight renders as.
+- `warning` drives admonitions (`:::warning`), find-in-page (`.find-match`, `.find-match-active`), and any UI that is semantically a _warning_. Do **not** reuse `warning` for new UI-chrome highlights.
+
+When a new highlight role appears (new kind of `<mark>`, new pill, new callout), add a dedicated semantic token rather than bolting another responsibility onto an existing role-overloaded token. Each visible highlight color in the product should map to exactly one panel swatch.
 
 ## Tier 3: Component Tokens
 

@@ -376,7 +376,7 @@ export default function DesignTokenTweakPanel() {
                 className={`border-b-2 px-hsp-md py-vsp-xs transition-colors ${
                   isSelected
                     ? "border-accent text-fg"
-                    : "border-transparent text-muted hover:text-fg"
+                    : "border-transparent text-muted hover:text-fg hover:underline focus-visible:underline"
                 }`}
                 style={{ fontSize: "0.875rem" }}
               >

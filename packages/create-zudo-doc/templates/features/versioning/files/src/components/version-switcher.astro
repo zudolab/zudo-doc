@@ -75,7 +75,7 @@ const isLatest = !currentVersion;
         href={latestUrl}
         aria-current={isLatest ? "page" : undefined}
         class:list={[
-          "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10",
+          "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 hover:underline focus-visible:underline",
           isLatest ? "font-bold text-accent" : "text-fg",
         ]}
       >
@@ -99,7 +99,7 @@ const isLatest = !currentVersion;
                 href={vUrl}
                 aria-current={isActive ? "page" : undefined}
                 class:list={[
-                  "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10",
+                  "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 hover:underline focus-visible:underline",
                   isActive ? "font-bold text-accent" : "text-fg",
                 ]}
               >
@@ -123,7 +123,7 @@ const isLatest = !currentVersion;
     <li class="border-t border-muted">
       <a
         href={versionsPageUrl}
-        class="block px-hsp-md py-vsp-2xs text-small text-muted hover:bg-accent/10 hover:text-fg"
+        class="block px-hsp-md py-vsp-2xs text-small text-muted hover:bg-accent/10 hover:text-fg hover:underline focus-visible:underline"
       >
         {allVersionsLabel}
       </a>

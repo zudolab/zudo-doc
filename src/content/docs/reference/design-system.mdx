@@ -191,3 +191,34 @@ The default Tailwind theme is not imported — only `tailwindcss/preflight` and 
 ```
 
 All tokens are defined in `src/styles/global.css`. That file is the single source of truth for the design system.
+
+## Interaction Rules
+
+### hover:underline on link-like elements
+
+Elements that _navigate_ (rendered as `<a href>` or behave as a link) must show an underline on hover and on keyboard focus. Buttons, toggles, and controls do not — they use a border/background change instead.
+
+**Do** (navigational links):
+
+```html
+<a class="text-accent hover:underline focus-visible:underline">Link</a>
+<a class="text-fg hover:text-accent hover:underline focus-visible:underline">Sidebar item</a>
+```
+
+**Don't** (missing focus-visible parity):
+
+```html
+<!-- DON'T: mouse users get an underline, keyboard users don't -->
+<a class="text-fg hover:underline">Inaccessible to keyboard focus</a>
+```
+
+**Don't** (controls):
+
+```html
+<!-- DON'T: buttons use border/bg hover, not underline -->
+<button class="hover:underline">Use hover:bg-accent/10 instead</button>
+```
+
+The pair `hover:underline focus-visible:underline` is the canonical form — always add both, never one without the other. Precedents: `src/components/header.astro`, `src/components/site-tree-nav.tsx`, `src/components/footer.astro`.
+
+For the broader reasoning (light-mode / dark-mode contrast, when an underline is sufficient vs when a color shift is also needed), consult the `/css-wisdom` skill locally — its light-mode/dark-mode and three-tier token strategy sections cover the trade-offs.

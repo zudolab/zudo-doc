@@ -144,5 +144,27 @@ test.describe("Search dialog", () => {
         `Expected "${text}" to contain one of: ${queryTerms.join(", ")}`,
       ).toBeTruthy();
     }
+
+    // Regression guard (#364): the search <mark> highlight must run through
+    // dedicated matchedKeyword tokens at the scheme-provider layer, not piggyback
+    // on --color-warning via color-mix.
+    //
+    // The fixture build does NOT bundle Tailwind's @theme :root emission, so we
+    // cannot assert --color-matched-keyword-bg on :root here. Instead we verify
+    // the scheme provider layer: the ColorSchemeProvider inlines
+    // --zd-matched-keyword-bg / --zd-matched-keyword-fg into <style>:root {...},
+    // and those exist only if schemeToCssPairs + semantic defaults still emit
+    // them. If someone removes the matchedKeyword plumbing from
+    // color-scheme-utils.ts, these properties disappear and this test fails.
+    const zdTokens = await page.evaluate(() => {
+      const root = document.documentElement;
+      const style = getComputedStyle(root);
+      return {
+        zdBg: style.getPropertyValue("--zd-matched-keyword-bg").trim(),
+        zdFg: style.getPropertyValue("--zd-matched-keyword-fg").trim(),
+      };
+    });
+    expect(zdTokens.zdBg.length, "expected --zd-matched-keyword-bg to be emitted on :root by ColorSchemeProvider").toBeGreaterThan(0);
+    expect(zdTokens.zdFg.length, "expected --zd-matched-keyword-fg to be emitted on :root by ColorSchemeProvider").toBeGreaterThan(0);
   });
 });

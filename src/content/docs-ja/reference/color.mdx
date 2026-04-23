@@ -106,6 +106,10 @@ zudo-docのカラーシステムは**16色パレット**を採用しています
   --color-danger: var(--zd-danger);
   --color-warning: var(--zd-warning);
   --color-info: var(--zd-info);
+
+  /* 検索ハイライト（専用トークン、デザイントークンパネルでライブ編集可能） */
+  --color-matched-keyword-bg: var(--zd-matched-keyword-bg);
+  --color-matched-keyword-fg: var(--zd-matched-keyword-fg);
 }
 ```
 
@@ -127,8 +131,10 @@ zudo-docのカラーシステムは**16色パレット**を採用しています
 | `code-fg` | `p11`（テキストプライマリ） | インラインコードテキスト |
 | `success` | `p2`（成功） | 成功状態、確認 |
 | `danger` | `p1`（危険） | エラー、破壊的操作 |
-| `warning` | `p3`（警告） | 警告メッセージ |
+| `warning` | `p3`（警告） | 警告メッセージ、Admonition、find-in-pageハイライト |
 | `info` | `p4`（情報） | 情報ハイライト |
+| `matched-keyword-bg` | `p3`（警告ファミリー） | 検索結果の`<mark>`背景 — 専用トークン、デザイントークンパネルでライブ編集可能 |
+| `matched-keyword-fg` | `p11`（テキストプライマリ） | 検索結果の`<mark>`前景 — `matched-keyword-bg`とペアで使用 |
 
 ### スキームごとのセマンティックオーバーライド
 
@@ -162,6 +168,15 @@ zudo-docのカラーシステムは**16色パレット**を採用しています
 ```
 
 解決ロジックは`src/config/color-scheme-utils.ts`にあり、各プロパティは明示的に設定されていない場合、デフォルトのパレットスロットにフォールバックします。
+
+### 検索とハイライトのトークン（役割を分離）
+
+ハイライトの役割は意図的に専用セマンティックトークンに分離されています。無関係なハイライトUI間でひとつのトークンを使い回すのはアンチパターンです。
+
+- `matched-keyword-bg` / `matched-keyword-fg` は検索パネルの`<mark>`要素に使われます。別の役割の`color-mix()`ではなく専用トークンのため、[デザイントークンパネル](./design-token-panel.mdx)のスウォッチがハイライト色の唯一のソースになります。パネルで見えている色＝実際のハイライト色です。
+- `warning` はAdmonition（`:::warning`）、find-in-page（`.find-match`、`.find-match-active`）など、意味的に _警告_ にあたるUIで使います。**新しいUIクロム向けのハイライトに`warning`を使い回してはいけません**。
+
+新しいハイライトの役割が出てきたとき（新種の`<mark>`、新しいピル、新しいコールアウト）は、既存の役割過多なトークンに載せるのではなく、専用のセマンティックトークンを追加してください。プロダクトに現れるハイライト色はどれも、パネルのスウォッチに1対1で対応するべきです。
 
 ## Tier 3：コンポーネントトークン
 

@@ -191,3 +191,34 @@ Tailwindのデフォルトテーマはインポートされていません。`ta
 ```
 
 すべてのトークンは`src/styles/global.css`で定義されています。このファイルがデザインシステムの唯一の情報源です。
+
+## インタラクションのルール
+
+### リンクには hover:underline
+
+_遷移する_ 要素（`<a href>`、またはリンクとして振る舞う要素）は、ホバー時とキーボードフォーカス時にアンダーラインを表示します。ボタン、トグル、コントロールは対象外で、ボーダー／背景の変化で代替します。
+
+**OK**（ナビゲーション用のリンク）：
+
+```html
+<a class="text-accent hover:underline focus-visible:underline">リンク</a>
+<a class="text-fg hover:text-accent hover:underline focus-visible:underline">サイドバー項目</a>
+```
+
+**NG**（focus-visible が欠けている）：
+
+```html
+<!-- NG: マウスだけ下線、キーボード操作では出ない -->
+<a class="text-fg hover:underline">キーボードフォーカスで下線が出ない</a>
+```
+
+**NG**（コントロール）：
+
+```html
+<!-- NG: ボタンは下線ではなくボーダー／背景ホバーを使う -->
+<button class="hover:underline">代わりに hover:bg-accent/10 などを使う</button>
+```
+
+`hover:underline focus-visible:underline` のペアが正規形です。必ず両方を書き、片方だけにはしないでください。実装例：`src/components/header.astro`、`src/components/site-tree-nav.tsx`、`src/components/footer.astro`。
+
+より深い背景（ライト／ダークのコントラスト、下線だけで足りるか色の変化も必要か）は、ローカルの `/css-wisdom` スキルを参照してください。light-mode/dark-mode と three-tier トークン戦略のセクションがトレードオフを扱っています。

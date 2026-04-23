@@ -47,6 +47,26 @@ Read ONLY the file relevant to your task. Apply its rules strictly.
   - p1=danger, p2=success, p3=warning, p4=info, p5=accent
   - p8=muted, p9=background, p10=surface, p11=text primary
 
+### Search & highlight tokens (role-split)
+
+Highlight roles are deliberately split across dedicated semantic tokens — do **not** share one token across unrelated highlight UIs.
+
+- `matched-keyword-bg` / `matched-keyword-fg` — background and foreground of the search panel `<mark>` element. Driven by `--color-matched-keyword-bg` / `--color-matched-keyword-fg`; live-editable in the Design Token Panel. This is the single source of truth for "why is this color yellow in the search results" — the panel swatch matches the rendered highlight 1:1.
+- `warning` — drives admonitions (`:::warning`), find-in-page (`.find-match`, `.find-match-active`), and any UI that is semantically a warning. Do **not** reuse it for new UI-chrome highlights.
+
+**Rule**: when a new highlight role appears (new kind of mark, new pill, new callout), add a dedicated semantic token rather than bolting it onto `--color-warning` or another existing token. Each visible highlight color should map to exactly one panel swatch.
+
+### hover:underline on link-like elements
+
+Any element that navigates (rendered as `<a href>` or behaves as a link) MUST have `hover:underline focus-visible:underline`. Keyboard users need the same affordance as mouse users — never add `hover:underline` without the `focus-visible:underline` pair.
+
+- **Links (do underline)**: doc content links, sidebar items, header main-nav, header overflow menu items, color-tweak panel unselected tabs, search result rows, footer links, doc history entries, breadcrumb trails, mobile TOC entries.
+- **Controls (do NOT underline)**: buttons, toggles, sidebar resizer, palette selectors, color swatches, close icons. These use border/bg hover instead.
+
+Precedents to copy the pattern from: `src/components/header.astro`, `src/components/site-tree-nav.tsx`, `src/components/footer.astro`.
+
+See also: `/css-wisdom` for light-mode / dark-mode contrast rules and the broader three-tier token strategy.
+
 ### Astro vs React
 
 - Default to **Astro components** (`.astro`) — zero JS, server-rendered

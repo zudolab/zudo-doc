@@ -57,7 +57,7 @@ export function MobileToc({ headings, title = "On this page" }: MobileTocProps) 
               <a
                 href={`#${heading.slug}`}
                 onClick={() => setOpen(false)}
-                className="block py-vsp-2xs text-small text-muted hover:text-fg hover:underline"
+                className="block py-vsp-2xs text-small text-muted hover:text-fg hover:underline focus-visible:underline"
               >
                 {heading.text}
               </a>

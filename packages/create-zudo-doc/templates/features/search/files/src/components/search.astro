@@ -542,9 +542,11 @@ const resultCountTemplate = t("search.resultCount", lang);
       link.className =
         "group block px-hsp-lg py-vsp-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
-      // Title (phrasing) — primary accessible name, hover color via group-hover
+      // Title (phrasing) — primary accessible name, hover color via group-hover.
+      // Underline mirrors doc-content links on hover/keyboard-focus of the row.
       const title = document.createElement("span");
-      title.className = "font-semibold text-fg group-hover:text-accent";
+      title.className =
+        "font-semibold text-fg group-hover:text-accent group-hover:underline group-focus-visible:underline";
       title.innerHTML = highlightTerms(entry.title, this.currentQuery);
       link.appendChild(title);
 
