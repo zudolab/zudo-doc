@@ -8,6 +8,7 @@ import { ContentBlockquote } from './content-blockquote';
 import { ContentUl } from './content-ul';
 import { ContentOl } from './content-ol';
 import { ContentTable } from './content-table';
+import { ContentCode } from './content-code';
 
 export const htmlOverrides = {
   h2: HeadingH2,
@@ -20,4 +21,5 @@ export const htmlOverrides = {
   ul: ContentUl,
   ol: ContentOl,
   table: ContentTable,
+  code: ContentCode,
 };
