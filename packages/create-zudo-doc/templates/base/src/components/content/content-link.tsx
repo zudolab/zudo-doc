@@ -4,7 +4,7 @@ import { SmartBreak as SmartBreakBase } from '../../utils/smart-break';
 // components type children as React.ReactNode. Cast to a React-compatible
 // signature; at runtime Preact compat unifies the two.
 const SmartBreak = SmartBreakBase as unknown as (props: {
-  children?: unknown;
+  children?: React.ReactNode;
 }) => React.ReactElement;
 
 type Props = {
