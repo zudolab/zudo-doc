@@ -550,12 +550,13 @@ const resultCountTemplate = t("search.resultCount", lang);
       title.innerHTML = highlightTerms(entry.title, this.currentQuery);
       link.appendChild(title);
 
-      // Description or body excerpt (optional, flow content inside <a>)
+      // Description or body excerpt (optional, flow content inside <a>).
+      // Underline together with the title so the whole row is clearly linked on hover/focus.
       const text = entry.description || entry.body;
       if (text) {
         const excerpt = document.createElement("p");
         excerpt.className =
-          "mt-vsp-2xs text-caption text-muted leading-relaxed";
+          "mt-vsp-2xs text-caption text-muted leading-relaxed group-hover:underline group-focus-visible:underline decoration-muted";
         const truncated = truncateExcerpt(text, this.currentQuery);
         excerpt.innerHTML = highlightTerms(truncated, this.currentQuery);
         link.appendChild(excerpt);
