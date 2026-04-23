@@ -1,0 +1,107 @@
+---
+title: Smart Break ユーティリティ
+sidebar_position: 11
+description: パス風の長い文字列に <wbr> を挿入し、狭い UI でもきれいに折り返す
+tags:
+  - content
+  - i18n
+---
+
+長いURLやファイルシステムパス — 例えば `packages/create-zudo-doc/templates/base/src/utils/smart-break.tsx` — は任意の文字境界では折り返されません。狭いUI（サイドバーのラベル、パンくず、インラインコード、検索スニペットなど）ではコンテナからあふれたり、レイアウトを本来より広くしてしまいます。
+
+`src/utils/smart-break.tsx` にある smart-break ユーティリティは、パス風に見える文字列のデリミタごとに `<wbr>`（word-break opportunity）ヒントを挿入することでこの問題を解決します。実際にどこで折り返すかはブラウザが利用可能な幅に応じて判断します。
+
+## 自動適用
+
+zudo-doc のいくつかの表示面では、すでに smart-break が自動的に適用されています。追加の設定は不要です：
+
+- **サイドバーツリーのラベル** — カテゴリ名・ページ名
+- **パンくずリスト** — 現在ページまでの経路
+- **MDX のリンク** — 本文中のアンカーテキスト
+- **MDX のインラインコード** — 本文中のバッククォートスパン
+- **検索結果** — 検索ダイアログのタイトルとスニペット
+- **ドキュメント履歴** — コミットメッセージの表示
+
+ユーザー入力のパス風文字列を描画するカスタムコンポーネントを書くとき以外は、自分で呼び出す必要はありません。
+
+## 手動適用：`SmartBreak` コンポーネント
+
+Preact アイランド（あるいはプロジェクト内の任意の `.tsx` コンポーネント）では `SmartBreak` コンポーネントを使います。子要素を文字列化し、適切な位置に `<wbr>` を挿入します：
+
+```tsx
+import { SmartBreak } from "@/utils/smart-break";
+
+export function FileBadge({ path }: { path: string }) {
+  return (
+    <span class="font-mono text-caption">
+      <SmartBreak>{path}</SmartBreak>
+    </span>
+  );
+}
+```
+
+`path` がパス風でない場合（通常の文章、`and/or`、`state-of-the-art` など）はそのまま返され、不要な wbr は挿入されません。
+
+## 手動適用：`smartBreakToHtml` ヘルパー
+
+Astro コンポーネントや、HTML 文字列を描画するコードパス（`set:html` や `dangerouslySetInnerHTML` など）では、Preact の VNode を直接マウントできません。その場合は `smartBreakToHtml` を使ってください。HTML エスケープ済みの文字列に、リテラルの `<wbr>` タグを挿入した結果を返します：
+
+```astro
+---
+import { smartBreakToHtml } from "@/utils/smart-break";
+
+const { label } = Astro.props;
+---
+
+<span set:html={smartBreakToHtml(label)} />
+```
+
+返される文字列はすでに HTML エスケープ済みなので、そのまま `set:html` に渡しても安全です。
+
+## 判定のしくみ
+
+smart-break は2段階で動作します：まず入力を `isPathLike` ヒューリスティックで判定し、**パス風と判定された場合にのみ**固定のデリミタセットで分割して、セグメント間に `<wbr>` を挟みながら再結合します。
+
+### デリミタセット
+
+以下の各文字の直後に `<wbr>` を挿入します：
+
+```
+/  \  -  _  .  :  ?  #  &  =
+```
+
+これで URL 構造（`://`、`?query=value&other=1`、`#anchor`）、ファイルシステムパス（`/`、`\`）、複合的な識別子（`snake_case`、`kebab-case`、`file.name.ext`）をカバーできます。
+
+### `isPathLike` ヒューリスティック
+
+`isPathLike` は、URL・パス・その他のデリミタ構造に見える文字列に対して `true` を返します：
+
+- `://` を含む（任意の URL）
+- `/`、`./`、`../` で始まる（POSIX パス）
+- `C:\` や `C:/` のような Windows のドライブ接頭辞で始まる
+- 英数字の間にスラッシュが2つ以上ある（ネストされたパス）
+- ドメイン風の `a.b` パターンに加えて、どこかにスラッシュを含む
+
+一方、文章に紛れ込んだデリミタには `false` を返します：`and/or`、`well-known`、`state-of-the-art`、`1.2.3-beta.4`、`UI/UX` などです。これらはそのまま通過するので、通常の文章の折り返し挙動が維持されます。
+
+### 実例
+
+次のような入力を考えてみます：
+
+```
+packages/create-zudo-doc/templates/base/src/utils/smart-break.tsx
+```
+
+`isPathLike` は `true` を返し、`smartBreakToHtml` は概念的に次のような結果を返します：
+
+```html
+packages<wbr>/create<wbr>-zudo<wbr>-doc<wbr>/templates<wbr>/base<wbr>/src<wbr>/utils<wbr>/smart<wbr>-break<wbr>.tsx
+```
+
+コンテナが十分広ければブラウザは1行で保ち、狭い場合は最も近い `<wbr>` の位置で折り返します。常にセグメントの境界で折り返され、セグメントの途中で切られることはありません。
+
+## 使わないほうがよい場面
+
+- 短いラベル（1〜2語）— そもそも折り返す箇所がありません。
+- どこでも折り返したくない意図的な単一トークン（決して折り返してはいけないバージョンタグなど）。
+- CJK の本文 — このユーティリティはラテン文字のパス風文字列を対象としています。CJK の行折り返しは [CJK対応マークダウン](./cjk-friendly.mdx) プラグインとブラウザ標準の挙動に任せてください。
