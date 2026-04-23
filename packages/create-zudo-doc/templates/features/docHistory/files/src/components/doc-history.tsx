@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { diffLines } from "diff";
 import type { DocHistoryData, DocHistoryEntry } from "@/types/doc-history";
+import { SmartBreak } from "@/utils/smart-break";
 
 interface DocHistoryProps {
   slug: string;
@@ -374,7 +375,7 @@ function RevisionList({
                     <span className="text-caption text-muted">{dateStr}</span>
                   </div>
                   <div className="text-small text-fg mt-vsp-2xs truncate">
-                    {entry.message}
+                    <SmartBreak>{entry.message}</SmartBreak>
                   </div>
                   <div className="text-caption text-muted">{entry.author}</div>
                 </div>

@@ -74,8 +74,14 @@ export function smartBreak(text: string): VNode | string {
 /**
  * Preact function component wrapper — pure, server-renderable.
  * Stringifies children and defers to smartBreak.
+ *
+ * Return type is `any` so the component can be mounted from both
+ * Preact-typed and React-typed .tsx files (preact/compat makes this safe
+ * at runtime, but TypeScript treats Preact's VNode and React's JSX.Element
+ * as distinct types).
  */
-export function SmartBreak({ children }: { children?: unknown }): VNode {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function SmartBreak({ children }: { children?: unknown }): any {
   return <>{smartBreak(String(children ?? ""))}</>;
 }
 

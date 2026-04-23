@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { ChatMessage } from "@/types/ai-chat";
 import { renderMarkdown } from "@/utils/render-markdown";
+import { SmartBreak } from "@/utils/smart-break";
 
 interface AiChatModalProps {
   basePath: string;
@@ -162,7 +163,7 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
             >
               {msg.role === "user" ? (
                 <div className="max-w-[85%] rounded-t-[1rem] rounded-bl-[1rem] rounded-br-[0.25rem] bg-chat-user-bg px-hsp-md py-vsp-2xs text-small leading-relaxed text-chat-user-text">
-                  {msg.content}
+                  <SmartBreak>{msg.content}</SmartBreak>
                 </div>
               ) : (
                 <div
