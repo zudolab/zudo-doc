@@ -3,6 +3,7 @@ import type { NavNode } from "@/utils/docs";
 import type { LocaleLink } from "@/types/locale";
 import { INDENT, BASE_PAD, connectorLeft, ConnectorLines, CategoryLinkIcon } from "./tree-nav-shared";
 import ThemeToggle from "@/components/theme-toggle";
+import { smartBreakToHtml } from "@/utils/smart-break";
 
 function ToggleChevron({ isExpanded, className }: { isExpanded: boolean; className?: string }) {
   return (
@@ -110,10 +111,10 @@ function RootMenuItemEntry({ item }: { item: RootMenuItem }) {
       <div className="flex items-center">
         <a
           href={item.href}
-          className="flex flex-1 items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-small font-semibold text-fg hover:text-accent hover:underline"
+          className="flex flex-1 items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-small font-semibold text-fg hover:text-accent hover:underline break-words"
         >
           <CategoryLinkIcon className="w-[14px]" />
-          {item.label}
+          <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(item.label) }} />
         </a>
         {hasChildren && (
           <button
@@ -133,9 +134,9 @@ function RootMenuItemEntry({ item }: { item: RootMenuItem }) {
             <a
               key={child.href}
               href={child.href}
-              className="block pl-hsp-xl pr-hsp-sm py-vsp-2xs text-small text-muted hover:text-accent hover:underline"
+              className="block pl-hsp-xl pr-hsp-sm py-vsp-2xs text-small text-muted hover:text-accent hover:underline break-words"
             >
-              {child.label}
+              <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(child.label) }} />
             </a>
           ))}
         </div>
@@ -422,11 +423,11 @@ function CategoryNode({
             <a
               href={node.href}
               aria-current={isActive ? "page" : undefined}
-              className={`flex-1 flex items-center gap-hsp-xs py-vsp-xs hover:underline focus:underline ${isActive ? "text-bg" : "text-fg"}`}
+              className={`flex-1 flex items-center gap-hsp-xs py-vsp-xs hover:underline focus:underline break-words ${isActive ? "text-bg" : "text-fg"}`}
               style={{ paddingLeft }}
             >
               {depth === 0 && <CategoryLinkIcon className={`w-[14px] ${isActive ? "text-bg" : ""}`} />}
-              {node.label}
+              <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(node.label) }} />
             </a>
             <button
               type="button"
@@ -442,7 +443,7 @@ function CategoryNode({
           <button
             type="button"
             onClick={toggle}
-            className={`flex w-full items-center gap-hsp-md text-left text-small font-semibold py-vsp-xs text-fg hover:underline focus:underline`}
+            className={`flex w-full items-center gap-hsp-md text-left text-small font-semibold py-vsp-xs text-fg hover:underline focus:underline break-words`}
             style={{ paddingLeft }}
             aria-expanded={isExpanded}
             aria-label={isExpanded ? `Collapse ${node.label}` : `Expand ${node.label}`}
@@ -450,7 +451,7 @@ function CategoryNode({
             <span className="aspect-square flex items-center justify-center w-[1.5rem] shrink-0 border border-muted">
               <ToggleChevron isExpanded={isExpanded} className="text-muted" />
             </span>
-            {node.label}
+            <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(node.label) }} />
           </button>
         )}
       </div>
@@ -502,10 +503,10 @@ function LeafNode({
           href={node.href}
           aria-current={isActive ? "page" : undefined}
           className={isRoot
-            ? `flex items-center gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-[4px] text-small font-semibold ${
+            ? `flex items-center gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-[4px] text-small font-semibold break-words ${
                 isActive ? "bg-fg text-bg" : "text-fg hover:underline focus:underline"
               }`
-            : `block py-vsp-2xs pr-[4px] text-small ${
+            : `block py-vsp-2xs pr-[4px] text-small break-words ${
                 isActive
                   ? "bg-fg font-medium text-bg"
                   : "text-muted hover:underline focus:underline"
@@ -514,7 +515,7 @@ function LeafNode({
           style={{ paddingLeft }}
         >
           {isRoot && <CategoryLinkIcon className={`w-[14px] ${isActive ? "text-bg" : ""}`} />}
-          {node.label}
+          <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(node.label) }} />
         </a>
       </div>
     </div>

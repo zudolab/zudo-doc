@@ -1,0 +1,107 @@
+---
+title: Smart Break Utility
+sidebar_position: 11
+description: Inject <wbr> hints into long path-like strings so they wrap cleanly in narrow UI.
+tags:
+  - content
+  - i18n
+---
+
+Long URLs and filesystem paths — for example `packages/create-zudo-doc/templates/base/src/utils/smart-break.tsx` — do not wrap at arbitrary character boundaries. In narrow UI (sidebar labels, breadcrumbs, inline code, search snippets) they overflow the container or push layout wider than it should be.
+
+The `smart-break` utility at `src/utils/smart-break.tsx` solves this by injecting `<wbr>` (word-break opportunity) hints after each delimiter in strings that look path-like. The browser then decides where to break based on available width.
+
+## Automatic Behavior
+
+Several zudo-doc surfaces already apply smart-break automatically — no configuration needed:
+
+- **Sidebar tree labels** — category and page labels
+- **Breadcrumbs** — current-page trail
+- **MDX links** — anchor text inside prose
+- **MDX inline code** — backtick spans inside prose
+- **Search results** — titles and snippets in the search dialog
+- **Doc history** — commit message rendering
+
+You only need to invoke the utility yourself when building a custom component that renders user-provided path-like strings.
+
+## Manual Opt-In: `SmartBreak` Component
+
+For Preact islands (or any `.tsx` component in the project) use the `SmartBreak` component. It stringifies its children and injects `<wbr>` where appropriate:
+
+```tsx
+import { SmartBreak } from "@/utils/smart-break";
+
+export function FileBadge({ path }: { path: string }) {
+  return (
+    <span class="font-mono text-caption">
+      <SmartBreak>{path}</SmartBreak>
+    </span>
+  );
+}
+```
+
+If `path` is not path-like (plain prose, `and/or`, `state-of-the-art`, etc.) it is returned unchanged — no stray wbrs are injected.
+
+## Manual Opt-In: `smartBreakToHtml` Helper
+
+Astro components and any code path that renders an HTML string (for example `set:html` or `dangerouslySetInnerHTML`) cannot mount Preact VNodes directly. Use `smartBreakToHtml` instead — it returns an HTML-escaped string with literal `<wbr>` tags injected:
+
+```astro
+---
+import { smartBreakToHtml } from "@/utils/smart-break";
+
+const { label } = Astro.props;
+---
+
+<span set:html={smartBreakToHtml(label)} />
+```
+
+The returned string is already HTML-escaped, so it is safe to pass to `set:html`.
+
+## How It Decides
+
+Smart-break does two things: it classifies the input with an `isPathLike` heuristic, and — only when the heuristic says yes — it splits on a fixed delimiter set and re-joins with `<wbr>` between segments.
+
+### Delimiter Set
+
+Breaks are inserted after each of these characters:
+
+```
+/  \  -  _  .  :  ?  #  &  =
+```
+
+These cover URL structure (`://`, `?query=value&other=1`, `#anchor`), filesystem paths (`/`, `\`), and compound identifiers (`snake_case`, `kebab-case`, `file.name.ext`).
+
+### The `isPathLike` Heuristic
+
+`isPathLike` returns `true` for strings that look like URLs, paths, or similar delimited structures:
+
+- Contains `://` (any URL)
+- Starts with `/`, `./`, or `../` (POSIX paths)
+- Starts with a Windows drive prefix like `C:\` or `C:/`
+- Has at least two slashes between alphanumerics (nested paths)
+- Has a domain-like `a.b` pattern combined with a slash somewhere
+
+It returns `false` for prose-y fragments that happen to contain delimiters: `and/or`, `well-known`, `state-of-the-art`, `1.2.3-beta.4`, `UI/UX`. These pass through unmodified so normal prose wrapping still applies.
+
+### A Realistic Sample
+
+For an input like:
+
+```
+packages/create-zudo-doc/templates/base/src/utils/smart-break.tsx
+```
+
+`isPathLike` returns `true` and `smartBreakToHtml` emits (conceptually):
+
+```html
+packages<wbr>/create<wbr>-zudo<wbr>-doc<wbr>/templates<wbr>/base<wbr>/src<wbr>/utils<wbr>/smart<wbr>-break<wbr>.tsx
+```
+
+The browser keeps the line intact when the container is wide enough, and breaks at the nearest `<wbr>` when it must — always between segments, never mid-segment.
+
+## When Not to Use It
+
+- Short labels (one or two words) — there is nothing to break.
+- Intentional single-token strings where any visual break is wrong (for example a version tag you must never wrap).
+- CJK prose — the utility targets Latin-alphabet path-like strings; CJK line-wrapping is handled by the [CJK-friendly markdown](./cjk-friendly.mdx) plugin and native browser behavior.

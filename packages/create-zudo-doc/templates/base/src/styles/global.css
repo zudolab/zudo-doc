@@ -397,7 +397,7 @@ body {
 .zd-content :where(td) {
   padding: var(--spacing-vsp-xs) var(--spacing-hsp-md);
   border-bottom: 1px solid var(--color-muted);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .zd-content :where(th) {

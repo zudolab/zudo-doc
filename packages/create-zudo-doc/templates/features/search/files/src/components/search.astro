@@ -126,6 +126,7 @@ const resultCountTemplate = t("search.resultCount", lang);
 
 <script>
   import MiniSearch from "minisearch";
+  import { isPathLike, escapeAndInjectWbr } from "@/utils/smart-break";
 
   interface SearchEntry {
     id: string;
@@ -156,7 +157,16 @@ const resultCountTemplate = t("search.resultCount", lang);
 
   function highlightTerms(text: string, query: string): string {
     const terms = parseQueryTerms(query).map(escapeRegExp);
-    if (terms.length === 0) return escapeHtml(text);
+    // Decide path-likeness once for the whole text. When the string as a
+    // whole is path-like (URL, filesystem path, etc.), each split segment
+    // must unconditionally receive wbr injection — even if the segment
+    // itself is too short for the heuristic to classify correctly.
+    // Byte-identical to smartBreakToHtml(text) for path-like input when
+    // no query terms are present.
+    const pathLike = isPathLike(text);
+    const escapeSegment = (seg: string) =>
+      pathLike ? escapeAndInjectWbr(seg) : escapeHtml(seg);
+    if (terms.length === 0) return escapeSegment(text);
     // Sort by length descending so longer terms match before their prefixes
     terms.sort((a, b) => b.length - a.length);
     const pattern = new RegExp(`(${terms.join("|")})`, "gi");
@@ -164,8 +174,8 @@ const resultCountTemplate = t("search.resultCount", lang);
       .split(pattern)
       .map((segment, i) =>
         i % 2 === 1
-          ? `<mark>${escapeHtml(segment)}</mark>`
-          : escapeHtml(segment),
+          ? `<mark>${escapeSegment(segment)}</mark>`
+          : escapeSegment(segment),
       )
       .join("");
   }

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useActiveHeading } from "@/hooks/use-active-heading";
 import type { Heading } from "@/types/heading";
+import { SmartBreak } from "@/utils/smart-break";
 import clsx from "clsx";
 
 interface TocProps {
@@ -49,7 +50,7 @@ export function Toc({ headings }: TocProps) {
                     : "text-muted hover:underline focus:underline",
                 )}
               >
-                {heading.text}
+                <SmartBreak>{heading.text}</SmartBreak>
               </a>
             </li>
           );
