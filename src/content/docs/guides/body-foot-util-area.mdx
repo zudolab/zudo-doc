@@ -1,0 +1,92 @@
+---
+title: Body Foot Util Area
+description: "The right-aligned strip below every doc page that hosts the Document History trigger and the \"View source on GitHub\" link."
+sidebar_position: 6.1
+tags:
+  - customization
+  - doc-history
+---
+
+Every doc page renders a small utility strip between the article body and the footer. The strip hosts the Document History trigger and a "View source on GitHub" link, both configured through one settings block: `bodyFootUtilArea`.
+
+<Note>
+
+The History button used to render as a floating element. It now lives inside this area — see [Document History](./doc-history.mdx) for the feature itself.
+
+</Note>
+
+## Default configuration
+
+```ts
+export const settings = {
+  // ...
+  githubUrl: "https://github.com/zudolab/zudo-doc",
+  docHistory: true,
+  bodyFootUtilArea: {
+    docHistory: true,
+    viewSourceLink: true,
+  },
+};
+```
+
+Both entries default to `true`. Set the whole block to `false` to hide the strip entirely:
+
+```ts
+bodyFootUtilArea: false,
+```
+
+## Fields
+
+| Field | Type | Description |
+|---|---|---|
+| `docHistory` | boolean | Show the Document History trigger inside the strip. Requires top-level `docHistory: true`. |
+| `viewSourceLink` | boolean | Show the "View source on GitHub" link. Requires top-level `githubUrl` to be set. |
+
+The strip is only rendered if at least one item is visible. If `docHistory: false` AND `viewSourceLink: false` (or both dependencies are off), the strip disappears and the page footer flows directly under the article.
+
+## View source on GitHub
+
+When `viewSourceLink` is enabled and `githubUrl` is set, each page shows a link to its source `.mdx` file on GitHub. The URL is built as:
+
+```
+${githubUrl}/blob/HEAD/${contentDir}/${entryId}
+```
+
+where `contentDir` is the page's content directory (e.g. `src/content/docs` for English, `src/content/docs-ja` for Japanese, or the `docsDir` of the active version) and `entryId` is the page's file path within that directory.
+
+| Page | Resolved URL |
+|---|---|
+| `/docs/guides/header-navigation` | `https://github.com/…/blob/HEAD/src/content/docs/guides/header-navigation.mdx` |
+| `/ja/docs/guides/header-navigation` | `https://github.com/…/blob/HEAD/src/content/docs-ja/guides/header-navigation.mdx` |
+
+<Info>
+
+The URL pins to `HEAD` — not a specific branch. GitHub resolves `HEAD` to your repo's default branch, so the link always points at the latest version without hard-coding a branch name.
+
+</Info>
+
+### Japanese fallback pages
+
+If a Japanese page falls back to English content, the link still points to the actual file that rendered — the English `src/content/docs/` file in that case.
+
+## Hiding a single item
+
+Turn off only the pieces you don't want:
+
+```ts
+// Keep history, hide source link
+bodyFootUtilArea: {
+  docHistory: true,
+  viewSourceLink: false,
+},
+```
+
+```ts
+// Hide history, keep source link
+bodyFootUtilArea: {
+  docHistory: false,
+  viewSourceLink: true,
+},
+```
+
+Toggling `docHistory` here is independent from the top-level `docHistory` flag: the top-level flag controls the overall feature (including build-time generation); the `bodyFootUtilArea.docHistory` flag just controls whether the trigger button appears inside the strip.

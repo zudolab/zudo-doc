@@ -1,0 +1,138 @@
+---
+title: Header Right Items
+description: Configure the right-side cluster of the site header with a data-driven array of actions.
+sidebar_position: 4.1
+tags:
+  - customization
+---
+
+The right side of the header — search, theme toggle, language switcher, version switcher, GitHub link, and the Design Token / AI Chat triggers — is rendered from a single array: `settings.headerRightItems`. Each entry is a discriminated-union item rendered in order.
+
+<Note>
+
+This complements [Header Navigation](./header-navigation.mdx), which configures the **left-side tabs**. Both live in `src/config/settings.ts` and are independent of each other.
+
+</Note>
+
+## Default configuration
+
+```ts
+export const settings = {
+  // ...
+  githubUrl: "https://github.com/zudolab/zudo-doc",
+  headerRightItems: [
+    { type: "trigger", trigger: "design-token-panel" },
+    { type: "trigger", trigger: "ai-chat" },
+    { type: "component", component: "version-switcher" },
+    { type: "component", component: "github-link" },
+    { type: "component", component: "theme-toggle" },
+    { type: "component", component: "language-switcher" },
+  ],
+};
+```
+
+The built-in `Search` component is always rendered at the end of the cluster and is not configured through this array.
+
+## Item types
+
+### `component`
+
+References a built-in UI piece that is gated by its own feature flag.
+
+| Component | Feature flag |
+|---|---|
+| `theme-toggle` | `colorMode` |
+| `language-switcher` | `locales` (needs at least one non-default locale) |
+| `version-switcher` | `versions` |
+| `github-link` | `githubUrl` |
+
+```ts
+{ type: "component", component: "github-link" }
+```
+
+When the associated feature is disabled the entry is skipped — you can leave it in the array unconditionally.
+
+### `trigger`
+
+Opens a built-in modal or panel.
+
+| Trigger | Feature flag |
+|---|---|
+| `design-token-panel` | `designTokenPanel` (or legacy `colorTweakPanel`) |
+| `ai-chat` | `aiAssistant` |
+
+```ts
+{ type: "trigger", trigger: "ai-chat" }
+```
+
+### `link`
+
+A custom external or internal link, rendered with an optional icon.
+
+```ts
+{
+  type: "link",
+  href: "https://discord.example",
+  ariaLabel: "Discord",
+  icon: "github", // only "github" is bundled today
+}
+```
+
+External URLs open in a new tab automatically.
+
+### `html`
+
+Escape hatch for injecting arbitrary markup.
+
+```ts
+{ type: "html", html: '<span class="text-caption">beta</span>' }
+```
+
+Use sparingly — the html string is rendered verbatim.
+
+## Customisation recipes
+
+### Point the GitHub icon at your repo
+
+Set `githubUrl` at the top level of `settings.ts`. The `github-link` component reads that value, so you don't duplicate the URL inside `headerRightItems`.
+
+```ts
+export const settings = {
+  githubUrl: "https://github.com/your-org/your-repo",
+};
+```
+
+Setting `githubUrl: false` removes the icon without having to edit the array.
+
+### Drop an item
+
+Remove it from the array — don't rely on the feature flag to hide it. For example, to hide the AI chat trigger:
+
+```ts
+headerRightItems: [
+  { type: "trigger", trigger: "design-token-panel" },
+  // { type: "trigger", trigger: "ai-chat" },  // removed
+  { type: "component", component: "version-switcher" },
+  { type: "component", component: "github-link" },
+  { type: "component", component: "theme-toggle" },
+  { type: "component", component: "language-switcher" },
+],
+```
+
+### Add a custom link
+
+```ts
+headerRightItems: [
+  // ...existing items
+  {
+    type: "link",
+    href: "https://discord.gg/your-server",
+    ariaLabel: "Discord",
+    icon: "github", // until more icons are bundled
+  },
+],
+```
+
+## Ordering
+
+Items render in the order they appear in the array. The cluster is right-aligned, so the first entry sits closest to the nav and the last entry sits closest to the viewport edge.

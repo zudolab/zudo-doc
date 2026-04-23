@@ -1,0 +1,92 @@
+---
+title: Body Foot Util エリア
+description: ドキュメント本文とフッターの間に配置される、Document History トリガーと「GitHub でソースを見る」リンクを置く右寄せのユーティリティ帯。
+sidebar_position: 6.1
+tags:
+  - customization
+  - doc-history
+---
+
+すべてのドキュメントページには、本文とフッターの間に小さなユーティリティ帯が配置されます。ここには Document History トリガーと「GitHub でソースを見る」リンクが並び、どちらも `bodyFootUtilArea` という 1 つの設定ブロックで制御します。
+
+<Note>
+
+History ボタンは以前はフローティング表示でしたが、いまはこのエリアに内包されています。機能自体の説明は [Document History](./doc-history.mdx) を参照してください。
+
+</Note>
+
+## デフォルト設定
+
+```ts
+export const settings = {
+  // ...
+  githubUrl: "https://github.com/zudolab/zudo-doc",
+  docHistory: true,
+  bodyFootUtilArea: {
+    docHistory: true,
+    viewSourceLink: true,
+  },
+};
+```
+
+両方のフィールドは既定で `true` です。帯全体を非表示にするにはブロックごと `false` にしてください:
+
+```ts
+bodyFootUtilArea: false,
+```
+
+## フィールド
+
+| フィールド | 型 | 説明 |
+|---|---|---|
+| `docHistory` | boolean | 帯の中に Document History トリガーを表示。トップレベルの `docHistory: true` も必要。 |
+| `viewSourceLink` | boolean | 「GitHub でソースを見る」リンクを表示。トップレベルの `githubUrl` の設定が必要。 |
+
+表示すべき要素がひとつも無い(たとえば `docHistory: false` かつ `viewSourceLink: false`、あるいは依存フラグが両方オフ)ときは帯そのものが消え、フッターが本文直下に来ます。
+
+## GitHub でソースを見る
+
+`viewSourceLink` が有効かつ `githubUrl` が設定されていると、各ページに対応する `.mdx` へのリンクが表示されます。URL は次のように組み立てられます:
+
+```
+${githubUrl}/blob/HEAD/${contentDir}/${entryId}
+```
+
+`contentDir` はページが属するコンテンツディレクトリ(英語なら `src/content/docs`、日本語なら `src/content/docs-ja`、バージョンによっては各バージョンの `docsDir`)、`entryId` はその中でのファイルパスです。
+
+| ページ | 解決後の URL |
+|---|---|
+| `/docs/guides/header-navigation` | `https://github.com/…/blob/HEAD/src/content/docs/guides/header-navigation.mdx` |
+| `/ja/docs/guides/header-navigation` | `https://github.com/…/blob/HEAD/src/content/docs-ja/guides/header-navigation.mdx` |
+
+<Info>
+
+URL は特定ブランチではなく `HEAD` に固定されます。`HEAD` は GitHub 側でリポジトリのデフォルトブランチへ解決されるので、ブランチ名を書かずとも常に最新版へ飛ばせます。
+
+</Info>
+
+### 日本語ページのフォールバック
+
+日本語ページが英語コンテンツへフォールバックしている場合、リンクは実際に描画された英語ファイル(`src/content/docs/` 側)を指します。
+
+## 片方だけ隠す
+
+不要な項目だけ `false` にしてください:
+
+```ts
+// 履歴は出す、ソースリンクは隠す
+bodyFootUtilArea: {
+  docHistory: true,
+  viewSourceLink: false,
+},
+```
+
+```ts
+// 履歴を隠す、ソースリンクは出す
+bodyFootUtilArea: {
+  docHistory: false,
+  viewSourceLink: true,
+},
+```
+
+ここでの `docHistory` はトップレベルの `docHistory` フラグとは独立しています。トップレベルのフラグは機能全体(ビルド時の履歴生成を含む)の有効化を司り、`bodyFootUtilArea.docHistory` は帯の中にトリガーボタンを置くかどうかだけを決めます。

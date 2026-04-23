@@ -1,0 +1,138 @@
+---
+title: ヘッダー右側アイテム
+description: サイトヘッダー右側のクラスタ(検索・テーマ・言語切替など)をデータ駆動の配列で構成する。
+sidebar_position: 4.1
+tags:
+  - customization
+---
+
+ヘッダーの右側 — 検索、テーマ切替、言語スイッチャー、バージョンスイッチャー、GitHub リンク、Design Token / AI Chat トリガー — は `settings.headerRightItems` という 1 つの配列からレンダリングされます。各エントリは discriminated union で、配列の順番どおりに描画されます。
+
+<Note>
+
+左側のタブは [ヘッダーナビゲーション](./header-navigation.mdx) で設定します。どちらも `src/config/settings.ts` に定義しますが、互いに独立しています。
+
+</Note>
+
+## デフォルト設定
+
+```ts
+export const settings = {
+  // ...
+  githubUrl: "https://github.com/zudolab/zudo-doc",
+  headerRightItems: [
+    { type: "trigger", trigger: "design-token-panel" },
+    { type: "trigger", trigger: "ai-chat" },
+    { type: "component", component: "version-switcher" },
+    { type: "component", component: "github-link" },
+    { type: "component", component: "theme-toggle" },
+    { type: "component", component: "language-switcher" },
+  ],
+};
+```
+
+組込みの `Search` コンポーネントは常にクラスタ末尾に描画され、この配列では構成しません。
+
+## アイテム種別
+
+### `component`
+
+組み込みの UI 要素を参照します。対応する機能フラグが無効なら自動的にスキップされます。
+
+| コンポーネント | 機能フラグ |
+|---|---|
+| `theme-toggle` | `colorMode` |
+| `language-switcher` | `locales`(少なくとも 1 つの非デフォルトロケールが必要) |
+| `version-switcher` | `versions` |
+| `github-link` | `githubUrl` |
+
+```ts
+{ type: "component", component: "github-link" }
+```
+
+機能を無効化すればエントリは黙って除外されるので、配列に残したままでも問題ありません。
+
+### `trigger`
+
+組み込みのモーダルやパネルを開きます。
+
+| トリガー | 機能フラグ |
+|---|---|
+| `design-token-panel` | `designTokenPanel`(互換エイリアス `colorTweakPanel`) |
+| `ai-chat` | `aiAssistant` |
+
+```ts
+{ type: "trigger", trigger: "ai-chat" }
+```
+
+### `link`
+
+任意の外部/内部リンクをアイコン付きで描画します。
+
+```ts
+{
+  type: "link",
+  href: "https://discord.example",
+  ariaLabel: "Discord",
+  icon: "github", // 現在同梱されているアイコンは "github" のみ
+}
+```
+
+外部 URL は自動的に新しいタブで開きます。
+
+### `html`
+
+任意のマークアップを差し込むためのエスケープハッチです。
+
+```ts
+{ type: "html", html: '<span class="text-caption">beta</span>' }
+```
+
+文字列がそのまま出力されるため、使いどころは限定してください。
+
+## カスタマイズ例
+
+### GitHub アイコンをあなたのリポジトリへ向ける
+
+トップレベルの `githubUrl` を書き換えるだけで済みます。`github-link` コンポーネントはこの値を読むので、配列側に URL を書き足す必要はありません。
+
+```ts
+export const settings = {
+  githubUrl: "https://github.com/your-org/your-repo",
+};
+```
+
+`githubUrl: false` を指定すると、配列を編集せずにアイコンだけ消せます。
+
+### アイテムを外す
+
+機能フラグでの非表示ではなく、配列から該当エントリを削除してください。たとえば AI chat トリガーを隠すなら:
+
+```ts
+headerRightItems: [
+  { type: "trigger", trigger: "design-token-panel" },
+  // { type: "trigger", trigger: "ai-chat" },  // 削除
+  { type: "component", component: "version-switcher" },
+  { type: "component", component: "github-link" },
+  { type: "component", component: "theme-toggle" },
+  { type: "component", component: "language-switcher" },
+],
+```
+
+### カスタムリンクを追加する
+
+```ts
+headerRightItems: [
+  // ...既存のアイテム
+  {
+    type: "link",
+    href: "https://discord.gg/your-server",
+    ariaLabel: "Discord",
+    icon: "github", // 他アイコン同梱までの暫定
+  },
+],
+```
+
+## 並び順
+
+配列に書いた順にレンダリングされます。クラスタは右寄せなので、最初のエントリがナビ寄り、末尾のエントリがビューポート端寄りに配置されます。
