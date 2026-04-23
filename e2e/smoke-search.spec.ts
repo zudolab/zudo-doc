@@ -144,5 +144,39 @@ test.describe("Search dialog", () => {
         `Expected "${text}" to contain one of: ${queryTerms.join(", ")}`,
       ).toBeTruthy();
     }
+
+    // Regression guard (#364): <mark> must resolve its background and
+    // foreground colors from --color-matched-keyword-bg / --color-matched-keyword-fg,
+    // not from --color-warning via color-mix. If someone reverts the CSS to
+    // color-mix(--color-warning ...), computed styles will diverge and this
+    // assertion will fail.
+    const colors = await marks.first().evaluate((el) => {
+      const root = document.documentElement;
+      const rootStyle = getComputedStyle(root);
+      const markStyle = getComputedStyle(el);
+      return {
+        markBg: markStyle.backgroundColor,
+        markFg: markStyle.color,
+        tokenBg: rootStyle.getPropertyValue("--color-matched-keyword-bg").trim(),
+        tokenFg: rootStyle.getPropertyValue("--color-matched-keyword-fg").trim(),
+      };
+    });
+    expect(colors.tokenBg.length, "expected --color-matched-keyword-bg to be defined on :root").toBeGreaterThan(0);
+    expect(colors.tokenFg.length, "expected --color-matched-keyword-fg to be defined on :root").toBeGreaterThan(0);
+    // Resolve the token values to rgb() for a robust computed-style match.
+    const resolved = await page.evaluate(({ bg, fg }) => {
+      const probe = document.createElement("div");
+      probe.style.position = "fixed";
+      probe.style.left = "-9999px";
+      document.body.appendChild(probe);
+      probe.style.backgroundColor = bg;
+      const rgbBg = getComputedStyle(probe).backgroundColor;
+      probe.style.color = fg;
+      const rgbFg = getComputedStyle(probe).color;
+      probe.remove();
+      return { rgbBg, rgbFg };
+    }, { bg: colors.tokenBg, fg: colors.tokenFg });
+    expect(colors.markBg).toBe(resolved.rgbBg);
+    expect(colors.markFg).toBe(resolved.rgbFg);
   });
 });
