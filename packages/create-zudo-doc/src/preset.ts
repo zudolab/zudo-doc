@@ -12,6 +12,7 @@ export interface PresetJson {
   defaultMode?: "light" | "dark";
   respectPrefersColorScheme?: boolean;
   features?: string[];
+  githubUrl?: string;
   packageManager?: "pnpm" | "npm" | "yarn" | "bun";
 }
 
@@ -90,6 +91,7 @@ export function presetToChoices(json: PresetJson): PartialChoices {
     choices.respectPrefersColorScheme = json.respectPrefersColorScheme;
   }
   if (json.packageManager) choices.packageManager = json.packageManager;
+  if (json.githubUrl !== undefined) choices.githubUrl = json.githubUrl;
 
   if (json.features) {
     // Warn about unrecognized feature names

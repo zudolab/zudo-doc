@@ -72,6 +72,17 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     }
   }
 
+  // body-foot-util-area.astro ships the DocHistory component inline (byte-
+  // identical to main/src/components/body-foot-util-area.astro). Selecting
+  // bodyFootUtil without docHistory would leave an unresolved import, so we
+  // silently co-enable docHistory.
+  if (
+    choices.features.includes("bodyFootUtil") &&
+    !choices.features.includes("docHistory")
+  ) {
+    choices.features = [...choices.features, "docHistory"];
+  }
+
   // Resolve template directories
   const pkgRoot = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),

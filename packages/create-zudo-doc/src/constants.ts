@@ -160,6 +160,13 @@ export const FEATURES: Feature[] = [
     cliFlag: "doc-history",
   },
   {
+    value: "bodyFootUtil",
+    label: "Body foot util area",
+    hint: "Right-aligned strip below each doc: doc history trigger + View source on GitHub link",
+    default: false,
+    cliFlag: "body-foot-util",
+  },
+  {
     value: "llmsTxt",
     label: "llms.txt",
     hint: "Generate llms.txt for LLM consumption",

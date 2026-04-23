@@ -15,6 +15,9 @@ export interface CreateOptions {
   respectPrefersColorScheme?: boolean;
   defaultMode?: "light" | "dark";
   features: string[];
+  /** GitHub repository URL — drives the header GitHub link and body-foot
+   *  "View source on GitHub" link. Empty = disabled. */
+  githubUrl?: string;
   packageManager: "pnpm" | "npm" | "yarn" | "bun";
   /** Install dependencies after scaffolding (default: false) */
   install?: boolean;

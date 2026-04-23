@@ -29,6 +29,8 @@ export interface CliArgs {
   changelog?: boolean;
   tagGovernance?: boolean;
   footerTaglist?: boolean;
+  bodyFootUtil?: boolean;
+  githubUrl?: string;
   preset?: string;
   pm?: "pnpm" | "npm" | "yarn" | "bun";
   install?: boolean;
@@ -46,6 +48,7 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
       "light-scheme",
       "dark-scheme",
       "default-mode",
+      "github-url",
       "preset",
       "pm",
     ],
@@ -83,6 +86,7 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
   if (raw["default-mode"]) args.defaultMode = raw["default-mode"];
   if (raw.preset) args.preset = raw.preset;
   if (raw.pm) args.pm = raw.pm;
+  if (typeof raw["github-url"] === "string") args.githubUrl = raw["github-url"];
 
   // Boolean flags — only set if explicitly passed in argv
   if (wasPassed("respect-system-preference")) {
@@ -123,6 +127,7 @@ ${pc.bold("Options:")}
   --[no-]respect-system-preference
                                Respect OS color scheme preference
 ${featureHelp}
+  --github-url <url>           GitHub repository URL (drives header link + source link)
   --preset <path>              Load settings from a JSON preset file (use "-" for stdin)
   --pm <manager>               pnpm | npm | yarn | bun
   --[no-]install               Install dependencies after scaffolding

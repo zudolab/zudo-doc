@@ -22,6 +22,7 @@ import { tauriFeature } from "./tauri.js";
 import { imageEnlargeFeature } from "./image-enlarge.js";
 import { tagGovernanceFeature } from "./tag-governance.js";
 import { footerTaglistFeature } from "./footer-taglist.js";
+import { bodyFootUtilFeature } from "./body-foot-util.js";
 
 /**
  * All feature modules keyed by their feature name.
@@ -38,6 +39,7 @@ export const featureModules: Record<string, FeatureModule> = {
   sidebarToggle: sidebarToggleFeature,
   versioning: versioningFeature,
   docHistory: docHistoryFeature,
+  bodyFootUtil: bodyFootUtilFeature,
   llmsTxt: llmsTxtFeature,
   tauri: tauriFeature,
   imageEnlarge: imageEnlargeFeature,

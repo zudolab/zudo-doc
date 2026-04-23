@@ -14,6 +14,9 @@ export interface UserChoices {
   defaultMode?: "light" | "dark";
   // Features
   features: string[];
+  // GitHub repository URL — drives the GitHub link in the header and the
+  // "View source on GitHub" link in the body-foot util area. Empty = disabled.
+  githubUrl?: string;
   // Package manager
   packageManager: "pnpm" | "npm" | "yarn" | "bun";
 }
@@ -28,6 +31,7 @@ export interface PartialChoices {
   respectPrefersColorScheme?: boolean;
   defaultMode?: "light" | "dark";
   features?: Partial<Record<string, boolean>>;
+  githubUrl?: string;
   packageManager?: "pnpm" | "npm" | "yarn" | "bun";
 }
 
@@ -224,7 +228,24 @@ export async function runPrompts(
     features = result;
   }
 
-  // 5. Package manager
+  // 5. GitHub URL (drives header GitHub icon + view-source link)
+  let githubUrl: string | undefined = prefilled.githubUrl;
+  if (githubUrl === undefined) {
+    const result = await p.text({
+      message: "GitHub repository URL (optional, leave blank to disable):",
+      placeholder: "https://github.com/you/your-repo",
+      defaultValue: "",
+      validate(value) {
+        if (!value) return;
+        if (!/^https?:\/\//.test(value))
+          return "URL must start with http(s)://";
+      },
+    });
+    if (p.isCancel(result)) process.exit(0);
+    githubUrl = result;
+  }
+
+  // 6. Package manager
   let packageManager: "pnpm" | "npm" | "yarn" | "bun";
   if (prefilled.packageManager) {
     packageManager = prefilled.packageManager;
@@ -252,6 +273,7 @@ export async function runPrompts(
     respectPrefersColorScheme,
     defaultMode,
     features,
+    githubUrl,
     packageManager,
   };
 }

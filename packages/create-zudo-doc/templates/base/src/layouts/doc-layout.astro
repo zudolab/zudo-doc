@@ -23,6 +23,8 @@ interface Props {
   description?: string;
   lang?: Locale;
   currentSlug?: string;
+  contentDir?: string;
+  entryId?: string;
   headings?: Heading[];
   unlisted?: boolean;
   currentVersion?: string;
@@ -36,6 +38,8 @@ const {
   description,
   lang = defaultLocale,
   currentSlug,
+  contentDir,
+  entryId,
   headings = [],
   unlisted = false,
   currentVersion,
@@ -43,6 +47,9 @@ const {
   hideSidebar = false,
   hideToc = false,
 } = Astro.props;
+// Silence unused-var warnings when no feature consumes these.
+void contentDir;
+void entryId;
 const latestUrl = currentSlug ? docsUrl(currentSlug, lang) : undefined;
 // @slot:doc-layout:frontmatter
 const fullTitle =

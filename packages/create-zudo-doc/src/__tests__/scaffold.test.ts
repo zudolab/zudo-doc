@@ -399,7 +399,8 @@ describe("scaffold — docHistory feature", () => {
       defaultLang: "en",
       colorSchemeMode: "single",
       singleScheme: "Default Dark",
-      features: ["search", "docHistory", "designTokenPanel"],
+      features: ["search", "docHistory", "designTokenPanel", "bodyFootUtil"],
+      githubUrl: "https://github.com/example/demo",
       packageManager: "pnpm",
     };
     await scaffold(choices);
@@ -407,11 +408,49 @@ describe("scaffold — docHistory feature", () => {
       projectPath("test-header-footer-tweak", "src/config/settings.ts"),
       "utf-8",
     );
-    expect(content).toContain("githubUrl: false");
-    expect(content).toContain("bodyFootUtilArea:");
+    expect(content).toContain(
+      'githubUrl: "https://github.com/example/demo"',
+    );
+    expect(content).toContain("bodyFootUtilArea: {");
     expect(content).toContain("viewSourceLink: true");
     expect(content).toContain('trigger: "design-token-panel"');
     expect(content).toContain('component: "github-link"');
+  });
+
+  it("omits bodyFootUtilArea when bodyFootUtil feature is not selected", async () => {
+    const choices: UserChoices = {
+      projectName: "test-no-body-foot-util",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "docHistory"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-no-body-foot-util", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("bodyFootUtilArea: false");
+    expect(content).toContain("githubUrl: false");
+  });
+
+  it("auto-enables docHistory when bodyFootUtil is selected without it", async () => {
+    const choices: UserChoices = {
+      projectName: "test-body-foot-util-auto",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "bodyFootUtil"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-body-foot-util-auto", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("docHistory: true");
+    expect(content).toContain("bodyFootUtilArea: {");
   });
 });
 

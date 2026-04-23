@@ -70,7 +70,12 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  trailingSlash: false as boolean,`);
   lines.push(`  noindex: false as boolean,`);
   lines.push(`  editUrl: false as string | false,`);
-  lines.push(`  githubUrl: false as string | false,`);
+  const rawGithubUrl = (choices.githubUrl ?? "").trim();
+  if (rawGithubUrl) {
+    lines.push(`  githubUrl: ${JSON.stringify(rawGithubUrl)} as string | false,`);
+  } else {
+    lines.push(`  githubUrl: false as string | false,`);
+  }
   lines.push(`  siteUrl: "" as string,`);
   lines.push(`  docsDir: "src/content/docs",`);
 
@@ -115,12 +120,18 @@ export function generateSettingsFile(choices: UserChoices): string {
   } else {
     lines.push(`  docHistory: false,`);
   }
-  lines.push(`  bodyFootUtilArea: {`);
-  lines.push(`    docHistory: ${choices.features.includes("docHistory")},`);
-  lines.push(`    viewSourceLink: true,`);
-  lines.push(
-    `  } satisfies BodyFootUtilAreaConfig as BodyFootUtilAreaConfig | false,`,
-  );
+  if (choices.features.includes("bodyFootUtil")) {
+    lines.push(`  bodyFootUtilArea: {`);
+    lines.push(`    docHistory: ${choices.features.includes("docHistory")},`);
+    lines.push(`    viewSourceLink: ${Boolean(rawGithubUrl)},`);
+    lines.push(
+      `  } satisfies BodyFootUtilAreaConfig as BodyFootUtilAreaConfig | false,`,
+    );
+  } else {
+    lines.push(
+      `  bodyFootUtilArea: false as BodyFootUtilAreaConfig | false,`,
+    );
+  }
 
   if (choices.features.includes("designTokenPanel")) {
     lines.push(`  designTokenPanel: true as boolean,`);

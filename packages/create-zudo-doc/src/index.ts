@@ -58,6 +58,7 @@ async function main() {
     prefilled.respectPrefersColorScheme = args.respectSystemPreference;
   }
   if (args.pm) prefilled.packageManager = args.pm;
+  if (args.githubUrl !== undefined) prefilled.githubUrl = args.githubUrl;
 
   // Build feature overrides from explicit flags — driven by FEATURES constant
   const featureFlags: Partial<Record<string, boolean>> = {};
@@ -83,6 +84,7 @@ async function main() {
       prefilled.singleScheme ??= "Dracula";
     }
     prefilled.packageManager ??= "pnpm";
+    prefilled.githubUrl ??= "";
     // For features: set defaults for any not explicitly specified
     const featureDefaults: Partial<Record<string, boolean>> = {};
     for (const f of FEATURES) {
