@@ -4,7 +4,7 @@ import Header from "@/components/header.astro";
 import Sidebar from "@/components/sidebar.astro";
 import { Toc } from "@/components/toc";
 import { MobileToc } from "@/components/mobile-toc";
-import { DocHistory } from "@/components/doc-history";
+import BodyFootUtilArea from "@/components/body-foot-util-area.astro";
 import ColorSchemeProvider from "@/components/color-scheme-provider.astro";
 import CodeBlockEnhancer from "@/components/code-block-enhancer.astro";
 import TabsInit from "@/components/tabs-init.astro";
@@ -38,6 +38,8 @@ interface Props {
   description?: string;
   lang?: Locale;
   currentSlug?: string;
+  contentDir?: string;
+  entryId?: string;
   headings?: Heading[];
   unlisted?: boolean;
   currentVersion?: string;
@@ -51,6 +53,8 @@ const {
   description,
   lang = defaultLocale,
   currentSlug,
+  contentDir,
+  entryId,
   headings = [],
   unlisted = false,
   currentVersion,
@@ -231,9 +235,12 @@ const contentTransition = {
             <article class="zd-content max-w-none">
               <slot />
             </article>
-            {settings.docHistory && currentSlug && (
-              <DocHistory slug={currentSlug} locale={lang !== defaultLocale ? lang : undefined} basePath={withBase("/")} client:idle />
-            )}
+            <BodyFootUtilArea
+              currentSlug={currentSlug}
+              lang={lang}
+              contentDir={contentDir}
+              entryId={entryId}
+            />
           </main>
 
           {/* Table of contents */}

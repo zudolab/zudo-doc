@@ -19,6 +19,12 @@ export function filterHeaderRightItems(
     }
 
     if (item.type === "component") {
+      if (item.component === "theme-toggle") {
+        return Boolean(settings.colorMode);
+      }
+      if (item.component === "language-switcher") {
+        return Object.keys(settings.locales).length > 0;
+      }
       if (item.component === "version-switcher") {
         return Boolean(settings.versions);
       }

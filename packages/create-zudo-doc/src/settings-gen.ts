@@ -8,24 +8,28 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`export type {`);
   lines.push(`  HeaderNavChildItem,`);
   lines.push(`  HeaderNavItem,`);
+  lines.push(`  HeaderRightItem,`);
   lines.push(`  ColorModeConfig,`);
   lines.push(`  HtmlPreviewConfig,`);
   lines.push(`  FrontmatterPreviewConfig,`);
   lines.push(`  LocaleConfig,`);
   lines.push(`  VersionConfig,`);
   lines.push(`  FooterConfig,`);
+  lines.push(`  BodyFootUtilAreaConfig,`);
   lines.push(`  TagPlacement,`);
   lines.push(`  TagGovernanceMode,`);
   lines.push(`  TagVocabularyEntry,`);
   lines.push(`} from "./settings-types";`);
   lines.push(`import type {`);
   lines.push(`  HeaderNavItem,`);
+  lines.push(`  HeaderRightItem,`);
   lines.push(`  ColorModeConfig,`);
   lines.push(`  HtmlPreviewConfig,`);
   lines.push(`  FrontmatterPreviewConfig,`);
   lines.push(`  LocaleConfig,`);
   lines.push(`  VersionConfig,`);
   lines.push(`  FooterConfig,`);
+  lines.push(`  BodyFootUtilAreaConfig,`);
   lines.push(`  TagPlacement,`);
   lines.push(`  TagGovernanceMode,`);
   lines.push(`} from "./settings-types";`);
@@ -66,6 +70,7 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  trailingSlash: false as boolean,`);
   lines.push(`  noindex: false as boolean,`);
   lines.push(`  editUrl: false as string | false,`);
+  lines.push(`  githubUrl: false as string | false,`);
   lines.push(`  siteUrl: "" as string,`);
   lines.push(`  docsDir: "src/content/docs",`);
 
@@ -110,6 +115,12 @@ export function generateSettingsFile(choices: UserChoices): string {
   } else {
     lines.push(`  docHistory: false,`);
   }
+  lines.push(`  bodyFootUtilArea: {`);
+  lines.push(`    docHistory: ${choices.features.includes("docHistory")},`);
+  lines.push(`    viewSourceLink: true,`);
+  lines.push(
+    `  } satisfies BodyFootUtilAreaConfig as BodyFootUtilAreaConfig | false,`,
+  );
 
   if (choices.features.includes("designTokenPanel")) {
     lines.push(`  designTokenPanel: true as boolean,`);
@@ -207,6 +218,19 @@ export function generateSettingsFile(choices: UserChoices): string {
     );
   }
   lines.push(`  ] as HeaderNavItem[],`);
+  lines.push(`  headerRightItems: [`);
+  if (choices.features.includes("designTokenPanel")) {
+    lines.push(`    { type: "trigger", trigger: "design-token-panel" },`);
+  }
+  if (choices.features.includes("versioning")) {
+    lines.push(`    { type: "component", component: "version-switcher" },`);
+  }
+  lines.push(`    { type: "component", component: "github-link" },`);
+  lines.push(`    { type: "component", component: "theme-toggle" },`);
+  if (choices.features.includes("i18n")) {
+    lines.push(`    { type: "component", component: "language-switcher" },`);
+  }
+  lines.push(`  ] as HeaderRightItem[],`);
   lines.push(`};`);
 
   return lines.join("\n") + "\n";
