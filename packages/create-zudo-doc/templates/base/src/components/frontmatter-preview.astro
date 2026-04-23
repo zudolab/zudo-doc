@@ -3,6 +3,7 @@ import { settings } from "@/config/settings";
 import { DEFAULT_FRONTMATTER_IGNORE_KEYS } from "@/config/frontmatter-preview-defaults";
 import { t, type Locale } from "@/config/i18n";
 import { frontmatterRenderers } from "@/config/frontmatter-preview-renderers";
+import { smartBreakToHtml } from "@/utils/smart-break";
 
 interface Props {
   data: Record<string, unknown>;
@@ -81,9 +82,9 @@ function renderValue(v: unknown): { text?: string; code?: string } {
                       <code class="bg-code-bg text-code-fg px-hsp-xs py-0 rounded text-micro font-mono">
                         {rendered.code}
                       </code>
-                    ) : (
-                      rendered?.text
-                    )}
+                    ) : rendered?.text !== undefined ? (
+                      <Fragment set:html={smartBreakToHtml(rendered.text)} />
+                    ) : null}
                   </td>
                 </tr>
               );

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import type { Heading } from "@/types/heading";
+import { SmartBreak } from "@/utils/smart-break";
 import clsx from "clsx";
 
 interface MobileTocProps {
@@ -59,7 +60,7 @@ export function MobileToc({ headings, title = "On this page" }: MobileTocProps) 
                 onClick={() => setOpen(false)}
                 className="block py-vsp-2xs text-small text-muted hover:text-fg hover:underline focus-visible:underline"
               >
-                {heading.text}
+                <SmartBreak>{heading.text}</SmartBreak>
               </a>
             </li>
           ))}
