@@ -1,5 +1,6 @@
 ---
 import type { BreadcrumbItem } from "@/utils/docs";
+import { smartBreakToHtml } from "@/utils/smart-break";
 
 interface Props {
   items: BreadcrumbItem[];
@@ -53,10 +54,10 @@ const { items } = Astro.props;
                     />
                   </svg>
                 )}
-                {item.label}
+                <span set:html={smartBreakToHtml(item.label)} />
               </a>
             ) : (
-              <span class="text-fg">{item.label}</span>
+              <span class="text-fg" set:html={smartBreakToHtml(item.label)} />
             )}
           </li>
         ))}

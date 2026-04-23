@@ -80,6 +80,32 @@ export function SmartBreak({ children }: { children?: unknown }): VNode {
 }
 
 /**
+ * HTML-escape `text` and inject a literal "<wbr>" tag after every
+ * delimiter character. Unlike smartBreakToHtml, this does NOT check
+ * isPathLike — it unconditionally breaks on delimiters.
+ *
+ * Useful when a caller has already decided that a larger string is
+ * path-like and wants to apply the same wbr-injection rule to a
+ * substring (e.g. a segment produced by splitting on a search-query
+ * regex) without re-running the heuristic on fragments that are too
+ * short to be classified correctly on their own.
+ *
+ * Byte-identical to smartBreakToHtml for inputs where isPathLike is
+ * true, so the shared contract holds.
+ */
+export function escapeAndInjectWbr(text: string): string {
+  const parts = text.split(DELIM_SPLIT);
+  let out = "";
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (part === "") continue;
+    out += htmlEscape(part);
+    if (i % 2 === 1) out += "<wbr>";
+  }
+  return out;
+}
+
+/**
  * HTML-string counterpart of smartBreak. Produces a safe HTML string
  * with literal "<wbr>" tags injected after each delimiter in path-like
  * input, and HTML-escaped text elsewhere. For non-path input, returns
@@ -90,13 +116,5 @@ export function SmartBreak({ children }: { children?: unknown }): VNode {
  */
 export function smartBreakToHtml(text: string): string {
   if (!isPathLike(text)) return htmlEscape(text);
-  const parts = text.split(DELIM_SPLIT);
-  let out = "";
-  for (let i = 0; i < parts.length; i++) {
-    const part = parts[i];
-    if (part === "") continue;
-    out += htmlEscape(part);
-    if (i % 2 === 1) out += "<wbr>";
-  }
-  return out;
+  return escapeAndInjectWbr(text);
 }
