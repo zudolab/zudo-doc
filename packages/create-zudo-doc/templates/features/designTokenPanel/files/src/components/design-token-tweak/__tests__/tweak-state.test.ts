@@ -147,6 +147,47 @@ describe("loadPersistedState — v1→v2 migration", () => {
     expect(storage.entries[STORAGE_KEY_V1]).toBeDefined();
   });
 
+  it("fills in missing semantic keys from defaults when v2 state predates them", () => {
+    // Simulate a v2 state written by an older build that did not yet know
+    // about `matchedKeywordBg` / `matchedKeywordFg`. The persisted
+    // semanticMappings has the old keys only; loading it should backfill the
+    // new keys from the caller-supplied defaults rather than leaving them
+    // undefined (which would blow up `applyColorState`).
+    const legacyV2 = {
+      color: {
+        palette: palette16,
+        background: 1,
+        foreground: 14,
+        cursor: 5,
+        selectionBg: 2,
+        selectionFg: 13,
+        // Missing `matchedKeywordBg` / `matchedKeywordFg` on purpose.
+        semanticMappings: { accent: 6, muted: 8 },
+        shikiTheme: "tokyo-night",
+      },
+    };
+    const freshDefaults: ColorTweakState = {
+      ...defaults,
+      semanticMappings: {
+        ...defaults.semanticMappings,
+        matchedKeywordBg: 3,
+        matchedKeywordFg: 15,
+      },
+    };
+    const storage = makeStorage({ [STORAGE_KEY_V2]: JSON.stringify(legacyV2) });
+
+    const result = loadPersistedState(storage, freshDefaults);
+
+    expect(result).not.toBeNull();
+    // User-persisted values preserved.
+    expect(result!.color.background).toBe(1);
+    expect(result!.color.semanticMappings.accent).toBe(6);
+    // New keys hydrated from defaults — this is what protects users who
+    // upgrade into a build that added new semantic tokens.
+    expect(result!.color.semanticMappings.matchedKeywordBg).toBe(3);
+    expect(result!.color.semanticMappings.matchedKeywordFg).toBe(15);
+  });
+
   it("falls back to v1 when v2 is malformed (with console.warn)", () => {
     const v1 = makeV1();
     const storage = makeStorage({
