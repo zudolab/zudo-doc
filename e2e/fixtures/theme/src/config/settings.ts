@@ -1,5 +1,6 @@
 import type {
   HeaderNavItem,
+  HeaderRightItem,
   ColorModeConfig,
   LocaleConfig,
 } from "./settings-types";
@@ -35,4 +36,8 @@ export const settings = {
       categoryMatch: "getting-started",
     },
   ] as HeaderNavItem[],
+  headerRightItems: [
+    { type: "trigger", trigger: "design-token-panel" },
+    { type: "component", component: "theme-toggle" },
+  ] as HeaderRightItem[],
 };
