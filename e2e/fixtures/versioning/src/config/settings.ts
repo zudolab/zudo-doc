@@ -1,5 +1,6 @@
 import type {
   HeaderNavItem,
+  HeaderRightItem,
   ColorModeConfig,
   LocaleConfig,
   VersionConfig,
@@ -39,4 +40,7 @@ export const settings = {
       categoryMatch: "getting-started",
     },
   ] as HeaderNavItem[],
+  headerRightItems: [
+    { type: "component", component: "version-switcher" },
+  ] as HeaderRightItem[],
 };

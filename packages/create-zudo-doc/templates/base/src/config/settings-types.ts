@@ -9,6 +9,48 @@ export interface HeaderNavItem extends HeaderNavChildItem {
   children?: HeaderNavChildItem[];
 }
 
+export type HeaderRightComponentName =
+  | "theme-toggle"
+  | "language-switcher"
+  | "version-switcher"
+  | "github-link";
+
+export type HeaderRightTriggerName = "design-token-panel" | "ai-chat";
+
+export interface HeaderRightComponentItem {
+  type: "component";
+  component: HeaderRightComponentName;
+}
+
+export interface HeaderRightTriggerItem {
+  type: "trigger";
+  trigger: HeaderRightTriggerName;
+}
+
+export interface HeaderRightLinkItem {
+  type: "link";
+  href: string;
+  label?: string;
+  ariaLabel?: string;
+  icon?: "github";
+}
+
+export interface HeaderRightHtmlItem {
+  type: "html";
+  html: string;
+}
+
+export type HeaderRightItem =
+  | HeaderRightComponentItem
+  | HeaderRightTriggerItem
+  | HeaderRightLinkItem
+  | HeaderRightHtmlItem;
+
+export interface BodyFootUtilAreaConfig {
+  docHistory?: boolean;
+  viewSourceLink?: boolean;
+}
+
 export interface ColorModeConfig {
   defaultMode: "light" | "dark";
   lightScheme: string;

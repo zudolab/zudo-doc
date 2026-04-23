@@ -392,6 +392,27 @@ describe("scaffold — docHistory feature", () => {
     );
     expect(content).toContain("docHistory: false");
   });
+
+  it("emits bodyFootUtilArea defaults and headerRightItems", async () => {
+    const choices: UserChoices = {
+      projectName: "test-header-footer-tweak",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "docHistory", "designTokenPanel"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-header-footer-tweak", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("githubUrl: false");
+    expect(content).toContain("bodyFootUtilArea:");
+    expect(content).toContain("viewSourceLink: true");
+    expect(content).toContain('trigger: "design-token-panel"');
+    expect(content).toContain('component: "github-link"');
+  });
 });
 
 describe("scaffold — llmsTxt feature", () => {
