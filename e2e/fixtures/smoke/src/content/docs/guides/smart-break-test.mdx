@@ -1,0 +1,31 @@
+---
+title: Smart Break Test
+sidebar_position: 15
+sidebar_label: src/components/very/long/path/to/some/module/file-name.ts
+description: Fixture page for smart-break (<wbr>) visual, a11y, and copy-paste verification.
+---
+
+## Inline code wrapping
+
+Visit this resource at `https://example.com/very/long/path/to/some/resource/that-should-wrap-on-narrow.html` to see how inline code wraps on narrow viewports.
+
+Another path example: `packages/doc-history-server/src/cli/generate-history.ts` which should also wrap.
+
+## Table cell wrapping
+
+| Key | URL |
+| --- | --- |
+| docs | https://example.com/very/long/path/to/some/resource/that-should-wrap-in-table-cell.html |
+| api | https://api.example.com/v1/endpoints/users/profiles/settings/preferences.json |
+
+## Link wrapping
+
+See the reference at [https://example.com/very/long/path/to/some/documentation/page-about-everything.html](https://example.com/very/long/path/to/some/documentation/page-about-everything.html) for more.
+
+## Fenced code block regression
+
+The fenced block below must NOT wrap unless the user toggles word wrap:
+
+```ts
+const longVariable = "this is a deliberately long line that must NOT wrap unless the user toggles word-wrap explicitly, so the regression guard catches any accidental overflow-wrap on pre.astro-code";
+```
