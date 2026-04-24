@@ -1,6 +1,5 @@
 ---
 import { render } from "astro:content";
-import { getDocsCollection } from "@/utils/get-docs-collection";
 import DocLayout from "@/layouts/doc-layout.astro";
 import Note from "@/components/admonitions/note.astro";
 import Tip from "@/components/admonitions/tip.astro";
@@ -22,124 +21,98 @@ import {
   buildBreadcrumbs,
   flattenTree,
   findNode,
-  loadCategoryMeta,
   collectAutoIndexNodes,
   isNavVisible,
   type NavNode,
 } from "@/utils/docs";
 import type { Heading } from "@/types/heading";
 import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
-import { t, getContentDir } from "@/config/i18n";
+import { t, getContentDir, type Locale } from "@/config/i18n";
+import { loadLocaleDocs } from "@/utils/locale-docs";
 import { docsUrl } from "@/utils/base";
 import EditLink from "@/components/edit-link.astro";
 import { settings } from "@/config/settings";
 import DocMetainfo from "@/components/doc-metainfo.astro";
 import DocTags from "@/components/doc-tags.astro";
 import FrontmatterPreview from "@/components/frontmatter-preview.astro";
-import type { DocsEntry } from "@/types/docs-entry";
 
 export async function getStaticPaths() {
-  const localeDocs = await getDocsCollection("docs-ja");
-  const baseDocs = await getDocsCollection("docs");
+  const paths = [];
 
-  // In production, exclude drafts. In dev, include them for preview.
-  const filterDrafts = (docs: DocsEntry[]) =>
-    import.meta.env.PROD ? docs.filter((doc) => !doc.data.draft) : docs;
+  for (const locale of Object.keys(settings.locales) as Locale[]) {
+    const { allDocs, fallbackSlugs, categoryMeta } =
+      await loadLocaleDocs(locale);
 
-  const filteredLocaleDocs = filterDrafts(localeDocs);
-  const filteredBaseDocs = filterDrafts(baseDocs);
+    // Exclude unlisted pages from nav tree (used for sidebar, prev/next)
+    const navDocs = allDocs.filter(isNavVisible);
+    const tree = buildNavTree(navDocs, locale, categoryMeta);
+    // Full tree including unlisted pages (used for breadcrumbs)
+    const fullTree = buildNavTree(allDocs, locale, categoryMeta);
 
-  // Build slug set from locale docs (locale takes priority)
-  const localeSlugSet = new Set(
-    filteredLocaleDocs.map((d) => d.data.slug ?? toRouteSlug(d.id)),
-  );
+    // Regular doc pages
+    for (const entry of allDocs) {
+      const slug = entry.data.slug ?? toRouteSlug(entry.id);
+      const isFallback = fallbackSlugs.has(slug);
+      const navSection = getNavSectionForSlug(slug);
+      const subtree = getNavSubtree(tree, navSection);
+      const flat = flattenTree(subtree);
+      const idx = flat.findIndex((n) => n.slug === slug);
 
-  // Merge: locale docs first, then base docs for missing pages
-  const allDocs = [
-    ...filteredLocaleDocs,
-    ...filteredBaseDocs.filter(
-      (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id)),
-    ),
-  ];
+      let prevNode = idx > 0 ? flat[idx - 1] : null;
+      let nextNode = idx >= 0 && idx < flat.length - 1 ? flat[idx + 1] : null;
 
-  // Track which slugs are fallback (from base collection)
-  const fallbackSlugs = new Set(
-    filteredBaseDocs
-      .filter((d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id)))
-      .map((d) => d.data.slug ?? toRouteSlug(d.id)),
-  );
-
-  // Merge category metadata: base first, locale overrides
-  const baseCategoryMeta = loadCategoryMeta(settings.docsDir);
-  const localeCategoryMeta = loadCategoryMeta(getContentDir("ja"));
-  const categoryMeta = new Map([...baseCategoryMeta, ...localeCategoryMeta]);
-
-  // Exclude unlisted pages from nav tree (used for sidebar, prev/next)
-  const navDocs = allDocs.filter(isNavVisible);
-  const tree = buildNavTree(navDocs, "ja", categoryMeta);
-  // Full tree including unlisted pages (used for breadcrumbs)
-  const fullTree = buildNavTree(allDocs, "ja", categoryMeta);
-
-  // Regular doc pages
-  const docPaths = allDocs.map((entry) => {
-    const slug = entry.data.slug ?? toRouteSlug(entry.id);
-    const isFallback = fallbackSlugs.has(slug);
-    const navSection = getNavSectionForSlug(slug);
-    const subtree = getNavSubtree(tree, navSection);
-    const flat = flattenTree(subtree);
-    const idx = flat.findIndex((n) => n.slug === slug);
-
-    let prevNode = idx > 0 ? flat[idx - 1] : null;
-    let nextNode = idx >= 0 && idx < flat.length - 1 ? flat[idx + 1] : null;
-
-    // Apply frontmatter overrides
-    if (entry.data.pagination_prev !== undefined) {
-      if (entry.data.pagination_prev === null) {
-        prevNode = null;
-      } else {
-        const found = findNode(tree, entry.data.pagination_prev);
-        prevNode = found ?? prevNode;
+      // Apply frontmatter overrides
+      if (entry.data.pagination_prev !== undefined) {
+        if (entry.data.pagination_prev === null) {
+          prevNode = null;
+        } else {
+          const found = findNode(tree, entry.data.pagination_prev);
+          prevNode = found ?? prevNode;
+        }
       }
-    }
-    if (entry.data.pagination_next !== undefined) {
-      if (entry.data.pagination_next === null) {
-        nextNode = null;
-      } else {
-        const found = findNode(tree, entry.data.pagination_next);
-        nextNode = found ?? nextNode;
+      if (entry.data.pagination_next !== undefined) {
+        if (entry.data.pagination_next === null) {
+          nextNode = null;
+        } else {
+          const found = findNode(tree, entry.data.pagination_next);
+          nextNode = found ?? nextNode;
+        }
       }
+
+      paths.push({
+        params: { locale, slug },
+        props: {
+          entry,
+          contentDir: isFallback ? settings.docsDir : getContentDir(locale),
+          isFallback,
+          breadcrumbs: buildBreadcrumbs(fullTree, slug, locale),
+          prev: prevNode,
+          next: nextNode,
+        },
+      });
     }
 
-    return {
-      params: { slug },
-      props: {
-        entry,
-        contentDir: isFallback ? settings.docsDir : getContentDir("ja"),
-        isFallback,
-        breadcrumbs: buildBreadcrumbs(fullTree, slug, "ja"),
-        prev: prevNode,
-        next: nextNode,
-      },
-    };
-  });
+    // Auto-generated index pages for categories without index.mdx
+    for (const node of collectAutoIndexNodes(tree)) {
+      paths.push({
+        params: { locale, slug: node.slug },
+        props: {
+          entry: null,
+          contentDir: getContentDir(locale),
+          isFallback: false,
+          autoIndex: node,
+          breadcrumbs: buildBreadcrumbs(fullTree, node.slug, locale),
+          prev: null,
+          next: null,
+        },
+      });
+    }
+  }
 
-  // Auto-generated index pages for categories without index.mdx
-  const autoIndexPaths = collectAutoIndexNodes(tree).map((node) => ({
-    params: { slug: node.slug },
-    props: {
-      entry: null,
-      contentDir: getContentDir("ja"),
-      isFallback: false,
-      autoIndex: node,
-      breadcrumbs: buildBreadcrumbs(fullTree, node.slug, "ja"),
-      prev: null,
-      next: null,
-    },
-  }));
-
-  return [...docPaths, ...autoIndexPaths];
+  return paths;
 }
 
+const lang = Astro.params.locale as Locale;
 const {
   entry,
   contentDir,
@@ -183,7 +156,7 @@ const slug = autoIndex
 <DocLayout
   title={autoIndex ? autoIndex.label : entry.data.title}
   description={autoIndex ? autoIndex.description : entry.data.description}
-  lang="ja"
+  lang={lang}
   currentSlug={slug}
   contentDir={entry ? contentDir : undefined}
   entryId={entry?.id}
@@ -207,7 +180,7 @@ const slug = autoIndex
             .filter((c: NavNode) => c.hasPage || c.children.length > 0)
             .map((child: NavNode) => (
               <a
-                href={child.href ?? docsUrl(child.slug, "ja")}
+                href={child.href ?? docsUrl(child.slug, lang)}
                 class="group block border border-muted bg-surface px-hsp-lg py-vsp-md hover:border-accent"
               >
                 <span class="font-medium text-accent underline group-hover:underline">
@@ -226,7 +199,7 @@ const slug = autoIndex
       <Fragment>
         <h1 class="text-heading font-bold mb-vsp-xs">{entry.data.title}</h1>
         {settings.docMetainfo && (
-          <DocMetainfo filePath={`${contentDir}/${entry.id}`} locale="ja" />
+          <DocMetainfo filePath={`${contentDir}/${entry.id}`} locale={lang} />
         )}
 
         {isFallback && !entry.data.generated && (
@@ -234,12 +207,16 @@ const slug = autoIndex
             class="mb-vsp-md border border-info/30 bg-info/5 px-hsp-lg py-vsp-sm text-small text-muted rounded"
             role="note"
           >
-            {t("doc.fallbackNotice", "ja")}
+            {t("doc.fallbackNotice", lang)}
           </div>
         )}
 
         {entry?.data?.tags && settings.tagPlacement === "after-title" && (
-          <DocTags tags={entry.data.tags} locale="ja" placement="after-title" />
+          <DocTags
+            tags={entry.data.tags}
+            locale={lang}
+            placement="after-title"
+          />
         )}
 
         {entry.data.description && (
@@ -249,21 +226,25 @@ const slug = autoIndex
         )}
 
         {settings.frontmatterPreview && entry && (
-          <FrontmatterPreview data={entry.data} locale="ja" />
+          <FrontmatterPreview data={entry.data} locale={lang} />
         )}
 
         <Content components={components} />
 
         {settings.editUrl && entry && (
           <div class="mt-vsp-xl mb-vsp-md border-t border-muted pt-vsp-md">
-            <EditLink contentDir={contentDir} entryId={entry.id} locale="ja" />
+            <EditLink
+              contentDir={contentDir}
+              entryId={entry.id}
+              locale={lang}
+            />
           </div>
         )}
 
         {entry?.data?.tags && settings.tagPlacement === "before-pager" && (
           <DocTags
             tags={entry.data.tags}
-            locale="ja"
+            locale={lang}
             placement="before-pager"
           />
         )}
@@ -289,7 +270,7 @@ const slug = autoIndex
                     d="M15 19l-7-7 7-7"
                   />
                 </svg>
-                <span class="no-underline">{t("nav.previous", "ja")}</span>
+                <span class="no-underline">{t("nav.previous", lang)}</span>
               </div>
               <p class="text-small font-semibold underline group-hover:text-accent">
                 {prev.label}
@@ -304,7 +285,7 @@ const slug = autoIndex
               class="group border border-muted rounded-lg p-hsp-lg hover:border-accent text-right"
             >
               <div class="flex items-center justify-end gap-hsp-xs text-caption text-muted mb-vsp-2xs">
-                <span class="no-underline">{t("nav.next", "ja")}</span>
+                <span class="no-underline">{t("nav.next", lang)}</span>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   class="h-[1.125rem] w-[1.125rem]"

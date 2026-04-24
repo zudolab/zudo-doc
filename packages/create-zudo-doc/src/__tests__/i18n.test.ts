@@ -84,34 +84,42 @@ describe("i18n — defaultLang 'ja' + secondary 'en'", () => {
     assertNoWrongLocale(content, "ja");
   });
 
-  it("secondary-locale en/docs/[...slug].astro uses 'en' at every call site", async () => {
+  it("secondary-locale [locale]/docs/[...slug].astro uses lang variable (no literal) at every call site", async () => {
     const filePath = projectPath(
       "test-ja-en",
-      "src/pages/en/docs/[...slug].astro",
+      "src/pages/[locale]/docs/[...slug].astro",
     );
     expect(await fs.pathExists(filePath)).toBe(true);
     const content = await fs.readFile(filePath, "utf-8");
-    expect(content).toMatch(/getDocsCollection\("docs-en"\)/);
-    expect(content).toMatch(/getContentDir\("en"\)/);
-    expect(content).toMatch(/buildNavTree\(navDocs, "en"/);
-    expect(content).toMatch(/buildNavTree\(allDocs, "en"/);
-    expect(content).toMatch(/buildBreadcrumbs\(fullTree, slug, "en"\)/);
-    expect(content).toMatch(/buildBreadcrumbs\(fullTree, node\.slug, "en"\)/);
-    expect(content).toMatch(/lang="en"/);
-    expect(content).toMatch(/locale="en"/);
-    expect(content).toMatch(/t\("nav\.previous", "en"\)/);
+    // The catch-all reads Astro.params.locale and iterates settings.locales,
+    // so the page is shared across every non-default locale and contains no
+    // literal locale string in its call sites.
+    expect(content).toMatch(/Astro\.params\.locale as Locale/);
+    expect(content).toMatch(/Object\.keys\(settings\.locales\)/);
+    expect(content).toMatch(/buildNavTree\(navDocs, locale/);
+    expect(content).toMatch(/buildNavTree\(allDocs, locale/);
+    expect(content).toMatch(/buildBreadcrumbs\(fullTree, slug, locale\)/);
+    expect(content).toMatch(/lang=\{lang\}/);
+    expect(content).toMatch(/locale=\{lang\}/);
+    expect(content).toMatch(/t\("nav\.previous", lang\)/);
+    assertNoWrongLocale(content, "en");
     assertNoWrongLocale(content, "ja");
   });
 
-  it("secondary-locale en/index.astro uses 'en' CTA label (not 概要)", async () => {
+  it("secondary-locale [locale]/index.astro uses lang variable (no literal locale)", async () => {
     const content = await fs.readFile(
-      projectPath("test-ja-en", "src/pages/en/index.astro"),
+      projectPath("test-ja-en", "src/pages/[locale]/index.astro"),
       "utf-8",
     );
+    // The shared template reads Astro.params.locale; UI strings come from t()
+    // which resolves at runtime from the resolved locale, so no literal
+    // localized text appears in the file.
     expect(content).not.toContain("概要");
-    expect(content).toMatch(/t\("nav\.overview", "en"\)/);
-    expect(content).toMatch(/loadLocaleDocs\("en"\)/);
-    expect(content).toMatch(/buildNavTree\(navDocs, "en"/);
+    expect(content).toMatch(/Astro\.params\.locale as Locale/);
+    expect(content).toMatch(/t\("nav\.overview", lang\)/);
+    expect(content).toMatch(/loadLocaleDocs\(lang\)/);
+    expect(content).toMatch(/buildNavTree\(navDocs, lang/);
+    assertNoWrongLocale(content, "en");
     assertNoWrongLocale(content, "ja");
   });
 
@@ -129,24 +137,34 @@ describe("i18n — defaultLang 'ja' + secondary 'en'", () => {
     assertNoWrongLocale(content, "ja");
   });
 
-  it("en/docs/tags/[tag].astro and index use 'en' at every call site", async () => {
+  it("[locale]/docs/tags/[tag].astro and index use lang variable (no literal locale)", async () => {
     const tagPage = await fs.readFile(
-      projectPath("test-ja-en", "src/pages/en/docs/tags/[tag].astro"),
+      projectPath(
+        "test-ja-en",
+        "src/pages/[locale]/docs/tags/[tag].astro",
+      ),
       "utf-8",
     );
-    expect(tagPage).toMatch(/getDocsCollection\("docs-en"\)/);
-    expect(tagPage).toMatch(/t\("doc\.taggedWith", "en"\)/);
-    expect(tagPage).toMatch(/docsUrl\(doc\.slug, "en"\)/);
-    expect(tagPage).toMatch(/withBase\("\/en\/docs/);
+    expect(tagPage).toMatch(/Astro\.params\.locale as Locale/);
+    expect(tagPage).toMatch(/loadLocaleDocs\(locale\)/);
+    expect(tagPage).toMatch(/t\("doc\.taggedWith", lang\)/);
+    expect(tagPage).toMatch(/docsUrl\(doc\.slug, lang\)/);
+    expect(tagPage).toMatch(/withBase\(`\/\$\{lang\}\/docs`\)/);
+    assertNoWrongLocale(tagPage, "en");
     assertNoWrongLocale(tagPage, "ja");
 
     const tagsIndex = await fs.readFile(
-      projectPath("test-ja-en", "src/pages/en/docs/tags/index.astro"),
+      projectPath(
+        "test-ja-en",
+        "src/pages/[locale]/docs/tags/index.astro",
+      ),
       "utf-8",
     );
-    expect(tagsIndex).toMatch(/t\("doc\.allTags", "en"\)/);
-    expect(tagsIndex).toMatch(/locale="en"/);
-    expect(tagsIndex).toMatch(/withBase\("\/en\/docs/);
+    expect(tagsIndex).toMatch(/Astro\.params\.locale as Locale/);
+    expect(tagsIndex).toMatch(/t\("doc\.allTags", lang\)/);
+    expect(tagsIndex).toMatch(/locale=\{lang\}/);
+    expect(tagsIndex).toMatch(/withBase\(`\/\$\{lang\}\/docs`\)/);
+    assertNoWrongLocale(tagsIndex, "en");
     assertNoWrongLocale(tagsIndex, "ja");
   });
 });
@@ -180,18 +198,25 @@ describe("i18n — defaultLang 'en' + secondary 'ja' (mirror)", () => {
     assertNoWrongLocale(content, "ja");
   });
 
-  it("secondary-locale ja/docs/[...slug].astro uses 'ja' at every call site (unchanged)", async () => {
+  it("secondary-locale [locale]/docs/[...slug].astro uses lang variable (template is locale-agnostic)", async () => {
     const filePath = projectPath(
       "test-en-ja",
-      "src/pages/ja/docs/[...slug].astro",
+      "src/pages/[locale]/docs/[...slug].astro",
     );
     expect(await fs.pathExists(filePath)).toBe(true);
     const content = await fs.readFile(filePath, "utf-8");
-    expect(content).toMatch(/buildNavTree\(navDocs, "ja"/);
-    expect(content).toMatch(/buildNavTree\(allDocs, "ja"/);
-    expect(content).toMatch(/buildBreadcrumbs\(fullTree, slug, "ja"\)/);
-    expect(content).toMatch(/lang="ja"/);
-    expect(content).toMatch(/locale="ja"/);
+    // The catch-all is shared — it must not bake any single locale literal in,
+    // so it stays correct regardless of which non-default locale settings.locales
+    // declares.
+    expect(content).toMatch(/Astro\.params\.locale as Locale/);
+    expect(content).toMatch(/Object\.keys\(settings\.locales\)/);
+    expect(content).toMatch(/buildNavTree\(navDocs, locale/);
+    expect(content).toMatch(/buildNavTree\(allDocs, locale/);
+    expect(content).toMatch(/buildBreadcrumbs\(fullTree, slug, locale\)/);
+    expect(content).toMatch(/lang=\{lang\}/);
+    expect(content).toMatch(/locale=\{lang\}/);
+    assertNoWrongLocale(content, "en");
+    assertNoWrongLocale(content, "ja");
   });
 
   it("default-locale index.astro uses defaultLocale for nav.overview (no literal)", async () => {
@@ -203,14 +228,17 @@ describe("i18n — defaultLang 'en' + secondary 'ja' (mirror)", () => {
     expect(content).not.toContain("概要");
   });
 
-  it("secondary-locale ja/index.astro uses '概要' label (via nav.overview 'ja')", async () => {
+  it("secondary-locale [locale]/index.astro uses lang variable (no literal locale)", async () => {
     const content = await fs.readFile(
-      projectPath("test-en-ja", "src/pages/ja/index.astro"),
+      projectPath("test-en-ja", "src/pages/[locale]/index.astro"),
       "utf-8",
     );
-    expect(content).toMatch(/t\("nav\.overview", "ja"\)/);
+    expect(content).toMatch(/Astro\.params\.locale as Locale/);
+    expect(content).toMatch(/t\("nav\.overview", lang\)/);
     // Should not be the raw "Overview" string (translation call is fine)
     const bareOverview = /^\s*Overview\s*$/m.test(content);
     expect(bareOverview).toBe(false);
+    assertNoWrongLocale(content, "en");
+    assertNoWrongLocale(content, "ja");
   });
 });

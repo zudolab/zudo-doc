@@ -72,9 +72,9 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     ).toBe(true);
   });
 
-  it("does NOT create Japanese pages directory (i18n off)", async () => {
+  it("does NOT create [locale] pages directory (i18n off)", async () => {
     expect(
-      await fs.pathExists(projectPath("test-minimal", "src/pages/ja")),
+      await fs.pathExists(projectPath("test-minimal", "src/pages/[locale]")),
     ).toBe(false);
   });
 
@@ -201,9 +201,9 @@ describe("scaffold — full features (i18n, light-dark, all features)", () => {
     await scaffold(choices);
   });
 
-  it("creates Japanese pages directory (i18n on)", async () => {
+  it("creates [locale] pages directory (i18n on)", async () => {
     expect(
-      await fs.pathExists(projectPath("test-full", "src/pages/ja")),
+      await fs.pathExists(projectPath("test-full", "src/pages/[locale]")),
     ).toBe(true);
   });
 
