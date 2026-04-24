@@ -293,6 +293,60 @@ describe("scaffold — generated settings.ts content", () => {
     expect(content).toContain("docs-ja");
   });
 
+  it("cjkFriendly: defaults to false when not specified", async () => {
+    const choices: UserChoices = {
+      projectName: "test-cjk-default",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-cjk-default", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("cjkFriendly: false");
+  });
+
+  it("cjkFriendly: true flows through from preset into generated settings.ts", async () => {
+    const choices: UserChoices = {
+      projectName: "test-cjk-on",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      cjkFriendly: true,
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-cjk-on", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("cjkFriendly: true");
+    expect(content).not.toContain("cjkFriendly: false");
+  });
+
+  it("cjkFriendly: false from preset emits false in generated settings.ts", async () => {
+    const choices: UserChoices = {
+      projectName: "test-cjk-off-explicit",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      cjkFriendly: false,
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-cjk-off-explicit", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("cjkFriendly: false");
+  });
+
   it("tagPlacement: generated settings default to after-title", async () => {
     const choices: UserChoices = {
       projectName: "test-settings-tag-placement",
