@@ -732,6 +732,22 @@ describe("scaffold — claudeSkills feature", () => {
     }
   });
 
+  it("emits b4push stub script when enabled (sub #414)", async () => {
+    const choices: UserChoices = {
+      projectName: "test-claude-skills-b4push-on",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "claudeSkills"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const pkg = await fs.readJson(
+      projectPath("test-claude-skills-b4push-on", "package.json"),
+    );
+    expect(pkg.scripts.b4push).toBe("pnpm check && pnpm build");
+  });
+
   it("does NOT ship zudo-doc-* skills when disabled", async () => {
     const choices: UserChoices = {
       projectName: "test-claude-skills-off",
@@ -750,6 +766,22 @@ describe("scaffold — claudeSkills feature", () => {
         ),
       ),
     ).toBe(false);
+  });
+
+  it("does NOT emit b4push script when disabled (sub #414)", async () => {
+    const choices: UserChoices = {
+      projectName: "test-claude-skills-b4push-off",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const pkg = await fs.readJson(
+      projectPath("test-claude-skills-b4push-off", "package.json"),
+    );
+    expect(pkg.scripts.b4push).toBeUndefined();
   });
 });
 

@@ -294,6 +294,14 @@ function generatePackageJson(choices: UserChoices) {
     scripts["setup:doc-skill"] = "bash scripts/setup-doc-skill.sh";
   }
 
+  // claudeSkills ships the zudo-doc-version-bump skill, whose release workflow
+  // calls `pnpm b4push`. Emit a minimal stub so the skill does not hit a
+  // "script not found" error on freshly scaffolded projects. Consumers are
+  // free to expand this into a richer pre-push pipeline later.
+  if (choices.features.includes("claudeSkills")) {
+    scripts["b4push"] = "pnpm check && pnpm build";
+  }
+
   if (choices.features.includes("tauri")) {
     scripts["dev:tauri"] = "cargo tauri dev";
     const runCmd = choices.packageManager === "npm" || choices.packageManager === "bun" ? `${choices.packageManager} run` : choices.packageManager;
