@@ -253,10 +253,10 @@ export async function scaffold(choices: UserChoices): Promise<void> {
 
 function generatePackageJson(choices: UserChoices) {
   const deps: Record<string, string> = {
-    astro: "^5.18.0",
-    "@astrojs/mdx": "^4.3.0",
-    "@astrojs/preact": "^4.1.0",
-    preact: "^10.26.0",
+    astro: "^6.0.4",
+    "@astrojs/mdx": "^5.0.0",
+    "@astrojs/preact": "^5.0.0",
+    preact: "^10.26.9",
     shiki: "^4.0.2",
     "@shikijs/transformers": "^4.0.0",
     clsx: "^2.1.0",
@@ -273,7 +273,7 @@ function generatePackageJson(choices: UserChoices) {
     tailwindcss: "^4.2.0",
 
     typescript: "^5.9.0",
-    "@astrojs/check": "^0.9.0",
+    "@astrojs/check": "^0.9.7",
     "@types/hast": "^3.0.4",
     "@types/mdast": "^4.0.4",
     "@types/node": "^22.0.0",
