@@ -41,7 +41,14 @@ export async function patchFile(
   await fs.writeFile(filePath, content);
 }
 
-/** Patch default locale references in page files. */
+/** Patch default locale references in page files.
+ *
+ * Base pages no longer contain literal `"en"` for the default locale — they
+ * read `defaultLocale` from `src/config/i18n.ts`, which in turn reads
+ * `settings.defaultLocale`. So this hook only needs to patch the
+ * `getLocaleLabel` fallback in i18n.ts so that `getLocaleLabel(defaultLocale)`
+ * returns the correct uppercase label (e.g. "JA" instead of "EN").
+ */
 export async function patchDefaultLang(
   targetDir: string,
   lang: string,
@@ -49,32 +56,6 @@ export async function patchDefaultLang(
   const label = getLangLabel(lang);
 
   await patchFile(path.join(targetDir, "src/config/i18n.ts"), [
-    [/export const defaultLocale = "en" as const;/g, `export const defaultLocale = "${lang}" as const;`],
     [/return "EN";/g, `return ${JSON.stringify(label)};`],
-  ]);
-
-  await patchFile(path.join(targetDir, "src/pages/index.astro"), [
-    [/loadLocaleDocs\("en"\)/g, `loadLocaleDocs("${lang}")`],
-    [/buildNavTree\((navDocs|allDocs|docs), "en"/g, `buildNavTree($1, "${lang}"`],
-    [/lang="en"/g, `lang="${lang}"`],
-    [/locale="en"/g, `locale="${lang}"`],
-    [/t\("([^"]+)", "en"\)/g, `t("$1", "${lang}")`],
-  ]);
-
-  await patchFile(path.join(targetDir, "src/pages/404.astro"), [
-    [/lang="en"/g, `lang="${lang}"`],
-  ]);
-
-  await patchFile(path.join(targetDir, "src/pages/docs/[...slug].astro"), [
-    [/buildNavTree\((navDocs|allDocs|docs), "en"/g, `buildNavTree($1, "${lang}"`],
-    [/buildBreadcrumbs\((tree|fullTree), (slug|node\.slug), "en"\)/g, `buildBreadcrumbs($1, $2, "${lang}")`],
-    [/docsUrl\(child\.slug, "en"\)/g, `docsUrl(child.slug, "${lang}")`],
-    [/docsUrl\(doc\.slug, "en"\)/g, `docsUrl(doc.slug, "${lang}")`],
-    [/locale="en"/g, `locale="${lang}"`],
-    [/t\("([^"]+)", "en"\)/g, `t("$1", "${lang}")`],
-  ]);
-
-  await patchFile(path.join(targetDir, "src/pages/docs/tags/[tag].astro"), [
-    [/docsUrl\(doc\.slug, "en"\)/g, `docsUrl(doc.slug, "${lang}")`],
   ]);
 }

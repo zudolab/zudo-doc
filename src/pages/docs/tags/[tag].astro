@@ -5,7 +5,7 @@ import Breadcrumb from "@/components/breadcrumb.astro";
 import DocCardGrid from "@/components/doc-card-grid.astro";
 import { toRouteSlug } from "@/utils/slug";
 import { collectTags } from "@/utils/tags";
-import { t } from "@/config/i18n";
+import { defaultLocale, t } from "@/config/i18n";
 import { docsUrl, withBase } from "@/utils/base";
 
 export async function getStaticPaths() {
@@ -49,7 +49,7 @@ const countText =
   <DocCardGrid
     ariaLabel={`${t("doc.taggedWith")}: ${tag}`}
     items={tagInfo.docs.map((doc) => ({
-      href: docsUrl(doc.slug, "en"),
+      href: docsUrl(doc.slug, defaultLocale),
       title: doc.title,
       description: doc.description,
     }))}

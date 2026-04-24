@@ -66,20 +66,22 @@ describe("i18n — defaultLang 'ja' + secondary 'en'", () => {
     await scaffold(choices);
   });
 
-  it("default-locale docs/[...slug].astro uses 'ja' at every call site", async () => {
+  it("default-locale docs/[...slug].astro uses defaultLocale (no literal) at every call site", async () => {
     const content = await fs.readFile(
       projectPath("test-ja-en", "src/pages/docs/[...slug].astro"),
       "utf-8",
     );
-    // Must contain the locale-correct calls
-    expect(content).toMatch(/buildNavTree\(navDocs, "ja"/);
-    expect(content).toMatch(/buildBreadcrumbs\(fullTree, slug, "ja"\)/);
-    expect(content).toMatch(/buildBreadcrumbs\(fullTree, node\.slug, "ja"\)/);
-    expect(content).toMatch(/locale="ja"/);
-    expect(content).toMatch(/t\("nav\.previous", "ja"\)/);
-    expect(content).toMatch(/t\("nav\.next", "ja"\)/);
-    // Must NOT contain the other locale literal
+    // Base pages now read defaultLocale from i18n.ts (which reads
+    // settings.defaultLocale) instead of hardcoding the locale string.
+    expect(content).toMatch(/buildNavTree\(navDocs, defaultLocale/);
+    expect(content).toMatch(/buildBreadcrumbs\(fullTree, slug, defaultLocale\)/);
+    expect(content).toMatch(/buildBreadcrumbs\(fullTree, node\.slug, defaultLocale\)/);
+    expect(content).toMatch(/locale=\{defaultLocale\}/);
+    expect(content).toMatch(/t\("nav\.previous", defaultLocale\)/);
+    expect(content).toMatch(/t\("nav\.next", defaultLocale\)/);
+    // Must NOT contain either raw locale literal as a hardcoded call-site arg
     assertNoWrongLocale(content, "en");
+    assertNoWrongLocale(content, "ja");
   });
 
   it("secondary-locale en/docs/[...slug].astro uses 'en' at every call site", async () => {
@@ -113,16 +115,18 @@ describe("i18n — defaultLang 'ja' + secondary 'en'", () => {
     assertNoWrongLocale(content, "ja");
   });
 
-  it("default-locale ja/index-ish (root) uses 'ja' CTA", async () => {
-    // Default-locale index is at src/pages/index.astro after patchDefaultLang
+  it("default-locale index.astro uses defaultLocale (no literal) at every call site", async () => {
+    // Default-locale index is at src/pages/index.astro. It now reads
+    // defaultLocale from i18n.ts instead of hardcoding the locale string.
     const content = await fs.readFile(
       projectPath("test-ja-en", "src/pages/index.astro"),
       "utf-8",
     );
-    expect(content).toMatch(/t\("nav\.overview", "ja"\)/);
-    expect(content).toMatch(/loadLocaleDocs\("ja"\)/);
-    expect(content).toMatch(/buildNavTree\(navDocs, "ja"/);
+    expect(content).toMatch(/t\("nav\.overview", defaultLocale\)/);
+    expect(content).toMatch(/loadLocaleDocs\(defaultLocale\)/);
+    expect(content).toMatch(/buildNavTree\(navDocs, defaultLocale/);
     assertNoWrongLocale(content, "en");
+    assertNoWrongLocale(content, "ja");
   });
 
   it("en/docs/tags/[tag].astro and index use 'en' at every call site", async () => {
@@ -161,17 +165,18 @@ describe("i18n — defaultLang 'en' + secondary 'ja' (mirror)", () => {
     await scaffold(choices);
   });
 
-  it("default-locale docs/[...slug].astro uses 'en' at every call site", async () => {
+  it("default-locale docs/[...slug].astro uses defaultLocale (no literal) at every call site", async () => {
     const content = await fs.readFile(
       projectPath("test-en-ja", "src/pages/docs/[...slug].astro"),
       "utf-8",
     );
-    expect(content).toMatch(/buildNavTree\(navDocs, "en"/);
-    expect(content).toMatch(/buildNavTree\(docs, "en"/);
-    expect(content).toMatch(/buildBreadcrumbs\(fullTree, slug, "en"\)/);
-    expect(content).toMatch(/buildBreadcrumbs\(fullTree, node\.slug, "en"\)/);
-    expect(content).toMatch(/locale="en"/);
-    expect(content).toMatch(/t\("nav\.previous", "en"\)/);
+    expect(content).toMatch(/buildNavTree\(navDocs, defaultLocale/);
+    expect(content).toMatch(/buildNavTree\(docs, defaultLocale/);
+    expect(content).toMatch(/buildBreadcrumbs\(fullTree, slug, defaultLocale\)/);
+    expect(content).toMatch(/buildBreadcrumbs\(fullTree, node\.slug, defaultLocale\)/);
+    expect(content).toMatch(/locale=\{defaultLocale\}/);
+    expect(content).toMatch(/t\("nav\.previous", defaultLocale\)/);
+    assertNoWrongLocale(content, "en");
     assertNoWrongLocale(content, "ja");
   });
 
@@ -189,12 +194,12 @@ describe("i18n — defaultLang 'en' + secondary 'ja' (mirror)", () => {
     expect(content).toMatch(/locale="ja"/);
   });
 
-  it("default-locale index.astro uses 'Overview' label (via nav.overview 'en')", async () => {
+  it("default-locale index.astro uses defaultLocale for nav.overview (no literal)", async () => {
     const content = await fs.readFile(
       projectPath("test-en-ja", "src/pages/index.astro"),
       "utf-8",
     );
-    expect(content).toMatch(/t\("nav\.overview", "en"\)/);
+    expect(content).toMatch(/t\("nav\.overview", defaultLocale\)/);
     expect(content).not.toContain("概要");
   });
 

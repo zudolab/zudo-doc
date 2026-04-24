@@ -28,7 +28,7 @@ import {
 } from "@/utils/docs";
 import type { Heading } from "@/types/heading";
 import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
-import { t } from "@/config/i18n";
+import { defaultLocale, t } from "@/config/i18n";
 import { settings } from "@/config/settings";
 import { docsUrl } from "@/utils/base";
 import EditLink from "@/components/edit-link.astro";
@@ -45,9 +45,9 @@ export async function getStaticPaths() {
   const categoryMeta = loadCategoryMeta(settings.docsDir);
   // Exclude unlisted pages from nav tree (used for sidebar, prev/next)
   const navDocs = docs.filter(isNavVisible);
-  const tree = buildNavTree(navDocs, "en", categoryMeta);
+  const tree = buildNavTree(navDocs, defaultLocale, categoryMeta);
   // Full tree including unlisted pages (used for breadcrumbs)
-  const fullTree = buildNavTree(docs, "en", categoryMeta);
+  const fullTree = buildNavTree(docs, defaultLocale, categoryMeta);
 
   // Regular doc pages
   const docPaths = docs.map((entry) => {
@@ -82,7 +82,7 @@ export async function getStaticPaths() {
       params: { slug },
       props: {
         entry,
-        breadcrumbs: buildBreadcrumbs(fullTree, slug, "en"),
+        breadcrumbs: buildBreadcrumbs(fullTree, slug, defaultLocale),
         prev: prevNode,
         next: nextNode,
       },
@@ -95,7 +95,7 @@ export async function getStaticPaths() {
     props: {
       entry: null,
       autoIndex: node,
-      breadcrumbs: buildBreadcrumbs(fullTree, node.slug, "en"),
+      breadcrumbs: buildBreadcrumbs(fullTree, node.slug, defaultLocale),
       prev: null,
       next: null,
     },
@@ -162,7 +162,7 @@ const slug = autoIndex
             .filter((c: NavNode) => c.hasPage || c.children.length > 0)
             .map((child: NavNode) => (
               <a
-                href={child.href ?? docsUrl(child.slug, "en")}
+                href={child.href ?? docsUrl(child.slug, defaultLocale)}
                 class="group block border border-muted bg-surface px-hsp-lg py-vsp-md hover:border-accent"
               >
                 <span class="font-medium text-accent underline group-hover:underline">
@@ -183,12 +183,16 @@ const slug = autoIndex
         {settings.docMetainfo && (
           <DocMetainfo
             filePath={`${settings.docsDir}/${entry.id}`}
-            locale="en"
+            locale={defaultLocale}
           />
         )}
 
         {entry?.data?.tags && settings.tagPlacement === "after-title" && (
-          <DocTags tags={entry.data.tags} locale="en" placement="after-title" />
+          <DocTags
+            tags={entry.data.tags}
+            locale={defaultLocale}
+            placement="after-title"
+          />
         )}
 
         {entry.data.description && (
@@ -198,7 +202,7 @@ const slug = autoIndex
         )}
 
         {settings.frontmatterPreview && entry && (
-          <FrontmatterPreview data={entry.data} locale="en" />
+          <FrontmatterPreview data={entry.data} locale={defaultLocale} />
         )}
 
         <Content components={components} />
@@ -208,7 +212,7 @@ const slug = autoIndex
             <EditLink
               contentDir={settings.docsDir}
               entryId={entry.id}
-              locale="en"
+              locale={defaultLocale}
             />
           </div>
         )}
@@ -216,7 +220,7 @@ const slug = autoIndex
         {entry?.data?.tags && settings.tagPlacement === "before-pager" && (
           <DocTags
             tags={entry.data.tags}
-            locale="en"
+            locale={defaultLocale}
             placement="before-pager"
           />
         )}
@@ -242,7 +246,9 @@ const slug = autoIndex
                     d="M15 19l-7-7 7-7"
                   />
                 </svg>
-                <span class="no-underline">{t("nav.previous", "en")}</span>
+                <span class="no-underline">
+                  {t("nav.previous", defaultLocale)}
+                </span>
               </div>
               <p class="text-small font-semibold underline group-hover:text-accent">
                 {prev.label}
@@ -257,7 +263,7 @@ const slug = autoIndex
               class="group border border-muted rounded-lg p-hsp-lg hover:border-accent text-right"
             >
               <div class="flex items-center justify-end gap-hsp-xs text-caption text-muted mb-vsp-2xs">
-                <span class="no-underline">{t("nav.next", "en")}</span>
+                <span class="no-underline">{t("nav.next", defaultLocale)}</span>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   class="h-[1.125rem] w-[1.125rem]"
