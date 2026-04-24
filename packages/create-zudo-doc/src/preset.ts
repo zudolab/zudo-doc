@@ -13,6 +13,7 @@ export interface PresetJson {
   respectPrefersColorScheme?: boolean;
   features?: string[];
   githubUrl?: string;
+  cjkFriendly?: boolean;
   packageManager?: "pnpm" | "npm" | "yarn" | "bun";
 }
 
@@ -65,6 +66,9 @@ export function validatePreset(json: unknown): string | null {
   if (p.packageManager && !VALID_PMS.has(p.packageManager)) {
     return `Invalid packageManager "${p.packageManager}" in preset`;
   }
+  if (p.cjkFriendly !== undefined && typeof p.cjkFriendly !== "boolean") {
+    return `"cjkFriendly" must be a boolean in preset`;
+  }
   // Cross-field validation
   if (p.colorSchemeMode === "single" && (p.lightScheme || p.darkScheme)) {
     return `lightScheme/darkScheme are only valid with colorSchemeMode "light-dark"`;
@@ -92,6 +96,7 @@ export function presetToChoices(json: PresetJson): PartialChoices {
   }
   if (json.packageManager) choices.packageManager = json.packageManager;
   if (json.githubUrl !== undefined) choices.githubUrl = json.githubUrl;
+  if (json.cjkFriendly !== undefined) choices.cjkFriendly = json.cjkFriendly;
 
   if (json.features) {
     // Warn about unrecognized feature names

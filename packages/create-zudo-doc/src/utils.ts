@@ -55,8 +55,10 @@ export async function patchDefaultLang(
 
   await patchFile(path.join(targetDir, "src/pages/index.astro"), [
     [/loadLocaleDocs\("en"\)/g, `loadLocaleDocs("${lang}")`],
-    [/buildNavTree\(navDocs, "en"/g, `buildNavTree(navDocs, "${lang}"`],
+    [/buildNavTree\((navDocs|allDocs|docs), "en"/g, `buildNavTree($1, "${lang}"`],
     [/lang="en"/g, `lang="${lang}"`],
+    [/locale="en"/g, `locale="${lang}"`],
+    [/t\("([^"]+)", "en"\)/g, `t("$1", "${lang}")`],
   ]);
 
   await patchFile(path.join(targetDir, "src/pages/404.astro"), [
@@ -64,14 +66,12 @@ export async function patchDefaultLang(
   ]);
 
   await patchFile(path.join(targetDir, "src/pages/docs/[...slug].astro"), [
-    [/buildNavTree\(navDocs, "en"/g, `buildNavTree(navDocs, "${lang}"`],
-    [/buildBreadcrumbs\(tree, slug, "en"\)/g, `buildBreadcrumbs(tree, slug, "${lang}")`],
-    [/buildBreadcrumbs\(tree, node\.slug, "en"\)/g, `buildBreadcrumbs(tree, node.slug, "${lang}")`],
+    [/buildNavTree\((navDocs|allDocs|docs), "en"/g, `buildNavTree($1, "${lang}"`],
+    [/buildBreadcrumbs\((tree|fullTree), (slug|node\.slug), "en"\)/g, `buildBreadcrumbs($1, $2, "${lang}")`],
     [/docsUrl\(child\.slug, "en"\)/g, `docsUrl(child.slug, "${lang}")`],
     [/docsUrl\(doc\.slug, "en"\)/g, `docsUrl(doc.slug, "${lang}")`],
     [/locale="en"/g, `locale="${lang}"`],
-    [/t\("nav\.previous", "en"\)/g, `t("nav.previous", "${lang}")`],
-    [/t\("nav\.next", "en"\)/g, `t("nav.next", "${lang}")`],
+    [/t\("([^"]+)", "en"\)/g, `t("$1", "${lang}")`],
   ]);
 
   await patchFile(path.join(targetDir, "src/pages/docs/tags/[tag].astro"), [

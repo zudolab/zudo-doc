@@ -208,7 +208,30 @@ export async function scaffold(choices: UserChoices): Promise<void> {
 
   await fs.outputFile(
     path.join(targetDir, ".gitignore"),
-    ["node_modules", "dist", ".astro", ""].join("\n"),
+    [
+      "# Build output",
+      "node_modules",
+      "dist",
+      ".astro",
+      "",
+      "# macOS",
+      ".DS_Store",
+      "",
+      "# Environment",
+      ".env",
+      ".env.local",
+      ".env.*.local",
+      "",
+      "# Logs",
+      "*.log",
+      "npm-debug.log*",
+      "yarn-debug.log*",
+      "pnpm-debug.log*",
+      "",
+      "# Cloudflare Wrangler",
+      ".wrangler/",
+      "",
+    ].join("\n"),
   );
 
   const claudeContent = generateCLAUDEFile(choices);
@@ -294,9 +317,18 @@ function generatePackageJson(choices: UserChoices) {
     scripts["setup:doc-skill"] = "bash scripts/setup-doc-skill.sh";
   }
 
+  const runCmd = choices.packageManager === "npm" || choices.packageManager === "bun" ? `${choices.packageManager} run` : choices.packageManager;
+
+  // claudeSkills ships the zudo-doc-version-bump skill, whose release workflow
+  // calls `<pm> b4push`. Emit a minimal stub so the skill does not hit a
+  // "script not found" error on freshly scaffolded projects. Consumers are
+  // free to expand this into a richer pre-push pipeline later.
+  if (choices.features.includes("claudeSkills")) {
+    scripts["b4push"] = `${runCmd} check && ${runCmd} build`;
+  }
+
   if (choices.features.includes("tauri")) {
     scripts["dev:tauri"] = "cargo tauri dev";
-    const runCmd = choices.packageManager === "npm" || choices.packageManager === "bun" ? `${choices.packageManager} run` : choices.packageManager;
     scripts["build:tauri"] = `${runCmd} build && cargo tauri build`;
   }
 

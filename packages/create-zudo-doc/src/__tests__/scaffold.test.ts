@@ -143,6 +143,39 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     expect(layout).not.toContain("DesktopSidebarToggle");
     expect(layout).not.toContain("zudo-doc-sidebar-visible");
   });
+
+  it(".gitignore includes standard Node + macOS + Cloudflare entries", async () => {
+    const gitignore = await fs.readFile(
+      projectPath("test-minimal", ".gitignore"),
+      "utf-8",
+    );
+    // Build output (existing entries preserved)
+    expect(gitignore).toContain("node_modules");
+    expect(gitignore).toContain("dist");
+    expect(gitignore).toContain(".astro");
+    // macOS
+    expect(gitignore).toContain(".DS_Store");
+    // Environment
+    expect(gitignore).toContain(".env");
+    expect(gitignore).toContain(".env.local");
+    expect(gitignore).toContain(".env.*.local");
+    // Logs
+    expect(gitignore).toContain("*.log");
+    expect(gitignore).toContain("npm-debug.log*");
+    expect(gitignore).toContain("yarn-debug.log*");
+    expect(gitignore).toContain("pnpm-debug.log*");
+    // Cloudflare Wrangler
+    expect(gitignore).toContain(".wrangler/");
+  });
+
+  it(".gitignore does NOT include Tauri entries when tauri is disabled", async () => {
+    const gitignore = await fs.readFile(
+      projectPath("test-minimal", ".gitignore"),
+      "utf-8",
+    );
+    expect(gitignore).not.toContain("src-tauri/target");
+    expect(gitignore).not.toContain("src-tauri/gen");
+  });
 });
 
 describe("scaffold — full features (i18n, light-dark, all features)", () => {
@@ -291,6 +324,60 @@ describe("scaffold — generated settings.ts content", () => {
     expect(content).toContain("locales:");
     expect(content).toContain("ja:");
     expect(content).toContain("docs-ja");
+  });
+
+  it("cjkFriendly: defaults to false when not specified", async () => {
+    const choices: UserChoices = {
+      projectName: "test-cjk-default",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-cjk-default", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("cjkFriendly: false");
+  });
+
+  it("cjkFriendly: true flows through from preset into generated settings.ts", async () => {
+    const choices: UserChoices = {
+      projectName: "test-cjk-on",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      cjkFriendly: true,
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-cjk-on", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("cjkFriendly: true");
+    expect(content).not.toContain("cjkFriendly: false");
+  });
+
+  it("cjkFriendly: false from preset emits false in generated settings.ts", async () => {
+    const choices: UserChoices = {
+      projectName: "test-cjk-off-explicit",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      cjkFriendly: false,
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-cjk-off-explicit", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("cjkFriendly: false");
   });
 
   it("tagPlacement: generated settings default to after-title", async () => {
@@ -732,6 +819,45 @@ describe("scaffold — claudeSkills feature", () => {
     }
   });
 
+  it("emits b4push stub script when enabled (sub #414)", async () => {
+    const choices: UserChoices = {
+      projectName: "test-claude-skills-b4push-on",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "claudeSkills"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const pkg = await fs.readJson(
+      projectPath("test-claude-skills-b4push-on", "package.json"),
+    );
+    expect(pkg.scripts.b4push).toBe("pnpm check && pnpm build");
+  });
+
+  it.each([
+    ["npm", "npm run check && npm run build"],
+    ["yarn", "yarn check && yarn build"],
+    ["bun", "bun run check && bun run build"],
+  ])(
+    "emits b4push script using %s run when package manager is %s",
+    async (pm, expected) => {
+      const choices: UserChoices = {
+        projectName: `test-b4push-${pm}`,
+        defaultLang: "en",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        features: ["search", "claudeSkills"],
+        packageManager: pm as UserChoices["packageManager"],
+      };
+      await scaffold(choices);
+      const pkg = await fs.readJson(
+        projectPath(`test-b4push-${pm}`, "package.json"),
+      );
+      expect(pkg.scripts.b4push).toBe(expected);
+    },
+  );
+
   it("does NOT ship zudo-doc-* skills when disabled", async () => {
     const choices: UserChoices = {
       projectName: "test-claude-skills-off",
@@ -750,6 +876,22 @@ describe("scaffold — claudeSkills feature", () => {
         ),
       ),
     ).toBe(false);
+  });
+
+  it("does NOT emit b4push script when disabled (sub #414)", async () => {
+    const choices: UserChoices = {
+      projectName: "test-claude-skills-b4push-off",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const pkg = await fs.readJson(
+      projectPath("test-claude-skills-b4push-off", "package.json"),
+    );
+    expect(pkg.scripts.b4push).toBeUndefined();
   });
 });
 
@@ -818,12 +960,21 @@ describe("scaffold — tauri feature", () => {
     );
     expect(layout).toContain("FindInPageInit");
 
-    // .gitignore has tauri entries
+    // .gitignore has tauri entries + standard entries
     const gitignore = await fs.readFile(
       projectPath("test-tauri", ".gitignore"),
       "utf-8",
     );
     expect(gitignore).toContain("src-tauri/target");
+    expect(gitignore).toContain("src-tauri/gen");
+    // Standard entries still present when tauri is on
+    expect(gitignore).toContain(".DS_Store");
+    expect(gitignore).toContain(".env");
+    expect(gitignore).toContain(".env.local");
+    expect(gitignore).toContain(".env.*.local");
+    expect(gitignore).toContain("*.log");
+    expect(gitignore).toContain("pnpm-debug.log*");
+    expect(gitignore).toContain(".wrangler/");
   });
 
   it("does NOT generate src-tauri/ when tauri is disabled", async () => {
@@ -1414,6 +1565,130 @@ describe("scaffold — vanilla output (both tag flags off)", () => {
   });
 });
 
+describe("scaffold — always emits framework-required settings fields (sub #408)", () => {
+  /**
+   * Regression guard for sub-issue #408. These five fields are read by
+   * framework components and must always be declared in the generated
+   * settings.ts — otherwise `pnpm check` on a fresh scaffold fails with
+   * ts(2339) "Property X does not exist" errors.
+   *
+   * The test exercises several preset shapes (barebone, feature-heavy,
+   * i18n + light-dark, github URL) to confirm the fields are emitted for
+   * every code path, not only the default one.
+   */
+  const REQUIRED_FIELDS = [
+    "githubUrl",
+    "tagPlacement",
+    "frontmatterPreview",
+    "tagVocabulary",
+    "tagGovernance",
+  ] as const;
+
+  const presets: ReadonlyArray<{ name: string; choices: UserChoices }> = [
+    {
+      name: "barebone (no features, single scheme)",
+      choices: {
+        projectName: "test-req-barebone",
+        defaultLang: "en",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        features: [],
+        packageManager: "pnpm",
+      },
+    },
+    {
+      name: "search only (common minimal preset)",
+      choices: {
+        projectName: "test-req-search",
+        defaultLang: "en",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        features: ["search"],
+        packageManager: "pnpm",
+      },
+    },
+    {
+      name: "tag-governance enabled",
+      choices: {
+        projectName: "test-req-tag-gov",
+        defaultLang: "en",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        features: ["search", "tagGovernance"],
+        packageManager: "pnpm",
+      },
+    },
+    {
+      name: "feature-heavy (i18n + light-dark + many features)",
+      choices: {
+        projectName: "test-req-heavy",
+        defaultLang: "en",
+        colorSchemeMode: "light-dark",
+        lightScheme: "Default Light",
+        darkScheme: "Default Dark",
+        respectPrefersColorScheme: true,
+        defaultMode: "dark",
+        features: [
+          "i18n",
+          "search",
+          "designTokenPanel",
+          "docHistory",
+          "tagGovernance",
+          "footerTaglist",
+          "bodyFootUtil",
+        ],
+        githubUrl: "https://github.com/example/demo",
+        packageManager: "pnpm",
+      },
+    },
+  ];
+
+  for (const preset of presets) {
+    it(`declares all 5 framework-required fields: ${preset.name}`, async () => {
+      await scaffold(preset.choices);
+      const content = await fs.readFile(
+        projectPath(preset.choices.projectName, "src/config/settings.ts"),
+        "utf-8",
+      );
+      const missing = REQUIRED_FIELDS.filter(
+        (field) => !new RegExp(`^\\s{2}${field}\\s*:`, "m").test(content),
+      );
+      expect(
+        missing,
+        `Generated settings.ts for "${preset.choices.projectName}" is missing ` +
+          `required fields: ${missing.join(", ")}. These fields are read by ` +
+          `framework components and must always be declared.`,
+      ).toEqual([]);
+    });
+  }
+
+  it("explicitly types each required field so framework consumers compile", async () => {
+    // Guard against accidental narrowing (e.g., emitting `tagPlacement: "after-title"`
+    // as a string literal rather than `as TagPlacement`), which would prevent
+    // downstream projects from setting alternate values without a type assertion.
+    const choices: UserChoices = {
+      projectName: "test-req-typing",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: [],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-req-typing", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toMatch(/githubUrl:\s*(?:"[^"]*"|false)\s+as\s+string\s*\|\s*false,/);
+    expect(content).toMatch(/tagPlacement:\s*"[^"]+"\s+as\s+TagPlacement,/);
+    expect(content).toMatch(
+      /frontmatterPreview:[\s\S]*?as\s+FrontmatterPreviewConfig\s*\|\s*false,/,
+    );
+    expect(content).toMatch(/tagVocabulary:\s*(?:true|false)\s+as\s+boolean,/);
+    expect(content).toMatch(/tagGovernance:\s*"[^"]+"\s+as\s+TagGovernanceMode,/);
+  });
+});
+
 describe("drift detection — generator vs main project settings", () => {
   /**
    * This test catches feature drift between the main project's settings.ts
@@ -1466,5 +1741,92 @@ describe("drift detection — generator vs main project settings", () => {
       `Generator is missing settings fields: ${missingFields.join(", ")}. ` +
         `Update packages/create-zudo-doc/src/settings-gen.ts or run /l-update-generator`,
     ).toEqual([]);
+  });
+});
+
+describe("scaffold — framework TS error fixes (sub #410)", () => {
+  /**
+   * Regression guards for sub-issue #410. Before this fix, a fresh scaffold's
+   * pnpm check emitted four framework-level TS errors:
+   *   1. frontmatter-preview.astro line ~76: `unknown` not assignable to `{}`
+   *      when piping the iterated `value` into a `<Renderer>` JSX slot whose
+   *      props are typed `NonNullable<unknown>`.
+   *   2. frontmatter-preview.astro: `cfg === false` no-overlap (mitigated in
+   *      sub #408 by typing `frontmatterPreview` as
+   *      `FrontmatterPreviewConfig | false`).
+   *   3. mermaid-init.astro: `Cannot find module 'mermaid'` — strategy (a):
+   *      mermaid stays an unconditional dependency in every scaffolded
+   *      package.json.
+   *   4. header.astro (i18n feature): LanguageSwitcher rejects a `locales`
+   *      prop it does not declare. Strategy: drop the dead prop at the call
+   *      site (and stop importing `locales`).
+   *
+   * These tests assert the emitted scaffold no longer contains the
+   * problematic patterns, so a future generator change cannot silently
+   * reintroduce them without flagging.
+   */
+  it("frontmatter-preview.astro casts value to NonNullable<unknown> before JSX slot", async () => {
+    const choices: UserChoices = {
+      projectName: "test-410-fp",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: [],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-410-fp", "src/components/frontmatter-preview.astro"),
+      "utf-8",
+    );
+    // The Renderer slot must receive a narrowed value, not the raw `unknown`
+    // that Object.entries returns. Without the cast astro check ts(2322) errors.
+    expect(content).toMatch(/value=\{value as NonNullable<unknown>\}/);
+    expect(content).not.toMatch(/<Renderer\s+value=\{value\}/);
+  });
+
+  it("mermaid stays an unconditional dependency in scaffolded package.json (strategy a)", async () => {
+    const choices: UserChoices = {
+      projectName: "test-410-mermaid",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: [],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const pkg = await fs.readJson(
+      projectPath("test-410-mermaid", "package.json"),
+    );
+    expect(
+      pkg.dependencies?.mermaid,
+      "mermaid must stay an unconditional runtime dependency so the dynamic " +
+        "import in src/components/mermaid-init.astro resolves at type-check time",
+    ).toBeTruthy();
+  });
+
+  it("i18n header injection no longer passes the dead `locales` prop to LanguageSwitcher", async () => {
+    const choices: UserChoices = {
+      projectName: "test-410-i18n",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["i18n"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const header = await fs.readFile(
+      projectPath("test-410-i18n", "src/components/header.astro"),
+      "utf-8",
+    );
+    // LanguageSwitcher's Props interface only declares `lang`. Passing
+    // `locales` triggers ts(2322): "{ ... } is not assignable to IntrinsicAttributes & Props".
+    expect(header).toMatch(/<LanguageSwitcher lang=\{lang\} \/>/);
+    expect(header).not.toMatch(/locales=\{locales\}/);
+    // The accompanying `import { locales } from "@/config/i18n"` must also go,
+    // otherwise tsc flags it as ts(6133) "declared but never used".
+    expect(header).not.toMatch(
+      /import \{ locales \} from "@\/config\/i18n";/,
+    );
   });
 });

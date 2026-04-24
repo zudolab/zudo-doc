@@ -57,6 +57,7 @@ export const settings = {
     { type: "trigger", trigger: "design-token-panel" },
     { type: "trigger", trigger: "ai-chat" },
     { type: "component", component: "github-link" },
+    { type: "component", component: "search" },
     { type: "component", component: "theme-toggle" },
   ] as HeaderRightItem[],
 };
