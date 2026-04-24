@@ -1414,6 +1414,130 @@ describe("scaffold — vanilla output (both tag flags off)", () => {
   });
 });
 
+describe("scaffold — always emits framework-required settings fields (sub #408)", () => {
+  /**
+   * Regression guard for sub-issue #408. These five fields are read by
+   * framework components and must always be declared in the generated
+   * settings.ts — otherwise `pnpm check` on a fresh scaffold fails with
+   * ts(2339) "Property X does not exist" errors.
+   *
+   * The test exercises several preset shapes (barebone, feature-heavy,
+   * i18n + light-dark, github URL) to confirm the fields are emitted for
+   * every code path, not only the default one.
+   */
+  const REQUIRED_FIELDS = [
+    "githubUrl",
+    "tagPlacement",
+    "frontmatterPreview",
+    "tagVocabulary",
+    "tagGovernance",
+  ] as const;
+
+  const presets: ReadonlyArray<{ name: string; choices: UserChoices }> = [
+    {
+      name: "barebone (no features, single scheme)",
+      choices: {
+        projectName: "test-req-barebone",
+        defaultLang: "en",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        features: [],
+        packageManager: "pnpm",
+      },
+    },
+    {
+      name: "search only (common minimal preset)",
+      choices: {
+        projectName: "test-req-search",
+        defaultLang: "en",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        features: ["search"],
+        packageManager: "pnpm",
+      },
+    },
+    {
+      name: "tag-governance enabled",
+      choices: {
+        projectName: "test-req-tag-gov",
+        defaultLang: "en",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        features: ["search", "tagGovernance"],
+        packageManager: "pnpm",
+      },
+    },
+    {
+      name: "feature-heavy (i18n + light-dark + many features)",
+      choices: {
+        projectName: "test-req-heavy",
+        defaultLang: "en",
+        colorSchemeMode: "light-dark",
+        lightScheme: "Default Light",
+        darkScheme: "Default Dark",
+        respectPrefersColorScheme: true,
+        defaultMode: "dark",
+        features: [
+          "i18n",
+          "search",
+          "designTokenPanel",
+          "docHistory",
+          "tagGovernance",
+          "footerTaglist",
+          "bodyFootUtil",
+        ],
+        githubUrl: "https://github.com/example/demo",
+        packageManager: "pnpm",
+      },
+    },
+  ];
+
+  for (const preset of presets) {
+    it(`declares all 5 framework-required fields: ${preset.name}`, async () => {
+      await scaffold(preset.choices);
+      const content = await fs.readFile(
+        projectPath(preset.choices.projectName, "src/config/settings.ts"),
+        "utf-8",
+      );
+      const missing = REQUIRED_FIELDS.filter(
+        (field) => !new RegExp(`^\\s{2}${field}\\s*:`, "m").test(content),
+      );
+      expect(
+        missing,
+        `Generated settings.ts for "${preset.choices.projectName}" is missing ` +
+          `required fields: ${missing.join(", ")}. These fields are read by ` +
+          `framework components and must always be declared.`,
+      ).toEqual([]);
+    });
+  }
+
+  it("explicitly types each required field so framework consumers compile", async () => {
+    // Guard against accidental narrowing (e.g., emitting `tagPlacement: "after-title"`
+    // as a string literal rather than `as TagPlacement`), which would prevent
+    // downstream projects from setting alternate values without a type assertion.
+    const choices: UserChoices = {
+      projectName: "test-req-typing",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: [],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-req-typing", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toMatch(/githubUrl:\s*(?:"[^"]*"|false)\s+as\s+string\s*\|\s*false,/);
+    expect(content).toMatch(/tagPlacement:\s*"[^"]+"\s+as\s+TagPlacement,/);
+    expect(content).toMatch(
+      /frontmatterPreview:[\s\S]*?as\s+FrontmatterPreviewConfig\s*\|\s*false,/,
+    );
+    expect(content).toMatch(/tagVocabulary:\s*(?:true|false)\s+as\s+boolean,/);
+    expect(content).toMatch(/tagGovernance:\s*"[^"]+"\s+as\s+TagGovernanceMode,/);
+  });
+});
+
 describe("drift detection — generator vs main project settings", () => {
   /**
    * This test catches feature drift between the main project's settings.ts
