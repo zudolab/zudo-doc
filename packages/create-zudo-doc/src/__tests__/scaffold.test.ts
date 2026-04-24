@@ -1592,3 +1592,90 @@ describe("drift detection — generator vs main project settings", () => {
     ).toEqual([]);
   });
 });
+
+describe("scaffold — framework TS error fixes (sub #410)", () => {
+  /**
+   * Regression guards for sub-issue #410. Before this fix, a fresh scaffold's
+   * pnpm check emitted four framework-level TS errors:
+   *   1. frontmatter-preview.astro line ~76: `unknown` not assignable to `{}`
+   *      when piping the iterated `value` into a `<Renderer>` JSX slot whose
+   *      props are typed `NonNullable<unknown>`.
+   *   2. frontmatter-preview.astro: `cfg === false` no-overlap (mitigated in
+   *      sub #408 by typing `frontmatterPreview` as
+   *      `FrontmatterPreviewConfig | false`).
+   *   3. mermaid-init.astro: `Cannot find module 'mermaid'` — strategy (a):
+   *      mermaid stays an unconditional dependency in every scaffolded
+   *      package.json.
+   *   4. header.astro (i18n feature): LanguageSwitcher rejects a `locales`
+   *      prop it does not declare. Strategy: drop the dead prop at the call
+   *      site (and stop importing `locales`).
+   *
+   * These tests assert the emitted scaffold no longer contains the
+   * problematic patterns, so a future generator change cannot silently
+   * reintroduce them without flagging.
+   */
+  it("frontmatter-preview.astro casts value to NonNullable<unknown> before JSX slot", async () => {
+    const choices: UserChoices = {
+      projectName: "test-410-fp",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: [],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-410-fp", "src/components/frontmatter-preview.astro"),
+      "utf-8",
+    );
+    // The Renderer slot must receive a narrowed value, not the raw `unknown`
+    // that Object.entries returns. Without the cast astro check ts(2322) errors.
+    expect(content).toMatch(/value=\{value as NonNullable<unknown>\}/);
+    expect(content).not.toMatch(/<Renderer\s+value=\{value\}/);
+  });
+
+  it("mermaid stays an unconditional dependency in scaffolded package.json (strategy a)", async () => {
+    const choices: UserChoices = {
+      projectName: "test-410-mermaid",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: [],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const pkg = await fs.readJson(
+      projectPath("test-410-mermaid", "package.json"),
+    );
+    expect(
+      pkg.dependencies?.mermaid,
+      "mermaid must stay an unconditional runtime dependency so the dynamic " +
+        "import in src/components/mermaid-init.astro resolves at type-check time",
+    ).toBeTruthy();
+  });
+
+  it("i18n header injection no longer passes the dead `locales` prop to LanguageSwitcher", async () => {
+    const choices: UserChoices = {
+      projectName: "test-410-i18n",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["i18n"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const header = await fs.readFile(
+      projectPath("test-410-i18n", "src/components/header.astro"),
+      "utf-8",
+    );
+    // LanguageSwitcher's Props interface only declares `lang`. Passing
+    // `locales` triggers ts(2322): "{ ... } is not assignable to IntrinsicAttributes & Props".
+    expect(header).toMatch(/<LanguageSwitcher lang=\{lang\} \/>/);
+    expect(header).not.toMatch(/locales=\{locales\}/);
+    // The accompanying `import { locales } from "@/config/i18n"` must also go,
+    // otherwise tsc flags it as ts(6133) "declared but never used".
+    expect(header).not.toMatch(
+      /import \{ locales \} from "@\/config\/i18n";/,
+    );
+  });
+});

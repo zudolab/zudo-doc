@@ -10,13 +10,12 @@ export const i18nFeature: FeatureModule = (choices) => ({
     {
       file: "src/components/header.astro",
       anchor: "// @slot:header:imports",
-      content: `import LanguageSwitcher from "@/components/language-switcher.astro";
-import { locales } from "@/config/i18n";`,
+      content: `import LanguageSwitcher from "@/components/language-switcher.astro";`,
     },
     {
       file: "src/components/header.astro",
       anchor: "<!-- @slot:header:after-theme-toggle -->",
-      content: `      {lang && <LanguageSwitcher lang={lang} locales={locales} />}`,
+      content: `      {lang && <LanguageSwitcher lang={lang} />}`,
       position: "after",
     },
   ],
