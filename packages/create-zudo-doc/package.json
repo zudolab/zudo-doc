@@ -17,7 +17,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:slow": "vitest run --config vitest.slow.config.ts"
   },
   "dependencies": {
     "@clack/prompts": "^0.9.1",

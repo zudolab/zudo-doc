@@ -151,9 +151,9 @@ export function generateAstroConfig(choices: UserChoices): string {
   // i18n block
   if (hasI18n) {
     lines.push(`  i18n: {`);
-    lines.push(`    defaultLocale: ${JSON.stringify(choices.defaultLang)},`);
+    lines.push(`    defaultLocale: settings.defaultLocale,`);
     lines.push(
-      `    locales: [${JSON.stringify(choices.defaultLang)}, ...Object.keys(settings.locales)],`,
+      `    locales: [settings.defaultLocale, ...Object.keys(settings.locales)],`,
     );
     lines.push(`    routing: {`);
     lines.push(`      prefixDefaultLocale: false,`);

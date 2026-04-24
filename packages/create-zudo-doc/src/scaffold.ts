@@ -8,7 +8,7 @@ import { generateContentConfig } from "./content-config-gen.js";
 import { generateCLAUDEFile } from "./claude-md-gen.js";
 import { composeFeatures } from "./compose.js";
 import { featureModules } from "./features/index.js";
-import { capitalize, getSecondaryLang, patchDefaultLang } from "./utils.js";
+import { capitalize, getSecondaryLang } from "./utils.js";
 
 export { getSecondaryLang };
 
@@ -240,23 +240,16 @@ export async function scaffold(choices: UserChoices): Promise<void> {
   // 4. Compose features (copy feature files + inject into shared files)
   await composeFeatures(targetDir, choices, featureModules, featuresDir);
 
-  // 5. Handle default language patching for non-i18n projects
-  if (!choices.features.includes("i18n") && choices.defaultLang !== "en") {
-    // The i18n feature handles its own language patching via postProcess.
-    // For non-i18n projects, we still need to patch the default locale.
-    await patchDefaultLang(targetDir, choices.defaultLang);
-  }
-
   // Ensure content directories exist
   await fs.ensureDir(path.join(targetDir, "src/content/docs"));
 }
 
 function generatePackageJson(choices: UserChoices) {
   const deps: Record<string, string> = {
-    astro: "^5.18.0",
-    "@astrojs/mdx": "^4.3.0",
-    "@astrojs/preact": "^4.1.0",
-    preact: "^10.26.0",
+    astro: "^6.0.4",
+    "@astrojs/mdx": "^5.0.0",
+    "@astrojs/preact": "^5.0.0",
+    preact: "^10.26.9",
     shiki: "^4.0.2",
     "@shikijs/transformers": "^4.0.0",
     clsx: "^2.1.0",
@@ -273,7 +266,7 @@ function generatePackageJson(choices: UserChoices) {
     tailwindcss: "^4.2.0",
 
     typescript: "^5.9.0",
-    "@astrojs/check": "^0.9.0",
+    "@astrojs/check": "^0.9.7",
     "@types/hast": "^3.0.4",
     "@types/mdast": "^4.0.4",
     "@types/node": "^22.0.0",

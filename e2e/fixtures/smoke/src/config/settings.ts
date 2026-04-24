@@ -15,6 +15,7 @@ export const settings = {
   siteDescription: "Test fixture for smoke E2E tests" as string,
   base: "/",
   docsDir: "src/content/docs",
+  defaultLocale: "en",
   locales: {} as Record<string, LocaleConfig>,
   mermaid: true,
   noindex: true as boolean,

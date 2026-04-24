@@ -78,6 +78,9 @@ export function generateSettingsFile(choices: UserChoices): string {
   }
   lines.push(`  siteUrl: "" as string,`);
   lines.push(`  docsDir: "src/content/docs",`);
+  lines.push(
+    `  defaultLocale: ${JSON.stringify(choices.defaultLang ?? "en")} as string,`,
+  );
 
   if (choices.features.includes("i18n")) {
     const secondaryLang = getSecondaryLang(choices.defaultLang);

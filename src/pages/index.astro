@@ -9,7 +9,7 @@ import SiteTreeNav from "@/components/site-tree-nav.tsx";
 import { collectTags } from "@/utils/tags";
 import TagNav from "@/components/tag-nav.astro";
 import { toRouteSlug } from "@/utils/slug";
-import { t } from "@/config/i18n";
+import { defaultLocale, t } from "@/config/i18n";
 
 const ctaNav = settings.headerNav[0] ?? null;
 const overview = ctaNav ? withBase(ctaNav.path) : null;
@@ -17,9 +17,9 @@ const logoUrl = withBase("/img/logo.svg");
 const categoryOrder = getCategoryOrder();
 
 // Build full nav tree for site index
-const { allDocs, categoryMeta } = await loadLocaleDocs("en");
+const { allDocs, categoryMeta } = await loadLocaleDocs(defaultLocale);
 const navDocs = allDocs.filter(isNavVisible);
-const tree = buildNavTree(navDocs, "en", categoryMeta);
+const tree = buildNavTree(navDocs, defaultLocale, categoryMeta);
 const groupedTree = groupSatelliteNodes(tree, categoryOrder);
 const tagDocs = import.meta.env.PROD
   ? navDocs.filter((d) => !d.data.draft)
@@ -30,7 +30,7 @@ const tagCount = collectTags(
 ).size;
 ---
 
-<DocLayout title={settings.siteName} lang="en" hideSidebar hideToc>
+<DocLayout title={settings.siteName} lang={defaultLocale} hideSidebar hideToc>
   <!-- Hero: logo left, title+desc+links right, block centered -->
   <div class="flex justify-center mb-vsp-xl">
     <div
@@ -54,7 +54,7 @@ const tagCount = collectTags(
             overview && (
               <>
                 <a href={overview} class="text-fg underline hover:text-accent">
-                  {t("nav.overview", "en")}
+                  {t("nav.overview", defaultLocale)}
                 </a>
                 <span class="text-muted">/</span>
               </>
@@ -99,9 +99,9 @@ const tagCount = collectTags(
     settings.docTags && tagCount > 0 && (
       <section class="mt-vsp-xl">
         <h2 class="text-subheading font-bold mb-vsp-md">
-          {t("doc.allTags", "en")}
+          {t("doc.allTags", defaultLocale)}
         </h2>
-        <TagNav variant="all" docs={tagDocs} locale="en" />
+        <TagNav variant="all" docs={tagDocs} locale={defaultLocale} />
       </section>
     )
   }
