@@ -143,6 +143,39 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     expect(layout).not.toContain("DesktopSidebarToggle");
     expect(layout).not.toContain("zudo-doc-sidebar-visible");
   });
+
+  it(".gitignore includes standard Node + macOS + Cloudflare entries", async () => {
+    const gitignore = await fs.readFile(
+      projectPath("test-minimal", ".gitignore"),
+      "utf-8",
+    );
+    // Build output (existing entries preserved)
+    expect(gitignore).toContain("node_modules");
+    expect(gitignore).toContain("dist");
+    expect(gitignore).toContain(".astro");
+    // macOS
+    expect(gitignore).toContain(".DS_Store");
+    // Environment
+    expect(gitignore).toContain(".env");
+    expect(gitignore).toContain(".env.local");
+    expect(gitignore).toContain(".env.*.local");
+    // Logs
+    expect(gitignore).toContain("*.log");
+    expect(gitignore).toContain("npm-debug.log*");
+    expect(gitignore).toContain("yarn-debug.log*");
+    expect(gitignore).toContain("pnpm-debug.log*");
+    // Cloudflare Wrangler
+    expect(gitignore).toContain(".wrangler/");
+  });
+
+  it(".gitignore does NOT include Tauri entries when tauri is disabled", async () => {
+    const gitignore = await fs.readFile(
+      projectPath("test-minimal", ".gitignore"),
+      "utf-8",
+    );
+    expect(gitignore).not.toContain("src-tauri/target");
+    expect(gitignore).not.toContain("src-tauri/gen");
+  });
 });
 
 describe("scaffold — full features (i18n, light-dark, all features)", () => {
@@ -872,12 +905,21 @@ describe("scaffold — tauri feature", () => {
     );
     expect(layout).toContain("FindInPageInit");
 
-    // .gitignore has tauri entries
+    // .gitignore has tauri entries + standard entries
     const gitignore = await fs.readFile(
       projectPath("test-tauri", ".gitignore"),
       "utf-8",
     );
     expect(gitignore).toContain("src-tauri/target");
+    expect(gitignore).toContain("src-tauri/gen");
+    // Standard entries still present when tauri is on
+    expect(gitignore).toContain(".DS_Store");
+    expect(gitignore).toContain(".env");
+    expect(gitignore).toContain(".env.local");
+    expect(gitignore).toContain(".env.*.local");
+    expect(gitignore).toContain("*.log");
+    expect(gitignore).toContain("pnpm-debug.log*");
+    expect(gitignore).toContain(".wrangler/");
   });
 
   it("does NOT generate src-tauri/ when tauri is disabled", async () => {

@@ -208,7 +208,30 @@ export async function scaffold(choices: UserChoices): Promise<void> {
 
   await fs.outputFile(
     path.join(targetDir, ".gitignore"),
-    ["node_modules", "dist", ".astro", ""].join("\n"),
+    [
+      "# Build output",
+      "node_modules",
+      "dist",
+      ".astro",
+      "",
+      "# macOS",
+      ".DS_Store",
+      "",
+      "# Environment",
+      ".env",
+      ".env.local",
+      ".env.*.local",
+      "",
+      "# Logs",
+      "*.log",
+      "npm-debug.log*",
+      "yarn-debug.log*",
+      "pnpm-debug.log*",
+      "",
+      "# Cloudflare Wrangler",
+      ".wrangler/",
+      "",
+    ].join("\n"),
   );
 
   const claudeContent = generateCLAUDEFile(choices);
