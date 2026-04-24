@@ -1,6 +1,5 @@
 import { execSync } from "child_process";
 import fs from "fs-extra";
-import path from "path";
 
 export function installDependencies(dir: string, pm: string): void {
   const commands: Record<string, string> = {
@@ -39,23 +38,4 @@ export async function patchFile(
     content = content.replace(pattern, replacement);
   }
   await fs.writeFile(filePath, content);
-}
-
-/** Patch default locale references in page files.
- *
- * Base pages no longer contain literal `"en"` for the default locale — they
- * read `defaultLocale` from `src/config/i18n.ts`, which in turn reads
- * `settings.defaultLocale`. So this hook only needs to patch the
- * `getLocaleLabel` fallback in i18n.ts so that `getLocaleLabel(defaultLocale)`
- * returns the correct uppercase label (e.g. "JA" instead of "EN").
- */
-export async function patchDefaultLang(
-  targetDir: string,
-  lang: string,
-): Promise<void> {
-  const label = getLangLabel(lang);
-
-  await patchFile(path.join(targetDir, "src/config/i18n.ts"), [
-    [/return "EN";/g, `return ${JSON.stringify(label)};`],
-  ]);
 }

@@ -37,7 +37,7 @@ export function getCollectionName(locale: Locale | string): CollectionKey {
 
 /** Get the display label for a locale. */
 export function getLocaleLabel(locale: Locale | string): string {
-  if (locale === defaultLocale) return "EN";
+  if (locale === defaultLocale) return defaultLocale.toUpperCase();
   return getLocaleConfig(locale)?.label ?? locale.toUpperCase();
 }
 
