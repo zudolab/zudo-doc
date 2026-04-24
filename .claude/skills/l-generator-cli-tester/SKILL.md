@@ -212,18 +212,18 @@ Check that expected files exist or don't exist in `__inbox/generator-test-<patte
 
 Use these tables to verify. Check each file with `test -e <path>`.
 
+> **Note on `theme-toggle.tsx`**: this component always ships on disk as part of the base template — whether it renders at runtime is gated by the `colorMode` setting. The expectation tables below therefore only assert PRESENT for the `light-dark` and `all-features` patterns and do not assert ABSENT elsewhere.
+
 **barebone** — minimal, everything stripped:
 
 | File | Expected |
 |------|----------|
 | `src/components/search.astro` | ABSENT |
 | `src/components/language-switcher.astro` | ABSENT |
-| `src/pages/ja/` | ABSENT |
+| `src/pages/[locale]/` | ABSENT |
 | `src/content/docs-ja/` | ABSENT |
 | `src/integrations/claude-resources/` | ABSENT |
-| `src/components/theme-toggle.tsx` | ABSENT |
-| `src/components/design-token-tweak/index.tsx` | ABSENT |
-| `src/components/color-tweak-export-modal.tsx` | ABSENT |
+| `src/components/design-token-tweak/` | ABSENT |
 | `src/components/doc-history.tsx` | ABSENT |
 | `src/components/ai-chat-modal.tsx` | ABSENT |
 | `src/integrations/doc-history.ts` | ABSENT |
@@ -241,8 +241,7 @@ Use these tables to verify. Check each file with `test -e <path>`.
 | `src/components/search.astro` | PRESENT |
 | `src/components/language-switcher.astro` | ABSENT |
 | `src/integrations/claude-resources/` | ABSENT |
-| `src/components/theme-toggle.tsx` | ABSENT |
-| `src/components/design-token-tweak/index.tsx` | ABSENT |
+| `src/components/design-token-tweak/` | ABSENT |
 
 **i18n:**
 
@@ -250,11 +249,10 @@ Use these tables to verify. Check each file with `test -e <path>`.
 |------|----------|
 | `src/components/search.astro` | ABSENT |
 | `src/components/language-switcher.astro` | PRESENT |
-| `src/pages/ja/` | PRESENT |
+| `src/pages/[locale]/` | PRESENT |
 | `src/content/docs-ja/` | PRESENT |
 | `src/integrations/claude-resources/` | ABSENT |
-| `src/components/theme-toggle.tsx` | ABSENT |
-| `src/components/design-token-tweak/index.tsx` | ABSENT |
+| `src/components/design-token-tweak/` | ABSENT |
 
 **sidebar-filter:**
 
@@ -263,8 +261,7 @@ Use these tables to verify. Check each file with `test -e <path>`.
 | `src/components/search.astro` | ABSENT |
 | `src/components/sidebar-tree.tsx` | PRESENT |
 | `src/components/language-switcher.astro` | ABSENT |
-| `src/components/theme-toggle.tsx` | ABSENT |
-| `src/components/design-token-tweak/index.tsx` | ABSENT |
+| `src/components/design-token-tweak/` | ABSENT |
 
 **claude-resources:**
 
@@ -273,21 +270,19 @@ Use these tables to verify. Check each file with `test -e <path>`.
 | `src/integrations/claude-resources/` | PRESENT |
 | `src/components/search.astro` | ABSENT |
 | `src/components/language-switcher.astro` | ABSENT |
-| `src/components/theme-toggle.tsx` | ABSENT |
-| `src/components/design-token-tweak/index.tsx` | ABSENT |
+| `src/components/design-token-tweak/` | ABSENT |
 
 **design-token-panel:**
 
 | File | Expected |
 |------|----------|
 | `src/components/design-token-tweak/index.tsx` | PRESENT |
-| `src/components/color-tweak-export-modal.tsx` | PRESENT |
+| `src/components/design-token-tweak/export-modal.tsx` | PRESENT |
 | `src/config/color-tweak-presets.ts` | PRESENT |
 | `src/utils/color-convert.ts` | PRESENT |
-| `src/utils/export-code.ts` | PRESENT |
+| `src/utils/design-token-serde.ts` | PRESENT |
 | `src/components/search.astro` | ABSENT |
 | `src/components/language-switcher.astro` | ABSENT |
-| `src/components/theme-toggle.tsx` | ABSENT |
 
 **light-dark:**
 
@@ -296,7 +291,7 @@ Use these tables to verify. Check each file with `test -e <path>`.
 | `src/components/theme-toggle.tsx` | PRESENT |
 | `src/components/search.astro` | ABSENT |
 | `src/components/language-switcher.astro` | ABSENT |
-| `src/components/design-token-tweak/index.tsx` | ABSENT |
+| `src/components/design-token-tweak/` | ABSENT |
 
 **lang-ja:**
 
@@ -304,7 +299,6 @@ Use these tables to verify. Check each file with `test -e <path>`.
 |------|----------|
 | `src/components/search.astro` | ABSENT |
 | `src/components/language-switcher.astro` | ABSENT |
-| `src/components/theme-toggle.tsx` | ABSENT |
 | `src/pages/docs/` | PRESENT |
 | `src/content/docs/` | PRESENT |
 
@@ -314,12 +308,12 @@ Use these tables to verify. Check each file with `test -e <path>`.
 |------|----------|
 | `src/components/search.astro` | PRESENT |
 | `src/components/language-switcher.astro` | PRESENT |
-| `src/pages/ja/` | PRESENT |
+| `src/pages/[locale]/` | PRESENT |
 | `src/content/docs-ja/` | PRESENT |
 | `src/integrations/claude-resources/` | PRESENT |
 | `src/components/theme-toggle.tsx` | PRESENT |
 | `src/components/design-token-tweak/index.tsx` | PRESENT |
-| `src/components/color-tweak-export-modal.tsx` | PRESENT |
+| `src/components/design-token-tweak/export-modal.tsx` | PRESENT |
 | `src/config/color-tweak-presets.ts` | PRESENT |
 
 ## Step 7: Verify Settings
