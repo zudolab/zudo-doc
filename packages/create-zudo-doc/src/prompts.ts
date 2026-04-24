@@ -17,6 +17,9 @@ export interface UserChoices {
   // GitHub repository URL — drives the GitHub link in the header and the
   // "View source on GitHub" link in the body-foot util area. Empty = disabled.
   githubUrl?: string;
+  // Enable remark-cjk-friendly plugin (intelligent spacing around CJK text).
+  // Preset-only for now — no interactive prompt.
+  cjkFriendly?: boolean;
   // Package manager
   packageManager: "pnpm" | "npm" | "yarn" | "bun";
 }
@@ -32,6 +35,7 @@ export interface PartialChoices {
   defaultMode?: "light" | "dark";
   features?: Partial<Record<string, boolean>>;
   githubUrl?: string;
+  cjkFriendly?: boolean;
   packageManager?: "pnpm" | "npm" | "yarn" | "bun";
 }
 
@@ -274,6 +278,7 @@ export async function runPrompts(
     defaultMode,
     features,
     githubUrl,
+    cjkFriendly: prefilled.cjkFriendly,
     packageManager,
   };
 }
