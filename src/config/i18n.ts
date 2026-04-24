@@ -1,8 +1,8 @@
 import type { CollectionKey } from "astro:content";
 import { settings } from "./settings";
 
-/** Default locale code (always "en", served from docsDir). */
-export const defaultLocale = "en" as const;
+/** Default locale code, served from docsDir. */
+export const defaultLocale = settings.defaultLocale;
 
 /** All supported locale codes, derived from settings. */
 export const locales = [

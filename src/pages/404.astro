@@ -5,9 +5,10 @@ import { ClientRouter } from "astro:transitions";
 import PageLoadingOverlay from "@/components/page-loading-overlay.astro";
 import { settings } from "@/config/settings";
 import { withBase } from "@/utils/base";
+import { defaultLocale } from "@/config/i18n";
 ---
 
-<html lang="en">
+<html lang={defaultLocale}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

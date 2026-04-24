@@ -40,6 +40,7 @@ export const settings = {
   base: "/pj/zudo-doc/",
   trailingSlash: true as boolean,
   docsDir: "src/content/docs",
+  defaultLocale: "en" as string,
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },
   } satisfies Record<string, LocaleConfig>,
