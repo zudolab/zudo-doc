@@ -56,9 +56,8 @@ async function createSecondaryPages(
   for (const file of astroFiles) {
     await patchFile(file, [
       [/loadLocaleDocs\("ja"\)/g, `loadLocaleDocs("${secondaryLang}")`],
-      [/buildNavTree\(navDocs, "ja"/g, `buildNavTree(navDocs, "${secondaryLang}"`],
-      [/buildBreadcrumbs\(tree, slug, "ja"\)/g, `buildBreadcrumbs(tree, slug, "${secondaryLang}")`],
-      [/buildBreadcrumbs\(tree, node\.slug, "ja"\)/g, `buildBreadcrumbs(tree, node.slug, "${secondaryLang}")`],
+      [/buildNavTree\((navDocs|allDocs|docs), "ja"/g, `buildNavTree($1, "${secondaryLang}"`],
+      [/buildBreadcrumbs\((tree|fullTree), (slug|node\.slug), "ja"\)/g, `buildBreadcrumbs($1, $2, "${secondaryLang}")`],
       [/<html lang="ja">/g, `<html lang="${secondaryLang}">`],
       [/lang="ja"/g, `lang="${secondaryLang}"`],
       [/docsUrl\(child\.slug, "ja"\)/g, `docsUrl(child.slug, "${secondaryLang}")`],
