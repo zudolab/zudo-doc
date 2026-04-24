@@ -835,6 +835,29 @@ describe("scaffold — claudeSkills feature", () => {
     expect(pkg.scripts.b4push).toBe("pnpm check && pnpm build");
   });
 
+  it.each([
+    ["npm", "npm run check && npm run build"],
+    ["yarn", "yarn check && yarn build"],
+    ["bun", "bun run check && bun run build"],
+  ])(
+    "emits b4push script using %s run when package manager is %s",
+    async (pm, expected) => {
+      const choices: UserChoices = {
+        projectName: `test-b4push-${pm}`,
+        defaultLang: "en",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        features: ["search", "claudeSkills"],
+        packageManager: pm as UserChoices["packageManager"],
+      };
+      await scaffold(choices);
+      const pkg = await fs.readJson(
+        projectPath(`test-b4push-${pm}`, "package.json"),
+      );
+      expect(pkg.scripts.b4push).toBe(expected);
+    },
+  );
+
   it("does NOT ship zudo-doc-* skills when disabled", async () => {
     const choices: UserChoices = {
       projectName: "test-claude-skills-off",
