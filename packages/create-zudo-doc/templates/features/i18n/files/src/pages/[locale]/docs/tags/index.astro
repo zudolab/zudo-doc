@@ -6,7 +6,6 @@ import { collectTags } from "@/utils/tags";
 import { settings } from "@/config/settings";
 import { t, type Locale } from "@/config/i18n";
 import { loadLocaleDocs } from "@/utils/locale-docs";
-import { withBase } from "@/utils/base";
 import TagNav from "@/components/tag-nav.astro";
 import type { DocsEntry } from "@/types/docs-entry";
 
@@ -37,10 +36,7 @@ const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
 >
   <Breadcrumb
     slot="breadcrumb"
-    items={[
-      { label: "Docs", href: withBase(`/${lang}/docs`) },
-      { label: t("doc.allTags", lang) },
-    ]}
+    items={[{ label: "Docs" }, { label: t("doc.allTags", lang) }]}
   />
   <h1 class="text-heading font-bold mb-vsp-lg">{t("doc.allTags", lang)}</h1>
   {
