@@ -65,14 +65,17 @@ describe("generateAstroConfig", () => {
     expect(result).toContain("prefixDefaultLocale: false");
   });
 
-  it("uses correct default locale in i18n block", () => {
+  it("derives default locale from settings in i18n block", () => {
     const choices = {
       ...baseChoices,
       defaultLang: "ja",
       features: ["i18n"],
     };
     const result = generateAstroConfig(choices);
-    expect(result).toContain('defaultLocale: "ja"');
+    expect(result).toContain("defaultLocale: settings.defaultLocale");
+    expect(result).toContain(
+      "locales: [settings.defaultLocale, ...Object.keys(settings.locales)]",
+    );
   });
 
   it("generates single shiki config for single color scheme mode", () => {
