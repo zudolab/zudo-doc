@@ -1,5 +1,4 @@
 import type { FeatureModule } from "../compose.js";
-import { patchDefaultLang } from "../utils.js";
 
 export const i18nFeature: FeatureModule = (_choices) => ({
   name: "i18n",
@@ -16,15 +15,8 @@ export const i18nFeature: FeatureModule = (_choices) => ({
       position: "after",
     },
   ],
-  postProcess: async (targetDir, ch) => {
-    const defaultLang = ch.defaultLang;
-
-    // Patch default language label if not "en". The pages themselves no
-    // longer encode the secondary locale path — the [locale] catch-all
-    // iterates settings.locales, so any non-default locale (set via
-    // settings.locales) is picked up automatically without copying files.
-    if (defaultLang !== "en") {
-      await patchDefaultLang(targetDir, defaultLang);
-    }
-  },
+  // No postProcess needed: pages are locale-agnostic (they iterate
+  // settings.locales) and getLocaleLabel derives its label from
+  // defaultLocale.toUpperCase(), so no regex patching of generated files
+  // is required for non-default languages.
 });
