@@ -340,4 +340,235 @@ describe("remarkResolveMarkdownLinks", () => {
       expect(link.url).toBe("/docs/guides/my doc/");
     });
   });
+
+  describe("extensionless relative links", () => {
+    it("resolves an extensionless relative link to a matching .mdx source", () => {
+      touch(rootDir, "src/content/docs/guides/dark-mode-strategies.mdx");
+      touch(rootDir, "src/content/docs/guides/current.mdx");
+
+      const link = makeLink("./dark-mode-strategies");
+      const tree = makeTree(link);
+      const file = {
+        path: resolve(rootDir, "src/content/docs/guides/current.mdx"),
+      };
+
+      const plugin = remarkResolveMarkdownLinks(baseOptions());
+      plugin(tree, file);
+
+      expect(link.url).toBe("/docs/guides/dark-mode-strategies/");
+    });
+
+    it("resolves an extensionless relative link to a matching .md source", () => {
+      touch(rootDir, "src/content/docs/guides/sidebar.md");
+      touch(rootDir, "src/content/docs/guides/current.mdx");
+
+      const link = makeLink("./sidebar");
+      const tree = makeTree(link);
+      const file = {
+        path: resolve(rootDir, "src/content/docs/guides/current.mdx"),
+      };
+
+      const plugin = remarkResolveMarkdownLinks(baseOptions());
+      plugin(tree, file);
+
+      expect(link.url).toBe("/docs/guides/sidebar/");
+    });
+
+    it("prefers .mdx over .md when both exist", () => {
+      touch(rootDir, "src/content/docs/guides/dup.mdx");
+      touch(rootDir, "src/content/docs/guides/dup.md");
+      touch(rootDir, "src/content/docs/guides/current.mdx");
+
+      const link = makeLink("./dup");
+      const tree = makeTree(link);
+      const file = {
+        path: resolve(rootDir, "src/content/docs/guides/current.mdx"),
+      };
+
+      const plugin = remarkResolveMarkdownLinks(baseOptions());
+      plugin(tree, file);
+
+      // Both produce the same URL, but the lookup order is .mdx first.
+      expect(link.url).toBe("/docs/guides/dup/");
+    });
+
+    it("preserves hash fragment on extensionless link", () => {
+      touch(rootDir, "src/content/docs/guides/dark-mode-strategies.mdx");
+      touch(rootDir, "src/content/docs/guides/current.mdx");
+
+      const link = makeLink("./dark-mode-strategies#tokens");
+      const tree = makeTree(link);
+      const file = {
+        path: resolve(rootDir, "src/content/docs/guides/current.mdx"),
+      };
+
+      const plugin = remarkResolveMarkdownLinks(baseOptions());
+      plugin(tree, file);
+
+      expect(link.url).toBe("/docs/guides/dark-mode-strategies/#tokens");
+    });
+
+    it("preserves query string on extensionless link", () => {
+      touch(rootDir, "src/content/docs/guides/dark-mode-strategies.mdx");
+      touch(rootDir, "src/content/docs/guides/current.mdx");
+
+      const link = makeLink("./dark-mode-strategies?foo=1");
+      const tree = makeTree(link);
+      const file = {
+        path: resolve(rootDir, "src/content/docs/guides/current.mdx"),
+      };
+
+      const plugin = remarkResolveMarkdownLinks(baseOptions());
+      plugin(tree, file);
+
+      expect(link.url).toBe("/docs/guides/dark-mode-strategies/?foo=1");
+    });
+
+    it("resolves extensionless parent-directory link", () => {
+      touch(rootDir, "src/content/docs/guides/sidebar.mdx");
+      touch(rootDir, "src/content/docs/guides/sub/page.mdx");
+
+      const link = makeLink("../sidebar");
+      const tree = makeTree(link);
+      const file = {
+        path: resolve(rootDir, "src/content/docs/guides/sub/page.mdx"),
+      };
+
+      const plugin = remarkResolveMarkdownLinks(baseOptions());
+      plugin(tree, file);
+
+      expect(link.url).toBe("/docs/guides/sidebar/");
+    });
+
+    it("leaves extensionless link untouched when no matching source exists", () => {
+      touch(rootDir, "src/content/docs/guides/current.mdx");
+
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const link = makeLink("./nonexistent-page");
+      const tree = makeTree(link);
+      const file = {
+        path: resolve(rootDir, "src/content/docs/guides/current.mdx"),
+      };
+
+      const plugin = remarkResolveMarkdownLinks(baseOptions());
+      plugin(tree, file);
+
+      // No rewrite, no warning — the URL may be a non-doc target.
+      expect(link.url).toBe("./nonexistent-page");
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it("does not throw on extensionless miss even with onBrokenLinks: 'error'", () => {
+      touch(rootDir, "src/content/docs/guides/current.mdx");
+
+      const link = makeLink("./nonexistent-page");
+      const tree = makeTree(link);
+      const file = {
+        path: resolve(rootDir, "src/content/docs/guides/current.mdx"),
+      };
+
+      const plugin = remarkResolveMarkdownLinks({
+        ...baseOptions(),
+        onBrokenLinks: "error",
+      });
+
+      // Extensionless misses are ambiguous — never throw on them.
+      expect(() => plugin(tree, file)).not.toThrow();
+      expect(link.url).toBe("./nonexistent-page");
+    });
+
+    it("does not modify links with non-markdown extension (e.g., .png)", () => {
+      touch(rootDir, "src/content/docs/guides/current.mdx");
+
+      const link = makeLink("./image.png");
+      const tree = makeTree(link);
+      const file = {
+        path: resolve(rootDir, "src/content/docs/guides/current.mdx"),
+      };
+
+      const plugin = remarkResolveMarkdownLinks(baseOptions());
+      plugin(tree, file);
+
+      expect(link.url).toBe("./image.png");
+    });
+
+    it("does not modify external extensionless URLs", () => {
+      touch(rootDir, "src/content/docs/guides/current.mdx");
+
+      const link = makeLink("https://example.com/foo");
+      const tree = makeTree(link);
+      const file = {
+        path: resolve(rootDir, "src/content/docs/guides/current.mdx"),
+      };
+
+      const plugin = remarkResolveMarkdownLinks(baseOptions());
+      plugin(tree, file);
+
+      expect(link.url).toBe("https://example.com/foo");
+    });
+
+    it("does not modify pure anchor links", () => {
+      touch(rootDir, "src/content/docs/guides/current.mdx");
+
+      const link = makeLink("#section");
+      const tree = makeTree(link);
+      const file = {
+        path: resolve(rootDir, "src/content/docs/guides/current.mdx"),
+      };
+
+      const plugin = remarkResolveMarkdownLinks(baseOptions());
+      plugin(tree, file);
+
+      expect(link.url).toBe("#section");
+    });
+
+    it("resolves a dotted slug (e.g. version number) to a matching .mdx", () => {
+      touch(rootDir, "src/content/docs/changelog/0.1.0.mdx");
+      touch(rootDir, "src/content/docs/changelog/index.mdx");
+
+      const link = makeLink("./0.1.0");
+      const tree = makeTree(link);
+      const file = {
+        path: resolve(rootDir, "src/content/docs/changelog/index.mdx"),
+      };
+
+      const plugin = remarkResolveMarkdownLinks(baseOptions());
+      plugin(tree, file);
+
+      expect(link.url).toBe("/docs/changelog/0.1.0/");
+    });
+
+    it("resolves a directory-style link to its index.mdx", () => {
+      touch(rootDir, "src/content/docs/guides/index.mdx");
+      touch(rootDir, "src/content/docs/current.mdx");
+
+      const link = makeLink("./guides/");
+      const tree = makeTree(link);
+      const file = {
+        path: resolve(rootDir, "src/content/docs/current.mdx"),
+      };
+
+      const plugin = remarkResolveMarkdownLinks(baseOptions());
+      plugin(tree, file);
+
+      expect(link.url).toBe("/docs/guides/");
+    });
+
+    it("resolves a directory-style link without trailing slash to its index.mdx", () => {
+      touch(rootDir, "src/content/docs/guides/index.mdx");
+      touch(rootDir, "src/content/docs/current.mdx");
+
+      const link = makeLink("./guides");
+      const tree = makeTree(link);
+      const file = {
+        path: resolve(rootDir, "src/content/docs/current.mdx"),
+      };
+
+      const plugin = remarkResolveMarkdownLinks(baseOptions());
+      plugin(tree, file);
+
+      expect(link.url).toBe("/docs/guides/");
+    });
+  });
 });
