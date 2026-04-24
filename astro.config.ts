@@ -69,8 +69,8 @@ export default defineConfig({
       : []),
   ],
   i18n: {
-    defaultLocale: "en",
-    locales: ["en", ...Object.keys(settings.locales)],
+    defaultLocale: settings.defaultLocale,
+    locales: [settings.defaultLocale, ...Object.keys(settings.locales)],
     routing: {
       prefixDefaultLocale: false,
     },

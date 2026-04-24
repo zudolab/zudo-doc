@@ -9,17 +9,25 @@ import SiteTreeNav from "@/components/site-tree-nav.tsx";
 import { collectTags } from "@/utils/tags";
 import TagNav from "@/components/tag-nav.astro";
 import { toRouteSlug } from "@/utils/slug";
-import { t } from "@/config/i18n";
+import { t, type Locale } from "@/config/i18n";
+
+export async function getStaticPaths() {
+  return Object.keys(settings.locales).map((locale) => ({
+    params: { locale },
+  }));
+}
+
+const lang = Astro.params.locale as Locale;
 
 const ctaNav = settings.headerNav[0] ?? null;
-const overview = ctaNav ? withBase(`/ja${ctaNav.path}`) : null;
+const overview = ctaNav ? withBase(`/${lang}${ctaNav.path}`) : null;
 const logoUrl = withBase("/img/logo.svg");
 const categoryOrder = getCategoryOrder();
 
 // Build full nav tree for site index
-const { allDocs, categoryMeta } = await loadLocaleDocs("ja");
+const { allDocs, categoryMeta } = await loadLocaleDocs(lang);
 const navDocs = allDocs.filter(isNavVisible);
-const tree = buildNavTree(navDocs, "ja", categoryMeta);
+const tree = buildNavTree(navDocs, lang, categoryMeta);
 const groupedTree = groupSatelliteNodes(tree, categoryOrder);
 const tagDocs = import.meta.env.PROD
   ? navDocs.filter((d) => !d.data.draft)
@@ -30,7 +38,7 @@ const tagCount = collectTags(
 ).size;
 ---
 
-<DocLayout title={settings.siteName} lang="ja" hideSidebar hideToc>
+<DocLayout title={settings.siteName} lang={lang} hideSidebar hideToc>
   <!-- Hero: logo left, title+desc+links right, block centered -->
   <div class="flex justify-center mb-vsp-xl">
     <div class="flex items-center gap-hsp-xl">
@@ -50,7 +58,7 @@ const tagCount = collectTags(
             overview && (
               <>
                 <a href={overview} class="text-fg underline hover:text-accent">
-                  {t("nav.overview", "ja")}
+                  {t("nav.overview", lang)}
                 </a>
                 <span class="text-muted">/</span>
               </>
@@ -86,9 +94,9 @@ const tagCount = collectTags(
     settings.docTags && tagCount > 0 && (
       <section class="mt-vsp-xl">
         <h2 class="text-subheading font-bold mb-vsp-md">
-          {t("doc.allTags", "ja")}
+          {t("doc.allTags", lang)}
         </h2>
-        <TagNav variant="all" docs={tagDocs} locale="ja" />
+        <TagNav variant="all" docs={tagDocs} locale={lang} />
       </section>
     )
   }

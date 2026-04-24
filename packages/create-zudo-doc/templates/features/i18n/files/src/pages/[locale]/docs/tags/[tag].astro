@@ -1,0 +1,77 @@
+---
+import DocLayout from "@/layouts/doc-layout.astro";
+import Breadcrumb from "@/components/breadcrumb.astro";
+import DocCardGrid from "@/components/doc-card-grid.astro";
+import { toRouteSlug } from "@/utils/slug";
+import { collectTags } from "@/utils/tags";
+import { settings } from "@/config/settings";
+import { t, type Locale } from "@/config/i18n";
+import { loadLocaleDocs } from "@/utils/locale-docs";
+import { docsUrl, withBase } from "@/utils/base";
+import type { DocsEntry } from "@/types/docs-entry";
+
+export async function getStaticPaths() {
+  const paths = [];
+
+  const filterDocs = (docs: DocsEntry[]) =>
+    import.meta.env.PROD
+      ? docs.filter((doc) => !doc.data.draft && !doc.data.unlisted)
+      : docs.filter((doc) => !doc.data.unlisted);
+
+  for (const locale of Object.keys(settings.locales) as Locale[]) {
+    const { allDocs } = await loadLocaleDocs(locale);
+    const docs = filterDocs(allDocs);
+    const tagMap = collectTags(
+      docs,
+      (id, data) => data.slug ?? toRouteSlug(id),
+    );
+
+    for (const [tag, info] of tagMap.entries()) {
+      paths.push({
+        params: { locale, tag },
+        props: { tagInfo: info },
+      });
+    }
+  }
+
+  return paths;
+}
+
+const lang = Astro.params.locale as Locale;
+const { tag } = Astro.params;
+const { tagInfo } = Astro.props;
+const countText =
+  tagInfo.count === 1
+    ? t("doc.pageCountSingle", lang).replace("{count}", String(tagInfo.count))
+    : t("doc.pageCount", lang).replace("{count}", String(tagInfo.count));
+---
+
+<DocLayout
+  title={`${t("doc.taggedWith", lang)}: ${tag}`}
+  lang={lang}
+  currentSlug={`tags/${tag}`}
+  hideSidebar={true}
+  hideToc={true}
+>
+  <Breadcrumb
+    slot="breadcrumb"
+    items={[
+      { label: "Docs", href: withBase(`/${lang}/docs`) },
+      { label: t("doc.allTags", lang), href: withBase(`/${lang}/docs/tags`) },
+      { label: tag },
+    ]}
+  />
+  <h1 class="text-heading font-bold mb-vsp-xs">
+    {t("doc.taggedWith", lang)}: {tag}
+  </h1>
+  <p class="text-muted mb-vsp-lg">{countText}</p>
+
+  <DocCardGrid
+    ariaLabel={`${t("doc.taggedWith", lang)}: ${tag}`}
+    items={tagInfo.docs.map((doc) => ({
+      href: docsUrl(doc.slug, lang),
+      title: doc.title,
+      description: doc.description,
+    }))}
+  />
+</DocLayout>
