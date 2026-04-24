@@ -17,6 +17,7 @@ export const settings = {
   siteDescription: "Test fixture for theme toggle E2E tests" as string,
   base: "/",
   docsDir: "src/content/docs",
+  defaultLocale: "en",
   locales: {} as Record<string, LocaleConfig>,
   mermaid: false,
   noindex: true as boolean,

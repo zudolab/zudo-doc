@@ -11,6 +11,7 @@ export const settings = {
   siteDescription: "Test fixture for i18n E2E tests" as string,
   base: "/",
   docsDir: "src/content/docs",
+  defaultLocale: "en",
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },
     de: { label: "DE", dir: "src/content/docs-de" },
