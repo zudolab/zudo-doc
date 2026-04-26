@@ -216,6 +216,13 @@ export const FEATURES: Feature[] = [
     cliFlag: "changelog",
   },
   {
+    value: "blog",
+    label: "Blog",
+    hint: "Opt-in blog with paginated listing, archives, and excerpt marker",
+    default: false,
+    cliFlag: "blog",
+  },
+  {
     value: "tagGovernance",
     label: "Tag governance",
     hint: "Vocabulary-aware tag audit + suggest scripts",
