@@ -19,9 +19,16 @@ export function getCategoryOrder(): string[] {
 /**
  * Given a doc's slug (e.g. "getting-started/introduction" or "claude-agents/doc-reviewer"),
  * return the categoryMatch value of the headerNav item it belongs to.
+ *
+ * Slugs starting with `blog/` (including `blog/archives`) always resolve to
+ * the synthetic `"blog"` section so the sidebar can swap to the blog tree.
+ * Blog routes do not appear in `headerNav.categoryMatch`, so this fast path
+ * is a defensive default — page templates that pass `navSection="blog"`
+ * directly already short-circuit this lookup.
  */
 export function getNavSectionForSlug(slug: string): string | undefined {
   const topCategory = slug.split("/")[0] ?? "";
+  if (topCategory === "blog") return "blog";
   const all = getCategoryOrder();
 
   // First pass: find explicit matchers (not "!")

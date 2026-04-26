@@ -5,6 +5,7 @@ import { defaultLocale, locales, t, type Locale } from "@/config/i18n";
 import { buildLocaleLinks, versionedDocsUrl, navHref } from "@/utils/base";
 import { loadLocaleDocs } from "@/utils/locale-docs";
 import { isNavVisible, type NavNode } from "@/utils/docs";
+import { buildBlogSidebar } from "@/utils/blog";
 import { settings } from "@/config/settings";
 
 interface Props {
@@ -36,8 +37,13 @@ const rootMenuItems = settings.headerNav.map((item) => ({
   })),
 }));
 
-const { allDocs, categoryMeta } = await loadLocaleDocs(lang);
-const docs = allDocs.filter(isNavVisible);
+const isBlogSection = navSection === "blog";
+
+// Skip the docs collection load when rendering the synthetic blog sidebar:
+// it is built from the blog collection only and never reads docs.
+const localeDocs = isBlogSection ? null : await loadLocaleDocs(lang);
+const docs = localeDocs ? localeDocs.allDocs.filter(isNavVisible) : [];
+const categoryMeta = localeDocs?.categoryMeta;
 
 /**
  * Remap node hrefs from docsUrl() to versionedDocsUrl() for versioned pages.
@@ -66,10 +72,16 @@ function remapVersionedHrefs(
   });
 }
 
-const rawNodes = buildSidebarForSection(docs, lang, navSection, categoryMeta);
-const nodes = currentVersion
-  ? remapVersionedHrefs(rawNodes, currentVersion, lang)
-  : rawNodes;
+const rawNodes = isBlogSection
+  ? await buildBlogSidebar(lang)
+  : buildSidebarForSection(docs, lang, navSection, categoryMeta);
+// Blog routes are not versioned, so skip the versioned-href remap for them
+// even if `currentVersion` is somehow set — versionedDocsUrl() would emit
+// a `/v/<ver>/docs/blog/...` path that doesn't exist.
+const nodes =
+  currentVersion && !isBlogSection
+    ? remapVersionedHrefs(rawNodes, currentVersion, lang)
+    : rawNodes;
 
 // Build locale switcher links for mobile sidebar
 const localeLinks =

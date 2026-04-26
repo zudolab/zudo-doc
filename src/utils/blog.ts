@@ -46,7 +46,12 @@ export type ResolvedBlogConfig = Omit<
  */
 export function getBlogConfig(): ResolvedBlogConfig | null {
   const blog = settings.blog;
-  if (blog === false) return null;
+  // Defensive: treat both `false` (explicit disable) and missing/undefined
+  // (field omitted in fixture / generated settings.ts) as disabled. The TS
+  // type is `BlogConfig | false`, but runtime-only consumers (e2e fixtures,
+  // generated downstream projects mid-scaffold) often omit the field
+  // entirely — that should opt out, not crash on `blog.dir`.
+  if (!blog) return null;
   return {
     ...blog,
     dir: blog.dir ?? BLOG_DEFAULTS.dir,
