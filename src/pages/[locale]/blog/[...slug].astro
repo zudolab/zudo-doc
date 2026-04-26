@@ -1,0 +1,124 @@
+---
+import { render } from "astro:content";
+import DocLayout from "@/layouts/doc-layout.astro";
+import Note from "@/components/admonitions/note.astro";
+import Tip from "@/components/admonitions/tip.astro";
+import Info from "@/components/admonitions/info.astro";
+import Warning from "@/components/admonitions/warning.astro";
+import Danger from "@/components/admonitions/danger.astro";
+import Tabs from "@/components/tabs.astro";
+import TabItem from "@/components/tab-item.astro";
+import Details from "@/components/details.astro";
+import HtmlPreview from "@/components/html-preview-wrapper.astro";
+import { htmlOverrides } from "@/components/content/component-map";
+import BlogPostMeta from "@/components/blog-post-meta.astro";
+import { toRouteSlug } from "@/utils/slug";
+import { loadBlogPosts, getBlogConfig } from "@/utils/blog";
+import { t, type Locale } from "@/config/i18n";
+import { settings } from "@/config/settings";
+import type { Heading } from "@/types/heading";
+
+export async function getStaticPaths() {
+  // Skip locale routes when no locales are configured
+  if (Object.keys(settings.locales).length === 0) return [];
+  if (!getBlogConfig()) return [];
+
+  const paths = [];
+
+  for (const locale of Object.keys(settings.locales) as Locale[]) {
+    const { allPosts, fallbackSlugs } = await loadBlogPosts(locale);
+    // allPosts is sorted newest-first; prev = newer, next = older (same ordering as EN route)
+
+    for (let idx = 0; idx < allPosts.length; idx++) {
+      const entry = allPosts[idx];
+      const slug = entry.data.slug ?? toRouteSlug(entry.id);
+      const isFallback = fallbackSlugs.has(slug);
+
+      const prevEntry = idx > 0 ? allPosts[idx - 1] : null;
+      const nextEntry = idx < allPosts.length - 1 ? allPosts[idx + 1] : null;
+
+      paths.push({
+        params: { locale, slug },
+        props: {
+          entry,
+          isFallback,
+          prev: prevEntry
+            ? {
+                slug: prevEntry.data.slug ?? toRouteSlug(prevEntry.id),
+                title: prevEntry.data.title,
+              }
+            : null,
+          next: nextEntry
+            ? {
+                slug: nextEntry.data.slug ?? toRouteSlug(nextEntry.id),
+                title: nextEntry.data.title,
+              }
+            : null,
+        },
+      });
+    }
+  }
+
+  return paths;
+}
+
+const lang = Astro.params.locale as Locale;
+const { entry, isFallback } = Astro.props;
+
+const components = {
+  ...htmlOverrides,
+  Note,
+  Tip,
+  Info,
+  Warning,
+  Danger,
+  Tabs,
+  TabItem,
+  Details,
+  HtmlPreview,
+};
+
+const { Content, headings } = await render(entry as any);
+const slug = entry.data.slug ?? toRouteSlug(entry.id);
+---
+
+<DocLayout
+  title={entry.data.title}
+  description={entry.data.description}
+  lang={lang}
+  currentSlug={`blog/${slug}`}
+  navSection="blog"
+  headings={headings as Heading[]}
+>
+  <Fragment>
+    <h1 class="text-heading font-bold mb-vsp-xs">{entry.data.title}</h1>
+
+    {
+      isFallback && (
+        <div
+          class="mb-vsp-md border border-info/30 bg-info/5 px-hsp-lg py-vsp-sm text-small text-muted rounded"
+          role="note"
+        >
+          {t("doc.fallbackNotice", lang)}
+        </div>
+      )
+    }
+
+    <BlogPostMeta
+      date={entry.data.date}
+      author={entry.data.author}
+      authors={entry.data.authors}
+      tags={entry.data.tags}
+      lang={lang}
+    />
+    {
+      entry.data.description && (
+        <p class="mt-0 mb-vsp-lg text-subheading text-muted">
+          {entry.data.description}
+        </p>
+      )
+    }
+    <Content components={components} />
+    {/* Prev/next pagination across blog listing is Wave 4 — skipped for now */}
+  </Fragment>
+</DocLayout>
