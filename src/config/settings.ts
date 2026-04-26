@@ -145,7 +145,13 @@ export const settings = {
    *     },
    *   },
    */
-  blog: false as BlogConfig | false,
+  blog: {
+    enabled: true,
+    dir: "src/content/blog",
+    locales: { ja: { dir: "src/content/blog-ja" } },
+    sidebarRecentCount: 30,
+    postsPerPage: 10,
+  } as BlogConfig | false,
   claudeResources: {
     claudeDir: ".claude",
   } as { claudeDir: string; projectRoot?: string } | false,
