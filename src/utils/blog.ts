@@ -1,4 +1,5 @@
 import { getCollection, type CollectionKey } from "astro:content";
+import { extractExcerptFromMarkdown } from "@zudo-doc/md-plugins";
 import type { BlogEntry } from "@/types/blog-entry";
 import { settings } from "@/config/settings";
 import { toRouteSlug } from "@/utils/slug";
@@ -97,4 +98,64 @@ async function loadBlogPostsImpl(lang: string): Promise<BlogPostsResult> {
   );
 
   return { allPosts, fallbackSlugs };
+}
+
+// ---------------------------------------------------------------------------
+// getBlogExcerpt — fallback for the <!-- more --> marker
+// ---------------------------------------------------------------------------
+
+/**
+ * Result of `getBlogExcerpt()`.
+ *
+ * `source` reflects which path was taken so callers (and templates) can decide
+ * whether to render a "Continue reading" link.
+ */
+export interface BlogExcerpt {
+  /** Excerpt HTML (rendered) OR the manual frontmatter string when source === "manual". */
+  excerpt: string;
+  /** True iff the body contained a `<!-- more -->` marker. */
+  hasMore: boolean;
+  source: "manual" | "marker" | "none";
+}
+
+const excerptCache = new WeakMap<BlogEntry, BlogExcerpt>();
+
+/**
+ * Resolve the excerpt for a blog entry, with this precedence:
+ *
+ *   1. Manual `entry.data.excerpt` set in frontmatter — wins, never
+ *      overwritten. `hasMore` reflects whether the body also has a marker.
+ *   2. `<!-- more -->` marker in `entry.body` — re-parsed at render time and
+ *      rendered to HTML.
+ *   3. Neither — returns `{ excerpt: "", hasMore: false, source: "none" }`
+ *      so callers can fall back to a description or the rendered body.
+ *
+ * This is the documented fallback path from issue #442. The companion remark
+ * plugin still runs at build time (it strips the marker from the rendered
+ * detail page), but Astro 6 Content Collections do NOT propagate
+ * `vfile.data.astro.frontmatter` mutations to `entry.data`, so we re-parse
+ * the body here at listing-render time. Slower but bulletproof.
+ *
+ * Memoized per-entry via a WeakMap, so repeated lookups within a single build
+ * pay the parse cost once.
+ */
+export async function getBlogExcerpt(entry: BlogEntry): Promise<BlogExcerpt> {
+  const cached = excerptCache.get(entry);
+  if (cached) return cached;
+
+  const manual = entry.data.excerpt;
+  const body = entry.body ?? "";
+  const parsed = await extractExcerptFromMarkdown(body);
+  const hasMore = parsed?.hasMore ?? false;
+
+  let result: BlogExcerpt;
+  if (manual !== undefined && manual !== null && manual !== "") {
+    result = { excerpt: manual, hasMore, source: "manual" };
+  } else if (parsed) {
+    result = { excerpt: parsed.excerpt, hasMore: true, source: "marker" };
+  } else {
+    result = { excerpt: "", hasMore: false, source: "none" };
+  }
+  excerptCache.set(entry, result);
+  return result;
 }
