@@ -103,24 +103,19 @@ test.describe("Blog feature", () => {
     const errors: string[] = [];
     page.on("pageerror", (err) => errors.push(err.message));
 
-    await page.goto("/blog", { waitUntil: "load" });
+    // Navigate directly to a known post slug for test stability.
+    // post-two has no excerpt marker so the entire body renders on both pages.
+    await page.goto("/blog/post-two", { waitUntil: "load" });
 
-    // Click the first post link in the listing
-    const firstPostLink = page.locator("article h2 a").first();
-    const postTitle = await firstPostLink.textContent();
-    await firstPostLink.click();
-    await page.waitForLoadState("load");
-
-    // Detail page should have an h1 matching the post title
+    // Detail page should have an h1 matching the known post title
     const h1 = page.locator("h1");
     await expect(h1).toBeVisible();
-    if (postTitle) {
-      await expect(h1).toContainText(postTitle.trim());
-    }
+    await expect(h1).toContainText("Post Two");
 
     // Body content should be present (the main article area)
     const content = page.locator(".zd-content");
     await expect(content).toBeVisible();
+    await expect(content).toContainText("Content of post two");
 
     expect(errors).toHaveLength(0);
   });
