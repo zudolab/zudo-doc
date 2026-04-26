@@ -1,5 +1,6 @@
 import * as p from "@clack/prompts";
 import { LIGHT_DARK_PAIRINGS, SINGLE_SCHEMES, FEATURES, SUPPORTED_LANGS } from "./constants.js";
+import type { PresetHeaderRightItem } from "./preset.js";
 
 export interface UserChoices {
   projectName: string;
@@ -22,6 +23,11 @@ export interface UserChoices {
   cjkFriendly?: boolean;
   // Package manager
   packageManager: "pnpm" | "npm" | "yarn" | "bun";
+  // Header-right items override. Preset-only — no interactive prompt because
+  // the array-of-discriminated-union shape does not fit `--flag` style prompts
+  // or CLI args. When omitted, settings-gen.ts emits the existing hardcoded
+  // fallback.
+  headerRightItems?: PresetHeaderRightItem[];
 }
 
 export interface PartialChoices {
@@ -37,6 +43,7 @@ export interface PartialChoices {
   githubUrl?: string;
   cjkFriendly?: boolean;
   packageManager?: "pnpm" | "npm" | "yarn" | "bun";
+  headerRightItems?: PresetHeaderRightItem[];
 }
 
 export async function runPrompts(
@@ -280,5 +287,6 @@ export async function runPrompts(
     githubUrl,
     cjkFriendly: prefilled.cjkFriendly,
     packageManager,
+    headerRightItems: prefilled.headerRightItems,
   };
 }

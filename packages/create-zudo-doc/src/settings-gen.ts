@@ -233,16 +233,35 @@ export function generateSettingsFile(choices: UserChoices): string {
   }
   lines.push(`  ] as HeaderNavItem[],`);
   lines.push(`  headerRightItems: [`);
-  if (choices.features.includes("designTokenPanel")) {
-    lines.push(`    { type: "trigger", trigger: "design-token-panel" },`);
-  }
-  if (choices.features.includes("versioning")) {
-    lines.push(`    { type: "component", component: "version-switcher" },`);
-  }
-  lines.push(`    { type: "component", component: "github-link" },`);
-  lines.push(`    { type: "component", component: "theme-toggle" },`);
-  if (choices.features.includes("i18n")) {
-    lines.push(`    { type: "component", component: "language-switcher" },`);
+  if (choices.headerRightItems && choices.headerRightItems.length > 0) {
+    // User-supplied override: emit each entry verbatim, in the chosen order.
+    // filterHeaderRightItems (src/utils/header-right-items.ts) handles runtime
+    // hiding of items whose feature is disabled — no need to gate emission
+    // here on choices.features.
+    for (const item of choices.headerRightItems) {
+      if (item.type === "trigger") {
+        lines.push(
+          `    { type: "trigger", trigger: ${JSON.stringify(item.trigger)} },`,
+        );
+      } else {
+        lines.push(
+          `    { type: "component", component: ${JSON.stringify(item.component)} },`,
+        );
+      }
+    }
+  } else {
+    // Default fallback: hardcoded order, gated on selected features.
+    if (choices.features.includes("designTokenPanel")) {
+      lines.push(`    { type: "trigger", trigger: "design-token-panel" },`);
+    }
+    if (choices.features.includes("versioning")) {
+      lines.push(`    { type: "component", component: "version-switcher" },`);
+    }
+    lines.push(`    { type: "component", component: "github-link" },`);
+    lines.push(`    { type: "component", component: "theme-toggle" },`);
+    if (choices.features.includes("i18n")) {
+      lines.push(`    { type: "component", component: "language-switcher" },`);
+    }
   }
   lines.push(`  ] as HeaderRightItem[],`);
   lines.push(`};`);

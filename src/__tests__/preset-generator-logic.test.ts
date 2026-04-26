@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { FEATURES, buildJson, buildCliCommand, type FormState } from "../lib/preset-generator-logic";
+import {
+  FEATURES,
+  buildJson,
+  buildCliCommand,
+  DEFAULT_HEADER_RIGHT_ITEMS,
+  type FormState,
+  type HeaderRightItemSpec,
+} from "../lib/preset-generator-logic";
 
 function makeState(overrides: Partial<FormState> = {}): FormState {
   return {
@@ -12,7 +19,9 @@ function makeState(overrides: Partial<FormState> = {}): FormState {
     defaultMode: "dark",
     respectPrefersColorScheme: true,
     features: [],
+    cjkFriendly: false,
     packageManager: "pnpm",
+    headerRightItems: [...DEFAULT_HEADER_RIGHT_ITEMS],
     ...overrides,
   };
 }
@@ -142,13 +151,94 @@ describe("buildCliCommand", () => {
     expect(cmd).toContain('"my docs"');
   });
 
-  it("command ends with --yes", () => {
+  it("command line ends with --yes (before the trailing comment line)", () => {
     const cmd = buildCliCommand(makeState());
-    expect(cmd).toMatch(/--yes$/);
+    // The command itself ends with --yes; a documentation comment line about
+    // headerRightItems may follow on a separate shell-comment line.
+    const firstLine = cmd.split("\n")[0]!;
+    expect(firstLine).toMatch(/--yes$/);
+  });
+
+  it("includes a trailing # comment about headerRightItems being preset-only", () => {
+    const cmd = buildCliCommand(makeState());
+    expect(cmd).toContain(
+      "# headerRightItems: use a JSON preset (--preset) — array configs are not expressible as CLI flags",
+    );
   });
 
   it("includes --pm flag", () => {
     const cmd = buildCliCommand(makeState({ packageManager: "npm" }));
     expect(cmd).toContain("--pm npm");
+  });
+});
+
+describe("headerRightItems — DEFAULT_HEADER_RIGHT_ITEMS", () => {
+  it("matches the canonical default order from src/config/settings.ts", () => {
+    // This is the live default from src/config/settings.ts and the user-facing
+    // guide at src/content/docs/guides/header-right-items.mdx. Keep both sides
+    // in sync — preset-generator drift here would surprise scaffold users.
+    expect(DEFAULT_HEADER_RIGHT_ITEMS).toEqual([
+      { kind: "component", name: "version-switcher" },
+      { kind: "trigger", name: "design-token-panel" },
+      { kind: "trigger", name: "ai-chat" },
+      { kind: "component", name: "github-link" },
+      { kind: "component", name: "theme-toggle" },
+      { kind: "component", name: "search" },
+      { kind: "component", name: "language-switcher" },
+    ]);
+  });
+});
+
+describe("buildJson — headerRightItems mapping", () => {
+  it("maps {kind: 'component'} → {type: 'component', component: <name>}", () => {
+    const items: HeaderRightItemSpec[] = [
+      { kind: "component", name: "github-link" },
+    ];
+    const json = buildJson(makeState({ headerRightItems: items }));
+    expect(json.headerRightItems).toEqual([
+      { type: "component", component: "github-link" },
+    ]);
+  });
+
+  it("maps {kind: 'trigger'} → {type: 'trigger', trigger: <name>}", () => {
+    const items: HeaderRightItemSpec[] = [
+      { kind: "trigger", name: "ai-chat" },
+    ];
+    const json = buildJson(makeState({ headerRightItems: items }));
+    expect(json.headerRightItems).toEqual([
+      { type: "trigger", trigger: "ai-chat" },
+    ]);
+  });
+
+  it("emits the canonical default headerRightItems for the default state", () => {
+    const json = buildJson(makeState());
+    expect(json.headerRightItems).toEqual([
+      { type: "component", component: "version-switcher" },
+      { type: "trigger", trigger: "design-token-panel" },
+      { type: "trigger", trigger: "ai-chat" },
+      { type: "component", component: "github-link" },
+      { type: "component", component: "theme-toggle" },
+      { type: "component", component: "search" },
+      { type: "component", component: "language-switcher" },
+    ]);
+  });
+
+  it("preserves reordered items in the JSON output", () => {
+    const reordered: HeaderRightItemSpec[] = [
+      { kind: "component", name: "theme-toggle" },
+      { kind: "component", name: "github-link" },
+      { kind: "trigger", name: "design-token-panel" },
+    ];
+    const json = buildJson(makeState({ headerRightItems: reordered }));
+    expect(json.headerRightItems).toEqual([
+      { type: "component", component: "theme-toggle" },
+      { type: "component", component: "github-link" },
+      { type: "trigger", trigger: "design-token-panel" },
+    ]);
+  });
+
+  it("emits headerRightItems even when it equals the default (always present)", () => {
+    const json = buildJson(makeState());
+    expect(json).toHaveProperty("headerRightItems");
   });
 });
