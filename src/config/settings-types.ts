@@ -160,3 +160,16 @@ export interface VersionConfig {
   /** Banner text shown on versioned pages (e.g., "unmaintained", "unreleased") */
   banner?: "unmaintained" | "unreleased" | false;
 }
+
+export interface BlogConfig {
+  /** Must be true to activate blog routes and sidebar. */
+  enabled: boolean;
+  /** Content directory for English blog posts (default: "src/content/blog"). */
+  dir?: string;
+  /** Number of recent posts shown in the blog sidebar (default: 30). */
+  sidebarRecentCount?: number;
+  /** Number of posts per listing page (default: 10). */
+  postsPerPage?: number;
+  /** Per-locale content directories for blog posts. */
+  locales?: Record<string, { dir: string }>;
+}
