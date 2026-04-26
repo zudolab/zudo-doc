@@ -5,9 +5,11 @@ import { defaultLocale, t } from "@/config/i18n";
 import { withBase } from "@/utils/base";
 import { toRouteSlug } from "@/utils/slug";
 
-// Blog disabled — redirect to site root rather than emitting a dead page.
-if (!getBlogConfig()) {
-  return Astro.redirect(withBase("/"));
+export async function getStaticPaths() {
+  // Opt out entirely when the blog feature is disabled — same pattern as the
+  // listing pages and the JA archives page so build output is consistent.
+  if (!getBlogConfig()) return [];
+  return [{ params: {} }];
 }
 
 const lang = defaultLocale;
