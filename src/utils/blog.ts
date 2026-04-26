@@ -1,7 +1,55 @@
 import { getCollection, type CollectionKey } from "astro:content";
 import type { BlogEntry } from "@/types/blog-entry";
 import { settings } from "@/config/settings";
+import type { BlogConfig } from "@/config/settings";
 import { toRouteSlug } from "@/utils/slug";
+
+// ---------------------------------------------------------------------------
+// Resolved blog config
+// ---------------------------------------------------------------------------
+
+/**
+ * Documented defaults for `BlogConfig`. Single source of truth so callers do
+ * not repeat the fallbacks. Adjust here if the documented defaults change.
+ */
+const BLOG_DEFAULTS = {
+  dir: "src/content/blog",
+  sidebarRecentCount: 30,
+  postsPerPage: 10,
+} as const;
+
+/**
+ * Resolved blog config returned by {@link getBlogConfig}. Fields with a
+ * documented default are required (non-optional) so callers can rely on them
+ * being populated. Optional `BlogConfig` fields without a default (currently
+ * `locales`) remain optional.
+ */
+export type ResolvedBlogConfig = Omit<
+  BlogConfig,
+  "dir" | "sidebarRecentCount" | "postsPerPage"
+> & {
+  dir: string;
+  sidebarRecentCount: number;
+  postsPerPage: number;
+};
+
+/**
+ * Returns the resolved blog config with all documented defaults applied, or
+ * `null` when the blog feature is disabled (`settings.blog === false`).
+ *
+ * The leading `...blog` spread keeps any future `BlogConfig` field passed
+ * through verbatim; explicit `??` fallbacks cover the documented defaults.
+ */
+export function getBlogConfig(): ResolvedBlogConfig | null {
+  const blog = settings.blog;
+  if (blog === false) return null;
+  return {
+    ...blog,
+    dir: blog.dir ?? BLOG_DEFAULTS.dir,
+    sidebarRecentCount: blog.sidebarRecentCount ?? BLOG_DEFAULTS.sidebarRecentCount,
+    postsPerPage: blog.postsPerPage ?? BLOG_DEFAULTS.postsPerPage,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Internal helpers
