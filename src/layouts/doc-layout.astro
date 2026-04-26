@@ -46,6 +46,8 @@ interface Props {
   versionBanner?: VersionConfig["banner"];
   hideSidebar?: boolean;
   hideToc?: boolean;
+  /** When provided, overrides the navSection derived from currentSlug. Used by blog routes. */
+  navSection?: string;
 }
 
 const {
@@ -61,11 +63,13 @@ const {
   versionBanner,
   hideSidebar = false,
   hideToc = false,
+  navSection: navSectionProp,
 } = Astro.props;
 const latestUrl = currentSlug ? docsUrl(currentSlug, lang) : undefined;
 const versionAvailability = settings.versions ? await getVersionAvailability() : undefined;
 const fullTitle = title === settings.siteName ? title : `${title} | ${settings.siteName}`;
-const navSection = currentSlug ? getNavSectionForSlug(currentSlug) : undefined;
+// Use explicit navSection prop when provided (e.g. blog routes), otherwise derive from slug
+const navSection = navSectionProp ?? (currentSlug ? getNavSectionForSlug(currentSlug) : undefined);
 const currentPath = Astro.url.pathname;
 const htmlColorAttrs = settings.colorMode
   ? { "data-theme": settings.colorMode.defaultMode, style: `color-scheme: ${settings.colorMode.defaultMode}` }
