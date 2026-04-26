@@ -6,17 +6,21 @@ export const FEATURES = [
   { value: "sidebarFilter", label: "Sidebar filter", cliFlag: "sidebar-filter", default: true },
   { value: "claudeResources", label: "Claude Resources", cliFlag: "claude-resources", default: false },
   { value: "claudeSkills", label: "Claude skills (user-facing)", cliFlag: "claude-skills", default: false },
-  { value: "colorTweakPanel", label: "Color tweak panel", cliFlag: "color-tweak-panel", default: false },
+  { value: "designTokenPanel", label: "Design Token Panel", cliFlag: "design-token-panel", default: false },
   { value: "sidebarResizer", label: "Sidebar resizer", cliFlag: "sidebar-resizer", default: false },
   { value: "sidebarToggle", label: "Sidebar toggle", cliFlag: "sidebar-toggle", default: false },
   { value: "versioning", label: "Versioning", cliFlag: "versioning", default: false },
   { value: "docHistory", label: "Document history", cliFlag: "doc-history", default: false },
+  { value: "bodyFootUtil", label: "Body foot util area", cliFlag: "body-foot-util", default: false },
   { value: "llmsTxt", label: "llms.txt", cliFlag: "llms-txt", default: false },
   { value: "skillSymlinker", label: "Skill symlinker", cliFlag: "skill-symlinker", default: false },
   { value: "tauri", label: "Tauri desktop app", cliFlag: "tauri", default: false },
   { value: "footerNavGroup", label: "Footer nav group", cliFlag: "footer-nav-group", default: false },
+  { value: "imageEnlarge", label: "Image enlarge", cliFlag: "image-enlarge", default: true },
   { value: "footerCopyright", label: "Footer copyright", cliFlag: "footer-copyright", default: false },
   { value: "changelog", label: "Changelog", cliFlag: "changelog", default: false },
+  { value: "tagGovernance", label: "Tag governance", cliFlag: "tag-governance", default: true },
+  { value: "footerTaglist", label: "Footer taglist", cliFlag: "footer-taglist", default: false },
 ] as const;
 
 export type ColorSchemeMode = "single" | "light-dark";
