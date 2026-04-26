@@ -6,6 +6,7 @@ import type {
   LocaleConfig,
   FrontmatterPreviewConfig,
   BodyFootUtilAreaConfig,
+  BlogConfig,
 } from "./settings-types";
 
 export const settings = {
@@ -39,11 +40,22 @@ export const settings = {
     css: `.global-test { border: 3px solid rgb(255, 0, 0); }`,
   } as HtmlPreviewConfig | undefined,
   claudeResources: false as { claudeDir: string; projectRoot?: string } | false,
+  // Blog enabled for E2E testing. postsPerPage=3 so 5 posts create 2 pages.
+  blog: {
+    enabled: true,
+    dir: "src/content/blog",
+    postsPerPage: 3,
+  } as BlogConfig | false,
   headerNav: [
     {
       label: "Getting Started",
       path: "/docs/getting-started",
       categoryMatch: "getting-started",
+    },
+    {
+      label: "Blog",
+      path: "/blog",
+      categoryMatch: "blog",
     },
     {
       label: "Learn",
