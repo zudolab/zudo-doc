@@ -1,0 +1,77 @@
+---
+import BlogPostMeta from "@/components/blog-post-meta.astro";
+import { defaultLocale, t, type Locale } from "@/config/i18n";
+import { withBase } from "@/utils/base";
+import { toRouteSlug } from "@/utils/slug";
+import type { BlogEntry } from "@/types/blog-entry";
+import type { BlogExcerpt } from "@/utils/blog";
+
+interface Props {
+  entry: BlogEntry;
+  lang?: Locale;
+  excerpt: BlogExcerpt;
+}
+
+const { entry, lang = defaultLocale, excerpt } = Astro.props;
+
+const slug = entry.data.slug ?? toRouteSlug(entry.id);
+const href =
+  lang === defaultLocale
+    ? withBase(`/blog/${slug}`)
+    : withBase(`/${lang}/blog/${slug}`);
+
+// "Continue reading" link is rendered when the body contained a `<!-- more -->`
+// marker (excerpt.hasMore) OR the author manually set `excerpt:` in
+// frontmatter (which always implies "there is more in the detail page").
+const showContinue = excerpt.hasMore || excerpt.source === "manual";
+---
+
+<article class="border-b border-muted py-vsp-md">
+  <h2 class="text-subheading font-bold mb-vsp-2xs">
+    <a href={href} class="text-fg hover:text-accent">{entry.data.title}</a>
+  </h2>
+
+  <BlogPostMeta
+    date={entry.data.date}
+    author={entry.data.author}
+    authors={entry.data.authors}
+    tags={entry.data.tags}
+    lang={lang}
+  />
+
+  {
+    /*
+    Excerpt rendering by source:
+      - "marker"  → rendered HTML from re-parsed body up to <!-- more -->
+      - "manual"  → frontmatter `excerpt:` string (treated as plain prose)
+      - "none"    → fall back to `description`, or render nothing
+    Cards never display the full post body — excerpt only.
+  */
+  }
+  {
+    excerpt.source === "marker" && (
+      <div class="zd-content mb-vsp-sm" set:html={excerpt.excerpt} />
+    )
+  }
+  {
+    excerpt.source === "manual" && (
+      <p class="mb-vsp-sm text-fg">{excerpt.excerpt}</p>
+    )
+  }
+  {
+    excerpt.source === "none" && entry.data.description && (
+      <p class="mb-vsp-sm text-muted">{entry.data.description}</p>
+    )
+  }
+
+  {
+    showContinue && (
+      <a
+        href={href}
+        class="inline-flex items-center gap-hsp-2xs text-accent hover:underline"
+      >
+        {t("blog.continueReading", lang)} →
+      </a>
+    )
+  }
+</article>
