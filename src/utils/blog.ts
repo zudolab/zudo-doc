@@ -1,0 +1,100 @@
+import { getCollection, type CollectionKey } from "astro:content";
+import type { BlogEntry } from "@/types/blog-entry";
+import { settings } from "@/config/settings";
+import { toRouteSlug } from "@/utils/slug";
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Typed wrapper around getCollection() for blog collections.
+ *
+ * The unsafe boundary is confined to a single location, mirroring
+ * the pattern in get-docs-collection.ts.
+ */
+async function getBlogCollection(name: CollectionKey | string): Promise<BlogEntry[]> {
+  return (await getCollection(name as CollectionKey)) as unknown as BlogEntry[];
+}
+
+/** Filter drafts in production builds, aligned with the docs behaviour. */
+function filterDrafts(posts: BlogEntry[]): BlogEntry[] {
+  return import.meta.env.PROD ? posts.filter((p) => !p.data.draft) : posts;
+}
+
+/** Sort posts newest-first by date. */
+function sortNewestFirst(posts: BlogEntry[]): BlogEntry[] {
+  return [...posts].sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+}
+
+// ---------------------------------------------------------------------------
+// Public result type
+// ---------------------------------------------------------------------------
+
+export interface BlogPostsResult {
+  /** All posts: locale-first, then EN fallbacks (includes unlisted — filter as needed). */
+  allPosts: BlogEntry[];
+  /** Slugs that come from the EN (base) collection, not the locale. */
+  fallbackSlugs: Set<string>;
+}
+
+// ---------------------------------------------------------------------------
+// Module-level cache — stable within a single build
+// ---------------------------------------------------------------------------
+
+const cache = new Map<string, Promise<BlogPostsResult>>();
+
+// ---------------------------------------------------------------------------
+// loadBlogPosts
+// ---------------------------------------------------------------------------
+
+/**
+ * Load and merge blog posts for a given language.
+ * Results are memoized by language for the duration of the build.
+ *
+ * For English (default locale), returns the base `blog` collection directly.
+ * For other locales, merges locale posts with EN fallbacks:
+ *   - Locale posts take priority (matched by slug)
+ *   - EN posts fill in for missing translations
+ *   - Draft filtering applied in production
+ *   - Posts sorted newest-first
+ */
+export function loadBlogPosts(lang: string): Promise<BlogPostsResult> {
+  const cached = cache.get(lang);
+  if (cached) return cached;
+  const promise = loadBlogPostsImpl(lang);
+  cache.set(lang, promise);
+  return promise;
+}
+
+async function loadBlogPostsImpl(lang: string): Promise<BlogPostsResult> {
+  const defaultLang = settings.defaultLocale;
+
+  if (lang === defaultLang) {
+    const posts = sortNewestFirst(filterDrafts(await getBlogCollection("blog")));
+    return { allPosts: posts, fallbackSlugs: new Set<string>() };
+  }
+
+  // Determine the locale collection name. When blog.locales is configured, use
+  // its dir; the collection name is always `blog-${code}`.
+  const localeCollectionName = `blog-${lang}`;
+
+  const localePosts = filterDrafts(await getBlogCollection(localeCollectionName));
+  const basePosts = filterDrafts(await getBlogCollection("blog"));
+
+  const localeSlugSet = new Set<string>(
+    localePosts.map((p) => p.data.slug ?? toRouteSlug(p.id)),
+  );
+
+  const fallbackPosts = basePosts.filter(
+    (p) => !localeSlugSet.has(p.data.slug ?? toRouteSlug(p.id)),
+  );
+
+  const allPosts = sortNewestFirst([...localePosts, ...fallbackPosts]);
+
+  const fallbackSlugs = new Set<string>(
+    fallbackPosts.map((p) => p.data.slug ?? toRouteSlug(p.id)),
+  );
+
+  return { allPosts, fallbackSlugs };
+}

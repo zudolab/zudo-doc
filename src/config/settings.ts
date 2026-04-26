@@ -6,6 +6,7 @@ export type {
   HtmlPreviewConfig,
   LocaleConfig,
   VersionConfig,
+  BlogConfig,
   FooterConfig,
   FrontmatterPreviewConfig,
   BodyFootUtilAreaConfig,
@@ -20,6 +21,7 @@ import type {
   HtmlPreviewConfig,
   LocaleConfig,
   VersionConfig,
+  BlogConfig,
   FooterConfig,
   FrontmatterPreviewConfig,
   BodyFootUtilAreaConfig,
@@ -117,6 +119,22 @@ export const settings = {
       banner: "unmaintained",
     },
   ] as VersionConfig[] | false,
+  /**
+   * Opt-in blog feature. Off by default — set to a config object to enable.
+   *
+   * Example:
+   *
+   *   blog: {
+   *     enabled: true,
+   *     dir: "src/content/blog",
+   *     sidebarRecentCount: 30,
+   *     postsPerPage: 10,
+   *     locales: {
+   *       ja: { dir: "src/content/blog-ja" },
+   *     },
+   *   },
+   */
+  blog: false as BlogConfig | false,
   claudeResources: {
     claudeDir: ".claude",
   } as { claudeDir: string; projectRoot?: string } | false,
