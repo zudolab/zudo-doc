@@ -233,8 +233,9 @@ export function generateSettingsFile(choices: UserChoices): string {
   }
   lines.push(`  ] as HeaderNavItem[],`);
   lines.push(`  headerRightItems: [`);
-  if (choices.headerRightItems && choices.headerRightItems.length > 0) {
-    // User-supplied override: emit each entry verbatim, in the chosen order.
+  if (choices.headerRightItems !== undefined) {
+    // User-supplied override (including empty array): emit each entry verbatim,
+    // in the chosen order. An empty array means "no header-right items" — honor it.
     // filterHeaderRightItems (src/utils/header-right-items.ts) handles runtime
     // hiding of items whose feature is disabled — no need to gate emission
     // here on choices.features.

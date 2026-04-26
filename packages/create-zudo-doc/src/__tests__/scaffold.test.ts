@@ -604,6 +604,36 @@ describe("scaffold — headerRightItems preset override (sub #440)", () => {
     expect(content).not.toContain('trigger: "ai-chat"');
   });
 
+  it("honors an explicit empty headerRightItems array (no items)", async () => {
+    // Empty array means "user wants no header-right items at all" — must not
+    // silently fall back to the hardcoded default. validatePreset accepts [],
+    // and presetToChoices forwards it; settings-gen must honor it too.
+    const choices: UserChoices = {
+      projectName: "test-hri-empty",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "designTokenPanel"],
+      packageManager: "pnpm",
+      headerRightItems: [],
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-hri-empty", "src/config/settings.ts"),
+      "utf-8",
+    );
+    const match = content.match(
+      /headerRightItems:\s*\[([\s\S]*?)\]\s*as\s+HeaderRightItem\[\],/,
+    );
+    expect(match).toBeTruthy();
+    // Block should be empty (whitespace only) — no fallback entries leaked in.
+    expect(match![1].trim()).toBe("");
+    // Specifically, the legacy fallback's design-token-panel trigger must not
+    // appear even though designTokenPanel is in the features list.
+    expect(content).not.toContain('trigger: "design-token-panel"');
+    expect(content).not.toContain('component: "github-link"');
+  });
+
   it("emits ai-chat verbatim when explicitly listed in the preset", async () => {
     // The runtime filter (filterHeaderRightItems) hides ai-chat when
     // aiAssistant is false in the scaffold, but emission must still preserve

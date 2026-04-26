@@ -119,6 +119,14 @@ describe("validatePreset — headerRightItems (sub #440)", () => {
     ).toMatch(/component must be a string/);
   });
 
+  it("rejects items where trigger is not a string", () => {
+    expect(
+      validatePreset({
+        headerRightItems: [{ type: "trigger", trigger: 42 }],
+      }),
+    ).toMatch(/trigger must be a string/);
+  });
+
   it("rejects non-object items", () => {
     expect(
       validatePreset({ headerRightItems: ["theme-toggle"] }),
