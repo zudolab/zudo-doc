@@ -1830,3 +1830,261 @@ describe("scaffold — framework TS error fixes (sub #410)", () => {
     );
   });
 });
+
+describe("scaffold — blog feature", () => {
+  describe("with blog ON, i18n OFF", () => {
+    const choices: UserChoices = {
+      projectName: "test-blog-no-i18n",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "blog"],
+      packageManager: "pnpm",
+    };
+
+    beforeEach(async () => {
+      await scaffold(choices);
+    });
+
+    it("creates the EN blog route pages", async () => {
+      expect(
+        await fs.pathExists(
+          projectPath("test-blog-no-i18n", "src/pages/blog/index.astro"),
+        ),
+      ).toBe(true);
+      expect(
+        await fs.pathExists(
+          projectPath("test-blog-no-i18n", "src/pages/blog/[...slug].astro"),
+        ),
+      ).toBe(true);
+      expect(
+        await fs.pathExists(
+          projectPath("test-blog-no-i18n", "src/pages/blog/archives.astro"),
+        ),
+      ).toBe(true);
+      expect(
+        await fs.pathExists(
+          projectPath(
+            "test-blog-no-i18n",
+            "src/pages/blog/page/[page].astro",
+          ),
+        ),
+      ).toBe(true);
+    });
+
+    it("creates the blog listing components", async () => {
+      expect(
+        await fs.pathExists(
+          projectPath(
+            "test-blog-no-i18n",
+            "src/components/blog-post-card.astro",
+          ),
+        ),
+      ).toBe(true);
+      expect(
+        await fs.pathExists(
+          projectPath(
+            "test-blog-no-i18n",
+            "src/components/blog-pagination.astro",
+          ),
+        ),
+      ).toBe(true);
+      expect(
+        await fs.pathExists(
+          projectPath(
+            "test-blog-no-i18n",
+            "src/components/blog-post-meta.astro",
+          ),
+        ),
+      ).toBe(true);
+    });
+
+    it("creates the blog utilities, types, and inlined remark-excerpt plugin", async () => {
+      expect(
+        await fs.pathExists(
+          projectPath("test-blog-no-i18n", "src/utils/blog.ts"),
+        ),
+      ).toBe(true);
+      expect(
+        await fs.pathExists(
+          projectPath("test-blog-no-i18n", "src/utils/blog-listing.ts"),
+        ),
+      ).toBe(true);
+      expect(
+        await fs.pathExists(
+          projectPath("test-blog-no-i18n", "src/types/blog-entry.ts"),
+        ),
+      ).toBe(true);
+      expect(
+        await fs.pathExists(
+          projectPath("test-blog-no-i18n", "src/plugins/remark-excerpt.ts"),
+        ),
+      ).toBe(true);
+    });
+
+    it("creates the EN starter blog post (single sample)", async () => {
+      expect(
+        await fs.pathExists(
+          projectPath(
+            "test-blog-no-i18n",
+            "src/content/blog/hello-world.md",
+          ),
+        ),
+      ).toBe(true);
+    });
+
+    it("emits the blog setting block in settings.ts", async () => {
+      const settings = await fs.readFile(
+        projectPath("test-blog-no-i18n", "src/config/settings.ts"),
+        "utf-8",
+      );
+      expect(settings).toMatch(/blog:\s*\{/);
+      expect(settings).toMatch(/enabled:\s*true/);
+    });
+
+    it("adds the runtime deps required by remark-excerpt to package.json", async () => {
+      const pkg = await fs.readJson(
+        projectPath("test-blog-no-i18n", "package.json"),
+      );
+      expect(pkg.dependencies).toHaveProperty("mdast-util-to-hast");
+      expect(pkg.dependencies).toHaveProperty("hast-util-to-html");
+      expect(pkg.dependencies).toHaveProperty("mdast-util-from-markdown");
+    });
+
+    it("emits the blog content collection in content.config.ts", async () => {
+      const config = await fs.readFile(
+        projectPath("test-blog-no-i18n", "src/content.config.ts"),
+        "utf-8",
+      );
+      expect(config).toMatch(/blogSchema/);
+      expect(config).toMatch(/const blog = defineCollection/);
+      expect(config).toMatch(/collections\s*=\s*\{[^}]*\bblog\b/);
+    });
+
+    it("does NOT create [locale] blog routes when i18n is off", async () => {
+      expect(
+        await fs.pathExists(
+          projectPath("test-blog-no-i18n", "src/pages/[locale]/blog"),
+        ),
+      ).toBe(false);
+    });
+
+    it("does NOT create blog-{lang} secondary content when i18n is off", async () => {
+      // secondaryLang for defaultLang=en would be "ja"
+      expect(
+        await fs.pathExists(
+          projectPath("test-blog-no-i18n", "src/content/blog-ja"),
+        ),
+      ).toBe(false);
+    });
+  });
+
+  describe("with blog ON, i18n ON", () => {
+    const choices: UserChoices = {
+      projectName: "test-blog-i18n",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "blog", "i18n"],
+      packageManager: "pnpm",
+    };
+
+    beforeEach(async () => {
+      await scaffold(choices);
+    });
+
+    it("creates BOTH the EN and locale-aware blog index routes", async () => {
+      expect(
+        await fs.pathExists(
+          projectPath("test-blog-i18n", "src/pages/blog/index.astro"),
+        ),
+      ).toBe(true);
+      expect(
+        await fs.pathExists(
+          projectPath(
+            "test-blog-i18n",
+            "src/pages/[locale]/blog/index.astro",
+          ),
+        ),
+      ).toBe(true);
+    });
+
+    it("creates the locale-aware blog detail / archives / paginated routes", async () => {
+      expect(
+        await fs.pathExists(
+          projectPath(
+            "test-blog-i18n",
+            "src/pages/[locale]/blog/[...slug].astro",
+          ),
+        ),
+      ).toBe(true);
+      expect(
+        await fs.pathExists(
+          projectPath(
+            "test-blog-i18n",
+            "src/pages/[locale]/blog/archives.astro",
+          ),
+        ),
+      ).toBe(true);
+      expect(
+        await fs.pathExists(
+          projectPath(
+            "test-blog-i18n",
+            "src/pages/[locale]/blog/page/[page].astro",
+          ),
+        ),
+      ).toBe(true);
+    });
+
+    it("creates the JA secondary-locale starter post (defaultLang=en → blog-ja/)", async () => {
+      expect(
+        await fs.pathExists(
+          projectPath(
+            "test-blog-i18n",
+            "src/content/blog-ja/hello-world.md",
+          ),
+        ),
+      ).toBe(true);
+    });
+
+    it("emits a blog-{code} locale collection in content.config.ts", async () => {
+      const config = await fs.readFile(
+        projectPath("test-blog-i18n", "src/content.config.ts"),
+        "utf-8",
+      );
+      expect(config).toMatch(/blogLocaleCollections/);
+      expect(config).toMatch(/blog-\$\{code\}/);
+    });
+  });
+
+  describe("without blog feature", () => {
+    const choices: UserChoices = {
+      projectName: "test-no-blog",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+
+    beforeEach(async () => {
+      await scaffold(choices);
+    });
+
+    it("does NOT create src/pages/blog when blog is disabled", async () => {
+      expect(
+        await fs.pathExists(projectPath("test-no-blog", "src/pages/blog")),
+      ).toBe(false);
+    });
+
+    it("does NOT emit a blog: { … } block in settings.ts", async () => {
+      const settings = await fs.readFile(
+        projectPath("test-no-blog", "src/config/settings.ts"),
+        "utf-8",
+      );
+      // The generator emits `blog: false as BlogConfig | false` when the
+      // blog feature is OFF, so the literal "blog: {" header must not appear.
+      expect(settings).not.toMatch(/blog:\s*\{/);
+    });
+  });
+});
