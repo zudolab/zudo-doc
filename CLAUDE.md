@@ -136,6 +136,10 @@ Navigation is filesystem-driven. Directory structure becomes sidebar navigation.
 4. Keep code blocks and `<HtmlPreview>` blocks identical -- only translate prose
 5. Run `pnpm format:md` then `pnpm build` to verify
 
+### Blog Conventions
+
+Blog posts live in `src/content/blog/{name}.md` (or `.mdx` when JSX components are needed). The schema requires `title` (string) and `date` (ISO date). Optional fields include `description`, `author`, `authors`, `tags`, `excerpt` (manual excerpt string), `draft`, `unlisted`, and `slug` (URL slug override). Posts are sorted newest-first by `date` and paginated at `postsPerPage` (default: 10). Use `<!-- more -->` in the post body to mark the excerpt boundary — everything above the marker renders on the listing page, everything below appears only on the detail page; a manual `excerpt:` frontmatter field wins over the marker when both are present. Blog posts follow the same bilingual rule as docs: mirror posts under `src/content/blog-ja/` (or the configured locale dir) when a Japanese locale is enabled.
+
 ## Doc Skill (setup-doc-skill)
 
 The doc-skill (`scripts/setup-doc-skill.sh`) generates `.claude/skills/<name>/SKILL.md` and symlinks docs into it. It is gitignored -- do NOT track the generated SKILL.md in git. Run `pnpm setup:doc-skill` to regenerate. To update the skill template, edit `scripts/setup-doc-skill.sh`.
