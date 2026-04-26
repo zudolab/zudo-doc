@@ -282,6 +282,14 @@ function generatePackageJson(choices: UserChoices) {
     deps["diff"] = "^8.0.3";
   }
 
+  if (choices.features.includes("blog")) {
+    // Runtime deps for the bundled remark-excerpt plugin (renders the
+    // pre-`<!-- more -->` portion of a post to HTML for listing/sidebar).
+    deps["mdast-util-to-hast"] = "^13.2.1";
+    deps["hast-util-to-html"] = "^9.0.5";
+    deps["mdast-util-from-markdown"] = "^2.0.3";
+  }
+
   if (choices.features.includes("tagGovernance")) {
     // gray-matter is already in `deps` unconditionally (base template uses it),
     // so we only add the tooling deps specific to tags:audit / tags:suggest.
