@@ -5,11 +5,12 @@ import { defaultLocale, t } from "@/config/i18n";
 import { withBase } from "@/utils/base";
 import { toRouteSlug } from "@/utils/slug";
 
-export async function getStaticPaths() {
-  // Opt out entirely when the blog feature is disabled — same pattern as the
-  // listing pages and the JA archives page so build output is consistent.
-  if (!getBlogConfig()) return [];
-  return [{ params: {} }];
+// Static-route opt-out: Astro ignores `getStaticPaths` on routes without a
+// dynamic segment, so we redirect to the site root when the blog feature is
+// disabled. Dynamic siblings ([locale]/blog/archives, [page] paginated routes)
+// use the empty-getStaticPaths pattern instead.
+if (!getBlogConfig()) {
+  return Astro.redirect(withBase("/"));
 }
 
 const lang = defaultLocale;

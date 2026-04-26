@@ -4,19 +4,20 @@ import BlogPostCard from "@/components/blog-post-card.astro";
 import BlogPagination from "@/components/blog-pagination.astro";
 import { defaultLocale, t } from "@/config/i18n";
 import { getBlogConfig } from "@/utils/blog";
+import { withBase } from "@/utils/base";
 import { blogPageHref, loadBlogListingPage } from "@/utils/blog-listing";
 
-export async function getStaticPaths() {
-  // Opt out entirely when the blog feature is disabled — same pattern as the
-  // detail page from Wave 3.
-  if (!getBlogConfig()) return [];
-  return [{ params: {} }];
+// Static-route opt-out: Astro ignores `getStaticPaths` on routes without a
+// dynamic segment, so we redirect to the site root when the blog feature is
+// disabled. Dynamic siblings ([page] paginated route, [locale]/blog/...) use
+// the empty-getStaticPaths pattern instead.
+if (!getBlogConfig()) {
+  return Astro.redirect(withBase("/"));
 }
 
 const lang = defaultLocale;
-// `loadBlogListingPage` only returns null when blog is disabled, and in that
-// case `getStaticPaths` already excluded this route. The non-null assertion
-// is therefore safe at render time.
+// `loadBlogListingPage` only returns null when blog is disabled, and the
+// early redirect above already handled that case.
 const data = (await loadBlogListingPage(lang, 1))!;
 const { posts, excerpts, currentPage, lastPage } = data;
 
