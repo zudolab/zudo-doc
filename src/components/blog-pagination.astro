@@ -1,0 +1,71 @@
+---
+import { defaultLocale, t, type Locale } from "@/config/i18n";
+
+interface Props {
+  currentPage: number;
+  lastPage: number;
+  lang?: Locale;
+  prevHref: string | null;
+  nextHref: string | null;
+}
+
+const {
+  currentPage,
+  lastPage,
+  lang = defaultLocale,
+  prevHref,
+  nextHref,
+} = Astro.props;
+
+const pageOfTotal = t("blog.pageNofM", lang)
+  .replace("{n}", String(currentPage))
+  .replace("{m}", String(lastPage));
+
+const prevLabel = t("blog.previousPage", lang);
+const nextLabel = t("blog.nextPage", lang);
+---
+
+<nav
+  class="flex items-center justify-between gap-hsp-md mt-vsp-lg pt-vsp-md border-t border-muted"
+  aria-label={pageOfTotal}
+>
+  {
+    prevHref ? (
+      <a
+        href={prevHref}
+        rel="prev"
+        class="text-accent hover:underline inline-flex items-center gap-hsp-2xs"
+      >
+        ← {prevLabel}
+      </a>
+    ) : (
+      <span
+        class="text-muted inline-flex items-center gap-hsp-2xs"
+        aria-hidden="true"
+      >
+        ← {prevLabel}
+      </span>
+    )
+  }
+
+  <span class="text-caption text-muted">{pageOfTotal}</span>
+
+  {
+    nextHref ? (
+      <a
+        href={nextHref}
+        rel="next"
+        class="text-accent hover:underline inline-flex items-center gap-hsp-2xs"
+      >
+        {nextLabel} →
+      </a>
+    ) : (
+      <span
+        class="text-muted inline-flex items-center gap-hsp-2xs"
+        aria-hidden="true"
+      >
+        {nextLabel} →
+      </span>
+    )
+  }
+</nav>
