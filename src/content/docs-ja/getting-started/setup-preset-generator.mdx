@@ -9,3 +9,19 @@ import PresetGenerator from '@/components/preset-generator';
 このインタラクティブツールを使って、zudo-docプロジェクトのオプションを設定し、セットアッププリセットを生成できます。出力はプログラマティックAPI用のJSON、またはターミナル用のCLIコマンドとしてコピーできます。
 
 <PresetGenerator client:load />
+
+## ヘッダー右側アイテム
+
+「Header right items」セクションは `settings.headerRightItems` — サイトヘッダー右側のクラスタ(テーマ切替、言語スイッチャー、バージョンスイッチャー、GitHub リンク、Design Token Panel / AI Chat トリガー)を構成します。各アイテムのオン・オフを切り替え、上下ボタンで描画順を変更できます。
+
+2 種類のアイテム — `link`(任意の外部リンク)と `html`(生 HTML)— は、意図的に UI に出していません。これらを使う場合はスキャフォールド後に `settings.ts` を直接編集してください。discriminated union のスキーマと使用例は [ヘッダー右側アイテム](../guides/header-right-items.mdx) を参照してください。
+
+## 新しく追加された機能
+
+Features セクションには、いくつか押さえておきたい新項目があります。
+
+- **Image enlarge** — コンテンツ画像のクリック拡大。デフォルトで有効。
+- **Tag governance** — タグの語彙ルール監査。デフォルトで有効。詳細は [タグガバナンス](../guides/tag-governance.mdx)。
+- **Body foot util area** — 記事本文の末尾にタグリストやフィードバックリンクなどのユーティリティを差し込めるスロット。詳細は [Body foot util area](../guides/body-foot-util-area.mdx)。
+- **Footer taglist** — サイトフッターにグローバルタグクラウドを表示します。詳細は [Footer taglist](../guides/footer-taglist.mdx)。
+- **Design Token Panel** — 旧称「Color tweak panel」を改称。設定キーは `designTokenPanel`。互換のため `colorTweakPanel` も引き続きエイリアスとして使えます。
