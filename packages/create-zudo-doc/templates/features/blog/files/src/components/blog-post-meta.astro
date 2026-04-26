@@ -1,0 +1,89 @@
+---
+import { t, defaultLocale, type Locale } from "@/config/i18n";
+
+interface Props {
+  date: Date;
+  author?: string;
+  authors?: string[];
+  tags?: string[];
+  lang?: Locale;
+}
+
+const { date, author, authors, tags, lang = defaultLocale } = Astro.props;
+
+const formattedDate = new Intl.DateTimeFormat(lang, {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+}).format(date);
+
+// Merge author + authors into one display list
+const authorList = [...(author ? [author] : []), ...(authors ?? [])];
+const hasAuthors = authorList.length > 0;
+const authorDisplay = authorList.join(", ");
+---
+
+<div
+  class="flex flex-wrap items-center gap-x-hsp-md gap-y-vsp-2xs text-caption text-muted mb-vsp-md"
+>
+  <span class="inline-flex items-center gap-hsp-2xs">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class="h-icon-xs w-icon-xs"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+      ></path>
+    </svg>
+    <span>
+      {t("blog.publishedOn", lang)}
+      <time datetime={date.toISOString()}>{formattedDate}</time>
+    </span>
+  </span>
+
+  {
+    hasAuthors && (
+      <span class="inline-flex items-center gap-hsp-2xs">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-icon-xs w-icon-xs"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+          />
+        </svg>
+        <span>
+          {t("blog.author", lang)} {authorDisplay}
+        </span>
+      </span>
+    )
+  }
+
+  {
+    tags && tags.length > 0 && (
+      <ul class="flex flex-wrap items-center gap-x-hsp-xs gap-y-vsp-2xs list-none p-0 m-0">
+        {tags.map((tag) => (
+          <li class="inline-flex">
+            <span class="text-caption text-muted border border-muted px-hsp-xs py-vsp-2xs">
+              #{tag}
+            </span>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</div>

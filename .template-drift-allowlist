@@ -6,6 +6,7 @@ src/plugins/rehype-image-enlarge.ts
 src/plugins/rehype-mermaid.ts
 src/plugins/rehype-strip-md-extension.ts
 src/plugins/remark-admonitions.ts
+src/plugins/remark-excerpt.ts
 src/plugins/remark-resolve-markdown-links.ts
 
 # Plugin utilities — template-only files (production uses @zudo-doc/md-plugins)
@@ -28,3 +29,19 @@ src/config/frontmatter-preview-renderers.tsx
 # the zudo-doc showcase docs; template ships an empty array so downstream
 # projects define their own taxonomy without inheriting unrelated ids
 src/config/tag-vocabulary.ts
+
+# Blog utility import — production imports `extractExcerptFromMarkdown` from
+# @zudo-doc/md-plugins, but generated projects don't depend on that package
+# so the template imports it from the inlined `@/plugins/remark-excerpt`.
+src/utils/blog.ts
+
+# Showcase-only sample blog posts — the template ships a single hello-world
+# starter post per locale; these extra posts demonstrate the showcase's
+# excerpt strategies and bilingual authoring flow but are not appropriate
+# defaults for a brand-new generated project.
+src/content/blog/authoring-blog-posts.md
+src/content/blog/writing-bilingual-blog-posts.md
+src/content/blog/tags-and-the-blog-index.md
+src/content/blog-ja/authoring-blog-posts.md
+src/content/blog-ja/writing-bilingual-blog-posts.md
+src/content/blog-ja/tags-and-the-blog-index.md
