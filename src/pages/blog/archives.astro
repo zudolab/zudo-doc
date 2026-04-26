@@ -1,0 +1,75 @@
+---
+import DocLayout from "@/layouts/doc-layout.astro";
+import { loadBlogPosts, getBlogConfig } from "@/utils/blog";
+import { defaultLocale, t } from "@/config/i18n";
+import { withBase } from "@/utils/base";
+import { toRouteSlug } from "@/utils/slug";
+
+// Blog disabled — redirect to site root rather than emitting a dead page.
+if (!getBlogConfig()) {
+  return Astro.redirect(withBase("/"));
+}
+
+const lang = defaultLocale;
+
+const { allPosts } = await loadBlogPosts(lang);
+// allPosts is already sorted newest-first and draft-filtered by loadBlogPosts.
+// Hide unlisted posts from the archives index.
+const visiblePosts = allPosts.filter((p) => !p.data.unlisted);
+
+const dateFormatter = new Intl.DateTimeFormat(lang, {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+
+const archivesTitle = t("blog.archives", lang);
+const noPostsLabel = t("blog.noPosts", lang);
+
+function postUrl(slug: string): string {
+  return withBase(`/blog/${slug}`);
+}
+---
+
+<DocLayout
+  title={archivesTitle}
+  lang={lang}
+  currentSlug="blog/archives"
+  navSection="blog"
+  hideToc
+>
+  <Fragment>
+    <h1 class="text-heading font-bold mb-vsp-lg">{archivesTitle}</h1>
+
+    {
+      visiblePosts.length === 0 ? (
+        <p class="text-muted">{noPostsLabel}</p>
+      ) : (
+        <ul class="list-none p-0 m-0 flex flex-col gap-vsp-sm">
+          {visiblePosts.map((post) => {
+            const slug = post.data.slug ?? toRouteSlug(post.id);
+            const href = postUrl(slug);
+            const iso = post.data.date.toISOString();
+            const formatted = dateFormatter.format(post.data.date);
+            return (
+              <li class="flex flex-wrap items-baseline gap-x-hsp-md gap-y-vsp-2xs">
+                <time
+                  datetime={iso}
+                  class="text-caption text-muted shrink-0 tabular-nums"
+                >
+                  {formatted}
+                </time>
+                <a
+                  href={href}
+                  class="text-fg underline hover:text-accent break-words"
+                >
+                  {post.data.title}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      )
+    }
+  </Fragment>
+</DocLayout>
