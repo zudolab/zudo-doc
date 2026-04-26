@@ -1,5 +1,51 @@
 // Keep in sync with packages/create-zudo-doc/src/constants.ts
 
+import type {
+  HeaderRightComponentName,
+  HeaderRightTriggerName,
+  HeaderRightItem,
+} from "../config/settings-types";
+
+export type { HeaderRightComponentName, HeaderRightTriggerName };
+
+/**
+ * UI-internal representation of a header-right item. The preset generator UI
+ * benefits from a uniform `{ kind, name }` handle while the user is reordering
+ * and toggling rows, but the JSON output uses the canonical `HeaderRightItem`
+ * discriminated union (`type` + `trigger | component`) from
+ * `src/config/settings-types.ts`. v1 of preset support intentionally rejects
+ * `link`/`html` items (they need free-text fields).
+ */
+export type HeaderRightItemSpec =
+  | { kind: "trigger"; name: HeaderRightTriggerName }
+  | { kind: "component"; name: HeaderRightComponentName };
+
+/**
+ * Canonical default order, mirrored from `src/config/settings.ts`. Editing
+ * either side without the other will desync the preset generator from the
+ * project's own scaffold.
+ */
+export const DEFAULT_HEADER_RIGHT_ITEMS: readonly HeaderRightItemSpec[] = [
+  { kind: "component", name: "version-switcher" },
+  { kind: "trigger", name: "design-token-panel" },
+  { kind: "trigger", name: "ai-chat" },
+  { kind: "component", name: "github-link" },
+  { kind: "component", name: "theme-toggle" },
+  { kind: "component", name: "search" },
+  { kind: "component", name: "language-switcher" },
+];
+
+/**
+ * Map a UI-internal {@link HeaderRightItemSpec} to the canonical
+ * `HeaderRightItem` shape consumed by `settings.ts`.
+ */
+export function specToHeaderRightItem(spec: HeaderRightItemSpec): HeaderRightItem {
+  if (spec.kind === "trigger") {
+    return { type: "trigger", trigger: spec.name };
+  }
+  return { type: "component", component: spec.name };
+}
+
 export const FEATURES = [
   { value: "i18n", label: "i18n (multi-language)", cliFlag: "i18n", default: false },
   { value: "search", label: "Pagefind search", cliFlag: "search", default: true },
@@ -37,6 +83,7 @@ export interface FormState {
   features: string[];
   cjkFriendly: boolean;
   packageManager: string;
+  headerRightItems: HeaderRightItemSpec[];
 }
 
 export function buildJson(state: FormState): Record<string, unknown> {
@@ -58,6 +105,9 @@ export function buildJson(state: FormState): Record<string, unknown> {
   base.features = state.features;
   base.cjkFriendly = state.cjkFriendly;
   base.packageManager = state.packageManager;
+  // Always emit the canonical {type, trigger|component} shape (not the internal
+  // kind/name shape) — self-documents the preset for users who copy-paste.
+  base.headerRightItems = state.headerRightItems.map(specToHeaderRightItem);
   return base;
 }
 
@@ -91,5 +141,11 @@ export function buildCliCommand(state: FormState): string {
   parts.push(`--pm ${pm}`);
   parts.push("--yes");
 
-  return parts.join(" ");
+  // Trailing comment: headerRightItems is an array of discriminated unions
+  // that does not fit the --flag CLI model. Surfaced as a shell comment line
+  // so users know to use a JSON preset (--preset) for header-right ordering.
+  const trailingNote =
+    "\n# headerRightItems: use a JSON preset (--preset) — array configs are not expressible as CLI flags";
+
+  return parts.join(" ") + trailingNote;
 }

@@ -541,6 +541,95 @@ describe("scaffold — docHistory feature", () => {
   });
 });
 
+describe("scaffold — headerRightItems preset override (sub #440)", () => {
+  it("emits user-supplied headerRightItems verbatim and in chosen order", async () => {
+    const choices: UserChoices = {
+      projectName: "test-hri-override",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+      headerRightItems: [
+        { type: "component", component: "theme-toggle" },
+        { type: "trigger", trigger: "design-token-panel" },
+        { type: "component", component: "github-link" },
+        { type: "trigger", trigger: "ai-chat" },
+        { type: "component", component: "search" },
+      ],
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-hri-override", "src/config/settings.ts"),
+      "utf-8",
+    );
+    // Extract the headerRightItems block to assert exact order.
+    const blockMatch = content.match(
+      /headerRightItems:\s*\[([\s\S]*?)\]\s*as\s+HeaderRightItem\[\],/,
+    );
+    expect(blockMatch).not.toBeNull();
+    const block = blockMatch![1]!;
+    const lines = block
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+    expect(lines).toEqual([
+      `{ type: "component", component: "theme-toggle" },`,
+      `{ type: "trigger", trigger: "design-token-panel" },`,
+      `{ type: "component", component: "github-link" },`,
+      `{ type: "trigger", trigger: "ai-chat" },`,
+      `{ type: "component", component: "search" },`,
+    ]);
+  });
+
+  it("falls back to hardcoded default when headerRightItems is omitted", async () => {
+    const choices: UserChoices = {
+      projectName: "test-hri-fallback",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "designTokenPanel"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-hri-fallback", "src/config/settings.ts"),
+      "utf-8",
+    );
+    // The legacy hardcoded fallback gates designTokenPanel on the feature.
+    expect(content).toContain('trigger: "design-token-panel"');
+    expect(content).toContain('component: "github-link"');
+    expect(content).toContain('component: "theme-toggle"');
+    // ai-chat is not in the legacy fallback path.
+    expect(content).not.toContain('trigger: "ai-chat"');
+  });
+
+  it("emits ai-chat verbatim when explicitly listed in the preset", async () => {
+    // The runtime filter (filterHeaderRightItems) hides ai-chat when
+    // aiAssistant is false in the scaffold, but emission must still preserve
+    // the entry so the preset round-trips and so users can flip aiAssistant
+    // later without re-editing headerRightItems.
+    const choices: UserChoices = {
+      projectName: "test-hri-aichat",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+      headerRightItems: [
+        { type: "trigger", trigger: "ai-chat" },
+        { type: "component", component: "theme-toggle" },
+      ],
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-hri-aichat", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain('trigger: "ai-chat"');
+  });
+});
+
 describe("scaffold — llmsTxt feature", () => {
   it("settings have llmsTxt: true when enabled", async () => {
     const choices: UserChoices = {
