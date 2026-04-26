@@ -17,6 +17,7 @@ import { llmsTxtIntegration } from "./src/integrations/llms-txt";
 import { sitemapIntegration } from "./src/integrations/sitemap";
 import remarkDirective from "remark-directive";
 import { remarkAdmonitions } from "./src/plugins/remark-admonitions";
+import { remarkExcerpt } from "./src/plugins/remark-excerpt";
 import { remarkResolveMarkdownLinks } from "./src/plugins/remark-resolve-markdown-links";
 import { rehypeCodeTitle } from "./src/plugins/rehype-code-title";
 import { rehypeHeadingLinks } from "./src/plugins/rehype-heading-links";
@@ -98,6 +99,8 @@ export default defineConfig({
       }],
       ...(settings.math ? [remarkMath] : []),
       ...(settings.cjkFriendly ? [remarkCjkFriendly] : []),
+      // Always-on; no-op when no <!-- more --> marker is present.
+      remarkExcerpt,
     ],
     rehypePlugins: [
       rehypeCodeTitle,

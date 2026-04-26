@@ -256,6 +256,15 @@ importers:
       github-slugger:
         specifier: ^2.0.0
         version: 2.0.0
+      hast-util-to-html:
+        specifier: ^9.0.5
+        version: 9.0.5
+      mdast-util-from-markdown:
+        specifier: ^2.0.3
+        version: 2.0.3
+      mdast-util-to-hast:
+        specifier: ^13.2.1
+        version: 13.2.1
       unist-util-visit:
         specifier: ^5.1.0
         version: 5.1.0
@@ -269,6 +278,12 @@ importers:
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.15
+      mdast-util-mdx:
+        specifier: ^3.0.0
+        version: 3.0.0
+      micromark-extension-mdxjs:
+        specifier: ^3.0.0
+        version: 3.0.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3

@@ -1,5 +1,6 @@
 // Remark plugins
 export { remarkAdmonitions } from "./remark-admonitions";
+export { remarkExcerpt, extractExcerptFromMarkdown } from "./remark-excerpt";
 export { remarkResolveMarkdownLinks } from "./remark-resolve-markdown-links";
 export type { ResolveMarkdownLinksOptions } from "./remark-resolve-markdown-links";
 
