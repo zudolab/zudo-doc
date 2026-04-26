@@ -201,6 +201,7 @@ export const settings = {
   } satisfies FooterConfig as FooterConfig | false,
   headerNav: [
     { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
+    { label: "Blog", labelKey: "nav.blog", path: "/blog", categoryMatch: "blog" },
     {
       label: "Learn",
       labelKey: "nav.learn",
