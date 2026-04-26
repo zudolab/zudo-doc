@@ -9,3 +9,19 @@ import PresetGenerator from '@/components/preset-generator';
 Use this interactive tool to configure your zudo-doc project options and generate a setup preset. You can copy the output as JSON for the programmatic API, or as a CLI command for terminal usage.
 
 <PresetGenerator client:load />
+
+## Header right items
+
+The "Header right items" section configures `settings.headerRightItems` — the right-side cluster of the site header (theme toggle, language switcher, version switcher, GitHub link, and the Design Token Panel / AI Chat triggers). Toggle each item on or off, and use the up/down buttons to change render order.
+
+Two item kinds — `link` (custom external link) and `html` (raw HTML) — are intentionally not exposed in the UI. Add those by editing `settings.ts` directly after scaffolding. See [Header Right Items](../guides/header-right-items.mdx) for the full discriminated-union schema and examples.
+
+## Newly available features
+
+The Features section now includes a few additions worth calling out:
+
+- **Image enlarge** — click-to-zoom for content images. Enabled by default.
+- **Tag governance** — vocabulary-rule audit for tags. Enabled by default. See [Tag governance](../guides/tag-governance.mdx).
+- **Body foot util area** — slot at the bottom of the article body for util widgets like a tag list or feedback link. See [Body foot util area](../guides/body-foot-util-area.mdx).
+- **Footer taglist** — render the global tag cloud in the site footer. See [Footer taglist](../guides/footer-taglist.mdx).
+- **Design Token Panel** — renamed from "Color tweak panel". The setting key is `designTokenPanel`; the legacy `colorTweakPanel` still works as an alias.

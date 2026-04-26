@@ -2,6 +2,51 @@ import fs from "fs";
 import { FEATURES, SINGLE_SCHEMES, SUPPORTED_LANGS } from "./constants.js";
 import type { PartialChoices } from "./prompts.js";
 
+/**
+ * Header-right item shapes accepted in v1 of preset support. Mirrors
+ * `HeaderRightComponentItem` and `HeaderRightTriggerItem` from
+ * `src/config/settings-types.ts`. The wider `link`/`html` variants are
+ * intentionally rejected for now — they need free-text fields that pollute
+ * the JSON preset schema and the generator UI.
+ */
+export type PresetHeaderRightComponentName =
+  | "theme-toggle"
+  | "language-switcher"
+  | "version-switcher"
+  | "github-link"
+  | "search";
+
+export type PresetHeaderRightTriggerName =
+  | "design-token-panel"
+  | "ai-chat";
+
+export interface PresetHeaderRightComponentItem {
+  type: "component";
+  component: PresetHeaderRightComponentName;
+}
+
+export interface PresetHeaderRightTriggerItem {
+  type: "trigger";
+  trigger: PresetHeaderRightTriggerName;
+}
+
+export type PresetHeaderRightItem =
+  | PresetHeaderRightComponentItem
+  | PresetHeaderRightTriggerItem;
+
+const VALID_HEADER_RIGHT_COMPONENTS = new Set<PresetHeaderRightComponentName>([
+  "theme-toggle",
+  "language-switcher",
+  "version-switcher",
+  "github-link",
+  "search",
+]);
+
+const VALID_HEADER_RIGHT_TRIGGERS = new Set<PresetHeaderRightTriggerName>([
+  "design-token-panel",
+  "ai-chat",
+]);
+
 export interface PresetJson {
   projectName?: string;
   defaultLang?: string;
@@ -15,6 +60,7 @@ export interface PresetJson {
   githubUrl?: string;
   cjkFriendly?: boolean;
   packageManager?: "pnpm" | "npm" | "yarn" | "bun";
+  headerRightItems?: PresetHeaderRightItem[];
 }
 
 export function loadPreset(pathOrStdin: string): PartialChoices {
@@ -69,6 +115,48 @@ export function validatePreset(json: unknown): string | null {
   if (p.cjkFriendly !== undefined && typeof p.cjkFriendly !== "boolean") {
     return `"cjkFriendly" must be a boolean in preset`;
   }
+  if (p.headerRightItems !== undefined) {
+    if (!Array.isArray(p.headerRightItems)) {
+      return `"headerRightItems" must be an array in preset`;
+    }
+    for (let i = 0; i < p.headerRightItems.length; i++) {
+      const item = p.headerRightItems[i] as unknown;
+      if (item === null || typeof item !== "object" || Array.isArray(item)) {
+        return `headerRightItems[${i}] must be an object`;
+      }
+      const t = (item as { type?: unknown }).type;
+      if (t === "link" || t === "html") {
+        return `headerRightItems[${i}] type "${t}" is not supported in presets (v1) — edit settings.ts after scaffold`;
+      }
+      if (t === "component") {
+        const component = (item as { component?: unknown }).component;
+        if (typeof component !== "string") {
+          return `headerRightItems[${i}].component must be a string`;
+        }
+        if (!VALID_HEADER_RIGHT_COMPONENTS.has(
+          component as PresetHeaderRightComponentName,
+        )) {
+          return `headerRightItems[${i}] unknown component "${component}". Allowed: ${[
+            ...VALID_HEADER_RIGHT_COMPONENTS,
+          ].join(", ")}`;
+        }
+      } else if (t === "trigger") {
+        const trigger = (item as { trigger?: unknown }).trigger;
+        if (typeof trigger !== "string") {
+          return `headerRightItems[${i}].trigger must be a string`;
+        }
+        if (!VALID_HEADER_RIGHT_TRIGGERS.has(
+          trigger as PresetHeaderRightTriggerName,
+        )) {
+          return `headerRightItems[${i}] unknown trigger "${trigger}". Allowed: ${[
+            ...VALID_HEADER_RIGHT_TRIGGERS,
+          ].join(", ")}`;
+        }
+      } else {
+        return `headerRightItems[${i}] must have type "component" or "trigger" (got ${JSON.stringify(t)})`;
+      }
+    }
+  }
   // Cross-field validation
   if (p.colorSchemeMode === "single" && (p.lightScheme || p.darkScheme)) {
     return `lightScheme/darkScheme are only valid with colorSchemeMode "light-dark"`;
@@ -97,6 +185,9 @@ export function presetToChoices(json: PresetJson): PartialChoices {
   if (json.packageManager) choices.packageManager = json.packageManager;
   if (json.githubUrl !== undefined) choices.githubUrl = json.githubUrl;
   if (json.cjkFriendly !== undefined) choices.cjkFriendly = json.cjkFriendly;
+  if (json.headerRightItems !== undefined) {
+    choices.headerRightItems = json.headerRightItems;
+  }
 
   if (json.features) {
     // Warn about unrecognized feature names

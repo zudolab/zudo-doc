@@ -1,5 +1,12 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { FEATURES, buildJson, buildCliCommand, type FormState } from "../lib/preset-generator-logic";
+import {
+  FEATURES,
+  buildJson,
+  buildCliCommand,
+  DEFAULT_HEADER_RIGHT_ITEMS,
+  type FormState,
+  type HeaderRightItemSpec,
+} from "../lib/preset-generator-logic";
 import { HeadingH3 } from "./content/heading-h3";
 
 // ── Data ──
@@ -78,6 +85,24 @@ const SUPPORTED_LANGS = [
 ] as const;
 
 const PACKAGE_MANAGERS = ["pnpm", "npm", "yarn", "bun"] as const;
+
+// Display labels for header-right items. Keep in sync with the canonical names
+// defined in src/config/settings-types.ts (HeaderRightComponentName /
+// HeaderRightTriggerName). Order does not matter here — the user reorders
+// state.headerRightItems directly.
+const HEADER_RIGHT_LABELS: Record<string, string> = {
+  "version-switcher": "Version switcher",
+  "design-token-panel": "Design token panel (trigger)",
+  "ai-chat": "AI chat (trigger)",
+  "github-link": "GitHub link",
+  "theme-toggle": "Theme toggle",
+  search: "Search",
+  "language-switcher": "Language switcher",
+};
+
+function headerRightItemKey(item: HeaderRightItemSpec): string {
+  return `${item.kind}:${item.name}`;
+}
 
 // ── Sub-components ──
 
@@ -246,6 +271,7 @@ export default function PresetGenerator() {
     features: FEATURES.filter((f) => f.default).map((f) => f.value),
     cjkFriendly: true,
     packageManager: "pnpm",
+    headerRightItems: [...DEFAULT_HEADER_RIGHT_ITEMS],
   });
 
   const [modalState, setModalState] = useState<FormState | null>(null);
@@ -264,6 +290,52 @@ export default function PresetGenerator() {
         : [...prev.features, value];
       return { ...prev, features };
     });
+  }, []);
+
+  // Header-right items: present rows in user-chosen order, support per-row
+  // checkbox (off removes the item entirely from state), arrow buttons to
+  // reorder, and a Reset-to-default button. The presence/absence of an item is
+  // the single source of truth — there is no "shadow off-list" to merge back.
+  const toggleHeaderRightItem = useCallback((spec: HeaderRightItemSpec) => {
+    setState((prev) => {
+      const key = headerRightItemKey(spec);
+      const existsAt = prev.headerRightItems.findIndex(
+        (item) => headerRightItemKey(item) === key,
+      );
+      if (existsAt >= 0) {
+        return {
+          ...prev,
+          headerRightItems: prev.headerRightItems.filter((_, i) => i !== existsAt),
+        };
+      }
+      // Re-adding: append at the end. Users can reorder afterwards.
+      return {
+        ...prev,
+        headerRightItems: [...prev.headerRightItems, spec],
+      };
+    });
+  }, []);
+
+  const moveHeaderRightItem = useCallback(
+    (index: number, direction: -1 | 1) => {
+      setState((prev) => {
+        const target = index + direction;
+        if (target < 0 || target >= prev.headerRightItems.length) return prev;
+        const next = [...prev.headerRightItems];
+        const tmp = next[index]!;
+        next[index] = next[target]!;
+        next[target] = tmp;
+        return { ...prev, headerRightItems: next };
+      });
+    },
+    [],
+  );
+
+  const resetHeaderRightItems = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      headerRightItems: [...DEFAULT_HEADER_RIGHT_ITEMS],
+    }));
   }, []);
 
   return (
@@ -467,6 +539,120 @@ export default function PresetGenerator() {
             />
             AI Assistant (under development)
           </label>
+        </div>
+      </section>
+
+      {/* Header right items */}
+      <section>
+        <SectionHeading>Header right items</SectionHeading>
+        <p className="mb-vsp-xs text-caption text-muted">
+          Choose which items appear in the header right cluster and in what
+          order. Disabled items are dropped from the preset entirely. The
+          ai-chat trigger is shown for forward-compatibility but the scaffold
+          hardcodes <code>aiAssistant: false</code> so it never renders.
+        </p>
+        <ul className="flex flex-col gap-y-vsp-2xs">
+          {(() => {
+            const allSpecs: HeaderRightItemSpec[] = [
+              ...DEFAULT_HEADER_RIGHT_ITEMS,
+            ];
+            // Show items in current state order first, then any default items
+            // that the user has removed (so they can be re-enabled).
+            const presentKeys = new Set(
+              state.headerRightItems.map(headerRightItemKey),
+            );
+            const missing = allSpecs.filter(
+              (spec) => !presentKeys.has(headerRightItemKey(spec)),
+            );
+            const ordered: Array<{ spec: HeaderRightItemSpec; index: number }> =
+              state.headerRightItems.map((spec, index) => ({ spec, index }));
+
+            return (
+              <>
+                {ordered.map(({ spec, index }) => {
+                  const key = headerRightItemKey(spec);
+                  const label = HEADER_RIGHT_LABELS[spec.name] ?? spec.name;
+                  const isAiChat = spec.name === "ai-chat";
+                  return (
+                    <li
+                      key={key}
+                      className="flex items-center gap-x-hsp-xs text-small text-fg"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={true}
+                        onChange={() => toggleHeaderRightItem(spec)}
+                        aria-label={`Include ${label}`}
+                        className="accent-accent"
+                      />
+                      <span className="flex-1">
+                        {label}
+                        {isAiChat && (
+                          <span className="ml-hsp-xs text-caption text-muted">
+                            (requires aiAssistant — disabled in scaffold)
+                          </span>
+                        )}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => moveHeaderRightItem(index, -1)}
+                        disabled={index === 0}
+                        aria-label={`Move ${label} up`}
+                        className="border border-muted bg-surface px-hsp-xs py-vsp-2xs text-caption text-fg transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveHeaderRightItem(index, 1)}
+                        disabled={index === ordered.length - 1}
+                        aria-label={`Move ${label} down`}
+                        className="border border-muted bg-surface px-hsp-xs py-vsp-2xs text-caption text-fg transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        ↓
+                      </button>
+                    </li>
+                  );
+                })}
+                {missing.map((spec) => {
+                  const key = headerRightItemKey(spec);
+                  const label = HEADER_RIGHT_LABELS[spec.name] ?? spec.name;
+                  const isAiChat = spec.name === "ai-chat";
+                  return (
+                    <li
+                      key={key}
+                      className="flex items-center gap-x-hsp-xs text-small text-muted"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={false}
+                        onChange={() => toggleHeaderRightItem(spec)}
+                        aria-label={`Include ${label}`}
+                        className="accent-accent"
+                      />
+                      <span className="flex-1">
+                        {label}
+                        {isAiChat && (
+                          <span className="ml-hsp-xs text-caption text-muted">
+                            (requires aiAssistant — disabled in scaffold)
+                          </span>
+                        )}
+                      </span>
+                    </li>
+                  );
+                })}
+              </>
+            );
+          })()}
+        </ul>
+        <div className="mt-vsp-xs">
+          <button
+            type="button"
+            onClick={resetHeaderRightItems}
+            className="border border-muted bg-surface px-hsp-md py-vsp-2xs text-small text-muted transition-colors hover:border-fg hover:text-fg"
+          >
+            Reset to default
+          </button>
         </div>
       </section>
 

@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { FEATURES, buildCliCommand, type FormState } from "../lib/preset-generator-logic";
+import {
+  FEATURES,
+  buildCliCommand,
+  DEFAULT_HEADER_RIGHT_ITEMS,
+  type FormState,
+} from "../lib/preset-generator-logic";
 import { parseArgs } from "../../packages/create-zudo-doc/src/cli";
 
 /**
@@ -8,11 +13,19 @@ import { parseArgs } from "../../packages/create-zudo-doc/src/cli";
  * Strips the leading "{pm} create zudo-doc" prefix (3 tokens).
  */
 function cliCommandToArgv(command: string): string[] {
+  // Strip trailing/leading shell-comment lines (e.g. the headerRightItems
+  // documentation hint) — these are documentation only, not parsable args.
+  const commandLine = command
+    .split("\n")
+    .filter((line) => !line.trimStart().startsWith("#"))
+    .join(" ")
+    .trim();
+
   const tokens: string[] = [];
   let current = "";
   let inQuotes = false;
 
-  for (const ch of command) {
+  for (const ch of commandLine) {
     if (ch === '"') {
       inQuotes = !inQuotes;
     } else if (ch === " " && !inQuotes) {
@@ -39,7 +52,9 @@ function makeState(overrides: Partial<FormState> = {}): FormState {
     defaultMode: "dark",
     respectPrefersColorScheme: true,
     features: FEATURES.filter((f) => f.default).map((f) => f.value),
+    cjkFriendly: false,
     packageManager: "pnpm",
+    headerRightItems: [...DEFAULT_HEADER_RIGHT_ITEMS],
     ...overrides,
   };
 }
