@@ -119,6 +119,7 @@ const translations: Record<string, Record<string, string>> = {
     "blog.previousPage": "Previous page",
     "blog.nextPage": "Next page",
     "blog.pageN": "Page {n}",
+    "blog.pageNofM": "Page {n} of {m}",
     "blog.noPosts": "No posts yet.",
   },
   ja: {
@@ -187,6 +188,7 @@ const translations: Record<string, Record<string, string>> = {
     "blog.previousPage": "前のページ",
     "blog.nextPage": "次のページ",
     "blog.pageN": "{n} ページ",
+    "blog.pageNofM": "{n} / {m} ページ",
     "blog.noPosts": "投稿がまだありません。",
   },
   de: {
