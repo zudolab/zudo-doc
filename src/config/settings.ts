@@ -120,7 +120,18 @@ export const settings = {
     },
   ] as VersionConfig[] | false,
   /**
-   * Opt-in blog feature. Off by default — set to a config object to enable.
+   * Opt-in blog feature. Off by default — leave as `false` to disable, or set
+   * to a config object to enable.
+   *
+   * The example below shows every supported field with the documented default
+   * applied, so it can be copy-pasted as a starting point. Only `enabled` is
+   * required; omit any field you are happy to inherit from the default.
+   *
+   * Defaults:
+   *   - `dir`                 → `"src/content/blog"`
+   *   - `sidebarRecentCount`  → `30`
+   *   - `postsPerPage`        → `10`
+   *   - `locales`             → `undefined` (no locale mirrors)
    *
    * Example:
    *
