@@ -1,0 +1,174 @@
+---
+title: Blog
+description: How to enable the blog feature, wire it into the header, and write posts.
+sidebar_position: 2.7
+---
+
+zudo-doc ships with an opt-in blog feature. When enabled, it adds a date-aware
+blog index, an "Archives" page that lists every post, locale-aware fallbacks,
+and a sidebar that surfaces recent posts. This page walks through the setup.
+
+## What the blog feature gives you
+
+The blog feature is intentionally small. It hands you:
+
+- A landing page at `/blog/` with paginated post cards.
+- An archives page at `/blog/archives/` that lists every post.
+- A sidebar that surfaces the most recent posts plus an "Archives" link.
+- A `<!-- more -->` excerpt marker, plus optional manual `excerpt:` frontmatter.
+- Locale fallbacks: a missing translation falls back to the English post.
+
+## Enable the feature
+
+The feature is controlled by the `blog` field in `src/config/settings.ts`. The
+default is `false` (disabled). Set it to a config object to turn it on:
+
+```ts
+// src/config/settings.ts
+export const settings = {
+  // …
+  blog: {
+    enabled: true,
+    dir: "src/content/blog",
+    locales: { ja: { dir: "src/content/blog-ja" } },
+    sidebarRecentCount: 30,
+    postsPerPage: 10,
+  },
+  // …
+};
+```
+
+The fields on `BlogConfig`:
+
+| Field | Default | Purpose |
+|---|---|---|
+| `enabled` | required | Set to `true` to enable the feature. |
+| `dir` | `"src/content/blog"` | Directory holding the default-locale posts. |
+| `locales` | `undefined` | Per-locale overrides, e.g. `{ ja: { dir: "src/content/blog-ja" } }`. |
+| `sidebarRecentCount` | `30` | How many recent posts the sidebar lists. |
+| `postsPerPage` | `10` | Page size for the blog index. |
+
+<Tip>
+
+Only `enabled` is required. Omit any field you are happy to inherit from the
+documented default.
+
+</Tip>
+
+## Add the Blog link to the header
+
+The blog feature does not auto-register a header link. Add an entry to
+`headerNav` in `src/config/settings.ts`:
+
+```ts
+headerNav: [
+  { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
+  { label: "Blog", labelKey: "nav.blog", path: "/blog", categoryMatch: "blog" },
+  // …other entries
+],
+```
+
+The `categoryMatch: "blog"` value is what marks the link as active when the
+current URL is anywhere under `/blog/`. The `labelKey` is an i18n key — add a
+matching entry under each locale in `src/config/i18n.ts`:
+
+```ts
+en: { /* … */ "nav.blog": "Blog" },
+ja: { /* … */ "nav.blog": "ブログ" },
+```
+
+## Where posts live
+
+Posts go into the directories you configured under `blog.dir` and
+`blog.locales[code].dir`:
+
+```
+src/content/blog/
+├── hello-world.md
+├── authoring-blog-posts.md
+└── …
+
+src/content/blog-ja/
+├── hello-world.md
+└── …
+```
+
+Filenames are kebab-case. Use `.md` for prose-only posts and `.mdx` only when
+you actually need MDX features.
+
+## Frontmatter
+
+Two fields are required:
+
+| Field | Type | Description |
+|---|---|---|
+| `title` | string | The post title. Renders on the index card and detail page. |
+| `date` | date | Used for sorting (newest-first) and the "Published on" label. |
+
+The remaining fields are optional:
+
+| Field | Type | Description |
+|---|---|---|
+| `description` | string | One-liner used for metadata and feed contexts. |
+| `author` | string | Single author. |
+| `authors` | string[] | Co-authors, when there are several. |
+| `tags` | string[] | Tag ids from `src/config/tag-vocabulary.ts`. |
+| `excerpt` | string | Manual excerpt. Wins over the `<!-- more -->` marker. |
+| `slug` | string | URL slug override (defaults to the filename stem). |
+| `draft` | boolean | Excluded from production builds. |
+| `unlisted` | boolean | Built but hidden from the sidebar's recent list. |
+
+## The `<!-- more -->` excerpt marker
+
+The blog index needs a short excerpt for each post. There are three ways to
+provide one, in order of precedence:
+
+1. **Manual `excerpt:` frontmatter** wins, even when a marker is present.
+2. **`<!-- more -->` marker** in the body splits the excerpt from the rest.
+3. **Fallback** — the first paragraph of the body, used when neither is set.
+
+Example with the marker:
+
+```md
+---
+title: Hello, blog!
+date: 2026-04-27
+---
+
+This paragraph is the excerpt. It will appear on the blog index card.
+
+<!-- more -->
+
+Everything below the marker is part of the full post and only renders on the
+detail page.
+```
+
+<Note>
+
+The marker is a literal HTML comment: `<!-- more -->`. Place it on its own line
+with blank lines around it.
+
+</Note>
+
+## Bilingual posts
+
+When `blog.locales` is configured, every English post should ideally have a
+mirror in each locale directory. If a translation is missing, the post still
+appears in the locale's index — the English body is used as a fallback and the
+detail page shows a "not yet translated" notice.
+
+<Warning>
+
+Keep frontmatter shape identical between locales: same `date`, same `tags`,
+same `slug`, same `author`. Translate only `title`, `description`, and the
+prose body. Code blocks stay verbatim — see [Writing Docs](./writing-docs.mdx)
+for the same rule applied to documentation pages.
+
+</Warning>
+
+## Next steps
+
+- Browse the [showcase blog](/blog/) to see the feature in action.
+- Read [Writing Docs](./writing-docs.mdx) for the wider authoring conventions.
+- Skim [Structuring Navigations](./structuring-navigations.mdx) to understand
+  how `headerNav` and the sidebar fit together.
