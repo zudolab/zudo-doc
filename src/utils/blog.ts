@@ -4,6 +4,9 @@ import type { BlogEntry } from "@/types/blog-entry";
 import { settings } from "@/config/settings";
 import type { BlogConfig } from "@/config/settings";
 import { toRouteSlug } from "@/utils/slug";
+import { withBase } from "@/utils/base";
+import type { NavNode } from "@/utils/docs";
+import { t } from "@/config/i18n";
 
 // ---------------------------------------------------------------------------
 // Resolved blog config
@@ -146,6 +149,94 @@ async function loadBlogPostsImpl(lang: string): Promise<BlogPostsResult> {
   );
 
   return { allPosts, fallbackSlugs };
+}
+
+// ---------------------------------------------------------------------------
+// Blog sidebar tree
+// ---------------------------------------------------------------------------
+
+/**
+ * Build the URL path prefix for blog routes in a given language. Returns the
+ * path under the base, e.g. `/blog` for the default locale or `/ja/blog` for
+ * a non-default locale. The trailing slash is applied by `withBase` when
+ * `settings.trailingSlash` is enabled.
+ */
+function blogPathPrefix(lang: string): string {
+  return lang === settings.defaultLocale ? "/blog" : `/${lang}/blog`;
+}
+
+/**
+ * Build a blog post URL for the given post slug and language. Mirrors the
+ * routing in `src/pages/blog/[...slug].astro` and the locale variant.
+ */
+function blogPostUrl(postSlug: string, lang: string): string {
+  return withBase(`${blogPathPrefix(lang)}/${postSlug}`);
+}
+
+/**
+ * Build the synthesized sidebar tree for blog routes:
+ *
+ *   Blog
+ *     ├ <recent post 1>
+ *     ├ <recent post 2>
+ *     ├ ...up to N (default 30, configurable via settings.blog.sidebarRecentCount)
+ *     └ Archives
+ *
+ * Returns an empty array when the blog feature is disabled, so callers can
+ * treat the result uniformly.
+ *
+ * Posts come from `loadBlogPosts(lang)`, which already merges locale posts
+ * with EN fallbacks (locale wins by slug) and sorts newest-first. The post
+ * label uses the entry's title — this is the locale title when available,
+ * otherwise the EN fallback title.
+ *
+ * `recentCount` overrides the configured `settings.blog.sidebarRecentCount`.
+ * When omitted, the resolved config default (30) is used.
+ */
+export async function buildBlogSidebar(
+  lang: string,
+  recentCount?: number,
+): Promise<NavNode[]> {
+  const blog = getBlogConfig();
+  if (!blog) return [];
+
+  const limit = recentCount ?? blog.sidebarRecentCount;
+  const { allPosts } = await loadBlogPosts(lang);
+
+  const visiblePosts = allPosts.filter((p) => !p.data.unlisted);
+  const recent = limit > 0 ? visiblePosts.slice(0, limit) : [];
+
+  const postNodes: NavNode[] = recent.map((entry, index) => {
+    const slug = entry.data.slug ?? toRouteSlug(entry.id);
+    return {
+      slug: `blog/${slug}`,
+      label: entry.data.title,
+      position: index,
+      href: blogPostUrl(slug, lang),
+      hasPage: true,
+      children: [],
+    };
+  });
+
+  const archivesNode: NavNode = {
+    slug: "blog/archives",
+    label: t("blog.archives", lang),
+    position: postNodes.length,
+    href: withBase(`${blogPathPrefix(lang)}/archives`),
+    hasPage: true,
+    children: [],
+  };
+
+  const blogRoot: NavNode = {
+    slug: "blog",
+    label: t("blog.title", lang),
+    position: 0,
+    href: withBase(blogPathPrefix(lang)),
+    hasPage: true,
+    children: [...postNodes, archivesNode],
+  };
+
+  return [blogRoot];
 }
 
 // ---------------------------------------------------------------------------
