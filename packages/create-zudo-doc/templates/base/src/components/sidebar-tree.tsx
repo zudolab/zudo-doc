@@ -415,7 +415,7 @@ function CategoryNode({
         />
       )}
       <div className="relative">
-        <ConnectorLines depth={depth} isLast={isLast} />
+        <ConnectorLines depth={depth} isLast={isLast} topPad="calc(0.15rem + var(--spacing-vsp-xs))" />
         {node.href ? (
           <div
             className={`flex w-full items-center text-small font-semibold pt-[0.15rem] ${isActive ? "bg-fg text-bg" : "text-fg"}`}
@@ -423,10 +423,14 @@ function CategoryNode({
             <a
               href={node.href}
               aria-current={isActive ? "page" : undefined}
-              className={`flex-1 flex items-center gap-hsp-xs py-vsp-xs hover:underline focus:underline break-words ${isActive ? "text-bg" : "text-fg"}`}
+              className={`flex-1 flex items-start gap-hsp-xs py-vsp-xs hover:underline focus:underline break-words ${isActive ? "text-bg" : "text-fg"}`}
               style={{ paddingLeft }}
             >
-              {depth === 0 && <CategoryLinkIcon className={`w-[14px] ${isActive ? "text-bg" : ""}`} />}
+              {depth === 0 && (
+                <span className="flex h-[1lh] items-center">
+                  <CategoryLinkIcon className={`w-[14px] ${isActive ? "text-bg" : ""}`} />
+                </span>
+              )}
               <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(node.label) }} />
             </a>
             <button
@@ -487,23 +491,27 @@ function LeafNode({
 
   // For nested last leaves, add visual breathing space as margin on the outer wrapper
   // rather than padding on the anchor — padding would grow the row box and throw off
-  // the ConnectorLines geometry (which uses bottom: 50% of the row to land the horizontal
-  // connector at the label midpoint).
+  // the ConnectorLines geometry (which now uses topPad + 0.5lh of the row to land the
+  // horizontal connector at the first-line midpoint).
   const outerClass = isRoot
     ? "border-t border-muted"
     : !isRoot && isLast
       ? "pb-vsp-md"
       : "";
 
+  const topPad = isRoot
+    ? "calc(var(--spacing-vsp-xs) + 0.15rem)"
+    : "var(--spacing-vsp-2xs)";
+
   return (
     <div className={outerClass}>
       <div className="relative">
-        <ConnectorLines depth={depth} isLast={isLast} />
+        <ConnectorLines depth={depth} isLast={isLast} topPad={topPad} />
         <a
           href={node.href}
           aria-current={isActive ? "page" : undefined}
           className={isRoot
-            ? `flex items-center gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-[4px] text-small font-semibold break-words ${
+            ? `flex items-start gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-[4px] text-small font-semibold break-words ${
                 isActive ? "bg-fg text-bg" : "text-fg hover:underline focus:underline"
               }`
             : `block py-vsp-2xs pr-[4px] text-small break-words ${
@@ -514,7 +522,11 @@ function LeafNode({
           }
           style={{ paddingLeft }}
         >
-          {isRoot && <CategoryLinkIcon className={`w-[14px] ${isActive ? "text-bg" : ""}`} />}
+          {isRoot && (
+            <span className="flex h-[1lh] items-center">
+              <CategoryLinkIcon className={`w-[14px] ${isActive ? "text-bg" : ""}`} />
+            </span>
+          )}
           <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(node.label) }} />
         </a>
       </div>
