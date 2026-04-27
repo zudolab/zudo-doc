@@ -38,6 +38,23 @@ export type ResolvedBlogConfig = Omit<
 };
 
 /**
+ * Returns the list of non-default locale codes that have blog content
+ * registered (i.e., locales explicitly listed in `settings.blog.locales`).
+ *
+ * Routes under `[locale]/blog/*` MUST iterate over this list — not over
+ * `settings.locales`, which is the docs locale list. Iterating the docs
+ * locale list would call `getCollection("blog-${docsLocale}")` for locales
+ * that were never registered in `content.config.ts`, which crashes the
+ * build. Returns an empty array when the blog feature is disabled or has
+ * no `locales` mapping.
+ */
+export function getBlogLocales(): string[] {
+  const blog = getBlogConfig();
+  if (!blog || !blog.locales) return [];
+  return Object.keys(blog.locales);
+}
+
+/**
  * Returns the resolved blog config with all documented defaults applied, or
  * `null` when the blog feature is disabled (`settings.blog === false`).
  *
@@ -46,12 +63,15 @@ export type ResolvedBlogConfig = Omit<
  */
 export function getBlogConfig(): ResolvedBlogConfig | null {
   const blog = settings.blog;
-  // Defensive: treat both `false` (explicit disable) and missing/undefined
-  // (field omitted in fixture / generated settings.ts) as disabled. The TS
-  // type is `BlogConfig | false`, but runtime-only consumers (e2e fixtures,
-  // generated downstream projects mid-scaffold) often omit the field
-  // entirely — that should opt out, not crash on `blog.dir`.
-  if (!blog) return null;
+  // Defensive: treat `false` (explicit disable), missing/undefined (field
+  // omitted in fixture / generated settings.ts), AND an explicit
+  // `enabled: false` flag as disabled. The TS type is `BlogConfig | false`,
+  // but runtime-only consumers (e2e fixtures, generated downstream projects
+  // mid-scaffold) often omit the field entirely — that should opt out, not
+  // crash on `blog.dir`. The `enabled: boolean` field on BlogConfig is the
+  // documented kill switch ("Must be true to activate blog routes and
+  // sidebar"), so honor it here as the single source of truth.
+  if (!blog || blog.enabled === false) return null;
   return {
     ...blog,
     dir: blog.dir ?? BLOG_DEFAULTS.dir,
@@ -72,6 +92,24 @@ export function getBlogConfig(): ResolvedBlogConfig | null {
  */
 async function getBlogCollection(name: CollectionKey | string): Promise<BlogEntry[]> {
   return (await getCollection(name as CollectionKey)) as unknown as BlogEntry[];
+}
+
+/**
+ * Defensive variant of {@link getBlogCollection} that returns an empty array
+ * when the collection is not registered. Used for locale-specific blog
+ * collections, which may be absent when `settings.blog.locales` does not
+ * include a given code (or when a downstream project leaves the blog locale
+ * map empty entirely). Treating "no collection" as "no posts" lets the
+ * locale-merge logic short-circuit cleanly without a build crash.
+ */
+async function getBlogCollectionOrEmpty(
+  name: CollectionKey | string,
+): Promise<BlogEntry[]> {
+  try {
+    return await getBlogCollection(name);
+  } catch {
+    return [];
+  }
 }
 
 /** Filter drafts in production builds, aligned with the docs behaviour. */
@@ -133,10 +171,14 @@ async function loadBlogPostsImpl(lang: string): Promise<BlogPostsResult> {
   }
 
   // Determine the locale collection name. When blog.locales is configured, use
-  // its dir; the collection name is always `blog-${code}`.
+  // its dir; the collection name is always `blog-${code}`. If the locale
+  // collection is not registered (lang not in blog.locales), treat it as
+  // empty rather than crashing — the EN fallback list still resolves.
   const localeCollectionName = `blog-${lang}`;
 
-  const localePosts = filterDrafts(await getBlogCollection(localeCollectionName));
+  const localePosts = filterDrafts(
+    await getBlogCollectionOrEmpty(localeCollectionName),
+  );
   const basePosts = filterDrafts(await getBlogCollection("blog"));
 
   const localeSlugSet = new Set<string>(
@@ -160,6 +202,10 @@ async function loadBlogPostsImpl(lang: string): Promise<BlogPostsResult> {
 // Blog sidebar tree
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// URL helpers — consolidated single source of truth for blog routes.
+// ---------------------------------------------------------------------------
+
 /**
  * Build the URL path prefix for blog routes in a given language. Returns the
  * path under the base, e.g. `/blog` for the default locale or `/ja/blog` for
@@ -171,11 +217,32 @@ function blogPathPrefix(lang: string): string {
 }
 
 /**
+ * Href to the blog listing root for a locale (page 1 lives at this URL).
+ */
+export function blogIndexHref(lang: string): string {
+  return withBase(blogPathPrefix(lang));
+}
+
+/**
+ * Href for a specific blog listing page (`n >= 1`). Page 1 always resolves
+ * to the listing root (no `/page/1/` URL is generated).
+ */
+export function blogPageHref(n: number, lang: string): string {
+  if (n <= 1) return blogIndexHref(lang);
+  return withBase(`${blogPathPrefix(lang)}/page/${n}`);
+}
+
+/**
  * Build a blog post URL for the given post slug and language. Mirrors the
  * routing in `src/pages/blog/[...slug].astro` and the locale variant.
  */
-function blogPostUrl(postSlug: string, lang: string): string {
+export function blogPostUrl(postSlug: string, lang: string): string {
   return withBase(`${blogPathPrefix(lang)}/${postSlug}`);
+}
+
+/** Href for the blog archives page in a given language. */
+export function blogArchivesHref(lang: string): string {
+  return withBase(`${blogPathPrefix(lang)}/archives`);
 }
 
 /**
@@ -227,7 +294,7 @@ export async function buildBlogSidebar(
     slug: "blog/archives",
     label: t("blog.archives", lang),
     position: postNodes.length,
-    href: withBase(`${blogPathPrefix(lang)}/archives`),
+    href: blogArchivesHref(lang),
     hasPage: true,
     children: [],
   };
@@ -236,7 +303,7 @@ export async function buildBlogSidebar(
     slug: "blog",
     label: t("blog.title", lang),
     position: 0,
-    href: withBase(blogPathPrefix(lang)),
+    href: blogIndexHref(lang),
     hasPage: true,
     children: [...postNodes, archivesNode],
   };

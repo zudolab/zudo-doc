@@ -3,8 +3,8 @@ import DocLayout from "@/layouts/doc-layout.astro";
 import BlogPostCard from "@/components/blog-post-card.astro";
 import BlogPagination from "@/components/blog-pagination.astro";
 import { defaultLocale, t } from "@/config/i18n";
+import { blogPageHref } from "@/utils/blog";
 import {
-  blogPageHref,
   getBlogExtraPagePaths,
   loadBlogListingPage,
 } from "@/utils/blog-listing";
@@ -16,7 +16,13 @@ export async function getStaticPaths() {
 }
 
 const lang = defaultLocale;
+// Validate the page param early. `Number("abc")` returns NaN, which would
+// silently propagate through pagination math and surface as a page titled
+// "NaN" with no posts. Reject anything that is not a positive integer.
 const pageNum = Number(Astro.params.page);
+if (!Number.isInteger(pageNum) || pageNum < 1) {
+  return new Response(null, { status: 404 });
+}
 const data = (await loadBlogListingPage(lang, pageNum))!;
 const { posts, excerpts, currentPage, lastPage } = data;
 

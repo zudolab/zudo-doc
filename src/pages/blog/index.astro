@@ -3,9 +3,9 @@ import DocLayout from "@/layouts/doc-layout.astro";
 import BlogPostCard from "@/components/blog-post-card.astro";
 import BlogPagination from "@/components/blog-pagination.astro";
 import { defaultLocale, t } from "@/config/i18n";
-import { getBlogConfig } from "@/utils/blog";
+import { blogPageHref, getBlogConfig } from "@/utils/blog";
 import { withBase } from "@/utils/base";
-import { blogPageHref, loadBlogListingPage } from "@/utils/blog-listing";
+import { loadBlogListingPage } from "@/utils/blog-listing";
 
 // Static-route opt-out: Astro ignores `getStaticPaths` on routes without a
 // dynamic segment, so we redirect to the site root when the blog feature is

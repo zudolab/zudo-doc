@@ -22,9 +22,13 @@ export function getCategoryOrder(): string[] {
  *
  * Slugs starting with `blog/` (including `blog/archives`) always resolve to
  * the synthetic `"blog"` section so the sidebar can swap to the blog tree.
- * Blog routes do not appear in `headerNav.categoryMatch`, so this fast path
- * is a defensive default — page templates that pass `navSection="blog"`
- * directly already short-circuit this lookup.
+ * The `headerNav` entry generated for the blog feature carries
+ * `categoryMatch: "blog"` (see `src/config/settings.ts`), so the explicit
+ * matcher loop below already handles this case correctly. We keep an
+ * explicit early return as a defensive default for downstream projects
+ * (or fixtures) that enable blog routes WITHOUT a corresponding
+ * `categoryMatch: "blog"` entry in `headerNav` — the synthetic blog
+ * section must still resolve so the sidebar can swap to the blog tree.
  */
 export function getNavSectionForSlug(slug: string): string | undefined {
   const topCategory = slug.split("/")[0] ?? "";

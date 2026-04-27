@@ -3,16 +3,19 @@ import DocLayout from "@/layouts/doc-layout.astro";
 import BlogPostCard from "@/components/blog-post-card.astro";
 import BlogPagination from "@/components/blog-pagination.astro";
 import { t, type Locale } from "@/config/i18n";
-import { settings } from "@/config/settings";
-import { getBlogConfig } from "@/utils/blog";
-import { blogPageHref, loadBlogListingPage } from "@/utils/blog-listing";
+import { blogPageHref, getBlogConfig, getBlogLocales } from "@/utils/blog";
+import { loadBlogListingPage } from "@/utils/blog-listing";
 
 export async function getStaticPaths() {
-  // Skip locale routes when no locales are configured or blog is disabled.
-  if (Object.keys(settings.locales).length === 0) return [];
+  // Skip locale routes when blog is disabled, or when no blog locales are
+  // configured. We must iterate `getBlogLocales()` (the keys of
+  // `settings.blog.locales`), NOT `settings.locales` — the docs locale list
+  // can include codes for which no `blog-${code}` collection exists.
   if (!getBlogConfig()) return [];
+  const blogLocales = getBlogLocales();
+  if (blogLocales.length === 0) return [];
 
-  return Object.keys(settings.locales).map((locale) => ({
+  return blogLocales.map((locale) => ({
     params: { locale },
   }));
 }

@@ -151,6 +151,29 @@ describe("remarkExcerpt", () => {
     expect(fm.excerpt as string).toContain("Lead paragraph.");
   });
 
+  it("does not pass through raw HTML literals into the rendered excerpt (XSS hardening)", () => {
+    // The rendered excerpt feeds straight into <BlogPostCard set:html=...>;
+    // raw mdast html nodes from the body must not survive to the output.
+    const tree = parse(
+      [
+        "Lead paragraph.",
+        "",
+        "<script>alert(1)</script>",
+        "",
+        "<!-- more -->",
+        "",
+        "Body.",
+      ].join("\n"),
+    );
+    const file = run(tree);
+    const excerpt = file.data.astro!.frontmatter!.excerpt as string;
+    expect(excerpt).toContain("Lead paragraph.");
+    // The literal <script> must NOT appear as raw HTML in the rendered
+    // string — `allowDangerousHtml` is intentionally off in remark-excerpt.
+    expect(excerpt).not.toContain("<script>");
+    expect(excerpt).not.toContain("</script>");
+  });
+
   it("only matches the first marker; subsequent markers stay in body", () => {
     const tree = parse(
       [
