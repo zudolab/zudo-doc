@@ -3,8 +3,7 @@ import DocLayout from "@/layouts/doc-layout.astro";
 import BlogPostCard from "@/components/blog-post-card.astro";
 import BlogPagination from "@/components/blog-pagination.astro";
 import { t, type Locale } from "@/config/i18n";
-import { settings } from "@/config/settings";
-import { getBlogConfig } from "@/utils/blog";
+import { getBlogConfig, getBlogLocales } from "@/utils/blog";
 import {
   blogPageHref,
   getBlogExtraPagePaths,
@@ -12,11 +11,12 @@ import {
 } from "@/utils/blog-listing";
 
 export async function getStaticPaths() {
-  if (Object.keys(settings.locales).length === 0) return [];
   if (!getBlogConfig()) return [];
+  const blogLocales = getBlogLocales();
+  if (blogLocales.length === 0) return [];
 
   const paths: { params: { locale: string; page: string } }[] = [];
-  for (const locale of Object.keys(settings.locales)) {
+  for (const locale of blogLocales) {
     const localePaths = await getBlogExtraPagePaths(locale as Locale);
     for (const sp of localePaths) {
       paths.push({ params: { locale, page: sp.params.page } });

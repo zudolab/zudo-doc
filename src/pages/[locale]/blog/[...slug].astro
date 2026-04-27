@@ -13,19 +13,21 @@ import HtmlPreview from "@/components/html-preview-wrapper.astro";
 import { htmlOverrides } from "@/components/content/component-map";
 import BlogPostMeta from "@/components/blog-post-meta.astro";
 import { toRouteSlug } from "@/utils/slug";
-import { loadBlogPosts, getBlogConfig } from "@/utils/blog";
+import { loadBlogPosts, getBlogConfig, getBlogLocales } from "@/utils/blog";
 import { t, type Locale } from "@/config/i18n";
-import { settings } from "@/config/settings";
 import type { Heading } from "@/types/heading";
 
 export async function getStaticPaths() {
-  // Skip locale routes when no locales are configured
-  if (Object.keys(settings.locales).length === 0) return [];
+  // Skip locale routes when blog is disabled or no blog locales configured.
+  // Iterate `getBlogLocales()` (keys of settings.blog.locales) — never
+  // `settings.locales`, which is the docs locale list.
   if (!getBlogConfig()) return [];
+  const blogLocales = getBlogLocales();
+  if (blogLocales.length === 0) return [];
 
   const paths = [];
 
-  for (const locale of Object.keys(settings.locales) as Locale[]) {
+  for (const locale of blogLocales as Locale[]) {
     const { allPosts, fallbackSlugs } = await loadBlogPosts(locale);
     // allPosts is sorted newest-first; prev = newer, next = older (same ordering as EN route)
 

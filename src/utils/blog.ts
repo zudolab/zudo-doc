@@ -38,6 +38,23 @@ export type ResolvedBlogConfig = Omit<
 };
 
 /**
+ * Returns the list of non-default locale codes that have blog content
+ * registered (i.e., locales explicitly listed in `settings.blog.locales`).
+ *
+ * Routes under `[locale]/blog/*` MUST iterate over this list — not over
+ * `settings.locales`, which is the docs locale list. Iterating the docs
+ * locale list would call `getCollection("blog-${docsLocale}")` for locales
+ * that were never registered in `content.config.ts`, which crashes the
+ * build. Returns an empty array when the blog feature is disabled or has
+ * no `locales` mapping.
+ */
+export function getBlogLocales(): string[] {
+  const blog = getBlogConfig();
+  if (!blog || !blog.locales) return [];
+  return Object.keys(blog.locales);
+}
+
+/**
  * Returns the resolved blog config with all documented defaults applied, or
  * `null` when the blog feature is disabled (`settings.blog === false`).
  *
@@ -75,6 +92,24 @@ export function getBlogConfig(): ResolvedBlogConfig | null {
  */
 async function getBlogCollection(name: CollectionKey | string): Promise<BlogEntry[]> {
   return (await getCollection(name as CollectionKey)) as unknown as BlogEntry[];
+}
+
+/**
+ * Defensive variant of {@link getBlogCollection} that returns an empty array
+ * when the collection is not registered. Used for locale-specific blog
+ * collections, which may be absent when `settings.blog.locales` does not
+ * include a given code (or when a downstream project leaves the blog locale
+ * map empty entirely). Treating "no collection" as "no posts" lets the
+ * locale-merge logic short-circuit cleanly without a build crash.
+ */
+async function getBlogCollectionOrEmpty(
+  name: CollectionKey | string,
+): Promise<BlogEntry[]> {
+  try {
+    return await getBlogCollection(name);
+  } catch {
+    return [];
+  }
 }
 
 /** Filter drafts in production builds, aligned with the docs behaviour. */
@@ -136,10 +171,14 @@ async function loadBlogPostsImpl(lang: string): Promise<BlogPostsResult> {
   }
 
   // Determine the locale collection name. When blog.locales is configured, use
-  // its dir; the collection name is always `blog-${code}`.
+  // its dir; the collection name is always `blog-${code}`. If the locale
+  // collection is not registered (lang not in blog.locales), treat it as
+  // empty rather than crashing — the EN fallback list still resolves.
   const localeCollectionName = `blog-${lang}`;
 
-  const localePosts = filterDrafts(await getBlogCollection(localeCollectionName));
+  const localePosts = filterDrafts(
+    await getBlogCollectionOrEmpty(localeCollectionName),
+  );
   const basePosts = filterDrafts(await getBlogCollection("blog"));
 
   const localeSlugSet = new Set<string>(
