@@ -1,5 +1,5 @@
 ---
-import { render } from "astro:content";
+import { render, type CollectionEntry } from "astro:content";
 import DocLayout from "@/layouts/doc-layout.astro";
 import Note from "@/components/admonitions/note.astro";
 import Tip from "@/components/admonitions/tip.astro";
@@ -80,7 +80,16 @@ const components = {
   HtmlPreview,
 };
 
-const { Content, headings } = await render(entry as any);
+// `entry` is typed as the shared `BlogEntry` shape so listing/sidebar
+// helpers can consume entries from any `blog-${code}` collection. Astro's
+// `render()` expects a concrete `CollectionEntry<C>` keyed by collection
+// name — which fights the dynamic collection setup. Narrow the cast to
+// `CollectionEntry<"blog">` (still goes through `unknown` because the
+// shapes are nominally distinct) instead of `any`, so future refactors
+// surface real type errors.
+const { Content, headings } = await render(
+  entry as unknown as CollectionEntry<"blog">,
+);
 const slug = entry.data.slug ?? toRouteSlug(entry.id);
 ---
 
