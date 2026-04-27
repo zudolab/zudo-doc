@@ -92,7 +92,15 @@ const slug = entry.data.slug ?? toRouteSlug(entry.id);
   navSection="blog"
   headings={headings as Heading[]}
 >
-  <Fragment>
+  {
+    /*
+    Render the page h1, fallback notice, post-meta, and description in the
+    `article-header` named slot — i.e., OUTSIDE the .zd-content article
+    wrapper. The "no h1 in content" rule means .zd-content has no h1
+    typography rules.
+  */
+  }
+  <Fragment slot="article-header">
     <h1 class="text-heading font-bold mb-vsp-xs">{entry.data.title}</h1>
 
     {
@@ -120,6 +128,8 @@ const slug = entry.data.slug ?? toRouteSlug(entry.id);
         </p>
       )
     }
+  </Fragment>
+  <Fragment>
     <Content components={components} />
     {/* Prev/next pagination across blog listing is Wave 4 — skipped for now */}
   </Fragment>
