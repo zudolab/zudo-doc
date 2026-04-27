@@ -46,12 +46,15 @@ export type ResolvedBlogConfig = Omit<
  */
 export function getBlogConfig(): ResolvedBlogConfig | null {
   const blog = settings.blog;
-  // Defensive: treat both `false` (explicit disable) and missing/undefined
-  // (field omitted in fixture / generated settings.ts) as disabled. The TS
-  // type is `BlogConfig | false`, but runtime-only consumers (e2e fixtures,
-  // generated downstream projects mid-scaffold) often omit the field
-  // entirely — that should opt out, not crash on `blog.dir`.
-  if (!blog) return null;
+  // Defensive: treat `false` (explicit disable), missing/undefined (field
+  // omitted in fixture / generated settings.ts), AND an explicit
+  // `enabled: false` flag as disabled. The TS type is `BlogConfig | false`,
+  // but runtime-only consumers (e2e fixtures, generated downstream projects
+  // mid-scaffold) often omit the field entirely — that should opt out, not
+  // crash on `blog.dir`. The `enabled: boolean` field on BlogConfig is the
+  // documented kill switch ("Must be true to activate blog routes and
+  // sidebar"), so honor it here as the single source of truth.
+  if (!blog || blog.enabled === false) return null;
   return {
     ...blog,
     dir: blog.dir ?? BLOG_DEFAULTS.dir,
