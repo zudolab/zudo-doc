@@ -41,7 +41,7 @@ const children =
 {
   children.length > 0 && (
     <nav aria-label="Category navigation" class="mt-vsp-lg mb-vsp-md">
-      <ul class="list-none m-0 p-0">
+      <ul class="list-none m-0 p-0 pl-hsp-xl">
         {children.map((child) => (
           <li class="m-0 p-0">
             {child.href ? (
@@ -62,7 +62,7 @@ const children =
               </span>
             )}
             {child.children.length > 0 && (
-              <ul class="list-none m-0 p-0 pl-hsp-lg ml-hsp-xs">
+              <ul class="list-none m-0 p-0 pl-hsp-xl">
                 {child.children
                   .filter((c: NavNode) => c.hasPage || c.children.length > 0)
                   .map((grandchild: NavNode) => (
@@ -85,7 +85,7 @@ const children =
                         </span>
                       )}
                       {grandchild.children.length > 0 && (
-                        <ul class="list-none m-0 p-0 pl-hsp-lg ml-hsp-xs">
+                        <ul class="list-none m-0 p-0 pl-hsp-xl">
                           {grandchild.children
                             .filter(
                               (c: NavNode) =>
