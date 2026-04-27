@@ -29,15 +29,18 @@ export async function getStaticPaths() {
 
   for (const locale of blogLocales as Locale[]) {
     const { allPosts, fallbackSlugs } = await loadBlogPosts(locale);
-    // allPosts is sorted newest-first; prev = newer, next = older (same ordering as EN route)
+    // allPosts is sorted newest-first; index 0 is the newest post.
+    // Convention: "prev" = older post (further back in time); "next" =
+    // newer post. So given index i, prev = posts[i + 1] (older) and
+    // next = posts[i - 1] (newer). Matches the EN route ordering.
 
     for (let idx = 0; idx < allPosts.length; idx++) {
       const entry = allPosts[idx];
       const slug = entry.data.slug ?? toRouteSlug(entry.id);
       const isFallback = fallbackSlugs.has(slug);
 
-      const prevEntry = idx > 0 ? allPosts[idx - 1] : null;
-      const nextEntry = idx < allPosts.length - 1 ? allPosts[idx + 1] : null;
+      const prevEntry = idx < allPosts.length - 1 ? allPosts[idx + 1] : null;
+      const nextEntry = idx > 0 ? allPosts[idx - 1] : null;
 
       paths.push({
         params: { locale, slug },

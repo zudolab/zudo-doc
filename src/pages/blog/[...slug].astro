@@ -22,13 +22,15 @@ export async function getStaticPaths() {
 
   const { allPosts } = await loadBlogPosts(defaultLocale);
   // allPosts is already sorted newest-first; index 0 is the newest post.
-  // "prev" = index - 1 = newer post; "next" = index + 1 = older post.
-  // This matches blog reading order: prev navigates toward newer content.
+  // Convention: "prev" = older post (further back in time); "next" = newer
+  // post. So given index i, prev = posts[i + 1] (older) and next =
+  // posts[i - 1] (newer). This matches the typical blog UI affordance
+  // where "← Previous" walks the reader backward through history.
 
   return allPosts.map((entry, idx) => {
     const slug = entry.data.slug ?? toRouteSlug(entry.id);
-    const prevEntry = idx > 0 ? allPosts[idx - 1] : null;
-    const nextEntry = idx < allPosts.length - 1 ? allPosts[idx + 1] : null;
+    const prevEntry = idx < allPosts.length - 1 ? allPosts[idx + 1] : null;
+    const nextEntry = idx > 0 ? allPosts[idx - 1] : null;
 
     return {
       params: { slug },
