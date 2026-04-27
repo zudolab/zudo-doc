@@ -46,6 +46,8 @@ interface Props {
   versionBanner?: VersionConfig["banner"];
   hideSidebar?: boolean;
   hideToc?: boolean;
+  /** When provided, overrides the navSection derived from currentSlug. Used by blog routes. */
+  navSection?: string;
 }
 
 const {
@@ -61,11 +63,13 @@ const {
   versionBanner,
   hideSidebar = false,
   hideToc = false,
+  navSection: navSectionProp,
 } = Astro.props;
 const latestUrl = currentSlug ? docsUrl(currentSlug, lang) : undefined;
 const versionAvailability = settings.versions ? await getVersionAvailability() : undefined;
 const fullTitle = title === settings.siteName ? title : `${title} | ${settings.siteName}`;
-const navSection = currentSlug ? getNavSectionForSlug(currentSlug) : undefined;
+// Use explicit navSection prop when provided (e.g. blog routes), otherwise derive from slug
+const navSection = navSectionProp ?? (currentSlug ? getNavSectionForSlug(currentSlug) : undefined);
 const currentPath = Astro.url.pathname;
 const htmlColorAttrs = settings.colorMode
   ? { "data-theme": settings.colorMode.defaultMode, style: `color-scheme: ${settings.colorMode.defaultMode}` }
@@ -232,6 +236,14 @@ const contentTransition = {
               <VersionBanner type={versionBanner} latestUrl={latestUrl} lang={lang} />
             )}
             {!hideToc && <MobileToc headings={headings} title={t("toc.title", lang)} client:load />}
+            {/*
+              Optional `article-header` slot for callers that need to render
+              content (e.g. a page h1, post-meta) BEFORE the .zd-content
+              wrapper. The "no h1 in content" rule means .zd-content does
+              not style h1 — anything that renders an h1 must do so outside
+              the wrapper to pick up the page-level heading typography.
+            */}
+            <slot name="article-header" />
             <article class="zd-content max-w-none">
               <slot />
             </article>

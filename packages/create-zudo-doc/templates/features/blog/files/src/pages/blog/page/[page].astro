@@ -1,0 +1,65 @@
+---
+import DocLayout from "@/layouts/doc-layout.astro";
+import BlogPostCard from "@/components/blog-post-card.astro";
+import BlogPagination from "@/components/blog-pagination.astro";
+import { defaultLocale, t } from "@/config/i18n";
+import { blogPageHref } from "@/utils/blog";
+import {
+  getBlogExtraPagePaths,
+  loadBlogListingPage,
+} from "@/utils/blog-listing";
+
+export async function getStaticPaths() {
+  // Returns pages 2..N. Page 1 lives at /blog/ via index.astro and is
+  // intentionally NOT generated here to avoid a duplicate /blog/page/1/ route.
+  return await getBlogExtraPagePaths(defaultLocale);
+}
+
+const lang = defaultLocale;
+// Validate the page param early. `Number("abc")` returns NaN, which would
+// silently propagate through pagination math and surface as a page titled
+// "NaN" with no posts. Reject anything that is not a positive integer.
+const pageNum = Number(Astro.params.page);
+if (!Number.isInteger(pageNum) || pageNum < 1) {
+  return new Response(null, { status: 404 });
+}
+const data = (await loadBlogListingPage(lang, pageNum))!;
+const { posts, excerpts, currentPage, lastPage } = data;
+
+const prevHref = currentPage > 1 ? blogPageHref(currentPage - 1, lang) : null;
+const nextHref =
+  currentPage < lastPage ? blogPageHref(currentPage + 1, lang) : null;
+
+const title = `${t("blog.title", lang)} — ${t("blog.pageN", lang).replace(
+  "{n}",
+  String(currentPage),
+)}`;
+---
+
+<DocLayout title={title} navSection="blog" hideToc={true}>
+  <Fragment>
+    <h1 class="text-heading font-bold mb-vsp-md">{t("blog.title", lang)}</h1>
+
+    <ul class="list-none p-0 m-0">
+      {
+        posts.map((entry) => (
+          <li class="m-0">
+            <BlogPostCard
+              entry={entry}
+              lang={lang}
+              excerpt={excerpts.get(entry.id)!}
+            />
+          </li>
+        ))
+      }
+    </ul>
+
+    <BlogPagination
+      currentPage={currentPage}
+      lastPage={lastPage}
+      lang={lang}
+      prevHref={prevHref}
+      nextHref={nextHref}
+    />
+  </Fragment>
+</DocLayout>

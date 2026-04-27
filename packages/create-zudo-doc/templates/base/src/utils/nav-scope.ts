@@ -19,9 +19,20 @@ export function getCategoryOrder(): string[] {
 /**
  * Given a doc's slug (e.g. "getting-started/introduction" or "claude-agents/doc-reviewer"),
  * return the categoryMatch value of the headerNav item it belongs to.
+ *
+ * Slugs starting with `blog/` (including `blog/archives`) always resolve to
+ * the synthetic `"blog"` section so the sidebar can swap to the blog tree.
+ * The `headerNav` entry generated for the blog feature carries
+ * `categoryMatch: "blog"` (see `src/config/settings.ts`), so the explicit
+ * matcher loop below already handles this case correctly. We keep an
+ * explicit early return as a defensive default for downstream projects
+ * (or fixtures) that enable blog routes WITHOUT a corresponding
+ * `categoryMatch: "blog"` entry in `headerNav` — the synthetic blog
+ * section must still resolve so the sidebar can swap to the blog tree.
  */
 export function getNavSectionForSlug(slug: string): string | undefined {
   const topCategory = slug.split("/")[0] ?? "";
+  if (topCategory === "blog") return "blog";
   const all = getCategoryOrder();
 
   // First pass: find explicit matchers (not "!")

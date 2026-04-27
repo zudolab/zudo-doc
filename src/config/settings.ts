@@ -6,6 +6,7 @@ export type {
   HtmlPreviewConfig,
   LocaleConfig,
   VersionConfig,
+  BlogConfig,
   FooterConfig,
   FrontmatterPreviewConfig,
   BodyFootUtilAreaConfig,
@@ -20,6 +21,7 @@ import type {
   HtmlPreviewConfig,
   LocaleConfig,
   VersionConfig,
+  BlogConfig,
   FooterConfig,
   FrontmatterPreviewConfig,
   BodyFootUtilAreaConfig,
@@ -117,6 +119,39 @@ export const settings = {
       banner: "unmaintained",
     },
   ] as VersionConfig[] | false,
+  /**
+   * Opt-in blog feature. Off by default — leave as `false` to disable, or set
+   * to a config object to enable.
+   *
+   * The example below shows every supported field with the documented default
+   * applied, so it can be copy-pasted as a starting point. Only `enabled` is
+   * required; omit any field you are happy to inherit from the default.
+   *
+   * Defaults:
+   *   - `dir`                 → `"src/content/blog"`
+   *   - `sidebarRecentCount`  → `30`
+   *   - `postsPerPage`        → `10`
+   *   - `locales`             → `undefined` (no locale mirrors)
+   *
+   * Example:
+   *
+   *   blog: {
+   *     enabled: true,
+   *     dir: "src/content/blog",
+   *     sidebarRecentCount: 30,
+   *     postsPerPage: 10,
+   *     locales: {
+   *       ja: { dir: "src/content/blog-ja" },
+   *     },
+   *   },
+   */
+  blog: {
+    enabled: true,
+    dir: "src/content/blog",
+    locales: { ja: { dir: "src/content/blog-ja" } },
+    sidebarRecentCount: 30,
+    postsPerPage: 10,
+  } as BlogConfig | false,
   claudeResources: {
     claudeDir: ".claude",
   } as { claudeDir: string; projectRoot?: string } | false,
@@ -166,6 +201,7 @@ export const settings = {
   } satisfies FooterConfig as FooterConfig | false,
   headerNav: [
     { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
+    { label: "Blog", labelKey: "nav.blog", path: "/blog", categoryMatch: "blog" },
     {
       label: "Learn",
       labelKey: "nav.learn",

@@ -1,0 +1,120 @@
+---
+import { render, type CollectionEntry } from "astro:content";
+import DocLayout from "@/layouts/doc-layout.astro";
+import Note from "@/components/admonitions/note.astro";
+import Tip from "@/components/admonitions/tip.astro";
+import Info from "@/components/admonitions/info.astro";
+import Warning from "@/components/admonitions/warning.astro";
+import Danger from "@/components/admonitions/danger.astro";
+import Tabs from "@/components/tabs.astro";
+import TabItem from "@/components/tab-item.astro";
+import Details from "@/components/details.astro";
+import HtmlPreview from "@/components/html-preview-wrapper.astro";
+import { htmlOverrides } from "@/components/content/component-map";
+import BlogPostMeta from "@/components/blog-post-meta.astro";
+import { toRouteSlug } from "@/utils/slug";
+import { loadBlogPosts, getBlogConfig } from "@/utils/blog";
+import { defaultLocale } from "@/config/i18n";
+import type { Heading } from "@/types/heading";
+
+export async function getStaticPaths() {
+  if (!getBlogConfig()) return [];
+
+  const { allPosts } = await loadBlogPosts(defaultLocale);
+  // allPosts is already sorted newest-first; index 0 is the newest post.
+  // Convention: "prev" = older post (further back in time); "next" = newer
+  // post. So given index i, prev = posts[i + 1] (older) and next =
+  // posts[i - 1] (newer). This matches the typical blog UI affordance
+  // where "← Previous" walks the reader backward through history.
+
+  return allPosts.map((entry, idx) => {
+    const slug = entry.data.slug ?? toRouteSlug(entry.id);
+    const prevEntry = idx < allPosts.length - 1 ? allPosts[idx + 1] : null;
+    const nextEntry = idx > 0 ? allPosts[idx - 1] : null;
+
+    return {
+      params: { slug },
+      props: {
+        entry,
+        prev: prevEntry
+          ? {
+              slug: prevEntry.data.slug ?? toRouteSlug(prevEntry.id),
+              title: prevEntry.data.title,
+            }
+          : null,
+        next: nextEntry
+          ? {
+              slug: nextEntry.data.slug ?? toRouteSlug(nextEntry.id),
+              title: nextEntry.data.title,
+            }
+          : null,
+      },
+    };
+  });
+}
+
+const { entry } = Astro.props;
+
+const components = {
+  ...htmlOverrides,
+  Note,
+  Tip,
+  Info,
+  Warning,
+  Danger,
+  Tabs,
+  TabItem,
+  Details,
+  HtmlPreview,
+};
+
+// `entry` is typed as the shared `BlogEntry` shape so listing/sidebar
+// helpers can consume entries from any `blog-${code}` collection. Astro's
+// `render()` expects a concrete `CollectionEntry<C>` keyed by collection
+// name — which fights the dynamic collection setup. Narrow the cast to
+// `CollectionEntry<"blog">` (still goes through `unknown` because the
+// shapes are nominally distinct) instead of `any`, so future refactors
+// surface real type errors.
+const { Content, headings } = await render(
+  entry as unknown as CollectionEntry<"blog">,
+);
+const slug = entry.data.slug ?? toRouteSlug(entry.id);
+---
+
+<DocLayout
+  title={entry.data.title}
+  description={entry.data.description}
+  currentSlug={`blog/${slug}`}
+  navSection="blog"
+  headings={headings as Heading[]}
+>
+  {
+    /*
+    Render the page h1, post-meta, and description in the `article-header`
+    named slot — i.e., OUTSIDE the .zd-content article wrapper. The
+    "no h1 in content" rule means .zd-content has no h1 typography rules,
+    so an h1 placed inside the wrapper would render as unstyled text.
+  */
+  }
+  <Fragment slot="article-header">
+    <h1 class="text-heading font-bold mb-vsp-xs">{entry.data.title}</h1>
+    <BlogPostMeta
+      date={entry.data.date}
+      author={entry.data.author}
+      authors={entry.data.authors}
+      tags={entry.data.tags}
+      lang={defaultLocale}
+    />
+    {
+      entry.data.description && (
+        <p class="mt-0 mb-vsp-lg text-subheading text-muted">
+          {entry.data.description}
+        </p>
+      )
+    }
+  </Fragment>
+  <Fragment>
+    <Content components={components} />
+    {/* Prev/next pagination across blog listing is Wave 4 — skipped for now */}
+  </Fragment>
+</DocLayout>

@@ -14,6 +14,7 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  FrontmatterPreviewConfig,`);
   lines.push(`  LocaleConfig,`);
   lines.push(`  VersionConfig,`);
+  lines.push(`  BlogConfig,`);
   lines.push(`  FooterConfig,`);
   lines.push(`  BodyFootUtilAreaConfig,`);
   lines.push(`  TagPlacement,`);
@@ -28,6 +29,7 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  FrontmatterPreviewConfig,`);
   lines.push(`  LocaleConfig,`);
   lines.push(`  VersionConfig,`);
+  lines.push(`  BlogConfig,`);
   lines.push(`  FooterConfig,`);
   lines.push(`  BodyFootUtilAreaConfig,`);
   lines.push(`  TagPlacement,`);
@@ -174,6 +176,23 @@ export function generateSettingsFile(choices: UserChoices): string {
     lines.push(`  versions: false as VersionConfig[] | false,`);
   }
 
+  if (choices.features.includes("blog")) {
+    lines.push(`  blog: {`);
+    lines.push(`    enabled: true,`);
+    lines.push(`    dir: "src/content/blog",`);
+    if (choices.features.includes("i18n")) {
+      const secondaryLang = getSecondaryLang(choices.defaultLang);
+      lines.push(
+        `    locales: { ${secondaryLang}: { dir: "src/content/blog-${secondaryLang}" } },`,
+      );
+    }
+    lines.push(`    sidebarRecentCount: 30,`);
+    lines.push(`    postsPerPage: 10,`);
+    lines.push(`  } satisfies BlogConfig as BlogConfig | false,`);
+  } else {
+    lines.push(`  blog: false as BlogConfig | false,`);
+  }
+
   if (choices.features.includes("claudeResources")) {
     lines.push(`  claudeResources: {`);
     lines.push(`    claudeDir: ".claude",`);
@@ -226,6 +245,11 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(
     `    { label: "Getting Started", path: "/docs/getting-started", categoryMatch: "getting-started" },`,
   );
+  if (choices.features.includes("blog")) {
+    lines.push(
+      `    { label: "Blog", path: "/blog", categoryMatch: "blog" },`,
+    );
+  }
   if (choices.features.includes("changelog")) {
     lines.push(
       `    { label: "Changelog", path: "/docs/changelog", categoryMatch: "changelog" },`,

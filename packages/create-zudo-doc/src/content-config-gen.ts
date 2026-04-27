@@ -10,6 +10,7 @@ import type { UserChoices } from "./prompts.js";
 export function generateContentConfig(choices: UserChoices): string {
   const hasI18n = choices.features.includes("i18n");
   const hasVersioning = choices.features.includes("versioning");
+  const hasBlog = choices.features.includes("blog");
 
   const lines: string[] = [];
 
@@ -108,10 +109,65 @@ export function generateContentConfig(choices: UserChoices): string {
     lines.push(``);
   }
 
+  // --- Blog collections ---
+  if (hasBlog) {
+    // Exported so `src/types/blog-entry.ts` can derive `BlogData` via
+    // `z.infer<typeof blogSchema>` (single source of truth for the
+    // frontmatter shape — keep schema and type in sync automatically).
+    lines.push(`export const blogSchema = z.object({`);
+    lines.push(`  title: z.string(),`);
+    lines.push(`  description: z.string().optional(),`);
+    lines.push(`  date: z.coerce.date(),`);
+    lines.push(`  author: z.string().optional(),`);
+    lines.push(`  authors: z.string().array().optional(),`);
+    lines.push(`  tags: z.array(z.string()).optional(),`);
+    lines.push(`  excerpt: z.string().optional(),`);
+    lines.push(`  hasMore: z.boolean().optional(),`);
+    lines.push(`  draft: z.boolean().optional(),`);
+    lines.push(`  unlisted: z.boolean().optional(),`);
+    lines.push(`  slug: z.string().optional(),`);
+    lines.push(`}).passthrough();`);
+    lines.push(``);
+
+    lines.push(`const blogBaseDir = settings.blog ? settings.blog.dir : "src/content/blog";`);
+    lines.push(`const blog = defineCollection({`);
+    lines.push(
+      `  loader: glob({ pattern: "**/*.{md,mdx}", base: \`./$\{blogBaseDir}\` }),`,
+    );
+    lines.push(`  schema: blogSchema,`);
+    lines.push(`});`);
+    lines.push(``);
+
+    if (hasI18n) {
+      lines.push(
+        `const blogLocaleCollections: Record<string, ReturnType<typeof defineCollection>> = {};`,
+      );
+      lines.push(`if (settings.blog && settings.blog.locales) {`);
+      lines.push(
+        `  for (const [code, config] of Object.entries(settings.blog.locales)) {`,
+      );
+      lines.push(
+        `    blogLocaleCollections[\`blog-$\{code}\`] = defineCollection({`,
+      );
+      lines.push(
+        `      loader: glob({ pattern: "**/*.{md,mdx}", base: \`./$\{config.dir}\` }),`,
+      );
+      lines.push(`      schema: blogSchema,`);
+      lines.push(`    });`);
+      lines.push(`  }`);
+      lines.push(`}`);
+      lines.push(``);
+    }
+  }
+
   // --- Export collections ---
   const collectionParts = ["docs"];
   if (hasI18n) collectionParts.push("...localeCollections");
   if (hasVersioning) collectionParts.push("...versionCollections");
+  if (hasBlog) {
+    collectionParts.push("blog");
+    if (hasI18n) collectionParts.push("...blogLocaleCollections");
+  }
   lines.push(
     `export const collections = { ${collectionParts.join(", ")} };`,
   );

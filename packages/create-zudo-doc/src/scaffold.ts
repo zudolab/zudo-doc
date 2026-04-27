@@ -60,6 +60,50 @@ sidebar_position: 99
 - 初回リリース
 `;
 
+const BLOG_STARTER_POST_EN = () => `---
+title: Hello, blog!
+date: ${new Date().toISOString().slice(0, 10)}
+author: zudo-doc
+description: First blog post — kicks the tires of the new blog feature.
+---
+
+## Welcome
+
+This is the first post on your zudo-doc blog. The blog feature supports MDX
+content, date-aware sorting, locale-based fallbacks, and a \`<!-- more -->\`
+excerpt marker for listing pages.
+
+<!-- more -->
+
+The excerpt above will be shown on the blog index page. Everything below this
+marker is part of the full post body and will not appear in the listing excerpt.
+
+Feel free to replace this post with your own content and explore the
+frontmatter fields such as \`author\`, \`authors\`, \`tags\`, and \`description\`.
+`;
+
+const BLOG_STARTER_POST_JA = () => `---
+title: ブログをはじめました
+date: ${new Date().toISOString().slice(0, 10)}
+author: zudo-doc
+description: zudo-doc のブログ機能の最初の投稿。新機能の動作確認を兼ねています。
+---
+
+## ようこそ
+
+zudo-doc ブログの最初の投稿です。ブログ機能は MDX コンテンツ、日付による並び替え、
+ロケールベースのフォールバック、そしてリスト表示用の \`<!-- more -->\` 抜粋マーカーに
+対応しています。
+
+<!-- more -->
+
+このマーカーから上の部分はブログのインデックスページで抜粋として表示されます。
+マーカーから下はフルページの本文の一部となり、リスト表示の抜粋には現れません。
+
+この投稿を自由に書き換えながら、\`author\`、\`authors\`、\`tags\`、\`description\` などの
+フロントマターのフィールドを試してみてください。
+`;
+
 export async function scaffold(choices: UserChoices): Promise<void> {
   const targetDir = path.resolve(process.cwd(), choices.projectName);
 
@@ -181,6 +225,30 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     }
   }
 
+  // When the blog + i18n features are both ON, mirror the EN starter blog
+  // post into `src/content/blog-${secondaryLang}/` (the dynamic dir name is
+  // why this lives in scaffold.ts rather than templates/features/blog/files).
+  // The EN starter post itself is shipped statically under
+  // templates/features/blog/files/src/content/blog/hello-world.md.
+  if (
+    choices.features.includes("blog") &&
+    choices.features.includes("i18n")
+  ) {
+    const secondaryLang = getSecondaryLang(defaultLang);
+    const secondaryBlogDir = `src/content/blog-${secondaryLang}`;
+    await fs.ensureDir(path.join(targetDir, secondaryBlogDir));
+    await fs.outputFile(
+      path.join(targetDir, `${secondaryBlogDir}/.gitkeep`),
+      "",
+    );
+    const secondaryBlogPost =
+      secondaryLang === "ja" ? BLOG_STARTER_POST_JA() : BLOG_STARTER_POST_EN();
+    await fs.outputFile(
+      path.join(targetDir, `${secondaryBlogDir}/hello-world.md`),
+      secondaryBlogPost,
+    );
+  }
+
   // 3. Generate programmatic files
   const settingsContent = generateSettingsFile(choices);
   await fs.outputFile(
@@ -280,6 +348,14 @@ function generatePackageJson(choices: UserChoices) {
 
   if (choices.features.includes("docHistory")) {
     deps["diff"] = "^8.0.3";
+  }
+
+  if (choices.features.includes("blog")) {
+    // Runtime deps for the bundled remark-excerpt plugin (renders the
+    // pre-`<!-- more -->` portion of a post to HTML for listing/sidebar).
+    deps["mdast-util-to-hast"] = "^13.2.1";
+    deps["hast-util-to-html"] = "^9.0.5";
+    deps["mdast-util-from-markdown"] = "^2.0.3";
   }
 
   if (choices.features.includes("tagGovernance")) {

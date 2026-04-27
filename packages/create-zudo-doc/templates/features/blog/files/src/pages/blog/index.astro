@@ -1,0 +1,65 @@
+---
+import DocLayout from "@/layouts/doc-layout.astro";
+import BlogPostCard from "@/components/blog-post-card.astro";
+import BlogPagination from "@/components/blog-pagination.astro";
+import { defaultLocale, t } from "@/config/i18n";
+import { blogPageHref, getBlogConfig } from "@/utils/blog";
+import { withBase } from "@/utils/base";
+import { loadBlogListingPage } from "@/utils/blog-listing";
+
+// Static-route opt-out: Astro ignores `getStaticPaths` on routes without a
+// dynamic segment, so we redirect to the site root when the blog feature is
+// disabled. Dynamic siblings ([page] paginated route, [locale]/blog/...) use
+// the empty-getStaticPaths pattern instead.
+if (!getBlogConfig()) {
+  return Astro.redirect(withBase("/"));
+}
+
+const lang = defaultLocale;
+// `loadBlogListingPage` only returns null when blog is disabled, and the
+// early redirect above already handled that case.
+const data = (await loadBlogListingPage(lang, 1))!;
+const { posts, excerpts, currentPage, lastPage } = data;
+
+const prevHref = currentPage > 1 ? blogPageHref(currentPage - 1, lang) : null;
+const nextHref =
+  currentPage < lastPage ? blogPageHref(currentPage + 1, lang) : null;
+
+const title = t("blog.title", lang);
+---
+
+<DocLayout title={title} navSection="blog" hideToc={true}>
+  <Fragment>
+    <h1 class="text-heading font-bold mb-vsp-md">{title}</h1>
+
+    {
+      posts.length === 0 ? (
+        <p class="text-muted">{t("blog.noPosts", lang)}</p>
+      ) : (
+        <ul class="list-none p-0 m-0">
+          {posts.map((entry) => (
+            <li class="m-0">
+              <BlogPostCard
+                entry={entry}
+                lang={lang}
+                excerpt={excerpts.get(entry.id)!}
+              />
+            </li>
+          ))}
+        </ul>
+      )
+    }
+
+    {
+      lastPage > 1 && (
+        <BlogPagination
+          currentPage={currentPage}
+          lastPage={lastPage}
+          lang={lang}
+          prevHref={prevHref}
+          nextHref={nextHref}
+        />
+      )
+    }
+  </Fragment>
+</DocLayout>

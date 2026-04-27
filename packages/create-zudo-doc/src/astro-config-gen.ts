@@ -14,6 +14,7 @@ export function generateAstroConfig(choices: UserChoices): string {
   const hasLlmsTxt = choices.features.includes("llmsTxt");
   const hasClaudeResources = choices.features.includes("claudeResources");
   const hasImageEnlarge = choices.features.includes("imageEnlarge");
+  const hasBlog = choices.features.includes("blog");
 
   const lines: string[] = [];
 
@@ -72,6 +73,11 @@ export function generateAstroConfig(choices: UserChoices): string {
   if (hasImageEnlarge) {
     lines.push(
       `import { rehypeImageEnlarge } from "./src/plugins/rehype-image-enlarge";`,
+    );
+  }
+  if (hasBlog) {
+    lines.push(
+      `import { remarkExcerpt } from "./src/plugins/remark-excerpt";`,
     );
   }
 
@@ -192,6 +198,9 @@ export function generateAstroConfig(choices: UserChoices): string {
   lines.push(`        onBrokenLinks: settings.onBrokenMarkdownLinks,`);
   lines.push(`      }],`);
   lines.push(`      ...(settings.cjkFriendly ? [remarkCjkFriendly] : []),`);
+  if (hasBlog) {
+    lines.push(`      remarkExcerpt,`);
+  }
   lines.push(`    ],`);
   lines.push(`    rehypePlugins: [`);
   lines.push(`      rehypeCodeTitle,`);

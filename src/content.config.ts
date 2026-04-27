@@ -4,6 +4,10 @@ import { glob } from "astro/loaders";
 import { settings } from "./config/settings";
 import { tagVocabulary } from "./config/tag-vocabulary";
 
+// Default content directories for blog collections
+const DEFAULT_BLOG_DIR = "src/content/blog";
+const DEFAULT_BLOG_LOCALE_DIR_PREFIX = "src/content/blog-";
+
 // Build the `tags` schema based on governance mode. `"strict"` tightens to a
 // z.enum of every canonical id plus every alias (content still uses aliases
 // verbatim — resolution happens at the aggregation layer, after parsing).
@@ -77,4 +81,57 @@ if (settings.versions) {
   }
 }
 
-export const collections = { docs, ...localeCollections, ...versionCollections };
+// Blog schema — declared fields only; Astro 6 only surfaces schema-declared
+// keys from vfile.data.astro.frontmatter into entry.data.
+//
+// Exported so `src/types/blog-entry.ts` can derive `BlogData` from this
+// schema (single source of truth — keep frontmatter shape changes in one
+// place).
+export const blogSchema = z
+  .object({
+    title: z.string(),
+    description: z.string().optional(),
+    date: z.coerce.date(),
+    author: z.string().optional(),
+    authors: z.string().array().optional(),
+    tags: buildTagsSchema(),
+    /** Manual excerpt override OR populated by the <!-- more --> remark plugin. */
+    excerpt: z.string().optional(),
+    /** Set by the <!-- more --> remark plugin to signal that a "Continue reading" link should render. */
+    hasMore: z.boolean().optional(),
+    draft: z.boolean().optional(),
+    unlisted: z.boolean().optional(),
+    slug: z.string().optional(),
+  })
+  .passthrough();
+
+// Blog collections (always registered so getCollection("blog") works unconditionally)
+const blogDir = settings.blog ? (settings.blog.dir ?? DEFAULT_BLOG_DIR) : DEFAULT_BLOG_DIR;
+const blog = defineCollection({
+  loader: glob({ pattern: "**/*.{md,mdx}", base: `./${blogDir}` }),
+  schema: blogSchema,
+});
+
+// Locale blog collections
+const blogLocaleCollections: Record<string, ReturnType<typeof defineCollection>> = {};
+if (settings.blog && settings.blog.locales) {
+  for (const [code, config] of Object.entries(settings.blog.locales)) {
+    blogLocaleCollections[`blog-${code}`] = defineCollection({
+      loader: glob({ pattern: "**/*.{md,mdx}", base: `./${config.dir}` }),
+      schema: blogSchema,
+    });
+  }
+} else {
+  // Register default locale collections so TypeScript / Astro schema checks pass
+  // even when the blog feature is off. We use the docs locale list as a reference
+  // so that every known locale gets a blog-{code} collection with the correct dir
+  // structure, falling back to the conventional default path.
+  for (const [code] of Object.entries(settings.locales)) {
+    blogLocaleCollections[`blog-${code}`] = defineCollection({
+      loader: glob({ pattern: "**/*.{md,mdx}", base: `./${DEFAULT_BLOG_LOCALE_DIR_PREFIX}${code}` }),
+      schema: blogSchema,
+    });
+  }
+}
+
+export const collections = { docs, ...localeCollections, ...versionCollections, blog, ...blogLocaleCollections };

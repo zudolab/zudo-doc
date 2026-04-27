@@ -1,0 +1,172 @@
+---
+title: ブログ
+description: ブログ機能を有効にし、ヘッダーに組み込み、記事を書くための手順。
+sidebar_position: 2.7
+---
+
+zudo-doc にはオプトインのブログ機能が組み込まれています。有効にすると、
+日付に応じたブログインデックス、全記事を一覧する「Archives」ページ、
+ロケール対応のフォールバック、新着記事を見せるサイドバーがそろいます。
+このページではセットアップの流れを順に見ていきます。
+
+## ブログ機能で得られるもの
+
+ブログ機能はあえて小さくまとめてあります。手に入るのは次のとおりです。
+
+- `/blog/` にあるランディングページ。記事カードがページネーションされて並びます。
+- `/blog/archives/` の全記事一覧ページ。
+- 新着記事と「Archives」リンクを表示するサイドバー。
+- `<!-- more -->` 抜粋マーカーと、任意の `excerpt:` フロントマター。
+- ロケールフォールバック。翻訳が無い場合は英語版の記事を代わりに表示します。
+
+## 機能を有効にする
+
+ブログ機能は `src/config/settings.ts` の `blog` フィールドで制御します。
+既定値は `false` (無効) です。設定オブジェクトを渡して有効にします。
+
+```ts
+// src/config/settings.ts
+export const settings = {
+  // …
+  blog: {
+    enabled: true,
+    dir: "src/content/blog",
+    locales: { ja: { dir: "src/content/blog-ja" } },
+    sidebarRecentCount: 30,
+    postsPerPage: 10,
+  },
+  // …
+};
+```
+
+`BlogConfig` のフィールドは次のとおりです。
+
+| フィールド | 既定値 | 用途 |
+|---|---|---|
+| `enabled` | 必須 | `true` で機能を有効化。 |
+| `dir` | `"src/content/blog"` | デフォルトロケールの記事を置くディレクトリ。 |
+| `locales` | `undefined` | ロケールごとの上書き。例 `{ ja: { dir: "src/content/blog-ja" } }`。 |
+| `sidebarRecentCount` | `30` | サイドバーに並ぶ新着記事の件数。 |
+| `postsPerPage` | `10` | ブログインデックスの 1 ページあたり件数。 |
+
+<Tip>
+
+必須なのは `enabled` だけです。既定値で問題ないフィールドは省略してかまいません。
+
+</Tip>
+
+## Blog リンクをヘッダーに追加する
+
+ブログ機能はヘッダーリンクを自動登録しません。`src/config/settings.ts` の
+`headerNav` にエントリを追加してください。
+
+```ts
+headerNav: [
+  { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
+  { label: "Blog", labelKey: "nav.blog", path: "/blog", categoryMatch: "blog" },
+  // …他のエントリ
+],
+```
+
+`categoryMatch: "blog"` を指定しておくと、URL が `/blog/` 配下にあるあいだ、
+そのリンクがアクティブ表示になります。`labelKey` は i18n のキーなので、
+`src/config/i18n.ts` の各ロケールに対応する翻訳を追加します。
+
+```ts
+en: { /* … */ "nav.blog": "Blog" },
+ja: { /* … */ "nav.blog": "ブログ" },
+```
+
+## 記事の置き場所
+
+`blog.dir` と `blog.locales[code].dir` で指定したディレクトリに記事を置きます。
+
+```
+src/content/blog/
+├── hello-world.md
+├── authoring-blog-posts.md
+└── …
+
+src/content/blog-ja/
+├── hello-world.md
+└── …
+```
+
+ファイル名は kebab-case で、文章だけの記事は `.md`、MDX 機能を本当に使う
+ときだけ `.mdx` にします。
+
+## フロントマター
+
+必須は次のふたつです。
+
+| フィールド | 型 | 説明 |
+|---|---|---|
+| `title` | string | 記事のタイトル。インデックスカードと記事ページに表示されます。 |
+| `date` | date | 並び替え (新しい順) と「公開日」表示に使われます。 |
+
+その他はすべて任意です。
+
+| フィールド | 型 | 説明 |
+|---|---|---|
+| `description` | string | メタデータやフィードで使う一行説明。 |
+| `author` | string | 単独の著者。 |
+| `authors` | string[] | 共著者がいる場合の配列。 |
+| `tags` | string[] | `src/config/tag-vocabulary.ts` のタグ id。 |
+| `excerpt` | string | 手書き抜粋。`<!-- more -->` マーカーよりも優先されます。 |
+| `slug` | string | URL スラッグの上書き (既定はファイル名)。 |
+| `draft` | boolean | 本番ビルドから除外。 |
+| `unlisted` | boolean | ビルドはされるがサイドバーの新着リストには出ない。 |
+
+## `<!-- more -->` 抜粋マーカー
+
+ブログインデックスは記事ごとの短い抜粋を必要とします。抜粋を与える方法は
+3 通りあり、優先順位は次のとおりです。
+
+1. **`excerpt:` フロントマター** が最優先。マーカーが同居していてもこちらが勝ちます。
+2. **`<!-- more -->` マーカー** が本文中で抜粋とそれ以降を分けます。
+3. **フォールバック** — どちらも無い場合、本文の最初の段落を抜粋として使います。
+
+マーカーを使う例:
+
+```md
+---
+title: Hello, blog!
+date: 2026-04-27
+---
+
+この段落が抜粋になります。ブログインデックスのカードに表示されます。
+
+<!-- more -->
+
+マーカーから下はフルページの本文の一部で、記事ページにのみ表示されます。
+```
+
+<Note>
+
+マーカーは文字どおりの HTML コメント `<!-- more -->` です。前後に空行を入れて、
+独立した行に配置してください。
+
+</Note>
+
+## 多言語の記事
+
+`blog.locales` を設定すると、英語の記事ごとに各ロケールのミラーを置けます。
+翻訳が存在しないときは、ロケールのインデックスにも記事は表示され、英語本文が
+代わりに使われ、記事ページには「まだ翻訳されていません」という注意書きが
+表示されます。
+
+<Warning>
+
+フロントマターの形はロケール間で揃えてください。`date`、`tags`、`slug`、
+`author` は同じにします。翻訳するのは `title`、`description`、本文の散文だけで、
+コードブロックはそのままにしておきます。同じルールはドキュメントページにも
+当てはまります — 詳しくは [Writing Docs](./writing-docs.mdx) を参照してください。
+
+</Warning>
+
+## 次のステップ
+
+- 実例として [showcase blog](/ja/blog/) を眺めてみてください。
+- 全体的な執筆ルールは [Writing Docs](./writing-docs.mdx) を参照してください。
+- `headerNav` とサイドバーの関係は [Structuring Navigations](./structuring-navigations.mdx)
+  で説明しています。
