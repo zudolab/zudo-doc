@@ -801,6 +801,19 @@ pre.astro-code .line .highlighted-word {
   display: block;
   margin-inline: 0;
   margin-block-end: 0;
+  border: 1px solid transparent;
+  transition: border-color var(--default-transition-duration);
+}
+
+/* Eligible images (expand-btn visible): the entire image becomes the click target.
+ * Show a subtle border as the interactivity affordance, accent on hover. */
+.zd-enlargeable:has(.zd-enlarge-btn:not([hidden])) {
+  border-color: var(--color-muted);
+  cursor: pointer;
+}
+
+.zd-enlargeable:has(.zd-enlarge-btn:not([hidden])):hover {
+  border-color: var(--color-accent);
 }
 
 .zd-enlargeable img {
@@ -853,7 +866,12 @@ dialog.zd-enlarge-dialog::backdrop {
   background: color-mix(in oklch, var(--color-overlay) 80%, transparent);
 }
 
+/* Close button is positioned to the VIEWPORT corner (not the dialog) so it
+ * stays visually distinct against any image, regardless of the dialog's size. */
 .zd-enlarge-dialog-close {
+  position: fixed;
+  top: 4px;
+  right: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -880,10 +898,23 @@ dialog.zd-enlarge-dialog::backdrop {
 .zd-enlarge-dialog-close > svg {
   position: relative;
   z-index: 1;
-  width: var(--spacing-icon-md);
-  height: var(--spacing-icon-md);
+  width: var(--spacing-icon-lg);
+  height: var(--spacing-icon-lg);
   color: var(--color-image-overlay-fg);
   fill: currentColor;
+}
+
+/* Wide viewport: ~3× larger close button to read clearly against any image. */
+@media (min-width: 1024px) {
+  .zd-enlarge-dialog-close {
+    top: 10px;
+    right: 10px;
+  }
+
+  .zd-enlarge-dialog-close > svg {
+    width: calc(var(--spacing-icon-lg) * 3);
+    height: calc(var(--spacing-icon-lg) * 3);
+  }
 }
 
 /* ========================================
