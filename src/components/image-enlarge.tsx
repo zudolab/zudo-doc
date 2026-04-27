@@ -102,10 +102,11 @@ export default function ImageEnlarge() {
   useEffect(() => {
     function handleDocumentClick(e: MouseEvent) {
       const target = e.target as Element;
-      const btn = target.closest(".zd-enlarge-btn");
-      if (!btn) return;
-      const container = btn.closest(".zd-enlargeable");
+      const container = target.closest(".zd-enlargeable");
       if (!container) return;
+      const btn = container.querySelector(".zd-enlarge-btn") as HTMLElement | null;
+      // Eligibility gate: only open when the expand button is visible (image is large enough).
+      if (!btn || btn.hasAttribute("hidden")) return;
       const img = container.querySelector("img") as HTMLImageElement | null;
       if (!img) return;
       setImgData({
@@ -185,25 +186,27 @@ export default function ImageEnlarge() {
       style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
     >
       {imgData && (
-        <div className="relative">
-          <img
-            src={imgData.currentSrc || imgData.src}
-            srcSet={imgData.srcset}
-            sizes={imgData.srcset ? "100vw" : undefined}
-            alt={imgData.alt}
-            className="block max-h-[85vh] max-w-[85vw] object-contain"
-          />
+        <>
+          <div className="relative">
+            <img
+              src={imgData.currentSrc || imgData.src}
+              srcSet={imgData.srcset}
+              sizes={imgData.srcset ? "100vw" : undefined}
+              alt={imgData.alt}
+              className="block max-h-[85vh] max-w-[85vw] object-contain"
+            />
+          </div>
           <button
             type="button"
             onClick={() => dialogRef.current?.close()}
-            className="zd-enlarge-dialog-close absolute right-0 top-0"
+            className="zd-enlarge-dialog-close"
             aria-label="Close enlarged image"
           >
             <svg viewBox="0 0 161.03 161.03" fill="currentColor" aria-hidden="true" focusable="false">
               <polygon points="161.03 10.27 150.76 0 80.51 70.24 10.27 0 0 10.27 70.24 80.51 0 150.76 10.27 161.03 80.51 90.78 150.76 161.03 161.03 150.76 90.78 80.51 161.03 10.27" />
             </svg>
           </button>
-        </div>
+        </>
       )}
     </dialog>
   );
