@@ -31,6 +31,7 @@ interface Props {
   versionBanner?: VersionConfig["banner"];
   hideSidebar?: boolean;
   hideToc?: boolean;
+  docHistory?: boolean;
 }
 
 const {
@@ -46,10 +47,12 @@ const {
   versionBanner,
   hideSidebar = false,
   hideToc = false,
+  docHistory,
 } = Astro.props;
 // Silence unused-var warnings when no feature consumes these.
 void contentDir;
 void entryId;
+void docHistory;
 const latestUrl = currentSlug ? docsUrl(currentSlug, lang) : undefined;
 // @slot:doc-layout:frontmatter
 const fullTitle =
