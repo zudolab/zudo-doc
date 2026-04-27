@@ -10,13 +10,31 @@ interface Props {
   lang?: Locale;
   contentDir?: string;
   entryId?: string;
+  docHistory?: boolean;
 }
 
-const { currentSlug, lang = defaultLocale, contentDir, entryId } = Astro.props;
+const {
+  currentSlug,
+  lang = defaultLocale,
+  contentDir,
+  entryId,
+  docHistory,
+} = Astro.props;
 
 const utilSettings = settings.bodyFootUtilArea;
+// Category-index pages (e.g. `guides/index.mdx`) suppress the doc-history
+// button by default — they are rarely meaningful targets for a revision view.
+// Per-page frontmatter `doc_history: true | false` overrides this default in
+// either direction.
+const isCategoryIndex = Boolean(entryId?.endsWith("/index"));
+const docHistoryPerPage =
+  docHistory === false ? false : docHistory === true ? true : !isCategoryIndex;
 const docHistoryEnabled = Boolean(
-  utilSettings && settings.docHistory && utilSettings.docHistory && currentSlug,
+  utilSettings &&
+  settings.docHistory &&
+  utilSettings.docHistory &&
+  currentSlug &&
+  docHistoryPerPage,
 );
 const sourceUrl =
   utilSettings && utilSettings.viewSourceLink && contentDir && entryId

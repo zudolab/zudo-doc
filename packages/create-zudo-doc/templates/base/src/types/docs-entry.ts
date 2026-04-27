@@ -27,6 +27,7 @@ export interface DocsEntry {
     unlisted?: boolean;
     hide_sidebar?: boolean;
     hide_toc?: boolean;
+    doc_history?: boolean;
     standalone?: boolean;
     slug?: string;
     generated?: boolean;

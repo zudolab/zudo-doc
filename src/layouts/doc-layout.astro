@@ -46,6 +46,7 @@ interface Props {
   versionBanner?: VersionConfig["banner"];
   hideSidebar?: boolean;
   hideToc?: boolean;
+  docHistory?: boolean;
 }
 
 const {
@@ -61,6 +62,7 @@ const {
   versionBanner,
   hideSidebar = false,
   hideToc = false,
+  docHistory,
 } = Astro.props;
 const latestUrl = currentSlug ? docsUrl(currentSlug, lang) : undefined;
 const versionAvailability = settings.versions ? await getVersionAvailability() : undefined;
@@ -240,6 +242,7 @@ const contentTransition = {
               lang={lang}
               contentDir={contentDir}
               entryId={entryId}
+              docHistory={docHistory}
             />
           </main>
 

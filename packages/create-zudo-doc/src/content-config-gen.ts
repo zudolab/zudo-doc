@@ -39,6 +39,7 @@ export function generateContentConfig(choices: UserChoices): string {
   lines.push(`  unlisted: z.boolean().optional(),`);
   lines.push(`  hide_sidebar: z.boolean().optional(),`);
   lines.push(`  hide_toc: z.boolean().optional(),`);
+  lines.push(`  doc_history: z.boolean().optional(),`);
   lines.push(`  standalone: z.boolean().optional(),`);
   lines.push(`  slug: z.string().optional(),`);
   lines.push(`  generated: z.boolean().optional(),`);

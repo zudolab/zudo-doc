@@ -17,6 +17,7 @@ export const bodyFootUtilFeature: FeatureModule = () => ({
               lang={lang}
               contentDir={contentDir}
               entryId={entryId}
+              docHistory={docHistory}
             />`,
     },
   ],
