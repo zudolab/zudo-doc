@@ -3,9 +3,8 @@ import DocLayout from "@/layouts/doc-layout.astro";
 import BlogPostCard from "@/components/blog-post-card.astro";
 import BlogPagination from "@/components/blog-pagination.astro";
 import { t, type Locale } from "@/config/i18n";
-import { getBlogConfig, getBlogLocales } from "@/utils/blog";
+import { blogPageHref, getBlogConfig, getBlogLocales } from "@/utils/blog";
 import {
-  blogPageHref,
   getBlogExtraPagePaths,
   loadBlogListingPage,
 } from "@/utils/blog-listing";

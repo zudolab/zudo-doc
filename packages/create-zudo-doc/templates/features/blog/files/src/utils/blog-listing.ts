@@ -1,6 +1,5 @@
 import type { BlogEntry } from "@/types/blog-entry";
-import { defaultLocale, type Locale } from "@/config/i18n";
-import { withBase } from "@/utils/base";
+import { type Locale } from "@/config/i18n";
 import {
   getBlogConfig,
   getBlogExcerpt,
@@ -9,29 +8,11 @@ import {
 } from "@/utils/blog";
 
 // ---------------------------------------------------------------------------
-// URL helpers
-// ---------------------------------------------------------------------------
-
-/** Href to the blog listing root for a locale (page 1 lives at this URL). */
-export function blogIndexHref(lang: Locale): string {
-  return lang === defaultLocale
-    ? withBase("/blog")
-    : withBase(`/${lang}/blog`);
-}
-
-/**
- * Href for a specific blog listing page (`n >= 1`). Page 1 always resolves to
- * the listing root (no `/page/1/` URL is generated).
- */
-export function blogPageHref(n: number, lang: Locale): string {
-  if (n <= 1) return blogIndexHref(lang);
-  return lang === defaultLocale
-    ? withBase(`/blog/page/${n}`)
-    : withBase(`/${lang}/blog/page/${n}`);
-}
-
-// ---------------------------------------------------------------------------
 // Listing data loaders
+//
+// URL helpers (`blogIndexHref`, `blogPageHref`, `blogPostUrl`,
+// `blogArchivesHref`) live in `@/utils/blog` — that's the single source of
+// truth for blog route shapes. Import them directly from there.
 // ---------------------------------------------------------------------------
 
 export interface BlogListingPage {

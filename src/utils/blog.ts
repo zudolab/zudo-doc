@@ -202,6 +202,10 @@ async function loadBlogPostsImpl(lang: string): Promise<BlogPostsResult> {
 // Blog sidebar tree
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// URL helpers — consolidated single source of truth for blog routes.
+// ---------------------------------------------------------------------------
+
 /**
  * Build the URL path prefix for blog routes in a given language. Returns the
  * path under the base, e.g. `/blog` for the default locale or `/ja/blog` for
@@ -213,11 +217,32 @@ function blogPathPrefix(lang: string): string {
 }
 
 /**
+ * Href to the blog listing root for a locale (page 1 lives at this URL).
+ */
+export function blogIndexHref(lang: string): string {
+  return withBase(blogPathPrefix(lang));
+}
+
+/**
+ * Href for a specific blog listing page (`n >= 1`). Page 1 always resolves
+ * to the listing root (no `/page/1/` URL is generated).
+ */
+export function blogPageHref(n: number, lang: string): string {
+  if (n <= 1) return blogIndexHref(lang);
+  return withBase(`${blogPathPrefix(lang)}/page/${n}`);
+}
+
+/**
  * Build a blog post URL for the given post slug and language. Mirrors the
  * routing in `src/pages/blog/[...slug].astro` and the locale variant.
  */
-function blogPostUrl(postSlug: string, lang: string): string {
+export function blogPostUrl(postSlug: string, lang: string): string {
   return withBase(`${blogPathPrefix(lang)}/${postSlug}`);
+}
+
+/** Href for the blog archives page in a given language. */
+export function blogArchivesHref(lang: string): string {
+  return withBase(`${blogPathPrefix(lang)}/archives`);
 }
 
 /**
@@ -269,7 +294,7 @@ export async function buildBlogSidebar(
     slug: "blog/archives",
     label: t("blog.archives", lang),
     position: postNodes.length,
-    href: withBase(`${blogPathPrefix(lang)}/archives`),
+    href: blogArchivesHref(lang),
     hasPage: true,
     children: [],
   };
@@ -278,7 +303,7 @@ export async function buildBlogSidebar(
     slug: "blog",
     label: t("blog.title", lang),
     position: 0,
-    href: withBase(blogPathPrefix(lang)),
+    href: blogIndexHref(lang),
     hasPage: true,
     children: [...postNodes, archivesNode],
   };
