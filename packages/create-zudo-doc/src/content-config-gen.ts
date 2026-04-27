@@ -111,7 +111,10 @@ export function generateContentConfig(choices: UserChoices): string {
 
   // --- Blog collections ---
   if (hasBlog) {
-    lines.push(`const blogSchema = z.object({`);
+    // Exported so `src/types/blog-entry.ts` can derive `BlogData` via
+    // `z.infer<typeof blogSchema>` (single source of truth for the
+    // frontmatter shape — keep schema and type in sync automatically).
+    lines.push(`export const blogSchema = z.object({`);
     lines.push(`  title: z.string(),`);
     lines.push(`  description: z.string().optional(),`);
     lines.push(`  date: z.coerce.date(),`);

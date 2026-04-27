@@ -83,7 +83,11 @@ if (settings.versions) {
 
 // Blog schema — declared fields only; Astro 6 only surfaces schema-declared
 // keys from vfile.data.astro.frontmatter into entry.data.
-const blogSchema = z
+//
+// Exported so `src/types/blog-entry.ts` can derive `BlogData` from this
+// schema (single source of truth — keep frontmatter shape changes in one
+// place).
+export const blogSchema = z
   .object({
     title: z.string(),
     description: z.string().optional(),

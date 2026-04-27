@@ -1,4 +1,14 @@
 import type { RenderedContent } from "astro:content";
+import type { z } from "astro/zod";
+import type { blogSchema } from "@/content.config";
+
+/**
+ * Frontmatter shape for blog entries, derived directly from the Zod schema
+ * declared in `src/content.config.ts`. Keeping this as `z.infer` ensures the
+ * type and the runtime validator never drift — change the schema and the
+ * type follows automatically.
+ */
+export type BlogData = z.infer<typeof blogSchema>;
 
 /**
  * Concrete entry type for blog collections.
@@ -13,21 +23,7 @@ export interface BlogEntry {
   id: string;
   body?: string;
   collection: string;
-  data: {
-    title: string;
-    description?: string;
-    date: Date;
-    author?: string;
-    authors?: string[];
-    tags?: string[];
-    /** Manual excerpt override OR populated by the <!-- more --> remark plugin. */
-    excerpt?: string;
-    /** Set by the <!-- more --> remark plugin to signal "Continue reading" should render. */
-    hasMore?: boolean;
-    draft?: boolean;
-    unlisted?: boolean;
-    slug?: string;
-  };
+  data: BlogData;
   rendered?: RenderedContent;
   filePath?: string;
 }
