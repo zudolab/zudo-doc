@@ -8,7 +8,7 @@ tags:
 
 ## Overview
 
-zudo-doc can show the git revision history for each documentation page. When enabled, a **History** button appears on every doc page, opening a side panel where you can browse past revisions and compare any two versions with a line-by-line diff viewer.
+zudo-doc can show the git revision history for each documentation page. When enabled, a **History** button appears on each detail page, opening a side panel where you can browse past revisions and compare any two versions with a line-by-line diff viewer.
 
 This is useful for:
 
@@ -35,9 +35,41 @@ export const settings = {
 
 The feature is **disabled by default** to keep builds fast for projects that don't need it.
 
+## Per-Page Visibility
+
+Once `docHistory` is on globally, each page decides whether to display the **History** button via two rules:
+
+1. **Auto-suppression on category-index pages** — pages whose entry id ends with `/index` (for example, `guides/index.mdx`) hide the button by default. These pages are typically navigation hubs or landing pages, where a revision history is rarely useful.
+2. **Detail pages show the button by default** — every concrete leaf page (anything that is not a category index) shows the button.
+
+You can override the default per page with the `doc_history` frontmatter flag:
+
+```yaml
+---
+title: My Page
+doc_history: false # always hide the button on this page
+---
+```
+
+```yaml
+---
+title: My Category Index
+doc_history: true # opt back in even though this is an index page
+---
+```
+
+The frontmatter override wins in both directions:
+
+| Page type | No frontmatter | `doc_history: true` | `doc_history: false` |
+| --- | --- | --- | --- |
+| Detail page (leaf) | shown | shown | hidden |
+| Category-index page (`*/index`) | hidden | shown | hidden |
+
+Use `doc_history: true` on an index page when its content is substantial enough to warrant version tracking (for example, a category landing page with significant prose). Use `doc_history: false` on a detail page that is generated, ephemeral, or otherwise should not surface its commit log.
+
 ## Using the History Viewer
 
-Once enabled, each doc page shows a **History** button inside the [body foot util area](./body-foot-util-area.mdx) — the small right-aligned strip between the article and the footer.
+Once enabled, each detail page shows a **History** button inside the [body foot util area](./body-foot-util-area.mdx) — the small right-aligned strip between the article and the footer. Category-index pages hide the button by default; see [Per-Page Visibility](#per-page-visibility) above.
 
 ### Browsing Revisions
 
