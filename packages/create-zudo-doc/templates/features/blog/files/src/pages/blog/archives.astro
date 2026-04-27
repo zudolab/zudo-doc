@@ -20,10 +20,13 @@ const { allPosts } = await loadBlogPosts(lang);
 // Hide unlisted posts from the archives index.
 const visiblePosts = allPosts.filter((p) => !p.data.unlisted);
 
+// Format dates against UTC so a YYYY-MM-DD frontmatter date does not shift
+// by a day depending on the build server's local timezone.
 const dateFormatter = new Intl.DateTimeFormat(lang, {
   year: "numeric",
   month: "long",
   day: "numeric",
+  timeZone: "UTC",
 });
 
 const archivesTitle = t("blog.archives", lang);

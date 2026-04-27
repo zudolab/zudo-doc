@@ -11,10 +11,15 @@ interface Props {
 
 const { date, author, authors, tags, lang = defaultLocale } = Astro.props;
 
+// Format with `timeZone: "UTC"` so a YYYY-MM-DD frontmatter date does not
+// shift by a day depending on the build server's local timezone — Zod
+// coerces such strings to UTC midnight, and an offset-aware Intl format
+// would otherwise display the previous (or next) calendar day.
 const formattedDate = new Intl.DateTimeFormat(lang, {
   year: "numeric",
   month: "long",
   day: "numeric",
+  timeZone: "UTC",
 }).format(date);
 
 // Merge author + authors into one display list
