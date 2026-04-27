@@ -1612,6 +1612,67 @@ describe("scaffold — tagGovernance feature", () => {
   });
 });
 
+describe("scaffold — versioning feature (sub #468)", () => {
+  it("declares versionAvailability prop in scaffolded header.astro when enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-versioning-header-prop",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "versioning"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+
+    const header = await fs.readFile(
+      projectPath(
+        "test-versioning-header-prop",
+        "src/components/header.astro",
+      ),
+      "utf-8",
+    );
+
+    // Type import for VersionAvailability is present
+    expect(header).toContain(
+      'import type { VersionAvailability } from "@/utils/version-availability"',
+    );
+    // Props interface declares versionAvailability
+    expect(header).toMatch(/versionAvailability\?:\s*VersionAvailability;/);
+    // Destructure pulls versionAvailability out of Astro.props
+    expect(header).toMatch(
+      /const\s*\{[\s\S]*versionAvailability[\s\S]*\}\s*=\s*Astro\.props/,
+    );
+    // No leftover @slot anchor lines after composition
+    expect(header).not.toContain("@slot:header:props");
+    expect(header).not.toContain("@slot:header:props-destructure");
+  });
+
+  it("does NOT add versionAvailability prop when versioning is disabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-versioning-header-prop-off",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+
+    const header = await fs.readFile(
+      projectPath(
+        "test-versioning-header-prop-off",
+        "src/components/header.astro",
+      ),
+      "utf-8",
+    );
+
+    expect(header).not.toContain("versionAvailability");
+    expect(header).not.toContain("VersionAvailability");
+    // Anchor cleanup removes the unused props anchors
+    expect(header).not.toContain("@slot:header:props");
+  });
+});
+
 describe("scaffold — footerTaglist feature", () => {
   it("emits taglist block inside footer when enabled (with tagGovernance)", async () => {
     const choices: UserChoices = {

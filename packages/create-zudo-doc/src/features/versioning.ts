@@ -55,6 +55,18 @@ import { getVersionAvailability } from "@/utils/version-availability";`,
       content: `import VersionSwitcher from "@/components/version-switcher.astro";
 import type { VersionAvailability } from "@/utils/version-availability";`,
     },
+    // --- Header Props interface field ---
+    {
+      file: "src/components/header.astro",
+      anchor: "// @slot:header:props",
+      content: `  versionAvailability?: VersionAvailability;`,
+    },
+    // --- Header Props destructure ---
+    {
+      file: "src/components/header.astro",
+      anchor: "// @slot:header:props-destructure",
+      content: `  versionAvailability,`,
+    },
     // --- Header version switcher in actions ---
     {
       file: "src/components/header.astro",
