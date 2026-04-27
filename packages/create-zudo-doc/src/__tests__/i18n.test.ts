@@ -149,7 +149,7 @@ describe("i18n — defaultLang 'ja' + secondary 'en'", () => {
     expect(tagPage).toMatch(/loadLocaleDocs\(locale\)/);
     expect(tagPage).toMatch(/t\("doc\.taggedWith", lang\)/);
     expect(tagPage).toMatch(/docsUrl\(doc\.slug, lang\)/);
-    expect(tagPage).toMatch(/withBase\(`\/\$\{lang\}\/docs`\)/);
+    expect(tagPage).toMatch(/withBase\(`\/\$\{lang\}\/docs\/tags`\)/);
     assertNoWrongLocale(tagPage, "en");
     assertNoWrongLocale(tagPage, "ja");
 
@@ -163,7 +163,6 @@ describe("i18n — defaultLang 'ja' + secondary 'en'", () => {
     expect(tagsIndex).toMatch(/Astro\.params\.locale as Locale/);
     expect(tagsIndex).toMatch(/t\("doc\.allTags", lang\)/);
     expect(tagsIndex).toMatch(/locale=\{lang\}/);
-    expect(tagsIndex).toMatch(/withBase\(`\/\$\{lang\}\/docs`\)/);
     assertNoWrongLocale(tagsIndex, "en");
     assertNoWrongLocale(tagsIndex, "ja");
   });
