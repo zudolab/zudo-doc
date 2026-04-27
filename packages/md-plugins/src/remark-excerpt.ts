@@ -49,9 +49,17 @@ export function remarkExcerpt() {
     const excerptNodes = tree.children.slice(0, markerIndex);
 
     // Render the pre-marker portion to HTML.
+    //
+    // We deliberately do NOT pass `allowDangerousHtml: true` here. The
+    // resulting string is consumed by `<BlogPostCard>` via `set:html=`,
+    // which already trusts the input — letting raw mdast `html` nodes (or
+    // hast `raw` nodes) bypass escaping turns the listing-page excerpt
+    // into an XSS sink for any HTML literal a post body happens to
+    // contain. Markdown prose, emphasis, links, lists, etc. all render
+    // fine without it.
     const excerptRoot: Root = { type: "root", children: excerptNodes };
-    const hast = toHast(excerptRoot, { allowDangerousHtml: true });
-    const html = toHtml(hast, { allowDangerousHtml: true }).trim();
+    const hast = toHast(excerptRoot);
+    const html = toHtml(hast).trim();
 
     // Strip the marker from the tree so the detail page renders cleanly.
     tree.children.splice(markerIndex, 1);
@@ -103,7 +111,10 @@ export async function extractExcerptFromMarkdown(
     type: "root",
     children: tree.children.slice(0, markerIndex),
   };
-  const hast = toHast(excerptRoot, { allowDangerousHtml: true });
-  const html = toHtml(hast, { allowDangerousHtml: true }).trim();
+  // Same XSS hardening as the remark-time path above: do NOT enable
+  // `allowDangerousHtml`. The result feeds straight into `set:html=` on
+  // the blog post card, so raw HTML pass-through would be a sink.
+  const hast = toHast(excerptRoot);
+  const html = toHtml(hast).trim();
   return { excerpt: html, hasMore: true };
 }
