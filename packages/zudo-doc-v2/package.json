@@ -50,6 +50,10 @@
       "types": "./src/tab-item/index.ts",
       "default": "./src/tab-item/index.ts"
     },
+    "./code-syntax": {
+      "types": "./src/code-syntax/index.ts",
+      "default": "./src/code-syntax/index.ts"
+    },
     "./body-foot-util": {
       "types": "./src/body-foot-util/index.ts",
       "default": "./src/body-foot-util/index.ts"
