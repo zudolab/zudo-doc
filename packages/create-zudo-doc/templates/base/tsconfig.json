@@ -3,7 +3,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@takazudo/zfb": ["src/components/island"]
     }
   },
   "exclude": ["dist", "e2e/fixtures", "packages", "worktrees", "vendor", "src/**/__tests__", "vitest.config.ts"]

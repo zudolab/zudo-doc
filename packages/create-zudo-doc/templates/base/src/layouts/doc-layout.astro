@@ -16,6 +16,7 @@ import { getNavSectionForSlug } from "@/utils/nav-scope";
 import { defaultLocale, t, type Locale } from "@/config/i18n";
 import { withBase, docsUrl } from "@/utils/base";
 import type { VersionConfig } from "@/config/settings-types";
+import { Island } from "@takazudo/zfb";
 // @slot:doc-layout:imports
 
 interface Props {
@@ -170,11 +171,9 @@ const contentTransition = {
             <!-- @slot:doc-layout:after-breadcrumb -->
             {
               !hideToc && (
-                <MobileToc
-                  headings={headings}
-                  title={t("toc.title", lang)}
-                  client:load
-                />
+                <Island when="load">
+                  <MobileToc headings={headings} title={t("toc.title", lang)} />
+                </Island>
               )
             }
             <article class="zd-content max-w-none">
@@ -184,7 +183,13 @@ const contentTransition = {
           </main>
 
           {/* Table of contents */}
-          {!hideToc && <Toc headings={headings} client:load />}
+          {
+            !hideToc && (
+              <Island when="load">
+                <Toc headings={headings} />
+              </Island>
+            )
+          }
         </div>
       </div>
       <!-- @slot:doc-layout:footer -->
