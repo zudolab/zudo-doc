@@ -132,6 +132,10 @@ function DesignTokenTweakPanelInner({
   }, []);
 
   // Mirror host root inline `--zd-*` overrides into the iframe in real time.
+  // Note: this listener only mirrors changes made via inline-style on the
+  // host `<html>` root. CSS variables set elsewhere (CSSOM rules, other
+  // elements, animations) are intentionally NOT mirrored — the panel writes
+  // exclusively to `documentElement.style` so this scope matches.
   useEffect(() => {
     if (!iframeReady) return;
     const root = document.documentElement;
@@ -143,17 +147,27 @@ function DesignTokenTweakPanelInner({
     }
     lastVarsRef.current = initial;
 
-    function flush() {
-      const next = collectInlineCssVars(root);
-      const dropped = namesDropped(lastVarsRef.current, next);
-      if (dropped.length > 0) sendClearCssVars(iframeRef.current, dropped);
-      if (next.length > 0) sendApplyCssVars(iframeRef.current, next);
-      lastVarsRef.current = next;
+    // Debounce flushes to one per animation frame so a burst of mutations
+    // (e.g. dragging a slider) collapses into a single postMessage hop.
+    let rafId = 0;
+    function scheduleFlush() {
+      if (rafId !== 0) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = 0;
+        const next = collectInlineCssVars(root);
+        const dropped = namesDropped(lastVarsRef.current, next);
+        if (dropped.length > 0) sendClearCssVars(iframeRef.current, dropped);
+        if (next.length > 0) sendApplyCssVars(iframeRef.current, next);
+        lastVarsRef.current = next;
+      });
     }
 
-    const observer = new MutationObserver(flush);
+    const observer = new MutationObserver(scheduleFlush);
     observer.observe(root, { attributes: true, attributeFilter: ["style"] });
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (rafId !== 0) window.cancelAnimationFrame(rafId);
+    };
   }, [iframeReady]);
 
   return (
