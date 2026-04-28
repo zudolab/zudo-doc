@@ -106,9 +106,11 @@ await runDocHistoryPostBuild(
 ```
 
 The function returns early without spawning anything when
-`SKIP_DOC_HISTORY=1` is set. Otherwise it spawns
-`doc-history-generate` via the platform shell so the
-`node_modules/.bin` symlink resolves naturally.
+`SKIP_DOC_HISTORY=1` is set. Otherwise it resolves the absolute
+path of `doc-history-generate` from `@zudo-doc/doc-history-server`'s
+`package.json` `bin` field and spawns it directly with
+`process.execPath` (`node`) — no shell, no PATH lookup, no risk of
+shell quoting on option-derived CLI flags.
 
 ## Behaviour parity
 

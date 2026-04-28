@@ -34,6 +34,8 @@
 
 import { spawn } from "node:child_process";
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { createRequire } from "node:module";
+import { dirname, join, resolve as resolvePath } from "node:path";
 
 // ---------------------------------------------------------------------------
 // Public option / descriptor shapes
@@ -238,8 +240,9 @@ export function buildGenerateCliArgs(
   options: DocHistoryOptions,
   outDir: string,
 ): string[] {
-  const trimmed = outDir.replace(/[/\\]+$/, "");
-  const historyOut = `${trimmed}/${DOC_HISTORY_OUTPUT_DIRNAME}`;
+  // `path.join` collapses redundant separators and uses the platform
+  // separator on Windows, keeping the emitted CLI invocation portable.
+  const historyOut = join(outDir, DOC_HISTORY_OUTPUT_DIRNAME);
 
   const args: string[] = [
     "--content-dir",
@@ -261,19 +264,72 @@ export function buildGenerateCliArgs(
   return args;
 }
 
+/**
+ * Resolve the absolute path of the `doc-history-generate` script
+ * shipped by `@zudo-doc/doc-history-server`.
+ *
+ * Reading `bin` out of the dependency's `package.json` and joining it
+ * to that file's directory avoids two pitfalls:
+ *
+ *   1. **Shell injection.** Spawning the CLI as
+ *      `spawn(node, [absoluteCliPath, ...flagArgs], { shell: false })`
+ *      means CLI flag values (which may include user-controlled
+ *      content directory paths) are never interpolated into a shell
+ *      command line.
+ *   2. **PATH ambiguity.** Resolving via `node_modules/.bin` only
+ *      works when that directory is on `PATH`, which depends on how
+ *      the build is invoked. Reading the package's own `bin` map
+ *      eliminates the dependency on shell PATH lookup.
+ *
+ * `package.json` is reachable via `require.resolve` regardless of
+ * the package's `exports` field (the spec carves out `./package.json`
+ * unconditionally), so this is safe even if the package later
+ * tightens its exports surface.
+ */
+export function resolveDocHistoryGenerateBin(): string {
+  const localRequire = createRequire(import.meta.url);
+  const pkgJsonPath = localRequire.resolve(
+    "@zudo-doc/doc-history-server/package.json",
+  );
+  const pkgJson = localRequire(
+    "@zudo-doc/doc-history-server/package.json",
+  ) as { bin?: Record<string, string> | string };
+
+  const binEntry =
+    typeof pkgJson.bin === "string"
+      ? pkgJson.bin
+      : pkgJson.bin?.[DOC_HISTORY_GENERATE_BIN];
+  if (!binEntry) {
+    throw new Error(
+      `@zudo-doc/doc-history-server does not declare a '${DOC_HISTORY_GENERATE_BIN}' bin entry`,
+    );
+  }
+  return resolvePath(dirname(pkgJsonPath), binEntry);
+}
+
 function spawnDocHistoryGenerate(
   args: string[],
   logger?: PostBuildLogger,
 ): Promise<void> {
-  return new Promise((resolve, reject) => {
-    // `shell: true` lets the OS resolve `doc-history-generate` from
-    // `node_modules/.bin` without us having to walk the workspace
-    // ourselves. Args are CLI flags + already-validated paths, so
-    // shell-quoting risk is bounded; we still pass them as an array
-    // and rely on the spawn implementation's per-platform escaping.
-    const child = spawn(DOC_HISTORY_GENERATE_BIN, args, {
+  return new Promise((resolveSpawn, reject) => {
+    let cliPath: string;
+    try {
+      cliPath = resolveDocHistoryGenerateBin();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger?.warn(
+        `Failed to resolve ${DOC_HISTORY_GENERATE_BIN} from @zudo-doc/doc-history-server: ${msg}`,
+      );
+      reject(err instanceof Error ? err : new Error(msg));
+      return;
+    }
+
+    // Spawn `node <absolute cli path> <flag args>` with `shell: false`
+    // so neither the CLI path nor the option-derived args are passed
+    // through a shell. Args remain a typed string[] end-to-end.
+    const child = spawn(process.execPath, [cliPath, ...args], {
       stdio: "inherit",
-      shell: true,
+      shell: false,
     });
 
     child.on("error", (err) => {
@@ -285,7 +341,7 @@ function spawnDocHistoryGenerate(
 
     child.on("exit", (code, signal) => {
       if (code === 0) {
-        resolve();
+        resolveSpawn();
         return;
       }
       const reason =
