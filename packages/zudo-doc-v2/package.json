@@ -105,6 +105,10 @@
     "./content": {
       "types": "./src/content/index.ts",
       "default": "./src/content/index.ts"
+    },
+    "./nav-indexing": {
+      "types": "./src/nav-indexing/index.ts",
+      "default": "./src/nav-indexing/index.ts"
     }
   },
   "files": [
