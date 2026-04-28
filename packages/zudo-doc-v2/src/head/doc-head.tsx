@@ -85,6 +85,7 @@ export function DocHead(props: HeadProps): JSX.Element {
       )}
       {stylesheets?.map((s) => (
         <link
+          key={`stylesheet:${s.href}`}
           rel="stylesheet"
           href={s.href}
           {...(s.integrity !== undefined ? { integrity: s.integrity } : {})}
@@ -93,6 +94,7 @@ export function DocHead(props: HeadProps): JSX.Element {
       ))}
       {alternateLinks?.map((l) => (
         <link
+          key={`${l.rel}:${l.type ?? ""}:${l.href}`}
           rel={l.rel}
           {...(l.type !== undefined ? { type: l.type } : {})}
           href={l.href}
@@ -101,6 +103,7 @@ export function DocHead(props: HeadProps): JSX.Element {
       ))}
       {preload?.map((p) => (
         <link
+          key={`preload:${p.as}:${p.href}`}
           rel="preload"
           as={p.as}
           href={p.href}
