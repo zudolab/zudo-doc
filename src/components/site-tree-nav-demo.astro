@@ -5,6 +5,7 @@ import { stripBase } from "@/utils/base";
 import { detectLocaleFromPath, type Locale } from "@/config/i18n";
 import { getCategoryOrder } from "@/utils/nav-scope";
 import SiteTreeNav from "@/components/site-tree-nav.tsx";
+import { Island } from "@takazudo/zfb";
 
 const currentPath = Astro.url.pathname;
 const pathWithoutBase = stripBase(currentPath);
@@ -17,9 +18,10 @@ const tree = buildNavTree(navDocs, lang, categoryMeta);
 const groupedTree = groupSatelliteNodes(tree, categoryOrder);
 ---
 
-<SiteTreeNav
-  tree={groupedTree}
-  categoryOrder={categoryOrder}
-  categoryIgnore={["inbox"]}
-  client:visible
-/>
+<Island when="visible">
+  <SiteTreeNav
+    tree={groupedTree}
+    categoryOrder={categoryOrder}
+    categoryIgnore={["inbox"]}
+  />
+</Island>

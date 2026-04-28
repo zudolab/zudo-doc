@@ -5,10 +5,11 @@ sidebar_position: 2.5
 ---
 
 import PresetGenerator from '@/components/preset-generator';
+import { Island } from "@takazudo/zfb";
 
 このインタラクティブツールを使って、zudo-docプロジェクトのオプションを設定し、セットアッププリセットを生成できます。出力はプログラマティックAPI用のJSON、またはターミナル用のCLIコマンドとしてコピーできます。
 
-<PresetGenerator client:load />
+<Island when="load"><PresetGenerator /></Island>
 
 ## ヘッダー右側アイテム
 

@@ -1,6 +1,11 @@
 import { defineConfig } from "vitest/config";
 import { resolve } from "node:path";
 
+// The package directory — vitest resolves `include` globs relative to `root`,
+// which defaults to process.cwd() (the workspace root) rather than the config
+// file's directory. Setting it explicitly ensures tests in this package's
+// `src/**/__tests__/` are found, not the root-level `src/**/__tests__/`.
+const pkgRoot = __dirname;
 const repoRoot = resolve(__dirname, "../..");
 
 /**
@@ -32,6 +37,7 @@ export default defineConfig({
     },
   },
   test: {
+    root: pkgRoot,
     include: ["src/**/__tests__/**/*.test.{ts,tsx}"],
   },
 });
