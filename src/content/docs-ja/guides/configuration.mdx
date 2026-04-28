@@ -363,7 +363,7 @@ frontmatterPreview: false,
 
 ### aiAssistant
 
-AIアシスタントチャットウィジェットを有効にします。`true`の場合、ページにチャットボタンが表示され、ドキュメントに関する質問に答えるAI搭載のアシスタントが開きます。設定済みの`ai-chat-worker` Cloudflare Workerバックエンドが必要です。
+AIアシスタントチャットウィジェットを有効にします。`true`の場合、ページにチャットボタンが表示され、ドキュメントに関する質問に答えるAI搭載のアシスタントが開きます。チャットAPIはCloudflare Pages SSRエンドポイント（`pages/api/ai-chat.tsx`）として動作します。`wrangler.toml`に`ANTHROPIC_API_KEY`、`DOCS_SITE_URL`、および`RATE_LIMIT` KV名前空間の設定が必要です。
 
 型：`boolean`
 

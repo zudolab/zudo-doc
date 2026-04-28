@@ -26,36 +26,37 @@ export const settings = {
 When enabled:
 
 - A sparkle icon appears in the header bar
-- The `@astrojs/node` adapter is added automatically (the site switches from static to hybrid mode)
-- The `POST /api/ai-chat` endpoint becomes available
+- The `POST /api/ai-chat` endpoint becomes available as a Cloudflare Pages SSR route
 
 ## Environment Setup
 
-Create a `.env` file (see `.env.example`):
+The chat endpoint runs as a Cloudflare Pages SSR route (`pages/api/ai-chat.tsx`) and reads its
+configuration from Cloudflare env bindings set in `wrangler.toml`.
 
-```env title=".env"
-# "local" uses Claude Code CLI, "remote" uses Anthropic API
-AI_CHAT_MODE=local
-```
+### Required CF bindings
 
-### Local Mode
-
-Uses the [Claude Code CLI](https://code.claude.com/docs/en/overview) (`claude -p`) as the backend. No API key needed — uses your existing Claude Code authentication.
+**Secret** — set via `wrangler secret put ANTHROPIC_API_KEY`:
 
 ```env
-AI_CHAT_MODE=local
-```
-
-This is the simplest setup for local development.
-
-### Remote Mode
-
-Calls the Anthropic Messages API directly. Requires an API key.
-
-```env
-AI_CHAT_MODE=remote
 ANTHROPIC_API_KEY=sk-ant-...
 ```
+
+**Vars** — configure in `wrangler.toml`:
+
+```toml title="wrangler.toml"
+[vars]
+DOCS_SITE_URL = "https://your-docs-site.pages.dev"
+RATE_LIMIT_PER_MINUTE = "10"
+RATE_LIMIT_PER_DAY = "100"
+```
+
+**KV namespace** — rate limiting and audit logging:
+
+```sh
+wrangler kv namespace create RATE_LIMIT
+```
+
+Paste the returned `id` into the `[[kv_namespaces]]` block in `wrangler.toml`.
 
 Uses `claude-haiku-4-5-20251001` for fast, low-cost responses.
 
@@ -109,10 +110,6 @@ MSW requires `aiAssistant: true` in settings. The generated `public/mockServiceW
 
 For the full endpoint specification (request/response types, error codes, environment variables), see the [AI Assistant API reference](/docs/reference/ai-assistant-api).
 
-## Cloudflare Worker (Standalone API)
-
-For deploying the chat API as a standalone Cloudflare Worker (separate from the Astro site), see the [`packages/ai-chat-worker/`](/docs/reference/ai-chat-worker) sub-package. The Worker fetches `llms-full.txt` from your deployed documentation site and uses it as context for Claude API calls — useful when you want to host the API independently or deploy the docs as a static site.
-
 ## File Structure
 
 ```
@@ -125,11 +122,11 @@ src/
 │   ├── browser.ts              # MSW browser worker setup
 │   ├── server.ts               # MSW node server setup
 │   └── init.ts                 # Conditional MSW initialization
-├── pages/
-│   └── api/
-│       └── ai-chat.ts          # Server endpoint (local/remote modes)
 ├── types/
 │   └── ai-chat.ts              # ChatMessage, AiChatRequest/Response types
 └── utils/
     └── render-markdown.ts      # Lightweight markdown-to-HTML renderer
+pages/
+└── api/
+    └── ai-chat.tsx             # CF Pages SSR endpoint (prerender = false)
 ```

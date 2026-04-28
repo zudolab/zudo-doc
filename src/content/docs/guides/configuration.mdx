@@ -363,7 +363,7 @@ See the [Design Token Panel reference](../reference/design-token-panel.mdx) for 
 
 ### aiAssistant
 
-Enables the AI assistant chat widget. When `true`, a chat button appears in the page that opens an AI-powered assistant for answering questions about your documentation. Requires a configured `ai-chat-worker` Cloudflare Worker backend.
+Enables the AI assistant chat widget. When `true`, a chat button appears in the page that opens an AI-powered assistant for answering questions about your documentation. The chat API runs as a Cloudflare Pages SSR endpoint (`pages/api/ai-chat.tsx`) — requires `ANTHROPIC_API_KEY`, `DOCS_SITE_URL`, and a `RATE_LIMIT` KV namespace configured in `wrangler.toml`.
 
 Type: `boolean`
 
