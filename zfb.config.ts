@@ -1,0 +1,151 @@
+// zfb.config.ts — entry-point config consumed by the zfb engine.
+//
+// This file replaces the Astro-flavoured `src/content.config.ts` while the
+// migration is in progress. Both files coexist until every content site,
+// integration, and page in this repo has been ported over to zfb. Once the
+// switch-over is complete, `src/content.config.ts` is removed in a later
+// topic.
+//
+// Authoring conventions inherited from `src/content.config.ts`:
+//
+// - Schemas live as vanilla zod definitions so we keep the type-inference
+//   ergonomics editors expect. The schemas are converted to JSON Schema via
+//   `z.toJSONSchema()` at the boundary because zfb's `CollectionDef.schema`
+//   takes a JSON-Schema-shaped object (mirrored one-for-one in the Rust
+//   `Config` struct — see `crates/zfb/src/config.rs` in the zfb repo).
+// - Collection paths derive from `src/config/settings.ts` so per-locale and
+//   per-version directories stay a single source of truth.
+// - The `plugins` array starts empty here. Sibling integration topics
+//   (doc-history, search, llms-txt, sitemap, claude-resources, …) each add
+//   one entry under their own import line so this file stays additive on
+//   merge.
+//
+// Typed schema reflection: zfb's content engine emits `.zfb/types.d.ts`
+// from the per-collection schemas (see `emit_types_dts_with_schemas` in
+// `crates/zfb-content/src/collection.rs`). Once zfb is wired in, that file
+// is the source of truth for `getCollection("docs")[0].data.sidebar_position`
+// being typed `number | undefined` rather than `unknown`.
+
+import { z } from "zod";
+import { defineConfig } from "zfb/config";
+import { settings } from "./src/config/settings";
+import { tagVocabulary } from "./src/config/tag-vocabulary";
+
+// ---------------------------------------------------------------------------
+// Schema definitions (vanilla zod — no astro/zod dependency).
+// ---------------------------------------------------------------------------
+
+/**
+ * Build the `tags` schema based on governance mode. `"strict"` tightens to a
+ * `z.enum` of every canonical id plus every alias (content still uses
+ * aliases verbatim — resolution happens at the aggregation layer, after
+ * parsing). Mirrors the equivalent helper in `src/content.config.ts`.
+ */
+function buildTagsSchema() {
+  const vocabularyActive = settings.tagVocabulary && settings.tagGovernance === "strict";
+  if (!vocabularyActive) return z.array(z.string()).optional();
+  const allowed = new Set<string>();
+  for (const entry of tagVocabulary) {
+    allowed.add(entry.id);
+    for (const alias of entry.aliases ?? []) allowed.add(alias);
+  }
+  const allowedList = [...allowed];
+  if (allowedList.length === 0) return z.array(z.string()).optional();
+  const [first, ...rest] = allowedList;
+  return z.array(z.enum([first, ...rest] as [string, ...string[]])).optional();
+}
+
+/**
+ * Single zod schema reused for every docs collection (default + per-locale
+ * + per-version + per-version-per-locale). Field set is byte-for-byte
+ * identical to `src/content.config.ts`'s `docsSchema`.
+ *
+ * `.passthrough()` keeps custom frontmatter keys (e.g. `author`, `status`)
+ * available downstream — the frontmatter-preview UI relies on this to
+ * surface arbitrary keys without us having to declare each one here.
+ */
+const docsSchema = z
+  .object({
+    title: z.string(),
+    description: z.string().optional(),
+    category: z.string().optional(),
+    sidebar_position: z.number().optional(),
+    sidebar_label: z.string().optional(),
+    tags: buildTagsSchema(),
+    search_exclude: z.boolean().optional(),
+    pagination_next: z.string().nullable().optional(),
+    pagination_prev: z.string().nullable().optional(),
+    draft: z.boolean().optional(),
+    unlisted: z.boolean().optional(),
+    hide_sidebar: z.boolean().optional(),
+    hide_toc: z.boolean().optional(),
+    doc_history: z.boolean().optional(),
+    standalone: z.boolean().optional(),
+    slug: z.string().optional(),
+    generated: z.boolean().optional(),
+  })
+  .passthrough();
+
+// `z.toJSONSchema` is a runtime call but the result is a stable JSON
+// document. We compute it once and reuse the same object across every
+// collection definition.
+const docsSchemaJson = z.toJSONSchema(docsSchema) as Record<string, unknown>;
+
+// ---------------------------------------------------------------------------
+// Collection list — derived from settings.
+// ---------------------------------------------------------------------------
+
+interface CollectionEntryShape {
+  name: string;
+  path: string;
+  schema: Record<string, unknown>;
+}
+
+const collections: CollectionEntryShape[] = [];
+
+// Default English collection.
+collections.push({ name: "docs", path: settings.docsDir, schema: docsSchemaJson });
+
+// Per-locale collections (e.g. `docs-ja`).
+for (const [code, config] of Object.entries(settings.locales)) {
+  collections.push({ name: `docs-${code}`, path: config.dir, schema: docsSchemaJson });
+}
+
+// Per-version collections (and their locale variants), if configured.
+if (settings.versions) {
+  for (const version of settings.versions) {
+    collections.push({
+      name: `docs-v-${version.slug}`,
+      path: version.docsDir,
+      schema: docsSchemaJson,
+    });
+    if (version.locales) {
+      for (const [code, config] of Object.entries(version.locales)) {
+        collections.push({
+          name: `docs-v-${version.slug}-${code}`,
+          path: config.dir,
+          schema: docsSchemaJson,
+        });
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Default export — the zfb config object.
+// ---------------------------------------------------------------------------
+
+export default defineConfig({
+  framework: "preact",
+  tailwind: { enabled: true },
+  collections,
+  // populated by integration topics
+  // ----------------------------------------------------------------------
+  // Each sibling integration topic (doc-history, search, llms-txt,
+  // sitemap, claude-resources, …) adds one import line above and one
+  // entry to this array. Keep the empty array literal in place even when
+  // no integrations are wired in yet — it's the merge-friendly extension
+  // point that lets parallel topic branches converge cleanly.
+  // ----------------------------------------------------------------------
+  plugins: [],
+});
