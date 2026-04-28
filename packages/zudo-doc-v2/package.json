@@ -26,6 +26,14 @@
       "types": "./src/breadcrumb/index.ts",
       "default": "./src/breadcrumb/index.ts"
     },
+    "./footer": {
+      "types": "./src/footer/index.ts",
+      "default": "./src/footer/index.ts"
+    },
+    "./sidebar": {
+      "types": "./src/sidebar/index.ts",
+      "default": "./src/sidebar/index.ts"
+    },
     "./doclayout": {
       "types": "./src/doclayout/index.ts",
       "default": "./src/doclayout/index.ts"
