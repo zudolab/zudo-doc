@@ -3,8 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import type { UserChoices } from "./prompts.js";
 import { generateSettingsFile } from "./settings-gen.js";
-import { generateAstroConfig } from "./astro-config-gen.js";
-import { generateContentConfig } from "./content-config-gen.js";
+import { generateZfbConfig } from "./zfb-config-gen.js";
 import { generateCLAUDEFile } from "./claude-md-gen.js";
 import { composeFeatures } from "./compose.js";
 import { featureModules } from "./features/index.js";
@@ -188,16 +187,10 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     settingsContent,
   );
 
-  const astroConfigContent = generateAstroConfig(choices);
+  const zfbConfigContent = generateZfbConfig(choices);
   await fs.outputFile(
-    path.join(targetDir, "astro.config.ts"),
-    astroConfigContent,
-  );
-
-  const contentConfigContent = generateContentConfig(choices);
-  await fs.outputFile(
-    path.join(targetDir, "src/content.config.ts"),
-    contentConfigContent,
+    path.join(targetDir, "zfb.config.ts"),
+    zfbConfigContent,
   );
 
   const pkg = generatePackageJson(choices);
@@ -212,7 +205,7 @@ export async function scaffold(choices: UserChoices): Promise<void> {
       "# Build output",
       "node_modules",
       "dist",
-      ".astro",
+      ".zfb",
       "",
       "# macOS",
       ".DS_Store",
