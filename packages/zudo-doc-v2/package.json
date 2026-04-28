@@ -49,5 +49,11 @@
   ],
   "peerDependencies": {
     "preact": "*"
+  },
+  "devDependencies": {
+    "preact": "^10.26.9",
+    "preact-render-to-string": "^6.6.6",
+    "typescript": "^5.0.0",
+    "vitest": "^3.0.0"
   }
 }

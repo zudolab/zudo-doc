@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "jsxImportSource": "preact",
     "moduleResolution": "bundler",
     "module": "ESNext",
@@ -11,5 +11,6 @@
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": []
 }

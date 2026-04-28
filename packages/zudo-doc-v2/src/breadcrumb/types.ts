@@ -1,26 +1,26 @@
 /**
  * Type contract for the breadcrumb component.
  *
- * NOTE — Cross-topic dependency:
- *
- * The canonical SidebarNode type is owned by the sibling topic
- * sidebar-tree (packages/zudo-doc-v2/src/sidebar-tree/types.ts).
- * That topic is implemented in parallel and lands separately.
- *
- * Until the merge wires the two topics together, breadcrumb declares
- * its own structural alias matching the agreed sketch from epic
- * zudolab/zudo-doc#474. After merge the manager re-exports the
- * sibling type from "../sidebar-tree/types" and removes this local
- * declaration; consumers don't change.
+ * Breadcrumb only walks the tree to find an ancestor chain — it does not
+ * need the full SidebarNode shape from sidebar-tree. We declare a minimal
+ * structural interface here. The canonical SidebarNode (from sidebar-tree)
+ * is structurally assignable to this, so callers can pass either shape
+ * unchanged.
  */
-export interface SidebarNode {
+export interface BreadcrumbNode {
   type: "doc" | "category";
   id: string;
   label: string;
   href?: string;
   sidebar_position?: number;
-  children?: SidebarNode[];
+  children?: readonly BreadcrumbNode[];
 }
+
+/**
+ * Backward-compatible alias retained for callers that previously imported
+ * `SidebarNode` from this subpath.
+ */
+export type SidebarNode = BreadcrumbNode;
 
 /**
  * One rung of the breadcrumb trail. `href` is omitted on the final
