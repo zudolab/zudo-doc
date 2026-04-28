@@ -13,6 +13,7 @@
  *   import { DocLayout, DocLayoutWithDefaults }     from "@zudo-doc/zudo-doc-v2/doclayout";
  *   import { ColorSchemeProvider, ThemeToggle }     from "@zudo-doc/zudo-doc-v2/theme";
  *   import { startViewTransition, sidebarPersistName } from "@zudo-doc/zudo-doc-v2/transitions";
+ *   import { initSidebarResizer }                      from "@zudo-doc/zudo-doc-v2/sidebar-resizer";
  *   import { AiChatModalIsland, ImageEnlargeIsland }   from "@zudo-doc/zudo-doc-v2/ssr-skip";
  *
  * See packages/zudo-doc-v2/README.md for the topic map.
