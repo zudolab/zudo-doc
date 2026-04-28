@@ -47,10 +47,13 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     expect(pkg.name).toBe("test-minimal");
   });
 
-  it("creates zfb.config.ts", async () => {
+  it("creates zfb.config.ts (not astro.config.ts)", async () => {
     expect(
       await fs.pathExists(projectPath("test-minimal", "zfb.config.ts")),
     ).toBe(true);
+    expect(
+      await fs.pathExists(projectPath("test-minimal", "astro.config.ts")),
+    ).toBe(false);
   });
 
   it("creates src/config/settings.ts", async () => {
@@ -108,9 +111,10 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     ).toBe(false);
   });
 
+  // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
   it("doc-layout does not reference MockInit, AiChatModal, or DocHistory (disabled by default)", async () => {
     const layout = await fs.readFile(
-      projectPath("test-minimal", "src/layouts/doc-layout.astro"),
+      projectPath("test-minimal", "src/layouts/doc-layout.tsx"),
       "utf-8",
     );
     expect(layout).not.toContain("MockInit");
@@ -118,9 +122,10 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     expect(layout).not.toContain("DocHistory");
   });
 
+  // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
   it("doc-layout does not reference sidebar resizer (disabled by default)", async () => {
     const layout = await fs.readFile(
-      projectPath("test-minimal", "src/layouts/doc-layout.astro"),
+      projectPath("test-minimal", "src/layouts/doc-layout.tsx"),
       "utf-8",
     );
     expect(layout).not.toContain("initSidebarResizer");
@@ -135,9 +140,10 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     ).toBe(false);
   });
 
+  // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
   it("doc-layout does not reference sidebar toggle (disabled by default)", async () => {
     const layout = await fs.readFile(
-      projectPath("test-minimal", "src/layouts/doc-layout.astro"),
+      projectPath("test-minimal", "src/layouts/doc-layout.tsx"),
       "utf-8",
     );
     expect(layout).not.toContain("DesktopSidebarToggle");
@@ -456,6 +462,7 @@ describe("scaffold — docHistory feature", () => {
         projectPath("test-dh-int", "src/components/doc-history.tsx"),
       ),
     ).toBe(true);
+    // Depends on: topic-config-generators (zfb-config-gen.ts)
     const config = await fs.readFile(
       projectPath("test-dh-int", "zfb.config.ts"),
       "utf-8",
@@ -693,6 +700,7 @@ describe("scaffold — llmsTxt feature", () => {
         projectPath("test-llms-int", "src/integrations/llms-txt.ts"),
       ),
     ).toBe(true);
+    // Depends on: topic-config-generators (zfb-config-gen.ts)
     const config = await fs.readFile(
       projectPath("test-llms-int", "zfb.config.ts"),
       "utf-8",
@@ -797,8 +805,9 @@ describe("scaffold — footer features", () => {
         projectPath("test-footer-off", "src/components/footer.astro"),
       ),
     ).toBe(false);
+    // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
     const layout = await fs.readFile(
-      projectPath("test-footer-off", "src/layouts/doc-layout.astro"),
+      projectPath("test-footer-off", "src/layouts/doc-layout.tsx"),
       "utf-8",
     );
     expect(layout).not.toContain("Footer");
@@ -1072,9 +1081,10 @@ describe("scaffold — tauri feature", () => {
     );
     expect(conf).not.toContain('"ZudoDoc"');
 
+    // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
     // Layout has FindInPageInit
     const layout = await fs.readFile(
-      projectPath("test-tauri", "src/layouts/doc-layout.astro"),
+      projectPath("test-tauri", "src/layouts/doc-layout.tsx"),
       "utf-8",
     );
     expect(layout).toContain("FindInPageInit");
@@ -1225,7 +1235,7 @@ describe("scaffold — CLAUDE.md generation", () => {
     );
     expect(content).toContain("# Test Claudemd");
     expect(content).toContain("zudo-doc");
-    expect(content).toContain("**Astro**");
+    expect(content).toContain("**zfb**");
     expect(content).toContain("pnpm dev");
     expect(content).toContain("pnpm build");
     expect(content).toContain("docs/            # MDX content");
@@ -1470,6 +1480,7 @@ describe("scaffold — imageEnlarge feature", () => {
     expect(config).not.toContain("rehypeImageEnlarge");
   });
 
+  // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
   it("doc-layout references ImageEnlarge when enabled", async () => {
     const choices: UserChoices = {
       projectName: "test-ie-layout-on",
@@ -1481,12 +1492,13 @@ describe("scaffold — imageEnlarge feature", () => {
     };
     await scaffold(choices);
     const layout = await fs.readFile(
-      projectPath("test-ie-layout-on", "src/layouts/doc-layout.astro"),
+      projectPath("test-ie-layout-on", "src/layouts/doc-layout.tsx"),
       "utf-8",
     );
     expect(layout).toContain("ImageEnlarge");
   });
 
+  // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
   it("doc-layout does not reference ImageEnlarge when disabled", async () => {
     const choices: UserChoices = {
       projectName: "test-ie-layout-off",
@@ -1498,7 +1510,7 @@ describe("scaffold — imageEnlarge feature", () => {
     };
     await scaffold(choices);
     const layout = await fs.readFile(
-      projectPath("test-ie-layout-off", "src/layouts/doc-layout.astro"),
+      projectPath("test-ie-layout-off", "src/layouts/doc-layout.tsx"),
       "utf-8",
     );
     expect(layout).not.toContain("ImageEnlarge");
@@ -1596,7 +1608,8 @@ describe("scaffold — tagGovernance feature", () => {
 });
 
 describe("scaffold — versioning feature (sub #468)", () => {
-  it("declares versionAvailability prop in scaffolded header.astro when enabled", async () => {
+  // Depends on: topic-template-files (E7a JSX header port) + topic-feature-modules
+  it("declares versionAvailability prop in scaffolded header.tsx when enabled", async () => {
     const choices: UserChoices = {
       projectName: "test-versioning-header-prop",
       defaultLang: "en",
@@ -1610,7 +1623,7 @@ describe("scaffold — versioning feature (sub #468)", () => {
     const header = await fs.readFile(
       projectPath(
         "test-versioning-header-prop",
-        "src/components/header.astro",
+        "src/components/header.tsx",
       ),
       "utf-8",
     );
@@ -1621,15 +1634,16 @@ describe("scaffold — versioning feature (sub #468)", () => {
     );
     // Props interface declares versionAvailability
     expect(header).toMatch(/versionAvailability\?:\s*VersionAvailability;/);
-    // Destructure pulls versionAvailability out of Astro.props
+    // Destructure pulls versionAvailability out of component props
     expect(header).toMatch(
-      /const\s*\{[\s\S]*versionAvailability[\s\S]*\}\s*=\s*Astro\.props/,
+      /const\s*\{[\s\S]*versionAvailability[\s\S]*\}\s*=/,
     );
     // No leftover @slot anchor lines after composition
     expect(header).not.toContain("@slot:header:props");
     expect(header).not.toContain("@slot:header:props-destructure");
   });
 
+  // Depends on: topic-template-files (E7a JSX header port) + topic-feature-modules
   it("does NOT add versionAvailability prop when versioning is disabled", async () => {
     const choices: UserChoices = {
       projectName: "test-versioning-header-prop-off",
@@ -1644,7 +1658,7 @@ describe("scaffold — versioning feature (sub #468)", () => {
     const header = await fs.readFile(
       projectPath(
         "test-versioning-header-prop-off",
-        "src/components/header.astro",
+        "src/components/header.tsx",
       ),
       "utf-8",
     );
@@ -1968,6 +1982,7 @@ describe("scaffold — framework TS error fixes (sub #410)", () => {
     ).toBeTruthy();
   });
 
+  // Depends on: topic-template-files (E7a JSX header port) + topic-feature-modules
   it("i18n header injection no longer passes the dead `locales` prop to LanguageSwitcher", async () => {
     const choices: UserChoices = {
       projectName: "test-410-i18n",
@@ -1979,17 +1994,202 @@ describe("scaffold — framework TS error fixes (sub #410)", () => {
     };
     await scaffold(choices);
     const header = await fs.readFile(
-      projectPath("test-410-i18n", "src/components/header.astro"),
+      projectPath("test-410-i18n", "src/components/header.tsx"),
       "utf-8",
     );
     // LanguageSwitcher's Props interface only declares `lang`. Passing
-    // `locales` triggers ts(2322): "{ ... } is not assignable to IntrinsicAttributes & Props".
+    // `locales` triggers a type error: "{ ... } is not assignable to IntrinsicAttributes & Props".
     expect(header).toMatch(/<LanguageSwitcher lang=\{lang\} \/>/);
     expect(header).not.toMatch(/locales=\{locales\}/);
     // The accompanying `import { locales } from "@/config/i18n"` must also go,
-    // otherwise tsc flags it as ts(6133) "declared but never used".
+    // otherwise tsc flags it as "declared but never used".
     expect(header).not.toMatch(
       /import \{ locales \} from "@\/config\/i18n";/,
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// zfb.config.ts shape — ≥ 3 representative feature combinations
+//
+// ALL tests in this describe block depend on:
+//   - topic-config-generators  (zfb-config-gen.ts that emits zfb.config.ts)
+//   - topic-template-files     (base template retarget to zfb layout)
+//
+// They will fail until those sibling topics merge into base/astro-zfb-migration-scaffold.
+// ---------------------------------------------------------------------------
+
+describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
+  // Pattern 1: minimal (search + sidebarFilter, no i18n, single scheme)
+  describe("minimal", () => {
+    const choices: UserChoices = {
+      projectName: "test-zfb-minimal",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "sidebarFilter"],
+      packageManager: "pnpm",
+    };
+
+    beforeEach(async () => {
+      await scaffold(choices);
+    });
+
+    it("creates zfb.config.ts with defineConfig from zfb/config", async () => {
+      const config = await fs.readFile(
+        projectPath("test-zfb-minimal", "zfb.config.ts"),
+        "utf-8",
+      );
+      expect(config).toContain('from "zfb/config"');
+      expect(config).toContain("defineConfig(");
+      expect(config).not.toContain('from "astro/config"');
+    });
+
+    it("zfb.config.ts declares framework: preact and tailwind", async () => {
+      const config = await fs.readFile(
+        projectPath("test-zfb-minimal", "zfb.config.ts"),
+        "utf-8",
+      );
+      expect(config).toContain('framework: "preact"');
+      expect(config).toContain("tailwind:");
+    });
+
+    it("zfb.config.ts declares docs collection derived from settings.docsDir", async () => {
+      const config = await fs.readFile(
+        projectPath("test-zfb-minimal", "zfb.config.ts"),
+        "utf-8",
+      );
+      expect(config).toContain('"docs"');
+      expect(config).toContain("settings.docsDir");
+    });
+
+    it("zfb.config.ts has a plugins array", async () => {
+      const config = await fs.readFile(
+        projectPath("test-zfb-minimal", "zfb.config.ts"),
+        "utf-8",
+      );
+      expect(config).toContain("plugins:");
+    });
+
+    it("src/content.config.ts is NOT emitted (content config lives in zfb.config.ts)", async () => {
+      expect(
+        await fs.pathExists(
+          projectPath("test-zfb-minimal", "src/content.config.ts"),
+        ),
+      ).toBe(false);
+    });
+
+    it("package.json lists zfb as a runtime dependency", async () => {
+      const pkg = await fs.readJson(
+        projectPath("test-zfb-minimal", "package.json"),
+      );
+      expect(pkg.dependencies["zfb"]).toBeDefined();
+    });
+  });
+
+  // Pattern 2: barebone — everything off (no features, single scheme)
+  describe("barebone (everything off)", () => {
+    const choices: UserChoices = {
+      projectName: "test-zfb-barebone",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: [],
+      packageManager: "pnpm",
+    };
+
+    beforeEach(async () => {
+      await scaffold(choices);
+    });
+
+    it("zfb.config.ts exists without any optional plugin imports", async () => {
+      const config = await fs.readFile(
+        projectPath("test-zfb-barebone", "zfb.config.ts"),
+        "utf-8",
+      );
+      expect(config).toContain('from "zfb/config"');
+      expect(config).not.toContain("docHistory");
+      expect(config).not.toContain("llmsTxt");
+      expect(config).not.toContain("claudeResources");
+    });
+
+    it("src/content.config.ts is NOT emitted", async () => {
+      expect(
+        await fs.pathExists(
+          projectPath("test-zfb-barebone", "src/content.config.ts"),
+        ),
+      ).toBe(false);
+    });
+
+    it("no locale collections in zfb.config.ts (i18n off)", async () => {
+      const config = await fs.readFile(
+        projectPath("test-zfb-barebone", "zfb.config.ts"),
+        "utf-8",
+      );
+      expect(config).not.toContain("docs-ja");
+    });
+  });
+
+  // Pattern 3: most features on (i18n, search, docHistory, llmsTxt, claudeResources)
+  describe("most features on", () => {
+    const choices: UserChoices = {
+      projectName: "test-zfb-full",
+      defaultLang: "en",
+      colorSchemeMode: "light-dark",
+      lightScheme: "Default Light",
+      darkScheme: "Default Dark",
+      respectPrefersColorScheme: true,
+      defaultMode: "dark",
+      features: [
+        "i18n",
+        "search",
+        "sidebarFilter",
+        "docHistory",
+        "llmsTxt",
+        "claudeResources",
+        "imageEnlarge",
+      ],
+      packageManager: "pnpm",
+    };
+
+    beforeEach(async () => {
+      await scaffold(choices);
+    });
+
+    it("zfb.config.ts contains locale collection entries for i18n", async () => {
+      const config = await fs.readFile(
+        projectPath("test-zfb-full", "zfb.config.ts"),
+        "utf-8",
+      );
+      // docs-ja locale collection must appear
+      expect(config).toContain("docs-ja");
+      expect(config).toContain("settings.locales");
+    });
+
+    it("zfb.config.ts wires docHistory, llmsTxt, and claudeResources plugins", async () => {
+      const config = await fs.readFile(
+        projectPath("test-zfb-full", "zfb.config.ts"),
+        "utf-8",
+      );
+      expect(config).toContain("docHistory");
+      expect(config).toContain("llmsTxt");
+      expect(config).toContain("claudeResources");
+    });
+
+    it("zfb.config.ts wires rehypeImageEnlarge when imageEnlarge is on", async () => {
+      const config = await fs.readFile(
+        projectPath("test-zfb-full", "zfb.config.ts"),
+        "utf-8",
+      );
+      expect(config).toContain("rehypeImageEnlarge");
+    });
+
+    it("src/content.config.ts is NOT emitted", async () => {
+      expect(
+        await fs.pathExists(
+          projectPath("test-zfb-full", "src/content.config.ts"),
+        ),
+      ).toBe(false);
+    });
   });
 });

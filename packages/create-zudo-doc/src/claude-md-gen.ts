@@ -13,17 +13,17 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   lines.push(`# ${siteName}`);
   lines.push(``);
   lines.push(
-    `Documentation site built with [zudo-doc](https://github.com/zudolab/zudo-doc) — an Astro-based documentation framework with MDX, Tailwind CSS v4, and Preact islands.`,
+    `Documentation site built with [zudo-doc](https://github.com/zudolab/zudo-doc) — a zfb-based documentation framework with MDX, Tailwind CSS v4, and Preact islands.`,
   );
   lines.push(``);
 
   // Tech stack
   lines.push(`## Tech Stack`);
   lines.push(``);
-  lines.push(`- **Astro** — static site generator with Content Collections`);
-  lines.push(`- **MDX** — content format via \`@astrojs/mdx\``);
+  lines.push(`- **zfb** — documentation build framework`);
+  lines.push(`- **MDX** — content format`);
   lines.push(
-    `- **Tailwind CSS v4** — via \`@tailwindcss/vite\` (not \`@astrojs/tailwind\`)`,
+    `- **Tailwind CSS v4** — via \`@tailwindcss/vite\``,
   );
   lines.push(
     `- **Preact** — for interactive islands only (with compat mode for React API)`,
@@ -35,9 +35,9 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   lines.push(`## Commands`);
   lines.push(``);
   const pm = choices.packageManager;
-  lines.push(`- \`${runCmd(pm, "dev")}\` — Astro dev server (port 4321)`);
+  lines.push(`- \`${runCmd(pm, "dev")}\` — zfb dev server (port 4321)`);
   lines.push(`- \`${runCmd(pm, "build")}\` — static HTML export to \`dist/\``);
-  lines.push(`- \`${runCmd(pm, "check")}\` — Astro type checking`);
+  lines.push(`- \`${runCmd(pm, "check")}\` — TypeScript type checking`);
   lines.push(``);
 
   // Key directories
@@ -45,7 +45,7 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   lines.push(``);
   lines.push("```");
   lines.push(`src/`);
-  lines.push(`├── components/          # Astro + Preact components`);
+  lines.push(`├── components/          # JSX + Preact components`);
   lines.push(`│   └── admonitions/     # Note, Tip, Info, Warning, Danger`);
   lines.push(`├── config/              # Settings, color schemes`);
   lines.push(`├── content/`);
@@ -58,7 +58,7 @@ export function generateCLAUDEFile(choices: UserChoices): string {
     );
   }
 
-  lines.push(`├── layouts/             # Astro layouts`);
+  lines.push(`├── layouts/             # JSX layouts`);
   lines.push(`├── pages/               # File-based routing`);
   lines.push(`└── styles/`);
   lines.push(`    └── global.css       # Design tokens & Tailwind config`);
@@ -94,7 +94,7 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   lines.push(`## Components`);
   lines.push(``);
   lines.push(
-    `- Default to **Astro components** (\`.astro\`) — zero JS, server-rendered`,
+    `- Default to **server-rendered JSX components** (\`.tsx\`) — zero JS, server-rendered`,
   );
   lines.push(
     `- Use **Preact islands** (\`client:load\`) only when client-side interactivity is needed`,
