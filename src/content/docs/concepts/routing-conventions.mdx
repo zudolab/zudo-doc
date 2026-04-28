@@ -175,7 +175,6 @@ Each entry's slug maps to a `string[]` of URL segments:
 ```tsx
 // pages/docs/[...slug].tsx
 import { getCollection, getEntry } from "zfb/content";
-import { settings } from "@/config/settings";
 
 export function paths() {
   const docs = getCollection("docs");
