@@ -43,6 +43,9 @@ importers:
       '@zudo-doc/md-plugins':
         specifier: workspace:*
         version: link:packages/md-plugins
+      '@zudo-doc/zudo-doc-v2':
+        specifier: workspace:*
+        version: link:packages/zudo-doc-v2
       astro:
         specifier: ^6.0.4
         version: 6.0.4(patch_hash=8d13f8bf10637ae8cfa995bc18a09e7da49fcba98a46458afc1326be95f68c6d)(@types/node@25.3.5)(jiti@2.6.1)(lightningcss@1.31.1)(rollup@4.59.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
