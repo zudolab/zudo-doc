@@ -42,6 +42,10 @@
       "types": "./src/transitions/index.ts",
       "default": "./src/transitions/index.ts"
     },
+    "./sidebar-resizer": {
+      "types": "./src/sidebar-resizer/index.ts",
+      "default": "./src/sidebar-resizer/index.ts"
+    },
     "./integrations/doc-history": {
       "types": "./src/integrations/doc-history/index.ts",
       "default": "./src/integrations/doc-history/index.ts"
