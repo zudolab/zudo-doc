@@ -26,6 +26,10 @@
       "types": "./src/breadcrumb/index.ts",
       "default": "./src/breadcrumb/index.ts"
     },
+    "./i18n-version": {
+      "types": "./src/i18n-version/index.ts",
+      "default": "./src/i18n-version/index.ts"
+    },
     "./doclayout": {
       "types": "./src/doclayout/index.ts",
       "default": "./src/doclayout/index.ts"
