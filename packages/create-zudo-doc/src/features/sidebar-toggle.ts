@@ -19,48 +19,50 @@ export const sidebarToggleFeature: FeatureModule = () => ({
       position: "after",
     },
     {
-      file: "src/layouts/doc-layout.astro",
+      file: "src/layouts/doc-layout.tsx",
       anchor: "// @slot:doc-layout:imports",
-      content: 'import DesktopSidebarToggle from "@/components/desktop-sidebar-toggle";',
+      content:
+        'import DesktopSidebarToggle from "@/components/desktop-sidebar-toggle";',
     },
     {
-      file: "src/layouts/doc-layout.astro",
-      anchor: "<!-- @slot:doc-layout:head-scripts -->",
+      // Inline script: applies sidebar visible/hidden state from localStorage
+      // before first paint. Uses dangerouslySetInnerHTML because JSX layouts
+      // do not have Astro's is:inline script bundling.
+      file: "src/layouts/doc-layout.tsx",
+      anchor: "{/* @slot:doc-layout:head-scripts */}",
       content: `    {settings.sidebarToggle && (
-      <script is:inline>
-        (function () {
-          function applySidebarState() {
-            if (localStorage.getItem("zudo-doc-sidebar-visible") === "false") {
-              document.documentElement.setAttribute("data-sidebar-hidden", "");
-            } else {
-              document.documentElement.removeAttribute("data-sidebar-hidden");
-            }
-          }
-          applySidebarState();
-          if (!window.__zdSidebarApplied) {
-            document.addEventListener("astro:after-swap", applySidebarState);
-            window.__zdSidebarApplied = true;
-          }
-        })();
-      </script>
+      <script dangerouslySetInnerHTML={{ __html: \`(function () {
+  function applySidebarState() {
+    if (localStorage.getItem("zudo-doc-sidebar-visible") === "false") {
+      document.documentElement.setAttribute("data-sidebar-hidden", "");
+    } else {
+      document.documentElement.removeAttribute("data-sidebar-hidden");
+    }
+  }
+  applySidebarState();
+})();\` }} />
     )}`,
       position: "after",
     },
     {
-      file: "src/layouts/doc-layout.astro",
-      anchor: "<!-- @slot:doc-layout:after-sidebar -->",
+      // Island when="load" replaces the Astro client:load directive.
+      // transition:persist is dropped — the zfb layout manages persistence
+      // through the framework's view-transition primitives instead.
+      file: "src/layouts/doc-layout.tsx",
+      anchor: "{/* @slot:doc-layout:after-sidebar */}",
       content: `    {!hideSidebar && settings.sidebarToggle && (
-      <DesktopSidebarToggle
-        client:load
-        transition:persist="desktop-sidebar-toggle"
-      />
+      <Island when="load">
+        <DesktopSidebarToggle />
+      </Island>
     )}`,
       position: "after",
     },
     {
-      file: "src/layouts/doc-layout.astro",
-      anchor: "<!-- @slot:doc-layout:content-wrapper:start -->",
-      content: `    <div class:list={[!hideSidebar && "lg:ml-[var(--zd-sidebar-w)]", !hideSidebar && settings.sidebarToggle && "zd-sidebar-content-wrapper"]}>`,
+      // Replace the simple content-wrapper div with the toggle-aware version.
+      // class:list (Astro directive) becomes a filter+join expression (JSX).
+      file: "src/layouts/doc-layout.tsx",
+      anchor: "{/* @slot:doc-layout:content-wrapper:start */}",
+      content: `    <div class={[!hideSidebar && "lg:ml-[var(--zd-sidebar-w)]", !hideSidebar && settings.sidebarToggle && "zd-sidebar-content-wrapper"].filter(Boolean).join(" ")}>`,
       position: "replace",
     },
   ],
