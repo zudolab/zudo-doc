@@ -1,0 +1,206 @@
+---
+title: ルーティング規約
+description: zfbにおけるpaths()のルート列挙方法と、AstroのgetStaticPathsからの移行方法
+sidebar_position: 10
+tags:
+  - routing
+  - migration
+---
+
+zfbはAstroの`getStaticPaths()`を`paths()`エクスポートで置き換えます。
+どちらも動的ルートやキャッチオールルートがビルド時に出力すべき具体的なURLをビルドに伝えるものですが、
+実行モデルが大きく異なります。
+このページでは規約とマイグレーション手順を説明します。
+
+## paths()は同期的に実行される
+
+Astroの`getStaticPaths()`はビルド時にNode.jsで実行される`async`関数です。
+ファイル読み込み、データベースクエリ、ライブHTTPリクエストなど、あらゆる`await`が使えます。
+
+zfbの`paths()`はビルド時に**miniflare**内で実行され、**同期的**であることが契約上の仕様です。
+関数シグネチャは`async`ではなく`function paths(): PathEntry[]`です。
+
+```tsx
+// pages/docs/[...slug].tsx
+import { getCollection, getEntry } from "zfb/content";
+
+export function paths() {
+  const entries = getCollection("docs");
+  return entries.map((entry) => ({
+    params: { slug: entry.slug.split("/") },
+  }));
+}
+
+export default function DocsPage({ params }: { params: { slug: string[] } }) {
+  const slugPath = params.slug.join("/");
+  const entry = getEntry("docs", slugPath);
+  if (!entry) return <p>Not found.</p>;
+  return <entry.Content />;
+}
+```
+
+## データアクセスにはgetCollectionとgetEntryを使用する
+
+`paths()`内では、`zfb/content`から`getCollection(name)`と`getEntry(name, slug)`を使ってコンテンツを読み込みます。
+どちらも同期的で、`await`は不要です。
+
+```ts
+import { getCollection } from "zfb/content";
+
+export function paths() {
+  const docs = getCollection("docs"); // 同期的 — awaitなし
+  return docs
+    .filter((entry) => !entry.data.draft)
+    .map((entry) => ({
+      params: { slug: entry.slug.split("/") },
+      props: { title: entry.data.title },
+    }));
+}
+```
+
+これらのヘルパーは**ContentSnapshot**から読み取ります。ContentSnapshotとは、TypeScriptモジュールが実行される前にRustで構築された、全コンテンツコレクションのインメモリスナップショットです。
+`paths()`が実行される時点で、全データはすでにメモリ上にあるため、呼び出し時にI/Oは発生しません。
+
+<Note title="なぜ同期的なのか？">
+
+ContentSnapshotはランタイム起動時にJSONにシリアライズされ、最初のTSXモジュールが評価される前に`globalThis.__zfb`に埋め込まれます。
+`getCollection`と`getEntry`はそのインメモリマップから直接読み取るため、非同期の境界を越える必要がなく、呼び出し元に`await`を連鎖させる必要もありません。
+Rust ↔ JSブリッジ契約の詳細は[ADR-004](https://takazudomodular.com/pj/zfb/architecture/adr-004-content-bridge)を参照してください。
+
+</Note>
+
+## paths()内でライブデータをフェッチしないこと
+
+`paths()`は技術的には`async`として書けますが、そうするとSSGの保証が破れます。
+
+```tsx
+// ❌ アンチパターン — paths()内でライブフェッチ
+export async function paths() {
+  const res = await fetch("https://api.example.com/items");
+  const items = await res.json();
+  return items.map((item) => ({ params: { slug: item.id } }));
+}
+```
+
+このパターンにはいくつかの問題があります：
+
+- **非決定論的** — リモートAPIはビルドごとに異なるデータを返す可能性がある
+- **再現性の欠如** — 同じコミットから異なるHTML出力が生成される可能性がある
+- **オフラインでの障害** — エアギャップ環境やネットワークのないCIでビルドが失敗する
+- **ビルド遅延** — ルート列挙のたびにネットワークラウンドトリップが発生する
+
+コンテンツレイヤーはまさにこれを避けるために存在します。
+一度フェッチしてビルド時にスナップショットし、そのスナップショットから同期的にクエリします。
+
+## AstroのgetStaticPathsからの移行
+
+Astroの`getStaticPaths()`は任意の非同期操作を受け付けていました。
+次のようなパターンがよく見られました：
+
+```ts
+// ❌ Astro — 移行前
+// src/pages/tags/[tag].astro
+export async function getStaticPaths() {
+  const res = await fetch("https://api.example.com/tags");
+  const tags = await res.json();
+  return tags.map((tag: { slug: string }) => ({
+    params: { tag: tag.slug },
+  }));
+}
+```
+
+zfbでは、これを2ステップのプロセスに変換します。
+
+**ステップ1** — フェッチをビルド時ジェネレータースクリプトに移動します。
+`zfb build`の前に実行し、その結果をコンテンツコレクションまたは静的JSONファイルに書き込みます：
+
+```ts
+// scripts/fetch-tags.ts — ビルド前のステップとして実行
+import { writeFileSync, mkdirSync } from "fs";
+
+const res = await fetch("https://api.example.com/tags");
+const tags = await res.json();
+
+mkdirSync("src/content/tags", { recursive: true });
+for (const tag of tags) {
+  writeFileSync(
+    `src/content/tags/${tag.slug}.json`,
+    JSON.stringify(tag),
+  );
+}
+```
+
+**ステップ2** — `getCollection`を使って`paths()`内でプリフェッチ済みデータを読み込みます：
+
+```tsx
+// ✅ zfb — 移行後
+// pages/tags/[tag].tsx
+import { getCollection, getEntry } from "zfb/content";
+
+export function paths() {
+  const tags = getCollection("tags"); // 事前生成されたコンテンツを読み込む
+  return tags.map((tag) => ({
+    params: { tag: tag.slug },
+    props: { label: tag.data.label },
+  }));
+}
+
+export default function TagPage({
+  params,
+  props,
+}: {
+  params: { tag: string };
+  props: { label: string };
+}) {
+  return <h1>{props.label}</h1>;
+}
+```
+
+デプロイ間で変わらないデータ（例：リポジトリにコミットされた初期データセット）の場合は、
+ジェネレータースクリプトを省略して、JSONファイルを直接`src/content/`に配置することもできます。
+
+## コレクションベースのpaths()：完全なdocsパターン
+
+zudo-docで最も一般的な`paths()`の使い方は、docsキャッチオールルートです。
+各エントリのスラグはURLセグメントの`string[]`にマッピングされます：
+
+```tsx
+// pages/docs/[...slug].tsx
+import { getCollection, getEntry } from "zfb/content";
+import { settings } from "@/config/settings";
+
+export function paths() {
+  const docs = getCollection("docs");
+  return docs
+    .filter((entry) => !entry.data.draft)
+    .map((entry) => ({
+      params: { slug: entry.slug.split("/") },
+    }));
+}
+
+export default function DocsPage({ params }: { params: { slug: string[] } }) {
+  const slugPath = params.slug.join("/");
+  const entry = getEntry("docs", slugPath);
+  if (!entry) return <p>Not found.</p>;
+  return <entry.Content />;
+}
+```
+
+`/docs/guides/configuration`は`params.slug === ["guides", "configuration"]`でマッチします。
+`slug.join("/")`で再結合して`getEntry`のルックアップキーを再構築します。
+
+## クイックリファレンス
+
+| | Astro `getStaticPaths` | zfb `paths` |
+| --- | --- | --- |
+| **シグネチャ** | `async function getStaticPaths()` | `function paths()` |
+| **ランタイム** | Node.js | miniflare |
+| **データアクセス** | `await getCollection(...)` または `await fetch(...)` | `getCollection(...)` / `getEntry(...)` (同期) |
+| **ライブHTTPフェッチ** | 許可（SSGでは非推奨） | ビルド前ステップに移動 |
+| **返り値の形状** | `{ params, props }[]` | `{ params, props }[]` |
+| **下書き除外** | `getStaticPaths`内でフィルタリング | `paths()`内でフィルタリング |
+
+## 関連ページ
+
+- [国際化（i18n）](../guides/i18n.mdx) — `paths()`を使ったロケール別ルート列挙
+- [バージョニング](../guides/versioning.mdx) — バージョン管理されたdocsとそのルート規約
