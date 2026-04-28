@@ -135,6 +135,81 @@ if (settings.versions) {
 // Default export — the zfb config object.
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Plugins — declarative breadcrumbs for the v0 plugin runtime.
+// ---------------------------------------------------------------------------
+//
+// zfb v0 accepts `plugins: PluginConfig[]` as `{ name, options }` metadata
+// only — no lifecycle hooks fire today. The host wires the actual work via
+// npm-script lifecycle hooks (`scripts/zfb-prebuild.mjs` for claude-resources,
+// `scripts/zfb-postbuild.mjs` for doc-history / search-index / llms-txt) and
+// a dev sidecar (S3) for the dev-mode middlewares.
+//
+// The entries below are forward-compat breadcrumbs: once zfb adopts plugin
+// lifecycle hooks the script glue can be retired and these descriptors will
+// pick up the matching `runClaudeResourcesPreStep` / `runDocHistoryPostBuild`
+// / `emitSearchIndex` / `emitLlmsTxt` runners automatically.
+//
+// Sitemap is NOT in this list — it is served as a `pages/sitemap.xml.tsx`
+// zfb route (per ADR-005's "non-HTML page" pattern) introduced in epic E8.
+
+const localeArray = Object.entries(settings.locales).map(([code, locale]) => ({
+  code,
+  dir: locale.dir,
+}));
+const localeRecord = Object.fromEntries(
+  Object.entries(settings.locales).map(([code, locale]) => [code, { dir: locale.dir }]),
+);
+
+const integrationPlugins = [
+  ...(settings.claudeResources
+    ? [
+        {
+          name: "claude-resources",
+          options: {
+            claudeDir: settings.claudeResources.claudeDir,
+            projectRoot: settings.claudeResources.projectRoot,
+            docsDir: settings.docsDir,
+          },
+        },
+      ]
+    : []),
+  ...(settings.docHistory
+    ? [
+        {
+          name: "doc-history",
+          options: {
+            docsDir: settings.docsDir,
+            locales: localeRecord,
+          },
+        },
+      ]
+    : []),
+  {
+    name: "search-index",
+    options: {
+      docsDir: settings.docsDir,
+      locales: localeRecord,
+      base: settings.base,
+    },
+  },
+  ...(settings.llmsTxt
+    ? [
+        {
+          name: "llms-txt",
+          options: {
+            siteName: settings.siteName,
+            siteDescription: settings.siteDescription,
+            base: settings.base,
+            siteUrl: settings.siteUrl,
+            defaultLocaleDir: settings.docsDir,
+            locales: localeArray,
+          },
+        },
+      ]
+    : []),
+];
+
 export default defineConfig({
   framework: "preact",
   tailwind: { enabled: true },
@@ -150,13 +225,5 @@ export default defineConfig({
   // same package.
   // ----------------------------------------------------------------------
   adapter: "@takazudo/zfb-adapter-cloudflare",
-  // populated by integration topics
-  // ----------------------------------------------------------------------
-  // Each sibling integration topic (doc-history, search, llms-txt,
-  // sitemap, claude-resources, …) adds one import line above and one
-  // entry to this array. Keep the empty array literal in place even when
-  // no integrations are wired in yet — it's the merge-friendly extension
-  // point that lets parallel topic branches converge cleanly.
-  // ----------------------------------------------------------------------
-  plugins: [],
+  plugins: integrationPlugins,
 });
