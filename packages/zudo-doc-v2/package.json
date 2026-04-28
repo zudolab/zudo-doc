@@ -74,21 +74,9 @@
       "types": "./src/ssr-skip/index.ts",
       "default": "./src/ssr-skip/index.ts"
     },
-    "./body-foot-util": {
-      "types": "./src/body-foot-util/index.ts",
-      "default": "./src/body-foot-util/index.ts"
-    },
     "./transitions": {
       "types": "./src/transitions/index.ts",
       "default": "./src/transitions/index.ts"
-    },
-    "./page-loading": {
-      "types": "./src/page-loading/index.ts",
-      "default": "./src/page-loading/index.ts"
-    },
-    "./tab-item": {
-      "types": "./src/tab-item/index.ts",
-      "default": "./src/tab-item/index.ts"
     },
     "./integrations/doc-history": {
       "types": "./src/integrations/doc-history/index.ts",
@@ -113,6 +101,18 @@
     "./nav-indexing": {
       "types": "./src/nav-indexing/index.ts",
       "default": "./src/nav-indexing/index.ts"
+    },
+    "./metainfo": {
+      "types": "./src/metainfo/index.ts",
+      "default": "./src/metainfo/index.ts"
+    },
+    "./html-preview-wrapper": {
+      "types": "./src/html-preview-wrapper/index.ts",
+      "default": "./src/html-preview-wrapper/index.ts"
+    },
+    "./details": {
+      "types": "./src/details/index.ts",
+      "default": "./src/details/index.ts"
     }
   },
   "files": [
