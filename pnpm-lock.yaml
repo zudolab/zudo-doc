@@ -28,6 +28,15 @@ importers:
       '@shikijs/transformers':
         specifier: ^4.0.1
         version: 4.0.1
+      '@takazudo/zfb':
+        specifier: file:../zfb/packages/zfb
+        version: file:../zfb/packages/zfb
+      '@takazudo/zfb-adapter-cloudflare':
+        specifier: file:../zfb/packages/zfb-adapter-cloudflare
+        version: file:../zfb/packages/zfb-adapter-cloudflare
+      '@takazudo/zfb-runtime':
+        specifier: file:../zfb/packages/zfb-runtime
+        version: file:../zfb/packages/zfb-runtime(@takazudo/zfb@file:../zfb/packages/zfb)
       '@types/hast':
         specifier: ^3.0.4
         version: 3.0.4
@@ -1823,6 +1832,18 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7
 
+  '@takazudo/zfb-adapter-cloudflare@file:../zfb/packages/zfb-adapter-cloudflare':
+    resolution: {directory: ../zfb/packages/zfb-adapter-cloudflare, type: directory}
+    hasBin: true
+
+  '@takazudo/zfb-runtime@file:../zfb/packages/zfb-runtime':
+    resolution: {directory: ../zfb/packages/zfb-runtime, type: directory}
+    peerDependencies:
+      '@takazudo/zfb': workspace:*
+
+  '@takazudo/zfb@file:../zfb/packages/zfb':
+    resolution: {directory: ../zfb/packages/zfb, type: directory}
+
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
 
@@ -2875,6 +2896,10 @@ packages:
 
   headers-polyfill@4.0.3:
     resolution: {integrity: sha512-IScLbePpkvO846sIwOtOTDjutRMWdXdJmXdMvk6gCBHxFO8d+QKOQedyZSxFTTFYRSmlgSTDtXqqq4pcenBXLQ==}
+
+  hono@4.12.15:
+    resolution: {integrity: sha512-qM0jDhFEaCBb4TxoW7f53Qrpv9RBiayUHo0S52JudprkhvpjIrGoU1mnnr29Fvd1U335ZFPZQY1wlkqgfGXyLg==}
+    engines: {node: '>=16.9.0'}
 
   html-escaper@3.0.3:
     resolution: {integrity: sha512-RuMffC89BOWQoY0WKGpIhn5gX3iI54O6nRA0yC124NYVtzjmFWBIiFd8M0x+ZdX0P9R4lADg1mgP8C7PxGOWuQ==}
@@ -5990,6 +6015,15 @@ snapshots:
       tailwindcss: 4.2.1
       vite: 7.3.1(@types/node@25.3.5)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)(yaml@2.8.2)
 
+  '@takazudo/zfb-adapter-cloudflare@file:../zfb/packages/zfb-adapter-cloudflare': {}
+
+  '@takazudo/zfb-runtime@file:../zfb/packages/zfb-runtime(@takazudo/zfb@file:../zfb/packages/zfb)':
+    dependencies:
+      '@takazudo/zfb': file:../zfb/packages/zfb
+      hono: 4.12.15
+
+  '@takazudo/zfb@file:../zfb/packages/zfb': {}
+
   '@types/babel__core@7.20.5':
     dependencies:
       '@babel/parser': 7.29.0
@@ -7367,6 +7401,8 @@ snapshots:
   he@1.2.0: {}
 
   headers-polyfill@4.0.3: {}
+
+  hono@4.12.15: {}
 
   html-escaper@3.0.3: {}
 

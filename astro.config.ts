@@ -77,16 +77,6 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
-    resolve: {
-      alias: {
-        // Phase-A bridge: map `@takazudo/zfb` (unpublished) to the local
-        // Island stub so `.astro` / `.mdx` imports typecheck and bundle
-        // correctly until the real package ships.
-        "@takazudo/zfb": fileURLToPath(
-          new URL("./src/components/island.tsx", import.meta.url),
-        ),
-      },
-    },
   },
   markdown: {
     shikiConfig,
