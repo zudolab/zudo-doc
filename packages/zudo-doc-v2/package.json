@@ -101,6 +101,10 @@
     "./integrations/claude-resources": {
       "types": "./src/integrations/claude-resources/index.ts",
       "default": "./src/integrations/claude-resources/index.ts"
+    },
+    "./content": {
+      "types": "./src/content/index.ts",
+      "default": "./src/content/index.ts"
     }
   },
   "files": [
