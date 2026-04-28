@@ -6,14 +6,15 @@ export const tauriFeature: FeatureModule = (choices) => ({
   name: "tauri",
   injections: [
     {
-      file: "src/layouts/doc-layout.astro",
+      file: "src/layouts/doc-layout.tsx",
       anchor: "// @slot:doc-layout:imports",
       content: 'import FindInPageInit from "@/components/find-in-page-init";',
     },
     {
-      file: "src/layouts/doc-layout.astro",
-      anchor: "<!-- @slot:doc-layout:body-end-components -->",
-      content: "    <FindInPageInit client:load />",
+      file: "src/layouts/doc-layout.tsx",
+      anchor: "{/* @slot:doc-layout:body-end-components */}",
+      content:
+        "    <Island when=\"load\"><FindInPageInit /></Island>",
       position: "after",
     },
     {

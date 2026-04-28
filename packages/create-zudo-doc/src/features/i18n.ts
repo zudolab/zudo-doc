@@ -4,13 +4,13 @@ export const i18nFeature: FeatureModule = (_choices) => ({
   name: "i18n",
   injections: [
     {
-      file: "src/components/header.astro",
+      file: "src/components/header.tsx",
       anchor: "// @slot:header:imports",
-      content: `import LanguageSwitcher from "@/components/language-switcher.astro";`,
+      content: `import LanguageSwitcher from "@/components/language-switcher";`,
     },
     {
-      file: "src/components/header.astro",
-      anchor: "<!-- @slot:header:after-theme-toggle -->",
+      file: "src/components/header.tsx",
+      anchor: "{/* @slot:header:after-theme-toggle */}",
       content: `      {lang && <LanguageSwitcher lang={lang} />}`,
       position: "after",
     },

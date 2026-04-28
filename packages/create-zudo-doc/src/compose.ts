@@ -50,8 +50,18 @@ export type FeatureModule = (choices: UserChoices) => FeatureDefinition;
 // Anchor patterns
 // ---------------------------------------------------------------------------
 
-/** Regex that matches any line containing an @slot anchor comment. */
-const ANCHOR_LINE_RE = /^[ \t]*(?:\/\/|\/\*|<!--|#)\s*@slot:[^\n]*(?:\*\/|-->)?[ \t]*\r?\n?$/gm;
+/**
+ * Regex that matches any line containing an @slot anchor comment.
+ *
+ * Matches all anchor forms used across the template files:
+ *   - `// @slot:…`              — TypeScript/JS line comment (module scope)
+ *   - `/* @slot:… *\/`          — block comment
+ *   - `{/* @slot:… *\/}`        — JSX expression comment (body region in .tsx)
+ *   - `<!-- @slot:… -->`        — HTML comment (legacy .astro body region)
+ *   - `# @slot:…`               — shell / YAML comment
+ */
+const ANCHOR_LINE_RE =
+  /^[ \t]*(?:\{\/\*|\/\/|\/\*|<!--|#)\s*@slot:[^\n]*(?:\*\/\}|\*\/|-->)?[ \t]*\r?\n?$/gm;
 
 // ---------------------------------------------------------------------------
 // Core functions
@@ -225,8 +235,8 @@ export function validateDependencies(
 
 /** Files that may contain injection anchors and need cleaning. */
 export const ANCHOR_FILES = [
-  "src/layouts/doc-layout.astro",
-  "src/components/header.astro",
+  "src/layouts/doc-layout.tsx",
+  "src/components/header.tsx",
   "src/styles/global.css",
 ];
 
