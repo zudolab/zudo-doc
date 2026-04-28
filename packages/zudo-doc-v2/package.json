@@ -113,6 +113,10 @@
     "./details": {
       "types": "./src/details/index.ts",
       "default": "./src/details/index.ts"
+    },
+    "./url-normalizer": {
+      "types": "./src/url-normalizer/index.ts",
+      "default": "./src/url-normalizer/index.ts"
     }
   },
   "files": [

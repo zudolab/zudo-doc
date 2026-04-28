@@ -1,5 +1,10 @@
 {
   "label": "Concepts",
+<<<<<<< HEAD
   "position": 8,
   "description": "Core concepts for the zfb migration"
+=======
+  "position": 12,
+  "description": "Architecture and design concepts for the zfb migration"
+>>>>>>> astro-zfb-migration-routing/trailing-slash-build
 }
