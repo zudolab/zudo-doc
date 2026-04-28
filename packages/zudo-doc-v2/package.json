@@ -41,6 +41,10 @@
     "./transitions": {
       "types": "./src/transitions/index.ts",
       "default": "./src/transitions/index.ts"
+    },
+    "./integrations/claude-resources": {
+      "types": "./src/integrations/claude-resources/index.ts",
+      "default": "./src/integrations/claude-resources/index.ts"
     }
   },
   "files": [
@@ -49,6 +53,9 @@
   ],
   "peerDependencies": {
     "preact": "*"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3"
   },
   "devDependencies": {
     "preact": "^10.26.9",
