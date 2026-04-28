@@ -1,0 +1,53 @@
+{
+  "name": "@zudo-doc/zudo-doc-v2",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "zudo-doc framework primitives layer that sits on top of zfb's engine — sidebar, theme, TOC, breadcrumb, layouts, head injection, View Transitions, SSR-skip wrappers (per ADR-003).",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./sidebar-tree": {
+      "types": "./src/sidebar-tree/index.ts",
+      "default": "./src/sidebar-tree/index.ts"
+    },
+    "./theme": {
+      "types": "./src/theme/index.ts",
+      "default": "./src/theme/index.ts"
+    },
+    "./toc": {
+      "types": "./src/toc/index.ts",
+      "default": "./src/toc/index.ts"
+    },
+    "./breadcrumb": {
+      "types": "./src/breadcrumb/index.ts",
+      "default": "./src/breadcrumb/index.ts"
+    },
+    "./doclayout": {
+      "types": "./src/doclayout/index.ts",
+      "default": "./src/doclayout/index.ts"
+    },
+    "./head": {
+      "types": "./src/head/index.ts",
+      "default": "./src/head/index.ts"
+    },
+    "./ssr-skip": {
+      "types": "./src/ssr-skip/index.ts",
+      "default": "./src/ssr-skip/index.ts"
+    },
+    "./transitions": {
+      "types": "./src/transitions/index.ts",
+      "default": "./src/transitions/index.ts"
+    }
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "preact": "*"
+  }
+}
