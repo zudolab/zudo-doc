@@ -102,13 +102,13 @@ dialog.zd-enlarge-dialog::backdrop {
       position: "after",
     },
     {
-      file: "src/layouts/doc-layout.tsx",
+      file: "src/layouts/doc-layout.astro",
       anchor: "// @slot:doc-layout:imports",
       content: 'import ImageEnlarge from "@/components/image-enlarge";',
     },
     {
-      file: "src/layouts/doc-layout.tsx",
-      anchor: "{/* @slot:doc-layout:body-end-components */}",
+      file: "src/layouts/doc-layout.astro",
+      anchor: "<!-- @slot:doc-layout:body-end-components -->",
       content:
         "    {settings.imageEnlarge && <Island when=\"idle\"><ImageEnlarge /></Island>}",
       position: "after",

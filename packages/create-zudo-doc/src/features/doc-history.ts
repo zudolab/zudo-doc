@@ -12,13 +12,13 @@ export const docHistoryFeature: FeatureModule = (choices) => {
     name: "docHistory",
     injections: [
       {
-        file: "src/layouts/doc-layout.tsx",
+        file: "src/layouts/doc-layout.astro",
         anchor: "// @slot:doc-layout:imports",
         content: 'import { DocHistory } from "@/components/doc-history";',
       },
       {
-        file: "src/layouts/doc-layout.tsx",
-        anchor: "{/* @slot:doc-layout:after-content */}",
+        file: "src/layouts/doc-layout.astro",
+        anchor: "<!-- @slot:doc-layout:after-content -->",
         content: `            {settings.docHistory && currentSlug && (
               <Island when="idle">
                 <DocHistory slug={currentSlug} locale={lang !== defaultLocale ? lang : undefined} basePath={withBase("/")} />

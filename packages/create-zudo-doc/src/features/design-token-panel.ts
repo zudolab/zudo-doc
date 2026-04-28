@@ -4,7 +4,7 @@ export const designTokenPanelFeature: FeatureModule = () => ({
   name: "designTokenPanel",
   injections: [
     {
-      file: "src/layouts/doc-layout.tsx",
+      file: "src/layouts/doc-layout.astro",
       anchor: "// @slot:doc-layout:imports",
       content: `import DesignTokenTweakPanel from "@/components/design-token-tweak";
 import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "@/config/color-scheme-utils";`,
@@ -14,8 +14,8 @@ import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "@/config/color-scheme-uti
       // template-literal interpolation so the server-side values of
       // SEMANTIC_DEFAULTS and SEMANTIC_CSS_NAMES are embedded into the
       // HTML output at SSR time (same effect as Astro's define:vars).
-      file: "src/layouts/doc-layout.tsx",
-      anchor: "{/* @slot:doc-layout:head-scripts */}",
+      file: "src/layouts/doc-layout.astro",
+      anchor: "<!-- @slot:doc-layout:head-scripts -->",
       content: `    {(settings.designTokenPanel || settings.colorTweakPanel) && (
       <script dangerouslySetInnerHTML={{ __html: \`(function () {
   var tweakSemanticDefaults = \${JSON.stringify(SEMANTIC_DEFAULTS)};
@@ -61,15 +61,15 @@ import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "@/config/color-scheme-uti
       position: "after",
     },
     {
-      file: "src/layouts/doc-layout.tsx",
-      anchor: "{/* @slot:doc-layout:body-end-components */}",
+      file: "src/layouts/doc-layout.astro",
+      anchor: "<!-- @slot:doc-layout:body-end-components -->",
       content:
         '    {(settings.designTokenPanel || settings.colorTweakPanel) && <Island when="load"><DesignTokenTweakPanel /></Island>}',
       position: "after",
     },
     {
-      file: "src/components/header.tsx",
-      anchor: "{/* @slot:header:actions-start */}",
+      file: "src/components/header.astro",
+      anchor: "<!-- @slot:header:actions-start -->",
       content: `    {
       (settings.designTokenPanel || settings.colorTweakPanel) && (
         <button

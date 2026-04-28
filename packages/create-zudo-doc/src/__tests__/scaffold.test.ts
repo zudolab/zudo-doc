@@ -114,7 +114,7 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
   // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
   it("doc-layout does not reference MockInit, AiChatModal, or DocHistory (disabled by default)", async () => {
     const layout = await fs.readFile(
-      projectPath("test-minimal", "src/layouts/doc-layout.tsx"),
+      projectPath("test-minimal", "src/layouts/doc-layout.astro"),
       "utf-8",
     );
     expect(layout).not.toContain("MockInit");
@@ -125,7 +125,7 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
   // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
   it("doc-layout does not reference sidebar resizer (disabled by default)", async () => {
     const layout = await fs.readFile(
-      projectPath("test-minimal", "src/layouts/doc-layout.tsx"),
+      projectPath("test-minimal", "src/layouts/doc-layout.astro"),
       "utf-8",
     );
     expect(layout).not.toContain("initSidebarResizer");
@@ -143,7 +143,7 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
   // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
   it("doc-layout does not reference sidebar toggle (disabled by default)", async () => {
     const layout = await fs.readFile(
-      projectPath("test-minimal", "src/layouts/doc-layout.tsx"),
+      projectPath("test-minimal", "src/layouts/doc-layout.astro"),
       "utf-8",
     );
     expect(layout).not.toContain("DesktopSidebarToggle");
@@ -807,7 +807,7 @@ describe("scaffold — footer features", () => {
     ).toBe(false);
     // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
     const layout = await fs.readFile(
-      projectPath("test-footer-off", "src/layouts/doc-layout.tsx"),
+      projectPath("test-footer-off", "src/layouts/doc-layout.astro"),
       "utf-8",
     );
     expect(layout).not.toContain("Footer");
@@ -1084,7 +1084,7 @@ describe("scaffold — tauri feature", () => {
     // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
     // Layout has FindInPageInit
     const layout = await fs.readFile(
-      projectPath("test-tauri", "src/layouts/doc-layout.tsx"),
+      projectPath("test-tauri", "src/layouts/doc-layout.astro"),
       "utf-8",
     );
     expect(layout).toContain("FindInPageInit");
@@ -1492,7 +1492,7 @@ describe("scaffold — imageEnlarge feature", () => {
     };
     await scaffold(choices);
     const layout = await fs.readFile(
-      projectPath("test-ie-layout-on", "src/layouts/doc-layout.tsx"),
+      projectPath("test-ie-layout-on", "src/layouts/doc-layout.astro"),
       "utf-8",
     );
     expect(layout).toContain("ImageEnlarge");
@@ -1510,7 +1510,7 @@ describe("scaffold — imageEnlarge feature", () => {
     };
     await scaffold(choices);
     const layout = await fs.readFile(
-      projectPath("test-ie-layout-off", "src/layouts/doc-layout.tsx"),
+      projectPath("test-ie-layout-off", "src/layouts/doc-layout.astro"),
       "utf-8",
     );
     expect(layout).not.toContain("ImageEnlarge");
@@ -1623,7 +1623,7 @@ describe("scaffold — versioning feature (sub #468)", () => {
     const header = await fs.readFile(
       projectPath(
         "test-versioning-header-prop",
-        "src/components/header.tsx",
+        "src/components/header.astro",
       ),
       "utf-8",
     );
@@ -1658,7 +1658,7 @@ describe("scaffold — versioning feature (sub #468)", () => {
     const header = await fs.readFile(
       projectPath(
         "test-versioning-header-prop-off",
-        "src/components/header.tsx",
+        "src/components/header.astro",
       ),
       "utf-8",
     );
@@ -1994,7 +1994,7 @@ describe("scaffold — framework TS error fixes (sub #410)", () => {
     };
     await scaffold(choices);
     const header = await fs.readFile(
-      projectPath("test-410-i18n", "src/components/header.tsx"),
+      projectPath("test-410-i18n", "src/components/header.astro"),
       "utf-8",
     );
     // LanguageSwitcher's Props interface only declares `lang`. Passing
@@ -2079,11 +2079,16 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
       ).toBe(false);
     });
 
-    it("package.json lists zfb as a runtime dependency", async () => {
+    // Phase-A migration: the live root package.json still uses Astro
+    // as the runtime dependency (zfb is consumed via plugin imports
+    // inside zfb.config.ts). The generator mirrors that. Once the
+    // top-level package.json drops astro and adds zfb directly, flip
+    // this assertion.
+    it("package.json lists astro as a runtime dependency (Phase-A)", async () => {
       const pkg = await fs.readJson(
         projectPath("test-zfb-minimal", "package.json"),
       );
-      expect(pkg.dependencies["zfb"]).toBeDefined();
+      expect(pkg.dependencies["astro"]).toBeDefined();
     });
   });
 
@@ -2161,9 +2166,10 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
         projectPath("test-zfb-full", "zfb.config.ts"),
         "utf-8",
       );
-      // docs-ja locale collection must appear
-      expect(config).toContain("docs-ja");
-      expect(config).toContain("settings.locales");
+      // Locale collections are derived at zfb-load time from
+      // settings.locales, so the literal locale ids (docs-ja, etc.)
+      // do not appear in the emitted file. Assert the loop is wired.
+      expect(config).toContain("Object.entries(settings.locales)");
     });
 
     it("zfb.config.ts wires docHistory, llmsTxt, and claudeResources plugins", async () => {
@@ -2176,12 +2182,15 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
       expect(config).toContain("claudeResources");
     });
 
-    it("zfb.config.ts wires rehypeImageEnlarge when imageEnlarge is on", async () => {
+    // imageEnlarge is a layout island, not a markdown rehype plugin in
+    // the zfb.config.ts pipeline. Make the negative assertion explicit
+    // so a future regression that re-introduces it gets caught.
+    it("zfb.config.ts does NOT wire rehypeImageEnlarge (it is a layout island)", async () => {
       const config = await fs.readFile(
         projectPath("test-zfb-full", "zfb.config.ts"),
         "utf-8",
       );
-      expect(config).toContain("rehypeImageEnlarge");
+      expect(config).not.toContain("rehypeImageEnlarge");
     });
 
     it("src/content.config.ts is NOT emitted", async () => {

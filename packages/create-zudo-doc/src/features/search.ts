@@ -4,13 +4,13 @@ export const searchFeature: FeatureModule = () => ({
   name: "search",
   injections: [
     {
-      file: "src/components/header.tsx",
+      file: "src/components/header.astro",
       anchor: "// @slot:header:imports",
       content: 'import Search from "@/components/search";',
     },
     {
-      file: "src/components/header.tsx",
-      anchor: "{/* @slot:header:actions-end */}",
+      file: "src/components/header.astro",
+      anchor: "<!-- @slot:header:actions-end -->",
       content: "    <Search />",
     },
   ],

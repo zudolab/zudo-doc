@@ -233,10 +233,18 @@ export function validateDependencies(
   }
 }
 
-/** Files that may contain injection anchors and need cleaning. */
+/** Files that may contain injection anchors and need cleaning.
+ *
+ * Phase-A migration state: layouts and the header are still authored as
+ * Astro components (frontmatter `---` plus body) using zfb Island wrappers
+ * for client-side islands. The .tsx anchor form is supported in
+ * ANCHOR_LINE_RE for forward compatibility, but the current generator
+ * emits .astro files. Flip these to .tsx when E7a actually ports
+ * header.astro / doc-layout.astro in the live src/ tree.
+ */
 export const ANCHOR_FILES = [
-  "src/layouts/doc-layout.tsx",
-  "src/components/header.tsx",
+  "src/layouts/doc-layout.astro",
+  "src/components/header.astro",
   "src/styles/global.css",
 ];
 
