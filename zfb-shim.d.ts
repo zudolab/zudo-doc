@@ -1,51 +1,17 @@
-// Local type shims for `zfb/config` and `@takazudo/zfb`.
+// Local type shim for `zfb/config`.
 //
-// During the Astro→zfb migration, the `zfb` npm package is not yet
-// published (Phase A engine has landed in the zfb repo's main branch but
-// publish is deferred — see super-epic zudolab/zudo-doc#473). The zfb
-// build tool internally aliases `zfb/config` to its own stub at parse
-// time, so the runtime import works once the build runs through zfb.
+// The `@takazudo/zfb` package itself now resolves through a local
+// `file:` dep on `~/repos/myoss/zfb/packages/zfb` (see root
+// `package.json`), so its types come from the real package and no
+// ambient declaration is needed.
 //
-// These `.d.ts` declarations exist purely so that:
-//   - `zfb.config.ts` (and any future helper importing from `zfb/config`)
-//     typechecks under `pnpm check` today.
-//   - `.astro` and `.mdx` files that import `{ Island } from "@takazudo/zfb"`
-//     (Phase A migration scaffold, islands-wrap topic) typecheck correctly.
+// `zfb/config` is a *virtual* module aliased internally by the zfb
+// build tool at parse time — no real file backs it in `node_modules`.
+// The declaration below is what lets `zfb.config.ts` (and any future
+// helper importing from `zfb/config`) typecheck under `pnpm check`.
 //
 // The real public types live in the zfb repo and mirror these shapes
 // one-for-one — keep the two in sync.
-//
-// Runtime resolution: a Vite alias in `astro.config.ts` maps
-// `"@takazudo/zfb"` → `"./src/components/island.tsx"` so the build
-// resolves to the local Phase-A stub.
-
-// ─── @takazudo/zfb ───────────────────────────────────────────────────────────
-// Minimal ambient declaration for the `Island` hydration-boundary primitive.
-// The concrete implementation is the local stub in
-// `src/components/island.tsx`; this declaration lets TypeScript typecheck
-// imports of `{ Island } from "@takazudo/zfb"` without requiring the real
-// (unpublished) package in `node_modules`.
-
-declare module "@takazudo/zfb" {
-  /** Hydration scheduling strategy. */
-  export type IslandWhen = "load" | "idle" | "visible" | "media";
-
-  export interface IslandProps {
-    /** When to hydrate on the client. */
-    when?: IslandWhen;
-    /** Fallback rendered server-side (SSR-skip mode). */
-    ssrFallback?: unknown;
-    children?: unknown;
-  }
-
-  /**
-   * Island hydration-boundary wrapper. Replaces Astro `client:*` directives.
-   * Usage: `<Island when="load"><MyComponent /></Island>`
-   */
-  export function Island(props: IslandProps): unknown;
-}
-
-// ─── zfb/config ──────────────────────────────────────────────────────────────
 
 declare module "zfb/config" {
   /** JSX framework runtime. */
