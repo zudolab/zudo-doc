@@ -11,20 +11,17 @@
 //   params: { locale: string; tag: string }
 //   props:  { tagInfo: TagInfo }
 //
-// Fallback strategy (mirrors [locale]/docs/tags/index.tsx):
-//   1. Collect docs from `docs-${locale}` collection.
-//   2. Collect base "docs" collection.
-//   3. Merge: locale docs take priority; base docs fill in missing slugs.
-//   4. Build tag map; emit one route per (locale, tag) pair.
+// Fallback strategy: see pages/lib/locale-merge.ts for full details.
+//   Locale docs take priority; base docs fill in missing slugs.
+//   Build tag map; emit one route per (locale, tag) pair.
 
-import { getCollection } from "zfb/content";
+import { mergeLocaleDocs } from "../../../lib/locale-merge";
 import { collectTags } from "@/utils/tags";
 import type { TagInfo } from "@/utils/tags";
 import { toRouteSlug } from "@/utils/slug";
 import { t } from "@/config/i18n";
 import { withBase, docsUrl } from "@/utils/base";
 import { settings } from "@/config/settings";
-import type { DocsEntry } from "@/types/docs-entry";
 import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
 import { Breadcrumb } from "@zudo-doc/zudo-doc-v2/breadcrumb";
 import type { BreadcrumbItem } from "@zudo-doc/zudo-doc-v2/breadcrumb";
@@ -32,34 +29,6 @@ import { DocCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import type { JSX } from "preact";
 
 export const frontmatter = { title: "Tag" };
-
-/**
- * Merge locale docs with base-locale fallbacks.
- * Locale docs take priority; base docs fill in slugs not covered by the
- * locale collection. Mirrors the non-default-locale branch of tag-nav.astro.
- */
-function mergeLocaleDocs(locale: string): DocsEntry[] {
-  const localeDocs = getCollection(`docs-${locale}`) as unknown as DocsEntry[];
-  const baseDocs = getCollection("docs") as unknown as DocsEntry[];
-
-  const filteredLocale = localeDocs.filter(
-    (d) => !d.data.draft && !d.data.unlisted,
-  );
-  const filteredBase = baseDocs.filter(
-    (d) => !d.data.draft && !d.data.unlisted,
-  );
-
-  const localeSlugSet = new Set(
-    filteredLocale.map((d) => d.data.slug ?? toRouteSlug(d.id)),
-  );
-
-  return [
-    ...filteredLocale,
-    ...filteredBase.filter(
-      (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id)),
-    ),
-  ];
-}
 
 /** One route per (non-default locale, tag) pair. */
 export function paths(): Array<{
