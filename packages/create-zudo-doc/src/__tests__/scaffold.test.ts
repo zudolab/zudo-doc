@@ -47,9 +47,9 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     expect(pkg.name).toBe("test-minimal");
   });
 
-  it("creates astro.config.ts", async () => {
+  it("creates zfb.config.ts", async () => {
     expect(
-      await fs.pathExists(projectPath("test-minimal", "astro.config.ts")),
+      await fs.pathExists(projectPath("test-minimal", "zfb.config.ts")),
     ).toBe(true);
   });
 
@@ -152,7 +152,7 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     // Build output (existing entries preserved)
     expect(gitignore).toContain("node_modules");
     expect(gitignore).toContain("dist");
-    expect(gitignore).toContain(".astro");
+    expect(gitignore).toContain(".zfb");
     // macOS
     expect(gitignore).toContain(".DS_Store");
     // Environment
@@ -457,10 +457,10 @@ describe("scaffold — docHistory feature", () => {
       ),
     ).toBe(true);
     const config = await fs.readFile(
-      projectPath("test-dh-int", "astro.config.ts"),
+      projectPath("test-dh-int", "zfb.config.ts"),
       "utf-8",
     );
-    expect(config).toContain("docHistoryIntegration");
+    expect(config).toContain("docHistoryPlugin");
   });
 
   it("settings have docHistory: false when disabled", async () => {
@@ -694,10 +694,10 @@ describe("scaffold — llmsTxt feature", () => {
       ),
     ).toBe(true);
     const config = await fs.readFile(
-      projectPath("test-llms-int", "astro.config.ts"),
+      projectPath("test-llms-int", "zfb.config.ts"),
       "utf-8",
     );
-    expect(config).toContain("llmsTxtIntegration");
+    expect(config).toContain("llmsTxtPlugin");
   });
 
   it("settings have llmsTxt: false when disabled", async () => {
@@ -1452,9 +1452,9 @@ describe("scaffold — imageEnlarge feature", () => {
     ).toBe(true);
   });
 
-  it("astro.config.ts wires rehypeImageEnlarge when enabled", async () => {
+  it("zfb.config.ts does not contain Astro-specific rehype symbols (imageEnlarge is a layout island)", async () => {
     const choices: UserChoices = {
-      projectName: "test-ie-astro-on",
+      projectName: "test-ie-zfb-on",
       defaultLang: "en",
       colorSchemeMode: "single",
       singleScheme: "Default Dark",
@@ -1463,27 +1463,10 @@ describe("scaffold — imageEnlarge feature", () => {
     };
     await scaffold(choices);
     const config = await fs.readFile(
-      projectPath("test-ie-astro-on", "astro.config.ts"),
+      projectPath("test-ie-zfb-on", "zfb.config.ts"),
       "utf-8",
     );
-    expect(config).toContain("rehypeImageEnlarge");
-    expect(config).toContain("settings.imageEnlarge");
-  });
-
-  it("astro.config.ts does not wire rehypeImageEnlarge when disabled", async () => {
-    const choices: UserChoices = {
-      projectName: "test-ie-astro-off",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
-    const config = await fs.readFile(
-      projectPath("test-ie-astro-off", "astro.config.ts"),
-      "utf-8",
-    );
+    // imageEnlarge is a layout island — it is not wired via the zfb config.
     expect(config).not.toContain("rehypeImageEnlarge");
   });
 

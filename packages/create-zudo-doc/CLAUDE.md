@@ -7,7 +7,7 @@ CLI scaffold tool for creating new zudo-doc documentation sites. Generates a pro
 The generator uses an **additive composition** approach:
 
 1. Copy a minimal **base template** (`templates/base/`) — core files with injection anchors
-2. **Generate** `astro.config.ts`, `content.config.ts`, `settings.ts`, `package.json` programmatically
+2. **Generate** `zfb.config.ts`, `settings.ts`, `package.json` programmatically
 3. **Compose** selected features — copy feature files + inject code into shared files at anchor points
 4. Clean up unused anchors
 
@@ -20,8 +20,7 @@ This replaces the old "copy everything then strip" approach. Features are added,
 | `src/scaffold.ts` | Orchestrates the scaffold pipeline: copy base, generate configs, compose features |
 | `src/compose.ts` | Composition engine: injection system, anchor cleanup, feature resolution |
 | `src/features/*.ts` | Feature modules defining injections for each optional feature (10 modules) |
-| `src/astro-config-gen.ts` | Programmatic `astro.config.ts` generator (conditional imports/integrations) |
-| `src/content-config-gen.ts` | Programmatic `content.config.ts` generator (locale/version collections) |
+| `src/zfb-config-gen.ts` | Programmatic `zfb.config.ts` generator (schema, collections, conditional plugins) |
 | `src/settings-gen.ts` | Generates `src/config/settings.ts` with user-chosen options |
 | `src/constants.ts` | Feature definitions, color scheme lists, light-dark pairings |
 | `src/utils.ts` | Shared utilities (patchFile, patchDefaultLang, getSecondaryLang) |
@@ -41,8 +40,8 @@ This replaces the old "copy everything then strip" approach. Features are added,
 
 Shared files in `templates/base/` have anchor comments where features inject code:
 
-- `src/layouts/doc-layout.astro` — 16 anchors (imports, head scripts, sidebar, breadcrumb, footer, body-end)
-- `src/components/header.astro` — 4 anchors (imports, actions, after-theme-toggle)
+- `src/layouts/doc-layout.astro` — layout anchors (imports, head scripts, sidebar, breadcrumb, footer, body-end)
+- `src/components/header.astro` — header anchors (imports, actions, after-theme-toggle)
 - `src/styles/global.css` — 2 anchors (theme tokens, feature styles)
 
 ## Testing
@@ -91,8 +90,7 @@ When adding a feature to the main zudo-doc project that the generator should sup
 3. **`src/features/index.ts`** — Register the feature module
 4. **`templates/features/<name>/files/`** — Add feature-specific files to copy
 5. **`src/scaffold.ts`** — Add dependencies in `generatePackageJson()` if needed
-6. **`src/astro-config-gen.ts`** — Add conditional imports/integrations if the feature affects `astro.config.ts`
-7. **`src/content-config-gen.ts`** — Add collections if the feature affects content config
+6. **`src/zfb-config-gen.ts`** — Add conditional imports/plugins if the feature affects `zfb.config.ts`; add collection entries if the feature introduces new content directories
 8. **`src/settings-gen.ts`** — Add the setting field to generated `settings.ts`
 9. **`src/__tests__/scaffold.test.ts`** — Update tests
 
