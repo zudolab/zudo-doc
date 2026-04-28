@@ -1,5 +1,6 @@
 ---
 import SidebarTree from "@/components/sidebar-tree";
+import { Island } from "@takazudo/zfb";
 import { buildSidebarForSection } from "@/utils/sidebar";
 import { defaultLocale, locales, t, type Locale } from "@/config/i18n";
 import { buildLocaleLinks, versionedDocsUrl, navHref } from "@/utils/base";
@@ -76,14 +77,15 @@ const localeLinks =
   locales.length > 1 ? buildLocaleLinks(Astro.url.pathname, lang) : undefined;
 ---
 
-<SidebarTree
-  nodes={nodes}
-  currentSlug={currentSlug}
-  rootMenuItems={rootMenuItems}
-  backToMenuLabel={backToMenuLabel}
-  localeLinks={localeLinks}
-  themeDefaultMode={settings.colorMode
-    ? settings.colorMode.defaultMode
-    : undefined}
-  client:load
-/>
+<Island when="load">
+  <SidebarTree
+    nodes={nodes}
+    currentSlug={currentSlug}
+    rootMenuItems={rootMenuItems}
+    backToMenuLabel={backToMenuLabel}
+    localeLinks={localeLinks}
+    themeDefaultMode={settings.colorMode
+      ? settings.colorMode.defaultMode
+      : undefined}
+  />
+</Island>

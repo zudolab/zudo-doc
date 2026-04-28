@@ -4,6 +4,7 @@ import ThemeToggle from "@/components/theme-toggle";
 import { settings } from "@/config/settings";
 import { withBase, stripBase, navHref } from "@/utils/base";
 import { defaultLocale, t, type Locale } from "@/config/i18n";
+import { Island } from "@takazudo/zfb";
 // @slot:header:imports
 
 interface Props {
@@ -51,9 +52,11 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
   class="sticky top-0 z-50 flex h-[3.5rem] items-center border-b border-muted bg-surface px-hsp-lg"
   data-header
 >
-  <SidebarToggle client:media="(max-width: 1023px)">
-    <slot name="sidebar" />
-  </SidebarToggle>
+  <Island when="media">
+    <SidebarToggle>
+      <slot name="sidebar" />
+    </SidebarToggle>
+  </Island>
 
   <a
     href={withBase(isNonDefaultLocale ? `/${lang}/` : "/")}
@@ -182,10 +185,9 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
     <div class="hidden lg:flex items-center gap-x-hsp-md">
       {
         settings.colorMode && (
-          <ThemeToggle
-            defaultMode={settings.colorMode.defaultMode}
-            client:load
-          />
+          <Island when="load">
+            <ThemeToggle defaultMode={settings.colorMode.defaultMode} />
+          </Island>
         )
       }
       {

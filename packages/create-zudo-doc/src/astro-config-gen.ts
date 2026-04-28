@@ -164,6 +164,16 @@ export function generateAstroConfig(choices: UserChoices): string {
   // Vite
   lines.push(`  vite: {`);
   lines.push(`    plugins: [tailwindcss()],`);
+  lines.push(`    resolve: {`);
+  lines.push(`      alias: {`);
+  lines.push(`        // Phase-A bridge: map \`@takazudo/zfb\` (unpublished) to the local`);
+  lines.push(`        // Island stub so .astro / .mdx imports typecheck and bundle`);
+  lines.push(`        // correctly until the real package ships.`);
+  lines.push(`        "@takazudo/zfb": fileURLToPath(`);
+  lines.push(`          new URL("./src/components/island.tsx", import.meta.url),`);
+  lines.push(`        ),`);
+  lines.push(`      },`);
+  lines.push(`    },`);
   lines.push(`  },`);
 
   // Markdown

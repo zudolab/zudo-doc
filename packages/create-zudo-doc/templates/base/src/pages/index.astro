@@ -6,6 +6,7 @@ import { buildNavTree, groupSatelliteNodes, isNavVisible } from "@/utils/docs";
 import { loadLocaleDocs } from "@/utils/locale-docs";
 import { getCategoryOrder } from "@/utils/nav-scope";
 import SiteTreeNav from "@/components/site-tree-nav.tsx";
+import { Island } from "@takazudo/zfb";
 import { collectTags } from "@/utils/tags";
 import TagNav from "@/components/tag-nav.astro";
 import { toRouteSlug } from "@/utils/slug";
@@ -88,12 +89,13 @@ const tagCount = collectTags(
   </div>
 
   <!-- Sitemap grid -->
-  <SiteTreeNav
-    tree={groupedTree}
-    categoryOrder={categoryOrder}
-    categoryIgnore={["inbox"]}
-    client:idle
-  />
+  <Island when="idle">
+    <SiteTreeNav
+      tree={groupedTree}
+      categoryOrder={categoryOrder}
+      categoryIgnore={["inbox"]}
+    />
+  </Island>
 
   {
     settings.docTags && tagCount > 0 && (
