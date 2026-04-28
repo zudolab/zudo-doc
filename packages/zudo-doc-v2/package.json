@@ -26,6 +26,10 @@
       "types": "./src/breadcrumb/index.ts",
       "default": "./src/breadcrumb/index.ts"
     },
+    "./header": {
+      "types": "./src/header/index.ts",
+      "default": "./src/header/index.ts"
+    },
     "./doclayout": {
       "types": "./src/doclayout/index.ts",
       "default": "./src/doclayout/index.ts"
