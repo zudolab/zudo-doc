@@ -41,6 +41,7 @@ import { Breadcrumb } from "@zudo-doc/zudo-doc-v2/breadcrumb";
 import { htmlOverrides } from "@zudo-doc/zudo-doc-v2/content";
 import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import type { JSX } from "preact";
+import { bridgeEntries } from "../../_data";
 
 export const frontmatter = { title: "Docs" };
 
@@ -100,18 +101,18 @@ export function paths(): Array<{
     const contentDir = localeConfig?.dir ?? settings.docsDir;
 
     // Load locale + base docs, filter drafts
-    const localeDocs = (getCollection(`docs-${locale}`) as unknown as DocPageEntry[]).filter(
+    const localeDocs = ((bridgeEntries(getCollection(`docs-${locale}`), `docs-${locale}`) as unknown as DocPageEntry[])).filter(
       (d) => !d.data.draft,
     );
-    const baseDocs = (getCollection("docs") as unknown as DocPageEntry[]).filter(
+    const baseDocs = ((bridgeEntries(getCollection("docs"), "docs") as unknown as DocPageEntry[])).filter(
       (d) => !d.data.draft,
     );
 
-    const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? toRouteSlug(d.id)));
+    const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? toRouteSlug(d.slug)));
     const fallbackDocs = baseDocs.filter(
-      (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id)),
+      (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.slug)),
     );
-    const fallbackSlugs = new Set(fallbackDocs.map((d) => d.data.slug ?? toRouteSlug(d.id)));
+    const fallbackSlugs = new Set(fallbackDocs.map((d) => d.data.slug ?? toRouteSlug(d.slug)));
     const allDocs = [...localeDocs, ...fallbackDocs];
 
     // Merge category metadata: base first, locale overrides
@@ -125,7 +126,7 @@ export function paths(): Array<{
 
     // Regular doc pages
     for (const entry of allDocs) {
-      const slug = entry.data.slug ?? toRouteSlug(entry.id);
+      const slug = entry.data.slug ?? toRouteSlug(entry.slug);
       const isFallback = fallbackSlugs.has(slug);
       const entryContentDir = isFallback ? settings.docsDir : contentDir;
 
@@ -202,7 +203,7 @@ export default function LocaleDocsPage({ params, props }: PageArgs): JSX.Element
 
   const slug = autoIndex
     ? autoIndex.slug
-    : (entry!.data.slug ?? toRouteSlug(entry!.id));
+    : (entry!.data.slug ?? toRouteSlug(entry!.slug));
 
   const title = autoIndex ? autoIndex.label : entry!.data.title;
   const description = autoIndex ? autoIndex.description : entry!.data.description;

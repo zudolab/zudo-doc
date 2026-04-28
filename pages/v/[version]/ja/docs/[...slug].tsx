@@ -41,6 +41,7 @@ import { Breadcrumb } from "@zudo-doc/zudo-doc-v2/breadcrumb";
 import { htmlOverrides } from "@zudo-doc/zudo-doc-v2/content";
 import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import type { JSX } from "preact";
+import { bridgeEntries } from "../../../../_data";
 
 export const frontmatter = { title: "Docs" };
 
@@ -103,23 +104,23 @@ export function paths(): Array<{
     const localeDir = (version.locales as Record<string, { dir: string }> | undefined)?.ja?.dir;
     const localeCollectionName = localeDir ? `docs-v-${version.slug}-ja` : null;
 
-    const baseDocs = (getCollection(baseCollectionName) as unknown as DocPageEntry[]).filter(
+    const baseDocs = ((bridgeEntries(getCollection(baseCollectionName), baseCollectionName) as unknown as DocPageEntry[])).filter(
       (doc) => !doc.data.draft,
     );
     const localeDocs = localeCollectionName
-      ? (getCollection(localeCollectionName) as unknown as DocPageEntry[]).filter(
+      ? ((bridgeEntries(getCollection(localeCollectionName), localeCollectionName) as unknown as DocPageEntry[])).filter(
           (doc) => !doc.data.draft,
         )
       : [];
 
     // Build slug set from locale docs (locale takes priority)
-    const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? toRouteSlug(d.id)));
+    const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? toRouteSlug(d.slug)));
 
     // Merge: locale docs first, then base docs for missing pages
     const fallbackDocs = baseDocs.filter(
-      (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id)),
+      (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.slug)),
     );
-    const fallbackSlugs = new Set(fallbackDocs.map((d) => d.data.slug ?? toRouteSlug(d.id)));
+    const fallbackSlugs = new Set(fallbackDocs.map((d) => d.data.slug ?? toRouteSlug(d.slug)));
     const allDocs = [...localeDocs, ...fallbackDocs];
 
     // Merge category metadata: base first, locale overrides
@@ -132,7 +133,7 @@ export function paths(): Array<{
 
     // Regular doc pages
     for (const entry of allDocs) {
-      const slug = entry.data.slug ?? toRouteSlug(entry.id);
+      const slug = entry.data.slug ?? toRouteSlug(entry.slug);
       const isFallback = fallbackSlugs.has(slug);
       const entryContentDir = isFallback ? version.docsDir : (localeDir ?? version.docsDir);
 
@@ -222,7 +223,7 @@ export default function VersionedJaDocsPage({ props }: PageArgs): JSX.Element {
 
   const slug = autoIndex
     ? autoIndex.slug
-    : (entry!.data.slug ?? toRouteSlug(entry!.id));
+    : (entry!.data.slug ?? toRouteSlug(entry!.slug));
 
   const title = autoIndex ? autoIndex.label : entry!.data.title;
   const description = autoIndex ? autoIndex.description : entry!.data.description;

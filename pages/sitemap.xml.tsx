@@ -62,11 +62,11 @@ function withBase(path: string): string {
   return path;
 }
 
-async function collectDocsUrls(
+function collectDocsUrls(
   collectionName: string,
   pathPrefix: readonly string[],
-): Promise<string[]> {
-  const entries = (await getCollection(collectionName)) as Array<{
+): string[] {
+  const entries = getCollection(collectionName) as Array<{
     slug: string;
     data: DocData;
   }>;
@@ -84,34 +84,34 @@ async function collectDocsUrls(
   return urls;
 }
 
-export default async function Sitemap(): Promise<string> {
+export default function Sitemap(): string {
   const urls: string[] = [];
 
   // Site root.
   urls.push(buildUrl());
 
   // Default-locale docs (mirrors `src/pages/docs/[...slug].astro`).
-  urls.push(...(await collectDocsUrls("docs", ["docs"])));
+  urls.push(...collectDocsUrls("docs", ["docs"]));
 
   // Per-locale docs (mirrors `src/pages/[locale]/docs/[...slug].astro`).
   for (const code of Object.keys(settings.locales)) {
     urls.push(buildUrl(code));
-    urls.push(...(await collectDocsUrls(`docs-${code}`, [code, "docs"])));
+    urls.push(...collectDocsUrls(`docs-${code}`, [code, "docs"]));
   }
 
   // Versioned docs (mirrors `src/pages/v/[version]/docs/[...slug].astro`).
   if (settings.versions) {
     for (const version of settings.versions) {
-      urls.push(
-        ...(await collectDocsUrls(`docs-v-${version.slug}`, ["v", version.slug, "docs"])),
-      );
+      urls.push(...collectDocsUrls(`docs-v-${version.slug}`, ["v", version.slug, "docs"]));
       if (version.locales) {
         for (const code of Object.keys(version.locales)) {
           urls.push(
-            ...(await collectDocsUrls(
-              `docs-v-${version.slug}-${code}`,
-              [code, "v", version.slug, "docs"],
-            )),
+            ...collectDocsUrls(`docs-v-${version.slug}-${code}`, [
+              code,
+              "v",
+              version.slug,
+              "docs",
+            ]),
           );
         }
       }

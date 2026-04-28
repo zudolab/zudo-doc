@@ -81,7 +81,37 @@ export function getDocs(collectionName: string): ZfbDocsEntry[] {
   const entries = getCollection(collectionName) as unknown as CollectionEntry<ZfbDocsData>[];
   return entries.map((e) => ({
     ...e,
-    id: e.slug,
+    // Astro-compat: strip a trailing `/index` from the entry id so
+    // `getting-started/index.mdx` → id "getting-started" (matching
+    // Astro 5's `glob()` collection loader). Downstream nav helpers
+    // (`buildNavTree`, `buildBreadcrumbs`, …) keyed off the stripped
+    // form long before zfb existed; emitting the unstripped slug here
+    // produces ambiguous-URL collisions at paths()-expansion time.
+    id: stripIndexSuffix(e.slug),
+    collection: collectionName,
+  }));
+}
+
+function stripIndexSuffix(slug: string): string {
+  if (slug === "index") return "";
+  return slug.endsWith("/index") ? slug.slice(0, -"/index".length) : slug;
+}
+
+/**
+ * Augment a raw zfb collection result with the Astro-style
+ * `id`/`collection` fields that downstream `@/utils/docs` helpers
+ * (and the `DocPageEntry` extender shape used by `[...slug].tsx`
+ * pages) expect. Use this when a page needs a typed array more
+ * specific than `DocsEntry` — pages that only need `DocsEntry[]`
+ * can use [`loadDocs`] / [`getDocs`] directly.
+ */
+export function bridgeEntries<T = ZfbDocsData>(
+  entries: ReadonlyArray<CollectionEntry<T>>,
+  collectionName: string,
+): Array<CollectionEntry<T> & { id: string; collection: string }> {
+  return entries.map((e) => ({
+    ...e,
+    id: stripIndexSuffix(e.slug),
     collection: collectionName,
   }));
 }
@@ -95,6 +125,19 @@ export function getDocs(collectionName: string): ZfbDocsEntry[] {
  */
 export function asDocsEntries(entries: ZfbDocsEntry[]): DocsEntry[] {
   return entries as unknown as DocsEntry[];
+}
+
+/**
+ * One-shot helper for paths()/render-time pages that just need a
+ * `DocsEntry[]` for `@/utils/docs` consumption — wraps `getDocs` and
+ * the `asDocsEntries` cast so call sites stay one-line. Use this from
+ * any page that previously did
+ * `getCollection("docs") as unknown as DocsEntry[]` — that idiom
+ * silently dropped the `id`/`collection` fields the utility helpers
+ * read, which threw `Cannot read properties of undefined` at runtime.
+ */
+export function loadDocs(collectionName: string): DocsEntry[] {
+  return asDocsEntries(getDocs(collectionName));
 }
 
 /**

@@ -12,7 +12,7 @@
 //   → collectTags()         counts unique tags for the tag section header
 //   → DocLayoutWithDefaults renders the page with no sidebar/TOC
 
-import { getCollection } from "zfb/content";
+import { loadDocs } from "./_data";
 import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
 import { defaultLocale, t } from "@/config/i18n";
@@ -35,7 +35,10 @@ export const frontmatter = { title: "Home" };
 export default function IndexPage(): JSX.Element {
   const locale = defaultLocale;
 
-  const allDocs = getCollection("docs") as unknown as DocsEntry[];
+  // `loadDocs` bridges zfb's CollectionEntry → Astro-style DocsEntry
+  // (adds `id`/`collection`) so `@/utils/docs` helpers see the shape
+  // they expect.
+  const allDocs = loadDocs("docs");
   const docs = allDocs.filter((doc) => !doc.data.draft);
   const categoryMeta = loadCategoryMeta(settings.docsDir);
   const navDocs = docs.filter(isNavVisible);
