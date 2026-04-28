@@ -132,20 +132,33 @@ function loadEntriesForLocale(localeCode) {
   });
 }
 
+// Build the set of recognised locale prefixes from settings, so the
+// route matcher accepts whatever shape `settings.locales` declares —
+// including BCP-47 codes like `en-US` — without a hard-coded regex
+// that would silently drop them.
+const localeCodes = new Set(Object.keys(settings.locales ?? {}));
+
 /**
  * Match `/llms.txt`, `/llms-full.txt`, `/<locale>/llms.txt`, or
  * `/<locale>/llms-full.txt`. Returns `{ kind, locale }` or null.
+ *
+ * The locale segment is validated against `settings.locales` keys —
+ * unknown prefixes fall through (the chain returns 404). This avoids
+ * collisions with future routes that might share the `/<thing>/llms.txt`
+ * shape.
  */
 function matchLlmsRoute(url) {
   // Strip query string + leading base prefix the same way the v2
   // search middleware does: tolerate any prefix that ends in the
   // canonical route suffix.
   const pathname = url.split("?")[0];
-  const m = pathname.match(/(?:\/([a-z]{2,5}))?\/(llms|llms-full)\.txt$/);
+  const m = pathname.match(/^(?:\/(.+?))?\/(llms|llms-full)\.txt$/);
   if (!m) return null;
-  const locale = m[1] ?? null;
+  const prefix = m[1];
   const kind = m[2]; // "llms" | "llms-full"
-  return { kind, locale };
+  if (prefix === undefined) return { kind, locale: null };
+  if (localeCodes.has(prefix)) return { kind, locale: prefix };
+  return null;
 }
 
 function llmsTxtMiddleware(req, res, next) {
@@ -260,11 +273,23 @@ server.listen(PORT, () => {
   }
 });
 
+// `shuttingDown` guards both the close callback and the watchdog
+// timeout so a re-sent signal (or a timeout firing after a graceful
+// close) cannot enter the exit path twice.
+let shuttingDown = false;
 function shutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
   consoleLogger.info(`received ${signal}, shutting down`);
-  server.close(() => process.exit(0));
+  let exited = false;
+  const exitOnce = (code) => {
+    if (exited) return;
+    exited = true;
+    process.exit(code);
+  };
+  server.close(() => exitOnce(0));
   // Force exit if close hangs (e.g. in-flight upstream proxy fetches).
-  setTimeout(() => process.exit(0), 1500).unref();
+  setTimeout(() => exitOnce(0), 1500).unref();
 }
 
 process.on("SIGINT", () => shutdown("SIGINT"));
