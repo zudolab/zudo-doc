@@ -1,6 +1,7 @@
 ---
 import SidebarToggle from "@/components/sidebar-toggle";
 import ThemeToggle from "@/components/theme-toggle";
+import { Island } from "@takazudo/zfb";
 import LanguageSwitcher from "@/components/language-switcher.astro";
 import VersionSwitcher from "@/components/version-switcher.astro";
 import Search from "@/components/search.astro";
@@ -61,9 +62,11 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
   class="sticky top-0 z-50 flex h-[3.5rem] items-center border-b border-muted bg-surface px-hsp-lg"
   data-header
 >
-  <SidebarToggle client:media="(max-width: 1023px)">
-    <slot name="sidebar" />
-  </SidebarToggle>
+  <Island when="media">
+    <SidebarToggle>
+      <slot name="sidebar" />
+    </SidebarToggle>
+  </Island>
 
   <a
     href={withBase(isNonDefaultLocale ? `/${lang}/` : "/")}
@@ -295,10 +298,9 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
           if (!settings.colorMode) return null;
           return (
             <div class="hidden lg:flex items-center">
-              <ThemeToggle
-                defaultMode={settings.colorMode.defaultMode}
-                client:load
-              />
+              <Island when="load">
+                <ThemeToggle defaultMode={settings.colorMode.defaultMode} />
+              </Island>
             </div>
           );
         }
