@@ -139,6 +139,17 @@ export default defineConfig({
   framework: "preact",
   tailwind: { enabled: true },
   collections,
+  // ----------------------------------------------------------------------
+  // Cloudflare Pages adapter — wraps the SSR bundle into `dist/_worker.js`
+  // (advanced-mode entry) plus a sidecar `dist/_zfb_inner.mjs`. The adapter
+  // is a hard requirement for any route exporting `prerender = false`
+  // (currently `pages/api/ai-chat.tsx`); without it `zfb build` rejects
+  // those routes at build time. Bindings (ANTHROPIC_API_KEY, DOCS_SITE_URL,
+  // RATE_LIMIT KV, RATE_LIMIT_PER_MINUTE, RATE_LIMIT_PER_DAY) are wired via
+  // wrangler.toml and reach user code via `getCloudflareContext()` from the
+  // same package.
+  // ----------------------------------------------------------------------
+  adapter: "@takazudo/zfb-adapter-cloudflare",
   // populated by integration topics
   // ----------------------------------------------------------------------
   // Each sibling integration topic (doc-history, search, llms-txt,
