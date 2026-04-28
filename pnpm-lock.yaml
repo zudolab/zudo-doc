@@ -337,9 +337,6 @@ importers:
       '@types/node':
         specifier: ^25.3.5
         version: 25.3.5
-      gray-matter:
-        specifier: ^4.0.3
-        version: 4.0.3
       preact:
         specifier: ^10.26.9
         version: 10.29.0
