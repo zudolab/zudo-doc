@@ -25,6 +25,7 @@ import type { BreadcrumbItem } from "@zudo-doc/zudo-doc-v2/breadcrumb";
 import { TagNav } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import type { TagItem, TagNavLabels } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import type { JSX } from "preact";
+import { bridgeEntries } from "../../_data";
 
 export const frontmatter = { title: "All Tags" };
 
@@ -32,7 +33,7 @@ export default function DocsTagsIndexPage(): JSX.Element {
   const locale = defaultLocale;
   const pageTitle = t("doc.allTags", locale);
 
-  const allDocs = getCollection("docs") as unknown as DocsEntry[];
+  const allDocs = (bridgeEntries(getCollection("docs"), "docs") as unknown as DocsEntry[]);
   const docs = allDocs.filter((doc) => !doc.data.unlisted && !doc.data.draft);
   const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
 

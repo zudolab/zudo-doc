@@ -73,6 +73,9 @@ importers:
       preact:
         specifier: ^10.26.9
         version: 10.29.0
+      preact-render-to-string:
+        specifier: ^6.6.6
+        version: 6.6.6(preact@10.29.0)
       rehype-katex:
         specifier: ^7.0.1
         version: 7.0.1

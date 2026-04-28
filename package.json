@@ -83,6 +83,7 @@
     "mermaid": "^11.12.3",
     "minisearch": "^7.2.0",
     "preact": "^10.26.9",
+    "preact-render-to-string": "^6.6.6",
     "rehype-katex": "^7.0.1",
     "remark-cjk-friendly": "^2.0.1",
     "remark-directive": "^4.0.0",

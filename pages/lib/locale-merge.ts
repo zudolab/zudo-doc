@@ -15,8 +15,7 @@
 // This is a zfb-only module (uses synchronous getCollection from zfb/content).
 // Do not import from Astro page code.
 
-import { getCollection } from "zfb/content";
-import { toRouteSlug } from "@/utils/slug";
+import { loadDocs } from "../_data";
 import type { DocsEntry } from "@/types/docs-entry";
 
 /**
@@ -26,8 +25,18 @@ import type { DocsEntry } from "@/types/docs-entry";
  * locale collection. Drafts and unlisted docs are filtered out.
  */
 export function mergeLocaleDocs(locale: string): DocsEntry[] {
-  const localeDocs = getCollection(`docs-${locale}`) as unknown as DocsEntry[];
-  const baseDocs = getCollection("docs") as unknown as DocsEntry[];
+  // zfb's CollectionEntry uses `slug`/`collection` only; @/utils/docs
+  // utilities expect Astro-style `id` and `collection` fields. Map them
+  // here so the rest of this module (and its callers) get the
+  // DocsEntry-shaped objects they assume. Bridging on read keeps the
+  // schema discrepancy contained to the I/O boundary.
+  // Use `loadDocs` so the Astro-compat `id`/`collection` augmentation
+  // (and the `index` slug stripping) stays in one place — the inline
+  // `id: e.slug` map dropped the `/index` suffix that
+  // `buildNavTree`/`buildBreadcrumbs` etc. assume Astro 5 strips, which
+  // produced ambiguous-URL collisions at paths()-expansion time.
+  const localeDocs = loadDocs(`docs-${locale}`);
+  const baseDocs = loadDocs("docs");
 
   const filteredLocale = localeDocs.filter(
     (d) => !d.data.draft && !d.data.unlisted,
@@ -37,13 +46,13 @@ export function mergeLocaleDocs(locale: string): DocsEntry[] {
   );
 
   const localeSlugSet = new Set(
-    filteredLocale.map((d) => d.data.slug ?? toRouteSlug(d.id)),
+    filteredLocale.map((d) => d.data.slug ?? d.id),
   );
 
   return [
     ...filteredLocale,
     ...filteredBase.filter(
-      (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id)),
+      (d) => !localeSlugSet.has(d.data.slug ?? d.id),
     ),
   ];
 }
