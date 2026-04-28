@@ -116,6 +116,8 @@ function buildProcessor() {
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
     .use(rehypeShimShiki)
+    // Plugin order mirrors astro.config.ts: code-title → heading-links →
+    // strip-md → image-enlarge → mermaid → katex.
     .use(rehypeCodeTitle)
     .use(rehypeHeadingLinks)
     .use(rehypeStripMdExtension)
