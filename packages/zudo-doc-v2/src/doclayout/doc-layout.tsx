@@ -60,6 +60,8 @@
 
 import type { ComponentChildren, JSX } from "preact";
 
+import { persistName } from "../transitions/persist.js";
+
 /**
  * Direction-and-mode metadata for the root `<html>` element. Keeps the
  * shell from depending on a project's i18n module.
@@ -227,8 +229,17 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
   // View Transitions API treats it as a persistent region across
   // navigations. The original Astro layout used `transition:persist`
   // which does the equivalent thing under the hood.
-  const sidebarStyle: JSX.CSSProperties | undefined = sidebarPersistKey
-    ? { viewTransitionName: sidebarPersistKey }
+  //
+  // We pass the user-supplied key through `persistName` so any input
+  // that isn't a valid CSS `<custom-ident>` (whitespace, punctuation,
+  // unicode, etc.) is sanitized rather than silently rejected by the
+  // browser — and the helper also caps length so a runaway prop value
+  // can't produce a multi-kilobyte style string.
+  const sidebarTransitionName = sidebarPersistKey
+    ? persistName(sidebarPersistKey)
+    : undefined;
+  const sidebarStyle: JSX.CSSProperties | undefined = sidebarTransitionName
+    ? { viewTransitionName: sidebarTransitionName }
     : undefined;
 
   // The `style` prop accepts a string in Preact, but only via

@@ -30,6 +30,14 @@ const SIDEBAR_PREFIX = "sidebar";
 const NON_IDENTIFIER_CHAR = /[^A-Za-z0-9_-]+/g;
 
 /**
+ * Hard cap on a single sanitized segment. Keeps a runaway/user-controlled
+ * input from producing a multi-kilobyte `view-transition-name` value
+ * (which browsers may truncate or reject silently anyway). 64 chars is
+ * comfortably above any realistic locale or section label.
+ */
+const MAX_SANITIZED_LEN = 64;
+
+/**
  * Build the `view-transition-name` value for the desktop sidebar.
  *
  * The original Astro layout used the literal `sidebar-${lang}-${section ?? "default"}`
@@ -89,8 +97,11 @@ export function clearPersistName(el: HTMLElement): void {
  * (e.g. an i18n locale read from the URL) do not produce malformed CSS.
  */
 function sanitize(value: string): string {
-  return value
+  const cleaned = value
     .trim()
     .replace(NON_IDENTIFIER_CHAR, "_")
     .replace(/^_+|_+$/g, "");
+  return cleaned.length > MAX_SANITIZED_LEN
+    ? cleaned.slice(0, MAX_SANITIZED_LEN)
+    : cleaned;
 }
