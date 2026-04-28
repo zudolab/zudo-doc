@@ -42,6 +42,14 @@
       "types": "./src/transitions/index.ts",
       "default": "./src/transitions/index.ts"
     },
+    "./page-loading": {
+      "types": "./src/page-loading/index.ts",
+      "default": "./src/page-loading/index.ts"
+    },
+    "./tab-item": {
+      "types": "./src/tab-item/index.ts",
+      "default": "./src/tab-item/index.ts"
+    },
     "./integrations/doc-history": {
       "types": "./src/integrations/doc-history/index.ts",
       "default": "./src/integrations/doc-history/index.ts"
