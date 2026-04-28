@@ -6,7 +6,7 @@ export const searchFeature: FeatureModule = () => ({
     {
       file: "src/components/header.astro",
       anchor: "// @slot:header:imports",
-      content: 'import Search from "@/components/search.astro";',
+      content: 'import Search from "@/components/search";',
     },
     {
       file: "src/components/header.astro",

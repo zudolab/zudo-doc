@@ -1,5 +1,6 @@
 ---
 import { DocHistory } from "@/components/doc-history";
+import { Island } from "@takazudo/zfb";
 import { settings } from "@/config/settings";
 import { defaultLocale, t, type Locale } from "@/config/i18n";
 import { withBase } from "@/utils/base";
@@ -81,12 +82,13 @@ const hasContent = docHistoryEnabled || sourceUrl;
         </div>
       )}
       {docHistoryEnabled && (
-        <DocHistory
-          slug={currentSlug}
-          locale={lang !== defaultLocale ? lang : undefined}
-          basePath={withBase("/")}
-          client:idle
-        />
+        <Island when="idle">
+          <DocHistory
+            slug={currentSlug}
+            locale={lang !== defaultLocale ? lang : undefined}
+            basePath={withBase("/")}
+          />
+        </Island>
       )}
     </section>
   )

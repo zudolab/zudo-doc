@@ -7,7 +7,7 @@ export const bodyFootUtilFeature: FeatureModule = () => ({
       file: "src/layouts/doc-layout.astro",
       anchor: "// @slot:doc-layout:imports",
       content:
-        'import BodyFootUtilArea from "@/components/body-foot-util-area.astro";',
+        'import BodyFootUtilArea from "@/components/body-foot-util-area";',
     },
     {
       file: "src/layouts/doc-layout.astro",
