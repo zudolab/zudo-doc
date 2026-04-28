@@ -26,6 +26,38 @@
       "types": "./src/breadcrumb/index.ts",
       "default": "./src/breadcrumb/index.ts"
     },
+    "./header": {
+      "types": "./src/header/index.ts",
+      "default": "./src/header/index.ts"
+    },
+    "./footer": {
+      "types": "./src/footer/index.ts",
+      "default": "./src/footer/index.ts"
+    },
+    "./sidebar": {
+      "types": "./src/sidebar/index.ts",
+      "default": "./src/sidebar/index.ts"
+    },
+    "./i18n-version": {
+      "types": "./src/i18n-version/index.ts",
+      "default": "./src/i18n-version/index.ts"
+    },
+    "./page-loading": {
+      "types": "./src/page-loading/index.ts",
+      "default": "./src/page-loading/index.ts"
+    },
+    "./tab-item": {
+      "types": "./src/tab-item/index.ts",
+      "default": "./src/tab-item/index.ts"
+    },
+    "./body-foot-util": {
+      "types": "./src/body-foot-util/index.ts",
+      "default": "./src/body-foot-util/index.ts"
+    },
+    "./sidebar-resizer": {
+      "types": "./src/sidebar-resizer/index.ts",
+      "default": "./src/sidebar-resizer/index.ts"
+    },
     "./doclayout": {
       "types": "./src/doclayout/index.ts",
       "default": "./src/doclayout/index.ts"
@@ -38,9 +70,21 @@
       "types": "./src/ssr-skip/index.ts",
       "default": "./src/ssr-skip/index.ts"
     },
+    "./body-foot-util": {
+      "types": "./src/body-foot-util/index.ts",
+      "default": "./src/body-foot-util/index.ts"
+    },
     "./transitions": {
       "types": "./src/transitions/index.ts",
       "default": "./src/transitions/index.ts"
+    },
+    "./page-loading": {
+      "types": "./src/page-loading/index.ts",
+      "default": "./src/page-loading/index.ts"
+    },
+    "./tab-item": {
+      "types": "./src/tab-item/index.ts",
+      "default": "./src/tab-item/index.ts"
     },
     "./integrations/doc-history": {
       "types": "./src/integrations/doc-history/index.ts",
