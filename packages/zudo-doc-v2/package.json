@@ -71,7 +71,6 @@
   },
   "devDependencies": {
     "@types/node": "^25.3.5",
-    "gray-matter": "^4.0.3",
     "preact": "^10.26.9",
     "preact-render-to-string": "^6.6.6",
     "typescript": "^5.0.0",
