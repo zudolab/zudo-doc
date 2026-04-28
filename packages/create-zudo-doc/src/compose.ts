@@ -50,8 +50,20 @@ export type FeatureModule = (choices: UserChoices) => FeatureDefinition;
 // Anchor patterns
 // ---------------------------------------------------------------------------
 
-/** Regex that matches any line containing an @slot anchor comment. */
-const ANCHOR_LINE_RE = /^[ \t]*(?:\/\/|\/\*|<!--|#)\s*@slot:[^\n]*(?:\*\/|-->)?[ \t]*\r?\n?$/gm;
+/**
+ * Regex that matches any line containing an @slot anchor comment.
+ *
+ * Handles four comment forms:
+ *   1. `// @slot:…`          — JS/TS line comment
+ *   2. `/* @slot:… *\/`      — JS/TS block comment
+ *   3. `<!-- @slot:… -->`    — HTML/Astro comment
+ *   4. `# @slot:…`           — shell / CSS comment
+ *   5. `{/* <!-- @slot:… --> *\/}` — JSX comment expression embedding an
+ *                              HTML-style anchor so the Astro anchor string
+ *                              is still findable via content.indexOf().
+ */
+const ANCHOR_LINE_RE =
+  /^[ \t]*(?:(?:\/\/|\/\*|<!--|#)\s*@slot:[^\n]*(?:\*\/|-->)?|\{\/\*[^\n]*@slot:[^\n]*\*\/\})[ \t]*\r?\n?$/gm;
 
 // ---------------------------------------------------------------------------
 // Core functions
@@ -223,10 +235,20 @@ export function validateDependencies(
   }
 }
 
-/** Files that may contain injection anchors and need cleaning. */
+/**
+ * Files that may contain injection anchors and need cleaning.
+ *
+ * Both the legacy Astro files and the new JSX files are listed so that
+ * anchor cleanup runs on whichever version is present in the generated
+ * project.  Feature modules currently target the `.astro` files; once
+ * topic-feature-modules updates those injection targets to the `.tsx`
+ * equivalents, the `.astro` entries can be removed.
+ */
 export const ANCHOR_FILES = [
   "src/layouts/doc-layout.astro",
+  "src/layouts/doc-layout.tsx",
   "src/components/header.astro",
+  "src/components/header.tsx",
   "src/styles/global.css",
 ];
 
