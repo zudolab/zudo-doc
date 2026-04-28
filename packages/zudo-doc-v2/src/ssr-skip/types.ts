@@ -110,10 +110,19 @@ export function renderSsrSkipPlaceholder(
 function safeStringify(value: unknown): string | null {
   try {
     return JSON.stringify(value);
-  } catch {
+  } catch (err) {
     // Non-serialisable prop values (functions, circular refs, DOM
     // nodes). Drop the attribute rather than crashing SSR — losing a
-    // prop is recoverable, an SSR exception is not.
+    // prop is recoverable, an SSR exception is not. In development we
+    // surface a console warning so the dropped prop doesn't fail
+    // silently; production builds stay quiet.
+    if (typeof process !== "undefined" && process.env && process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[zudo-doc-v2/ssr-skip] dropped non-serialisable prop on SSR-skip placeholder:",
+        err,
+      );
+    }
     return null;
   }
 }
