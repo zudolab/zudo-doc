@@ -38,6 +38,10 @@
       "types": "./src/ssr-skip/index.ts",
       "default": "./src/ssr-skip/index.ts"
     },
+    "./body-foot-util": {
+      "types": "./src/body-foot-util/index.ts",
+      "default": "./src/body-foot-util/index.ts"
+    },
     "./transitions": {
       "types": "./src/transitions/index.ts",
       "default": "./src/transitions/index.ts"
