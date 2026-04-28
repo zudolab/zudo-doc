@@ -41,6 +41,22 @@
     "./transitions": {
       "types": "./src/transitions/index.ts",
       "default": "./src/transitions/index.ts"
+    },
+    "./integrations/doc-history": {
+      "types": "./src/integrations/doc-history/index.ts",
+      "default": "./src/integrations/doc-history/index.ts"
+    },
+    "./integrations/llms-txt": {
+      "types": "./src/integrations/llms-txt/index.ts",
+      "default": "./src/integrations/llms-txt/index.ts"
+    },
+    "./integrations/search-index": {
+      "types": "./src/integrations/search-index/index.ts",
+      "default": "./src/integrations/search-index/index.ts"
+    },
+    "./integrations/claude-resources": {
+      "types": "./src/integrations/claude-resources/index.ts",
+      "default": "./src/integrations/claude-resources/index.ts"
     }
   },
   "files": [
@@ -50,7 +66,11 @@
   "peerDependencies": {
     "preact": "*"
   },
+  "dependencies": {
+    "gray-matter": "^4.0.3"
+  },
   "devDependencies": {
+    "@types/node": "^25.3.5",
     "preact": "^10.26.9",
     "preact-render-to-string": "^6.6.6",
     "typescript": "^5.0.0",
