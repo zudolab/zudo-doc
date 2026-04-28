@@ -1,0 +1,13 @@
+---
+title: rehypeStripMdExtension cleanup
+---
+
+These links exercise the rehype-side ext stripper (it runs against the raw
+HTML and strips .md/.mdx, adding a trailing slash):
+
+- <a href="./already-html.md">authored as raw HTML, .md ext</a>
+- <a href="./other.mdx#anchor">authored as raw HTML, .mdx with anchor</a>
+- <a href="./guide/intro">authored as raw HTML, extensionless relative</a>
+- <a href="./image.png">file with real extension stays</a>
+- <a href="https://example.com/foo.md">external is left alone</a>
+- <a href="#anchor-only">pure anchor untouched</a>

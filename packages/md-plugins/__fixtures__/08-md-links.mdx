@@ -1,0 +1,19 @@
+---
+title: Markdown link rewriting
+---
+
+Authors often link with .md/.mdx extensions:
+
+- [Sibling page](./sibling.mdx)
+- [Up and over](../guide/intro.md)
+- [With anchor](./other.mdx#install)
+- [With query](./other.md?foo=bar)
+
+External links must be left alone:
+
+- [External](https://example.com/foo.md)
+- [Mailto](mailto:hi@example.com)
+
+Pure anchor stays untouched:
+
+- [Anchor only](#section)
