@@ -49,6 +49,10 @@
     "./integrations/search-index": {
       "types": "./src/integrations/search-index/index.ts",
       "default": "./src/integrations/search-index/index.ts"
+    },
+    "./integrations/claude-resources": {
+      "types": "./src/integrations/claude-resources/index.ts",
+      "default": "./src/integrations/claude-resources/index.ts"
     }
   },
   "files": [
