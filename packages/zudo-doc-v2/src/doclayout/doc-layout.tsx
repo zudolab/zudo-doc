@@ -222,7 +222,14 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
     bodyEndScripts,
   } = props;
 
-  const showSidebar = !hideSidebar && sidebar !== undefined;
+  // `hasSidebar` tracks whether sidebar content was supplied at all.
+  // `showSidebar` is true only when the sidebar should be visually rendered.
+  // Separating the two lets us emit the <aside> landmark even on hide_sidebar
+  // pages so the complementary ARIA role is preserved for screen readers —
+  // matching the Astro layout's SidebarToggle mobile aside that was always
+  // present in the DOM regardless of the hideSidebar flag.
+  const hasSidebar = sidebar !== undefined;
+  const showSidebar = !hideSidebar && hasSidebar;
   const showToc = !hideToc && toc !== undefined;
 
   // The desktop-sidebar gets a `view-transition-name` so the native
@@ -269,12 +276,19 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
       <body class="min-h-screen antialiased">
         {header}
 
-        {showSidebar && (
+        {hasSidebar && (
           <aside
             id={DESKTOP_SIDEBAR_ID}
             aria-label="Documentation sidebar"
-            class="hidden lg:block fixed top-[3.5rem] left-0 z-30 w-[var(--zd-sidebar-w)] h-[calc(100vh-3.5rem)] overflow-y-auto bg-bg border-r border-muted pb-vsp-xl"
-            style={sidebarStyle}
+            // When the sidebar is visible: standard fixed desktop panel.
+            // When hideSidebar=true: sr-only so the complementary ARIA
+            // landmark is still present (matches the Astro layout's mobile
+            // SidebarToggle aside that was always in the DOM).
+            class={showSidebar
+              ? "hidden lg:block fixed top-[3.5rem] left-0 z-30 w-[var(--zd-sidebar-w)] h-[calc(100vh-3.5rem)] overflow-y-auto bg-bg border-r border-muted pb-vsp-xl"
+              : "sr-only"
+            }
+            style={showSidebar ? sidebarStyle : undefined}
           >
             {sidebar}
           </aside>
