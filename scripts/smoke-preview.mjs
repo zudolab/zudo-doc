@@ -171,6 +171,17 @@ async function main() {
     },
   );
 
+  // Make sure a Ctrl-C / SIGTERM tears down the preview tree even if
+  // we die mid-check — without this the wrangler/workerd subprocess
+  // keeps the port bound for the next b4push step.
+  const onSignal = (signal) => {
+    cleanup(child);
+    // Re-raise so callers see the original signal exit code.
+    process.kill(process.pid, signal);
+  };
+  process.once("SIGINT", () => onSignal("SIGINT"));
+  process.once("SIGTERM", () => onSignal("SIGTERM"));
+
   let stderrBuf = "";
   child.stdout.on("data", () => {});
   child.stderr.on("data", (d) => {
