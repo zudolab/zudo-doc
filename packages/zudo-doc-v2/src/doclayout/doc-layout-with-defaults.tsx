@@ -68,6 +68,7 @@ import { DocLayout, type DocLayoutProps } from "./doc-layout.js";
 import { Sidebar } from "../sidebar/sidebar.js";
 import { Toc } from "../toc/toc.js";
 import { MobileToc } from "../toc/mobile-toc.js";
+import { getTocTitle } from "../toc/toc-title.js";
 import ThemeToggle from "../theme/theme-toggle.js";
 import { Footer } from "../footer/footer.js";
 import {
@@ -178,8 +179,14 @@ export function DocLayoutWithDefaults(
     afterBreadcrumb,
     afterContent,
     head,
+    lang,
     ...rest
   } = props;
+
+  // Locale-aware TOC section label — "On this page" (EN), "目次" (JA), etc.
+  // Used by the default Toc / MobileToc instances so SSG HTML always carries
+  // the correct locale string without requiring every caller to pass an override.
+  const tocTitle = getTocTitle(lang);
 
   // The empty fragments below carry the body-region injection anchors
   // verbatim. Each fragment is a no-op at runtime; the drift checker
@@ -203,6 +210,7 @@ export function DocLayoutWithDefaults(
       {/* @slot:doc-layout:body-end-scripts */}
       <DocLayout
         {...rest}
+        lang={lang}
         head={head}
         header={
           headerOverride ?? (
@@ -224,8 +232,8 @@ export function DocLayoutWithDefaults(
           // tree pass it through `sidebarOverride`.
           sidebarOverride ?? <Sidebar nodes={[]} />
         }
-        toc={tocOverride ?? <Toc headings={[]} />}
-        mobileToc={mobileTocOverride ?? <MobileToc headings={[]} />}
+        toc={tocOverride ?? <Toc headings={[]} title={tocTitle} />}
+        mobileToc={mobileTocOverride ?? <MobileToc headings={[]} title={tocTitle} />}
         breadcrumb={breadcrumbOverride}
         afterBreadcrumb={afterBreadcrumb}
         afterSidebar={afterSidebar}
