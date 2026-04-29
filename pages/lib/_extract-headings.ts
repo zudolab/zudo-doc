@@ -44,17 +44,27 @@ export function extractHeadings(body: string): HeadingItem[] {
   const slugger = new GithubSlugger();
   const headings: HeadingItem[] = [];
 
-  let inCodeFence = false;
+  // Track the opening fence string (`` ``` `` or ```` ```` ````) so we match the
+  // correct closing fence — Markdown allows longer fences to nest shorter ones.
+  let codeFenceOpener: string | null = null;
   for (const line of body.split("\n")) {
-    // Track code fences so we skip ``` ``` blocks.
-    if (/^```/.test(line)) {
-      inCodeFence = !inCodeFence;
+    // Detect code fence open/close. A fence is 3+ backticks optionally followed
+    // by a language specifier. The closing fence must match the opener's length.
+    const fenceMatch = /^(`{3,})/.exec(line);
+    if (fenceMatch) {
+      const fence = fenceMatch[1] as string;
+      if (codeFenceOpener === null) {
+        codeFenceOpener = fence;
+      } else if (fence.length >= codeFenceOpener.length) {
+        codeFenceOpener = null;
+      }
       continue;
     }
-    if (inCodeFence) continue;
+    if (codeFenceOpener !== null) continue;
 
-    // Match ATX headings at depth 2, 3, or 4.
-    const match = /^(#{2,4}) (.+)$/.exec(line.trim());
+    // Match ATX headings at depth 2, 3, or 4. Allow one or more spaces/tabs
+    // after the hash characters (both are valid per the CommonMark spec).
+    const match = /^(#{2,4})[ \t]+(.+)$/.exec(line.trim());
     if (!match) continue;
 
     const depth = (match[1] as string).length;
