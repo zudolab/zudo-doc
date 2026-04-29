@@ -29,7 +29,7 @@
  *   3. Discover routes + diff artifacts via discoverRoutes() + diffArtifacts() (in-process).
  *   4. Batch-compare routes: split routes.inBoth into chunks, spawn compare-routes.mjs
  *      per batch, cap concurrent children with job-queue helper.
- *   5. S7 aggregation — TODO (not yet integrated, see note below).
+ *   5. S7 aggregation — cluster findings, render report.md via aggregate.mjs.
  *   6. Stop servers, release resources, print summary.
  *
  * Exit code policy:
@@ -52,6 +52,7 @@ import { startServer } from "./serve-snapshots.mjs";
 import { discoverRoutes } from "./discover-routes.mjs";
 import { diffArtifacts } from "./diff-artifacts.mjs";
 import { runJobQueue } from "./lib/job-queue.mjs";
+import { aggregate } from "./aggregate.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -476,10 +477,7 @@ async function main() {
     // ── Phase 5: S7 aggregation ─────────────────────────────────────────────
 
     console.log("\n[S6] ── Phase 5: Aggregation ───────────────────────────────");
-    // TODO(S7): Wire findings into the aggregator. This is a one-line addition
-    // once S7 lands. Example:
-    //   await aggregate({ findingsDir: FINDINGS_DIR, reportPath: REPORT_PATH });
-    console.log("[S6] S7 aggregation not yet integrated — skipping.");
+    await aggregate({ findingsDir: FINDINGS_DIR, reportPath: REPORT_PATH });
 
   } finally {
     if (!shuttingDown) {
