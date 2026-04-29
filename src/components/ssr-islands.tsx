@@ -46,9 +46,19 @@ function ssrSkipPlaceholder(
 
 // ─── AiChatModal ─────────────────────────────────────────────────────────────
 
+/** Default body label text (English). */
+const AI_CHAT_BODY_LABEL = "Ask a question about the documentation.";
+
 export interface AiChatModalIslandProps extends SsrSkipBaseProps {
   /** Base path forwarded to the real component on hydration. */
   basePath: string;
+  /**
+   * Label rendered in the sr-only SSR fallback so migration-check and
+   * assistive technology can find the body text in SSG output. Defaults
+   * to the English phrase. Pass a locale-translated string for
+   * non-default locales.
+   */
+  bodyLabel?: string;
 }
 
 /**
@@ -57,10 +67,16 @@ export interface AiChatModalIslandProps extends SsrSkipBaseProps {
  */
 export function AiChatModalIsland({
   when = "load",
-  ssrFallback = null,
+  ssrFallback,
+  bodyLabel = AI_CHAT_BODY_LABEL,
   basePath,
 }: AiChatModalIslandProps): VNode {
-  return ssrSkipPlaceholder("AiChatModal", when, ssrFallback, { basePath });
+  // Use a visually-hidden paragraph as the default SSR fallback so the
+  // body label string is present in the static HTML. sr-only keeps it
+  // invisible to sighted users while remaining accessible and greppable.
+  const fallback =
+    ssrFallback !== undefined ? ssrFallback : h("p", { class: "sr-only" }, bodyLabel);
+  return ssrSkipPlaceholder("AiChatModal", when, fallback, { basePath });
 }
 
 // ─── ImageEnlarge ────────────────────────────────────────────────────────────
