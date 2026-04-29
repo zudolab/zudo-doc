@@ -19,6 +19,31 @@ import { loadDocs } from "../_data";
 import type { DocsEntry } from "@/types/docs-entry";
 
 /**
+ * Enumerate merged doc slugs for a locale — the URL-list slice of the merge.
+ *
+ * Locale docs take priority; base EN docs fill in slugs not covered by the
+ * locale collection. Only drafts are filtered — unlisted pages ARE included
+ * because they have real URLs and should appear in the sitemap.
+ *
+ * Returns raw route slugs (e.g. "getting-started/intro") for
+ * route-enumerators.ts to convert into full URLs.
+ */
+export function enumerateMergedDocsSlugs(locale: string): string[] {
+  const localeDocs = loadDocs(`docs-${locale}`).filter((d) => !d.data.draft);
+  const baseDocs = loadDocs("docs").filter((d) => !d.data.draft);
+
+  const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? d.id));
+  const fallbackDocs = baseDocs.filter(
+    (d) => !localeSlugSet.has(d.data.slug ?? d.id),
+  );
+
+  return [
+    ...localeDocs.map((d) => d.data.slug ?? d.id),
+    ...fallbackDocs.map((d) => d.data.slug ?? d.id),
+  ];
+}
+
+/**
  * Merge locale docs with base-locale fallbacks.
  *
  * Locale docs take priority; base docs fill in slugs not covered by the
