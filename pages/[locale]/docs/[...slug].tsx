@@ -205,7 +205,7 @@ interface PageArgs {
 
 export default function LocaleDocsPage({ params, props }: PageArgs): JSX.Element {
   const locale = params.locale;
-  const { entry, autoIndex, isFallback, breadcrumbs, prev, next } = props;
+  const { entry, autoIndex, contentDir, isFallback, breadcrumbs, prev, next } = props;
 
   const slug = autoIndex
     ? autoIndex.slug
@@ -286,9 +286,14 @@ export default function LocaleDocsPage({ params, props }: PageArgs): JSX.Element
 
           {entry && <entry.Content components={components} />}
 
-          {/* Document utilities (revision history) — skipped for unlisted pages */}
+          {/* Document utilities (revision history + view-source link) — skipped for unlisted pages */}
           {!entry!.data.unlisted && (
-            <DocHistoryArea slug={slug} locale={locale} />
+            <DocHistoryArea
+              slug={slug}
+              locale={locale}
+              entrySlug={entry!.slug}
+              contentDir={contentDir}
+            />
           )}
 
           {/* Prev / Next pagination */}
