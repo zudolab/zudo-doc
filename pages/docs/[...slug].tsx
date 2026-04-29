@@ -38,15 +38,12 @@ import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
 import { toRouteSlug } from "@/utils/slug";
 import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
 import { Breadcrumb } from "@zudo-doc/zudo-doc-v2/breadcrumb";
-import { htmlOverrides } from "@zudo-doc/zudo-doc-v2/content";
 import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
-// MDX named-element overrides — every component MDX content authors
-// reference by capitalised tag name (`<HtmlPreview>`, `<Note>`, …) must
-// be passed via the `components` prop on `<entry.Content>` so the
-// renderer can resolve it. The Astro original wired these via the
-// `<Content components={...} />` call site in
-// `src/pages/docs/[...slug].astro`; this is the zfb-side equivalent.
-import { HtmlPreviewWrapper } from "@zudo-doc/zudo-doc-v2/html-preview-wrapper";
+// Shared MDX-tag → Preact-component bag. Includes htmlOverrides
+// (native typography), HtmlPreviewWrapper (Island), and stub bindings
+// for every other custom tag the MDX corpus references — see
+// `pages/_mdx-components.ts` for the full list and rationale.
+import { mdxComponents } from "../_mdx-components";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../_data";
 
@@ -186,14 +183,8 @@ export default function DocsPage({ props }: PageArgs): JSX.Element {
   const title = autoIndex ? autoIndex.label : entry!.data.title;
   const description = autoIndex ? autoIndex.description : entry!.data.description;
 
-  // The htmlOverrides cover element-level overrides (h2/h3/h4, p, a, …).
-  // Add the named-tag bindings the MDX authors use so `<HtmlPreview>`
-  // resolves to the self-Island'd `HtmlPreviewWrapper`. (Other named
-  // tags — Note, Tip, Tabs, etc. — are wired by sibling topics.)
-  const components = {
-    ...htmlOverrides,
-    HtmlPreview: HtmlPreviewWrapper,
-  };
+  // Shared components bag — see `pages/_mdx-components.ts`.
+  const components = mdxComponents;
 
   // Resolve child hrefs for auto-index pages
   const autoIndexChildren = autoIndex
