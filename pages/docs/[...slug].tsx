@@ -255,9 +255,14 @@ export default function DocsPage({ props }: PageArgs): JSX.Element {
           {/* MDX content rendered via zfb's Content bridge */}
           {entry && <entry.Content components={components} />}
 
-          {/* Document utilities (revision history) — skipped for unlisted pages */}
+          {/* Document utilities (revision history + view-source link) — skipped for unlisted pages */}
           {!entry!.data.unlisted && (
-            <DocHistoryArea slug={slug} locale={locale} />
+            <DocHistoryArea
+              slug={slug}
+              locale={locale}
+              entrySlug={entry!.slug}
+              contentDir={settings.docsDir}
+            />
           )}
 
           {/* Prev / Next pagination */}
