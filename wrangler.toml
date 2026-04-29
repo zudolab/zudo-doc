@@ -1,6 +1,11 @@
 # Cloudflare Pages project configuration
 
 compatibility_date = "2024-12-01"
+# nodejs_compat is required by the CF Pages adapter wrapper at dist/_worker.js,
+# which imports node:async_hooks (AsyncLocalStorage) to thread per-request
+# env/ctx into the inner bundle. Without this flag wrangler 4.x refuses to
+# load the worker even when dist/_worker.js exists.
+compatibility_flags = ["nodejs_compat"]
 
 # ---------------------------------------------------------------------------
 # AI chat endpoint (pages/api/ai-chat.tsx)
