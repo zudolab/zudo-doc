@@ -28,6 +28,7 @@ import { DocCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../../_data";
 import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
+import { HeaderWithDefaults } from "../../lib/_header-with-defaults";
 
 export const frontmatter = { title: "Tag" };
 
@@ -80,6 +81,7 @@ export default function DocTagPage({ params, props }: PageProps): JSX.Element {
       title={pageTitle}
       hideSidebar={true}
       hideToc={true}
+      headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase(`/docs/tags/${tag}`)} />}
       breadcrumbOverride={<Breadcrumb items={breadcrumbItems} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
     >

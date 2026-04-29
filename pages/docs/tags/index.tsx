@@ -27,6 +27,7 @@ import type { TagItem, TagNavLabels } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../../_data";
 import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
+import { HeaderWithDefaults } from "../../lib/_header-with-defaults";
 
 export const frontmatter = { title: "All Tags" };
 
@@ -62,6 +63,7 @@ export default function DocsTagsIndexPage(): JSX.Element {
       title={pageTitle}
       hideSidebar={true}
       hideToc={true}
+      headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase("/docs/tags")} />}
       breadcrumbOverride={<Breadcrumb items={breadcrumbItems} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
     >
