@@ -54,3 +54,6 @@ e2e/fixtures/*/src/config/sidebars.ts
 e2e/fixtures/*/zfb.config.ts
 e2e/fixtures/*/.zfb
 e2e/fixtures/*/dist
+
+# migration-check harness workspace (throwaway build artifacts)
+.l-zfb-migration-check/
