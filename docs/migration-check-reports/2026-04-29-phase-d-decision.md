@@ -236,12 +236,13 @@ D2's audit identified that zfb's `src/pages/sitemap.xml.tsx` builds URLs from ra
 
 The actual rendered HTML pages are at the canonical non-`/index` URLs in zfb (matching Astro), so end-user-visible parity is unaffected. A small fix to `src/pages/sitemap.xml.tsx` to apply `toRouteSlug()` (or to mirror the page module's slug-rewrite logic) would collapse the symdiff for those 40 routes and make the sitemap.xml artifact diff cleaner.
 
-This is a parity-cosmetic improvement, not a parity blocker. It is being raised as a separate GitHub issue for tracking and is intentionally not folded into this epic.
+This is a parity-cosmetic improvement, not a parity blocker. Tracked separately at [#690](https://github.com/zudolab/zudo-doc/issues/690) and intentionally not folded into this epic.
 
 ## Cross-references
 
 - Super-epic: [#663](https://github.com/zudolab/zudo-doc/issues/663) — drive `migration-regression` count from 138 → 0
 - Phase D epic: [#667](https://github.com/zudolab/zudo-doc/issues/667) — this work
+- Sitemap follow-up issue: [#690](https://github.com/zudolab/zudo-doc/issues/690) — sitemap.xml.tsx /index-variant artifact (out of scope for this epic)
 - zfb routing-conventions doc: `src/content/docs/concepts/routing-conventions.mdx`
 - zfb trailing-slash policy: `src/content/docs/concepts/trailing-slash-policy.mdx`
 - Source migration check report: `docs/migration-check-reports/2026-04-29.md`
