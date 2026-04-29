@@ -1,0 +1,6 @@
+# My Documentation
+> An example documentation site
+
+## Sections
+- Introduction
+- Guide
