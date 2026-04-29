@@ -44,6 +44,7 @@ import { mdxComponents } from "../../../../_mdx-components";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../../../../_data";
 import { FooterWithDefaults } from "../../../../lib/_footer-with-defaults";
+import { SidebarWithDefaults } from "../../../../lib/_sidebar-with-defaults";
 
 export const frontmatter = { title: "Docs" };
 
@@ -245,6 +246,15 @@ export default function VersionedJaDocsPage({ props }: PageArgs): JSX.Element {
       hideToc={entry?.data?.hide_toc}
       breadcrumbOverride={
         breadcrumbs.length > 0 ? <Breadcrumb items={breadcrumbs} /> : undefined
+      }
+      sidebarOverride={
+        <SidebarWithDefaults
+          currentSlug={slug}
+          lang={locale}
+          navSection={getNavSectionForSlug(slug)}
+          currentVersion={version.slug}
+          currentPath={versionedDocsUrl(slug, version.slug, locale)}
+        />
       }
       footerOverride={<FooterWithDefaults lang={locale} />}
     >

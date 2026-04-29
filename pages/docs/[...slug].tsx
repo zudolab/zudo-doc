@@ -46,6 +46,7 @@ import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import { mdxComponents } from "../_mdx-components";
 import { FooterWithDefaults } from "../lib/_footer-with-defaults";
 import { DocHistoryArea } from "../lib/_doc-history-area";
+import { SidebarWithDefaults } from "../lib/_sidebar-with-defaults";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../_data";
 
@@ -207,6 +208,14 @@ export default function DocsPage({ props }: PageArgs): JSX.Element {
       hideToc={entry?.data?.hide_toc}
       breadcrumbOverride={
         breadcrumbs.length > 0 ? <Breadcrumb items={breadcrumbs} /> : undefined
+      }
+      sidebarOverride={
+        <SidebarWithDefaults
+          currentSlug={slug}
+          lang={locale}
+          navSection={getNavSectionForSlug(slug)}
+          currentPath={docsUrl(slug, locale)}
+        />
       }
       footerOverride={<FooterWithDefaults lang={locale} />}
     >
