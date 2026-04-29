@@ -28,6 +28,7 @@ import { collectTags } from "@/utils/tags";
 import { toRouteSlug } from "@/utils/slug";
 import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
 import { DocsSitemap } from "@zudo-doc/zudo-doc-v2/nav-indexing";
+import { Header } from "@zudo-doc/zudo-doc-v2/header";
 import type { JSX } from "preact";
 import { FooterWithDefaults } from "./lib/_footer-with-defaults";
 
@@ -63,6 +64,10 @@ export default function IndexPage(): JSX.Element {
       lang={locale}
       hideSidebar={true}
       hideToc={true}
+      // Use the full Header (logo + main nav) so the navigation ARIA landmark
+      // is present even when hideSidebar=true. Mirrors the Astro layout's
+      // header.astro which always rendered <nav aria-label="Main">.
+      headerOverride={<Header lang={locale} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
     >
       {/* Hero: logo left, title+desc+links right, block centered */}
