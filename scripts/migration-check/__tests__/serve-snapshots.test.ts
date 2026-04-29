@@ -112,6 +112,30 @@ describe("resolveFilePath – path resolution", () => {
       "/snap/docs/intro/index.html",
     );
   });
+
+  it("rejects path traversal escaping snapshotDir → routes to forbidden sentinel", () => {
+    // Direct traversal attempt
+    expect(resolveFilePath("/../etc/passwd", snap, "")).toBe("/snap/__forbidden__");
+  });
+
+  it("rejects encoded path traversal → routes to forbidden sentinel", () => {
+    // URL-encoded traversal (decoded by resolveFilePath before resolution)
+    expect(resolveFilePath("/%2E%2E/etc/passwd", snap, "")).toBe(
+      "/snap/__forbidden__",
+    );
+  });
+
+  it("rejects deep traversal under sitePrefix → routes to forbidden sentinel", () => {
+    expect(resolveFilePath("/pj/zudo-doc/../../etc/passwd", snap, prefix)).toBe(
+      "/snap/__forbidden__",
+    );
+  });
+
+  it("normal nested paths are NOT rejected (paths inside snapshotDir are fine)", () => {
+    expect(resolveFilePath("/docs/intro/.", snap, "")).toBe(
+      "/snap/docs/intro/index.html",
+    );
+  });
 });
 
 // ── HTTP server routing ───────────────────────────────────────────────────────

@@ -148,12 +148,22 @@ function runCmd(cmd, args, cwd) {
 
 /**
  * Resolve a git ref to its full commit SHA.
+ *
+ * Uses spawnSync with array args (no shell interpolation) so that
+ * ref values containing shell metacharacters cannot inject commands.
  */
 function resolveRef(repoRoot, ref) {
-  return execSync(`git rev-parse ${ref}`, {
+  const result = spawnSync("git", ["rev-parse", ref], {
     cwd: repoRoot,
     encoding: "utf8",
-  }).trim();
+    shell: false,
+  });
+  if (result.status !== 0) {
+    throw new Error(
+      `git rev-parse ${ref} failed (exit ${result.status ?? "?"}): ${result.stderr?.trim() ?? ""}`,
+    );
+  }
+  return result.stdout.trim();
 }
 
 /**

@@ -55,7 +55,7 @@
 import { createServer, get as httpGet } from "node:http";
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
-import { join, extname, resolve, dirname } from "node:path";
+import { join, extname, resolve, dirname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import * as config from "./config.mjs";
@@ -150,22 +150,30 @@ export function resolveFilePath(urlPath, snapshotDir, sitePrefix) {
     }
   }
 
-  // Root request.
-  if (!path || path === "/") return join(snapshotDir, "index.html");
-
-  // Trailing slash → directory index (Astro/zfb SSG default convention).
-  if (path.endsWith("/")) {
-    return join(snapshotDir, path, "index.html");
+  let candidate;
+  if (!path || path === "/") {
+    candidate = join(snapshotDir, "index.html");
+  } else if (path.endsWith("/")) {
+    // Trailing slash → directory index (Astro/zfb SSG default convention).
+    candidate = join(snapshotDir, path, "index.html");
+  } else if (extname(path)) {
+    // Path with file extension → serve the file directly.
+    candidate = join(snapshotDir, path);
+  } else {
+    // No extension, no trailing slash.
+    // SSG convention: /docs/intro → dist/docs/intro/index.html
+    candidate = join(snapshotDir, path, "index.html");
   }
 
-  // Path with file extension → serve the file directly.
-  if (extname(path)) {
-    return join(snapshotDir, path);
+  // Path-traversal guard: confirm the resolved path stays inside snapshotDir.
+  // Returning a sentinel under snapshotDir guarantees the request handler
+  // 404s rather than escaping the snapshot root.
+  const root = resolve(snapshotDir);
+  const resolved = resolve(candidate);
+  if (resolved !== root && !resolved.startsWith(root + sep)) {
+    return join(root, "__forbidden__");
   }
-
-  // No extension, no trailing slash.
-  // SSG convention: /docs/intro → dist/docs/intro/index.html
-  return join(snapshotDir, path, "index.html");
+  return resolved;
 }
 
 // ── Request handler ───────────────────────────────────────────────────────────
