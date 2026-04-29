@@ -18,6 +18,7 @@ import { VersionsPageContent } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import type { VersionPageEntry, VersionsPageLabels } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import type { JSX } from "preact";
 import { FooterWithDefaults } from "../lib/_footer-with-defaults";
+import { HeaderWithDefaults } from "../lib/_header-with-defaults";
 
 export const frontmatter = { title: "Versions" };
 
@@ -58,6 +59,7 @@ export default function VersionsPage(): JSX.Element {
       lang={locale}
       hideSidebar={true}
       hideToc={true}
+      headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase("/docs/versions")} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
     >
       <VersionsPageContent
