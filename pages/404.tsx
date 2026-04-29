@@ -18,6 +18,7 @@ import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
 import type { JSX } from "preact";
 import { FooterWithDefaults } from "./lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "./lib/_header-with-defaults";
+import { HeadWithDefaults } from "./lib/_head-with-defaults";
 
 export const frontmatter = { title: "404" };
 
@@ -27,6 +28,7 @@ export default function NotFoundPage(): JSX.Element {
   return (
     <DocLayoutWithDefaults
       title={`Page Not Found | ${settings.siteName}`}
+      head={<HeadWithDefaults title={`Page Not Found | ${settings.siteName}`} />}
       lang={locale}
       noindex={true}
       hideSidebar={true}

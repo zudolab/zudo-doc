@@ -29,6 +29,7 @@ import { DocCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import type { JSX } from "preact";
 import { FooterWithDefaults } from "../../../lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "../../../lib/_header-with-defaults";
+import { HeadWithDefaults } from "../../../lib/_head-with-defaults";
 
 export const frontmatter = { title: "Tag" };
 
@@ -94,6 +95,7 @@ export default function LocaleDocTagPage({
   return (
     <DocLayoutWithDefaults
       title={pageTitle}
+      head={<HeadWithDefaults title={pageTitle} />}
       lang={locale}
       hideSidebar={true}
       hideToc={true}
