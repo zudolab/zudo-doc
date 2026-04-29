@@ -17,7 +17,7 @@
  *   landmark-removed — at least one landmark role from A absent in B
  */
 
-import { readFile, mkdir, writeFile } from "node:fs/promises";
+import { readFile, readdir, mkdir, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -129,16 +129,20 @@ function deriveFiredPredicates(diff, visibleTextA, visibleTextB) {
 async function main() {
   console.log("Phase A scan — loading all batch detailed JSON files...");
 
-  // Collect all content-loss routes from all batch files
+  // Collect all content-loss routes from all batch files.
+  // Dynamically discover all batch-*-detailed.json files rather than
+  // iterating a fixed range — handles any number of batches.
   const contentLossRoutes = [];
 
-  for (let i = 0; i <= 9; i++) {
-    const batchId = String(i).padStart(4, "0");
-    const path = join(FINDINGS_DIR, `batch-${batchId}-detailed.json`);
-    if (!existsSync(path)) continue;
+  const allFiles = await readdir(FINDINGS_DIR);
+  const batchDetailedFiles = allFiles
+    .filter((f) => /^batch-\d{4}-detailed\.json$/.test(f))
+    .sort();
 
+  for (const filename of batchDetailedFiles) {
+    const path = join(FINDINGS_DIR, filename);
     const data = JSON.parse(await readFile(path, "utf8"));
-    for (const route of data.routes) {
+    for (const route of data.routes ?? []) {
       if (route.category === "content-loss") {
         contentLossRoutes.push(route);
       }
