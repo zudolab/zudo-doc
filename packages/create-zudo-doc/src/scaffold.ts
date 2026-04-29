@@ -239,9 +239,13 @@ export async function scaffold(choices: UserChoices): Promise<void> {
 
 function generatePackageJson(choices: UserChoices) {
   const deps: Record<string, string> = {
-    astro: "^6.0.4",
-    "@astrojs/mdx": "^5.0.0",
-    "@astrojs/preact": "^5.0.0",
+    // zfb engine — replaces astro/@astrojs/* now that the cutover (#500 S5)
+    // has retired the legacy Astro pipeline. The host project supplies the
+    // local file: pin in its own package.json; the scaffold just lists the
+    // public entry by name so resolution comes from the user's registry /
+    // workspace.
+    "@takazudo/zfb": "*",
+    "@takazudo/zfb-runtime": "*",
     preact: "^10.26.9",
     shiki: "^4.0.2",
     "@shikijs/transformers": "^4.0.0",
@@ -259,7 +263,6 @@ function generatePackageJson(choices: UserChoices) {
     tailwindcss: "^4.2.0",
 
     typescript: "^5.9.0",
-    "@astrojs/check": "^0.9.7",
     "@types/hast": "^3.0.4",
     "@types/mdast": "^4.0.4",
     "@types/node": "^22.0.0",
@@ -288,10 +291,10 @@ function generatePackageJson(choices: UserChoices) {
   }
 
   const scripts: Record<string, string> = {
-    dev: "astro dev",
-    build: "astro build",
-    preview: "astro preview",
-    check: "astro check",
+    dev: "zfb dev",
+    build: "zfb build",
+    preview: "zfb preview",
+    check: "zfb check",
   };
 
   if (choices.features.includes("tagGovernance")) {

@@ -15,9 +15,15 @@ src/plugins/url-utils.ts
 
 # Slot-based files — templates use @slot: injection anchors,
 # production has features inlined
-src/components/header.astro
-src/layouts/doc-layout.astro
 src/styles/global.css
+
+# claude-resources feature — generated projects ship their own copies of the
+# generator/escape helpers; production consumes the same logic re-exported
+# from @zudo-doc/zudo-doc-v2/integrations/claude-resources, so prod has no
+# matching paths under src/integrations/claude-resources/.
+src/integrations/claude-resources/__tests__/generate.test.ts
+src/integrations/claude-resources/escape-for-mdx.ts
+src/integrations/claude-resources/generate.ts
 
 # Showcase-specific renderers — source ships discount/status/difficulty examples
 # for the zudo-doc showcase only; template ships an empty map so downstream users
