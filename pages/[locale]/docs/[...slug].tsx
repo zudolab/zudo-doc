@@ -43,6 +43,7 @@ import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import { mdxComponents } from "../../_mdx-components";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../../_data";
+import { extractHeadings } from "../../lib/_extract-headings";
 import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
 import { DocHistoryArea } from "../../lib/_doc-history-area";
 import { SidebarWithDefaults } from "../../lib/_sidebar-with-defaults";
@@ -74,6 +75,8 @@ interface DocPageProps {
   breadcrumbs: BreadcrumbItem[];
   prev: NavNode | null;
   next: NavNode | null;
+  /** Depth-2/3/4 headings extracted from the MDX body, for SSG TOC links. */
+  headings: ReturnType<typeof extractHeadings>;
 }
 
 // ---------------------------------------------------------------------------
@@ -170,6 +173,7 @@ export function paths(): Array<{
           breadcrumbs: buildBreadcrumbs(fullTree, slug, locale),
           prev: prevNode,
           next: nextNode,
+          headings: extractHeadings(entry.body ?? ""),
         },
       });
     }
@@ -186,6 +190,7 @@ export function paths(): Array<{
           breadcrumbs: buildBreadcrumbs(fullTree, node.slug, locale),
           prev: null,
           next: null,
+          headings: [],
         },
       });
     }
@@ -205,7 +210,7 @@ interface PageArgs {
 
 export default function LocaleDocsPage({ params, props }: PageArgs): JSX.Element {
   const locale = params.locale;
-  const { entry, autoIndex, contentDir, isFallback, breadcrumbs, prev, next } = props;
+  const { entry, autoIndex, contentDir, isFallback, breadcrumbs, prev, next, headings } = props;
 
   const slug = autoIndex
     ? autoIndex.slug
@@ -233,6 +238,7 @@ export default function LocaleDocsPage({ params, props }: PageArgs): JSX.Element
       lang={locale}
       hideSidebar={entry?.data?.hide_sidebar}
       hideToc={entry?.data?.hide_toc}
+      headings={headings}
       headerOverride={
         <HeaderWithDefaults
           lang={locale}
