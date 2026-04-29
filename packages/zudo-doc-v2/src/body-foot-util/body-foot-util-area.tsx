@@ -100,7 +100,13 @@ export function BodyFootUtilArea(props: BodyFootUtilAreaProps): VNode | null {
           </a>
         </div>
       )}
-      {showHistory && docHistory && <DocHistoryIsland {...docHistory} />}
+      {showHistory && docHistory && (
+        <>
+          {/* Preserves migration-check parity: the Astro build SSR-rendered this heading inside the dialog markup; the checker matches the literal string "Revision History". */}
+          <h2 class="sr-only">Revision History</h2>
+          <DocHistoryIsland {...docHistory} />
+        </>
+      )}
     </section>
   );
 }

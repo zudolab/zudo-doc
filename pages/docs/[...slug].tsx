@@ -45,6 +45,7 @@ import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 // `pages/_mdx-components.ts` for the full list and rationale.
 import { mdxComponents } from "../_mdx-components";
 import { FooterWithDefaults } from "../lib/_footer-with-defaults";
+import { DocHistoryArea } from "../lib/_doc-history-area";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../_data";
 
@@ -233,6 +234,11 @@ export default function DocsPage({ props }: PageArgs): JSX.Element {
 
           {/* MDX content rendered via zfb's Content bridge */}
           {entry && <entry.Content components={components} />}
+
+          {/* Document utilities (revision history) — skipped for unlisted pages */}
+          {!entry!.data.unlisted && (
+            <DocHistoryArea slug={slug} locale={locale} />
+          )}
 
           {/* Prev / Next pagination */}
           <nav class="mt-vsp-2xl grid grid-cols-2 gap-hsp-xl">
