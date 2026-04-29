@@ -41,6 +41,9 @@ import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
 import { Breadcrumb } from "@zudo-doc/zudo-doc-v2/breadcrumb";
 import { htmlOverrides } from "@zudo-doc/zudo-doc-v2/content";
 import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
+// Match the EN sibling page — bind capitalised MDX tags so the
+// `<HtmlPreview>` author shape resolves to the Island-wrapped wrapper.
+import { HtmlPreviewWrapper } from "@zudo-doc/zudo-doc-v2/html-preview-wrapper";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../../../_data";
 
@@ -194,7 +197,10 @@ export default function VersionedDocsPage({ props }: PageArgs): JSX.Element {
   const title = autoIndex ? autoIndex.label : entry!.data.title;
   const description = autoIndex ? autoIndex.description : entry!.data.description;
 
-  const components = { ...htmlOverrides };
+  const components = {
+    ...htmlOverrides,
+    HtmlPreview: HtmlPreviewWrapper,
+  };
 
   const autoIndexChildren = autoIndex
     ? autoIndex.children.filter((c: NavNode) => c.hasPage || c.children.length > 0)

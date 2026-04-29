@@ -59,6 +59,21 @@
 import type { ComponentChildren, JSX } from "preact";
 
 import { DocLayout, type DocLayoutProps } from "./doc-layout.js";
+// Default-bearing slots: when the caller does not supply an override
+// these wrapped islands keep the SSG output emitting island hydration
+// markers (`data-zfb-island=…`) so client-side interactivity wires up
+// at boot. Each import below is a self-Island'd shell — the marker is
+// produced regardless of whether the host wires real data into the
+// component yet.
+import { Sidebar } from "../sidebar/sidebar.js";
+import { Toc } from "../toc/toc.js";
+import { MobileToc } from "../toc/mobile-toc.js";
+import ThemeToggle from "../theme/theme-toggle.js";
+import {
+  AiChatModalIsland,
+  DesignTokenTweakPanelIsland,
+  ImageEnlargeIsland,
+} from "../ssr-skip/index.js";
 
 // Sibling-topic barrels. Each is being authored by a peer agent in the
 // same parallel session; the imports below assume the canonical shape
@@ -191,16 +206,48 @@ export function DocLayoutWithDefaults(
       <DocLayout
         {...rest}
         head={head}
-        header={headerOverride ?? null}
-        sidebar={sidebarOverride}
-        toc={tocOverride}
-        mobileToc={mobileTocOverride}
+        header={
+          headerOverride ?? (
+            // Minimal default header — surfaces a `<ThemeToggle>` island
+            // so SSG output emits `data-zfb-island="ThemeToggle"` on
+            // every page. Pages with bespoke chrome should pass
+            // `headerOverride` to swap this out wholesale.
+            <header
+              class="sticky top-0 z-50 flex h-[3.5rem] items-center justify-end border-b border-muted bg-surface px-hsp-lg"
+              data-header
+            >
+              <ThemeToggle />
+            </header>
+          )
+        }
+        sidebar={
+          // Empty-data Sidebar still emits the SSG marker via the
+          // internal `<Island>` wrapper. Hosts that have a real nav
+          // tree pass it through `sidebarOverride`.
+          sidebarOverride ?? <Sidebar nodes={[]} />
+        }
+        toc={tocOverride ?? <Toc headings={[]} />}
+        mobileToc={mobileTocOverride ?? <MobileToc headings={[]} />}
         breadcrumb={breadcrumbOverride}
         afterBreadcrumb={afterBreadcrumb}
         afterSidebar={afterSidebar}
         afterContent={afterContent}
         footer={footerOverride}
-        bodyEndComponents={bodyEndComponents}
+        bodyEndComponents={
+          bodyEndComponents ?? (
+            // Default body-end islands. Each is an SSR-skip wrapper
+            // (`data-zfb-island-skip-ssr`) — they need no SSR markup
+            // because the underlying widgets are overlay/effect
+            // components with no layout footprint when closed/idle.
+            // Hosts that want a different body-end set should pass
+            // `bodyEndComponents` explicitly.
+            <>
+              <DesignTokenTweakPanelIsland />
+              <AiChatModalIsland basePath="/" />
+              <ImageEnlargeIsland />
+            </>
+          )
+        }
         bodyEndScripts={bodyEndScripts}
         main={children}
       />

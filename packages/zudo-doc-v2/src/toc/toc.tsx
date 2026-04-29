@@ -1,7 +1,12 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
+import type { VNode } from "preact";
 import { useMemo } from "preact/hooks";
+// `@takazudo/zfb` is provided by the consumer at integration time;
+// types come from the package-level shim at `../_zfb-shim.d.ts`.
+import { Island } from "@takazudo/zfb";
+
 import { useActiveHeading } from "./use-active-heading";
 import type { HeadingItem } from "./types";
 import { SmartBreak } from "./smart-break";
@@ -12,8 +17,10 @@ export interface TocProps {
 }
 
 /**
- * Desktop right-rail Table of Contents. Sticky island that lights up
- * the heading nearest the top of the viewport via `useActiveHeading`.
+ * Inner desktop right-rail Table of Contents — the renamed body of the
+ * original `Toc` component. The exported `Toc` wraps this in `<Island>`
+ * so SSG output emits `data-zfb-island="Toc"` for the hydration
+ * runtime to find.
  *
  * Renders only depth 2–4 headings (h2/h3/h4), matching zudo-doc's
  * historical behavior — the page title (h1) is rendered separately by
@@ -21,7 +28,7 @@ export interface TocProps {
  * with no in-range headings render an empty hidden nav so layout
  * reservations stay stable across pages.
  */
-export function Toc({ headings }: TocProps) {
+function TocInner({ headings }: TocProps) {
   const filtered = useMemo(
     () => headings.filter((h) => h.depth >= 2 && h.depth <= 4),
     [headings],
@@ -71,4 +78,23 @@ export function Toc({ headings }: TocProps) {
       </ul>
     </nav>
   );
+}
+// Pin the marker name to "Toc" so the hydration manifest can resolve
+// the island regardless of how the bundler renames inner helpers.
+TocInner.displayName = "Toc";
+
+/**
+ * Desktop right-rail Table of Contents. Sticky island that lights up
+ * the heading nearest the top of the viewport via `useActiveHeading`.
+ *
+ * Wraps `<TocInner>` in `<Island when="load">` so the SSG renderer
+ * emits `<div data-zfb-island="Toc" data-when="load">…</div>` and the
+ * client-side hydration runtime can pick the island up.
+ */
+export function Toc(props: TocProps): VNode {
+  const rendered = Island({
+    when: "load",
+    children: <TocInner {...props} />,
+  });
+  return rendered as unknown as VNode;
 }

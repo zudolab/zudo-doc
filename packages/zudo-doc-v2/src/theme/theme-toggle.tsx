@@ -1,6 +1,14 @@
-// Ported verbatim from src/components/theme-toggle.tsx (E5 framework primitives).
-// Preact runs in compat mode so the React-style imports keep working.
-import { useState, useEffect } from "react";
+/** @jsxRuntime automatic */
+/** @jsxImportSource preact */
+// Ported from src/components/theme-toggle.tsx (E5 framework primitives).
+// Use the preact hook entrypoints directly — zfb's esbuild step doesn't
+// alias "react" to "preact/compat" the way Astro's `@astrojs/preact`
+// integration did, so importing from "react" here would fail to resolve.
+import type { VNode } from "preact";
+import { useState, useEffect } from "preact/hooks";
+// `@takazudo/zfb` is provided by the consumer at integration time;
+// types come from the topic shim at `./_zfb-shim.d.ts`.
+import { Island } from "@takazudo/zfb";
 
 const STORAGE_KEY = "zudo-doc-theme";
 
@@ -54,7 +62,13 @@ interface ThemeToggleProps {
   defaultMode?: "light" | "dark";
 }
 
-export default function ThemeToggle({ defaultMode = "dark" }: ThemeToggleProps) {
+/**
+ * Inner click-toggle button — the renamed body of the original
+ * `ThemeToggle` default export. The new exported `ThemeToggle` wraps
+ * this in `<Island>` so SSG output emits a `data-zfb-island="ThemeToggle"`
+ * marker for the hydration runtime.
+ */
+function ThemeToggleInner({ defaultMode = "dark" }: ThemeToggleProps) {
   // Initial state must match server render to avoid hydration mismatch.
   // Actual theme is synced from DOM in useEffect below.
   const [mode, setMode] = useState<"light" | "dark">(defaultMode);
@@ -92,4 +106,21 @@ export default function ThemeToggle({ defaultMode = "dark" }: ThemeToggleProps) 
       {mode === "dark" ? <SunIcon /> : <MoonIcon />}
     </button>
   );
+}
+// Pin the marker name to "ThemeToggle" — bundlers that mangle inner
+// helper names would otherwise leak through to the SSG output.
+ThemeToggleInner.displayName = "ThemeToggle";
+
+/**
+ * Default-export click-toggle for color scheme. Wraps `<ThemeToggleInner>`
+ * in `<Island when="load">` so the SSG renderer emits a
+ * `data-zfb-island="ThemeToggle"` marker the hydration runtime can
+ * find at boot time.
+ */
+export default function ThemeToggle(props: ThemeToggleProps = {}): VNode {
+  const rendered = Island({
+    when: "load",
+    children: <ThemeToggleInner {...props} />,
+  });
+  return rendered as unknown as VNode;
 }
