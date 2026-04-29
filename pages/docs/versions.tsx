@@ -19,6 +19,7 @@ import type { VersionPageEntry, VersionsPageLabels } from "@zudo-doc/zudo-doc-v2
 import type { JSX } from "preact";
 import { FooterWithDefaults } from "../lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "../lib/_header-with-defaults";
+import { HeadWithDefaults } from "../lib/_head-with-defaults";
 
 export const frontmatter = { title: "Versions" };
 
@@ -56,6 +57,7 @@ export default function VersionsPage(): JSX.Element {
   return (
     <DocLayoutWithDefaults
       title={pageTitle}
+      head={<HeadWithDefaults title={pageTitle} />}
       lang={locale}
       hideSidebar={true}
       hideToc={true}

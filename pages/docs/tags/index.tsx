@@ -28,6 +28,7 @@ import type { JSX } from "preact";
 import { bridgeEntries } from "../../_data";
 import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "../../lib/_header-with-defaults";
+import { HeadWithDefaults } from "../../lib/_head-with-defaults";
 
 export const frontmatter = { title: "All Tags" };
 
@@ -61,6 +62,7 @@ export default function DocsTagsIndexPage(): JSX.Element {
   return (
     <DocLayoutWithDefaults
       title={pageTitle}
+      head={<HeadWithDefaults title={pageTitle} />}
       hideSidebar={true}
       hideToc={true}
       headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase("/docs/tags")} />}

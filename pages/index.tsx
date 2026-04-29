@@ -31,6 +31,7 @@ import { DocsSitemap } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import type { JSX } from "preact";
 import { FooterWithDefaults } from "./lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "./lib/_header-with-defaults";
+import { HeadWithDefaults } from "./lib/_head-with-defaults";
 
 export const frontmatter = { title: "Home" };
 
@@ -61,6 +62,7 @@ export default function IndexPage(): JSX.Element {
   return (
     <DocLayoutWithDefaults
       title={settings.siteName}
+      head={<HeadWithDefaults title={settings.siteName} />}
       lang={locale}
       hideSidebar={true}
       hideToc={true}
