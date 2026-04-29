@@ -29,7 +29,7 @@ import { toRouteSlug } from "@/utils/slug";
 import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
 import { DocsSitemap } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import type { JSX } from "preact";
-import { FooterWithDefaults } from "./lib/footer-with-defaults";
+import { FooterWithDefaults } from "./lib/_footer-with-defaults";
 
 export const frontmatter = { title: "Home" };
 

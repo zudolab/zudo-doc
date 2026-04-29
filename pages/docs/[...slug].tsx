@@ -44,7 +44,7 @@ import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 // for every other custom tag the MDX corpus references — see
 // `pages/_mdx-components.ts` for the full list and rationale.
 import { mdxComponents } from "../_mdx-components";
-import { FooterWithDefaults } from "../lib/footer-with-defaults";
+import { FooterWithDefaults } from "../lib/_footer-with-defaults";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../_data";
 

@@ -43,7 +43,7 @@ import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import { mdxComponents } from "../../_mdx-components";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../../_data";
-import { FooterWithDefaults } from "../../lib/footer-with-defaults";
+import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
 
 export const frontmatter = { title: "Docs" };
 

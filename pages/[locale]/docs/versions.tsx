@@ -17,7 +17,7 @@ import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
 import { VersionsPageContent } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import type { VersionPageEntry, VersionsPageLabels } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import type { JSX } from "preact";
-import { FooterWithDefaults } from "../../lib/footer-with-defaults";
+import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
 
 export const frontmatter = { title: "Versions" };
 

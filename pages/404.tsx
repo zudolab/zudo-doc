@@ -16,7 +16,7 @@ import { defaultLocale } from "@/config/i18n";
 import { withBase } from "@/utils/base";
 import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
 import type { JSX } from "preact";
-import { FooterWithDefaults } from "./lib/footer-with-defaults";
+import { FooterWithDefaults } from "./lib/_footer-with-defaults";
 
 export const frontmatter = { title: "404" };
 
