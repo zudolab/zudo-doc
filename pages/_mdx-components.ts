@@ -17,11 +17,9 @@
 //
 // ## Strategy
 //
-// Until each named tag has its proper Preact binding ported to `@zudo-doc/zudo-doc-v2`,
-// this module ships **stub bindings** that render nothing. That keeps the
-// build green and the typography/Island acceptance tests intact while the
-// proper bindings ship in sibling topics. As real components land, they
-// replace their stub here and propagate to every page automatically.
+// This module ships stub bindings for tags not yet ported to `@zudo-doc/zudo-doc-v2`
+// (render nothing), and real Preact bindings for tags whose ports are complete.
+// As real components land, they replace their stub here and propagate to every page automatically.
 //
 // `htmlOverrides` (basic typography — h2/h3/h4/p/a/ul/ol/blockquote/strong/table)
 // and `HtmlPreview: HtmlPreviewWrapper` (Island wrapper) stay in their
@@ -29,6 +27,8 @@
 
 import { htmlOverrides } from "@zudo-doc/zudo-doc-v2/content";
 import { HtmlPreviewWrapper } from "@zudo-doc/zudo-doc-v2/html-preview-wrapper";
+import { Tabs } from "@zudo-doc/zudo-doc-v2/code-syntax";
+import { TabItem } from "@zudo-doc/zudo-doc-v2/tab-item";
 
 /**
  * MDX-tag stub: renders nothing. Returning `null` keeps the rendered
@@ -106,8 +106,8 @@ export const mdxComponents = {
   SiteTreeNav: MdxStub,
   SiteTreeNavDemo: MdxStub,
   Details: MdxStub,
-  Tabs: MdxStub,
-  TabItem: MdxStub,
+  Tabs,
+  TabItem,
   SmartBreak: MdxStub,
   Island: MdxStub,
   PresetGenerator: MdxStub,
