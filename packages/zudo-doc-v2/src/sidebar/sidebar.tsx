@@ -24,10 +24,16 @@
 //     that swap the tree out wholesale).
 //
 // In Astro, the host invokes this through a small `.astro` wrapper that
-// adds the `client:load` directive on the island. Everything else lives
-// in v2.
+// adds the `client:load` directive on the island. In zfb the wrapping
+// is internal: this module wraps the inner shell in `<Island>` so SSG-
+// rendered HTML emits a `data-zfb-island="Sidebar"` marker for the
+// hydration runtime to pick up. Pages call `<Sidebar ... />` and get
+// the marker for free.
 
 import type { ComponentChildren, FunctionComponent, VNode } from "preact";
+// `@takazudo/zfb` resolves at integration time via the consumer; the
+// types come from the package shim at `../_zfb-shim.d.ts`.
+import { Island } from "@takazudo/zfb";
 
 import type { SidebarTreeIslandProps } from "./types";
 
@@ -49,24 +55,12 @@ export interface SidebarProps extends SidebarTreeIslandProps {
 }
 
 /**
- * Sidebar shell — typed wrapper around the SidebarTree island.
- *
- * Two usage shapes (matching the breadcrumb shell's pattern):
- *
- *   1. Pass `treeComponent` plus the data props (`nodes`,
- *      `rootMenuItems`, `localeLinks`, …). The shell forwards them all
- *      to the supplied component.
- *
- *   2. Pass `children` (e.g. a pre-instantiated `<SidebarTree
- *      client:load … />` from an Astro wrapper). The shell renders
- *      them as-is — the typed island props are then unused but kept on
- *      the type signature so call-sites stay self-documenting.
- *
- * Returns `null` when neither path produces content; matches the
- * implicit "render nothing" behaviour the Astro template would have if
- * the host passed an empty tree island.
+ * Inner shell — same logic the original Astro `.astro` wrapper used.
+ * Renamed so the outer `<Sidebar>` can wrap this in `<Island>` and
+ * still produce a `data-zfb-island="Sidebar"` marker (Island reads the
+ * child's `displayName ?? name` to derive the marker string).
  */
-export function Sidebar(props: SidebarProps): VNode | null {
+function SidebarInner(props: SidebarProps): VNode | null {
   const {
     treeComponent: TreeComponent,
     children,
@@ -96,4 +90,38 @@ export function Sidebar(props: SidebarProps): VNode | null {
   }
 
   return null;
+}
+// Pin the marker name to "Sidebar" regardless of how Preact's compat
+// layer munges the inner function name (some bundlers rename inner
+// helpers). The hydration manifest looks the marker up by this string.
+SidebarInner.displayName = "Sidebar";
+
+/**
+ * Sidebar shell — typed wrapper around the SidebarTree island.
+ *
+ * Two usage shapes (matching the breadcrumb shell's pattern):
+ *
+ *   1. Pass `treeComponent` plus the data props (`nodes`,
+ *      `rootMenuItems`, `localeLinks`, …). The shell forwards them all
+ *      to the supplied component.
+ *
+ *   2. Pass `children` (e.g. a pre-instantiated `<SidebarTree
+ *      client:load … />` from an Astro wrapper). The shell renders
+ *      them as-is — the typed island props are then unused but kept on
+ *      the type signature so call-sites stay self-documenting.
+ *
+ * Either way the outer `<Island>` emits the SSG marker; if both
+ * `treeComponent` and `children` are omitted, the inner returns `null`
+ * but the marker div still ships so the hydration runtime can pick the
+ * island up after the host wires data prep at integration time.
+ */
+export function Sidebar(props: SidebarProps): VNode {
+  // `Island(...)` is called directly (rather than via JSX) so we can
+  // narrow its `unknown` return type at a single boundary — same shape
+  // used in `theme/design-token-tweak-panel.tsx`.
+  const rendered = Island({
+    when: "load",
+    children: <SidebarInner {...props} />,
+  });
+  return rendered as unknown as VNode;
 }

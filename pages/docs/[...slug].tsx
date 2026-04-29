@@ -38,9 +38,14 @@ import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
 import { toRouteSlug } from "@/utils/slug";
 import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
 import { Breadcrumb } from "@zudo-doc/zudo-doc-v2/breadcrumb";
-import { htmlOverrides } from "@zudo-doc/zudo-doc-v2/content";
 import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
+// Shared MDX-tag → Preact-component bag. Includes htmlOverrides
+// (native typography), HtmlPreviewWrapper (Island), and stub bindings
+// for every other custom tag the MDX corpus references — see
+// `pages/_mdx-components.ts` for the full list and rationale.
+import { mdxComponents } from "../_mdx-components";
 import type { JSX } from "preact";
+import { bridgeEntries } from "../_data";
 
 export const frontmatter = { title: "Docs" };
 
@@ -88,7 +93,7 @@ export function paths(): Array<{
   props: DocPageProps;
 }> {
   const locale = defaultLocale;
-  const allDocs = getCollection("docs") as unknown as DocPageEntry[];
+  const allDocs = (bridgeEntries(getCollection("docs"), "docs") as unknown as DocPageEntry[]);
   // In static builds, always exclude drafts.
   const docs = allDocs.filter((doc) => !doc.data.draft);
   const categoryMeta = loadCategoryMeta(settings.docsDir);
@@ -103,7 +108,7 @@ export function paths(): Array<{
 
   // Regular doc pages
   for (const entry of docs) {
-    const slug = entry.data.slug ?? toRouteSlug(entry.id);
+    const slug = entry.data.slug ?? toRouteSlug(entry.slug);
     const navSection = getNavSectionForSlug(slug);
     const subtree = getNavSubtree(tree, navSection);
     const flat = flattenTree(subtree);
@@ -173,12 +178,13 @@ export default function DocsPage({ props }: PageArgs): JSX.Element {
 
   const slug = autoIndex
     ? autoIndex.slug
-    : (entry!.data.slug ?? toRouteSlug(entry!.id));
+    : (entry!.data.slug ?? toRouteSlug(entry!.slug));
 
   const title = autoIndex ? autoIndex.label : entry!.data.title;
   const description = autoIndex ? autoIndex.description : entry!.data.description;
 
-  const components = { ...htmlOverrides };
+  // Shared components bag — see `pages/_mdx-components.ts`.
+  const components = mdxComponents;
 
   // Resolve child hrefs for auto-index pages
   const autoIndexChildren = autoIndex

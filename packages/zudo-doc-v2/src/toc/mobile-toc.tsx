@@ -1,7 +1,12 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
+import type { VNode } from "preact";
 import { useMemo, useState } from "preact/hooks";
+// `@takazudo/zfb` is provided by the consumer at integration time;
+// types come from the package-level shim at `../_zfb-shim.d.ts`.
+import { Island } from "@takazudo/zfb";
+
 import type { HeadingItem } from "./types";
 import { SmartBreak } from "./smart-break";
 import { cx } from "./cx";
@@ -12,16 +17,16 @@ export interface MobileTocProps {
 }
 
 /**
- * Collapsible TOC for narrow viewports (`xl:hidden`). Closed by
- * default; tapping the header toggles, and tapping any entry closes
- * the panel after navigation so the reader does not have to dismiss
- * it manually.
+ * Inner narrow-viewport TOC — extracted body of the original
+ * `MobileToc`. The exported `MobileToc` wraps this in `<Island>` so
+ * SSG-rendered HTML emits `data-zfb-island="MobileToc"` and the
+ * hydration runtime can pick the island up to drive open/close.
  *
  * Like `Toc`, this only renders depth 2–4 headings and returns a
  * hidden placeholder when nothing qualifies — keeps the surrounding
  * markup shape predictable across pages.
  */
-export function MobileToc({
+function MobileTocInner({
   headings,
   title = "On this page",
 }: MobileTocProps) {
@@ -84,4 +89,21 @@ export function MobileToc({
       )}
     </div>
   );
+}
+// Pin the marker name to "MobileToc" — see Toc for rationale.
+MobileTocInner.displayName = "MobileToc";
+
+/**
+ * Collapsible TOC for narrow viewports (`xl:hidden`). Closed by
+ * default; tapping the header toggles, and tapping any entry closes
+ * the panel after navigation.
+ *
+ * Wraps `<MobileTocInner>` in `<Island when="load">`.
+ */
+export function MobileToc(props: MobileTocProps): VNode {
+  const rendered = Island({
+    when: "load",
+    children: <MobileTocInner {...props} />,
+  });
+  return rendered as unknown as VNode;
 }

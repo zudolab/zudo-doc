@@ -14,7 +14,7 @@
 //   params: { locale: string }
 //   props:  (none — tag map computed at render time)
 
-import { mergeLocaleDocs } from "../../lib/locale-merge";
+import { mergeLocaleDocs } from "../../../lib/locale-merge";
 import { collectTags } from "@/utils/tags";
 import { toRouteSlug } from "@/utils/slug";
 import { t } from "@/config/i18n";

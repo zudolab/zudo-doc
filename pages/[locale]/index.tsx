@@ -32,6 +32,7 @@ import { toRouteSlug } from "@/utils/slug";
 import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
 import { DocsSitemap } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import type { JSX } from "preact";
+import { bridgeEntries } from "../_data";
 
 export const frontmatter = { title: "Home" };
 
@@ -59,16 +60,16 @@ export function paths(): Array<{
  * Mirrors the merge strategy in src/utils/locale-docs.ts.
  */
 function mergeLocaleDocs(locale: string): DocsEntry[] {
-  const localeDocs = (getCollection(`docs-${locale}`) as unknown as DocsEntry[]).filter(
+  const localeDocs = ((bridgeEntries(getCollection(`docs-${locale}`), `docs-${locale}`) as unknown as DocsEntry[])).filter(
     (d) => !d.data.draft,
   );
-  const baseDocs = (getCollection("docs") as unknown as DocsEntry[]).filter(
+  const baseDocs = ((bridgeEntries(getCollection("docs"), "docs") as unknown as DocsEntry[])).filter(
     (d) => !d.data.draft,
   );
-  const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? toRouteSlug(d.id)));
+  const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? toRouteSlug(d.slug)));
   return [
     ...localeDocs,
-    ...baseDocs.filter((d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id))),
+    ...baseDocs.filter((d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.slug))),
   ];
 }
 

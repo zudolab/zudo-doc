@@ -1,11 +1,32 @@
 {
-  "extends": "astro/tsconfigs/strict",
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "jsx": "preserve",
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "useUnknownInCatchVariables": true,
+    "alwaysStrict": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@takazudo/zfb": ["src/components/island"]
+      "@/*": ["src/*"]
     }
   },
-  "exclude": ["dist", "e2e/fixtures", "packages", "worktrees", "vendor", "src/**/__tests__", "vitest.config.ts"]
+  "exclude": ["dist", "e2e/fixtures", "packages", "pages", "worktrees", "vendor", "src/**/__tests__", "vitest.config.ts"]
 }

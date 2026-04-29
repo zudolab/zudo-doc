@@ -22,6 +22,12 @@
 
 import { getCloudflareContext } from "@takazudo/zfb-adapter-cloudflare";
 
+// `frontmatter` is required by zfb's TSX page contract (see
+// `crates/zfb-content/src/tsx_frontmatter.rs`). Without it, zfb defaults
+// the route to SSG and `prerender = false` below is ignored. Title is
+// cosmetic for an API route — only the export's presence matters.
+export const frontmatter = { title: "AI Chat API" };
+
 export const prerender = false;
 
 // ---------------------------------------------------------------------------

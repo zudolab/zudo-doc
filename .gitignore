@@ -1,6 +1,5 @@
 node_modules/
 dist/
-.astro/
 .zfb/
 worktrees/
 __inbox/
@@ -52,6 +51,6 @@ e2e/fixtures/*/src/config/settings-types.ts
 e2e/fixtures/*/src/config/frontmatter-preview-defaults.ts
 e2e/fixtures/*/src/config/frontmatter-preview-renderers.tsx
 e2e/fixtures/*/src/config/sidebars.ts
-e2e/fixtures/*/astro.config.ts
-e2e/fixtures/*/.astro
+e2e/fixtures/*/zfb.config.ts
+e2e/fixtures/*/.zfb
 e2e/fixtures/*/dist
