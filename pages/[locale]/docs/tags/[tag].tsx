@@ -27,6 +27,7 @@ import { Breadcrumb } from "@zudo-doc/zudo-doc-v2/breadcrumb";
 import type { BreadcrumbItem } from "@zudo-doc/zudo-doc-v2/breadcrumb";
 import { DocCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import type { JSX } from "preact";
+import { FooterWithDefaults } from "../../../lib/_footer-with-defaults";
 
 export const frontmatter = { title: "Tag" };
 
@@ -96,6 +97,7 @@ export default function LocaleDocTagPage({
       hideSidebar={true}
       hideToc={true}
       breadcrumbOverride={<Breadcrumb items={breadcrumbItems} />}
+      footerOverride={<FooterWithDefaults lang={locale} />}
     >
       <h1 class="text-heading font-bold mb-vsp-xs">{pageTitle}</h1>
       <p class="text-muted mb-vsp-lg">{countText}</p>

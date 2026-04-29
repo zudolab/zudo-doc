@@ -12,11 +12,14 @@
 //
 // Behaviour parity notes:
 //
-//  - When all three slots are empty/undefined the component returns null,
-//    matching the Astro template's "early return when !footer" guard.
+//  - The `<footer>` shell is always rendered — even when all three slots
+//    are empty — so the contentinfo ARIA landmark is present on every
+//    page regardless of whether link columns or copyright are configured.
+//    (The original Astro template returned early when `!footer`; that
+//    guard lives in the host-side `FooterWithDefaults` wrapper in
+//    `pages/lib/footer-with-defaults.tsx` now.)
 //
-//  - When at least one slot has content, a `<footer>` shell is rendered.
-//    The link/tag column grid is only emitted when at least one column is
+//  - The link/tag column grid is only emitted when at least one column is
 //    present (mirrors the Astro `hasColumns &&` guard).
 //
 //  - The copyright block is rendered as-is via `dangerouslySetInnerHTML`
@@ -56,19 +59,18 @@ export interface FooterProps {
 /**
  * Footer shell for the documentation layout.
  *
- * Returns null when every slot is empty so the host can place this
- * unconditionally inside the layout's `footer` slot without producing
- * an empty `<footer>` element.
+ * Always renders the `<footer>` shell so the contentinfo ARIA landmark
+ * is present on every page — even when no columns or copyright are
+ * configured. The inner content (link grid, copyright) is only emitted
+ * when the respective slots carry data.
  */
-export function Footer(props: FooterProps): VNode | null {
+export function Footer(props: FooterProps): VNode {
   const linkColumns = props.linkColumns ?? [];
   const tagColumns = props.tagColumns ?? [];
   const copyright = props.copyright ?? "";
 
   const hasColumns = linkColumns.length > 0 || tagColumns.length > 0;
   const hasCopyright = copyright.length > 0;
-
-  if (!hasColumns && !hasCopyright) return null;
 
   const copyrightClass = hasColumns
     ? "text-center text-caption text-muted [&_a]:text-accent [&_a]:underline mt-vsp-lg border-t border-muted pt-vsp-md"
