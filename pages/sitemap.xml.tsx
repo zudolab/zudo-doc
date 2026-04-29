@@ -7,28 +7,18 @@
 // explicit `contentType` export pins the dev-server `Content-Type`
 // header to `application/xml` regardless of the filename hint.
 //
-// The Astro integration walks every `.html` file under `dist/` after
-// the build finishes and emits one `<url>` entry per route. zfb runs
-// each page in isolation, so the equivalent here is to walk every
-// loaded content collection through `zfb/content` and reproduce the
-// same URL set the docs / locale / version routes consume. The XML
-// formatter (escaping, sorted entries, today-only `<lastmod>`) mirrors
-// the original integration byte-for-byte modulo timestamps.
-//
-// No plugin registration is required — the filename convention drives
-// route discovery and `contentType` drives the response header. See
-// `https://takazudomodular.com/pj/zudo-front-builder/concepts/non-html-pages`.
+// URL enumeration is delegated to `pages/lib/route-enumerators.ts` so
+// the sitemap cannot drift from the actual routes the page modules build.
+// Previously the sitemap walked raw collection slugs directly and missed:
+//   (a) tag pages           (b) JA fallback URLs
+//   (c) versioned JA routes (d) wrong URL pattern for versioned-locale pages
+//   (e) emitted /index/ suffix on category pages (closes #690)
 
-import { getCollection } from "zfb/content";
 import { settings } from "@/config/settings";
+import { enumerateAllRoutes } from "./lib/route-enumerators";
 
 export const frontmatter = { title: "Sitemap" };
 export const contentType = "application/xml";
-
-type DocData = {
-  draft?: boolean;
-  slug?: string;
-};
 
 function escapeXml(str: string): string {
   return str
@@ -39,95 +29,16 @@ function escapeXml(str: string): string {
     .replace(/'/g, "&apos;");
 }
 
-/**
- * Build a directory-style URL (always trailing slash) from path
- * segments. Mirrors Astro's `trailingSlash: true` build, which is what
- * the original integration recovered from `index.html` paths.
- */
-function buildUrl(...segments: string[]): string {
-  const joined = segments
-    .filter((s) => s !== "")
-    .join("/")
-    .replace(/^\/+/, "")
-    .replace(/\/+$/, "");
-  return joined === "" ? "/" : `/${joined}/`;
-}
-
-/** Apply `settings.base` (matches the original integration). */
-function withBase(path: string): string {
-  const base = settings.base.replace(/\/$/, "");
-  if (base && base !== "/") {
-    return base + path;
-  }
-  return path;
-}
-
-function collectDocsUrls(
-  collectionName: string,
-  pathPrefix: readonly string[],
-): string[] {
-  const entries = getCollection(collectionName) as Array<{
-    slug: string;
-    data: DocData;
-  }>;
-  // Match the original integration's "walk every emitted HTML file"
-  // behaviour: only `draft` is filtered (Astro excludes drafts from the
-  // build itself, so they never reach `dist/`). `unlisted` and
-  // `standalone` pages do reach `dist/` and therefore appear in today's
-  // sitemap — preserve that bug-for-bug to keep the output byte-equal.
-  const urls: string[] = [];
-  for (const entry of entries) {
-    if (entry.data.draft) continue;
-    const slug = entry.data.slug ?? entry.slug;
-    urls.push(buildUrl(...pathPrefix, slug));
-  }
-  return urls;
-}
-
 export default function Sitemap(): string {
-  const urls: string[] = [];
-
-  // Site root.
-  urls.push(buildUrl());
-
-  // Default-locale docs (mirrors `src/pages/docs/[...slug].astro`).
-  urls.push(...collectDocsUrls("docs", ["docs"]));
-
-  // Per-locale docs (mirrors `src/pages/[locale]/docs/[...slug].astro`).
-  for (const code of Object.keys(settings.locales)) {
-    urls.push(buildUrl(code));
-    urls.push(...collectDocsUrls(`docs-${code}`, [code, "docs"]));
-  }
-
-  // Versioned docs (mirrors `src/pages/v/[version]/docs/[...slug].astro`).
-  if (settings.versions) {
-    for (const version of settings.versions) {
-      urls.push(...collectDocsUrls(`docs-v-${version.slug}`, ["v", version.slug, "docs"]));
-      if (version.locales) {
-        for (const code of Object.keys(version.locales)) {
-          urls.push(
-            ...collectDocsUrls(`docs-v-${version.slug}-${code}`, [
-              code,
-              "v",
-              version.slug,
-              "docs",
-            ]),
-          );
-        }
-      }
-    }
-  }
-
-  const finalUrls = urls.map(withBase);
-
-  const today = new Date().toISOString().split("T")[0];
+  const routeMap = enumerateAllRoutes();
   const siteUrlBase = (settings.siteUrl ?? "").replace(/\/$/, "");
-  const urlEntries = finalUrls
-    .sort()
+
+  const urlEntries = [...routeMap.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
     .map(
-      (url) => `  <url>
+      ([url, lastmod]) => `  <url>
     <loc>${escapeXml(siteUrlBase + url)}</loc>
-    <lastmod>${today}</lastmod>
+    <lastmod>${lastmod}</lastmod>
   </url>`,
     )
     .join("\n");
