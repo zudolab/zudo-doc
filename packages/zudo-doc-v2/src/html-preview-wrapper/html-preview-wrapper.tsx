@@ -2,6 +2,10 @@
 /** @jsxImportSource preact */
 
 import type { VNode } from "preact";
+// `@takazudo/zfb` is provided by the consumer at integration time;
+// types come from the package-level shim at `../_zfb-shim.d.ts`.
+import { Island } from "@takazudo/zfb";
+
 import { HtmlPreview } from "./html-preview.js";
 
 /**
@@ -49,19 +53,13 @@ export interface HtmlPreviewWrapperProps {
 }
 
 /**
- * HTML preview wrapper — JSX port of
- * `src/components/html-preview-wrapper.astro`.
- *
- * The legacy Astro wrapper merged `settings.htmlPreview` (global config)
- * with per-usage props and forwarded everything to `<HtmlPreview
- * client:visible />`. v2 collapses the merge into this component and
- * renders `HtmlPreview` directly.
- *
- * This component requires client-side JS (iframe lifecycle). Mount it
- * with `client:visible` in Astro, or wrap it in an SSR-skip placeholder
- * for non-Astro consumers.
+ * Inner wrapper body — the data-prep that merges global + per-usage
+ * config and forwards to `<HtmlPreview>`. The exported
+ * `HtmlPreviewWrapper` wraps this in `<Island>` so SSG-rendered HTML
+ * emits `data-zfb-island="HtmlPreviewWrapper"` for the hydration
+ * runtime.
  */
-export function HtmlPreviewWrapper(
+function HtmlPreviewWrapperInner(
   props: HtmlPreviewWrapperProps,
 ): VNode {
   const { globalConfig, html, css, head, js, title, height, defaultOpen } =
@@ -88,4 +86,29 @@ export function HtmlPreviewWrapper(
       componentJs={js}
     />
   );
+}
+// Pin the marker name to "HtmlPreviewWrapper" — see Toc/MobileToc for
+// rationale.
+HtmlPreviewWrapperInner.displayName = "HtmlPreviewWrapper";
+
+/**
+ * HTML preview wrapper — JSX port of
+ * `src/components/html-preview-wrapper.astro`.
+ *
+ * The legacy Astro wrapper merged `settings.htmlPreview` (global config)
+ * with per-usage props and forwarded everything to `<HtmlPreview
+ * client:visible />`. v2 collapses the merge into the inner shell and
+ * wraps it in `<Island when="visible">` here, mirroring the legacy
+ * `client:visible` hydration timing — the iframe is heavy and not on
+ * the critical path, so we defer hydration until the preview enters
+ * the viewport.
+ */
+export function HtmlPreviewWrapper(
+  props: HtmlPreviewWrapperProps,
+): VNode {
+  const rendered = Island({
+    when: "visible",
+    children: <HtmlPreviewWrapperInner {...props} />,
+  });
+  return rendered as unknown as VNode;
 }
