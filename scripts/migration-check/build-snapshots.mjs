@@ -45,6 +45,22 @@ const __dirname = dirname(__filename);
 /** Absolute path to the repo root (two levels up from scripts/migration-check/). */
 const REPO_ROOT = resolve(__dirname, "../..");
 
+/**
+ * Directory under which snapshot build worktrees are created.
+ *
+ * Must be OUTSIDE the main repo directory tree.  If the worktree is created
+ * inside the repo (even as a sibling of another worktree), pnpm detects the
+ * enclosing pnpm-workspace.yaml and resolves shared packages into the parent
+ * repo's node_modules/ instead of the worktree's own node_modules/.  This
+ * breaks preact's singleton-hooks assumption during SSR prerendering because
+ * preact-render-to-string ends up loading from a different preact instance
+ * than the compiled component code.
+ *
+ * Using /tmp/ guarantees isolation — pnpm sees no enclosing workspace and
+ * installs everything self-contained inside the worktree.
+ */
+const SNAPSHOT_WORKTREES_DIR = "/tmp/zudo-doc-migration-check-worktrees";
+
 /** Absolute path to the snapshots/ directory inside the workspace. */
 const SNAPSHOTS_DIR = join(REPO_ROOT, config.workspaceDir, "snapshots");
 const SNAPSHOT_A_DIR = join(SNAPSHOTS_DIR, "a");
@@ -370,7 +386,7 @@ async function copyArtifacts(distDir, artifactsDir) {
  */
 async function buildSnapshotInWorktree({ ref, destDir, worktreeNamePrefix, label }) {
   const refSlug = refToSlug(ref);
-  const worktreePath = join(REPO_ROOT, "worktrees", `${worktreeNamePrefix}-${refSlug}`);
+  const worktreePath = join(SNAPSHOT_WORKTREES_DIR, `${worktreeNamePrefix}-${refSlug}`);
   const startTime = Date.now();
 
   try {
@@ -411,10 +427,21 @@ async function buildSnapshotInWorktree({ ref, destDir, worktreeNamePrefix, label
     const outputDir = detectOutputDir(worktreePath, framework);
     const distPath = join(worktreePath, outputDir);
 
-    console.log(`[S2] copying ${outputDir}/ → ${label} snapshot ...`);
+    // Astro with @astrojs/node adapter (mode: "standalone") splits output into
+    //   dist/client/  — static HTML, assets (the browsable content)
+    //   dist/server/  — SSR entrypoint (not needed for parity comparison)
+    // When this layout is detected, use dist/client/ as the snapshot root so
+    // routes are discovered at the same depth as a plain static output.
+    const clientPath = join(distPath, "client");
+    const contentPath =
+      existsSync(join(clientPath, "index.html")) ? clientPath : distPath;
+    const contentDirLabel =
+      contentPath === clientPath ? `${outputDir}/client` : outputDir;
+
+    console.log(`[S2] copying ${contentDirLabel}/ → ${label} snapshot ...`);
     await mkdir(destDir, { recursive: true });
-    await cp(distPath, destDir, { recursive: true });
-    await copyArtifacts(distPath, join(destDir, "_artifacts"));
+    await cp(contentPath, destDir, { recursive: true });
+    await copyArtifacts(contentPath, join(destDir, "_artifacts"));
 
     console.log(`[S2] ${label} done in ${(buildDurationMs / 1000).toFixed(1)}s`);
 
@@ -508,13 +535,18 @@ async function buildSnapshotBFromCurrentDist({ toRef, headCommit }) {
 
   const freshResult = await checkDistFreshness(REPO_ROOT);
 
+  // Same client/ detection as buildSnapshotInWorktree.
+  const clientPath = join(distPath, "client");
+
   if (freshResult.fresh) {
     console.log("[S2] dist/ is fresh — reusing for snapshot B (no rebuild)");
     const framework = detectFramework(REPO_ROOT);
+    const contentPath =
+      existsSync(join(clientPath, "index.html")) ? clientPath : distPath;
 
     await mkdir(SNAPSHOT_B_DIR, { recursive: true });
-    await cp(distPath, SNAPSHOT_B_DIR, { recursive: true });
-    await copyArtifacts(distPath, join(SNAPSHOT_B_DIR, "_artifacts"));
+    await cp(contentPath, SNAPSHOT_B_DIR, { recursive: true });
+    await copyArtifacts(contentPath, join(SNAPSHOT_B_DIR, "_artifacts"));
 
     return {
       ref: toRef,
@@ -534,10 +566,12 @@ async function buildSnapshotBFromCurrentDist({ toRef, headCommit }) {
   await writeStamp(distPath, headCommit);
 
   const framework = detectFramework(REPO_ROOT);
+  const contentPath =
+    existsSync(join(clientPath, "index.html")) ? clientPath : distPath;
 
   await mkdir(SNAPSHOT_B_DIR, { recursive: true });
-  await cp(distPath, SNAPSHOT_B_DIR, { recursive: true });
-  await copyArtifacts(distPath, join(SNAPSHOT_B_DIR, "_artifacts"));
+  await cp(contentPath, SNAPSHOT_B_DIR, { recursive: true });
+  await copyArtifacts(contentPath, join(SNAPSHOT_B_DIR, "_artifacts"));
 
   console.log(`[S2] snapshot B done in ${(buildDurationMs / 1000).toFixed(1)}s`);
 
