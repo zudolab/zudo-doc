@@ -203,7 +203,13 @@ async function handleRequest(snapshotDir, sitePrefix, req, res) {
     "Content-Type": getMimeType(filePath),
     "Content-Length": fileStat.size,
   });
-  createReadStream(filePath).pipe(res);
+  const readStream = createReadStream(filePath);
+  readStream.on("error", (err) => {
+    // Headers are already sent — can't change status code. Close the connection.
+    console.error("[S3] read stream error:", err.message);
+    res.end();
+  });
+  readStream.pipe(res);
 }
 
 // ── Public programmatic API ───────────────────────────────────────────────────
