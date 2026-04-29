@@ -51,6 +51,7 @@ import { HeaderWithDefaults } from "../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../lib/_head-with-defaults";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../_data";
+import { extractHeadings } from "../lib/_extract-headings";
 
 export const frontmatter = { title: "Docs" };
 
@@ -80,6 +81,8 @@ interface DocPageProps {
   prev: NavNode | null;
   /** Following page in the nav tree. */
   next: NavNode | null;
+  /** Depth-2/3/4 headings extracted from the MDX body, for SSG TOC links. */
+  headings: ReturnType<typeof extractHeadings>;
 }
 
 // ---------------------------------------------------------------------------
@@ -147,6 +150,7 @@ export function paths(): Array<{
         breadcrumbs: buildBreadcrumbs(fullTree, slug, locale),
         prev: prevNode,
         next: nextNode,
+        headings: extractHeadings(entry.body ?? ""),
       },
     });
   }
@@ -161,6 +165,7 @@ export function paths(): Array<{
         breadcrumbs: buildBreadcrumbs(fullTree, node.slug, locale),
         prev: null,
         next: null,
+        headings: [],
       },
     });
   }
@@ -178,7 +183,7 @@ interface PageArgs {
 }
 
 export default function DocsPage({ props }: PageArgs): JSX.Element {
-  const { entry, autoIndex, breadcrumbs, prev, next } = props;
+  const { entry, autoIndex, breadcrumbs, prev, next, headings } = props;
   const locale = defaultLocale;
 
   const slug = autoIndex
@@ -209,6 +214,7 @@ export default function DocsPage({ props }: PageArgs): JSX.Element {
       lang={locale}
       hideSidebar={entry?.data?.hide_sidebar}
       hideToc={entry?.data?.hide_toc}
+      headings={headings}
       headerOverride={
         <HeaderWithDefaults
           lang={locale}

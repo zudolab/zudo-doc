@@ -44,6 +44,7 @@ import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import { mdxComponents } from "../../../_mdx-components";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../../../_data";
+import { extractHeadings } from "../../../lib/_extract-headings";
 import { FooterWithDefaults } from "../../../lib/_footer-with-defaults";
 import { SidebarWithDefaults } from "../../../lib/_sidebar-with-defaults";
 import { HeaderWithDefaults } from "../../../lib/_header-with-defaults";
@@ -72,6 +73,8 @@ interface DocPageProps {
   breadcrumbs: BreadcrumbItem[];
   prev: NavNode | null;
   next: NavNode | null;
+  /** Depth-2/3/4 headings extracted from the MDX body, for SSG TOC links. */
+  headings: ReturnType<typeof extractHeadings>;
 }
 
 // ---------------------------------------------------------------------------
@@ -150,6 +153,7 @@ export function paths(): Array<{
           next: nextNode
             ? { ...nextNode, href: versionedDocsUrl(nextNode.slug, version.slug) }
             : null,
+          headings: extractHeadings(entry.body ?? ""),
         },
       });
     }
@@ -171,6 +175,7 @@ export function paths(): Array<{
           breadcrumbs: buildBreadcrumbs(tree, node.slug, "en"),
           prev: null,
           next: null,
+          headings: [],
         },
       });
     }
@@ -189,7 +194,7 @@ interface PageArgs {
 }
 
 export default function VersionedDocsPage({ props }: PageArgs): JSX.Element {
-  const { entry, autoIndex, version, breadcrumbs, prev, next } = props;
+  const { entry, autoIndex, version, breadcrumbs, prev, next, headings } = props;
   const locale = "en";
 
   const slug = autoIndex
@@ -213,6 +218,7 @@ export default function VersionedDocsPage({ props }: PageArgs): JSX.Element {
       lang={locale}
       hideSidebar={entry?.data?.hide_sidebar}
       hideToc={entry?.data?.hide_toc}
+      headings={headings}
       headerOverride={
         <HeaderWithDefaults
           lang={locale}
