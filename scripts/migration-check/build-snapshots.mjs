@@ -330,15 +330,20 @@ async function writeStamp(distDir, commit) {
 
 /**
  * Copy the non-HTML artifacts listed in ARTIFACT_PATHS from `distDir` into
- * `artifactsDir`. Files that don't exist in the snapshot are silently skipped.
+ * `artifactsDir`. Files that don't exist in the snapshot's dist/ are skipped
+ * with a debug-level log so unexpected absences surface clearly.
  */
 async function copyArtifacts(distDir, artifactsDir) {
   await mkdir(artifactsDir, { recursive: true });
   const copied = [];
+  const skipped = [];
 
   for (const relPath of ARTIFACT_PATHS) {
     const src = join(distDir, relPath);
-    if (!existsSync(src)) continue;
+    if (!existsSync(src)) {
+      skipped.push(relPath);
+      continue;
+    }
 
     const dest = join(artifactsDir, relPath);
     await mkdir(dirname(dest), { recursive: true });
@@ -349,6 +354,82 @@ async function copyArtifacts(distDir, artifactsDir) {
   console.log(
     `[S2] artifacts: copied ${copied.length}/${ARTIFACT_PATHS.length} file(s) → ${artifactsDir}`,
   );
+  if (skipped.length > 0) {
+    console.log(`[S2] artifacts: skipped (not in dist/): ${skipped.join(", ")}`);
+  }
+}
+
+// ── Shared worktree build logic ───────────────────────────────────────────────
+
+/**
+ * Build a snapshot inside a throwaway git worktree at `ref` and copy the
+ * output into `destDir`. Used by both snapshot A and worktree-based snapshot B.
+ *
+ * @param {{ ref: string, destDir: string, worktreeNamePrefix: string, label: string }} opts
+ * @returns {Promise<object>} manifest entry
+ */
+async function buildSnapshotInWorktree({ ref, destDir, worktreeNamePrefix, label }) {
+  const refSlug = refToSlug(ref);
+  const worktreePath = join(REPO_ROOT, "worktrees", `${worktreeNamePrefix}-${refSlug}`);
+  const startTime = Date.now();
+
+  try {
+    await createWorktree(REPO_ROOT, worktreePath, ref);
+
+    const commitSha = resolveRef(REPO_ROOT, ref);
+    const framework = detectFramework(worktreePath);
+    console.log(`[S2] framework detected: ${framework}`);
+
+    // Rewrite file:../ deps if present — relative paths break when pnpm install
+    // runs from inside worktrees/<name>/ instead of the original repo root.
+    const pkgJsonPath = join(worktreePath, "package.json");
+    const pkgJson = JSON.parse(await readFile(pkgJsonPath, "utf8"));
+    const {
+      rewritten,
+      log: rewriteLog,
+      pkgJson: rewrittenPkg,
+    } = rewriteFileDeps(pkgJson, REPO_ROOT);
+
+    if (rewritten) {
+      console.log(`[S2] rewriting ${rewriteLog.length} file:../ dep(s) to absolute paths:`);
+      for (const entry of rewriteLog) console.log(`  ${entry}`);
+      await writeFile(pkgJsonPath, JSON.stringify(rewrittenPkg, null, 2) + "\n");
+    } else {
+      console.log("[S2] no file:../ deps to rewrite");
+    }
+
+    // Skip --frozen-lockfile when file: specs were rewritten: the lockfile
+    // still records the old relative paths and would fail hash verification.
+    const installArgs = rewritten ? ["install"] : ["install", "--frozen-lockfile"];
+    console.log("[S2] running pnpm install ...");
+    runCmd("pnpm", installArgs, worktreePath);
+
+    console.log("[S2] running pnpm build ...");
+    runCmd("pnpm", ["build"], worktreePath);
+
+    const buildDurationMs = Date.now() - startTime;
+    const outputDir = detectOutputDir(worktreePath, framework);
+    const distPath = join(worktreePath, outputDir);
+
+    console.log(`[S2] copying ${outputDir}/ → ${label} snapshot ...`);
+    await mkdir(destDir, { recursive: true });
+    await cp(distPath, destDir, { recursive: true });
+    await copyArtifacts(distPath, join(destDir, "_artifacts"));
+
+    console.log(`[S2] ${label} done in ${(buildDurationMs / 1000).toFixed(1)}s`);
+
+    return {
+      ref,
+      commit: commitSha,
+      outputDirRelative: outputDir,
+      buildDurationMs,
+      framework,
+      fileDepRewriteLog: rewriteLog,
+    };
+  } finally {
+    console.log(`[S2] cleaning up ${label} worktree ...`);
+    await removeWorktree(REPO_ROOT, worktreePath);
+  }
 }
 
 // ── Snapshot A (from-ref) ─────────────────────────────────────────────────────
@@ -367,78 +448,14 @@ async function buildSnapshotA(opts) {
     return null;
   }
 
-  const refSlug = refToSlug(fromRef);
-  const worktreePath = join(
-    REPO_ROOT,
-    "worktrees",
-    `migration-check-baseline-${refSlug}`,
-  );
-  const startTime = Date.now();
-
   console.log(`\n[S2] ── Building snapshot A (${fromRef}) ──────────────────`);
 
-  try {
-    await createWorktree(REPO_ROOT, worktreePath, fromRef);
-
-    const commitSha = resolveRef(REPO_ROOT, fromRef);
-    const framework = detectFramework(worktreePath);
-    console.log(`[S2] framework detected: ${framework}`);
-
-    // Rewrite file:../ deps if present
-    const pkgJsonPath = join(worktreePath, "package.json");
-    const pkgJsonRaw = await readFile(pkgJsonPath, "utf8");
-    const pkgJson = JSON.parse(pkgJsonRaw);
-    const {
-      rewritten,
-      log: rewriteLog,
-      pkgJson: rewrittenPkg,
-    } = rewriteFileDeps(pkgJson, REPO_ROOT);
-
-    if (rewritten) {
-      console.log(`[S2] rewriting ${rewriteLog.length} file:../ dep(s) to absolute paths:`);
-      for (const entry of rewriteLog) console.log(`  ${entry}`);
-      await writeFile(pkgJsonPath, JSON.stringify(rewrittenPkg, null, 2) + "\n");
-    } else {
-      console.log("[S2] no file:../ deps to rewrite (Astro era baseline)");
-    }
-
-    // Install deps
-    console.log("[S2] running pnpm install ...");
-    // Do not use --frozen-lockfile when we've rewritten file: specs,
-    // as the lockfile still has the old relative paths.
-    const installArgs = rewritten ? ["install"] : ["install", "--frozen-lockfile"];
-    runCmd("pnpm", installArgs, worktreePath);
-
-    // Build
-    console.log("[S2] running pnpm build ...");
-    runCmd("pnpm", ["build"], worktreePath);
-
-    const buildDurationMs = Date.now() - startTime;
-
-    // Detect output dir and copy to snapshots/a/
-    const outputDir = detectOutputDir(worktreePath, framework);
-    const distPath = join(worktreePath, outputDir);
-
-    console.log(`[S2] copying ${outputDir}/ → snapshots/a/ ...`);
-    await mkdir(SNAPSHOT_A_DIR, { recursive: true });
-    await cp(distPath, SNAPSHOT_A_DIR, { recursive: true });
-
-    await copyArtifacts(distPath, join(SNAPSHOT_A_DIR, "_artifacts"));
-
-    console.log(`[S2] snapshot A done in ${(buildDurationMs / 1000).toFixed(1)}s`);
-
-    return {
-      ref: fromRef,
-      commit: commitSha,
-      outputDirRelative: outputDir,
-      buildDurationMs,
-      framework,
-      fileDepRewriteLog: rewriteLog,
-    };
-  } finally {
-    console.log("[S2] cleaning up snapshot A worktree ...");
-    await removeWorktree(REPO_ROOT, worktreePath);
-  }
+  return buildSnapshotInWorktree({
+    ref: fromRef,
+    destDir: SNAPSHOT_A_DIR,
+    worktreeNamePrefix: "migration-check-baseline",
+    label: "snapshot A",
+  });
 }
 
 // ── Snapshot B (to-ref) ───────────────────────────────────────────────────────
@@ -473,11 +490,17 @@ async function buildSnapshotB(opts) {
     return buildSnapshotBFromCurrentDist({ toRef, headCommit });
   }
 
-  return buildSnapshotBFromWorktree({ toRef });
+  return buildSnapshotInWorktree({
+    ref: toRef,
+    destDir: SNAPSHOT_B_DIR,
+    worktreeNamePrefix: "migration-check-current",
+    label: "snapshot B",
+  });
 }
 
 /**
  * Snapshot B from the current repo's dist/ (toRef === HEAD).
+ * Reuses dist/ if fresh; otherwise rebuilds and writes a stamp.
  */
 async function buildSnapshotBFromCurrentDist({ toRef, headCommit }) {
   const distPath = join(REPO_ROOT, "dist");
@@ -526,71 +549,6 @@ async function buildSnapshotBFromCurrentDist({ toRef, headCommit }) {
     framework,
     fileDepRewriteLog: [],
   };
-}
-
-/**
- * Snapshot B from a separate git worktree (toRef !== HEAD).
- */
-async function buildSnapshotBFromWorktree({ toRef }) {
-  const refSlug = refToSlug(toRef);
-  const worktreePath = join(
-    REPO_ROOT,
-    "worktrees",
-    `migration-check-current-${refSlug}`,
-  );
-  const startTime = Date.now();
-
-  try {
-    await createWorktree(REPO_ROOT, worktreePath, toRef);
-
-    const commitSha = resolveRef(REPO_ROOT, toRef);
-    const framework = detectFramework(worktreePath);
-    console.log(`[S2] framework detected: ${framework}`);
-
-    const pkgJsonPath = join(worktreePath, "package.json");
-    const pkgJson = JSON.parse(await readFile(pkgJsonPath, "utf8"));
-    const {
-      rewritten,
-      log: rewriteLog,
-      pkgJson: rewrittenPkg,
-    } = rewriteFileDeps(pkgJson, REPO_ROOT);
-
-    if (rewritten) {
-      console.log(`[S2] rewriting ${rewriteLog.length} file:../ dep(s):`);
-      for (const entry of rewriteLog) console.log(`  ${entry}`);
-      await writeFile(pkgJsonPath, JSON.stringify(rewrittenPkg, null, 2) + "\n");
-    }
-
-    const installArgs = rewritten ? ["install"] : ["install", "--frozen-lockfile"];
-    console.log("[S2] running pnpm install ...");
-    runCmd("pnpm", installArgs, worktreePath);
-
-    console.log("[S2] running pnpm build ...");
-    runCmd("pnpm", ["build"], worktreePath);
-
-    const buildDurationMs = Date.now() - startTime;
-    const outputDir = detectOutputDir(worktreePath, framework);
-    const distPath = join(worktreePath, outputDir);
-
-    console.log(`[S2] copying ${outputDir}/ → snapshots/b/ ...`);
-    await mkdir(SNAPSHOT_B_DIR, { recursive: true });
-    await cp(distPath, SNAPSHOT_B_DIR, { recursive: true });
-    await copyArtifacts(distPath, join(SNAPSHOT_B_DIR, "_artifacts"));
-
-    console.log(`[S2] snapshot B done in ${(buildDurationMs / 1000).toFixed(1)}s`);
-
-    return {
-      ref: toRef,
-      commit: commitSha,
-      outputDirRelative: outputDir,
-      buildDurationMs,
-      framework,
-      fileDepRewriteLog: rewriteLog,
-    };
-  } finally {
-    console.log("[S2] cleaning up snapshot B worktree ...");
-    await removeWorktree(REPO_ROOT, worktreePath);
-  }
 }
 
 // ── Manifest ──────────────────────────────────────────────────────────────────
