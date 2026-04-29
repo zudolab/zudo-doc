@@ -97,6 +97,64 @@ This harness is **framework-agnostic** and works for any zudo-style project migr
 
 To run the same harness on a different project, clone the `scripts/migration-check/` directory alongside the target repo's source and set `--site-prefix` accordingly.
 
+## Closing Stale Regression Issues
+
+After a round of migration-parity fixes, many cluster signatures no longer fire in the latest report. The `close-stale-issues.mjs` script diffs the current live signature set against open `migration-regression` GitHub issues and closes the stale ones.
+
+### When to run
+
+Run **after** a fresh `pnpm migration-check --rerun --raise-issues` that reflects the converged post-fix state. Running before that would close issues the harness is about to re-raise.
+
+### Preview first (always)
+
+```bash
+pnpm migration-check:close-stale:dry-run
+```
+
+This prints, for each open issue:
+
+```
+WOULD CLOSE: #<n> [migration-regression:<short-hash>] — signature <full-sig> not in live set
+WOULD KEEP:  #<n> [migration-regression:<short-hash>]
+```
+
+No GitHub mutations are made in dry-run mode. `MANUAL REVIEW` lines indicate issues whose body is missing or malformed — investigate those by hand before proceeding.
+
+### Live execution (manager only)
+
+```bash
+pnpm migration-check:close-stale
+```
+
+For each stale issue the script:
+
+1. Posts this comment:
+
+   > Superseded by Phase B-N migration-parity work; this signature no longer fires in the latest `/l-zfb-migration-check` report (run: `<ISO timestamp>` on commit `<short-sha>`). Closed automatically by `scripts/migration-check/close-stale-issues.mjs`.
+
+2. Closes the issue via `gh issue close`.
+
+The script is idempotent — running it again after a clean state is a no-op (closed issues are no longer returned by `gh issue list --state open`).
+
+### How the signature is parsed
+
+Each `migration-regression` issue body contains a Markdown table row:
+
+```
+| **Signature** | `<cluster.signature>` |
+```
+
+The script reads that value and checks it against the cluster signatures in `.l-zfb-migration-check/findings/batch-*.json` (the same summary files the harness uses internally, not the `-detailed.json` variants).
+
+### Verifying after live run
+
+```bash
+gh issue list --label migration-regression --state open --json number,body \
+  | jq '.[].body' | grep -o '`[^`]*`' | sort -u
+```
+
+Cross-reference the remaining signatures against the findings directory to confirm all open issues still correspond to live regressions.
+
 ## Pipeline Phases (for reference)
 
 The harness runs these phases in order:
