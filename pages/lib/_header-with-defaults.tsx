@@ -37,7 +37,14 @@
 import type { VNode, JSX } from "preact";
 import { Island } from "@takazudo/zfb";
 import { Header } from "@zudo-doc/zudo-doc-v2/header";
-import { ThemeToggle } from "@zudo-doc/zudo-doc-v2/theme";
+// Don't import ThemeToggle from "@zudo-doc/zudo-doc-v2/theme" — that barrel
+// also re-exports DesignTokenTweakPanel and ColorTweakExportModal, which
+// transitively pull `src/components/design-token-tweak/*` and the v2 panel
+// modules into the zfb esbuild graph. Those files import `react`, which
+// zfb does not alias to `preact/compat`, so the build fails. Use the host's
+// local ThemeToggle (already on `preact/hooks`) and wrap it in Island here
+// so the SSG output still emits the `data-zfb-island="ThemeToggle"` marker.
+import ThemeToggle from "@/components/theme-toggle";
 import SidebarToggle from "@/components/sidebar-toggle";
 import SidebarTree from "@/components/sidebar-tree";
 import { settings } from "@/config/settings";
@@ -234,16 +241,24 @@ export function HeaderWithDefaults(
     }) as unknown as VNode;
   }
 
+  // Wrap the host's local ThemeToggle in Island({when:"load"}) so the SSG
+  // output emits a data-zfb-island="ThemeToggle" marker the hydration
+  // runtime can find — matching the original header.astro output. The v2
+  // package's <ThemeToggle> already does this internally, but importing it
+  // forces the v2 theme barrel into the bundle (see import note at the top
+  // of this file).
+  const themeToggle = Island({
+    when: "load",
+    children: <ThemeToggle />,
+  }) as unknown as VNode;
+
   return (
     <Header
       lang={lang}
       currentPath={currentPath}
       currentVersion={currentVersion}
       sidebarToggle={sidebarToggle}
-      // Pass the package's self-island-wrapped ThemeToggle so the
-      // data-zfb-island="ThemeToggle" marker appears in the header right
-      // items on every page — matching the original header.astro output.
-      themeToggle={<ThemeToggle />}
+      themeToggle={themeToggle}
     />
   );
 }
