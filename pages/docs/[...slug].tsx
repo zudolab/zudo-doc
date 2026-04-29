@@ -44,6 +44,7 @@ import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 // for every other custom tag the MDX corpus references — see
 // `pages/_mdx-components.ts` for the full list and rationale.
 import { mdxComponents } from "../_mdx-components";
+import { FooterWithDefaults } from "../lib/footer-with-defaults";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../_data";
 
@@ -206,6 +207,7 @@ export default function DocsPage({ props }: PageArgs): JSX.Element {
       breadcrumbOverride={
         breadcrumbs.length > 0 ? <Breadcrumb items={breadcrumbs} /> : undefined
       }
+      footerOverride={<FooterWithDefaults lang={locale} />}
     >
       {autoIndex ? (
         /* Auto-index page: category without an index.mdx */

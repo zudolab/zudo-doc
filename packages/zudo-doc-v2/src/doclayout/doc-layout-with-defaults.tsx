@@ -69,6 +69,7 @@ import { Sidebar } from "../sidebar/sidebar.js";
 import { Toc } from "../toc/toc.js";
 import { MobileToc } from "../toc/mobile-toc.js";
 import ThemeToggle from "../theme/theme-toggle.js";
+import { Footer } from "../footer/footer.js";
 import {
   AiChatModalIsland,
   DesignTokenTweakPanelIsland,
@@ -92,17 +93,13 @@ import {
 
 /**
  * Override slots for the default-bearing wrapper. Any slot that the
- * caller wants to replace can be passed here; otherwise the defaults
- * (set up by the sibling topic primitives, once those stabilize) are
- * used.
+ * caller wants to replace can be passed here; otherwise the package
+ * defaults are used.
  *
- * The concrete defaults for header/sidebar/toc/breadcrumb/footer are
- * intentionally *not* hard-coded inside this wrapper today: it would
- * couple this topic to in-flight sibling APIs, and the manager has
- * asked us to write to the expected interface and let the merge step
- * resolve mismatches. Callers can pass overrides explicitly today, and
- * once the sibling topics land, those imports can be wired up in a
- * follow-up commit without changing this wrapper's public surface.
+ * Footer default: a bare `<Footer />` shell so the contentinfo ARIA
+ * landmark is always present. Callers that want full footer content
+ * (link columns, copyright, taglist) pass `footerOverride` with a
+ * host-side data-aware wrapper — see `pages/lib/footer-with-defaults.tsx`.
  */
 export interface DocLayoutWithDefaultsProps
   extends Omit<
@@ -232,7 +229,11 @@ export function DocLayoutWithDefaults(
         afterBreadcrumb={afterBreadcrumb}
         afterSidebar={afterSidebar}
         afterContent={afterContent}
-        footer={footerOverride}
+        // Default: bare <Footer /> shell so the contentinfo ARIA landmark
+        // is always present on every page. Callers that want full footer
+        // content (link columns, copyright, taglist) pass `footerOverride`
+        // with a host-side data-aware wrapper (e.g. FooterWithDefaults).
+        footer={footerOverride ?? <Footer />}
         bodyEndComponents={
           bodyEndComponents ?? (
             // Default body-end islands. Each is an SSR-skip wrapper

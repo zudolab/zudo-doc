@@ -16,6 +16,7 @@ import { defaultLocale } from "@/config/i18n";
 import { withBase } from "@/utils/base";
 import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
 import type { JSX } from "preact";
+import { FooterWithDefaults } from "./lib/footer-with-defaults";
 
 export const frontmatter = { title: "404" };
 
@@ -29,6 +30,7 @@ export default function NotFoundPage(): JSX.Element {
       noindex={true}
       hideSidebar={true}
       hideToc={true}
+      footerOverride={<FooterWithDefaults lang={locale} />}
     >
       <div class="min-h-[60vh] flex flex-col items-center justify-center px-hsp-2xl py-vsp-xl">
         <h1 class="text-display font-bold mb-vsp-md">404</h1>

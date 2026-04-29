@@ -27,6 +27,7 @@ import type { BreadcrumbItem } from "@zudo-doc/zudo-doc-v2/breadcrumb";
 import { DocCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../../_data";
+import { FooterWithDefaults } from "../../lib/footer-with-defaults";
 
 export const frontmatter = { title: "Tag" };
 
@@ -80,6 +81,7 @@ export default function DocTagPage({ params, props }: PageProps): JSX.Element {
       hideSidebar={true}
       hideToc={true}
       breadcrumbOverride={<Breadcrumb items={breadcrumbItems} />}
+      footerOverride={<FooterWithDefaults lang={locale} />}
     >
       <h1 class="text-heading font-bold mb-vsp-xs">{pageTitle}</h1>
       <p class="text-muted mb-vsp-lg">{countText}</p>

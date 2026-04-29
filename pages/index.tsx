@@ -29,6 +29,7 @@ import { toRouteSlug } from "@/utils/slug";
 import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
 import { DocsSitemap } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import type { JSX } from "preact";
+import { FooterWithDefaults } from "./lib/footer-with-defaults";
 
 export const frontmatter = { title: "Home" };
 
@@ -62,6 +63,7 @@ export default function IndexPage(): JSX.Element {
       lang={locale}
       hideSidebar={true}
       hideToc={true}
+      footerOverride={<FooterWithDefaults lang={locale} />}
     >
       {/* Hero: logo left, title+desc+links right, block centered */}
       <div class="flex justify-center mb-vsp-xl">
