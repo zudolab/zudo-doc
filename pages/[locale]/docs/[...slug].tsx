@@ -44,6 +44,7 @@ import { mdxComponents } from "../../_mdx-components";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../../_data";
 import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
+import { DocHistoryArea } from "../../lib/_doc-history-area";
 
 export const frontmatter = { title: "Docs" };
 
@@ -264,6 +265,11 @@ export default function LocaleDocsPage({ params, props }: PageArgs): JSX.Element
           )}
 
           {entry && <entry.Content components={components} />}
+
+          {/* Document utilities (revision history) — skipped for unlisted pages */}
+          {!entry!.data.unlisted && (
+            <DocHistoryArea slug={slug} locale={locale} />
+          )}
 
           {/* Prev / Next pagination */}
           <nav class="mt-vsp-2xl grid grid-cols-2 gap-hsp-xl">
