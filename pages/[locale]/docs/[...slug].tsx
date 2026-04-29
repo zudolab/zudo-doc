@@ -46,6 +46,7 @@ import { bridgeEntries } from "../../_data";
 import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
 import { DocHistoryArea } from "../../lib/_doc-history-area";
 import { SidebarWithDefaults } from "../../lib/_sidebar-with-defaults";
+import { HeaderWithDefaults } from "../../lib/_header-with-defaults";
 
 export const frontmatter = { title: "Docs" };
 
@@ -230,6 +231,14 @@ export default function LocaleDocsPage({ params, props }: PageArgs): JSX.Element
       lang={locale}
       hideSidebar={entry?.data?.hide_sidebar}
       hideToc={entry?.data?.hide_toc}
+      headerOverride={
+        <HeaderWithDefaults
+          lang={locale}
+          currentSlug={slug}
+          navSection={getNavSectionForSlug(slug)}
+          currentPath={docsUrl(slug, locale)}
+        />
+      }
       breadcrumbOverride={
         breadcrumbs.length > 0 ? <Breadcrumb items={breadcrumbs} /> : undefined
       }
