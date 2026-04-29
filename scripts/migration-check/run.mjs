@@ -53,6 +53,7 @@ import { discoverRoutes } from "./discover-routes.mjs";
 import { diffArtifacts } from "./diff-artifacts.mjs";
 import { runJobQueue } from "./lib/job-queue.mjs";
 import { aggregate } from "./aggregate.mjs";
+import { raiseIssues } from "./raise-issues.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -478,6 +479,13 @@ async function main() {
 
     console.log("\n[S6] ── Phase 5: Aggregation ───────────────────────────────");
     await aggregate({ findingsDir: FINDINGS_DIR, reportPath: REPORT_PATH });
+
+    // ── Phase 5b: Raise GitHub issues (opt-in via --raise-issues) ──────────
+
+    if (args.raiseIssues) {
+      console.log("\n[S6] ── Phase 5b: Raise issues ─────────────────────────────");
+      await raiseIssues({ findingsDir: FINDINGS_DIR });
+    }
 
   } finally {
     if (!shuttingDown) {
