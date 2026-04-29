@@ -48,6 +48,7 @@ import { FooterWithDefaults } from "../lib/_footer-with-defaults";
 import { DocHistoryArea } from "../lib/_doc-history-area";
 import { SidebarWithDefaults } from "../lib/_sidebar-with-defaults";
 import { HeaderWithDefaults } from "../lib/_header-with-defaults";
+import { HeadWithDefaults } from "../lib/_head-with-defaults";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../_data";
 
@@ -204,6 +205,7 @@ export default function DocsPage({ props }: PageArgs): JSX.Element {
     <DocLayoutWithDefaults
       title={title}
       description={description}
+      head={<HeadWithDefaults title={title} description={description} />}
       lang={locale}
       hideSidebar={entry?.data?.hide_sidebar}
       hideToc={entry?.data?.hide_toc}
