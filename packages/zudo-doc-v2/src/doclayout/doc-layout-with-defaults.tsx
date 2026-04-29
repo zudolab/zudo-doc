@@ -75,6 +75,7 @@ import {
   DesignTokenTweakPanelIsland,
   ImageEnlargeIsland,
 } from "../ssr-skip/index.js";
+import { TabsInit } from "../code-syntax/tabs-init.js";
 
 // Sibling-topic barrels. Each is being authored by a peer agent in the
 // same parallel session; the imports below assume the canonical shape
@@ -251,7 +252,15 @@ export function DocLayoutWithDefaults(
             </>
           )
         }
-        bodyEndScripts={bodyEndScripts}
+        bodyEndScripts={
+          bodyEndScripts ?? (
+            // Default body-end script: activates the correct tab panel and
+            // wires click handlers for <Tabs> components. Emitted once per
+            // page; callers that need a different body-end script set should
+            // pass `bodyEndScripts` explicitly to override this default.
+            <TabsInit />
+          )
+        }
         main={children}
       />
     </>
