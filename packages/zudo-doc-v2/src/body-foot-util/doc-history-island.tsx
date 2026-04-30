@@ -115,24 +115,58 @@ export function DocHistoryIsland(props: DocHistoryIslandProps): VNode {
   } = props;
 
   // Build the static SSR fallback if the caller did not supply one.
-  // sr-only keeps it invisible to sighted users while remaining
-  // accessible and greppable by the migration-check text extractor.
+  //
+  // The fallback renders two regions:
+  //  1. An sr-only div with author + date metadata for assistive
+  //     technology and the migration-check text extractor.
+  //  2. A visible trigger button matching the Astro SSR-rendered shape
+  //     (`<div class="flex justify-end mt-vsp-xl"><button …>`).
+  //     Astro SSR-rendered the full DocHistory Preact component,
+  //     producing a visible "History" button before hydration. The zfb
+  //     SSR-skip placeholder replaces that pattern; to maintain parity
+  //     we emit the same visible button here.
   const fallback =
     ssrFallback !== undefined ? (
       ssrFallback
     ) : (
-      <div class="sr-only">
-        {author && <span>{author}</span>}
-        <span>
-          {createdLabel}
-          {createdDate ? `: ${createdDate}` : ""}
-        </span>
-        <span>
-          {updatedLabel}
-          {updatedDate ? `: ${updatedDate}` : ""}
-        </span>
-        <span>{historyLabel}</span>
-      </div>
+      <>
+        {/* sr-only metadata — accessible before JS, greppable by migration-check */}
+        <div class="sr-only">
+          {author && <span>{author}</span>}
+          <span>
+            {createdLabel}
+            {createdDate ? `: ${createdDate}` : ""}
+          </span>
+          <span>
+            {updatedLabel}
+            {updatedDate ? `: ${updatedDate}` : ""}
+          </span>
+        </div>
+        {/* Visible trigger button — matches the Astro SSR-rendered initial state */}
+        <div class="flex justify-end mt-vsp-xl">
+          <button
+            type="button"
+            class="doc-history-trigger flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-fg hover:border-fg transition-colors"
+            aria-label={historyLabel}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="h-icon-md w-icon-md"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <span class="text-small">{historyLabel}</span>
+          </button>
+        </div>
+      </>
     );
 
   return renderSsrSkipPlaceholder("DocHistory", when, fallback, {

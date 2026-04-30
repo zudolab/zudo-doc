@@ -50,6 +50,7 @@ import { SidebarWithDefaults } from "../../../lib/_sidebar-with-defaults";
 import { HeaderWithDefaults } from "../../../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../../../lib/_head-with-defaults";
 import { DocHistoryArea } from "../../../lib/_doc-history-area";
+import { DocMetainfoArea } from "../../../lib/_doc-metainfo-area";
 
 export const frontmatter = { title: "Docs" };
 
@@ -258,6 +259,11 @@ export default function VersionedDocsPage({ props }: PageArgs): JSX.Element {
       ) : (
         <div>
           <h1 class="text-heading font-bold mb-vsp-xs">{entry!.data.title}</h1>
+
+          {/* Build-time date block (Created / Updated / Author). Mirrors the
+              Astro `doc-metainfo.astro` placement — between <h1> and description.
+              Data from `.zfb/doc-history-meta.json` (esbuild-inlined, no fs). */}
+          <DocMetainfoArea slug={slug} locale={locale} />
 
           {entry!.data.description && (
             <p class="mt-0 mb-vsp-lg text-subheading text-muted">
