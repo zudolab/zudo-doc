@@ -19,6 +19,8 @@ import {
   diffText,
   diffBinary,
   walkArtifactsDir,
+  extractAstroCanonicalBasename,
+  buildAstroCanonicalMap,
 } from "../diff-artifacts.mjs";
 
 const FIXTURES = join(import.meta.dirname, "fixtures");
@@ -44,6 +46,9 @@ describe("getArtifactType", () => {
   it("returns 'binary' for image extensions", () => {
     expect(getArtifactType("icon.png")).toBe("binary");
     expect(getArtifactType("photo.jpg")).toBe("binary");
+    expect(getArtifactType("image-wide.webp")).toBe("binary");
+    expect(getArtifactType("logo.svg")).toBe("binary");
+    expect(getArtifactType("_astro/image-wide.D1YdccyX_1EtJL4.webp")).toBe("binary");
   });
 
   it("returns 'text' for known text artifact names", () => {
@@ -287,6 +292,87 @@ describe("walkArtifactsDir", () => {
   it("returns an empty array for a non-existent directory", async () => {
     const files = await walkArtifactsDir(join(FIXTURES, "nonexistent-dir"));
     expect(files).toEqual([]);
+  });
+});
+
+// ── extractAstroCanonicalBasename ─────────────────────────────────────────────
+
+describe("extractAstroCanonicalBasename", () => {
+  it("strips Astro content hash and returns canonical basename", () => {
+    expect(extractAstroCanonicalBasename("_astro/image-wide.D1YdccyX_1EtJL4.webp")).toBe(
+      "image-wide.webp",
+    );
+  });
+
+  it("handles hashes with underscores and hyphens (base64url charset)", () => {
+    expect(extractAstroCanonicalBasename("_astro/image-small.A1B2C3D4_efgh.webp")).toBe(
+      "image-small.webp",
+    );
+  });
+
+  it("handles different extensions (png, jpg)", () => {
+    expect(extractAstroCanonicalBasename("_astro/logo.ABCDEFGH12345678.png")).toBe("logo.png");
+    expect(extractAstroCanonicalBasename("_astro/photo.abcdefgh.jpg")).toBe("photo.jpg");
+  });
+
+  it("returns null for paths not under _astro/", () => {
+    expect(extractAstroCanonicalBasename("img/image-enlarge/image-wide.webp")).toBeNull();
+    expect(extractAstroCanonicalBasename("favicon.ico")).toBeNull();
+    expect(extractAstroCanonicalBasename("robots.txt")).toBeNull();
+  });
+
+  it("returns null when hash segment is shorter than 8 characters", () => {
+    // 7 chars is too short — likely not a content hash
+    expect(extractAstroCanonicalBasename("_astro/image.short.webp")).toBeNull();
+    expect(extractAstroCanonicalBasename("_astro/image.abc1234.webp")).toBeNull();
+  });
+
+  it("returns null when filename has no hash pattern (no dot-separated segments)", () => {
+    expect(extractAstroCanonicalBasename("_astro/image-wide.webp")).toBeNull();
+  });
+
+  it("returns null for nested _astro paths (subdirectory inside _astro/)", () => {
+    // Only top-level _astro/<name>.<HASH>.<ext> is supported
+    expect(extractAstroCanonicalBasename("_astro/sub/image.D1YdccyX.webp")).toBeNull();
+  });
+});
+
+// ── buildAstroCanonicalMap ────────────────────────────────────────────────────
+
+describe("buildAstroCanonicalMap", () => {
+  it("builds a map of canonical basename → actual path for _astro paths", () => {
+    const paths = [
+      "_astro/image-wide.D1YdccyX_1EtJL4.webp",
+      "_astro/image-small.ABCDEFGH12345678.webp",
+      "robots.txt",
+      "img/image-enlarge/image-opt-out.webp",
+    ];
+    const map = buildAstroCanonicalMap(paths);
+    expect(map.size).toBe(2);
+    expect(map.get("image-wide.webp")).toBe("_astro/image-wide.D1YdccyX_1EtJL4.webp");
+    expect(map.get("image-small.webp")).toBe("_astro/image-small.ABCDEFGH12345678.webp");
+  });
+
+  it("ignores non-_astro paths", () => {
+    const paths = ["robots.txt", "search-index.json", "favicon.ico"];
+    const map = buildAstroCanonicalMap(paths);
+    expect(map.size).toBe(0);
+  });
+
+  it("returns empty map for empty input", () => {
+    const map = buildAstroCanonicalMap([]);
+    expect(map.size).toBe(0);
+  });
+
+  it("last writer wins when two _astro paths canonicalize to the same basename", () => {
+    // Unlikely in practice, but the Map will hold the last one written
+    const paths = [
+      "_astro/image-wide.HASH00001234.webp",
+      "_astro/image-wide.HASH99998765.webp",
+    ];
+    const map = buildAstroCanonicalMap(paths);
+    expect(map.size).toBe(1);
+    expect(map.has("image-wide.webp")).toBe(true);
   });
 });
 

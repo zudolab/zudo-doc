@@ -204,6 +204,48 @@ export function normalizeHtml(html, options = {}) {
     ""
   );
 
+  // ── 1b. Strip Astro framework runtime inline scripts and style block ──────
+  // Astro emits a display:contents inline <style> for astro-island/astro-slot
+  // elements, plus one or more inline IIFE <script> blocks that register the
+  // Astro runtime namespace (self.Astro, astro:idle, astro:load). These appear
+  // in every Astro page that contains an <astro-island> element (i.e. virtually
+  // every doc page with a Toc/MobileToc/SidebarTree island).
+  //
+  // zfb has no equivalent inline runtime — its islands hydrate via
+  // data-zfb-island markers handled by a single shared external script.
+  // Stripping these elements from both sides (only A has them; B output is a
+  // no-op) eliminates DOM-shape noise from domShapeHash and prevents the
+  // character-by-character typography walker from misinterpreting JS operators
+  // (< / >) as HTML tag boundaries. Conceptually identical to the #701
+  // asset-loss carve-out for Astro-emitted assets.
+  //
+  // Phase B-14-1, issue #914.
+
+  // The astro-island/astro-slot display:contents style block — emitted once per
+  // page whenever any <astro-island> element is present.
+  result = result.replace(
+    /<style[^>]*>\s*astro-island\s*,\s*astro-slot[^<]*<\/style>/gi,
+    ""
+  );
+
+  // Inline <script> bodies that register or invoke the Astro runtime namespace.
+  // Only matches attribute-less <script> tags (Astro runtime scripts never carry
+  // a src= attribute; JSON-LD uses type="application/ld+json" and is unaffected).
+  result = result.replace(
+    /<script>([\s\S]*?)<\/script>/g,
+    (match, body) => {
+      if (
+        body.includes("self.Astro") ||
+        body.includes("astro:idle") ||
+        body.includes("astro:load") ||
+        body.includes("astro-island")
+      ) {
+        return "";
+      }
+      return match;
+    }
+  );
+
   // ── 2. Collapse whitespace between tags, preserve pre/code/textarea ──────
   // Also canonicalize quote / apostrophe typography in text content so the
   // zfb MDX output (literal `&quot;` entity, U+0027 straight apostrophe)
@@ -219,6 +261,24 @@ export function normalizeHtml(html, options = {}) {
       return applyTypographyNormalizationToTextNodes(collapsed);
     })
     .join("");
+
+  // ── 2b. Canonicalize non-breaking whitespace ─────────────────────────────
+  // Tag-listing pages in Astro emit "#tag &nbsp;(N)" while zfb uses a plain
+  // space: "#tag (N)". After HTML entity decoding both are semantically
+  // equivalent, but the raw &nbsp; entity (6 chars) vs ASCII space (1 char)
+  // flips the textHash and can push B's visible-text length below the 95%
+  // content-loss threshold.
+  //
+  // Decode &nbsp; and U+00A0 to plain ASCII space so both sides converge
+  // before signal extraction. The existing whitespace-between-tags collapse
+  // (step 2 above) only handles inter-tag whitespace; text-content &nbsp; is
+  // unaffected by that pass and must be handled explicitly here.
+  //
+  // Phase B-14-3, issue #914.
+  result = result.replace(/&nbsp;/gi, " ");
+  result = result.replace(/&#160;/g, " "); // decimal numeric character reference for U+00A0
+  result = result.replace(/&#x0*a0;/gi, " "); // hex numeric character reference for U+00A0
+  result = result.replace(/\u00a0/g, " "); // U+00A0 NON-BREAKING SPACE -> ASCII SPACE
 
   // ── 3. Process open tags (sort attrs, strip runtime data-*, normalize URLs) ─
   // Tag regex: matches open tags handling quoted attribute values.
