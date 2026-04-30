@@ -48,6 +48,7 @@ import { FooterWithDefaults } from "../../../../lib/_footer-with-defaults";
 import { SidebarWithDefaults } from "../../../../lib/_sidebar-with-defaults";
 import { HeaderWithDefaults } from "../../../../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../../../../lib/_head-with-defaults";
+import { DocHistoryArea } from "../../../../lib/_doc-history-area";
 
 export const frontmatter = { title: "Docs" };
 
@@ -307,6 +308,11 @@ export default function VersionedJaDocsPage({ props }: PageArgs): JSX.Element {
           )}
 
           {entry && <entry.Content components={components} />}
+
+          {/* Document utilities (revision history) — gated on entry, matching regular slug page pattern */}
+          {entry && (
+            <DocHistoryArea slug={slug} locale={locale} />
+          )}
 
           {/* Prev / Next pagination */}
           <nav class="mt-vsp-2xl grid grid-cols-2 gap-hsp-xl">

@@ -18,18 +18,15 @@ import { settings } from "@/config/settings";
 import { defaultLocale, t } from "@/config/i18n";
 import { BodyFootUtilArea } from "@zudo-doc/zudo-doc-v2/body-foot-util";
 import { buildGitHubSourceUrl } from "@/utils/github";
-// HOTFIX (Phase C round 5, 2026-04-30): B-10 b10-3 imported
-// `getFileCommits, getCommitInfo` from `@/utils/doc-history` to enrich the
-// DocHistoryIsland SSR fallback with author/date markers. That utility chain
-// transitively pulls in `gray-matter` (Node-only `fs`), which zfb's bundler
-// drags into the client graph through the page tree, breaking `pnpm build`
-// with `Could not resolve "fs"`. The b10-3 `getHistoryMeta()` helper has been
-// removed so the build unblocks; the fallback now contains only the static
-// labels (Created/Updated/History) and the DocHistoryIsland still hydrates
-// the actual author/dates client-side from /doc-history/{slug}.json. Filing a
-// Phase B-11 epic to re-add SSR-time author/dates via a route that does not
-// drag Node-only utilities into the client bundle (e.g., reading the already
-// generated doc-history JSON or moving the lookup to a build-time data step).
+// SSR author + date metadata comes from `.zfb/doc-history-meta.json`, a
+// build-time manifest emitted by `scripts/zfb-prebuild.mjs` (step 2:
+// doc-history-meta) before `zfb build` runs. esbuild inlines the JSON
+// statically so no Node-only `fs` code reaches the client bundle.
+// The `#doc-history-meta` alias is defined in tsconfig.json and resolves
+// to the absolute path of `.zfb/doc-history-meta.json` — this is needed
+// because the zfb bundler builds pages from a shadow tree; relative paths
+// across the shadow boundary would resolve to the wrong location.
+import docHistoryMeta from "#doc-history-meta";
 
 interface DocHistoryAreaProps {
   /** Page slug, e.g. "getting-started/intro". */
@@ -80,6 +77,13 @@ export function DocHistoryArea({
 }: DocHistoryAreaProps): VNode | null {
   if (!settings.docHistory) return null;
 
+  // Look up the build-time manifest entry for this page. The composedSlug
+  // matches the key written by the prebuild step: bare slug for the default
+  // locale, "<localeKey>/<slug>" for non-default locales.
+  const composedSlug = locale === defaultLocale ? slug : `${locale}/${slug}`;
+  type MetaEntry = { author: string; createdDate: string; updatedDate: string };
+  const meta = (docHistoryMeta as Record<string, MetaEntry>)[composedSlug];
+
   const docHistory = {
     slug,
     // Omit locale for the default locale — fetch path is /doc-history/{slug}.json.
@@ -90,9 +94,11 @@ export function DocHistoryArea({
     createdLabel: t("doc.created", locale),
     updatedLabel: t("doc.updated", locale),
     historyLabel: t("doc.history", locale),
-    // Author + dates intentionally omitted at SSR time — see hotfix note at top
-    // of this file. DocHistoryIsland hydrates them client-side from the
-    // /doc-history/{slug}.json endpoint emitted by the postbuild step.
+    // SSR author + dates from the build-time manifest (b11-2). Omitted when the
+    // manifest has no entry for this slug (e.g. untracked files, shallow clone).
+    ...(meta?.author ? { author: meta.author } : {}),
+    ...(meta?.createdDate ? { createdDate: meta.createdDate } : {}),
+    ...(meta?.updatedDate ? { updatedDate: meta.updatedDate } : {}),
   };
 
   // Compute the view-source GitHub URL host-side so the v2 BodyFootUtilArea

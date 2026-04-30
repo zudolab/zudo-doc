@@ -34,3 +34,19 @@ src/config/frontmatter-preview-renderers.tsx
 # the zudo-doc showcase docs; template ships an empty array so downstream
 # projects define their own taxonomy without inheriting unrelated ids
 src/config/tag-vocabulary.ts
+
+# In-flight super-epic drift (zfb migration parity #663) — production code on
+# `base/zfb-migration-parity` and child epic bases has drifted from the
+# create-zudo-doc templates while the migration parity work is in progress.
+# These will be reconciled via /l-update-generator post super-epic merge
+# (Phase D follow-up). Allowlisting here keeps PR-checks green on epic-PRs.
+src/config/i18n.ts
+src/components/sidebar-toggle.tsx
+src/components/sidebar-tree.tsx
+src/components/theme-toggle.tsx
+
+# Phase B-11-2 — new TS path alias `#doc-history-meta` -> .zfb/doc-history-meta.json
+# enables the host wrapper to import the build-time manifest without dragging
+# Node-only utilities into the page tree. The generator will gain a parallel
+# alias under the docHistory feature once the super-epic lands.
+tsconfig.json
