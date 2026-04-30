@@ -58,6 +58,8 @@ export function detectLocaleFromPath(path: string): Locale {
 /** UI string translations */
 const translations: Record<string, Record<string, string>> = {
   en: {
+    "search.placeholder": "Type to search...",
+    "search.shortcutHint": "to open search from anywhere",
     "nav.gettingStarted": "Getting Started",
     "nav.learn": "Learn",
     "nav.guides": "Guides",
@@ -84,6 +86,7 @@ const translations: Record<string, Record<string, string>> = {
     "doc.allTags": "All Tags",
     "doc.created": "Created",
     "doc.updated": "Updated",
+    "doc.history": "History",
     "doc.noTags": "No tags found.",
     "doc.pageCount": "{count} pages",
     "doc.pageCountSingle": "{count} page",
@@ -116,6 +119,8 @@ const translations: Record<string, Record<string, string>> = {
     "version.page.docs": "Docs",
   },
   ja: {
+    "search.placeholder": "検索したい単語を入力",
+    "search.shortcutHint": "いつでも検索バーを開ける",
     "nav.gettingStarted": "はじめに",
     "nav.learn": "学ぶ",
     "nav.guides": "ガイド",
@@ -142,6 +147,7 @@ const translations: Record<string, Record<string, string>> = {
     "doc.allTags": "すべてのタグ",
     "doc.created": "作成",
     "doc.updated": "更新",
+    "doc.history": "履歴",
     "doc.noTags": "タグが見つかりません。",
     "doc.pageCount": "{count}ページ",
     "doc.pageCountSingle": "{count}ページ",
@@ -201,6 +207,7 @@ const translations: Record<string, Record<string, string>> = {
     "doc.allTags": "Alle Tags",
     "doc.created": "Erstellt",
     "doc.updated": "Aktualisiert",
+    "doc.history": "Verlauf",
     "doc.noTags": "Keine Tags gefunden.",
     "doc.pageCount": "{count} Seiten",
     "doc.pageCountSingle": "{count} Seite",
