@@ -25,10 +25,12 @@
 // and `HtmlPreview: HtmlPreviewWrapper` (Island wrapper) stay in their
 // non-stub form because their Preact bindings already exist.
 
+import type { ComponentChildren } from "preact";
 import { htmlOverrides } from "@zudo-doc/zudo-doc-v2/content";
 import { HtmlPreviewWrapper } from "@zudo-doc/zudo-doc-v2/html-preview-wrapper";
 import { Tabs } from "@zudo-doc/zudo-doc-v2/code-syntax";
 import { TabItem } from "@zudo-doc/zudo-doc-v2/tab-item";
+import { PresetGeneratorFallback } from "./lib/_preset-generator";
 
 /**
  * MDX-tag stub: renders nothing. Returning `null` keeps the rendered
@@ -36,6 +38,29 @@ import { TabItem } from "@zudo-doc/zudo-doc-v2/tab-item";
  * markup into the SSR output.
  */
 const MdxStub = (_props: unknown) => null;
+
+/**
+ * SSR-pass-through wrapper for `<Island when="load|idle|visible">`.
+ *
+ * In the zfb build the zfb `<Island>` component is unavailable, so the
+ * MDX corpus tags resolve to this binding instead. Rendering the
+ * children directly ensures that any server-renderable content nested
+ * inside `<Island>` (headings, paragraphs, etc.) appears in the SSR
+ * HTML. Client-only inner components that are themselves wrapped in an
+ * SSR-skip placeholder will emit their own placeholder markup; this
+ * wrapper does not suppress them.
+ *
+ * The `when` prop is intentionally ignored at render time — it is only
+ * meaningful to the zfb hydration runtime on the client, which reads
+ * the `data-when` attribute on the inner SSR-skip placeholder div (if
+ * present) rather than on this wrapper.
+ */
+function IslandWrapper(props: {
+  when?: "load" | "idle" | "visible" | "media";
+  children?: ComponentChildren;
+}): ComponentChildren {
+  return props.children ?? null;
+}
 
 /**
  * Build an admonition stub for the given variant — renders the
@@ -109,8 +134,14 @@ export const mdxComponents = {
   Tabs,
   TabItem,
   SmartBreak: MdxStub,
-  Island: MdxStub,
-  PresetGenerator: MdxStub,
+  // Island: pass children through so server-renderable content nested inside
+  // <Island> appears in SSR HTML. See IslandWrapper comment above.
+  Island: IslandWrapper,
+  // PresetGenerator: render the 8 section headings as static SSR HTML so the
+  // migration-check can find all h3 markers before JS hydration. The
+  // interactive form loads client-side via the SSR-skip placeholder inside
+  // PresetGeneratorFallback.
+  PresetGenerator: PresetGeneratorFallback,
   // Pure showcase placeholders (Avatar/Button/Card/MyComponent/PageLayout
   // appear only inside MDX prose as illustrative examples — never
   // implemented as real components).
