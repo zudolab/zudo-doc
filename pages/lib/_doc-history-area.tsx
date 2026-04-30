@@ -59,9 +59,10 @@ function getHistoryMeta(
     const commits = getFileCommits(filePath, 100);
     if (commits.length === 0) return null;
     const newest = getCommitInfo(commits[0], filePath);
+    if (!newest) return null;
     const oldest =
       commits.length > 1
-        ? getCommitInfo(commits[commits.length - 1], filePath)
+        ? getCommitInfo(commits[commits.length - 1], filePath) ?? newest
         : newest;
     return {
       // First commit author is the document creator; fall back to newest

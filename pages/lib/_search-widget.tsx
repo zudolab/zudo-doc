@@ -115,7 +115,7 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
               <input
                 data-search-input
                 type="text"
-                placeholder="Search docs..."
+                placeholder={placeholderText}
                 class="w-full bg-transparent text-body text-fg outline-none placeholder:text-muted"
                 autocomplete="off"
                 spellcheck={false}
