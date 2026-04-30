@@ -46,6 +46,7 @@ import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import { createMdxComponents } from "../_mdx-components";
 import { FooterWithDefaults } from "../lib/_footer-with-defaults";
 import { DocHistoryArea } from "../lib/_doc-history-area";
+import { DocMetainfoArea } from "../lib/_doc-metainfo-area";
 import { SidebarWithDefaults } from "../lib/_sidebar-with-defaults";
 import { HeaderWithDefaults } from "../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../lib/_head-with-defaults";
@@ -252,6 +253,11 @@ export default function DocsPage({ props }: PageArgs): JSX.Element {
         /* Regular doc page */
         <div>
           <h1 class="text-heading font-bold mb-vsp-xs">{entry!.data.title}</h1>
+
+          {/* Build-time date block (Created / Updated / Author). Mirrors the
+              Astro `doc-metainfo.astro` placement — between <h1> and description.
+              Data from `.zfb/doc-history-meta.json` (esbuild-inlined, no fs). */}
+          <DocMetainfoArea slug={slug} locale={locale} />
 
           {entry!.data.description && (
             <p class="mt-0 mb-vsp-lg text-subheading text-muted">
