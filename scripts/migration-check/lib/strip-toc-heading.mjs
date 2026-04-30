@@ -1,5 +1,5 @@
 /**
- * strip-toc-heading.mjs — strip in-content TOC heading before signal extraction.
+ * strip-toc-heading.mjs — strip TOC heading before signal extraction.
  *
  * Context (phase B-15-2, issue #917):
  *   zfb's DocLayout emits an in-content <h2>On this page</h2> (EN) /
@@ -13,11 +13,24 @@
  *   falls out of the diff entirely — routes that were clean except for this
  *   heading are reclassified as identical.
  *
- *   Only h2 elements inside <main> are stripped. h2s outside main, h2s with
- *   different text (including partial matches like "On this page only"), and
- *   h3s with the same text are left untouched. Text matching is exact after
- *   trimming and stripping inner tags — a <span> or similar wrapper around
- *   the text content is handled transparently.
+ *   Two placement variants are normalized (see hasTocHeading / stripTocHeading):
+ *
+ *   1. Inside <main> (B-15 pattern): the dominant case where zfb DocLayout
+ *      emits the heading adjacent to the MobileToc island inside the main
+ *      content area. h2s outside main and h2s with non-matching text are
+ *      left intact. Text matching is exact after trimming and stripping inner
+ *      tags — a <span> wrapper around the text content is handled transparently.
+ *
+ *   2. After </main> in the suffix (C-3 residual, phase C): zfb's desktop Toc
+ *      island itself emits <h2>On this page</h2> / <h2>目次</h2> in the
+ *      sidebar column outside <main>. Astro's Toc component does not emit
+ *      this heading at all, so the diff is framework-asymmetric. 4 routes
+ *      (/ja/docs/claude-skills, /ja/docs/components/mermaid-diagrams,
+ *      /v/1.0/docs/getting-started/installation,
+ *      /v/1.0/ja/docs/getting-started/installation) hit this pattern.
+ *
+ *   h2s before <main> (e.g. in the site header) are never stripped to avoid
+ *   false positives.
  *
  *   The strip is gated by `enabled` in the run config so pages without a
  *   TOC heading pass through untouched.
@@ -171,12 +184,19 @@ function stripTocH2sFrom(fragment) {
 // ── Detection ─────────────────────────────────────────────────────────────────
 
 /**
- * Return true when the HTML contains at least one in-content TOC h2 heading
- * inside <main> — either "On this page" (EN) or "目次" (JA).
+ * Return true when the HTML contains at least one TOC h2 heading — either
+ * "On this page" (EN) or "目次" (JA) — in any of the stripped regions:
  *
- * Only h2 elements inside the first <main> element are checked. h2s outside
- * main are ignored. Text matching is exact after stripping inner tags and
- * trimming — a <span> wrapper around the text does not prevent detection.
+ *   1. Inside <main>: the dominant B-15 pattern where zfb DocLayout emitted
+ *      the heading adjacent to the MobileToc island inside the main content
+ *      area.
+ *   2. After </main> (suffix): the C-3 residual pattern where zfb's Toc island
+ *      itself emits <h2>On this page</h2> / <h2>目次</h2> in the desktop
+ *      sidebar column, which sits outside <main>. Astro's Toc component does
+ *      not emit this heading at all, so the diff is framework-asymmetric.
+ *
+ * h2s before <main> (e.g. in the site header) are intentionally excluded to
+ * avoid false positives.
  *
  * @param {string} html  Normalized HTML string.
  * @returns {boolean}
@@ -184,26 +204,36 @@ function stripTocH2sFrom(fragment) {
 export function hasTocHeading(html) {
   const bounds = findMainInnerBounds(html);
   if (!bounds) return false;
-  return fragmentHasTocH2(html.slice(bounds.innerStart, bounds.innerEnd));
+  // Check inside <main> (B-15 pattern).
+  if (fragmentHasTocH2(html.slice(bounds.innerStart, bounds.innerEnd))) return true;
+  // Also check the suffix after </main> (C-3 residual: Toc island outside main).
+  return fragmentHasTocH2(html.slice(bounds.innerEnd));
 }
 
 // ── Stripping ─────────────────────────────────────────────────────────────────
 
 /**
- * Remove in-content TOC h2 headings from the <main> element of `html`.
+ * Remove TOC h2 headings from `html`, covering two distinct placement patterns:
  *
- * Strips every `<h2>On this page</h2>` (EN) and `<h2>目次</h2>` (JA)
- * element found inside <main>. Text matching is exact after stripping inner
- * tags and trimming — a <span> or other inline wrapper around the text
- * content is handled transparently. h2 elements outside <main> and h2s with
- * non-matching text are left intact.
+ *   1. Inside <main> (B-15 pattern) — zfb DocLayout emitted the heading
+ *      adjacent to the MobileToc island inside the main content area.
+ *   2. After </main> in the suffix (C-3 residual pattern) — zfb's desktop Toc
+ *      island emits `<h2>On this page</h2>` / `<h2>目次</h2>` as a sidebar
+ *      heading outside <main>. Astro's Toc component does not emit this
+ *      heading at all (text matching falls outside the sidebar nav entirely),
+ *      so the diff is framework-asymmetric and must be normalized.
+ *
+ * Text matching is exact after stripping inner tags and trimming — a <span>
+ * or other inline wrapper around the text content is handled transparently.
+ * h2 elements before <main> (site header area) are left intact to avoid
+ * false positives.
  *
  * Uses the same regex-based parsing approach as the rest of the harness
  * (see strip-version-switcher.mjs for the general rationale). This is safe
  * for the controlled Astro/zfb HTML output that the harness processes.
  *
  * @param {string} html  HTML string (normalized or raw).
- * @returns {string}     HTML with in-content TOC h2 elements removed.
+ * @returns {string}     HTML with TOC h2 elements removed from both regions.
  */
 export function stripTocHeading(html) {
   const bounds = findMainInnerBounds(html);
@@ -212,9 +242,11 @@ export function stripTocHeading(html) {
   const { innerStart, innerEnd } = bounds;
   const prefix = html.slice(0, innerStart);
   const mainContent = html.slice(innerStart, innerEnd);
+  // suffix starts from the </main> tag itself; strip covers the Toc island
+  // sidebar that zfb renders immediately after </main>.
   const suffix = html.slice(innerEnd);
 
-  return prefix + stripTocH2sFrom(mainContent) + suffix;
+  return prefix + stripTocH2sFrom(mainContent) + stripTocH2sFrom(suffix);
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────
