@@ -46,6 +46,7 @@ import { bridgeEntries } from "../../_data";
 import { extractHeadings } from "../../lib/_extract-headings";
 import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
 import { DocHistoryArea } from "../../lib/_doc-history-area";
+import { DocMetainfoArea } from "../../lib/_doc-metainfo-area";
 import { SidebarWithDefaults } from "../../lib/_sidebar-with-defaults";
 import { HeaderWithDefaults } from "../../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../../lib/_head-with-defaults";
@@ -275,6 +276,11 @@ export default function LocaleDocsPage({ params, props }: PageArgs): JSX.Element
       ) : (
         <div>
           <h1 class="text-heading font-bold mb-vsp-xs">{entry!.data.title}</h1>
+
+          {/* Build-time date block (Created / Updated / Author). Mirrors the
+              Astro `doc-metainfo.astro` placement — between <h1> and description.
+              Data from `.zfb/doc-history-meta.json` (esbuild-inlined, no fs). */}
+          <DocMetainfoArea slug={slug} locale={locale} />
 
           {/* Fallback notice for non-translated pages */}
           {isFallback && !entry!.data.generated && (
