@@ -202,6 +202,26 @@ export function DocLayoutWithDefaults(
   // the correct locale string without requiring every caller to pass an override.
   const tocTitle = getTocTitle(lang);
 
+  // Gate the *default* Toc / MobileToc islands on heading availability and the
+  // hide_toc page flag. Astro's parity baseline omits the entire TOC region
+  // (no <nav aria-label="Table of contents">, no "On this page" / "目次" h2)
+  // whenever the page has no qualifying headings or hide_toc is true. Without
+  // this guard, DocLayoutWithDefaults would always emit those islands as SSG
+  // placeholders, producing a structural diff against Astro on ~28 doc routes
+  // (e.g. /docs/components, hide_toc index pages). Passing `undefined` to the
+  // toc / mobileToc slot tells <DocLayout> to drop them entirely (see
+  // `showToc = !hideToc && toc !== undefined` and `{!hideToc && mobileToc}`
+  // in doc-layout.tsx). Explicit overrides still win below — a caller that
+  // passes tocOverride / mobileTocOverride can force a custom TOC even on
+  // no-heading or hide_toc pages.
+  const shouldRenderDefaultToc = !props.hideToc && tocHeadings.length > 0;
+  const defaultToc = shouldRenderDefaultToc
+    ? <Toc headings={tocHeadings} title={tocTitle} />
+    : undefined;
+  const defaultMobileToc = shouldRenderDefaultToc
+    ? <MobileToc headings={tocHeadings} title={tocTitle} />
+    : undefined;
+
   // The empty fragments below carry the body-region injection anchors
   // verbatim. Each fragment is a no-op at runtime; the drift checker
   // matches the literal anchor string at the source-text level.
@@ -246,8 +266,8 @@ export function DocLayoutWithDefaults(
           // tree pass it through `sidebarOverride`.
           sidebarOverride ?? <Sidebar nodes={[]} />
         }
-        toc={tocOverride ?? <Toc headings={tocHeadings} title={tocTitle} />}
-        mobileToc={mobileTocOverride ?? <MobileToc headings={tocHeadings} title={tocTitle} />}
+        toc={tocOverride ?? defaultToc}
+        mobileToc={mobileTocOverride ?? defaultMobileToc}
         breadcrumb={breadcrumbOverride}
         afterBreadcrumb={afterBreadcrumb}
         afterSidebar={afterSidebar}
