@@ -30,6 +30,7 @@ import { bridgeEntries } from "../../_data";
 import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "../../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../../lib/_head-with-defaults";
+import { DocHistoryArea } from "../../lib/_doc-history-area";
 
 export const frontmatter = { title: "Tag" };
 
@@ -90,6 +91,7 @@ export default function DocTagPage({ params, props }: PageProps): JSX.Element {
       <h1 class="text-heading font-bold mb-vsp-xs">{pageTitle}</h1>
       <p class="text-muted mb-vsp-lg">{countText}</p>
       <DocCardGrid ariaLabel={pageTitle} items={cardItems} />
+      <DocHistoryArea slug={`tags/${tag}`} locale={locale} />
     </DocLayoutWithDefaults>
   );
 }
