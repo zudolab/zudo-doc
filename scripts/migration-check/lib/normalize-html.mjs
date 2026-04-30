@@ -276,6 +276,8 @@ export function normalizeHtml(html, options = {}) {
   //
   // Phase B-14-3, issue #914.
   result = result.replace(/&nbsp;/gi, " ");
+  result = result.replace(/&#160;/g, " "); // decimal numeric character reference for U+00A0
+  result = result.replace(/&#x0*a0;/gi, " "); // hex numeric character reference for U+00A0
   result = result.replace(/\u00a0/g, " "); // U+00A0 NON-BREAKING SPACE -> ASCII SPACE
 
   // ── 3. Process open tags (sort attrs, strip runtime data-*, normalize URLs) ─

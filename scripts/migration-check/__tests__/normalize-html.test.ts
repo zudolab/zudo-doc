@@ -289,6 +289,24 @@ describe("normalizeHtml – non-breaking whitespace canonicalization", () => {
     expect(result).toContain("#ai");
     expect(result).toContain("(3)");
   });
+
+  it("converts &#160; (decimal NCR for U+00A0) to plain ASCII space", () => {
+    const html = "<p>#ai&#160;(3)</p>";
+    const result = normalizeHtml(html);
+    expect(result).not.toContain("&#160;");
+    expect(result).toContain("#ai (3)");
+  });
+
+  it("converts &#xa0; (hex NCR for U+00A0) to plain ASCII space", () => {
+    const html = "<p>#ai&#xa0;(3)</p><p>#ja&#xA0;(2)</p><p>#en&#x00a0;(1)</p>";
+    const result = normalizeHtml(html);
+    expect(result).not.toContain("&#xa0;");
+    expect(result).not.toContain("&#xA0;");
+    expect(result).not.toContain("&#x00a0;");
+    expect(result).toContain("#ai (3)");
+    expect(result).toContain("#ja (2)");
+    expect(result).toContain("#en (1)");
+  });
 });
 
 // ── Fixture pair tests ────────────────────────────────────────────────────────
