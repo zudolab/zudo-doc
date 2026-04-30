@@ -37,6 +37,10 @@
 import type { VNode, JSX } from "preact";
 import { Island } from "@takazudo/zfb";
 import { Header } from "@zudo-doc/zudo-doc-v2/header";
+import {
+  VersionSwitcher,
+  type VersionSwitcherLabels,
+} from "@zudo-doc/zudo-doc-v2/i18n-version";
 // Don't import ThemeToggle from "@zudo-doc/zudo-doc-v2/theme" — that barrel
 // also re-exports DesignTokenTweakPanel and ColorTweakExportModal, which
 // transitively pull `src/components/design-token-tweak/*` and the v2 panel
@@ -49,7 +53,7 @@ import SidebarToggle from "@/components/sidebar-toggle";
 import SidebarTree from "@/components/sidebar-tree";
 import { settings } from "@/config/settings";
 import { defaultLocale, locales, t, type Locale } from "@/config/i18n";
-import { buildLocaleLinks, navHref, versionedDocsUrl } from "@/utils/base";
+import { buildLocaleLinks, docsUrl, navHref, versionedDocsUrl, withBase } from "@/utils/base";
 import {
   isNavVisible,
   loadCategoryMeta,
@@ -267,6 +271,63 @@ export function HeaderWithDefaults(
     />
   );
 
+  // Build the version-switcher component when versioning is configured.
+  // The VersionSwitcher is a pure SSR component — it emits the full dropdown
+  // markup (including the "All versions" footer link) directly in the SSG
+  // HTML so crawlers and JS-off users see the version list. The interactive
+  // toggle behavior is wired by VERSION_SWITCHER_INIT_SCRIPT included in
+  // the layout's body-end scripts.
+  //
+  // Gate: only render when settings.versions is a non-empty array. When
+  // versioning is disabled (settings.versions === false) the slot is
+  // undefined and the Header renders nothing for the version-switcher item.
+  let versionSwitcher: VNode | undefined;
+
+  if (settings.versions && settings.versions.length > 0) {
+    const isNonDefaultLocale = lang !== defaultLocale;
+    // "All versions" page URL — locale-prefixed when not on the default locale.
+    const versionsPageUrl = withBase(
+      isNonDefaultLocale ? `/${lang}/docs/versions` : "/docs/versions",
+    );
+    // "Latest" entry links to the current page in the latest (unversioned)
+    // docs when a slug is available, or falls back to the versions index page.
+    const latestUrl = currentSlug
+      ? docsUrl(currentSlug, lang)
+      : versionsPageUrl;
+
+    // Per-version URLs for the current page. When there is no slug in scope
+    // (e.g. on the versions page itself) all entries point to the versions
+    // index. This mirrors the original version-switcher.astro behavior.
+    const versionUrls: Record<string, string> = {};
+    for (const v of settings.versions) {
+      versionUrls[v.slug] = currentSlug
+        ? versionedDocsUrl(currentSlug, v.slug, lang)
+        : versionsPageUrl;
+    }
+
+    const labels: VersionSwitcherLabels = {
+      latest: t("version.latest", lang),
+      switcher: t("version.switcher.label", lang),
+      unavailable: t("version.switcher.unavailable", lang),
+      allVersions: t("version.switcher.allVersions", lang),
+    };
+
+    versionSwitcher = (
+      <VersionSwitcher
+        versions={settings.versions.map((v) => ({
+          slug: v.slug,
+          label: v.label ?? v.slug,
+        }))}
+        currentVersion={currentVersion}
+        latestUrl={latestUrl}
+        versionsPageUrl={versionsPageUrl}
+        versionUrls={versionUrls}
+        labels={labels}
+        idSuffix="header"
+      />
+    ) as unknown as VNode;
+  }
+
   return (
     <Header
       lang={lang}
@@ -275,6 +336,7 @@ export function HeaderWithDefaults(
       sidebarToggle={sidebarToggle}
       themeToggle={themeToggle}
       search={searchWidget}
+      versionSwitcher={versionSwitcher}
     />
   );
 }
