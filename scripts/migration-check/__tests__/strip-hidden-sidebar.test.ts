@@ -5,12 +5,13 @@
  * maybeStripHiddenSidebar() from lib/strip-hidden-sidebar.mjs.
  *
  * Covers:
- *   - Detection of hidden sidebar markers (class="sr-only" on aside#desktop-sidebar)
+ *   - Detection of hidden sidebar markers (B-side: aside#desktop-sidebar.sr-only)
+ *   - Detection of A-side Astro mobile-drawer aside (lg:hidden + -translate-x-full)
  *   - Non-detection on normal (visible) sidebar pages
  *   - Removal of the aside element and all its children
- *   - Symmetric stripping: content in the stripped block is gone from both sides
+ *   - Symmetric stripping: B-side and A-side hidden asides both fall out of the diff
  *   - Toggle: maybeStripHiddenSidebar is a no-op when enabled=false
- *   - Edge cases: nested asides, sidebar absent entirely
+ *   - Edge cases: multi-line class attribute, nested asides, sidebar absent
  */
 
 import { describe, expect, it } from "vitest";
@@ -19,6 +20,22 @@ import {
   stripDesktopSidebarAside,
   maybeStripHiddenSidebar,
 } from "../lib/strip-hidden-sidebar.mjs";
+
+// ── Fixtures ──────────────────────────────────────────────────────────────────
+
+// B-side (zfb) hideSidebar=true marker — single-line, sr-only on #desktop-sidebar.
+const B_SIDE_HIDDEN_ASIDE = `<aside id="desktop-sidebar" aria-label="Documentation sidebar" class="sr-only"><nav><a href="/docs/x">X</a></nav></aside>`;
+
+// A-side (Astro) mobile-drawer aside emitted by SidebarToggle. The class
+// attribute spans multiple lines and contains both `lg:hidden` (hides on
+// desktop) and `-translate-x-full` (hides on mobile when drawer is closed),
+// so the aside is hidden on every viewport at first paint.
+const A_SIDE_MOBILE_DRAWER_ASIDE = `<aside class="
+      fixed top-[3.5rem] left-0 z-40 h-[calc(100vh-3.5rem)] w-[16rem] flex flex-col
+      border-r border-muted bg-bg transition-transform duration-200
+      lg:hidden
+      -translate-x-full
+    "><nav><a href="/docs/guide">Guide</a></nav></aside>`;
 
 // ── hasHiddenSidebar ──────────────────────────────────────────────────────────
 
@@ -46,6 +63,27 @@ describe("hasHiddenSidebar", () => {
 
   it("returns false for an aside with sr-only but a different id", () => {
     const html = `<aside id="mobile-sidebar" class="sr-only"><nav>links</nav></aside>`;
+    expect(hasHiddenSidebar(html)).toBe(false);
+  });
+
+  it("detects A-side Astro mobile-drawer aside (lg:hidden + -translate-x-full, multi-line class)", () => {
+    expect(hasHiddenSidebar(A_SIDE_MOBILE_DRAWER_ASIDE)).toBe(true);
+  });
+
+  it("detects A-side mobile-drawer aside even when wrapped in surrounding markup", () => {
+    const html = `<body><header>H</header>${A_SIDE_MOBILE_DRAWER_ASIDE}<main>Content</main></body>`;
+    expect(hasHiddenSidebar(html)).toBe(true);
+  });
+
+  it("returns false for an aside with lg:hidden but no -translate-x-full", () => {
+    // Sidebar that is desktop-hidden but visible on mobile is NOT the
+    // mobile-drawer pattern — only the drawer ships with both classes.
+    const html = `<aside class="lg:hidden flex w-full"><nav>links</nav></aside>`;
+    expect(hasHiddenSidebar(html)).toBe(false);
+  });
+
+  it("returns false for an aside with -translate-x-full but no lg:hidden", () => {
+    const html = `<aside class="fixed -translate-x-full"><nav>links</nav></aside>`;
     expect(hasHiddenSidebar(html)).toBe(false);
   });
 });
@@ -89,6 +127,33 @@ describe("stripDesktopSidebarAside", () => {
     expect(result).not.toContain("Page 0");
     expect(result).not.toContain("Page 49");
     expect(result).toContain("Main content");
+  });
+
+  it("strips A-side Astro mobile-drawer aside (multi-line class attribute)", () => {
+    const html = `<body><header>H</header>${A_SIDE_MOBILE_DRAWER_ASIDE}<main>Main</main></body>`;
+    const result = stripDesktopSidebarAside(html);
+    expect(result).not.toContain("-translate-x-full");
+    expect(result).not.toContain("/docs/guide");
+    expect(result).not.toContain("<aside");
+    expect(result).toContain("<header>H</header>");
+    expect(result).toContain("<main>Main</main>");
+  });
+
+  it("strips both shapes in the same document", () => {
+    const html = `<body>${B_SIDE_HIDDEN_ASIDE}<main>Hello</main>${A_SIDE_MOBILE_DRAWER_ASIDE}</body>`;
+    const result = stripDesktopSidebarAside(html);
+    expect(result).not.toContain("<aside");
+    expect(result).not.toContain("desktop-sidebar");
+    expect(result).not.toContain("-translate-x-full");
+    expect(result).toContain("<main>Hello</main>");
+  });
+
+  it("leaves a non-hidden aside untouched", () => {
+    // Visible sidebar on a regular doc page — must not be stripped.
+    const visible = `<aside id="desktop-sidebar" class="hidden lg:block fixed"><nav><a href="/docs/x">X</a></nav></aside>`;
+    const html = `<body>${visible}<main>Main</main></body>`;
+    const result = stripDesktopSidebarAside(html);
+    expect(result).toBe(html);
   });
 });
 
@@ -135,5 +200,39 @@ describe("maybeStripHiddenSidebar", () => {
     // Main content is unchanged on both sides
     expect(strippedA).toContain("Tag page content");
     expect(strippedB).toContain("Tag page content");
+  });
+
+  it("symmetric stripping across asymmetric markup shapes (A-side mobile drawer vs B-side sr-only)", () => {
+    // hideSidebar=true route post-migration: A renders the Astro mobile drawer,
+    // B renders the zfb sr-only marker. Different DOM shapes, but both must
+    // fall out of the diff so the content-loss check sees only the visible
+    // page content.
+    const sideA = `<body><header>H</header>${A_SIDE_MOBILE_DRAWER_ASIDE}<main>Tag page content</main></body>`;
+    const sideB = `<body><header>H</header>${B_SIDE_HIDDEN_ASIDE}<main>Tag page content</main></body>`;
+
+    const strippedA = maybeStripHiddenSidebar(sideA, true);
+    const strippedB = maybeStripHiddenSidebar(sideB, true);
+
+    // Both sides have no aside left
+    expect(strippedA).not.toContain("<aside");
+    expect(strippedB).not.toContain("<aside");
+    // No nav link text leaked through from either hidden sidebar
+    expect(strippedA).not.toContain("/docs/guide");
+    expect(strippedB).not.toContain("/docs/x");
+    // Both sides converge on the same shape after stripping
+    expect(strippedA).toBe(strippedB);
+  });
+
+  it("strips A-side Astro mobile-drawer aside via the public contract", () => {
+    const html = `<body>${A_SIDE_MOBILE_DRAWER_ASIDE}<main>Page content</main></body>`;
+    const result = maybeStripHiddenSidebar(html, true);
+    expect(result).not.toContain("<aside");
+    expect(result).not.toContain("/docs/guide");
+    expect(result).toContain("Page content");
+  });
+
+  it("is a no-op on the A-side aside when enabled=false", () => {
+    const html = `<body>${A_SIDE_MOBILE_DRAWER_ASIDE}<main>Page content</main></body>`;
+    expect(maybeStripHiddenSidebar(html, false)).toBe(html);
   });
 });
