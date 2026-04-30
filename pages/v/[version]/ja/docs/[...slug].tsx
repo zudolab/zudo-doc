@@ -39,8 +39,8 @@ import { toRouteSlug } from "@/utils/slug";
 import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
 import { Breadcrumb } from "@zudo-doc/zudo-doc-v2/breadcrumb";
 import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
-// Shared MDX components bag — see `pages/_mdx-components.ts`.
-import { mdxComponents } from "../../../../_mdx-components";
+// Locale-aware MDX components factory — see `pages/_mdx-components.ts`.
+import { createMdxComponents } from "../../../../_mdx-components";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../../../../_data";
 import { extractHeadings } from "../../../../lib/_extract-headings";
@@ -239,7 +239,9 @@ export default function VersionedJaDocsPage({ props }: PageArgs): JSX.Element {
   const title = autoIndex ? autoIndex.label : entry!.data.title;
   const description = autoIndex ? autoIndex.description : entry!.data.description;
 
-  const components = mdxComponents;
+  // Locale-aware components bag — creates nav wrappers bound to the active
+  // locale so CategoryNav/CategoryTreeNav/SiteTreeNav query the right collection.
+  const components = createMdxComponents(locale);
 
   const autoIndexChildren = autoIndex
     ? autoIndex.children.filter((c: NavNode) => c.hasPage || c.children.length > 0)
