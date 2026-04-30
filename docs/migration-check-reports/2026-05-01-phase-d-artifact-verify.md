@@ -1,9 +1,4 @@
----
-title: Phase D — Artifact Diff Verification (2026-05-01)
-description: Post-Phase-C rerun of the migration check harness; all non-HTML artifact diffs classified as intentional.
-sidebar_position: 1
-generated: true
----
+# Phase D — Artifact Diff Verification (2026-05-01)
 
 **Rerun date**: 2026-05-01  
 **Harness**: `pnpm migration-check --rerun`  
@@ -38,7 +33,6 @@ B-16 baseline reference (issue #668): `llms-full.txt` 157/339, `llms.txt` 2/4, `
 | `docs/reference/ai-assistant-api` | 15 | intentional | Backend-mode docs simplified after ai-chat-worker removal (Phase C) |
 | `docs/claude-md/packages--create-zudo-doc` | 7 | intentional | ai-chat-worker references removed from create-zudo-doc CLAUDE.md (Phase C) |
 | `docs/components/image-enlarge` | 3 | intentional | Image paths migrated `./image.png` → `/img/image-enlarge/image.webp` (Phase B asset fix) |
-| `docs/guides/ai-assistant` | *(counted above)* | — | — |
 | `docs/getting-started/structuring-navigations` | 1 | intentional | ai-chat-worker heading removed from page (Phase C) |
 | `docs/guides/doc-history` | 1 | intentional | ai-chat-worker reference removed from doc-history guide (Phase C) |
 | `docs/guides/configuration` | 1 | intentional | ai-chat-worker config option removed from docs (Phase C) |
