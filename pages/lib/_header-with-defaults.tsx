@@ -59,6 +59,7 @@ import {
 import { buildSidebarForSection } from "@/utils/sidebar";
 import type { DocsEntry } from "@/types/docs-entry";
 import { loadDocs } from "../_data";
+import { SearchWidget } from "./_search-widget";
 
 // ---------------------------------------------------------------------------
 // Internal helpers — duplicated from _sidebar-with-defaults.tsx so that
@@ -252,6 +253,20 @@ export function HeaderWithDefaults(
     children: <ThemeToggle />,
   }) as unknown as VNode;
 
+  // Locale-aware search widget — mirrors `<Search />` from the deleted
+  // `src/components/search.astro`. Renders the full dialog markup in SSR
+  // so the placeholder text ("Type to search..." / 「検索したい単語を入力」)
+  // and keyboard-shortcut hint appear in the static HTML on every page.
+  // Strings are derived from the host's t() helper so locale switching works.
+  const searchWidget = (
+    <SearchWidget
+      placeholderText={t("search.placeholder", lang)}
+      shortcutHint={t("search.shortcutHint", lang)}
+      resultCountTemplate={t("search.resultCount", lang)}
+      searchLabel={t("search.label", lang)}
+    />
+  );
+
   return (
     <Header
       lang={lang}
@@ -259,6 +274,7 @@ export function HeaderWithDefaults(
       currentVersion={currentVersion}
       sidebarToggle={sidebarToggle}
       themeToggle={themeToggle}
+      search={searchWidget}
     />
   );
 }
