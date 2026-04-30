@@ -30,6 +30,7 @@ import { fileURLToPath } from "node:url";
 import { normalizeHtml } from "./lib/normalize-html.mjs";
 import { extractSignals } from "./lib/extract-signals.mjs";
 import { maybeStripHiddenSidebar } from "./lib/strip-hidden-sidebar.mjs";
+import { maybeStripVersionSwitcher } from "./lib/strip-version-switcher.mjs";
 import * as config from "./config.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -336,19 +337,28 @@ async function compareRoute({ route, baseA, baseB, sitePrefix }) {
   }
 
   // Normalize and extract signals.
-  // maybeStripHiddenSidebar runs after normalizeHtml so the aside's class
-  // attribute has been sorted/normalised before detection fires.
-  // Stripping is symmetric (both A and B) so the sidebar content falls out
-  // of the diff entirely — see lib/strip-hidden-sidebar.mjs for rationale.
+  // Strip passes run after normalizeHtml so class attributes are sorted/normalised
+  // before detection fires. Stripping is symmetric (both A and B) so the
+  // stripped content falls out of the diff entirely.
+  //   1. maybeStripHiddenSidebar — removes sr-only / mobile-drawer sidebar asides
+  //      (see lib/strip-hidden-sidebar.mjs for rationale).
+  //   2. maybeStripVersionSwitcher — removes the inline version-switcher div
+  //      (see lib/strip-version-switcher.mjs for rationale).
   let sigA, sigB;
   try {
-    const normA = maybeStripHiddenSidebar(
-      normalizeHtml(fetchA.text, { sitePrefix }),
-      config.stripHiddenSidebarDom,
+    const normA = maybeStripVersionSwitcher(
+      maybeStripHiddenSidebar(
+        normalizeHtml(fetchA.text, { sitePrefix }),
+        config.stripHiddenSidebarDom,
+      ),
+      config.stripVersionSwitcherDom,
     );
-    const normB = maybeStripHiddenSidebar(
-      normalizeHtml(fetchB.text, { sitePrefix }),
-      config.stripHiddenSidebarDom,
+    const normB = maybeStripVersionSwitcher(
+      maybeStripHiddenSidebar(
+        normalizeHtml(fetchB.text, { sitePrefix }),
+        config.stripHiddenSidebarDom,
+      ),
+      config.stripVersionSwitcherDom,
     );
     sigA = extractSignals(normA);
     sigB = extractSignals(normB);
