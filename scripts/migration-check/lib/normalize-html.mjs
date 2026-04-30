@@ -7,6 +7,8 @@
  * hydration markers) does not produce false-positive diffs.
  */
 
+import { applyTypographyNormalizationToTextNodes } from "./normalize-typography.mjs";
+
 // Attributes with these prefixes are pure framework noise — strip them.
 const STRIP_ATTR_PREFIXES = ["data-zfb-island-", "data-astro-"];
 
@@ -203,13 +205,18 @@ export function normalizeHtml(html, options = {}) {
   );
 
   // ── 2. Collapse whitespace between tags, preserve pre/code/textarea ──────
+  // Also canonicalize quote / apostrophe typography in text content so the
+  // zfb MDX output (literal `&quot;` entity, U+0027 straight apostrophe)
+  // matches Astro's smartypants output (Unicode `“ ” ‘ ’` glyphs). See
+  // ./normalize-typography.mjs for the rationale and idempotency guarantee.
   const segments = splitPreservedBlocks(result);
   result = segments
     .map((seg) => {
       if (seg.preserved) return seg.content;
-      return seg.content
+      const collapsed = seg.content
         .replace(/>\s+</g, "><") // whitespace between tags
         .replace(/^\s+|\s+$/g, ""); // leading/trailing
+      return applyTypographyNormalizationToTextNodes(collapsed);
     })
     .join("");
 
