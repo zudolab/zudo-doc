@@ -78,6 +78,7 @@ import {
   ImageEnlargeIsland,
 } from "../ssr-skip/index.js";
 import { TabsInit } from "../code-syntax/tabs-init.js";
+import { VERSION_SWITCHER_INIT_SCRIPT } from "../i18n-version/version-switcher.js";
 
 // Sibling-topic barrels. Each is being authored by a peer agent in the
 // same parallel session; the imports below assume the canonical shape
@@ -275,11 +276,18 @@ export function DocLayoutWithDefaults(
         }
         bodyEndScripts={
           bodyEndScripts ?? (
-            // Default body-end script: activates the correct tab panel and
-            // wires click handlers for <Tabs> components. Emitted once per
-            // page; callers that need a different body-end script set should
-            // pass `bodyEndScripts` explicitly to override this default.
-            <TabsInit />
+            // Default body-end scripts: TabsInit activates the correct tab
+            // panel and wires click handlers for <Tabs> components. The
+            // version-switcher script wires the dropdown toggle / outside-click
+            // / Escape-key behavior for every [data-version-switcher] element.
+            // Both scripts are idempotent and safe on pages that have no
+            // matching elements, so they are included unconditionally.
+            // Callers that need a different body-end script set should pass
+            // `bodyEndScripts` explicitly to override this default.
+            <>
+              <TabsInit />
+              <script dangerouslySetInnerHTML={{ __html: VERSION_SWITCHER_INIT_SCRIPT }} />
+            </>
           )
         }
         main={children}
