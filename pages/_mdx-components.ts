@@ -37,6 +37,7 @@
 // with the active locale instead of using the static `mdxComponents` export.
 // The static export still exists for backward compatibility (using defaultLocale).
 
+import type { ComponentChildren } from "preact";
 import { htmlOverrides } from "@zudo-doc/zudo-doc-v2/content";
 import { HtmlPreviewWrapper } from "@zudo-doc/zudo-doc-v2/html-preview-wrapper";
 import { Tabs } from "@zudo-doc/zudo-doc-v2/code-syntax";
@@ -46,6 +47,7 @@ import { CategoryNavWrapper } from "./lib/_category-nav";
 import { CategoryTreeNavWrapper } from "./lib/_category-tree-nav";
 import { SiteTreeNavWrapper } from "./lib/_site-tree-nav";
 import { DetailsWrapper } from "./lib/_details";
+import { PresetGeneratorFallback } from "./lib/_preset-generator";
 
 /**
  * MDX-tag stub: renders nothing. Returning `null` keeps the rendered
@@ -53,6 +55,29 @@ import { DetailsWrapper } from "./lib/_details";
  * markup into the SSR output.
  */
 const MdxStub = (_props: unknown) => null;
+
+/**
+ * SSR-pass-through wrapper for `<Island when="load|idle|visible">`.
+ *
+ * In the zfb build the zfb `<Island>` component is unavailable, so the
+ * MDX corpus tags resolve to this binding instead. Rendering the
+ * children directly ensures that any server-renderable content nested
+ * inside `<Island>` (headings, paragraphs, etc.) appears in the SSR
+ * HTML. Client-only inner components that are themselves wrapped in an
+ * SSR-skip placeholder will emit their own placeholder markup; this
+ * wrapper does not suppress them.
+ *
+ * The `when` prop is intentionally ignored at render time — it is only
+ * meaningful to the zfb hydration runtime on the client, which reads
+ * the `data-when` attribute on the inner SSR-skip placeholder div (if
+ * present) rather than on this wrapper.
+ */
+function IslandWrapper(props: {
+  when?: "load" | "idle" | "visible" | "media";
+  children?: ComponentChildren;
+}): ComponentChildren {
+  return props.children ?? null;
+}
 
 /**
  * Build an admonition stub for the given variant — renders the
@@ -106,6 +131,9 @@ function makeAdmonitionStub(variant: string) {
  * - `HtmlPreview` — Island-wrapped preview component.
  * - Real Preact wrappers for CategoryNav, CategoryTreeNav, SiteTreeNav,
  *   SiteTreeNavDemo, and Details.
+ * - `Island` — SSR pass-through wrapper so children render server-side.
+ * - `PresetGenerator` — SSR fallback shell that renders the 8 h3 sections;
+ *   interactive form hydrates client-side via SSR-skip placeholder.
  * - Stub bindings for every other custom tag the MDX corpus references.
  *
  * Keep this list in sync with the corpus when new MDX tags appear.
@@ -143,8 +171,14 @@ export function createMdxComponents(lang: Locale | string = defaultLocale) {
     Tabs,
     TabItem,
     SmartBreak: MdxStub,
-    Island: MdxStub,
-    PresetGenerator: MdxStub,
+    // Island: pass children through so server-renderable content nested
+    // inside <Island> appears in SSR HTML. See IslandWrapper comment above.
+    Island: IslandWrapper,
+    // PresetGenerator: render the 8 section headings as static SSR HTML so the
+    // migration-check can find all h3 markers before JS hydration. The
+    // interactive form loads client-side via the SSR-skip placeholder inside
+    // PresetGeneratorFallback.
+    PresetGenerator: PresetGeneratorFallback,
     // Pure showcase placeholders (Avatar/Button/Card/MyComponent/PageLayout
     // appear only inside MDX prose as illustrative examples — never
     // implemented as real components).
