@@ -29,6 +29,7 @@ import { fileURLToPath } from "node:url";
 
 import { normalizeHtml } from "./lib/normalize-html.mjs";
 import { extractSignals } from "./lib/extract-signals.mjs";
+import { maybeStripHiddenSidebar } from "./lib/strip-hidden-sidebar.mjs";
 import * as config from "./config.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -334,11 +335,23 @@ async function compareRoute({ route, baseA, baseB, sitePrefix }) {
     };
   }
 
-  // Normalize and extract signals
+  // Normalize and extract signals.
+  // maybeStripHiddenSidebar runs after normalizeHtml so the aside's class
+  // attribute has been sorted/normalised before detection fires.
+  // Stripping is symmetric (both A and B) so the sidebar content falls out
+  // of the diff entirely — see lib/strip-hidden-sidebar.mjs for rationale.
   let sigA, sigB;
   try {
-    sigA = extractSignals(normalizeHtml(fetchA.text, { sitePrefix }));
-    sigB = extractSignals(normalizeHtml(fetchB.text, { sitePrefix }));
+    const normA = maybeStripHiddenSidebar(
+      normalizeHtml(fetchA.text, { sitePrefix }),
+      config.stripHiddenSidebarDom,
+    );
+    const normB = maybeStripHiddenSidebar(
+      normalizeHtml(fetchB.text, { sitePrefix }),
+      config.stripHiddenSidebarDom,
+    );
+    sigA = extractSignals(normA);
+    sigB = extractSignals(normB);
   } catch (err) {
     return {
       route,

@@ -29,6 +29,7 @@ import { bridgeEntries } from "../../_data";
 import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "../../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../../lib/_head-with-defaults";
+import { DocHistoryArea } from "../../lib/_doc-history-area";
 
 export const frontmatter = { title: "All Tags" };
 
@@ -75,6 +76,7 @@ export default function DocsTagsIndexPage(): JSX.Element {
       ) : (
         <TagNav variant="all" tags={tags} labels={labels} />
       )}
+      <DocHistoryArea slug="tags" locale={locale} />
     </DocLayoutWithDefaults>
   );
 }

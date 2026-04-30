@@ -43,7 +43,7 @@ import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 // (native typography), HtmlPreviewWrapper (Island), and stub bindings
 // for every other custom tag the MDX corpus references — see
 // `pages/_mdx-components.ts` for the full list and rationale.
-import { mdxComponents } from "../_mdx-components";
+import { createMdxComponents } from "../_mdx-components";
 import { FooterWithDefaults } from "../lib/_footer-with-defaults";
 import { DocHistoryArea } from "../lib/_doc-history-area";
 import { SidebarWithDefaults } from "../lib/_sidebar-with-defaults";
@@ -193,8 +193,9 @@ export default function DocsPage({ props }: PageArgs): JSX.Element {
   const title = autoIndex ? autoIndex.label : entry!.data.title;
   const description = autoIndex ? autoIndex.description : entry!.data.description;
 
-  // Shared components bag — see `pages/_mdx-components.ts`.
-  const components = mdxComponents;
+  // Locale-aware components bag — creates nav wrappers bound to the active
+  // locale so CategoryNav/CategoryTreeNav/SiteTreeNav query the right collection.
+  const components = createMdxComponents(locale);
 
   // Resolve child hrefs for auto-index pages
   const autoIndexChildren = autoIndex
