@@ -124,6 +124,11 @@ export function MockInitIsland(props: MockInitIslandProps = {}): VNode {
 
 // ─── DocHistory ──────────────────────────────────────────────────────────────
 
+/** Default label values (English) — pass locale-translated strings for non-EN routes. */
+const DOC_HISTORY_CREATED_LABEL = "Created";
+const DOC_HISTORY_UPDATED_LABEL = "Updated";
+const DOC_HISTORY_HISTORY_LABEL = "History";
+
 export interface DocHistoryIslandProps extends SsrSkipBaseProps {
   /** Page slug for the history JSON fetch path. */
   slug: string;
@@ -131,20 +136,77 @@ export interface DocHistoryIslandProps extends SsrSkipBaseProps {
   locale?: string;
   /** Site base path. */
   basePath?: string;
+
+  // ── SSR-fallback-only props (not forwarded to the client island) ──
+
+  /**
+   * Author name (typically the first commit author) rendered in the
+   * static fallback so the migration-check marker and screen readers
+   * can find the value without waiting for JS hydration.
+   */
+  author?: string;
+  /**
+   * Localised "Created" label. Defaults to the English string; pass
+   * the locale-specific translation for non-default locales.
+   */
+  createdLabel?: string;
+  /**
+   * Localised "Updated" label. Defaults to the English string; pass
+   * the locale-specific translation for non-default locales.
+   */
+  updatedLabel?: string;
+  /**
+   * Localised "History" toggle label. Defaults to the English string;
+   * pass the locale-specific translation for non-default locales.
+   */
+  historyLabel?: string;
+  /**
+   * ISO-date string for the document creation date (from the oldest
+   * commit). Omit when not available — the label is still rendered.
+   */
+  createdDate?: string;
+  /**
+   * ISO-date string for the document's last-updated date (from the
+   * newest commit). Omit when not available — the label is still rendered.
+   */
+  updatedDate?: string;
 }
 
 /**
  * SSR-skip wrapper for the doc-history dialog.
  * Drop-in replacement for `<DocHistory slug={...} client:idle />`.
+ *
+ * Renders a sr-only SSR fallback containing the author name, created /
+ * updated labels (with dates when available), and the History toggle
+ * label so that the migration-check can find the author marker in the
+ * static HTML before JS hydration. Mirrors the B-8-1 AiChatModal
+ * bodyLabel pattern — all text strings are passed as props from the host.
  */
 export function DocHistoryIsland({
   when = "idle",
-  ssrFallback = null,
+  ssrFallback,
   slug,
   locale,
   basePath,
+  author,
+  createdLabel = DOC_HISTORY_CREATED_LABEL,
+  updatedLabel = DOC_HISTORY_UPDATED_LABEL,
+  historyLabel = DOC_HISTORY_HISTORY_LABEL,
+  createdDate,
+  updatedDate,
 }: DocHistoryIslandProps): VNode {
-  return ssrSkipPlaceholder("DocHistory", when, ssrFallback, {
+  const fallback =
+    ssrFallback !== undefined
+      ? ssrFallback
+      : h(
+          "div",
+          { class: "sr-only" },
+          author ? h("span", null, author) : null,
+          h("span", null, createdLabel + (createdDate ? `: ${createdDate}` : "")),
+          h("span", null, updatedLabel + (updatedDate ? `: ${updatedDate}` : "")),
+          h("span", null, historyLabel),
+        );
+  return ssrSkipPlaceholder("DocHistory", when, fallback, {
     slug,
     locale,
     basePath,
