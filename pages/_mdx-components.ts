@@ -24,11 +24,28 @@
 // `htmlOverrides` (basic typography — h2/h3/h4/p/a/ul/ol/blockquote/strong/table)
 // and `HtmlPreview: HtmlPreviewWrapper` (Island wrapper) stay in their
 // non-stub form because their Preact bindings already exist.
+//
+// ## Locale-aware bindings (createMdxComponents factory)
+//
+// CategoryNav, CategoryTreeNav, SiteTreeNav, and SiteTreeNavDemo resolve nav
+// tree data at render time. Since the same MDX content is rendered for both
+// default-locale and non-default-locale pages, these components need to know
+// which locale to use when building the nav tree.
+//
+// The `createMdxComponents(lang)` factory returns a components map with
+// locale-bound wrappers for these nav components. Page modules should call it
+// with the active locale instead of using the static `mdxComponents` export.
+// The static export still exists for backward compatibility (using defaultLocale).
 
 import { htmlOverrides } from "@zudo-doc/zudo-doc-v2/content";
 import { HtmlPreviewWrapper } from "@zudo-doc/zudo-doc-v2/html-preview-wrapper";
 import { Tabs } from "@zudo-doc/zudo-doc-v2/code-syntax";
 import { TabItem } from "@zudo-doc/zudo-doc-v2/tab-item";
+import { defaultLocale, type Locale } from "@/config/i18n";
+import { CategoryNavWrapper } from "./lib/_category-nav";
+import { CategoryTreeNavWrapper } from "./lib/_category-tree-nav";
+import { SiteTreeNavWrapper } from "./lib/_site-tree-nav";
+import { DetailsWrapper } from "./lib/_details";
 
 /**
  * MDX-tag stub: renders nothing. Returning `null` keeps the rendered
@@ -72,51 +89,75 @@ function makeAdmonitionStub(variant: string) {
 }
 
 /**
- * Components map handed to `<entry.Content components={...} />`. Combines:
+ * Build a locale-aware MDX components map for the given locale.
  *
+ * Nav components (CategoryNav, CategoryTreeNav, SiteTreeNav, SiteTreeNavDemo)
+ * resolve nav tree data at render time and need the active locale so they
+ * query the right collection. The factory closes over `lang` and returns
+ * locale-bound wrapper functions.
+ *
+ * Page modules should call createMdxComponents(locale) instead of importing
+ * the static mdxComponents export.
+ *
+ * Components map includes:
  * - `htmlOverrides` — element-level overrides for native tags (h2..h4,
  *   p, a, ul/ol, blockquote, strong, table). Defined in
  *   `@zudo-doc/zudo-doc-v2/content`.
- * - `HtmlPreview` — Island-wrapped preview component
- *   (`HtmlPreviewWrapper` from `@zudo-doc/zudo-doc-v2/html-preview-wrapper`).
+ * - `HtmlPreview` — Island-wrapped preview component.
+ * - Real Preact wrappers for CategoryNav, CategoryTreeNav, SiteTreeNav,
+ *   SiteTreeNavDemo, and Details.
  * - Stub bindings for every other custom tag the MDX corpus references.
- *   Each stub returns `null`. This list is the union of `<TagName` matches
- *   under `src/content/docs/` and `src/content/docs-ja/` minus the bindings
- *   above.
  *
  * Keep this list in sync with the corpus when new MDX tags appear.
  * `pnpm exec grep -rohE '<[A-Z][a-zA-Z]+' src/content/` enumerates them.
  */
-export const mdxComponents = {
-  ...htmlOverrides,
-  HtmlPreview: HtmlPreviewWrapper,
-  // Admonitions — proper bindings land in the doc-content-components
-  // topic. Until then, render the children inside a
-  // `<div class="admonition admonition-<variant>">` so the body text
-  // stays visible (and the design system's existing `.admonition` CSS
-  // hook still targets it).
-  Note: makeAdmonitionStub("note"),
-  Tip: makeAdmonitionStub("tip"),
-  Info: makeAdmonitionStub("info"),
-  Warning: makeAdmonitionStub("warning"),
-  Danger: makeAdmonitionStub("danger"),
-  // Showcase / nav helpers.
-  CategoryNav: MdxStub,
-  CategoryTreeNav: MdxStub,
-  SiteTreeNav: MdxStub,
-  SiteTreeNavDemo: MdxStub,
-  Details: MdxStub,
-  Tabs,
-  TabItem,
-  SmartBreak: MdxStub,
-  Island: MdxStub,
-  PresetGenerator: MdxStub,
-  // Pure showcase placeholders (Avatar/Button/Card/MyComponent/PageLayout
-  // appear only inside MDX prose as illustrative examples — never
-  // implemented as real components).
-  Avatar: MdxStub,
-  Button: MdxStub,
-  Card: MdxStub,
-  MyComponent: MdxStub,
-  PageLayout: MdxStub,
-};
+export function createMdxComponents(lang: Locale | string = defaultLocale) {
+  // Locale-bound wrappers — close over `lang` so each wrapper queries
+  // the correct collection without needing a prop.
+  const CategoryNavBound = (props: Record<string, unknown>) =>
+    CategoryNavWrapper({ ...(props as Parameters<typeof CategoryNavWrapper>[0]), lang });
+  const CategoryTreeNavBound = (props: Record<string, unknown>) =>
+    CategoryTreeNavWrapper({ ...(props as Parameters<typeof CategoryTreeNavWrapper>[0]), lang });
+  const SiteTreeNavBound = (props: Record<string, unknown>) =>
+    SiteTreeNavWrapper({ ...(props as Parameters<typeof SiteTreeNavWrapper>[0]), lang });
+
+  return {
+    ...htmlOverrides,
+    HtmlPreview: HtmlPreviewWrapper,
+    // Admonitions — proper bindings land in the doc-content-components
+    // topic. Until then, render the children inside a
+    // `<div class="admonition admonition-<variant>">` so the body text
+    // stays visible (and the design system's existing `.admonition` CSS
+    // hook still targets it).
+    Note: makeAdmonitionStub("note"),
+    Tip: makeAdmonitionStub("tip"),
+    Info: makeAdmonitionStub("info"),
+    Warning: makeAdmonitionStub("warning"),
+    Danger: makeAdmonitionStub("danger"),
+    // Showcase / nav helpers — real Preact wrappers replacing MdxStub.
+    CategoryNav: CategoryNavBound,
+    CategoryTreeNav: CategoryTreeNavBound,
+    SiteTreeNav: SiteTreeNavBound,
+    SiteTreeNavDemo: SiteTreeNavBound,
+    Details: DetailsWrapper,
+    Tabs,
+    TabItem,
+    SmartBreak: MdxStub,
+    Island: MdxStub,
+    PresetGenerator: MdxStub,
+    // Pure showcase placeholders (Avatar/Button/Card/MyComponent/PageLayout
+    // appear only inside MDX prose as illustrative examples — never
+    // implemented as real components).
+    Avatar: MdxStub,
+    Button: MdxStub,
+    Card: MdxStub,
+    MyComponent: MdxStub,
+    PageLayout: MdxStub,
+  };
+}
+
+/**
+ * Static default-locale components map for backward compatibility.
+ * New page modules should call createMdxComponents(locale) instead.
+ */
+export const mdxComponents = createMdxComponents(defaultLocale);
