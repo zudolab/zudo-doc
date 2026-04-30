@@ -52,6 +52,8 @@ const BINARY_EXTENSIONS = new Set([
   ".jpeg",
   ".gif",
   ".bmp",
+  ".webp",
+  ".svg",
   ".woff",
   ".woff2",
   ".ttf",
@@ -213,6 +215,52 @@ export async function diffBinary(aPath, bPath) {
   };
 }
 
+// ── Astro asset path canonicalization ────────────────────────────────────────
+
+/**
+ * Astro's image pipeline emits content-hashed filenames under /_astro/:
+ *   _astro/<name>.<HASH>.<ext>   e.g. _astro/image-wide.D1YdccyX_1EtJL4.webp
+ *
+ * When a migration moves those images to a stable public path
+ * (e.g. /img/image-enlarge/image-wide.webp), the A and B artifact directories
+ * reference the same content at different relative paths.
+ *
+ * This function strips the hash to produce a canonical basename so the two
+ * sides can be matched.  It only activates for paths whose first segment is
+ * exactly `_astro` and whose filename contains an 8+-char base64url hash
+ * segment.
+ *
+ * @param {string} relPath Relative artifact path
+ * @returns {string | null} Canonical basename (e.g. "image-wide.webp") or null
+ */
+export function extractAstroCanonicalBasename(relPath) {
+  // Require path starts with `_astro/` with no subdirectory (flat filename only)
+  const match = relPath.match(/^_astro\/([^/]+?)\.([A-Za-z0-9_-]{8,})\.([A-Za-z0-9]+)$/);
+  if (!match) return null;
+  return `${match[1]}.${match[3]}`;
+}
+
+/**
+ * Build a Map from canonical basename → relative path for every _astro entry
+ * in the given path list that matches the Astro hash pattern.
+ *
+ * Used to cross-match A-side Astro-hashed paths against B-side public paths
+ * that carry the same image content under a different directory structure.
+ *
+ * @param {string[]} paths List of relative artifact paths
+ * @returns {Map<string, string>} canonical basename → actual relPath
+ */
+export function buildAstroCanonicalMap(paths) {
+  const map = new Map();
+  for (const p of paths) {
+    const canonical = extractAstroCanonicalBasename(p);
+    if (canonical !== null) {
+      map.set(canonical, p);
+    }
+  }
+  return map;
+}
+
 // ── Artifact directory walking ────────────────────────────────────────────────
 
 /**
@@ -277,11 +325,88 @@ export async function diffArtifacts(opts = {}) {
 
   const setA = new Set(pathsA);
   const setB = new Set(pathsB);
-  const allPaths = [...new Set([...pathsA, ...pathsB])].sort();
+
+  // ── Astro cross-matching ─────────────────────────────────────────────────────
+  // A-side images under _astro/<name>.HASH.<ext> may correspond to B-side images
+  // at a stable public path like img/image-enlarge/<name>.<ext>.
+  // Pair them by canonical basename (hash stripped) when exactly one B candidate
+  // shares that basename and neither path has an exact counterpart on the other side.
+
+  const astroCanonicalMapA = buildAstroCanonicalMap(pathsA);
+
+  // Build basename → B paths map (only consider B paths not already in A)
+  const basenameMapB = new Map();
+  for (const p of pathsB) {
+    if (setA.has(p)) continue; // exact match; handled by normal path comparison
+    const bn = p.split("/").at(-1);
+    if (!basenameMapB.has(bn)) basenameMapB.set(bn, []);
+    basenameMapB.get(bn).push(p);
+  }
+
+  // aRelPath → bRelPath for safely cross-matched pairs
+  const astroCrossMatch = new Map();
+  for (const [canonical, aRelPath] of astroCanonicalMapA) {
+    if (setB.has(aRelPath)) continue; // exact path exists in B; no canonicalization needed
+    const bCandidates = basenameMapB.get(canonical) ?? [];
+    if (bCandidates.length === 1) {
+      astroCrossMatch.set(aRelPath, bCandidates[0]);
+    }
+  }
+  const crossMatchedBPaths = new Set(astroCrossMatch.values());
+
+  if (astroCrossMatch.size > 0) {
+    console.log(`[S4] Astro cross-matched ${astroCrossMatch.size} path(s) by canonical basename`);
+  }
+
+  // ── Helper to compare two artifact files ────────────────────────────────────
+  async function compareFiles(type, aFilePath, bFilePath) {
+    if (type === "json") {
+      const [aContent, bContent] = await Promise.all([
+        readFile(aFilePath, "utf8"),
+        readFile(bFilePath, "utf8"),
+      ]);
+      return diffJson(aContent, bContent);
+    } else if (type === "text") {
+      const [aContent, bContent] = await Promise.all([
+        readFile(aFilePath, "utf8"),
+        readFile(bFilePath, "utf8"),
+      ]);
+      return diffText(aContent, bContent);
+    } else if (type === "binary") {
+      return diffBinary(aFilePath, bFilePath);
+    }
+    return null;
+  }
 
   const artifacts = [];
 
-  for (const relPath of allPaths) {
+  // ── Process Astro cross-matched pairs ───────────────────────────────────────
+  for (const [aRelPath, bRelPath] of astroCrossMatch) {
+    const canonical = extractAstroCanonicalBasename(aRelPath);
+    const type = getArtifactType(aRelPath);
+    const comparison = await compareFiles(
+      type,
+      join(artifactsADir, aRelPath),
+      join(artifactsBDir, bRelPath),
+    );
+    artifacts.push({
+      path: canonical,
+      pathA: aRelPath,
+      pathB: bRelPath,
+      presence: "present-in-both",
+      canonicalized: true,
+      type,
+      comparison,
+    });
+  }
+
+  // ── Process remaining paths (exact-path comparison) ──────────────────────────
+  const crossMatchedAPaths = new Set(astroCrossMatch.keys());
+  const remainingPaths = [...new Set([...pathsA, ...pathsB])]
+    .filter((p) => !crossMatchedAPaths.has(p) && !crossMatchedBPaths.has(p))
+    .sort();
+
+  for (const relPath of remainingPaths) {
     const inA = setA.has(relPath);
     const inB = setB.has(relPath);
 
@@ -290,28 +415,18 @@ export async function diffArtifacts(opts = {}) {
     let comparison = null;
 
     if (presence === "present-in-both") {
-      const aPath = join(artifactsADir, relPath);
-      const bPath = join(artifactsBDir, relPath);
-
-      if (type === "json") {
-        const [aContent, bContent] = await Promise.all([
-          readFile(aPath, "utf8"),
-          readFile(bPath, "utf8"),
-        ]);
-        comparison = diffJson(aContent, bContent);
-      } else if (type === "text") {
-        const [aContent, bContent] = await Promise.all([
-          readFile(aPath, "utf8"),
-          readFile(bPath, "utf8"),
-        ]);
-        comparison = diffText(aContent, bContent);
-      } else if (type === "binary") {
-        comparison = await diffBinary(aPath, bPath);
-      }
+      comparison = await compareFiles(
+        type,
+        join(artifactsADir, relPath),
+        join(artifactsBDir, relPath),
+      );
     }
 
     artifacts.push({ path: relPath, presence, type, comparison });
   }
+
+  // Re-sort so cross-matched and exact-path entries are interleaved by path
+  artifacts.sort((a, b) => a.path.localeCompare(b.path));
 
   const stats = {
     total: artifacts.length,
