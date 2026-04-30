@@ -191,6 +191,47 @@ describe("categorizeSignals – asset-loss", () => {
     // Assets only added in B — not a loss
     expect(categorizeSignals(sigA, sigB).category).not.toBe("asset-loss");
   });
+
+  // ── Stylesheet presence-based comparison (#1327) ──────────────────────────
+
+  it("does NOT return asset-loss when A has Astro-hashed CSS and B has zfb-hashed CSS (framework URL mismatch)", () => {
+    // This is the exact pattern from issue #1327: Astro emits /_astro/base.X.css
+    // and zfb emits /assets/styles-Y.css — both are valid stylesheets so no loss.
+    const sigA = signals(`<html><head>
+      <link rel="stylesheet" href="/_astro/base.HWDxbTAy.css">
+    </head><body><main><p>Content</p></main></body></html>`);
+    const sigB = signals(`<html><head>
+      <link rel="stylesheet" href="/assets/styles-a0c3a8de.css">
+    </head><body><main><p>Content</p></main></body></html>`);
+    expect(categorizeSignals(sigA, sigB).category).not.toBe("asset-loss");
+  });
+
+  it("returns asset-loss when A has a stylesheet and B has none (real stylesheet loss)", () => {
+    const sigA = signals(`<html><head>
+      <link rel="stylesheet" href="/_astro/base.HWDxbTAy.css">
+    </head><body><main><p>Content</p></main></body></html>`);
+    // B has no stylesheet at all — genuine loss
+    const sigB = signals(`<html><head></head><body><main><p>Content</p></main></body></html>`);
+    expect(categorizeSignals(sigA, sigB)).toEqual({
+      category: "asset-loss",
+      subCategory: null,
+    });
+  });
+
+  it("returns asset-loss when A has a non-stylesheet ref not present in B (e.g. an image)", () => {
+    const sigA = signals(`<html><head>
+      <link rel="stylesheet" href="/main.css">
+      <link rel="preload" href="/logo.png" as="image">
+    </head><body><main><p>Content</p></main></body></html>`);
+    // B has a stylesheet (different URL) but is missing the /logo.png preload
+    const sigB = signals(`<html><head>
+      <link rel="stylesheet" href="/assets/styles-abc.css">
+    </head><body><main><p>Content</p></main></body></html>`);
+    expect(categorizeSignals(sigA, sigB)).toEqual({
+      category: "asset-loss",
+      subCategory: null,
+    });
+  });
 });
 
 describe("categorizeSignals – meta-changed", () => {
