@@ -29,6 +29,7 @@ import { htmlOverrides } from "@zudo-doc/zudo-doc-v2/content";
 import { HtmlPreviewWrapper } from "@zudo-doc/zudo-doc-v2/html-preview-wrapper";
 import { Tabs } from "@zudo-doc/zudo-doc-v2/code-syntax";
 import { TabItem } from "@zudo-doc/zudo-doc-v2/tab-item";
+import { MathBlock } from "./lib/_math-block";
 
 /**
  * MDX-tag stub: renders nothing. Returning `null` keeps the rendered
@@ -108,6 +109,11 @@ export const mdxComponents = {
   Details: MdxStub,
   Tabs,
   TabItem,
+  // Math rendering — KaTeX via server-side katex.renderToString().
+  // The math-equations.mdx content files write <MathBlock> JSX directly
+  // (instead of $$…$$) because the zfb Rust emitter does not yet support
+  // remark-math math nodes (zudo-front-builder #93).
+  MathBlock,
   SmartBreak: MdxStub,
   Island: MdxStub,
   PresetGenerator: MdxStub,
