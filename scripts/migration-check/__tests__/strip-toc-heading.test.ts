@@ -41,6 +41,11 @@ const H3_JA = `<h3>目次</h3>`;
 const wrap = (mainContent: string, extraOutsideMain = "") =>
   `<body>${extraOutsideMain}<main>${mainContent}</main></body>`;
 
+// C-3 residual pattern: heading appears in the Toc island AFTER </main>,
+// not inside <main>. zfb's desktop Toc island emits the heading; Astro's does not.
+const wrapWithSuffix = (mainContent: string, suffix: string) =>
+  `<body><main>${mainContent}</main>${suffix}</body>`;
+
 // ── hasTocHeading ─────────────────────────────────────────────────────────────
 
 describe("hasTocHeading", () => {
@@ -97,6 +102,26 @@ describe("hasTocHeading", () => {
 
   it("detects JA heading even when wrapped in a span with a class", () => {
     expect(hasTocHeading(wrap(H2_JA_SPAN))).toBe(true);
+  });
+
+  // C-3 residual: heading in the Toc island AFTER </main>.
+  // zfb's desktop Toc island renders <h2>On this page</h2> / <h2>目次</h2>
+  // outside <main>; Astro's Toc does not emit this heading at all.
+  it("detects EN heading in suffix after </main> — C-3 residual Toc-island pattern", () => {
+    const suffix = `<div data-zfb-island="Toc"><nav>${H2_EN}<ul><li>§1</li></ul></nav></div>`;
+    expect(hasTocHeading(wrapWithSuffix("<p>Body</p>", suffix))).toBe(true);
+  });
+
+  it("detects JA heading in suffix after </main> — C-3 residual Toc-island pattern", () => {
+    const suffix = `<div data-zfb-island="Toc"><nav>${H2_JA}<ul><li>§1</li></ul></nav></div>`;
+    expect(hasTocHeading(wrapWithSuffix("<p>本文</p>", suffix))).toBe(true);
+  });
+
+  it("returns false when matching h2 is only before <main> (prefix is excluded)", () => {
+    // Heading before <main> must not trigger hasTocHeading to avoid false positives
+    // on site headers. (The before-main prefix is not a stripped region.)
+    const html = `<body>${H2_EN}<main><p>Content</p></main></body>`;
+    expect(hasTocHeading(html)).toBe(false);
   });
 });
 
@@ -205,6 +230,54 @@ describe("stripTocHeading", () => {
     expect(stripTocHeading(sideA)).toBe(sideA);
     expect(stripTocHeading(sideB)).toBe(sideB);
   });
+
+  // C-3 residual: heading in the Toc island AFTER </main>.
+  it("strips EN TOC h2 in suffix after </main> — C-3 residual Toc-island pattern", () => {
+    const suffix = `<div data-zfb-island="Toc"><nav>${H2_EN}<ul><li>§1</li></ul></nav></div>`;
+    const html = wrapWithSuffix("<article>Doc</article>", suffix);
+    const result = stripTocHeading(html);
+    expect(result).not.toContain("On this page");
+    expect(result).toContain("<article>Doc</article>");
+    expect(result).toContain("<ul><li>§1</li></ul>");
+  });
+
+  it("strips JA TOC h2 in suffix after </main> — C-3 residual Toc-island pattern", () => {
+    const suffix = `<div data-zfb-island="Toc"><nav>${H2_JA}<ul><li>§1</li></ul></nav></div>`;
+    const html = wrapWithSuffix("<article>本文</article>", suffix);
+    const result = stripTocHeading(html);
+    expect(result).not.toContain("目次");
+    expect(result).toContain("<article>本文</article>");
+    expect(result).toContain("<ul><li>§1</li></ul>");
+  });
+
+  it("does NOT strip h2 before <main> even when text matches (prefix is excluded)", () => {
+    // Site-header headings before <main> must be left intact.
+    const html = `<body>${H2_EN}<main><article>Content</article></main></body>`;
+    const result = stripTocHeading(html);
+    expect(result).toContain("On this page");
+    expect(result).toContain("<article>Content</article>");
+  });
+
+  it("C-3 symmetric: A-side (no Toc h2) and B-side (Toc island suffix) converge after strip", () => {
+    // A (Astro) — Toc island emits no h2 heading.
+    const sideA = wrapWithSuffix(
+      "<article>Doc</article>",
+      `<div data-zfb-island="Toc"><nav><ul><li>§1</li></ul></nav></div>`,
+    );
+    // B (zfb) — Toc island emits <h2>On this page</h2> outside <main>.
+    const sideB = wrapWithSuffix(
+      "<article>Doc</article>",
+      `<div data-zfb-island="Toc"><nav>${H2_EN}<ul><li>§1</li></ul></nav></div>`,
+    );
+
+    const strippedA = stripTocHeading(sideA);
+    const strippedB = stripTocHeading(sideB);
+
+    expect(strippedA).not.toContain("On this page");
+    expect(strippedB).not.toContain("On this page");
+    expect(strippedA).toContain("Doc");
+    expect(strippedB).toContain("Doc");
+  });
 });
 
 // ── maybeStripTocHeading ──────────────────────────────────────────────────────
@@ -259,5 +332,41 @@ describe("maybeStripTocHeading", () => {
     expect(strippedB).not.toContain("目次");
     expect(strippedA).toContain("コンテンツ");
     expect(strippedB).toContain("コンテンツ");
+  });
+
+  // C-3 residual: heading in suffix after </main> (Toc island outside main).
+  it("C-3: strips Toc-island suffix heading when enabled=true", () => {
+    const suffix = `<div data-zfb-island="Toc"><nav>${H2_EN}<ul><li>§1</li></ul></nav></div>`;
+    const html = wrapWithSuffix("<article>Content</article>", suffix);
+    const result = maybeStripTocHeading(html, true);
+    expect(result).not.toContain("On this page");
+    expect(result).toContain("Content");
+  });
+
+  it("C-3: is a no-op for suffix heading when enabled=false", () => {
+    const suffix = `<div data-zfb-island="Toc"><nav>${H2_JA}<ul><li>§1</li></ul></nav></div>`;
+    const html = wrapWithSuffix("<article>本文</article>", suffix);
+    expect(maybeStripTocHeading(html, false)).toBe(html);
+  });
+
+  it("C-3 symmetric: A-side passes through, B-side suffix heading stripped", () => {
+    // A (Astro) — Toc island has no h2.
+    const sideA = wrapWithSuffix(
+      "<article>Doc</article>",
+      `<div data-zfb-island="Toc"><nav><ul><li>§1</li></ul></nav></div>`,
+    );
+    // B (zfb) — Toc island suffix emits <h2>目次</h2> outside main.
+    const sideB = wrapWithSuffix(
+      "<article>Doc</article>",
+      `<div data-zfb-island="Toc"><nav>${H2_JA}<ul><li>§1</li></ul></nav></div>`,
+    );
+
+    const strippedA = maybeStripTocHeading(sideA, true);
+    const strippedB = maybeStripTocHeading(sideB, true);
+
+    expect(strippedA).not.toContain("目次");
+    expect(strippedB).not.toContain("目次");
+    expect(strippedA).toContain("Doc");
+    expect(strippedB).toContain("Doc");
   });
 });
