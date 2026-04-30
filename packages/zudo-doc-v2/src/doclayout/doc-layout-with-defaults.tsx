@@ -68,6 +68,8 @@ import { DocLayout, type DocLayoutProps } from "./doc-layout.js";
 import { Sidebar } from "../sidebar/sidebar.js";
 import { Toc } from "../toc/toc.js";
 import { MobileToc } from "../toc/mobile-toc.js";
+import { getTocTitle } from "../toc/toc-title.js";
+import type { HeadingItem } from "../toc/types.js";
 import ThemeToggle from "../theme/theme-toggle.js";
 import { Footer } from "../footer/footer.js";
 import {
@@ -129,6 +131,14 @@ export interface DocLayoutWithDefaultsProps
   breadcrumbOverride?: ComponentChildren;
   /** Replace the default footer. */
   footerOverride?: ComponentChildren;
+  /**
+   * Heading items extracted from the page's MDX body. When provided, the
+   * default Toc and MobileToc instances render the full item list in SSG
+   * HTML (anchor links visible to crawlers and JS-off users). Auto-index
+   * pages and pages with no qualifying headings should pass `[]` or omit
+   * this prop — the components gracefully handle both cases.
+   */
+  headings?: readonly HeadingItem[];
 }
 
 /**
@@ -172,14 +182,24 @@ export function DocLayoutWithDefaults(
     mobileTocOverride,
     breadcrumbOverride,
     footerOverride,
+    headings,
     bodyEndComponents,
     bodyEndScripts,
     afterSidebar,
     afterBreadcrumb,
     afterContent,
     head,
+    lang,
     ...rest
   } = props;
+
+  // Coerce undefined to empty array so Toc/MobileToc always receive an array.
+  const tocHeadings: readonly HeadingItem[] = headings ?? [];
+
+  // Locale-aware TOC section label — "On this page" (EN), "目次" (JA), etc.
+  // Used by the default Toc / MobileToc instances so SSG HTML always carries
+  // the correct locale string without requiring every caller to pass an override.
+  const tocTitle = getTocTitle(lang);
 
   // The empty fragments below carry the body-region injection anchors
   // verbatim. Each fragment is a no-op at runtime; the drift checker
@@ -203,6 +223,7 @@ export function DocLayoutWithDefaults(
       {/* @slot:doc-layout:body-end-scripts */}
       <DocLayout
         {...rest}
+        lang={lang}
         head={head}
         header={
           headerOverride ?? (
@@ -224,8 +245,8 @@ export function DocLayoutWithDefaults(
           // tree pass it through `sidebarOverride`.
           sidebarOverride ?? <Sidebar nodes={[]} />
         }
-        toc={tocOverride ?? <Toc headings={[]} />}
-        mobileToc={mobileTocOverride ?? <MobileToc headings={[]} />}
+        toc={tocOverride ?? <Toc headings={tocHeadings} title={tocTitle} />}
+        mobileToc={mobileTocOverride ?? <MobileToc headings={tocHeadings} title={tocTitle} />}
         breadcrumb={breadcrumbOverride}
         afterBreadcrumb={afterBreadcrumb}
         afterSidebar={afterSidebar}

@@ -14,6 +14,14 @@ import { cx } from "./cx";
 
 export interface TocProps {
   headings: readonly HeadingItem[];
+  /**
+   * Section label rendered as a static h2 above the outline list.
+   * Defaults to "On this page" (English). Pass the i18n-resolved
+   * equivalent (e.g. "目次" for Japanese) from the caller so SSG HTML
+   * always contains the correct locale string — required for
+   * migration-check parity on non-EN routes.
+   */
+  title?: string;
 }
 
 /**
@@ -24,18 +32,19 @@ export interface TocProps {
  *
  * Renders only depth 2–4 headings (h2/h3/h4), matching zudo-doc's
  * historical behavior — the page title (h1) is rendered separately by
- * the layout and h5+ are deemed too granular for the TOC. Components
- * with no in-range headings render an empty hidden nav so layout
- * reservations stay stable across pages.
+ * the layout and h5+ are deemed too granular for the TOC.
+ *
+ * The section `title` h2 is always rendered even when there are no
+ * qualifying headings — this preserves the "On this page" / locale
+ * string in the SSG HTML for migration-check parity. When headings are
+ * absent the `<ul>` is omitted so no empty list appears to users.
  */
-function TocInner({ headings }: TocProps) {
+function TocInner({ headings, title = "On this page" }: TocProps) {
   const filtered = useMemo(
     () => headings.filter((h) => h.depth >= 2 && h.depth <= 4),
     [headings],
   );
   const { activeId, activate } = useActiveHeading(filtered);
-
-  if (filtered.length === 0) return <nav className="hidden" />;
 
   return (
     <nav
@@ -48,34 +57,39 @@ function TocInner({ headings }: TocProps) {
         "h-[calc(100vh-3.5rem)]",
       )}
     >
-      <ul className="border-l border-muted pl-hsp-lg overflow-y-auto flex-1 min-h-0">
-        {filtered.map((heading, index) => {
-          const isActive = heading.slug === activeId;
-          return (
-            <li
-              key={`${heading.slug}-${index}`}
-              className={cx(
-                heading.depth === 3 && "ml-hsp-lg",
-                heading.depth === 4 && "ml-hsp-2xl",
-              )}
-            >
-              <a
-                href={`#${heading.slug}`}
-                onClick={() => activate(heading.slug)}
-                aria-current={isActive ? "true" : undefined}
+      <h2 className="mb-vsp-xs pl-hsp-lg text-small font-medium text-fg">
+        {title}
+      </h2>
+      {filtered.length > 0 && (
+        <ul className="border-l border-muted pl-hsp-lg overflow-y-auto flex-1 min-h-0">
+          {filtered.map((heading, index) => {
+            const isActive = heading.slug === activeId;
+            return (
+              <li
+                key={`${heading.slug}-${index}`}
                 className={cx(
-                  "block py-vsp-2xs text-small leading-snug transition-colors",
-                  isActive
-                    ? "bg-fg text-bg font-medium"
-                    : "text-muted hover:underline focus:underline",
+                  heading.depth === 3 && "ml-hsp-lg",
+                  heading.depth === 4 && "ml-hsp-2xl",
                 )}
               >
-                <SmartBreak>{heading.text}</SmartBreak>
-              </a>
-            </li>
-          );
-        })}
-      </ul>
+                <a
+                  href={`#${heading.slug}`}
+                  onClick={() => activate(heading.slug)}
+                  aria-current={isActive ? "true" : undefined}
+                  className={cx(
+                    "block py-vsp-2xs text-small leading-snug transition-colors",
+                    isActive
+                      ? "bg-fg text-bg font-medium"
+                      : "text-muted hover:underline focus:underline",
+                  )}
+                >
+                  <SmartBreak>{heading.text}</SmartBreak>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </nav>
   );
 }
