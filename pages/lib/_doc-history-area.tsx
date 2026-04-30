@@ -18,7 +18,15 @@ import { settings } from "@/config/settings";
 import { defaultLocale, t } from "@/config/i18n";
 import { BodyFootUtilArea } from "@zudo-doc/zudo-doc-v2/body-foot-util";
 import { buildGitHubSourceUrl } from "@/utils/github";
-import { getFileCommits, getCommitInfo } from "@/utils/doc-history";
+// SSR author + date metadata comes from `.zfb/doc-history-meta.json`, a
+// build-time manifest emitted by `scripts/zfb-prebuild.mjs` (step 2:
+// doc-history-meta) before `zfb build` runs. esbuild inlines the JSON
+// statically so no Node-only `fs` code reaches the client bundle.
+// The `#doc-history-meta` alias is defined in tsconfig.json and resolves
+// to the absolute path of `.zfb/doc-history-meta.json` — this is needed
+// because the zfb bundler builds pages from a shadow tree; relative paths
+// across the shadow boundary would resolve to the wrong location.
+import docHistoryMeta from "#doc-history-meta";
 
 interface DocHistoryAreaProps {
   /** Page slug, e.g. "getting-started/intro". */
@@ -39,42 +47,6 @@ interface DocHistoryAreaProps {
    * view-source GitHub URL. Omit to suppress the view-source link.
    */
   contentDir?: string;
-}
-
-/**
- * Lightweight git lookup for the SSR fallback: returns author name from the
- * oldest commit (= document creator) plus ISO-date strings for created
- * (oldest) and updated (newest). Returns null on any git failure so that
- * shallow clones and CI environments gracefully degrade without crashing SSR.
- *
- * Uses only the commit-hash list + per-commit metadata (no file content) so
- * it is significantly faster than a full `getDocHistory()` call.
- */
-function getHistoryMeta(
-  entrySlug: string,
-  contentDir: string,
-): { author?: string; createdDate?: string; updatedDate?: string } | null {
-  try {
-    const filePath = `${contentDir}/${entrySlug}.mdx`;
-    const commits = getFileCommits(filePath, 100);
-    if (commits.length === 0) return null;
-    const newest = getCommitInfo(commits[0], filePath);
-    if (!newest) return null;
-    const oldest =
-      commits.length > 1
-        ? getCommitInfo(commits[commits.length - 1], filePath) ?? newest
-        : newest;
-    return {
-      // First commit author is the document creator; fall back to newest
-      // committer when the oldest lookup returns empty (shallow clone).
-      author: oldest.author || newest.author || undefined,
-      createdDate: oldest.date || undefined,
-      updatedDate: newest.date || undefined,
-    };
-  } catch {
-    // git unavailable or repo missing — degrade gracefully
-    return null;
-  }
 }
 
 /**
@@ -105,6 +77,13 @@ export function DocHistoryArea({
 }: DocHistoryAreaProps): VNode | null {
   if (!settings.docHistory) return null;
 
+  // Look up the build-time manifest entry for this page. The composedSlug
+  // matches the key written by the prebuild step: bare slug for the default
+  // locale, "<localeKey>/<slug>" for non-default locales.
+  const composedSlug = locale === defaultLocale ? slug : `${locale}/${slug}`;
+  type MetaEntry = { author: string; createdDate: string; updatedDate: string };
+  const meta = (docHistoryMeta as Record<string, MetaEntry>)[composedSlug];
+
   const docHistory = {
     slug,
     // Omit locale for the default locale — fetch path is /doc-history/{slug}.json.
@@ -115,8 +94,11 @@ export function DocHistoryArea({
     createdLabel: t("doc.created", locale),
     updatedLabel: t("doc.updated", locale),
     historyLabel: t("doc.history", locale),
-    // Author + dates from git; undefined when not available (shallow clone / error).
-    ...(entrySlug && contentDir ? (getHistoryMeta(entrySlug, contentDir) ?? {}) : {}),
+    // SSR author + dates from the build-time manifest (b11-2). Omitted when the
+    // manifest has no entry for this slug (e.g. untracked files, shallow clone).
+    ...(meta?.author ? { author: meta.author } : {}),
+    ...(meta?.createdDate ? { createdDate: meta.createdDate } : {}),
+    ...(meta?.updatedDate ? { updatedDate: meta.updatedDate } : {}),
   };
 
   // Compute the view-source GitHub URL host-side so the v2 BodyFootUtilArea

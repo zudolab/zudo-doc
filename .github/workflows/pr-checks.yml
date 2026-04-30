@@ -1,7 +1,9 @@
 # Pull request quality checks and preview deployment.
 #
-# Triggered on PRs targeting `main`. The pipeline mirrors the local
-# `pnpm b4push` script:
+# Triggered on PRs targeting `main` or any `base/**` branch (epic-PRs in
+# the zfb migration parity super-epic stack into base/zfb-migration-parity
+# so each child epic-PR also needs CI gating). The pipeline mirrors the
+# local `pnpm b4push` script:
 #   0. Template drift check (no install needed — pure shell)
 #   1. Type checking (astro check)
 #   2. Build the Astro docs site (shallow clone, skips doc history)
@@ -9,6 +11,11 @@
 #   4. E2E & smoke tests (Playwright)
 #   5. Merge build outputs and deploy a preview to Cloudflare Pages
 #   6. Post the preview URL as a PR comment
+#
+# Each install-bearing job clones the public Takazudo/zudo-front-builder
+# repo to ../zfb so the package.json's file:../zfb/... workspace deps
+# resolve. Local dev uses the same sibling-repo layout. Once zfb publishes
+# to npm, drop the clone steps and switch to versioned deps.
 #
 # Inter-job data sharing uses actions/cache (not upload-artifact) to avoid
 # Actions storage accumulation. Cache keys are scoped to github.run_id so
@@ -22,6 +29,7 @@ on:
   pull_request:
     branches:
       - main
+      - 'base/**'
 
 concurrency:
   group: pr-checks-${{ github.event.pull_request.number }}
@@ -57,6 +65,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
+      # Clone the public sibling zfb repo so file:../zfb/... workspace deps resolve.
+      # See pr-checks.yml top-of-file note on the zfb migration parity super-epic.
+      - name: Clone zfb sibling repo
+        run: git clone --depth 1 https://github.com/Takazudo/zudo-front-builder.git ../zfb
+
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
         with:
@@ -86,6 +99,10 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           fetch-depth: 1
+
+      # Clone the public sibling zfb repo so file:../zfb/... workspace deps resolve.
+      - name: Clone zfb sibling repo
+        run: git clone --depth 1 https://github.com/Takazudo/zudo-front-builder.git ../zfb
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
@@ -127,6 +144,10 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           fetch-depth: 0
+
+      # Clone the public sibling zfb repo so file:../zfb/... workspace deps resolve.
+      - name: Clone zfb sibling repo
+        run: git clone --depth 1 https://github.com/Takazudo/zudo-front-builder.git ../zfb
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
@@ -174,6 +195,10 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           fetch-depth: 0
+
+      # Clone the public sibling zfb repo so file:../zfb/... workspace deps resolve.
+      - name: Clone zfb sibling repo
+        run: git clone --depth 1 https://github.com/Takazudo/zudo-front-builder.git ../zfb
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
