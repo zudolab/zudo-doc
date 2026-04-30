@@ -190,6 +190,107 @@ describe("normalizeHtml – CF workerd error overlay stripping", () => {
   });
 });
 
+// ── Astro framework runtime stripping (B-14-1) ───────────────────────────────
+
+describe("normalizeHtml – Astro runtime noise stripping", () => {
+  it("strips the astro-island/astro-slot display:contents style block", () => {
+    const html =
+      '<head><style>astro-island,astro-slot,astro-static-slot{display:contents}</style></head><body><main><p>Content</p></main></body>';
+    const result = normalizeHtml(html);
+    expect(result).not.toContain("astro-island,astro-slot");
+    expect(result).not.toContain("display:contents");
+    expect(result).toContain("<p>Content</p>");
+  });
+
+  it("strips an inline script containing self.Astro", () => {
+    const html =
+      '<main><script>(()=>{var e=async t=>{await(await t())()};(self.Astro||(self.Astro={})).load=e;window.dispatchEvent(new Event("astro:load"));})();</script><p>Content</p></main>';
+    const result = normalizeHtml(html);
+    expect(result).not.toContain("self.Astro");
+    expect(result).toContain("<p>Content</p>");
+  });
+
+  it("strips an inline script containing astro:idle", () => {
+    const html =
+      '<main><script>(()=>{var l=(n,t)=>{window.addEventListener("astro:idle",()=>{})}})();</script><p>Content</p></main>';
+    const result = normalizeHtml(html);
+    expect(result).not.toContain("astro:idle");
+    expect(result).toContain("<p>Content</p>");
+  });
+
+  it("strips an inline script containing astro-island class registration", () => {
+    const html =
+      '<header><script>(()=>{class astro-island extends HTMLElement{}})()</script><nav>Nav</nav></header>';
+    const result = normalizeHtml(html);
+    expect(result).not.toContain("astro-island extends");
+    expect(result).toContain("<nav>Nav</nav>");
+  });
+
+  it("leaves unrelated inline scripts intact", () => {
+    const html = '<script>var x = 1; console.log(x);</script><p>Text</p>';
+    const result = normalizeHtml(html);
+    expect(result).toContain("var x = 1");
+    expect(result).toContain("<p>Text</p>");
+  });
+
+  it("leaves external scripts (with src) intact", () => {
+    const html = '<script src="/app.js"></script><p>Text</p>';
+    const result = normalizeHtml(html);
+    expect(result).toContain('src="/app.js"');
+    expect(result).toContain("<p>Text</p>");
+  });
+
+  it("leaves JSON-LD scripts (with type attribute) intact", () => {
+    const html =
+      '<script type="application/ld+json">{"@type":"WebPage"}</script><p>Text</p>';
+    const result = normalizeHtml(html);
+    expect(result).toContain("application/ld+json");
+    expect(result).toContain("@type");
+  });
+});
+
+// ── Non-breaking whitespace canonicalization (B-14-3) ────────────────────────
+
+describe("normalizeHtml – non-breaking whitespace canonicalization", () => {
+  it("converts &nbsp; entity to plain ASCII space", () => {
+    const html = "<p>#ai&nbsp;(3)</p>";
+    const result = normalizeHtml(html);
+    expect(result).not.toContain("&nbsp;");
+    expect(result).toContain("#ai");
+    expect(result).toContain("(3)");
+  });
+
+  it("converts multiple &nbsp; occurrences", () => {
+    const html = "<p>#ai&nbsp;(3)&nbsp;#cloudflare&nbsp;(2)</p>";
+    const result = normalizeHtml(html);
+    expect(result).not.toContain("&nbsp;");
+  });
+
+  it("is case-insensitive for &NBSP; / &Nbsp;", () => {
+    const html = "<p>foo&NBSP;bar</p>";
+    const result = normalizeHtml(html);
+    expect(result).not.toContain("&NBSP;");
+    expect(result).not.toContain("&nbsp;");
+  });
+
+  it("converts U+00A0 non-breaking space to plain ASCII space", () => {
+    // U+00A0 is the decoded form of &nbsp; — also canonicalize it
+    const html = "<p>tag (5)</p>";
+    const result = normalizeHtml(html);
+    expect(result).not.toContain(" ");
+    expect(result).toContain("tag");
+    expect(result).toContain("(5)");
+  });
+
+  it("preserves other content around &nbsp;", () => {
+    const html = "<span>#ai</span><span>&nbsp;(3)</span>";
+    const result = normalizeHtml(html);
+    expect(result).not.toContain("&nbsp;");
+    expect(result).toContain("#ai");
+    expect(result).toContain("(3)");
+  });
+});
+
 // ── Fixture pair tests ────────────────────────────────────────────────────────
 
 describe("normalizeHtml – fixture pairs", () => {
