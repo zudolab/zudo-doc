@@ -198,8 +198,38 @@ function extractLinkTargets(html) {
 // ── Asset refs ────────────────────────────────────────────────────────────────
 
 /**
+ * Returns true for framework-specific asset refs that should be excluded from
+ * cross-framework comparison. These are Astro output that zfb either does not
+ * emit or emits differently, so excluding them keeps the diff framework-agnostic.
+ *
+ * Excluded patterns (both strip from whichever side they appear on):
+ *   - /_astro/*.js (with or without query string): Astro hashed JS chunks for
+ *     ClientRouter, mermaid-init, search bundle, etc. zfb does not emit these.
+ *     (#1327 — Astro-specific runtime output absent by design in zfb)
+ *   - https://cdn.jsdelivr.net/npm/katex@...: CDN KaTeX stylesheet loaded by
+ *     Astro's remark-math integration. zfb bundles KaTeX into its main CSS via
+ *     the Tailwind build, so this CDN URL never appears in B. (#1327)
+ *
+ * /_astro/*.css is intentionally NOT excluded — the Astro stylesheet entry must
+ * survive so the stylesheet-presence check in hasAssetLoss still has something
+ * to recognize as "A had a stylesheet".
+ */
+function isFrameworkNoiseRef(ref) {
+  // Strip query string before checking path suffix
+  const path = ref.split("?")[0];
+  // Astro hashed JS chunks under /_astro/ — but not CSS files (#1327)
+  if (path.startsWith("/_astro/") && path.endsWith(".js")) return true;
+  // CDN KaTeX — zfb bundles KaTeX into its main CSS instead (#1327)
+  if (ref.startsWith("https://cdn.jsdelivr.net/npm/katex@")) return true;
+  return false;
+}
+
+/**
  * Collect all src/href references that point to assets (scripts, stylesheets,
  * images, fonts). Excludes plain anchor hrefs (those are linkTargets).
+ *
+ * Framework-specific noise refs (Astro JS chunks, CDN KaTeX) are stripped
+ * before returning so the result is framework-agnostic (see isFrameworkNoiseRef).
  */
 function extractAssetRefs(html) {
   const refs = new Set();
@@ -233,6 +263,11 @@ function extractAssetRefs(html) {
   while ((m = imgRe.exec(html)) !== null) {
     const src = getAttr(m[1], "src");
     if (src) refs.add(src);
+  }
+
+  // Drop framework-specific noise before returning (see isFrameworkNoiseRef)
+  for (const ref of [...refs]) {
+    if (isFrameworkNoiseRef(ref)) refs.delete(ref);
   }
 
   return [...refs];
