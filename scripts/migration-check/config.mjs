@@ -63,6 +63,24 @@ export const lockDir = "/tmp/l-zfb-migration-check-locks/";
  */
 export const sitePrefix = "/pj/zudo-doc/";
 
+// ── Hidden-sidebar strip ──────────────────────────────────────────────────────
+
+/**
+ * Strip the hidden desktop-sidebar <aside> element from both A and B HTML
+ * before signal extraction.
+ *
+ * Background (phase B-12, issue #907, option (b)):
+ *   Tag-listing routes (/docs/tags/<tag> and JA mirrors) use hideSidebar=true.
+ *   Site A (old Astro layout) rendered the full nav tree in the DOM and hid it
+ *   via CSS; site B (zfb DocLayout) intentionally omits the tree. Stripping
+ *   symmetrically from both sides removes the sidebar from the diff so that the
+ *   18 affected routes are no longer classified as content-loss.
+ *
+ *   Default ON for round-7 rerun and beyond. Set to false to restore the old
+ *   behaviour where sidebar DOM was included in the content-loss calculation.
+ */
+export const stripHiddenSidebarDom = true;
+
 // ── Cosmetic-by-default markers ───────────────────────────────────────────────
 
 /**
