@@ -119,3 +119,22 @@ export const cosmeticByDefaultMarkers = [
   "sitemap-route-order",
   "build-hash-filename",
 ];
+
+// ── Known upstream fixes (pending binary rebuild) ─────────────────────────────
+//
+// These are routes that show harness diffs due to a known zfb upstream bug that
+// has been fixed but requires a `cargo build -p zfb` rebuild to take effect.
+// Once the fix is compiled and the binary is re-linked (`pnpm install`), the
+// listed routes should return to parity without any zudo-doc changes.
+//
+// B-14-5 — zfb MDX named-import stripped from rendered output (issue #914)
+//   Root cause: `import { X } from "pkg"` was parsed as a Paragraph because
+//   markdown-rs's MdxjsEsm construct requires `mdx_esm_parse` to be Some.
+//   Without it the `{ X }` binding became an MdxTextExpression evaluating to
+//   `undefined`, leaving a visible double-space skeleton in the page body.
+//   Fix: Takazudo/zudo-front-builder#94 — supply a permissive mdx_esm_parse.
+//   Affected routes (2): /docs/getting-started/setup-preset-generator (EN + JA)
+export const pendingBinaryRebuildRoutes = [
+  "/docs/getting-started/setup-preset-generator",
+  "/ja/docs/getting-started/setup-preset-generator",
+];
