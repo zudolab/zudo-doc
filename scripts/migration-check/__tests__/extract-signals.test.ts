@@ -198,6 +198,51 @@ describe("extractSignals – assetRefs", () => {
     expect(assetRefs).not.toContain("/docs/page/");
     expect(assetRefs).toContain("/style.css");
   });
+
+  // ── Framework-noise stripping (#1327) ────────────────────────────────────
+
+  it("strips /_astro/*.js script refs (Astro hashed JS chunks absent in zfb)", () => {
+    const html = `<head>
+      <script src="/_astro/ClientRouter.astro_abc123.js" type="module"></script>
+      <script src="/_astro/search.astro_xyz789.js" type="module"></script>
+      <link rel="stylesheet" href="/_astro/base.HWDxbTAy.css">
+    </head>`;
+    const { assetRefs } = extractSignals(normalizeHtml(html));
+    // JS chunks must be gone
+    expect(assetRefs).not.toContain("/_astro/ClientRouter.astro_abc123.js");
+    expect(assetRefs).not.toContain("/_astro/search.astro_xyz789.js");
+    // CSS entry must survive (needed for stylesheet-presence check in hasAssetLoss)
+    expect(assetRefs).toContain("/_astro/base.HWDxbTAy.css");
+  });
+
+  it("strips /_astro/*.js refs even when a query string is appended", () => {
+    const html = `<script src="/_astro/mermaid-init.astro_abc.js?v=1"></script>`;
+    const { assetRefs } = extractSignals(normalizeHtml(html));
+    expect(assetRefs).not.toContain("/_astro/mermaid-init.astro_abc.js?v=1");
+  });
+
+  it("strips CDN KaTeX stylesheet (zfb bundles KaTeX into its main CSS instead)", () => {
+    const html = `<head>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.38/dist/katex.min.css">
+      <link rel="stylesheet" href="/local.css">
+    </head>`;
+    const { assetRefs } = extractSignals(normalizeHtml(html));
+    expect(assetRefs).not.toContain(
+      "https://cdn.jsdelivr.net/npm/katex@0.16.38/dist/katex.min.css",
+    );
+    // Unrelated local stylesheet must survive
+    expect(assetRefs).toContain("/local.css");
+  });
+
+  it("preserves non-/_astro script refs and unrelated asset refs", () => {
+    const html = `<head>
+      <script src="/assets/app.js" type="module"></script>
+      <img src="/images/hero.png" alt="">
+    </head>`;
+    const { assetRefs } = extractSignals(normalizeHtml(html));
+    expect(assetRefs).toContain("/assets/app.js");
+    expect(assetRefs).toContain("/images/hero.png");
+  });
 });
 
 // ── Script inventory ──────────────────────────────────────────────────────────
@@ -219,6 +264,25 @@ describe("extractSignals – scriptInventory", () => {
     const html = "<script>window.foo = 1;</script>";
     const { scriptInventory } = extractSignals(normalizeHtml(html));
     expect(scriptInventory).toEqual([]);
+  });
+
+  // (#1327) Strip Astro hashed JS chunks here for the same reason extractAssetRefs
+  // strips them — they would otherwise dominate hasAssetLoss against zfb output.
+  it("strips Astro hashed JS chunks under /_astro/", () => {
+    const html = `<head>
+      <script src="/_astro/ClientRouter.astro_astro_type_script_index_0_lang.DmQZLfuR.js" type="module"></script>
+      <script src="/_astro/search.astro_astro_type_script_index_0_lang.L0QHLS6J.js"></script>
+      <script src="/bundle.js" type="module"></script>
+    </head>`;
+    const { scriptInventory } = extractSignals(normalizeHtml(html));
+    expect(scriptInventory).toContain("/bundle.js");
+    expect(scriptInventory).not.toContain(
+      "/_astro/ClientRouter.astro_astro_type_script_index_0_lang.DmQZLfuR.js"
+    );
+    expect(scriptInventory).not.toContain(
+      "/_astro/search.astro_astro_type_script_index_0_lang.L0QHLS6J.js"
+    );
+    expect(scriptInventory).toHaveLength(1);
   });
 });
 
