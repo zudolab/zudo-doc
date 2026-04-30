@@ -100,6 +100,24 @@ export const stripHiddenSidebarDom = true;
  */
 export const stripVersionSwitcherDom = true;
 
+// ── TOC-heading strip ─────────────────────────────────────────────────────────
+
+/**
+ * Strip the in-content TOC h2 heading from both A and B HTML before signal
+ * extraction.
+ *
+ * Background (phase B-15-2, issue #917):
+ *   zfb's DocLayout emits <h2>On this page</h2> (EN) / <h2>目次</h2> (JA)
+ *   inside <main> next to the Toc/MobileToc islands. Astro's DocLayout
+ *   renders the TOC heading outside <main>. The heading text was counted as
+ *   content-loss on ~5 affected routes, and contributes to ~10 more routes
+ *   alongside other causes.
+ *
+ *   Default ON for B-15-2 rerun and beyond. Set to false to restore the old
+ *   behaviour where the TOC heading was included in the content comparison.
+ */
+export const stripTocHeadingDom = true;
+
 // ── Cosmetic-by-default markers ───────────────────────────────────────────────
 
 /**

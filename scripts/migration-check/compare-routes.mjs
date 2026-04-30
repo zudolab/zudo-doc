@@ -31,6 +31,7 @@ import { normalizeHtml } from "./lib/normalize-html.mjs";
 import { extractSignals } from "./lib/extract-signals.mjs";
 import { maybeStripHiddenSidebar } from "./lib/strip-hidden-sidebar.mjs";
 import { maybeStripVersionSwitcher } from "./lib/strip-version-switcher.mjs";
+import { maybeStripTocHeading } from "./lib/strip-toc-heading.mjs";
 import * as config from "./config.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -344,6 +345,8 @@ async function compareRoute({ route, baseA, baseB, sitePrefix }) {
   //      (see lib/strip-hidden-sidebar.mjs for rationale).
   //   2. maybeStripVersionSwitcher — removes the inline version-switcher div
   //      (see lib/strip-version-switcher.mjs for rationale).
+  //   3. maybeStripTocHeading — removes the in-content TOC h2 from <main>
+  //      (see lib/strip-toc-heading.mjs for rationale).
   // Normalizer options shared between A and B — built once to avoid repetition.
   const normalizeOptions = {
     sitePrefix,
@@ -352,19 +355,25 @@ async function compareRoute({ route, baseA, baseB, sitePrefix }) {
   };
   let sigA, sigB;
   try {
-    const normA = maybeStripVersionSwitcher(
-      maybeStripHiddenSidebar(
-        normalizeHtml(fetchA.text, normalizeOptions),
-        config.stripHiddenSidebarDom,
+    const normA = maybeStripTocHeading(
+      maybeStripVersionSwitcher(
+        maybeStripHiddenSidebar(
+          normalizeHtml(fetchA.text, normalizeOptions),
+          config.stripHiddenSidebarDom,
+        ),
+        config.stripVersionSwitcherDom,
       ),
-      config.stripVersionSwitcherDom,
+      config.stripTocHeadingDom,
     );
-    const normB = maybeStripVersionSwitcher(
-      maybeStripHiddenSidebar(
-        normalizeHtml(fetchB.text, normalizeOptions),
-        config.stripHiddenSidebarDom,
+    const normB = maybeStripTocHeading(
+      maybeStripVersionSwitcher(
+        maybeStripHiddenSidebar(
+          normalizeHtml(fetchB.text, normalizeOptions),
+          config.stripHiddenSidebarDom,
+        ),
+        config.stripVersionSwitcherDom,
       ),
-      config.stripVersionSwitcherDom,
+      config.stripTocHeadingDom,
     );
     sigA = extractSignals(normA);
     sigB = extractSignals(normB);
