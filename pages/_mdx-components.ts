@@ -48,6 +48,7 @@ import { CategoryTreeNavWrapper } from "./lib/_category-tree-nav";
 import { SiteTreeNavWrapper } from "./lib/_site-tree-nav";
 import { DetailsWrapper } from "./lib/_details";
 import { PresetGeneratorFallback } from "./lib/_preset-generator";
+import { MathBlock } from "./lib/_math-block";
 
 /**
  * MDX-tag stub: renders nothing. Returning `null` keeps the rendered
@@ -170,6 +171,11 @@ export function createMdxComponents(lang: Locale | string = defaultLocale) {
     Details: DetailsWrapper,
     Tabs,
     TabItem,
+    // Math rendering — KaTeX via server-side katex.renderToString().
+    // The math-equations.mdx content files write <MathBlock> JSX directly
+    // (instead of $$…$$) because the zfb Rust emitter does not yet support
+    // remark-math math nodes (zudo-front-builder #93).
+    MathBlock,
     SmartBreak: MdxStub,
     // Island: pass children through so server-renderable content nested
     // inside <Island> appears in SSR HTML. See IslandWrapper comment above.
