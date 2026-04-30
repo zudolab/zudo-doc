@@ -81,6 +81,25 @@ export const sitePrefix = "/pj/zudo-doc/";
  */
 export const stripHiddenSidebarDom = true;
 
+// ── Version-switcher strip ────────────────────────────────────────────────────
+
+/**
+ * Strip the inline version-switcher <div> element from both A and B HTML
+ * before signal extraction.
+ *
+ * Background (phase B-14-2, issue #914):
+ *   A's Astro DocLayout renders <div class="version-switcher"> inline in <main>
+ *   next to the breadcrumb, containing "Version: Latest" button text and a
+ *   hidden dropdown with version links. zfb's host puts the version-switcher
+ *   only in the header. The inline dropdown is cosmetic chrome that is
+ *   functionally redundant with the header switcher, but its text (~45 chars)
+ *   was counted as content-loss on ~30 of 51 affected routes.
+ *
+ *   Default ON for B-14-2 rerun and beyond. Set to false to restore the old
+ *   behaviour where version-switcher text was included in the content comparison.
+ */
+export const stripVersionSwitcherDom = true;
+
 // ── Cosmetic-by-default markers ───────────────────────────────────────────────
 
 /**
