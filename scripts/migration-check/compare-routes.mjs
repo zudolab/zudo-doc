@@ -344,18 +344,24 @@ async function compareRoute({ route, baseA, baseB, sitePrefix }) {
   //      (see lib/strip-hidden-sidebar.mjs for rationale).
   //   2. maybeStripVersionSwitcher — removes the inline version-switcher div
   //      (see lib/strip-version-switcher.mjs for rationale).
+  // Normalizer options shared between A and B — built once to avoid repetition.
+  const normalizeOptions = {
+    sitePrefix,
+    brandSuffix: config.brandSuffix,
+    stripAstroViewTransitionsMeta: config.stripAstroViewTransitionsMeta,
+  };
   let sigA, sigB;
   try {
     const normA = maybeStripVersionSwitcher(
       maybeStripHiddenSidebar(
-        normalizeHtml(fetchA.text, { sitePrefix }),
+        normalizeHtml(fetchA.text, normalizeOptions),
         config.stripHiddenSidebarDom,
       ),
       config.stripVersionSwitcherDom,
     );
     const normB = maybeStripVersionSwitcher(
       maybeStripHiddenSidebar(
-        normalizeHtml(fetchB.text, { sitePrefix }),
+        normalizeHtml(fetchB.text, normalizeOptions),
         config.stripHiddenSidebarDom,
       ),
       config.stripVersionSwitcherDom,

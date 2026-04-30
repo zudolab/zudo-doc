@@ -179,16 +179,31 @@ function splitPreservedBlocks(html) {
  * Normalize an HTML string for deterministic snapshot comparison.
  *
  * @param {string} html - Raw HTML page content.
- * @param {{ sitePrefix?: string }} [options]
+ * @param {{
+ *   sitePrefix?: string,
+ *   brandSuffix?: string,
+ *   stripAstroViewTransitionsMeta?: boolean
+ * }} [options]
  *   sitePrefix: URL path prefix used by the deployed site (e.g. "/pj/zudo-doc/").
  *               When set, href/src/canonical values starting with this prefix are
  *               stripped down to the bare path (e.g. /pj/zudo-doc/docs/x → /docs/x).
  *               This is the prefix-normalization layer agreed in codex/gcoc review —
  *               it lives here at the signal-extraction boundary, not in the static server.
+ *   brandSuffix: Trailing suffix to strip from og:title content values (e.g. " | zudo-doc").
+ *                When non-empty, removes this suffix from `<meta property="og:title">` content
+ *                so A-side (Astro, with brand suffix) and B-side (zfb, without) converge.
+ *                Phase B-15-1, issue #917.
+ *   stripAstroViewTransitionsMeta: When true, removes the two Astro view-transitions
+ *                meta tags (astro-view-transitions-enabled, astro-view-transitions-fallback)
+ *                that A emits but B does not. Phase B-15-1, issue #917.
  * @returns {string} Normalized HTML.
  */
 export function normalizeHtml(html, options = {}) {
-  const { sitePrefix = "" } = options;
+  const {
+    sitePrefix = "",
+    brandSuffix = "",
+    stripAstroViewTransitionsMeta = false,
+  } = options;
 
   let result = html;
 
@@ -286,6 +301,43 @@ export function normalizeHtml(html, options = {}) {
   const OPEN_TAG_RE =
     /<[a-zA-Z][a-zA-Z0-9:-]*(?:\s(?:[^>"']|"[^"]*"|'[^']*')*)?(?:\s*\/)?>/g;
   result = result.replace(OPEN_TAG_RE, (match) => processTag(match, sitePrefix));
+
+  // ── 4. Strip Astro view-transitions noise meta tags ──────────────────────
+  // A's Astro DocLayout emits two meta tags that B never emits:
+  //   <meta name="astro-view-transitions-enabled" content="…">
+  //   <meta name="astro-view-transitions-fallback" content="…">
+  // Conceptually identical to the framework-runtime-script noise stripped in
+  // B-14-1. Dropping these symmetrically (both sides) removes them from the
+  // metaTags signal. Phase B-15-1, issue #917.
+  if (stripAstroViewTransitionsMeta) {
+    // Match only the two known tags (enabled, fallback) — do not over-match.
+    result = result.replace(
+      /<meta\b(?=[^>]*\bname="astro-view-transitions-(?:enabled|fallback)")[^>]*(?:\s*\/)?>/gi,
+      "",
+    );
+  }
+
+  // ── 5. Strip brand suffix from og:title content ──────────────────────────
+  // A's Astro DocLayout appends a " | zudo-doc" suffix to og:title values;
+  // B emits the bare page title with no suffix. After step 3, attributes are
+  // sorted (content before property), so the canonical form is:
+  //   <meta content="Page Title | zudo-doc" property="og:title">
+  // We strip the configured suffix so both sides converge on the bare title.
+  // Phase B-15-1, issue #917.
+  if (brandSuffix) {
+    result = result.replace(
+      /<meta\b[^>]*\bproperty="og:title"[^>]*>/gi,
+      (match) => {
+        // Extract content attribute value from the (already-processed) tag.
+        const contentMatch = match.match(/\bcontent="([^"]*)"/i);
+        if (!contentMatch) return match;
+        const value = contentMatch[1];
+        if (!value.endsWith(brandSuffix)) return match;
+        const stripped = value.slice(0, value.length - brandSuffix.length);
+        return match.replace(`content="${value}"`, `content="${stripped}"`);
+      },
+    );
+  }
 
   return result;
 }
