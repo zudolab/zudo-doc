@@ -265,6 +265,25 @@ describe("extractSignals – scriptInventory", () => {
     const { scriptInventory } = extractSignals(normalizeHtml(html));
     expect(scriptInventory).toEqual([]);
   });
+
+  // (#1327) Strip Astro hashed JS chunks here for the same reason extractAssetRefs
+  // strips them — they would otherwise dominate hasAssetLoss against zfb output.
+  it("strips Astro hashed JS chunks under /_astro/", () => {
+    const html = `<head>
+      <script src="/_astro/ClientRouter.astro_astro_type_script_index_0_lang.DmQZLfuR.js" type="module"></script>
+      <script src="/_astro/search.astro_astro_type_script_index_0_lang.L0QHLS6J.js"></script>
+      <script src="/bundle.js" type="module"></script>
+    </head>`;
+    const { scriptInventory } = extractSignals(normalizeHtml(html));
+    expect(scriptInventory).toContain("/bundle.js");
+    expect(scriptInventory).not.toContain(
+      "/_astro/ClientRouter.astro_astro_type_script_index_0_lang.DmQZLfuR.js"
+    );
+    expect(scriptInventory).not.toContain(
+      "/_astro/search.astro_astro_type_script_index_0_lang.L0QHLS6J.js"
+    );
+    expect(scriptInventory).toHaveLength(1);
+  });
 });
 
 // ── Landmarks ─────────────────────────────────────────────────────────────────

@@ -277,6 +277,12 @@ function extractAssetRefs(html) {
 
 /**
  * External <script src="..."> only — inline script bodies are excluded.
+ *
+ * Framework-specific noise (Astro hashed JS chunks under /_astro/) is stripped
+ * here too, because Astro's <script src="/_astro/..."> tags surface in this
+ * inventory just like they do in extractAssetRefs. Without this, hasAssetLoss
+ * would still flag every cross-framework route as asset-loss via the
+ * scriptInventory check even after assetRefs is normalized. (#1327)
  */
 function extractScriptInventory(html) {
   const srcs = [];
@@ -284,7 +290,7 @@ function extractScriptInventory(html) {
   let m;
   while ((m = re.exec(html)) !== null) {
     const src = getAttr(m[1], "src");
-    if (src) srcs.push(src);
+    if (src && !isFrameworkNoiseRef(src)) srcs.push(src);
   }
   return srcs;
 }
