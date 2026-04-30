@@ -22,15 +22,18 @@ import { HeadingH3 } from "@zudo-doc/zudo-doc-v2/content";
 // Heading text for each of the 8 sections — must match the original
 // SectionHeading calls in src/components/preset-generator.tsx exactly
 // so migration-check h3 queries resolve.
+// Order must mirror the JSX source order in preset-generator.tsx — do NOT
+// sort alphabetically. The array drives the SSR fallback heading sequence
+// that the migration-check harness compares against the Astro A snapshot.
 const SECTION_HEADINGS = [
-  "Header right items",
-  "Color Scheme",
-  "Color Scheme Mode",
+  "Project Name",
   "Default Language",
+  "Color Scheme Mode",
+  "Color Scheme",
   "Features",
+  "Header right items",
   "Markdown Options",
   "Package Manager",
-  "Project Name",
 ] as const;
 
 /**

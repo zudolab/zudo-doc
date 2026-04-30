@@ -100,6 +100,24 @@ export const stripHiddenSidebarDom = true;
  */
 export const stripVersionSwitcherDom = true;
 
+// ── TOC-heading strip ─────────────────────────────────────────────────────────
+
+/**
+ * Strip the in-content TOC h2 heading from both A and B HTML before signal
+ * extraction.
+ *
+ * Background (phase B-15-2, issue #917):
+ *   zfb's DocLayout emits <h2>On this page</h2> (EN) / <h2>目次</h2> (JA)
+ *   inside <main> next to the Toc/MobileToc islands. Astro's DocLayout
+ *   renders the TOC heading outside <main>. The heading text was counted as
+ *   content-loss on ~5 affected routes, and contributes to ~10 more routes
+ *   alongside other causes.
+ *
+ *   Default ON for B-15-2 rerun and beyond. Set to false to restore the old
+ *   behaviour where the TOC heading was included in the content comparison.
+ */
+export const stripTocHeadingDom = true;
+
 // ── Cosmetic-by-default markers ───────────────────────────────────────────────
 
 /**
@@ -119,6 +137,43 @@ export const cosmeticByDefaultMarkers = [
   "sitemap-route-order",
   "build-hash-filename",
 ];
+
+// ── og:title brand-suffix strip ───────────────────────────────────────────────
+
+/**
+ * Trailing suffix to strip from <meta property="og:title" content="…"> values.
+ *
+ * Background (phase B-15-1, issue #917):
+ *   A's Astro DocLayout emits e.g.
+ *     <meta property="og:title" content="Page Title | zudo-doc">
+ *   B emits:
+ *     <meta property="og:title" content="Page Title">
+ *   (no brand suffix). Stripping this suffix symmetrically from both sides
+ *   removes the false-positive from the metaTags signal.
+ *
+ *   Set to "" to disable suffix stripping entirely.
+ *   Override for downstream projects that use a different brand name
+ *   (e.g. " | My Docs").
+ */
+export const brandSuffix = " | zudo-doc";
+
+// ── Astro view-transitions meta strip ────────────────────────────────────────
+
+/**
+ * Strip Astro view-transitions noise meta tags from both A and B HTML before
+ * signal extraction.
+ *
+ * Background (phase B-15-1, issue #917):
+ *   A's Astro DocLayout emits two meta tags that B never emits:
+ *     <meta name="astro-view-transitions-enabled" content="…">
+ *     <meta name="astro-view-transitions-fallback" content="…">
+ *   Conceptually identical to the Astro framework-runtime-script noise stripped
+ *   in B-14-1. Dropping these symmetrically removes them from the metaTags diff.
+ *
+ *   Default ON for B-15-1 rerun and beyond. Set to false to restore the old
+ *   behaviour where these meta tags were included in the metaTags comparison.
+ */
+export const stripAstroViewTransitionsMeta = true;
 
 // ── Known upstream fixes (pending binary rebuild) ─────────────────────────────
 //

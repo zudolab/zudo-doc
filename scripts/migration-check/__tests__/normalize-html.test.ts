@@ -357,3 +357,120 @@ describe("normalizeHtml – fixture pairs", () => {
     expect(result).toContain("<h1>404</h1>");
   });
 });
+
+// ── og:title brand-suffix stripping (B-15-1) ─────────────────────────────────
+
+describe("normalizeHtml – og:title brand-suffix stripping", () => {
+  it("strips the configured brandSuffix from og:title content", () => {
+    const html = '<meta property="og:title" content="Page Title | zudo-doc">';
+    const result = normalizeHtml(html, { brandSuffix: " | zudo-doc" });
+    expect(result).toContain('content="Page Title"');
+    expect(result).not.toContain("| zudo-doc");
+  });
+
+  it("leaves og:title unchanged when content has no brandSuffix", () => {
+    const html = '<meta property="og:title" content="Page Title">';
+    const result = normalizeHtml(html, { brandSuffix: " | zudo-doc" });
+    expect(result).toContain('content="Page Title"');
+  });
+
+  it("respects a custom brandSuffix (e.g. \" | foo\")", () => {
+    const html = '<meta property="og:title" content="Some Page | foo">';
+    const result = normalizeHtml(html, { brandSuffix: " | foo" });
+    expect(result).toContain('content="Some Page"');
+    expect(result).not.toContain("| foo");
+  });
+
+  it("is a no-op when brandSuffix is empty string (disabled)", () => {
+    const html = '<meta property="og:title" content="Page Title | zudo-doc">';
+    const result = normalizeHtml(html, { brandSuffix: "" });
+    expect(result).toContain('content="Page Title | zudo-doc"');
+  });
+
+  it("is a no-op when brandSuffix option is not provided", () => {
+    const html = '<meta property="og:title" content="Page Title | zudo-doc">';
+    const result = normalizeHtml(html);
+    expect(result).toContain('content="Page Title | zudo-doc"');
+  });
+
+  it("does not affect other og: meta tags", () => {
+    const html =
+      '<meta property="og:description" content="Desc | zudo-doc">' +
+      '<meta property="og:url" content="https://example.com/page">';
+    const result = normalizeHtml(html, { brandSuffix: " | zudo-doc" });
+    expect(result).toContain('content="Desc | zudo-doc"');
+    expect(result).toContain('content="https://example.com/page"');
+  });
+
+  it("handles attributes in either order (property before content)", () => {
+    // After normalizeHtml step 3 attrs are sorted (content before property),
+    // but this test verifies the regex works regardless of order.
+    const html = '<meta property="og:title" content="My Doc | zudo-doc">';
+    const result = normalizeHtml(html, { brandSuffix: " | zudo-doc" });
+    expect(result).toContain('content="My Doc"');
+  });
+});
+
+// ── Astro view-transitions meta tag stripping (B-15-1) ───────────────────────
+
+describe("normalizeHtml – Astro view-transitions meta stripping", () => {
+  it("removes astro-view-transitions-enabled meta when toggle is on", () => {
+    const html =
+      '<meta name="astro-view-transitions-enabled" content="true"><p>Body</p>';
+    const result = normalizeHtml(html, { stripAstroViewTransitionsMeta: true });
+    expect(result).not.toContain("astro-view-transitions-enabled");
+    expect(result).toContain("<p>Body</p>");
+  });
+
+  it("removes astro-view-transitions-fallback meta when toggle is on", () => {
+    const html =
+      '<meta name="astro-view-transitions-fallback" content="animate"><p>Body</p>';
+    const result = normalizeHtml(html, { stripAstroViewTransitionsMeta: true });
+    expect(result).not.toContain("astro-view-transitions-fallback");
+    expect(result).toContain("<p>Body</p>");
+  });
+
+  it("removes both view-transitions meta tags when both are present", () => {
+    const html =
+      '<meta name="astro-view-transitions-enabled" content="true">' +
+      '<meta name="astro-view-transitions-fallback" content="animate">' +
+      "<title>Page</title>";
+    const result = normalizeHtml(html, { stripAstroViewTransitionsMeta: true });
+    expect(result).not.toContain("astro-view-transitions-enabled");
+    expect(result).not.toContain("astro-view-transitions-fallback");
+    expect(result).toContain("<title>Page</title>");
+  });
+
+  it("is a no-op when toggle is false", () => {
+    const html =
+      '<meta name="astro-view-transitions-enabled" content="true"><p>Body</p>';
+    const result = normalizeHtml(html, { stripAstroViewTransitionsMeta: false });
+    expect(result).toContain("astro-view-transitions-enabled");
+  });
+
+  it("is a no-op when toggle is not provided (defaults false)", () => {
+    const html =
+      '<meta name="astro-view-transitions-enabled" content="true"><p>Body</p>';
+    const result = normalizeHtml(html);
+    expect(result).toContain("astro-view-transitions-enabled");
+  });
+
+  it("does NOT strip other astro-view-transitions-* prefixed tags (over-matching guard)", () => {
+    // Only the two known names (enabled, fallback) should be stripped.
+    // A hypothetical future tag must not be accidentally removed.
+    const html =
+      '<meta name="astro-view-transitions-custom" content="foo"><p>Body</p>';
+    const result = normalizeHtml(html, { stripAstroViewTransitionsMeta: true });
+    expect(result).toContain("astro-view-transitions-custom");
+  });
+
+  it("leaves unrelated meta tags intact", () => {
+    const html =
+      '<meta name="description" content="Hello world">' +
+      '<meta name="astro-view-transitions-enabled" content="true">';
+    const result = normalizeHtml(html, { stripAstroViewTransitionsMeta: true });
+    expect(result).toContain('name="description"');
+    expect(result).toContain('content="Hello world"');
+    expect(result).not.toContain("astro-view-transitions-enabled");
+  });
+});
