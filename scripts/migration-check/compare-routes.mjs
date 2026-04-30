@@ -117,13 +117,47 @@ function hasContentLoss(a, b) {
 }
 
 /**
+ * Returns true if the ref is a stylesheet (path component ends with .css).
+ * Host and query string are ignored; only the path portion is checked.
+ * Used to do presence-based stylesheet comparison across frameworks — Astro
+ * emits /_astro/base.X.css while zfb emits /assets/styles-Y.css, so URL
+ * equality would always produce false positives. (#1327)
+ */
+function isStylesheetRef(ref) {
+  let path;
+  try {
+    path = new URL(ref).pathname;
+  } catch {
+    // Not a full URL — ref is a relative path (possibly with query string)
+    path = ref.split("?")[0];
+  }
+  return path.endsWith(".css");
+}
+
+/**
  * True iff B is missing asset or script entries that A had.
  * Additions in B are not considered a loss.
+ *
+ * Stylesheet refs use presence-based comparison: A having /_astro/base.X.css
+ * and B having /assets/styles-Y.css both count as "has a stylesheet". URL
+ * equality would always fail here because the two frameworks use different
+ * hashed filenames and path prefixes. After extractAssetRefs has stripped
+ * Astro JS chunks and CDN KaTeX, any non-stylesheet ref that survives is a
+ * real candidate for literal-match comparison. (#1327)
  */
 function hasAssetLoss(a, b) {
   const bAssets = new Set(b.assetRefs);
+  const bHasStylesheet = b.assetRefs.some(isStylesheetRef);
+
   for (const ref of a.assetRefs) {
-    if (!bAssets.has(ref)) return true;
+    if (isStylesheetRef(ref)) {
+      // Stylesheet presence check: if A had a stylesheet, B must have at least one.
+      // URL format differs between frameworks, so we compare presence, not URL. (#1327)
+      if (!bHasStylesheet) return true;
+    } else {
+      // Non-stylesheet refs require an exact URL match in B.
+      if (!bAssets.has(ref)) return true;
+    }
   }
 
   const bScripts = new Set(b.scriptInventory);
