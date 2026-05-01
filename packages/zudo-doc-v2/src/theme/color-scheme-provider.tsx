@@ -14,6 +14,7 @@ import {
   generateLightDarkCssProperties,
 } from "@/config/color-scheme-utils";
 import { settings } from "@/config/settings";
+import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
 
 interface ColorSchemeProviderProps {
   /** Optional override for tests; defaults to the project-level settings. */
@@ -28,8 +29,12 @@ function buildColorModeBootstrap(
 ): string {
   // Values are inlined as JSON literals so the script body is fully
   // self-contained and matches what `define:vars` produced in Astro.
+  // The post-navigation re-apply hook reads `AFTER_NAVIGATE_EVENT` from
+  // `transitions/page-events.ts` rather than a hard-coded `astro:*`
+  // literal — see zudolab/zudo-doc#1335 E2 task 2 half B.
   const dm = JSON.stringify(defaultMode);
   const rp = JSON.stringify(Boolean(respectPrefersColorScheme));
+  const afterNav = JSON.stringify(AFTER_NAVIGATE_EVENT);
   return `(function(){
 var defaultMode=${dm};
 var respectPrefersColorScheme=${rp};
@@ -39,17 +44,27 @@ function applyTheme(mode){document.documentElement.setAttribute("data-theme",mod
 function getEffectiveMode(choice){if(choice==="light"||choice==="dark")return choice;return respectPrefersColorScheme?getSystemMode():defaultMode;}
 var stored=null;try{stored=localStorage.getItem(STORAGE_KEY);}catch(e){}
 applyTheme(getEffectiveMode(stored));
-document.addEventListener("astro:after-swap",function(){var s=null;try{s=localStorage.getItem(STORAGE_KEY);}catch(e){}applyTheme(getEffectiveMode(s));});
+document.addEventListener(${afterNav},function(){var s=null;try{s=localStorage.getItem(STORAGE_KEY);}catch(e){}applyTheme(getEffectiveMode(s));});
 if(respectPrefersColorScheme){window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",function(){var s=null;try{s=localStorage.getItem(STORAGE_KEY);}catch(e){}if(!s)applyTheme(getSystemMode());});}
 })();`;
 }
 
-/** Bootstrap script for the persisted-tweak path (no light/dark mode). */
-const PERSISTED_TWEAK_BOOTSTRAP = `(function(){
+/**
+ * Bootstrap script for the persisted-tweak path (no light/dark mode).
+ *
+ * Built lazily so the `AFTER_NAVIGATE_EVENT` constant from
+ * `transitions/page-events.ts` is interpolated into the script body
+ * (zudolab/zudo-doc#1335 E2 task 2 half B). The previous module-scope
+ * literal hard-coded `astro:after-swap`.
+ */
+function buildPersistedTweakBootstrap(): string {
+  const afterNav = JSON.stringify(AFTER_NAVIGATE_EVENT);
+  return `(function(){
 function applyStoredScheme(){var css=localStorage.getItem("zudo-doc-color-scheme-css");if(!css)return;try{var pairs=JSON.parse(css);var root=document.documentElement;for(var i=0;i<pairs.length;i++){root.style.setProperty(pairs[i][0],pairs[i][1]);}}catch(e){localStorage.removeItem("zudo-doc-color-scheme-css");}}
 applyStoredScheme();
-document.addEventListener("astro:after-swap",applyStoredScheme);
+document.addEventListener(${afterNav},applyStoredScheme);
 })();`;
+}
 
 export default function ColorSchemeProvider(props: ColorSchemeProviderProps = {}) {
   const colorMode = props.colorModeOverride ?? settings.colorMode;
@@ -62,7 +77,7 @@ export default function ColorSchemeProvider(props: ColorSchemeProviderProps = {}
         colorMode.defaultMode,
         Boolean(colorMode.respectPrefersColorScheme),
       )
-    : PERSISTED_TWEAK_BOOTSTRAP;
+    : buildPersistedTweakBootstrap();
 
   return (
     <>

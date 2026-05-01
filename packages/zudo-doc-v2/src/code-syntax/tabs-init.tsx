@@ -25,7 +25,8 @@ import { TABS_INIT_SCRIPT } from "./tabs-init-script.js";
  * - Wires click handlers to the pre-rendered `[data-tab-btn]` buttons from
  *   the `<Tabs>` component.
  * - Syncs tab state across containers that share a `data-group-id`.
- * - Re-runs on `astro:page-load` to support Astro view transitions.
+ * - Re-runs on `AFTER_NAVIGATE_EVENT` (from `../transitions/page-events.ts`)
+ *   to support View Transitions.
  *
  * Requires `<Tabs>` to have server-rendered the tab buttons in the DOM.
  */

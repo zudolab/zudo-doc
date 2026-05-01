@@ -3,12 +3,14 @@
 // Background
 // ----------
 // The Astro version shipped this as `src/scripts/sidebar-resizer.ts`,
-// invoked from the doc layout on initial load and on `astro:after-swap`.
-// In the zfb-based v2 stack there is no `astro:after-swap`; the layout
-// owner is responsible for calling `initSidebarResizer()` on first load
-// and again after each cross-page View Transition swap. The function
-// is idempotent — repeated calls on the same DOM are safe — so the
-// caller can hook it into whatever post-swap signal their router uses.
+// invoked from the doc layout on initial load and on the page-navigate-
+// end event. In the zfb-based v2 stack `AFTER_NAVIGATE_EVENT` from
+// `../transitions/page-events.ts` (today: `DOMContentLoaded`) is the
+// successor to Astro's `astro:after-swap`. The layout owner is
+// responsible for calling `initSidebarResizer()` on first load and
+// again after each cross-page View Transition swap. The function is
+// idempotent — repeated calls on the same DOM are safe — so the caller
+// can hook it into whatever post-navigate signal their router uses.
 //
 // What the resizer does
 // ---------------------
@@ -45,7 +47,8 @@
 // -----------
 // Subsequent calls find the existing `[data-sidebar-resizer]` handle
 // already attached and bail out early. This matches how the Astro
-// version was wired (initial call + `astro:after-swap` rebind).
+// version was wired (initial call + post-navigate rebind via
+// `AFTER_NAVIGATE_EVENT`).
 
 const SIDEBAR_ID = "desktop-sidebar";
 const HANDLE_MARKER = "data-sidebar-resizer";

@@ -2,6 +2,10 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { diffLines } from "diff";
 import type { DocHistoryData, DocHistoryEntry } from "@/types/doc-history";
 import { SmartBreak } from "@/utils/smart-break";
+// After zudolab/zudo-doc#1335 (E2 task 2 half B) the host components
+// pull lifecycle event names from the v2 transitions module rather
+// than hard-coding `astro:*` literals.
+import { AFTER_NAVIGATE_EVENT } from "@zudo-doc/zudo-doc-v2/transitions";
 
 interface DocHistoryProps {
   slug: string;
@@ -482,8 +486,8 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
 
   // Close on View Transition navigation
   useEffect(() => {
-    document.addEventListener("astro:after-swap", handleClose);
-    return () => document.removeEventListener("astro:after-swap", handleClose);
+    document.addEventListener(AFTER_NAVIGATE_EVENT, handleClose);
+    return () => document.removeEventListener(AFTER_NAVIGATE_EVENT, handleClose);
   }, [handleClose]);
 
   const isOpen = view !== "closed";

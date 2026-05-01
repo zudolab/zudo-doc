@@ -5,6 +5,10 @@
 // and packages/zudo-doc-v2/src/theme/theme-toggle.tsx. Type references via
 // the global React namespace still resolve via @types/react.
 import { useState, useEffect } from "preact/hooks";
+// After zudolab/zudo-doc#1335 (E2 task 2 half B) the host components
+// pull lifecycle event names from the v2 transitions module rather
+// than hard-coding `astro:*` literals.
+import { AFTER_NAVIGATE_EVENT } from "@zudo-doc/zudo-doc-v2/transitions";
 
 interface SidebarToggleProps {
   children: React.ReactNode;
@@ -29,8 +33,8 @@ export default function SidebarToggle({ children }: SidebarToggleProps) {
     function handleSwap() {
       setOpen(false);
     }
-    document.addEventListener("astro:after-swap", handleSwap);
-    return () => document.removeEventListener("astro:after-swap", handleSwap);
+    document.addEventListener(AFTER_NAVIGATE_EVENT, handleSwap);
+    return () => document.removeEventListener(AFTER_NAVIGATE_EVENT, handleSwap);
   }, []);
 
   return (

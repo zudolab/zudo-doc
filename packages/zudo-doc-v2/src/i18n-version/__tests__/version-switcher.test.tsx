@@ -8,6 +8,7 @@ import {
   VERSION_SWITCHER_INIT_SCRIPT,
 } from "../version-switcher";
 import type { VersionEntry, VersionSwitcherLabels } from "../types";
+import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events";
 
 type AnyVNode = VNode<{ children?: ComponentChildren; [key: string]: unknown }>;
 
@@ -174,8 +175,11 @@ describe("VersionSwitcher", () => {
     expect(matches.length).toBe(2);
   });
 
-  it("VERSION_SWITCHER_INIT_SCRIPT is non-empty and contains the after-swap rebind", () => {
-    expect(VERSION_SWITCHER_INIT_SCRIPT).toContain('astro:after-swap');
+  it("VERSION_SWITCHER_INIT_SCRIPT is non-empty and rebinds on the v2 after-navigate event", () => {
+    // The rebind hooks the constant from `transitions/page-events.ts`,
+    // not a hard-coded `astro:*` literal — so the script string contains
+    // whatever `AFTER_NAVIGATE_EVENT` resolves to today.
+    expect(VERSION_SWITCHER_INIT_SCRIPT).toContain(JSON.stringify(AFTER_NAVIGATE_EVENT));
     expect(VERSION_SWITCHER_INIT_SCRIPT).toContain('AbortController');
     expect(VERSION_SWITCHER_INIT_SCRIPT).toContain('data-version-switcher');
   });

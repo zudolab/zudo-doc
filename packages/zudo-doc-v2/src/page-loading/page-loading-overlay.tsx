@@ -16,10 +16,12 @@
 //      pattern) so no separate stylesheet has to be wired up.
 //   3. A small `<script>` that toggles the `data-visible` attribute on
 //      navigation lifecycle events. The event names come from the
-//      `@zudo-doc/zudo-doc-v2/transitions` shim — this component does
-//      not reach for the underlying Astro event names directly. When
-//      zfb later supplies its own router events, only the constants in
-//      `transitions/page-events.ts` change.
+//      `@zudo-doc/zudo-doc-v2/transitions` module — this component does
+//      not reach for the underlying browser event names directly. After
+//      zudolab/zudo-doc#1335 (E2 task 2 half B) the v2 vocabulary
+//      resolves to `pagehide` (BEFORE_NAVIGATE_EVENT) and
+//      `DOMContentLoaded` (AFTER_NAVIGATE_EVENT); see
+//      `transitions/page-events.ts` for rationale.
 //
 // The component is intentionally not hydrated. Hydrating Preact just to
 // attach two listeners would be wasteful given the original Astro file
@@ -49,8 +51,9 @@ export interface PageLoadingOverlayProps {
 export function buildPageLoadingOverlayBootstrap(overlayId: string): string {
   // Values are inlined as JSON literals so the script is fully
   // self-contained and matches the `define:vars` shape used elsewhere
-  // (see ColorSchemeProvider). Event names come from the shim's
-  // exported constants — no raw `astro:*` strings live in this file.
+  // (see ColorSchemeProvider). Event names come from the transitions
+  // module's exported constants — no raw `astro:*` strings live in
+  // this file.
   const id = JSON.stringify(overlayId);
   const before = JSON.stringify(BEFORE_NAVIGATE_EVENT);
   const after = JSON.stringify(AFTER_NAVIGATE_EVENT);

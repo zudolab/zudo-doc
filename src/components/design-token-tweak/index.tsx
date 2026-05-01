@@ -6,6 +6,10 @@ import FontTab from "./tabs/font-tab";
 import SizeTab from "./tabs/size-tab";
 import SpacingTab from "./tabs/spacing-tab";
 import { usePersist } from "./state/persist";
+// After zudolab/zudo-doc#1335 (E2 task 2 half B) the host components
+// pull lifecycle event names from the v2 transitions module rather
+// than hard-coding `astro:*` literals.
+import { AFTER_NAVIGATE_EVENT } from "@zudo-doc/zudo-doc-v2/transitions";
 import {
   type TweakState,
   type PanelPosition,
@@ -227,8 +231,8 @@ export default function DesignTokenTweakPanel() {
         if (state) setState(persisted);
       }
     }
-    document.addEventListener("astro:after-swap", handleSwap);
-    return () => document.removeEventListener("astro:after-swap", handleSwap);
+    document.addEventListener(AFTER_NAVIGATE_EVENT, handleSwap);
+    return () => document.removeEventListener(AFTER_NAVIGATE_EVENT, handleSwap);
   }, [state]);
 
   const handleLoadFromJson = useCallback((loaded: TweakState) => {

@@ -1,4 +1,8 @@
 import { useState, useEffect, useRef } from "react";
+// After zudolab/zudo-doc#1335 (E2 task 2 half B) the host components
+// pull lifecycle event names from the v2 transitions module rather
+// than hard-coding `astro:*` literals.
+import { AFTER_NAVIGATE_EVENT } from "@zudo-doc/zudo-doc-v2/transitions";
 
 interface ImageData {
   src: string;
@@ -87,14 +91,14 @@ export default function ImageEnlarge() {
 
     startObserving();
     window.addEventListener("resize", handleWindowResize);
-    document.addEventListener("astro:after-swap", handleAfterSwap);
+    document.addEventListener(AFTER_NAVIGATE_EVENT, handleAfterSwap);
 
     return () => {
       resizeObservers.forEach((ro) => ro.disconnect());
       resizeObservers.clear();
       mutationObserver?.disconnect();
       window.removeEventListener("resize", handleWindowResize);
-      document.removeEventListener("astro:after-swap", handleAfterSwap);
+      document.removeEventListener(AFTER_NAVIGATE_EVENT, handleAfterSwap);
       clearTimeout(resizeTimer);
     };
   }, []);
@@ -153,15 +157,15 @@ export default function ImageEnlarge() {
     return () => dialog.removeEventListener("close", handleClose);
   }, []);
 
-  // Close and reset on ClientRouter navigation
+  // Close and reset on page navigation
   useEffect(() => {
     function handleAfterSwap() {
       const dialog = dialogRef.current;
       if (dialog?.open) dialog.close();
       setImgData(null);
     }
-    document.addEventListener("astro:after-swap", handleAfterSwap);
-    return () => document.removeEventListener("astro:after-swap", handleAfterSwap);
+    document.addEventListener(AFTER_NAVIGATE_EVENT, handleAfterSwap);
+    return () => document.removeEventListener(AFTER_NAVIGATE_EVENT, handleAfterSwap);
   }, []);
 
   function handleBackdropClick(e: React.MouseEvent) {
