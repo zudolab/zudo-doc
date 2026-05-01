@@ -14,7 +14,7 @@ The CI pipeline is split into parallel jobs to keep total build time low. Site g
 
 The built site is deployed to Cloudflare Pages using `wrangler pages deploy`. The deploy artifact includes:
 
-- The Astro build output (`dist/`)
+- The zfb build output (`dist/`)
 - Pre-generated doc history JSON files (if `docHistory` is enabled)
 - A redirect rule from `/` to the site's base path
 
@@ -32,7 +32,7 @@ The project uses two GitHub Actions workflows.
 
 Triggered on push to `main`. Runs four jobs:
 
-1. **build-site** — shallow clone (`fetch-depth: 1`), builds the Astro site with `SKIP_DOC_HISTORY=1 pnpm build`
+1. **build-site** — shallow clone (`fetch-depth: 1`), builds the zfb site with `SKIP_DOC_HISTORY=1 pnpm build`
 2. **build-history** — full clone (`fetch-depth: 0`), runs `@zudo-doc/doc-history-server generate` to pre-extract git history for all content files
 3. **deploy** — merges the site and history artifacts, then deploys to Cloudflare Pages (production)
 4. **notify** — sends an IFTTT webhook notification with the deploy status
@@ -43,7 +43,7 @@ Triggered on push to `main`. Runs four jobs:
 
 Triggered on pull requests targeting `main`. Runs five jobs:
 
-1. **typecheck** — runs `pnpm check` (Astro type checking)
+1. **typecheck** — runs `pnpm check` (TypeScript type checking)
 2. **build-site** — shallow clone, `SKIP_DOC_HISTORY=1 pnpm build`, then `check:links`
 3. **build-history** — full clone, doc history generation
 4. **e2e** — runs Playwright end-to-end tests (full clone, no `SKIP_DOC_HISTORY` so history is embedded inline)
@@ -63,7 +63,7 @@ The URL is posted automatically as a comment on the PR by the **preview** job.
 
 ## SKIP_DOC_HISTORY
 
-When `SKIP_DOC_HISTORY=1` is set, the Astro integration skips inline history generation during the build. This flag exists because history generation requires a full git clone and walks every commit — it is too slow to run inside the main build job.
+When `SKIP_DOC_HISTORY=1` is set, the doc-history zfb plugin skips inline history generation during the build. This flag exists because history generation requires a full git clone and walks every commit — it is too slow to run inside the main build job.
 
 | Context | Value | Why |
 |---|---|---|
