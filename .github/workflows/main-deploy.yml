@@ -1,10 +1,18 @@
-# Production deployment workflow for the Astro docs site.
+# Production deployment workflow for the docs site.
 #
 # Triggered on every push to `main`. The pipeline:
-#   1. Builds the Astro static site (shallow clone, skips doc history)
-#   2. Builds doc history JSONs (full clone, standalone server package)
-#   3. Merges both build outputs and deploys to Cloudflare Pages (production)
-#   4. Sends IFTTT notification with deploy status
+#   1. Builds the zfb Rust binary at the pinned SHA (single artifact)
+#   2. Builds the static site (shallow clone, skips doc history)
+#   3. Builds doc history JSONs (full clone, standalone server package)
+#   4. Merges both build outputs and deploys to Cloudflare Pages (production)
+#   5. Sends IFTTT notification with deploy status
+#
+# zfb is consumed as `file:../zfb/...` workspace deps. Each install-bearing
+# job clones the public Takazudo/zudo-front-builder repo at the pinned SHA
+# to ../zfb so those deps resolve, and downloads the prebuilt zfb binary
+# artifact (built once by the build-zfb job below) into
+# ../zfb/target/release/zfb so the postinstall hook (scripts/zfb-link.mjs)
+# can resolve it. See pr-checks.yml for the full rationale.
 #
 # Inter-job data sharing uses actions/cache (not upload-artifact) to avoid
 # Actions storage accumulation. Cache keys are scoped to github.run_id so
@@ -27,20 +35,75 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  # Pinned zfb commit — keep in sync with the zfb pin comment at the
+  # top of zfb.config.ts and the same env in pr-checks.yml.
+  ZFB_PINNED_SHA: 4b16b3296b0ebe9c14c781ddda2297c05445522a
+
 jobs:
   # ---------------------------------------------------------------------------
-  # Job 1: Build the Astro docs site (shallow clone — fast)
+  # Job 0: Build the zfb Rust binary once and share it across install-bearing jobs.
+  # ---------------------------------------------------------------------------
+  build-zfb:
+    name: Build zfb Binary
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout pinned zfb
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          repository: Takazudo/zudo-front-builder
+          ref: ${{ env.ZFB_PINNED_SHA }}
+          path: zfb-src
+          fetch-depth: 1
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+        with:
+          workspaces: zfb-src
+          key: zfb-${{ env.ZFB_PINNED_SHA }}
+
+      - name: Build zfb release binary
+        run: cargo build -p zfb --release
+        working-directory: zfb-src
+
+      - name: Upload zfb binary artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: zfb-binary
+          path: zfb-src/target/release/zfb
+          if-no-files-found: error
+          retention-days: 1
+
+  # ---------------------------------------------------------------------------
+  # Job 1: Build the docs site (shallow clone — fast)
   # ---------------------------------------------------------------------------
   build-site:
     name: Build Site
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: build-zfb
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           fetch-depth: 1
+
+      - name: Clone zfb sibling repo
+        run: |
+          git clone https://github.com/Takazudo/zudo-front-builder.git ../zfb
+          git -C ../zfb checkout "$ZFB_PINNED_SHA"
+
+      - name: Download zfb binary
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: zfb-binary
+          path: ../zfb/target/release
+
+      - name: Mark zfb binary executable
+        run: chmod +x ../zfb/target/release/zfb
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
@@ -69,6 +132,10 @@ jobs:
   # ---------------------------------------------------------------------------
   # Job 2: Build doc history JSONs (full clone — only this job needs it)
   # ---------------------------------------------------------------------------
+  # See pr-checks.yml `build-history` for the decision to skip the zfb
+  # binary download here: doc-history-server is standalone and the
+  # postinstall hook is no-op-when-absent. We still clone the pinned zfb
+  # source so pnpm can resolve the file:../zfb/... workspace deps.
   build-history:
     name: Build Doc History
     runs-on: ubuntu-latest
@@ -79,6 +146,11 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           fetch-depth: 0
+
+      - name: Clone zfb sibling repo
+        run: |
+          git clone https://github.com/Takazudo/zudo-front-builder.git ../zfb
+          git -C ../zfb checkout "$ZFB_PINNED_SHA"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
@@ -161,7 +233,7 @@ jobs:
   # ---------------------------------------------------------------------------
   notify:
     name: Deploy Notification
-    needs: [build-site, build-history, deploy]
+    needs: [build-zfb, build-site, build-history, deploy]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -172,6 +244,7 @@ jobs:
         env:
           IFTTT_PROD_NOTIFY: ${{ secrets.IFTTT_PROD_NOTIFY }}
           RAW_COMMIT_MSG: ${{ github.event.head_commit.message }}
+          BUILD_ZFB_RESULT: ${{ needs.build-zfb.result }}
           BUILD_SITE_RESULT: ${{ needs.build-site.result }}
           BUILD_HISTORY_RESULT: ${{ needs.build-history.result }}
           DEPLOY_RESULT: ${{ needs.deploy.result }}
@@ -182,6 +255,8 @@ jobs:
         run: |
           if [ "$DEPLOY_RESULT" = "success" ]; then
             STATUS="zudo-doc deploy succeeded!"
+          elif [ "$BUILD_ZFB_RESULT" = "failure" ]; then
+            STATUS="zudo-doc deploy failed (zfb binary build)"
           elif [ "$BUILD_SITE_RESULT" = "failure" ]; then
             STATUS="zudo-doc deploy failed (site build)"
           elif [ "$BUILD_HISTORY_RESULT" = "failure" ]; then
