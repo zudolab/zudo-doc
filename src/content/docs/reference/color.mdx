@@ -59,7 +59,7 @@ The actual hex values differ between light and dark schemes, but the **role** of
 
 ### How Palette Colors Are Injected
 
-The `ColorSchemeProvider` component (`src/components/color-scheme-provider.astro`) reads the active color scheme and injects CSS custom properties on `:root` at build time:
+The `ColorSchemeProvider` component (`packages/zudo-doc-v2/src/theme/color-scheme-provider.tsx`) reads the active color scheme and injects CSS custom properties on `:root` at build time:
 
 ```css
 :root {

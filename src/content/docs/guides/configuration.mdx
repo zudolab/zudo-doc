@@ -4,7 +4,7 @@ description: Global settings and configuration reference for zudo-doc.
 sidebar_position: 1
 ---
 
-zudo-doc is configured through a small set of files in the `src/config/` directory and the root `astro.config.ts`.
+zudo-doc is configured through a small set of files in the `src/config/` directory and the root `zfb.config.ts`.
 
 ## Site Settings
 
@@ -98,7 +98,7 @@ For example, to serve the site at `https://example.com/my-docs/`:
 base: "/my-docs",
 ```
 
-All internal links (sidebar, navigation, prev/next, search) are automatically prefixed with the base path. This maps directly to [Astro's `base` config option](https://docs.astro.build/en/reference/configuration-reference/#base).
+All internal links (sidebar, navigation, prev/next, search) are automatically prefixed with the base path. The value flows through to zfb's build pipeline so emitted asset URLs and route paths share the same prefix.
 
 <Note>
 
@@ -108,7 +108,7 @@ Inline markdown links within MDX content (e.g., `[link text](/docs/some-page)`) 
 
 ### trailingSlash
 
-Controls whether URLs end with a trailing slash. When `true`, all internal links are generated with a trailing slash (e.g., `/docs/guides/` instead of `/docs/guides`). This also sets Astro's [`trailingSlash`](https://docs.astro.build/en/reference/configuration-reference/#trailingslash) to `"always"` or `"never"` accordingly.
+Controls whether URLs end with a trailing slash. When `true`, all internal links are generated with a trailing slash (e.g., `/docs/guides/` instead of `/docs/guides`). The build-time URL helpers in `@zudo-doc/zudo-doc-v2/url-normalizer` enforce this policy across every emitted route — see [Trailing-Slash Policy](../concepts/trailing-slash-policy.mdx) for how the rule splits between build time and the deployment host.
 
 Default: `false`
 
@@ -122,7 +122,7 @@ Some hosting platforms (e.g., AWS Amplify, Cloudflare Pages) work better with tr
 
 </Note>
 
-When enabled, a middleware automatically redirects URLs without a trailing slash to their trailing-slash version with a **301 redirect** (e.g., `/docs/guides` → `/docs/guides/`). This ensures consistent URLs during development, since Astro's dev server does not perform this redirect on its own. Static assets (files with extensions like `.js`, `.css`, `.png`) and Astro internal paths (`/_astro/`, `/_image`) are excluded from the redirect.
+When enabled, the dev server automatically redirects URLs without a trailing slash to their trailing-slash version with a **301 redirect** (e.g., `/docs/guides` → `/docs/guides/`) so navigation behaves the same way locally as on production. Static assets (files with extensions like `.js`, `.css`, `.png`) and framework-internal paths (`/_astro/`, `/_image` — preserved for compatibility with assets emitted under those prefixes) are excluded from the redirect.
 
 ### onBrokenMarkdownLinks
 
@@ -142,7 +142,7 @@ onBrokenMarkdownLinks: "error", // fail the build on broken links
 
 ### docsDir
 
-The directory path (relative to the project root) where English documentation MDX files are stored. This uses Astro's `glob()` loader, so it can point to any directory.
+The directory path (relative to the project root) where English documentation MDX files are stored. zfb's content engine globs this directory, so it can point to any location inside the project.
 
 Default: `"src/content/docs"`
 
@@ -167,8 +167,8 @@ locales: {
 
 For each locale entry, zudo-doc automatically:
 
-- Creates an Astro content collection (`docs-{code}`)
-- Registers the locale in Astro's i18n routing
+- Creates a zfb content collection (`docs-{code}`)
+- Registers the locale in zfb's i18n routing
 - Adds it to the language switcher
 
 ### versions
@@ -540,34 +540,28 @@ headerNav: [
 ],
 ```
 
-## Astro Configuration
+## zfb Configuration
 
-The root `astro.config.ts` controls the build pipeline:
+The root `zfb.config.ts` controls the build pipeline:
 
 ```ts
 export default defineConfig({
-  output: "static",
-  integrations: [mdx(), react(), searchIndexIntegration()],
-  i18n: {
-    defaultLocale: "en",
-    locales: ["en", ...Object.keys(settings.locales)],
-    routing: { prefixDefaultLocale: false },
-  },
-  vite: {
-    plugins: [tailwindcss()],
-  },
-  markdown: {
-    shikiConfig: { theme: shikiTheme },
-  },
+  framework: "preact",
+  tailwind: { enabled: true },
+  collections,                  // derived from settings.docsDir + settings.locales
+  adapter: "@takazudo/zfb-adapter-cloudflare",
+  plugins: integrationPlugins,  // doc-history / search-index / llms-txt / claude-resources
 });
 ```
 
 Key aspects:
 
-- **output**: Set to `"static"` for full static HTML export
-- **integrations**: MDX support, Preact islands, and MiniSearch search indexing
-- **i18n**: English (default at `/docs/...`) and Japanese (`/ja/docs/...`). Default locale has no URL prefix
-- **Tailwind CSS**: Loaded via the `@tailwindcss/vite` plugin instead of an Astro integration
+- **framework**: Preact — every component is a `.tsx` file (server-rendered by default; client islands hydrate via zfb's runtime)
+- **tailwind**: First-class Tailwind CSS v4 integration
+- **collections**: Generated from `settings.docsDir` and `settings.locales`, validated by zod schemas defined in the same file
+- **adapter**: Cloudflare Pages — wraps the SSR bundle into `dist/_worker.js`, required for any route exporting `prerender = false`
+- **plugins**: Each integration (doc-history, search-index, llms-txt, claude-resources) is a small wrapper module under `./plugins/` whose default export is a `ZfbPlugin`
+- **i18n routing**: English (default at `/docs/...`) and additional locales declared in `settings.locales`. Default locale has no URL prefix
 - **Shiki theme**: Automatically derived from the active color scheme's `shikiTheme` property — no manual sync needed
 
 <Note>

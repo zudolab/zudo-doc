@@ -1,5 +1,7 @@
 # E2E Tests
 
+> **Status (post-zfb cutover):** the Playwright suite is currently parked under epic E9b — the fixture setup harness (`setup-fixtures.sh`, `playwright.config.ts`) still drives the legacy Astro tooling and has not yet been retargeted to zfb. The notes below describe the harness as-is; rewrite as part of E9b. New e2e work should wait for that re-target unless you are explicitly working on E9b itself.
+
 ## Architecture
 
 5 Playwright fixtures, each with its own port, build, and `settings.ts`:
@@ -12,7 +14,7 @@
 | smoke | 4503 | General features (search, TOC, code blocks, mermaid, doc history, etc.) |
 | versioning | 4504 | Version switcher, banners |
 
-Configured in `playwright.config.ts`. Each fixture runs `astro preview` on its port.
+Configured in `playwright.config.ts`. Each fixture currently boots a preview server on its port (legacy Astro `preview` invocation pending E9b re-target onto `zfb preview`).
 
 ## Adding Tests
 
@@ -46,15 +48,13 @@ test("feature works", async ({ page }) => {
 
 ## Fixture Setup Pipeline (`setup-fixtures.sh`)
 
-Each fixture shares framework source from repo root via **symlinks**, but has its own content and settings:
+Each fixture shares framework source from repo root via **symlinks**, but has its own content and settings. The script paths below reflect the legacy harness (still in place — pending E9b re-target onto zfb):
 
-- **Symlinked**: `components/`, `hooks/`, `integrations/`, `layouts/`, `plugins/`, `styles/`, `types/`, `utils/`, `node_modules/`
-- **Copied** (has relative imports): `astro.config.ts`, `content.config.ts`, `src/config/*.ts` (except `settings.ts`)
+- **Symlinked**: framework source dirs under `src/` plus `node_modules/`
+- **Copied** (has relative imports): the engine config (legacy `astro.config.ts` / `src/content.config.ts` today; will become `zfb.config.ts` after E9b), and `src/config/*.ts` (except `settings.ts`)
 - **Fixture-specific**: `src/config/settings.ts`, `src/content/docs/`
 
-All fixtures are pre-built sequentially before Playwright runs (`astro build`), then Playwright only runs `astro preview`.
-
-The smoke fixture also initializes a git repo for doc-history testing (2 commits).
+All fixtures are pre-built sequentially before Playwright runs, then Playwright runs the preview server only. The smoke fixture also initializes a git repo for doc-history testing (2 commits).
 
 ## Commands
 
