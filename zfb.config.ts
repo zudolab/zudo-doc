@@ -162,19 +162,20 @@ if (settings.versions) {
 // references a small wrapper module under `./plugins/` whose default
 // export is a `ZfbPlugin`.
 //
-// postBuild wiring (this commit) — doc-history / search-index / llms-txt
-// emit their dist-time artifacts via the wrapper modules' `postBuild`
-// hook. The legacy `scripts/zfb-postbuild.mjs` npm-script glue stays in
-// place during the merge window so the two paths co-run idempotently;
-// the script is retired in a sibling topic once all three lifecycle
-// epics land.
+// All three lifecycle hooks are now wired via the wrapper modules:
 //
-// preBuild wiring (sibling topic) — claude-resources and doc-history-meta
-// add `preBuild` hooks to their respective wrapper modules.
+//   preBuild    — claude-resources writes its pre-step output;
+//                 doc-history writes `.zfb/doc-history-meta.json`.
+//   postBuild   — doc-history / search-index / llms-txt emit their
+//                 dist-time artifacts.
+//   devMiddleware — doc-history / search-index / llms-txt register
+//                 Connect-style middleware via the shared
+//                 `plugins/connect-adapter.mjs` so the dev sidecar
+//                 (`scripts/dev-sidecar.mjs`) can be retired.
 //
-// devMiddleware wiring (sibling topic) — doc-history / search-index /
-// llms-txt all gain `devMiddleware` registrations on the same wrapper
-// modules so the dev sidecar can be retired.
+// The legacy npm-script glue (`scripts/zfb-{pre,post}build.mjs`,
+// `scripts/dev-sidecar.mjs`) stays in place during the merge window;
+// T6 retires it once all lifecycle epics land.
 //
 // Sitemap is NOT in this list — it is served as a `pages/sitemap.xml.tsx`
 // zfb route (per ADR-005's "non-HTML page" pattern) introduced in epic E8.
@@ -191,7 +192,7 @@ const integrationPlugins = [
   ...(settings.claudeResources
     ? [
         {
-          name: "claude-resources",
+          name: "./plugins/claude-resources-plugin.mjs",
           options: {
             claudeDir: settings.claudeResources.claudeDir,
             projectRoot: settings.claudeResources.projectRoot,

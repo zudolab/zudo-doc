@@ -25,6 +25,13 @@
  * the strings directly without touching the filesystem twice.
  */
 
+export { createLlmsTxtDevMiddleware } from "./dev-middleware.ts";
+export type {
+  LlmsTxtDevMiddlewareOptions,
+  LlmsTxtMiddleware,
+  LlmsTxtMiddlewareLogger,
+  LlmsTxtNextFn,
+} from "./dev-middleware.ts";
 export { emitLlmsTxt } from "./emit.ts";
 export {
   generateLlmsFullTxt,
