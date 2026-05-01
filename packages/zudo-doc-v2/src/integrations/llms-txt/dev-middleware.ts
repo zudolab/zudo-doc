@@ -94,7 +94,12 @@ export function createLlmsTxtDevMiddleware(
 
   return (req, res, next) => {
     const url = req.url ?? "";
-    const match = matchLlmsRoute(url, localeCodes);
+    // Strip the configured `base` prefix before matching. zfb's dev
+    // server passes the full request URL (e.g. `/pj/zudo-doc/llms.txt`),
+    // but `LLMS_KIND_PATTERN` only recognises root-relative or
+    // single-locale-prefixed paths. Stripping the base normalises both
+    // shapes to `/llms.txt` or `/<locale>/llms.txt`.
+    const match = matchLlmsRoute(stripBase(url, base), localeCodes);
     if (!match) {
       next();
       return;
@@ -165,4 +170,20 @@ function matchLlmsRoute(
   if (prefix === undefined) return { kind, locale: null };
   if (localeCodes.has(prefix)) return { kind, locale: prefix };
   return null;
+}
+
+/**
+ * Strip the configured `base` prefix from an incoming URL so the route
+ * matcher sees a root-relative path. Empty / missing base is a no-op.
+ * If the URL doesn't start with the base, it's returned unchanged so a
+ * misrouted request still falls through to `next()` cleanly.
+ */
+function stripBase(url: string, base: string): string {
+  if (!base || base === "/") return url;
+  const normalised = base.endsWith("/") ? base.slice(0, -1) : base;
+  if (url.startsWith(normalised + "/")) {
+    return url.slice(normalised.length);
+  }
+  if (url === normalised) return "/";
+  return url;
 }

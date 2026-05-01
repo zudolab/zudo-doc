@@ -35,11 +35,18 @@ export default {
 
   devMiddleware(ctx) {
     const middleware = createSearchIndexDevMiddleware(ctx.options);
-    // `register` is exact-prefix; the v2 middleware itself accepts any
-    // URL ending in `/search-index.json` (so a `base`-prefixed dev
-    // server still works), but a `/search-index.json` registration is
-    // sufficient because the dev server canonicalises the request URL
-    // before dispatch.
-    ctx.register("/search-index.json", connectToZfbHandler(middleware));
+    // zfb's `register(path, handler)` matches against the FULL request
+    // URL (no base-stripping). With `settings.base = "/pj/zudo-doc/"`,
+    // requests arrive as `/pj/zudo-doc/search-index.json`, so we must
+    // register the full base-prefixed route. The v2 middleware itself
+    // is base-tolerant (matches via `endsWith("/search-index.json")`),
+    // so it does not need a separate base-stripping pass.
+    const basePrefix = stripTrailingSlash(ctx.options.base ?? "");
+    ctx.register(`${basePrefix}/search-index.json`, connectToZfbHandler(middleware));
   },
 };
+
+function stripTrailingSlash(s) {
+  if (typeof s !== "string" || s.length === 0) return "";
+  return s.endsWith("/") ? s.slice(0, -1) : s;
+}

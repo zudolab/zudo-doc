@@ -51,16 +51,23 @@ export default {
     const middleware = createLlmsTxtDevMiddleware(ctx.options, ctx.logger);
     const handler = connectToZfbHandler(middleware);
 
-    // zfb's `register(path, handler)` is exact-prefix, so register
-    // every route the v2 middleware recognises. The middleware itself
-    // does the real matching — these registrations just tell zfb which
-    // paths to round-trip through this plugin (so the dev server
-    // doesn't 404 before the middleware runs).
-    ctx.register("/llms.txt", handler);
-    ctx.register("/llms-full.txt", handler);
+    // zfb's `register(path, handler)` matches against the FULL request
+    // URL (no base-stripping). With `settings.base = "/pj/zudo-doc/"`,
+    // requests arrive as `/pj/zudo-doc/llms.txt` (etc.), so we must
+    // register every route the v2 middleware recognises with the base
+    // prefix. The middleware itself accepts base-prefixed URLs via the
+    // matcher (see `matchLlmsRoute` in `dev-middleware.ts`).
+    const basePrefix = stripTrailingSlash(ctx.options.base ?? "");
+    ctx.register(`${basePrefix}/llms.txt`, handler);
+    ctx.register(`${basePrefix}/llms-full.txt`, handler);
     for (const locale of ctx.options.locales ?? []) {
-      ctx.register(`/${locale.code}/llms.txt`, handler);
-      ctx.register(`/${locale.code}/llms-full.txt`, handler);
+      ctx.register(`${basePrefix}/${locale.code}/llms.txt`, handler);
+      ctx.register(`${basePrefix}/${locale.code}/llms-full.txt`, handler);
     }
   },
 };
+
+function stripTrailingSlash(s) {
+  if (typeof s !== "string" || s.length === 0) return "";
+  return s.endsWith("/") ? s.slice(0, -1) : s;
+}

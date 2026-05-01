@@ -81,12 +81,18 @@ export default {
 
   devMiddleware(ctx) {
     const middleware = createDocHistoryDevMiddleware(ctx.options, ctx.logger);
-    // The Connect middleware itself filters on the `/doc-history/`
-    // substring; we still register on `/doc-history` so zfb only
-    // dispatches matching requests through the JSON-envelope round-
-    // trip. zfb's `register(path, handler)` is exact-prefix: the
-    // single registration covers `/doc-history` and `/doc-history/foo`
-    // alike.
-    ctx.register("/doc-history", connectToZfbHandler(middleware));
+    // zfb's `register(path, handler)` matches against the FULL request
+    // URL (no base-stripping). With `settings.base = "/pj/zudo-doc/"`,
+    // requests arrive as `/pj/zudo-doc/doc-history/foo.json`, so we
+    // must register at the base-prefixed route. The v2 middleware
+    // itself is base-tolerant (matches via `url.includes("/doc-history/")`)
+    // and slices from `/doc-history/` onward when proxying upstream.
+    const basePrefix = stripTrailingSlash(ctx.options.base ?? "");
+    ctx.register(`${basePrefix}/doc-history`, connectToZfbHandler(middleware));
   },
 };
+
+function stripTrailingSlash(s) {
+  if (typeof s !== "string" || s.length === 0) return "";
+  return s.endsWith("/") ? s.slice(0, -1) : s;
+}
