@@ -161,7 +161,7 @@ export default function ImageEnlarge() {
       setImgData(null);
     }
     document.addEventListener("DOMContentLoaded", handleAfterSwap);
-    return () => document.removeEventListener("astro:after-swap", handleAfterSwap);
+    return () => document.removeEventListener("DOMContentLoaded", handleAfterSwap);
   }, []);
 
   function handleBackdropClick(e: React.MouseEvent) {

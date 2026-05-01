@@ -50,3 +50,16 @@ src/components/theme-toggle.tsx
 # Node-only utilities into the page tree. The generator will gain a parallel
 # alias under the docHistory feature once the super-epic lands.
 tsconfig.json
+
+# E2 task 2 (zfb migration finalisation #1335) — production showcase files in
+# src/components/ now import lifecycle event names from
+# `@zudo-doc/zudo-doc-v2/transitions` (the v2 module owns the vocabulary so
+# only one file changes if zfb later supplies router events). The matching
+# create-zudo-doc templates remain self-contained and inline literal
+# "DOMContentLoaded" / "pagehide" because downstream scaffolds do not depend
+# on @zudo-doc/zudo-doc-v2 as a runtime dep. Reconcile if/when create-zudo-doc
+# migrates onto the v2 transitions module.
+src/components/design-token-tweak/index.tsx
+src/components/doc-history.tsx
+src/components/image-enlarge.tsx
+src/components/find-in-page-init.tsx
