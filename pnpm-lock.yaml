@@ -310,6 +310,9 @@ importers:
 
   packages/zudo-doc-v2:
     dependencies:
+      '@zudo-doc/doc-history-server':
+        specifier: workspace:*
+        version: link:../doc-history-server
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3

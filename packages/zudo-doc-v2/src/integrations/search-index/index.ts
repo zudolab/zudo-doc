@@ -12,23 +12,27 @@
 // in `./types`, the worker continues to serve server-side search
 // unchanged. Nothing in this integration touches the Worker bundle.
 
-export { emitSearchIndex } from "./build-emitter";
+// Note: relative imports keep the explicit `.ts` extension so the
+// runtime ESM loader (Node's native TS support, used by zfb's plugin
+// host) can resolve them without a TS-aware loader. Matches the
+// sibling `llms-txt/index.ts` convention.
+export { emitSearchIndex } from "./build-emitter.ts";
 export type {
   SearchIndexBuildOptions,
   SearchIndexBuildResult,
-} from "./build-emitter";
-export { collectSearchEntries } from "./collect";
-export { createSearchIndexDevMiddleware } from "./dev-middleware";
+} from "./build-emitter.ts";
+export { collectSearchEntries } from "./collect.ts";
+export { createSearchIndexDevMiddleware } from "./dev-middleware.ts";
 export type {
   SearchIndexMiddleware,
   SearchIndexNextFn,
-} from "./dev-middleware";
+} from "./dev-middleware.ts";
 export {
   MAX_BODY_LENGTH,
   SEARCH_INDEX_ROUTE,
-} from "./types";
+} from "./types.ts";
 export type {
   SearchIndexConfig,
   SearchIndexEntry,
   SearchIndexLocaleConfig,
-} from "./types";
+} from "./types.ts";

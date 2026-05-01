@@ -127,6 +127,7 @@
     "preact": "*"
   },
   "dependencies": {
+    "@zudo-doc/doc-history-server": "workspace:*",
     "gray-matter": "^4.0.3"
   },
   "devDependencies": {
