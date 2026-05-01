@@ -1,9 +1,4 @@
 dist/
-.astro/
 node_modules/
 worktrees/
 __inbox/
-
-# Astro files with is:inline + define:vars that prettier-plugin-astro can't parse
-src/components/color-scheme-provider.astro
-src/layouts/doc-layout.astro
