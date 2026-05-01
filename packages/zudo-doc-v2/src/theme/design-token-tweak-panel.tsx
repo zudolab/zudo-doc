@@ -37,7 +37,7 @@
 // shape is shimmed via `declare module` below so this file type-checks in
 // isolation; the real wiring happens at the consumer/integration level.
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import type * as preact from "preact";
 import InnerDesignTokenTweakPanel from "@/components/design-token-tweak";
 import {

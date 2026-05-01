@@ -4,7 +4,7 @@
 // version so the export output for an unchanged scheme remains line-equal to
 // today's output — a hard acceptance criterion for the theme topic.
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "preact/hooks";
 import { serialize } from "@/utils/design-token-serde";
 import {
   type ColorTweakState,
