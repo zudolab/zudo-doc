@@ -1,6 +1,6 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: 4b16b32 (Takazudo/zudo-front-builder main, 2026-05-01)
+ *   commit: d2762c9 (Takazudo/zudo-front-builder main, 2026-05-02)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -8,6 +8,7 @@
  *     - zudolab/zfb#102 (CJK-aware emphasis/strong tokenisation in MDX pipeline)
  *     - zudolab/zfb#103 (ResolveLinksPlugin: probe extensionless candidates)
  *     - zudolab/zfb#104 (rehype output parity: heading-links, code-title, mermaid, image-enlarge, strip-md-ext)
+ *     - zudolab/zfb#113 (tailwindcss v4 binary fetch script + ZFB_TAILWIND_BIN env var)
  *   pinned by: epic zudolab/zudo-doc#1334 (super-epic #1333)
  */
 
@@ -149,7 +150,7 @@ if (settings.versions) {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// Plugins — wired through zfb's plugin lifecycle (issue #101 / 4b16b32).
+// Plugins — wired through zfb's plugin lifecycle (issue #101).
 // ---------------------------------------------------------------------------
 //
 // zfb's plugin runtime loads each entry's `name` as a module specifier
