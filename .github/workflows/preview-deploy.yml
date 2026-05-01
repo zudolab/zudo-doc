@@ -1,7 +1,7 @@
 # Preview deployment for preview and expreview/* branches.
 #
 # Triggered on pushes to `preview` and `expreview/**` branches.
-# Builds the docs site and deploys to Cloudflare Pages with a branch name
+# Builds the zfb docs site and deploys to Cloudflare Pages with a branch name
 # so the preview URL is predictable (e.g. preview.zudo-doc.pages.dev).
 #
 # This is separate from PR preview deploys (handled by pr-checks.yml).
@@ -11,6 +11,24 @@
 # an artifact; the build-and-deploy job clones the same pinned source +
 # downloads the binary so the postinstall hook (scripts/zfb-link.mjs)
 # can resolve it. See pr-checks.yml for the full rationale.
+#
+# ----------------------------------------------------------------------------
+# Deployed artifact contract — see main-deploy.yml top-of-file for the
+# canonical 9-category list. Categories (a)–(i) MUST be preserved here in
+# parity with production (audited in epic #1337 task 5).
+#
+# This workflow currently does NOT pull doc-history (category g) — it builds
+# the site inline via `pnpm build` without SKIP_DOC_HISTORY, so the
+# doc-history-plugin's inline mode embeds history at build time. That keeps
+# preview deploys self-contained at the cost of a slower build (full git
+# clone via fetch-depth: 0). Production splits build-history into a parallel
+# job for speed; preview does not.
+#
+# See the same SSR-placement note in main-deploy.yml about _worker.js: the
+# CF Pages advanced-mode entry currently lands at deploy/pj/zudo-doc/_worker.js
+# under the project's base path. Until the deploy layout is reshaped, SSR
+# routes (currently only /api/ai-chat) will not work in preview either.
+# ----------------------------------------------------------------------------
 
 name: Preview Deploy
 
@@ -126,14 +144,20 @@ jobs:
           echo "Deploy branch: $DEPLOY_BRANCH"
 
       - name: Prepare deploy directory
+        # Mirror of main-deploy.yml's prepare step. See that file for the
+        # 9-category artifact contract. Note: doc-history is NOT merged here
+        # — preview-deploy builds inline (SKIP_DOC_HISTORY unset) so history
+        # is already embedded under dist/doc-history/.
+        # The dist/client/ branch is a legacy Astro fallback and never runs
+        # under zfb (zfb emits a flat dist/).
         run: |
           mkdir -p deploy/pj/zudo-doc
-          # When aiAssistant is enabled, Astro outputs static files to dist/client/
           if [ -d dist/client ]; then
             cp -r dist/client/. deploy/pj/zudo-doc/
           else
             cp -r dist/. deploy/pj/zudo-doc/
           fi
+          # (c) Root-level _redirects: bare-domain hits land on the based site.
           echo '/ /pj/zudo-doc/ 302' > deploy/_redirects
 
       - name: Deploy to Cloudflare Pages

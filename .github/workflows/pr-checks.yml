@@ -6,8 +6,8 @@
 # local `pnpm b4push` script:
 #   0. Template drift check (no install needed — pure shell)
 #   0b. Build the zfb Rust binary at the pinned SHA (single job, artifact)
-#   1. Type checking
-#   2. Build the docs site (shallow clone, skips doc history)
+#   1. Type checking (`zfb check` → tsc --noEmit)
+#   2. Build the zfb docs site (shallow clone, skips doc history)
 #   3. Build doc history JSONs (full clone, standalone server package)
 #   4. E2E & smoke tests (Playwright)
 #   5. Merge build outputs and deploy a preview to Cloudflare Pages
@@ -158,7 +158,7 @@ jobs:
         run: pnpm check
 
   # ---------------------------------------------------------------------------
-  # Job 2: Build the docs site (shallow clone — fast)
+  # Job 2: Build the zfb docs site (shallow clone — fast)
   # ---------------------------------------------------------------------------
   build-site:
     name: Build Site
@@ -360,19 +360,23 @@ jobs:
           key: doc-history-${{ github.run_id }}
 
       - name: Prepare deploy directory
+        # Mirror of main-deploy.yml's prepare step. See main-deploy.yml for
+        # the 9-category deployed-artifact contract (audited in epic #1337
+        # task 5). The dist/client/ branch is a legacy Astro fallback and
+        # never runs under zfb (zfb emits a flat dist/).
         run: |
           mkdir -p deploy/pj/zudo-doc
-          # When aiAssistant is enabled, Astro outputs static files to dist/client/
           if [ -d dist/client ]; then
             cp -r dist/client/. deploy/pj/zudo-doc/
           else
             cp -r dist/. deploy/pj/zudo-doc/
           fi
-          # Merge doc history JSONs into the deploy directory (if available)
+          # (g) Merge doc history JSONs into the deploy directory.
           if [ -d doc-history-out ] && [ "$(ls -A doc-history-out 2>/dev/null)" ]; then
             mkdir -p deploy/pj/zudo-doc/doc-history
             cp -r doc-history-out/. deploy/pj/zudo-doc/doc-history/
           fi
+          # (c) Root-level _redirects: bare-domain hits land on the based site.
           echo '/ /pj/zudo-doc/ 302' > deploy/_redirects
 
       - name: Deploy preview to Cloudflare Pages
