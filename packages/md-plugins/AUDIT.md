@@ -68,11 +68,11 @@ Legend:
 
 | JS plugin | zfb counterpart | Status | Notes |
 | --- | --- | --- | --- |
-| `rehypeCodeTitle` | `CodeTitlePlugin` | ⚠️ | **Different markup.** JS wraps `<pre>` in `<div class="code-block-container"><div class="code-block-title">…</div><pre>…</pre></div>`. zfb wraps in `<figure class="code-figure"><figcaption>…</figcaption><pre>…</pre></figure>`. CSS selectors and the title-rendering Astro component will need to be updated to the new shape on the zfb side, or the Rust plugin needs to be aligned to the existing markup. |
-| `rehypeHeadingLinks` | `HeadingLinksPlugin` | ⚠️ | **Different anchor markup.** JS appends `<a href="#id" class="hash-link" aria-label="Direct link to ...">` (empty body — the `#` symbol is rendered via CSS `::after`). zfb prepends `<a href="#id" class="heading-anchor" aria-label="Permalink to this heading">#</a>` (literal `#` text). Both add `id`. Slug algorithm matches (`github-slugger`-equivalent dedup). |
-| `rehypeImageEnlarge` | `ImageEnlargePlugin` | ⚠️ | **Different selector AND output.** JS wraps any `<p>` whose only non-whitespace child is `<img>` in `<figure class="zd-enlargeable"><img><button class="zd-enlarge-btn">…SVG…</button></figure>` and supports `title="no-enlarge"` opt-out. zfb only acts on `<img width="…">` and emits an `<ImageEnlarge>` MDX marker (the actual UI is provided by a downstream component). The two strategies are not interchangeable. **Action:** align zfb to the JS strategy, or update content to use explicit `width` attributes plus a new MDX component. |
-| `rehypeMermaid` | `MermaidPlugin` | ⚠️ | **Different output AND different selector.** JS keys strictly on `<pre data-language="mermaid">` (set upstream by Shiki — without Shiki the JS plugin silently no-ops) and replaces the entire `<pre>` with `<div class="mermaid" data-mermaid>…body text…</div>` (extracted text, code wrapper discarded). zfb keys on `<pre><code class="language-mermaid">` directly (no Shiki dependency) and merely adds `data-mermaid="true"` to the `<pre>`, leaving the body in place. Client-side render JS needs to know which shape to look for. |
-| `rehypeStripMdExtension` | `StripMdExtensionPlugin` | ⚠️ | Both strip `.md`/`.mdx` from internal `<a href>` paths. JS additionally adds a trailing slash to extensionless paths that start with `./` or `../` (e.g. `./guide` → `./guide/`) for sites running in `trailingSlash: "always"` mode — root-relative `/guide` and bare `guide` are NOT patched. zfb does not do the trailing-slash patch at all. **Action:** add the (scoped) trailing-slash behaviour to zfb, or rely on `ResolveLinksPlugin` already producing trailing-slash URLs. **Known JS-side bug:** the regex used (`\.mdx?(#.*)?$`) does not handle query strings — `./other.md?foo=bar` is left as-is in the JS pipeline (visible in `__fixtures__/expected-html/08-md-links.html`). The zfb port should fix this, not preserve it. |
+| `rehypeCodeTitle` | `CodeTitlePlugin` | ✅ retired (zfb #104) | zfb now emits `<div class="code-block-container"><div class="code-block-title">…</div><pre>…</pre></div>` byte-for-byte. JS shim deleted (both `packages/md-plugins/src/rehype-code-title.ts` and `src/plugins/rehype-code-title.ts`); `__fixtures__/05-code-titles.{mdx,html}` retired. |
+| `rehypeHeadingLinks` | `HeadingLinksPlugin` | ✅ retired (zfb #104) | zfb appends `<a href="#id" class="hash-link" aria-label="Direct link to …"></a>` (empty body, `#` glyph rendered via CSS `::after`) with the same github-slugger-equivalent dedup. JS shim deleted; `__fixtures__/02-headings.{mdx,html}` retired. |
+| `rehypeImageEnlarge` | `ImageEnlargePlugin` | ✅ retired (zfb #104) | zfb selector and shape match the JS shim verbatim — any `<p>` whose only non-whitespace child is `<img>` is replaced with `<figure class="zd-enlargeable"><img><button class="zd-enlarge-btn" hidden>…4-polygon SVG…</button></figure>`, `title="no-enlarge"` opt-out preserved, idempotent over already-wrapped figures. JS shim deleted; `__fixtures__/07-image-enlarge.{mdx,html}` retired. |
+| `rehypeMermaid` | `MermaidPlugin` | ✅ retired (zfb #104) | zfb keys on `<pre><code class="language-mermaid">` directly (no Shiki dependency) and emits `<div class="mermaid" data-mermaid>{body text}</div>` — same output shape as the JS shim, even though the upstream selector differs. Client-side renderer is unchanged. JS shim deleted; `__fixtures__/06-mermaid.{mdx,html}` retired. |
+| `rehypeStripMdExtension` | `StripMdExtensionPlugin` | ⚠️ divergence pending zfb follow-up | zfb's `with_trailing_slash` mode matches the JS shim for the common `.md`/`.mdx` → `/` and extensionless-relative cases. **Divergence:** the JS regex `/\.mdx?(#.*)?$/` does not handle query strings — `./other.md?foo=bar` is left as-is in the JS pipeline (`__fixtures__/expected-html/08-md-links.html` line 6). The zfb port intentionally fixes this bug and emits `./other/?foo=bar`. JS shim is kept (and the fixture preserved) until the manager files an upstream zfb follow-up clarifying that the bug fix is the documented behaviour. |
 | `rehypeKatex` (3rd-party) | — | ❌ | Not in zfb defaults. Either port, find a Rust KaTeX renderer, or shim in JS post-zfb. Feature-flagged via `settings.math`. |
 
 ## Plugins that need zfb-side work
@@ -84,15 +84,16 @@ These are tracked as follow-up GitHub issues against this repo
 2. ~~**remarkCjkFriendly**~~ — resolved by zfb #102 (`CjkFriendlyPlugin`,
    wired in `Pipeline::with_defaults`). Verified at the dist level on
    2026-05-01 (T4).
-3. **rehypeImageEnlarge** — output markup divergence (figure wrapper +
-   button SVG vs. `<ImageEnlarge>` MDX marker).
-4. **rehypeHeadingLinks** — anchor placement, class name, aria-label,
-   and inner `#` body diverge.
-5. **rehypeCodeTitle** — wrapper/title element shape diverges
-   (`code-block-container/code-block-title` vs `code-figure/figcaption`).
-6. **rehypeMermaid** — replacement strategy diverges
-   (`<div class="mermaid">` vs `<pre data-mermaid="true">`).
-7. **rehypeStripMdExtension** — trailing-slash patch missing on zfb side.
+3. ~~**rehypeImageEnlarge**~~ — resolved by zfb #104; JS shim retired (T5).
+4. ~~**rehypeHeadingLinks**~~ — resolved by zfb #104; JS shim retired (T5).
+5. ~~**rehypeCodeTitle**~~ — resolved by zfb #104; JS shim retired (T5).
+6. ~~**rehypeMermaid**~~ — resolved by zfb #104; JS shim retired (T5).
+7. **rehypeStripMdExtension** — zfb #104 added trailing-slash behaviour and
+   fixed the `\.mdx?(#.*)?$` query-string bug; the bug fix is a documented
+   divergence from the JS fixture (`./other.md?foo=bar` → `./other/?foo=bar`
+   in zfb vs. unchanged in JS). Filed as a follow-up so downstream
+   contracts state the fix is intentional. JS shim kept until the
+   follow-up lands.
 8. **remarkResolveMarkdownLinks** — zfb #103 ported the extensionless
    probe into `ResolveLinksPlugin` itself, BUT the zfb orchestrator does
    not yet instantiate `ResolveLinksPlugin` for the production build, so
@@ -106,19 +107,20 @@ These are tracked as follow-up GitHub issues against this repo
 
 ## Fixture corpus
 
-`__fixtures__/` contains 13 representative MDX files plus reference
+`__fixtures__/` contains 9 representative MDX files plus reference
 HTML output under `__fixtures__/expected-html/`. The driver lives at
 `src/__tests__/fixtures.test.ts` and runs as part of `pnpm test`.
+
+After zfb #104 retired the four "shape" rehype plugins, the fixtures
+that exercised them only (`02-headings`, `05-code-titles`, `06-mermaid`,
+`07-image-enlarge`) were dropped. Coverage of those shapes lives in the
+zfb crate's per-plugin Rust unit tests.
 
 | Fixture | Exercises |
 | --- | --- |
 | `01-basic-prose.mdx` | Paragraphs, inline marks, links, ul/ol nesting |
-| `02-headings.mdx` | h2–h6, dedup of repeated slugs, nested formatting |
 | `03-admonitions-directive.mdx` | `:::note/tip/info/warning/danger` directive form |
 | `04-admonitions-jsx.mdx` | JSX-form admonitions (`<Note>`, `<Tip>`, …) |
-| `05-code-titles.mdx` | Fenced code with and without `title="…"` meta |
-| `06-mermaid.mdx` | Mermaid flowchart and sequence diagram |
-| `07-image-enlarge.mdx` | Block image, sized image, inline-in-paragraph image, linked image, opt-out title |
 | `08-md-links.mdx` | `.md`/`.mdx` link rewriting incl. anchors and queries |
 | `09-tables.mdx` | GFM tables with inline marks, code, and links |
 | `10-math.mdx` | `remarkMath` + `rehypeKatex` (inline and display) |
@@ -128,17 +130,13 @@ HTML output under `__fixtures__/expected-html/`. The driver lives at
 
 ### What the captured HTML proves — and what it does not
 
-Astro's runtime is intentionally **not** booted here (per the topic
-brief). The fixture driver builds a `unified` pipeline that mirrors
-`astro.config.ts`, but with these documented limitations:
+zfb's runtime is intentionally **not** booted here. The fixture driver
+builds a `unified` pipeline that mirrors `zfb.config.ts`, but with these
+documented limitations:
 
-- **Shiki is not run.** A small in-test `rehypeShimShiki` step adds
-  the two attributes the rehype plugins depend on (`data-language` on
-  `<pre>` and `meta` on `<code>`). The reference HTML therefore does
-  **not** include syntax-highlighted spans. zfb will run `SyntectPlugin`
-  to produce its own highlighted output; final byte-diff verification
-  against the live site is OUT OF SCOPE here and must happen once
-  zfb is fully wired into the build.
+- **Shiki / Syntect is not run.** Reference HTML does not include
+  syntax-highlighted spans; the remaining fixtures avoid fenced code
+  entirely so the absence is invisible in expected output.
 - **`remarkResolveMarkdownLinks` is NOT run** in the driver because
   the fixtures do not have a real filesystem source map. The
   `rehypeStripMdExtension` cleanup still runs, so the `.md`/`.mdx` →
