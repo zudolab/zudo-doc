@@ -108,7 +108,8 @@ export interface HeaderProps {
  *      ai-chat trigger when `aiAssistant` is off) are skipped.
  *   3. Emit the inline overflow controller script. The script wires the
  *      "..." overflow menu, manages `aria-expanded` on dropdowns, and
- *      re-runs after View Transitions (`astro:after-swap`).
+ *      re-runs after View Transitions (via `AFTER_NAVIGATE_EVENT` from
+ *      `../transitions/page-events`).
  */
 export function Header(props: HeaderProps): JSX.Element {
   const {

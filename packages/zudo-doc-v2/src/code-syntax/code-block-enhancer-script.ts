@@ -9,6 +9,19 @@
 // Kept in a separate module (rather than inlined in the TSX file) so
 // future edits can be reviewed in isolation — same pattern as
 // `src/header/nav-overflow-script.ts`.
+//
+// Lifecycle vocabulary: the cleanup-before-navigate and re-init-after-
+// navigate hooks pull their event names from `BEFORE_NAVIGATE_EVENT`
+// and `AFTER_NAVIGATE_EVENT` in `transitions/page-events.ts`. After
+// zudolab/zudo-doc#1335 (E2 task 2 half B) those resolve to
+// `pagehide` and `DOMContentLoaded` respectively (zfb's runtime does a
+// real page load on every navigation, so the standard browser events
+// are the natural successors to Astro's soft-swap hooks).
+
+import {
+  AFTER_NAVIGATE_EVENT,
+  BEFORE_NAVIGATE_EVENT,
+} from "../transitions/page-events.js";
 
 export const CODE_BLOCK_ENHANCER_SCRIPT = `(function () {
   // Single shared ResizeObserver for all code blocks on the page.
@@ -135,8 +148,11 @@ export const CODE_BLOCK_ENHANCER_SCRIPT = `(function () {
     btn.style.display = isActive || pre.scrollWidth > pre.clientWidth ? "" : "none";
   }
 
-  // Clean up stale references before page swap (Astro view transitions).
-  document.addEventListener("astro:before-swap", function () {
+  // Clean up stale references before navigating away. Under zfb's
+  // full-reload navigation model the page is going to be torn down
+  // anyway, but unobserving keeps the ResizeObserver healthy if a
+  // bfcache restore re-uses this script context.
+  document.addEventListener(${JSON.stringify(BEFORE_NAVIGATE_EVENT)}, function () {
     wrapButtons.forEach(function (_btn, el) {
       resizeObserver.unobserve(el);
     });
@@ -146,6 +162,8 @@ export const CODE_BLOCK_ENHANCER_SCRIPT = `(function () {
   // Run on initial load.
   enhanceCodeBlocks();
 
-  // Support Astro view transitions.
-  document.addEventListener("astro:page-load", enhanceCodeBlocks);
+  // Re-run after every page-navigate-end signal (DOMContentLoaded under
+  // the zfb runtime). The IIFE itself runs once per real page load, so
+  // this listener is mostly a safety net for bfcache restores.
+  document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)}, enhanceCodeBlocks);
 })();`;

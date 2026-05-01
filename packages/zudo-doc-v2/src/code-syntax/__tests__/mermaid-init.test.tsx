@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { render } from "preact-render-to-string";
 import { MermaidInit } from "../mermaid-init";
 import { MERMAID_INIT_SCRIPT } from "../mermaid-init-script";
+import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events";
 
 describe("<MermaidInit />", () => {
   it("renders a <script> tag", () => {
@@ -18,9 +19,12 @@ describe("<MermaidInit />", () => {
     expect(html).toContain("data-mermaid");
   });
 
-  it("script hooks into astro:page-load for view transitions", () => {
+  it("script hooks into the v2 after-navigate event for view transitions", () => {
+    // After zudolab/zudo-doc#1335 (E2 task 2 half B) the script reads
+    // event names from `transitions/page-events.ts` rather than hard-
+    // coded `astro:*` literals.
     const html = render(<MermaidInit />);
-    expect(html).toContain("astro:page-load");
+    expect(html).toContain(JSON.stringify(AFTER_NAVIGATE_EVENT));
   });
 
   it("script observes color scheme changes via MutationObserver", () => {

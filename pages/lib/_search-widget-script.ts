@@ -11,8 +11,13 @@
 //     index + simple word-match scoring) is used instead. This avoids the
 //     inline-script bundling limitation. Full MiniSearch integration can be
 //     added in a follow-up topic once the bundle pipeline is in place.
-//   - `astro:after-swap` listener is preserved for View Transitions
-//     compatibility (zfb emits the same event name for forwards-compat).
+//   - The post-navigation rebinder pulls its event name from
+//     `AFTER_NAVIGATE_EVENT` in
+//     `@zudo-doc/zudo-doc-v2/transitions` (today: `DOMContentLoaded`)
+//     rather than a hard-coded `astro:*` literal. See
+//     zudolab/zudo-doc#1335 (E2 task 2 half B) for the vocabulary swap.
+
+import { AFTER_NAVIGATE_EVENT } from "@zudo-doc/zudo-doc-v2/transitions";
 
 export const SEARCH_WIDGET_SCRIPT = /* javascript */ `(function () {
   if (customElements.get("site-search")) return; // guard double-registration
@@ -161,8 +166,8 @@ export const SEARCH_WIDGET_SCRIPT = /* javascript */ `(function () {
       };
       document.addEventListener("keydown", this._keydownHandler);
 
-      // View-Transitions compat: re-run on navigation swap
-      document.addEventListener("astro:after-swap", function() {
+      // View-Transitions compat: re-run on the v2 after-navigate event
+      document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)}, function() {
         var kbdEl2 = self.querySelector("[data-kbd-shortcut]");
         if (kbdEl2) kbdEl2.textContent = self._shortcut;
       });

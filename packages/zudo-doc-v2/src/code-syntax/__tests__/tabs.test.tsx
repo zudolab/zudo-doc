@@ -7,6 +7,7 @@ import { Tabs } from "../tabs";
 import { TabsInit } from "../tabs-init";
 import { TABS_INIT_SCRIPT } from "../tabs-init-script";
 import { TabItem } from "../../tab-item/tab-item";
+import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events";
 
 describe("<Tabs />", () => {
   it("renders the [data-tabs] container", () => {
@@ -130,9 +131,12 @@ describe("<TabsInit />", () => {
     expect(html).toContain("showPanel");
   });
 
-  it("script hooks into astro:page-load", () => {
+  it("script hooks into the v2 after-navigate event", () => {
+    // After zudolab/zudo-doc#1335 (E2 task 2 half B) the script reads
+    // event names from `transitions/page-events.ts` rather than hard-
+    // coded `astro:*` literals.
     const html = render(<TabsInit />);
-    expect(html).toContain("astro:page-load");
+    expect(html).toContain(JSON.stringify(AFTER_NAVIGATE_EVENT));
   });
 
   it("script handles localStorage group sync", () => {

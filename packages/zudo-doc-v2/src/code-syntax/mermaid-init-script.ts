@@ -7,6 +7,13 @@
 //
 // Wrapped in an IIFE to avoid polluting the global scope.
 // Kept in a separate module so future edits can be reviewed in isolation.
+//
+// Lifecycle vocabulary: the page-navigate-end hook reads
+// `AFTER_NAVIGATE_EVENT` from `transitions/page-events.ts` rather than
+// a hard-coded `astro:*` literal — see that module's header for the
+// full vocabulary rationale (zudolab/zudo-doc#1335 E2 task 2 half B).
+
+import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
 
 export const MERMAID_INIT_SCRIPT = `(function () {
   /**
@@ -99,8 +106,10 @@ export const MERMAID_INIT_SCRIPT = `(function () {
     initMermaid();
   }
 
-  // astro:page-load fires on initial load and after View Transition navigations.
-  document.addEventListener("astro:page-load", function () { initMermaid(); });
+  // AFTER_NAVIGATE_EVENT fires on initial parse (DOMContentLoaded under
+  // the zfb runtime) — every navigation is a real page load, so this
+  // listener also covers the post-navigation re-render path.
+  document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)}, function () { initMermaid(); });
 
   // Re-render mermaid when color tweak panel changes CSS custom properties (debounced).
   var tweakTimer;
