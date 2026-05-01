@@ -11,12 +11,12 @@ import {
   parseMarkdownFile,
   slugToUrl,
   stripMarkdown,
-} from "./content-files";
+} from "./content-files.ts";
 import {
   MAX_BODY_LENGTH,
   type SearchIndexConfig,
   type SearchIndexEntry,
-} from "./types";
+} from "./types.ts";
 
 function truncateBody(text: string): string {
   return text.length > MAX_BODY_LENGTH

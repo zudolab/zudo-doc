@@ -149,19 +149,33 @@ if (settings.versions) {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// Plugins — declarative breadcrumbs for the v0 plugin runtime.
+// Plugins — wired through zfb's plugin lifecycle (issue #101 / 4b16b32).
 // ---------------------------------------------------------------------------
 //
-// zfb v0 accepts `plugins: PluginConfig[]` as `{ name, options }` metadata
-// only — no lifecycle hooks fire today. The host wires the actual work via
-// npm-script lifecycle hooks (`scripts/zfb-prebuild.mjs` for claude-resources,
-// `scripts/zfb-postbuild.mjs` for doc-history / search-index / llms-txt) and
-// a dev sidecar (S3) for the dev-mode middlewares.
+// zfb's plugin runtime loads each entry's `name` as a module specifier
+// (npm bare or `./`-relative path) and dispatches lifecycle hooks
+// (`preBuild`, `postBuild`, `devMiddleware`) on the module's default
+// export. Inline function hooks on this config are NOT supported — the
+// config goes through a JSON round-trip to the Rust side and any
+// function value would be silently dropped (see `@takazudo/zfb/plugins`
+// source comment for the rationale). Each entry below therefore
+// references a small wrapper module under `./plugins/` whose default
+// export is a `ZfbPlugin`.
 //
-// The entries below are forward-compat breadcrumbs: once zfb adopts plugin
-// lifecycle hooks the script glue can be retired and these descriptors will
-// pick up the matching `runClaudeResourcesPreStep` / `runDocHistoryPostBuild`
-// / `emitSearchIndex` / `emitLlmsTxt` runners automatically.
+// All three lifecycle hooks are now wired via the wrapper modules:
+//
+//   preBuild    — claude-resources writes its pre-step output;
+//                 doc-history writes `.zfb/doc-history-meta.json`.
+//   postBuild   — doc-history / search-index / llms-txt emit their
+//                 dist-time artifacts.
+//   devMiddleware — doc-history / search-index / llms-txt register
+//                 Connect-style middleware via the shared
+//                 `plugins/connect-adapter.mjs` so the dev sidecar
+//                 (`scripts/dev-sidecar.mjs`) can be retired.
+//
+// The legacy npm-script glue (`scripts/zfb-{pre,post}build.mjs`,
+// `scripts/dev-sidecar.mjs`) stays in place during the merge window;
+// T6 retires it once all lifecycle epics land.
 //
 // Sitemap is NOT in this list — it is served as a `pages/sitemap.xml.tsx`
 // zfb route (per ADR-005's "non-HTML page" pattern) introduced in epic E8.
@@ -178,7 +192,7 @@ const integrationPlugins = [
   ...(settings.claudeResources
     ? [
         {
-          name: "claude-resources",
+          name: "./plugins/claude-resources-plugin.mjs",
           options: {
             claudeDir: settings.claudeResources.claudeDir,
             projectRoot: settings.claudeResources.projectRoot,
@@ -190,7 +204,7 @@ const integrationPlugins = [
   ...(settings.docHistory
     ? [
         {
-          name: "doc-history",
+          name: "./plugins/doc-history-plugin.mjs",
           options: {
             docsDir: settings.docsDir,
             locales: localeRecord,
@@ -199,7 +213,7 @@ const integrationPlugins = [
       ]
     : []),
   {
-    name: "search-index",
+    name: "./plugins/search-index-plugin.mjs",
     options: {
       docsDir: settings.docsDir,
       locales: localeRecord,
@@ -209,7 +223,7 @@ const integrationPlugins = [
   ...(settings.llmsTxt
     ? [
         {
-          name: "llms-txt",
+          name: "./plugins/llms-txt-plugin.mjs",
           options: {
             siteName: settings.siteName,
             siteDescription: settings.siteDescription,
