@@ -9,18 +9,18 @@ Standalone package for serving and generating document git history, with dual mo
 
 ## Overview
 
-The Doc History Server is a sub-package at `packages/doc-history-server/` that handles all git history extraction for the [Document History](/docs/guides/doc-history) feature. It was extracted from the Astro build pipeline to decouple expensive git operations from the site build.
+The Doc History Server is a sub-package at `packages/doc-history-server/` that handles all git history extraction for the [Document History](/docs/guides/doc-history) feature. It was extracted from the zfb build pipeline to decouple expensive git operations from the site build.
 
 It operates in two modes:
 
 - **Server mode** -- runs an HTTP server during local development, serving history on demand
 - **CLI mode** -- batch-generates all history JSON files for production builds in CI
 
-This separation enables a parallel CI strategy where the Astro site build and history generation run as independent jobs, reducing total build time.
+This separation enables a parallel CI strategy where the zfb site build and history generation run as independent jobs, reducing total build time.
 
 ## Server Mode (Local Development)
 
-The server runs on a configurable port (default 4322) and serves document history via a REST API. In the standard `pnpm dev` setup, Astro and the doc-history-server run concurrently via `run-p`.
+The server runs on a configurable port (default 4322) and serves document history via a REST API. In the standard `pnpm dev` setup, zfb and the doc-history-server run concurrently via `run-p`.
 
 ### Starting the Server
 
@@ -69,11 +69,11 @@ Health check endpoint.
 - CORS headers are included for cross-origin dev access
 - Requests for unknown slugs return 404 with `{ "error": "No doc found for slug: ..." }`
 
-### Astro Integration
+### zfb Integration
 
-In dev mode, the Astro integration at `src/integrations/doc-history.ts` proxies `/doc-history/*` requests to this server. This means the history panel in the browser transparently fetches from the standalone server through the Astro dev server.
+In dev mode, the doc-history zfb plugin's `devMiddleware` hook proxies `/doc-history/*` requests to this server. This means the history panel in the browser transparently fetches from the standalone server through the zfb dev server.
 
-The root `pnpm dev` command runs both Astro (port 4321) and the doc-history-server (port 4322) concurrently using `run-p`.
+The root `pnpm dev` command runs both zfb (port 4321) and the doc-history-server (port 4322) concurrently using `run-p`.
 
 ## CLI Mode (CI Builds)
 
@@ -96,13 +96,13 @@ pnpm generate -- --content-dir src/content/docs --locale ja:src/content/docs-ja 
 
 ### CI Pipeline Integration
 
-The CI pipeline runs history generation as a parallel job alongside the Astro site build:
+The CI pipeline runs history generation as a parallel job alongside the zfb site build:
 
-- **build-site** job: shallow clone (`fetch-depth: 1`), builds the Astro site with `SKIP_DOC_HISTORY=1`
+- **build-site** job: shallow clone (`fetch-depth: 1`), builds the zfb site with `SKIP_DOC_HISTORY=1`
 - **build-history** job: full clone (`fetch-depth: 0`), runs `@zudo-doc/doc-history-server generate`
 - **deploy** job: merges both artifacts and deploys to Cloudflare Pages
 
-This parallelization is possible because the history generation is fully independent of the Astro build.
+This parallelization is possible because the history generation is fully independent of the zfb build.
 
 <Tip>
 
@@ -174,7 +174,7 @@ The `--follow` flag tracks file history across renames with multiple fallback st
 
 - **Synchronous git** -- `execFileSync` is acceptable for the dev server (same-process, sequential). The CI CLI is inherently sequential as well
 - **Repo-relative paths** -- API responses use relative file paths to avoid leaking absolute server paths
-- **Standalone package** -- decoupled from Astro to enable parallel CI builds and independent versioning
+- **Standalone package** -- decoupled from zfb to enable parallel CI builds and independent versioning
 
 ## Sub-Package Location
 

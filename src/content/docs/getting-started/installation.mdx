@@ -6,7 +6,7 @@ sidebar_position: 2
 
 ## Prerequisites
 
-- **Node.js 18+** — required for Astro 6
+- **Node.js 18+** — required by zfb and the toolchain
 - **pnpm** — recommended package manager
 
 <Info>
@@ -107,7 +107,7 @@ The dev server starts on port 4321 with Vite for instant hot module replacement.
 
 <Warning>
 
-Make sure port 4321 is available. If another process is using it, Astro will automatically pick the next available port.
+Make sure port 4321 is available. If another process is using it, the dev server will automatically pick the next available port.
 
 </Warning>
 
@@ -125,7 +125,7 @@ This generates static HTML in the `dist/` directory. You can deploy it to any st
 pnpm check
 ```
 
-Runs Astro's built-in type checker with strict TypeScript mode.
+Runs the project's TypeScript type checker in strict mode.
 
 <Danger>
 
@@ -139,7 +139,7 @@ After installation, your project looks like this:
 
 ```
 src/
-├── components/          # Astro + Preact components
+├── components/          # Preact components (server-rendered + client islands)
 │   └── admonitions/     # Note, Tip, Info, Warning, Danger
 ├── config/
 │   ├── settings.ts      # Site name, active color scheme
@@ -148,10 +148,11 @@ src/
 ├── content/
 │   ├── docs/            # English MDX content
 │   └── docs-ja/         # Japanese MDX content
-├── layouts/             # Page layouts
-├── pages/               # File-based routing
 └── styles/
     └── global.css       # Design tokens & Tailwind config
+
+pages/                   # zfb file-based routing (.tsx page modules)
+zfb.config.ts            # zfb engine entry-point config
 ```
 
 See the [Writing Docs](/docs/getting-started/writing-docs) guide for how to create and organize your documentation pages.
