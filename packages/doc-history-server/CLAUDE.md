@@ -1,6 +1,6 @@
 # doc-history-server
 
-Standalone package for document git history with dual modes: REST API server for local dev, CLI batch generator for CI builds. Extracted from `src/utils/doc-history.ts` to decouple expensive git operations from the Astro build pipeline.
+Standalone package for document git history with dual modes: REST API server for local dev, CLI batch generator for CI builds. Extracted from `src/utils/doc-history.ts` to decouple expensive git operations from the documentation build pipeline.
 
 ## Tech Stack
 
@@ -41,13 +41,13 @@ src/
 
 - Generates `{slug}.json` files in the output directory
 - Reports progress and timing
-- Used by CI `build-history` job (parallel with Astro build)
+- Used by CI `build-history` job (parallel with the main site build)
 
-### Astro Integration
+### zfb Integration
 
-In dev mode, `src/integrations/doc-history.ts` proxies `/doc-history/*` requests to this server. In build mode, the Astro integration falls back to inline generation when `SKIP_DOC_HISTORY` is not set.
+In dev mode, the zfb integration at `packages/zudo-doc-v2/src/integrations/doc-history/` proxies `/doc-history/*` requests to this server. In build mode, that integration falls back to inline generation when `SKIP_DOC_HISTORY` is not set.
 
-Root `pnpm dev` runs both Astro and this server via `run-p`.
+Root `pnpm dev` runs both the zfb dev server and this server via `run-p`.
 
 ## Key Design Decisions
 
