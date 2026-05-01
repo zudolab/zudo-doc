@@ -9,7 +9,10 @@ export default defineConfig({
     baseURL: `http://localhost:${BASE_PORT}`,
   },
   webServer: FIXTURES.map((name, i) => ({
-    command: `cd e2e/fixtures/${name} && ./node_modules/.bin/astro preview --port ${BASE_PORT + i}`,
+    // `setup-fixtures.sh` already ran `zfb build` per fixture; this only
+    // launches the static preview server. The fixture's `node_modules`
+    // is a symlink back to the repo root, so the binary path is shared.
+    command: `cd e2e/fixtures/${name} && ./node_modules/.bin/zfb preview --port ${BASE_PORT + i}`,
     url: `http://localhost:${BASE_PORT + i}/`,
     reuseExistingServer: true,
     timeout: 120_000,
