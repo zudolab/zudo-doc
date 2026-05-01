@@ -16,19 +16,24 @@
 # zfb is consumed as `file:../zfb/...` workspace deps (see top of
 # package.json). Each install-bearing job clones the public
 # Takazudo/zudo-front-builder repo at the pinned SHA to ../zfb so those
-# deps resolve, and downloads the prebuilt zfb binary artifact (built
-# once by the build-zfb job below) into ../zfb/target/release/zfb so the
-# postinstall hook (scripts/zfb-link.mjs) can resolve it.
+# deps resolve, then downloads two prebuilt artifacts produced by the
+# build-zfb job below:
+#   - zfb-binary           → ../zfb/target/release/zfb         (Rust CLI)
+#   - zfb-tailwind-binary  → ../zfb/crates/zfb/binaries/...    (Tailwind v4 CLI)
+# The postinstall hook (scripts/zfb-fetch-tailwind.mjs +
+# scripts/zfb-link.mjs) then sees both as already staged and bakes the
+# tailwind path into the zfb wrapper.
 #
 # Pinned zfb SHA (mirrors the canonical pin documented at the top of
 # zfb.config.ts). Bump in lockstep with that comment.
 #
 # Inter-job data sharing uses actions/cache (not upload-artifact) for
-# build outputs to avoid Actions storage accumulation. The compiled zfb
-# binary uses upload-artifact (with a 1-day retention) so the install-
-# bearing jobs that need it (typecheck, build-site, e2e) can pull it
-# without each compiling Rust. The build-history job is the lone
-# exception — see its inline comment for why it skips the artifact.
+# build outputs to avoid Actions storage accumulation. The two prebuilt
+# binary artifacts use upload-artifact (with a 1-day retention) so the
+# install-bearing jobs that need them (typecheck, build-site, e2e) can
+# pull them without each compiling Rust or hitting the upstream tailwind
+# release URL. The build-history job is the lone exception — see its
+# inline comment for why it skips both artifacts.
 #
 # Concurrency: cancel in-progress runs for the same PR to save resources.
 
@@ -52,7 +57,7 @@ env:
   # Pinned zfb commit — keep in sync with the zfb pin comment at the
   # top of zfb.config.ts. Updating the pin here without updating that
   # comment (or vice versa) will silently desync local dev from CI.
-  ZFB_PINNED_SHA: 4b16b3296b0ebe9c14c781ddda2297c05445522a
+  ZFB_PINNED_SHA: d2762c9e67eb9b2df8668fd4101d09cd11dbdccf
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -103,11 +108,29 @@ jobs:
         run: cargo build -p zfb --release
         working-directory: zfb-src
 
+      # Fetch the pinned tailwindcss v4 standalone CLI into
+      # zfb-src/crates/zfb/binaries/tailwindcss-v4 (idempotent, sha256-verified
+      # by zfb's scripts/fetch-tailwind.mjs). Uploaded as a separate artifact
+      # so each consumer job places it into ../zfb/crates/zfb/binaries/ before
+      # `pnpm install` runs zfb-link.mjs (which captures the path into the
+      # generated wrapper).
+      - name: Fetch tailwindcss binary
+        run: node scripts/fetch-tailwind.mjs
+        working-directory: zfb-src
+
       - name: Upload zfb binary artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: zfb-binary
           path: zfb-src/target/release/zfb
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload zfb tailwind binary artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: zfb-tailwind-binary
+          path: zfb-src/crates/zfb/binaries/tailwindcss-v4
           if-no-files-found: error
           retention-days: 1
 
@@ -140,6 +163,19 @@ jobs:
 
       - name: Mark zfb binary executable
         run: chmod +x ../zfb/target/release/zfb
+
+      # Tailwindcss v4 standalone CLI staged by build-zfb. Must land at
+      # ../zfb/crates/zfb/binaries/tailwindcss-v4 so pnpm install's
+      # postinstall (scripts/zfb-fetch-tailwind.mjs) sees it as already
+      # present (idempotent) and zfb-link.mjs captures the path.
+      - name: Download zfb tailwind binary
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: zfb-tailwind-binary
+          path: ../zfb/crates/zfb/binaries
+
+      - name: Mark zfb tailwind binary executable
+        run: chmod +x ../zfb/crates/zfb/binaries/tailwindcss-v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
@@ -186,6 +222,19 @@ jobs:
 
       - name: Mark zfb binary executable
         run: chmod +x ../zfb/target/release/zfb
+
+      # Tailwindcss v4 standalone CLI staged by build-zfb. Must land at
+      # ../zfb/crates/zfb/binaries/tailwindcss-v4 so pnpm install's
+      # postinstall (scripts/zfb-fetch-tailwind.mjs) sees it as already
+      # present (idempotent) and zfb-link.mjs captures the path.
+      - name: Download zfb tailwind binary
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: zfb-tailwind-binary
+          path: ../zfb/crates/zfb/binaries
+
+      - name: Mark zfb tailwind binary executable
+        run: chmod +x ../zfb/crates/zfb/binaries/tailwindcss-v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
@@ -311,6 +360,19 @@ jobs:
 
       - name: Mark zfb binary executable
         run: chmod +x ../zfb/target/release/zfb
+
+      # Tailwindcss v4 standalone CLI staged by build-zfb. Must land at
+      # ../zfb/crates/zfb/binaries/tailwindcss-v4 so pnpm install's
+      # postinstall (scripts/zfb-fetch-tailwind.mjs) sees it as already
+      # present (idempotent) and zfb-link.mjs captures the path.
+      - name: Download zfb tailwind binary
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: zfb-tailwind-binary
+          path: ../zfb/crates/zfb/binaries
+
+      - name: Mark zfb tailwind binary executable
+        run: chmod +x ../zfb/crates/zfb/binaries/tailwindcss-v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4

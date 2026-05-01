@@ -7,10 +7,12 @@
 # This is separate from PR preview deploys (handled by pr-checks.yml).
 #
 # zfb is consumed as `file:../zfb/...` workspace deps. The build-zfb job
-# below compiles the zfb Rust binary at the pinned SHA and uploads it as
-# an artifact; the build-and-deploy job clones the same pinned source +
-# downloads the binary so the postinstall hook (scripts/zfb-link.mjs)
-# can resolve it. See pr-checks.yml for the full rationale.
+# below compiles the zfb Rust binary at the pinned SHA and fetches the
+# pinned tailwindcss v4 standalone CLI, then uploads each as a separate
+# artifact; the build-and-deploy job clones the same pinned source and
+# downloads both binaries so the postinstall hooks
+# (zfb-fetch-tailwind.mjs + zfb-link.mjs) resolve them locally. See
+# pr-checks.yml for the full rationale.
 #
 # ----------------------------------------------------------------------------
 # Deployed artifact contract — see main-deploy.yml top-of-file for the
@@ -50,7 +52,7 @@ permissions:
 env:
   # Pinned zfb commit — keep in sync with the zfb pin comment at the
   # top of zfb.config.ts and the same env in pr-checks.yml.
-  ZFB_PINNED_SHA: 4b16b3296b0ebe9c14c781ddda2297c05445522a
+  ZFB_PINNED_SHA: d2762c9e67eb9b2df8668fd4101d09cd11dbdccf
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -80,11 +82,25 @@ jobs:
         run: cargo build -p zfb --release
         working-directory: zfb-src
 
+      # See pr-checks.yml `build-zfb` for the rationale on uploading the
+      # tailwindcss v4 standalone CLI as a separate artifact.
+      - name: Fetch tailwindcss binary
+        run: node scripts/fetch-tailwind.mjs
+        working-directory: zfb-src
+
       - name: Upload zfb binary artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: zfb-binary
           path: zfb-src/target/release/zfb
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload zfb tailwind binary artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: zfb-tailwind-binary
+          path: zfb-src/crates/zfb/binaries/tailwindcss-v4
           if-no-files-found: error
           retention-days: 1
 
@@ -117,6 +133,16 @@ jobs:
 
       - name: Mark zfb binary executable
         run: chmod +x ../zfb/target/release/zfb
+
+      # See pr-checks.yml `typecheck` for the tailwind binary placement rationale.
+      - name: Download zfb tailwind binary
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: zfb-tailwind-binary
+          path: ../zfb/crates/zfb/binaries
+
+      - name: Mark zfb tailwind binary executable
+        run: chmod +x ../zfb/crates/zfb/binaries/tailwindcss-v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4

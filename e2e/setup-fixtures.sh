@@ -174,6 +174,24 @@ setup_fixture() {
     printf '{}\n' > "$fixture_dir/.zfb/doc-history-meta.json"
   fi
 
+  # ----- package.json — required by zfb's adapter dispatch -----
+  # zfb's cloudflare-adapter dispatch (zfb-build/src/adapter.rs) shells
+  # out to `pnpm exec zfb-adapter-cloudflare bundle ...` from the project
+  # root. pnpm refuses to exec without a package.json in the cwd
+  # (ERR_PNPM_RECURSIVE_EXEC_NO_PACKAGE), so seed a minimal manifest
+  # marking the fixture as a private, non-workspace package. The fixture
+  # already inherits node_modules/ as a symlink to the root, so this
+  # manifest is purely a pnpm-exec gate, not a real package.
+  if [ ! -f "$fixture_dir/package.json" ]; then
+    cat > "$fixture_dir/package.json" <<EOF
+{
+  "name": "zudo-doc-e2e-${fixture}-fixture",
+  "private": true,
+  "version": "0.0.0"
+}
+EOF
+  fi
+
   echo "  Done: $fixture"
 }
 
