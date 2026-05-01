@@ -149,19 +149,25 @@ if (settings.versions) {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// Plugins — declarative breadcrumbs for the v0 plugin runtime.
+// Plugins — wired through zfb's lifecycle hooks (Sub 3 / zfb#101).
 // ---------------------------------------------------------------------------
 //
-// zfb v0 accepts `plugins: PluginConfig[]` as `{ name, options }` metadata
-// only — no lifecycle hooks fire today. The host wires the actual work via
-// npm-script lifecycle hooks (`scripts/zfb-prebuild.mjs` for claude-resources,
-// `scripts/zfb-postbuild.mjs` for doc-history / search-index / llms-txt) and
-// a dev sidecar (S3) for the dev-mode middlewares.
+// Each entry is a `{ name, options }` descriptor where `name` is a path-
+// relative specifier that zfb's config loader resolves against the project
+// root and the plugin host imports via dynamic `import()`. The plugin
+// modules under `./plugins/zfb-plugins/` export a [`ZfbPlugin`] default with
+// the matching lifecycle hooks (`preBuild`, `postBuild`, `devMiddleware`).
 //
-// The entries below are forward-compat breadcrumbs: once zfb adopts plugin
-// lifecycle hooks the script glue can be retired and these descriptors will
-// pick up the matching `runClaudeResourcesPreStep` / `runDocHistoryPostBuild`
-// / `emitSearchIndex` / `emitLlmsTxt` runners automatically.
+// Today's hook coverage:
+//
+//   - **devMiddleware** — `doc-history`, `search-index`, `llms-txt` mount
+//     their Connect-style dev middlewares on the zfb dev server, replacing
+//     the standalone `scripts/dev-sidecar.mjs` (port 4323) the v0 era ran.
+//     Sibling epic task T6 retires the sidecar script + its npm entry
+//     point in a follow-up commit.
+//   - **preBuild** / **postBuild** — owned by sibling tasks T3 and T4. The
+//     interim npm-script glue (`scripts/zfb-prebuild.mjs`,
+//     `scripts/zfb-postbuild.mjs`) keeps running until those tasks land.
 //
 // Sitemap is NOT in this list — it is served as a `pages/sitemap.xml.tsx`
 // zfb route (per ADR-005's "non-HTML page" pattern) introduced in epic E8.
@@ -178,7 +184,7 @@ const integrationPlugins = [
   ...(settings.claudeResources
     ? [
         {
-          name: "claude-resources",
+          name: "./plugins/zfb-plugins/claude-resources.mjs",
           options: {
             claudeDir: settings.claudeResources.claudeDir,
             projectRoot: settings.claudeResources.projectRoot,
@@ -190,7 +196,7 @@ const integrationPlugins = [
   ...(settings.docHistory
     ? [
         {
-          name: "doc-history",
+          name: "./plugins/zfb-plugins/doc-history.mjs",
           options: {
             docsDir: settings.docsDir,
             locales: localeRecord,
@@ -199,7 +205,7 @@ const integrationPlugins = [
       ]
     : []),
   {
-    name: "search-index",
+    name: "./plugins/zfb-plugins/search-index.mjs",
     options: {
       docsDir: settings.docsDir,
       locales: localeRecord,
@@ -209,7 +215,7 @@ const integrationPlugins = [
   ...(settings.llmsTxt
     ? [
         {
-          name: "llms-txt",
+          name: "./plugins/zfb-plugins/llms-txt.mjs",
           options: {
             siteName: settings.siteName,
             siteDescription: settings.siteDescription,
