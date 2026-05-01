@@ -59,9 +59,9 @@ Legend:
 | JS plugin | zfb counterpart | Status | Notes |
 | --- | --- | --- | --- |
 | `remarkAdmonitions` | `AdmonitionsPlugin` | ⚠️ | JS handles 5 directives (note/tip/info/warning/danger). zfb handles 6 (adds `details`) and ships a runtime-extensible `DirectiveRegistry`. Output JSX node names match for the 5 shared directives. JS plugin currently silently passes `:::details` through as a raw container directive. Recommend aligning JS to zfb (add details) before final cutover, or relying on zfb defaults post-cutover. |
-| `remarkResolveMarkdownLinks` | `ResolveLinksPlugin` | ✅ (with caveat) | Both rewrite `.md`/`.mdx` link targets to final site URLs. JS rebuilds the source map on every call (so dev-server new files Just Work); zfb expects a pre-built `HashMap<PathBuf, String>` from the orchestrator. Final URL output matches given the same source map. JS additionally probes extensionless candidates (`./guide` → `./guide.mdx`, `./guide/index.mdx`). zfb does NOT — it keys strictly on the explicit path. **Action:** decide whether the extensionless probing must be ported or whether content can be re-authored to use explicit extensions. Filed as a follow-up issue. |
+| `remarkResolveMarkdownLinks` | `ResolveLinksPlugin` | ⚠️ divergence (T4, 2026-05-01) | zfb #103 added extensionless candidate probing inside `ResolveLinksPlugin` itself, so the Rust plugin and the JS shim are now feature-equivalent at the unit level (probe order matches: `.mdx` → `.md` → `.../index.mdx` → `.../index.md`). HOWEVER: the zfb orchestrator (zfb-build / zfb-render) does NOT currently instantiate `ResolveLinksPlugin` at all — the JS shim has been unwired alongside the Astro removal, but no zfb-side replacement was added. As of this commit, both explicit `.mdx`/`.md` links AND extensionless candidates pass through the production build unresolved (e.g. `dist/docs/getting-started/writing-docs/index.html` contains a literal `href="../guides/frontmatter.mdx"` from the inline prose link on line 38 of the source mdx). The JS shim file at `packages/md-plugins/src/remark-resolve-markdown-links.ts` is therefore intentionally left in place (dead code in the consumer, but still authoritative for fixture / unit coverage) until the orchestrator wires `ResolveLinksPlugin` with a real source map. Tracking: needs a follow-up zfb-side issue (orchestrator wiring of `ResolveLinksPlugin` + project-level source-map provider). |
 | `remarkMath` (3rd-party) | — | ❌ | Not in zfb defaults. Either port, add a Rust crate (e.g. `markdown-rs` math support), or run as a JS shim. Currently feature-flagged via `settings.math`. |
-| `remarkCjkFriendly` (3rd-party) | — | ❌ | Not in zfb defaults. Adjusts emphasis/strong parsing around CJK characters. Currently feature-flagged via `settings.cjkFriendly`. Likely best ported as a small Rust visitor since it modifies tokenisation rather than rendering. |
+| `remarkCjkFriendly` (3rd-party) | `CjkFriendlyPlugin` | ✅ retired (zfb #102, T4, 2026-05-01) | zfb #102 ported the CJK-aware emphasis/strong tokenisation as `CjkFriendlyPlugin`, which `Pipeline::with_defaults()` registers as the first mdast visitor (see `crates/zfb-content/src/pipeline.rs:227`). Verified end-to-end against the production build at this commit: `dist/ja/docs/reference/cjk-friendly/index.html` renders `<strong class="font-bold text-fg">扱わない</strong>` from the source `**扱わない**`-pattern in `src/content/docs-ja/reference/cjk-friendly.mdx`, and 10+ other JA pages contain CJK runs wrapped in `<strong>`. There is no separate JS shim file for CJK in this repo — `remark-cjk-friendly` is a 3rd-party npm package consumed only by `__tests__/fixtures.test.ts` for parity diffing, so the dependency stays as-is until the fixture corpus itself is retired. The `settings.cjkFriendly` flag is now dead code on the JS side and is preserved purely for downstream-template back-compat. |
 | `remarkDirective` (3rd-party) | (handled inside `AdmonitionsPlugin`) | ✅ | zfb's directives are parsed natively by the Rust admonitions / directive registry. No counterpart needed in zfb config. |
 
 ### Rehype (hast) plugins
@@ -81,7 +81,9 @@ These are tracked as follow-up GitHub issues against this repo
 (`zudolab/zudo-doc`, label `zfb-migration`):
 
 1. **remarkMath + rehypeKatex** — math rendering not in zfb defaults.
-2. **remarkCjkFriendly** — CJK-friendly emphasis parsing not in zfb defaults.
+2. ~~**remarkCjkFriendly**~~ — resolved by zfb #102 (`CjkFriendlyPlugin`,
+   wired in `Pipeline::with_defaults`). Verified at the dist level on
+   2026-05-01 (T4).
 3. **rehypeImageEnlarge** — output markup divergence (figure wrapper +
    button SVG vs. `<ImageEnlarge>` MDX marker).
 4. **rehypeHeadingLinks** — anchor placement, class name, aria-label,
@@ -91,8 +93,14 @@ These are tracked as follow-up GitHub issues against this repo
 6. **rehypeMermaid** — replacement strategy diverges
    (`<div class="mermaid">` vs `<pre data-mermaid="true">`).
 7. **rehypeStripMdExtension** — trailing-slash patch missing on zfb side.
-8. **remarkResolveMarkdownLinks** — extensionless candidate probing
-   (`./guide` → `./guide.mdx` / `./guide/index.mdx`) not in zfb.
+8. **remarkResolveMarkdownLinks** — zfb #103 ported the extensionless
+   probe into `ResolveLinksPlugin` itself, BUT the zfb orchestrator does
+   not yet instantiate `ResolveLinksPlugin` for the production build, so
+   `.md`/`.mdx` and extensionless link rewriting are absent at the dist
+   level (verified by T4 on 2026-05-01: `../guides/frontmatter.mdx`
+   passes through unchanged into `dist/docs/getting-started/writing-docs/index.html`).
+   Follow-up needed on the zfb side: orchestrator wiring +
+   project-level source-map provider. JS shim retained until then.
 9. **remarkAdmonitions** — JS implementation does not handle
    `:::details`; zfb does. Align before cutover.
 
