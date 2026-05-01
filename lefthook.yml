@@ -4,6 +4,3 @@ pre-commit:
     format-mdx:
       glob: "*.{md,mdx}"
       run: pnpm dlx @takazudo/mdx-formatter --write {staged_files} && git add {staged_files}
-    format-astro:
-      glob: "*.astro"
-      run: npx prettier --write {staged_files} && git add {staged_files}
