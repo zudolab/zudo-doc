@@ -72,8 +72,10 @@ function useActiveSlug(nodes: NavNode[], initial?: string): string | undefined {
       if (found !== undefined) setSlug(found);
     };
     update();
-    document.addEventListener("astro:after-swap", update);
-    return () => document.removeEventListener("astro:after-swap", update);
+    // zfb's `<ViewTransitions />` does a real page load on every
+    // navigation, so `DOMContentLoaded` is the post-navigate signal.
+    document.addEventListener("DOMContentLoaded", update);
+    return () => document.removeEventListener("DOMContentLoaded", update);
   }, [nodes]);
 
   return slug;

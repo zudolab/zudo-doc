@@ -11,10 +11,13 @@
 //
 // The Astro version shipped a `<script>` in the same file that wired up
 // click-toggle / outside-click / Escape-key behavior on every
-// `[data-version-switcher]` instance, idempotently re-binding after
-// `astro:after-swap`. The JSX port emits the same data-attributes and
-// markup, but the script lives separately as `VERSION_SWITCHER_INIT_SCRIPT`
-// so consumers mount it once at body-end (matching how
+// `[data-version-switcher]` instance, idempotently re-binding after the
+// page-navigate-end event. After zudolab/zudo-doc#1335 (E2 task 2 half
+// B) that event resolves through the `AFTER_NAVIGATE_EVENT` constant in
+// `transitions/page-events.ts` rather than a hard-coded `astro:*`
+// literal. The JSX port emits the same data-attributes and markup, but
+// the script lives separately as `VERSION_SWITCHER_INIT_SCRIPT` so
+// consumers mount it once at body-end (matching how
 // color-scheme-provider's bootstrap is structured). That keeps the
 // component itself SSR-safe and side-effect-free, while letting the host
 // page wire up exactly one global listener regardless of how many
@@ -32,6 +35,7 @@
 
 import type { VNode } from "preact";
 import type { VersionEntry, VersionSwitcherLabels } from "./types";
+import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
 
 export interface VersionSwitcherProps {
   /**
@@ -209,12 +213,18 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
 /**
  * Self-contained init script for the version-switcher's interactive
  * behavior. Mount once per page (e.g. inside the layout's body-end
- * scripts slot) — it idempotently re-binds after `astro:after-swap`
- * via an AbortController, so multiple switchers on the page share a
- * single event-listener generation.
+ * scripts slot) — it idempotently re-binds via an AbortController so
+ * multiple switchers on the page share a single event-listener
+ * generation.
  *
- * Lifted verbatim from the `<script>` block of the original
- * version-switcher.astro so behavior is bit-for-bit identical.
+ * The post-navigation rebinder uses `AFTER_NAVIGATE_EVENT` from
+ * `transitions/page-events.ts` (today: `DOMContentLoaded`) rather than
+ * a hard-coded `astro:*` literal — see that module's header for the
+ * full vocabulary rationale.
+ *
+ * Lifted from the `<script>` block of the original
+ * version-switcher.astro; behaviour is unchanged modulo the lifecycle
+ * vocabulary swap.
  */
 export const VERSION_SWITCHER_INIT_SCRIPT = `(function(){
 var cleanupController=null;
@@ -247,7 +257,7 @@ toggle.focus();
 });
 }
 initVersionSwitcher();
-document.addEventListener("astro:after-swap",initVersionSwitcher);
+document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)},initVersionSwitcher);
 })();`;
 
 // Re-export the data types so consumers can import everything they need

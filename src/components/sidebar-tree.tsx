@@ -8,6 +8,11 @@ import type { LocaleLink } from "@/types/locale";
 import { INDENT, BASE_PAD, connectorLeft, ConnectorLines, CategoryLinkIcon } from "./tree-nav-shared";
 import ThemeToggle from "@/components/theme-toggle";
 import { smartBreakToHtml } from "@/utils/smart-break";
+// After zudolab/zudo-doc#1335 (E2 task 2 half B) the host components
+// also pull lifecycle event names from the v2 transitions module
+// rather than hard-coding `astro:*` literals — keeps the entire repo's
+// post-navigate listener vocabulary on a single source of truth.
+import { AFTER_NAVIGATE_EVENT } from "@zudo-doc/zudo-doc-v2/transitions";
 
 function ToggleChevron({ isExpanded, className }: { isExpanded: boolean; className?: string }) {
   return (
@@ -76,8 +81,8 @@ function useActiveSlug(nodes: NavNode[], initial?: string): string | undefined {
       if (found !== undefined) setSlug(found);
     };
     update();
-    document.addEventListener("astro:after-swap", update);
-    return () => document.removeEventListener("astro:after-swap", update);
+    document.addEventListener(AFTER_NAVIGATE_EVENT, update);
+    return () => document.removeEventListener(AFTER_NAVIGATE_EVENT, update);
   }, [nodes]);
 
   return slug;

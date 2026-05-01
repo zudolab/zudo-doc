@@ -12,7 +12,13 @@
 //   4. Handle group-sync via localStorage when a `data-group-id` is present.
 //
 // Wrapped in an IIFE to avoid polluting the global scope.
-// Run on initial load and re-run on `astro:page-load` for view transitions.
+// Run on initial load and re-run on the v2 after-navigate event for
+// View Transitions support. The event name is pulled from
+// `AFTER_NAVIGATE_EVENT` in `transitions/page-events.ts` (today:
+// `DOMContentLoaded`) rather than a hard-coded `astro:*` literal — see
+// zudolab/zudo-doc#1335 E2 task 2 half B for the vocabulary swap.
+
+import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
 
 export const TABS_INIT_SCRIPT = `(function () {
   var BASE_BTN = "px-hsp-lg py-vsp-xs text-small font-medium border-b-[5px] -mb-px transition-colors";
@@ -111,6 +117,8 @@ export const TABS_INIT_SCRIPT = `(function () {
   // Run on initial load.
   initTabs();
 
-  // Support Astro view transitions.
-  document.addEventListener("astro:page-load", initTabs);
+  // Re-run after every page-navigate-end signal so View Transitions
+  // navigations (which under the zfb runtime are real page loads) see
+  // the tabs initialised on the new page.
+  document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)}, initTabs);
 })();`;
