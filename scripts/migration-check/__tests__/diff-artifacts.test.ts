@@ -27,6 +27,15 @@ const FIXTURES = join(import.meta.dirname, "fixtures");
 const ARTIFACTS_A = join(FIXTURES, "s4-artifacts", "a");
 const ARTIFACTS_B = join(FIXTURES, "s4-artifacts", "b");
 
+// Local success-shape aliases for the diff-artifacts return unions.
+// The source helpers return `success | error`; tests in this file always assert
+// the success path explicitly, so we narrow at the call site via `as`.
+type DiffJsonSuccess = {
+  identical: boolean;
+  entryCountDelta: number;
+  keySetDelta: { onlyInA: string[]; onlyInB: string[] } | null;
+};
+
 // ── Artifact type detection ───────────────────────────────────────────────────
 
 describe("getArtifactType", () => {
@@ -68,7 +77,7 @@ describe("getArtifactType", () => {
 
 describe("deepSortObject", () => {
   it("sorts top-level object keys alphabetically", () => {
-    const result = deepSortObject({ z: 1, a: 2, m: 3 });
+    const result = deepSortObject({ z: 1, a: 2, m: 3 }) as Record<string, number>;
     expect(Object.keys(result)).toEqual(["a", "m", "z"]);
   });
 
@@ -106,7 +115,7 @@ describe("diffJson", () => {
   it("treats key-order drift as cosmetic (identical result)", () => {
     const a = JSON.stringify({ z: 1, a: 2 });
     const b = JSON.stringify({ a: 2, z: 1 });
-    const result = diffJson(a, b);
+    const result = diffJson(a, b) as DiffJsonSuccess;
     expect(result.identical).toBe(true);
     expect(result.entryCountDelta).toBe(0);
   });
@@ -114,35 +123,35 @@ describe("diffJson", () => {
   it("treats nested key-order drift as cosmetic", () => {
     const a = JSON.stringify({ x: { z: 1, a: 2 } });
     const b = JSON.stringify({ x: { a: 2, z: 1 } });
-    const result = diffJson(a, b);
+    const result = diffJson(a, b) as DiffJsonSuccess;
     expect(result.identical).toBe(true);
   });
 
   it("detects value differences as non-identical", () => {
     const a = JSON.stringify({ key: "value-a" });
     const b = JSON.stringify({ key: "value-b" });
-    const result = diffJson(a, b);
+    const result = diffJson(a, b) as DiffJsonSuccess;
     expect(result.identical).toBe(false);
   });
 
   it("reports entryCountDelta for arrays", () => {
     const a = JSON.stringify([1, 2, 3]);
     const b = JSON.stringify([1, 2, 3, 4, 5]);
-    const result = diffJson(a, b);
+    const result = diffJson(a, b) as DiffJsonSuccess;
     expect(result.entryCountDelta).toBe(2);
   });
 
   it("reports entryCountDelta of 0 when entry counts match", () => {
     const a = JSON.stringify({ a: 1, b: 2 });
     const b = JSON.stringify({ b: 2, a: 1 });
-    const result = diffJson(a, b);
+    const result = diffJson(a, b) as DiffJsonSuccess;
     expect(result.entryCountDelta).toBe(0);
   });
 
   it("reports keySetDelta when keys are added", () => {
     const a = JSON.stringify({ existing: 1 });
     const b = JSON.stringify({ existing: 1, newKey: 2 });
-    const result = diffJson(a, b);
+    const result = diffJson(a, b) as DiffJsonSuccess;
     expect(result.keySetDelta?.onlyInB).toContain("newKey");
     expect(result.keySetDelta?.onlyInA).toHaveLength(0);
   });
@@ -150,7 +159,7 @@ describe("diffJson", () => {
   it("reports keySetDelta when keys are removed", () => {
     const a = JSON.stringify({ keep: 1, removed: 2 });
     const b = JSON.stringify({ keep: 1 });
-    const result = diffJson(a, b);
+    const result = diffJson(a, b) as DiffJsonSuccess;
     expect(result.keySetDelta?.onlyInA).toContain("removed");
     expect(result.keySetDelta?.onlyInB).toHaveLength(0);
   });
@@ -158,7 +167,7 @@ describe("diffJson", () => {
   it("does not flag keySetDelta when key sets are identical", () => {
     const a = JSON.stringify({ a: 1, b: 2 });
     const b = JSON.stringify({ b: 99, a: 1 });
-    const result = diffJson(a, b);
+    const result = diffJson(a, b) as DiffJsonSuccess;
     expect(result.keySetDelta).toBeNull();
   });
 
@@ -177,7 +186,7 @@ describe("diffJson", () => {
   it("compares fixture a/search-index.json and b/search-index.json as identical (key order differs)", () => {
     const aContent = readFileSync(join(ARTIFACTS_A, "search-index.json"), "utf8");
     const bContent = readFileSync(join(ARTIFACTS_B, "search-index.json"), "utf8");
-    const result = diffJson(aContent, bContent);
+    const result = diffJson(aContent, bContent) as DiffJsonSuccess;
     expect(result.identical).toBe(true);
   });
 });

@@ -85,7 +85,7 @@ describe("extractSignals – metaTags", () => {
     const html = '<head><meta charset="UTF-8"></head>';
     const { metaTags } = extractSignals(normalizeHtml(html));
     // charset has no content= attribute so it should not appear
-    expect(metaTags.map(([k]) => k)).not.toContain("charset");
+    expect(metaTags.map(([k]: [string, string]) => k)).not.toContain("charset");
   });
 });
 
@@ -310,7 +310,7 @@ describe("extractSignals – landmarks", () => {
   it("does not include bare <section> without aria-label as a landmark", () => {
     const html = "<section><p>Content</p></section>";
     const { landmarks } = extractSignals(normalizeHtml(html));
-    expect(landmarks.map(([r]) => r)).not.toContain("region");
+    expect(landmarks.map(([r]: [string, string]) => r)).not.toContain("region");
   });
 
   it("extracts explicit role=... attributes", () => {
@@ -415,7 +415,7 @@ describe("extractSignals – fixture categories", () => {
 
   it("error: error page headings contain the 404 status", () => {
     const sig = extractSignals(normalizeHtml(fixture("error", "a.html")));
-    const headingTexts = sig.headings.map(([, text]) => text);
+    const headingTexts = sig.headings.map(([, text]: [number, string]) => text);
     expect(headingTexts).toContain("404");
   });
 });

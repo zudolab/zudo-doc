@@ -14,10 +14,24 @@
 import { resolve } from "node:path";
 
 /**
+ * @typedef {Record<string, string>} DepMap
+ */
+
+/**
+ * @typedef {Object} PackageJson
+ * @property {string} [name]
+ * @property {string} [version]
+ * @property {DepMap} [dependencies]
+ * @property {DepMap} [devDependencies]
+ * @property {DepMap} [peerDependencies]
+ * @property {DepMap} [optionalDependencies]
+ */
+
+/**
  * @typedef {Object} RewriteResult
  * @property {boolean} rewritten - true if at least one dep was rewritten
  * @property {string[]} log - human-readable log of each rewrite performed
- * @property {object} pkgJson - the (possibly modified) copy of the package.json
+ * @property {PackageJson} pkgJson - the (possibly modified) copy of the package.json
  */
 
 /**
@@ -29,7 +43,7 @@ import { resolve } from "node:path";
  *
  * Does NOT mutate the input object.
  *
- * @param {object} pkgJson - parsed package.json as a plain JS object
+ * @param {PackageJson} pkgJson - parsed package.json as a plain JS object
  * @param {string} repoRoot - absolute path to the original repo root
  * @returns {RewriteResult}
  */
