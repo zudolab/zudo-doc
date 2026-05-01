@@ -72,8 +72,8 @@ function findZfbBinary() {
  * `ZFB_ESBUILD_BIN` env var or the staged tarball slot at
  * `crates/zfb/binaries/esbuild/esbuild` (relative to cwd). Neither
  * helps an in-repo dev workflow, so we discover the binary the project
- * already installs (Astro, tailwind, etc. transitively bring esbuild
- * in) and bake the path into the wrapper below.
+ * already installs (tailwind, vite, etc. transitively bring esbuild in)
+ * and bake the path into the wrapper below.
  *
  * Returns `null` when no esbuild binary is found — the wrapper still
  * works, the user just sees the same "esbuild binary not found" zfb
