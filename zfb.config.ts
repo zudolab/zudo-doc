@@ -1,3 +1,16 @@
+/**
+ * zfb pin (canonical, shared with E2/E4):
+ *   commit: 4b16b32 (Takazudo/zudo-front-builder main, 2026-05-01)
+ *   includes fixes:
+ *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
+ *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
+ *     - zudolab/zfb#101 (plugin lifecycle hooks: preBuild, postBuild, devMiddleware)
+ *     - zudolab/zfb#102 (CJK-aware emphasis/strong tokenisation in MDX pipeline)
+ *     - zudolab/zfb#103 (ResolveLinksPlugin: probe extensionless candidates)
+ *     - zudolab/zfb#104 (rehype output parity: heading-links, code-title, mermaid, image-enlarge, strip-md-ext)
+ *   pinned by: epic zudolab/zudo-doc#1334 (super-epic #1333)
+ */
+
 // zfb.config.ts — entry-point config consumed by the zfb engine.
 //
 // This file replaces the Astro-flavoured `src/content.config.ts` while the
