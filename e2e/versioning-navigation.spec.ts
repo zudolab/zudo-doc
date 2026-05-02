@@ -90,7 +90,7 @@ test.describe("Versioned navigation: sidebar links", () => {
 test.describe("Versioned navigation: version switcher visibility", () => {
   test("version switcher is visible on versioned page", async ({ page }) => {
     await page.goto("/v/1.0/docs/getting-started", { waitUntil: "load" });
-    const switcher = page.locator("main [data-version-switcher]");
+    const switcher = page.locator("[data-version-switcher]");
     await expect(switcher).toBeVisible();
   });
 
