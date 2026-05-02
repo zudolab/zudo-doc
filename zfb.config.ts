@@ -1,6 +1,6 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: d1f4d24 (Takazudo/zudo-front-builder main, 2026-05-02)
+ *   commit: ea8a834 (Takazudo/zudo-front-builder main, 2026-05-03)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -46,6 +46,16 @@
  *                               when a tsconfig path alias resolves to a non-trivial JSON file —
  *                               e.g. the host's #doc-history-meta alias mapped to populated
  *                               .zfb/doc-history-meta.json in the smoke E2E fixture)
+ *     - Takazudo/zudo-front-builder PR #143 (TS Bundler / NodeNext moduleResolution shape: when a
+ *                               source writes import "./foo.js" against on-disk foo.tsx (the
+ *                               canonical convention used by the @zudo-doc/zudo-doc-v2 workspace
+ *                               package), the resolver now probes the .ts/.tsx/.mts/.cts sibling
+ *                               first and falls back to .js only when no TS sibling exists. Pre-
+ *                               #143 the islands scanner walked one chain into v2 and immediately
+ *                               dead-ended at every ./foo.js, so only the directly-imported
+ *                               Sidebar reached the bundle. With #143 the smoke fixture build
+ *                               registers 13 islands and emits a complete client runtime — finally
+ *                               unblocking Sig G island hydration on this consumer)
  *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333) → bumped by epic
  *              zudolab/zudo-doc#1355 (Sig F finalisation + post-#131 hash-mismatch follow-up
  *              + Sig G island-resolver/esbuild parity)
