@@ -1,3 +1,5 @@
+"use client";
+
 // Framework wrapper around the image-enlarge dialog — emits an
 // SSR-skip placeholder so the eligibility scanner (ResizeObserver,
 // MutationObserver, devicePixelRatio checks) never executes

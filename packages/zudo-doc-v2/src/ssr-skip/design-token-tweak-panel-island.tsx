@@ -1,3 +1,5 @@
+"use client";
+
 // Framework wrapper around the design-token tweak panel — emits an
 // SSR-skip placeholder so the panel (which reads `localStorage`,
 // builds an `<iframe>` bridge, and depends on a fully-resolved
