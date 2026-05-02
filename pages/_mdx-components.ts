@@ -102,6 +102,10 @@ function makeAdmonitionStub(variant: string) {
     return {
       type: "div",
       props: {
+        // `data-admonition` is the structural hook the smoke spec relies on
+        // (independent of styling classes); the design-system class hooks
+        // are kept too so existing CSS continues to apply.
+        "data-admonition": variant,
         class: `admonition admonition-${variant}`,
         children: [
           props.title ? { type: "div", props: { class: "admonition-title", children: props.title }, key: null, constructor: undefined } : null,
