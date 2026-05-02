@@ -1,6 +1,6 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: db40216 (Takazudo/zudo-front-builder main, 2026-05-02)
+ *   commit: d1f4d24 (Takazudo/zudo-front-builder main, 2026-05-02)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -40,6 +40,12 @@
  *                               islands scanner can follow @/-aliased imports from host pages
  *                               into "use client" components — unblocks Sig G island hydration on
  *                               this consumer)
+ *     - Takazudo/zudo-front-builder#141 / PR #142 (post-#140 follow-up: islands scanner walk now
+ *                               whitelists .ts/.tsx/.js/.jsx/.mjs/.cjs and skips .json/CSS/asset
+ *                               files before SWC parse, fixing the ExpectedSemiForExprStmt crash
+ *                               when a tsconfig path alias resolves to a non-trivial JSON file —
+ *                               e.g. the host's #doc-history-meta alias mapped to populated
+ *                               .zfb/doc-history-meta.json in the smoke E2E fixture)
  *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333) → bumped by epic
  *              zudolab/zudo-doc#1355 (Sig F finalisation + post-#131 hash-mismatch follow-up
  *              + Sig G island-resolver/esbuild parity)
