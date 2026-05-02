@@ -77,6 +77,7 @@ import {
   DesignTokenTweakPanelIsland,
   ImageEnlargeIsland,
 } from "../ssr-skip/index.js";
+import { CodeBlockEnhancer } from "../code-syntax/code-block-enhancer.js";
 import { TabsInit } from "../code-syntax/tabs-init.js";
 import { VERSION_SWITCHER_INIT_SCRIPT } from "../i18n-version/version-switcher.js";
 import {
@@ -339,15 +340,22 @@ export function DocLayoutWithDefaults(
         }
         bodyEndScripts={
           bodyEndScripts ?? (
-            // Default body-end scripts: TabsInit activates the correct tab
-            // panel and wires click handlers for <Tabs> components. The
-            // version-switcher script wires the dropdown toggle / outside-click
-            // / Escape-key behavior for every [data-version-switcher] element.
-            // Both scripts are idempotent and safe on pages that have no
-            // matching elements, so they are included unconditionally.
+            // Default body-end scripts:
+            //   - CodeBlockEnhancer wraps every <pre class="syntect-*"> with
+            //     copy + word-wrap controls and emits an SR-announce live
+            //     region for clipboard feedback. Idempotent on pages with no
+            //     fenced code.
+            //   - TabsInit activates the correct tab panel and wires click
+            //     handlers for <Tabs> components.
+            //   - The version-switcher script wires the dropdown toggle /
+            //     outside-click / Escape-key behavior for every
+            //     [data-version-switcher] element.
+            // All three scripts are idempotent and safe on pages that have
+            // no matching elements, so they are included unconditionally.
             // Callers that need a different body-end script set should pass
             // `bodyEndScripts` explicitly to override this default.
             <>
+              <CodeBlockEnhancer />
               <TabsInit />
               <script dangerouslySetInnerHTML={{ __html: VERSION_SWITCHER_INIT_SCRIPT }} />
             </>
