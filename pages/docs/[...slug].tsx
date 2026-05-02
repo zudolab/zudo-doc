@@ -39,6 +39,7 @@ import { toRouteSlug } from "@/utils/slug";
 import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
 import { Breadcrumb } from "@zudo-doc/zudo-doc-v2/breadcrumb";
 import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
+import { FrontmatterPreview } from "@zudo-doc/zudo-doc-v2/metainfo";
 // Shared MDX-tag → Preact-component bag. Includes htmlOverrides
 // (native typography), HtmlPreviewWrapper (Island), and stub bindings
 // for every other custom tag the MDX corpus references — see
@@ -50,6 +51,7 @@ import { DocMetainfoArea } from "../lib/_doc-metainfo-area";
 import { SidebarWithDefaults } from "../lib/_sidebar-with-defaults";
 import { HeaderWithDefaults } from "../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../lib/_head-with-defaults";
+import { buildFrontmatterPreviewEntries } from "../lib/_frontmatter-preview-data";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../_data";
 import { extractHeadings } from "../lib/_extract-headings";
@@ -264,6 +266,16 @@ export default function DocsPage({ props }: PageArgs): JSX.Element {
               {entry!.data.description}
             </p>
           )}
+
+          {/* Frontmatter preview — non-system, custom keys only. Returns
+              null when the entries array is empty, so pages without
+              custom frontmatter emit nothing. */}
+          <FrontmatterPreview
+            entries={buildFrontmatterPreviewEntries(entry!.data)}
+            title={t("frontmatter.preview.title", locale)}
+            keyColLabel={t("frontmatter.preview.keyCol", locale)}
+            valueColLabel={t("frontmatter.preview.valueCol", locale)}
+          />
 
           {/* MDX content rendered via zfb's Content bridge */}
           {entry && <entry.Content components={components} />}
