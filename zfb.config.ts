@@ -1,6 +1,6 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: 10c21e4 (Takazudo/zudo-front-builder main, 2026-05-03)
+ *   commit: ad11758 (Takazudo/zudo-front-builder main, 2026-05-03)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -67,9 +67,19 @@
  *                               island had no client runtime to mount. With #145 every island's
  *                               exports survive — closes the final Sig G hydration gap on this
  *                               consumer)
+ *     - Takazudo/zudo-front-builder#146 / PR #147 (mountIslands invoked on shared-bundle
+ *                               production path: post-#144 the bundle byte-content carried every
+ *                               island's compiled source but the synthesised entry never called
+ *                               mountIslands — so SSR'd data-zfb-island markers stayed un-hydrated
+ *                               in production. IslandManifest widened from Record<string, string>
+ *                               to Record<string, string | IslandModule>, render_shared_bundle_entry_source
+ *                               now imports mountIslands and registers each island as an inline
+ *                               IslandModule entry, finally wiring SSR markers to runtime
+ *                               constructors and closing the Sig G hydration cascade on this
+ *                               consumer)
  *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333) → bumped by epic
  *              zudolab/zudo-doc#1355 (Sig F finalisation + post-#131 hash-mismatch follow-up
- *              + Sig G island-resolver/esbuild parity)
+ *              + Sig G island-resolver/esbuild parity + shared-bundle hydration glue)
  */
 
 // zfb.config.ts — entry-point config consumed by the zfb engine.
