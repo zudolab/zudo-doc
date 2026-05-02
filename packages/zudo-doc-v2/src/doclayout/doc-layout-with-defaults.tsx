@@ -79,6 +79,10 @@ import {
 } from "../ssr-skip/index.js";
 import { TabsInit } from "../code-syntax/tabs-init.js";
 import { VERSION_SWITCHER_INIT_SCRIPT } from "../i18n-version/version-switcher.js";
+import {
+  VersionBanner,
+  type VersionBannerLabels,
+} from "../i18n-version/version-banner.js";
 
 // Sibling-topic barrels. Each is being authored by a peer agent in the
 // same parallel session; the imports below assume the canonical shape
@@ -140,6 +144,21 @@ export interface DocLayoutWithDefaultsProps
    * this prop — the components gracefully handle both cases.
    */
   headings?: readonly HeadingItem[];
+
+  /**
+   * Version-banner variant. When set, a `<VersionBanner>` is rendered in
+   * the `afterBreadcrumb` slot. `false` / `undefined` suppress it. This
+   * matches the legacy `version.banner` frontmatter shape.
+   *
+   * The host must also pass `versionBannerLatestUrl` and
+   * `versionBannerLabels` so the banner can render a localized notice
+   * with a link to the latest version of the current page.
+   */
+  versionBanner?: "unmaintained" | "unreleased" | false;
+  /** Pre-resolved href used by the version banner's "view latest" link. */
+  versionBannerLatestUrl?: string;
+  /** Localized labels used by the version banner. */
+  versionBannerLabels?: VersionBannerLabels;
 }
 
 /**
@@ -191,8 +210,32 @@ export function DocLayoutWithDefaults(
     afterContent,
     head,
     lang,
+    versionBanner,
+    versionBannerLatestUrl,
+    versionBannerLabels,
     ...rest
   } = props;
+
+  // When the host opts into a version banner, prepend it to the
+  // `afterBreadcrumb` slot so the banner sits between the breadcrumb and
+  // the article body — matching the legacy Astro placement (the
+  // `@slot:doc-layout:after-breadcrumb` anchor).
+  const composedAfterBreadcrumb =
+    versionBanner !== undefined &&
+    versionBanner !== false &&
+    versionBannerLatestUrl !== undefined &&
+    versionBannerLabels !== undefined ? (
+      <>
+        <VersionBanner
+          type={versionBanner}
+          latestUrl={versionBannerLatestUrl}
+          labels={versionBannerLabels}
+        />
+        {afterBreadcrumb}
+      </>
+    ) : (
+      afterBreadcrumb
+    );
 
   // Coerce undefined to empty array so Toc/MobileToc always receive an array.
   const tocHeadings: readonly HeadingItem[] = headings ?? [];
@@ -269,7 +312,7 @@ export function DocLayoutWithDefaults(
         toc={tocOverride ?? defaultToc}
         mobileToc={mobileTocOverride ?? defaultMobileToc}
         breadcrumb={breadcrumbOverride}
-        afterBreadcrumb={afterBreadcrumb}
+        afterBreadcrumb={composedAfterBreadcrumb}
         afterSidebar={afterSidebar}
         afterContent={afterContent}
         // Default: bare <Footer /> shell so the contentinfo ARIA landmark
