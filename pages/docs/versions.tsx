@@ -21,6 +21,7 @@ import { FooterWithDefaults } from "../lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../lib/_head-with-defaults";
 import { composeMetaTitle } from "../lib/_compose-meta-title";
+import { BodyEndIslands } from "../lib/_body-end-islands";
 
 export const frontmatter = { title: "Versions" };
 
@@ -65,6 +66,7 @@ export default function VersionsPage(): JSX.Element {
       hideToc={true}
       headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase("/docs/versions")} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
+      bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
     >
       <VersionsPageContent
         latestHref={latestHref}

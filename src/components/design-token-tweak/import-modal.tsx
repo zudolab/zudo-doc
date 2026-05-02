@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+// preact/compat shim — see src/components/ai-chat-modal.tsx for rationale.
+import { useEffect, useRef, useState } from "preact/compat";
 import {
   DESIGN_TOKEN_SCHEMA,
   DesignTokenSchemaError,
