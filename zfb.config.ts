@@ -1,6 +1,6 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: ae43844 (Takazudo/zudo-front-builder main, 2026-05-02)
+ *   commit: 7ed6fda (Takazudo/zudo-front-builder main, 2026-05-02)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -17,8 +17,11 @@
  *     - zudolab/zfb#126 / #131 (bundler threads Pipeline::with_defaults() through MDX pre-compile;
  *                               unblocks Sig F in zudolab/zudo-doc#1355)
  *     - zudolab/zfb#131 (opt-in `stripMdExt` config option through bundler + dev loader)
+ *     - zudolab/zfb#132 / #133 (build_snapshot drives walk_collection with the default Pipeline so
+ *                               snapshot module_specifier hashes match bridge map keys; closes the
+ *                               post-#131 fallback-render regression)
  *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333) → bumped by epic
- *              zudolab/zudo-doc#1355 (Sig F finalisation)
+ *              zudolab/zudo-doc#1355 (Sig F finalisation + post-#131 hash-mismatch follow-up)
  */
 
 // zfb.config.ts — entry-point config consumed by the zfb engine.
