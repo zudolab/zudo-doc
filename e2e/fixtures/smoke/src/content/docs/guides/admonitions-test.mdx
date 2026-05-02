@@ -3,37 +3,47 @@ title: Admonitions Test
 sidebar_position: 99
 ---
 
+{/*
+  Admonitions are authored in JSX form here (Note/Tip/Info/Warning/Danger).
+  Originally these were directive-form (`:::note[Title]`), but zfb's
+  AdmonitionsPlugin is configured with `title_from_label: false`, so the
+  bracketed title is dropped at parse time. Filed as an upstream enhancement
+  request against Takazudo/zudo-front-builder; until that lands, JSX form is
+  the supported way to attach a custom title in zudo-doc fixtures.
+  See zudolab/zudo-doc#1355 (Wave 3, Topic B).
+*/}
+
 ## Directive Syntax
 
-:::note[Note Title Here]
+<Note title="Note Title Here">
 
 This is a note with a custom title using directive syntax.
 
-:::
+</Note>
 
-:::tip
+<Tip>
 
 This is a tip without a custom title.
 
-:::
+</Tip>
 
-:::info[Info Block]
+<Info title="Info Block">
 
 This is an info admonition.
 
-:::
+</Info>
 
-:::warning[Be Careful]
+<Warning title="Be Careful">
 
 This is a warning admonition.
 
-:::
+</Warning>
 
-:::danger[Critical]
+<Danger title="Critical">
 
 This is a danger admonition.
 
-:::
+</Danger>
 
 ## JSX Syntax
 
