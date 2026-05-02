@@ -1,6 +1,6 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: ad11758 (Takazudo/zudo-front-builder main, 2026-05-03)
+ *   commit: 784dead (Takazudo/zudo-front-builder main, 2026-05-03)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -77,6 +77,15 @@
  *                               IslandModule entry, finally wiring SSR markers to runtime
  *                               constructors and closing the Sig G hydration cascade on this
  *                               consumer)
+ *     - Takazudo/zudo-front-builder PR #148 (post-#147 follow-up: shared-bundle synthesised
+ *                               entry now derives manifest keys from each component's
+ *                               displayName ?? name at module-init time so multiple host-shape
+ *                               `export default function ComponentName()` islands no longer
+ *                               collide on a static "default" key. Synthesised entry tempfile
+ *                               relocated from $TMPDIR into EsbuildSubprocessConfig::working_dir
+ *                               so esbuild's upward node_modules walk resolves "preact" and
+ *                               "@takazudo/zfb/runtime" — fixes the smoke fixture build crash
+ *                               introduced by #147 on this consumer)
  *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333) → bumped by epic
  *              zudolab/zudo-doc#1355 (Sig F finalisation + post-#131 hash-mismatch follow-up
  *              + Sig G island-resolver/esbuild parity + shared-bundle hydration glue)
