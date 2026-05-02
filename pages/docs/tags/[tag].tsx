@@ -19,6 +19,7 @@ import { collectTags } from "@/utils/tags";
 import type { TagInfo } from "@/utils/tags";
 import { toRouteSlug } from "@/utils/slug";
 import { t, defaultLocale } from "@/config/i18n";
+import { settings } from "@/config/settings";
 import { withBase, docsUrl } from "@/utils/base";
 import type { DocsEntry } from "@/types/docs-entry";
 import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
@@ -83,6 +84,7 @@ export default function DocTagPage({ params, props }: PageProps): JSX.Element {
     <DocLayoutWithDefaults
       title={composeMetaTitle(pageTitle)}
       head={<HeadWithDefaults title={pageTitle} />}
+      noindex={settings.noindex}
       hideSidebar={true}
       hideToc={true}
       headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase(`/docs/tags/${tag}`)} />}

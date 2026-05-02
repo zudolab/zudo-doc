@@ -276,6 +276,7 @@ export default function VersionedJaDocsPage({ props }: PageArgs): JSX.Element {
       description={description}
       head={<HeadWithDefaults title={title} description={description} />}
       lang={locale}
+      noindex={settings.noindex}
       hideSidebar={entry?.data?.hide_sidebar}
       hideToc={entry?.data?.hide_toc}
       headings={headings}
