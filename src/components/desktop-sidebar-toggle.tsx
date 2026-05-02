@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from 'react';
 
 export const SIDEBAR_STORAGE_KEY = 'zudo-doc-sidebar-visible';

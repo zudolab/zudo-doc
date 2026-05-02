@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useRef } from "react";
 // After zudolab/zudo-doc#1335 (E2 task 2 half B) the host components
 // pull lifecycle event names from the v2 transitions module rather

@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import DesignTokenExportModal from "./export-modal";
 import DesignTokenImportModal from "./import-modal";

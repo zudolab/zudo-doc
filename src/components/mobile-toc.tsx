@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useMemo } from "react";
 import type { Heading } from "@/types/heading";
 import { SmartBreak } from "@/utils/smart-break";

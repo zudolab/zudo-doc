@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { diffLines } from "diff";
 import type { DocHistoryData, DocHistoryEntry } from "@/types/doc-history";

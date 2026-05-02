@@ -1,5 +1,3 @@
-"use client";
-
 // Phase-A local SSR-skip island stubs — local counterparts of the framework
 // wrappers in packages/zudo-doc-v2/src/ssr-skip/. Kept in src/ to avoid
 // cross-package import complexity during Phase A scaffolding.
