@@ -1,6 +1,6 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: bea6364 (Takazudo/zudo-front-builder main, 2026-05-02)
+ *   commit: db40216 (Takazudo/zudo-front-builder main, 2026-05-02)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -31,6 +31,15 @@
  *                               per-island bundler can tree-shake content collection helpers out of
  *                               browser-targeted bundles; defensive --platform=browser +
  *                               --external:node:* flags on the islands esbuild invocation)
+ *     - Takazudo/zudo-front-builder#138 / #139 / PR #140 (#138: produce_bundle_js renders one
+ *                               synthesized entry that imports every island so esbuild only ever
+ *                               sees a single input + --outfile, fixing "Must use outdir when
+ *                               there are multiple input files"; #139: FsResolver walks up to the
+ *                               nearest tsconfig.json and resolves compilerOptions.paths aliases
+ *                               (e.g. "@/*": ["src/*"]) with extends-chain support, so the
+ *                               islands scanner can follow @/-aliased imports from host pages
+ *                               into "use client" components — unblocks Sig G island hydration on
+ *                               this consumer)
  *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333) → bumped by epic
  *              zudolab/zudo-doc#1355 (Sig F finalisation + post-#131 hash-mismatch follow-up
  *              + Sig G island-resolver/esbuild parity)
