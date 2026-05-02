@@ -114,6 +114,7 @@ export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
       title={composeMetaTitle(settings.siteName)}
       head={<HeadWithDefaults title={settings.siteName} />}
       lang={locale}
+      noindex={settings.noindex}
       hideSidebar={true}
       hideToc={true}
       headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase(`/${locale}/`)} />}

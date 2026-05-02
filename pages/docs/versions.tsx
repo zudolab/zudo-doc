@@ -60,6 +60,7 @@ export default function VersionsPage(): JSX.Element {
       title={composeMetaTitle(pageTitle)}
       head={<HeadWithDefaults title={pageTitle} />}
       lang={locale}
+      noindex={settings.noindex}
       hideSidebar={true}
       hideToc={true}
       headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase("/docs/versions")} />}
