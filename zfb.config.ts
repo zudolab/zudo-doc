@@ -1,6 +1,6 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: 784dead (Takazudo/zudo-front-builder main, 2026-05-03)
+ *   commit: c8e0e10 (Takazudo/zudo-front-builder main, 2026-05-03)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -86,9 +86,20 @@
  *                               so esbuild's upward node_modules walk resolves "preact" and
  *                               "@takazudo/zfb/runtime" — fixes the smoke fixture build crash
  *                               introduced by #147 on this consumer)
+ *     - Takazudo/zudo-front-builder#149 / PR #150 (shared-bundle manifest uses static SSR-marker
+ *                               names from the scanner, not runtime introspection: scanner now
+ *                               derives a marker_name per island (default-export identifier OR
+ *                               literal first arg of renderSsrSkipPlaceholder("X", ...)), and
+ *                               the bundler bakes that name as a static literal third argument
+ *                               to __zfb_register. Drops __zfb_keyFor runtime introspection
+ *                               entirely so esbuild minification and ssr-skip "Island" suffix
+ *                               wrappers can no longer break manifest-key alignment with SSR
+ *                               markers — closes the final Sig G hydration alignment gap on
+ *                               this consumer)
  *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333) → bumped by epic
  *              zudolab/zudo-doc#1355 (Sig F finalisation + post-#131 hash-mismatch follow-up
- *              + Sig G island-resolver/esbuild parity + shared-bundle hydration glue)
+ *              + Sig G island-resolver/esbuild parity + shared-bundle hydration glue
+ *              + manifest-key alignment)
  */
 
 // zfb.config.ts — entry-point config consumed by the zfb engine.
