@@ -1,3 +1,5 @@
+"use client";
+
 // Framework wrapper around the dev-only MSW mock initialiser —
 // emits an SSR-skip placeholder so the dynamic `import("../mocks/init")`
 // never resolves at build time (the mocks bundle is not part of the

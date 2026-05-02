@@ -1,3 +1,5 @@
+"use client";
+
 // Framework wrapper around the AI chat modal — emits an SSR-skip
 // placeholder so the heavy modal Preact island never renders during
 // the static build (it depends on `dialog.showModal()`, browser-only

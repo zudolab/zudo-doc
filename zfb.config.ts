@@ -1,6 +1,6 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: 7ed6fda (Takazudo/zudo-front-builder main, 2026-05-02)
+ *   commit: bea6364 (Takazudo/zudo-front-builder main, 2026-05-02)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -20,8 +20,20 @@
  *     - zudolab/zfb#132 / #133 (build_snapshot drives walk_collection with the default Pipeline so
  *                               snapshot module_specifier hashes match bridge map keys; closes the
  *                               post-#131 fallback-render regression)
+ *     - Takazudo/zudo-front-builder#130 / PR #134 (Gap A: FsResolver::probe_package_entry consults
+ *                               package.json `exports` for subpath bare imports so workspace island
+ *                               modules under @zudo-doc/zudo-doc-v2/{toc,sidebar,theme,...} resolve
+ *                               to their src/.../index.ts entries; Gap B: EXPECTED_ESBUILD_VERSION
+ *                               bumped 0.24.0 → 0.25.12 to match the host's installed esbuild —
+ *                               unblocks Sig G island hydration in zudolab/zudo-doc#1355)
+ *     - Takazudo/zudo-front-builder PR #137 (post-#134 follow-up: defer node:* imports in
+ *                               zfb root barrel content.ts to inside function bodies so the islands
+ *                               per-island bundler can tree-shake content collection helpers out of
+ *                               browser-targeted bundles; defensive --platform=browser +
+ *                               --external:node:* flags on the islands esbuild invocation)
  *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333) → bumped by epic
- *              zudolab/zudo-doc#1355 (Sig F finalisation + post-#131 hash-mismatch follow-up)
+ *              zudolab/zudo-doc#1355 (Sig F finalisation + post-#131 hash-mismatch follow-up
+ *              + Sig G island-resolver/esbuild parity)
  */
 
 // zfb.config.ts — entry-point config consumed by the zfb engine.

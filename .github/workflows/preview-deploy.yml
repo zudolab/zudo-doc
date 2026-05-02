@@ -52,7 +52,7 @@ permissions:
 env:
   # Pinned zfb commit — keep in sync with the zfb pin comment at the
   # top of zfb.config.ts and the same env in pr-checks.yml.
-  ZFB_PINNED_SHA: 7ed6fda2106f7d0c221c2ba250020b486a78b713
+  ZFB_PINNED_SHA: bea6364870eb49f0a9899ad5404c7c25847feb6a
 
 jobs:
   # ---------------------------------------------------------------------------

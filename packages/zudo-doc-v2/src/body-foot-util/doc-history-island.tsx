@@ -1,3 +1,5 @@
+"use client";
+
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
