@@ -65,6 +65,14 @@ import { DocLayout, type DocLayoutProps } from "./doc-layout.js";
 // at boot. Each import below is a self-Island'd shell — the marker is
 // produced regardless of whether the host wires real data into the
 // component yet.
+//
+// Wave 8 (Path A — super-epic #1333 / child epic #1355): the body-end
+// SSR-skip wrappers (AiChatModalIsland / DesignTokenTweakPanelIsland /
+// ImageEnlargeIsland) are no longer imported here. The host now owns
+// the page → real-component import chain so zfb's island scanner can
+// walk it; see `pages/lib/_body-end-islands.tsx` for the canonical
+// composition. `bodyEndComponents` becomes a host-supplied slot — when
+// undefined, this layout emits no body-end islands.
 import { Sidebar } from "../sidebar/sidebar.js";
 import { Toc } from "../toc/toc.js";
 import { MobileToc } from "../toc/mobile-toc.js";
@@ -72,11 +80,6 @@ import { getTocTitle } from "../toc/toc-title.js";
 import type { HeadingItem } from "../toc/types.js";
 import ThemeToggle from "../theme/theme-toggle.js";
 import { Footer } from "../footer/footer.js";
-import {
-  AiChatModalIsland,
-  DesignTokenTweakPanelIsland,
-  ImageEnlargeIsland,
-} from "../ssr-skip/index.js";
 import { CodeBlockEnhancer } from "../code-syntax/code-block-enhancer.js";
 import { TabsInit } from "../code-syntax/tabs-init.js";
 import { VERSION_SWITCHER_INIT_SCRIPT } from "../i18n-version/version-switcher.js";
@@ -321,23 +324,14 @@ export function DocLayoutWithDefaults(
         // content (link columns, copyright, taglist) pass `footerOverride`
         // with a host-side data-aware wrapper (e.g. FooterWithDefaults).
         footer={footerOverride ?? <Footer />}
-        bodyEndComponents={
-          bodyEndComponents ?? (
-            // Default body-end islands. Each is an SSR-skip wrapper
-            // (`data-zfb-island-skip-ssr`) — they need no SSR markup
-            // because the underlying widgets are overlay/effect
-            // components with no layout footprint when closed/idle.
-            // Hosts that want a different body-end set should pass
-            // `bodyEndComponents` explicitly.
-            <>
-              <DesignTokenTweakPanelIsland />
-              {/* Preserves migration-check parity: the Astro build SSR-rendered <h2>AI Assistant</h2> inside the chat modal markup; the checker matches the literal heading text. */}
-              <h2 class="sr-only">AI Assistant</h2>
-              <AiChatModalIsland basePath="/" />
-              <ImageEnlargeIsland />
-            </>
-          )
-        }
+        // Body-end islands are now host-owned so zfb's island scanner can
+        // walk the page → real-component import chain. The host's helper
+        // (`pages/lib/_body-end-islands.tsx`) imports the real components
+        // (AiChatModal, DesignTokenTweakPanel, ImageEnlarge) directly and
+        // wraps them with zfb's native `<Island ssrFallback={...}>`. When
+        // no slot is supplied this layout emits nothing in the body-end
+        // region.
+        bodyEndComponents={bodyEndComponents}
         bodyEndScripts={
           bodyEndScripts ?? (
             // Default body-end scripts:

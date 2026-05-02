@@ -1,6 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+// Use `preact/compat` so the bundle resolves to Preact's React-shim at
+// runtime (zfb's esbuild step doesn't alias bare `react` to `preact/compat`).
+// See `src/components/theme-toggle.tsx` for the same workaround in the
+// hook-only case. preact/compat re-exports the same hooks plus the
+// `React.*` type namespace for event handlers.
+import { useState, useEffect, useRef } from "preact/compat";
 // After zudolab/zudo-doc#1335 (E2 task 2 half B) the host components
 // pull lifecycle event names from the v2 transitions module rather
 // than hard-coding `astro:*` literals.

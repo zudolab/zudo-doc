@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+// preact/compat shim — see src/components/ai-chat-modal.tsx for rationale.
+import { useCallback, useMemo } from "preact/compat";
 import SelectRow from "../controls/select-row";
 import SliderRow from "../controls/slider-row";
 import TextRow from "../controls/text-row";

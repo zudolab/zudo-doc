@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+// Use `preact/compat` so the bundle resolves to Preact's React-shim at
+// runtime (zfb's esbuild step doesn't alias bare `react` to `preact/compat`
+// the way Astro's `@astrojs/preact` integration did — see
+// `src/components/theme-toggle.tsx` for the same workaround in the
+// hook-only case). preact/compat re-exports the same hooks under the
+// React-compat names plus the `React.*` type namespace this file
+// references for event handlers.
+import { useState, useEffect, useRef, useCallback } from "preact/compat";
 import type { ChatMessage } from "@/types/ai-chat";
 import { renderMarkdown } from "@/utils/render-markdown";
 import { SmartBreak } from "@/utils/smart-break";

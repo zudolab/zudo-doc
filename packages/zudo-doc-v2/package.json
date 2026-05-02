@@ -70,10 +70,6 @@
       "types": "./src/head/index.ts",
       "default": "./src/head/index.ts"
     },
-    "./ssr-skip": {
-      "types": "./src/ssr-skip/index.ts",
-      "default": "./src/ssr-skip/index.ts"
-    },
     "./transitions": {
       "types": "./src/transitions/index.ts",
       "default": "./src/transitions/index.ts"

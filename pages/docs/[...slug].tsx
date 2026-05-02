@@ -48,6 +48,7 @@ import { createMdxComponents } from "../_mdx-components";
 import { FooterWithDefaults } from "../lib/_footer-with-defaults";
 import { DocHistoryArea } from "../lib/_doc-history-area";
 import { DocMetainfoArea } from "../lib/_doc-metainfo-area";
+import { BodyEndIslands } from "../lib/_body-end-islands";
 import { SidebarWithDefaults } from "../lib/_sidebar-with-defaults";
 import { HeaderWithDefaults } from "../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../lib/_head-with-defaults";
@@ -241,6 +242,7 @@ export default function DocsPage({ props }: PageArgs): JSX.Element {
         />
       }
       footerOverride={<FooterWithDefaults lang={locale} />}
+      bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
     >
       {autoIndex ? (
         /* Auto-index page: category without an index.mdx */

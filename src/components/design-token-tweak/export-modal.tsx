@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+// preact/compat shim — see src/components/ai-chat-modal.tsx for rationale.
+import { useState, useEffect, useMemo, useRef } from "preact/compat";
 import { serialize } from "@/utils/design-token-serde";
 import {
   type ColorTweakState,

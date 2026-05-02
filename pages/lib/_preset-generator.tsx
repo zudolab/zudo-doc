@@ -13,8 +13,12 @@
 //
 // The interactive form is wrapped in a data-zfb-island-skip-ssr
 // placeholder so the zfb hydration runtime can swap it in on the client
-// after load. The placeholder approach mirrors the B-8-1 AiChatModal
-// SSR-fallback pattern in src/components/ssr-islands.tsx.
+// after load. The placeholder approach mirrors the SSR-skip pattern
+// formalised by zfb's `<Island ssrFallback>` API; this fallback emits
+// the marker div directly because the real <PresetGenerator> component
+// is interaction-heavy and only loaded by the build-tools showcase
+// page. See `pages/lib/_body-end-islands.tsx` for the canonical
+// `<Island ssrFallback>` pattern.
 
 import type { VNode } from "preact";
 import { HeadingH3 } from "@zudo-doc/zudo-doc-v2/content";
@@ -54,7 +58,7 @@ export function PresetGeneratorFallback(): VNode {
       {/* SSR-skip placeholder: the zfb hydration runtime replaces this
           div with the real interactive form on the client after load.
           The data-zfb-island-skip-ssr + data-when attributes match the
-          SSR-skip marker contract defined in packages/zudo-doc-v2/src/ssr-skip/types.ts */}
+          SSR-skip marker contract defined in zfb's <Island> wrapper. */}
       <div
         data-zfb-island-skip-ssr="PresetGenerator"
         data-when="load"
