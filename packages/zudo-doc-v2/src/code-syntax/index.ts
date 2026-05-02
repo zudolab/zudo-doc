@@ -2,7 +2,7 @@
 //
 // Three JSX ports of the code/syntax Astro components:
 //
-//   CodeBlockEnhancer — wraps <pre.astro-code> blocks with copy + word-wrap
+//   CodeBlockEnhancer — wraps <pre class="syntect-*"> blocks with copy + word-wrap
 //                       buttons. Include once in the layout.
 //
 //   MermaidInit       — lazily renders [data-mermaid] diagrams and re-renders

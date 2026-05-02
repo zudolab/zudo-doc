@@ -58,8 +58,8 @@ describe("CODE_BLOCK_ENHANCER_SCRIPT", () => {
     expect(CODE_BLOCK_ENHANCER_SCRIPT.trimEnd()).toMatch(/\)\(\);$/);
   });
 
-  it("targets pre.astro-code elements", () => {
-    expect(CODE_BLOCK_ENHANCER_SCRIPT).toContain("pre.astro-code");
+  it("targets syntect-class pre elements", () => {
+    expect(CODE_BLOCK_ENHANCER_SCRIPT).toContain('pre[class^="syntect-"]');
   });
 
   it("uses ResizeObserver for overflow detection", () => {

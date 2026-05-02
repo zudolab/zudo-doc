@@ -34,7 +34,7 @@ export const CODE_BLOCK_ENHANCER_SCRIPT = `(function () {
   });
 
   function enhanceCodeBlocks() {
-    var pres = document.querySelectorAll("pre.astro-code");
+    var pres = document.querySelectorAll('pre[class^="syntect-"]');
 
     for (var pi = 0; pi < pres.length; pi++) {
       var pre = pres[pi];
