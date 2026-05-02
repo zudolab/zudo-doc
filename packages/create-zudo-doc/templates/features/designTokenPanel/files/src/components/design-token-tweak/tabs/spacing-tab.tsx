@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useMemo } from "react";
 import SliderRow from "../controls/slider-row";
 import {

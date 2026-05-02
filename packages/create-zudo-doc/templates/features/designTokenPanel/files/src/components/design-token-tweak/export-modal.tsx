@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useMemo, useRef } from "react";
 import { serialize } from "@/utils/design-token-serde";
 import {

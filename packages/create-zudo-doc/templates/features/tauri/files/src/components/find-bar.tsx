@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { FindResult, FindInPage } from "@/utils/find-in-page";
 

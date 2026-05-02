@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { colorSchemes, type ColorScheme } from "@/config/color-schemes";
 import { colorTweakPresets } from "@/config/color-tweak-presets";
