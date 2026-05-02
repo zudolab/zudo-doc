@@ -27,13 +27,21 @@ export function buildFrontmatterPreviewEntries(
 ): Array<[string, unknown]> {
   if (!data) return [];
 
-  const config = settings.frontmatterPreview;
-  if (config === false) return [];
+  // `frontmatterPreview` may be absent (undefined) in fixtures that
+  // don't opt into the feature. `false` means the host explicitly
+  // disabled the block. Both should produce an empty entries array.
+  const config = (settings as { frontmatterPreview?: unknown })
+    .frontmatterPreview;
+  if (config === false || config === undefined) return [];
 
+  const cfg = config as {
+    ignoreKeys?: string[];
+    extraIgnoreKeys?: string[];
+  };
   const ignoreSet = new Set<string>(
-    config.ignoreKeys ?? [
+    cfg.ignoreKeys ?? [
       ...DEFAULT_FRONTMATTER_IGNORE_KEYS,
-      ...(config.extraIgnoreKeys ?? []),
+      ...(cfg.extraIgnoreKeys ?? []),
     ],
   );
 
