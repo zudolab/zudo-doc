@@ -26,6 +26,9 @@ export {
 } from "./version-switcher";
 export type { VersionSwitcherProps } from "./version-switcher";
 
+export { VersionBanner } from "./version-banner";
+export type { VersionBannerProps, VersionBannerLabels } from "./version-banner";
+
 export type {
   LocaleLink,
   VersionEntry,

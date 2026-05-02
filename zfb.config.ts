@@ -1,6 +1,6 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: d2762c9 (Takazudo/zudo-front-builder main, 2026-05-02)
+ *   commit: 38ba297 (Takazudo/zudo-front-builder main, 2026-05-02)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -9,7 +9,12 @@
  *     - zudolab/zfb#103 (ResolveLinksPlugin: probe extensionless candidates)
  *     - zudolab/zfb#104 (rehype output parity: heading-links, code-title, mermaid, image-enlarge, strip-md-ext)
  *     - zudolab/zfb#113 (tailwindcss v4 binary fetch script + ZFB_TAILWIND_BIN env var)
- *   pinned by: epic zudolab/zudo-doc#1334 (super-epic #1333)
+ *     - zudolab/zfb#118 (mdast-phase MDX pipeline wiring)
+ *     - zudolab/zfb#121 (hast-phase MDX→JSX wiring)
+ *     - zudolab/zfb#122 (islands prod-bundle workspace-probe fix)
+ *     - zudolab/zfb#123 (doctest fence stabilization)
+ *     - zudolab/zfb#124 (watcher test stabilization)
+ *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333)
  */
 
 // zfb.config.ts — entry-point config consumed by the zfb engine.

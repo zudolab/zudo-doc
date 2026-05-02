@@ -39,6 +39,7 @@ import { toRouteSlug } from "@/utils/slug";
 import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
 import { Breadcrumb } from "@zudo-doc/zudo-doc-v2/breadcrumb";
 import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
+import { FrontmatterPreview } from "@zudo-doc/zudo-doc-v2/metainfo";
 // Shared MDX components bag — see `pages/_mdx-components.ts`.
 import { createMdxComponents } from "../../_mdx-components";
 import type { JSX } from "preact";
@@ -50,6 +51,8 @@ import { DocMetainfoArea } from "../../lib/_doc-metainfo-area";
 import { SidebarWithDefaults } from "../../lib/_sidebar-with-defaults";
 import { HeaderWithDefaults } from "../../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../../lib/_head-with-defaults";
+import { buildFrontmatterPreviewEntries } from "../../lib/_frontmatter-preview-data";
+import { composeMetaTitle } from "../../lib/_compose-meta-title";
 
 export const frontmatter = { title: "Docs" };
 
@@ -235,7 +238,7 @@ export default function LocaleDocsPage({ params, props }: PageArgs): JSX.Element
 
   return (
     <DocLayoutWithDefaults
-      title={title}
+      title={composeMetaTitle(title)}
       description={description}
       head={<HeadWithDefaults title={title} description={description} />}
       lang={locale}
@@ -297,6 +300,16 @@ export default function LocaleDocsPage({ params, props }: PageArgs): JSX.Element
               {entry!.data.description}
             </p>
           )}
+
+          {/* Frontmatter preview — non-system, custom keys only. Returns
+              null when the entries array is empty, so pages without
+              custom frontmatter emit nothing. */}
+          <FrontmatterPreview
+            entries={buildFrontmatterPreviewEntries(entry!.data)}
+            title={t("frontmatter.preview.title", locale)}
+            keyColLabel={t("frontmatter.preview.keyCol", locale)}
+            valueColLabel={t("frontmatter.preview.valueCol", locale)}
+          />
 
           {entry && <entry.Content components={components} />}
 

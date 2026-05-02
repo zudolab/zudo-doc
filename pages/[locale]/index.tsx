@@ -36,6 +36,7 @@ import { bridgeEntries } from "../_data";
 import { FooterWithDefaults } from "../lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../lib/_head-with-defaults";
+import { composeMetaTitle } from "../lib/_compose-meta-title";
 
 export const frontmatter = { title: "Home" };
 
@@ -110,7 +111,7 @@ export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
 
   return (
     <DocLayoutWithDefaults
-      title={settings.siteName}
+      title={composeMetaTitle(settings.siteName)}
       head={<HeadWithDefaults title={settings.siteName} />}
       lang={locale}
       hideSidebar={true}

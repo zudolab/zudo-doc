@@ -30,6 +30,7 @@ import { bridgeEntries } from "../../_data";
 import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "../../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../../lib/_head-with-defaults";
+import { composeMetaTitle } from "../../lib/_compose-meta-title";
 import { DocHistoryArea } from "../../lib/_doc-history-area";
 
 export const frontmatter = { title: "Tag" };
@@ -80,7 +81,7 @@ export default function DocTagPage({ params, props }: PageProps): JSX.Element {
 
   return (
     <DocLayoutWithDefaults
-      title={pageTitle}
+      title={composeMetaTitle(pageTitle)}
       head={<HeadWithDefaults title={pageTitle} />}
       hideSidebar={true}
       hideToc={true}
