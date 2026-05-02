@@ -50,6 +50,7 @@ import { DocMetainfoArea } from "../../lib/_doc-metainfo-area";
 import { SidebarWithDefaults } from "../../lib/_sidebar-with-defaults";
 import { HeaderWithDefaults } from "../../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../../lib/_head-with-defaults";
+import { composeMetaTitle } from "../../lib/_compose-meta-title";
 
 export const frontmatter = { title: "Docs" };
 
@@ -235,7 +236,7 @@ export default function LocaleDocsPage({ params, props }: PageArgs): JSX.Element
 
   return (
     <DocLayoutWithDefaults
-      title={title}
+      title={composeMetaTitle(title)}
       description={description}
       head={<HeadWithDefaults title={title} description={description} />}
       lang={locale}

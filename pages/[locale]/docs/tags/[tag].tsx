@@ -30,6 +30,7 @@ import type { JSX } from "preact";
 import { FooterWithDefaults } from "../../../lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "../../../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../../../lib/_head-with-defaults";
+import { composeMetaTitle } from "../../../lib/_compose-meta-title";
 import { DocHistoryArea } from "../../../lib/_doc-history-area";
 
 export const frontmatter = { title: "Tag" };
@@ -95,7 +96,7 @@ export default function LocaleDocTagPage({
 
   return (
     <DocLayoutWithDefaults
-      title={pageTitle}
+      title={composeMetaTitle(pageTitle)}
       head={<HeadWithDefaults title={pageTitle} />}
       lang={locale}
       hideSidebar={true}

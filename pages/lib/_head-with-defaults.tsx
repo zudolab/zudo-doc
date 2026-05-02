@@ -17,6 +17,7 @@
 
 import type { JSX } from "preact";
 import { OgTags } from "@zudo-doc/zudo-doc-v2/head";
+import { composeMetaTitle } from "./_compose-meta-title";
 
 export interface HeadWithDefaultsProps {
   /** Page title forwarded to og:title. Required. */
@@ -29,6 +30,11 @@ export interface HeadWithDefaultsProps {
  * Default-bearing host wrapper that injects og:title and og:description
  * into the v2 layout's `head` slot.
  *
+ * og:title is run through composeMetaTitle so it matches the
+ * "<title> | <siteName>" shape emitted by the host's <title> element
+ * (the legacy Astro layout produced both shapes; the zfb host has to
+ * compose them itself).
+ *
  * Pure SSR — no state, no client-only imports. Intended for use as:
  *   head={<HeadWithDefaults title={title} description={description} />}
  * on every DocLayoutWithDefaults call site in the host pages.
@@ -37,5 +43,5 @@ export function HeadWithDefaults({
   title,
   description,
 }: HeadWithDefaultsProps): JSX.Element {
-  return <OgTags title={title} description={description} />;
+  return <OgTags title={composeMetaTitle(title)} description={description} />;
 }

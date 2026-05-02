@@ -50,6 +50,7 @@ import { DocMetainfoArea } from "../lib/_doc-metainfo-area";
 import { SidebarWithDefaults } from "../lib/_sidebar-with-defaults";
 import { HeaderWithDefaults } from "../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../lib/_head-with-defaults";
+import { composeMetaTitle } from "../lib/_compose-meta-title";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../_data";
 import { extractHeadings } from "../lib/_extract-headings";
@@ -210,7 +211,7 @@ export default function DocsPage({ props }: PageArgs): JSX.Element {
 
   return (
     <DocLayoutWithDefaults
-      title={title}
+      title={composeMetaTitle(title)}
       description={description}
       head={<HeadWithDefaults title={title} description={description} />}
       lang={locale}

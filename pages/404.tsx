@@ -11,7 +11,6 @@
 // This port wraps via DocLayoutWithDefaults with hideSidebar/hideToc plus
 // a noindex meta so search engines do not index it.
 
-import { settings } from "@/config/settings";
 import { defaultLocale } from "@/config/i18n";
 import { withBase } from "@/utils/base";
 import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
@@ -19,16 +18,18 @@ import type { JSX } from "preact";
 import { FooterWithDefaults } from "./lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "./lib/_header-with-defaults";
 import { HeadWithDefaults } from "./lib/_head-with-defaults";
+import { composeMetaTitle } from "./lib/_compose-meta-title";
 
 export const frontmatter = { title: "404" };
 
 export default function NotFoundPage(): JSX.Element {
   const locale = defaultLocale;
+  const title = "Page Not Found";
 
   return (
     <DocLayoutWithDefaults
-      title={`Page Not Found | ${settings.siteName}`}
-      head={<HeadWithDefaults title={`Page Not Found | ${settings.siteName}`} />}
+      title={composeMetaTitle(title)}
+      head={<HeadWithDefaults title={title} />}
       lang={locale}
       noindex={true}
       hideSidebar={true}

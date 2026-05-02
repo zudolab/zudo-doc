@@ -20,6 +20,7 @@ import type { JSX } from "preact";
 import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "../../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../../lib/_head-with-defaults";
+import { composeMetaTitle } from "../../lib/_compose-meta-title";
 
 export const frontmatter = { title: "Versions" };
 
@@ -78,7 +79,7 @@ export default function LocaleVersionsPage({ params }: PageArgs): JSX.Element {
 
   return (
     <DocLayoutWithDefaults
-      title={pageTitle}
+      title={composeMetaTitle(pageTitle)}
       head={<HeadWithDefaults title={pageTitle} />}
       lang={locale}
       hideSidebar={true}
