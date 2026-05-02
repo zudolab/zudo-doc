@@ -1,6 +1,6 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: c8e0e10 (Takazudo/zudo-front-builder main, 2026-05-03)
+ *   commit: 0d0d373 (Takazudo/zudo-front-builder main, 2026-05-03)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -96,6 +96,11 @@
  *                               wrappers can no longer break manifest-key alignment with SSR
  *                               markers — closes the final Sig G hydration alignment gap on
  *                               this consumer)
+ *     - Takazudo/zudo-front-builder#151 / PR #152 (zfb-islands esbuild step now passes
+ *                               --jsx=automatic --jsx-import-source=preact; fixes
+ *                               ReferenceError: React is not defined at island mount when
+ *                               host components use preact/compat for hooks; unblocks Sig G
+ *                               hydration in zudolab/zudo-doc#1355)
  *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333) → bumped by epic
  *              zudolab/zudo-doc#1355 (Sig F finalisation + post-#131 hash-mismatch follow-up
  *              + Sig G island-resolver/esbuild parity + shared-bundle hydration glue
