@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef } from "react";
+// preact/compat shim — see src/components/ai-chat-modal.tsx for rationale.
+import { useCallback, useEffect, useRef } from "preact/compat";
 import SliderRow from "./slider-row";
 import type { TokenDef } from "../tokens/manifest";
 
