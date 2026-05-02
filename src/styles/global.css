@@ -404,11 +404,11 @@ body {
   position: relative;
 }
 
-pre.astro-code.word-wrap {
+pre[class^="syntect-"].word-wrap {
   overflow-x: hidden;
 }
 
-pre.astro-code.word-wrap code {
+pre[class^="syntect-"].word-wrap code {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -559,7 +559,7 @@ pre.astro-code .line .highlighted-word {
   padding: var(--spacing-vsp-2xs) var(--spacing-hsp-lg);
 }
 
-.code-block-container pre.astro-code {
+.code-block-container pre[class^="syntect-"] {
   margin-top: 0 !important;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
