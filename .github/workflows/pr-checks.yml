@@ -57,7 +57,7 @@ env:
   # Pinned zfb commit — keep in sync with the zfb pin comment at the
   # top of zfb.config.ts. Updating the pin here without updating that
   # comment (or vice versa) will silently desync local dev from CI.
-  ZFB_PINNED_SHA: ea8a834854d678e2c087eda9556547c52f30783d
+  ZFB_PINNED_SHA: 10c21e4c01e4992233a95a4d5b409d04b2044fcf
 
 jobs:
   # ---------------------------------------------------------------------------

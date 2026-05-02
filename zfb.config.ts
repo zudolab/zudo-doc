@@ -1,6 +1,6 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: ea8a834 (Takazudo/zudo-front-builder main, 2026-05-03)
+ *   commit: 10c21e4 (Takazudo/zudo-front-builder main, 2026-05-03)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -56,6 +56,17 @@
  *                               Sidebar reached the bundle. With #143 the smoke fixture build
  *                               registers 13 islands and emits a complete client runtime — finally
  *                               unblocking Sig G island hydration on this consumer)
+ *     - Takazudo/zudo-front-builder#144 / PR #145 (synthesised shared-bundle entry survives
+ *                               esbuild tree-shaking when an island has no top-level side effect:
+ *                               render_shared_bundle_entry_source now namespace-imports each
+ *                               island and references the namespaces from a top-level
+ *                               globalThis.__zfb_islands ??= [...] assignment. Pre-#145, host-side
+ *                               islands authored as bare `export default function ComponentName`
+ *                               with no top-level effect were tree-shaken out of the bundle, so
+ *                               every data-zfb-island="ComponentName" SSR marker for a host-shape
+ *                               island had no client runtime to mount. With #145 every island's
+ *                               exports survive — closes the final Sig G hydration gap on this
+ *                               consumer)
  *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333) → bumped by epic
  *              zudolab/zudo-doc#1355 (Sig F finalisation + post-#131 hash-mismatch follow-up
  *              + Sig G island-resolver/esbuild parity)
