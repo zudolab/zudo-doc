@@ -47,10 +47,28 @@ import ImageEnlarge from "@/components/image-enlarge";
   "DesignTokenTweakPanel";
 (ImageEnlarge as { displayName?: string }).displayName = "ImageEnlarge";
 
+/**
+ * Default sr-only label rendered as the AiChatModal SSR fallback. This
+ * mirrors the body-label string the deleted `AiChatModalIsland` wrapper
+ * produced verbatim, so the migration-check parity harness still finds
+ * the literal text in SSG output and assistive tech can discover the
+ * chat entrypoint before JS hydration. English-only for now — the
+ * previous default was also English-only; pass `aiChatBodyLabel` to
+ * localise.
+ */
+const DEFAULT_AI_CHAT_BODY_LABEL = "Ask a question about the documentation.";
+
 /** Props for {@link BodyEndIslands}. */
 export interface BodyEndIslandsProps {
   /** Base path the AI chat modal uses to construct API URLs. */
   basePath: string;
+  /**
+   * Sr-only label rendered as the AiChatModal SSR fallback. Defaults to
+   * the English string. Pass a locale-translated string for non-default
+   * locales so screen readers announce the chat entrypoint correctly
+   * before hydration.
+   */
+  aiChatBodyLabel?: string;
 }
 
 /**
@@ -70,14 +88,20 @@ export interface BodyEndIslandsProps {
  * migration-check parity harness greps the literal heading text in
  * SSG output.
  */
-export function BodyEndIslands({ basePath }: BodyEndIslandsProps): JSX.Element {
+export function BodyEndIslands({
+  basePath,
+  aiChatBodyLabel = DEFAULT_AI_CHAT_BODY_LABEL,
+}: BodyEndIslandsProps): JSX.Element {
   const designToken = Island({
     ssrFallback: null,
     children: <DesignTokenTweakPanel />,
   }) as unknown as VNode;
 
+  // Use a visually-hidden paragraph as the AiChatModal SSR fallback so
+  // the body label is present in static HTML for screen readers and
+  // migration-check parity. sr-only keeps it invisible to sighted users.
   const aiChat = Island({
-    ssrFallback: null,
+    ssrFallback: <p class="sr-only">{aiChatBodyLabel}</p>,
     children: <AiChatModal basePath={basePath} />,
   }) as unknown as VNode;
 
