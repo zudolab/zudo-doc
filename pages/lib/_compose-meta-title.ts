@@ -18,12 +18,6 @@
  * - When `siteName` is missing/empty (defensive — settings.ts always
  *   has it in practice), fall back to the bare title.
  *
- * Out-of-scope call sites: this helper is currently NOT applied at
- *   pages/v/[version]/docs/[...slug].tsx
- *   pages/v/[version]/ja/docs/[...slug].tsx
- * because those are owned by a sibling agent's versionBanner work.
- * After that branch merges, those host pages should also route their
- * title prop through composeMetaTitle for consistency.
  */
 import { settings } from "@/config/settings";
 

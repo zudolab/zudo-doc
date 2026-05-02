@@ -52,6 +52,7 @@ import { HeadWithDefaults } from "../../../../lib/_head-with-defaults";
 import { DocHistoryArea } from "../../../../lib/_doc-history-area";
 import { DocMetainfoArea } from "../../../../lib/_doc-metainfo-area";
 import { buildFrontmatterPreviewEntries } from "../../../../lib/_frontmatter-preview-data";
+import { composeMetaTitle } from "../../../../lib/_compose-meta-title";
 
 export const frontmatter = { title: "Docs" };
 
@@ -271,7 +272,7 @@ export default function VersionedJaDocsPage({ props }: PageArgs): JSX.Element {
 
   return (
     <DocLayoutWithDefaults
-      title={title}
+      title={composeMetaTitle(title)}
       description={description}
       head={<HeadWithDefaults title={title} description={description} />}
       lang={locale}
