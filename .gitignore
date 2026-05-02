@@ -76,3 +76,4 @@ e2e/fixtures/*/public/mockServiceWorker.js
 # its on-disk cache lands here per fixture)
 .wrangler/
 e2e/fixtures/*/.wrangler/
+.claude/scheduled_tasks.lock
