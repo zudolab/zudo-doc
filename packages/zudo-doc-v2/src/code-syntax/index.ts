@@ -7,6 +7,12 @@
 //
 //   MermaidInit       — lazily renders [data-mermaid] diagrams and re-renders
 //                       on color scheme changes. Include once in the layout.
+//                       Wave 13 (zudolab/zudo-doc#1355 Topic 4): the
+//                       script's mermaid import URL was switched from
+//                       the bare `"mermaid"` specifier to an ESM CDN
+//                       URL because the inline `<script>` reaches the
+//                       browser without a bundler in the path; the
+//                       override knob is `MERMAID_CDN_MODULE_URL`.
 //
 //   Tabs / TabsInit   — server-rendered tab containers. <Tabs> renders the
 //                       nav buttons from its <TabItem> children; <TabsInit>
@@ -19,8 +25,16 @@
 export { CodeBlockEnhancer, default as CodeBlockEnhancerDefault } from "./code-block-enhancer.js";
 export { CODE_BLOCK_ENHANCER_SCRIPT } from "./code-block-enhancer-script.js";
 
-export { MermaidInit, default as MermaidInitDefault } from "./mermaid-init.js";
-export { MERMAID_INIT_SCRIPT } from "./mermaid-init-script.js";
+export {
+  MermaidInit,
+  default as MermaidInitDefault,
+} from "./mermaid-init.js";
+export type { MermaidInitProps } from "./mermaid-init.js";
+export {
+  MERMAID_INIT_SCRIPT,
+  MERMAID_CDN_MODULE_URL,
+  buildMermaidInitScript,
+} from "./mermaid-init-script.js";
 
 export { Tabs, default as TabsDefault } from "./tabs.js";
 export type { TabsProps } from "./tabs.js";
