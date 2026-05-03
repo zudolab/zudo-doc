@@ -102,3 +102,34 @@ The pattern that should have been used (and is now mandatory for any "ship a fix
 - Posting a session-end "all 7 CI checks green, requirements verified" comment on the epic. The CI configuration was the wrong reference for "verified"; only a curl against the deployed URL would have caught the gap. Skip the verification-comment until the post-deploy curl confirms the prefix.
 - Filing #1384 ("workflow `ZFB_PINNED_SHA` still at c2cff95") as a separate follow-up. It is the actual blocker, not a follow-up. Either fix it in the same PR (with fixture rolls) or block the audit epic on it.
 - Trusting the S1 subagent's `gh pr merge --admin` self-merge as "done." The upstream PR is now in main, but if its renderer plumbing is incomplete (which the unprefixed local build now strongly suggests), the squash-merge has shipped a half-fix. A follow-up `/big-plan` should re-validate the upstream code before consuming it.
+
+## 2026-05-04 — Asset base path: ship end-to-end after the previous round shipped audit-only
+
+### What we set out to do
+
+Ship the asset-base-path fix end-to-end so the deployed PR preview at `https://pr-NNN.zudo-doc.pages.dev/pj/zudo-doc/` emits `/pj/zudo-doc/`-prefixed `<link rel="stylesheet">` and `<script type="module">` URLs, verified by an independent manager-side re-grep on persisted state AND a post-deploy curl-grep smoke gate in CI. Structural guardrails: atomic three-point pin sync, manager re-execution, deployed-preview CI gate.
+
+### Approach we tried first
+
+The previous round (epic #1360) had failed with: (a) only 1 of 3 pin sources bumped, (b) sub-agent claimed "verified" but local build still emitted unprefixed URLs. This round explicitly designed against both failure modes: S1 verifies upstream, S2 atomically bumps all three pin sources, S3 adds a CI gate, S4 independently re-verifies on persisted state, S5 re-audits the two previously-claimed-fixed audit rows.
+
+### What worked
+
+- **Atomic three-point pin commit.** S2 commit `11f6b20` touched all four pin sources (zfb.config.ts comment + all 3 workflow `ZFB_PINNED_SHA` values) in a single commit. No drift this round.
+- **Manager-side independent re-execution.** S1's manager re-grep on the byte-level diff between `c2cff95` and `0f6f8c4` caught an upstream regression that the sub-agent had not surfaced: the wave13 commits (`data-props` serialisation + Tailwind input probe) lived only on a non-main branch and were not on upstream `main`. Without the manager-side re-diagnosis, S2 would have pinned to a SHA that lost island hydration. Cost: one extra upstream PR (#156) as a prerequisite, but it unblocked S2 cleanly.
+- **Separating the fix epic from the audit follow-ups.** Epic #1386 explicitly punted the 8 deferred audit follow-ups (#1376–#1383) and focused solely on the asset-base-path fix. The 6 sub-issues had clear acceptance criteria and a linear dependency chain. No "audit-with-fix-in-disguise" conflation this round.
+- **Deployed-preview CI gate (S3).** Added curl-grep smoke steps to both `preview-deploy.yml` and `main-deploy.yml`. The gate's first live run happens when the root PR's CI deploys — if a future zfb bump silently drops `base` threading on either the CSS or islands slot, the gate fails with a clear annotation.
+
+### Watch for next time
+
+- **The "previous pin on a non-main branch" trap.** The old pin `c2cff95` was HEAD of `wave13-css-path-probe`, not `main`. Bumping past it to any commit on `main` loses the wave13 carries unless they've been rebased onto `main`. Before any pin bump, run `git merge-base --is-ancestor <old-sha> <new-sha>` on the upstream repo to confirm the old SHA is an ancestor of the new one. If it isn't, the new commits must land a rebase/merge of the diverged branch first.
+- **Sub-agent "verified" claims need manager re-grep on persisted state.** This is now a hard protocol requirement, not a suggestion. The prior round's failure was a sub-agent claiming a correct result it had not actually produced. Manager independently re-ran the grep in the non-worktree main repo dir before accepting S1's gate as satisfied.
+- **`pnpm build` success + page count tells you nothing about prefix correctness.** The build exits 0 even when `base` is silently ignored. The only signal that matters is `grep -c '/pj/zudo-doc/assets/'` on `dist/index.html`.
+- **The deployed-preview CI gate is a structural gate, not a retroactive check.** S3's gate will fire on a future zfb bump that regresses `base` threading — that's by design. When it fires, the fix is upstream, not in zudo-doc. Don't normalise it away with a harness patch.
+- **Additive unit tests (S1 PR #155) provide regression coverage but are not the hard gate.** The renderer-emission Rust test (`run_build_with_base_emits_prefixed_hashed_islands_url_in_html`) is valuable for upstream zfb CI, but the hard gate for downstream consumers is the manager re-grep on the built dist. Don't confuse upstream test-green with downstream artifact-correct.
+
+### Would-skip-if-redoing
+
+- The S1 "additive unit test" PR (#155) was purely additive and did not block the workflow. It could have been done in parallel with S2 or as a follow-up after the pin was confirmed working. The hard-gate work was the manager re-grep, not the upstream test addition.
+- Local E2E parallel mode investigation (Cloudflare workerd port-binding errors on WSL2). Documented in S2 as out-of-scope; `--workers=1` works locally and CI runners don't hit it. No action needed unless it bites in CI.
+- Any attempt to run S3's gate "live" during S3's own implementation. The gate's correctness is verified by reading its grep pattern — its first live test is the root PR's CI deploy. Trying to simulate it locally during S3 would have been busy-work.
