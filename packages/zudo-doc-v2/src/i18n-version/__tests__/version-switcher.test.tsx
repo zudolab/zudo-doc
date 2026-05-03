@@ -215,9 +215,22 @@ describe("VersionSwitcher", () => {
   });
 
   it("VERSION_SWITCHER_VISIBILITY_STYLE is a self-contained CSS rule for the wrapper", () => {
-    expect(VERSION_SWITCHER_VISIBILITY_STYLE).toContain(":has(> [data-version-switcher])");
-    expect(VERSION_SWITCHER_VISIBILITY_STYLE).toContain("display:none");
+    // The rule pins onto the `.hidden` baseline that Tailwind always
+    // generates (because `pages/` references it directly), so it stays
+    // out of the way of any consumer that wraps the switcher without
+    // the `hidden lg:block` pattern. The mobile (`< 64rem`) state falls
+    // through to the layered `.hidden { display: none }` utility — this
+    // string only carries the desktop override.
+    expect(VERSION_SWITCHER_VISIBILITY_STYLE).toContain(
+      ".hidden:has(> [data-version-switcher])",
+    );
     expect(VERSION_SWITCHER_VISIBILITY_STYLE).toContain("@media (min-width:64rem)");
     expect(VERSION_SWITCHER_VISIBILITY_STYLE).toContain("display:block");
+    // Mobile has no override here — `.hidden` does that job.
+    expect(VERSION_SWITCHER_VISIBILITY_STYLE).not.toContain("display:none");
+    // Universal/parent-affecting selector must NOT escape into the
+    // bundle: it would force `display:none` on any wrapping element
+    // a consumer chose, regardless of intent.
+    expect(VERSION_SWITCHER_VISIBILITY_STYLE).not.toContain("*:has(");
   });
 });
