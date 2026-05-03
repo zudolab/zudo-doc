@@ -94,10 +94,17 @@ All 6 presets are structurally valid `ColorScheme` objects.
 | Source-level path | PASS | n/a | `pages/index.tsx` line 62: `const logoUrl = withBase("/img/logo.svg")`. Same pattern in `pages/[locale]/index.tsx` line 111. |
 | Mask applied as inline style | PASS | n/a | `style={\`-webkit-mask: url(\${logoUrl}) center/contain no-repeat; mask: url(\${logoUrl}) center/contain no-repeat;\`}` — uses the `withBase`-resolved value. |
 | No `mask-image` in any CSS file | PASS | n/a | `grep mask-image` across `src/`, `packages/`, `pages/` returns zero hits. There is no CSS file or `@apply` that hardcodes a logo URL. |
-| URL in `dist/index.html` | PASS | **FIXED (zudo-doc-side)** | `mask: url(/pj/zudo-doc/img/logo.svg)` — base-prefixed. The PR #669 404 was a **zudo-doc-side** bug: the mask URL was previously hardcoded or computed without `withBase`. S1's zfb pin bump enabled `withBase()` to produce correct base-prefixed URLs at build time. The fix was applied at the source level (inline style uses `withBase` result at SSG time), not by zfb CSS asset rewriting. |
-| CSS file mask-image URLs | PASS | n/a | `dist/assets/styles-81dadcca.css` contains no `mask-image` or `logo.svg`. |
+| URL in `dist/index.html` | PASS | **FIXED (zudo-doc-side) — confirmed on post-fix dist (S5)** | `mask: url(/pj/zudo-doc/img/logo.svg)` — base-prefixed. Verified against the S4 clean build (manager-run `pnpm build` on merged `base/asset-base-path-fix`). S5 re-grep confirms the prefix is correct; original "fixed by S1" claim now has concrete dist evidence. |
+| CSS file mask-image URLs | PASS | n/a | `dist/assets/styles-ab5f6362.css` (post-fix hash) contains no `mask-image` or `logo.svg`. |
 
 **Root cause classification: zudo-doc-side (now fixed).** The logo mask URL was embedded in an inline style at SSG time using `withBase()`. The S1 zfb pin bump fixed `withBase()` to produce correctly prefixed paths. No zfb-upstream CSS asset URL rewriting is needed because the URL is not in a CSS file.
+
+**S5 confirmation:** The post-fix dist (built during S4 manager verification on `base/asset-base-path-fix`, 492 prefixed asset refs) was re-grepped in S5. Both `dist/index.html` and `dist/ja/index.html` show:
+
+- `-webkit-mask: url(/pj/zudo-doc/img/logo.svg) center/contain no-repeat`
+- `mask: url(/pj/zudo-doc/img/logo.svg) center/contain no-repeat`
+
+No unprefixed `url(/img/logo.svg)` pattern exists anywhere in `dist/`. The original claim holds.
 
 ---
 
@@ -110,9 +117,37 @@ All 6 presets are structurally valid `ColorScheme` objects.
 | Design-token panel — 4 tabs, island, trigger | PASS |
 | Export format | STALE-SPEC (JSON, not TS — intentional redesign) |
 | Color rules — three-tier strategy | PASS (minor doc imprecision about `initial` reset) |
-| Logo CSS-mask URL | PASS — fixed by S1 (classification: zudo-doc-side) |
+| Logo CSS-mask URL | PASS — verified on post-fix dist (S5 re-verification confirms `/pj/zudo-doc/` prefix present) |
 
 ### Follow-up issues
 
 1. **Doc clarification — `reference/color.mdx` `--color-*: initial` text**: The doc and its illustrative code sample say the `@theme` block contains `--color-*: initial` but the actual `global.css` does not. The real mechanism is that `@import "tailwindcss/utilities"` skips the default theme entirely. A one-sentence clarification in `reference/color.mdx` would prevent future confusion. Low priority — not a correctness bug.
 2. **`src/CLAUDE.md` stale line** — "Available: Dracula, Catppuccin Mocha, Nord, TokyoNight, Gruvbox Dark, Atom One Dark" under "Changing Scheme" implies these are `colorScheme` values in `settings.ts`. They are only presets visible in the design-token panel dropdown. Consider rewording to "Presets available in the Design Token Panel: …" to avoid confusion when a developer tries to set `colorScheme: "Dracula"` and gets an unknown-scheme error.
+
+---
+
+## S5 Re-verification (epic #1386)
+
+**Date:** 2026-05-04
+**Dist used:** `/home/takazudo/repos/myoss/zudo-doc2/dist/` — S4 manager clean build on `base/asset-base-path-fix` (492 prefixed asset refs, 0 unprefixed).
+
+### Row checked: Logo CSS-mask URL (Section 5, summary table)
+
+**Original claim:** "PASS — fixed by S1 (classification: zudo-doc-side)"
+
+**S5 grep against post-fix dist:**
+
+```
+$ grep -o 'mask: url([^)]*)[^;]*' dist/index.html dist/ja/index.html
+dist/index.html:mask: url(/pj/zudo-doc/img/logo.svg) center/contain no-repeat
+dist/index.html:mask: url(/pj/zudo-doc/img/logo.svg) center/contain no-repeat
+dist/ja/index.html:mask: url(/pj/zudo-doc/img/logo.svg) center/contain no-repeat
+dist/ja/index.html:mask: url(/pj/zudo-doc/img/logo.svg) center/contain no-repeat
+
+$ grep -o '\-webkit-mask: url([^)]*)[^;]*' dist/index.html
+dist/index.html:-webkit-mask: url(/pj/zudo-doc/img/logo.svg) center/contain no-repeat
+```
+
+**Finding:** Claim holds. Both `dist/index.html` (EN root) and `dist/ja/index.html` (JA root) emit the mask URL with the `/pj/zudo-doc/` prefix. No unprefixed `url(/img/logo.svg)` pattern is present anywhere in `dist/`. The CSS file (`dist/assets/styles-ab5f6362.css`) contains zero `mask` references — confirming the URL is only in the SSG-emitted inline style, not in any CSS asset.
+
+**Conclusion:** The original "fixed by S1" claim was correct. No row update needed beyond adding this verbatim evidence.
