@@ -236,6 +236,25 @@ export function DocLayoutWithDefaults(
   // `afterBreadcrumb` slot so the banner sits between the breadcrumb and
   // the article body — matching the legacy Astro placement (the
   // `@slot:doc-layout:after-breadcrumb` anchor).
+  const versionBannerActive =
+    versionBanner !== undefined && versionBanner !== false;
+  const versionBannerComplete =
+    versionBannerLatestUrl !== undefined && versionBannerLabels !== undefined;
+  if (
+    versionBannerActive &&
+    !versionBannerComplete &&
+    typeof process !== "undefined" &&
+    process.env?.NODE_ENV !== "production"
+  ) {
+    const missing: string[] = [];
+    if (versionBannerLatestUrl === undefined) missing.push("versionBannerLatestUrl");
+    if (versionBannerLabels === undefined) missing.push("versionBannerLabels");
+    console.warn(
+      `[doc-layout] versionBanner=${String(versionBanner)} requires ${missing.join(
+        " + ",
+      )}; banner will be skipped.`,
+    );
+  }
   const composedAfterBreadcrumb =
     versionBanner !== undefined &&
     versionBanner !== false &&
