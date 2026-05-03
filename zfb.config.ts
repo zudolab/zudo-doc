@@ -1,6 +1,6 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: 0d0d373 (Takazudo/zudo-front-builder main, 2026-05-03)
+ *   commit: a9c8a65 (Takazudo/zudo-front-builder main, 2026-05-03)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -101,6 +101,13 @@
  *                               ReferenceError: React is not defined at island mount when
  *                               host components use preact/compat for hooks; unblocks Sig G
  *                               hydration in zudolab/zudo-doc#1355)
+ *     - Takazudo/zudo-front-builder PR #153 (CF adapter wrapper now probes env.ASSETS first
+ *                               on GET/HEAD, falling through to the inner zfb worker only on
+ *                               404; this restores SSG head injection — <link rel="stylesheet">
+ *                               and <script type="module" src="/assets/islands-…"> — for
+ *                               no-trailing-slash URLs like /docs/getting-started under
+ *                               `zfb preview` and Cloudflare Pages, fixing Wave 10 Sig G e2e
+ *                               failures in zudolab/zudo-doc#1355)
  *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333) → bumped by epic
  *              zudolab/zudo-doc#1355 (Sig F finalisation + post-#131 hash-mismatch follow-up
  *              + Sig G island-resolver/esbuild parity + shared-bundle hydration glue
