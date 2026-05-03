@@ -80,6 +80,10 @@ interface ClaudeApiResponse {
 
 const MAX_HISTORY_LENGTH = 50;
 const MAX_MESSAGE_LENGTH = 4000;
+// Per-history-entry character cap. Bounds request size and Claude
+// context-window cost; exceeds the live `message` cap so callers can
+// still replay a full prior turn without resubmitting it.
+const MAX_HISTORY_CONTENT_LENGTH = 8192;
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
@@ -412,9 +416,48 @@ export default async function AiChatHandler(): Promise<Response> {
       );
     }
 
-    const history = Array.isArray(body.history)
-      ? (body.history as unknown[]).filter(isValidMessage).slice(-MAX_HISTORY_LENGTH)
-      : [];
+    let history: ChatMessage[] = [];
+    if (body.history !== undefined && body.history !== null) {
+      if (!Array.isArray(body.history)) {
+        audit(body.message, { blocked: true, blockReason: "invalid_input" });
+        return jsonResponse({ error: "history must be an array" }, 400);
+      }
+      if (body.history.length > MAX_HISTORY_LENGTH) {
+        audit(body.message, { blocked: true, blockReason: "invalid_input" });
+        return jsonResponse(
+          { error: `history exceeds ${MAX_HISTORY_LENGTH} entry limit` },
+          400,
+        );
+      }
+      const candidates = body.history as unknown[];
+      for (const entry of candidates) {
+        if (!isValidMessage(entry)) {
+          audit(body.message, { blocked: true, blockReason: "invalid_input" });
+          return jsonResponse({ error: "history contains malformed entries" }, 400);
+        }
+        if (entry.content.length > MAX_HISTORY_CONTENT_LENGTH) {
+          audit(body.message, { blocked: true, blockReason: "invalid_input" });
+          return jsonResponse(
+            {
+              error: `history content exceeds ${MAX_HISTORY_CONTENT_LENGTH} character limit`,
+            },
+            400,
+          );
+        }
+        // Apply prompt-injection screening only to user-authored turns;
+        // assistant turns are model-emitted text already constrained by
+        // the system prompt and may legitimately quote injection-shaped
+        // language in normal answers.
+        if (entry.role === "user" && !screenInput(entry.content)) {
+          audit(body.message, { blocked: true, blockReason: "prompt_injection" });
+          return jsonResponse(
+            { error: "I can only help with questions about the documentation." },
+            400,
+          );
+        }
+      }
+      history = candidates as ChatMessage[];
+    }
 
     const response = await callClaude(body.message, history, env);
     audit(body.message, { blocked: false, responsePreview: response });
