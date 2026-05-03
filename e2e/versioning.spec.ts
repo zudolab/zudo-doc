@@ -184,8 +184,12 @@ test.describe("Versioning: version switcher interaction", () => {
     const versionLink = page.locator("[data-version-menu] a").nth(1);
     await versionLink.click();
 
-    // Should navigate to versioned page
-    await page.waitForURL("**/v/1.0/docs/getting-started");
+    // Should navigate to versioned page. The asset pipeline normalises
+    // pretty-URL routes to the trailing-slash form (e.g. zfb's CF
+    // adapter `worker-wrapper.mjs` 308-redirects no-slash URLs onto the
+    // `<slug>/` form, which is what the static asset server serves), so
+    // the matcher accepts either shape.
+    await page.waitForURL(/\/v\/1\.0\/docs\/getting-started\/?$/);
     const content = await page.textContent("body");
     expect(content).toContain("version 1.0");
   });

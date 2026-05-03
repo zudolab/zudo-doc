@@ -32,6 +32,24 @@
 //     an icon library.
 //   * The `<script>` block in the .astro source is hoisted out into the
 //     exported `VERSION_SWITCHER_INIT_SCRIPT` constant.
+//
+// Self-contained responsive visibility (Wave 11):
+//   The host's <Header> wraps this component in `<div class="hidden lg:block">`
+//   so the switcher only appears at lg+ viewports. That works as long as
+//   Tailwind's content scanner has actually generated `.lg:block` and `.hidden`
+//   rules in the bundled CSS. In some build setups (notably the e2e versioning
+//   fixture) those classes never end up in the final stylesheet because
+//   Tailwind's filesystem walk doesn't reach into the workspace package's
+//   source files. The wrapper then resolves to a permanent `display: none`
+//   and the switcher disappears at every viewport.
+//
+//   Rather than depend on the host's Tailwind classes, this component emits a
+//   small unlayered `<style>` block (`VERSION_SWITCHER_VISIBILITY_STYLE`) that
+//   targets any element with `[data-version-switcher]` as a direct child via
+//   `:has()` and sets the responsive `display`. Because the rule is unlayered
+//   author CSS, it wins over Tailwind's `.hidden` (which lives in
+//   `@layer utilities`), so visibility is correct regardless of whether the
+//   wrapper's Tailwind classes survived content scanning.
 
 import type { VNode } from "preact";
 import type { VersionEntry, VersionSwitcherLabels } from "./types";
@@ -87,6 +105,26 @@ function cls(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join(" ");
 }
 
+/**
+ * Inline stylesheet that backs the responsive visibility of the
+ * version-switcher's host wrapper. The rule keys off `:has(> [data-version-switcher])`
+ * so it matches the wrapping element (e.g. the host header's `<div class="hidden lg:block">`)
+ * regardless of what classes the wrapper carries — see the file header for
+ * the rationale.
+ *
+ * The breakpoint (`64rem` = 1024px) intentionally mirrors the project's
+ * Tailwind `lg` token. If the design system's `lg` boundary moves, update
+ * this value to match.
+ *
+ * Specificity: `*:has(> [data-version-switcher])` resolves to 0,0,1,0 — the
+ * same as `.hidden`. The unlayered author origin still wins over the layered
+ * Tailwind utilities, so this rule reliably overrides the wrapper's
+ * `display: none` baseline at viewports `>= 64rem`.
+ */
+export const VERSION_SWITCHER_VISIBILITY_STYLE =
+  "*:has(> [data-version-switcher]){display:none}" +
+  "@media (min-width:64rem){*:has(> [data-version-switcher]){display:block}}";
+
 function ChevronDownIcon(): VNode {
   return (
     <svg
@@ -132,81 +170,91 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
     : (versions.find((v) => v.slug === currentVersion)?.label ?? currentVersion);
 
   return (
-    <div class="version-switcher relative" data-version-switcher>
-      <button
-        type="button"
-        class="flex items-center gap-hsp-2xs border border-muted rounded px-hsp-sm py-vsp-3xs text-small text-muted hover:border-accent hover:text-accent transition-colors cursor-pointer whitespace-nowrap"
-        aria-expanded="false"
-        aria-controls={menuId}
-        data-version-toggle
-      >
-        <span class="text-caption">{labels.switcher}:</span>
-        <span class="font-medium">{triggerLabel}</span>
-        <ChevronDownIcon />
-      </button>
+    <>
+      {/*
+       * Inline visibility rule — see file header for rationale. Emitting it
+       * inside the component output keeps the rule co-located with the markup
+       * it governs and means the host doesn't need any extra wiring. Multiple
+       * version-switchers on the same page each emit one of these blocks; the
+       * declarations are byte-identical so the duplication is harmless.
+       */}
+      <style dangerouslySetInnerHTML={{ __html: VERSION_SWITCHER_VISIBILITY_STYLE }} />
+      <div class="version-switcher relative" data-version-switcher>
+        <button
+          type="button"
+          class="flex items-center gap-hsp-2xs border border-muted rounded px-hsp-sm py-vsp-3xs text-small text-muted hover:border-accent hover:text-accent transition-colors cursor-pointer whitespace-nowrap"
+          aria-expanded="false"
+          aria-controls={menuId}
+          data-version-toggle
+        >
+          <span class="text-caption">{labels.switcher}:</span>
+          <span class="font-medium">{triggerLabel}</span>
+          <ChevronDownIcon />
+        </button>
 
-      <ul
-        id={menuId}
-        class="absolute right-0 top-full z-10 mt-vsp-3xs hidden min-w-[8rem] border border-muted rounded bg-surface shadow-lg whitespace-nowrap py-vsp-3xs"
-        data-version-menu
-      >
-        <li>
-          <a
-            href={latestUrl}
-            aria-current={isLatest ? "page" : undefined}
-            class={cls(
-              "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 hover:underline focus-visible:underline",
-              isLatest ? "font-bold text-accent" : "text-fg",
-            )}
-          >
-            {labels.latest}
-          </a>
-        </li>
-        {versions.map((v) => {
-          const vUrl = versionUrls[v.slug] ?? versionsPageUrl;
-          const isActive = currentVersion === v.slug;
-          // The Astro source treated "no availability info" as
-          // "everything available" (`!availability || (...has(slug))`).
-          // We mirror that: when the consumer doesn't pass
-          // `unavailableVersions`, treat every entry as available.
-          const isAvailable = !unavailableVersions || !unavailableVersions.has(v.slug);
-          return (
-            <li key={v.slug}>
-              {isAvailable ? (
-                <a
-                  href={vUrl}
-                  aria-current={isActive ? "page" : undefined}
-                  class={cls(
-                    "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 hover:underline focus-visible:underline",
-                    isActive ? "font-bold text-accent" : "text-fg",
-                  )}
-                >
-                  {v.label}
-                </a>
-              ) : (
-                <a
-                  href={vUrl}
-                  aria-disabled="true"
-                  tabindex={-1}
-                  class="block px-hsp-md py-vsp-2xs text-small text-muted/50 cursor-not-allowed pointer-events-none"
-                  title={labels.unavailable}
-                >
-                  {v.label}
-                </a>
+        <ul
+          id={menuId}
+          class="absolute right-0 top-full z-10 mt-vsp-3xs hidden min-w-[8rem] border border-muted rounded bg-surface shadow-lg whitespace-nowrap py-vsp-3xs"
+          data-version-menu
+        >
+          <li>
+            <a
+              href={latestUrl}
+              aria-current={isLatest ? "page" : undefined}
+              class={cls(
+                "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 hover:underline focus-visible:underline",
+                isLatest ? "font-bold text-accent" : "text-fg",
               )}
-            </li>
-          );
-        })}
-        <li class="border-t border-muted">
-          <a
-            href={versionsPageUrl}
-            class="block px-hsp-md py-vsp-2xs text-small text-muted hover:bg-accent/10 hover:text-fg hover:underline focus-visible:underline"
-          >
-            {labels.allVersions}
-          </a>
-        </li>
-      </ul>
-    </div>
+            >
+              {labels.latest}
+            </a>
+          </li>
+          {versions.map((v) => {
+            const vUrl = versionUrls[v.slug] ?? versionsPageUrl;
+            const isActive = currentVersion === v.slug;
+            // The Astro source treated "no availability info" as
+            // "everything available" (`!availability || (...has(slug))`).
+            // We mirror that: when the consumer doesn't pass
+            // `unavailableVersions`, treat every entry as available.
+            const isAvailable = !unavailableVersions || !unavailableVersions.has(v.slug);
+            return (
+              <li key={v.slug}>
+                {isAvailable ? (
+                  <a
+                    href={vUrl}
+                    aria-current={isActive ? "page" : undefined}
+                    class={cls(
+                      "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 hover:underline focus-visible:underline",
+                      isActive ? "font-bold text-accent" : "text-fg",
+                    )}
+                  >
+                    {v.label}
+                  </a>
+                ) : (
+                  <a
+                    href={vUrl}
+                    aria-disabled="true"
+                    tabindex={-1}
+                    class="block px-hsp-md py-vsp-2xs text-small text-muted/50 cursor-not-allowed pointer-events-none"
+                    title={labels.unavailable}
+                  >
+                    {v.label}
+                  </a>
+                )}
+              </li>
+            );
+          })}
+          <li class="border-t border-muted">
+            <a
+              href={versionsPageUrl}
+              class="block px-hsp-md py-vsp-2xs text-small text-muted hover:bg-accent/10 hover:text-fg hover:underline focus-visible:underline"
+            >
+              {labels.allVersions}
+            </a>
+          </li>
+        </ul>
+      </div>
+    </>
   );
 }
 

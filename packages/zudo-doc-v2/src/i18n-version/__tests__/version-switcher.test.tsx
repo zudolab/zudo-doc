@@ -6,6 +6,7 @@ import type { ComponentChildren, VNode } from "preact";
 import {
   VersionSwitcher,
   VERSION_SWITCHER_INIT_SCRIPT,
+  VERSION_SWITCHER_VISIBILITY_STYLE,
 } from "../version-switcher";
 import type { VersionEntry, VersionSwitcherLabels } from "../types";
 import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events";
@@ -182,5 +183,41 @@ describe("VersionSwitcher", () => {
     expect(VERSION_SWITCHER_INIT_SCRIPT).toContain(JSON.stringify(AFTER_NAVIGATE_EVENT));
     expect(VERSION_SWITCHER_INIT_SCRIPT).toContain('AbortController');
     expect(VERSION_SWITCHER_INIT_SCRIPT).toContain('data-version-switcher');
+  });
+
+  it("emits the responsive visibility <style> alongside the switcher markup", () => {
+    // Wave-11 fix: even when the host wraps this component in
+    // `<div class="hidden lg:block">` and Tailwind's content scanner
+    // never generated `.lg:block`, the inline `<style>` rule keyed off
+    // `:has(> [data-version-switcher])` keeps visibility correct at
+    // viewports `>= 64rem`.
+    //
+    // The local `serialize()` helper renders `dangerouslySetInnerHTML`
+    // as the raw string `[object Object]` rather than expanding it, so
+    // we only assert the `<style>` element is present and ordered
+    // before the switcher root here. The CSS payload itself is covered
+    // by the dedicated `VERSION_SWITCHER_VISIBILITY_STYLE` test below
+    // (and by SSR end-to-end via preact-render-to-string in any caller
+    // that uses the real renderer).
+    const html = serialize(
+      <VersionSwitcher
+        versions={versions}
+        latestUrl="/docs/intro/"
+        versionsPageUrl="/docs/versions/"
+        versionUrls={versionUrls}
+        labels={labels}
+      />,
+    );
+    const styleIdx = html.indexOf("<style");
+    const switcherIdx = html.indexOf("data-version-switcher");
+    expect(styleIdx).toBeGreaterThanOrEqual(0);
+    expect(switcherIdx).toBeGreaterThan(styleIdx);
+  });
+
+  it("VERSION_SWITCHER_VISIBILITY_STYLE is a self-contained CSS rule for the wrapper", () => {
+    expect(VERSION_SWITCHER_VISIBILITY_STYLE).toContain(":has(> [data-version-switcher])");
+    expect(VERSION_SWITCHER_VISIBILITY_STYLE).toContain("display:none");
+    expect(VERSION_SWITCHER_VISIBILITY_STYLE).toContain("@media (min-width:64rem)");
+    expect(VERSION_SWITCHER_VISIBILITY_STYLE).toContain("display:block");
   });
 });
