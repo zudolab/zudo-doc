@@ -281,6 +281,30 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
         )}
         {noindex && <meta name="robots" content="noindex, nofollow" />}
         {/*
+          Default value for `--zd-sidebar-w`, mirroring the `:root` rule in
+          src/styles/global.css. The desktop-sidebar `<aside>` and the main
+          content wrapper both consume this var (via `w-[var(--zd-sidebar-w)]`
+          and `lg:ml-[var(--zd-sidebar-w)]`), and the project's CSS pipeline
+          does not currently emit a `:root` declaration of the var into the
+          shared utility bundle — leaving `var(--zd-sidebar-w)` to compute to
+          `initial`, i.e. `width: auto`. A position:fixed aside with `left:0`
+          and `width:auto` shrink-to-fits to its content, which for the
+          documentation tree is much wider than 22rem; the resulting bounding
+          box overlaps the main column and `<aside id="desktop-sidebar">`
+          intercepts clicks intended for elements like tab buttons. Emitting
+          the default here keeps the var defined for every doc page; the
+          sidebar-resizer JS (`document.documentElement.style.setProperty`)
+          still wins over a `<style>` rule because inline styles outrank the
+          author stylesheet, so user resizing continues to work. Wave 12
+          (zudolab/zudo-doc#1355).
+        */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html: ":root{--zd-sidebar-w:clamp(14rem,20vw,22rem);}",
+          }}
+        />
+
+        {/*
           zfb engine-side <ViewTransitions />: emits the
           <meta name="view-transition" content="same-origin"> tag plus the
           inline click-intercepting router. Mounted here so it lands on
