@@ -231,6 +231,30 @@ async function applyEnlargeButtonCss(page: Page) {
   });
 }
 
+// Strip [hidden] from every enlarge button on the page.
+//
+// Wave 13 (zudolab/zudo-doc#1355): in the post-Wave-12 smoke fixture build
+// the zfb image-enlarge plugin only wraps top-level paragraph images in
+// <figure class="zd-enlargeable">; images nested inside a host-supplied
+// <div style="..."> wrapper (the oversized + medium fixtures) are left
+// unwrapped, so the FIRST figure.zd-enlargeable on the test page is the
+// 300×100 small image — its hydrated eligibility check correctly keeps the
+// button hidden because naturalWidth (300) is not greater than
+// clientWidth × DPR.
+//
+// This `two-layer button CSS` test only validates the ::before / svg /
+// background-transparency CSS, not the eligibility logic, so we force the
+// SSR-emitted [hidden] attribute off before asserting visibility. That
+// isolates this test from the upstream zfb plugin behavior and from the
+// fixture-CSS-not-bundled gap covered by the css-path-probe topic.
+async function showEnlargeButtonsRegardlessOfEligibility(page: Page) {
+  await page.evaluate(() => {
+    document
+      .querySelectorAll<HTMLButtonElement>(".zd-enlarge-btn[hidden]")
+      .forEach((b) => b.removeAttribute("hidden"));
+  });
+}
+
 test.describe("Image Enlarge: two-layer button CSS", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
@@ -240,6 +264,7 @@ test.describe("Image Enlarge: two-layer button CSS", () => {
     await page.goto(PAGE, { waitUntil: "networkidle" });
     await applyEnlargeButtonCss(page);
     await applyImageConstraints(page);
+    await showEnlargeButtonsRegardlessOfEligibility(page);
 
     const figure = page.locator("figure.zd-enlargeable").first();
     const btn = figure.locator(".zd-enlarge-btn");
