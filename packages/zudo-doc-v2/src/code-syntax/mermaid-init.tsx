@@ -14,6 +14,12 @@
 //
 // This JSX version emits the identical script via `dangerouslySetInnerHTML`.
 // Include once in the layout, before any mermaid diagram content.
+//
+// Wave 13 (zudolab/zudo-doc#1355 Topic 4): the script's mermaid import
+// target was changed from the bare `"mermaid"` specifier to a public
+// ESM CDN URL so the inline `<script>` (no bundler in the path) can
+// resolve the module at runtime. See `mermaid-init-script.ts` for the
+// full rationale and the override knob.
 
 import type { JSX } from "preact";
 import { MERMAID_INIT_SCRIPT } from "./mermaid-init-script.js";

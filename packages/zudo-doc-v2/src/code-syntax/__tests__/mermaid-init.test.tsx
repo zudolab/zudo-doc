@@ -4,7 +4,10 @@
 import { describe, expect, it } from "vitest";
 import { render } from "preact-render-to-string";
 import { MermaidInit } from "../mermaid-init";
-import { MERMAID_INIT_SCRIPT } from "../mermaid-init-script";
+import {
+  MERMAID_INIT_SCRIPT,
+  MERMAID_CDN_MODULE_URL,
+} from "../mermaid-init-script";
 import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events";
 
 describe("<MermaidInit />", () => {
@@ -51,8 +54,15 @@ describe("MERMAID_INIT_SCRIPT", () => {
     expect(MERMAID_INIT_SCRIPT.trimEnd()).toMatch(/\)\(\);$/);
   });
 
-  it("lazily imports mermaid via dynamic import", () => {
-    expect(MERMAID_INIT_SCRIPT).toContain('import("mermaid")');
+  it("lazily imports mermaid via dynamic import to a CDN URL (not the bare specifier)", () => {
+    // Wave 13 (zudolab/zudo-doc#1355 Topic 4): the bare `import("mermaid")`
+    // form fails at runtime under zfb because the inline <script> has no
+    // bundler in the path to resolve the specifier. The script must
+    // import from the configured CDN URL instead.
+    expect(MERMAID_INIT_SCRIPT).toContain(
+      `import(${JSON.stringify(MERMAID_CDN_MODULE_URL)})`,
+    );
+    expect(MERMAID_INIT_SCRIPT).not.toContain('import("mermaid")');
   });
 
   it("resolves CSS custom properties for theme variables", () => {
@@ -68,5 +78,15 @@ describe("MERMAID_INIT_SCRIPT", () => {
 
   it("skips already-rendered diagrams", () => {
     expect(MERMAID_INIT_SCRIPT).toContain("data-mermaid-rendered");
+  });
+});
+
+describe("MERMAID_CDN_MODULE_URL", () => {
+  it("is an https ESM CDN URL pinned to a major version", () => {
+    expect(MERMAID_CDN_MODULE_URL).toMatch(/^https:\/\//);
+    // Must encode some version pin (major-only `@11`, exact `@11.x.y`,
+    // or range `@11.x`) so the runtime resolution can't drift across a
+    // mermaid major bump.
+    expect(MERMAID_CDN_MODULE_URL).toMatch(/mermaid@\d+/);
   });
 });

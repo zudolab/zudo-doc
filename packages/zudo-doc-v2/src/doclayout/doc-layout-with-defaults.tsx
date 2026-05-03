@@ -81,6 +81,7 @@ import type { HeadingItem } from "../toc/types.js";
 import ThemeToggle from "../theme/theme-toggle.js";
 import { Footer } from "../footer/footer.js";
 import { CodeBlockEnhancer } from "../code-syntax/code-block-enhancer.js";
+import { MermaidInit } from "../code-syntax/mermaid-init.js";
 import { TabsInit } from "../code-syntax/tabs-init.js";
 import { VERSION_SWITCHER_INIT_SCRIPT } from "../i18n-version/version-switcher.js";
 import {
@@ -341,16 +342,24 @@ export function DocLayoutWithDefaults(
             //     fenced code.
             //   - TabsInit activates the correct tab panel and wires click
             //     handlers for <Tabs> components.
+            //   - MermaidInit lazily imports the mermaid library from
+            //     `MERMAID_CDN_MODULE_URL` (esm.sh by default) on
+            //     `AFTER_NAVIGATE_EVENT` and renders any `[data-mermaid]`
+            //     containers emitted by zfb's MermaidPlugin (zfb#104).
+            //     Pages without diagrams pay zero runtime cost because
+            //     the dynamic import is gated on a non-empty
+            //     `querySelectorAll("[data-mermaid]:not([data-mermaid-rendered])")`.
             //   - The version-switcher script wires the dropdown toggle /
             //     outside-click / Escape-key behavior for every
             //     [data-version-switcher] element.
-            // All three scripts are idempotent and safe on pages that have
+            // All four scripts are idempotent and safe on pages that have
             // no matching elements, so they are included unconditionally.
             // Callers that need a different body-end script set should pass
             // `bodyEndScripts` explicitly to override this default.
             <>
               <CodeBlockEnhancer />
               <TabsInit />
+              <MermaidInit />
               <script dangerouslySetInnerHTML={{ __html: VERSION_SWITCHER_INIT_SCRIPT }} />
             </>
           )
