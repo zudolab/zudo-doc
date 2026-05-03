@@ -126,4 +126,19 @@ describe("buildMermaidInitScript / cdnUrl override", () => {
     expect(html).toContain(customScript);
     expect(html).not.toContain(`import(${JSON.stringify(customUrl)})`);
   });
+
+  it("escapes literal </script> sequences inside the cdnUrl", () => {
+    // Defense-in-depth: if a developer ever passes a URL containing
+    // `</script>` (or even just `</script` as a substring), the inline
+    // <script> tag carrying the init body would otherwise be torn
+    // apart by the HTML parser. The builder rewrites `</script` to
+    // `<\/script` in the JS string literal so the JS lexer collapses
+    // it back to the right URL but the HTML parser never sees the
+    // closing tag pattern.
+    const malicious = "https://evil.test/</script><img src=x onerror=alert(1)>";
+    const built = buildMermaidInitScript(malicious);
+    expect(built).not.toContain("</script>");
+    expect(built).not.toContain("</script");
+    expect(built).toContain("<\\/script");
+  });
 });

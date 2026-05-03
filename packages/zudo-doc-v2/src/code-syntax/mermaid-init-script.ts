@@ -76,10 +76,18 @@ export const MERMAID_CDN_MODULE_URL = "https://esm.sh/mermaid@11";
  * unchanged.
  */
 export function buildMermaidInitScript(cdnUrl: string): string {
-  return makeScript(cdnUrl);
-}
-
-function makeScript(cdnUrl: string): string {
+  // JSON.stringify produces a valid JS string literal but does NOT
+  // escape `</script>`; if such a sequence appeared inside `cdnUrl`
+  // the browser's HTML parser would close the surrounding inline
+  // <script> tag prematurely and start parsing the rest as HTML.
+  // Defense-in-depth: rewrite `</` so the literal stays inside the
+  // script context. JSON.stringify keeps the URL parseable as JS at
+  // runtime — the `\/` sequence is just a character escape that the
+  // JS lexer collapses back to "/".
+  const safeUrlLiteral = JSON.stringify(cdnUrl).replace(
+    /<\/(script)/gi,
+    "<\\/$1",
+  );
   return `(function () {
   /**
    * Resolve a CSS value to a hex color (#rrggbb).
@@ -125,7 +133,7 @@ function makeScript(cdnUrl: string): string {
       // browser without a bundler — bare specifiers like "mermaid"
       // cannot be resolved at runtime. See the file header for the
       // full trade-off rationale.
-      var mod = await import(${JSON.stringify(cdnUrl)});
+      var mod = await import(${safeUrlLiteral});
       var mermaid = mod.default;
       var s = getComputedStyle(document.documentElement);
       // Read a custom property, resolve through the temporary-element
@@ -141,11 +149,15 @@ function makeScript(cdnUrl: string): string {
         return resolved || undefined;
       };
       var bg = v("--zd-bg");
-      // Default luminance to 0.5 (treated as light by the < 0.5 check
-      // below) when --zd-bg is not yet on :root. NaN would cascade into
-      // an "is dark" decision via the Number.isNaN guard, but skipping
-      // the parse entirely is cleaner and lets the page's <html
-      // data-theme> attribute remain authoritative.
+      // Leave luminance as NaN when --zd-bg is not yet on :root. The
+      // Number.isNaN guard below maps NaN to darkMode:true, which is
+      // mermaid's safer default — light text on dark fills survives
+      // the page eventually flipping into dark mode without a
+      // re-render, whereas the inverse produces unreadable diagrams
+      // on dark backgrounds. The MutationObserver on the root style
+      // attribute (registered further down) will reinit with real
+      // luminance once ColorSchemeProvider populates the custom
+      // properties.
       var luminance = NaN;
       if (bg && bg.charAt(0) === "#" && bg.length === 7) {
         var hex = bg.replace("#", "");
