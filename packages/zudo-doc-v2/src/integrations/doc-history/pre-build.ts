@@ -121,7 +121,7 @@ export async function runDocHistoryMetaStep(
   // `getFileCommits` / `getCommitInfo` pair we need here, so we go
   // directly to the .ts source. Resolving via `package.json` keeps this
   // independent of the workspace layout.
-  const { collectContentFiles, getFileCommits, getCommitInfo } =
+  const { collectContentFiles, getFileCommits, getFirstCommit, getCommitInfo } =
     await loadGitHistoryHelpers(projectRoot);
 
   // Collect [localeKey | null, absoluteDir] pairs. `null` = default
@@ -140,16 +140,18 @@ export async function runDocHistoryMetaStep(
   for (const [localeKey, contentDir] of dirEntries) {
     const files = collectContentFiles(contentDir);
     for (const { filePath, slug } of files) {
-      // maxEntries=2: we only need the newest (entries[0]) and oldest
-      // (entries[1]) commits to derive updatedDate + createdDate + author.
-      const commits = getFileCommits(filePath, 2);
+      // Newest commit only — `getFileCommits` returns most-recent-first, so
+      // asking for n=1 cannot misidentify the oldest entry on long histories.
+      const commits = getFileCommits(filePath, 1);
       if (commits.length === 0) continue; // untracked / not yet committed
 
       const newestInfo = getCommitInfo(commits[0], filePath);
-      // When there is only one commit, oldest === newest.
+      // For the oldest commit we query git directly with --reverse so the
+      // result is correct regardless of how many commits the file has.
+      const firstHash = getFirstCommit(filePath);
       const oldestInfo =
-        commits.length > 1
-          ? getCommitInfo(commits[commits.length - 1], filePath)
+        firstHash && firstHash !== commits[0]
+          ? getCommitInfo(firstHash, filePath)
           : newestInfo;
 
       const composedSlug = localeKey ? `${localeKey}/${slug}` : slug;
@@ -183,6 +185,7 @@ const defaultLogger = {
 type GitHistoryHelpers = {
   collectContentFiles(dir: string): Array<{ filePath: string; slug: string }>;
   getFileCommits(filePath: string, maxEntries?: number): string[];
+  getFirstCommit(filePath: string): string | null;
   getCommitInfo(
     hash: string,
     filePath: string,
@@ -226,6 +229,7 @@ async function loadGitHistoryHelpers(
   return {
     collectContentFiles: mod.collectContentFiles,
     getFileCommits: mod.getFileCommits,
+    getFirstCommit: mod.getFirstCommit,
     getCommitInfo: mod.getCommitInfo,
   };
 }
