@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from "preact/hooks";
 import type { FindResult, FindInPage } from "@/utils/find-in-page";
 
 interface FindBarProps {

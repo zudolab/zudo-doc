@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo } from "preact/hooks";
 import type { Heading } from "@/types/heading";
 import { SmartBreak } from "@/utils/smart-break";
 import clsx from "clsx";
