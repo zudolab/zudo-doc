@@ -53,6 +53,13 @@ declare module "zfb/config" {
     tailwind?: TailwindConfig;
     plugins?: PluginConfig[];
     adapter?: string;
+    /**
+     * Strip `.md` / `.mdx` from in-page `<a href>` paths and append a
+     * trailing `/` so author-written `[label](other.mdx)` references
+     * resolve to the rendered route URL. Mirrors Config::strip_md_ext
+     * in crates/zfb/src/config.rs (zudolab/zfb#131).
+     */
+    stripMdExt?: boolean;
   }
 
   /**
