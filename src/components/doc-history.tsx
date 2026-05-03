@@ -175,6 +175,35 @@ function buildSideBySideRows(
  * DiffViewer sub-component (side-by-side)
  * ──────────────────────────────────────────── */
 
+// Hashes — not full file content — are the cache key so the keys stay
+// short regardless of doc size. Map insertion order is the LRU.
+type DiffChanges = ReturnType<typeof diffLines>;
+const DIFF_CACHE_LIMIT = 32;
+const diffCache = new Map<string, DiffChanges>();
+
+function getCachedDiff(
+  olderHash: string,
+  newerHash: string,
+  olderContent: string,
+  newerContent: string,
+): DiffChanges {
+  const key = `${olderHash}::${newerHash}`;
+  const hit = diffCache.get(key);
+  if (hit) {
+    // Refresh recency by re-inserting at the end of the iteration order.
+    diffCache.delete(key);
+    diffCache.set(key, hit);
+    return hit;
+  }
+  const changes = diffLines(olderContent, newerContent);
+  diffCache.set(key, changes);
+  if (diffCache.size > DIFF_CACHE_LIMIT) {
+    const oldest = diffCache.keys().next().value;
+    if (oldest !== undefined) diffCache.delete(oldest);
+  }
+  return changes;
+}
+
 function DiffViewer({
   selection,
   onBack,
@@ -185,8 +214,14 @@ function DiffViewer({
   showBackButton: boolean;
 }) {
   const changes = useMemo(
-    () => diffLines(selection.older.content, selection.newer.content),
-    [selection.older.content, selection.newer.content],
+    () =>
+      getCachedDiff(
+        selection.older.hash,
+        selection.newer.hash,
+        selection.older.content,
+        selection.newer.content,
+      ),
+    [selection.older.hash, selection.newer.hash],
   );
   const rows = useMemo(() => buildSideBySideRows(changes), [changes]);
 
