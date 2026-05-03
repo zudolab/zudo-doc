@@ -24,7 +24,6 @@
 @source "src/content/**/*.{mdx,md}";
 @source "src/hooks/**/*.{tsx,ts,jsx,js}";
 @source "src/utils/**/*.{tsx,ts,jsx,js}";
-@source "packages/zudo-doc-v2/src/**/*.{tsx,ts,jsx,js}";
 
 /* ========================================
  * Design Token System
