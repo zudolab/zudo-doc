@@ -50,7 +50,6 @@ import {
 // so the SSG output still emits the `data-zfb-island="ThemeToggle"` marker.
 import ThemeToggle from "@/components/theme-toggle";
 import SidebarToggle from "@/components/sidebar-toggle";
-import SidebarTree from "@/components/sidebar-tree";
 import { settings } from "@/config/settings";
 import { defaultLocale, locales, t, type Locale } from "@/config/i18n";
 import { buildLocaleLinks, docsUrl, navHref, versionedDocsUrl, withBase } from "@/utils/base";
@@ -229,19 +228,26 @@ export function HeaderWithDefaults(
     // Island so the SSG output carries the full tree HTML AND the
     // data-zfb-island="SidebarToggle" marker for client-side hydration.
     // Island.captureComponentName reads SidebarToggle.name → "SidebarToggle".
+    //
+    // SidebarTree's data props (nodes, currentSlug, rootMenuItems, …) are
+    // passed to SidebarToggle directly rather than as JSX children so they
+    // ride across the SSR → hydrate boundary in the Island marker's
+    // `data-props` attribute. Island only serialises a wrapped child
+    // component's *own* props (excluding `children`); when SidebarTree was
+    // nested as a JSX child its data was dropped during hydration and
+    // SidebarToggle re-rendered with `children=undefined`, wiping the SSR
+    // tree DOM. zudolab/zudo-doc#1355 wave 13.5.
     sidebarToggle = Island({
       when: "load",
       children: (
-        <SidebarToggle>
-          <SidebarTree
-            nodes={nodes}
-            currentSlug={currentSlug}
-            rootMenuItems={rootMenuItems}
-            backToMenuLabel={backToMenuLabel}
-            localeLinks={localeLinks}
-            themeDefaultMode={themeDefaultMode}
-          />
-        </SidebarToggle>
+        <SidebarToggle
+          nodes={nodes}
+          currentSlug={currentSlug}
+          rootMenuItems={rootMenuItems}
+          backToMenuLabel={backToMenuLabel}
+          localeLinks={localeLinks}
+          themeDefaultMode={themeDefaultMode}
+        />
       ),
     }) as unknown as VNode;
   }
