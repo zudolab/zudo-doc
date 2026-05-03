@@ -38,25 +38,31 @@
 //     and emit their own script that imports mermaid through their own
 //     bundler.
 //
-// The version pin is intentionally a major-only `@11` so security
-// patches and bug fixes flow through automatically; package.json's
-// `mermaid` dep should be kept on the same major to avoid theme-API
-// drift between SSR-time mermaid (used in build/test) and runtime
-// mermaid (loaded by this script).
+// The version pin is a specific `@11.x.y` — see the constant below for
+// the rationale and bump policy. Floating on `@11` invited silent
+// upstream behaviour drift between SSR-time mermaid (in package.json)
+// and runtime mermaid (loaded from esm.sh by this script).
 import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
 
 /**
  * ESM CDN URL the inline init script imports `mermaid` from. esm.sh
- * resolves npm package specifiers to publishable ESM modules. The pin
- * stays on major-11 so the dependency bump in package.json (`mermaid:
- * ^11.x`) and the script's runtime resolution land on the same major
- * version family.
+ * resolves npm package specifiers to publishable ESM modules.
+ *
+ * Pinned to a specific minor.patch (not the bare `@11` major) so the
+ * runtime version is byte-stable across deploys; floating on the major
+ * would silently pull in upstream theme-API or behaviour changes the
+ * SSR-time mermaid in package.json hasn't been pinned to. Bump policy:
+ * raise this string in the same PR that bumps `mermaid` in
+ * package.json so the SSR-time and runtime mermaid versions stay
+ * matched. Cross-major jumps need an extra parity smoke (`pnpm build`
+ * and a manual diagram render) since esm.sh's exports drift between
+ * majors.
  *
  * Exported (rather than baked into the template) so consumers and
  * tests can override the URL — e.g. self-hosted mirrors, version-
  * locked deployments — without re-templating the whole script.
  */
-export const MERMAID_CDN_MODULE_URL = "https://esm.sh/mermaid@11";
+export const MERMAID_CDN_MODULE_URL = "https://esm.sh/mermaid@11.4.1";
 
 /**
  * Build the inline init script with a caller-supplied module URL.

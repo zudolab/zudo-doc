@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "preact/hooks";
 import { FindBar } from "./find-bar";
 import { createFindInPage } from "@/utils/find-in-page";
 // After zudolab/zudo-doc#1335 (E2 task 2 half B) the host components

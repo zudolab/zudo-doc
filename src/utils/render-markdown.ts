@@ -11,6 +11,35 @@ function escapeHtml(str: string): string {
     .replace(/"/g, "&quot;");
 }
 
+// Allowlist used by `renderInline` link rewrites. Anything outside this
+// set (javascript:, data:, file:, vbscript:, etc.) renders as plain text
+// so the markdown layer cannot smuggle a hostile scheme into an href.
+const ALLOWED_LINK_PROTOCOLS = new Set(["http:", "https:"]);
+
+function unescapeHtml(str: string): string {
+  return str
+    .replace(/&quot;/g, '"')
+    .replace(/&gt;/g, ">")
+    .replace(/&lt;/g, "<")
+    .replace(/&amp;/g, "&");
+}
+
+function safeHref(rawCapturedUrl: string): string | null {
+  // The captured URL has already been HTML-escaped by `escapeHtml` so we
+  // need the original characters before validating with `URL`.
+  const decoded = unescapeHtml(rawCapturedUrl);
+  let parsed: URL;
+  try {
+    parsed = new URL(decoded);
+  } catch {
+    return null;
+  }
+  if (!ALLOWED_LINK_PROTOCOLS.has(parsed.protocol)) return null;
+  // Re-encode and re-escape so the value embedded in `href` cannot break
+  // attribute quoting or reintroduce control characters.
+  return escapeHtml(encodeURI(decoded));
+}
+
 function renderInline(text: string): string {
   // Extract inline code first so bold/italic don't process inside backticks
   const codeSpans: string[] = [];
@@ -27,11 +56,12 @@ function renderInline(text: string): string {
     // italic: *text* or _text_ (not inside words for _)
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
     .replace(/(?<!\w)_(.+?)_(?!\w)/g, "<em>$1</em>")
-    // links: [text](url)
-    .replace(
-      /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
-      '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>',
-    );
+    // links: [text](url) — http(s) only, validated via URL parser
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (_match, label, url) => {
+      const href = safeHref(url);
+      if (href === null) return `[${label}](${url})`;
+      return `<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+    });
 
   // Restore inline code spans
   return processed.replace(/%%CODE_(\d+)%%/g, (_match, idx) => codeSpans[parseInt(idx, 10)]);

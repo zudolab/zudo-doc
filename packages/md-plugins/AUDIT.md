@@ -1,5 +1,21 @@
 # md-plugins audit — Astro → zfb migration
 
+## Status note (deep-review #1338, 2026-05-04)
+
+`stripMdExt: true` is now wired in `zfb.config.ts` so author-written
+`[label](./other.mdx)` links resolve to rendered route URLs at build
+time. After enabling it, `dist/` carried only two stragglers:
+
+- `dist/ja/docs/getting-started/writing-docs/index.html`
+- `dist/ja/docs/guides/header-navigation/index.html`
+
+Both leftovers are `[label](path.mdx)` references inside `:::note` /
+`:::tip` admonition directives — zfb's strip-md-ext pass does not
+descend into the admonition-injected JSX subtree. Tracked separately;
+the gap is documented here rather than blocking the deep-review pass.
+
+---
+
 This document classifies every plugin under `packages/md-plugins/src/`
 against the Rust pipeline shipped by **zfb** (the Rust-native build
 orchestrator that will replace the Astro pipeline). It also describes

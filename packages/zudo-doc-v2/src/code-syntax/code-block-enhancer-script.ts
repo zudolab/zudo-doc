@@ -34,7 +34,17 @@ export const CODE_BLOCK_ENHANCER_SCRIPT = `(function () {
   });
 
   function enhanceCodeBlocks() {
-    var pres = document.querySelectorAll('pre[class^="syntect-"]');
+    // Selector covers two shapes:
+    //   1. pre.syntect-... from the syntect highlighter (the class
+    //      is anchored or merged with other classes).
+    //   2. bare pre inside .tab-panel (TabItem) wrappers where some
+    //      pipelines emit class-less pre elements.
+    // No backticks in this comment: this whole script body lives inside
+    // a template literal in the host .ts module, so an inline backtick
+    // would close the literal and make 'panel' a free identifier.
+    var pres = document.querySelectorAll(
+      'pre[class*="syntect-"], .tab-panel pre',
+    );
 
     for (var pi = 0; pi < pres.length; pi++) {
       var pre = pres[pi];

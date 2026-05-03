@@ -59,7 +59,11 @@ describe("CODE_BLOCK_ENHANCER_SCRIPT", () => {
   });
 
   it("targets syntect-class pre elements", () => {
-    expect(CODE_BLOCK_ENHANCER_SCRIPT).toContain('pre[class^="syntect-"]');
+    expect(CODE_BLOCK_ENHANCER_SCRIPT).toContain('pre[class*="syntect-"]');
+  });
+
+  it("also targets bare <pre> inside tab panels", () => {
+    expect(CODE_BLOCK_ENHANCER_SCRIPT).toContain(".tab-panel pre");
   });
 
   it("uses ResizeObserver for overflow detection", () => {

@@ -42,6 +42,10 @@
       "types": "./src/sidebar/index.ts",
       "default": "./src/sidebar/index.ts"
     },
+    "./sidebar/types": {
+      "types": "./src/sidebar/types.ts",
+      "default": "./src/sidebar/types.ts"
+    },
     "./i18n-version": {
       "types": "./src/i18n-version/index.ts",
       "default": "./src/i18n-version/index.ts"

@@ -371,6 +371,13 @@ export default defineConfig({
   framework: "preact",
   tailwind: { enabled: true },
   collections,
+  // Strip `.md` / `.mdx` from in-page `<a href>` and append a trailing
+  // slash so author-written `[label](./other.mdx)` references resolve
+  // to the rendered route URL. Mirrors `rehypeStripMdExtension` from
+  // packages/md-plugins. Without this, dist HTML carries unrouted
+  // `href="./other.mdx"` links — the deep-review #1338 finding 12
+  // verification surfaced this on roughly two dozen pages.
+  stripMdExt: true,
   // ----------------------------------------------------------------------
   // Cloudflare Pages adapter — wraps the SSR bundle into `dist/_worker.js`
   // (advanced-mode entry) plus a sidecar `dist/_zfb_inner.mjs`. The adapter
