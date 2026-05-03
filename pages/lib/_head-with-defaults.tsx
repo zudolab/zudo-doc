@@ -23,7 +23,15 @@
 
 import type { JSX } from "preact";
 import { OgTags } from "@zudo-doc/zudo-doc-v2/head";
-import { ColorSchemeProvider } from "@zudo-doc/zudo-doc-v2/theme";
+// Don't import ColorSchemeProvider from "@zudo-doc/zudo-doc-v2/theme" — that
+// barrel also re-exports DesignTokenTweakPanel + ColorTweakExportModal, which
+// transitively pull `src/components/design-token-tweak/*` and the v2 panel
+// modules (and react-dependent code) into the zfb esbuild graph. Same hazard
+// the host's `_header-with-defaults.tsx` documents for ThemeToggle. The v2
+// package exposes a dedicated `./theme/color-scheme-provider` subpath whose
+// only output is the SSR-only ColorSchemeProvider component, keeping this
+// head emission free of the panel-module dependency chain.
+import ColorSchemeProvider from "@zudo-doc/zudo-doc-v2/theme/color-scheme-provider";
 import { composeMetaTitle } from "./_compose-meta-title";
 
 export interface HeadWithDefaultsProps {
