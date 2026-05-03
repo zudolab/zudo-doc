@@ -65,15 +65,9 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
   function handleBackdropClick(e: React.MouseEvent) {
     const dialog = dialogRef.current;
     if (!dialog) return;
-    const rect = dialog.getBoundingClientRect();
-    if (
-      e.clientX < rect.left ||
-      e.clientX > rect.right ||
-      e.clientY < rect.top ||
-      e.clientY > rect.bottom
-    ) {
-      dialog.close();
-    }
+    // Native <dialog> backdrop clicks fire with e.target === the dialog
+    // itself; child element clicks bubble with target set to that child.
+    if (e.target === dialog) dialog.close();
   }
 
   const sendMessage = useCallback(async () => {
