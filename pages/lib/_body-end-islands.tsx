@@ -33,7 +33,7 @@ import { Island } from "@takazudo/zfb";
 
 import AiChatModal from "@/components/ai-chat-modal";
 import DesignTokenTweakPanel from "@/components/design-token-tweak";
-import ImageEnlarge from "@/components/image-enlarge";
+import ImageEnlarge, { ImageEnlargeSsrFallback } from "@/components/image-enlarge";
 
 // Set explicit `displayName` on each default-exported island so zfb's
 // `captureComponentName` produces a stable marker even after the SSR
@@ -105,9 +105,16 @@ export function BodyEndIslands({
     children: <AiChatModal basePath={basePath} />,
   }) as unknown as VNode;
 
+  // Wave 11 (zudolab/zudo-doc#1355): the SSR fallback is the empty,
+  // closed `<dialog class="zd-enlarge-dialog ...">` shell so the dist
+  // HTML carries one dialog from the start. Without this the smoke
+  // "exactly one zd-enlarge-dialog element" assertion sees zero
+  // (skip-ssr placeholders are empty divs) and the no-JS path has no
+  // dialog at all. Hydration replaces this shell with the real
+  // ImageEnlarge component when the page goes idle.
   const imageEnlarge = Island({
     when: "idle",
-    ssrFallback: null,
+    ssrFallback: <ImageEnlargeSsrFallback />,
     children: <ImageEnlarge />,
   }) as unknown as VNode;
 

@@ -222,3 +222,30 @@ export default function ImageEnlarge() {
     </dialog>
   );
 }
+
+/**
+ * Static SSR fallback for the {@link ImageEnlarge} island.
+ *
+ * Wave 11 (zudolab/zudo-doc#1355): the body-end Island wrapper renders
+ * this on the server so the dist HTML carries an empty, closed
+ * `<dialog class="zd-enlarge-dialog ...">` even before hydration. This:
+ *
+ *   1. Lets the smoke "exactly one zd-enlarge-dialog element" static
+ *      HTML assertion pass without booting Preact.
+ *   2. Gives the no-JS path a hidden-by-default dialog (a `<dialog>`
+ *      without `open` is `display:none` per UA stylesheet), so screen
+ *      readers and crawlers see the same shape they would post-hydration.
+ *
+ * The classes and inline style mirror the hydrated `<dialog>` above
+ * one-to-one. Keep them in sync — the post-hydration component re-
+ * renders into the same Island container, so any drift would show up
+ * as a cosmetic flash on first interaction.
+ */
+export function ImageEnlargeSsrFallback() {
+  return (
+    <dialog
+      className="zd-enlarge-dialog mx-auto max-h-[90vh] max-w-[90vw] overflow-hidden border border-muted bg-surface p-0"
+      style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
+    />
+  );
+}
