@@ -157,7 +157,10 @@
 }
 
 :root {
-  /* Default responsive range; sidebar-resizer.ts allows 192–448px for explicit resizing */
+  /* Default responsive range; sidebar-resizer.ts allows 192–448px for explicit resizing.
+   * Keep the value in sync with the inline `<style>` fallback in
+   * packages/zudo-doc-v2/src/doclayout/doc-layout.tsx (Wave 12 workaround
+   * for the upstream zfb CSS-pipeline path-probe issue, #1355). */
   --zd-sidebar-w: clamp(14rem, 20vw, 22rem);
 
   /* ── Tier 1: Abstract font-size scale (raw values — NOT for direct component use) ── */
