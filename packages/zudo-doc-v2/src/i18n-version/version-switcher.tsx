@@ -61,6 +61,16 @@
 //   `.hidden` (which lives in `@layer utilities`), so visibility is correct
 //   regardless of whether `.lg:block` survived content scanning. Mobile
 //   visibility falls through to `.hidden`'s `display: none` baseline.
+//
+//   The `<style>` element is rendered as the first child INSIDE the
+//   `<div data-version-switcher>` so that the migration-check
+//   `strip-version-switcher.mjs` walker (which removes the entire
+//   `<div data-version-switcher>` subtree) cleans the `<style>` up too —
+//   keeping post-cutover migration parity comparisons free of a structural
+//   delta on every versioned page.
+//
+//   Consumers that ship their own visibility CSS can pass
+//   `disableInlineVisibilityStyle` to suppress the inline `<style>`.
 
 import type { VNode } from "preact";
 import type { VersionEntry, VersionSwitcherLabels } from "./types";
@@ -109,6 +119,21 @@ export interface VersionSwitcherProps {
    * unique.
    */
   idSuffix?: string;
+
+  /**
+   * When true, suppress the inline `<style>` element that backs responsive
+   * visibility (`VERSION_SWITCHER_VISIBILITY_STYLE`). Use this when the
+   * host already ships its own visibility CSS — for example, a project
+   * whose Tailwind content scanner reaches the workspace-package source
+   * (via an explicit `@source` directive) so `.lg:block` makes it into
+   * the bundle without the inline override, or a project that wraps the
+   * switcher in a layout that uses a non-`.hidden` baseline (`hidden
+   * lg:flex`, `hidden xl:block`, a custom breakpoint, etc.).
+   *
+   * Defaults to `false` (emit the inline style) so existing consumers
+   * keep working without a code change.
+   */
+  disableInlineVisibilityStyle?: boolean;
 }
 
 /** Concatenate Tailwind class strings, dropping falsy entries. */
@@ -181,6 +206,7 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
     unavailableVersions,
     labels,
     idSuffix = "",
+    disableInlineVisibilityStyle = false,
   } = props;
 
   const menuId = `version-menu${idSuffix ? `-${idSuffix}` : ""}`;
@@ -190,91 +216,93 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
     : (versions.find((v) => v.slug === currentVersion)?.label ?? currentVersion);
 
   return (
-    <>
+    <div class="version-switcher relative" data-version-switcher>
       {/*
-       * Inline visibility rule — see file header for rationale. Emitting it
-       * inside the component output keeps the rule co-located with the markup
-       * it governs and means the host doesn't need any extra wiring. Multiple
-       * version-switchers on the same page each emit one of these blocks; the
-       * declarations are byte-identical so the duplication is harmless.
+       * Inline visibility rule — see file header for rationale. The
+       * `<style>` lives inside the `data-version-switcher` element so the
+       * migration-check `strip-version-switcher.mjs` walker removes it
+       * symmetrically with the rest of the switcher subtree. Multiple
+       * version-switchers on the same page each emit one of these
+       * blocks; the declarations are byte-identical so the duplication
+       * is harmless.
        */}
-      <style dangerouslySetInnerHTML={{ __html: VERSION_SWITCHER_VISIBILITY_STYLE }} />
-      <div class="version-switcher relative" data-version-switcher>
-        <button
-          type="button"
-          class="flex items-center gap-hsp-2xs border border-muted rounded px-hsp-sm py-vsp-3xs text-small text-muted hover:border-accent hover:text-accent transition-colors cursor-pointer whitespace-nowrap"
-          aria-expanded="false"
-          aria-controls={menuId}
-          data-version-toggle
-        >
-          <span class="text-caption">{labels.switcher}:</span>
-          <span class="font-medium">{triggerLabel}</span>
-          <ChevronDownIcon />
-        </button>
+      {!disableInlineVisibilityStyle && (
+        <style dangerouslySetInnerHTML={{ __html: VERSION_SWITCHER_VISIBILITY_STYLE }} />
+      )}
+      <button
+        type="button"
+        class="flex items-center gap-hsp-2xs border border-muted rounded px-hsp-sm py-vsp-3xs text-small text-muted hover:border-accent hover:text-accent transition-colors cursor-pointer whitespace-nowrap"
+        aria-expanded="false"
+        aria-controls={menuId}
+        data-version-toggle
+      >
+        <span class="text-caption">{labels.switcher}:</span>
+        <span class="font-medium">{triggerLabel}</span>
+        <ChevronDownIcon />
+      </button>
 
-        <ul
-          id={menuId}
-          class="absolute right-0 top-full z-10 mt-vsp-3xs hidden min-w-[8rem] border border-muted rounded bg-surface shadow-lg whitespace-nowrap py-vsp-3xs"
-          data-version-menu
-        >
-          <li>
-            <a
-              href={latestUrl}
-              aria-current={isLatest ? "page" : undefined}
-              class={cls(
-                "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 hover:underline focus-visible:underline",
-                isLatest ? "font-bold text-accent" : "text-fg",
+      <ul
+        id={menuId}
+        class="absolute right-0 top-full z-10 mt-vsp-3xs hidden min-w-[8rem] border border-muted rounded bg-surface shadow-lg whitespace-nowrap py-vsp-3xs"
+        data-version-menu
+      >
+        <li>
+          <a
+            href={latestUrl}
+            aria-current={isLatest ? "page" : undefined}
+            class={cls(
+              "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 hover:underline focus-visible:underline",
+              isLatest ? "font-bold text-accent" : "text-fg",
+            )}
+          >
+            {labels.latest}
+          </a>
+        </li>
+        {versions.map((v) => {
+          const vUrl = versionUrls[v.slug] ?? versionsPageUrl;
+          const isActive = currentVersion === v.slug;
+          // The Astro source treated "no availability info" as
+          // "everything available" (`!availability || (...has(slug))`).
+          // We mirror that: when the consumer doesn't pass
+          // `unavailableVersions`, treat every entry as available.
+          const isAvailable = !unavailableVersions || !unavailableVersions.has(v.slug);
+          return (
+            <li key={v.slug}>
+              {isAvailable ? (
+                <a
+                  href={vUrl}
+                  aria-current={isActive ? "page" : undefined}
+                  class={cls(
+                    "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 hover:underline focus-visible:underline",
+                    isActive ? "font-bold text-accent" : "text-fg",
+                  )}
+                >
+                  {v.label}
+                </a>
+              ) : (
+                <a
+                  href={vUrl}
+                  aria-disabled="true"
+                  tabindex={-1}
+                  class="block px-hsp-md py-vsp-2xs text-small text-muted/50 cursor-not-allowed pointer-events-none"
+                  title={labels.unavailable}
+                >
+                  {v.label}
+                </a>
               )}
-            >
-              {labels.latest}
-            </a>
-          </li>
-          {versions.map((v) => {
-            const vUrl = versionUrls[v.slug] ?? versionsPageUrl;
-            const isActive = currentVersion === v.slug;
-            // The Astro source treated "no availability info" as
-            // "everything available" (`!availability || (...has(slug))`).
-            // We mirror that: when the consumer doesn't pass
-            // `unavailableVersions`, treat every entry as available.
-            const isAvailable = !unavailableVersions || !unavailableVersions.has(v.slug);
-            return (
-              <li key={v.slug}>
-                {isAvailable ? (
-                  <a
-                    href={vUrl}
-                    aria-current={isActive ? "page" : undefined}
-                    class={cls(
-                      "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 hover:underline focus-visible:underline",
-                      isActive ? "font-bold text-accent" : "text-fg",
-                    )}
-                  >
-                    {v.label}
-                  </a>
-                ) : (
-                  <a
-                    href={vUrl}
-                    aria-disabled="true"
-                    tabindex={-1}
-                    class="block px-hsp-md py-vsp-2xs text-small text-muted/50 cursor-not-allowed pointer-events-none"
-                    title={labels.unavailable}
-                  >
-                    {v.label}
-                  </a>
-                )}
-              </li>
-            );
-          })}
-          <li class="border-t border-muted">
-            <a
-              href={versionsPageUrl}
-              class="block px-hsp-md py-vsp-2xs text-small text-muted hover:bg-accent/10 hover:text-fg hover:underline focus-visible:underline"
-            >
-              {labels.allVersions}
-            </a>
-          </li>
-        </ul>
-      </div>
-    </>
+            </li>
+          );
+        })}
+        <li class="border-t border-muted">
+          <a
+            href={versionsPageUrl}
+            class="block px-hsp-md py-vsp-2xs text-small text-muted hover:bg-accent/10 hover:text-fg hover:underline focus-visible:underline"
+          >
+            {labels.allVersions}
+          </a>
+        </li>
+      </ul>
+    </div>
   );
 }
 

@@ -185,20 +185,25 @@ describe("VersionSwitcher", () => {
     expect(VERSION_SWITCHER_INIT_SCRIPT).toContain('data-version-switcher');
   });
 
-  it("emits the responsive visibility <style> alongside the switcher markup", () => {
+  it("emits the responsive visibility <style> inside the switcher root", () => {
     // Wave-11 fix: even when the host wraps this component in
     // `<div class="hidden lg:block">` and Tailwind's content scanner
     // never generated `.lg:block`, the inline `<style>` rule keyed off
     // `:has(> [data-version-switcher])` keeps visibility correct at
     // viewports `>= 64rem`.
     //
+    // The `<style>` is rendered as the first child INSIDE the
+    // `<div data-version-switcher>` so the migration-check
+    // `strip-version-switcher.mjs` walker (which removes the entire
+    // switcher subtree) cleans the `<style>` up symmetrically — keeping
+    // post-cutover migration parity comparisons free of a structural
+    // delta on every versioned page.
+    //
     // The local `serialize()` helper renders `dangerouslySetInnerHTML`
     // as the raw string `[object Object]` rather than expanding it, so
-    // we only assert the `<style>` element is present and ordered
-    // before the switcher root here. The CSS payload itself is covered
-    // by the dedicated `VERSION_SWITCHER_VISIBILITY_STYLE` test below
-    // (and by SSR end-to-end via preact-render-to-string in any caller
-    // that uses the real renderer).
+    // we only assert the `<style>` element is present and located after
+    // the switcher root opening tag. The CSS payload itself is covered
+    // by the dedicated `VERSION_SWITCHER_VISIBILITY_STYLE` test below.
     const html = serialize(
       <VersionSwitcher
         versions={versions}
@@ -211,7 +216,25 @@ describe("VersionSwitcher", () => {
     const styleIdx = html.indexOf("<style");
     const switcherIdx = html.indexOf("data-version-switcher");
     expect(styleIdx).toBeGreaterThanOrEqual(0);
-    expect(switcherIdx).toBeGreaterThan(styleIdx);
+    expect(switcherIdx).toBeGreaterThanOrEqual(0);
+    // `<style>` lives inside the `data-version-switcher` element so the
+    // existing migration-check stripper takes it out symmetrically.
+    expect(styleIdx).toBeGreaterThan(switcherIdx);
+  });
+
+  it("suppresses the inline <style> when disableInlineVisibilityStyle is true", () => {
+    const html = serialize(
+      <VersionSwitcher
+        versions={versions}
+        latestUrl="/docs/intro/"
+        versionsPageUrl="/docs/versions/"
+        versionUrls={versionUrls}
+        labels={labels}
+        disableInlineVisibilityStyle
+      />,
+    );
+    expect(html).toContain("data-version-switcher");
+    expect(html).not.toContain("<style");
   });
 
   it("VERSION_SWITCHER_VISIBILITY_STYLE is a self-contained CSS rule for the wrapper", () => {
