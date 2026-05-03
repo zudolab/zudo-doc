@@ -57,6 +57,17 @@
 // // @slot:doc-layout:frontmatter
 
 import type { ComponentChildren, JSX } from "preact";
+// `@takazudo/zfb` provides the `<Island>` JSX wrapper. We wrap the
+// default Toc / MobileToc here (rather than inside the Toc / MobileToc
+// modules themselves) so the zfb island bundle hydrates the bare inner
+// component against the existing data-zfb-island element in-place.
+// Pre-Wave 13, Toc / MobileToc each called Island internally and
+// returned the wrapped div; the bundle then hydrated *that* wrapper
+// inside the SSR'd marker div, producing a nested duplicate
+// `<nav aria-label="Table of contents">` (and the equivalent panel for
+// MobileToc) on every page. See the leading comment in
+// `../toc/toc.tsx` for the full diagnosis. zudolab/zudo-doc#1355.
+import { Island } from "@takazudo/zfb";
 
 import { DocLayout, type DocLayoutProps } from "./doc-layout.js";
 // Default-bearing slots: when the caller does not supply an override
@@ -262,11 +273,25 @@ export function DocLayoutWithDefaults(
   // passes tocOverride / mobileTocOverride can force a custom TOC even on
   // no-heading or hide_toc pages.
   const shouldRenderDefaultToc = !props.hideToc && tocHeadings.length > 0;
+  // Wrap each default island in zfb's `<Island when="load">` so the SSG
+  // pass emits the `data-zfb-island="Toc"` / `="MobileToc"` markers and
+  // the client bundle's hydrate pass targets the bare inner component
+  // (the `<nav>` / panel) directly. The cast through `unknown` mirrors
+  // the existing `as unknown as VNode` pattern in `<Toc>`'s historical
+  // wrapper — Island returns the structural IslandElement shape and
+  // Preact's JSX.Element typing does not directly accept it, but at
+  // runtime the renderer recognises the constructor:undefined sentinel.
   const defaultToc = shouldRenderDefaultToc
-    ? <Toc headings={tocHeadings} title={tocTitle} />
+    ? (Island({
+        when: "load",
+        children: <Toc headings={tocHeadings} title={tocTitle} />,
+      }) as unknown as JSX.Element)
     : undefined;
   const defaultMobileToc = shouldRenderDefaultToc
-    ? <MobileToc headings={tocHeadings} title={tocTitle} />
+    ? (Island({
+        when: "load",
+        children: <MobileToc headings={tocHeadings} title={tocTitle} />,
+      }) as unknown as JSX.Element)
     : undefined;
 
   // The empty fragments below carry the body-region injection anchors
@@ -308,10 +333,19 @@ export function DocLayoutWithDefaults(
           )
         }
         sidebar={
-          // Empty-data Sidebar still emits the SSG marker via the
-          // internal `<Island>` wrapper. Hosts that have a real nav
-          // tree pass it through `sidebarOverride`.
-          sidebarOverride ?? <Sidebar nodes={[]} />
+          // Empty-data Sidebar emits the SSG marker via an explicit
+          // `<Island when="load">` wrap at this call site (not inside
+          // `<Sidebar>` itself) so the bundle's hydrate pass targets
+          // the bare component and Preact doesn't append a duplicate
+          // wrapper-div alongside the SSR'd tree. See `../sidebar/sidebar.tsx`
+          // for the full diagnosis. Hosts that have a real nav tree
+          // pass it through `sidebarOverride` and apply their own
+          // `<Island>` wrap (see `pages/lib/_sidebar-with-defaults.tsx`
+          // in the host project).
+          sidebarOverride ?? (Island({
+            when: "load",
+            children: <Sidebar nodes={[]} />,
+          }) as unknown as JSX.Element)
         }
         toc={tocOverride ?? defaultToc}
         mobileToc={mobileTocOverride ?? defaultMobileToc}
