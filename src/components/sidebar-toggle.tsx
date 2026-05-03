@@ -12,12 +12,42 @@ import clsx from "clsx";
 // pull lifecycle event names from the v2 transitions module rather
 // than hard-coding `astro:*` literals.
 import { AFTER_NAVIGATE_EVENT } from "@zudo-doc/zudo-doc-v2/transitions";
+import SidebarTree from "@/components/sidebar-tree";
+import type { NavNode } from "@/utils/docs";
+import type { LocaleLink } from "@/types/locale";
 
-interface SidebarToggleProps {
-  children: React.ReactNode;
+// Mobile drawer hosts the SidebarTree directly (rather than receiving it as
+// JSX children) so the tree's data props ride across the SSR → hydrate
+// boundary inside the Island marker's `data-props` attribute. zfb's
+// `Island()` only serialises a child component's *own* props (excluding
+// `children`); when SidebarTree was passed as `children`, its data was
+// dropped during hydration and Preact wiped the SSR-rendered tree DOM.
+// Mirroring the desktop `<Sidebar treeComponent={SidebarTree} ...>` shape
+// keeps the data attached to the wrapping island. zudolab/zudo-doc#1355
+// wave 13.5.
+interface RootMenuItem {
+  label: string;
+  href: string;
+  children?: RootMenuItem[];
 }
 
-export default function SidebarToggle({ children }: SidebarToggleProps) {
+interface SidebarToggleProps {
+  nodes: NavNode[];
+  currentSlug?: string;
+  rootMenuItems?: RootMenuItem[];
+  backToMenuLabel?: string;
+  localeLinks?: LocaleLink[];
+  themeDefaultMode?: "light" | "dark";
+}
+
+export default function SidebarToggle({
+  nodes,
+  currentSlug,
+  rootMenuItems,
+  backToMenuLabel,
+  localeLinks,
+  themeDefaultMode,
+}: SidebarToggleProps) {
   // Initial state must match SSR (`open=false`) so the hydration DOM
   // matches the SSG output byte-for-byte. The backdrop and toggle-icon
   // are rendered unconditionally below so the hydration tree has the
@@ -114,7 +144,14 @@ export default function SidebarToggle({ children }: SidebarToggleProps) {
         `}
       >
         <div className="flex-1 overflow-y-auto">
-          {children}
+          <SidebarTree
+            nodes={nodes}
+            currentSlug={currentSlug}
+            rootMenuItems={rootMenuItems}
+            backToMenuLabel={backToMenuLabel}
+            localeLinks={localeLinks}
+            themeDefaultMode={themeDefaultMode}
+          />
         </div>
       </aside>
     </>
