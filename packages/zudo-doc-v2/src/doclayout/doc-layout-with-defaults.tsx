@@ -333,10 +333,19 @@ export function DocLayoutWithDefaults(
           )
         }
         sidebar={
-          // Empty-data Sidebar still emits the SSG marker via the
-          // internal `<Island>` wrapper. Hosts that have a real nav
-          // tree pass it through `sidebarOverride`.
-          sidebarOverride ?? <Sidebar nodes={[]} />
+          // Empty-data Sidebar emits the SSG marker via an explicit
+          // `<Island when="load">` wrap at this call site (not inside
+          // `<Sidebar>` itself) so the bundle's hydrate pass targets
+          // the bare component and Preact doesn't append a duplicate
+          // wrapper-div alongside the SSR'd tree. See `../sidebar/sidebar.tsx`
+          // for the full diagnosis. Hosts that have a real nav tree
+          // pass it through `sidebarOverride` and apply their own
+          // `<Island>` wrap (see `pages/lib/_sidebar-with-defaults.tsx`
+          // in the host project).
+          sidebarOverride ?? (Island({
+            when: "load",
+            children: <Sidebar nodes={[]} />,
+          }) as unknown as JSX.Element)
         }
         toc={tocOverride ?? defaultToc}
         mobileToc={mobileTocOverride ?? defaultMobileToc}
