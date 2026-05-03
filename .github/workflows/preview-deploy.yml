@@ -204,6 +204,24 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
+      # Guardrail: assert that the deployed HTML has /pj/zudo-doc/-prefixed
+      # asset URLs (stylesheet href and islands script src).  If zfb silently
+      # drops the `base` threading in a future version this step goes red
+      # before the broken preview reaches the user — fixing the gap documented
+      # in epic #1386 / #1389 ("CI green is necessary but not sufficient for
+      # feature delivered").
+      - name: Verify deployed preview has prefixed asset URLs
+        run: |
+          set -euo pipefail
+          PREVIEW_URL="${{ steps.deploy.outputs.deploy_url }}/pj/zudo-doc/"
+          echo "Checking prefixed asset URLs at: $PREVIEW_URL"
+          HTML=$(curl -fsSL "$PREVIEW_URL")
+          echo "$HTML" | grep -qE 'href="/pj/zudo-doc/assets/' \
+            || { echo "::error::Preview HTML missing prefixed stylesheet href"; exit 1; }
+          echo "$HTML" | grep -qE 'src="/pj/zudo-doc/assets/' \
+            || { echo "::error::Preview HTML missing prefixed islands script src"; exit 1; }
+          echo "OK: deployed preview has prefixed asset URLs"
+
       - name: Set commit status
         if: always()
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
