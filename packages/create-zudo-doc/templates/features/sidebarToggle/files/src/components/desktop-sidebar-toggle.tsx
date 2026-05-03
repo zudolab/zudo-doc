@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'preact/hooks';
 
 export const SIDEBAR_STORAGE_KEY = 'zudo-doc-sidebar-visible';
 
