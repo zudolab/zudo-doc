@@ -37,10 +37,12 @@ export default function DesktopSidebarToggle() {
   const hydrated = useRef(false);
 
   // Persist state changes to localStorage and the <html> data-attribute.
-  // Declared *before* the hydration-sync effect so on the very first
-  // mount this effect's check sees `hydrated.current === false` and
-  // bails out — preventing a flash of "visible" when the user has the
-  // sidebar hidden.
+  // The `hydrated.current` guard is the real protection: it is still
+  // `false` on the very first effect run (the hydration-sync effect
+  // below sets it to `true` only after this one fires, since effects
+  // run in declaration order on mount), so the first run bails out
+  // and we don't clobber the user's persisted "hidden" preference
+  // with the SSR-safe default `true`.
   useEffect(() => {
     if (!hydrated.current) return;
     setDataAttribute(visible);
@@ -52,8 +54,8 @@ export default function DesktopSidebarToggle() {
   }, [visible]);
 
   // After mount, read the persisted preference and reconcile state
-  // with the SSR default. Marks the ref so subsequent effect runs
-  // start persisting normally.
+  // with the SSR default. Sets the ref so subsequent runs of the
+  // persistence effect above start syncing normally.
   useEffect(() => {
     hydrated.current = true;
     const actual = readState();

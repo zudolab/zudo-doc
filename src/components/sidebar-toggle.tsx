@@ -7,6 +7,7 @@
 // and packages/zudo-doc-v2/src/theme/theme-toggle.tsx. Type references via
 // the global React namespace still resolve via @types/react.
 import { useState, useEffect } from "preact/hooks";
+import clsx from "clsx";
 // After zudolab/zudo-doc#1335 (E2 task 2 half B) the host components
 // pull lifecycle event names from the v2 transitions module rather
 // than hard-coding `astro:*` literals.
@@ -62,7 +63,7 @@ export default function SidebarToggle({ children }: SidebarToggleProps) {
         {/* X icon — visible only when open */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className={`h-icon-lg w-icon-lg${open ? "" : " hidden"}`}
+          className={clsx("h-icon-lg w-icon-lg", !open && "hidden")}
           aria-hidden="true"
           fill="none"
           viewBox="0 0 24 24"
@@ -78,7 +79,7 @@ export default function SidebarToggle({ children }: SidebarToggleProps) {
         {/* Hamburger icon — visible only when closed */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className={`h-icon-lg w-icon-lg${open ? " hidden" : ""}`}
+          className={clsx("h-icon-lg w-icon-lg", open && "hidden")}
           aria-hidden="true"
           fill="none"
           viewBox="0 0 24 24"
@@ -98,7 +99,7 @@ export default function SidebarToggle({ children }: SidebarToggleProps) {
           the SSR DOM tree matches the hydrated tree (no subtree
           mount/unmount across the hydration boundary). */}
       <div
-        className={`fixed inset-0 z-30 bg-overlay/30 lg:hidden${open ? "" : " hidden"}`}
+        className={clsx("fixed inset-0 z-30 bg-overlay/30 lg:hidden", !open && "hidden")}
         aria-hidden={!open}
         onClick={() => setOpen(false)}
       />
