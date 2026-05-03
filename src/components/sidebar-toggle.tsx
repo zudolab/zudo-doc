@@ -17,6 +17,11 @@ interface SidebarToggleProps {
 }
 
 export default function SidebarToggle({ children }: SidebarToggleProps) {
+  // Initial state must match SSR (`open=false`) so the hydration DOM
+  // matches the SSG output byte-for-byte. The backdrop and toggle-icon
+  // are rendered unconditionally below so the hydration tree has the
+  // same shape regardless of `open`, preventing Preact from re-mounting
+  // the subtree (which can drop click handlers on the hamburger button).
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -41,53 +46,62 @@ export default function SidebarToggle({ children }: SidebarToggleProps) {
 
   return (
     <>
-      {/* Hamburger button - visible only on mobile */}
+      {/* Hamburger button - visible only on mobile.
+          Both icons are always rendered so the SSR output has the same
+          DOM shape as the post-hydration tree. The closed-state icon is
+          hidden via `hidden` when open=true, and vice versa, so Preact's
+          hydration walk sees byte-stable markup and keeps the click
+          handler attached. */}
       <button
         type="button"
         onClick={() => setOpen(!open)}
         className="lg:hidden px-hsp-sm py-vsp-xs -ml-hsp-sm mr-hsp-sm text-muted hover:text-fg"
         aria-label={open ? "Close sidebar" : "Open sidebar"}
+        aria-expanded={open}
       >
-        {open ? (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-icon-lg w-icon-lg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        ) : (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-icon-lg w-icon-lg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
-        )}
+        {/* X icon — visible only when open */}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className={`h-icon-lg w-icon-lg${open ? "" : " hidden"}`}
+          aria-hidden="true"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+        {/* Hamburger icon — visible only when closed */}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className={`h-icon-lg w-icon-lg${open ? " hidden" : ""}`}
+          aria-hidden="true"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M4 6h16M4 12h16M4 18h16"
+          />
+        </svg>
       </button>
 
-      {/* Backdrop overlay - mobile only */}
-      {open && (
-        <div
-          className="fixed inset-0 z-30 bg-overlay/30 lg:hidden"
-          onClick={() => setOpen(false)}
-        />
-      )}
+      {/* Backdrop overlay - mobile only.
+          Rendered unconditionally; CSS `hidden` toggles visibility so
+          the SSR DOM tree matches the hydrated tree (no subtree
+          mount/unmount across the hydration boundary). */}
+      <div
+        className={`fixed inset-0 z-30 bg-overlay/30 lg:hidden${open ? "" : " hidden"}`}
+        aria-hidden={!open}
+        onClick={() => setOpen(false)}
+      />
 
       {/* Sidebar panel - mobile only (desktop sidebar is in doc-layout) */}
       <aside
