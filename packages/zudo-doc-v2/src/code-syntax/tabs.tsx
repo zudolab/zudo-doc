@@ -20,14 +20,23 @@
 // Children that are NOT `<TabItem>` elements are rendered into the content
 // area unchanged, so mixed content (e.g. a heading above a tab set) works.
 
-import { toChildArray } from "preact";
+import { cloneElement, toChildArray } from "preact";
 import type { ComponentChildren, JSX, VNode } from "preact";
 import { TabItem } from "../tab-item/tab-item.js";
 import type { TabItemProps } from "../tab-item/tab-item.js";
 
 const BASE_BTN_CLASS =
   "px-hsp-lg py-vsp-xs text-small font-medium border-b-[5px] -mb-px transition-colors";
-/** Initially every button is inactive; the TabsInit script activates the correct one. */
+/**
+ * Wave 11 (zudolab/zudo-doc#1355): the default tab's button now ships
+ * with active styles and `aria-selected="true"` straight from SSR — see
+ * the `Tabs` body for the per-button selection. Non-default buttons
+ * keep the inactive class. The companion TabsInit script can still
+ * re-derive the active tab (e.g. from localStorage group sync) and
+ * reapply both classes; the styles below stay in lockstep with
+ * `tabs-init-script.ts`.
+ */
+const ACTIVE_BTN_CLASS = `${BASE_BTN_CLASS} text-accent border-accent`;
 const INACTIVE_BTN_CLASS = `${BASE_BTN_CLASS} text-muted border-transparent hover:text-fg`;
 
 export interface TabsProps {
@@ -83,6 +92,39 @@ export function Tabs({ groupId, children }: TabsProps): JSX.Element {
     props: n.props as TabItemProps,
   }));
 
+  // Wave 11: pre-resolve the default tab's `value` so the SSR HTML can
+  // render the correct button as active and leave the matching panel
+  // unhidden. Resolution mirrors the runtime fallback in
+  // `tabs-init-script.ts`: the first TabItem with `default` wins; if no
+  // child opts in, the first TabItem becomes the implicit default. This
+  // keeps the no-JS path usable and avoids a hidden-everything flash
+  // before the init script runs.
+  const explicitDefault = tabItems.find((item) => item.props.default === true);
+  const fallbackDefault = tabItems[0];
+  const defaultItem = explicitDefault ?? fallbackDefault;
+  const defaultValue = defaultItem
+    ? defaultItem.props.value ?? defaultItem.props.label
+    : undefined;
+
+  // Re-walk children so each TabItem panel knows whether it is the
+  // implicit default. Non-TabItem children (the test "renders non-
+  // TabItem children in the content area" guards this) flow through
+  // unchanged so mixed content keeps working.
+  const renderedChildren = childArray.map((child) => {
+    if (
+      typeof child === "object" &&
+      child !== null &&
+      (child as VNode).type === TabItem
+    ) {
+      const node = child as VNode;
+      const props = node.props as TabItemProps;
+      const value = props.value ?? props.label;
+      const isDefault = value === defaultValue;
+      return cloneElement(node, { default: isDefault });
+    }
+    return child;
+  });
+
   return (
     <div
       class="tabs-container my-vsp-md"
@@ -90,20 +132,24 @@ export function Tabs({ groupId, children }: TabsProps): JSX.Element {
       data-group-id={groupId}
     >
       <div class="tabs-nav flex border-b border-muted" role="tablist">
-        {tabItems.map((item) => (
-          <button
-            key={item.props.value ?? item.props.label}
-            type="button"
-            role="tab"
-            class={INACTIVE_BTN_CLASS}
-            data-tab-btn={item.props.value ?? item.props.label}
-            aria-selected="false"
-          >
-            {item.props.label}
-          </button>
-        ))}
+        {tabItems.map((item) => {
+          const value = item.props.value ?? item.props.label;
+          const isActive = value === defaultValue;
+          return (
+            <button
+              key={value}
+              type="button"
+              role="tab"
+              class={isActive ? ACTIVE_BTN_CLASS : INACTIVE_BTN_CLASS}
+              data-tab-btn={value}
+              aria-selected={isActive ? "true" : "false"}
+            >
+              {item.props.label}
+            </button>
+          );
+        })}
       </div>
-      <div class="tabs-content">{children}</div>
+      <div class="tabs-content">{renderedChildren}</div>
     </div>
   );
 }
