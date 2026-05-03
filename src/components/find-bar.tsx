@@ -18,17 +18,28 @@ export function FindBar({ visible, onClose, findInPage, containerSelector }: Fin
   const [query, setQuery] = useState("");
   const [matchInfo, setMatchInfo] = useState<FindResult | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Pin `findInPage` via ref so the visibility-clear effect doesn't
+  // re-run when a new `find-in-page` instance is passed; the latest
+  // value is read at effect-fire time without entering the deps.
+  const findInPageRef = useRef(findInPage);
+  useEffect(() => {
+    findInPageRef.current = findInPage;
+  }, [findInPage]);
 
   useEffect(() => {
     if (visible) {
       inputRef.current?.focus();
       inputRef.current?.select();
-    } else {
+    }
+  }, [visible]);
+
+  useEffect(() => {
+    if (!visible) {
       setQuery("");
       setMatchInfo(null);
-      findInPage.stop();
+      findInPageRef.current.stop();
     }
-  }, [visible, findInPage]);
+  }, [visible]);
 
   const handleFind = useCallback(
     (text: string) => {
