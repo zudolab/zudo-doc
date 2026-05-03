@@ -1,6 +1,6 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: a9c8a65 (Takazudo/zudo-front-builder main, 2026-05-03)
+ *   commit: a8f79dd (Takazudo/zudo-front-builder base/island-data-props-serialization, 2026-05-03)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -108,10 +108,20 @@
  *                               no-trailing-slash URLs like /docs/getting-started under
  *                               `zfb preview` and Cloudflare Pages, fixing Wave 10 Sig G e2e
  *                               failures in zudolab/zudo-doc#1355)
+ *     - Takazudo/zudo-front-builder base/island-data-props-serialization (Island JSX wrapper now
+ *                               JSON.stringifies the wrapped child's own props onto a `data-props`
+ *                               attribute on the SSR marker div — the runtime hydration path has
+ *                               always read that attribute via getAttribute("data-props") + JSON.parse
+ *                               but no SSR site ever wrote it, so every caller-supplied prop bag
+ *                               silently vanished across the SSR → hydrate boundary and every
+ *                               island re-rendered with {} on the client; closes the prop-
+ *                               serialisation gap that wave 12 of zudolab/zudo-doc#1355 traced as
+ *                               the root cause of the remaining 20 failing e2e specs — i18n
+ *                               sidebar fallback, mobile-toc, mobile-sidebar, smoke-pages)
  *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333) → bumped by epic
  *              zudolab/zudo-doc#1355 (Sig F finalisation + post-#131 hash-mismatch follow-up
  *              + Sig G island-resolver/esbuild parity + shared-bundle hydration glue
- *              + manifest-key alignment)
+ *              + manifest-key alignment + wave 12 hydration prop serialisation)
  */
 
 // zfb.config.ts — entry-point config consumed by the zfb engine.
