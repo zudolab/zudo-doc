@@ -34,7 +34,13 @@ export const CODE_BLOCK_ENHANCER_SCRIPT = `(function () {
   });
 
   function enhanceCodeBlocks() {
-    var pres = document.querySelectorAll('pre[class^="syntect-"]');
+    // Cover both: (a) the regular <pre class="syntect-…"> shape produced by
+    // the syntect highlighter (anchored or merged with other classes), and
+    // (b) bare <pre> elements that show up inside <TabItem>'s `.tab-panel`
+    // wrapper (where some pipelines emit class-less <pre>).
+    var pres = document.querySelectorAll(
+      'pre[class*="syntect-"], .tab-panel pre',
+    );
 
     for (var pi = 0; pi < pres.length; pi++) {
       var pre = pres[pi];
