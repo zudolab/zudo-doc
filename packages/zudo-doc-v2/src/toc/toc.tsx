@@ -5,9 +5,6 @@
 
 import type { VNode } from "preact";
 import { useMemo } from "preact/hooks";
-// `@takazudo/zfb` is provided by the consumer at integration time;
-// types come from the package-level shim at `../_zfb-shim.d.ts`.
-import { Island } from "@takazudo/zfb";
 
 import { useActiveHeading } from "./use-active-heading";
 import type { HeadingItem } from "./types";
@@ -27,10 +24,29 @@ export interface TocProps {
 }
 
 /**
- * Inner desktop right-rail Table of Contents — the renamed body of the
- * original `Toc` component. The exported `Toc` wraps this in `<Island>`
- * so SSG output emits `data-zfb-island="Toc"` for the hydration
- * runtime to find.
+ * Desktop right-rail Table of Contents — a Preact island component.
+ *
+ * Renders the `<nav aria-label="Table of contents">` directly. The
+ * `<Island when="load">` wrapper is applied at the call site (see
+ * `<DocLayoutWithDefaults>`) so the SSG output emits the
+ * `data-zfb-island="Toc"` hydration marker around this nav.
+ *
+ * Wave 13 ("smoke-toc duplicate-nav regression", zudolab/zudo-doc#1355):
+ * before this refactor, this module exported a `Toc` wrapper that itself
+ * called `Island(...)` internally and an inner `TocInner` component that
+ * carried `displayName = "Toc"`. The zfb island scanner picked the
+ * exported `Toc` (the wrapper) as the hydration target, so on the
+ * client `mountIslands` ran `hydrate(<Toc/>, dataIslandDiv)` where the
+ * vnode itself rendered to *another* `<div data-zfb-island="Toc">…<nav>…</nav></div>`
+ * — Preact appended the new wrapper-div as a child of the existing
+ * data-zfb-island element instead of in-place hydrating the inner nav,
+ * leaving two `<nav aria-label="Table of contents">` elements in the
+ * post-hydration DOM. The host's Wave 12 prop-serialisation pin
+ * (`data-props`) made hydration succeed where it previously crashed
+ * silently on the missing `headings` prop, which is why the duplicate
+ * only became visible in CI smoke runs after Wave 12. Moving the
+ * `<Island>` wrapper to the call site lets the bundle hydrate the bare
+ * `<nav>` against the existing DOM in-place, eliminating the duplicate.
  *
  * Renders only depth 2–4 headings (h2/h3/h4), matching zudo-doc's
  * historical behavior — the page title (h1) is rendered separately by
@@ -41,7 +57,7 @@ export interface TocProps {
  * string in the SSG HTML for migration-check parity. When headings are
  * absent the `<ul>` is omitted so no empty list appears to users.
  */
-function TocInner({ headings, title = "On this page" }: TocProps) {
+export function Toc({ headings, title = "On this page" }: TocProps): VNode {
   const filtered = useMemo(
     () => headings.filter((h) => h.depth >= 2 && h.depth <= 4),
     [headings],
@@ -95,22 +111,9 @@ function TocInner({ headings, title = "On this page" }: TocProps) {
     </nav>
   );
 }
-// Pin the marker name to "Toc" so the hydration manifest can resolve
-// the island regardless of how the bundler renames inner helpers.
-TocInner.displayName = "Toc";
-
-/**
- * Desktop right-rail Table of Contents. Sticky island that lights up
- * the heading nearest the top of the viewport via `useActiveHeading`.
- *
- * Wraps `<TocInner>` in `<Island when="load">` so the SSG renderer
- * emits `<div data-zfb-island="Toc" data-when="load">…</div>` and the
- * client-side hydration runtime can pick the island up.
- */
-export function Toc(props: TocProps): VNode {
-  const rendered = Island({
-    when: "load",
-    children: <TocInner {...props} />,
-  });
-  return rendered as unknown as VNode;
-}
+// Pin the marker name to "Toc" explicitly so the SSR pass `<Island>` wrapper
+// resolves a stable component identity even after esbuild minification has
+// renamed the function. captureComponentName reads displayName first, then
+// falls back to function.name; setting both means the SSR marker stays
+// "Toc" no matter which path the runtime takes.
+Toc.displayName = "Toc";
