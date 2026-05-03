@@ -26,10 +26,14 @@ export interface TocProps {
 /**
  * Desktop right-rail Table of Contents — a Preact island component.
  *
- * Renders the `<nav aria-label="Table of contents">` directly. The
- * `<Island when="load">` wrapper is applied at the call site (see
- * `<DocLayoutWithDefaults>`) so the SSG output emits the
- * `data-zfb-island="Toc"` hydration marker around this nav.
+ * Renders the `<nav aria-label="Table of contents">` directly. **The
+ * caller is responsible for wrapping this in `<Island when="load">`**
+ * so the SSG output emits the `data-zfb-island="Toc"` hydration marker
+ * around the nav. `<DocLayoutWithDefaults>` does this for you; consumers
+ * who render `<Toc>` outside the default layout (e.g. via the
+ * `tocOverride` prop or in a custom layout) must apply the wrapper
+ * themselves — otherwise the active-section scroll-spy never hydrates
+ * on the client and the nav stays static.
  *
  * Wave 13 ("smoke-toc duplicate-nav regression", zudolab/zudo-doc#1355):
  * before this refactor, this module exported a `Toc` wrapper that itself

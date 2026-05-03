@@ -20,10 +20,15 @@ export interface MobileTocProps {
  * component. Closed by default; tapping the header toggles, and tapping
  * any entry closes the panel after navigation.
  *
- * Renders the `<div class="xl:hidden …">` panel directly. The
- * `<Island when="load">` wrapper is applied at the call site (see
- * `<DocLayoutWithDefaults>`) so the SSG output emits the
- * `data-zfb-island="MobileToc"` hydration marker around this panel.
+ * Renders the `<div class="xl:hidden …">` panel directly. **The caller
+ * is responsible for wrapping this in `<Island when="load">`** so the
+ * SSG output emits the `data-zfb-island="MobileToc"` hydration marker
+ * around the panel. `<DocLayoutWithDefaults>` does this for you;
+ * consumers who render `<MobileToc>` outside the default layout (e.g.
+ * via the `mobileTocOverride` prop or in a custom layout) must apply
+ * the wrapper themselves — otherwise the open/close toggle never
+ * hydrates on the client and the panel stays in its initial closed
+ * state.
  *
  * Wave 13 (zudolab/zudo-doc#1355): previously this module exported a
  * `MobileToc` wrapper that called `Island(...)` itself; on hydration
