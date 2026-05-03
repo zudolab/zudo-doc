@@ -1,6 +1,6 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: a8f79dd (Takazudo/zudo-front-builder base/island-data-props-serialization, 2026-05-03)
+ *   commit: c2cff95 (Takazudo/zudo-front-builder wave13-css-path-probe, 2026-05-03)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -118,10 +118,27 @@
  *                               serialisation gap that wave 12 of zudolab/zudo-doc#1355 traced as
  *                               the root cause of the remaining 20 failing e2e specs — i18n
  *                               sidebar fallback, mobile-toc, mobile-sidebar, smoke-pages)
+ *     - Takazudo/zudo-front-builder wave13-css-path-probe (build_default_css_payload now probes
+ *                               BOTH `<root>/styles/global.css` AND `<root>/src/styles/global.css`
+ *                               for the Tailwind v4 input CSS, first match wins. Pre-fix the
+ *                               probe hardcoded the legacy `<root>/styles/global.css` location and
+ *                               missed the conventional Vite/Astro/Next-style `src/styles/` layout
+ *                               this consumer uses, so the host's `:root` block defining
+ *                               `--zd-sidebar-w` and the entire `@theme` semantic-token mapping
+ *                               (`--color-bg → --zd-bg` and friends) never reached Tailwind's
+ *                               entry CSS. Result: the dist CSS shipped only Tailwind v4 stock
+ *                               palette plus generated arbitrary-value classes, and host-defined
+ *                               custom properties resolved to defaults at runtime — directly
+ *                               causing the wave 12 desktop-sidebar fallback width regression
+ *                               that Wave 12 Topic A patched with an inline <style> in
+ *                               doc-layout.tsx. With this pin the host's authored @theme block
+ *                               flows through Tailwind as designed and the inline workaround
+ *                               can be dropped — closes wave 13 topic 5 of zudolab/zudo-doc#1355)
  *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333) → bumped by epic
  *              zudolab/zudo-doc#1355 (Sig F finalisation + post-#131 hash-mismatch follow-up
  *              + Sig G island-resolver/esbuild parity + shared-bundle hydration glue
- *              + manifest-key alignment + wave 12 hydration prop serialisation)
+ *              + manifest-key alignment + wave 12 hydration prop serialisation
+ *              + wave 13 Tailwind input-CSS path-probe gap)
  */
 
 // zfb.config.ts — entry-point config consumed by the zfb engine.
