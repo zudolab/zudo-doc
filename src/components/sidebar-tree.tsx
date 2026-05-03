@@ -7,6 +7,9 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "preact/hooks";
 import type { NavNode } from "@/utils/docs";
 import type { LocaleLink } from "@/types/locale";
+// Types-only subpath (`./sidebar/types`) sidesteps the JSX type-graph
+// pulled in by `./sidebar`'s runtime barrel.
+import type { SidebarRootMenuItem } from "@zudo-doc/zudo-doc-v2/sidebar/types";
 import { INDENT, BASE_PAD, connectorLeft, ConnectorLines, CategoryLinkIcon } from "./tree-nav-shared";
 import ThemeToggle from "@/components/theme-toggle";
 import { smartBreakToHtml } from "@/utils/smart-break";
@@ -136,13 +139,7 @@ function filterTree(nodes: NavNode[], query: string): NavNode[] {
   }, []);
 }
 
-interface RootMenuItem {
-  label: string;
-  href: string;
-  children?: RootMenuItem[];
-}
-
-function RootMenuItemEntry({ item }: { item: RootMenuItem }) {
+function RootMenuItemEntry({ item }: { item: SidebarRootMenuItem }) {
   const [expanded, setExpanded] = useState(false);
   const hasChildren = item.children && item.children.length > 0;
 
@@ -188,7 +185,7 @@ function RootMenuItemEntry({ item }: { item: RootMenuItem }) {
 interface SidebarTreeProps {
   nodes: NavNode[];
   currentSlug?: string;
-  rootMenuItems?: RootMenuItem[];
+  rootMenuItems?: SidebarRootMenuItem[];
   backToMenuLabel?: string;
   localeLinks?: LocaleLink[];
   themeDefaultMode?: "light" | "dark";
