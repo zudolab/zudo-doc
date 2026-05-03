@@ -2,6 +2,32 @@
 @import "tailwindcss/utilities";
 
 /* ========================================
+ * Tailwind v4 content sources
+ *
+ * Without a `.git` directory in the project root Tailwind v4's content
+ * scanner falls back to explicit @source directives for class detection.
+ * E2E fixture builds (e2e/fixtures/<name>/) are not git repos, so
+ * git-ls-files-based auto-detection skips them and zfb's default content
+ * roots only cover `pages/`. Components and shared package code holding
+ * responsive variants (`lg:hidden`, `lg:block`, `xl:hidden`),
+ * design-token utilities (`h-icon-lg`, `bg-bg`, `text-fg`), and absolute-
+ * position primitives (`sticky`, `inset-0`, `top-[3.5rem]`) live outside
+ * pages/, so without these directives Tailwind drops every utility class
+ * those modules emit and the dist stylesheet collapses to a third of its
+ * size — breaking mobile-sidebar visibility, desktop-sidebar reveal, and
+ * mobile-toc accordion at fixture viewports. zfb wave-13 topic-5
+ * (input-CSS path probe) makes these directives reach Tailwind for the
+ * first time; the directives themselves close zudolab/zudo-doc#1355
+ * wave-13 topic-2.
+ * ======================================== */
+
+@source "src/components/**/*.{tsx,ts,jsx,js,mdx,md}";
+@source "src/content/**/*.{mdx,md}";
+@source "src/hooks/**/*.{tsx,ts,jsx,js}";
+@source "src/utils/**/*.{tsx,ts,jsx,js}";
+@source "packages/zudo-doc-v2/src/**/*.{tsx,ts,jsx,js}";
+
+/* ========================================
  * Design Token System
  *
  * Tight token strategy: import preflight + utilities only (no default theme).
