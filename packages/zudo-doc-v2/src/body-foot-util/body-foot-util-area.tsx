@@ -2,7 +2,6 @@
 /** @jsxImportSource preact */
 
 import type { VNode } from "preact";
-import { DocHistoryIsland, type DocHistoryIslandProps } from "./doc-history-island.js";
 
 /**
  * Default label used when the consumer doesn't pass one. The legacy
@@ -32,23 +31,21 @@ export interface BodyFootUtilAreaProps {
    */
   viewSourceLabel?: string;
   /**
-   * When provided, mounts the `DocHistoryIsland` SSR-skip wrapper.
-   * The legacy Astro template owned three gating predicates
-   * (`utilSettings.docHistory`, `currentSlug`, and the per-page /
-   * `isCategoryIndex` resolution); v2 collapses all of those into a
-   * single nullable prop so the v2 package stays oblivious to the
-   * project's settings shape.
+   * Pre-built doc-history island — typically a zfb `<Island ssrFallback>`
+   * that renders the host's real DocHistory component. The host is
+   * responsible for assembling this so the page → real-component import
+   * chain is preserved (zfb's island scanner relies on that walk; see
+   * issue zudolab/zudo-doc#1355 Wave 8 Path A).
    *
-   * Pass `null` / `undefined` to suppress the history trigger
-   * entirely.
+   * Pass `null` / `undefined` to suppress the history trigger entirely.
    */
-  docHistory?: DocHistoryIslandProps | null;
+  docHistoryIsland?: VNode | null;
 }
 
 /**
  * Footer utility area shown below an article body — composes the
- * "View source on GitHub" link and the `DocHistoryIsland` SSR-skip
- * wrapper. JSX port of `src/components/body-foot-util-area.astro`.
+ * "View source on GitHub" link and the host-supplied doc-history
+ * island. JSX port of `src/components/body-foot-util-area.astro`.
  *
  * Returns `null` when neither slot has anything to render, mirroring
  * the `hasContent && (...)` guard in the original template so the
@@ -56,11 +53,14 @@ export interface BodyFootUtilAreaProps {
  * appear as an empty band.
  */
 export function BodyFootUtilArea(props: BodyFootUtilAreaProps): VNode | null {
-  const { sourceUrl, viewSourceLabel = DEFAULT_VIEW_SOURCE_LABEL, docHistory } =
-    props;
+  const {
+    sourceUrl,
+    viewSourceLabel = DEFAULT_VIEW_SOURCE_LABEL,
+    docHistoryIsland,
+  } = props;
 
   const showSource = Boolean(sourceUrl);
-  const showHistory = Boolean(docHistory);
+  const showHistory = Boolean(docHistoryIsland);
   if (!showSource && !showHistory) return null;
 
   return (
@@ -100,11 +100,11 @@ export function BodyFootUtilArea(props: BodyFootUtilAreaProps): VNode | null {
           </a>
         </div>
       )}
-      {showHistory && docHistory && (
+      {showHistory && docHistoryIsland && (
         <>
           {/* Preserves migration-check parity: the Astro build SSR-rendered this heading inside the dialog markup; the checker matches the literal string "Revision History". */}
           <h2 class="sr-only">Revision History</h2>
-          <DocHistoryIsland {...docHistory} />
+          {docHistoryIsland}
         </>
       )}
     </section>

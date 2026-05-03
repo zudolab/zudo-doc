@@ -11,30 +11,34 @@
 // This port wraps via DocLayoutWithDefaults with hideSidebar/hideToc plus
 // a noindex meta so search engines do not index it.
 
-import { settings } from "@/config/settings";
 import { defaultLocale } from "@/config/i18n";
+import { settings } from "@/config/settings";
 import { withBase } from "@/utils/base";
 import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
 import type { JSX } from "preact";
 import { FooterWithDefaults } from "./lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "./lib/_header-with-defaults";
 import { HeadWithDefaults } from "./lib/_head-with-defaults";
+import { composeMetaTitle } from "./lib/_compose-meta-title";
+import { BodyEndIslands } from "./lib/_body-end-islands";
 
 export const frontmatter = { title: "404" };
 
 export default function NotFoundPage(): JSX.Element {
   const locale = defaultLocale;
+  const title = "Page Not Found";
 
   return (
     <DocLayoutWithDefaults
-      title={`Page Not Found | ${settings.siteName}`}
-      head={<HeadWithDefaults title={`Page Not Found | ${settings.siteName}`} />}
+      title={composeMetaTitle(title)}
+      head={<HeadWithDefaults title={title} />}
       lang={locale}
       noindex={true}
       hideSidebar={true}
       hideToc={true}
       headerOverride={<HeaderWithDefaults lang={locale} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
+      bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
     >
       <div class="min-h-[60vh] flex flex-col items-center justify-center px-hsp-2xl py-vsp-xl">
         <h1 class="text-display font-bold mb-vsp-md">404</h1>

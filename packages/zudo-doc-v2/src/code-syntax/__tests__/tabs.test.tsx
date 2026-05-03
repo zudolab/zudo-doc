@@ -7,6 +7,7 @@ import { Tabs } from "../tabs";
 import { TabsInit } from "../tabs-init";
 import { TABS_INIT_SCRIPT } from "../tabs-init-script";
 import { TabItem } from "../../tab-item/tab-item";
+import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events";
 
 describe("<Tabs />", () => {
   it("renders the [data-tabs] container", () => {
@@ -60,20 +61,52 @@ describe("<Tabs />", () => {
     expect(html).toContain('data-tab-btn="alpha-id"');
   });
 
-  it("renders nav buttons with aria-selected=false initially (TabsInit activates)", () => {
+  it("activates the first nav button as the implicit default in SSR", () => {
+    // Wave 11 (zudolab/zudo-doc#1355): when no TabItem opts in via
+    // `default`, the first one becomes the implicit default. Its
+    // button ships `aria-selected="true"` from SSR; the rest stay
+    // `false` until TabsInit re-derives at runtime.
     const html = render(
       <Tabs>
         <TabItem label="One">one</TabItem>
         <TabItem label="Two">two</TabItem>
       </Tabs>,
     );
-    // All buttons should have aria-selected=false; TabsInit sets the active one.
     const matches = html.match(/aria-selected="[^"]+"/g) ?? [];
-    expect(matches.length).toBe(2);
-    expect(matches.every((m) => m === 'aria-selected="false"')).toBe(true);
+    expect(matches).toEqual(['aria-selected="true"', 'aria-selected="false"']);
   });
 
-  it("renders the tabs-content area with TabItem panels", () => {
+  it("activates the explicitly-defaulted button in SSR (not the first child)", () => {
+    const html = render(
+      <Tabs>
+        <TabItem label="One">one</TabItem>
+        <TabItem label="Two" default>two</TabItem>
+        <TabItem label="Three">three</TabItem>
+      </Tabs>,
+    );
+    // Buttons render in source order; "Two" should be active even
+    // though it is not the first child.
+    const matches = html.match(/aria-selected="[^"]+"/g) ?? [];
+    expect(matches).toEqual([
+      'aria-selected="false"',
+      'aria-selected="true"',
+      'aria-selected="false"',
+    ]);
+  });
+
+  it("applies the active CSS class only to the default button", () => {
+    const html = render(
+      <Tabs>
+        <TabItem label="One">one</TabItem>
+        <TabItem label="Two" default>two</TabItem>
+      </Tabs>,
+    );
+    // The active token-pair `text-accent border-accent` is the
+    // marker classes the TabsInit script also writes on click.
+    expect(html).toContain("text-accent border-accent");
+  });
+
+  it("renders the tabs-content area with TabItem panels and unhides the default", () => {
     const html = render(
       <Tabs>
         <TabItem label="A">content A</TabItem>
@@ -81,8 +114,23 @@ describe("<Tabs />", () => {
     );
     expect(html).toContain("tabs-content");
     expect(html).toContain("content A");
-    // The panel should be hidden (TabItem renders with hidden).
-    expect(html).toContain("hidden");
+    // Single TabItem becomes the implicit default → panel paints
+    // immediately, no `hidden` attribute on the only panel.
+    expect(html).not.toContain("hidden");
+  });
+
+  it("hides every non-default panel via the hidden attribute", () => {
+    const html = render(
+      <Tabs>
+        <TabItem label="A">content A</TabItem>
+        <TabItem label="B">content B</TabItem>
+        <TabItem label="C">content C</TabItem>
+      </Tabs>,
+    );
+    // 3 panels, 1 default visible, 2 hidden → exactly 2 `hidden`
+    // attributes in the SSR output.
+    const matches = html.match(/\bhidden(?:=|\s|>)/g) ?? [];
+    expect(matches.length).toBe(2);
   });
 
   it("forwards the groupId as data-group-id", () => {
@@ -130,9 +178,12 @@ describe("<TabsInit />", () => {
     expect(html).toContain("showPanel");
   });
 
-  it("script hooks into astro:page-load", () => {
+  it("script hooks into the v2 after-navigate event", () => {
+    // After zudolab/zudo-doc#1335 (E2 task 2 half B) the script reads
+    // event names from `transitions/page-events.ts` rather than hard-
+    // coded `astro:*` literals.
     const html = render(<TabsInit />);
-    expect(html).toContain("astro:page-load");
+    expect(html).toContain(JSON.stringify(AFTER_NAVIGATE_EVENT));
   });
 
   it("script handles localStorage group sync", () => {

@@ -5,6 +5,10 @@ import { describe, expect, it } from "vitest";
 import { render } from "preact-render-to-string";
 import { CodeBlockEnhancer } from "../code-block-enhancer";
 import { CODE_BLOCK_ENHANCER_SCRIPT } from "../code-block-enhancer-script";
+import {
+  AFTER_NAVIGATE_EVENT,
+  BEFORE_NAVIGATE_EVENT,
+} from "../../transitions/page-events";
 
 describe("<CodeBlockEnhancer />", () => {
   it("renders the screen-reader announce region", () => {
@@ -29,14 +33,17 @@ describe("<CodeBlockEnhancer />", () => {
     expect(html).toContain("code-btn-wrap");
   });
 
-  it("script hooks into astro:page-load for view transitions", () => {
+  it("script hooks into the v2 after-navigate event for view transitions", () => {
+    // After zudolab/zudo-doc#1335 (E2 task 2 half B) the script reads
+    // event names from `transitions/page-events.ts` rather than hard-
+    // coded `astro:*` literals.
     const html = render(<CodeBlockEnhancer />);
-    expect(html).toContain("astro:page-load");
+    expect(html).toContain(JSON.stringify(AFTER_NAVIGATE_EVENT));
   });
 
-  it("script cleans up before page swap", () => {
+  it("script cleans up before navigating away", () => {
     const html = render(<CodeBlockEnhancer />);
-    expect(html).toContain("astro:before-swap");
+    expect(html).toContain(JSON.stringify(BEFORE_NAVIGATE_EVENT));
   });
 });
 
@@ -51,8 +58,12 @@ describe("CODE_BLOCK_ENHANCER_SCRIPT", () => {
     expect(CODE_BLOCK_ENHANCER_SCRIPT.trimEnd()).toMatch(/\)\(\);$/);
   });
 
-  it("targets pre.astro-code elements", () => {
-    expect(CODE_BLOCK_ENHANCER_SCRIPT).toContain("pre.astro-code");
+  it("targets syntect-class pre elements", () => {
+    expect(CODE_BLOCK_ENHANCER_SCRIPT).toContain('pre[class*="syntect-"]');
+  });
+
+  it("also targets bare <pre> inside tab panels", () => {
+    expect(CODE_BLOCK_ENHANCER_SCRIPT).toContain(".tab-panel pre");
   });
 
   it("uses ResizeObserver for overflow detection", () => {

@@ -60,6 +60,15 @@
 
 import type { ComponentChildren, JSX } from "preact";
 
+// zfb's runtime <ViewTransitions /> mounts the same-origin meta tag and
+// the click-intercepting client router that wraps same-origin navigations
+// in `document.startViewTransition`. It is the engine-side replacement
+// for Astro's `<ClientRouter />` — closes zudolab/zudo-doc#1335 (E2 task
+// 2 half A). Per zfb #99 the navigation is still a real page load (not
+// an SPA swap); this shell mounts the component verbatim in <head> so
+// every page renders the meta tag plus the inline router script.
+import { ViewTransitions } from "@takazudo/zfb-runtime";
+
 import { persistName } from "../transitions/persist.js";
 
 /**
@@ -271,6 +280,17 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
           <meta name="description" content={description} />
         )}
         {noindex && <meta name="robots" content="noindex, nofollow" />}
+        {/*
+          zfb engine-side <ViewTransitions />: emits the
+          <meta name="view-transition" content="same-origin"> tag plus the
+          inline click-intercepting router. Mounted here so it lands on
+          every page that uses this shell — equivalent placement to
+          where Astro's <ClientRouter /> would have lived. Cast through
+          `unknown` because the shim widens the structural-VNode return
+          type to `readonly ViewTransitionsElement[]` and Preact's JSX
+          typing does not directly accept that array shape; at runtime
+          the elements are valid VNode descriptors. */}
+        {ViewTransitions() as unknown as JSX.Element}
         {head}
       </head>
       <body class="min-h-screen antialiased">

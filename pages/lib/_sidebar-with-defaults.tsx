@@ -19,6 +19,13 @@
 // `<div data-zfb-island="Sidebar" data-when="load"></div>` marker.
 
 import type { JSX } from "preact";
+// `<Island>` is applied here at the call site rather than inside the v2
+// `<Sidebar>` module so the zfb island bundle's hydrate pass targets
+// the bare Sidebar component (not a self-Island'd wrapper). Wave 13
+// follow-on for the duplicate-nav fix family — see the head comment in
+// `packages/zudo-doc-v2/src/sidebar/sidebar.tsx` for the full diagnosis.
+// zudolab/zudo-doc#1355.
+import { Island } from "@takazudo/zfb";
 import { Sidebar } from "@zudo-doc/zudo-doc-v2/sidebar";
 import SidebarTree from "@/components/sidebar-tree";
 import { settings } from "@/config/settings";
@@ -131,10 +138,21 @@ function loadNavSourceDocs(
  * Default-bearing host wrapper around v2's `<Sidebar>` shell. Performs
  * the data prep that the deleted `sidebar.astro` template did, plugs
  * the project's `<SidebarTree>` Preact island into the shell via the
- * `treeComponent` prop, and lets `<Sidebar>` wrap the rendered tree in
- * `<Island when="load">` so the SSG output ships a populated
+ * `treeComponent` prop, and wraps the result in `<Island when="load">`
+ * here at the call site so the SSG output ships a populated
  * `<div data-zfb-island="Sidebar" data-when="load">…tree…</div>` marker
  * for the hydration runtime to pick up.
+ *
+ * Wave 13 follow-on (zudolab/zudo-doc#1355): the Island wrap moved
+ * from inside `v2/sidebar/sidebar.tsx` to this call site for the same
+ * reason it moved for Toc / MobileToc — when the v2 module exported a
+ * self-Island'd `Sidebar`, the zfb island bundle hydrated *that*
+ * wrapper inside the existing data-zfb-island marker, appending a
+ * duplicate (empty here, because `treeComponent` is a function and
+ * gets dropped by `JSON.stringify` during data-props serialisation).
+ * Hydrating the bare `<Sidebar>` against the existing data-zfb-island
+ * element in-place is the correct behaviour and reclaims a wasted
+ * hydration slot.
  */
 export function SidebarWithDefaults(
   props: SidebarWithDefaultsProps,
@@ -178,17 +196,24 @@ export function SidebarWithDefaults(
   const localeLinks =
     locales.length > 1 ? buildLocaleLinks(currentPath, lang) : undefined;
 
-  return (
-    <Sidebar
-      treeComponent={SidebarTree}
-      nodes={nodes}
-      currentSlug={currentSlug}
-      rootMenuItems={rootMenuItems}
-      backToMenuLabel={backToMenuLabel}
-      localeLinks={localeLinks}
-      themeDefaultMode={
-        settings.colorMode ? settings.colorMode.defaultMode : undefined
-      }
-    />
-  );
+  // Wrap the populated <Sidebar> in <Island when="load"> so the SSR
+  // pass emits the `data-zfb-island="Sidebar"` marker around the
+  // rendered tree and the bundle's hydrate pass targets the bare
+  // Sidebar against the existing marker element in-place.
+  return Island({
+    when: "load",
+    children: (
+      <Sidebar
+        treeComponent={SidebarTree}
+        nodes={nodes}
+        currentSlug={currentSlug}
+        rootMenuItems={rootMenuItems}
+        backToMenuLabel={backToMenuLabel}
+        localeLinks={localeLinks}
+        themeDefaultMode={
+          settings.colorMode ? settings.colorMode.defaultMode : undefined
+        }
+      />
+    ),
+  }) as unknown as JSX.Element;
 }

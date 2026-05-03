@@ -19,9 +19,11 @@ This replaces the old "copy everything then strip" approach. Features are added,
 |------|------|
 | `src/scaffold.ts` | Orchestrates the scaffold pipeline: copy base, generate configs, compose features |
 | `src/compose.ts` | Composition engine: injection system, anchor cleanup, feature resolution |
-| `src/features/*.ts` | Feature modules defining injections for each optional feature (10 modules) |
+| `src/features/*.ts` | Feature modules defining injections for each optional feature (15 modules) |
 | `src/zfb-config-gen.ts` | Programmatic `zfb.config.ts` generator (schema, collections, conditional plugins) |
 | `src/settings-gen.ts` | Generates `src/config/settings.ts` with user-chosen options |
+| `src/claude-md-gen.ts` | Generates the per-project `CLAUDE.md` for the scaffolded site |
+| `src/preset.ts` | Resolves the user-chosen preset into a concrete feature set |
 | `src/constants.ts` | Feature definitions, color scheme lists, light-dark pairings |
 | `src/utils.ts` | Shared utilities (patchFile, patchDefaultLang, getSecondaryLang) |
 | `src/cli.ts` | CLI argument parsing (commander) |
@@ -33,16 +35,18 @@ This replaces the old "copy everything then strip" approach. Features are added,
 
 | Directory | Role |
 |-----------|------|
-| `templates/base/` | Minimal project with injection anchors (73 files, no optional feature code) |
+| `templates/base/` | Minimal project with injection anchors (post-cutover: only `.tsx`, `.ts`, `.css`, `.json` — no `.astro`) |
 | `templates/features/*/files/` | Feature-specific files copied when a feature is selected |
 
 ### Injection Anchors
 
-Shared files in `templates/base/` have anchor comments where features inject code:
+The only file shipped with anchors in `templates/base/` today is:
 
-- `src/layouts/doc-layout.astro` — layout anchors (imports, head scripts, sidebar, breadcrumb, footer, body-end)
-- `src/components/header.astro` — header anchors (imports, actions, after-theme-toggle)
-- `src/styles/global.css` — 2 anchors (theme tokens, feature styles)
+- `src/styles/global.css` — 2 anchors (`@slot:global-css:theme-tokens`, `@slot:global-css:feature-styles`)
+
+Feature modules also inject into the generated `src/layouts/doc-layout.astro` and `src/components/header.astro` files. Those files are not in `templates/base/` — they are emitted at scaffold time and remain a transitional shape from the zfb cutover (#500). The `ANCHOR_FILES` list in `src/compose.ts` is the source of truth for which files are anchor-cleaned after composition.
+
+`src/compose.ts` `ANCHOR_LINE_RE` accepts JSX-comment (`{/* @slot:… */}`), block-comment, line-comment, HTML-comment, and shell-comment forms so anchors work across `.tsx`, `.ts`, `.css`, and any remaining `.astro` targets.
 
 ## Testing
 
@@ -88,10 +92,10 @@ When adding a feature to the main zudo-doc project that the generator should sup
 1. **`src/constants.ts`** — Add feature to `FEATURES` array if it needs a CLI flag
 2. **`src/features/<name>.ts`** — Create a feature module defining injections for shared files
 3. **`src/features/index.ts`** — Register the feature module
-4. **`templates/features/<name>/files/`** — Add feature-specific files to copy
+4. **`templates/features/<name>/files/`** — Add feature-specific files to copy (use `.tsx` for components, `.ts` for utilities — no `.astro`)
 5. **`src/scaffold.ts`** — Add dependencies in `generatePackageJson()` if needed
 6. **`src/zfb-config-gen.ts`** — Add conditional imports/plugins if the feature affects `zfb.config.ts`; add collection entries if the feature introduces new content directories
-8. **`src/settings-gen.ts`** — Add the setting field to generated `settings.ts`
-9. **`src/__tests__/scaffold.test.ts`** — Update tests
+7. **`src/settings-gen.ts`** — Add the setting field to generated `settings.ts`
+8. **`src/__tests__/scaffold.test.ts`** — Update tests
 
 After changes, run `/l-update-generator` to verify no drift remains between the main project and the generator.

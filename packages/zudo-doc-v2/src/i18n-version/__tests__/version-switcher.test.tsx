@@ -6,8 +6,10 @@ import type { ComponentChildren, VNode } from "preact";
 import {
   VersionSwitcher,
   VERSION_SWITCHER_INIT_SCRIPT,
+  VERSION_SWITCHER_VISIBILITY_STYLE,
 } from "../version-switcher";
 import type { VersionEntry, VersionSwitcherLabels } from "../types";
+import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events";
 
 type AnyVNode = VNode<{ children?: ComponentChildren; [key: string]: unknown }>;
 
@@ -174,9 +176,84 @@ describe("VersionSwitcher", () => {
     expect(matches.length).toBe(2);
   });
 
-  it("VERSION_SWITCHER_INIT_SCRIPT is non-empty and contains the after-swap rebind", () => {
-    expect(VERSION_SWITCHER_INIT_SCRIPT).toContain('astro:after-swap');
+  it("VERSION_SWITCHER_INIT_SCRIPT is non-empty and rebinds on the v2 after-navigate event", () => {
+    // The rebind hooks the constant from `transitions/page-events.ts`,
+    // not a hard-coded `astro:*` literal — so the script string contains
+    // whatever `AFTER_NAVIGATE_EVENT` resolves to today.
+    expect(VERSION_SWITCHER_INIT_SCRIPT).toContain(JSON.stringify(AFTER_NAVIGATE_EVENT));
     expect(VERSION_SWITCHER_INIT_SCRIPT).toContain('AbortController');
     expect(VERSION_SWITCHER_INIT_SCRIPT).toContain('data-version-switcher');
+  });
+
+  it("emits the responsive visibility <style> inside the switcher root", () => {
+    // Wave-11 fix: even when the host wraps this component in
+    // `<div class="hidden lg:block">` and Tailwind's content scanner
+    // never generated `.lg:block`, the inline `<style>` rule keyed off
+    // `:has(> [data-version-switcher])` keeps visibility correct at
+    // viewports `>= 64rem`.
+    //
+    // The `<style>` is rendered as the first child INSIDE the
+    // `<div data-version-switcher>` so the migration-check
+    // `strip-version-switcher.mjs` walker (which removes the entire
+    // switcher subtree) cleans the `<style>` up symmetrically — keeping
+    // post-cutover migration parity comparisons free of a structural
+    // delta on every versioned page.
+    //
+    // The local `serialize()` helper renders `dangerouslySetInnerHTML`
+    // as the raw string `[object Object]` rather than expanding it, so
+    // we only assert the `<style>` element is present and located after
+    // the switcher root opening tag. The CSS payload itself is covered
+    // by the dedicated `VERSION_SWITCHER_VISIBILITY_STYLE` test below.
+    const html = serialize(
+      <VersionSwitcher
+        versions={versions}
+        latestUrl="/docs/intro/"
+        versionsPageUrl="/docs/versions/"
+        versionUrls={versionUrls}
+        labels={labels}
+      />,
+    );
+    const styleIdx = html.indexOf("<style");
+    const switcherIdx = html.indexOf("data-version-switcher");
+    expect(styleIdx).toBeGreaterThanOrEqual(0);
+    expect(switcherIdx).toBeGreaterThanOrEqual(0);
+    // `<style>` lives inside the `data-version-switcher` element so the
+    // existing migration-check stripper takes it out symmetrically.
+    expect(styleIdx).toBeGreaterThan(switcherIdx);
+  });
+
+  it("suppresses the inline <style> when disableInlineVisibilityStyle is true", () => {
+    const html = serialize(
+      <VersionSwitcher
+        versions={versions}
+        latestUrl="/docs/intro/"
+        versionsPageUrl="/docs/versions/"
+        versionUrls={versionUrls}
+        labels={labels}
+        disableInlineVisibilityStyle
+      />,
+    );
+    expect(html).toContain("data-version-switcher");
+    expect(html).not.toContain("<style");
+  });
+
+  it("VERSION_SWITCHER_VISIBILITY_STYLE is a self-contained CSS rule for the wrapper", () => {
+    // The rule pins onto the `.hidden` baseline that Tailwind always
+    // generates (because `pages/` references it directly), so it stays
+    // out of the way of any consumer that wraps the switcher without
+    // the `hidden lg:block` pattern. The mobile (`< 64rem`) state falls
+    // through to the layered `.hidden { display: none }` utility — this
+    // string only carries the desktop override.
+    expect(VERSION_SWITCHER_VISIBILITY_STYLE).toContain(
+      ".hidden:has(> [data-version-switcher])",
+    );
+    expect(VERSION_SWITCHER_VISIBILITY_STYLE).toContain("@media (min-width:64rem)");
+    expect(VERSION_SWITCHER_VISIBILITY_STYLE).toContain("display:block");
+    // Mobile has no override here — `.hidden` does that job.
+    expect(VERSION_SWITCHER_VISIBILITY_STYLE).not.toContain("display:none");
+    // Universal/parent-affecting selector must NOT escape into the
+    // bundle: it would force `display:none` on any wrapping element
+    // a consumer chose, regardless of intent.
+    expect(VERSION_SWITCHER_VISIBILITY_STYLE).not.toContain("*:has(");
   });
 });

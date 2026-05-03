@@ -1,4 +1,6 @@
-import { useEffect } from "react";
+"use client";
+
+import { useEffect } from "preact/hooks";
 
 export default function MockInit() {
   useEffect(() => {

@@ -18,6 +18,10 @@
       "types": "./src/theme/index.ts",
       "default": "./src/theme/index.ts"
     },
+    "./theme/color-scheme-provider": {
+      "types": "./src/theme/color-scheme-provider.tsx",
+      "default": "./src/theme/color-scheme-provider.tsx"
+    },
     "./toc": {
       "types": "./src/toc/index.ts",
       "default": "./src/toc/index.ts"
@@ -37,6 +41,10 @@
     "./sidebar": {
       "types": "./src/sidebar/index.ts",
       "default": "./src/sidebar/index.ts"
+    },
+    "./sidebar/types": {
+      "types": "./src/sidebar/types.ts",
+      "default": "./src/sidebar/types.ts"
     },
     "./i18n-version": {
       "types": "./src/i18n-version/index.ts",
@@ -69,10 +77,6 @@
     "./head": {
       "types": "./src/head/index.ts",
       "default": "./src/head/index.ts"
-    },
-    "./ssr-skip": {
-      "types": "./src/ssr-skip/index.ts",
-      "default": "./src/ssr-skip/index.ts"
     },
     "./transitions": {
       "types": "./src/transitions/index.ts",
@@ -127,6 +131,7 @@
     "preact": "*"
   },
   "dependencies": {
+    "@zudo-doc/doc-history-server": "workspace:*",
     "gray-matter": "^4.0.3"
   },
   "devDependencies": {

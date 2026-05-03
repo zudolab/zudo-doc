@@ -44,19 +44,17 @@ If `path` is not path-like (plain prose, `and/or`, `state-of-the-art`, etc.) it 
 
 ## Manual Opt-In: `smartBreakToHtml` Helper
 
-Astro components and any code path that renders an HTML string (for example `set:html` or `dangerouslySetInnerHTML`) cannot mount Preact VNodes directly. Use `smartBreakToHtml` instead — it returns an HTML-escaped string with literal `<wbr>` tags injected:
+Any code path that renders an HTML string (for example `dangerouslySetInnerHTML`) cannot mount Preact VNodes directly. Use `smartBreakToHtml` instead — it returns an HTML-escaped string with literal `<wbr>` tags injected:
 
-```astro
----
+```tsx
 import { smartBreakToHtml } from "@/utils/smart-break";
 
-const { label } = Astro.props;
----
-
-<span set:html={smartBreakToHtml(label)} />
+export function PathLabel({ label }: { label: string }) {
+  return <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(label) }} />;
+}
 ```
 
-The returned string is already HTML-escaped, so it is safe to pass to `set:html`.
+The returned string is already HTML-escaped, so it is safe to pass to `dangerouslySetInnerHTML`.
 
 ## How It Decides
 

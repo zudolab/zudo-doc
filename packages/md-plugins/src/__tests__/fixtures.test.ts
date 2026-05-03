@@ -3,13 +3,19 @@
  * JS md-plugins pipeline so the upcoming Rust (zfb) port can be diffed
  * against it.
  *
- * Pipeline composition mirrors astro.config.ts as closely as possible
- * WITHOUT booting Astro itself. Notable differences from the live site
- * (documented in AUDIT.md):
+ * After zfb #104, the four "shape" rehype plugins (heading-links, code-title,
+ * mermaid, image-enlarge) reached byte-for-byte parity with their Rust ports
+ * and were retired. The remaining JS-side coverage in this fixture corpus is
+ * for behaviour that is either still on the JS side or not yet covered by zfb
+ * (admonitions, math, CJK emphasis, GFM tables/strikethrough, blockquotes,
+ * markdown-link rewriting incl. the .md → / cleanup).
  *
- *   - Shiki is not run; a small "rehypeShimShiki" pass mimics the two
- *     attributes the JS rehype plugins depend on (data-language on <pre>
- *     and meta on <code>).
+ * Pipeline composition mirrors zfb.config.ts as closely as possible without
+ * booting zfb itself. Notable differences from the live site (documented in
+ * AUDIT.md):
+ *
+ *   - Shiki is not run; the captured HTML therefore does not include
+ *     syntax-highlighted spans.
  *   - remarkResolveMarkdownLinks is NOT run — it needs a real filesystem
  *     source map, which the fixtures do not have. rehypeStripMdExtension
  *     does run, so the .md/.mdx → / cleanup is still exercised.
@@ -35,15 +41,8 @@ import remarkRehype from "remark-rehype";
 import rehypeRaw from "rehype-raw";
 import rehypeKatex from "rehype-katex";
 import rehypeStringify from "rehype-stringify";
-import { visit } from "unist-util-visit";
-import type { Root as MdastRoot } from "mdast";
-import type { Root as HastRoot, Element } from "hast";
 
 import { remarkAdmonitions } from "../remark-admonitions";
-import { rehypeCodeTitle } from "../rehype-code-title";
-import { rehypeHeadingLinks } from "../rehype-heading-links";
-import { rehypeImageEnlarge } from "../rehype-image-enlarge";
-import { rehypeMermaid } from "../rehype-mermaid";
 import { rehypeStripMdExtension } from "../rehype-strip-md-extension";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -59,51 +58,6 @@ function stripFrontmatter(src: string): string {
   return src.slice(end + 5);
 }
 
-/**
- * Attach fenced-code-block meta to mdast so it survives remark-rehype.
- * mdast-util-to-hast merges `node.data.hProperties` into the resulting
- * <code> element's properties — that is how rehypeCodeTitle finds the
- * `title="..."` substring at runtime in the live build.
- */
-function remarkAttachCodeMeta() {
-  return (tree: MdastRoot) => {
-    visit(tree, "code", (node) => {
-      if (!node.meta) return;
-      const data = (node.data ??= {});
-      data.hProperties = { ...(data.hProperties ?? {}), meta: node.meta };
-    });
-  };
-}
-
-/**
- * Mimic the two Shiki-set attributes the rehype plugins depend on:
- *   - <pre data-language="X">  (rehypeMermaid checks this)
- *   - <code meta="...">        (rehypeCodeTitle uses this — already
- *                               attached by remarkAttachCodeMeta, but
- *                               this normalises both sources).
- */
-function rehypeShimShiki() {
-  return (tree: HastRoot) => {
-    visit(tree, "element", (node: Element) => {
-      if (node.tagName !== "pre") return;
-      const codeEl = node.children.find(
-        (c): c is Element => c.type === "element" && c.tagName === "code",
-      );
-      if (!codeEl) return;
-      const cls = codeEl.properties?.className;
-      if (Array.isArray(cls)) {
-        const langCls = cls.find(
-          (c): c is string => typeof c === "string" && c.startsWith("language-"),
-        );
-        if (langCls) {
-          node.properties = node.properties ?? {};
-          node.properties.dataLanguage = langCls.replace(/^language-/, "");
-        }
-      }
-    });
-  };
-}
-
 function buildProcessor() {
   return unified()
     .use(remarkParse)
@@ -112,17 +66,13 @@ function buildProcessor() {
     .use(remarkAdmonitions)
     .use(remarkMath)
     .use(remarkCjkFriendly)
-    .use(remarkAttachCodeMeta)
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
-    .use(rehypeShimShiki)
-    // Plugin order mirrors astro.config.ts: code-title → heading-links →
-    // strip-md → image-enlarge → mermaid → katex.
-    .use(rehypeCodeTitle)
-    .use(rehypeHeadingLinks)
+    // Plugin order mirrors zfb.config.ts: only strip-md and katex remain on
+    // the JS side post zfb #104. The four "shape" rehype plugins (code-title,
+    // heading-links, image-enlarge, mermaid) ship natively from the zfb Rust
+    // pipeline now.
     .use(rehypeStripMdExtension)
-    .use(rehypeImageEnlarge)
-    .use(rehypeMermaid)
     .use(rehypeKatex)
     .use(rehypeStringify, { allowDangerousHtml: true });
 }
@@ -153,9 +103,13 @@ async function renderFixture(file: string): Promise<string> {
 describe("md-plugins fixture corpus", () => {
   const fixtures = listFixtures();
 
-  it("has 10–15 fixtures", () => {
-    expect(fixtures.length).toBeGreaterThanOrEqual(10);
-    expect(fixtures.length).toBeLessThanOrEqual(15);
+  it("has 8–12 fixtures", () => {
+    // After zfb #104 retired heading-links/code-title/mermaid/image-enlarge,
+    // their dedicated fixtures (02/05/06/07) were dropped. The corpus now
+    // covers admonitions, math, CJK, GFM tables/strikethrough, blockquotes,
+    // and md-link rewriting only.
+    expect(fixtures.length).toBeGreaterThanOrEqual(8);
+    expect(fixtures.length).toBeLessThanOrEqual(12);
   });
 
   for (const file of fixtures) {

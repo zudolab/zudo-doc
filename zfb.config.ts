@@ -1,3 +1,146 @@
+/**
+ * zfb pin (canonical, shared with E2/E4):
+ *   commit: c2cff95 (Takazudo/zudo-front-builder wave13-css-path-probe, 2026-05-03)
+ *   includes fixes:
+ *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
+ *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
+ *     - zudolab/zfb#101 (plugin lifecycle hooks: preBuild, postBuild, devMiddleware)
+ *     - zudolab/zfb#102 (CJK-aware emphasis/strong tokenisation in MDX pipeline)
+ *     - zudolab/zfb#103 (ResolveLinksPlugin: probe extensionless candidates)
+ *     - zudolab/zfb#104 (rehype output parity: heading-links, code-title, mermaid, image-enlarge, strip-md-ext)
+ *     - zudolab/zfb#113 (tailwindcss v4 binary fetch script + ZFB_TAILWIND_BIN env var)
+ *     - zudolab/zfb#118 (mdast-phase MDX pipeline wiring)
+ *     - zudolab/zfb#121 (hast-phase MDX→JSX wiring)
+ *     - zudolab/zfb#122 (islands prod-bundle workspace-probe fix)
+ *     - zudolab/zfb#123 (doctest fence stabilization)
+ *     - zudolab/zfb#124 (watcher test stabilization)
+ *     - zudolab/zfb#126 / #131 (bundler threads Pipeline::with_defaults() through MDX pre-compile;
+ *                               unblocks Sig F in zudolab/zudo-doc#1355)
+ *     - zudolab/zfb#131 (opt-in `stripMdExt` config option through bundler + dev loader)
+ *     - zudolab/zfb#132 / #133 (build_snapshot drives walk_collection with the default Pipeline so
+ *                               snapshot module_specifier hashes match bridge map keys; closes the
+ *                               post-#131 fallback-render regression)
+ *     - Takazudo/zudo-front-builder#130 / PR #134 (Gap A: FsResolver::probe_package_entry consults
+ *                               package.json `exports` for subpath bare imports so workspace island
+ *                               modules under @zudo-doc/zudo-doc-v2/{toc,sidebar,theme,...} resolve
+ *                               to their src/.../index.ts entries; Gap B: EXPECTED_ESBUILD_VERSION
+ *                               bumped 0.24.0 → 0.25.12 to match the host's installed esbuild —
+ *                               unblocks Sig G island hydration in zudolab/zudo-doc#1355)
+ *     - Takazudo/zudo-front-builder PR #137 (post-#134 follow-up: defer node:* imports in
+ *                               zfb root barrel content.ts to inside function bodies so the islands
+ *                               per-island bundler can tree-shake content collection helpers out of
+ *                               browser-targeted bundles; defensive --platform=browser +
+ *                               --external:node:* flags on the islands esbuild invocation)
+ *     - Takazudo/zudo-front-builder#138 / #139 / PR #140 (#138: produce_bundle_js renders one
+ *                               synthesized entry that imports every island so esbuild only ever
+ *                               sees a single input + --outfile, fixing "Must use outdir when
+ *                               there are multiple input files"; #139: FsResolver walks up to the
+ *                               nearest tsconfig.json and resolves compilerOptions.paths aliases
+ *                               (e.g. "@/*": ["src/*"]) with extends-chain support, so the
+ *                               islands scanner can follow @/-aliased imports from host pages
+ *                               into "use client" components — unblocks Sig G island hydration on
+ *                               this consumer)
+ *     - Takazudo/zudo-front-builder#141 / PR #142 (post-#140 follow-up: islands scanner walk now
+ *                               whitelists .ts/.tsx/.js/.jsx/.mjs/.cjs and skips .json/CSS/asset
+ *                               files before SWC parse, fixing the ExpectedSemiForExprStmt crash
+ *                               when a tsconfig path alias resolves to a non-trivial JSON file —
+ *                               e.g. the host's #doc-history-meta alias mapped to populated
+ *                               .zfb/doc-history-meta.json in the smoke E2E fixture)
+ *     - Takazudo/zudo-front-builder PR #143 (TS Bundler / NodeNext moduleResolution shape: when a
+ *                               source writes import "./foo.js" against on-disk foo.tsx (the
+ *                               canonical convention used by the @zudo-doc/zudo-doc-v2 workspace
+ *                               package), the resolver now probes the .ts/.tsx/.mts/.cts sibling
+ *                               first and falls back to .js only when no TS sibling exists. Pre-
+ *                               #143 the islands scanner walked one chain into v2 and immediately
+ *                               dead-ended at every ./foo.js, so only the directly-imported
+ *                               Sidebar reached the bundle. With #143 the smoke fixture build
+ *                               registers 13 islands and emits a complete client runtime — finally
+ *                               unblocking Sig G island hydration on this consumer)
+ *     - Takazudo/zudo-front-builder#144 / PR #145 (synthesised shared-bundle entry survives
+ *                               esbuild tree-shaking when an island has no top-level side effect:
+ *                               render_shared_bundle_entry_source now namespace-imports each
+ *                               island and references the namespaces from a top-level
+ *                               globalThis.__zfb_islands ??= [...] assignment. Pre-#145, host-side
+ *                               islands authored as bare `export default function ComponentName`
+ *                               with no top-level effect were tree-shaken out of the bundle, so
+ *                               every data-zfb-island="ComponentName" SSR marker for a host-shape
+ *                               island had no client runtime to mount. With #145 every island's
+ *                               exports survive — closes the final Sig G hydration gap on this
+ *                               consumer)
+ *     - Takazudo/zudo-front-builder#146 / PR #147 (mountIslands invoked on shared-bundle
+ *                               production path: post-#144 the bundle byte-content carried every
+ *                               island's compiled source but the synthesised entry never called
+ *                               mountIslands — so SSR'd data-zfb-island markers stayed un-hydrated
+ *                               in production. IslandManifest widened from Record<string, string>
+ *                               to Record<string, string | IslandModule>, render_shared_bundle_entry_source
+ *                               now imports mountIslands and registers each island as an inline
+ *                               IslandModule entry, finally wiring SSR markers to runtime
+ *                               constructors and closing the Sig G hydration cascade on this
+ *                               consumer)
+ *     - Takazudo/zudo-front-builder PR #148 (post-#147 follow-up: shared-bundle synthesised
+ *                               entry now derives manifest keys from each component's
+ *                               displayName ?? name at module-init time so multiple host-shape
+ *                               `export default function ComponentName()` islands no longer
+ *                               collide on a static "default" key. Synthesised entry tempfile
+ *                               relocated from $TMPDIR into EsbuildSubprocessConfig::working_dir
+ *                               so esbuild's upward node_modules walk resolves "preact" and
+ *                               "@takazudo/zfb/runtime" — fixes the smoke fixture build crash
+ *                               introduced by #147 on this consumer)
+ *     - Takazudo/zudo-front-builder#149 / PR #150 (shared-bundle manifest uses static SSR-marker
+ *                               names from the scanner, not runtime introspection: scanner now
+ *                               derives a marker_name per island (default-export identifier OR
+ *                               literal first arg of renderSsrSkipPlaceholder("X", ...)), and
+ *                               the bundler bakes that name as a static literal third argument
+ *                               to __zfb_register. Drops __zfb_keyFor runtime introspection
+ *                               entirely so esbuild minification and ssr-skip "Island" suffix
+ *                               wrappers can no longer break manifest-key alignment with SSR
+ *                               markers — closes the final Sig G hydration alignment gap on
+ *                               this consumer)
+ *     - Takazudo/zudo-front-builder#151 / PR #152 (zfb-islands esbuild step now passes
+ *                               --jsx=automatic --jsx-import-source=preact; fixes
+ *                               ReferenceError: React is not defined at island mount when
+ *                               host components use preact/compat for hooks; unblocks Sig G
+ *                               hydration in zudolab/zudo-doc#1355)
+ *     - Takazudo/zudo-front-builder PR #153 (CF adapter wrapper now probes env.ASSETS first
+ *                               on GET/HEAD, falling through to the inner zfb worker only on
+ *                               404; this restores SSG head injection — <link rel="stylesheet">
+ *                               and <script type="module" src="/assets/islands-…"> — for
+ *                               no-trailing-slash URLs like /docs/getting-started under
+ *                               `zfb preview` and Cloudflare Pages, fixing Wave 10 Sig G e2e
+ *                               failures in zudolab/zudo-doc#1355)
+ *     - Takazudo/zudo-front-builder base/island-data-props-serialization (Island JSX wrapper now
+ *                               JSON.stringifies the wrapped child's own props onto a `data-props`
+ *                               attribute on the SSR marker div — the runtime hydration path has
+ *                               always read that attribute via getAttribute("data-props") + JSON.parse
+ *                               but no SSR site ever wrote it, so every caller-supplied prop bag
+ *                               silently vanished across the SSR → hydrate boundary and every
+ *                               island re-rendered with {} on the client; closes the prop-
+ *                               serialisation gap that wave 12 of zudolab/zudo-doc#1355 traced as
+ *                               the root cause of the remaining 20 failing e2e specs — i18n
+ *                               sidebar fallback, mobile-toc, mobile-sidebar, smoke-pages)
+ *     - Takazudo/zudo-front-builder wave13-css-path-probe (build_default_css_payload now probes
+ *                               BOTH `<root>/styles/global.css` AND `<root>/src/styles/global.css`
+ *                               for the Tailwind v4 input CSS, first match wins. Pre-fix the
+ *                               probe hardcoded the legacy `<root>/styles/global.css` location and
+ *                               missed the conventional Vite/Astro/Next-style `src/styles/` layout
+ *                               this consumer uses, so the host's `:root` block defining
+ *                               `--zd-sidebar-w` and the entire `@theme` semantic-token mapping
+ *                               (`--color-bg → --zd-bg` and friends) never reached Tailwind's
+ *                               entry CSS. Result: the dist CSS shipped only Tailwind v4 stock
+ *                               palette plus generated arbitrary-value classes, and host-defined
+ *                               custom properties resolved to defaults at runtime — directly
+ *                               causing the wave 12 desktop-sidebar fallback width regression
+ *                               that Wave 12 Topic A patched with an inline <style> in
+ *                               doc-layout.tsx. With this pin the host's authored @theme block
+ *                               flows through Tailwind as designed and the inline workaround
+ *                               can be dropped — closes wave 13 topic 5 of zudolab/zudo-doc#1355)
+ *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333) → bumped by epic
+ *              zudolab/zudo-doc#1355 (Sig F finalisation + post-#131 hash-mismatch follow-up
+ *              + Sig G island-resolver/esbuild parity + shared-bundle hydration glue
+ *              + manifest-key alignment + wave 12 hydration prop serialisation
+ *              + wave 13 Tailwind input-CSS path-probe gap)
+ */
+
 // zfb.config.ts — entry-point config consumed by the zfb engine.
 //
 // This file replaces the Astro-flavoured `src/content.config.ts` while the
@@ -136,19 +279,33 @@ if (settings.versions) {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// Plugins — declarative breadcrumbs for the v0 plugin runtime.
+// Plugins — wired through zfb's plugin lifecycle (issue #101).
 // ---------------------------------------------------------------------------
 //
-// zfb v0 accepts `plugins: PluginConfig[]` as `{ name, options }` metadata
-// only — no lifecycle hooks fire today. The host wires the actual work via
-// npm-script lifecycle hooks (`scripts/zfb-prebuild.mjs` for claude-resources,
-// `scripts/zfb-postbuild.mjs` for doc-history / search-index / llms-txt) and
-// a dev sidecar (S3) for the dev-mode middlewares.
+// zfb's plugin runtime loads each entry's `name` as a module specifier
+// (npm bare or `./`-relative path) and dispatches lifecycle hooks
+// (`preBuild`, `postBuild`, `devMiddleware`) on the module's default
+// export. Inline function hooks on this config are NOT supported — the
+// config goes through a JSON round-trip to the Rust side and any
+// function value would be silently dropped (see `@takazudo/zfb/plugins`
+// source comment for the rationale). Each entry below therefore
+// references a small wrapper module under `./plugins/` whose default
+// export is a `ZfbPlugin`.
 //
-// The entries below are forward-compat breadcrumbs: once zfb adopts plugin
-// lifecycle hooks the script glue can be retired and these descriptors will
-// pick up the matching `runClaudeResourcesPreStep` / `runDocHistoryPostBuild`
-// / `emitSearchIndex` / `emitLlmsTxt` runners automatically.
+// All three lifecycle hooks are now wired via the wrapper modules:
+//
+//   preBuild    — claude-resources writes its pre-step output;
+//                 doc-history writes `.zfb/doc-history-meta.json`.
+//   postBuild   — doc-history / search-index / llms-txt emit their
+//                 dist-time artifacts.
+//   devMiddleware — doc-history / search-index / llms-txt register
+//                 Connect-style middleware via the shared
+//                 `plugins/connect-adapter.mjs` so the dev sidecar
+//                 (`scripts/dev-sidecar.mjs`) can be retired.
+//
+// The legacy npm-script glue (`scripts/zfb-{pre,post}build.mjs`,
+// `scripts/dev-sidecar.mjs`) stays in place during the merge window;
+// T6 retires it once all lifecycle epics land.
 //
 // Sitemap is NOT in this list — it is served as a `pages/sitemap.xml.tsx`
 // zfb route (per ADR-005's "non-HTML page" pattern) introduced in epic E8.
@@ -165,7 +322,7 @@ const integrationPlugins = [
   ...(settings.claudeResources
     ? [
         {
-          name: "claude-resources",
+          name: "./plugins/claude-resources-plugin.mjs",
           options: {
             claudeDir: settings.claudeResources.claudeDir,
             projectRoot: settings.claudeResources.projectRoot,
@@ -177,7 +334,7 @@ const integrationPlugins = [
   ...(settings.docHistory
     ? [
         {
-          name: "doc-history",
+          name: "./plugins/doc-history-plugin.mjs",
           options: {
             docsDir: settings.docsDir,
             locales: localeRecord,
@@ -186,7 +343,7 @@ const integrationPlugins = [
       ]
     : []),
   {
-    name: "search-index",
+    name: "./plugins/search-index-plugin.mjs",
     options: {
       docsDir: settings.docsDir,
       locales: localeRecord,
@@ -196,7 +353,7 @@ const integrationPlugins = [
   ...(settings.llmsTxt
     ? [
         {
-          name: "llms-txt",
+          name: "./plugins/llms-txt-plugin.mjs",
           options: {
             siteName: settings.siteName,
             siteDescription: settings.siteDescription,
@@ -214,6 +371,13 @@ export default defineConfig({
   framework: "preact",
   tailwind: { enabled: true },
   collections,
+  // Strip `.md` / `.mdx` from in-page `<a href>` and append a trailing
+  // slash so author-written `[label](./other.mdx)` references resolve
+  // to the rendered route URL. Mirrors `rehypeStripMdExtension` from
+  // packages/md-plugins. Without this, dist HTML carries unrouted
+  // `href="./other.mdx"` links — the deep-review #1338 finding 12
+  // verification surfaced this on roughly two dozen pages.
+  stripMdExt: true,
   // ----------------------------------------------------------------------
   // Cloudflare Pages adapter — wraps the SSR bundle into `dist/_worker.js`
   // (advanced-mode entry) plus a sidecar `dist/_zfb_inner.mjs`. The adapter

@@ -14,7 +14,12 @@
  *   import { ColorSchemeProvider, ThemeToggle }     from "@zudo-doc/zudo-doc-v2/theme";
  *   import { startViewTransition, sidebarPersistName } from "@zudo-doc/zudo-doc-v2/transitions";
  *   import { initSidebarResizer }                      from "@zudo-doc/zudo-doc-v2/sidebar-resizer";
- *   import { AiChatModalIsland, ImageEnlargeIsland }   from "@zudo-doc/zudo-doc-v2/ssr-skip";
+ *
+ * The SSR-skip wrapper subpath (`@zudo-doc/zudo-doc-v2/ssr-skip`) was
+ * removed in Wave 8 (super-epic #1333 / child epic #1355). Hosts now
+ * compose body-end islands directly with zfb's native `<Island
+ * ssrFallback>` API so the page → real-component import chain stays
+ * walkable by zfb's island scanner.
  *
  * See packages/zudo-doc-v2/README.md for the topic map.
  */

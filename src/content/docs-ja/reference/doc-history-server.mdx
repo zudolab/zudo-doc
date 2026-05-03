@@ -9,18 +9,18 @@ tags:
 
 ## 概要
 
-Doc History Serverは`packages/doc-history-server/`にあるサブパッケージで、[ドキュメント履歴](/ja/docs/guides/doc-history)機能のすべてのgit履歴抽出を処理します。コストの高いgit操作をサイトビルドから分離するために、Astroビルドパイプラインから抽出されました。
+Doc History Serverは`packages/doc-history-server/`にあるサブパッケージで、[ドキュメント履歴](/ja/docs/guides/doc-history)機能のすべてのgit履歴抽出を処理します。コストの高いgit操作をサイトビルドから分離するために、zfbビルドパイプラインから抽出されました。
 
 2つのモードで動作します：
 
 - **サーバーモード** -- ローカル開発時にHTTPサーバーを実行し、オンデマンドで履歴を配信
 - **CLIモード** -- CIの本番ビルドですべての履歴JSONファイルをバッチ生成
 
-この分離により、AstroサイトビルドとHistory生成を独立したジョブとして実行する並列CI戦略が可能になり、合計ビルド時間を短縮します。
+この分離により、zfbサイトビルドとHistory生成を独立したジョブとして実行する並列CI戦略が可能になり、合計ビルド時間を短縮します。
 
 ## サーバーモード（ローカル開発）
 
-サーバーは設定可能なポート（デフォルト4322）で実行され、REST API経由でドキュメント履歴を配信します。標準の`pnpm dev`セットアップでは、Astroとdoc-history-serverが`run-p`を使用して同時に実行されます。
+サーバーは設定可能なポート（デフォルト4322）で実行され、REST API経由でドキュメント履歴を配信します。標準の`pnpm dev`セットアップでは、zfbとdoc-history-serverが`run-p`を使用して同時に実行されます。
 
 ### サーバーの起動
 
@@ -69,11 +69,11 @@ GET /doc-history/ja/guides/writing-docs.json
 - クロスオリジン開発アクセス用のCORSヘッダーが含まれます
 - 不明なスラッグへのリクエストは`{ "error": "No doc found for slug: ..." }`とともに404を返します
 
-### Astroインテグレーション
+### zfbインテグレーション
 
-開発モードでは、`src/integrations/doc-history.ts`にあるAstroインテグレーションが`/doc-history/*`リクエストをこのサーバーにプロキシします。これにより、ブラウザの履歴パネルはAstro開発サーバーを通じてスタンドアロンサーバーから透過的に取得します。
+開発モードでは、doc-historyのzfbプラグインの`devMiddleware`フックが`/doc-history/*`リクエストをこのサーバーにプロキシします。これにより、ブラウザの履歴パネルはzfb開発サーバーを通じてスタンドアロンサーバーから透過的に取得します。
 
-ルートの`pnpm dev`コマンドは、`run-p`を使用してAstro（ポート4321）とdoc-history-server（ポート4322）を同時に実行します。
+ルートの`pnpm dev`コマンドは、`run-p`を使用してzfb（ポート4321）とdoc-history-server（ポート4322）を同時に実行します。
 
 ## CLIモード（CIビルド）
 
@@ -96,13 +96,13 @@ pnpm generate -- --content-dir src/content/docs --locale ja:src/content/docs-ja 
 
 ### CIパイプライン統合
 
-CIパイプラインはAstroサイトビルドと並行して履歴生成を実行します：
+CIパイプラインはzfbサイトビルドと並行して履歴生成を実行します：
 
-- **build-site**ジョブ：シャロークローン（`fetch-depth: 1`）、`SKIP_DOC_HISTORY=1`でAstroサイトをビルド
+- **build-site**ジョブ：シャロークローン（`fetch-depth: 1`）、`SKIP_DOC_HISTORY=1`でzfbサイトをビルド
 - **build-history**ジョブ：フルクローン（`fetch-depth: 0`）、`@zudo-doc/doc-history-server generate`を実行
 - **deploy**ジョブ：両方のアーティファクトをマージしてCloudflare Pagesにデプロイ
 
-この並列化は、履歴生成がAstroビルドから完全に独立しているため可能です。
+この並列化は、履歴生成がzfbビルドから完全に独立しているため可能です。
 
 <Tip>
 
@@ -174,7 +174,7 @@ dist/doc-history/
 
 - **同期git** -- `execFileSync`は開発サーバー（同一プロセス、逐次処理）で問題ありません。CI CLIも本質的に逐次処理です
 - **リポジトリ相対パス** -- APIレスポンスは絶対サーバーパスの漏洩を避けるために相対ファイルパスを使用します
-- **スタンドアロンパッケージ** -- 並列CIビルドと独立したバージョニングを可能にするためにAstroから分離されています
+- **スタンドアロンパッケージ** -- 並列CIビルドと独立したバージョニングを可能にするためにzfbから分離されています
 
 ## サブパッケージの場所
 

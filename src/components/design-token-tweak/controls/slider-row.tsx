@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+// preact/compat shim — see src/components/ai-chat-modal.tsx for rationale.
+import { useState, useEffect, useCallback } from "preact/compat";
 import {
   type TokenDef,
   formatValue,

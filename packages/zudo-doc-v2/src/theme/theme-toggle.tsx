@@ -1,3 +1,5 @@
+"use client";
+
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 // Ported from src/components/theme-toggle.tsx (E5 framework primitives).

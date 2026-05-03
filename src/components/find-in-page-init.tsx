@@ -1,6 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+"use client";
+
+import { useState, useEffect, useRef } from "preact/hooks";
 import { FindBar } from "./find-bar";
 import { createFindInPage } from "@/utils/find-in-page";
+// After zudolab/zudo-doc#1335 (E2 task 2 half B) the host components
+// pull lifecycle event names from the v2 transitions module rather
+// than hard-coding `astro:*` literals.
+import { BEFORE_NAVIGATE_EVENT } from "@zudo-doc/zudo-doc-v2/transitions";
 
 const CONTENT_SELECTOR = "article.zd-content";
 
@@ -30,14 +36,14 @@ export default function FindInPageInit() {
     return () => document.removeEventListener("keydown", handler);
   }, [isTauri]);
 
-  // Clear search on Astro page navigation
+  // Clear search on page navigation
   useEffect(() => {
     const handler = () => {
       findInPageRef.current.stop();
       setVisible(false);
     };
-    document.addEventListener("astro:before-swap", handler);
-    return () => document.removeEventListener("astro:before-swap", handler);
+    document.addEventListener(BEFORE_NAVIGATE_EVENT, handler);
+    return () => document.removeEventListener(BEFORE_NAVIGATE_EVENT, handler);
   }, []);
 
   if (!isTauri) return null;

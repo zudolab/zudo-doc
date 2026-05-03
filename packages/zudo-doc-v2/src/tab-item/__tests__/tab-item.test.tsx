@@ -15,6 +15,7 @@ describe("<TabItem />", () => {
     expect(html).toContain('role="tabpanel"');
     expect(html).toContain('data-tab-value="Apple"');
     expect(html).toContain('data-tab-label="Apple"');
+    // Non-default TabItem keeps `hidden` so only the chosen panel paints.
     expect(html).toContain("hidden");
     expect(html).not.toContain("data-tab-default");
     expect(html).toContain("<p>fruit body</p>");
@@ -33,6 +34,16 @@ describe("<TabItem />", () => {
     // `data-tab-default=""`. Both forms satisfy `[data-tab-default]`
     // selectors and `getAttribute("data-tab-default")` reads as "".
     expect(html).toMatch(/data-tab-default(=""|\s|>)/);
+  });
+
+  it("omits the hidden attribute when default={true} so the SSR HTML paints the active panel", () => {
+    // Wave 11 (zudolab/zudo-doc#1355): the default panel must be
+    // visible from SSR so the no-JS path and pre-init paint both show
+    // the chosen tab. preact-render-to-string emits `hidden` as a bare
+    // attribute when truthy and omits it entirely when undefined, so
+    // the simple substring assertion below is sufficient.
+    const html = render(<TabItem label="Banana" default />);
+    expect(html).not.toContain("hidden");
   });
 
   it("omits data-tab-default when default is false or not set", () => {

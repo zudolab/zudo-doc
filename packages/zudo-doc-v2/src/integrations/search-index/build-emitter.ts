@@ -6,8 +6,8 @@
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { collectSearchEntries } from "./collect";
-import type { SearchIndexConfig, SearchIndexEntry } from "./types";
+import { collectSearchEntries } from "./collect.ts";
+import type { SearchIndexConfig, SearchIndexEntry } from "./types.ts";
 
 export interface SearchIndexBuildResult {
   /** Absolute path of the JSON file that was written. */

@@ -37,6 +37,18 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { createRequire } from "node:module";
 import { dirname, join, resolve as resolvePath } from "node:path";
 
+// preBuild runner — see ./pre-build.ts for the full doc-history-meta
+// emission contract (including the SKIP_DOC_HISTORY=1 short-circuit
+// that CI relies on).
+export {
+  runDocHistoryMetaStep,
+  type RunDocHistoryMetaOptions,
+  type DocHistoryMetaEntry,
+  type DocHistoryMetaLocaleConfig,
+  type DocHistoryMetaManifest,
+  type DocHistoryMetaVersionConfig,
+} from "./pre-build.ts";
+
 // ---------------------------------------------------------------------------
 // Public option / descriptor shapes
 // ---------------------------------------------------------------------------

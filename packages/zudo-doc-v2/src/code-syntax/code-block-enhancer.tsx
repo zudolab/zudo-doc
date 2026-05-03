@@ -22,11 +22,12 @@ import { CODE_BLOCK_ENHANCER_SCRIPT } from "./code-block-enhancer-script.js";
  * and emits the code-block enhancer init script via `dangerouslySetInnerHTML`.
  *
  * The script:
- * - Wraps each `<pre.astro-code>` in a `.code-block-wrapper` container.
+ * - Wraps each `<pre class="syntect-*">` in a `.code-block-wrapper` container.
  * - Adds a copy-to-clipboard button and a word-wrap toggle button.
  * - Observes resize events to hide the wrap button when content fits.
- * - Handles `astro:before-swap` cleanup and `astro:page-load` re-init for
- *   Astro view transitions.
+ * - Handles before-navigate cleanup and after-navigate re-init for View
+ *   Transitions. Event names come from `BEFORE_NAVIGATE_EVENT` /
+ *   `AFTER_NAVIGATE_EVENT` in `../transitions/page-events.ts`.
  */
 export function CodeBlockEnhancer(): JSX.Element {
   return (

@@ -57,6 +57,17 @@
 // // @slot:doc-layout:frontmatter
 
 import type { ComponentChildren, JSX } from "preact";
+// `@takazudo/zfb` provides the `<Island>` JSX wrapper. We wrap the
+// default Toc / MobileToc here (rather than inside the Toc / MobileToc
+// modules themselves) so the zfb island bundle hydrates the bare inner
+// component against the existing data-zfb-island element in-place.
+// Pre-Wave 13, Toc / MobileToc each called Island internally and
+// returned the wrapped div; the bundle then hydrated *that* wrapper
+// inside the SSR'd marker div, producing a nested duplicate
+// `<nav aria-label="Table of contents">` (and the equivalent panel for
+// MobileToc) on every page. See the leading comment in
+// `../toc/toc.tsx` for the full diagnosis. zudolab/zudo-doc#1355.
+import { Island } from "@takazudo/zfb";
 
 import { DocLayout, type DocLayoutProps } from "./doc-layout.js";
 // Default-bearing slots: when the caller does not supply an override
@@ -65,6 +76,14 @@ import { DocLayout, type DocLayoutProps } from "./doc-layout.js";
 // at boot. Each import below is a self-Island'd shell — the marker is
 // produced regardless of whether the host wires real data into the
 // component yet.
+//
+// Wave 8 (Path A — super-epic #1333 / child epic #1355): the body-end
+// SSR-skip wrappers (AiChatModalIsland / DesignTokenTweakPanelIsland /
+// ImageEnlargeIsland) are no longer imported here. The host now owns
+// the page → real-component import chain so zfb's island scanner can
+// walk it; see `pages/lib/_body-end-islands.tsx` for the canonical
+// composition. `bodyEndComponents` becomes a host-supplied slot — when
+// undefined, this layout emits no body-end islands.
 import { Sidebar } from "../sidebar/sidebar.js";
 import { Toc } from "../toc/toc.js";
 import { MobileToc } from "../toc/mobile-toc.js";
@@ -72,13 +91,14 @@ import { getTocTitle } from "../toc/toc-title.js";
 import type { HeadingItem } from "../toc/types.js";
 import ThemeToggle from "../theme/theme-toggle.js";
 import { Footer } from "../footer/footer.js";
-import {
-  AiChatModalIsland,
-  DesignTokenTweakPanelIsland,
-  ImageEnlargeIsland,
-} from "../ssr-skip/index.js";
+import { CodeBlockEnhancer } from "../code-syntax/code-block-enhancer.js";
+import { MermaidInit } from "../code-syntax/mermaid-init.js";
 import { TabsInit } from "../code-syntax/tabs-init.js";
 import { VERSION_SWITCHER_INIT_SCRIPT } from "../i18n-version/version-switcher.js";
+import {
+  VersionBanner,
+  type VersionBannerLabels,
+} from "../i18n-version/version-banner.js";
 
 // Sibling-topic barrels. Each is being authored by a peer agent in the
 // same parallel session; the imports below assume the canonical shape
@@ -140,6 +160,21 @@ export interface DocLayoutWithDefaultsProps
    * this prop — the components gracefully handle both cases.
    */
   headings?: readonly HeadingItem[];
+
+  /**
+   * Version-banner variant. When set, a `<VersionBanner>` is rendered in
+   * the `afterBreadcrumb` slot. `false` / `undefined` suppress it. This
+   * matches the legacy `version.banner` frontmatter shape.
+   *
+   * The host must also pass `versionBannerLatestUrl` and
+   * `versionBannerLabels` so the banner can render a localized notice
+   * with a link to the latest version of the current page.
+   */
+  versionBanner?: "unmaintained" | "unreleased" | false;
+  /** Pre-resolved href used by the version banner's "view latest" link. */
+  versionBannerLatestUrl?: string;
+  /** Localized labels used by the version banner. */
+  versionBannerLabels?: VersionBannerLabels;
 }
 
 /**
@@ -191,8 +226,51 @@ export function DocLayoutWithDefaults(
     afterContent,
     head,
     lang,
+    versionBanner,
+    versionBannerLatestUrl,
+    versionBannerLabels,
     ...rest
   } = props;
+
+  // When the host opts into a version banner, prepend it to the
+  // `afterBreadcrumb` slot so the banner sits between the breadcrumb and
+  // the article body — matching the legacy Astro placement (the
+  // `@slot:doc-layout:after-breadcrumb` anchor).
+  const versionBannerActive =
+    versionBanner !== undefined && versionBanner !== false;
+  const versionBannerComplete =
+    versionBannerLatestUrl !== undefined && versionBannerLabels !== undefined;
+  if (
+    versionBannerActive &&
+    !versionBannerComplete &&
+    typeof process !== "undefined" &&
+    process.env?.NODE_ENV !== "production"
+  ) {
+    const missing: string[] = [];
+    if (versionBannerLatestUrl === undefined) missing.push("versionBannerLatestUrl");
+    if (versionBannerLabels === undefined) missing.push("versionBannerLabels");
+    console.warn(
+      `[doc-layout] versionBanner=${String(versionBanner)} requires ${missing.join(
+        " + ",
+      )}; banner will be skipped.`,
+    );
+  }
+  const composedAfterBreadcrumb =
+    versionBanner !== undefined &&
+    versionBanner !== false &&
+    versionBannerLatestUrl !== undefined &&
+    versionBannerLabels !== undefined ? (
+      <>
+        <VersionBanner
+          type={versionBanner}
+          latestUrl={versionBannerLatestUrl}
+          labels={versionBannerLabels}
+        />
+        {afterBreadcrumb}
+      </>
+    ) : (
+      afterBreadcrumb
+    );
 
   // Coerce undefined to empty array so Toc/MobileToc always receive an array.
   const tocHeadings: readonly HeadingItem[] = headings ?? [];
@@ -215,11 +293,25 @@ export function DocLayoutWithDefaults(
   // passes tocOverride / mobileTocOverride can force a custom TOC even on
   // no-heading or hide_toc pages.
   const shouldRenderDefaultToc = !props.hideToc && tocHeadings.length > 0;
+  // Wrap each default island in zfb's `<Island when="load">` so the SSG
+  // pass emits the `data-zfb-island="Toc"` / `="MobileToc"` markers and
+  // the client bundle's hydrate pass targets the bare inner component
+  // (the `<nav>` / panel) directly. The cast through `unknown` mirrors
+  // the existing `as unknown as VNode` pattern in `<Toc>`'s historical
+  // wrapper — Island returns the structural IslandElement shape and
+  // Preact's JSX.Element typing does not directly accept it, but at
+  // runtime the renderer recognises the constructor:undefined sentinel.
   const defaultToc = shouldRenderDefaultToc
-    ? <Toc headings={tocHeadings} title={tocTitle} />
+    ? (Island({
+        when: "load",
+        children: <Toc headings={tocHeadings} title={tocTitle} />,
+      }) as unknown as JSX.Element)
     : undefined;
   const defaultMobileToc = shouldRenderDefaultToc
-    ? <MobileToc headings={tocHeadings} title={tocTitle} />
+    ? (Island({
+        when: "load",
+        children: <MobileToc headings={tocHeadings} title={tocTitle} />,
+      }) as unknown as JSX.Element)
     : undefined;
 
   // The empty fragments below carry the body-region injection anchors
@@ -261,15 +353,24 @@ export function DocLayoutWithDefaults(
           )
         }
         sidebar={
-          // Empty-data Sidebar still emits the SSG marker via the
-          // internal `<Island>` wrapper. Hosts that have a real nav
-          // tree pass it through `sidebarOverride`.
-          sidebarOverride ?? <Sidebar nodes={[]} />
+          // Empty-data Sidebar emits the SSG marker via an explicit
+          // `<Island when="load">` wrap at this call site (not inside
+          // `<Sidebar>` itself) so the bundle's hydrate pass targets
+          // the bare component and Preact doesn't append a duplicate
+          // wrapper-div alongside the SSR'd tree. See `../sidebar/sidebar.tsx`
+          // for the full diagnosis. Hosts that have a real nav tree
+          // pass it through `sidebarOverride` and apply their own
+          // `<Island>` wrap (see `pages/lib/_sidebar-with-defaults.tsx`
+          // in the host project).
+          sidebarOverride ?? (Island({
+            when: "load",
+            children: <Sidebar nodes={[]} />,
+          }) as unknown as JSX.Element)
         }
         toc={tocOverride ?? defaultToc}
         mobileToc={mobileTocOverride ?? defaultMobileToc}
         breadcrumb={breadcrumbOverride}
-        afterBreadcrumb={afterBreadcrumb}
+        afterBreadcrumb={composedAfterBreadcrumb}
         afterSidebar={afterSidebar}
         afterContent={afterContent}
         // Default: bare <Footer /> shell so the contentinfo ARIA landmark
@@ -277,35 +378,41 @@ export function DocLayoutWithDefaults(
         // content (link columns, copyright, taglist) pass `footerOverride`
         // with a host-side data-aware wrapper (e.g. FooterWithDefaults).
         footer={footerOverride ?? <Footer />}
-        bodyEndComponents={
-          bodyEndComponents ?? (
-            // Default body-end islands. Each is an SSR-skip wrapper
-            // (`data-zfb-island-skip-ssr`) — they need no SSR markup
-            // because the underlying widgets are overlay/effect
-            // components with no layout footprint when closed/idle.
-            // Hosts that want a different body-end set should pass
-            // `bodyEndComponents` explicitly.
-            <>
-              <DesignTokenTweakPanelIsland />
-              {/* Preserves migration-check parity: the Astro build SSR-rendered <h2>AI Assistant</h2> inside the chat modal markup; the checker matches the literal heading text. */}
-              <h2 class="sr-only">AI Assistant</h2>
-              <AiChatModalIsland basePath="/" />
-              <ImageEnlargeIsland />
-            </>
-          )
-        }
+        // Body-end islands are now host-owned so zfb's island scanner can
+        // walk the page → real-component import chain. The host's helper
+        // (`pages/lib/_body-end-islands.tsx`) imports the real components
+        // (AiChatModal, DesignTokenTweakPanel, ImageEnlarge) directly and
+        // wraps them with zfb's native `<Island ssrFallback={...}>`. When
+        // no slot is supplied this layout emits nothing in the body-end
+        // region.
+        bodyEndComponents={bodyEndComponents}
         bodyEndScripts={
           bodyEndScripts ?? (
-            // Default body-end scripts: TabsInit activates the correct tab
-            // panel and wires click handlers for <Tabs> components. The
-            // version-switcher script wires the dropdown toggle / outside-click
-            // / Escape-key behavior for every [data-version-switcher] element.
-            // Both scripts are idempotent and safe on pages that have no
-            // matching elements, so they are included unconditionally.
+            // Default body-end scripts:
+            //   - CodeBlockEnhancer wraps every <pre class="syntect-*"> with
+            //     copy + word-wrap controls and emits an SR-announce live
+            //     region for clipboard feedback. Idempotent on pages with no
+            //     fenced code.
+            //   - TabsInit activates the correct tab panel and wires click
+            //     handlers for <Tabs> components.
+            //   - MermaidInit lazily imports the mermaid library from
+            //     `MERMAID_CDN_MODULE_URL` (esm.sh by default) on
+            //     `AFTER_NAVIGATE_EVENT` and renders any `[data-mermaid]`
+            //     containers emitted by zfb's MermaidPlugin (zfb#104).
+            //     Pages without diagrams pay zero runtime cost because
+            //     the dynamic import is gated on a non-empty
+            //     `querySelectorAll("[data-mermaid]:not([data-mermaid-rendered])")`.
+            //   - The version-switcher script wires the dropdown toggle /
+            //     outside-click / Escape-key behavior for every
+            //     [data-version-switcher] element.
+            // All four scripts are idempotent and safe on pages that have
+            // no matching elements, so they are included unconditionally.
             // Callers that need a different body-end script set should pass
             // `bodyEndScripts` explicitly to override this default.
             <>
+              <CodeBlockEnhancer />
               <TabsInit />
+              <MermaidInit />
               <script dangerouslySetInnerHTML={{ __html: VERSION_SWITCHER_INIT_SCRIPT }} />
             </>
           )

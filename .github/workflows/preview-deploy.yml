@@ -1,10 +1,36 @@
 # Preview deployment for preview and expreview/* branches.
 #
 # Triggered on pushes to `preview` and `expreview/**` branches.
-# Builds the Astro docs site and deploys to Cloudflare Pages with a branch name
+# Builds the zfb docs site and deploys to Cloudflare Pages with a branch name
 # so the preview URL is predictable (e.g. preview.zudo-doc.pages.dev).
 #
 # This is separate from PR preview deploys (handled by pr-checks.yml).
+#
+# zfb is consumed as `file:../zfb/...` workspace deps. The build-zfb job
+# below compiles the zfb Rust binary at the pinned SHA and fetches the
+# pinned tailwindcss v4 standalone CLI, then uploads each as a separate
+# artifact; the build-and-deploy job clones the same pinned source and
+# downloads both binaries so the postinstall hooks
+# (zfb-fetch-tailwind.mjs + zfb-link.mjs) resolve them locally. See
+# pr-checks.yml for the full rationale.
+#
+# ----------------------------------------------------------------------------
+# Deployed artifact contract — see main-deploy.yml top-of-file for the
+# canonical 9-category list. Categories (a)–(i) MUST be preserved here in
+# parity with production (audited in epic #1337 task 5).
+#
+# This workflow currently does NOT pull doc-history (category g) — it builds
+# the site inline via `pnpm build` without SKIP_DOC_HISTORY, so the
+# doc-history-plugin's inline mode embeds history at build time. That keeps
+# preview deploys self-contained at the cost of a slower build (full git
+# clone via fetch-depth: 0). Production splits build-history into a parallel
+# job for speed; preview does not.
+#
+# See the same SSR-placement note in main-deploy.yml about _worker.js: the
+# CF Pages advanced-mode entry currently lands at deploy/pj/zudo-doc/_worker.js
+# under the project's base path. Until the deploy layout is reshaped, SSR
+# routes (currently only /api/ai-chat) will not work in preview either.
+# ----------------------------------------------------------------------------
 
 name: Preview Deploy
 
@@ -23,7 +49,61 @@ permissions:
   pull-requests: write
   statuses: write
 
+env:
+  # Pinned zfb commit — keep in sync with the zfb pin comment at the
+  # top of zfb.config.ts and the same env in pr-checks.yml.
+  ZFB_PINNED_SHA: c2cff95e740e671656896d38ca9e422f3cdb0e8c
+
 jobs:
+  # ---------------------------------------------------------------------------
+  # Job 0: Build the zfb Rust binary at the pinned SHA.
+  # ---------------------------------------------------------------------------
+  build-zfb:
+    name: Build zfb Binary
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout pinned zfb
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          repository: Takazudo/zudo-front-builder
+          ref: ${{ env.ZFB_PINNED_SHA }}
+          path: zfb-src
+          fetch-depth: 1
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+        with:
+          workspaces: zfb-src
+          key: zfb-${{ env.ZFB_PINNED_SHA }}
+
+      - name: Build zfb release binary
+        run: cargo build -p zfb --release
+        working-directory: zfb-src
+
+      # See pr-checks.yml `build-zfb` for the rationale on uploading the
+      # tailwindcss v4 standalone CLI as a separate artifact.
+      - name: Fetch tailwindcss binary
+        run: node scripts/fetch-tailwind.mjs
+        working-directory: zfb-src
+
+      - name: Upload zfb binary artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: zfb-binary
+          path: zfb-src/target/release/zfb
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload zfb tailwind binary artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: zfb-tailwind-binary
+          path: zfb-src/crates/zfb/binaries/tailwindcss-v4
+          if-no-files-found: error
+          retention-days: 1
+
   # ---------------------------------------------------------------------------
   # Job 1: Build and deploy preview
   # ---------------------------------------------------------------------------
@@ -31,6 +111,7 @@ jobs:
     name: Build and Deploy Preview
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    needs: build-zfb
 
     steps:
       # fetch-depth: 0 is required for docHistoryIntegration (reads git log)
@@ -38,6 +119,30 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           fetch-depth: 0
+
+      - name: Clone zfb sibling repo
+        run: |
+          git clone https://github.com/Takazudo/zudo-front-builder.git ../zfb
+          git -C ../zfb checkout "$ZFB_PINNED_SHA"
+
+      - name: Download zfb binary
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: zfb-binary
+          path: ../zfb/target/release
+
+      - name: Mark zfb binary executable
+        run: chmod +x ../zfb/target/release/zfb
+
+      # See pr-checks.yml `typecheck` for the tailwind binary placement rationale.
+      - name: Download zfb tailwind binary
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: zfb-tailwind-binary
+          path: ../zfb/crates/zfb/binaries
+
+      - name: Mark zfb tailwind binary executable
+        run: chmod +x ../zfb/crates/zfb/binaries/tailwindcss-v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
@@ -65,14 +170,20 @@ jobs:
           echo "Deploy branch: $DEPLOY_BRANCH"
 
       - name: Prepare deploy directory
+        # Mirror of main-deploy.yml's prepare step. See that file for the
+        # 9-category artifact contract. Note: doc-history is NOT merged here
+        # — preview-deploy builds inline (SKIP_DOC_HISTORY unset) so history
+        # is already embedded under dist/doc-history/.
+        # The dist/client/ branch is a legacy Astro fallback and never runs
+        # under zfb (zfb emits a flat dist/).
         run: |
           mkdir -p deploy/pj/zudo-doc
-          # When aiAssistant is enabled, Astro outputs static files to dist/client/
           if [ -d dist/client ]; then
             cp -r dist/client/. deploy/pj/zudo-doc/
           else
             cp -r dist/. deploy/pj/zudo-doc/
           fi
+          # (c) Root-level _redirects: bare-domain hits land on the based site.
           echo '/ /pj/zudo-doc/ 302' > deploy/_redirects
 
       - name: Deploy to Cloudflare Pages

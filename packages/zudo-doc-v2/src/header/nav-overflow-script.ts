@@ -8,7 +8,7 @@
 // type annotations) have been dropped so the browser can parse it
 // directly.
 //
-// The behaviour is byte-for-byte equivalent to the original:
+// The behaviour matches the original modulo lifecycle vocabulary:
 //   1. Locate the `[data-header-nav]` flex container, its `[data-nav-more]`
 //      overflow trigger, and its dropdown menu.
 //   2. Measure each top-level nav item, then greedily hide items that
@@ -17,12 +17,18 @@
 //      `[data-nav-item-dropdown]` entries).
 //   3. Wire toggle / outside-click / Escape handlers to the overflow
 //      menu and aria-expanded state to the in-place dropdowns.
-//   4. Re-run on `astro:after-swap` so the overflow stays correct after
-//      View Transitions navigation.
+//   4. Re-run on the v2 after-navigate event so the overflow stays
+//      correct after a View Transitions navigation. The event name is
+//      pulled from `AFTER_NAVIGATE_EVENT` in
+//      `transitions/page-events.ts` (today: `DOMContentLoaded`) rather
+//      than a hard-coded `astro:*` literal — see that module for the
+//      vocabulary rationale.
 //
 // Kept as a separate module (rather than inlined in `header.tsx`) so
 // the JSX file stays focused on markup and so future edits to the
 // script can be reviewed in isolation.
+
+import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
 
 export const NAV_OVERFLOW_SCRIPT = `(function () {
   var cleanupNavOverflow = null;
@@ -187,5 +193,5 @@ export const NAV_OVERFLOW_SCRIPT = `(function () {
   }
 
   initNavOverflow();
-  document.addEventListener("astro:after-swap", initNavOverflow);
+  document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)}, initNavOverflow);
 })();`;

@@ -227,8 +227,8 @@ export default function DesignTokenTweakPanel() {
         if (state) setState(persisted);
       }
     }
-    document.addEventListener("astro:after-swap", handleSwap);
-    return () => document.removeEventListener("astro:after-swap", handleSwap);
+    document.addEventListener("DOMContentLoaded", handleSwap);
+    return () => document.removeEventListener("DOMContentLoaded", handleSwap);
   }, [state]);
 
   const handleLoadFromJson = useCallback((loaded: TweakState) => {

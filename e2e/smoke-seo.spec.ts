@@ -9,8 +9,10 @@ test.describe("SEO: meta tags render correctly", () => {
 
   test("og:title meta tag is present with correct content", () => {
     const html = readDistFile("docs/guides/page-1/index.html");
-    expect(html).toContain(
-      '<meta property="og:title" content="Writing Docs | Smoke Test">',
+    // Tolerate either HTML (`>`) or XHTML/self-closing (`/>`) closing form so
+    // the assertion stays valid regardless of how the renderer emits void tags.
+    expect(html).toMatch(
+      /<meta property="og:title" content="Writing Docs \| Smoke Test"\s*\/?>/,
     );
   });
 

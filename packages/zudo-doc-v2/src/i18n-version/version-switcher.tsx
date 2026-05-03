@@ -11,10 +11,13 @@
 //
 // The Astro version shipped a `<script>` in the same file that wired up
 // click-toggle / outside-click / Escape-key behavior on every
-// `[data-version-switcher]` instance, idempotently re-binding after
-// `astro:after-swap`. The JSX port emits the same data-attributes and
-// markup, but the script lives separately as `VERSION_SWITCHER_INIT_SCRIPT`
-// so consumers mount it once at body-end (matching how
+// `[data-version-switcher]` instance, idempotently re-binding after the
+// page-navigate-end event. After zudolab/zudo-doc#1335 (E2 task 2 half
+// B) that event resolves through the `AFTER_NAVIGATE_EVENT` constant in
+// `transitions/page-events.ts` rather than a hard-coded `astro:*`
+// literal. The JSX port emits the same data-attributes and markup, but
+// the script lives separately as `VERSION_SWITCHER_INIT_SCRIPT` so
+// consumers mount it once at body-end (matching how
 // color-scheme-provider's bootstrap is structured). That keeps the
 // component itself SSR-safe and side-effect-free, while letting the host
 // page wire up exactly one global listener regardless of how many
@@ -29,9 +32,49 @@
 //     an icon library.
 //   * The `<script>` block in the .astro source is hoisted out into the
 //     exported `VERSION_SWITCHER_INIT_SCRIPT` constant.
+//
+// Self-contained responsive visibility (Wave 11):
+//   The host's <Header> wraps this component in `<div class="hidden lg:block">`
+//   so the switcher only appears at lg+ viewports. That works as long as
+//   Tailwind's content scanner has actually generated `.lg:block` and `.hidden`
+//   rules in the bundled CSS. In some build setups (notably the e2e versioning
+//   fixture) `.hidden` is generated but `.lg:block` is not, because Tailwind's
+//   filesystem walk reaches `pages/` (where `.hidden`/`.block` are referenced
+//   directly) but not the workspace-package source where `lg:block` lives.
+//   The wrapper then resolves to a permanent `display: none` even on desktop
+//   and the switcher disappears at every viewport.
+//
+//   Rather than depend on the host's Tailwind classes, this component emits a
+//   small unlayered `<style>` block (`VERSION_SWITCHER_VISIBILITY_STYLE`) that
+//   re-introduces the missing desktop override only. The selector is
+//   `.hidden:has(> [data-version-switcher])` so it
+//
+//     * matches the host header's `<div class="hidden lg:block">` wrapper
+//       (which always has `.hidden` whether or not `.lg:block` made it into
+//       the bundle), and
+//     * does NOT touch any consumer that wraps the switcher in something
+//       without the Tailwind `.hidden` baseline — that wrapper isn't asking
+//       for "hide on mobile, show on desktop" in the first place, so the
+//       fix stays out of its way.
+//
+//   Because the rule is unlayered author CSS, it wins over Tailwind's
+//   `.hidden` (which lives in `@layer utilities`), so visibility is correct
+//   regardless of whether `.lg:block` survived content scanning. Mobile
+//   visibility falls through to `.hidden`'s `display: none` baseline.
+//
+//   The `<style>` element is rendered as the first child INSIDE the
+//   `<div data-version-switcher>` so that the migration-check
+//   `strip-version-switcher.mjs` walker (which removes the entire
+//   `<div data-version-switcher>` subtree) cleans the `<style>` up too —
+//   keeping post-cutover migration parity comparisons free of a structural
+//   delta on every versioned page.
+//
+//   Consumers that ship their own visibility CSS can pass
+//   `disableInlineVisibilityStyle` to suppress the inline `<style>`.
 
 import type { VNode } from "preact";
 import type { VersionEntry, VersionSwitcherLabels } from "./types";
+import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
 
 export interface VersionSwitcherProps {
   /**
@@ -76,12 +119,56 @@ export interface VersionSwitcherProps {
    * unique.
    */
   idSuffix?: string;
+
+  /**
+   * When true, suppress the inline `<style>` element that backs responsive
+   * visibility (`VERSION_SWITCHER_VISIBILITY_STYLE`). Use this when the
+   * host already ships its own visibility CSS — for example, a project
+   * whose Tailwind content scanner reaches the workspace-package source
+   * (via an explicit `@source` directive) so `.lg:block` makes it into
+   * the bundle without the inline override, or a project that wraps the
+   * switcher in a layout that uses a non-`.hidden` baseline (`hidden
+   * lg:flex`, `hidden xl:block`, a custom breakpoint, etc.).
+   *
+   * Defaults to `false` (emit the inline style) so existing consumers
+   * keep working without a code change.
+   */
+  disableInlineVisibilityStyle?: boolean;
 }
 
 /** Concatenate Tailwind class strings, dropping falsy entries. */
 function cls(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join(" ");
 }
+
+/**
+ * Inline stylesheet that backs the responsive visibility of the
+ * version-switcher's host wrapper. The selector
+ * `.hidden:has(> [data-version-switcher])` keys off the host header's
+ * `<div class="hidden lg:block">` baseline (the `.hidden` part is always
+ * generated by Tailwind because `pages/` directly references it) and only
+ * adds the *desktop* override at viewports `>= 64rem`. Below 64rem there
+ * is no rule, so visibility falls through to Tailwind's `.hidden` rule —
+ * mobile stays hidden the way the host requested.
+ *
+ * Why scope to `.hidden`: a consumer that wraps `<VersionSwitcher>` in
+ * something *without* the `.hidden` baseline (a flex row, a grid cell, an
+ * unstyled span) is not asking for "hide on mobile, show on desktop" and
+ * shouldn't have this rule rewrite its parent's `display`. Pinning the
+ * selector to the `.hidden` precondition keeps the override surgical to
+ * the documented usage pattern.
+ *
+ * The breakpoint (`64rem` = 1024px) intentionally mirrors the project's
+ * Tailwind `lg` token. If the design system's `lg` boundary moves, update
+ * this value to match.
+ *
+ * Specificity: `.hidden:has(> [data-version-switcher])` resolves to 0,0,2,0
+ * — higher than Tailwind's `.hidden` (0,0,1,0). The unlayered author origin
+ * also wins over `@layer utilities` regardless of specificity, so this rule
+ * reliably overrides the wrapper's `display: none` at `>= 64rem`.
+ */
+export const VERSION_SWITCHER_VISIBILITY_STYLE =
+  "@media (min-width:64rem){.hidden:has(> [data-version-switcher]){display:block}}";
 
 function ChevronDownIcon(): VNode {
   return (
@@ -119,6 +206,7 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
     unavailableVersions,
     labels,
     idSuffix = "",
+    disableInlineVisibilityStyle = false,
   } = props;
 
   const menuId = `version-menu${idSuffix ? `-${idSuffix}` : ""}`;
@@ -129,6 +217,18 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
 
   return (
     <div class="version-switcher relative" data-version-switcher>
+      {/*
+       * Inline visibility rule — see file header for rationale. The
+       * `<style>` lives inside the `data-version-switcher` element so the
+       * migration-check `strip-version-switcher.mjs` walker removes it
+       * symmetrically with the rest of the switcher subtree. Multiple
+       * version-switchers on the same page each emit one of these
+       * blocks; the declarations are byte-identical so the duplication
+       * is harmless.
+       */}
+      {!disableInlineVisibilityStyle && (
+        <style dangerouslySetInnerHTML={{ __html: VERSION_SWITCHER_VISIBILITY_STYLE }} />
+      )}
       <button
         type="button"
         class="flex items-center gap-hsp-2xs border border-muted rounded px-hsp-sm py-vsp-3xs text-small text-muted hover:border-accent hover:text-accent transition-colors cursor-pointer whitespace-nowrap"
@@ -209,12 +309,18 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
 /**
  * Self-contained init script for the version-switcher's interactive
  * behavior. Mount once per page (e.g. inside the layout's body-end
- * scripts slot) — it idempotently re-binds after `astro:after-swap`
- * via an AbortController, so multiple switchers on the page share a
- * single event-listener generation.
+ * scripts slot) — it idempotently re-binds via an AbortController so
+ * multiple switchers on the page share a single event-listener
+ * generation.
  *
- * Lifted verbatim from the `<script>` block of the original
- * version-switcher.astro so behavior is bit-for-bit identical.
+ * The post-navigation rebinder uses `AFTER_NAVIGATE_EVENT` from
+ * `transitions/page-events.ts` (today: `DOMContentLoaded`) rather than
+ * a hard-coded `astro:*` literal — see that module's header for the
+ * full vocabulary rationale.
+ *
+ * Lifted from the `<script>` block of the original
+ * version-switcher.astro; behaviour is unchanged modulo the lifecycle
+ * vocabulary swap.
  */
 export const VERSION_SWITCHER_INIT_SCRIPT = `(function(){
 var cleanupController=null;
@@ -247,7 +353,7 @@ toggle.focus();
 });
 }
 initVersionSwitcher();
-document.addEventListener("astro:after-swap",initVersionSwitcher);
+document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)},initVersionSwitcher);
 })();`;
 
 // Re-export the data types so consumers can import everything they need

@@ -22,7 +22,7 @@ import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
 import type { VersionConfig } from "@/config/settings";
 import { t } from "@/config/i18n";
-import { versionedDocsUrl } from "@/utils/base";
+import { docsUrl, versionedDocsUrl } from "@/utils/base";
 import {
   buildNavTree,
   buildBreadcrumbs,
@@ -39,6 +39,7 @@ import { toRouteSlug } from "@/utils/slug";
 import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
 import { Breadcrumb } from "@zudo-doc/zudo-doc-v2/breadcrumb";
 import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
+import { FrontmatterPreview } from "@zudo-doc/zudo-doc-v2/metainfo";
 // Locale-aware MDX components factory — see `pages/_mdx-components.ts`.
 import { createMdxComponents } from "../../../../_mdx-components";
 import type { JSX } from "preact";
@@ -50,6 +51,9 @@ import { HeaderWithDefaults } from "../../../../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../../../../lib/_head-with-defaults";
 import { DocHistoryArea } from "../../../../lib/_doc-history-area";
 import { DocMetainfoArea } from "../../../../lib/_doc-metainfo-area";
+import { BodyEndIslands } from "../../../../lib/_body-end-islands";
+import { buildFrontmatterPreviewEntries } from "../../../../lib/_frontmatter-preview-data";
+import { composeMetaTitle } from "../../../../lib/_compose-meta-title";
 
 export const frontmatter = { title: "Docs" };
 
@@ -248,15 +252,38 @@ export default function VersionedJaDocsPage({ props }: PageArgs): JSX.Element {
     ? autoIndex.children.filter((c: NavNode) => c.hasPage || c.children.length > 0)
     : [];
 
+  // Version banner: drives the `<VersionBanner>` element inside
+  // DocLayoutWithDefaults when `version.banner` is "unmaintained" or
+  // "unreleased". The banner links out to the latest version of the
+  // current page (slug-preserving — strips the /v/{version}/ prefix,
+  // keeps the /ja/ locale prefix).
+  const versionBannerType = version.banner ? version.banner : undefined;
+  const versionBannerLatestUrl = versionBannerType
+    ? docsUrl(slug, locale)
+    : undefined;
+  const versionBannerLabels = versionBannerType
+    ? {
+        message:
+          versionBannerType === "unmaintained"
+            ? t("version.banner.unmaintained", locale)
+            : t("version.banner.unreleased", locale),
+        latestLink: t("version.banner.latestLink", locale),
+      }
+    : undefined;
+
   return (
     <DocLayoutWithDefaults
-      title={title}
+      title={composeMetaTitle(title)}
       description={description}
       head={<HeadWithDefaults title={title} description={description} />}
       lang={locale}
+      noindex={settings.noindex}
       hideSidebar={entry?.data?.hide_sidebar}
       hideToc={entry?.data?.hide_toc}
       headings={headings}
+      versionBanner={versionBannerType ?? false}
+      versionBannerLatestUrl={versionBannerLatestUrl}
+      versionBannerLabels={versionBannerLabels}
       headerOverride={
         <HeaderWithDefaults
           lang={locale}
@@ -279,6 +306,7 @@ export default function VersionedJaDocsPage({ props }: PageArgs): JSX.Element {
         />
       }
       footerOverride={<FooterWithDefaults lang={locale} />}
+      bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
     >
       {autoIndex ? (
         <div>
@@ -314,6 +342,16 @@ export default function VersionedJaDocsPage({ props }: PageArgs): JSX.Element {
               {entry!.data.description}
             </p>
           )}
+
+          {/* Frontmatter preview — non-system, custom keys only. Returns
+              null when the entries array is empty, so pages without
+              custom frontmatter emit nothing. */}
+          <FrontmatterPreview
+            entries={buildFrontmatterPreviewEntries(entry!.data)}
+            title={t("frontmatter.preview.title", locale)}
+            keyColLabel={t("frontmatter.preview.keyCol", locale)}
+            valueColLabel={t("frontmatter.preview.valueCol", locale)}
+          />
 
           {entry && <entry.Content components={components} />}
 

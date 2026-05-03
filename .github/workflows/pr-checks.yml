@@ -5,21 +5,35 @@
 # so each child epic-PR also needs CI gating). The pipeline mirrors the
 # local `pnpm b4push` script:
 #   0. Template drift check (no install needed — pure shell)
-#   1. Type checking (astro check)
-#   2. Build the Astro docs site (shallow clone, skips doc history)
+#   0b. Build the zfb Rust binary at the pinned SHA (single job, artifact)
+#   1. Type checking (`zfb check` → tsc --noEmit)
+#   2. Build the zfb docs site (shallow clone, skips doc history)
 #   3. Build doc history JSONs (full clone, standalone server package)
 #   4. E2E & smoke tests (Playwright)
 #   5. Merge build outputs and deploy a preview to Cloudflare Pages
 #   6. Post the preview URL as a PR comment
 #
-# Each install-bearing job clones the public Takazudo/zudo-front-builder
-# repo to ../zfb so the package.json's file:../zfb/... workspace deps
-# resolve. Local dev uses the same sibling-repo layout. Once zfb publishes
-# to npm, drop the clone steps and switch to versioned deps.
+# zfb is consumed as `file:../zfb/...` workspace deps (see top of
+# package.json). Each install-bearing job clones the public
+# Takazudo/zudo-front-builder repo at the pinned SHA to ../zfb so those
+# deps resolve, then downloads two prebuilt artifacts produced by the
+# build-zfb job below:
+#   - zfb-binary           → ../zfb/target/release/zfb         (Rust CLI)
+#   - zfb-tailwind-binary  → ../zfb/crates/zfb/binaries/...    (Tailwind v4 CLI)
+# The postinstall hook (scripts/zfb-fetch-tailwind.mjs +
+# scripts/zfb-link.mjs) then sees both as already staged and bakes the
+# tailwind path into the zfb wrapper.
 #
-# Inter-job data sharing uses actions/cache (not upload-artifact) to avoid
-# Actions storage accumulation. Cache keys are scoped to github.run_id so
-# each run gets a fresh, unique cache that won't be reused by other runs.
+# Pinned zfb SHA (mirrors the canonical pin documented at the top of
+# zfb.config.ts). Bump in lockstep with that comment.
+#
+# Inter-job data sharing uses actions/cache (not upload-artifact) for
+# build outputs to avoid Actions storage accumulation. The two prebuilt
+# binary artifacts use upload-artifact (with a 1-day retention) so the
+# install-bearing jobs that need them (typecheck, build-site, e2e) can
+# pull them without each compiling Rust or hitting the upstream tailwind
+# release URL. The build-history job is the lone exception — see its
+# inline comment for why it skips both artifacts.
 #
 # Concurrency: cancel in-progress runs for the same PR to save resources.
 
@@ -39,6 +53,12 @@ permissions:
   contents: read
   pull-requests: write
 
+env:
+  # Pinned zfb commit — keep in sync with the zfb pin comment at the
+  # top of zfb.config.ts. Updating the pin here without updating that
+  # comment (or vice versa) will silently desync local dev from CI.
+  ZFB_PINNED_SHA: c2cff95e740e671656896d38ca9e422f3cdb0e8c
+
 jobs:
   # ---------------------------------------------------------------------------
   # Job 0: Template drift check (lightweight, no pnpm install needed)
@@ -54,21 +74,108 @@ jobs:
         run: bash scripts/check-template-drift.sh
 
   # ---------------------------------------------------------------------------
+  # Job 0b: Build the zfb Rust binary once and share it across install-bearing jobs.
+  # ---------------------------------------------------------------------------
+  # The zfb CLI is shipped as a Cargo workspace member (`crates/zfb`).
+  # Compiling it once and uploading the binary as an artifact is much
+  # cheaper than installing the Rust toolchain in every consumer job —
+  # in particular, the e2e job runs inside the Playwright container which
+  # does not ship a Rust toolchain at all. Consumer jobs `cp` the binary
+  # into `../zfb/target/release/zfb` before `pnpm install` so the
+  # postinstall hook (scripts/zfb-link.mjs) finds it on its first
+  # candidate path.
+  build-zfb:
+    name: Build zfb Binary
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout pinned zfb
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          repository: Takazudo/zudo-front-builder
+          ref: ${{ env.ZFB_PINNED_SHA }}
+          path: zfb-src
+          fetch-depth: 1
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+        with:
+          workspaces: zfb-src
+          key: zfb-${{ env.ZFB_PINNED_SHA }}
+
+      - name: Build zfb release binary
+        run: cargo build -p zfb --release
+        working-directory: zfb-src
+
+      # Fetch the pinned tailwindcss v4 standalone CLI into
+      # zfb-src/crates/zfb/binaries/tailwindcss-v4 (idempotent, sha256-verified
+      # by zfb's scripts/fetch-tailwind.mjs). Uploaded as a separate artifact
+      # so each consumer job places it into ../zfb/crates/zfb/binaries/ before
+      # `pnpm install` runs zfb-link.mjs (which captures the path into the
+      # generated wrapper).
+      - name: Fetch tailwindcss binary
+        run: node scripts/fetch-tailwind.mjs
+        working-directory: zfb-src
+
+      - name: Upload zfb binary artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: zfb-binary
+          path: zfb-src/target/release/zfb
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload zfb tailwind binary artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: zfb-tailwind-binary
+          path: zfb-src/crates/zfb/binaries/tailwindcss-v4
+          if-no-files-found: error
+          retention-days: 1
+
+  # ---------------------------------------------------------------------------
   # Job 1: Type checking
   # ---------------------------------------------------------------------------
   typecheck:
     name: Type Check
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: build-zfb
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
-      # Clone the public sibling zfb repo so file:../zfb/... workspace deps resolve.
-      # See pr-checks.yml top-of-file note on the zfb migration parity super-epic.
+      # Clone the pinned zfb sibling repo so file:../zfb/... workspace deps resolve.
+      # SHA must match build-zfb above so the prebuilt binary lines up with the
+      # source the npm packages were built from.
       - name: Clone zfb sibling repo
-        run: git clone --depth 1 https://github.com/Takazudo/zudo-front-builder.git ../zfb
+        run: |
+          git clone https://github.com/Takazudo/zudo-front-builder.git ../zfb
+          git -C ../zfb checkout "$ZFB_PINNED_SHA"
+
+      - name: Download zfb binary
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: zfb-binary
+          path: ../zfb/target/release
+
+      - name: Mark zfb binary executable
+        run: chmod +x ../zfb/target/release/zfb
+
+      # Tailwindcss v4 standalone CLI staged by build-zfb. Must land at
+      # ../zfb/crates/zfb/binaries/tailwindcss-v4 so pnpm install's
+      # postinstall (scripts/zfb-fetch-tailwind.mjs) sees it as already
+      # present (idempotent) and zfb-link.mjs captures the path.
+      - name: Download zfb tailwind binary
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: zfb-tailwind-binary
+          path: ../zfb/crates/zfb/binaries
+
+      - name: Mark zfb tailwind binary executable
+        run: chmod +x ../zfb/crates/zfb/binaries/tailwindcss-v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
@@ -87,12 +194,13 @@ jobs:
         run: pnpm check
 
   # ---------------------------------------------------------------------------
-  # Job 2: Build the Astro docs site (shallow clone — fast)
+  # Job 2: Build the zfb docs site (shallow clone — fast)
   # ---------------------------------------------------------------------------
   build-site:
     name: Build Site
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: build-zfb
 
     steps:
       - name: Checkout repository
@@ -100,9 +208,33 @@ jobs:
         with:
           fetch-depth: 1
 
-      # Clone the public sibling zfb repo so file:../zfb/... workspace deps resolve.
+      # Clone the pinned zfb sibling repo so file:../zfb/... workspace deps resolve.
       - name: Clone zfb sibling repo
-        run: git clone --depth 1 https://github.com/Takazudo/zudo-front-builder.git ../zfb
+        run: |
+          git clone https://github.com/Takazudo/zudo-front-builder.git ../zfb
+          git -C ../zfb checkout "$ZFB_PINNED_SHA"
+
+      - name: Download zfb binary
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: zfb-binary
+          path: ../zfb/target/release
+
+      - name: Mark zfb binary executable
+        run: chmod +x ../zfb/target/release/zfb
+
+      # Tailwindcss v4 standalone CLI staged by build-zfb. Must land at
+      # ../zfb/crates/zfb/binaries/tailwindcss-v4 so pnpm install's
+      # postinstall (scripts/zfb-fetch-tailwind.mjs) sees it as already
+      # present (idempotent) and zfb-link.mjs captures the path.
+      - name: Download zfb tailwind binary
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: zfb-tailwind-binary
+          path: ../zfb/crates/zfb/binaries
+
+      - name: Mark zfb tailwind binary executable
+        run: chmod +x ../zfb/crates/zfb/binaries/tailwindcss-v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
@@ -134,6 +266,18 @@ jobs:
   # ---------------------------------------------------------------------------
   # Job 3: Build doc history JSONs (full clone — only this job needs it)
   # ---------------------------------------------------------------------------
+  # Decision (E2 task 1): build-history does NOT depend on the build-zfb
+  # artifact and does NOT download the prebuilt zfb binary.
+  #
+  # Rationale: the @zudo-doc/doc-history-server package is fully
+  # standalone (only depends on @types/node + tsup + tsx + typescript +
+  # vitest — no zfb consumption) and the workspace postinstall hook
+  # `scripts/zfb-link.mjs` is no-op-when-absent (warns + exits 0 if no
+  # compiled zfb binary is found, so `pnpm install` succeeds without it).
+  # Adding the artifact-download path here would only force a `needs:
+  # build-zfb` edge that serialises this otherwise-independent job behind
+  # the Rust build for no benefit. We still clone the pinned zfb source
+  # so pnpm can resolve the file:../zfb/... workspace deps.
   build-history:
     name: Build Doc History
     runs-on: ubuntu-latest
@@ -145,9 +289,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Clone the public sibling zfb repo so file:../zfb/... workspace deps resolve.
+      # Clone the pinned zfb sibling repo so file:../zfb/... workspace deps resolve.
       - name: Clone zfb sibling repo
-        run: git clone --depth 1 https://github.com/Takazudo/zudo-front-builder.git ../zfb
+        run: |
+          git clone https://github.com/Takazudo/zudo-front-builder.git ../zfb
+          git -C ../zfb checkout "$ZFB_PINNED_SHA"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
@@ -178,10 +324,14 @@ jobs:
   # ---------------------------------------------------------------------------
   # Job 4: E2E & smoke tests
   # ---------------------------------------------------------------------------
+  # The Playwright container ships Node + browsers but NO Rust toolchain,
+  # so installing cargo here just to compile zfb would be expensive and
+  # redundant. Take the prebuilt binary from build-zfb instead.
   e2e:
     name: E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: build-zfb
     container:
       # renovate: datasource=docker depName=mcr.microsoft.com/playwright versioning=docker
       image: mcr.microsoft.com/playwright:v1.58.2-noble
@@ -196,9 +346,33 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Clone the public sibling zfb repo so file:../zfb/... workspace deps resolve.
+      # Clone the pinned zfb sibling repo so file:../zfb/... workspace deps resolve.
       - name: Clone zfb sibling repo
-        run: git clone --depth 1 https://github.com/Takazudo/zudo-front-builder.git ../zfb
+        run: |
+          git clone https://github.com/Takazudo/zudo-front-builder.git ../zfb
+          git -C ../zfb checkout "$ZFB_PINNED_SHA"
+
+      - name: Download zfb binary
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: zfb-binary
+          path: ../zfb/target/release
+
+      - name: Mark zfb binary executable
+        run: chmod +x ../zfb/target/release/zfb
+
+      # Tailwindcss v4 standalone CLI staged by build-zfb. Must land at
+      # ../zfb/crates/zfb/binaries/tailwindcss-v4 so pnpm install's
+      # postinstall (scripts/zfb-fetch-tailwind.mjs) sees it as already
+      # present (idempotent) and zfb-link.mjs captures the path.
+      - name: Download zfb tailwind binary
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: zfb-tailwind-binary
+          path: ../zfb/crates/zfb/binaries
+
+      - name: Mark zfb tailwind binary executable
+        run: chmod +x ../zfb/crates/zfb/binaries/tailwindcss-v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
@@ -248,19 +422,23 @@ jobs:
           key: doc-history-${{ github.run_id }}
 
       - name: Prepare deploy directory
+        # Mirror of main-deploy.yml's prepare step. See main-deploy.yml for
+        # the 9-category deployed-artifact contract (audited in epic #1337
+        # task 5). The dist/client/ branch is a legacy Astro fallback and
+        # never runs under zfb (zfb emits a flat dist/).
         run: |
           mkdir -p deploy/pj/zudo-doc
-          # When aiAssistant is enabled, Astro outputs static files to dist/client/
           if [ -d dist/client ]; then
             cp -r dist/client/. deploy/pj/zudo-doc/
           else
             cp -r dist/. deploy/pj/zudo-doc/
           fi
-          # Merge doc history JSONs into the deploy directory (if available)
+          # (g) Merge doc history JSONs into the deploy directory.
           if [ -d doc-history-out ] && [ "$(ls -A doc-history-out 2>/dev/null)" ]; then
             mkdir -p deploy/pj/zudo-doc/doc-history
             cp -r doc-history-out/. deploy/pj/zudo-doc/doc-history/
           fi
+          # (c) Root-level _redirects: bare-domain hits land on the based site.
           echo '/ /pj/zudo-doc/ 302' > deploy/_redirects
 
       - name: Deploy preview to Cloudflare Pages
