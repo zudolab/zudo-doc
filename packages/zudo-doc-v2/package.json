@@ -18,6 +18,10 @@
       "types": "./src/theme/index.ts",
       "default": "./src/theme/index.ts"
     },
+    "./theme/color-scheme-provider": {
+      "types": "./src/theme/color-scheme-provider.tsx",
+      "default": "./src/theme/color-scheme-provider.tsx"
+    },
     "./toc": {
       "types": "./src/toc/index.ts",
       "default": "./src/toc/index.ts"
