@@ -60,6 +60,14 @@ declare module "zfb/config" {
      * in crates/zfb/src/config.rs (zudolab/zfb#131).
      */
     stripMdExt?: boolean;
+    /**
+     * Site base path. Prefixed onto stable HTML asset URLs (CSS / JS
+     * `<link>` and `<script>` tags). Normalised to start AND end with
+     * `/`; `undefined` / `""` / `"/"` all behave identically (no
+     * prefix). Mirrors Config::base in crates/zfb/src/config.rs
+     * (Takazudo/zudo-front-builder#154).
+     */
+    base?: string;
   }
 
   /**

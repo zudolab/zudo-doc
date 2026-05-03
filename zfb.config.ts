@@ -1,6 +1,7 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: c2cff95 (Takazudo/zudo-front-builder wave13-css-path-probe, 2026-05-03)
+ *   commit: 19b2bd5 (Takazudo/zudo-front-builder main, merged via PR #154
+ *           feat/asset-base-path, 2026-05-03)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -134,11 +135,24 @@
  *                               doc-layout.tsx. With this pin the host's authored @theme block
  *                               flows through Tailwind as designed and the inline workaround
  *                               can be dropped — closes wave 13 topic 5 of zudolab/zudo-doc#1355)
+ *     - Takazudo/zudo-front-builder PR #154 (config: support `base` for HTML asset URLs.
+ *                               ZfbConfig grew a `base?: string` field (TS + Rust serde), and
+ *                               commands::build now mounts each emitter slot's `stable_url`
+ *                               under the configured prefix BEFORE handing it to the renderer
+ *                               and to ProductionAssetPipeline::boundary_replace. Result: with
+ *                               base = "/pj/zudo-doc/" the dist HTML emits
+ *                               `<link rel="stylesheet" href="/pj/zudo-doc/assets/styles-<hash>.css">`
+ *                               instead of the unprefixed `/assets/styles-<hash>.css` that
+ *                               404'd under the sub-path mount on PR #669 preview. Closes the
+ *                               BLOCKER sub-issue zudolab/zudo-doc#1361 of feature-audit
+ *                               epic zudolab/zudo-doc#1360)
  *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333) → bumped by epic
  *              zudolab/zudo-doc#1355 (Sig F finalisation + post-#131 hash-mismatch follow-up
  *              + Sig G island-resolver/esbuild parity + shared-bundle hydration glue
  *              + manifest-key alignment + wave 12 hydration prop serialisation
- *              + wave 13 Tailwind input-CSS path-probe gap)
+ *              + wave 13 Tailwind input-CSS path-probe gap) → bumped by epic
+ *              zudolab/zudo-doc#1360 sub-issue #1361 (S1 BLOCKER: HTML asset URLs respect
+ *              site `base`)
  */
 
 // zfb.config.ts — entry-point config consumed by the zfb engine.
@@ -378,6 +392,13 @@ export default defineConfig({
   // `href="./other.mdx"` links — the deep-review #1338 finding 12
   // verification surfaced this on roughly two dozen pages.
   stripMdExt: true,
+  // Public URL prefix for `<link rel="stylesheet">` and `<script
+  // type="module">` tags emitted into dist HTML. Without this, the
+  // unprefixed `/assets/styles-<hash>.css` 404s under the sub-path
+  // mount at https://<deployment>.zudo-doc.pages.dev/pj/zudo-doc/
+  // (closes BLOCKER #1361 of feature-audit epic #1360). The same
+  // value already drives the search-index / llms-txt plugins below.
+  base: settings.base,
   // ----------------------------------------------------------------------
   // Cloudflare Pages adapter — wraps the SSR bundle into `dist/_worker.js`
   // (advanced-mode entry) plus a sidecar `dist/_zfb_inner.mjs`. The adapter
