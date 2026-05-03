@@ -37,6 +37,7 @@ import { FooterWithDefaults } from "../lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../lib/_head-with-defaults";
 import { composeMetaTitle } from "../lib/_compose-meta-title";
+import { BodyEndIslands } from "../lib/_body-end-islands";
 
 export const frontmatter = { title: "Home" };
 
@@ -114,10 +115,12 @@ export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
       title={composeMetaTitle(settings.siteName)}
       head={<HeadWithDefaults title={settings.siteName} />}
       lang={locale}
+      noindex={settings.noindex}
       hideSidebar={true}
       hideToc={true}
       headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase(`/${locale}/`)} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
+      bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
     >
       {/* Hero: logo left, title+desc+links right, block centered */}
       <div class="flex justify-center mb-vsp-xl">

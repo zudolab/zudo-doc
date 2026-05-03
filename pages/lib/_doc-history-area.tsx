@@ -4,20 +4,32 @@
 //
 // Mirrors the Phase B-1 pattern used by _footer-with-defaults.tsx: this
 // wrapper lives in pages/lib/ with a leading underscore so the zfb router
-// skips it as a page module, while the two doc-page modules (docs/[...slug].tsx
-// and [locale]/docs/[...slug].tsx) import it directly. It gates on
-// settings.docHistory, resolves the correct locale prop (omitted for the
-// default locale, matching the doc-history fetch-path branch in
-// src/components/doc-history.tsx), and passes the assembled props into
-// BodyFootUtilArea — restoring the `<section aria-label="Document utilities">`
-// landmark and its Revision History heading that the migration-check was
-// reporting as missing on all zfb doc routes.
+// skips it as a page module, while the two doc-page modules
+// (docs/[...slug].tsx and [locale]/docs/[...slug].tsx) import it directly.
+// It gates on settings.docHistory, resolves the correct locale prop
+// (omitted for the default locale, matching the doc-history fetch-path
+// branch in src/components/doc-history.tsx), and passes the assembled
+// island into BodyFootUtilArea — restoring the
+// `<section aria-label="Document utilities">` landmark and its Revision
+// History heading that the migration-check was reporting as missing on
+// all zfb doc routes.
+//
+// Wave 8 (Path A — super-epic #1333 / child epic #1355): the doc-history
+// island is now built right here using zfb's native `<Island ssrFallback>`
+// API with the real DocHistory component imported from
+// `@/components/doc-history`. Previously this file passed
+// DocHistoryIslandProps to BodyFootUtilArea, which fed an SSR-skip
+// wrapper that did not import the real component — the orphan-component
+// bug that left the marker un-bundled. The host-side import here is the
+// page → real-component chain zfb's island scanner walks.
 
 import type { VNode } from "preact";
+import { Island } from "@takazudo/zfb";
 import { settings } from "@/config/settings";
 import { defaultLocale, t } from "@/config/i18n";
 import { BodyFootUtilArea } from "@zudo-doc/zudo-doc-v2/body-foot-util";
 import { buildGitHubSourceUrl } from "@/utils/github";
+import { DocHistory } from "@/components/doc-history";
 // SSR author + date metadata comes from `.zfb/doc-history-meta.json`, a
 // build-time manifest emitted by `scripts/zfb-prebuild.mjs` (step 2:
 // doc-history-meta) before `zfb build` runs. esbuild inlines the JSON
@@ -27,6 +39,14 @@ import { buildGitHubSourceUrl } from "@/utils/github";
 // because the zfb bundler builds pages from a shadow tree; relative paths
 // across the shadow boundary would resolve to the wrong location.
 import docHistoryMeta from "#doc-history-meta";
+
+// Set explicit `displayName` on the named-export DocHistory so zfb's
+// `captureComponentName` produces a stable marker even after the SSR
+// pipeline runs the component through a function-name-rewriting layer.
+// (DocHistory is `export function DocHistory(...)` — `name` is already
+// "DocHistory" but the explicit assignment is a guard for production
+// minification regressions, mirroring the BodyEndIslands helper.)
+(DocHistory as { displayName?: string }).displayName = "DocHistory";
 
 interface DocHistoryAreaProps {
   /** Page slug, e.g. "getting-started/intro". */
@@ -54,20 +74,19 @@ interface DocHistoryAreaProps {
  * `settings.docHistory` is enabled.  Returns null otherwise so no empty
  * landmark appears on pages where history is disabled.
  *
- * The locale prop is forwarded to `DocHistoryIsland` only for non-default
- * locales — the history JSON server stores default-locale files without a
- * locale path segment (matching the fetch-path branch in doc-history.tsx).
+ * The locale prop is forwarded to the real DocHistory component only for
+ * non-default locales — the history JSON server stores default-locale
+ * files without a locale path segment (matching the fetch-path branch in
+ * doc-history.tsx).
  *
  * When entrySlug + contentDir are both provided and settings.bodyFootUtilArea
  * has viewSourceLink enabled, computes sourceUrl via buildGitHubSourceUrl and
  * resolves the i18n label for the active locale — keeping the v2 component
  * oblivious to project settings (host-side computation, B-8-2).
  *
- * The SSR fallback for the DocHistoryIsland is built from git metadata
+ * The SSR fallback for the doc-history island is built from git metadata
  * (author name, created/updated dates) so that static HTML contains the
  * author marker required by the migration-check before JS hydration.
- * Following the B-8-1 AiChatModal pattern, all text strings are resolved
- * from the project's i18n table and passed as props so locale switching works.
  */
 export function DocHistoryArea({
   slug,
@@ -84,22 +103,78 @@ export function DocHistoryArea({
   type MetaEntry = { author: string; createdDate: string; updatedDate: string };
   const meta = (docHistoryMeta as Record<string, MetaEntry>)[composedSlug];
 
-  const docHistory = {
-    slug,
-    // Omit locale for the default locale — fetch path is /doc-history/{slug}.json.
-    // For non-default locales the path is /doc-history/{locale}/{slug}.json.
-    locale: locale === defaultLocale ? undefined : locale,
-    basePath: settings.base ?? "/",
-    // SSR fallback labels — resolved per locale so /ja/ routes get Japanese strings.
-    createdLabel: t("doc.created", locale),
-    updatedLabel: t("doc.updated", locale),
-    historyLabel: t("doc.history", locale),
-    // SSR author + dates from the build-time manifest (b11-2). Omitted when the
-    // manifest has no entry for this slug (e.g. untracked files, shallow clone).
-    ...(meta?.author ? { author: meta.author } : {}),
-    ...(meta?.createdDate ? { createdDate: meta.createdDate } : {}),
-    ...(meta?.updatedDate ? { updatedDate: meta.updatedDate } : {}),
-  };
+  // Locale-aware labels for the SSR fallback.
+  const createdLabel = t("doc.created", locale);
+  const updatedLabel = t("doc.updated", locale);
+  const historyLabel = t("doc.history", locale);
+
+  // Real-component props — locale omitted for the default locale.
+  const docHistoryLocale = locale === defaultLocale ? undefined : locale;
+  const docHistoryBasePath = settings.base ?? "/";
+
+  // Build the SSR fallback verbatim from the previous v2 wrapper so the
+  // migration-check parity check still finds the author marker, the
+  // Created/Updated labels, and the visible "History" trigger button in
+  // SSG output before JS hydration.
+  const author = meta?.author;
+  const createdDate = meta?.createdDate;
+  const updatedDate = meta?.updatedDate;
+
+  const fallback: VNode = (
+    <>
+      {/* sr-only metadata — accessible before JS, greppable by migration-check */}
+      <div class="sr-only">
+        {author && <span>{author}</span>}
+        <span>
+          {createdLabel}
+          {createdDate ? `: ${createdDate}` : ""}
+        </span>
+        <span>
+          {updatedLabel}
+          {updatedDate ? `: ${updatedDate}` : ""}
+        </span>
+      </div>
+      {/* Visible trigger button — matches the Astro SSR-rendered initial state */}
+      <div class="flex justify-end mt-vsp-xl">
+        <button
+          type="button"
+          class="doc-history-trigger flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-fg hover:border-fg transition-colors"
+          aria-label={historyLabel}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="h-icon-md w-icon-md"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+          <span class="text-small">{historyLabel}</span>
+        </button>
+      </div>
+    </>
+  );
+
+  // Compose the SSR-skip island with zfb's native `<Island ssrFallback>` API.
+  // The page → this file → real DocHistory import chain is what the scanner
+  // walks; the marker emitted is "DocHistory" via captureComponentName.
+  const docHistoryIsland = Island({
+    when: "idle",
+    ssrFallback: fallback,
+    children: (
+      <DocHistory
+        slug={slug}
+        locale={docHistoryLocale}
+        basePath={docHistoryBasePath}
+      />
+    ),
+  }) as unknown as VNode;
 
   // Compute the view-source GitHub URL host-side so the v2 BodyFootUtilArea
   // component stays oblivious to project settings. Guards mirror the legacy
@@ -118,7 +193,7 @@ export function DocHistoryArea({
 
   return (
     <BodyFootUtilArea
-      docHistory={docHistory}
+      docHistoryIsland={docHistoryIsland}
       sourceUrl={sourceUrl}
       viewSourceLabel={viewSourceLabel}
     />

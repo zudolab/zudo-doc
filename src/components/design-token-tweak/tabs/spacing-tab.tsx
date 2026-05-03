@@ -1,4 +1,7 @@
-import { useCallback, useMemo } from "react";
+"use client";
+
+// preact/compat shim — see src/components/ai-chat-modal.tsx for rationale.
+import { useCallback, useMemo } from "preact/compat";
 import SliderRow from "../controls/slider-row";
 import {
   GROUP_ORDER,

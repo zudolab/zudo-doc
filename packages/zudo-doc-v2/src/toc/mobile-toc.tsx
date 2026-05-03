@@ -1,11 +1,10 @@
+"use client";
+
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
 import type { VNode } from "preact";
 import { useMemo, useState } from "preact/hooks";
-// `@takazudo/zfb` is provided by the consumer at integration time;
-// types come from the package-level shim at `../_zfb-shim.d.ts`.
-import { Island } from "@takazudo/zfb";
 
 import type { HeadingItem } from "./types";
 import { SmartBreak } from "./smart-break";
@@ -17,10 +16,28 @@ export interface MobileTocProps {
 }
 
 /**
- * Inner narrow-viewport TOC — extracted body of the original
- * `MobileToc`. The exported `MobileToc` wraps this in `<Island>` so
- * SSG-rendered HTML emits `data-zfb-island="MobileToc"` and the
- * hydration runtime can pick the island up to drive open/close.
+ * Collapsible TOC for narrow viewports (`xl:hidden`) — a Preact island
+ * component. Closed by default; tapping the header toggles, and tapping
+ * any entry closes the panel after navigation.
+ *
+ * Renders the `<div class="xl:hidden …">` panel directly. **The caller
+ * is responsible for wrapping this in `<Island when="load">`** so the
+ * SSG output emits the `data-zfb-island="MobileToc"` hydration marker
+ * around the panel. `<DocLayoutWithDefaults>` does this for you;
+ * consumers who render `<MobileToc>` outside the default layout (e.g.
+ * via the `mobileTocOverride` prop or in a custom layout) must apply
+ * the wrapper themselves — otherwise the open/close toggle never
+ * hydrates on the client and the panel stays in its initial closed
+ * state.
+ *
+ * Wave 13 (zudolab/zudo-doc#1355): previously this module exported a
+ * `MobileToc` wrapper that called `Island(...)` itself; on hydration
+ * the runtime ran `hydrate(<MobileToc/>, dataIslandDiv)` and the
+ * wrapper re-emitted *another* `<div data-zfb-island="MobileToc">…</div>`
+ * inside the existing one, leaving two `xl:hidden …` panels in the
+ * post-hydration DOM. See `./toc.tsx` for the full diagnosis. Moving
+ * the `<Island>` wrapper to the call site lets the bundle hydrate the
+ * bare panel against the existing DOM in-place.
  *
  * Like `Toc`, this always includes the `title` text in the SSG HTML
  * even when no headings qualify. When no headings are present, a
@@ -29,10 +46,10 @@ export interface MobileTocProps {
  * locale label is present. When headings are present the full
  * interactive toggle UI is rendered.
  */
-function MobileTocInner({
+export function MobileToc({
   headings,
   title = "On this page",
-}: MobileTocProps) {
+}: MobileTocProps): VNode {
   const filtered = useMemo(
     () => headings.filter((h) => h.depth >= 2 && h.depth <= 4),
     [headings],
@@ -114,20 +131,5 @@ function MobileTocInner({
     </div>
   );
 }
-// Pin the marker name to "MobileToc" — see Toc for rationale.
-MobileTocInner.displayName = "MobileToc";
-
-/**
- * Collapsible TOC for narrow viewports (`xl:hidden`). Closed by
- * default; tapping the header toggles, and tapping any entry closes
- * the panel after navigation.
- *
- * Wraps `<MobileTocInner>` in `<Island when="load">`.
- */
-export function MobileToc(props: MobileTocProps): VNode {
-  const rendered = Island({
-    when: "load",
-    children: <MobileTocInner {...props} />,
-  });
-  return rendered as unknown as VNode;
-}
+// See `./toc.tsx` for rationale on the explicit displayName pin.
+MobileToc.displayName = "MobileToc";

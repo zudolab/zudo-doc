@@ -62,6 +62,11 @@ export function clampPosition(top: number, right: number, panelWidth: number, pa
 
 /** Re-highlight all code blocks on the page with a new Shiki theme (lazy-loaded) */
 export async function applyShikiTheme(themeName: string): Promise<void> {
+  // NOTE: zfb's syntect plugin does not emit data-language; this selector
+  // matches zero elements on zfb-built sites. Runtime theme reapply is
+  // effectively a no-op until upstream zfb adds language metadata to its
+  // <pre> output. Selector kept as-is to avoid silently re-enabling a
+  // broken code path.
   const codeBlocks = document.querySelectorAll<HTMLPreElement>("pre.astro-code[data-language]");
   if (codeBlocks.length === 0) return;
 

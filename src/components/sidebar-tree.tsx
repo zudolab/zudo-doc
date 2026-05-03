@@ -1,3 +1,5 @@
+"use client";
+
 // Use preact hook entrypoints directly — zfb's esbuild step doesn't alias
 // "react" to "preact/compat" the way Astro's `@astrojs/preact` integration
 // did, so importing from "react" here would fail to resolve at SSR/island
@@ -70,14 +72,43 @@ function findActiveSlug(nodes: NavNode[], pathname: string): string | undefined 
   return undefined;
 }
 
-/** Track current active slug, updating on View Transition navigations */
+/**
+ * Derive the active slug from the current document URL. Used as a hydration-
+ * time fallback when the parent island does not forward `currentSlug` through
+ * its prop boundary, and at every View Transition to keep the highlight in
+ * sync. Returns `undefined` outside a browser context (defensive — the
+ * lazy-init path runs during hydration so `window` should exist, but the
+ * guard keeps this safe to call from any code path).
+ */
+function deriveActiveSlugFromUrl(nodes: NavNode[]): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  const pathname = normalizePath(window.location.pathname);
+  return findActiveSlug(nodes, pathname);
+}
+
+/**
+ * Track the current active slug, updating on View Transition navigations.
+ *
+ * The initial-state initialiser prefers the SSR-supplied `initial` prop, but
+ * falls back to deriving the slug from `window.location.pathname` when the
+ * prop is missing. This keeps the hydrated category open-state aligned with
+ * what SSR emitted: zfb's Island wrapper does not currently serialise props
+ * across the SSR → hydrate boundary, so the post-hydration `<SidebarTree>`
+ * may receive `currentSlug=undefined` even when the page rendered with the
+ * right active slug. Computing the fallback synchronously in the initial
+ * state (rather than waiting for a post-mount `useEffect`) avoids a flicker
+ * where every category collapses for one render before the auto-open effect
+ * fires — which Playwright sees as `aria-expanded="true"` being dropped from
+ * the SSR markup.
+ */
 function useActiveSlug(nodes: NavNode[], initial?: string): string | undefined {
-  const [slug, setSlug] = useState(initial);
+  const [slug, setSlug] = useState<string | undefined>(() =>
+    initial !== undefined ? initial : deriveActiveSlugFromUrl(nodes),
+  );
 
   useEffect(() => {
     const update = () => {
-      const pathname = normalizePath(window.location.pathname);
-      const found = findActiveSlug(nodes, pathname);
+      const found = deriveActiveSlugFromUrl(nodes);
       if (found !== undefined) setSlug(found);
     };
     update();

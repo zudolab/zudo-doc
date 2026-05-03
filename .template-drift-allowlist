@@ -40,6 +40,16 @@ src/config/tag-vocabulary.ts
 # create-zudo-doc templates while the migration parity work is in progress.
 # These will be reconciled via /l-update-generator post super-epic merge
 # (Phase D follow-up). Allowlisting here keeps PR-checks green on epic-PRs.
+#
+# Wave 11 (#1355 / PR #1356) reshaped sidebar-toggle.tsx (always-render
+# hamburger/X icons with hidden-class toggling, AFTER_NAVIGATE_EVENT instead
+# of DOMContentLoaded, explicit aria-expanded) and sidebar-tree.tsx
+# (URL-derived currentSlug lazy-init via deriveActiveSlugFromUrl) to fix
+# host-side island state-defaults exposed by Wave 10's hydration unblock.
+# Template counterparts under packages/create-zudo-doc/templates/ are
+# intentionally NOT synced in PR #1356 — the post-super-epic
+# /l-update-generator pass is the single reconciliation point. theme-toggle
+# drift predates Wave 11.
 src/config/i18n.ts
 src/components/sidebar-toggle.tsx
 src/components/sidebar-tree.tsx
@@ -59,6 +69,13 @@ tsconfig.json
 # "DOMContentLoaded" / "pagehide" because downstream scaffolds do not depend
 # on @zudo-doc/zudo-doc-v2 as a runtime dep. Reconcile if/when create-zudo-doc
 # migrates onto the v2 transitions module.
+#
+# Wave 11 (#1355 / PR #1356) added an exported `ImageEnlargeSsrFallback`
+# component to image-enlarge.tsx and hoisted shared `DIALOG_CLASS` /
+# `DIALOG_STYLE` constants so the SSR fallback cannot drift from the live
+# component. The template counterpart is allowlisted here too — the
+# post-super-epic /l-update-generator pass is the single reconciliation
+# point.
 src/components/design-token-tweak/index.tsx
 src/components/doc-history.tsx
 src/components/image-enlarge.tsx

@@ -1,3 +1,5 @@
+"use client";
+
 import { useMemo } from "react";
 import { useActiveHeading } from "@/hooks/use-active-heading";
 import type { Heading } from "@/types/heading";

@@ -29,9 +29,19 @@ export interface TabItemProps {
 }
 
 /**
- * One tab panel. Always rendered with `hidden` so the page never paints
- * a flash of all-tabs-visible before the Tabs island activates the
- * default tab.
+ * One tab panel.
+ *
+ * Wave 11 (zudolab/zudo-doc#1355): the default panel is rendered
+ * **without** the `hidden` attribute so the SSR HTML already shows the
+ * correct active panel before any JS runs. Non-default panels keep
+ * `hidden`. This avoids the post-Wave-10 regression where the tabs
+ * init script could land after first paint and flash an empty tab
+ * group; it also gives the no-JS path a usable default tab.
+ *
+ * The companion `TabsInit` script remains the source of truth at
+ * runtime — it re-derives the active tab from `localStorage` and
+ * `[data-tab-default]` and reapplies `hidden` / `aria-selected` so
+ * the SSR-rendered defaults survive group sync and View Transitions.
  */
 export function TabItem({
   label,
@@ -48,7 +58,9 @@ export function TabItem({
       // `data-tab-default={undefined}` omits the attribute entirely,
       // matching the Astro template's conditional spread.
       data-tab-default={isDefault ? "" : undefined}
-      hidden
+      // Render `hidden` only on non-default panels so the SSR markup
+      // shows the active panel immediately (no JS-required flash).
+      hidden={isDefault ? undefined : true}
     >
       {children}
     </div>

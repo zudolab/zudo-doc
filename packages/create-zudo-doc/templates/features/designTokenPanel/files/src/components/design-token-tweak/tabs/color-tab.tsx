@@ -1,4 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+"use client";
+
+// preact/compat shim — see src/components/ai-chat-modal.tsx for rationale.
+import { useState, useEffect, useCallback, useRef } from "preact/compat";
 import { colorSchemes, type ColorScheme } from "@/config/color-schemes";
 import { colorTweakPresets } from "@/config/color-tweak-presets";
 import { SEMANTIC_DEFAULTS } from "@/config/color-scheme-utils";

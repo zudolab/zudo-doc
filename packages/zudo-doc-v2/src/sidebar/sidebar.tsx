@@ -1,3 +1,5 @@
+"use client";
+
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
@@ -23,17 +25,33 @@
 //     themselves (useful for tests, fixtures, and downstream projects
 //     that swap the tree out wholesale).
 //
-// In Astro, the host invokes this through a small `.astro` wrapper that
-// adds the `client:load` directive on the island. In zfb the wrapping
-// is internal: this module wraps the inner shell in `<Island>` so SSG-
-// rendered HTML emits a `data-zfb-island="Sidebar"` marker for the
-// hydration runtime to pick up. Pages call `<Sidebar ... />` and get
-// the marker for free.
+// Wave 13 ("smoke-toc duplicate-nav regression follow-on", zudolab/zudo-doc#1355):
+// before this refactor, this module exported a `Sidebar` wrapper that
+// itself called `Island({when:"load", children:<SidebarInner/>})` and
+// returned the wrapped div. The zfb island scanner picked the exported
+// `Sidebar` (the wrapper) as the bundle's hydration target, so on the
+// client `mountIslands` ran `hydrate(<Sidebar/>, dataIslandDiv)` where
+// the rendered vnode itself emitted *another* `<div data-zfb-island=
+// "Sidebar"><SidebarInner/></div>` inside the existing one. Unlike the
+// `Toc` / `MobileToc` case (where the inner re-rendered identical
+// content alongside the SSR'd content, producing a visible duplicate),
+// the duplicate here was silent: the host passes `treeComponent` (a
+// Preact component function) as a prop, and `island.ts`'s
+// `captureSerializableProps` does `JSON.stringify` on the props bag,
+// which silently drops function values. At hydrate time the
+// deserialized props had no `treeComponent`, `SidebarInner` returned
+// `null`, and the appended wrapper-div was empty. Net result: an extra
+// dead-mount data-zfb-island Sidebar div alongside the SSR'd tree, with
+// no observable content — but a wasted hydration slot, and the actual
+// user-facing event-handler / state work was being done entirely by
+// the host's `SidebarTree` island registration.
+//
+// Fix: same shape as Toc / MobileToc — drop the `Island`-wrapping
+// outer, export the bare component (was `SidebarInner`) as `Sidebar`,
+// pin `displayName` explicitly. The `<Island when="load">` wrapper is
+// applied at the call site (`<DocLayoutWithDefaults>`).
 
 import type { ComponentChildren, FunctionComponent, VNode } from "preact";
-// `@takazudo/zfb` resolves at integration time via the consumer; the
-// types come from the package shim at `../_zfb-shim.d.ts`.
-import { Island } from "@takazudo/zfb";
 
 import type { SidebarTreeIslandProps } from "./types";
 
@@ -55,12 +73,32 @@ export interface SidebarProps extends SidebarTreeIslandProps {
 }
 
 /**
- * Inner shell — same logic the original Astro `.astro` wrapper used.
- * Renamed so the outer `<Sidebar>` can wrap this in `<Island>` and
- * still produce a `data-zfb-island="Sidebar"` marker (Island reads the
- * child's `displayName ?? name` to derive the marker string).
+ * Sidebar shell — typed wrapper around the SidebarTree island.
+ *
+ * Two usage shapes (matching the breadcrumb shell's pattern):
+ *
+ *   1. Pass `treeComponent` plus the data props (`nodes`,
+ *      `rootMenuItems`, `localeLinks`, …). The shell forwards them all
+ *      to the supplied component.
+ *
+ *   2. Pass `children` (e.g. a pre-instantiated `<SidebarTree
+ *      client:load … />` from an Astro wrapper). The shell renders
+ *      them as-is — the typed island props are then unused but kept on
+ *      the type signature so call-sites stay self-documenting.
+ *
+ * **The caller is responsible for wrapping this in `<Island when="load">`**
+ * so the SSG output emits the `data-zfb-island="Sidebar"` hydration
+ * marker around the rendered tree. `<DocLayoutWithDefaults>` does this
+ * for you; consumers who render `<Sidebar>` outside the default layout
+ * (e.g. via the `sidebarOverride` prop or in a custom layout) must
+ * apply the wrapper themselves — otherwise no hydration marker is
+ * emitted, and the runtime walks past the SSR'd tree without claiming
+ * it as an island. Either way the actual user-facing interactivity
+ * comes from the `treeComponent`'s own island registration; the
+ * `<Island>` wrapper here exists so the shell can host data-only
+ * variants in the future without losing the marker contract.
  */
-function SidebarInner(props: SidebarProps): VNode | null {
+export function Sidebar(props: SidebarProps): VNode | null {
   const {
     treeComponent: TreeComponent,
     children,
@@ -92,36 +130,8 @@ function SidebarInner(props: SidebarProps): VNode | null {
   return null;
 }
 // Pin the marker name to "Sidebar" regardless of how Preact's compat
-// layer munges the inner function name (some bundlers rename inner
-// helpers). The hydration manifest looks the marker up by this string.
-SidebarInner.displayName = "Sidebar";
-
-/**
- * Sidebar shell — typed wrapper around the SidebarTree island.
- *
- * Two usage shapes (matching the breadcrumb shell's pattern):
- *
- *   1. Pass `treeComponent` plus the data props (`nodes`,
- *      `rootMenuItems`, `localeLinks`, …). The shell forwards them all
- *      to the supplied component.
- *
- *   2. Pass `children` (e.g. a pre-instantiated `<SidebarTree
- *      client:load … />` from an Astro wrapper). The shell renders
- *      them as-is — the typed island props are then unused but kept on
- *      the type signature so call-sites stay self-documenting.
- *
- * Either way the outer `<Island>` emits the SSG marker; if both
- * `treeComponent` and `children` are omitted, the inner returns `null`
- * but the marker div still ships so the hydration runtime can pick the
- * island up after the host wires data prep at integration time.
- */
-export function Sidebar(props: SidebarProps): VNode {
-  // `Island(...)` is called directly (rather than via JSX) so we can
-  // narrow its `unknown` return type at a single boundary — same shape
-  // used in `theme/design-token-tweak-panel.tsx`.
-  const rendered = Island({
-    when: "load",
-    children: <SidebarInner {...props} />,
-  });
-  return rendered as unknown as VNode;
-}
+// layer or esbuild minification renames the function. Island's SSR
+// pass reads `displayName ?? name` to derive the marker string;
+// pinning both means the SSG marker stays `data-zfb-island="Sidebar"`
+// independent of the bundle's symbol-renaming.
+Sidebar.displayName = "Sidebar";

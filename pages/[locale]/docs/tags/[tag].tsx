@@ -32,6 +32,7 @@ import { HeaderWithDefaults } from "../../../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../../../lib/_head-with-defaults";
 import { composeMetaTitle } from "../../../lib/_compose-meta-title";
 import { DocHistoryArea } from "../../../lib/_doc-history-area";
+import { BodyEndIslands } from "../../../lib/_body-end-islands";
 
 export const frontmatter = { title: "Tag" };
 
@@ -99,11 +100,13 @@ export default function LocaleDocTagPage({
       title={composeMetaTitle(pageTitle)}
       head={<HeadWithDefaults title={pageTitle} />}
       lang={locale}
+      noindex={settings.noindex}
       hideSidebar={true}
       hideToc={true}
       headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase(`/${locale}/docs/tags/${tag}`)} />}
       breadcrumbOverride={<Breadcrumb items={breadcrumbItems} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
+      bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
     >
       <h1 class="text-heading font-bold mb-vsp-xs">{pageTitle}</h1>
       <p class="text-muted mb-vsp-lg">{countText}</p>

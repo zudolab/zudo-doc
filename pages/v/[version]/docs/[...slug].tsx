@@ -52,6 +52,7 @@ import { HeaderWithDefaults } from "../../../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../../../lib/_head-with-defaults";
 import { DocHistoryArea } from "../../../lib/_doc-history-area";
 import { DocMetainfoArea } from "../../../lib/_doc-metainfo-area";
+import { BodyEndIslands } from "../../../lib/_body-end-islands";
 import { buildFrontmatterPreviewEntries } from "../../../lib/_frontmatter-preview-data";
 import { composeMetaTitle } from "../../../lib/_compose-meta-title";
 
@@ -241,6 +242,7 @@ export default function VersionedDocsPage({ props }: PageArgs): JSX.Element {
       description={description}
       head={<HeadWithDefaults title={title} description={description} />}
       lang={locale}
+      noindex={settings.noindex}
       hideSidebar={entry?.data?.hide_sidebar}
       hideToc={entry?.data?.hide_toc}
       headings={headings}
@@ -269,6 +271,7 @@ export default function VersionedDocsPage({ props }: PageArgs): JSX.Element {
         />
       }
       footerOverride={<FooterWithDefaults lang={locale} />}
+      bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
     >
       {autoIndex ? (
         <div>

@@ -47,6 +47,7 @@ import { bridgeEntries } from "../../_data";
 import { extractHeadings } from "../../lib/_extract-headings";
 import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
 import { DocHistoryArea } from "../../lib/_doc-history-area";
+import { BodyEndIslands } from "../../lib/_body-end-islands";
 import { DocMetainfoArea } from "../../lib/_doc-metainfo-area";
 import { SidebarWithDefaults } from "../../lib/_sidebar-with-defaults";
 import { HeaderWithDefaults } from "../../lib/_header-with-defaults";
@@ -242,6 +243,7 @@ export default function LocaleDocsPage({ params, props }: PageArgs): JSX.Element
       description={description}
       head={<HeadWithDefaults title={title} description={description} />}
       lang={locale}
+      noindex={settings.noindex}
       hideSidebar={entry?.data?.hide_sidebar}
       hideToc={entry?.data?.hide_toc}
       headings={headings}
@@ -265,6 +267,7 @@ export default function LocaleDocsPage({ params, props }: PageArgs): JSX.Element
         />
       }
       footerOverride={<FooterWithDefaults lang={locale} />}
+      bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
     >
       {autoIndex ? (
         <div>

@@ -23,6 +23,7 @@ export type { LanguageSwitcherProps } from "./language-switcher";
 export {
   VersionSwitcher,
   VERSION_SWITCHER_INIT_SCRIPT,
+  VERSION_SWITCHER_VISIBILITY_STYLE,
 } from "./version-switcher";
 export type { VersionSwitcherProps } from "./version-switcher";
 

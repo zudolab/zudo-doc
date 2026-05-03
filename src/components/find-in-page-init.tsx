@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useRef } from "react";
 import { FindBar } from "./find-bar";
 import { createFindInPage } from "@/utils/find-in-page";

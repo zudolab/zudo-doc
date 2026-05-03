@@ -1,4 +1,7 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+"use client";
+
+// preact/compat shim — see src/components/ai-chat-modal.tsx for rationale.
+import { useState, useEffect, useCallback, useMemo, useRef } from "preact/compat";
 import { diffLines } from "diff";
 import type { DocHistoryData, DocHistoryEntry } from "@/types/doc-history";
 import { SmartBreak } from "@/utils/smart-break";
