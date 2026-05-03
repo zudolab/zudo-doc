@@ -25,10 +25,15 @@
 export { CodeBlockEnhancer, default as CodeBlockEnhancerDefault } from "./code-block-enhancer.js";
 export { CODE_BLOCK_ENHANCER_SCRIPT } from "./code-block-enhancer-script.js";
 
-export { MermaidInit, default as MermaidInitDefault } from "./mermaid-init.js";
+export {
+  MermaidInit,
+  default as MermaidInitDefault,
+} from "./mermaid-init.js";
+export type { MermaidInitProps } from "./mermaid-init.js";
 export {
   MERMAID_INIT_SCRIPT,
   MERMAID_CDN_MODULE_URL,
+  buildMermaidInitScript,
 } from "./mermaid-init-script.js";
 
 export { Tabs, default as TabsDefault } from "./tabs.js";

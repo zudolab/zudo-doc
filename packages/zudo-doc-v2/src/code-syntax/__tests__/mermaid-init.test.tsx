@@ -7,6 +7,7 @@ import { MermaidInit } from "../mermaid-init";
 import {
   MERMAID_INIT_SCRIPT,
   MERMAID_CDN_MODULE_URL,
+  buildMermaidInitScript,
 } from "../mermaid-init-script";
 import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events";
 
@@ -88,5 +89,41 @@ describe("MERMAID_CDN_MODULE_URL", () => {
     // or range `@11.x`) so the runtime resolution can't drift across a
     // mermaid major bump.
     expect(MERMAID_CDN_MODULE_URL).toMatch(/mermaid@\d+/);
+  });
+});
+
+describe("buildMermaidInitScript / cdnUrl override", () => {
+  it("interpolates the supplied URL into the dynamic import", () => {
+    // Codex review surfaced that the public override knob has to
+    // actually take effect — exporting `MERMAID_CDN_MODULE_URL` alone
+    // is ineffective because the script string is frozen at module
+    // load. The builder rebuilds the script with the caller's URL.
+    const customUrl = "https://example.test/internal-mirror/mermaid.mjs";
+    const built = buildMermaidInitScript(customUrl);
+    expect(built).toContain(`import(${JSON.stringify(customUrl)})`);
+    expect(built).not.toContain(JSON.stringify(MERMAID_CDN_MODULE_URL));
+  });
+
+  it("the default-URL constant is built via the same builder for parity", () => {
+    expect(MERMAID_INIT_SCRIPT).toBe(
+      buildMermaidInitScript(MERMAID_CDN_MODULE_URL),
+    );
+  });
+
+  it("<MermaidInit cdnUrl=… /> emits a script with the supplied URL", () => {
+    const customUrl = "https://example.test/cdn/mermaid";
+    const html = render(<MermaidInit cdnUrl={customUrl} />);
+    expect(html).toContain(`import(${JSON.stringify(customUrl)})`);
+    expect(html).not.toContain(JSON.stringify(MERMAID_CDN_MODULE_URL));
+  });
+
+  it("<MermaidInit script=… /> wins over cdnUrl when both are passed", () => {
+    const customUrl = "https://example.test/cdn/mermaid";
+    const customScript = `(function(){/* sentinel-${Math.random()} */})();`;
+    const html = render(
+      <MermaidInit script={customScript} cdnUrl={customUrl} />,
+    );
+    expect(html).toContain(customScript);
+    expect(html).not.toContain(`import(${JSON.stringify(customUrl)})`);
   });
 });

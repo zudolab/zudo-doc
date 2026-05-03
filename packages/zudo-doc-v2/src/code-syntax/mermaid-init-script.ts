@@ -58,7 +58,29 @@ import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
  */
 export const MERMAID_CDN_MODULE_URL = "https://esm.sh/mermaid@11";
 
-export const MERMAID_INIT_SCRIPT = `(function () {
+/**
+ * Build the inline init script with a caller-supplied module URL.
+ *
+ * Why a builder (vs. just exporting `MERMAID_INIT_SCRIPT`): the
+ * constant interpolates `MERMAID_CDN_MODULE_URL` at module-load time,
+ * so reassigning the exported binding has no runtime effect — ESM
+ * exports are read-only and the script string is already frozen by
+ * the time consumers see it. Hosts that need a self-hosted /
+ * version-pinned / CSP-allowlisted mermaid URL call this builder
+ * with their URL and pass the result to `<MermaidInit script={…}/>`
+ * (or to their own `<script dangerouslySetInnerHTML>` site).
+ *
+ * The default-URL flow stays available via `MERMAID_INIT_SCRIPT`
+ * (built once below by calling this builder with
+ * `MERMAID_CDN_MODULE_URL`) so existing callers keep working
+ * unchanged.
+ */
+export function buildMermaidInitScript(cdnUrl: string): string {
+  return makeScript(cdnUrl);
+}
+
+function makeScript(cdnUrl: string): string {
+  return `(function () {
   /**
    * Resolve a CSS value to a hex color (#rrggbb).
    * CSS custom properties return raw values from getComputedStyle (e.g.
@@ -103,7 +125,7 @@ export const MERMAID_INIT_SCRIPT = `(function () {
       // browser without a bundler — bare specifiers like "mermaid"
       // cannot be resolved at runtime. See the file header for the
       // full trade-off rationale.
-      var mod = await import(${JSON.stringify(MERMAID_CDN_MODULE_URL)});
+      var mod = await import(${JSON.stringify(cdnUrl)});
       var mermaid = mod.default;
       var s = getComputedStyle(document.documentElement);
       // Read a custom property, resolve through the temporary-element
@@ -201,3 +223,17 @@ export const MERMAID_INIT_SCRIPT = `(function () {
     attributeFilter: ["style"],
   });
 })();`;
+}
+
+/**
+ * Default-URL init script. Built once at module load by passing
+ * `MERMAID_CDN_MODULE_URL` to `buildMermaidInitScript`. Kept as the
+ * primary export for backward compatibility — `<MermaidInit/>` (no
+ * props) and any direct consumer that grabs this string both end up
+ * importing mermaid from `https://esm.sh/mermaid@11`.
+ *
+ * For a custom URL (self-hosted mirror, version-pinned package,
+ * CSP-allowlisted host) call `buildMermaidInitScript(yourUrl)` and
+ * pass the result to `<MermaidInit script={…}/>`.
+ */
+export const MERMAID_INIT_SCRIPT = buildMermaidInitScript(MERMAID_CDN_MODULE_URL);

@@ -19,10 +19,42 @@
 // target was changed from the bare `"mermaid"` specifier to a public
 // ESM CDN URL so the inline `<script>` (no bundler in the path) can
 // resolve the module at runtime. See `mermaid-init-script.ts` for the
-// full rationale and the override knob.
+// full rationale and the override knobs (`cdnUrl` prop or
+// `buildMermaidInitScript()` for hand-rolled callers).
 
 import type { JSX } from "preact";
-import { MERMAID_INIT_SCRIPT } from "./mermaid-init-script.js";
+import {
+  MERMAID_INIT_SCRIPT,
+  buildMermaidInitScript,
+} from "./mermaid-init-script.js";
+
+/**
+ * Props for `<MermaidInit/>`.
+ *
+ * Either knob is optional — by default the component emits the
+ * pre-built `MERMAID_INIT_SCRIPT` constant (esm.sh @11 URL).
+ *
+ * `script` wins over `cdnUrl` when both are provided so a fully
+ * hand-rolled script can short-circuit the builder entirely.
+ */
+export interface MermaidInitProps {
+  /**
+   * Override the mermaid module URL the inline script imports at
+   * runtime. Use this for self-hosted mirrors, version-pinned
+   * packages, or CSP-allowlisted domains. The component re-builds
+   * the script with this URL via `buildMermaidInitScript`.
+   *
+   * Ignored when `script` is also provided.
+   */
+  cdnUrl?: string;
+  /**
+   * Replace the entire script body verbatim. Bypasses the
+   * `cdnUrl`-driven builder; use when the caller wants to ship a
+   * fully customised init routine (different theme palette wiring,
+   * extra mermaid plugins, etc.).
+   */
+  script?: string;
+}
 
 /**
  * Drop-in JSX replacement for `src/components/mermaid-init.astro`.
@@ -37,8 +69,11 @@ import { MERMAID_INIT_SCRIPT } from "./mermaid-init-script.js";
  * a `MutationObserver` on `:root[style]` to re-render when the user
  * changes the color scheme via the color-tweak panel.
  */
-export function MermaidInit(): JSX.Element {
-  return <script dangerouslySetInnerHTML={{ __html: MERMAID_INIT_SCRIPT }} />;
+export function MermaidInit(props: MermaidInitProps = {}): JSX.Element {
+  const script =
+    props.script ??
+    (props.cdnUrl ? buildMermaidInitScript(props.cdnUrl) : MERMAID_INIT_SCRIPT);
+  return <script dangerouslySetInnerHTML={{ __html: script }} />;
 }
 
 export default MermaidInit;
