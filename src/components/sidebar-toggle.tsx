@@ -25,6 +25,14 @@ import type { LocaleLink } from "@/types/locale";
 // Mirroring the desktop `<Sidebar treeComponent={SidebarTree} ...>` shape
 // keeps the data attached to the wrapping island. zudolab/zudo-doc#1355
 // wave 13.5.
+//
+// The shape mirrors `SidebarRootMenuItem` from
+// `@zudo-doc/zudo-doc-v2/sidebar` (the canonical v2 type) — kept structural
+// here on purpose: importing the v2 type pulls the v2 sidebar module into
+// the host's tsc resolution graph, which surfaces an unrelated pre-existing
+// preact-vs-react JSX type mismatch in v2's `Sidebar` shell. Consolidating
+// `RootMenuItem` across host components is tracked separately as wave-13
+// follow-on tech debt.
 interface RootMenuItem {
   label: string;
   href: string;
