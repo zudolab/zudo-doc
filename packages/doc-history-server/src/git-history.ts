@@ -56,7 +56,12 @@ export function getFileCommits(
 
 /**
  * Get the oldest commit hash that touched a file (the file's "first" commit).
- * Uses --follow + --reverse + -n 1 so cost is bounded regardless of history depth.
+ *
+ * Uses --follow + --reverse + --max-count=1. Note that git still has to walk
+ * the file's full history once before applying --reverse, so this is O(history)
+ * for that file path, not O(1). Acceptable here because the caller is a
+ * build-time helper run once per content file, not a hot path.
+ *
  * Returns null when the file has no git history (untracked / not yet committed).
  */
 export function getFirstCommit(filePath: string): string | null {
