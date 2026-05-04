@@ -49,6 +49,28 @@
 
 @theme {
   /* ========================================
+   * Default-theme reset (zfb upstream blind spot workaround)
+   *
+   * zfb prepends `@import "tailwindcss";` (full bundle) to every
+   * synthesised entry CSS unless the user CSS contains a literal
+   * `@import "tailwindcss"` line at column 0. Our split-import pattern
+   * (`@import "tailwindcss/preflight"` + `@import "tailwindcss/utilities"`
+   * at the top of this file) does NOT match upstream's `user_has_import`
+   * check at `crates/zfb-css/src/engine.rs:234`, so the full default
+   * Tailwind theme (gray/zinc/red/blue/etc. palette, default --spacing,
+   * default --text-sm scale, etc.) leaks into the @theme output. The
+   * wildcards below set those defaults to `initial`, removing them from
+   * the compiled CSS while leaving the project's own tokens
+   * (defined below) untouched. Restores the tight-token strategy at the
+   * OUTPUT level. Upstream issue: Takazudo/zudo-front-builder#159 —
+   * filed in Sub-4. Once upstream lands the split-import recognition and
+   * the pin is bumped (Sub-5), the resets become no-ops; remove at that
+   * time.
+   * ======================================== */
+  --color-*: initial;
+  --spacing: initial;
+
+  /* ========================================
    * Colors — Three-tier token system
    * ======================================== */
 
