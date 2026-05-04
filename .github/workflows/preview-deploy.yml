@@ -52,7 +52,7 @@ permissions:
 env:
   # Pinned zfb commit — keep in sync with the zfb pin comment at the
   # top of zfb.config.ts and the same env in pr-checks.yml.
-  ZFB_PINNED_SHA: 88cec078b568596b57b5ba041adc2849d28fa737
+  ZFB_PINNED_SHA: bdbfbfb80d57f86de2485100af380b4b8c82c8f7
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -61,7 +61,7 @@ jobs:
   build-zfb:
     name: Build zfb Binary
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
 
     steps:
       - name: Checkout pinned zfb
