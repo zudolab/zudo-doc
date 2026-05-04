@@ -5,6 +5,9 @@ const FIXTURES = ["sidebar", "i18n", "theme", "smoke", "versioning"] as const;
 
 export default defineConfig({
   testDir: "./e2e",
+  // CI-only single retry: tolerate the intermittent first-navigation flake
+  // (page.goto ERR_ABORTED / 30 s timeout) without masking real failures locally.
+  retries: process.env.CI ? 1 : 0,
   use: {
     baseURL: `http://localhost:${BASE_PORT}`,
   },
