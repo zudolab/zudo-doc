@@ -112,53 +112,31 @@ export function DocHistoryArea({
   const docHistoryLocale = locale === defaultLocale ? undefined : locale;
   const docHistoryBasePath = settings.base ?? "/";
 
-  // Build the SSR fallback verbatim from the previous v2 wrapper so the
-  // migration-check parity check still finds the author marker, the
-  // Created/Updated labels, and the visible "History" trigger button in
-  // SSG output before JS hydration.
+  // Build the SSR fallback with only the sr-only metadata block so the
+  // migration-check parity check still finds the author marker and
+  // Created/Updated labels in SSG output before JS hydration.
+  // The visible "History" trigger button is NOT included here — DocHistory
+  // renders its own trigger after hydration, and including one in the
+  // ssrFallback as well caused a duplicate button in the DOM because
+  // Preact's render() does not reliably remove static ssrFallback HTML
+  // before mounting the new component output (same wrapper-self-Island
+  // pattern fixed for Toc/Sidebar in commit 4014cdc).
   const author = meta?.author;
   const createdDate = meta?.createdDate;
   const updatedDate = meta?.updatedDate;
 
   const fallback: VNode = (
-    <>
-      {/* sr-only metadata — accessible before JS, greppable by migration-check */}
-      <div class="sr-only">
-        {author && <span>{author}</span>}
-        <span>
-          {createdLabel}
-          {createdDate ? `: ${createdDate}` : ""}
-        </span>
-        <span>
-          {updatedLabel}
-          {updatedDate ? `: ${updatedDate}` : ""}
-        </span>
-      </div>
-      {/* Visible trigger button — matches the Astro SSR-rendered initial state */}
-      <div class="flex justify-end mt-vsp-xl">
-        <button
-          type="button"
-          class="doc-history-trigger flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-fg hover:border-fg transition-colors"
-          aria-label={historyLabel}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="h-icon-md w-icon-md"
-            aria-hidden="true"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-          </svg>
-          <span class="text-small">{historyLabel}</span>
-        </button>
-      </div>
-    </>
+    <div class="sr-only">
+      {author && <span>{author}</span>}
+      <span>
+        {createdLabel}
+        {createdDate ? `: ${createdDate}` : ""}
+      </span>
+      <span>
+        {updatedLabel}
+        {updatedDate ? `: ${updatedDate}` : ""}
+      </span>
+    </div>
   );
 
   // Compose the SSR-skip island with zfb's native `<Island ssrFallback>` API.
