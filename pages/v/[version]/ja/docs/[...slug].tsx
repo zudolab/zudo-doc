@@ -233,7 +233,6 @@ interface PageArgs {
   entry: DocPageProps["entry"];
   autoIndex?: DocPageProps["autoIndex"];
   version: DocPageProps["version"];
-  contentDir: DocPageProps["contentDir"];
   isFallback: DocPageProps["isFallback"];
   breadcrumbs: DocPageProps["breadcrumbs"];
   prev: DocPageProps["prev"];
