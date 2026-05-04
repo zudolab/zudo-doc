@@ -82,10 +82,12 @@ stops at the first match):
 ```
 
 :::note[Why the host owns this]
+
 Keeping runtime redirects on the host rather than in framework code means you can
 swap deployment targets — Cloudflare Pages, Netlify, Vercel, a plain nginx — by
 changing only the `_redirects` (or equivalent) file. The framework stays
 platform-agnostic.
+
 :::
 
 ### Other hosts

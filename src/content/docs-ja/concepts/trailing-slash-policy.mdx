@@ -67,7 +67,9 @@ const canonical = normalizePathname(rawPathname); // 末尾スラッシュがな
 ```
 
 :::note[ホストがランタイムを担当する理由]
+
 ランタイムリダイレクトをフレームワークコードではなくホストに委ねることで、`_redirects`（または同等の）ファイルを変更するだけでデプロイターゲットを切り替えられます。Cloudflare Pages、Netlify、Vercel、plain nginxのいずれでも対応可能です。フレームワークはプラットフォームに依存しない状態を保てます。
+
 :::
 
 ### その他のホスト
