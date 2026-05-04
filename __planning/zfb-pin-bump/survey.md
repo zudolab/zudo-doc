@@ -117,7 +117,7 @@ src/content/docs/concepts/routing-conventions.mdx:201:
 
 ## 5. Drafted New `zfb.config.ts` Long-Pin Comment Block
 
-Replace the existing block (lines 1–180) with the following after bumping to `e550167`:
+Replace the existing block (lines 1–180) with the following after bumping to `e550167`. Keep every existing bullet in the `includes fixes:` list intact and append the new entries below them:
 
 ```
 /**
@@ -127,7 +127,7 @@ Replace the existing block (lines 1–180) with the following after bumping to `
  *           build-time JS host; on top of PR #157 basic-blog end-to-end fix;
  *           2026-05-04)
  *   includes fixes:
- *     [... all entries from 88cec07 pin block verbatim ...]
+ *     [carry all existing bullet entries from the 88cec07 block verbatim]
  *     - Takazudo/zudo-front-builder PR #157 (fix examples/basic-blog build
  *                               end-to-end — 6 bugs fixed; no consumer API
  *                               change)
