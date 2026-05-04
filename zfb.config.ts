@@ -456,6 +456,35 @@ const integrationPlugins = [
   },
 ];
 
+// ---------------------------------------------------------------------------
+// Open upstream gaps blocking style/feature parity (zudolab/zudo-doc#1417 W3C):
+//
+// 1. Takazudo/zudo-front-builder#187 — bundler walks each collection root via
+//    `WalkDir` (no sort) while `zfb-content::content_bridge::build_snapshot`
+//    walks via `walk_collection` which explicitly sorts the file vector. The
+//    two walks feed entries into separate `Pipeline::with_defaults()`
+//    instances; `HeadingLinksPlugin` carries a `seen: HashMap<String, usize>`
+//    that accumulates across entries, so different walk orders produce
+//    different slug-suffixes on duplicate H2s — therefore different JSX,
+//    different `content_hash`, and different `mdx://<collection>/<slug>#<hash>`
+//    specifiers. The bridge map and the snapshot's `module_specifier` then
+//    disagree byte-for-byte, every `bridge.get(spec)` lookup misses, and the
+//    page silently renders `<pre data-zfb-content-fallback>`. Today this
+//    affects ~68 of ~104 EN pages (issue #1380); it also masks all syntect
+//    code-block highlighting on those pages (issue #1379) because the
+//    fallback path bypasses the entire MDX pipeline. No host-side workaround
+//    exists — the fix must land in zfb.
+//
+// 2. Takazudo/zudo-front-builder#188 — `Pipeline::with_defaults()` hardcodes
+//    the syntect theme to `base16-ocean.dark`. `SyntectPlugin::with_theme`
+//    and `Highlighter::set_default_theme` exist but are unreachable from
+//    `ZfbConfig`. The host's `colorSchemes[*].shikiTheme` field is therefore
+//    currently a no-op; once #188 lands we wire it through here. (Note:
+//    zfb uses syntect, not Shiki — Shiki theme names like "dracula" or
+//    "catppuccin-mocha" are TextMate themes for the JS Shiki library and
+//    are NOT recognised by syntect's bundled theme set.)
+// ---------------------------------------------------------------------------
+
 export default defineConfig({
   framework: "preact",
   tailwind: { enabled: true },
