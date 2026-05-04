@@ -403,6 +403,14 @@ const integrationPlugins = [
         },
       ]
     : []),
+  // Workaround for upstream zfb gap (zudolab/zudo-doc#1394; upstream issue: https://github.com/Takazudo/zudo-front-builder/issues/158) — zfb build does not copy publicDir to outDir; remove once upstream ships and pin is bumped.
+  {
+    name: "./plugins/copy-public-plugin.mjs",
+    options: {
+      publicDir: "public",
+      base: settings.base,
+    },
+  },
 ];
 
 export default defineConfig({
