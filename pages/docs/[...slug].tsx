@@ -57,6 +57,10 @@ import { composeMetaTitle } from "../lib/_compose-meta-title";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../_data";
 import { extractHeadings } from "../lib/_extract-headings";
+import DesktopSidebarToggle from "@/components/desktop-sidebar-toggle";
+import { SidebarResizerInit } from "@zudo-doc/zudo-doc-v2/sidebar-resizer";
+import type { VNode } from "preact";
+import { Island } from "@takazudo/zfb";
 
 export const frontmatter = { title: "Docs" };
 
@@ -216,16 +220,24 @@ export default function DocsPage({ entry, autoIndex, breadcrumbs, prev, next, he
         }))
     : [];
 
+  // Canonical URL — only when siteUrl is configured. pageUrl is the
+  // base-prefixed path for this page without the siteUrl origin.
+  const pageUrl = docsUrl(slug, locale);
+  const canonical = settings.siteUrl
+    ? settings.siteUrl.replace(/\/$/, "") + pageUrl
+    : undefined;
+
   return (
     <DocLayoutWithDefaults
       title={composeMetaTitle(title)}
       description={description}
-      head={<HeadWithDefaults title={title} description={description} />}
+      head={<HeadWithDefaults title={title} description={description} canonical={canonical} />}
       lang={locale}
       noindex={settings.noindex}
       hideSidebar={entry?.data?.hide_sidebar}
       hideToc={entry?.data?.hide_toc}
       headings={headings}
+      canonical={canonical}
       headerOverride={
         <HeaderWithDefaults
           lang={locale}
@@ -245,8 +257,34 @@ export default function DocsPage({ entry, autoIndex, breadcrumbs, prev, next, he
           currentPath={docsUrl(slug, locale)}
         />
       }
+      afterSidebar={
+        // Pre-paint inline script: restore persisted sidebar visibility to
+        // <html data-sidebar-hidden> before first paint to avoid flash.
+        // Runs unconditionally when sidebarToggle is enabled; the attribute
+        // is only set when localStorage says "false" so the default (visible)
+        // needs no attribute and causes no layout shift.
+        settings.sidebarToggle ? (
+          <>
+            <script dangerouslySetInnerHTML={{
+              __html: `(function(){try{if(localStorage.getItem('zudo-doc-sidebar-visible')==='false'){document.documentElement.setAttribute('data-sidebar-hidden','');}}catch(e){}})();`,
+            }} />
+            {Island({
+              when: "load",
+              children: <DesktopSidebarToggle />,
+            }) as unknown as VNode}
+          </>
+        ) : undefined
+      }
       footerOverride={<FooterWithDefaults lang={locale} />}
-      bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
+      bodyEndComponents={
+        <>
+          <BodyEndIslands basePath={settings.base ?? "/"} />
+          {/* SidebarResizerInit: attach drag handle to #desktop-sidebar on load
+              and on AFTER_NAVIGATE_EVENT (DOMContentLoaded under zfb's full-
+              reload navigation model). Idempotent — safe on every page. */}
+          {settings.sidebarResizer && <SidebarResizerInit />}
+        </>
+      }
     >
       {autoIndex ? (
         /* Auto-index page: category without an index.mdx */

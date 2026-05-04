@@ -33,18 +33,27 @@ import { OgTags } from "@zudo-doc/zudo-doc-v2/head";
 // head emission free of the panel-module dependency chain.
 import ColorSchemeProvider from "@zudo-doc/zudo-doc-v2/theme/color-scheme-provider";
 import { composeMetaTitle } from "./_compose-meta-title";
+import { withBase } from "@/utils/base";
 
 export interface HeadWithDefaultsProps {
   /** Page title forwarded to og:title. Required. */
   title: string;
   /** Optional page description forwarded to og:description. */
   description?: string;
+  /**
+   * Absolute canonical URL for this page. When supplied, emits
+   * <link rel="canonical" href="...">. Compute as:
+   *   settings.siteUrl.replace(/\/$/, '') + pageUrl
+   * in each host page and pass only when settings.siteUrl is non-empty.
+   */
+  canonical?: string;
 }
 
 /**
- * Default-bearing host wrapper that injects og:title / og:description and
- * the ColorSchemeProvider (`:root { --zd-* }` palette + theme bootstrap)
- * into the v2 layout's `head` slot.
+ * Default-bearing host wrapper that injects og:title / og:description,
+ * the ColorSchemeProvider (`:root { --zd-* }` palette + theme bootstrap),
+ * the favicon link, and an optional canonical link into the v2 layout's
+ * `head` slot.
  *
  * og:title is run through composeMetaTitle so it matches the
  * "<title> | <siteName>" shape emitted by the host's <title> element
@@ -52,17 +61,21 @@ export interface HeadWithDefaultsProps {
  * compose them itself).
  *
  * Pure SSR — no state, no client-only imports. Intended for use as:
- *   head={<HeadWithDefaults title={title} description={description} />}
+ *   head={<HeadWithDefaults title={title} description={description} canonical={canonical} />}
  * on every DocLayoutWithDefaults call site in the host pages.
  */
 export function HeadWithDefaults({
   title,
   description,
+  canonical,
 }: HeadWithDefaultsProps): JSX.Element {
   return (
     <>
       <OgTags title={composeMetaTitle(title)} description={description} />
       <ColorSchemeProvider />
+      {/* favicon — withBase() handles the configured base path prefix */}
+      <link rel="icon" href={withBase("/favicon.svg")} type="image/svg+xml" />
+      {canonical !== undefined && <link rel="canonical" href={canonical} />}
     </>
   );
 }

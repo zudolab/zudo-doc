@@ -162,6 +162,19 @@ export interface DocLayoutWithDefaultsProps
   headings?: readonly HeadingItem[];
 
   /**
+   * Absolute canonical URL for this page. When supplied, the host page
+   * should pass this through to `<HeadWithDefaults canonical={...} />` in
+   * the `head` slot so `<link rel="canonical">` is emitted. Compute as:
+   *   settings.siteUrl.replace(/\/$/, '') + pageUrl
+   * when settings.siteUrl is non-empty; omit otherwise.
+   *
+   * This prop is declared here so the host's call sites have a single
+   * place to express the canonical intent. The actual emission happens in
+   * the `head` slot child (HeadWithDefaults).
+   */
+  canonical?: string;
+
+  /**
    * Version-banner variant. When set, a `<VersionBanner>` is rendered in
    * the `afterBreadcrumb` slot. `false` / `undefined` suppress it. This
    * matches the legacy `version.banner` frontmatter shape.
@@ -226,11 +239,17 @@ export function DocLayoutWithDefaults(
     afterContent,
     head,
     lang,
+    canonical,
     versionBanner,
     versionBannerLatestUrl,
     versionBannerLabels,
     ...rest
   } = props;
+  // canonical is declared in DocLayoutWithDefaultsProps so host call sites
+  // can document intent here; actual emission happens in the head slot
+  // child (HeadWithDefaults). We destructure it to keep it out of ...rest
+  // and avoid forwarding an unknown prop to DocLayout.
+  void canonical;
 
   // When the host opts into a version banner, prepend it to the
   // `afterBreadcrumb` slot so the banner sits between the breadcrumb and

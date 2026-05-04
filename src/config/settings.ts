@@ -48,7 +48,7 @@ export const settings = {
   noindex: false as boolean, // When true, adds noindex/nofollow to all pages (for internal docs)
   editUrl: false as string | false,
   githubUrl: "https://github.com/zudolab/zudo-doc" as string | false,
-  siteUrl: "" as string, // e.g. "https://example.com" — required for sitemap absolute URLs
+  siteUrl: "https://zudo-doc.pages.dev" as string, // e.g. "https://example.com" — required for sitemap absolute URLs
   sitemap: true,
   docMetainfo: true,
   docTags: true,

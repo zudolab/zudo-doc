@@ -55,6 +55,10 @@ import { DocMetainfoArea } from "../../../lib/_doc-metainfo-area";
 import { BodyEndIslands } from "../../../lib/_body-end-islands";
 import { buildFrontmatterPreviewEntries } from "../../../lib/_frontmatter-preview-data";
 import { composeMetaTitle } from "../../../lib/_compose-meta-title";
+import DesktopSidebarToggle from "@/components/desktop-sidebar-toggle";
+import { SidebarResizerInit } from "@zudo-doc/zudo-doc-v2/sidebar-resizer";
+import type { VNode } from "preact";
+import { Island } from "@takazudo/zfb";
 
 export const frontmatter = { title: "Docs" };
 
@@ -241,16 +245,23 @@ export default function VersionedDocsPage({ entry, autoIndex, version, breadcrum
       }
     : undefined;
 
+  // Canonical URL — versioned pages use the versioned URL as canonical.
+  const pageUrl = versionedDocsUrl(slug, version.slug, locale);
+  const canonical = settings.siteUrl
+    ? settings.siteUrl.replace(/\/$/, "") + pageUrl
+    : undefined;
+
   return (
     <DocLayoutWithDefaults
       title={composeMetaTitle(title)}
       description={description}
-      head={<HeadWithDefaults title={title} description={description} />}
+      head={<HeadWithDefaults title={title} description={description} canonical={canonical} />}
       lang={locale}
       noindex={settings.noindex}
       hideSidebar={entry?.data?.hide_sidebar}
       hideToc={entry?.data?.hide_toc}
       headings={headings}
+      canonical={canonical}
       versionBanner={versionBannerType ?? false}
       versionBannerLatestUrl={versionBannerLatestUrl}
       versionBannerLabels={versionBannerLabels}
@@ -275,8 +286,26 @@ export default function VersionedDocsPage({ entry, autoIndex, version, breadcrum
           currentPath={versionedDocsUrl(slug, version.slug, locale)}
         />
       }
+      afterSidebar={
+        settings.sidebarToggle ? (
+          <>
+            <script dangerouslySetInnerHTML={{
+              __html: `(function(){try{if(localStorage.getItem('zudo-doc-sidebar-visible')==='false'){document.documentElement.setAttribute('data-sidebar-hidden','');}}catch(e){}})();`,
+            }} />
+            {Island({
+              when: "load",
+              children: <DesktopSidebarToggle />,
+            }) as unknown as VNode}
+          </>
+        ) : undefined
+      }
       footerOverride={<FooterWithDefaults lang={locale} />}
-      bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
+      bodyEndComponents={
+        <>
+          <BodyEndIslands basePath={settings.base ?? "/"} />
+          {settings.sidebarResizer && <SidebarResizerInit />}
+        </>
+      }
     >
       {autoIndex ? (
         <div>
