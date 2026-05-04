@@ -344,9 +344,11 @@ jobs:
         run: |
           set -euo pipefail
           DEPLOY_URL="https://zudo-doc.pages.dev/pj/zudo-doc"
-          CSS_URL=$(curl -fsSL "$DEPLOY_URL/" | grep -oE 'href="[^"]*assets/styles-[^"]*\.css"' | head -1 | sed 's/href="//;s/"$//')
-          [ -n "$CSS_URL" ] || { echo "::error::no CSS link found in $DEPLOY_URL/"; exit 1; }
-          curl -fsSL "$CSS_URL" -o /tmp/deployed-css.css
+          # CSS href is root-relative (/pj/zudo-doc/assets/...); prepend origin.
+          ORIGIN="${DEPLOY_URL%%/pj*}"
+          CSS_PATH=$(curl -fsSL "$DEPLOY_URL/" | grep -oE 'href="[^"]*assets/styles-[^"]*\.css"' | head -1 | sed 's/href="//;s/"$//')
+          [ -n "$CSS_PATH" ] || { echo "::error::no CSS link found in $DEPLOY_URL/"; exit 1; }
+          curl -fsSL "${ORIGIN}${CSS_PATH}" -o /tmp/deployed-css.css
 
           CSS_BYTES=$(wc -c < /tmp/deployed-css.css)
           MIN_CSS_BYTES=65000  # tuned from the Sub-2 manager-confirm baseline (post-fix ~77.7 KB; broken-scanner floor ~30-40 KB)
