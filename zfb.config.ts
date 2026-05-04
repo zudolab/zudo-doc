@@ -361,6 +361,59 @@ if (settings.versions) {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
+// MDX content pipeline — driven by zfb's Rust port, NOT JS plugins.
+// ---------------------------------------------------------------------------
+//
+// Background: this project's `packages/md-plugins/src/` ships a JS-side
+// `remarkAdmonitions` + `remarkResolveMarkdownLinks` + `rehypeStripMdExtension`
+// (legacy Astro-era pipeline). The current zfb pin (`bdbfbfb`, post-#170
+// hotfix) has Rust ports of all three plus four more (`HeadingLinks`,
+// `CodeTitle`, `ImageEnlarge`, `Mermaid`, `Syntect`, `CjkFriendlyPlugin`)
+// in `crates/zfb-content/src/plugins/`, all wired automatically via
+// `Pipeline::with_defaults()` at every MDX pre-compile call site
+// (`crates/zfb-build/src/bundler.rs:785, 1015`,
+// `crates/zfb-content/src/content_bridge.rs:183`). PR zfb#118
+// (mdast phase) + zfb#121 (hast phase) + zfb#126/#128/#131 (bundler
+// threading) closed the wiring chain.
+//
+// What this means for `zfb.config.ts`:
+//
+//   - There is NO slot for user-supplied remark/rehype plugin entries
+//     in `defineConfig({...})`. The `plugins` array below targets the
+//     plugin LIFECYCLE (preBuild/postBuild/devMiddleware), not the MDX
+//     content pipeline. The Rust pipeline is opinionated and runs the
+//     full default chain on every `.mdx` file the bundler walks.
+//   - `stripMdExt: true` (set below) is the one MDX-pipeline knob the
+//     zfb config exposes. It opt-in adds `StripMdExtensionPlugin` to
+//     the hoisted `Pipeline::with_defaults()` (zfb#131). Done.
+//
+// What is NOT yet reachable from this file (tracked upstream in
+// Takazudo/zudo-front-builder#185):
+//
+//   - `ResolveLinksPlugin` is implemented in zfb-content but not
+//     reachable through `ZfbConfig` — there's no field for the
+//     `source_map` / `onBrokenLinks` options the legacy JS pipeline
+//     accepted, so authors who hand-write `[label](./other.mdx)`
+//     references rely on `stripMdExt: true` alone (which only strips
+//     the suffix from already-routed URLs). This is acceptable today
+//     because every zudo-doc internal link the corpus actually
+//     contains is already extensionless or already-routed by the time
+//     it reaches the renderer.
+//   - The Rust `AdmonitionsPlugin`'s directive parser requires
+//     CommonMark blank-line paragraphs around `:::name` / `:::` (the
+//     in-tree fixture at zfb's `crates/zfb-build/tests/bundler_default_plugins.rs`
+//     uses this shape). The legacy JS `remark-directive` accepted a
+//     no-blank-line shape too. Project content (`src/content/docs/components/admonitions.mdx`
+//     etc.) was reformatted to the blank-line shape so the Rust plugin
+//     fires; the upstream issue requests either a parser-side relaxation
+//     or a build-time diagnostic for the no-blank-line form.
+//
+// Broken-link warnings are produced today by `pnpm check:links`
+// (`scripts/check-links.js`) running against built `dist/` HTML — a
+// post-build scanner that does not depend on the MDX-pipeline plugin
+// contract and therefore does not block on zfb#185.
+
+// ---------------------------------------------------------------------------
 // Plugins — wired through zfb's plugin lifecycle (issue #101).
 // ---------------------------------------------------------------------------
 //
