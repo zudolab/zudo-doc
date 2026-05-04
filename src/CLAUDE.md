@@ -96,7 +96,7 @@ Element dimensions (icons, toggles, etc.) follow a two-tier approach:
 
 - Before writing or editing CSS, Tailwind classes, color tokens, or component markup, invoke `/zudo-doc-design-system` to load project-specific rules
 - Tailwind v4: imports `tailwindcss/preflight` + `tailwindcss/utilities` (no default theme)
-- No `--*: initial` resets needed — default theme is simply not imported
+- `@theme` has `--color-*: initial; --spacing: initial;` at the top — workaround for a zfb upstream bug (Takazudo/zudo-front-builder#159) that injects the full default Tailwind theme. Remove when upstream fix lands and pin is bumped (Sub-5).
 - Content typography: component-first approach — major HTML elements (h2-h4, p, a, strong, blockquote, ul, ol, table) are overridden via Preact components in `src/components/content/` registered through `component-map.ts`. Minor elements (li, th/td, code, pre, hr, img, h5/h6, dt/dd, etc.) and structural rules (flow-space, consecutive heading tightening, hash-links) remain in `.zd-content` in `global.css`.
 - **Component-first strategy**: always use Tailwind utility classes directly in component markup — never create CSS module files or custom CSS class names. The component itself is the abstraction.
 - **Tight token strategy**: prefer existing spacing (`hsp-*`, `vsp-*`), typography (`text-caption`, `text-small`, etc.), and color tokens. Avoid arbitrary values (`text-[0.8rem]`, `py-[0.35rem]`) when an existing token is close enough.

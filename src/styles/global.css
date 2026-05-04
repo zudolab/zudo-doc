@@ -49,6 +49,40 @@
 
 @theme {
   /* ========================================
+   * Default-theme reset (zfb upstream blind spot workaround)
+   *
+   * zfb prepends `@import "tailwindcss";` (full bundle) to every
+   * synthesised entry CSS unless the user CSS contains a literal
+   * `@import "tailwindcss"` line at column 0. Our split-import pattern
+   * (`@import "tailwindcss/preflight"` + `@import "tailwindcss/utilities"`
+   * at the top of this file) does NOT match upstream's `user_has_import`
+   * check at `crates/zfb-css/src/engine.rs:234`, so the full default
+   * Tailwind theme (gray/zinc/red/blue/etc. palette plus other defaults)
+   * leaks into the @theme output. The wildcard below removes the leaked
+   * default COLOR tokens — that is what the project's tight-token rule
+   * forbids ("NEVER use Tailwind default colors", per src/CLAUDE.md).
+   * Project palette/semantic color tokens (defined below) re-add the
+   * project's own colors after the wildcard wipe.
+   *
+   * NOT reset: `--spacing` (the base spacing scale, default 0.25rem).
+   * Tailwind's spacing utilities (gap-*, px-*, ml-*, m-*, p-*, etc.)
+   * compute as calc(var(--spacing) * N). Wiping it with `initial`
+   * causes the calc to evaluate to invalid, collapsing all those
+   * utilities to zero — which broke header gap, sidebar offset,
+   * list spacing, and page gutters on the Wave 4 deployed preview
+   * (caught by Sub-7 / #1403 browser verification). The default
+   * `--spacing: 0.25rem` is harmless; tight-token is a colour rule,
+   * not a spacing rule, and the project's named spacing tokens
+   * (--spacing-hsp-*, --spacing-vsp-*, --spacing-icon-*) are
+   * preserved alongside.
+   *
+   * Upstream issue: Takazudo/zudo-front-builder#159 — filed in Sub-4.
+   * Once upstream lands the split-import recognition and the pin is
+   * bumped, this reset becomes a no-op; remove at that time.
+   * ======================================== */
+  --color-*: initial;
+
+  /* ========================================
    * Colors — Three-tier token system
    * ======================================== */
 
