@@ -1,0 +1,103 @@
+---
+title: コードブロック
+description: タイトル、行ハイライト、差分表示に対応した、Shikiによるシンタックスハイライト付きフェンスドコードブロック。
+sidebar_position: 1.5
+---
+
+zudo-docのフェンスドコードブロックは[Shiki](https://shiki.style/)によって高精度なシンタックスハイライトを実現しています。開始フェンスの後に言語識別子を指定するとハイライトが有効になります。
+
+## 基本的な使い方
+
+トリプルバッククォートでコードを囲み、開始フェンスの後に言語識別子を追加します。
+
+```ts
+function add(a: number, b: number): number {
+  return a + b;
+}
+```
+
+````mdx
+```ts
+function add(a: number, b: number): number {
+  return a + b;
+}
+```
+````
+
+## サポートされている言語
+
+Shikiは多くの言語を標準でサポートしています。主な識別子は以下の通りです：
+
+| 言語 | 識別子 |
+| -------- | ---------- |
+| TypeScript | `ts`, `typescript` |
+| JavaScript | `js`, `javascript` |
+| HTML | `html` |
+| CSS | `css` |
+| JSON | `json` |
+| Bash / Shell | `bash`, `sh`, `shell`, `zsh` |
+| Markdown | `md`, `markdown` |
+| MDX | `mdx` |
+| YAML | `yaml`, `yml` |
+| Python | `python`, `py` |
+| Rust | `rust`, `rs` |
+| Go | `go` |
+| SQL | `sql` |
+| GraphQL | `graphql` |
+| Diff | `diff` |
+| TOML | `toml` |
+| JSX / TSX | `jsx`, `tsx` |
+
+すべての利用可能な識別子については、[サポートされている言語の一覧](https://shiki.style/languages)を参照してください。
+
+## コードブロックのタイトル
+
+`title`メタ属性を追加すると、コードブロックの上にファイル名やラベルを表示できます。
+
+```ts title="src/utils/math.ts"
+export function multiply(a: number, b: number): number {
+  return a * b;
+}
+```
+
+````mdx
+```ts title="src/utils/math.ts"
+export function multiply(a: number, b: number): number {
+  return a * b;
+}
+```
+````
+
+## 差分表示
+
+`diff`言語を使用すると、`+`と`-`のプレフィックスで追加・削除行をハイライト表示できます。
+
+```diff
+- const greeting = "Hello";
++ const greeting = "Hello, world!";
+  console.log(greeting);
+```
+
+````mdx
+```diff
+- const greeting = "Hello";
++ const greeting = "Hello, world!";
+  console.log(greeting);
+```
+````
+
+## ネストされたコードブロック
+
+MDXの例の中にフェンスドコードブロックを表示する必要がある場合は、外側のフェンスに4つのバッククォートを使用し、内側のブロックには3つを使用します。
+
+`````mdx
+````mdx
+```ts
+const x = 1;
+```
+````
+`````
+
+## Shikiテーマ
+
+シンタックスハイライトのテーマはアクティブなカラースキームに連動しています。各スキームの`shikiTheme`フィールドで`src/config/color-schemes.ts`に設定されています。ユーザーがライト／ダークモードを切り替えると、コードブロックの配色も自動的に切り替わります。個別の設定は不要です。
