@@ -74,7 +74,7 @@ permissions:
 env:
   # Pinned zfb commit — keep in sync with the zfb pin comment at the
   # top of zfb.config.ts and the same env in pr-checks.yml.
-  ZFB_PINNED_SHA: c2cff95e740e671656896d38ca9e422f3cdb0e8c
+  ZFB_PINNED_SHA: 88cec078b568596b57b5ba041adc2849d28fa737
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -295,6 +295,7 @@ jobs:
           echo '/ /pj/zudo-doc/ 302' > deploy/_redirects
 
       - name: Deploy to Cloudflare Pages (production)
+        id: deploy
         run: |
           npx wrangler@4 pages deploy deploy \
             --project-name=zudo-doc \
@@ -304,6 +305,26 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # Guardrail: assert that the deployed HTML has /pj/zudo-doc/-prefixed
+      # asset URLs (stylesheet href and islands script src).  If zfb silently
+      # drops the `base` threading in a future version this step goes red
+      # before the broken production site reaches users — fixing the gap
+      # documented in epic #1386 / #1389 ("CI green is necessary but not
+      # sufficient for feature delivered").
+      - name: Verify production site has prefixed asset URLs
+        run: |
+          set -euo pipefail
+          PROD_URL="https://zudo-doc.pages.dev/pj/zudo-doc/"
+          echo "Checking prefixed asset URLs at: $PROD_URL"
+          HTML=$(curl -fsSL "$PROD_URL")
+          # Use here-strings (not echo|grep) so grep -q exiting early on a
+          # match cannot SIGPIPE upstream echo + flip pipefail.
+          grep -qE 'href="/pj/zudo-doc/assets/' <<<"$HTML" \
+            || { echo "::error::Production HTML missing prefixed stylesheet href"; exit 1; }
+          grep -qE 'src="/pj/zudo-doc/assets/' <<<"$HTML" \
+            || { echo "::error::Production HTML missing prefixed islands script src"; exit 1; }
+          echo "OK: production site has prefixed asset URLs"
 
   # ---------------------------------------------------------------------------
   # Job 4: Send IFTTT notification with deploy status

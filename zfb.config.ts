@@ -1,7 +1,9 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: 19b2bd5 (Takazudo/zudo-front-builder main, merged via PR #154
- *           feat/asset-base-path, 2026-05-03)
+ *   commit: 88cec07 (Takazudo/zudo-front-builder main, post-merge of PR #156
+ *           — wave13 rebase: data-props SSR + Tailwind src/styles/global.css
+ *           input-CSS path probe — on top of PR #155 renderer-emission test
+ *           and PR #154 feat/asset-base-path; 2026-05-04)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -146,13 +148,35 @@
  *                               404'd under the sub-path mount on PR #669 preview. Closes the
  *                               BLOCKER sub-issue zudolab/zudo-doc#1361 of feature-audit
  *                               epic zudolab/zudo-doc#1360)
+ *     - Takazudo/zudo-front-builder#155 (renderer-emission unit test for islands slot —
+ *                               asserts the built dist HTML emits the configured `base`
+ *                               prefix on `<script type="module">` tags for the islands
+ *                               slot; guards against regression of the #154 wiring on the
+ *                               Rust-side renderer. Pure test addition, no runtime change)
+ *     - Takazudo/zudo-front-builder#156 (wave13 rebase: brings two commits onto main that
+ *                               had previously lived only on the wave13-css-path-probe branch
+ *                               and were never PR'd. (a) feat(island): SSR `<Island>` wrapper
+ *                               serialises the wrapped child's props onto a `data-props`
+ *                               attribute so the runtime hydration path can JSON.parse them
+ *                               back; without this, every hydrated island sees `{}` and
+ *                               findActiveSlug throws "e is not iterable" on every doc page.
+ *                               (b) fix(build): build_default_css_payload probes
+ *                               `<root>/src/styles/global.css` as a Tailwind v4 input fallback;
+ *                               without this, the host's `@theme` block under `src/` never
+ *                               reaches the Tailwind run and design tokens default. The
+ *                               previous pin c2cff95 was HEAD of wave13-css-path-probe — when
+ *                               PR #1388 of zudolab/zudo-doc#1386 bumped to PR-#155 main
+ *                               (0f6f8c4), 73 of 145 e2e tests went red because both wave13
+ *                               carries were silently lost. PR #156 brings them onto main
+ *                               cleanly (textual rebase) so the bump path stays additive)
  *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333) → bumped by epic
  *              zudolab/zudo-doc#1355 (Sig F finalisation + post-#131 hash-mismatch follow-up
  *              + Sig G island-resolver/esbuild parity + shared-bundle hydration glue
  *              + manifest-key alignment + wave 12 hydration prop serialisation
  *              + wave 13 Tailwind input-CSS path-probe gap) → bumped by epic
  *              zudolab/zudo-doc#1360 sub-issue #1361 (S1 BLOCKER: HTML asset URLs respect
- *              site `base`)
+ *              site `base`) → bumped by epic zudolab/zudo-doc#1386 sub-issue #1388
+ *              (atomic three-point pin bump + e2e fixture roll-forward; closes #1384)
  */
 
 // zfb.config.ts — entry-point config consumed by the zfb engine.

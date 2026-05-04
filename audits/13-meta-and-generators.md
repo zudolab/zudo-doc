@@ -86,3 +86,69 @@ This gap is noted here. A separate follow-up issue is filed below.
 | Gap (follow-up filed) | 2 |
 
 All generator outputs (llms.txt, sitemap, claudeResources, doc-skill-symlinker, versions) work correctly after the S1 pin bump. The only hard failure is the missing favicon (root cause: `zudo-doc-side`). Canonical link emission is a separate wiring gap. All other meta features (view-transition, og:title, noindex, editUrl, githubUrl, frontmatterPreview) behave as specified.
+
+---
+
+## S5 Re-verification (epic #1386)
+
+**Date:** 2026-05-04
+**Dist used:** `/home/takazudo/repos/myoss/zudo-doc2/dist/` — S4 manager clean build on `base/asset-base-path-fix` (492 prefixed asset refs, 0 unprefixed).
+
+### Rows checked: generator outputs (llms.txt, sitemap, versions)
+
+These rows were marked PASS in the original audit based on a local build whose `base` path was not yet confirmed to be threading correctly. S5 re-grepped the post-fix dist for the specific URL patterns the audit cited.
+
+**llms.txt — root-relative URLs:**
+
+```
+$ grep -m5 "pj/zudo-doc" dist/llms.txt
+- [Getting Started](/pj/zudo-doc/docs/getting-started): ...
+- [0.1.0](/pj/zudo-doc/docs/changelog/0.1.0): ...
+- [Basic Components](/pj/zudo-doc/docs/components/basic-components): ...
+- [Trailing-Slash Policy](/pj/zudo-doc/docs/concepts/trailing-slash-policy): ...
+- [Develop](/pj/zudo-doc/docs/develop): ...
+```
+
+Claim holds: `/pj/zudo-doc/docs/…` prefix present throughout `dist/llms.txt`.
+
+**sitemap.xml — `<loc>` values:**
+
+```
+$ grep "<loc>" dist/sitemap.xml | head -5
+    <loc>/pj/zudo-doc/</loc>
+    <loc>/pj/zudo-doc/docs/changelog/</loc>
+    <loc>/pj/zudo-doc/docs/changelog/0.1.0/</loc>
+    <loc>/pj/zudo-doc/docs/claude-agents/</loc>
+    <loc>/pj/zudo-doc/docs/claude-agents/doc-reviewer/</loc>
+```
+
+Claim holds: `<loc>/pj/zudo-doc/</loc>` root URL and all doc URLs carry the prefix.
+
+**versions — `/pj/zudo-doc/v/1.0/` prefix:**
+
+```
+$ grep -o 'href="/pj/zudo-doc/v[^"]*"' dist/docs/versions/index.html
+href="/pj/zudo-doc/v/1.0/docs/"
+
+$ grep -o 'href="/pj/zudo-doc[^"]*"' dist/v/1.0/docs/getting-started/index.html | head -5
+href="/pj/zudo-doc/assets/styles-ab5f6362.css"
+href="/pj/zudo-doc/v/1.0/docs/getting-started/"
+href="/pj/zudo-doc/v/1.0/docs/getting-started/installation/"
+href="/pj/zudo-doc/ja/v/1.0/docs/getting-started/"
+href="/pj/zudo-doc/"
+```
+
+Claim holds: version links and versioned-page asset refs all carry the `/pj/zudo-doc/` prefix.
+
+### Favicon row — independent of S1
+
+```
+$ grep -c 'rel="icon"' dist/index.html
+0
+```
+
+No `<link rel="icon">` is emitted in the post-fix dist. This is expected — the favicon failure (#1381) is a project-side wiring gap independent of the asset-base-path fix. It was correctly classified as a deferred follow-up in the original audit and remains open. S5 does not change this row's status.
+
+### Conclusion
+
+All generator output rows (llms.txt, sitemap, versions) cited in the original audit hold on the post-fix dist. The original "PASS after S1 pin bump" claims were accurate: these features produced correctly prefixed URLs both before and after S4's end-to-end fix confirmation, because their URL emission went through `withBase()` or the zfb base-path logic independently of the stylesheet/script asset graph that S1 fixed. The favicon FAIL (#1381) remains open and is not affected by S5.
