@@ -326,6 +326,42 @@ jobs:
             || { echo "::error::Production HTML missing prefixed islands script src"; exit 1; }
           echo "OK: production site has prefixed asset URLs"
 
+      # Public-asset HTTP 200 gate — defends against #1394 (Sub-3 host-side
+      # workaround: public/ assets served under the base path).
+      - name: Public-asset smoke gate (#1394)
+        run: |
+          set -euo pipefail
+          DEPLOY_URL="https://zudo-doc.pages.dev/pj/zudo-doc"
+          STATUS=$(curl -fsSL -o /dev/null -w '%{http_code}' "$DEPLOY_URL/img/logo.svg")
+          [ "$STATUS" = "200" ] || { echo "::error::$DEPLOY_URL/img/logo.svg returned HTTP $STATUS, expected 200"; exit 1; }
+          echo "OK: $DEPLOY_URL/img/logo.svg returned HTTP 200"
+
+      # CSS-shape gate — defends against #1395 (Sub-4 host-side workaround:
+      # @theme { --color-*: initial; --spacing: initial; } reset).
+      # Three structural invariants (no class-name greps — fragile against
+      # Tailwind escaping and minification churn).
+      - name: CSS-shape smoke gate (#1395)
+        run: |
+          set -euo pipefail
+          DEPLOY_URL="https://zudo-doc.pages.dev/pj/zudo-doc"
+          CSS_URL=$(curl -fsSL "$DEPLOY_URL/" | grep -oE 'href="[^"]*assets/styles-[^"]*\.css"' | head -1 | sed 's/href="//;s/"$//')
+          [ -n "$CSS_URL" ] || { echo "::error::no CSS link found in $DEPLOY_URL/"; exit 1; }
+          curl -fsSL "$CSS_URL" -o /tmp/deployed-css.css
+
+          CSS_BYTES=$(wc -c < /tmp/deployed-css.css)
+          MIN_CSS_BYTES=65000  # tuned from the Sub-2 manager-confirm baseline (post-fix ~77.7 KB; broken-scanner floor ~30-40 KB)
+          [ "$CSS_BYTES" -ge "$MIN_CSS_BYTES" ] || { echo "::error::deployed CSS is $CSS_BYTES bytes, below threshold $MIN_CSS_BYTES (broken scanner produces ~30-40 KB)"; exit 1; }
+
+          MEDIA_COUNT=$(grep -cE '^@media' /tmp/deployed-css.css || true)
+          MIN_MEDIA=3  # tuned from the Sub-2 manager-confirm baseline (post-fix has 4 @media; threshold 3 leaves one block of safety)
+          [ "$MEDIA_COUNT" -ge "$MIN_MEDIA" ] || { echo "::error::deployed CSS has $MEDIA_COUNT @media blocks, below threshold $MIN_MEDIA"; exit 1; }
+
+          LEAKED_DEFAULT_COLORS=$(grep -cE -- '--color-(gray|zinc|red|amber|green|cyan|blue|indigo|purple|slate)-[0-9]+:' /tmp/deployed-css.css || true)
+          MAX_DEFAULT_THEME_COLOR_TOKENS=2  # tuned from the Sub-2 manager-confirm baseline (post-fix has 0; broken state has 36)
+          [ "$LEAKED_DEFAULT_COLORS" -le "$MAX_DEFAULT_THEME_COLOR_TOKENS" ] || { echo "::error::deployed CSS has $LEAKED_DEFAULT_COLORS leaked Tailwind default color tokens, above threshold $MAX_DEFAULT_THEME_COLOR_TOKENS (zfb user_has_import blind-spot regression)"; exit 1; }
+
+          echo "OK: deployed CSS is $CSS_BYTES bytes, $MEDIA_COUNT @media blocks, $LEAKED_DEFAULT_COLORS leaked default color tokens"
+
   # ---------------------------------------------------------------------------
   # Job 4: Send IFTTT notification with deploy status
   # ---------------------------------------------------------------------------
