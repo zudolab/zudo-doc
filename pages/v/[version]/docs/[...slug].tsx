@@ -196,11 +196,16 @@ export function paths(): Array<{
 
 interface PageArgs {
   params: { version: string; slug: string[] };
-  props: DocPageProps;
+  entry: DocPageProps["entry"];
+  autoIndex?: DocPageProps["autoIndex"];
+  version: DocPageProps["version"];
+  breadcrumbs: DocPageProps["breadcrumbs"];
+  prev: DocPageProps["prev"];
+  next: DocPageProps["next"];
+  headings: DocPageProps["headings"];
 }
 
-export default function VersionedDocsPage({ props }: PageArgs): JSX.Element {
-  const { entry, autoIndex, version, breadcrumbs, prev, next, headings } = props;
+export default function VersionedDocsPage({ entry, autoIndex, version, breadcrumbs, prev, next, headings }: PageArgs): JSX.Element {
   const locale = "en";
 
   const slug = autoIndex

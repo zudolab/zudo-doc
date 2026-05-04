@@ -1,9 +1,11 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: 88cec07 (Takazudo/zudo-front-builder main, post-merge of PR #156
- *           — wave13 rebase: data-props SSR + Tailwind src/styles/global.css
- *           input-CSS path probe — on top of PR #155 renderer-emission test
- *           and PR #154 feat/asset-base-path; 2026-05-04)
+ *   commit: bdbfbfb (Takazudo/zudo-front-builder main, post-#170 hotfix:
+ *           add node:async_hooks stub to embedded V8 v1 node:* list so
+ *           consumer bundles that import @takazudo/zfb-adapter-cloudflare
+ *           (AsyncLocalStorage) evaluate during SSG paths() step; on top of
+ *           PR #170 fix/dev-cold-start-rebuild + PR #168 embed-v8 + PR #157
+ *           basic-blog end-to-end fix; 2026-05-04)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -169,6 +171,45 @@
  *                               (0f6f8c4), 73 of 145 e2e tests went red because both wave13
  *                               carries were silently lost. PR #156 brings them onto main
  *                               cleanly (textual rebase) so the bump path stays additive)
+ *     - Takazudo/zudo-front-builder PR #157 (fix examples/basic-blog build
+ *                               end-to-end — 6 bugs fixed; no consumer API
+ *                               change)
+ *     - Takazudo/zudo-front-builder PR #168 / sub-161 (ADR-007: author
+ *                               embedded deno_core ADR, superseding ADR-005
+ *                               miniflare subprocess)
+ *     - Takazudo/zudo-front-builder PR #168 / sub-162 (implement
+ *                               EmbeddedV8RenderHost: deno_core + node:*
+ *                               runtime stubs + deno_fetch/web/url/console
+ *                               Web API extensions)
+ *     - Takazudo/zudo-front-builder PR #168 / sub-163 (CI: wire
+ *                               Swatinem/rust-cache@v2; document 15-30 min
+ *                               V8 first-build cost in CONTRIBUTING.md)
+ *     - Takazudo/zudo-front-builder PR #168 / sub-164 (renderer: add
+ *                               Backend::EmbeddedV8 + Backend::Stub,
+ *                               WorkerDispatch enum; swap dispatch path)
+ *     - Takazudo/zudo-front-builder PR #168 / sub-165 (test: ContentSnapshot
+ *                               e2e verification tests)
+ *     - Takazudo/zudo-front-builder PR #168 / sub-166 (cli: flip default
+ *                               Backend from SpawnMiniflare → EmbeddedV8
+ *                               in build/dev pipelines)
+ *     - Takazudo/zudo-front-builder PR #168 / sub-167 (cleanup: delete
+ *                               miniflare-bootstrap.mjs, strip
+ *                               SpawnMiniflare backend, scrub all miniflare
+ *                               references from code/docs/config)
+ *     - Takazudo/zudo-front-builder PR #170 (fix(dev): cold-start rebuild
+ *                               empty dirty set (DependencyGraph seeded with
+ *                               all page IDs on startup; empty dirty escalates
+ *                               to PageSelection::All) + PageCache disk
+ *                               fallback (serve_page() reads from dist/ on
+ *                               cache miss instead of returning 500))
+ *     - Takazudo/zudo-front-builder bdbfbfb (fix(embedded-v8): add
+ *                               node:async_hooks stub to v1 node:* list;
+ *                               consumer bundles that import
+ *                               @takazudo/zfb-adapter-cloudflare do a
+ *                               top-level import of AsyncLocalStorage from
+ *                               node:async_hooks — without this stub the
+ *                               embedded V8 host fails at bundle-load time
+ *                               with "no in-memory source for node:async_hooks")
  *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333) → bumped by epic
  *              zudolab/zudo-doc#1355 (Sig F finalisation + post-#131 hash-mismatch follow-up
  *              + Sig G island-resolver/esbuild parity + shared-bundle hydration glue
@@ -177,6 +218,9 @@
  *              zudolab/zudo-doc#1360 sub-issue #1361 (S1 BLOCKER: HTML asset URLs respect
  *              site `base`) → bumped by epic zudolab/zudo-doc#1386 sub-issue #1388
  *              (atomic three-point pin bump + e2e fixture roll-forward; closes #1384)
+ *              → bumped by epic zudolab/zudo-doc#1407 (zfb-pin-bump-embed-v8: pick up
+ *              PR #168 embedded deno_core + PR #170 cold-start-rebuild fix; hotfix
+ *              bdbfbfb adds node:async_hooks stub surfaced during W3 build verification)
  */
 
 // zfb.config.ts — entry-point config consumed by the zfb engine.

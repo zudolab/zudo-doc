@@ -230,11 +230,18 @@ export function paths(): Array<{
 
 interface PageArgs {
   params: { version: string; slug: string[] };
-  props: DocPageProps;
+  entry: DocPageProps["entry"];
+  autoIndex?: DocPageProps["autoIndex"];
+  version: DocPageProps["version"];
+  contentDir: DocPageProps["contentDir"];
+  isFallback: DocPageProps["isFallback"];
+  breadcrumbs: DocPageProps["breadcrumbs"];
+  prev: DocPageProps["prev"];
+  next: DocPageProps["next"];
+  headings: DocPageProps["headings"];
 }
 
-export default function VersionedJaDocsPage({ props }: PageArgs): JSX.Element {
-  const { entry, autoIndex, version, isFallback, breadcrumbs, prev, next, headings } = props;
+export default function VersionedJaDocsPage({ entry, autoIndex, version, isFallback, breadcrumbs, prev, next, headings }: PageArgs): JSX.Element {
   const locale = "ja";
 
   const slug = autoIndex

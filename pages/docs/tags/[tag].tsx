@@ -54,12 +54,11 @@ export function paths(): Array<{
 
 interface PageProps {
   params: { tag: string };
-  props: { tagInfo: TagInfo };
+  tagInfo: TagInfo;
 }
 
-export default function DocTagPage({ params, props }: PageProps): JSX.Element {
+export default function DocTagPage({ params, tagInfo }: PageProps): JSX.Element {
   const { tag } = params;
-  const { tagInfo } = props;
   const locale = defaultLocale;
 
   const countText =
