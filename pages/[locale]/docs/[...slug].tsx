@@ -210,12 +210,18 @@ export function paths(): Array<{
 
 interface PageArgs {
   params: { locale: string; slug: string[] };
-  props: DocPageProps;
+  entry: DocPageProps["entry"];
+  autoIndex?: DocPageProps["autoIndex"];
+  contentDir: DocPageProps["contentDir"];
+  isFallback: DocPageProps["isFallback"];
+  breadcrumbs: DocPageProps["breadcrumbs"];
+  prev: DocPageProps["prev"];
+  next: DocPageProps["next"];
+  headings: DocPageProps["headings"];
 }
 
-export default function LocaleDocsPage({ params, props }: PageArgs): JSX.Element {
+export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, isFallback, breadcrumbs, prev, next, headings }: PageArgs): JSX.Element {
   const locale = params.locale;
-  const { entry, autoIndex, contentDir, isFallback, breadcrumbs, prev, next, headings } = props;
 
   const slug = autoIndex
     ? autoIndex.slug

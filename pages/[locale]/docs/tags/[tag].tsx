@@ -63,15 +63,14 @@ export function paths(): Array<{
 
 interface PageProps {
   params: { locale: string; tag: string };
-  props: { tagInfo: TagInfo };
+  tagInfo: TagInfo;
 }
 
 export default function LocaleDocTagPage({
   params,
-  props,
+  tagInfo,
 }: PageProps): JSX.Element {
   const { locale, tag } = params;
-  const { tagInfo } = props;
 
   const countText =
     tagInfo.count === 1

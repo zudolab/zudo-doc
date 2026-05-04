@@ -184,11 +184,15 @@ export function paths(): Array<{
 
 interface PageArgs {
   params: { slug: string[] };
-  props: DocPageProps;
+  entry: DocPageProps["entry"];
+  autoIndex?: DocPageProps["autoIndex"];
+  breadcrumbs: DocPageProps["breadcrumbs"];
+  prev: DocPageProps["prev"];
+  next: DocPageProps["next"];
+  headings: DocPageProps["headings"];
 }
 
-export default function DocsPage({ props }: PageArgs): JSX.Element {
-  const { entry, autoIndex, breadcrumbs, prev, next, headings } = props;
+export default function DocsPage({ entry, autoIndex, breadcrumbs, prev, next, headings }: PageArgs): JSX.Element {
   const locale = defaultLocale;
 
   const slug = autoIndex
