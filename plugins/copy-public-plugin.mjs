@@ -4,32 +4,37 @@
 // contents to `outDir`. See: zudolab/zudo-doc#1394;
 // upstream issue: https://github.com/Takazudo/zudo-front-builder/issues/158
 //
-// postBuild — recursively copies `<projectRoot>/public/` into
-//             `<outDir>/<base>/` so static assets land at the correct
-//             base-prefixed URL paths matching what `withBase()` emits.
+// postBuild — recursively copies `<projectRoot>/public/` directly into
+//             `<outDir>/` (FLAT, matching zfb's own dist/ convention —
+//             zfb emits dist/index.html, dist/assets/..., NOT
+//             dist/<base>/index.html). The deployed URL prefix is
+//             applied uniformly by the deploy pipeline's prepare step
+//             (`mkdir -p deploy/<base> && cp -r dist/. deploy/<base>/`
+//             in `.github/workflows/preview-deploy.yml`,
+//             `pr-checks.yml`, and `main-deploy.yml`), so prefixing
+//             here would double-prefix the file path.
 //
-//             Example: with `base = "/pj/zudo-doc/"`, `public/img/logo.svg`
-//             becomes `dist/pj/zudo-doc/img/logo.svg`, served at
+//             Example: `public/img/logo.svg` becomes `dist/img/logo.svg`,
+//             which the deploy prepare step relocates to
+//             `deploy/pj/zudo-doc/img/logo.svg`, served at
 //             `/pj/zudo-doc/img/logo.svg` by Cloudflare Pages.
 //
 // Missing or empty `public/` is treated as a no-op (no error).
 //
-// `options` carries `{ publicDir, base }` from the matching entry in
-// `zfb.config.ts`.
+// `options` carries `{ publicDir }` from the matching entry in
+// `zfb.config.ts`. The `base` option is intentionally unused — see
+// rationale above.
 
 import { cp } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { resolve } from "node:path";
 
 export default {
   name: "copy-public",
 
   async postBuild(ctx) {
-    const { publicDir: publicDirOption, base } = ctx.options;
+    const { publicDir: publicDirOption } = ctx.options;
     const publicDir = resolve(ctx.projectRoot, publicDirOption ?? "public");
-    // Strip leading and trailing slashes from base so we can use it as a
-    // relative path segment — e.g. "/pj/zudo-doc/" → "pj/zudo-doc".
-    const baseSegment = typeof base === "string" ? base.replace(/^\/|\/$/g, "") : "";
-    const dest = join(ctx.outDir, baseSegment);
+    const dest = ctx.outDir;
 
     ctx.logger.info(`copying ${publicDir} → ${dest}`);
 

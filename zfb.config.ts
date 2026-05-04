@@ -408,7 +408,6 @@ const integrationPlugins = [
     name: "./plugins/copy-public-plugin.mjs",
     options: {
       publicDir: "public",
-      base: settings.base,
     },
   },
 ];
