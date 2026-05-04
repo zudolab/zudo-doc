@@ -318,9 +318,11 @@ jobs:
           PROD_URL="https://zudo-doc.pages.dev/pj/zudo-doc/"
           echo "Checking prefixed asset URLs at: $PROD_URL"
           HTML=$(curl -fsSL "$PROD_URL")
-          echo "$HTML" | grep -qE 'href="/pj/zudo-doc/assets/' \
+          # Use here-strings (not echo|grep) so grep -q exiting early on a
+          # match cannot SIGPIPE upstream echo + flip pipefail.
+          grep -qE 'href="/pj/zudo-doc/assets/' <<<"$HTML" \
             || { echo "::error::Production HTML missing prefixed stylesheet href"; exit 1; }
-          echo "$HTML" | grep -qE 'src="/pj/zudo-doc/assets/' \
+          grep -qE 'src="/pj/zudo-doc/assets/' <<<"$HTML" \
             || { echo "::error::Production HTML missing prefixed islands script src"; exit 1; }
           echo "OK: production site has prefixed asset URLs"
 

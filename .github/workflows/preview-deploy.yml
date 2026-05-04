@@ -216,9 +216,11 @@ jobs:
           PREVIEW_URL="${{ steps.deploy.outputs.deploy_url }}/pj/zudo-doc/"
           echo "Checking prefixed asset URLs at: $PREVIEW_URL"
           HTML=$(curl -fsSL "$PREVIEW_URL")
-          echo "$HTML" | grep -qE 'href="/pj/zudo-doc/assets/' \
+          # Use here-strings (not echo|grep) so grep -q exiting early on a
+          # match cannot SIGPIPE upstream echo + flip pipefail.
+          grep -qE 'href="/pj/zudo-doc/assets/' <<<"$HTML" \
             || { echo "::error::Preview HTML missing prefixed stylesheet href"; exit 1; }
-          echo "$HTML" | grep -qE 'src="/pj/zudo-doc/assets/' \
+          grep -qE 'src="/pj/zudo-doc/assets/' <<<"$HTML" \
             || { echo "::error::Preview HTML missing prefixed islands script src"; exit 1; }
           echo "OK: deployed preview has prefixed asset URLs"
 
