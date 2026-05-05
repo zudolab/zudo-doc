@@ -69,6 +69,15 @@
 //   keeping post-cutover migration parity comparisons free of a structural
 //   delta on every versioned page.
 //
+//   zudolab/zudo-doc#1444 added @source "packages/zudo-doc-v2/src/**" to
+//   zudo-doc's global.css so `.lg:block` is emitted in both main and E2E
+//   fixture builds for that project. The inline style is kept here because
+//   this package is a library: downstream projects scaffolded by
+//   create-zudo-doc do NOT have `packages/zudo-doc-v2/src/**` locally and
+//   their global.css template does not include that @source path. Removing
+//   the inline style would silently break the version-switcher in all
+//   downstream consumer projects.
+//
 //   Consumers that ship their own visibility CSS can pass
 //   `disableInlineVisibilityStyle` to suppress the inline `<style>`.
 
