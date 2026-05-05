@@ -3,4 +3,4 @@ pre-commit:
   commands:
     format-mdx:
       glob: "*.{md,mdx}"
-      run: pnpm dlx @takazudo/mdx-formatter --write {staged_files} && git add {staged_files}
+      run: pnpm dlx @takazudo/mdx-formatter --write {staged_files} && git add -f {staged_files}
