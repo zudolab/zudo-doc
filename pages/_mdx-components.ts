@@ -43,12 +43,38 @@ import { HtmlPreviewWrapper } from "@zudo-doc/zudo-doc-v2/html-preview-wrapper";
 import { Tabs } from "@zudo-doc/zudo-doc-v2/code-syntax";
 import { TabItem } from "@zudo-doc/zudo-doc-v2/tab-item";
 import { defaultLocale, type Locale } from "@/config/i18n";
+import { withBase } from "@/utils/base";
 import { CategoryNavWrapper } from "./lib/_category-nav";
 import { CategoryTreeNavWrapper } from "./lib/_category-tree-nav";
 import { SiteTreeNavWrapper } from "./lib/_site-tree-nav";
 import { DetailsWrapper } from "./lib/_details";
 import { PresetGeneratorFallback } from "./lib/_preset-generator";
 import { MathBlock } from "./lib/_math-block";
+
+/**
+ * MDX `<img>` override — rewrites root-relative src attributes to include the
+ * configured site base path (settings.base). Without this, an MDX image like
+ * `![alt](/img/foo.webp)` emits `src="/img/foo.webp"` which 404s when the
+ * site is deployed under a sub-path prefix (e.g. /pj/zudo-doc/).
+ *
+ * Only root-relative paths (starting with "/") are rewritten; external URLs,
+ * protocol-relative URLs ("//…"), and data URIs pass through unchanged. The
+ * withBase() call is generic — it reads settings.base at build time and applies
+ * whatever prefix is configured.
+ *
+ * Note: `srcset` attributes are NOT rewritten here because the current MDX
+ * corpus does not use srcset (standard markdown `![alt](src)` syntax produces
+ * only `src`). If srcset with root-relative URLs is ever introduced, extend
+ * this override to rewrite each srcset candidate URL as well.
+ */
+function ContentImg(props: Record<string, unknown>) {
+  const src = props.src;
+  const rewrittenSrc =
+    typeof src === "string" && src.startsWith("/") && !src.startsWith("//")
+      ? withBase(src)
+      : src;
+  return { type: "img", props: { ...props, src: rewrittenSrc }, key: null, constructor: undefined };
+}
 
 /**
  * MDX-tag stub: renders nothing. Returning `null` keeps the rendered
@@ -87,11 +113,21 @@ function IslandWrapper(props: {
  * land. Matches the `admonition` class hook the design system already
  * targets for the Astro-era components.
  *
+ * The title row is ALWAYS rendered (defaulting to the capitalized
+ * variant name when no `title` prop is given). The icon emoji is
+ * supplied by `.admonition-title::before` in `global.css` keyed off
+ * `data-admonition`, so the stub stays variant-agnostic. This mirrors
+ * the Astro reference theme's structure (zudolab/zudo-doc#1456).
+ *
  * Untyped (`unknown` props) on purpose: the stubs go away once the
  * proper bindings ship, so investing in a typed prop bag here would
  * just be deleted later.
  */
 function makeAdmonitionStub(variant: string) {
+  // Default title — capitalized variant name (e.g. "note" → "Note"),
+  // matching the Astro reference where every admonition shows a title row
+  // regardless of whether the author provided one in MDX.
+  const defaultTitle = variant.charAt(0).toUpperCase() + variant.slice(1);
   // The tag name is passed through `h` indirectly by the MDX runtime
   // (Preact's `h(tag, props, ...children)`), so we build a plain
   // VNode-shaped object here. Returning a real Preact vnode via
@@ -99,6 +135,7 @@ function makeAdmonitionStub(variant: string) {
   // site; the literal-shape is what htmlOverrides downstream emit
   // and it round-trips through `preact-render-to-string` cleanly.
   return function AdmonitionStub(props: { title?: string; children?: unknown }): unknown {
+    const title = props.title && props.title.length > 0 ? props.title : defaultTitle;
     return {
       type: "div",
       props: {
@@ -108,7 +145,7 @@ function makeAdmonitionStub(variant: string) {
         "data-admonition": variant,
         class: `admonition admonition-${variant}`,
         children: [
-          props.title ? { type: "div", props: { class: "admonition-title", children: props.title }, key: null, constructor: undefined } : null,
+          { type: "p", props: { class: "admonition-title", children: title }, key: null, constructor: undefined },
           { type: "div", props: { class: "admonition-body", children: props.children }, key: null, constructor: undefined },
         ],
       },
@@ -156,6 +193,11 @@ export function createMdxComponents(lang: Locale | string = defaultLocale) {
 
   return {
     ...htmlOverrides,
+    // img override: rewrites root-relative src to include the site base path.
+    // Required when settings.base is a sub-path (e.g. /pj/zudo-doc/) so that
+    // MDX images like ![alt](/img/foo.webp) resolve correctly on the deployed
+    // preview. withBase() is generic — any configured base value works.
+    img: ContentImg,
     HtmlPreview: HtmlPreviewWrapper,
     // Admonitions — proper bindings land in the doc-content-components
     // topic. Until then, render the children inside a

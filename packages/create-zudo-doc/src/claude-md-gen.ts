@@ -28,7 +28,9 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   lines.push(
     `- **Preact** — for interactive islands only (with compat mode for React API)`,
   );
-  lines.push(`- **Shiki** — built-in code highlighting`);
+  lines.push(
+    `- **syntect** — built-in code highlighting, run by zfb's Rust pipeline at build time (single fixed theme: \`base16-ocean-dark\`)`,
+  );
   lines.push(``);
 
   // Commands

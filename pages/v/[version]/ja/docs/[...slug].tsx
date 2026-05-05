@@ -40,6 +40,7 @@ import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
 import { Breadcrumb } from "@zudo-doc/zudo-doc-v2/breadcrumb";
 import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import { FrontmatterPreview } from "@zudo-doc/zudo-doc-v2/metainfo";
+import { frontmatterRenderers } from "@/config/frontmatter-preview-renderers";
 // Locale-aware MDX components factory — see `pages/_mdx-components.ts`.
 import { createMdxComponents } from "../../../../_mdx-components";
 import type { JSX } from "preact";
@@ -344,17 +345,25 @@ export default function VersionedJaDocsPage({ entry, autoIndex, version, isFallb
       }
     >
       {autoIndex ? (
-        <div>
+        /* Auto-index page: category without an index.mdx.
+           Fragment (not <div>) so children become direct children of
+           <article class="zd-content">, picking up the flow-space rule
+           (.zd-content > :where(* + *) { margin-top: var(--flow-space) }).
+           Wrapping in <div> would make h1/description p children-of-children
+           and the flow gap (~24px) would never apply — see #1460. */
+        <>
           <h1 class="text-heading font-bold mb-vsp-xs">{autoIndex.label}</h1>
           {autoIndex.description && (
-            <p class="mt-0 mb-vsp-lg text-subheading text-muted">
+            <p class="mb-vsp-lg text-subheading text-muted">
               {autoIndex.description}
             </p>
           )}
           <NavCardGrid children={autoIndexChildren} />
-        </div>
+        </>
       ) : (
-        <div>
+        /* Regular doc page. Fragment (not <div>) for the same reason as
+           the auto-index branch above — see #1460. */
+        <>
           <h1 class="text-heading font-bold mb-vsp-xs">{entry!.data.title}</h1>
 
           {/* Build-time date block (Created / Updated / Author). Mirrors the
@@ -373,7 +382,7 @@ export default function VersionedJaDocsPage({ entry, autoIndex, version, isFallb
           )}
 
           {entry!.data.description && (
-            <p class="mt-0 mb-vsp-lg text-subheading text-muted">
+            <p class="mb-vsp-lg text-subheading text-muted">
               {entry!.data.description}
             </p>
           )}
@@ -386,6 +395,9 @@ export default function VersionedJaDocsPage({ entry, autoIndex, version, isFallb
             title={t("frontmatter.preview.title", locale)}
             keyColLabel={t("frontmatter.preview.keyCol", locale)}
             valueColLabel={t("frontmatter.preview.valueCol", locale)}
+            renderers={frontmatterRenderers}
+            data={entry!.data as Record<string, unknown>}
+            locale={locale}
           />
 
           {entry && <entry.Content components={components} />}
@@ -448,7 +460,7 @@ export default function VersionedJaDocsPage({ entry, autoIndex, version, isFallb
               <div />
             )}
           </nav>
-        </div>
+        </>
       )}
     </DocLayoutWithDefaults>
   );

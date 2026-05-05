@@ -19,6 +19,12 @@
  * (input-CSS path probe) makes these directives reach Tailwind for the
  * first time; the directives themselves close zudolab/zudo-doc#1355
  * wave-13 topic-2.
+ *
+ * pages/ and packages/create-zudo-doc/templates/ added in #1444
+ * (epic #1443): pages/_mdx-components.ts emits admonition wrapper classes
+ * and other utility references; the create-zudo-doc templates hold classes
+ * used in downstream scaffolded projects. Both are required so fixture
+ * builds (non-git trees) and the main build emit the full utility set.
  * ======================================== */
 
 @source "src/components/**/*.{tsx,ts,jsx,js,mdx,md}";
@@ -26,6 +32,8 @@
 @source "src/hooks/**/*.{tsx,ts,jsx,js}";
 @source "src/utils/**/*.{tsx,ts,jsx,js}";
 @source "packages/zudo-doc-v2/src/**/*.{tsx,ts,jsx,js}";
+@source "packages/create-zudo-doc/templates/**/*.{tsx,ts,jsx,js,mdx,md}";
+@source "pages/**/*.{tsx,ts,jsx,js}";
 
 /* ========================================
  * Design Token System
@@ -444,6 +452,138 @@ body {
 }
 
 /* ========================================
+ * Admonitions ([data-admonition])
+ *
+ * The admonition stub in pages/_mdx-components.ts emits:
+ *   <div data-admonition="<variant>" class="admonition admonition-<variant>">
+ *     <p class="admonition-title">…</p>
+ *     <div class="admonition-body">…</div>
+ *   </div>
+ *
+ * Variant→color mapping (matches Astro reference theme): note→accent,
+ * tip→success, info→info, warning→warning, danger→danger. The icon emoji is
+ * added via `.admonition-title::before` keyed off `data-admonition`.
+ *
+ * Background tint uses `color-mix(in srgb, var(--color-X) 12%, var(--color-bg))`
+ * per the production reference — gives an opaque per-theme tinted backdrop
+ * rather than a transparent overlay (matches the Astro reference look exactly).
+ *
+ * Class names are dynamic (admonition-${variant}) so Tailwind cannot scan them;
+ * rules must live here explicitly. Closes zudolab/zudo-doc#1357 / #1444 / #1456.
+ * ======================================== */
+
+[data-admonition] {
+  border-left: 4px solid var(--color-muted);
+  /* Asymmetric padding mirrors the Astro reference (`pt-vsp-md pb-vsp-2xs`) —
+   * generous space at the top, snug at the bottom — so the title row sits
+   * under generous breathing room without inflating the bottom gap. */
+  padding: var(--spacing-vsp-md) var(--spacing-hsp-lg) var(--spacing-vsp-2xs);
+  background-color: color-mix(in srgb, var(--color-muted) 12%, var(--color-bg));
+  border-radius: 0 var(--radius-DEFAULT) var(--radius-DEFAULT) 0;
+}
+
+.admonition-title {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-small);
+  margin-bottom: var(--spacing-vsp-2xs);
+}
+
+/* Variant icon — emoji rendered via ::before so the stub markup stays
+ * variant-agnostic and the icon vocabulary lives next to its color rule.
+ * Matches the Astro reference (`<span class="mr-hsp-2xs">📝</span>` etc.). */
+.admonition-title::before {
+  margin-right: var(--spacing-hsp-2xs);
+}
+
+.admonition-body > :first-child {
+  margin-top: 0;
+}
+
+.admonition-body > :last-child {
+  margin-bottom: 0;
+}
+
+[data-admonition="note"],
+.admonition-note {
+  border-left-color: var(--color-accent);
+  background-color: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg));
+}
+
+[data-admonition="note"] .admonition-title,
+.admonition-note .admonition-title {
+  color: var(--color-accent);
+}
+
+[data-admonition="note"] .admonition-title::before,
+.admonition-note .admonition-title::before {
+  content: "📝";
+}
+
+[data-admonition="tip"],
+.admonition-tip {
+  border-left-color: var(--color-success);
+  background-color: color-mix(in srgb, var(--color-success) 12%, var(--color-bg));
+}
+
+[data-admonition="tip"] .admonition-title,
+.admonition-tip .admonition-title {
+  color: var(--color-success);
+}
+
+[data-admonition="tip"] .admonition-title::before,
+.admonition-tip .admonition-title::before {
+  content: "💡";
+}
+
+[data-admonition="info"],
+.admonition-info {
+  border-left-color: var(--color-info);
+  background-color: color-mix(in srgb, var(--color-info) 12%, var(--color-bg));
+}
+
+[data-admonition="info"] .admonition-title,
+.admonition-info .admonition-title {
+  color: var(--color-info);
+}
+
+[data-admonition="info"] .admonition-title::before,
+.admonition-info .admonition-title::before {
+  content: "ℹ️";
+}
+
+[data-admonition="warning"],
+.admonition-warning {
+  border-left-color: var(--color-warning);
+  background-color: color-mix(in srgb, var(--color-warning) 12%, var(--color-bg));
+}
+
+[data-admonition="warning"] .admonition-title,
+.admonition-warning .admonition-title {
+  color: var(--color-warning);
+}
+
+[data-admonition="warning"] .admonition-title::before,
+.admonition-warning .admonition-title::before {
+  content: "⚠️";
+}
+
+[data-admonition="danger"],
+.admonition-danger {
+  border-left-color: var(--color-danger);
+  background-color: color-mix(in srgb, var(--color-danger) 12%, var(--color-bg));
+}
+
+[data-admonition="danger"] .admonition-title,
+.admonition-danger .admonition-title {
+  color: var(--color-danger);
+}
+
+[data-admonition="danger"] .admonition-title::before,
+.admonition-danger .admonition-title::before {
+  content: "🚨";
+}
+
+/* ========================================
  * Code block buttons (copy + word wrap)
  * ======================================== */
 
@@ -541,15 +681,34 @@ pre[class^="syntect-"].word-wrap code {
 }
 
 /* ========================================
- * Shiki dual theme (light/dark mode)
+ * Code-block syntax-highlight token color rule
  * ======================================== */
 
+/* Two highlighter modes coexist on this site:
+ *
+ *   1. Build-time: zfb's Rust pipeline runs SyntectPlugin and emits
+ *      <pre class="syntect-..."> with inline style="color:#hex" on every token
+ *      span. The inline hex IS the desired token color — this rule must NOT
+ *      override it.
+ *
+ *   2. Runtime: the design-token-tweak panel (src/components/design-token-tweak)
+ *      re-highlights code blocks via Shiki on demand. Shiki emits spans with
+ *      inline style="--shiki-light:#X;--shiki-dark:#Y" — CSS custom properties
+ *      only, no `color` declaration — so it depends on this rule resolving
+ *      light-dark(var(--shiki-light), var(--shiki-dark)) to the active theme.
+ *
+ * Therefore: NO !important on `color` (would override mode 1's inline color);
+ * inline declarations win via cascade on mode 1 because they are normal
+ * author declarations of higher precedence than this selector. Mode 2 spans
+ * have no inline `color`, so the rule applies cleanly. Same logic for
+ * background-color on the <pre> wrapper (mode 1 has no inline bg, mode 2
+ * sets the bg vars inline). See zudolab/zudo-doc#1457. */
 [data-theme] .shiki,
 [data-theme] .shiki span,
 [data-theme] pre[class^="syntect-"],
 [data-theme] pre[class^="syntect-"] span {
-  color: light-dark(var(--shiki-light), var(--shiki-dark)) !important;
-  background-color: light-dark(var(--shiki-light-bg), var(--shiki-dark-bg)) !important;
+  color: light-dark(var(--shiki-light), var(--shiki-dark));
+  background-color: light-dark(var(--shiki-light-bg), var(--shiki-dark-bg));
   font-style: light-dark(
     var(--shiki-light-font-style, inherit),
     var(--shiki-dark-font-style, inherit)

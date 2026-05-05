@@ -13,11 +13,9 @@
 // Returning an empty array suppresses the block — the v2 component
 // short-circuits with `null` when `entries` is empty.
 //
-// Note: `frontmatterRenderers` integration is intentionally skipped for
-// now. The v2 component does not yet accept a renderer map; the simple
-// text path covers every case the e2e smoke spec checks for. Custom
-// renderer support can be added as a follow-up without changing this
-// helper's signature.
+// Custom per-key renderers (from `src/config/frontmatter-preview-renderers.tsx`)
+// are wired by the page template directly on the `<FrontmatterPreview>` call site
+// via the `renderers` prop. This helper only produces the filtered entries array.
 
 import { settings } from "@/config/settings";
 import { DEFAULT_FRONTMATTER_IGNORE_KEYS } from "@/config/frontmatter-preview-defaults";

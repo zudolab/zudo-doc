@@ -1,8 +1,39 @@
 /** Shared argument parsing utilities for CLI and server entry points */
 
+import { existsSync } from "node:fs";
+import { isAbsolute, resolve } from "node:path";
+
 export interface LocaleEntry {
   key: string;
   dir: string;
+}
+
+/**
+ * Resolve a potentially-relative content path.
+ *
+ * When invoked via `pnpm --filter <pkg>`, process.cwd() is the package
+ * directory, not the repo root. INIT_CWD is set by pnpm to the directory
+ * where pnpm was originally invoked — typically the repo root — so relative
+ * paths like "src/content/docs" resolve correctly without requiring "../../"
+ * prefixes in the root package.json scripts.
+ *
+ * Resolution order:
+ *   1. Absolute path → use as-is
+ *   2. Relative + INIT_CWD set + resolves to an existing directory → use that
+ *   3. Relative + fallback to process.cwd()
+ */
+export function resolveContentPath(p: string): string {
+  if (isAbsolute(p)) return p;
+  const initCwd = process.env["INIT_CWD"];
+  if (initCwd) {
+    const candidate = resolve(initCwd, p);
+    if (existsSync(candidate)) return candidate;
+    // INIT_CWD candidate didn't exist; fall through to process.cwd() resolution
+    console.warn(
+      `doc-history-server: INIT_CWD candidate "${candidate}" does not exist; falling back to process.cwd()`,
+    );
+  }
+  return resolve(p);
 }
 
 /** Safely get the next argument, or exit with an error if missing */
@@ -14,7 +45,7 @@ function requireNextArg(args: string[], index: number, flag: string): string {
   return args[index];
 }
 
-/** Parse --locale value into { key, dir } */
+/** Parse --locale value into { key, dir } — dir is resolved via resolveContentPath */
 function parseLocaleArg(val: string): LocaleEntry {
   const colonIdx = val.indexOf(":");
   if (colonIdx === -1) {
@@ -23,7 +54,7 @@ function parseLocaleArg(val: string): LocaleEntry {
   }
   return {
     key: val.slice(0, colonIdx),
-    dir: val.slice(colonIdx + 1),
+    dir: resolveContentPath(val.slice(colonIdx + 1)),
   };
 }
 
@@ -58,7 +89,7 @@ export function parseCommonArgs(
 
     switch (flag) {
       case "--content-dir":
-        contentDir = next();
+        contentDir = resolveContentPath(next());
         break;
       case "--locale":
         locales.push(parseLocaleArg(next()));

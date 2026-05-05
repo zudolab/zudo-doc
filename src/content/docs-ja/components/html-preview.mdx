@@ -223,7 +223,7 @@ htmlPreview: {
 ## 注意事項
 
 - プレビューは CSS リセット（Tailwind v4 preflight）を含む分離された `<iframe>` 内で描画されるため、スタイルが外部に漏れることはありません。
-- プレビューは `sandbox` 属性なしで動作します。`srcdoc` の内容は作成者が管理する MDX であるため、追加の分離は不要です。
+- プレビューは `sandbox="allow-same-origin"`（`js` プロップまたは `<script>` がある場合は `sandbox="allow-scripts allow-same-origin"`）を使用し、`contentDocument` 経由で iframe の高さを自動同期します。`srcdoc` の内容は作成者が管理する MDX です。
 - `settings.htmlPreview` のグローバルリソースは、コンポーネント単位のプロップの前に挿入されます。
 - `html`、`css`、`js` プロップはインデント付きのテンプレートリテラルに対応しています。先頭の空白はソースコード表示時に自動的に除去されます。
 - クライアントサイドのハイドレーションはコンポーネントラッパーにより自動的に処理されるため、MDX 内で `client:load` ディレクティブを付ける必要はありません。

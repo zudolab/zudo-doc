@@ -17,13 +17,14 @@
  * the dist stylesheet collapses — breaking mobile-sidebar visibility,
  * desktop-sidebar reveal, and mobile-toc accordion at non-git build
  * targets. Keep these in sync with `src/styles/global.css` in the host
- * repo (zudolab/zudo-doc#1355 wave 13 topic 2).
+ * repo (zudolab/zudo-doc#1355 wave 13 topic 2; pages/ added in #1444).
  * ======================================== */
 
 @source "src/components/**/*.{tsx,ts,jsx,js,mdx,md}";
 @source "src/content/**/*.{mdx,md}";
 @source "src/hooks/**/*.{tsx,ts,jsx,js}";
 @source "src/utils/**/*.{tsx,ts,jsx,js}";
+@source "pages/**/*.{tsx,ts,jsx,js}";
 
 /* ========================================
  * Design Token System
@@ -458,6 +459,125 @@ body {
 }
 
 /* ========================================
+ * Admonitions ([data-admonition])
+ *
+ * Variant→color mapping: note→accent, tip→success, info→info,
+ * warning→warning, danger→danger. Background tint uses
+ * `color-mix(in srgb, var(--color-X) 12%, var(--color-bg))` for an opaque
+ * per-theme tinted backdrop. Class names are dynamic (admonition-${variant})
+ * so Tailwind cannot scan them; rules must live here explicitly.
+ * See zudolab/zudo-doc#1357 / #1444 / #1456.
+ * ======================================== */
+
+[data-admonition] {
+  border-left: 4px solid var(--color-muted);
+  /* Asymmetric padding mirrors the Astro reference: generous top, snug bottom. */
+  padding: var(--spacing-vsp-md) var(--spacing-hsp-lg) var(--spacing-vsp-2xs);
+  background-color: color-mix(in srgb, var(--color-muted) 12%, var(--color-bg));
+  border-radius: 0 var(--radius-DEFAULT) var(--radius-DEFAULT) 0;
+}
+
+.admonition-title {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-small);
+  margin-bottom: var(--spacing-vsp-2xs);
+}
+
+/* Variant icon — emoji rendered via ::before so the stub markup stays
+ * variant-agnostic and the icon vocabulary lives next to its color rule. */
+.admonition-title::before {
+  margin-right: var(--spacing-hsp-2xs);
+}
+
+.admonition-body > :first-child {
+  margin-top: 0;
+}
+
+.admonition-body > :last-child {
+  margin-bottom: 0;
+}
+
+[data-admonition="note"],
+.admonition-note {
+  border-left-color: var(--color-accent);
+  background-color: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg));
+}
+
+[data-admonition="note"] .admonition-title,
+.admonition-note .admonition-title {
+  color: var(--color-accent);
+}
+
+[data-admonition="note"] .admonition-title::before,
+.admonition-note .admonition-title::before {
+  content: "📝";
+}
+
+[data-admonition="tip"],
+.admonition-tip {
+  border-left-color: var(--color-success);
+  background-color: color-mix(in srgb, var(--color-success) 12%, var(--color-bg));
+}
+
+[data-admonition="tip"] .admonition-title,
+.admonition-tip .admonition-title {
+  color: var(--color-success);
+}
+
+[data-admonition="tip"] .admonition-title::before,
+.admonition-tip .admonition-title::before {
+  content: "💡";
+}
+
+[data-admonition="info"],
+.admonition-info {
+  border-left-color: var(--color-info);
+  background-color: color-mix(in srgb, var(--color-info) 12%, var(--color-bg));
+}
+
+[data-admonition="info"] .admonition-title,
+.admonition-info .admonition-title {
+  color: var(--color-info);
+}
+
+[data-admonition="info"] .admonition-title::before,
+.admonition-info .admonition-title::before {
+  content: "ℹ️";
+}
+
+[data-admonition="warning"],
+.admonition-warning {
+  border-left-color: var(--color-warning);
+  background-color: color-mix(in srgb, var(--color-warning) 12%, var(--color-bg));
+}
+
+[data-admonition="warning"] .admonition-title,
+.admonition-warning .admonition-title {
+  color: var(--color-warning);
+}
+
+[data-admonition="warning"] .admonition-title::before,
+.admonition-warning .admonition-title::before {
+  content: "⚠️";
+}
+
+[data-admonition="danger"],
+.admonition-danger {
+  border-left-color: var(--color-danger);
+  background-color: color-mix(in srgb, var(--color-danger) 12%, var(--color-bg));
+}
+
+[data-admonition="danger"] .admonition-title,
+.admonition-danger .admonition-title {
+  color: var(--color-danger);
+}
+
+[data-admonition="danger"] .admonition-title::before,
+.admonition-danger .admonition-title::before {
+  content: "🚨";
+}
+
+/* ========================================
  * Code block buttons (copy + word wrap)
  * ======================================== */
 
@@ -555,15 +675,26 @@ pre[class^="syntect-"].word-wrap code {
 }
 
 /* ========================================
- * Shiki dual theme (light/dark mode)
+ * Code-block syntax-highlight token color rule
  * ======================================== */
 
+/* Build-time: zfb's Rust pipeline runs SyntectPlugin and emits
+ * <pre class="syntect-..."> with inline style="color:#hex" on every token
+ * span. The inline hex is the desired token color — this rule must NOT
+ * override it (so: NO !important on `color`).
+ *
+ * Runtime (design-token-tweak panel, when enabled): Shiki re-highlights on
+ * demand and emits spans with inline style="--shiki-light:#X;--shiki-dark:#Y"
+ * — CSS custom properties only, no `color` declaration — depending on this
+ * rule to resolve light-dark(var(--shiki-light), var(--shiki-dark)) to the
+ * active theme. Shiki spans have no inline `color`, so the rule applies
+ * without needing !important. */
 [data-theme] .shiki,
 [data-theme] .shiki span,
 [data-theme] pre[class^="syntect-"],
 [data-theme] pre[class^="syntect-"] span {
-  color: light-dark(var(--shiki-light), var(--shiki-dark)) !important;
-  background-color: light-dark(var(--shiki-light-bg), var(--shiki-dark-bg)) !important;
+  color: light-dark(var(--shiki-light), var(--shiki-dark));
+  background-color: light-dark(var(--shiki-light-bg), var(--shiki-dark-bg));
   font-style: light-dark(
     var(--shiki-light-font-style, inherit),
     var(--shiki-dark-font-style, inherit)
