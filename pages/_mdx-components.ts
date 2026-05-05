@@ -106,12 +106,26 @@ function IslandWrapper(props: {
   return props.children ?? null;
 }
 
+// Emoji glyphs and default title text for each admonition variant.
+// Sourced from the reference Astro theme (takazudomodular.com) — refs #1456.
+const ADMONITION_META: Record<string, { emoji: string; defaultTitle: string }> = {
+  note:    { emoji: "📝", defaultTitle: "Note" },
+  tip:     { emoji: "💡", defaultTitle: "Tip" },
+  info:    { emoji: "ℹ️",  defaultTitle: "Info" },
+  warning: { emoji: "⚠️",  defaultTitle: "Warning" },
+  danger:  { emoji: "🚨", defaultTitle: "Danger" },
+};
+
 /**
  * Build an admonition stub for the given variant — renders the
  * children inside `<div class="admonition admonition-<variant>">`
  * so the body text stays visible until the proper Preact bindings
  * land. Matches the `admonition` class hook the design system already
  * targets for the Astro-era components.
+ *
+ * Always renders a title row (emoji + title text) to match the
+ * reference Astro theme. Title defaults to the capitalized variant
+ * name when no explicit title prop is provided.
  *
  * Untyped (`unknown` props) on purpose: the stubs go away once the
  * proper bindings ship, so investing in a typed prop bag here would
@@ -124,7 +138,15 @@ function makeAdmonitionStub(variant: string) {
   // `h("div", ...)` would require pulling in `preact` at the call
   // site; the literal-shape is what htmlOverrides downstream emit
   // and it round-trips through `preact-render-to-string` cleanly.
+  const meta = ADMONITION_META[variant] ?? { emoji: "", defaultTitle: variant };
   return function AdmonitionStub(props: { title?: string; children?: unknown }): unknown {
+    const titleText = props.title ?? meta.defaultTitle;
+    const titleChildren = meta.emoji
+      ? [
+          { type: "span", props: { class: "admonition-title-icon", children: meta.emoji }, key: null, constructor: undefined },
+          titleText,
+        ]
+      : titleText;
     return {
       type: "div",
       props: {
@@ -134,7 +156,7 @@ function makeAdmonitionStub(variant: string) {
         "data-admonition": variant,
         class: `admonition admonition-${variant}`,
         children: [
-          props.title ? { type: "div", props: { class: "admonition-title", children: props.title }, key: null, constructor: undefined } : null,
+          { type: "div", props: { class: "admonition-title", children: titleChildren }, key: null, constructor: undefined },
           { type: "div", props: { class: "admonition-body", children: props.children }, key: null, constructor: undefined },
         ],
       },

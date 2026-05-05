@@ -62,4 +62,19 @@ test.describe("Admonitions: directive syntax renders correctly", () => {
     expect(html).toContain('data-admonition="warning"');
     expect(html).toContain('data-admonition="danger"');
   });
+
+  test("admonition title row is always rendered (emoji + text)", () => {
+    // Every admonition should have an admonition-title div — even when no
+    // custom title is provided, a default title (type name) is rendered.
+    // refs zudolab/zudo-doc#1456
+    expect(html).toContain('class="admonition-title"');
+    // Emoji icons should be present via admonition-title-icon spans
+    expect(html).toContain('class="admonition-title-icon"');
+  });
+
+  test("admonition with no explicit title uses default type name", () => {
+    // The Tip admonition in the fixture has no title prop, so it should
+    // render with the default "Tip" label. refs zudolab/zudo-doc#1456
+    expect(html).toContain("Tip");
+  });
 });
