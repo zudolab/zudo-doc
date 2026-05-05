@@ -461,14 +461,18 @@ body {
 /* ========================================
  * Admonitions ([data-admonition])
  *
- * Class names are dynamic (admonition-${variant}) so Tailwind cannot scan
- * them; rules must live here explicitly. See zudolab/zudo-doc#1357 / #1444.
+ * Variant→color mapping: note→accent, tip→success, info→info,
+ * warning→warning, danger→danger. Background tint uses
+ * `color-mix(in srgb, var(--color-X) 12%, var(--color-bg))` for an opaque
+ * per-theme tinted backdrop. Class names are dynamic (admonition-${variant})
+ * so Tailwind cannot scan them; rules must live here explicitly.
+ * See zudolab/zudo-doc#1357 / #1444 / #1456.
  * ======================================== */
 
 [data-admonition] {
   border-left: 4px solid var(--color-muted);
   padding: var(--spacing-vsp-sm) var(--spacing-hsp-lg);
-  background-color: color-mix(in oklch, var(--color-muted) 10%, transparent);
+  background-color: color-mix(in srgb, var(--color-muted) 12%, var(--color-bg));
   border-radius: 0 var(--radius-DEFAULT) var(--radius-DEFAULT) 0;
 }
 
@@ -476,6 +480,12 @@ body {
   font-weight: var(--font-weight-semibold);
   font-size: var(--text-small);
   margin-bottom: var(--spacing-vsp-2xs);
+}
+
+/* Variant icon — emoji rendered via ::before so the stub markup stays
+ * variant-agnostic and the icon vocabulary lives next to its color rule. */
+.admonition-title::before {
+  margin-right: var(--spacing-hsp-2xs);
 }
 
 .admonition-body > :first-child {
@@ -488,19 +498,24 @@ body {
 
 [data-admonition="note"],
 .admonition-note {
-  border-left-color: var(--color-info);
-  background-color: color-mix(in oklch, var(--color-info) 10%, transparent);
+  border-left-color: var(--color-accent);
+  background-color: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg));
 }
 
 [data-admonition="note"] .admonition-title,
 .admonition-note .admonition-title {
-  color: var(--color-info);
+  color: var(--color-accent);
+}
+
+[data-admonition="note"] .admonition-title::before,
+.admonition-note .admonition-title::before {
+  content: "📝";
 }
 
 [data-admonition="tip"],
 .admonition-tip {
   border-left-color: var(--color-success);
-  background-color: color-mix(in oklch, var(--color-success) 10%, transparent);
+  background-color: color-mix(in srgb, var(--color-success) 12%, var(--color-bg));
 }
 
 [data-admonition="tip"] .admonition-title,
@@ -508,10 +523,15 @@ body {
   color: var(--color-success);
 }
 
+[data-admonition="tip"] .admonition-title::before,
+.admonition-tip .admonition-title::before {
+  content: "💡";
+}
+
 [data-admonition="info"],
 .admonition-info {
   border-left-color: var(--color-info);
-  background-color: color-mix(in oklch, var(--color-info) 10%, transparent);
+  background-color: color-mix(in srgb, var(--color-info) 12%, var(--color-bg));
 }
 
 [data-admonition="info"] .admonition-title,
@@ -519,10 +539,15 @@ body {
   color: var(--color-info);
 }
 
+[data-admonition="info"] .admonition-title::before,
+.admonition-info .admonition-title::before {
+  content: "ℹ️";
+}
+
 [data-admonition="warning"],
 .admonition-warning {
   border-left-color: var(--color-warning);
-  background-color: color-mix(in oklch, var(--color-warning) 10%, transparent);
+  background-color: color-mix(in srgb, var(--color-warning) 12%, var(--color-bg));
 }
 
 [data-admonition="warning"] .admonition-title,
@@ -530,15 +555,25 @@ body {
   color: var(--color-warning);
 }
 
+[data-admonition="warning"] .admonition-title::before,
+.admonition-warning .admonition-title::before {
+  content: "⚠️";
+}
+
 [data-admonition="danger"],
 .admonition-danger {
   border-left-color: var(--color-danger);
-  background-color: color-mix(in oklch, var(--color-danger) 10%, transparent);
+  background-color: color-mix(in srgb, var(--color-danger) 12%, var(--color-bg));
 }
 
 [data-admonition="danger"] .admonition-title,
 .admonition-danger .admonition-title {
   color: var(--color-danger);
+}
+
+[data-admonition="danger"] .admonition-title::before,
+.admonition-danger .admonition-title::before {
+  content: "🚨";
 }
 
 /* ========================================
