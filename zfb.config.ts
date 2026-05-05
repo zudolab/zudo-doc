@@ -1,11 +1,11 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: f68a9ba (Takazudo/zudo-front-builder main, post-#170 hotfix:
- *           add node:async_hooks stub to embedded V8 v1 node:* list so
- *           consumer bundles that import @takazudo/zfb-adapter-cloudflare
- *           (AsyncLocalStorage) evaluate during SSG paths() step; on top of
- *           PR #170 fix/dev-cold-start-rebuild + PR #168 embed-v8 + PR #157
- *           basic-blog end-to-end fix; 2026-05-04)
+ *   commit: 9239267 (Takazudo/zudo-front-builder main, post-#202 fix:
+ *           snapshot pipeline aligned with bundler so build_snapshot's
+ *           module_specifier content_hash matches the bundler's bridge-map
+ *           keys byte-for-byte — eliminates fallback-render dump on
+ *           content-heavy MDX pages; on top of PR #200 migration-fixes
+ *           batch and prior PR #170 cold-start-rebuild fix; 2026-05-05)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -227,6 +227,18 @@
  *                #188 partial, copy-public-dir native, GFM table emission,
  *                CSS split-import fix #159, embedded binaries d6a1c46, runtime
  *                embed 16770a8)
+ *              → re-bumped at W4 retry: pin 9239267 picks up upstream PR #202
+ *                (Takazudo/zudo-front-builder#202) — snapshot/bundler pipeline
+ *                alignment fix discovered when W4A's bilingual fallback audit
+ *                showed f68a9ba alone left 66 EN + 38 JA pages emitting
+ *                <pre data-zfb-content-fallback> on content-heavy MDX. Three
+ *                snapshot-side divergences (no reset_per_entry between files,
+ *                hardcoded Pipeline::with_defaults ignoring code_highlight_theme
+ *                / strip_md_ext / resolve_markdown_links, build.rs not threading
+ *                config through to build_snapshot) caused the snapshot's
+ *                content_hash to disagree with the bundler's bridge-map key
+ *                so globalThis.__zfb.content.get(specifier) silently missed.
+ *                After re-bump: 0 fallback markers on both EN and JA corpora.)
  */
 
 // zfb.config.ts — entry-point config consumed by the zfb engine.
@@ -372,8 +384,8 @@ if (settings.versions) {
 //
 // Background: this project's `packages/md-plugins/src/` ships a JS-side
 // `remarkAdmonitions` + `remarkResolveMarkdownLinks` + `rehypeStripMdExtension`
-// (legacy Astro-era pipeline). The current zfb pin (`f68a9ba`, post-#200
-// hotfix) has Rust ports of all three plus four more (`HeadingLinks`,
+// (legacy Astro-era pipeline). The current zfb pin (`9239267`, post-#202
+// fix) has Rust ports of all three plus four more (`HeadingLinks`,
 // `CodeTitle`, `ImageEnlarge`, `Mermaid`, `Syntect`, `CjkFriendlyPlugin`)
 // in `crates/zfb-content/src/plugins/`, all wired automatically via
 // `Pipeline::with_defaults()` at every MDX pre-compile call site
