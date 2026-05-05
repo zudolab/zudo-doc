@@ -96,11 +96,47 @@ export function buildMermaidInitScript(cdnUrl: string): string {
   );
   return `(function () {
   /**
+   * Syntactically pick the matching arg from a CSS \`light-dark(a, b)\`
+   * value, based on the active theme attribute on \`:root\`.
+   *
+   * zudolab/zudo-doc#1458: mermaid 11.4.1 ships khroma 2.1.0, which
+   * does not understand the CSS \`light-dark()\` function. CSS custom
+   * properties on \`:root\` are written as \`light-dark(#hex-light,
+   * #hex-dark)\` when colorMode is configured (see
+   * \`generateLightDarkCssProperties\` in
+   * \`src/config/color-scheme-utils.ts\`), and \`getPropertyValue\`
+   * returns them as the literal string. The earlier resolveColor
+   * temp-element trick — assigning the value to \`el.style.color\` and
+   * reading \`getComputedStyle\` — was unreliable in production
+   * (depends on browser \`light-dark()\` support and on
+   * \`color-scheme\` propagating to the temp element), so we parse
+   * the function syntactically here.
+   *
+   * Returns the picked hex on success, or \`null\` if the input is not
+   * a \`light-dark(...)\` value (caller falls back to resolveColor for
+   * \`oklch(...)\`, \`rgb(...)\`, etc.). When the theme attribute is
+   * missing — first paint before the color-scheme bootstrap runs, or
+   * a host that does not configure colorMode — returns the light arg
+   * as a deterministic default.
+   */
+  function parseLightDark(raw, theme) {
+    if (!raw) return null;
+    var m = raw.match(/^\\s*light-dark\\s*\\(\\s*([^,]+?)\\s*,\\s*([^)]+?)\\s*\\)\\s*$/);
+    if (!m) return null;
+    return theme === "dark" ? m[2] : m[1];
+  }
+
+  /**
    * Resolve a CSS value to a hex color (#rrggbb).
    * CSS custom properties return raw values from getComputedStyle (e.g.
    * "light-dark(#fff, #000)") which mermaid cannot parse. This uses a
    * temporary element so the browser resolves any CSS function to a
    * concrete rgb() value, then converts it to hex.
+   *
+   * \`light-dark(...)\` is now handled syntactically in
+   * \`parseLightDark\` above (zudolab/zudo-doc#1458) — this function
+   * remains as a fallback for any other CSS function value
+   * (\`oklch(...)\`, \`rgb(...)\`, named colors, etc.).
    */
   function resolveColor(value) {
     if (!value) return value;
@@ -142,6 +178,13 @@ export function buildMermaidInitScript(cdnUrl: string): string {
       var mod = await import(${safeUrlLiteral});
       var mermaid = mod.default;
       var s = getComputedStyle(document.documentElement);
+      // Read the active theme attribute that the color-scheme-provider
+      // bootstrap pins on :root (see
+      // packages/zudo-doc-v2/src/theme/color-scheme-provider.tsx).
+      // parseLightDark uses this to pick the matching arg from
+      // \`light-dark(#a, #b)\` tokens before they reach mermaid /
+      // khroma (zudolab/zudo-doc#1458).
+      var theme = document.documentElement.getAttribute("data-theme");
       // Read a custom property, resolve through the temporary-element
       // round-trip to a hex color, and return undefined when the
       // property is unset on :root. mermaid.initialize crashes (khroma
@@ -151,6 +194,16 @@ export function buildMermaidInitScript(cdnUrl: string): string {
       var v = function (name) {
         var raw = s.getPropertyValue(name).trim();
         if (!raw) return undefined;
+        // light-dark() is parsed syntactically against the active
+        // data-theme attribute — khroma 2.1.0 cannot parse the
+        // function form (zudolab/zudo-doc#1458). Other CSS function
+        // values (oklch(...), rgb(...), etc.) still go through the
+        // temp-element resolveColor path below.
+        var picked = parseLightDark(raw, theme);
+        if (picked) {
+          var resolvedPicked = resolveColor(picked);
+          return resolvedPicked || undefined;
+        }
         var resolved = resolveColor(raw);
         return resolved || undefined;
       };
@@ -231,14 +284,21 @@ export function buildMermaidInitScript(cdnUrl: string): string {
   // listener also covers the post-navigation re-render path.
   document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)}, function () { initMermaid(); });
 
-  // Re-render mermaid when color tweak panel changes CSS custom properties (debounced).
+  // Re-render mermaid when:
+  //   * the color-tweak panel mutates :root[style] (custom properties), or
+  //   * the theme-toggle flips :root[data-theme] between "light" / "dark"
+  //     (zudolab/zudo-doc#1458 — diagram colors are baked into the rendered
+  //     SVG, so we have to clear data-mermaid-rendered and re-run with
+  //     the new theme's hex picks from parseLightDark).
+  // Debounced so a synchronous flip of both attributes triggers a
+  // single re-render.
   var tweakTimer;
   new MutationObserver(function () {
     clearTimeout(tweakTimer);
     tweakTimer = setTimeout(reinitMermaid, 300);
   }).observe(document.documentElement, {
     attributes: true,
-    attributeFilter: ["style"],
+    attributeFilter: ["style", "data-theme"],
   });
 })();`;
 }
