@@ -367,3 +367,46 @@ The pattern transfers directly to zudo-doc's "deployed preview vs main" question
 
 - Writing #1430's acceptance criteria as a strict structural checklist ("no `data-zfb-content-fallback` markers, Shiki tokens >= 1, screenshot-confirmed parity for all 5 critical pages, total fallback count drops from 143 to < 20"). The 143-to-<20 threshold is also wrong in spirit — the real question is "does the user think the deployed preview looks acceptably close to main?" not "is the fallback count below an arbitrary number." Future #1430-style follow-up bodies should declare the user-confirmation-style verification primary and treat structural metrics as supporting evidence the user can choose to ignore.
 - Filing zfb#187 / #188 / #185 as the "blocking" upstream fixes without checking what an "almost same style" deployment would look like even *with* the current zfb pin. Some of the fallback symptoms (admonitions falling back) might be acceptable visually if the page still has all the prose content, just without the colored callout boxes — that's a UX judgment call, not a structural one. The user might decide "ship it, the upstream fix is nice-to-have not must-have." That conversation never happened in this round because the manager auto-piloted past the gate.
+
+### Addendum 2 (same day) — the "almost same" framing was also wrong
+
+The previous addendum corrected my W4A "exact byte parity" framing to "approximately matches the working reference, not visibly broken." That softening was ALSO wrong — and it inverted the project's foundational loop. User clarified:
+
+> "almost same is not the goal. we are using frontend builder Astro, and we changed it to zfb. It's now, so we also had the rule that 'if something wrong about zfb, update zfb and return to our base'. In this case, /verify-ui 's result must be same for most cases. If this request is wrongly received, it sometimes raise errors about wrong tiny tiny diff for those 2. but basically, if html + css's result is same, it needs to be almost same"
+
+Re-stated structurally:
+
+1. **The migration target is byte-level-equivalent rendered HTML + CSS between Astro main and zfb deploy.** The first retro entry (2026-05-01) phrased the right target as "zfb produces a production-grade artifact set — the harness diff confirms it." That IS the byte-equivalent goal: `/verify-ui` (or equivalent computed-style harness) returning clean modulo its known noise.
+2. **`/verify-ui` is the deterministic gate, with known noise.** It "sometimes raises errors about wrong tiny tiny diff" — pixel rounding, sub-pixel anti-aliasing, font hinting variance, etc. The skill of using `/verify-ui` correctly is triaging its output: real regression vs known noise. The bar is *zero real-regression diffs*, not *zero diffs*.
+3. **The visual interpretation step is downstream of the deterministic check, not parallel to it.** "Almost same" makes sense as a *user-perception ratification* of an already-`/verify-ui`-clean candidate — but it cannot stand in for `/verify-ui` itself. If `/verify-ui` has 30 non-noise diffs, "user thinks it looks close enough" doesn't make those go away — they will surface later as bugs, regressions, or production drift.
+4. **Any non-noise diff = zfb capability gap = fix upstream + bump pin = retry.** The 2026-05-01 first lesson is explicit: "zudo-doc-side fix when the diff is local content / authoring drift / harness-extractor false positive; **zfb-side fix when the diff reflects a missing/incomplete zfb capability that any future zfb consumer would hit. File detailed issue upstream, let zfb maintainer plan and ship, then re-run harness — the noise heals as a side effect.**" The W3C diagnosis (walk-order divergence, zfb#187) is exactly this case. Shipping host-side preparation while the dominant zfb gap stays open is the exact anti-pattern.
+
+So the correct framing for epic #1417's deliverable is **NOT** what I wrote in either of the previous addenda. It is:
+
+- **Goal**: every page in the deployed PR preview produces byte-equivalent HTML + CSS rendering vs `takazudomodular.com/pj/zudo-doc/` modulo `/verify-ui`'s known noise tolerance.
+- **Verification**: `/verify-ui` per page (or equivalent computed-style harness comparing the two URLs). Manager triages findings: known-noise → ignore; real regression → file zfb issue, fix upstream, bump pin, retry.
+- **Anti-action**: do NOT add host-side workarounds for upstream-shape bugs. Do NOT ship "upstream-blocked remainder" as if it were a partial-win. Do NOT soften the bar to "approximately close" when `/verify-ui` would say no.
+
+#### Why I keep getting this wrong (the meta-lesson)
+
+Three retro framings on the same epic in one session:
+
+| Attempt | Framing | What's wrong with it |
+|---|---|---|
+| W4A original | "Strict structural checklist (143 fallback markers → <20, all greps green, etc.)" | Streetlight-effect translation: greps for what's mechanically checkable, not what was asked. |
+| Addendum 1 | "Almost same style — approximately matches main, not byte-equal" | Too lenient. Inverts the project loop: legitimizes shipping host-side workarounds + deferring upstream fix as "remainder". |
+| Addendum 2 (this) | "Byte-equivalent rendered HTML+CSS modulo /verify-ui noise; any non-noise diff is a zfb bug to fix upstream" | Matches the project's foundational rule + user's actual standard. |
+
+The structural cause of the flip-flop: I kept searching for the framing that *let me ship something this session*, instead of internalizing the project's "fix zfb, retry" loop. When upstream blockers showed up (zfb#187), the right move was to STOP, not to find an alternate acceptance criterion that lets the wrong-state PR exit through `gh pr ready`. That's the loop I've been resisting in three different ways across this session — strict-checklist, almost-same, and (silently) "let's just call this done with documented remainder."
+
+#### Watch for next time (real version)
+
+- **The bar for any zfb-migration-parity epic is `/verify-ui` clean against the working reference URL, modulo `/verify-ui`'s known noise tolerance.** If `/verify-ui` flags non-noise diffs, the deliverable is not done. Period. Do not soften this with "but the structural greps pass" or "the user said it looks close enough."
+- **Triaging `/verify-ui` output is the manager's job, not the user's.** Known noise (pixel rounding, font hinting, sub-pixel layout drift on different browsers) — ignore with a one-line annotation. Non-noise (missing rule values, fallback rendering, structurally different DOM) — file zfb issue, fix upstream, bump pin. If the manager can't tell which is which, ask the user with concrete diff samples — not with "is the page approximately correct?"
+- **Upstream-blocked remainder is not a release shape; it's a stop signal.** If W3C-style "no host-side workaround viable, fix is upstream-only" appears, the epic STOPS at that wave. The PR stays draft. The session ends with "blocked on upstream zfb#NNN; will resume after pin bump." Continuing to W3D/W3E to ship "preparation" is anti-rule because the preparation is meaningless to the user until upstream lands.
+- **Content-side workarounds for upstream-shape bugs are anti-rule for this project.** If the bug is "zfb's MDX bundler walk-order produces wrong content_hash → fallback," rewriting the source MDX to dodge the bug is exactly the "make zudo-doc forgive zfb" mistake the 2026-05-01 lesson originally identified. The right answer is "fix the walk-order in zfb." Patches that hide the upstream bug at the host layer make the bug invisible to *every other zfb consumer* and lock zudo-doc into per-page workarounds that have to be undone later.
+
+#### Would-skip-if-redoing (real version)
+
+- The whole "Path 1 — content-side workarounds for the most-visible elements" option in #1430. That path is anti-rule and should not appear as a recommendation. The hybrid Path 3 was wrong for the same reason — half of it was anti-rule.
+- The first two retro framings (W4A "strict checklist" and Addendum 1 "almost same"). Both should be replaced by Addendum 2's framing in any forward-reading by `/big-plan`. The earlier framings stay in the file as a record of the flip-flop, but `/big-plan` should be told to read the addendum FIRST.
