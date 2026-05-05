@@ -293,7 +293,7 @@ export default function DocsPage({ entry, autoIndex, breadcrumbs, prev, next, he
            <article class="zd-content">, picking up the flow-space rule
            (.zd-content > :where(* + *) { margin-top: var(--flow-space) }).
            Wrapping in <div> would make h1/description p children-of-children
-           and the flow gap (~24px) would never apply — see #1460. */}
+           and the flow gap (~24px) would never apply — see #1460. */
         <>
           <h1 class="text-heading font-bold mb-vsp-xs">{autoIndex.label}</h1>
 
