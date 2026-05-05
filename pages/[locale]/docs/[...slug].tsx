@@ -313,6 +313,13 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
            and the flow gap (~24px) would never apply — see #1460. */
         <>
           <h1 class="text-heading font-bold mb-vsp-xs">{autoIndex.label}</h1>
+
+          {/* Build-time date block — chrome parity (#1461). Auto-index pages
+              previously rendered without doc-meta; reference site shows it on
+              every docs page. The component returns null when no manifest
+              entry exists for this slug. */}
+          <DocMetainfoArea slug={slug} locale={locale} />
+
           {autoIndex.description && (
             <p class="mb-vsp-lg text-subheading text-muted">
               {autoIndex.description}
