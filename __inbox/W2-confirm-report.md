@@ -350,7 +350,7 @@ Links back to epic #1443 and this sub-issue #1450.
 
 Wave 1 (#1444–#1449) has landed cleanly on PR #1454's deployed preview (https://pr-1454.zudo-doc.pages.dev/pj/zudo-doc/). All 7 CI checks are green. Structural DOM evidence confirms all six Wave 1 fixes are present in the deployed HTML and CSS.
 
-Per-symptom results: 3 PASS, 3 FAIL. The 3 FAILs are all deferred items, not Wave 1 regressions:
+Per-symptom results: 4 PASS, 3 FAIL. The 3 FAILs are all deferred items, not Wave 1 regressions:
 
 - Admonitions visual: PASS
 - Prose spacing visual: PASS
