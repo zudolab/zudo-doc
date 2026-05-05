@@ -393,31 +393,26 @@ if (settings.versions) {
 //     zfb config exposes. It opt-in adds `StripMdExtensionPlugin` to
 //     the hoisted `Pipeline::with_defaults()` (zfb#131). Done.
 //
-// What is NOT yet reachable from this file (tracked upstream in
-// Takazudo/zudo-front-builder#185):
+// Partial status of Takazudo/zudo-front-builder#185 at f68a9ba:
 //
-//   - `ResolveLinksPlugin` is implemented in zfb-content but not
-//     reachable through `ZfbConfig` — there's no field for the
-//     `source_map` / `onBrokenLinks` options the legacy JS pipeline
-//     accepted, so authors who hand-write `[label](./other.mdx)`
-//     references rely on `stripMdExt: true` alone (which only strips
-//     the suffix from already-routed URLs). This is acceptable today
-//     because every zudo-doc internal link the corpus actually
-//     contains is already extensionless or already-routed by the time
-//     it reaches the renderer.
-//   - The Rust `AdmonitionsPlugin`'s directive parser requires
-//     CommonMark blank-line paragraphs around `:::name` / `:::` (the
-//     in-tree fixture at zfb's `crates/zfb-build/tests/bundler_default_plugins.rs`
-//     uses this shape). The legacy JS `remark-directive` accepted a
-//     no-blank-line shape too. Project content (`src/content/docs/components/admonitions.mdx`
-//     etc.) was reformatted to the blank-line shape so the Rust plugin
-//     fires; the upstream issue requests either a parser-side relaxation
-//     or a build-time diagnostic for the no-blank-line form.
+//   - `ResolveLinksPlugin` is now wired via a22eb71 (resolveMarkdownLinks
+//     config field) — Gap 1 of zfb#185 is closed. Host-side adoption is
+//     deferred — the current corpus uses `stripMdExt: true` alone and all
+//     corpus links resolve correctly.
+//   - The Rust `AdmonitionsPlugin`'s directive parser still requires
+//     CommonMark blank-line paragraphs around `:::name` / `:::` (empirically
+//     confirmed at f68a9ba — W1B category 3 FAIL). Commit c644eb7 adds a
+//     build-time diagnostic for the no-blank-line form but did NOT relax the
+//     parser. The 6 corpus files reformatted by W3B retain blank-line shape
+//     permanently.
 //
 // Broken-link warnings are produced today by `pnpm check:links`
 // (`scripts/check-links.js`) running against built `dist/` HTML — a
 // post-build scanner that does not depend on the MDX-pipeline plugin
-// contract and therefore does not block on zfb#185.
+// contract. zfb#185 is partially resolved at f68a9ba: Gap 1
+// (ResolveLinksPlugin config exposure) closed by a22eb71; Gap 2
+// (blank-line parser requirement) has a diagnostic added by c644eb7
+// but is not relaxed.
 
 // ---------------------------------------------------------------------------
 // Plugins — wired through zfb's plugin lifecycle (issue #101).
@@ -506,7 +501,13 @@ const integrationPlugins = [
         },
       ]
     : []),
-  // Workaround for upstream zfb gap (zudolab/zudo-doc#1394; upstream issue: https://github.com/Takazudo/zudo-front-builder/issues/158) — zfb build does not copy publicDir to outDir; remove once upstream ships and pin is bumped.
+  // Upstream zfb #192 (a6abbc3, f68a9ba) ships native copy_public_dir — but its output goes
+  // to dist/<base-segment>/ (e.g. dist/pj/zudo-doc/img/logo.svg). The deploy pipeline then
+  // does `cp -r dist/. deploy/pj/zudo-doc/`, producing a double-prefix
+  // (deploy/pj/zudo-doc/pj/zudo-doc/img/logo.svg). The host plugin copies flat to dist/
+  // (no base prefix), which the deploy step correctly relocates to deploy/pj/zudo-doc/.
+  // Keep the host plugin until the deploy pipeline is reshaped to serve dist/ directly.
+  // CI gate: main-deploy.yml:335-337 asserts HTTP 200 for $DEPLOY_URL/img/logo.svg.
   {
     name: "./plugins/copy-public-plugin.mjs",
     options: {
@@ -515,34 +516,7 @@ const integrationPlugins = [
   },
 ];
 
-// ---------------------------------------------------------------------------
-// Open upstream gaps blocking style/feature parity (zudolab/zudo-doc#1417 W3C):
-//
-// 1. Takazudo/zudo-front-builder#187 — bundler walks each collection root via
-//    `WalkDir` (no sort) while `zfb-content::content_bridge::build_snapshot`
-//    walks via `walk_collection` which explicitly sorts the file vector. The
-//    two walks feed entries into separate `Pipeline::with_defaults()`
-//    instances; `HeadingLinksPlugin` carries a `seen: HashMap<String, usize>`
-//    that accumulates across entries, so different walk orders produce
-//    different slug-suffixes on duplicate H2s — therefore different JSX,
-//    different `content_hash`, and different `mdx://<collection>/<slug>#<hash>`
-//    specifiers. The bridge map and the snapshot's `module_specifier` then
-//    disagree byte-for-byte, every `bridge.get(spec)` lookup misses, and the
-//    page silently renders `<pre data-zfb-content-fallback>`. Today this
-//    affects ~68 of ~104 EN pages (issue #1380); it also masks all syntect
-//    code-block highlighting on those pages (issue #1379) because the
-//    fallback path bypasses the entire MDX pipeline. No host-side workaround
-//    exists — the fix must land in zfb.
-//
-// 2. Takazudo/zudo-front-builder#188 — `Pipeline::with_defaults()` hardcodes
-//    the syntect theme to `base16-ocean.dark`. `SyntectPlugin::with_theme`
-//    and `Highlighter::set_default_theme` exist but are unreachable from
-//    `ZfbConfig`. The host's `colorSchemes[*].shikiTheme` field is therefore
-//    currently a no-op; once #188 lands we wire it through here. (Note:
-//    zfb uses syntect, not Shiki — Shiki theme names like "dracula" or
-//    "catppuccin-mocha" are TextMate themes for the JS Shiki library and
-//    are NOT recognised by syntect's bundled theme set.)
-// ---------------------------------------------------------------------------
+// Upstream gaps #187 (walk-order) and #188 (syntect theme) resolved in f68a9ba (635a8e3, 339e30f).
 
 export default defineConfig({
   framework: "preact",
