@@ -63,7 +63,7 @@ The reset line (`--color-*: initial`) at `src/styles/global.css:83` is CORRECT t
 
 **Files / line ranges to modify:**
 
-- `src/styles/global.css` lines 51–82: update the comment header from "zfb upstream blind spot workaround" to "project tight-token rule"; drop the leak-mechanism description; drop or invert the "remove once upstream ships" sentence. The updated comment should clarify that while the upstream fix (zfb#159, `9e37551`) is now applied (no longer needed to block the leak), the reset is retained as an intentional project design rule per the tight-token policy.
+- `src/styles/global.css` lines 51–82: update the comment header from "zfb upstream blind spot workaround" to "project tight-token rule"; drop the leak-mechanism description; drop or invert the "remove once upstream ships" sentence. The updated comment should clarify that while the upstream fix (zfb#159, `9e37551`) is now applied (no longer needed to block the leak), the reset is retained as an intentional project design rule per the tight-token policy (documented in `src/CLAUDE.md` "Color Rules" and `src/styles/global.css` itself under "Colors — Three-tier token system").
 - `src/CLAUDE.md` line 99: update the stale "Remove when upstream fix lands" language. The fix has landed and the pin has been bumped, yet the reset is retained by policy.
 
 ---
@@ -151,7 +151,7 @@ The comment at lines 390–414 says both gaps are "NOT yet reachable" and tracke
 **File / line ranges to modify:**
 
 - `zfb.config.ts` line 369: update the pin reference from `bdbfbfb` to `f68a9ba`.
-- `zfb.config.ts` lines 390–401: update to reflect that `ResolveLinksPlugin` IS now wired upstream via `a22eb71`; note that adding `resolveMarkdownLinks` to this config is now possible (host-side adoption is a follow-up, not an upstream gap).
+- `zfb.config.ts` lines 390–401: update to reflect that `ResolveLinksPlugin` IS now wired upstream via `a22eb71`; note that adding `resolveMarkdownLinks` to this config is now possible (host-side adoption is a follow-up, out of scope for this audit — a separate sub-issue should be opened to adopt it in `zfb.config.ts`).
 - `zfb.config.ts` lines 402–409: update to note that zfb#185 Gap 2 (blank-line requirement) is partially addressed — a build-time diagnostic was added (`c644eb7`) but the parser was not relaxed; the blank-line shape remains required.
 - `zfb.config.ts` line 414: remove the "does not block on zfb#185" sentence or update it to note that zfb#185 is partially resolved.
 
