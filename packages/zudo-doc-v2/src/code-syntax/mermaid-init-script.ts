@@ -98,9 +98,11 @@ export function buildMermaidInitScript(cdnUrl: string): string {
   /**
    * Resolve a CSS value to a hex color (#rrggbb).
    * CSS custom properties return raw values from getComputedStyle (e.g.
-   * "light-dark(#fff, #000)") which mermaid cannot parse. This uses a
-   * temporary element so the browser resolves any CSS function to a
-   * concrete rgb() value, then converts it to hex.
+   * "light-dark(#fff, #000)") which mermaid cannot parse. Handles:
+   *   1. light-dark() function — resolved by reading data-theme on <html>
+   *      (zudolab/zudo-doc#1458: khroma 2.1.0 does not support light-dark()).
+   *   2. Other CSS functions (e.g. oklch, hsl) — resolved via a temporary
+   *      element so the browser returns a concrete rgb() value.
    */
   function resolveColor(value) {
     if (!value) return value;
@@ -111,6 +113,15 @@ export function buildMermaidInitScript(cdnUrl: string): string {
     if (/^#[0-9a-fA-F]{8}$/.test(value)) return value.slice(0, 7);
     if (/^#[0-9a-fA-F]{4}$/.test(value)) {
       return "#" + value[1] + value[1] + value[2] + value[2] + value[3] + value[3];
+    }
+    // Resolve CSS light-dark(<light>, <dark>) by reading data-theme from <html>.
+    // khroma cannot parse the light-dark() syntax; resolve it here so mermaid
+    // always receives a plain hex/rgb value regardless of browser support for
+    // light-dark() inside el.style.color.
+    var ldMatch = value.match(/^light-dark\\(\\s*([^,]+?)\\s*,\\s*([^)]+?)\\s*\\)$/i);
+    if (ldMatch) {
+      var isDark = document.documentElement.getAttribute("data-theme") === "dark";
+      return resolveColor(isDark ? ldMatch[2].trim() : ldMatch[1].trim());
     }
     var el = document.createElement("div");
     el.style.display = "none";
@@ -231,14 +242,16 @@ export function buildMermaidInitScript(cdnUrl: string): string {
   // listener also covers the post-navigation re-render path.
   document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)}, function () { initMermaid(); });
 
-  // Re-render mermaid when color tweak panel changes CSS custom properties (debounced).
+  // Re-render mermaid when color tweak panel changes CSS custom properties, or when
+  // the theme toggle changes data-theme (light ↔ dark). Debounced so rapid successive
+  // changes (e.g. tweak-panel sliders) coalesce into a single re-render.
   var tweakTimer;
   new MutationObserver(function () {
     clearTimeout(tweakTimer);
     tweakTimer = setTimeout(reinitMermaid, 300);
   }).observe(document.documentElement, {
     attributes: true,
-    attributeFilter: ["style"],
+    attributeFilter: ["style", "data-theme"],
   });
 })();`;
 }

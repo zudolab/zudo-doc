@@ -80,6 +80,22 @@ describe("MERMAID_INIT_SCRIPT", () => {
   it("skips already-rendered diagrams", () => {
     expect(MERMAID_INIT_SCRIPT).toContain("data-mermaid-rendered");
   });
+
+  it("resolves light-dark() tokens by reading data-theme from <html> (zudolab/zudo-doc#1458)", () => {
+    // khroma 2.1.0 does not support the CSS light-dark() function syntax.
+    // The script must parse light-dark(<light>, <dark>) manually and pick
+    // the appropriate arm using document.documentElement.getAttribute("data-theme").
+    expect(MERMAID_INIT_SCRIPT).toContain("light-dark");
+    expect(MERMAID_INIT_SCRIPT).toContain('getAttribute("data-theme")');
+  });
+
+  it("MutationObserver watches data-theme in addition to style (zudolab/zudo-doc#1458)", () => {
+    // Theme toggle sets data-theme on <html> (not only the style attribute).
+    // Watching data-theme ensures mermaid re-renders when the user toggles
+    // light ↔ dark so the resolved color picks up the new theme arm.
+    expect(MERMAID_INIT_SCRIPT).toContain('"data-theme"');
+    expect(MERMAID_INIT_SCRIPT).toContain('"style"');
+  });
 });
 
 describe("MERMAID_CDN_MODULE_URL", () => {
