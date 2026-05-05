@@ -23,4 +23,8 @@ export {
   DEFAULT_KEY_COL_LABEL,
   DEFAULT_VALUE_COL_LABEL,
 } from "./frontmatter-preview.js";
-export type { FrontmatterPreviewProps } from "./frontmatter-preview.js";
+export type {
+  FrontmatterPreviewProps,
+  FrontmatterCellRenderer,
+  FrontmatterCellRendererProps,
+} from "./frontmatter-preview.js";

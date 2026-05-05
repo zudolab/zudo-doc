@@ -166,3 +166,82 @@ describe("FrontmatterPreview", () => {
     expect(html).toMatch(/<table[^>]*>/);
   });
 });
+
+describe("FrontmatterPreview renderers", () => {
+  it("calls a matching renderer and uses its output", () => {
+    const html = serialize(
+      <FrontmatterPreview
+        entries={[["status", "stable"]]}
+        renderers={{
+          status: ({ value }) => <span class="pill">{String(value)}</span>,
+        }}
+      />,
+    );
+    expect(html).toContain('class="pill"');
+    expect(html).toContain("stable");
+  });
+
+  it("falls through to plain text when renderer returns null", () => {
+    const html = serialize(
+      <FrontmatterPreview
+        entries={[["discount", false]]}
+        renderers={{
+          discount: () => null,
+        }}
+      />,
+    );
+    // Renderer returns null → built-in renderValue() used → plain "false"
+    expect(html).toContain("false");
+    expect(html).not.toContain('class="pill"');
+  });
+
+  it("falls through to plain text when no renderer is registered for a key", () => {
+    const html = serialize(
+      <FrontmatterPreview
+        entries={[["author", "Jane"]]}
+        renderers={{}}
+      />,
+    );
+    expect(html).toContain("Jane");
+  });
+
+  it("forwards data and locale to the renderer", () => {
+    let receivedData: Record<string, unknown> | undefined;
+    let receivedLocale: string | undefined;
+
+    serialize(
+      <FrontmatterPreview
+        entries={[["status", "stable"]]}
+        renderers={{
+          status: ({ data, locale }) => {
+            receivedData = data;
+            receivedLocale = locale;
+            return null;
+          },
+        }}
+        data={{ title: "My Page", status: "stable" }}
+        locale="ja"
+      />,
+    );
+
+    expect(receivedData).toEqual({ title: "My Page", status: "stable" });
+    expect(receivedLocale).toBe("ja");
+  });
+
+  it("does not call renderer for keys not in entries", () => {
+    let called = false;
+    serialize(
+      <FrontmatterPreview
+        entries={[["author", "Jane"]]}
+        renderers={{
+          // "status" is registered but not in entries
+          status: () => {
+            called = true;
+            return null;
+          },
+        }}
+      />,
+    );
+    expect(called).toBe(false);
+  });
+});
