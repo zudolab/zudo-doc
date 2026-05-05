@@ -80,7 +80,100 @@ describe("MERMAID_INIT_SCRIPT", () => {
   it("skips already-rendered diagrams", () => {
     expect(MERMAID_INIT_SCRIPT).toContain("data-mermaid-rendered");
   });
+
+  // zudolab/zudo-doc#1458 — khroma 2.1.0 (mermaid 11.4.1's transitive
+  // dep) does not understand the CSS `light-dark()` function. CSS
+  // custom properties on `:root` are written as
+  // `light-dark(#hex-light, #hex-dark)` when colorMode is enabled
+  // (see `generateLightDarkCssProperties` in
+  // `src/config/color-scheme-utils.ts`), and `getPropertyValue` returns
+  // them as the literal string. The init script must syntactically
+  // parse `light-dark(...)` and pick the matching arg from
+  // `document.documentElement.dataset.theme` BEFORE any value reaches
+  // mermaid — relying on the browser to resolve `light-dark()` via the
+  // temp-element trick was unreliable in production.
+  it("parses CSS light-dark(...) syntactically against data-theme", () => {
+    expect(MERMAID_INIT_SCRIPT).toContain("parseLightDark");
+    expect(MERMAID_INIT_SCRIPT).toContain("light-dark(");
+    // Reads the theme attribute that the color-scheme-provider bootstrap
+    // sets on `:root` (see packages/zudo-doc-v2/src/theme/color-scheme-provider.tsx).
+    expect(MERMAID_INIT_SCRIPT).toContain("data-theme");
+  });
+
+  it("parseLightDark picks the light arg when data-theme=light", () => {
+    // Extract the parser body from the inline script and exercise it
+    // in a sandbox so the runtime branch is unit-tested, not just
+    // string-matched. The function signature `parseLightDark(raw, theme)`
+    // is the public contract used by the value-reader `v()`.
+    const fn = extractParseLightDark(MERMAID_INIT_SCRIPT);
+    expect(fn("light-dark(#abcdef, #123456)", "light")).toBe("#abcdef");
+    expect(fn("light-dark(#abcdef, #123456)", "dark")).toBe("#123456");
+    // Whitespace tolerance — `generateLightDarkCssProperties` emits
+    // `light-dark(#a, #b)` with a single space, but a future formatter
+    // change could add more.
+    expect(fn("light-dark( #ff0000 , #00ff00 )", "light")).toBe("#ff0000");
+    expect(fn("light-dark( #ff0000 , #00ff00 )", "dark")).toBe("#00ff00");
+  });
+
+  it("parseLightDark returns null for non-light-dark inputs", () => {
+    const fn = extractParseLightDark(MERMAID_INIT_SCRIPT);
+    expect(fn("#abcdef", "light")).toBeNull();
+    expect(fn("rgb(1, 2, 3)", "dark")).toBeNull();
+    expect(fn("", "light")).toBeNull();
+  });
+
+  it("parseLightDark falls back to the light arg when theme is unknown", () => {
+    // `data-theme` may be missing on first paint (before the bootstrap
+    // script runs) — pick the light arg as a deterministic default
+    // rather than returning null and forcing the caller to handle it.
+    const fn = extractParseLightDark(MERMAID_INIT_SCRIPT);
+    expect(fn("light-dark(#abcdef, #123456)", undefined)).toBe("#abcdef");
+    expect(fn("light-dark(#abcdef, #123456)", "")).toBe("#abcdef");
+    expect(fn("light-dark(#abcdef, #123456)", "auto")).toBe("#abcdef");
+  });
+
+  it("re-renders diagrams when the data-theme attribute changes", () => {
+    // The theme-toggle island flips `:root[data-theme]` between
+    // `"light"` and `"dark"`. Mermaid's resolved theme colors are
+    // baked into the rendered SVG, so the script must re-run
+    // `mermaid.initialize` + clear `data-mermaid-rendered` on the
+    // attribute change.
+    expect(MERMAID_INIT_SCRIPT).toContain('"data-theme"');
+    // Either a separate observer or an extended attributeFilter that
+    // covers `data-theme`.
+    const observesDataTheme =
+      /attributeFilter\s*:\s*\[[^\]]*"data-theme"[^\]]*\]/.test(
+        MERMAID_INIT_SCRIPT,
+      );
+    expect(observesDataTheme).toBe(true);
+  });
 });
+
+/**
+ * Pull the inline `parseLightDark` function out of the IIFE-wrapped
+ * init script and return it as a callable function. Lets the parser's
+ * runtime branches be unit-tested directly, instead of only
+ * string-matched.
+ */
+function extractParseLightDark(
+  script: string,
+): (raw: string, theme: string | undefined) => string | null {
+  // The function body is a top-level declaration inside the IIFE, so a
+  // straightforward `function parseLightDark(...) { ... }` capture
+  // works. We re-emit it as an expression for `new Function` so the
+  // function value is returned without polluting any global.
+  const match = script.match(
+    /function\s+parseLightDark\s*\([^)]*\)\s*\{[\s\S]*?\n\s{2}\}/,
+  );
+  if (!match) {
+    throw new Error("parseLightDark not found in MERMAID_INIT_SCRIPT");
+  }
+  // eslint-disable-next-line @typescript-eslint/no-implied-eval
+  return new Function(`${match[0]}\nreturn parseLightDark;`)() as (
+    raw: string,
+    theme: string | undefined,
+  ) => string | null;
+}
 
 describe("MERMAID_CDN_MODULE_URL", () => {
   it("is an https ESM CDN URL pinned to a major version", () => {
