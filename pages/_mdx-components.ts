@@ -57,9 +57,15 @@ import { MathBlock } from "./lib/_math-block";
  * `![alt](/img/foo.webp)` emits `src="/img/foo.webp"` which 404s when the
  * site is deployed under a sub-path prefix (e.g. /pj/zudo-doc/).
  *
- * Only root-relative paths (starting with "/") are rewritten; external URLs
- * and data URIs pass through unchanged. The withBase() call is generic —
- * it reads settings.base at build time and applies whatever prefix is configured.
+ * Only root-relative paths (starting with "/") are rewritten; external URLs,
+ * protocol-relative URLs ("//…"), and data URIs pass through unchanged. The
+ * withBase() call is generic — it reads settings.base at build time and applies
+ * whatever prefix is configured.
+ *
+ * Note: `srcset` attributes are NOT rewritten here because the current MDX
+ * corpus does not use srcset (standard markdown `![alt](src)` syntax produces
+ * only `src`). If srcset with root-relative URLs is ever introduced, extend
+ * this override to rewrite each srcset candidate URL as well.
  */
 function ContentImg(props: Record<string, unknown>) {
   const src = props.src;
