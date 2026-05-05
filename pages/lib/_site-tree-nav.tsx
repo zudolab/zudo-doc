@@ -7,14 +7,16 @@
 //   - src/components/site-tree-nav-demo.astro — Astro wrapper that loaded
 //     collection data and rendered the island
 //
-// In the v2 package the presentational tree is exposed as SiteTreeNavDemo.
+// Restored to use the interactive SiteTreeNav island (refs #1453):
 // Both <SiteTreeNav> and <SiteTreeNavDemo> MDX tags are mapped to this
 // wrapper which does the same data loading that site-tree-nav-demo.astro did:
 //
 //   1. Load the full docs collection for the active locale.
 //   2. Build nav tree via buildNavTree().
 //   3. Group satellite nodes via groupSatelliteNodes().
-//   4. Forward the tree + category configuration to v2 SiteTreeNavDemo.
+//   4. Wrap the interactive SiteTreeNav in Island({when:"idle"}) so the MDX
+//      page gets the same collapsible grid the reference renders at
+//      /docs/components/site-tree-nav/ (refs #1453/#1442).
 //
 // All data access is synchronous (ADR-004 zfb content snapshot contract).
 // The `lang` prop is injected by createMdxComponents() in
@@ -24,7 +26,8 @@
 // and site-tree-nav-demo.astro.
 
 import type { JSX } from "preact";
-import { SiteTreeNavDemo } from "@zudo-doc/zudo-doc-v2/nav-indexing";
+import { Island } from "@takazudo/zfb";
+import SiteTreeNav from "@/components/site-tree-nav";
 import {
   buildNavTree,
   groupSatelliteNodes,
@@ -84,11 +87,12 @@ function loadNavSource(
 /**
  * MDX wrapper shared by both <SiteTreeNav> and <SiteTreeNavDemo> tags.
  *
- * Builds the full site nav tree and renders it via v2 SiteTreeNavDemo
- * (static collapsible sections — no JS required). The interactive
- * SiteTreeNav island is not used here because MDX components are server-
- * rendered at build time; the static demo variant provides parity with
- * the original site-tree-nav-demo.astro wrapper.
+ * Builds the full site nav tree and renders it via the interactive SiteTreeNav
+ * island (wrapped in Island({when:"idle"})) — restoring byte-parity with the
+ * Astro reference at /docs/components/site-tree-nav/ (refs #1453/#1442).
+ *
+ * The island renders the collapsible multi-column grid the reference shows.
+ * SiteTreeNavDemo (static <details> list) is no longer used for MDX content.
  *
  * Returns null when the tree is empty after filtering.
  */
@@ -106,12 +110,15 @@ export function SiteTreeNavWrapper({
 
   if (groupedTree.length === 0) return null;
 
-  return (
-    <SiteTreeNavDemo
-      tree={groupedTree}
-      categoryOrder={categoryOrder}
-      categoryIgnore={["inbox"]}
-      ariaLabel={ariaLabel}
-    />
-  );
+  return Island({
+    when: "idle",
+    children: (
+      <SiteTreeNav
+        tree={groupedTree}
+        categoryOrder={categoryOrder}
+        categoryIgnore={["inbox"]}
+        ariaLabel={ariaLabel}
+      />
+    ),
+  }) as unknown as JSX.Element;
 }

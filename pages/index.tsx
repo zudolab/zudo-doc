@@ -13,7 +13,6 @@
 //   → DocLayoutWithDefaults renders the page with no sidebar/TOC
 
 import { loadDocs } from "./_data";
-import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
 import { defaultLocale, t } from "@/config/i18n";
 import { withBase } from "@/utils/base";
@@ -27,8 +26,10 @@ import { getCategoryOrder } from "@/utils/nav-scope";
 import { collectTags } from "@/utils/tags";
 import { toRouteSlug } from "@/utils/slug";
 import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
-import { DocsSitemap } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import type { JSX } from "preact";
+import type { VNode } from "preact";
+import { Island } from "@takazudo/zfb";
+import SiteTreeNav from "@/components/site-tree-nav";
 import { FooterWithDefaults } from "./lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "./lib/_header-with-defaults";
 import { HeadWithDefaults } from "./lib/_head-with-defaults";
@@ -112,13 +113,35 @@ export default function IndexPage(): JSX.Element {
                   <span class="text-muted">/</span>
                 </>
               )}
+              {/* @Takazudo link — present in the original Astro index.astro (refs #1453).
+                  The deploy was missing this trailing item, leaving a dangling "/" separator. */}
+              <a
+                href="https://x.com/Takazudo"
+                class="text-fg underline hover:text-accent"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                @Takazudo
+              </a>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Sitemap grid */}
-      <DocsSitemap tree={groupedTree} />
+      {/* Sitemap grid — restored to the original SiteTreeNav island (refs #1453).
+          The Astro reference used <Island when="idle"><SiteTreeNav ...></Island>.
+          DocsSitemap (vertical <details> list) was incorrect; SiteTreeNav gives
+          the responsive multi-column grid the reference renders. */}
+      {Island({
+        when: "idle",
+        children: (
+          <SiteTreeNav
+            tree={groupedTree}
+            categoryOrder={categoryOrder}
+            categoryIgnore={["inbox"]}
+          />
+        ),
+      }) as unknown as VNode}
 
       {settings.docTags && tagCount > 0 && (
         <section class="mt-vsp-xl">

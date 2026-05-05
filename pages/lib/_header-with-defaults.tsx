@@ -21,23 +21,27 @@
 //   - The v2 <Header> accepts a `sidebarToggle` slot that holds the
 //     complete mobile sidebar widget: hamburger button + backdrop overlay +
 //     slide-in <aside> panel (all rendered by <SidebarToggle>).
-//   - This wrapper builds the same nav-tree data that _sidebar-with-defaults
-//     produces, then wraps <SidebarToggle>(<SidebarTree ...>) in Island so
-//     the SSG output carries the full tree HTML (closed/hidden by CSS
-//     transform) AND a data-zfb-island="SidebarToggle" hydration marker.
-//   - The mobile sidebar slot is only wired when `navSection` is defined
-//     (i.e. the caller is rendering a doc route with an active sidebar
-//     section). Pages with hideSidebar=true or no docs section (404, index,
-//     tags, versions) omit the sidebarToggle prop; the Header renders without
-//     the hamburger in that case, which matches the Astro original.
+//   - This wrapper ALWAYS builds the sidebarToggle (refs #1453: the original
+//     header.astro rendered SidebarToggle unconditionally on every page,
+//     including the home page with hideSidebar=true). When `navSection` is
+//     defined the panel gets the full section tree; when undefined (home,
+//     404, tags, versions) nodes=[] so the panel shows only rootMenuItems.
 //   - ThemeToggle from the package (self-island-wrapped) is always passed to
 //     Header.themeToggle so the ThemeToggle island marker appears in the
 //     header on every page — matching the original header.astro behavior.
+//
+// Locale switcher strategy (refs #1453):
+//   - The original header.astro always rendered <LanguageSwitcher /> in the
+//     right-items row. This wrapper builds locale links from buildLocaleLinks()
+//     and passes a <LanguageSwitcher> as the languageSwitcher slot prop.
+//   - Header only renders the slot when settings.locales has > 1 entry, so
+//     single-locale projects are unaffected.
 
 import type { VNode, JSX } from "preact";
 import { Island } from "@takazudo/zfb";
 import { Header } from "@zudo-doc/zudo-doc-v2/header";
 import {
+  LanguageSwitcher,
   VersionSwitcher,
   type VersionSwitcherLabels,
 } from "@zudo-doc/zudo-doc-v2/i18n-version";
@@ -201,56 +205,58 @@ export function HeaderWithDefaults(
     })),
   }));
 
-  // Build the mobile sidebar toggle only when we have an active docs section.
-  // Pages with hideSidebar=true or no sidebar section (404, index, tags,
-  // versions) pass no navSection and get no hamburger button / slide-in panel.
-  let sidebarToggle: VNode | undefined;
+  // Build the mobile sidebar toggle unconditionally — the original header.astro
+  // rendered SidebarToggle on every page (refs #1453). When navSection is
+  // defined the panel gets the full section tree; when undefined (home, 404,
+  // tags, versions) nodes=[] so the panel shows only rootMenuItems + locale
+  // links (the basic nav menu without a doc tree).
+  const backToMenuLabel = t("nav.backToMenu", lang);
 
+  // Locale-switcher links in the mobile sidebar footer — only when
+  // multiple locales are configured (mirrors _sidebar-with-defaults.tsx).
+  const localeLinks =
+    locales.length > 1 ? buildLocaleLinks(currentPath, lang) : undefined;
+
+  const themeDefaultMode = settings.colorMode
+    ? settings.colorMode.defaultMode
+    : undefined;
+
+  let sidebarNodes: NavNode[] = [];
   if (navSection !== undefined) {
-    const backToMenuLabel = t("nav.backToMenu", lang);
     const { docs, categoryMeta } = loadNavSourceDocs(lang, currentVersion);
     const navDocs = docs.filter(isNavVisible);
     const rawNodes = buildSidebarForSection(navDocs, lang, navSection, categoryMeta);
-    const nodes = currentVersion
+    sidebarNodes = currentVersion
       ? remapVersionedHrefs(rawNodes, currentVersion, lang)
       : rawNodes;
-
-    // Locale-switcher links in the mobile sidebar footer — only when
-    // multiple locales are configured (mirrors _sidebar-with-defaults.tsx).
-    const localeLinks =
-      locales.length > 1 ? buildLocaleLinks(currentPath, lang) : undefined;
-
-    const themeDefaultMode = settings.colorMode
-      ? settings.colorMode.defaultMode
-      : undefined;
-
-    // Wrap SidebarToggle (hamburger button + slide-in aside + SidebarTree) in
-    // Island so the SSG output carries the full tree HTML AND the
-    // data-zfb-island="SidebarToggle" marker for client-side hydration.
-    // Island.captureComponentName reads SidebarToggle.name → "SidebarToggle".
-    //
-    // SidebarTree's data props (nodes, currentSlug, rootMenuItems, …) are
-    // passed to SidebarToggle directly rather than as JSX children so they
-    // ride across the SSR → hydrate boundary in the Island marker's
-    // `data-props` attribute. Island only serialises a wrapped child
-    // component's *own* props (excluding `children`); when SidebarTree was
-    // nested as a JSX child its data was dropped during hydration and
-    // SidebarToggle re-rendered with `children=undefined`, wiping the SSR
-    // tree DOM. zudolab/zudo-doc#1355 wave 13.5.
-    sidebarToggle = Island({
-      when: "load",
-      children: (
-        <SidebarToggle
-          nodes={nodes}
-          currentSlug={currentSlug}
-          rootMenuItems={rootMenuItems}
-          backToMenuLabel={backToMenuLabel}
-          localeLinks={localeLinks}
-          themeDefaultMode={themeDefaultMode}
-        />
-      ),
-    }) as unknown as VNode;
   }
+
+  // Wrap SidebarToggle (hamburger button + slide-in aside + SidebarTree) in
+  // Island so the SSG output carries the full tree HTML AND the
+  // data-zfb-island="SidebarToggle" marker for client-side hydration.
+  // Island.captureComponentName reads SidebarToggle.name → "SidebarToggle".
+  //
+  // SidebarTree's data props (nodes, currentSlug, rootMenuItems, …) are
+  // passed to SidebarToggle directly rather than as JSX children so they
+  // ride across the SSR → hydrate boundary in the Island marker's
+  // `data-props` attribute. Island only serialises a wrapped child
+  // component's *own* props (excluding `children`); when SidebarTree was
+  // nested as a JSX child its data was dropped during hydration and
+  // SidebarToggle re-rendered with `children=undefined`, wiping the SSR
+  // tree DOM. zudolab/zudo-doc#1355 wave 13.5.
+  const sidebarToggle = Island({
+    when: "load",
+    children: (
+      <SidebarToggle
+        nodes={sidebarNodes}
+        currentSlug={currentSlug}
+        rootMenuItems={rootMenuItems}
+        backToMenuLabel={backToMenuLabel}
+        localeLinks={localeLinks}
+        themeDefaultMode={themeDefaultMode}
+      />
+    ),
+  }) as unknown as VNode;
 
   // Wrap the host's local ThemeToggle in Island({when:"load"}) so the SSG
   // output emits a data-zfb-island="ThemeToggle" marker the hydration
@@ -334,6 +340,18 @@ export function HeaderWithDefaults(
     ) as unknown as VNode;
   }
 
+  // Build locale-switcher for the header right-items row (refs #1453).
+  // The original header.astro always rendered <LanguageSwitcher /> when
+  // multiple locales are configured. Reuses the same localeLinks array built
+  // above for the mobile sidebar footer (buildLocaleLinks is pure, but one
+  // call is cleaner).
+  const languageSwitcher =
+    localeLinks != null ? (
+      <LanguageSwitcher
+        links={localeLinks}
+      />
+    ) as unknown as VNode : undefined;
+
   return (
     <Header
       lang={lang}
@@ -343,6 +361,7 @@ export function HeaderWithDefaults(
       themeToggle={themeToggle}
       search={searchWidget}
       versionSwitcher={versionSwitcher}
+      languageSwitcher={languageSwitcher}
     />
   );
 }
