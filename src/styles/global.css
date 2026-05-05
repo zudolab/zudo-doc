@@ -474,7 +474,10 @@ body {
 
 [data-admonition] {
   border-left: 4px solid var(--color-muted);
-  padding: var(--spacing-vsp-sm) var(--spacing-hsp-lg);
+  /* Asymmetric padding mirrors the Astro reference (`pt-vsp-md pb-vsp-2xs`) —
+   * generous space at the top, snug at the bottom — so the title row sits
+   * under generous breathing room without inflating the bottom gap. */
+  padding: var(--spacing-vsp-md) var(--spacing-hsp-lg) var(--spacing-vsp-2xs);
   background-color: color-mix(in srgb, var(--color-muted) 12%, var(--color-bg));
   border-radius: 0 var(--radius-DEFAULT) var(--radius-DEFAULT) 0;
 }
