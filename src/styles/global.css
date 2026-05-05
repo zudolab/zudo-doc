@@ -681,15 +681,34 @@ pre[class^="syntect-"].word-wrap code {
 }
 
 /* ========================================
- * Shiki dual theme (light/dark mode)
+ * Code-block syntax-highlight token color rule
  * ======================================== */
 
+/* Two highlighter modes coexist on this site:
+ *
+ *   1. Build-time: zfb's Rust pipeline runs SyntectPlugin and emits
+ *      <pre class="syntect-..."> with inline style="color:#hex" on every token
+ *      span. The inline hex IS the desired token color — this rule must NOT
+ *      override it.
+ *
+ *   2. Runtime: the design-token-tweak panel (src/components/design-token-tweak)
+ *      re-highlights code blocks via Shiki on demand. Shiki emits spans with
+ *      inline style="--shiki-light:#X;--shiki-dark:#Y" — CSS custom properties
+ *      only, no `color` declaration — so it depends on this rule resolving
+ *      light-dark(var(--shiki-light), var(--shiki-dark)) to the active theme.
+ *
+ * Therefore: NO !important on `color` (would override mode 1's inline color);
+ * inline declarations win via cascade on mode 1 because they are normal
+ * author declarations of higher precedence than this selector. Mode 2 spans
+ * have no inline `color`, so the rule applies cleanly. Same logic for
+ * background-color on the <pre> wrapper (mode 1 has no inline bg, mode 2
+ * sets the bg vars inline). See zudolab/zudo-doc#1457. */
 [data-theme] .shiki,
 [data-theme] .shiki span,
 [data-theme] pre[class^="syntect-"],
 [data-theme] pre[class^="syntect-"] span {
-  color: light-dark(var(--shiki-light), var(--shiki-dark)) !important;
-  background-color: light-dark(var(--shiki-light-bg), var(--shiki-dark-bg)) !important;
+  color: light-dark(var(--shiki-light), var(--shiki-dark));
+  background-color: light-dark(var(--shiki-light-bg), var(--shiki-dark-bg));
   font-style: light-dark(
     var(--shiki-light-font-style, inherit),
     var(--shiki-dark-font-style, inherit)

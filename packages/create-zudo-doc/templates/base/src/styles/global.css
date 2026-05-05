@@ -675,15 +675,26 @@ pre[class^="syntect-"].word-wrap code {
 }
 
 /* ========================================
- * Shiki dual theme (light/dark mode)
+ * Code-block syntax-highlight token color rule
  * ======================================== */
 
+/* Build-time: zfb's Rust pipeline runs SyntectPlugin and emits
+ * <pre class="syntect-..."> with inline style="color:#hex" on every token
+ * span. The inline hex is the desired token color — this rule must NOT
+ * override it (so: NO !important on `color`).
+ *
+ * Runtime (design-token-tweak panel, when enabled): Shiki re-highlights on
+ * demand and emits spans with inline style="--shiki-light:#X;--shiki-dark:#Y"
+ * — CSS custom properties only, no `color` declaration — depending on this
+ * rule to resolve light-dark(var(--shiki-light), var(--shiki-dark)) to the
+ * active theme. Shiki spans have no inline `color`, so the rule applies
+ * without needing !important. */
 [data-theme] .shiki,
 [data-theme] .shiki span,
 [data-theme] pre[class^="syntect-"],
 [data-theme] pre[class^="syntect-"] span {
-  color: light-dark(var(--shiki-light), var(--shiki-dark)) !important;
-  background-color: light-dark(var(--shiki-light-bg), var(--shiki-dark-bg)) !important;
+  color: light-dark(var(--shiki-light), var(--shiki-dark));
+  background-color: light-dark(var(--shiki-light-bg), var(--shiki-dark-bg));
   font-style: light-dark(
     var(--shiki-light-font-style, inherit),
     var(--shiki-dark-font-style, inherit)

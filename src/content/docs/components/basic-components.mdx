@@ -39,7 +39,7 @@ Use backticks to mark `inline code` within a sentence.
 
 ## Code Blocks
 
-Fenced code blocks support syntax highlighting via Shiki. Specify the language after the opening backticks.
+Fenced code blocks support syntax highlighting via syntect, run by zfb's Rust pipeline at build time. Specify the language after the opening backticks. See the [Code Blocks](./code-blocks.mdx) page for the full rundown.
 
 ```ts
 function greet(name: string): string {
@@ -59,7 +59,7 @@ function greet(name: string): string {
 
 ### Supported Languages
 
-Shiki supports a wide range of languages. Common ones include:
+syntect supports a wide range of languages. Common ones include:
 
 | Language | Identifier |
 | -------- | ---------- |
@@ -81,7 +81,7 @@ Shiki supports a wide range of languages. Common ones include:
 | TOML | `toml` |
 | JSX / TSX | `jsx`, `tsx` |
 
-See the [full list of supported languages](https://shiki.style/languages) for all available identifiers.
+If a language identifier isn't recognised, the block falls back to a plain unhighlighted render.
 
 ## Unordered Lists
 
@@ -132,14 +132,14 @@ See the [full list of supported languages](https://shiki.style/languages) for al
 | Feature    | Status      | Notes              |
 | ---------- | ----------- | ------------------ |
 | MDX        | Supported   | Built into zfb     |
-| Shiki      | Built-in    | Code highlighting  |
+| syntect    | Built-in    | Code highlighting  |
 | Tailwind   | v4          | Token-based design |
 
 ```mdx
 | Feature    | Status      | Notes              |
 | ---------- | ----------- | ------------------ |
 | MDX        | Supported   | Built into zfb     |
-| Shiki      | Built-in    | Code highlighting  |
+| syntect    | Built-in    | Code highlighting  |
 | Tailwind   | v4          | Token-based design |
 ```
 

@@ -1,10 +1,10 @@
 ---
 title: Code Blocks
-description: Syntax-highlighted fenced code blocks powered by Shiki, with support for titles, line highlighting, and diff display.
+description: Syntax-highlighted fenced code blocks powered by syntect, with support for titles, line highlighting, and diff display.
 sidebar_position: 1.5
 ---
 
-Fenced code blocks in zudo-doc are powered by [Shiki](https://shiki.style/), a high-fidelity syntax highlighter. Specify the language after the opening fence to activate highlighting.
+Fenced code blocks in zudo-doc are powered by [syntect](https://github.com/trishume/syntect), a Rust-native syntax highlighter run during the build by the zfb engine. Specify the language after the opening fence to activate highlighting.
 
 ## Basic Usage
 
@@ -26,7 +26,7 @@ function add(a: number, b: number): number {
 
 ## Supported Languages
 
-Shiki supports a wide range of languages out of the box. Common identifiers:
+syntect ships a wide range of languages out of the box. Common identifiers:
 
 | Language | Identifier |
 | -------- | ---------- |
@@ -48,7 +48,7 @@ Shiki supports a wide range of languages out of the box. Common identifiers:
 | TOML | `toml` |
 | JSX / TSX | `jsx`, `tsx` |
 
-See the [full list of supported languages](https://shiki.style/languages) for all available identifiers.
+If a language identifier isn't recognised, the block falls back to a plain unhighlighted render — the surrounding container styling and copy/word-wrap controls still apply.
 
 ## Code Block Title
 
@@ -98,6 +98,8 @@ const x = 1;
 ````
 `````
 
-## Shiki Theme
+## Syntax-highlight Theme
 
-The syntax highlighting theme is tied to the active color scheme. It is configured in `src/config/color-schemes.ts` via the `shikiTheme` field on each scheme. When the user switches between light and dark modes the code block colors adapt automatically — no separate configuration is needed.
+The build-time highlighter is syntect, which renders each token's color as inline `style="color:#hex"` against a single theme. The current theme is `base16-ocean-dark`.
+
+The `shikiTheme` field in `src/config/color-schemes.ts` is a separate, runtime-only setting consumed by the design-token-tweak panel: when that panel is open it re-highlights code blocks via Shiki on the client to preview color-scheme tweaks live. The static page render does not use it.
