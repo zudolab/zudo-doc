@@ -1,6 +1,6 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: bdbfbfb (Takazudo/zudo-front-builder main, post-#170 hotfix:
+ *   commit: f68a9ba (Takazudo/zudo-front-builder main, post-#170 hotfix:
  *           add node:async_hooks stub to embedded V8 v1 node:* list so
  *           consumer bundles that import @takazudo/zfb-adapter-cloudflare
  *           (AsyncLocalStorage) evaluate during SSG paths() step; on top of
@@ -221,6 +221,12 @@
  *              → bumped by epic zudolab/zudo-doc#1407 (zfb-pin-bump-embed-v8: pick up
  *              PR #168 embedded deno_core + PR #170 cold-start-rebuild fix; hotfix
  *              bdbfbfb adds node:async_hooks stub surfaced during W3 build verification)
+ *              → bumped by epic zudolab/zudo-doc#1431 sub-issue #1435 (W3A
+ *                manager-confirm gate: pin f68a9ba picks up migration-fixes
+ *                PR #200 — walk-order fix #187, admonitions title_from_label
+ *                #188 partial, copy-public-dir native, GFM table emission,
+ *                CSS split-import fix #159, embedded binaries d6a1c46, runtime
+ *                embed 16770a8)
  */
 
 // zfb.config.ts — entry-point config consumed by the zfb engine.
@@ -366,7 +372,7 @@ if (settings.versions) {
 //
 // Background: this project's `packages/md-plugins/src/` ships a JS-side
 // `remarkAdmonitions` + `remarkResolveMarkdownLinks` + `rehypeStripMdExtension`
-// (legacy Astro-era pipeline). The current zfb pin (`bdbfbfb`, post-#170
+// (legacy Astro-era pipeline). The current zfb pin (`f68a9ba`, post-#200
 // hotfix) has Rust ports of all three plus four more (`HeadingLinks`,
 // `CodeTitle`, `ImageEnlarge`, `Mermaid`, `Syntect`, `CjkFriendlyPlugin`)
 // in `crates/zfb-content/src/plugins/`, all wired automatically via
