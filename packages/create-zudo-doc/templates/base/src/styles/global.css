@@ -459,6 +459,89 @@ body {
 }
 
 /* ========================================
+ * Admonitions ([data-admonition])
+ *
+ * Class names are dynamic (admonition-${variant}) so Tailwind cannot scan
+ * them; rules must live here explicitly. See zudolab/zudo-doc#1357 / #1444.
+ * ======================================== */
+
+[data-admonition] {
+  border-left: 4px solid var(--color-muted);
+  padding: var(--spacing-vsp-sm) var(--spacing-hsp-lg);
+  background-color: color-mix(in oklch, var(--color-muted) 10%, transparent);
+  border-radius: 0 var(--radius-DEFAULT) var(--radius-DEFAULT) 0;
+}
+
+.admonition-title {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-small);
+  margin-bottom: var(--spacing-vsp-2xs);
+}
+
+.admonition-body > :first-child {
+  margin-top: 0;
+}
+
+.admonition-body > :last-child {
+  margin-bottom: 0;
+}
+
+[data-admonition="note"],
+.admonition-note {
+  border-left-color: var(--color-info);
+  background-color: color-mix(in oklch, var(--color-info) 10%, transparent);
+}
+
+[data-admonition="note"] .admonition-title,
+.admonition-note .admonition-title {
+  color: var(--color-info);
+}
+
+[data-admonition="tip"],
+.admonition-tip {
+  border-left-color: var(--color-success);
+  background-color: color-mix(in oklch, var(--color-success) 10%, transparent);
+}
+
+[data-admonition="tip"] .admonition-title,
+.admonition-tip .admonition-title {
+  color: var(--color-success);
+}
+
+[data-admonition="info"],
+.admonition-info {
+  border-left-color: var(--color-info);
+  background-color: color-mix(in oklch, var(--color-info) 10%, transparent);
+}
+
+[data-admonition="info"] .admonition-title,
+.admonition-info .admonition-title {
+  color: var(--color-info);
+}
+
+[data-admonition="warning"],
+.admonition-warning {
+  border-left-color: var(--color-warning);
+  background-color: color-mix(in oklch, var(--color-warning) 10%, transparent);
+}
+
+[data-admonition="warning"] .admonition-title,
+.admonition-warning .admonition-title {
+  color: var(--color-warning);
+}
+
+[data-admonition="danger"],
+.admonition-danger {
+  border-left-color: var(--color-danger);
+  background-color: color-mix(in oklch, var(--color-danger) 10%, transparent);
+}
+
+[data-admonition="danger"] .admonition-title,
+.admonition-danger .admonition-title {
+  color: var(--color-danger);
+}
+
+/* ========================================
  * Code block buttons (copy + word wrap)
  * ======================================== */
 
