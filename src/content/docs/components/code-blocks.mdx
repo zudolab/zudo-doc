@@ -1,10 +1,10 @@
 ---
 title: Code Blocks
-description: Syntax-highlighted fenced code blocks powered by Shiki, with support for titles, line highlighting, and diff display.
+description: "Syntax-highlighted fenced code blocks powered by syntect (zfb's Rust-native highlighter), with support for titles, line highlighting, and diff display."
 sidebar_position: 1.5
 ---
 
-Fenced code blocks in zudo-doc are powered by [Shiki](https://shiki.style/), a high-fidelity syntax highlighter. Specify the language after the opening fence to activate highlighting.
+Fenced code blocks in zudo-doc are powered by **syntect**, the Rust-native syntax highlighter built into zfb. Specify the language after the opening fence to activate highlighting.
 
 ## Basic Usage
 
@@ -26,7 +26,7 @@ function add(a: number, b: number): number {
 
 ## Supported Languages
 
-Shiki supports a wide range of languages out of the box. Common identifiers:
+syntect supports a wide range of languages via its built-in syntax definitions. Common identifiers:
 
 | Language | Identifier |
 | -------- | ---------- |
@@ -48,7 +48,7 @@ Shiki supports a wide range of languages out of the box. Common identifiers:
 | TOML | `toml` |
 | JSX / TSX | `jsx`, `tsx` |
 
-See the [full list of supported languages](https://shiki.style/languages) for all available identifiers.
+See the [syntect documentation](https://github.com/trishume/syntect) for the full list of supported syntax definitions.
 
 ## Code Block Title
 
@@ -98,6 +98,6 @@ const x = 1;
 ````
 `````
 
-## Shiki Theme
+## Syntax Theme
 
-The syntax highlighting theme is tied to the active color scheme. It is configured in `src/config/color-schemes.ts` via the `shikiTheme` field on each scheme. When the user switches between light and dark modes the code block colors adapt automatically — no separate configuration is needed.
+The syntax highlighting theme is tied to the active color scheme. It is configured in `src/config/color-schemes.ts` via the `shikiTheme` field on each scheme (this field controls the syntect theme zfb selects at build time). When the user switches between light and dark modes the code block colors adapt automatically — no separate configuration is needed.

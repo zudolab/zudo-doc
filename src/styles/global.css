@@ -640,12 +640,21 @@ pre[class^="syntect-"].word-wrap code {
 
 /* ========================================
  * Shiki dual theme (light/dark mode)
+ *
+ * This rule applies ONLY to .shiki elements (used by the HtmlPreview
+ * component, which calls Shiki at runtime and emits --shiki-light /
+ * --shiki-dark CSS variables on each span).
+ *
+ * Syntect-highlighted blocks (pre[class^="syntect-"]) must NOT be targeted
+ * here. Syntect emits inline style="color:#hex" directly on each span; those
+ * spans carry no --shiki-light/--shiki-dark vars. Including them would cause
+ * light-dark() to resolve to a fallback, and the !important would override
+ * the inline color — making every token render in the same foreground color
+ * (the monochrome bug, refs zudolab/zudo-doc#1457).
  * ======================================== */
 
 [data-theme] .shiki,
-[data-theme] .shiki span,
-[data-theme] pre[class^="syntect-"],
-[data-theme] pre[class^="syntect-"] span {
+[data-theme] .shiki span {
   color: light-dark(var(--shiki-light), var(--shiki-dark)) !important;
   background-color: light-dark(var(--shiki-light-bg), var(--shiki-dark-bg)) !important;
   font-style: light-dark(
