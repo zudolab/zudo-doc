@@ -43,12 +43,32 @@ import { HtmlPreviewWrapper } from "@zudo-doc/zudo-doc-v2/html-preview-wrapper";
 import { Tabs } from "@zudo-doc/zudo-doc-v2/code-syntax";
 import { TabItem } from "@zudo-doc/zudo-doc-v2/tab-item";
 import { defaultLocale, type Locale } from "@/config/i18n";
+import { withBase } from "@/utils/base";
 import { CategoryNavWrapper } from "./lib/_category-nav";
 import { CategoryTreeNavWrapper } from "./lib/_category-tree-nav";
 import { SiteTreeNavWrapper } from "./lib/_site-tree-nav";
 import { DetailsWrapper } from "./lib/_details";
 import { PresetGeneratorFallback } from "./lib/_preset-generator";
 import { MathBlock } from "./lib/_math-block";
+
+/**
+ * MDX `<img>` override — rewrites root-relative src attributes to include the
+ * configured site base path (settings.base). Without this, an MDX image like
+ * `![alt](/img/foo.webp)` emits `src="/img/foo.webp"` which 404s when the
+ * site is deployed under a sub-path prefix (e.g. /pj/zudo-doc/).
+ *
+ * Only root-relative paths (starting with "/") are rewritten; external URLs
+ * and data URIs pass through unchanged. The withBase() call is generic —
+ * it reads settings.base at build time and applies whatever prefix is configured.
+ */
+function ContentImg(props: Record<string, unknown>) {
+  const src = props.src;
+  const rewrittenSrc =
+    typeof src === "string" && src.startsWith("/") && !src.startsWith("//")
+      ? withBase(src)
+      : src;
+  return { type: "img", props: { ...props, src: rewrittenSrc }, key: null, constructor: undefined };
+}
 
 /**
  * MDX-tag stub: renders nothing. Returning `null` keeps the rendered
@@ -156,6 +176,11 @@ export function createMdxComponents(lang: Locale | string = defaultLocale) {
 
   return {
     ...htmlOverrides,
+    // img override: rewrites root-relative src to include the site base path.
+    // Required when settings.base is a sub-path (e.g. /pj/zudo-doc/) so that
+    // MDX images like ![alt](/img/foo.webp) resolve correctly on the deployed
+    // preview. withBase() is generic — any configured base value works.
+    img: ContentImg,
     HtmlPreview: HtmlPreviewWrapper,
     // Admonitions — proper bindings land in the doc-content-components
     // topic. Until then, render the children inside a
