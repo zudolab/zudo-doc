@@ -7,26 +7,34 @@
 // settings.headerNav, load the locale's docs collection (with EN
 // fallback for non-default locales), build the nav tree for the active
 // section, optionally remap hrefs for versioned routes, and feed the
-// result into the v2 <Sidebar> shell with the project's Preact
-// SidebarTree island wired in via `treeComponent`.
+// result into the host's <SidebarTree> Preact island.
 //
-// Why this wrapper exists: the v2 Sidebar shell is intentionally
-// framework-agnostic — it does not import host helpers (@/config/*,
-// @/utils/*) so the package can be published independently. The data
-// prep stays on the host side. Without this wrapper the zfb doc pages
-// fall through to `<Sidebar nodes={[]} />` (the DocLayoutWithDefaults
-// default) and the SSG output emits an empty
-// `<div data-zfb-island="Sidebar" data-when="load"></div>` marker.
+// Why this wrapper exists: the data prep is host-only (it imports
+// @/config/* and @/utils/*), so it cannot live in the published v2
+// package. Without this wrapper the zfb doc pages fall through to a
+// <SidebarTree nodes={[]} /> default and the SSG output emits an empty
+// `<div data-zfb-island="SidebarTree" data-when="load"></div>` marker.
 
 import type { JSX } from "preact";
-// `<Island>` is applied here at the call site rather than inside the v2
-// `<Sidebar>` module so the zfb island bundle's hydrate pass targets
-// the bare Sidebar component (not a self-Island'd wrapper). Wave 13
-// follow-on for the duplicate-nav fix family — see the head comment in
-// `packages/zudo-doc-v2/src/sidebar/sidebar.tsx` for the full diagnosis.
-// zudolab/zudo-doc#1355.
+// `<Island>` wraps `<SidebarTree>` directly here (rather than going through
+// the v2 `<Sidebar>` shell with `treeComponent`) so the zfb island bundle's
+// hydrate pass targets the actual stateful tree component. Mirrors the
+// mobile `<SidebarToggle>` shape in `pages/lib/_header-with-defaults.tsx`:
+// the hydration target owns its own data props directly so they ride the
+// SSR → hydrate boundary inside the Island marker's `data-props` attribute.
+//
+// Background: zfb's `Island.captureSerializableProps` runs `JSON.stringify`
+// on the wrapped component's own props bag, which silently drops function
+// values. With the previous `<Sidebar treeComponent={SidebarTree} ...>`
+// shape the `treeComponent` function was dropped during serialisation, so
+// at hydration the v2 Sidebar shell mounted with `treeComponent=undefined`,
+// returned `null`, and Preact's `hydrate(null, element)` left the SSR-
+// rendered tree DOM in place WITHOUT attaching the input's `onChange`
+// handler — typing into the filter input had no DOM effect.
+// zudolab/zudo-doc#1459 (Wave 1 #1445 wired the input but not the wiring
+// path; this wave routes the hydration target so the wiring actually
+// reaches the rendered tree).
 import { Island } from "@takazudo/zfb";
-import { Sidebar } from "@zudo-doc/zudo-doc-v2/sidebar";
 import SidebarTree from "@/components/sidebar-tree";
 import { settings } from "@/config/settings";
 import { defaultLocale, locales, t, type Locale } from "@/config/i18n";
@@ -135,24 +143,21 @@ function loadNavSourceDocs(
 }
 
 /**
- * Default-bearing host wrapper around v2's `<Sidebar>` shell. Performs
- * the data prep that the deleted `sidebar.astro` template did, plugs
- * the project's `<SidebarTree>` Preact island into the shell via the
- * `treeComponent` prop, and wraps the result in `<Island when="load">`
- * here at the call site so the SSG output ships a populated
- * `<div data-zfb-island="Sidebar" data-when="load">…tree…</div>` marker
- * for the hydration runtime to pick up.
+ * Default-bearing host wrapper that performs the data prep the deleted
+ * `sidebar.astro` template did, then wraps the project's `<SidebarTree>`
+ * Preact island in `<Island when="load">` so the SSG output ships a
+ * populated `<div data-zfb-island="SidebarTree" data-when="load">…tree…
+ * </div>` marker for the hydration runtime to pick up.
  *
- * Wave 13 follow-on (zudolab/zudo-doc#1355): the Island wrap moved
- * from inside `v2/sidebar/sidebar.tsx` to this call site for the same
- * reason it moved for Toc / MobileToc — when the v2 module exported a
- * self-Island'd `Sidebar`, the zfb island bundle hydrated *that*
- * wrapper inside the existing data-zfb-island marker, appending a
- * duplicate (empty here, because `treeComponent` is a function and
- * gets dropped by `JSON.stringify` during data-props serialisation).
- * Hydrating the bare `<Sidebar>` against the existing data-zfb-island
- * element in-place is the correct behaviour and reclaims a wasted
- * hydration slot.
+ * The v2 `<Sidebar>` shell is intentionally NOT used as the hydration
+ * target here. Its `treeComponent` prop is a function, and zfb's
+ * `Island.captureSerializableProps` drops function values during
+ * `JSON.stringify`, so a `<Sidebar treeComponent={SidebarTree} ...>`
+ * island would hydrate with `treeComponent=undefined` and the shell
+ * would return `null`, silently breaking the filter input's hydration
+ * (zudolab/zudo-doc#1459). Wrapping `<SidebarTree>` directly mirrors the
+ * mobile `<SidebarToggle>` shape (see `_header-with-defaults.tsx`) and
+ * keeps all data props serializable.
  */
 export function SidebarWithDefaults(
   props: SidebarWithDefaultsProps,
@@ -196,15 +201,18 @@ export function SidebarWithDefaults(
   const localeLinks =
     locales.length > 1 ? buildLocaleLinks(currentPath, lang) : undefined;
 
-  // Wrap the populated <Sidebar> in <Island when="load"> so the SSR
-  // pass emits the `data-zfb-island="Sidebar"` marker around the
-  // rendered tree and the bundle's hydrate pass targets the bare
-  // Sidebar against the existing marker element in-place.
+  // Wrap <SidebarTree> directly in <Island when="load">. SSR emits the
+  // `data-zfb-island="SidebarTree"` marker around the rendered tree, with
+  // all data props serialised into `data-props` (every prop is plain data:
+  // arrays of objects + strings). At hydration the runtime finds the
+  // marker, looks up "SidebarTree" in the islands manifest (registered via
+  // the host's `"use client"` directive on `src/components/sidebar-tree.tsx`),
+  // and mounts the real component in-place — re-attaching the filter
+  // input's `onChange` handler to the existing SSR DOM.
   return Island({
     when: "load",
     children: (
-      <Sidebar
-        treeComponent={SidebarTree}
+      <SidebarTree
         nodes={nodes}
         currentSlug={currentSlug}
         rootMenuItems={rootMenuItems}
