@@ -305,17 +305,25 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
       }
     >
       {autoIndex ? (
-        <div>
+        /* Auto-index page: category without an index.mdx.
+           Fragment (not <div>) so children become direct children of
+           <article class="zd-content">, picking up the flow-space rule
+           (.zd-content > :where(* + *) { margin-top: var(--flow-space) }).
+           Wrapping in <div> would make h1/description p children-of-children
+           and the flow gap (~24px) would never apply — see #1460. */
+        <>
           <h1 class="text-heading font-bold mb-vsp-xs">{autoIndex.label}</h1>
           {autoIndex.description && (
-            <p class="mt-0 mb-vsp-lg text-subheading text-muted">
+            <p class="mb-vsp-lg text-subheading text-muted">
               {autoIndex.description}
             </p>
           )}
           <NavCardGrid children={autoIndexChildren} />
-        </div>
+        </>
       ) : (
-        <div>
+        /* Regular doc page. Fragment (not <div>) for the same reason as
+           the auto-index branch above — see #1460. */
+        <>
           <h1 class="text-heading font-bold mb-vsp-xs">{entry!.data.title}</h1>
 
           {/* Build-time date block (Created / Updated / Author). Mirrors the
@@ -334,7 +342,7 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
           )}
 
           {entry!.data.description && (
-            <p class="mt-0 mb-vsp-lg text-subheading text-muted">
+            <p class="mb-vsp-lg text-subheading text-muted">
               {entry!.data.description}
             </p>
           )}
@@ -414,7 +422,7 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
               <div />
             )}
           </nav>
-        </div>
+        </>
       )}
     </DocLayoutWithDefaults>
   );
