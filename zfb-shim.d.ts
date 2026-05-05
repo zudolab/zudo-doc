@@ -68,6 +68,15 @@ declare module "zfb/config" {
      * (Takazudo/zudo-front-builder#154).
      */
     base?: string;
+    /**
+     * Configures the syntect-based syntax highlighter shipped with zfb.
+     * Mirrors `code_highlight` in crates/zfb/src/config.rs (Takazudo/zudo-front-builder#188 / sub #194; landed in commit 339e30f).
+     * When omitted, the engine falls back to the hardcoded default theme `base16-ocean.dark`.
+     */
+    codeHighlight?: {
+      theme?: string;
+      themesDir?: string;
+    };
   }
 
   /**
