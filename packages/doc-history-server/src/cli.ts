@@ -48,4 +48,8 @@ function generate(options: {
 }
 
 const options = parseCliArgs(process.argv.slice(2));
+console.log(`doc-history-server: content-dir resolved to ${options.contentDir}`);
+for (const locale of options.locales) {
+  console.log(`doc-history-server: locale ${locale.key} resolved to ${locale.dir}`);
+}
 generate(options);
