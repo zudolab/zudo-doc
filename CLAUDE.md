@@ -10,7 +10,7 @@ Minimal documentation framework built with zfb, MDX, Tailwind CSS v4, and Preact
 - **MDX** — authored under `src/content/`, content directory configurable via `docsDir` setting; pipeline configured in `zfb.config.ts`
 - **Tailwind CSS v4** — via `@tailwindcss/vite`
 - **Preact** — for interactive islands (TOC scroll spy, sidebar toggle, collapsible categories) and server-rendered content typography components; runs in compat mode for React API compatibility
-- **Shiki** — built-in code highlighting, theme set from active color scheme
+- **syntect** — built-in code highlighting, run by zfb's Rust pipeline at build time (single fixed theme: `base16-ocean-dark`); the `shikiTheme` field on each color scheme is a separate runtime-only setting consumed by the design-token-tweak panel's client-side Shiki preview
 - **TypeScript** — strict mode (project `tsconfig.json` sets `strict: true` plus the full set of `strict*` flags directly)
 
 ## Commands
