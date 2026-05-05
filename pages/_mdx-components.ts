@@ -113,11 +113,21 @@ function IslandWrapper(props: {
  * land. Matches the `admonition` class hook the design system already
  * targets for the Astro-era components.
  *
+ * The title row is ALWAYS rendered (defaulting to the capitalized
+ * variant name when no `title` prop is given). The icon emoji is
+ * supplied by `.admonition-title::before` in `global.css` keyed off
+ * `data-admonition`, so the stub stays variant-agnostic. This mirrors
+ * the Astro reference theme's structure (zudolab/zudo-doc#1456).
+ *
  * Untyped (`unknown` props) on purpose: the stubs go away once the
  * proper bindings ship, so investing in a typed prop bag here would
  * just be deleted later.
  */
 function makeAdmonitionStub(variant: string) {
+  // Default title — capitalized variant name (e.g. "note" → "Note"),
+  // matching the Astro reference where every admonition shows a title row
+  // regardless of whether the author provided one in MDX.
+  const defaultTitle = variant.charAt(0).toUpperCase() + variant.slice(1);
   // The tag name is passed through `h` indirectly by the MDX runtime
   // (Preact's `h(tag, props, ...children)`), so we build a plain
   // VNode-shaped object here. Returning a real Preact vnode via
@@ -125,6 +135,7 @@ function makeAdmonitionStub(variant: string) {
   // site; the literal-shape is what htmlOverrides downstream emit
   // and it round-trips through `preact-render-to-string` cleanly.
   return function AdmonitionStub(props: { title?: string; children?: unknown }): unknown {
+    const title = props.title && props.title.length > 0 ? props.title : defaultTitle;
     return {
       type: "div",
       props: {
@@ -134,7 +145,7 @@ function makeAdmonitionStub(variant: string) {
         "data-admonition": variant,
         class: `admonition admonition-${variant}`,
         children: [
-          props.title ? { type: "div", props: { class: "admonition-title", children: props.title }, key: null, constructor: undefined } : null,
+          { type: "p", props: { class: "admonition-title", children: title }, key: null, constructor: undefined },
           { type: "div", props: { class: "admonition-body", children: props.children }, key: null, constructor: undefined },
         ],
       },
