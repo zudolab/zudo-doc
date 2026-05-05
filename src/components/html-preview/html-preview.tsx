@@ -64,9 +64,13 @@ export default function HtmlPreview({
   );
   const hasScripts = containsScript(head, js);
   const syncDelay = hasScripts ? 300 : 0;
-  // allow-same-origin is needed alongside allow-scripts so that syncHeight
-  // can access iframe.contentDocument for auto-height measurement
-  const sandboxValue = hasScripts ? "allow-scripts allow-same-origin" : "";
+  // allow-same-origin is always required so that syncHeight can access
+  // iframe.contentDocument for auto-height measurement; sandbox="" without
+  // allow-same-origin gives the srcdoc iframe an opaque origin and blocks
+  // contentDocument reads even from the parent page.
+  const sandboxValue = hasScripts
+    ? "allow-scripts allow-same-origin"
+    : "allow-same-origin";
 
   const codeBlocks = useMemo(
     () => [
