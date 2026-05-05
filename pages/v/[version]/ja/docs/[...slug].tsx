@@ -40,6 +40,7 @@ import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
 import { Breadcrumb } from "@zudo-doc/zudo-doc-v2/breadcrumb";
 import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import { FrontmatterPreview } from "@zudo-doc/zudo-doc-v2/metainfo";
+import { frontmatterRenderers } from "@/config/frontmatter-preview-renderers";
 // Locale-aware MDX components factory — see `pages/_mdx-components.ts`.
 import { createMdxComponents } from "../../../../_mdx-components";
 import type { JSX } from "preact";
@@ -386,6 +387,9 @@ export default function VersionedJaDocsPage({ entry, autoIndex, version, isFallb
             title={t("frontmatter.preview.title", locale)}
             keyColLabel={t("frontmatter.preview.keyCol", locale)}
             valueColLabel={t("frontmatter.preview.valueCol", locale)}
+            renderers={frontmatterRenderers}
+            data={entry!.data as Record<string, unknown>}
+            locale={locale}
           />
 
           {entry && <entry.Content components={components} />}

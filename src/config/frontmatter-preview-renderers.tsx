@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
-import type { ComponentType } from "preact/compat";
-import type { Locale } from "@/config/i18n";
+import type { FrontmatterCellRenderer, FrontmatterCellRendererProps } from "@zudo-doc/zudo-doc-v2/metainfo";
 
 /**
  * Props passed to every custom frontmatter renderer component.
@@ -21,12 +20,11 @@ import type { Locale } from "@/config/i18n";
  * Null/undefined skipping: values of `null` or `undefined` are filtered out
  * before renderer lookup. Renderers can assume `value` is defined.
  */
-export interface FrontmatterRendererProps {
-  value: NonNullable<unknown>;
-  entryKey: string;
-  data: Record<string, unknown>;
-  locale?: Locale;
-}
+// Re-export the canonical props type from the package so project code has a
+// single import path. The locale field is typed as string (the package uses
+// string rather than the project-specific Locale union to avoid a circular
+// dependency); the runtime values are identical.
+export type { FrontmatterCellRendererProps as FrontmatterRendererProps };
 
 type PillColor = "danger" | "success" | "warning" | "info" | "muted";
 
@@ -59,10 +57,7 @@ function Pill({ children, color }: { children: ReactNode; color: PillColor }) {
  * discount: ({ value }) => <strong>{String(value)}</strong>,
  * ```
  */
-export const frontmatterRenderers: Record<
-  string,
-  ComponentType<FrontmatterRendererProps>
-> = {
+export const frontmatterRenderers: Record<string, FrontmatterCellRenderer> = {
   discount: ({ value }) => {
     if (value !== true) return null;
     return <Pill color="danger">ON SALE</Pill>;
