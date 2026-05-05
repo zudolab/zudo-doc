@@ -17,13 +17,14 @@
  * the dist stylesheet collapses — breaking mobile-sidebar visibility,
  * desktop-sidebar reveal, and mobile-toc accordion at non-git build
  * targets. Keep these in sync with `src/styles/global.css` in the host
- * repo (zudolab/zudo-doc#1355 wave 13 topic 2).
+ * repo (zudolab/zudo-doc#1355 wave 13 topic 2; pages/ added in #1444).
  * ======================================== */
 
 @source "src/components/**/*.{tsx,ts,jsx,js,mdx,md}";
 @source "src/content/**/*.{mdx,md}";
 @source "src/hooks/**/*.{tsx,ts,jsx,js}";
 @source "src/utils/**/*.{tsx,ts,jsx,js}";
+@source "pages/**/*.{tsx,ts,jsx,js}";
 
 /* ========================================
  * Design Token System
