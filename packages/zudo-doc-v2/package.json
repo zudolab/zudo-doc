@@ -82,6 +82,10 @@
       "types": "./src/transitions/index.ts",
       "default": "./src/transitions/index.ts"
     },
+    "./transitions/persist": {
+      "types": "./src/transitions/persist.ts",
+      "default": "./src/transitions/persist.ts"
+    },
     "./integrations/doc-history": {
       "types": "./src/integrations/doc-history/index.ts",
       "default": "./src/integrations/doc-history/index.ts"
