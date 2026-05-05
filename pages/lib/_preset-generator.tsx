@@ -1,27 +1,34 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// SSR fallback shell for the <PresetGenerator> interactive form.
+// Island wrapper for the <PresetGenerator> interactive form.
 //
-// The real component (src/components/preset-generator.tsx) is a large
-// client-only island that requires useState/useEffect and cannot be
-// server-rendered directly in the zfb build. This fallback renders the
-// 8 section headings as static SSR HTML so:
+// Wave 3 (zudolab/zudo-doc#1452): the previous implementation used the old
+// "orphan component" pattern — it emitted a manual
+// `<div data-zfb-island-skip-ssr="PresetGenerator" data-when="load" />` but
+// never imported the real PresetGenerator component. Because no page module
+// walked page → real-component, zfb's island scanner never registered the
+// constructor and the client bundle never contained the form body. The result:
+// the placeholder div was replaced with nothing on load.
 //
+// The fix mirrors the Wave 8 pattern used by _body-end-islands.tsx and
+// _doc-history-area.tsx: import the real component here so the scanner
+// walks page → _mdx-components → PresetGeneratorFallback → real PresetGenerator,
+// and use zfb's native `<Island ssrFallback>` API so the marker name is derived
+// via captureComponentName (displayName ?? name) rather than a hand-coded string.
+//
+// The SSR fallback renders the 8 section headings so:
 //   1. The migration-check can find all h3 markers in the static output.
 //   2. Screen readers and search engines see the section structure.
 //   3. Layout does not collapse to nothing while JS loads.
-//
-// The interactive form is wrapped in a data-zfb-island-skip-ssr
-// placeholder so the zfb hydration runtime can swap it in on the client
-// after load. The placeholder approach mirrors the SSR-skip pattern
-// formalised by zfb's `<Island ssrFallback>` API; this fallback emits
-// the marker div directly because the real <PresetGenerator> component
-// is interaction-heavy and only loaded by the build-tools showcase
-// page. See `pages/lib/_body-end-islands.tsx` for the canonical
-// `<Island ssrFallback>` pattern.
 
 import type { VNode } from "preact";
+import { Island } from "@takazudo/zfb";
 import { HeadingH3 } from "@zudo-doc/zudo-doc-v2/content";
+import RealPresetGenerator from "@/components/preset-generator";
+
+// Set explicit displayName so zfb's captureComponentName produces a stable
+// marker after any function-name-rewriting layer (esbuild minification guard).
+(RealPresetGenerator as { displayName?: string }).displayName = "PresetGenerator";
 
 // Heading text for each of the 8 sections — must match the original
 // SectionHeading calls in src/components/preset-generator.tsx exactly
@@ -41,28 +48,32 @@ const SECTION_HEADINGS = [
 ] as const;
 
 /**
- * Static SSR fallback for the interactive PresetGenerator form.
+ * Island wrapper for the interactive PresetGenerator form.
  *
- * Renders all 8 section headings so the migration-check finds them in
- * the static HTML before JS hydration. The interactive body is deferred
- * behind a zfb SSR-skip placeholder so it only loads on the client.
+ * Renders all 8 section headings as the SSR fallback so the migration-check
+ * finds them in the static HTML before JS hydration. The real interactive
+ * form is loaded on the client after "load" via zfb's Island mechanism.
+ *
+ * This function is bound to the `PresetGenerator` key in the MDX components
+ * map (pages/_mdx-components.ts), replacing the default-export import in the
+ * MDX corpus. The MDX file also wraps it in <Island when="load"> which
+ * resolves to IslandWrapper (pass-through) in the zfb build, so the Island
+ * nesting here is the authoritative one.
  */
 export function PresetGeneratorFallback(): VNode {
-  return (
+  const ssrFallback: VNode = (
     <div class="zd-preset-gen-fallback">
       {SECTION_HEADINGS.map((heading) => (
         <section key={heading}>
           <HeadingH3>{heading}</HeadingH3>
         </section>
       ))}
-      {/* SSR-skip placeholder: the zfb hydration runtime replaces this
-          div with the real interactive form on the client after load.
-          The data-zfb-island-skip-ssr + data-when attributes match the
-          SSR-skip marker contract defined in zfb's <Island> wrapper. */}
-      <div
-        data-zfb-island-skip-ssr="PresetGenerator"
-        data-when="load"
-      />
     </div>
   );
+
+  return Island({
+    when: "load",
+    ssrFallback,
+    children: <RealPresetGenerator />,
+  }) as unknown as VNode;
 }
