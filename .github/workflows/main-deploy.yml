@@ -351,7 +351,7 @@ jobs:
           curl -fsSL "${ORIGIN}${CSS_PATH}" -o /tmp/deployed-css.css
 
           CSS_BYTES=$(wc -c < /tmp/deployed-css.css)
-          MIN_CSS_BYTES=65000  # tuned from the Sub-2 manager-confirm baseline (post-fix ~77.7 KB; broken-scanner floor ~30-40 KB)
+          MIN_CSS_BYTES=50000  # post-zfb#159 split-import fix (in pin 9239267) drops leaked Tailwind defaults; healthy baseline ~64-66 KB (down from pre-fix ~77.7 KB). Threshold sits well above the ~30-40 KB broken-scanner floor with headroom for future intentional shrinkage.
           [ "$CSS_BYTES" -ge "$MIN_CSS_BYTES" ] || { echo "::error::deployed CSS is $CSS_BYTES bytes, below threshold $MIN_CSS_BYTES (broken scanner produces ~30-40 KB)"; exit 1; }
 
           MEDIA_COUNT=$(grep -cE '^@media' /tmp/deployed-css.css || true)
