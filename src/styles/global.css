@@ -1146,3 +1146,14 @@ dialog.zd-enlarge-dialog::backdrop {
     opacity: 0;
   }
 }
+
+/* Wire the orphaned keyframes to the View Transitions root pseudo-elements.
+ * Timings (150ms out / 300ms in) match the Astro reference behaviour.
+ * The sidebar carves itself out of the root group via its view-transition-name
+ * (Gap 1 fix); the header has no name and fades with the root — W4A confirms. */
+::view-transition-old(root) {
+  animation: 150ms ease-in both contentFadeOut;
+}
+::view-transition-new(root) {
+  animation: 300ms ease-out both contentFadeIn;
+}
