@@ -410,3 +410,36 @@ The structural cause of the flip-flop: I kept searching for the framing that *le
 
 - The whole "Path 1 — content-side workarounds for the most-visible elements" option in #1430. That path is anti-rule and should not appear as a recommendation. The hybrid Path 3 was wrong for the same reason — half of it was anti-rule.
 - The first two retro framings (W4A "strict checklist" and Addendum 1 "almost same"). Both should be replaced by Addendum 2's framing in any forward-reading by `/big-plan`. The earlier framings stay in the file as a record of the flip-flop, but `/big-plan` should be told to read the addendum FIRST.
+
+## 2026-05-06 — Backside migration: replicate, do not redesign
+
+### What we set out to do
+
+Wave 3 of epic #1443 (deploy-parity for the Astro→zfb migration) included #1453 — restore home-page nav to match the production reference. The pre-Wave-3 state was that the home-page nav had been silently REPLACED with a different component (a generic-looking section grid instead of the original SiteTreeNav). The user surfaced this in #1442 as "top-page nav block differs from old."
+
+### Approach we tried first
+
+Earlier waves (and the original migration epics) implicitly framed the migration as "implement the goal of the page" rather than "replicate the existing artifact." Migration-time agents took that as license to redesign the home nav as a fresh component when zfb did not surface the original directly. Same pattern almost happened in Wave 3 #1453 — the agent had to be explicitly told "restore-from-reference work — match the production reference structurally. Do NOT redesign creatively." With that anchor it produced the right result.
+
+### Why it went wrong (root cause)
+
+Migration epics did not state the **default contract**: in a backside replacement / framework migration, the rendered HTML + CSS + behavior of every component is the spec. The component code in the new framework is just a re-expression of the same contract. AI agents default to "implement the goal" and read freedom to redesign that wasn't there. Without an explicit anchor (reference SHA, reference URL, match-this-exactly directive), the result drifts toward "generic-looking implementation of the same idea" — which violates the migration's actual goal: byte-equivalent rendered HTML+CSS.
+
+Concretely on this project: SiteTreeNav existed in the Astro reference with specific markup, classes, and grid behavior. zfb migration produced a new section-grid component that had a similar function but rendered different DOM and CSS. /verify-ui caught the divergence late — Wave 2 confirm sweep, Finding F adjacent — instead of at the original migration commit, because the pre-Wave-3 lessons file did not flag "creative output is a smell" as a hard rule.
+
+### What worked instead
+
+Wave 3 #1453 prompt explicitly said: "Restore byte-equivalence with the production reference. This is restore-from-reference work — match the production reference structurally. Do NOT redesign creatively." Agent diffed against the pre-migration version, restored the missing pieces (3-column grid, hamburger, locale switcher, breadcrumb), and committed. /verify-ui PASS on the deploy preview.
+
+### Watch for next time
+
+- **In a backside migration / replacement, the default contract is "preserve the rendered HTML + CSS + behavior of every component." Deviation requires an explicit, named technical cause** — engine swap with different output shape, deprecated API, dropped dependency. Document the cause in the commit when deviating.
+- **Engine swaps DO produce legitimate output differences and that is fine.** Example on this project: the syntax highlighter switched from Shiki (Astro era, dual-theme CSS-var emit) to syntect (zfb, single-theme inline-style emit). The token markup naturally differs. That kind of difference is a stated, sized, agreed-upon trade-off of the migration. It is NOT license to redesign other components that have no engine reason to change.
+- **"Creative output" during migration is a smell. Flag it before merge.** If the migrated component looks meaningfully different from the source artifact and there is no engine-level reason it had to, treat that as a regression candidate and surface to the user — do not accept it as a finished result.
+- **Anchor every migration sub-task to a concrete reference: a pre-migration SHA on the same repo, a deployed reference URL, and ideally both.** Child agents should diff against the anchor, not synthesize from scratch.
+- **/verify-ui or equivalent computed-style harness is the deterministic gate, but it runs late.** Do not rely solely on it. Add a code-level review step that asks "does this component still produce the same DOM shape and class set as the pre-migration version?" — if a child agent rewrote the markup/styles, that is the moment to push back, not the moment to accept and let /verify-ui find it.
+- **Mirror engine-driven exceptions explicitly in the lessons file with their justification.** Future migration agents will look for permission to deviate. "Because Shiki→syntect is a documented engine swap" is an acceptable cause; "because the new component looks cleaner" is not.
+
+### Would-skip-if-redoing
+
+- All the time spent in Waves 2 and 3 re-discovering and re-restoring already-existing UI components — home nav, doc-meta line, admonition icons, admonition title row, prose first-child margin, sidebar filter logic. Each of those was working in the Astro reference; each was silently dropped or rewritten during the original migration. Had the original migration epic stated "default contract is replicate, not redesign," and had the lessons file been seeded with that rule, the original migration would have shipped most of these intact and the Wave 2/3 follow-up scope would have been a fraction of its actual size.
