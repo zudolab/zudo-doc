@@ -104,6 +104,28 @@ jobs:
           workspaces: zfb-src
           key: zfb-${{ env.ZFB_PINNED_SHA }}
 
+      # zfb#210 (pin 8e8aed2 onward) added a build.rs step that copies the
+      # `preact`, `preact-render-to-string`, and `hono` packages out of
+      # `zfb-src/node_modules/.pnpm/` into the embedded vendor snapshot.
+      # Without an upstream `pnpm install` first, build.rs panics at
+      # `framework package preact@<version> not found`.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+
+      - name: Install zfb workspace deps (for build.rs framework staging)
+        # --ignore-scripts skips the upstream `prepare` hook (lefthook install)
+        # — we only need the `.pnpm/` content-addressable layout so build.rs
+        # can locate preact/hono package dirs.
+        run: pnpm install --frozen-lockfile --ignore-scripts
+        working-directory: zfb-src
+
       - name: Build zfb release binary
         run: cargo build -p zfb --release
         working-directory: zfb-src
