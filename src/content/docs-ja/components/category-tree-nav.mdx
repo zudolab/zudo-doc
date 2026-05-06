@@ -1,12 +1,12 @@
 ---
 title: CategoryTreeNav
-description: カテゴリインデックスページに子ページのネストされたツリーリンクを表示するAstroコンポーネント。
+description: カテゴリインデックスページに子ページのネストされたツリーリンクを表示する、サーバーレンダリングのPreactコンポーネント。
 sidebar_position: 9
 ---
 
 ## 概要
 
-`CategoryTreeNav`は、カテゴリの子ページをネストされたツリー形式のリンク（`ul > li > ul > li`パターン）で表示するAstroコンポーネントです。カードグリッドスタイルの`CategoryNav`の代替として、より深いネストを持つカテゴリに適したコンパクトな表示を提供します。
+`CategoryTreeNav`は、カテゴリの子ページをネストされたツリー形式のリンク（`ul > li > ul > li`パターン）で表示する、サーバーレンダリングのPreactコンポーネントです。カードグリッドスタイルの`CategoryNav`の代替として、より深いネストを持つカテゴリに適したコンパクトな表示を提供します。
 
 <Info>
 
@@ -35,7 +35,7 @@ Welcome to the Getting Started section.
 <CategoryTreeNav category="getting-started" />
 ```
 
-`CategoryTreeNav`はAstroコンポーネント（クライアントサイドJavaScriptなし）のため、`client:`ディレクティブは不要です。
+`CategoryTreeNav`は完全にサーバー側でレンダリングされ、クライアントサイドJavaScriptはゼロです — ハイドレートディレクティブは不要です。
 
 ## CategoryNavとの比較
 
@@ -57,4 +57,4 @@ Welcome to the Getting Started section.
 
 ## ソース
 
-コンポーネントは`src/components/category-tree-nav.astro`に定義されています。
+コンポーネントは`pages/lib/_category-tree-nav.tsx`に定義されています。

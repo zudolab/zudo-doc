@@ -194,7 +194,7 @@ All tokens are defined in `src/styles/global.css`. That file is the single sourc
 
 ## Interaction Rules
 
-### hover:underline on link-like elements
+### Hover-state underline for link-like elements
 
 Elements that _navigate_ (rendered as `<a href>` or behave as a link) must show an underline on hover and on keyboard focus. Buttons, toggles, and controls do not — they use a border/background change instead.
 
@@ -219,6 +219,6 @@ Elements that _navigate_ (rendered as `<a href>` or behave as a link) must show 
 <button class="hover:underline">Use hover:bg-accent/10 instead</button>
 ```
 
-The pair `hover:underline focus-visible:underline` is the canonical form — always add both, never one without the other. Precedents: `src/components/header.astro`, `src/components/site-tree-nav.tsx`, `src/components/footer.astro`.
+The pair `hover:underline focus-visible:underline` is the canonical form — always add both, never one without the other. Precedents: `packages/zudo-doc-v2/src/header/header.tsx`, `src/components/site-tree-nav.tsx`, `packages/zudo-doc-v2/src/footer/footer.tsx`.
 
 For the broader reasoning (light-mode / dark-mode contrast, when an underline is sufficient vs when a color shift is also needed), consult the `/css-wisdom` skill locally — its light-mode/dark-mode and three-tier token strategy sections cover the trade-offs.

@@ -1,4 +1,10 @@
-import { useState, useEffect } from "react";
+"use client";
+
+// Use preact hook entrypoints directly — zfb's esbuild step doesn't alias
+// "react" to "preact/compat" the way Astro's `@astrojs/preact` integration
+// did, so importing from "react" here would fail to resolve at SSR/island
+// bundle time. Same pattern as packages/zudo-doc-v2/src/theme/theme-toggle.tsx.
+import { useState, useEffect } from "preact/hooks";
 
 const STORAGE_KEY = "zudo-doc-theme";
 
@@ -91,3 +97,12 @@ export default function ThemeToggle({ defaultMode = "dark" }: ThemeToggleProps) 
     </button>
   );
 }
+// Pin the island marker name to "ThemeToggle" regardless of esbuild's
+// identifier deduplication. Both this host component and the v2 package's
+// ThemeToggleInner share the plain name "ThemeToggle"; when both land in the
+// same SSR bundle esbuild renames one to "ThemeToggle2", making
+// captureComponentName() emit "ThemeToggle2" — a name that has no entry in
+// the island manifest. Setting displayName explicitly ensures Island() reads
+// the attribute-level name (displayName is preferred over .name) and emits
+// the correct data-zfb-island="ThemeToggle" marker. zudolab/zudo-doc#1446.
+ThemeToggle.displayName = "ThemeToggle";

@@ -1,4 +1,6 @@
-import { useMemo } from "react";
+"use client";
+
+import { useMemo } from "preact/hooks";
 import { useActiveHeading } from "@/hooks/use-active-heading";
 import type { Heading } from "@/types/heading";
 import { SmartBreak } from "@/utils/smart-break";

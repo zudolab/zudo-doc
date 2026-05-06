@@ -1,0 +1,148 @@
+{
+  "name": "@zudo-doc/zudo-doc-v2",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "zudo-doc framework primitives layer that sits on top of zfb's engine — sidebar, theme, TOC, breadcrumb, layouts, head injection, View Transitions, SSR-skip wrappers (per ADR-003).",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./sidebar-tree": {
+      "types": "./src/sidebar-tree/index.ts",
+      "default": "./src/sidebar-tree/index.ts"
+    },
+    "./theme": {
+      "types": "./src/theme/index.ts",
+      "default": "./src/theme/index.ts"
+    },
+    "./theme/color-scheme-provider": {
+      "types": "./src/theme/color-scheme-provider.tsx",
+      "default": "./src/theme/color-scheme-provider.tsx"
+    },
+    "./toc": {
+      "types": "./src/toc/index.ts",
+      "default": "./src/toc/index.ts"
+    },
+    "./breadcrumb": {
+      "types": "./src/breadcrumb/index.ts",
+      "default": "./src/breadcrumb/index.ts"
+    },
+    "./header": {
+      "types": "./src/header/index.ts",
+      "default": "./src/header/index.ts"
+    },
+    "./footer": {
+      "types": "./src/footer/index.ts",
+      "default": "./src/footer/index.ts"
+    },
+    "./sidebar": {
+      "types": "./src/sidebar/index.ts",
+      "default": "./src/sidebar/index.ts"
+    },
+    "./sidebar/types": {
+      "types": "./src/sidebar/types.ts",
+      "default": "./src/sidebar/types.ts"
+    },
+    "./i18n-version": {
+      "types": "./src/i18n-version/index.ts",
+      "default": "./src/i18n-version/index.ts"
+    },
+    "./page-loading": {
+      "types": "./src/page-loading/index.ts",
+      "default": "./src/page-loading/index.ts"
+    },
+    "./tab-item": {
+      "types": "./src/tab-item/index.ts",
+      "default": "./src/tab-item/index.ts"
+    },
+    "./code-syntax": {
+      "types": "./src/code-syntax/index.ts",
+      "default": "./src/code-syntax/index.ts"
+    },
+    "./body-foot-util": {
+      "types": "./src/body-foot-util/index.ts",
+      "default": "./src/body-foot-util/index.ts"
+    },
+    "./sidebar-resizer": {
+      "types": "./src/sidebar-resizer/index.ts",
+      "default": "./src/sidebar-resizer/index.ts"
+    },
+    "./doclayout": {
+      "types": "./src/doclayout/index.ts",
+      "default": "./src/doclayout/index.ts"
+    },
+    "./head": {
+      "types": "./src/head/index.ts",
+      "default": "./src/head/index.ts"
+    },
+    "./transitions": {
+      "types": "./src/transitions/index.ts",
+      "default": "./src/transitions/index.ts"
+    },
+    "./transitions/persist": {
+      "types": "./src/transitions/persist.ts",
+      "default": "./src/transitions/persist.ts"
+    },
+    "./integrations/doc-history": {
+      "types": "./src/integrations/doc-history/index.ts",
+      "default": "./src/integrations/doc-history/index.ts"
+    },
+    "./integrations/llms-txt": {
+      "types": "./src/integrations/llms-txt/index.ts",
+      "default": "./src/integrations/llms-txt/index.ts"
+    },
+    "./integrations/search-index": {
+      "types": "./src/integrations/search-index/index.ts",
+      "default": "./src/integrations/search-index/index.ts"
+    },
+    "./integrations/claude-resources": {
+      "types": "./src/integrations/claude-resources/index.ts",
+      "default": "./src/integrations/claude-resources/index.ts"
+    },
+    "./content": {
+      "types": "./src/content/index.ts",
+      "default": "./src/content/index.ts"
+    },
+    "./nav-indexing": {
+      "types": "./src/nav-indexing/index.ts",
+      "default": "./src/nav-indexing/index.ts"
+    },
+    "./metainfo": {
+      "types": "./src/metainfo/index.ts",
+      "default": "./src/metainfo/index.ts"
+    },
+    "./html-preview-wrapper": {
+      "types": "./src/html-preview-wrapper/index.ts",
+      "default": "./src/html-preview-wrapper/index.ts"
+    },
+    "./details": {
+      "types": "./src/details/index.ts",
+      "default": "./src/details/index.ts"
+    },
+    "./url-normalizer": {
+      "types": "./src/url-normalizer/index.ts",
+      "default": "./src/url-normalizer/index.ts"
+    }
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "preact": "*"
+  },
+  "dependencies": {
+    "@zudo-doc/doc-history-server": "workspace:*",
+    "gray-matter": "^4.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.5",
+    "preact": "^10.26.9",
+    "preact-render-to-string": "^6.6.6",
+    "typescript": "^5.0.0",
+    "vitest": "^3.0.0"
+  }
+}

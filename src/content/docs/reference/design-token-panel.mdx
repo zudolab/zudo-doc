@@ -60,7 +60,7 @@ The Color tab is the previous Color Tweak Panel, now scoped to its own tab. It c
 
 #### Matched-keyword tokens
 
-Two semantic color tokens drive how matched keywords are highlighted. They live alongside the other semantic overrides in the Color tab and are consumed by `src/components/search.astro` to style hits in the search UI.
+Two semantic color tokens drive how matched keywords are highlighted. They live alongside the other semantic overrides in the Color tab and are consumed by the search widget at `pages/lib/_search-widget.tsx` to style hits in the search UI.
 
 - `matchedKeywordBg` — background color painted behind a matched keyword.
 - `matchedKeywordFg` — foreground (text) color of the matched keyword on top of that background.
@@ -136,7 +136,7 @@ State is persisted to `localStorage` under the key `zudo-doc-tweak-state-v2`. Th
 Older projects that persisted the v1 Color-Tweak state under `zudo-doc-tweak-state` are migrated automatically:
 
 - On load, the panel reads v2 first. If absent, it falls back to parsing the v1 state (which only contained color tokens) and promotes it into the v2 color tab.
-- The FOUC-prevention script injected into `<head>` by `doc-layout.astro` performs the same v2-then-v1 lookup so saved colors apply before first paint on old devices too.
+- The FOUC-prevention script injected into `<head>` by the doc layout (`@zudo-doc/zudo-doc-v2/doclayout`) performs the same v2-then-v1 lookup so saved colors apply before first paint on old devices too.
 - Clicking **Reset all** in the panel header clears both keys, restoring the color scheme declared in `src/config/settings.ts`.
 
 ## Settings Reference

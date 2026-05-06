@@ -30,26 +30,31 @@ For AI agents, this is a particularly common failure mode. Given a task like "bu
 
 ## In zudo-doc
 
-zudo-doc uses **Astro components** (`.astro`) and **Preact islands** (`.tsx`) with **Tailwind CSS v4** utilities. The same rule applies to both:
+zudo-doc uses **Preact components** (`.tsx`) on top of zfb, with **Tailwind CSS v4** utilities. The same rule applies whether a component renders only on the server or also hydrates on the client:
 
-### Astro Components
+### Server-rendered components
 
-Most UI is server-rendered Astro — zero JavaScript, utility classes inline:
+Most UI is server-rendered — zero JavaScript, utility classes inline:
 
-```astro
-<!-- src/components/footer.astro -->
-<footer class="border-t border-muted bg-surface px-hsp-xl py-vsp-xl">
-  <div class="text-center text-caption text-muted">
-    <Fragment set:html={copyright} />
-  </div>
-</footer>
+```tsx
+// packages/zudo-doc-v2/src/footer/footer.tsx
+export function Footer({ copyright }: Props) {
+  return (
+    <footer class="border-t border-muted bg-surface px-hsp-xl py-vsp-xl">
+      <div
+        class="text-center text-caption text-muted"
+        dangerouslySetInnerHTML={{ __html: copyright }}
+      />
+    </footer>
+  );
+}
 ```
 
 No `.footer` class. No `footer.module.css`. The component **is** the abstraction.
 
-### Preact Islands
+### Client-hydrated islands
 
-Interactive components use Preact with `client:load`, same utility approach:
+Interactive components register themselves with zfb's island runtime through their own `useEffect` / event-binding code, but use the same utility-class approach:
 
 ```tsx
 // src/components/sidebar-toggle.tsx
@@ -57,7 +62,7 @@ export function SidebarToggle({ label }: Props) {
   const [open, setOpen] = useState(false);
   return (
     <button
-      className="lg:hidden flex items-center gap-hsp-xs text-fg"
+      class="lg:hidden flex items-center gap-hsp-xs text-fg"
       onClick={() => setOpen(!open)}
     >
       {label}
@@ -83,8 +88,8 @@ Do **not** create CSS class names in a zudo-doc project:
 }
 ```
 
-```astro
-<!-- WRONG — custom class names bypass the design system -->
+```tsx
+// WRONG — custom class names bypass the design system
 <div class="profile-card">
   <h3 class="profile-card__name">{name}</h3>
 </div>
@@ -92,8 +97,8 @@ Do **not** create CSS class names in a zudo-doc project:
 
 Instead:
 
-```astro
-<!-- RIGHT — utility classes, the component is the abstraction -->
+```tsx
+// RIGHT — utility classes, the component is the abstraction
 <div class="flex gap-hsp-md p-hsp-lg">
   <h3 class="text-body font-semibold">{name}</h3>
 </div>
@@ -130,7 +135,7 @@ No `.btn-primary` class to maintain. The `variant` prop is type-safe, auto-compl
 
 Complex layouts are built by composing smaller components — not by adding more CSS:
 
-```astro
+```tsx
 <div class="divide-y divide-muted">
   {users.map((user) => (
     <div class="flex items-center gap-hsp-md py-vsp-sm">
@@ -150,11 +155,11 @@ Each piece — `<Avatar>`, the list layout — is a component. No `.user-list__i
 
 Always use project tokens instead of arbitrary values:
 
-```astro
-<!-- WRONG — arbitrary values bypass the design system -->
+```tsx
+// WRONG — arbitrary values bypass the design system
 <div class="p-[1.2rem] text-[0.875rem] text-[#6b7280]">
 
-<!-- RIGHT — use design tokens -->
+// RIGHT — use design tokens
 <div class="p-hsp-md text-small text-muted">
 ```
 

@@ -10,11 +10,11 @@ sidebar_position: 17
 
 | コマンド | 説明 |
 |---|---|
-| `pnpm dev` | Astro開発サーバー（ポート4321）とdoc-history-server（ポート4322）を同時に起動 |
-| `pnpm dev:astro` | Astro開発サーバーのみ（ポート4321） |
+| `pnpm dev` | zfb開発サーバー（ポート4321）とdoc-history-server（ポート4322）を同時に起動 |
+| `pnpm dev:zfb` | zfb開発サーバーのみ（ポート4321） |
 | `pnpm dev:history` | docヒストリーAPIサーバーのみ（ポート4322） |
 | `pnpm dev:stable` | ビルドしてからサーブする代替モード（コンテンツファイルの追加・削除時のHMRクラッシュを回避） |
-| `pnpm dev:network` | `--host 0.0.0.0`でAstro開発サーバーを起動（LAN経由アクセス用） |
+| `pnpm dev:network` | `--host 0.0.0.0`でzfb開発サーバーを起動（LAN経由アクセス用） |
 
 <Tip>
 
@@ -27,9 +27,9 @@ sidebar_position: 17
 | コマンド | 説明 |
 |---|---|
 | `pnpm build` | 静的HTMLを`dist/`にエクスポート |
-| `pnpm check` | Astro型チェック |
+| `pnpm check` | TypeScript型チェック |
 | `pnpm b4push` | プッシュ前の検証：フォーマットチェック → 型チェック → ビルド → リンクチェック → E2Eテスト |
-| `pnpm format` | MDXおよびAstroファイルのフォーマット |
+| `pnpm format` | MDXファイルのフォーマット |
 | `pnpm test:unit` | ユニットテストを実行（Vitest） |
 | `pnpm test:e2e` | E2Eテストを実行（Playwright） |
 
@@ -41,25 +41,23 @@ sidebar_position: 17
 
 ## コンポーネント開発
 
-zudo-docは3つのコンポーネント階層を使用します。コンポーネントの要件に応じて適切な階層を選んでください。
+zudo-docはzfb上で動作するPreact専用プロジェクトです。すべてのコンポーネントは`.tsx`ファイルです。区別すべき点は、**コンポーネントがサーバーのみで動作するか、クライアントでもハイドレートされるか**です。
 
-### Astroコンポーネント
+### サーバーレンダリングPreactコンポーネント
 
-`.astro`ファイルはデフォルトの選択肢です — JavaScriptなし、ビルド時にサーバーレンダリングされます。
-
-Astroコンポーネントの用途：
+デフォルトでは、すべての`.tsx`コンポーネントはビルド時にHTMLにレンダリングされ、クライアント側のJavaScriptはゼロです。次の用途に最適です：
 
 - レイアウトラッパー
-- 静的なUI要素（ヘッダー、フッター、サイドバー）
-- ユーザー操作が不要なもの全般
+- 静的なUI要素（ヘッダー、フッター、インタラクティビティのないサイドバー）
+- 実行時の状態やDOMイベントが不要なもの全般
 
-### Preactアイランド
+### クライアントハイドレートアイランド
 
-`client:load`アイランドは、クライアントサイドのインタラクティビティが必要な場合にのみ使用します。Preactはcompatモード（`@astrojs/preact` with `compat: true`）で動作するため、コンポーネントはReact形式のインポートとAPIを使用できます。
+コンポーネントがインタラクティビティを必要とする場合 — ローカル状態、イベントハンドラ、アニメーションなど — 自身の`useEffect`やイベントバインディングコードを通じて、zfbのアイランドランタイムに登録します。サーバーレンダリングの出力はそのまま使われ、インタラクティブな部分のみがハイドレートされます。
 
-プロジェクトの現在のアイランド：`toc.tsx`、`mobile-toc.tsx`、`sidebar-toggle.tsx`、`sidebar-tree.tsx`、`theme-toggle.tsx`、`doc-history.tsx`、`color-tweak-panel.tsx`、`color-tweak-export-modal.tsx`。
+プロジェクトの現在のアイランド：`toc.tsx`、`mobile-toc.tsx`、`sidebar-toggle.tsx`、`sidebar-tree.tsx`、`theme-toggle.tsx`、`doc-history.tsx`、design-token-tweakパネル、ai-chat-modal、find-bar。
 
-Preactアイランドの用途：
+クライアントハイドレートアイランドの用途：
 
 - スクロールスパイ（TOCのハイライト）
 - トグル・ドロワーコンポーネント
@@ -67,7 +65,7 @@ Preactアイランドの用途：
 
 ### コンテンツタイポグラフィコンポーネント
 
-`src/components/content/`に配置されたPreact関数コンポーネントで、`client:`ディレクティブを持ちません — クライアントJavaScriptなしでサーバーレンダリングされます。`<Content components={...} />`を通じてMDX内の標準HTMLエレメントをオーバーライドします。
+`src/components/content/`に配置されたPreact関数コンポーネントで、サーバー側でのみレンダリングされます — クライアントへのハイドレートはありません。doc-pageルートが利用する`_mdx-components.ts`マッピングを通じて、MDX内の標準HTML要素をオーバーライドします。
 
 現在のオーバーライド：見出し（h2〜h4）、段落、リンク、strong、ブロッククォート、リスト（ul/ol）、テーブル。
 
@@ -81,7 +79,7 @@ Preactアイランドの用途：
 2. `## h2`見出しからコンテンツを書き始めます。`# h1`は追加しません — フロントマターの`title`がページのh1としてレンダリングされます。
 3. `src/content/docs-ja/`以下に日本語訳を含む対応ファイルを作成します。
 4. ENとJAのコードブロックは同一に保ちます — 翻訳するのは周囲のプロズのみです。
-5. `pnpm format:mdx`を実行してMDXファイルをフォーマットします。
+5. `pnpm format`（または`pnpm format:mdx`）を実行してMDXファイルをフォーマットします。
 6. `pnpm build`を実行してサイトが正常にビルドされることを確認します。
 
 <Tip>

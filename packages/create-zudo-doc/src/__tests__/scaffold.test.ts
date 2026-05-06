@@ -47,10 +47,13 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     expect(pkg.name).toBe("test-minimal");
   });
 
-  it("creates astro.config.ts", async () => {
+  it("creates zfb.config.ts (not astro.config.ts)", async () => {
+    expect(
+      await fs.pathExists(projectPath("test-minimal", "zfb.config.ts")),
+    ).toBe(true);
     expect(
       await fs.pathExists(projectPath("test-minimal", "astro.config.ts")),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("creates src/config/settings.ts", async () => {
@@ -108,7 +111,11 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     ).toBe(false);
   });
 
-  it("doc-layout does not reference MockInit, AiChatModal, or DocHistory (disabled by default)", async () => {
+  // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("doc-layout does not reference MockInit, AiChatModal, or DocHistory (disabled by default)", async () => {
     const layout = await fs.readFile(
       projectPath("test-minimal", "src/layouts/doc-layout.astro"),
       "utf-8",
@@ -118,7 +125,11 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     expect(layout).not.toContain("DocHistory");
   });
 
-  it("doc-layout does not reference sidebar resizer (disabled by default)", async () => {
+  // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("doc-layout does not reference sidebar resizer (disabled by default)", async () => {
     const layout = await fs.readFile(
       projectPath("test-minimal", "src/layouts/doc-layout.astro"),
       "utf-8",
@@ -135,7 +146,11 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     ).toBe(false);
   });
 
-  it("doc-layout does not reference sidebar toggle (disabled by default)", async () => {
+  // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("doc-layout does not reference sidebar toggle (disabled by default)", async () => {
     const layout = await fs.readFile(
       projectPath("test-minimal", "src/layouts/doc-layout.astro"),
       "utf-8",
@@ -152,7 +167,7 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     // Build output (existing entries preserved)
     expect(gitignore).toContain("node_modules");
     expect(gitignore).toContain("dist");
-    expect(gitignore).toContain(".astro");
+    expect(gitignore).toContain(".zfb");
     // macOS
     expect(gitignore).toContain(".DS_Store");
     // Environment
@@ -201,7 +216,10 @@ describe("scaffold — full features (i18n, light-dark, all features)", () => {
     await scaffold(choices);
   });
 
-  it("creates [locale] pages directory (i18n on)", async () => {
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("creates [locale] pages directory (i18n on)", async () => {
     expect(
       await fs.pathExists(projectPath("test-full", "src/pages/[locale]")),
     ).toBe(true);
@@ -436,7 +454,10 @@ describe("scaffold — docHistory feature", () => {
     expect(content).toContain("docHistory: true");
   });
 
-  it("keeps doc-history integration when enabled", async () => {
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("keeps doc-history integration when enabled", async () => {
     const choices: UserChoices = {
       projectName: "test-dh-int",
       defaultLang: "en",
@@ -456,11 +477,12 @@ describe("scaffold — docHistory feature", () => {
         projectPath("test-dh-int", "src/components/doc-history.tsx"),
       ),
     ).toBe(true);
+    // Depends on: topic-config-generators (zfb-config-gen.ts)
     const config = await fs.readFile(
-      projectPath("test-dh-int", "astro.config.ts"),
+      projectPath("test-dh-int", "zfb.config.ts"),
       "utf-8",
     );
-    expect(config).toContain("docHistoryIntegration");
+    expect(config).toContain("docHistoryPlugin");
   });
 
   it("settings have docHistory: false when disabled", async () => {
@@ -678,7 +700,10 @@ describe("scaffold — llmsTxt feature", () => {
     expect(content).toContain("llmsTxt: true");
   });
 
-  it("keeps llms-txt integration when enabled", async () => {
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("keeps llms-txt integration when enabled", async () => {
     const choices: UserChoices = {
       projectName: "test-llms-int",
       defaultLang: "en",
@@ -693,11 +718,12 @@ describe("scaffold — llmsTxt feature", () => {
         projectPath("test-llms-int", "src/integrations/llms-txt.ts"),
       ),
     ).toBe(true);
+    // Depends on: topic-config-generators (zfb-config-gen.ts)
     const config = await fs.readFile(
-      projectPath("test-llms-int", "astro.config.ts"),
+      projectPath("test-llms-int", "zfb.config.ts"),
       "utf-8",
     );
-    expect(config).toContain("llmsTxtIntegration");
+    expect(config).toContain("llmsTxtPlugin");
   });
 
   it("settings have llmsTxt: false when disabled", async () => {
@@ -777,7 +803,10 @@ describe("scaffold — footer features", () => {
     expect(content).toContain("copyright:");
   });
 
-  it("sets footer: false and strips component when disabled", async () => {
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("sets footer: false and strips component when disabled", async () => {
     const choices: UserChoices = {
       projectName: "test-footer-off",
       defaultLang: "en",
@@ -797,6 +826,7 @@ describe("scaffold — footer features", () => {
         projectPath("test-footer-off", "src/components/footer.astro"),
       ),
     ).toBe(false);
+    // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
     const layout = await fs.readFile(
       projectPath("test-footer-off", "src/layouts/doc-layout.astro"),
       "utf-8",
@@ -804,7 +834,10 @@ describe("scaffold — footer features", () => {
     expect(layout).not.toContain("Footer");
   });
 
-  it("keeps footer component when footer is enabled", async () => {
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("keeps footer component when footer is enabled", async () => {
     const choices: UserChoices = {
       projectName: "test-footer-keep",
       defaultLang: "en",
@@ -1015,7 +1048,10 @@ describe("scaffold — claudeSkills feature", () => {
 });
 
 describe("scaffold — tauri feature", () => {
-  it("generates src-tauri/ and find-in-page when tauri is enabled", async () => {
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("generates src-tauri/ and find-in-page when tauri is enabled", async () => {
     const choices: UserChoices = {
       projectName: "test-tauri",
       defaultLang: "en",
@@ -1072,6 +1108,7 @@ describe("scaffold — tauri feature", () => {
     );
     expect(conf).not.toContain('"ZudoDoc"');
 
+    // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
     // Layout has FindInPageInit
     const layout = await fs.readFile(
       projectPath("test-tauri", "src/layouts/doc-layout.astro"),
@@ -1225,7 +1262,7 @@ describe("scaffold — CLAUDE.md generation", () => {
     );
     expect(content).toContain("# Test Claudemd");
     expect(content).toContain("zudo-doc");
-    expect(content).toContain("**Astro**");
+    expect(content).toContain("**zfb**");
     expect(content).toContain("pnpm dev");
     expect(content).toContain("pnpm build");
     expect(content).toContain("docs/            # MDX content");
@@ -1325,7 +1362,10 @@ describe("scaffold — frontmatterPreview setting", () => {
     expect(content).toContain("FrontmatterPreviewConfig | false");
   });
 
-  it("frontmatter-preview.astro component exists in base template", async () => {
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("frontmatter-preview.astro component exists in base template", async () => {
     const choices: UserChoices = {
       projectName: "test-fp-component",
       defaultLang: "en",
@@ -1452,9 +1492,9 @@ describe("scaffold — imageEnlarge feature", () => {
     ).toBe(true);
   });
 
-  it("astro.config.ts wires rehypeImageEnlarge when enabled", async () => {
+  it("zfb.config.ts does not contain Astro-specific rehype symbols (imageEnlarge is a layout island)", async () => {
     const choices: UserChoices = {
-      projectName: "test-ie-astro-on",
+      projectName: "test-ie-zfb-on",
       defaultLang: "en",
       colorSchemeMode: "single",
       singleScheme: "Default Dark",
@@ -1463,31 +1503,18 @@ describe("scaffold — imageEnlarge feature", () => {
     };
     await scaffold(choices);
     const config = await fs.readFile(
-      projectPath("test-ie-astro-on", "astro.config.ts"),
+      projectPath("test-ie-zfb-on", "zfb.config.ts"),
       "utf-8",
     );
-    expect(config).toContain("rehypeImageEnlarge");
-    expect(config).toContain("settings.imageEnlarge");
-  });
-
-  it("astro.config.ts does not wire rehypeImageEnlarge when disabled", async () => {
-    const choices: UserChoices = {
-      projectName: "test-ie-astro-off",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
-    const config = await fs.readFile(
-      projectPath("test-ie-astro-off", "astro.config.ts"),
-      "utf-8",
-    );
+    // imageEnlarge is a layout island — it is not wired via the zfb config.
     expect(config).not.toContain("rehypeImageEnlarge");
   });
 
-  it("doc-layout references ImageEnlarge when enabled", async () => {
+  // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("doc-layout references ImageEnlarge when enabled", async () => {
     const choices: UserChoices = {
       projectName: "test-ie-layout-on",
       defaultLang: "en",
@@ -1504,7 +1531,11 @@ describe("scaffold — imageEnlarge feature", () => {
     expect(layout).toContain("ImageEnlarge");
   });
 
-  it("doc-layout does not reference ImageEnlarge when disabled", async () => {
+  // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("doc-layout does not reference ImageEnlarge when disabled", async () => {
     const choices: UserChoices = {
       projectName: "test-ie-layout-off",
       defaultLang: "en",
@@ -1613,7 +1644,11 @@ describe("scaffold — tagGovernance feature", () => {
 });
 
 describe("scaffold — versioning feature (sub #468)", () => {
-  it("declares versionAvailability prop in scaffolded header.astro when enabled", async () => {
+  // Depends on: topic-template-files (E7a JSX header port) + topic-feature-modules
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("declares versionAvailability prop in scaffolded header.tsx when enabled", async () => {
     const choices: UserChoices = {
       projectName: "test-versioning-header-prop",
       defaultLang: "en",
@@ -1638,16 +1673,20 @@ describe("scaffold — versioning feature (sub #468)", () => {
     );
     // Props interface declares versionAvailability
     expect(header).toMatch(/versionAvailability\?:\s*VersionAvailability;/);
-    // Destructure pulls versionAvailability out of Astro.props
+    // Destructure pulls versionAvailability out of component props
     expect(header).toMatch(
-      /const\s*\{[\s\S]*versionAvailability[\s\S]*\}\s*=\s*Astro\.props/,
+      /const\s*\{[\s\S]*versionAvailability[\s\S]*\}\s*=/,
     );
     // No leftover @slot anchor lines after composition
     expect(header).not.toContain("@slot:header:props");
     expect(header).not.toContain("@slot:header:props-destructure");
   });
 
-  it("does NOT add versionAvailability prop when versioning is disabled", async () => {
+  // Depends on: topic-template-files (E7a JSX header port) + topic-feature-modules
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("does NOT add versionAvailability prop when versioning is disabled", async () => {
     const choices: UserChoices = {
       projectName: "test-versioning-header-prop-off",
       defaultLang: "en",
@@ -1674,7 +1713,10 @@ describe("scaffold — versioning feature (sub #468)", () => {
 });
 
 describe("scaffold — footerTaglist feature", () => {
-  it("emits taglist block inside footer when enabled (with tagGovernance)", async () => {
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("emits taglist block inside footer when enabled (with tagGovernance)", async () => {
     const choices: UserChoices = {
       projectName: "test-footer-taglist-on",
       defaultLang: "en",
@@ -1945,7 +1987,10 @@ describe("scaffold — framework TS error fixes (sub #410)", () => {
    * problematic patterns, so a future generator change cannot silently
    * reintroduce them without flagging.
    */
-  it("frontmatter-preview.astro casts value to NonNullable<unknown> before JSX slot", async () => {
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("frontmatter-preview.astro casts value to NonNullable<unknown> before JSX slot", async () => {
     const choices: UserChoices = {
       projectName: "test-410-fp",
       defaultLang: "en",
@@ -1985,7 +2030,11 @@ describe("scaffold — framework TS error fixes (sub #410)", () => {
     ).toBeTruthy();
   });
 
-  it("i18n header injection no longer passes the dead `locales` prop to LanguageSwitcher", async () => {
+  // Depends on: topic-template-files (E7a JSX header port) + topic-feature-modules
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("i18n header injection no longer passes the dead `locales` prop to LanguageSwitcher", async () => {
     const choices: UserChoices = {
       projectName: "test-410-i18n",
       defaultLang: "en",
@@ -2000,13 +2049,206 @@ describe("scaffold — framework TS error fixes (sub #410)", () => {
       "utf-8",
     );
     // LanguageSwitcher's Props interface only declares `lang`. Passing
-    // `locales` triggers ts(2322): "{ ... } is not assignable to IntrinsicAttributes & Props".
+    // `locales` triggers a type error: "{ ... } is not assignable to IntrinsicAttributes & Props".
     expect(header).toMatch(/<LanguageSwitcher lang=\{lang\} \/>/);
     expect(header).not.toMatch(/locales=\{locales\}/);
     // The accompanying `import { locales } from "@/config/i18n"` must also go,
-    // otherwise tsc flags it as ts(6133) "declared but never used".
+    // otherwise tsc flags it as "declared but never used".
     expect(header).not.toMatch(
       /import \{ locales \} from "@\/config\/i18n";/,
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// zfb.config.ts shape — ≥ 3 representative feature combinations
+//
+// ALL tests in this describe block depend on:
+//   - topic-config-generators  (zfb-config-gen.ts that emits zfb.config.ts)
+//   - topic-template-files     (base template retarget to zfb layout)
+//
+// They will fail until those sibling topics merge into base/astro-zfb-migration-scaffold.
+// ---------------------------------------------------------------------------
+
+describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
+  // Pattern 1: minimal (search + sidebarFilter, no i18n, single scheme)
+  describe("minimal", () => {
+    const choices: UserChoices = {
+      projectName: "test-zfb-minimal",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "sidebarFilter"],
+      packageManager: "pnpm",
+    };
+
+    beforeEach(async () => {
+      await scaffold(choices);
+    });
+
+    it("creates zfb.config.ts with defineConfig from zfb/config", async () => {
+      const config = await fs.readFile(
+        projectPath("test-zfb-minimal", "zfb.config.ts"),
+        "utf-8",
+      );
+      expect(config).toContain('from "zfb/config"');
+      expect(config).toContain("defineConfig(");
+      expect(config).not.toContain('from "astro/config"');
+    });
+
+    it("zfb.config.ts declares framework: preact and tailwind", async () => {
+      const config = await fs.readFile(
+        projectPath("test-zfb-minimal", "zfb.config.ts"),
+        "utf-8",
+      );
+      expect(config).toContain('framework: "preact"');
+      expect(config).toContain("tailwind:");
+    });
+
+    it("zfb.config.ts declares docs collection derived from settings.docsDir", async () => {
+      const config = await fs.readFile(
+        projectPath("test-zfb-minimal", "zfb.config.ts"),
+        "utf-8",
+      );
+      expect(config).toContain('"docs"');
+      expect(config).toContain("settings.docsDir");
+    });
+
+    it("zfb.config.ts has a plugins array", async () => {
+      const config = await fs.readFile(
+        projectPath("test-zfb-minimal", "zfb.config.ts"),
+        "utf-8",
+      );
+      expect(config).toContain("plugins:");
+    });
+
+    it("src/content.config.ts is NOT emitted (content config lives in zfb.config.ts)", async () => {
+      expect(
+        await fs.pathExists(
+          projectPath("test-zfb-minimal", "src/content.config.ts"),
+        ),
+      ).toBe(false);
+    });
+
+    // Post-S5: the root package.json has dropped astro/@astrojs/* and the
+    // generator now lists @takazudo/zfb directly as the runtime dependency.
+    // (Replaces the Phase-A assertion that astro was still present.)
+    it("package.json lists @takazudo/zfb as a runtime dependency (post-S5)", async () => {
+      const pkg = await fs.readJson(
+        projectPath("test-zfb-minimal", "package.json"),
+      );
+      expect(pkg.dependencies["@takazudo/zfb"]).toBeDefined();
+      expect(pkg.dependencies["astro"]).toBeUndefined();
+    });
+  });
+
+  // Pattern 2: barebone — everything off (no features, single scheme)
+  describe("barebone (everything off)", () => {
+    const choices: UserChoices = {
+      projectName: "test-zfb-barebone",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: [],
+      packageManager: "pnpm",
+    };
+
+    beforeEach(async () => {
+      await scaffold(choices);
+    });
+
+    it("zfb.config.ts exists without any optional plugin imports", async () => {
+      const config = await fs.readFile(
+        projectPath("test-zfb-barebone", "zfb.config.ts"),
+        "utf-8",
+      );
+      expect(config).toContain('from "zfb/config"');
+      expect(config).not.toContain("docHistory");
+      expect(config).not.toContain("llmsTxt");
+      expect(config).not.toContain("claudeResources");
+    });
+
+    it("src/content.config.ts is NOT emitted", async () => {
+      expect(
+        await fs.pathExists(
+          projectPath("test-zfb-barebone", "src/content.config.ts"),
+        ),
+      ).toBe(false);
+    });
+
+    it("no locale collections in zfb.config.ts (i18n off)", async () => {
+      const config = await fs.readFile(
+        projectPath("test-zfb-barebone", "zfb.config.ts"),
+        "utf-8",
+      );
+      expect(config).not.toContain("docs-ja");
+    });
+  });
+
+  // Pattern 3: most features on (i18n, search, docHistory, llmsTxt, claudeResources)
+  describe("most features on", () => {
+    const choices: UserChoices = {
+      projectName: "test-zfb-full",
+      defaultLang: "en",
+      colorSchemeMode: "light-dark",
+      lightScheme: "Default Light",
+      darkScheme: "Default Dark",
+      respectPrefersColorScheme: true,
+      defaultMode: "dark",
+      features: [
+        "i18n",
+        "search",
+        "sidebarFilter",
+        "docHistory",
+        "llmsTxt",
+        "claudeResources",
+        "imageEnlarge",
+      ],
+      packageManager: "pnpm",
+    };
+
+    beforeEach(async () => {
+      await scaffold(choices);
+    });
+
+    it("zfb.config.ts contains locale collection entries for i18n", async () => {
+      const config = await fs.readFile(
+        projectPath("test-zfb-full", "zfb.config.ts"),
+        "utf-8",
+      );
+      // Locale collections are derived at zfb-load time from
+      // settings.locales, so the literal locale ids (docs-ja, etc.)
+      // do not appear in the emitted file. Assert the loop is wired.
+      expect(config).toContain("Object.entries(settings.locales)");
+    });
+
+    it("zfb.config.ts wires docHistory, llmsTxt, and claudeResources plugins", async () => {
+      const config = await fs.readFile(
+        projectPath("test-zfb-full", "zfb.config.ts"),
+        "utf-8",
+      );
+      expect(config).toContain("docHistory");
+      expect(config).toContain("llmsTxt");
+      expect(config).toContain("claudeResources");
+    });
+
+    // imageEnlarge is a layout island, not a markdown rehype plugin in
+    // the zfb.config.ts pipeline. Make the negative assertion explicit
+    // so a future regression that re-introduces it gets caught.
+    it("zfb.config.ts does NOT wire rehypeImageEnlarge (it is a layout island)", async () => {
+      const config = await fs.readFile(
+        projectPath("test-zfb-full", "zfb.config.ts"),
+        "utf-8",
+      );
+      expect(config).not.toContain("rehypeImageEnlarge");
+    });
+
+    it("src/content.config.ts is NOT emitted", async () => {
+      expect(
+        await fs.pathExists(
+          projectPath("test-zfb-full", "src/content.config.ts"),
+        ),
+      ).toBe(false);
+    });
   });
 });

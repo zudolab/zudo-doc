@@ -10,11 +10,11 @@ These commands start the local development servers.
 
 | Command | What it does |
 |---|---|
-| `pnpm dev` | Runs Astro dev server (port 4321) and doc-history-server (port 4322) concurrently |
-| `pnpm dev:astro` | Astro dev server only (port 4321) |
+| `pnpm dev` | Runs the zfb dev server (port 4321) and doc-history-server (port 4322) concurrently |
+| `pnpm dev:zfb` | zfb dev server only (port 4321) |
 | `pnpm dev:history` | Doc history API server only (port 4322) |
 | `pnpm dev:stable` | Alternative build-then-serve mode (avoids HMR crashes on content file add/remove) |
-| `pnpm dev:network` | Astro dev server with `--host 0.0.0.0` for LAN access |
+| `pnpm dev:network` | zfb dev server with `--host 0.0.0.0` for LAN access |
 
 <Tip>
 
@@ -27,9 +27,9 @@ Use `pnpm dev:stable` when you're adding or removing content files frequently. S
 | Command | What it does |
 |---|---|
 | `pnpm build` | Static HTML export to `dist/` |
-| `pnpm check` | Astro type checking |
+| `pnpm check` | TypeScript type checking |
 | `pnpm b4push` | Pre-push validation: format check → typecheck → build → link check → E2E tests |
-| `pnpm format` | Format MDX and Astro files |
+| `pnpm format` | Format MDX files |
 | `pnpm test:unit` | Run unit tests (Vitest) |
 | `pnpm test:e2e` | Run E2E tests (Playwright) |
 
@@ -41,25 +41,23 @@ Run `pnpm b4push` before pushing to verify the full site builds, all links resol
 
 ## Component Development
 
-zudo-doc uses three component tiers. Choose the right tier based on what your component needs to do.
+zudo-doc is a Preact-only project running on zfb. All components are `.tsx` files. The distinction is **whether a component runs only on the server, or also hydrates on the client**.
 
-### Astro Components
+### Server-rendered Preact components
 
-`.astro` files are the default choice — zero JavaScript, server-rendered at build time.
-
-Use Astro components for:
+By default, every `.tsx` component renders to HTML at build time and ships zero client-side JavaScript. This is the right choice for:
 
 - Layout wrappers
-- Static UI elements (headers, footers, sidebars)
-- Anything that doesn't require user interaction
+- Static UI elements (headers, footers, sidebars without interactivity)
+- Anything that doesn't require runtime state or DOM events
 
-### Preact Islands
+### Client-hydrated islands
 
-`client:load` islands are used only when client-side interactivity is required. Preact runs in compat mode (`@astrojs/preact` with `compat: true`), so components can use React-style imports and APIs.
+When a component needs interactivity — local state, event handlers, animations — it registers itself with zfb's island runtime through its own `useEffect` / event-binding code. Server-render output is reused; only the interactive part hydrates.
 
-Current islands in the project: `toc.tsx`, `mobile-toc.tsx`, `sidebar-toggle.tsx`, `sidebar-tree.tsx`, `theme-toggle.tsx`, `doc-history.tsx`, `color-tweak-panel.tsx`, `color-tweak-export-modal.tsx`.
+Current islands in the project: `toc.tsx`, `mobile-toc.tsx`, `sidebar-toggle.tsx`, `sidebar-tree.tsx`, `theme-toggle.tsx`, `doc-history.tsx`, design-token-tweak panel, ai-chat-modal, find-bar.
 
-Use Preact islands for:
+Use client-hydrated islands for:
 
 - Scroll spy (TOC highlighting)
 - Toggle/drawer components
@@ -67,7 +65,7 @@ Use Preact islands for:
 
 ### Content Typography Components
 
-These live in `src/components/content/` and are Preact function components **without** a `client:` directive — they are server-rendered with zero client JavaScript. They override standard HTML elements in MDX via `<Content components={...} />`.
+These live in `src/components/content/` and are Preact function components that render purely on the server — no client hydration. They override standard HTML elements in MDX via the `_mdx-components.ts` mapping consumed by the doc page route.
 
 Current overrides: headings (h2–h4), paragraph, link, strong, blockquote, lists (ul/ol), table.
 
@@ -81,7 +79,7 @@ Follow these steps when adding new documentation pages:
 2. Write content starting with `## h2` headings. Do not add `# h1` — the frontmatter `title` renders as the page h1.
 3. Create a matching file under `src/content/docs-ja/` with translated prose.
 4. Keep all code blocks identical between EN and JA — only translate the surrounding prose.
-5. Run `pnpm format:mdx` to format MDX files.
+5. Run `pnpm format` (or `pnpm format:mdx`) to format MDX files.
 6. Run `pnpm build` to verify the site builds correctly.
 
 <Tip>

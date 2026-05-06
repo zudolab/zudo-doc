@@ -6,7 +6,7 @@ export const footerFeature: FeatureModule = () => ({
     {
       file: "src/layouts/doc-layout.astro",
       anchor: "// @slot:doc-layout:imports",
-      content: 'import Footer from "@/components/footer.astro";',
+      content: 'import Footer from "@/components/footer";',
     },
     {
       file: "src/layouts/doc-layout.astro",

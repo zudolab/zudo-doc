@@ -1,0 +1,105 @@
+---
+title: コードブロック
+description: タイトル、行ハイライト、差分表示に対応した、syntectによるシンタックスハイライト付きフェンスドコードブロック。
+sidebar_position: 1.5
+---
+
+zudo-docのフェンスドコードブロックは、ビルド時にzfbエンジンが実行するRust製のシンタックスハイライタ[syntect](https://github.com/trishume/syntect)によってハイライトされます。開始フェンスの後に言語識別子を指定するとハイライトが有効になります。
+
+## 基本的な使い方
+
+トリプルバッククォートでコードを囲み、開始フェンスの後に言語識別子を追加します。
+
+```ts
+function add(a: number, b: number): number {
+  return a + b;
+}
+```
+
+````mdx
+```ts
+function add(a: number, b: number): number {
+  return a + b;
+}
+```
+````
+
+## サポートされている言語
+
+syntectは多くの言語を標準でサポートしています。主な識別子は以下の通りです：
+
+| 言語 | 識別子 |
+| -------- | ---------- |
+| TypeScript | `ts`, `typescript` |
+| JavaScript | `js`, `javascript` |
+| HTML | `html` |
+| CSS | `css` |
+| JSON | `json` |
+| Bash / Shell | `bash`, `sh`, `shell`, `zsh` |
+| Markdown | `md`, `markdown` |
+| MDX | `mdx` |
+| YAML | `yaml`, `yml` |
+| Python | `python`, `py` |
+| Rust | `rust`, `rs` |
+| Go | `go` |
+| SQL | `sql` |
+| GraphQL | `graphql` |
+| Diff | `diff` |
+| TOML | `toml` |
+| JSX / TSX | `jsx`, `tsx` |
+
+認識できない言語識別子が指定された場合は、ハイライトされない素のコードブロックとしてレンダリングされます。コンテナのスタイル、コピーボタン、折り返しトグルはそのまま動作します。
+
+## コードブロックのタイトル
+
+`title`メタ属性を追加すると、コードブロックの上にファイル名やラベルを表示できます。
+
+```ts title="src/utils/math.ts"
+export function multiply(a: number, b: number): number {
+  return a * b;
+}
+```
+
+````mdx
+```ts title="src/utils/math.ts"
+export function multiply(a: number, b: number): number {
+  return a * b;
+}
+```
+````
+
+## 差分表示
+
+`diff`言語を使用すると、`+`と`-`のプレフィックスで追加・削除行をハイライト表示できます。
+
+```diff
+- const greeting = "Hello";
++ const greeting = "Hello, world!";
+  console.log(greeting);
+```
+
+````mdx
+```diff
+- const greeting = "Hello";
++ const greeting = "Hello, world!";
+  console.log(greeting);
+```
+````
+
+## ネストされたコードブロック
+
+MDXの例の中にフェンスドコードブロックを表示する必要がある場合は、外側のフェンスに4つのバッククォートを使用し、内側のブロックには3つを使用します。
+
+`````mdx
+````mdx
+```ts
+const x = 1;
+```
+````
+`````
+
+## シンタックスハイライトのテーマ
+
+ビルド時のハイライタはsyntectで、各トークンの色を `style="color:#hex"` のインラインスタイルとして単一テーマでレンダリングします。現在のテーマは `base16-ocean-dark` です。
+
+`src/config/color-schemes.ts` の `shikiTheme` フィールドは別物で、デザイントークン編集パネル専用のランタイム設定です。パネルが開いているときに、カラースキーム変更のライブプレビュー用としてクライアント側でShikiによる再ハイライトが行われます。静的なページレンダリングではこの値は使われません。

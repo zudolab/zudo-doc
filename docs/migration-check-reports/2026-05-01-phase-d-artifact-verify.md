@@ -1,0 +1,95 @@
+# Phase D — Artifact Diff Verification (2026-05-01)
+
+**Rerun date**: 2026-05-01  
+**Harness**: `pnpm migration-check --rerun`  
+**Snapshot A**: `origin/main` (Astro site)  
+**Snapshot B**: `HEAD` (zfb site, post-Phase-C mop-up)  
+**Epic**: [#668](https://github.com/zudolab/zudo-doc/issues/668)
+
+---
+
+## Result Summary
+
+| Artifact | Type | Removed lines | Added lines / delta | vs B-16 baseline |
+|---|---|---|---|---|
+| `llms-full.txt` | text | 158 | 339 added | +1 removed (Phase C-4 heading rename) |
+| `llms.txt` | text | 2 | 4 added | matches |
+| `search-index.json` | JSON | — | +4 entries | matches |
+| `sitemap.xml` | text | 6 | 15 added | matches |
+
+B-16 baseline reference (issue #668): `llms-full.txt` 157/339, `llms.txt` 2/4, `search-index.json` +4, `sitemap.xml` 6/15.
+
+---
+
+## Triage — llms-full.txt (158 removed / 339 added)
+
+### Removed lines (158 total)
+
+| Source page | Count | Classification | Cause |
+|---|---|---|---|
+| `docs/reference/ai-chat-worker` | 82 | intentional | Route-only-in-A: page removed in B |
+| `docs/claude-md/packages--ai-chat-worker` | 30 | intentional | Route-only-in-A: page removed in B |
+| `docs/guides/ai-assistant` | 17 | intentional | ai-chat-worker section removed from guide (Phase C content update) |
+| `docs/reference/ai-assistant-api` | 15 | intentional | Backend-mode docs simplified after ai-chat-worker removal (Phase C) |
+| `docs/claude-md/packages--create-zudo-doc` | 7 | intentional | ai-chat-worker references removed from create-zudo-doc CLAUDE.md (Phase C) |
+| `docs/components/image-enlarge` | 3 | intentional | Image paths migrated `./image.png` → `/img/image-enlarge/image.webp` (Phase B asset fix) |
+| `docs/getting-started/structuring-navigations` | 1 | intentional | ai-chat-worker heading removed from page (Phase C) |
+| `docs/guides/doc-history` | 1 | intentional | ai-chat-worker reference removed from doc-history guide (Phase C) |
+| `docs/guides/configuration` | 1 | intentional | ai-chat-worker config option removed from docs (Phase C) |
+| `docs/claude-skills/zudo-doc-design-system` | 1 | intentional | Section heading renamed `hover:underline on link-like elements` → `Hover-state underline for link-like elements` (Phase C-4) |
+
+### Added lines (339 total)
+
+All 339 added lines are content from the 15 route-only-in-B pages (new routes added in B):
+`/docs/changelog/0.1.0`, `/docs/claude-agents`, `/docs/claude-md`, `/docs/claude-skills`, `/docs/claude-skills/l-lessons-zfb-migration-parity`, `/docs/claude-skills/l-zfb-migration-check`, `/docs/concepts`, `/docs/concepts/routing-conventions`, `/docs/concepts/trailing-slash-policy`, plus `/ja/` mirrors.
+
+**Classification**: intentional (route symmetric-diff).
+
+---
+
+## Triage — llms.txt (2 removed / 4 added)
+
+| Direction | Line | Classification |
+|---|---|---|
+| removed | Entry for `docs/claude-md/packages--ai-chat-worker` | intentional (route-only-in-A) |
+| removed | Entry for `docs/reference/ai-chat-worker` | intentional (route-only-in-A) |
+| added | Entry for `docs/concepts/routing-conventions` | intentional (route-only-in-B) |
+| added | Entry for `docs/concepts/trailing-slash-policy` | intentional (route-only-in-B) |
+| added | Entry for `docs/claude-skills/l-lessons-zfb-migration-parity` | intentional (route-only-in-B) |
+| added | Entry for `docs/claude-skills/l-zfb-migration-check` | intentional (route-only-in-B) |
+
+---
+
+## Triage — search-index.json (+4 entries)
+
+Net new searchable routes: 15 routes added in B minus 6 routes removed minus routes not indexed = +4 net entries. Matches the route symmetric-diff counts.
+
+**Classification**: intentional (route symmetric-diff).
+
+---
+
+## Triage — sitemap.xml (6 removed / 15 added)
+
+| Direction | Count | Classification |
+|---|---|---|
+| removed `<loc>` entries | 6 | intentional (6 route-only-in-A pages and their `/ja/` mirrors) |
+| added `<loc>` entries | 15 | intentional (15 route-only-in-B pages and their `/ja/` mirrors) |
+
+---
+
+## No Fixes Required
+
+No zudo-doc-side bugs, harness false-positives, or zfb-upstream gaps were found.
+All diff lines are accounted for by:
+
+1. Route symmetric-diff (6 A-only removals, 15 B-only additions) — intentional doc churn.
+2. ai-chat-worker feature removal — content removed from shared pages in B (Phase C mop-up).
+3. Image path migration (`./image.png` → `/img/image-enlarge/image.webp`) — Phase B asset fix.
+4. Phase C-4 heading rename in `zudo-doc-design-system` page.
+
+---
+
+## Acceptance Verdict
+
+**YES** — every artifact diff is either zero or has a documented intentional cause.
+The Phase D artifact verification acceptance criterion is satisfied.

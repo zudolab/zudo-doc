@@ -1,0 +1,105 @@
+---
+title: Code Blocks
+description: Syntax-highlighted fenced code blocks powered by syntect, with support for titles, line highlighting, and diff display.
+sidebar_position: 1.5
+---
+
+Fenced code blocks in zudo-doc are powered by [syntect](https://github.com/trishume/syntect), a Rust-native syntax highlighter run during the build by the zfb engine. Specify the language after the opening fence to activate highlighting.
+
+## Basic Usage
+
+Wrap code in triple backticks and add a language identifier after the opening fence.
+
+```ts
+function add(a: number, b: number): number {
+  return a + b;
+}
+```
+
+````mdx
+```ts
+function add(a: number, b: number): number {
+  return a + b;
+}
+```
+````
+
+## Supported Languages
+
+syntect ships a wide range of languages out of the box. Common identifiers:
+
+| Language | Identifier |
+| -------- | ---------- |
+| TypeScript | `ts`, `typescript` |
+| JavaScript | `js`, `javascript` |
+| HTML | `html` |
+| CSS | `css` |
+| JSON | `json` |
+| Bash / Shell | `bash`, `sh`, `shell`, `zsh` |
+| Markdown | `md`, `markdown` |
+| MDX | `mdx` |
+| YAML | `yaml`, `yml` |
+| Python | `python`, `py` |
+| Rust | `rust`, `rs` |
+| Go | `go` |
+| SQL | `sql` |
+| GraphQL | `graphql` |
+| Diff | `diff` |
+| TOML | `toml` |
+| JSX / TSX | `jsx`, `tsx` |
+
+If a language identifier isn't recognised, the block falls back to a plain unhighlighted render — the surrounding container styling and copy/word-wrap controls still apply.
+
+## Code Block Title
+
+Add a `title` meta attribute to display a filename or label above the code block.
+
+```ts title="src/utils/math.ts"
+export function multiply(a: number, b: number): number {
+  return a * b;
+}
+```
+
+````mdx
+```ts title="src/utils/math.ts"
+export function multiply(a: number, b: number): number {
+  return a * b;
+}
+```
+````
+
+## Diff Highlighting
+
+Use the `diff` language to show added and removed lines with `+` and `-` prefixes.
+
+```diff
+- const greeting = "Hello";
++ const greeting = "Hello, world!";
+  console.log(greeting);
+```
+
+````mdx
+```diff
+- const greeting = "Hello";
++ const greeting = "Hello, world!";
+  console.log(greeting);
+```
+````
+
+## Nested Code Blocks
+
+When you need to show a fenced code block inside an MDX example, use four backticks for the outer fence and three for the inner block.
+
+`````mdx
+````mdx
+```ts
+const x = 1;
+```
+````
+`````
+
+## Syntax-highlight Theme
+
+The build-time highlighter is syntect, which renders each token's color as inline `style="color:#hex"` against a single theme. The current theme is `base16-ocean-dark`.
+
+The `shikiTheme` field in `src/config/color-schemes.ts` is a separate, runtime-only setting consumed by the design-token-tweak panel: when that panel is open it re-highlights code blocks via Shiki on the client to preview color-scheme tweaks live. The static page render does not use it.

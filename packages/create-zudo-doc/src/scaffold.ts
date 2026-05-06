@@ -3,8 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import type { UserChoices } from "./prompts.js";
 import { generateSettingsFile } from "./settings-gen.js";
-import { generateAstroConfig } from "./astro-config-gen.js";
-import { generateContentConfig } from "./content-config-gen.js";
+import { generateZfbConfig } from "./zfb-config-gen.js";
 import { generateCLAUDEFile } from "./claude-md-gen.js";
 import { composeFeatures } from "./compose.js";
 import { featureModules } from "./features/index.js";
@@ -188,16 +187,10 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     settingsContent,
   );
 
-  const astroConfigContent = generateAstroConfig(choices);
+  const zfbConfigContent = generateZfbConfig(choices);
   await fs.outputFile(
-    path.join(targetDir, "astro.config.ts"),
-    astroConfigContent,
-  );
-
-  const contentConfigContent = generateContentConfig(choices);
-  await fs.outputFile(
-    path.join(targetDir, "src/content.config.ts"),
-    contentConfigContent,
+    path.join(targetDir, "zfb.config.ts"),
+    zfbConfigContent,
   );
 
   const pkg = generatePackageJson(choices);
@@ -212,7 +205,7 @@ export async function scaffold(choices: UserChoices): Promise<void> {
       "# Build output",
       "node_modules",
       "dist",
-      ".astro",
+      ".zfb",
       "",
       "# macOS",
       ".DS_Store",
@@ -246,9 +239,13 @@ export async function scaffold(choices: UserChoices): Promise<void> {
 
 function generatePackageJson(choices: UserChoices) {
   const deps: Record<string, string> = {
-    astro: "^6.0.4",
-    "@astrojs/mdx": "^5.0.0",
-    "@astrojs/preact": "^5.0.0",
+    // zfb engine — replaces astro/@astrojs/* now that the cutover (#500 S5)
+    // has retired the legacy Astro pipeline. The host project supplies the
+    // local file: pin in its own package.json; the scaffold just lists the
+    // public entry by name so resolution comes from the user's registry /
+    // workspace.
+    "@takazudo/zfb": "*",
+    "@takazudo/zfb-runtime": "*",
     preact: "^10.26.9",
     shiki: "^4.0.2",
     "@shikijs/transformers": "^4.0.0",
@@ -266,7 +263,6 @@ function generatePackageJson(choices: UserChoices) {
     tailwindcss: "^4.2.0",
 
     typescript: "^5.9.0",
-    "@astrojs/check": "^0.9.7",
     "@types/hast": "^3.0.4",
     "@types/mdast": "^4.0.4",
     "@types/node": "^22.0.0",
@@ -295,10 +291,10 @@ function generatePackageJson(choices: UserChoices) {
   }
 
   const scripts: Record<string, string> = {
-    dev: "astro dev",
-    build: "astro build",
-    preview: "astro preview",
-    check: "astro check",
+    dev: "zfb dev",
+    build: "zfb build",
+    preview: "zfb preview",
+    check: "zfb check",
   };
 
   if (choices.features.includes("tagGovernance")) {

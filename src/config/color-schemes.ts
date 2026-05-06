@@ -11,7 +11,11 @@ export interface ColorScheme {
     string, string, string, string, string, string, string, string,
     string, string, string, string, string, string, string, string,
   ];
-  shikiTheme: NonNullable<import("astro").ShikiConfig["theme"]>;
+  // Shiki theme name (e.g. "dracula", "catppuccin-latte"). Was typed via
+  // Astro's ShikiConfig before the zfb cutover; post-cutover we use a plain
+  // string since shiki accepts either a registered theme name or a theme JSON
+  // object — and the project only uses string names.
+  shikiTheme: string;
   /** Optional semantic overrides — when omitted, defaults are used:
    *  surface=p0, muted=p8, accent=p5, accentHover=p14
    *  codeBg=p10, codeFg=p11, success=p2, danger=p1, warning=p3, info=p4

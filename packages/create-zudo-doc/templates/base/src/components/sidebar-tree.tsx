@@ -1,4 +1,10 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+"use client";
+
+// Use preact hook entrypoints directly — zfb's esbuild step doesn't alias
+// "react" to "preact/compat" the way Astro's `@astrojs/preact` integration
+// did, so importing from "react" here would fail to resolve at SSR/island
+// bundle time.
+import { useState, useCallback, useEffect, useMemo, useRef } from "preact/hooks";
 import type { NavNode } from "@/utils/docs";
 import type { LocaleLink } from "@/types/locale";
 import { INDENT, BASE_PAD, connectorLeft, ConnectorLines, CategoryLinkIcon } from "./tree-nav-shared";
@@ -72,8 +78,10 @@ function useActiveSlug(nodes: NavNode[], initial?: string): string | undefined {
       if (found !== undefined) setSlug(found);
     };
     update();
-    document.addEventListener("astro:after-swap", update);
-    return () => document.removeEventListener("astro:after-swap", update);
+    // zfb's `<ViewTransitions />` does a real page load on every
+    // navigation, so `DOMContentLoaded` is the post-navigate signal.
+    document.addEventListener("DOMContentLoaded", update);
+    return () => document.removeEventListener("DOMContentLoaded", update);
   }, [nodes]);
 
   return slug;

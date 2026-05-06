@@ -12,7 +12,8 @@
     "dev": "tsx src/index.ts",
     "generate": "tsx src/cli.ts",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepare": "tsup src/index.ts src/cli.ts --format esm --dts --silent"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

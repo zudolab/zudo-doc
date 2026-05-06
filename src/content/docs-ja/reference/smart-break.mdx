@@ -44,19 +44,17 @@ export function FileBadge({ path }: { path: string }) {
 
 ## 手動適用：`smartBreakToHtml` ヘルパー
 
-Astro コンポーネントや、HTML 文字列を描画するコードパス（`set:html` や `dangerouslySetInnerHTML` など）では、Preact の VNode を直接マウントできません。その場合は `smartBreakToHtml` を使ってください。HTML エスケープ済みの文字列に、リテラルの `<wbr>` タグを挿入した結果を返します：
+HTML 文字列を描画するコードパス（`dangerouslySetInnerHTML` など）では、Preact の VNode を直接マウントできません。その場合は `smartBreakToHtml` を使ってください。HTML エスケープ済みの文字列に、リテラルの `<wbr>` タグを挿入した結果を返します：
 
-```astro
----
+```tsx
 import { smartBreakToHtml } from "@/utils/smart-break";
 
-const { label } = Astro.props;
----
-
-<span set:html={smartBreakToHtml(label)} />
+export function PathLabel({ label }: { label: string }) {
+  return <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(label) }} />;
+}
 ```
 
-返される文字列はすでに HTML エスケープ済みなので、そのまま `set:html` に渡しても安全です。
+返される文字列はすでに HTML エスケープ済みなので、そのまま `dangerouslySetInnerHTML` に渡しても安全です。
 
 ## 判定のしくみ
 

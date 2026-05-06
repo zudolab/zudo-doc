@@ -1,5 +1,7 @@
 # E2E Tests
 
+> **Status (post-zfb cutover):** the fixture setup harness (`setup-fixtures.sh`, `playwright.config.ts`) is now retargeted onto zfb (epic 1337 task 3a). Per-spec selector retargeting (task 3b) is the remaining E9b work — some specs may still encode Astro-era markup until that lands.
+
 ## Architecture
 
 5 Playwright fixtures, each with its own port, build, and `settings.ts`:
@@ -12,7 +14,7 @@
 | smoke | 4503 | General features (search, TOC, code blocks, mermaid, doc history, etc.) |
 | versioning | 4504 | Version switcher, banners |
 
-Configured in `playwright.config.ts`. Each fixture runs `astro preview` on its port.
+Configured in `playwright.config.ts`. Each fixture's webServer entry runs `zfb preview` against the pre-built `dist/` produced by `setup-fixtures.sh`.
 
 ## Adding Tests
 
@@ -46,15 +48,15 @@ test("feature works", async ({ page }) => {
 
 ## Fixture Setup Pipeline (`setup-fixtures.sh`)
 
-Each fixture shares framework source from repo root via **symlinks**, but has its own content and settings:
+Each fixture shares the project tree from repo root via **symlinks**, but has its own content and settings.
 
-- **Symlinked**: `components/`, `hooks/`, `integrations/`, `layouts/`, `plugins/`, `styles/`, `types/`, `utils/`, `node_modules/`
-- **Copied** (has relative imports): `astro.config.ts`, `content.config.ts`, `src/config/*.ts` (except `settings.ts`)
-- **Fixture-specific**: `src/config/settings.ts`, `src/content/docs/`
+- **Symlinked at fixture root**: `pages/`, `plugins/`, `packages/`, `node_modules/`
+- **Symlinked under `src/`**: `components/`, `hooks/`, `lib/`, `mocks/`, `plugins/`, `scripts/`, `styles/`, `types/`, `utils/`
+- **Copied** (relative imports): `zfb.config.ts`, `zfb-shim.d.ts`, `tsconfig.json`, and every `src/config/*.ts | *.tsx` *except* `settings.ts`
+- **Fixture-specific** (kept in git per fixture): `src/config/settings.ts`, `src/content/`, optionally `public/<fixture-only-files>/`
+- **Seed file**: `.zfb/doc-history-meta.json` is created as `{}` so the bundler's static `#doc-history-meta` import resolves on the first run; the doc-history plugin's preBuild hook overwrites it on subsequent builds.
 
-All fixtures are pre-built sequentially before Playwright runs (`astro build`), then Playwright only runs `astro preview`.
-
-The smoke fixture also initializes a git repo for doc-history testing (2 commits).
+All fixtures are pre-built sequentially with `zfb build` (with `SKIP_DOC_HISTORY=1` for non-smoke fixtures) before Playwright runs; the runner then only spawns `zfb preview` per fixture. The smoke fixture also initialises a git repo for doc-history specs (2 commits) and is built *with* doc-history enabled so the per-page JSON manifests land in `dist/doc-history/`.
 
 ## Commands
 

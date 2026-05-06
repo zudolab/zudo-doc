@@ -83,7 +83,7 @@ Relative links are validated during build. If a linked file doesn't exist, you'l
 For external links or links to non-document pages, use regular URLs:
 
 ```mdx
-[Astro docs](https://docs.astro.build)
+[External site](https://example.com)
 [API reference](/api/v1)
 ```
 
@@ -183,17 +183,17 @@ See the [i18n guide](/docs/guides/i18n) for detailed instructions on managing tr
 
 ## MDX Features
 
-You can use Preact components in your documentation. Interactive components hydrate as Astro islands — the rest ships as pure HTML with zero JavaScript.
+You can use Preact components in your documentation. Interactive components hydrate on the client via zfb's island runtime — the rest ships as pure HTML with zero JavaScript.
 
 ```mdx
 import MyComponent from "@/components/my-component";
 
-<MyComponent client:load />
+<MyComponent />
 ```
 
 <Info>
 
-Use `client:load` for components that need interactivity. Omit it for components that only render static HTML.
+Components that need interactivity register with zfb's island runtime through their own `useEffect` / event-binding code. Components that only render static HTML render server-side and ship zero JavaScript.
 
 </Info>
 
