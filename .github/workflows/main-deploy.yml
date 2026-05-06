@@ -127,8 +127,21 @@ jobs:
           retention-days: 1
 
   # ---------------------------------------------------------------------------
-  # Job 1: Build the zfb docs site (shallow clone — fast)
+  # Job 1: Build the zfb docs site (full clone — needed for SSG meta dates)
   # ---------------------------------------------------------------------------
+  # fetch-depth: 0 is required so the doc-history preBuild step can call
+  # `git log --follow` on each content file and populate
+  # `.zfb/doc-history-meta.json` with real author/date values. Those
+  # values are statically inlined by esbuild into the SSG HTML at build
+  # time (via the #doc-history-meta tsconfig alias). A shallow clone
+  # produces an empty manifest, which causes DocMetainfoArea to return
+  # null and the visible Created/Updated/Author block to be absent from
+  # every deployed page (#1479, SSG meta gap).
+  #
+  # SKIP_DOC_HISTORY is intentionally NOT set here: we want the preBuild
+  # runner to execute with full git access. The build-history job still
+  # runs in parallel to generate the per-page dropdown JSON files for the
+  # DocHistory island.
   build-site:
     name: Build Site
     runs-on: ubuntu-latest
@@ -139,7 +152,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Clone zfb sibling repo
         run: |
@@ -180,8 +193,6 @@ jobs:
 
       - name: Build site
         run: pnpm build
-        env:
-          SKIP_DOC_HISTORY: "1"
 
       - name: Cache site build output
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
