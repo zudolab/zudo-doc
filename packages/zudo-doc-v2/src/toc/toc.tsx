@@ -79,9 +79,16 @@ export function Toc({ headings, title = "On this page" }: TocProps): VNode {
         "h-[calc(100vh-3.5rem)]",
       )}
     >
-      <h2 className="mb-vsp-xs pl-hsp-lg text-small font-medium text-fg">
+      {/* Non-heading label so the TOC title does not appear in the page
+          heading outline. The reference site (takazudomodular.com) emits
+          this as non-heading markup; using <h2> added an extra entry to
+          every doc page's outline and a structural diff vs the reference.
+          The <nav aria-label="Table of contents"> landmark provides the
+          section semantics for screen readers — a heading is redundant.
+          Wave 2 parity fix: zudolab/zudo-doc#1478. */}
+      <p className="mb-vsp-xs pl-hsp-lg text-small font-medium text-fg">
         {title}
-      </h2>
+      </p>
       {filtered.length > 0 && (
         <ul className="border-l border-muted pl-hsp-lg overflow-y-auto flex-1 min-h-0">
           {filtered.map((heading, index) => {
