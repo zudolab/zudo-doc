@@ -16,11 +16,6 @@ export type { ResolveMarkdownLinksOptions } from "./remark-resolve-markdown-link
 // JS plugin); the divergence is tracked in AUDIT.md pending a downstream
 // follow-up.
 export { rehypeStripMdExtension } from "./rehype-strip-md-extension";
-// CJK-safe heading-id slugger — companion to the dist-HTML rewriter at
-// plugins/heading-ids-cjk-plugin.mjs. zfb's Rust HeadingLinksPlugin
-// drops non-ASCII characters when slugifying, leaving JA pages without
-// `<h2 id="...">`. See zudolab/zudo-doc#1484.
-export { rehypeCjkHeadingIds } from "./rehype-cjk-heading-ids";
 
 // Utilities
 export { extractText } from "./hast-utils";

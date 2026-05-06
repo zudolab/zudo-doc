@@ -1,15 +1,19 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: 8e8aed2 (Takazudo/zudo-front-builder main, post-#214 merge:
- *           PR #214 base/fix-211-212 — sub-211 resolves plugin modules in
- *           zfb.config.json, sub-212 wires embedded-binary extraction into
- *           the TS config loader and CSS engine. Previous pin 9239267
- *           (post-#202 snapshot/bundler hash alignment) is included; on
- *           top of that, PR #208 post-migration-fixes batch (sort DTS
- *           object properties alphabetically; residual-fallback regression
- *           test) and PR #210 embed-framework-pkgs (preact + hono staged
- *           in zfb binary). Bumped 2026-05-06 in zudolab/zudo-doc#669
- *           parity-fix batch.)
+ *   commit: 3b81411 (Takazudo/zudo-front-builder main, post-#220 merge:
+ *           PR #220 base/content-plugin-fixes — sub-218 syntect alias
+ *           remap + themed fallback for unknown/error paths (so mdx/tsx/
+ *           jsx/no-lang fences keep the syntect-themed `<pre class="syntect-…">`
+ *           wrapper instead of degrading to bare `<pre>`); sub-219
+ *           Unicode-preserving heading slugifier (replaces ASCII-only
+ *           `is_ascii_alphanumeric()` filter so JA/CJK h2s get proper
+ *           `id` attrs natively). Both close consumer-side workarounds
+ *           previously carried in zudolab/zudo-doc — the postBuild
+ *           heading-ids-cjk plugin and the bare-`<pre>` CSS fallback are
+ *           retired in this same bump. Previous pin 8e8aed2 (post-#214
+ *           merge) included; on top of that, plus PR #208 post-migration
+ *           fixes, PR #210 embed-framework-pkgs, PR #214 fix-211-212.
+ *           Bumped 2026-05-06 in zudolab/zudo-doc#669 parity-fix batch.)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -529,19 +533,6 @@ const integrationPlugins = [
     options: {
       publicDir: "public",
     },
-  },
-  // Upstream zfb's `HeadingLinksPlugin` slugifier
-  // (`crates/zfb-content/src/plugins/heading_links.rs`) drops every
-  // non-ASCII character, so JA / CJK headings render with no `id`
-  // attribute and no permalink anchor — breaking TOC scroll-spy and
-  // direct-link `#section` URLs on every `/ja/docs/...` page.
-  // This postBuild plugin walks dist HTML and adds `id` + hash-link
-  // anchors using `github-slugger` (CJK-safe), matching the shape
-  // already produced for ASCII headings on the same pages. Closes
-  // zudolab/zudo-doc#1484.
-  {
-    name: "./plugins/heading-ids-cjk-plugin.mjs",
-    options: {},
   },
 ];
 
