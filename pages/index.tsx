@@ -138,7 +138,7 @@ export default function IndexPage(): JSX.Element {
           <SiteTreeNav
             tree={groupedTree}
             categoryOrder={categoryOrder}
-            categoryIgnore={["inbox"]}
+            categoryIgnore={["inbox", "develop"]}
           />
         ),
       }) as unknown as VNode}
