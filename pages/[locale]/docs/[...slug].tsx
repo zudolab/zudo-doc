@@ -56,6 +56,7 @@ import { HeaderWithDefaults } from "../../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../../lib/_head-with-defaults";
 import { buildFrontmatterPreviewEntries } from "../../lib/_frontmatter-preview-data";
 import { composeMetaTitle } from "../../lib/_compose-meta-title";
+import { buildInlineVersionSwitcher } from "../../lib/_inline-version-switcher";
 import DesktopSidebarToggle from "@/components/desktop-sidebar-toggle";
 import { SidebarResizerInit } from "@zudo-doc/zudo-doc-v2/sidebar-resizer";
 import type { VNode } from "preact";
@@ -278,6 +279,7 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
       breadcrumbOverride={
         breadcrumbs.length > 0 ? <Breadcrumb items={breadcrumbs} /> : undefined
       }
+      afterBreadcrumb={buildInlineVersionSwitcher(slug, locale)}
       sidebarOverride={
         <SidebarWithDefaults
           currentSlug={slug}

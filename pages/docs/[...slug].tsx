@@ -56,6 +56,7 @@ import { HeaderWithDefaults } from "../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../lib/_head-with-defaults";
 import { buildFrontmatterPreviewEntries } from "../lib/_frontmatter-preview-data";
 import { composeMetaTitle } from "../lib/_compose-meta-title";
+import { buildInlineVersionSwitcher } from "../lib/_inline-version-switcher";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../_data";
 import { extractHeadings } from "../lib/_extract-headings";
@@ -252,6 +253,7 @@ export default function DocsPage({ entry, autoIndex, breadcrumbs, prev, next, he
       breadcrumbOverride={
         breadcrumbs.length > 0 ? <Breadcrumb items={breadcrumbs} /> : undefined
       }
+      afterBreadcrumb={buildInlineVersionSwitcher(slug, locale)}
       sidebarOverride={
         <SidebarWithDefaults
           currentSlug={slug}
