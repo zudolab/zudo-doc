@@ -8,9 +8,12 @@ import { test, expect } from "@playwright/test";
  * - Version 1.0 docs at /v/1.0/docs/getting-started (title: "Getting Started (v1)")
  * - Version 1.0 configured with banner: "unmaintained"
  *
- * Note: The version switcher renders in the header right rail (zfb era).
- * Selectors target the unique `[data-version-switcher]` directly — the
- * page contains exactly one instance, mounted in the header.
+ * Note: The version switcher renders in BOTH the header right rail and an
+ * inline `afterBreadcrumb` banner inside `<main>` on doc pages (the inline
+ * one was added in the Wave 2 fix for epic #1478 to match the production
+ * reference). Selectors are scoped to `getByRole("banner")` so they target
+ * the header instance — most of these tests were written before the inline
+ * banner existed.
  */
 
 test.describe("Versioning: latest version pages", () => {
@@ -34,7 +37,7 @@ test.describe("Versioning: latest version pages", () => {
 
   test("version switcher is visible on latest page", async ({ page }) => {
     await page.goto("/docs/getting-started", { waitUntil: "load" });
-    const switcher = page.locator("[data-version-switcher]");
+    const switcher = page.getByRole("banner").locator("[data-version-switcher]");
     await expect(switcher).toBeVisible();
   });
 
@@ -42,7 +45,7 @@ test.describe("Versioning: latest version pages", () => {
     page,
   }) => {
     await page.goto("/docs/getting-started", { waitUntil: "load" });
-    const toggle = page.locator("[data-version-toggle]");
+    const toggle = page.getByRole("banner").locator("[data-version-toggle]");
     const text = await toggle.textContent();
     expect(text).toContain("Latest");
   });
@@ -94,7 +97,7 @@ test.describe("Versioning: versioned pages", () => {
     page,
   }) => {
     await page.goto("/v/1.0/docs/getting-started", { waitUntil: "load" });
-    const toggle = page.locator("[data-version-toggle]");
+    const toggle = page.getByRole("banner").locator("[data-version-toggle]");
     const text = await toggle.textContent();
     expect(text).toContain("1.0.0");
   });
@@ -104,8 +107,8 @@ test.describe("Versioning: version switcher interaction", () => {
   test("clicking toggle opens dropdown menu", async ({ page }) => {
     await page.goto("/docs/getting-started", { waitUntil: "load" });
 
-    const toggle = page.locator("[data-version-toggle]");
-    const menu = page.locator("[data-version-menu]");
+    const toggle = page.getByRole("banner").locator("[data-version-toggle]");
+    const menu = page.getByRole("banner").locator("[data-version-menu]");
 
     // Menu should be hidden initially
     await expect(menu).toHaveClass(/hidden/);
@@ -121,8 +124,8 @@ test.describe("Versioning: version switcher interaction", () => {
   test("clicking outside closes dropdown menu", async ({ page }) => {
     await page.goto("/docs/getting-started", { waitUntil: "load" });
 
-    const toggle = page.locator("[data-version-toggle]");
-    const menu = page.locator("[data-version-menu]");
+    const toggle = page.getByRole("banner").locator("[data-version-toggle]");
+    const menu = page.getByRole("banner").locator("[data-version-menu]");
 
     // Open menu
     await toggle.click();
@@ -137,8 +140,8 @@ test.describe("Versioning: version switcher interaction", () => {
   test("Escape key closes dropdown menu", async ({ page }) => {
     await page.goto("/docs/getting-started", { waitUntil: "load" });
 
-    const toggle = page.locator("[data-version-toggle]");
-    const menu = page.locator("[data-version-menu]");
+    const toggle = page.getByRole("banner").locator("[data-version-toggle]");
+    const menu = page.getByRole("banner").locator("[data-version-menu]");
 
     // Open menu
     await toggle.click();
@@ -153,10 +156,10 @@ test.describe("Versioning: version switcher interaction", () => {
   test("dropdown contains links to all versions", async ({ page }) => {
     await page.goto("/docs/getting-started", { waitUntil: "load" });
 
-    const toggle = page.locator("[data-version-toggle]");
+    const toggle = page.getByRole("banner").locator("[data-version-toggle]");
     await toggle.click();
 
-    const menu = page.locator("[data-version-menu]");
+    const menu = page.getByRole("banner").locator("[data-version-menu]");
     const links = menu.locator("a");
 
     // Should have 3 links: Latest + 1.0.0 + "All versions"
@@ -177,11 +180,11 @@ test.describe("Versioning: version switcher interaction", () => {
     await page.goto("/docs/getting-started", { waitUntil: "load" });
 
     // Open version switcher
-    const toggle = page.locator("[data-version-toggle]");
+    const toggle = page.getByRole("banner").locator("[data-version-toggle]");
     await toggle.click();
 
     // Click version 1.0.0 link
-    const versionLink = page.locator("[data-version-menu] a").nth(1);
+    const versionLink = page.getByRole("banner").locator("[data-version-menu] a").nth(1);
     await versionLink.click();
 
     // Should navigate to versioned page. The asset pipeline normalises
