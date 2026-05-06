@@ -109,9 +109,13 @@ jobs:
       # `zfb-src/node_modules/.pnpm/` into the embedded vendor snapshot.
       # Without an upstream `pnpm install` first, build.rs panics at
       # `framework package preact@<version> not found`.
+      # The consumer repo isn't checked out here (only zfb-src/ is), so
+      # pnpm/action-setup can't auto-detect a packageManager pin from the
+      # workflow root. Read it from zfb-src/package.json instead.
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
         with:
+          package_json_file: zfb-src/package.json
           dest: ~/setup-pnpm-${{ github.job }}
 
       - name: Setup Node.js
