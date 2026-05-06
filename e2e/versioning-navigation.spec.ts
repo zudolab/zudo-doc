@@ -90,14 +90,17 @@ test.describe("Versioned navigation: sidebar links", () => {
 test.describe("Versioned navigation: version switcher visibility", () => {
   test("version switcher is visible on versioned page", async ({ page }) => {
     await page.goto("/v/1.0/docs/getting-started", { waitUntil: "load" });
-    const switcher = page.locator("[data-version-switcher]");
+    // Doc pages render TWO version switchers (header + inline afterBreadcrumb,
+    // matching the production reference per epic #1478 Wave 2). Scope to the
+    // header instance to preserve the original test intent.
+    const switcher = page.getByRole("banner").locator("[data-version-switcher]");
     await expect(switcher).toBeVisible();
   });
 
   test("version switcher is visible on landing page", async ({ page }) => {
     await page.goto("/", { waitUntil: "load" });
     // On the landing page, the version switcher appears in the header
-    const headerSwitcher = page.locator("[data-version-switcher]");
+    const headerSwitcher = page.getByRole("banner").locator("[data-version-switcher]");
     await expect(headerSwitcher).toBeVisible();
   });
 });

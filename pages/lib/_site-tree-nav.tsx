@@ -22,7 +22,7 @@
 // The `lang` prop is injected by createMdxComponents() in
 // pages/_mdx-components.ts so locale routes get locale-aware nav data.
 //
-// categoryIgnore defaults to ["inbox"] — same as the original index page
+// categoryIgnore defaults to ["inbox", "develop"] — same as the original index page
 // and site-tree-nav-demo.astro.
 
 import type { JSX } from "preact";
@@ -116,7 +116,7 @@ export function SiteTreeNavWrapper({
       <SiteTreeNav
         tree={groupedTree}
         categoryOrder={categoryOrder}
-        categoryIgnore={["inbox"]}
+        categoryIgnore={["inbox", "develop"]}
         ariaLabel={ariaLabel}
       />
     ),

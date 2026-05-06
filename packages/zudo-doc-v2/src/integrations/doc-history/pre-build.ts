@@ -13,21 +13,28 @@
 // locales (e.g. `ja/getting-started/intro`). Pages with no manifest entry
 // fall through to the SSR-empty branch in `_doc-history-area.tsx`.
 //
-// ### CRITICAL: SKIP_DOC_HISTORY=1 contract
+// ### SKIP_DOC_HISTORY=1 contract
 //
-// CI's `build-site` job runs with a shallow `fetch-depth: 1` clone, so
-// `git log --follow` would either fail or return useless data. The
-// build-site pipeline therefore sets `SKIP_DOC_HISTORY=1`, and this
-// runner MUST short-circuit by writing literal `{}\n` and returning
-// immediately — without invoking git. The page-side static import
-// resolves to that empty object, the SSR fallback is omitted, and the
-// dedicated `build-history` CI job (full clone) merges real history
-// into the deploy artifact in parallel.
+// When `SKIP_DOC_HISTORY=1` is set this runner short-circuits by writing
+// literal `{}\n` and returning immediately, without invoking git. The
+// page-side static import resolves to an empty object, so DocMetainfoArea
+// returns null on every page (no Created/Updated/Author block rendered).
 //
-// Breaking this contract breaks CI in a non-obvious way: the shallow
-// clone makes `git log --follow` slow / empty / error-prone, and the
-// page bundle ends up with stale or missing manifest data. Do not
-// remove the env-var short-circuit without coordinating a CI change.
+// ### CI usage (as of #1479 SSG-meta-gap fix)
+//
+// All three CI workflows (pr-checks.yml, main-deploy.yml,
+// preview-deploy.yml) use `fetch-depth: 0` in their build-site job and
+// do NOT set SKIP_DOC_HISTORY. This allows the preBuild step to run
+// `git log --follow` on each content file and produce a populated
+// manifest, so the SSG HTML contains real Created/Updated/Author values.
+// The parallel `build-history` job (also `fetch-depth: 0`) still
+// generates the per-page dropdown JSON files for the DocHistory island.
+//
+// The SKIP_DOC_HISTORY=1 short-circuit is retained for cases where the
+// caller explicitly wants to skip git-based meta generation (e.g. a
+// truly shallow clone with no git history, a custom CI variant, or a
+// future optimisation that passes a pre-computed manifest via a different
+// mechanism).
 
 import fs from "node:fs";
 import path from "node:path";

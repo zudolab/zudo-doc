@@ -55,6 +55,7 @@ import { DocMetainfoArea } from "../../../../lib/_doc-metainfo-area";
 import { BodyEndIslands } from "../../../../lib/_body-end-islands";
 import { buildFrontmatterPreviewEntries } from "../../../../lib/_frontmatter-preview-data";
 import { composeMetaTitle } from "../../../../lib/_compose-meta-title";
+import { buildInlineVersionSwitcher } from "../../../../lib/_inline-version-switcher";
 import DesktopSidebarToggle from "@/components/desktop-sidebar-toggle";
 import { SidebarResizerInit } from "@zudo-doc/zudo-doc-v2/sidebar-resizer";
 import type { VNode } from "preact";
@@ -314,6 +315,7 @@ export default function VersionedJaDocsPage({ entry, autoIndex, version, isFallb
       breadcrumbOverride={
         breadcrumbs.length > 0 ? <Breadcrumb items={breadcrumbs} /> : undefined
       }
+      afterBreadcrumb={buildInlineVersionSwitcher(slug, locale, version.slug)}
       sidebarOverride={
         <SidebarWithDefaults
           currentSlug={slug}
