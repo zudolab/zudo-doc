@@ -73,7 +73,7 @@ export default function LocaleVersionsPage({ params }: PageArgs): JSX.Element {
     ? settings.versions.map((v) => ({
         slug: v.slug,
         label: v.label ?? v.slug,
-        docsHref: withBase(`/${locale}/v/${v.slug}/docs`),
+        docsHref: withBase(`/${locale}/v/${v.slug}/docs/getting-started/`),
         banner: v.banner as "unmaintained" | "unreleased" | undefined,
       }))
     : [];

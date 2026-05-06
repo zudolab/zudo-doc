@@ -51,7 +51,7 @@ export default function VersionsPage(): JSX.Element {
     ? settings.versions.map((v) => ({
         slug: v.slug,
         label: v.label ?? v.slug,
-        docsHref: withBase(`/v/${v.slug}/docs`),
+        docsHref: withBase(`/v/${v.slug}/docs/getting-started/`),
         banner: v.banner as "unmaintained" | "unreleased" | undefined,
       }))
     : [];
