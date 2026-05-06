@@ -401,6 +401,15 @@ body {
   overflow-x: auto;
 }
 
+/* Fallback styling for fences whose lang has no syntect grammar
+   (e.g. ```mdx, ```tsx, no-lang). Without this, degraded blocks render
+   on the page background with no theming. The syntect-themed rule
+   above wins by specificity for blocks that did highlight. */
+.zd-content :where(pre):not([class*="syntect"]) {
+  background-color: var(--color-code-bg);
+  color: var(--color-code-fg);
+}
+
 .zd-content :where(pre code) {
   background: transparent;
   padding: 0;
