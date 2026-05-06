@@ -30,8 +30,10 @@ import { getCategoryOrder } from "@/utils/nav-scope";
 import { collectTags } from "@/utils/tags";
 import { toRouteSlug } from "@/utils/slug";
 import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
-import { DocsSitemap } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import type { JSX } from "preact";
+import type { VNode } from "preact";
+import { Island } from "@takazudo/zfb";
+import SiteTreeNav from "@/components/site-tree-nav";
 import { bridgeEntries } from "../_data";
 import { FooterWithDefaults } from "../lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "../lib/_header-with-defaults";
@@ -161,13 +163,35 @@ export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
                   <span class="text-muted">/</span>
                 </>
               )}
+              {/* @Takazudo link — ported from pages/index.tsx (refs #1453).
+                  The locale home was missing this trailing item, leaving a
+                  dangling "/" separator after GitHub. */}
+              <a
+                href="https://x.com/Takazudo"
+                class="text-fg underline hover:text-accent"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                @Takazudo
+              </a>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Sitemap grid */}
-      <DocsSitemap tree={groupedTree} />
+      {/* Sitemap grid — SiteTreeNav island mirrors the EN home (refs #1453).
+          The locale home was using DocsSitemap (vertical <details> list);
+          replaced with the same SiteTreeNav island used by pages/index.tsx. */}
+      {Island({
+        when: "idle",
+        children: (
+          <SiteTreeNav
+            tree={groupedTree}
+            categoryOrder={categoryOrder}
+            categoryIgnore={["inbox", "develop"]}
+          />
+        ),
+      }) as unknown as VNode}
 
       {settings.docTags && tagCount > 0 && (
         <section class="mt-vsp-xl">
