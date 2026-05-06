@@ -273,7 +273,7 @@ jobs:
         run: |
           BRANCH="${{ steps.branch.outputs.name }}"
 
-          pnpm exec wrangler pages deploy deploy \
+          npx wrangler@4 pages deploy deploy \
             --project-name=zudo-doc \
             --branch="$BRANCH" \
             --commit-hash="${GITHUB_SHA}" \
