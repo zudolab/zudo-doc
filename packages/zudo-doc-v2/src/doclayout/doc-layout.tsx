@@ -251,12 +251,8 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
           Cast through `unknown` because ClientRouter() returns a readonly
           array of structural VNode objects — Preact's JSX typing does not
           directly accept that array shape, but at runtime the elements are
-          valid VNode descriptors.
-          The empty `{}` works around upstream zfb-runtime missing a `= {}`
-          default on the destructured props parameter (the shim declares
-          `props?` as optional but the runtime impl doesn't). Drop once
-          zfb upstream PR with the default lands and pin is bumped. */}
-        {ClientRouter({}) as unknown as JSX.Element}
+          valid VNode descriptors. */}
+        {ClientRouter() as unknown as JSX.Element}
         {head}
       </head>
       <body class="min-h-screen antialiased">
