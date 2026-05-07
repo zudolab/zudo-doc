@@ -13,9 +13,11 @@
 //     added in a follow-up topic once the bundle pipeline is in place.
 //   - The post-navigation rebinder pulls its event name from
 //     `AFTER_NAVIGATE_EVENT` in
-//     `@zudo-doc/zudo-doc-v2/transitions` (today: `DOMContentLoaded`)
+//     `@zudo-doc/zudo-doc-v2/transitions` (today: `zfb:after-swap`)
 //     rather than a hard-coded `astro:*` literal. See
-//     zudolab/zudo-doc#1335 (E2 task 2 half B) for the vocabulary swap.
+//     zudolab/zudo-doc#1335 (E2 task 2 half B) for the vocabulary
+//     introduction and zudolab/zudo-doc#1523 for the W6B flip from
+//     `DOMContentLoaded` to the Strategy B SPA event name.
 
 import { AFTER_NAVIGATE_EVENT } from "@zudo-doc/zudo-doc-v2/transitions";
 
@@ -114,6 +116,11 @@ export const SEARCH_WIDGET_SCRIPT = /* javascript */ `(function () {
       // without re-querying the DOM (the placeholder node is replaced once
       // search results are rendered).
       this._placeholderHtml = "";
+      // Held so we can remove the document-level after-navigate listener
+      // in disconnectedCallback. zudolab/zudo-doc#1523 — under Strategy B
+      // SPA navigation a non-persisted <site-search> element would leak
+      // one document listener per nav without this hook.
+      this._afterNavHandler = null;
     }
 
     connectedCallback() {
@@ -166,17 +173,25 @@ export const SEARCH_WIDGET_SCRIPT = /* javascript */ `(function () {
       };
       document.addEventListener("keydown", this._keydownHandler);
 
-      // View-Transitions compat: re-run on the v2 after-navigate event
-      document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)}, function() {
+      // View-Transitions compat: re-run on the v2 after-navigate event.
+      // Stored on the instance so disconnectedCallback can detach it on
+      // body swap when this element is NOT persisted via
+      // data-zfb-transition-persist (zudolab/zudo-doc#1523).
+      this._afterNavHandler = function() {
         var kbdEl2 = self.querySelector("[data-kbd-shortcut]");
         if (kbdEl2) kbdEl2.textContent = self._shortcut;
-      });
+      };
+      document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)}, this._afterNavHandler);
     }
 
     disconnectedCallback() {
       if (this._keydownHandler) {
         document.removeEventListener("keydown", this._keydownHandler);
         this._keydownHandler = null;
+      }
+      if (this._afterNavHandler) {
+        document.removeEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)}, this._afterNavHandler);
+        this._afterNavHandler = null;
       }
       this.teardownSentinel();
     }
