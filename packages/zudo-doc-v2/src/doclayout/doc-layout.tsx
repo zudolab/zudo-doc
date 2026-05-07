@@ -60,13 +60,16 @@
 
 import type { ComponentChildren, JSX } from "preact";
 
-// zfb's runtime <ViewTransitions /> mounts the same-origin meta tag and
-// the click-intercepting client router that wraps same-origin navigations
-// in `document.startViewTransition`. It is the engine-side replacement
-// for Astro's `<ClientRouter />` — closes zudolab/zudo-doc#1335 (E2 task
-// 2 half A). Per zfb #99 the navigation is still a real page load (not
-// an SPA swap); this shell mounts the component verbatim in <head> so
-// every page renders the meta tag plus the inline router script.
+// `<ViewTransitions />` from zfb-runtime is now a TYPED NO-OP — it
+// returns `[]` and emits no DOM. Cross-document View Transitions are
+// opted in via the `@view-transition { navigation: auto; }` CSS at-rule
+// in `src/styles/global.css` (outside any `@layer` block per the spec).
+// The mount below is intentionally retained as a documentation marker:
+// it pins the `<head>`-time intent and shields the host from a future
+// upstream pin where `<ViewTransitions />` regains semantic content.
+// History: closes zudolab/zudo-doc#1335 (E2 task 2 half A); rewired in
+// zudolab/zudo-doc#1491 / #1500 after the upstream click-intercept IIFE
+// was discovered to be incompatible with Chromium 126+ cross-document VT.
 import { ViewTransitions } from "@takazudo/zfb-runtime";
 
 import { persistName } from "../transitions/persist.js";

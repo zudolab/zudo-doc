@@ -26,11 +26,22 @@ declare module "@takazudo/zfb-runtime" {
   };
 
   /**
-   * `<ViewTransitions />` — mount in the layout `<head>`. Renders a
-   * `<meta name="view-transition" content="same-origin">` plus an
-   * inline `<script type="module">` that wraps same-origin link clicks
-   * in `document.startViewTransition`. Each navigation is still a real
-   * page load — there is no SPA-style DOM swap.
+   * `<ViewTransitions />` — DEPRECATED: typed no-op. Cross-document View
+   * Transitions are opted in via the `@view-transition { navigation: auto; }`
+   * CSS at-rule on the host's top-level stylesheet (outside any `@layer`
+   * block — see https://developer.mozilla.org/en-US/docs/Web/CSS/@view-transition),
+   * NOT via this component. The doc-layout still mounts `<ViewTransitions />`
+   * in `<head>` as a documentation marker; the call returns `[]` and emits
+   * no DOM.
+   *
+   * The previous implementation injected a `<meta name="view-transition"
+   * content="same-origin">` opt-in plus an inline router IIFE that called
+   * `event.preventDefault()` and `document.startViewTransition` around
+   * `window.location.href = url`. That pattern is INCOMPATIBLE with the
+   * cross-document VT spec — Chromium treats the script reload as
+   * excluded from `auto`, so no `::view-transition-*` pseudo-elements ever
+   * materialise. The export is kept (returning `[]`) so existing mounts
+   * compile unchanged.
    */
   export function ViewTransitions(): readonly ViewTransitionsElement[];
 }
