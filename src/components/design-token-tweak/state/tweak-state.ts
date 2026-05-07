@@ -60,105 +60,6 @@ export function clampPosition(top: number, right: number, panelWidth: number, pa
   };
 }
 
-/** Re-highlight all code blocks on the page with a new Shiki theme (lazy-loaded) */
-export async function applyShikiTheme(themeName: string): Promise<void> {
-  // NOTE: zfb's syntect plugin does not emit data-language; this selector
-  // matches zero elements on zfb-built sites. Runtime theme reapply is
-  // effectively a no-op until upstream zfb adds language metadata to its
-  // <pre> output. Selector kept as-is to avoid silently re-enabling a
-  // broken code path.
-  const codeBlocks = document.querySelectorAll<HTMLPreElement>("pre.astro-code[data-language]");
-  if (codeBlocks.length === 0) return;
-
-  const langs = new Set<string>();
-  for (const pre of codeBlocks) {
-    const lang = pre.getAttribute("data-language");
-    if (lang) langs.add(lang);
-  }
-
-  let highlighter: Awaited<ReturnType<typeof import("shiki")["createHighlighter"]>>;
-  try {
-    const { createHighlighter } = await import("shiki");
-    highlighter = await createHighlighter({
-      themes: [themeName],
-      langs: [...langs],
-    });
-  } catch (err) {
-    console.warn(`[tweak] Failed to load Shiki theme "${themeName}":`, err);
-    return;
-  }
-
-  for (const pre of codeBlocks) {
-    const lang = pre.getAttribute("data-language") || "text";
-    const codeEl = pre.querySelector("code");
-    if (!codeEl) continue;
-    const text = codeEl.textContent || "";
-
-    try {
-      // Generate dual-theme output (same theme for both) so existing
-      // light-dark() CSS picks up the new colors automatically
-      const html = highlighter.codeToHtml(text, {
-        lang,
-        themes: { light: themeName, dark: themeName },
-        defaultColor: false,
-      });
-      const temp = document.createElement("div");
-      temp.innerHTML = html;
-      const newPre = temp.querySelector("pre");
-      if (!newPre) continue;
-
-      const newCode = newPre.querySelector("code");
-      if (newCode) codeEl.innerHTML = newCode.innerHTML;
-      // Update CSS custom properties on the <pre> for background
-      const newStyle = newPre.getAttribute("style") || "";
-      for (const prop of ["--shiki-light", "--shiki-dark", "--shiki-light-bg", "--shiki-dark-bg"]) {
-        const match = newStyle.match(new RegExp(`${prop.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}:([^;]+)`));
-        if (match) pre.style.setProperty(prop, match[1].trim());
-      }
-    } catch {
-      // Skip blocks with unsupported languages
-    }
-  }
-  highlighter.dispose();
-}
-
-export const SHIKI_THEMES = [
-  "ayu-light",
-  "catppuccin-latte",
-  "catppuccin-mocha",
-  "dracula",
-  "everforest-dark",
-  "everforest-light",
-  "github-dark",
-  "github-dark-dimmed",
-  "github-light",
-  "gruvbox-dark-medium",
-  "gruvbox-light-medium",
-  "kanagawa-dragon",
-  "kanagawa-wave",
-  "material-theme-darker",
-  "material-theme-lighter",
-  "material-theme-ocean",
-  "min-dark",
-  "min-light",
-  "monokai",
-  "night-owl",
-  "nord",
-  "one-dark-pro",
-  "one-light",
-  "poimandres",
-  "rose-pine",
-  "rose-pine-dawn",
-  "rose-pine-moon",
-  "snazzy-light",
-  "solarized-dark",
-  "solarized-light",
-  "tokyo-night",
-  "vesper",
-  "vitesse-dark",
-  "vitesse-light",
-];
-
 /**
  * ColorTweakState models the 3-tier color strategy:
  * - palette: 16 editable raw colors
@@ -176,7 +77,6 @@ export interface ColorTweakState {
   selectionBg: number;
   selectionFg: number;
   semanticMappings: Record<string, number | "bg" | "fg">;
-  shikiTheme: string;
 }
 
 /**
@@ -315,7 +215,6 @@ export function initColorFromSchemeData(scheme: ColorScheme): ColorTweakState {
     selectionBg: colorRefToIndex(scheme.selectionBg, scheme.palette, 0),
     selectionFg: colorRefToIndex(scheme.selectionFg, scheme.palette, 15),
     semanticMappings,
-    shikiTheme: String(scheme.shikiTheme ?? "dracula"),
   };
 }
 
@@ -451,10 +350,6 @@ function hydrateColorState(
       partial.semanticMappings && typeof partial.semanticMappings === "object"
         ? { ...defaults.semanticMappings, ...partial.semanticMappings }
         : defaults.semanticMappings,
-    shikiTheme:
-      typeof partial.shikiTheme === "string" && partial.shikiTheme.length > 0
-        ? partial.shikiTheme
-        : defaults.shikiTheme,
   };
 }
 
@@ -523,12 +418,7 @@ export function loadPersistedState(
     const parsed = safeParse(rawV1);
     if (parsed && typeof parsed === "object" && isValidColorShape(parsed)) {
       const defaults = colorDefaults ?? tryInitColorFromScheme();
-      // Backfill shikiTheme like the legacy loader did.
-      const partial = parsed as Partial<ColorTweakState>;
-      if (!partial.shikiTheme) {
-        partial.shikiTheme = defaults.shikiTheme;
-      }
-      const color = hydrateColorState(partial, defaults);
+      const color = hydrateColorState(parsed as Partial<ColorTweakState>, defaults);
       const migrated: TweakState = {
         color,
         spacing: emptyOverrides(),
@@ -591,7 +481,6 @@ function tryInitColorFromScheme(): ColorTweakState {
       selectionBg: 0,
       selectionFg: 15,
       semanticMappings: { ...SEMANTIC_DEFAULTS },
-      shikiTheme: "dracula",
     };
   }
 }
