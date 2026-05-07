@@ -1,8 +1,16 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: c34b821 (Takazudo/zudo-front-builder main, post-#224 merge:
- *           PR #224 client-router/component (W4A) — ports the Astro-style
- *           SPA soft-swap router into @takazudo/zfb-runtime as a new
+ *   commit: 7e11ebd (Takazudo/zudo-front-builder main, post-#225 merge:
+ *           PR #225 fix/embedded-v8-event-globals (W5A hotfix) — adds
+ *           minimal globalThis stubs for Event, CustomEvent, EventTarget
+ *           in the embedded V8 host's bootstrap_host_shim, following the
+ *           bdbfbfb (node:async_hooks) pattern. Unblocks the just-shipped
+ *           <ClientRouter /> surface whose events.ts declares three
+ *           top-level `class X extends Event` that previously failed bundle
+ *           load with `ReferenceError: Event is not defined` during SSG
+ *           paths() evaluation. This pin also absorbs PR #224
+ *           client-router/component (W4A) — ports the Astro-style SPA
+ *           soft-swap router into @takazudo/zfb-runtime as a new
  *           <ClientRouter /> component. Closes the W3D back-compat hole
  *           where <ViewTransitions /> became a typed no-op but no
  *           replacement opt-in surface existed for cross-document soft-swap
@@ -10,9 +18,13 @@
  *           consumers see no change. This consumer's integration switches
  *           from Strategy A (CSS @view-transition at-rule) to Strategy B
  *           (<ClientRouter /> mount) in W6A/W6B (next wave of
- *           zudolab/zudo-doc#1510). Bumped 2026-05-07 in W5A
+ *           zudolab/zudo-doc#1510). Bumped 2026-05-07 in W5A re-bump
  *           (zudolab/zudo-doc#1521) under host epic zudolab/zudo-doc#1510.
- *           Previous pin 1e0e6a7 (post-#221/#222/#223 merge: Wave 4 W4A
+ *           Previous pin c34b821 (W5A first attempt, post-#224 merge) —
+ *           broke embedded V8 SSG paths() at bundle load time because the
+ *           V8 host did not stub the browser Event global; reverted-by-
+ *           bumping-forward via #225 above rather than literal git revert.
+ *           Before that 1e0e6a7 (post-#221/#222/#223 merge: Wave 4 W4A
  *           bump from epic zudolab/zudo-doc#1492 — #222 made <ViewTransitions />
  *           a typed no-op with CSS at-rule as the VT opt-in; #223 fixed
  *           <span><pre> content-model; #221 wired embedded esbuild.)
