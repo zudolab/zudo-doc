@@ -1,23 +1,21 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: 1e0e6a7 (Takazudo/zudo-front-builder main, post-#223 merge:
- *           PR #223 fix/raw-block-wrapper — HastNode::Raw arm now wraps
- *           block-level raw HTML (e.g. syntect <pre>) in a <div> instead
- *           of <span>, fixing the invalid `<span><pre>` content-model
- *           emitted by every code-block page (zudolab/zudo-doc#1490);
- *           PR #222 fix/view-transitions-cross-document — <ViewTransitions />
- *           is now a typed no-op; cross-document VT opt-in moves to the
- *           CSS @view-transition at-rule on the host side, deleting the
- *           click-intercept IIFE + meta tag that prevented Chromium 126+
- *           from animating navigations (zudolab/zudo-doc#1491). Also pulls
- *           PR #221 (runtime check accepts embedded vendor; CF adapter +
- *           islands bundler wired through embedded esbuild and node_modules).
- *           Bumped 2026-05-07 in zudolab/zudo-doc#1492 visible-bug-triage
- *           Wave 4 (W4A). Previous pin 3b81411 (post-#220 merge: PR #220
- *           base/content-plugin-fixes — sub-218 syntect alias remap + themed
- *           fallback; sub-219 Unicode-preserving heading slugifier).
- *           Both #220 and earlier closed consumer-side workarounds
- *           previously carried in zudolab/zudo-doc.)
+ *   commit: c34b821 (Takazudo/zudo-front-builder main, post-#224 merge:
+ *           PR #224 client-router/component (W4A) — ports the Astro-style
+ *           SPA soft-swap router into @takazudo/zfb-runtime as a new
+ *           <ClientRouter /> component. Closes the W3D back-compat hole
+ *           where <ViewTransitions /> became a typed no-op but no
+ *           replacement opt-in surface existed for cross-document soft-swap
+ *           navigation. The new component is opt-in via mount; non-adopting
+ *           consumers see no change. This consumer's integration switches
+ *           from Strategy A (CSS @view-transition at-rule) to Strategy B
+ *           (<ClientRouter /> mount) in W6A/W6B (next wave of
+ *           zudolab/zudo-doc#1510). Bumped 2026-05-07 in W5A
+ *           (zudolab/zudo-doc#1521) under host epic zudolab/zudo-doc#1510.
+ *           Previous pin 1e0e6a7 (post-#221/#222/#223 merge: Wave 4 W4A
+ *           bump from epic zudolab/zudo-doc#1492 — #222 made <ViewTransitions />
+ *           a typed no-op with CSS at-rule as the VT opt-in; #223 fixed
+ *           <span><pre> content-model; #221 wired embedded esbuild.)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -251,6 +249,16 @@
  *                content_hash to disagree with the bundler's bridge-map key
  *                so globalThis.__zfb.content.get(specifier) silently missed.
  *                After re-bump: 0 fallback markers on both EN and JA corpora.)
+ *              → bumped by epic zudolab/zudo-doc#1492 sub-issue #1501 (W4A
+ *                visible-bug-triage: pin 1e0e6a7 picks up PRs #221/#222/#223 —
+ *                <ViewTransitions /> becomes typed no-op; cross-document VT
+ *                opt-in moves to CSS @view-transition at-rule on the host side;
+ *                HastNode::Raw block-level wrapping fix; embedded esbuild wiring)
+ *              → bumped by epic zudolab/zudo-doc#1510 sub-issue #1521 (W5A
+ *                VT Strategy B port: pin c34b821 picks up PR #224 —
+ *                <ClientRouter /> ported into @takazudo/zfb-runtime as the
+ *                supported opt-in for cross-document soft-swap navigation.
+ *                Host integration switches Strategy A → B in W6A/W6B.)
  */
 
 // zfb.config.ts — entry-point config consumed by the zfb engine.

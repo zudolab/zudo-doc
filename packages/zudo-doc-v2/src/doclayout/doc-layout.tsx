@@ -60,16 +60,15 @@
 
 import type { ComponentChildren, JSX } from "preact";
 
-// `<ViewTransitions />` from zfb-runtime is now a TYPED NO-OP — it
-// returns `[]` and emits no DOM. Cross-document View Transitions are
-// opted in via the `@view-transition { navigation: auto; }` CSS at-rule
-// in `src/styles/global.css` (outside any `@layer` block per the spec).
-// The mount below is intentionally retained as a documentation marker:
-// it pins the `<head>`-time intent and shields the host from a future
-// upstream pin where `<ViewTransitions />` regains semantic content.
-// History: closes zudolab/zudo-doc#1335 (E2 task 2 half A); rewired in
-// zudolab/zudo-doc#1491 / #1500 after the upstream click-intercept IIFE
-// was discovered to be incompatible with Chromium 126+ cross-document VT.
+// `<ViewTransitions />` from zfb-runtime is a back-compat TYPED NO-OP —
+// returns `[]` and emits no DOM; kept so this `<head>` mount compiles
+// unchanged until Strategy B lands. Cross-document soft-swap navigation
+// now ships via upstream <ClientRouter /> (Takazudo/zudo-front-builder
+// PR #224). This consumer's opt-in switches from Strategy A (the
+// `@view-transition { navigation: auto; }` CSS at-rule in
+// `src/styles/global.css`) to Strategy B (<ClientRouter /> mount) in
+// W6A/W6B of zudolab/zudo-doc#1510. History: closes zudolab/zudo-doc#1335
+// (E2 task 2 half A); rewired in zudolab/zudo-doc#1491 / #1500.
 import { ViewTransitions } from "@takazudo/zfb-runtime";
 
 import { persistName } from "../transitions/persist.js";
