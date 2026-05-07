@@ -7,9 +7,7 @@
 // any other framework concern. Those concerns live one level up in
 // `<DocLayoutWithDefaults>`. The shell's only job is to lay out the
 // chrome (header / sidebar / main / TOC / footer) plus a few well-known
-// extension points (head, before-/after-sidebar, body-end) and to wire
-// the per-page View Transitions hooks for the persistent sidebar
-// (see `../transitions/persist.ts`).
+// extension points (head, before-/after-sidebar, body-end).
 //
 // The slot props are deliberately typed as `ComponentChildren` rather
 // than concrete component types so this shell can compose:
@@ -30,13 +28,11 @@
 //    one (matches the existing Astro behavior).
 //
 //  - `sidebar`: optional. When present, rendered as a fixed-position
-//    `<aside id="desktop-sidebar">` with the persistent-region
-//    `view-transition-name`/`transition:persist` analogue. The
-//    `sidebarPersistKey` prop drives the `view-transition-name` value;
-//    callers should pass a stable per-section key (see
-//    `../transitions/persist.ts` and `persistViewTransitionName`). When
-//    `hideSidebar` is true the slot is dropped entirely and the
-//    content-margin wrapper collapses.
+//    `<aside id="desktop-sidebar">` annotated with
+//    `data-zfb-transition-persist="docs-sidebar"` so Strategy B's
+//    client-router keeps sidebar state stable across same-document
+//    navigations. When `hideSidebar` is true the slot is dropped
+//    entirely and the content-margin wrapper collapses.
 //
 //  - `main`: required. Wrapped in the standard min-h / max-w content
 //    container that mirrors the Astro layout's flex/clamp rules.
@@ -60,18 +56,12 @@
 
 import type { ComponentChildren, JSX } from "preact";
 
-// `<ViewTransitions />` from zfb-runtime is a back-compat TYPED NO-OP —
-// returns `[]` and emits no DOM; kept so this `<head>` mount compiles
-// unchanged until Strategy B lands. Cross-document soft-swap navigation
-// now ships via upstream <ClientRouter /> (Takazudo/zudo-front-builder
-// PR #224). This consumer's opt-in switches from Strategy A (the
-// `@view-transition { navigation: auto; }` CSS at-rule in
-// `src/styles/global.css`) to Strategy B (<ClientRouter /> mount) in
-// W6A/W6B of zudolab/zudo-doc#1510. History: closes zudolab/zudo-doc#1335
-// (E2 task 2 half A); rewired in zudolab/zudo-doc#1491 / #1500.
-import { ViewTransitions } from "@takazudo/zfb-runtime";
-
-import { persistName } from "../transitions/persist.js";
+// <ClientRouter /> from @takazudo/zfb-runtime: Strategy B SPA soft-swap
+// router. Intercepts same-origin link clicks, fetches the new page, and
+// swaps the DOM via document.startViewTransition — same behaviour as
+// Astro's <ClientRouter />. Mounted here so it lands in <head> on every
+// page that uses this shell. Closes zudolab/zudo-doc#1522.
+import { ClientRouter } from "@takazudo/zfb-runtime";
 
 /**
  * Direction-and-mode metadata for the root `<html>` element. Keeps the
@@ -133,15 +123,6 @@ export interface DocLayoutProps extends DocLayoutHtmlAttrs {
   hideSidebar?: boolean;
 
   /**
-   * Per-section persistence key the View Transitions persist helper
-   * uses to keep the sidebar's scroll position and DOM identity stable
-   * across navigation. Consumers should pass something like
-   * `sidebar-${lang}-${section}`. When omitted, the sidebar is treated
-   * as non-persistent.
-   */
-  sidebarPersistKey?: string;
-
-  /**
    * Slot rendered between the desktop sidebar and the content-margin
    * wrapper. Used by the sidebar-toggle feature in `create-zudo-doc`.
    */
@@ -193,9 +174,8 @@ export interface DocLayoutProps extends DocLayoutHtmlAttrs {
 }
 
 /**
- * Default `view-transition-name` applied to the desktop sidebar when a
- * persist key is provided. Exposed so consumers (and the persist helper)
- * can target the same name in CSS/queries.
+ * `id` attribute of the desktop sidebar `<aside>`. Used by consumer code
+ * (e.g. sidebar-toggle island) to locate the element in the DOM.
  */
 export const DESKTOP_SIDEBAR_ID = "desktop-sidebar";
 
@@ -219,7 +199,6 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
     header,
     sidebar,
     hideSidebar = false,
-    sidebarPersistKey,
     afterSidebar,
     breadcrumb,
     afterBreadcrumb,
@@ -242,23 +221,6 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
   const hasSidebar = sidebar !== undefined;
   const showSidebar = !hideSidebar && hasSidebar;
   const showToc = !hideToc && toc !== undefined;
-
-  // The desktop-sidebar gets a `view-transition-name` so the native
-  // View Transitions API treats it as a persistent region across
-  // navigations. The original Astro layout used `transition:persist`
-  // which does the equivalent thing under the hood.
-  //
-  // We pass the user-supplied key through `persistName` so any input
-  // that isn't a valid CSS `<custom-ident>` (whitespace, punctuation,
-  // unicode, etc.) is sanitized rather than silently rejected by the
-  // browser — and the helper also caps length so a runaway prop value
-  // can't produce a multi-kilobyte style string.
-  const sidebarTransitionName = sidebarPersistKey
-    ? persistName(sidebarPersistKey)
-    : undefined;
-  const sidebarStyle: JSX.CSSProperties | undefined = sidebarTransitionName
-    ? { viewTransitionName: sidebarTransitionName }
-    : undefined;
 
   // The `style` prop accepts a string in Preact, but only via
   // type-narrowing — JSX.HTMLAttributes wants either a CSSProperties
@@ -283,16 +245,18 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
         )}
         {noindex && <meta name="robots" content="noindex, nofollow" />}
         {/*
-          zfb engine-side <ViewTransitions />: emits the
-          <meta name="view-transition" content="same-origin"> tag plus the
-          inline click-intercepting router. Mounted here so it lands on
-          every page that uses this shell — equivalent placement to
-          where Astro's <ClientRouter /> would have lived. Cast through
-          `unknown` because the shim widens the structural-VNode return
-          type to `readonly ViewTransitionsElement[]` and Preact's JSX
-          typing does not directly accept that array shape; at runtime
-          the elements are valid VNode descriptors. */}
-        {ViewTransitions() as unknown as JSX.Element}
+          Strategy B SPA router. Emits the opt-in meta tags and the global
+          .zfb-route-announcer stylesheet. Intercepts same-origin link
+          clicks and swaps the DOM via document.startViewTransition.
+          Cast through `unknown` because ClientRouter() returns a readonly
+          array of structural VNode objects — Preact's JSX typing does not
+          directly accept that array shape, but at runtime the elements are
+          valid VNode descriptors.
+          The empty `{}` works around upstream zfb-runtime missing a `= {}`
+          default on the destructured props parameter (the shim declares
+          `props?` as optional but the runtime impl doesn't). Drop once
+          zfb upstream PR with the default lands and pin is bumped. */}
+        {ClientRouter({}) as unknown as JSX.Element}
         {head}
       </head>
       <body class="min-h-screen antialiased">
@@ -310,7 +274,10 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
               ? "hidden lg:block fixed top-[3.5rem] left-0 z-30 w-[var(--zd-sidebar-w)] h-[calc(100vh-3.5rem)] overflow-y-auto bg-bg border-r border-muted pb-vsp-xl"
               : "sr-only"
             }
-            style={showSidebar ? sidebarStyle : undefined}
+            // Strategy B persist contract: client-router moves this element
+            // from old to new DOM rather than cross-fading it, preserving
+            // scroll position across same-document navigations.
+            data-zfb-transition-persist="docs-sidebar"
           >
             {sidebar}
           </aside>
