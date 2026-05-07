@@ -283,8 +283,8 @@ export default function DocsPage({ entry, autoIndex, breadcrumbs, prev, next, he
         <>
           <BodyEndIslands basePath={settings.base ?? "/"} />
           {/* SidebarResizerInit: attach drag handle to #desktop-sidebar on load
-              and on AFTER_NAVIGATE_EVENT (DOMContentLoaded under zfb's full-
-              reload navigation model). Idempotent — safe on every page. */}
+              and on AFTER_NAVIGATE_EVENT (zfb:after-swap under the Strategy B
+              SPA navigation model). Idempotent — safe on every page. */}
           {settings.sidebarResizer && <SidebarResizerInit />}
         </>
       }

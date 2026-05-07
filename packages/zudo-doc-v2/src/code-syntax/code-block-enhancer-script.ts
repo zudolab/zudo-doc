@@ -12,11 +12,12 @@
 //
 // Lifecycle vocabulary: the cleanup-before-navigate and re-init-after-
 // navigate hooks pull their event names from `BEFORE_NAVIGATE_EVENT`
-// and `AFTER_NAVIGATE_EVENT` in `transitions/page-events.ts`. After
-// zudolab/zudo-doc#1335 (E2 task 2 half B) those resolve to
-// `pagehide` and `DOMContentLoaded` respectively (zfb's runtime does a
-// real page load on every navigation, so the standard browser events
-// are the natural successors to Astro's soft-swap hooks).
+// and `AFTER_NAVIGATE_EVENT` in `transitions/page-events.ts`. Under
+// zfb's Strategy B SPA navigation those resolve to
+// `zfb:before-preparation` and `zfb:after-swap` respectively. The
+// before-navigate handler runs while the OLD body is still live (so
+// it can unobserve old `<pre>` nodes and clear the wrapButtons Map);
+// the after-swap handler runs after the NEW body has been inserted.
 
 import {
   AFTER_NAVIGATE_EVENT,
@@ -159,9 +160,11 @@ export const CODE_BLOCK_ENHANCER_SCRIPT = `(function () {
   }
 
   // Clean up stale references before navigating away. Under zfb's
-  // full-reload navigation model the page is going to be torn down
-  // anyway, but unobserving keeps the ResizeObserver healthy if a
-  // bfcache restore re-uses this script context.
+  // Strategy B SPA navigation the body is replaced in place (head and
+  // html survive), so the OLD pre nodes the ResizeObserver was watching
+  // go away — unobserve them so the observer doesn't keep detached
+  // references, then clear the wrapButtons Map so the next
+  // enhanceCodeBlocks pass can repopulate it cleanly.
   document.addEventListener(${JSON.stringify(BEFORE_NAVIGATE_EVENT)}, function () {
     wrapButtons.forEach(function (_btn, el) {
       resizeObserver.unobserve(el);
@@ -172,8 +175,10 @@ export const CODE_BLOCK_ENHANCER_SCRIPT = `(function () {
   // Run on initial load.
   enhanceCodeBlocks();
 
-  // Re-run after every page-navigate-end signal (DOMContentLoaded under
-  // the zfb runtime). The IIFE itself runs once per real page load, so
-  // this listener is mostly a safety net for bfcache restores.
+  // Re-run after every page-navigate-end signal (zfb:after-swap under
+  // Strategy B SPA navigation). The IIFE itself only runs on the first
+  // load — zfb's deselectScripts marks identical inline scripts in
+  // the new body as already-executed — so this listener is the path
+  // by which the new body's <pre> elements get enhanced.
   document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)}, enhanceCodeBlocks);
 })();`;

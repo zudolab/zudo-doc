@@ -12,11 +12,13 @@
 //   4. Handle group-sync via localStorage when a `data-group-id` is present.
 //
 // Wrapped in an IIFE to avoid polluting the global scope.
-// Run on initial load and re-run on the v2 after-navigate event for
-// View Transitions support. The event name is pulled from
-// `AFTER_NAVIGATE_EVENT` in `transitions/page-events.ts` (today:
-// `DOMContentLoaded`) rather than a hard-coded `astro:*` literal — see
-// zudolab/zudo-doc#1335 E2 task 2 half B for the vocabulary swap.
+// Run on initial load (top-level `initTabs()` call below) and re-run on
+// the v2 after-navigate event so SPA body swaps re-bind the click
+// handlers on the new page's tab buttons. The event name is pulled
+// from `AFTER_NAVIGATE_EVENT` in `transitions/page-events.ts` (today:
+// `zfb:after-swap`) rather than a hard-coded `astro:*` literal — see
+// zudolab/zudo-doc#1335 E2 task 2 half B (vocabulary introduction)
+// and zudolab/zudo-doc#1523 (post-W6A flip to the Strategy B value).
 
 import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
 
