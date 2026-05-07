@@ -317,6 +317,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
+      # Clone the pinned zfb sibling repo so the `file:../zfb/...` workspace
+      # deps in package.json resolve during `pnpm install`. We don't need
+      # zfb's binary or its full build artifacts here — only the package
+      # directories that pnpm walks. Lightweight clone (single commit at
+      # the pinned SHA) is enough.
+      - name: Clone zfb sibling repo
+        run: |
+          git clone --depth 1 https://github.com/Takazudo/zudo-front-builder.git ../zfb
+          git -C ../zfb fetch --depth 1 origin "$ZFB_PINNED_SHA"
+          git -C ../zfb checkout "$ZFB_PINNED_SHA"
+
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
         with:
