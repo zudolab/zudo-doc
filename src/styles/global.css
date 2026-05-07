@@ -1172,3 +1172,19 @@ dialog.zd-enlarge-dialog::backdrop {
 ::view-transition-new(root) {
   animation: 300ms ease-out both contentFadeIn;
 }
+
+/* Version-switcher responsive visibility (was an inline <style> child of
+ * the data-version-switcher <div>; moved to global.css to avoid the
+ * <style>-inside-<div> HTML5 content-model violation flagged by
+ * html-validate — see zudolab/zudo-doc#1505).
+ *
+ * Pins onto the `.hidden` baseline that Tailwind always generates so
+ * consumers wrapping <VersionSwitcher> in `<div class="hidden lg:block">`
+ * still get the desktop override even when the content scanner did not
+ * generate `.lg:block`. Mobile (<64rem) falls through to `.hidden`'s
+ * `display: none`. */
+@media (min-width: 64rem) {
+  .hidden:has(> [data-version-switcher]) {
+    display: block;
+  }
+}

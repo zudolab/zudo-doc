@@ -185,25 +185,14 @@ describe("VersionSwitcher", () => {
     expect(VERSION_SWITCHER_INIT_SCRIPT).toContain('data-version-switcher');
   });
 
-  it("emits the responsive visibility <style> inside the switcher root", () => {
-    // Wave-11 fix: even when the host wraps this component in
-    // `<div class="hidden lg:block">` and Tailwind's content scanner
-    // never generated `.lg:block`, the inline `<style>` rule keyed off
-    // `:has(> [data-version-switcher])` keeps visibility correct at
-    // viewports `>= 64rem`.
-    //
-    // The `<style>` is rendered as the first child INSIDE the
-    // `<div data-version-switcher>` so the migration-check
-    // `strip-version-switcher.mjs` walker (which removes the entire
-    // switcher subtree) cleans the `<style>` up symmetrically — keeping
-    // post-cutover migration parity comparisons free of a structural
-    // delta on every versioned page.
-    //
-    // The local `serialize()` helper renders `dangerouslySetInnerHTML`
-    // as the raw string `[object Object]` rather than expanding it, so
-    // we only assert the `<style>` element is present and located after
-    // the switcher root opening tag. The CSS payload itself is covered
-    // by the dedicated `VERSION_SWITCHER_VISIBILITY_STYLE` test below.
+  it("does NOT emit an inline <style> (rule moved to consumer global.css per #1505)", () => {
+    // Per zudolab/zudo-doc#1505, the inline <style> element that backed
+    // responsive visibility was moved out of the component into the
+    // consumer's global stylesheet. <style> as a child of <div> violates
+    // HTML5's content model and html-validate's element-permitted-content
+    // rule. The component now only emits the data-version-switcher root
+    // and its dropdown markup; consumers are responsible for shipping the
+    // VERSION_SWITCHER_VISIBILITY_STYLE rule in their global.css.
     const html = serialize(
       <VersionSwitcher
         versions={versions}
@@ -213,17 +202,15 @@ describe("VersionSwitcher", () => {
         labels={labels}
       />,
     );
-    const styleIdx = html.indexOf("<style");
-    const switcherIdx = html.indexOf("data-version-switcher");
-    expect(styleIdx).toBeGreaterThanOrEqual(0);
-    expect(switcherIdx).toBeGreaterThanOrEqual(0);
-    // `<style>` lives inside the `data-version-switcher` element so the
-    // existing migration-check stripper takes it out symmetrically.
-    expect(styleIdx).toBeGreaterThan(switcherIdx);
+    expect(html).toContain("data-version-switcher");
+    expect(html).not.toContain("<style");
   });
 
-  it("suppresses the inline <style> when disableInlineVisibilityStyle is true", () => {
-    const html = serialize(
+  it("disableInlineVisibilityStyle prop is a backwards-compat no-op", () => {
+    // The prop is retained on the public interface so callers that still
+    // pass it don't need to change. Whether passed or omitted, the output
+    // is identical (no inline <style> in either case).
+    const withProp = serialize(
       <VersionSwitcher
         versions={versions}
         latestUrl="/docs/intro/"
@@ -233,8 +220,17 @@ describe("VersionSwitcher", () => {
         disableInlineVisibilityStyle
       />,
     );
-    expect(html).toContain("data-version-switcher");
-    expect(html).not.toContain("<style");
+    const withoutProp = serialize(
+      <VersionSwitcher
+        versions={versions}
+        latestUrl="/docs/intro/"
+        versionsPageUrl="/docs/versions/"
+        versionUrls={versionUrls}
+        labels={labels}
+      />,
+    );
+    expect(withProp).toBe(withoutProp);
+    expect(withProp).not.toContain("<style");
   });
 
   it("VERSION_SWITCHER_VISIBILITY_STYLE is a self-contained CSS rule for the wrapper", () => {

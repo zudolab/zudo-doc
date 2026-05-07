@@ -844,4 +844,15 @@ pre[class^="syntect-"] .line .highlighted-word {
   navigation: auto;
 }
 
+/* Version-switcher responsive visibility (moved out of the component to
+ * avoid <style>-inside-<div> HTML5 content-model violation; required when
+ * the i18nVersion feature ships a <VersionSwitcher> wrapped in
+ * `<div class="hidden lg:block">`. Inert when no version-switcher is on
+ * the page. */
+@media (min-width: 64rem) {
+  .hidden:has(> [data-version-switcher]) {
+    display: block;
+  }
+}
+
 /* @slot:global-css:feature-styles */
