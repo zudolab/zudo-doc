@@ -11,19 +11,21 @@ set -euo pipefail
 #   5. Type checking (zfb check)
 #   6. Build (zfb build)
 #   7. Link check
-#   8. Automated preview smoke (blocking)
-#   9. Manual interactive smoke (operator-driven)
+#   8. HTML validation (html-validate dist/**/*.html)
+#   9. Automated preview smoke (blocking)
+#  10. Manual interactive smoke (operator-driven)
 #
 # CI parity (Playwright E2E + GitHub Actions) is intentionally parked
 # to E9b until the post-cutover migration window closes.
 #
 # Env overrides for non-interactive use:
+#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 8)
 #   B4PUSH_SKIP_PREVIEW_SMOKE=1  — skip the automated preview smoke
 #   B4PUSH_SKIP_MANUAL_SMOKE=1   — skip the manual interactive smoke
 
 START_TIME=$(date +%s)
 FAILURES=()
-TOTAL_STEPS=9
+TOTAL_STEPS=10
 CURRENT_STEP=0
 
 step() {
@@ -101,7 +103,19 @@ else
   fail "Link check"
 fi
 
-# ── Step 8: Automated preview smoke (blocking) ───────
+# ── Step 8: HTML validation ───────────────────────────
+step "HTML validation (html-validate)"
+if [[ "${B4PUSH_SKIP_HTML_VALIDATE:-}" == "1" ]]; then
+  skip "HTML validation (B4PUSH_SKIP_HTML_VALIDATE=1)"
+else
+  if (cd "$ROOT_DIR" && pnpm run check:html); then
+    pass "HTML validation passed"
+  else
+    fail "HTML validation"
+  fi
+fi
+
+# ── Step 9: Automated preview smoke (blocking) ───────
 step "Preview smoke (automated)"
 if [[ "${B4PUSH_SKIP_PREVIEW_SMOKE:-}" == "1" ]]; then
   skip "Preview smoke (B4PUSH_SKIP_PREVIEW_SMOKE=1)"
@@ -113,7 +127,7 @@ else
   fi
 fi
 
-# ── Step 9: Manual interactive smoke ─────────────────
+# ── Step 10: Manual interactive smoke ────────────────
 step "Manual interactive smoke"
 if [[ "${B4PUSH_SKIP_MANUAL_SMOKE:-}" == "1" ]]; then
   skip "Manual smoke (B4PUSH_SKIP_MANUAL_SMOKE=1)"
