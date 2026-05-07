@@ -39,7 +39,6 @@ const defaults: ColorTweakState = {
   selectionBg: 0,
   selectionFg: 15,
   semanticMappings: { accent: 6, muted: 8 },
-  shikiTheme: "dracula",
 };
 
 function makeV1(overrides?: Partial<ColorTweakState>): ColorTweakState {
@@ -51,7 +50,6 @@ function makeV1(overrides?: Partial<ColorTweakState>): ColorTweakState {
     selectionBg: 2,
     selectionFg: 13,
     semanticMappings: { accent: 6, muted: 8 },
-    shikiTheme: "tokyo-night",
     ...overrides,
   };
 }
@@ -82,7 +80,6 @@ describe("loadPersistedState — v1→v2 migration", () => {
     expect(result).not.toBeNull();
     expect(result!.color.background).toBe(1);
     expect(result!.color.foreground).toBe(14);
-    expect(result!.color.shikiTheme).toBe("tokyo-night");
     expect(result!.color.palette).toEqual(v1.palette);
 
     // v2 was written, v1 was removed.
@@ -91,11 +88,10 @@ describe("loadPersistedState — v1→v2 migration", () => {
 
     const persisted = JSON.parse(storage.entries[STORAGE_KEY_V2]);
     expect(persisted.color.background).toBe(1);
-    expect(persisted.color.shikiTheme).toBe("tokyo-night");
   });
 
   it("fills in missing fields from defaults on a partial v1 state", () => {
-    // v1 missing shikiTheme + semanticMappings — still has the required 16-item palette & numeric indices
+    // v1 missing semanticMappings — still has the required 16-item palette & numeric indices
     const partial = {
       palette: palette16,
       background: 2,
@@ -111,8 +107,6 @@ describe("loadPersistedState — v1→v2 migration", () => {
 
     expect(result).not.toBeNull();
     expect(result!.color.background).toBe(2);
-    // missing shikiTheme filled from defaults
-    expect(result!.color.shikiTheme).toBe(defaults.shikiTheme);
     // missing semantic keys filled from defaults
     expect(result!.color.semanticMappings.accent).toBe(defaults.semanticMappings.accent);
     // v2 written
@@ -132,8 +126,8 @@ describe("loadPersistedState — v1→v2 migration", () => {
   });
 
   it("prefers v2 when both v1 and v2 are present", () => {
-    const v1 = makeV1({ shikiTheme: "v1-theme" });
-    const v2 = { color: { ...makeV1({ shikiTheme: "v2-theme" }) } };
+    const v1 = makeV1();
+    const v2 = { color: { ...makeV1() } };
     const storage = makeStorage({
       [STORAGE_KEY_V1]: JSON.stringify(v1),
       [STORAGE_KEY_V2]: JSON.stringify(v2),
@@ -142,7 +136,7 @@ describe("loadPersistedState — v1→v2 migration", () => {
     const result = loadPersistedState(storage, defaults);
 
     expect(result).not.toBeNull();
-    expect(result!.color.shikiTheme).toBe("v2-theme");
+    expect(result!.color.background).toBe(v2.color.background);
     // v1 was NOT touched (v2 wins means we don't run migration)
     expect(storage.entries[STORAGE_KEY_V1]).toBeDefined();
   });
@@ -163,7 +157,6 @@ describe("loadPersistedState — v1→v2 migration", () => {
         selectionFg: 13,
         // Missing `matchedKeywordBg` / `matchedKeywordFg` on purpose.
         semanticMappings: { accent: 6, muted: 8 },
-        shikiTheme: "tokyo-night",
       },
     };
     const freshDefaults: ColorTweakState = {
@@ -198,7 +191,7 @@ describe("loadPersistedState — v1→v2 migration", () => {
     const result = loadPersistedState(storage, defaults);
 
     expect(result).not.toBeNull();
-    expect(result!.color.shikiTheme).toBe(v1.shikiTheme);
+    expect(result!.color.background).toBe(v1.background);
     expect(warnSpy).toHaveBeenCalled();
     // migration ran successfully → v1 deleted, v2 overwritten
     expect(storage.entries[STORAGE_KEY_V1]).toBeUndefined();

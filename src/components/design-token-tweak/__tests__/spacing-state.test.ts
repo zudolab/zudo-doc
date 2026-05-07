@@ -40,7 +40,6 @@ const defaults: ColorTweakState = {
   selectionBg: 0,
   selectionFg: 15,
   semanticMappings: { accent: 6, muted: 8 },
-  shikiTheme: "dracula",
 };
 
 function makeColor(): ColorTweakState {
@@ -52,7 +51,6 @@ function makeColor(): ColorTweakState {
     selectionBg: 2,
     selectionFg: 13,
     semanticMappings: { accent: 6, muted: 8 },
-    shikiTheme: "tokyo-night",
   };
 }
 
