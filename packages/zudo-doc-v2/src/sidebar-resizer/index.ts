@@ -5,7 +5,7 @@
 // The Astro version shipped this as `src/scripts/sidebar-resizer.ts`,
 // invoked from the doc layout on initial load and on the page-navigate-
 // end event. In the zfb-based v2 stack `AFTER_NAVIGATE_EVENT` from
-// `../transitions/page-events.ts` (today: `DOMContentLoaded`) is the
+// `../transitions/page-events.ts` (today: `zfb:after-swap`) is the
 // successor to Astro's `astro:after-swap`. The layout owner is
 // responsible for calling `initSidebarResizer()` on first load and
 // again after each cross-page View Transition swap. The function is

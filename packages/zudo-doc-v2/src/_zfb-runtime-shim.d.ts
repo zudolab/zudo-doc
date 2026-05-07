@@ -4,44 +4,40 @@
 // runtime dependency (matches the `@takazudo/zfb` pattern in
 // `_zfb-shim.d.ts` — npm publish is deferred per super-epic #473). The
 // host project provides the real package; this `.d.ts` only widens types
-// so the doc-layout shell can import `<ViewTransitions />` without
-// pulling the workspace dep into the package's manifest.
+// so the doc-layout shell can import `<ClientRouter />` without pulling
+// the workspace dep into the package's manifest.
 //
-// The real public types live in `packages/zfb-runtime/src/view-transitions.ts`
-// of the zfb repo. We mirror only the shape this package needs (the
-// `<ViewTransitions />` component); other zfb-runtime exports stay
-// off the v2 package's surface intentionally.
+// The real public types live in `packages/zfb-runtime/src/client-router.ts`
+// of the zfb repo (W3D). We mirror only the shape this package needs (the
+// `<ClientRouter />` component and its props); other zfb-runtime exports
+// stay off the v2 package's surface intentionally.
+//
+// Strategy B switch landed in W6A (zudolab/zudo-doc#1522).
 
 declare module "@takazudo/zfb-runtime" {
   /**
-   * Structural VNode shape returned by `<ViewTransitions />`. Mirrors the
-   * shape used by zfb's `Island` wrapper so both Preact and React SSR
-   * renderers accept it without pulling either framework's VNode types
-   * into the v2 package.
+   * Structural VNode shape returned by `<ClientRouter />`. Mirrors the shape
+   * used by zfb's `Island` wrapper so both Preact and React SSR renderers
+   * accept it without pulling either framework's VNode types into the v2
+   * package.
    */
-  export type ViewTransitionsElement = {
+  export type ClientRouterElement = {
     readonly type: string;
     readonly props: Readonly<Record<string, unknown>>;
     readonly key: unknown;
   };
 
+  /** Props accepted by `<ClientRouter />`. */
+  export interface ClientRouterProps {
+    /** Fallback animation strategy when native View Transitions are not supported. */
+    fallback?: "none" | "animate" | "swap";
+  }
+
   /**
-   * `<ViewTransitions />` — DEPRECATED: typed no-op. Cross-document View
-   * Transitions are opted in via the `@view-transition { navigation: auto; }`
-   * CSS at-rule on the host's top-level stylesheet (outside any `@layer`
-   * block — see https://developer.mozilla.org/en-US/docs/Web/CSS/@view-transition),
-   * NOT via this component. The doc-layout still mounts `<ViewTransitions />`
-   * in `<head>` as a documentation marker; the call returns `[]` and emits
-   * no DOM.
-   *
-   * The previous implementation injected a `<meta name="view-transition"
-   * content="same-origin">` opt-in plus an inline router IIFE that called
-   * `event.preventDefault()` and `document.startViewTransition` around
-   * `window.location.href = url`. That pattern is INCOMPATIBLE with the
-   * cross-document VT spec — Chromium treats the script reload as
-   * excluded from `auto`, so no `::view-transition-*` pseudo-elements ever
-   * materialise. The export is kept (returning `[]`) so existing mounts
-   * compile unchanged.
+   * `<ClientRouter />` — Strategy B SPA soft-swap router. Intercepts
+   * same-origin link clicks, fetches the new page, and swaps the DOM via
+   * `document.startViewTransition`. Emits opt-in meta tags and the global
+   * `.zfb-route-announcer` stylesheet. Mount once in `<head>`.
    */
-  export function ViewTransitions(): readonly ViewTransitionsElement[];
+  export function ClientRouter(props?: ClientRouterProps): readonly ClientRouterElement[];
 }

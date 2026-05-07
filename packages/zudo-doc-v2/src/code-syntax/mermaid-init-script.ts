@@ -11,7 +11,10 @@
 // Lifecycle vocabulary: the page-navigate-end hook reads
 // `AFTER_NAVIGATE_EVENT` from `transitions/page-events.ts` rather than
 // a hard-coded `astro:*` literal — see that module's header for the
-// full vocabulary rationale (zudolab/zudo-doc#1335 E2 task 2 half B).
+// full vocabulary rationale (zudolab/zudo-doc#1335 E2 task 2 half B
+// introduced the constant; zudolab/zudo-doc#1523 flipped it from the
+// browser-standard `DOMContentLoaded` to zfb's Strategy B SPA event
+// `zfb:after-swap`).
 //
 // ## Mermaid module URL — Wave 13 (zudolab/zudo-doc#1355 Topic 4)
 //
@@ -279,9 +282,13 @@ export function buildMermaidInitScript(cdnUrl: string): string {
     initMermaid();
   }
 
-  // AFTER_NAVIGATE_EVENT fires on initial parse (DOMContentLoaded under
-  // the zfb runtime) — every navigation is a real page load, so this
-  // listener also covers the post-navigation re-render path.
+  // First-paint render — under zfb's Strategy B SPA navigation,
+  // AFTER_NAVIGATE_EVENT (zfb:after-swap) does NOT fire on the initial
+  // page load (only post-swap), so we have to invoke initMermaid()
+  // synchronously at script-evaluation time to render diagrams on the
+  // landing page. The listener below covers the re-render path for
+  // every subsequent SPA hop. zudolab/zudo-doc#1523.
+  initMermaid();
   document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)}, function () { initMermaid(); });
 
   // Re-render mermaid when:

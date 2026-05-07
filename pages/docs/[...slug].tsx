@@ -37,7 +37,6 @@ import {
 import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
 import { toRouteSlug } from "@/utils/slug";
 import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
-import { sidebarPersistName } from "@zudo-doc/zudo-doc-v2/transitions/persist";
 import { Breadcrumb } from "@zudo-doc/zudo-doc-v2/breadcrumb";
 import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
 import { FrontmatterPreview } from "@zudo-doc/zudo-doc-v2/metainfo";
@@ -241,7 +240,6 @@ export default function DocsPage({ entry, autoIndex, breadcrumbs, prev, next, he
       hideToc={entry?.data?.hide_toc}
       headings={headings}
       canonical={canonical}
-      sidebarPersistKey={sidebarPersistName(locale, getNavSectionForSlug(slug) ?? "default")}
       headerOverride={
         <HeaderWithDefaults
           lang={locale}
@@ -285,8 +283,8 @@ export default function DocsPage({ entry, autoIndex, breadcrumbs, prev, next, he
         <>
           <BodyEndIslands basePath={settings.base ?? "/"} />
           {/* SidebarResizerInit: attach drag handle to #desktop-sidebar on load
-              and on AFTER_NAVIGATE_EVENT (DOMContentLoaded under zfb's full-
-              reload navigation model). Idempotent — safe on every page. */}
+              and on AFTER_NAVIGATE_EVENT (zfb:after-swap under the Strategy B
+              SPA navigation model). Idempotent — safe on every page. */}
           {settings.sidebarResizer && <SidebarResizerInit />}
         </>
       }

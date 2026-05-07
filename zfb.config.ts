@@ -1,23 +1,61 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: 1e0e6a7 (Takazudo/zudo-front-builder main, post-#223 merge:
- *           PR #223 fix/raw-block-wrapper — HastNode::Raw arm now wraps
- *           block-level raw HTML (e.g. syntect <pre>) in a <div> instead
- *           of <span>, fixing the invalid `<span><pre>` content-model
- *           emitted by every code-block page (zudolab/zudo-doc#1490);
- *           PR #222 fix/view-transitions-cross-document — <ViewTransitions />
- *           is now a typed no-op; cross-document VT opt-in moves to the
- *           CSS @view-transition at-rule on the host side, deleting the
- *           click-intercept IIFE + meta tag that prevented Chromium 126+
- *           from animating navigations (zudolab/zudo-doc#1491). Also pulls
- *           PR #221 (runtime check accepts embedded vendor; CF adapter +
- *           islands bundler wired through embedded esbuild and node_modules).
- *           Bumped 2026-05-07 in zudolab/zudo-doc#1492 visible-bug-triage
- *           Wave 4 (W4A). Previous pin 3b81411 (post-#220 merge: PR #220
- *           base/content-plugin-fixes — sub-218 syntect alias remap + themed
- *           fallback; sub-219 Unicode-preserving heading slugifier).
- *           Both #220 and earlier closed consumer-side workarounds
- *           previously carried in zudolab/zudo-doc.)
+ *   commit: 95058f0 (Takazudo/zudo-front-builder main, post-#227 merge:
+ *           PR #227 fix/client-router-bootstrap-export — adds a public
+ *           `./client-router` subpath export to @takazudo/zfb-runtime's
+ *           package.json. Purely additive (no source changes); maps to
+ *           the existing barrel at src/client-router/index.ts.
+ *           Surfaced by W7A (zudolab/zudo-doc#1524) end-to-end Playwright
+ *           verification — all 4 SPA-router GATEs failed because
+ *           `<ClientRouter />`'s top-of-module side effect
+ *           `if (typeof document !== "undefined") { init(); }` only fired
+ *           server-side (where the guard is always false). The host's
+ *           existing `import { ClientRouter } from "@takazudo/zfb-runtime"`
+ *           in doc-layout.tsx happens during SSR, so the click/form
+ *           intercepts were never registered in the browser; every
+ *           navigation was a full page load with no View Transition.
+ *           This pin bump exposes the client-router barrel as a subpath
+ *           so a host-side "use client" island
+ *           (src/components/client-router-bootstrap.tsx) can
+ *           side-effect-import it from the browser, triggering init()
+ *           on bundle parse without dragging in any server-only modules.
+ *           Bumped 2026-05-08 in the W7A bootstrap-fix follow-up under
+ *           host epic zudolab/zudo-doc#1510.
+ *           Previous pin 5e679d3 (post-#226 merge) — added `= {}` default
+ *           to the destructured props parameter on
+ *           packages/zfb-runtime/src/client-router.ts so calling
+ *           ClientRouter() with no arguments no longer destructures
+ *           undefined. The runtime impl now matches the documented
+ *           optional-props contract (props?: ClientRouterProps) declared
+ *           in this consumer's _zfb-runtime-shim.d.ts. Surfaced by W6A
+ *           (zudolab/zudo-doc#1522) — the host-side mount in
+ *           packages/zudo-doc-v2/src/doclayout/doc-layout.tsx calls
+ *           <ClientRouter /> with no args; without this fix it threw
+ *           `TypeError: Cannot read properties of undefined (reading
+ *           'fallback')` at SSR render time inside the embedded V8 host.
+ *           W6A landed an in-host workaround `ClientRouter({})`; this pin
+ *           bump enables that workaround to revert to the cleaner no-arg
+ *           call (done atomically in the same commit as this pin bump).
+ *           Bumped 2026-05-08 in W5A.5 mini follow-up (zudolab/zudo-doc#1522
+ *           extended) under host epic zudolab/zudo-doc#1510.
+ *           Previous pin 7e11ebd (W5A re-bump, post-#225 merge) — added
+ *           globalThis stubs for browser Event/CustomEvent/EventTarget to
+ *           the embedded V8 host's bootstrap_host_shim. Unblocked the
+ *           just-shipped <ClientRouter /> surface whose events.ts declares
+ *           three top-level `class X extends Event`. Also absorbed PR #224
+ *           client-router/component (W4A) — Astro-style SPA soft-swap
+ *           router ported into @takazudo/zfb-runtime. This consumer's
+ *           integration switches from Strategy A (CSS @view-transition
+ *           at-rule) to Strategy B (<ClientRouter /> mount) in W6A/W6B
+ *           (zudolab/zudo-doc#1510).
+ *           Previous pin c34b821 (W5A first attempt, post-#224 merge) —
+ *           broke embedded V8 SSG paths() at bundle load time because the
+ *           V8 host did not stub the browser Event global; reverted-by-
+ *           bumping-forward via #225 rather than literal git revert.
+ *           Before that 1e0e6a7 (post-#221/#222/#223 merge: Wave 4 W4A
+ *           bump from epic zudolab/zudo-doc#1492 — #222 made <ViewTransitions />
+ *           a typed no-op with CSS at-rule as the VT opt-in; #223 fixed
+ *           <span><pre> content-model; #221 wired embedded esbuild.)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -251,6 +289,29 @@
  *                content_hash to disagree with the bundler's bridge-map key
  *                so globalThis.__zfb.content.get(specifier) silently missed.
  *                After re-bump: 0 fallback markers on both EN and JA corpora.)
+ *              → bumped by epic zudolab/zudo-doc#1492 sub-issue #1501 (W4A
+ *                visible-bug-triage: pin 1e0e6a7 picks up PRs #221/#222/#223 —
+ *                <ViewTransitions /> becomes typed no-op; cross-document VT
+ *                opt-in moves to CSS @view-transition at-rule on the host side;
+ *                HastNode::Raw block-level wrapping fix; embedded esbuild wiring)
+ *              → bumped by epic zudolab/zudo-doc#1510 sub-issue #1521 (W5A
+ *                VT Strategy B port: pin c34b821 picks up PR #224 —
+ *                <ClientRouter /> ported into @takazudo/zfb-runtime as the
+ *                supported opt-in for cross-document soft-swap navigation.
+ *                Host integration switches Strategy A → B in W6A/W6B.)
+ *              → re-bumped at W5A hotfix follow-up: pin 7e11ebd picks up
+ *                upstream PR #225 — embedded V8 globalThis stubs for
+ *                Event/CustomEvent/EventTarget; resolves the bundle-load
+ *                regression where W4A's events.ts top-level `extends Event`
+ *                hit `ReferenceError` in the SSG paths() pass.
+ *              → bumped by epic zudolab/zudo-doc#1510 sub-issue #1522 W5A.5
+ *                mini follow-up (W6A host-side switch landing): pin 5e679d3
+ *                picks up upstream PR #226 — adds `= {}` default to the
+ *                destructured props parameter on ClientRouter() so the
+ *                no-arg call from the host's doc-layout mount no longer
+ *                throws at SSR render time. This pin enables reverting the
+ *                W6A in-host workaround `ClientRouter({})` back to the
+ *                cleaner `ClientRouter()` no-arg form.)
  */
 
 // zfb.config.ts — entry-point config consumed by the zfb engine.

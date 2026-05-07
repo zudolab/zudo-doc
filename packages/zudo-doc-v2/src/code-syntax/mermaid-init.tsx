@@ -4,8 +4,9 @@
 // JSX port of src/components/mermaid-init.astro.
 //
 // The original .astro component rendered a single <script> tag that:
-//   1. Lazily imports mermaid on first after-navigate event (today
-//      `DOMContentLoaded`; pre-migration this was `astro:page-load`).
+//   1. Lazily imports mermaid on first paint and on every after-navigate
+//      event (today `zfb:after-swap`; pre-migration this was
+//      `astro:page-load`).
 //   2. Reads CSS custom properties to build mermaid theme variables.
 //   3. Renders `[data-mermaid]` elements and marks them with
 //      `[data-mermaid-rendered]` to avoid double-rendering.

@@ -32,6 +32,7 @@ import type { VNode, JSX } from "preact";
 import { Island } from "@takazudo/zfb";
 
 import AiChatModal from "@/components/ai-chat-modal";
+import ClientRouterBootstrap from "@/components/client-router-bootstrap";
 import DesignTokenTweakPanel from "@/components/design-token-tweak";
 import ImageEnlarge, { ImageEnlargeSsrFallback } from "@/components/image-enlarge";
 
@@ -43,6 +44,8 @@ import ImageEnlarge, { ImageEnlargeSsrFallback } from "@/components/image-enlarg
 // function names by default, but the explicit assignment is a
 // belt-and-braces guard for production minification regressions.
 (AiChatModal as { displayName?: string }).displayName = "AiChatModal";
+(ClientRouterBootstrap as { displayName?: string }).displayName =
+  "ClientRouterBootstrap";
 (DesignTokenTweakPanel as { displayName?: string }).displayName =
   "DesignTokenTweakPanel";
 (ImageEnlarge as { displayName?: string }).displayName = "ImageEnlarge";
@@ -92,6 +95,16 @@ export function BodyEndIslands({
   basePath,
   aiChatBodyLabel = DEFAULT_AI_CHAT_BODY_LABEL,
 }: BodyEndIslandsProps): JSX.Element {
+  // Hydrates first (when="load") so the SPA-router click intercept is
+  // registered as soon as the islands runtime mounts the marker. The
+  // component renders nothing visually — the island bundle's top-level
+  // `import "@takazudo/zfb-runtime/client-router"` is what actually
+  // wires up the router (zudolab/zudo-doc#1524 W7A fix).
+  const clientRouterBootstrap = Island({
+    when: "load",
+    children: <ClientRouterBootstrap />,
+  }) as unknown as VNode;
+
   const designToken = Island({
     ssrFallback: null,
     children: <DesignTokenTweakPanel />,
@@ -120,6 +133,7 @@ export function BodyEndIslands({
 
   return (
     <>
+      {clientRouterBootstrap}
       {designToken}
       {/* Preserves migration-check parity: the Astro build SSR-rendered
           <h2>AI Assistant</h2> inside the chat modal markup; the checker
