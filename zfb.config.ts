@@ -1,7 +1,27 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: 5e679d3 (Takazudo/zudo-front-builder main, post-#226 merge:
- *           PR #226 fix/client-router-no-arg-default — adds `= {}` default
+ *   commit: 95058f0 (Takazudo/zudo-front-builder main, post-#227 merge:
+ *           PR #227 fix/client-router-bootstrap-export — adds a public
+ *           `./client-router` subpath export to @takazudo/zfb-runtime's
+ *           package.json. Purely additive (no source changes); maps to
+ *           the existing barrel at src/client-router/index.ts.
+ *           Surfaced by W7A (zudolab/zudo-doc#1524) end-to-end Playwright
+ *           verification — all 4 SPA-router GATEs failed because
+ *           `<ClientRouter />`'s top-of-module side effect
+ *           `if (typeof document !== "undefined") { init(); }` only fired
+ *           server-side (where the guard is always false). The host's
+ *           existing `import { ClientRouter } from "@takazudo/zfb-runtime"`
+ *           in doc-layout.tsx happens during SSR, so the click/form
+ *           intercepts were never registered in the browser; every
+ *           navigation was a full page load with no View Transition.
+ *           This pin bump exposes the client-router barrel as a subpath
+ *           so a host-side "use client" island
+ *           (src/components/client-router-bootstrap.tsx) can
+ *           side-effect-import it from the browser, triggering init()
+ *           on bundle parse without dragging in any server-only modules.
+ *           Bumped 2026-05-08 in the W7A bootstrap-fix follow-up under
+ *           host epic zudolab/zudo-doc#1510.
+ *           Previous pin 5e679d3 (post-#226 merge) — added `= {}` default
  *           to the destructured props parameter on
  *           packages/zfb-runtime/src/client-router.ts so calling
  *           ClientRouter() with no arguments no longer destructures
