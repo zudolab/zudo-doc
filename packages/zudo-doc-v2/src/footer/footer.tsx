@@ -77,7 +77,13 @@ export function Footer(props: FooterProps): VNode {
     : "text-center text-caption text-muted [&_a]:text-accent [&_a]:underline";
 
   return (
-    <footer class="border-t border-muted bg-surface">
+    <footer
+      class="border-t border-muted bg-surface"
+      // Strategy B persist contract: client-router moves the footer from
+      // old to new DOM rather than cross-fading it, keeping it stable
+      // across same-document navigations.
+      data-zfb-transition-persist="site-footer"
+    >
       <div class="mx-auto max-w-[clamp(50rem,75vw,90rem)] px-hsp-xl py-vsp-xl lg:px-hsp-2xl lg:py-vsp-2xl">
         {hasColumns && (
           <div class="grid grid-cols-1 gap-vsp-lg sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(12rem,1fr))]">

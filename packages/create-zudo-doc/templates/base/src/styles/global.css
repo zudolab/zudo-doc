@@ -829,19 +829,22 @@ pre[class^="syntect-"] .line .highlighted-word {
   }
 }
 
-/* Cross-document View Transitions opt-in (Chromium 126+).
+/* Root cross-fade for same-document View Transitions (Strategy B).
  *
- * Both source and destination documents must contain this at-rule for
- * the browser to capture and animate same-origin link navigations.
- * The previous opt-in (<meta name="view-transition" content="same-origin">)
- * was deprecated by the spec and is no longer honoured by browsers
- * that ship cross-document VT.
+ * @view-transition { navigation: auto; } (Strategy A, cross-document) is
+ * not used — Strategy B uses <ClientRouter /> which drives same-document
+ * transitions via document.startViewTransition on each navigation.
  *
- * Browsers without VT support ignore this rule entirely — navigation
- * works as a normal full reload with no animation, identical to today's
- * Firefox / Safari behaviour. */
-@view-transition {
-  navigation: auto;
+ * These root pseudo-element rules fire for every same-document VT that
+ * <ClientRouter /> initiates, producing a 150ms-out / 300ms-in cross-fade.
+ * Persistent elements (sidebar, header, footer) are moved via
+ * data-zfb-transition-persist and carve themselves out of the root group
+ * automatically. */
+::view-transition-old(root) {
+  animation: 150ms ease-in both contentFadeOut;
+}
+::view-transition-new(root) {
+  animation: 300ms ease-out both contentFadeIn;
 }
 
 /* Version-switcher responsive visibility (moved out of the component to

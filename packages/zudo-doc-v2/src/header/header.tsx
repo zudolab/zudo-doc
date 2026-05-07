@@ -139,6 +139,10 @@ export function Header(props: HeaderProps): JSX.Element {
     <header
       class="sticky top-0 z-50 flex h-[3.5rem] items-center border-b border-muted bg-surface px-hsp-lg"
       data-header
+      // Strategy B persist contract: client-router moves the header from
+      // old to new DOM rather than cross-fading it, keeping it stable
+      // across same-document navigations.
+      data-zfb-transition-persist="site-header"
     >
       {sidebarToggle ?? (
         // Render an inert wrapper so consumers that omit the slot still
