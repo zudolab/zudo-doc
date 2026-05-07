@@ -61,6 +61,13 @@ src/components/theme-toggle.tsx
 # alias under the docHistory feature once the super-epic lands.
 tsconfig.json
 
+# W3B (#1498) — template run-b4push.sh is a lean downstream variant (4 steps:
+# typecheck, build, html-validate, manual smoke). The main project's version
+# has 10 steps including tags audit, template drift check, link check, and
+# automated preview smoke that are showcase-specific. Template version
+# intentionally omits those; both include the html-validate step.
+scripts/run-b4push.sh
+
 # E2 task 2 (zfb migration finalisation #1335) — production showcase files in
 # src/components/ now import lifecycle event names from
 # `@zudo-doc/zudo-doc-v2/transitions` (the v2 module owns the vocabulary so

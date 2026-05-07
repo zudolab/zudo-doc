@@ -227,6 +227,44 @@ jobs:
           key: dist-${{ github.run_id }}
 
   # ---------------------------------------------------------------------------
+  # Job: HTML validate (block-in-inline guard for #1490 regression)
+  # ---------------------------------------------------------------------------
+  # Mirrors pr-checks.yml html-validate job. Last-line gate before production
+  # deploy; catches element-permitted-content violations after build-site.
+  # See W3B spec §4 and PR description coupling note.
+  html-validate:
+    name: HTML validate
+    needs: [build-site]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+
+      - name: Install deps (no scripts)
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Restore dist cache (built by build-site)
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: dist/
+          key: dist-${{ github.run_id }}
+          fail-on-cache-miss: true
+
+      - name: Run html-validate
+        run: pnpm check:html
+
+  # ---------------------------------------------------------------------------
   # Job 2: Build doc history JSONs (full clone — only this job needs it)
   # ---------------------------------------------------------------------------
   # See pr-checks.yml `build-history` for the decision to skip the zfb

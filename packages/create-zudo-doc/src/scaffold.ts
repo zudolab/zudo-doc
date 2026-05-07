@@ -267,6 +267,7 @@ function generatePackageJson(choices: UserChoices) {
     "@types/mdast": "^4.0.4",
     "@types/node": "^22.0.0",
     "@types/react": "^19.2.0", // needed for preact/compat type resolution
+    "html-validate": "^10.0.0",
   };
 
   if (choices.features.includes("search")) {
@@ -295,6 +296,7 @@ function generatePackageJson(choices: UserChoices) {
     build: "zfb build",
     preview: "zfb preview",
     check: "zfb check",
+    "check:html": "html-validate \"dist/**/*.html\"",
   };
 
   if (choices.features.includes("tagGovernance")) {

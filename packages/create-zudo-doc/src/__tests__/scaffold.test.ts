@@ -1243,6 +1243,22 @@ describe("scaffold — plugin copying and settings", () => {
     );
     expect(pkg.devDependencies["@types/mdast"]).toBeDefined();
   });
+
+  it("includes html-validate in devDependencies", async () => {
+    const pkg = await fs.readJson(
+      projectPath("test-minimal", "package.json"),
+    );
+    expect(pkg.devDependencies["html-validate"]).toBeDefined();
+  });
+
+  it("includes check:html script", async () => {
+    const pkg = await fs.readJson(
+      projectPath("test-minimal", "package.json"),
+    );
+    expect(pkg.scripts["check:html"]).toBe(
+      'html-validate "dist/**/*.html"',
+    );
+  });
 });
 
 describe("scaffold — CLAUDE.md generation", () => {
