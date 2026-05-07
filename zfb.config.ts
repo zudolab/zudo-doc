@@ -1,19 +1,23 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: 3b81411 (Takazudo/zudo-front-builder main, post-#220 merge:
- *           PR #220 base/content-plugin-fixes — sub-218 syntect alias
- *           remap + themed fallback for unknown/error paths (so mdx/tsx/
- *           jsx/no-lang fences keep the syntect-themed `<pre class="syntect-…">`
- *           wrapper instead of degrading to bare `<pre>`); sub-219
- *           Unicode-preserving heading slugifier (replaces ASCII-only
- *           `is_ascii_alphanumeric()` filter so JA/CJK h2s get proper
- *           `id` attrs natively). Both close consumer-side workarounds
- *           previously carried in zudolab/zudo-doc — the postBuild
- *           heading-ids-cjk plugin and the bare-`<pre>` CSS fallback are
- *           retired in this same bump. Previous pin 8e8aed2 (post-#214
- *           merge) included; on top of that, plus PR #208 post-migration
- *           fixes, PR #210 embed-framework-pkgs, PR #214 fix-211-212.
- *           Bumped 2026-05-06 in zudolab/zudo-doc#669 parity-fix batch.)
+ *   commit: 1e0e6a7 (Takazudo/zudo-front-builder main, post-#223 merge:
+ *           PR #223 fix/raw-block-wrapper — HastNode::Raw arm now wraps
+ *           block-level raw HTML (e.g. syntect <pre>) in a <div> instead
+ *           of <span>, fixing the invalid `<span><pre>` content-model
+ *           emitted by every code-block page (zudolab/zudo-doc#1490);
+ *           PR #222 fix/view-transitions-cross-document — <ViewTransitions />
+ *           is now a typed no-op; cross-document VT opt-in moves to the
+ *           CSS @view-transition at-rule on the host side, deleting the
+ *           click-intercept IIFE + meta tag that prevented Chromium 126+
+ *           from animating navigations (zudolab/zudo-doc#1491). Also pulls
+ *           PR #221 (runtime check accepts embedded vendor; CF adapter +
+ *           islands bundler wired through embedded esbuild and node_modules).
+ *           Bumped 2026-05-07 in zudolab/zudo-doc#1492 visible-bug-triage
+ *           Wave 4 (W4A). Previous pin 3b81411 (post-#220 merge: PR #220
+ *           base/content-plugin-fixes — sub-218 syntect alias remap + themed
+ *           fallback; sub-219 Unicode-preserving heading slugifier).
+ *           Both #220 and earlier closed consumer-side workarounds
+ *           previously carried in zudolab/zudo-doc.)
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)

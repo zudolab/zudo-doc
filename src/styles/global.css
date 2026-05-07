@@ -1147,6 +1147,21 @@ dialog.zd-enlarge-dialog::backdrop {
   }
 }
 
+/* Cross-document View Transitions opt-in (Chromium 126+).
+ *
+ * Both source and destination documents must contain this at-rule for
+ * the browser to capture and animate same-origin link navigations.
+ * The previous opt-in (<meta name="view-transition" content="same-origin">)
+ * was deprecated by the spec and is no longer honoured by browsers
+ * that ship cross-document VT.
+ *
+ * Browsers without VT support ignore this rule entirely — navigation
+ * works as a normal full reload with no animation, identical to today's
+ * Firefox / Safari behaviour. */
+@view-transition {
+  navigation: auto;
+}
+
 /* Wire the orphaned keyframes to the View Transitions root pseudo-elements.
  * Timings (150ms out / 300ms in) match the Astro reference behaviour.
  * The sidebar carves itself out of the root group via its view-transition-name
@@ -1156,4 +1171,20 @@ dialog.zd-enlarge-dialog::backdrop {
 }
 ::view-transition-new(root) {
   animation: 300ms ease-out both contentFadeIn;
+}
+
+/* Version-switcher responsive visibility (was an inline <style> child of
+ * the data-version-switcher <div>; moved to global.css to avoid the
+ * <style>-inside-<div> HTML5 content-model violation flagged by
+ * html-validate — see zudolab/zudo-doc#1505).
+ *
+ * Pins onto the `.hidden` baseline that Tailwind always generates so
+ * consumers wrapping <VersionSwitcher> in `<div class="hidden lg:block">`
+ * still get the desktop override even when the content scanner did not
+ * generate `.lg:block`. Mobile (<64rem) falls through to `.hidden`'s
+ * `display: none`. */
+@media (min-width: 64rem) {
+  .hidden:has(> [data-version-switcher]) {
+    display: block;
+  }
 }

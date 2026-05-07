@@ -32,7 +32,6 @@ const COLOR_BASELINE: ColorTweakState = {
     codeBg: 10,
     codeFg: 11,
   },
-  shikiTheme: "dracula",
 };
 
 function cloneBaseline(): ColorTweakState {
@@ -129,14 +128,6 @@ describe("serialize", () => {
     expect(json.color?.semantic).toEqual({ accent: 7 });
   });
 
-  it("emits shikiTheme only when it differs", () => {
-    const color = cloneBaseline();
-    color.shikiTheme = "vitesse-dark";
-    const json = serialize(makeState({ color }), {
-      colorDefaults: COLOR_BASELINE,
-    });
-    expect(json.color?.shikiTheme).toBe("vitesse-dark");
-  });
 });
 
 describe("deserialize", () => {
@@ -220,7 +211,6 @@ describe("deserialize", () => {
     expect(state.color.cursor).toBe(3);
     expect(state.color.background).toBe(COLOR_BASELINE.background);
     expect(state.color.palette).toEqual(COLOR_BASELINE.palette);
-    expect(state.color.shikiTheme).toBe(COLOR_BASELINE.shikiTheme);
   });
 
   it("warns-then-ignores palette arrays that aren't exactly 16 long", () => {

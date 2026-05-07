@@ -58,7 +58,6 @@ export interface DesignTokenJsonColor {
   base?: DesignTokenJsonColorBase;
   /** Palette-index (or "bg"/"fg") mappings, same keys as `SEMANTIC_DEFAULTS`. */
   semantic?: Record<string, ColorSlotValue>;
-  shikiTheme?: string;
 }
 
 /** External token map keyed by CSS var name. */
@@ -216,12 +215,6 @@ function serializeColor(
   }
   if (semanticChanged) {
     out.semantic = semantic;
-    changed = true;
-  }
-
-  // Shiki theme — include only when different.
-  if (full || !baseline || color.shikiTheme !== baseline.shikiTheme) {
-    out.shikiTheme = color.shikiTheme;
     changed = true;
   }
 
@@ -393,11 +386,6 @@ function deserializeColor(
     }
   }
 
-  const shikiTheme =
-    typeof c.shikiTheme === "string" && c.shikiTheme.length > 0
-      ? c.shikiTheme
-      : baseline.shikiTheme;
-
   return {
     palette,
     background,
@@ -406,7 +394,6 @@ function deserializeColor(
     selectionBg,
     selectionFg,
     semanticMappings,
-    shikiTheme,
   };
 }
 
@@ -465,6 +452,5 @@ function neutralColorDefaults(): ColorTweakState {
     selectionBg: 0,
     selectionFg: 15,
     semanticMappings: {},
-    shikiTheme: "dracula",
   };
 }

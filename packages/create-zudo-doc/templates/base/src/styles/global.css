@@ -829,4 +829,30 @@ pre[class^="syntect-"] .line .highlighted-word {
   }
 }
 
+/* Cross-document View Transitions opt-in (Chromium 126+).
+ *
+ * Both source and destination documents must contain this at-rule for
+ * the browser to capture and animate same-origin link navigations.
+ * The previous opt-in (<meta name="view-transition" content="same-origin">)
+ * was deprecated by the spec and is no longer honoured by browsers
+ * that ship cross-document VT.
+ *
+ * Browsers without VT support ignore this rule entirely — navigation
+ * works as a normal full reload with no animation, identical to today's
+ * Firefox / Safari behaviour. */
+@view-transition {
+  navigation: auto;
+}
+
+/* Version-switcher responsive visibility (moved out of the component to
+ * avoid <style>-inside-<div> HTML5 content-model violation; required when
+ * the i18nVersion feature ships a <VersionSwitcher> wrapped in
+ * `<div class="hidden lg:block">`. Inert when no version-switcher is on
+ * the page. */
+@media (min-width: 64rem) {
+  .hidden:has(> [data-version-switcher]) {
+    display: block;
+  }
+}
+
 /* @slot:global-css:feature-styles */

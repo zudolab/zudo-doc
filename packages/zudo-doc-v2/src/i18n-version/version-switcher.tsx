@@ -33,7 +33,7 @@
 //   * The `<script>` block in the .astro source is hoisted out into the
 //     exported `VERSION_SWITCHER_INIT_SCRIPT` constant.
 //
-// Self-contained responsive visibility (Wave 11):
+// Responsive visibility — now lives in consumer CSS (zudolab/zudo-doc#1505):
 //   The host's <Header> wraps this component in `<div class="hidden lg:block">`
 //   so the switcher only appears at lg+ viewports. That works as long as
 //   Tailwind's content scanner has actually generated `.lg:block` and `.hidden`
@@ -41,45 +41,32 @@
 //   fixture) `.hidden` is generated but `.lg:block` is not, because Tailwind's
 //   filesystem walk reaches `pages/` (where `.hidden`/`.block` are referenced
 //   directly) but not the workspace-package source where `lg:block` lives.
-//   The wrapper then resolves to a permanent `display: none` even on desktop
-//   and the switcher disappears at every viewport.
+//   The wrapper would then resolve to a permanent `display: none` even on
+//   desktop and the switcher would disappear at every viewport.
 //
-//   Rather than depend on the host's Tailwind classes, this component emits a
-//   small unlayered `<style>` block (`VERSION_SWITCHER_VISIBILITY_STYLE`) that
-//   re-introduces the missing desktop override only. The selector is
-//   `.hidden:has(> [data-version-switcher])` so it
+//   Originally (Wave 11) the component emitted a small inline `<style>` child
+//   inside the `<div data-version-switcher>` to add the missing desktop
+//   override. That broke HTML5's content model — `<style>` is not permitted
+//   as a child of flow content like `<div>` (zudolab/zudo-doc#1505). The fix
+//   moved the rule out of the component and into the consumer's `global.css`
+//   directly. The exported `VERSION_SWITCHER_VISIBILITY_STYLE` constant
+//   remains as a re-usable string of the canonical CSS so downstream
+//   consumers can verify or copy it into their own stylesheet.
 //
-//     * matches the host header's `<div class="hidden lg:block">` wrapper
-//       (which always has `.hidden` whether or not `.lg:block` made it into
-//       the bundle), and
-//     * does NOT touch any consumer that wraps the switcher in something
-//       without the Tailwind `.hidden` baseline — that wrapper isn't asking
-//       for "hide on mobile, show on desktop" in the first place, so the
-//       fix stays out of its way.
+//   Required CSS rule on any consumer that uses <VersionSwitcher>:
 //
-//   Because the rule is unlayered author CSS, it wins over Tailwind's
-//   `.hidden` (which lives in `@layer utilities`), so visibility is correct
-//   regardless of whether `.lg:block` survived content scanning. Mobile
-//   visibility falls through to `.hidden`'s `display: none` baseline.
+//     @media (min-width: 64rem) {
+//       .hidden:has(> [data-version-switcher]) { display: block; }
+//     }
 //
-//   The `<style>` element is rendered as the first child INSIDE the
-//   `<div data-version-switcher>` so that the migration-check
-//   `strip-version-switcher.mjs` walker (which removes the entire
-//   `<div data-version-switcher>` subtree) cleans the `<style>` up too —
-//   keeping post-cutover migration parity comparisons free of a structural
-//   delta on every versioned page.
+//   - zudolab/zudo-doc carries this rule in `src/styles/global.css`.
+//   - `create-zudo-doc` scaffolds it into the generated `src/styles/global.css`
+//     template so freshly-scaffolded projects get it without action.
 //
-//   zudolab/zudo-doc#1444 added @source "packages/zudo-doc-v2/src/**" to
-//   zudo-doc's global.css so `.lg:block` is emitted in both main and E2E
-//   fixture builds for that project. The inline style is kept here because
-//   this package is a library: downstream projects scaffolded by
-//   create-zudo-doc do NOT have `packages/zudo-doc-v2/src/**` locally and
-//   their global.css template does not include that @source path. Removing
-//   the inline style would silently break the version-switcher in all
-//   downstream consumer projects.
-//
-//   Consumers that ship their own visibility CSS can pass
-//   `disableInlineVisibilityStyle` to suppress the inline `<style>`.
+//   The `disableInlineVisibilityStyle` prop is now a no-op (the component
+//   never emits a `<style>` regardless). It is retained on the public
+//   interface for backwards compatibility with consumers that may still
+//   pass it.
 
 import type { VNode } from "preact";
 import type { VersionEntry, VersionSwitcherLabels } from "./types";
@@ -130,17 +117,11 @@ export interface VersionSwitcherProps {
   idSuffix?: string;
 
   /**
-   * When true, suppress the inline `<style>` element that backs responsive
-   * visibility (`VERSION_SWITCHER_VISIBILITY_STYLE`). Use this when the
-   * host already ships its own visibility CSS — for example, a project
-   * whose Tailwind content scanner reaches the workspace-package source
-   * (via an explicit `@source` directive) so `.lg:block` makes it into
-   * the bundle without the inline override, or a project that wraps the
-   * switcher in a layout that uses a non-`.hidden` baseline (`hidden
-   * lg:flex`, `hidden xl:block`, a custom breakpoint, etc.).
-   *
-   * Defaults to `false` (emit the inline style) so existing consumers
-   * keep working without a code change.
+   * @deprecated No longer wired — the component never emits an inline
+   * `<style>`. Visibility CSS lives in the consumer's global stylesheet
+   * (see `VERSION_SWITCHER_VISIBILITY_STYLE` for the canonical rule).
+   * Retained on the public interface for backwards compatibility; passing
+   * any value is a no-op.
    */
   disableInlineVisibilityStyle?: boolean;
 }
@@ -151,14 +132,21 @@ function cls(...parts: (string | false | null | undefined)[]): string {
 }
 
 /**
- * Inline stylesheet that backs the responsive visibility of the
- * version-switcher's host wrapper. The selector
- * `.hidden:has(> [data-version-switcher])` keys off the host header's
- * `<div class="hidden lg:block">` baseline (the `.hidden` part is always
- * generated by Tailwind because `pages/` directly references it) and only
- * adds the *desktop* override at viewports `>= 64rem`. Below 64rem there
- * is no rule, so visibility falls through to Tailwind's `.hidden` rule —
- * mobile stays hidden the way the host requested.
+ * Canonical CSS rule that backs the responsive visibility of the
+ * version-switcher's host wrapper. **The component itself does NOT
+ * emit a `<style>` carrying this rule** — it lives in the consumer's
+ * global stylesheet to avoid HTML5's `<style>`-as-flow-content
+ * violation (zudolab/zudo-doc#1505). This export remains as a
+ * re-usable canonical string so downstream consumers can drop the
+ * rule into their own `global.css` verbatim or assert against it.
+ *
+ * The selector `.hidden:has(> [data-version-switcher])` keys off the
+ * host header's `<div class="hidden lg:block">` baseline (the `.hidden`
+ * part is always generated by Tailwind because `pages/` directly
+ * references it) and only adds the *desktop* override at viewports
+ * `>= 64rem`. Below 64rem there is no rule, so visibility falls
+ * through to Tailwind's `.hidden` rule — mobile stays hidden the way
+ * the host requested.
  *
  * Why scope to `.hidden`: a consumer that wraps `<VersionSwitcher>` in
  * something *without* the `.hidden` baseline (a flex row, a grid cell, an
@@ -215,7 +203,6 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
     unavailableVersions,
     labels,
     idSuffix = "",
-    disableInlineVisibilityStyle = false,
   } = props;
 
   const menuId = `version-menu${idSuffix ? `-${idSuffix}` : ""}`;
@@ -226,18 +213,6 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
 
   return (
     <div class="version-switcher relative" data-version-switcher>
-      {/*
-       * Inline visibility rule — see file header for rationale. The
-       * `<style>` lives inside the `data-version-switcher` element so the
-       * migration-check `strip-version-switcher.mjs` walker removes it
-       * symmetrically with the rest of the switcher subtree. Multiple
-       * version-switchers on the same page each emit one of these
-       * blocks; the declarations are byte-identical so the duplication
-       * is harmless.
-       */}
-      {!disableInlineVisibilityStyle && (
-        <style dangerouslySetInnerHTML={{ __html: VERSION_SWITCHER_VISIBILITY_STYLE }} />
-      )}
       <button
         type="button"
         class="flex items-center gap-hsp-2xs border border-muted rounded px-hsp-sm py-vsp-3xs text-small text-muted hover:border-accent hover:text-accent transition-colors cursor-pointer whitespace-nowrap"

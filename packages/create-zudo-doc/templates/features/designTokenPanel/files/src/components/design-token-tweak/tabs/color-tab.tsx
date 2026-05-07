@@ -8,8 +8,6 @@ import { SEMANTIC_DEFAULTS } from "@/config/color-scheme-utils";
 import { hexToHsl, hslToHex } from "@/utils/color-convert";
 import {
   type ColorTweakState,
-  SHIKI_THEMES,
-  applyShikiTheme,
   initColorFromSchemeData,
 } from "../state/tweak-state";
 import type { PersistColor } from "../state/persist";
@@ -402,7 +400,6 @@ export default function ColorTab({ state, persistColor }: ColorTabProps) {
       if (!scheme) return;
       const newState = initColorFromSchemeData(scheme);
       persistColor(() => newState);
-      applyShikiTheme(newState.shikiTheme);
     },
     [persistColor],
   );
@@ -524,28 +521,6 @@ export default function ColorTab({ state, persistColor }: ColorTabProps) {
           </div>
         </div>
 
-        {/* Divider + shikiTheme (non-token setting) */}
-        <div className="border-t border-muted pt-vsp-xs">
-          <div className="flex items-center gap-[6px]">
-            <span className="text-muted shrink-0" style={{ fontSize: "0.75rem" }}>
-              shikiTheme
-            </span>
-            <select
-              value={state.shikiTheme}
-              onChange={(e) => {
-                const val = e.target.value;
-                persistColor((prev) => ({ ...prev, shikiTheme: val }));
-                applyShikiTheme(val);
-              }}
-              className="bg-surface text-fg border border-muted px-[6px] py-[4px] hover:border-fg transition-colors"
-              style={{ fontSize: "0.75rem", borderRadius: "var(--radius-DEFAULT)" }}
-            >
-              {SHIKI_THEMES.map((theme) => (
-                <option key={theme} value={theme}>{theme}</option>
-              ))}
-            </select>
-          </div>
-        </div>
       </div>
     </div>
   );
