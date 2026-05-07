@@ -1,17 +1,5 @@
 {
-  "extends": ["html-validate:recommended"],
   "rules": {
-    "element-permitted-content": "error",
-    "no-trailing-whitespace": "off",
-    "no-raw-characters": "off",
-    "void-style": "off",
-    "wcag/h30": "off",
-    "wcag/h32": "off",
-    "wcag/h36": "off",
-    "wcag/h37": "off",
-    "wcag/h63": "off",
-    "wcag/h67": "off",
-    "wcag/h71": "off"
-  },
-  "overrides": []
+    "element-permitted-content": "error"
+  }
 }
