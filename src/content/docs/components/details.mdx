@@ -8,7 +8,11 @@ Use `<Details>` for collapsible content sections. This component is globally ava
 
 ## Basic Usage
 
-<details title="Click to expand">This content is hidden by default and revealed when the user clicks the summary.</details>
+<Details title="Click to expand">
+
+  This content is hidden by default and revealed when the user clicks the summary.
+
+</Details>
 
 ```mdx
 <Details title="Click to expand">
@@ -20,7 +24,11 @@ This content is hidden by default and revealed when the user clicks the summary.
 
 When no `title` prop is provided, the summary text defaults to "Details".
 
-<details>This collapsible section uses the default title.</details>
+<Details>
+
+  This collapsible section uses the default title.
+
+</Details>
 
 ```mdx
 <Details>
@@ -32,7 +40,11 @@ This collapsible section uses the default title.
 
 You can include any MDX content inside a `<Details>` block, including code blocks, lists, and other components.
 
-<details title="Configuration Example">Here is a sample configuration: ```ts export default { site: "https://example.com", output: "static", }; ``` Key points: - The `site` field sets the base URL - The `output` field controls the build mode - All fields are optional with sensible defaults</details>
+<Details title="Configuration Example">
+
+  Here is a sample configuration: `export default { site: "https://example.com", output: "static" }`. Key points: the `site` field sets the base URL, the `output` field controls the build mode, all fields are optional with sensible defaults.
+
+</Details>
 
 ````mdx
 <Details title="Configuration Example">
