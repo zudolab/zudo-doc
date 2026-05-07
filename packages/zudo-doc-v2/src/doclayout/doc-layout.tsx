@@ -252,14 +252,6 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
           array of structural VNode objects — Preact's JSX typing does not
           directly accept that array shape, but at runtime the elements are
           valid VNode descriptors. */}
-        {/*
-          Strategy B SPA router. Emits the opt-in meta tags and the global
-          .zfb-route-announcer stylesheet. Intercepts same-origin link
-          clicks and swaps the DOM via document.startViewTransition.
-          Cast through `unknown` because ClientRouter() returns a readonly
-          array of structural VNode objects — Preact's JSX typing does not
-          directly accept that array shape, but at runtime the elements are
-          valid VNode descriptors. */}
         {ClientRouter() as unknown as JSX.Element}
         {head}
       </head>
