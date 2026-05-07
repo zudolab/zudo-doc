@@ -139,10 +139,15 @@ export function Header(props: HeaderProps): JSX.Element {
     <header
       class="sticky top-0 z-50 flex h-[3.5rem] items-center border-b border-muted bg-surface px-hsp-lg"
       data-header
-      // Strategy B persist contract: client-router moves the header from
-      // old to new DOM rather than cross-fading it, keeping it stable
-      // across same-document navigations.
-      data-zfb-transition-persist="site-header"
+      // Strategy B note: the header used to carry
+      // data-zfb-transition-persist="site-header" so client-router would
+      // move it byte-identical across the swap. That broke the EN/JA
+      // locale switcher because zfb's swap-functions only re-copies
+      // data-props for elements that match [data-zfb-island] — a
+      // server-rendered <header> stays frozen on the previous page's
+      // SSR DOM, including the active-locale span/anchor pair (W7A
+      // post-fix bug, zudolab/zudo-doc#1510). Repainting the header on
+      // every swap matches the Astro reference and is cheap.
     >
       {sidebarToggle ?? (
         // Render an inert wrapper so consumers that omit the slot still

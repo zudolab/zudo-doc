@@ -79,10 +79,14 @@ export function Footer(props: FooterProps): VNode {
   return (
     <footer
       class="border-t border-muted bg-surface"
-      // Strategy B persist contract: client-router moves the footer from
-      // old to new DOM rather than cross-fading it, keeping it stable
-      // across same-document navigations.
-      data-zfb-transition-persist="site-footer"
+      // Strategy B note: the footer used to carry
+      // data-zfb-transition-persist="site-footer" but its content is
+      // resolved per-locale at SSR time (link labels, copyright text),
+      // so persisting it byte-identical across an EN→JA swap leaves the
+      // footer frozen on the old locale (W7A post-fix bug,
+      // zudolab/zudo-doc#1510). Repainting on every swap is the safe
+      // default; persist would only be correct if the footer's content
+      // were truly invariant across pages.
     >
       <div class="mx-auto max-w-[clamp(50rem,75vw,90rem)] px-hsp-xl py-vsp-xl lg:px-hsp-2xl lg:py-vsp-2xl">
         {hasColumns && (

@@ -1155,9 +1155,15 @@ dialog.zd-enlarge-dialog::backdrop {
  *
  * These root pseudo-element rules remain: they fire for every
  * same-document VT that <ClientRouter /> initiates, producing the
- * 150ms-out / 300ms-in content cross-fade. Persistent elements
- * (sidebar, header, footer) are moved via data-zfb-transition-persist
- * and carve themselves out of the root group automatically. */
+ * 150ms-out / 300ms-in content cross-fade.
+ *
+ * Note: data-zfb-transition-persist annotations were removed from
+ * <header>, <aside id="desktop-sidebar">, and <footer> (W7A post-fix
+ * — zudolab/zudo-doc#1510). zfb's swap-functions byte-moves persisted
+ * non-island elements without refreshing per-page state (locale,
+ * active-nav, etc.), so persistence on those elements broke EN/JA
+ * locale switching and active-page highlighting. They now ride the
+ * root cross-fade like everything else. */
 ::view-transition-old(root) {
   animation: 150ms ease-in both contentFadeOut;
 }

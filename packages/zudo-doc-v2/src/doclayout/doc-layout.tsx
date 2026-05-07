@@ -28,11 +28,11 @@
 //    one (matches the existing Astro behavior).
 //
 //  - `sidebar`: optional. When present, rendered as a fixed-position
-//    `<aside id="desktop-sidebar">` annotated with
-//    `data-zfb-transition-persist="docs-sidebar"` so Strategy B's
-//    client-router keeps sidebar state stable across same-document
-//    navigations. When `hideSidebar` is true the slot is dropped
-//    entirely and the content-margin wrapper collapses.
+//    `<aside id="desktop-sidebar">`. The persist annotation that used
+//    to be here was removed in the W7A post-fix (zudolab/zudo-doc#1510)
+//    — see the inline comment on the <aside> below for the full
+//    rationale. When `hideSidebar` is true the slot is dropped entirely
+//    and the content-margin wrapper collapses.
 //
 //  - `main`: required. Wrapped in the standard min-h / max-w content
 //    container that mirrors the Astro layout's flex/clamp rules.
@@ -270,10 +270,17 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
               ? "hidden lg:block fixed top-[3.5rem] left-0 z-30 w-[var(--zd-sidebar-w)] h-[calc(100vh-3.5rem)] overflow-y-auto bg-bg border-r border-muted pb-vsp-xl"
               : "sr-only"
             }
-            // Strategy B persist contract: client-router moves this element
-            // from old to new DOM rather than cross-fading it, preserving
-            // scroll position across same-document navigations.
-            data-zfb-transition-persist="docs-sidebar"
+            // Strategy B note: the desktop sidebar used to carry
+            // data-zfb-transition-persist="docs-sidebar" to preserve scroll
+            // position across navigations. That broke locale switches and
+            // active-page highlighting because zfb's swap-functions
+            // byte-moves persisted non-island elements without refreshing
+            // the SidebarTree island's data-props (W7A post-fix bug,
+            // zudolab/zudo-doc#1510). Repainting the sidebar on every swap
+            // matches the Astro reference behaviour. If preserving sidebar
+            // scroll position becomes important, do it with an explicit
+            // scroll-state save/restore in the SidebarTree island rather
+            // than DOM-node persistence.
           >
             {sidebar}
           </aside>
