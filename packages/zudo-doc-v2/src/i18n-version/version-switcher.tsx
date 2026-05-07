@@ -298,7 +298,7 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
  * generation.
  *
  * The post-navigation rebinder uses `AFTER_NAVIGATE_EVENT` from
- * `transitions/page-events.ts` (today: `DOMContentLoaded`) rather than
+ * `transitions/page-events.ts` (today: `zfb:after-swap`) rather than
  * a hard-coded `astro:*` literal — see that module's header for the
  * full vocabulary rationale.
  *

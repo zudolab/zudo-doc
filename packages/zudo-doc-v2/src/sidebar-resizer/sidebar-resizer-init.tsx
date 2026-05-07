@@ -10,10 +10,13 @@
 // it self-guards with `if (!sidebar || sidebar.querySelector(...))` so it is
 // safe to call on pages where the sidebar is hidden or already initialized.
 //
-// AFTER_NAVIGATE_EVENT resolves to "DOMContentLoaded" under zfb's full-reload
-// navigation model. Because each navigation is a real page load, registering
-// for DOMContentLoaded on the newly-loaded page is equivalent to the
-// astro:page-load post-navigate hook — no persistent listener is needed.
+// AFTER_NAVIGATE_EVENT resolves to "zfb:after-swap" under zfb's Strategy B
+// SPA navigation model. The event is dispatched on `document` after every
+// body swap (and on the initial page load), so registering one listener on
+// the persistent <head>-injected script gives both first-paint init and
+// post-swap re-init. The body itself is replaced on each nav, so the per-
+// instance handle DOM is rebuilt each time and the existing-handle guard
+// (`sidebar.querySelector("["+HANDLE_MARKER+"]")`) keeps re-runs idempotent.
 
 import type { JSX } from "preact";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
@@ -126,8 +129,8 @@ export const SIDEBAR_RESIZER_INIT_SCRIPT = `(function(){
  * `dangerouslySetInnerHTML` script so it runs without a module import.
  *
  * - Calls `initSidebarResizer()` once on first paint.
- * - Re-runs on `AFTER_NAVIGATE_EVENT` (`DOMContentLoaded`) for
- *   view-transitions support (each navigation is a full page load under zfb).
+ * - Re-runs on `AFTER_NAVIGATE_EVENT` (`zfb:after-swap`) for
+ *   Strategy B SPA navigation support.
  * - Idempotent: repeated calls on the same DOM are safe.
  */
 export function SidebarResizerInit(): JSX.Element {

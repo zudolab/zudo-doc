@@ -17,10 +17,10 @@
 //   3. A small `<script>` that toggles the `data-visible` attribute on
 //      navigation lifecycle events. The event names come from the
 //      `@zudo-doc/zudo-doc-v2/transitions` module — this component does
-//      not reach for the underlying browser event names directly. After
-//      zudolab/zudo-doc#1335 (E2 task 2 half B) the v2 vocabulary
-//      resolves to `pagehide` (BEFORE_NAVIGATE_EVENT) and
-//      `DOMContentLoaded` (AFTER_NAVIGATE_EVENT); see
+//      not reach for the underlying browser event names directly. Under
+//      zfb's Strategy B SPA navigation, the v2 vocabulary resolves to
+//      `zfb:before-preparation` (BEFORE_NAVIGATE_EVENT) and
+//      `zfb:after-swap` (AFTER_NAVIGATE_EVENT); see
 //      `transitions/page-events.ts` for rationale.
 //
 // The component is intentionally not hydrated. Hydrating Preact just to

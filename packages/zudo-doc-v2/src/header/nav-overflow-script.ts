@@ -18,11 +18,13 @@
 //   3. Wire toggle / outside-click / Escape handlers to the overflow
 //      menu and aria-expanded state to the in-place dropdowns.
 //   4. Re-run on the v2 after-navigate event so the overflow stays
-//      correct after a View Transitions navigation. The event name is
+//      correct after an SPA body-swap navigation. The event name is
 //      pulled from `AFTER_NAVIGATE_EVENT` in
-//      `transitions/page-events.ts` (today: `DOMContentLoaded`) rather
+//      `transitions/page-events.ts` (today: `zfb:after-swap`) rather
 //      than a hard-coded `astro:*` literal — see that module for the
-//      vocabulary rationale.
+//      vocabulary rationale. The first-paint init relies on the
+//      top-level `initNavOverflow()` call further down (after-swap
+//      does NOT fire on the initial page load).
 //
 // Kept as a separate module (rather than inlined in `header.tsx`) so
 // the JSX file stays focused on markup and so future edits to the

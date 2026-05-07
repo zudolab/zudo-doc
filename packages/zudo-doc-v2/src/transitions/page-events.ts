@@ -12,58 +12,61 @@
 //     (initial load + every soft navigation).
 //
 // After the migration, the engine-side cross-page wrapper is zfb's
-// `<ViewTransitions />` (zfb #99), mounted in the doc-layout shell.
-// zfb's component intercepts same-origin link clicks and wraps the
-// navigation in `document.startViewTransition` — but each hop is still
-// a real, full page load (no SPA-style DOM swap). zfb does NOT
-// dispatch any custom router events.
+// `<ClientRouter />` mounted in the doc-layout shell, which now
+// implements VT Strategy B: an SPA-style same-document body swap on
+// every same-origin link click, dispatching its own custom lifecycle
+// events on `document` (zudolab/zudo-doc#1510, port from zfb #226).
 //
-// This means the v2 vocabulary now resolves to standard browser
-// lifecycle events that fire on every full page load:
+// Lifecycle events fired by zfb's client-router on `document`:
 //
-//   * `BEFORE_NAVIGATE_EVENT = "pagehide"` — fires when the current
-//     page is being unloaded (the browser-standard "leaving the page"
-//     hook). This is the closest one-shot signal to "navigation
-//     started" in the full-reload model and is also stable across
-//     bfcache hops.
-//   * `AFTER_NAVIGATE_EVENT = "DOMContentLoaded"` — fires once on
-//     each newly-loaded document, after parsing is done. Because
-//     every navigation under zfb's runtime is a real page load, this
-//     is the direct successor to Astro's `astro:page-load` (which
-//     also fired on initial paint and after every soft swap).
+//   * `zfb:before-preparation` — fires just before the next page DOM
+//     is fetched / prepared (i.e. immediately when navigation starts).
+//     Closest analogue to Astro's `astro:before-preparation`.
+//   * `zfb:after-swap` — fires after the new page's `<body>` has been
+//     swapped into the live document.
+//     Closest analogue (for the swap-completion signal) to Astro's
+//     `astro:after-swap`. Note: this fires only AFTER an SPA body swap;
+//     it does NOT fire on the initial page load (the runtime dispatches
+//     `zfb:page-load` for that). Consumers that need a first-paint init
+//     should call their init helper at the top level of the inline
+//     script (see e.g. sidebar-resizer-init.tsx, version-switcher.tsx)
+//     in addition to subscribing here for re-init across SPA hops.
 //
 // Components inside zudo-doc-v2 should not reach for those event
 // names directly — go through the constants below (or the
 // `onBeforeNavigate` / `onAfterNavigate` helpers) so the transitions
-// module owns the vocabulary. If zfb later supplies a richer router
-// with its own custom events, only this file changes.
+// module owns the vocabulary. If zfb later renames its lifecycle
+// events, only this file changes.
 //
 // All functions are SSR-safe: when `document` is unavailable they
 // return a no-op unsubscribe and never throw.
 
 /**
  * Event name fired at the start of a navigation away from the current
- * page. Today resolves to `"pagehide"` (browser-standard unload hook).
- * Equivalent to "page-loading-begin" / Astro's
- * `astro:before-preparation` in the v2 vocabulary.
+ * page. Today resolves to `"zfb:before-preparation"` — dispatched by
+ * zfb's client-router on `document` immediately when a same-origin
+ * link click is intercepted (Strategy B SPA navigation). Equivalent
+ * to "page-loading-begin" / Astro's `astro:before-preparation` in
+ * the v2 vocabulary.
  */
-export const BEFORE_NAVIGATE_EVENT = "pagehide";
+export const BEFORE_NAVIGATE_EVENT = "zfb:before-preparation";
 
 /**
- * Event name fired once the new page has loaded. Today resolves to
- * `"DOMContentLoaded"` — fires once per real page load, which under
- * zfb's full-reload navigation model is the natural successor to
- * Astro's `astro:page-load` (fired on initial paint + every soft
- * swap; with no soft swaps, every load IS the after-navigate signal).
+ * Event name fired once the new page's `<body>` has been swapped in.
+ * Today resolves to `"zfb:after-swap"` — dispatched by zfb's
+ * client-router after a Strategy B SPA navigation completes (and on
+ * the initial page load, so consumers register one listener and get
+ * both first-paint and post-swap behavior). Direct successor to
+ * Astro's `astro:page-load`.
  */
-export const AFTER_NAVIGATE_EVENT = "DOMContentLoaded";
+export const AFTER_NAVIGATE_EVENT = "zfb:after-swap";
 
 /**
  * Subscribe to "navigation start" — runs `handler` each time the user
- * navigates away from the current page (zfb's `<ViewTransitions />`
- * intercepts same-origin link clicks and wraps the navigation in
- * `document.startViewTransition`; the browser still dispatches
- * `pagehide` on the outgoing document).
+ * navigates away from the current page. zfb's `<ClientRouter />`
+ * intercepts same-origin link clicks and dispatches
+ * `zfb:before-preparation` on `document` before fetching the next
+ * page DOM.
  *
  * Returns an unsubscribe function. SSR-safe: if `document` is undefined
  * (server / non-browser host) returns a no-op unsubscribe.
@@ -75,10 +78,10 @@ export function onBeforeNavigate(handler: () => void): () => void {
 }
 
 /**
- * Subscribe to "navigation end" — runs `handler` after each page load.
- * Mirrors Astro's `astro:page-load`: fires once on first load, and
- * again on every full-reload navigation (which under zfb is every
- * navigation).
+ * Subscribe to "navigation end" — runs `handler` after each page-body
+ * swap. Mirrors Astro's `astro:page-load`: fires once on first load,
+ * and again on every SPA navigation (zfb's Strategy B client-router
+ * dispatches `zfb:after-swap` on the document for both cases).
  *
  * Returns an unsubscribe function. SSR-safe: returns a no-op when
  * called outside a browser.
