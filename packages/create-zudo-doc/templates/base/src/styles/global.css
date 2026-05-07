@@ -829,4 +829,19 @@ pre[class^="syntect-"] .line .highlighted-word {
   }
 }
 
+/* Cross-document View Transitions opt-in (Chromium 126+).
+ *
+ * Both source and destination documents must contain this at-rule for
+ * the browser to capture and animate same-origin link navigations.
+ * The previous opt-in (<meta name="view-transition" content="same-origin">)
+ * was deprecated by the spec and is no longer honoured by browsers
+ * that ship cross-document VT.
+ *
+ * Browsers without VT support ignore this rule entirely — navigation
+ * works as a normal full reload with no animation, identical to today's
+ * Firefox / Safari behaviour. */
+@view-transition {
+  navigation: auto;
+}
+
 /* @slot:global-css:feature-styles */
