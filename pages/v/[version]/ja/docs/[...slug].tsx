@@ -404,12 +404,9 @@ export default function VersionedJaDocsPage({ entry, autoIndex, version, isFallb
 
           {entry && <entry.Content components={components} />}
 
-          {/* Document utilities (revision history) — gated on entry, matching regular slug page pattern */}
-          {entry && (
-            <DocHistoryArea slug={slug} locale={locale} />
-          )}
-
-          {/* Prev / Next pagination */}
+          {/* Prev / Next pagination — placed before the document utilities
+              section to match the Astro reference order: content → pager →
+              view-source / history. Fixes #1535. */}
           <nav class="mt-vsp-2xl grid grid-cols-2 gap-hsp-xl">
             {prev ? (
               <a
@@ -462,6 +459,11 @@ export default function VersionedJaDocsPage({ entry, autoIndex, version, isFallb
               <div />
             )}
           </nav>
+
+          {/* Document utilities (revision history) — gated on entry, matching regular slug page pattern */}
+          {entry && (
+            <DocHistoryArea slug={slug} locale={locale} />
+          )}
         </>
       )}
     </DocLayoutWithDefaults>
