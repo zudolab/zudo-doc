@@ -72,6 +72,7 @@ export default function DesktopSidebarToggle() {
       className="zd-desktop-sidebar-toggle hidden lg:flex fixed bottom-vsp-xl z-40 items-center justify-center w-[1.5rem] h-[3rem] bg-surface border border-muted border-l-0 rounded-r-DEFAULT text-muted cursor-pointer transition-[left,color] duration-200 ease-in-out hover:text-fg"
       aria-label={visible ? 'Hide sidebar' : 'Show sidebar'}
       aria-pressed={visible}
+      data-zfb-transition-persist="desktop-sidebar-toggle"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
