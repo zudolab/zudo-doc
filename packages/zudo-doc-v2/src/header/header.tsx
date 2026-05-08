@@ -93,6 +93,28 @@ export interface HeaderProps {
 
   /** Replacement for the `<Search />` Astro child. */
   search?: ComponentChildren;
+
+  /**
+   * When provided, emits `data-zfb-transition-persist={persistKey}` on the
+   * `<header>` element so zfb's client-router preserves DOM-node identity
+   * across same-locale View Transition swaps. Omit to disable persist
+   * (back-compat default — the header is re-rendered on every swap).
+   *
+   * **Locale keying**: callers MUST key by locale (e.g. `"header-en"`,
+   * `"header-ja"`). Cross-locale swaps must NOT share the same key; a
+   * key mismatch tells the router to replace the header, re-rendering
+   * the locale toggle anchors and all other SSR'd locale-specific
+   * content with fresh markup. See zudolab/zudo-doc#1546.
+   *
+   * **headerOverride scope**: hosts that supply their own `<header>`
+   * element via `headerOverride` on `<DocLayoutWithDefaults>` are
+   * responsible for adding `data-zfb-transition-persist` to their custom
+   * element themselves. This package only injects the attribute on the
+   * default `<Header>` shell. A key of `"header-${lang}"` is recommended
+   * for consistency, matching the Astro reference implementation
+   * (zudolab/zudo-doc#1546).
+   */
+  persistKey?: string;
 }
 
 /**
@@ -122,6 +144,7 @@ export function Header(props: HeaderProps): JSX.Element {
     languageSwitcher,
     versionSwitcher,
     search,
+    persistKey,
   } = props;
 
   const isNonDefaultLocale = lang != null && lang !== defaultLocale;
@@ -139,15 +162,32 @@ export function Header(props: HeaderProps): JSX.Element {
     <header
       class="sticky top-0 z-50 flex h-[3.5rem] items-center border-b border-muted bg-surface px-hsp-lg"
       data-header
-      // Strategy B note: the header used to carry
-      // data-zfb-transition-persist="site-header" so client-router would
-      // move it byte-identical across the swap. That broke the EN/JA
-      // locale switcher because zfb's swap-functions only re-copies
-      // data-props for elements that match [data-zfb-island] — a
-      // server-rendered <header> stays frozen on the previous page's
-      // SSR DOM, including the active-locale span/anchor pair (W7A
-      // post-fix bug, zudolab/zudo-doc#1510). Repainting the header on
-      // every swap matches the Astro reference and is cheap.
+      // Strategy B persist (zudolab/zudo-doc#1546): the header now carries
+      // data-zfb-transition-persist when a locale-keyed persistKey is
+      // supplied (e.g. "header-en" / "header-ja"). Cross-locale swaps use
+      // different keys, so the router replaces the header element entirely,
+      // re-rendering the locale toggle anchors and all locale-specific SSR
+      // content with fresh markup. Same-locale swaps share the key and
+      // preserve DOM-node identity; each embedded element refreshes via
+      // AFTER_NAVIGATE_EVENT or URL derivation:
+      //   - ThemeToggle: re-applies from localStorage on AFTER_NAVIGATE_EVENT
+      //     (color-scheme-provider.tsx bootstrap script, #1546 verified (a))
+      //   - VersionSwitcher: VERSION_SWITCHER_INIT_SCRIPT re-wires toggle on
+      //     AFTER_NAVIGATE_EVENT (version-switcher.tsx:340, verified (a))
+      //   - Search: <site-search> custom element re-registers on
+      //     AFTER_NAVIGATE_EVENT (_search-widget-script.ts:184, verified (a))
+      //   - SidebarToggle (mobile): closes on AFTER_NAVIGATE_EVENT
+      //     (sidebar-toggle.tsx:72, verified (a); sidebar content is
+      //     re-serialised into Island data-props on every SSR render, so
+      //     same-locale swaps see stale SSR in the persist window but the
+      //     Island re-hydrates with correct nodes on mount)
+      //   - Header nav + aria-current: NAV_OVERFLOW_SCRIPT re-runs on
+      //     AFTER_NAVIGATE_EVENT (nav-overflow-script.ts:198, verified (a))
+      //   - LanguageSwitcher: SSR'd locale links are locale-static within
+      //     a same-locale persist window — no per-page fields go stale
+      //     (verified (a) — locale does not change during same-locale nav)
+      // Omit persistKey to fall back to the old repaint-on-every-swap path.
+      data-zfb-transition-persist={persistKey}
     >
       {sidebarToggle ?? (
         // Render an inert wrapper so consumers that omit the slot still
