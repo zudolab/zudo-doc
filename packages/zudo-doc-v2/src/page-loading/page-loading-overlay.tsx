@@ -61,8 +61,12 @@ export function buildPageLoadingOverlayBootstrap(overlayId: string): string {
 var id=${id};
 function show(){var el=document.getElementById(id);if(!el)return;el.setAttribute("data-visible","");el.setAttribute("aria-hidden","false");}
 function hide(){var el=document.getElementById(id);if(!el)return;el.removeAttribute("data-visible");el.setAttribute("aria-hidden","true");}
+function setPending(ev){document.querySelectorAll("[data-zd-nav-pending]").forEach(function(el){el.removeAttribute("data-zd-nav-pending");});var src=ev&&ev.sourceElement;if(src&&src instanceof Element)src.setAttribute("data-zd-nav-pending","");}
+function clearPending(){document.querySelectorAll("[data-zd-nav-pending]").forEach(function(el){el.removeAttribute("data-zd-nav-pending");});}
 document.addEventListener(${before},show);
 document.addEventListener(${after},hide);
+document.addEventListener(${before},setPending);
+document.addEventListener(${after},clearPending);
 })();`;
 }
 
@@ -81,7 +85,11 @@ const OVERLAY_CSS = `.page-loading-overlay {
 
 .page-loading-overlay[data-visible] {
   opacity: 1;
-  pointer-events: auto;
+}
+
+a[data-zd-nav-pending],
+button[data-zd-nav-pending] {
+  color: var(--color-accent);
 }
 
 .page-loading-spinner {

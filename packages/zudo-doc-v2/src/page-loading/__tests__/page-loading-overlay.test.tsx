@@ -30,6 +30,12 @@ describe("buildPageLoadingOverlayBootstrap", () => {
     expect(script).not.toMatch(/var id="id"; alert\(1\)/);
     expect(script).toContain(JSON.stringify('id"; alert(1); //'));
   });
+
+  it("contains data-zd-nav-pending marker logic with removeAttribute cleanup", () => {
+    const script = buildPageLoadingOverlayBootstrap("test-overlay");
+    expect(script).toContain("data-zd-nav-pending");
+    expect(script).toContain("removeAttribute");
+  });
 });
 
 describe("<PageLoadingOverlay />", () => {
@@ -51,5 +57,11 @@ describe("<PageLoadingOverlay />", () => {
     const html = render(<PageLoadingOverlay id="custom-overlay" />);
     expect(html).toContain('id="custom-overlay"');
     expect(html).toContain('var id="custom-overlay";');
+  });
+
+  it("style block contains a[data-zd-nav-pending] selector and does not contain pointer-events: auto", () => {
+    const html = render(<PageLoadingOverlay />);
+    expect(html).toContain("a[data-zd-nav-pending]");
+    expect(html).not.toContain("pointer-events: auto");
   });
 });
