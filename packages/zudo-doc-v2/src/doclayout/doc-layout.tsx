@@ -123,6 +123,17 @@ export interface DocLayoutProps extends DocLayoutHtmlAttrs {
   hideSidebar?: boolean;
 
   /**
+   * When present, sets `data-zfb-transition-persist` on the desktop
+   * sidebar `<aside>`. Keyed as `sidebar-{lang}-{navSection}` so zfb's
+   * Strategy B persist swaps reuse the same DOM node across same-locale +
+   * same-section navigations. Omit for back-compat (no attribute). Must
+   * NOT be passed when `hideSidebar` is true — the sr-only aside contains
+   * no real sidebar content and persisting it conflicts with the new
+   * page's tree on cross-type navigations. Resolves #1546.
+   */
+  sidebarPersistKey?: string;
+
+  /**
    * Slot rendered between the desktop sidebar and the content-margin
    * wrapper. Used by the sidebar-toggle feature in `create-zudo-doc`.
    */
@@ -199,6 +210,7 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
     header,
     sidebar,
     hideSidebar = false,
+    sidebarPersistKey,
     afterSidebar,
     breadcrumb,
     afterBreadcrumb,
@@ -270,17 +282,16 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
               ? "hidden lg:block fixed top-[3.5rem] left-0 z-30 w-[var(--zd-sidebar-w)] h-[calc(100vh-3.5rem)] overflow-y-auto bg-bg border-r border-muted pb-vsp-xl"
               : "sr-only"
             }
-            // Strategy B note: the desktop sidebar used to carry
-            // data-zfb-transition-persist="docs-sidebar" to preserve scroll
-            // position across navigations. That broke locale switches and
-            // active-page highlighting because zfb's swap-functions
-            // byte-moves persisted non-island elements without refreshing
-            // the SidebarTree island's data-props (W7A post-fix bug,
-            // zudolab/zudo-doc#1510). Repainting the sidebar on every swap
-            // matches the Astro reference behaviour. If preserving sidebar
-            // scroll position becomes important, do it with an explicit
-            // scroll-state save/restore in the SidebarTree island rather
-            // than DOM-node persistence.
+            // Strategy B persist: data-zfb-transition-persist is set only when
+            // sidebarPersistKey is provided (i.e. when hideSidebar is false at
+            // the call site). The key is keyed on locale + nav-section so zfb's
+            // DOM byte-move only reuses this node across same-locale +
+            // same-section navigations — locale switches and cross-section jumps
+            // always repaint, avoiding the W7A island-data-mismatch regression
+            // (zudolab/zudo-doc#1510). Full rationale in #1546.
+            {...(sidebarPersistKey !== undefined
+              ? { "data-zfb-transition-persist": sidebarPersistKey }
+              : {})}
           >
             {sidebar}
           </aside>
