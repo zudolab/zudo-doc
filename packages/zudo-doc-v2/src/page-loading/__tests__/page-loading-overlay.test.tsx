@@ -47,9 +47,11 @@ describe("<PageLoadingOverlay />", () => {
     expect(html).toContain('class="page-loading-spinner"');
   });
 
-  it("emits both the overlay style block and the bootstrap script", () => {
+  it("emits the bootstrap script but no inline <style> block (CSS moved to global.css)", () => {
+    // CSS was moved out of an inline <style> in body to src/styles/global.css
+    // to fix the HTML5 element-permitted-content violation (#1543).
     const html = render(<PageLoadingOverlay />);
-    expect(html).toMatch(/<style>[\s\S]*\.page-loading-overlay/);
+    expect(html).not.toMatch(/<style>/);
     expect(html).toMatch(/<script>[\s\S]*addEventListener/);
   });
 
@@ -59,9 +61,11 @@ describe("<PageLoadingOverlay />", () => {
     expect(html).toContain('var id="custom-overlay";');
   });
 
-  it("style block contains a[data-zd-nav-pending] selector and does not contain pointer-events: auto", () => {
+  it("bootstrap script references data-zd-nav-pending and does not emit pointer-events: auto", () => {
+    // a[data-zd-nav-pending] CSS rule lives in global.css (not inline).
+    // The bootstrap script still uses the data-zd-nav-pending attribute in querySelectorAll.
     const html = render(<PageLoadingOverlay />);
-    expect(html).toContain("a[data-zd-nav-pending]");
+    expect(html).toContain("data-zd-nav-pending");
     expect(html).not.toContain("pointer-events: auto");
   });
 });
