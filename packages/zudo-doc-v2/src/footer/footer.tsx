@@ -54,6 +54,13 @@ export interface FooterProps {
    * anchors work. The caller is responsible for the contents.
    */
   copyright?: string;
+  /**
+   * When provided, adds `data-zfb-transition-persist` to the `<footer>`
+   * element. Use a locale-keyed value (e.g. `footer-en`, `footer-ja`) so
+   * cross-locale swaps discard the stale footer while same-locale swaps
+   * preserve DOM-node identity. See zudolab/zudo-doc#1546.
+   */
+  persistKey?: string;
 }
 
 /**
@@ -68,6 +75,7 @@ export function Footer(props: FooterProps): VNode {
   const linkColumns = props.linkColumns ?? [];
   const tagColumns = props.tagColumns ?? [];
   const copyright = props.copyright ?? "";
+  const persistKey = props.persistKey;
 
   const hasColumns = linkColumns.length > 0 || tagColumns.length > 0;
   const hasCopyright = copyright.length > 0;
@@ -79,14 +87,15 @@ export function Footer(props: FooterProps): VNode {
   return (
     <footer
       class="border-t border-muted bg-surface"
-      // Strategy B note: the footer used to carry
-      // data-zfb-transition-persist="site-footer" but its content is
-      // resolved per-locale at SSR time (link labels, copyright text),
-      // so persisting it byte-identical across an EN→JA swap leaves the
-      // footer frozen on the old locale (W7A post-fix bug,
-      // zudolab/zudo-doc#1510). Repainting on every swap is the safe
-      // default; persist would only be correct if the footer's content
-      // were truly invariant across pages.
+      // Strategy B: locale-keyed persist (zudolab/zudo-doc#1546).
+      // The footer's locale-aware bits (link labels, copyright) are SSR'd
+      // per locale; a locale-keyed persist key (`footer-en`, `footer-ja`)
+      // guarantees cross-locale swaps re-render the footer while
+      // same-locale swaps preserve DOM-node identity (safe — footer
+      // content is invariant page-to-page within a locale).
+      {...(persistKey
+        ? { "data-zfb-transition-persist": persistKey }
+        : {})}
     >
       <div class="mx-auto max-w-[clamp(50rem,75vw,90rem)] px-hsp-xl py-vsp-xl lg:px-hsp-2xl lg:py-vsp-2xl">
         {hasColumns && (

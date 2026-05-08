@@ -84,10 +84,14 @@ export function FooterWithDefaults({
 }: FooterWithDefaultsProps): VNode {
   const footer = settings.footer;
 
+  // Locale-keyed persist key: same-locale swaps preserve DOM identity;
+  // cross-locale swaps discard the stale footer and re-render. (#1546)
+  const persistKey = `footer-${lang}`;
+
   // When footer is not configured, return the bare shell so the
   // contentinfo ARIA landmark is present.
   if (!footer) {
-    return <Footer />;
+    return <Footer persistKey={persistKey} />;
   }
 
   const { links, copyright, taglist } = footer;
@@ -224,6 +228,7 @@ export function FooterWithDefaults({
       linkColumns={linkColumns}
       tagColumns={tagColumns}
       copyright={copyright}
+      persistKey={persistKey}
     />
   );
 }
