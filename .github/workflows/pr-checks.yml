@@ -527,7 +527,9 @@ jobs:
             cp -r doc-history-out/. deploy/pj/zudo-doc/doc-history/
           fi
           # (c) Root-level _redirects: bare-domain hits land on the based site.
-          echo '/ /pj/zudo-doc/ 302' > deploy/_redirects
+          # /favicon.ico: browsers request this automatically as a fallback;
+          # redirect to the real SVG favicon under the base path (#1533).
+          printf '/ /pj/zudo-doc/ 302\n/favicon.ico /pj/zudo-doc/favicon.svg 301\n' > deploy/_redirects
 
       - name: Deploy preview to Cloudflare Pages
         id: cf-deploy
