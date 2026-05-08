@@ -277,9 +277,13 @@ export default function VersionedDocsPage({ entry, autoIndex, version, breadcrum
         />
       }
       breadcrumbOverride={
-        breadcrumbs.length > 0 ? <Breadcrumb items={breadcrumbs} /> : undefined
+        breadcrumbs.length > 0 ? (
+          <Breadcrumb
+            items={breadcrumbs}
+            rightSlot={buildInlineVersionSwitcher(slug, locale, version.slug)}
+          />
+        ) : undefined
       }
-      afterBreadcrumb={buildInlineVersionSwitcher(slug, locale, version.slug)}
       sidebarOverride={
         <SidebarWithDefaults
           currentSlug={slug}

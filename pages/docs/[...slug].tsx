@@ -249,9 +249,13 @@ export default function DocsPage({ entry, autoIndex, breadcrumbs, prev, next, he
         />
       }
       breadcrumbOverride={
-        breadcrumbs.length > 0 ? <Breadcrumb items={breadcrumbs} /> : undefined
+        breadcrumbs.length > 0 ? (
+          <Breadcrumb
+            items={breadcrumbs}
+            rightSlot={buildInlineVersionSwitcher(slug, locale)}
+          />
+        ) : undefined
       }
-      afterBreadcrumb={buildInlineVersionSwitcher(slug, locale)}
       sidebarOverride={
         <SidebarWithDefaults
           currentSlug={slug}

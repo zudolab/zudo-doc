@@ -1,7 +1,7 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-import type { VNode } from "preact";
+import type { ComponentChildren, VNode } from "preact";
 import { findPath } from "./find-path";
 import type { BreadcrumbItem, SidebarNode } from "./types";
 
@@ -130,6 +130,21 @@ export interface BreadcrumbProps {
   currentId?: string;
   /** Href for the leading home rung. Defaults to "/". */
   homeHref?: string;
+  /**
+   * Optional slot rendered at the right end of the breadcrumb row.
+   * When provided, the breadcrumb nav and this slot are wrapped in a
+   * flex row that matches the original Astro doc-layout's combined
+   * breadcrumb + version-switcher row:
+   *
+   *   class="mb-vsp-sm flex flex-col items-start gap-vsp-xs
+   *          sm:flex-row sm:items-center sm:justify-between [&_nav]:mb-0"
+   *
+   * The `[&_nav]:mb-0` rule strips the nav's own `mb-vsp-md` so the
+   * wrapper margin controls spacing instead. Use this to place the
+   * VersionSwitcher pill inline at the right of the breadcrumb row,
+   * matching the reference site's layout on category index pages.
+   */
+  rightSlot?: ComponentChildren;
 }
 
 /**
@@ -152,7 +167,7 @@ export function Breadcrumb(props: BreadcrumbProps): VNode | null {
 
   if (items.length === 0) return null;
 
-  return (
+  const nav = (
     <nav class="mb-vsp-md text-small" aria-label="Breadcrumb">
       <ol class="flex flex-wrap items-center gap-x-hsp-xs">
         {items.map((item, i) => (
@@ -175,5 +190,19 @@ export function Breadcrumb(props: BreadcrumbProps): VNode | null {
         ))}
       </ol>
     </nav>
+  );
+
+  if (props.rightSlot === undefined) return nav;
+
+  // When a rightSlot is provided, wrap both elements in a flex row that
+  // matches the original Astro doc-layout's breadcrumb + version-switcher
+  // row. The `[&_nav]:mb-0` rule cancels the nav's own bottom margin so
+  // the wrapper margin controls spacing instead (matching the Astro
+  // reference which used `mb-vsp-sm` on the outer div).
+  return (
+    <div class="mb-vsp-sm flex flex-col items-start gap-vsp-xs sm:flex-row sm:items-center sm:justify-between [&_nav]:mb-0">
+      {nav}
+      {props.rightSlot}
+    </div>
   );
 }
