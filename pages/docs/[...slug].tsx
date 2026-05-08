@@ -351,17 +351,11 @@ export default function DocsPage({ entry, autoIndex, breadcrumbs, prev, next, he
           {/* MDX content rendered via zfb's Content bridge */}
           {entry && <entry.Content components={components} />}
 
-          {/* Document utilities (revision history + view-source link) — skipped for unlisted pages */}
-          {!entry!.data.unlisted && (
-            <DocHistoryArea
-              slug={slug}
-              locale={locale}
-              entrySlug={entry!.slug}
-              contentDir={settings.docsDir}
-            />
-          )}
-
-          {/* Prev / Next pagination */}
+          {/* Prev / Next pagination — placed before the document utilities
+              section to match the Astro reference order: content → pager →
+              view-source / history. In the Astro layout, BodyFootUtilArea was
+              rendered by the doc-layout wrapper after the <slot /> content,
+              so the pager (inside the slot) came first. Fixes #1535. */}
           <nav class="mt-vsp-2xl grid grid-cols-2 gap-hsp-xl">
             {prev ? (
               <a
@@ -422,6 +416,16 @@ export default function DocsPage({ entry, autoIndex, breadcrumbs, prev, next, he
               <div />
             )}
           </nav>
+
+          {/* Document utilities (revision history + view-source link) — skipped for unlisted pages */}
+          {!entry!.data.unlisted && (
+            <DocHistoryArea
+              slug={slug}
+              locale={locale}
+              entrySlug={entry!.slug}
+              contentDir={settings.docsDir}
+            />
+          )}
         </>
       )}
     </DocLayoutWithDefaults>
