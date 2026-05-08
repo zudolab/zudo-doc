@@ -35,6 +35,7 @@ import AiChatModal from "@/components/ai-chat-modal";
 import ClientRouterBootstrap from "@/components/client-router-bootstrap";
 import DesignTokenTweakPanel from "@/components/design-token-tweak";
 import ImageEnlarge, { ImageEnlargeSsrFallback } from "@/components/image-enlarge";
+import { PageLoadingOverlay } from "@zudo-doc/zudo-doc-v2/page-loading";
 
 // Set explicit `displayName` on each default-exported island so zfb's
 // `captureComponentName` produces a stable marker even after the SSR
@@ -133,6 +134,10 @@ export function BodyEndIslands({
 
   return (
     <>
+      {/* Pure SSR — no Island wrap. The component emits its overlay div,
+          inline styles, and a small inline script that self-wires
+          zfb:before-preparation / zfb:after-swap listeners at runtime. */}
+      <PageLoadingOverlay />
       {clientRouterBootstrap}
       {designToken}
       {/* Preserves migration-check parity: the Astro build SSR-rendered
