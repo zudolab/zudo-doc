@@ -30,7 +30,8 @@
 #   (a) dist/index.html and per-route dist/**/index.html           (HTML pages)
 #   (b) dist/404.html at root                                      (zfb #100)
 #   (c) dist/_redirects                                            (overwritten
-#       at deploy time below to /  /pj/zudo-doc/ 302 — see step body)
+#       at deploy time below to /  /pj/zudo-doc/ 302 and
+#       /favicon.ico /pj/zudo-doc/favicon.svg 301 — see step body)
 #   (d) dist/sitemap.xml                                           (page route
 #       pages/sitemap.xml.tsx, ADR-005)
 #   (e) dist/search-index.json                                     (search-index
@@ -349,7 +350,7 @@ jobs:
 
       - name: Prepare deploy directory
         # Layout produced (audited in epic #1337 task 5):
-        #   deploy/_redirects                       — root-level redirect
+        #   deploy/_redirects                       — root-level redirects (/ + /favicon.ico)
         #   deploy/pj/zudo-doc/index.html           — (a) home + per-route HTML
         #   deploy/pj/zudo-doc/404.html             — (b) zfb #100 convention
         #   deploy/pj/zudo-doc/sitemap.xml          — (d) page route
@@ -378,7 +379,19 @@ jobs:
             cp -r doc-history-out/. deploy/pj/zudo-doc/doc-history/
           fi
           # (c) Root-level _redirects: bare-domain hits land on the based site.
-          echo '/ /pj/zudo-doc/ 302' > deploy/_redirects
+          # /favicon.ico: browsers request this automatically as a fallback;
+          # redirect to the real SVG favicon under the base path (#1533).
+          # Changelog slug changed from /docs/changelog/010/ (old prod URL, no dots)
+          # to /docs/changelog/0.1.0/ (file-routed). Both slash variants and the
+          # JA locale are covered to preserve all external bookmarks (#1536).
+          printf '%s\n' \
+            '/ /pj/zudo-doc/ 302' \
+            '/favicon.ico /pj/zudo-doc/favicon.svg 301' \
+            '/pj/zudo-doc/docs/changelog/010 /pj/zudo-doc/docs/changelog/0.1.0/ 301' \
+            '/pj/zudo-doc/docs/changelog/010/ /pj/zudo-doc/docs/changelog/0.1.0/ 301' \
+            '/pj/zudo-doc/ja/docs/changelog/010 /pj/zudo-doc/ja/docs/changelog/0.1.0/ 301' \
+            '/pj/zudo-doc/ja/docs/changelog/010/ /pj/zudo-doc/ja/docs/changelog/0.1.0/ 301' \
+            > deploy/_redirects
 
       - name: Deploy to Cloudflare Pages (production)
         id: deploy
