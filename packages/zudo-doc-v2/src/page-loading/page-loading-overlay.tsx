@@ -70,73 +70,24 @@ document.addEventListener(${after},clearPending);
 })();`;
 }
 
-const OVERLAY_CSS = `.page-loading-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: color-mix(in oklch, var(--color-overlay) 60%, transparent);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 150ms ease-out;
-}
-
-.page-loading-overlay[data-visible] {
-  opacity: 1;
-}
-
-a[data-zd-nav-pending],
-button[data-zd-nav-pending] {
-  color: var(--color-accent);
-}
-
-.page-loading-spinner {
-  width: 48px;
-  height: 48px;
-  border: 5px solid var(--color-fg, #fff);
-  border-bottom-color: transparent;
-  border-radius: 50%;
-  display: inline-block;
-  box-sizing: border-box;
-  animation: page-loading-spin 1s linear infinite;
-}
-
-@media (min-width: 1024px) {
-  .page-loading-spinner {
-    width: 64px;
-    height: 64px;
-    border-width: 6px;
-  }
-}
-
-@keyframes page-loading-spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .page-loading-spinner {
-    animation: none;
-    border-bottom-color: var(--color-fg, #fff);
-    opacity: 0.5;
-  }
-}`;
-
 /**
  * Full-page loading overlay shown during view-transition navigations.
  *
  * Mount this once per layout (typically inside `DocLayoutWithDefaults`'s
  * `bodyEnd` slot, alongside the existing body-end providers). It is
  * server-rendered and self-wires its visibility — no hydration needed.
+ *
+ * CSS lives in the host project's `src/styles/global.css` (`.page-loading-overlay`,
+ * `.page-loading-spinner`, `[data-zd-nav-pending]` rules) rather than in an
+ * inline `<style>` block here — a `<style>` inside `<body>` violates HTML5
+ * element-permitted-content and fails html-validate (same fix applied to the
+ * version-switcher in zudolab/zudo-doc#1505; regression caught in W2A #1543).
  */
 export default function PageLoadingOverlay({
   id = PAGE_LOADING_OVERLAY_ID,
 }: PageLoadingOverlayProps = {}) {
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: OVERLAY_CSS }} />
       <div
         id={id}
         class="page-loading-overlay"
