@@ -436,7 +436,7 @@ async function runBehaviourAssertions(): Promise<void> {
             }, { once: true });
             setTimeout(() => resolve(false), 6000);
             // Trigger nav after listener is set up
-            const anchor = document.querySelector(`a[href="${target}"]`);
+            const anchor = document.querySelector<HTMLElement>(`a[href="${target}"]`);
             if (anchor) anchor.click();
           });
         }, PAGE_B_EN);
@@ -581,7 +581,7 @@ async function runBehaviourAssertions(): Promise<void> {
               ]);
               return { resolved: true, error: null };
             } catch (e) {
-              return { resolved: false, error: e?.message ?? String(e) };
+              return { resolved: false, error: e instanceof Error ? e.message : String(e) };
             }
           });
           if (vtFinished.resolved) {
