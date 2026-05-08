@@ -378,7 +378,16 @@ jobs:
             cp -r doc-history-out/. deploy/pj/zudo-doc/doc-history/
           fi
           # (c) Root-level _redirects: bare-domain hits land on the based site.
-          echo '/ /pj/zudo-doc/ 302' > deploy/_redirects
+          # Changelog slug changed from /docs/changelog/010/ (old prod URL, no dots)
+          # to /docs/changelog/0.1.0/ (file-routed). Both slash variants and the
+          # JA locale are covered to preserve all external bookmarks from the Astro era.
+          printf '%s\n' \
+            '/ /pj/zudo-doc/ 302' \
+            '/pj/zudo-doc/docs/changelog/010 /pj/zudo-doc/docs/changelog/0.1.0/ 301' \
+            '/pj/zudo-doc/docs/changelog/010/ /pj/zudo-doc/docs/changelog/0.1.0/ 301' \
+            '/pj/zudo-doc/ja/docs/changelog/010 /pj/zudo-doc/ja/docs/changelog/0.1.0/ 301' \
+            '/pj/zudo-doc/ja/docs/changelog/010/ /pj/zudo-doc/ja/docs/changelog/0.1.0/ 301' \
+            > deploy/_redirects
 
       - name: Deploy to Cloudflare Pages (production)
         id: deploy
