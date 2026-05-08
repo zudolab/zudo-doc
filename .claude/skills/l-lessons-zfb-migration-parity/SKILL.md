@@ -539,3 +539,69 @@ Strategy B port across 8 waves (W1 repro/spec → W2 confirm-gate → W3 upstrea
 - **The "5/5 contract assertions PASS" framing in W5A's verification report.** Reframe it as "5/5 SHAPE assertions PASS, BEHAVIOUR assertions still pending end-to-end browser confirmation on real link clicks." Numerical PASS counts on shape-only checks are misleading — they round 0/1 behaviour-confirmed up to 5/5 verified. Even when the shape checks all pass, the report should call out which assertion families are missing.
 - **Hand-writing the W7A spec's `pageswap.viewTransition` GATE language without first writing a tiny synthetic-skip Playwright trace.** A 5-minute test that creates a `ViewTransition` and immediately calls `vt.skipTransition()` would have shown that `pageswap.viewTransition` is truthy *even when the transition is skipped before any animation runs*. That single observation would have flipped the canonical first-check to `viewTransition.finished` resolves before the W7A spec was written, saving the GATE-shape correction cycle that ran during the post-fix re-verification.
 - **Including the "Manager subagent spawned an Opus subagent for /verify-ui" pattern in the May-7 retro as if it were generic.** The pattern is correct, but the *content* of W5A's check (5 SSR-shape assertions) was the bug. Future verification waves should treat the "spawn isolated browser subagent + return PASS/FAIL + manager does NOT claim parity" *workflow* as a separate, generic primitive from the *content* of the assertion list — and the assertion list itself needs the shape-vs-behaviour split per check. Future retros should describe the workflow primitive + assertion list separately so future readers can adopt the workflow without inheriting the assertion list's sins.
+
+## 2026-05-09 — VT chrome-persist: persist-key shape vs persist presence (epic #1547, sub-issue #1554)
+
+### What broke
+
+Epic #1546 (W7A) removed all `data-zfb-transition-persist` annotations from the chrome (sidebar, header, footer, desktop-sidebar-toggle) because doing so fixed a visible EN↔JA locale toggle regression: with a static persist key the same DOM node was reused across locales, breaking the active-link highlight and the locale toggle itself. That stop-gap was correct. It went too far. Removing all persist annotations threw out persistence entirely instead of fixing the persist *key* — swapping locale or section now correctly re-renders the chrome, but same-locale same-section navigations also re-render it, defeating the chrome-flash and scroll-preservation goals that the whole epic was about.
+
+### What the right key shape is
+
+```
+sidebar:               data-zfb-transition-persist={`sidebar-${lang}-${navSection ?? "default"}`}
+header:                data-zfb-transition-persist={`header-${lang}`}
+footer:                data-zfb-transition-persist={`footer-${lang}`}
+desktop sidebar toggle: data-zfb-transition-persist="desktop-sidebar-toggle"   // static — no locale or section
+```
+
+Locale + section in the key means cross-locale and cross-section swaps produce a key mismatch → DOM node is not reused → chrome re-renders (locale toggle / section nav stays correct). Same-locale + same-section swaps produce a key match → DOM node identity is preserved → smooth animation, scroll preservation, no chrome flash.
+
+The desktop sidebar toggle is intentionally static: it has no locale-specific content, so it should persist across all same-origin navigations including locale toggles. It carries only the open/closed state, which the B10 re-sync hook handles separately (see Wave 2b below).
+
+### Why same-locale persistence is safe even though active links change
+
+Every island that renders an active-page indicator already re-derives its state from the URL on `AFTER_NAVIGATE_EVENT`:
+
+- `sidebar-tree.tsx` — `useActiveSlug` recomputes from `location.pathname`
+- header nav — `nav-overflow-script` runs on each nav to set overflow state
+- color-scheme-provider — re-initialises from localStorage on each nav
+- version-switcher init script — re-runs on each nav
+- search widget — custom element re-initialises on each nav
+
+DOM-node identity preservation does not freeze the active-page indicator. The highlight is computed by the island from the new URL; it is not baked into SSR. Preserving the node is safe.
+
+The harness that proves this contract holds lives at `scripts/wave2-vt-chrome-persist-confirm.ts` (added in T5, #1552). It asserts both SSR shape AND post-navigation behaviour in 29 assertions. All 29 PASS at base/vt-chrome-persist HEAD commit `13fb574`.
+
+### Watch for next time
+
+The trap that consumed two epics' worth of cycles was "remove persist entirely" being **shape-positive** (no visible regression on locale toggle, no harness failures) while being **behaviourally wrong** (every same-locale navigation cross-fades with the chrome, defeating the UX goal). The lesson parallels the Strategy A lesson from the May-8 VT entry: shape-positive does not imply behaviour-correct.
+
+**Persist key shape, not persist presence, is the load-bearing decision.** When a persist key causes a cross-X regression (where X is locale or section), fix the key by encoding X in it; don't drop the key. Dropping the key silences the symptom at the cost of the feature.
+
+Concretely: the original sidebarPersistKey PR commit `4ee3e66` introduced a static persist key that caused the EN↔JA regression. The right correction was to add `${lang}` and `${navSection}` to the key. The actual correction (commit `94da5c4`, W7A) dropped the key entirely. Going straight from `4ee3e66` to a locale-and-section-keyed key would have skipped the W7A overshoot and this whole correction cycle.
+
+### Wave 2b sub-lesson: persist preserves DOM identity, not derived browser state or transient html attributes
+
+The initial Wave 1 T1–T4 implementation (#1548) passed all harness shape assertions but the Wave 2 confirm gate harness (T5, #1552) caught two behaviour failures:
+
+**B9 — sidebar scrollTop reset** (fixed in T1B, commit `ab75344`): the `<aside>` DOM node survives the body swap via `moveBefore()` (B2 PASS), but `scrollTop` is reset during the swap sequence — either by `moveBefore()` itself or by Preact's post-swap re-renders. Fix: capture `scrollTop` just before `AFTER_NAVIGATE_EVENT` fires (where it is already 0) and restore it immediately after. Lives in `src/components/sidebar-tree.tsx`.
+
+**B10 — data-sidebar-hidden wiped** (fixed in T4B, commit `4f6b7ff`): zfb's `swapRootAttributes` wipes all `<html>` attributes that are not in `NON_OVERRIDABLE_ZFB_ATTRS` on every SPA navigation. `data-sidebar-hidden` is one of them, and the pre-paint inline script that restores it from localStorage only runs on initial page load, not on SPA nav. Fix: add `BEFORE_NAVIGATE_EVENT` / `AFTER_NAVIGATE_EVENT` listeners to the persisted `DesktopSidebarToggle` island — capture whether the attribute is present before the swap, restore it after. Lives in `src/components/desktop-sidebar-toggle.tsx`.
+
+Both fixes are exactly the pattern the harness was designed to catch: shape assertions (B1–B8) passed in Wave 1, behaviour assertions (B9–B10) failed in Wave 2. The contract worked.
+
+The sub-lesson: **`data-zfb-transition-persist` preserves DOM-node identity across the swap. It does NOT preserve derived browser state (scroll position, selection, focus) or transient `<html>` attributes managed by zfb's root-attribute swap. Those need their own re-sync hooks on `BEFORE_NAVIGATE_EVENT` / `AFTER_NAVIGATE_EVENT`.** Persist is not a substitute for explicit state capture and restore.
+
+### Would-skip-if-redoing
+
+The W7A "drop persist entirely" commit (`94da5c4`). Going straight from the original static sidebarPersistKey PR (`4ee3e66`) to a locale-and-section-keyed sidebarPersistKey would have skipped both the W7A fix-then-overshoot cycle and this big-plan correction epic.
+
+### References
+
+- Epic: #1547; this sub-issue: #1554
+- T1 (Wave 1 sidebar persist wiring): #1548; T5 (confirm gate harness): #1552
+- Wave 2b fixes: T1B B9 scrollTop (`ab75344`), T4B B10 data-sidebar-hidden (`4f6b7ff`)
+- W7A over-correction commit: `94da5c4`
+- Original sidebarPersistKey commit: `4ee3e66`
+- Harness (source of truth for shape-AND-behaviour testing): `scripts/wave2-vt-chrome-persist-confirm.ts`
