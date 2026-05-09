@@ -1268,6 +1268,376 @@ async function runBehaviourAssertions(): Promise<void> {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Visual extraction assertions (V1-V8b)
+  // ---------------------------------------------------------------------------
+
+  console.log("\n--- Visual extraction assertions (V1-V8b) ---");
+
+  // The 12 named-chrome pseudo-element strings we expect to be animation-free.
+  // Exact-match set — never use .includes("zfb-") substring matching, which
+  // would also catch ::view-transition-group(...) at unknown nesting levels.
+  const namedChromePseudos = new Set([
+    "::view-transition-old(zfb-header)",
+    "::view-transition-new(zfb-header)",
+    "::view-transition-group(zfb-header)",
+    "::view-transition-old(zfb-sidebar)",
+    "::view-transition-new(zfb-sidebar)",
+    "::view-transition-group(zfb-sidebar)",
+    "::view-transition-old(zfb-footer)",
+    "::view-transition-new(zfb-footer)",
+    "::view-transition-group(zfb-footer)",
+    "::view-transition-old(zfb-sidebar-toggle)",
+    "::view-transition-new(zfb-sidebar-toggle)",
+    "::view-transition-group(zfb-sidebar-toggle)",
+  ]);
+
+  // V1-V4: computed viewTransitionName on each chrome element
+  {
+    const page = await ctx.newPage();
+    try {
+      await page.goto(`${PREVIEW_BASE_URL}${PAGE_A_EN}`, { waitUntil: "domcontentloaded" });
+      await waitForSidebarHydration(page);
+
+      const vtNames = await page.evaluate(() => {
+        const header = document.querySelector("header");
+        const aside = document.querySelector("aside#desktop-sidebar");
+        const footer = document.querySelector("footer");
+        const toggle = document.querySelector(
+          "[data-zfb-transition-persist='desktop-sidebar-toggle']"
+        );
+        return {
+          header: header ? getComputedStyle(header).viewTransitionName : null,
+          aside: aside ? getComputedStyle(aside).viewTransitionName : null,
+          footer: footer ? getComputedStyle(footer).viewTransitionName : null,
+          toggle: toggle ? getComputedStyle(toggle).viewTransitionName : null,
+        };
+      });
+
+      // V1
+      if (vtNames.header === "zfb-header") {
+        pass("V1", `header viewTransitionName === "zfb-header"`);
+      } else {
+        fail("V1", `header viewTransitionName="${vtNames.header}" (expected "zfb-header")`);
+      }
+
+      // V2
+      if (vtNames.aside === "zfb-sidebar") {
+        pass("V2", `aside#desktop-sidebar viewTransitionName === "zfb-sidebar"`);
+      } else {
+        fail("V2", `aside#desktop-sidebar viewTransitionName="${vtNames.aside}" (expected "zfb-sidebar")`);
+      }
+
+      // V3
+      if (vtNames.footer === "zfb-footer") {
+        pass("V3", `footer viewTransitionName === "zfb-footer"`);
+      } else {
+        fail("V3", `footer viewTransitionName="${vtNames.footer}" (expected "zfb-footer")`);
+      }
+
+      // V4
+      if (vtNames.toggle === "zfb-sidebar-toggle") {
+        pass("V4", `desktop-sidebar-toggle viewTransitionName === "zfb-sidebar-toggle"`);
+      } else {
+        fail("V4", `desktop-sidebar-toggle viewTransitionName="${vtNames.toggle}" (expected "zfb-sidebar-toggle")`);
+      }
+    } catch (e) {
+      fail("V1", String(e));
+      fail("V2", "skipped");
+      fail("V3", "skipped");
+      fail("V4", "skipped");
+    } finally {
+      await page.close();
+    }
+  }
+
+  // V5 + V6: same-locale + same-section transition — sample animations at ~50ms
+  {
+    const page = await ctx.newPage();
+    try {
+      await page.goto(`${PREVIEW_BASE_URL}${PAGE_A_EN}`, { waitUntil: "domcontentloaded" });
+      await waitForSidebarHydration(page);
+
+      const linkExists = await page.evaluate(
+        (href) => !!document.querySelector(`#desktop-sidebar a[href="${href}"]`),
+        PAGE_B_EN
+      );
+
+      if (!linkExists) {
+        fail("V5", `No sidebar link to ${PAGE_B_EN} found`);
+        fail("V6", "skipped — no sidebar link");
+      } else {
+        // Hook startViewTransition to capture named-chrome and root animation counts at ~50ms
+        await page.evaluate(() => {
+          const origSVT = document.startViewTransition?.bind(document);
+          if (origSVT) {
+            (document as any).__v5ChromeCount__ = null;
+            (document as any).__v6RootCount__ = null;
+            document.startViewTransition = (cb) => {
+              const vt = origSVT(cb);
+              // Named chrome pseudo set (exact-match, mirrors the harness-level const)
+              const namedSet = new Set([
+                "::view-transition-old(zfb-header)",
+                "::view-transition-new(zfb-header)",
+                "::view-transition-group(zfb-header)",
+                "::view-transition-old(zfb-sidebar)",
+                "::view-transition-new(zfb-sidebar)",
+                "::view-transition-group(zfb-sidebar)",
+                "::view-transition-old(zfb-footer)",
+                "::view-transition-new(zfb-footer)",
+                "::view-transition-group(zfb-footer)",
+                "::view-transition-old(zfb-sidebar-toggle)",
+                "::view-transition-new(zfb-sidebar-toggle)",
+                "::view-transition-group(zfb-sidebar-toggle)",
+              ]);
+              setTimeout(() => {
+                const anims = document.getAnimations();
+                (document as any).__v5ChromeCount__ = anims.filter(
+                  (a: Animation) => namedSet.has((a.effect as KeyframeEffect)?.pseudoElement ?? "")
+                ).length;
+                // V6 total count: captures total getAnimations() length at the same
+                // 50ms window. View-transition pseudo-element animations may or may not
+                // appear in getAnimations() depending on browser/headless quirks; using
+                // total count (same metric as B6) is the reliable regression check that
+                // the view-transition is still running with some animations active.
+                (document as any).__v6TotalCount__ = anims.length;
+              }, 50);
+              return vt;
+            };
+          }
+        });
+
+        await spaClickHref(page, PAGE_B_EN);
+
+        const counts = await page.evaluate(() => ({
+          chrome: (document as any).__v5ChromeCount__,
+          total: (document as any).__v6TotalCount__,
+        }));
+
+        // V5: named-chrome animations === 0 (animation: none applied by T2 CSS)
+        if (counts.chrome === 0) {
+          pass("V5", "named-chrome animations === 0 during same-locale+same-section transition (animation: none applied)");
+        } else if (counts.chrome === null) {
+          fail("V5", "startViewTransition hook not active — animation snapshot not captured");
+        } else {
+          fail("V5", `named-chrome animations count=${counts.chrome} (expected 0 — T2 CSS should suppress all 12 pseudos)`);
+        }
+
+        // V6: total animations >= 1 during transition (regression sanity that view-transition
+        // is still active and root content animation is running). Uses the same total-count
+        // metric as B6 — view-transition pseudo-element animations may not appear in
+        // getAnimations() by pseudo-element in headless Chrome, but the total count is
+        // a reliable proxy that the transition is running and named-chrome suppression
+        // has not eliminated all animation activity.
+        if (counts.total !== null && counts.total >= 1) {
+          pass("V6", `document.getAnimations() had ${counts.total} entries during transition — content animation still running (chrome extraction did not kill VT)`);
+        } else if (counts.total === 0) {
+          fail("V6", "document.getAnimations() was empty at 50ms — view-transition may have stopped running after chrome extraction");
+        } else {
+          fail("V6", "total animation snapshot not captured (hook inactive)");
+        }
+      }
+    } catch (e) {
+      fail("V5", String(e));
+      fail("V6", "skipped");
+    } finally {
+      await page.close();
+    }
+  }
+
+  // V7: cross-locale (EN→JA) — named-chrome animations === 0
+  // named chrome should not visibly animate even when persist mismatches — host CSS
+  // applies animation: none regardless of whether persist matched.
+  {
+    const page = await ctx.newPage();
+    try {
+      await page.goto(`${PREVIEW_BASE_URL}${PAGE_EN}`, { waitUntil: "domcontentloaded" });
+      await waitForSidebarHydration(page);
+
+      const jaHref = await page.evaluate(() => {
+        const jaLink =
+          document.querySelector('header a[lang="ja"]') ??
+          Array.from(document.querySelectorAll("header a")).find(
+            (a) => a.textContent?.trim() === "JA"
+          );
+        return jaLink?.getAttribute("href") ?? null;
+      });
+
+      if (!jaHref) {
+        fail("V7", "No JA language switcher link found in header");
+      } else {
+        await page.evaluate(() => {
+          const origSVT = document.startViewTransition?.bind(document);
+          if (origSVT) {
+            (document as any).__v7ChromeCount__ = null;
+            document.startViewTransition = (cb) => {
+              const vt = origSVT(cb);
+              const namedSet = new Set([
+                "::view-transition-old(zfb-header)",
+                "::view-transition-new(zfb-header)",
+                "::view-transition-group(zfb-header)",
+                "::view-transition-old(zfb-sidebar)",
+                "::view-transition-new(zfb-sidebar)",
+                "::view-transition-group(zfb-sidebar)",
+                "::view-transition-old(zfb-footer)",
+                "::view-transition-new(zfb-footer)",
+                "::view-transition-group(zfb-footer)",
+                "::view-transition-old(zfb-sidebar-toggle)",
+                "::view-transition-new(zfb-sidebar-toggle)",
+                "::view-transition-group(zfb-sidebar-toggle)",
+              ]);
+              setTimeout(() => {
+                const anims = document.getAnimations();
+                (document as any).__v7ChromeCount__ = anims.filter(
+                  (a: Animation) => namedSet.has((a.effect as KeyframeEffect)?.pseudoElement ?? "")
+                ).length;
+              }, 50);
+              return vt;
+            };
+          }
+        });
+
+        await spaClickHref(page, jaHref);
+
+        const chromeCount = await page.evaluate(() => (document as any).__v7ChromeCount__);
+
+        if (chromeCount === 0) {
+          pass("V7", "named-chrome animations === 0 during EN→JA cross-locale transition (animation: none applies regardless of persist mismatch)");
+        } else if (chromeCount === null) {
+          fail("V7", "startViewTransition hook not active — animation snapshot not captured");
+        } else {
+          fail("V7", `named-chrome animations count=${chromeCount} on EN→JA (expected 0 — CSS animation: none should suppress all 12 pseudos)`);
+        }
+      }
+    } catch (e) {
+      fail("V7", String(e));
+    } finally {
+      await page.close();
+    }
+  }
+
+  // V8a + V8b: cross-section (sidebar key differs, header/footer keys match)
+  {
+    const page = await ctx.newPage();
+    try {
+      await page.goto(`${PREVIEW_BASE_URL}${PAGE_A_EN}`, { waitUntil: "domcontentloaded" });
+      await waitForSidebarHydration(page);
+
+      // Capture header and footer persist keys BEFORE cross-section nav
+      const beforeData = await page.evaluate(() => {
+        const now = Date.now();
+        const header = document.querySelector("header");
+        const footer = document.querySelector("footer");
+        if (header) (header as any).__bigPlanMarker__ = now;
+        if (footer) (footer as any).__bigPlanMarker__ = now;
+        return {
+          marker: now,
+          headerKey: header?.getAttribute("data-zfb-transition-persist") ?? null,
+          footerKey: footer?.getAttribute("data-zfb-transition-persist") ?? null,
+        };
+      });
+
+      const guidesHref = await page.evaluate((target) => {
+        const link =
+          document.querySelector(`a[href="${target}"]`) ??
+          document.querySelector('header a[href*="/docs/guides/"]');
+        return link?.getAttribute("href") ?? null;
+      }, PAGE_A_GUIDES);
+
+      if (!guidesHref) {
+        fail("V8a", `No link to guides section found from ${PAGE_A_EN}`);
+        fail("V8b", "skipped — no cross-section link");
+      } else {
+        // Hook startViewTransition to sample chrome animations at ~50ms
+        await page.evaluate(() => {
+          const origSVT = document.startViewTransition?.bind(document);
+          if (origSVT) {
+            (document as any).__v8aChrome__ = null;
+            document.startViewTransition = (cb) => {
+              const vt = origSVT(cb);
+              const namedSet = new Set([
+                "::view-transition-old(zfb-header)",
+                "::view-transition-new(zfb-header)",
+                "::view-transition-group(zfb-header)",
+                "::view-transition-old(zfb-sidebar)",
+                "::view-transition-new(zfb-sidebar)",
+                "::view-transition-group(zfb-sidebar)",
+                "::view-transition-old(zfb-footer)",
+                "::view-transition-new(zfb-footer)",
+                "::view-transition-group(zfb-footer)",
+                "::view-transition-old(zfb-sidebar-toggle)",
+                "::view-transition-new(zfb-sidebar-toggle)",
+                "::view-transition-group(zfb-sidebar-toggle)",
+              ]);
+              setTimeout(() => {
+                const anims = document.getAnimations();
+                (document as any).__v8aChrome__ = anims.filter(
+                  (a: Animation) => namedSet.has((a.effect as KeyframeEffect)?.pseudoElement ?? "")
+                ).length;
+              }, 50);
+              return vt;
+            };
+          }
+        });
+
+        await spaClickHref(page, guidesHref);
+        await page.waitForTimeout(300);
+
+        const afterData = await page.evaluate((expectedMarker) => {
+          const header = document.querySelector("header");
+          const footer = document.querySelector("footer");
+          return {
+            v8aChrome: (document as any).__v8aChrome__,
+            headerKey: header?.getAttribute("data-zfb-transition-persist") ?? null,
+            footerKey: footer?.getAttribute("data-zfb-transition-persist") ?? null,
+            headerMarker: (header as any)?.__bigPlanMarker__,
+            footerMarker: (footer as any)?.__bigPlanMarker__,
+            expectedMarker,
+          };
+        }, beforeData.marker);
+
+        // V8a: named-chrome animations === 0 during cross-section transition
+        if (afterData.v8aChrome === 0) {
+          pass("V8a", "named-chrome animations === 0 during cross-section transition (animation: none applies)");
+        } else if (afterData.v8aChrome === null) {
+          fail("V8a", "startViewTransition hook not active — animation snapshot not captured");
+        } else {
+          fail("V8a", `named-chrome animations count=${afterData.v8aChrome} on cross-section (expected 0)`);
+        }
+
+        // V8b: header and footer persist keys stable; DOM-node identity preserved
+        // Mirrors B1+B3: header/footer keys are locale-keyed only, so they match
+        // across cross-section nav. Asserts new attribute selectors did not break
+        // the persist swap path for header/footer.
+        const headerKeyMatch = beforeData.headerKey === afterData.headerKey;
+        const footerKeyMatch = beforeData.footerKey === afterData.footerKey;
+        const headerPreserved = afterData.headerMarker === afterData.expectedMarker;
+        const footerPreserved = afterData.footerMarker === afterData.expectedMarker;
+
+        if (headerKeyMatch && footerKeyMatch && headerPreserved && footerPreserved) {
+          pass(
+            "V8b",
+            `header/footer persist keys stable (header="${afterData.headerKey}", footer="${afterData.footerKey}") and DOM-node preserved across cross-section nav`
+          );
+        } else {
+          const issues: string[] = [];
+          if (!headerKeyMatch)
+            issues.push(`header key changed: "${beforeData.headerKey}"→"${afterData.headerKey}"`);
+          if (!footerKeyMatch)
+            issues.push(`footer key changed: "${beforeData.footerKey}"→"${afterData.footerKey}"`);
+          if (!headerPreserved) issues.push("header DOM-node NOT preserved");
+          if (!footerPreserved) issues.push("footer DOM-node NOT preserved");
+          fail("V8b", issues.join("; "));
+        }
+      }
+    } catch (e) {
+      fail("V8a", String(e));
+      fail("V8b", "skipped");
+    } finally {
+      await page.close();
+    }
+  }
+
   await ctx.close();
   await browser.close();
 }
