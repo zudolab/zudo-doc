@@ -279,6 +279,14 @@ function generatePackageJson(choices: UserChoices) {
     deps["diff"] = "^8.0.3";
   }
 
+  if (choices.features.includes("designTokenPanel")) {
+    // zdtp is consumed as a file: sibling dep (mirrors this project's pattern).
+    // Downstream consumers using a published npm version should replace this
+    // with a semver range once zdtp is released publicly.
+    deps["@takazudo/zudo-design-token-panel"] =
+      "file:../zdtp/packages/zudo-design-token-panel";
+  }
+
   if (choices.features.includes("tagGovernance")) {
     // gray-matter is already in `deps` unconditionally (base template uses it),
     // so we only add the tooling deps specific to tags:audit / tags:suggest.
@@ -298,6 +306,13 @@ function generatePackageJson(choices: UserChoices) {
     check: "zfb check",
     "check:html": "html-validate \"dist/**/*.html\"",
   };
+
+  if (choices.features.includes("designTokenPanel")) {
+    // The postinstall hook verifies zdtp's dist/ is present before pnpm
+    // hard-copies the file: dep. CI must clone + build zdtp BEFORE running
+    // pnpm install (see scripts/zdtp-link.mjs for the full rationale).
+    scripts["postinstall"] = "node scripts/zdtp-link.mjs";
+  }
 
   if (choices.features.includes("tagGovernance")) {
     scripts["tags:audit"] = "tsx scripts/tags-audit.ts";

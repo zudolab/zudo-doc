@@ -244,12 +244,40 @@ describe("scaffold — full features (i18n, light-dark, all features)", () => {
     ).toBe(true);
   });
 
-  it("includes design token tweak panel component", async () => {
+  it("includes zdtp bootstrap and config when designTokenPanel is enabled", async () => {
     expect(
       await fs.pathExists(
-        projectPath("test-full", "src/components/design-token-tweak/index.tsx"),
+        projectPath("test-full", "src/lib/design-token-panel-bootstrap.ts"),
       ),
     ).toBe(true);
+    expect(
+      await fs.pathExists(
+        projectPath("test-full", "src/config/design-token-panel-config.ts"),
+      ),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(
+        projectPath("test-full", "src/config/design-tokens-manifest.ts"),
+      ),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(
+        projectPath("test-full", "src/utils/design-token-types.ts"),
+      ),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(
+        projectPath("test-full", "scripts/zdtp-link.mjs"),
+      ),
+    ).toBe(true);
+  });
+
+  it("does NOT include legacy design-token-tweak panel component", async () => {
+    expect(
+      await fs.pathExists(
+        projectPath("test-full", "src/components/design-token-tweak"),
+      ),
+    ).toBe(false);
   });
 });
 
@@ -279,6 +307,33 @@ describe("scaffold — generated package.json dependencies", () => {
       projectPath("test-deps", "package.json"),
     );
     expect(pkg.devDependencies["pagefind"]).toBeDefined();
+  });
+
+  it("does NOT include @takazudo/zudo-design-token-panel when designTokenPanel is disabled", async () => {
+    const pkg = await fs.readJson(
+      projectPath("test-deps", "package.json"),
+    );
+    expect(pkg.dependencies["@takazudo/zudo-design-token-panel"]).toBeUndefined();
+  });
+});
+
+describe("scaffold — designTokenPanel package.json wiring", () => {
+  it("includes @takazudo/zudo-design-token-panel dep and postinstall script when enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-zdtp-deps",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "designTokenPanel"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const pkg = await fs.readJson(
+      projectPath("test-zdtp-deps", "package.json"),
+    );
+    expect(pkg.dependencies["@takazudo/zudo-design-token-panel"]).toBeDefined();
+    expect(pkg.dependencies["@takazudo/zudo-design-token-panel"]).toContain("file:");
+    expect(pkg.scripts["postinstall"]).toContain("zdtp-link.mjs");
   });
 });
 
