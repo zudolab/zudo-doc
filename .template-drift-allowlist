@@ -88,36 +88,19 @@ src/components/doc-history.tsx
 src/components/image-enlarge.tsx
 src/components/find-in-page-init.tsx
 
-# zdtp-migration W3-2 (#1572) — production deleted src/components/design-token-tweak/
-# entirely; the new panel is @takazudo/zudo-design-token-panel (zdtp) bootstrapped
-# via src/lib/design-token-panel-bootstrap.ts. The template tree under
-# packages/create-zudo-doc/templates/features/designTokenPanel/ still carries the
-# legacy panel files — W5-1 will remove the legacy template and replace it with
-# the zdtp wiring. Allowlisted here to keep PR-checks green during the transition
-# window between W3-2 and W5-1.
-src/components/design-token-tweak/__tests__/sanitize-css-value.test.ts
-src/components/design-token-tweak/__tests__/settings-alias.test.ts
-src/components/design-token-tweak/__tests__/size-manifest.test.ts
-src/components/design-token-tweak/__tests__/spacing-state.test.ts
-src/components/design-token-tweak/__tests__/token-manifest.test.ts
-src/components/design-token-tweak/__tests__/tweak-state.test.ts
-src/components/design-token-tweak/controls/.gitkeep
-src/components/design-token-tweak/controls/pill-slider-row.tsx
-src/components/design-token-tweak/controls/sanitize-css-value.ts
-src/components/design-token-tweak/controls/select-row.tsx
-src/components/design-token-tweak/controls/slider-row.tsx
-src/components/design-token-tweak/controls/text-row.tsx
-src/components/design-token-tweak/export-modal.tsx
-src/components/design-token-tweak/import-modal.tsx
-src/components/design-token-tweak/state/persist.ts
-src/components/design-token-tweak/state/tweak-state.ts
-src/components/design-token-tweak/tabs/color-tab.tsx
-src/components/design-token-tweak/tabs/font-tab.tsx
-src/components/design-token-tweak/tabs/size-tab.tsx
-src/components/design-token-tweak/tabs/spacing-tab.tsx
-src/components/design-token-tweak/tokens/manifest.ts
-# design-token-serde.ts: W3-1b updated the prod file to import from the new
-# types shim (@/utils/design-token-types) and zdtp manifest; the template still
-# carries the pre-migration version referencing the legacy panel paths. W5-1 will
-# sync the template.
-src/utils/design-token-serde.ts
+# zdtp panel template variants — intentionally differ from production in two ways:
+#  1. design-token-panel-config.ts: template uses generic placeholder IDs/storage
+#     keys ("my-doc-tweak", "myDoc", etc.) and an empty colorPresets map, while
+#     production has zudo-doc-specific values and imports colorTweakPresets. The
+#     generator injects project-name-specific values via the feature module.
+#  2. design-token-panel-bootstrap.ts: template inlines literal zfb lifecycle
+#     event strings ("zfb:before-preparation", "zfb:after-swap") because
+#     downstream scaffolds do not depend on @zudo-doc/zudo-doc-v2 as a runtime
+#     dep. Production imports BEFORE_NAVIGATE_EVENT / AFTER_NAVIGATE_EVENT from
+#     @zudo-doc/zudo-doc-v2/transitions. Reconcile if/when create-zudo-doc
+#     migrates onto the v2 transitions module.
+#  3. design-token-types.ts: template has fewer comments (zudo-doc-specific
+#     migration context stripped; upstream issue notes retained).
+src/config/design-token-panel-config.ts
+src/lib/design-token-panel-bootstrap.ts
+src/utils/design-token-types.ts
