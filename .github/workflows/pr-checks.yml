@@ -24,6 +24,23 @@
 # scripts/zfb-link.mjs) then sees both as already staged and bakes the
 # tailwind path into the zfb wrapper.
 #
+# zdtp (zudo-design-token-panel) is consumed as `file:../zdtp/...` workspace
+# dep (see package.json). Each install-bearing job clones the public
+# Takazudo/zudo-design-token-panel repo at ZDTP_PINNED_SHA to ../zdtp,
+# installs its deps, and builds its dist/ BEFORE running pnpm install in
+# the zudo-doc tree. This ordering is critical: pnpm hard-copies file: deps
+# at install time, so a missing dist/ at that moment produces an incomplete
+# installed package (no JS, no types, broken exports map). The postinstall
+# hook (scripts/zdtp-link.mjs) verifies dist/ presence and fails loudly if
+# the build step was skipped.
+#
+# Three zdtp pin sources that MUST be bumped in lockstep (see also the zdtp
+# pin block in zfb.config.ts and the same env vars in main-deploy.yml /
+# preview-deploy.yml):
+#   1. ZDTP_PINNED_SHA env var in this file (workflow level, below)
+#   2. package.json "@takazudo/zudo-design-token-panel" file: spec
+#   3. Local upstream HEAD at ../zdtp (used for local dev)
+#
 # Pinned zfb SHA (mirrors the canonical pin documented at the top of
 # zfb.config.ts). Bump in lockstep with that comment.
 #
@@ -58,6 +75,10 @@ env:
   # top of zfb.config.ts. Updating the pin here without updating that
   # comment (or vice versa) will silently desync local dev from CI.
   ZFB_PINNED_SHA: 95058f0998a53e7f9a1871edd729a1835c893cab
+  # Pinned zdtp commit — keep in sync with the zdtp pin block in zfb.config.ts,
+  # the file: spec in package.json, and the same env in main-deploy.yml /
+  # preview-deploy.yml. All three sources must be bumped together.
+  ZDTP_PINNED_SHA: e23fc86fe61405a76b893ba18644eb08be5ecbdc
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -213,6 +234,29 @@ jobs:
         with:
           node-version: 22
 
+      # Clone + build zdtp BEFORE pnpm install. See main-deploy.yml for rationale.
+      - name: Restore zdtp dist cache
+        id: zdtp-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ../zdtp/packages/zudo-design-token-panel/dist
+          key: zdtp-dist-${{ env.ZDTP_PINNED_SHA }}
+
+      - name: Clone + build zdtp (cache miss fallback)
+        if: steps.zdtp-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/Takazudo/zudo-design-token-panel.git ../zdtp
+          git -C ../zdtp checkout "$ZDTP_PINNED_SHA"
+          pnpm --dir ../zdtp install --frozen-lockfile --ignore-scripts
+          pnpm --dir ../zdtp --filter @takazudo/zudo-design-token-panel build
+
+      - name: Save zdtp dist cache
+        if: steps.zdtp-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ../zdtp/packages/zudo-design-token-panel/dist
+          key: zdtp-dist-${{ env.ZDTP_PINNED_SHA }}
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -285,6 +329,29 @@ jobs:
         with:
           node-version: 22
 
+      # Clone + build zdtp BEFORE pnpm install. See main-deploy.yml for rationale.
+      - name: Restore zdtp dist cache
+        id: zdtp-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ../zdtp/packages/zudo-design-token-panel/dist
+          key: zdtp-dist-${{ env.ZDTP_PINNED_SHA }}
+
+      - name: Clone + build zdtp (cache miss fallback)
+        if: steps.zdtp-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/Takazudo/zudo-design-token-panel.git ../zdtp
+          git -C ../zdtp checkout "$ZDTP_PINNED_SHA"
+          pnpm --dir ../zdtp install --frozen-lockfile --ignore-scripts
+          pnpm --dir ../zdtp --filter @takazudo/zudo-design-token-panel build
+
+      - name: Save zdtp dist cache
+        if: steps.zdtp-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ../zdtp/packages/zudo-design-token-panel/dist
+          key: zdtp-dist-${{ env.ZDTP_PINNED_SHA }}
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -338,6 +405,22 @@ jobs:
         with:
           node-version: 22
 
+      # Restore zdtp dist cache so the file: dep resolves during --ignore-scripts install.
+      - name: Restore zdtp dist cache
+        id: zdtp-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ../zdtp/packages/zudo-design-token-panel/dist
+          key: zdtp-dist-${{ env.ZDTP_PINNED_SHA }}
+
+      - name: Clone + build zdtp (cache miss fallback)
+        if: steps.zdtp-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/Takazudo/zudo-design-token-panel.git ../zdtp
+          git -C ../zdtp checkout "$ZDTP_PINNED_SHA"
+          pnpm --dir ../zdtp install --frozen-lockfile --ignore-scripts
+          pnpm --dir ../zdtp --filter @takazudo/zudo-design-token-panel build
+
       - name: Install deps (no scripts)
         run: pnpm install --frozen-lockfile --ignore-scripts
 
@@ -366,6 +449,7 @@ jobs:
   # build-zfb` edge that serialises this otherwise-independent job behind
   # the Rust build for no benefit. We still clone the pinned zfb source
   # so pnpm can resolve the file:../zfb/... workspace deps.
+  # zdtp dist is restored from the pinned-SHA cache (or rebuilt on miss).
   build-history:
     name: Build Doc History
     runs-on: ubuntu-latest
@@ -392,6 +476,22 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
+
+      # Clone + build zdtp BEFORE pnpm install. See main-deploy.yml for rationale.
+      - name: Restore zdtp dist cache
+        id: zdtp-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ../zdtp/packages/zudo-design-token-panel/dist
+          key: zdtp-dist-${{ env.ZDTP_PINNED_SHA }}
+
+      - name: Clone + build zdtp (cache miss fallback)
+        if: steps.zdtp-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/Takazudo/zudo-design-token-panel.git ../zdtp
+          git -C ../zdtp checkout "$ZDTP_PINNED_SHA"
+          pnpm --dir ../zdtp install --frozen-lockfile --ignore-scripts
+          pnpm --dir ../zdtp --filter @takazudo/zudo-design-token-panel build
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -471,6 +571,22 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
+
+      # Clone + build zdtp BEFORE pnpm install. See main-deploy.yml for rationale.
+      - name: Restore zdtp dist cache
+        id: zdtp-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ../zdtp/packages/zudo-design-token-panel/dist
+          key: zdtp-dist-${{ env.ZDTP_PINNED_SHA }}
+
+      - name: Clone + build zdtp (cache miss fallback)
+        if: steps.zdtp-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/Takazudo/zudo-design-token-panel.git ../zdtp
+          git -C ../zdtp checkout "$ZDTP_PINNED_SHA"
+          pnpm --dir ../zdtp install --frozen-lockfile --ignore-scripts
+          pnpm --dir ../zdtp --filter @takazudo/zudo-design-token-panel build
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

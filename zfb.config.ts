@@ -371,6 +371,28 @@
  *                plugin-runner map leak guard + persist.rs tracing-warn.)
  */
 
+/**
+ * zdtp pin (canonical; mirrors the three-source pattern from zfb above).
+ *
+ * Three pin sources that MUST be bumped in lockstep when upgrading zdtp:
+ *   1. package.json `@takazudo/zudo-design-token-panel` file: spec path (points
+ *      to the checkout at ../zdtp/packages/zudo-design-token-panel)
+ *   2. ZDTP_PINNED_SHA env var at the top of each CI workflow file:
+ *        .github/workflows/main-deploy.yml
+ *        .github/workflows/preview-deploy.yml
+ *        .github/workflows/pr-checks.yml
+ *   3. Local upstream HEAD at ../zdtp (the checkout used for local dev)
+ *
+ * Failing to bump all three causes CI to silently build against a different
+ * zdtp commit than local dev — the same trap that hit zfb in S1/zfb-feat-asset-
+ * base-path (see zudo-doc#1564 LESSON CONTEXT).
+ *
+ * Current pin:
+ *   SHA: e23fc86fe61405a76b893ba18644eb08be5ecbdc
+ *   Repo: Takazudo/zudo-design-token-panel
+ *   Context: initial zdtp wiring — epic zudolab/zudo-doc#1564 sub-issue #1566
+ */
+
 // zfb.config.ts — entry-point config consumed by the zfb engine.
 //
 // This file replaces the Astro-flavoured `src/content.config.ts` while the
