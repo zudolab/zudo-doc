@@ -30,7 +30,9 @@ describe("designTokenPanelConfig", () => {
         `preset "${key}" should be JSON-serializable`,
       ).not.toThrow();
       const roundTripped = JSON.parse(JSON.stringify(preset));
-      expect(roundTripped, `preset "${key}" round-trip should match`).toEqual(preset);
+      expect(roundTripped, `preset "${key}" round-trip should match`).toEqual(
+        preset,
+      );
     }
   });
 });
