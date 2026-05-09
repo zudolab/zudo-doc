@@ -605,3 +605,148 @@ The W7A "drop persist entirely" commit (`94da5c4`). Going straight from the orig
 - W7A over-correction commit: `94da5c4`
 - Original sidebarPersistKey commit: `4ee3e66`
 - Harness (source of truth for shape-AND-behaviour testing): `scripts/wave2-vt-chrome-persist-confirm.ts`
+
+## 2026-05-09 (later) — VT chrome-persist W8: DOM-identity vs visual-extraction (epic #1556)
+
+### What broke
+
+Epic #1547 (W7A correction + W8 groundwork) shipped DOM-node identity preservation for the chrome (sidebar, header, footer, desktop-sidebar-toggle) with a 29/29 confirm-gate harness PASS and three permanent e2e specs. The harness covered shape (S1–S7), DOM-identity behaviour (B1–B10), cross-locale (C1–C3), cross-section (D1–D2), and hide_sidebar boundary (E1–E3) assertions. All 29 passed.
+
+The user reported on the deployed PR preview that the entire viewport was still cross-fading on navigation — chrome flashing alongside content, exactly the visual symptom the epic was meant to eliminate. The UX goal was not achieved despite every assertion passing.
+
+### What the harness asserted
+
+The W7A correction harness (`scripts/wave2-vt-chrome-persist-confirm.ts`) asserted the following families:
+
+- **S1–S7** — SSR shape: `data-zfb-transition-persist` attributes emitted on the correct elements, correct key values, no duplicate keys.
+- **B1–B10** — DOM-identity behaviour: the sidebar, header, footer, and desktop-sidebar-toggle DOM nodes are the same object instances before and after navigation (`el === elAfterNav`), scroll position preserved (B9), `data-sidebar-hidden` re-synced (B10).
+- **C1–C3** — Cross-locale: key mismatch on EN↔JA navigation causes expected new-node creation (locale toggle stays correct).
+- **D1–D2** — Cross-section: key mismatch on section boundary navigation causes expected new-node creation.
+- **E1–E3** — hide_sidebar boundary: chrome re-renders correctly on pages where the sidebar is hidden.
+
+**No assertion sampled `viewTransitionName` on any persisted element. No assertion called `document.getAnimations()` filtered by named chrome pseudo-elements.** The harness was entirely structural — it verified that the right DOM nodes survived the swap, but said nothing about whether the View Transitions API captured those nodes as named, non-animated snapshots.
+
+### Why the gap was invisible
+
+"Persist" is a leaky shared word across frameworks. In Astro, `data-astro-transition-persist` implicitly does two things simultaneously:
+
+1. DOM-node identity preservation (the runtime's `moveBefore()`-based matched-key swap).
+2. Visual extraction: Astro's router automatically emits `view-transition-name` on persist-annotated elements so the VT API treats them as individually named snapshots rather than parts of the full-page crossfade.
+
+Both halves come bundled in one attribute in Astro. In zfb, the contract is split: `data-zfb-transition-persist` handles only DOM-node identity. This is confirmed by reading `packages/zfb-runtime/src/client-router/swap-functions.ts` in the zfb checkout — it greps `[data-zfb-transition-persist]`, collects matching elements from old and new bodies, and calls `moveBefore()` to transplant them. Nothing in that file emits `view-transition-name`. The host CSS layer is the sole place where the visual extraction can happen.
+
+Because the W7A harness was written by authors who came from Astro's bundled-contract mental model, "persist" implicitly meant "both parts are done." The harness verified the DOM-identity half (which IS what `data-zfb-transition-persist` does) and silently assumed the visual half was automatically handled — just as it is in Astro. It was not. The gap was invisible because the assumption was never examined.
+
+### The right contract shape
+
+Persist in zfb is a **two-part contract** that must be explicitly implemented and explicitly asserted:
+
+**Part 1 — DOM-node identity (runtime layer):**
+`data-zfb-transition-persist="<key>"` on the element + the zfb runtime's `swap-functions.ts` matched-key `moveBefore()` swap. This half was present and passing.
+
+**Part 2 — Visual extraction (host CSS layer):**
+CSS attribute selectors that map `[data-zfb-transition-persist^="<prefix>"]` to `view-transition-name: <name>` on the matching elements. Plus `animation: none` on the named pseudos — `::view-transition-old(<name>)`, `::view-transition-new(<name>)`, and `::view-transition-group(<name>)` (see below) — so the named elements are held static while the rest of the page crossfades.
+
+The W7A correction added Part 1 and missed Part 2. The W8 epic (this epic, #1556) adds Part 2 and the visual assertions V1–V8b in T3 to lock both halves in.
+
+The full correct CSS shape for each persisted chrome region is:
+
+```css
+[data-zfb-transition-persist^="sidebar"] {
+  view-transition-name: chrome-sidebar;
+}
+::view-transition-old(chrome-sidebar),
+::view-transition-new(chrome-sidebar),
+::view-transition-group(chrome-sidebar) {
+  animation: none;
+}
+/* ... repeat for header, footer, desktop-sidebar-toggle */
+```
+
+### Why `::view-transition-group` matters
+
+When `::view-transition-old(<name>)` and `::view-transition-new(<name>)` are both `animation: none`, there is still a third UA-generated pseudo-element: `::view-transition-group(<name>)`. This pseudo animates the bounding-box geometry of the named element between its captured position in the old snapshot and its captured position in the new snapshot. If the element's size or position changes between pages (e.g. sidebar width differs across locales, or header height changes on pages with different nav states), the UA will produce a geometry-morph animation on the group even when old/new are frozen.
+
+For the "named chrome element never visually animates" contract to be robust, all three pseudos must be neutralised. The original W8 plan (before Codex and gcoc reviews during planning) only neutralised old/new. Codex's planning review explicitly flagged the group pseudo as a missing neutralisation — surfacing a would-be silent regression before the CSS was written. The final T2 implementation neutralises all three pseudos.
+
+The lesson: when writing `animation: none` rules for a named VT element, enumerate `::view-transition-old(<name>)`, `::view-transition-new(<name>)`, AND `::view-transition-group(<name>)` as a unit. Missing any one of the three leaves a door open for geometry-morph animations on geometry changes.
+
+### Watch for next time
+
+**When porting a "persist" feature from another framework, name the two halves of the contract explicitly before writing any code.** Ask: "In this framework, does the persist annotation handle DOM-node identity only, or does it also handle visual extraction?" If only DOM identity, add the visual extraction half explicitly as a separate implementation task and write a separate harness assertion for it.
+
+The two halves and their assertion shapes:
+
+**DOM-identity half** — checked via marker properties:
+
+```ts
+const elBefore = document.querySelector('[data-zfb-transition-persist^="sidebar"]');
+await navigate('/docs/other-page');
+const elAfter = document.querySelector('[data-zfb-transition-persist^="sidebar"]');
+assert(elBefore === elAfter, 'sidebar DOM node preserved');
+```
+
+**Visual-extraction half** — checked via computed style AND filtered animations:
+
+```ts
+// Check that the CSS attribute selector applied the view-transition-name
+const el = document.querySelector('[data-zfb-transition-persist^="sidebar"]');
+assert(getComputedStyle(el).viewTransitionName === 'chrome-sidebar', 'VTN applied');
+
+// Check that the named element's animations are neutralised
+// Use EXACT-MATCH pseudo strings — NOT substring match like .includes("zfb-")
+const vtOldAnims = document.getAnimations().filter(
+  a => a.effect?.target === el && a.effect?.pseudoElement === '::view-transition-old(chrome-sidebar)'
+);
+const vtGroupAnims = document.getAnimations().filter(
+  a => a.effect?.pseudoElement === '::view-transition-group(chrome-sidebar)'
+);
+assert(vtOldAnims.every(a => a.playState === 'finished'), 'old pseudo: no active animation');
+assert(vtGroupAnims.every(a => a.playState === 'finished'), 'group pseudo: no geometry morph');
+```
+
+Why **exact-match** on pseudo strings matters: `.includes("zfb-")` or `.includes("chrome-")` substring matching mixes old/new/group pseudos and makes a `count === 0` assertion simultaneously brittle (passes when the runtime is broken and no animation fires at all) and too broad (conflates three different animation channels into one check). Use exact pseudo strings to assert each channel independently.
+
+**Asserting the structural (DOM-identity) half and trusting the visual half is the W7A trap — one level deeper than the W8 entry that superseded it.** The prior retro entries warn about shape-vs-behaviour gaps in VT verification; this entry names the specific axis within persist verification where that gap opened.
+
+### Watch for next time #2: `view-transition-name` uniqueness
+
+The CSS spec requires `view-transition-name` to be unique among all rendered elements at the moment a transition starts. If two elements share the same `view-transition-name` value, the UA skips the entire transition for those elements (and may skip the transition entirely depending on implementation). The symptom is silent — no error, no console warning, the transition just falls back to the full-page crossfade.
+
+This is a real risk when CSS attribute selectors assign `view-transition-name`. A selector like `[data-zfb-transition-persist^="sidebar"]` matches every element whose key starts with `"sidebar"`. If both the mobile sidebar (`sidebar-en-default`) and the desktop sidebar (`sidebar-en-default`) are rendered simultaneously under different CSS media conditions, both match the selector and both get the same `view-transition-name: chrome-sidebar`. Result: UA silently skips the named transition.
+
+Audit pattern: after writing the attribute selectors, run `pnpm build && node -e "..." dist/index.html` (or open the deployed preview in DevTools) and verify that **exactly one element matches each selector** in the rendered DOM. For mobile/desktop variants where both are present in the DOM at all times (just hidden via CSS), the selectors must be more specific or the `view-transition-name` values must be distinct per variant.
+
+### Watch for next time #3: deployed-preview verification, not local dev
+
+The chrome cross-fade only manifested on the deployed Cloudflare Pages preview at the asset-base path (`/pj/zudo-doc/` on `pr-<num>.zudo-doc.pages.dev`). Running `pnpm dev` locally (which runs without the asset-base prefix) did not reproduce the issue.
+
+This is consistent with the 2026-05-04 "claimed-fix-without-end-to-end-verification" entry's lesson about asset-base-path bugs hiding in local dev. The lesson extends to VT visual bugs: the full VT execution path (CSS asset URL resolution, view-transition-name cascade, UA snapshot capture) runs with the deployed asset-base prefix. Local dev may produce a functionally identical VT outcome via a different code path that happens to work for the local case.
+
+**Acceptance criteria for any UX-perceptible change — especially View Transitions behavior — must include explicit verification on the deployed per-PR preview URL**, not just on `localhost`. For VT specifically: open the deployed preview in Chrome, navigate between two doc pages, and confirm with eyes that the chrome elements do not flash.
+
+### Headless Chromium limitation note (for future visual harness work)
+
+During T3 implementation, V6 (the "root cross-fade still animating" sanity check) hit a headless Chromium limitation: `document.getAnimations()` does not consistently return view-transition pseudo-element animations when filtered by `pseudoElement` string in headless mode. Specifically, `document.getAnimations().filter(a => a.effect?.pseudoElement === '::view-transition-old(root)')` returned 0 even when the root cross-fade was visually in progress.
+
+The T3 harness adapted by using total `document.getAnimations().length >= 1` as the V6 regression proxy — mirroring the B6 shape check — rather than asserting the specific root pseudo. The permanent e2e specs use the same adaptation.
+
+If future visual harness work tries to assert the absence or presence of a specific named pseudo-element animation in headless Chromium and gets surprising 0-count results, this is the likely cause. The workaround is to assert total animation count (coarser, but stable in headless) and separately verify the named-element shape via `getComputedStyle(el).viewTransitionName` (which IS consistent in headless). Reserve the exact-pseudo-string filter assertions for real (non-headless) Chrome verification or for cases where the total-count proxy is insufficient.
+
+### Would-skip-if-redoing
+
+The W7A confirm-gate harness should have been authored with BOTH halves of the persist contract from day one. The W7A lesson on "shape-positive does not imply behaviour-correct" (from the May-8 Strategy A entry) was **exactly** the lesson needed to motivate visual assertions on day one. If the harness authors had applied that lesson one level deeper — "DOM-identity is the *shape* of persist; visual extraction is the *behaviour* of persist as the user sees it" — the V1–V8b visual assertions would have been part of the W7A harness scope, not a follow-up epic's T3 scope.
+
+The structural cause: "behaviour" was silently scoped to DOM identity and clickability in the W7A harness, because those are the behaviours `data-zfb-transition-persist` directly controls in zfb's runtime. The visual half required reading the zfb runtime source (`swap-functions.ts`) to discover what persist does NOT do. That source-read step was not in the harness authoring workflow.
+
+**Future harness authors: when porting a UX-perceptible feature from another framework, read the target framework's runtime source for that feature before writing the harness.** Confirm: does the runtime handle both the structural and the visual half, or only the structural half? If only structural, the visual half must be added explicitly to the implementation scope AND to the harness scope on the same wave. Do not split them across epics.
+
+Specific rule for View Transitions + persist: the moment a persist annotation is added to a chrome element, the harness must assert BOTH `el === elAfterNav` (DOM identity) AND `getComputedStyle(el).viewTransitionName === <expected>` (visual extraction applied). Two assertions, one annotation. Every time.
+
+### References
+
+- This epic: #1556
+- Previous epic that shipped DOM-identity half without visual half: #1547; merged as PR #1555
+- zfb runtime file that defines what `data-zfb-transition-persist` actually does: `packages/zfb-runtime/src/client-router/swap-functions.ts`
+- Planning review logs: `cclogs/zudo-doc2/20260509_155403-codex-2nd.md` (Codex 2nd review that flagged `::view-transition-group`) and `cclogs/zudo-doc2/20260509_155630-gcoc-2nd.md` (gcoc 2nd review)
+- T3 visual assertions (V1–V8b): added in sub-issue #1559 on branch `vt-chrome-static/T3`
