@@ -139,6 +139,18 @@ Older projects that persisted the v1 Color-Tweak state under `zudo-doc-tweak-sta
 - The FOUC-prevention script injected into `<head>` by the doc layout (`@zudo-doc/zudo-doc-v2/doclayout`) performs the same v2-then-v1 lookup so saved colors apply before first paint on old devices too.
 - Clicking **Reset all** in the panel header clears both keys, restoring the color scheme declared in `src/config/settings.ts`.
 
+<Note title="Storage prefix continuity guarantee">
+
+The storage prefix `zudo-doc-tweak` is locked in `src/config/design-token-panel-config.ts` and will not change across the zdtp migration. Any tokens a user saved before the migration continue to load automatically — no manual migration step is needed.
+
+</Note>
+
+## Implementation
+
+The panel UI is provided by the `@takazudo/zudo-design-token-panel` (zdtp) npm package. zudo-doc wires it via `configurePanel(designTokenPanelConfig)` in `src/lib/design-token-panel-bootstrap.ts`. The panel self-mounts as a side-effect of that call — there is no Preact island registration for it.
+
+The header trigger button dispatches the `toggle-design-token-panel` custom event on `window`. zdtp listens for this event natively, so no additional wiring is needed when the trigger is customised through `settings.headerRightItems`.
+
 ## Settings Reference
 
 | Setting | Type | Description |
