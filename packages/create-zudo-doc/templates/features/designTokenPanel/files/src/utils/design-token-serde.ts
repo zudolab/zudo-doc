@@ -26,18 +26,14 @@
  * `clamp()`) are skipped in both directions.
  */
 
-import {
-  FONT_TOKENS,
-  SIZE_TOKENS,
-  SPACING_TOKENS,
-  type TokenDef,
-} from "@/components/design-token-tweak/tokens/manifest";
+import { type TokenDef } from "@takazudo/zudo-design-token-panel";
+import { FONT_TOKENS, SIZE_TOKENS, SPACING_TOKENS } from "@/config/design-tokens-manifest";
 import {
   emptyOverrides,
   type ColorTweakState,
   type TokenOverrides,
   type TweakState,
-} from "@/components/design-token-tweak/state/tweak-state";
+} from "@/utils/design-token-types";
 
 export const DESIGN_TOKEN_SCHEMA = "zudo-doc-design-tokens/v1" as const;
 
