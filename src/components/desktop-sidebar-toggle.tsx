@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'preact/hooks';
+import { BEFORE_NAVIGATE_EVENT, AFTER_NAVIGATE_EVENT } from '@zudo-doc/zudo-doc-v2/transitions';
 
 export const SIDEBAR_STORAGE_KEY = 'zudo-doc-sidebar-visible';
 
@@ -65,6 +66,37 @@ export default function DesktopSidebarToggle() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Re-apply data-sidebar-hidden to <html> after every SPA nav.
+  // zfb's swapRootAttributes wipes all non-preserved <html> attributes on
+  // each navigation (data-sidebar-hidden is not in NON_OVERRIDABLE_ZFB_ATTRS),
+  // and the pre-paint inline script does not re-run on SPA nav. Since this
+  // island is persisted (data-zfb-transition-persist), this listener stays
+  // registered across SPA swaps.
+  //
+  // Strategy: capture the attribute presence just before the swap
+  // (BEFORE_NAVIGATE_EVENT fires before swapRootAttributes runs), then
+  // restore it once the swap completes (AFTER_NAVIGATE_EVENT). This is
+  // authoritative regardless of how the attribute was set (toggle click,
+  // localStorage, or external mutation). (#1551, #1552 B10)
+  useEffect(() => {
+    let wasHidden = false;
+    const capture = () => {
+      wasHidden = document.documentElement.hasAttribute('data-sidebar-hidden');
+    };
+    const restore = () => {
+      if (wasHidden) {
+        document.documentElement.setAttribute('data-sidebar-hidden', '');
+      }
+      // If not hidden, swapRootAttributes already cleared it — nothing to do.
+    };
+    document.addEventListener(BEFORE_NAVIGATE_EVENT, capture);
+    document.addEventListener(AFTER_NAVIGATE_EVENT, restore);
+    return () => {
+      document.removeEventListener(BEFORE_NAVIGATE_EVENT, capture);
+      document.removeEventListener(AFTER_NAVIGATE_EVENT, restore);
+    };
+  }, []);
+
   return (
     <button
       type="button"
@@ -72,6 +104,7 @@ export default function DesktopSidebarToggle() {
       className="zd-desktop-sidebar-toggle hidden lg:flex fixed bottom-vsp-xl z-40 items-center justify-center w-[1.5rem] h-[3rem] bg-surface border border-muted border-l-0 rounded-r-DEFAULT text-muted cursor-pointer transition-[left,color] duration-200 ease-in-out hover:text-fg"
       aria-label={visible ? 'Hide sidebar' : 'Show sidebar'}
       aria-pressed={visible}
+      data-zfb-transition-persist="desktop-sidebar-toggle"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

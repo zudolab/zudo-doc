@@ -1,6 +1,53 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: 95058f0 (Takazudo/zudo-front-builder main, post-#227 merge:
+ *   commit: 6754312 (three post-deep-review fix rounds landing on main:
+ *           8258782 fix(review-round-1): bugs, path traversal, and
+ *           validation gaps surfaced by deep-review — fixes a `from`/`form`
+ *           typo in client-router form-submit enctype handling
+ *           (zfb-runtime/client-router/router.ts); gates the on-disk
+ *           fallback in the dev server's serve_page behind
+ *           `is_safe_url_path` so a percent-encoded `..` request cannot
+ *           escape the dist root; extracts `push_canon_string` in
+ *           zfb-render/paths.rs and applies it to object keys so
+ *           PathsCache hashes no longer collide on keys containing `"` or
+ *           `\`; rejects negative `src_line`/`src_col` in
+ *           zfb-render/sourcemap.rs rather than silently wrapping; logs
+ *           walkdir errors during the `public/` copy in commands/build.rs
+ *           instead of dropping them with filter_map(.ok()); enforces the
+ *           documented `..`-escape ban and a leading-`/` requirement on
+ *           `base` in config.rs; drops an invalid `trust-policy=any` key
+ *           from .npmrc.
+ *           66b3ce9 fix(review-round-2): classifier root-anchor,
+ *           source-directive escaping, schema overflow — anchors
+ *           `classify_change` at the project root in zfb-build/policy.rs
+ *           so a project hosted under a parent directory whose name
+ *           matches `pages`/`content`/etc. no longer silently
+ *           misclassifies every change (adds regression test + updates
+ *           orchestrator caller); escapes `"` and `\` when interpolating
+ *           the project root into the Tailwind `@source "..."` directive
+ *           in zfb-css/engine.rs so paths containing those bytes produce
+ *           a well-formed declaration; tightens the JSON-Schema `integer`
+ *           type check in zfb-content/schema.rs to reject oversized
+ *           floats (`1e30.fract() == 0.0` no longer passes).
+ *           6754312 fix(review-round-3): CSS-in-components, content-type
+ *           fallback, write-cache ordering, leak guards — carves out
+ *           `.css` from the directory-precedence rules in
+ *           zfb-build/policy.rs so co-located component CSS edits reach
+ *           `dist/assets/` (adds regression test); fixes
+ *           zfb-server/routes.rs so the on-disk cold-start fallback
+ *           derives Content-Type from the file extension rather than
+ *           hardcoding `text/html`, preventing `<script>` injection into
+ *           non-HTML routes like `/sitemap.xml`; moves the
+ *           `last_bytes` dedup-cache insert in
+ *           zfb-build/pipeline/dev.rs to AFTER the atomic write so a
+ *           transient write failure cannot poison the cache and silently
+ *           suppress future writes; evicts the pending-map entry in
+ *           plugin_runner.rs on stdin write failure to prevent unbounded
+ *           map growth; replaces silent `filter_map(.ok())` walk in
+ *           zfb-graph/persist.rs with a tracing-warn variant.
+ *           Bumped 2026-05-09 in vt-chrome-static T1 under host epic
+ *           zudolab/zudo-doc#1556.
+ *           Previous pin 95058f0 (Takazudo/zudo-front-builder main, post-#227 merge:
  *           PR #227 fix/client-router-bootstrap-export — adds a public
  *           `./client-router` subpath export to @takazudo/zfb-runtime's
  *           package.json. Purely additive (no source changes); maps to
@@ -55,7 +102,7 @@
  *           Before that 1e0e6a7 (post-#221/#222/#223 merge: Wave 4 W4A
  *           bump from epic zudolab/zudo-doc#1492 — #222 made <ViewTransitions />
  *           a typed no-op with CSS at-rule as the VT opt-in; #223 fixed
- *           <span><pre> content-model; #221 wired embedded esbuild.)
+ *           <span><pre> content-model; #221 wired embedded esbuild.))
  *   includes fixes:
  *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
  *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
@@ -312,6 +359,16 @@
  *                throws at SSR render time. This pin enables reverting the
  *                W6A in-host workaround `ClientRouter({})` back to the
  *                cleaner `ClientRouter()` no-arg form.)
+ *              → bumped by epic zudolab/zudo-doc#1556 sub-issue #1557 (T1
+ *                vt-chrome-static pin bump: 6754312 picks up three post-
+ *                deep-review fix rounds — round-1 (8258782) client-router
+ *                typo + path-traversal gate + PathsCache collision + negative
+ *                sourcemap cast + public/ walk logging + config validation;
+ *                round-2 (66b3ce9) policy.rs root-anchor + CSS source-
+ *                directive escaping + schema integer overflow tighten;
+ *                round-3 (6754312) CSS-in-components policy carve-out +
+ *                content-type cold-start fix + write-cache ordering +
+ *                plugin-runner map leak guard + persist.rs tracing-warn.)
  */
 
 // zfb.config.ts — entry-point config consumed by the zfb engine.

@@ -17,7 +17,7 @@ import { smartBreakToHtml } from "@/utils/smart-break";
 // also pull lifecycle event names from the v2 transitions module
 // rather than hard-coding `astro:*` literals — keeps the entire repo's
 // post-navigate listener vocabulary on a single source of truth.
-import { AFTER_NAVIGATE_EVENT } from "@zudo-doc/zudo-doc-v2/transitions";
+import { AFTER_NAVIGATE_EVENT, BEFORE_NAVIGATE_EVENT } from "@zudo-doc/zudo-doc-v2/transitions";
 
 function ToggleChevron({ isExpanded, className }: { isExpanded: boolean; className?: string }) {
   return (
@@ -122,6 +122,59 @@ function useActiveSlug(nodes: NavNode[], initial?: string): string | undefined {
   return slug;
 }
 
+/**
+ * Preserve `#desktop-sidebar` scrollTop across SPA navigations.
+ *
+ * The scroll position is captured at BEFORE_NAVIGATE_EVENT time (before any
+ * DOM changes), then restored after the full navigation cycle settles.
+ *
+ * Two things can reset scrollTop during the transition:
+ *   1. moveBefore() moving the <aside> to <html> and back during the body swap.
+ *   2. Preact re-renders (aria-current update, category auto-open effects).
+ *
+ * We save on BEFORE_NAVIGATE_EVENT (guaranteed to fire before the DOM is
+ * touched), and restore on AFTER_NAVIGATE_EVENT after a short delay to let
+ * all Preact effect cascades settle.
+ */
+function useSidebarScrollPreserve() {
+  useEffect(() => {
+    let savedScrollTop = 0;
+    let restoreTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const onBefore = () => {
+      // Cancel any in-flight restore from a previous nav so rapid consecutive
+      // navigations don't clobber the scroll position of the final destination.
+      if (restoreTimer !== undefined) {
+        clearTimeout(restoreTimer);
+        restoreTimer = undefined;
+      }
+      const aside = document.querySelector<HTMLElement>("#desktop-sidebar");
+      if (aside) savedScrollTop = aside.scrollTop;
+    };
+
+    const onAfter = () => {
+      const aside = document.querySelector<HTMLElement>("#desktop-sidebar");
+      if (!aside) return;
+      // Restore after Preact re-render and all cascaded effects (category
+      // auto-open) have settled. A 50 ms timeout sits comfortably after
+      // Preact's synchronous + microtask flush and any rAF-batched effects,
+      // while being well below the 300 ms the harness waits before sampling.
+      restoreTimer = setTimeout(() => {
+        restoreTimer = undefined;
+        aside.scrollTop = savedScrollTop;
+      }, 50);
+    };
+
+    document.addEventListener(BEFORE_NAVIGATE_EVENT, onBefore);
+    document.addEventListener(AFTER_NAVIGATE_EVENT, onAfter);
+    return () => {
+      document.removeEventListener(BEFORE_NAVIGATE_EVENT, onBefore);
+      document.removeEventListener(AFTER_NAVIGATE_EVENT, onAfter);
+      if (restoreTimer !== undefined) clearTimeout(restoreTimer);
+    };
+  }, []);
+}
+
 function filterTree(nodes: NavNode[], query: string): NavNode[] {
   return nodes.reduce<NavNode[]>((acc, node) => {
     const matchesLabel = node.label.toLowerCase().includes(query.toLowerCase());
@@ -215,6 +268,7 @@ function SidebarFooter({ links, themeDefaultMode }: { links?: LocaleLink[]; them
 
 export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToMenuLabel, localeLinks, themeDefaultMode }: SidebarTreeProps) {
   const activeSlug = useActiveSlug(nodes, currentSlug);
+  useSidebarScrollPreserve();
   const [query, setQuery] = useState("");
   const [showingRootMenu, setShowingRootMenu] = useState(false);
   const filterRef = useRef<HTMLInputElement>(null);

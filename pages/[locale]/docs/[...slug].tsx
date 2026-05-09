@@ -255,6 +255,16 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
     ? settings.siteUrl.replace(/\/$/, "") + pageUrl
     : undefined;
 
+  // Persist key: locale + nav-section so the sidebar DOM node is reused
+  // across same-locale + same-section navigations only. No sanitizer needed —
+  // both lang (BCP-47 locale string) and navSection (filesystem-derived
+  // kebab-case slug) come from controlled, trusted sources.
+  const navSection = getNavSectionForSlug(slug);
+  const hideSidebar = entry?.data?.hide_sidebar;
+  const sidebarPersistKey = hideSidebar
+    ? undefined
+    : `sidebar-${locale}-${navSection ?? "default"}`;
+
   return (
     <DocLayoutWithDefaults
       title={composeMetaTitle(title)}
@@ -262,10 +272,11 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
       head={<HeadWithDefaults title={title} description={description} canonical={canonical} />}
       lang={locale}
       noindex={settings.noindex}
-      hideSidebar={entry?.data?.hide_sidebar}
+      hideSidebar={hideSidebar}
       hideToc={entry?.data?.hide_toc}
       headings={headings}
       canonical={canonical}
+      sidebarPersistKey={sidebarPersistKey}
       headerOverride={
         <HeaderWithDefaults
           lang={locale}
