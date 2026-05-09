@@ -9,7 +9,7 @@ import {
 import type {
   ColorTweakState,
   TweakState,
-} from "@/components/design-token-tweak/state/tweak-state";
+} from "@/utils/design-token-types";
 
 /** Fully-populated 16-color palette whose entries look obviously synthetic so
  *  tests can spot a palette leak at a glance. */
