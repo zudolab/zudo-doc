@@ -244,7 +244,9 @@ jobs:
         id: zdtp-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          path: ../zdtp/packages/zudo-design-token-panel/dist
+          # Cache the full package dir (not just dist/) — pnpm reads package.json
+          # from the package root when resolving file: deps at install time.
+          path: ../zdtp/packages/zudo-design-token-panel
           key: zdtp-dist-${{ env.ZDTP_PINNED_SHA }}
 
       - name: Clone + build zdtp
@@ -259,7 +261,7 @@ jobs:
         if: steps.zdtp-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          path: ../zdtp/packages/zudo-design-token-panel/dist
+          path: ../zdtp/packages/zudo-design-token-panel
           key: zdtp-dist-${{ env.ZDTP_PINNED_SHA }}
 
       - name: Install dependencies
@@ -316,7 +318,7 @@ jobs:
         id: zdtp-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          path: ../zdtp/packages/zudo-design-token-panel/dist
+          path: ../zdtp/packages/zudo-design-token-panel
           key: zdtp-dist-${{ env.ZDTP_PINNED_SHA }}
 
       - name: Clone + build zdtp (cache miss fallback)
@@ -380,7 +382,7 @@ jobs:
         id: zdtp-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          path: ../zdtp/packages/zudo-design-token-panel/dist
+          path: ../zdtp/packages/zudo-design-token-panel
           key: zdtp-dist-${{ env.ZDTP_PINNED_SHA }}
 
       - name: Clone + build zdtp (cache miss fallback)
