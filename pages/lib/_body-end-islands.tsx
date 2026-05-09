@@ -30,16 +30,13 @@
 
 import type { VNode, JSX } from "preact";
 import { Island } from "@takazudo/zfb";
+import { settings } from "@/config/settings";
 
-// Spike: mount the new zdtp panel alongside the legacy panel when ?dtp=v2 is
-// present in the URL. This gates the W2-1 spike so the legacy panel is
-// unchanged for all other users. W3-1a will remove this block and replace it
-// with the production bootstrap module (delete the "-spike" suffix file).
-if (
-  typeof window !== "undefined" &&
-  new URLSearchParams(window.location.search).get("dtp") === "v2"
-) {
-  void import("@/lib/design-token-panel-bootstrap-spike");
+// Production bootstrap for the zdtp panel. Loaded as a side-effect when the
+// feature flag is enabled; the dynamic import keeps the zdtp bundle out of
+// pages that disable the panel.
+if (settings.designTokenPanel || settings.colorTweakPanel) {
+  void import("@/lib/design-token-panel-bootstrap");
 }
 
 import AiChatModal from "@/components/ai-chat-modal";
