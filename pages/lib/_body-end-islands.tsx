@@ -37,7 +37,6 @@ import { Island } from "@takazudo/zfb";
 // with the production bootstrap module (delete the "-spike" suffix file).
 if (
   typeof window !== "undefined" &&
-  new URLSearchParams(window.location.search).has("dtp") &&
   new URLSearchParams(window.location.search).get("dtp") === "v2"
 ) {
   void import("@/lib/design-token-panel-bootstrap-spike");
