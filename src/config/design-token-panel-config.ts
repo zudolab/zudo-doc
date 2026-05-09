@@ -21,7 +21,12 @@ import type {
   PanelConfig,
   ColorScheme as ZdtpColorScheme,
 } from "@takazudo/zudo-design-token-panel";
-import { SPACING_TOKENS, FONT_TOKENS, SIZE_TOKENS, COLOR_TOKENS } from "./design-tokens-manifest";
+import {
+  SPACING_TOKENS,
+  FONT_TOKENS,
+  SIZE_TOKENS,
+  COLOR_TOKENS,
+} from "./design-tokens-manifest";
 import { colorSchemes } from "./color-schemes";
 import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "./color-scheme-utils";
 import { colorTweakPresets } from "./color-tweak-presets";
