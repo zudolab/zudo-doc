@@ -139,6 +139,18 @@ Colorタブは、以前のColor Tweak Panelがタブの1つに収まった形で
 - doc レイアウト（`@zudo-doc/zudo-doc-v2/doclayout`）が `<head>` に注入するFOUC防止スクリプトも、v2→v1の同じ順で参照します。これにより、古いデバイスでも最初のペイント前に保存済みのカラーが適用されます。
 - ヘッダーの **Reset all** をクリックすると両方のキーがクリアされ、`src/config/settings.ts` で宣言されたカラースキームに戻ります。
 
+<Note title="ストレージプレフィックスの継続性保証">
+
+ストレージプレフィックス `zudo-doc-tweak` は `src/config/design-token-panel-config.ts` に固定されており、zdtpへの移行を経ても変わりません。移行前にユーザーが保存したトークンは自動的に読み込まれ、手動のマイグレーション作業は不要です。
+
+</Note>
+
+## 実装
+
+パネルUIは `@takazudo/zudo-design-token-panel`（zdtp）npmパッケージが提供します。zudo-docは `src/lib/design-token-panel-bootstrap.ts` 内で `configurePanel(designTokenPanelConfig)` を呼び出してzdtpを組み込んでいます。パネルはこの呼び出しのサイドエフェクトとして自己マウントされるため、Preactアイランドの登録は不要です。
+
+ヘッダーのトリガーボタンは `window` に `toggle-design-token-panel` カスタムイベントをディスパッチします。zdtpはこのイベントをネイティブに受け取るため、`settings.headerRightItems` でトリガーをカスタマイズしても追加の配線は必要ありません。
+
 ## 設定リファレンス
 
 | 設定 | 型 | 説明 |

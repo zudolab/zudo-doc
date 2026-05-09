@@ -87,3 +87,20 @@ src/components/design-token-tweak/index.tsx
 src/components/doc-history.tsx
 src/components/image-enlarge.tsx
 src/components/find-in-page-init.tsx
+
+# zdtp panel template variants — intentionally differ from production in two ways:
+#  1. design-token-panel-config.ts: template uses generic placeholder IDs/storage
+#     keys ("my-doc-tweak", "myDoc", etc.) and an empty colorPresets map, while
+#     production has zudo-doc-specific values and imports colorTweakPresets. The
+#     generator injects project-name-specific values via the feature module.
+#  2. design-token-panel-bootstrap.ts: template inlines literal zfb lifecycle
+#     event strings ("zfb:before-preparation", "zfb:after-swap") because
+#     downstream scaffolds do not depend on @zudo-doc/zudo-doc-v2 as a runtime
+#     dep. Production imports BEFORE_NAVIGATE_EVENT / AFTER_NAVIGATE_EVENT from
+#     @zudo-doc/zudo-doc-v2/transitions. Reconcile if/when create-zudo-doc
+#     migrates onto the v2 transitions module.
+#  3. design-token-types.ts: template has fewer comments (zudo-doc-specific
+#     migration context stripped; upstream issue notes retained).
+src/config/design-token-panel-config.ts
+src/lib/design-token-panel-bootstrap.ts
+src/utils/design-token-types.ts

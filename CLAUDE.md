@@ -10,7 +10,8 @@ Minimal documentation framework built with zfb, MDX, Tailwind CSS v4, and Preact
 - **MDX** — authored under `src/content/`, content directory configurable via `docsDir` setting; pipeline configured in `zfb.config.ts`
 - **Tailwind CSS v4** — via `@tailwindcss/vite`
 - **Preact** — for interactive islands (TOC scroll spy, sidebar toggle, collapsible categories) and server-rendered content typography components; runs in compat mode for React API compatibility
-- **syntect** — built-in code highlighting, run by zfb's Rust pipeline at build time (single fixed theme: `base16-ocean-dark`); the `shikiTheme` field on each color scheme is a separate runtime-only setting consumed by the design-token-tweak panel's client-side Shiki preview
+- **syntect** — built-in code highlighting, run by zfb's Rust pipeline at build time (single fixed theme: `base16-ocean-dark`); the `shikiTheme` field on each color scheme is a separate runtime-only setting consumed by the zdtp panel's client-side Shiki preview
+- **@takazudo/zudo-design-token-panel (zdtp)** — external npm package that owns the Design Token Panel UI; wired via `configurePanel(designTokenPanelConfig)` in `src/lib/design-token-panel-bootstrap.ts`; self-mounts as a side-effect (no Preact island registration needed)
 - **TypeScript** — strict mode (project `tsconfig.json` sets `strict: true` plus the full set of `strict*` flags directly)
 
 ## Commands
@@ -62,7 +63,7 @@ src/
 - All components are **Preact `.tsx`** — there are no `.astro` files. Pages, layouts, and component overrides are all written as Preact function components.
 - Default to **server-rendered Preact** (no `client:*` directive) — emits zero JS for static markup
 - Promote a component to a **client island** only when it needs interactivity. zfb hydration is opt-in via the `ssr-islands.tsx` registry / standard `client:*`-style props on island wrappers.
-- Current client islands: `toc.tsx`, `mobile-toc.tsx`, `sidebar-toggle.tsx`, `sidebar-tree.tsx`, `theme-toggle.tsx`, `doc-history.tsx`, `find-bar.tsx`, `image-enlarge.tsx`, `ai-chat-modal.tsx`, design-token-tweak panel
+- Current client islands: `toc.tsx`, `mobile-toc.tsx`, `sidebar-toggle.tsx`, `sidebar-tree.tsx`, `theme-toggle.tsx`, `doc-history.tsx`, `find-bar.tsx`, `image-enlarge.tsx`, `ai-chat-modal.tsx`, zdtp panel (self-mounted via `configurePanel()`, not registered in the island registry)
 - Content typography components (`src/components/content/`): server-rendered Preact functions that override HTML elements emitted by MDX via the `<Content components={...} />` mapping in `pages/_mdx-components.ts`. Includes: headings (h2-h4), paragraph, link, strong, blockquote, lists (ul/ol), table.
 
 ### Content Collections

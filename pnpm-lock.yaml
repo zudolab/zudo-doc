@@ -23,6 +23,9 @@ importers:
       '@takazudo/zfb-runtime':
         specifier: file:../zfb/packages/zfb-runtime
         version: file:../zfb/packages/zfb-runtime(@takazudo/zfb@file:../zfb/packages/zfb)
+      '@takazudo/zudo-design-token-panel':
+        specifier: file:../zdtp/packages/zudo-design-token-panel
+        version: file:../zdtp/packages/zudo-design-token-panel(preact@10.29.0)
       '@types/hast':
         specifier: ^3.0.4
         version: 3.0.4
@@ -1720,6 +1723,12 @@ packages:
 
   '@takazudo/zfb@file:../zfb/packages/zfb':
     resolution: {directory: ../zfb/packages/zfb, type: directory}
+
+  '@takazudo/zudo-design-token-panel@file:../zdtp/packages/zudo-design-token-panel':
+    resolution: {directory: ../zdtp/packages/zudo-design-token-panel, type: directory}
+    hasBin: true
+    peerDependencies:
+      preact: ^10.29.1
 
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
@@ -4948,6 +4957,10 @@ snapshots:
       hono: 4.12.15
 
   '@takazudo/zfb@file:../zfb/packages/zfb': {}
+
+  '@takazudo/zudo-design-token-panel@file:../zdtp/packages/zudo-design-token-panel(preact@10.29.0)':
+    dependencies:
+      preact: 10.29.0
 
   '@types/babel__core@7.20.5':
     dependencies:

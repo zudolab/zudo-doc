@@ -4,68 +4,17 @@ export const designTokenPanelFeature: FeatureModule = () => ({
   name: "designTokenPanel",
   injections: [
     {
+      // Bootstrap the zdtp panel as a side-effect dynamic import.
+      // The import is gated on the feature flag so the zdtp bundle is excluded
+      // from pages that disable the panel. No Island wrapper is needed — zdtp
+      // mounts its own DOM when configurePanel() runs inside the bootstrap module.
       file: "src/layouts/doc-layout.astro",
       anchor: "// @slot:doc-layout:imports",
-      content: `import DesignTokenTweakPanel from "@/components/design-token-tweak";
-import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "@/config/color-scheme-utils";`,
-    },
-    {
-      // Inline tweak-state script: uses JSX dangerouslySetInnerHTML +
-      // template-literal interpolation so the server-side values of
-      // SEMANTIC_DEFAULTS and SEMANTIC_CSS_NAMES are embedded into the
-      // HTML output at SSR time (same effect as Astro's define:vars).
-      file: "src/layouts/doc-layout.astro",
-      anchor: "<!-- @slot:doc-layout:head-scripts -->",
-      content: `    {(settings.designTokenPanel || settings.colorTweakPanel) && (
-      <script dangerouslySetInnerHTML={{ __html: \`(function () {
-  var tweakSemanticDefaults = \${JSON.stringify(SEMANTIC_DEFAULTS)};
-  var tweakSemanticCss = \${JSON.stringify(SEMANTIC_CSS_NAMES)};
-  var V1_KEY = "zudo-doc-tweak-state";
-  var V2_KEY = "zudo-doc-tweak-state-v2";
-  function readColorState() {
-    var rawV2 = null;
-    try { rawV2 = localStorage.getItem(V2_KEY); } catch (e) {}
-    if (rawV2) {
-      try {
-        var parsed = JSON.parse(rawV2);
-        if (parsed && parsed.color) return parsed.color;
-      } catch (e) {}
-    }
-    var rawV1 = null;
-    try { rawV1 = localStorage.getItem(V1_KEY); } catch (e) {}
-    if (rawV1) {
-      try { return JSON.parse(rawV1); } catch (e) {}
-    }
-    return null;
-  }
-  function applyTweakState() {
-    var s = readColorState();
-    if (!s || !s.palette || s.palette.length !== 16 || s.background === undefined) return;
-    var root = document.documentElement;
-    for (var i = 0; i < 16; i++) root.style.setProperty("--zd-" + i, s.palette[i]);
-    root.style.setProperty("--zd-bg", s.palette[s.background]);
-    root.style.setProperty("--zd-fg", s.palette[s.foreground]);
-    root.style.setProperty("--zd-cursor", s.palette[s.cursor]);
-    root.style.setProperty("--zd-sel-bg", s.palette[s.selectionBg]);
-    root.style.setProperty("--zd-sel-fg", s.palette[s.selectionFg]);
-    for (var key in tweakSemanticCss) {
-      var m = s.semanticMappings && s.semanticMappings[key];
-      if (m === undefined) m = tweakSemanticDefaults[key];
-      var val = m === "bg" ? s.palette[s.background] : m === "fg" ? s.palette[s.foreground] : s.palette[m];
-      root.style.setProperty(tweakSemanticCss[key], val);
-    }
-  }
-  applyTweakState();
-})();\` }} />
-    )}`,
-      position: "after",
-    },
-    {
-      file: "src/layouts/doc-layout.astro",
-      anchor: "<!-- @slot:doc-layout:body-end-components -->",
-      content:
-        '    {(settings.designTokenPanel || settings.colorTweakPanel) && <Island when="load"><DesignTokenTweakPanel /></Island>}',
-      position: "after",
+      content: `// Production bootstrap for @takazudo/zudo-design-token-panel (zdtp).
+// Loaded as a side-effect when the feature flag is enabled.
+if (settings.designTokenPanel || settings.colorTweakPanel) {
+  void import("@/lib/design-token-panel-bootstrap");
+}`,
     },
     {
       file: "src/components/header.astro",
