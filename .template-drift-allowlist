@@ -87,3 +87,37 @@ src/components/design-token-tweak/index.tsx
 src/components/doc-history.tsx
 src/components/image-enlarge.tsx
 src/components/find-in-page-init.tsx
+
+# zdtp-migration W3-2 (#1572) — production deleted src/components/design-token-tweak/
+# entirely; the new panel is @takazudo/zudo-design-token-panel (zdtp) bootstrapped
+# via src/lib/design-token-panel-bootstrap.ts. The template tree under
+# packages/create-zudo-doc/templates/features/designTokenPanel/ still carries the
+# legacy panel files — W5-1 will remove the legacy template and replace it with
+# the zdtp wiring. Allowlisted here to keep PR-checks green during the transition
+# window between W3-2 and W5-1.
+src/components/design-token-tweak/__tests__/sanitize-css-value.test.ts
+src/components/design-token-tweak/__tests__/settings-alias.test.ts
+src/components/design-token-tweak/__tests__/size-manifest.test.ts
+src/components/design-token-tweak/__tests__/spacing-state.test.ts
+src/components/design-token-tweak/__tests__/token-manifest.test.ts
+src/components/design-token-tweak/__tests__/tweak-state.test.ts
+src/components/design-token-tweak/controls/.gitkeep
+src/components/design-token-tweak/controls/pill-slider-row.tsx
+src/components/design-token-tweak/controls/sanitize-css-value.ts
+src/components/design-token-tweak/controls/select-row.tsx
+src/components/design-token-tweak/controls/slider-row.tsx
+src/components/design-token-tweak/controls/text-row.tsx
+src/components/design-token-tweak/export-modal.tsx
+src/components/design-token-tweak/import-modal.tsx
+src/components/design-token-tweak/state/persist.ts
+src/components/design-token-tweak/state/tweak-state.ts
+src/components/design-token-tweak/tabs/color-tab.tsx
+src/components/design-token-tweak/tabs/font-tab.tsx
+src/components/design-token-tweak/tabs/size-tab.tsx
+src/components/design-token-tweak/tabs/spacing-tab.tsx
+src/components/design-token-tweak/tokens/manifest.ts
+# design-token-serde.ts: W3-1b updated the prod file to import from the new
+# types shim (@/utils/design-token-types) and zdtp manifest; the template still
+# carries the pre-migration version referencing the legacy panel paths. W5-1 will
+# sync the template.
+src/utils/design-token-serde.ts
