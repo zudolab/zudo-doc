@@ -3,15 +3,17 @@
 // colorDefaults })`) is intentionally byte-identical to the host project's
 // version so the export output for an unchanged scheme remains line-equal to
 // today's output — a hard acceptance criterion for the theme topic.
+//
+// W3-2 (zdtp-migration): migrated ColorTweakState/TweakState imports to the
+// canonical shim in @/utils/design-token-types; removed initColorFromSchemeData
+// (legacy panel helper deleted with src/components/design-token-tweak/).
 
 import { useState, useEffect, useMemo, useRef } from "preact/hooks";
 import { serialize } from "@/utils/design-token-serde";
 import {
   type ColorTweakState,
   type TweakState,
-  initColorFromSchemeData,
-} from "@/components/design-token-tweak/state/tweak-state";
-import { colorSchemes } from "@/config/color-schemes";
+} from "@/utils/design-token-types";
 
 interface DesignTokenExportModalProps {
   onClose: () => void;
@@ -29,13 +31,10 @@ function resolveColorDefaults(
   fallback: ColorTweakState,
   explicit?: ColorTweakState,
 ): ColorTweakState {
-  if (explicit) return explicit;
-  // No explicit defaults → pick the first scheme so we still produce a
-  // sensible baseline shape. This path is only hit in edge cases; the panel
-  // always passes explicit defaults.
-  const firstScheme = Object.values(colorSchemes)[0];
-  if (firstScheme) return initColorFromSchemeData(firstScheme);
-  return fallback;
+  // Explicit defaults take priority (normal path — the panel always passes them).
+  // W3-2: initColorFromSchemeData removed with the legacy panel; fall through to
+  // the caller-supplied fallback state for the rare edge case.
+  return explicit ?? fallback;
 }
 
 export default function ColorTweakExportModal({

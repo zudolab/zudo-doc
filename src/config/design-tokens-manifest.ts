@@ -5,7 +5,7 @@
  *
  * Imported by:
  *  - src/config/design-token-panel-config.ts  (new zdtp PanelConfig)
- *  - src/components/design-token-tweak/tokens/manifest.ts  (legacy re-export)
+ *  - (W3-2: legacy re-export src/components/design-token-tweak/tokens/manifest.ts deleted)
  *
  * Type strategy: the zdtp `TokenDef` interface (group: string) and the local
  * legacy `TokenDef` interface (group: TokenGroup closed union) are structurally
