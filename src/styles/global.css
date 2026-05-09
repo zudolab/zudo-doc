@@ -1153,17 +1153,44 @@ dialog.zd-enlarge-dialog::backdrop {
  * deleted — Strategy B uses <ClientRouter /> which drives same-document
  * transitions via document.startViewTransition on each navigation.
  *
- * These root pseudo-element rules remain: they fire for every
- * same-document VT that <ClientRouter /> initiates, producing the
- * 150ms-out / 300ms-in content cross-fade.
+ * Chrome extraction via view-transition-name (Strategy B+, zudolab/zudo-doc#1558):
+ * <header>, <aside id="desktop-sidebar">, <footer>, and the desktop-sidebar-toggle
+ * button each carry a data-zfb-transition-persist attribute whose value is keyed
+ * by locale and nav-section. The four attribute selectors below assign a stable
+ * view-transition-name based on the attribute value prefix, extracting those
+ * elements from the root snapshot into their own named layers:
+ *   - header-{lang}          → zfb-header
+ *   - sidebar-{locale}-…     → zfb-sidebar
+ *   - footer-{lang}          → zfb-footer
+ *   - desktop-sidebar-toggle → zfb-sidebar-toggle
  *
- * Note: data-zfb-transition-persist annotations were removed from
- * <header>, <aside id="desktop-sidebar">, and <footer> (W7A post-fix
- * — zudolab/zudo-doc#1510). zfb's swap-functions byte-moves persisted
- * non-island elements without refreshing per-page state (locale,
- * active-nav, etc.), so persistence on those elements broke EN/JA
- * locale switching and active-page highlighting. They now ride the
- * root cross-fade like everything else. */
+ * Once extracted, the root cross-fade animates only non-chrome content (main,
+ * article, TOC, etc.). The twelve ::view-transition-{old,new,group}(<name>)
+ * rules disable animation for all four chrome layers. The group pseudo must be
+ * neutralised too — even when old/new are static the group container can still
+ * produce a geometry-morph animation when snapshot size/position differs. */
+
+/* Chrome extraction — assign view-transition-name from data-zfb-transition-persist */
+[data-zfb-transition-persist^="header-"]               { view-transition-name: zfb-header; }
+[data-zfb-transition-persist^="sidebar-"]              { view-transition-name: zfb-sidebar; }
+[data-zfb-transition-persist^="footer-"]               { view-transition-name: zfb-footer; }
+[data-zfb-transition-persist="desktop-sidebar-toggle"] { view-transition-name: zfb-sidebar-toggle; }
+
+/* Disable animation for all four chrome layers (old, new, and group) */
+::view-transition-old(zfb-header),
+::view-transition-new(zfb-header),
+::view-transition-group(zfb-header),
+::view-transition-old(zfb-sidebar),
+::view-transition-new(zfb-sidebar),
+::view-transition-group(zfb-sidebar),
+::view-transition-old(zfb-footer),
+::view-transition-new(zfb-footer),
+::view-transition-group(zfb-footer),
+::view-transition-old(zfb-sidebar-toggle),
+::view-transition-new(zfb-sidebar-toggle),
+::view-transition-group(zfb-sidebar-toggle) { animation: none; }
+
+/* Root cross-fade rules — animate only the non-chrome snapshot */
 ::view-transition-old(root) {
   animation: 150ms ease-in both contentFadeOut;
 }
