@@ -528,7 +528,7 @@ Claude Code configuration reference.
 
 ## Resources
 
-<CategoryTreeNav category="claude" />
+<CategoryNav category="claude" />
 `;
   fs.writeFileSync(path.join(outputDir, "index.mdx"), index);
 }
