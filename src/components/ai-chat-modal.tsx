@@ -11,6 +11,7 @@ import { useState, useEffect, useRef, useCallback } from "preact/compat";
 import type { ChatMessage } from "@/types/ai-chat";
 import { renderMarkdown } from "@/utils/render-markdown";
 import { SmartBreak } from "@/utils/smart-break";
+import { BEFORE_NAVIGATE_EVENT } from "@zudo-doc/zudo-doc-v2/transitions";
 
 interface AiChatModalProps {
   basePath: string;
@@ -30,7 +31,8 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
   useEffect(() => {
     function handleToggle() {
       const dialog = dialogRef.current;
-      if (!dialog) return;
+      // Guard against stale refs from detached DOM after SPA navigation (#1621)
+      if (!dialog || !dialog.isConnected) return;
       if (dialog.open) {
         dialog.close();
       } else {
@@ -54,6 +56,16 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
     }
     dialog.addEventListener("close", handleClose);
     return () => dialog.removeEventListener("close", handleClose);
+  }, []);
+
+  // Close dialog before SPA body swap to avoid stale-ref errors on next open (#1621)
+  useEffect(() => {
+    function handleBeforeNavigate() {
+      const dialog = dialogRef.current;
+      if (dialog?.open) dialog.close();
+    }
+    document.addEventListener(BEFORE_NAVIGATE_EVENT, handleBeforeNavigate);
+    return () => document.removeEventListener(BEFORE_NAVIGATE_EVENT, handleBeforeNavigate);
   }, []);
 
   // Auto-scroll to bottom when messages change
