@@ -22,10 +22,6 @@
 # the built HTML because the JA page references siblings whose JA
 # mirrors don't exist:
 #
-#   - `claude-commands` exists ONLY in JA at
-#     `src/content/docs-ja/claude-commands/index.mdx`; the JA
-#     locale switcher / nav generator emits an EN URL anyway,
-#     producing the 3 entries below in the same JA page.
 #   - `ai-assistant-api.mdx` and `ai-assistant.mdx` exist ONLY in
 #     EN; the JA `ai-chat-worker.mdx` page links to them with
 #     relative `.mdx` paths, which the resolver correctly cannot
@@ -35,12 +31,7 @@
 # Follow-ups (not in scope for #1581):
 #   - Either remove the JA `ai-chat-worker.mdx` page's references
 #     to those 2 EN-only siblings, OR add JA mirrors for them.
-#   - Fix the JA-side nav/locale-switcher to drop EN-only entries
-#     instead of emitting broken EN URLs.
 
-dist/ja/docs/claude-commands/index.html:75:/pj/zudo-doc/docs/claude-commands/
-dist/ja/docs/claude-commands/index.html:439:/pj/zudo-doc/docs/claude-commands/
-dist/ja/docs/claude-commands/index.html:603:/pj/zudo-doc/docs/claude-commands/
 dist/ja/docs/reference/ai-chat-worker/index.html:603:./ai-assistant-api/
 dist/ja/docs/reference/ai-chat-worker/index.html:621:../guides/ai-assistant/
 
