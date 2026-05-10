@@ -1,5 +1,12 @@
 @import "tailwindcss/preflight";
 @import "tailwindcss/utilities";
+/* Design token panel chrome — the panel package's bundled stylesheet defines
+   the panel shell and modal chrome. Imported here so the rules land in the
+   main page CSS bundle (not a deferred chunk), ensuring the panel renders
+   correctly on first click. Vite library mode strips the source CSS import
+   from the emitted JS, so this CSS-side import is the required pull point.
+   See @takazudo/zudo-design-token-panel PORTABLE-CONTRACT.md §7. */
+@import "@takazudo/zudo-design-token-panel/styles.css";
 
 /* ========================================
  * Tailwind v4 content sources
