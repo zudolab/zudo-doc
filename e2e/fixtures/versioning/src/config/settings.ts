@@ -34,6 +34,7 @@ export const settings = {
     },
   ] as VersionConfig[] | false,
   claudeResources: false as { claudeDir: string; projectRoot?: string } | false,
+  defaultLocaleOnlyPrefixes: [] as string[],
   headerNav: [
     {
       label: "Getting Started",

@@ -30,6 +30,7 @@ export const settings = {
   colorTweakPanel: true as boolean,
   docHistory: false,
   claudeResources: false as { claudeDir: string; projectRoot?: string } | false,
+  defaultLocaleOnlyPrefixes: [] as string[],
   headerNav: [
     {
       label: "Getting Started",
