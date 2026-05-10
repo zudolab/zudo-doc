@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .zfb/
+.zfb-build/
 worktrees/
 __inbox/
 .env
