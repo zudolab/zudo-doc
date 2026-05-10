@@ -6,26 +6,27 @@ set -euo pipefail
 # Step order (cheap → expensive):
 #   1. Format check (mdx)
 #   2. Template drift check
-#   3. Tags audit (--ci)
-#   4. Design token lint
-#   5. Type checking (zfb check)
-#   6. Build (zfb build)
-#   7. Link check
-#   8. HTML validation (html-validate dist/**/*.html)
-#   9. Automated preview smoke (blocking)
-#  10. Manual interactive smoke (operator-driven)
+#   3. Fixture settings drift check
+#   4. Tags audit (--ci)
+#   5. Design token lint
+#   6. Type checking (zfb check)
+#   7. Build (zfb build)
+#   8. Link check
+#   9. HTML validation (html-validate dist/**/*.html)
+#  10. Automated preview smoke (blocking)
+#  11. Manual interactive smoke (operator-driven)
 #
 # CI parity (Playwright E2E + GitHub Actions) is intentionally parked
 # to E9b until the post-cutover migration window closes.
 #
 # Env overrides for non-interactive use:
-#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 8)
+#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 9)
 #   B4PUSH_SKIP_PREVIEW_SMOKE=1  — skip the automated preview smoke
 #   B4PUSH_SKIP_MANUAL_SMOKE=1   — skip the manual interactive smoke
 
 START_TIME=$(date +%s)
 FAILURES=()
-TOTAL_STEPS=10
+TOTAL_STEPS=11
 CURRENT_STEP=0
 
 step() {
@@ -58,7 +59,15 @@ else
   fail "Template drift check"
 fi
 
-# ── Step 3: Tags audit ────────────────────────────────
+# ── Step 3: Fixture settings drift check ─────────────
+step "Fixture settings drift check"
+if (cd "$ROOT_DIR" && pnpm check:fixture-settings-drift); then
+  pass "Fixture settings drift check passed"
+else
+  fail "Fixture settings drift check"
+fi
+
+# ── Step 4: Tags audit ────────────────────────────────
 step "Tags audit (tags:audit --ci)"
 if (cd "$ROOT_DIR" && pnpm tags:audit --ci); then
   pass "Tags audit passed"
@@ -66,7 +75,7 @@ else
   fail "Tags audit"
 fi
 
-# ── Step 4: Design token lint ────────────────────────
+# ── Step 5: Design token lint ────────────────────────
 step "Design token lint"
 if (cd "$ROOT_DIR" && pnpm lint:tokens); then
   pass "Design token lint passed"
@@ -74,7 +83,7 @@ else
   fail "Design token lint"
 fi
 
-# ── Step 5: Type checking ─────────────────────────────
+# ── Step 6: Type checking ─────────────────────────────
 # Prefer `zfb check` (the post-cutover entry point). If it fails to
 # start (e.g. binary not yet built), fall back to `tsc --noEmit` so the
 # typecheck still gates pushes.
@@ -87,7 +96,7 @@ else
   fail "Type checking"
 fi
 
-# ── Step 6: Build ─────────────────────────────────────
+# ── Step 7: Build ─────────────────────────────────────
 step "Build (zfb build)"
 if (cd "$ROOT_DIR" && pnpm build); then
   pass "Build passed"
@@ -95,7 +104,7 @@ else
   fail "Build"
 fi
 
-# ── Step 7: Link check ────────────────────────────────
+# ── Step 8: Link check ────────────────────────────────
 #
 # Strict on broken links + absolute MDX-source warnings (real 404s
 # / sub-path bypass). Trailing-slash warnings stay warn-only — they
@@ -115,7 +124,7 @@ else
   fail "Link check"
 fi
 
-# ── Step 8: HTML validation ───────────────────────────
+# ── Step 9: HTML validation ───────────────────────────
 step "HTML validation (html-validate)"
 if [[ "${B4PUSH_SKIP_HTML_VALIDATE:-}" == "1" ]]; then
   skip "HTML validation (B4PUSH_SKIP_HTML_VALIDATE=1)"
@@ -127,7 +136,7 @@ else
   fi
 fi
 
-# ── Step 9: Automated preview smoke (blocking) ───────
+# ── Step 10: Automated preview smoke (blocking) ──────
 step "Preview smoke (automated)"
 if [[ "${B4PUSH_SKIP_PREVIEW_SMOKE:-}" == "1" ]]; then
   skip "Preview smoke (B4PUSH_SKIP_PREVIEW_SMOKE=1)"
@@ -139,7 +148,7 @@ else
   fi
 fi
 
-# ── Step 10: Manual interactive smoke ────────────────
+# ── Step 11: Manual interactive smoke ────────────────
 step "Manual interactive smoke"
 if [[ "${B4PUSH_SKIP_MANUAL_SMOKE:-}" == "1" ]]; then
   skip "Manual smoke (B4PUSH_SKIP_MANUAL_SMOKE=1)"

@@ -16,43 +16,19 @@
 # writes the missing JA mirror page), DELETE the entry — the
 # strict gate then surfaces real regressions in the same category.
 #
-# ----- Broken Links in Built HTML (5 entries) ---------------------
+# ----- Broken Links in Built HTML (0 entries) ---------------------
 #
-# JA-side cross-references to EN-only resources. These survive in
-# the built HTML because the JA page references siblings whose JA
-# mirrors don't exist:
+# Previously held entries for JA-side cross-references to EN-only
+# resources. The remaining 2 entries (`ai-assistant-api/` and
+# `ai-assistant/` references from the JA `ai-chat-worker.mdx` page)
+# were resolved by T6 (#1614): JA mirror pages were translated, so
+# the resolver now finds the targets and the entries are obsolete.
+
+# ----- Absolute Links Bypassing Base Path (0 entries) ------------
 #
-#   - `ai-assistant-api.mdx` and `ai-assistant.mdx` exist ONLY in
-#     EN; the JA `ai-chat-worker.mdx` page links to them with
-#     relative `.mdx` paths, which the resolver correctly cannot
-#     map (no JA target) and StripMdExtensionPlugin then renders
-#     as the broken relative href below.
-#
-# Follow-ups (not in scope for #1581):
-#   - Either remove the JA `ai-chat-worker.mdx` page's references
-#     to those 2 EN-only siblings, OR add JA mirrors for them.
-
-dist/ja/docs/reference/ai-chat-worker/index.html:603:./ai-assistant-api/
-dist/ja/docs/reference/ai-chat-worker/index.html:621:../guides/ai-assistant/
-
-# ----- Absolute Links Bypassing Base Path (5 entries) ------------
-#
-# Cannot be auto-converted to relative `.mdx` because the targets
-# are either (a) inline-code teaching examples, or (b) runtime-
-# generated routes with no MDX source.
-
-# Inline-code example in a `<Note>` callout that documents what
-# NOT to do — `[link text](/docs/some-page)` inside backticks.
-# The check-links MDX-source regex doesn't skip backtick-wrapped
-# code, so this false-positive is permanent until the regex is
-# upgraded.
-src/content/docs/guides/configuration.mdx:105:/docs/some-page
-
-# Runtime-generated tags index (`pages/docs/tags/...`) — has no
-# MDX source so a relative `.mdx` link can't resolve to it.
-src/content/docs/guides/frontmatter.mdx:163:/docs/tags/
-src/content/docs/guides/tags.mdx:56:/docs/tags/
-src/content/docs/guides/tags.mdx:72:/docs/tags/
-
-# Runtime-generated versions index — same shape as `/docs/tags/`.
-src/content/docs/guides/versioning.mdx:98:/docs/versions/
+# Previously held 5 entries; all removed after T4 (#1612):
+#   - inline-code false-positive: extractMdxAbsoluteLinks now strips
+#     inline-code spans before running the link regex (Fix A).
+#   - runtime-generated routes (/docs/tags/, /docs/versions/):
+#     checkMdxLinks now cross-checks against dist/ via resolveLink
+#     and drops warnings for hrefs that resolve to built routes (Fix B).

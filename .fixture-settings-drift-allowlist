@@ -1,0 +1,169 @@
+# .fixture-settings-drift-allowlist
+#
+# Each entry is a snapshot of a pre-existing *intentional* omission in an
+# e2e fixture's settings.ts, not a general escape hatch.
+#
+# Convention (enforced by review, not tooling):
+#   - SEED ONCE: entries are added when the checker is introduced, for keys
+#     whose absence is genuinely intentional (feature not exercised by fixture).
+#   - NEW KEYS: when src/config/settings.ts gains a new key, the gate fires
+#     for any fixture that lacks it.  To resolve: either (a) add the key to
+#     all five fixtures in the same commit, OR (b) add one entry per fixture
+#     here with a "# reason: ..." comment in the preceding line.
+#   - NO SILENT EXTENSIONS: every new allowlist entry needs a # reason: comment.
+#
+# Format: one entry per line — {fixture-name}:{key}
+# Comments: lines starting with # are ignored. Blank lines are ignored.
+# Exact-match only (no globs, no wildcards).
+#
+
+# ── trailingSlash ──────────────────────────────────────────────────────────────
+# reason: fixtures serve at base "/" so trailing-slash behaviour is irrelevant to E2E
+sidebar:trailingSlash
+i18n:trailingSlash
+theme:trailingSlash
+smoke:trailingSlash
+versioning:trailingSlash
+
+# ── githubUrl ─────────────────────────────────────────────────────────────────
+# reason: github-link component is only tested in the smoke fixture
+sidebar:githubUrl
+i18n:githubUrl
+theme:githubUrl
+versioning:githubUrl
+
+# ── tagPlacement ──────────────────────────────────────────────────────────────
+# reason: tag UI is not exercised in any fixture (docTags: false everywhere)
+sidebar:tagPlacement
+i18n:tagPlacement
+theme:tagPlacement
+smoke:tagPlacement
+versioning:tagPlacement
+
+# ── tagGovernance ─────────────────────────────────────────────────────────────
+# reason: tag governance enforcement is not tested in fixtures
+sidebar:tagGovernance
+i18n:tagGovernance
+theme:tagGovernance
+smoke:tagGovernance
+versioning:tagGovernance
+
+# ── tagVocabulary ─────────────────────────────────────────────────────────────
+# reason: tag vocabulary lookup is not tested in fixtures
+sidebar:tagVocabulary
+i18n:tagVocabulary
+theme:tagVocabulary
+smoke:tagVocabulary
+versioning:tagVocabulary
+
+# ── llmsTxt ───────────────────────────────────────────────────────────────────
+# reason: llms.txt generation is not exercised in these fixtures
+sidebar:llmsTxt
+i18n:llmsTxt
+theme:llmsTxt
+smoke:llmsTxt
+
+# ── cjkFriendly ───────────────────────────────────────────────────────────────
+# reason: CJK line-break behaviour is not tested in fixtures
+sidebar:cjkFriendly
+i18n:cjkFriendly
+theme:cjkFriendly
+smoke:cjkFriendly
+versioning:cjkFriendly
+
+# ── onBrokenMarkdownLinks ─────────────────────────────────────────────────────
+# reason: broken-link reporting mode is a build-time setting not observable in E2E
+sidebar:onBrokenMarkdownLinks
+i18n:onBrokenMarkdownLinks
+theme:onBrokenMarkdownLinks
+smoke:onBrokenMarkdownLinks
+versioning:onBrokenMarkdownLinks
+
+# ── aiAssistant ───────────────────────────────────────────────────────────────
+# reason: AI chat modal is only tested in the smoke fixture
+sidebar:aiAssistant
+i18n:aiAssistant
+theme:aiAssistant
+versioning:aiAssistant
+
+# ── designTokenPanel ──────────────────────────────────────────────────────────
+# reason: fixtures that test the panel use the deprecated colorTweakPanel alias;
+#         designTokenPanel (the new key) is not yet needed in fixtures
+sidebar:designTokenPanel
+i18n:designTokenPanel
+theme:designTokenPanel
+smoke:designTokenPanel
+versioning:designTokenPanel
+
+# ── sidebarResizer ────────────────────────────────────────────────────────────
+# reason: sidebar resizer feature is not exercised in any fixture
+sidebar:sidebarResizer
+i18n:sidebarResizer
+theme:sidebarResizer
+smoke:sidebarResizer
+versioning:sidebarResizer
+
+# ── sidebarToggle ─────────────────────────────────────────────────────────────
+# reason: sidebar toggle (mobile) feature is not exercised in any fixture
+sidebar:sidebarToggle
+i18n:sidebarToggle
+theme:sidebarToggle
+smoke:sidebarToggle
+versioning:sidebarToggle
+
+# ── imageEnlarge ──────────────────────────────────────────────────────────────
+# reason: image enlarge feature is only tested in the smoke fixture
+sidebar:imageEnlarge
+i18n:imageEnlarge
+theme:imageEnlarge
+versioning:imageEnlarge
+
+# ── frontmatterPreview ────────────────────────────────────────────────────────
+# reason: frontmatter preview panel is only tested in the smoke fixture
+sidebar:frontmatterPreview
+i18n:frontmatterPreview
+theme:frontmatterPreview
+versioning:frontmatterPreview
+
+# ── bodyFootUtilArea ──────────────────────────────────────────────────────────
+# reason: body-foot utility area (doc history link, view-source link) is only
+#         tested in the smoke fixture
+sidebar:bodyFootUtilArea
+i18n:bodyFootUtilArea
+theme:bodyFootUtilArea
+versioning:bodyFootUtilArea
+
+# ── htmlPreview ───────────────────────────────────────────────────────────────
+# reason: HTML preview component is only tested in the smoke fixture
+sidebar:htmlPreview
+i18n:htmlPreview
+theme:htmlPreview
+versioning:htmlPreview
+
+# ── versions ──────────────────────────────────────────────────────────────────
+# reason: version switcher is only tested in the versioning fixture
+sidebar:versions
+i18n:versions
+theme:versions
+smoke:versions
+
+# ── colorTweakPanel ───────────────────────────────────────────────────────────
+# reason: deprecated alias for designTokenPanel; only the fixtures that test the
+#         panel need it (theme, smoke); absent in sidebar/i18n/versioning
+sidebar:colorTweakPanel
+i18n:colorTweakPanel
+versioning:colorTweakPanel
+
+# ── footer ────────────────────────────────────────────────────────────────────
+# reason: footer content is not exercised in any fixture
+sidebar:footer
+i18n:footer
+theme:footer
+smoke:footer
+versioning:footer
+
+# ── headerRightItems ──────────────────────────────────────────────────────────
+# reason: header-right slot (version switcher, theme toggle, etc.) is not tested
+#         in the sidebar and i18n fixtures
+sidebar:headerRightItems
+i18n:headerRightItems
