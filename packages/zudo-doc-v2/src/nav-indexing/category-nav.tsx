@@ -81,7 +81,7 @@ export function CategoryNav(props: CategoryNavProps): JSX.Element | null {
             {child.label}
           </span>
           {child.description && (
-            <span class="mt-vsp-2xs block text-small text-muted">
+            <span class="mt-vsp-2xs block text-small text-muted group-hover:underline group-focus-visible:underline">
               {child.description}
             </span>
           )}
