@@ -1,6 +1,14 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: c371e4c (base/link-cleanup-zfb — link-pipeline parity:
+ *   commit: 6be1f38 (base/link-cleanup-zfb — link-pipeline parity:
+ *           same content as c371e4c (parent commit) PLUS the TS-side
+ *           type defs for `ZfbConfig.resolveMarkdownLinks` and
+ *           `ZfbConfig.trailingSlash`. Fixes a `pnpm check` TS2353
+ *           error on this consumer because the SDK type lookup walks
+ *           `file:../zfb/packages/zfb` (which CI checks out at the
+ *           pinned SHA) and the new fields needed type defs to match
+ *           the new Rust Config fields.
+ *   c371e4c (base/link-cleanup-zfb — link-pipeline parity:
  *           nested-route source map (preserves
  *           `components/code-blocks.mdx` → `/docs/components/code-blocks/`,
  *           sub #234 / zudolab/zudo-doc#1577); multi-locale
