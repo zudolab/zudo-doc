@@ -1,0 +1,131 @@
+---
+title: AI Assistant
+description: ドキュメントに関する質問に答える、組み込みのチャットアシスタント。
+sidebar_position: 16
+tags:
+  - ai
+---
+
+## 概要
+
+AIアシスタントは、ドキュメントサイトにチャットダイアログを追加します。ユーザーはヘッダーのスパークルアイコンをクリックしてダイアログを開き、ドキュメントの内容について質問できます。
+
+アシスタントは[llms.txtインテグレーション](./llms-txt.mdx)で生成されたドキュメント全文をコンテキストとして利用するため、サイト上のあらゆるページに関する質問に答えられます。
+
+## アシスタントの有効化
+
+`src/config/settings.ts`で`aiAssistant`を`true`に設定します：
+
+```ts title="src/config/settings.ts"
+export const settings = {
+  aiAssistant: true,
+  // ...
+};
+```
+
+有効にすると：
+
+- ヘッダーバーにスパークルアイコンが表示されます
+- `POST /api/ai-chat`エンドポイントがCloudflare PagesのSSRルートとして利用可能になります
+
+## 環境設定
+
+チャットエンドポイントはCloudflare PagesのSSRルート（`pages/api/ai-chat.tsx`）として動作し、設定は`wrangler.toml`に定義されたCloudflare環境バインディングから読み込みます。
+
+### 必要なCFバインディング
+
+**シークレット** — `wrangler secret put ANTHROPIC_API_KEY`で設定します：
+
+```env
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+**変数** — `wrangler.toml`で設定します：
+
+```toml title="wrangler.toml"
+[vars]
+DOCS_SITE_URL = "https://your-docs-site.pages.dev"
+RATE_LIMIT_PER_MINUTE = "10"
+RATE_LIMIT_PER_DAY = "100"
+```
+
+**KV名前空間** — レート制限と監査ログ用：
+
+```sh
+wrangler kv namespace create RATE_LIMIT
+```
+
+返却された`id`を`wrangler.toml`の`[[kv_namespaces]]`ブロックに貼り付けます。
+
+応答の高速性とコストを抑えるため、`claude-haiku-4-5-20251001`を使用しています。
+
+## チャットダイアログ
+
+ダイアログはネイティブの`<dialog>`要素を使ったPreactアイランド（`src/components/ai-chat-modal.tsx`）です。
+
+### レイアウト
+
+- **狭いビューポート**（`lg`/1024px未満）：ビューポートの幅と高さいっぱいに表示
+- **広いビューポート**（1024px以上）：中央配置、90vw/90vhでmax-widthは52.5rem、ボーダー付き
+
+### 機能
+
+- 吹き出し風のメッセージバブル（ユーザーは右、アシスタントは左）
+- アシスタント応答内のマークダウンレンダリング（太字、イタリック、コード、リスト、リンク）
+- API呼び出し中の「Thinking...」インジケーター
+- エラーメッセージのインライン表示
+- 背景クリックまたはEscapeキーで閉じる
+- ダイアログを閉じると会話はリセットされる
+
+## MSWモック（開発時のみ）
+
+実際のバックエンドなしでUI開発を行うには、MSW（Mock Service Worker）を有効にします。MSWは**開発環境専用**で、本番ビルドでは決して動作しません。
+
+**セットアップ：**
+
+1. サービスワーカーファイルを生成（初回のみ）：
+
+   ```bash
+   npx msw init public/ --save
+   ```
+
+2. 環境変数を設定：
+
+   ```env title=".env"
+   PUBLIC_ENABLE_MOCKS=true
+   ```
+
+3. 開発サーバーを起動（`pnpm dev`）。
+
+モックハンドラ（`src/mocks/handlers.ts`）は、シミュレートされた遅延付きで定義済みのレスポンスを返します。APIクレジットを消費せずにチャットUIのスタイリングや動作確認を行うのに便利です。
+
+<Note>
+
+MSWを使うには設定で`aiAssistant: true`である必要があります。生成される`public/mockServiceWorker.js`ファイルはgitignore対象です — 各開発者がローカルで生成します。
+
+</Note>
+
+## APIリファレンス
+
+エンドポイントの詳細仕様（リクエスト／レスポンスの型、エラーコード、環境変数）は[AI Assistant APIリファレンス](../reference/ai-assistant-api.mdx)を参照してください。
+
+## ファイル構成
+
+```
+src/
+├── components/
+│   ├── ai-chat-modal.tsx       # Preact island — chat dialog UI
+│   └── mock-init.tsx           # MSW initializer (dev only)
+├── mocks/
+│   ├── handlers.ts             # MSW mock response handlers
+│   ├── browser.ts              # MSW browser worker setup
+│   ├── server.ts               # MSW node server setup
+│   └── init.ts                 # Conditional MSW initialization
+├── types/
+│   └── ai-chat.ts              # ChatMessage, AiChatRequest/Response types
+└── utils/
+    └── render-markdown.ts      # Lightweight markdown-to-HTML renderer
+pages/
+└── api/
+    └── ai-chat.tsx             # CF Pages SSR endpoint (prerender = false)
+```

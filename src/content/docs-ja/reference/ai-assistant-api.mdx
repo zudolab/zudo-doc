@@ -1,0 +1,101 @@
+---
+title: AI Assistant API
+sidebar_position: 5
+tags:
+  - ai
+---
+
+AIアシスタントのチャットエンドポイントのAPI仕様です。
+
+## エンドポイント
+
+```
+POST /api/ai-chat
+Content-Type: application/json
+```
+
+### リクエストボディ
+
+```ts
+interface AiChatRequest {
+  message: string;
+  history: ChatMessage[];
+}
+
+interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+```
+
+| フィールド | 型              | 必須 | 説明                                                                 |
+| ---------- | --------------- | ---- | -------------------------------------------------------------------- |
+| `message`  | `string`        | はい | ユーザーの現在のメッセージ。空でないこと。                           |
+| `history`  | `ChatMessage[]` | はい | 過去の会話メッセージ。無効なエントリーは静かに除外されます。         |
+
+### 成功レスポンス (200)
+
+```ts
+interface AiChatResponse {
+  response: string;
+}
+```
+
+`response`フィールドはアシスタントの返答をマークダウン文字列として含みます。
+
+**例：**
+
+```json
+// Request
+{
+  "message": "How do I add a new page?",
+  "history": []
+}
+
+// Response
+{
+  "response": "Create an MDX file in `src/content/docs/`:\n\n1. Add frontmatter with `title`\n2. Write your content in MDX\n3. The page appears in the sidebar automatically"
+}
+```
+
+### エラーレスポンス (400 / 500)
+
+```ts
+interface AiChatErrorResponse {
+  error: string;
+}
+```
+
+| ステータス | 条件                                                            |
+| ---------- | --------------------------------------------------------------- |
+| 400        | 無効なJSONボディ                                                |
+| 400        | `message`が空でない文字列ではない                               |
+| 400        | `message`が4000文字の制限を超えている                           |
+| 400        | 入力スクリーニング（プロンプトインジェクションガード）で拒否された |
+| 429        | レート制限超過（`Retry-After`ヘッダーを含む）                   |
+| 500        | Anthropic APIコール失敗                                         |
+
+## CF環境バインディング
+
+| バインディング          | 種別          | 必須 | 説明                                                                       |
+| ----------------------- | ------------- | ---- | -------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`     | secret        | はい | Anthropic APIキー                                                          |
+| `DOCS_SITE_URL`         | var           | はい | デプロイ済みのドキュメントサイトURL（`llms-full.txt`の取得に使用）         |
+| `RATE_LIMIT`            | KV namespace  | はい | レート制限のカウンタと監査ログを保存                                       |
+| `RATE_LIMIT_PER_MINUTE` | var           | いいえ | IPあたりの1分間の最大リクエスト数（デフォルト`10`）                        |
+| `RATE_LIMIT_PER_DAY`    | var           | いいえ | IPあたりの1日の最大リクエスト数（デフォルト`100`）                         |
+| `PUBLIC_ENABLE_MOCKS`   | var           | いいえ | `"true"`に設定するとMSWのモックレスポンスが有効になる（開発モードのみ）    |
+
+## セキュリティ
+
+このエンドポイントは、レガシーのスタンドアロンWorkerから移植された多層的な防御を備えています：
+
+- **ハードニングされたシステムプロンプト** — XMLタグでコンテキストを区切り、明示的なガードレールによってモデルが設定情報を漏洩したり、トピック外の指示に従ったりすることを防ぎます
+- **入力スクリーニング** — 一般的なプロンプトインジェクションパターンを正規表現の事前フィルタで弾き、Claude APIに到達する前に拒否します。レート制限の枠は消費しません
+- **レート制限** — `RATE_LIMIT` KVを使ったIPごとの制限（ベストエフォート、KV障害時はフェイルオープン）
+- **監査ログ** — すべてのインタラクションを`audit:`プレフィックスで`RATE_LIMIT` KVに記録（7日のTTL、ファイア・アンド・フォーゲット）
+- **メッセージ長制限** — 4000文字を超えるメッセージはAPIに到達する前に拒否されます
+
+## ドキュメントコンテキスト
+
+このエンドポイントは、[llms.txtインテグレーション](../guides/llms-txt.mdx)で生成された`llms-full.txt`を`DOCS_SITE_URL`から取得し、CF Workersのアイソレートが生きている間メモリにキャッシュします（ベストエフォート、約1時間）。取得したコンテンツはシステムプロンプトに`<documentation>`XMLコンテキストとして含められます。
