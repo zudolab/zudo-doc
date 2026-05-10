@@ -35,24 +35,11 @@
 dist/ja/docs/reference/ai-chat-worker/index.html:603:./ai-assistant-api/
 dist/ja/docs/reference/ai-chat-worker/index.html:621:../guides/ai-assistant/
 
-# ----- Absolute Links Bypassing Base Path (5 entries) ------------
+# ----- Absolute Links Bypassing Base Path (0 entries) ------------
 #
-# Cannot be auto-converted to relative `.mdx` because the targets
-# are either (a) inline-code teaching examples, or (b) runtime-
-# generated routes with no MDX source.
-
-# Inline-code example in a `<Note>` callout that documents what
-# NOT to do — `[link text](/docs/some-page)` inside backticks.
-# The check-links MDX-source regex doesn't skip backtick-wrapped
-# code, so this false-positive is permanent until the regex is
-# upgraded.
-src/content/docs/guides/configuration.mdx:105:/docs/some-page
-
-# Runtime-generated tags index (`pages/docs/tags/...`) — has no
-# MDX source so a relative `.mdx` link can't resolve to it.
-src/content/docs/guides/frontmatter.mdx:163:/docs/tags/
-src/content/docs/guides/tags.mdx:56:/docs/tags/
-src/content/docs/guides/tags.mdx:72:/docs/tags/
-
-# Runtime-generated versions index — same shape as `/docs/tags/`.
-src/content/docs/guides/versioning.mdx:98:/docs/versions/
+# Previously held 5 entries; all removed after T4 (#1612):
+#   - inline-code false-positive: extractMdxAbsoluteLinks now strips
+#     inline-code spans before running the link regex (Fix A).
+#   - runtime-generated routes (/docs/tags/, /docs/versions/):
+#     checkMdxLinks now cross-checks against dist/ via resolveLink
+#     and drops warnings for hrefs that resolve to built routes (Fix B).
