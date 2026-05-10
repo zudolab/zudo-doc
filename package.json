@@ -49,6 +49,7 @@
     "// ── Linting ─────────────────────────────────────": "",
     "lint:tokens": "design-token-lint",
     "check:template-drift": "bash scripts/check-template-drift.sh",
+    "check:fixture-settings-drift": "node scripts/check-fixture-settings-drift.mjs",
     "// ── Tags ────────────────────────────────────────": "",
     "tags:audit": "tsx scripts/tags-audit.ts",
     "tags:suggest": "tsx scripts/tags-suggest.ts"
