@@ -159,7 +159,7 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
             {/* ── Results area ──────────────────────────────────────── */}
             {/* aria-live="polite" so screen readers announce result changes */}
             <div
-              class="flex-1 overflow-y-auto px-hsp-lg py-vsp-md"
+              class="flex-1 overflow-y-auto px-hsp-lg pb-vsp-md"
               data-search-results
               aria-live="polite"
             >
