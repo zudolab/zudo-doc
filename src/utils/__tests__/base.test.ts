@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { navHref, getPathForLocale, normalizedBase } from "../base";
+import { navHref, getPathForLocale, normalizedBase, isDefaultLocaleOnlyPath } from "../base";
 import { settings } from "@/config/settings";
 import { defaultLocale } from "@/config/i18n";
 
@@ -65,6 +65,39 @@ describe("navHref", () => {
         "/pj/zudo-doc/v/1.0/docs/guides/",
       );
     });
+  });
+});
+
+describe("isDefaultLocaleOnlyPath", () => {
+  // Guard: tests rely on these prefixes being configured.
+  beforeAll(() => {
+    expect(settings.defaultLocaleOnlyPrefixes).toContain("/docs/claude-md/");
+    expect(settings.defaultLocaleOnlyPrefixes).not.toContain("/docs/claude/");
+    expect(normalizedBase).toBe("/pj/zudo-doc");
+  });
+
+  it("returns false for /docs/claude/ (top-level claude is bilingual, not in prefix list)", () => {
+    expect(isDefaultLocaleOnlyPath("/docs/claude/")).toBe(false);
+  });
+
+  it("returns true for /docs/claude-md/", () => {
+    expect(isDefaultLocaleOnlyPath("/docs/claude-md/")).toBe(true);
+  });
+
+  it("returns true for a sub-path under /docs/claude-md/", () => {
+    expect(isDefaultLocaleOnlyPath("/docs/claude-md/some-file/")).toBe(true);
+  });
+
+  it("returns false for /docs/guides/", () => {
+    expect(isDefaultLocaleOnlyPath("/docs/guides/")).toBe(false);
+  });
+
+  it("returns false for /docs/claude-extras/ (not in prefix list)", () => {
+    expect(isDefaultLocaleOnlyPath("/docs/claude-extras/")).toBe(false);
+  });
+
+  it("strips basePath before matching — /pj/zudo-doc/docs/claude-md/ returns true", () => {
+    expect(isDefaultLocaleOnlyPath("/pj/zudo-doc/docs/claude-md/")).toBe(true);
   });
 });
 
