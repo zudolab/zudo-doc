@@ -84,6 +84,7 @@ When we say "update docs" or "update our doc," it means updating the **showcase 
 - Japanese docs should mirror the English directory structure
 - **Bilingual rule**: When creating or updating any doc page, update both EN and JA versions. Keep code blocks identical -- only translate prose.
 - **Exception**: Pages with `generated: true` in frontmatter do not require Japanese translations.
+- **Exception**: Pages whose paths fall under `settings.defaultLocaleOnlyPrefixes` are default-locale-only by design — no JA mirror should be created for them. The current entries are `/docs/claude-md/`, `/docs/claude-skills/`, `/docs/claude-agents/`, and `/docs/claude-commands/`. Note that the top-level `/docs/claude/` index is bilingual (the JA stub lives at `src/content/docs-ja/claude/index.mdx`) — only the four deep prefixes listed above are default-locale-only.
 
 ## Writing Docs
 

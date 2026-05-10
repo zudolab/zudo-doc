@@ -120,6 +120,12 @@ export const settings = {
   claudeResources: {
     claudeDir: ".claude",
   } as { claudeDir: string; projectRoot?: string } | false,
+  defaultLocaleOnlyPrefixes: [
+    "/docs/claude-md/",
+    "/docs/claude-skills/",
+    "/docs/claude-agents/",
+    "/docs/claude-commands/",
+  ] as string[],
   footer: {
     links: [
       {

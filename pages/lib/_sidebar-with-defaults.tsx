@@ -38,7 +38,7 @@ import { Island } from "@takazudo/zfb";
 import SidebarTree from "@/components/sidebar-tree";
 import { settings } from "@/config/settings";
 import { defaultLocale, locales, t, type Locale } from "@/config/i18n";
-import { buildLocaleLinks, navHref, versionedDocsUrl } from "@/utils/base";
+import { buildLocaleLinks, docsUrl, isDefaultLocaleOnlyPath, navHref, versionedDocsUrl } from "@/utils/base";
 import {
   isNavVisible,
   loadCategoryMeta,
@@ -124,9 +124,9 @@ function loadNavSourceDocs(
   const localeDocs = loadDocs(`docs-${lang}`).filter((d) => !d.data.draft);
   const baseDocs = loadDocs("docs").filter((d) => !d.data.draft);
   const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? d.id));
-  const fallbackDocs = baseDocs.filter(
-    (d) => !localeSlugSet.has(d.data.slug ?? d.id),
-  );
+  const fallbackDocs = baseDocs
+    .filter((d) => !localeSlugSet.has(d.data.slug ?? d.id))
+    .filter((d) => !isDefaultLocaleOnlyPath(docsUrl(d.data.slug ?? d.id)));
   const allDocs = [...localeDocs, ...fallbackDocs];
 
   const localeDir =

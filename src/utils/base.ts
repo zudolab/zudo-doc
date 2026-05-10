@@ -96,12 +96,38 @@ export function getPathForLocale(
 
 /** Build locale links for locale switcher UI components. */
 export function buildLocaleLinks(currentPath: string, currentLang: Locale): LocaleLink[] {
+  let defaultLocalePath = stripBase(currentPath);
+  if (currentLang !== defaultLocale) {
+    defaultLocalePath = defaultLocalePath.replace(new RegExp(`^/${currentLang}/`), "/");
+  }
+  if (isDefaultLocaleOnlyPath(defaultLocalePath)) {
+    return [{
+      code: currentLang,
+      label: getLocaleLabel(currentLang),
+      href: getPathForLocale(currentPath, currentLang, currentLang),
+      active: true,
+    }];
+  }
   return locales.map((code) => ({
     code,
     label: getLocaleLabel(code),
     href: getPathForLocale(currentPath, currentLang, code),
     active: code === currentLang,
   }));
+}
+
+/**
+ * Returns true when the given default-locale-shaped path falls under one of
+ * the configured `defaultLocaleOnlyPrefixes`.  Callers that work with
+ * locale-prefixed paths (e.g. `/ja/docs/...`) are responsible for stripping
+ * the locale segment before calling this function.  The path is normalized to
+ * end with `/` before the comparison so the helper is robust to projects that
+ * disable `settings.trailingSlash` (where `docsUrl` returns slashless paths).
+ */
+export function isDefaultLocaleOnlyPath(path: string): boolean {
+  const stripped = stripBase(path);
+  const normalized = stripped.endsWith("/") ? stripped : `${stripped}/`;
+  return settings.defaultLocaleOnlyPrefixes.some((prefix) => normalized.startsWith(prefix));
 }
 
 /** Build a versioned docs URL for the given slug, version, and lang. */

@@ -36,6 +36,7 @@ import {
 } from "@/utils/docs";
 import { settings } from "@/config/settings";
 import { defaultLocale, type Locale } from "@/config/i18n";
+import { isDefaultLocaleOnlyPath } from "@/utils/base";
 import { getCategoryOrder } from "@/utils/nav-scope";
 import { loadDocs } from "../_data";
 
@@ -69,9 +70,12 @@ function loadNavSource(
   const localeDocs = loadDocs(`docs-${locale}`).filter((d) => !d.data.draft);
   const baseDocs = loadDocs("docs").filter((d) => !d.data.draft);
   const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? d.id));
-  const fallbackDocs = baseDocs.filter(
-    (d) => !localeSlugSet.has(d.data.slug ?? d.id),
-  );
+  const fallbackDocs = baseDocs
+    .filter((d) => !localeSlugSet.has(d.data.slug ?? d.id))
+    .filter((d) => {
+      const slug = d.data.slug ?? d.id;
+      return !isDefaultLocaleOnlyPath(`/docs/${slug}/`);
+    });
 
   const localeDir =
     (settings.locales as Record<string, { dir?: string }>)[locale]?.dir ??

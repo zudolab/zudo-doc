@@ -26,6 +26,7 @@ export const settings = {
   math: false,
   docHistory: false,
   claudeResources: false as { claudeDir: string; projectRoot?: string } | false,
+  defaultLocaleOnlyPrefixes: [] as string[],
   headerNav: [
     {
       label: "Getting Started",
