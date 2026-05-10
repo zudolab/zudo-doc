@@ -12,7 +12,7 @@ create-zudo-doc [project-name] [options]
 
 フラグなしで実行すると、対話式ウィザードが起動します。すべてのオプションはフラグで指定でき、非対話的（CI/エージェント）に使用できます。
 
-[セットアッププリセットジェネレーター](/ja/docs/getting-started/setup-preset-generator)を使って、対話的に設定を構成し、JSON プリセットまたは CLI コマンドとしてコピーすることもできます。
+[セットアッププリセットジェネレーター](../getting-started/setup-preset-generator.mdx)を使って、対話的に設定を構成し、JSON プリセットまたは CLI コマンドとしてコピーすることもできます。
 
 ## オプション
 
@@ -61,7 +61,7 @@ create-zudo-doc [project-name] [options]
 |--------|------|
 | `--preset <path>` | JSON プリセットファイルから設定を読み込み（`"-"` で標準入力） |
 
-`--preset` フラグは[セットアッププリセットジェネレーター](/ja/docs/getting-started/setup-preset-generator)の JSON 出力を受け付けます。プリセットを読み込むと、すべてのプロンプトがスキップされます（`--yes` と同様）。個別の CLI フラグはプリセットの値を上書きします。
+`--preset` フラグは[セットアッププリセットジェネレーター](../getting-started/setup-preset-generator.mdx)の JSON 出力を受け付けます。プリセットを読み込むと、すべてのプロンプトがスキップされます（`--yes` と同様）。個別の CLI フラグはプリセットの値を上書きします。
 
 ### 一般
 
@@ -121,7 +121,7 @@ pnpm create zudo-doc my-docs \
 
 ### プリセットファイルの使用
 
-[セットアッププリセットジェネレーター](/ja/docs/getting-started/setup-preset-generator)で JSON プリセットを生成し、ファイルに保存してから CLI に渡します:
+[セットアッププリセットジェネレーター](../getting-started/setup-preset-generator.mdx)で JSON プリセットを生成し、ファイルに保存してから CLI に渡します:
 
 ```bash
 pnpm create zudo-doc --preset setup.json --install
