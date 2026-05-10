@@ -56,27 +56,29 @@ import ThemeToggle from "@/components/theme-toggle";
 import SidebarToggle from "@/components/sidebar-toggle";
 import { settings } from "@/config/settings";
 import { defaultLocale, locales, t, type Locale } from "@/config/i18n";
-import { buildLocaleLinks, docsUrl, isDefaultLocaleOnlyPath, navHref, versionedDocsUrl, withBase } from "@/utils/base";
+import { buildLocaleLinks, docsUrl, navHref, versionedDocsUrl, withBase } from "@/utils/base";
 import {
   isNavVisible,
-  loadCategoryMeta,
-  type CategoryMeta,
   type NavNode,
 } from "@/utils/docs";
 import { buildSidebarForSection } from "@/utils/sidebar";
-import type { DocsEntry } from "@/types/docs-entry";
-import { loadDocs } from "../_data";
 import { SearchWidget } from "./_search-widget";
+import { loadNavSourceDocs } from "./_nav-source-docs";
 
 // ---------------------------------------------------------------------------
-// Internal helpers — duplicated from _sidebar-with-defaults.tsx so that
-// module stays self-contained and this wrapper owns its own data-prep.
+// Internal helpers
 // ---------------------------------------------------------------------------
 
 /**
- * Rewrite versioned hrefs — same logic as _sidebar-with-defaults.tsx.
- * The nav tree always emits hrefs via docsUrl(); when the active route lives
- * under /v/{version}/... we need the same nodes pointing at the versioned URL.
+ * Walk the nav tree and rewrite each node's `href` to its versioned form.
+ *
+ * `buildNavTree` always emits hrefs via `docsUrl()`; when the active route
+ * lives under `/v/{version}/...` we need the same nodes pointing at the
+ * versioned URL so internal nav clicks stay inside the version. Skips
+ * nodes without an href (link-only or category placeholders).
+ *
+ * Intentionally kept as a local copy in this module (not extracted) —
+ * T2 only dedupes loadNavSourceDocs; remapVersionedHrefs is out of scope.
  */
 function remapVersionedHrefs(
   nodes: NavNode[],
@@ -96,51 +98,6 @@ function remapVersionedHrefs(
     const newHref = versionedDocsUrl(node.slug, version, nodeLang);
     return { ...node, href: newHref, children };
   });
-}
-
-/**
- * Pick the right loadDocs() collection for the (locale, version) pair —
- * same merge strategy as _sidebar-with-defaults.tsx.
- */
-function loadNavSourceDocs(
-  lang: Locale,
-  currentVersion: string | undefined,
-): { docs: DocsEntry[]; categoryMeta: Map<string, CategoryMeta> } {
-  if (currentVersion) {
-    const collectionName = `docs-v-${currentVersion}`;
-    const versionConfig = settings.versions?.find((v) => v.slug === currentVersion);
-    const docs = loadDocs(collectionName).filter((d) => !d.data.draft);
-    const categoryMeta = loadCategoryMeta(versionConfig?.docsDir ?? settings.docsDir);
-    return { docs, categoryMeta };
-  }
-
-  if (lang === defaultLocale) {
-    const docs = loadDocs("docs").filter((d) => !d.data.draft);
-    const categoryMeta = loadCategoryMeta(settings.docsDir);
-    return { docs, categoryMeta };
-  }
-
-  // Non-default locale: locale-first merge with EN fallback.
-  // Mirror T4's filter from `_sidebar-with-defaults.tsx` so the mobile
-  // SidebarToggle island's tree matches the desktop sidebar tree —
-  // default-locale-only fallback paths must NOT leak into JA URL space.
-  const localeDocs = loadDocs(`docs-${lang}`).filter((d) => !d.data.draft);
-  const baseDocs = loadDocs("docs").filter((d) => !d.data.draft);
-  const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? d.id));
-  const fallbackDocs = baseDocs
-    .filter((d) => !localeSlugSet.has(d.data.slug ?? d.id))
-    .filter((d) => !isDefaultLocaleOnlyPath(docsUrl(d.data.slug ?? d.id)));
-  const allDocs = [...localeDocs, ...fallbackDocs];
-
-  const localeDir =
-    (settings.locales as Record<string, { dir?: string }>)[lang]?.dir ??
-    settings.docsDir;
-  const categoryMeta = new Map<string, CategoryMeta>([
-    ...loadCategoryMeta(settings.docsDir),
-    ...loadCategoryMeta(localeDir),
-  ]);
-
-  return { docs: allDocs, categoryMeta };
 }
 
 // ---------------------------------------------------------------------------
