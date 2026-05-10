@@ -139,7 +139,7 @@ describe("generateClaudeResourcesDocs", () => {
         path.join(docsDir, "claude", "index.mdx"),
         "utf8",
       );
-      expect(overview).toContain('<CategoryNav category="claude" />');
+      expect(overview).toContain('<CategoryNav categories={');
     });
 
     it("skill page has correct frontmatter", () => {

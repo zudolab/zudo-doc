@@ -17,6 +17,7 @@
 
 import type { JSX } from "preact";
 import { CategoryNav as CategoryNavV2 } from "@zudo-doc/zudo-doc-v2/nav-indexing";
+import type { NavNode as V2NavNode } from "@zudo-doc/zudo-doc-v2/nav-indexing/types";
 import {
   buildNavTree,
   findNode,
@@ -25,6 +26,7 @@ import {
 } from "@/utils/docs";
 import { settings } from "@/config/settings";
 import { defaultLocale, type Locale } from "@/config/i18n";
+import { docsUrl } from "@/utils/base";
 import { loadDocs } from "../_data";
 
 export interface CategoryNavWrapperProps {
@@ -32,7 +34,18 @@ export interface CategoryNavWrapperProps {
    * Slug of the category whose immediate children should be listed, e.g.
    * "getting-started" or "guides/layout-demos".
    */
-  category: string;
+  category?: string;
+  /**
+   * Explicit list of top-level category slugs to render as cards. Use this
+   * when the target categories are not children of a single parent node in
+   * the nav tree (e.g. "claude-md", "claude-skills" are top-level siblings
+   * of "claude", not children). Each slug is resolved to its nav node; nodes
+   * not found in the tree are silently skipped.
+   *
+   * For nodes with noPage=true (no index.mdx), the href falls back to the
+   * auto-generated category index URL via docsUrl(slug, lang).
+   */
+  categories?: string[];
   /**
    * Active locale. Injected via createMdxComponents() closure.
    * Defaults to defaultLocale when not provided.
@@ -80,11 +93,19 @@ function loadNavSource(
  * MDX wrapper for CategoryNav. Resolves nav tree data host-side and forwards
  * the resolved category children into the v2 CategoryNav component.
  *
- * Returns null when the category is not found or has no visible children —
- * matching the original Astro component's guard.
+ * Supports two modes:
+ * - `category`: resolves immediate children of a single category node.
+ * - `categories`: resolves an explicit list of top-level slugs as cards.
+ *   Use this when the target categories are siblings in the nav tree rather
+ *   than children of a common parent (e.g. claude-md / claude-skills are
+ *   top-level peers of claude, not children of it). Nodes with noPage=true
+ *   get their href computed via docsUrl() since auto-index pages exist.
+ *
+ * Returns null when no visible children are resolved.
  */
 export function CategoryNavWrapper({
   category,
+  categories,
   lang = defaultLocale,
   class: className,
 }: CategoryNavWrapperProps): JSX.Element | null {
@@ -94,8 +115,32 @@ export function CategoryNavWrapper({
   const navDocs = docs.filter(isNavVisible);
   const tree = buildNavTree(navDocs, locale, categoryMeta);
 
-  const categoryNode = findNode(tree, category);
-  const children = categoryNode?.children.filter((c) => c.hasPage) ?? [];
+  let children: V2NavNode[];
+
+  if (categories !== undefined) {
+    // Explicit slug list mode: resolve each slug to its nav node and build
+    // a card for it. noPage nodes have no href in the tree but their
+    // auto-generated category index page is reachable via docsUrl().
+    children = categories
+      .map((slug): V2NavNode | null => {
+        const node = findNode(tree, slug);
+        if (!node) return null;
+        const href = node.href ?? docsUrl(slug, locale);
+        return {
+          label: node.label,
+          description: node.description,
+          href,
+          hasPage: true,
+          children: [],
+        };
+      })
+      .filter((n): n is V2NavNode => n !== null);
+  } else if (category !== undefined) {
+    const categoryNode = findNode(tree, category);
+    children = (categoryNode?.children.filter((c) => c.hasPage) ?? []) as V2NavNode[];
+  } else {
+    return null;
+  }
 
   if (children.length === 0) return null;
 
