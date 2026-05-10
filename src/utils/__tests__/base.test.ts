@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { navHref, getPathForLocale, normalizedBase, isDefaultLocaleOnlyPath } from "../base";
+import { navHref, getPathForLocale, normalizedBase, isDefaultLocaleOnlyPath, buildLocaleLinks } from "../base";
 import { settings } from "@/config/settings";
 import { defaultLocale } from "@/config/i18n";
 
@@ -130,5 +130,40 @@ describe("getPathForLocale", () => {
         getPathForLocale("/pj/zudo-doc/ja/docs/guides/", "ja", "ja"),
       ).toBe("/pj/zudo-doc/ja/docs/guides/");
     });
+  });
+});
+
+describe("buildLocaleLinks", () => {
+  beforeAll(() => {
+    expect(settings.defaultLocaleOnlyPrefixes).toContain("/docs/claude-md/");
+    expect(settings.defaultLocaleOnlyPrefixes).not.toContain("/docs/claude/");
+  });
+
+  it("returns single-element list for a default-locale deep claude-md path (switcher hides)", () => {
+    const links = buildLocaleLinks("/pj/zudo-doc/docs/claude-md/some-slug/", "en");
+    expect(links).toHaveLength(1);
+    expect(links[0].code).toBe("en");
+    expect(links[0].active).toBe(true);
+  });
+
+  it("returns full list for /docs/claude/ (top-level, not in prefix list)", () => {
+    const links = buildLocaleLinks("/pj/zudo-doc/docs/claude/", "en");
+    expect(links.length).toBeGreaterThan(1);
+    expect(links.some((l) => l.code === "en")).toBe(true);
+    expect(links.some((l) => l.code === "ja")).toBe(true);
+  });
+
+  it("returns full list for a non-claude page", () => {
+    const links = buildLocaleLinks("/pj/zudo-doc/docs/guides/configuration/", "en");
+    expect(links.length).toBeGreaterThan(1);
+    expect(links.some((l) => l.code === "en")).toBe(true);
+    expect(links.some((l) => l.code === "ja")).toBe(true);
+  });
+
+  it("returns single-element list (only ja) when on a JA deep claude-md path", () => {
+    const links = buildLocaleLinks("/pj/zudo-doc/ja/docs/claude-md/some-slug/", "ja");
+    expect(links).toHaveLength(1);
+    expect(links[0].code).toBe("ja");
+    expect(links[0].active).toBe(true);
   });
 });
