@@ -19,7 +19,7 @@ import { getCollection } from "zfb/content";
 import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
 import { t } from "@/config/i18n";
-import { withBase } from "@/utils/base";
+import { withBase, isDefaultLocaleOnlyPath } from "@/utils/base";
 import {
   buildNavTree,
   groupSatelliteNodes,
@@ -74,10 +74,12 @@ function mergeLocaleDocs(locale: string): DocsEntry[] {
     (d) => !d.data.draft,
   );
   const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? toRouteSlug(d.slug)));
-  return [
-    ...localeDocs,
-    ...baseDocs.filter((d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.slug))),
-  ];
+  const fallbackDocs = baseDocs.filter((d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.slug)));
+  const filteredFallback = fallbackDocs.filter((d) => {
+    const slug = d.data.slug ?? toRouteSlug(d.slug);
+    return !isDefaultLocaleOnlyPath(`/docs/${slug}/`);
+  });
+  return [...localeDocs, ...filteredFallback];
 }
 
 // ---------------------------------------------------------------------------
