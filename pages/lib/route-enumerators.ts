@@ -17,12 +17,12 @@
 //     emitted by building the nav tree and calling collectAutoIndexNodes.
 
 import { loadDocs } from "../_data";
-import { enumerateMergedDocsSlugs, mergeLocaleDocs } from "./locale-merge";
+import { mergeLocaleDocs } from "./locale-merge";
 import { settings } from "@/config/settings";
 import { defaultLocale } from "@/config/i18n";
 import type { VersionConfig } from "@/config/settings";
 import type { DocsEntry } from "@/types/docs-entry";
-import { docsUrl, versionedDocsUrl, withBase } from "@/utils/base";
+import { docsUrl, versionedDocsUrl, withBase, isDefaultLocaleOnlyPath } from "@/utils/base";
 import { collectTags } from "@/utils/tags";
 import { toRouteSlug } from "@/utils/slug";
 import {
@@ -62,19 +62,17 @@ export function enumerateDocsRoutes(locale: string): string[] {
       urls.push(docsUrl(node.slug, locale as string));
     }
   } else {
-    // Regular doc URLs — locale-first merge, draft-only filter (includes unlisted).
-    for (const slug of enumerateMergedDocsSlugs(locale)) {
-      urls.push(docsUrl(slug, locale as string));
-    }
-
-    // Auto-index nodes require a nav tree built from merged entries.
     const localeDocs = loadDocs(`docs-${locale}`).filter((d) => !d.data.draft);
     const baseDocs = loadDocs("docs").filter((d) => !d.data.draft);
     const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? d.id));
     const fallbackDocs = baseDocs.filter(
-      (d) => !localeSlugSet.has(d.data.slug ?? d.id),
+      (d) => !localeSlugSet.has(d.data.slug ?? d.id) && !isDefaultLocaleOnlyPath(`/docs/${d.data.slug ?? d.id}`),
     );
     const allDocs = [...localeDocs, ...fallbackDocs] as DocsEntry[];
+
+    for (const doc of allDocs) {
+      urls.push(docsUrl(doc.data.slug ?? doc.id, locale as string));
+    }
 
     const localeConfig = (
       settings.locales as Record<string, { dir: string }>
@@ -193,7 +191,7 @@ export function enumerateVersionedRoutes(
 
     const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? d.id));
     const fallbackDocs = baseDocs.filter(
-      (d) => !localeSlugSet.has(d.data.slug ?? d.id),
+      (d) => !localeSlugSet.has(d.data.slug ?? d.id) && !isDefaultLocaleOnlyPath(`/docs/${d.data.slug ?? d.id}`),
     );
     const allDocs = [...localeDocs, ...fallbackDocs] as DocsEntry[];
 

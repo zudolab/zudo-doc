@@ -22,7 +22,7 @@ import type { CollectionEntry } from "zfb/content";
 import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
 import { t, getContentDir } from "@/config/i18n";
-import { docsUrl } from "@/utils/base";
+import { docsUrl, isDefaultLocaleOnlyPath } from "@/utils/base";
 import {
   buildNavTree,
   buildBreadcrumbs,
@@ -130,7 +130,7 @@ export function paths(): Array<{
 
     const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? toRouteSlug(d.slug)));
     const fallbackDocs = baseDocs.filter(
-      (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.slug)),
+      (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.slug)) && !isDefaultLocaleOnlyPath(`/docs/${d.data.slug ?? toRouteSlug(d.slug)}`),
     );
     const fallbackSlugs = new Set(fallbackDocs.map((d) => d.data.slug ?? toRouteSlug(d.slug)));
     const allDocs = [...localeDocs, ...fallbackDocs];

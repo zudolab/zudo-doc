@@ -279,6 +279,91 @@ describe("enumerateVersionedRoutes", () => {
 });
 
 // ---------------------------------------------------------------------------
+// (e) defaultLocaleOnlyPrefixes — JA fallback filter
+// ---------------------------------------------------------------------------
+
+describe("enumerateDocsRoutes — defaultLocaleOnlyPrefixes filter", () => {
+  beforeEach(() => {
+    mockGetCollection.mockReset();
+    mockGetCollection.mockImplementation((_name: string) => []);
+  });
+
+  it("does not emit /ja/docs/claude-md/* for EN-only fallback entries", () => {
+    mockGetCollection.mockImplementation((name: string) => {
+      if (name === "docs-ja") {
+        return [makeEntry("claude", { title: "Claude JA stub" })];
+      }
+      if (name === "docs") {
+        return [
+          makeEntry("claude", { title: "Claude EN" }),
+          makeEntry("claude-md/overview", { title: "CLAUDE.md overview" }),
+          makeEntry("claude-skills/intro", { title: "Skills intro" }),
+        ];
+      }
+      return [];
+    });
+
+    const urls = enumerateDocsRoutes("ja");
+    expect(urls.some((u) => u.includes("/ja/docs/claude-md/"))).toBe(false);
+    expect(urls.some((u) => u.includes("/ja/docs/claude-skills/"))).toBe(false);
+  });
+
+  it("still emits /ja/docs/claude/ for the locale-authored JA stub", () => {
+    mockGetCollection.mockImplementation((name: string) => {
+      if (name === "docs-ja") {
+        return [makeEntry("claude", { title: "Claude JA stub" })];
+      }
+      if (name === "docs") {
+        return [
+          makeEntry("claude", { title: "Claude EN" }),
+          makeEntry("claude-md/overview", { title: "CLAUDE.md overview" }),
+        ];
+      }
+      return [];
+    });
+
+    const urls = enumerateDocsRoutes("ja");
+    expect(urls.some((u) => u.endsWith("/ja/docs/claude/"))).toBe(true);
+  });
+
+  it("does not filter EN enumeration — default locale emits all docs", () => {
+    mockGetCollection.mockImplementation((name: string) => {
+      if (name === "docs") {
+        return [
+          makeEntry("claude", { title: "Claude EN" }),
+          makeEntry("claude-md/overview", { title: "CLAUDE.md overview" }),
+          makeEntry("claude-skills/intro", { title: "Skills intro" }),
+          makeEntry("claude-agents/guide", { title: "Agents guide" }),
+          makeEntry("claude-commands/ref", { title: "Commands ref" }),
+        ];
+      }
+      return [];
+    });
+
+    const urls = enumerateDocsRoutes("en");
+    expect(urls.some((u) => u.includes("/docs/claude-md/"))).toBe(true);
+    expect(urls.some((u) => u.includes("/docs/claude-skills/"))).toBe(true);
+    expect(urls.some((u) => u.includes("/docs/claude-agents/"))).toBe(true);
+    expect(urls.some((u) => u.includes("/docs/claude-commands/"))).toBe(true);
+  });
+
+  it("does not emit /v/{version}/ja/docs/claude-md/* for EN-only fallback versioned entries", () => {
+    mockGetCollection.mockImplementation((name: string) => {
+      if (name === "docs-v-1.0") {
+        return [makeEntry("claude-md/overview", { title: "CLAUDE.md v1" })];
+      }
+      return [];
+    });
+
+    const urls = enumerateVersionedRoutes(
+      { slug: "1.0", label: "1.0.0", docsDir: "src/content/docs-v1" },
+      "ja",
+    );
+    expect(urls.some((u) => u.includes("/v/1.0/ja/docs/claude-md/"))).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // (d) toRouteSlug strips /index suffix from category index entries
 // ---------------------------------------------------------------------------
 
