@@ -96,8 +96,20 @@ else
 fi
 
 # ── Step 7: Link check ────────────────────────────────
-step "Link check (check-links)"
-if (cd "$ROOT_DIR" && pnpm run check:links); then
+#
+# Strict on broken links + absolute MDX-source warnings (real 404s
+# / sub-path bypass). Trailing-slash warnings stay warn-only — they
+# 301-redirect rather than 404 and the allowlist would need a new
+# entry every time the basePath rewriter regresses, which is the
+# exact noise-floor we already detect via build-time signals.
+#
+# Allowlist file at `.check-links-allowlist` carries the known
+# pre-existing exceptions (JA→EN cross-locale references, runtime-
+# generated route URLs that don't have MDX sources). Delete an
+# entry whenever the underlying issue gets fixed so the strict
+# gate then catches future regressions of the same shape.
+step "Link check (check-links --strict-broken --strict-absolute)"
+if (cd "$ROOT_DIR" && pnpm run check:links -- --strict-broken --strict-absolute --allowlist=.check-links-allowlist); then
   pass "Link check passed"
 else
   fail "Link check"
