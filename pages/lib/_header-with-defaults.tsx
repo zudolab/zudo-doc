@@ -56,7 +56,7 @@ import ThemeToggle from "@/components/theme-toggle";
 import SidebarToggle from "@/components/sidebar-toggle";
 import { settings } from "@/config/settings";
 import { defaultLocale, locales, t, type Locale } from "@/config/i18n";
-import { buildLocaleLinks, docsUrl, navHref, versionedDocsUrl, withBase } from "@/utils/base";
+import { buildLocaleLinks, docsUrl, isDefaultLocaleOnlyPath, navHref, versionedDocsUrl, withBase } from "@/utils/base";
 import {
   isNavVisible,
   loadCategoryMeta,
@@ -121,12 +121,15 @@ function loadNavSourceDocs(
   }
 
   // Non-default locale: locale-first merge with EN fallback.
+  // Mirror T4's filter from `_sidebar-with-defaults.tsx` so the mobile
+  // SidebarToggle island's tree matches the desktop sidebar tree —
+  // default-locale-only fallback paths must NOT leak into JA URL space.
   const localeDocs = loadDocs(`docs-${lang}`).filter((d) => !d.data.draft);
   const baseDocs = loadDocs("docs").filter((d) => !d.data.draft);
   const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? d.id));
-  const fallbackDocs = baseDocs.filter(
-    (d) => !localeSlugSet.has(d.data.slug ?? d.id),
-  );
+  const fallbackDocs = baseDocs
+    .filter((d) => !localeSlugSet.has(d.data.slug ?? d.id))
+    .filter((d) => !isDefaultLocaleOnlyPath(docsUrl(d.data.slug ?? d.id)));
   const allDocs = [...localeDocs, ...fallbackDocs];
 
   const localeDir =
