@@ -4,6 +4,16 @@ export const designTokenPanelFeature: FeatureModule = () => ({
   name: "designTokenPanel",
   injections: [
     {
+      // Panel chrome CSS — imported here so the rules land in the main page
+      // CSS bundle (not a deferred chunk), ensuring the panel renders
+      // correctly on first click. Vite library mode strips the source CSS
+      // import from the emitted JS, so this CSS-side import is the required
+      // pull point. See @takazudo/zudo-design-token-panel PORTABLE-CONTRACT.md §7.
+      file: "src/styles/global.css",
+      anchor: "/* @slot:global-css:feature-styles */",
+      content: `@import "@takazudo/zudo-design-token-panel/styles.css";`,
+    },
+    {
       // Bootstrap the zdtp panel as a side-effect dynamic import.
       // The import is gated on the feature flag so the zdtp bundle is excluded
       // from pages that disable the panel. No Island wrapper is needed — zdtp
