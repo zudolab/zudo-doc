@@ -120,11 +120,14 @@ export function buildLocaleLinks(currentPath: string, currentLang: Locale): Loca
  * Returns true when the given default-locale-shaped path falls under one of
  * the configured `defaultLocaleOnlyPrefixes`.  Callers that work with
  * locale-prefixed paths (e.g. `/ja/docs/...`) are responsible for stripping
- * the locale segment before calling this function.
+ * the locale segment before calling this function.  The path is normalized to
+ * end with `/` before the comparison so the helper is robust to projects that
+ * disable `settings.trailingSlash` (where `docsUrl` returns slashless paths).
  */
 export function isDefaultLocaleOnlyPath(path: string): boolean {
   const stripped = stripBase(path);
-  return settings.defaultLocaleOnlyPrefixes.some((prefix) => stripped.startsWith(prefix));
+  const normalized = stripped.endsWith("/") ? stripped : `${stripped}/`;
+  return settings.defaultLocaleOnlyPrefixes.some((prefix) => normalized.startsWith(prefix));
 }
 
 /** Build a versioned docs URL for the given slug, version, and lang. */
