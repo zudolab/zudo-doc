@@ -22,7 +22,7 @@ import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
 import type { VersionConfig } from "@/config/settings";
 import { t } from "@/config/i18n";
-import { docsUrl, versionedDocsUrl } from "@/utils/base";
+import { docsUrl, versionedDocsUrl, isDefaultLocaleOnlyPath } from "@/utils/base";
 import {
   buildNavTree,
   buildBreadcrumbs,
@@ -138,7 +138,7 @@ export function paths(): Array<{
 
     // Merge: locale docs first, then base docs for missing pages
     const fallbackDocs = baseDocs.filter(
-      (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.slug)),
+      (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.slug)) && !isDefaultLocaleOnlyPath(`/docs/${d.data.slug ?? toRouteSlug(d.slug)}`),
     );
     const fallbackSlugs = new Set(fallbackDocs.map((d) => d.data.slug ?? toRouteSlug(d.slug)));
     const allDocs = [...localeDocs, ...fallbackDocs];
