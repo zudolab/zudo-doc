@@ -32,19 +32,9 @@ import type { VNode, JSX } from "preact";
 import { Island } from "@takazudo/zfb";
 import { settings } from "@/config/settings";
 
-// Production bootstrap for the zdtp panel. Loaded as a side-effect when the
-// feature flag is enabled; the dynamic import keeps the zdtp bundle out of
-// pages that disable the panel.
-if (settings.designTokenPanel || settings.colorTweakPanel) {
-  void import("@/lib/design-token-panel-bootstrap");
-}
-
 import AiChatModal from "@/components/ai-chat-modal";
 import ClientRouterBootstrap from "@/components/client-router-bootstrap";
-// W3-2 (zdtp-migration): DesignTokenTweakPanel (legacy Preact island) removed.
-// The new zdtp panel mounts itself as a side-effect of the dynamic import above
-// (design-token-panel-bootstrap.ts calls configurePanel() which owns its own DOM).
-// No Island wrapper is needed here.
+import DesignTokenPanelBootstrap from "@/components/design-token-panel-bootstrap";
 import ImageEnlarge, { ImageEnlargeSsrFallback } from "@/components/image-enlarge";
 import { PageLoadingOverlay } from "@zudo-doc/zudo-doc-v2/page-loading";
 
@@ -58,6 +48,8 @@ import { PageLoadingOverlay } from "@zudo-doc/zudo-doc-v2/page-loading";
 (AiChatModal as { displayName?: string }).displayName = "AiChatModal";
 (ClientRouterBootstrap as { displayName?: string }).displayName =
   "ClientRouterBootstrap";
+(DesignTokenPanelBootstrap as { displayName?: string }).displayName =
+  "DesignTokenPanelBootstrap";
 (ImageEnlarge as { displayName?: string }).displayName = "ImageEnlarge";
 
 /**
@@ -115,6 +107,18 @@ export function BodyEndIslands({
     children: <ClientRouterBootstrap />,
   }) as unknown as VNode;
 
+  // Hydrates on load so configurePanel() runs as early as possible and
+  // the `toggle-design-token-panel` window listener is registered before
+  // the user can click the header trigger. Renders nothing visually —
+  // the zdtp panel self-mounts as a side-effect (zudolab/zudo-doc#1623).
+  const designTokenPanelBootstrap =
+    settings.designTokenPanel || settings.colorTweakPanel
+      ? (Island({
+          when: "load",
+          children: <DesignTokenPanelBootstrap />,
+        }) as unknown as VNode)
+      : null;
+
   // Use a visually-hidden paragraph as the AiChatModal SSR fallback so
   // the body label is present in static HTML for screen readers and
   // migration-check parity. sr-only keeps it invisible to sighted users.
@@ -143,6 +147,7 @@ export function BodyEndIslands({
           zfb:before-preparation / zfb:after-swap listeners at runtime. */}
       <PageLoadingOverlay />
       {clientRouterBootstrap}
+      {designTokenPanelBootstrap}
       {/* Preserves migration-check parity: the Astro build SSR-rendered
           <h2>AI Assistant</h2> inside the chat modal markup; the checker
           matches the literal heading text. */}
