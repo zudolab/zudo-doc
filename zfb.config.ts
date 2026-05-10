@@ -1,6 +1,21 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: 6754312 (three post-deep-review fix rounds landing on main:
+ *   commit: c371e4c (base/link-cleanup-zfb — link-pipeline parity:
+ *           nested-route source map (preserves
+ *           `components/code-blocks.mdx` → `/docs/components/code-blocks/`,
+ *           sub #234 / zudolab/zudo-doc#1577); multi-locale
+ *           `resolveMarkdownLinks.dirs` field so EN+JA mirrors map to
+ *           `/docs/` vs `/ja/docs/`; bundler-side wiring of
+ *           `Config::resolve_markdown_links` →
+ *           `BundlerInput::resolve_markdown_links` (was missing — the
+ *           snapshot path consumed it but the bundler MDX pipeline
+ *           never appended ResolveLinksPlugin); basePath rewriter
+ *           `compute_prefixed_with_trailing_slash` appends `/` to
+ *           extensionless absolute hrefs when `trailingSlash: true`,
+ *           closing zudolab/zudo-doc#1579. Bumped 2026-05-10 in epic
+ *           zudolab/zudo-doc#1581 (link-cleanup) sub-issues #1582 (T1)
+ *           and #1583 (T3).
+ *           Previous pin 6754312 (three post-deep-review fix rounds landing on main:
  *           8258782 fix(review-round-1): bugs, path traversal, and
  *           validation gaps surfaced by deep-review — fixes a `from`/`form`
  *           typo in client-router form-submit enctype handling
@@ -693,6 +708,26 @@ export default defineConfig({
   // `href="./other.mdx"` links — the deep-review #1338 finding 12
   // verification surfaced this on roughly two dozen pages.
   stripMdExt: true,
+  // Resolve relative `[label](./other.mdx)` links to absolute resolved
+  // route URLs at the mdast phase (`/pj/zudo-doc/docs/.../other/`)
+  // before the file→directory transformation makes the relative path
+  // ambiguous. The legacy `stripMdExt: true` alone produced relative
+  // hrefs that broke when `foo.mdx` became `foo/index.html` — every
+  // sibling link gained one nesting level of drift. Multi-dir shape
+  // (sub #234 in the pinned zfb branch) maps each source dir to its
+  // own route prefix so JA mirrors resolve under `/ja/docs/` instead
+  // of `/docs/`. Closes zudolab/zudo-doc#1577 (109 broken links).
+  resolveMarkdownLinks: {
+    enabled: true,
+    dirs: [
+      { dir: settings.docsDir, routePrefix: "/docs/" },
+      ...Object.entries(settings.locales).map(([code, locale]) => ({
+        dir: locale.dir,
+        routePrefix: `/${code}/docs/`,
+      })),
+    ],
+    onBrokenLinks: "warn",
+  },
   // Public URL prefix for `<link rel="stylesheet">` and `<script
   // type="module">` tags emitted into dist HTML. Without this, the
   // unprefixed `/assets/styles-<hash>.css` 404s under the sub-path
@@ -700,6 +735,13 @@ export default defineConfig({
   // (closes BLOCKER #1361 of feature-audit epic #1360). The same
   // value already drives the search-index / llms-txt plugins below.
   base: settings.base,
+  // Mirror `settings.trailingSlash` so the basePath rewriter appends
+  // `/` to extensionless absolute hrefs (`/docs/getting-started`
+  // becomes `/pj/zudo-doc/docs/getting-started/`). Without this, dist
+  // HTML shipped the non-canonical shape and Cloudflare 301-redirected
+  // every click — a hop on every navigation and address-bar flicker.
+  // Closes zudolab/zudo-doc#1579 (54 missing-trailing-slash entries).
+  trailingSlash: settings.trailingSlash,
   // ----------------------------------------------------------------------
   // Cloudflare Pages adapter — wraps the SSR bundle into `dist/_worker.js`
   // (advanced-mode entry) plus a sidecar `dist/_zfb_inner.mjs`. The adapter

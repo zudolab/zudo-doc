@@ -64,9 +64,9 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.79.0",
     "@shikijs/transformers": "^4.0.1",
-    "@takazudo/zfb": "file:../zfb/packages/zfb",
-    "@takazudo/zfb-adapter-cloudflare": "file:../zfb/packages/zfb-adapter-cloudflare",
-    "@takazudo/zfb-runtime": "file:../zfb/packages/zfb-runtime",
+    "@takazudo/zfb": "file:../zfb-link-cleanup/packages/zfb",
+    "@takazudo/zfb-adapter-cloudflare": "file:../zfb-link-cleanup/packages/zfb-adapter-cloudflare",
+    "@takazudo/zfb-runtime": "file:../zfb-link-cleanup/packages/zfb-runtime",
     "@takazudo/zudo-design-token-panel": "file:../zdtp/packages/zudo-design-token-panel",
     "@types/hast": "^3.0.4",
     "@zudo-doc/md-plugins": "workspace:*",
