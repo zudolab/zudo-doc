@@ -161,6 +161,19 @@ export async function resolveLink(href, distDir, basePath = "/", fileDir = "") {
 
 // --- MDX Source Scan ---
 
+/**
+ * Strip inline-code spans from a line before running link regexes.
+ * Handles double-backtick spans (``...``) and single-backtick spans (`...`).
+ * Escaped backticks (\`) are ignored.
+ */
+export function stripInlineCode(line) {
+  // Replace double-backtick spans first to avoid partial single-backtick matches
+  let result = line.replace(/(?<!\\)``[^`]*(?:``|$)/g, (m) => " ".repeat(m.length));
+  // Replace single-backtick spans
+  result = result.replace(/(?<!\\)`[^`]*(?:`|$)/g, (m) => " ".repeat(m.length));
+  return result;
+}
+
 export function extractMdxAbsoluteLinks(content) {
   const issues = [];
   const lines = content.split("\n");
@@ -175,16 +188,18 @@ export function extractMdxAbsoluteLinks(content) {
     }
     if (inCodeBlock) continue;
 
+    const searchLine = stripInlineCode(line);
+
     // Markdown link syntax: [text](/docs/...) or [text](/ja/docs/...)
     const mdRegex = /\]\((\/(?:ja\/)?docs\/[^)]*)\)/g;
     let match;
-    while ((match = mdRegex.exec(line)) !== null) {
+    while ((match = mdRegex.exec(searchLine)) !== null) {
       issues.push({ href: match[1], line: i + 1 });
     }
 
     // JSX href attributes: href="/docs/..." or href="/ja/docs/..."
     const jsxRegex = /href="(\/(?:ja\/)?docs\/[^"]*)"/g;
-    while ((match = jsxRegex.exec(line)) !== null) {
+    while ((match = jsxRegex.exec(searchLine)) !== null) {
       issues.push({ href: match[1], line: i + 1 });
     }
   }
@@ -271,7 +286,7 @@ export async function checkTrailingSlashLinks(distDir, rootDir, basePath = "/", 
   return warnings;
 }
 
-export async function checkMdxLinks(contentDirs, rootDir) {
+export async function checkMdxLinks(contentDirs, rootDir, distDir = null, basePath = "/") {
   const warnings = [];
 
   for (const dir of contentDirs) {
@@ -283,6 +298,8 @@ export async function checkMdxLinks(contentDirs, rootDir) {
       const issues = extractMdxAbsoluteLinks(content);
 
       for (const { href, line } of issues) {
+        // If dist/ is available, drop warnings for hrefs that resolve to built routes
+        if (distDir && (await resolveLink(href, distDir, basePath))) continue;
         warnings.push({ file: relative(rootDir, file), line, href });
       }
     }
@@ -392,7 +409,7 @@ async function main() {
 
   const checks = [
     checkHtmlLinks(distDir, rootDir, basePath, excludePatterns),
-    checkMdxLinks(contentDirs, rootDir),
+    checkMdxLinks(contentDirs, rootDir, distDir, basePath),
   ];
 
   if (trailingSlash) {
