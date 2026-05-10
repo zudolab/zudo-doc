@@ -21,6 +21,7 @@ src/styles/global.css
 # generator/escape helpers; production consumes the same logic re-exported
 # from @zudo-doc/zudo-doc-v2/integrations/claude-resources, so prod has no
 # matching paths under src/integrations/claude-resources/.
+src/integrations/claude-resources/__tests__/escape-for-mdx.test.ts
 src/integrations/claude-resources/__tests__/generate.test.ts
 src/integrations/claude-resources/escape-for-mdx.ts
 src/integrations/claude-resources/generate.ts
