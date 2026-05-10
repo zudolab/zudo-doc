@@ -58,7 +58,32 @@ function loadAllowlist(allowlistPath) {
 }
 
 const canonicalKeys = extractSettingsKeys(resolve(ROOT, CANONICAL_PATH));
+const canonicalKeySet = new Set(canonicalKeys);
+const fixtureSet = new Set(FIXTURES);
 const allowed = loadAllowlist(resolve(ROOT, ALLOWLIST_PATH));
+
+// Validate allowlist entries reference real fixtures and real canonical keys.
+// A stale entry (fixture or key no longer exists) is reported as an error so
+// the allowlist stays accurate rather than silently masking nothing.
+let anyError = false;
+for (const entry of allowed) {
+  const colon = entry.indexOf(":");
+  if (colon === -1) {
+    console.error(`[fixture-settings-drift] bad allowlist entry (no colon): ${entry}`);
+    anyError = true;
+    continue;
+  }
+  const fixture = entry.slice(0, colon);
+  const key = entry.slice(colon + 1);
+  if (!fixtureSet.has(fixture)) {
+    console.error(`[fixture-settings-drift] allowlist references unknown fixture: ${entry}`);
+    anyError = true;
+  }
+  if (!canonicalKeySet.has(key)) {
+    console.error(`[fixture-settings-drift] allowlist references unknown canonical key: ${entry}`);
+    anyError = true;
+  }
+}
 
 let anyDrift = false;
 
@@ -92,6 +117,9 @@ if (anyDrift) {
   console.error(
     "entry to .fixture-settings-drift-allowlist (with # reason: comment)."
   );
+}
+
+if (anyError || anyDrift) {
   process.exit(1);
 } else {
   console.log("fixture-settings drift check passed.");
