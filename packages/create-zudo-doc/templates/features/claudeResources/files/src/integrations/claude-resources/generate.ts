@@ -512,10 +512,30 @@ ${escapeForMdx(parsed.content.trim())}
 // Main
 // ---------------------------------------------------------------------------
 
-function generateOverviewIndex(config: ClaudeResourcesConfig) {
+function generateOverviewIndex(
+  config: ClaudeResourcesConfig,
+  {
+    hasCommands,
+    hasSkills,
+    hasAgents,
+    hasClaudemd,
+  }: { hasCommands: boolean; hasSkills: boolean; hasAgents: boolean; hasClaudemd: boolean },
+) {
   const outputDir = path.join(config.docsDir, "claude");
   cleanDir(outputDir);
   ensureDir(outputDir);
+
+  // Build the explicit slug list from whichever sub-categories were generated.
+  // CategoryNav with `categories` renders cards for each slug by resolving
+  // the node in the nav tree (including noPage auto-index categories) and
+  // falling back to docsUrl(slug, locale) for the href when noPage=true.
+  const categorySlugs: string[] = [];
+  if (hasClaudemd) categorySlugs.push("claude-md");
+  if (hasSkills) categorySlugs.push("claude-skills");
+  if (hasAgents) categorySlugs.push("claude-agents");
+  if (hasCommands) categorySlugs.push("claude-commands");
+
+  const categoriesAttr = JSON.stringify(categorySlugs);
 
   const index = `---
 title: "Claude"
@@ -528,7 +548,7 @@ Claude Code configuration reference.
 
 ## Resources
 
-<CategoryNav category="claude" />
+<CategoryNav categories={${categoriesAttr}} />
 `;
   fs.writeFileSync(path.join(outputDir, "index.mdx"), index);
 }
@@ -539,7 +559,12 @@ export function generateClaudeResourcesDocs(config: ClaudeResourcesConfig) {
   const skills = generateSkillsDocs(config);
   const agents = generateAgentsDocs(config);
 
-  generateOverviewIndex(config);
+  generateOverviewIndex(config, {
+    hasClaudemd: claudemds.length > 0,
+    hasCommands: commands.length > 0,
+    hasSkills: skills.length > 0,
+    hasAgents: agents.length > 0,
+  });
 
   return {
     claudemd: claudemds.length,
