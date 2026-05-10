@@ -96,6 +96,18 @@ export function getPathForLocale(
 
 /** Build locale links for locale switcher UI components. */
 export function buildLocaleLinks(currentPath: string, currentLang: Locale): LocaleLink[] {
+  let defaultLocalePath = stripBase(currentPath);
+  if (currentLang !== defaultLocale) {
+    defaultLocalePath = defaultLocalePath.replace(new RegExp(`^/${currentLang}/`), "/");
+  }
+  if (isDefaultLocaleOnlyPath(defaultLocalePath)) {
+    return [{
+      code: currentLang,
+      label: getLocaleLabel(currentLang),
+      href: getPathForLocale(currentPath, currentLang, currentLang),
+      active: true,
+    }];
+  }
   return locales.map((code) => ({
     code,
     label: getLocaleLabel(code),
