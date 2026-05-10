@@ -77,6 +77,31 @@ declare module "zfb/config" {
       theme?: string;
       themesDir?: string;
     };
+    /**
+     * Markdown link resolver (port of `remarkResolveMarkdownLinks`).
+     * Mirrors `Config::resolve_markdown_links` in crates/zfb/src/config.rs
+     * (Takazudo/zudo-front-builder PR #234 / zudolab/zudo-doc#1577).
+     * When `enabled: true`, the build appends `ResolveLinksPlugin` to the
+     * mdast pipeline so author-written `[label](./other.mdx)` links are
+     * rewritten to the corresponding rendered route URL — bypassing the
+     * file→directory transformation that breaks relative paths in dist
+     * HTML when `foo.mdx` becomes `foo/index.html`.
+     */
+    resolveMarkdownLinks?: {
+      enabled?: boolean;
+      docsDir?: string;
+      dirs?: Array<{ dir: string; routePrefix: string }>;
+      onBrokenLinks?: "warn" | "error" | "ignore";
+    };
+    /**
+     * Whether the basePath rewriter should append a trailing `/` to
+     * extensionless absolute hrefs. Mirrors `Config::trailing_slash` in
+     * crates/zfb/src/config.rs (Takazudo/zudo-front-builder PR #234 /
+     * zudolab/zudo-doc#1579). Off by default — preserves byte-for-byte
+     * parity with the pre-`trailingSlash` build for projects that
+     * haven't opted in.
+     */
+    trailingSlash?: boolean;
   }
 
   /**
