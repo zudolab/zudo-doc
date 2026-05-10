@@ -32,9 +32,6 @@
 #   - Either remove the JA `ai-chat-worker.mdx` page's references
 #     to those 2 EN-only siblings, OR add JA mirrors for them.
 
-dist/ja/docs/reference/ai-chat-worker/index.html:603:./ai-assistant-api/
-dist/ja/docs/reference/ai-chat-worker/index.html:621:../guides/ai-assistant/
-
 # ----- Absolute Links Bypassing Base Path (5 entries) ------------
 #
 # Cannot be auto-converted to relative `.mdx` because the targets
