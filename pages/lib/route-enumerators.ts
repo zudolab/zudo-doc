@@ -40,8 +40,10 @@ import {
  * Enumerate all doc page URLs for a locale.
  *
  * For the default locale: loads the "docs" collection directly.
- * For non-default locales: locale-first merge using enumerateMergedDocsSlugs
- * (regular pages) plus a nav-tree pass for auto-generated category index pages.
+ * For non-default locales: inlines a locale-first merge — locale docs take
+ * priority; base EN docs fill in slugs not covered by the locale collection,
+ * with default-locale-only paths excluded. A nav-tree pass then adds
+ * auto-generated category index pages.
  *
  * Applies toRouteSlug so "category/index" entries become "category/" URLs.
  * Returns deduplicated URL strings with base prefix and trailing slash.
