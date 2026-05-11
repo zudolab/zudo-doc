@@ -411,9 +411,12 @@
  * base-path (see zudo-doc#1564 LESSON CONTEXT).
  *
  * Current pin:
- *   SHA: e23fc86fe61405a76b893ba18644eb08be5ecbdc
+ *   SHA: e5249698a2dc95aae2c1061463677ce7a5a0755a
  *   Repo: Takazudo/zudo-design-token-panel
- *   Context: initial zdtp wiring — epic zudolab/zudo-doc#1564 sub-issue #1566
+ *   Context: pulls upstream zdtp PR #54 — consolidates the panel toggle
+ *   ownership into a single source of truth (`localStorage[OPEN_KEY]`),
+ *   eliminating the dual-listener race that caused "1st click does nothing,
+ *   2nd click opens" after the in-panel X button was used.
  */
 
 // zfb.config.ts — entry-point config consumed by the zfb engine.
