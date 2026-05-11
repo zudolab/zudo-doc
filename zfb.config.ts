@@ -411,14 +411,18 @@
  * base-path (see zudo-doc#1564 LESSON CONTEXT).
  *
  * Current pin:
- *   SHA: 75a567349943a3beb80a209d47f087824f3b82c8
+ *   SHA: 4f9d3799bbf3c08c54cd84b7f0e209745b11493f
  *   Repo: Takazudo/zudo-design-token-panel
- *   Context: pulls upstream zdtp PR #55 — forces `willBeOpen=true` in
- *   `handleExternalToggleEvent` when the panel root is absent, fixing the
- *   "1st click does nothing, 2nd click opens" regression that surfaced after
- *   SPA-nav from an open panel (downstream zudolab/zudo-doc#1633 / #1640 /
- *   #1631). The fresh-mount path no longer trusts a possibly-stale OPEN_KEY
- *   to derive toggle direction.
+ *   Context: pulls upstream zdtp PR #56 — replaces the static
+ *   `DEFAULT_POSITION = { top: 60, right: 20 }` fallback with a runtime
+ *   viewport-centered position via a new `defaultPosition()` helper, so
+ *   `loadPosition()` returns a centered position on fresh localStorage
+ *   instead of dropping the panel in the upper-right corner. Saved-position
+ *   behaviour is unchanged: existing `zudo-doc-tweak-position` entries still
+ *   load verbatim. Downstream epic zudolab/zudo-doc#1645, sub-issue #1646
+ *   (W1). W2b (#1648) mirrors the same shape into this repo's `main` branch
+ *   (legacy in-tree panel) so users on `main` get the same fix before the
+ *   post-zfb-migration cutover.
  */
 
 // zfb.config.ts — entry-point config consumed by the zfb engine.

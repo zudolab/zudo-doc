@@ -69,7 +69,7 @@ env:
   # Pinned zdtp commit — keep in sync with the zdtp pin block in zfb.config.ts,
   # the file: spec in package.json, and the same env in main-deploy.yml /
   # pr-checks.yml. All three sources must be bumped together.
-  ZDTP_PINNED_SHA: 75a567349943a3beb80a209d47f087824f3b82c8
+  ZDTP_PINNED_SHA: 4f9d3799bbf3c08c54cd84b7f0e209745b11493f
 
 jobs:
   # ---------------------------------------------------------------------------
