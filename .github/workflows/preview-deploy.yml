@@ -446,13 +446,25 @@ jobs:
         run: |
           BRANCH="${{ steps.branch.outputs.name }}"
 
+          # Cloudflare Pages truncates branch-alias subdomains to 28 chars,
+          # so the served alias can differ from `https://${BRANCH}.zudo-doc.pages.dev`
+          # whenever BRANCH is longer than 28 chars (e.g. expreview/long-name -> ...
+          # -> expreview-long-name truncated to 28). Parse wrangler's actual
+          # "Deployment alias URL:" line instead of reconstructing it, otherwise
+          # the downstream verify steps hit 404 on the wrong subdomain.
+          DEPLOY_LOG=$(mktemp)
           npx wrangler@4 pages deploy deploy \
             --project-name=zudo-doc \
             --branch="$BRANCH" \
             --commit-hash="${GITHUB_SHA}" \
-            --commit-message="Preview: ${BRANCH} @ ${GITHUB_SHA:0:7}"
+            --commit-message="Preview: ${BRANCH} @ ${GITHUB_SHA:0:7}" \
+            2>&1 | tee "$DEPLOY_LOG"
 
-          DEPLOY_URL="https://${BRANCH}.zudo-doc.pages.dev"
+          DEPLOY_URL=$(awk '/Deployment alias URL:/ {for(i=1;i<=NF;i++) if($i ~ /^https?:\/\//) print $i}' "$DEPLOY_LOG" | head -1)
+          if [ -z "$DEPLOY_URL" ]; then
+            echo "::error::Failed to parse Deployment alias URL from wrangler output"
+            exit 1
+          fi
           echo "deploy_url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
           echo "Preview URL: $DEPLOY_URL"
         env:
