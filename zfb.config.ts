@@ -411,12 +411,14 @@
  * base-path (see zudo-doc#1564 LESSON CONTEXT).
  *
  * Current pin:
- *   SHA: e5249698a2dc95aae2c1061463677ce7a5a0755a
+ *   SHA: 75a567349943a3beb80a209d47f087824f3b82c8
  *   Repo: Takazudo/zudo-design-token-panel
- *   Context: pulls upstream zdtp PR #54 — consolidates the panel toggle
- *   ownership into a single source of truth (`localStorage[OPEN_KEY]`),
- *   eliminating the dual-listener race that caused "1st click does nothing,
- *   2nd click opens" after the in-panel X button was used.
+ *   Context: pulls upstream zdtp PR #55 — forces `willBeOpen=true` in
+ *   `handleExternalToggleEvent` when the panel root is absent, fixing the
+ *   "1st click does nothing, 2nd click opens" regression that surfaced after
+ *   SPA-nav from an open panel (downstream zudolab/zudo-doc#1633 / #1640 /
+ *   #1631). The fresh-mount path no longer trusts a possibly-stale OPEN_KEY
+ *   to derive toggle direction.
  */
 
 // zfb.config.ts — entry-point config consumed by the zfb engine.
