@@ -23,7 +23,37 @@ export interface PanelPosition {
   right: number;
 }
 
+/**
+ * SSR-safe static fallback. Kept exported so SSR call sites (where `window`
+ * is undefined) still get a deterministic value. Runtime callers should
+ * prefer `defaultPosition()`, which returns a viewport-centered position
+ * when `window` is available.
+ */
 export const DEFAULT_POSITION: PanelPosition = { top: 60, right: 20 };
+
+/**
+ * Compute a viewport-centered default panel position for first-open behaviour.
+ *
+ * The panel sizes itself up to 1200×800 but caps at 80% of the viewport, so
+ * we mirror the same min/0.8x rule here. The resulting `top` / `right` place
+ * the panel at the geometric center of the viewport.
+ *
+ * Falls back to the static `DEFAULT_POSITION` when `window` is undefined
+ * (e.g. SSR / node test setup without jsdom). Real browsers + jsdom-backed
+ * tests get the centered position.
+ *
+ * Mirrors the upstream zdtp shape (Takazudo/zudo-design-token-panel#56).
+ * Kept here byte-equivalent with the main zudo-doc copy so the template +
+ * production code never diverge.
+ */
+export function defaultPosition(): PanelPosition {
+  if (typeof window === "undefined") return DEFAULT_POSITION;
+  const panelW = Math.min(1200, 0.8 * window.innerWidth);
+  const panelH = Math.min(800, 0.8 * window.innerHeight);
+  const top = Math.max(0, Math.round((window.innerHeight - panelH) / 2));
+  const right = Math.max(0, Math.round((window.innerWidth - panelW) / 2));
+  return { top, right };
+}
 
 export function loadPosition(): PanelPosition {
   try {
@@ -35,7 +65,7 @@ export function loadPosition(): PanelPosition {
       }
     }
   } catch { /* ignore */ }
-  return DEFAULT_POSITION;
+  return defaultPosition();
 }
 
 export function savePosition(pos: PanelPosition) {
