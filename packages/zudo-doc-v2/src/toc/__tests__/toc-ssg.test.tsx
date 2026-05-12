@@ -45,16 +45,19 @@ describe("Toc — SSG HTML presence", () => {
     expect(html).toContain("Configuration");
   });
 
-  it("renders section title in static HTML", () => {
+  it("does not render a visible title <p> in static HTML (desktop heading removed, issue #1655/T1)", () => {
     const html = render(<Toc headings={SAMPLE_HEADINGS} title="On this page" />);
-    expect(html).toContain("On this page");
+    // Desktop Toc no longer emits a visible heading — the nav landmark is the
+    // accessible section boundary for screen readers.
+    expect(html).not.toContain("On this page");
+    // The aria-label landmark must still be present.
+    expect(html).toContain('aria-label="Table of contents"');
   });
 
-  it("renders locale title even when headings array is empty", () => {
+  it("renders no content when headings array is empty (title <p> absent)", () => {
     const html = render(<Toc headings={[]} title="目次" />);
-    // Title must be present for migration-check parity.
-    expect(html).toContain("目次");
-    // No spurious anchor links when there are no headings.
+    // No visible title and no anchor links when there are no headings.
+    expect(html).not.toContain("目次");
     expect(html).not.toContain('href="#');
   });
 

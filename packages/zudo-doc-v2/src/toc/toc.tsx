@@ -14,11 +14,10 @@ import { cx } from "./cx";
 export interface TocProps {
   headings: readonly HeadingItem[];
   /**
-   * Section label rendered as a static h2 above the outline list.
-   * Defaults to "On this page" (English). Pass the i18n-resolved
-   * equivalent (e.g. "目次" for Japanese) from the caller so SSG HTML
-   * always contains the correct locale string — required for
-   * migration-check parity on non-EN routes.
+   * Section label used by MobileToc. The desktop Toc no longer renders
+   * a visible heading (issue #1655 / T1) but the prop is kept so callers
+   * can share a single title value for both desktop and mobile surfaces.
+   * Defaults to "On this page" (English).
    */
   title?: string;
 }
@@ -56,10 +55,10 @@ export interface TocProps {
  * historical behavior — the page title (h1) is rendered separately by
  * the layout and h5+ are deemed too granular for the TOC.
  *
- * The section `title` h2 is always rendered even when there are no
- * qualifying headings — this preserves the "On this page" / locale
- * string in the SSG HTML for migration-check parity. When headings are
- * absent the `<ul>` is omitted so no empty list appears to users.
+ * The `title` prop is kept on the signature (MobileToc and callers still
+ * use it) but the desktop Toc no longer renders a visible heading — the
+ * `<nav aria-label="Table of contents">` landmark provides the section
+ * semantics for screen readers. Issue #1655 / T1.
  */
 export function Toc({ headings, title = "On this page" }: TocProps): VNode {
   const filtered = useMemo(
@@ -79,18 +78,8 @@ export function Toc({ headings, title = "On this page" }: TocProps): VNode {
         "h-[calc(100vh-3.5rem)]",
       )}
     >
-      {/* Non-heading label so the TOC title does not appear in the page
-          heading outline. The reference site (takazudomodular.com) emits
-          this as non-heading markup; using <h2> added an extra entry to
-          every doc page's outline and a structural diff vs the reference.
-          The <nav aria-label="Table of contents"> landmark provides the
-          section semantics for screen readers — a heading is redundant.
-          Wave 2 parity fix: zudolab/zudo-doc#1478. */}
-      <p className="mb-vsp-xs pl-hsp-lg text-small font-medium text-fg">
-        {title}
-      </p>
       {filtered.length > 0 && (
-        <ul className="border-l border-muted pl-hsp-lg overflow-y-auto flex-1 min-h-0">
+        <ul className="border-l border-muted pl-hsp-lg overflow-y-auto">
           {filtered.map((heading, index) => {
             const isActive = heading.slug === activeId;
             return (
