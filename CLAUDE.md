@@ -26,6 +26,46 @@ Minimal documentation framework built with zfb, MDX, Tailwind CSS v4, and Preact
 - `pnpm check` — type checking (runs `zfb check`, which delegates to `tsc --noEmit`)
 - `pnpm b4push` — pre-push validation: format check → template drift check → tags audit (`tags:audit --ci`) → design token lint → typecheck → build → link check → preview smoke (E2E parity is parked under E9b until the post-cutover migration window closes)
 
+## Automation
+
+These run automatically — be aware when working in this repo:
+
+- **predev port cleanup**: `pnpm dev` first runs `lsof -ti :4321 -ti :4322 | xargs kill` so stale dev/history servers are reaped on start. You do not need a separate kill step.
+- **lefthook pre-commit** (`lefthook.yml`): on commit, staged `*.md` and `*.mdx` files are formatted with `@takazudo/mdx-formatter` and re-added. You do not need to manually `pnpm format` markdown before committing.
+- **postinstall**: `pnpm install` runs `scripts/zfb-fetch-tailwind.mjs`, `scripts/zfb-link.mjs`, and `scripts/zdtp-link.mjs` to wire the local `file:` deps for zfb and zdtp. If you change those `file:` paths or wipe `node_modules`, rerun `pnpm install`.
+
+## Worktree push policy (enforced)
+
+This repo uses `/x-wt-teams` for multi-topic development. Child agents work in git worktrees under `worktrees/`. **Pushing from a worktree is forbidden.** Only the manager session — running from the main repo at the repo root — pushes, after merging topic branches into the base branch locally.
+
+### Why
+
+- CI runs on every push. Children pushing pre-empt the manager's merge + review step, multiplying CI cost across intermediate state.
+- Topic branches in `worktrees/*/` are intermediate by design — they shouldn't appear as standalone PRs unless the manager creates them.
+
+### How it's enforced
+
+`.git/hooks/pre-push` is a direct script (not managed via `lefthook.yml`) that blocks any push from a git worktree. It is auto-installed by `pnpm install` (via the `prepare` lifecycle script) and can be re-installed manually with:
+
+```sh
+pnpm init-worktree
+```
+
+The installer source lives at `scripts/install-git-hooks.sh`; the hook itself at `scripts/hooks/pre-push`.
+
+### Emergency bypass (human use)
+
+```sh
+ALLOW_WORKTREE_PUSH=1 git push ...
+```
+
+Use only when you genuinely need to push from a worktree (rare). Never set this in agent prompts.
+
+### Guidance for agents
+
+- **Child agents working in `worktrees/*/`:** commit locally only. Pushing will fail with the message above — do not retry, do not invoke the bypass. Report back to the manager with the branch name and commit SHAs; the manager merges and pushes from the main repo.
+- **`/x-wt-teams` manager session:** the hook does not affect you. Your `git push` runs from the main repo (the cwd is the repo root, not `worktrees/...`). After every wave's local merges, push as usual. Do not pass `ALLOW_WORKTREE_PUSH` to children.
+
 ## Key Directories
 
 ```
@@ -37,7 +77,7 @@ pages/                   # File-routed pages (.tsx) — zfb resolves these
 ├── api/                 # API routes (e.g. ai-chat)
 └── sitemap.xml.tsx      # Sitemap generator
 packages/
-├── ai-chat-worker/       # CF Worker for AI chat API
+├── ai-chat-worker/       # CF Worker for AI chat API (deprecated; superseded by pages/api/ai-chat.tsx)
 ├── md-plugins/           # Shared remark/rehype plugins (link resolver, admonitions, etc.)
 ├── search-worker/        # CF Worker for search API
 ├── doc-history-server/   # Doc history REST API + CLI generator
@@ -56,97 +96,26 @@ src/
     └── global.css       # Design tokens (@theme) & Tailwind config
 ```
 
-## Conventions
-
-### Components
-
-- All components are **Preact `.tsx`** — there are no `.astro` files. Pages, layouts, and component overrides are all written as Preact function components.
-- Default to **server-rendered Preact** (no `client:*` directive) — emits zero JS for static markup
-- Promote a component to a **client island** only when it needs interactivity. zfb hydration is opt-in via the `ssr-islands.tsx` registry / standard `client:*`-style props on island wrappers.
-- Current client islands: `toc.tsx`, `mobile-toc.tsx`, `sidebar-toggle.tsx`, `sidebar-tree.tsx`, `theme-toggle.tsx`, `doc-history.tsx`, `find-bar.tsx`, `image-enlarge.tsx`, `ai-chat-modal.tsx`, zdtp panel (self-mounted via `configurePanel()`, not registered in the island registry)
-- Content typography components (`src/components/content/`): server-rendered Preact functions that override HTML elements emitted by MDX via the `<Content components={...} />` mapping in `pages/_mdx-components.ts`. Includes: headings (h2-h4), paragraph, link, strong, blockquote, lists (ul/ol), table.
-
-### Content Collections
+## Content Collections
 
 - Schema and collection wiring live in `zfb.config.ts` (Zod validation)
 - Loaded via zfb's MDX content pipeline with a configurable `base` directory from settings
 - Content directories: `docsDir` (default: `src/content/docs`), `docsJaDir` (default: `src/content/docs-ja`)
 
-### Terminology: "Update docs"
+## Terminology: "Update docs"
 
 When we say "update docs" or "update our doc," it means updating the **showcase documentation** content in `src/content/docs/` (English) and `src/content/docs-ja/` (Japanese). Since zudo-doc is a documentation framework, its own content directories serve as the default showcase. These are the pages visible when running `pnpm dev`.
 
-### i18n
+## i18n
 
 - English (default): `/docs/...` — content in `docsDir` (default: `src/content/docs`)
 - Japanese: `/ja/docs/...` — content in `docsJaDir` (default: `src/content/docs-ja`)
 - Configured in `zfb.config.ts` with `prefixDefaultLocale: false`
-- Japanese docs should mirror the English directory structure
-- **Bilingual rule**: When creating or updating any doc page, update both EN and JA versions. Keep code blocks identical -- only translate prose.
-- **Exception**: Pages with `generated: true` in frontmatter do not require Japanese translations.
-- **Exception**: Pages whose paths fall under `settings.defaultLocaleOnlyPrefixes` are default-locale-only by design — no JA mirror should be created for them. The current entries are `/docs/claude-md/`, `/docs/claude-skills/`, `/docs/claude-agents/`, and `/docs/claude-commands/`. Note that the top-level `/docs/claude/` index is bilingual (the JA stub lives at `src/content/docs-ja/claude/index.mdx`) — only the four deep prefixes listed above are default-locale-only.
-
-## Writing Docs
-
-### Frontmatter Fields
-
-Schema in `zfb.config.ts` (`docsSchema`). Required: `title` (string). Key optional fields:
-
-| Field | Type | Description |
-|---|---|---|
-| `sidebar_position` | number | Sort order within category (lower = higher). Always set this |
-| `description` | string | Subtitle below the title |
-| `sidebar_label` | string | Custom sidebar text (overrides `title`) |
-| `tags` | string[] | Cross-category grouping |
-| `draft` | boolean | Exclude from build entirely |
-| `unlisted` | boolean | Built but hidden from sidebar/nav |
-| `generated` | boolean | Build-time generated content (skip translation) |
-| `hide_sidebar` | boolean | Hide left sidebar |
-| `hide_toc` | boolean | Hide right-side TOC |
-
-### Content Rules
-
-- **No h1 in content**: The frontmatter `title` renders as the page h1. Start with `## h2`.
-- **Always set `sidebar_position`**: Without it, pages sort alphabetically.
-- **Kebab-case file names**: Use `my-article.mdx`, not `myArticle.mdx`.
-
-### Admonitions
-
-Available in all MDX files without imports (registered globally in doc page).
-
-**Directive syntax**: `:::note[Title]` ... `:::`
-
-**JSX syntax**: `<Note>`, `<Tip>`, `<Info>`, `<Warning>`, `<Danger>` — each accepts optional `title` prop.
-
-### Linking Between Docs
-
-Use relative file paths with `.mdx` extension:
-
-```markdown
-[Link text](./sibling-page.mdx)
-[Link text](../other-category/page.mdx#anchor)
-```
-
-### Navigation Structure
-
-Navigation is filesystem-driven. Directory structure becomes sidebar navigation.
-
-- Pages ordered by `sidebar_position` (ascending)
-- Category index pages (`index.mdx`) control category position
-- `_category_.json` for category-level metadata (label, position, noPage)
-- Header nav defined in `src/config/settings.ts` via `headerNav` with `categoryMatch`
-
-### Content Creation Workflow
-
-1. Create English `.mdx` file under `src/content/docs/` with `title` and `sidebar_position`
-2. Write content starting with `## h2` headings (not `# h1`)
-3. Create matching Japanese file under `src/content/docs-ja/`
-4. Keep code blocks and `<HtmlPreview>` blocks identical -- only translate prose
-5. Run `pnpm format` then `pnpm build` to verify
+- **Bilingual rule**: when creating or updating any doc page, update both EN and JA versions. Detailed exceptions and the content-writing workflow live in `src/content/CLAUDE.md` (auto-loaded when working on content).
 
 ## Doc Skill (setup-doc-skill)
 
-The doc-skill (`scripts/setup-doc-skill.sh`) generates `.claude/skills/<name>/SKILL.md` and symlinks docs into it. It is gitignored -- do NOT track the generated SKILL.md in git. Run `pnpm setup:doc-skill` to regenerate. To update the skill template, edit `scripts/setup-doc-skill.sh`.
+The doc-skill (`scripts/setup-doc-skill.sh`) generates `.claude/skills/<name>/SKILL.md` and symlinks docs into it. It is gitignored — do NOT track the generated SKILL.md in git. Run `pnpm setup:doc-skill` to regenerate. To update the skill template, edit `scripts/setup-doc-skill.sh`.
 
 This script is also the **source template** copied to downstream projects by `create-zudo-doc` when the `skillSymlinker` feature is enabled.
 
@@ -188,6 +157,13 @@ When adding or removing a feature from zudo-doc, update the `create-zudo-doc` ge
 
 **Important**: This checklist also applies to incremental improvements (CSS token migrations, icon sizing, spacing changes, etc.) — not just new features. If you change a file that has a template counterpart, update the template too. Run `pnpm check:template-drift` to verify (note: allowlisted files such as `src/styles/global.css`, plugin re-exports, and other slot-based files listed in `.template-drift-allowlist` are excluded from automated checks and need manual review).
 
-## Design Tokens & CSS
+## Directory-scoped CLAUDE.md files
 
-See `src/CLAUDE.md` for design token system (three-tier color strategy, color rules, scheme configuration) and CSS conventions (component-first strategy, tight token strategy).
+These auto-load when working in the corresponding directory — read them when relevant work is in scope:
+
+- `src/CLAUDE.md` — components, design tokens, three-tier color/font-size strategy, CSS rules
+- `src/config/CLAUDE.md` — tag vocabulary and tag governance
+- `src/content/CLAUDE.md` — doc-writing rules (frontmatter, admonitions, linking, bilingual workflow)
+- `e2e/CLAUDE.md` — Playwright fixture architecture and test patterns
+- `packages/*/CLAUDE.md` — per-package architecture notes (workers, generator, doc-history-server)
+- `vendor/design-token-lint/CLAUDE.md` — design-token-lint linter package

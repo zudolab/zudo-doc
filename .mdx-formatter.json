@@ -1,5 +1,16 @@
 {
-  "exclude": ["node_modules/**", "dist/**", ".astro/**"],
+  "exclude": [
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    ".astro/**",
+    ".git/**",
+    "worktrees/**",
+    "src/content/docs/claude/**",
+    "src/content/docs/claude-md/**",
+    "src/content/docs/claude-skills/**",
+    "src/content/docs/claude-agents/**"
+  ],
   "addEmptyLinesInBlockJsx": {
     "blockComponents": ["Note", "Tip", "Info", "Warning", "Danger", "Details", "Tabs", "HtmlPreview"]
   },
