@@ -31,11 +31,15 @@ export function initSidebarResizer() {
   handle.setAttribute("aria-valuemin", String(MIN_W));
   handle.setAttribute("aria-valuemax", String(MAX_W));
   handle.setAttribute("aria-valuenow", String(Math.round(cachedWidth)));
+  // 20px is wider than every common native y-scrollbar (~12-17px on
+  // Win/Linux classic; 0 on macOS overlay) so a draggable strip always remains
+  // visible to the LEFT of the scrollbar when sidebar content overflows.
+  // zudolab/zudo-doc#1660
   Object.assign(handle.style, {
     position: "absolute",
     top: "0",
     right: "0",
-    width: "6px",
+    width: "20px",
     height: "100%",
     cursor: "col-resize",
     zIndex: "10",

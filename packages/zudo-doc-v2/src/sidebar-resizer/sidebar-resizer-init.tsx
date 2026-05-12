@@ -55,7 +55,9 @@ export const SIDEBAR_RESIZER_INIT_SCRIPT = `(function(){
     handle.setAttribute("aria-valuemin",String(MIN_W));
     handle.setAttribute("aria-valuemax",String(MAX_W));
     handle.setAttribute("aria-valuenow",String(Math.round(cachedWidth)));
-    Object.assign(handle.style,{position:"absolute",top:"0",right:"0",width:"6px",height:"100%",cursor:"col-resize",zIndex:"10",transition:"background 0.15s"});
+    // 20px hit area > native y-scrollbar (~12-17px) so a draggable strip stays
+    // visible to the LEFT of the scrollbar when sidebar overflows. zudolab/zudo-doc#1660
+    Object.assign(handle.style,{position:"absolute",top:"0",right:"0",width:"20px",height:"100%",cursor:"col-resize",zIndex:"10",transition:"background 0.15s"});
 
     var dragging=false,focused=false;
 
