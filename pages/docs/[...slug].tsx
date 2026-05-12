@@ -49,6 +49,7 @@ import { createMdxComponents } from "../_mdx-components";
 import { FooterWithDefaults } from "../lib/_footer-with-defaults";
 import { DocHistoryArea } from "../lib/_doc-history-area";
 import { DocMetainfoArea } from "../lib/_doc-metainfo-area";
+import { DocTagsArea } from "../lib/_doc-tags-area";
 import { BodyEndIslands } from "../lib/_body-end-islands";
 import { SidebarWithDefaults } from "../lib/_sidebar-with-defaults";
 import { HeaderWithDefaults } from "../lib/_header-with-defaults";
@@ -337,6 +338,9 @@ export default function DocsPage({ entry, autoIndex, breadcrumbs, prev, next, he
               Astro `doc-metainfo.astro` placement — between <h1> and description.
               Data from `.zfb/doc-history-meta.json` (esbuild-inlined, no fs). */}
           <DocMetainfoArea slug={slug} locale={locale} />
+
+          {/* Page-level tag chips — mirroring doc-tags.astro placement (#1658). */}
+          <DocTagsArea slug={slug} locale={locale} tags={entry!.data.tags} />
 
           {entry!.data.description && (
             <p class="mb-vsp-lg text-subheading text-muted">

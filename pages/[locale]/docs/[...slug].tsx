@@ -50,6 +50,7 @@ import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
 import { DocHistoryArea } from "../../lib/_doc-history-area";
 import { BodyEndIslands } from "../../lib/_body-end-islands";
 import { DocMetainfoArea } from "../../lib/_doc-metainfo-area";
+import { DocTagsArea } from "../../lib/_doc-tags-area";
 import { SidebarWithDefaults } from "../../lib/_sidebar-with-defaults";
 import { HeaderWithDefaults } from "../../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../../lib/_head-with-defaults";
@@ -355,6 +356,9 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
               Astro `doc-metainfo.astro` placement — between <h1> and description.
               Data from `.zfb/doc-history-meta.json` (esbuild-inlined, no fs). */}
           <DocMetainfoArea slug={slug} locale={locale} />
+
+          {/* Page-level tag chips — mirroring doc-tags.astro placement (#1658). */}
+          <DocTagsArea slug={slug} locale={locale} tags={entry!.data.tags} />
 
           {/* Fallback notice for non-translated pages */}
           {isFallback && !entry!.data.generated && (
