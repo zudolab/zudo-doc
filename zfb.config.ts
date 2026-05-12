@@ -1,6 +1,15 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: 6be1f38 (base/link-cleanup-zfb — link-pipeline parity:
+ *   commit: aa8e9ac (main — `build: commit Cargo.lock so transitive dep
+ *           resolution is reproducible`. Removes Cargo.lock from
+ *           .gitignore and ships a checked-in workspace lockfile so the
+ *           consumer's `Build zfb Binary` job stops drifting against
+ *           the cached `target/` on each CI run. Closes the follow-up
+ *           called out in 9dcae3f and root-causes the rusty_v8
+ *           link-failure surfaced when the partial-rebuild path tries
+ *           to re-link v8 against a librusty_v8.a path that no longer
+ *           exists in OUT_DIR after rust-cache restore.
+ *           Previous pin 6be1f38 (base/link-cleanup-zfb — link-pipeline parity:
  *           same content as c371e4c (parent commit) PLUS the TS-side
  *           type defs for `ZfbConfig.resolveMarkdownLinks` and
  *           `ZfbConfig.trailingSlash`. Fixes a `pnpm check` TS2353
