@@ -53,8 +53,9 @@
     "tags:audit": "tsx scripts/tags-audit.ts",
     "tags:suggest": "tsx scripts/tags-suggest.ts",
     "// ── Lifecycle (auto-run by pnpm install) ─────────": "",
-    "prepare": "lefthook install --reset-hooks-path",
-    "postinstall": "node scripts/zfb-fetch-tailwind.mjs && node scripts/zfb-link.mjs && node scripts/zdtp-link.mjs"
+    "prepare": "lefthook install --reset-hooks-path && bash scripts/install-git-hooks.sh",
+    "postinstall": "node scripts/zfb-fetch-tailwind.mjs && node scripts/zfb-link.mjs && node scripts/zdtp-link.mjs",
+    "init-worktree": "bash scripts/install-git-hooks.sh"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
