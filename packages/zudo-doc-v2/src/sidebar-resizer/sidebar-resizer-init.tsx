@@ -98,8 +98,10 @@ export const SIDEBAR_RESIZER_INIT_SCRIPT = `(function(){
       ghost.style.left=sidebarLeft+sidebarRect.width+"px";
       document.body.appendChild(ghost);
       var targetWidth=0;
+      var cleaned=false;
       function onMove(ev){targetWidth=Math.max(MIN_W,Math.min(MAX_W,ev.clientX-sidebarLeft));ghost.style.left=sidebarLeft+targetWidth+"px";}
       function cleanup(){
+        if(cleaned)return;cleaned=true;
         dragging=false;updateHandleVisual();
         document.documentElement.style.cursor="";
         document.documentElement.style.userSelect="";
@@ -107,14 +109,23 @@ export const SIDEBAR_RESIZER_INIT_SCRIPT = `(function(){
         handle.removeEventListener("pointermove",onMove);
         handle.removeEventListener("pointerup",onUp);
         handle.removeEventListener("pointercancel",onCancel);
-        handle.removeEventListener("lostpointercapture",onCancel);
+        handle.removeEventListener("lostpointercapture",onLost);
       }
-      function onUp(ev){handle.releasePointerCapture(ev.pointerId);cleanup();if(targetWidth>0)applyWidth(targetWidth);}
+      function commit(){if(targetWidth>0)applyWidth(targetWidth);}
+      // pointerup: normal end-of-drag. Commit then teardown.
+      function onUp(){commit();cleanup();}
+      // lostpointercapture: per spec fires AFTER pointerup, but browsers reorder
+      // these in edge cases (cursor near y-scrollbar, fast drags, OS handoff).
+      // Commit here too so a real drag still applies if pointerup is dropped.
+      // Idempotent with onUp via the cleaned guard.
+      function onLost(){commit();cleanup();}
+      // pointercancel: actual user/OS cancellation (touch interrupted, etc.).
+      // Do NOT commit — caller intent was to abort.
       function onCancel(){cleanup();}
       handle.addEventListener("pointermove",onMove);
       handle.addEventListener("pointerup",onUp);
       handle.addEventListener("pointercancel",onCancel);
-      handle.addEventListener("lostpointercapture",onCancel);
+      handle.addEventListener("lostpointercapture",onLost);
     });
     sidebar.appendChild(handle);
   }
