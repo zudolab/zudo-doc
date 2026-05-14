@@ -11,13 +11,32 @@ describe("designTokenPanelConfig", () => {
     expect(designTokenPanelConfig.storagePrefix).toBe("zudo-doc-tweak");
   });
 
-  it("paletteCssVarTemplate produces '--zd-0' when '{n}' is replaced with '0'", () => {
-    const template = designTokenPanelConfig.colorCluster.paletteCssVarTemplate;
-    expect(template.replace("{n}", "0")).toBe("--zd-0");
+  it("color tab's palette tier writes --zd-0..--zd-15 (drives the derived paletteCssVarTemplate)", () => {
+    // In the new tabs[] API the palette CSS-var template is no longer a
+    // literal field — zdtp derives it from the first palette item's cssVar
+    // (replacing the trailing digit run with `{n}`). We assert the items
+    // directly to pin the bridge's input.
+    const colorTab = designTokenPanelConfig.tabs.find((t) => t.id === "color");
+    expect(colorTab).toBeDefined();
+    const paletteTier = colorTab!.tiers.find((t) => t.id === "palette");
+    expect(paletteTier).toBeDefined();
+    expect(paletteTier!.items).toHaveLength(16);
+    expect(paletteTier!.items[0].cssVar).toBe("--zd-0");
+    expect(paletteTier!.items[15].cssVar).toBe("--zd-15");
   });
 
-  it("tokens.color is an empty array — color is cluster-driven, not per-token", () => {
-    expect(designTokenPanelConfig.tokens.color).toEqual([]);
+  it("color tab carries colorExtras with the cluster id 'zudo-doc'", () => {
+    const colorTab = designTokenPanelConfig.tabs.find((t) => t.id === "color");
+    expect(colorTab?.colorExtras?.id).toBe("zudo-doc");
+  });
+
+  it("ships exactly four tabs: color, font, spacing, size", () => {
+    expect(designTokenPanelConfig.tabs.map((t) => t.id)).toEqual([
+      "color",
+      "font",
+      "spacing",
+      "size",
+    ]);
   });
 
   it("every key in colorTweakPresets round-trips through JSON.stringify", () => {
