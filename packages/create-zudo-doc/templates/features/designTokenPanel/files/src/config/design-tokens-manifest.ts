@@ -4,17 +4,15 @@
  * so they survive the W3-2 deletion of the panel component tree.
  *
  * Imported by:
- *  - src/config/design-token-panel-config.ts  (new zdtp PanelConfig)
- *  - (W3-2: legacy re-export src/components/design-token-tweak/tokens/manifest.ts deleted)
+ *  - src/config/design-token-panel-config.ts  (groups items into TabConfig.tiers)
+ *  - src/utils/design-token-serde.ts          (cssVar ↔ id lookup for JSON I/O)
  *
- * Type strategy: the zdtp `TokenDef` interface (group: string) and the local
- * legacy `TokenDef` interface (group: TokenGroup closed union) are structurally
- * compatible — every group value in the arrays is a member of both. Arrays are
- * typed using the zdtp `TokenDef` so `design-token-panel-config.ts` can pass
- * them directly to `PanelConfig.tokens` without any cast. The legacy
- * `manifest.ts` re-exports them; TypeScript allows assigning `TokenDef[]`
- * (group: string) elements to the local narrower union via assignment since all
- * literal group values satisfy both types.
+ * Type strategy: arrays are typed `readonly TokenDef[]` for back-compat with
+ * the consumer serde and tests. `design-token-panel-config.ts` partitions the
+ * flat arrays by the `group` field into the new zdtp `TabConfig.tiers` shape.
+ * `TokenDef.advanced` was dropped upstream (zdtp 8abb1e4) — items previously
+ * gated behind an "Advanced" disclosure now live in their own tier ("Scale —
+ * advanced") so the tier acts as the disclosure container.
  */
 import type { TokenDef } from "@takazudo/zudo-design-token-panel";
 
@@ -70,9 +68,14 @@ export const SPACING_TOKENS: readonly TokenDef[] = [
  * Font tokens from `global.css`.
  *
  * Tier 2 semantic tokens (sizes, line-heights, weights, families) are exposed
- * as primary rows; Tier 1 abstract scale (`--text-scale-*`) is surfaced under
- * an Advanced disclosure so designers who tweak the scale see the tokens that
- * the semantic sizes resolve from.
+ * as primary tiers; Tier 1 abstract scale (`--text-scale-*`) lives in its own
+ * `font-scale` tier so designers who tweak the scale see the tokens that the
+ * semantic sizes resolve from.
+ *
+ * (Note: `TokenDef.advanced` was dropped upstream in zdtp 8abb1e4. The
+ * progressive-disclosure container is now the tier itself; the
+ * panel-config groups by `group` and presents each tier as a separate
+ * section under the Font tab.)
  *
  * Defaults mirror `global.css` resolved values: font-size tokens are recorded
  * as their resolved rem (`--text-body` → `1.2rem`) rather than their `var()`
@@ -104,14 +107,15 @@ export const FONT_TOKENS: readonly TokenDef[] = [
   { id: "font-sans", cssVar: "--font-sans", label: "font-sans", group: "font-family", default: "system-ui, sans-serif",    min: 0, max: 0, step: 1, unit: "", control: "text" },
   { id: "font-mono", cssVar: "--font-mono", label: "font-mono", group: "font-family", default: "ui-monospace, monospace",  min: 0, max: 0, step: 1, unit: "", control: "text" },
 
-  // --- Advanced: Tier 1 abstract scale (reveals behind <details>) ---
-  { id: "text-scale-2xs", cssVar: "--text-scale-2xs", label: "text-scale-2xs", group: "font-scale", default: "0.75rem",  min: 0.5, max: 5, step: 0.05, unit: "rem", advanced: true },
-  { id: "text-scale-xs",  cssVar: "--text-scale-xs",  label: "text-scale-xs",  group: "font-scale", default: "0.875rem", min: 0.5, max: 5, step: 0.05, unit: "rem", advanced: true },
-  { id: "text-scale-sm",  cssVar: "--text-scale-sm",  label: "text-scale-sm",  group: "font-scale", default: "1rem",     min: 0.5, max: 5, step: 0.05, unit: "rem", advanced: true },
-  { id: "text-scale-md",  cssVar: "--text-scale-md",  label: "text-scale-md",  group: "font-scale", default: "1.2rem",   min: 0.5, max: 5, step: 0.05, unit: "rem", advanced: true },
-  { id: "text-scale-lg",  cssVar: "--text-scale-lg",  label: "text-scale-lg",  group: "font-scale", default: "1.4rem",   min: 0.5, max: 5, step: 0.05, unit: "rem", advanced: true },
-  { id: "text-scale-xl",  cssVar: "--text-scale-xl",  label: "text-scale-xl",  group: "font-scale", default: "3rem",     min: 0.5, max: 5, step: 0.05, unit: "rem", advanced: true },
-  { id: "text-scale-2xl", cssVar: "--text-scale-2xl", label: "text-scale-2xl", group: "font-scale", default: "3.75rem",  min: 0.5, max: 5, step: 0.05, unit: "rem", advanced: true },
+  // --- Tier 1 abstract scale (was "Advanced" disclosure in v1 of the panel;
+  //     now lives in its own font-scale tier). ---
+  { id: "text-scale-2xs", cssVar: "--text-scale-2xs", label: "text-scale-2xs", group: "font-scale", default: "0.75rem",  min: 0.5, max: 5, step: 0.05, unit: "rem" },
+  { id: "text-scale-xs",  cssVar: "--text-scale-xs",  label: "text-scale-xs",  group: "font-scale", default: "0.875rem", min: 0.5, max: 5, step: 0.05, unit: "rem" },
+  { id: "text-scale-sm",  cssVar: "--text-scale-sm",  label: "text-scale-sm",  group: "font-scale", default: "1rem",     min: 0.5, max: 5, step: 0.05, unit: "rem" },
+  { id: "text-scale-md",  cssVar: "--text-scale-md",  label: "text-scale-md",  group: "font-scale", default: "1.2rem",   min: 0.5, max: 5, step: 0.05, unit: "rem" },
+  { id: "text-scale-lg",  cssVar: "--text-scale-lg",  label: "text-scale-lg",  group: "font-scale", default: "1.4rem",   min: 0.5, max: 5, step: 0.05, unit: "rem" },
+  { id: "text-scale-xl",  cssVar: "--text-scale-xl",  label: "text-scale-xl",  group: "font-scale", default: "3rem",     min: 0.5, max: 5, step: 0.05, unit: "rem" },
+  { id: "text-scale-2xl", cssVar: "--text-scale-2xl", label: "text-scale-2xl", group: "font-scale", default: "3.75rem",  min: 0.5, max: 5, step: 0.05, unit: "rem" },
 ];
 
 /**
@@ -161,8 +165,10 @@ export const SIZE_TOKENS: readonly TokenDef[] = [
 ];
 
 /**
- * Color tokens — empty because color is cluster-driven in zudo-doc.
- * zdtp uses `colorCluster` for all color editing; this array satisfies the
- * `TokenManifest.color` field requirement.
+ * Color tokens — kept as an empty array for back-compat with the consumer
+ * serde, which historically iterated `COLOR_TOKENS` symmetric with the other
+ * three arrays. Color is cluster-driven in zudo-doc and is constructed in
+ * `design-token-panel-config.ts` from `colorSchemes` + `SEMANTIC_*` —
+ * not from this array.
  */
 export const COLOR_TOKENS: readonly TokenDef[] = [];

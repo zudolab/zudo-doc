@@ -74,11 +74,11 @@ env:
   # Pinned zfb commit — keep in sync with the zfb pin comment at the
   # top of zfb.config.ts. Updating the pin here without updating that
   # comment (or vice versa) will silently desync local dev from CI.
-  ZFB_PINNED_SHA: aa8e9ac7c68786ac90b2ca1628dea3bae54dc57f
+  ZFB_PINNED_SHA: 0f7aa62a21f327c3205d98127ab3be43320350a2
   # Pinned zdtp commit — keep in sync with the zdtp pin block in zfb.config.ts,
   # the file: spec in package.json, and the same env in main-deploy.yml /
   # preview-deploy.yml. All three sources must be bumped together.
-  ZDTP_PINNED_SHA: 4f9d3799bbf3c08c54cd84b7f0e209745b11493f
+  ZDTP_PINNED_SHA: b2882939f4160d6121bceb8991d06e5d6255c6a4
 
 jobs:
   # ---------------------------------------------------------------------------
