@@ -26,6 +26,28 @@ Minimal documentation framework built with zfb, MDX, Tailwind CSS v4, and Preact
 - `pnpm check` — type checking (runs `zfb check`, which delegates to `tsc --noEmit`)
 - `pnpm b4push` — pre-push validation: format check → template drift check → tags audit (`tags:audit --ci`) → design token lint → typecheck → build → link check → preview smoke (E2E parity is parked under E9b until the post-cutover migration window closes)
 
+## First-time setup on a new machine
+
+This project consumes `../zfb` and `../zdtp` as sibling git checkouts via `file:` deps in `package.json`. On a new machine, clone them and build their artifacts before running `pnpm install`.
+
+One command handles everything:
+
+```sh
+pnpm setup:upstream
+```
+
+The script (`scripts/setup-upstream.mjs`):
+
+1. Reads pinned SHAs from `.github/workflows/pr-checks.yml` (`ZFB_PINNED_SHA`, `ZDTP_PINNED_SHA`) — single source of truth.
+2. Clones `../zfb` and `../zdtp` if missing, or checks out the pinned SHA if they already exist.
+3. Refuses to touch a sibling with uncommitted changes (pass `--force-checkout` to override).
+4. Builds artifacts: `cargo build -p zfb --release` for zfb; `pnpm install` + zdtp build for zdtp. Skips if already built at the pinned SHA.
+5. Runs `pnpm install` in this consumer.
+
+**Flags:** `--force-checkout` (discard dirty upstream changes), `--skip-install` (skip final consumer install), `--dry-run` (preview only), `--help`.
+
+See `$HOME/.claude/skills/dev-wip-package-refer/SKILL.md` for the generic pattern this follows.
+
 ## Automation
 
 These run automatically — be aware when working in this repo:
