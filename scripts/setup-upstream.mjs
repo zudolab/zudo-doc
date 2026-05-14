@@ -138,14 +138,18 @@ function gitHead(repoPath) {
 }
 
 /**
- * Returns true if the repo has uncommitted changes to tracked files.
- * Ignores untracked files — build artifacts (target/, dist/) are gitignored
- * and shouldn't trigger the dirty check.
+ * Returns true if the repo has uncommitted changes OR new untracked files.
+ *
+ * Build artifacts (target/, dist/, node_modules/) are already gitignored, so
+ * default `git status --porcelain` (untracked-files=normal) does not list
+ * them. The check fires on tracked-file modifications AND on untracked
+ * source files not yet `git add`-ed — without the latter, `--force-checkout`
+ * would silently discard new uncommitted work the user hasn't staged yet.
  */
 function isRepoDirty(repoPath) {
   const result = spawnSync(
     "git",
-    ["-C", repoPath, "status", "--porcelain", "--untracked-files=no"],
+    ["-C", repoPath, "status", "--porcelain"],
     { encoding: "utf8" },
   );
   if (result.status !== 0) return false; // can't tell — treat as clean
