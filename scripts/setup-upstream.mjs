@@ -26,8 +26,13 @@ const UPSTREAMS = {
     url: "https://github.com/Takazudo/zudo-front-builder.git",
     // env var name in .github/workflows/pr-checks.yml
     shaEnvVar: "ZFB_PINNED_SHA",
-    // path relative to sibling root to check if build is present
-    buildCheckPath: "target/release/zfb",
+    // Resolver — returns absolute path to the build artifact. Uses
+    // `cargo metadata` so it respects custom CARGO_TARGET_DIR env vars and
+    // ~/.cargo/config.toml [build].target-dir overrides. Without this, the
+    // build-skip check would miss the binary on dev machines that share a
+    // single cargo target dir across workspaces.
+    resolveBuildArtifact: (siblingPath) =>
+      resolve(cargoTargetDir(siblingPath), "release", "zfb"),
     build: {
       // single command: cargo build -p zfb --release
       type: "single",
@@ -38,8 +43,8 @@ const UPSTREAMS = {
   zdtp: {
     url: "https://github.com/Takazudo/zudo-design-token-panel.git",
     shaEnvVar: "ZDTP_PINNED_SHA",
-    // directory relative to sibling root to check if build is present
-    buildCheckPath: "packages/zudo-design-token-panel/dist",
+    resolveBuildArtifact: (siblingPath) =>
+      resolve(siblingPath, "packages", "zudo-design-token-panel", "dist"),
     build: {
       // two sequential commands
       type: "sequence",
@@ -50,6 +55,34 @@ const UPSTREAMS = {
     },
   },
 };
+
+// ---------------------------------------------------------------------------
+// Cargo target-dir resolution
+// ---------------------------------------------------------------------------
+
+/**
+ * Query `cargo metadata` for the workspace's target_directory. This respects
+ * the standard precedence order (CARGO_TARGET_DIR env, --target-dir flag,
+ * [build].target-dir in ~/.cargo/config.toml, then workspace-relative
+ * `target/`). Falls back to `<repoPath>/target` if cargo isn't available or
+ * the call fails (the caller's `cargo build` step will surface the real
+ * error in that case).
+ */
+function cargoTargetDir(repoPath) {
+  const result = spawnSync(
+    "cargo",
+    ["metadata", "--format-version", "1", "--no-deps"],
+    { cwd: repoPath, encoding: "utf8" },
+  );
+  if (result.status !== 0) return resolve(repoPath, "target");
+  try {
+    const meta = JSON.parse(result.stdout);
+    if (typeof meta.target_directory === "string") return meta.target_directory;
+  } catch {
+    // fall through to fallback
+  }
+  return resolve(repoPath, "target");
+}
 
 // ---------------------------------------------------------------------------
 // Argument parsing
@@ -301,7 +334,7 @@ async function processUpstream(name, cfg, { projectRoot, pinnedSha }) {
   }
 
   // ── 3. Build artifacts if needed ────────────────────────────────────────
-  const buildCheckFull = resolve(siblingPath, cfg.buildCheckPath);
+  const buildCheckFull = cfg.resolveBuildArtifact(siblingPath);
   // Read HEAD from disk (read-only; safe in dry-run too). For repos that were
   // just would-cloned in dry-run mode, siblingPath doesn't exist yet, so fall
   // back to pinnedSha to let the rest of the logic reason about the ideal state.
