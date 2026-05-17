@@ -101,18 +101,23 @@ function findClaudeMdFiles(dir: string, excludeDirs: string[]): string[] {
 
   for (const item of fs.readdirSync(dir)) {
     if (item === "node_modules") continue;
+    if (item.startsWith(".")) continue;
     const itemPath = path.join(dir, item);
     if (excludeDirs.some((d) => itemPath.startsWith(d))) continue;
 
+    // lstat (not stat) so symlinks aren't followed — a symlinked dir can point
+    // back into the project (e.g. e2e fixtures linking to packages/) or out to
+    // a slow mount (e.g. /mnt/c on WSL) and either turns the walk into a
+    // multi-minute hang.
     let stat: fs.Stats;
     try {
-      stat = fs.statSync(itemPath);
+      stat = fs.lstatSync(itemPath);
     } catch {
-      continue; // broken symlinks
+      continue;
     }
     if (stat.isDirectory()) {
       results.push(...findClaudeMdFiles(itemPath, excludeDirs));
-    } else if (item === "CLAUDE.md") {
+    } else if (stat.isFile() && item === "CLAUDE.md") {
       results.push(itemPath);
     }
   }
@@ -135,6 +140,12 @@ function generateClaudemdDocs(
     path.join(projectRoot, ".git"),
     path.join(projectRoot, "node_modules"),
     path.join(projectRoot, "worktrees"),
+    path.join(projectRoot, "dist"),
+    path.join(projectRoot, "out"),
+    path.join(projectRoot, "public"),
+    path.join(projectRoot, "__inbox"),
+    path.join(projectRoot, "test-results"),
+    path.join(projectRoot, "e2e", "fixtures"),
     path.join(config.docsDir),
   ];
 
