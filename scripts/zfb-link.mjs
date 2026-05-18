@@ -24,7 +24,31 @@ import {
   readdirSync,
   constants,
 } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
+
+/**
+ * Query `cargo metadata` for the workspace's target_directory. This respects
+ * the standard precedence order (CARGO_TARGET_DIR env, --target-dir flag,
+ * [build].target-dir in ~/.cargo/config.toml, then workspace-relative
+ * `target/`). Falls back to `<repoPath>/target` if cargo isn't available or
+ * the call fails — matching the behaviour of `scripts/setup-upstream.mjs`.
+ */
+function cargoTargetDir(repoPath) {
+  const result = spawnSync(
+    "cargo",
+    ["metadata", "--format-version", "1", "--no-deps"],
+    { cwd: repoPath, encoding: "utf8" },
+  );
+  if (result.status !== 0) return resolve(repoPath, "target");
+  try {
+    const meta = JSON.parse(result.stdout);
+    if (typeof meta.target_directory === "string") return meta.target_directory;
+  } catch {
+    // fall through to fallback
+  }
+  return resolve(repoPath, "target");
+}
 
 function findZfbBinary() {
   // pnpm hard-copies `file:` deps into node_modules/.pnpm/, so we
@@ -48,9 +72,13 @@ function findZfbBinary() {
   const pkgDir = resolve(projectRoot, spec.slice("file:".length));
   // pkgDir: <zfb-checkout>/packages/zfb
   const zfbCheckout = resolve(pkgDir, "..", "..");
+  // Resolve the cargo target dir via `cargo metadata` so we respect
+  // CARGO_TARGET_DIR / [build].target-dir overrides. Same fix pattern
+  // as setup-upstream.mjs (commit cd246b9).
+  const targetDir = cargoTargetDir(zfbCheckout);
   const candidates = [
-    join(zfbCheckout, "target", "release", "zfb"),
-    join(zfbCheckout, "target", "debug", "zfb"),
+    join(targetDir, "release", "zfb"),
+    join(targetDir, "debug", "zfb"),
   ];
   for (const candidate of candidates) {
     try {
