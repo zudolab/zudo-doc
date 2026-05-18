@@ -1,14 +1,39 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: aa8e9ac (main — `build: commit Cargo.lock so transitive dep
- *           resolution is reproducible`. Removes Cargo.lock from
- *           .gitignore and ships a checked-in workspace lockfile so the
- *           consumer's `Build zfb Binary` job stops drifting against
- *           the cached `target/` on each CI run. Closes the follow-up
- *           called out in 9dcae3f and root-causes the rusty_v8
- *           link-failure surfaced when the partial-rebuild path tries
- *           to re-link v8 against a librusty_v8.a path that no longer
- *           exists in OUT_DIR after rust-cache restore.
+ *   commit: 195be73 (main — `feat(content): add include / exclude /
+ *           idStripSuffix to CollectionDef` (#286) atop a stack of
+ *           bundler / plugin / adapter fixes:
+ *             - 195be73 Merge #286 collection-filters
+ *             - a7491a2 feat(content): add include / exclude /
+ *               idStripSuffix to CollectionDef
+ *             - 67358cd Merge #285 sitemap prerender field
+ *             - f053186 feat(plugins): expose prerender on postBuild
+ *               route manifest
+ *             - fd708ea Merge #284 cf-adapter prerender filter
+ *             - 24ef06d test(zfb): new BundlerInput fields in
+ *               framework_packages_no_pnpm fixture
+ *             - 97864ee feat(bundler): trim runtime bundle to SSR-only
+ *               routes for deploy adapters (#283)
+ *             - 0774318 Merge #282 zzmod-wave2 papercuts
+ *             - d49bd39 fix(jsx-types): widen VNode.type to accept
+ *               class components
+ *           No consumer-side runtime-shape changes expected; new
+ *           collection / plugin fields are additive. Ancestor check
+ *           confirmed 0f7aa62 is on origin/main, no carries lost.
+ *           Bumped 2026-05-19 in topic/bump-zfb-upstream-latest.
+ *           Previous pin 0f7aa62 (main — `build: add x-wt-teams
+ *           worktree push-guard scaffold`, picked up at zudo-doc2
+ *           introduction).
+ *           Previous pin aa8e9ac (main — `build: commit Cargo.lock so
+ *           transitive dep resolution is reproducible`. Removes
+ *           Cargo.lock from .gitignore and ships a checked-in
+ *           workspace lockfile so the consumer's `Build zfb Binary`
+ *           job stops drifting against the cached `target/` on each CI
+ *           run. Closes the follow-up called out in 9dcae3f and
+ *           root-causes the rusty_v8 link-failure surfaced when the
+ *           partial-rebuild path tries to re-link v8 against a
+ *           librusty_v8.a path that no longer exists in OUT_DIR after
+ *           rust-cache restore.
  *           Previous pin 6be1f38 (base/link-cleanup-zfb — link-pipeline parity:
  *           same content as c371e4c (parent commit) PLUS the TS-side
  *           type defs for `ZfbConfig.resolveMarkdownLinks` and
