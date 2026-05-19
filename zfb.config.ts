@@ -1,8 +1,25 @@
 /**
  * zfb pin (canonical, shared with E2/E4):
- *   commit: 195be73 (main — `feat(content): add include / exclude /
- *           idStripSuffix to CollectionDef` (#286) atop a stack of
- *           bundler / plugin / adapter fixes:
+ *   commit: c93a7ec (main — Merge #288 islands env defines):
+ *             - c93a7ec Merge #288 islands env defines
+ *             - d438061 fix(zfb-islands): define
+ *               `import.meta.env.{PROD,DEV}` in esbuild args
+ *           Closes the latent hydration-crash path on this consumer:
+ *           `src/components/mock-init.tsx` (a `"use client"` island)
+ *           dynamically imports `src/mocks/init.ts`, which references
+ *           `import.meta.env.DEV`. Before this fix the islands esbuild
+ *           pipeline shipped that read verbatim into
+ *           `assets/islands.js`, where `import.meta.env` is undefined
+ *           at runtime and the first access would throw
+ *           `TypeError: Cannot read properties of undefined`. The fix
+ *           mirrors the `bundler.rs` PROD/DEV defines into
+ *           `crates/zfb-islands/src/esbuild.rs`, so both pipelines
+ *           fold the value at bundle time. Ancestor check confirmed
+ *           195be73 is on origin/main, no carries lost.
+ *           Bumped 2026-05-20 in topic/bump-zfb-c93a7ec.
+ *           Previous pin 195be73 (main — `feat(content): add include /
+ *           exclude / idStripSuffix to CollectionDef` (#286) atop a
+ *           stack of bundler / plugin / adapter fixes:
  *             - 195be73 Merge #286 collection-filters
  *             - a7491a2 feat(content): add include / exclude /
  *               idStripSuffix to CollectionDef
@@ -16,11 +33,7 @@
  *               routes for deploy adapters (#283)
  *             - 0774318 Merge #282 zzmod-wave2 papercuts
  *             - d49bd39 fix(jsx-types): widen VNode.type to accept
- *               class components
- *           No consumer-side runtime-shape changes expected; new
- *           collection / plugin fields are additive. Ancestor check
- *           confirmed 0f7aa62 is on origin/main, no carries lost.
- *           Bumped 2026-05-19 in topic/bump-zfb-upstream-latest.
+ *               class components).
  *           Previous pin 0f7aa62 (main — `build: add x-wt-teams
  *           worktree push-guard scaffold`, picked up at zudo-doc2
  *           introduction).
