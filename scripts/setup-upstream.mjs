@@ -13,7 +13,7 @@
 // and would create an infinite loop.
 
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -408,8 +408,14 @@ async function processUpstream(name, cfg, { projectRoot, pinnedSha }) {
     // binary after a pin bump. Only reached on full success — a partial /
     // failed build never writes the marker, which means the next run will
     // re-attempt the rebuild.
+    //
+    // Atomic write: write to a sibling temp file then rename. If we are
+    // killed mid-write, the marker is either fully old (rebuild on next
+    // run is unnecessary but harmless) or fully new — never half-written.
     try {
-      writeFileSync(markerPath, `${pinnedSha}\n`);
+      const tmpPath = `${markerPath}.tmp`;
+      writeFileSync(tmpPath, `${pinnedSha}\n`);
+      renameSync(tmpPath, markerPath);
     } catch (err) {
       // Non-fatal: the binary built successfully. Without the marker the next
       // run will just rebuild unnecessarily, which is annoying but correct.
