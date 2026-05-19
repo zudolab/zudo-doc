@@ -13,7 +13,7 @@
 // and would create an infinite loop.
 
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -33,6 +33,11 @@ const UPSTREAMS = {
     // single cargo target dir across workspaces.
     resolveBuildArtifact: (siblingPath) =>
       resolve(cargoTargetDir(siblingPath), "release", "zfb"),
+    // Sidecar marker recording the SHA the artifact was built from. Sibling
+    // of the binary so it travels with the cargo target dir (shared across
+    // workspaces when CARGO_TARGET_DIR is set).
+    resolveBuildMarker: (siblingPath) =>
+      resolve(cargoTargetDir(siblingPath), "release", ".zfb-built-at"),
     build: {
       // single command: cargo build -p zfb --release
       type: "single",
@@ -45,6 +50,9 @@ const UPSTREAMS = {
     shaEnvVar: "ZDTP_PINNED_SHA",
     resolveBuildArtifact: (siblingPath) =>
       resolve(siblingPath, "packages", "zudo-design-token-panel", "dist"),
+    // Sidecar marker inside the dist/ directory the build regenerates.
+    resolveBuildMarker: (siblingPath) =>
+      resolve(siblingPath, "packages", "zudo-design-token-panel", "dist", ".zdtp-built-at"),
     build: {
       // two sequential commands
       type: "sequence",
@@ -335,22 +343,29 @@ async function processUpstream(name, cfg, { projectRoot, pinnedSha }) {
 
   // ── 3. Build artifacts if needed ────────────────────────────────────────
   const buildCheckFull = cfg.resolveBuildArtifact(siblingPath);
-  // Read HEAD from disk (read-only; safe in dry-run too). For repos that were
-  // just would-cloned in dry-run mode, siblingPath doesn't exist yet, so fall
-  // back to pinnedSha to let the rest of the logic reason about the ideal state.
-  const headAfterCheckout = existsSync(siblingPath) ? gitHead(siblingPath) : pinnedSha;
+  const markerPath = cfg.resolveBuildMarker(siblingPath);
   const buildAlreadyPresent = existsSync(buildCheckFull);
-  const headMatchesPinned = headAfterCheckout === pinnedSha;
+  // Read the sidecar marker recording which SHA the existing artifact was
+  // built from. Checking the upstream's git HEAD here would be useless — we
+  // just checked it out to the pinned SHA, so it always matches. The on-disk
+  // marker is the only signal that tells us whether the binary itself is
+  // current. Missing or mismatched ⇒ rebuild.
+  const builtSha = (buildAlreadyPresent && existsSync(markerPath))
+    ? readFileSync(markerPath, "utf8").trim()
+    : null;
+  const builtAtPinned = builtSha === pinnedSha;
 
-  if (buildAlreadyPresent && headMatchesPinned) {
-    console.log(`  Build artifact present and HEAD matches pinned SHA — skipping build.`);
+  if (buildAlreadyPresent && builtAtPinned) {
+    console.log(`  Build artifact present and built at pinned SHA — skipping build.`);
     status.buildAction = "skipped";
   } else {
     if (DRY_RUN) {
       if (!buildAlreadyPresent) {
         console.log(`  [dry-run] Build artifact not found — would build ${name}.`);
+      } else if (builtSha === null) {
+        console.log(`  [dry-run] No built-SHA marker — would rebuild ${name} to record current SHA.`);
       } else {
-        console.log(`  [dry-run] HEAD differs from pinned SHA — would rebuild ${name}.`);
+        console.log(`  [dry-run] Built-SHA marker (${builtSha}) differs from pinned (${pinnedSha}) — would rebuild ${name}.`);
       }
       if (cfg.build.type === "single") {
         console.log(`  [dry-run] $ ${cfg.build.cmd} ${cfg.build.args.join(" ")}  (in ${siblingPath})`);
@@ -359,14 +374,17 @@ async function processUpstream(name, cfg, { projectRoot, pinnedSha }) {
           console.log(`  [dry-run] $ ${cmd} ${args.join(" ")}  (in ${siblingPath})`);
         }
       }
+      console.log(`  [dry-run] would write ${markerPath} = ${pinnedSha}`);
       status.buildAction = "would-build";
       return status;
     }
 
     if (!buildAlreadyPresent) {
       console.log(`  Build artifact not found — building...`);
+    } else if (builtSha === null) {
+      console.log(`  No built-SHA marker — rebuilding to record current SHA...`);
     } else {
-      console.log(`  HEAD changed — rebuilding...`);
+      console.log(`  Built-SHA marker (${builtSha}) differs from pinned (${pinnedSha}) — rebuilding...`);
     }
 
     if (cfg.build.type === "single") {
@@ -385,6 +403,23 @@ async function processUpstream(name, cfg, { projectRoot, pinnedSha }) {
           return status;
         }
       }
+    }
+    // Record the SHA we just built from so subsequent runs can detect a stale
+    // binary after a pin bump. Only reached on full success — a partial /
+    // failed build never writes the marker, which means the next run will
+    // re-attempt the rebuild.
+    //
+    // Atomic write: write to a sibling temp file then rename. If we are
+    // killed mid-write, the marker is either fully old (rebuild on next
+    // run is unnecessary but harmless) or fully new — never half-written.
+    try {
+      const tmpPath = `${markerPath}.tmp`;
+      writeFileSync(tmpPath, `${pinnedSha}\n`);
+      renameSync(tmpPath, markerPath);
+    } catch (err) {
+      // Non-fatal: the binary built successfully. Without the marker the next
+      // run will just rebuild unnecessarily, which is annoying but correct.
+      console.warn(`  WARN: could not write build marker ${markerPath}: ${err.message}`);
     }
     status.buildAction = "built";
   }
