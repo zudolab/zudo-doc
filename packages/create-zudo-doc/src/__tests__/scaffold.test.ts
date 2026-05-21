@@ -1217,6 +1217,94 @@ describe("scaffold — tauri feature", () => {
   });
 });
 
+describe("scaffold — tauri-dev feature (Mode 2)", () => {
+  it("generates src-tauri-dev/ when tauriDev is enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-tauri-dev",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "tauriDev"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+
+    // src-tauri-dev/ directory exists with key files
+    expect(
+      await fs.pathExists(projectPath("test-tauri-dev", "src-tauri-dev/Cargo.toml")),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(projectPath("test-tauri-dev", "src-tauri-dev/src/main.rs")),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(projectPath("test-tauri-dev", "src-tauri-dev/tauri.conf.json")),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(projectPath("test-tauri-dev", "src-tauri-dev/capabilities/default.json")),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(projectPath("test-tauri-dev", "src-tauri-dev/frontend/index.html")),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(projectPath("test-tauri-dev", "src-tauri-dev/icons/icon.png")),
+    ).toBe(true);
+
+    // package.json has tauri-dev scripts that cd into the src-tauri-dev crate
+    const pkg = await fs.readJson(projectPath("test-tauri-dev", "package.json"));
+    expect(pkg.scripts["dev:tauri-dev"]).toBe(
+      "cd src-tauri-dev && cargo tauri dev",
+    );
+    expect(pkg.scripts["build:tauri-dev"]).toBe(
+      "cd src-tauri-dev && cargo tauri build",
+    );
+    // Mode 1 tauri scripts must NOT be present (only tauriDev enabled)
+    expect(pkg.scripts["dev:tauri"]).toBeUndefined();
+
+    // Cargo.toml package name patched with "-dev" suffix to avoid Mode 1 collision
+    const cargo = await fs.readFile(
+      projectPath("test-tauri-dev", "src-tauri-dev/Cargo.toml"),
+      "utf-8",
+    );
+    expect(cargo).toContain('name = "test-tauri-dev-dev"');
+    expect(cargo).not.toContain('name = "zudo-doc-dev"');
+
+    // tauri.conf.json identity is NOT patched (Mode 2 fixed identity)
+    const conf = await fs.readFile(
+      projectPath("test-tauri-dev", "src-tauri-dev/tauri.conf.json"),
+      "utf-8",
+    );
+    expect(conf).toContain('"productName": "zudo-doc dev"');
+
+    // .gitignore has src-tauri-dev entries
+    const gitignore = await fs.readFile(
+      projectPath("test-tauri-dev", ".gitignore"),
+      "utf-8",
+    );
+    expect(gitignore).toContain("src-tauri-dev/target");
+    expect(gitignore).toContain("src-tauri-dev/gen");
+  });
+
+  it("does NOT generate src-tauri-dev/ when tauriDev is disabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-no-tauri-dev",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+
+    expect(
+      await fs.pathExists(projectPath("test-no-tauri-dev", "src-tauri-dev/Cargo.toml")),
+    ).toBe(false);
+
+    const pkg = await fs.readJson(projectPath("test-no-tauri-dev", "package.json"));
+    expect(pkg.scripts["dev:tauri-dev"]).toBeUndefined();
+    expect(pkg.scripts["build:tauri-dev"]).toBeUndefined();
+  });
+});
+
 describe("scaffold — plugin copying and settings", () => {
   const choices: UserChoices = {
     projectName: "test-minimal",

@@ -111,6 +111,9 @@ importers:
       '@zudolab/design-token-lint':
         specifier: file:./vendor/design-token-lint
         version: file:vendor/design-token-lint
+      chokidar:
+        specifier: ^4.0.0
+        version: 4.0.3
       html-validate:
         specifier: ^10.15.0
         version: 10.15.0(vitest@4.1.0(@types/node@25.3.5)(msw@2.12.12(@types/node@25.3.5)(typescript@5.9.3))(vite@7.3.1(@types/node@25.3.5)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)(yaml@2.8.2)))
