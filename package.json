@@ -98,7 +98,6 @@
   },
   "devDependencies": {
     "@inquirer/prompts": "^8.4.2",
-    "chokidar": "^4.0.0",
     "@playwright/test": "1.58.2",
     "@tailwindcss/vite": "^4.2.1",
     "@types/mdast": "^4.0.4",
@@ -107,6 +106,7 @@
     "@types/react": "^19.2.14",
     "@types/string-similarity": "^4.0.2",
     "@zudolab/design-token-lint": "file:./vendor/design-token-lint",
+    "chokidar": "^4.0.0",
     "html-validate": "^10.15.0",
     "lefthook": "^2.1.4",
     "msw": "^2.12.12",
