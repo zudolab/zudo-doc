@@ -750,3 +750,51 @@ Specific rule for View Transitions + persist: the moment a persist annotation is
 - zfb runtime file that defines what `data-zfb-transition-persist` actually does: `packages/zfb-runtime/src/client-router/swap-functions.ts`
 - Planning review logs: `cclogs/zudo-doc2/20260509_155403-codex-2nd.md` (Codex 2nd review that flagged `::view-transition-group`) and `cclogs/zudo-doc2/20260509_155630-gcoc-2nd.md` (gcoc 2nd review)
 - T3 visual assertions (V1–V8b): added in sub-issue #1559 on branch `vt-chrome-static/T3`
+
+## 2026-05-22 — Two-Mode Tauri (epic #1673)
+
+### What we set out to do
+
+Issue #1672 recommended adopting zfb's new embed-as-library API (`ServerMode::Embed` + `extraWatchPaths`) to give the Tauri stub a "Tauri-with-live-content" shape. The goal that emerged after re-framing: ship a standalone offline reader (Mode 1, the existing `src-tauri/`) AND a configurable dev wrapper (Mode 2, new `src-tauri-dev/`) that spawns a project's `pnpm dev` and opens a WebView at the dev URL — plus a host-side chokidar watcher so `.claude/` edits regenerate during `pnpm dev`.
+
+### Approach we tried first
+
+The starting point was #1672's recommendation: adopt the embed API, which would have meant substantial upstream zfb work (watcher-in-Embed, a Rust plugin-tick callback, etc.).
+
+### What worked
+
+The embed adoption was **dropped**. The two-mode architecture serves both of zudo-doc's actual use cases (ship-an-offline-reader; wrap-a-live-dev-server) with **zero upstream zfb changes**. The implementation was a near-mechanical port of an existing working reference.
+
+### Watch for next time #1: re-frame "how do we adopt this API?" as "what use cases does the deliverable serve?"
+
+#1672 was a well-written planning issue that recommended a concrete, complex architectural adoption. It was correctly refuted during planning — not by finding a flaw in the embed API, but by **re-framing the question**. "How do we adopt `ServerMode::Embed`?" assumes the deliverable is "a thing that uses the embed API." Asking instead "what use cases does the Tauri integration actually serve?" surfaced two distinct, simpler shapes (offline reader; dev wrapper) — neither of which needs the hybrid embed shape the API was built for.
+
+The lesson is the framing move itself: when a planning issue recommends adopting an upstream capability, **before designing the adoption, enumerate the concrete use cases the deliverable serves and check whether any of them actually needs that capability.** A recommended adoption is a proposed *means*; verify it against *ends* first. Here the means was solving a problem ("one hybrid app that is both shipped-standalone AND live-content-capable") that neither end required.
+
+### Watch for next time #2: look at sibling projects / wisdom skills before designing — not just upstream
+
+The project already has a "look upstream first" lesson (2026-05-01). This is the sibling/reference-implementation version. W1B's design scope and W2A's implementation scope **collapsed dramatically** once the user pointed at CCResDoc (`$HOME/.claude/doc/src-tauri/`) as a working reference and `zudo-tauri-wisdom` as the documented-gotchas skill. What looked like green-field Tauri lifecycle design (GUI PATH resolution, process-group cleanup, port reaping, ready detection, loading screen, launch-error UI) was almost entirely **already solved** in a sibling project. W1B's job shrank to "read the reference, identify the Mode 2-specific deltas, lock the spec"; W2A's to "port `main.rs` with 10 named adaptations."
+
+Mid-planning recognition of "this is not green-field — there is a working reference" is high leverage. Before designing any subsystem, ask: has this team (or a sibling project, or a wisdom skill) already built this? If yes, the design task is *delta identification*, not design.
+
+### Watch for next time #3: zfb's `preBuild` plugin hook does NOT re-run on dev watcher ticks
+
+Confirmed in zfb source: `crates/zfb/src/commands/dev.rs:144-181` and `crates/zfb-build/src/plugin_runner.rs:21`. zfb's dev server runs `preBuild` plugin hooks once at startup; on a content-watcher tick it re-renders content but does **not** re-invoke the Node plugin pipeline — re-importing Node plugins per tick is too expensive.
+
+Consequence for any zfb consumer with a build-time content generator (here: the Claude-resources MDX generator): "live regeneration during dev" cannot ride the plugin hook. It needs a **host-side watcher** — chokidar wired into `pnpm dev` via `run-p` for local dev, or a native file watcher for a Tauri-embed shape. This generalises: if a zfb consumer generates content in a `preBuild` plugin and wants that content to refresh during `pnpm dev`, the watcher is the consumer's responsibility, not zfb's.
+
+### Would-skip-if-redoing
+
+Two execution-level defects slipped past child agents and `/light-review`, caught only by the manager's Wave 4 end-to-end verification:
+
+1. **A feature template directory was named in kebab-case (`templates/features/tauri-dev/`) while the scaffold composer resolves the directory from the camelCase feature name (`tauriDev`).** `compose.ts` does `path.join(featuresDir, feature.name, "files")`, and `copyFeatureFiles` **silently returns** when the directory does not exist — so scaffolding the feature copied nothing, with no error. The unit test that would have caught it was authored by the same agent and never run in its worktree (no `node_modules`); the root `vitest` Step-9 check did exercise it, but the regression was introduced after that check. Lesson: when a feature is keyed by a camelCase name, every name-derived path (template dir, etc.) must use that exact name — and `copyFeatureFiles`'s silent no-op on a missing dir is a footgun worth a louder failure.
+2. **A build command (`cargo tauri build --manifest-path src-tauri-dev/Cargo.toml`) was specified in the locked spec, faithfully copied into package.json scripts, the generator, docs (EN+JA), README, and code comments — and was invalid.** `cargo tauri` has no `--manifest-path` flag; the correct form is `cd src-tauri-dev && cargo tauri build`. A wrong command in a *locked spec* propagates to every downstream artifact. Lesson: spec-level commands that no agent will execute before final verification (here, a heavy Tauri build) should be sanity-checked against the actual CLI early — ideally during spec lock (W1B) — not discovered at end-to-end verification (W4).
+
+Both reinforce the existing "sub-agent verified is not verified" lesson: the heavy/GUI/build verification a child agent cannot run in a worktree (no `node_modules`, no port binding, resource limits) **must** be run by the manager on the merged base, and that pass is where genuinely broken-but-plausible-looking output gets caught.
+
+### References
+
+- This epic: #1673 (supersedes #1672)
+- Reference implementation ported for Mode 2: `$HOME/.claude/doc/src-tauri/` (CCResDoc) and the `zudo-tauri-wisdom` skill
+- zfb source confirming preBuild does not re-run on watcher ticks: `crates/zfb/src/commands/dev.rs:144-181`, `crates/zfb-build/src/plugin_runner.rs:21`
+- Unrelated pre-existing failure raised during the epic: #1683 (migration-check serve-snapshots SIGTERM test)
