@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>zudo-doc dev</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #181818; color: #b8b8b8; font-family: system-ui, sans-serif;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100vh; padding: 2rem;
+  }
+  .spinner {
+    width: 32px; height: 32px; border: 3px solid #383838;
+    border-top-color: #d69a66; border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .text { font-size: 1.1rem; color: #888; }
+  .sub { font-size: 0.85rem; color: #555; }
+
+  #loading {
+    display: flex; flex-direction: column; align-items: center; gap: 1.5rem;
+  }
+  #loading[hidden] { display: none; }
+
+  .slow-hint {
+    font-size: 0.85rem; color: #555; text-align: center;
+    max-width: 32rem; opacity: 0; transition: opacity 0.4s ease-in;
+  }
+  .slow-hint.visible { opacity: 1; }
+
+  #error {
+    display: none; flex-direction: column; align-items: center;
+    gap: 0.9rem; max-width: 42rem; text-align: center;
+  }
+  #error.visible { display: flex; }
+  #error .title { font-size: 1.2rem; color: #e0e0e0; }
+  #error .reason { font-size: 0.95rem; color: #a9a9a9; }
+  #error .log-label {
+    font-size: 0.8rem; color: #666; margin-top: 0.25rem;
+    letter-spacing: 0.02em;
+  }
+  #error .log-path {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.8rem; color: #888;
+    background: #222; padding: 0.6rem 0.9rem; border-radius: 4px;
+    border: 1px solid #303030; word-break: break-all;
+    max-width: 100%; text-align: left;
+  }
+  .btn-row { display: flex; gap: 0.75rem; margin-top: 0.5rem; }
+  button {
+    background: #2a2a2a; color: #d69a66;
+    border: 1px solid #3a3a3a; padding: 0.5rem 1.1rem;
+    border-radius: 4px; cursor: pointer;
+    font-family: inherit; font-size: 0.9rem;
+  }
+  button:hover { background: #353535; border-color: #4a4a4a; }
+  button:active { background: #252525; }
+  button.secondary { color: #a9a9a9; }
+</style>
+</head>
+<body>
+  <div id="loading">
+    <div class="spinner"></div>
+    <div class="text">Loading zudo-doc dev...</div>
+    <div class="sub">Waiting for dev server to be available...</div>
+    <div class="slow-hint" id="slow-hint">
+      Taking longer than usual &mdash; still starting the dev server.
+    </div>
+  </div>
+
+  <div id="error">
+    <div class="title">Could not start the dev server</div>
+    <div class="reason" id="error-reason"></div>
+    <div class="log-label">Sidecar log</div>
+    <div class="log-path" id="error-log-path"></div>
+    <div class="btn-row">
+      <button id="retry-btn">Retry</button>
+      <button id="copy-btn" class="secondary">Copy log path</button>
+    </div>
+  </div>
+
+<script>
+  // Inline-only script: no bundler, no imports. Uses the Tauri v2 global
+  // API exposed via `withGlobalTauri: true` in tauri.conf.json.
+  (function () {
+    var SLOW_HINT_DELAY_MS = 20000;
+
+    var loadingEl = document.getElementById("loading");
+    var errorEl = document.getElementById("error");
+    var reasonEl = document.getElementById("error-reason");
+    var logPathEl = document.getElementById("error-log-path");
+    var retryBtn = document.getElementById("retry-btn");
+    var copyBtn = document.getElementById("copy-btn");
+    var slowHintEl = document.getElementById("slow-hint");
+
+    var currentLogPath = "";
+    var slowHintTimer = null;
+
+    function armSlowHint() {
+      clearTimeout(slowHintTimer);
+      slowHintEl.classList.remove("visible");
+      slowHintTimer = setTimeout(function () {
+        // Only show the hint if the error panel hasn't taken over.
+        if (!errorEl.classList.contains("visible")) {
+          slowHintEl.classList.add("visible");
+        }
+      }, SLOW_HINT_DELAY_MS);
+    }
+
+    function showError(reason, logPath) {
+      currentLogPath = logPath || "";
+      reasonEl.textContent = "reason: " + (reason || "unknown");
+      logPathEl.textContent = currentLogPath;
+      loadingEl.setAttribute("hidden", "");
+      errorEl.classList.add("visible");
+      slowHintEl.classList.remove("visible");
+      clearTimeout(slowHintTimer);
+    }
+
+    function showLoading() {
+      errorEl.classList.remove("visible");
+      loadingEl.removeAttribute("hidden");
+      armSlowHint();
+    }
+
+    function tauri() {
+      return (typeof window !== "undefined" && window.__TAURI__) || null;
+    }
+
+    function setupEventListener() {
+      var t = tauri();
+      if (!t || !t.event || typeof t.event.listen !== "function") {
+        // The Tauri API is injected before DOMContentLoaded in practice,
+        // but guard with a short retry in case of startup race.
+        setTimeout(setupEventListener, 50);
+        return;
+      }
+      t.event.listen("launch-error", function (evt) {
+        var payload = (evt && evt.payload) || {};
+        showError(payload.reason, payload.logPath);
+      }).catch(function (e) {
+        // Non-fatal; log for devtools visibility.
+        // eslint-disable-next-line no-console
+        console.error("launch-error listen failed:", e);
+      });
+    }
+
+    retryBtn.addEventListener("click", function () {
+      var t = tauri();
+      if (!t || !t.core || typeof t.core.invoke !== "function") {
+        // eslint-disable-next-line no-console
+        console.error("Tauri invoke API not available");
+        return;
+      }
+      // Flip back to the spinner immediately so the user sees feedback.
+      // If retry also fails, launch-error will fire again and re-show
+      // the error panel.
+      showLoading();
+      t.core.invoke("retry_launch").catch(function (e) {
+        // eslint-disable-next-line no-console
+        console.error("retry_launch invoke failed:", e);
+      });
+    });
+
+    copyBtn.addEventListener("click", function () {
+      if (!currentLogPath) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(currentLogPath).then(function () {
+          var original = copyBtn.textContent;
+          copyBtn.textContent = "Copied!";
+          setTimeout(function () { copyBtn.textContent = original; }, 1500);
+        }).catch(function (e) {
+          // eslint-disable-next-line no-console
+          console.error("clipboard writeText failed:", e);
+        });
+      }
+    });
+
+    // Boot.
+    armSlowHint();
+    setupEventListener();
+  })();
+</script>
+</body>
+</html>

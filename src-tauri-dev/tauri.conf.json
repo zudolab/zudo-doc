@@ -1,0 +1,22 @@
+{
+  "productName": "zudo-doc dev",
+  "version": "0.1.0",
+  "identifier": "com.takazudo.zudo-doc-dev",
+  "build": {
+    "frontendDist": "./frontend",
+    "beforeDevCommand": "cd .. && pnpm dev",
+    "devUrl": "http://localhost:4321/"
+  },
+  "app": {
+    "windows": [],
+    "withGlobalTauri": true,
+    "security": { "csp": null }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": ["icons/icon.png"],
+    "category": "DeveloperTool",
+    "macOS": { "minimumSystemVersion": "10.15" }
+  }
+}
