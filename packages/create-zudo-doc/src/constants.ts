@@ -188,6 +188,13 @@ export const FEATURES: Feature[] = [
     cliFlag: "tauri",
   },
   {
+    value: "tauriDev",
+    label: "Tauri dev wrapper (Mode 2)",
+    hint: "Configurable desktop dev wrapper for any project",
+    default: false,
+    cliFlag: "tauri-dev",
+  },
+  {
     value: "footerNavGroup",
     label: "Footer nav group",
     hint: "Navigation links in the footer",

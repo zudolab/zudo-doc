@@ -338,6 +338,11 @@ function generatePackageJson(choices: UserChoices) {
     scripts["build:tauri"] = `${runCmd} build && cargo tauri build`;
   }
 
+  if (choices.features.includes("tauriDev")) {
+    scripts["dev:tauri-dev"] = "cargo tauri dev --manifest-path src-tauri-dev/Cargo.toml";
+    scripts["build:tauri-dev"] = "cargo tauri build --manifest-path src-tauri-dev/Cargo.toml";
+  }
+
   return {
     name: choices.projectName,
     version: "0.0.1",
