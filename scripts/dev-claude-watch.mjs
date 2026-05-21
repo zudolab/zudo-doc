@@ -36,6 +36,7 @@ const DEBOUNCE_MS = 300;
 
 let debounceTimer = null;
 let inFlight = null;
+let rerunQueued = false;
 let shuttingDown = false;
 
 // ---------------------------------------------------------------------------
@@ -84,15 +85,17 @@ function runRunner() {
 // Debounced schedule
 // ---------------------------------------------------------------------------
 
-function scheduleRegen(changedPath) {
+// Runs the generator, serialized. If changes arrive while a run is in flight,
+// they coalesce into exactly one follow-up run (rerunQueued) — never two
+// concurrent `tsx -e` subprocesses writing the same MDX output.
+async function regenerate() {
   if (shuttingDown) return;
-
-  if (debounceTimer) clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(async () => {
-    debounceTimer = null;
-    if (shuttingDown) return;
-
-    console.log(`[claude-watch] change: ${changedPath} — regenerating…`);
+  if (inFlight) {
+    rerunQueued = true;
+    return;
+  }
+  do {
+    rerunQueued = false;
     const run = runRunner();
     inFlight = run;
     try {
@@ -100,6 +103,19 @@ function scheduleRegen(changedPath) {
     } finally {
       if (inFlight === run) inFlight = null;
     }
+  } while (rerunQueued && !shuttingDown);
+}
+
+function scheduleRegen(changedPath) {
+  if (shuttingDown) return;
+
+  if (debounceTimer) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    debounceTimer = null;
+    if (shuttingDown) return;
+
+    console.log(`[claude-watch] change: ${changedPath} — regenerating…`);
+    regenerate();
   }, DEBOUNCE_MS);
 }
 
