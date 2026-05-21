@@ -4,6 +4,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use std::thread;
 
@@ -30,6 +31,10 @@ struct AppState {
     app_log_path: Mutex<String>,
     sidecar_log_path: Mutex<String>,
     app_data_dir: Mutex<PathBuf>,
+    // Bumped at the start of every launch attempt (initial setup + each
+    // restart). A launch thread that finishes after a newer launch began
+    // sees a mismatch and skips its navigate/emit so the two cannot race.
+    launch_gen: AtomicU64,
 }
 
 /// Shape of config.json in the platform app-data dir.
@@ -128,14 +133,27 @@ fn load_config(app_data_dir: &PathBuf, log_path: &str) -> ConfigResult {
     }
     match serde_json::from_value::<Config>(val) {
         Ok(c) => {
-            log_to(
-                log_path,
-                &format!(
-                    "load_config: ok projectDir={} devServerUrl={}",
-                    c.project_dir, c.dev_server_url
-                ),
-            );
-            ConfigResult::Ok(c)
+            // devCommand's first token must be `pnpm`: find_pnpm() resolves
+            // only pnpm and spawn_sidecar substitutes it for token 0, so a
+            // non-pnpm command would silently run the wrong binary.
+            match c.dev_command.split_whitespace().next() {
+                Some("pnpm") => {
+                    log_to(
+                        log_path,
+                        &format!(
+                            "load_config: ok projectDir={} devServerUrl={}",
+                            c.project_dir, c.dev_server_url
+                        ),
+                    );
+                    ConfigResult::Ok(c)
+                }
+                other => {
+                    let msg =
+                        format!("devCommand must start with 'pnpm' (got {other:?})");
+                    log_to(log_path, &format!("load_config: {msg}"));
+                    ConfigResult::Invalid(msg)
+                }
+            }
         }
         Err(e) => {
             let msg = format!("invalid fields: {e}");
@@ -181,7 +199,16 @@ fn kill_port(port: u16, log_path: &str) {
 
 // ── Sidecar management ──────────────────────────
 
-fn spawn_sidecar(config: &Config, pnpm_path: &std::path::Path, sidecar_log_path: &str, app_log_path: &str) -> Sidecar {
+/// Spawn the dev-server sidecar. Returns `Err` (instead of panicking) on the
+/// realistic unhappy paths — a bad `projectDir`, an unwritable log location —
+/// so the caller can surface a `launch-error` rather than leave the loading
+/// spinner stuck forever in a panicked background thread.
+fn spawn_sidecar(
+    config: &Config,
+    pnpm_path: &std::path::Path,
+    sidecar_log_path: &str,
+    app_log_path: &str,
+) -> Result<Sidecar, String> {
     log_to(
         app_log_path,
         &format!(
@@ -197,16 +224,17 @@ fn spawn_sidecar(config: &Config, pnpm_path: &std::path::Path, sidecar_log_path:
         .write(true)
         .truncate(true)
         .open(sidecar_log_path)
-        .unwrap_or_else(|e| {
+        .map_err(|e| {
             log_to(app_log_path, &format!("Failed to open sidecar log: {e}"));
-            panic!("Failed to open sidecar log at {sidecar_log_path}: {e}");
-        });
-    let log_file_clone = log_file
-        .try_clone()
-        .expect("Failed to clone sidecar log file handle");
+            format!("failed to open sidecar log at {sidecar_log_path}: {e}")
+        })?;
+    let log_file_clone = log_file.try_clone().map_err(|e| {
+        log_to(app_log_path, &format!("Failed to clone sidecar log handle: {e}"));
+        format!("failed to clone sidecar log handle: {e}")
+    })?;
 
-    // devCommand is e.g. "pnpm dev" — first token is expected to be pnpm;
-    // pnpm_path replaces it, rest become args.
+    // devCommand is e.g. "pnpm dev" — first token is pnpm (verified by
+    // load_config); pnpm_path replaces it, rest become args.
     let tokens: Vec<&str> = config.dev_command.split_whitespace().collect();
     let args: &[&str] = if tokens.len() > 1 { &tokens[1..] } else { &[] };
 
@@ -222,20 +250,20 @@ fn spawn_sidecar(config: &Config, pnpm_path: &std::path::Path, sidecar_log_path:
         cmd.process_group(0);
     }
 
-    let child = cmd.spawn().unwrap_or_else(|e| {
+    let child = cmd.spawn().map_err(|e| {
         log_to(
             app_log_path,
-            &format!(
-                "Failed to spawn sidecar (pnpm={}): {e}",
-                pnpm_path.display()
-            ),
+            &format!("Failed to spawn sidecar (pnpm={}): {e}", pnpm_path.display()),
         );
-        panic!("Failed to spawn pnpm sidecar: {e}");
-    });
+        format!(
+            "failed to spawn pnpm sidecar in {}: {e}",
+            config.project_dir
+        )
+    })?;
     let pid = child.id();
     log_to(app_log_path, &format!("spawn_sidecar: pid={pid}"));
 
-    Sidecar { child, pid }
+    Ok(Sidecar { child, pid })
 }
 
 fn kill_sidecar(sidecar: &mut Sidecar, log_path: &str) {
@@ -396,6 +424,9 @@ fn do_restart(app_handle: &AppHandle) {
     let app_log = state.app_log_path.lock().unwrap().clone();
     let sidecar_log = state.sidecar_log_path.lock().unwrap().clone();
     let app_data_dir = state.app_data_dir.lock().unwrap().clone();
+    // Claim a new launch generation: any in-flight launch (the initial setup
+    // thread or an earlier restart) is now stale and will skip its navigate.
+    let my_gen = state.launch_gen.fetch_add(1, Ordering::SeqCst) + 1;
     drop(state);
 
     log_to(&app_log, "do_restart: re-reading config.json");
@@ -452,7 +483,15 @@ fn do_restart(app_handle: &AppHandle) {
     // 4. Spawn new sidecar
     {
         let mut guard = sidecar_arc.lock().unwrap();
-        *guard = Some(spawn_sidecar(&config, &pnpm_path, &sidecar_log, &app_log));
+        match spawn_sidecar(&config, &pnpm_path, &sidecar_log, &app_log) {
+            Ok(s) => *guard = Some(s),
+            Err(e) => {
+                drop(guard);
+                log_to(&app_log, &format!("do_restart: spawn failed: {e}"));
+                emit_launch_error_str(app_handle, "spawn_failed", &sidecar_log);
+                return;
+            }
+        }
     }
 
     // 5. Wait for ready (use full 120s — restart may point at a cold project)
@@ -463,7 +502,16 @@ fn do_restart(app_handle: &AppHandle) {
         &app_log,
     );
 
-    // 6. Navigate or emit error
+    // 6. Skip navigate/emit if a newer launch superseded this one.
+    if app_handle.state::<AppState>().launch_gen.load(Ordering::SeqCst) != my_gen {
+        log_to(
+            &app_log,
+            "do_restart: superseded by a newer launch — skipping navigate/emit",
+        );
+        return;
+    }
+
+    // 7. Navigate or emit error
     match result {
         ReadyResult::Ready => {
             if let Some(w) = app_handle.get_webview_window("main") {
@@ -506,6 +554,7 @@ fn main() {
         app_log_path: Mutex::new(String::new()),
         sidecar_log_path: Mutex::new(String::new()),
         app_data_dir: Mutex::new(PathBuf::new()),
+        launch_gen: AtomicU64::new(0),
     };
     let sidecar_for_exit = app_state.sidecar.clone();
 
@@ -641,6 +690,14 @@ fn main() {
                 let data_dir = app_data_dir.clone();
 
                 thread::spawn(move || {
+                    // Claim this launch's generation; a restart pressed during
+                    // the wait below bumps it and makes this thread skip its
+                    // navigate/emit so the two launches do not race.
+                    let my_gen = {
+                        let state = handle.state::<AppState>();
+                        state.launch_gen.fetch_add(1, Ordering::SeqCst) + 1
+                    };
+
                     // Load config.json — location is <app_data_dir>/config.json
                     let config = match load_config(&data_dir, &app_log) {
                         ConfigResult::Ok(c) => c,
@@ -692,7 +749,15 @@ fn main() {
 
                     {
                         let mut guard = sidecar_arc.lock().unwrap();
-                        *guard = Some(spawn_sidecar(&config, &pnpm_path, &sidecar_log, &app_log));
+                        match spawn_sidecar(&config, &pnpm_path, &sidecar_log, &app_log) {
+                            Ok(s) => *guard = Some(s),
+                            Err(e) => {
+                                drop(guard);
+                                log_to(&app_log, &format!("setup thread: spawn failed: {e}"));
+                                emit_launch_error_str(&handle, "spawn_failed", &sidecar_log);
+                                return;
+                            }
+                        }
                     }
 
                     let dev_server_url = config.dev_server_url.clone();
@@ -702,6 +767,16 @@ fn main() {
                         &dev_server_url,
                         &app_log,
                     );
+
+                    if handle.state::<AppState>().launch_gen.load(Ordering::SeqCst)
+                        != my_gen
+                    {
+                        log_to(
+                            &app_log,
+                            "setup thread: superseded by a restart — skipping navigate/emit",
+                        );
+                        return;
+                    }
 
                     match result {
                         ReadyResult::Ready => {
@@ -731,7 +806,8 @@ fn main() {
                     // Retrieve log path from AppState (set during setup()).
                     let log_path = {
                         let state = app_handle.state::<AppState>();
-                        state.app_log_path.lock().unwrap().clone()
+                        let p = state.app_log_path.lock().unwrap().clone();
+                        p
                     };
                     if let Ok(mut g) = sidecar_for_exit.lock() {
                         if let Some(mut s) = g.take() {
