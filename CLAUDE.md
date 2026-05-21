@@ -201,7 +201,7 @@ Bundles zudo-doc's own pre-built `dist/` into a self-contained desktop app.
 A standalone Tauri app that any project can use as a desktop dev wrapper. It reads the
 target project URL and settings from a per-user config file rather than hard-coding anything.
 
-- **Build (shipped product):** `cargo tauri build --manifest-path src-tauri-dev/Cargo.toml`
+- **Build (shipped product):** `cd src-tauri-dev && cargo tauri build`
 - **Config file (macOS):**
   `~/Library/Application Support/com.takazudo.zudo-doc-dev/config.json`
   (Windows/Linux paths differ; see `src-tauri-dev/` for details.)

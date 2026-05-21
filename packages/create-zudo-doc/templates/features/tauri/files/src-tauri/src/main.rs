@@ -7,7 +7,7 @@
 //                           server. NOT a shipped product; only for zudo-doc contributors.
 //
 // For the shipped, configurable dev wrapper (for any project), see src-tauri-dev/ (Mode 2).
-// Mode 2 build: cargo tauri build --manifest-path src-tauri-dev/Cargo.toml
+// Mode 2 build: cd src-tauri-dev && cargo tauri build
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 

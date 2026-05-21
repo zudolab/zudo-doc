@@ -41,6 +41,9 @@ struct AppState {
 // macOS path: ~/Library/Application Support/com.takazudo.zudo-doc-dev/config.json
 #[derive(Debug, Deserialize)]
 struct Config {
+    // Read off the raw JSON value in load_config's version gate; kept on the
+    // struct to document the schema (and exercised by the unit tests).
+    #[allow(dead_code)]
     version: u32,
     #[serde(rename = "projectDir")]
     project_dir: String,

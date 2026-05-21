@@ -47,13 +47,13 @@ Unlike Mode 1, Mode 2 hard-codes nothing about the project. It reads the project
 
 ### Building Mode 2
 
-Mode 2 lives in its own crate with its own `Cargo.toml`. Pass the manifest path explicitly:
+Mode 2 lives in its own crate with its own `Cargo.toml`. Build it from inside the crate directory:
 
 ```sh
-cargo tauri build --manifest-path src-tauri-dev/Cargo.toml
+cd src-tauri-dev && cargo tauri build
 ```
 
-There is no repo-root Cargo workspace — Mode 1 and Mode 2 are independent crates with independent `target/` directories. Running `cargo` from the repo root with no `--manifest-path` simply builds neither; that is expected, not an error.
+There is no repo-root Cargo workspace — Mode 1 and Mode 2 are independent crates with independent `target/` directories. Running `cargo` from the repo root builds neither; that is expected, not an error.
 
 <Note>
 

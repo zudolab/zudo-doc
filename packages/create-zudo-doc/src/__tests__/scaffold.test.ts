@@ -1249,13 +1249,13 @@ describe("scaffold — tauri-dev feature (Mode 2)", () => {
       await fs.pathExists(projectPath("test-tauri-dev", "src-tauri-dev/icons/icon.png")),
     ).toBe(true);
 
-    // package.json has tauri-dev scripts with --manifest-path flag
+    // package.json has tauri-dev scripts that cd into the src-tauri-dev crate
     const pkg = await fs.readJson(projectPath("test-tauri-dev", "package.json"));
     expect(pkg.scripts["dev:tauri-dev"]).toBe(
-      "cargo tauri dev --manifest-path src-tauri-dev/Cargo.toml",
+      "cd src-tauri-dev && cargo tauri dev",
     );
     expect(pkg.scripts["build:tauri-dev"]).toBe(
-      "cargo tauri build --manifest-path src-tauri-dev/Cargo.toml",
+      "cd src-tauri-dev && cargo tauri build",
     );
     // Mode 1 tauri scripts must NOT be present (only tauriDev enabled)
     expect(pkg.scripts["dev:tauri"]).toBeUndefined();

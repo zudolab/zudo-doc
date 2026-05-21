@@ -339,8 +339,8 @@ function generatePackageJson(choices: UserChoices) {
   }
 
   if (choices.features.includes("tauriDev")) {
-    scripts["dev:tauri-dev"] = "cargo tauri dev --manifest-path src-tauri-dev/Cargo.toml";
-    scripts["build:tauri-dev"] = "cargo tauri build --manifest-path src-tauri-dev/Cargo.toml";
+    scripts["dev:tauri-dev"] = "cd src-tauri-dev && cargo tauri dev";
+    scripts["build:tauri-dev"] = "cd src-tauri-dev && cargo tauri build";
   }
 
   return {

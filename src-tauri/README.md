@@ -46,7 +46,7 @@ serve completely different audiences:
 | Hard-coded project | Yes — always opens zudo-doc | No — reads project URL from config |
 | Config file | None | `~/Library/Application Support/com.takazudo.zudo-doc-dev/config.json` (macOS) |
 | Shipped as a product | No | Yes |
-| Build command | `cargo tauri dev` | `cargo tauri build --manifest-path src-tauri-dev/Cargo.toml` |
+| Build command | `cargo tauri dev` | `cd src-tauri-dev && cargo tauri build` |
 
 For the shipped configurable dev wrapper, see `../src-tauri-dev/`.
 
