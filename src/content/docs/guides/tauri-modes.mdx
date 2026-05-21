@@ -1,0 +1,123 @@
+---
+title: Tauri Desktop Modes
+description: When to use the standalone offline reader (Mode 1) versus the configurable dev wrapper (Mode 2), how each is built, and the Mode 2 config file.
+sidebar_position: 19
+tags:
+  - type:guide
+---
+
+zudo-doc ships **two independent Tauri desktop apps**. They look similar — both wrap web content in a native window — but they target completely different audiences and are built from separate crates.
+
+| | Mode 1 — Offline reader | Mode 2 — Dev wrapper |
+|---|---|---|
+| Directory | `src-tauri/` | `src-tauri-dev/` |
+| What it shows | A frozen snapshot of the built site | A live `pnpm dev` server with HMR |
+| Audience | End readers (read docs offline) | Developers (work on a project) |
+| Content source | Embedded static `dist/` | A dev server spawned at launch |
+| Configured by | Nothing — hard-coded to this repo | A per-user `config.json` file |
+
+## Mode 1 — Standalone offline reader
+
+Mode 1 produces a self-contained desktop app that **bundles zudo-doc's own pre-built `dist/`**. The reader can browse the documentation offline with no server running and no network access.
+
+### Building Mode 1
+
+Build the static site first, then build the app:
+
+```sh
+pnpm build
+cargo tauri build
+```
+
+`cargo tauri build` embeds `../dist/` via the `frontendDist` field in `src-tauri/tauri.conf.json`. The WebView loads `WebviewUrl::App`, which maps directly to the embedded files. The output is a `.app` (macOS), `.exe` (Windows), or AppImage (Linux).
+
+<Warning>
+
+`cargo tauri dev` also exists in `src-tauri/`, but it is a **contributor-only convenience** — it opens the WebView against the local zfb dev server (`http://localhost:4321/`) so you can iterate on the Tauri shell and site content together. It is *not* a shipped product. Ship Mode 1 only via `cargo tauri build`.
+
+</Warning>
+
+Use Mode 1 when you want to hand someone a finished, immutable copy of the docs — a release artifact, an offline kiosk, a bundled help app.
+
+## Mode 2 — Configurable dev wrapper
+
+Mode 2 is a **standalone app that any zudo-doc-style project can use as a desktop dev environment**. Instead of embedding a frozen `dist/`, it spawns the project's live `pnpm dev` server as a child process and points the WebView at it. Edits to content reload instantly through HMR, exactly as in a browser — but inside a native window.
+
+Unlike Mode 1, Mode 2 hard-codes nothing about the project. It reads the project path and dev server URL from a per-user config file.
+
+### Building Mode 2
+
+Mode 2 lives in its own crate with its own `Cargo.toml`. Pass the manifest path explicitly:
+
+```sh
+cargo tauri build --manifest-path src-tauri-dev/Cargo.toml
+```
+
+There is no repo-root Cargo workspace — Mode 1 and Mode 2 are independent crates with independent `target/` directories. Running `cargo` from the repo root with no `--manifest-path` simply builds neither; that is expected, not an error.
+
+<Note>
+
+Mode 2 wraps a *live dev server*, so its binary embeds no site content. The resulting app is small — single-digit megabytes — regardless of how large the wrapped project is.
+
+</Note>
+
+### The Mode 2 config file
+
+Before the first launch, create a `config.json` in the platform app-data directory. On macOS this is:
+
+```
+~/Library/Application Support/com.takazudo.zudo-doc-dev/config.json
+```
+
+The file shape is:
+
+```json
+{
+  "version": 1,
+  "projectDir": "/Users/foo/repos/my-doc-project",
+  "devCommand": "pnpm dev",
+  "devServerUrl": "http://localhost:4321"
+}
+```
+
+| Field | Required | Meaning |
+|---|---|---|
+| `version` | yes | Schema version. Must be `1`. Any other value is treated as invalid. |
+| `projectDir` | yes | Absolute path to the project root. Used as the working directory for the dev server. Must exist as a directory. |
+| `devCommand` | yes | The dev command to run, e.g. `"pnpm dev"`. The first token must be `pnpm`; the rest are passed as arguments. |
+| `devServerUrl` | yes | Base URL the dev server listens on. Used for the readiness probe, for the final WebView navigation, and to parse the port for cleanup. |
+
+If the file is missing, unreadable, malformed, has `version != 1`, or has a missing or ill-typed field, Mode 2 **does not start a server**. It shows an error panel naming the expected file path and this JSON shape so you can fix the file and retry.
+
+<Tip>
+
+Mode 2 v1 wraps exactly **one** project. To switch projects, quit the app, edit `config.json`, and relaunch — or edit the file and use **Restart dev server** from the menu. A multi-project switcher is a planned follow-up.
+
+</Tip>
+
+### Behavior you will observe
+
+Mode 2 inherits a set of process-lifecycle behaviors so that launching, restarting, and quitting are reliable even when launched from Finder (where the shell `PATH` is not available).
+
+**Loading screen.** The window opens immediately with a spinner — it never waits for the dev server. Once the server answers an HTTP probe, the WebView navigates to it. If the server takes a while, a slow-start hint appears after about 20 seconds.
+
+**Launch errors are surfaced, not silent.** If pnpm cannot be found, the config is invalid, or the dev server never becomes ready, the loading screen flips to an error panel that names the problem and points at a log file. A **Retry** button re-runs the launch without restarting the app.
+
+**Locked `PATH` mitigation.** A GUI-launched app does not inherit your shell `PATH`, so a bare `pnpm` lookup fails. Mode 2 resolves pnpm by checking known absolute install paths first (Homebrew, Volta) and only falls back to `/usr/bin/which pnpm` last. This is why Mode 2 finds pnpm when launched from Finder even though a naive lookup would not.
+
+**Process-group cleanup.** The dev server (and every child it spawns) runs in its own process group. When you quit the app — or use **Restart dev server** — the whole group is signalled and reaped. No orphaned `node` or `pnpm` processes are left behind.
+
+**Stale-port cleanup.** Before every launch, Mode 2 frees the dev server's port by terminating any process still holding it. So if a previous run crashed without cleanup, the next launch still starts cleanly.
+
+## The `.claude/` dev watcher
+
+When you run `pnpm dev` in a zudo-doc project, a `.claude/` watcher runs alongside the zfb dev server and the doc-history server. Edits to files under `.claude/` regenerate the corresponding MDX pages live.
+
+Because Mode 2 wraps the real `pnpm dev` command, this watcher runs inside the Mode 2 window exactly as it does in a browser — editing a `.claude/` file updates the rendered docs without a manual rebuild.
+
+## Choosing a mode
+
+- Reach for **Mode 1** when you need a finished, frozen, offline copy of the docs to distribute.
+- Reach for **Mode 2** when you are actively writing or developing a project and want the live dev server in a native window instead of a browser tab.
+
+See [Development Workflow](./development-workflow.mdx) for the dev commands and [Deployment](./deployment.mdx) for how the static `dist/` that Mode 1 bundles is produced.
