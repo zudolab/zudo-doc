@@ -16,7 +16,7 @@ Minimal documentation framework built with zfb, MDX, Tailwind CSS v4, and Preact
 
 ## Commands
 
-- `pnpm dev` — runs zfb dev (port 4321) and doc-history-server (port 4322) concurrently via `run-p` (predev kills stale processes on those ports)
+- `pnpm dev` — runs zfb dev (port 4321), doc-history-server (port 4322), and a `.claude/` watcher concurrently via `run-p` (predev kills stale processes on those ports); edits to `.claude/` files regenerate the corresponding MDX live
 - `pnpm dev:zfb` — zfb dev server only (port 4321)
 - `pnpm dev:history` — doc history API server only (port 4322)
 - `pnpm dev:stable` — alternative build-then-serve dev mode (avoids HMR crashes on content file add/remove)
