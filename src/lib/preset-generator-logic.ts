@@ -61,6 +61,7 @@ export const FEATURES = [
   { value: "llmsTxt", label: "llms.txt", cliFlag: "llms-txt", default: false },
   { value: "skillSymlinker", label: "Skill symlinker", cliFlag: "skill-symlinker", default: false },
   { value: "tauri", label: "Tauri desktop app", cliFlag: "tauri", default: false },
+  { value: "tauriDev", label: "Tauri dev wrapper (Mode 2)", cliFlag: "tauri-dev", default: false },
   { value: "footerNavGroup", label: "Footer nav group", cliFlag: "footer-nav-group", default: false },
   { value: "imageEnlarge", label: "Image enlarge", cliFlag: "image-enlarge", default: true },
   { value: "footerCopyright", label: "Footer copyright", cliFlag: "footer-copyright", default: false },
