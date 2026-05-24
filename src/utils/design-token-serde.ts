@@ -26,7 +26,7 @@
  * `clamp()`) are skipped in both directions.
  */
 
-import { type TokenDef } from "@takazudo/zudo-design-token-panel";
+import { type TokenDef } from "@takazudo/zdtp";
 import { FONT_TOKENS, SIZE_TOKENS, SPACING_TOKENS } from "@/config/design-tokens-manifest";
 import {
   emptyOverrides,
