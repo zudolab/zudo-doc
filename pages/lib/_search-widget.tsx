@@ -6,8 +6,8 @@
 // commit a4d9956) for the zfb host pages. The key SSR requirement is that
 // the placeholder text ("Type to search..." / 「検索したい単語を入力」) and
 // the keyboard-shortcut hint ("to open search from anywhere" /
-// 「いつでも検索バーを開ける」) appear in the static HTML so the
-// migration-check parity test can find them.
+// 「いつでも検索バーを開ける」) appear in the static HTML so no-JS users
+// and crawlers can see them.
 //
 // Architecture:
 //   - Pure SSR markup for the dialog structure + placeholder text.
@@ -86,8 +86,9 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
         </button>
 
         {/* Search dialog — rendered in SSR so the placeholder text is in
-            static HTML for the migration-check. The browser treats it as
-            a closed <dialog> until the custom element calls showModal(). */}
+            static HTML for no-JS users and crawlers. The browser treats
+            it as a closed <dialog> until the custom element calls
+            showModal(). */}
         <dialog
           data-search-dialog
           class="m-0 h-full w-full max-w-none border-none bg-transparent p-0 backdrop:bg-overlay/60 sm:mx-auto sm:my-[10vh] sm:h-auto sm:max-h-[80vh] sm:max-w-[52rem] sm:rounded-lg"
@@ -163,9 +164,9 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
               data-search-results
               aria-live="polite"
             >
-              {/* Placeholder text — always in SSR HTML.
-                  The migration-check looks for placeholderText and shortcutHint
-                  in the static page source; this div carries both strings. */}
+              {/* Placeholder text — always in SSR HTML so no-JS users and
+                  crawlers see the placeholderText and shortcutHint strings
+                  in the static page source. */}
               <div class="text-small text-muted" data-search-placeholder>
                 <p>{placeholderText}</p>
                 <p class="mt-vsp-md text-caption">

@@ -15,7 +15,7 @@
 // side. Without this wrapper the zfb doc pages fall through to the
 // DocLayoutWithDefaults minimal default (a bare <header> with only
 // <ThemeToggle>) — the full logo + nav + mobile-sidebar markup is absent
-// from the SSG output, failing the migration-check parity test.
+// from the SSG output, breaking crawlers, screen readers, and no-JS users.
 //
 // Mobile sidebar strategy:
 //   - The v2 <Header> accepts a `sidebarToggle` slot that holds the

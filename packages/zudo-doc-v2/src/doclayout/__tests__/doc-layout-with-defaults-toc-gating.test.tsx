@@ -9,7 +9,8 @@
  * baseline omits the entire TOC region in those cases — every byte of
  * `<nav aria-label="Table of contents">` and the "On this page" / "目次" h2
  * is absent. Without the gate, ~28 doc routes (e.g. /docs/components, several
- * hide_toc index pages) drift from the Astro baseline in migration-check.
+ * hide_toc index pages) emit stale TOC markup that crawlers and screen readers
+ * would see for pages that have no headings.
  *
  * Explicit `tocOverride` / `mobileTocOverride` props must still win even on
  * no-heading or hide_toc=true pages — callers that supply a custom TOC

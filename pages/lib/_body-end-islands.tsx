@@ -55,9 +55,8 @@ import { PageLoadingOverlay } from "@zudo-doc/zudo-doc-v2/page-loading";
 /**
  * Default sr-only label rendered as the AiChatModal SSR fallback. This
  * mirrors the body-label string the deleted `AiChatModalIsland` wrapper
- * produced verbatim, so the migration-check parity harness still finds
- * the literal text in SSG output and assistive tech can discover the
- * chat entrypoint before JS hydration. English-only for now — the
+ * produced verbatim so assistive tech can discover the chat entrypoint
+ * in the static HTML before JS hydration. English-only for now — the
  * previous default was also English-only; pass `aiChatBodyLabel` to
  * localise.
  */
@@ -119,10 +118,9 @@ export interface BodyEndIslandsProps {
  * fetch, etc. The hydration runtime swaps each placeholder on the
  * client.
  *
- * The `<h2 class="sr-only">AI Assistant</h2>` heading is preserved
- * verbatim from the previous v2-default fallback because the
- * migration-check parity harness greps the literal heading text in
- * SSG output.
+ * The `<h2 class="sr-only">AI Assistant</h2>` heading is emitted in
+ * the SSG output so screen readers and crawlers can discover the chat
+ * section landmark before JS hydration.
  */
 export function BodyEndIslands({
   basePath,
@@ -164,8 +162,8 @@ export function BodyEndIslands({
       : null;
 
   // Use a visually-hidden paragraph as the AiChatModal SSR fallback so
-  // the body label is present in static HTML for screen readers and
-  // migration-check parity. sr-only keeps it invisible to sighted users.
+  // the body label is present in static HTML for screen readers before
+  // JS hydration. sr-only keeps it invisible to sighted users.
   const aiChat = Island({
     ssrFallback: <p class="sr-only">{aiChatBodyLabel}</p>,
     children: <AiChatModal basePath={basePath} />,
@@ -192,9 +190,9 @@ export function BodyEndIslands({
       <PageLoadingOverlay />
       {clientRouterBootstrap}
       {designTokenPanelBootstrap}
-      {/* Preserves migration-check parity: the Astro build SSR-rendered
-          <h2>AI Assistant</h2> inside the chat modal markup; the checker
-          matches the literal heading text. */}
+      {/* Emits the "AI Assistant" heading in the SSG output so screen
+          readers can discover the chat section landmark before JS
+          hydration. */}
       <h2 class="sr-only">AI Assistant</h2>
       {aiChat}
       {imageEnlarge}
