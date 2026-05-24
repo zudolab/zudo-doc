@@ -442,34 +442,18 @@
  */
 
 /**
- * zdtp pin (canonical; mirrors the three-source pattern from zfb above).
+ * zdtp dependency (npm).
  *
- * Three pin sources that MUST be bumped in lockstep when upgrading zdtp:
- *   1. package.json `@takazudo/zudo-design-token-panel` file: spec path (points
- *      to the checkout at ../zdtp/packages/zudo-design-token-panel)
- *   2. ZDTP_PINNED_SHA env var at the top of each CI workflow file:
- *        .github/workflows/main-deploy.yml
- *        .github/workflows/preview-deploy.yml
- *        .github/workflows/pr-checks.yml
- *   3. Local upstream HEAD at ../zdtp (the checkout used for local dev)
+ * The Design Token Panel ships as the published npm package `@takazudo/zdtp`
+ * (renamed from `@takazudo/zudo-design-token-panel`; same API). It is no longer
+ * consumed from a sibling `file:../zdtp` checkout, so there is no SHA to pin and
+ * no per-CI `ZDTP_PINNED_SHA` to keep in lockstep — the version field in
+ * package.json is the single source of truth. Bump it there to upgrade.
  *
- * Failing to bump all three causes CI to silently build against a different
- * zdtp commit than local dev — the same trap that hit zfb in S1/zfb-feat-asset-
- * base-path (see zudo-doc#1564 LESSON CONTEXT).
- *
- * Current pin:
- *   SHA: 4f9d3799bbf3c08c54cd84b7f0e209745b11493f
- *   Repo: Takazudo/zudo-design-token-panel
- *   Context: pulls upstream zdtp PR #56 — replaces the static
- *   `DEFAULT_POSITION = { top: 60, right: 20 }` fallback with a runtime
- *   viewport-centered position via a new `defaultPosition()` helper, so
- *   `loadPosition()` returns a centered position on fresh localStorage
- *   instead of dropping the panel in the upper-right corner. Saved-position
- *   behaviour is unchanged: existing `zudo-doc-tweak-position` entries still
- *   load verbatim. Downstream epic zudolab/zudo-doc#1645, sub-issue #1646
- *   (W1). W2b (#1648) mirrors the same shape into this repo's `main` branch
- *   (legacy in-tree panel) so users on `main` get the same fix before the
- *   post-zfb-migration cutover.
+ * To develop against a local zdtp checkout, add a temporary
+ * `pnpm.overrides` entry in package.json (e.g.
+ * `"@takazudo/zdtp": "link:../zdtp/packages/zdtp"`), `pnpm install`, then
+ * remove the override when done.
  */
 
 // zfb.config.ts — entry-point config consumed by the zfb engine.

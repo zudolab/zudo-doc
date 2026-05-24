@@ -11,7 +11,7 @@ Minimal documentation framework built with zfb, MDX, Tailwind CSS v4, and Preact
 - **Tailwind CSS v4** — via `@tailwindcss/vite`
 - **Preact** — for interactive islands (TOC scroll spy, sidebar toggle, collapsible categories) and server-rendered content typography components; runs in compat mode for React API compatibility
 - **syntect** — built-in code highlighting, run by zfb's Rust pipeline at build time (single fixed theme: `base16-ocean-dark`); the `shikiTheme` field on each color scheme is a separate runtime-only setting consumed by the zdtp panel's client-side Shiki preview
-- **@takazudo/zudo-design-token-panel (zdtp)** — external npm package that owns the Design Token Panel UI; wired via `configurePanel(designTokenPanelConfig)` in `src/lib/design-token-panel-bootstrap.ts`; self-mounts as a side-effect (no Preact island registration needed)
+- **@takazudo/zdtp (zdtp)** — external npm package that owns the Design Token Panel UI; wired via `configurePanel(designTokenPanelConfig)` in `src/lib/design-token-panel-bootstrap.ts`; self-mounts as a side-effect (no Preact island registration needed)
 - **TypeScript** — strict mode (project `tsconfig.json` sets `strict: true` plus the full set of `strict*` flags directly)
 
 ## Commands
@@ -28,25 +28,27 @@ Minimal documentation framework built with zfb, MDX, Tailwind CSS v4, and Preact
 
 ## First-time setup on a new machine
 
-This project consumes `../zfb` and `../zdtp` as sibling git checkouts via `file:` deps in `package.json`. On a new machine, clone them and build their artifacts before running `pnpm install`.
-
-One command handles everything:
+zfb and zdtp are consumed as published npm packages — there is no sibling-checkout build step. A plain install pulls everything, including zfb's prebuilt platform binary (shipped via a platform-specific npm optionalDependency, e.g. `@takazudo/zfb-linux-x64-gnu`):
 
 ```sh
-pnpm setup:upstream
+pnpm install
 ```
 
-The script (`scripts/setup-upstream.mjs`):
+Versions are pinned in `package.json` (`@takazudo/zfb`, `@takazudo/zfb-runtime`, `@takazudo/zfb-adapter-cloudflare`, and `@takazudo/zdtp`) — that file is the single source of truth for which upstream versions this project builds against.
 
-1. Reads pinned SHAs from `.github/workflows/pr-checks.yml` (`ZFB_PINNED_SHA`, `ZDTP_PINNED_SHA`) — single source of truth.
-2. Clones `../zfb` and `../zdtp` if missing, or checks out the pinned SHA if they already exist.
-3. Refuses to touch a sibling with uncommitted changes (pass `--force-checkout` to override).
-4. Builds artifacts: `cargo build -p zfb --release` for zfb; `pnpm install` + zdtp build for zdtp. Skips if already built at the pinned SHA.
-5. Runs `pnpm install` in this consumer.
+### Editing zfb / zdtp from source (escape hatch)
 
-**Flags:** `--force-checkout` (discard dirty upstream changes), `--skip-install` (skip final consumer install), `--dry-run` (preview only), `--help`.
+When you need to develop against a local zfb or zdtp checkout (e.g. fixing an upstream bug), use a temporary `pnpm.overrides` entry in `package.json` pointing the package at a local path, then `pnpm install`:
 
-See `$HOME/.claude/skills/dev-wip-package-refer/SKILL.md` for the generic pattern this follows.
+```jsonc
+"pnpm": {
+  "overrides": {
+    "@takazudo/zfb": "link:../zfb/packages/zfb"
+  }
+}
+```
+
+Run `pnpm install` to wire the link, do your work, then remove the override and re-run `pnpm install` to restore the published version. Do not commit the override.
 
 ## Automation
 
@@ -54,7 +56,7 @@ These run automatically — be aware when working in this repo:
 
 - **predev port cleanup**: `pnpm dev` first runs `lsof -ti :4321 -ti :4322 | xargs kill` so stale dev/history servers are reaped on start. You do not need a separate kill step.
 - **lefthook pre-commit** (`lefthook.yml`): on commit, staged `*.md` and `*.mdx` files are formatted with `@takazudo/mdx-formatter` and re-added. You do not need to manually `pnpm format` markdown before committing.
-- **postinstall**: `pnpm install` runs `scripts/zfb-fetch-tailwind.mjs`, `scripts/zfb-link.mjs`, and `scripts/zdtp-link.mjs` to wire the local `file:` deps for zfb and zdtp. If you change those `file:` paths or wipe `node_modules`, rerun `pnpm install`.
+- **prepare**: `pnpm install` runs `lefthook install` and `scripts/install-git-hooks.sh` (the worktree push-guard hook). zfb and zdtp come straight from npm — there is no link/build postinstall step anymore.
 
 ## Worktree push policy (enforced)
 
