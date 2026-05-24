@@ -1,4 +1,0 @@
-Sitemap: https://example.com/sitemap.xml
-Disallow: /private/
-User-agent: *
-Allow: /

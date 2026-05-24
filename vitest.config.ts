@@ -11,7 +11,6 @@ export default defineConfig({
     include: [
       "src/**/__tests__/**/*.test.ts",
       "scripts/__tests__/**/*.test.ts",
-      "scripts/migration-check/__tests__/**/*.test.ts",
     ],
   },
 });

@@ -11,8 +11,7 @@
 // branch in src/components/doc-history.tsx), and passes the assembled
 // island into BodyFootUtilArea — restoring the
 // `<section aria-label="Document utilities">` landmark and its Revision
-// History heading that the migration-check was reporting as missing on
-// all zfb doc routes.
+// History heading in the SSG output for all zfb doc routes.
 //
 // Wave 8 (Path A — super-epic #1333 / child epic #1355): the doc-history
 // island is now built right here using zfb's native `<Island ssrFallback>`
@@ -86,7 +85,7 @@ interface DocHistoryAreaProps {
  *
  * The SSR fallback for the doc-history island is built from git metadata
  * (author name, created/updated dates) so that static HTML contains the
- * author marker required by the migration-check before JS hydration.
+ * author marker before JS hydration, visible to screen readers and crawlers.
  */
 export function DocHistoryArea({
   slug,
@@ -113,8 +112,8 @@ export function DocHistoryArea({
   const docHistoryBasePath = settings.base ?? "/";
 
   // Build the SSR fallback with only the sr-only metadata block so the
-  // migration-check parity check still finds the author marker and
-  // Created/Updated labels in SSG output before JS hydration.
+  // author marker and Created/Updated labels are present in SSG output
+  // before JS hydration, discoverable by screen readers and crawlers.
   // The visible "History" trigger button is NOT included here — DocHistory
   // renders its own trigger after hydration, and including one in the
   // ssrFallback as well caused a duplicate button in the DOM because

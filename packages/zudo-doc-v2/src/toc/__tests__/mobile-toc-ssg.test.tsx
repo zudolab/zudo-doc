@@ -7,7 +7,6 @@
  * when the panel is in the closed (initial) state. The items list must
  * be present in the static markup so:
  *   - crawlers and JS-off users can discover the links,
- *   - migration-check anchor-link probes pass,
  *   - keyboard navigation works immediately after hydration.
  *
  * Visibility is toggled by CSS (`hidden` class / display:none) — the
@@ -50,7 +49,7 @@ describe("MobileToc — SSG HTML presence", () => {
 
   it("renders locale title even when headings array is empty", () => {
     // When no qualifying headings exist, the hidden placeholder still carries
-    // the locale label so migration-check string probes pass.
+    // the locale label so no-JS users and crawlers can still find it.
     const html = render(<MobileToc headings={[]} title="目次" />);
     expect(html).toContain("目次");
     expect(html).not.toContain('href="#');

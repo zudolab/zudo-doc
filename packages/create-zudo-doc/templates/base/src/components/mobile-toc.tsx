@@ -18,9 +18,9 @@ export function MobileToc({ headings, title = "On this page" }: MobileTocProps) 
   const [open, setOpen] = useState(false);
 
   // No qualifying headings: emit a CSS-hidden container that still
-  // carries the locale title text so migration-check string probes
-  // ("On this page" / "目次") succeed. aria-hidden prevents screen
-  // readers from announcing the invisible label.
+  // carries the locale title text in the static markup so no-JS users
+  // and crawlers still see it ("On this page" / "目次"). aria-hidden
+  // prevents screen readers from announcing the invisible label.
   if (filtered.length === 0) {
     return (
       <div className="hidden" aria-hidden="true">

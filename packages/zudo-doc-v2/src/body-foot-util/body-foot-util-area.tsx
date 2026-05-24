@@ -102,7 +102,7 @@ export function BodyFootUtilArea(props: BodyFootUtilAreaProps): VNode | null {
       )}
       {showHistory && docHistoryIsland && (
         <>
-          {/* Preserves migration-check parity: the Astro build SSR-rendered this heading inside the dialog markup; the checker matches the literal string "Revision History". */}
+          {/* Emits the "Revision History" heading in the SSG output so screen readers and crawlers can discover the history section landmark before JS hydration. */}
           <h2 class="sr-only">Revision History</h2>
           {docHistoryIsland}
         </>
