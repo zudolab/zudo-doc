@@ -245,7 +245,10 @@ function generatePackageJson(choices: UserChoices) {
     // @takazudo/zfb); pinned to the pre-release the scaffold targets.
     "@takazudo/zfb": "0.1.0-next.5",
     "@takazudo/zfb-runtime": "0.1.0-next.5",
-    preact: "^10.26.9",
+    // ^10.29.1 floor satisfies @takazudo/zdtp's preact peer range so the app
+    // and zdtp resolve a single preact instance — a lower floor can split into
+    // two copies and crash hook-using SSR islands with "undefined reading __H".
+    preact: "^10.29.1",
     shiki: "^4.0.2",
     "@shikijs/transformers": "^4.0.0",
     clsx: "^2.1.0",
