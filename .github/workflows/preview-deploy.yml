@@ -6,26 +6,13 @@
 #
 # This is separate from PR preview deploys (handled by pr-checks.yml).
 #
-# zfb is consumed as `file:../zfb/...` workspace deps. The build-zfb job
-# below compiles the zfb Rust binary at the pinned SHA and fetches the
-# pinned tailwindcss v4 standalone CLI, then uploads each as a separate
-# artifact; the build-site job clones the same pinned source and downloads
-# both binaries so the postinstall hooks (zfb-fetch-tailwind.mjs +
-# zfb-link.mjs) resolve them locally. See pr-checks.yml for the full
-# rationale.
-#
-# zdtp (zudo-design-token-panel) is consumed as `file:../zdtp/...` workspace
-# dep (see package.json). Each install-bearing job clones the public
-# Takazudo/zudo-design-token-panel repo at ZDTP_PINNED_SHA to ../zdtp,
-# installs its deps, and builds its dist/ BEFORE running pnpm install in
-# the zudo-doc tree. See main-deploy.yml for the full rationale.
-#
-# Three zdtp pin sources that MUST be bumped in lockstep (see also the zdtp
-# pin block in zfb.config.ts and the same env vars in main-deploy.yml /
-# pr-checks.yml):
-#   1. ZDTP_PINNED_SHA env var in this file (workflow level, below)
-#   2. package.json "@takazudo/zudo-design-token-panel" file: spec
-#   3. Local upstream HEAD at ../zdtp (used for local dev)
+# zfb and zdtp are consumed directly from npm (see package.json). The zfb
+# CLI's prebuilt Rust binary arrives via a platform-specific
+# optionalDependency (@takazudo/zfb-linux-x64-gnu on these ubuntu runners),
+# resolved automatically by `pnpm install`. zdtp ships its own prebuilt
+# dist/. There is no from-source clone/build/link step — a plain
+# `pnpm install --frozen-lockfile` is all each job needs. Dep versions are
+# pinned in package.json (single source of truth).
 #
 # ----------------------------------------------------------------------------
 # Deployed artifact contract — see main-deploy.yml top-of-file for the
@@ -33,11 +20,11 @@
 # parity with production (audited in epic #1337 task 5).
 #
 # Category (g) doc-history is handled by a dedicated build-history job
-# (full clone, fetch-depth: 0) that runs in parallel with build-site
-# (shallow clone). The deploy job merges both artifacts — same shape as
-# main-deploy.yml. The prior single-job inline approach (pnpm build
-# without SKIP_DOC_HISTORY) did not reliably emit doc-history JSONs in CI,
-# producing empty Created/Updated values in preview deploys (#1479, #1468).
+# (full clone, fetch-depth: 0) that runs in parallel with build-site.
+# The deploy job merges both artifacts — same shape as main-deploy.yml.
+# The prior single-job inline approach (pnpm build without SKIP_DOC_HISTORY)
+# did not reliably emit doc-history JSONs in CI, producing empty
+# Created/Updated values in preview deploys (#1479, #1468).
 #
 # See the same SSR-placement note in main-deploy.yml about _worker.js: the
 # CF Pages advanced-mode entry currently lands at deploy/pj/zudo-doc/_worker.js
@@ -62,91 +49,7 @@ permissions:
   pull-requests: write
   statuses: write
 
-env:
-  # Pinned zfb commit — keep in sync with the zfb pin comment at the
-  # top of zfb.config.ts and the same env in pr-checks.yml.
-  ZFB_PINNED_SHA: c93a7ece29e3e3d5e6140d69bab7a11924d03dcf
-  # Pinned zdtp commit — keep in sync with the zdtp pin block in zfb.config.ts,
-  # the file: spec in package.json, and the same env in main-deploy.yml /
-  # pr-checks.yml. All three sources must be bumped together.
-  ZDTP_PINNED_SHA: b2882939f4160d6121bceb8991d06e5d6255c6a4
-
 jobs:
-  # ---------------------------------------------------------------------------
-  # Job 0: Build the zfb Rust binary at the pinned SHA.
-  # ---------------------------------------------------------------------------
-  build-zfb:
-    name: Build zfb Binary
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-
-    steps:
-      - name: Checkout pinned zfb
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-        with:
-          repository: Takazudo/zudo-front-builder
-          ref: ${{ env.ZFB_PINNED_SHA }}
-          path: zfb-src
-          fetch-depth: 1
-
-      - name: Cache cargo build
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
-        with:
-          workspaces: zfb-src
-          key: zfb-${{ env.ZFB_PINNED_SHA }}
-
-      # zfb#210 (pin 8e8aed2 onward) added a build.rs step that copies the
-      # `preact`, `preact-render-to-string`, and `hono` packages out of
-      # `zfb-src/node_modules/.pnpm/` into the embedded vendor snapshot.
-      # Without an upstream `pnpm install` first, build.rs panics at
-      # `framework package preact@<version> not found`.
-      # The consumer repo isn't checked out here (only zfb-src/ is), so
-      # pnpm/action-setup can't auto-detect a packageManager pin from the
-      # workflow root. Read it from zfb-src/package.json instead.
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
-        with:
-          package_json_file: zfb-src/package.json
-          dest: ~/setup-pnpm-${{ github.job }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version: 22
-
-      - name: Install zfb workspace deps (for build.rs framework staging)
-        # --ignore-scripts skips the upstream `prepare` hook (lefthook install)
-        # — we only need the `.pnpm/` content-addressable layout so build.rs
-        # can locate preact/hono package dirs.
-        run: pnpm install --frozen-lockfile --ignore-scripts
-        working-directory: zfb-src
-
-      - name: Build zfb release binary
-        run: cargo build -p zfb --release
-        working-directory: zfb-src
-
-      # See pr-checks.yml `build-zfb` for the rationale on uploading the
-      # tailwindcss v4 standalone CLI as a separate artifact.
-      - name: Fetch tailwindcss binary
-        run: node scripts/fetch-tailwind.mjs
-        working-directory: zfb-src
-
-      - name: Upload zfb binary artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
-        with:
-          name: zfb-binary
-          path: zfb-src/target/release/zfb
-          if-no-files-found: error
-          retention-days: 1
-
-      - name: Upload zfb tailwind binary artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
-        with:
-          name: zfb-tailwind-binary
-          path: zfb-src/crates/zfb/binaries/tailwindcss-v4
-          if-no-files-found: error
-          retention-days: 1
-
   # ---------------------------------------------------------------------------
   # Job 1: Build the zfb docs site (full clone — needed for SSG meta dates)
   # ---------------------------------------------------------------------------
@@ -167,37 +70,12 @@ jobs:
     name: Build Site
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: build-zfb
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           fetch-depth: 0
-
-      - name: Clone zfb sibling repo
-        run: |
-          git clone https://github.com/Takazudo/zudo-front-builder.git ../zfb
-          git -C ../zfb checkout "$ZFB_PINNED_SHA"
-
-      - name: Download zfb binary
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
-        with:
-          name: zfb-binary
-          path: ../zfb/target/release
-
-      - name: Mark zfb binary executable
-        run: chmod +x ../zfb/target/release/zfb
-
-      # See pr-checks.yml `typecheck` for the tailwind binary placement rationale.
-      - name: Download zfb tailwind binary
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
-        with:
-          name: zfb-tailwind-binary
-          path: ../zfb/crates/zfb/binaries
-
-      - name: Mark zfb tailwind binary executable
-        run: chmod +x ../zfb/crates/zfb/binaries/tailwindcss-v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
@@ -208,31 +86,6 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
-
-      # Clone + build zdtp BEFORE pnpm install. See main-deploy.yml for rationale.
-      - name: Restore zdtp dist cache
-        id: zdtp-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          # Cache the full package dir (not just dist/) — pnpm reads package.json
-          # from the package root when resolving file: deps at install time.
-          path: ../zdtp/packages/zudo-design-token-panel
-          key: zdtp-dist-${{ env.ZDTP_PINNED_SHA }}
-
-      - name: Clone + build zdtp (cache miss fallback)
-        if: steps.zdtp-cache.outputs.cache-hit != 'true'
-        run: |
-          git clone https://github.com/Takazudo/zudo-design-token-panel.git ../zdtp
-          git -C ../zdtp checkout "$ZDTP_PINNED_SHA"
-          pnpm --dir ../zdtp install --frozen-lockfile --ignore-scripts
-          pnpm --dir ../zdtp --filter @takazudo/zudo-design-token-panel build
-
-      - name: Save zdtp dist cache
-        if: steps.zdtp-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: ../zdtp/packages/zudo-design-token-panel
-          key: zdtp-dist-${{ env.ZDTP_PINNED_SHA }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -250,8 +103,7 @@ jobs:
   # Job: HTML validate (block-in-inline guard for #1490 regression)
   # ---------------------------------------------------------------------------
   # Mirrors pr-checks.yml and main-deploy.yml html-validate job. preview-deploy
-  # builds dist/ independently so the validator must be wired here too. See W3B
-  # spec §4 and PR description coupling note.
+  # builds dist/ independently so the validator must be wired here too.
   html-validate:
     name: HTML validate
     needs: [build-site]
@@ -260,17 +112,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-
-      # Clone the pinned zfb sibling repo so the `file:../zfb/...` workspace
-      # deps in package.json resolve during `pnpm install`. We don't need
-      # zfb's binary or its full build artifacts here — only the package
-      # directories that pnpm walks. Lightweight clone (single commit at
-      # the pinned SHA) is enough.
-      - name: Clone zfb sibling repo
-        run: |
-          git clone --depth 1 https://github.com/Takazudo/zudo-front-builder.git ../zfb
-          git -C ../zfb fetch --depth 1 origin "$ZFB_PINNED_SHA"
-          git -C ../zfb checkout "$ZFB_PINNED_SHA"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
@@ -281,22 +122,6 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
-
-      # Restore zdtp dist cache so the file: dep resolves during --ignore-scripts install.
-      - name: Restore zdtp dist cache
-        id: zdtp-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: ../zdtp/packages/zudo-design-token-panel
-          key: zdtp-dist-${{ env.ZDTP_PINNED_SHA }}
-
-      - name: Clone + build zdtp (cache miss fallback)
-        if: steps.zdtp-cache.outputs.cache-hit != 'true'
-        run: |
-          git clone https://github.com/Takazudo/zudo-design-token-panel.git ../zdtp
-          git -C ../zdtp checkout "$ZDTP_PINNED_SHA"
-          pnpm --dir ../zdtp install --frozen-lockfile --ignore-scripts
-          pnpm --dir ../zdtp --filter @takazudo/zudo-design-token-panel build
 
       - name: Install deps (no scripts)
         run: pnpm install --frozen-lockfile --ignore-scripts
@@ -314,10 +139,8 @@ jobs:
   # ---------------------------------------------------------------------------
   # Job 2: Build doc history JSONs (full clone — only this job needs it)
   # ---------------------------------------------------------------------------
-  # Mirrors main-deploy.yml build-history. Does NOT depend on build-zfb
-  # (doc-history-server is standalone; see pr-checks.yml build-history for
-  # the full rationale on skipping the zfb binary download here).
-  # zdtp dist is restored from the pinned-SHA cache (or rebuilt on miss).
+  # Mirrors main-deploy.yml build-history. doc-history-server is standalone
+  # (no zfb consumption). fetch-depth: 0 so it can walk git history.
   build-history:
     name: Build Doc History
     runs-on: ubuntu-latest
@@ -329,11 +152,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Clone zfb sibling repo
-        run: |
-          git clone https://github.com/Takazudo/zudo-front-builder.git ../zfb
-          git -C ../zfb checkout "$ZFB_PINNED_SHA"
-
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
         with:
@@ -343,22 +161,6 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
-
-      # Clone + build zdtp BEFORE pnpm install. See main-deploy.yml for rationale.
-      - name: Restore zdtp dist cache
-        id: zdtp-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: ../zdtp/packages/zudo-design-token-panel
-          key: zdtp-dist-${{ env.ZDTP_PINNED_SHA }}
-
-      - name: Clone + build zdtp (cache miss fallback)
-        if: steps.zdtp-cache.outputs.cache-hit != 'true'
-        run: |
-          git clone https://github.com/Takazudo/zudo-design-token-panel.git ../zdtp
-          git -C ../zdtp checkout "$ZDTP_PINNED_SHA"
-          pnpm --dir ../zdtp install --frozen-lockfile --ignore-scripts
-          pnpm --dir ../zdtp --filter @takazudo/zudo-design-token-panel build
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
