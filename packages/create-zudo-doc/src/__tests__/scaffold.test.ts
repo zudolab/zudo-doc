@@ -193,6 +193,52 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
   });
 });
 
+describe("scaffold — sidebarToggle feature", () => {
+  it("desktop-sidebar-toggle.tsx does NOT import from @zudo-doc/* (inlined constants)", async () => {
+    const choices: UserChoices = {
+      projectName: "test-sidebar-toggle-on",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "sidebarToggle"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath(
+        "test-sidebar-toggle-on",
+        "src/components/desktop-sidebar-toggle.tsx",
+      ),
+      "utf-8",
+    );
+    expect(content).not.toMatch(/from\s+['"]@zudo-doc\//);
+
+  });
+
+  it("generated package.json has no @zudo-doc/* dependency when sidebarToggle is enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-sidebar-toggle-deps",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "sidebarToggle"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const pkg = await fs.readJson(
+      projectPath("test-sidebar-toggle-deps", "package.json"),
+    );
+    const allDeps = {
+      ...pkg.dependencies,
+      ...pkg.devDependencies,
+    };
+    const zudoDocKeys = Object.keys(allDeps).filter((k) =>
+      k.startsWith("@zudo-doc/"),
+    );
+    expect(zudoDocKeys).toEqual([]);
+  });
+});
+
 describe("scaffold — full features (i18n, light-dark, all features)", () => {
   const choices: UserChoices = {
     projectName: "test-full",
