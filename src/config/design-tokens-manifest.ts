@@ -14,7 +14,7 @@
  * gated behind an "Advanced" disclosure now live in their own tier ("Scale —
  * advanced") so the tier acts as the disclosure container.
  */
-import type { TokenDef } from "@takazudo/zudo-design-token-panel";
+import type { TokenDef } from "@takazudo/zdtp";
 
 // --- Font weight select options ---
 const FONT_WEIGHT_OPTIONS = [

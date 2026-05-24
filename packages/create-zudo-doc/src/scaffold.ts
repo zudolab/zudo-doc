@@ -240,13 +240,15 @@ export async function scaffold(choices: UserChoices): Promise<void> {
 function generatePackageJson(choices: UserChoices) {
   const deps: Record<string, string> = {
     // zfb engine — replaces astro/@astrojs/* now that the cutover (#500 S5)
-    // has retired the legacy Astro pipeline. The host project supplies the
-    // local file: pin in its own package.json; the scaffold just lists the
-    // public entry by name so resolution comes from the user's registry /
-    // workspace.
-    "@takazudo/zfb": "*",
-    "@takazudo/zfb-runtime": "*",
-    preact: "^10.26.9",
+    // has retired the legacy Astro pipeline. Distributed as published npm
+    // packages (the prebuilt binary ships via an optionalDependency of
+    // @takazudo/zfb); pinned to the pre-release the scaffold targets.
+    "@takazudo/zfb": "0.1.0-next.5",
+    "@takazudo/zfb-runtime": "0.1.0-next.5",
+    // ^10.29.1 floor satisfies @takazudo/zdtp's preact peer range so the app
+    // and zdtp resolve a single preact instance — a lower floor can split into
+    // two copies and crash hook-using SSR islands with "undefined reading __H".
+    preact: "^10.29.1",
     shiki: "^4.0.2",
     "@shikijs/transformers": "^4.0.0",
     clsx: "^2.1.0",
@@ -280,11 +282,7 @@ function generatePackageJson(choices: UserChoices) {
   }
 
   if (choices.features.includes("designTokenPanel")) {
-    // zdtp is consumed as a file: sibling dep (mirrors this project's pattern).
-    // Downstream consumers using a published npm version should replace this
-    // with a semver range once zdtp is released publicly.
-    deps["@takazudo/zudo-design-token-panel"] =
-      "file:../zdtp/packages/zudo-design-token-panel";
+    deps["@takazudo/zdtp"] = "0.1.0-next.1";
   }
 
   if (choices.features.includes("tagGovernance")) {
@@ -306,13 +304,6 @@ function generatePackageJson(choices: UserChoices) {
     check: "zfb check",
     "check:html": "html-validate \"dist/**/*.html\"",
   };
-
-  if (choices.features.includes("designTokenPanel")) {
-    // The postinstall hook verifies zdtp's dist/ is present before pnpm
-    // hard-copies the file: dep. CI must clone + build zdtp BEFORE running
-    // pnpm install (see scripts/zdtp-link.mjs for the full rationale).
-    scripts["postinstall"] = "node scripts/zdtp-link.mjs";
-  }
 
   if (choices.features.includes("tagGovernance")) {
     scripts["tags:audit"] = "tsx scripts/tags-audit.ts";

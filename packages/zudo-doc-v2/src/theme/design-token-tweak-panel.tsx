@@ -3,7 +3,7 @@
 // Design Token Tweak Panel — stub for zdtp-migration W3-2.
 //
 // The legacy inner panel (src/components/design-token-tweak/) was deleted in
-// W3-2. The production panel is now @takazudo/zudo-design-token-panel (zdtp),
+// W3-2. The production panel is now @takazudo/zdtp (zdtp),
 // bootstrapped via src/lib/design-token-panel-bootstrap.ts as a side-effect
 // import from pages/lib/_body-end-islands.tsx.
 //

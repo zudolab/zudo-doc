@@ -1,3 +1,4 @@
 /target/
 /gen/
+/Cargo.lock
 *.log

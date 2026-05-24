@@ -1,6 +1,6 @@
 // Local shim until upstream zdtp exports TweakState and emptyOverrides from main.
 // Tracks https://github.com/Takazudo/zudo-design-token-panel/issues/49 — remove this file
-// and import directly from "@takazudo/zudo-design-token-panel" once that lands.
+// and import directly from "@takazudo/zdtp" once that lands.
 
 export interface ColorTweakState {
   palette: string[];

@@ -147,7 +147,7 @@ Colorタブは、以前のColor Tweak Panelがタブの1つに収まった形で
 
 ## 実装
 
-パネルUIは `@takazudo/zudo-design-token-panel`（zdtp）npmパッケージが提供します。zudo-docは `src/lib/design-token-panel-bootstrap.ts` 内で `configurePanel(designTokenPanelConfig)` を呼び出してzdtpを組み込んでいます。パネルはこの呼び出しのサイドエフェクトとして自己マウントされるため、Preactアイランドの登録は不要です。
+パネルUIは `@takazudo/zdtp`（zdtp）npmパッケージが提供します。zudo-docは `src/lib/design-token-panel-bootstrap.ts` 内で `configurePanel(designTokenPanelConfig)` を呼び出してzdtpを組み込んでいます。パネルはこの呼び出しのサイドエフェクトとして自己マウントされるため、Preactアイランドの登録は不要です。
 
 ヘッダーのトリガーボタンは `window` に `toggle-design-token-panel` カスタムイベントをディスパッチします。zdtpはこのイベントをネイティブに受け取るため、`settings.headerRightItems` でトリガーをカスタマイズしても追加の配線は必要ありません。
 

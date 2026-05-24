@@ -55,7 +55,7 @@ zudo-docはzfb上で動作するPreact専用プロジェクトです。すべて
 
 コンポーネントがインタラクティビティを必要とする場合 — ローカル状態、イベントハンドラ、アニメーションなど — 自身の`useEffect`やイベントバインディングコードを通じて、zfbのアイランドランタイムに登録します。サーバーレンダリングの出力はそのまま使われ、インタラクティブな部分のみがハイドレートされます。
 
-プロジェクトの現在のアイランド：`toc.tsx`、`mobile-toc.tsx`、`sidebar-toggle.tsx`、`sidebar-tree.tsx`、`theme-toggle.tsx`、`doc-history.tsx`、zdtpパネル（Design Token Panel — `@takazudo/zudo-design-token-panel`パッケージの`configurePanel()`によるサイドエフェクトで自己マウントされ、アイランドレジストリへの登録は不要）、`ai-chat-modal`、`find-bar`。
+プロジェクトの現在のアイランド：`toc.tsx`、`mobile-toc.tsx`、`sidebar-toggle.tsx`、`sidebar-tree.tsx`、`theme-toggle.tsx`、`doc-history.tsx`、zdtpパネル（Design Token Panel — `@takazudo/zdtp`パッケージの`configurePanel()`によるサイドエフェクトで自己マウントされ、アイランドレジストリへの登録は不要）、`ai-chat-modal`、`find-bar`。
 
 クライアントハイドレートアイランドの用途：
 

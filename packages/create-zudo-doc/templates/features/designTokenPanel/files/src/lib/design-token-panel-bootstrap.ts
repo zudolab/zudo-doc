@@ -1,5 +1,5 @@
 /**
- * Production bootstrap for @takazudo/zudo-design-token-panel (zdtp).
+ * Production bootstrap for @takazudo/zdtp (zdtp).
  *
  * Imported as a side-effect from the body-end islands helper when
  * settings.designTokenPanel (or the deprecated alias colorTweakPanel) is
@@ -13,8 +13,8 @@
  * bridge with setLifecycleAdapter() once upstream issue #50 ships.
  */
 
-import { configurePanel } from "@takazudo/zudo-design-token-panel";
-// CSS is pulled via `@import "@takazudo/zudo-design-token-panel/styles.css"` in
+import { configurePanel } from "@takazudo/zdtp";
+// CSS is pulled via `@import "@takazudo/zdtp/styles.css"` in
 // src/styles/global.css so the panel chrome lands in the main page CSS bundle
 // (not a deferred chunk). Vite library mode strips the source CSS import from
 // the emitted JS, so the explicit CSS-side import is the required pull point.
