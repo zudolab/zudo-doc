@@ -9,10 +9,10 @@
 // `head` slot but intentionally does NOT emit either — that is the host's
 // responsibility.
 //
-// Without OgTags the migration-check parity harness fails on missing
-// og:title / og:description. Without ColorSchemeProvider the runtime
-// `:root { --zd-* }` palette is missing, so every component that resolves
-// a color via `--zd-*` (search match-keyword highlight, image-overlay,
+// Without OgTags the SSG output is missing og:title / og:description,
+// which crawlers and link-preview tools rely on. Without ColorSchemeProvider
+// the runtime `:root { --zd-* }` palette is missing, so every component that
+// resolves a color via `--zd-*` (search match-keyword highlight, image-overlay,
 // etc.) falls back to UA defaults — and the smoke-search "matched
 // keywords" regression guard at e2e/smoke-search.spec.ts:167 fires
 // because `getComputedStyle(root).getPropertyValue("--zd-matched-keyword-bg")`

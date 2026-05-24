@@ -226,10 +226,10 @@ export function createMdxComponents(lang: Locale | string = defaultLocale) {
     // Island: pass children through so server-renderable content nested
     // inside <Island> appears in SSR HTML. See IslandWrapper comment above.
     Island: IslandWrapper,
-    // PresetGenerator: render the 8 section headings as static SSR HTML so the
-    // migration-check can find all h3 markers before JS hydration. The
-    // interactive form loads client-side via the SSR-skip placeholder inside
-    // PresetGeneratorFallback.
+    // PresetGenerator: render the 8 section headings as static SSR HTML for
+    // a11y/SEO section structure and no-JS layout stability. The interactive
+    // form loads client-side via the SSR-skip placeholder inside
+    // PresetGeneratorFallback (see pages/lib/_preset-generator.tsx).
     PresetGenerator: PresetGeneratorFallback,
     // Pure showcase placeholders (Avatar/Button/Card/MyComponent/PageLayout
     // appear only inside MDX prose as illustrative examples — never

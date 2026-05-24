@@ -238,6 +238,11 @@ export async function scaffold(choices: UserChoices): Promise<void> {
 }
 
 function generatePackageJson(choices: UserChoices) {
+  // Intentionally absent from scaffolded deps:
+  //   @zudo-doc/md-plugins — zero references in generator templates/source
+  //   @takazudo/zfb-adapter-cloudflare — zero references in generator templates/source
+  //   @zudo-doc/zudo-doc-v2 — workspace-private/unpublished; the two constants it
+  //     provides to desktop-sidebar-toggle.tsx are inlined directly in that template
   const deps: Record<string, string> = {
     // zfb engine — replaces astro/@astrojs/* now that the cutover (#500 S5)
     // has retired the legacy Astro pipeline. Distributed as published npm

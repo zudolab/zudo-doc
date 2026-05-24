@@ -5,9 +5,8 @@
  *
  * Verifies that anchor links appear in the serialized HTML produced by
  * `preact-render-to-string` (which mirrors what the zfb SSG renderer
- * emits into `dist/**\/index.html`). This is the contract that
- * migration-check and crawlers rely on — JS-off users must see the TOC
- * links in the static markup.
+ * emits into `dist/**\/index.html`). This is the contract that crawlers
+ * rely on — JS-off users must see the TOC links in the static markup.
  */
 
 import { describe, expect, it } from "vitest";
