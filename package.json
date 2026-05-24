@@ -56,9 +56,6 @@
     "init-worktree": "bash scripts/install-git-hooks.sh"
   },
   "pnpm": {
-    "overrides": {
-      "preact": "^10.29.1"
-    },
     "onlyBuiltDependencies": [
       "esbuild",
       "lefthook",
