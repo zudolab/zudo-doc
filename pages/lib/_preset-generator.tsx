@@ -11,9 +11,10 @@
 // cause fixed for body-end islands in _body-end-islands.tsx).
 //
 // The fallback renders all 8 section headings as static SSR HTML so:
-//   1. The migration-check can find all h3 markers before JS hydration.
-//   2. Screen readers and search engines see the section structure.
-//   3. Layout does not collapse to nothing while JS loads.
+//   1. Screen readers and search engines see the section structure (a11y/SEO).
+//   2. Layout does not collapse to nothing while JS loads (no-JS layout).
+//   3. The scanner traces this file → preset-generator.tsx via the Island child
+//      and registers PresetGenerator in the manifest for client-side mounting.
 //
 // Uses the canonical `<Island ssrFallback>` API (zfb) so the scanner can
 // connect the import to the manifest entry and the hydration runtime can
@@ -32,10 +33,10 @@ import PresetGenerator from "@/components/preset-generator";
 
 // Heading text for each of the 8 sections — must match the original
 // SectionHeading calls in src/components/preset-generator.tsx exactly
-// so migration-check h3 queries resolve.
+// so the SSR fallback and the real component render the same section labels.
 // Order must mirror the JSX source order in preset-generator.tsx — do NOT
 // sort alphabetically. The array drives the SSR fallback heading sequence
-// that the migration-check harness compares against the Astro A snapshot.
+// shown to screen readers and visible before JS hydration.
 const SECTION_HEADINGS = [
   "Project Name",
   "Default Language",
@@ -50,10 +51,10 @@ const SECTION_HEADINGS = [
 /**
  * Static SSR fallback for the interactive PresetGenerator form.
  *
- * Renders all 8 section headings so the migration-check finds them in
- * the static HTML before JS hydration. Uses Island with ssrFallback so
- * the zfb scanner traces this file → preset-generator.tsx and registers
- * the real component in the island manifest for client-side mounting.
+ * Renders all 8 section headings as static HTML for a11y/SEO and no-JS
+ * layout stability. Uses Island with ssrFallback so the zfb scanner traces
+ * this file → preset-generator.tsx and registers the real component in the
+ * island manifest for client-side mounting.
  */
 export function PresetGeneratorFallback(): VNode {
   const fallback = (
