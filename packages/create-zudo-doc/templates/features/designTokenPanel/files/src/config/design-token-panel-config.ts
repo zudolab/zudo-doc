@@ -16,7 +16,7 @@
 import type {
   PanelConfig,
   ColorScheme as ZdtpColorScheme,
-} from "@takazudo/zudo-design-token-panel";
+} from "@takazudo/zdtp";
 import {
   SPACING_TOKENS,
   FONT_TOKENS,

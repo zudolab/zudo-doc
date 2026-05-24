@@ -8,10 +8,10 @@ export const designTokenPanelFeature: FeatureModule = () => ({
       // CSS bundle (not a deferred chunk), ensuring the panel renders
       // correctly on first click. Vite library mode strips the source CSS
       // import from the emitted JS, so this CSS-side import is the required
-      // pull point. See @takazudo/zudo-design-token-panel PORTABLE-CONTRACT.md §7.
+      // pull point. See @takazudo/zdtp PORTABLE-CONTRACT.md §7.
       file: "src/styles/global.css",
       anchor: "/* @slot:global-css:feature-styles */",
-      content: `@import "@takazudo/zudo-design-token-panel/styles.css";`,
+      content: `@import "@takazudo/zdtp/styles.css";`,
     },
     {
       // Bootstrap the zdtp panel as a side-effect dynamic import.
@@ -20,7 +20,7 @@ export const designTokenPanelFeature: FeatureModule = () => ({
       // mounts its own DOM when configurePanel() runs inside the bootstrap module.
       file: "src/layouts/doc-layout.astro",
       anchor: "// @slot:doc-layout:imports",
-      content: `// Production bootstrap for @takazudo/zudo-design-token-panel (zdtp).
+      content: `// Production bootstrap for @takazudo/zdtp (zdtp).
 // Loaded as a side-effect when the feature flag is enabled.
 if (settings.designTokenPanel || settings.colorTweakPanel) {
   void import("@/lib/design-token-panel-bootstrap");
