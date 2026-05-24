@@ -56,6 +56,9 @@
     "init-worktree": "bash scripts/install-git-hooks.sh"
   },
   "pnpm": {
+    "overrides": {
+      "preact": "^10.29.1"
+    },
     "onlyBuiltDependencies": [
       "esbuild",
       "lefthook",
@@ -67,9 +70,9 @@
     "@anthropic-ai/sdk": "^0.79.0",
     "@shikijs/transformers": "^4.0.1",
     "@takazudo/zdtp": "0.1.0-next.0",
-    "@takazudo/zfb": "0.1.0-next.2",
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.2",
-    "@takazudo/zfb-runtime": "0.1.0-next.2",
+    "@takazudo/zfb": "0.1.0-next.5",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.5",
+    "@takazudo/zfb-runtime": "0.1.0-next.5",
     "@types/hast": "^3.0.4",
     "@zudo-doc/md-plugins": "workspace:*",
     "@zudo-doc/zudo-doc-v2": "workspace:*",
@@ -80,7 +83,7 @@
     "katex": "^0.16.38",
     "mermaid": "^11.12.3",
     "minisearch": "^7.2.0",
-    "preact": "^10.26.9",
+    "preact": "^10.29.1",
     "preact-render-to-string": "^6.6.6",
     "rehype-katex": "^7.0.1",
     "remark-cjk-friendly": "^2.0.1",

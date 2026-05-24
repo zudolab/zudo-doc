@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  preact: ^10.29.1
+
 importers:
 
   .:
@@ -14,18 +17,18 @@ importers:
       '@shikijs/transformers':
         specifier: ^4.0.1
         version: 4.0.1
+      '@takazudo/zdtp':
+        specifier: 0.1.0-next.0
+        version: 0.1.0-next.0(preact@10.29.2)
       '@takazudo/zfb':
-        specifier: file:../zfb/packages/zfb
-        version: file:../zfb/packages/zfb
+        specifier: 0.1.0-next.5
+        version: 0.1.0-next.5
       '@takazudo/zfb-adapter-cloudflare':
-        specifier: file:../zfb/packages/zfb-adapter-cloudflare
-        version: file:../zfb/packages/zfb-adapter-cloudflare
+        specifier: 0.1.0-next.5
+        version: 0.1.0-next.5
       '@takazudo/zfb-runtime':
-        specifier: file:../zfb/packages/zfb-runtime
-        version: file:../zfb/packages/zfb-runtime(@takazudo/zfb@file:../zfb/packages/zfb)
-      '@takazudo/zudo-design-token-panel':
-        specifier: file:../zdtp/packages/zudo-design-token-panel
-        version: file:../zdtp/packages/zudo-design-token-panel(preact@10.29.0)
+        specifier: 0.1.0-next.5
+        version: 0.1.0-next.5(@takazudo/zfb@0.1.0-next.5)
       '@types/hast':
         specifier: ^3.0.4
         version: 3.0.4
@@ -57,11 +60,11 @@ importers:
         specifier: ^7.2.0
         version: 7.2.0
       preact:
-        specifier: ^10.26.9
-        version: 10.29.0
+        specifier: ^10.29.1
+        version: 10.29.2
       preact-render-to-string:
         specifier: ^6.6.6
-        version: 6.6.6(preact@10.29.0)
+        version: 6.6.6(preact@10.29.2)
       rehype-katex:
         specifier: ^7.0.1
         version: 7.0.1
@@ -330,11 +333,11 @@ importers:
         specifier: ^25.3.5
         version: 25.3.5
       preact:
-        specifier: ^10.26.9
-        version: 10.29.0
+        specifier: ^10.29.1
+        version: 10.29.2
       preact-render-to-string:
         specifier: ^6.6.6
-        version: 6.6.6(preact@10.29.0)
+        version: 6.6.6(preact@10.29.2)
       typescript:
         specifier: ^5.0.0
         version: 5.9.3
@@ -1715,23 +1718,53 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7
 
-  '@takazudo/zfb-adapter-cloudflare@file:../zfb/packages/zfb-adapter-cloudflare':
-    resolution: {directory: ../zfb/packages/zfb-adapter-cloudflare, type: directory}
-    hasBin: true
-
-  '@takazudo/zfb-runtime@file:../zfb/packages/zfb-runtime':
-    resolution: {directory: ../zfb/packages/zfb-runtime, type: directory}
-    peerDependencies:
-      '@takazudo/zfb': workspace:*
-
-  '@takazudo/zfb@file:../zfb/packages/zfb':
-    resolution: {directory: ../zfb/packages/zfb, type: directory}
-
-  '@takazudo/zudo-design-token-panel@file:../zdtp/packages/zudo-design-token-panel':
-    resolution: {directory: ../zdtp/packages/zudo-design-token-panel, type: directory}
+  '@takazudo/zdtp@0.1.0-next.0':
+    resolution: {integrity: sha512-eKE+xEZfCeaxe3VAektz8+8plk/EaOOZmS/SKJB5g3qFZF4pWHfzNhngyDAvUkj3f2yCpnIyT+xeZjZqQ1f7Lg==}
+    engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
     hasBin: true
     peerDependencies:
       preact: ^10.29.1
+
+  '@takazudo/zfb-adapter-cloudflare@0.1.0-next.5':
+    resolution: {integrity: sha512-zOF4bQFHX4iiTe6dYYx6rEQYMRE+EKm/KwTUj8HPyT20L4r6OY9/BmLn+7ncmRdbFxW4KzIW3SWF8HOIqaIZqA==}
+    engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
+    hasBin: true
+
+  '@takazudo/zfb-darwin-arm64@0.1.0-next.5':
+    resolution: {integrity: sha512-jdWF9r9yqDPR/Yzjr1S2u+aL40stJhufQbnpMoPxsIrSEQPgyYBFaRhfZiLbjT2k7xgvx7T7YozF9IXeLybz+A==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@takazudo/zfb-darwin-x64@0.1.0-next.5':
+    resolution: {integrity: sha512-k5m4A7c1uwvptM0+LHjzaqwsQQiinmd6QaROSIQoTseI/2Dqsv16+ZOLo6clGstNZQ5ODGlm4jkupc9ppdobJg==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@takazudo/zfb-linux-arm64-gnu@0.1.0-next.5':
+    resolution: {integrity: sha512-BG3y8r8wyg50S1f6J7JrzEapb4eHXdlUc/6Zlafw/l6yFxtU6gCxndRzuc0zXWMNFEqosgQsZEUKTyOGyXU90Q==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@takazudo/zfb-linux-x64-gnu@0.1.0-next.5':
+    resolution: {integrity: sha512-JL/tOCRGURVXoX/Sh0ZcgVAstP16fR/8plRxyd2z3BbL2R20BGZ3aqHcbZ+O/neJbjj6BlBY7kU7aGMEpvKyjQ==}
+    cpu: [x64]
+    os: [linux]
+
+  '@takazudo/zfb-runtime@0.1.0-next.5':
+    resolution: {integrity: sha512-8KVBTBoelIw1VQuTMq+daeG3QTYHgNJS413vr2+jK2/SyrWP/VyhzgoVIGop4s/EzImA2j4qBKVy7vl1kVmA8A==}
+    engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
+    peerDependencies:
+      '@takazudo/zfb': 0.1.0-next.5
+
+  '@takazudo/zfb-win32-x64-msvc@0.1.0-next.5':
+    resolution: {integrity: sha512-tgQlMLD8LDslujrBo4GKULGqN62nrlrQ/IVI5LiHHb+3osTmnNJAyJDu43Pw3X4P7Q28itxMNHsk0pb4CbER1g==}
+    cpu: [x64]
+    os: [win32]
+
+  '@takazudo/zfb@0.1.0-next.5':
+    resolution: {integrity: sha512-SpCz5HI/+pJU9/au4izHVPGwsjsHRNayQAETnc93lpmNVsMadS58M+vfojHtu47ZI8qM5wYGcN1WYP84TdKFpA==}
+    engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
+    hasBin: true
 
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
@@ -2162,6 +2195,10 @@ packages:
 
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
+
+  culori@4.0.2:
+    resolution: {integrity: sha512-1+BhOB8ahCn4O0cep0Sh2l9KCOfOdY+BXJnKMHFFzDEouSr/el18QwXEMRlOj9UY5nCeA8UN3a/82rUWRBeyBw==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
   cytoscape-cose-bilkent@4.1.0:
     resolution: {integrity: sha512-wgQlVIUJF13Quxiv5e1gstZ08rnZj2XaLHGoFMYXz7SkNfCDOOteKBE6SYRfA9WxxI/iBc3ajfDoc6hb/MRAHQ==}
@@ -3217,10 +3254,10 @@ packages:
   preact-render-to-string@6.6.6:
     resolution: {integrity: sha512-EfqZJytnjJldV+YaaqhthU2oXsEf5e+6rDv957p+zxAvNfFLQOPfvBOTncscQ+akzu6Wrl7s3Pa0LjUQmWJsGQ==}
     peerDependencies:
-      preact: '>=10 || >= 11.0.0-0'
+      preact: ^10.29.1
 
-  preact@10.29.0:
-    resolution: {integrity: sha512-wSAGyk2bYR1c7t3SZ3jHcM6xy0lcBcDel6lODcs9ME6Th++Dx2KU+6D3HD8wMMKGA8Wpw7OMd3/4RGzYRpzwRg==}
+  preact@10.29.2:
+    resolution: {integrity: sha512-7tNmwg/7mzzAoB/8kSg6Hl37JraAZw3Z3A0JSY7VXlZwo82Xn0G7wKbNNs2qoF4ZEEsQGTwDAroNdqKs1ofJxQ==}
 
   prettier@3.8.1:
     resolution: {integrity: sha512-UOnG6LftzbdaHZcKoPFtOcCKztrQ57WkHDeRD9t/PTQtmT0NHSeWWepj6pS0z/N7+08BHFDQVUrfmfMRcZwbMg==}
@@ -4952,18 +4989,40 @@ snapshots:
       tailwindcss: 4.2.1
       vite: 7.3.1(@types/node@25.3.5)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)(yaml@2.8.2)
 
-  '@takazudo/zfb-adapter-cloudflare@file:../zfb/packages/zfb-adapter-cloudflare': {}
-
-  '@takazudo/zfb-runtime@file:../zfb/packages/zfb-runtime(@takazudo/zfb@file:../zfb/packages/zfb)':
+  '@takazudo/zdtp@0.1.0-next.0(preact@10.29.2)':
     dependencies:
-      '@takazudo/zfb': file:../zfb/packages/zfb
+      culori: 4.0.2
+      preact: 10.29.2
+
+  '@takazudo/zfb-adapter-cloudflare@0.1.0-next.5': {}
+
+  '@takazudo/zfb-darwin-arm64@0.1.0-next.5':
+    optional: true
+
+  '@takazudo/zfb-darwin-x64@0.1.0-next.5':
+    optional: true
+
+  '@takazudo/zfb-linux-arm64-gnu@0.1.0-next.5':
+    optional: true
+
+  '@takazudo/zfb-linux-x64-gnu@0.1.0-next.5':
+    optional: true
+
+  '@takazudo/zfb-runtime@0.1.0-next.5(@takazudo/zfb@0.1.0-next.5)':
+    dependencies:
+      '@takazudo/zfb': 0.1.0-next.5
       hono: 4.12.15
 
-  '@takazudo/zfb@file:../zfb/packages/zfb': {}
+  '@takazudo/zfb-win32-x64-msvc@0.1.0-next.5':
+    optional: true
 
-  '@takazudo/zudo-design-token-panel@file:../zdtp/packages/zudo-design-token-panel(preact@10.29.0)':
-    dependencies:
-      preact: 10.29.0
+  '@takazudo/zfb@0.1.0-next.5':
+    optionalDependencies:
+      '@takazudo/zfb-darwin-arm64': 0.1.0-next.5
+      '@takazudo/zfb-darwin-x64': 0.1.0-next.5
+      '@takazudo/zfb-linux-arm64-gnu': 0.1.0-next.5
+      '@takazudo/zfb-linux-x64-gnu': 0.1.0-next.5
+      '@takazudo/zfb-win32-x64-msvc': 0.1.0-next.5
 
   '@types/babel__core@7.20.5':
     dependencies:
@@ -5445,6 +5504,8 @@ snapshots:
   cssesc@3.0.0: {}
 
   csstype@3.2.3: {}
+
+  culori@4.0.2: {}
 
   cytoscape-cose-bilkent@4.1.0(cytoscape@3.33.1):
     dependencies:
@@ -6813,11 +6874,11 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  preact-render-to-string@6.6.6(preact@10.29.0):
+  preact-render-to-string@6.6.6(preact@10.29.2):
     dependencies:
-      preact: 10.29.0
+      preact: 10.29.2
 
-  preact@10.29.0: {}
+  preact@10.29.2: {}
 
   prettier@3.8.1: {}
 
