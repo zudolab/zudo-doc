@@ -15,8 +15,8 @@ importers:
         specifier: ^4.0.1
         version: 4.0.1
       '@takazudo/zdtp':
-        specifier: 0.1.0-next.0
-        version: 0.1.0-next.0(preact@10.29.2)
+        specifier: 0.1.0-next.1
+        version: 0.1.0-next.1(preact@10.29.2)
       '@takazudo/zfb':
         specifier: 0.1.0-next.5
         version: 0.1.0-next.5
@@ -1715,8 +1715,8 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7
 
-  '@takazudo/zdtp@0.1.0-next.0':
-    resolution: {integrity: sha512-eKE+xEZfCeaxe3VAektz8+8plk/EaOOZmS/SKJB5g3qFZF4pWHfzNhngyDAvUkj3f2yCpnIyT+xeZjZqQ1f7Lg==}
+  '@takazudo/zdtp@0.1.0-next.1':
+    resolution: {integrity: sha512-USvjhTQBvgdGBJEfM1F9fu30Q2uTytyIP4nYSDcUPeLb4pvnS4InSho4vrFWW+z8Jr5M4G5DxQd49HcAnUv9HA==}
     engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
     hasBin: true
     peerDependencies:
@@ -4986,7 +4986,7 @@ snapshots:
       tailwindcss: 4.2.1
       vite: 7.3.1(@types/node@25.3.5)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)(yaml@2.8.2)
 
-  '@takazudo/zdtp@0.1.0-next.0(preact@10.29.2)':
+  '@takazudo/zdtp@0.1.0-next.1(preact@10.29.2)':
     dependencies:
       culori: 4.0.2
       preact: 10.29.2
