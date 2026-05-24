@@ -109,3 +109,13 @@ src/components/find-in-page-init.tsx
 src/config/design-token-panel-config.ts
 src/lib/design-token-panel-bootstrap.ts
 src/utils/design-token-types.ts
+
+# Post-cutover cleanup (#1688) — sidebarToggle desktop component. Production
+# imports BEFORE_NAVIGATE_EVENT / AFTER_NAVIGATE_EVENT from
+# @zudo-doc/zudo-doc-v2/transitions (the v2 module owns the event vocabulary).
+# The create-zudo-doc template inlines the literal "zfb:before-preparation" /
+# "zfb:after-swap" strings because that package is workspace-private/unpublished,
+# so a standalone scaffold cannot resolve the import. Same intentional divergence
+# as design-token-panel-bootstrap.ts above. Reconcile if/when create-zudo-doc
+# migrates onto the v2 transitions module.
+src/components/desktop-sidebar-toggle.tsx
