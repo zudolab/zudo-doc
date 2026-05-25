@@ -2,6 +2,32 @@
   "name": "create-zudo-doc",
   "version": "0.0.1",
   "description": "Create a new zudo-doc documentation site",
+  "license": "MIT",
+  "author": "Takeshi Takatsudo",
+  "homepage": "https://zudo-doc.takazudomodular.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zudolab/zudo-doc.git",
+    "directory": "packages/create-zudo-doc"
+  },
+  "bugs": {
+    "url": "https://github.com/zudolab/zudo-doc/issues"
+  },
+  "keywords": [
+    "documentation",
+    "zfb",
+    "mdx",
+    "scaffold",
+    "create",
+    "cli"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "type": "module",
   "bin": {
     "create-zudo-doc": "./bin/create-zudo-doc.js"
@@ -18,7 +44,8 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "vitest run",
-    "test:slow": "vitest run --config vitest.slow.config.ts"
+    "test:slow": "vitest run --config vitest.slow.config.ts",
+    "prepublishOnly": "pnpm build && pnpm test"
   },
   "dependencies": {
     "@clack/prompts": "^0.9.1",
