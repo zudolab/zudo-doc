@@ -25,7 +25,8 @@
     "alwaysStrict": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "#doc-history-meta": [".zfb/doc-history-meta.json"]
     }
   },
   "exclude": ["dist", "e2e/fixtures", "packages", "pages", "worktrees", "vendor", "src/**/__tests__", "vitest.config.ts"]
