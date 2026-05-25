@@ -23,12 +23,14 @@
 //     when="load">`). The matching `<slot name="sidebar" />` in the
 //     legacy template becomes `sidebarSlot` so the mobile-sheet tree
 //     can still flow in from the layout.
-//   * Everything that derives from `settings` (siteName, headerNav,
-//     headerRightItems, githubRepoUrl) is read here directly via the
-//     `@/config` and `@/utils` aliases — same pattern as the existing
-//     `color-scheme-provider.tsx` port. Pure helpers used by the active-
-//     link logic live in `./nav-active.ts` so they stay unit-testable
-//     without booting the host config.
+//   * Everything host-derived (siteName, headerNav, headerRightItems,
+//     githubRepoUrl, …) is supplied via props. Sub-issue #1729 inverted
+//     the older direct `@/config` / `@/utils` imports — the host
+//     wrapper (`pages/lib/_header-with-defaults.tsx`) now computes the
+//     same values from its own modules and passes them through.
+//     Pure helpers used by the active-link logic live in
+//     `./nav-active.ts` so they stay unit-testable without booting the
+//     host config.
 //   * The inline overflow script is a pure-JS string emitted via
 //     `dangerouslySetInnerHTML` (see `./nav-overflow-script.ts`). The
 //     behaviour is identical to the original `<script>` block — only
@@ -36,17 +38,43 @@
 //     ships its body to the browser as-is.
 
 import type { ComponentChildren, JSX, VNode } from "preact";
-import { settings } from "@/config/settings";
-import { withBase, stripBase, navHref } from "@/utils/base";
-import { defaultLocale, locales, t, type Locale } from "@/config/i18n";
-import { buildGitHubRepoUrl } from "@/utils/github";
-import { filterHeaderRightItems } from "@/utils/header-right-items";
 import {
   computeActiveNavPath,
   isNavItemActive,
   pathForMatch,
 } from "./nav-active.js";
 import { NAV_OVERFLOW_SCRIPT } from "./nav-overflow-script.js";
+import type {
+  HeaderNavItem,
+  HeaderRightItem,
+  Locale,
+} from "./types.js";
+
+/**
+ * Boundary helpers the host injects into `<Header>`. These are the URL
+ * builders the legacy header.tsx used to import from `@/utils/base` —
+ * pulled into a single prop bag so the v2 package is host-agnostic.
+ */
+export interface HeaderUrlHelpers {
+  withBase(path: string): string;
+  stripBase(path: string): string;
+  navHref(
+    path: string,
+    lang?: Locale,
+    currentVersion?: string,
+  ): string;
+}
+
+/**
+ * Boundary helpers for locale-aware behaviour the host injects into
+ * `<Header>`. Matches the surface the legacy header.tsx used from
+ * `@/config/i18n`.
+ */
+export interface HeaderI18n {
+  defaultLocale: string;
+  locales: readonly string[];
+  t(key: string, lang?: string): string;
+}
 
 /**
  * Props for the JSX `<Header />` port. Mirrors the Astro template's
@@ -80,8 +108,8 @@ export interface HeaderProps {
 
   /**
    * Replacement for `<ThemeToggle client:load />`. Rendered only when
-   * `settings.colorMode` is configured AND a `theme-toggle` entry is
-   * present in `headerRightItems` — matching the original template.
+   * `colorModeEnabled` is `true` AND a `theme-toggle` entry survives
+   * `filterHeaderRightItems` — matching the original template.
    */
   themeToggle?: ComponentChildren;
 
@@ -115,6 +143,69 @@ export interface HeaderProps {
    * (zudolab/zudo-doc#1546).
    */
   persistKey?: string;
+
+  /** Site-name string shown in the logo anchor (host `settings.siteName`). */
+  siteName: string;
+
+  /** Header-nav items in render order (host `settings.headerNav`). */
+  headerNav: HeaderNavItem[];
+
+  /**
+   * Header-right items, **already filtered** by the host via
+   * `filterHeaderRightItems` (see `./right-items.ts`). The renderer no
+   * longer re-checks `settings.colorMode` / `locales.length` etc — if
+   * an item is in this array, the renderer emits its markup. Slot
+   * presence (e.g. `languageSwitcher` being supplied) still gates per
+   * the legacy template: a slot left undefined renders an empty
+   * wrapper, matching prior behaviour.
+   */
+  headerRightItems: HeaderRightItem[];
+
+  /**
+   * Whether the host has a `colorMode` config. Required because the
+   * `theme-toggle` right-item is two-gated: the filter drops it when
+   * `colorMode` is off entirely, but the renderer also checks it before
+   * emitting the wrapping `<div>` so a `headerRightItems` array that
+   * still contains `theme-toggle` but is rendered against a config
+   * with `colorMode === false` stays a no-op (the legacy template's
+   * shape).
+   */
+  colorModeEnabled: boolean;
+
+  /**
+   * Whether the host has more than one locale configured (`locales.length > 1`
+   * in the legacy template's gate). The renderer needs this to keep
+   * the language-switcher slot empty on single-locale sites even when
+   * `headerRightItems` contains a `language-switcher` entry.
+   */
+  hasLocales: boolean;
+
+  /**
+   * Whether the host has `versions` configured. Currently informational —
+   * the version-switcher gate lives entirely in the host slot's
+   * presence — but accepted for symmetry with `colorModeEnabled` /
+   * `hasLocales` so the prop bag fully describes the feature surface.
+   */
+  hasVersions: boolean;
+
+  /**
+   * Resolved GitHub repo URL (no trailing slash) or `null` when
+   * unconfigured. Replaces the legacy direct call to
+   * `buildGitHubRepoUrl()` in this component.
+   */
+  githubRepoUrl: string | null;
+
+  /**
+   * Localised aria-label / title for the GitHub anchor — host-side
+   * translated string (the legacy `t("header.github", lang)`).
+   */
+  githubLabel: string;
+
+  /** URL builder helpers — see `HeaderUrlHelpers`. */
+  urlHelpers: HeaderUrlHelpers;
+
+  /** i18n helpers and config — see `HeaderI18n`. */
+  i18n: HeaderI18n;
 }
 
 /**
@@ -124,10 +215,9 @@ export interface HeaderProps {
  *   1. Render the sticky `<header>` with the site logo and the desktop
  *      nav, including the dropdown-parent / overflow-bucket markup the
  *      controller script reshapes at runtime.
- *   2. Iterate `settings.headerRightItems`, emitting the matching
- *      trigger button / icon link / consumer-supplied slot for each
- *      entry. Items disabled by `filterHeaderRightItems` (e.g.
- *      ai-chat trigger when `aiAssistant` is off) are skipped.
+ *   2. Iterate `headerRightItems` (already filtered by the caller via
+ *      `filterHeaderRightItems`), emitting the matching trigger button /
+ *      icon link / consumer-supplied slot for each entry.
  *   3. Emit the inline overflow controller script. The script wires the
  *      "..." overflow menu, manages `aria-expanded` on dropdowns, and
  *      re-runs after View Transitions (via `AFTER_NAVIGATE_EVENT` from
@@ -145,18 +235,22 @@ export function Header(props: HeaderProps): JSX.Element {
     versionSwitcher,
     search,
     persistKey,
+    siteName,
+    headerNav,
+    headerRightItems,
+    colorModeEnabled,
+    hasLocales,
+    githubRepoUrl,
+    githubLabel,
+    urlHelpers,
+    i18n,
   } = props;
 
-  const isNonDefaultLocale = lang != null && lang !== defaultLocale;
-  const pathWithoutBase = stripBase(currentPath);
-  const matchPath = pathForMatch(pathWithoutBase, lang, defaultLocale);
+  const isNonDefaultLocale = lang != null && lang !== i18n.defaultLocale;
+  const pathWithoutBase = urlHelpers.stripBase(currentPath);
+  const matchPath = pathForMatch(pathWithoutBase, lang, i18n.defaultLocale);
 
-  const activeNavPath = computeActiveNavPath(settings.headerNav, matchPath);
-  const headerRightItems = filterHeaderRightItems(
-    settings.headerRightItems ?? [],
-  );
-  const githubRepoUrl = buildGitHubRepoUrl();
-  const githubLabel = t("header.github", lang);
+  const activeNavPath = computeActiveNavPath(headerNav, matchPath);
 
   return (
     <header
@@ -198,11 +292,11 @@ export function Header(props: HeaderProps): JSX.Element {
       )}
 
       <a
-        href={withBase(isNonDefaultLocale ? `/${lang}/` : "/")}
+        href={urlHelpers.withBase(isNonDefaultLocale ? `/${lang}/` : "/")}
         class="whitespace-nowrap text-title font-bold text-fg hover:underline focus:underline shrink-0"
         data-header-logo
       >
-        {settings.siteName}
+        {siteName}
       </a>
 
       <nav
@@ -210,11 +304,13 @@ export function Header(props: HeaderProps): JSX.Element {
         class="relative ml-hsp-xl hidden min-w-0 flex-1 items-center gap-x-hsp-2xs whitespace-nowrap lg:flex"
         data-header-nav
       >
-        {settings.headerNav.map((item) => renderNavItem(
+        {headerNav.map((item) => renderNavItem(
           item,
           activeNavPath,
           lang,
           currentVersion,
+          urlHelpers,
+          i18n,
         ))}
 
         <div class="relative shrink-0" data-nav-more style="display:none">
@@ -248,6 +344,8 @@ export function Header(props: HeaderProps): JSX.Element {
             languageSwitcher,
             versionSwitcher,
             search,
+            colorModeEnabled,
+            hasLocales,
           },
         ))}
       </div>
@@ -271,14 +369,16 @@ function SidebarSlotFallback({
 }
 
 function renderNavItem(
-  item: (typeof settings.headerNav)[number],
+  item: HeaderNavItem,
   activeNavPath: string | undefined,
   lang: Locale | undefined,
   currentVersion: string | undefined,
+  urlHelpers: HeaderUrlHelpers,
+  i18n: HeaderI18n,
 ): VNode {
   const isActive = isNavItemActive(item, activeNavPath);
-  const href = navHref(item.path, lang, currentVersion);
-  const label = item.labelKey ? t(item.labelKey, lang) : item.label;
+  const href = urlHelpers.navHref(item.path, lang, currentVersion);
+  const label = item.labelKey ? i18n.t(item.labelKey, lang) : item.label;
 
   if (item.children && item.children.length > 0) {
     return (
@@ -321,9 +421,9 @@ function renderNavItem(
         <div class="absolute left-0 top-full z-50 hidden group-hover:block group-focus-within:block pt-vsp-3xs">
           <div class="min-w-[10rem] border border-muted rounded bg-surface shadow-lg py-vsp-3xs">
             {item.children.map((child) => {
-              const childHref = navHref(child.path, lang, currentVersion);
+              const childHref = urlHelpers.navHref(child.path, lang, currentVersion);
               const childLabel = child.labelKey
-                ? t(child.labelKey, lang)
+                ? i18n.t(child.labelKey, lang)
                 : child.label;
               const childActive = activeNavPath === child.path;
               return (
@@ -370,10 +470,12 @@ interface RightItemContext {
   languageSwitcher: ComponentChildren;
   versionSwitcher: ComponentChildren;
   search: ComponentChildren;
+  colorModeEnabled: boolean;
+  hasLocales: boolean;
 }
 
 function renderRightItem(
-  item: (ReturnType<typeof filterHeaderRightItems>)[number],
+  item: HeaderRightItem,
   index: number,
   ctx: RightItemContext,
 ): VNode | null {
@@ -487,7 +589,12 @@ function renderRightItem(
   }
 
   if (item.type === "component" && item.component === "theme-toggle") {
-    if (!settings.colorMode) return null;
+    // Mirrors the legacy template's two-gate behaviour: the
+    // `filterHeaderRightItems` caller drops this item entirely when
+    // color-mode is off, but the renderer still cross-checks the host
+    // flag so an inconsistent caller (item present + colorMode off)
+    // stays a no-op instead of emitting an empty island slot.
+    if (!ctx.colorModeEnabled) return null;
     return (
       <div key={`right-${index}`} class="hidden lg:flex items-center">
         {ctx.themeToggle}
@@ -496,7 +603,12 @@ function renderRightItem(
   }
 
   if (item.type === "component" && item.component === "language-switcher") {
-    if (!(ctx.lang && locales.length > 1)) return null;
+    // Same two-gate shape as theme-toggle above. The legacy template
+    // gated on `lang && locales.length > 1`; the host signals the
+    // multi-locale half via `hasLocales`, and the `lang` half is still
+    // checked here so single-locale renders (where `lang` is undefined)
+    // emit nothing.
+    if (!(ctx.lang && ctx.hasLocales)) return null;
     return (
       <div key={`right-${index}`} class="hidden lg:flex items-center">
         {ctx.languageSwitcher}

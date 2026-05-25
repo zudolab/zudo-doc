@@ -56,12 +56,21 @@ import ThemeToggle from "@/components/theme-toggle";
 import SidebarToggle from "@/components/sidebar-toggle";
 import { settings } from "@/config/settings";
 import { defaultLocale, locales, t, type Locale } from "@/config/i18n";
-import { buildLocaleLinks, docsUrl, navHref, versionedDocsUrl, withBase } from "@/utils/base";
+import { buildGitHubRepoUrl } from "@/utils/github";
+import {
+  buildLocaleLinks,
+  docsUrl,
+  navHref,
+  stripBase,
+  versionedDocsUrl,
+  withBase,
+} from "@/utils/base";
 import {
   isNavVisible,
   type NavNode,
 } from "@/utils/docs";
 import { buildSidebarForSection } from "@/utils/sidebar";
+import { filterHeaderRightItems } from "@zudo-doc/zudo-doc-v2/header";
 import { SearchWidget } from "./_search-widget";
 import { loadNavSourceDocs } from "./_nav-source-docs";
 
@@ -318,6 +327,27 @@ export function HeaderWithDefaults(
   // SSR content such as the LanguageSwitcher anchors). See #1546 + #1549.
   const persistKey = `header-${lang}`;
 
+  // Compute the right-items flags from the host's settings. The v2
+  // `<Header>` no longer consults `@/config/settings` directly — see
+  // sub-issue #1729 — so the wrapper is responsible for translating
+  // host state into the prop bag the renderer expects. Boolean
+  // coercion mirrors the original filter predicates verbatim.
+  const headerRightItems = filterHeaderRightItems(
+    settings.headerRightItems ?? [],
+    {
+      designTokenPanel: Boolean(settings.designTokenPanel),
+      colorTweakPanel: Boolean(settings.colorTweakPanel),
+      aiAssistant: Boolean(settings.aiAssistant),
+      colorMode: Boolean(settings.colorMode),
+      hasLocales: Object.keys(settings.locales).length > 0,
+      hasVersions: Boolean(settings.versions),
+      hasGithubUrl: Boolean(settings.githubUrl),
+    },
+  );
+
+  const githubRepoUrl = buildGitHubRepoUrl();
+  const githubLabel = t("header.github", lang);
+
   return (
     <Header
       lang={lang}
@@ -329,6 +359,28 @@ export function HeaderWithDefaults(
       versionSwitcher={versionSwitcher}
       languageSwitcher={languageSwitcher}
       persistKey={persistKey}
+      siteName={settings.siteName}
+      headerNav={settings.headerNav}
+      headerRightItems={headerRightItems}
+      colorModeEnabled={Boolean(settings.colorMode)}
+      hasLocales={locales.length > 1}
+      hasVersions={Boolean(settings.versions)}
+      githubRepoUrl={githubRepoUrl}
+      githubLabel={githubLabel}
+      urlHelpers={{
+        withBase,
+        stripBase,
+        // `navHref` from `@/utils/base` types the lang param as the
+        // host's literal-locale union; v2's `Locale` is `string`. Wrap
+        // so strictFunctionTypes accepts the assignment without losing
+        // the runtime call shape (sub-issue #1729 boundary widening).
+        navHref: (path, l, v) => navHref(path, l as Locale | undefined, v),
+      }}
+      i18n={{
+        defaultLocale,
+        locales,
+        t,
+      }}
     />
   );
 }

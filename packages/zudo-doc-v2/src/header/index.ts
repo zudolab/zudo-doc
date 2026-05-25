@@ -10,6 +10,22 @@
  * the `pathForMatch` / `computeActiveNavPath` regex logic.
  */
 
+export type {
+  Locale,
+  HeaderNavChildItem,
+  HeaderNavItem,
+  HeaderRightComponentItem,
+  HeaderRightComponentName,
+  HeaderRightHtmlItem,
+  HeaderRightItem,
+  HeaderRightLinkItem,
+  HeaderRightTriggerItem,
+  HeaderRightTriggerName,
+} from "./types.js";
+export {
+  filterHeaderRightItems,
+  type HeaderRightItemFlags,
+} from "./right-items.js";
 export { Header, type HeaderProps } from "./header.js";
 export {
   computeActiveNavPath,
