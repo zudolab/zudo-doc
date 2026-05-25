@@ -164,7 +164,7 @@ function PresetModal({
     };
   }, []);
 
-  function handleBackdropClick(e: React.MouseEvent) {
+  function handleBackdropClick(e: React.MouseEvent<HTMLDialogElement>) {
     const dialog = dialogRef.current;
     if (!dialog) return;
     // Native <dialog> backdrop clicks fire with e.target === the dialog

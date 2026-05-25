@@ -74,7 +74,7 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
   }, [messages, loading]);
 
   // Backdrop click
-  function handleBackdropClick(e: React.MouseEvent) {
+  function handleBackdropClick(e: React.MouseEvent<HTMLDialogElement>) {
     const dialog = dialogRef.current;
     if (!dialog) return;
     // Native <dialog> backdrop clicks fire with e.target === the dialog
@@ -123,7 +123,7 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
     }
   }, [input, loading, messages, basePath]);
 
-  function handleKeyDown(e: React.KeyboardEvent) {
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -210,7 +210,7 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
               ref={inputRef}
               type="text"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => setInput(e.currentTarget.value)}
               onKeyDown={handleKeyDown}
               disabled={loading}
               placeholder="Type your message..."

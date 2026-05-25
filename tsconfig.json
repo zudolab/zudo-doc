@@ -26,7 +26,10 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "#doc-history-meta": [".zfb/doc-history-meta.json"]
+      "#doc-history-meta": [".zfb/doc-history-meta.json"],
+      "react": ["./node_modules/preact/compat/"],
+      "react/jsx-runtime": ["./node_modules/preact/jsx-runtime"],
+      "react-dom": ["./node_modules/preact/compat/"]
     }
   },
   "exclude": ["dist", "e2e/fixtures", "packages", "pages", "worktrees", "vendor", "__inbox", "src/**/__tests__", "vitest.config.ts"]
