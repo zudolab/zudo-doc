@@ -24,12 +24,22 @@ set -euo pipefail
 #   1. Validates version format (semver + optional prerelease suffix)
 #   2. Bumps version in root package.json
 #   3. Bumps version in packages/create-zudo-doc/package.json
-#   4. Scaffolds EN+JA changelog MDX entries
+#   4. Bumps version in packages/zudo-doc-v2/package.json  (W4A — #1732)
+#   5. Bumps version in packages/doc-history-server/package.json  (W4A — #1732)
+#   6. Bumps the @zudo-doc/zudo-doc-v2 pin in scaffold.ts to ^<new-version>
+#      so the generated package.json points at the v2 version being released
+#      (W4A — #1732). The @takazudo/zfb / @takazudo/zfb-runtime pins in
+#      scaffold.ts are upstream-tracked separately and gated by
+#      scripts/check-pin-parity.mjs — they are NOT touched here.
+#   7. Scaffolds EN+JA changelog MDX entries
 # ─────────────────────────────────────────────────────────────────────────────
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 PKG_JSON="$ROOT_DIR/package.json"
 CREATE_PKG_JSON="$ROOT_DIR/packages/create-zudo-doc/package.json"
+V2_PKG_JSON="$ROOT_DIR/packages/zudo-doc-v2/package.json"
+DHS_PKG_JSON="$ROOT_DIR/packages/doc-history-server/package.json"
+SCAFFOLD_TS="$ROOT_DIR/packages/create-zudo-doc/src/scaffold.ts"
 
 # ── Parse arguments ──────────────────────────────────────────────────────────
 
@@ -56,12 +66,19 @@ fi
 
 OLD_ROOT_VERSION=$(node -p "require('$PKG_JSON').version" 2>/dev/null)
 OLD_CREATE_VERSION=$(node -p "require('$CREATE_PKG_JSON').version" 2>/dev/null)
+OLD_V2_VERSION=$(node -p "require('$V2_PKG_JSON').version" 2>/dev/null)
+OLD_DHS_VERSION=$(node -p "require('$DHS_PKG_JSON').version" 2>/dev/null)
 
 echo "Root package:           $OLD_ROOT_VERSION → $NEW_VERSION"
 echo "create-zudo-doc:        $OLD_CREATE_VERSION → $NEW_VERSION"
+echo "zudo-doc-v2:            $OLD_V2_VERSION → $NEW_VERSION"
+echo "doc-history-server:     $OLD_DHS_VERSION → $NEW_VERSION"
 
-if [ "$OLD_ROOT_VERSION" = "$NEW_VERSION" ] && [ "$OLD_CREATE_VERSION" = "$NEW_VERSION" ]; then
-  echo "Error: Both packages already at $NEW_VERSION — nothing to bump"
+if [ "$OLD_ROOT_VERSION" = "$NEW_VERSION" ] \
+  && [ "$OLD_CREATE_VERSION" = "$NEW_VERSION" ] \
+  && [ "$OLD_V2_VERSION" = "$NEW_VERSION" ] \
+  && [ "$OLD_DHS_VERSION" = "$NEW_VERSION" ]; then
+  echo "Error: All packages already at $NEW_VERSION — nothing to bump"
   exit 1
 fi
 
@@ -88,6 +105,52 @@ node -e "
   fs.writeFileSync('$CREATE_PKG_JSON', JSON.stringify(pkg, null, 2) + '\n');
 "
 echo "  ✓ $CREATE_PKG_JSON → $NEW_VERSION"
+
+# ── Step 2a: Bump packages/zudo-doc-v2/package.json (W4A — #1732) ────────────
+
+echo ""
+echo "▶ Bumping packages/zudo-doc-v2/package.json..."
+node -e "
+  const fs = require('fs');
+  const pkg = JSON.parse(fs.readFileSync('$V2_PKG_JSON', 'utf-8'));
+  pkg.version = '$NEW_VERSION';
+  fs.writeFileSync('$V2_PKG_JSON', JSON.stringify(pkg, null, 2) + '\n');
+"
+echo "  ✓ $V2_PKG_JSON → $NEW_VERSION"
+
+# ── Step 2b: Bump packages/doc-history-server/package.json (W4A — #1732) ─────
+
+echo ""
+echo "▶ Bumping packages/doc-history-server/package.json..."
+node -e "
+  const fs = require('fs');
+  const pkg = JSON.parse(fs.readFileSync('$DHS_PKG_JSON', 'utf-8'));
+  pkg.version = '$NEW_VERSION';
+  fs.writeFileSync('$DHS_PKG_JSON', JSON.stringify(pkg, null, 2) + '\n');
+"
+echo "  ✓ $DHS_PKG_JSON → $NEW_VERSION"
+
+# ── Step 2c: Align @zudo-doc/zudo-doc-v2 pin in scaffold.ts (W4A — #1732) ────
+# The generated downstream package.json pins ^X.Y.Z of @zudo-doc/zudo-doc-v2;
+# when v2 bumps, the pin must move with it so a fresh scaffold gets the
+# version we just published. The two zfb pins on adjacent lines are NOT
+# touched — those track the upstream zfb release cadence and are gated by
+# scripts/check-pin-parity.mjs against the root package.json.
+
+echo ""
+echo "▶ Aligning @zudo-doc/zudo-doc-v2 pin in scaffold.ts..."
+node -e "
+  const fs = require('fs');
+  const src = fs.readFileSync('$SCAFFOLD_TS', 'utf-8');
+  const re = /(\"@zudo-doc\/zudo-doc-v2\"\s*:\s*\")\^?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?(\")/;
+  if (!re.test(src)) {
+    console.error('Error: could not locate @zudo-doc/zudo-doc-v2 pin in $SCAFFOLD_TS');
+    process.exit(1);
+  }
+  const next = src.replace(re, '\$1^$NEW_VERSION\$3');
+  fs.writeFileSync('$SCAFFOLD_TS', next);
+"
+echo "  ✓ $SCAFFOLD_TS @zudo-doc/zudo-doc-v2 → ^$NEW_VERSION"
 
 # ── Step 3: Scaffold EN + JA changelog entries ────────────────────────────────
 
@@ -155,14 +218,27 @@ fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  Done! Both packages bumped to $NEW_VERSION"
+echo "  Done! All four packages bumped to $NEW_VERSION"
+echo "  (root, create-zudo-doc, zudo-doc-v2, doc-history-server)"
+echo "  scaffold.ts @zudo-doc/zudo-doc-v2 pin → ^$NEW_VERSION"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "Next steps:"
 echo "  1. Fill in changelog: src/content/docs/changelog/$NEW_VERSION.mdx"
 echo "  2. Fill in Japanese:  src/content/docs-ja/changelog/$NEW_VERSION.mdx"
 echo "  3. Run pnpm b4push to validate"
-echo "  4. Commit, push, wait for CI, then:"
-echo "     git tag v$NEW_VERSION && git push --tags"
-echo "  5. Create a DRAFT GitHub release for tag v$NEW_VERSION"
-echo "     Publishing the draft fires the publish-create-zudo-doc CI workflow."
+echo "  4. Commit, push, wait for CI."
+echo ""
+echo "  Publish ORDER matters — v2 and doc-history-server first, then"
+echo "  create-zudo-doc (whose generated package.json pins v2 ^$NEW_VERSION)."
+echo ""
+echo "  5a. If doc-history-server or v2 changed:"
+echo "      git tag doc-history-server-$NEW_VERSION && git push origin doc-history-server-$NEW_VERSION"
+echo "      git tag v2-$NEW_VERSION && git push origin v2-$NEW_VERSION"
+echo "      Create DRAFT releases for each tag — publishing fires"
+echo "      publish-doc-history-server.yml and publish-zudo-doc-v2.yml."
+echo ""
+echo "  5b. After 5a is live on npm:"
+echo "      git tag v$NEW_VERSION && git push origin v$NEW_VERSION"
+echo "      Create a DRAFT release for v$NEW_VERSION — publishing fires"
+echo "      publish-create-zudo-doc.yml."
