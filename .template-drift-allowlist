@@ -119,3 +119,13 @@ src/utils/design-token-types.ts
 # as design-token-panel-bootstrap.ts above. Reconcile if/when create-zudo-doc
 # migrates onto the v2 transitions module.
 src/components/desktop-sidebar-toggle.tsx
+
+# W3A (#1729 / generator-pages-migration Wave 3) — header-right-items moved into
+# @zudo-doc/zudo-doc-v2/header for production. The host (this repo) imports
+# filterHeaderRightItems from the v2 package directly and the source-of-truth
+# lives in packages/zudo-doc-v2/src/header/right-items.ts. The template ships
+# a self-contained copy under templates/base/src/utils/ for downstream scaffolds
+# that don't depend on v2 as a runtime dep — same intentional divergence pattern
+# as design-token-panel-bootstrap.ts and desktop-sidebar-toggle.tsx above.
+# Reconcile if/when create-zudo-doc migrates onto the v2 header module wholesale.
+src/utils/header-right-items.ts
