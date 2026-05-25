@@ -38,8 +38,12 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { createRequire } from "node:module";
-import { pathToFileURL } from "node:url";
+import {
+  collectContentFiles,
+  getFileCommits,
+  getFirstCommit,
+  getCommitInfo,
+} from "@zudo-doc/doc-history-server/git-history";
 
 /** A single non-default locale entry; mirrors `settings.locales[*]`. */
 export interface DocHistoryMetaLocaleConfig {
@@ -122,14 +126,9 @@ export async function runDocHistoryMetaStep(
     return;
   }
 
-  // The git-history helpers live in the sibling
-  // `@zudo-doc/doc-history-server` package's source tree. The compiled
-  // dist re-exports `getDocHistory` (full content) but not the lighter
-  // `getFileCommits` / `getCommitInfo` pair we need here, so we go
-  // directly to the .ts source. Resolving via `package.json` keeps this
-  // independent of the workspace layout.
-  const { collectContentFiles, getFileCommits, getFirstCommit, getCommitInfo } =
-    await loadGitHistoryHelpers(projectRoot);
+  // git-history helpers are imported statically at the top of the file
+  // from `@zudo-doc/doc-history-server/git-history` — the published
+  // package's `./git-history` subpath export.
 
   // Collect [localeKey | null, absoluteDir] pairs. `null` = default
   // locale (bare slug); a string locale key produces a prefixed slug.
@@ -188,55 +187,3 @@ const defaultLogger = {
   },
 };
 
-/** Shape of the helpers we need from doc-history-server's git-history module. */
-type GitHistoryHelpers = {
-  collectContentFiles(dir: string): Array<{ filePath: string; slug: string }>;
-  getFileCommits(filePath: string, maxEntries?: number): string[];
-  getFirstCommit(filePath: string): string | null;
-  getCommitInfo(
-    hash: string,
-    filePath: string,
-  ): { hash: string; date: string; author: string; message: string };
-};
-
-/**
- * Resolve `git-history.ts` inside `@zudo-doc/doc-history-server`'s source
- * tree. We import the .ts file directly (not the built dist) because the
- * lower-level helpers `getFileCommits` / `getCommitInfo` aren't part of
- * the package's public dist exports — only the higher-level
- * `getDocHistory` is. Going through `require.resolve` on the package's
- * `package.json` keeps this resilient to workspace layout changes.
- */
-async function loadGitHistoryHelpers(
-  projectRoot: string,
-): Promise<GitHistoryHelpers> {
-  // TODO: factor `getFileCommits` / `getCommitInfo` into the public
-  // dist exports of `@zudo-doc/doc-history-server` so this can become
-  // a plain `import` from the package's main entry.
-  const localRequire = createRequire(
-    pathToFileURL(path.join(projectRoot, "noop.js")).href,
-  );
-  let pkgJsonPath: string;
-  try {
-    pkgJsonPath = localRequire.resolve("@zudo-doc/doc-history-server/package.json");
-  } catch {
-    // Fall back to the workspace-relative path used by the legacy
-    // `scripts/zfb-prebuild.mjs`. Keeps behaviour byte-identical when
-    // the package is laid out under `packages/doc-history-server/`.
-    pkgJsonPath = path.resolve(
-      projectRoot,
-      "packages/doc-history-server/package.json",
-    );
-  }
-  const gitHistoryPath = path.resolve(
-    path.dirname(pkgJsonPath),
-    "src/git-history.ts",
-  );
-  const mod = (await import(pathToFileURL(gitHistoryPath).href)) as GitHistoryHelpers;
-  return {
-    collectContentFiles: mod.collectContentFiles,
-    getFileCommits: mod.getFileCommits,
-    getFirstCommit: mod.getFirstCommit,
-    getCommitInfo: mod.getCommitInfo,
-  };
-}
