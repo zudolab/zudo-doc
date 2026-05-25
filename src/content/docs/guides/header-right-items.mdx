@@ -65,6 +65,8 @@ Opens a built-in modal or panel.
 { type: "trigger", trigger: "ai-chat" }
 ```
 
+The `design-token-panel` trigger button dispatches the `toggle-design-token-panel` custom event on `window`. The zdtp panel (`@takazudo/zdtp`) listens for this event natively — no additional wiring is needed.
+
 ### `link`
 
 A custom external or internal link, rendered with an optional icon.

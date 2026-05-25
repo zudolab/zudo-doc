@@ -15,9 +15,16 @@ src/plugins/url-utils.ts
 
 # Slot-based files — templates use @slot: injection anchors,
 # production has features inlined
-src/components/header.astro
-src/layouts/doc-layout.astro
 src/styles/global.css
+
+# claude-resources feature — generated projects ship their own copies of the
+# generator/escape helpers; production consumes the same logic re-exported
+# from @zudo-doc/zudo-doc-v2/integrations/claude-resources, so prod has no
+# matching paths under src/integrations/claude-resources/.
+src/integrations/claude-resources/__tests__/escape-for-mdx.test.ts
+src/integrations/claude-resources/__tests__/generate.test.ts
+src/integrations/claude-resources/escape-for-mdx.ts
+src/integrations/claude-resources/generate.ts
 
 # Showcase-specific renderers — source ships discount/status/difficulty examples
 # for the zudo-doc showcase only; template ships an empty map so downstream users
@@ -28,3 +35,87 @@ src/config/frontmatter-preview-renderers.tsx
 # the zudo-doc showcase docs; template ships an empty array so downstream
 # projects define their own taxonomy without inheriting unrelated ids
 src/config/tag-vocabulary.ts
+
+# In-flight super-epic drift (zfb migration parity #663) — production code on
+# `base/zfb-migration-parity` and child epic bases has drifted from the
+# create-zudo-doc templates while the migration parity work is in progress.
+# These will be reconciled via /l-update-generator post super-epic merge
+# (Phase D follow-up). Allowlisting here keeps PR-checks green on epic-PRs.
+#
+# Wave 11 (#1355 / PR #1356) reshaped sidebar-toggle.tsx (always-render
+# hamburger/X icons with hidden-class toggling, AFTER_NAVIGATE_EVENT instead
+# of DOMContentLoaded, explicit aria-expanded) and sidebar-tree.tsx
+# (URL-derived currentSlug lazy-init via deriveActiveSlugFromUrl) to fix
+# host-side island state-defaults exposed by Wave 10's hydration unblock.
+# Template counterparts under packages/create-zudo-doc/templates/ are
+# intentionally NOT synced in PR #1356 — the post-super-epic
+# /l-update-generator pass is the single reconciliation point. theme-toggle
+# drift predates Wave 11.
+src/config/i18n.ts
+src/components/sidebar-toggle.tsx
+src/components/sidebar-tree.tsx
+src/components/theme-toggle.tsx
+
+# Phase B-11-2 — new TS path alias `#doc-history-meta` -> .zfb/doc-history-meta.json
+# enables the host wrapper to import the build-time manifest without dragging
+# Node-only utilities into the page tree. The generator will gain a parallel
+# alias under the docHistory feature once the super-epic lands.
+tsconfig.json
+
+# W3B (#1498) — template run-b4push.sh is a lean downstream variant (4 steps:
+# typecheck, build, html-validate, manual smoke). The main project's version
+# has 10 steps including tags audit, template drift check, link check, and
+# automated preview smoke that are showcase-specific. Template version
+# intentionally omits those; both include the html-validate step.
+scripts/run-b4push.sh
+
+# E2 task 2 (zfb migration finalisation #1335) — production showcase files in
+# src/components/ now import lifecycle event names from
+# `@zudo-doc/zudo-doc-v2/transitions` (the v2 module owns the vocabulary so
+# only one file changes if zfb later supplies router events). The matching
+# create-zudo-doc templates remain self-contained and inline literal
+# "DOMContentLoaded" / "pagehide" because downstream scaffolds do not depend
+# on @zudo-doc/zudo-doc-v2 as a runtime dep. Reconcile if/when create-zudo-doc
+# migrates onto the v2 transitions module.
+#
+# Wave 11 (#1355 / PR #1356) added an exported `ImageEnlargeSsrFallback`
+# component to image-enlarge.tsx and hoisted shared `DIALOG_CLASS` /
+# `DIALOG_STYLE` constants so the SSR fallback cannot drift from the live
+# component. The template counterpart is allowlisted here too — the
+# post-super-epic /l-update-generator pass is the single reconciliation
+# point.
+src/components/design-token-tweak/index.tsx
+src/components/doc-history.tsx
+src/components/image-enlarge.tsx
+src/components/find-in-page-init.tsx
+
+# zdtp panel template variants — intentionally differ from production in the
+# following ways:
+#  1. design-token-panel-config.ts: template uses generic placeholder IDs/storage
+#     keys ("my-doc-tweak", "myDoc", etc.) and an empty colorPresets map, while
+#     production has zudo-doc-specific values and imports colorTweakPresets. The
+#     generator injects project-name-specific values via the feature module.
+#  2. design-token-panel-bootstrap.ts: template inlines literal zfb lifecycle
+#     event strings ("zfb:before-preparation", "zfb:after-swap") because
+#     downstream scaffolds do not depend on @zudo-doc/zudo-doc-v2 as a runtime
+#     dep. Production imports BEFORE_NAVIGATE_EVENT / AFTER_NAVIGATE_EVENT from
+#     @zudo-doc/zudo-doc-v2/transitions. Reconcile if/when create-zudo-doc
+#     migrates onto the v2 transitions module.
+#     Both template and production now include the queue-drain (__zdtpReadyClicks)
+#     and bridge idempotency guard (__zdtpAstroBridgeInstalled) added in #1627.
+#     Both omit the JS-side CSS import (moved to global.css @slot injection in #1629).
+#  3. design-token-types.ts: template has fewer comments (zudo-doc-specific
+#     migration context stripped; upstream issue notes retained).
+src/config/design-token-panel-config.ts
+src/lib/design-token-panel-bootstrap.ts
+src/utils/design-token-types.ts
+
+# Post-cutover cleanup (#1688) — sidebarToggle desktop component. Production
+# imports BEFORE_NAVIGATE_EVENT / AFTER_NAVIGATE_EVENT from
+# @zudo-doc/zudo-doc-v2/transitions (the v2 module owns the event vocabulary).
+# The create-zudo-doc template inlines the literal "zfb:before-preparation" /
+# "zfb:after-swap" strings because that package is workspace-private/unpublished,
+# so a standalone scaffold cannot resolve the import. Same intentional divergence
+# as design-token-panel-bootstrap.ts above. Reconcile if/when create-zudo-doc
+# migrates onto the v2 transitions module.
+src/components/desktop-sidebar-toggle.tsx

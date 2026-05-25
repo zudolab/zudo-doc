@@ -482,8 +482,8 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
 
   // Close on View Transition navigation
   useEffect(() => {
-    document.addEventListener("astro:after-swap", handleClose);
-    return () => document.removeEventListener("astro:after-swap", handleClose);
+    document.addEventListener("DOMContentLoaded", handleClose);
+    return () => document.removeEventListener("DOMContentLoaded", handleClose);
   }, [handleClose]);
 
   const isOpen = view !== "closed";

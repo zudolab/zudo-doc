@@ -13,10 +13,16 @@ Another path example: `packages/doc-history-server/src/cli/generate-history.ts` 
 
 ## Table cell wrapping
 
-| Key | URL |
-| --- | --- |
-| docs | https://example.com/very/long/path/to/some/resource/that-should-wrap-in-table-cell.html |
-| api | https://api.example.com/v1/endpoints/users/profiles/settings/preferences.json |
+{/*
+  Authored as raw HTML <table> instead of GFM pipe-table because zfb's
+  mdx_jsx_emit currently drops MdastNode::Table — pipe-table syntax
+  produces no rendered table in the output HTML. Filed as an upstream
+  enhancement request against Takazudo/zudo-front-builder; once GFM
+  table emission lands, this can be reverted to pipe-table form.
+  See zudolab/zudo-doc#1355 (Wave 3, Topic B).
+*/}
+
+<table><thead><tr><th>Key</th><th>URL</th></tr></thead><tbody><tr><td>docs</td><td>https://example.com/very/long/path/to/some/resource/that-should-wrap-in-table-cell.html</td></tr><tr><td>api</td><td>https://api.example.com/v1/endpoints/users/profiles/settings/preferences.json</td></tr></tbody></table>
 
 ## Link wrapping
 

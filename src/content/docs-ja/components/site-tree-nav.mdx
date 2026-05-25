@@ -10,7 +10,7 @@ sidebar_position: 7
 
 <Info>
 
-このコンポーネントはMDXコンテンツで直接利用することは**できません**。サーバーサイドのデータ取得が必要なため、Astroページテンプレートでインポートする必要があります。以下のライブデモは、グローバルMDXコンポーネントとして登録された`SiteTreeNavDemo`（Astroラッパー）を使用しています。
+このコンポーネントはMDXコンテンツで直接利用することは**できません**。サーバーサイドのデータ取得が必要なため、zfbのページモジュールでインポートする必要があります。以下のライブデモは、グローバルMDXコンポーネントとして登録された`SiteTreeNavDemo`ラッパーを使用しています。
 
 </Info>
 
@@ -22,31 +22,36 @@ sidebar_position: 7
 
 ## 使い方
 
-`SiteTreeNav`は`src/pages/index.astro`でホームページのサイトマップを表示するために使用されています：
+`SiteTreeNav`は`pages/index.tsx`でホームページのサイトマップを表示するために使用されています：
 
-```astro
----
+```tsx
+// pages/index.tsx
 import { buildNavTree, groupSatelliteNodes } from "@/utils/docs";
-import { loadLocaleDocs } from "@/utils/locale-docs";
+import { loadCategoryMeta } from "@/utils/docs";
 import { getCategoryOrder } from "@/utils/nav-scope";
-import SiteTreeNav from "@/components/site-tree-nav.tsx";
+import SiteTreeNav from "@/components/site-tree-nav";
+import { loadDocs } from "./_data";
+import { settings } from "@/config/settings";
 
-const categoryOrder = getCategoryOrder();
-const { allDocs, categoryMeta } = await loadLocaleDocs("en");
-const navDocs = allDocs.filter((doc) => !doc.data.unlisted);
-const tree = buildNavTree(navDocs, "en", categoryMeta);
-const groupedTree = groupSatelliteNodes(tree, categoryOrder);
----
+export default function IndexPage() {
+  const allDocs = loadDocs("docs");
+  const navDocs = allDocs.filter((doc) => !doc.data.unlisted);
+  const categoryMeta = loadCategoryMeta(settings.docsDir);
+  const tree = buildNavTree(navDocs, "en", categoryMeta);
+  const categoryOrder = getCategoryOrder();
+  const groupedTree = groupSatelliteNodes(tree, categoryOrder);
 
-<SiteTreeNav
-  tree={groupedTree}
-  categoryOrder={categoryOrder}
-  categoryIgnore={["inbox"]}
-  client:idle
-/>
+  return (
+    <SiteTreeNav
+      tree={groupedTree}
+      categoryOrder={categoryOrder}
+      categoryIgnore={["inbox"]}
+    />
+  );
+}
 ```
 
-このコンポーネントは展開・折りたたみのインタラクティブ機能にPreactステートを使用するため、`client:idle`（または他のAstroクライアントディレクティブ）が必要です。
+このコンポーネントは展開・折りたたみのインタラクティブ機能にPreactステートを使用するため、zfbのアイランドランタイムを介してクライアントでハイドレートされます。
 
 ## プロップ
 

@@ -6,11 +6,15 @@ tags:
   - cloudflare-worker
 ---
 
+:::warning[Deprecated]
+The `@zudo-doc/ai-chat-worker` package was migrated to a Cloudflare Pages Functions / SSR endpoint at `pages/api/ai-chat.tsx`. The package source has been removed; this doc is retained for historical reference only.
+:::
+
 Standalone Cloudflare Worker that provides an AI chat API endpoint, independent of the Astro documentation site.
 
 ## Overview
 
-The AI Chat Worker is a sub-package at `packages/ai-chat-worker/` that deploys as a Cloudflare Worker. It provides the same chat functionality as the built-in [AI Assistant API](/docs/reference/ai-assistant-api), but runs as a standalone service on Cloudflare Workers runtime.
+The AI Chat Worker is a sub-package at `packages/ai-chat-worker/` that deploys as a Cloudflare Worker. It provides the same chat functionality as the built-in [AI Assistant API](./ai-assistant-api.mdx), but runs as a standalone service on Cloudflare Workers runtime.
 
 This is useful when:
 
@@ -43,10 +47,10 @@ interface ChatMessage {
 }
 ```
 
-| Field     | Type             | Required | Description                                                              |
-| --------- | ---------------- | -------- | ------------------------------------------------------------------------ |
-| `message` | `string`         | Yes      | The user's current message. Must be non-empty, max 4000 characters.      |
-| `history` | `ChatMessage[]`  | Yes      | Previous conversation messages. Invalid entries are filtered out silently. |
+| Field     | Type            | Required | Description                                                          |
+| --------- | --------------- | -------- | -------------------------------------------------------------------- |
+| `message` | `string`        | Yes      | The user's current message. Must be non-empty, max 4000 characters.  |
+| `history` | `ChatMessage[]` | Yes      | Previous conversation messages. Invalid entries are filtered out silently. |
 
 ### Success Response (200)
 
@@ -60,15 +64,15 @@ The `response` field contains the assistant's reply as a markdown string.
 
 ### Error Responses
 
-| Status | Condition                      |
-| ------ | ------------------------------ |
-| 400    | Invalid JSON body              |
-| 400    | `message` is not a non-empty string |
-| 400    | `message` exceeds 4000 character limit |
-| 400    | Message rejected by input screening |
-| 405    | Request method is not POST     |
+| Status | Condition                                           |
+| ------ | --------------------------------------------------- |
+| 400    | Invalid JSON body                                   |
+| 400    | `message` is not a non-empty string                 |
+| 400    | `message` exceeds 4000 character limit              |
+| 400    | Message rejected by input screening                 |
+| 405    | Request method is not POST                          |
 | 429    | Rate limit exceeded (includes `Retry-After` header) |
-| 500    | Anthropic API call failed      |
+| 500    | Anthropic API call failed                           |
 
 ## Security
 
@@ -108,11 +112,11 @@ RATE_LIMIT_PER_MINUTE = "10"
 RATE_LIMIT_PER_DAY = "100"
 ```
 
-| Variable | Default | Description |
-| -------- | ------- | ----------- |
-| `DOCS_SITE_URL` | — | Your deployed documentation site URL |
-| `RATE_LIMIT_PER_MINUTE` | `10` | Max requests per IP per minute |
-| `RATE_LIMIT_PER_DAY` | `100` | Max requests per IP per day |
+| Variable                | Default | Description                          |
+| ----------------------- | ------- | ------------------------------------ |
+| `DOCS_SITE_URL`         | —       | Your deployed documentation site URL |
+| `RATE_LIMIT_PER_MINUTE` | `10`    | Max requests per IP per minute       |
+| `RATE_LIMIT_PER_DAY`    | `100`   | Max requests per IP per day          |
 
 The Worker fetches `${DOCS_SITE_URL}/llms-full.txt` to load documentation context.
 
@@ -142,14 +146,14 @@ Every chat interaction is logged to KV for security analysis. This enables detec
 
 **Logged fields:**
 
-| Field | Description |
-| ----- | ----------- |
-| `timestamp` | ISO 8601 timestamp |
-| `ipHash` | SHA-256 hash of the client IP (raw IP is never stored) |
-| `message` | User's message, truncated to 500 characters |
-| `responsePreview` | First 200 characters of the response |
-| `blocked` | Whether the request was rejected |
-| `blockReason` | `"rate_limit"`, `"invalid_input"`, or `"prompt_injection"` (when blocked) |
+| Field             | Description                                                                          |
+| ----------------- | ------------------------------------------------------------------------------------ |
+| `timestamp`       | ISO 8601 timestamp                                                                   |
+| `ipHash`          | SHA-256 hash of the client IP (raw IP is never stored)                               |
+| `message`         | User's message, truncated to 500 characters                                          |
+| `responsePreview` | First 200 characters of the response                                                 |
+| `blocked`         | Whether the request was rejected                                                     |
+| `blockReason`     | `"rate_limit"`, `"invalid_input"`, or `"prompt_injection"` (when blocked)            |
 
 **Storage details:**
 
@@ -190,14 +194,14 @@ The workflow can also be triggered manually via `workflow_dispatch`.
 
 ## Relationship to AI Assistant
 
-The built-in [AI Assistant](/docs/guides/ai-assistant) runs as part of the Astro site using the `@astrojs/node` adapter. The AI Chat Worker is a standalone alternative that provides the same chat capability without requiring server-side rendering in the docs site.
+The built-in [AI Assistant](../guides/ai-assistant.mdx) runs as part of the Astro site using the `@astrojs/node` adapter. The AI Chat Worker is a standalone alternative that provides the same chat capability without requiring server-side rendering in the docs site.
 
-| Feature                    | Built-in AI Assistant        | AI Chat Worker             |
-| -------------------------- | ---------------------------- | -------------------------- |
-| Runtime                    | Node.js (Astro SSR)          | Cloudflare Workers         |
-| Deployment                 | Part of the docs site        | Independent service        |
-| Docs site requirement      | Hybrid mode (SSR)            | Static site is sufficient  |
-| Documentation context      | Loaded from local file       | Fetched from deployed site |
+| Feature               | Built-in AI Assistant   | AI Chat Worker             |
+| --------------------- | ----------------------- | -------------------------- |
+| Runtime               | Node.js (Astro SSR)     | Cloudflare Workers         |
+| Deployment            | Part of the docs site   | Independent service        |
+| Docs site requirement | Hybrid mode (SSR)       | Static site is sufficient  |
+| Documentation context | Loaded from local file  | Fetched from deployed site |
 
 ## Sub-Package Location
 

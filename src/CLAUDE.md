@@ -1,5 +1,13 @@
 # Source Code Rules
 
+## Components
+
+- All components are **Preact `.tsx`** — there are no `.astro` files. Pages, layouts, and component overrides are all written as Preact function components.
+- Default to **server-rendered Preact** (no `client:*` directive) — emits zero JS for static markup.
+- Promote a component to a **client island** only when it needs interactivity. zfb hydration is opt-in via the `ssr-islands.tsx` registry / standard `client:*`-style props on island wrappers.
+- Current client islands: `toc.tsx`, `mobile-toc.tsx`, `sidebar-toggle.tsx`, `sidebar-tree.tsx`, `theme-toggle.tsx`, `doc-history.tsx`, `find-bar.tsx`, `image-enlarge.tsx`, `ai-chat-modal.tsx`; the zdtp panel self-mounts via `configurePanel()` and is not registered in the island registry.
+- Content typography components (`src/components/content/`): server-rendered Preact functions that override HTML elements emitted by MDX via the `<Content components={...} />` mapping in `pages/_mdx-components.ts`. Includes: headings (h2-h4), paragraph, link, strong, blockquote, lists (ul/ol), table.
+
 ## Design Token System
 
 Uses a 16-color palette system.
@@ -42,12 +50,13 @@ Each tier only references the tier above it.
 - Add schemes in `src/config/color-schemes.ts` (22 color props + `shikiTheme`)
 - `ColorRef` type: `background`, `foreground`, `cursor`, `selectionBg`, `selectionFg`, and semantic overrides accept `number | string` — number = palette index, string = direct color
 
-### Color Tweak Panel
+### Design Token Panel (zdtp)
 
-- Enabled via `colorTweakPanel: true` in settings
-- Interactive panel at page bottom for live color editing (palette, base, semantic tokens)
-- Export button generates `ColorScheme` TypeScript code for clipboard copy
-- State persisted in `localStorage` (`zudo-doc-tweak-state`)
+- Enabled via `designTokenPanel: true` in settings (`colorTweakPanel` is the deprecated alias)
+- Implemented by the external `@takazudo/zdtp` (zdtp) package; wired via `configurePanel(designTokenPanelConfig)` in `src/lib/design-token-panel-bootstrap.ts`; self-mounts as a side-effect — no Preact island registration needed
+- Interactive tabbed panel for live editing of spacing, font, size, and color tokens; includes JSON export/import workflow for AI-assisted token round-trips
+- The header trigger button dispatches `toggle-design-token-panel` on `window`; zdtp listens for this event natively
+- Storage prefix is `zudo-doc-tweak` (keys: `zudo-doc-tweak-state-v2` current, `zudo-doc-tweak-state` legacy v1); the prefix is set via `storagePrefix` in `src/config/design-token-panel-config.ts` and is guaranteed not to change — existing user saves carry over automatically
 
 ### Three-Tier Font-Size Strategy
 
@@ -96,7 +105,7 @@ Element dimensions (icons, toggles, etc.) follow a two-tier approach:
 
 - Before writing or editing CSS, Tailwind classes, color tokens, or component markup, invoke `/zudo-doc-design-system` to load project-specific rules
 - Tailwind v4: imports `tailwindcss/preflight` + `tailwindcss/utilities` (no default theme)
-- No `--*: initial` resets needed — default theme is simply not imported
+- `@theme` has `--color-*: initial;` at the top — project tight-token guardrail: wipes all Tailwind default color tokens so only project-defined tokens are available. The upstream split-import fix (zfb#159 / 9e37551) shipped in f68a9ba and eliminated the original leak cause; the reset is retained as an explicit design rule per the "NEVER use Tailwind default colors" policy. Do NOT remove.
 - Content typography: component-first approach — major HTML elements (h2-h4, p, a, strong, blockquote, ul, ol, table) are overridden via Preact components in `src/components/content/` registered through `component-map.ts`. Minor elements (li, th/td, code, pre, hr, img, h5/h6, dt/dd, etc.) and structural rules (flow-space, consecutive heading tightening, hash-links) remain in `.zd-content` in `global.css`.
 - **Component-first strategy**: always use Tailwind utility classes directly in component markup — never create CSS module files or custom CSS class names. The component itself is the abstraction.
 - **Tight token strategy**: prefer existing spacing (`hsp-*`, `vsp-*`), typography (`text-caption`, `text-small`, etc.), and color tokens. Avoid arbitrary values (`text-[0.8rem]`, `py-[0.35rem]`) when an existing token is close enough.

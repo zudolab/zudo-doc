@@ -3,8 +3,8 @@
 /**
  * dev-stable.js — Build-then-serve dev mode
  *
- * Avoids Astro dev server hot reload crashes when content files are
- * added/removed. Runs `astro build`, serves dist/ on port 4322,
+ * Avoids dev-server HMR crashes when content files are added/removed.
+ * Runs `pnpm run build` (zfb build), serves dist/ on port 4322,
  * watches for file changes, and rebuilds automatically.
  */
 

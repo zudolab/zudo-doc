@@ -1,9 +1,23 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+"use client";
+
+// Use preact hook entrypoints directly — zfb's esbuild step doesn't alias
+// "react" to "preact/compat" the way Astro's `@astrojs/preact` integration
+// did, so importing from "react" here would fail to resolve at SSR/island
+// bundle time. Same pattern as packages/zudo-doc-v2/src/theme/theme-toggle.tsx.
+import { useState, useCallback, useEffect, useMemo, useRef } from "preact/hooks";
 import type { NavNode } from "@/utils/docs";
 import type { LocaleLink } from "@/types/locale";
+// Types-only subpath (`./sidebar/types`) sidesteps the JSX type-graph
+// pulled in by `./sidebar`'s runtime barrel.
+import type { SidebarRootMenuItem } from "@zudo-doc/zudo-doc-v2/sidebar/types";
 import { INDENT, BASE_PAD, connectorLeft, ConnectorLines, CategoryLinkIcon } from "./tree-nav-shared";
 import ThemeToggle from "@/components/theme-toggle";
 import { smartBreakToHtml } from "@/utils/smart-break";
+// After zudolab/zudo-doc#1335 (E2 task 2 half B) the host components
+// also pull lifecycle event names from the v2 transitions module
+// rather than hard-coding `astro:*` literals — keeps the entire repo's
+// post-navigate listener vocabulary on a single source of truth.
+import { AFTER_NAVIGATE_EVENT, BEFORE_NAVIGATE_EVENT } from "@zudo-doc/zudo-doc-v2/transitions";
 
 function ToggleChevron({ isExpanded, className }: { isExpanded: boolean; className?: string }) {
   return (
@@ -61,22 +75,104 @@ function findActiveSlug(nodes: NavNode[], pathname: string): string | undefined 
   return undefined;
 }
 
-/** Track current active slug, updating on View Transition navigations */
+/**
+ * Derive the active slug from the current document URL. Used as a hydration-
+ * time fallback when the parent island does not forward `currentSlug` through
+ * its prop boundary, and at every View Transition to keep the highlight in
+ * sync. Returns `undefined` outside a browser context (defensive — the
+ * lazy-init path runs during hydration so `window` should exist, but the
+ * guard keeps this safe to call from any code path).
+ */
+function deriveActiveSlugFromUrl(nodes: NavNode[]): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  const pathname = normalizePath(window.location.pathname);
+  return findActiveSlug(nodes, pathname);
+}
+
+/**
+ * Track the current active slug, updating on View Transition navigations.
+ *
+ * The initial-state initialiser prefers the SSR-supplied `initial` prop, but
+ * falls back to deriving the slug from `window.location.pathname` when the
+ * prop is missing. This keeps the hydrated category open-state aligned with
+ * what SSR emitted: zfb's Island wrapper does not currently serialise props
+ * across the SSR → hydrate boundary, so the post-hydration `<SidebarTree>`
+ * may receive `currentSlug=undefined` even when the page rendered with the
+ * right active slug. Computing the fallback synchronously in the initial
+ * state (rather than waiting for a post-mount `useEffect`) avoids a flicker
+ * where every category collapses for one render before the auto-open effect
+ * fires — which Playwright sees as `aria-expanded="true"` being dropped from
+ * the SSR markup.
+ */
 function useActiveSlug(nodes: NavNode[], initial?: string): string | undefined {
-  const [slug, setSlug] = useState(initial);
+  const [slug, setSlug] = useState<string | undefined>(() =>
+    initial !== undefined ? initial : deriveActiveSlugFromUrl(nodes),
+  );
 
   useEffect(() => {
     const update = () => {
-      const pathname = normalizePath(window.location.pathname);
-      const found = findActiveSlug(nodes, pathname);
+      const found = deriveActiveSlugFromUrl(nodes);
       if (found !== undefined) setSlug(found);
     };
     update();
-    document.addEventListener("astro:after-swap", update);
-    return () => document.removeEventListener("astro:after-swap", update);
+    document.addEventListener(AFTER_NAVIGATE_EVENT, update);
+    return () => document.removeEventListener(AFTER_NAVIGATE_EVENT, update);
   }, [nodes]);
 
   return slug;
+}
+
+/**
+ * Preserve `#desktop-sidebar` scrollTop across SPA navigations.
+ *
+ * The scroll position is captured at BEFORE_NAVIGATE_EVENT time (before any
+ * DOM changes), then restored after the full navigation cycle settles.
+ *
+ * Two things can reset scrollTop during the transition:
+ *   1. moveBefore() moving the <aside> to <html> and back during the body swap.
+ *   2. Preact re-renders (aria-current update, category auto-open effects).
+ *
+ * We save on BEFORE_NAVIGATE_EVENT (guaranteed to fire before the DOM is
+ * touched), and restore on AFTER_NAVIGATE_EVENT after a short delay to let
+ * all Preact effect cascades settle.
+ */
+function useSidebarScrollPreserve() {
+  useEffect(() => {
+    let savedScrollTop = 0;
+    let restoreTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const onBefore = () => {
+      // Cancel any in-flight restore from a previous nav so rapid consecutive
+      // navigations don't clobber the scroll position of the final destination.
+      if (restoreTimer !== undefined) {
+        clearTimeout(restoreTimer);
+        restoreTimer = undefined;
+      }
+      const aside = document.querySelector<HTMLElement>("#desktop-sidebar");
+      if (aside) savedScrollTop = aside.scrollTop;
+    };
+
+    const onAfter = () => {
+      const aside = document.querySelector<HTMLElement>("#desktop-sidebar");
+      if (!aside) return;
+      // Restore after Preact re-render and all cascaded effects (category
+      // auto-open) have settled. A 50 ms timeout sits comfortably after
+      // Preact's synchronous + microtask flush and any rAF-batched effects,
+      // while being well below the 300 ms the harness waits before sampling.
+      restoreTimer = setTimeout(() => {
+        restoreTimer = undefined;
+        aside.scrollTop = savedScrollTop;
+      }, 50);
+    };
+
+    document.addEventListener(BEFORE_NAVIGATE_EVENT, onBefore);
+    document.addEventListener(AFTER_NAVIGATE_EVENT, onAfter);
+    return () => {
+      document.removeEventListener(BEFORE_NAVIGATE_EVENT, onBefore);
+      document.removeEventListener(AFTER_NAVIGATE_EVENT, onAfter);
+      if (restoreTimer !== undefined) clearTimeout(restoreTimer);
+    };
+  }, []);
 }
 
 function filterTree(nodes: NavNode[], query: string): NavNode[] {
@@ -96,13 +192,7 @@ function filterTree(nodes: NavNode[], query: string): NavNode[] {
   }, []);
 }
 
-interface RootMenuItem {
-  label: string;
-  href: string;
-  children?: RootMenuItem[];
-}
-
-function RootMenuItemEntry({ item }: { item: RootMenuItem }) {
+function RootMenuItemEntry({ item }: { item: SidebarRootMenuItem }) {
   const [expanded, setExpanded] = useState(false);
   const hasChildren = item.children && item.children.length > 0;
 
@@ -148,7 +238,7 @@ function RootMenuItemEntry({ item }: { item: RootMenuItem }) {
 interface SidebarTreeProps {
   nodes: NavNode[];
   currentSlug?: string;
-  rootMenuItems?: RootMenuItem[];
+  rootMenuItems?: SidebarRootMenuItem[];
   backToMenuLabel?: string;
   localeLinks?: LocaleLink[];
   themeDefaultMode?: "light" | "dark";
@@ -178,6 +268,7 @@ function SidebarFooter({ links, themeDefaultMode }: { links?: LocaleLink[]; them
 
 export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToMenuLabel, localeLinks, themeDefaultMode }: SidebarTreeProps) {
   const activeSlug = useActiveSlug(nodes, currentSlug);
+  useSidebarScrollPreserve();
   const [query, setQuery] = useState("");
   const [showingRootMenu, setShowingRootMenu] = useState(false);
   const filterRef = useRef<HTMLInputElement>(null);

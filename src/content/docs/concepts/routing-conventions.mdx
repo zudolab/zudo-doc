@@ -1,0 +1,210 @@
+---
+title: Routing Conventions
+description: "How paths() enumerates routes in zfb and how to migrate from Astro's getStaticPaths"
+sidebar_position: 10
+---
+
+zfb replaces Astro's `getStaticPaths()` with a `paths()` export.
+Both tell the build which concrete URLs a dynamic or catchall route should emit,
+but their execution models differ significantly.
+This page explains the convention and the migration path.
+
+## paths() is synchronous
+
+Astro's `getStaticPaths()` is an `async` function that runs in Node.js at build time.
+It can `await` anything: file reads, database queries, or live HTTP requests.
+
+zfb's `paths()` runs inside **miniflare** at build time and is **synchronous** by contract.
+The function signature is `function paths(): PathEntry[]` — not `async`.
+
+```tsx
+// pages/docs/[...slug].tsx
+import { getCollection, getEntry } from "zfb/content";
+
+export function paths() {
+  const entries = getCollection("docs");
+  return entries.map((entry) => ({
+    params: { slug: entry.slug.split("/") },
+  }));
+}
+
+export default function DocsPage({ params }: { params: { slug: string[] } }) {
+  const slugPath = params.slug.join("/");
+  const entry = getEntry("docs", slugPath);
+  if (!entry) return <p>Not found.</p>;
+  return <entry.Content />;
+}
+```
+
+## Use getCollection and getEntry for data access
+
+Inside `paths()`, load content with `getCollection(name)` and `getEntry(name, slug)`
+from `zfb/content`.
+Both are synchronous — no `await` is needed or allowed.
+
+```ts
+import { getCollection } from "zfb/content";
+
+export function paths() {
+  const docs = getCollection("docs"); // synchronous — no await
+  return docs
+    .filter((entry) => !entry.data.draft)
+    .map((entry) => ({
+      params: { slug: entry.slug.split("/") },
+      props: { title: entry.data.title },
+    }));
+}
+```
+
+These helpers read from the **ContentSnapshot** — an in-memory snapshot of every
+content collection built in Rust before any TypeScript module runs.
+By the time `paths()` executes, all data is already in memory;
+no I/O occurs at call time.
+
+<Note title="Why synchronous?">
+
+The ContentSnapshot is serialized to JSON and embedded on `globalThis.__zfb`
+at runtime startup, before the first TSX module evaluates.
+`getCollection` and `getEntry` read directly from that in-memory map —
+there is no async boundary to cross, and no `await` to thread through callers.
+See [ADR-004](https://takazudomodular.com/pj/zfb/architecture/adr-004-content-bridge)
+for the full Rust ↔ JS bridge contract.
+
+</Note>
+
+## Do not fetch live data inside paths()
+
+`paths()` can technically be written as `async`, but doing so breaks SSG guarantees.
+
+```tsx
+// ❌ Anti-pattern — live fetch inside paths()
+export async function paths() {
+  const res = await fetch("https://api.example.com/items");
+  const items = await res.json();
+  return items.map((item) => ({ params: { slug: item.id } }));
+}
+```
+
+This pattern causes several problems:
+
+- **Non-determinism** — the remote API may return different data on each build run
+- **Reproducibility** — the same commit can produce different HTML output
+- **Offline breakage** — builds fail in air-gapped environments or CI with no network access
+- **Build latency** — every build pays for a network round-trip during route enumeration
+
+The content layer exists precisely to avoid this: fetch once, snapshot at build time,
+query synchronously from that snapshot.
+
+## Migration from Astro's getStaticPaths
+
+Astro's `getStaticPaths()` accepted any async operation.
+Patterns like the following were common:
+
+```ts
+// ❌ Astro — before migration
+// src/pages/tags/[tag].astro
+export async function getStaticPaths() {
+  const res = await fetch("https://api.example.com/tags");
+  const tags = await res.json();
+  return tags.map((tag: { slug: string }) => ({
+    params: { tag: tag.slug },
+  }));
+}
+```
+
+In zfb this becomes a two-step process.
+
+**Step 1** — Move the fetch into a build-time generator script.
+Run it before `zfb build` and write its output into a content collection
+or a static JSON file:
+
+```ts
+// scripts/fetch-tags.ts — run as a pre-build step
+import { writeFileSync, mkdirSync } from "fs";
+
+const res = await fetch("https://api.example.com/tags");
+const tags = await res.json();
+
+mkdirSync("src/content/tags", { recursive: true });
+for (const tag of tags) {
+  writeFileSync(
+    `src/content/tags/${tag.slug}.json`,
+    JSON.stringify(tag),
+  );
+}
+```
+
+**Step 2** — Read the pre-fetched data inside `paths()` using `getCollection`:
+
+```tsx
+// ✅ zfb — after migration
+// pages/tags/[tag].tsx
+import { getCollection, getEntry } from "zfb/content";
+
+export function paths() {
+  const tags = getCollection("tags"); // reads the pre-generated content
+  return tags.map((tag) => ({
+    params: { tag: tag.slug },
+    props: { label: tag.data.label },
+  }));
+}
+
+export default function TagPage({
+  params,
+  props,
+}: {
+  params: { tag: string };
+  props: { label: string };
+}) {
+  return <h1>{props.label}</h1>;
+}
+```
+
+For data that never changes between deploys (e.g. an initial dataset committed to the repo),
+you can skip the generator script entirely and author the JSON files directly in
+`src/content/`.
+
+## Collection-backed paths: the full docs pattern
+
+The most common `paths()` usage in zudo-doc is the docs catchall route.
+Each entry's slug maps to a `string[]` of URL segments:
+
+```tsx
+// pages/docs/[...slug].tsx
+import { getCollection, getEntry } from "zfb/content";
+
+export function paths() {
+  const docs = getCollection("docs");
+  return docs
+    .filter((entry) => !entry.data.draft)
+    .map((entry) => ({
+      params: { slug: entry.slug.split("/") },
+    }));
+}
+
+export default function DocsPage({ params }: { params: { slug: string[] } }) {
+  const slugPath = params.slug.join("/");
+  const entry = getEntry("docs", slugPath);
+  if (!entry) return <p>Not found.</p>;
+  return <entry.Content />;
+}
+```
+
+`/docs/guides/configuration` matches with `params.slug === ["guides", "configuration"]`.
+Rejoin with `slug.join("/")` to reconstruct the lookup key for `getEntry`.
+
+## Quick reference
+
+| | Astro `getStaticPaths` | zfb `paths` |
+| --- | --- | --- |
+| **Signature** | `async function getStaticPaths()` | `function paths()` |
+| **Runtime** | Node.js | miniflare |
+| **Data access** | `await getCollection(...)` or `await fetch(...)` | `getCollection(...)` / `getEntry(...)` (sync) |
+| **Live HTTP fetch** | Allowed (not recommended for SSG) | Move to a pre-build step |
+| **Return shape** | `{ params, props }[]` | `{ params, props }[]` |
+| **Draft filtering** | Filter in `getStaticPaths` | Filter in `paths()` |
+
+## See also
+
+- [i18n](../guides/i18n.mdx) — per-locale route enumeration with `paths()`
+- [Versioning](../guides/versioning.mdx) — versioned docs and their route conventions

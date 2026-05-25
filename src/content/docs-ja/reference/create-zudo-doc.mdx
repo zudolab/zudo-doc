@@ -12,7 +12,7 @@ create-zudo-doc [project-name] [options]
 
 フラグなしで実行すると、対話式ウィザードが起動します。すべてのオプションはフラグで指定でき、非対話的（CI/エージェント）に使用できます。
 
-[セットアッププリセットジェネレーター](/ja/docs/getting-started/setup-preset-generator)を使って、対話的に設定を構成し、JSON プリセットまたは CLI コマンドとしてコピーすることもできます。
+[セットアッププリセットジェネレーター](../getting-started/setup-preset-generator.mdx)を使って、対話的に設定を構成し、JSON プリセットまたは CLI コマンドとしてコピーすることもできます。
 
 ## オプション
 
@@ -51,6 +51,8 @@ create-zudo-doc [project-name] [options]
 | `--[no-]doc-history` | ドキュメント編集履歴 | オフ |
 | `--[no-]llms-txt` | LLM 向け llms.txt を生成 | オフ |
 | `--[no-]skill-symlinker` | ドキュメントスキルのシンボリックリンク | オフ |
+| `--[no-]tauri` | Tauri デスクトップアプリ（Mode 1）— ページ内検索付き macOS オフラインリーダー | オフ |
+| `--[no-]tauri-dev` | Tauri 開発ラッパー（Mode 2）— 任意プロジェクト向けの設定可能なデスクトップ開発ラッパー | オフ |
 | `--[no-]footer-nav-group` | フッターのナビゲーションリンク | オフ |
 | `--[no-]footer-copyright` | フッターの著作権表示 | オフ |
 | `--[no-]changelog` | 変更履歴ページ | オフ |
@@ -61,7 +63,7 @@ create-zudo-doc [project-name] [options]
 |--------|------|
 | `--preset <path>` | JSON プリセットファイルから設定を読み込み（`"-"` で標準入力） |
 
-`--preset` フラグは[セットアッププリセットジェネレーター](/ja/docs/getting-started/setup-preset-generator)の JSON 出力を受け付けます。プリセットを読み込むと、すべてのプロンプトがスキップされます（`--yes` と同様）。個別の CLI フラグはプリセットの値を上書きします。
+`--preset` フラグは[セットアッププリセットジェネレーター](../getting-started/setup-preset-generator.mdx)の JSON 出力を受け付けます。プリセットを読み込むと、すべてのプロンプトがスキップされます（`--yes` と同様）。個別の CLI フラグはプリセットの値を上書きします。
 
 ### 一般
 
@@ -121,7 +123,7 @@ pnpm create zudo-doc my-docs \
 
 ### プリセットファイルの使用
 
-[セットアッププリセットジェネレーター](/ja/docs/getting-started/setup-preset-generator)で JSON プリセットを生成し、ファイルに保存してから CLI に渡します:
+[セットアッププリセットジェネレーター](../getting-started/setup-preset-generator.mdx)で JSON プリセットを生成し、ファイルに保存してから CLI に渡します:
 
 ```bash
 pnpm create zudo-doc --preset setup.json --install

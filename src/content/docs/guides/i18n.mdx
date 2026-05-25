@@ -6,7 +6,7 @@ tags:
   - i18n
 ---
 
-zudo-doc supports multiple languages using Astro's built-in i18n routing.
+zudo-doc supports multiple languages using zfb's i18n routing.
 
 ## How It Works
 
@@ -30,8 +30,8 @@ export const settings = {
 
 For each locale entry, zudo-doc automatically:
 
-- Creates an Astro content collection (`docs-{code}`)
-- Registers the locale in Astro's i18n routing
+- Creates a zfb content collection (`docs-{code}`)
+- Registers the locale in zfb's i18n routing
 - Generates the appropriate page routes
 - Adds the locale to the language switcher
 
@@ -73,25 +73,13 @@ zudo-doc uses a translation key system for built-in UI strings. Keys are organiz
 
 These keys allow the entire UI (not just content) to be localized across all configured languages.
 
-## Astro Configuration
+## zfb Configuration
 
-i18n routing is configured in `astro.config.ts`:
-
-```ts
-i18n: {
-  defaultLocale: "en",
-  locales: ["en", ...Object.keys(settings.locales)],
-  routing: {
-    prefixDefaultLocale: false,
-  },
-},
-```
-
-With `prefixDefaultLocale: false`, English pages are served without a language prefix (`/docs/...`) while Japanese pages use the `/ja/` prefix (`/ja/docs/...`).
+The locale list flows through `zfb.config.ts`. Each entry in `settings.locales` becomes a `docs-{code}` content collection automatically — there is no separate `i18n` block to maintain. Page routes under `pages/[locale]/docs/[...slug].tsx` enumerate locales via their `paths()` export, so English pages are served without a language prefix (`/docs/...`) while non-default locales use their code as the prefix (`/ja/docs/...`).
 
 <Note>
 
-The `locales` array in `astro.config.ts` is automatically derived from `settings.locales`, so you only need to maintain locales in one place.
+The locale list in `zfb.config.ts` is automatically derived from `settings.locales`, so you only need to maintain locales in one place.
 
 </Note>
 
@@ -110,7 +98,7 @@ To add a new language (e.g., Korean):
 
 2. Create a content directory: `src/content/docs-ko/`
 3. Mirror the English directory structure with translated files
-4. Add a new page route at `src/pages/ko/docs/[...slug].astro` (copy from an existing locale route)
+4. Add a new page route at `pages/ko/docs/[...slug].tsx` (copy from an existing locale route)
 5. Add UI translations for the new locale
 
 <Tip>

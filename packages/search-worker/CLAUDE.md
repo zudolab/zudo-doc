@@ -1,6 +1,6 @@
 # search-worker
 
-Cloudflare Worker sub-package providing a server-side search API. Additional option for large doc bases — the primary search remains client-side MiniSearch (`src/components/search.astro`).
+Cloudflare Worker sub-package providing a server-side search API. Additional option for large doc bases — the primary search remains the in-browser MiniSearch island (`pages/lib/_search-widget.tsx`), which loads the same `search-index.json` emitted by the `@zudo-doc/zudo-doc-v2/integrations/search-index` zfb integration.
 
 ## Tech Stack
 

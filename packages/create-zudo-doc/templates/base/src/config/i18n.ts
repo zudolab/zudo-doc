@@ -1,5 +1,9 @@
-import type { CollectionKey } from "astro:content";
 import { settings } from "./settings";
+
+// Collection name string used by zfb's content engine (`getCollection(...)`).
+// Kept as a structural string-literal alias so callers don't have to redeclare
+// it; it's a structural type so the underlying engine is interchangeable.
+type CollectionKey = string;
 
 /** Default locale code, served from docsDir. */
 export const defaultLocale = settings.defaultLocale;

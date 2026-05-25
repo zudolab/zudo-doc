@@ -1,0 +1,111 @@
+---
+title: Trailing-Slash Policy
+description: How zfb splits trailing-slash enforcement between build time and runtime.
+sidebar_position: 1
+---
+
+## Overview
+
+zudo-doc enforces a "trailing slash always" URL policy: every page lives at a path
+ending with `/` — for example `/docs/getting-started/` rather than
+`/docs/getting-started`. This convention matches the Astro `trailingSlash: "always"`
+setting that was active before the zfb migration.
+
+With Astro, the enforcement ran in two places:
+
+- The **build**: Astro emitted `dist/docs/getting-started/index.html`, so
+  `trailingSlash: "always"` was baked into the output paths.
+- **Dev server middleware**: `src/middleware-handler.ts` issued a 301 redirect for
+  any request that arrived without the trailing slash.
+
+zfb is a **static-only** builder — there is no server-side middleware layer. The
+enforcement therefore splits cleanly into two concerns with different owners.
+
+## Build time — owned by zfb / url-normalizer
+
+All URLs emitted during the static build must end with `/`. This is enforced by
+`buildUrl()` in `@zudo-doc/zudo-doc-v2/url-normalizer`:
+
+```ts
+import { buildUrl } from "@zudo-doc/zudo-doc-v2/url-normalizer";
+
+// In a paths() implementation or integration:
+const url = buildUrl("docs", slug);          // "/docs/my-slug/"
+const root = buildUrl();                      // "/"
+const localized = buildUrl("ja", "docs", slug); // "/ja/docs/my-slug/"
+```
+
+`buildUrl()` is the primary helper. It joins path segments, strips redundant
+slashes, and wraps the result in `/<joined>/`. It is used by:
+
+- `pages/sitemap.xml.tsx` — generates `<loc>` entries.
+- Any zfb `paths()` export that maps collection slugs to route paths.
+- Integration-level URL emitters (llms.txt, claude-resources, etc.).
+
+A secondary helper `normalizePathname()` is available for cases where a
+pathname arrives from external data and may or may not already carry a trailing
+slash:
+
+```ts
+import { normalizePathname } from "@zudo-doc/zudo-doc-v2/url-normalizer";
+
+const canonical = normalizePathname(rawPathname); // adds "/" if missing
+```
+
+### Skip rules
+
+`normalizePathname()` and its underlying `shouldSkipNormalization()` preserve
+the same skip rules that were in the legacy middleware:
+
+| Condition | Behaviour |
+|---|---|
+| Already ends with `/` | no-op |
+| Last segment has a letter-starting extension (`.js`, `.css`, `.png` …) | no-op — static asset |
+| Starts with `/_astro/` or `/_image` | no-op — framework-internal path |
+| Version string like `/docs/v2.0` (digit after dot) | **normalised** — not treated as extension |
+
+## Runtime — owned by the deployment host
+
+When a visitor types `https://example.com/docs/guide` without the trailing slash,
+there is no framework code to intercept the request — the static files have already
+been deployed. The deployment host is responsible for issuing a redirect.
+
+### Cloudflare Pages
+
+Add the following rule to `public/_redirects`. It must come **before** any
+page-specific redirect rules (Cloudflare Pages evaluates rules top-to-bottom and
+stops at the first match):
+
+```
+# Redirect non-trailing-slash URLs to their canonical form.
+/:splat  /:splat/  301
+```
+
+:::note[Why the host owns this]
+
+Keeping runtime redirects on the host rather than in framework code means you can
+swap deployment targets — Cloudflare Pages, Netlify, Vercel, a plain nginx — by
+changing only the `_redirects` (or equivalent) file. The framework stays
+platform-agnostic.
+
+:::
+
+### Other hosts
+
+| Host | Mechanism |
+|---|---|
+| Netlify | `public/_redirects` — same `/:splat /:splat/ 301` syntax |
+| Vercel | `vercel.json` `"trailingSlash": true` |
+| nginx | `try_files` + `return 301 $uri/` |
+| AWS CloudFront | Lambda@Edge or CloudFront Function for the viewer-request event |
+
+## Summary
+
+| Layer | Owner | Mechanism |
+|---|---|---|
+| Build-time URL construction | zfb / `url-normalizer` | `buildUrl()` — always emits `/<path>/` |
+| Build-time pathname correction | zfb / `url-normalizer` | `normalizePathname()` |
+| Runtime redirect (no-slash → slash) | Deployment host | `_redirects` or host config |
+
+The split keeps each concern in the right place and makes it easy to reason about
+which layer is responsible when something goes wrong.

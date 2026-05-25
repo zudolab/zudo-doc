@@ -31,11 +31,15 @@ export function initSidebarResizer() {
   handle.setAttribute("aria-valuemin", String(MIN_W));
   handle.setAttribute("aria-valuemax", String(MAX_W));
   handle.setAttribute("aria-valuenow", String(Math.round(cachedWidth)));
+  // 20px is wider than every common native y-scrollbar (~12-17px on
+  // Win/Linux classic; 0 on macOS overlay) so a draggable strip always remains
+  // visible to the LEFT of the scrollbar when sidebar content overflows.
+  // zudolab/zudo-doc#1660
   Object.assign(handle.style, {
     position: "absolute",
     top: "0",
     right: "0",
-    width: "6px",
+    width: "20px",
     height: "100%",
     cursor: "col-resize",
     zIndex: "10",
@@ -125,6 +129,7 @@ export function initSidebarResizer() {
     ghost.style.left = (sidebarLeft + sidebarRect.width) + "px";
     document.body.appendChild(ghost);
     let targetWidth = 0;
+    let cleaned = false;
 
     const onMove = (ev: PointerEvent) => {
       targetWidth = Math.max(MIN_W, Math.min(MAX_W, ev.clientX - sidebarLeft));
@@ -132,6 +137,8 @@ export function initSidebarResizer() {
     };
 
     const cleanup = () => {
+      if (cleaned) return;
+      cleaned = true;
       dragging = false;
       updateHandleVisual();
       document.documentElement.style.cursor = "";
@@ -140,17 +147,30 @@ export function initSidebarResizer() {
       handle.removeEventListener("pointermove", onMove);
       handle.removeEventListener("pointerup", onUp);
       handle.removeEventListener("pointercancel", onCancel);
-      handle.removeEventListener("lostpointercapture", onCancel);
+      handle.removeEventListener("lostpointercapture", onLost);
     };
 
-    const onUp = (ev: PointerEvent) => {
-      handle.releasePointerCapture(ev.pointerId);
+    const commit = () => {
+      if (targetWidth > 0) applyWidth(targetWidth);
+    };
+
+    // pointerup: normal end-of-drag. Commit, then teardown.
+    const onUp = () => {
+      commit();
       cleanup();
-      if (targetWidth > 0) {
-        applyWidth(targetWidth);
-      }
     };
 
+    // lostpointercapture: per spec fires AFTER pointerup, but browsers reorder
+    // these in edge cases (cursor near y-scrollbar, fast drags, OS handoff).
+    // Commit here too so a real drag still applies if pointerup is dropped.
+    // Idempotent with onUp via the `cleaned` guard.
+    const onLost = () => {
+      commit();
+      cleanup();
+    };
+
+    // pointercancel: actual user/OS cancellation (touch interrupted, etc.).
+    // Do NOT commit — caller intent was to abort.
     const onCancel = () => {
       cleanup();
     };
@@ -158,7 +178,7 @@ export function initSidebarResizer() {
     handle.addEventListener("pointermove", onMove);
     handle.addEventListener("pointerup", onUp);
     handle.addEventListener("pointercancel", onCancel);
-    handle.addEventListener("lostpointercapture", onCancel);
+    handle.addEventListener("lostpointercapture", onLost);
   });
 
   sidebar.appendChild(handle);

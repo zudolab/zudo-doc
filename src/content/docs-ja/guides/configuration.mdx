@@ -4,7 +4,7 @@ description: zudo-docのグローバル設定と構成リファレンス。
 sidebar_position: 1
 ---
 
-zudo-docは`src/config/`ディレクトリ内の少数のファイルとルートの`astro.config.ts`で設定を行います。
+zudo-docは`src/config/`ディレクトリ内の少数のファイルとルートの`zfb.config.ts`で設定を行います。
 
 ## サイト設定
 
@@ -58,7 +58,7 @@ export const settings = {
 
 <Tip>
 
-利用可能なスキームの一覧、プレビュー、カスタムスキームの追加手順については[カラーガイド](/ja/docs/reference/color)を参照してください。
+利用可能なスキームの一覧、プレビュー、カスタムスキームの追加手順については[カラーガイド](../reference/color.mdx)を参照してください。
 
 </Tip>
 
@@ -98,7 +98,7 @@ colorMode: false,
 base: "/my-docs",
 ```
 
-すべての内部リンク（サイドバー、ナビゲーション、前後ページ、検索）にはベースパスが自動的にプレフィックスされます。これは[AstroのConfigの`base`オプション](https://docs.astro.build/en/reference/configuration-reference/#base)に直接マッピングされます。
+すべての内部リンク（サイドバー、ナビゲーション、前後ページ、検索）にはベースパスが自動的にプレフィックスされます。この値はzfbのビルドパイプラインを通じて、出力されるアセットURLとルートパスに同じプレフィックスが適用されます。
 
 <Note>
 
@@ -108,7 +108,7 @@ MDXコンテンツ内のインラインMarkdownリンク（例：`[リンクテ�
 
 ### trailingSlash
 
-URLの末尾にトレイリングスラッシュを付けるかどうかを制御します。`true`の場合、すべての内部リンクがトレイリングスラッシュ付きで生成されます（例：`/docs/guides`ではなく`/docs/guides/`）。これにより、Astroの[`trailingSlash`](https://docs.astro.build/en/reference/configuration-reference/#trailingslash)も`"always"`または`"never"`に設定されます。
+URLの末尾にトレイリングスラッシュを付けるかどうかを制御します。`true`の場合、すべての内部リンクがトレイリングスラッシュ付きで生成されます（例：`/docs/guides`ではなく`/docs/guides/`）。`@zudo-doc/zudo-doc-v2/url-normalizer`のビルド時URLヘルパーが、このポリシーを発行されるすべてのルートで強制します — ビルド時とデプロイホスト間でのルール分担については[トレイリングスラッシュポリシー](../concepts/trailing-slash-policy.mdx)を参照してください。
 
 デフォルト：`false`
 
@@ -122,7 +122,7 @@ trailingSlash: true,
 
 </Note>
 
-有効にすると、ミドルウェアがトレイリングスラッシュなしのURLをトレイリングスラッシュ付きのURLへ**301リダイレクト**します（例：`/docs/guides` → `/docs/guides/`）。Astroの開発サーバーはこのリダイレクトを自動的に行わないため、開発時でも一貫したURLを保証します。静的アセット（`.js`、`.css`、`.png`などの拡張子を持つファイル）やAstro内部パス（`/_astro/`、`/_image`）はリダイレクトの対象外です。
+有効にすると、開発サーバーがトレイリングスラッシュなしのURLをトレイリングスラッシュ付きのURLへ**301リダイレクト**します（例：`/docs/guides` → `/docs/guides/`）。これにより、ローカルでも本番と同じナビゲーション挙動になります。静的アセット（`.js`、`.css`、`.png`などの拡張子を持つファイル）やフレームワーク内部パス（`/_astro/`、`/_image` — それらのプレフィックス下に出力されるアセットとの互換性のため保持）はリダイレクトの対象外です。
 
 ### onBrokenMarkdownLinks
 
@@ -142,7 +142,7 @@ onBrokenMarkdownLinks: "error", // 壊れたリンクでビルドを失敗させ
 
 ### docsDir
 
-英語ドキュメントのMDXファイルが格納されるディレクトリパス（プロジェクトルートからの相対パス）。Astroの`glob()`ローダーを使用するため、任意のディレクトリを指定できます。
+英語ドキュメントのMDXファイルが格納されるディレクトリパス（プロジェクトルートからの相対パス）。zfbのコンテンツエンジンがこのディレクトリをglobするため、プロジェクト内の任意の場所を指定できます。
 
 デフォルト：`"src/content/docs"`
 
@@ -167,8 +167,8 @@ locales: {
 
 各ロケールエントリに対して、zudo-docは自動的に：
 
-- Astroコンテンツコレクション（`docs-{code}`）を作成
-- Astroのi18nルーティングにロケールを登録
+- zfbコンテンツコレクション（`docs-{code}`）を作成
+- zfbのi18nルーティングにロケールを登録
 - 言語切り替えに追加
 
 ### versions
@@ -204,7 +204,7 @@ versions: false,
 
 <Tip>
 
-バージョン切り替えの仕組みやメンテナンス終了・未リリースバージョンのバナー設定については[バージョン管理ガイド](/ja/docs/guides/versioning)を参照してください。
+バージョン切り替えの仕組みやメンテナンス終了・未リリースバージョンのバナー設定については[バージョン管理ガイド](./versioning.mdx)を参照してください。
 
 </Tip>
 
@@ -363,7 +363,7 @@ frontmatterPreview: false,
 
 ### aiAssistant
 
-AIアシスタントチャットウィジェットを有効にします。`true`の場合、ページにチャットボタンが表示され、ドキュメントに関する質問に答えるAI搭載のアシスタントが開きます。設定済みの`ai-chat-worker` Cloudflare Workerバックエンドが必要です。
+AIアシスタントチャットウィジェットを有効にします。`true`の場合、ページにチャットボタンが表示され、ドキュメントに関する質問に答えるAI搭載のアシスタントが開きます。チャットAPIはCloudflare Pages SSRエンドポイント（`pages/api/ai-chat.tsx`）として動作します。`wrangler.toml`に`ANTHROPIC_API_KEY`、`DOCS_SITE_URL`、および`RATE_LIMIT` KV名前空間の設定が必要です。
 
 型：`boolean`
 
@@ -401,13 +401,13 @@ sidebarResizer: true,
 
 ドキュメントごとのgitリビジョン履歴ビューアを有効にします。`true`の場合、各ドキュメントページに**History**ボタンが表示され、ドキュメントのgitコミット履歴と行単位のdiffビューアを備えたサイドパネルが開きます。
 
-開発モードでは、履歴はポート4322で動作するスタンドアロンの`@zudo-doc/doc-history-server`パッケージが配信します。本番環境では、CLIジェネレーターがCI中に静的JSONファイルを生成します。サーバーとCLIの詳細については[Doc History Serverリファレンス](/ja/docs/reference/doc-history-server)を参照してください。
+開発モードでは、履歴はポート4322で動作するスタンドアロンの`@zudo-doc/doc-history-server`パッケージが配信します。本番環境では、CLIジェネレーターがCI中に静的JSONファイルを生成します。サーバーとCLIの詳細については[Doc History Serverリファレンス](../reference/doc-history-server.mdx)を参照してください。
 
 デフォルト：`false`（`true`に設定して有効化）
 
 <Tip>
 
-使用方法の詳細、キーボードショートカット、技術情報については[ドキュメント履歴ガイド](/ja/docs/guides/doc-history)を参照してください。
+使用方法の詳細、キーボードショートカット、技術情報については[ドキュメント履歴ガイド](./doc-history.mdx)を参照してください。
 
 </Tip>
 
@@ -464,7 +464,7 @@ claudeResources: false,
 
 <Tip>
 
-生成される内容と仕組みの詳細については[Claude Codeリソースガイド](/ja/docs/guides/claude-resources)を参照してください。
+生成される内容と仕組みの詳細については[Claude Codeリソースガイド](./claude-resources.mdx)を参照してください。
 
 </Tip>
 
@@ -540,34 +540,28 @@ headerNav: [
 ],
 ```
 
-## Astro設定
+## zfb設定
 
-ルートの`astro.config.ts`がビルドパイプラインを制御します：
+ルートの`zfb.config.ts`がビルドパイプラインを制御します：
 
 ```ts
 export default defineConfig({
-  output: "static",
-  integrations: [mdx(), react(), searchIndexIntegration()],
-  i18n: {
-    defaultLocale: "en",
-    locales: ["en", ...Object.keys(settings.locales)],
-    routing: { prefixDefaultLocale: false },
-  },
-  vite: {
-    plugins: [tailwindcss()],
-  },
-  markdown: {
-    shikiConfig: { theme: shikiTheme },
-  },
+  framework: "preact",
+  tailwind: { enabled: true },
+  collections,                  // settings.docsDir + settings.localesから導出
+  adapter: "@takazudo/zfb-adapter-cloudflare",
+  plugins: integrationPlugins,  // doc-history / search-index / llms-txt / claude-resources
 });
 ```
 
 主なポイント：
 
-- **output**：完全な静的HTMLエクスポートのため`"static"`に設定
-- **integrations**：MDXサポート、Preactアイランド（compatモード）、MiniSearch検索インデックス
-- **i18n**：英語（デフォルト、`/docs/...`）と日本語（`/ja/docs/...`）。デフォルトロケールにはURLプレフィックスなし
-- **Tailwind CSS**：Astroインテグレーションではなく`@tailwindcss/vite`プラグイン経由でロード
+- **framework**：Preact — すべてのコンポーネントは`.tsx`ファイル（デフォルトでサーバーレンダリング、クライアントアイランドはzfbのランタイムでハイドレート）
+- **tailwind**：Tailwind CSS v4のファーストクラスインテグレーション
+- **collections**：`settings.docsDir`と`settings.locales`から生成され、同じファイル内のzodスキーマで検証
+- **adapter**：Cloudflare Pages — SSRバンドルを`dist/_worker.js`にラップします。`prerender = false`をエクスポートするルートに必須
+- **plugins**：各インテグレーション（doc-history、search-index、llms-txt、claude-resources）は、`./plugins/`配下の小さなラッパーモジュールで、デフォルトエクスポートが`ZfbPlugin`
+- **i18nルーティング**：英語（デフォルト、`/docs/...`）と`settings.locales`で宣言された追加ロケール。デフォルトロケールにはURLプレフィックスなし
 - **Shikiテーマ**：アクティブなカラースキームの`shikiTheme`プロパティから自動的に導出 — 手動同期不要
 
 <Note>
@@ -602,6 +596,6 @@ pnpm run generate:logo
 
 <Info>
 
-カラースキームの追加やカスタマイズの詳細については[カラーガイド](/ja/docs/reference/color)を参照してください。
+カラースキームの追加やカスタマイズの詳細については[カラーガイド](../reference/color.mdx)を参照してください。
 
 </Info>

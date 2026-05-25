@@ -10,7 +10,7 @@ sidebar_position: 7
 
 <Info>
 
-This component is **not** directly available in MDX content. It requires server-side data fetching, so it must be imported in Astro page templates. The live demo below uses `SiteTreeNavDemo`, an Astro wrapper registered as a global MDX component.
+This component is **not** directly available in MDX content. It requires server-side data fetching, so it must be imported in a zfb page module. The live demo below uses `SiteTreeNavDemo`, a wrapper registered as a global MDX component.
 
 </Info>
 
@@ -22,31 +22,36 @@ Below is `SiteTreeNav` rendered with the full documentation tree (same as the [h
 
 ## Usage
 
-`SiteTreeNav` is used in `src/pages/index.astro` to display the home page sitemap:
+`SiteTreeNav` is used in `pages/index.tsx` to display the home page sitemap:
 
-```astro
----
+```tsx
+// pages/index.tsx
 import { buildNavTree, groupSatelliteNodes } from "@/utils/docs";
-import { loadLocaleDocs } from "@/utils/locale-docs";
+import { loadCategoryMeta } from "@/utils/docs";
 import { getCategoryOrder } from "@/utils/nav-scope";
-import SiteTreeNav from "@/components/site-tree-nav.tsx";
+import SiteTreeNav from "@/components/site-tree-nav";
+import { loadDocs } from "./_data";
+import { settings } from "@/config/settings";
 
-const categoryOrder = getCategoryOrder();
-const { allDocs, categoryMeta } = await loadLocaleDocs("en");
-const navDocs = allDocs.filter((doc) => !doc.data.unlisted);
-const tree = buildNavTree(navDocs, "en", categoryMeta);
-const groupedTree = groupSatelliteNodes(tree, categoryOrder);
----
+export default function IndexPage() {
+  const allDocs = loadDocs("docs");
+  const navDocs = allDocs.filter((doc) => !doc.data.unlisted);
+  const categoryMeta = loadCategoryMeta(settings.docsDir);
+  const tree = buildNavTree(navDocs, "en", categoryMeta);
+  const categoryOrder = getCategoryOrder();
+  const groupedTree = groupSatelliteNodes(tree, categoryOrder);
 
-<SiteTreeNav
-  tree={groupedTree}
-  categoryOrder={categoryOrder}
-  categoryIgnore={["inbox"]}
-  client:idle
-/>
+  return (
+    <SiteTreeNav
+      tree={groupedTree}
+      categoryOrder={categoryOrder}
+      categoryIgnore={["inbox"]}
+    />
+  );
+}
 ```
 
-The component requires `client:idle` (or another Astro client directive) because it uses React state for expand/collapse interactivity.
+The component uses Preact state for expand/collapse interactivity, so it hydrates on the client through zfb's island runtime.
 
 ## Props
 

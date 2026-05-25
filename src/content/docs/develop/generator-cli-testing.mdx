@@ -83,7 +83,7 @@ The `/l-run-generator-cli-whole-test` skill has a structured bug-fix phase:
 | Failure | Likely cause | Fix location |
 |---------|-------------|--------------|
 | Missing module at build time | Dependency not in generated `package.json` | `scaffold.ts` — `generatePackageJson()` |
-| Import not found in astro.config | Feature integration not included | `astro-config-gen.ts` |
+| Import not found in zfb.config | Feature integration not included | `zfb-config-gen.ts` |
 | Type error in settings.ts | Settings field missing or wrong | `settings-gen.ts` |
 | Feature component missing | Feature module not copying files or injection anchor mismatch | `features/*.ts` or `templates/features/*/files/` |
 | Anchor remnant in output | Injection anchor not cleaned up | `compose.ts` — `cleanAnchors()` |
@@ -95,8 +95,7 @@ The `/l-run-generator-cli-whole-test` skill has a structured bug-fix phase:
 | `packages/create-zudo-doc/src/scaffold.ts` | Orchestrates pipeline: copy base, generate configs, compose features |
 | `packages/create-zudo-doc/src/compose.ts` | Composition engine: injection system, anchor cleanup, feature resolution |
 | `packages/create-zudo-doc/src/features/*.ts` | Feature modules defining injections for each optional feature |
-| `packages/create-zudo-doc/src/astro-config-gen.ts` | Programmatic `astro.config.ts` generator |
-| `packages/create-zudo-doc/src/content-config-gen.ts` | Programmatic `content.config.ts` generator |
+| `packages/create-zudo-doc/src/zfb-config-gen.ts` | Programmatic `zfb.config.ts` generator |
 | `packages/create-zudo-doc/src/settings-gen.ts` | Generates `settings.ts` |
 | `packages/create-zudo-doc/src/constants.ts` | Feature definitions, color scheme lists |
 | `packages/create-zudo-doc/src/cli.ts` | CLI argument parsing |

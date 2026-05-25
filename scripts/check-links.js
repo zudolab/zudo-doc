@@ -161,6 +161,19 @@ export async function resolveLink(href, distDir, basePath = "/", fileDir = "") {
 
 // --- MDX Source Scan ---
 
+/**
+ * Strip inline-code spans from a line before running link regexes.
+ * Handles double-backtick spans (``...``) and single-backtick spans (`...`).
+ * Escaped backticks (\`) are ignored.
+ */
+export function stripInlineCode(line) {
+  // Replace double-backtick spans first to avoid partial single-backtick matches
+  let result = line.replace(/(?<!\\)``[^`]*(?:``|$)/g, (m) => " ".repeat(m.length));
+  // Replace single-backtick spans
+  result = result.replace(/(?<!\\)`[^`]*(?:`|$)/g, (m) => " ".repeat(m.length));
+  return result;
+}
+
 export function extractMdxAbsoluteLinks(content) {
   const issues = [];
   const lines = content.split("\n");
@@ -175,16 +188,18 @@ export function extractMdxAbsoluteLinks(content) {
     }
     if (inCodeBlock) continue;
 
+    const searchLine = stripInlineCode(line);
+
     // Markdown link syntax: [text](/docs/...) or [text](/ja/docs/...)
     const mdRegex = /\]\((\/(?:ja\/)?docs\/[^)]*)\)/g;
     let match;
-    while ((match = mdRegex.exec(line)) !== null) {
+    while ((match = mdRegex.exec(searchLine)) !== null) {
       issues.push({ href: match[1], line: i + 1 });
     }
 
     // JSX href attributes: href="/docs/..." or href="/ja/docs/..."
     const jsxRegex = /href="(\/(?:ja\/)?docs\/[^"]*)"/g;
-    while ((match = jsxRegex.exec(line)) !== null) {
+    while ((match = jsxRegex.exec(searchLine)) !== null) {
       issues.push({ href: match[1], line: i + 1 });
     }
   }
@@ -271,7 +286,7 @@ export async function checkTrailingSlashLinks(distDir, rootDir, basePath = "/", 
   return warnings;
 }
 
-export async function checkMdxLinks(contentDirs, rootDir) {
+export async function checkMdxLinks(contentDirs, rootDir, distDir = null, basePath = "/") {
   const warnings = [];
 
   for (const dir of contentDirs) {
@@ -283,6 +298,8 @@ export async function checkMdxLinks(contentDirs, rootDir) {
       const issues = extractMdxAbsoluteLinks(content);
 
       for (const { href, line } of issues) {
+        // If dist/ is available, drop warnings for hrefs that resolve to built routes
+        if (distDir && (await resolveLink(href, distDir, basePath))) continue;
         warnings.push({ file: relative(rootDir, file), line, href });
       }
     }
@@ -346,6 +363,28 @@ export function formatReport(brokenLinks, mdxWarnings, trailingSlashWarnings = [
   return lines.join("\n");
 }
 
+// --- Allowlist ---
+
+/**
+ * Read the allowlist file (one entry per line; `#` comments stripped).
+ * Each non-blank line is a literal `<file>:<line>:<href>` exact match.
+ * Returns a Set for O(1) lookup against `entryKey()` output below.
+ */
+export async function readAllowlist(allowlistPath) {
+  if (!allowlistPath) return new Set();
+  if (!(await fileExists(allowlistPath))) return new Set();
+  const text = await readFile(allowlistPath, "utf-8");
+  const lines = text
+    .split("\n")
+    .map((l) => l.replace(/#.*$/, "").trim())
+    .filter((l) => l.length > 0);
+  return new Set(lines);
+}
+
+function entryKey(e) {
+  return `${e.file}:${e.line}:${e.href}`;
+}
+
 // --- Main ---
 
 async function main() {
@@ -370,26 +409,88 @@ async function main() {
 
   const checks = [
     checkHtmlLinks(distDir, rootDir, basePath, excludePatterns),
-    checkMdxLinks(contentDirs, rootDir),
+    checkMdxLinks(contentDirs, rootDir, distDir, basePath),
   ];
 
   if (trailingSlash) {
     checks.push(checkTrailingSlashLinks(distDir, rootDir, basePath, excludePatterns));
   }
 
-  const [brokenLinks, mdxWarnings, trailingSlashWarnings = []] = await Promise.all(checks);
+  let [brokenLinks, mdxWarnings, trailingSlashWarnings = []] = await Promise.all(checks);
+
+  // --- Flag parsing ---
+  //
+  // Three strict knobs (separable so a deploy can fail on real 404s
+  // without blocking on warn-only categories) plus an allowlist:
+  //
+  //   --strict           legacy: fail when any category has entries
+  //   --strict-broken    fail when broken links > 0 (after allowlist)
+  //   --strict-absolute  fail when absolute warnings > 0 (after allowlist)
+  //   --strict-trailing  fail when trailing-slash warnings > 0 (after allowlist)
+  //   --allowlist=PATH   skip entries listed in PATH (one
+  //                      `<file>:<line>:<href>` per line, `#` comments)
+  const argv = process.argv.slice(2);
+  const strict = argv.includes("--strict");
+  const strictBroken = strict || argv.includes("--strict-broken");
+  const strictAbsolute = strict || argv.includes("--strict-absolute");
+  const strictTrailing = strict || argv.includes("--strict-trailing");
+  const allowlistArg = argv.find((a) => a.startsWith("--allowlist="));
+  const allowlistPath = allowlistArg ? allowlistArg.split("=").slice(1).join("=") : null;
+  const resolvedAllowlist = allowlistPath
+    ? (allowlistPath.startsWith("/") ? allowlistPath : join(rootDir, allowlistPath))
+    : null;
+  const allowlist = await readAllowlist(resolvedAllowlist);
+
+  // Filter out allowlisted entries before strict-mode decisions but
+  // AFTER the printed report — so the report shows the full picture
+  // and the strict gate counts only "real" entries.
+  const filterOut = (entries) => entries.filter((e) => !allowlist.has(entryKey(e)));
+  const realBroken = filterOut(brokenLinks);
+  const realAbsolute = filterOut(mdxWarnings);
+  const realTrailing = filterOut(trailingSlashWarnings);
 
   console.log(formatReport(brokenLinks, mdxWarnings, trailingSlashWarnings));
 
-  const hasIssues = brokenLinks.length > 0 || mdxWarnings.length > 0 || trailingSlashWarnings.length > 0;
-  const strict = process.argv.includes("--strict");
+  if (allowlist.size > 0) {
+    const skipped =
+      (brokenLinks.length - realBroken.length) +
+      (mdxWarnings.length - realAbsolute.length) +
+      (trailingSlashWarnings.length - realTrailing.length);
+    if (skipped > 0) {
+      console.log(
+        `\nAllowlist: ${skipped} known exception${skipped === 1 ? "" : "s"} excluded from strict-mode counts (${resolvedAllowlist}).`,
+      );
+    }
+  }
 
-  if (hasIssues && strict) {
+  const hasIssues =
+    brokenLinks.length > 0 || mdxWarnings.length > 0 || trailingSlashWarnings.length > 0;
+
+  // Per-category strict failure (real counts). Combined into one exit
+  // code so b4push only needs one invocation. Print which category
+  // tripped before exiting so the diagnosis is obvious from the log.
+  let failed = false;
+  if (strictBroken && realBroken.length > 0) {
+    console.log(`\n❌ STRICT FAIL: ${realBroken.length} broken link${realBroken.length === 1 ? "" : "s"} (after allowlist).`);
+    failed = true;
+  }
+  if (strictAbsolute && realAbsolute.length > 0) {
+    console.log(`\n❌ STRICT FAIL: ${realAbsolute.length} absolute MDX-source link${realAbsolute.length === 1 ? "" : "s"} (after allowlist).`);
+    failed = true;
+  }
+  if (strictTrailing && realTrailing.length > 0) {
+    console.log(`\n❌ STRICT FAIL: ${realTrailing.length} trailing-slash warning${realTrailing.length === 1 ? "" : "s"} (after allowlist).`);
+    failed = true;
+  }
+  if (failed) {
     process.exit(1);
   }
-  if (hasIssues && !strict) {
+
+  if (hasIssues && !strictBroken && !strictAbsolute && !strictTrailing) {
     console.log("\nNote: Issues found but running in non-strict mode (exit 0).");
-    console.log("Use --strict to fail on issues.");
+    console.log(
+      "Use --strict-broken / --strict-absolute / --strict-trailing (or --strict for all) to fail on issues.",
+    );
   }
 }
 

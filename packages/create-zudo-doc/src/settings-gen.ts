@@ -186,6 +186,17 @@ export function generateSettingsFile(choices: UserChoices): string {
     );
   }
 
+  if (choices.features.includes("claudeResources")) {
+    lines.push(`  defaultLocaleOnlyPrefixes: [`);
+    lines.push(`    "/docs/claude-md/",`);
+    lines.push(`    "/docs/claude-skills/",`);
+    lines.push(`    "/docs/claude-agents/",`);
+    lines.push(`    "/docs/claude-commands/",`);
+    lines.push(`  ] as string[],`);
+  } else {
+    lines.push(`  defaultLocaleOnlyPrefixes: [] as string[],`);
+  }
+
   if (
     choices.features.includes("footerNavGroup") ||
     choices.features.includes("footerCopyright") ||

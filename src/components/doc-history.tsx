@@ -1,7 +1,14 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+"use client";
+
+// preact/compat shim — see src/components/ai-chat-modal.tsx for rationale.
+import { useState, useEffect, useCallback, useMemo, useRef } from "preact/compat";
 import { diffLines } from "diff";
 import type { DocHistoryData, DocHistoryEntry } from "@/types/doc-history";
 import { SmartBreak } from "@/utils/smart-break";
+// After zudolab/zudo-doc#1335 (E2 task 2 half B) the host components
+// pull lifecycle event names from the v2 transitions module rather
+// than hard-coding `astro:*` literals.
+import { AFTER_NAVIGATE_EVENT } from "@zudo-doc/zudo-doc-v2/transitions";
 
 interface DocHistoryProps {
   slug: string;
@@ -168,6 +175,35 @@ function buildSideBySideRows(
  * DiffViewer sub-component (side-by-side)
  * ──────────────────────────────────────────── */
 
+// Hashes — not full file content — are the cache key so the keys stay
+// short regardless of doc size. Map insertion order is the LRU.
+type DiffChanges = ReturnType<typeof diffLines>;
+const DIFF_CACHE_LIMIT = 32;
+const diffCache = new Map<string, DiffChanges>();
+
+function getCachedDiff(
+  olderHash: string,
+  newerHash: string,
+  olderContent: string,
+  newerContent: string,
+): DiffChanges {
+  const key = `${olderHash}::${newerHash}`;
+  const hit = diffCache.get(key);
+  if (hit) {
+    // Refresh recency by re-inserting at the end of the iteration order.
+    diffCache.delete(key);
+    diffCache.set(key, hit);
+    return hit;
+  }
+  const changes = diffLines(olderContent, newerContent);
+  diffCache.set(key, changes);
+  if (diffCache.size > DIFF_CACHE_LIMIT) {
+    const oldest = diffCache.keys().next().value;
+    if (oldest !== undefined) diffCache.delete(oldest);
+  }
+  return changes;
+}
+
 function DiffViewer({
   selection,
   onBack,
@@ -178,8 +214,14 @@ function DiffViewer({
   showBackButton: boolean;
 }) {
   const changes = useMemo(
-    () => diffLines(selection.older.content, selection.newer.content),
-    [selection.older.content, selection.newer.content],
+    () =>
+      getCachedDiff(
+        selection.older.hash,
+        selection.newer.hash,
+        selection.older.content,
+        selection.newer.content,
+      ),
+    [selection.older.hash, selection.newer.hash],
   );
   const rows = useMemo(() => buildSideBySideRows(changes), [changes]);
 
@@ -482,8 +524,8 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
 
   // Close on View Transition navigation
   useEffect(() => {
-    document.addEventListener("astro:after-swap", handleClose);
-    return () => document.removeEventListener("astro:after-swap", handleClose);
+    document.addEventListener(AFTER_NAVIGATE_EVENT, handleClose);
+    return () => document.removeEventListener(AFTER_NAVIGATE_EVENT, handleClose);
   }, [handleClose]);
 
   const isOpen = view !== "closed";

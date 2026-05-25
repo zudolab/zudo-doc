@@ -87,14 +87,14 @@ export default function ImageEnlarge() {
 
     startObserving();
     window.addEventListener("resize", handleWindowResize);
-    document.addEventListener("astro:after-swap", handleAfterSwap);
+    document.addEventListener("DOMContentLoaded", handleAfterSwap);
 
     return () => {
       resizeObservers.forEach((ro) => ro.disconnect());
       resizeObservers.clear();
       mutationObserver?.disconnect();
       window.removeEventListener("resize", handleWindowResize);
-      document.removeEventListener("astro:after-swap", handleAfterSwap);
+      document.removeEventListener("DOMContentLoaded", handleAfterSwap);
       clearTimeout(resizeTimer);
     };
   }, []);
@@ -160,8 +160,8 @@ export default function ImageEnlarge() {
       if (dialog?.open) dialog.close();
       setImgData(null);
     }
-    document.addEventListener("astro:after-swap", handleAfterSwap);
-    return () => document.removeEventListener("astro:after-swap", handleAfterSwap);
+    document.addEventListener("DOMContentLoaded", handleAfterSwap);
+    return () => document.removeEventListener("DOMContentLoaded", handleAfterSwap);
   }, []);
 
   function handleBackdropClick(e: React.MouseEvent) {

@@ -19,6 +19,7 @@ import { designTokenPanelFeature } from "./design-token-panel.js";
 import { i18nFeature } from "./i18n.js";
 import { versioningFeature } from "./versioning.js";
 import { tauriFeature } from "./tauri.js";
+import { tauriDevFeature } from "./tauri-dev.js";
 import { imageEnlargeFeature } from "./image-enlarge.js";
 import { tagGovernanceFeature } from "./tag-governance.js";
 import { footerTaglistFeature } from "./footer-taglist.js";
@@ -42,6 +43,7 @@ export const featureModules: Record<string, FeatureModule> = {
   bodyFootUtil: bodyFootUtilFeature,
   llmsTxt: llmsTxtFeature,
   tauri: tauriFeature,
+  tauriDev: tauriDevFeature,
   imageEnlarge: imageEnlargeFeature,
   // skillSymlinker — handled in scaffold.ts
   // claudeSkills — handled in scaffold.ts (copies zudo-doc-* skills from monorepo)

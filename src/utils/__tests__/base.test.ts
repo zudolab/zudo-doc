@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { navHref, getPathForLocale, normalizedBase } from "../base";
+import { navHref, getPathForLocale, normalizedBase, isDefaultLocaleOnlyPath, buildLocaleLinks } from "../base";
 import { settings } from "@/config/settings";
 import { defaultLocale } from "@/config/i18n";
 
@@ -68,6 +68,39 @@ describe("navHref", () => {
   });
 });
 
+describe("isDefaultLocaleOnlyPath", () => {
+  // Guard: tests rely on these prefixes being configured.
+  beforeAll(() => {
+    expect(settings.defaultLocaleOnlyPrefixes).toContain("/docs/claude-md/");
+    expect(settings.defaultLocaleOnlyPrefixes).not.toContain("/docs/claude/");
+    expect(normalizedBase).toBe("/pj/zudo-doc");
+  });
+
+  it("returns false for /docs/claude/ (top-level claude is bilingual, not in prefix list)", () => {
+    expect(isDefaultLocaleOnlyPath("/docs/claude/")).toBe(false);
+  });
+
+  it("returns true for /docs/claude-md/", () => {
+    expect(isDefaultLocaleOnlyPath("/docs/claude-md/")).toBe(true);
+  });
+
+  it("returns true for a sub-path under /docs/claude-md/", () => {
+    expect(isDefaultLocaleOnlyPath("/docs/claude-md/some-file/")).toBe(true);
+  });
+
+  it("returns false for /docs/guides/", () => {
+    expect(isDefaultLocaleOnlyPath("/docs/guides/")).toBe(false);
+  });
+
+  it("returns false for /docs/claude-extras/ (not in prefix list)", () => {
+    expect(isDefaultLocaleOnlyPath("/docs/claude-extras/")).toBe(false);
+  });
+
+  it("strips basePath before matching — /pj/zudo-doc/docs/claude-md/ returns true", () => {
+    expect(isDefaultLocaleOnlyPath("/pj/zudo-doc/docs/claude-md/")).toBe(true);
+  });
+});
+
 describe("getPathForLocale", () => {
   describe("switch from default to non-default", () => {
     it("adds locale prefix (en → ja)", () => {
@@ -97,5 +130,40 @@ describe("getPathForLocale", () => {
         getPathForLocale("/pj/zudo-doc/ja/docs/guides/", "ja", "ja"),
       ).toBe("/pj/zudo-doc/ja/docs/guides/");
     });
+  });
+});
+
+describe("buildLocaleLinks", () => {
+  beforeAll(() => {
+    expect(settings.defaultLocaleOnlyPrefixes).toContain("/docs/claude-md/");
+    expect(settings.defaultLocaleOnlyPrefixes).not.toContain("/docs/claude/");
+  });
+
+  it("returns single-element list for a default-locale deep claude-md path (switcher hides)", () => {
+    const links = buildLocaleLinks("/pj/zudo-doc/docs/claude-md/some-slug/", "en");
+    expect(links).toHaveLength(1);
+    expect(links[0].code).toBe("en");
+    expect(links[0].active).toBe(true);
+  });
+
+  it("returns full list for /docs/claude/ (top-level, not in prefix list)", () => {
+    const links = buildLocaleLinks("/pj/zudo-doc/docs/claude/", "en");
+    expect(links.length).toBeGreaterThan(1);
+    expect(links.some((l) => l.code === "en")).toBe(true);
+    expect(links.some((l) => l.code === "ja")).toBe(true);
+  });
+
+  it("returns full list for a non-claude page", () => {
+    const links = buildLocaleLinks("/pj/zudo-doc/docs/guides/configuration/", "en");
+    expect(links.length).toBeGreaterThan(1);
+    expect(links.some((l) => l.code === "en")).toBe(true);
+    expect(links.some((l) => l.code === "ja")).toBe(true);
+  });
+
+  it("returns single-element list (only ja) when on a JA deep claude-md path", () => {
+    const links = buildLocaleLinks("/pj/zudo-doc/ja/docs/claude-md/some-slug/", "ja");
+    expect(links).toHaveLength(1);
+    expect(links[0].code).toBe("ja");
+    expect(links[0].active).toBe(true);
   });
 });

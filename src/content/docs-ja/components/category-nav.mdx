@@ -1,12 +1,12 @@
 ---
 title: CategoryNav
-description: カテゴリインデックスページに子ページのカードグリッドを表示するAstroコンポーネント。
+description: カテゴリインデックスページに子ページのカードグリッドを表示する、サーバーレンダリングのPreactコンポーネント。
 sidebar_position: 8
 ---
 
 ## 概要
 
-`CategoryNav`は、カテゴリの子ページをカードグリッドとして自動的に一覧表示するAstroコンポーネントです。カテゴリの`index.mdx`ファイルで使用し、すべての子ページへのリンクを含むランディングページを作成するために設計されています。
+`CategoryNav`は、カテゴリの子ページをカードグリッドとして自動的に一覧表示する、サーバーレンダリングのPreactコンポーネントです。カテゴリの`index.mdx`ファイルで使用し、すべての子ページへのリンクを含むランディングページを作成するために設計されています。
 
 <Info>
 
@@ -35,7 +35,7 @@ Welcome to the Getting Started section. Choose a topic below to begin.
 <CategoryNav category="getting-started" />
 ```
 
-`CategoryNav`はAstroコンポーネント（クライアントサイドJavaScriptなし）のため、`client:`ディレクティブは不要です。
+`CategoryNav`は完全にサーバー側でレンダリングされ、クライアントサイドJavaScriptはゼロです — ハイドレートディレクティブは不要です。
 
 ## プロップ
 
@@ -69,4 +69,4 @@ src/content/docs/
 
 ## ソース
 
-コンポーネントは`src/components/category-nav.astro`に定義されています。
+コンポーネントは`pages/lib/_category-nav.tsx`に定義されています。

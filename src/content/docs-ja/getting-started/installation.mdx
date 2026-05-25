@@ -6,7 +6,7 @@ sidebar_position: 2
 
 ## 前提条件
 
-- **Node.js 18+** — Astro 6 に必要
+- **Node.js 18+** — zfbおよびツールチェーンに必要
 - **pnpm** — 推奨パッケージマネージャー
 
 <Info>
@@ -38,7 +38,7 @@ pnpm create zudo-doc my-docs --yes
 pnpm create zudo-doc my-docs --lang ja --scheme Dracula --no-i18n --pm pnpm --install
 ```
 
-すべてのフラグについては [CLI リファレンス](/ja/docs/reference/create-zudo-doc) を参照してください。
+すべてのフラグについては [CLI リファレンス](../reference/create-zudo-doc.mdx) を参照してください。
 
 CLI では以下のオプションを順番に設定します。
 
@@ -65,11 +65,11 @@ Light/Dark モードでは、デフォルトモード（ライトまたはダー
 
 | 機能 | デフォルト | 説明 |
 |------|-----------|------|
-| [i18n（多言語対応）](/ja/docs/guides/i18n/) | オフ | セカンダリ言語をミラーリングしたコンテンツディレクトリで追加 |
-| [Pagefind 検索](/ja/docs/guides/search/) | オン | ドキュメント全体の全文検索 |
-| [サイドバーフィルター](/ja/docs/guides/sidebar-filter/) | オン | サイドバーナビゲーションのリアルタイムフィルタリング |
-| [Claude Resources](/ja/docs/guides/claude-resources/) | オフ | Claude Code コンポーネントの自動生成ドキュメント |
-| [カラースキームプレビュー](/ja/docs/guides/color-scheme-preview/) | オフ | カラー調整パネルで50以上のプリセットカラースキームを閲覧 |
+| [i18n（多言語対応）](../guides/i18n.mdx) | オフ | セカンダリ言語をミラーリングしたコンテンツディレクトリで追加 |
+| [Pagefind 検索](../guides/search.mdx) | オン | ドキュメント全体の全文検索 |
+| [サイドバーフィルター](../guides/sidebar-filter.mdx) | オン | サイドバーナビゲーションのリアルタイムフィルタリング |
+| [Claude Resources](../guides/claude-resources.mdx) | オフ | Claude Code コンポーネントの自動生成ドキュメント |
+| [カラースキームプレビュー](../guides/color-scheme-preview.mdx) | オフ | カラー調整パネルで50以上のプリセットカラースキームを閲覧 |
 
 ### パッケージマネージャー
 
@@ -107,7 +107,7 @@ Viteによるインスタントなホットモジュールリプレースメン�
 
 <Warning>
 
-ポート4321が使用可能であることを確認してください。別のプロセスが使用中の場合、Astro は自動的に次の使用可能なポートを選択します。
+ポート4321が使用可能であることを確認してください。別のプロセスが使用中の場合、開発サーバーは自動的に次の使用可能なポートを選択します。
 
 </Warning>
 
@@ -125,7 +125,7 @@ pnpm build
 pnpm check
 ```
 
-Astro の組み込み型チェッカーを strict TypeScript モードで実行します。
+プロジェクトのTypeScript型チェッカーをstrictモードで実行します。
 
 <Danger>
 
@@ -139,7 +139,7 @@ Astro の組み込み型チェッカーを strict TypeScript モードで実行�
 
 ```
 src/
-├── components/          # Astro + Preact コンポーネント
+├── components/          # Preactコンポーネント（サーバーレンダリング + クライアントアイランド）
 │   └── admonitions/     # Note, Tip, Info, Warning, Danger
 ├── config/
 │   ├── settings.ts      # サイト名、アクティブなカラースキーム
@@ -148,10 +148,11 @@ src/
 ├── content/
 │   ├── docs/            # 英語 MDX コンテンツ
 │   └── docs-ja/         # 日本語 MDX コンテンツ
-├── layouts/             # ページレイアウト
-├── pages/               # ファイルベースルーティング
 └── styles/
     └── global.css       # デザイントークン & Tailwind 設定
+
+pages/                   # zfbのファイルベースルーティング（.tsxページモジュール）
+zfb.config.ts            # zfbエンジンのエントリーポイント設定
 ```
 
-ドキュメントページの作成と整理方法については、[ドキュメントの書き方](/ja/docs/getting-started/writing-docs) ガイドを参照してください。
+ドキュメントページの作成と整理方法については、[ドキュメントの書き方](./writing-docs.mdx) ガイドを参照してください。

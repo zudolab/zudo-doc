@@ -26,18 +26,14 @@
  * `clamp()`) are skipped in both directions.
  */
 
-import {
-  FONT_TOKENS,
-  SIZE_TOKENS,
-  SPACING_TOKENS,
-  type TokenDef,
-} from "@/components/design-token-tweak/tokens/manifest";
+import { type TokenDef } from "@takazudo/zdtp";
+import { FONT_TOKENS, SIZE_TOKENS, SPACING_TOKENS } from "@/config/design-tokens-manifest";
 import {
   emptyOverrides,
   type ColorTweakState,
   type TokenOverrides,
   type TweakState,
-} from "@/components/design-token-tweak/state/tweak-state";
+} from "@/utils/design-token-types";
 
 export const DESIGN_TOKEN_SCHEMA = "zudo-doc-design-tokens/v1" as const;
 
@@ -58,7 +54,6 @@ export interface DesignTokenJsonColor {
   base?: DesignTokenJsonColorBase;
   /** Palette-index (or "bg"/"fg") mappings, same keys as `SEMANTIC_DEFAULTS`. */
   semantic?: Record<string, ColorSlotValue>;
-  shikiTheme?: string;
 }
 
 /** External token map keyed by CSS var name. */
@@ -216,12 +211,6 @@ function serializeColor(
   }
   if (semanticChanged) {
     out.semantic = semantic;
-    changed = true;
-  }
-
-  // Shiki theme — include only when different.
-  if (full || !baseline || color.shikiTheme !== baseline.shikiTheme) {
-    out.shikiTheme = color.shikiTheme;
     changed = true;
   }
 
@@ -393,11 +382,6 @@ function deserializeColor(
     }
   }
 
-  const shikiTheme =
-    typeof c.shikiTheme === "string" && c.shikiTheme.length > 0
-      ? c.shikiTheme
-      : baseline.shikiTheme;
-
   return {
     palette,
     background,
@@ -406,7 +390,6 @@ function deserializeColor(
     selectionBg,
     selectionFg,
     semanticMappings,
-    shikiTheme,
   };
 }
 
@@ -465,6 +448,5 @@ function neutralColorDefaults(): ColorTweakState {
     selectionBg: 0,
     selectionFg: 15,
     semanticMappings: {},
-    shikiTheme: "dracula",
   };
 }

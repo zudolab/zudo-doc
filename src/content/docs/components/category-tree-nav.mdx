@@ -1,12 +1,12 @@
 ---
 title: CategoryTreeNav
-description: An Astro component that renders a nested tree of child page links for category index pages.
+description: A server-rendered Preact component that renders a nested tree of child page links for category index pages.
 sidebar_position: 9
 ---
 
 ## Overview
 
-`CategoryTreeNav` is an Astro component that displays child pages of a category as a nested tree of links (`ul > li > ul > li` pattern). It is an alternative to `CategoryNav` which uses a card-grid style — `CategoryTreeNav` is more compact and suited to categories with deeper nesting.
+`CategoryTreeNav` is a server-rendered Preact component that displays child pages of a category as a nested tree of links (`ul > li > ul > li` pattern). It is an alternative to `CategoryNav` which uses a card-grid style — `CategoryTreeNav` is more compact and suited to categories with deeper nesting.
 
 <Info>
 
@@ -35,7 +35,7 @@ Welcome to the Getting Started section.
 <CategoryTreeNav category="getting-started" />
 ```
 
-Since `CategoryTreeNav` is an Astro component (zero client-side JavaScript), no `client:` directive is needed.
+`CategoryTreeNav` renders entirely on the server with zero client-side JavaScript — no hydration directive is needed.
 
 ## Comparison with CategoryNav
 
@@ -57,4 +57,4 @@ The `lang` prop is automatically detected from the current URL path, so you typi
 
 ## Source
 
-The component is defined at `src/components/category-tree-nav.astro`.
+The component is defined at `pages/lib/_category-tree-nav.tsx`.

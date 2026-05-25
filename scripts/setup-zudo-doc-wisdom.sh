@@ -85,7 +85,7 @@ argument-hint: "[topic keyword, e.g., 'configuration', 'sidebar', 'i18n']"
 
 # zudo-doc Documentation Reference
 
-Look up documentation from the zudo-doc project — a minimal documentation framework built with Astro 6, MDX, Tailwind CSS v4, and Preact islands.
+Look up documentation from the zudo-doc project — a minimal documentation framework built with zfb, MDX, Tailwind CSS v4, and Preact islands.
 
 Documentation base path: `src/content/docs` (relative to repo root)
 

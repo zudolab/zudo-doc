@@ -1,3 +1,14 @@
+// Mode 1 — Standalone offline reader (src-tauri/)
+//
+// `cargo tauri build`     → bundles zudo-doc's own static `dist/` into a self-contained .app.
+//                           This is the shipped offline reader for zudo-doc itself.
+// `cargo tauri dev`       → repo-internal contributor convenience only. Uses `beforeDevCommand`
+//                           to spawn `pnpm dev` and opens the WebView against the local zfb dev
+//                           server. NOT a shipped product; only for zudo-doc contributors.
+//
+// For the shipped, configurable dev wrapper (for any project), see src-tauri-dev/ (Mode 2).
+// Mode 2 build: cd src-tauri-dev && cargo tauri build
+
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::sync::Mutex;
@@ -40,6 +51,11 @@ fn apply_zoom(app_handle: &AppHandle, level: f64) {
     let state = app_handle.state::<AppState>();
     *state.zoom.lock().unwrap() = level;
     if let Some(w) = app_handle.get_webview_window("main") {
+        // quirk: `document.body.style.zoom` is a non-standard Chromium-only CSS property.
+        // It is NOT part of any CSS spec (Firefox does not support it). Tauri's embedded
+        // Chromium/WebKit (WKWebView on macOS, Chromium on Windows/Linux) supports it, so
+        // it works here. The standards-based alternative is `webview.setZoom()` from the
+        // Tauri API, but migration is out of scope — keep as-is.
         let _ = w.eval(&format!("document.body.style.zoom = '{level}'"));
     }
 }
@@ -137,7 +153,7 @@ fn main() {
             });
 
             // ── Window ──
-            // Dev: connect to Astro dev server via devUrl
+            // Dev: connect to zfb dev server via devUrl (contributor convenience only)
             // Production: Tauri serves embedded dist/ files via frontendDist
             let initial_url = if IS_DEV {
                 WebviewUrl::External(
@@ -157,7 +173,7 @@ fn main() {
                     .on_navigation(|url| {
                         let s = url.as_str();
                         // Allow internal schemes and the local dev / bundled app origins.
-                        // - http://localhost, https://localhost          : Astro dev server
+                        // - http://localhost, https://localhost          : zfb dev server
                         // - tauri://                                     : bundled app (macOS/Linux)
                         // - http://tauri.localhost, https://tauri.localhost
                         //                                                : bundled app (Windows)

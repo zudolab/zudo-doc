@@ -60,7 +60,7 @@ Colorタブは、以前のColor Tweak Panelがタブの1つに収まった形で
 
 #### マッチキーワード用トークン
 
-検索結果でマッチしたキーワードのハイライト色を制御する2つのセマンティックカラートークンがあります。Colorタブの他のセマンティック上書きと並んで配置され、`src/components/search.astro` が検索UIのヒット箇所のスタイリングで参照します。
+検索結果でマッチしたキーワードのハイライト色を制御する2つのセマンティックカラートークンがあります。Colorタブの他のセマンティック上書きと並んで配置され、検索ウィジェット（`pages/lib/_search-widget.tsx`）が検索UIのヒット箇所のスタイリングで参照します。
 
 - `matchedKeywordBg` — マッチしたキーワードの背景に塗られる色。
 - `matchedKeywordFg` — その背景の上に重なる、マッチしたキーワードの文字色。
@@ -136,8 +136,20 @@ Colorタブは、以前のColor Tweak Panelがタブの1つに収まった形で
 以前のプロジェクトで `zudo-doc-tweak-state` の下に保存されていたv1（カラーのみ）の状態は、自動的にマイグレーションされます:
 
 - パネルは読み込み時にまずv2を参照します。v2が無ければ、v1の状態（カラートークンのみ）を解釈し、v2のColorタブへ昇格させます。
-- `doc-layout.astro` が `<head>` に注入するFOUC防止スクリプトも、v2→v1の同じ順で参照します。これにより、古いデバイスでも最初のペイント前に保存済みのカラーが適用されます。
+- doc レイアウト（`@zudo-doc/zudo-doc-v2/doclayout`）が `<head>` に注入するFOUC防止スクリプトも、v2→v1の同じ順で参照します。これにより、古いデバイスでも最初のペイント前に保存済みのカラーが適用されます。
 - ヘッダーの **Reset all** をクリックすると両方のキーがクリアされ、`src/config/settings.ts` で宣言されたカラースキームに戻ります。
+
+<Note title="ストレージプレフィックスの継続性保証">
+
+ストレージプレフィックス `zudo-doc-tweak` は `src/config/design-token-panel-config.ts` に固定されており、zdtpへの移行を経ても変わりません。移行前にユーザーが保存したトークンは自動的に読み込まれ、手動のマイグレーション作業は不要です。
+
+</Note>
+
+## 実装
+
+パネルUIは `@takazudo/zdtp`（zdtp）npmパッケージが提供します。zudo-docは `src/lib/design-token-panel-bootstrap.ts` 内で `configurePanel(designTokenPanelConfig)` を呼び出してzdtpを組み込んでいます。パネルはこの呼び出しのサイドエフェクトとして自己マウントされるため、Preactアイランドの登録は不要です。
+
+ヘッダーのトリガーボタンは `window` に `toggle-design-token-panel` カスタムイベントをディスパッチします。zdtpはこのイベントをネイティブに受け取るため、`settings.headerRightItems` でトリガーをカスタマイズしても追加の配線は必要ありません。
 
 ## 設定リファレンス
 

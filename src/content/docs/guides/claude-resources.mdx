@@ -39,12 +39,12 @@ Each resource type gets its own index page with a list of all items, plus indivi
 
 ## How It Works
 
-The integration runs at build time during the `astro:config:setup` hook:
+The integration runs at build time as a zfb plugin (`./plugins/claude-resources-plugin.mjs`) wired in `zfb.config.ts`. Its `preBuild` hook:
 
 1. Scans the configured `.claude/` directory
 2. Discovers CLAUDE.md files, commands, skills (with references), and agents
 3. Generates MDX files in `src/content/docs/claude-*/` directories
-4. These files are picked up by Astro's content collections and rendered as documentation pages
+4. These files are picked up by zfb's content collections and rendered as documentation pages
 
 The generated pages appear under the **Claude** header navigation tab, configured via `headerNav` with `categoryMatch: "claude"`.
 

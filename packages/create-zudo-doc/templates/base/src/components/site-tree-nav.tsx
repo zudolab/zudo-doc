@@ -1,4 +1,10 @@
-import { useState } from "react";
+"use client";
+
+// Use preact hook entrypoints directly — zfb's esbuild step doesn't alias
+// "react" to "preact/compat" the way Astro's `@astrojs/preact` integration
+// did, so importing from "react" here would fail to resolve at SSR/island
+// bundle time. Same pattern as src/components/sidebar-tree.tsx.
+import { useState } from "preact/hooks";
 import type { NavNode } from "@/utils/docs";
 import { INDENT, connectorLeft, ConnectorLines, CategoryLinkIcon } from "./tree-nav-shared";
 

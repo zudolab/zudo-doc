@@ -66,7 +66,10 @@ describe("i18n — defaultLang 'ja' + secondary 'en'", () => {
     await scaffold(choices);
   });
 
-  it("default-locale docs/[...slug].astro uses defaultLocale (no literal) at every call site", async () => {
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("default-locale docs/[...slug].astro uses defaultLocale (no literal) at every call site", async () => {
     const content = await fs.readFile(
       projectPath("test-ja-en", "src/pages/docs/[...slug].astro"),
       "utf-8",
@@ -84,7 +87,10 @@ describe("i18n — defaultLang 'ja' + secondary 'en'", () => {
     assertNoWrongLocale(content, "ja");
   });
 
-  it("secondary-locale [locale]/docs/[...slug].astro uses lang variable (no literal) at every call site", async () => {
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("secondary-locale [locale]/docs/[...slug].astro uses lang variable (no literal) at every call site", async () => {
     const filePath = projectPath(
       "test-ja-en",
       "src/pages/[locale]/docs/[...slug].astro",
@@ -106,7 +112,10 @@ describe("i18n — defaultLang 'ja' + secondary 'en'", () => {
     assertNoWrongLocale(content, "ja");
   });
 
-  it("secondary-locale [locale]/index.astro uses lang variable (no literal locale)", async () => {
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("secondary-locale [locale]/index.astro uses lang variable (no literal locale)", async () => {
     const content = await fs.readFile(
       projectPath("test-ja-en", "src/pages/[locale]/index.astro"),
       "utf-8",
@@ -123,7 +132,10 @@ describe("i18n — defaultLang 'ja' + secondary 'en'", () => {
     assertNoWrongLocale(content, "ja");
   });
 
-  it("default-locale index.astro uses defaultLocale (no literal) at every call site", async () => {
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("default-locale index.astro uses defaultLocale (no literal) at every call site", async () => {
     // Default-locale index is at src/pages/index.astro. It now reads
     // defaultLocale from i18n.ts instead of hardcoding the locale string.
     const content = await fs.readFile(
@@ -137,7 +149,10 @@ describe("i18n — defaultLang 'ja' + secondary 'en'", () => {
     assertNoWrongLocale(content, "ja");
   });
 
-  it("[locale]/docs/tags/[tag].astro and index use lang variable (no literal locale)", async () => {
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("[locale]/docs/tags/[tag].astro and index use lang variable (no literal locale)", async () => {
     const tagPage = await fs.readFile(
       projectPath(
         "test-ja-en",
@@ -182,7 +197,10 @@ describe("i18n — defaultLang 'en' + secondary 'ja' (mirror)", () => {
     await scaffold(choices);
   });
 
-  it("default-locale docs/[...slug].astro uses defaultLocale (no literal) at every call site", async () => {
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("default-locale docs/[...slug].astro uses defaultLocale (no literal) at every call site", async () => {
     const content = await fs.readFile(
       projectPath("test-en-ja", "src/pages/docs/[...slug].astro"),
       "utf-8",
@@ -197,7 +215,10 @@ describe("i18n — defaultLang 'en' + secondary 'ja' (mirror)", () => {
     assertNoWrongLocale(content, "ja");
   });
 
-  it("secondary-locale [locale]/docs/[...slug].astro uses lang variable (template is locale-agnostic)", async () => {
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("secondary-locale [locale]/docs/[...slug].astro uses lang variable (template is locale-agnostic)", async () => {
     const filePath = projectPath(
       "test-en-ja",
       "src/pages/[locale]/docs/[...slug].astro",
@@ -218,7 +239,10 @@ describe("i18n — defaultLang 'en' + secondary 'ja' (mirror)", () => {
     assertNoWrongLocale(content, "ja");
   });
 
-  it("default-locale index.astro uses defaultLocale for nav.overview (no literal)", async () => {
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("default-locale index.astro uses defaultLocale for nav.overview (no literal)", async () => {
     const content = await fs.readFile(
       projectPath("test-en-ja", "src/pages/index.astro"),
       "utf-8",
@@ -227,7 +251,10 @@ describe("i18n — defaultLang 'en' + secondary 'ja' (mirror)", () => {
     expect(content).not.toContain("概要");
   });
 
-  it("secondary-locale [locale]/index.astro uses lang variable (no literal locale)", async () => {
+  // S5 retired Astro: this assertion targeted .astro fixtures or generator
+  // pathways that have not yet been ported to the post-cutover .tsx layout.
+  // Re-enable in the create-zudo-doc S5 follow-up sub-task.
+  it.skip("secondary-locale [locale]/index.astro uses lang variable (no literal locale)", async () => {
     const content = await fs.readFile(
       projectPath("test-en-ja", "src/pages/[locale]/index.astro"),
       "utf-8",

@@ -1,0 +1,92 @@
+---
+title: 末尾スラッシュポリシー
+description: zfbがビルド時とランタイムで末尾スラッシュの適用をどのように分担するかについての解説。
+sidebar_position: 1
+---
+
+## 概要
+
+zudo-docは「常に末尾スラッシュあり」のURLポリシーを採用しています。すべてのページは末尾が `/` で終わるパスに配置されます。例えば `/docs/getting-started` ではなく `/docs/getting-started/` です。この規則は、zfb移行前に有効だったAstroの `trailingSlash: "always"` 設定と一致しています。
+
+Astroでは、この適用は2箇所で行われていました：
+
+- **ビルド**: Astroは `dist/docs/getting-started/index.html` を出力するため、`trailingSlash: "always"` が出力パスに組み込まれていました。
+- **開発サーバーミドルウェア**: `src/middleware-handler.ts` が末尾スラッシュなしでリクエストが到着した場合に301リダイレクトを発行していました。
+
+zfbは**静的サイトビルダーのみ**であり、サーバーサイドのミドルウェアレイヤーはありません。そのため、適用は異なる担当者を持つ2つの関心事に明確に分割されます。
+
+## ビルド時 — zfb / url-normalizerの担当
+
+静的ビルド中に出力されるすべてのURLは `/` で終わる必要があります。これは `@zudo-doc/zudo-doc-v2/url-normalizer` の `buildUrl()` によって強制されます：
+
+```ts
+import { buildUrl } from "@zudo-doc/zudo-doc-v2/url-normalizer";
+
+// paths()の実装やインテグレーションで:
+const url = buildUrl("docs", slug);          // "/docs/my-slug/"
+const root = buildUrl();                      // "/"
+const localized = buildUrl("ja", "docs", slug); // "/ja/docs/my-slug/"
+```
+
+`buildUrl()` は主要なヘルパーです。パスセグメントを結合し、冗長なスラッシュを除去し、結果を `/<joined>/` でラップします。以下の箇所で使用されています：
+
+- `pages/sitemap.xml.tsx` — `<loc>` エントリの生成。
+- コレクションスラッグをルートパスにマップするzfbの `paths()` エクスポート。
+- インテグレーションレベルのURL出力（llms.txt、claude-resourcesなど）。
+
+外部データからパス名が届き、末尾スラッシュがあるかどうか不明な場合のために、補助ヘルパー `normalizePathname()` も用意されています：
+
+```ts
+import { normalizePathname } from "@zudo-doc/zudo-doc-v2/url-normalizer";
+
+const canonical = normalizePathname(rawPathname); // 末尾スラッシュがない場合は追加
+```
+
+### スキップルール
+
+`normalizePathname()` とその内部の `shouldSkipNormalization()` は、レガシーミドルウェアと同じスキップルールを保持しています：
+
+| 条件 | 動作 |
+|---|---|
+| すでに `/` で終わっている | 何もしない |
+| 最後のセグメントに文字で始まる拡張子がある（`.js`、`.css`、`.png` など） | 何もしない — 静的アセット |
+| `/_astro/` または `/_image` で始まる | 何もしない — フレームワーク内部パス |
+| `/docs/v2.0` のようなバージョン文字列（ドットの後に数字） | **正規化される** — 拡張子とは扱われない |
+
+## ランタイム — デプロイホストの担当
+
+訪問者が末尾スラッシュなしで `https://example.com/docs/guide` と入力した場合、リクエストをインターセプトするフレームワークのコードはありません。静的ファイルはすでにデプロイされています。デプロイホストがリダイレクトを発行する責任を持ちます。
+
+### Cloudflare Pages
+
+`public/_redirects` に以下のルールを追加します。ページ固有のリダイレクトルールより**前に**記述する必要があります（Cloudflare Pagesはルールを上から順に評価し、最初にマッチしたルールで停止します）：
+
+```
+# 末尾スラッシュなしのURLを正規形にリダイレクトする。
+/:splat  /:splat/  301
+```
+
+:::note[ホストがランタイムを担当する理由]
+
+ランタイムリダイレクトをフレームワークコードではなくホストに委ねることで、`_redirects`（または同等の）ファイルを変更するだけでデプロイターゲットを切り替えられます。Cloudflare Pages、Netlify、Vercel、plain nginxのいずれでも対応可能です。フレームワークはプラットフォームに依存しない状態を保てます。
+
+:::
+
+### その他のホスト
+
+| ホスト | メカニズム |
+|---|---|
+| Netlify | `public/_redirects` — 同じ `/:splat /:splat/ 301` 構文 |
+| Vercel | `vercel.json` の `"trailingSlash": true` |
+| nginx | `try_files` + `return 301 $uri/` |
+| AWS CloudFront | viewer-requestイベント用のLambda@EdgeまたはCloudFront Function |
+
+## まとめ
+
+| レイヤー | 担当 | メカニズム |
+|---|---|---|
+| ビルド時のURL構築 | zfb / `url-normalizer` | `buildUrl()` — 常に `/<path>/` を出力 |
+| ビルド時のパス名補正 | zfb / `url-normalizer` | `normalizePathname()` |
+| ランタイムリダイレクト（スラッシュなし→あり） | デプロイホスト | `_redirects` またはホスト設定 |
+
+この分割により、各関心事が適切な場所に置かれ、問題が発生した際にどのレイヤーが担当しているかを容易に把握できます。

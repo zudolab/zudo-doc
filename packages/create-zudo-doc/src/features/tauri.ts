@@ -13,7 +13,8 @@ export const tauriFeature: FeatureModule = (choices) => ({
     {
       file: "src/layouts/doc-layout.astro",
       anchor: "<!-- @slot:doc-layout:body-end-components -->",
-      content: "    <FindInPageInit client:load />",
+      content:
+        "    <Island when=\"load\"><FindInPageInit /></Island>",
       position: "after",
     },
     {

@@ -28,17 +28,22 @@ zudo-docは**コンポーネントファースト戦略**に従います：UIは
 
 ## zudo-docでの実践
 
-zudo-docは**Astroコンポーネント**（`.astro`）と**Preactアイランド**（`.tsx`）を**Tailwind CSS v4**ユーティリティとともに使用します。
+zudo-docはzfb上で動作する**Preactコンポーネント**（`.tsx`）を、**Tailwind CSS v4**ユーティリティとともに使用します。サーバーレンダリングのみのコンポーネントでも、クライアントでハイドレートされるアイランドでも、同じルールが適用されます。
 
-### Astroコンポーネント
+### サーバーレンダリングコンポーネント
 
-```astro
-<!-- ユーティリティクラスをインラインで使用 -->
-<footer class="border-t border-muted bg-surface px-hsp-xl py-vsp-xl">
-  <div class="text-center text-caption text-muted">
-    <Fragment set:html={copyright} />
-  </div>
-</footer>
+```tsx
+// packages/zudo-doc-v2/src/footer/footer.tsx
+export function Footer({ copyright }: Props) {
+  return (
+    <footer class="border-t border-muted bg-surface px-hsp-xl py-vsp-xl">
+      <div
+        class="text-center text-caption text-muted"
+        dangerouslySetInnerHTML={{ __html: copyright }}
+      />
+    </footer>
+  );
+}
 ```
 
 `.footer`クラスなし。`footer.module.css`なし。コンポーネント**が**抽象化です。
@@ -50,11 +55,11 @@ zudo-docは**Astroコンポーネント**（`.astro`）と**Preactアイラン�
 .profile-card { display: flex; gap: 1rem; }
 ```
 
-```astro
-<!-- 間違い — カスタムクラス名はデザインシステムをバイパスする -->
+```tsx
+// 間違い — カスタムクラス名はデザインシステムをバイパスする
 <div class="profile-card">...</div>
 
-<!-- 正しい — ユーティリティクラス、コンポーネントが抽象化 -->
+// 正しい — ユーティリティクラス、コンポーネントが抽象化
 <div class="flex gap-hsp-md p-hsp-lg">...</div>
 ```
 
@@ -80,15 +85,15 @@ function Button({ variant = "primary", children }) {
 
 任意の値ではなく、プロジェクトトークンを常に使用：
 
-```astro
-<!-- 間違い — 任意の値はデザインシステムをバイパスする -->
+```tsx
+// 間違い — 任意の値はデザインシステムをバイパスする
 <div class="p-[1.2rem] text-[0.875rem]">
 
-<!-- 正しい — デザイントークンを使用 -->
+// 正しい — デザイントークンを使用
 <div class="p-hsp-md text-small text-muted">
 ```
 
-利用可能なトークンについては[デザインシステム](/ja/docs/reference/design-system)を参照してください。
+利用可能なトークンについては[デザインシステム](./design-system.mdx)を参照してください。
 
 ## カスタムCSSが許容される場合
 

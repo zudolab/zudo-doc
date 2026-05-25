@@ -83,7 +83,7 @@ sidebar_position: 2
 | 失敗内容 | 原因 | 修正対象 |
 |----------|------|----------|
 | ビルド時にモジュールが見つからない | 生成された`package.json`に依存関係がない | `scaffold.ts` — `generatePackageJson()` |
-| astro.configでインポートが見つからない | 機能のインテグレーションが含まれていない | `astro-config-gen.ts` |
+| zfb.configでインポートが見つからない | 機能のインテグレーションが含まれていない | `zfb-config-gen.ts` |
 | settings.tsの型エラー | 設定フィールドが不足または不正 | `settings-gen.ts` |
 | 機能コンポーネントが見つからない | 機能モジュールのファイルコピーまたはアンカー不一致 | `features/*.ts`または`templates/features/*/files/` |
 | アンカーが出力に残っている | injectionアンカーが未クリーンアップ | `compose.ts` — `cleanAnchors()` |
@@ -95,8 +95,7 @@ sidebar_position: 2
 | `packages/create-zudo-doc/src/scaffold.ts` | パイプライン統括: ベースコピー、設定生成、機能合成 |
 | `packages/create-zudo-doc/src/compose.ts` | 合成エンジン: injection、アンカークリーンアップ、機能解決 |
 | `packages/create-zudo-doc/src/features/*.ts` | 各機能のinjection定義モジュール |
-| `packages/create-zudo-doc/src/astro-config-gen.ts` | `astro.config.ts`のプログラマティック生成 |
-| `packages/create-zudo-doc/src/content-config-gen.ts` | `content.config.ts`のプログラマティック生成 |
+| `packages/create-zudo-doc/src/zfb-config-gen.ts` | `zfb.config.ts`のプログラマティック生成 |
 | `packages/create-zudo-doc/src/settings-gen.ts` | `settings.ts`の生成 |
 | `packages/create-zudo-doc/src/constants.ts` | 機能定義、カラースキームリスト |
 | `packages/create-zudo-doc/src/cli.ts` | CLI引数のパース |

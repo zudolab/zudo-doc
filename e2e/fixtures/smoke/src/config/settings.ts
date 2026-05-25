@@ -39,6 +39,7 @@ export const settings = {
     css: `.global-test { border: 3px solid rgb(255, 0, 0); }`,
   } as HtmlPreviewConfig | undefined,
   claudeResources: false as { claudeDir: string; projectRoot?: string } | false,
+  defaultLocaleOnlyPrefixes: [] as string[],
   headerNav: [
     {
       label: "Getting Started",

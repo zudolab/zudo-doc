@@ -52,6 +52,7 @@ The URL slug is derived from the filename, so kebab-case also keeps URLs clean.
 - Keep `<HtmlPreview>` and other JSX blocks identical.
 - The JA directory should mirror the EN directory tree exactly.
 - **Exception**: pages with `generated: true` in frontmatter are skipped (they are generated at build time).
+- **Exception**: pages whose paths fall under `settings.defaultLocaleOnlyPrefixes` are default-locale-only by design — do NOT create a JA mirror for them. The source of truth is `settings.defaultLocaleOnlyPrefixes` in `src/config/settings.ts`. Current entries: `/docs/claude-md/`, `/docs/claude-skills/`, `/docs/claude-agents/`, `/docs/claude-commands/`. The top-level `/docs/claude/` index is bilingual — only the four deep prefixes above are default-locale-only.
 
 ## Frontmatter Schema
 
@@ -115,7 +116,7 @@ All five components accept an optional `title` prop.
 - **Starting content with `# Foo`** — duplicates the h1. Start with `## Foo`.
 - **Forgetting `sidebar_position`** — produces alphabetical chaos in the sidebar.
 - **camelCase or PascalCase file names** — breaks on some filesystems.
-- **Updating only the EN or only the JA version** — breaks the bilingual mirror.
+- **Updating only the EN or only the JA version** — breaks the bilingual mirror (except for pages under `defaultLocaleOnlyPrefixes` or with `generated: true`).
 - **Absolute `/docs/...` links in prose** — the resolver cannot verify them; use relative `./page.mdx` instead.
 - **Omitting the `.mdx` extension in links** — the resolver requires it.
 - **Inventing frontmatter fields** — the Zod schema will reject them at build time.

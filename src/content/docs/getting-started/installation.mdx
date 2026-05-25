@@ -6,7 +6,7 @@ sidebar_position: 2
 
 ## Prerequisites
 
-- **Node.js 18+** — required for Astro 6
+- **Node.js 18+** — required by zfb and the toolchain
 - **pnpm** — recommended package manager
 
 <Info>
@@ -38,7 +38,7 @@ pnpm create zudo-doc my-docs --yes
 pnpm create zudo-doc my-docs --lang ja --scheme Dracula --no-i18n --pm pnpm --install
 ```
 
-See the [CLI reference](/docs/reference/create-zudo-doc) for all available flags.
+See the [CLI reference](../reference/create-zudo-doc.mdx) for all available flags.
 
 The CLI walks you through the following options:
 
@@ -65,11 +65,11 @@ Select which optional features to include:
 
 | Feature | Default | Description |
 |---------|---------|-------------|
-| [i18n (multi-language)](/docs/guides/i18n/) | Off | Add a secondary language with mirrored content directories |
-| [Pagefind search](/docs/guides/search/) | On | Full-text search across all documentation |
-| [Sidebar filter](/docs/guides/sidebar-filter/) | On | Real-time filtering of sidebar navigation items |
-| [Claude Resources](/docs/guides/claude-resources/) | Off | Auto-generated documentation for Claude Code components |
-| [Color scheme preview](/docs/guides/color-scheme-preview/) | Off | Browse 50+ preset color schemes via the Color Tweak Panel |
+| [i18n (multi-language)](../guides/i18n.mdx) | Off | Add a secondary language with mirrored content directories |
+| [Pagefind search](../guides/search.mdx) | On | Full-text search across all documentation |
+| [Sidebar filter](../guides/sidebar-filter.mdx) | On | Real-time filtering of sidebar navigation items |
+| [Claude Resources](../guides/claude-resources.mdx) | Off | Auto-generated documentation for Claude Code components |
+| [Color scheme preview](../guides/color-scheme-preview.mdx) | Off | Browse 50+ preset color schemes via the Color Tweak Panel |
 
 ### Package Manager
 
@@ -107,7 +107,7 @@ The dev server starts on port 4321 with Vite for instant hot module replacement.
 
 <Warning>
 
-Make sure port 4321 is available. If another process is using it, Astro will automatically pick the next available port.
+Make sure port 4321 is available. If another process is using it, the dev server will automatically pick the next available port.
 
 </Warning>
 
@@ -125,7 +125,7 @@ This generates static HTML in the `dist/` directory. You can deploy it to any st
 pnpm check
 ```
 
-Runs Astro's built-in type checker with strict TypeScript mode.
+Runs the project's TypeScript type checker in strict mode.
 
 <Danger>
 
@@ -139,7 +139,7 @@ After installation, your project looks like this:
 
 ```
 src/
-├── components/          # Astro + Preact components
+├── components/          # Preact components (server-rendered + client islands)
 │   └── admonitions/     # Note, Tip, Info, Warning, Danger
 ├── config/
 │   ├── settings.ts      # Site name, active color scheme
@@ -148,10 +148,11 @@ src/
 ├── content/
 │   ├── docs/            # English MDX content
 │   └── docs-ja/         # Japanese MDX content
-├── layouts/             # Page layouts
-├── pages/               # File-based routing
 └── styles/
     └── global.css       # Design tokens & Tailwind config
+
+pages/                   # zfb file-based routing (.tsx page modules)
+zfb.config.ts            # zfb engine entry-point config
 ```
 
-See the [Writing Docs](/docs/getting-started/writing-docs) guide for how to create and organize your documentation pages.
+See the [Writing Docs](./writing-docs.mdx) guide for how to create and organize your documentation pages.

@@ -39,12 +39,12 @@ claudeResources: false,
 
 ## 仕組み
 
-インテグレーションはビルド時に`astro:config:setup`フックで実行されます：
+インテグレーションは`zfb.config.ts`に登録されたzfbプラグイン（`./plugins/claude-resources-plugin.mjs`）として、ビルド時に動作します。`preBuild`フックで以下を行います：
 
 1. 設定された`.claude/`ディレクトリをスキャン
 2. CLAUDE.mdファイル、コマンド、スキル（リファレンス付き）、エージェントを検出
 3. `src/content/docs/claude-*/`ディレクトリにMDXファイルを生成
-4. これらのファイルはAstroのコンテンツコレクションによって取得され、ドキュメントページとしてレンダリング
+4. これらのファイルはzfbのコンテンツコレクションによって取得され、ドキュメントページとしてレンダリング
 
 生成されたページは**Claude**ヘッダーナビゲーションタブに表示されます。`headerNav`で`categoryMatch: "claude"`を設定して構成します。
 

@@ -3,8 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import type { UserChoices } from "./prompts.js";
 import { generateSettingsFile } from "./settings-gen.js";
-import { generateAstroConfig } from "./astro-config-gen.js";
-import { generateContentConfig } from "./content-config-gen.js";
+import { generateZfbConfig } from "./zfb-config-gen.js";
 import { generateCLAUDEFile } from "./claude-md-gen.js";
 import { composeFeatures } from "./compose.js";
 import { featureModules } from "./features/index.js";
@@ -188,16 +187,10 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     settingsContent,
   );
 
-  const astroConfigContent = generateAstroConfig(choices);
+  const zfbConfigContent = generateZfbConfig(choices);
   await fs.outputFile(
-    path.join(targetDir, "astro.config.ts"),
-    astroConfigContent,
-  );
-
-  const contentConfigContent = generateContentConfig(choices);
-  await fs.outputFile(
-    path.join(targetDir, "src/content.config.ts"),
-    contentConfigContent,
+    path.join(targetDir, "zfb.config.ts"),
+    zfbConfigContent,
   );
 
   const pkg = generatePackageJson(choices);
@@ -212,7 +205,7 @@ export async function scaffold(choices: UserChoices): Promise<void> {
       "# Build output",
       "node_modules",
       "dist",
-      ".astro",
+      ".zfb",
       "",
       "# macOS",
       ".DS_Store",
@@ -245,11 +238,22 @@ export async function scaffold(choices: UserChoices): Promise<void> {
 }
 
 function generatePackageJson(choices: UserChoices) {
+  // Intentionally absent from scaffolded deps:
+  //   @zudo-doc/md-plugins — zero references in generator templates/source
+  //   @takazudo/zfb-adapter-cloudflare — zero references in generator templates/source
+  //   @zudo-doc/zudo-doc-v2 — workspace-private/unpublished; the two constants it
+  //     provides to desktop-sidebar-toggle.tsx are inlined directly in that template
   const deps: Record<string, string> = {
-    astro: "^6.0.4",
-    "@astrojs/mdx": "^5.0.0",
-    "@astrojs/preact": "^5.0.0",
-    preact: "^10.26.9",
+    // zfb engine — replaces astro/@astrojs/* now that the cutover (#500 S5)
+    // has retired the legacy Astro pipeline. Distributed as published npm
+    // packages (the prebuilt binary ships via an optionalDependency of
+    // @takazudo/zfb); pinned to the pre-release the scaffold targets.
+    "@takazudo/zfb": "0.1.0-next.5",
+    "@takazudo/zfb-runtime": "0.1.0-next.5",
+    // ^10.29.1 floor satisfies @takazudo/zdtp's preact peer range so the app
+    // and zdtp resolve a single preact instance — a lower floor can split into
+    // two copies and crash hook-using SSR islands with "undefined reading __H".
+    preact: "^10.29.1",
     shiki: "^4.0.2",
     "@shikijs/transformers": "^4.0.0",
     clsx: "^2.1.0",
@@ -266,11 +270,11 @@ function generatePackageJson(choices: UserChoices) {
     tailwindcss: "^4.2.0",
 
     typescript: "^5.9.0",
-    "@astrojs/check": "^0.9.7",
     "@types/hast": "^3.0.4",
     "@types/mdast": "^4.0.4",
     "@types/node": "^22.0.0",
     "@types/react": "^19.2.0", // needed for preact/compat type resolution
+    "html-validate": "^10.0.0",
   };
 
   if (choices.features.includes("search")) {
@@ -280,6 +284,10 @@ function generatePackageJson(choices: UserChoices) {
 
   if (choices.features.includes("docHistory")) {
     deps["diff"] = "^8.0.3";
+  }
+
+  if (choices.features.includes("designTokenPanel")) {
+    deps["@takazudo/zdtp"] = "0.1.0-next.1";
   }
 
   if (choices.features.includes("tagGovernance")) {
@@ -295,10 +303,11 @@ function generatePackageJson(choices: UserChoices) {
   }
 
   const scripts: Record<string, string> = {
-    dev: "astro dev",
-    build: "astro build",
-    preview: "astro preview",
-    check: "astro check",
+    dev: "zfb dev",
+    build: "zfb build",
+    preview: "zfb preview",
+    check: "zfb check",
+    "check:html": "html-validate \"dist/**/*.html\"",
   };
 
   if (choices.features.includes("tagGovernance")) {
@@ -323,6 +332,11 @@ function generatePackageJson(choices: UserChoices) {
   if (choices.features.includes("tauri")) {
     scripts["dev:tauri"] = "cargo tauri dev";
     scripts["build:tauri"] = `${runCmd} build && cargo tauri build`;
+  }
+
+  if (choices.features.includes("tauriDev")) {
+    scripts["dev:tauri-dev"] = "cd src-tauri-dev && cargo tauri dev";
+    scripts["build:tauri-dev"] = "cd src-tauri-dev && cargo tauri build";
   }
 
   return {

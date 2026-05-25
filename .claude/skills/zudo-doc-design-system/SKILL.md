@@ -56,7 +56,7 @@ Highlight roles are deliberately split across dedicated semantic tokens — do *
 
 **Rule**: when a new highlight role appears (new kind of mark, new pill, new callout), add a dedicated semantic token rather than bolting it onto `--color-warning` or another existing token. Each visible highlight color should map to exactly one panel swatch.
 
-### hover:underline on link-like elements
+### Hover-state underline for link-like elements
 
 Any element that navigates (rendered as `<a href>` or behaves as a link) MUST have `hover:underline focus-visible:underline`. Keyboard users need the same affordance as mouse users — never add `hover:underline` without the `focus-visible:underline` pair.
 

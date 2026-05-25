@@ -36,8 +36,8 @@ export default function FindInPageInit() {
       findInPageRef.current.stop();
       setVisible(false);
     };
-    document.addEventListener("astro:before-swap", handler);
-    return () => document.removeEventListener("astro:before-swap", handler);
+    document.addEventListener("pagehide", handler);
+    return () => document.removeEventListener("pagehide", handler);
   }, []);
 
   if (!isTauri) return null;

@@ -19,7 +19,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#6272a4", "#ff6e6e", "#69ff94", "#ffffa5",
       "#d6acff", "#ff92df", "#a4ffff", "#ffffff",
     ],
-    shikiTheme: "dracula",
     semantic: { muted: "#86878b" },
   },
   "Catppuccin Mocha": {
@@ -34,7 +33,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#585b70", "#f37799", "#89d88b", "#ebd391",
       "#74a8fc", "#f2aede", "#6bd7ca", "#bac2de",
     ],
-    shikiTheme: "catppuccin-mocha",
     semantic: { muted: "#787d94" },
   },
   Nord: {
@@ -49,7 +47,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#596377", "#bf616a", "#a3be8c", "#ebcb8b",
       "#81a1c1", "#b48ead", "#8fbcbb", "#eceff4",
     ],
-    shikiTheme: "nord",
     semantic: { muted: "#8c929e" },
   },
   TokyoNight: {
@@ -64,7 +61,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#414868", "#f7768e", "#9ece6a", "#e0af68",
       "#7aa2f7", "#bb9af7", "#7dcfff", "#c0caf5",
     ],
-    shikiTheme: "tokyo-night",
     semantic: { muted: "#737996" },
   },
   "Gruvbox Dark": {
@@ -79,7 +75,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#928374", "#fb4934", "#b8bb26", "#fabd2f",
       "#83a598", "#d3869b", "#8ec07c", "#ebdbb2",
     ],
-    shikiTheme: "gruvbox-dark-medium",
   },
   "Atom One Dark": {
     background: 0,
@@ -93,7 +88,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#767676", "#e06c75", "#98c379", "#e5c07b",
       "#61afef", "#c678dd", "#56b6c2", "#abb2bf",
     ],
-    shikiTheme: "one-dark-pro",
     semantic: { muted: "#7d828d" },
   },
   "Solarized Dark": {
@@ -108,7 +102,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#335e69", "#cb4b16", "#586e75", "#657b83",
       "#839496", "#6c71c4", "#93a1a1", "#fdf6e3",
     ],
-    shikiTheme: "solarized-dark",
     semantic: { muted: "#73888b" },
   },
   "Solarized Dark Higher Contrast": {
@@ -123,7 +116,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#006488", "#f5163b", "#51ef84", "#b27e28",
       "#178ec8", "#e24d8e", "#00b39e", "#fcf4dc",
     ],
-    shikiTheme: "solarized-dark",
     semantic: { muted: "#5d7f84" },
   },
   "Solarized Light": {
@@ -138,7 +130,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#002b36", "#cb4b16", "#586e75", "#657b83",
       "#839496", "#6c71c4", "#93a1a1", "#fdf6e3",
     ],
-    shikiTheme: "solarized-light",
     semantic: { accent: 5, accentHover: 13, surface: "#f4efdd" },
   },
   "Monokai Pro": {
@@ -153,7 +144,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#727072", "#ff6188", "#a9dc76", "#ffd866",
       "#fc9867", "#ab9df2", "#78dce8", "#fcfcfa",
     ],
-    shikiTheme: "monokai",
     semantic: { muted: "#898889" },
   },
   "Monokai Remastered": {
@@ -168,7 +158,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#625e4c", "#f4005f", "#98e024", "#e0d561",
       "#9d65ff", "#f4005f", "#58d1eb", "#f6f6ef",
     ],
-    shikiTheme: "monokai",
     semantic: { muted: "#717171" },
   },
   "Monokai Vivid": {
@@ -183,7 +172,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#838383", "#f6669d", "#b1e05f", "#fff26d",
       "#0443ff", "#f200f6", "#51ceff", "#ffffff",
     ],
-    shikiTheme: "monokai",
   },
   "Monokai Soda": {
     background: 0,
@@ -197,7 +185,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#625e4c", "#f4005f", "#98e024", "#e0d561",
       "#9d65ff", "#f4005f", "#58d1eb", "#f6f6ef",
     ],
-    shikiTheme: "monokai",
     semantic: { muted: "#797971" },
   },
   "Material Ocean": {
@@ -212,7 +199,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#546e7a", "#ff5370", "#c3e88d", "#ffcb6b",
       "#82aaff", "#c792ea", "#89ddff", "#ffffff",
     ],
-    shikiTheme: "material-theme-ocean",
     semantic: { muted: "#707481", surface: "#151821" },
   },
   "Material Darker": {
@@ -227,7 +213,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#545454", "#ff5370", "#c3e88d", "#ffcb6b",
       "#82aaff", "#c792ea", "#89ddff", "#ffffff",
     ],
-    shikiTheme: "material-theme-darker",
     semantic: { muted: "#798181" },
   },
   "Material Dark": {
@@ -242,7 +227,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#4f4f4f", "#e83b3f", "#7aba3a", "#ffea2e",
       "#54a4f3", "#aa4dbc", "#26bbd1", "#d9d9d9",
     ],
-    shikiTheme: "material-theme-darker",
     semantic: { muted: "#818180", accent: 14 },
   },
   Material: {
@@ -257,7 +241,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#424242", "#e83b3f", "#7aba3a", "#bfaa00",
       "#54a4f3", "#aa4dbc", "#26bbd1", "#d9d9d9",
     ],
-    shikiTheme: "material-theme-lighter",
     semantic: { accentHover: 13, surface: "#dedede" },
   },
   "Rose Pine": {
@@ -272,7 +255,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#6e6a86", "#eb6f92", "#31748f", "#f6c177",
       "#9ccfd8", "#c4a7e7", "#ebbcba", "#e0def4",
     ],
-    shikiTheme: "rose-pine",
     semantic: { muted: "#787688" },
   },
   "Rose Pine Moon": {
@@ -287,7 +269,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#6e6a86", "#eb6f92", "#3e8fb0", "#f6c177",
       "#9ccfd8", "#c4a7e7", "#ea9a97", "#e0def4",
     ],
-    shikiTheme: "rose-pine-moon",
     semantic: { muted: "#817f94" },
   },
   "Rose Pine Dawn": {
@@ -302,7 +283,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#9893a5", "#b4637a", "#286983", "#ea9d34",
       "#56949f", "#907aa9", "#d7827e", "#575279",
     ],
-    shikiTheme: "rose-pine-dawn",
     semantic: { muted: "#7b7692", accent: 2 },
   },
   "Atom One Light": {
@@ -317,7 +297,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#000000", "#de3e35", "#3f953a", "#d2b67c",
       "#2f5af3", "#a00095", "#3f953a", "#ffffff",
     ],
-    shikiTheme: "one-light",
     semantic: { surface: "#ededed" },
   },
   "GitHub Dark": {
@@ -332,7 +311,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#4d4d4d", "#f78166", "#56d364", "#e3b341",
       "#6ca4f8", "#db61a2", "#2b7489", "#ffffff",
     ],
-    shikiTheme: "github-dark",
     semantic: { muted: "#6d757d" },
   },
   "GitHub Dark Dimmed": {
@@ -347,7 +325,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#636e7b", "#ff938a", "#6bc46d", "#daaa3f",
       "#6cb6ff", "#dcbdfb", "#56d4dd", "#cdd9e5",
     ],
-    shikiTheme: "github-dark-dimmed",
     semantic: { muted: "#7b858f", surface: "#292e36" },
   },
   "GitHub Light": {
@@ -362,7 +339,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#57606a", "#a40e26", "#1a7f37", "#633c01",
       "#218bff", "#a475f9", "#3192aa", "#8c959f",
     ],
-    shikiTheme: "github-light",
     semantic: { surface: "#f2f2f2" },
   },
   "Everforest Dark": {
@@ -377,7 +353,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#a6b0a0", "#f85552", "#8da101", "#dfa000",
       "#3a94c5", "#df69ba", "#35a77c", "#fffbef",
     ],
-    shikiTheme: "everforest-dark",
     semantic: { surface: "#272b2d" },
   },
   "Everforest Light": {
@@ -392,7 +367,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#a6b0a0", "#f85552", "#8da101", "#dfa000",
       "#3a94c5", "#df69ba", "#35a77c", "#fffbef",
     ],
-    shikiTheme: "everforest-light",
     semantic: { muted: "#68757a", accent: "#68757a", surface: "#e6e3ce" },
   },
   "Kanagawa Wave": {
@@ -407,7 +381,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#727169", "#e82424", "#98bb6c", "#e6c384",
       "#7fb4ca", "#938aa9", "#7aa89f", "#dcd7ba",
     ],
-    shikiTheme: "kanagawa-wave",
     semantic: { muted: "#807e73" },
   },
   "Kanagawa Dragon": {
@@ -422,7 +395,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#a6a69c", "#e46876", "#87a987", "#e6c384",
       "#7fb4ca", "#938aa9", "#7aa89f", "#c5c9c5",
     ],
-    shikiTheme: "kanagawa-dragon",
   },
   Nightfox: {
     background: "#192330",
@@ -436,7 +408,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#575860", "#d16983", "#8ebaa4", "#e0c989",
       "#86abdc", "#baa1e2", "#7ad5d6", "#e4e4e5",
     ],
-    shikiTheme: "github-dark",
     semantic: { muted: "#7b8087" },
   },
   Carbonfox: {
@@ -451,7 +422,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#484848", "#f16da6", "#46c880", "#2dc7c4",
       "#8cb6ff", "#c8a5ff", "#52bdff", "#e4e4e5",
     ],
-    shikiTheme: "github-dark",
     semantic: { muted: "#767778" },
   },
   Dawnfox: {
@@ -466,7 +436,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#5f5695", "#c26d85", "#629f81", "#eea846",
       "#2d81a3", "#9a80b9", "#5ca7b4", "#e6ebf3",
     ],
-    shikiTheme: "rose-pine-dawn",
     semantic: { accent: 4, surface: "#f0eae6" },
   },
   Dayfox: {
@@ -481,7 +450,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#534c45", "#b3434e", "#577f63", "#b86e28",
       "#4863b6", "#8452d5", "#488d93", "#f4ece6",
     ],
-    shikiTheme: "github-light",
     semantic: { surface: "#ebe6e5" },
   },
   Duskfox: {
@@ -496,7 +464,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#544d8a", "#f083a2", "#b1d196", "#f9cb8c",
       "#65b1cd", "#ccb1ed", "#a6dae3", "#e2e0f7",
     ],
-    shikiTheme: "rose-pine-moon",
     semantic: { muted: "#817f94" },
   },
   "Catppuccin Latte": {
@@ -511,7 +478,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#6c6f85", "#de293e", "#49af3d", "#eea02d",
       "#456eff", "#fe85d8", "#2d9fa8", "#bcc0cc",
     ],
-    shikiTheme: "catppuccin-latte",
     semantic: { accent: 4, surface: "#e5e7ed" },
   },
   "Catppuccin Frappe": {
@@ -526,7 +492,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#626880", "#e67172", "#8ec772", "#d9ba73",
       "#7b9ef0", "#f2a4db", "#5abfb5", "#b5bfe2",
     ],
-    shikiTheme: "catppuccin-mocha",
     semantic: { muted: "#8a92b0" },
   },
   "Catppuccin Macchiato": {
@@ -541,7 +506,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#5b6078", "#ec7486", "#8ccf7f", "#e1c682",
       "#78a1f6", "#f2a9dd", "#63cbc0", "#b8c0e0",
     ],
-    shikiTheme: "catppuccin-mocha",
     semantic: { muted: "#7e84a0" },
   },
   "Gruvbox Dark Hard": {
@@ -556,7 +520,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#928374", "#fb4934", "#b8bb26", "#fabd2f",
       "#83a598", "#d3869b", "#8ec07c", "#ebdbb2",
     ],
-    shikiTheme: "gruvbox-dark-medium",
   },
   "Gruvbox Material Dark": {
     background: 0,
@@ -570,7 +533,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#7c6f64", "#ea6962", "#a9b665", "#d8a657",
       "#7daea3", "#d3869b", "#89b482", "#ddc7a1",
     ],
-    shikiTheme: "gruvbox-dark-medium",
     semantic: { muted: "#91836c" },
   },
   "Gruvbox Light": {
@@ -585,7 +547,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#928374", "#9d0006", "#79740e", "#b57614",
       "#076678", "#8f3f71", "#427b58", "#3c3836",
     ],
-    shikiTheme: "gruvbox-light-medium",
     semantic: { muted: "#7b7666", accent: 4 },
   },
   "Ayu Dark": {
@@ -600,7 +561,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#686868", "#f07178", "#aad94c", "#ffb454",
       "#59c2ff", "#d2a6ff", "#95e6cb", "#ffffff",
     ],
-    shikiTheme: "github-dark",
     semantic: { muted: "#727270" },
   },
   "Ayu Mirage": {
@@ -615,7 +575,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#686868", "#f28779", "#d5ff80", "#ffd173",
       "#73d0ff", "#dfbfff", "#95e6cb", "#ffffff",
     ],
-    shikiTheme: "github-dark",
     semantic: { muted: "#808182" },
   },
   "Ayu Light": {
@@ -630,7 +589,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#686868", "#f07171", "#86b300", "#f2ae49",
       "#399ee6", "#a37acc", "#4cbf99", "#d1d1d1",
     ],
-    shikiTheme: "ayu-light",
     semantic: { accent: "#787c80", accentHover: 12, surface: "#eff0f1" },
   },
   Snazzy: {
@@ -645,7 +603,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#555555", "#fc4346", "#50fb7c", "#f0fb8c",
       "#49baff", "#fc4cb4", "#8be9fe", "#ededec",
     ],
-    shikiTheme: "snazzy-light",
     semantic: { muted: "#7d7e80" },
   },
   "VS Code Dark+": {
@@ -660,7 +617,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#666666", "#f14c4c", "#23d18b", "#f5f543",
       "#3b8eea", "#d670d6", "#29b8db", "#e5e5e5",
     ],
-    shikiTheme: "github-dark",
     semantic: { muted: "#7d7d7d" },
   },
   "Night Owl": {
@@ -675,7 +631,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#575656", "#ef5350", "#22da6e", "#ffeb95",
       "#82aaff", "#c792ea", "#7fdbca", "#ffffff",
     ],
-    shikiTheme: "night-owl",
     semantic: { muted: "#687786" },
   },
   Poimandres: {
@@ -690,7 +645,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#a6accd", "#d0679d", "#5de4c7", "#fffac2",
       "#add7ff", "#fae4fc", "#89ddff", "#ffffff",
     ],
-    shikiTheme: "poimandres",
   },
   Vesper: {
     background: 0,
@@ -704,7 +658,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#7e7e7e", "#ff8080", "#99ffe4", "#ffc799",
       "#b9aeda", "#ecaad6", "#f591b2", "#ffffff",
     ],
-    shikiTheme: "vesper",
   },
   "Doom One": {
     background: "#282c34",
@@ -718,7 +671,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#595959", "#ff6655", "#99bb66", "#ecbe7b",
       "#a9a1e1", "#c678dd", "#51afef", "#bfbfbf",
     ],
-    shikiTheme: "one-dark-pro",
     semantic: { muted: "#848a95" },
   },
   "Challenger Deep": {
@@ -733,7 +685,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#565575", "#ff8080", "#95ffa4", "#ffe9aa",
       "#91ddff", "#c991e1", "#aaffe4", "#cbe3e7",
     ],
-    shikiTheme: "github-dark",
     semantic: { muted: "#747d8b" },
   },
   Embark: {
@@ -748,7 +699,6 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "#585273", "#f02e6e", "#2ce592", "#ffb378",
       "#1da0e2", "#a742ea", "#63f2f1", "#a6b3cc",
     ],
-    shikiTheme: "github-dark",
     semantic: { muted: "#767c89" },
   },
 };

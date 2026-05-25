@@ -1,7 +1,17 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+"use client";
+
+// Use `preact/compat` so the bundle resolves to Preact's React-shim at
+// runtime (zfb's esbuild step doesn't alias bare `react` to `preact/compat`
+// the way Astro's `@astrojs/preact` integration did — see
+// `src/components/theme-toggle.tsx` for the same workaround in the
+// hook-only case). preact/compat re-exports the same hooks under the
+// React-compat names plus the `React.*` type namespace this file
+// references for event handlers.
+import { useState, useEffect, useRef, useCallback } from "preact/compat";
 import type { ChatMessage } from "@/types/ai-chat";
 import { renderMarkdown } from "@/utils/render-markdown";
 import { SmartBreak } from "@/utils/smart-break";
+import { BEFORE_NAVIGATE_EVENT } from "@zudo-doc/zudo-doc-v2/transitions";
 
 interface AiChatModalProps {
   basePath: string;
@@ -21,7 +31,8 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
   useEffect(() => {
     function handleToggle() {
       const dialog = dialogRef.current;
-      if (!dialog) return;
+      // Guard against stale refs from detached DOM after SPA navigation (#1621)
+      if (!dialog || !dialog.isConnected) return;
       if (dialog.open) {
         dialog.close();
       } else {
@@ -47,6 +58,16 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
     return () => dialog.removeEventListener("close", handleClose);
   }, []);
 
+  // Close dialog before SPA body swap to avoid stale-ref errors on next open (#1621)
+  useEffect(() => {
+    function handleBeforeNavigate() {
+      const dialog = dialogRef.current;
+      if (dialog?.open) dialog.close();
+    }
+    document.addEventListener(BEFORE_NAVIGATE_EVENT, handleBeforeNavigate);
+    return () => document.removeEventListener(BEFORE_NAVIGATE_EVENT, handleBeforeNavigate);
+  }, []);
+
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -56,15 +77,9 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
   function handleBackdropClick(e: React.MouseEvent) {
     const dialog = dialogRef.current;
     if (!dialog) return;
-    const rect = dialog.getBoundingClientRect();
-    if (
-      e.clientX < rect.left ||
-      e.clientX > rect.right ||
-      e.clientY < rect.top ||
-      e.clientY > rect.bottom
-    ) {
-      dialog.close();
-    }
+    // Native <dialog> backdrop clicks fire with e.target === the dialog
+    // itself; child element clicks bubble with target set to that child.
+    if (e.target === dialog) dialog.close();
   }
 
   const sendMessage = useCallback(async () => {

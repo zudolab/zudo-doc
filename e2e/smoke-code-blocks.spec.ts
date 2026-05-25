@@ -32,6 +32,28 @@ test.describe("Code blocks: copy and wrap buttons", () => {
     // Grant clipboard permission so the click handler succeeds
     await page.context().grantPermissions(["clipboard-write"]);
 
+    // The .code-buttons container is opacity:0 until the parent
+    // .code-block-wrapper enters :hover / :focus-within (see global.css
+    // "Code block buttons" section). Playwright's actionability check
+    // resolves visibility BEFORE moving the mouse, so the auto-hover
+    // built into .click() does not unmask the button on its own — the
+    // first toBeVisible() must observe a non-zero opacity already.
+    //
+    // Move the mouse over the wrapper first so the :hover rule lifts
+    // the opacity, then perform the actual click. This mirrors how a
+    // real user reaches the button (cursor lands on the code block,
+    // controls fade in, click follows).
+    //
+    // Wave 13 (zudolab/zudo-doc#1355): the upstream zfb input-CSS path
+    // probe fix from topic-wave13-zfb-css-path-probe restored these
+    // .code-buttons / .code-btn rules in the fixture bundle, so the
+    // opacity gate now applies in CI. Before the path-probe fix the
+    // rules were missing and Playwright saw an unstyled (always
+    // visible) button.
+    await copyBtn.scrollIntoViewIfNeeded();
+    await copyBtn.hover();
+    await expect(copyBtn).toBeVisible({ timeout: 3000 });
+
     await copyBtn.click();
 
     // .copied class should appear immediately after click

@@ -218,12 +218,12 @@ The source code panel uses a lightweight Shiki instance with the following langu
 - `css` — for the CSS panel
 - `javascript` — for the JS panel
 
-Unsupported languages fall back to plain text (no highlighting). This is a smaller subset than the [full language list](/docs/components/basic-components#supported-languages) available in standard code blocks.
+Unsupported languages fall back to plain text (no highlighting). This is a smaller subset than the [full language list](./basic-components.mdx#supported-languages) available in standard code blocks.
 
 ## Notes
 
 - The preview renders inside an isolated `<iframe>` with a CSS reset (Tailwind v4 preflight), so styles do not leak in or out.
-- Previews run without a `sandbox` attribute. The `srcdoc` content is author-controlled MDX, so no additional isolation is needed.
+- Previews use `sandbox="allow-same-origin"` (or `sandbox="allow-scripts allow-same-origin"` when a `js` prop or `<script>` is present) so the iframe height auto-syncs via `contentDocument`. The `srcdoc` content is author-controlled MDX.
 - Global resources from `settings.htmlPreview` are injected before per-component props.
 - The `html`, `css`, and `js` props support template literals with indentation. Leading whitespace is automatically stripped (dedented) in the source code display.
 - Client-side hydration is handled automatically by the component wrapper — no `client:load` directive needed in MDX.

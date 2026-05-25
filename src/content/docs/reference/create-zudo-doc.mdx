@@ -12,7 +12,7 @@ create-zudo-doc [project-name] [options]
 
 When run without flags, the CLI launches an interactive wizard. All options can be specified via flags for non-interactive (CI/agent) usage.
 
-You can also use the [Setup Preset Generator](/docs/getting-started/setup-preset-generator) to interactively build a configuration and copy it as a JSON preset or CLI command.
+You can also use the [Setup Preset Generator](../getting-started/setup-preset-generator.mdx) to interactively build a configuration and copy it as a JSON preset or CLI command.
 
 ## Options
 
@@ -51,6 +51,8 @@ You can also use the [Setup Preset Generator](/docs/getting-started/setup-preset
 | `--[no-]doc-history` | Document edit history | off |
 | `--[no-]llms-txt` | Generate llms.txt for LLM consumption | off |
 | `--[no-]skill-symlinker` | Symlink documentation skills | off |
+| `--[no-]tauri` | Tauri desktop app (Mode 1) — macOS offline reader with in-page search | off |
+| `--[no-]tauri-dev` | Tauri dev wrapper (Mode 2) — configurable desktop dev wrapper for any project | off |
 | `--[no-]footer-nav-group` | Navigation links in the footer | off |
 | `--[no-]footer-copyright` | Copyright notice in the footer | off |
 | `--[no-]changelog` | Changelog page | off |
@@ -61,7 +63,7 @@ You can also use the [Setup Preset Generator](/docs/getting-started/setup-preset
 |------|-------------|
 | `--preset <path>` | Load settings from a JSON preset file (use `"-"` for stdin) |
 
-The `--preset` flag accepts the JSON output from the [Setup Preset Generator](/docs/getting-started/setup-preset-generator). When a preset is loaded, all prompts are skipped (same as `--yes`). Individual CLI flags override preset values.
+The `--preset` flag accepts the JSON output from the [Setup Preset Generator](../getting-started/setup-preset-generator.mdx). When a preset is loaded, all prompts are skipped (same as `--yes`). Individual CLI flags override preset values.
 
 ### General
 
@@ -121,7 +123,7 @@ pnpm create zudo-doc my-docs \
 
 ### Using a preset file
 
-Generate a preset JSON from the [Setup Preset Generator](/docs/getting-started/setup-preset-generator), save it to a file, then pass it to the CLI:
+Generate a preset JSON from the [Setup Preset Generator](../getting-started/setup-preset-generator.mdx), save it to a file, then pass it to the CLI:
 
 ```bash
 pnpm create zudo-doc --preset setup.json --install

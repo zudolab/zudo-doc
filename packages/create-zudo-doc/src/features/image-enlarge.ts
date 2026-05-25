@@ -109,7 +109,8 @@ dialog.zd-enlarge-dialog::backdrop {
     {
       file: "src/layouts/doc-layout.astro",
       anchor: "<!-- @slot:doc-layout:body-end-components -->",
-      content: "    {settings.imageEnlarge && <ImageEnlarge client:idle />}",
+      content:
+        "    {settings.imageEnlarge && <Island when=\"idle\"><ImageEnlarge /></Island>}",
       position: "after",
     },
   ],

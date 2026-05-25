@@ -6,7 +6,7 @@ export const i18nFeature: FeatureModule = (_choices) => ({
     {
       file: "src/components/header.astro",
       anchor: "// @slot:header:imports",
-      content: `import LanguageSwitcher from "@/components/language-switcher.astro";`,
+      content: `import LanguageSwitcher from "@/components/language-switcher";`,
     },
     {
       file: "src/components/header.astro",

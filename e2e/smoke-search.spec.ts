@@ -12,7 +12,7 @@ const DOCS_PAGE = "/docs/getting-started";
 
 test.describe("Search dialog", () => {
   test("Ctrl+K opens the search dialog", async ({ page }) => {
-    await page.goto(DOCS_PAGE, { waitUntil: "load" });
+    await page.goto(DOCS_PAGE, { waitUntil: "domcontentloaded" });
 
     const dialog = page.locator("[data-search-dialog]");
     await expect(dialog).not.toBeVisible();
@@ -23,7 +23,7 @@ test.describe("Search dialog", () => {
   });
 
   test("search input is focused when dialog opens", async ({ page }) => {
-    await page.goto(DOCS_PAGE, { waitUntil: "load" });
+    await page.goto(DOCS_PAGE, { waitUntil: "domcontentloaded" });
 
     await page.keyboard.press("Control+k");
 
@@ -32,7 +32,7 @@ test.describe("Search dialog", () => {
   });
 
   test("typing a query shows results", async ({ page }) => {
-    await page.goto(DOCS_PAGE, { waitUntil: "load" });
+    await page.goto(DOCS_PAGE, { waitUntil: "domcontentloaded" });
 
     await page.keyboard.press("Control+k");
     const input = page.locator("[data-search-input]");
@@ -50,7 +50,7 @@ test.describe("Search dialog", () => {
   });
 
   test("clicking a result navigates to that page", async ({ page }) => {
-    await page.goto(DOCS_PAGE, { waitUntil: "load" });
+    await page.goto(DOCS_PAGE, { waitUntil: "domcontentloaded" });
 
     await page.keyboard.press("Control+k");
     const input = page.locator("[data-search-input]");
@@ -76,7 +76,7 @@ test.describe("Search dialog", () => {
   });
 
   test("Escape closes the dialog", async ({ page }) => {
-    await page.goto(DOCS_PAGE, { waitUntil: "load" });
+    await page.goto(DOCS_PAGE, { waitUntil: "domcontentloaded" });
 
     await page.keyboard.press("Control+k");
     const dialog = page.locator("[data-search-dialog]");
@@ -88,7 +88,7 @@ test.describe("Search dialog", () => {
   });
 
   test("clicking backdrop closes the dialog", async ({ page }) => {
-    await page.goto(DOCS_PAGE, { waitUntil: "load" });
+    await page.goto(DOCS_PAGE, { waitUntil: "domcontentloaded" });
 
     await page.keyboard.press("Control+k");
     const dialog = page.locator("[data-search-dialog]");
@@ -102,7 +102,7 @@ test.describe("Search dialog", () => {
   });
 
   test("nonsense query shows 'No results found.'", async ({ page }) => {
-    await page.goto(DOCS_PAGE, { waitUntil: "load" });
+    await page.goto(DOCS_PAGE, { waitUntil: "domcontentloaded" });
 
     await page.keyboard.press("Control+k");
     const input = page.locator("[data-search-input]");
@@ -116,7 +116,7 @@ test.describe("Search dialog", () => {
   });
 
   test("matched keywords are highlighted with mark elements", async ({ page }) => {
-    await page.goto(DOCS_PAGE, { waitUntil: "load" });
+    await page.goto(DOCS_PAGE, { waitUntil: "domcontentloaded" });
 
     await page.keyboard.press("Control+k");
     const input = page.locator("[data-search-input]");

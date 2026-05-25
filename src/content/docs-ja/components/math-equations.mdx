@@ -10,7 +10,7 @@ sidebar_position: 5
 
 テキスト内に数式を埋め込むには、単一のドル記号を使用します。
 
-数式 $E = mc^2$ はインラインで表示されます。
+数式 <MathBlock latex="E = mc^2" /> はインラインで表示されます。
 
 ```mdx
 数式 $E = mc^2$ はインラインで表示されます。
@@ -20,9 +20,7 @@ sidebar_position: 5
 
 中央揃えのディスプレイ数式をレンダリングするには、二重のドル記号を使用します。
 
-$$
-\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
-$$
+<MathBlock latex="\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}" block />
 
 ```mdx
 $$
@@ -61,9 +59,7 @@ export const settings = {
 
 ### 二次方程式の解の公式
 
-$$
-x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
-$$
+<MathBlock latex="x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}" block />
 
 ```mdx
 $$
@@ -73,9 +69,7 @@ $$
 
 ### 総和
 
-$$
-\sum_{i=1}^{n} i = \frac{n(n+1)}{2}
-$$
+<MathBlock latex="\sum_{i=1}^{n} i = \frac{n(n+1)}{2}" block />
 
 ```mdx
 $$
@@ -85,22 +79,7 @@ $$
 
 ### 行列
 
-$$
-\begin{bmatrix}
-a & b \\
-c & d
-\end{bmatrix}
-\begin{bmatrix}
-x \\
-y
-\end{bmatrix}
-=
-
-\begin{bmatrix}
-ax + by \\
-cx + dy
-\end{bmatrix}
-$$
+<MathBlock latex="\begin{bmatrix} a & b \\ c & d \end{bmatrix} \begin{bmatrix} x \\ y \end{bmatrix} = \begin{bmatrix} ax + by \\ cx + dy \end{bmatrix}" block />
 
 ```mdx
 $$

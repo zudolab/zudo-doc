@@ -65,6 +65,8 @@ export const settings = {
 { type: "trigger", trigger: "ai-chat" }
 ```
 
+`design-token-panel` トリガーボタンは `window` に `toggle-design-token-panel` カスタムイベントをディスパッチします。zdtpパネル（`@takazudo/zdtp`）はこのイベントをネイティブに受け取るため、追加の配線は不要です。
+
 ### `link`
 
 任意の外部/内部リンクをアイコン付きで描画します。

@@ -4,65 +4,27 @@ export const designTokenPanelFeature: FeatureModule = () => ({
   name: "designTokenPanel",
   injections: [
     {
+      // Panel chrome CSS — imported here so the rules land in the main page
+      // CSS bundle (not a deferred chunk), ensuring the panel renders
+      // correctly on first click. Vite library mode strips the source CSS
+      // import from the emitted JS, so this CSS-side import is the required
+      // pull point. See @takazudo/zdtp PORTABLE-CONTRACT.md §7.
+      file: "src/styles/global.css",
+      anchor: "/* @slot:global-css:feature-styles */",
+      content: `@import "@takazudo/zdtp/styles.css";`,
+    },
+    {
+      // Bootstrap the zdtp panel as a side-effect dynamic import.
+      // The import is gated on the feature flag so the zdtp bundle is excluded
+      // from pages that disable the panel. No Island wrapper is needed — zdtp
+      // mounts its own DOM when configurePanel() runs inside the bootstrap module.
       file: "src/layouts/doc-layout.astro",
       anchor: "// @slot:doc-layout:imports",
-      content: `import DesignTokenTweakPanel from "@/components/design-token-tweak";
-import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "@/config/color-scheme-utils";`,
-    },
-    {
-      file: "src/layouts/doc-layout.astro",
-      anchor: "<!-- @slot:doc-layout:head-scripts -->",
-      content: `    {(settings.designTokenPanel || settings.colorTweakPanel) && (
-      <script is:inline define:vars={{ tweakSemanticDefaults: SEMANTIC_DEFAULTS, tweakSemanticCss: SEMANTIC_CSS_NAMES }}>
-        (function () {
-          var V1_KEY = "zudo-doc-tweak-state";
-          var V2_KEY = "zudo-doc-tweak-state-v2";
-          function readColorState() {
-            // v2 wins; fall back to v1 shape if v2 is absent.
-            var rawV2 = null;
-            try { rawV2 = localStorage.getItem(V2_KEY); } catch (e) {}
-            if (rawV2) {
-              try {
-                var parsed = JSON.parse(rawV2);
-                if (parsed && parsed.color) return parsed.color;
-              } catch (e) { /* fall through */ }
-            }
-            var rawV1 = null;
-            try { rawV1 = localStorage.getItem(V1_KEY); } catch (e) {}
-            if (rawV1) {
-              try { return JSON.parse(rawV1); } catch (e) { /* malformed; ignore */ }
-            }
-            return null;
-          }
-          function applyTweakState() {
-            var s = readColorState();
-            if (!s || !s.palette || s.palette.length !== 16 || s.background === undefined) return;
-            var root = document.documentElement;
-            for (var i = 0; i < 16; i++) root.style.setProperty("--zd-" + i, s.palette[i]);
-            root.style.setProperty("--zd-bg", s.palette[s.background]);
-            root.style.setProperty("--zd-fg", s.palette[s.foreground]);
-            root.style.setProperty("--zd-cursor", s.palette[s.cursor]);
-            root.style.setProperty("--zd-sel-bg", s.palette[s.selectionBg]);
-            root.style.setProperty("--zd-sel-fg", s.palette[s.selectionFg]);
-            for (var key in tweakSemanticCss) {
-              var m = s.semanticMappings && s.semanticMappings[key];
-              if (m === undefined) m = tweakSemanticDefaults[key];
-              var val = m === "bg" ? s.palette[s.background] : m === "fg" ? s.palette[s.foreground] : s.palette[m];
-              root.style.setProperty(tweakSemanticCss[key], val);
-            }
-          }
-          applyTweakState();
-          document.addEventListener("astro:after-swap", applyTweakState);
-        })();
-      </script>
-    )}`,
-      position: "after",
-    },
-    {
-      file: "src/layouts/doc-layout.astro",
-      anchor: "<!-- @slot:doc-layout:body-end-components -->",
-      content: '    {(settings.designTokenPanel || settings.colorTweakPanel) && <DesignTokenTweakPanel client:only="preact" />}',
-      position: "after",
+      content: `// Production bootstrap for @takazudo/zdtp (zdtp).
+// Loaded as a side-effect when the feature flag is enabled.
+if (settings.designTokenPanel || settings.colorTweakPanel) {
+  void import("@/lib/design-token-panel-bootstrap");
+}`,
     },
     {
       file: "src/components/header.astro",

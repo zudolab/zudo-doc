@@ -24,6 +24,7 @@ export interface CliArgs {
   llmsTxt?: boolean;
   skillSymlinker?: boolean;
   tauri?: boolean;
+  tauriDev?: boolean;
   footerNavGroup?: boolean;
   footerCopyright?: boolean;
   changelog?: boolean;

@@ -1,0 +1,34 @@
+# Known exceptions for `pnpm run check:links` (consumed by
+# `scripts/check-links.js --allowlist=...`).
+#
+# Format: `<file>:<line>:<href>` per line. `#` comments and blank
+# lines are ignored. Each entry MUST match the printed report
+# verbatim (file path relative to repo root, 1-based line number,
+# href as it appeared in the source/dist).
+#
+# Add entries here when an issue cannot be fixed at the source —
+# typically: doc pages that reference EN-only siblings from JA, or
+# absolute hrefs that point at runtime-generated routes with no
+# MDX file. See zudolab/zudo-doc#1581 (link-cleanup epic) for the
+# canonical context.
+#
+# When ANY of these stops being a known exception (e.g. someone
+# writes the missing JA mirror page), DELETE the entry — the
+# strict gate then surfaces real regressions in the same category.
+#
+# ----- Broken Links in Built HTML (0 entries) ---------------------
+#
+# Previously held entries for JA-side cross-references to EN-only
+# resources. The remaining 2 entries (`ai-assistant-api/` and
+# `ai-assistant/` references from the JA `ai-chat-worker.mdx` page)
+# were resolved by T6 (#1614): JA mirror pages were translated, so
+# the resolver now finds the targets and the entries are obsolete.
+
+# ----- Absolute Links Bypassing Base Path (0 entries) ------------
+#
+# Previously held 5 entries; all removed after T4 (#1612):
+#   - inline-code false-positive: extractMdxAbsoluteLinks now strips
+#     inline-code spans before running the link regex (Fix A).
+#   - runtime-generated routes (/docs/tags/, /docs/versions/):
+#     checkMdxLinks now cross-checks against dist/ via resolveLink
+#     and drops warnings for hrefs that resolve to built routes (Fix B).

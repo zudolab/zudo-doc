@@ -1,3 +1,32 @@
 # Cloudflare Pages project configuration
 
 compatibility_date = "2024-12-01"
+# nodejs_compat is required by the CF Pages adapter wrapper at dist/_worker.js,
+# which imports node:async_hooks (AsyncLocalStorage) to thread per-request
+# env/ctx into the inner bundle. Without this flag wrangler 4.x refuses to
+# load the worker even when dist/_worker.js exists.
+compatibility_flags = ["nodejs_compat"]
+
+# ---------------------------------------------------------------------------
+# AI chat endpoint (pages/api/ai-chat.tsx)
+#
+# Required setup before deploying:
+#
+#   1. Create the KV namespace:
+#        wrangler kv namespace create RATE_LIMIT
+#      Then paste the returned `id` below.
+#
+#   2. Add the Anthropic API key as a secret:
+#        wrangler secret put ANTHROPIC_API_KEY
+#
+#   3. Set DOCS_SITE_URL to your deployed docs site URL.
+# ---------------------------------------------------------------------------
+
+[vars]
+DOCS_SITE_URL = "https://your-docs-site.pages.dev"
+RATE_LIMIT_PER_MINUTE = "10"
+RATE_LIMIT_PER_DAY = "100"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "placeholder-create-via-wrangler-kv-namespace-create"

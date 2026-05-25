@@ -22,6 +22,9 @@ test.describe("404 page: renders correctly", () => {
   });
 
   test("has noindex robots meta tag", () => {
-    expect(html).toContain('<meta name="robots" content="noindex"');
+    // Match `noindex` as the leading directive; the renderer emits the
+    // full `noindex, nofollow` form so we drop the literal closing quote
+    // (matches the same prefix-only shape used in smoke-seo.spec.ts).
+    expect(html).toContain('<meta name="robots" content="noindex');
   });
 });
