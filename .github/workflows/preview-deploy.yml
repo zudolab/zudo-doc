@@ -21,8 +21,9 @@
 #
 # ----------------------------------------------------------------------------
 # Deployed artifact contract — see main-deploy.yml top-of-file for the
-# canonical 9-category list. Categories (a)–(i) MUST be preserved here in
-# parity with production (audited in epic #1337 task 5).
+# canonical 8-category list (Workers static assets; category (c) _redirects
+# was dropped in the Pages→Workers migration #1691). Categories (a),(b),(d)–(i)
+# MUST be preserved here in parity with production (audited in epic #1337 task 5).
 #
 # Category (g) doc-history is handled by a dedicated build-history job
 # (full clone, fetch-depth: 0) that runs in parallel with build-site.
@@ -188,6 +189,12 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      # wrangler reads wrangler.toml (Workers config) from the repo root at
+      # upload time. Without checkout the runner has only the restored caches,
+      # so the upload fails / uses wrong defaults. Mirrors main-deploy.yml.
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
       - name: Restore site build cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
@@ -205,8 +212,13 @@ jobs:
         id: branch
         run: |
           BRANCH_NAME="${{ github.ref_name }}"
-          # Convert slashes to hyphens (expreview/foo -> expreview-foo)
-          BRANCH_SLUG=$(echo "$BRANCH_NAME" | sed 's/\//-/g')
+          # wrangler preview aliases must be lowercase [a-z0-9-] (no slashes,
+          # underscores, dots, or uppercase). Lowercase, replace every invalid
+          # char with a hyphen, collapse repeats, and trim leading/trailing
+          # hyphens. e.g. expreview/Feature_X -> expreview-feature-x
+          BRANCH_SLUG=$(echo "$BRANCH_NAME" \
+            | tr '[:upper:]' '[:lower:]' \
+            | sed 's/[^a-z0-9]/-/g; s/-\{2,\}/-/g; s/^-//; s/-$//')
           echo "slug=$BRANCH_SLUG" >> "$GITHUB_OUTPUT"
           echo "Branch slug: $BRANCH_SLUG"
 
@@ -252,9 +264,10 @@ jobs:
             2>&1 | tee "$DEPLOY_LOG"
 
           # Match the stable alias URL: the subdomain starts with the slug
-          # followed by a hyphen and the worker name (slug-zudo-doc).
-          # wrangler prints it on a line referencing the alias.
-          DEPLOY_URL=$(grep -oE "https://${SLUG}-[^[:space:]]+" "$DEPLOY_LOG" | head -1)
+          # followed by a hyphen and the worker name (slug-zudo-doc), anchored
+          # on the .workers.dev boundary so log noise after the URL can't be
+          # swallowed. Parse this — not the per-version hash URL.
+          DEPLOY_URL=$(grep -oE "https://${SLUG}-[a-z0-9.-]+\.workers\.dev" "$DEPLOY_LOG" | head -1)
           if [ -z "$DEPLOY_URL" ]; then
             echo "::error::Failed to parse alias preview URL for slug '$SLUG' from wrangler output"
             exit 1
@@ -321,6 +334,27 @@ jobs:
           [ "$LEAKED_DEFAULT_COLORS" -le "$MAX_DEFAULT_THEME_COLOR_TOKENS" ] || { echo "::error::deployed CSS has $LEAKED_DEFAULT_COLORS leaked Tailwind default color tokens, above threshold $MAX_DEFAULT_THEME_COLOR_TOKENS (zfb user_has_import blind-spot regression)"; exit 1; }
 
           echo "OK: deployed CSS is $CSS_BYTES bytes, $MEDIA_COUNT @media blocks, $LEAKED_DEFAULT_COLORS leaked default color tokens"
+
+      # SSR endpoint smoke gate — asserts the Workers SSR entry is wired up on
+      # the preview alias and responding with JSON (not a static 404.html from
+      # the asset layer). A no-body POST returns a validation error, but the
+      # Content-Type must be application/json; text/html means the asset layer
+      # served 404.html instead of the worker handler running. Mirrors the
+      # production gate in main-deploy.yml — the same worker artifact deploys
+      # here, so preview must exercise the same SSR assertion.
+      - name: POST /api/ai-chat returns JSON (SSR smoke gate)
+        env:
+          DEPLOY_URL: ${{ steps.deploy.outputs.deploy_url }}
+        run: |
+          set -euo pipefail
+          CONTENT_TYPE=$(curl -sS -o /dev/null -w '%{content_type}' \
+            -X POST "$DEPLOY_URL/api/ai-chat" \
+            -H 'Content-Type: application/json' \
+            -d '{}')
+          echo "POST /api/ai-chat Content-Type: $CONTENT_TYPE"
+          echo "$CONTENT_TYPE" | grep -q 'application/json' \
+            || { echo "::error::POST /api/ai-chat returned Content-Type '$CONTENT_TYPE', expected application/json (Workers SSR not firing — asset layer returned 404.html?)"; exit 1; }
+          echo "OK: POST /api/ai-chat returned application/json"
 
       - name: Set commit status
         if: always()

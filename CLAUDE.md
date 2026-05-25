@@ -202,6 +202,8 @@ wrangler deploy --var DOCS_SITE_URL=<preview-url>
 
 Or override via the Cloudflare dashboard per environment to avoid preview workers pointing at production docs.
 
+> **Search worker (separate deployment).** `packages/search-worker/wrangler.toml` carries its **own** `DOCS_SITE_URL` (used for CORS/referrer). This repo updates it to `https://zudo-doc.takazudomodular.com`, but a Cloudflare **dashboard environment-variable override** on the search Worker (the old `your-docs-site.pages.dev` placeholder suggests one may exist) **shadows** the file value and persists across deploys. After cutover, redeploy the search worker AND clear/replace any dashboard `DOCS_SITE_URL` override — otherwise live search silently 404s once Pages is decommissioned. No CI gate covers this.
+
 ### 4. Bind the custom domain
 
 `wrangler.toml` already contains:

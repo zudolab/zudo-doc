@@ -310,17 +310,21 @@ jobs:
         id: cf-deploy
         run: |
           PR_NUMBER="${{ github.event.pull_request.number }}"
-          # pr-${PR_NUMBER} is alias-safe (no slashes/underscores).
-          # --json gives a stable machine-readable output; preview URL is on
-          # *.workers.dev (requires preview_urls = true in wrangler.toml).
-          DEPLOY_JSON=$(npx wrangler@4 versions upload \
-            --preview-alias "pr-${PR_NUMBER}" \
-            --json \
-            2>/dev/null)
-          DEPLOY_URL=$(echo "$DEPLOY_JSON" | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{const o=JSON.parse(d);console.log(o.preview_url||o.previewUrl||o.url||'');}catch(e){}})" 2>/dev/null || true)
+          ALIAS="pr-${PR_NUMBER}"
+          # pr-${PR_NUMBER} is alias-safe (lowercase, no slashes/underscores).
+          # `wrangler versions upload` has no --json flag; it prints the stable
+          # preview-alias URL (on *.workers.dev — requires preview_urls = true
+          # in wrangler.toml) to stdout/stderr. Capture both via tee and grep
+          # the alias URL line, anchored on the .workers.dev boundary. Parse the
+          # alias URL (subdomain starts with the alias) — not the per-version
+          # hash URL — so smoke gates + PR comments hit a stable host.
+          DEPLOY_LOG=$(mktemp)
+          npx wrangler@4 versions upload \
+            --preview-alias "$ALIAS" \
+            2>&1 | tee "$DEPLOY_LOG"
+          DEPLOY_URL=$(grep -oE "https://${ALIAS}-[a-z0-9.-]+\.workers\.dev" "$DEPLOY_LOG" | head -1)
           if [ -z "$DEPLOY_URL" ]; then
-            echo "::error::Failed to parse preview URL from wrangler versions upload JSON output"
-            echo "Raw wrangler output: $DEPLOY_JSON"
+            echo "::error::Failed to parse alias preview URL for '$ALIAS' from wrangler output"
             exit 1
           fi
           echo "deploy_url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"

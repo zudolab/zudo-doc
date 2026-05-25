@@ -49,19 +49,19 @@ Triggered on pull requests targeting `main`. Runs five jobs:
 2. **build-site** — shallow clone, `SKIP_DOC_HISTORY=1 pnpm build`, then `check:links`
 3. **build-history** — full clone, doc history generation
 4. **e2e** — runs Playwright end-to-end tests (full clone, no `SKIP_DOC_HISTORY` so history is embedded inline)
-5. **preview** — merges artifacts and deploys a preview via `wrangler deploy`, then posts the URL as a PR comment
+5. **preview** — merges artifacts and uploads a preview via `wrangler versions upload --preview-alias`, then posts the URL as a PR comment
 
 **Concurrency:** `group: pr-checks-{pr-number}, cancel-in-progress: true` — outdated runs are cancelled to save CI minutes.
 
 ### Preview Deployments
 
-Each PR gets a version-preview URL via `preview_urls = true` in `wrangler.toml`. URLs follow the pattern:
+Each PR gets a **stable preview-alias** URL via `wrangler versions upload --preview-alias <alias>` (enabled by `preview_urls = true` in `wrangler.toml`). The alias is `pr-<number>` for PR checks and the branch slug for branch previews. The URL is on `*.workers.dev` (not the production custom domain) and its subdomain starts with the alias:
 
 ```
-https://<hash>.zudo-doc.workers.dev
+https://<alias>-zudo-doc.<your-subdomain>.workers.dev
 ```
 
-The URL is posted automatically as a comment on the PR by the **preview** job.
+CI parses the exact host from wrangler's output and posts it automatically as a comment on the PR by the **preview** job.
 
 ## SKIP_DOC_HISTORY
 
@@ -88,7 +88,7 @@ key: dist-${{ github.run_id }}
 key: doc-history-${{ github.run_id }}
 ```
 
-The **deploy** (or **preview**) job restores both caches and merges the `dist/` directories before calling `wrangler deploy`.
+The **deploy** (or **preview**) job restores both caches and merges the `dist/` directories before calling `wrangler deploy` (production) or `wrangler versions upload` (preview).
 
 <Note>
 
