@@ -7,17 +7,13 @@
 // postBuild — recursively copies `<projectRoot>/public/` directly into
 //             `<outDir>/` (FLAT, matching zfb's own dist/ convention —
 //             zfb emits dist/index.html, dist/assets/..., NOT
-//             dist/<base>/index.html). The deployed URL prefix is
-//             applied uniformly by the deploy pipeline's prepare step
-//             (`mkdir -p deploy/<base> && cp -r dist/. deploy/<base>/`
-//             in `.github/workflows/preview-deploy.yml`,
-//             `pr-checks.yml`, and `main-deploy.yml`), so prefixing
-//             here would double-prefix the file path.
+//             dist/<base>/index.html). Under the Workers static assets
+//             deploy (base="/"), `dist/` is served at root directly by
+//             `wrangler deploy` — no deploy-pipeline relocation step is
+//             needed. The `base` option is intentionally unused here.
 //
 //             Example: `public/img/logo.svg` becomes `dist/img/logo.svg`,
-//             which the deploy prepare step relocates to
-//             `deploy/pj/zudo-doc/img/logo.svg`, served at
-//             `/pj/zudo-doc/img/logo.svg` by Cloudflare Pages.
+//             served at `/img/logo.svg` by the Workers static asset layer.
 //
 // Missing or empty `public/` is treated as a no-op (no error).
 //

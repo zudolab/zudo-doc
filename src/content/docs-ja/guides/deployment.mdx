@@ -1,26 +1,28 @@
 ---
 title: デプロイ
-description: GitHub Actions CI/CDを使用してzudo-docサイトをCloudflare Pagesにデプロイする。
+description: GitHub Actions CI/CDを使用してzudo-docサイトをCloudflare Workersにデプロイする。
 sidebar_position: 18
 ---
 
 ## 概要
 
-zudo-docは完全な静的サイトジェネレーターです。`pnpm build`の出力はHTML、CSS、JavaScriptファイルのディレクトリであり、どこでもデプロイできます。デフォルトのデプロイ先は**Cloudflare Pages**で、CI/CDの自動化にはGitHub Actionsを使用します。
+zudo-docは完全な静的サイトジェネレーターです。`pnpm build`の出力はHTML、CSS、JavaScriptファイルのディレクトリであり、どこでもデプロイできます。デフォルトのデプロイ先は**Cloudflare Workers**（静的アセット）で、CI/CDの自動化にはGitHub Actionsを使用します。
 
 CIパイプラインは合計ビルド時間を短縮するために並列ジョブに分割されています。サイト生成とドキュメント履歴の抽出は独立したジョブとして実行され、デプロイ前にマージされます。
 
-## Cloudflare Pages
+## Cloudflare Workers静的アセット
 
-ビルドされたサイトは`wrangler pages deploy`を使用してCloudflare Pagesにデプロイされます。デプロイアーティファクトには以下が含まれます：
+ビルドされたサイトは`wrangler deploy`を使用してデプロイされます。デプロイアーティファクトには以下が含まれます：
 
 - zfbのビルド出力（`dist/`）
 - 事前生成されたdocヒストリーJSONファイル（`docHistory`が有効な場合）
-- `/`からサイトのベースパスへのリダイレクトルール
+- `dist/_worker.js` — CFアダプターが生成する明示的なメインエントリー
+
+サイトはWorkers静的アセット層によりルート（`base = "/"`）で配信されます。動的ルート（例：`/api/ai-chat`）は`dist/_worker.js`が処理し、それ以外のGETリクエストは`dist/`から静的アセットとして配信されます。
 
 <Info>
 
-`/`からのリダイレクトはビルド出力に含まれる静的な`_redirects`ファイルです。Cloudflare Pagesがネイティブに処理するため、Workerやサーバーロジックは不要です。
+サイトURLは`wrangler.toml`の`[[routes]]`でカスタムドメインバインディングとして設定します。`ANTHROPIC_API_KEY`、`DOCS_SITE_URL`、`RATE_LIMIT` KVなどのバインディングも`wrangler.toml`で宣言します。
 
 </Info>
 
@@ -34,7 +36,7 @@ CIパイプラインは合計ビルド時間を短縮するために並列ジョ
 
 1. **build-site** — シャロークローン（`fetch-depth: 1`）、`SKIP_DOC_HISTORY=1 pnpm build`でzfbサイトをビルド
 2. **build-history** — フルクローン（`fetch-depth: 0`）、`@zudo-doc/doc-history-server generate`を実行してすべてのコンテンツファイルのgit履歴を事前抽出
-3. **deploy** — サイトと履歴のアーティファクトをマージし、Cloudflare Pages（本番環境）にデプロイ
+3. **deploy** — サイトと履歴のアーティファクトをマージし、`wrangler deploy`で本番環境にデプロイ
 4. **notify** — デプロイステータスをIFTTTウェブフックで通知
 
 **コンカレンシー:** `group: production-deploy, cancel-in-progress: false` — 先行するデプロイはキャンセルされずに完了が許可されます。
@@ -47,16 +49,16 @@ CIパイプラインは合計ビルド時間を短縮するために並列ジョ
 2. **build-site** — シャロークローン、`SKIP_DOC_HISTORY=1 pnpm build`、その後`check:links`
 3. **build-history** — フルクローン、docヒストリーの生成
 4. **e2e** — Playwrightエンドツーエンドテストを実行（フルクローン、`SKIP_DOC_HISTORY`なしで履歴をインラインに埋め込み）
-5. **preview** — アーティファクトをマージしてCloudflare Pagesにプレビューをデプロイ、PRコメントとしてURLを投稿
+5. **preview** — アーティファクトをマージして`wrangler deploy`でプレビューをデプロイ、PRコメントとしてURLを投稿
 
 **コンカレンシー:** `group: pr-checks-{pr-number}, cancel-in-progress: true` — 古い実行はCIの消費を節約するためにキャンセルされます。
 
 ### プレビューデプロイ
 
-各PRは以下のURLにプレビューデプロイを取得します：
+各PRは`wrangler.toml`の`preview_urls = true`によりバージョンプレビューURLを取得します。URLは以下のパターンになります：
 
 ```
-https://pr-{number}.zudo-doc.pages.dev
+https://<hash>.zudo-doc.workers.dev
 ```
 
 URLは**preview**ジョブによってPRのコメントとして自動的に投稿されます。
@@ -86,7 +88,7 @@ key: dist-${{ github.run_id }}
 key: doc-history-${{ github.run_id }}
 ```
 
-**deploy**（または**preview**）ジョブは両方のキャッシュを復元し、`wrangler pages deploy`を呼び出す前に`dist/`ディレクトリをマージします。
+**deploy**（または**preview**）ジョブは両方のキャッシュを復元し、`wrangler deploy`を呼び出す前に`dist/`ディレクトリをマージします。
 
 <Note>
 
@@ -100,12 +102,12 @@ key: doc-history-${{ github.run_id }}
 
 | シークレット | 説明 |
 |---|---|
-| `CLOUDFLARE_API_TOKEN` | Pagesデプロイ権限を持つCloudflare APIトークン |
+| `CLOUDFLARE_API_TOKEN` | WorkersデプロイのためのCloudflare APIトークン |
 | `CLOUDFLARE_ACCOUNT_ID` | CloudflareアカウントID |
 | `IFTTT_PROD_NOTIFY` | デプロイ通知用のIFTTTウェブフックURL（オプション） |
 
 <Warning>
 
-`CLOUDFLARE_API_TOKEN`には**Cloudflare Pages: Edit**権限が必要です。アカウント全体へのアクセス権限を付与するのではなく、特定のPagesプロジェクトにスコープすることを推奨します。
+`CLOUDFLARE_API_TOKEN`には**Workers: Edit**権限が必要です（KVネームスペースを使用する場合は**KV Storage: Edit**も必要）。アカウント全体へのアクセス権限を付与するのではなく、特定のWorkerにスコープすることを推奨します。
 
 </Warning>

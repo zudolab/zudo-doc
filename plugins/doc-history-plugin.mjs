@@ -82,9 +82,10 @@ export default {
   devMiddleware(ctx) {
     const middleware = createDocHistoryDevMiddleware(ctx.options, ctx.logger);
     // zfb's `register(path, handler)` matches against the FULL request
-    // URL (no base-stripping). With `settings.base = "/pj/zudo-doc/"`,
-    // requests arrive as `/pj/zudo-doc/doc-history/foo.json`, so we
-    // must register at the base-prefixed route. The v2 middleware
+    // URL (no base-stripping). For a non-root base (e.g. "/my-docs/"),
+    // requests arrive as `/my-docs/doc-history/foo.json`, so we register
+    // at the full base-prefixed route. For base="/", the prefix is empty
+    // and the route is `/doc-history` as expected. The v2 middleware
     // itself is base-tolerant (matches via `url.includes("/doc-history/")`)
     // and slices from `/doc-history/` onward when proxying upstream.
     const basePrefix = stripTrailingSlash(ctx.options.base ?? "");

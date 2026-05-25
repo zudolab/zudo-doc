@@ -144,7 +144,7 @@ export const settings = {
         ],
       },
     ],
-    copyright: `Copyright © ${new Date().getFullYear()} <a href="https://x.com/Takazudo">Takazudo</a>. Built with <a href="https://zudo-doc.pages.dev/pj/zudo-doc/docs/getting-started/">zudo-doc</a>.`,
+    copyright: `Copyright © ${new Date().getFullYear()} <a href="https://x.com/Takazudo">Takazudo</a>. Built with <a href="https://zudo-doc.takazudomodular.com/docs/getting-started/">zudo-doc</a>.`,
     /**
      * Opt-in footer tag index. Leave `enabled: false` (or omit the block
      * entirely) to render the footer unchanged from today.
