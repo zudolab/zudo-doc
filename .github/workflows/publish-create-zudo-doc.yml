@@ -137,19 +137,21 @@ jobs:
         run: pnpm --filter create-zudo-doc test
 
       # ── Compute dist-tag ───────────────────────────────────────────────────
-      # Prerelease tags (-next.*, -beta.*, -rc.*) publish under --tag next
-      # so they don't disturb the "latest" default install path.
-      # All other tags publish as --tag latest.
+      # ANY semver prerelease (a hyphen after the X.Y.Z core — e.g. -next.1,
+      # -beta.2, -rc.1, -alpha.1, or a bare -beta) publishes under --tag next
+      # so it never becomes the default "latest" install. Only a clean X.Y.Z
+      # release gets --tag latest. (VERSION is the tag with the leading "v"
+      # stripped, set by Safeguard 1.)
       - name: Compute npm dist-tag
         shell: bash
         run: |
-          if [[ "$TAG" =~ -(next|beta|rc)\. ]]; then
+          if [[ "$VERSION" == *-* ]]; then
             DIST_TAG=next
           else
             DIST_TAG=latest
           fi
           echo "DIST_TAG=$DIST_TAG" >> "$GITHUB_ENV"
-          echo "Dist tag: $DIST_TAG (tag: $TAG)"
+          echo "Dist tag: $DIST_TAG (version: $VERSION)"
 
       # ── Safeguard 4/4: Dry-run path ────────────────────────────────────────
       # When dry_run is true (workflow_dispatch only), prove the secret

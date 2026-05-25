@@ -38,7 +38,9 @@
   },
   "files": [
     "bin",
-    "dist"
+    "dist",
+    "templates",
+    "!dist/__tests__"
   ],
   "scripts": {
     "build": "tsc",
