@@ -133,8 +133,12 @@ describe("buildCliCommand", () => {
     "enabled feature %s produces --%s flag",
     (value, cliFlag) => {
       const cmd = buildCliCommand(makeState({ features: [value] }));
-      expect(cmd).toContain(`--${cliFlag}`);
-      expect(cmd).not.toContain(`--no-${cliFlag}`);
+      // Split only the first line to exclude the trailing shell-comment line,
+      // then tokenise on whitespace. Whole-token matching avoids the substring
+      // trap where e.g. "--no-tauri-dev" would match a naive .toContain("--no-tauri").
+      const tokens = cmd.split("\n")[0]!.split(/\s+/);
+      expect(tokens).toContain(`--${cliFlag}`);
+      expect(tokens).not.toContain(`--no-${cliFlag}`);
     },
   );
 
@@ -142,7 +146,8 @@ describe("buildCliCommand", () => {
     "disabled feature %s produces --no-%s flag",
     (value, cliFlag) => {
       const cmd = buildCliCommand(makeState({ features: [] }));
-      expect(cmd).toContain(`--no-${cliFlag}`);
+      const tokens = cmd.split("\n")[0]!.split(/\s+/);
+      expect(tokens).toContain(`--no-${cliFlag}`);
     },
   );
 
