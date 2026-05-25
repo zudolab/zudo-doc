@@ -5,7 +5,7 @@
  *
  * Imported by:
  *  - src/config/design-token-panel-config.ts  (groups items into TabConfig.tiers)
- *  - src/utils/design-token-serde.ts          (cssVar ↔ id lookup for JSON I/O)
+ *  - packages/zudo-doc-v2/src/theme/design-token-serde.ts  (cssVar ↔ id lookup for JSON I/O)
  *
  * Type strategy: arrays are typed `readonly TokenDef[]` for back-compat with
  * the consumer serde and tests. `design-token-panel-config.ts` partitions the

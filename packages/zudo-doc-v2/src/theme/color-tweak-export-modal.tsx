@@ -1,24 +1,35 @@
 // Ported from src/components/design-token-tweak/export-modal.tsx (E5 framework
 // primitives). The serializer call (`serialize(state, { includeDefaults,
-// colorDefaults })`) is intentionally byte-identical to the host project's
-// version so the export output for an unchanged scheme remains line-equal to
-// today's output — a hard acceptance criterion for the theme topic.
+// colorDefaults, manifest })`) is intentionally byte-identical to the host
+// project's version so the export output for an unchanged scheme remains
+// line-equal to today's output — a hard acceptance criterion for the theme
+// topic.
 //
 // W3-2 (zdtp-migration): migrated ColorTweakState/TweakState imports to the
 // canonical shim in @/utils/design-token-types; removed initColorFromSchemeData
 // (legacy panel helper deleted with src/components/design-token-tweak/).
+//
+// W3B (#1730 — Generator Pages Migration): switched serde + types imports to
+// the v2-local relocations and added a required `manifest` prop. The
+// manifest used to be sourced inside serde from
+// `@/config/design-tokens-manifest`; the consumer now passes it in so the
+// v2 modal carries no host-`@/` dependency.
 
 import { useState, useEffect, useMemo, useRef } from "preact/hooks";
-import { serialize } from "@/utils/design-token-serde";
+import { serialize, type DesignTokenManifest } from "./design-token-serde";
 import {
   type ColorTweakState,
   type TweakState,
-} from "@/utils/design-token-types";
+} from "./design-token-types";
 
 interface DesignTokenExportModalProps {
   onClose: () => void;
   /** Full unified tweak state — the modal serializes all four categories. */
   state: TweakState;
+  /** Token manifest (spacing / font / size arrays) used by serialize() to
+   *  compute diff-only output. The caller is expected to forward the same
+   *  manifest the panel was configured with. */
+  manifest: DesignTokenManifest;
   /** Color baseline used for diff-only output. Optional: callers without DOM
    *  access (tests) can omit and we'll treat the entire color block as changed. */
   colorDefaults?: ColorTweakState;
@@ -40,6 +51,7 @@ function resolveColorDefaults(
 export default function ColorTweakExportModal({
   onClose,
   state,
+  manifest,
   colorDefaults,
 }: DesignTokenExportModalProps) {
   const [copyLabel, setCopyLabel] = useState("Copy");
@@ -53,11 +65,12 @@ export default function ColorTweakExportModal({
   const code = useMemo(() => {
     const baseline = resolveColorDefaults(state.color, colorDefaults);
     const json = serialize(state, {
+      manifest,
       includeDefaults,
       colorDefaults: baseline,
     });
     return JSON.stringify(json, null, 2);
-  }, [state, colorDefaults, includeDefaults]);
+  }, [state, manifest, colorDefaults, includeDefaults]);
 
   useEffect(() => {
     const dialog = dialogRef.current;

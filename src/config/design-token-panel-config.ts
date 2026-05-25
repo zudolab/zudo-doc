@@ -48,7 +48,7 @@ import { colorSchemes } from "./color-schemes";
 import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "./color-scheme-utils";
 import { colorTweakPresets } from "./color-tweak-presets";
 import { settings } from "./settings";
-import { DESIGN_TOKEN_SCHEMA } from "@/utils/design-token-serde";
+import { DESIGN_TOKEN_SCHEMA } from "@zudo-doc/zudo-doc-v2/theme";
 
 /**
  * Base-role fallback indices derived from the legacy `initColorFromSchemeData`
@@ -330,7 +330,7 @@ export const designTokenPanelConfig: PanelConfig = {
   storagePrefix: "zudo-doc-tweak",
   consoleNamespace: "zudoDoc",
   modalClassPrefix: "zudo-doc-design-token-panel-modal",
-  // Must match DESIGN_TOKEN_SCHEMA in src/utils/design-token-serde.ts so that
+  // Must match DESIGN_TOKEN_SCHEMA in @zudo-doc/zudo-doc-v2/theme so that
   // JSON files exported by the legacy panel remain importable after migration.
   schemaId: DESIGN_TOKEN_SCHEMA,
   exportFilenameBase: "zudo-doc-design-tokens",

@@ -8,18 +8,44 @@
 // `define:vars`; the JSX equivalent is `dangerouslySetInnerHTML` with the
 // runtime values interpolated as a JSON literal so the script can read
 // them without re-fetching settings.
+//
+// W3B (#1730 — Generator Pages Migration): the consumer-side palette
+// resolution and the host `settings.colorMode` lookup were lifted out of
+// this component into the caller. The consumer (host wrapper) now
+// pre-computes `cssText` via its own `generateCssCustomProperties()` /
+// `generateLightDarkCssProperties()` helpers and passes both `cssText`
+// and `colorMode` as required props, so this file no longer reaches into
+// host `@/config/*` modules.
 
-import {
-  generateCssCustomProperties,
-  generateLightDarkCssProperties,
-} from "@/config/color-scheme-utils";
-import { settings } from "@/config/settings";
+import type { ComponentChildren } from "preact";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
 
-interface ColorSchemeProviderProps {
-  /** Optional override for tests; defaults to the project-level settings. */
-  cssText?: string;
-  colorModeOverride?: typeof settings.colorMode;
+/**
+ * Subset of the host's `ColorModeConfig` that the v2 provider actually
+ * consumes. Kept locally so the v2 package does not need to import a host
+ * type module — the caller maps its own settings into this shape (or
+ * passes `null` for the persisted-tweak / no-light-dark path).
+ */
+export interface ColorSchemeProviderColorMode {
+  defaultMode: "light" | "dark";
+  respectPrefersColorScheme: boolean;
+}
+
+export interface ColorSchemeProviderProps {
+  /**
+   * Pre-computed `:root { --zd-* }` CSS string. The caller resolves the
+   * active color scheme (or the configured light+dark pair) and renders
+   * the `<style>` body for us — this component just emits it.
+   */
+  cssText: string;
+  /**
+   * Active light/dark mode config, or `null` for the persisted-tweak
+   * bootstrap path (no light/dark; the in-browser tweak panel may inject
+   * custom CSS vars from localStorage instead).
+   */
+  colorMode: ColorSchemeProviderColorMode | null;
+  /** Optional children; preserved for forward compatibility. */
+  children?: ComponentChildren;
 }
 
 /** Bootstrap script for the light/dark mode (settings.colorMode set). */
@@ -66,12 +92,10 @@ document.addEventListener(${afterNav},applyStoredScheme);
 })();`;
 }
 
-export default function ColorSchemeProvider(props: ColorSchemeProviderProps = {}) {
-  const colorMode = props.colorModeOverride ?? settings.colorMode;
-  const cssText =
-    props.cssText ??
-    (colorMode ? generateLightDarkCssProperties() : generateCssCustomProperties());
-
+export default function ColorSchemeProvider({
+  cssText,
+  colorMode,
+}: ColorSchemeProviderProps) {
   const bootstrap = colorMode
     ? buildColorModeBootstrap(
         colorMode.defaultMode,

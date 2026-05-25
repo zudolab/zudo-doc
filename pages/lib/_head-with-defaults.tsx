@@ -35,6 +35,12 @@ import ColorSchemeProvider from "@zudo-doc/zudo-doc-v2/theme/color-scheme-provid
 import { composeMetaTitle } from "./_compose-meta-title";
 import { withBase } from "@/utils/base";
 import { settings } from "@/config/settings";
+// W3B (#1730): cssText + colorMode are precomputed here — the v2
+// ColorSchemeProvider no longer reaches into the host config tree.
+import {
+  generateCssCustomProperties,
+  generateLightDarkCssProperties,
+} from "@/config/color-scheme-utils";
 
 export interface HeadWithDefaultsProps {
   /** Page title forwarded to og:title. Required. */
@@ -74,6 +80,14 @@ export function HeadWithDefaults({
   // relative og:image values. Computed as siteUrl (no trailing slash) + the
   // base-prefixed asset path.
   const ogImageUrl = `${settings.siteUrl.replace(/\/$/, "")}${withBase("/img/ogp.png")}`;
+
+  // Resolve the palette CSS body once per page render (the v2 component
+  // is pure SSR — no caching needed).
+  const colorMode = settings.colorMode ? settings.colorMode : null;
+  const cssText = colorMode
+    ? generateLightDarkCssProperties()
+    : generateCssCustomProperties();
+
   return (
     <>
       <OgTags
@@ -88,7 +102,7 @@ export function HeadWithDefaults({
       <meta property="og:image:height" content="630" />
       <meta property="og:image:alt" content={composeMetaTitle(title)} />
       <TwitterCard card="summary_large_image" image={ogImageUrl} />
-      <ColorSchemeProvider />
+      <ColorSchemeProvider cssText={cssText} colorMode={colorMode} />
       {/* favicon set — withBase() handles the configured base path prefix */}
       <link rel="icon" href={withBase("/favicon.ico")} sizes="any" />
       <link rel="icon" type="image/png" sizes="32x32" href={withBase("/favicon-32x32.png")} />

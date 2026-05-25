@@ -1,15 +1,42 @@
+// Moved from src/utils/__tests__/design-token-serde.test.ts as part of W3B
+// (#1730 — Generator Pages Migration). The serde + types live in v2 now, so
+// the tests live alongside them.
+//
+// W3B (#1730): the host `@/config/design-tokens-manifest` is intentionally not
+// imported here — the serde now takes a `manifest` argument, so tests use a
+// small inline fixture covering the exact ids the assertions rely on
+// (`hsp-md`, `vsp-sm`, `text-body`, `radius-DEFAULT`). Adding new
+// assertions? Extend the fixture rather than reaching back into host config.
 import { describe, it, expect, vi, afterEach } from "vitest";
+import { type TokenDef } from "@takazudo/zdtp";
 import {
   DESIGN_TOKEN_SCHEMA,
   DesignTokenSchemaError,
   deserialize,
   serialize,
   type DesignTokenJson,
+  type DesignTokenManifest,
 } from "../design-token-serde";
 import type {
   ColorTweakState,
   TweakState,
-} from "@/utils/design-token-types";
+} from "../design-token-types";
+
+const SPACING: readonly TokenDef[] = [
+  { id: "hsp-md", cssVar: "--spacing-hsp-md", label: "hsp-md", group: "hsp", default: "0.75rem", min: 0, max: 3, step: 0.025, unit: "rem" },
+  { id: "vsp-sm", cssVar: "--spacing-vsp-sm", label: "vsp-sm", group: "vsp", default: "1.25rem", min: 0, max: 4, step: 0.025, unit: "rem" },
+];
+
+const FONT: readonly TokenDef[] = [
+  { id: "text-body", cssVar: "--text-body", label: "text-body", group: "font-size", default: "1.2rem", min: 0.5, max: 5, step: 0.05, unit: "rem" },
+];
+
+const SIZE: readonly TokenDef[] = [
+  { id: "radius-DEFAULT", cssVar: "--radius-DEFAULT", label: "radius-DEFAULT", group: "radius", default: "4px", min: 0, max: 100, step: 1, unit: "px" },
+  { id: "radius-lg", cssVar: "--radius-lg", label: "radius-lg", group: "radius", default: "8px", min: 0, max: 100, step: 1, unit: "px" },
+];
+
+const MANIFEST: DesignTokenManifest = { spacing: SPACING, font: FONT, size: SIZE };
 
 /** Fully-populated 16-color palette whose entries look obviously synthetic so
  *  tests can spot a palette leak at a glance. */
@@ -59,14 +86,14 @@ afterEach(() => {
 describe("serialize", () => {
   it("always includes $schema and exportedAt", () => {
     const state = makeState();
-    const json = serialize(state, { colorDefaults: COLOR_BASELINE });
+    const json = serialize(state, { manifest: MANIFEST, colorDefaults: COLOR_BASELINE });
     expect(json.$schema).toBe(DESIGN_TOKEN_SCHEMA);
     expect(typeof json.exportedAt).toBe("string");
     expect(() => new Date(json.exportedAt).toISOString()).not.toThrow();
   });
 
   it("emits nothing in color/spacing/font/size when state matches baseline", () => {
-    const json = serialize(makeState(), { colorDefaults: COLOR_BASELINE });
+    const json = serialize(makeState(), { manifest: MANIFEST, colorDefaults: COLOR_BASELINE });
     expect(json.color).toBeUndefined();
     expect(json.spacing).toBeUndefined();
     expect(json.font).toBeUndefined();
@@ -75,7 +102,7 @@ describe("serialize", () => {
 
   it("emits only changed spacing tokens by default (diff-only)", () => {
     const state = makeState({ spacing: { "hsp-md": "1.125rem" } });
-    const json = serialize(state, { colorDefaults: COLOR_BASELINE });
+    const json = serialize(state, { manifest: MANIFEST, colorDefaults: COLOR_BASELINE });
     expect(json.spacing).toEqual({ "--spacing-hsp-md": "1.125rem" });
   });
 
@@ -83,12 +110,13 @@ describe("serialize", () => {
     // 0.75rem is the declared default for --spacing-hsp-md, so it should NOT
     // appear in diff-only output.
     const state = makeState({ spacing: { "hsp-md": "0.75rem" } });
-    const json = serialize(state, { colorDefaults: COLOR_BASELINE });
+    const json = serialize(state, { manifest: MANIFEST, colorDefaults: COLOR_BASELINE });
     expect(json.spacing).toBeUndefined();
   });
 
   it("emits full token blocks when includeDefaults=true", () => {
     const json = serialize(makeState(), {
+      manifest: MANIFEST,
       colorDefaults: COLOR_BASELINE,
       includeDefaults: true,
     });
@@ -103,6 +131,7 @@ describe("serialize", () => {
     const color = cloneBaseline();
     color.palette[5] = "#ff00ff";
     const json = serialize(makeState({ color }), {
+      manifest: MANIFEST,
       colorDefaults: COLOR_BASELINE,
     });
     expect(json.color?.palette).toHaveLength(16);
@@ -113,6 +142,7 @@ describe("serialize", () => {
     const color = cloneBaseline();
     color.cursor = 9;
     const json = serialize(makeState({ color }), {
+      manifest: MANIFEST,
       colorDefaults: COLOR_BASELINE,
     });
     expect(json.color?.base).toEqual({ cursor: 9 });
@@ -123,6 +153,7 @@ describe("serialize", () => {
     const color = cloneBaseline();
     color.semanticMappings.accent = 7;
     const json = serialize(makeState({ color }), {
+      manifest: MANIFEST,
       colorDefaults: COLOR_BASELINE,
     });
     expect(json.color?.semantic).toEqual({ accent: 7 });
@@ -139,10 +170,11 @@ describe("deserialize", () => {
     });
     original.color.cursor = 9;
 
-    const json = serialize(original, { colorDefaults: COLOR_BASELINE });
+    const json = serialize(original, { manifest: MANIFEST, colorDefaults: COLOR_BASELINE });
     const text = JSON.stringify(json);
     const parsed = JSON.parse(text);
     const { state, unknownTokens } = deserialize(parsed, {
+      manifest: MANIFEST,
       colorDefaults: COLOR_BASELINE,
     });
 
@@ -167,6 +199,7 @@ describe("deserialize", () => {
       },
     };
     const { state, unknownTokens } = deserialize(payload, {
+      manifest: MANIFEST,
       colorDefaults: COLOR_BASELINE,
     });
     expect(state.spacing).toEqual({ "hsp-md": "1.25rem" });
@@ -180,14 +213,14 @@ describe("deserialize", () => {
     expect(() =>
       deserialize(
         { $schema: "zudo-doc-design-tokens/v2", exportedAt: "x" },
-        { colorDefaults: COLOR_BASELINE },
+        { manifest: MANIFEST, colorDefaults: COLOR_BASELINE },
       ),
     ).toThrowError(DesignTokenSchemaError);
   });
 
   it("throws schema-missing when $schema is absent", () => {
     try {
-      deserialize({ exportedAt: "x" }, { colorDefaults: COLOR_BASELINE });
+      deserialize({ exportedAt: "x" }, { manifest: MANIFEST, colorDefaults: COLOR_BASELINE });
       throw new Error("expected to throw");
     } catch (err) {
       expect(err).toBeInstanceOf(DesignTokenSchemaError);
@@ -196,9 +229,9 @@ describe("deserialize", () => {
   });
 
   it("throws not-object for non-object input", () => {
-    expect(() => deserialize("hello")).toThrowError(DesignTokenSchemaError);
-    expect(() => deserialize(null)).toThrowError(DesignTokenSchemaError);
-    expect(() => deserialize(42)).toThrowError(DesignTokenSchemaError);
+    expect(() => deserialize("hello", { manifest: MANIFEST })).toThrowError(DesignTokenSchemaError);
+    expect(() => deserialize(null, { manifest: MANIFEST })).toThrowError(DesignTokenSchemaError);
+    expect(() => deserialize(42, { manifest: MANIFEST })).toThrowError(DesignTokenSchemaError);
   });
 
   it("falls back to baseline for absent color fields", () => {
@@ -207,7 +240,7 @@ describe("deserialize", () => {
       exportedAt: new Date().toISOString(),
       color: { base: { cursor: 3 } },
     };
-    const { state } = deserialize(payload, { colorDefaults: COLOR_BASELINE });
+    const { state } = deserialize(payload, { manifest: MANIFEST, colorDefaults: COLOR_BASELINE });
     expect(state.color.cursor).toBe(3);
     expect(state.color.background).toBe(COLOR_BASELINE.background);
     expect(state.color.palette).toEqual(COLOR_BASELINE.palette);
@@ -220,6 +253,7 @@ describe("deserialize", () => {
       color: { palette: ["#111", "#222"] },
     };
     const { state, warnings } = deserialize(payload, {
+      manifest: MANIFEST,
       colorDefaults: COLOR_BASELINE,
     });
     expect(state.color.palette).toEqual(COLOR_BASELINE.palette);
@@ -238,6 +272,7 @@ describe("deserialize", () => {
       color: { palette: rawPalette },
     };
     const { state, warnings } = deserialize(payload, {
+      manifest: MANIFEST,
       colorDefaults: COLOR_BASELINE,
     });
     expect(state.color.palette).toEqual(COLOR_BASELINE.palette);

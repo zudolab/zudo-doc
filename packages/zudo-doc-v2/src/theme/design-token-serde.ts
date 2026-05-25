@@ -24,16 +24,22 @@
  *
  * Read-only manifest tokens (e.g. `--spacing-0`, `--zd-sidebar-w` with
  * `clamp()`) are skipped in both directions.
+ *
+ * W3B (#1730 — Generator Pages Migration): moved from
+ * `src/utils/design-token-serde.ts` into v2. The manifest tokens
+ * (`SPACING_TOKENS` / `FONT_TOKENS` / `SIZE_TOKENS`) are no longer
+ * imported from the host's `@/config/design-tokens-manifest` — the
+ * caller now passes them through `SerializeOptions.manifest` /
+ * `DeserializeOptions.manifest`, preserving consumer override hooks.
  */
 
 import { type TokenDef } from "@takazudo/zdtp";
-import { FONT_TOKENS, SIZE_TOKENS, SPACING_TOKENS } from "@/config/design-tokens-manifest";
 import {
   emptyOverrides,
   type ColorTweakState,
   type TokenOverrides,
   type TweakState,
-} from "@/utils/design-token-types";
+} from "./design-token-types";
 
 export const DESIGN_TOKEN_SCHEMA = "zudo-doc-design-tokens/v1" as const;
 
@@ -68,7 +74,22 @@ export interface DesignTokenJson {
   size?: DesignTokenJsonOverrides;
 }
 
+/**
+ * Token manifest the caller hands in — the consumer's
+ * `src/config/design-tokens-manifest.ts` (or generator override). v2
+ * doesn't ship its own manifest; this is intentionally a caller concern
+ * so each consumer keeps full control over the editable token set.
+ */
+export interface DesignTokenManifest {
+  spacing: readonly TokenDef[];
+  font: readonly TokenDef[];
+  size: readonly TokenDef[];
+}
+
 export interface SerializeOptions {
+  /** Token manifest (spacing / font / size arrays) used to compute
+   *  diff-only output and resolve CSS-var names. Required. */
+  manifest: DesignTokenManifest;
   /** When true, dump full state (all palette entries, all token manifest
    *  defaults merged in). Default: diff-only. */
   includeDefaults?: boolean;
@@ -92,6 +113,9 @@ export interface DeserializeResult {
 }
 
 export interface DeserializeOptions {
+  /** Token manifest (spacing / font / size arrays) used to resolve CSS-var
+   *  names back to internal token ids. Required. */
+  manifest: DesignTokenManifest;
   /** Color baseline used to fill in fields absent from the payload (diff-only
    *  exports are missing most fields by design). Typically the current
    *  scheme's initial state. */
@@ -127,7 +151,7 @@ export class DesignTokenSchemaError extends Error {
  */
 export function serialize(
   state: TweakState,
-  opts: SerializeOptions = {},
+  opts: SerializeOptions,
 ): DesignTokenJson {
   const now = opts.now ? opts.now() : new Date();
   const out: DesignTokenJson = {
@@ -138,13 +162,13 @@ export function serialize(
   const color = serializeColor(state.color, opts);
   if (color) out.color = color;
 
-  const spacing = serializeOverrides(SPACING_TOKENS, state.spacing, opts);
+  const spacing = serializeOverrides(opts.manifest.spacing, state.spacing, opts);
   if (spacing) out.spacing = spacing;
 
-  const font = serializeOverrides(FONT_TOKENS, state.font, opts);
+  const font = serializeOverrides(opts.manifest.font, state.font, opts);
   if (font) out.font = font;
 
-  const size = serializeOverrides(SIZE_TOKENS, state.size, opts);
+  const size = serializeOverrides(opts.manifest.size, state.size, opts);
   if (size) out.size = size;
 
   return out;
@@ -265,7 +289,7 @@ function serializeOverrides(
  */
 export function deserialize(
   input: unknown,
-  opts: DeserializeOptions = {},
+  opts: DeserializeOptions,
 ): DeserializeResult {
   if (input === null || typeof input !== "object") {
     throw new DesignTokenSchemaError(
@@ -297,21 +321,21 @@ export function deserialize(
   const color = deserializeColor(obj.color, baseline, warnings);
   const spacing = deserializeOverrides(
     obj.spacing,
-    SPACING_TOKENS,
+    opts.manifest.spacing,
     "spacing",
     unknownTokens,
     warnings,
   );
   const font = deserializeOverrides(
     obj.font,
-    FONT_TOKENS,
+    opts.manifest.font,
     "font",
     unknownTokens,
     warnings,
   );
   const size = deserializeOverrides(
     obj.size,
-    SIZE_TOKENS,
+    opts.manifest.size,
     "size",
     unknownTokens,
     warnings,

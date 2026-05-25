@@ -306,11 +306,19 @@ describe("scaffold — full features (i18n, light-dark, all features)", () => {
         projectPath("test-full", "src/config/design-tokens-manifest.ts"),
       ),
     ).toBe(true);
+    // W3B (#1730): design-token-types.ts moved into @zudo-doc/zudo-doc-v2/theme,
+    // no longer scaffolded into the generated project. Verify the legacy
+    // path is absent so a regression that resurrects the duplicate trips.
     expect(
       await fs.pathExists(
         projectPath("test-full", "src/utils/design-token-types.ts"),
       ),
-    ).toBe(true);
+    ).toBe(false);
+    expect(
+      await fs.pathExists(
+        projectPath("test-full", "src/utils/design-token-serde.ts"),
+      ),
+    ).toBe(false);
   });
 
   it("does NOT include legacy design-token-tweak panel component", async () => {
