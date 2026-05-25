@@ -55,7 +55,13 @@ CIパイプラインは合計ビルド時間を短縮するために並列ジョ
 
 ### プレビューデプロイ
 
-各PRは`wrangler.toml`の`preview_urls = true`によりバージョンプレビューURLを取得します。URLは**preview**ジョブによってPRのコメントとして自動的に投稿されます。
+各PRは`wrangler.toml`の`preview_urls = true`によりバージョンプレビューURLを取得します。URLは以下のパターンになります：
+
+```
+https://<hash>.zudo-doc.workers.dev
+```
+
+URLは**preview**ジョブによってPRのコメントとして自動的に投稿されます。
 
 ## SKIP_DOC_HISTORY
 

@@ -55,7 +55,13 @@ Triggered on pull requests targeting `main`. Runs five jobs:
 
 ### Preview Deployments
 
-Each PR gets a version-preview URL via `preview_urls = true` in `wrangler.toml`. The URL is posted automatically as a comment on the PR by the **preview** job.
+Each PR gets a version-preview URL via `preview_urls = true` in `wrangler.toml`. URLs follow the pattern:
+
+```
+https://<hash>.zudo-doc.workers.dev
+```
+
+The URL is posted automatically as a comment on the PR by the **preview** job.
 
 ## SKIP_DOC_HISTORY
 
