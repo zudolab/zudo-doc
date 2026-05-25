@@ -10,6 +10,16 @@ compatibility_date = "2024-12-01"
 # wrangler 4.x refuses to load the worker even when dist/_worker.js exists.
 compatibility_flags = ["nodejs_compat"]
 
+# Top-level fields (MUST stay above the [assets] table — in TOML any key after
+# a table header is scoped into that table; if these sit under [assets] wrangler
+# warns "Unexpected fields found in assets field" and silently ignores them).
+#
+# preview_urls enables *.workers.dev version-preview URLs for staging/preview
+# deploys (consumed by preview-deploy.yml / pr-checks.yml via
+# `wrangler versions upload --preview-alias`).
+preview_urls = true
+# workers_dev = false  # uncomment to prevent serving on *.workers.dev prod route
+
 # ---------------------------------------------------------------------------
 # Static asset serving
 #
@@ -31,10 +41,6 @@ directory = "./dist"
 binding = "ASSETS"
 not_found_handling = "404-page"
 run_worker_first = false
-
-# Enables *.workers.dev version-preview URLs for staging/preview deploys.
-preview_urls = true
-# workers_dev = false  # uncomment to prevent serving on *.workers.dev prod route
 
 # ---------------------------------------------------------------------------
 # Custom domain routing
@@ -68,6 +74,6 @@ RATE_LIMIT_PER_DAY = "100"
 
 [[kv_namespaces]]
 binding = "RATE_LIMIT"
-# PLACEHOLDER: create the KV namespace via `wrangler kv namespace create RATE_LIMIT`
-# and paste the returned id here. See zudolab/zudo-doc#1691 prerequisites.
-id = "PLACEHOLDER_CREATE_VIA_WRANGLER"
+# KV namespace id (not a secret — account-scoped identifier). Created via
+# `wrangler kv namespace create RATE_LIMIT` per zudolab/zudo-doc#1691.
+id = "19cd1f19d18d4d50b79db8198b3479b3"
