@@ -129,3 +129,27 @@ src/utils/design-token-types.ts
 # as design-token-panel-bootstrap.ts and desktop-sidebar-toggle.tsx above.
 # Reconcile if/when create-zudo-doc migrates onto the v2 header module wholesale.
 src/utils/header-right-items.ts
+
+# W6A (#1734 / generator-pages-migration Wave 6A) — missing-src stubs landed
+# in templates/base/src/components/ so the mirrored unconditional pages
+# (templates/base/pages/lib/_body-end-islands.tsx and friends) resolve their
+# @/components/* imports without dragging full feature implementations into
+# every scaffold. The five files below have no feature template to swap them
+# out — they ship as permanent no-ops in base; a future PR can introduce a
+# feature flag if downstream consumers ask. The other two stubs
+# (doc-history.tsx, image-enlarge.tsx) are already allowlisted above via the
+# Wave-11 / E2-task-2 entries; the imageEnlarge feature now also ships the
+# ImageEnlargeSsrFallback named export to mirror the host shape.
+# Spec-lock §1.5 + Decision 5 — see #1728.
+src/components/ai-chat-modal.tsx
+src/components/client-router-bootstrap.tsx
+src/components/design-token-panel-bootstrap.tsx
+src/components/desktop-sidebar-toggle.tsx
+src/components/preset-generator.tsx
+
+# W6A (#1734) — empty seed JSON for the `#doc-history-meta` tsconfig alias.
+# The host gitignores .zfb/ wholesale so there is no matching prod file; the
+# template ships {} so freshly-scaffolded barebone projects (no docHistory)
+# can resolve the alias at typecheck. The doc-history prebuild step
+# overwrites this file at build time when the feature is enabled.
+.zfb/doc-history-meta.json

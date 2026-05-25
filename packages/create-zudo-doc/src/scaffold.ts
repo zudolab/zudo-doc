@@ -11,6 +11,36 @@ import { capitalize, getSecondaryLang } from "./utils.js";
 
 export { getSecondaryLang };
 
+/**
+ * Files in `templates/base/**` that must never be copied into a generated
+ * project. Each entry is matched against the path relative to `templates/base/`
+ * (POSIX-style, forward slashes).
+ *
+ * W2 spec-lock Decision 5 (#1728) — `pages/api/**` is worker-only SSR
+ * (uses `@takazudo/zfb-adapter-cloudflare`, `prerender = false`) and is
+ * intentionally absent from `templates/base/pages/` already. This list
+ * is the explicit policy: future upstream-sync helpers that mirror more
+ * of `pages/` into `templates/base/` MUST honour these patterns.
+ */
+const EXCLUDE_FROM_MIRROR: RegExp[] = [
+  /^pages\/api(\/|$)/,
+];
+
+/**
+ * `fs.copy` filter for the `templates/base/` → target-dir copy. Returns
+ * `false` for any path matching {@link EXCLUDE_FROM_MIRROR}. Directories
+ * matching an exclusion are skipped wholesale (fs.copy honours filter on
+ * directories).
+ */
+function shouldCopyBaseFile(srcAbs: string, baseDir: string): boolean {
+  const rel = path.relative(baseDir, srcAbs).split(path.sep).join("/");
+  if (rel === "") return true; // root — always include
+  for (const pattern of EXCLUDE_FROM_MIRROR) {
+    if (pattern.test(rel)) return false;
+  }
+  return true;
+}
+
 const STARTER_CONTENT_EN = (siteName: string) => `---
 title: Welcome
 sidebar_position: 1
@@ -97,7 +127,13 @@ export async function scaffold(choices: UserChoices): Promise<void> {
   await fs.ensureDir(targetDir);
 
   // 1. Copy base template
-  await fs.copy(baseDir, targetDir);
+  // Honour EXCLUDE_FROM_MIRROR so paths like `pages/api/**` (worker-only SSR
+  // endpoints) are never emitted into a generated project — see W2 spec-lock
+  // Decision 5 (#1728). Today templates/base/ does not contain any excluded
+  // paths, but the filter documents the policy in code that runs.
+  await fs.copy(baseDir, targetDir, {
+    filter: (src: string) => shouldCopyBaseFile(src, baseDir),
+  });
 
   // 2. Copy skill symlinker script when enabled
   if (choices.features.includes("skillSymlinker")) {
