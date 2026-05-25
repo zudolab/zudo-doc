@@ -204,11 +204,39 @@ carefully before clicking.
 | `v1.2.3-beta.2`     | `next`       |
 | `v1.2.3-rc.3`       | `next`       |
 
-## Files involved
+## Files involved (pin sources)
+
+The release script writes to ALL of these in one pass:
 
 | File | Role |
 |------|------|
 | `scripts/release-create-zudo-doc.sh` | Version bump + changelog scaffold (run in Step 2) |
-| `.github/workflows/publish-create-zudo-doc.yml` | CI publish workflow (fires on draft publish) |
-| `packages/create-zudo-doc/package.json` | Package version (must match the git tag) |
+| `.github/workflows/publish-create-zudo-doc.yml` | CI publish workflow for `create-zudo-doc` (fires on `v*` draft publish) |
+| `.github/workflows/publish-zudo-doc-v2.yml` | CI publish workflow for `@zudo-doc/zudo-doc-v2` (fires on `v2-*` draft publish) — W4A (#1732) |
+| `.github/workflows/publish-doc-history-server.yml` | CI publish workflow for `@zudo-doc/doc-history-server` (fires on `doc-history-server-*` draft publish) — W4A (#1732) |
 | `package.json` (root) | Root version (kept in lockstep) |
+| `packages/create-zudo-doc/package.json` | Generator package version (must match the `v<X.Y.Z>` git tag) |
+| `packages/zudo-doc-v2/package.json` | v2 framework package version (must match the `v2-<X.Y.Z>` git tag) — W4A (#1732) |
+| `packages/doc-history-server/package.json` | doc-history-server package version (must match the `doc-history-server-<X.Y.Z>` git tag) — W4A (#1732) |
+| `packages/create-zudo-doc/src/scaffold.ts` | `@zudo-doc/zudo-doc-v2: ^<version>` pin in the generated downstream `package.json`; bumped in lockstep with v2 by the release script — W4A (#1732) |
+
+## Publish ORDER matters (W4A — #1732)
+
+When v2 or doc-history-server has changed, publish them BEFORE
+`create-zudo-doc`, because the generated `package.json` from
+`create-zudo-doc` pins `@zudo-doc/zudo-doc-v2: ^<version>`. If that v2
+version is not yet on npm, a fresh scaffold's `pnpm install` will fail
+with a 404 on the v2 package.
+
+Recommended sequence after `b4push` is green and the commit is pushed:
+
+1. Tag and draft-publish `doc-history-server-<X.Y.Z>` if its
+   `packages/doc-history-server/` source has changed.
+2. Tag and draft-publish `v2-<X.Y.Z>` if its `packages/zudo-doc-v2/`
+   source or pin range has changed.
+3. After both above are live on npm, tag and draft-publish
+   `v<X.Y.Z>` for `create-zudo-doc`.
+
+Each draft-publish fires its own dedicated workflow (concurrency groups
+are distinct, so they can run in parallel within a single wave once
+their tags are pushed).
