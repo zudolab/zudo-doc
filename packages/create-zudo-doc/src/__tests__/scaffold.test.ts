@@ -194,7 +194,14 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
 });
 
 describe("scaffold — sidebarToggle feature", () => {
-  it("desktop-sidebar-toggle.tsx does NOT import from @zudo-doc/* (inlined constants)", async () => {
+  // W4A (#1732): @zudo-doc/zudo-doc-v2 is now a runtime dep of every scaffold
+  // (published via .github/workflows/publish-zudo-doc-v2.yml), so the
+  // desktop-sidebar-toggle component imports BEFORE_NAVIGATE_EVENT /
+  // AFTER_NAVIGATE_EVENT from @zudo-doc/zudo-doc-v2/transitions directly
+  // instead of inlining them as string literals. The two tests below were
+  // previously asserting the inverse (v2 absent), which encoded the
+  // "v2 is workspace-private/unpublished" constraint that W4A removes.
+  it("desktop-sidebar-toggle.tsx imports lifecycle events from @zudo-doc/zudo-doc-v2/transitions", async () => {
     const choices: UserChoices = {
       projectName: "test-sidebar-toggle-on",
       defaultLang: "en",
@@ -211,11 +218,14 @@ describe("scaffold — sidebarToggle feature", () => {
       ),
       "utf-8",
     );
-    expect(content).not.toMatch(/from\s+['"]@zudo-doc\//);
-
+    expect(content).toMatch(
+      /from\s+['"]@zudo-doc\/zudo-doc-v2\/transitions['"]/,
+    );
+    expect(content).toContain("BEFORE_NAVIGATE_EVENT");
+    expect(content).toContain("AFTER_NAVIGATE_EVENT");
   });
 
-  it("generated package.json has no @zudo-doc/* dependency when sidebarToggle is enabled", async () => {
+  it("generated package.json pins @zudo-doc/zudo-doc-v2 (W4A — runtime dep)", async () => {
     const choices: UserChoices = {
       projectName: "test-sidebar-toggle-deps",
       defaultLang: "en",
@@ -228,14 +238,8 @@ describe("scaffold — sidebarToggle feature", () => {
     const pkg = await fs.readJson(
       projectPath("test-sidebar-toggle-deps", "package.json"),
     );
-    const allDeps = {
-      ...pkg.dependencies,
-      ...pkg.devDependencies,
-    };
-    const zudoDocKeys = Object.keys(allDeps).filter((k) =>
-      k.startsWith("@zudo-doc/"),
-    );
-    expect(zudoDocKeys).toEqual([]);
+    expect(pkg.dependencies["@zudo-doc/zudo-doc-v2"]).toBeDefined();
+    expect(pkg.dependencies["@zudo-doc/zudo-doc-v2"]).toMatch(/^\^?0\.1\./);
   });
 });
 
@@ -2339,12 +2343,17 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
     // Post-S5: the root package.json has dropped astro/@astrojs/* and the
     // generator now lists @takazudo/zfb directly as the runtime dependency.
     // (Replaces the Phase-A assertion that astro was still present.)
-    it("package.json lists @takazudo/zfb as a runtime dependency (post-S5)", async () => {
+    // W4A (#1732): @zudo-doc/zudo-doc-v2 is now also a runtime dep — pinned
+    // to the v2 publish version that release-create-zudo-doc.sh keeps in
+    // lockstep with the generator's own version.
+    it("package.json lists @takazudo/zfb and @zudo-doc/zudo-doc-v2 as runtime dependencies (post-S5, post-W4A)", async () => {
       const pkg = await fs.readJson(
         projectPath("test-zfb-minimal", "package.json"),
       );
       expect(pkg.dependencies["@takazudo/zfb"]).toBeDefined();
       expect(pkg.dependencies["astro"]).toBeUndefined();
+      expect(pkg.dependencies["@zudo-doc/zudo-doc-v2"]).toBeDefined();
+      expect(pkg.dependencies["@zudo-doc/zudo-doc-v2"]).toMatch(/^\^?0\.1\./);
     });
   });
 

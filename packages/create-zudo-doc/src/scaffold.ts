@@ -241,15 +241,21 @@ function generatePackageJson(choices: UserChoices) {
   // Intentionally absent from scaffolded deps:
   //   @zudo-doc/md-plugins — zero references in generator templates/source
   //   @takazudo/zfb-adapter-cloudflare — zero references in generator templates/source
-  //   @zudo-doc/zudo-doc-v2 — workspace-private/unpublished; the two constants it
-  //     provides to desktop-sidebar-toggle.tsx are inlined directly in that template
   const deps: Record<string, string> = {
     // zfb engine — replaces astro/@astrojs/* now that the cutover (#500 S5)
     // has retired the legacy Astro pipeline. Distributed as published npm
     // packages (the prebuilt binary ships via an optionalDependency of
     // @takazudo/zfb); pinned to the pre-release the scaffold targets.
-    "@takazudo/zfb": "0.1.0-next.5",
-    "@takazudo/zfb-runtime": "0.1.0-next.5",
+    // The two literals below must match root package.json's
+    // dependencies["@takazudo/zfb"] / ["@takazudo/zfb-runtime"] —
+    // enforced by scripts/check-pin-parity.mjs (W4A — #1732).
+    "@takazudo/zfb": "0.1.0-next.6",
+    "@takazudo/zfb-runtime": "0.1.0-next.6",
+    // @zudo-doc/zudo-doc-v2 — published from this monorepo via
+    // .github/workflows/publish-zudo-doc-v2.yml. The pin here is bumped in
+    // lockstep by scripts/release-create-zudo-doc.sh whenever v2's version
+    // moves, so a fresh scaffold pulls the version we just published.
+    "@zudo-doc/zudo-doc-v2": "^0.1.0",
     // ^10.29.1 floor satisfies @takazudo/zdtp's preact peer range so the app
     // and zdtp resolve a single preact instance — a lower floor can split into
     // two copies and crash hook-using SSR islands with "undefined reading __H".

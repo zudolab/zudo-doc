@@ -26,9 +26,13 @@ src/integrations/claude-resources/__tests__/generate.test.ts
 src/integrations/claude-resources/escape-for-mdx.ts
 src/integrations/claude-resources/generate.ts
 
-# Showcase-specific renderers — source ships discount/status/difficulty examples
-# for the zudo-doc showcase only; template ships an empty map so downstream users
-# can add their own renderers without inheriting unrelated examples
+# Showcase-specific renderers — source ships Pill/discount/status/difficulty
+# examples for the zudo-doc showcase only; template ships an empty map so
+# downstream users can add their own renderers without inheriting unrelated
+# examples. Both import the canonical types (FrontmatterCellRenderer +
+# FrontmatterCellRendererProps) from @zudo-doc/zudo-doc-v2/metainfo since W4A
+# (#1732) — the legacy preact/compat ComponentType<FrontmatterRendererProps>
+# shape was replaced to match host.
 src/config/frontmatter-preview-renderers.tsx
 
 # Showcase-specific tag vocabulary — source ships the starter vocabulary for
@@ -110,15 +114,11 @@ src/config/design-token-panel-config.ts
 src/lib/design-token-panel-bootstrap.ts
 src/utils/design-token-types.ts
 
-# Post-cutover cleanup (#1688) — sidebarToggle desktop component. Production
-# imports BEFORE_NAVIGATE_EVENT / AFTER_NAVIGATE_EVENT from
-# @zudo-doc/zudo-doc-v2/transitions (the v2 module owns the event vocabulary).
-# The create-zudo-doc template inlines the literal "zfb:before-preparation" /
-# "zfb:after-swap" strings because that package is workspace-private/unpublished,
-# so a standalone scaffold cannot resolve the import. Same intentional divergence
-# as design-token-panel-bootstrap.ts above. Reconcile if/when create-zudo-doc
-# migrates onto the v2 transitions module.
-src/components/desktop-sidebar-toggle.tsx
+# W4A (#1732) — desktop-sidebar-toggle.tsx no longer drifts. Now that
+# @zudo-doc/zudo-doc-v2 is published and pinned in the generated package.json,
+# the template imports BEFORE_NAVIGATE_EVENT / AFTER_NAVIGATE_EVENT from
+# @zudo-doc/zudo-doc-v2/transitions directly (was: inlined literals). Allowlist
+# entry removed; the file is now byte-identical between template and host.
 
 # W3A (#1729 / generator-pages-migration Wave 3) — header-right-items moved into
 # @zudo-doc/zudo-doc-v2/header for production. The host (this repo) imports
