@@ -372,7 +372,7 @@ export default function VersionedJaDocsPage({ entry, autoIndex, version, isFallb
         <>
           <h1 class="text-heading font-bold mb-vsp-xs">{autoIndex.label}</h1>
           {autoIndex.description && (
-            <p class="mb-vsp-lg text-subheading text-muted">
+            <p class="mb-vsp-lg text-title text-muted">
               {autoIndex.description}
             </p>
           )}
@@ -403,7 +403,7 @@ export default function VersionedJaDocsPage({ entry, autoIndex, version, isFallb
           )}
 
           {entry!.data.description && (
-            <p class="mb-vsp-lg text-subheading text-muted">
+            <p class="mb-vsp-lg text-title text-muted">
               {entry!.data.description}
             </p>
           )}

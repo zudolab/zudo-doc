@@ -322,7 +322,7 @@ export default function DocsPage({ entry, autoIndex, breadcrumbs, prev, next, he
           <DocMetainfoArea slug={slug} locale={locale} />
 
           {autoIndex.description && (
-            <p class="mb-vsp-lg text-subheading text-muted">
+            <p class="mb-vsp-lg text-title text-muted">
               {autoIndex.description}
             </p>
           )}
@@ -343,7 +343,7 @@ export default function DocsPage({ entry, autoIndex, breadcrumbs, prev, next, he
           <DocTagsArea slug={slug} locale={locale} tags={entry!.data.tags} />
 
           {entry!.data.description && (
-            <p class="mb-vsp-lg text-subheading text-muted">
+            <p class="mb-vsp-lg text-title text-muted">
               {entry!.data.description}
             </p>
           )}

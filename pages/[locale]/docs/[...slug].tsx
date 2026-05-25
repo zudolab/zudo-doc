@@ -340,7 +340,7 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
           <DocMetainfoArea slug={slug} locale={locale} />
 
           {autoIndex.description && (
-            <p class="mb-vsp-lg text-subheading text-muted">
+            <p class="mb-vsp-lg text-title text-muted">
               {autoIndex.description}
             </p>
           )}
@@ -371,7 +371,7 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
           )}
 
           {entry!.data.description && (
-            <p class="mb-vsp-lg text-subheading text-muted">
+            <p class="mb-vsp-lg text-title text-muted">
               {entry!.data.description}
             </p>
           )}

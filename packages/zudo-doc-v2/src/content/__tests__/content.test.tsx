@@ -87,7 +87,7 @@ describe("HeadingH2", () => {
     const html = serialize(<HeadingH2 id="section-1">Hello</HeadingH2>);
     expect(html).toContain("<h2");
     expect(html).toContain('id="section-1"');
-    expect(html).toContain("text-subheading");
+    expect(html).toContain("text-title");
     expect(html).toContain("font-bold");
     expect(html).toContain("Hello");
   });
@@ -97,7 +97,7 @@ describe("HeadingH2", () => {
       <HeadingH2 className="extra-class">Text</HeadingH2>,
     );
     expect(html).toContain("extra-class");
-    expect(html).toContain("text-subheading");
+    expect(html).toContain("text-title");
   });
 });
 

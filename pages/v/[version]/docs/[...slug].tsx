@@ -343,7 +343,7 @@ export default function VersionedDocsPage({ entry, autoIndex, version, breadcrum
           <DocMetainfoArea slug={slug} locale={locale} />
 
           {autoIndex.description && (
-            <p class="mb-vsp-lg text-subheading text-muted">
+            <p class="mb-vsp-lg text-title text-muted">
               {autoIndex.description}
             </p>
           )}
@@ -364,7 +364,7 @@ export default function VersionedDocsPage({ entry, autoIndex, version, breadcrum
           <DocTagsArea slug={slug} locale={locale} tags={entry!.data.tags} />
 
           {entry!.data.description && (
-            <p class="mb-vsp-lg text-subheading text-muted">
+            <p class="mb-vsp-lg text-title text-muted">
               {entry!.data.description}
             </p>
           )}

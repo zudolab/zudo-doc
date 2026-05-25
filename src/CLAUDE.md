@@ -70,15 +70,18 @@ Uses the same three-tier approach as colors: abstract scale → semantic roles �
 
 **Tier 2 — Semantic tokens** (`--text-*` in `@theme`, reference Tier 1):
 
-- `micro` (2xs/12px), `caption` (xs/14px), `small` (sm/16px), `body` (md/19.2px), `subheading` (lg/22.4px), `heading` (xl/48px), `display` (2xl/60px)
+- `micro` (2xs/12px), `caption` (xs/14px), `small` (sm/16px), `body` (md/19.2px), `title` (lg/22.4px), `heading` (xl/48px), `display` (2xl/60px)
+- Each is a pure `var(--text-scale-*)` reference — Tier 2 carries the role, Tier 1 carries the value. The Design Token Panel models this exactly: the Font tab's role tier is a `referencesTier: "font-scale"` tier (dropdowns picking a scale step), mirroring the Color tab's semantic→palette tier. Editing a scale step propagates to every role live.
 - Use these via Tailwind classes: `text-body`, `text-caption`, `text-micro`, `text-heading`, etc.
+- Name roles by their **role**, broadly enough to cover every usage (`title` covers h2 / card / modal / section headings). `subheading` was renamed to `title` because its name implied a narrower scope than its actual broad use. A role used in only one place should instead be a scoped Tier 3 token.
 
 **Tier 3 — Component usage** (Tailwind classes in markup):
 
 - Components consume Tier 2 tokens: `<p class="text-body">`, `<h1 class="text-heading">`
 - `.zd-content` typography in `global.css` also references Tier 2 tokens
+- For a genuinely component-specific size that should not become a global role, add a scoped CSS custom property on the component (e.g. `--_card-amount: var(--text-scale-2xl)`) referencing Tier 1/Tier 2 — do NOT widen a Tier 2 role to fit one component.
 
-To add a new font size: add the raw value to Tier 1, then create a semantic token in Tier 2 that references it.
+To add a new font size: add the raw value to Tier 1, then create a semantic token in Tier 2 that references it. Keep the panel in sync by adding the role→scale mapping in `FONT_ROLE_TO_SCALE` (`design-token-panel-config.ts`).
 
 ## Two-Tier Size Strategy
 

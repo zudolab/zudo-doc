@@ -246,15 +246,55 @@ const COLOR_TAB: TabConfig = {
 // Font tab — five tiers grouped by the manifest's `group` field.
 // ---------------------------------------------------------------------------
 
+const FONT_SCALE_TIER_ID = "font-scale";
+
+/**
+ * Tier 2 semantic role → Tier 1 abstract scale item id. Mirrors the `var(--…)`
+ * wiring in `global.css` (`--text-body: var(--text-scale-md)` etc.). The role
+ * tier is a *reference* tier: each item's stored value is the id of a
+ * `font-scale` item, exactly like the Color tab's semantic→palette tier. zdtp
+ * renders these as dropdowns and emits `var(--text-scale-*)`, so editing a
+ * scale step propagates to every role live — the refer model the panel
+ * previously hid behind independent rem sliders.
+ */
+const FONT_ROLE_TO_SCALE: Readonly<Record<string, string>> = {
+  "text-micro": "text-scale-2xs",
+  "text-caption": "text-scale-xs",
+  "text-small": "text-scale-sm",
+  "text-body": "text-scale-md",
+  "text-title": "text-scale-lg",
+  "text-heading": "text-scale-xl",
+  "text-display": "text-scale-2xl",
+};
+
+/**
+ * Build the semantic font-size tier as a reference tier pointing at the
+ * `font-scale` tier. Defaults are overridden to the referenced scale id (the
+ * manifest still records resolved rem values for serde / the flat-manifest
+ * generator template, so the override happens here rather than in the
+ * manifest to keep both consumers correct).
+ */
+function buildFontRoleTier(): TierConfig {
+  const base = tierFromGroup(FONT_TOKENS, "font-size", "Font size");
+  return {
+    ...base,
+    items: base.items.map((item) => {
+      const scaleId = FONT_ROLE_TO_SCALE[item.id];
+      return scaleId ? { ...item, default: scaleId } : item;
+    }),
+    referencesTier: FONT_SCALE_TIER_ID,
+  };
+}
+
 const FONT_TAB: TabConfig = {
   id: "font",
   label: "Font",
   tiers: [
-    tierFromGroup(FONT_TOKENS, "font-size", "Font size"),
+    tierFromGroup(FONT_TOKENS, FONT_SCALE_TIER_ID, "Scale"),
+    buildFontRoleTier(),
     tierFromGroup(FONT_TOKENS, "line-height", "Line height"),
     tierFromGroup(FONT_TOKENS, "font-weight", "Font weight"),
     tierFromGroup(FONT_TOKENS, "font-family", "Font family"),
-    tierFromGroup(FONT_TOKENS, "font-scale", "Scale (advanced)"),
   ],
 };
 

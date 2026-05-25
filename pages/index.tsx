@@ -145,7 +145,7 @@ export default function IndexPage(): JSX.Element {
 
       {settings.docTags && tagCount > 0 && (
         <section class="mt-vsp-xl">
-          <h2 class="text-subheading font-bold mb-vsp-md">
+          <h2 class="text-title font-bold mb-vsp-md">
             {t("doc.allTags", locale)}
           </h2>
           <a href={withBase("/docs/tags")} class="text-accent underline hover:text-accent-hover">

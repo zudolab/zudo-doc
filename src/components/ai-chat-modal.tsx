@@ -139,7 +139,7 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
       <div className="flex h-full flex-col">
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-muted px-hsp-lg py-vsp-xs">
-          <h2 className="text-subheading font-bold text-fg">AI Assistant</h2>
+          <h2 className="text-title font-bold text-fg">AI Assistant</h2>
           <button
             type="button"
             onClick={() => dialogRef.current?.close()}
