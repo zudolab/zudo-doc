@@ -22,7 +22,7 @@
 // was orphaned during the .astro retirement.)
 
 import type { JSX } from "preact";
-import { OgTags } from "@zudo-doc/zudo-doc-v2/head";
+import { OgTags, TwitterCard } from "@zudo-doc/zudo-doc-v2/head";
 // Don't import ColorSchemeProvider from "@zudo-doc/zudo-doc-v2/theme" — that
 // barrel also re-exports DesignTokenTweakPanel + ColorTweakExportModal, which
 // transitively pull `src/components/design-token-tweak/*` and the v2 panel
@@ -34,6 +34,7 @@ import { OgTags } from "@zudo-doc/zudo-doc-v2/head";
 import ColorSchemeProvider from "@zudo-doc/zudo-doc-v2/theme/color-scheme-provider";
 import { composeMetaTitle } from "./_compose-meta-title";
 import { withBase } from "@/utils/base";
+import { settings } from "@/config/settings";
 
 export interface HeadWithDefaultsProps {
   /** Page title forwarded to og:title. Required. */
@@ -69,12 +70,29 @@ export function HeadWithDefaults({
   description,
   canonical,
 }: HeadWithDefaultsProps): JSX.Element {
+  // og:image / twitter:image must be absolute URLs — crawlers silently drop
+  // relative og:image values. Computed as siteUrl (no trailing slash) + the
+  // base-prefixed asset path.
+  const ogImageUrl = `${settings.siteUrl.replace(/\/$/, "")}${withBase("/img/ogp.png")}`;
   return (
     <>
-      <OgTags title={composeMetaTitle(title)} description={description} />
+      <OgTags
+        title={composeMetaTitle(title)}
+        description={description}
+        ogImage={ogImageUrl}
+      />
+      {/* og:image:width / og:image:height / og:image:alt — not in OgTags API;
+          emitted here directly to avoid expanding the shared HeadProps surface.
+          Standard 1200×630 social preview dimensions. */}
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:image:alt" content={composeMetaTitle(title)} />
+      <TwitterCard card="summary_large_image" image={ogImageUrl} />
       <ColorSchemeProvider />
-      {/* favicon — withBase() handles the configured base path prefix */}
-      <link rel="icon" href={withBase("/favicon.svg")} type="image/svg+xml" />
+      {/* favicon set — withBase() handles the configured base path prefix */}
+      <link rel="icon" href={withBase("/favicon.ico")} sizes="any" />
+      <link rel="icon" type="image/png" sizes="32x32" href={withBase("/favicon-32x32.png")} />
+      <link rel="icon" type="image/png" sizes="16x16" href={withBase("/favicon-16x16.png")} />
       {canonical !== undefined && <link rel="canonical" href={canonical} />}
     </>
   );
