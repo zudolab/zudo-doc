@@ -36,7 +36,7 @@ export const settings = {
     respectPrefersColorScheme: true,
   } as ColorModeConfig | false,
   siteName: "zudo-doc",
-  siteDescription: "Documentation base framework built with Astro and MDX." as string,
+  siteDescription: "Documentation base framework built with zfb, MDX, and Tailwind CSS v4." as string,
   base: "/",
   trailingSlash: true as boolean,
   docsDir: "src/content/docs",
