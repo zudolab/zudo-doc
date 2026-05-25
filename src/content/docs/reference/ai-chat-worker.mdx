@@ -10,7 +10,7 @@ tags:
 The `@zudo-doc/ai-chat-worker` package was migrated to a Cloudflare Pages Functions / SSR endpoint at `pages/api/ai-chat.tsx`. The package source has been removed; this doc is retained for historical reference only.
 :::
 
-Standalone Cloudflare Worker that provides an AI chat API endpoint, independent of the Astro documentation site.
+Standalone Cloudflare Worker that provides an AI chat API endpoint, independent of the zfb documentation site.
 
 ## Overview
 
@@ -194,11 +194,11 @@ The workflow can also be triggered manually via `workflow_dispatch`.
 
 ## Relationship to AI Assistant
 
-The built-in [AI Assistant](../guides/ai-assistant.mdx) runs as part of the Astro site using the `@astrojs/node` adapter. The AI Chat Worker is a standalone alternative that provides the same chat capability without requiring server-side rendering in the docs site.
+The built-in [AI Assistant](../guides/ai-assistant.mdx) runs as part of the zfb site as an SSR endpoint (`pages/api/ai-chat.tsx`). The AI Chat Worker is a standalone alternative that provides the same chat capability without requiring server-side rendering in the docs site.
 
 | Feature               | Built-in AI Assistant   | AI Chat Worker             |
 | --------------------- | ----------------------- | -------------------------- |
-| Runtime               | Node.js (Astro SSR)     | Cloudflare Workers         |
+| Runtime               | zfb SSR endpoint        | Cloudflare Workers         |
 | Deployment            | Part of the docs site   | Independent service        |
 | Docs site requirement | Hybrid mode (SSR)       | Static site is sufficient  |
 | Documentation context | Loaded from local file  | Fetched from deployed site |

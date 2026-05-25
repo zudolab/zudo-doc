@@ -194,11 +194,11 @@ pnpm run deploy
 
 ## AI Assistantとの関係
 
-組み込みの[AI Assistant](../guides/ai-assistant.mdx)は`@astrojs/node`アダプタを使用してAstroサイトの一部として動作します。AI Chat Workerは、ドキュメントサイトでサーバーサイドレンダリングを必要とせずに同じチャット機能を提供するスタンドアロンの代替手段です。
+組み込みの[AI Assistant](../guides/ai-assistant.mdx)はzfbサイトのSSRエンドポイント（`pages/api/ai-chat.tsx`）として動作します。AI Chat Workerは、ドキュメントサイトでサーバーサイドレンダリングを必要とせずに同じチャット機能を提供するスタンドアロンの代替手段です。
 
 | 機能                       | 組み込みAI Assistant       | AI Chat Worker                       |
 | -------------------------- | -------------------------- | ------------------------------------ |
-| ランタイム                 | Node.js（Astro SSR）       | Cloudflare Workers                   |
+| ランタイム                 | zfb SSRエンドポイント      | Cloudflare Workers                   |
 | デプロイ                   | ドキュメントサイトの一部   | 独立したサービス                     |
 | ドキュメントサイトの要件   | ハイブリッドモード（SSR）  | 静的サイトで十分                     |
 | ドキュメントコンテキスト   | ローカルファイルから読み込み | デプロイ済みサイトから取得          |
