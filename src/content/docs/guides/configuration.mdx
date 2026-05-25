@@ -572,18 +572,11 @@ The Shiki code highlighting theme is tied to the color scheme. When you change `
 
 ## Logo
 
-The site logo is displayed on the landing page as a masked SVG shape. The file is located at `public/img/logo.svg`.
+The site logo is displayed on the landing page as a full-color banner image. The file is located at `public/img/logo.svg`.
 
-The default logo is a randomly generated geometric pattern created with [`@takazudo/kumiko-gen`](https://www.npmjs.com/package/@takazudo/kumiko-gen). To regenerate it with a new random pattern:
+The default banner is a 1200×630 SVG with the background baked in, so it renders correctly on both light and dark themes without any CSS masking. To update the logo, replace `public/img/logo.svg` with your own SVG file.
 
-```bash
-pnpm run generate:logo
-```
-
-You can also replace `public/img/logo.svg` with any custom SVG file. The logo is rendered as a CSS mask using the alpha channel, so:
-
-- The SVG **must have a transparent background** — opaque backgrounds render as a filled rectangle
-- The stroke or fill color in the SVG file does not matter; the displayed color is controlled by the site's color tokens
+Because the banner is rendered as a plain `<img>` element, there are no constraints on background color or alpha channel — any SVG will display as-is.
 
 ## Color Scheme Config
 

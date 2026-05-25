@@ -129,10 +129,10 @@ export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
       {/* Hero: logo left, title+desc+links right, block centered */}
       <div class="flex justify-center mb-vsp-xl">
         <div class="flex flex-col items-center text-center gap-hsp-md lg:flex-row lg:text-left lg:gap-hsp-xl">
-          <div
-            class="w-[80%] aspect-square lg:h-[10.5rem] lg:w-[10.5rem] bg-fg shrink-0"
-            style={`-webkit-mask: url(${logoUrl}) center/contain no-repeat; mask: url(${logoUrl}) center/contain no-repeat;`}
-            aria-hidden="true"
+          <img
+            src={logoUrl}
+            alt={settings.siteName}
+            class="w-[320px] max-w-full aspect-[1200/630] shrink-0"
           />
           <div>
             <h1 class="text-heading font-bold mb-vsp-2xs">{settings.siteName}</h1>
