@@ -60,6 +60,23 @@ jobs:
         run: bash scripts/check-template-drift.sh
 
   # ---------------------------------------------------------------------------
+  # Job 0.5: Pin parity check (lightweight, no pnpm install needed)
+  # ---------------------------------------------------------------------------
+  # Verifies @takazudo/zfb / @takazudo/zfb-runtime pins are identical
+  # between root package.json and packages/create-zudo-doc/src/scaffold.ts.
+  # Failure mode "W1A §5#4 — three pin sources, only one bumped" (W4A — #1732).
+  # Pure-Node script — uses preinstalled Node 22 on the runner image, no pnpm.
+  check-pin-parity:
+    name: Pin Parity Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Check pin parity
+        run: node scripts/check-pin-parity.mjs
+
+  # ---------------------------------------------------------------------------
   # Job 1: Type checking
   # ---------------------------------------------------------------------------
   typecheck:
