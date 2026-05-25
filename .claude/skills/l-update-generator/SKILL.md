@@ -12,7 +12,7 @@ Detect and fix drift between the main zudo-doc project and the `create-zudo-doc`
 The generator uses **additive composition** — not copy-then-strip:
 
 1. A minimal **base template** (`templates/base/`) is copied first
-2. **Programmatic generators** create config files from user choices (`astro-config-gen.ts`, `content-config-gen.ts`, `settings-gen.ts`)
+2. **Programmatic generators** create config files from user choices (`zfb-config-gen.ts`, `settings-gen.ts`)
 3. **Feature modules** (`src/features/*.ts`) inject code into anchor points (`@slot:`) in shared files and copy feature-specific files
 4. `compose.ts` orchestrates feature file copying, injection, and anchor cleanup
 5. Some features have **postProcess hooks** that mutate or remove generated files (e.g., `i18n.ts` patches locale strings and may delete `src/pages/ja/`)
@@ -24,7 +24,7 @@ The generator uses **additive composition** — not copy-then-strip:
 - Periodically to verify generator health
 - User says "update generator", "sync generator", "check generator drift", "l-update-generator", or the old name "l-sync-create-zudo-doc"
 
-**Quick pre-check**: Run `pnpm check:template-drift` first to get an automated summary of base template drift. Then proceed with the full workflow below for settings, dependency, astro config, and feature composition drift.
+**Quick pre-check**: Run `pnpm check:template-drift` first to get an automated summary of base template drift. Then proceed with the full workflow below for settings, dependency, zfb config, and feature composition drift.
 
 ## Step 1: Analyze Drift
 
@@ -48,16 +48,16 @@ Compare dependencies:
 
 Check for packages used in base template files and feature files that are not included in the generated package.json.
 
-### 1c. Astro config drift
+### 1c. zfb config drift
 
-Compare the main project's `astro.config.ts` with what the generator produces:
+Compare the main project's `zfb.config.ts` with what the generator produces:
 
-- **Main**: `astro.config.ts` — all imports and integrations
-- **Generator**: `packages/create-zudo-doc/src/astro-config-gen.ts` — programmatic generation
+- **Main**: `zfb.config.ts` — all imports and integrations
+- **Generator**: `packages/create-zudo-doc/src/zfb-config-gen.ts` — programmatic generation
 
-For each integration in the main astro.config.ts, verify that either:
+For each integration in the main zfb.config.ts, verify that either:
 
-1. It is unconditionally included in `astro-config-gen.ts`, OR
+1. It is unconditionally included in `zfb-config-gen.ts`, OR
 2. It is conditionally included based on the correct feature selection
 
 ### 1d. Feature composition drift
@@ -86,7 +86,7 @@ Check that non-feature-specific files in the base template reflect the latest ch
 
 **Automated first check**: Run `pnpm check:template-drift` before doing manual analysis. This runs `scripts/check-template-drift.sh` and quickly identifies files that differ between the main project and the base template.
 
-**Allowlist note**: Some files are listed in `.template-drift-allowlist` (e.g., `global.css`, `header.astro`, `doc-layout.astro`) and are skipped entirely by the automated script because they contain slot sections that intentionally differ. These files **still require manual review** — check that any non-slot-section changes in the main project are reflected in the template counterpart.
+**Allowlist note**: Some files are listed in `.template-drift-allowlist` (e.g., `global.css`) and are skipped entirely by the automated script because they contain slot sections that intentionally differ. These files **still require manual review** — check that any non-slot-section changes in the main project are reflected in the template counterpart.
 
 ## Step 2: Report Findings
 
@@ -101,8 +101,8 @@ Present a clear drift report:
 - Missing from generated package.json: packageX (used by featureY)
 - Unnecessary in generated package.json: packageZ (feature disabled)
 
-## Astro Config Drift
-- Missing integration: integrationX (present in main, absent from astro-config-gen.ts)
+## zfb Config Drift
+- Missing integration: integrationX (present in main, absent from zfb-config-gen.ts)
 - Missing conditional: integrationY should be gated by feature "Z"
 
 ## Feature Composition Drift
@@ -111,7 +111,7 @@ Present a clear drift report:
 - Missing anchor: feature "X" injects at @slot:Y but anchor not found in base template
 
 ## Base Template Drift
-- Stale file: templates/base/src/components/foo.astro differs from main src/components/foo.astro
+- Stale file: templates/base/src/components/foo.tsx differs from main src/components/foo.tsx
 
 ## No Drift Detected
 (if everything is in sync)
@@ -123,7 +123,7 @@ For each drift item found:
 
 1. **Settings drift** → Update `settings-gen.ts` to add missing fields with sensible defaults
 2. **Dependency drift** → Update `scaffold.ts` `generatePackageJson()` to add/remove deps
-3. **Astro config drift** → Update `astro-config-gen.ts` to add/remove imports and integrations
+3. **zfb config drift** → Update `zfb-config-gen.ts` to add/remove imports and integrations
 4. **Feature composition drift** → Create/update feature module in `src/features/`, add template files, add anchors to base template
 5. **Base template drift** → Update the stale file in `templates/base/`
 
@@ -138,10 +138,9 @@ After fixes:
 | File | Role |
 |------|------|
 | `src/config/settings.ts` | Canonical settings (source of truth) |
-| `astro.config.ts` | Main project astro config (reference for generator) |
+| `zfb.config.ts` | Main project zfb config (reference for generator) |
 | `packages/create-zudo-doc/src/settings-gen.ts` | Generates settings.ts |
-| `packages/create-zudo-doc/src/astro-config-gen.ts` | Generates astro.config.ts programmatically |
-| `packages/create-zudo-doc/src/content-config-gen.ts` | Generates content.config.ts programmatically |
+| `packages/create-zudo-doc/src/zfb-config-gen.ts` | Generates zfb.config.ts programmatically (content-collection schemas live inline — there is no separate content config) |
 | `packages/create-zudo-doc/src/compose.ts` | Additive composition engine (injections, anchors) |
 | `packages/create-zudo-doc/src/features/*.ts` | Feature modules (injections + file lists) |
 | `packages/create-zudo-doc/src/scaffold.ts` | Orchestrates generation pipeline, generates package.json |

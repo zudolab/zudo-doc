@@ -232,7 +232,7 @@ Use these tables to verify. Check each file with `test -e <path>`.
 | `src/pages/docs/` | PRESENT |
 | `src/content/docs/` | PRESENT |
 | `src/config/settings.ts` | PRESENT |
-| `astro.config.ts` | PRESENT |
+| `zfb.config.ts` | PRESENT |
 
 **search:**
 
@@ -359,7 +359,7 @@ Read `__inbox/generator-test-<pattern>/test-project/src/config/settings.ts` and 
 
 - `colorScheme: "Default Dark"`
 - Check `src/config/i18n.ts` for `defaultLocale = "ja"`
-- Check `astro.config.ts` for `defaultLocale: "ja"`
+- Check `zfb.config.ts` for `defaultLocale: "ja"`
 
 **all-features:**
 
@@ -387,7 +387,7 @@ Start the dev server and use `/headless-browser` (Tier 1: headless-check.js) to 
 
 ```bash
 cd __inbox/generator-test-<pattern>/test-project
-npx astro dev --port 14350 &
+pnpm dev --port 14350 &
 DEV_PID=$!
 sleep 6
 ```
