@@ -77,9 +77,12 @@ export const SPACING_TOKENS: readonly TokenDef[] = [
  * panel-config groups by `group` and presents each tier as a separate
  * section under the Font tab.)
  *
- * Defaults mirror `global.css` resolved values: font-size tokens are recorded
- * as their resolved rem (`--text-body` → `1.2rem`) rather than their `var()`
- * reference, so the slider can display a concrete number on first open.
+ * Defaults here mirror `global.css` resolved rem values (`--text-body` →
+ * `1.2rem`) so serde and the flat-`TokenManifest` generator template have a
+ * concrete number. The tier-based main panel (`design-token-panel-config.ts`)
+ * promotes the `font-size` group to a *reference* tier pointing at
+ * `font-scale`, overriding these defaults to the referenced scale id so the
+ * panel reflects the `var(--text-scale-*)` wiring the CSS already encodes.
  */
 export const FONT_TOKENS: readonly TokenDef[] = [
   // --- Font sizes (Tier 2 semantic) ---
@@ -87,7 +90,7 @@ export const FONT_TOKENS: readonly TokenDef[] = [
   { id: "text-caption",    cssVar: "--text-caption",    label: "text-caption",    group: "font-size", default: "0.875rem", min: 0.5, max: 5, step: 0.05, unit: "rem" },
   { id: "text-small",      cssVar: "--text-small",      label: "text-small",      group: "font-size", default: "1rem",     min: 0.5, max: 5, step: 0.05, unit: "rem" },
   { id: "text-body",       cssVar: "--text-body",       label: "text-body",       group: "font-size", default: "1.2rem",   min: 0.5, max: 5, step: 0.05, unit: "rem" },
-  { id: "text-subheading", cssVar: "--text-subheading", label: "text-subheading", group: "font-size", default: "1.4rem",   min: 0.5, max: 5, step: 0.05, unit: "rem" },
+  { id: "text-title", cssVar: "--text-title", label: "text-title", group: "font-size", default: "1.4rem",   min: 0.5, max: 5, step: 0.05, unit: "rem" },
   { id: "text-heading",    cssVar: "--text-heading",    label: "text-heading",    group: "font-size", default: "3rem",     min: 0.5, max: 5, step: 0.05, unit: "rem" },
   { id: "text-display",    cssVar: "--text-display",    label: "text-display",    group: "font-size", default: "3.75rem",  min: 0.5, max: 5, step: 0.05, unit: "rem" },
 

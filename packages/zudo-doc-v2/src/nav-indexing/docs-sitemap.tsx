@@ -55,7 +55,7 @@ function SitemapSection({ node, index }: SitemapSectionProps): JSX.Element {
 
   return (
     <details key={`section-${index}`} class="group border border-muted overflow-hidden" open>
-      <summary class="flex items-center gap-x-hsp-md px-hsp-xl py-vsp-md text-subheading font-bold cursor-pointer select-none bg-surface list-none [&::-webkit-details-marker]:hidden">
+      <summary class="flex items-center gap-x-hsp-md px-hsp-xl py-vsp-md text-title font-bold cursor-pointer select-none bg-surface list-none [&::-webkit-details-marker]:hidden">
         <span class="inline-block text-caption text-muted transition-transform duration-200 group-open:rotate-90">
           &#9654;
         </span>

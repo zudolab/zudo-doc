@@ -56,7 +56,7 @@ export function VersionsPageContent(
 
       {/* Latest version section */}
       <section class="mb-vsp-xl">
-        <h2 class="text-subheading font-bold mb-vsp-xs">{labels.latestTitle}</h2>
+        <h2 class="text-title font-bold mb-vsp-xs">{labels.latestTitle}</h2>
         <p class="text-small text-muted mb-vsp-sm">{labels.latestDescription}</p>
         <a
           href={latestHref}
@@ -83,7 +83,7 @@ export function VersionsPageContent(
       {/* Past versions section */}
       {versions.length > 0 && (
         <section>
-          <h2 class="text-subheading font-bold mb-vsp-xs">{labels.pastTitle}</h2>
+          <h2 class="text-title font-bold mb-vsp-xs">{labels.pastTitle}</h2>
           <p class="text-small text-muted mb-vsp-md">{labels.pastDescription}</p>
           <div class="border border-muted rounded overflow-hidden">
             <table class="w-full text-small">

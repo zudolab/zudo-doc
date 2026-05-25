@@ -136,7 +136,7 @@ export default function ColorTweakExportModal({
       className="mx-auto max-h-[80vh] w-full max-w-[46rem] overflow-y-auto border border-muted bg-surface p-hsp-xl backdrop:bg-bg/80"
       style={{ color: "var(--color-fg)", position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", userSelect: "text" }}
     >
-      <h2 className="mb-vsp-sm text-subheading font-bold text-fg">
+      <h2 className="mb-vsp-sm text-title font-bold text-fg">
         Export Design Tokens
       </h2>
 

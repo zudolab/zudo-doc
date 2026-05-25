@@ -199,7 +199,7 @@ export function Header(props: HeaderProps): JSX.Element {
 
       <a
         href={withBase(isNonDefaultLocale ? `/${lang}/` : "/")}
-        class="whitespace-nowrap text-subheading font-bold text-fg hover:underline focus:underline shrink-0"
+        class="whitespace-nowrap text-title font-bold text-fg hover:underline focus:underline shrink-0"
         data-header-logo
       >
         {settings.siteName}

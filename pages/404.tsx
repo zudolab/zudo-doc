@@ -42,7 +42,7 @@ export default function NotFoundPage(): JSX.Element {
     >
       <div class="min-h-[60vh] flex flex-col items-center justify-center px-hsp-2xl py-vsp-xl">
         <h1 class="text-display font-bold mb-vsp-md">404</h1>
-        <p class="text-subheading text-muted mb-vsp-xl">Page not found.</p>
+        <p class="text-title text-muted mb-vsp-xl">Page not found.</p>
         <a
           href={withBase("/")}
           class="bg-accent px-hsp-lg py-vsp-xs font-medium text-bg hover:bg-accent-hover"

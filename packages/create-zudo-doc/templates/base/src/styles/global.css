@@ -143,7 +143,7 @@
   --text-caption:    var(--text-scale-xs);   /* labels, timestamps */
   --text-small:      var(--text-scale-sm);   /* secondary text, nav items */
   --text-body:       var(--text-scale-md);   /* paragraphs, default */
-  --text-subheading: var(--text-scale-lg);   /* card titles, section labels */
+  --text-title: var(--text-scale-lg);   /* card titles, section labels */
   --text-heading:    var(--text-scale-xl);   /* page headings */
   --text-display:    var(--text-scale-2xl);  /* hero text */
 
@@ -243,7 +243,7 @@ body {
 /* ── Headings ── */
 
 .zd-content :where(h2) {
-  font-size: var(--text-subheading);
+  font-size: var(--text-title);
   font-weight: var(--font-weight-bold);
   line-height: var(--leading-tight);
   margin-top: var(--spacing-vsp-2xl);
