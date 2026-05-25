@@ -729,12 +729,11 @@ const integrationPlugins = [
       ]
     : []),
   // Upstream zfb #192 (a6abbc3, f68a9ba) ships native copy_public_dir — but its output goes
-  // to dist/<base-segment>/ (e.g. dist/pj/zudo-doc/img/logo.svg). The deploy pipeline then
-  // does `cp -r dist/. deploy/pj/zudo-doc/`, producing a double-prefix
-  // (deploy/pj/zudo-doc/pj/zudo-doc/img/logo.svg). The host plugin copies flat to dist/
-  // (no base prefix), which the deploy step correctly relocates to deploy/pj/zudo-doc/.
-  // Keep the host plugin until the deploy pipeline is reshaped to serve dist/ directly.
-  // CI gate: main-deploy.yml:335-337 asserts HTTP 200 for $DEPLOY_URL/img/logo.svg.
+  // to dist/<base-segment>/ (e.g. dist/my-docs/img/logo.svg) when base is non-root. Under the
+  // Workers static assets deploy (base="/") dist/ is served at root directly, but the host
+  // plugin is still needed because copy_public_dir is not yet exercised for root-base configs.
+  // Keep the host plugin until the native copy_public_dir is validated for base="/".
+  // CI gate: main-deploy.yml asserts HTTP 200 for $DEPLOY_URL/img/logo.svg.
   {
     name: "./plugins/copy-public-plugin.mjs",
     options: {
@@ -757,7 +756,7 @@ export default defineConfig({
   // verification surfaced this on roughly two dozen pages.
   stripMdExt: true,
   // Resolve relative `[label](./other.mdx)` links to absolute resolved
-  // route URLs at the mdast phase (`/pj/zudo-doc/docs/.../other/`)
+  // route URLs at the mdast phase (e.g. `/docs/.../other/`)
   // before the file→directory transformation makes the relative path
   // ambiguous. The legacy `stripMdExt: true` alone produced relative
   // hrefs that broke when `foo.mdx` became `foo/index.html` — every
@@ -777,28 +776,28 @@ export default defineConfig({
     onBrokenLinks: "warn",
   },
   // Public URL prefix for `<link rel="stylesheet">` and `<script
-  // type="module">` tags emitted into dist HTML. Without this, the
-  // unprefixed `/assets/styles-<hash>.css` 404s under the sub-path
-  // mount at https://<deployment>.zudo-doc.pages.dev/pj/zudo-doc/
-  // (closes BLOCKER #1361 of feature-audit epic #1360). The same
-  // value already drives the search-index / llms-txt plugins below.
+  // type="module">` tags emitted into dist HTML. Currently "/" (root)
+  // for the Workers static assets deploy at zudo-doc.takazudomodular.com.
+  // Historically "/pj/zudo-doc/" under Cloudflare Pages advanced mode
+  // (closed BLOCKER #1361 of feature-audit epic #1360). The same value
+  // drives the search-index / llms-txt plugins below.
   base: settings.base,
   // Mirror `settings.trailingSlash` so the basePath rewriter appends
   // `/` to extensionless absolute hrefs (`/docs/getting-started`
-  // becomes `/pj/zudo-doc/docs/getting-started/`). Without this, dist
-  // HTML shipped the non-canonical shape and Cloudflare 301-redirected
-  // every click — a hop on every navigation and address-bar flicker.
+  // becomes `/docs/getting-started/`). Without this, dist HTML ships
+  // the non-canonical shape and Cloudflare 301-redirects every click —
+  // a hop on every navigation and address-bar flicker.
   // Closes zudolab/zudo-doc#1579 (54 missing-trailing-slash entries).
   trailingSlash: settings.trailingSlash,
   // ----------------------------------------------------------------------
-  // Cloudflare Pages adapter — wraps the SSR bundle into `dist/_worker.js`
-  // (advanced-mode entry) plus a sidecar `dist/_zfb_inner.mjs`. The adapter
-  // is a hard requirement for any route exporting `prerender = false`
-  // (currently `pages/api/ai-chat.tsx`); without it `zfb build` rejects
-  // those routes at build time. Bindings (ANTHROPIC_API_KEY, DOCS_SITE_URL,
-  // RATE_LIMIT KV, RATE_LIMIT_PER_MINUTE, RATE_LIMIT_PER_DAY) are wired via
-  // wrangler.toml and reach user code via `getCloudflareContext()` from the
-  // same package.
+  // Cloudflare adapter — wraps the SSR bundle into `dist/_worker.js`
+  // (the explicit main entry for Workers static assets) plus a sidecar
+  // `dist/_zfb_inner.mjs`. The adapter is a hard requirement for any
+  // route exporting `prerender = false` (currently `pages/api/ai-chat.tsx`);
+  // without it `zfb build` rejects those routes at build time. Bindings
+  // (ANTHROPIC_API_KEY, DOCS_SITE_URL, RATE_LIMIT KV,
+  // RATE_LIMIT_PER_MINUTE, RATE_LIMIT_PER_DAY) are wired via wrangler.toml
+  // and reach user code via `getCloudflareContext()` from the same package.
   // ----------------------------------------------------------------------
   adapter: "@takazudo/zfb-adapter-cloudflare",
   plugins: integrationPlugins,

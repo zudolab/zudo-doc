@@ -14,7 +14,7 @@ zudo-doc includes a built-in link checker (`scripts/check-links.js`) that runs t
 
 Scans all `.html` files in `dist/` for internal `<a href="...">` links and verifies each target exists on disk. It handles:
 
-- Base path stripping (e.g., `/pj/zudo-doc/docs/foo` → `docs/foo`)
+- Base path stripping (e.g., `/my-docs/docs/foo` → `docs/foo`)
 - Trailing slash resolution (`docs/foo/` → `docs/foo/index.html`)
 - Extension resolution (`docs/foo` → `docs/foo/index.html` or `docs/foo.html`)
 - Query string and fragment stripping before resolution
@@ -42,7 +42,7 @@ Scans all `.mdx` and `.md` files in the configured content directories for absol
 [guide](../other/bar.mdx)
 ```
 
-When a base path is configured (e.g., `/pj/zudo-doc/`), absolute links starting with `/docs/` or `/ja/docs/` will break because they're missing the base path prefix. The MDX source scan catches these before they become broken links in production.
+When a base path is configured (e.g., `/my-docs/`), absolute links starting with `/docs/` or `/ja/docs/` will break because they're missing the base path prefix. The MDX source scan catches these before they become broken links in production.
 
 Links inside fenced code blocks are ignored.
 
@@ -83,7 +83,7 @@ The link checker runs in the `build-site` job of the PR checks workflow (`pr-che
 When no issues are found:
 
 ```
-Checking links (base: /pj/zudo-doc/)...
+Checking links (base: /my-docs/)...
 
 ✓ No broken links or absolute path issues found
 ```
@@ -91,10 +91,10 @@ Checking links (base: /pj/zudo-doc/)...
 When issues are found:
 
 ```
-Checking links (base: /pj/zudo-doc/)...
+Checking links (base: /my-docs/)...
 
 === Broken Links in Built HTML ===
-  dist/docs/page/index.html:42  /pj/zudo-doc/docs/missing-page
+  dist/docs/page/index.html:42  /my-docs/docs/missing-page
 
 === Absolute Links Bypassing Base Path (MDX Source) ===
   src/content/docs/guides/test.mdx:15  /docs/guides/foo

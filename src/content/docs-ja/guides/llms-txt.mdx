@@ -104,11 +104,11 @@ search_exclude: true
 `llmsTxt`が有効な場合、zudo-docはすべてのページの`<head>`に`<link>`タグを追加し、サイトがサブパスにデプロイされている場合でもAIツールがファイルを発見できるようにします：
 
 ```html
-<link rel="alternate" type="text/plain" href="/pj/zudo-doc/llms.txt" title="llms.txt" />
-<link rel="alternate" type="text/plain" href="/pj/zudo-doc/llms-full.txt" title="llms-full.txt" />
+<link rel="alternate" type="text/plain" href="/my-docs/llms.txt" title="llms.txt" />
+<link rel="alternate" type="text/plain" href="/my-docs/llms-full.txt" title="llms-full.txt" />
 ```
 
-これは、サイトが`/pj/zudo-doc/`のような`base`パスを使用している場合に機能しない可能性がある、標準的なパスベースの検出（ドメインルートの`/llms.txt`）を補完します。
+これは、サイトが`/my-docs/`のような`base`パスを使用している場合に機能しない可能性がある、標準的なパスベースの検出（ドメインルートの`/llms.txt`）を補完します。
 
 ## 開発モード
 

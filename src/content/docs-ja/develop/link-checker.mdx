@@ -14,7 +14,7 @@ zudo-docには、サイトビルド後に2種類の検証を行う組み込み�
 
 `dist/`内のすべての`.html`ファイルをスキャンし、内部`<a href="...">`リンクの各ターゲットがディスク上に存在するかを検証します。以下を処理します：
 
-- ベースパスの除去（例：`/pj/zudo-doc/docs/foo` → `docs/foo`）
+- ベースパスの除去（例：`/my-docs/docs/foo` → `docs/foo`）
 - 末尾スラッシュの解決（`docs/foo/` → `docs/foo/index.html`）
 - 拡張子の解決（`docs/foo` → `docs/foo/index.html`または`docs/foo.html`）
 - 解決前のクエリ文字列とフラグメントの除去
@@ -42,7 +42,7 @@ zudo-docには、サイトビルド後に2種類の検証を行う組み込み�
 [guide](../other/bar.mdx)
 ```
 
-ベースパスが設定されている場合（例：`/pj/zudo-doc/`）、`/docs/`や`/ja/docs/`で始まる絶対リンクはベースパスのプレフィックスが欠けているため壊れます。MDXソーススキャンは、これらが本番環境で壊れたリンクになる前に検出します。
+ベースパスが設定されている場合（例：`/my-docs/`）、`/docs/`や`/ja/docs/`で始まる絶対リンクはベースパスのプレフィックスが欠けているため壊れます。MDXソーススキャンは、これらが本番環境で壊れたリンクになる前に検出します。
 
 フェンスドコードブロック内のリンクは無視されます。
 
@@ -83,7 +83,7 @@ pnpm check:links --strict
 問題がない場合：
 
 ```
-Checking links (base: /pj/zudo-doc/)...
+Checking links (base: /my-docs/)...
 
 ✓ No broken links or absolute path issues found
 ```
@@ -91,10 +91,10 @@ Checking links (base: /pj/zudo-doc/)...
 問題がある場合：
 
 ```
-Checking links (base: /pj/zudo-doc/)...
+Checking links (base: /my-docs/)...
 
 === Broken Links in Built HTML ===
-  dist/docs/page/index.html:42  /pj/zudo-doc/docs/missing-page
+  dist/docs/page/index.html:42  /my-docs/docs/missing-page
 
 === Absolute Links Bypassing Base Path (MDX Source) ===
   src/content/docs/guides/test.mdx:15  /docs/guides/foo

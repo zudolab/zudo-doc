@@ -52,11 +52,12 @@ export default {
     const handler = connectToZfbHandler(middleware);
 
     // zfb's `register(path, handler)` matches against the FULL request
-    // URL (no base-stripping). With `settings.base = "/pj/zudo-doc/"`,
-    // requests arrive as `/pj/zudo-doc/llms.txt` (etc.), so we must
-    // register every route the v2 middleware recognises with the base
-    // prefix. The middleware itself accepts base-prefixed URLs via the
-    // matcher (see `matchLlmsRoute` in `dev-middleware.ts`).
+    // URL (no base-stripping). For a non-root base (e.g. "/my-docs/"),
+    // requests arrive as `/my-docs/llms.txt` (etc.), so we register
+    // every route with the base prefix. For base="/", the prefix is
+    // empty and routes are `/llms.txt` etc. as expected. The middleware
+    // accepts base-prefixed URLs via the matcher (see `matchLlmsRoute`
+    // in `dev-middleware.ts`).
     const basePrefix = stripTrailingSlash(ctx.options.base ?? "");
     ctx.register(`${basePrefix}/llms.txt`, handler);
     ctx.register(`${basePrefix}/llms-full.txt`, handler);

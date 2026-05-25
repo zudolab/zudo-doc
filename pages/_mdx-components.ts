@@ -55,7 +55,7 @@ import { MathBlock } from "./lib/_math-block";
  * MDX `<img>` override — rewrites root-relative src attributes to include the
  * configured site base path (settings.base). Without this, an MDX image like
  * `![alt](/img/foo.webp)` emits `src="/img/foo.webp"` which 404s when the
- * site is deployed under a sub-path prefix (e.g. /pj/zudo-doc/).
+ * site is deployed under a sub-path prefix (e.g. /my-docs/).
  *
  * Only root-relative paths (starting with "/") are rewritten; external URLs,
  * protocol-relative URLs ("//…"), and data URIs pass through unchanged. The
@@ -194,9 +194,9 @@ export function createMdxComponents(lang: Locale | string = defaultLocale) {
   return {
     ...htmlOverrides,
     // img override: rewrites root-relative src to include the site base path.
-    // Required when settings.base is a sub-path (e.g. /pj/zudo-doc/) so that
+    // Required when settings.base is a sub-path (e.g. /my-docs/) so that
     // MDX images like ![alt](/img/foo.webp) resolve correctly on the deployed
-    // preview. withBase() is generic — any configured base value works.
+    // site. withBase() is generic — any configured base value works.
     img: ContentImg,
     HtmlPreview: HtmlPreviewWrapper,
     // Admonitions — proper bindings land in the doc-content-components
