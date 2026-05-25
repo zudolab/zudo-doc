@@ -56,7 +56,7 @@ export function FindBar({ visible, onClose, findInPage, containerSelector }: Fin
   );
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Escape") {
         onClose();
       } else if (e.key === "Enter") {
@@ -79,8 +79,8 @@ export function FindBar({ visible, onClose, findInPage, containerSelector }: Fin
         placeholder="Find in page..."
         aria-label="Find in page"
         onChange={(e) => {
-          setQuery(e.target.value);
-          handleFind(e.target.value);
+          setQuery(e.currentTarget.value);
+          handleFind(e.currentTarget.value);
         }}
         onKeyDown={handleKeyDown}
       />
