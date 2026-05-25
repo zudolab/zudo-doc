@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'preact/hooks';
-
-// zfb-runtime's <ClientRouter /> dispatches these lifecycle events on `document`
-// (Strategy B SPA navigation). Inlined from @zudo-doc/zudo-doc-v2/transitions —
-// that package is workspace-private/unpublished, so a standalone scaffold can't
-// import it. If zfb renames these events upstream, update the strings here.
-const BEFORE_NAVIGATE_EVENT = 'zfb:before-preparation';
-const AFTER_NAVIGATE_EVENT = 'zfb:after-swap';
+import { BEFORE_NAVIGATE_EVENT, AFTER_NAVIGATE_EVENT } from '@zudo-doc/zudo-doc-v2/transitions';
 
 export const SIDEBAR_STORAGE_KEY = 'zudo-doc-sidebar-visible';
 

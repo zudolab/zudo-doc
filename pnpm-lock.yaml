@@ -286,12 +286,18 @@ importers:
   packages/zudo-doc-v2:
     dependencies:
       '@zudo-doc/doc-history-server':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../doc-history-server
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
     devDependencies:
+      '@takazudo/zfb':
+        specifier: 0.1.0-next.6
+        version: 0.1.0-next.6
+      '@takazudo/zfb-runtime':
+        specifier: 0.1.0-next.6
+        version: 0.1.0-next.6(@takazudo/zfb@0.1.0-next.6)
       '@types/node':
         specifier: ^25.3.5
         version: 25.3.5
