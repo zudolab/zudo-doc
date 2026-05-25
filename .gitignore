@@ -1,6 +1,13 @@
 node_modules/
 dist/
 .zfb/
+# W6A — un-ignore the create-zudo-doc seed file so it ships in the
+# generated tarball. .zfb/ stays gitignored everywhere else; the seed
+# lets a freshly-scaffolded project resolve the `#doc-history-meta`
+# alias even without docHistory enabled (it is overwritten at build
+# time by the doc-history prebuild step).
+!packages/create-zudo-doc/templates/base/.zfb/
+!packages/create-zudo-doc/templates/base/.zfb/doc-history-meta.json
 .zfb-build/
 worktrees/
 __inbox/

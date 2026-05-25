@@ -95,20 +95,36 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     ).toBe(false);
   });
 
-  it("does NOT include ai-chat-modal component (aiAssistant off by default)", async () => {
-    expect(
-      await fs.pathExists(
-        projectPath("test-minimal", "src/components/ai-chat-modal.tsx"),
-      ),
-    ).toBe(false);
+  // W6A (#1734): ai-chat-modal stays always-on with a no-op stub in base so
+  // the mirrored pages/lib/_body-end-islands import closure resolves in every
+  // scaffold variant. The stub returns null; a future feature flag can swap
+  // it out. Spec-lock §1.5.
+  it("ships ai-chat-modal as a no-op stub (W6A — base template)", async () => {
+    const stubPath = projectPath(
+      "test-minimal",
+      "src/components/ai-chat-modal.tsx",
+    );
+    expect(await fs.pathExists(stubPath)).toBe(true);
+    const content = await fs.readFile(stubPath, "utf-8");
+    expect(content).toContain("W6A stub");
+    expect(content).toContain("return null");
+    expect(content).toContain("export default");
   });
 
-  it("does NOT include doc-history component (docHistory off by default)", async () => {
-    expect(
-      await fs.pathExists(
-        projectPath("test-minimal", "src/components/doc-history.tsx"),
-      ),
-    ).toBe(false);
+  // W6A (#1734): doc-history component stays always-on with a no-op stub in
+  // base. The docHistory feature template overwrites the stub with the real
+  // island when enabled. Spec-lock Decision 5.
+  it("ships doc-history as a no-op stub when docHistory feature is off (W6A)", async () => {
+    const stubPath = projectPath(
+      "test-minimal",
+      "src/components/doc-history.tsx",
+    );
+    expect(await fs.pathExists(stubPath)).toBe(true);
+    const content = await fs.readFile(stubPath, "utf-8");
+    expect(content).toContain("W6A stub");
+    expect(content).toContain("return null");
+    expect(content).toContain("export default");
+    expect(content).toContain("DocHistory");
   });
 
   // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
@@ -138,12 +154,19 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     expect(layout).not.toContain("zudo-doc-sidebar-width");
   });
 
-  it("does NOT include desktop-sidebar-toggle component (sidebarToggle off by default)", async () => {
-    expect(
-      await fs.pathExists(
-        projectPath("test-minimal", "src/components/desktop-sidebar-toggle.tsx"),
-      ),
-    ).toBe(false);
+  // W6A (#1734): desktop-sidebar-toggle stays always-on with a no-op stub in
+  // base. The sidebarToggle feature template overwrites the stub with the real
+  // island when enabled. Spec-lock Decision 5.
+  it("ships desktop-sidebar-toggle as a no-op stub when sidebarToggle feature is off (W6A)", async () => {
+    const stubPath = projectPath(
+      "test-minimal",
+      "src/components/desktop-sidebar-toggle.tsx",
+    );
+    expect(await fs.pathExists(stubPath)).toBe(true);
+    const content = await fs.readFile(stubPath, "utf-8");
+    expect(content).toContain("W6A stub");
+    expect(content).toContain("return null");
+    expect(content).toContain("export default");
   });
 
   // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
@@ -1668,7 +1691,11 @@ describe("scaffold — imageEnlarge feature", () => {
     ).toBe(true);
   });
 
-  it("island file src/components/image-enlarge.tsx absent when disabled", async () => {
+  // W6A (#1734): image-enlarge stays always-on with a no-op stub in base
+  // (carries both the default export and the ImageEnlargeSsrFallback named
+  // export the body-end Island wrapper imports). The imageEnlarge feature
+  // template overwrites the stub with the real island when enabled.
+  it("ships image-enlarge as a no-op stub when imageEnlarge feature is off (W6A)", async () => {
     const choices: UserChoices = {
       projectName: "test-ie-island-off",
       defaultLang: "en",
@@ -1678,11 +1705,16 @@ describe("scaffold — imageEnlarge feature", () => {
       packageManager: "pnpm",
     };
     await scaffold(choices);
-    expect(
-      await fs.pathExists(
-        projectPath("test-ie-island-off", "src/components/image-enlarge.tsx"),
-      ),
-    ).toBe(false);
+    const stubPath = projectPath(
+      "test-ie-island-off",
+      "src/components/image-enlarge.tsx",
+    );
+    expect(await fs.pathExists(stubPath)).toBe(true);
+    const content = await fs.readFile(stubPath, "utf-8");
+    expect(content).toContain("W6A stub");
+    expect(content).toContain("return null");
+    expect(content).toContain("export default");
+    expect(content).toContain("ImageEnlargeSsrFallback");
   });
 
   it("rehype-image-enlarge.ts always present in src/plugins/ (base template file)", async () => {
@@ -2465,5 +2497,143 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
         ),
       ).toBe(false);
     });
+  });
+});
+
+// W6A (#1734) — page mirror parity assertions. The 29 unconditional pages
+// from the host repo's pages/ tree are mirrored into templates/base/pages/
+// and must show up in every scaffold variant; pages/api/** is excluded as
+// worker-only per spec-lock Decision 5.
+describe("scaffold — W6A page mirror (templates/base/pages)", () => {
+  const UNCONDITIONAL_PAGES = [
+    "pages/index.tsx",
+    "pages/404.tsx",
+    "pages/sitemap.xml.tsx",
+    "pages/_data.ts",
+    "pages/_mdx-components.ts",
+    "pages/docs/[...slug].tsx",
+    "pages/lib/_body-end-islands.tsx",
+    "pages/lib/_category-nav.tsx",
+    "pages/lib/_category-tree-nav.tsx",
+    "pages/lib/_compose-meta-title.ts",
+    "pages/lib/_details.tsx",
+    "pages/lib/_doc-history-area.tsx",
+    "pages/lib/_doc-metainfo-area.tsx",
+    "pages/lib/_doc-tags-area.tsx",
+    "pages/lib/_extract-headings.ts",
+    "pages/lib/_footer-with-defaults.tsx",
+    "pages/lib/_frontmatter-preview-data.ts",
+    "pages/lib/_head-with-defaults.tsx",
+    "pages/lib/_header-with-defaults.tsx",
+    "pages/lib/_inline-version-switcher.tsx",
+    "pages/lib/_math-block.tsx",
+    "pages/lib/_nav-source-docs.ts",
+    "pages/lib/_preset-generator.tsx",
+    "pages/lib/_search-widget-script.ts",
+    "pages/lib/_search-widget.tsx",
+    "pages/lib/_sidebar-with-defaults.tsx",
+    "pages/lib/_site-tree-nav.tsx",
+    "pages/lib/locale-merge.ts",
+    "pages/lib/route-enumerators.ts",
+  ];
+
+  const BAREBONE: UserChoices = {
+    projectName: "test-pages-barebone",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: [],
+    packageManager: "pnpm",
+  };
+
+  const ALL_FEATURES: UserChoices = {
+    projectName: "test-pages-all",
+    defaultLang: "en",
+    colorSchemeMode: "light-dark",
+    lightScheme: "Default Light",
+    darkScheme: "Default Dark",
+    respectPrefersColorScheme: true,
+    defaultMode: "dark",
+    features: [
+      "i18n",
+      "search",
+      "sidebarFilter",
+      "sidebarToggle",
+      "sidebarResizer",
+      "docHistory",
+      "llmsTxt",
+      "claudeResources",
+      "claudeSkills",
+      "designTokenPanel",
+      "imageEnlarge",
+      "bodyFootUtil",
+      "footerNavGroup",
+      "footerCopyright",
+      "changelog",
+      "skillSymlinker",
+      "tagGovernance",
+    ],
+    packageManager: "pnpm",
+  };
+
+  it("emits all 29 unconditional page files in a barebone scaffold", async () => {
+    await scaffold(BAREBONE);
+    for (const rel of UNCONDITIONAL_PAGES) {
+      expect(
+        await fs.pathExists(projectPath("test-pages-barebone", rel)),
+        `expected ${rel} to exist in barebone scaffold`,
+      ).toBe(true);
+    }
+  });
+
+  it("emits all 29 unconditional page files in an all-features scaffold", async () => {
+    await scaffold(ALL_FEATURES);
+    for (const rel of UNCONDITIONAL_PAGES) {
+      expect(
+        await fs.pathExists(projectPath("test-pages-all", rel)),
+        `expected ${rel} to exist in all-features scaffold`,
+      ).toBe(true);
+    }
+  });
+
+  it("does not emit pages/api/ai-chat.tsx in any scaffold variant (W6A spec-lock Decision 5)", async () => {
+    // Worker-only SSR endpoint — explicit exclusion via EXCLUDE_FROM_MIRROR
+    // in src/scaffold.ts. Asserts both variants: a barebone with no features
+    // and an all-features scaffold. Neither should ship pages/api/**.
+    for (const choices of [BAREBONE, ALL_FEATURES]) {
+      await scaffold(choices);
+      const apiDir = projectPath(choices.projectName, "pages/api");
+      expect(
+        await fs.pathExists(apiDir),
+        `pages/api/ must not be emitted in ${choices.projectName}`,
+      ).toBe(false);
+      const aiChat = projectPath(choices.projectName, "pages/api/ai-chat.tsx");
+      expect(await fs.pathExists(aiChat)).toBe(false);
+    }
+  });
+
+  it("ships the #doc-history-meta seed JSON in every scaffold variant", async () => {
+    // The mirrored pages import "#doc-history-meta" — the tsconfig alias
+    // resolves to .zfb/doc-history-meta.json. The seed file containing
+    // exactly {} ships in templates/base/.zfb/ so the import resolves
+    // even when docHistory is disabled. The doc-history prebuild step
+    // overwrites it at build time when the feature is enabled.
+    await scaffold(BAREBONE);
+    const seedPath = projectPath(
+      "test-pages-barebone",
+      ".zfb/doc-history-meta.json",
+    );
+    expect(await fs.pathExists(seedPath)).toBe(true);
+    expect(await fs.readFile(seedPath, "utf-8")).toBe("{}\n");
+  });
+
+  it("tsconfig.json carries the #doc-history-meta path alias", async () => {
+    await scaffold(BAREBONE);
+    const tsconfig = await fs.readJson(
+      projectPath("test-pages-barebone", "tsconfig.json"),
+    );
+    expect(tsconfig.compilerOptions.paths["#doc-history-meta"]).toEqual([
+      ".zfb/doc-history-meta.json",
+    ]);
   });
 });

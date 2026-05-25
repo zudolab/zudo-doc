@@ -10,6 +10,20 @@ interface ImageData {
   naturalHeight: number;
 }
 
+// Shared shell for the enlarge `<dialog>`. The hydrated component and the
+// SSR fallback (below) render into the same Island container, so they MUST
+// agree on class string and inline style — otherwise the dist HTML and the
+// post-hydration DOM disagree on size / position and the first interaction
+// flashes. Sourcing both from the same constants closes the drift gap.
+const DIALOG_CLASS =
+  "zd-enlarge-dialog mx-auto max-h-[90vh] max-w-[90vw] overflow-hidden border border-muted bg-surface p-0";
+const DIALOG_STYLE = {
+  position: "fixed",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+} as const;
+
 export default function ImageEnlarge() {
   const [imgData, setImgData] = useState<ImageData | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -182,8 +196,8 @@ export default function ImageEnlarge() {
     <dialog
       ref={dialogRef}
       onClick={handleBackdropClick}
-      className="zd-enlarge-dialog mx-auto max-h-[90vh] max-w-[90vw] overflow-hidden border border-muted bg-surface p-0"
-      style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
+      className={DIALOG_CLASS}
+      style={DIALOG_STYLE}
     >
       {imgData && (
         <>
@@ -209,5 +223,25 @@ export default function ImageEnlarge() {
         </>
       )}
     </dialog>
+  );
+}
+
+/**
+ * Static SSR fallback for the {@link ImageEnlarge} island.
+ *
+ * Renders an empty, closed `<dialog class="zd-enlarge-dialog ...">` so the
+ * dist HTML carries the dialog shell even before hydration. A `<dialog>`
+ * without `open` is `display:none` per UA stylesheet, so screen readers
+ * and crawlers see the same shape they would post-hydration. Sources its
+ * class and inline style from the shared `DIALOG_CLASS` / `DIALOG_STYLE`
+ * constants above so the SSR shell cannot drift from the hydrated
+ * dialog (a drift would surface as a cosmetic flash on first interaction).
+ */
+export function ImageEnlargeSsrFallback() {
+  return (
+    <dialog
+      className={DIALOG_CLASS}
+      style={DIALOG_STYLE}
+    />
   );
 }
