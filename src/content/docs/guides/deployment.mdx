@@ -1,26 +1,28 @@
 ---
 title: Deployment
-description: Deploy zudo-doc sites to Cloudflare Pages with GitHub Actions CI/CD.
+description: Deploy zudo-doc sites to Cloudflare Workers with GitHub Actions CI/CD.
 sidebar_position: 18
 ---
 
 ## Overview
 
-zudo-doc is a fully static site generator — the output of `pnpm build` is a directory of HTML, CSS, and JavaScript files that can be deployed anywhere. The default deployment target is **Cloudflare Pages**, using GitHub Actions for CI/CD automation.
+zudo-doc is a fully static site generator — the output of `pnpm build` is a directory of HTML, CSS, and JavaScript files that can be deployed anywhere. The default deployment target is **Cloudflare Workers** (static assets), using GitHub Actions for CI/CD automation.
 
 The CI pipeline is split into parallel jobs to keep total build time low. Site generation and document history extraction run as separate jobs and are merged before deployment.
 
-## Cloudflare Pages
+## Cloudflare Workers Static Assets
 
-The built site is deployed to Cloudflare Pages using `wrangler pages deploy`. The deploy artifact includes:
+The built site is deployed using `wrangler deploy`. The deploy artifact includes:
 
 - The zfb build output (`dist/`)
 - Pre-generated doc history JSON files (if `docHistory` is enabled)
-- A redirect rule from `/` to the site's base path
+- `dist/_worker.js` — the explicit main entry produced by the CF adapter
+
+The site is served at root (`base = "/"`) via the Workers static asset layer. Dynamic routes (e.g. `/api/ai-chat`) are handled by `dist/_worker.js`; all other GET requests are served as static assets from `dist/`.
 
 <Info>
 
-The redirect from `/` is a static `_redirects` file included in the build output. Cloudflare Pages processes it natively — no Worker or server logic is required.
+The site URL is configured via `[[routes]]` in `wrangler.toml` (custom domain binding). Bindings such as `ANTHROPIC_API_KEY`, `DOCS_SITE_URL`, and `RATE_LIMIT` KV are also declared in `wrangler.toml`.
 
 </Info>
 
@@ -34,7 +36,7 @@ Triggered on push to `main`. Runs four jobs:
 
 1. **build-site** — shallow clone (`fetch-depth: 1`), builds the zfb site with `SKIP_DOC_HISTORY=1 pnpm build`
 2. **build-history** — full clone (`fetch-depth: 0`), runs `@zudo-doc/doc-history-server generate` to pre-extract git history for all content files
-3. **deploy** — merges the site and history artifacts, then deploys to Cloudflare Pages (production)
+3. **deploy** — merges the site and history artifacts, then deploys via `wrangler deploy` (production)
 4. **notify** — sends an IFTTT webhook notification with the deploy status
 
 **Concurrency:** `group: production-deploy, cancel-in-progress: false` — earlier deploys are allowed to finish rather than being cancelled.
@@ -47,19 +49,13 @@ Triggered on pull requests targeting `main`. Runs five jobs:
 2. **build-site** — shallow clone, `SKIP_DOC_HISTORY=1 pnpm build`, then `check:links`
 3. **build-history** — full clone, doc history generation
 4. **e2e** — runs Playwright end-to-end tests (full clone, no `SKIP_DOC_HISTORY` so history is embedded inline)
-5. **preview** — merges artifacts and deploys a preview to Cloudflare Pages, then posts the URL as a PR comment
+5. **preview** — merges artifacts and deploys a preview via `wrangler deploy`, then posts the URL as a PR comment
 
 **Concurrency:** `group: pr-checks-{pr-number}, cancel-in-progress: true` — outdated runs are cancelled to save CI minutes.
 
 ### Preview Deployments
 
-Each PR gets a preview deployment at:
-
-```
-https://pr-{number}.zudo-doc.pages.dev
-```
-
-The URL is posted automatically as a comment on the PR by the **preview** job.
+Each PR gets a version-preview URL via `preview_urls = true` in `wrangler.toml`. The URL is posted automatically as a comment on the PR by the **preview** job.
 
 ## SKIP_DOC_HISTORY
 
@@ -86,7 +82,7 @@ key: dist-${{ github.run_id }}
 key: doc-history-${{ github.run_id }}
 ```
 
-The **deploy** (or **preview**) job restores both caches and merges the `dist/` directories before calling `wrangler pages deploy`.
+The **deploy** (or **preview**) job restores both caches and merges the `dist/` directories before calling `wrangler deploy`.
 
 <Note>
 
@@ -100,12 +96,12 @@ Configure these in your repository's **Settings → Secrets and variables → Ac
 
 | Secret | Description |
 |---|---|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Pages deployment permissions |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers deployment permissions |
 | `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID |
 | `IFTTT_PROD_NOTIFY` | IFTTT webhook URL for deploy notifications (optional) |
 
 <Warning>
 
-The `CLOUDFLARE_API_TOKEN` needs the **Cloudflare Pages: Edit** permission. Scoping it to the specific Pages project is recommended over granting account-wide access.
+The `CLOUDFLARE_API_TOKEN` needs the **Workers: Edit** permission (and **KV Storage: Edit** if you use KV namespaces). Scoping it to the specific Worker is recommended over granting account-wide access.
 
 </Warning>

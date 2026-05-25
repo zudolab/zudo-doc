@@ -104,11 +104,11 @@ Each locale's files contain only the pages from that locale's content directory.
 When `llmsTxt` is enabled, zudo-doc adds `<link>` tags to the `<head>` of every page, helping AI tools discover the files even when the site is deployed at a subpath:
 
 ```html
-<link rel="alternate" type="text/plain" href="/pj/zudo-doc/llms.txt" title="llms.txt" />
-<link rel="alternate" type="text/plain" href="/pj/zudo-doc/llms-full.txt" title="llms-full.txt" />
+<link rel="alternate" type="text/plain" href="/my-docs/llms.txt" title="llms.txt" />
+<link rel="alternate" type="text/plain" href="/my-docs/llms-full.txt" title="llms-full.txt" />
 ```
 
-This supplements the standard path-based discovery (`/llms.txt` at the domain root) which may not work when your site uses a `base` path like `/pj/zudo-doc/`.
+This supplements the standard path-based discovery (`/llms.txt` at the domain root) which may not work when your site uses a `base` path like `/my-docs/`.
 
 ## Dev Mode
 

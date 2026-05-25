@@ -162,9 +162,61 @@ All three workflows (`main-deploy.yml`, `pr-checks.yml`, `preview-deploy.yml`) u
 
 - **build-site** — full clone (`fetch-depth: 0`), `pnpm build` — preBuild populates `.zfb/doc-history-meta.json` with real git dates so the SSG HTML contains the visible Created/Updated/Author block
 - **build-history** — full clone (`fetch-depth: 0`), `@zudo-doc/doc-history-server generate` — generates per-page dropdown JSON files for the DocHistory island
-- **deploy/preview** — merges both artifacts, deploys to Cloudflare Pages
+- **deploy/preview** — merges both artifacts, deploys via `wrangler deploy` to Cloudflare Workers static assets at `zudo-doc.takazudomodular.com`
 
 E2E tests also run with full clone (no `SKIP_DOC_HISTORY`).
+
+## Workers Cutover Runbook
+
+One-time setup steps required before the first `wrangler deploy` succeeds for this project (epic zudolab/zudo-doc#1691). Run from the repo root with Wrangler authenticated.
+
+### 1. Create the RATE_LIMIT KV namespace
+
+```sh
+wrangler kv namespace create RATE_LIMIT
+```
+
+Copy the returned `id` value and paste it into `wrangler.toml` under `[[kv_namespaces]]`:
+
+```toml
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "<paste-id-here>"
+```
+
+### 2. Add the Anthropic API key as a secret
+
+```sh
+wrangler secret put ANTHROPIC_API_KEY
+```
+
+Paste the key when prompted. The value is stored in Cloudflare's secret store and never appears in `wrangler.toml`.
+
+### 3. Verify DOCS_SITE_URL
+
+`wrangler.toml` already sets `DOCS_SITE_URL = "https://zudo-doc.takazudomodular.com"`. For preview deploys, override per-deploy:
+
+```sh
+wrangler deploy --var DOCS_SITE_URL=<preview-url>
+```
+
+Or override via the Cloudflare dashboard per environment to avoid preview workers pointing at production docs.
+
+### 4. Bind the custom domain
+
+`wrangler.toml` already contains:
+
+```toml
+[[routes]]
+pattern = "zudo-doc.takazudomodular.com"
+custom_domain = true
+```
+
+The domain binding is activated on first `wrangler deploy`. Ensure the DNS record for `zudo-doc.takazudomodular.com` exists in the Cloudflare zone (CNAME or proxied A record pointing at the Worker). Cloudflare will issue a certificate automatically.
+
+### 5. Pages project deletion (Wave 5 — #1698)
+
+The legacy `zudo-doc` Cloudflare Pages project and its `zudo-doc.pages.dev` subdomain remain active until Wave 5 (#1698). Do not delete the Pages project until that wave is explicitly greenlit.
 
 ## Feature Change Checklist
 
