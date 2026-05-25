@@ -37,7 +37,7 @@ export const settings = {
   } as ColorModeConfig | false,
   siteName: "zudo-doc",
   siteDescription: "Documentation base framework built with Astro and MDX." as string,
-  base: "/pj/zudo-doc/",
+  base: "/",
   trailingSlash: true as boolean,
   docsDir: "src/content/docs",
   defaultLocale: "en" as string,
@@ -48,7 +48,7 @@ export const settings = {
   noindex: false as boolean, // When true, adds noindex/nofollow to all pages (for internal docs)
   editUrl: false as string | false,
   githubUrl: "https://github.com/zudolab/zudo-doc" as string | false,
-  siteUrl: "https://takazudomodular.com" as string, // canonical prod host; sitemap/canonical links use this regardless of deploy URL
+  siteUrl: "https://zudo-doc.takazudomodular.com" as string, // canonical prod host; sitemap/canonical links use this regardless of deploy URL
   sitemap: true,
   docMetainfo: true,
   docTags: true,
