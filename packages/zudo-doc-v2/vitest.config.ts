@@ -1,5 +1,6 @@
 import { defineConfig } from "vitest/config";
 import { resolve } from "node:path";
+import { readdirSync } from "node:fs";
 
 // The package directory — vitest resolves `include` globs relative to `root`,
 // which defaults to process.cwd() (the workspace root) rather than the config
@@ -16,10 +17,31 @@ const repoRoot = resolve(__dirname, "../..");
  * `packages/zudo-doc-v2/src/**\/__tests__/` run via:
  *
  *   pnpm exec vitest run --config packages/zudo-doc-v2/vitest.config.ts
- *
- * No package.json scripts are added on purpose — E5 topic-child agents kept
- * package.json untouched per the manager's hard rule.
  */
+
+// Locate preact-render-to-string in the workspace's pnpm virtual store by
+// scanning for any entry matching "preact-render-to-string@6.x_preact@*".
+// This avoids hardcoding the exact preact patch version in the peer suffix,
+// which changes whenever `pnpm up preact` is run (#1733).
+function findPreactRenderToString(): string {
+  const pnpmDir = resolve(repoRoot, "node_modules/.pnpm");
+  const entries = readdirSync(pnpmDir);
+  const entry = entries.find(
+    (e) =>
+      e.startsWith("preact-render-to-string@6.") && e.includes("_preact@"),
+  );
+  if (!entry) {
+    throw new Error(
+      "Could not locate preact-render-to-string in workspace pnpm store. Run `pnpm install`.",
+    );
+  }
+  return resolve(
+    pnpmDir,
+    entry,
+    "node_modules/preact-render-to-string/dist/index.mjs",
+  );
+}
+
 export default defineConfig({
   esbuild: {
     jsx: "automatic",
@@ -30,10 +52,7 @@ export default defineConfig({
       // preact-render-to-string is hoisted into the workspace root pnpm store
       // but not surfaced at root or package node_modules. Pin it explicitly so
       // JSX rendering tests work without bloating the package's own deps.
-      "preact-render-to-string": resolve(
-        repoRoot,
-        "node_modules/.pnpm/preact-render-to-string@6.6.6_preact@10.29.0/node_modules/preact-render-to-string/dist/index.mjs",
-      ),
+      "preact-render-to-string": findPreactRenderToString(),
     },
   },
   test: {
