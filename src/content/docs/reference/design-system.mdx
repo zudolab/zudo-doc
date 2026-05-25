@@ -82,13 +82,17 @@ Notice that `hsp-lg` is `1rem` while `vsp-lg` is `1.5rem` — the vertical axis 
 
 ### Font Sizes
 
+Each semantic role references an abstract scale step (`--text-scale-*`); the
+values below are the resolved sizes.
+
 | Token | Value | Example |
 |-------|-------|---------|
-| `caption` | `0.75rem` / 12px | `text-caption` |
-| `small` | `0.875rem` / 14px | `text-small` |
-| `body` | `1rem` / 16px | `text-body` |
-| `subheading` | `1.125rem` / 18px | `text-subheading` |
-| `heading` | `1.875rem` / 30px | `text-heading` |
+| `micro` | `0.75rem` / 12px | `text-micro` |
+| `caption` | `0.875rem` / 14px | `text-caption` |
+| `small` | `1rem` / 16px | `text-small` |
+| `body` | `1.2rem` / 19.2px | `text-body` |
+| `title` | `1.4rem` / 22.4px | `text-title` |
+| `heading` | `3rem` / 48px | `text-heading` |
 | `display` | `3.75rem` / 60px | `text-display` |
 
 ### Font Weights
@@ -177,7 +181,7 @@ The default Tailwind theme is not imported — only `tailwindcss/preflight` and 
 <div class="gap-x-hsp-sm gap-y-vsp-md">Grid gaps</div>
 
 <!-- Typography tokens -->
-<h2 class="text-subheading font-semibold leading-tight">Heading</h2>
+<h2 class="text-title font-semibold leading-tight">Heading</h2>
 ```
 
 ### Don't
