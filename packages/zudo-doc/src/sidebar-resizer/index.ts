@@ -260,4 +260,9 @@ export function initSidebarResizer(): void {
   sidebar.appendChild(handle);
 }
 
-export { SidebarResizerInit, SIDEBAR_RESIZER_INIT_SCRIPT } from "./sidebar-resizer-init.js";
+export {
+  SidebarResizerInit,
+  SIDEBAR_RESIZER_INIT_SCRIPT,
+  SidebarResizerRestore,
+  SIDEBAR_RESIZER_RESTORE_SCRIPT,
+} from "./sidebar-resizer-init.js";
