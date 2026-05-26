@@ -1,0 +1,196 @@
+# Publish create-zudo-doc to npm.
+#
+# Trigger (two paths):
+#   1. release: published — fires when a human publishes a GitHub Draft Release.
+#      Publishing the draft is the irreversible human gate; CI does the actual
+#      `npm publish` only after all safeguards pass.
+#   2. workflow_dispatch with dry_run: true — proves the token and safeguards
+#      pass without touching npm. Use this before the first real release to
+#      verify NPM_TOKEN is wired correctly.
+#
+# NPM_TOKEN must be an Automation token (type: "Automation" in npmjs.com).
+# Automation tokens bypass npm's 2FA for `npm publish`, which is required
+# for CI-driven publishing. Classic Publish tokens with 2FA enabled would
+# fail at the publish step with an OTP error.
+#
+# OIDC provenance:
+#   id-token: write is required so npm can request an OIDC identity token
+#   and attach provenance metadata to the published package. The repo must
+#   be public (zudolab/zudo-doc is public) for provenance to be recorded
+#   in the npm transparency log.
+
+name: Publish create-zudo-doc
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run — verify auth and safeguards only; skip npm publish'
+        type: boolean
+        required: false
+        default: false
+
+# Least-privilege: read for checkout, id-token for OIDC provenance.
+permissions:
+  contents: read
+  id-token: write
+
+# Prevent concurrent publish runs. Never cancel in-progress publishes —
+# aborting mid-publish could leave a partial upload, so allow the run to
+# complete even if a second trigger arrives.
+concurrency:
+  group: publish-create-zudo-doc
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # ── Checkout at the exact release tag ──────────────────────────────────
+      # Explicit ref ensures we always build from the tagged commit even when
+      # triggered via workflow_dispatch (which defaults to the default branch).
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ github.event.release.tag_name || github.ref }}
+
+      # ── Safeguard 1/4: Tag must start with "v" ─────────────────────────────
+      # Reject accidental triggers from non-version tags (e.g. "latest",
+      # "stable", or typos). Pure shell — runs before any tooling setup so
+      # bad tags fail fast with a clear message.
+      - name: '[Safeguard 1/4] Reject non-v* release tags'
+        shell: bash
+        run: |
+          TAG="${{ github.event.release.tag_name || github.ref_name }}"
+          echo "Release tag: $TAG"
+          if [[ "$TAG" != v* ]]; then
+            echo "::error::Release tag '$TAG' does not start with 'v'."
+            echo "::error::Only version tags (e.g. v1.2.3, v1.2.3-next.1) trigger this workflow."
+            exit 1
+          fi
+          # Strip the leading "v" for use in later steps.
+          VERSION="${TAG#v}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+
+      # ── Setup toolchain ────────────────────────────────────────────────────
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+        with:
+          dest: ~/setup-pnpm-publish
+
+      # registry-url is required for setup-node to write the .npmrc that
+      # wires NODE_AUTH_TOKEN → npm auth. Without it, `npm publish` ignores
+      # the env var and falls back to unauthenticated (or interactive 2FA).
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      # ── Safeguard 2/4: package.json version must match the tag ─────────────
+      # Prevents a publish where the tag was pushed without a matching version
+      # bump (or vice-versa). Uses the VERSION env set by Safeguard 1.
+      - name: '[Safeguard 2/4] Assert package.json version matches tag'
+        shell: bash
+        run: |
+          PKG_VERSION=$(node -p "require('./packages/create-zudo-doc/package.json').version")
+          echo "Tag version:     $VERSION"
+          echo "package.json:    $PKG_VERSION"
+          if [[ "$PKG_VERSION" != "$VERSION" ]]; then
+            echo "::error::packages/create-zudo-doc/package.json .version is '$PKG_VERSION' but tag is 'v$VERSION'."
+            echo "::error::Bump the version with scripts/release-create-zudo-doc.sh before tagging."
+            exit 1
+          fi
+
+      # ── Safeguard 3/4: Version must not already be published ───────────────
+      # npm publish is irreversible (unpublish is locked after 72 h for
+      # packages with dependents). Guard against accidental double-publish.
+      # We check stdout: `npm view` prints the version string if it exists
+      # and exits 0; it prints nothing and exits non-zero if absent.
+      # We treat non-empty stdout as "already published".
+      - name: '[Safeguard 3/4] Assert version not yet published to npm'
+        shell: bash
+        run: |
+          EXISTING=$(npm view "create-zudo-doc@$VERSION" version 2>/dev/null || true)
+          if [[ -n "$EXISTING" ]]; then
+            echo "::error::create-zudo-doc@$VERSION is already published on npm (found: $EXISTING)."
+            echo "::error::npm publish is irreversible — aborting to prevent a duplicate-version error."
+            exit 1
+          fi
+          echo "OK: create-zudo-doc@$VERSION does not yet exist on npm."
+
+      # ── Install dependencies ───────────────────────────────────────────────
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ── Build and test ────────────────────────────────────────────────────
+      - name: Build create-zudo-doc
+        run: pnpm --filter create-zudo-doc build
+
+      - name: Test create-zudo-doc
+        run: pnpm --filter create-zudo-doc test
+
+      # ── Compute dist-tag ───────────────────────────────────────────────────
+      # ANY semver prerelease (a hyphen after the X.Y.Z core — e.g. -next.1,
+      # -beta.2, -rc.1, -alpha.1, or a bare -beta) publishes under --tag next
+      # so it never becomes the default "latest" install. Only a clean X.Y.Z
+      # release gets --tag latest. (VERSION is the tag with the leading "v"
+      # stripped, set by Safeguard 1.)
+      - name: Compute npm dist-tag
+        shell: bash
+        run: |
+          if [[ "$VERSION" == *-* ]]; then
+            DIST_TAG=next
+          else
+            DIST_TAG=latest
+          fi
+          echo "DIST_TAG=$DIST_TAG" >> "$GITHUB_ENV"
+          echo "Dist tag: $DIST_TAG (version: $VERSION)"
+
+      # ── Safeguard 4/4: Dry-run path ────────────────────────────────────────
+      # When dry_run is true (workflow_dispatch only), prove the secret
+      # authenticates and print what would be published — then stop.
+      # NOTE: `npm publish --dry-run` does NOT prove auth; it skips network
+      # calls entirely and never contacts the registry. Running `npm whoami`
+      # with NODE_AUTH_TOKEN is the only way to confirm the token is valid
+      # before the real publish.
+      - name: '[Safeguard 4/4] Dry-run: verify auth then stop (skip real publish)'
+        if: ${{ inputs.dry_run == true }}
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "=== DRY RUN MODE — npm publish will NOT be executed ==="
+          echo ""
+          echo "Verifying NPM_TOKEN authenticates against registry.npmjs.org..."
+          npm whoami
+          echo ""
+          echo "Would publish:"
+          echo "  Package : create-zudo-doc"
+          echo "  Version : $VERSION"
+          echo "  Dist-tag: $DIST_TAG"
+          echo "  Flags   : --access public --provenance"
+          echo ""
+          echo "Dry run complete. Remove dry_run input or set it to false to publish for real."
+
+      # ── Real publish ───────────────────────────────────────────────────────
+      # Only runs when dry_run is false (or the workflow was triggered by
+      # a release event, which has no dry_run input).
+      - name: Publish to npm
+        if: ${{ inputs.dry_run != true }}
+        shell: bash
+        working-directory: packages/create-zudo-doc
+        env:
+          # NPM_TOKEN must be an Automation token (bypasses 2FA for CI).
+          # Set it at: github.com/zudolab/zudo-doc → Settings → Secrets → Actions.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "Publishing create-zudo-doc@$VERSION with --tag $DIST_TAG..."
+          npm publish --access public --provenance --tag "$DIST_TAG"
+          echo "Published: https://www.npmjs.com/package/create-zudo-doc/v/$VERSION"
