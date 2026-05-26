@@ -2702,6 +2702,7 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
 });
 
 // ---------------------------------------------------------------------------
+<<<<<<< HEAD
 // W7A (#1736) — zfb-config-gen reconcile: the generated zfb.config.ts must
 // reference plugin `.mjs` files actually shipped by the templates, otherwise
 // `zfb build` fails at config bundling (the W6B-flagged blocker). These
@@ -2886,5 +2887,246 @@ describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => 
       "utf-8",
     );
     expect(emitted).toEqual(template);
+  });
+});
+
+// W7C — Feature-conditional pages: versioning + docTags  (#1738)
+// ---------------------------------------------------------------------------
+//
+// Each feature ships a `files/pages/` subtree that copyFeatureFiles emits
+// verbatim. The `[locale]/**` (and `v/[version]/ja/**`) subsets are stripped
+// by each feature's postProcess hook when i18n is NOT also selected — so a
+// single-locale project never ships orphan locale routes, and an all-features
+// scaffold ships the union.
+// ---------------------------------------------------------------------------
+
+describe("scaffold — W7C docTags feature pages (#1738)", () => {
+  it("emits docs/tags/[tag].tsx + docs/tags/index.tsx when docTags is selected (i18n off)", async () => {
+    const choices: UserChoices = {
+      projectName: "test-doctags-only",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "docTags"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath("test-doctags-only", "pages/docs/tags/[tag].tsx"),
+      ),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(
+        projectPath("test-doctags-only", "pages/docs/tags/index.tsx"),
+      ),
+    ).toBe(true);
+  });
+
+  it("strips [locale]/docs/tags/** when docTags is selected but i18n is OFF", async () => {
+    const choices: UserChoices = {
+      projectName: "test-doctags-no-i18n",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "docTags"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath("test-doctags-no-i18n", "pages/[locale]/docs/tags"),
+      ),
+    ).toBe(false);
+  });
+
+  it("emits [locale]/docs/tags/{[tag].tsx,index.tsx} when docTags + i18n are both selected", async () => {
+    const choices: UserChoices = {
+      projectName: "test-doctags-i18n",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "i18n", "docTags"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-doctags-i18n",
+          "pages/[locale]/docs/tags/[tag].tsx",
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-doctags-i18n",
+          "pages/[locale]/docs/tags/index.tsx",
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it("does NOT emit any docs/tags/** when docTags is not selected", async () => {
+    const choices: UserChoices = {
+      projectName: "test-no-doctags",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "i18n"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(projectPath("test-no-doctags", "pages/docs/tags")),
+    ).toBe(false);
+    expect(
+      await fs.pathExists(
+        projectPath("test-no-doctags", "pages/[locale]/docs/tags"),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("scaffold — W7C versioning feature pages (#1738)", () => {
+  it("emits docs/versions.tsx + v/[version]/docs/[...slug].tsx when versioning is selected (i18n off)", async () => {
+    const choices: UserChoices = {
+      projectName: "test-versioning-pages-only",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "versioning"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath("test-versioning-pages-only", "pages/docs/versions.tsx"),
+      ),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-versioning-pages-only",
+          "pages/v/[version]/docs/[...slug].tsx",
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it("strips [locale]/docs/versions.tsx + v/[version]/ja/** when versioning is selected but i18n is OFF", async () => {
+    const choices: UserChoices = {
+      projectName: "test-versioning-no-i18n",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "versioning"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-versioning-no-i18n",
+          "pages/[locale]/docs/versions.tsx",
+        ),
+      ),
+    ).toBe(false);
+    expect(
+      await fs.pathExists(
+        projectPath("test-versioning-no-i18n", "pages/v/[version]/ja"),
+      ),
+    ).toBe(false);
+  });
+
+  it("emits [locale]/docs/versions.tsx + v/[version]/ja/docs/[...slug].tsx when versioning + i18n are both selected", async () => {
+    const choices: UserChoices = {
+      projectName: "test-versioning-i18n",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "i18n", "versioning"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-versioning-i18n",
+          "pages/[locale]/docs/versions.tsx",
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-versioning-i18n",
+          "pages/v/[version]/ja/docs/[...slug].tsx",
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it("does NOT emit any docs/versions.tsx or v/[version]/** when versioning is not selected", async () => {
+    const choices: UserChoices = {
+      projectName: "test-no-versioning",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "i18n"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath("test-no-versioning", "pages/docs/versions.tsx"),
+      ),
+    ).toBe(false);
+    expect(
+      await fs.pathExists(projectPath("test-no-versioning", "pages/v")),
+    ).toBe(false);
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-no-versioning",
+          "pages/[locale]/docs/versions.tsx",
+        ),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("scaffold — W7C cross-feature union (i18n + docTags + versioning) (#1738)", () => {
+  it("emits the union of all 8 feature-conditional pages when all three are selected", async () => {
+    const choices: UserChoices = {
+      projectName: "test-union-all",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "i18n", "docTags", "versioning"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const expected = [
+      // docTags — unconditional pair
+      "pages/docs/tags/[tag].tsx",
+      "pages/docs/tags/index.tsx",
+      // docTags — locale pair
+      "pages/[locale]/docs/tags/[tag].tsx",
+      "pages/[locale]/docs/tags/index.tsx",
+      // versioning — unconditional pair
+      "pages/docs/versions.tsx",
+      "pages/v/[version]/docs/[...slug].tsx",
+      // versioning — locale + hardcoded-ja pair
+      "pages/[locale]/docs/versions.tsx",
+      "pages/v/[version]/ja/docs/[...slug].tsx",
+    ];
+    for (const rel of expected) {
+      expect(
+        await fs.pathExists(projectPath("test-union-all", rel)),
+        `expected ${rel} to exist in union scaffold`,
+      ).toBe(true);
+    }
   });
 });
