@@ -47,7 +47,7 @@ let shuttingDown = false;
 function runRunner() {
   const childScript = `
     (async () => {
-      const { runClaudeResourcesPreStep } = await import("@zudo-doc/zudo-doc-v2/integrations/claude-resources");
+      const { runClaudeResourcesPreStep } = await import("@takazudo/zudo-doc/integrations/claude-resources");
       const result = await runClaudeResourcesPreStep({
         claudeDir: ${JSON.stringify(CLAUDE_DIR)},
         projectRoot: ${JSON.stringify(PROJECT_ROOT)},

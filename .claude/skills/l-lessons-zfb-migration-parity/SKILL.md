@@ -234,7 +234,7 @@ Treat upstream's deferred post-merge smokes as "probably fine, run them to confi
 
 Restore visual parity on the deployed PR #669 preview at `https://pr-669.zudo-doc.pages.dev/pj/zudo-doc/`. Three concrete framings going in:
 
-- "Tailwind v4 utility classes for `packages/zudo-doc-v2/src/**` are missing from the bundle" (the headline framing for #1417 / #1357 / W1A / W2A / W3A)
+- "Tailwind v4 utility classes for `packages/zudo-doc/src/**` are missing from the bundle" (the headline framing for #1417 / #1357 / W1A / W2A / W3A)
 - "MDX content plugins are not wired so `:::note` directives stay raw" (#1378 / W3B)
 - "Code blocks emit no Shiki tokens AND ~68 pages render via `<pre data-zfb-content-fallback>`" (#1379 / #1380 / W3C)
 - Plus host-page wiring quartet (W3D) and two W1C-discovered bugs (W3E)
@@ -251,7 +251,7 @@ The cascade is the lesson again, but in a more uncomfortable direction than the 
 
 **Framing 1 — "missing utility classes in bundle" (W1A → W2A pivot, magnitude: cancels W3A entirely).**
 
-The grep pattern `'\.border-muted{'` requires `{` to appear immediately after the class name with no whitespace. Tailwind v4 emits `.border-muted {` with a space before the brace. The space-less form returns 0 for every class — including the host-side classes from `src/components/**` that everyone agreed worked. Once W1A retried with `'^\s*\.<class>\s*\{'` the count was 1 for every flagged class on local dist. W2A re-ran the corrected regex against the **deployed** bundle (`pr-669.zudo-doc.pages.dev/pj/zudo-doc/assets/styles-ea3fb6dc.css`) and got 1 for every class there too. The `@source` directive at `src/styles/global.css:28` is correct and effective; zfb's `tempfile_in(working_dir)` synthesis at `crates/zfb-css/src/engine.rs:386` correctly resolves `packages/zudo-doc-v2/src/**` relative to the project root. There was nothing to fix host-side. W3A was closed as not-planned. The whole epic's headline framing was a measurement artifact.
+The grep pattern `'\.border-muted{'` requires `{` to appear immediately after the class name with no whitespace. Tailwind v4 emits `.border-muted {` with a space before the brace. The space-less form returns 0 for every class — including the host-side classes from `src/components/**` that everyone agreed worked. Once W1A retried with `'^\s*\.<class>\s*\{'` the count was 1 for every flagged class on local dist. W2A re-ran the corrected regex against the **deployed** bundle (`pr-669.zudo-doc.pages.dev/pj/zudo-doc/assets/styles-ea3fb6dc.css`) and got 1 for every class there too. The `@source` directive at `src/styles/global.css:28` is correct and effective; zfb's `tempfile_in(working_dir)` synthesis at `crates/zfb-css/src/engine.rs:386` correctly resolves `packages/zudo-doc/src/**` relative to the project root. There was nothing to fix host-side. W3A was closed as not-planned. The whole epic's headline framing was a measurement artifact.
 
 **Framing 2 — "MDX plugins not wired" (W3B pivot, magnitude: shifts fix from config to content).**
 

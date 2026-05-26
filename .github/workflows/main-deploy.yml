@@ -150,7 +150,7 @@ jobs:
   # ---------------------------------------------------------------------------
   # Job 2: Build doc history JSONs (full clone — only this job needs it)
   # ---------------------------------------------------------------------------
-  # The @zudo-doc/doc-history-server package is fully standalone (no zfb
+  # The @takazudo/zudo-doc-history-server package is fully standalone (no zfb
   # consumption). fetch-depth: 0 so it can walk git history per content file.
   build-history:
     name: Build Doc History
@@ -178,7 +178,7 @@ jobs:
 
       - name: Generate doc history
         run: |
-          pnpm --filter @zudo-doc/doc-history-server generate \
+          pnpm --filter @takazudo/zudo-doc-history-server generate \
             --content-dir ../../src/content/docs \
             --locale ja:../../src/content/docs-ja \
             --out-dir ../../doc-history-out

@@ -16,9 +16,10 @@ Minimal documentation framework built with zfb, MDX, Tailwind CSS v4, and Preact
 
 ## Commands
 
-- `pnpm dev` — runs zfb dev (port 4321), doc-history-server (port 4322), and a `.claude/` watcher concurrently via `run-p` (predev kills stale processes on those ports); edits to `.claude/` files regenerate the corresponding MDX live
+- `pnpm dev` — runs zfb dev (port 4321), doc-history-server (port 4322), a `.claude/` watcher, and tsup `--watch` for `@takazudo/zudo-doc` concurrently via `run-p` (predev kills stale processes on those ports); edits to `.claude/` files regenerate the corresponding MDX live, and edits to `packages/zudo-doc/src/**` auto-rebuild `dist/` so zfb HMR picks them up
 - `pnpm dev:zfb` — zfb dev server only (port 4321)
 - `pnpm dev:history` — doc history API server only (port 4322)
+- `pnpm dev:zudo-doc` — tsup `--watch` for `@takazudo/zudo-doc` only; host imports resolve through `dist/` because the package now ships compiled JS (W8 Blocker-2 fix — Node 24 rejects raw `.ts` in `node_modules`, so the package's source is private and dist is the API surface)
 - `pnpm dev:stable` — alternative build-then-serve dev mode (avoids HMR crashes on content file add/remove)
 - `pnpm dev:network` — zfb dev with `--host 0.0.0.0` for LAN access
 - `pnpm build` — static HTML export to `dist/` (runs `zfb build`)
@@ -105,7 +106,7 @@ packages/
 ├── md-plugins/           # Shared remark/rehype plugins (link resolver, admonitions, etc.)
 ├── search-worker/        # CF Worker for search API
 ├── doc-history-server/   # Doc history REST API + CLI generator
-├── zudo-doc-v2/          # Shared layout + integration package (header, doc-layout, ...)
+├── zudo-doc/          # Shared layout + integration package (header, doc-layout, ...)
 └── create-zudo-doc/      # CLI scaffold tool
 
 src/
@@ -145,7 +146,7 @@ This script is also the **source template** copied to downstream projects by `cr
 
 ## Doc History Architecture
 
-Document git history is handled by a standalone package `@zudo-doc/doc-history-server` (at `packages/doc-history-server/`). It is intentionally decoupled from the main build pipeline so that expensive `git log --follow` calls do not block the main build.
+Document git history is handled by a standalone package `@takazudo/zudo-doc-history-server` (at `packages/doc-history-server/`). It is intentionally decoupled from the main build pipeline so that expensive `git log --follow` calls do not block the main build.
 
 It runs in two modes:
 
@@ -161,7 +162,7 @@ When `SKIP_DOC_HISTORY=1` is set, the doc-history plugin short-circuits and writ
 All three workflows (`main-deploy.yml`, `pr-checks.yml`, `preview-deploy.yml`) use parallel build jobs:
 
 - **build-site** — full clone (`fetch-depth: 0`), `pnpm build` — preBuild populates `.zfb/doc-history-meta.json` with real git dates so the SSG HTML contains the visible Created/Updated/Author block
-- **build-history** — full clone (`fetch-depth: 0`), `@zudo-doc/doc-history-server generate` — generates per-page dropdown JSON files for the DocHistory island
+- **build-history** — full clone (`fetch-depth: 0`), `@takazudo/zudo-doc-history-server generate` — generates per-page dropdown JSON files for the DocHistory island
 - **deploy/preview** — merges both artifacts, deploys via `wrangler deploy` to Cloudflare Workers static assets at `zudo-doc.takazudomodular.com`
 
 E2E tests also run with full clone (no `SKIP_DOC_HISTORY`).
@@ -203,6 +204,8 @@ wrangler deploy --var DOCS_SITE_URL=<preview-url>
 Or override via the Cloudflare dashboard per environment to avoid preview workers pointing at production docs.
 
 > **Search worker (separate deployment).** `packages/search-worker/wrangler.toml` carries its **own** `DOCS_SITE_URL` (used for CORS/referrer). This repo updates it to `https://zudo-doc.takazudomodular.com`, but a Cloudflare **dashboard environment-variable override** on the search Worker (the old `your-docs-site.pages.dev` placeholder suggests one may exist) **shadows** the file value and persists across deploys. After cutover, redeploy the search worker AND clear/replace any dashboard `DOCS_SITE_URL` override — otherwise live search silently 404s once Pages is decommissioned. No CI gate covers this.
+>
+> The search worker also has its **own `RATE_LIMIT` KV namespace** (separate from the main worker's). `packages/search-worker/wrangler.toml` currently holds a placeholder id — see `packages/search-worker/README.md` for the creation runbook (`wrangler kv namespace create RATE_LIMIT` run from that directory). Deploying without replacing the placeholder produces error code 10042 (tracked in #1703).
 
 ### 4. Bind the custom domain
 

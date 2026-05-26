@@ -1,24 +1,14 @@
 import type { FeatureModule } from "../compose.js";
 
+/**
+ * body-foot-util feature.
+ *
+ * W7A (#1736): post-cutover, the body-foot-util area is hosted by
+ * `pages/lib/_doc-history-area.tsx` which wraps `BodyFootUtilArea`
+ * unconditionally. The component itself runtime-gates on
+ * `settings.bodyFootUtilArea`, so there is nothing to inject.
+ */
 export const bodyFootUtilFeature: FeatureModule = () => ({
   name: "bodyFootUtil",
-  injections: [
-    {
-      file: "src/layouts/doc-layout.astro",
-      anchor: "// @slot:doc-layout:imports",
-      content:
-        'import BodyFootUtilArea from "@/components/body-foot-util-area";',
-    },
-    {
-      file: "src/layouts/doc-layout.astro",
-      anchor: "<!-- @slot:doc-layout:after-content -->",
-      content: `            <BodyFootUtilArea
-              currentSlug={currentSlug}
-              lang={lang}
-              contentDir={contentDir}
-              entryId={entryId}
-              docHistory={docHistory}
-            />`,
-    },
-  ],
+  injections: [],
 });

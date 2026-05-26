@@ -213,23 +213,19 @@ Check that expected files exist or don't exist in `__inbox/generator-test-<patte
 Use these tables to verify. Check each file with `test -e <path>`.
 
 > **Note on `theme-toggle.tsx`**: this component always ships on disk as part of the base template — whether it renders at runtime is gated by the `colorMode` setting. The expectation tables below therefore only assert PRESENT for the `light-dark` and `all-features` patterns and do not assert ABSENT elsewhere.
+>
+> **Note on file extensions**: all components are `.tsx` — there are no `.astro` files in the generated project. The generator uses zfb/Preact, not Astro.
 
-**barebone** — minimal, everything stripped:
+**barebone** — minimal, no optional features:
 
 | File | Expected |
 |------|----------|
-| `src/components/search.astro` | ABSENT |
-| `src/components/language-switcher.astro` | ABSENT |
-| `src/pages/[locale]/` | ABSENT |
 | `src/content/docs-ja/` | ABSENT |
 | `src/integrations/claude-resources/` | ABSENT |
-| `src/components/design-token-tweak/` | ABSENT |
 | `src/components/doc-history.tsx` | ABSENT |
-| `src/components/ai-chat-modal.tsx` | ABSENT |
-| `src/integrations/doc-history.ts` | ABSENT |
-| `src/integrations/llms-txt.ts` | ABSENT |
-| `src/integrations/sitemap.ts` | ABSENT |
-| `src/pages/docs/` | PRESENT |
+| `src/lib/design-token-panel-bootstrap.ts` | ABSENT |
+| `src/config/design-token-panel-config.ts` | ABSENT |
+| `src/utils/design-token-serde.ts` | ABSENT |
 | `src/content/docs/` | PRESENT |
 | `src/config/settings.ts` | PRESENT |
 | `zfb.config.ts` | PRESENT |
@@ -238,83 +234,86 @@ Use these tables to verify. Check each file with `test -e <path>`.
 
 | File | Expected |
 |------|----------|
-| `src/components/search.astro` | PRESENT |
-| `src/components/language-switcher.astro` | ABSENT |
 | `src/integrations/claude-resources/` | ABSENT |
-| `src/components/design-token-tweak/` | ABSENT |
+| `src/config/design-token-panel-config.ts` | ABSENT |
+| `src/content/docs/` | PRESENT |
+| `src/config/settings.ts` | PRESENT |
+
+> Note: the `search` feature wires Pagefind via the zfb config and `package.json` deps; it does not copy a dedicated search component file to `src/components/`. Verify search is enabled by checking `package.json` for `"@pagefind/default-ui"` or checking `zfb.config.ts` for pagefind plugin wiring.
 
 **i18n:**
 
 | File | Expected |
 |------|----------|
-| `src/components/search.astro` | ABSENT |
-| `src/components/language-switcher.astro` | PRESENT |
-| `src/pages/[locale]/` | PRESENT |
 | `src/content/docs-ja/` | PRESENT |
+| `src/content/docs-ja/getting-started/index.mdx` | PRESENT |
+| `src/content/docs/` | PRESENT |
 | `src/integrations/claude-resources/` | ABSENT |
-| `src/components/design-token-tweak/` | ABSENT |
+| `src/config/design-token-panel-config.ts` | ABSENT |
 
 **sidebar-filter:**
 
 | File | Expected |
 |------|----------|
-| `src/components/search.astro` | ABSENT |
 | `src/components/sidebar-tree.tsx` | PRESENT |
-| `src/components/language-switcher.astro` | ABSENT |
-| `src/components/design-token-tweak/` | ABSENT |
+| `src/integrations/claude-resources/` | ABSENT |
+| `src/config/design-token-panel-config.ts` | ABSENT |
+
+> Note: `sidebar-tree.tsx` always ships with the base template; the `sidebarFilter` flag controls whether filtering UI is active at runtime. Check the `sidebarFilter` setting in `src/config/settings.ts` to confirm the flag was applied.
 
 **claude-resources:**
 
 | File | Expected |
 |------|----------|
-| `src/integrations/claude-resources/` | PRESENT |
-| `src/components/search.astro` | ABSENT |
-| `src/components/language-switcher.astro` | ABSENT |
-| `src/components/design-token-tweak/` | ABSENT |
+| `src/integrations/claude-resources/generate.ts` | PRESENT |
+| `src/integrations/claude-resources/escape-for-mdx.ts` | PRESENT |
+| `src/integrations/claude-resources/__tests__/generate.test.ts` | PRESENT |
+| `src/config/design-token-panel-config.ts` | ABSENT |
 
 **design-token-panel:**
 
 | File | Expected |
 |------|----------|
-| `src/components/design-token-tweak/index.tsx` | PRESENT |
-| `src/components/design-token-tweak/export-modal.tsx` | PRESENT |
-| `src/config/color-tweak-presets.ts` | PRESENT |
-| `src/utils/color-convert.ts` | PRESENT |
+| `src/config/design-token-panel-config.ts` | PRESENT |
+| `src/config/design-tokens-manifest.ts` | PRESENT |
+| `src/lib/design-token-panel-bootstrap.ts` | PRESENT |
 | `src/utils/design-token-serde.ts` | PRESENT |
-| `src/components/search.astro` | ABSENT |
-| `src/components/language-switcher.astro` | ABSENT |
+| `src/utils/design-token-types.ts` | PRESENT |
+| `src/integrations/claude-resources/` | ABSENT |
 
 **light-dark:**
 
 | File | Expected |
 |------|----------|
 | `src/components/theme-toggle.tsx` | PRESENT |
-| `src/components/search.astro` | ABSENT |
-| `src/components/language-switcher.astro` | ABSENT |
-| `src/components/design-token-tweak/` | ABSENT |
+| `src/integrations/claude-resources/` | ABSENT |
+| `src/config/design-token-panel-config.ts` | ABSENT |
 
 **lang-ja:**
 
 | File | Expected |
 |------|----------|
-| `src/components/search.astro` | ABSENT |
-| `src/components/language-switcher.astro` | ABSENT |
-| `src/pages/docs/` | PRESENT |
 | `src/content/docs/` | PRESENT |
+| `src/config/settings.ts` | PRESENT |
+| `src/content/docs-ja/` | ABSENT |
 
 **all-features:**
 
 | File | Expected |
 |------|----------|
-| `src/components/search.astro` | PRESENT |
-| `src/components/language-switcher.astro` | PRESENT |
-| `src/pages/[locale]/` | PRESENT |
-| `src/content/docs-ja/` | PRESENT |
-| `src/integrations/claude-resources/` | PRESENT |
+| `src/content/docs-ja/getting-started/index.mdx` | PRESENT |
+| `src/content/docs/getting-started/index.mdx` | PRESENT |
+| `src/integrations/claude-resources/generate.ts` | PRESENT |
+| `src/integrations/claude-resources/escape-for-mdx.ts` | PRESENT |
 | `src/components/theme-toggle.tsx` | PRESENT |
-| `src/components/design-token-tweak/index.tsx` | PRESENT |
-| `src/components/design-token-tweak/export-modal.tsx` | PRESENT |
-| `src/config/color-tweak-presets.ts` | PRESENT |
+| `src/config/design-token-panel-config.ts` | PRESENT |
+| `src/lib/design-token-panel-bootstrap.ts` | PRESENT |
+| `src/utils/design-token-serde.ts` | PRESENT |
+| `src/components/doc-history.tsx` | PRESENT |
+| `src/components/desktop-sidebar-toggle.tsx` | PRESENT |
+| `src/scripts/sidebar-resizer.ts` | PRESENT |
+| `src/components/image-enlarge.tsx` | PRESENT |
+| `src/utils/github.ts` | PRESENT |
 
 ## Step 7: Verify Settings
 
@@ -358,8 +357,7 @@ Read `__inbox/generator-test-<pattern>/test-project/src/config/settings.ts` and 
 **lang-ja:**
 
 - `colorScheme: "Default Dark"`
-- Check `src/config/i18n.ts` for `defaultLocale = "ja"`
-- Check `zfb.config.ts` for `defaultLocale: "ja"`
+- Check `src/config/settings.ts` for `defaultLocale: "ja"` — this is the authoritative field emitted by settings-gen.ts; `src/config/i18n.ts` derives `defaultLocale` from `settings.defaultLocale` at runtime and does not hardcode it
 
 **all-features:**
 

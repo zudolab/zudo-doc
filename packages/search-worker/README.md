@@ -1,17 +1,36 @@
-# @zudo-doc/search-worker
+# @takazudo/zudo-doc-search-worker
 
 Cloudflare Worker that provides a server-side search API for zudo-doc. Fetches and caches `search-index.json` from the docs site and uses MiniSearch for full-text search.
 
 ## Setup
 
-1. Set the `DOCS_SITE_URL` variable in `wrangler.toml` to your deployed docs site URL
-2. Create a KV namespace for rate limiting:
+### 1. Set `DOCS_SITE_URL`
 
-```bash
+Set the `DOCS_SITE_URL` variable in `wrangler.toml` to your deployed docs site URL.
+
+### 2. Create the RATE_LIMIT KV namespace
+
+Run from `packages/search-worker/` with Wrangler authenticated:
+
+```sh
 wrangler kv namespace create RATE_LIMIT
 ```
 
-Update the `id` in `wrangler.toml` with the returned namespace ID.
+Copy the returned `id` value and paste it into `wrangler.toml` under `[[kv_namespaces]]`:
+
+```toml
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "<paste-id-here>"
+```
+
+The `wrangler.toml` currently contains a placeholder that must be replaced before `wrangler deploy` will succeed (deploying with the placeholder produces error code 10042).
+
+### 3. Deploy
+
+```sh
+pnpm deploy
+```
 
 ## Development
 
@@ -20,12 +39,6 @@ pnpm dev
 ```
 
 Starts a local dev server.
-
-## Deploy
-
-```bash
-pnpm deploy
-```
 
 ## API
 

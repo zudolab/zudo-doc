@@ -38,7 +38,7 @@
 @source "src/content/**/*.{mdx,md}";
 @source "src/hooks/**/*.{tsx,ts,jsx,js}";
 @source "src/utils/**/*.{tsx,ts,jsx,js}";
-@source "packages/zudo-doc-v2/src/**/*.{tsx,ts,jsx,js}";
+@source "packages/zudo-doc/src/**/*.{tsx,ts,jsx,js}";
 @source "packages/create-zudo-doc/templates/**/*.{tsx,ts,jsx,js,mdx,md}";
 @source "pages/**/*.{tsx,ts,jsx,js}";
 

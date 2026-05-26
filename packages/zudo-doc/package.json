@@ -1,0 +1,187 @@
+{
+  "name": "@takazudo/zudo-doc",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "zudo-doc framework primitives layer that sits on top of zfb's engine — sidebar, theme, TOC, breadcrumb, layouts, head injection, View Transitions, SSR-skip wrappers (per ADR-003).",
+  "license": "MIT",
+  "author": "Takeshi Takatsudo",
+  "homepage": "https://zudo-doc.takazudomodular.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zudolab/zudo-doc.git",
+    "directory": "packages/zudo-doc"
+  },
+  "bugs": {
+    "url": "https://github.com/zudolab/zudo-doc/issues"
+  },
+  "keywords": [
+    "zudo-doc",
+    "documentation",
+    "framework",
+    "mdx",
+    "preact",
+    "zfb"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./sidebar-tree": {
+      "types": "./dist/sidebar-tree/index.d.ts",
+      "default": "./dist/sidebar-tree/index.js"
+    },
+    "./theme": {
+      "types": "./dist/theme/index.d.ts",
+      "default": "./dist/theme/index.js"
+    },
+    "./theme/color-scheme-provider": {
+      "types": "./dist/theme/color-scheme-provider.d.ts",
+      "default": "./dist/theme/color-scheme-provider.js"
+    },
+    "./toc": {
+      "types": "./dist/toc/index.d.ts",
+      "default": "./dist/toc/index.js"
+    },
+    "./breadcrumb": {
+      "types": "./dist/breadcrumb/index.d.ts",
+      "default": "./dist/breadcrumb/index.js"
+    },
+    "./header": {
+      "types": "./dist/header/index.d.ts",
+      "default": "./dist/header/index.js"
+    },
+    "./footer": {
+      "types": "./dist/footer/index.d.ts",
+      "default": "./dist/footer/index.js"
+    },
+    "./sidebar": {
+      "types": "./dist/sidebar/index.d.ts",
+      "default": "./dist/sidebar/index.js"
+    },
+    "./sidebar/types": {
+      "types": "./dist/sidebar/types.d.ts",
+      "default": "./dist/sidebar/types.js"
+    },
+    "./i18n-version": {
+      "types": "./dist/i18n-version/index.d.ts",
+      "default": "./dist/i18n-version/index.js"
+    },
+    "./page-loading": {
+      "types": "./dist/page-loading/index.d.ts",
+      "default": "./dist/page-loading/index.js"
+    },
+    "./tab-item": {
+      "types": "./dist/tab-item/index.d.ts",
+      "default": "./dist/tab-item/index.js"
+    },
+    "./code-syntax": {
+      "types": "./dist/code-syntax/index.d.ts",
+      "default": "./dist/code-syntax/index.js"
+    },
+    "./body-foot-util": {
+      "types": "./dist/body-foot-util/index.d.ts",
+      "default": "./dist/body-foot-util/index.js"
+    },
+    "./sidebar-resizer": {
+      "types": "./dist/sidebar-resizer/index.d.ts",
+      "default": "./dist/sidebar-resizer/index.js"
+    },
+    "./doclayout": {
+      "types": "./dist/doclayout/index.d.ts",
+      "default": "./dist/doclayout/index.js"
+    },
+    "./head": {
+      "types": "./dist/head/index.d.ts",
+      "default": "./dist/head/index.js"
+    },
+    "./transitions": {
+      "types": "./dist/transitions/index.d.ts",
+      "default": "./dist/transitions/index.js"
+    },
+    "./integrations/doc-history": {
+      "types": "./dist/integrations/doc-history/index.d.ts",
+      "default": "./dist/integrations/doc-history/index.js"
+    },
+    "./integrations/llms-txt": {
+      "types": "./dist/integrations/llms-txt/index.d.ts",
+      "default": "./dist/integrations/llms-txt/index.js"
+    },
+    "./integrations/search-index": {
+      "types": "./dist/integrations/search-index/index.d.ts",
+      "default": "./dist/integrations/search-index/index.js"
+    },
+    "./integrations/claude-resources": {
+      "types": "./dist/integrations/claude-resources/index.d.ts",
+      "default": "./dist/integrations/claude-resources/index.js"
+    },
+    "./content": {
+      "types": "./dist/content/index.d.ts",
+      "default": "./dist/content/index.js"
+    },
+    "./nav-indexing": {
+      "types": "./dist/nav-indexing/index.d.ts",
+      "default": "./dist/nav-indexing/index.js"
+    },
+    "./nav-indexing/types": {
+      "types": "./dist/nav-indexing/types.d.ts",
+      "default": "./dist/nav-indexing/types.js"
+    },
+    "./metainfo": {
+      "types": "./dist/metainfo/index.d.ts",
+      "default": "./dist/metainfo/index.js"
+    },
+    "./html-preview-wrapper": {
+      "types": "./dist/html-preview-wrapper/index.d.ts",
+      "default": "./dist/html-preview-wrapper/index.js"
+    },
+    "./details": {
+      "types": "./dist/details/index.d.ts",
+      "default": "./dist/details/index.js"
+    },
+    "./url-normalizer": {
+      "types": "./dist/url-normalizer/index.d.ts",
+      "default": "./dist/url-normalizer/index.js"
+    }
+  },
+  "scripts": {
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsup",
+    "dev": "tsup --watch",
+    "prepare": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsup --silent",
+    "test": "vitest run --config vitest.config.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "preact": "^10.29.1",
+    "@takazudo/zfb": "^0.1.0-next.6",
+    "@takazudo/zfb-runtime": "^0.1.0-next.6",
+    "@takazudo/zudo-doc-history-server": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "@takazudo/zudo-doc-history-server": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.5",
+    "cross-env": "^7.0.3",
+    "preact": "^10.29.1",
+    "preact-render-to-string": "^6.6.6",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^3.0.0",
+    "@takazudo/zfb": "0.1.0-next.6",
+    "@takazudo/zfb-runtime": "0.1.0-next.6"
+  }
+}

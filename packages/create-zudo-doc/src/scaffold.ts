@@ -11,6 +11,36 @@ import { capitalize, getSecondaryLang } from "./utils.js";
 
 export { getSecondaryLang };
 
+/**
+ * Files in `templates/base/**` that must never be copied into a generated
+ * project. Each entry is matched against the path relative to `templates/base/`
+ * (POSIX-style, forward slashes).
+ *
+ * W2 spec-lock Decision 5 (#1728) — `pages/api/**` is worker-only SSR
+ * (uses `@takazudo/zfb-adapter-cloudflare`, `prerender = false`) and is
+ * intentionally absent from `templates/base/pages/` already. This list
+ * is the explicit policy: future upstream-sync helpers that mirror more
+ * of `pages/` into `templates/base/` MUST honour these patterns.
+ */
+const EXCLUDE_FROM_MIRROR: RegExp[] = [
+  /^pages\/api(\/|$)/,
+];
+
+/**
+ * `fs.copy` filter for the `templates/base/` → target-dir copy. Returns
+ * `false` for any path matching {@link EXCLUDE_FROM_MIRROR}. Directories
+ * matching an exclusion are skipped wholesale (fs.copy honours filter on
+ * directories).
+ */
+function shouldCopyBaseFile(srcAbs: string, baseDir: string): boolean {
+  const rel = path.relative(baseDir, srcAbs).split(path.sep).join("/");
+  if (rel === "") return true; // root — always include
+  for (const pattern of EXCLUDE_FROM_MIRROR) {
+    if (pattern.test(rel)) return false;
+  }
+  return true;
+}
+
 const STARTER_CONTENT_EN = (siteName: string) => `---
 title: Welcome
 sidebar_position: 1
@@ -97,7 +127,13 @@ export async function scaffold(choices: UserChoices): Promise<void> {
   await fs.ensureDir(targetDir);
 
   // 1. Copy base template
-  await fs.copy(baseDir, targetDir);
+  // Honour EXCLUDE_FROM_MIRROR so paths like `pages/api/**` (worker-only SSR
+  // endpoints) are never emitted into a generated project — see W2 spec-lock
+  // Decision 5 (#1728). Today templates/base/ does not contain any excluded
+  // paths, but the filter documents the policy in code that runs.
+  await fs.copy(baseDir, targetDir, {
+    filter: (src: string) => shouldCopyBaseFile(src, baseDir),
+  });
 
   // 2. Copy skill symlinker script when enabled
   if (choices.features.includes("skillSymlinker")) {
@@ -239,21 +275,42 @@ export async function scaffold(choices: UserChoices): Promise<void> {
 
 function generatePackageJson(choices: UserChoices) {
   // Intentionally absent from scaffolded deps:
-  //   @zudo-doc/md-plugins — zero references in generator templates/source
+  //   @takazudo/zudo-doc-md-plugins — zero references in generator templates/source
   //   @takazudo/zfb-adapter-cloudflare — zero references in generator templates/source
-  //   @zudo-doc/zudo-doc-v2 — workspace-private/unpublished; the two constants it
-  //     provides to desktop-sidebar-toggle.tsx are inlined directly in that template
   const deps: Record<string, string> = {
     // zfb engine — replaces astro/@astrojs/* now that the cutover (#500 S5)
     // has retired the legacy Astro pipeline. Distributed as published npm
     // packages (the prebuilt binary ships via an optionalDependency of
     // @takazudo/zfb); pinned to the pre-release the scaffold targets.
-    "@takazudo/zfb": "0.1.0-next.5",
-    "@takazudo/zfb-runtime": "0.1.0-next.5",
+    // The two literals below must match root package.json's
+    // dependencies["@takazudo/zfb"] / ["@takazudo/zfb-runtime"] —
+    // enforced by scripts/check-pin-parity.mjs (W4A — #1732).
+    "@takazudo/zfb": "0.1.0-next.6",
+    "@takazudo/zfb-runtime": "0.1.0-next.6",
+    // @takazudo/zudo-doc — published from this monorepo via
+    // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
+    // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
+    // version moves, so a fresh scaffold pulls the version we just published.
+    "@takazudo/zudo-doc": "^0.1.0",
+    // zod — used by the generated zfb.config.ts. zfb-config-gen emits
+    // `import { z } from "zod"` for the content-collection schema +
+    // `z.toJSONSchema(...)` conversion. Without this dep, the consumer
+    // fails at `zfb build` with esbuild "Could not resolve 'zod'" before
+    // any page compiles. The Astro→zfb retarget (3f0042f7) added the
+    // import without the runtime dep; W6B (#1735) consumer-build
+    // verification was the first to actually exercise it.
+    zod: "^4.0.0",
     // ^10.29.1 floor satisfies @takazudo/zdtp's preact peer range so the app
     // and zdtp resolve a single preact instance — a lower floor can split into
     // two copies and crash hook-using SSR islands with "undefined reading __H".
     preact: "^10.29.1",
+    // preact-render-to-string — zfb's emitted entry.mjs imports
+    // `renderToString` from this package as `__zfb_renderToString` to
+    // SSR each page. Without it, esbuild fails at the bundler step with
+    // "Could not resolve 'preact-render-to-string'" before any page
+    // compiles. Same pin as host. Caught by W6B (#1735) consumer-build
+    // verification.
+    "preact-render-to-string": "^6.6.6",
     shiki: "^4.0.2",
     "@shikijs/transformers": "^4.0.0",
     clsx: "^2.1.0",
@@ -263,6 +320,12 @@ function generatePackageJson(choices: UserChoices) {
     "remark-cjk-friendly": "^2.0.1",
     "remark-directive": "^3.0.0",
     "unist-util-visit": "^5.1.0",
+    // katex — server-side LaTeX renderer used by the always-on
+    // pages/lib/_math-block.tsx (called from pages/_mdx-components.ts
+    // for `$…$` and `$$…$$` math nodes). Caught by W6B (#1735)
+    // consumer-build verification — the import lives in the mirrored
+    // pages, not behind any feature gate. Same pin as host.
+    katex: "^0.16.38",
   };
 
   const devDeps: Record<string, string> = {
@@ -284,6 +347,25 @@ function generatePackageJson(choices: UserChoices) {
 
   if (choices.features.includes("docHistory")) {
     deps["diff"] = "^8.0.3";
+    // @takazudo/zudo-doc has @takazudo/zudo-doc-history-server as an optional
+    // peer dep. When docHistory is selected the zfb plugin
+    // (plugins/doc-history-plugin.mjs) eagerly imports
+    // @takazudo/zudo-doc/integrations/doc-history which in turn imports
+    // @takazudo/zudo-doc-history-server/git-history. Without this dep the
+    // plugin host fails at init with ERR_MODULE_NOT_FOUND — W8A (#1739).
+    deps["@takazudo/zudo-doc-history-server"] = "^0.1.0";
+    // W7A (#1736): doc-history-plugin.mjs spawns `tsx -e <inline-script>` to
+    // run the v2 runtime in a TS-aware Node subprocess; without tsx the
+    // plugin's preBuild step exits with ENOENT before zfb finishes config
+    // load.
+    devDeps["tsx"] = "^4.21.0";
+  }
+
+  if (choices.features.includes("claudeResources")) {
+    // W7A (#1736): claude-resources-plugin.mjs spawns `tsx -e <inline-script>`
+    // for the same reason as doc-history (TS-aware Node subprocess wrapping
+    // the v2 runner).
+    devDeps["tsx"] = "^4.21.0";
   }
 
   if (choices.features.includes("designTokenPanel")) {

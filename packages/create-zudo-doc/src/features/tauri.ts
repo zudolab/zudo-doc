@@ -2,36 +2,18 @@ import fs from "fs-extra";
 import path from "path";
 import type { FeatureModule } from "../compose.js";
 
+/**
+ * Tauri feature.
+ *
+ * W7A (#1736): post-cutover, the FindInPage island is mounted by the
+ * pages/lib body-end wrapper. The find-match highlight CSS is unconditional
+ * in `templates/base/src/styles/global.css` (matches host). Only the
+ * postProcess hooks (Cargo.toml / tauri.conf.json / .gitignore patches)
+ * remain feature-scoped.
+ */
 export const tauriFeature: FeatureModule = (choices) => ({
   name: "tauri",
-  injections: [
-    {
-      file: "src/layouts/doc-layout.astro",
-      anchor: "// @slot:doc-layout:imports",
-      content: 'import FindInPageInit from "@/components/find-in-page-init";',
-    },
-    {
-      file: "src/layouts/doc-layout.astro",
-      anchor: "<!-- @slot:doc-layout:body-end-components -->",
-      content:
-        "    <Island when=\"load\"><FindInPageInit /></Island>",
-      position: "after",
-    },
-    {
-      file: "src/styles/global.css",
-      anchor: "/* @slot:global-css:feature-styles */",
-      content: `/* ── Find-in-page highlight ── */
-.find-match {
-  background-color: rgba(255, 200, 0, 0.4);
-  border-radius: 2px;
-}
-.find-match-active {
-  background-color: rgba(255, 150, 0, 0.7);
-  border-radius: 2px;
-  outline: 2px solid rgba(255, 150, 0, 0.9);
-}`,
-    },
-  ],
+  injections: [],
   postProcess: async (targetDir) => {
     // Patch Cargo.toml package name
     const cargoPath = path.join(targetDir, "src-tauri/Cargo.toml");

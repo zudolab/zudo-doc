@@ -60,6 +60,23 @@ jobs:
         run: bash scripts/check-template-drift.sh
 
   # ---------------------------------------------------------------------------
+  # Job 0.5: Pin parity check (lightweight, no pnpm install needed)
+  # ---------------------------------------------------------------------------
+  # Verifies @takazudo/zfb / @takazudo/zfb-runtime pins are identical
+  # between root package.json and packages/create-zudo-doc/src/scaffold.ts.
+  # Failure mode "W1A §5#4 — three pin sources, only one bumped" (W4A — #1732).
+  # Pure-Node script — uses preinstalled Node 22 on the runner image, no pnpm.
+  check-pin-parity:
+    name: Pin Parity Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Check pin parity
+        run: node scripts/check-pin-parity.mjs
+
+  # ---------------------------------------------------------------------------
   # Job 1: Type checking
   # ---------------------------------------------------------------------------
   typecheck:
@@ -179,7 +196,7 @@ jobs:
   # ---------------------------------------------------------------------------
   # Job 3: Build doc history JSONs (full clone — only this job needs it)
   # ---------------------------------------------------------------------------
-  # The @zudo-doc/doc-history-server package is fully standalone (only depends
+  # The @takazudo/zudo-doc-history-server package is fully standalone (only depends
   # on @types/node + tsup + tsx + typescript + vitest — no zfb consumption).
   # fetch-depth: 0 so it can walk git history for every content file.
   build-history:
@@ -208,7 +225,7 @@ jobs:
 
       - name: Generate doc history
         run: |
-          pnpm --filter @zudo-doc/doc-history-server generate \
+          pnpm --filter @takazudo/zudo-doc-history-server generate \
             --content-dir ../../src/content/docs \
             --locale ja:../../src/content/docs-ja \
             --out-dir ../../doc-history-out

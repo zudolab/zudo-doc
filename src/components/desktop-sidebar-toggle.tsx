@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'preact/hooks';
-import { BEFORE_NAVIGATE_EVENT, AFTER_NAVIGATE_EVENT } from '@zudo-doc/zudo-doc-v2/transitions';
+import { BEFORE_NAVIGATE_EVENT, AFTER_NAVIGATE_EVENT } from '@takazudo/zudo-doc/transitions';
 
 export const SIDEBAR_STORAGE_KEY = 'zudo-doc-sidebar-visible';
 

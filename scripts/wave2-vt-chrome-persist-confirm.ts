@@ -153,16 +153,16 @@ function runShapeAssertions() {
     fail("S6", String(e));
   }
 
-  // S7: The dangling ./transitions/persist export is removed from packages/zudo-doc-v2/package.json
+  // S7: The dangling ./transitions/persist export is removed from packages/zudo-doc/package.json
   try {
     const pkgJson = readFileSync(
-      resolve(REPO_ROOT, "packages/zudo-doc-v2/package.json"),
+      resolve(REPO_ROOT, "packages/zudo-doc/package.json"),
       "utf-8"
     );
     if (pkgJson.includes("./transitions/persist")) {
-      fail("S7", 'packages/zudo-doc-v2/package.json still exports "./transitions/persist" — must be removed');
+      fail("S7", 'packages/zudo-doc/package.json still exports "./transitions/persist" — must be removed');
     } else {
-      pass("S7", 'dangling "./transitions/persist" export is absent from zudo-doc-v2/package.json');
+      pass("S7", 'dangling "./transitions/persist" export is absent from zudo-doc/package.json');
     }
   } catch (e) {
     fail("S7", String(e));

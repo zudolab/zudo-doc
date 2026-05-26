@@ -24,10 +24,10 @@ enforcement therefore splits cleanly into two concerns with different owners.
 ## Build time — owned by zfb / url-normalizer
 
 All URLs emitted during the static build must end with `/`. This is enforced by
-`buildUrl()` in `@zudo-doc/zudo-doc-v2/url-normalizer`:
+`buildUrl()` in `@takazudo/zudo-doc/url-normalizer`:
 
 ```ts
-import { buildUrl } from "@zudo-doc/zudo-doc-v2/url-normalizer";
+import { buildUrl } from "@takazudo/zudo-doc/url-normalizer";
 
 // In a paths() implementation or integration:
 const url = buildUrl("docs", slug);          // "/docs/my-slug/"
@@ -47,7 +47,7 @@ pathname arrives from external data and may or may not already carry a trailing
 slash:
 
 ```ts
-import { normalizePathname } from "@zudo-doc/zudo-doc-v2/url-normalizer";
+import { normalizePathname } from "@takazudo/zudo-doc/url-normalizer";
 
 const canonical = normalizePathname(rawPathname); // adds "/" if missing
 ```

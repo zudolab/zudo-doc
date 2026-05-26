@@ -20,8 +20,12 @@ describe("parseCliArgs", () => {
       "--out-dir",
       "dist/history",
     ]);
+    // contentDir is resolved to an absolute path by resolveContentPath (see args.ts).
+    // outDir is stored verbatim. Match the absolute path by its trailing segment so the
+    // assertion holds regardless of where the test runner is invoked from (INIT_CWD,
+    // package CWD, or CI runner root).
     expect(result).toEqual({
-      contentDir: "src/content/docs",
+      contentDir: expect.stringMatching(/src[\\/]content[\\/]docs$/),
       outDir: "dist/history",
       locales: [],
       maxEntries: 50,
@@ -40,9 +44,11 @@ describe("parseCliArgs", () => {
       "10",
     ]);
     expect(result).toEqual({
-      contentDir: "src/content/docs",
+      contentDir: expect.stringMatching(/src[\\/]content[\\/]docs$/),
       outDir: "dist/history",
-      locales: [{ key: "ja", dir: "src/content/docs-ja" }],
+      locales: [
+        { key: "ja", dir: expect.stringMatching(/src[\\/]content[\\/]docs-ja$/) },
+      ],
       maxEntries: 10,
     });
   });
@@ -137,7 +143,7 @@ describe("parseServerArgs", () => {
       "3000",
     ]);
     expect(result).toEqual({
-      contentDir: "src/content/docs",
+      contentDir: expect.stringMatching(/src[\\/]content[\\/]docs$/),
       locales: [],
       maxEntries: 50,
       port: 3000,

@@ -1,93 +1,57 @@
+import fs from "fs-extra";
+import path from "path";
 import type { FeatureModule } from "../compose.js";
 
-export const versioningFeature: FeatureModule = () => ({
+/**
+ * Versioning feature.
+ *
+ * W7A (#1736): post-cutover, the pages/lib wrappers gate `VersionSwitcher`
+ * and `VersionBanner` on `settings.versions`. Doc-layout flow is handled by
+ * route enumerators + `_inline-version-switcher.tsx`. The .astro inject
+ * calls that used to wire this in have been retired (they targeted dead
+ * `src/layouts/doc-layout.astro` + `src/components/header.astro` anchors).
+ *
+ * W7C (#1738): the versioning feature ships pages under
+ * `templates/features/versioning/files/pages/`:
+ *
+ *   docs/versions.tsx                       (always — versioning gate only)
+ *   v/[version]/docs/[...slug].tsx          (always — versioning gate only)
+ *   v/[version]/ja/docs/[...slug].tsx       (i18n + versioning — see below)
+ *   [locale]/docs/versions.tsx              (i18n + versioning)
+ *
+ * `copyFeatureFiles` (compose.ts) auto-copies everything under `files/`.
+ * postProcess removes the i18n-gated subset when i18n is OFF so single-
+ * locale projects don't ship orphan routes.
+ *
+ * Note: `v/[version]/ja/docs/[...slug].tsx` hardcodes `ja` per W2 spec-lock
+ * Decision 9 / §6.4 — matches main verbatim. Future generalization to
+ * `[locale]` is deferred (maintainer-question follow-up).
+ */
+export const versioningFeature: FeatureModule = (choices) => ({
   name: "versioning",
-  injections: [
-    // --- doc-layout imports ---
-    {
-      file: "src/layouts/doc-layout.astro",
-      anchor: "// @slot:doc-layout:imports",
-      content: `import VersionSwitcher from "@/components/version-switcher";
-import VersionBanner from "@/components/version-banner";
-import { getVersionAvailability } from "@/utils/version-availability";`,
-    },
-    // --- doc-layout frontmatter (versionAvailability computation) ---
-    {
-      file: "src/layouts/doc-layout.astro",
-      anchor: "// @slot:doc-layout:frontmatter",
-      content:
-        "const versionAvailability = settings.versions ? await getVersionAvailability() : undefined;",
-    },
-    // --- Replace header call to add versionAvailability prop ---
-    {
-      file: "src/layouts/doc-layout.astro",
-      anchor: "<!-- @slot:doc-layout:header-call:start -->",
-      content: `    <Header lang={lang} currentPath={currentPath} currentVersion={currentVersion} currentSlug={currentSlug} versionAvailability={versionAvailability}>`,
-      position: "replace",
-    },
-    // --- Replace breadcrumb area with version switcher ternary.
-    //     In JSX layouts the breadcrumb content is passed as a `breadcrumb`
-    //     prop (no Astro named-slot syntax) so <slot name="breadcrumb" />
-    //     becomes {breadcrumb}. ---
-    {
-      file: "src/layouts/doc-layout.astro",
-      anchor: "<!-- @slot:doc-layout:breadcrumb:start -->",
-      content: `            {settings.versions && currentSlug ? (
-              <div class="mb-vsp-sm flex flex-col items-start gap-vsp-xs sm:flex-row sm:items-center sm:justify-between [&_nav]:mb-0">
-                {breadcrumb}
-                <VersionSwitcher currentVersion={currentVersion} currentSlug={currentSlug} lang={lang} availability={versionAvailability} />
-              </div>
-            ) : (
-              breadcrumb
-            )}`,
-      position: "replace",
-    },
-    // --- Version banner after breadcrumb ---
-    {
-      file: "src/layouts/doc-layout.astro",
-      anchor: "<!-- @slot:doc-layout:after-breadcrumb -->",
-      content: `            {versionBanner && latestUrl && (
-              <VersionBanner type={versionBanner} latestUrl={latestUrl} lang={lang} />
-            )}`,
-      position: "after",
-    },
-    // --- Header imports ---
-    {
-      file: "src/components/header.astro",
-      anchor: "// @slot:header:imports",
-      content: `import VersionSwitcher from "@/components/version-switcher";
-import type { VersionAvailability } from "@/utils/version-availability";`,
-    },
-    // --- Header Props interface field ---
-    {
-      file: "src/components/header.astro",
-      anchor: "// @slot:header:props",
-      content: `  versionAvailability?: VersionAvailability;`,
-    },
-    // --- Header Props destructure ---
-    {
-      file: "src/components/header.astro",
-      anchor: "// @slot:header:props-destructure",
-      content: `  versionAvailability,`,
-    },
-    // --- Header version switcher in actions ---
-    {
-      file: "src/components/header.astro",
-      anchor: "<!-- @slot:header:actions-start -->",
-      content: `    {
-      settings.versions && (
-        <div class="hidden lg:block">
-          <VersionSwitcher
-            currentVersion={currentVersion}
-            currentSlug={currentSlug}
-            lang={lang}
-            availability={versionAvailability}
-            idSuffix="header"
-          />
-        </div>
-      )
-    }`,
-      position: "after",
-    },
-  ],
+  postProcess: async (targetDir) => {
+    if (!choices.features.includes("i18n")) {
+      const localeVersions = path.join(
+        targetDir,
+        "pages",
+        "[locale]",
+        "docs",
+        "versions.tsx",
+      );
+      if (await fs.pathExists(localeVersions)) {
+        await fs.remove(localeVersions);
+      }
+      const jaVersionedDocs = path.join(
+        targetDir,
+        "pages",
+        "v",
+        "[version]",
+        "ja",
+      );
+      if (await fs.pathExists(jaVersionedDocs)) {
+        await fs.remove(jaVersionedDocs);
+      }
+    }
+  },
+  injections: [],
 });

@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "preact/compat";
+import type { ComponentChildren } from "preact";
 
 interface SidebarToggleProps {
-  children: React.ReactNode;
+  children: ComponentChildren;
 }
 
 export default function SidebarToggle({ children }: SidebarToggleProps) {
