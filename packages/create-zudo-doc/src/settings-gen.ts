@@ -120,9 +120,12 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  aiAssistant: false as boolean,`);
   // When the user wires up `pages/api/ai-chat.tsx` (not shipped in any
   // scaffold variant — W6A spec-lock Decision 5), this toggle short-circuits
-  // the endpoint with a fixed "disabled" reply. Default `true` matches the
-  // showcase; flip to `false` once a real ANTHROPIC_API_KEY is in place.
-  lines.push(`  aiChatDemoMode: true as boolean,`);
+  // the endpoint with a fixed "disabled" reply. Default `false` here — the
+  // showcase ships with `true` because it deploys without an Anthropic key,
+  // but a fresh scaffold has `aiAssistant: false` and the user only enables
+  // the chat once they're wiring up a real `ANTHROPIC_API_KEY`. Defaulting
+  // demo mode off avoids silently disabling chat for them.
+  lines.push(`  aiChatDemoMode: false as boolean,`);
   if (choices.features.includes("docHistory")) {
     lines.push(`  docHistory: true,`);
   } else {
