@@ -24,6 +24,7 @@ import { imageEnlargeFeature } from "./image-enlarge.js";
 import { tagGovernanceFeature } from "./tag-governance.js";
 import { footerTaglistFeature } from "./footer-taglist.js";
 import { bodyFootUtilFeature } from "./body-foot-util.js";
+import { docTagsFeature } from "./doc-tags.js";
 
 /**
  * All feature modules keyed by their feature name.
@@ -48,6 +49,7 @@ export const featureModules: Record<string, FeatureModule> = {
   // skillSymlinker — handled in scaffold.ts
   // claudeSkills — handled in scaffold.ts (copies zudo-doc-* skills from monorepo)
   tagGovernance: tagGovernanceFeature,
+  docTags: docTagsFeature,
   footerTaglist: footerTaglistFeature,
   footer: footerFeature, // pseudo-feature: triggered by footerNavGroup, footerCopyright, or footerTaglist
   // changelog — handled in scaffold.ts
