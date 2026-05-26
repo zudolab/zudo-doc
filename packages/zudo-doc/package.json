@@ -10,127 +10,135 @@
   },
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./sidebar-tree": {
-      "types": "./src/sidebar-tree/index.ts",
-      "default": "./src/sidebar-tree/index.ts"
+      "types": "./dist/sidebar-tree/index.d.ts",
+      "default": "./dist/sidebar-tree/index.js"
     },
     "./theme": {
-      "types": "./src/theme/index.ts",
-      "default": "./src/theme/index.ts"
+      "types": "./dist/theme/index.d.ts",
+      "default": "./dist/theme/index.js"
     },
     "./theme/color-scheme-provider": {
-      "types": "./src/theme/color-scheme-provider.tsx",
-      "default": "./src/theme/color-scheme-provider.tsx"
+      "types": "./dist/theme/color-scheme-provider.d.ts",
+      "default": "./dist/theme/color-scheme-provider.js"
     },
     "./toc": {
-      "types": "./src/toc/index.ts",
-      "default": "./src/toc/index.ts"
+      "types": "./dist/toc/index.d.ts",
+      "default": "./dist/toc/index.js"
     },
     "./breadcrumb": {
-      "types": "./src/breadcrumb/index.ts",
-      "default": "./src/breadcrumb/index.ts"
+      "types": "./dist/breadcrumb/index.d.ts",
+      "default": "./dist/breadcrumb/index.js"
     },
     "./header": {
-      "types": "./src/header/index.ts",
-      "default": "./src/header/index.ts"
+      "types": "./dist/header/index.d.ts",
+      "default": "./dist/header/index.js"
     },
     "./footer": {
-      "types": "./src/footer/index.ts",
-      "default": "./src/footer/index.ts"
+      "types": "./dist/footer/index.d.ts",
+      "default": "./dist/footer/index.js"
     },
     "./sidebar": {
-      "types": "./src/sidebar/index.ts",
-      "default": "./src/sidebar/index.ts"
+      "types": "./dist/sidebar/index.d.ts",
+      "default": "./dist/sidebar/index.js"
     },
     "./sidebar/types": {
-      "types": "./src/sidebar/types.ts",
-      "default": "./src/sidebar/types.ts"
+      "types": "./dist/sidebar/types.d.ts",
+      "default": "./dist/sidebar/types.js"
     },
     "./i18n-version": {
-      "types": "./src/i18n-version/index.ts",
-      "default": "./src/i18n-version/index.ts"
+      "types": "./dist/i18n-version/index.d.ts",
+      "default": "./dist/i18n-version/index.js"
     },
     "./page-loading": {
-      "types": "./src/page-loading/index.ts",
-      "default": "./src/page-loading/index.ts"
+      "types": "./dist/page-loading/index.d.ts",
+      "default": "./dist/page-loading/index.js"
     },
     "./tab-item": {
-      "types": "./src/tab-item/index.ts",
-      "default": "./src/tab-item/index.ts"
+      "types": "./dist/tab-item/index.d.ts",
+      "default": "./dist/tab-item/index.js"
     },
     "./code-syntax": {
-      "types": "./src/code-syntax/index.ts",
-      "default": "./src/code-syntax/index.ts"
+      "types": "./dist/code-syntax/index.d.ts",
+      "default": "./dist/code-syntax/index.js"
     },
     "./body-foot-util": {
-      "types": "./src/body-foot-util/index.ts",
-      "default": "./src/body-foot-util/index.ts"
+      "types": "./dist/body-foot-util/index.d.ts",
+      "default": "./dist/body-foot-util/index.js"
     },
     "./sidebar-resizer": {
-      "types": "./src/sidebar-resizer/index.ts",
-      "default": "./src/sidebar-resizer/index.ts"
+      "types": "./dist/sidebar-resizer/index.d.ts",
+      "default": "./dist/sidebar-resizer/index.js"
     },
     "./doclayout": {
-      "types": "./src/doclayout/index.ts",
-      "default": "./src/doclayout/index.ts"
+      "types": "./dist/doclayout/index.d.ts",
+      "default": "./dist/doclayout/index.js"
     },
     "./head": {
-      "types": "./src/head/index.ts",
-      "default": "./src/head/index.ts"
+      "types": "./dist/head/index.d.ts",
+      "default": "./dist/head/index.js"
     },
     "./transitions": {
-      "types": "./src/transitions/index.ts",
-      "default": "./src/transitions/index.ts"
+      "types": "./dist/transitions/index.d.ts",
+      "default": "./dist/transitions/index.js"
     },
     "./integrations/doc-history": {
-      "types": "./src/integrations/doc-history/index.ts",
-      "default": "./src/integrations/doc-history/index.ts"
+      "types": "./dist/integrations/doc-history/index.d.ts",
+      "default": "./dist/integrations/doc-history/index.js"
     },
     "./integrations/llms-txt": {
-      "types": "./src/integrations/llms-txt/index.ts",
-      "default": "./src/integrations/llms-txt/index.ts"
+      "types": "./dist/integrations/llms-txt/index.d.ts",
+      "default": "./dist/integrations/llms-txt/index.js"
     },
     "./integrations/search-index": {
-      "types": "./src/integrations/search-index/index.ts",
-      "default": "./src/integrations/search-index/index.ts"
+      "types": "./dist/integrations/search-index/index.d.ts",
+      "default": "./dist/integrations/search-index/index.js"
     },
     "./integrations/claude-resources": {
-      "types": "./src/integrations/claude-resources/index.ts",
-      "default": "./src/integrations/claude-resources/index.ts"
+      "types": "./dist/integrations/claude-resources/index.d.ts",
+      "default": "./dist/integrations/claude-resources/index.js"
     },
     "./content": {
-      "types": "./src/content/index.ts",
-      "default": "./src/content/index.ts"
+      "types": "./dist/content/index.d.ts",
+      "default": "./dist/content/index.js"
     },
     "./nav-indexing": {
-      "types": "./src/nav-indexing/index.ts",
-      "default": "./src/nav-indexing/index.ts"
+      "types": "./dist/nav-indexing/index.d.ts",
+      "default": "./dist/nav-indexing/index.js"
+    },
+    "./nav-indexing/types": {
+      "types": "./dist/nav-indexing/types.d.ts",
+      "default": "./dist/nav-indexing/types.js"
     },
     "./metainfo": {
-      "types": "./src/metainfo/index.ts",
-      "default": "./src/metainfo/index.ts"
+      "types": "./dist/metainfo/index.d.ts",
+      "default": "./dist/metainfo/index.js"
     },
     "./html-preview-wrapper": {
-      "types": "./src/html-preview-wrapper/index.ts",
-      "default": "./src/html-preview-wrapper/index.ts"
+      "types": "./dist/html-preview-wrapper/index.d.ts",
+      "default": "./dist/html-preview-wrapper/index.js"
     },
     "./details": {
-      "types": "./src/details/index.ts",
-      "default": "./src/details/index.ts"
+      "types": "./dist/details/index.d.ts",
+      "default": "./dist/details/index.js"
     },
     "./url-normalizer": {
-      "types": "./src/url-normalizer/index.ts",
-      "default": "./src/url-normalizer/index.ts"
+      "types": "./dist/url-normalizer/index.d.ts",
+      "default": "./dist/url-normalizer/index.js"
     }
   },
   "scripts": {
-    "test": "vitest run --config vitest.config.ts"
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsup",
+    "dev": "tsup --watch",
+    "prepare": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsup --silent",
+    "test": "vitest run --config vitest.config.ts",
+    "typecheck": "tsc --noEmit"
   },
   "files": [
-    "src",
+    "dist",
     "README.md"
   ],
   "peerDependencies": {
@@ -149,8 +157,10 @@
   },
   "devDependencies": {
     "@types/node": "^25.3.5",
+    "cross-env": "^7.0.3",
     "preact": "^10.29.1",
     "preact-render-to-string": "^6.6.6",
+    "tsup": "^8.0.0",
     "typescript": "^5.0.0",
     "vitest": "^3.0.0",
     "@takazudo/zfb": "0.1.0-next.6",

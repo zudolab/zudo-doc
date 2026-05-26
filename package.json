@@ -8,10 +8,11 @@
   "scripts": {
     "// ── Core ─────────────────────────────────────────": "",
     "predev": "lsof -ti :4321 -ti :4322 | xargs kill 2>/dev/null; true",
-    "dev": "run-p dev:zfb dev:history dev:claude-watch",
+    "dev": "run-p dev:zfb dev:history dev:claude-watch dev:zudo-doc",
     "dev:zfb": "zfb dev",
     "dev:history": "pnpm --filter @takazudo/zudo-doc-history-server dev -- --port 4322 --content-dir src/content/docs --locale ja:src/content/docs-ja",
     "dev:claude-watch": "node scripts/dev-claude-watch.mjs",
+    "dev:zudo-doc": "pnpm --filter @takazudo/zudo-doc dev",
     "dev:network": "zfb dev --host 0.0.0.0",
     "dev:stable": "run-p dev:stable:server dev:claude-watch",
     "dev:stable:server": "node scripts/dev-stable.js",

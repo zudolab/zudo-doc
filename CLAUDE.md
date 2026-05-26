@@ -16,9 +16,10 @@ Minimal documentation framework built with zfb, MDX, Tailwind CSS v4, and Preact
 
 ## Commands
 
-- `pnpm dev` — runs zfb dev (port 4321), doc-history-server (port 4322), and a `.claude/` watcher concurrently via `run-p` (predev kills stale processes on those ports); edits to `.claude/` files regenerate the corresponding MDX live
+- `pnpm dev` — runs zfb dev (port 4321), doc-history-server (port 4322), a `.claude/` watcher, and tsup `--watch` for `@takazudo/zudo-doc` concurrently via `run-p` (predev kills stale processes on those ports); edits to `.claude/` files regenerate the corresponding MDX live, and edits to `packages/zudo-doc/src/**` auto-rebuild `dist/` so zfb HMR picks them up
 - `pnpm dev:zfb` — zfb dev server only (port 4321)
 - `pnpm dev:history` — doc history API server only (port 4322)
+- `pnpm dev:zudo-doc` — tsup `--watch` for `@takazudo/zudo-doc` only; host imports resolve through `dist/` because the package now ships compiled JS (W8 Blocker-2 fix — Node 24 rejects raw `.ts` in `node_modules`, so the package's source is private and dist is the API surface)
 - `pnpm dev:stable` — alternative build-then-serve dev mode (avoids HMR crashes on content file add/remove)
 - `pnpm dev:network` — zfb dev with `--host 0.0.0.0` for LAN access
 - `pnpm build` — static HTML export to `dist/` (runs `zfb build`)
