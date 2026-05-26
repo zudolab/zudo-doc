@@ -27,6 +27,7 @@ export const settings = {
   docTags: false,
   math: false,
   aiAssistant: true as boolean,
+  aiChatDemoMode: true as boolean,
   colorTweakPanel: true as boolean,
   imageEnlarge: true as boolean,
   frontmatterPreview: {} as FrontmatterPreviewConfig,

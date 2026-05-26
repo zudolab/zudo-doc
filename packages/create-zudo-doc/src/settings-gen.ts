@@ -118,6 +118,11 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  cjkFriendly: ${choices.cjkFriendly ?? false} as boolean,`);
   lines.push(`  onBrokenMarkdownLinks: "warn" as "warn" | "error" | "ignore",`);
   lines.push(`  aiAssistant: false as boolean,`);
+  // When the user wires up `pages/api/ai-chat.tsx` (not shipped in any
+  // scaffold variant — W6A spec-lock Decision 5), this toggle short-circuits
+  // the endpoint with a fixed "disabled" reply. Default `true` matches the
+  // showcase; flip to `false` once a real ANTHROPIC_API_KEY is in place.
+  lines.push(`  aiChatDemoMode: true as boolean,`);
   if (choices.features.includes("docHistory")) {
     lines.push(`  docHistory: true,`);
   } else {

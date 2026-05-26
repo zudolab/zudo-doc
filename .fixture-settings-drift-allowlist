@@ -86,6 +86,14 @@ i18n:aiAssistant
 theme:aiAssistant
 versioning:aiAssistant
 
+# ── aiChatDemoMode ────────────────────────────────────────────────────────────
+# reason: AI chat endpoint (and its demo-mode short-circuit) is only exercised
+#         in the smoke fixture (mirrors the aiAssistant omission above)
+sidebar:aiChatDemoMode
+i18n:aiChatDemoMode
+theme:aiChatDemoMode
+versioning:aiChatDemoMode
+
 # ── designTokenPanel ──────────────────────────────────────────────────────────
 # reason: fixtures that test the panel use the deprecated colorTweakPanel alias;
 #         designTokenPanel (the new key) is not yet needed in fixtures
