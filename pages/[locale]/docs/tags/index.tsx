@@ -1,12 +1,12 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Port of src/pages/[locale]/docs/tags/index.astro → zfb page module.
+// Page module for the locale-prefixed "All Tags" index route.
 //
 // Non-default-locale "All Tags" index page. paths() emits one route per
 // locale defined in settings.locales (English has no /en prefix — it is
 // handled by pages/docs/tags/index.tsx). The component recomputes the tag
-// map at render time using a locale-doc + base-doc fallback strategy that
-// mirrors src/components/tag-nav.astro's non-default-locale branch.
+// map at render time using a locale-doc + base-doc fallback strategy
+// (see pages/lib/locale-merge.ts for the merge logic).
 //
 // Fallback strategy (locale first, base as fill): see pages/lib/locale-merge.ts
 //
@@ -60,7 +60,7 @@ export default function LocaleTagsIndexPage({
     taggedWith: t("doc.taggedWith", locale),
   };
 
-  // Sort alphabetically using the page locale — mirrors tag-nav.astro sort.
+  // Sort alphabetically using the page locale — matches documented tag-nav sort order.
   const tags: TagItem[] = [...tagMap.values()]
     .sort((a, b) => a.tag.localeCompare(b.tag, locale))
     .map((info) => ({

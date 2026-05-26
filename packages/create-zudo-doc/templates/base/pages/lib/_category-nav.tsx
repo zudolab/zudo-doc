@@ -2,7 +2,7 @@
 /** @jsxImportSource preact */
 // Host-side MDX wrapper for <CategoryNav category="..." />.
 //
-// Mirrors the data-resolution shape of src/components/category-nav.astro:
+// Data-resolution steps performed before forwarding to the v2 CategoryNav component:
 //   1. Load docs for the active locale (or defaultLocale when not passed).
 //   2. Build the nav tree with buildNavTree().
 //   3. Find the target category node via findNode().

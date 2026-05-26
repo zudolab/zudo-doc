@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Port of src/pages/docs/tags/index.astro → zfb page module.
+// Page module for the default-locale "All Tags" index route.
 //
 // Default-locale (en) "All Tags" index page. Collects every tag across the
 // "docs" collection, sorts them alphabetically, and renders a full tag cloud
@@ -48,7 +48,7 @@ export default function DocsTagsIndexPage(): JSX.Element {
     taggedWith: t("doc.taggedWith", locale),
   };
 
-  // Sort alphabetically — mirrors the Astro tag-nav.astro sort order.
+  // Sort alphabetically — matches documented tag-nav sort order.
   const tags: TagItem[] = [...tagMap.values()]
     .sort((a, b) => a.tag.localeCompare(b.tag, locale))
     .map((info) => ({

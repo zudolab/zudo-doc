@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Port of src/pages/[locale]/docs/versions.astro → zfb page module.
+// Page module for the locale-prefixed versions index route.
 //
 // Non-default-locale versions page. paths() emits one route per locale in
 // settings.locales. Locale string is passed as a prop to drive label

@@ -2,8 +2,7 @@
 /** @jsxImportSource preact */
 // SSR-friendly search widget for the zfb host header.
 //
-// Mirrors the Astro baseline `src/components/search.astro` (deleted in
-// commit a4d9956) for the zfb host pages. The key SSR requirement is that
+// SSR search widget for the zfb host header. The key SSR requirement is that
 // the placeholder text ("Type to search..." / 「検索したい単語を入力」) and
 // the keyboard-shortcut hint ("to open search from anywhere" /
 // 「いつでも検索バーを開ける」) appear in the static HTML so no-JS users

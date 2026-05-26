@@ -3,10 +3,9 @@
 // Host-side MDX wrapper for <Details> — trivial passthrough to the v2
 // Details component.
 //
-// The legacy src/components/details.astro used Astro's <slot /> for children;
-// v2's Details accepts standard Preact children. MDX passes slot content as
-// `children`, so the mapping is direct. The title prop (default "Details")
-// is forwarded unchanged.
+// The v2 Details component accepts standard Preact children. MDX passes slot
+// content as `children`, so the mapping is direct. The title prop (default
+// "Details") is forwarded unchanged.
 
 import type { ComponentChildren, VNode } from "preact";
 import { Details as DetailsV2 } from "@takazudo/zudo-doc/details";

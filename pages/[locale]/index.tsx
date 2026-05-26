@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Port of src/pages/[locale]/index.astro → zfb page module.
+// Page module for the locale-prefixed site index route.
 //
 // Non-default-locale site index. paths() emits one route per locale defined
 // in settings.locales (never the default locale — that is handled by
