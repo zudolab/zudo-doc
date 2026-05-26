@@ -235,18 +235,17 @@ export function validateDependencies(
 
 /** Files that may contain injection anchors and need cleaning.
  *
- * Phase-A migration state: layouts and the header are still authored as
- * Astro components (frontmatter `---` plus body) using zfb Island wrappers
- * for client-side islands. The .tsx anchor form is supported in
- * ANCHOR_LINE_RE for forward compatibility, but the current generator
- * emits .astro files. Flip these to .tsx when E7a actually ports
- * header.astro / doc-layout.astro in the live src/ tree.
+ * W7A (#1736): the two `.astro` entries were dropped — those files no
+ * longer exist in generated projects after the post-cutover .tsx
+ * migration. The only surviving anchor target is `global.css`, where
+ * `design-token-panel.ts` injects `@import "@takazudo/zdtp/styles.css";`
+ * at `@slot:global-css:feature-styles`. The sibling
+ * `@slot:global-css:theme-tokens` anchor in the same file is consumed
+ * by the color-scheme palette generator and must remain. The .tsx
+ * anchor form is still supported in `ANCHOR_LINE_RE` for forward
+ * compatibility, but no current feature uses it.
  */
-export const ANCHOR_FILES = [
-  "src/layouts/doc-layout.astro",
-  "src/components/header.astro",
-  "src/styles/global.css",
-];
+export const ANCHOR_FILES = ["src/styles/global.css"];
 
 /**
  * Main composition entry point. Orchestrates the full feature composition

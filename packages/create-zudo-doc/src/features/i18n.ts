@@ -1,22 +1,13 @@
 import type { FeatureModule } from "../compose.js";
 
+/**
+ * i18n feature.
+ *
+ * W7A (#1736): post-cutover, `pages/lib/_header-with-defaults.tsx` gates
+ * `LanguageSwitcher` on `Object.keys(settings.locales).length > 0`.
+ * Conditional page files (i18n routes) are handled by #1737 (W7B).
+ */
 export const i18nFeature: FeatureModule = (_choices) => ({
   name: "i18n",
-  injections: [
-    {
-      file: "src/components/header.astro",
-      anchor: "// @slot:header:imports",
-      content: `import LanguageSwitcher from "@/components/language-switcher";`,
-    },
-    {
-      file: "src/components/header.astro",
-      anchor: "<!-- @slot:header:after-theme-toggle -->",
-      content: `      {lang && <LanguageSwitcher lang={lang} />}`,
-      position: "after",
-    },
-  ],
-  // No postProcess needed: pages are locale-agnostic (they iterate
-  // settings.locales) and getLocaleLabel derives its label from
-  // defaultLocale.toUpperCase(), so no regex patching of generated files
-  // is required for non-default languages.
+  injections: [],
 });
