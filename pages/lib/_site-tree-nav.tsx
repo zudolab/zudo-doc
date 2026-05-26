@@ -2,28 +2,23 @@
 /** @jsxImportSource preact */
 // Host-side MDX wrapper for <SiteTreeNav /> and <SiteTreeNavDemo />.
 //
-// The original Astro project had two files:
-//   - src/components/site-tree-nav.astro — interactive Preact island
-//   - src/components/site-tree-nav-demo.astro — Astro wrapper that loaded
-//     collection data and rendered the island
-//
-// Restored to use the interactive SiteTreeNav island (refs #1453):
 // Both <SiteTreeNav> and <SiteTreeNavDemo> MDX tags are mapped to this
-// wrapper which does the same data loading that site-tree-nav-demo.astro did:
+// wrapper, which loads the full site nav tree and renders the interactive
+// SiteTreeNav island (refs #1453):
 //
 //   1. Load the full docs collection for the active locale.
 //   2. Build nav tree via buildNavTree().
 //   3. Group satellite nodes via groupSatelliteNodes().
 //   4. Wrap the interactive SiteTreeNav in Island({when:"idle"}) so the MDX
-//      page gets the same collapsible grid the reference renders at
+//      page gets the collapsible grid rendered at
 //      /docs/components/site-tree-nav/ (refs #1453/#1442).
 //
 // All data access is synchronous (ADR-004 zfb content snapshot contract).
 // The `lang` prop is injected by createMdxComponents() in
 // pages/_mdx-components.ts so locale routes get locale-aware nav data.
 //
-// categoryIgnore defaults to ["inbox", "develop"] — same as the original index page
-// and site-tree-nav-demo.astro.
+// categoryIgnore defaults to ["inbox", "develop"] — matching the index page
+// and SiteTreeNavDemo defaults.
 
 import type { JSX } from "preact";
 import { Island } from "@takazudo/zfb";

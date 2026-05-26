@@ -2,11 +2,10 @@
 /** @jsxImportSource preact */
 // Locale-/version-aware Header wrapper for the zfb doc pages.
 //
-// Mirrors the data-prep that lived in src/components/header.astro
-// (deleted in commit a4d9956): build the header nav, compute active-path
-// state, wire the mobile SidebarToggle island (hamburger + slide-in panel)
-// with the full sidebar tree for doc routes, and feed everything into the
-// v2 <Header> shell.
+// Header data-prep utilities — builds the resolved header config from user
+// settings + page context: header nav, active-path state, mobile SidebarToggle
+// island (hamburger + slide-in panel) with the full sidebar tree for doc routes,
+// and feeds everything into the v2 <Header> shell.
 //
 // Why this wrapper exists: the v2 Header shell is intentionally
 // framework-agnostic — it accepts slot props (sidebarToggle, themeToggle,
@@ -21,19 +20,20 @@
 //   - The v2 <Header> accepts a `sidebarToggle` slot that holds the
 //     complete mobile sidebar widget: hamburger button + backdrop overlay +
 //     slide-in <aside> panel (all rendered by <SidebarToggle>).
-//   - This wrapper ALWAYS builds the sidebarToggle (refs #1453: the original
-//     header.astro rendered SidebarToggle unconditionally on every page,
-//     including the home page with hideSidebar=true). When `navSection` is
-//     defined the panel gets the full section tree; when undefined (home,
-//     404, tags, versions) nodes=[] so the panel shows only rootMenuItems.
+//   - This wrapper ALWAYS builds the sidebarToggle (refs #1453:
+//     SidebarToggle is rendered unconditionally on every page; the host CSS
+//     hides it on pages with hide_sidebar). When `navSection` is defined the
+//     panel gets the full section tree; when undefined (home, 404, tags,
+//     versions) nodes=[] so the panel shows only rootMenuItems.
 //   - ThemeToggle from the package (self-island-wrapped) is always passed to
 //     Header.themeToggle so the ThemeToggle island marker appears in the
-//     header on every page — matching the original header.astro behavior.
+//     header on every page — matching the documented header contract.
 //
 // Locale switcher strategy (refs #1453):
-//   - The original header.astro always rendered <LanguageSwitcher /> in the
-//     right-items row. This wrapper builds locale links from buildLocaleLinks()
-//     and passes a <LanguageSwitcher> as the languageSwitcher slot prop.
+//   - This wrapper always renders <LanguageSwitcher /> in the right-items row
+//     when multiple locales are configured. Builds locale links from
+//     buildLocaleLinks() and passes a <LanguageSwitcher> as the
+//     languageSwitcher slot prop.
 //   - Header only renders the slot when settings.locales has > 1 entry, so
 //     single-locale projects are unaffected.
 
@@ -174,8 +174,8 @@ export function HeaderWithDefaults(
     })),
   }));
 
-  // Build the mobile sidebar toggle unconditionally — the original header.astro
-  // rendered SidebarToggle on every page (refs #1453). When navSection is
+  // Build the mobile sidebar toggle unconditionally — SidebarToggle is rendered
+  // on every page (refs #1453); the host CSS hides it where unneeded. When navSection is
   // defined the panel gets the full section tree; when undefined (home, 404,
   // tags, versions) nodes=[] so the panel shows only rootMenuItems + locale
   // links (the basic nav menu without a doc tree).
@@ -229,7 +229,7 @@ export function HeaderWithDefaults(
 
   // Wrap the host's local ThemeToggle in Island({when:"load"}) so the SSG
   // output emits a data-zfb-island="ThemeToggle" marker the hydration
-  // runtime can find — matching the original header.astro output. The v2
+  // runtime can find — matching the documented header contract. The v2
   // package's <ThemeToggle> already does this internally, but importing it
   // forces the v2 theme barrel into the bundle (see import note at the top
   // of this file).
@@ -238,8 +238,7 @@ export function HeaderWithDefaults(
     children: <ThemeToggle />,
   }) as unknown as VNode;
 
-  // Locale-aware search widget — mirrors `<Search />` from the deleted
-  // `src/components/search.astro`. Renders the full dialog markup in SSR
+  // Locale-aware search widget. Renders the full dialog markup in SSR
   // so the placeholder text ("Type to search..." / 「検索したい単語を入力」)
   // and keyboard-shortcut hint appear in the static HTML on every page.
   // Strings are derived from the host's t() helper so locale switching works.
@@ -278,7 +277,7 @@ export function HeaderWithDefaults(
 
     // Per-version URLs for the current page. When there is no slug in scope
     // (e.g. on the versions page itself) all entries point to the versions
-    // index. This mirrors the original version-switcher.astro behavior.
+    // index — matching the documented version-switcher contract.
     const versionUrls: Record<string, string> = {};
     for (const v of settings.versions) {
       versionUrls[v.slug] = currentSlug
@@ -310,10 +309,9 @@ export function HeaderWithDefaults(
   }
 
   // Build locale-switcher for the header right-items row (refs #1453).
-  // The original header.astro always rendered <LanguageSwitcher /> when
-  // multiple locales are configured. Reuses the same localeLinks array built
-  // above for the mobile sidebar footer (buildLocaleLinks is pure, but one
-  // call is cleaner).
+  // Renders <LanguageSwitcher /> when multiple locales are configured.
+  // Reuses the same localeLinks array built above for the mobile sidebar footer
+  // (buildLocaleLinks is pure, but one call is cleaner).
   const languageSwitcher =
     localeLinks != null ? (
       <LanguageSwitcher

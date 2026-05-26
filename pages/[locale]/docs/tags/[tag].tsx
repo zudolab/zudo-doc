@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Port of src/pages/[locale]/docs/tags/[tag].astro → zfb page module.
+// Page module for the locale-prefixed per-tag detail route.
 //
 // Non-default-locale per-tag detail page. paths() enumerates every
 // (locale, tag) combination across all non-default locales defined in

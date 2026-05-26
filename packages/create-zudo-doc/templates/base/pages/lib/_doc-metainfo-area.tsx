@@ -3,8 +3,8 @@
 // Locale-aware DocMetainfo area wrapper for the zfb doc pages.
 //
 // Renders the visible date block (created / updated dates + author)
-// between the article <h1> and the description paragraph, mirroring the
-// position of the legacy `doc-metainfo.astro` in the Astro layout.
+// between the article <h1> and the description paragraph (doc-metainfo
+// placement — between <h1> and description).
 //
 // Data source: `.zfb/doc-history-meta.json`, a build-time manifest
 // emitted by `scripts/zfb-prebuild.mjs` before `zfb build` runs.
@@ -73,8 +73,7 @@ interface DocMetainfoAreaProps {
  *
  * The component is intentionally server-render-only: it emits static
  * HTML from build-time data and has no client JS footprint. It sits
- * between `<h1>` and the description `<p>`, mirroring the legacy Astro
- * `doc-metainfo.astro` placement.
+ * between `<h1>` and the description `<p>` (doc-metainfo placement).
  */
 export function DocMetainfoArea({ slug, locale }: DocMetainfoAreaProps): VNode | null {
   if (!settings.docMetainfo) return null;

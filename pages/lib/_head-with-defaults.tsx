@@ -2,12 +2,9 @@
 /** @jsxImportSource preact */
 // og:title / og:description / color-scheme head injection for the zfb doc pages.
 //
-// Why this wrapper exists: Astro's baseline doc-layout.astro synthesized
-// og:* meta from frontmatter title/description AND mounted the
-// `<color-scheme-provider>` Astro component (deleted in commit a4d9956 when
-// `src/**/*.astro` was retired). The v2 `<DocLayout>` shell exposes a
-// `head` slot but intentionally does NOT emit either — that is the host's
-// responsibility.
+// Why this wrapper exists: the v2 `<DocLayout>` shell exposes a `head` slot
+// but intentionally does NOT emit og:* meta or mount `<ColorSchemeProvider>` —
+// that is the host's responsibility.
 //
 // Without OgTags the SSG output is missing og:title / og:description,
 // which crawlers and link-preview tools rely on. Without ColorSchemeProvider
@@ -18,8 +15,8 @@
 // because `getComputedStyle(root).getPropertyValue("--zd-matched-keyword-bg")`
 // returns "" instead of the resolved palette token.
 //
-// (#1355 wave 13 — restoring the Astro-era ColorSchemeProvider mount that
-// was orphaned during the .astro retirement.)
+// (#1355 wave 13 — ColorSchemeProvider mount restored after the retirement of
+// the zfb cutover's initial setup.)
 
 import type { JSX } from "preact";
 import { OgTags, TwitterCard } from "@takazudo/zudo-doc/head";

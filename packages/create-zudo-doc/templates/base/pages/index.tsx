@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Port of src/pages/index.astro → zfb page module.
+// Page module for the site index route.
 //
 // Default-locale (EN) site index. Static route — no paths() export needed.
 // Collects the EN docs tree and renders the site-map grid plus optional
@@ -120,7 +120,7 @@ export default function IndexPage(): JSX.Element {
                   <span class="text-muted">/</span>
                 </>
               )}
-              {/* @Takazudo link — present in the original Astro index.astro (refs #1453).
+              {/* @Takazudo link — established in #1453 (project-specific brand link).
                   The deploy was missing this trailing item, leaving a dangling "/" separator. */}
               <a
                 href="https://x.com/Takazudo"

@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Port of src/pages/docs/tags/[tag].astro → zfb page module.
+// Page module for the default-locale per-tag detail route.
 //
 // Default-locale (en) per-tag detail page. paths() enumerates one route per
 // unique tag in the "docs" collection and passes the resolved TagInfo as a

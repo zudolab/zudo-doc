@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Port of src/pages/404.astro → zfb page module.
+// Page module for the 404 route.
 //
 // The 404 page is a static route with no dynamic params. zfb emits it as
 // dist/404.html so the host platform (Cloudflare Pages, Netlify, etc.) can

@@ -2,9 +2,8 @@
 /** @jsxImportSource preact */
 // Locale-aware Footer wrapper for the zfb doc pages.
 //
-// Mirrors the data-prep logic that lived in src/components/footer.astro
-// (deleted in commit a4d9956) — reading settings.footer, localizing link
-// hrefs and titles, and optionally collecting tag columns when taglist is
+// Footer data-prep utilities — reads settings.footer, localizes link
+// hrefs and titles, and optionally collects tag columns when taglist is
 // enabled — then feeds the result into the presentational <Footer> shell
 // from @takazudo/zudo-doc/footer.
 //
@@ -41,8 +40,6 @@ import type { DocsEntry } from "@/types/docs-entry";
 /**
  * Prefix an internal href with the locale path for non-default locales,
  * then apply the configured base prefix. External hrefs pass through.
- *
- * Mirrors the `localizeHref` function from the historical footer.astro.
  */
 function localizeHref(href: string, lang: string): string {
   if (isExternal(href)) return href;

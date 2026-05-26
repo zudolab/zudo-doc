@@ -1,9 +1,8 @@
 "use client";
 
-// Use preact hook entrypoints directly — zfb's esbuild step doesn't alias
-// "react" to "preact/compat" the way Astro's `@astrojs/preact` integration
-// did, so importing from "react" here would fail to resolve at SSR/island
-// bundle time.
+// Use preact hook entrypoints directly — the "react" → "preact/compat" alias
+// lets us consume React-typed components in this Preact app (configured
+// project-wide).
 import { useState, useCallback, useEffect, useMemo, useRef } from "preact/hooks";
 import type { NavNode } from "@/utils/docs";
 import type { LocaleLink } from "@/types/locale";

@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Port of src/pages/v/[version]/ja/docs/[...slug].astro → zfb page module.
+// Page module for the versioned JA docs route.
 //
 // Versioned JA docs route. paths() cross-products settings.versions with a
 // locale-first merge strategy: locale-specific collection (`docs-v-${version.slug}-ja`)
@@ -385,11 +385,11 @@ export default function VersionedJaDocsPage({ entry, autoIndex, version, isFallb
           <h1 class="text-heading font-bold mb-vsp-xs">{entry!.data.title}</h1>
 
           {/* Build-time date block (Created / Updated / Author). Mirrors the
-              Astro `doc-metainfo.astro` placement — between <h1> and description.
+              doc-metainfo placement — between <h1> and description.
               Data from `.zfb/doc-history-meta.json` (esbuild-inlined, no fs). */}
           <DocMetainfoArea slug={slug} locale={locale} />
 
-          {/* Page-level tag chips — mirroring doc-tags.astro placement (#1658). */}
+          {/* Page-level tag chips — matching doc-tags placement (#1658). */}
           <DocTagsArea slug={slug} locale={locale} tags={entry!.data.tags} />
 
           {/* Fallback notice for non-translated pages */}

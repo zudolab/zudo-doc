@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Port of src/pages/v/[version]/docs/[...slug].astro → zfb page module.
+// Page module for the versioned EN docs route.
 //
 // Versioned EN docs route. paths() enumerates one route per (version, slug)
 // combination using the `docs-v-${version.slug}` collection for each version
@@ -355,12 +355,12 @@ export default function VersionedDocsPage({ entry, autoIndex, version, breadcrum
         <>
           <h1 class="text-heading font-bold mb-vsp-xs">{entry!.data.title}</h1>
 
-          {/* Build-time date block (Created / Updated / Author). Mirrors the
-              Astro `doc-metainfo.astro` placement — between <h1> and description.
+          {/* Build-time date block (Created / Updated / Author).
+              doc-metainfo placement — between <h1> and description.
               Data from `.zfb/doc-history-meta.json` (esbuild-inlined, no fs). */}
           <DocMetainfoArea slug={slug} locale={locale} />
 
-          {/* Page-level tag chips — mirroring doc-tags.astro placement (#1658). */}
+          {/* Page-level tag chips — matching doc-tags placement (#1658). */}
           <DocTagsArea slug={slug} locale={locale} tags={entry!.data.tags} />
 
           {entry!.data.description && (

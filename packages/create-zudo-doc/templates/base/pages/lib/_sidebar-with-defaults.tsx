@@ -2,11 +2,10 @@
 /** @jsxImportSource preact */
 // Locale-/version-aware Sidebar wrapper for the zfb doc pages.
 //
-// Mirrors the data-prep that lived in src/components/sidebar.astro
-// (deleted in commit a4d9956): build root-menu items from
-// settings.headerNav, load the locale's docs collection (with EN
-// fallback for non-default locales), build the nav tree for the active
-// section, optionally remap hrefs for versioned routes, and feed the
+// Sidebar data-prep utilities — builds root-menu items from
+// settings.headerNav, loads the locale's docs collection (with EN
+// fallback for non-default locales), builds the nav tree for the active
+// section, optionally remaps hrefs for versioned routes, and feeds the
 // result into the host's <SidebarTree> Preact island.
 //
 // Why this wrapper exists: the data prep is host-only (it imports
@@ -92,8 +91,8 @@ function remapVersionedHrefs(
 }
 
 /**
- * Default-bearing host wrapper that performs the data prep the deleted
- * `sidebar.astro` template did, then wraps the project's `<SidebarTree>`
+ * Default-bearing host wrapper that performs sidebar data prep, then wraps
+ * the project's `<SidebarTree>`
  * Preact island in `<Island when="load">` so the SSG output ships a
  * populated `<div data-zfb-island="SidebarTree" data-when="load">…tree…
  * </div>` marker for the hydration runtime to pick up.
