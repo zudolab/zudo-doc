@@ -1,7 +1,7 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-// JSX port of src/components/versions-page-content.astro.
+// JSX port of src/components/versions-page-content.
 //
 // The original Astro template read settings.versions, resolved href helpers
 // from @/utils/base, called the host's t() i18n function, and rendered a
@@ -34,7 +34,7 @@ export interface VersionsPageContentProps {
 }
 
 /**
- * VersionsPageContent — JSX port of `src/components/versions-page-content.astro`.
+ * VersionsPageContent — JSX port of `src/components/versions-page-content`.
  *
  * Renders the full documentation versions page:
  *   - An `<h1>` heading (from `labels.pageTitle`).

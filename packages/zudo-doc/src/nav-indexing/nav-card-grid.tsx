@@ -1,7 +1,7 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-// JSX port of src/components/nav-card-grid.astro.
+// JSX port of src/components/nav-card-grid.
 //
 // The original Astro template received a NavNode[] (direct children) plus a
 // locale, and rendered a two-column grid of link cards. It used
@@ -52,7 +52,7 @@ function ArrowIcon(): JSX.Element {
 }
 
 /**
- * NavCardGrid — JSX port of `src/components/nav-card-grid.astro`.
+ * NavCardGrid — JSX port of `src/components/nav-card-grid`.
  *
  * Renders direct children of a category as a two-column grid of card links.
  * Unlike `CategoryNav`, the arrow icon uses `text-accent` and sits inline with

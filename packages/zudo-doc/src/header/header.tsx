@@ -1,7 +1,7 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-// Layout-level JSX port of `src/components/header.astro` for the
+// Layout-level JSX port of `src/components/header` for the
 // zudo-doc framework primitives layer (super-epic #473, sub-issue
 // #476). The component is intentionally server-render-friendly: it
 // emits the same markup the legacy Astro template did, leaving the two
@@ -15,7 +15,7 @@
 //     None of those have a JSX equivalent yet (Task #3 ports them), so
 //     they are exposed as `languageSwitcher` / `versionSwitcher` /
 //     `search` slot props. The host project keeps using
-//     `header.astro` until the sibling ports land — this file exists
+//     `header` until the sibling ports land — this file exists
 //     so consumers of the v2 package can opt into the JSX path early.
 //   * The two Preact islands (`SidebarToggle`, `ThemeToggle`) are also
 //     accepted as slots so consumers control hydration boundaries
@@ -209,7 +209,7 @@ export interface HeaderProps {
 }
 
 /**
- * Site-header shell — JSX port of `src/components/header.astro`.
+ * Site-header shell — JSX port of `src/components/header`.
  *
  * Responsibilities (matching the legacy template byte-for-byte):
  *   1. Render the sticky `<header>` with the site logo and the desktop

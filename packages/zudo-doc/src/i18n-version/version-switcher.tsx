@@ -1,7 +1,7 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-// JSX port of src/components/version-switcher.astro.
+// JSX port of src/components/version-switcher.
 //
 // Like the language-switcher, this is a pure presentational component:
 // every URL, label, and availability flag the host project would derive
@@ -30,7 +30,7 @@
 //     (Preact omits the attribute when the value is `undefined`).
 //   * The `<svg>` chevron stays inline so consumers don't need to import
 //     an icon library.
-//   * The `<script>` block in the .astro source is hoisted out into the
+//   * The `<script>` block in the source file is hoisted out into the
 //     exported `VERSION_SWITCHER_INIT_SCRIPT` constant.
 //
 // Responsive visibility — now lives in consumer CSS (zudolab/zudo-doc#1505):
@@ -303,7 +303,7 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
  * full vocabulary rationale.
  *
  * Lifted from the `<script>` block of the original
- * version-switcher.astro; behaviour is unchanged modulo the lifecycle
+ * version-switcher; behaviour is unchanged modulo the lifecycle
  * vocabulary swap.
  */
 export const VERSION_SWITCHER_INIT_SCRIPT = `(function(){

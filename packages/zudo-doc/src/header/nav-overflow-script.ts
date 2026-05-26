@@ -1,6 +1,6 @@
 // Inline-script source for the desktop-nav overflow controller.
 //
-// In the original `header.astro` template the script lived directly
+// In the original `header` template the script lived directly
 // inside a `<script>` tag (which Astro pipes through the bundler). For
 // the JSX port we emit the same logic verbatim via
 // `dangerouslySetInnerHTML`, so the value below is plain ECMAScript —
