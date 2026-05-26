@@ -34,10 +34,16 @@
 #   be public (zudolab/zudo-doc is public) for provenance to be recorded
 #   in the npm transparency log.
 #
-# No build step:
-#   zudo-doc ships raw .ts source (see packages/zudo-doc/package.json
-#   `exports` pointing at src/**/*.ts directly). The tarball contents are
-#   the literal src/ tree minus what packages/zudo-doc/src/.npmignore excludes.
+# Build step IS required:
+#   zudo-doc ships compiled dist/*.js + dist/*.d.ts (see
+#   packages/zudo-doc/package.json `exports` and `files: ["dist", "README.md"]`).
+#   The compile pipeline is tsup with bundle:false — see
+#   packages/zudo-doc/tsup.config.ts for the rationale (zfb's island scanner
+#   reads "use client" directives, which esbuild strips during true bundling;
+#   per-file output preserves them, plus cross-entry component identity).
+#   The package's `prepare` hook (tsup) auto-runs on `pnpm install`, but we
+#   keep an explicit build step below for clarity and to survive any future
+#   prepare-hook removal — see Wave 8 Blocker 2 resolution (#1724).
 
 name: Publish zudo-doc
 
@@ -150,13 +156,18 @@ jobs:
           echo "OK: @takazudo/zudo-doc@$VERSION does not yet exist on npm."
 
       # ── Install dependencies ───────────────────────────────────────────────
-      # zudo-doc ships raw .ts source — no build step required. pnpm install
-      # also runs the doc-history-server `prepare` script (tsup) which is
-      # needed because the workspace's zudo-doc → doc-history-server peer
-      # link expects dist/ to exist; harmless for the publish, but keeps
-      # post-install state consistent.
+      # pnpm install auto-runs the package's `prepare` script (tsup), which
+      # produces packages/zudo-doc/dist/. We keep an explicit build step
+      # below for defensive clarity in case the prepare hook is ever removed.
+      # Doc-history-server's prepare script also runs here, populating its
+      # dist/ so the workspace's @takazudo/zudo-doc → @takazudo/zudo-doc-history-server
+      # peer link resolves cleanly.
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # ── Build (explicit, defensive) ───────────────────────────────────────
+      - name: Build zudo-doc
+        run: pnpm --filter @takazudo/zudo-doc build
 
       # ── Run tests ─────────────────────────────────────────────────────────
       - name: Test zudo-doc
