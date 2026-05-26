@@ -17,6 +17,20 @@
 // post-swap re-init. The body itself is replaced on each nav, so the per-
 // instance handle DOM is rebuilt each time and the existing-handle guard
 // (`sidebar.querySelector("["+HANDLE_MARKER+"]")`) keeps re-runs idempotent.
+//
+// Pre-paint restore (SidebarResizerRestore / SIDEBAR_RESIZER_RESTORE_SCRIPT):
+// the init script above only mutates `--zd-sidebar-w` in response to user
+// input. Without a separate pre-paint reader, a page reload after a drag
+// shows the CSS-default width (`clamp(14rem, 20vw, 22rem)`) instead of the
+// persisted value — the saved width exists in localStorage but nothing
+// applies it before paint. The Restore component emits a tiny synchronous
+// `<script>` intended for `<head>` that reads `zudo-doc-sidebar-width`,
+// validates it against the same [MIN_W, MAX_W] bounds the runtime uses,
+// and sets `--zd-sidebar-w` on `:root` before first paint to avoid a FOUC.
+// The bounds are duplicated as literals (not imported) because the script
+// body is a static string emitted into HTML — sharing the constants would
+// require a build step. Keep these in sync with MIN_W / MAX_W / LS_KEY /
+// CSS_PROP in sidebar-resizer/index.ts.
 
 import type { JSX } from "preact";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
@@ -153,3 +167,40 @@ export function SidebarResizerInit(): JSX.Element {
 }
 
 export default SidebarResizerInit;
+
+// Pre-paint inline script: reads the persisted sidebar width from
+// localStorage and applies it to `--zd-sidebar-w` on `:root` BEFORE
+// first paint, so a reload after a manual resize doesn't flash to the
+// CSS-default width and then "stick" at the default. Parallels the
+// sibling sidebar-toggle pre-paint script that restores
+// `zudo-doc-sidebar-visible`.
+//
+// MIN_W (192) / MAX_W (448) are duplicated here as literals — see the
+// header comment for why. The clamp keeps a corrupted localStorage value
+// from producing a sidebar wider than the layout supports.
+export const SIDEBAR_RESIZER_RESTORE_SCRIPT = `(function(){try{var w=localStorage.getItem("zudo-doc-sidebar-width");if(!w)return;var n=parseFloat(w);if(!isFinite(n))return;if(n<192)n=192;else if(n>448)n=448;document.documentElement.style.setProperty("--zd-sidebar-w",n+"px");}catch(e){}})();`;
+
+/**
+ * Drop-in JSX `<head>` script that restores the persisted sidebar width
+ * before first paint.
+ *
+ * Include once in the page `<head>` (gated on `settings.sidebarResizer`)
+ * — placement in `<head>` is what makes this run before the body is
+ * parsed, eliminating the resize-flash on reload. Body-end placement is
+ * too late: the browser will have already painted at the CSS default.
+ *
+ * The script is a tiny synchronous IIFE that:
+ *   - reads `localStorage["zudo-doc-sidebar-width"]`,
+ *   - validates it as a finite number clamped to [MIN_W, MAX_W],
+ *   - sets `--zd-sidebar-w` on `document.documentElement.style`.
+ *
+ * It silently no-ops in privacy / disabled-storage modes (try/catch),
+ * matches the resilience of the runtime `applyWidth` writer.
+ */
+export function SidebarResizerRestore(): JSX.Element {
+  return (
+    <script
+      dangerouslySetInnerHTML={{ __html: SIDEBAR_RESIZER_RESTORE_SCRIPT }}
+    />
+  );
+}
