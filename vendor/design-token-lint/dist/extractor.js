@@ -1,9 +1,9 @@
 /**
- * Extract class names from source files (.tsx, .jsx, .astro).
+ * Extract class names from source files (.tsx, .jsx).
  *
  * Handles:
  * - className="..." and className={'...'} in TSX/JSX
- * - class="..." and class:list={[...]} in Astro
+ * - class="..." and class='...' in HTML/JSX
  * - Template literal classNames (simple cases)
  * - Ignore comments: design-token-lint-ignore
  */
@@ -35,14 +35,12 @@ export function extractClasses(content) {
     // Patterns to match class attributes
     // className="..." or class="..."
     const doubleQuoteAttr = /(?:className|class)\s*=\s*"([^"]+)"/g;
-    // class='...' (single-quote HTML attribute, common in Astro/HTML)
+    // class='...' (single-quote HTML attribute)
     const singleQuoteAttr = /(?:className|class)\s*=\s*'([^']+)'/g;
     // className={'...'} or class={'...'}
     const singleQuoteBrace = /(?:className|class)\s*=\s*\{\s*'([^']+)'\s*\}/g;
     // className={`...`} template literal (simple, no expressions)
     const templateLiteral = /(?:className|class)\s*=\s*\{\s*`([^`]+)`\s*\}/g;
-    // class:list={["...", '...']} — Astro
-    const classListPattern = /class:list\s*=\s*\{\s*\[([^\]]+)\]\s*\}/g;
     // clsx/cn/classNames function calls: cn("...", '...'), clsx("...", '...')
     const utilFnPattern = /(?:cn|clsx|classNames|twMerge)\s*\(\s*([^)]+)\)/g;
     for (let i = 0; i < lines.length; i++) {
@@ -54,7 +52,7 @@ export function extractClasses(content) {
         for (const match of line.matchAll(doubleQuoteAttr)) {
             addClasses(results, match[1], lineNum);
         }
-        // Extract from single-quote class/className attributes (HTML/Astro)
+        // Extract from single-quote class/className attributes (HTML)
         for (const match of line.matchAll(singleQuoteAttr)) {
             addClasses(results, match[1], lineNum);
         }
@@ -65,14 +63,6 @@ export function extractClasses(content) {
         // Extract from template literals (simple — no interpolation)
         for (const match of line.matchAll(templateLiteral)) {
             addClasses(results, match[1], lineNum);
-        }
-        // Extract from class:list arrays
-        for (const match of line.matchAll(classListPattern)) {
-            const arrayContent = match[1];
-            // Extract string literals from array
-            for (const strMatch of arrayContent.matchAll(/['"]([^'"]+)['"]/g)) {
-                addClasses(results, strMatch[1], lineNum);
-            }
         }
         // Extract from utility function calls
         for (const match of line.matchAll(utilFnPattern)) {
