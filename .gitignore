@@ -76,7 +76,10 @@ e2e/fixtures/*/wrangler.toml
 # are not. These mirror the entries in the repo-root public/ (img, favicon.svg);
 # add a line if a new root public/ entry is introduced.
 e2e/fixtures/*/public/img
+e2e/fixtures/*/public/favicon.ico
 e2e/fixtures/*/public/favicon.svg
+e2e/fixtures/*/public/favicon-16x16.png
+e2e/fixtures/*/public/favicon-32x32.png
 e2e/fixtures/*/public/mockServiceWorker.js
 
 # migration-check harness workspace (throwaway build artifacts)
