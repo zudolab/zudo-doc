@@ -43,7 +43,8 @@
     "!dist/__tests__"
   ],
   "scripts": {
-    "build": "tsc",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build": "pnpm clean && tsc",
     "dev": "tsc --watch",
     "test": "vitest run",
     "test:slow": "vitest run --config vitest.slow.config.ts",
