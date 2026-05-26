@@ -3,11 +3,11 @@
 
 import { describe, expect, it } from "vitest";
 import { render } from "preact-render-to-string";
-import { Tabs } from "../tabs";
-import { TabsInit } from "../tabs-init";
-import { TABS_INIT_SCRIPT } from "../tabs-init-script";
-import { TabItem } from "../../tab-item/tab-item";
-import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events";
+import { Tabs } from "../tabs.js";
+import { TabsInit } from "../tabs-init.js";
+import { TABS_INIT_SCRIPT } from "../tabs-init-script.js";
+import { TabItem } from "../../tab-item/tab-item.js";
+import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events.js";
 
 describe("<Tabs />", () => {
   it("renders the [data-tabs] container", () => {

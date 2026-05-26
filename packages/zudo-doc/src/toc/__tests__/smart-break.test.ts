@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isPathLike, smartBreak } from "../smart-break";
+import { isPathLike, smartBreak } from "../smart-break.js";
 
 describe("isPathLike", () => {
   it("returns false for empty input", () => {

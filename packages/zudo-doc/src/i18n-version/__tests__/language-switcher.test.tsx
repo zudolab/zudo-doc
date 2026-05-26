@@ -3,8 +3,8 @@
 
 import { describe, expect, it } from "vitest";
 import type { ComponentChildren, VNode } from "preact";
-import { LanguageSwitcher } from "../language-switcher";
-import type { LocaleLink } from "../types";
+import { LanguageSwitcher } from "../language-switcher.js";
+import type { LocaleLink } from "../types.js";
 
 // Minimal VNode → HTML serializer (mirrors the helper used in
 // breadcrumb.test.tsx — kept inline so the test runs without a render

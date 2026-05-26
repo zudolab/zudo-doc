@@ -39,7 +39,7 @@ import {
   type ColorTweakState,
   type TokenOverrides,
   type TweakState,
-} from "./design-token-types";
+} from "./design-token-types.js";
 
 export const DESIGN_TOKEN_SCHEMA = "zudo-doc-design-tokens/v1" as const;
 

@@ -1,67 +1,45 @@
 import { defineConfig } from "tsup";
-import fs from "node:fs";
 
-// Entry-point map is derived from package.json's `exports` field so the two
-// stay in sync mechanically. For each export entry whose `default` points
-// under ./dist/, we reverse-map to the matching source file under src/.
-// dist key `foo/index` → tries src/foo/index.ts then src/foo/index.tsx.
+// Per-file compilation (bundle:false) — not bundling — because zfb's
+// island scanner identifies hydratable components by the top-of-file
+// "use client" directive. esbuild (which tsup wraps) strips that
+// directive when bundling: the "use client" survives in an entry's
+// top-level slot, but inner modules get collapsed and their directives
+// are dropped. With bundle:false esbuild treats every input as a
+// standalone compilation, producing dist/<source-path>.js 1:1 with
+// the source layout — directives, identity, and tree-shape all
+// preserved. The exports map in package.json already points 1:1 at
+// dist/ paths so no entry-map derivation is required.
 //
-// Done this way (rather than a hand-maintained list) because adding a new
-// export then forgetting to add the matching tsup entry is the classic
-// "ships as undefined" failure mode — the test would build, the scaffold
-// would install, then the import would fail at runtime only.
-function buildEntryMap(): Record<string, string> {
-  const pkg = JSON.parse(fs.readFileSync("./package.json", "utf-8"));
-  const entries: Record<string, string> = {};
-  for (const v of Object.values(pkg.exports || {})) {
-    if (typeof v !== "object" || v === null) continue;
-    const def = (v as { default?: string }).default;
-    if (!def || !def.startsWith("./dist/")) continue;
-    const key = def.replace(/^\.\/dist\//, "").replace(/\.js$/, "");
-    const candidates = [`src/${key}.ts`, `src/${key}.tsx`];
-    const src = candidates.find((c) => fs.existsSync(c));
-    if (!src) {
-      throw new Error(
-        `tsup.config: could not resolve src/ for export "${def}"; tried ${candidates.join(", ")}`,
-      );
-    }
-    entries[key] = src;
-  }
-  return entries;
-}
-
+// Tradeoffs accepted:
+//   - tarball grows (~3×) — no cross-file DCE / minification.
+//     For a library of this size: ~1-2 MB after this change, vs the
+//     644 KB the bundle:true experiment produced. Acceptable.
+//   - dev iteration: tsup --watch recompiles only changed files,
+//     which is faster than the bundled mode (no chunk recomputation).
+//
+// Why this path beats banner / esbuild-plugin directive preservation:
+// those work mechanically but assume current tsup/esbuild internals.
+// bundle:false uses the published feature for its documented purpose
+// (publish-as-individually-compiled-files) — stable across releases.
 export default defineConfig({
-  entry: buildEntryMap(),
+  // Compile every .ts / .tsx under src/, except test fixtures and
+  // vitest configs. The exports map filters what consumers can
+  // import; this list is just what gets compiled.
+  entry: [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "!src/**/__tests__/**",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/vitest.config.ts",
+  ],
   format: "esm",
   dts: true,
   clean: true,
-  // splitting MUST stay on. With splitting:false each entry inlines a
-  // private copy of any internal cross-entry import (e.g. code-syntax
-  // pulls in its own private TabItem; tab-item exports its own TabItem;
-  // they become two distinct function references). Components that do
-  // identity checks like `child.type === TabItem` then silently fail in
-  // consumers, producing zero-button SSR output. Splitting emits shared
-  // chunks instead of duplicating, preserving a single function identity
-  // across all entry points. See zudolab/zudo-doc#1740 CI investigation.
-  splitting: true,
+  bundle: false,
   sourcemap: false,
-  // External rules:
-  //   - peer deps (preact, @takazudo/*) — consumer provides; bundling them
-  //     would dedupe-conflict and bloat
-  //   - node: builtins — never bundle
-  //   - shiki / mermaid — both are dynamically imported at runtime for
-  //     syntax highlighting and diagram rendering; bundling them inlines
-  //     megabytes of language grammars / mermaid into our dist (9.5 MB
-  //     observed before this rule). Consumers that use the relevant
-  //     features install shiki / mermaid themselves; the dynamic import
-  //     resolves at runtime in their node_modules.
-  //   - gray-matter (a declared runtime dep) is INTENTIONALLY bundled —
-  //     it's an internal helper, not exposed in the public API
-  external: [
-    /^preact($|\/)/,
-    /^@takazudo\//,
-    /^node:/,
-    "shiki",
-    "mermaid",
-  ],
+  // splitting + external are irrelevant when bundle:false — imports
+  // stay as written and resolve against the consumer's node_modules
+  // at runtime.
 });

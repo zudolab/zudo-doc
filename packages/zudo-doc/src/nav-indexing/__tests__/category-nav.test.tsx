@@ -2,9 +2,9 @@
 /** @jsxImportSource preact */
 
 import { describe, it, expect } from "vitest";
-import { CategoryNav } from "../category-nav";
-import { serialize } from "./helpers";
-import type { NavNode } from "../types";
+import { CategoryNav } from "../category-nav.js";
+import { serialize } from "./helpers.js";
+import type { NavNode } from "../types.js";
 
 function makeNode(
   label: string,

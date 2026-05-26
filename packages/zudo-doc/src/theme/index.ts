@@ -10,17 +10,17 @@
 // re-exported here so host config modules can pull them via
 // `@takazudo/zudo-doc/theme` without a deeper subpath.
 
-export { default as ThemeToggle } from "./theme-toggle";
-export { default as ColorSchemeProvider } from "./color-scheme-provider";
+export { default as ThemeToggle } from "./theme-toggle.js";
+export { default as ColorSchemeProvider } from "./color-scheme-provider.js";
 export type {
   ColorSchemeProviderProps,
   ColorSchemeProviderColorMode,
-} from "./color-scheme-provider";
+} from "./color-scheme-provider.js";
 export {
   default as DesignTokenTweakPanel,
   DesignTokenTweakPanelInner,
-} from "./design-token-tweak-panel";
-export { default as ColorTweakExportModal } from "./color-tweak-export-modal";
+} from "./design-token-tweak-panel.js";
+export { default as ColorTweakExportModal } from "./color-tweak-export-modal.js";
 export {
   DESIGN_TOKEN_SCHEMA,
   DesignTokenSchemaError,
@@ -34,13 +34,13 @@ export {
   type DeserializeOptions,
   type DeserializeResult,
   type SerializeOptions,
-} from "./design-token-serde";
+} from "./design-token-serde.js";
 export {
   emptyOverrides,
   type ColorTweakState,
   type TokenOverrides,
   type TweakState,
-} from "./design-token-types";
+} from "./design-token-types.js";
 export {
   BRIDGE_SOURCE,
   isBridgeMessage,
@@ -54,4 +54,4 @@ export {
   type ReadyMessage,
   type ErrorMessage,
   type CssVarPair,
-} from "./iframe-bridge";
+} from "./iframe-bridge.js";

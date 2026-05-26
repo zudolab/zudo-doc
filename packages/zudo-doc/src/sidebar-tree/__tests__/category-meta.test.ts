@@ -5,7 +5,7 @@ import path from "node:path";
 import {
   loadCategoryMeta,
   clearCategoryMetaCache,
-} from "../category-meta.ts";
+} from "../category-meta.js";
 
 function makeFixture(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "sidebar-tree-cm-"));

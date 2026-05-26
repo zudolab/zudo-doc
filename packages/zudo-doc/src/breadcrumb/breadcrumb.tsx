@@ -2,8 +2,8 @@
 /** @jsxImportSource preact */
 
 import type { ComponentChildren, VNode } from "preact";
-import { findPath } from "./find-path";
-import type { BreadcrumbItem, SidebarNode } from "./types";
+import { findPath } from "./find-path.js";
+import type { BreadcrumbItem, SidebarNode } from "./types.js";
 
 /**
  * Convert a sidebar tree + the current page's id into the ordered list

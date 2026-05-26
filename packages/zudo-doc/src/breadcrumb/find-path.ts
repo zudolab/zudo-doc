@@ -1,4 +1,4 @@
-import type { BreadcrumbNode, SidebarNode } from "./types";
+import type { BreadcrumbNode, SidebarNode } from "./types.js";
 
 /**
  * Walk the sidebar tree and return the chain of nodes from the root

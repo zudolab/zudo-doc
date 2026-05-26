@@ -15,8 +15,8 @@
 
 import { describe, expect, it } from "vitest";
 import { render } from "preact-render-to-string";
-import { MobileToc } from "../mobile-toc";
-import type { HeadingItem } from "../types";
+import { MobileToc } from "../mobile-toc.js";
+import type { HeadingItem } from "../types.js";
 
 const SAMPLE_HEADINGS: HeadingItem[] = [
   { depth: 2, slug: "introduction", text: "Introduction" },

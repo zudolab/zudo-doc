@@ -9,7 +9,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import type { CategoryMeta } from "./types.ts";
+import type { CategoryMeta } from "./types.js";
 
 const cache = new Map<string, Map<string, CategoryMeta>>();
 

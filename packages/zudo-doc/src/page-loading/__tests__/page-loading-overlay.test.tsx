@@ -6,11 +6,11 @@ import { render } from "preact-render-to-string";
 import {
   AFTER_NAVIGATE_EVENT,
   BEFORE_NAVIGATE_EVENT,
-} from "../../transitions/page-events";
+} from "../../transitions/page-events.js";
 import PageLoadingOverlay, {
   PAGE_LOADING_OVERLAY_ID,
   buildPageLoadingOverlayBootstrap,
-} from "../page-loading-overlay";
+} from "../page-loading-overlay.js";
 
 describe("buildPageLoadingOverlayBootstrap", () => {
   it("inlines the overlay id and routes through the v2 transitions vocabulary", () => {

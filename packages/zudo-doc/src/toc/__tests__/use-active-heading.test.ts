@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getActiveHeadingId } from "../use-active-heading";
+import { getActiveHeadingId } from "../use-active-heading.js";
 
 /**
  * Build a stub HTMLElement-ish object with a fixed `top` value. The

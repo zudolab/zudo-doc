@@ -12,9 +12,9 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { generateLlmsFullTxt, generateLlmsTxt } from "./generate.ts";
-import { loadDocEntries } from "./load.ts";
-import type { LlmsTxtEmitOptions, LlmsTxtEmitResult } from "./types.ts";
+import { generateLlmsFullTxt, generateLlmsTxt } from "./generate.js";
+import { loadDocEntries } from "./load.js";
+import type { LlmsTxtEmitOptions, LlmsTxtEmitResult } from "./types.js";
 
 /**
  * Walk every configured content root, generate the two files per

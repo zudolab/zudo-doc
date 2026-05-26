@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { escapeForMdx } from "../escape-for-mdx";
+import { escapeForMdx } from "../escape-for-mdx.js";
 
 describe("escapeForMdx", () => {
   // ---------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cx } from "../cx";
+import { cx } from "../cx.js";
 
 describe("cx", () => {
   it("joins truthy strings with spaces", () => {

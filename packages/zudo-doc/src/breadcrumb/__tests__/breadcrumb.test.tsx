@@ -3,8 +3,8 @@
 
 import { describe, expect, it } from "vitest";
 import type { ComponentChildren, VNode } from "preact";
-import { Breadcrumb, buildBreadcrumbItems } from "../breadcrumb";
-import type { SidebarNode } from "../types";
+import { Breadcrumb, buildBreadcrumbItems } from "../breadcrumb.js";
+import type { SidebarNode } from "../types.js";
 
 /**
  * Minimal VNode → HTML serializer. Walks the Preact VNode tree and

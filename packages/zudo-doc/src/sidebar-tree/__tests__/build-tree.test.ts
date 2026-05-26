@@ -3,12 +3,12 @@ import {
   buildSidebarTree,
   findSidebarNode,
   flattenSidebarTree,
-} from "../build-tree.ts";
+} from "../build-tree.js";
 import type {
   CategoryMeta,
   CollectionEntryLike,
   SidebarFrontmatter,
-} from "../types.ts";
+} from "../types.js";
 
 type Entry = CollectionEntryLike<SidebarFrontmatter>;
 

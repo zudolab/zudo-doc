@@ -19,7 +19,7 @@
 
 import type { VNode } from "preact";
 import { Fragment } from "preact";
-import type { LocaleLink } from "./types";
+import type { LocaleLink } from "./types.js";
 
 export interface LanguageSwitcherProps {
   /**

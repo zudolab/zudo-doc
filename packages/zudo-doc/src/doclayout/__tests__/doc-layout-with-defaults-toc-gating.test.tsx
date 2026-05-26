@@ -19,8 +19,8 @@
 
 import { describe, expect, it } from "vitest";
 import { render } from "preact-render-to-string";
-import { DocLayoutWithDefaults } from "../doc-layout-with-defaults";
-import type { HeadingItem } from "../../toc/types";
+import { DocLayoutWithDefaults } from "../doc-layout-with-defaults.js";
+import type { HeadingItem } from "../../toc/types.js";
 
 const SAMPLE_HEADINGS: HeadingItem[] = [
   { depth: 2, slug: "introduction", text: "Introduction" },

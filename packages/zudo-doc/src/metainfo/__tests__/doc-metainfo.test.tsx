@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 import type { ComponentChildren, VNode } from "preact";
-import { DocMetainfo } from "../doc-metainfo";
+import { DocMetainfo } from "../doc-metainfo.js";
 
 // ---------------------------------------------------------------------------
 // Minimal VNode serialiser (shared pattern across v2 tests).

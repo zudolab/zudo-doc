@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 import type { ComponentChildren, VNode } from "preact";
-import { Details } from "../details";
+import { Details } from "../details.js";
 
 // ---------------------------------------------------------------------------
 // Minimal VNode serialiser (copied from breadcrumb tests).

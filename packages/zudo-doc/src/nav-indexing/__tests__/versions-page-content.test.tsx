@@ -2,9 +2,9 @@
 /** @jsxImportSource preact */
 
 import { describe, it, expect } from "vitest";
-import { VersionsPageContent } from "../versions-page-content";
-import { serialize } from "./helpers";
-import type { VersionPageEntry, VersionsPageLabels } from "../types";
+import { VersionsPageContent } from "../versions-page-content.js";
+import { serialize } from "./helpers.js";
+import type { VersionPageEntry, VersionsPageLabels } from "../types.js";
 
 const labels: VersionsPageLabels = {
   pageTitle: "Documentation Versions",

@@ -16,11 +16,11 @@
 // v2 modal carries no host-`@/` dependency.
 
 import { useState, useEffect, useMemo, useRef } from "preact/hooks";
-import { serialize, type DesignTokenManifest } from "./design-token-serde";
+import { serialize, type DesignTokenManifest } from "./design-token-serde.js";
 import {
   type ColorTweakState,
   type TweakState,
-} from "./design-token-types";
+} from "./design-token-types.js";
 
 interface DesignTokenExportModalProps {
   onClose: () => void;

@@ -17,7 +17,7 @@ import type {
   CollectionEntryLike,
   SidebarFrontmatter,
   SidebarNode,
-} from "./types.ts";
+} from "./types.js";
 
 /** Strip a trailing `/index` segment to match Astro 5's glob() id stripping. */
 function toRouteSlug(id: string): string {

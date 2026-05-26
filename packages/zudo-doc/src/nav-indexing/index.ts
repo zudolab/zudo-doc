@@ -19,33 +19,33 @@
  * No `getCollection()` calls, no `@/` host-project imports, no Astro APIs.
  */
 
-export { CategoryNav } from "./category-nav";
-export type { CategoryNavProps } from "./category-nav";
+export { CategoryNav } from "./category-nav.js";
+export type { CategoryNavProps } from "./category-nav.js";
 
-export { CategoryTreeNav } from "./category-tree-nav";
-export type { CategoryTreeNavProps } from "./category-tree-nav";
+export { CategoryTreeNav } from "./category-tree-nav.js";
+export type { CategoryTreeNavProps } from "./category-tree-nav.js";
 
-export { SiteTreeNavDemo } from "./site-tree-nav-demo";
-export type { SiteTreeNavDemoProps } from "./site-tree-nav-demo";
+export { SiteTreeNavDemo } from "./site-tree-nav-demo.js";
+export type { SiteTreeNavDemoProps } from "./site-tree-nav-demo.js";
 
-export { TagNav } from "./tag-nav";
+export { TagNav } from "./tag-nav.js";
 export type {
   TagNavProps,
   TagNavAllProps,
   TagNavPageProps,
-} from "./tag-nav";
+} from "./tag-nav.js";
 
-export { DocsSitemap } from "./docs-sitemap";
-export type { DocsSitemapProps } from "./docs-sitemap";
+export { DocsSitemap } from "./docs-sitemap.js";
+export type { DocsSitemapProps } from "./docs-sitemap.js";
 
-export { NavCardGrid } from "./nav-card-grid";
-export type { NavCardGridProps } from "./nav-card-grid";
+export { NavCardGrid } from "./nav-card-grid.js";
+export type { NavCardGridProps } from "./nav-card-grid.js";
 
-export { DocCardGrid } from "./doc-card-grid";
-export type { DocCardGridProps, DocCardItem } from "./doc-card-grid";
+export { DocCardGrid } from "./doc-card-grid.js";
+export type { DocCardGridProps, DocCardItem } from "./doc-card-grid.js";
 
-export { VersionsPageContent } from "./versions-page-content";
-export type { VersionsPageContentProps } from "./versions-page-content";
+export { VersionsPageContent } from "./versions-page-content.js";
+export type { VersionsPageContentProps } from "./versions-page-content.js";
 
 export type {
   NavNode,
@@ -54,4 +54,4 @@ export type {
   TagNavLabels,
   VersionPageEntry,
   VersionsPageLabels,
-} from "./types";
+} from "./types.js";

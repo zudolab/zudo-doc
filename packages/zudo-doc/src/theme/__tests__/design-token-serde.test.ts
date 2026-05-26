@@ -16,11 +16,11 @@ import {
   serialize,
   type DesignTokenJson,
   type DesignTokenManifest,
-} from "../design-token-serde";
+} from "../design-token-serde.js";
 import type {
   ColorTweakState,
   TweakState,
-} from "../design-token-types";
+} from "../design-token-types.js";
 
 const SPACING: readonly TokenDef[] = [
   { id: "hsp-md", cssVar: "--spacing-hsp-md", label: "hsp-md", group: "hsp", default: "0.75rem", min: 0, max: 3, step: 0.025, unit: "rem" },

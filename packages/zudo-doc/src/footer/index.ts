@@ -9,11 +9,11 @@
  * shapes the host project assembles upstream.
  */
 
-export { Footer } from "./footer";
-export type { FooterProps } from "./footer";
+export { Footer } from "./footer.js";
+export type { FooterProps } from "./footer.js";
 export type {
   FooterLinkColumn,
   FooterLinkItem,
   FooterTagColumn,
   FooterTagItem,
-} from "./types";
+} from "./types.js";

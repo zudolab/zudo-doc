@@ -2,9 +2,9 @@
 /** @jsxImportSource preact */
 
 import { describe, it, expect } from "vitest";
-import { CategoryTreeNav } from "../category-tree-nav";
-import { serialize } from "./helpers";
-import type { NavNode } from "../types";
+import { CategoryTreeNav } from "../category-tree-nav.js";
+import { serialize } from "./helpers.js";
+import type { NavNode } from "../types.js";
 
 function leaf(label: string, href: string): NavNode {
   return { label, href, hasPage: true, children: [] };

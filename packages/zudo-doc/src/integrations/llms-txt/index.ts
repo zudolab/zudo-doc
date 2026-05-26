@@ -25,26 +25,26 @@
  * the strings directly without touching the filesystem twice.
  */
 
-export { createLlmsTxtDevMiddleware } from "./dev-middleware.ts";
+export { createLlmsTxtDevMiddleware } from "./dev-middleware.js";
 export type {
   LlmsTxtDevMiddlewareOptions,
   LlmsTxtMiddleware,
   LlmsTxtMiddlewareLogger,
   LlmsTxtNextFn,
-} from "./dev-middleware.ts";
-export { emitLlmsTxt } from "./emit.ts";
+} from "./dev-middleware.js";
+export { emitLlmsTxt } from "./emit.js";
 export {
   generateLlmsFullTxt,
   generateLlmsTxt,
-} from "./generate.ts";
+} from "./generate.js";
 export {
   collectMdFiles,
   isExcluded,
   loadDocEntries,
   parseMarkdownFile,
   slugToUrl,
-} from "./load.ts";
-export { stripImportsAndJsx, stripMarkdown } from "./strip.ts";
+} from "./load.js";
+export { stripImportsAndJsx, stripMarkdown } from "./strip.js";
 export type {
   LlmsDocEntry,
   LlmsTxtEmitOptions,
@@ -54,4 +54,4 @@ export type {
   LlmsTxtLocaleConfig,
   LlmsTxtLogger,
   LlmsTxtSiteMeta,
-} from "./types.ts";
+} from "./types.js";

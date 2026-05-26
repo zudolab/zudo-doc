@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render } from "preact-render-to-string";
-import { DocHead } from "../doc-head";
-import type { HeadProps } from "../types";
+import { DocHead } from "../doc-head.js";
+import type { HeadProps } from "../types.js";
 
 /**
  * Acceptance contract for the head topic: head HTML byte-diff between the

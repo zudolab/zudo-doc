@@ -3,13 +3,13 @@
 
 import { describe, expect, it } from "vitest";
 import { render } from "preact-render-to-string";
-import { MermaidInit } from "../mermaid-init";
+import { MermaidInit } from "../mermaid-init.js";
 import {
   MERMAID_INIT_SCRIPT,
   MERMAID_CDN_MODULE_URL,
   buildMermaidInitScript,
-} from "../mermaid-init-script";
-import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events";
+} from "../mermaid-init-script.js";
+import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events.js";
 
 describe("<MermaidInit />", () => {
   it("renders a <script> tag", () => {

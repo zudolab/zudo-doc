@@ -18,8 +18,8 @@ export {
   buildSidebarTree,
   findSidebarNode,
   flattenSidebarTree,
-} from "./build-tree.ts";
-export { loadCategoryMeta, clearCategoryMetaCache } from "./category-meta.ts";
+} from "./build-tree.js";
+export { loadCategoryMeta, clearCategoryMetaCache } from "./category-meta.js";
 export type {
   BuildHref,
   BuildSidebarTreeOptions,
@@ -27,4 +27,4 @@ export type {
   CollectionEntryLike,
   SidebarFrontmatter,
   SidebarNode,
-} from "./types.ts";
+} from "./types.js";

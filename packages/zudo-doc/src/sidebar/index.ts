@@ -17,11 +17,11 @@
  * `treeComponent` prop (or rendered as `children`).
  */
 
-export { Sidebar } from "./sidebar";
-export type { SidebarProps } from "./sidebar";
+export { Sidebar } from "./sidebar.js";
+export type { SidebarProps } from "./sidebar.js";
 export type {
   SidebarLocaleLink,
   SidebarNavNode,
   SidebarRootMenuItem,
   SidebarTreeIslandProps,
-} from "./types";
+} from "./types.js";

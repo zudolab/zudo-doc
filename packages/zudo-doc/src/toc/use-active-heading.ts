@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
-import type { HeadingItem } from "./types";
+import type { HeadingItem } from "./types.js";
 
 /**
  * Pixel offset from the viewport top used as the "above the fold"

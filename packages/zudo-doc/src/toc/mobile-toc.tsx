@@ -6,9 +6,9 @@
 import type { VNode } from "preact";
 import { useMemo, useState } from "preact/hooks";
 
-import type { HeadingItem } from "./types";
-import { SmartBreak } from "./smart-break";
-import { cx } from "./cx";
+import type { HeadingItem } from "./types.js";
+import { SmartBreak } from "./smart-break.js";
+import { cx } from "./cx.js";
 
 export interface MobileTocProps {
   headings: readonly HeadingItem[];

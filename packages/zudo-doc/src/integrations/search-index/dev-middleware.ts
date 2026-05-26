@@ -8,11 +8,11 @@
 // future zfb-native dev server with no glue.
 
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { collectSearchEntries } from "./collect.ts";
+import { collectSearchEntries } from "./collect.js";
 import {
   SEARCH_INDEX_ROUTE,
   type SearchIndexConfig,
-} from "./types.ts";
+} from "./types.js";
 
 export type SearchIndexNextFn = (err?: unknown) => void;
 

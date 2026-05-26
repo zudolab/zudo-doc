@@ -8,4 +8,4 @@ export {
   PAGE_LOADING_OVERLAY_ID,
   buildPageLoadingOverlayBootstrap,
   type PageLoadingOverlayProps,
-} from "./page-loading-overlay";
+} from "./page-loading-overlay.js";

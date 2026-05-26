@@ -1,7 +1,7 @@
 import type { JSX } from "preact";
-import type { HeadProps } from "./types";
-import { OgTags } from "./og-tags";
-import { TwitterCard } from "./twitter-card";
+import type { HeadProps } from "./types.js";
+import { OgTags } from "./og-tags.js";
+import { TwitterCard } from "./twitter-card.js";
 
 /**
  * Framework head tag emission. Renders only the meta-tag layer of <head>;

@@ -23,7 +23,7 @@ import path from "node:path";
 import {
   generateClaudeResourcesDocs,
   type ClaudeResourcesConfig,
-} from "./generate";
+} from "./generate.js";
 
 // Mirrors `PluginConfig` in `@takazudo/zfb/config` (`{ name, options? }`).
 // Defined locally so this module does not require zfb at type-check time —

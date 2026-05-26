@@ -3,12 +3,12 @@
 
 import { describe, expect, it } from "vitest";
 import { render } from "preact-render-to-string";
-import { CodeBlockEnhancer } from "../code-block-enhancer";
-import { CODE_BLOCK_ENHANCER_SCRIPT } from "../code-block-enhancer-script";
+import { CodeBlockEnhancer } from "../code-block-enhancer.js";
+import { CODE_BLOCK_ENHANCER_SCRIPT } from "../code-block-enhancer-script.js";
 import {
   AFTER_NAVIGATE_EVENT,
   BEFORE_NAVIGATE_EVENT,
-} from "../../transitions/page-events";
+} from "../../transitions/page-events.js";
 
 describe("<CodeBlockEnhancer />", () => {
   it("renders the screen-reader announce region", () => {

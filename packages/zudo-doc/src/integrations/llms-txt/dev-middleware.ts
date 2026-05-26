@@ -22,12 +22,12 @@
 
 import type { IncomingMessage, ServerResponse } from "node:http";
 
-import { generateLlmsFullTxt, generateLlmsTxt } from "./generate.ts";
-import { loadDocEntries } from "./load.ts";
+import { generateLlmsFullTxt, generateLlmsTxt } from "./generate.js";
+import { loadDocEntries } from "./load.js";
 import type {
   LlmsTxtLocaleConfig,
   LlmsTxtSiteMeta,
-} from "./types.ts";
+} from "./types.js";
 
 /** Connect-style middleware signature — works as a Vite plugin middleware. */
 export type LlmsTxtNextFn = (err?: unknown) => void;

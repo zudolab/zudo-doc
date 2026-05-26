@@ -53,7 +53,7 @@
 
 import type { ComponentChildren, FunctionComponent, VNode } from "preact";
 
-import type { SidebarTreeIslandProps } from "./types";
+import type { SidebarTreeIslandProps } from "./types.js";
 
 export interface SidebarProps extends SidebarTreeIslandProps {
   /**

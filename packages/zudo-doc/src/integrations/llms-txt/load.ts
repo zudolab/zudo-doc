@@ -14,12 +14,12 @@ import { join, relative, resolve } from "node:path";
 
 import matter from "gray-matter";
 
-import { stripImportsAndJsx, stripMarkdown } from "./strip.ts";
+import { stripImportsAndJsx, stripMarkdown } from "./strip.js";
 import type {
   LlmsDocEntry,
   LlmsTxtFrontmatter,
   LlmsTxtLoadOptions,
-} from "./types.ts";
+} from "./types.js";
 
 /**
  * Walk `dir` recursively and return every `*.md` / `*.mdx` file's

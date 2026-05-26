@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getTocTitle } from "../toc-title";
+import { getTocTitle } from "../toc-title.js";
 
 describe("getTocTitle", () => {
   it("returns English label for undefined input", () => {

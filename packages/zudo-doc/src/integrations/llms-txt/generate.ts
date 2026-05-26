@@ -10,7 +10,7 @@
  * — the file shape is part of the project's public surface.
  */
 
-import type { LlmsDocEntry, LlmsTxtSiteMeta } from "./types.ts";
+import type { LlmsDocEntry, LlmsTxtSiteMeta } from "./types.js";
 
 /**
  * Slim index — site header followed by a markdown bullet per page with

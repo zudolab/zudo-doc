@@ -37,4 +37,4 @@
  * ```
  */
 
-export { buildUrl, normalizePathname, shouldSkipNormalization } from "./normalize.ts";
+export { buildUrl, normalizePathname, shouldSkipNormalization } from "./normalize.js";

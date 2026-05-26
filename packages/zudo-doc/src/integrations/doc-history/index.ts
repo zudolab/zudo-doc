@@ -47,7 +47,7 @@ export {
   type DocHistoryMetaLocaleConfig,
   type DocHistoryMetaManifest,
   type DocHistoryMetaVersionConfig,
-} from "./pre-build.ts";
+} from "./pre-build.js";
 
 // ---------------------------------------------------------------------------
 // Public option / descriptor shapes

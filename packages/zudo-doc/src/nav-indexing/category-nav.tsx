@@ -17,7 +17,7 @@
 
 import type { JSX } from "preact";
 
-import type { NavNode } from "./types";
+import type { NavNode } from "./types.js";
 
 export interface CategoryNavProps {
   /**

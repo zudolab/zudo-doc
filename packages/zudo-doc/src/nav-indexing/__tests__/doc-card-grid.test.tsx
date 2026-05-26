@@ -2,9 +2,9 @@
 /** @jsxImportSource preact */
 
 import { describe, it, expect } from "vitest";
-import { DocCardGrid } from "../doc-card-grid";
-import { serialize } from "./helpers";
-import type { DocCardItem } from "../doc-card-grid";
+import { DocCardGrid } from "../doc-card-grid.js";
+import { serialize } from "./helpers.js";
+import type { DocCardItem } from "../doc-card-grid.js";
 
 describe("DocCardGrid", () => {
   it("returns null when items is empty", () => {

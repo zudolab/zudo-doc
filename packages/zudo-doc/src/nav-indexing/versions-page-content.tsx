@@ -22,7 +22,7 @@
 
 import type { JSX } from "preact";
 
-import type { VersionPageEntry, VersionsPageLabels } from "./types";
+import type { VersionPageEntry, VersionsPageLabels } from "./types.js";
 
 export interface VersionsPageContentProps {
   /** Pre-resolved href to the latest version's default docs page. */

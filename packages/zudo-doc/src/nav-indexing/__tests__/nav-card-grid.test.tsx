@@ -2,9 +2,9 @@
 /** @jsxImportSource preact */
 
 import { describe, it, expect } from "vitest";
-import { NavCardGrid } from "../nav-card-grid";
-import { serialize } from "./helpers";
-import type { NavNode } from "../types";
+import { NavCardGrid } from "../nav-card-grid.js";
+import { serialize } from "./helpers.js";
+import type { NavNode } from "../types.js";
 
 function node(
   label: string,

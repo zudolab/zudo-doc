@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 import { render } from "preact-render-to-string";
-import { TabItem } from "../tab-item";
+import { TabItem } from "../tab-item.js";
 
 describe("<TabItem />", () => {
   it("renders a hidden tabpanel with label-derived data-tab-value when value is omitted", () => {

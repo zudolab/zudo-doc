@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 import type { ComponentChildren, VNode } from "preact";
-import { FrontmatterPreview } from "../frontmatter-preview";
+import { FrontmatterPreview } from "../frontmatter-preview.js";
 
 // ---------------------------------------------------------------------------
 // Minimal VNode serialiser.

@@ -17,21 +17,21 @@
 // layout's body-end scripts slot) — it idempotently re-binds after
 // View Transitions navigation.
 
-export { LanguageSwitcher } from "./language-switcher";
-export type { LanguageSwitcherProps } from "./language-switcher";
+export { LanguageSwitcher } from "./language-switcher.js";
+export type { LanguageSwitcherProps } from "./language-switcher.js";
 
 export {
   VersionSwitcher,
   VERSION_SWITCHER_INIT_SCRIPT,
   VERSION_SWITCHER_VISIBILITY_STYLE,
-} from "./version-switcher";
-export type { VersionSwitcherProps } from "./version-switcher";
+} from "./version-switcher.js";
+export type { VersionSwitcherProps } from "./version-switcher.js";
 
-export { VersionBanner } from "./version-banner";
-export type { VersionBannerProps, VersionBannerLabels } from "./version-banner";
+export { VersionBanner } from "./version-banner.js";
+export type { VersionBannerProps, VersionBannerLabels } from "./version-banner.js";
 
 export type {
   LocaleLink,
   VersionEntry,
   VersionSwitcherLabels,
-} from "./types";
+} from "./types.js";

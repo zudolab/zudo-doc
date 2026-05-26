@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { findPath } from "../find-path";
-import type { SidebarNode } from "../types";
+import { findPath } from "../find-path.js";
+import type { SidebarNode } from "../types.js";
 
 const tree: SidebarNode[] = [
   {

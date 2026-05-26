@@ -35,7 +35,7 @@
 
 import type { VNode } from "preact";
 
-import type { FooterLinkColumn, FooterTagColumn } from "./types";
+import type { FooterLinkColumn, FooterTagColumn } from "./types.js";
 
 export interface FooterProps {
   /**

@@ -3,7 +3,7 @@ import {
   buildUrl,
   normalizePathname,
   shouldSkipNormalization,
-} from "../normalize";
+} from "../normalize.js";
 
 // ---------------------------------------------------------------------------
 // buildUrl

@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 import type { ComponentChildren, VNode } from "preact";
-import { DocTags } from "../doc-tags";
+import { DocTags } from "../doc-tags.js";
 
 // ---------------------------------------------------------------------------
 // Minimal VNode serialiser.

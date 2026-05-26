@@ -1,5 +1,5 @@
 import type { JSX } from "preact";
-import type { HeadProps } from "./types";
+import type { HeadProps } from "./types.js";
 
 /**
  * Twitter card meta tags. The host renders this only when a card type is

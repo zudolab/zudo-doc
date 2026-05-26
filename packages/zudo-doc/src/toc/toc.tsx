@@ -6,10 +6,10 @@
 import type { VNode } from "preact";
 import { useMemo } from "preact/hooks";
 
-import { useActiveHeading } from "./use-active-heading";
-import type { HeadingItem } from "./types";
-import { SmartBreak } from "./smart-break";
-import { cx } from "./cx";
+import { useActiveHeading } from "./use-active-heading.js";
+import type { HeadingItem } from "./types.js";
+import { SmartBreak } from "./smart-break.js";
+import { cx } from "./cx.js";
 
 export interface TocProps {
   headings: readonly HeadingItem[];

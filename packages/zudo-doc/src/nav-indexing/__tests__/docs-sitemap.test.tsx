@@ -2,9 +2,9 @@
 /** @jsxImportSource preact */
 
 import { describe, it, expect } from "vitest";
-import { DocsSitemap } from "../docs-sitemap";
-import { serialize } from "./helpers";
-import type { NavNode } from "../types";
+import { DocsSitemap } from "../docs-sitemap.js";
+import { serialize } from "./helpers.js";
+import type { NavNode } from "../types.js";
 
 function leaf(label: string, href: string, desc?: string): NavNode {
   return { label, href, hasPage: true, children: [], description: desc };

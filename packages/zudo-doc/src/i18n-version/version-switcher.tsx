@@ -69,7 +69,7 @@
 //   pass it.
 
 import type { VNode } from "preact";
-import type { VersionEntry, VersionSwitcherLabels } from "./types";
+import type { VersionEntry, VersionSwitcherLabels } from "./types.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
 
 export interface VersionSwitcherProps {

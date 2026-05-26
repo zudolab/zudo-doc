@@ -4,7 +4,7 @@ import {
   isNavItemActive,
   pathForMatch,
   type NavItemLike,
-} from "../nav-active";
+} from "../nav-active.js";
 
 describe("pathForMatch", () => {
   it("returns the path unchanged when lang is undefined", () => {

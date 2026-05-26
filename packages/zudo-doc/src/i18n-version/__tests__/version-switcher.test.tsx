@@ -7,9 +7,9 @@ import {
   VersionSwitcher,
   VERSION_SWITCHER_INIT_SCRIPT,
   VERSION_SWITCHER_VISIBILITY_STYLE,
-} from "../version-switcher";
-import type { VersionEntry, VersionSwitcherLabels } from "../types";
-import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events";
+} from "../version-switcher.js";
+import type { VersionEntry, VersionSwitcherLabels } from "../types.js";
+import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events.js";
 
 type AnyVNode = VNode<{ children?: ComponentChildren; [key: string]: unknown }>;
 

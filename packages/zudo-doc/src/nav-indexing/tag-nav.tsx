@@ -22,7 +22,7 @@
 
 import type { JSX } from "preact";
 
-import type { TagItem, TagLink, TagNavLabels } from "./types";
+import type { TagItem, TagLink, TagNavLabels } from "./types.js";
 
 // ─── "all" variant ──────────────────────────────────────────────────────────
 

@@ -16,23 +16,23 @@
 // runtime ESM loader (Node's native TS support, used by zfb's plugin
 // host) can resolve them without a TS-aware loader. Matches the
 // sibling `llms-txt/index.ts` convention.
-export { emitSearchIndex } from "./build-emitter.ts";
+export { emitSearchIndex } from "./build-emitter.js";
 export type {
   SearchIndexBuildOptions,
   SearchIndexBuildResult,
-} from "./build-emitter.ts";
-export { collectSearchEntries } from "./collect.ts";
-export { createSearchIndexDevMiddleware } from "./dev-middleware.ts";
+} from "./build-emitter.js";
+export { collectSearchEntries } from "./collect.js";
+export { createSearchIndexDevMiddleware } from "./dev-middleware.js";
 export type {
   SearchIndexMiddleware,
   SearchIndexNextFn,
-} from "./dev-middleware.ts";
+} from "./dev-middleware.js";
 export {
   MAX_BODY_LENGTH,
   SEARCH_INDEX_ROUTE,
-} from "./types.ts";
+} from "./types.js";
 export type {
   SearchIndexConfig,
   SearchIndexEntry,
   SearchIndexLocaleConfig,
-} from "./types.ts";
+} from "./types.js";

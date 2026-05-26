@@ -1,5 +1,5 @@
 import type { JSX } from "preact";
-import type { HeadProps } from "./types";
+import type { HeadProps } from "./types.js";
 
 /**
  * Open Graph meta tags. Emits og:title (always — defaults to `title`) plus

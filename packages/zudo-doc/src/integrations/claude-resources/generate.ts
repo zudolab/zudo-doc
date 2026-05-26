@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
-import { escapeForMdx } from "./escape-for-mdx";
+import { escapeForMdx } from "./escape-for-mdx.js";
 
 export interface ClaudeResourcesConfig {
   claudeDir: string;

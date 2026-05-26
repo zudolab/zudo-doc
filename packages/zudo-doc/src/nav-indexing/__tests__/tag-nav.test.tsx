@@ -2,9 +2,9 @@
 /** @jsxImportSource preact */
 
 import { describe, it, expect } from "vitest";
-import { TagNav } from "../tag-nav";
-import { serialize } from "./helpers";
-import type { TagItem, TagLink, TagNavLabels } from "../types";
+import { TagNav } from "../tag-nav.js";
+import { serialize } from "./helpers.js";
+import type { TagItem, TagLink, TagNavLabels } from "../types.js";
 
 const labels: TagNavLabels = {
   tags: "Tags",
