@@ -1,7 +1,7 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-// JSX port of src/components/docs-sitemap.astro.
+// JSX port of src/components/docs-sitemap.
 //
 // The original Astro template loaded the docs collection, built the nav tree,
 // and rendered a collapsible `<details>/<summary>` section for each top-level
@@ -93,7 +93,7 @@ function SitemapSection({ node, index }: SitemapSectionProps): JSX.Element {
 }
 
 /**
- * DocsSitemap — JSX port of `src/components/docs-sitemap.astro`.
+ * DocsSitemap — JSX port of `src/components/docs-sitemap`.
  *
  * Renders the full documentation tree as a series of collapsible
  * `<details>` sections. Each top-level node becomes one section; its

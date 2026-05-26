@@ -7,7 +7,7 @@ export interface DetailsProps {
   /**
    * Summary / toggle label shown in the `<summary>` element.
    * Defaults to `"Details"` — the same fallback used by the legacy
-   * `src/components/details.astro`.
+   * `src/components/details`.
    */
   title?: string;
   /** Slot content rendered inside the collapsed body. */
@@ -16,7 +16,7 @@ export interface DetailsProps {
 
 /**
  * Collapsible `<details>` / `<summary>` block — JSX port of
- * `src/components/details.astro`.
+ * `src/components/details`.
  *
  * Keeps layout and token classes identical to the original template.
  * The legacy component used Astro's `<slot />`; v2 accepts standard

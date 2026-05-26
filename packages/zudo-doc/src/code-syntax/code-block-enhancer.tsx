@@ -1,9 +1,9 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-// JSX port of src/components/code-block-enhancer.astro.
+// JSX port of the legacy `code-block-enhancer` component.
 //
-// The original .astro component rendered:
+// The original component rendered:
 //   1. A `<div class="code-block-sr-announce">` live-region for screen-reader
 //      announcements after copying.
 //   2. A <script> tag that self-initializes the copy/wrap button enhancer.
@@ -16,7 +16,7 @@ import type { JSX } from "preact";
 import { CODE_BLOCK_ENHANCER_SCRIPT } from "./code-block-enhancer-script.js";
 
 /**
- * Drop-in JSX replacement for `src/components/code-block-enhancer.astro`.
+ * Drop-in JSX replacement for the legacy `code-block-enhancer` component.
  *
  * Include **once** in the layout. Renders the screen-reader announce region
  * and emits the code-block enhancer init script via `dangerouslySetInnerHTML`.

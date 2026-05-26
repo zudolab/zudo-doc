@@ -5,14 +5,13 @@ import type { HeadProps } from "../types.js";
 
 /**
  * Acceptance contract for the head topic: head HTML byte-diff between the
- * legacy Astro emission (src/layouts/doc-layout.astro) and DocHead is zero,
- * modulo asset hashes. These tests pin the exact output of DocHead for a
- * range of fixtures so any silent reordering or attribute-shape regression
- * trips the suite.
+ * legacy doc-layout emission and DocHead is zero, modulo asset hashes.
+ * These tests pin the exact output of DocHead for a range of fixtures so
+ * any silent reordering or attribute-shape regression trips the suite.
  *
  * The reference snapshots use the preact-render-to-string serialisation
- * (self-closing void tags). When DocHead is consumed inside a real .astro
- * page the host serialises through Astro's HTML5 emitter, which drops the
+ * (self-closing void tags). When DocHead is consumed inside a real host
+ * layout the host serialises through its own HTML5 emitter, which drops the
  * "/" — both sides go through the same serialiser, so the runtime byte
  * comparison stays valid.
  */
@@ -29,7 +28,7 @@ describe("DocHead — byte-parity fixtures", () => {
     );
   });
 
-  it("matches the doc-layout.astro emission for a typical doc page", () => {
+  it("matches the doc-layout emission for a typical doc page", () => {
     const props: HeadProps = {
       title: "Writing Docs | Smoke Test",
       description: "How to write docs.",
@@ -227,7 +226,7 @@ describe("DocHead — byte-parity fixtures", () => {
     );
   });
 
-  it("matches the doc-layout.astro slot order: meta → title → desc → robots → canonical → theme-color → og → twitter → stylesheets → alternates → preload", () => {
+  it("matches the doc-layout slot order: meta → title → desc → robots → canonical → theme-color → og → twitter → stylesheets → alternates → preload", () => {
     const out = render(
       <DocHead
         title="Hello | Smoke Test"

@@ -3,9 +3,9 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 // Ported from src/components/theme-toggle.tsx (E5 framework primitives).
-// Use the preact hook entrypoints directly — zfb's esbuild step doesn't
-// alias "react" to "preact/compat" the way Astro's `@astrojs/preact`
-// integration did, so importing from "react" here would fail to resolve.
+// Use the preact hook entrypoints directly — zfb's esbuild step
+// does not alias "react" to "preact/compat", so importing from
+// "react" here would fail to resolve.
 import type { VNode } from "preact";
 import { useState, useEffect } from "preact/hooks";
 // `@takazudo/zfb` is provided by the consumer at integration time;

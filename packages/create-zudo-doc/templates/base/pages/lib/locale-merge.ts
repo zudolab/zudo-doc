@@ -1,8 +1,7 @@
 // Shared utility for merging locale docs with base-locale fallbacks.
 //
-// Used by the locale tag pages to replicate the locale-first + base-fallback
-// strategy from the Astro src/components/tag-nav.astro non-default-locale
-// branch. Extracted here to avoid duplicating the logic across multiple
+// Used by the locale tag pages to implement the locale-first + base-fallback
+// merge strategy. Extracted here to avoid duplicating the logic across multiple
 // [locale] page modules.
 //
 // Strategy:

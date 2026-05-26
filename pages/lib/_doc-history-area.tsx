@@ -154,9 +154,9 @@ export function DocHistoryArea({
   }) as unknown as VNode;
 
   // Compute the view-source GitHub URL host-side so the v2 BodyFootUtilArea
-  // component stays oblivious to project settings. Guards mirror the legacy
-  // body-foot-util-area.astro: gate on bodyFootUtilArea.viewSourceLink, and
-  // require both entrySlug and contentDir (auto-index pages pass neither).
+  // component stays oblivious to project settings. Gate on
+  // bodyFootUtilArea.viewSourceLink, and require both entrySlug and contentDir
+  // (auto-index pages pass neither).
   const utilSettings = settings.bodyFootUtilArea;
   const sourceUrl =
     utilSettings && utilSettings.viewSourceLink && entrySlug && contentDir

@@ -4,7 +4,7 @@
  *
  * Usage: design-token-lint [glob patterns...]
  *
- * Default patterns scan src/, components/, lib/, and app/ for .tsx, .jsx, .astro files.
+ * Default patterns scan src/, components/, lib/, and app/ for .tsx, .jsx files.
  * Loads config from .design-token-lint.json in the current directory (falls back to defaults).
  * Patterns can also be configured via the "patterns" field in the config file.
  */
@@ -14,8 +14,8 @@ import { loadConfig, compileConfig } from './config.js';
 import { setConfig } from './rules.js';
 import { lintFile } from './linter.js';
 const DEFAULT_PATTERNS = [
-    'src/**/*.{tsx,jsx,astro}',
-    'components/**/*.{tsx,jsx,astro}',
+    'src/**/*.{tsx,jsx}',
+    'components/**/*.{tsx,jsx}',
     'lib/**/*.{tsx,jsx}',
     'app/**/*.{tsx,jsx}',
 ];

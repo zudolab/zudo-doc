@@ -3,8 +3,8 @@
 // Locale-aware DocTags area wrapper for the zfb doc pages.
 //
 // Renders the page-level tag chips (e.g. "Tags: #customization") between
-// the DocMetainfo block and the description paragraph, mirroring the
-// position of the legacy `doc-tags.astro` in the Astro layout.
+// the DocMetainfo block and the description paragraph (doc-tags placement
+// — after-title, between the date block and description paragraph).
 //
 // Restoration of a Astro→zfb migration regression: the DocTags component
 // was correctly ported into @takazudo/zudo-doc/metainfo/doc-tags.tsx
@@ -63,8 +63,7 @@ interface DocTagsAreaProps {
  * Returns null when `docTags` is disabled, the page has no tags, or all
  * raw tags resolve to deprecated entries.
  *
- * Placement is "after-title" to match the legacy `doc-tags.astro` position
- * (between the date block and description paragraph).
+ * Placement is "after-title" (between the date block and description paragraph).
  */
 export function DocTagsArea({ locale, tags }: DocTagsAreaProps): VNode | null {
   if (!settings.docTags) return null;

@@ -3,7 +3,7 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-// JSX port of src/components/sidebar.astro.
+// JSX port of src/components/sidebar.
 //
 // The original Astro template was almost entirely data assembly —
 // build root-menu items from `settings.headerNav`, load the locale's
@@ -66,7 +66,7 @@ export interface SidebarProps extends SidebarTreeIslandProps {
   /**
    * Pre-rendered tree content — falls back to this when
    * `treeComponent` is omitted. Useful for tests and for layouts that
-   * compose the tree separately (e.g. inside an Astro `.astro` wrapper
+   * compose the tree separately (e.g. inside a host wrapper
    * that needs `client:load` on the actual island element).
    */
   children?: ComponentChildren;

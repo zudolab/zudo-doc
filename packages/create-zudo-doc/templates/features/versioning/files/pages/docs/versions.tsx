@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Port of src/pages/docs/versions.astro → zfb page module.
+// Page module for the default-locale versions index route.
 //
 // Default-locale (EN) documentation versions page. Static route — no
 // paths() export needed. Lists the latest version and any past versions

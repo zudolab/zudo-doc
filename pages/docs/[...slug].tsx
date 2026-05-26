@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Port of src/pages/docs/[...slug].astro → zfb page module.
+// Page module for the default-locale docs route.
 //
 // Default-locale (EN) catch-all docs route. paths() enumerates every page in
 // the "docs" collection plus auto-generated category index pages (for
@@ -334,12 +334,12 @@ export default function DocsPage({ entry, autoIndex, breadcrumbs, prev, next, he
         <>
           <h1 class="text-heading font-bold mb-vsp-xs">{entry!.data.title}</h1>
 
-          {/* Build-time date block (Created / Updated / Author). Mirrors the
-              Astro `doc-metainfo.astro` placement — between <h1> and description.
+          {/* Build-time date block (Created / Updated / Author).
+              doc-metainfo placement — between <h1> and description.
               Data from `.zfb/doc-history-meta.json` (esbuild-inlined, no fs). */}
           <DocMetainfoArea slug={slug} locale={locale} />
 
-          {/* Page-level tag chips — mirroring doc-tags.astro placement (#1658). */}
+          {/* Page-level tag chips — matching doc-tags placement (#1658). */}
           <DocTagsArea slug={slug} locale={locale} tags={entry!.data.tags} />
 
           {entry!.data.description && (

@@ -67,6 +67,7 @@ export const FEATURES = [
   { value: "footerCopyright", label: "Footer copyright", cliFlag: "footer-copyright", default: false },
   { value: "changelog", label: "Changelog", cliFlag: "changelog", default: false },
   { value: "tagGovernance", label: "Tag governance", cliFlag: "tag-governance", default: true },
+  { value: "docTags", label: "Doc tags pages", cliFlag: "doc-tags", default: false },
   { value: "footerTaglist", label: "Footer taglist", cliFlag: "footer-taglist", default: false },
 ] as const;
 

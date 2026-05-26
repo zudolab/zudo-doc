@@ -8,10 +8,10 @@ sidebar_position: 1
 
 zudo-doc enforces a "trailing slash always" URL policy: every page lives at a path
 ending with `/` — for example `/docs/getting-started/` rather than
-`/docs/getting-started`. This convention matches the Astro `trailingSlash: "always"`
-setting that was active before the zfb migration.
+`/docs/getting-started`. This matches the convention zudo-doc used in its Astro era (`trailingSlash: "always"`
+setting that was active before the zfb migration).
 
-With Astro, the enforcement ran in two places:
+Historically (Astro era), the enforcement ran in two places:
 
 - The **build**: Astro emitted `dist/docs/getting-started/index.html`, so
   `trailingSlash: "always"` was baked into the output paths.
@@ -61,7 +61,7 @@ the same skip rules that were in the legacy middleware:
 |---|---|
 | Already ends with `/` | no-op |
 | Last segment has a letter-starting extension (`.js`, `.css`, `.png` …) | no-op — static asset |
-| Starts with `/_astro/` or `/_image` | no-op — framework-internal path |
+| Starts with `/_astro/` or `/_image` | no-op — preserved for cross-framework asset path compatibility |
 | Version string like `/docs/v2.0` (digit after dot) | **normalised** — not treated as extension |
 
 ## Runtime — owned by the deployment host

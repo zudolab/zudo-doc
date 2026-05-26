@@ -1,7 +1,7 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-// JSX port of src/components/tag-nav.astro.
+// JSX port of src/components/tag-nav.
 //
 // The original Astro template had two rendering branches controlled by the
 // `variant` prop:
@@ -115,7 +115,7 @@ function PageTagChip({
 // ─── Public component ────────────────────────────────────────────────────────
 
 /**
- * TagNav — JSX port of `src/components/tag-nav.astro`.
+ * TagNav — JSX port of `src/components/tag-nav`.
  *
  * Two variants:
  *

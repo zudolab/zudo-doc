@@ -92,7 +92,7 @@ export const DEFAULT_VALUE_COL_LABEL = "Value";
  * - String arrays → comma-joined
  * - Anything else → JSON.stringify (displayed in a `<code>` block)
  *
- * The legacy `frontmatter-preview.astro` additionally ran
+ * The legacy `frontmatter-preview` additionally ran
  * `smartBreakToHtml` on strings and delegated to per-key
  * `frontmatterRenderers`. v2 keeps only the simple text path so the
  * component has no upward dependency on project utilities.
@@ -109,7 +109,7 @@ function renderValue(v: unknown): { text?: string; code?: string } {
 
 /**
  * Frontmatter data table — JSX port of
- * `src/components/frontmatter-preview.astro`.
+ * `src/components/frontmatter-preview`.
  *
  * Returns `null` when `entries` is empty, mirroring the original
  * `entries.length > 0` guard.

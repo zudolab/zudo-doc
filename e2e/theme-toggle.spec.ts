@@ -4,7 +4,7 @@ import { test, expect, type Page } from "@playwright/test";
  *
  * The ThemeToggle is a React island that must not cause hydration
  * mismatches when the user's stored theme preference differs from
- * the SSR default. An inline script in color-scheme-provider.astro
+ * the SSR default. An inline script in color-scheme-provider.tsx (server-emitted, pre-paint)
  * sets data-theme from localStorage before React hydrates — the
  * React component must use the SSR default for initial state and
  * sync from the DOM in useEffect.

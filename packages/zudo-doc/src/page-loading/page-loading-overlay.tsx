@@ -3,8 +3,6 @@
 
 // Server-rendered, zero-hydration full-page loading overlay.
 //
-// JSX port of src/components/page-loading-overlay.astro.
-//
 // Renders three things into the document:
 //
 //   1. A fixed-position overlay `<div>` with a centered spinner. Hidden

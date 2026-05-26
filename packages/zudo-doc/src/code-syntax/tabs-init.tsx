@@ -1,9 +1,9 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-// JSX port of src/components/tabs-init.astro.
+// JSX port of the legacy `tabs-init` component.
 //
-// The original .astro component rendered a <script> tag that created nav
+// The original component rendered a <script> tag that created nav
 // buttons from the `[data-tab-value]` / `[data-tab-label]` attributes on
 // `.tab-panel` elements. Because the JSX `<Tabs>` component now server-renders
 // those buttons, this script is simplified: it only activates the correct tab
@@ -15,7 +15,7 @@ import type { JSX } from "preact";
 import { TABS_INIT_SCRIPT } from "./tabs-init-script.js";
 
 /**
- * Drop-in JSX replacement for `src/components/tabs-init.astro`.
+ * Drop-in JSX replacement for the legacy `tabs-init` component.
  *
  * Include **once** in the layout (e.g. in the `<body>` foot). Emits the
  * tabs interactivity script via `dangerouslySetInnerHTML`.

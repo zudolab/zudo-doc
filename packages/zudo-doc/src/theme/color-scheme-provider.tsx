@@ -1,4 +1,4 @@
-// Layout-level JSX port of src/components/color-scheme-provider.astro.
+// Layout-level JSX port of src/components/color-scheme-provider.
 //
 // Renders the palette CSS custom properties on `:root` and the bootstrap
 // inline script that applies the persisted theme (light/dark) before the

@@ -1,7 +1,7 @@
 // Browser init script for the code block enhancer.
 //
 // Converted from the TypeScript <script> block in
-// `src/components/code-block-enhancer.astro` — TypeScript syntax stripped
+// the legacy `code-block-enhancer` component — TypeScript syntax stripped
 // so the string can be emitted via `dangerouslySetInnerHTML` and parsed
 // by the browser directly.
 //

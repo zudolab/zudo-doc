@@ -4,15 +4,15 @@ description: "How paths() enumerates routes in zfb and how to migrate from Astro
 sidebar_position: 10
 ---
 
-zfb replaces Astro's `getStaticPaths()` with a `paths()` export.
+If you're migrating from Astro, `paths()` is zfb's replacement for `getStaticPaths()`.
 Both tell the build which concrete URLs a dynamic or catchall route should emit,
 but their execution models differ significantly.
 This page explains the convention and the migration path.
 
 ## paths() is synchronous
 
-Astro's `getStaticPaths()` is an `async` function that runs in Node.js at build time.
-It can `await` anything: file reads, database queries, or live HTTP requests.
+In Astro, `getStaticPaths()` was an `async` function that ran in Node.js at build time.
+It could `await` anything: file reads, database queries, or live HTTP requests.
 
 zfb's `paths()` runs inside **miniflare** at build time and is **synchronous** by contract.
 The function signature is `function paths(): PathEntry[]` — not `async`.
@@ -102,7 +102,7 @@ Patterns like the following were common:
 
 ```ts
 // ❌ Astro — before migration
-// src/pages/tags/[tag].astro
+// pages/docs/tags/[tag].tsx
 export async function getStaticPaths() {
   const res = await fetch("https://api.example.com/tags");
   const tags = await res.json();

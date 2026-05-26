@@ -320,11 +320,6 @@ body {
   margin-top: 0;
 }
 
-/* astro-island uses display:contents which absorbs margin — give it a box */
-.zd-content > :where(astro-island) {
-  display: block;
-}
-
 /* Flow spacing inside nested sections (e.g., preset generator) */
 .zd-content .zd-preset-gen :where(section) > :where(* + *) {
   margin-top: var(--flow-space, var(--spacing-vsp-md));

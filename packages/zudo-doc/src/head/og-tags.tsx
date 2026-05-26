@@ -5,10 +5,10 @@ import type { HeadProps } from "./types.js";
  * Open Graph meta tags. Emits og:title (always — defaults to `title`) plus
  * any other og:* fields the caller has supplied.
  *
- * Output order matches the order in src/layouts/doc-layout.astro for byte
- * parity: og:title → og:description → og:type → og:url → og:image →
- * og:site_name. New og:* tags should be appended at the end of the list,
- * never reordered, to keep snapshot diffs minimal.
+ * Output order matches the legacy doc-layout emission for byte parity:
+ * og:title → og:description → og:type → og:url → og:image → og:site_name.
+ * New og:* tags should be appended at the end of the list, never reordered,
+ * to keep snapshot diffs minimal.
  */
 export function OgTags(props: {
   title: string;

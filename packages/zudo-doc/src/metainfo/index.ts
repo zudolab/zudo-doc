@@ -1,7 +1,7 @@
 // Barrel for the metainfo topic — JSX ports of:
-//   src/components/doc-metainfo.astro
-//   src/components/doc-tags.astro
-//   src/components/frontmatter-preview.astro
+//   src/components/doc-metainfo
+//   src/components/doc-tags
+//   src/components/frontmatter-preview
 
 export {
   DocMetainfo,

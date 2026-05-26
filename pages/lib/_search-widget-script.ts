@@ -1,12 +1,10 @@
 // Client-side script for the SiteSearch custom element.
 //
-// Port of the `<script>` block from the deleted
-// `src/components/search.astro` (commit a4d9956). Rewritten as a plain
-// JavaScript IIFE (no ES-module `import` statements) so it can be
-// emitted via `dangerouslySetInnerHTML` without requiring bundler
+// Implemented as a plain JavaScript IIFE (no ES-module `import` statements)
+// so it can be emitted via `dangerouslySetInnerHTML` without requiring bundler
 // support for inline scripts.
 //
-// Differences from the original Astro script:
+// Key differences from the bundled module approach:
 //   - MiniSearch is NOT imported; a lightweight built-in search (fetch
 //     index + simple word-match scoring) is used instead. This avoids the
 //     inline-script bundling limitation. Full MiniSearch integration can be

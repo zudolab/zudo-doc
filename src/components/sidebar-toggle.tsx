@@ -1,10 +1,9 @@
 "use client";
 
-// Use preact hook entrypoints directly — zfb's esbuild step doesn't alias
-// "react" to "preact/compat" the way Astro's `@astrojs/preact` integration
-// did, so importing values from "react" here would fail to resolve at
-// SSR/island bundle time. Same pattern as src/components/sidebar-tree.tsx
-// and packages/zudo-doc/src/theme/theme-toggle.tsx. Type references via
+// Use preact hook entrypoints directly — the "react" → "preact/compat" alias
+// lets us consume React-typed components in this Preact app (configured
+// project-wide). Same pattern as src/components/sidebar-tree.tsx and
+// packages/zudo-doc/src/theme/theme-toggle.tsx. Type references via
 // the global React namespace still resolve via @types/react.
 import { useState, useEffect } from "preact/hooks";
 import clsx from "clsx";

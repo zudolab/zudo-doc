@@ -1,7 +1,7 @@
 import { SmartBreak as SmartBreakImpl } from '@/utils/smart-break';
 
 // Preact VNode vs React.ReactNode type mismatch under compat mode; cast so the
-// content override type-checks. Runtime is fine since @astrojs/preact compat is on.
+// content override type-checks. Runtime is fine since the preact/compat alias is in effect.
 const SmartBreak = SmartBreakImpl as unknown as (props: {
   children?: unknown;
 }) => any;

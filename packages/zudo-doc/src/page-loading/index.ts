@@ -1,7 +1,6 @@
 // E5 framework primitives — page-loading overlay.
 //
-// Subpath: `@takazudo/zudo-doc/page-loading`. JSX port of
-// `src/components/page-loading-overlay.astro` from the host project.
+// Subpath: `@takazudo/zudo-doc/page-loading`.
 
 export {
   default as PageLoadingOverlay,

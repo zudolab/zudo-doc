@@ -1,7 +1,7 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-// JSX port of src/components/site-tree-nav-demo.astro.
+// JSX port of src/components/site-tree-nav-demo.
 //
 // The original Astro template loaded the full doc collection, built the nav
 // tree with groupSatelliteNodes, and rendered the interactive SiteTreeNav
@@ -115,7 +115,7 @@ function Section({ node }: SectionProps): JSX.Element {
 }
 
 /**
- * SiteTreeNavDemo — JSX port of `src/components/site-tree-nav-demo.astro`.
+ * SiteTreeNavDemo — JSX port of `src/components/site-tree-nav-demo`.
  *
  * Renders the full site tree as a static collapsible section-by-section view.
  * Each top-level category becomes a `<details>` block; leaves within each
