@@ -2387,6 +2387,26 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
       expect(pkg.dependencies["@zudo-doc/zudo-doc-v2"]).toBeDefined();
       expect(pkg.dependencies["@zudo-doc/zudo-doc-v2"]).toMatch(/^\^?0\.1\./);
     });
+
+    // W6B (#1735) — runtime deps required by always-on scaffolded
+    // pages/lib code or by the zfb engine bundler. Each was caught by
+    // the consumer-build verification gate (one missing-dep error per
+    // round). Without these, `zfb build` fails before any page compiles:
+    //   - zod                       → zfb-config-gen emits
+    //                                 `import { z } from "zod"` for the
+    //                                 collection schema + z.toJSONSchema()
+    //   - preact-render-to-string   → zfb's emitted entry.mjs SSR's pages
+    //                                 via `renderToString` from this pkg
+    //   - katex                     → pages/lib/_math-block.tsx renders
+    //                                 LaTeX server-side via katex.renderToString()
+    it("package.json lists zod, preact-render-to-string, katex as runtime deps (W6B — needed by always-on scaffolded code)", async () => {
+      const pkg = await fs.readJson(
+        projectPath("test-zfb-minimal", "package.json"),
+      );
+      expect(pkg.dependencies["zod"]).toBeDefined();
+      expect(pkg.dependencies["preact-render-to-string"]).toBeDefined();
+      expect(pkg.dependencies["katex"]).toBeDefined();
+    });
   });
 
   // Pattern 2: barebone — everything off (no features, single scheme)

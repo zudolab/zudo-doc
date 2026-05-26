@@ -292,10 +292,25 @@ function generatePackageJson(choices: UserChoices) {
     // lockstep by scripts/release-create-zudo-doc.sh whenever v2's version
     // moves, so a fresh scaffold pulls the version we just published.
     "@zudo-doc/zudo-doc-v2": "^0.1.0",
+    // zod — used by the generated zfb.config.ts. zfb-config-gen emits
+    // `import { z } from "zod"` for the content-collection schema +
+    // `z.toJSONSchema(...)` conversion. Without this dep, the consumer
+    // fails at `zfb build` with esbuild "Could not resolve 'zod'" before
+    // any page compiles. The Astro→zfb retarget (3f0042f7) added the
+    // import without the runtime dep; W6B (#1735) consumer-build
+    // verification was the first to actually exercise it.
+    zod: "^4.0.0",
     // ^10.29.1 floor satisfies @takazudo/zdtp's preact peer range so the app
     // and zdtp resolve a single preact instance — a lower floor can split into
     // two copies and crash hook-using SSR islands with "undefined reading __H".
     preact: "^10.29.1",
+    // preact-render-to-string — zfb's emitted entry.mjs imports
+    // `renderToString` from this package as `__zfb_renderToString` to
+    // SSR each page. Without it, esbuild fails at the bundler step with
+    // "Could not resolve 'preact-render-to-string'" before any page
+    // compiles. Same pin as host. Caught by W6B (#1735) consumer-build
+    // verification.
+    "preact-render-to-string": "^6.6.6",
     shiki: "^4.0.2",
     "@shikijs/transformers": "^4.0.0",
     clsx: "^2.1.0",
@@ -305,6 +320,12 @@ function generatePackageJson(choices: UserChoices) {
     "remark-cjk-friendly": "^2.0.1",
     "remark-directive": "^3.0.0",
     "unist-util-visit": "^5.1.0",
+    // katex — server-side LaTeX renderer used by the always-on
+    // pages/lib/_math-block.tsx (called from pages/_mdx-components.ts
+    // for `$…$` and `$$…$$` math nodes). Caught by W6B (#1735)
+    // consumer-build verification — the import lives in the mirrored
+    // pages, not behind any feature gate. Same pin as host.
+    katex: "^0.16.38",
   };
 
   const devDeps: Record<string, string> = {
