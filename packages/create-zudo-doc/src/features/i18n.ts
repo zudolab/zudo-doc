@@ -29,10 +29,10 @@ export const i18nFeature: FeatureModule = (_choices) => {
     "templates/features",
   );
   const pagesDir = path.join(featuresRoot, "i18n/files/pages");
-  if (
-    !fs.existsSync(pagesDir) ||
-    fs.readdirSync(pagesDir).length === 0
-  ) {
+  // Check existence + directory-ness before readdir so a stray file at this
+  // path produces the same loud error rather than an opaque ENOTDIR.
+  const stat = fs.existsSync(pagesDir) ? fs.statSync(pagesDir) : null;
+  if (!stat || !stat.isDirectory() || fs.readdirSync(pagesDir).length === 0) {
     throw new Error(
       `i18n feature template dir is missing or empty: ${pagesDir}\n` +
         `Expected to find [locale]/index.tsx and [locale]/docs/[...slug].tsx.\n` +
