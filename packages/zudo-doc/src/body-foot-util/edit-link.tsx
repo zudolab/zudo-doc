@@ -35,7 +35,7 @@ export interface EditLinkProps {
 }
 
 /**
- * "Edit this page" link — JSX port of `src/components/edit-link.astro`.
+ * "Edit this page" link — JSX port of the legacy `edit-link` component.
  *
  * The legacy component owned three concerns: URL computation, i18n
  * lookup, and presentation. v2 keeps only presentation; URL and label

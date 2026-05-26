@@ -1,6 +1,6 @@
 // Barrel for the body-foot-util topic — JSX port of
-// `src/components/body-foot-util-area.astro` and its sibling
-// `edit-link.astro`.
+// the legacy `body-foot-util-area` component and its sibling
+// `edit-link`.
 //
 // Wave 8 (super-epic #1333 / child epic #1355) dropped the local
 // DocHistoryIsland SSR-skip wrapper that used to live next to the area

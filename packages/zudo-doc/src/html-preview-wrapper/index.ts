@@ -1,6 +1,5 @@
-// Barrel for the html-preview-wrapper topic — JSX port of
-// `src/components/html-preview-wrapper.astro` and the full
-// `src/components/html-preview/` stack.
+// Barrel for the html-preview-wrapper topic — HtmlPreviewWrapper component
+// and the full html-preview stack.
 export {
   HtmlPreviewWrapper,
 } from "./html-preview-wrapper.js";

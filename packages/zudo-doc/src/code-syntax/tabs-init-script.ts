@@ -1,6 +1,6 @@
 // Browser init script for tabs interactivity.
 //
-// Simplified counterpart of `src/components/tabs-init.astro`.
+// Simplified counterpart of the legacy `tabs-init` component.
 //
 // The original script created `<button>` elements for each panel entirely
 // at runtime. The JSX `<Tabs>` component now server-renders the buttons,

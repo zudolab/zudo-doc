@@ -10,9 +10,9 @@ import { TwitterCard } from "./twitter-card.js";
  * panel, etc.) are owned by other topic folders and composed by the host
  * layout alongside this primitive.
  *
- * Output order is fixed and matches the existing src/layouts/doc-layout.astro
- * emission so head HTML stays byte-identical (modulo asset hashes) to the
- * pre-migration build for any fixture page:
+ * Output order is fixed and matches the legacy doc-layout emission so head
+ * HTML stays byte-identical (modulo asset hashes) to the pre-migration
+ * build for any fixture page:
  *
  *   1. <meta charset>
  *   2. <meta name="viewport">

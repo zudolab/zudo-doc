@@ -1,9 +1,9 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-// JSX port of src/components/footer.astro.
+// Footer presentational shell for the documentation layout.
 //
-// The original Astro template mixed data-prep (settings + getDocsCollection
+// The original template mixed data-prep (settings + getDocsCollection
 // + tag-vocabulary lookups + locale overrides) with the presentational
 // footer markup. Because v2 must stay decoupled from host-only helpers,
 // only the presentational shell lives here: callers prepare the

@@ -148,14 +148,14 @@ export interface BreadcrumbProps {
 }
 
 /**
- * Breadcrumb trail — JSX port of src/components/breadcrumb.astro.
+ * Breadcrumb trail component.
  *
  * Two usage shapes:
  *   1. Pass pre-built `items` (existing call-sites that already
  *      compute crumbs upstream).
  *   2. Pass `tree` + `currentId` and the component derives the trail.
  *
- * Returns null when no items resolve, matching the Astro template's
+ * Returns null when no items resolve, matching the documented
  * `items.length > 0 &&` guard.
  */
 export function Breadcrumb(props: BreadcrumbProps): VNode | null {

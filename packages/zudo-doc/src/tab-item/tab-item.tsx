@@ -1,7 +1,7 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-// JSX port of src/components/tab-item.astro.
+// JSX port of the legacy `tab-item` component.
 //
 // Visual wrapper for one tab panel inside a Tabs group. Server-rendered,
 // no hydration. The companion Tabs island reads `data-tab-value` /

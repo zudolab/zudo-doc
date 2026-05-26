@@ -5,7 +5,7 @@
 //
 //  1. Owns the 16 `create-zudo-doc` injection anchors. The drift checker
 //     (E9a sub-task 4) compares the literal anchor *substrings* in this
-//     file to the substrings in the scaffolded `doc-layout.astro`.
+//     file to the substrings in the scaffolded doc-layout file.
 //     The anchor identifiers themselves come from `./anchors.ts` — keep
 //     this file's anchors in lockstep with that list.
 //
@@ -21,8 +21,8 @@
 // any cross-topic API mismatches; the slot props are intentionally
 // permissive (`ComponentChildren`) so an override is always possible.
 //
-// Anchor cheat-sheet (matched 1:1 against
-// `packages/create-zudo-doc/templates/base/src/layouts/doc-layout.astro`):
+// Anchor cheat-sheet (matched 1:1 against the scaffolded doc-layout file
+// at `packages/create-zudo-doc/templates/base/src/layouts/`):
 //
 //  Frontmatter region:
 //   - // @slot:doc-layout:imports
@@ -49,7 +49,7 @@
 // no-ops at runtime, so they have no effect on the output, but the
 // drift checker — which works at the source-text level — sees them as
 // substrings, identical to the way it sees them in the scaffolded
-// `.astro` file. The exception is the two frontmatter anchors, which
+// doc-layout source. The exception is the two frontmatter anchors, which
 // the drift checker matches in their `// @slot:doc-layout:…` line-
 // comment form at the top of this file.
 //
@@ -216,7 +216,7 @@ export {
  *
  * The body of this component contains every body-region injection
  * anchor as a JSX comment expression, so a literal-substring drift
- * check between this file and the scaffolded `doc-layout.astro` will
+ * check between this file and the scaffolded doc-layout file will
  * find each anchor in both places. JSX comment expressions are
  * compile-time-only and do not affect runtime output.
  */
