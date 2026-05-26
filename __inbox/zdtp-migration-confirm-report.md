@@ -47,7 +47,7 @@ Migration-specific test suites: all GREEN
 
 - Live import statements of legacy `design-token-tweak` component directory: 0. The deleted `src/components/design-token-tweak/` directory has no surviving import consumers.
 - `from "@/components/design-token-tweak`: 0 results across src/, pages/, packages/.
-- The only non-comment `design-token-tweak` string in TS/TSX is `packages/zudo-doc-v2/src/theme/index.ts:13` which re-exports from `./design-token-tweak-panel` — this is the W3-2 null stub, intentionally kept for type-check barrel compatibility. Confirmed the stub returns null.
+- The only non-comment `design-token-tweak` string in TS/TSX is `packages/zudo-doc/src/theme/index.ts:13` which re-exports from `./design-token-tweak-panel` — this is the W3-2 null stub, intentionally kept for type-check barrel compatibility. Confirmed the stub returns null.
 
 ### Storage continuity audit: PASS
 
@@ -72,7 +72,7 @@ zdtp listens on `document` for both events (confirmed in `dist/index.js:2554`). 
 
 ### Header trigger: PASS (undisturbed)
 
-`packages/zudo-doc-v2/src/header/header.tsx:389` dispatches `window.dispatchEvent(new CustomEvent('toggle-design-token-panel'))`.
+`packages/zudo-doc/src/header/header.tsx:389` dispatches `window.dispatchEvent(new CustomEvent('toggle-design-token-panel'))`.
 
 zdtp listens to `window` for `toggle-design-token-panel` (confirmed in `dist/index.js:2200` and the const at line 2453). Header trigger is fully functional with no changes needed.
 
@@ -80,11 +80,11 @@ zdtp listens to `window` for `toggle-design-token-panel` (confirmed in `dist/ind
 
 ### Stub remnants: documented for W5-1
 
-`packages/zudo-doc-v2/src/theme/design-token-tweak-panel.tsx` is the W3-2 null stub:
+`packages/zudo-doc/src/theme/design-token-tweak-panel.tsx` is the W3-2 null stub:
 
 - `DesignTokenTweakPanelInner` returns `null`
 - `DesignTokenTweakPanel` (default export) returns `null`
-- Only purpose: keeps `packages/zudo-doc-v2/src/theme/index.ts` barrel type-checking without a breaking change
+- Only purpose: keeps `packages/zudo-doc/src/theme/index.ts` barrel type-checking without a breaking change
 - No host page (`src/`, `pages/`) imports these exports — confirmed by grep
 - W5-1 cleanup target: delete this file, remove barrel exports, update `theme/index.ts`
 

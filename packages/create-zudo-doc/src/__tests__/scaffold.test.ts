@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "fs-extra";
 import os from "os";
 import path from "path";
+import { fileURLToPath } from "url";
 import type { UserChoices } from "../prompts.js";
 import { scaffold } from "../scaffold.js";
 
@@ -95,20 +96,36 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     ).toBe(false);
   });
 
-  it("does NOT include ai-chat-modal component (aiAssistant off by default)", async () => {
-    expect(
-      await fs.pathExists(
-        projectPath("test-minimal", "src/components/ai-chat-modal.tsx"),
-      ),
-    ).toBe(false);
+  // W6A (#1734): ai-chat-modal stays always-on with a no-op stub in base so
+  // the mirrored pages/lib/_body-end-islands import closure resolves in every
+  // scaffold variant. The stub returns null; a future feature flag can swap
+  // it out. Spec-lock §1.5.
+  it("ships ai-chat-modal as a no-op stub (W6A — base template)", async () => {
+    const stubPath = projectPath(
+      "test-minimal",
+      "src/components/ai-chat-modal.tsx",
+    );
+    expect(await fs.pathExists(stubPath)).toBe(true);
+    const content = await fs.readFile(stubPath, "utf-8");
+    expect(content).toContain("W6A stub");
+    expect(content).toContain("return null");
+    expect(content).toContain("export default");
   });
 
-  it("does NOT include doc-history component (docHistory off by default)", async () => {
-    expect(
-      await fs.pathExists(
-        projectPath("test-minimal", "src/components/doc-history.tsx"),
-      ),
-    ).toBe(false);
+  // W6A (#1734): doc-history component stays always-on with a no-op stub in
+  // base. The docHistory feature template overwrites the stub with the real
+  // island when enabled. Spec-lock Decision 5.
+  it("ships doc-history as a no-op stub when docHistory feature is off (W6A)", async () => {
+    const stubPath = projectPath(
+      "test-minimal",
+      "src/components/doc-history.tsx",
+    );
+    expect(await fs.pathExists(stubPath)).toBe(true);
+    const content = await fs.readFile(stubPath, "utf-8");
+    expect(content).toContain("W6A stub");
+    expect(content).toContain("return null");
+    expect(content).toContain("export default");
+    expect(content).toContain("DocHistory");
   });
 
   // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
@@ -138,12 +155,19 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     expect(layout).not.toContain("zudo-doc-sidebar-width");
   });
 
-  it("does NOT include desktop-sidebar-toggle component (sidebarToggle off by default)", async () => {
-    expect(
-      await fs.pathExists(
-        projectPath("test-minimal", "src/components/desktop-sidebar-toggle.tsx"),
-      ),
-    ).toBe(false);
+  // W6A (#1734): desktop-sidebar-toggle stays always-on with a no-op stub in
+  // base. The sidebarToggle feature template overwrites the stub with the real
+  // island when enabled. Spec-lock Decision 5.
+  it("ships desktop-sidebar-toggle as a no-op stub when sidebarToggle feature is off (W6A)", async () => {
+    const stubPath = projectPath(
+      "test-minimal",
+      "src/components/desktop-sidebar-toggle.tsx",
+    );
+    expect(await fs.pathExists(stubPath)).toBe(true);
+    const content = await fs.readFile(stubPath, "utf-8");
+    expect(content).toContain("W6A stub");
+    expect(content).toContain("return null");
+    expect(content).toContain("export default");
   });
 
   // Depends on: topic-template-files (JSX layout from E5) + topic-feature-modules
@@ -194,7 +218,14 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
 });
 
 describe("scaffold — sidebarToggle feature", () => {
-  it("desktop-sidebar-toggle.tsx does NOT import from @zudo-doc/* (inlined constants)", async () => {
+  // W4A (#1732): @takazudo/zudo-doc is now a runtime dep of every scaffold
+  // (published via .github/workflows/publish-zudo-doc.yml), so the
+  // desktop-sidebar-toggle component imports BEFORE_NAVIGATE_EVENT /
+  // AFTER_NAVIGATE_EVENT from @takazudo/zudo-doc/transitions directly
+  // instead of inlining them as string literals. The two tests below were
+  // previously asserting the inverse (v2 absent), which encoded the
+  // "v2 is workspace-private/unpublished" constraint that W4A removes.
+  it("desktop-sidebar-toggle.tsx imports lifecycle events from @takazudo/zudo-doc/transitions", async () => {
     const choices: UserChoices = {
       projectName: "test-sidebar-toggle-on",
       defaultLang: "en",
@@ -211,11 +242,14 @@ describe("scaffold — sidebarToggle feature", () => {
       ),
       "utf-8",
     );
-    expect(content).not.toMatch(/from\s+['"]@zudo-doc\//);
-
+    expect(content).toMatch(
+      /from\s+['"]@takazudo\/zudo-doc\/transitions['"]/,
+    );
+    expect(content).toContain("BEFORE_NAVIGATE_EVENT");
+    expect(content).toContain("AFTER_NAVIGATE_EVENT");
   });
 
-  it("generated package.json has no @zudo-doc/* dependency when sidebarToggle is enabled", async () => {
+  it("generated package.json pins @takazudo/zudo-doc (W4A — runtime dep)", async () => {
     const choices: UserChoices = {
       projectName: "test-sidebar-toggle-deps",
       defaultLang: "en",
@@ -228,14 +262,8 @@ describe("scaffold — sidebarToggle feature", () => {
     const pkg = await fs.readJson(
       projectPath("test-sidebar-toggle-deps", "package.json"),
     );
-    const allDeps = {
-      ...pkg.dependencies,
-      ...pkg.devDependencies,
-    };
-    const zudoDocKeys = Object.keys(allDeps).filter((k) =>
-      k.startsWith("@zudo-doc/"),
-    );
-    expect(zudoDocKeys).toEqual([]);
+    expect(pkg.dependencies["@takazudo/zudo-doc"]).toBeDefined();
+    expect(pkg.dependencies["@takazudo/zudo-doc"]).toMatch(/^\^?0\.1\./);
   });
 });
 
@@ -306,11 +334,19 @@ describe("scaffold — full features (i18n, light-dark, all features)", () => {
         projectPath("test-full", "src/config/design-tokens-manifest.ts"),
       ),
     ).toBe(true);
+    // W3B (#1730): design-token-types.ts moved into @takazudo/zudo-doc/theme,
+    // no longer scaffolded into the generated project. Verify the legacy
+    // path is absent so a regression that resurrects the duplicate trips.
     expect(
       await fs.pathExists(
         projectPath("test-full", "src/utils/design-token-types.ts"),
       ),
-    ).toBe(true);
+    ).toBe(false);
+    expect(
+      await fs.pathExists(
+        projectPath("test-full", "src/utils/design-token-serde.ts"),
+      ),
+    ).toBe(false);
   });
 
   it("does NOT include legacy design-token-tweak panel component", async () => {
@@ -1656,7 +1692,11 @@ describe("scaffold — imageEnlarge feature", () => {
     ).toBe(true);
   });
 
-  it("island file src/components/image-enlarge.tsx absent when disabled", async () => {
+  // W6A (#1734): image-enlarge stays always-on with a no-op stub in base
+  // (carries both the default export and the ImageEnlargeSsrFallback named
+  // export the body-end Island wrapper imports). The imageEnlarge feature
+  // template overwrites the stub with the real island when enabled.
+  it("ships image-enlarge as a no-op stub when imageEnlarge feature is off (W6A)", async () => {
     const choices: UserChoices = {
       projectName: "test-ie-island-off",
       defaultLang: "en",
@@ -1666,11 +1706,16 @@ describe("scaffold — imageEnlarge feature", () => {
       packageManager: "pnpm",
     };
     await scaffold(choices);
-    expect(
-      await fs.pathExists(
-        projectPath("test-ie-island-off", "src/components/image-enlarge.tsx"),
-      ),
-    ).toBe(false);
+    const stubPath = projectPath(
+      "test-ie-island-off",
+      "src/components/image-enlarge.tsx",
+    );
+    expect(await fs.pathExists(stubPath)).toBe(true);
+    const content = await fs.readFile(stubPath, "utf-8");
+    expect(content).toContain("W6A stub");
+    expect(content).toContain("return null");
+    expect(content).toContain("export default");
+    expect(content).toContain("ImageEnlargeSsrFallback");
   });
 
   it("rehype-image-enlarge.ts always present in src/plugins/ (base template file)", async () => {
@@ -2331,12 +2376,37 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
     // Post-S5: the root package.json has dropped astro/@astrojs/* and the
     // generator now lists @takazudo/zfb directly as the runtime dependency.
     // (Replaces the Phase-A assertion that astro was still present.)
-    it("package.json lists @takazudo/zfb as a runtime dependency (post-S5)", async () => {
+    // W4A (#1732): @takazudo/zudo-doc is now also a runtime dep — pinned
+    // to the v2 publish version that release-create-zudo-doc.sh keeps in
+    // lockstep with the generator's own version.
+    it("package.json lists @takazudo/zfb and @takazudo/zudo-doc as runtime dependencies (post-S5, post-W4A)", async () => {
       const pkg = await fs.readJson(
         projectPath("test-zfb-minimal", "package.json"),
       );
       expect(pkg.dependencies["@takazudo/zfb"]).toBeDefined();
       expect(pkg.dependencies["astro"]).toBeUndefined();
+      expect(pkg.dependencies["@takazudo/zudo-doc"]).toBeDefined();
+      expect(pkg.dependencies["@takazudo/zudo-doc"]).toMatch(/^\^?0\.1\./);
+    });
+
+    // W6B (#1735) — runtime deps required by always-on scaffolded
+    // pages/lib code or by the zfb engine bundler. Each was caught by
+    // the consumer-build verification gate (one missing-dep error per
+    // round). Without these, `zfb build` fails before any page compiles:
+    //   - zod                       → zfb-config-gen emits
+    //                                 `import { z } from "zod"` for the
+    //                                 collection schema + z.toJSONSchema()
+    //   - preact-render-to-string   → zfb's emitted entry.mjs SSR's pages
+    //                                 via `renderToString` from this pkg
+    //   - katex                     → pages/lib/_math-block.tsx renders
+    //                                 LaTeX server-side via katex.renderToString()
+    it("package.json lists zod, preact-render-to-string, katex as runtime deps (W6B — needed by always-on scaffolded code)", async () => {
+      const pkg = await fs.readJson(
+        projectPath("test-zfb-minimal", "package.json"),
+      );
+      expect(pkg.dependencies["zod"]).toBeDefined();
+      expect(pkg.dependencies["preact-render-to-string"]).toBeDefined();
+      expect(pkg.dependencies["katex"]).toBeDefined();
     });
   });
 
@@ -2448,5 +2518,614 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
         ),
       ).toBe(false);
     });
+  });
+});
+
+// W6A (#1734) — page mirror parity assertions. The 29 unconditional pages
+// from the host repo's pages/ tree are mirrored into templates/base/pages/
+// and must show up in every scaffold variant; pages/api/** is excluded as
+// worker-only per spec-lock Decision 5.
+describe("scaffold — W6A page mirror (templates/base/pages)", () => {
+  const UNCONDITIONAL_PAGES = [
+    "pages/index.tsx",
+    "pages/404.tsx",
+    "pages/sitemap.xml.tsx",
+    "pages/_data.ts",
+    "pages/_mdx-components.ts",
+    "pages/docs/[...slug].tsx",
+    "pages/lib/_body-end-islands.tsx",
+    "pages/lib/_category-nav.tsx",
+    "pages/lib/_category-tree-nav.tsx",
+    "pages/lib/_compose-meta-title.ts",
+    "pages/lib/_details.tsx",
+    "pages/lib/_doc-history-area.tsx",
+    "pages/lib/_doc-metainfo-area.tsx",
+    "pages/lib/_doc-tags-area.tsx",
+    "pages/lib/_extract-headings.ts",
+    "pages/lib/_footer-with-defaults.tsx",
+    "pages/lib/_frontmatter-preview-data.ts",
+    "pages/lib/_head-with-defaults.tsx",
+    "pages/lib/_header-with-defaults.tsx",
+    "pages/lib/_inline-version-switcher.tsx",
+    "pages/lib/_math-block.tsx",
+    "pages/lib/_nav-source-docs.ts",
+    "pages/lib/_preset-generator.tsx",
+    "pages/lib/_search-widget-script.ts",
+    "pages/lib/_search-widget.tsx",
+    "pages/lib/_sidebar-with-defaults.tsx",
+    "pages/lib/_site-tree-nav.tsx",
+    "pages/lib/locale-merge.ts",
+    "pages/lib/route-enumerators.ts",
+  ];
+
+  const BAREBONE: UserChoices = {
+    projectName: "test-pages-barebone",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: [],
+    packageManager: "pnpm",
+  };
+
+  const ALL_FEATURES: UserChoices = {
+    projectName: "test-pages-all",
+    defaultLang: "en",
+    colorSchemeMode: "light-dark",
+    lightScheme: "Default Light",
+    darkScheme: "Default Dark",
+    respectPrefersColorScheme: true,
+    defaultMode: "dark",
+    features: [
+      "i18n",
+      "search",
+      "sidebarFilter",
+      "sidebarToggle",
+      "sidebarResizer",
+      "docHistory",
+      "llmsTxt",
+      "claudeResources",
+      "claudeSkills",
+      "designTokenPanel",
+      "imageEnlarge",
+      "bodyFootUtil",
+      "footerNavGroup",
+      "footerCopyright",
+      "changelog",
+      "skillSymlinker",
+      "tagGovernance",
+    ],
+    packageManager: "pnpm",
+  };
+
+  it("emits all 29 unconditional page files in a barebone scaffold", async () => {
+    await scaffold(BAREBONE);
+    for (const rel of UNCONDITIONAL_PAGES) {
+      expect(
+        await fs.pathExists(projectPath("test-pages-barebone", rel)),
+        `expected ${rel} to exist in barebone scaffold`,
+      ).toBe(true);
+    }
+  });
+
+  it("emits all 29 unconditional page files in an all-features scaffold", async () => {
+    await scaffold(ALL_FEATURES);
+    for (const rel of UNCONDITIONAL_PAGES) {
+      expect(
+        await fs.pathExists(projectPath("test-pages-all", rel)),
+        `expected ${rel} to exist in all-features scaffold`,
+      ).toBe(true);
+    }
+  });
+
+  it("does not emit pages/api/ai-chat.tsx in any scaffold variant (W6A spec-lock Decision 5)", async () => {
+    // Worker-only SSR endpoint — explicit exclusion via EXCLUDE_FROM_MIRROR
+    // in src/scaffold.ts. Asserts both variants: a barebone with no features
+    // and an all-features scaffold. Neither should ship pages/api/**.
+    for (const choices of [BAREBONE, ALL_FEATURES]) {
+      await scaffold(choices);
+      const apiDir = projectPath(choices.projectName, "pages/api");
+      expect(
+        await fs.pathExists(apiDir),
+        `pages/api/ must not be emitted in ${choices.projectName}`,
+      ).toBe(false);
+      const aiChat = projectPath(choices.projectName, "pages/api/ai-chat.tsx");
+      expect(await fs.pathExists(aiChat)).toBe(false);
+    }
+  });
+
+  it("ships the #doc-history-meta seed JSON in every scaffold variant", async () => {
+    // The mirrored pages import "#doc-history-meta" — the tsconfig alias
+    // resolves to .zfb/doc-history-meta.json. The seed file containing
+    // exactly {} ships in templates/base/.zfb/ so the import resolves
+    // even when docHistory is disabled. The doc-history prebuild step
+    // overwrites it at build time when the feature is enabled.
+    await scaffold(BAREBONE);
+    const seedPath = projectPath(
+      "test-pages-barebone",
+      ".zfb/doc-history-meta.json",
+    );
+    expect(await fs.pathExists(seedPath)).toBe(true);
+    expect(await fs.readFile(seedPath, "utf-8")).toBe("{}\n");
+  });
+
+  it("tsconfig.json carries the #doc-history-meta path alias", async () => {
+    await scaffold(BAREBONE);
+    const tsconfig = await fs.readJson(
+      projectPath("test-pages-barebone", "tsconfig.json"),
+    );
+    expect(tsconfig.compilerOptions.paths["#doc-history-meta"]).toEqual([
+      ".zfb/doc-history-meta.json",
+    ]);
+  });
+
+  // W6B (#1735) — react → preact/compat alias at the tsconfig layer.
+  // Lets the mirrored pages and feature templates `import ... from
+  // "react"` and have TypeScript + zfb's FsResolver (which walks up to
+  // the nearest tsconfig.json and resolves compilerOptions.paths at
+  // build time, per upstream zfb PR #139) route the import to
+  // preact/compat.
+  //
+  // Spec deviations from #1735 W2 §1.2:
+  //
+  // 1. Trailing slash on `react` + `react-dom` is load-bearing. Without
+  //    it, esbuild (running in `platform: "neutral"` mode in zfb's
+  //    islands bundler) resolves the alias to the bare path
+  //    `node_modules/preact/compat`, then refuses to read the package's
+  //    `main` field and errors with "Main fields must be configured
+  //    explicitly when using the 'neutral' platform". With trailing
+  //    slash, esbuild treats the alias as a package-directory and
+  //    resolves correctly. Confirmed empirically by the consumer-build
+  //    gate; matches the host's tsconfig shape verbatim.
+  // 2. `react-dom/*` (subpath wildcard) is intentionally omitted —
+  //    the host doesn't ship it and no scaffolded code imports a
+  //    react-dom subpath.
+  // 3. The spec also asked for a `vite.resolve.alias` belt-and-braces
+  //    layer in zfb.config.ts. zfb's `ZfbConfig` type (verified in
+  //    node_modules/@takazudo/zfb/dist/config.d.ts) has no `vite`
+  //    field — adding one breaks `pnpm check`. The host builds with
+  //    tsconfig paths only.
+  it("tsconfig.json aliases react/react-dom to preact/compat (matches host shape verbatim)", async () => {
+    await scaffold(BAREBONE);
+    const tsconfig = await fs.readJson(
+      projectPath("test-pages-barebone", "tsconfig.json"),
+    );
+    expect(tsconfig.compilerOptions.paths["react"]).toEqual([
+      "./node_modules/preact/compat/",
+    ]);
+    expect(tsconfig.compilerOptions.paths["react/jsx-runtime"]).toEqual([
+      "./node_modules/preact/jsx-runtime",
+    ]);
+    expect(tsconfig.compilerOptions.paths["react-dom"]).toEqual([
+      "./node_modules/preact/compat/",
+    ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// W7A (#1736) — zfb-config-gen reconcile: the generated zfb.config.ts must
+// reference plugin `.mjs` files actually shipped by the templates, otherwise
+// `zfb build` fails at config bundling (the W6B-flagged blocker). These
+// tests assert the import-resolution chain end-to-end at scaffold time so
+// the consumer build only fails for *new* drift, not for known-broken state.
+// ---------------------------------------------------------------------------
+
+describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)", () => {
+  it("barebone scaffold ships base/plugins/{search-index,copy-public,connect-adapter}.mjs", async () => {
+    const choices: UserChoices = {
+      projectName: "test-w7a-plugins-barebone",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: [],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    for (const file of [
+      "plugins/search-index-plugin.mjs",
+      "plugins/copy-public-plugin.mjs",
+      "plugins/connect-adapter.mjs",
+    ]) {
+      expect(
+        await fs.pathExists(
+          projectPath("test-w7a-plugins-barebone", file),
+        ),
+        `expected ${file} to ship in every scaffold`,
+      ).toBe(true);
+    }
+    // Optional-feature plugins must NOT ship when the feature is off,
+    // otherwise the generated zfb.config.ts (which lacks the matching
+    // inline entry) would leave the `.mjs` files as orphans and any
+    // future bare-grep validator could flag them.
+    for (const file of [
+      "plugins/doc-history-plugin.mjs",
+      "plugins/llms-txt-plugin.mjs",
+      "plugins/claude-resources-plugin.mjs",
+    ]) {
+      expect(
+        await fs.pathExists(
+          projectPath("test-w7a-plugins-barebone", file),
+        ),
+        `expected ${file} to be absent from barebone scaffold`,
+      ).toBe(false);
+    }
+  });
+
+  it("all-features scaffold ships every plugin .mjs the zfb config references", async () => {
+    const choices: UserChoices = {
+      projectName: "test-w7a-plugins-all",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "docHistory", "llmsTxt", "claudeResources"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const config = await fs.readFile(
+      projectPath("test-w7a-plugins-all", "zfb.config.ts"),
+      "utf-8",
+    );
+    // For every `./plugins/<name>.mjs` reference in zfb.config.ts, the
+    // file must actually exist at that path. This is the precise gate
+    // the W6B verification was hitting: imports without files = bundler
+    // failure at config load.
+    const matches = [
+      ...config.matchAll(/"\.\/plugins\/([\w-]+\.mjs)"/g),
+    ];
+    expect(matches.length).toBeGreaterThan(0);
+    for (const match of matches) {
+      const relPath = `plugins/${match[1]!}`;
+      expect(
+        await fs.pathExists(
+          projectPath("test-w7a-plugins-all", relPath),
+        ),
+        `zfb.config.ts references ${relPath} but the file was not shipped`,
+      ).toBe(true);
+    }
+  });
+
+  it("doc-history scaffold ships tsx devDep (plugin spawns `tsx -e`)", async () => {
+    const choices: UserChoices = {
+      projectName: "test-w7a-dh-tsx",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["docHistory"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const pkg = await fs.readJson(
+      projectPath("test-w7a-dh-tsx", "package.json"),
+    );
+    expect(pkg.devDependencies?.tsx).toBeTruthy();
+  });
+});
+
+// W7B (#1737) — i18n feature emits the locale-prefixed page set
+// (pages/[locale]/index.tsx + pages/[locale]/docs/[...slug].tsx) when
+// selected, and zero pages/[locale]/** files when not selected. Both
+// emitted files must be byte-identical to their feature templates.
+//
+// Cross-feature note: versioning + docTags also emit pages/[locale]/**
+// files (versions.tsx, tags/[tag].tsx, tags/index.tsx) — those are W7C
+// scope and live in different feature template dirs. The "off" assertion
+// below uses a feature set that selects neither i18n, versioning, nor
+// docTags so the [locale]/** namespace is provably empty.
+describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => {
+  const I18N_PAGE_FILES = [
+    "pages/[locale]/index.tsx",
+    "pages/[locale]/docs/[...slug].tsx",
+  ];
+
+  const I18N_ON: UserChoices = {
+    projectName: "test-w7b-i18n-on",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["i18n", "search"],
+    packageManager: "pnpm",
+  };
+
+  const I18N_OFF: UserChoices = {
+    projectName: "test-w7b-i18n-off",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "sidebarFilter"],
+    packageManager: "pnpm",
+  };
+
+  // Absolute path to the feature-template source files, relative to this
+  // test file. Used by the byte-identical assertion.
+  const FEATURE_PAGES_DIR = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "..",
+    "..",
+    "templates/features/i18n/files/pages",
+  );
+
+  it("emits pages/[locale]/index.tsx + pages/[locale]/docs/[...slug].tsx when i18n is selected", async () => {
+    await scaffold(I18N_ON);
+    for (const rel of I18N_PAGE_FILES) {
+      expect(
+        await fs.pathExists(projectPath("test-w7b-i18n-on", rel)),
+        `expected ${rel} to exist when i18n is selected`,
+      ).toBe(true);
+    }
+  });
+
+  it("does NOT emit any pages/[locale]/** files when i18n is not selected", async () => {
+    await scaffold(I18N_OFF);
+    const localeDir = projectPath("test-w7b-i18n-off", "pages/[locale]");
+    expect(
+      await fs.pathExists(localeDir),
+      "pages/[locale]/ must not exist when i18n is off",
+    ).toBe(false);
+  });
+
+  it("emitted pages/[locale]/index.tsx is byte-identical to the feature template", async () => {
+    await scaffold(I18N_ON);
+    const emitted = await fs.readFile(
+      projectPath("test-w7b-i18n-on", "pages/[locale]/index.tsx"),
+      "utf-8",
+    );
+    const template = await fs.readFile(
+      path.join(FEATURE_PAGES_DIR, "[locale]/index.tsx"),
+      "utf-8",
+    );
+    expect(emitted).toEqual(template);
+  });
+
+  it("emitted pages/[locale]/docs/[...slug].tsx is byte-identical to the feature template", async () => {
+    await scaffold(I18N_ON);
+    const emitted = await fs.readFile(
+      projectPath("test-w7b-i18n-on", "pages/[locale]/docs/[...slug].tsx"),
+      "utf-8",
+    );
+    const template = await fs.readFile(
+      path.join(FEATURE_PAGES_DIR, "[locale]/docs/[...slug].tsx"),
+      "utf-8",
+    );
+    expect(emitted).toEqual(template);
+  });
+});
+
+// W7C — Feature-conditional pages: versioning + docTags  (#1738)
+// ---------------------------------------------------------------------------
+//
+// Each feature ships a `files/pages/` subtree that copyFeatureFiles emits
+// verbatim. The `[locale]/**` (and `v/[version]/ja/**`) subsets are stripped
+// by each feature's postProcess hook when i18n is NOT also selected — so a
+// single-locale project never ships orphan locale routes, and an all-features
+// scaffold ships the union.
+// ---------------------------------------------------------------------------
+
+describe("scaffold — W7C docTags feature pages (#1738)", () => {
+  it("emits docs/tags/[tag].tsx + docs/tags/index.tsx when docTags is selected (i18n off)", async () => {
+    const choices: UserChoices = {
+      projectName: "test-doctags-only",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "docTags"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath("test-doctags-only", "pages/docs/tags/[tag].tsx"),
+      ),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(
+        projectPath("test-doctags-only", "pages/docs/tags/index.tsx"),
+      ),
+    ).toBe(true);
+  });
+
+  it("strips [locale]/docs/tags/** when docTags is selected but i18n is OFF", async () => {
+    const choices: UserChoices = {
+      projectName: "test-doctags-no-i18n",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "docTags"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath("test-doctags-no-i18n", "pages/[locale]/docs/tags"),
+      ),
+    ).toBe(false);
+  });
+
+  it("emits [locale]/docs/tags/{[tag].tsx,index.tsx} when docTags + i18n are both selected", async () => {
+    const choices: UserChoices = {
+      projectName: "test-doctags-i18n",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "i18n", "docTags"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-doctags-i18n",
+          "pages/[locale]/docs/tags/[tag].tsx",
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-doctags-i18n",
+          "pages/[locale]/docs/tags/index.tsx",
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it("does NOT emit any docs/tags/** when docTags is not selected", async () => {
+    const choices: UserChoices = {
+      projectName: "test-no-doctags",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "i18n"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(projectPath("test-no-doctags", "pages/docs/tags")),
+    ).toBe(false);
+    expect(
+      await fs.pathExists(
+        projectPath("test-no-doctags", "pages/[locale]/docs/tags"),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("scaffold — W7C versioning feature pages (#1738)", () => {
+  it("emits docs/versions.tsx + v/[version]/docs/[...slug].tsx when versioning is selected (i18n off)", async () => {
+    const choices: UserChoices = {
+      projectName: "test-versioning-pages-only",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "versioning"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath("test-versioning-pages-only", "pages/docs/versions.tsx"),
+      ),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-versioning-pages-only",
+          "pages/v/[version]/docs/[...slug].tsx",
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it("strips [locale]/docs/versions.tsx + v/[version]/ja/** when versioning is selected but i18n is OFF", async () => {
+    const choices: UserChoices = {
+      projectName: "test-versioning-no-i18n",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "versioning"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-versioning-no-i18n",
+          "pages/[locale]/docs/versions.tsx",
+        ),
+      ),
+    ).toBe(false);
+    expect(
+      await fs.pathExists(
+        projectPath("test-versioning-no-i18n", "pages/v/[version]/ja"),
+      ),
+    ).toBe(false);
+  });
+
+  it("emits [locale]/docs/versions.tsx + v/[version]/ja/docs/[...slug].tsx when versioning + i18n are both selected", async () => {
+    const choices: UserChoices = {
+      projectName: "test-versioning-i18n",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "i18n", "versioning"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-versioning-i18n",
+          "pages/[locale]/docs/versions.tsx",
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-versioning-i18n",
+          "pages/v/[version]/ja/docs/[...slug].tsx",
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it("does NOT emit any docs/versions.tsx or v/[version]/** when versioning is not selected", async () => {
+    const choices: UserChoices = {
+      projectName: "test-no-versioning",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "i18n"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath("test-no-versioning", "pages/docs/versions.tsx"),
+      ),
+    ).toBe(false);
+    expect(
+      await fs.pathExists(projectPath("test-no-versioning", "pages/v")),
+    ).toBe(false);
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-no-versioning",
+          "pages/[locale]/docs/versions.tsx",
+        ),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("scaffold — W7C cross-feature union (i18n + docTags + versioning) (#1738)", () => {
+  it("emits the union of all 8 feature-conditional pages when all three are selected", async () => {
+    const choices: UserChoices = {
+      projectName: "test-union-all",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "i18n", "docTags", "versioning"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const expected = [
+      // docTags — unconditional pair
+      "pages/docs/tags/[tag].tsx",
+      "pages/docs/tags/index.tsx",
+      // docTags — locale pair
+      "pages/[locale]/docs/tags/[tag].tsx",
+      "pages/[locale]/docs/tags/index.tsx",
+      // versioning — unconditional pair
+      "pages/docs/versions.tsx",
+      "pages/v/[version]/docs/[...slug].tsx",
+      // versioning — locale + hardcoded-ja pair
+      "pages/[locale]/docs/versions.tsx",
+      "pages/v/[version]/ja/docs/[...slug].tsx",
+    ];
+    for (const rel of expected) {
+      expect(
+        await fs.pathExists(projectPath("test-union-all", rel)),
+        `expected ${rel} to exist in union scaffold`,
+      ).toBe(true);
+    }
   });
 });

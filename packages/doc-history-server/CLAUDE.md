@@ -45,7 +45,7 @@ src/
 
 ### zfb Integration
 
-In dev mode, the zfb integration at `packages/zudo-doc-v2/src/integrations/doc-history/` proxies `/doc-history/*` requests to this server. In build mode, that integration falls back to inline generation when `SKIP_DOC_HISTORY` is not set.
+In dev mode, the zfb integration at `packages/zudo-doc/src/integrations/doc-history/` proxies `/doc-history/*` requests to this server. In build mode, that integration falls back to inline generation when `SKIP_DOC_HISTORY` is not set.
 
 Root `pnpm dev` runs both the zfb dev server and this server via `run-p`.
 

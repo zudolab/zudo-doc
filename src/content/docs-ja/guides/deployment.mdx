@@ -35,7 +35,7 @@ CIパイプラインは合計ビルド時間を短縮するために並列ジョ
 `main`へのプッシュでトリガーされます。4つのジョブが実行されます：
 
 1. **build-site** — シャロークローン（`fetch-depth: 1`）、`SKIP_DOC_HISTORY=1 pnpm build`でzfbサイトをビルド
-2. **build-history** — フルクローン（`fetch-depth: 0`）、`@zudo-doc/doc-history-server generate`を実行してすべてのコンテンツファイルのgit履歴を事前抽出
+2. **build-history** — フルクローン（`fetch-depth: 0`）、`@takazudo/zudo-doc-history-server generate`を実行してすべてのコンテンツファイルのgit履歴を事前抽出
 3. **deploy** — サイトと履歴のアーティファクトをマージし、`wrangler deploy`で本番環境にデプロイ
 4. **notify** — デプロイステータスをIFTTTウェブフックで通知
 

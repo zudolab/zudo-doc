@@ -168,7 +168,7 @@ jobs:
 
       - name: Generate doc history
         run: |
-          pnpm --filter @zudo-doc/doc-history-server generate \
+          pnpm --filter @takazudo/zudo-doc-history-server generate \
             --content-dir ../../src/content/docs \
             --locale ja:../../src/content/docs-ja \
             --out-dir ../../doc-history-out

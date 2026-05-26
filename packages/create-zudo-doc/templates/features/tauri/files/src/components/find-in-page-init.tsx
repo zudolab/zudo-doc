@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "preact/compat";
 import { FindBar } from "./find-bar";
 import { createFindInPage } from "@/utils/find-in-page";
 

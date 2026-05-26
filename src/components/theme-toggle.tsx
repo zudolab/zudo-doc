@@ -3,7 +3,7 @@
 // Use preact hook entrypoints directly — zfb's esbuild step doesn't alias
 // "react" to "preact/compat" the way Astro's `@astrojs/preact` integration
 // did, so importing from "react" here would fail to resolve at SSR/island
-// bundle time. Same pattern as packages/zudo-doc-v2/src/theme/theme-toggle.tsx.
+// bundle time. Same pattern as packages/zudo-doc/src/theme/theme-toggle.tsx.
 import { useState, useEffect } from "preact/hooks";
 
 const STORAGE_KEY = "zudo-doc-theme";

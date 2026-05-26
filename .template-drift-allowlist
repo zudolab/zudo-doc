@@ -1,5 +1,5 @@
 # Plugin re-exports — generated projects use inline implementations,
-# production re-exports from @zudo-doc/md-plugins
+# production re-exports from @takazudo/zudo-doc-md-plugins
 src/plugins/rehype-code-title.ts
 src/plugins/rehype-heading-links.ts
 src/plugins/rehype-image-enlarge.ts
@@ -8,7 +8,7 @@ src/plugins/rehype-strip-md-extension.ts
 src/plugins/remark-admonitions.ts
 src/plugins/remark-resolve-markdown-links.ts
 
-# Plugin utilities — template-only files (production uses @zudo-doc/md-plugins)
+# Plugin utilities — template-only files (production uses @takazudo/zudo-doc-md-plugins)
 src/plugins/docs-source-map.ts
 src/plugins/hast-utils.ts
 src/plugins/url-utils.ts
@@ -19,16 +19,20 @@ src/styles/global.css
 
 # claude-resources feature — generated projects ship their own copies of the
 # generator/escape helpers; production consumes the same logic re-exported
-# from @zudo-doc/zudo-doc-v2/integrations/claude-resources, so prod has no
+# from @takazudo/zudo-doc/integrations/claude-resources, so prod has no
 # matching paths under src/integrations/claude-resources/.
 src/integrations/claude-resources/__tests__/escape-for-mdx.test.ts
 src/integrations/claude-resources/__tests__/generate.test.ts
 src/integrations/claude-resources/escape-for-mdx.ts
 src/integrations/claude-resources/generate.ts
 
-# Showcase-specific renderers — source ships discount/status/difficulty examples
-# for the zudo-doc showcase only; template ships an empty map so downstream users
-# can add their own renderers without inheriting unrelated examples
+# Showcase-specific renderers — source ships Pill/discount/status/difficulty
+# examples for the zudo-doc showcase only; template ships an empty map so
+# downstream users can add their own renderers without inheriting unrelated
+# examples. Both import the canonical types (FrontmatterCellRenderer +
+# FrontmatterCellRendererProps) from @takazudo/zudo-doc/metainfo since W4A
+# (#1732) — the legacy preact/compat ComponentType<FrontmatterRendererProps>
+# shape was replaced to match host.
 src/config/frontmatter-preview-renderers.tsx
 
 # Showcase-specific tag vocabulary — source ships the starter vocabulary for
@@ -71,11 +75,11 @@ scripts/run-b4push.sh
 
 # E2 task 2 (zfb migration finalisation #1335) — production showcase files in
 # src/components/ now import lifecycle event names from
-# `@zudo-doc/zudo-doc-v2/transitions` (the v2 module owns the vocabulary so
+# `@takazudo/zudo-doc/transitions` (the v2 module owns the vocabulary so
 # only one file changes if zfb later supplies router events). The matching
 # create-zudo-doc templates remain self-contained and inline literal
 # "DOMContentLoaded" / "pagehide" because downstream scaffolds do not depend
-# on @zudo-doc/zudo-doc-v2 as a runtime dep. Reconcile if/when create-zudo-doc
+# on @takazudo/zudo-doc as a runtime dep. Reconcile if/when create-zudo-doc
 # migrates onto the v2 transitions module.
 #
 # Wave 11 (#1355 / PR #1356) added an exported `ImageEnlargeSsrFallback`
@@ -97,9 +101,9 @@ src/components/find-in-page-init.tsx
 #     generator injects project-name-specific values via the feature module.
 #  2. design-token-panel-bootstrap.ts: template inlines literal zfb lifecycle
 #     event strings ("zfb:before-preparation", "zfb:after-swap") because
-#     downstream scaffolds do not depend on @zudo-doc/zudo-doc-v2 as a runtime
+#     downstream scaffolds do not depend on @takazudo/zudo-doc as a runtime
 #     dep. Production imports BEFORE_NAVIGATE_EVENT / AFTER_NAVIGATE_EVENT from
-#     @zudo-doc/zudo-doc-v2/transitions. Reconcile if/when create-zudo-doc
+#     @takazudo/zudo-doc/transitions. Reconcile if/when create-zudo-doc
 #     migrates onto the v2 transitions module.
 #     Both template and production now include the queue-drain (__zdtpReadyClicks)
 #     and bridge idempotency guard (__zdtpAstroBridgeInstalled) added in #1627.
@@ -110,12 +114,62 @@ src/config/design-token-panel-config.ts
 src/lib/design-token-panel-bootstrap.ts
 src/utils/design-token-types.ts
 
-# Post-cutover cleanup (#1688) — sidebarToggle desktop component. Production
-# imports BEFORE_NAVIGATE_EVENT / AFTER_NAVIGATE_EVENT from
-# @zudo-doc/zudo-doc-v2/transitions (the v2 module owns the event vocabulary).
-# The create-zudo-doc template inlines the literal "zfb:before-preparation" /
-# "zfb:after-swap" strings because that package is workspace-private/unpublished,
-# so a standalone scaffold cannot resolve the import. Same intentional divergence
-# as design-token-panel-bootstrap.ts above. Reconcile if/when create-zudo-doc
-# migrates onto the v2 transitions module.
+# W4A (#1732) — desktop-sidebar-toggle.tsx no longer drifts. Now that
+# @takazudo/zudo-doc is published and pinned in the generated package.json,
+# the template imports BEFORE_NAVIGATE_EVENT / AFTER_NAVIGATE_EVENT from
+# @takazudo/zudo-doc/transitions directly (was: inlined literals). Allowlist
+# entry removed; the file is now byte-identical between template and host.
+
+# W3A (#1729 / generator-pages-migration Wave 3) — header-right-items moved into
+# @takazudo/zudo-doc/header for production. The host (this repo) imports
+# filterHeaderRightItems from the v2 package directly and the source-of-truth
+# lives in packages/zudo-doc/src/header/right-items.ts. The template ships
+# a self-contained copy under templates/base/src/utils/ for downstream scaffolds
+# that don't depend on v2 as a runtime dep — same intentional divergence pattern
+# as design-token-panel-bootstrap.ts and desktop-sidebar-toggle.tsx above.
+# Reconcile if/when create-zudo-doc migrates onto the v2 header module wholesale.
+src/utils/header-right-items.ts
+
+# W6A (#1734 / generator-pages-migration Wave 6A) — missing-src stubs landed
+# in templates/base/src/components/ so the mirrored unconditional pages
+# (templates/base/pages/lib/_body-end-islands.tsx and friends) resolve their
+# @/components/* imports without dragging full feature implementations into
+# every scaffold. The five files below have no feature template to swap them
+# out — they ship as permanent no-ops in base; a future PR can introduce a
+# feature flag if downstream consumers ask. The other two stubs
+# (doc-history.tsx, image-enlarge.tsx) are already allowlisted above via the
+# Wave-11 / E2-task-2 entries; the imageEnlarge feature now also ships the
+# ImageEnlargeSsrFallback named export to mirror the host shape.
+# Spec-lock §1.5 + Decision 5 — see #1728.
+src/components/ai-chat-modal.tsx
+src/components/client-router-bootstrap.tsx
+src/components/design-token-panel-bootstrap.tsx
 src/components/desktop-sidebar-toggle.tsx
+src/components/preset-generator.tsx
+
+# W6A (#1734) — empty seed JSON for the `#doc-history-meta` tsconfig alias.
+# The host gitignores .zfb/ wholesale so there is no matching prod file; the
+# template ships {} so freshly-scaffolded barebone projects (no docHistory)
+# can resolve the alias at typecheck. The doc-history prebuild step
+# overwrites this file at build time when the feature is enabled.
+.zfb/doc-history-meta.json
+
+# W8A (#1739) — acceptance gate forced literal preact/compat imports in template
+# files where host uses react with tsconfig path aliasing. Aliasing didn't
+# reach these files in scaffolded projects' bundling pipeline, so the W8
+# scaffold-smoke gate required the literal-import migration. Host versions
+# keep the react import + alias pattern (works inside the monorepo). Template
+# versions ship the literal preact/compat form (works downstream).
+#
+# These 7 files were touched by W8A's react→preact/compat sweep alongside the
+# 5 originally-flagged ones (sidebar-toggle, theme-toggle, image-enlarge,
+# doc-history, find-in-page-init — which had separate allowlist entries above
+# from earlier waves). Reconcile if/when the host adopts literal preact/compat
+# imports too.
+src/components/content/heading-h2.tsx
+src/components/content/heading-h3.tsx
+src/components/content/heading-h4.tsx
+src/components/html-preview/highlighted-code.tsx
+src/components/html-preview/html-preview.tsx
+src/components/html-preview/preview-base.tsx
+src/hooks/use-active-heading.ts

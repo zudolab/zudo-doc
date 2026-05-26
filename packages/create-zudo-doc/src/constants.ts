@@ -230,6 +230,13 @@ export const FEATURES: Feature[] = [
     cliFlag: "tag-governance",
   },
   {
+    value: "docTags",
+    label: "Doc tags pages",
+    hint: "Per-tag and tag-index browsing routes (docs/tags/...)",
+    default: false,
+    cliFlag: "doc-tags",
+  },
+  {
     value: "footerTaglist",
     label: "Footer taglist",
     hint: "Grouped tag index in the footer (requires tagGovernance)",

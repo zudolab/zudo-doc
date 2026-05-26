@@ -1,2 +1,2 @@
-export { remarkResolveMarkdownLinks } from "@zudo-doc/md-plugins";
-export type { ResolveMarkdownLinksOptions } from "@zudo-doc/md-plugins";
+export { remarkResolveMarkdownLinks } from "@takazudo/zudo-doc-md-plugins";
+export type { ResolveMarkdownLinksOptions } from "@takazudo/zudo-doc-md-plugins";

@@ -108,7 +108,7 @@ Inline markdown links within MDX content (e.g., `[link text](/docs/some-page)`) 
 
 ### trailingSlash
 
-Controls whether URLs end with a trailing slash. When `true`, all internal links are generated with a trailing slash (e.g., `/docs/guides/` instead of `/docs/guides`). The build-time URL helpers in `@zudo-doc/zudo-doc-v2/url-normalizer` enforce this policy across every emitted route — see [Trailing-Slash Policy](../concepts/trailing-slash-policy.mdx) for how the rule splits between build time and the deployment host.
+Controls whether URLs end with a trailing slash. When `true`, all internal links are generated with a trailing slash (e.g., `/docs/guides/` instead of `/docs/guides`). The build-time URL helpers in `@takazudo/zudo-doc/url-normalizer` enforce this policy across every emitted route — see [Trailing-Slash Policy](../concepts/trailing-slash-policy.mdx) for how the rule splits between build time and the deployment host.
 
 Default: `false`
 
@@ -401,7 +401,7 @@ sidebarResizer: true,
 
 Enables per-document git revision history viewer. When `true`, each doc page shows a **History** button that opens a side panel with the document's git commit history and a line-by-line diff viewer for comparing revisions.
 
-In dev mode, history is served by the standalone `@zudo-doc/doc-history-server` package running on port 4322. In production, a CLI generator creates static JSON files during CI. See the [Doc History Server reference](../reference/doc-history-server.mdx) for details on the server and CLI.
+In dev mode, history is served by the standalone `@takazudo/zudo-doc-history-server` package running on port 4322. In production, a CLI generator creates static JSON files during CI. See the [Doc History Server reference](../reference/doc-history-server.mdx) for details on the server and CLI.
 
 Default: `false` (set to `true` to enable)
 

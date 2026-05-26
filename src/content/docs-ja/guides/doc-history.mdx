@@ -108,14 +108,14 @@ diffビューアは**サイドバイサイド比較**を表示します — 左�
 
 ## 仕組み
 
-git履歴の抽出はスタンドアロンパッケージ`@zudo-doc/doc-history-server`（`packages/doc-history-server/`に配置）が処理します。このパッケージは開発用と本番ビルド用の2つのモードで動作します。
+git履歴の抽出はスタンドアロンパッケージ`@takazudo/zudo-doc-history-server`（`packages/doc-history-server/`に配置）が処理します。このパッケージは開発用と本番ビルド用の2つのモードで動作します。
 
 ### ビルドモード
 
 本番環境では、スタンドアロンCLIジェネレーターがすべてのコンテンツファイルをバッチ処理し、JSONの履歴ファイルを`dist/doc-history/`に書き出します。これはzfbサイトビルドと並行した独立したCIジョブとして実行されます：
 
 - **build-site**ジョブ：シャロークローン、`SKIP_DOC_HISTORY=1`でzfbサイトをビルド
-- **build-history**ジョブ：フルクローン、`@zudo-doc/doc-history-server generate`を実行
+- **build-history**ジョブ：フルクローン、`@takazudo/zudo-doc-history-server generate`を実行
 - **deploy**ジョブ：両方のアーティファクトをマージしてデプロイ
 
 この並列戦略により、履歴生成（フルgitクローンを必要とし、すべてのコミットを走査する）がzfbビルドとは独立して実行されるため、合計CIビルド時間が短縮されます。

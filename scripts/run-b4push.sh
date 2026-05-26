@@ -6,27 +6,28 @@ set -euo pipefail
 # Step order (cheap → expensive):
 #   1. Format check (mdx)
 #   2. Template drift check
-#   3. Fixture settings drift check
-#   4. Tags audit (--ci)
-#   5. Design token lint
-#   6. Type checking (zfb check)
-#   7. Build (zfb build)
-#   8. Link check
-#   9. HTML validation (html-validate dist/**/*.html)
-#  10. Automated preview smoke (blocking)
-#  11. Manual interactive smoke (operator-driven)
+#   3. Pin parity check (root pkg.json ↔ scaffold.ts zfb pins — W4A #1732)
+#   4. Fixture settings drift check
+#   5. Tags audit (--ci)
+#   6. Design token lint
+#   7. Type checking (zfb check)
+#   8. Build (zfb build)
+#   9. Link check
+#  10. HTML validation (html-validate dist/**/*.html)
+#  11. Automated preview smoke (blocking)
+#  12. Manual interactive smoke (operator-driven)
 #
 # CI parity (Playwright E2E + GitHub Actions) is intentionally parked
 # to E9b until the post-cutover migration window closes.
 #
 # Env overrides for non-interactive use:
-#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 9)
+#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 10)
 #   B4PUSH_SKIP_PREVIEW_SMOKE=1  — skip the automated preview smoke
 #   B4PUSH_SKIP_MANUAL_SMOKE=1   — skip the manual interactive smoke
 
 START_TIME=$(date +%s)
 FAILURES=()
-TOTAL_STEPS=11
+TOTAL_STEPS=12
 CURRENT_STEP=0
 
 step() {
@@ -59,7 +60,18 @@ else
   fail "Template drift check"
 fi
 
-# ── Step 3: Fixture settings drift check ─────────────
+# ── Step 3: Pin parity check (W4A — #1732) ───────────
+# Verifies the @takazudo/zfb / @takazudo/zfb-runtime pins in root
+# package.json match the literals in packages/create-zudo-doc/src/scaffold.ts.
+# Pure-Node, no install needed — cheap, runs before typecheck.
+step "Pin parity check (check:pin-parity)"
+if (cd "$ROOT_DIR" && pnpm check:pin-parity); then
+  pass "Pin parity check passed"
+else
+  fail "Pin parity check"
+fi
+
+# ── Step 4: Fixture settings drift check ─────────────
 step "Fixture settings drift check"
 if (cd "$ROOT_DIR" && pnpm check:fixture-settings-drift); then
   pass "Fixture settings drift check passed"
@@ -67,7 +79,7 @@ else
   fail "Fixture settings drift check"
 fi
 
-# ── Step 4: Tags audit ────────────────────────────────
+# ── Step 5: Tags audit ────────────────────────────────
 step "Tags audit (tags:audit --ci)"
 if (cd "$ROOT_DIR" && pnpm tags:audit --ci); then
   pass "Tags audit passed"
@@ -75,7 +87,7 @@ else
   fail "Tags audit"
 fi
 
-# ── Step 5: Design token lint ────────────────────────
+# ── Step 6: Design token lint ────────────────────────
 step "Design token lint"
 if (cd "$ROOT_DIR" && pnpm lint:tokens); then
   pass "Design token lint passed"
@@ -83,7 +95,7 @@ else
   fail "Design token lint"
 fi
 
-# ── Step 6: Type checking ─────────────────────────────
+# ── Step 7: Type checking ─────────────────────────────
 # Prefer `zfb check` (the post-cutover entry point). If it fails to
 # start (e.g. binary not yet built), fall back to `tsc --noEmit` so the
 # typecheck still gates pushes.
@@ -96,7 +108,7 @@ else
   fail "Type checking"
 fi
 
-# ── Step 7: Build ─────────────────────────────────────
+# ── Step 8: Build ─────────────────────────────────────
 step "Build (zfb build)"
 if (cd "$ROOT_DIR" && pnpm build); then
   pass "Build passed"
@@ -104,7 +116,7 @@ else
   fail "Build"
 fi
 
-# ── Step 8: Link check ────────────────────────────────
+# ── Step 9: Link check ────────────────────────────────
 #
 # Strict on broken links + absolute MDX-source warnings (real 404s
 # / sub-path bypass). Trailing-slash warnings stay warn-only — they
@@ -124,7 +136,7 @@ else
   fail "Link check"
 fi
 
-# ── Step 9: HTML validation ───────────────────────────
+# ── Step 10: HTML validation ──────────────────────────
 step "HTML validation (html-validate)"
 if [[ "${B4PUSH_SKIP_HTML_VALIDATE:-}" == "1" ]]; then
   skip "HTML validation (B4PUSH_SKIP_HTML_VALIDATE=1)"
@@ -136,7 +148,7 @@ else
   fi
 fi
 
-# ── Step 10: Automated preview smoke (blocking) ──────
+# ── Step 11: Automated preview smoke (blocking) ──────
 step "Preview smoke (automated)"
 if [[ "${B4PUSH_SKIP_PREVIEW_SMOKE:-}" == "1" ]]; then
   skip "Preview smoke (B4PUSH_SKIP_PREVIEW_SMOKE=1)"
@@ -148,7 +160,7 @@ else
   fi
 fi
 
-# ── Step 11: Manual interactive smoke ────────────────
+# ── Step 12: Manual interactive smoke ────────────────
 step "Manual interactive smoke"
 if [[ "${B4PUSH_SKIP_MANUAL_SMOKE:-}" == "1" ]]; then
   skip "Manual smoke (B4PUSH_SKIP_MANUAL_SMOKE=1)"

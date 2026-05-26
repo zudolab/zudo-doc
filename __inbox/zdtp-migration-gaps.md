@@ -8,7 +8,7 @@
 - `src/components/design-token-tweak/` (whole directory)
 - `src/utils/design-token-serde.ts`
 - `pages/lib/_body-end-islands.tsx`
-- `packages/zudo-doc-v2/src/header/header.tsx`
+- `packages/zudo-doc/src/header/header.tsx`
 - `src/utils/header-right-items.ts`
 - `src/config/settings.ts`
 - `src/config/color-tweak-presets.ts`
@@ -185,7 +185,7 @@
 
 | Item | Contract pin | Current state | Classification |
 |---|---|---|---|
-| `astro:before-swap` listener | Unmounts Preact tree, removes host node, snapshots visibility intent | NOT used — panel uses `AFTER_NAVIGATE_EVENT` (a zfb-native event alias from `@zudo-doc/zudo-doc-v2/transitions`) via `document.addEventListener(AFTER_NAVIGATE_EVENT, handleSwap)` | **Upstream-issue** — zdtp hard-codes `astro:before-swap` / `astro:page-load` at `index.tsx:401-402`; zudo-doc runs on zfb (not Astro), so these events never fire. zdtp needs framework-agnostic lifecycle hooks. **See Upstream-issue body below.** |
+| `astro:before-swap` listener | Unmounts Preact tree, removes host node, snapshots visibility intent | NOT used — panel uses `AFTER_NAVIGATE_EVENT` (a zfb-native event alias from `@takazudo/zudo-doc/transitions`) via `document.addEventListener(AFTER_NAVIGATE_EVENT, handleSwap)` | **Upstream-issue** — zdtp hard-codes `astro:before-swap` / `astro:page-load` at `index.tsx:401-402`; zudo-doc runs on zfb (not Astro), so these events never fire. zdtp needs framework-agnostic lifecycle hooks. **See Upstream-issue body below.** |
 | `astro:page-load` listener | Re-applies persisted overrides + re-mounts shell | NOT used — same AFTER_NAVIGATE_EVENT approach | **Upstream-issue** — same as above |
 | Non-Astro degraded path | Contract states "a non-Astro host gets a degraded but functional adapter: soft-nav lifecycle hooks are no-ops" | zudo-doc needs the soft-nav hooks to work (zfb view transitions are core to the UX) | **Upstream-issue** — "degraded" is not acceptable; zdtp must accept a custom lifecycle adapter. **See Upstream-issue body below.** |
 
@@ -390,7 +390,7 @@ registered, the package falls back to the existing `astro:*` listeners
 ```ts
 
 import { setLifecycleAdapter } from '@takazudo/zudo-design-token-panel';
-import { BEFORE_NAVIGATE_EVENT, AFTER_NAVIGATE_EVENT } from '@zudo-doc/zudo-doc-v2/transitions';
+import { BEFORE_NAVIGATE_EVENT, AFTER_NAVIGATE_EVENT } from '@takazudo/zudo-doc/transitions';
 
 setLifecycleAdapter({
   onBeforeSwap: (cb) => {

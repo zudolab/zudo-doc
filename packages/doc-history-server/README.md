@@ -1,4 +1,4 @@
-# @zudo-doc/doc-history-server
+# @takazudo/zudo-doc-history-server
 
 Standalone package for extracting and serving git history of documentation files. Has two modes: an HTTP server for local development and a CLI generator for CI builds.
 

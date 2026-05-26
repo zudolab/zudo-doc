@@ -1,4 +1,4 @@
-# @zudo-doc/search-worker
+# @takazudo/zudo-doc-search-worker
 
 Cloudflare Worker that provides a server-side search API for zudo-doc. Fetches and caches `search-index.json` from the docs site and uses MiniSearch for full-text search.
 

@@ -99,7 +99,7 @@ pnpm generate -- --content-dir src/content/docs --locale ja:src/content/docs-ja 
 The CI pipeline runs history generation as a parallel job alongside the zfb site build:
 
 - **build-site** job: shallow clone (`fetch-depth: 1`), builds the zfb site with `SKIP_DOC_HISTORY=1`
-- **build-history** job: full clone (`fetch-depth: 0`), runs `@zudo-doc/doc-history-server generate`
+- **build-history** job: full clone (`fetch-depth: 0`), runs `@takazudo/zudo-doc-history-server generate`
 - **deploy** job: merges both artifacts and deploys to Cloudflare Pages
 
 This parallelization is possible because the history generation is fully independent of the zfb build.

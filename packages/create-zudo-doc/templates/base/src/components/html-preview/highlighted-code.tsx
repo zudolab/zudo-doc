@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "preact/compat";
 import type { HighlighterCore } from "shiki";
 
 let highlighterPromise: Promise<HighlighterCore> | null = null;

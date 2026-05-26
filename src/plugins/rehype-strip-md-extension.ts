@@ -1,1 +1,1 @@
-export { rehypeStripMdExtension } from "@zudo-doc/md-plugins";
+export { rehypeStripMdExtension } from "@takazudo/zudo-doc-md-plugins";

@@ -146,7 +146,7 @@
  *           optional-props contract (props?: ClientRouterProps) declared
  *           in this consumer's _zfb-runtime-shim.d.ts. Surfaced by W6A
  *           (zudolab/zudo-doc#1522) — the host-side mount in
- *           packages/zudo-doc-v2/src/doclayout/doc-layout.tsx calls
+ *           packages/zudo-doc/src/doclayout/doc-layout.tsx calls
  *           <ClientRouter /> with no args; without this fix it threw
  *           `TypeError: Cannot read properties of undefined (reading
  *           'fallback')` at SSR render time inside the embedded V8 host.
@@ -194,7 +194,7 @@
  *                               post-#131 fallback-render regression)
  *     - Takazudo/zudo-front-builder#130 / PR #134 (Gap A: FsResolver::probe_package_entry consults
  *                               package.json `exports` for subpath bare imports so workspace island
- *                               modules under @zudo-doc/zudo-doc-v2/{toc,sidebar,theme,...} resolve
+ *                               modules under @takazudo/zudo-doc/{toc,sidebar,theme,...} resolve
  *                               to their src/.../index.ts entries; Gap B: EXPECTED_ESBUILD_VERSION
  *                               bumped 0.24.0 → 0.25.12 to match the host's installed esbuild —
  *                               unblocks Sig G island hydration in zudolab/zudo-doc#1355)
@@ -220,7 +220,7 @@
  *                               .zfb/doc-history-meta.json in the smoke E2E fixture)
  *     - Takazudo/zudo-front-builder PR #143 (TS Bundler / NodeNext moduleResolution shape: when a
  *                               source writes import "./foo.js" against on-disk foo.tsx (the
- *                               canonical convention used by the @zudo-doc/zudo-doc-v2 workspace
+ *                               canonical convention used by the @takazudo/zudo-doc workspace
  *                               package), the resolver now probes the .ts/.tsx/.mts/.cts sibling
  *                               first and falls back to .js only when no TS sibling exists. Pre-
  *                               #143 the islands scanner walked one chain into v2 and immediately

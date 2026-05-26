@@ -11,7 +11,7 @@ import { useState, useEffect, useRef, useCallback } from "preact/compat";
 import type { ChatMessage } from "@/types/ai-chat";
 import { renderMarkdown } from "@/utils/render-markdown";
 import { SmartBreak } from "@/utils/smart-break";
-import { BEFORE_NAVIGATE_EVENT } from "@zudo-doc/zudo-doc-v2/transitions";
+import { BEFORE_NAVIGATE_EVENT } from "@takazudo/zudo-doc/transitions";
 
 interface AiChatModalProps {
   basePath: string;

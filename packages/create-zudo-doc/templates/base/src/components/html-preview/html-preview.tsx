@@ -1,4 +1,4 @@
-import { type ReactNode, useMemo } from "react";
+import { type VNode, useMemo } from "preact/compat";
 import PreviewBase from "./preview-base";
 import { dedent } from "@/utils/dedent";
 import { preflightCss } from "./preflight";
@@ -57,7 +57,7 @@ export default function HtmlPreview({
   componentCss,
   componentHead,
   componentJs,
-}: HtmlPreviewProps): ReactNode {
+}: HtmlPreviewProps): VNode {
   const srcdoc = useMemo(
     () => buildSrcdoc(html, css, head, js),
     [html, css, head, js],

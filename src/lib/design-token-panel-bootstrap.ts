@@ -22,7 +22,7 @@ import { designTokenPanelConfig } from "@/config/design-token-panel-config";
 import {
   BEFORE_NAVIGATE_EVENT,
   AFTER_NAVIGATE_EVENT,
-} from "@zudo-doc/zudo-doc-v2/transitions";
+} from "@takazudo/zudo-doc/transitions";
 
 configurePanel(designTokenPanelConfig);
 

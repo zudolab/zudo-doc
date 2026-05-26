@@ -105,7 +105,7 @@ No search island at all.
 
 ### Root cause
 
-Same shape as Phase B-7's empty-header miss: the zfb default header in `packages/zudo-doc-v2/src/doclayout/doc-layout-with-defaults.tsx` does not include a search component, and the host's `headerOverride` (added in B-7 to wire logo / main nav / mobile-menu trigger) does not include one either. The host site needs to add a search trigger + dialog with SSR-rendered placeholder text matching the Astro `<site-search>` shape.
+Same shape as Phase B-7's empty-header miss: the zfb default header in `packages/zudo-doc/src/doclayout/doc-layout-with-defaults.tsx` does not include a search component, and the host's `headerOverride` (added in B-7 to wire logo / main nav / mobile-menu trigger) does not include one either. The host site needs to add a search trigger + dialog with SSR-rendered placeholder text matching the Astro `<site-search>` shape.
 
 Note: The 5 Astro-emitted asset references that disappear in B (3 framework JS chunks + the Astro `base.HWDxbTAy.css` + the CDN katex stylesheet) are an unrelated framework-level diff and not part of this fix's scope.
 
@@ -135,7 +135,7 @@ B snapshot: no `data-version-switcher` markup.
 
 ### Root cause
 
-Same shape as cause #1 — the zfb default header has no version switcher and the host's `headerOverride` doesn't render one. The package does ship a `version-switcher` component (`packages/zudo-doc-v2/src/i18n-version/version-switcher.tsx`); the host needs to wire it into the header.
+Same shape as cause #1 — the zfb default header has no version switcher and the host's `headerOverride` doesn't render one. The package does ship a `version-switcher` component (`packages/zudo-doc/src/i18n-version/version-switcher.tsx`); the host needs to wire it into the header.
 
 97/200 because non-versioned routes (e.g. some category index pages, `/docs/develop/*`) don't render the version dropdown in A either — those routes are content-loss / asset-loss for reasons covered by causes #1 (search) and #3 (DocHistory). The 97 are routes whose layout includes the version dropdown.
 
@@ -187,12 +187,12 @@ This is identical in shape to the AiChatModalIsland fix from B-8 — that fix ad
 One epic, three sub-tasks (matching the established Phase B-N pattern):
 
 1. **B-10-1** — Add Search component to zfb host header.
-   - Wire a search trigger + search dialog into either `packages/zudo-doc-v2/src/doclayout/doc-layout-with-defaults.tsx`'s default header **or** the host's `headerOverride` callback, matching the Astro baseline behaviour (button in header, modal dialog with results + placeholder).
+   - Wire a search trigger + search dialog into either `packages/zudo-doc/src/doclayout/doc-layout-with-defaults.tsx`'s default header **or** the host's `headerOverride` callback, matching the Astro baseline behaviour (button in header, modal dialog with results + placeholder).
    - SSR fallback must include the placeholder text ("Type to search..." / 「検索したい単語を入力」) and the keyboard-shortcut hint copy ("to open search from anywhere" / 「いつでも検索バーを開ける」), with i18n via the host-side `t(...)`.
    - Acceptance: 200 → ~3 routes lose the search markers (the 200 → 0 prediction may be too tight if any pages legitimately don't render the search trigger; all standard doc pages should regain it).
 
 2. **B-10-2** — Wire the existing `version-switcher` component into the zfb host header.
-   - Import `VersionSwitcher` from `packages/zudo-doc-v2/src/i18n-version/version-switcher.tsx` and render it in the host's `headerOverride` (or layout default header) for routes that have versioning enabled.
+   - Import `VersionSwitcher` from `packages/zudo-doc/src/i18n-version/version-switcher.tsx` and render it in the host's `headerOverride` (or layout default header) for routes that have versioning enabled.
    - SSR-render the dropdown markup so the version list ("Latest", "1.0.0", "All versions") is in the static HTML.
    - Acceptance: the 97 routes that lose the `All versions` marker drop to 0.
 
