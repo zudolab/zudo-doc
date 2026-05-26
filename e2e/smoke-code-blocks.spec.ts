@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test";
  * E2E tests for the code block enhancer component.
  *
  * Verifies copy-to-clipboard and word wrap toggle buttons that are
- * dynamically injected by code-block-enhancer.astro after page load.
+ * dynamically injected by code-block-enhancer.tsx (client-side script) after page load.
  */
 
 const PAGE = "/docs/guides/code-blocks-test";

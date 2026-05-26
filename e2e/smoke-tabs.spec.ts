@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 /**
  * E2E tests for the Tabs component.
  *
- * Tab buttons are created dynamically by tabs-init.astro script
+ * Tab buttons are created dynamically by tabs-init.tsx (client-side script).
  * after page load. Tests wait for [data-tab-btn] to appear before
  * asserting.
  */
