@@ -123,8 +123,7 @@ beforeAll(async () => {
   //      defaultLocale: "ja" -> "en"
   //      locales: { en: {...docs-en} } -> { ja: {...docs-ja} }
   //    No edits to src/pages/ or src/utils/docs.ts. The runtime-driven
-  //    [locale]/ catch-all and the derived `i18n` block in astro.config.ts
-  //    pick up the change automatically.
+  // The runtime-driven [locale]/ catch-all and the derived i18n block in zfb.config.ts pick up the change automatically.
   const settingsAfter = settingsBefore
     .replace(/defaultLocale:\s*"ja"/, 'defaultLocale: "en"')
     .replace(
@@ -188,11 +187,11 @@ describe("preset-swap: scaffold ja then flip defaultLocale to en", () => {
     await scaffold({ ...choices, projectName: `${PROJECT_NAME}-reference` });
 
     const checkPaths = [
-      "src/pages/index.astro",
-      "src/pages/404.astro",
-      "src/pages/docs/[...slug].astro",
-      "src/pages/[locale]/index.astro",
-      "src/pages/[locale]/docs/[...slug].astro",
+      "pages/index.tsx",
+      "pages/404.tsx",
+      "pages/docs/[...slug].tsx",
+      "pages/[locale]/index.tsx",
+      "pages/[locale]/docs/[...slug].tsx",
     ];
 
     for (const rel of checkPaths) {

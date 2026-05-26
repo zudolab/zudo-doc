@@ -5,11 +5,11 @@ import type { FeatureModule } from "../compose.js";
 /**
  * Versioning feature.
  *
- * W7A (#1736): post-cutover, the pages/lib wrappers gate `VersionSwitcher`
- * and `VersionBanner` on `settings.versions`. Doc-layout flow is handled by
- * route enumerators + `_inline-version-switcher.tsx`. The .astro inject
- * calls that used to wire this in have been retired (they targeted dead
- * `src/layouts/doc-layout.astro` + `src/components/header.astro` anchors).
+ * The pages/lib wrappers gate `VersionSwitcher` and `VersionBanner` on
+ * `settings.versions`. Doc-layout flow is handled by route enumerators +
+ * `_inline-version-switcher.tsx`. This feature copies versioning page
+ * templates from `templates/features/versioning/files/` via
+ * `copyFeatureFiles` (compose.ts), and injects nothing into `global.css`.
  *
  * W7C (#1738): the versioning feature ships pages under
  * `templates/features/versioning/files/pages/`:

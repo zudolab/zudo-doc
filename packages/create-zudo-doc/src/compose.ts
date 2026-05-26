@@ -57,7 +57,7 @@ export type FeatureModule = (choices: UserChoices) => FeatureDefinition;
  *   - `// @slot:…`              — TypeScript/JS line comment (module scope)
  *   - `/* @slot:… *\/`          — block comment
  *   - `{/* @slot:… *\/}`        — JSX expression comment (body region in .tsx)
- *   - `<!-- @slot:… -->`        — HTML comment (legacy .astro body region)
+ *   - `<!-- @slot:… -->`        — HTML comment (supported in case future template files use HTML comments)
  *   - `# @slot:…`               — shell / YAML comment
  */
 const ANCHOR_LINE_RE =
@@ -235,9 +235,7 @@ export function validateDependencies(
 
 /** Files that may contain injection anchors and need cleaning.
  *
- * W7A (#1736): the two `.astro` entries were dropped — those files no
- * longer exist in generated projects after the post-cutover .tsx
- * migration. The only surviving anchor target is `global.css`, where
+ * The only anchor target today is `global.css`, where
  * `design-token-panel.ts` injects `@import "@takazudo/zdtp/styles.css";`
  * at `@slot:global-css:feature-styles`. The sibling
  * `@slot:global-css:theme-tokens` anchor in the same file is consumed
