@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "preact/compat";
+import type { JSX } from "preact";
 
 interface ImageData {
   src: string;
@@ -178,7 +179,7 @@ export default function ImageEnlarge() {
     return () => document.removeEventListener("DOMContentLoaded", handleAfterSwap);
   }, []);
 
-  function handleBackdropClick(e: React.MouseEvent) {
+  function handleBackdropClick(e: JSX.TargetedMouseEvent<HTMLDialogElement>) {
     const dialog = dialogRef.current;
     if (!dialog) return;
     const rect = dialog.getBoundingClientRect();

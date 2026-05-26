@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { type VNode, useCallback, useEffect, useRef, useState } from "preact/compat";
 import HighlightedCode from "./highlighted-code";
 
 export interface CodeBlockData {
@@ -33,7 +33,7 @@ export default function PreviewBase({
   syncDelay,
   codeBlocks,
   defaultOpen,
-}: PreviewBaseProps): ReactNode {
+}: PreviewBaseProps): VNode {
   const [activeViewport, setActiveViewport] = useState(2); // default: Full
   const [codeOpen, setCodeOpen] = useState(defaultOpen ?? false);
   const [iframeHeight, setIframeHeight] = useState(height ?? 200);

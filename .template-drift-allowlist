@@ -153,3 +153,23 @@ src/components/preset-generator.tsx
 # can resolve the alias at typecheck. The doc-history prebuild step
 # overwrites this file at build time when the feature is enabled.
 .zfb/doc-history-meta.json
+
+# W8A (#1739) — acceptance gate forced literal preact/compat imports in template
+# files where host uses react with tsconfig path aliasing. Aliasing didn't
+# reach these files in scaffolded projects' bundling pipeline, so the W8
+# scaffold-smoke gate required the literal-import migration. Host versions
+# keep the react import + alias pattern (works inside the monorepo). Template
+# versions ship the literal preact/compat form (works downstream).
+#
+# These 7 files were touched by W8A's react→preact/compat sweep alongside the
+# 5 originally-flagged ones (sidebar-toggle, theme-toggle, image-enlarge,
+# doc-history, find-in-page-init — which had separate allowlist entries above
+# from earlier waves). Reconcile if/when the host adopts literal preact/compat
+# imports too.
+src/components/content/heading-h2.tsx
+src/components/content/heading-h3.tsx
+src/components/content/heading-h4.tsx
+src/components/html-preview/highlighted-code.tsx
+src/components/html-preview/html-preview.tsx
+src/components/html-preview/preview-base.tsx
+src/hooks/use-active-heading.ts
