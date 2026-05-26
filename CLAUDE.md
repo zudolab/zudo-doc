@@ -16,7 +16,7 @@ Minimal documentation framework built with zfb, MDX, Tailwind CSS v4, and Preact
 
 ## Commands
 
-- `pnpm dev` — runs zfb dev (port 4321), doc-history-server (port 4322), a `.claude/` watcher, and tsup `--watch` for `@takazudo/zudo-doc` concurrently via `run-p` (predev kills stale processes on those ports); edits to `.claude/` files regenerate the corresponding MDX live, and edits to `packages/zudo-doc/src/**` auto-rebuild `dist/` so zfb HMR picks them up
+- `pnpm dev` — runs zfb dev (port 4321), doc-history-server (port 4322), a `.claude/` watcher, and tsup `--watch` for `@takazudo/zudo-doc` concurrently via `run-p`; edits to `.claude/` files regenerate the corresponding MDX live, and edits to `packages/zudo-doc/src/**` auto-rebuild `dist/` so zfb HMR picks them up. If a previous dev process is still bound to 4321 / 4322, the new launch fails fast with `EADDRINUSE` — kill it manually before retrying (no automatic `lsof | xargs kill`, since that historically wiped unrelated processes on the same ports)
 - `pnpm dev:zfb` — zfb dev server only (port 4321)
 - `pnpm dev:history` — doc history API server only (port 4322)
 - `pnpm dev:zudo-doc` — tsup `--watch` for `@takazudo/zudo-doc` only; host imports resolve through `dist/` because the package now ships compiled JS (W8 Blocker-2 fix — Node 24 rejects raw `.ts` in `node_modules`, so the package's source is private and dist is the API surface)
@@ -55,7 +55,6 @@ Run `pnpm install` to wire the link, do your work, then remove the override and 
 
 These run automatically — be aware when working in this repo:
 
-- **predev port cleanup**: `pnpm dev` first runs `lsof -ti :4321 -ti :4322 | xargs kill` so stale dev/history servers are reaped on start. You do not need a separate kill step.
 - **lefthook pre-commit** (`lefthook.yml`): on commit, staged `*.md` and `*.mdx` files are formatted with `@takazudo/mdx-formatter` and re-added. You do not need to manually `pnpm format` markdown before committing.
 - **prepare**: `pnpm install` runs `lefthook install` and `scripts/install-git-hooks.sh` (the worktree push-guard hook). zfb and zdtp come straight from npm — there is no link/build postinstall step anymore.
 
