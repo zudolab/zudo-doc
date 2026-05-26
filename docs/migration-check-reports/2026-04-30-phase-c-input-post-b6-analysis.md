@@ -74,7 +74,7 @@ The Astro baseline (A) header on the same route is ~5,400 characters of visible 
 
 ### Root cause
 
-`packages/zudo-doc-v2/src/doclayout/doc-layout-with-defaults.tsx` (lines ~207–219) defines a deliberately minimal default header:
+`packages/zudo-doc/src/doclayout/doc-layout-with-defaults.tsx` (lines ~207–219) defines a deliberately minimal default header:
 
 ```tsx
 header={

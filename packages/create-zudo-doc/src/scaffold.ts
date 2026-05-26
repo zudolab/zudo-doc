@@ -275,7 +275,7 @@ export async function scaffold(choices: UserChoices): Promise<void> {
 
 function generatePackageJson(choices: UserChoices) {
   // Intentionally absent from scaffolded deps:
-  //   @zudo-doc/md-plugins — zero references in generator templates/source
+  //   @takazudo/zudo-doc-md-plugins — zero references in generator templates/source
   //   @takazudo/zfb-adapter-cloudflare — zero references in generator templates/source
   const deps: Record<string, string> = {
     // zfb engine — replaces astro/@astrojs/* now that the cutover (#500 S5)
@@ -287,11 +287,11 @@ function generatePackageJson(choices: UserChoices) {
     // enforced by scripts/check-pin-parity.mjs (W4A — #1732).
     "@takazudo/zfb": "0.1.0-next.6",
     "@takazudo/zfb-runtime": "0.1.0-next.6",
-    // @zudo-doc/zudo-doc-v2 — published from this monorepo via
-    // .github/workflows/publish-zudo-doc-v2.yml. The pin here is bumped in
-    // lockstep by scripts/release-create-zudo-doc.sh whenever v2's version
-    // moves, so a fresh scaffold pulls the version we just published.
-    "@zudo-doc/zudo-doc-v2": "^0.1.0",
+    // @takazudo/zudo-doc — published from this monorepo via
+    // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
+    // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
+    // version moves, so a fresh scaffold pulls the version we just published.
+    "@takazudo/zudo-doc": "^0.1.0",
     // zod — used by the generated zfb.config.ts. zfb-config-gen emits
     // `import { z } from "zod"` for the content-collection schema +
     // `z.toJSONSchema(...)` conversion. Without this dep, the consumer

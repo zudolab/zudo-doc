@@ -39,13 +39,13 @@
 
 import type { VNode, JSX } from "preact";
 import { Island } from "@takazudo/zfb";
-import { Header } from "@zudo-doc/zudo-doc-v2/header";
+import { Header } from "@takazudo/zudo-doc/header";
 import {
   LanguageSwitcher,
   VersionSwitcher,
   type VersionSwitcherLabels,
-} from "@zudo-doc/zudo-doc-v2/i18n-version";
-// Don't import ThemeToggle from "@zudo-doc/zudo-doc-v2/theme" — that barrel
+} from "@takazudo/zudo-doc/i18n-version";
+// Don't import ThemeToggle from "@takazudo/zudo-doc/theme" — that barrel
 // also re-exports DesignTokenTweakPanel and ColorTweakExportModal, which
 // transitively pull `src/components/design-token-tweak/*` and the v2 panel
 // modules into the zfb esbuild graph. Those files import `react`, which
@@ -70,7 +70,7 @@ import {
   type NavNode,
 } from "@/utils/docs";
 import { buildSidebarForSection } from "@/utils/sidebar";
-import { filterHeaderRightItems } from "@zudo-doc/zudo-doc-v2/header";
+import { filterHeaderRightItems } from "@takazudo/zudo-doc/header";
 import { SearchWidget } from "./_search-widget";
 import { loadNavSourceDocs } from "./_nav-source-docs";
 

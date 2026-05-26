@@ -3,13 +3,13 @@
 // Use preact hook entrypoints directly — zfb's esbuild step doesn't alias
 // "react" to "preact/compat" the way Astro's `@astrojs/preact` integration
 // did, so importing from "react" here would fail to resolve at SSR/island
-// bundle time. Same pattern as packages/zudo-doc-v2/src/theme/theme-toggle.tsx.
+// bundle time. Same pattern as packages/zudo-doc/src/theme/theme-toggle.tsx.
 import { useState, useCallback, useEffect, useMemo, useRef } from "preact/hooks";
 import type { NavNode } from "@/utils/docs";
 import type { LocaleLink } from "@/types/locale";
 // Types-only subpath (`./sidebar/types`) sidesteps the JSX type-graph
 // pulled in by `./sidebar`'s runtime barrel.
-import type { SidebarRootMenuItem } from "@zudo-doc/zudo-doc-v2/sidebar/types";
+import type { SidebarRootMenuItem } from "@takazudo/zudo-doc/sidebar/types";
 import { INDENT, BASE_PAD, connectorLeft, ConnectorLines, CategoryLinkIcon } from "./tree-nav-shared";
 import ThemeToggle from "@/components/theme-toggle";
 import { smartBreakToHtml } from "@/utils/smart-break";
@@ -17,7 +17,7 @@ import { smartBreakToHtml } from "@/utils/smart-break";
 // also pull lifecycle event names from the v2 transitions module
 // rather than hard-coding `astro:*` literals — keeps the entire repo's
 // post-navigate listener vocabulary on a single source of truth.
-import { AFTER_NAVIGATE_EVENT, BEFORE_NAVIGATE_EVENT } from "@zudo-doc/zudo-doc-v2/transitions";
+import { AFTER_NAVIGATE_EVENT, BEFORE_NAVIGATE_EVENT } from "@takazudo/zudo-doc/transitions";
 
 function ToggleChevron({ isExpanded, className }: { isExpanded: boolean; className?: string }) {
   return (

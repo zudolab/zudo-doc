@@ -196,7 +196,7 @@ jobs:
   # ---------------------------------------------------------------------------
   # Job 3: Build doc history JSONs (full clone — only this job needs it)
   # ---------------------------------------------------------------------------
-  # The @zudo-doc/doc-history-server package is fully standalone (only depends
+  # The @takazudo/zudo-doc-history-server package is fully standalone (only depends
   # on @types/node + tsup + tsx + typescript + vitest — no zfb consumption).
   # fetch-depth: 0 so it can walk git history for every content file.
   build-history:
@@ -225,7 +225,7 @@ jobs:
 
       - name: Generate doc history
         run: |
-          pnpm --filter @zudo-doc/doc-history-server generate \
+          pnpm --filter @takazudo/zudo-doc-history-server generate \
             --content-dir ../../src/content/docs \
             --locale ja:../../src/content/docs-ja \
             --out-dir ../../doc-history-out

@@ -1,7 +1,7 @@
 import type {
   FrontmatterCellRenderer,
   FrontmatterCellRendererProps,
-} from "@zudo-doc/zudo-doc-v2/metainfo";
+} from "@takazudo/zudo-doc/metainfo";
 
 /**
  * Props passed to every custom frontmatter renderer component.

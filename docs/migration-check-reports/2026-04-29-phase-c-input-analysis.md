@@ -74,7 +74,7 @@ Across the 10 sampled empty-aside routes, A's aside contains 1,064 chars of visi
 
 ### Root cause (best read)
 
-Astro's `client:load` directive renders the Preact island server-side and wraps the SSR output in `<astro-island>` so the runtime can hydrate. zfb's `<Island>` wrapper in `packages/zudo-doc-v2/src/sidebar/sidebar.tsx` emits only the `data-zfb-island="Sidebar"` marker. Either the `<Island>` helper from `@takazudo/zfb` is opting out of SSG for this island, or the data-prep host that supplies `treeComponent`/`nodes` is feeding it nothing during the SSG pass. The marker shape matches what zfb's hydration runtime expects, but the SSG body — the whole reason migration-check sees this as content-loss — is missing.
+Astro's `client:load` directive renders the Preact island server-side and wraps the SSR output in `<astro-island>` so the runtime can hydrate. zfb's `<Island>` wrapper in `packages/zudo-doc/src/sidebar/sidebar.tsx` emits only the `data-zfb-island="Sidebar"` marker. Either the `<Island>` helper from `@takazudo/zfb` is opting out of SSG for this island, or the data-prep host that supplies `treeComponent`/`nodes` is feeding it nothing during the SSG pass. The marker shape matches what zfb's hydration runtime expects, but the SSG body — the whole reason migration-check sees this as content-loss — is missing.
 
 A short follow-up investigation in Phase B-6 will determine whether the fix lives in:
 

@@ -17,10 +17,10 @@ zfbは**静的サイトビルダーのみ**であり、サーバーサイドの�
 
 ## ビルド時 — zfb / url-normalizerの担当
 
-静的ビルド中に出力されるすべてのURLは `/` で終わる必要があります。これは `@zudo-doc/zudo-doc-v2/url-normalizer` の `buildUrl()` によって強制されます：
+静的ビルド中に出力されるすべてのURLは `/` で終わる必要があります。これは `@takazudo/zudo-doc/url-normalizer` の `buildUrl()` によって強制されます：
 
 ```ts
-import { buildUrl } from "@zudo-doc/zudo-doc-v2/url-normalizer";
+import { buildUrl } from "@takazudo/zudo-doc/url-normalizer";
 
 // paths()の実装やインテグレーションで:
 const url = buildUrl("docs", slug);          // "/docs/my-slug/"
@@ -37,7 +37,7 @@ const localized = buildUrl("ja", "docs", slug); // "/ja/docs/my-slug/"
 外部データからパス名が届き、末尾スラッシュがあるかどうか不明な場合のために、補助ヘルパー `normalizePathname()` も用意されています：
 
 ```ts
-import { normalizePathname } from "@zudo-doc/zudo-doc-v2/url-normalizer";
+import { normalizePathname } from "@takazudo/zudo-doc/url-normalizer";
 
 const canonical = normalizePathname(rawPathname); // 末尾スラッシュがない場合は追加
 ```

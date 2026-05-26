@@ -15,7 +15,7 @@
 // pages/_mdx-components.ts so locale routes get locale-aware nav data.
 
 import type { JSX } from "preact";
-import { CategoryTreeNav as CategoryTreeNavV2 } from "@zudo-doc/zudo-doc-v2/nav-indexing";
+import { CategoryTreeNav as CategoryTreeNavV2 } from "@takazudo/zudo-doc/nav-indexing";
 import {
   buildNavTree,
   groupSatelliteNodes,

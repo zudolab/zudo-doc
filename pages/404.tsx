@@ -14,7 +14,7 @@
 import { defaultLocale } from "@/config/i18n";
 import { settings } from "@/config/settings";
 import { withBase } from "@/utils/base";
-import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
+import { DocLayoutWithDefaults } from "@takazudo/zudo-doc/doclayout";
 import type { JSX } from "preact";
 import { FooterWithDefaults } from "./lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "./lib/_header-with-defaults";

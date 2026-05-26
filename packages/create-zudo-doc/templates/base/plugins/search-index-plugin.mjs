@@ -16,7 +16,7 @@
 // Inline functions are not supported by zfb's plugin runtime; see the
 // sibling `doc-history-plugin.mjs` for the rationale.
 
-import { emitSearchIndex, createSearchIndexDevMiddleware } from "@zudo-doc/zudo-doc-v2/integrations/search-index";
+import { emitSearchIndex, createSearchIndexDevMiddleware } from "@takazudo/zudo-doc/integrations/search-index";
 import { connectToZfbHandler } from "./connect-adapter.mjs";
 
 export default {

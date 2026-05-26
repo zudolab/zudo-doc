@@ -17,7 +17,7 @@
 //
 // ## Strategy
 //
-// This module ships stub bindings for tags not yet ported to `@zudo-doc/zudo-doc-v2`
+// This module ships stub bindings for tags not yet ported to `@takazudo/zudo-doc`
 // (render nothing), and real Preact bindings for tags whose ports are complete.
 // As real components land, they replace their stub here and propagate to every page automatically.
 //
@@ -38,10 +38,10 @@
 // The static export still exists for backward compatibility (using defaultLocale).
 
 import type { ComponentChildren } from "preact";
-import { htmlOverrides } from "@zudo-doc/zudo-doc-v2/content";
-import { HtmlPreviewWrapper } from "@zudo-doc/zudo-doc-v2/html-preview-wrapper";
-import { Tabs } from "@zudo-doc/zudo-doc-v2/code-syntax";
-import { TabItem } from "@zudo-doc/zudo-doc-v2/tab-item";
+import { htmlOverrides } from "@takazudo/zudo-doc/content";
+import { HtmlPreviewWrapper } from "@takazudo/zudo-doc/html-preview-wrapper";
+import { Tabs } from "@takazudo/zudo-doc/code-syntax";
+import { TabItem } from "@takazudo/zudo-doc/tab-item";
 import { defaultLocale, type Locale } from "@/config/i18n";
 import { withBase } from "@/utils/base";
 import { CategoryNavWrapper } from "./lib/_category-nav";
@@ -169,7 +169,7 @@ function makeAdmonitionStub(variant: string) {
  * Components map includes:
  * - `htmlOverrides` — element-level overrides for native tags (h2..h4,
  *   p, a, ul/ol, blockquote, strong, table). Defined in
- *   `@zudo-doc/zudo-doc-v2/content`.
+ *   `@takazudo/zudo-doc/content`.
  * - `HtmlPreview` — Island-wrapped preview component.
  * - Real Preact wrappers for CategoryNav, CategoryTreeNav, SiteTreeNav,
  *   SiteTreeNavDemo, and Details.

@@ -36,10 +36,10 @@ import {
 } from "@/utils/docs";
 import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
 import { toRouteSlug } from "@/utils/slug";
-import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
-import { Breadcrumb } from "@zudo-doc/zudo-doc-v2/breadcrumb";
-import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
-import { FrontmatterPreview } from "@zudo-doc/zudo-doc-v2/metainfo";
+import { DocLayoutWithDefaults } from "@takazudo/zudo-doc/doclayout";
+import { Breadcrumb } from "@takazudo/zudo-doc/breadcrumb";
+import { NavCardGrid } from "@takazudo/zudo-doc/nav-indexing";
+import { FrontmatterPreview } from "@takazudo/zudo-doc/metainfo";
 import { frontmatterRenderers } from "@/config/frontmatter-preview-renderers";
 // Locale-aware MDX components factory — see `pages/_mdx-components.ts`.
 import { createMdxComponents } from "../../../../_mdx-components";
@@ -58,7 +58,7 @@ import { buildFrontmatterPreviewEntries } from "../../../../lib/_frontmatter-pre
 import { composeMetaTitle } from "../../../../lib/_compose-meta-title";
 import { buildInlineVersionSwitcher } from "../../../../lib/_inline-version-switcher";
 import DesktopSidebarToggle from "@/components/desktop-sidebar-toggle";
-import { SidebarResizerInit } from "@zudo-doc/zudo-doc-v2/sidebar-resizer";
+import { SidebarResizerInit } from "@takazudo/zudo-doc/sidebar-resizer";
 import type { VNode } from "preact";
 import { Island } from "@takazudo/zfb";
 

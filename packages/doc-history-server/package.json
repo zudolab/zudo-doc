@@ -1,5 +1,5 @@
 {
-  "name": "@zudo-doc/doc-history-server",
+  "name": "@takazudo/zudo-doc-history-server",
   "version": "0.1.0",
   "type": "module",
   "publishConfig": {

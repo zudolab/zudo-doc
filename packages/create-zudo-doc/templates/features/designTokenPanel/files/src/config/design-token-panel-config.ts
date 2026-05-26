@@ -26,7 +26,7 @@ import {
 import { colorSchemes } from "./color-schemes";
 import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "./color-scheme-utils";
 import { settings } from "./settings";
-import { DESIGN_TOKEN_SCHEMA } from "@zudo-doc/zudo-doc-v2/theme";
+import { DESIGN_TOKEN_SCHEMA } from "@takazudo/zudo-doc/theme";
 
 /**
  * Base-role fallback indices. Background defaults to palette index 0,
@@ -51,7 +51,7 @@ export const designTokenPanelConfig: PanelConfig = {
   storagePrefix: "my-doc-tweak",
   consoleNamespace: "myDoc",
   modalClassPrefix: "my-doc-design-token-panel-modal",
-  // Must match DESIGN_TOKEN_SCHEMA in @zudo-doc/zudo-doc-v2/theme so that
+  // Must match DESIGN_TOKEN_SCHEMA in @takazudo/zudo-doc/theme so that
   // exported JSON files remain importable across panel versions.
   schemaId: DESIGN_TOKEN_SCHEMA,
   exportFilenameBase: "my-doc-design-tokens",

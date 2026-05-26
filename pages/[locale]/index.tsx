@@ -29,7 +29,7 @@ import {
 import { getCategoryOrder } from "@/utils/nav-scope";
 import { collectTags } from "@/utils/tags";
 import { toRouteSlug } from "@/utils/slug";
-import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
+import { DocLayoutWithDefaults } from "@takazudo/zudo-doc/doclayout";
 import type { JSX } from "preact";
 import type { VNode } from "preact";
 import { Island } from "@takazudo/zfb";

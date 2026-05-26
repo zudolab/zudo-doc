@@ -1,7 +1,7 @@
 # ai-chat-worker
 
 :::warning[Deprecated]
-The `@zudo-doc/ai-chat-worker` package was migrated to a Cloudflare Pages Functions / SSR endpoint at `pages/api/ai-chat.tsx`. The package source has been removed; this doc is retained for historical reference only.
+The `@takazudo/zudo-doc-ai-chat-worker` package was migrated to a Cloudflare Pages Functions / SSR endpoint at `pages/api/ai-chat.tsx`. The package source has been removed; this doc is retained for historical reference only.
 :::
 
 Standalone Cloudflare Worker sub-package for the AI chat API. Independent of the docs site.

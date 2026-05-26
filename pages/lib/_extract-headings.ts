@@ -4,7 +4,7 @@
 // passes real heading data to `DocLayoutWithDefaults` rather than an empty
 // array. The result drops directly into the `headings` prop of `Toc` /
 // `MobileToc` — the shape is byte-aligned with `HeadingItem` in
-// `packages/zudo-doc-v2/src/toc/types.ts`.
+// `packages/zudo-doc/src/toc/types.ts`.
 //
 // Algorithm:
 //   1. Walk the body line-by-line looking for ATX-style markdown headings

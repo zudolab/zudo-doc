@@ -36,10 +36,10 @@ import {
 } from "@/utils/docs";
 import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
 import { toRouteSlug } from "@/utils/slug";
-import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
-import { Breadcrumb } from "@zudo-doc/zudo-doc-v2/breadcrumb";
-import { NavCardGrid } from "@zudo-doc/zudo-doc-v2/nav-indexing";
-import { FrontmatterPreview } from "@zudo-doc/zudo-doc-v2/metainfo";
+import { DocLayoutWithDefaults } from "@takazudo/zudo-doc/doclayout";
+import { Breadcrumb } from "@takazudo/zudo-doc/breadcrumb";
+import { NavCardGrid } from "@takazudo/zudo-doc/nav-indexing";
+import { FrontmatterPreview } from "@takazudo/zudo-doc/metainfo";
 import { frontmatterRenderers } from "@/config/frontmatter-preview-renderers";
 // Shared MDX-tag → Preact-component bag. Includes htmlOverrides
 // (native typography), HtmlPreviewWrapper (Island), and stub bindings
@@ -61,7 +61,7 @@ import type { JSX } from "preact";
 import { bridgeEntries } from "../_data";
 import { extractHeadings } from "../lib/_extract-headings";
 import DesktopSidebarToggle from "@/components/desktop-sidebar-toggle";
-import { SidebarResizerInit } from "@zudo-doc/zudo-doc-v2/sidebar-resizer";
+import { SidebarResizerInit } from "@takazudo/zudo-doc/sidebar-resizer";
 import type { VNode } from "preact";
 import { Island } from "@takazudo/zfb";
 

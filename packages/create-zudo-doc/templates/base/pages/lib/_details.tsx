@@ -9,7 +9,7 @@
 // is forwarded unchanged.
 
 import type { ComponentChildren, VNode } from "preact";
-import { Details as DetailsV2 } from "@zudo-doc/zudo-doc-v2/details";
+import { Details as DetailsV2 } from "@takazudo/zudo-doc/details";
 
 export interface DetailsWrapperProps {
   /** Summary label shown in the <summary> element. Defaults to "Details". */

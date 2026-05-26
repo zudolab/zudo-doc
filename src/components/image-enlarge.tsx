@@ -9,7 +9,7 @@ import { useState, useEffect, useRef } from "preact/compat";
 // After zudolab/zudo-doc#1335 (E2 task 2 half B) the host components
 // pull lifecycle event names from the v2 transitions module rather
 // than hard-coding `astro:*` literals.
-import { AFTER_NAVIGATE_EVENT } from "@zudo-doc/zudo-doc-v2/transitions";
+import { AFTER_NAVIGATE_EVENT } from "@takazudo/zudo-doc/transitions";
 
 interface ImageData {
   src: string;

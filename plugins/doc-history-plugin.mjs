@@ -13,7 +13,7 @@
 //               `SKIP_DOC_HISTORY=1` (the runner returns early when set).
 //
 //   devMiddleware — reverse-proxies `/doc-history/*` requests to the
-//               standalone `@zudo-doc/doc-history-server` on port 4322.
+//               standalone `@takazudo/zudo-doc-history-server` on port 4322.
 //
 // Inline functions are not supported by zfb's plugin runtime — see
 // `@takazudo/zfb/plugins` source comment. Plugins must be authored as
@@ -27,8 +27,8 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
-import { runDocHistoryPostBuild } from "@zudo-doc/zudo-doc-v2/integrations/doc-history";
-import { createDocHistoryDevMiddleware } from "@zudo-doc/zudo-doc-v2/integrations/doc-history";
+import { runDocHistoryPostBuild } from "@takazudo/zudo-doc/integrations/doc-history";
+import { createDocHistoryDevMiddleware } from "@takazudo/zudo-doc/integrations/doc-history";
 import { connectToZfbHandler } from "./connect-adapter.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -51,7 +51,7 @@ export default {
     });
     const script = `
       (async () => {
-        const { runDocHistoryMetaStep } = await import("@zudo-doc/zudo-doc-v2/integrations/doc-history");
+        const { runDocHistoryMetaStep } = await import("@takazudo/zudo-doc/integrations/doc-history");
         const opts = ${optsJson};
         await runDocHistoryMetaStep(opts);
       })().catch((err) => {

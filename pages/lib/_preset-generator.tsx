@@ -21,7 +21,7 @@
 // mount the real form into the skip-ssr placeholder on the client.
 
 import type { VNode } from "preact";
-import { HeadingH3 } from "@zudo-doc/zudo-doc-v2/content";
+import { HeadingH3 } from "@takazudo/zudo-doc/content";
 import { Island } from "@takazudo/zfb";
 import PresetGenerator from "@/components/preset-generator";
 

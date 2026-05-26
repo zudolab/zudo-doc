@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { FrontmatterCellRenderer, FrontmatterCellRendererProps } from "@zudo-doc/zudo-doc-v2/metainfo";
+import type { FrontmatterCellRenderer, FrontmatterCellRendererProps } from "@takazudo/zudo-doc/metainfo";
 
 /**
  * Props passed to every custom frontmatter renderer component.

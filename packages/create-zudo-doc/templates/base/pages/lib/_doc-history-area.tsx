@@ -26,7 +26,7 @@ import type { VNode } from "preact";
 import { Island } from "@takazudo/zfb";
 import { settings } from "@/config/settings";
 import { defaultLocale, t } from "@/config/i18n";
-import { BodyFootUtilArea } from "@zudo-doc/zudo-doc-v2/body-foot-util";
+import { BodyFootUtilArea } from "@takazudo/zudo-doc/body-foot-util";
 import { buildGitHubSourceUrl } from "@/utils/github";
 import { DocHistory } from "@/components/doc-history";
 // SSR author + date metadata comes from `.zfb/doc-history-meta.json`, a

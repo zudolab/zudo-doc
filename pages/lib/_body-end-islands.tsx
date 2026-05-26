@@ -3,7 +3,7 @@
 // Host-side body-end islands helper.
 //
 // Wave 8 (Path A — super-epic #1333 / child epic #1355) drops the local
-// SSR-skip wrapper functions in `@zudo-doc/zudo-doc-v2/ssr-skip` and uses
+// SSR-skip wrapper functions in `@takazudo/zudo-doc/ssr-skip` and uses
 // zfb's native `<Island ssrFallback={...}>` API directly with the real
 // component constructors imported by the host.
 //
@@ -36,7 +36,7 @@ import AiChatModal from "@/components/ai-chat-modal";
 import ClientRouterBootstrap from "@/components/client-router-bootstrap";
 import DesignTokenPanelBootstrap from "@/components/design-token-panel-bootstrap";
 import ImageEnlarge, { ImageEnlargeSsrFallback } from "@/components/image-enlarge";
-import { PageLoadingOverlay } from "@zudo-doc/zudo-doc-v2/page-loading";
+import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";
 
 // Set explicit `displayName` on each default-exported island so zfb's
 // `captureComponentName` produces a stable marker even after the SSR

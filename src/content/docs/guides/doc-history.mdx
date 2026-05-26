@@ -108,14 +108,14 @@ By default, A is set to the second-most-recent commit and B to the most recent, 
 
 ## How It Works
 
-Git history extraction is handled by a standalone package: `@zudo-doc/doc-history-server` (located at `packages/doc-history-server/`). This package operates in two modes, one for development and one for production builds.
+Git history extraction is handled by a standalone package: `@takazudo/zudo-doc-history-server` (located at `packages/doc-history-server/`). This package operates in two modes, one for development and one for production builds.
 
 ### Build Mode
 
 In production, a standalone CLI generator batch-processes all content files and writes JSON history files to `dist/doc-history/`. This runs as an independent CI job, parallel to the zfb site build:
 
 - **build-site** job: shallow clone, builds the zfb site with `SKIP_DOC_HISTORY=1`
-- **build-history** job: full clone, runs `@zudo-doc/doc-history-server generate`
+- **build-history** job: full clone, runs `@takazudo/zudo-doc-history-server generate`
 - **deploy** job: merges both artifacts and deploys
 
 This parallel strategy reduces total CI build time because the history generation (which requires a full git clone and walks every commit) runs independently of the zfb build.

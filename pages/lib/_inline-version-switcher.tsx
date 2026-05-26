@@ -23,7 +23,7 @@ import type { JSX } from "preact";
 import {
   VersionSwitcher,
   type VersionSwitcherLabels,
-} from "@zudo-doc/zudo-doc-v2/i18n-version";
+} from "@takazudo/zudo-doc/i18n-version";
 import { settings } from "@/config/settings";
 import { defaultLocale, t, type Locale } from "@/config/i18n";
 import { docsUrl, versionedDocsUrl, withBase } from "@/utils/base";

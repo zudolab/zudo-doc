@@ -6,7 +6,7 @@
 // (deleted in commit a4d9956) — reading settings.footer, localizing link
 // hrefs and titles, and optionally collecting tag columns when taglist is
 // enabled — then feeds the result into the presentational <Footer> shell
-// from @zudo-doc/zudo-doc-v2/footer.
+// from @takazudo/zudo-doc/footer.
 //
 // Callers pass a `lang` prop (the active locale string, e.g. "en", "ja").
 // The component returns a fully populated <Footer> when settings.footer is
@@ -24,8 +24,8 @@
 
 import type { VNode } from "preact";
 import { settings } from "@/config/settings";
-import { Footer } from "@zudo-doc/zudo-doc-v2/footer";
-import type { FooterLinkColumn, FooterTagColumn } from "@zudo-doc/zudo-doc-v2/footer";
+import { Footer } from "@takazudo/zudo-doc/footer";
+import type { FooterLinkColumn, FooterTagColumn } from "@takazudo/zudo-doc/footer";
 import { isExternal, resolveHref, withBase } from "@/utils/base";
 import { defaultLocale } from "@/config/i18n";
 import { tagVocabulary } from "@/config/tag-vocabulary";

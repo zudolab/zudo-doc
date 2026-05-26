@@ -105,7 +105,7 @@ packages/
 ├── md-plugins/           # Shared remark/rehype plugins (link resolver, admonitions, etc.)
 ├── search-worker/        # CF Worker for search API
 ├── doc-history-server/   # Doc history REST API + CLI generator
-├── zudo-doc-v2/          # Shared layout + integration package (header, doc-layout, ...)
+├── zudo-doc/          # Shared layout + integration package (header, doc-layout, ...)
 └── create-zudo-doc/      # CLI scaffold tool
 
 src/
@@ -145,7 +145,7 @@ This script is also the **source template** copied to downstream projects by `cr
 
 ## Doc History Architecture
 
-Document git history is handled by a standalone package `@zudo-doc/doc-history-server` (at `packages/doc-history-server/`). It is intentionally decoupled from the main build pipeline so that expensive `git log --follow` calls do not block the main build.
+Document git history is handled by a standalone package `@takazudo/zudo-doc-history-server` (at `packages/doc-history-server/`). It is intentionally decoupled from the main build pipeline so that expensive `git log --follow` calls do not block the main build.
 
 It runs in two modes:
 
@@ -161,7 +161,7 @@ When `SKIP_DOC_HISTORY=1` is set, the doc-history plugin short-circuits and writ
 All three workflows (`main-deploy.yml`, `pr-checks.yml`, `preview-deploy.yml`) use parallel build jobs:
 
 - **build-site** — full clone (`fetch-depth: 0`), `pnpm build` — preBuild populates `.zfb/doc-history-meta.json` with real git dates so the SSG HTML contains the visible Created/Updated/Author block
-- **build-history** — full clone (`fetch-depth: 0`), `@zudo-doc/doc-history-server generate` — generates per-page dropdown JSON files for the DocHistory island
+- **build-history** — full clone (`fetch-depth: 0`), `@takazudo/zudo-doc-history-server generate` — generates per-page dropdown JSON files for the DocHistory island
 - **deploy/preview** — merges both artifacts, deploys via `wrangler deploy` to Cloudflare Workers static assets at `zudo-doc.takazudomodular.com`
 
 E2E tests also run with full clone (no `SKIP_DOC_HISTORY`).

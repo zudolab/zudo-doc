@@ -108,7 +108,7 @@ MDXコンテンツ内のインラインMarkdownリンク（例：`[リンクテ�
 
 ### trailingSlash
 
-URLの末尾にトレイリングスラッシュを付けるかどうかを制御します。`true`の場合、すべての内部リンクがトレイリングスラッシュ付きで生成されます（例：`/docs/guides`ではなく`/docs/guides/`）。`@zudo-doc/zudo-doc-v2/url-normalizer`のビルド時URLヘルパーが、このポリシーを発行されるすべてのルートで強制します — ビルド時とデプロイホスト間でのルール分担については[トレイリングスラッシュポリシー](../concepts/trailing-slash-policy.mdx)を参照してください。
+URLの末尾にトレイリングスラッシュを付けるかどうかを制御します。`true`の場合、すべての内部リンクがトレイリングスラッシュ付きで生成されます（例：`/docs/guides`ではなく`/docs/guides/`）。`@takazudo/zudo-doc/url-normalizer`のビルド時URLヘルパーが、このポリシーを発行されるすべてのルートで強制します — ビルド時とデプロイホスト間でのルール分担については[トレイリングスラッシュポリシー](../concepts/trailing-slash-policy.mdx)を参照してください。
 
 デフォルト：`false`
 
@@ -401,7 +401,7 @@ sidebarResizer: true,
 
 ドキュメントごとのgitリビジョン履歴ビューアを有効にします。`true`の場合、各ドキュメントページに**History**ボタンが表示され、ドキュメントのgitコミット履歴と行単位のdiffビューアを備えたサイドパネルが開きます。
 
-開発モードでは、履歴はポート4322で動作するスタンドアロンの`@zudo-doc/doc-history-server`パッケージが配信します。本番環境では、CLIジェネレーターがCI中に静的JSONファイルを生成します。サーバーとCLIの詳細については[Doc History Serverリファレンス](../reference/doc-history-server.mdx)を参照してください。
+開発モードでは、履歴はポート4322で動作するスタンドアロンの`@takazudo/zudo-doc-history-server`パッケージが配信します。本番環境では、CLIジェネレーターがCI中に静的JSONファイルを生成します。サーバーとCLIの詳細については[Doc History Serverリファレンス](../reference/doc-history-server.mdx)を参照してください。
 
 デフォルト：`false`（`true`に設定して有効化）
 

@@ -20,7 +20,7 @@
 // Inline functions are not supported by zfb's plugin runtime; see the
 // sibling `doc-history-plugin.mjs` for the rationale.
 
-import { emitLlmsTxt, createLlmsTxtDevMiddleware } from "@zudo-doc/zudo-doc-v2/integrations/llms-txt";
+import { emitLlmsTxt, createLlmsTxtDevMiddleware } from "@takazudo/zudo-doc/integrations/llms-txt";
 import { connectToZfbHandler } from "./connect-adapter.mjs";
 
 export default {

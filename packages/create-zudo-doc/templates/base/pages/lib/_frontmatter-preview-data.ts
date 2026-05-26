@@ -1,7 +1,7 @@
 // Host-side filter helper that turns a doc entry's `data` (frontmatter)
 // into the `entries` array expected by `<FrontmatterPreview>`.
 //
-// The v2 component (packages/zudo-doc-v2/src/metainfo/frontmatter-preview.tsx)
+// The v2 component (packages/zudo-doc/src/metainfo/frontmatter-preview.tsx)
 // is a pure renderer — the caller is responsible for:
 //
 //  1. Honouring `settings.frontmatterPreview === false` (block hidden everywhere).

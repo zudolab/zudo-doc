@@ -1,7 +1,7 @@
 // zfb plugin module: claude-resources.
 //
 // Wires `runClaudeResourcesPreStep` (from
-// `@zudo-doc/zudo-doc-v2/integrations/claude-resources`) into zfb's
+// `@takazudo/zudo-doc/integrations/claude-resources`) into zfb's
 // `preBuild` lifecycle hook. Replaces the npm `prebuild`-script glue
 // in `scripts/zfb-prebuild.mjs` for this step (the script remains in
 // place during the merge window — T6 retires it).
@@ -10,7 +10,7 @@
 //
 //   1. zfb's plugin host runs `node` without any TypeScript loader, so
 //      it cannot import `.ts` source files. The v2 integration package
-//      (`@zudo-doc/zudo-doc-v2/integrations/claude-resources`) currently
+//      (`@takazudo/zudo-doc/integrations/claude-resources`) currently
 //      ships only TypeScript source through its `exports` map and has
 //      no build step.
 //
@@ -35,7 +35,7 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
-const PLUGIN_NAME = "@zudo-doc/claude-resources";
+const PLUGIN_NAME = "@takazudo/zudo-doc-claude-resources";
 
 // `tsx` is a workspace dependency of the host project and resolves to
 // `<projectRoot>/node_modules/.bin/tsx` from this file. We resolve the
@@ -65,7 +65,7 @@ function runRunnerUnderTsx({ claudeDir, projectRoot, docsDir }) {
   // the body in an `async`-IIFE rather than relying on top-level await.
   const childScript = `
     (async () => {
-      const { runClaudeResourcesPreStep } = await import("@zudo-doc/zudo-doc-v2/integrations/claude-resources");
+      const { runClaudeResourcesPreStep } = await import("@takazudo/zudo-doc/integrations/claude-resources");
       const result = await runClaudeResourcesPreStep({
         claudeDir: ${JSON.stringify(claudeDir)},
         projectRoot: ${JSON.stringify(projectRoot)},

@@ -23,7 +23,7 @@
 import type { VNode } from "preact";
 import { settings } from "@/config/settings";
 import { defaultLocale, t } from "@/config/i18n";
-import { DocMetainfo } from "@zudo-doc/zudo-doc-v2/metainfo";
+import { DocMetainfo } from "@takazudo/zudo-doc/metainfo";
 // SSR author + date metadata comes from `.zfb/doc-history-meta.json`, a
 // build-time manifest emitted by `scripts/zfb-prebuild.mjs` (step 2:
 // doc-history-meta) before `zfb build` runs. esbuild inlines the JSON

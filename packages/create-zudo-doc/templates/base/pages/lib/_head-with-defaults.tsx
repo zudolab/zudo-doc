@@ -22,8 +22,8 @@
 // was orphaned during the .astro retirement.)
 
 import type { JSX } from "preact";
-import { OgTags, TwitterCard } from "@zudo-doc/zudo-doc-v2/head";
-// Don't import ColorSchemeProvider from "@zudo-doc/zudo-doc-v2/theme" — that
+import { OgTags, TwitterCard } from "@takazudo/zudo-doc/head";
+// Don't import ColorSchemeProvider from "@takazudo/zudo-doc/theme" — that
 // barrel also re-exports DesignTokenTweakPanel + ColorTweakExportModal, which
 // transitively pull `src/components/design-token-tweak/*` and the v2 panel
 // modules (and react-dependent code) into the zfb esbuild graph. Same hazard
@@ -31,7 +31,7 @@ import { OgTags, TwitterCard } from "@zudo-doc/zudo-doc-v2/head";
 // package exposes a dedicated `./theme/color-scheme-provider` subpath whose
 // only output is the SSR-only ColorSchemeProvider component, keeping this
 // head emission free of the panel-module dependency chain.
-import ColorSchemeProvider from "@zudo-doc/zudo-doc-v2/theme/color-scheme-provider";
+import ColorSchemeProvider from "@takazudo/zudo-doc/theme/color-scheme-provider";
 import { composeMetaTitle } from "./_compose-meta-title";
 import { withBase } from "@/utils/base";
 import { settings } from "@/config/settings";

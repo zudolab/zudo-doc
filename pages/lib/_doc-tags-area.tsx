@@ -7,7 +7,7 @@
 // position of the legacy `doc-tags.astro` in the Astro layout.
 //
 // Restoration of a Astro→zfb migration regression: the DocTags component
-// was correctly ported into @zudo-doc/zudo-doc-v2/metainfo/doc-tags.tsx
+// was correctly ported into @takazudo/zudo-doc/metainfo/doc-tags.tsx
 // but no page template wired it up (#1658, closes #1508).
 //
 // tagHref logic: inlined from _footer-with-defaults.tsx (the `tagHref`
@@ -23,7 +23,7 @@ import { settings } from "@/config/settings";
 import { defaultLocale, t } from "@/config/i18n";
 import { withBase } from "@/utils/base";
 import { resolvePageTags } from "@/utils/tags";
-import { DocTags } from "@zudo-doc/zudo-doc-v2/metainfo";
+import { DocTags } from "@takazudo/zudo-doc/metainfo";
 
 // ---------------------------------------------------------------------------
 // Internal helpers

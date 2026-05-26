@@ -13,9 +13,9 @@
 import { settings } from "@/config/settings";
 import { t } from "@/config/i18n";
 import { withBase } from "@/utils/base";
-import { DocLayoutWithDefaults } from "@zudo-doc/zudo-doc-v2/doclayout";
-import { VersionsPageContent } from "@zudo-doc/zudo-doc-v2/nav-indexing";
-import type { VersionPageEntry, VersionsPageLabels } from "@zudo-doc/zudo-doc-v2/nav-indexing";
+import { DocLayoutWithDefaults } from "@takazudo/zudo-doc/doclayout";
+import { VersionsPageContent } from "@takazudo/zudo-doc/nav-indexing";
+import type { VersionPageEntry, VersionsPageLabels } from "@takazudo/zudo-doc/nav-indexing";
 import type { JSX } from "preact";
 import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "../../lib/_header-with-defaults";

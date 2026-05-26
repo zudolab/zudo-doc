@@ -99,7 +99,7 @@ pnpm generate -- --content-dir src/content/docs --locale ja:src/content/docs-ja 
 CIパイプラインはzfbサイトビルドと並行して履歴生成を実行します：
 
 - **build-site**ジョブ：シャロークローン（`fetch-depth: 1`）、`SKIP_DOC_HISTORY=1`でzfbサイトをビルド
-- **build-history**ジョブ：フルクローン（`fetch-depth: 0`）、`@zudo-doc/doc-history-server generate`を実行
+- **build-history**ジョブ：フルクローン（`fetch-depth: 0`）、`@takazudo/zudo-doc-history-server generate`を実行
 - **deploy**ジョブ：両方のアーティファクトをマージしてCloudflare Pagesにデプロイ
 
 この並列化は、履歴生成がzfbビルドから完全に独立しているため可能です。

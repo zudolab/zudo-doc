@@ -13,13 +13,13 @@
 //     added in a follow-up topic once the bundle pipeline is in place.
 //   - The post-navigation rebinder pulls its event name from
 //     `AFTER_NAVIGATE_EVENT` in
-//     `@zudo-doc/zudo-doc-v2/transitions` (today: `zfb:after-swap`)
+//     `@takazudo/zudo-doc/transitions` (today: `zfb:after-swap`)
 //     rather than a hard-coded `astro:*` literal. See
 //     zudolab/zudo-doc#1335 (E2 task 2 half B) for the vocabulary
 //     introduction and zudolab/zudo-doc#1523 for the W6B flip from
 //     `DOMContentLoaded` to the Strategy B SPA event name.
 
-import { AFTER_NAVIGATE_EVENT } from "@zudo-doc/zudo-doc-v2/transitions";
+import { AFTER_NAVIGATE_EVENT } from "@takazudo/zudo-doc/transitions";
 
 export const SEARCH_WIDGET_SCRIPT = /* javascript */ `(function () {
   if (customElements.get("site-search")) return; // guard double-registration
