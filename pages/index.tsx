@@ -77,10 +77,17 @@ export default function IndexPage(): JSX.Element {
       {/* Hero: logo left, title+desc+links right, block centered */}
       <div class="flex justify-center mb-vsp-xl">
         <div class="flex flex-col items-center text-center gap-hsp-md lg:flex-row lg:text-left lg:gap-hsp-xl">
-          <img
-            src={logoUrl}
-            alt={settings.siteName}
-            class="w-[320px] max-w-full aspect-[1200/630] shrink-0"
+          {/* Theme-adaptive logo: SVG used as a CSS mask over `bg-fg` so the
+              foreground color follows the active theme (white on dark, black on
+              light). The neighboring <h1>{settings.siteName}</h1> provides the
+              accessible name; mirrors zudolab/zudo-design-token-lint#65. */}
+          <div
+            class="w-[320px] max-w-full aspect-[1200/630] bg-fg shrink-0"
+            style={{
+              WebkitMask: `url(${logoUrl}) center/contain no-repeat`,
+              mask: `url(${logoUrl}) center/contain no-repeat`,
+            }}
+            aria-hidden="true"
           />
           <div>
             <h1 class="text-heading font-bold mb-vsp-2xs">{settings.siteName}</h1>
