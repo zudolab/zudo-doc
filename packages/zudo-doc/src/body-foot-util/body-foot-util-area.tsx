@@ -45,7 +45,7 @@ export interface BodyFootUtilAreaProps {
 /**
  * Footer utility area shown below an article body — composes the
  * "View source on GitHub" link and the host-supplied doc-history
- * island. JSX port of `src/components/body-foot-util-area.astro`.
+ * island. JSX port of the legacy `body-foot-util-area` component.
  *
  * Returns `null` when neither slot has anything to render, mirroring
  * the `hasContent && (...)` guard in the original template so the

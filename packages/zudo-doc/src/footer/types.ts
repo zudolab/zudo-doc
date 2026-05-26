@@ -1,7 +1,7 @@
 /**
  * Public types for the framework-agnostic footer shell.
  *
- * The original Astro `footer.astro` mixed three concerns:
+ * The original footer template mixed three concerns:
  *   1. Reading `settings.footer` and applying locale overrides.
  *   2. Loading the docs collection + tag vocabulary to build the
  *      optional taglist columns.

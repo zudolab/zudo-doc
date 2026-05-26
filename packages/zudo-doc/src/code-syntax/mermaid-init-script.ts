@@ -1,7 +1,7 @@
 // Browser init script for mermaid diagram rendering.
 //
 // Converted from the TypeScript <script> block in
-// `src/components/mermaid-init.astro` — TypeScript syntax stripped
+// the legacy `mermaid-init` component — TypeScript syntax stripped
 // so the string can be emitted via `dangerouslySetInnerHTML` and parsed
 // by the browser directly.
 //
