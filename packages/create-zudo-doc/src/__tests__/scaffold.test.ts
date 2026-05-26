@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "fs-extra";
 import os from "os";
 import path from "path";
+import { fileURLToPath } from "url";
 import type { UserChoices } from "../prompts.js";
 import { scaffold } from "../scaffold.js";
 
@@ -2697,5 +2698,94 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
     expect(tsconfig.compilerOptions.paths["react-dom"]).toEqual([
       "./node_modules/preact/compat/",
     ]);
+  });
+});
+
+// W7B (#1737) — i18n feature emits the locale-prefixed page set
+// (pages/[locale]/index.tsx + pages/[locale]/docs/[...slug].tsx) when
+// selected, and zero pages/[locale]/** files when not selected. Both
+// emitted files must be byte-identical to their feature templates.
+//
+// Cross-feature note: versioning + docTags also emit pages/[locale]/**
+// files (versions.tsx, tags/[tag].tsx, tags/index.tsx) — those are W7C
+// scope and live in different feature template dirs. The "off" assertion
+// below uses a feature set that selects neither i18n, versioning, nor
+// docTags so the [locale]/** namespace is provably empty.
+describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => {
+  const I18N_PAGE_FILES = [
+    "pages/[locale]/index.tsx",
+    "pages/[locale]/docs/[...slug].tsx",
+  ];
+
+  const I18N_ON: UserChoices = {
+    projectName: "test-w7b-i18n-on",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["i18n", "search"],
+    packageManager: "pnpm",
+  };
+
+  const I18N_OFF: UserChoices = {
+    projectName: "test-w7b-i18n-off",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "sidebarFilter"],
+    packageManager: "pnpm",
+  };
+
+  // Absolute path to the feature-template source files, relative to this
+  // test file. Used by the byte-identical assertion.
+  const FEATURE_PAGES_DIR = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "..",
+    "..",
+    "templates/features/i18n/files/pages",
+  );
+
+  it("emits pages/[locale]/index.tsx + pages/[locale]/docs/[...slug].tsx when i18n is selected", async () => {
+    await scaffold(I18N_ON);
+    for (const rel of I18N_PAGE_FILES) {
+      expect(
+        await fs.pathExists(projectPath("test-w7b-i18n-on", rel)),
+        `expected ${rel} to exist when i18n is selected`,
+      ).toBe(true);
+    }
+  });
+
+  it("does NOT emit any pages/[locale]/** files when i18n is not selected", async () => {
+    await scaffold(I18N_OFF);
+    const localeDir = projectPath("test-w7b-i18n-off", "pages/[locale]");
+    expect(
+      await fs.pathExists(localeDir),
+      "pages/[locale]/ must not exist when i18n is off",
+    ).toBe(false);
+  });
+
+  it("emitted pages/[locale]/index.tsx is byte-identical to the feature template", async () => {
+    await scaffold(I18N_ON);
+    const emitted = await fs.readFile(
+      projectPath("test-w7b-i18n-on", "pages/[locale]/index.tsx"),
+      "utf-8",
+    );
+    const template = await fs.readFile(
+      path.join(FEATURE_PAGES_DIR, "[locale]/index.tsx"),
+      "utf-8",
+    );
+    expect(emitted).toEqual(template);
+  });
+
+  it("emitted pages/[locale]/docs/[...slug].tsx is byte-identical to the feature template", async () => {
+    await scaffold(I18N_ON);
+    const emitted = await fs.readFile(
+      projectPath("test-w7b-i18n-on", "pages/[locale]/docs/[...slug].tsx"),
+      "utf-8",
+    );
+    const template = await fs.readFile(
+      path.join(FEATURE_PAGES_DIR, "[locale]/docs/[...slug].tsx"),
+      "utf-8",
+    );
+    expect(emitted).toEqual(template);
   });
 });
