@@ -347,6 +347,13 @@ function generatePackageJson(choices: UserChoices) {
 
   if (choices.features.includes("docHistory")) {
     deps["diff"] = "^8.0.3";
+    // @takazudo/zudo-doc has @takazudo/zudo-doc-history-server as an optional
+    // peer dep. When docHistory is selected the zfb plugin
+    // (plugins/doc-history-plugin.mjs) eagerly imports
+    // @takazudo/zudo-doc/integrations/doc-history which in turn imports
+    // @takazudo/zudo-doc-history-server/git-history. Without this dep the
+    // plugin host fails at init with ERR_MODULE_NOT_FOUND — W8A (#1739).
+    deps["@takazudo/zudo-doc-history-server"] = "^0.1.0";
     // W7A (#1736): doc-history-plugin.mjs spawns `tsx -e <inline-script>` to
     // run the v2 runtime in a TS-aware Node subprocess; without tsx the
     // plugin's preBuild step exits with ENOENT before zfb finishes config

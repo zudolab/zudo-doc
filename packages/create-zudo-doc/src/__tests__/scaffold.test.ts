@@ -615,6 +615,43 @@ describe("scaffold — docHistory feature", () => {
     expect(config).toContain("docHistoryPlugin");
   });
 
+  it("includes @takazudo/zudo-doc-history-server dep when docHistory is enabled (W8A — #1739)", async () => {
+    const choices: UserChoices = {
+      projectName: "test-dh-history-server-dep",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "docHistory"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const pkg = await fs.readJson(
+      projectPath("test-dh-history-server-dep", "package.json"),
+    );
+    // @takazudo/zudo-doc's pre-build integration eagerly imports
+    // @takazudo/zudo-doc-history-server/git-history at plugin init; without
+    // this dep the plugin host fails at ERR_MODULE_NOT_FOUND before any
+    // page builds.
+    expect(pkg.dependencies["@takazudo/zudo-doc-history-server"]).toBeDefined();
+    expect(pkg.dependencies["@takazudo/zudo-doc-history-server"]).toMatch(/^\^0\.1\./);
+  });
+
+  it("does NOT include @takazudo/zudo-doc-history-server dep when docHistory is disabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-dh-no-history-server-dep",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const pkg = await fs.readJson(
+      projectPath("test-dh-no-history-server-dep", "package.json"),
+    );
+    expect(pkg.dependencies["@takazudo/zudo-doc-history-server"]).toBeUndefined();
+  });
+
   it("settings have docHistory: false when disabled", async () => {
     const choices: UserChoices = {
       projectName: "test-dh-off",
