@@ -101,8 +101,8 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     }
   }
 
-  // body-foot-util-area.astro ships the DocHistory component inline (byte-
-  // identical to main/src/components/body-foot-util-area.astro). Selecting
+  // body-foot-util-area.tsx ships the DocHistory component inline (byte-
+  // identical to main/src/components/body-foot-util-area.tsx). Selecting
   // bodyFootUtil without docHistory would leave an unresolved import, so we
   // silently co-enable docHistory.
   if (
@@ -278,10 +278,9 @@ function generatePackageJson(choices: UserChoices) {
   //   @takazudo/zudo-doc-md-plugins — zero references in generator templates/source
   //   @takazudo/zfb-adapter-cloudflare — zero references in generator templates/source
   const deps: Record<string, string> = {
-    // zfb engine — replaces astro/@astrojs/* now that the cutover (#500 S5)
-    // has retired the legacy Astro pipeline. Distributed as published npm
-    // packages (the prebuilt binary ships via an optionalDependency of
-    // @takazudo/zfb); pinned to the pre-release the scaffold targets.
+    // zfb engine — distributed as published npm packages (the prebuilt binary
+    // ships via an optionalDependency of @takazudo/zfb-<platform>); pinned to
+    // the pre-release the scaffold targets (per #500).
     // The two literals below must match root package.json's
     // dependencies["@takazudo/zfb"] / ["@takazudo/zfb-runtime"] —
     // enforced by scripts/check-pin-parity.mjs (W4A — #1732).

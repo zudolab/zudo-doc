@@ -5,10 +5,10 @@ import type { FeatureModule } from "../compose.js";
  *
  * Purely a settings toggle: `settings-gen.ts` emits
  * `footer.taglist = { enabled: true, groupBy: "group" }` when selected,
- * and the existing `footer.astro` (part of the footer pseudo-feature) reads
+ * and the footer component (part of the footer pseudo-feature) reads
  * `settings.footer.taglist` to decide whether to render the column(s).
  *
- * `footer.astro` is only installed by the footer pseudo-feature, so
+ * The footer component is only installed by the footer pseudo-feature, so
  * `resolveSelectedFeatures` treats `footerTaglist` as one of the triggers
  * for that feature.
  */

@@ -29,7 +29,7 @@ afterEach(async () => {
 
 describe("applyInjections", () => {
   it("inserts content before an anchor (default position)", async () => {
-    const file = "test.astro";
+    const file = "test.html";
     await fs.writeFile(
       path.join(tempDir, file),
       `<div>\n  <!-- @slot:header:actions -->\n</div>\n`,
@@ -51,7 +51,7 @@ describe("applyInjections", () => {
   });
 
   it("inserts content after an anchor", async () => {
-    const file = "test.astro";
+    const file = "test.html";
     await fs.writeFile(
       path.join(tempDir, file),
       `<div>\n  <!-- @slot:body:end -->\n</div>\n`,
@@ -74,7 +74,7 @@ describe("applyInjections", () => {
   });
 
   it("replaces content between :start and :end anchors", async () => {
-    const file = "test.astro";
+    const file = "test.html";
     await fs.writeFile(
       path.join(tempDir, file),
       [
@@ -104,7 +104,7 @@ describe("applyInjections", () => {
   });
 
   it("handles multiple injections to the same file in order", async () => {
-    const file = "test.astro";
+    const file = "test.html";
     await fs.writeFile(
       path.join(tempDir, file),
       `<div>\n  <!-- @slot:actions -->\n</div>\n`,
@@ -134,7 +134,7 @@ describe("applyInjections", () => {
   });
 
   it("skips injection when anchor is not found", async () => {
-    const file = "test.astro";
+    const file = "test.html";
     const original = `<div>no anchor here</div>\n`;
     await fs.writeFile(path.join(tempDir, file), original);
 
@@ -154,7 +154,7 @@ describe("applyInjections", () => {
   it("skips injection when target file does not exist", async () => {
     const injections: Injection[] = [
       {
-        file: "nonexistent.astro",
+        file: "nonexistent.html",
         anchor: "<!-- @slot:x -->",
         content: "nope",
       },
@@ -170,7 +170,7 @@ describe("applyInjections", () => {
 
 describe("cleanAnchors", () => {
   it("removes unused anchor lines from files", async () => {
-    const file = "test.astro";
+    const file = "test.html";
     await fs.writeFile(
       path.join(tempDir, file),
       [
@@ -211,7 +211,7 @@ describe("cleanAnchors", () => {
 
   it("skips files that do not exist", async () => {
     // Should not throw
-    await cleanAnchors(tempDir, ["nonexistent.astro"]);
+    await cleanAnchors(tempDir, ["nonexistent.html"]);
   });
 });
 

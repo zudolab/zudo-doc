@@ -43,7 +43,7 @@ describe("generateZfbConfig", () => {
     expect(result).not.toContain("llms-txt-plugin.mjs");
     expect(result).not.toContain("claude-resources-plugin.mjs");
 
-    // Should NOT have Astro-specific symbols
+    // migration guards: generated package.json must never include Astro deps
     expect(result).not.toContain("astro/config");
     expect(result).not.toContain("@astrojs/mdx");
     expect(result).not.toContain("@astrojs/preact");
