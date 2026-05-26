@@ -203,9 +203,10 @@ wrangler deploy --var DOCS_SITE_URL=<preview-url>
 
 Or override via the Cloudflare dashboard per environment to avoid preview workers pointing at production docs.
 
-> **Search worker (separate deployment).** `packages/search-worker/wrangler.toml` carries its **own** `DOCS_SITE_URL` (used for CORS/referrer). This repo updates it to `https://zudo-doc.takazudomodular.com`, but a Cloudflare **dashboard environment-variable override** on the search Worker (the old `your-docs-site.pages.dev` placeholder suggests one may exist) **shadows** the file value and persists across deploys. After cutover, redeploy the search worker AND clear/replace any dashboard `DOCS_SITE_URL` override — otherwise live search silently 404s once Pages is decommissioned. No CI gate covers this.
+> **Search worker (optional, opt-in deployment).** The showcase site does NOT deploy `packages/search-worker/` — on-site search is served by the client-side MiniSearch island (`pages/lib/_search-widget.tsx`) reading `search-index.json` from `dist/`. The worker exists as a template/example for downstream users who want a server-side search API for huge doc bases or programmatic API consumers. If you choose to deploy it, two caveats apply:
 >
-> The search worker also has its **own `RATE_LIMIT` KV namespace** (separate from the main worker's). `packages/search-worker/wrangler.toml` currently holds a placeholder id — see `packages/search-worker/README.md` for the creation runbook (`wrangler kv namespace create RATE_LIMIT` run from that directory). Deploying without replacing the placeholder produces error code 10042 (tracked in #1703).
+> - `packages/search-worker/wrangler.toml` carries its **own** `DOCS_SITE_URL` (used for CORS/referrer). A Cloudflare **dashboard environment-variable override** on the search Worker **shadows** the file value and persists across deploys, so if you've ever set one, clear/replace it when redeploying.
+> - The search worker also has its **own `RATE_LIMIT` KV namespace** (separate from the main worker's). `packages/search-worker/wrangler.toml` ships with a placeholder id — see `packages/search-worker/README.md` for the creation runbook (`wrangler kv namespace create RATE_LIMIT` run from that directory). Deploying without replacing the placeholder produces error code 10042.
 
 ### 4. Bind the custom domain
 
