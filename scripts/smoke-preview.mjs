@@ -12,9 +12,11 @@
  *   - /sitemap.xml 200 + <?xml preamble
  *   - /search-index.json 200 + valid JSON with ≥1 entry
  *   - /llms.txt 200 + non-empty body
- *   - /api/ai-chat 401/400/405 (proves SSR wiring without calling
- *     Anthropic — anything that returns the SPA-shell HTML means the
- *     CF adapter wrap or worker-runtime wiring is broken)
+ *   - /api/ai-chat 200/400/401/405 with JSON content-type (proves SSR
+ *     wiring without depending on Anthropic — 200 is the showcase's
+ *     demo-mode reply, 400/401/405 cover real-mode error shapes;
+ *     anything that returns the SPA-shell HTML means the CF adapter
+ *     wrap or worker-runtime wiring is broken)
  *
  * Total wall-clock budget: ≤15s. Exit codes: 0 = pass, non-zero = fail.
  *
@@ -55,7 +57,7 @@ const checks = [
   {
     url: "/api/ai-chat",
     method: "POST",
-    status: [400, 401, 405],
+    status: [200, 400, 401, 405],
     body: ssrJsonResponse,
   },
 ];

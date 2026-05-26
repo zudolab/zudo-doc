@@ -85,6 +85,18 @@ export const settings = {
   onBrokenMarkdownLinks: "warn" as "warn" | "error" | "ignore",
   aiAssistant: true as boolean,
   /**
+   * When `true`, `POST /api/ai-chat` short-circuits and replies with a fixed
+   * "disabled on this demo" message — no Anthropic API key, no KV namespace,
+   * no rate limiter touched. This keeps the showcase deployment functional
+   * without server-side secrets while still rendering a meaningful assistant
+   * reply in the chat modal.
+   *
+   * Default `true` for this showcase repo. Downstream projects that wire up
+   * their own `ANTHROPIC_API_KEY` flip this to `false` to enable the real
+   * Claude-backed chat.
+   */
+  aiChatDemoMode: true as boolean,
+  /**
    * Enables the interactive Design Token Tweak panel (tabbed UI for spacing,
    * font, size and color tokens). The Color tab reproduces the former
    * Color-Tweak panel; other tabs are filled in by follow-up sub-issues.

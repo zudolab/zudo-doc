@@ -360,7 +360,7 @@ describe("scaffold — designTokenPanel package.json wiring", () => {
     const pkg = await fs.readJson(
       projectPath("test-zdtp-deps", "package.json"),
     );
-    expect(pkg.dependencies["@takazudo/zdtp"]).toBe("0.1.0-next.1");
+    expect(pkg.dependencies["@takazudo/zdtp"]).toBe("0.1.0-next.3");
   });
 });
 

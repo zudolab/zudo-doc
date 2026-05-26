@@ -22,6 +22,8 @@
 
 import { getCloudflareContext } from "@takazudo/zfb-adapter-cloudflare";
 
+import { settings } from "@/config/settings";
+
 // `frontmatter` is required by zfb's TSX page contract (see
 // `crates/zfb-content/src/tsx_frontmatter.rs`). Without it, zfb defaults
 // the route to SSG and `prerender = false` below is ignored. Title is
@@ -77,6 +79,14 @@ interface ClaudeApiResponse {
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
+
+/**
+ * Fixed reply returned when `settings.aiChatDemoMode === true`. The exact
+ * wording is part of the showcase spec (#1700) — keep it stable so screenshots
+ * and bilingual docs stay in sync.
+ */
+const DEMO_MODE_MESSAGE =
+  "This feature is disabled on this demo. Need per project setup to enable this.";
 
 const MAX_HISTORY_LENGTH = 50;
 const MAX_MESSAGE_LENGTH = 4000;
@@ -353,6 +363,13 @@ export default async function AiChatHandler(): Promise<Response> {
 
   if (request.method !== "POST") {
     return jsonResponse({ error: "Method not allowed" }, 405);
+  }
+
+  // Demo-mode short-circuit: when enabled, reply with a fixed message before
+  // touching the API key, KV namespace, audit logger, or rate limiter. Lets
+  // the showcase deploy run without ANTHROPIC_API_KEY / RATE_LIMIT bindings.
+  if (settings.aiChatDemoMode) {
+    return jsonResponse({ response: DEMO_MODE_MESSAGE }, 200);
   }
 
   const clientIp = request.headers.get("cf-connecting-ip") ?? "unknown";
