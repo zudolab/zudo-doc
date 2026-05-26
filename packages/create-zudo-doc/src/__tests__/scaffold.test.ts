@@ -2702,7 +2702,6 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
 });
 
 // ---------------------------------------------------------------------------
-<<<<<<< HEAD
 // W7A (#1736) — zfb-config-gen reconcile: the generated zfb.config.ts must
 // reference plugin `.mjs` files actually shipped by the templates, otherwise
 // `zfb build` fails at config bundling (the W6B-flagged blocker). These
