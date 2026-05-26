@@ -44,9 +44,9 @@ The only file shipped with anchors in `templates/base/` today is:
 
 - `src/styles/global.css` — 2 anchors (`@slot:global-css:theme-tokens`, `@slot:global-css:feature-styles`)
 
-Feature modules also inject into the generated `src/layouts/doc-layout.astro` and `src/components/header.astro` files. Those files are not in `templates/base/` — they are emitted at scaffold time and remain a transitional shape from the zfb cutover (#500). The `ANCHOR_FILES` list in `src/compose.ts` is the source of truth for which files are anchor-cleaned after composition.
+Only `src/styles/global.css` carries injection anchors. Feature-specific files are copied wholesale from `templates/features/<name>/files/`; no anchor injection into doc-layout/header is required post-zfb-cutover. The `ANCHOR_FILES` list in `src/compose.ts` is the source of truth for which files are anchor-cleaned after composition.
 
-`src/compose.ts` `ANCHOR_LINE_RE` accepts JSX-comment (`{/* @slot:… */}`), block-comment, line-comment, HTML-comment, and shell-comment forms so anchors work across `.tsx`, `.ts`, `.css`, and any remaining `.astro` targets.
+`src/compose.ts` `ANCHOR_LINE_RE` accepts JSX-comment (`{/* @slot:… */}`), block-comment, line-comment, HTML-comment, and shell-comment forms so anchors work across `.tsx`, `.ts`, and `.css`.
 
 ## Testing
 

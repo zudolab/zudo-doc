@@ -63,12 +63,12 @@ Any element that navigates (rendered as `<a href>` or behaves as a link) MUST ha
 - **Links (do underline)**: doc content links, sidebar items, header main-nav, header overflow menu items, color-tweak panel unselected tabs, search result rows, footer links, doc history entries, breadcrumb trails, mobile TOC entries.
 - **Controls (do NOT underline)**: buttons, toggles, sidebar resizer, palette selectors, color swatches, close icons. These use border/bg hover instead.
 
-Precedents to copy the pattern from: `src/components/header.astro`, `src/components/site-tree-nav.tsx`, `src/components/footer.astro`.
+Precedents to copy the pattern from: any current `.tsx` component in `src/components/` (e.g. `site-tree-nav.tsx`).
 
 See also: `/css-wisdom` for light-mode / dark-mode contrast rules and the broader three-tier token strategy.
 
-### Astro vs React
+### Server-rendered Preact vs client islands
 
-- Default to **Astro components** (`.astro`) — zero JS, server-rendered
-- Use **React islands** (`client:load`) only when client-side interactivity is needed
+- Default to **server-rendered Preact `.tsx`** (no `client:*` directive) — emits zero JS. See `src/CLAUDE.md` for the canonical rule: "All components are Preact `.tsx` — there are no `.astro` files."
+- Promote to a **client island** only when interactivity is needed
 - Both follow the same utility-class approach
