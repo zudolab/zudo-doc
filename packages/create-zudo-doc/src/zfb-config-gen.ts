@@ -3,12 +3,21 @@ import type { UserChoices } from "./prompts.js";
 /**
  * Programmatically generate zfb.config.ts from user choices.
  *
+ * W7A (#1736): emits zfb plugins in the host's INLINE-OBJECT shape —
+ * `{ name: "./plugins/<plugin>.mjs", options: {...} }` — not the
+ * pre-cutover factory-import pattern (`import { fooPlugin } from
+ * "./src/integrations/foo"`). Inline functions are not supported by zfb's
+ * plugin runtime (see `@takazudo/zfb/plugins` source); plugins MUST be
+ * authored as standalone `.mjs` modules referenced from `zfb.config.ts`
+ * by `name`. The plugin source files are shipped by the base/feature
+ * templates under `plugins/<plugin>.mjs` and `templates/features/<feature>/
+ * files/plugins/<plugin>.mjs`.
+ *
  * Replaces the former astro-config-gen.ts + content-config-gen.ts pair.
  * In the zfb world, content-collection schemas live inside zfb.config.ts
  * itself — there is no separate content.config.ts.
  */
 export function generateZfbConfig(choices: UserChoices): string {
-  const hasSearch = choices.features.includes("search");
   const hasDocHistory = choices.features.includes("docHistory");
   const hasLlmsTxt = choices.features.includes("llmsTxt");
   const hasClaudeResources = choices.features.includes("claudeResources");
@@ -24,26 +33,6 @@ export function generateZfbConfig(choices: UserChoices): string {
   if (hasTagGovernance) {
     lines.push(
       `import { tagVocabulary } from "./src/config/tag-vocabulary";`,
-    );
-  }
-  if (hasSearch) {
-    lines.push(
-      `import { searchIndexPlugin } from "./src/integrations/search-index";`,
-    );
-  }
-  if (hasDocHistory) {
-    lines.push(
-      `import { docHistoryPlugin } from "./src/integrations/doc-history";`,
-    );
-  }
-  if (hasLlmsTxt) {
-    lines.push(
-      `import { llmsTxtPlugin } from "./src/integrations/llms-txt";`,
-    );
-  }
-  if (hasClaudeResources) {
-    lines.push(
-      `import { claudeResourcesPlugin } from "./src/integrations/claude-resources";`,
     );
   }
 
@@ -156,39 +145,118 @@ export function generateZfbConfig(choices: UserChoices): string {
   lines.push(`}`);
   lines.push(``);
 
-  // --- Plugins ---
-  const plugins: string[] = [];
-  if (hasSearch) {
-    plugins.push(`    searchIndexPlugin()`);
+  // --- Locale helpers used by integrationPlugins (always emitted because
+  //     search-index + copy-public are always-on; locale-shaped data is
+  //     consumed by search-index even when there's only the default locale).
+  lines.push(
+    `const localeArray = Object.entries(settings.locales).map(([code, locale]) => ({`,
+  );
+  lines.push(`  code,`);
+  lines.push(`  dir: locale.dir,`);
+  lines.push(`}));`);
+  lines.push(`const localeRecord = Object.fromEntries(`);
+  lines.push(
+    `  Object.entries(settings.locales).map(([code, locale]) => [code, { dir: locale.dir }]),`,
+  );
+  lines.push(`);`);
+  lines.push(``);
+
+  // --- Plugins — inline-object shape matches host. Each entry's `name`
+  //     is a relative path to a `.mjs` plugin module shipped by the
+  //     base/feature templates. zfb's plugin runtime resolves the module
+  //     and dispatches lifecycle hooks (preBuild / postBuild / devMiddleware)
+  //     on its default export. ---
+  lines.push(`const integrationPlugins = [`);
+  if (hasClaudeResources) {
+    lines.push(`  ...(settings.claudeResources`);
+    lines.push(`    ? [`);
+    lines.push(`        {`);
+    lines.push(`          name: "./plugins/claude-resources-plugin.mjs",`);
+    lines.push(`          options: {`);
+    lines.push(`            claudeDir: settings.claudeResources.claudeDir,`);
+    lines.push(`            projectRoot: settings.claudeResources.projectRoot,`);
+    lines.push(`            docsDir: settings.docsDir,`);
+    lines.push(`          },`);
+    lines.push(`        },`);
+    lines.push(`      ]`);
+    lines.push(`    : []),`);
   }
   if (hasDocHistory) {
-    plugins.push(
-      `    ...(settings.docHistory\n` +
-        `      ? [docHistoryPlugin({ docsDir: settings.docsDir, locales: settings.locales })]\n` +
-        `      : [])`,
-    );
+    lines.push(`  ...(settings.docHistory`);
+    lines.push(`    ? [`);
+    lines.push(`        {`);
+    lines.push(`          name: "./plugins/doc-history-plugin.mjs",`);
+    lines.push(`          options: {`);
+    lines.push(`            docsDir: settings.docsDir,`);
+    lines.push(`            locales: localeRecord,`);
+    lines.push(`          },`);
+    lines.push(`        },`);
+    lines.push(`      ]`);
+    lines.push(`    : []),`);
   }
+  // search-index is always-on (matches host) — emits dist/search-index.json
+  // even when no <Search /> widget mounts; ~few-KB cost is acceptable and
+  // keeps the dev-middleware route registered for the always-mounted
+  // search widget in pages/lib/_header-with-defaults.tsx.
+  lines.push(`  {`);
+  lines.push(`    name: "./plugins/search-index-plugin.mjs",`);
+  lines.push(`    options: {`);
+  lines.push(`      docsDir: settings.docsDir,`);
+  lines.push(`      locales: localeRecord,`);
+  lines.push(`      base: settings.base,`);
+  lines.push(`    },`);
+  lines.push(`  },`);
   if (hasLlmsTxt) {
-    plugins.push(`    ...(settings.llmsTxt ? [llmsTxtPlugin()] : [])`);
+    lines.push(`  ...(settings.llmsTxt`);
+    lines.push(`    ? [`);
+    lines.push(`        {`);
+    lines.push(`          name: "./plugins/llms-txt-plugin.mjs",`);
+    lines.push(`          options: {`);
+    lines.push(`            siteName: settings.siteName,`);
+    lines.push(`            siteDescription: settings.siteDescription,`);
+    lines.push(`            base: settings.base,`);
+    lines.push(`            siteUrl: settings.siteUrl,`);
+    lines.push(`            defaultLocaleDir: settings.docsDir,`);
+    lines.push(`            locales: localeArray,`);
+    lines.push(`          },`);
+    lines.push(`        },`);
+    lines.push(`      ]`);
+    lines.push(`    : []),`);
   }
-  if (hasClaudeResources) {
-    plugins.push(
-      `    ...(settings.claudeResources\n` +
-        `      ? [claudeResourcesPlugin(settings.claudeResources)]\n` +
-        `      : [])`,
-    );
-  }
+  // copy-public is always-on (matches host) — workaround for upstream zfb
+  // gap where `zfb build` does not copy `public/` to dist/. Empty/missing
+  // public/ is a no-op, so the cost to projects without public/ is zero.
+  lines.push(`  {`);
+  lines.push(`    name: "./plugins/copy-public-plugin.mjs",`);
+  lines.push(`    options: {`);
+  lines.push(`      publicDir: "public",`);
+  lines.push(`    },`);
+  lines.push(`  },`);
+  lines.push(`];`);
+  lines.push(``);
 
   // --- Export ---
   lines.push(`export default defineConfig({`);
   lines.push(`  framework: "preact",`);
   lines.push(`  tailwind: { enabled: true },`);
   lines.push(`  collections,`);
-  lines.push(`  plugins: [`);
-  if (plugins.length > 0) {
-    lines.push(plugins.join(",\n") + ",");
-  }
-  lines.push(`  ],`);
+  lines.push(`  stripMdExt: true,`);
+  lines.push(`  resolveMarkdownLinks: {`);
+  lines.push(`    enabled: true,`);
+  lines.push(`    dirs: [`);
+  lines.push(`      { dir: settings.docsDir, routePrefix: "/docs/" },`);
+  lines.push(
+    `      ...Object.entries(settings.locales).map(([code, locale]) => ({`,
+  );
+  lines.push(`        dir: locale.dir,`);
+  lines.push(`        routePrefix: \`/\${code}/docs/\`,`);
+  lines.push(`      })),`);
+  lines.push(`    ],`);
+  lines.push(`    onBrokenLinks: "warn",`);
+  lines.push(`  },`);
+  lines.push(`  base: settings.base,`);
+  lines.push(`  trailingSlash: settings.trailingSlash,`);
+  lines.push(`  plugins: integrationPlugins,`);
   lines.push(`});`);
 
   return lines.join("\n") + "\n";

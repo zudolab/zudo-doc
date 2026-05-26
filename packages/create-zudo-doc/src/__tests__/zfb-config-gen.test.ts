@@ -21,12 +21,28 @@ describe("generateZfbConfig", () => {
     expect(result).toContain('framework: "preact"');
     expect(result).toContain("tailwind: { enabled: true }");
     expect(result).toContain("collections,");
-    expect(result).toContain("plugins: [");
-    // Should NOT have optional feature imports
-    expect(result).not.toContain("searchIndexPlugin");
-    expect(result).not.toContain("docHistoryPlugin");
-    expect(result).not.toContain("llmsTxtPlugin");
-    expect(result).not.toContain("claudeResourcesPlugin");
+    expect(result).toContain("plugins: integrationPlugins,");
+
+    // W7A (#1736): the pre-cutover factory-import pattern is retired —
+    // plugins are inline objects pointing at `.mjs` modules shipped by
+    // the templates, NOT factory imports from `./src/integrations/*`.
+    expect(result).not.toContain('from "./src/integrations/');
+    expect(result).not.toContain("searchIndexPlugin(");
+    expect(result).not.toContain("docHistoryPlugin(");
+    expect(result).not.toContain("llmsTxtPlugin(");
+    expect(result).not.toContain("claudeResourcesPlugin(");
+
+    // search-index and copy-public are always-on (matches host) — the
+    // search widget mounts unconditionally and consumers may need
+    // public/ copied. They appear even on a barebone project.
+    expect(result).toContain('name: "./plugins/search-index-plugin.mjs"');
+    expect(result).toContain('name: "./plugins/copy-public-plugin.mjs"');
+
+    // Optional plugins should NOT be present on a barebone project.
+    expect(result).not.toContain("doc-history-plugin.mjs");
+    expect(result).not.toContain("llms-txt-plugin.mjs");
+    expect(result).not.toContain("claude-resources-plugin.mjs");
+
     // Should NOT have Astro-specific symbols
     expect(result).not.toContain("astro/config");
     expect(result).not.toContain("@astrojs/mdx");
@@ -35,35 +51,39 @@ describe("generateZfbConfig", () => {
     expect(result).not.toContain("i18n:");
   });
 
-  it("includes searchIndexPlugin import and plugin entry when search is selected", () => {
+  it("search-index plugin entry uses inline-object shape with docsDir/locales/base options", () => {
     const choices = { ...baseChoices, features: ["search"] };
     const result = generateZfbConfig(choices);
-    expect(result).toContain('import { searchIndexPlugin } from "./src/integrations/search-index"');
-    expect(result).toContain("searchIndexPlugin()");
+    expect(result).toContain('name: "./plugins/search-index-plugin.mjs"');
+    expect(result).toContain("docsDir: settings.docsDir,");
+    expect(result).toContain("locales: localeRecord,");
+    expect(result).toContain("base: settings.base,");
   });
 
-  it("includes docHistoryPlugin import and conditional plugin entry when selected", () => {
+  it("doc-history plugin entry uses inline-object shape and gates on settings.docHistory", () => {
     const choices = { ...baseChoices, features: ["docHistory"] };
     const result = generateZfbConfig(choices);
-    expect(result).toContain('import { docHistoryPlugin } from "./src/integrations/doc-history"');
-    expect(result).toContain("docHistoryPlugin");
+    expect(result).toContain('name: "./plugins/doc-history-plugin.mjs"');
     expect(result).toContain("settings.docHistory");
+    expect(result).toContain("locales: localeRecord,");
   });
 
-  it("includes llmsTxtPlugin import and conditional plugin entry when selected", () => {
+  it("llms-txt plugin entry uses inline-object shape and gates on settings.llmsTxt", () => {
     const choices = { ...baseChoices, features: ["llmsTxt"] };
     const result = generateZfbConfig(choices);
-    expect(result).toContain('import { llmsTxtPlugin } from "./src/integrations/llms-txt"');
-    expect(result).toContain("llmsTxtPlugin");
+    expect(result).toContain('name: "./plugins/llms-txt-plugin.mjs"');
     expect(result).toContain("settings.llmsTxt");
+    expect(result).toContain("siteName: settings.siteName,");
+    expect(result).toContain("siteUrl: settings.siteUrl,");
+    expect(result).toContain("locales: localeArray,");
   });
 
-  it("includes claudeResourcesPlugin import and conditional plugin entry when selected", () => {
+  it("claude-resources plugin entry uses inline-object shape and gates on settings.claudeResources", () => {
     const choices = { ...baseChoices, features: ["claudeResources"] };
     const result = generateZfbConfig(choices);
-    expect(result).toContain('import { claudeResourcesPlugin } from "./src/integrations/claude-resources"');
-    expect(result).toContain("claudeResourcesPlugin");
+    expect(result).toContain('name: "./plugins/claude-resources-plugin.mjs"');
     expect(result).toContain("settings.claudeResources");
+    expect(result).toContain("claudeDir: settings.claudeResources.claudeDir,");
   });
 
   it("always emits locale loop (no-op when locales is empty)", () => {
@@ -122,16 +142,19 @@ describe("generateZfbConfig", () => {
     expect(result).toContain("tags: buildTagsSchema()");
   });
 
-  it("includes all plugins when all relevant features selected", () => {
+  it("includes every plugin entry when all integration features are selected", () => {
     const choices: UserChoices = {
       ...baseChoices,
       features: ["search", "docHistory", "llmsTxt", "claudeResources"],
     };
     const result = generateZfbConfig(choices);
-    expect(result).toContain("searchIndexPlugin");
-    expect(result).toContain("docHistoryPlugin");
-    expect(result).toContain("llmsTxtPlugin");
-    expect(result).toContain("claudeResourcesPlugin");
+    // All five plugin .mjs references should appear (search + copy-public
+    // always-on; doc-history + llms-txt + claude-resources from feature flags).
+    expect(result).toContain('name: "./plugins/search-index-plugin.mjs"');
+    expect(result).toContain('name: "./plugins/doc-history-plugin.mjs"');
+    expect(result).toContain('name: "./plugins/llms-txt-plugin.mjs"');
+    expect(result).toContain('name: "./plugins/claude-resources-plugin.mjs"');
+    expect(result).toContain('name: "./plugins/copy-public-plugin.mjs"');
   });
 
   it("does not include Astro-specific markdown config (shiki, remark, rehype at config level)", () => {
@@ -145,5 +168,17 @@ describe("generateZfbConfig", () => {
     expect(result).not.toContain("rehypePlugins");
     expect(result).not.toContain("vite:");
     expect(result).not.toContain("tailwindcss()");
+  });
+
+  it("emits base/trailingSlash/stripMdExt/resolveMarkdownLinks fields matching host", () => {
+    // W7A (#1736): host's zfb.config.ts threads these settings through —
+    // the generator must do the same so scaffolds inherit the same routing
+    // semantics (link rewriting, trailing-slash, base prefix).
+    const result = generateZfbConfig(baseChoices);
+    expect(result).toContain("base: settings.base,");
+    expect(result).toContain("trailingSlash: settings.trailingSlash,");
+    expect(result).toContain("stripMdExt: true,");
+    expect(result).toContain("resolveMarkdownLinks: {");
+    expect(result).toContain('onBrokenLinks: "warn"');
   });
 });

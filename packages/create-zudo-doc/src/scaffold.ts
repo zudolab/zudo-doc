@@ -347,6 +347,18 @@ function generatePackageJson(choices: UserChoices) {
 
   if (choices.features.includes("docHistory")) {
     deps["diff"] = "^8.0.3";
+    // W7A (#1736): doc-history-plugin.mjs spawns `tsx -e <inline-script>` to
+    // run the v2 runtime in a TS-aware Node subprocess; without tsx the
+    // plugin's preBuild step exits with ENOENT before zfb finishes config
+    // load.
+    devDeps["tsx"] = "^4.21.0";
+  }
+
+  if (choices.features.includes("claudeResources")) {
+    // W7A (#1736): claude-resources-plugin.mjs spawns `tsx -e <inline-script>`
+    // for the same reason as doc-history (TS-aware Node subprocess wrapping
+    // the v2 runner).
+    devDeps["tsx"] = "^4.21.0";
   }
 
   if (choices.features.includes("designTokenPanel")) {
