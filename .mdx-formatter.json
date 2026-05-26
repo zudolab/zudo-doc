@@ -3,7 +3,6 @@
     "node_modules/**",
     "dist/**",
     "build/**",
-    ".astro/**",
     ".git/**",
     "worktrees/**",
     "src/content/docs/claude/**",

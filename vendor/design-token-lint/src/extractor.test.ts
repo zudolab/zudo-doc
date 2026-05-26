@@ -12,7 +12,7 @@ describe('extractClasses', () => {
     ]);
   });
 
-  it('extracts from class="..." (Astro)', () => {
+  it('extracts from class="..." (HTML/JSX)', () => {
     const content = '<div class="m-8 grid">';
     const result = extractClasses(content);
     expect(result).toEqual([
@@ -45,16 +45,6 @@ describe('extractClasses', () => {
     expect(result).toEqual([
       { className: 'px-6', line: 1 },
       { className: 'relative', line: 1 },
-    ]);
-  });
-
-  it('extracts from class:list (Astro)', () => {
-    const content = `<div class:list={["p-4 flex", 'bg-gray-500']}>`;
-    const result = extractClasses(content);
-    expect(result).toEqual([
-      { className: 'p-4', line: 1 },
-      { className: 'flex', line: 1 },
-      { className: 'bg-gray-500', line: 1 },
     ]);
   });
 

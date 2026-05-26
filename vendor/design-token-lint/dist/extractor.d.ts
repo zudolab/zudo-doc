@@ -1,9 +1,9 @@
 /**
- * Extract class names from source files (.tsx, .jsx, .astro).
+ * Extract class names from source files (.tsx, .jsx).
  *
  * Handles:
  * - className="..." and className={'...'} in TSX/JSX
- * - class="..." and class:list={[...]} in Astro
+ * - class="..." and class='...' in HTML/JSX
  * - Template literal classNames (simple cases)
  * - Ignore comments: design-token-lint-ignore
  */
