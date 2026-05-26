@@ -1,9 +1,10 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties } from 'react';
+import type { ComponentChildren } from 'preact';
 
 type Props = {
   id?: string;
   className?: string;
-  children?: ReactNode;
+  children?: ComponentChildren;
   [key: string]: any;
 };
 
