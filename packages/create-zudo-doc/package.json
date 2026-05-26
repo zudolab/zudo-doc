@@ -30,7 +30,7 @@
   },
   "type": "module",
   "bin": {
-    "create-zudo-doc": "./bin/create-zudo-doc.js"
+    "create-zudo-doc": "bin/create-zudo-doc.js"
   },
   "main": "./dist/api.js",
   "exports": {
