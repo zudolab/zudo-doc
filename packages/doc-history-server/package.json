@@ -2,6 +2,24 @@
   "name": "@takazudo/zudo-doc-history-server",
   "version": "0.1.0",
   "type": "module",
+  "description": "Standalone doc git-history service for zudo-doc — HTTP server + CLI batch generator. Decouples expensive `git log --follow` calls from the main build pipeline.",
+  "license": "MIT",
+  "author": "Takeshi Takatsudo",
+  "homepage": "https://zudo-doc.takazudomodular.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zudolab/zudo-doc.git",
+    "directory": "packages/doc-history-server"
+  },
+  "bugs": {
+    "url": "https://github.com/zudolab/zudo-doc/issues"
+  },
+  "keywords": [
+    "zudo-doc",
+    "documentation",
+    "git-history",
+    "mdx"
+  ],
   "publishConfig": {
     "access": "public",
     "provenance": true

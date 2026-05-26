@@ -4,6 +4,24 @@
   "type": "module",
   "description": "zudo-doc framework primitives layer that sits on top of zfb's engine — sidebar, theme, TOC, breadcrumb, layouts, head injection, View Transitions, SSR-skip wrappers (per ADR-003).",
   "license": "MIT",
+  "author": "Takeshi Takatsudo",
+  "homepage": "https://zudo-doc.takazudomodular.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zudolab/zudo-doc.git",
+    "directory": "packages/zudo-doc"
+  },
+  "bugs": {
+    "url": "https://github.com/zudolab/zudo-doc/issues"
+  },
+  "keywords": [
+    "zudo-doc",
+    "documentation",
+    "framework",
+    "mdx",
+    "preact",
+    "zfb"
+  ],
   "publishConfig": {
     "access": "public",
     "provenance": true
