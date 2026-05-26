@@ -1,7 +1,7 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-// JSX port of src/components/language-switcher.astro.
+// JSX port of src/components/language-switcher.
 //
 // Pure presentational component: the host project pre-builds the
 // `LocaleLink[]` (using its own settings/i18n modules and the active

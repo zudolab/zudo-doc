@@ -1,7 +1,7 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-// JSX port of src/components/category-nav.astro.
+// JSX port of src/components/category-nav.
 //
 // The original Astro template built the nav tree, found a category node by
 // slug, and rendered the immediate children as a two-column card grid. This
@@ -45,7 +45,7 @@ function ArrowIcon(): JSX.Element {
 }
 
 /**
- * CategoryNav — JSX port of `src/components/category-nav.astro`.
+ * CategoryNav — JSX port of `src/components/category-nav`.
  *
  * Renders direct children of a category as a two-column grid of card links.
  * Each card shows the node's label (with an arrow icon) and an optional

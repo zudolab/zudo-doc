@@ -14,7 +14,7 @@ export interface NavItemLike {
 /**
  * Strip the locale prefix from `pathWithoutBase` when the page is being
  * served under a non-default locale. Mirrors the inline regex inside
- * `header.astro` so the JSX port matches the legacy template's
+ * `header` so the JSX port matches the legacy template's
  * active-link behaviour.
  *
  * Examples:

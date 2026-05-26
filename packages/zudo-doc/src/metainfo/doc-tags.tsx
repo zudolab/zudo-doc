@@ -5,7 +5,7 @@ import type { VNode } from "preact";
 
 /**
  * A single resolved tag with its navigation href. The legacy
- * `doc-tags.astro` called `resolvePageTags(tags)` and used `TagNav`
+ * `doc-tags` called `resolvePageTags(tags)` and used `TagNav`
  * which computed `tagHref()` internally. v2 delegates both to the
  * caller so the component has no upward dependency on project routing
  * utilities.
@@ -19,7 +19,7 @@ export interface ResolvedTag {
 
 /**
  * Controls vertical spacing: matches the `placement` prop on the
- * legacy `doc-tags.astro` component.
+ * legacy `doc-tags` component.
  *
  * - `"after-title"` — tight top margin, bottom margin to separate from
  *   the body (`mt-0 mb-vsp-md`).
@@ -56,14 +56,14 @@ export const DEFAULT_TAGS_LABEL = "Tags";
 export const DEFAULT_TAGGED_WITH_LABEL = "Tagged with";
 
 /**
- * Page-level tag chips — JSX port of `src/components/doc-tags.astro`
- * (page-variant rendering from `src/components/tag-nav.astro`).
+ * Page-level tag chips — JSX port of `src/components/doc-tags`
+ * (page-variant rendering from `src/components/tag-nav`).
  *
  * Returns `null` when the `tags` array is empty, matching the original
  * `resolvedTags.length > 0` guard.
  *
  * The pointed-chip shape is reproduced verbatim from the page-variant
- * branch of `tag-nav.astro` using the same `clip-path` values.
+ * branch of `tag-nav` using the same `clip-path` values.
  */
 export function DocTags(props: DocTagsProps): VNode | null {
   const {

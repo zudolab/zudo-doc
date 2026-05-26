@@ -1,7 +1,7 @@
 /**
  * Public types for the framework-agnostic sidebar shell.
  *
- * The original Astro `sidebar.astro` mixed three concerns:
+ * The original `sidebar` mixed three concerns:
  *   1. Building `rootMenuItems` from `settings.headerNav` (with i18n
  *      label resolution and version-aware hrefs).
  *   2. Building the doc tree via `loadLocaleDocs` +

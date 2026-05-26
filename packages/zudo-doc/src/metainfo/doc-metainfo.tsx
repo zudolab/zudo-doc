@@ -6,7 +6,7 @@ import type { VNode } from "preact";
 export interface DocMetainfoProps {
   /**
    * Pre-formatted creation date string (e.g. `"Jan 1, 2024"`).
-   * The legacy `doc-metainfo.astro` called `formatDate(gitInfo.createdAt,
+   * The legacy `doc-metainfo` called `formatDate(gitInfo.createdAt,
    * locale)` inline; v2 delegates that computation to the caller.
    * Omit (or pass `null`) to suppress the "created" row.
    */
@@ -97,7 +97,7 @@ function UserIcon(): VNode {
 
 /**
  * Document meta-information strip (created date, updated date, author)
- * — JSX port of `src/components/doc-metainfo.astro`.
+ * — JSX port of `src/components/doc-metainfo`.
  *
  * The legacy component owned three responsibilities: reading
  * `settings.docMetainfo`, calling `getGitInfo(filePath)`, and

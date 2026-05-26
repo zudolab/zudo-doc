@@ -1,7 +1,7 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-// JSX port of src/components/doc-card-grid.astro.
+// JSX port of src/components/doc-card-grid.
 //
 // The original Astro template accepted a flat list of pre-built items
 // (href + title + optional description) and rendered them in a two-column
@@ -50,7 +50,7 @@ function ArrowIcon(): JSX.Element {
 }
 
 /**
- * DocCardGrid — JSX port of `src/components/doc-card-grid.astro`.
+ * DocCardGrid — JSX port of `src/components/doc-card-grid`.
  *
  * Renders a flat list of `{ href, title, description? }` items as a two-column
  * card grid. Each card shows an arrow icon, the doc title, and an optional
