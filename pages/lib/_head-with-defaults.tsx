@@ -77,9 +77,16 @@ export function HeadWithDefaults({
   canonical,
 }: HeadWithDefaultsProps): JSX.Element {
   // og:image / twitter:image must be absolute URLs — crawlers silently drop
-  // relative og:image values. Computed as siteUrl (no trailing slash) + the
-  // base-prefixed asset path.
-  const ogImageUrl = `${settings.siteUrl.replace(/\/$/, "")}${withBase("/img/ogp.png")}`;
+  // relative og:image values. Compute as siteUrl (no trailing slash) + the
+  // base-prefixed asset path, and skip emission entirely when siteUrl is
+  // empty (e.g. a freshly scaffolded create-zudo-doc project that hasn't
+  // configured siteUrl yet) so we never ship a useless relative og:image.
+  // OgTags / TwitterCard already gate their image emission on the prop being
+  // defined; the og:image:* companion tags below are gated explicitly because
+  // they would dangle without the parent og:image.
+  const ogImageUrl = settings.siteUrl
+    ? `${settings.siteUrl.replace(/\/$/, "")}${withBase("/img/ogp.png")}`
+    : undefined;
 
   // Resolve the palette CSS body once per page render (the v2 component
   // is pure SSR — no caching needed).
@@ -97,10 +104,15 @@ export function HeadWithDefaults({
       />
       {/* og:image:width / og:image:height / og:image:alt — not in OgTags API;
           emitted here directly to avoid expanding the shared HeadProps surface.
-          Standard 1200×630 social preview dimensions. */}
-      <meta property="og:image:width" content="1200" />
-      <meta property="og:image:height" content="630" />
-      <meta property="og:image:alt" content={composeMetaTitle(title)} />
+          Standard 1200×630 social preview dimensions. Gated on ogImageUrl so
+          the companion tags don't dangle when og:image itself was suppressed. */}
+      {ogImageUrl !== undefined && (
+        <>
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
+          <meta property="og:image:alt" content={composeMetaTitle(title)} />
+        </>
+      )}
       <TwitterCard card="summary_large_image" image={ogImageUrl} />
       <ColorSchemeProvider cssText={cssText} colorMode={colorMode} />
       {/* favicon set — withBase() handles the configured base path prefix */}
