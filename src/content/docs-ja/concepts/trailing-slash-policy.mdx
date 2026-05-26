@@ -6,9 +6,9 @@ sidebar_position: 1
 
 ## 概要
 
-zudo-docは「常に末尾スラッシュあり」のURLポリシーを採用しています。すべてのページは末尾が `/` で終わるパスに配置されます。例えば `/docs/getting-started` ではなく `/docs/getting-started/` です。この規則は、zfb移行前に有効だったAstroの `trailingSlash: "always"` 設定と一致しています。
+zudo-docは「常に末尾スラッシュあり」のURLポリシーを採用しています。すべてのページは末尾が `/` で終わるパスに配置されます。例えば `/docs/getting-started` ではなく `/docs/getting-started/` です。この規則は、zudo-docがAstro時代に採用していた規約（zfb移行前に有効だった `trailingSlash: "always"` 設定）に基づいています。
 
-Astroでは、この適用は2箇所で行われていました：
+歴史的に（Astro時代）、この適用は2箇所で行われていました：
 
 - **ビルド**: Astroは `dist/docs/getting-started/index.html` を出力するため、`trailingSlash: "always"` が出力パスに組み込まれていました。
 - **開発サーバーミドルウェア**: `src/middleware-handler.ts` が末尾スラッシュなしでリクエストが到着した場合に301リダイレクトを発行していました。
@@ -50,7 +50,7 @@ const canonical = normalizePathname(rawPathname); // 末尾スラッシュがな
 |---|---|
 | すでに `/` で終わっている | 何もしない |
 | 最後のセグメントに文字で始まる拡張子がある（`.js`、`.css`、`.png` など） | 何もしない — 静的アセット |
-| `/_astro/` または `/_image` で始まる | 何もしない — フレームワーク内部パス |
+| `/_astro/` または `/_image` で始まる | 何もしない — クロスフレームワーク間のアセットパス互換性のため保持 |
 | `/docs/v2.0` のようなバージョン文字列（ドットの後に数字） | **正規化される** — 拡張子とは扱われない |
 
 ## ランタイム — デプロイホストの担当

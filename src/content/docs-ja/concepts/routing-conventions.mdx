@@ -4,15 +4,15 @@ description: zfbにおけるpaths()のルート列挙方法と、AstroのgetStat
 sidebar_position: 10
 ---
 
-zfbはAstroの`getStaticPaths()`を`paths()`エクスポートで置き換えます。
+Astroから移行する場合、`paths()`はzfbにおける`getStaticPaths()`の後継です。
 どちらも動的ルートやキャッチオールルートがビルド時に出力すべき具体的なURLをビルドに伝えるものですが、
 実行モデルが大きく異なります。
 このページでは規約とマイグレーション手順を説明します。
 
 ## paths()は同期的に実行される
 
-Astroの`getStaticPaths()`はビルド時にNode.jsで実行される`async`関数です。
-ファイル読み込み、データベースクエリ、ライブHTTPリクエストなど、あらゆる`await`が使えます。
+Astroでは、`getStaticPaths()`はビルド時にNode.jsで実行される`async`関数でした。
+ファイル読み込み、データベースクエリ、ライブHTTPリクエストなど、あらゆる`await`が使えました。
 
 zfbの`paths()`はビルド時に**miniflare**内で実行され、**同期的**であることが契約上の仕様です。
 関数シグネチャは`async`ではなく`function paths(): PathEntry[]`です。
@@ -96,7 +96,7 @@ Astroの`getStaticPaths()`は任意の非同期操作を受け付けていまし
 
 ```ts
 // ❌ Astro — 移行前
-// src/pages/tags/[tag].astro
+// pages/docs/tags/[tag].tsx
 export async function getStaticPaths() {
   const res = await fetch("https://api.example.com/tags");
   const tags = await res.json();
