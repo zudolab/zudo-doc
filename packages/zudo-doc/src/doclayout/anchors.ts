@@ -2,15 +2,14 @@
 // `create-zudo-doc` (the scaffold tool) injects into when generating
 // downstream projects. These ids are what the drift checker (E9a sub-task
 // 4) compares between this package's `DocLayoutWithDefaults` and the
-// scaffolded `doc-layout.astro` to catch missing or renamed anchors.
+// scaffolded doc-layout to catch missing or renamed anchors.
 //
 // The anchor *string* (the literal text the drift checker greps for in
 // the scaffolded file) is computed by `anchorComment(id)` below — it
 // produces an HTML comment for body-side anchors and a line comment for
 // frontmatter-side anchors. A scaffolded doc-layout will contain one
 // occurrence of each anchor in the same form `create-zudo-doc` already
-// uses today (see `packages/create-zudo-doc/templates/base/src/layouts/
-// doc-layout.astro`).
+// uses today (see `packages/create-zudo-doc/templates/base/src/layouts/`).
 //
 // Adding or removing an anchor here is the contract change — keep this
 // list in lockstep with the create-zudo-doc feature modules under
@@ -59,7 +58,7 @@ export interface DocLayoutAnchor {
 
 /**
  * The 16 doc-layout anchors, in the order they appear in a scaffolded
- * `doc-layout.astro`. Order is informational (useful for the drift
+ * doc-layout file. Order is informational (useful for the drift
  * checker's diagnostic output); identity is what matters.
  */
 export const DOC_LAYOUT_ANCHORS: readonly DocLayoutAnchor[] = [
@@ -112,7 +111,7 @@ export function anchorComment(anchor: DocLayoutAnchor): string {
 /**
  * Convenience: every anchor's comment string, in declaration order. The
  * drift checker can iterate this and assert each substring appears in the
- * scaffolded `doc-layout.astro`.
+ * scaffolded doc-layout file.
  */
 export function allAnchorComments(): readonly string[] {
   return DOC_LAYOUT_ANCHORS.map(anchorComment);

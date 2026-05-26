@@ -1,12 +1,12 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-// JSX port of src/components/tabs.astro.
+// JSX port of the legacy `tabs` component.
 //
-// The original .astro component rendered:
+// The original component rendered:
 //   1. A container `<div data-tabs data-group-id={groupId}>`.
 //   2. An empty `<div class="tabs-nav">` — the tab buttons were created
-//      imperatively by the companion `tabs-init.astro` script at runtime.
+//      imperatively by the companion `tabs-init` script at runtime.
 //   3. A `<div class="tabs-content"><slot/></div>` holding the `<TabItem>`
 //      panels.
 //
@@ -51,7 +51,7 @@ export interface TabsProps {
 }
 
 /**
- * Server-rendered tab container — JSX port of `src/components/tabs.astro`.
+ * Server-rendered tab container — JSX port of the legacy `tabs` component.
  *
  * Iterates `children` via `toChildArray` to discover `<TabItem>` elements
  * and renders their labels as `<button>` elements in the tab nav bar.

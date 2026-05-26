@@ -9,7 +9,7 @@
 /**
  * One page in the search index. The shape mirrors today's Astro
  * integration output verbatim — keep it byte-identical so downstream
- * consumers (search.astro client island and packages/search-worker via
+ * consumers (the search client island and packages/search-worker via
  * MiniSearch) keep working unchanged after the zfb cutover.
  */
 export interface SearchIndexEntry {

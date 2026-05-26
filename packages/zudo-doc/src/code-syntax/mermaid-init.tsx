@@ -1,9 +1,9 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-// JSX port of src/components/mermaid-init.astro.
+// JSX port of the legacy `mermaid-init` component.
 //
-// The original .astro component rendered a single <script> tag that:
+// The original component rendered a single <script> tag that:
 //   1. Lazily imports mermaid on first paint and on every after-navigate
 //      event (today `zfb:after-swap`; pre-migration this was
 //      `astro:page-load`).
@@ -58,7 +58,7 @@ export interface MermaidInitProps {
 }
 
 /**
- * Drop-in JSX replacement for `src/components/mermaid-init.astro`.
+ * Drop-in JSX replacement for the legacy `mermaid-init` component.
  *
  * Include **once** in the layout. Emits the mermaid init script via
  * `dangerouslySetInnerHTML`. The script lazily imports mermaid only when

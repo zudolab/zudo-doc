@@ -31,9 +31,9 @@ export interface HtmlPreviewWrapperProps {
    * `head`, `css`, and `js` are prepended to the per-usage values so
    * that global styles/scripts apply to every preview.
    *
-   * The legacy `html-preview-wrapper.astro` read this directly from
-   * `settings`; v2 accepts it as a prop so the component has no
-   * upward dependency on the project settings module.
+   * The legacy html-preview-wrapper read this directly from `settings`;
+   * v2 accepts it as a prop so the component has no upward dependency
+   * on the project settings module.
    */
   globalConfig?: HtmlPreviewGlobalConfig | null;
 
@@ -94,16 +94,13 @@ function HtmlPreviewWrapperInner(
 HtmlPreviewWrapperInner.displayName = "HtmlPreviewWrapper";
 
 /**
- * HTML preview wrapper — JSX port of
- * `src/components/html-preview-wrapper.astro`.
+ * HTML preview wrapper component.
  *
- * The legacy Astro wrapper merged `settings.htmlPreview` (global config)
- * with per-usage props and forwarded everything to `<HtmlPreview
- * client:visible />`. v2 collapses the merge into the inner shell and
- * wraps it in `<Island when="visible">` here, mirroring the legacy
- * `client:visible` hydration timing — the iframe is heavy and not on
- * the critical path, so we defer hydration until the preview enters
- * the viewport.
+ * Merges `settings.htmlPreview` (global config) with per-usage props and
+ * forwards everything to `<HtmlPreview>`. Wraps it in
+ * `<Island when="visible">`, mirroring the legacy `client:visible`
+ * hydration timing — the iframe is heavy and not on the critical path,
+ * so we defer hydration until the preview enters the viewport.
  */
 export function HtmlPreviewWrapper(
   props: HtmlPreviewWrapperProps,
