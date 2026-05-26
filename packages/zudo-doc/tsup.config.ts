@@ -35,7 +35,15 @@ export default defineConfig({
   format: "esm",
   dts: true,
   clean: true,
-  splitting: false,
+  // splitting MUST stay on. With splitting:false each entry inlines a
+  // private copy of any internal cross-entry import (e.g. code-syntax
+  // pulls in its own private TabItem; tab-item exports its own TabItem;
+  // they become two distinct function references). Components that do
+  // identity checks like `child.type === TabItem` then silently fail in
+  // consumers, producing zero-button SSR output. Splitting emits shared
+  // chunks instead of duplicating, preserving a single function identity
+  // across all entry points. See zudolab/zudo-doc#1740 CI investigation.
+  splitting: true,
   sourcemap: false,
   // External rules:
   //   - peer deps (preact, @takazudo/*) — consumer provides; bundling them
