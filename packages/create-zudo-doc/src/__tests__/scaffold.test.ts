@@ -2387,6 +2387,26 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
       expect(pkg.dependencies["@zudo-doc/zudo-doc-v2"]).toBeDefined();
       expect(pkg.dependencies["@zudo-doc/zudo-doc-v2"]).toMatch(/^\^?0\.1\./);
     });
+
+    // W6B (#1735) — runtime deps required by always-on scaffolded
+    // pages/lib code or by the zfb engine bundler. Each was caught by
+    // the consumer-build verification gate (one missing-dep error per
+    // round). Without these, `zfb build` fails before any page compiles:
+    //   - zod                       → zfb-config-gen emits
+    //                                 `import { z } from "zod"` for the
+    //                                 collection schema + z.toJSONSchema()
+    //   - preact-render-to-string   → zfb's emitted entry.mjs SSR's pages
+    //                                 via `renderToString` from this pkg
+    //   - katex                     → pages/lib/_math-block.tsx renders
+    //                                 LaTeX server-side via katex.renderToString()
+    it("package.json lists zod, preact-render-to-string, katex as runtime deps (W6B — needed by always-on scaffolded code)", async () => {
+      const pkg = await fs.readJson(
+        projectPath("test-zfb-minimal", "package.json"),
+      );
+      expect(pkg.dependencies["zod"]).toBeDefined();
+      expect(pkg.dependencies["preact-render-to-string"]).toBeDefined();
+      expect(pkg.dependencies["katex"]).toBeDefined();
+    });
   });
 
   // Pattern 2: barebone — everything off (no features, single scheme)
@@ -2634,6 +2654,48 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
     );
     expect(tsconfig.compilerOptions.paths["#doc-history-meta"]).toEqual([
       ".zfb/doc-history-meta.json",
+    ]);
+  });
+
+  // W6B (#1735) — react → preact/compat alias at the tsconfig layer.
+  // Lets the mirrored pages and feature templates `import ... from
+  // "react"` and have TypeScript + zfb's FsResolver (which walks up to
+  // the nearest tsconfig.json and resolves compilerOptions.paths at
+  // build time, per upstream zfb PR #139) route the import to
+  // preact/compat.
+  //
+  // Spec deviations from #1735 W2 §1.2:
+  //
+  // 1. Trailing slash on `react` + `react-dom` is load-bearing. Without
+  //    it, esbuild (running in `platform: "neutral"` mode in zfb's
+  //    islands bundler) resolves the alias to the bare path
+  //    `node_modules/preact/compat`, then refuses to read the package's
+  //    `main` field and errors with "Main fields must be configured
+  //    explicitly when using the 'neutral' platform". With trailing
+  //    slash, esbuild treats the alias as a package-directory and
+  //    resolves correctly. Confirmed empirically by the consumer-build
+  //    gate; matches the host's tsconfig shape verbatim.
+  // 2. `react-dom/*` (subpath wildcard) is intentionally omitted —
+  //    the host doesn't ship it and no scaffolded code imports a
+  //    react-dom subpath.
+  // 3. The spec also asked for a `vite.resolve.alias` belt-and-braces
+  //    layer in zfb.config.ts. zfb's `ZfbConfig` type (verified in
+  //    node_modules/@takazudo/zfb/dist/config.d.ts) has no `vite`
+  //    field — adding one breaks `pnpm check`. The host builds with
+  //    tsconfig paths only.
+  it("tsconfig.json aliases react/react-dom to preact/compat (matches host shape verbatim)", async () => {
+    await scaffold(BAREBONE);
+    const tsconfig = await fs.readJson(
+      projectPath("test-pages-barebone", "tsconfig.json"),
+    );
+    expect(tsconfig.compilerOptions.paths["react"]).toEqual([
+      "./node_modules/preact/compat/",
+    ]);
+    expect(tsconfig.compilerOptions.paths["react/jsx-runtime"]).toEqual([
+      "./node_modules/preact/jsx-runtime",
+    ]);
+    expect(tsconfig.compilerOptions.paths["react-dom"]).toEqual([
+      "./node_modules/preact/compat/",
     ]);
   });
 });
