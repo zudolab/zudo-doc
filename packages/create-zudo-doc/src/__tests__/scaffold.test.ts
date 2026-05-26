@@ -2699,3 +2699,102 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
     ]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// W7A (#1736) — zfb-config-gen reconcile: the generated zfb.config.ts must
+// reference plugin `.mjs` files actually shipped by the templates, otherwise
+// `zfb build` fails at config bundling (the W6B-flagged blocker). These
+// tests assert the import-resolution chain end-to-end at scaffold time so
+// the consumer build only fails for *new* drift, not for known-broken state.
+// ---------------------------------------------------------------------------
+
+describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)", () => {
+  it("barebone scaffold ships base/plugins/{search-index,copy-public,connect-adapter}.mjs", async () => {
+    const choices: UserChoices = {
+      projectName: "test-w7a-plugins-barebone",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: [],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    for (const file of [
+      "plugins/search-index-plugin.mjs",
+      "plugins/copy-public-plugin.mjs",
+      "plugins/connect-adapter.mjs",
+    ]) {
+      expect(
+        await fs.pathExists(
+          projectPath("test-w7a-plugins-barebone", file),
+        ),
+        `expected ${file} to ship in every scaffold`,
+      ).toBe(true);
+    }
+    // Optional-feature plugins must NOT ship when the feature is off,
+    // otherwise the generated zfb.config.ts (which lacks the matching
+    // inline entry) would leave the `.mjs` files as orphans and any
+    // future bare-grep validator could flag them.
+    for (const file of [
+      "plugins/doc-history-plugin.mjs",
+      "plugins/llms-txt-plugin.mjs",
+      "plugins/claude-resources-plugin.mjs",
+    ]) {
+      expect(
+        await fs.pathExists(
+          projectPath("test-w7a-plugins-barebone", file),
+        ),
+        `expected ${file} to be absent from barebone scaffold`,
+      ).toBe(false);
+    }
+  });
+
+  it("all-features scaffold ships every plugin .mjs the zfb config references", async () => {
+    const choices: UserChoices = {
+      projectName: "test-w7a-plugins-all",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "docHistory", "llmsTxt", "claudeResources"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const config = await fs.readFile(
+      projectPath("test-w7a-plugins-all", "zfb.config.ts"),
+      "utf-8",
+    );
+    // For every `./plugins/<name>.mjs` reference in zfb.config.ts, the
+    // file must actually exist at that path. This is the precise gate
+    // the W6B verification was hitting: imports without files = bundler
+    // failure at config load.
+    const matches = [
+      ...config.matchAll(/"\.\/plugins\/([\w-]+\.mjs)"/g),
+    ];
+    expect(matches.length).toBeGreaterThan(0);
+    for (const match of matches) {
+      const relPath = `plugins/${match[1]!}`;
+      expect(
+        await fs.pathExists(
+          projectPath("test-w7a-plugins-all", relPath),
+        ),
+        `zfb.config.ts references ${relPath} but the file was not shipped`,
+      ).toBe(true);
+    }
+  });
+
+  it("doc-history scaffold ships tsx devDep (plugin spawns `tsx -e`)", async () => {
+    const choices: UserChoices = {
+      projectName: "test-w7a-dh-tsx",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["docHistory"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const pkg = await fs.readJson(
+      projectPath("test-w7a-dh-tsx", "package.json"),
+    );
+    expect(pkg.devDependencies?.tsx).toBeTruthy();
+  });
+});
