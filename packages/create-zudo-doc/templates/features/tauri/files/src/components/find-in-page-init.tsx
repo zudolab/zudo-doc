@@ -30,7 +30,7 @@ export default function FindInPageInit() {
     return () => document.removeEventListener("keydown", handler);
   }, [isTauri]);
 
-  // Clear search on Astro page navigation
+  // Clear search on zfb page navigation
   useEffect(() => {
     const handler = () => {
       findInPageRef.current.stop();
