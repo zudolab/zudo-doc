@@ -29,7 +29,7 @@ Where `<pattern>` is one of the test patterns listed below.
 | `i18n` | Only i18n enabled |
 | `sidebar-filter` | Only sidebar filter enabled |
 | `claude-resources` | Only claude resources enabled |
-| `design-token-panel` | Only design token panel enabled (uses API) |
+| `design-token-panel` | Only design token panel enabled (uses --design-token-panel CLI flag) |
 | `light-dark` | Light-dark color mode |
 | `lang-ja` | Japanese as default language |
 | `all-features` | Everything ON |
@@ -63,6 +63,7 @@ Set `REPO_ROOT` to the repository root (absolute path). Run the generator from w
 cd __inbox/generator-test-barebone && \
   node $REPO_ROOT/packages/create-zudo-doc/dist/index.js test-project --yes \
   --no-search --no-sidebar-filter --no-i18n --no-claude-resources \
+  --no-image-enlarge --no-tag-governance \
   --color-scheme-mode single --scheme "Default Dark" --no-install
 ```
 
@@ -93,7 +94,7 @@ cd __inbox/generator-test-sidebar-filter && \
   --color-scheme-mode single --scheme "Default Dark" --no-install
 ```
 
-> Note: Sidebar filter stripping is not yet implemented (TODO in strip.ts). The filter is built into `sidebar-tree.tsx` and is always included regardless of the flag. This test mainly verifies the flag doesn't cause errors.
+> Note: `sidebarFilter` is built into `sidebar-tree.tsx` and ships in base by design (see `src/features/index.ts:37`); it is NOT tracked in `settings.ts` (no field emitted). `--no-sidebar-filter` currently has no structural effect. This test verifies the flag does not cause errors.
 
 **claude-resources:**
 
@@ -106,22 +107,12 @@ cd __inbox/generator-test-claude-resources && \
 
 **design-token-panel:**
 
-> `designTokenPanel` has NO CLI flag. Use the programmatic API instead:
-
 ```bash
 cd __inbox/generator-test-design-token-panel && \
-  node --input-type=module -e "
-import { createZudoDoc } from '$REPO_ROOT/packages/create-zudo-doc/dist/api.js';
-await createZudoDoc({
-  projectName: 'test-project',
-  colorSchemeMode: 'single',
-  singleScheme: 'Default Dark',
-  features: ['designTokenPanel'],
-  packageManager: 'pnpm',
-  install: false,
-});
-console.log('Scaffolding complete.');
-"
+  node $REPO_ROOT/packages/create-zudo-doc/dist/index.js test-project --yes \
+  --no-search --no-sidebar-filter --no-i18n --no-claude-resources \
+  --no-image-enlarge --no-tag-governance --design-token-panel \
+  --color-scheme-mode single --scheme "Default Dark" --no-install
 ```
 
 **light-dark:**
@@ -147,24 +138,16 @@ cd __inbox/generator-test-lang-ja && \
 
 ```bash
 cd __inbox/generator-test-all-features && \
-  node --input-type=module -e "
-import { createZudoDoc } from '$REPO_ROOT/packages/create-zudo-doc/dist/api.js';
-await createZudoDoc({
-  projectName: 'test-project',
-  colorSchemeMode: 'light-dark',
-  lightScheme: 'Default Light',
-  darkScheme: 'Default Dark',
-  defaultMode: 'dark',
-  respectPrefersColorScheme: true,
-  features: ['i18n', 'search', 'sidebarFilter', 'claudeResources', 'designTokenPanel'],
-  packageManager: 'pnpm',
-  install: false,
-});
-console.log('Scaffolding complete.');
-"
+  node $REPO_ROOT/packages/create-zudo-doc/dist/index.js test-project --yes \
+  --i18n --search --sidebar-filter --claude-resources --claude-skills \
+  --design-token-panel --sidebar-resizer --sidebar-toggle --versioning \
+  --doc-history --body-foot-util --llms-txt --skill-symlinker \
+  --footer-nav-group --image-enlarge --footer-copyright --changelog \
+  --tag-governance --doc-tags --footer-taglist \
+  --color-scheme-mode light-dark --light-scheme "Default Light" \
+  --dark-scheme "Default Dark" --default-mode dark \
+  --github-url "https://github.com/example/test-project" --no-install
 ```
-
-> Note: `all-features` uses the API because `designTokenPanel` has no CLI flag.
 
 ## Step 3: Install Dependencies
 
@@ -222,10 +205,9 @@ Use these tables to verify. Check each file with `test -e <path>`.
 |------|----------|
 | `src/content/docs-ja/` | ABSENT |
 | `src/integrations/claude-resources/` | ABSENT |
-| `src/components/doc-history.tsx` | ABSENT |
+| `src/components/doc-history.tsx` | PRESENT (ships in base unconditionally, runtime-gated by the `docHistory` setting) |
 | `src/lib/design-token-panel-bootstrap.ts` | ABSENT |
 | `src/config/design-token-panel-config.ts` | ABSENT |
-| `src/utils/design-token-serde.ts` | ABSENT |
 | `src/content/docs/` | PRESENT |
 | `src/config/settings.ts` | PRESENT |
 | `zfb.config.ts` | PRESENT |
@@ -239,7 +221,7 @@ Use these tables to verify. Check each file with `test -e <path>`.
 | `src/content/docs/` | PRESENT |
 | `src/config/settings.ts` | PRESENT |
 
-> Note: the `search` feature wires Pagefind via the zfb config and `package.json` deps; it does not copy a dedicated search component file to `src/components/`. Verify search is enabled by checking `package.json` for `"@pagefind/default-ui"` or checking `zfb.config.ts` for pagefind plugin wiring.
+> Note: the `search` feature wires search via the zfb config and `package.json` deps; it does not copy a dedicated search component file to `src/components/`. Verify search is enabled by checking `package.json` devDependencies for `"pagefind"` and dependencies for `"minisearch"`; check `zfb.config.ts` for `search-index-plugin.mjs`.
 
 **i18n:**
 
@@ -259,7 +241,7 @@ Use these tables to verify. Check each file with `test -e <path>`.
 | `src/integrations/claude-resources/` | ABSENT |
 | `src/config/design-token-panel-config.ts` | ABSENT |
 
-> Note: `sidebar-tree.tsx` always ships with the base template; the `sidebarFilter` flag controls whether filtering UI is active at runtime. Check the `sidebarFilter` setting in `src/config/settings.ts` to confirm the flag was applied.
+> Note: `sidebar-tree.tsx` always ships with the base template; the `sidebarFilter` flag controls whether filtering UI is active at runtime. `sidebarFilter` is NOT emitted as a field in `settings.ts` (no field). Confirm via `zfb.config.ts` or runtime behavior — not a settings field.
 
 **claude-resources:**
 
@@ -277,8 +259,7 @@ Use these tables to verify. Check each file with `test -e <path>`.
 | `src/config/design-token-panel-config.ts` | PRESENT |
 | `src/config/design-tokens-manifest.ts` | PRESENT |
 | `src/lib/design-token-panel-bootstrap.ts` | PRESENT |
-| `src/utils/design-token-serde.ts` | PRESENT |
-| `src/utils/design-token-types.ts` | PRESENT |
+| `src/components/design-token-panel-bootstrap.tsx` | PRESENT |
 | `src/integrations/claude-resources/` | ABSENT |
 
 **light-dark:**
@@ -303,17 +284,20 @@ Use these tables to verify. Check each file with `test -e <path>`.
 |------|----------|
 | `src/content/docs-ja/getting-started/index.mdx` | PRESENT |
 | `src/content/docs/getting-started/index.mdx` | PRESENT |
+| `src/content/docs/changelog/index.mdx` | PRESENT |
 | `src/integrations/claude-resources/generate.ts` | PRESENT |
 | `src/integrations/claude-resources/escape-for-mdx.ts` | PRESENT |
 | `src/components/theme-toggle.tsx` | PRESENT |
 | `src/config/design-token-panel-config.ts` | PRESENT |
 | `src/lib/design-token-panel-bootstrap.ts` | PRESENT |
-| `src/utils/design-token-serde.ts` | PRESENT |
 | `src/components/doc-history.tsx` | PRESENT |
 | `src/components/desktop-sidebar-toggle.tsx` | PRESENT |
 | `src/scripts/sidebar-resizer.ts` | PRESENT |
 | `src/components/image-enlarge.tsx` | PRESENT |
 | `src/utils/github.ts` | PRESENT |
+| `scripts/tags-audit.ts` | PRESENT |
+| `scripts/tags-suggest.ts` | PRESENT |
+| `pages/docs/tags/index.tsx` | PRESENT |
 
 ## Step 7: Verify Settings
 
@@ -326,6 +310,9 @@ Read `__inbox/generator-test-<pattern>/test-project/src/config/settings.ts` and 
 - `colorScheme: "Default Dark"`
 - `colorMode: false`
 - `locales: {}` (empty)
+- `imageEnlarge: false`
+- `tagGovernance: "off"` (no `tags:audit`/`tags:suggest` scripts, no string-similarity/pluralize devDeps)
+- `tagVocabulary: false`
 - `designTokenPanel: false`
 - `claudeResources: false`
 
@@ -461,10 +448,9 @@ Provide a clear pass/fail report:
 ## Important Notes
 
 - Always `cd` back to the repo root between major steps (use absolute paths)
-- The `--yes` flag auto-fills all unspecified options with defaults. Feature defaults with `--yes`: search=true, sidebarFilter=true, i18n=false, claudeResources=false, designTokenPanel=false
+- The `--yes` flag auto-fills all unspecified options with defaults. Feature defaults with `--yes`: search=true, sidebarFilter=true, imageEnlarge=true, tagGovernance=true, i18n=false, claudeResources=false, designTokenPanel=false (all other features false)
 - Use `--no-install` with CLI to prevent auto-install, then install manually for better error visibility
-- Sidebar filter stripping is TODO — the filter is always included regardless of the `--sidebar-filter` flag
-- `designTokenPanel` has no CLI flag — use the API approach for `design-token-panel` and `all-features` patterns
+- `sidebarFilter` is built into `sidebar-tree.tsx` by design (not a TODO); no strip step exists in the additive architecture
 - The dev server smoke test uses `pnpm dev` (generated projects have a single `dev` script)
 - If any step fails, still report all steps attempted before stopping
 - The `--headless` flag enables Step 8.5 (headless browser visual check). Without it, only process-level checks are performed
