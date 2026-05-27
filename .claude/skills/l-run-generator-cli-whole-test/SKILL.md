@@ -10,7 +10,7 @@ Run ALL `create-zudo-doc` generator patterns end-to-end, fix any failures, and v
 ## When to Use
 
 - Before releasing a new version of `create-zudo-doc`
-- After modifying generator source files (`scaffold.ts`, `strip.ts`, `settings-gen.ts`)
+- After modifying generator source files (`scaffold.ts`, `compose.ts`, `features/*.ts`, `settings-gen.ts`, `zfb-config-gen.ts`, `constants.ts`, `cli.ts`, `api.ts`)
 - After adding/removing features from the main zudo-doc project
 - User says "run all generator tests", "whole test", "l-run-generator-cli-whole-test"
 
@@ -41,10 +41,12 @@ Run in this order (CLI flags and details are defined in `/l-generator-cli-tester
 3. **`i18n`** — Only i18n enabled
 4. **`sidebar-filter`** — Only sidebar filter enabled
 5. **`claude-resources`** — Only Claude Resources enabled
-6. **`design-token-panel`** — Only design token panel enabled (uses API, no CLI flag)
+6. **`design-token-panel`** — Only design token panel enabled (uses `--design-token-panel` CLI flag)
 7. **`light-dark`** — Light-dark color scheme mode
 8. **`lang-ja`** — Japanese as default language
-9. **`all-features`** — Everything ON, maximum complexity (uses API)
+9. **`all-features`** — Everything ON, maximum complexity (uses the enumerated CLI invocation)
+
+> **Note:** These 9 patterns are valid manual smoke tests. The authoritative bug-hunt pattern matrix (15 patterns across Waves 4, 5, and 5b) lives in the Wave 2 spec (`__inbox/gen-cli-audit-spec/spec.md`) and the associated bug-hunt issues. Do not delete or rename these 9 patterns — they remain useful standalone checks.
 
 ### Running each pattern
 
@@ -82,11 +84,11 @@ For each failing pattern:
 - Determine which phase failed: scaffold, build, dev, or feature check
 - Common failure categories:
   - **Build error: missing module** — dependency not in generated `package.json` → fix `scaffold.ts` `generatePackageJson()`
-  - **Build error: import not found** — import not stripped for disabled feature → fix `strip.ts`
+  - **Build error: import not found** — in the additive architecture dead imports cannot arise from stripping; diagnose: missing import injection in `src/features/<name>.ts`, or missing feature files in `templates/features/<name>/files/`
   - **Build error: type error in settings.ts** — settings field missing/wrong → fix `settings-gen.ts`
-  - **Build error: component references stripped component** — template usage not stripped → fix `strip.ts` patch patterns
+  - **Build error: component references missing component** — base template references a component only added by a feature; fix the base template (remove the unconditional import) or the feature module
   - **Dev server crash** — runtime error in generated code → read the generated file and trace the issue to the source
-  - **Feature check fail** — feature file exists when it should be removed, or missing when it should exist → fix `strip.ts`
+  - **Feature check fail** — files are never removed (additive); "file missing when it should exist" means `templates/features/<name>/files/` is incomplete or the feature module omits a copy
 
 ### 2b. Read the generator source files
 
@@ -95,8 +97,10 @@ The key files to examine:
 | File | Role |
 |------|------|
 | `packages/create-zudo-doc/src/scaffold.ts` | Copies template, generates `package.json` |
-| `packages/create-zudo-doc/src/strip.ts` | Removes features/imports based on options |
+| `packages/create-zudo-doc/src/compose.ts` | Composition engine: injection system, anchor cleanup, feature resolution |
+| `packages/create-zudo-doc/src/features/*.ts` | Per-feature injection specs + post-processing (additive architecture) |
 | `packages/create-zudo-doc/src/settings-gen.ts` | Generates `settings.ts` |
+| `packages/create-zudo-doc/src/zfb-config-gen.ts` | Generates `zfb.config.ts` |
 | `packages/create-zudo-doc/src/constants.ts` | Feature definitions and color schemes |
 | `packages/create-zudo-doc/src/cli.ts` | CLI argument parsing |
 | `packages/create-zudo-doc/src/api.ts` | Programmatic API |
@@ -200,8 +204,8 @@ Output a final report:
 ### Fixes Applied
 
 1. `scaffold.ts`: Added missing `minisearch` dependency for search pattern
-2. `strip.ts`: Fixed claude-resources import stripping regex
-3. `strip.ts`: Fixed all-features light-dark theme-toggle handling
+2. `features/claude-resources.ts`: added missing import injection
+3. `settings-gen.ts`: fixed light-dark colorMode emission
 
 ### Final Status: ALL PASS
 ```
