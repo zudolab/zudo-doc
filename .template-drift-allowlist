@@ -103,11 +103,9 @@ src/components/find-in-page-init.tsx
 #     event strings ("zfb:before-preparation", "zfb:after-swap") because
 #     downstream scaffolds do not depend on @takazudo/zudo-doc as a runtime
 #     dep. Production imports BEFORE_NAVIGATE_EVENT / AFTER_NAVIGATE_EVENT from
-#     @takazudo/zudo-doc/transitions. Reconcile if/when create-zudo-doc
-#     migrates onto the v2 transitions module.
-#     Both template and production now include the queue-drain (__zdtpReadyClicks)
-#     and bridge idempotency guard (__zdtpAstroBridgeInstalled) added in #1627.
-#     Both omit the JS-side CSS import (moved to global.css @slot injection in #1629).
+#     @takazudo/zudo-doc/transitions. Both template and production use
+#     setLifecycleAdapter() (zdtp 0.2.0-next.2+). Both omit the JS-side CSS
+#     import (moved to global.css @slot injection in #1629).
 #  3. design-token-types.ts: template has fewer comments (zudo-doc-specific
 #     migration context stripped; upstream issue notes retained).
 src/config/design-token-panel-config.ts

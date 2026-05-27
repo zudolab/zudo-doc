@@ -6,14 +6,13 @@
  * truthy. The dynamic import is gated there so this module is only bundled
  * when the feature is enabled.
  *
- * Lifecycle bridge: zdtp hard-codes astro:before-swap / astro:page-load
- * event names (upstream issue Takazudo/zudo-design-token-panel#50). We
- * re-dispatch those Astro event names whenever the zfb equivalents fire so
- * zdtp's internal listeners receive the signal they expect. Replace this
- * bridge with setLifecycleAdapter() once upstream issue #50 ships.
+ * Lifecycle adapter: wires zdtp's navigation hooks to zfb's own navigation
+ * events via setLifecycleAdapter(). onBeforeSwap maps to zfb:before-preparation
+ * and onPageLoad maps to zfb:after-swap so zdtp re-applies persisted token
+ * overrides on every soft navigation without depending on Astro events.
  */
 
-import { configurePanel } from "@takazudo/zdtp";
+import { configurePanel, setLifecycleAdapter, type LifecycleAdapter } from "@takazudo/zdtp";
 // CSS is pulled via `@import "@takazudo/zdtp/styles.css"` in
 // src/styles/global.css so the panel chrome lands in the main page CSS bundle
 // (not a deferred chunk). Vite library mode strips the source CSS import from
@@ -31,20 +30,20 @@ if (typeof window !== "undefined") {
   (window as { __zdtpReadyClicks?: () => void }).__zdtpReadyClicks?.();
 }
 
-// Idempotency guard: the two document.addEventListener calls below must be
-// installed at most once per page lifecycle. Module caching usually guarantees
-// this, but a future refactor could re-evaluate the module. The flag makes it
-// provably one-shot.
 // zfb fires "zfb:before-preparation" (before nav) and "zfb:after-swap" (after nav).
 // Adjust these event names if your zfb version uses different names.
 if (typeof document !== "undefined") {
-  if (!(document as Document & { __zdtpAstroBridgeInstalled?: boolean }).__zdtpAstroBridgeInstalled) {
-    (document as Document & { __zdtpAstroBridgeInstalled?: boolean }).__zdtpAstroBridgeInstalled = true;
-    document.addEventListener("zfb:before-preparation", () => {
-      document.dispatchEvent(new Event("astro:before-swap"));
-    });
-    document.addEventListener("zfb:after-swap", () => {
-      document.dispatchEvent(new Event("astro:page-load"));
-    });
-  }
+  const adapter: LifecycleAdapter = {
+    onBeforeSwap(cb) {
+      const handler = () => cb();
+      document.addEventListener("zfb:before-preparation", handler);
+      return () => document.removeEventListener("zfb:before-preparation", handler);
+    },
+    onPageLoad(cb) {
+      const handler = () => cb();
+      document.addEventListener("zfb:after-swap", handler);
+      return () => document.removeEventListener("zfb:after-swap", handler);
+    },
+  };
+  setLifecycleAdapter(adapter);
 }
