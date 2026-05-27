@@ -10,10 +10,10 @@ import { extractText } from "./hast-utils";
  *   <a href="#id" class="hash-link" aria-label="Direct link to ..."></a>
  *
  * The "#" symbol is rendered via CSS ::after to avoid polluting
- * Astro's heading text extraction (used for TOC).
+ * heading text extraction (used for TOC).
  *
- * Runs before Astro's built-in heading ID plugin, so it sets IDs itself.
- * Astro's plugin will skip headings that already have an ID.
+ * Sets heading IDs itself (via github-slugger); skips headings that already
+ * have an ID assigned upstream.
  */
 
 const headingTags = new Set(["h2", "h3", "h4", "h5", "h6"]);

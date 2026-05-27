@@ -22,7 +22,7 @@
  * ## Tier
  *
  * This test scaffolds a real project, runs `pnpm install` against the public
- * registry (with hard-link cache), and runs a full Astro build. Local
+ * registry (with hard-link cache), and runs a full zfb build. Local
  * runtime is on the order of 60–120 seconds, well past the default unit
  * test budget. It therefore lives in the **slow tier** (`pnpm test:slow`)
  * and is excluded from `pnpm test` and `pnpm b4push`. Run it manually

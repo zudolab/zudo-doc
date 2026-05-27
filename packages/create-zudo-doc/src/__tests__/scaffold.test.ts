@@ -1874,8 +1874,6 @@ describe("scaffold — framework TS error fixes (sub #410)", () => {
 // ALL tests in this describe block depend on:
 //   - topic-config-generators  (zfb-config-gen.ts that emits zfb.config.ts)
 //   - topic-template-files     (base template retarget to zfb layout)
-//
-// They will fail until those sibling topics merge into base/astro-zfb-migration-scaffold.
 // ---------------------------------------------------------------------------
 
 describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
