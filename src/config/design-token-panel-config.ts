@@ -97,7 +97,7 @@ function getInitialPalette(): readonly string[] {
  * The mapping rules:
  *  - `control: "select"` → `type: { kind: 'select', options }`
  *  - `control: "text"`   → `type: { kind: 'text' }`
- *  - (default slider)    → `type: { kind: 'length', min, max, step, unit }`
+ *  - (default slider)    → `type: { kind: 'length', step, unit }`
  *
  * `pill` and `readonly` pass through unchanged.
  */
@@ -110,8 +110,6 @@ function toTierItem(t: TokenDef): TierItem {
   } else {
     kind = {
       kind: "length" as const,
-      min: t.min,
-      max: t.max,
       step: t.step,
       unit: t.unit,
     };
