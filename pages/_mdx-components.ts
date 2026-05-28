@@ -50,6 +50,7 @@ import { SiteTreeNavWrapper } from "./lib/_site-tree-nav";
 import { DetailsWrapper } from "./lib/_details";
 import { PresetGeneratorFallback } from "./lib/_preset-generator";
 import { MathBlock } from "./lib/_math-block";
+import { CodeGroup } from "@/components/content/code-group";
 
 /**
  * MDX `<img>` override — rewrites root-relative src attributes to include the
@@ -209,6 +210,14 @@ export function createMdxComponents(lang: Locale | string = defaultLocale) {
     Info: makeAdmonitionStub("info"),
     Warning: makeAdmonitionStub("warning"),
     Danger: makeAdmonitionStub("danger"),
+    // github-alerts [!IMPORTANT] and [!CAUTION] map to these variants.
+    // Without these bindings, those two alert variants 500 the SSR render.
+    Important: makeAdmonitionStub("important"),
+    Caution: makeAdmonitionStub("caution"),
+    // codeTabs Option A: zfb emits <CodeGroup tabs={[...]}> for :::code-group.
+    // The framework does not ship this component; we implement it here and map
+    // the tabs[] + <pre data-lang> children to the existing Tabs/TabItem UI.
+    CodeGroup: CodeGroup as unknown as (props: Record<string, unknown>) => unknown,
     // Showcase / nav helpers — real Preact wrappers replacing MdxStub.
     CategoryNav: CategoryNavBound,
     CategoryTreeNav: CategoryTreeNavBound,
