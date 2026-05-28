@@ -69,6 +69,14 @@ async function main() {
   if (Object.keys(featureFlags).length > 0) {
     prefilled.features = { ...prefilled.features, ...featureFlags };
   }
+  // Record which features were explicitly disabled via --no-<flag> so
+  // scaffold.ts can warn when an auto-enable overrides that explicit choice.
+  const explicitlyDisabled = Object.entries(featureFlags)
+    .filter(([, v]) => v === false)
+    .map(([k]) => k);
+  if (explicitlyDisabled.length > 0) {
+    prefilled.explicitlyDisabledFeatures = explicitlyDisabled;
+  }
 
   // With --yes or --preset: fill all unspecified options with defaults
   if (args.yes || args.preset) {
