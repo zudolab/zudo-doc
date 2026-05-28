@@ -577,6 +577,40 @@ body {
   content: "🚨";
 }
 
+/* github-alerts [!IMPORTANT] → magenta/accent-adjacent (p5 = magenta palette slot) */
+[data-admonition="important"],
+.admonition-important {
+  border-left-color: var(--color-p5);
+  background-color: color-mix(in srgb, var(--color-p5) 12%, var(--color-bg));
+}
+
+[data-admonition="important"] .admonition-title,
+.admonition-important .admonition-title {
+  color: var(--color-p5);
+}
+
+[data-admonition="important"] .admonition-title::before,
+.admonition-important .admonition-title::before {
+  content: "❗";
+}
+
+/* github-alerts [!CAUTION] → danger-adjacent (high severity, distinct from danger/🚨) */
+[data-admonition="caution"],
+.admonition-caution {
+  border-left-color: var(--color-danger);
+  background-color: color-mix(in srgb, var(--color-danger) 12%, var(--color-bg));
+}
+
+[data-admonition="caution"] .admonition-title,
+.admonition-caution .admonition-title {
+  color: var(--color-danger);
+}
+
+[data-admonition="caution"] .admonition-title::before,
+.admonition-caution .admonition-title::before {
+  content: "⛔";
+}
+
 /* ========================================
  * Code block buttons (copy + word wrap)
  * ======================================== */
@@ -721,8 +755,12 @@ pre[class^="syntect-"].word-wrap code {
  * Code block line highlighting
  * ======================================== */
 
-/* Line highlighting via {1,3-5} meta syntax */
-pre[class^="syntect-"] .line.highlighted {
+/* Line highlighting via {1,3-5} meta syntax.
+ * zfb emits data-line-highlight="true" on the <span class="line"> element
+ * (verified empirically at next.13). The .highlighted class form is kept for
+ * forward-compat in case a future zfb version emits both. */
+pre[class^="syntect-"] .line.highlighted,
+pre[class^="syntect-"] [data-line-highlight="true"] {
   background-color: color-mix(in srgb, var(--color-accent) 15%, transparent);
 }
 
@@ -755,6 +793,29 @@ pre[class^="syntect-"] .line .highlighted-word {
   margin-top: 0 !important;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
+}
+
+/* ========================================
+ * CodeGroup raw-code panels (codeTabs Option A)
+ *
+ * zfb's :::code-group emits <CodeGroup tabs={[...]}> with one
+ * <pre data-lang="…">{RAW text}</pre> child per fence. These <pre> elements
+ * are NOT syntect-highlighted (the Rust pipeline doesn't highlight inside
+ * code-group fences), so they get no `.syntect-*` class. Apply explicit
+ * code-block visual treatment via tokens to match the syntect-highlighted
+ * code blocks surrounding them.
+ * ======================================== */
+
+.code-group-panel pre[data-lang] {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  line-height: var(--leading-relaxed);
+  background-color: var(--color-code-bg);
+  color: var(--color-code-fg);
+  padding: var(--spacing-vsp-xs) var(--spacing-hsp-lg);
+  overflow-x: auto;
+  border-radius: 0 0 var(--radius-DEFAULT) var(--radius-DEFAULT);
+  margin: 0;
 }
 
 /* ========================================

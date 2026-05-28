@@ -36,7 +36,7 @@ function toArray(children: React.ReactNode): React.ReactNode[] {
   return [children];
 }
 
-export function CodeGroup({ tabs = [], children }: Props) {
+export function CodeGroup({ tabs = [], children, name }: Props) {
   const childArray = toArray(children);
 
   // Zip tabs labels with pre children by index. Extra children beyond the
@@ -51,14 +51,24 @@ export function CodeGroup({ tabs = [], children }: Props) {
     return <>{children}</>;
   }
 
+  // zfb forwards `:::code-group{name="x"}` as the `name` prop; Tabs persists
+  // the active tab per group via `groupId`.
+  const groupId = typeof name === "string" ? name : undefined;
+
   return (
-    <Tabs>
+    <Tabs groupId={groupId}>
       {items.map(({ label, child }, i) => (
-        <TabItem key={label} label={label} default={i === 0 ? true : undefined}>
+        // value is suffixed with the index so two fences sharing a label
+        // (e.g. both titled "ts") get distinct stable tab identities; the
+        // label stays the visible text.
+        <TabItem
+          key={`${label}-${i}`}
+          label={label}
+          value={`${label}-${i}`}
+          default={i === 0 ? true : undefined}
+        >
           {/* Raw-code <pre> from zfb: apply code-block visual treatment via tokens */}
-          <div class="code-group-panel">
-            {child}
-          </div>
+          <div class="code-group-panel">{child}</div>
         </TabItem>
       ))}
     </Tabs>
