@@ -789,6 +789,61 @@ export default defineConfig({
   // a hop on every navigation and address-bar flicker.
   // Closes zudolab/zudo-doc#1579 (54 missing-trailing-slash entries).
   trailingSlash: settings.trailingSlash,
+  // zfb next.13 moved four pipeline features from always-on (Core) to
+  // opt-in (admonitionsPreset, mermaid, imageEnlarge, headingMarkerToc) and
+  // ships the rest as opt-in. This block re-enables the former-Core four so
+  // the existing corpus still renders, plus the remaining opt-in features
+  // (#1804) so the showcase exercises the full zfb markdown pipeline.
+  //
+  // One opt-in feature is intentionally NOT here:
+  //   - tocExport: see the note below — it breaks the build at next.13.
+  //
+  // Value-shape note (verified empirically against the next.13 Rust loader):
+  // the object-typed features (githubAutolinks, codeEnrichment, tocExport,
+  // imageDimensions, transclude, linkValidation) REJECT the `true` shorthand
+  // and must be given an options object (`{}` or fields). The misleading
+  // "expected struct PluginConfig" error is what surfaces when one is `true`.
+  // The boolean-shorthand features (githubAlerts, readingTime, ruby,
+  // admonitionsPreset, mermaid, imageEnlarge, headingMarkerToc) accept `true`.
+  markdown: {
+    features: {
+      // Former-Core (restored in #1803).
+      admonitionsPreset: true,
+      mermaid: true,
+      imageEnlarge: true,
+      headingMarkerToc: true,
+      // Remaining opt-in features (#1804).
+      githubAlerts: true,
+      readingTime: true,
+      // owner/repo used to build `owner/repo#123`, `#123`, and SHA autolinks.
+      githubAutolinks: { repo: "zudolab/zudo-doc" },
+      codeEnrichment: {},
+      // codeTabs (#1805, Option A): zfb's directive groups consecutive fenced
+      // code blocks and emits a `<CodeGroup tabs={[...]}>` JSX element the
+      // framework does NOT ship — S5 (#1807) registers <CodeGroup> in
+      // pages/_mdx-components.ts (reusing the Tabs/TabItem UI). FeatureToggle
+      // accepts the `true` shorthand (boolean-OR-object per the S2 contract).
+      codeTabs: true,
+      // ruby disabled (#1815) — the `^{...}` annotation syntax 500s the SSR
+      // render at zfb next.13 (NOT a missing component; a registered stub
+      // cannot fix it — the error is inside zfb's Rust ruby pass). Re-enable
+      // when the upstream crate is fixed. See the S3 probe note (#1802).
+      // tocExport intentionally omitted: enabling it makes zfb next.13 inject
+      // an indented `export const toc = [{"depth":2,...}]` line that MDX
+      // parses as content, producing an esbuild "Expected }" failure across
+      // the whole corpus (153 errors, both locales). Tracked upstream as an
+      // agent-found issue; re-enable once zfb emits the export at column 0.
+      imageDimensions: {},
+      // transclude disabled (#1805) — directive form `:::include{file="..."}`
+      // 500s SSR (no registered <include> component) and the `![[...]]`
+      // wikilink form is a no-op at zfb next.13; re-enable when a transclude
+      // renderer is wired. See the S2 emitted-DOM contract (#1802).
+      // warn-only: failOnBroken=false never fails the build. On this corpus
+      // it emits no output beyond the existing resolveMarkdownLinks "warn"
+      // (broken file links surface there; intra-page anchors are unchecked).
+      linkValidation: { failOnBroken: false },
+    },
+  },
   // ----------------------------------------------------------------------
   // Cloudflare adapter — wraps the SSR bundle into `dist/_worker.js`
   // (the explicit main entry for Workers static assets) plus a sidecar

@@ -1,0 +1,105 @@
+---
+title: Admonitions Preset
+description: 標準の note/tip/warning/danger/info/details アドモニションディレクティブを登録します。
+sidebar_position: 10
+---
+
+**Admonitions Preset** は、6 種類の組み込みアドモニションディレクティブ（`note`、`tip`、`warning`、`danger`、`info`、`details`）を登録します。CommonMark Directives の `:::` フェンス構文を使って、重要な内容を目立たせることができます。
+
+:::note Opt-in 機能
+
+`zfb.config.ts` の `admonitionsPreset` キーで有効化します。
+
+```ts
+// zfb.config.ts
+export default defineConfig({
+  markdown: {
+    features: {
+      admonitionsPreset: true,
+    },
+  },
+});
+```
+
+:::
+
+## 構文
+
+`:::<type>` フェンスで内容を囲みます。各フェンス行（開始の `:::note` と終了の `:::`）は、前後の内容との間に**必ず空行を入れる**必要があります。空行がないとパースに失敗し、ビルド時に警告が出ます。
+
+```md
+:::note
+
+本文をここに書きます。
+
+:::
+```
+
+タイプの後に角括弧でラベルを付けると、アドモニションのタイトルになります。
+
+```md
+:::tip[任意のタイトル]
+
+本文。
+
+:::
+```
+
+## ライブデモ
+
+以下の 6 つのディレクティブは、この機能によってライブで描画されています。
+
+:::note
+
+これは **note** です。中立的な補足情報に使います。
+
+:::
+
+:::tip
+
+これは **tip** です。役立つアドバイスやショートカットに使います。
+
+:::
+
+:::info
+
+これは **info** コールアウトです。文脈的な背景情報に使います。
+
+:::
+
+:::warning
+
+これは **warning** です。読者が注意すべき事柄に使います。
+
+:::
+
+:::danger
+
+これは **danger** コールアウトです。破壊的・不可逆な操作に使います。
+
+:::
+
+:::details[クリックで展開]
+
+これは **details** ブロック — 折りたたみ可能な開閉領域です。本文は読者が展開するまで非表示のままです。
+
+:::
+
+## 出力されるマークアップ
+
+各ディレクティブは JSX 要素（例: `<Note title="任意のタイトル">`）にコンパイルされ、zudo-doc は次のように描画します。
+
+```html
+<div data-admonition="note" class="admonition admonition-note">
+  <p class="admonition-title">…</p>
+  <div class="admonition-body">…</div>
+</div>
+```
+
+タイプクラス（`admonition-note`、`admonition-tip`、`admonition-warning`、`admonition-danger`、`admonition-info`）と対応する `data-admonition` 属性により、スタイルシートは各バリアントを個別に色分けできます。
+
+## メモ
+
+- `:::details` タイプはレガシーな `:::details title="Click me"` 属性形式も受け付けます。
+- このプリセット以外のディレクティブを追加・上書きするには、この機能ではなく zfb の `DirectiveRegistry` をパイプライン API 経由で使います。
+- [GitHub Alerts](./github-alerts.mdx) は `> [!NOTE]` 形式のブロック引用から同じアドモニションマークアップを出力します。両機能はクリーンに共存します。

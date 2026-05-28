@@ -157,6 +157,48 @@ describe("generateZfbConfig", () => {
     expect(result).toContain('name: "./plugins/copy-public-plugin.mjs"');
   });
 
+  it("emits a markdown.features block with the 4 former-Core features and safe opt-ins (#1808)", () => {
+    // S6 (#1808): zfb next.12+ moved admonitionsPreset/mermaid/imageEnlarge/
+    // headingMarkerToc from always-on (Core) to opt-in. The generator must
+    // re-enable them plus the safe opt-ins so scaffolded projects work out of
+    // the box.
+    const result = generateZfbConfig(baseChoices);
+    expect(result).toContain("markdown: {");
+    expect(result).toContain("features: {");
+    // Former-Core (boolean-OR-object → true is fine)
+    expect(result).toContain("admonitionsPreset: true");
+    expect(result).toContain("mermaid: true");
+    expect(result).toContain("imageEnlarge: true");
+    expect(result).toContain("headingMarkerToc: true");
+    // Safe opt-ins (boolean-OR-object)
+    expect(result).toContain("githubAlerts: true");
+    expect(result).toContain("readingTime: true");
+    expect(result).toContain("codeTabs: true");
+    // Object-typed features — must use {} or options, NOT `true`
+    expect(result).toContain("codeEnrichment: {}");
+    expect(result).toContain("imageDimensions: {}");
+    expect(result).toContain("linkValidation: { failOnBroken: false }");
+  });
+
+  it("does NOT emit ruby, tocExport, or transclude as enabled (known-blocked at next.13) (#1808)", () => {
+    // ruby (#1815) and tocExport (#1814) break SSR at next.13; transclude
+    // 500s without a registered renderer. None of these should appear as
+    // enabled (un-commented) in the generated config.
+    const result = generateZfbConfig(baseChoices);
+    // These must not appear as enabled keys — commented-out or absent is fine.
+    // We check they don't appear on their own uncommented line.
+    expect(result).not.toMatch(/^\s+ruby:\s+true/m);
+    expect(result).not.toMatch(/^\s+tocExport:/m);
+    expect(result).not.toMatch(/^\s+transclude:/m);
+  });
+
+  it("does NOT emit githubAutolinks (repo is project-specific — user configures manually) (#1808)", () => {
+    // The showcase hardcodes repo: "zudolab/zudo-doc" but generated projects
+    // belong to a different repo. Omit and let users add it themselves.
+    const result = generateZfbConfig(baseChoices);
+    expect(result).not.toContain("githubAutolinks");
+  });
+
   it("does not include Astro-specific markdown config (shiki, remark, rehype at config level)", () => {
     const choices: UserChoices = {
       ...baseChoices,

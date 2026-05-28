@@ -289,8 +289,13 @@ function generatePackageJson(choices: UserChoices) {
     // The two literals below must match root package.json's
     // dependencies["@takazudo/zfb"] / ["@takazudo/zfb-runtime"] —
     // enforced by scripts/check-pin-parity.mjs (W4A — #1732).
-    "@takazudo/zfb": "0.1.0-next.10",
-    "@takazudo/zfb-runtime": "0.1.0-next.10",
+    // Bumped to next.13 in S6 (#1808) — absorbs the next.12 breaking change
+    // (4 former-Core features moved to opt-in markdown.features block).
+    "@takazudo/zfb": "0.1.0-next.13",
+    "@takazudo/zfb-runtime": "0.1.0-next.13",
+    // zfb-adapter-cloudflare — required for any route with `prerender = false`.
+    // Pinned in lockstep with @takazudo/zfb.
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.13",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's

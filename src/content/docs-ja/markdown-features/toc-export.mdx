@@ -1,0 +1,74 @@
+---
+title: TOC Export
+description: ページの目次を `export const toc` 名前付きエクスポートとして出力します。zfb next.13 では既知のブロック。
+sidebar_position: 20
+---
+
+`tocExport` 機能はドキュメントの見出しを走査し、処理した各ファイルの先頭に MDX の名前付きエクスポート（`export const toc`）を挿入します。これによりサイドバーやフローティング TOC コンポーネントに構造化された目次を提供します。
+
+:::danger[zfb next.13 では既知のブロック]
+
+`tocExport` を有効化すると、zfb `0.1.0-next.13` では**ビルドが壊れます**。挿入される `export const toc = [...]` 行がインデントされた列で出力されるため、MDX はそれを ESM エクスポートではなくコンテンツとして解析し、コーパス全体で約 153 件の esbuild `Expected "}"` エラーが発生します。zudo-doc の `zfb.config.ts` では**有効化していません**。このページではライブデモなしで解説します。アップストリームで [#1814](https://github.com/zudolab/zudo-doc/issues/1814) として追跡されています。zfb がエクスポートを列 0 で出力するようになり次第、再有効化します。
+
+:::
+
+## 設定
+
+アップストリームの問題が解決されたら、デフォルト（`maxDepth: 3`）で有効化します。オブジェクト型の機能であるため、オプションオブジェクトを渡す必要があります。
+
+```ts title="zfb.config.ts"
+export default defineConfig({
+  markdown: {
+    features: {
+      tocExport: {},
+    },
+  },
+});
+```
+
+見出しの深さを制限する場合:
+
+```ts title="zfb.config.ts"
+tocExport: { maxDepth: 2 },
+```
+
+## オプション
+
+| オプション | デフォルト | 説明 |
+| --- | --- | --- |
+| `maxDepth` | `3` | 見出しの最大深度（絶対値、2〜6）。`2` = h2 のみ、`3` = h2 + h3。 |
+
+## エクスポートされる構造
+
+この機能は、エントリが次の型に従う `export const toc` を挿入します。
+
+```ts
+type TocEntry = {
+  depth: number; // absolute heading depth: 2 | 3 | 4 | 5 | 6
+  id: string; // slug assigned by the heading-links pass
+  text: string; // plain-text heading content (hash-link stripped)
+  children: TocEntry[]; // nested sub-headings within maxDepth
+};
+```
+
+## 出力例
+
+h2 と h3 の見出しを持つドキュメントの場合、挿入されるエクスポートは次のようになります。
+
+```ts
+export const toc = [
+  {
+    depth: 2,
+    id: "introduction",
+    text: "Introduction",
+    children: [{ depth: 3, id: "background", text: "Background", children: [] }],
+  },
+  { depth: 2, id: "conclusion", text: "Conclusion", children: [] },
+];
+```
+
+## 補足
+
+- このエクスポートは見出しリンクパスの後に実行されるため、`id` スラッグは最終的で重複が解消されています。
+- `tocExport` は [Heading Marker TOC](./heading-marker-toc.mdx) とは独立して動作します — 一方を有効化しても他方に干渉しません。
+- zudo-doc の既存の TOC アイランドはこのエクスポートで駆動されていません。両者は別々の仕組みです。

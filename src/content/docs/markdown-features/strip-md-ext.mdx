@@ -1,0 +1,37 @@
+---
+title: Strip .md Extension
+description: Removes .md and .mdx suffixes from internal link hrefs in the final output.
+sidebar_position: 7
+---
+
+**Core feature** — always active, no configuration required.
+
+## What it does
+
+After [Resolve Links](./resolve-links.mdx) has normalized internal link targets, this feature removes any remaining `.md` or `.mdx` suffix from link `href` values. The result is clean URLs without file extensions in the final HTML.
+
+## Example
+
+```md
+See [setup](./installation.mdx) for details.
+```
+
+Renders to:
+
+```html
+<a href="./installation">See setup for details.</a>
+```
+
+The `.mdx` extension is stripped; the rest of the path, query string, and fragment remain intact.
+
+## Processing order
+
+The Strip .md Extension plugin runs in the hast phase, after Resolve Links has already rewritten file paths to output URLs. The two features work together:
+
+1. **Resolve Links** — maps source file paths to their output URLs.
+2. **Strip .md Extension** — removes any leftover `.md`/`.mdx` suffix.
+
+## Notes
+
+- Only relative and root-relative paths are affected. Absolute URLs are not modified.
+- Fragments (`#section`) and query strings are preserved.

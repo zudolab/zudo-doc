@@ -37,7 +37,11 @@ const SCAFFOLD_TS_PATH = resolve(
   "packages/create-zudo-doc/src/scaffold.ts",
 );
 
-const PINNED_PACKAGES = ["@takazudo/zfb", "@takazudo/zfb-runtime"];
+const PINNED_PACKAGES = [
+  "@takazudo/zfb",
+  "@takazudo/zfb-runtime",
+  "@takazudo/zfb-adapter-cloudflare",
+];
 
 /**
  * Extract the literal version string for `pkgName` from scaffold.ts. The

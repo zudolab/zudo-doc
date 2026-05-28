@@ -1,0 +1,69 @@
+---
+title: Image Dimensions
+description: Injects width/height attributes on images from disk metadata. No-op stub at zfb next.13.
+sidebar_position: 21
+---
+
+The `imageDimensions` feature is designed to read image file headers at build time and inject `width` and `height` attributes onto local `<img>` elements, preventing Cumulative Layout Shift (CLS) by letting the browser reserve space before the image loads.
+
+:::warning[No-op at zfb next.13]
+
+`imageDimensions` is **enabled** in zudo-doc's `zfb.config.ts`, but at zfb `0.1.0-next.13` it is a **no-op** for public-directory absolute paths: an image such as `![alt](/img/x.png)` is emitted as `<img src alt>` with **no** `width`/`height` injected. The configuration and syntax below are documented for completeness, but no dimensions are produced on this corpus today.
+
+:::
+
+## Configuration
+
+It is an object-typed feature, so it must be given an options object (`{}` or fields):
+
+```ts title="zfb.config.ts"
+export default defineConfig({
+  markdown: {
+    features: {
+      imageDimensions: {},
+    },
+  },
+});
+```
+
+## Intended behavior
+
+For each image element, the feature is designed to:
+
+1. Skip elements that already carry a `width` or `height` attribute.
+2. Ignore remote URLs (`http://`, `https://`, `//`) and `data:` URLs.
+3. Resolve the `src` to an absolute file path on disk.
+4. Read only the image file header and inject the resolved dimensions.
+5. Emit a build warning if the file is missing or unrecognized.
+
+Intended supported formats: PNG, JPEG, GIF, WebP, AVIF.
+
+## Path resolution
+
+| Path form | Resolves against |
+| --- | --- |
+| Absolute (`/img/hero.png`) | the `public` directory |
+| Relative (`./assets/hero.png`) | the markdown file's directory |
+| Remote / `data:` | skipped silently |
+
+## Options
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `skipRemote` | `true` | When `false`, remote images are probed during the build instead of being skipped. |
+
+## Syntax
+
+A standard markdown image is all that is required — no special syntax:
+
+```md
+![Hero image](/img/hero.png)
+```
+
+When the feature is functional, the intended output for a 400×300 PNG would be:
+
+```html
+<img src="/img/hero.png" alt="Hero image" width="400" height="300" />
+```
+
+At next.13, the `width`/`height` attributes are **not** injected for public-directory absolute paths, so the emitted markup is `<img src="/img/hero.png" alt="Hero image" />` unchanged.
