@@ -789,6 +789,18 @@ export default defineConfig({
   // a hop on every navigation and address-bar flicker.
   // Closes zudolab/zudo-doc#1579 (54 missing-trailing-slash entries).
   trailingSlash: settings.trailingSlash,
+  // zfb next.13 moved these four pipeline features from always-on (Core)
+  // to opt-in. Re-enable them explicitly so the existing corpus continues
+  // to render correctly after the bump. Other opt-in features land in
+  // later sub-issues (#1804 onwards) and are intentionally NOT listed here.
+  markdown: {
+    features: {
+      admonitionsPreset: true,
+      mermaid: true,
+      imageEnlarge: true,
+      headingMarkerToc: true,
+    },
+  },
   // ----------------------------------------------------------------------
   // Cloudflare adapter — wraps the SSR bundle into `dist/_worker.js`
   // (the explicit main entry for Workers static assets) plus a sidecar
