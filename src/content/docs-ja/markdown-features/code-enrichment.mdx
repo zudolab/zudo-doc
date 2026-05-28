@@ -1,0 +1,104 @@
+---
+title: Code Enrichment
+description: フェンスコードブロックにタイトルバー、コピーボタン、diff/行ハイライト装飾を追加します。
+sidebar_position: 17
+---
+
+`codeEnrichment` 機能は、フェンスコードブロックにタイトルバー、コピーボタン、そして行単位の注釈（diff マーカーと行ハイライト）を付与します。シンタックスハイライトの後に hast フェーズのビジターとして動作するため、すでにトークン化された `<span class="line">` の出力を処理します。
+
+:::note[オプトイン機能]
+
+この機能はデフォルトで無効です。`zfb.config.ts` の `codeEnrichment` キーで有効化します。オブジェクト型の機能であるため、オプションオブジェクト（`{}` またはフィールド）を渡す必要があります — `true` のショートハンドは受け付けません。
+
+:::
+
+## 設定
+
+```ts title="zfb.config.ts"
+export default defineConfig({
+  markdown: {
+    features: {
+      codeEnrichment: {},
+    },
+  },
+});
+```
+
+2 つの拡張機能（diff マーカーと行ハイライト）はデフォルトで有効です。それぞれ個別に無効化できます。
+
+```ts title="zfb.config.ts"
+codeEnrichment: {
+  diffMarkers: false,
+  lineHighlight: true,
+}
+```
+
+## タイトルバー
+
+フェンスに `title="…"` 属性を付けると、ブロックがタイトルバー付きのコンテナでラップされます。
+
+````md
+```ts title="example.ts"
+const greeting = "hello";
+```
+````
+
+出力されるマークアップは `<div class="code-block-container"><div class="code-block-title">example.ts</div><pre class="syntect-base16-ocean-dark"><code>…</code></pre></div>` です。タイトルのないフェンスは、コンテナもタイトルバーもない素の `<pre class="syntect-base16-ocean-dark"><code>…</code></pre>` を出力します。
+
+タイトル付きの実例:
+
+```ts title="example.ts"
+const greeting = "hello";
+console.log(greeting);
+```
+
+## Diff マーカー
+
+行末に `// [!code ++]` または `// [!code --]` コメントを追加します。マーカーは出力から除去され、その行には `data-line-diff` 属性（`added` または `removed`）が付与されます。
+
+```js title="diff-demo.js"
+const unchanged = 1;
+const removed = 2; // [!code --]
+const added = 3; // [!code ++]
+```
+
+対応するコメントスタイルは言語に合わせます: `//`（JavaScript/TypeScript/Rust）、`#`（Python/Ruby/Shell）、`--`（SQL/Lua）。
+
+## 行ハイライト
+
+フェンスの情報文字列に波括弧区切りの範囲を追加します。一致した行には `data-line-highlight="true"` 属性が付与されます。
+
+```js title="highlight-demo.js"
+const a = 1;
+const b = 2;
+const c = 3;
+const d = 4;
+const e = 5;
+```
+
+上のフェンスは次のように記述されています。
+
+````md
+```js {1,3-5}
+const a = 1;
+const b = 2;
+const c = 3;
+const d = 4;
+const e = 5;
+```
+````
+
+対応する範囲構文: 単一の数値（`{3}`）、両端を含む範囲（`{3-5}`）、それらの組み合わせ（`{1,3-5,8}`）。
+
+## コピーボタン
+
+コピーボタンは実行時にクライアントサイド JavaScript で追加されるため、サーバーレンダリングされた HTML には含まれません。ハイドレーション後のボタンマークアップは `button.code-btn.code-btn-copy` で、その中に `svg.code-icon.code-icon-copy` を含みます。
+
+## 出力 DOM
+
+| トリガー | 出力される要素 | クラス名 |
+| --- | --- | --- |
+| `title="x"` 付きフェンス | `<div><div>title</div><pre><code></code></pre></div>` | `.code-block-container` > `.code-block-title` + `pre.syntect-base16-ocean-dark` |
+| タイトルなしフェンス | 素の `<pre><code></code></pre>` | `pre.syntect-base16-ocean-dark` |
+| Diff マーカー行 | `<span class="line" data-line-diff="added\|removed">` | `span.line[data-line-diff]` |
+| ハイライト行 | `<span class="line" data-line-highlight="true">` | `span.line[data-line-highlight]` |

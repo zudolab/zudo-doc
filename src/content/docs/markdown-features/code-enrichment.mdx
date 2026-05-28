@@ -1,0 +1,104 @@
+---
+title: Code Enrichment
+description: Adds a title bar, copy button, and diff/line-highlight decorations to fenced code blocks.
+sidebar_position: 17
+---
+
+The `codeEnrichment` feature decorates fenced code blocks with a title bar, a copy button, and per-line annotations — diff markers and line highlighting. It runs as a hast-phase visitor after syntax highlighting, so it operates on the already-tokenized `<span class="line">` output.
+
+:::note[Opt-in feature]
+
+This feature is disabled by default. Enable it with the `codeEnrichment` key in `zfb.config.ts`. It is an object-typed feature, so it must be given an options object (`{}` or fields) — the `true` shorthand is rejected.
+
+:::
+
+## Configuration
+
+```ts title="zfb.config.ts"
+export default defineConfig({
+  markdown: {
+    features: {
+      codeEnrichment: {},
+    },
+  },
+});
+```
+
+Both enhancements (diff markers and line highlighting) are active by default. Disable either individually:
+
+```ts title="zfb.config.ts"
+codeEnrichment: {
+  diffMarkers: false,
+  lineHighlight: true,
+}
+```
+
+## Title bar
+
+When a fence carries a `title="…"` attribute, the block is wrapped in a container with a title bar:
+
+````md
+```ts title="example.ts"
+const greeting = "hello";
+```
+````
+
+The emitted markup is `<div class="code-block-container"><div class="code-block-title">example.ts</div><pre class="syntect-base16-ocean-dark"><code>…</code></pre></div>`. A fence without a title emits a bare `<pre class="syntect-base16-ocean-dark"><code>…</code></pre>` — no container, no title bar.
+
+Live example with a title:
+
+```ts title="example.ts"
+const greeting = "hello";
+console.log(greeting);
+```
+
+## Diff markers
+
+Append `// [!code ++]` or `// [!code --]` comments at line ends. The marker is stripped from the output, and the line receives a `data-line-diff` attribute (`added` or `removed`):
+
+```js title="diff-demo.js"
+const unchanged = 1;
+const removed = 2; // [!code --]
+const added = 3; // [!code ++]
+```
+
+Supported comment styles match the language: `//` (JavaScript/TypeScript/Rust), `#` (Python/Ruby/Shell), `--` (SQL/Lua).
+
+## Line highlighting
+
+Add brace-delimited ranges to the fence info-string. Matching lines receive a `data-line-highlight="true"` attribute:
+
+```js title="highlight-demo.js"
+const a = 1;
+const b = 2;
+const c = 3;
+const d = 4;
+const e = 5;
+```
+
+The fence above was authored as:
+
+````md
+```js {1,3-5}
+const a = 1;
+const b = 2;
+const c = 3;
+const d = 4;
+const e = 5;
+```
+````
+
+Supported range syntax: single numbers (`{3}`), inclusive ranges (`{3-5}`), and combinations (`{1,3-5,8}`).
+
+## Copy button
+
+The copy button is added by client-side JavaScript at runtime; it is not present in the server-rendered HTML. When hydrated, the button markup is `button.code-btn.code-btn-copy` containing `svg.code-icon.code-icon-copy`.
+
+## Emitted DOM
+
+| Trigger | Emitted element(s) | Class names |
+| --- | --- | --- |
+| Fence with `title="x"` | `<div><div>title</div><pre><code></code></pre></div>` | `.code-block-container` > `.code-block-title` + `pre.syntect-base16-ocean-dark` |
+| Fence without title | bare `<pre><code></code></pre>` | `pre.syntect-base16-ocean-dark` |
+| Diff marker line | `<span class="line" data-line-diff="added\|removed">` | `span.line[data-line-diff]` |
+| Highlighted line | `<span class="line" data-line-highlight="true">` | `span.line[data-line-highlight]` |

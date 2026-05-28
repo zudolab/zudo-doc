@@ -1,0 +1,76 @@
+---
+title: Transclude
+description: "Embeds the content of another file via :::include{file=\"…\"} or ![[path]]. Disabled in zudo-doc at zfb next.13."
+sidebar_position: 23
+---
+
+The `transclude` feature embeds the content of another file into a Markdown document. The included file is parsed as Markdown and its AST is merged in before the rest of the pipeline runs.
+
+:::danger[Disabled in zudo-doc — non-functional at zfb next.13]
+
+`transclude` is **disabled** (omitted from zudo-doc's `zfb.config.ts`). At zfb `0.1.0-next.13` it is non-functional: the `:::include{file="…"}` directive **500s the SSR render** (no registered `<include>` component), and the `![[path]]` wikilink form is a **no-op** (it renders as the literal text `![[path]]`). The syntax below appears only inside fenced code blocks; no live `:::include` directive is authored on this page. A one-line comment in `zfb.config.ts` marks it for re-enable once a transclude renderer is wired.
+
+:::
+
+## Configuration
+
+Once a renderer is wired, enable with defaults. It is an object-typed feature, so it must be given an options object:
+
+```ts title="zfb.config.ts"
+export default defineConfig({
+  markdown: {
+    features: {
+      transclude: {},
+    },
+  },
+});
+```
+
+Adjust the maximum include-chain depth:
+
+```ts title="zfb.config.ts"
+transclude: { maxDepth: 5 },
+```
+
+## Directive syntax
+
+Basic inclusion — the path resolves relative to the current source file:
+
+```md
+:::include{file="./snippets/intro.md"}
+```
+
+Include a file as a fenced code block:
+
+```md
+:::include{file="./examples/hello.rs" code=true lang="rust"}
+```
+
+Slice a line range (1-based, both endpoints inclusive):
+
+```md
+:::include{file="./src/lib.rs" code=true lang="rust" lines="10-30"}
+```
+
+## Wikilink form
+
+A `![[path]]` wikilink is the alternative inclusion syntax:
+
+```md
+![[snippets/intro.md]]
+```
+
+At next.13 this form is a no-op and renders as literal text.
+
+## Options
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `maxDepth` | `5` | Maximum include-chain depth. Included files may themselves contain `:::include` directives up to this depth. |
+
+## Intended features
+
+- **Chaining**: included files may contain further `:::include` directives, up to `maxDepth`.
+- **Cycle detection**: infinite loops from files including each other are prevented.
+- **Path restrictions**: only relative paths are allowed; traversal outside the project root is rejected.
+- **Blank-line requirement**: directives must have blank lines above and below to be recognized as block-level content.
