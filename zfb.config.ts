@@ -824,7 +824,10 @@ export default defineConfig({
       // pages/_mdx-components.ts (reusing the Tabs/TabItem UI). FeatureToggle
       // accepts the `true` shorthand (boolean-OR-object per the S2 contract).
       codeTabs: true,
-      ruby: true,
+      // ruby disabled (#1815) — the `^{...}` annotation syntax 500s the SSR
+      // render at zfb next.13 (NOT a missing component; a registered stub
+      // cannot fix it — the error is inside zfb's Rust ruby pass). Re-enable
+      // when the upstream crate is fixed. See the S3 probe note (#1802).
       // tocExport intentionally omitted: enabling it makes zfb next.13 inject
       // an indented `export const toc = [{"depth":2,...}]` line that MDX
       // parses as content, producing an esbuild "Expected }" failure across
