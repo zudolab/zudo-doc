@@ -1,0 +1,54 @@
+---
+title: Syntax Highlighting
+description: Build-time code highlighting via syntect with the fixed base16-ocean-dark theme.
+sidebar_position: 8
+---
+
+**Core feature** — always active, no configuration required.
+
+## What it does
+
+Every fenced code block is highlighted at build time using [syntect](https://github.com/trishume/syntect), a Rust library that uses Sublime Text–compatible grammar definitions. The highlighted HTML is embedded directly in the SSR output — no JavaScript is required in the browser.
+
+## Theme
+
+zudo-doc uses a single fixed highlight theme: **`base16-ocean-dark`**.
+
+The theme is baked into the build. All `<pre>` elements receive the class `syntect-base16-ocean-dark`.
+
+## Supported languages
+
+Any language with a Sublime Text–compatible grammar is supported. Specify the language identifier on the opening fence:
+
+````md
+```ts
+const greeting: string = "hello";
+```
+````
+
+Renders as:
+
+```ts
+const greeting: string = "hello";
+```
+
+Without a language identifier, the block is rendered as plain text with no highlighting.
+
+## Emitted markup
+
+A highlighted code block renders as:
+
+```html
+<pre class="syntect-base16-ocean-dark"><code>…</code></pre>
+```
+
+When used together with the [Code Title](./code-title.mdx) feature, the `<pre>` is wrapped inside a `.code-block-container` div. The copy button visible in the UI is injected by client-side JavaScript (part of the opt-in [Code Enrichment](./code-enrichment.mdx) feature).
+
+## Processing order
+
+The syntax highlighter runs last in the hast phase, after Code Title and any other code-block plugins. It replaces each `<pre><code>` element with raw highlighted HTML, so any plugin that needs to read the structured `<pre>` element must run before it.
+
+## Notes
+
+- Highlighting is performed entirely by Rust at build time; no Shiki, Prism, or other JS highlighter runs at build or serve time.
+- The `shikiTheme` field in color-scheme config is a separate, runtime-only setting consumed by the design token panel's client-side Shiki preview — it has no effect on the build output.

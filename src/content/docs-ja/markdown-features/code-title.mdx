@@ -1,0 +1,59 @@
+---
+title: Code Title
+description: "コードブロックに title=\"…\" を設定すると、ファイル名や見出しバーを表示します。"
+sidebar_position: 4
+---
+
+**Core 機能** — 常に有効です。設定は不要です。
+
+## 概要
+
+コードフェンスの言語識別子の後に `title="…"` 属性を付与すると、コードブロックの上にファイル名またはタイトルのラベルバーがレンダリングされます。
+
+`title` 属性がない場合は、コンテナや見出しなしのベアな `<pre>` 要素としてレンダリングされます。
+
+## 構文
+
+開始フェンスの言語タグの後に `title="…"` を追加します。
+
+````md
+```ts title="zfb.config.ts"
+export default defineConfig({
+  markdown: {
+    cjkFriendly: true,
+  },
+});
+```
+````
+
+このように表示されます。
+
+```ts title="zfb.config.ts"
+export default defineConfig({
+  markdown: {
+    cjkFriendly: true,
+  },
+});
+```
+
+## 出力マークアップ
+
+タイトル付きのコードブロックはコンテナ `div` にラップされます。
+
+```html
+<div class="code-block-container">
+  <div class="code-block-title">zfb.config.ts</div>
+  <pre class="syntect-base16-ocean-dark"><code>…</code></pre>
+</div>
+```
+
+タイトルなしのコードブロックはラッパーなしのベアな `<pre>` としてレンダリングされます。
+
+```html
+<pre class="syntect-base16-ocean-dark"><code>…</code></pre>
+```
+
+## 補足
+
+- Code Title プラグインはビルドパイプラインのシンタックスハイライターより**前に**実行されます。これにより、`<pre>` 要素がハイライト済み HTML に置き換えられる前に `title` メタデータが取得されます。
+- UI に表示されるコピーボタンはクライアントサイドの JavaScript で注入されるもので、SSR 出力には含まれません。コピーボタンや diff/行ハイライト装飾を追加するオプトイン機能については [Code Enrichment](./code-enrichment.mdx) を参照してください。

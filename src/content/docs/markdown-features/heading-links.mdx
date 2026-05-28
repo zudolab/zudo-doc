@@ -1,0 +1,45 @@
+---
+title: Heading Links
+description: Adds slug-based id attributes and self-referencing anchor links to every heading.
+sidebar_position: 3
+---
+
+**Core feature** — always active, no configuration required.
+
+## What it does
+
+Every heading at `h2` and below automatically receives:
+
+1. A slug-based `id` attribute derived from the heading text using GitHub-slugger-compatible rules.
+2. A self-referencing anchor element wrapping the heading text, so readers can copy a direct deep-link.
+3. Deduplication: when the same heading text appears more than once in a document, a counter suffix is appended (`overview`, `overview-1`, `overview-2`, …).
+
+## Example
+
+The following markdown headings:
+
+```md
+## Introduction
+
+## Introduction
+```
+
+Render to:
+
+```html
+<h2 id="introduction"><a href="#introduction">Introduction</a></h2>
+<h2 id="introduction-1"><a href="#introduction-1">Introduction</a></h2>
+```
+
+## Deep-linking
+
+Because each heading carries a stable `id`, you can link to any section of a page from another page:
+
+```md
+[See the Introduction](./other-page.mdx#introduction)
+```
+
+## Notes
+
+- The slug algorithm follows fixed GitHub-slugger rules and cannot be modified through `zfb.config.ts`.
+- The Heading Marker TOC opt-in feature depends on the stable heading identifiers produced by this plugin. When `headingMarkerToc` is enabled, it runs after heading links have been applied.

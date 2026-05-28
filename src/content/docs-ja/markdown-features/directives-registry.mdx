@@ -1,0 +1,83 @@
+---
+title: Directives Registry
+description: ":::name ディレクティブ構文を JSX コンポーネントにマッピングするパースプリミティブ。"
+sidebar_position: 9
+---
+
+**Core 機能** — 常に有効です。設定は不要です。
+
+## 概要
+
+Directives Registry は、markdown における `:::name`（および `::name` / `:name`）ディレクティブ構文を可能にする基盤プリミティブです。コンパイル時にディレクティブ構文を JSX コンポーネント呼び出しに変換し、組み込み機能とカスタムプロジェクトコンポーネントの両方がディレクティブブロックに応答できるようにします。
+
+このレジストリがなければ、アドモニションを含むディレクティブベースの機能はすべてパースされません。
+
+## ディレクティブの形式
+
+3 つの形式に対応しています。
+
+| 形式 | 構文 | 用途 |
+| --- | --- | --- |
+| コンテナ | `:::name[label]{attrs}` … `:::` | 複数段落ブロック（アドモニション、コードグループ） |
+| リーフ | `::name[label]{attrs}` | 自己クローズ要素 |
+| テキスト（インライン） | `:name[label]{attrs}` | インラインコンポーネント |
+
+## アドモニション
+
+レジストリの最も一般的な使用方法はアドモニションディレクティブです。オプトインの `admonitionsPreset` 機能が有効な場合（このプロジェクトでは有効）、以下のコンテナディレクティブが使えます。
+
+:::note
+これは `:::note` アドモニションです。
+:::
+
+:::tip
+役立つ提案には `:::tip` を使います。
+:::
+
+:::info
+補足情報には `:::info` を使います。
+:::
+
+:::warning
+注意が必要な内容には `:::warning` を使います。
+:::
+
+:::danger
+重大な警告には `:::danger` を使います。
+:::
+
+:::details[クリックして展開]
+折り畳み可能なコンテンツには `:::details[ラベル]` を使います。
+:::
+
+## 構文
+
+```md
+:::note[任意のタイトル]
+コンテンツをここに記述します。
+:::
+```
+
+角括弧内のラベルは省略可能です。ラベルを省略すると、デフォルトのタイプ名がタイトルとしてレンダリングされます。
+
+## 出力マークアップ
+
+`:::note` ディレクティブは以下のようにレンダリングされます。
+
+```html
+<div data-admonition="note" class="admonition admonition-note">
+  <p class="admonition-title">Note</p>
+  <div class="admonition-body">…</div>
+</div>
+```
+
+`data-admonition` 属性はバリアント名を保持します。タイプ固有のクラス（`admonition-note`、`admonition-tip` など）はスタイリングに使用されます。
+
+## カスタムディレクティブ
+
+プロジェクト側のコンポーネントは、`_mdx-components.ts` の設定を通じて追加のディレクティブ名を登録できます。Rust コードを書く必要はありません。コンポーネントオーバーライドの連携方法については [Components](../components/index.mdx) セクションを参照してください。
+
+## 補足
+
+- `admonitionsPreset` のバリアント（`note`、`tip`、`info`、`warning`、`danger`、`details`）はオプトインの [Admonitions Preset](./admonitions-preset.mdx) 機能が提供します。Core レジストリ自体ではありません。レジストリはメカニズムであり、プリセットがコンポーネントマッピングを提供します。
+- `important` と `caution` コンポーネントが登録されていることを確認しない限り、`> [!IMPORTANT]` や `> [!CAUTION]` の GitHub アラート構文は使用しないでください。それぞれ `data-admonition="important"` / `data-admonition="caution"` にマッピングされ、コンポーネントが存在しない場合は 500 エラーになります。

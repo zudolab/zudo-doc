@@ -1,0 +1,36 @@
+---
+title: External Links
+description: Marks outbound links with a visual indicator automatically.
+sidebar_position: 5
+---
+
+**Core feature** — always active, no configuration required.
+
+## What it does
+
+Links pointing to an external origin receive a visual affordance automatically. The affordance is applied by the project's link-override component, which adds an external-link icon to any anchor whose `href` is an absolute `http:` or `https:` URL pointing outside the current site.
+
+## What counts as external
+
+A link is treated as external when:
+
+- Its `href` is an absolute `http:` or `https:` URL.
+- The origin differs from the current site's origin.
+
+Relative paths and non-HTTP schemes (`mailto:`, `tel:`) are always treated as internal and receive no affordance.
+
+## Example
+
+Writing a standard markdown link to an external site:
+
+```md
+See the [zfb repository](https://github.com/takazudo/zfb) for source.
+```
+
+Renders with an external-link icon after the link text: [zfb repository](https://github.com/takazudo/zfb).
+
+## Notes
+
+- The visual affordance (icon, color) is defined in the project's link component, not by a configurable `externalLinks` key. The appearance is controlled by the project's design tokens.
+- Attribute merging (e.g. `target="_blank"`, `rel="noopener noreferrer"`) is handled by the link-override component, not in the markdown pipeline.
+- See [Resolve Links](./resolve-links.mdx) for the companion feature that normalizes internal link targets.

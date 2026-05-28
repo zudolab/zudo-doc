@@ -1,0 +1,59 @@
+---
+title: Code Title
+description: "Renders a filename or title bar above a fenced code block when title=\"…\" is set."
+sidebar_position: 4
+---
+
+**Core feature** — always active, no configuration required.
+
+## What it does
+
+When a fenced code block includes a `title="…"` attribute after the language identifier, a label bar is rendered directly above the block showing the filename or title.
+
+Without a `title` attribute the code block renders as a bare `<pre>` element, with no container or label.
+
+## Syntax
+
+Add `title="…"` after the language tag on the opening fence:
+
+````md
+```ts title="zfb.config.ts"
+export default defineConfig({
+  markdown: {
+    cjkFriendly: true,
+  },
+});
+```
+````
+
+This produces:
+
+```ts title="zfb.config.ts"
+export default defineConfig({
+  markdown: {
+    cjkFriendly: true,
+  },
+});
+```
+
+## Emitted markup
+
+A code block with a title is wrapped in a container `div`:
+
+```html
+<div class="code-block-container">
+  <div class="code-block-title">zfb.config.ts</div>
+  <pre class="syntect-base16-ocean-dark"><code>…</code></pre>
+</div>
+```
+
+A code block without a title renders as a bare `<pre>` with no wrapper:
+
+```html
+<pre class="syntect-base16-ocean-dark"><code>…</code></pre>
+```
+
+## Notes
+
+- The Code Title plugin runs **before** the syntax highlighter in the build pipeline, so the `title` metadata is captured before the `<pre>` element is replaced with highlighted HTML.
+- The copy button visible in the UI is injected by client-side JavaScript and is not part of the SSR output. See [Code Enrichment](./code-enrichment.mdx) for the opt-in feature that adds the copy button and diff/line-highlight decorations.

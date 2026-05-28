@@ -1,0 +1,36 @@
+---
+title: Resolve Links
+description: Rewrites relative .mdx/.md links to clean doc URLs using the content source map.
+sidebar_position: 6
+---
+
+**Core feature** — always active, no configuration required.
+
+## What it does
+
+When you write a relative link in markdown using a file path — such as `[link](./other-page.mdx)` — zfb rewrites that path to the final URL the page will be served at. This lets you author links as file-relative paths while the built site serves clean URLs with no `.mdx` extension.
+
+The rewriting process during the mdast phase:
+
+1. Resolves the path relative to the current source file.
+2. Looks up the resolved path in the content source map built at startup.
+3. Replaces the link target with the mapped output URL.
+4. Emits a warning if the target file does not exist in the source map.
+
+## Example
+
+```md
+See [configuration options](./resolve-links.mdx) for details.
+```
+
+Outputs a link pointing to `/docs/markdown-features/resolve-links`, not the raw file path.
+
+## Broken-link warnings
+
+When the target file does not exist in the source map, zfb emits a diagnostic warning. The build does not fail on broken links by default. To escalate warnings to errors, enable the opt-in [Link Validation](./link-validation.mdx) feature.
+
+## Notes
+
+- The plugin operates during the mdast phase, before hast processing.
+- The [Strip .md Extension](./strip-md-ext.mdx) feature runs after Resolve Links and removes any remaining `.md` or `.mdx` suffix from link hrefs in the final output.
+- Absolute URLs are not touched by this plugin.

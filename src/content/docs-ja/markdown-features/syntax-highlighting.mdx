@@ -1,0 +1,54 @@
+---
+title: Syntax Highlighting
+description: syntect による固定テーマ base16-ocean-dark でのビルド時コードハイライト。
+sidebar_position: 8
+---
+
+**Core 機能** — 常に有効です。設定は不要です。
+
+## 概要
+
+すべてのコードフェンスブロックは、ビルド時に [syntect](https://github.com/trishume/syntect) を使ってハイライトされます。syntect は Sublime Text 互換の文法定義を使用する Rust ライブラリです。ハイライト済みの HTML は SSR 出力に直接埋め込まれるため、ブラウザで JavaScript は不要です。
+
+## テーマ
+
+zudo-doc では単一の固定ハイライトテーマ **`base16-ocean-dark`** を使用します。
+
+テーマはビルドに組み込まれています。すべての `<pre>` 要素には `syntect-base16-ocean-dark` クラスが付与されます。
+
+## 対応言語
+
+Sublime Text 互換の文法がある言語はすべて対応しています。開始フェンスに言語識別子を指定します。
+
+````md
+```ts
+const greeting: string = "hello";
+```
+````
+
+次のようにレンダリングされます。
+
+```ts
+const greeting: string = "hello";
+```
+
+言語識別子を指定しない場合は、ハイライトなしのプレーンテキストとしてレンダリングされます。
+
+## 出力マークアップ
+
+ハイライトされたコードブロックは以下のようにレンダリングされます。
+
+```html
+<pre class="syntect-base16-ocean-dark"><code>…</code></pre>
+```
+
+[Code Title](./code-title.mdx) 機能と組み合わせると、`<pre>` は `.code-block-container` div の中にラップされます。UI に表示されるコピーボタンはクライアントサイドの JavaScript で注入されます（オプトインの [Code Enrichment](./code-enrichment.mdx) 機能の一部です）。
+
+## 処理順序
+
+シンタックスハイライターは hast フェーズで最後に実行されます。Code Title やその他のコードブロックプラグインの後で動作します。各 `<pre><code>` 要素をハイライト済みの生 HTML で置き換えるため、構造化された `<pre>` 要素を読む必要があるプラグインはより前に実行される必要があります。
+
+## 補足
+
+- ハイライトはビルド時にすべて Rust で処理されます。Shiki、Prism などの JS ハイライターはビルド時にも配信時にも実行されません。
+- カラースキーム設定の `shikiTheme` フィールドは、デザイントークンパネルのクライアントサイド Shiki プレビューで使用される別のランタイム専用設定です。ビルド出力には影響しません。
