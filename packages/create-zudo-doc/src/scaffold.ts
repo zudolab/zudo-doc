@@ -104,11 +104,16 @@ export async function scaffold(choices: UserChoices): Promise<void> {
   // body-foot-util-area.tsx ships the DocHistory component inline (byte-
   // identical to main/src/components/body-foot-util-area.tsx). Selecting
   // bodyFootUtil without docHistory would leave an unresolved import, so we
-  // silently co-enable docHistory.
+  // co-enable docHistory. Warn when this overrides an explicit --no-doc-history.
   if (
     choices.features.includes("bodyFootUtil") &&
     !choices.features.includes("docHistory")
   ) {
+    if (choices.explicitlyDisabledFeatures?.includes("docHistory")) {
+      console.warn(
+        "body-foot-util requires doc-history; enabling it despite --no-doc-history",
+      );
+    }
     choices.features = [...choices.features, "docHistory"];
   }
 
