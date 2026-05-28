@@ -1,0 +1,58 @@
+---
+title: Link Validation
+description: Validates internal links at build time and warns (or errors) on broken references.
+sidebar_position: 22
+---
+
+The `linkValidation` feature checks internal links and anchor fragments during the build to catch broken references before deployment. It inspects `<a href>` and `<img src>` elements, verifying that internal links and anchor fragments resolve correctly.
+
+:::note[Opt-in feature — enabled in warn mode]
+
+This feature is enabled in zudo-doc's `zfb.config.ts` as `linkValidation: { failOnBroken: false }` — **warn mode**. It is an object-typed feature, so it must be given an options object. In warn mode it never fails the build; broken references are reported as build diagnostics only.
+
+:::
+
+## Configuration
+
+Enable with defaults (warn-only, external URLs skipped):
+
+```ts title="zfb.config.ts"
+export default defineConfig({
+  markdown: {
+    features: {
+      linkValidation: {},
+    },
+  },
+});
+```
+
+zudo-doc sets `failOnBroken: false` explicitly to make the warn-only intent clear:
+
+```ts title="zfb.config.ts"
+linkValidation: { failOnBroken: false },
+```
+
+To fail the build on broken links instead (not used in zudo-doc — it would break CI):
+
+```ts title="zfb.config.ts"
+linkValidation: { failOnBroken: true },
+```
+
+## Options
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `failOnBroken` | `false` | When `true`, broken links produce `Error` diagnostics and fail the build. When `false`, they are warnings only. |
+| `allowExternal` | `true` | When `false`, external URLs are validated instead of being silently skipped. |
+
+## What gets validated
+
+- Bare anchor fragments (`#section-id`) against heading IDs in the current file.
+- File links without anchors (`./other.md`) — the target file must exist.
+- File links with anchors (`./other.md#section-id`) — both the file and the heading ID must resolve.
+
+External URLs (`http://`, `https://`, `mailto:`, `tel:`) are skipped while `allowExternal` is `true`.
+
+## Relationship to `resolveMarkdownLinks`
+
+zudo-doc already runs zfb's `resolveMarkdownLinks` with `onBrokenLinks: "warn"`, which resolves relative `.mdx`/`.md` links to clean route URLs and warns on broken file links. On this corpus, `linkValidation` in warn mode emits no distinguishable output beyond that — broken file links surface through `resolveMarkdownLinks`, and neither configuration fails the build. The two are complementary build-time link checks, both kept in warn mode so a stray broken reference does not block a deploy.

@@ -1,0 +1,92 @@
+---
+title: Code Tabs
+description: ":::code-group ディレクティブを <CodeGroup> コンポーネント経由でタブ付きコードパネルとして描画します。"
+sidebar_position: 18
+---
+
+`codeTabs` 機能は、関連するコードブロックをインタラクティブなタブストリップにまとめます。連続するフェンスブロックを `:::code-group` ディレクティブでラップすると、zfb がフレームワーク側でタブとして描画する `<CodeGroup>` 要素を出力します。
+
+:::note[オプトイン機能]
+
+この機能はデフォルトで無効です。`zfb.config.ts` の `codeTabs` キーで有効化します。`true` のショートハンドを受け付けます。
+
+:::
+
+## 設定
+
+```ts title="zfb.config.ts"
+export default defineConfig({
+  markdown: {
+    features: {
+      codeTabs: true,
+    },
+  },
+});
+```
+
+## 記述構文
+
+2 つ以上のフェンスコードブロックを `:::code-group` ディレクティブでラップします。各ブロックのタブラベルは、その `title="…"` 属性から導出されます。
+
+````md
+:::code-group
+
+```ts title="index.ts"
+export const greeting: string = "hello";
+```
+
+```js title="index.js"
+export const greeting = "hello";
+```
+
+:::
+````
+
+:::warning[トリガーは `:::code-group` ディレクティブ — 単なる連続フェンスではありません]
+
+隣接した 2 つのフェンスコードブロックだけではタブになりません。それらは独立した 2 つのコードブロックとして描画されます。タブ化は、フェンスをラップする明示的な `:::code-group` ディレクティブによってのみトリガーされます。
+
+:::
+
+## タブラベルの解決
+
+各タブのラベルは次の優先順位で決定されます。
+
+1. フェンスの `title="…"` 属性
+2. 言語 id（例: `ts`、`js`）
+3. いずれもない場合のフォールバック文字列 `"tab"`
+
+## ライブデモ
+
+上記のディレクティブは次のように描画されます。
+
+:::code-group
+
+```ts title="index.ts"
+export const greeting: string = "hello";
+```
+
+```js title="index.js"
+export const greeting = "hello";
+```
+
+:::
+
+## 出力
+
+`:::code-group` ディレクティブは、解決されたラベル配列を保持する `tabs` プロパティと、フェンスごとに 1 つの `<pre data-lang="…">` 子要素を持つ `<CodeGroup>` JSX 要素を生成します。
+
+```jsx
+<CodeGroup tabs={["index.ts", "index.js"]}>
+  <pre data-lang="ts">export const greeting: string = "hello";</pre>
+  <pre data-lang="js">export const greeting = "hello";</pre>
+</CodeGroup>
+```
+
+フレームワークは `<CodeGroup>` を同梱していません — zudo-doc は `pages/_mdx-components.ts` で独自の実装を登録し、`tabs` 配列と `<pre data-lang>` の子要素を既存の `<Tabs>` / `<TabItem>` UI にマッピングします。各 `<pre>` 内のコードは生のテキストです（Rust パイプラインは `:::code-group` フェンス内でシンタックスハイライトを実行しません）。
+
+## 補足
+
+- ディレクティブのオプション属性 `name`（`:::code-group{name="install"}`）は、ナビゲーションをまたいでアクティブなタブを保持するためにコンシューマーコンポーネントが利用できます。
+- 空の `:::code-group` コンテナ（フェンスなし）は、プレーンテキストのまま変更されません。
+- ネストした `:::code-group` ディレクティブはサポートされていません。

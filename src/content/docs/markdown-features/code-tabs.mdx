@@ -1,0 +1,92 @@
+---
+title: Code Tabs
+description: Renders :::code-group directives as tabbed code panels via a <CodeGroup> component.
+sidebar_position: 18
+---
+
+The `codeTabs` feature groups related code blocks into an interactive tab strip. You wrap consecutive fenced blocks in a `:::code-group` directive, and zfb emits a `<CodeGroup>` element that the framework renders as tabs.
+
+:::note[Opt-in feature]
+
+This feature is disabled by default. Enable it with the `codeTabs` key in `zfb.config.ts`. It accepts the `true` shorthand.
+
+:::
+
+## Configuration
+
+```ts title="zfb.config.ts"
+export default defineConfig({
+  markdown: {
+    features: {
+      codeTabs: true,
+    },
+  },
+});
+```
+
+## Authoring syntax
+
+Wrap two or more fenced code blocks in a `:::code-group` directive. Each block's tab label is derived from its `title="…"` attribute:
+
+````md
+:::code-group
+
+```ts title="index.ts"
+export const greeting: string = "hello";
+```
+
+```js title="index.js"
+export const greeting = "hello";
+```
+
+:::
+````
+
+:::warning[The `:::code-group` directive is the trigger — not bare consecutive fences]
+
+Two adjacent fenced code blocks on their own do **not** become tabs; they render as two independent code blocks. The tab grouping is triggered only by the explicit `:::code-group` directive wrapping the fences.
+
+:::
+
+## Tab label resolution
+
+Each tab's label follows this priority order:
+
+1. The `title="…"` attribute on the fence
+2. The language id (e.g. `ts`, `js`)
+3. The fallback string `"tab"` when neither is present
+
+## Live demo
+
+The directive above renders as:
+
+:::code-group
+
+```ts title="index.ts"
+export const greeting: string = "hello";
+```
+
+```js title="index.js"
+export const greeting = "hello";
+```
+
+:::
+
+## Emitted output
+
+The `:::code-group` directive produces a `<CodeGroup>` JSX element with a `tabs` prop holding the resolved label array, and one `<pre data-lang="…">` child per fence:
+
+```jsx
+<CodeGroup tabs={["index.ts", "index.js"]}>
+  <pre data-lang="ts">export const greeting: string = "hello";</pre>
+  <pre data-lang="js">export const greeting = "hello";</pre>
+</CodeGroup>
+```
+
+The framework does not ship `<CodeGroup>` — zudo-doc registers its own implementation in `pages/_mdx-components.ts`, mapping the `tabs` array and `<pre data-lang>` children onto the existing `<Tabs>` / `<TabItem>` UI. The code inside each `<pre>` is raw text (the Rust pipeline does not run syntax highlighting inside `:::code-group` fences).
+
+## Notes
+
+- An optional `name` attribute on the directive (`:::code-group{name="install"}`) can be used by the consumer component to persist the active tab across navigation.
+- Empty `:::code-group` containers (no fences) are left unchanged as plain text.
+- Nested `:::code-group` directives are not supported.

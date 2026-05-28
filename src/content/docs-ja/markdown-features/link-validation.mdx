@@ -1,0 +1,58 @@
+---
+title: Link Validation
+description: ビルド時に内部リンクを検証し、壊れた参照に警告（またはエラー）を出します。
+sidebar_position: 22
+---
+
+`linkValidation` 機能は、デプロイ前に壊れた参照を検出するため、ビルド時に内部リンクとアンカーフラグメントを検査します。`<a href>` と `<img src>` 要素を調べ、内部リンクとアンカーフラグメントが正しく解決されることを検証します。
+
+:::note[オプトイン機能 — warn モードで有効]
+
+この機能は zudo-doc の `zfb.config.ts` で `linkValidation: { failOnBroken: false }` として有効化されています — **warn モード**です。オブジェクト型の機能であるため、オプションオブジェクトを渡す必要があります。warn モードではビルドを失敗させることはなく、壊れた参照はビルド診断としてのみ報告されます。
+
+:::
+
+## 設定
+
+デフォルト（warn のみ、外部 URL はスキップ）で有効化します。
+
+```ts title="zfb.config.ts"
+export default defineConfig({
+  markdown: {
+    features: {
+      linkValidation: {},
+    },
+  },
+});
+```
+
+zudo-doc では warn のみであることを明示するため、`failOnBroken: false` を明示的に設定しています。
+
+```ts title="zfb.config.ts"
+linkValidation: { failOnBroken: false },
+```
+
+代わりに壊れたリンクでビルドを失敗させる場合（zudo-doc では未使用 — CI を壊すため）:
+
+```ts title="zfb.config.ts"
+linkValidation: { failOnBroken: true },
+```
+
+## オプション
+
+| オプション | デフォルト | 説明 |
+| --- | --- | --- |
+| `failOnBroken` | `false` | `true` の場合、壊れたリンクは `Error` 診断を生成しビルドを失敗させます。`false` の場合は警告のみです。 |
+| `allowExternal` | `true` | `false` の場合、外部 URL は警告なしでスキップされる代わりに検証されます。 |
+
+## 検証対象
+
+- 素のアンカーフラグメント（`#section-id`）— 現在のファイル内の見出し ID と照合。
+- アンカーなしのファイルリンク（`./other.md`）— 対象ファイルが存在する必要があります。
+- アンカー付きのファイルリンク（`./other.md#section-id`）— ファイルと見出し ID の両方が解決される必要があります。
+
+外部 URL（`http://`、`https://`、`mailto:`、`tel:`）は `allowExternal` が `true` の間スキップされます。
+
+## `resolveMarkdownLinks` との関係
+
+zudo-doc はすでに zfb の `resolveMarkdownLinks` を `onBrokenLinks: "warn"` で実行しており、相対パスの `.mdx`/`.md` リンクをクリーンなルート URL に解決し、壊れたファイルリンクに警告を出します。このコーパスでは、warn モードの `linkValidation` はそれを超える区別可能な出力を生成しません — 壊れたファイルリンクは `resolveMarkdownLinks` を通じて表面化し、どちらの設定もビルドを失敗させません。両者は補完的なビルド時リンクチェックであり、いずれも warn モードに保たれているため、紛れ込んだ壊れた参照がデプロイを妨げることはありません。
