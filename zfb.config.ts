@@ -795,8 +795,7 @@ export default defineConfig({
   // the existing corpus still renders, plus the remaining opt-in features
   // (#1804) so the showcase exercises the full zfb markdown pipeline.
   //
-  // Two opt-in features are intentionally NOT here:
-  //   - codeTabs: needs a paired <CodeGroup> component; wired up in #1805.
+  // One opt-in feature is intentionally NOT here:
   //   - tocExport: see the note below — it breaks the build at next.13.
   //
   // Value-shape note (verified empirically against the next.13 Rust loader):
@@ -819,19 +818,26 @@ export default defineConfig({
       // owner/repo used to build `owner/repo#123`, `#123`, and SHA autolinks.
       githubAutolinks: { repo: "zudolab/zudo-doc" },
       codeEnrichment: {},
-      ruby: true,
+      // codeTabs (#1805, Option A): zfb's directive groups consecutive fenced
+      // code blocks and emits a `<CodeGroup tabs={[...]}>` JSX element the
+      // framework does NOT ship — S5 (#1807) registers <CodeGroup> in
+      // pages/_mdx-components.ts (reusing the Tabs/TabItem UI). FeatureToggle
+      // accepts the `true` shorthand (boolean-OR-object per the S2 contract).
+      codeTabs: true,
+      // ruby disabled (#1815) — the `^{...}` annotation syntax 500s the SSR
+      // render at zfb next.13 (NOT a missing component; a registered stub
+      // cannot fix it — the error is inside zfb's Rust ruby pass). Re-enable
+      // when the upstream crate is fixed. See the S3 probe note (#1802).
       // tocExport intentionally omitted: enabling it makes zfb next.13 inject
       // an indented `export const toc = [{"depth":2,...}]` line that MDX
       // parses as content, producing an esbuild "Expected }" failure across
       // the whole corpus (153 errors, both locales). Tracked upstream as an
       // agent-found issue; re-enable once zfb emits the export at column 0.
       imageDimensions: {},
-      // transclude is enabled but unused by the corpus today. The working
-      // `:::include{file="..."}` directive emits an <include> element with
-      // no registered component (pages/_mdx-components.ts), so authoring it
-      // 500s the SSR render; the `![[...]]` wikilink form is not recognized
-      // and renders as literal text. See the S2 emitted-DOM contract (#1802).
-      transclude: {},
+      // transclude disabled (#1805) — directive form `:::include{file="..."}`
+      // 500s SSR (no registered <include> component) and the `![[...]]`
+      // wikilink form is a no-op at zfb next.13; re-enable when a transclude
+      // renderer is wired. See the S2 emitted-DOM contract (#1802).
       // warn-only: failOnBroken=false never fails the build. On this corpus
       // it emits no output beyond the existing resolveMarkdownLinks "warn"
       // (broken file links surface there; intra-page anchors are unchecked).
