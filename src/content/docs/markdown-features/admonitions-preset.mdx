@@ -1,0 +1,105 @@
+---
+title: Admonitions Preset
+description: Registers the standard note/tip/warning/danger/info/details admonition directives.
+sidebar_position: 10
+---
+
+The **Admonitions Preset** registers six built-in admonition directive types — `note`, `tip`, `warning`, `danger`, `info`, and `details` — so you can call out important content with the CommonMark Directives `:::` fence syntax.
+
+:::note Opt-in feature
+
+Enable it with the `admonitionsPreset` key in `zfb.config.ts`:
+
+```ts
+// zfb.config.ts
+export default defineConfig({
+  markdown: {
+    features: {
+      admonitionsPreset: true,
+    },
+  },
+});
+```
+
+:::
+
+## Syntax
+
+Wrap content in a `:::<type>` fence. Each fence line — the opening `:::note` and the closing `:::` — **must** be separated from the surrounding content by blank lines, or parsing fails and the build emits a warning.
+
+```md
+:::note
+
+Body content goes here.
+
+:::
+```
+
+A bracketed label after the type becomes the admonition title:
+
+```md
+:::tip[Optional title]
+
+Body content.
+
+:::
+```
+
+## Live demo
+
+The six directives below are rendered live by this feature.
+
+:::note
+
+This is a **note**. Use it for neutral, supplementary information.
+
+:::
+
+:::tip
+
+This is a **tip**. Use it for helpful advice or shortcuts.
+
+:::
+
+:::info
+
+This is an **info** callout. Use it for contextual background.
+
+:::
+
+:::warning
+
+This is a **warning**. Use it for things the reader should be careful about.
+
+:::
+
+:::danger
+
+This is a **danger** callout. Use it for destructive or irreversible actions.
+
+:::
+
+:::details[Click to expand]
+
+This is a **details** block — a collapsible disclosure. The body stays hidden until the reader expands it.
+
+:::
+
+## Emitted markup
+
+Each directive compiles to a JSX element (for example `<Note title="Optional title">`), which zudo-doc renders as:
+
+```html
+<div data-admonition="note" class="admonition admonition-note">
+  <p class="admonition-title">…</p>
+  <div class="admonition-body">…</div>
+</div>
+```
+
+The type class (`admonition-note`, `admonition-tip`, `admonition-warning`, `admonition-danger`, `admonition-info`) and the matching `data-admonition` attribute let the stylesheet color each variant distinctly.
+
+## Notes
+
+- The `:::details` type also accepts the legacy `:::details title="Click me"` attribute form.
+- To add or override directives beyond this preset, use zfb's `DirectiveRegistry` through the pipeline API rather than this feature.
+- [GitHub Alerts](./github-alerts.mdx) emits the same admonition markup from `> [!NOTE]`-style blockquotes; the two features coexist cleanly.
