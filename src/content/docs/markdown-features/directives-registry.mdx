@@ -1,0 +1,83 @@
+---
+title: Directives Registry
+description: The parsing primitive that maps :::name directive syntax to JSX components.
+sidebar_position: 9
+---
+
+**Core feature** — always active, no configuration required.
+
+## What it does
+
+The Directives Registry is the underlying primitive that enables the `:::name` (and `::name` / `:name`) directive syntax in markdown. During compilation it translates directive syntax into JSX component calls, making it possible for both built-in features and custom project components to respond to directive blocks.
+
+Without this registry, none of the directive-based features — including admonitions — would parse.
+
+## Directive shapes
+
+Three shapes are supported:
+
+| Shape | Syntax | Use case |
+| --- | --- | --- |
+| Container | `:::name[label]{attrs}` … `:::` | Multi-paragraph blocks (admonitions, code groups) |
+| Leaf | `::name[label]{attrs}` | Self-closing elements |
+| Text (inline) | `:name[label]{attrs}` | Inline components |
+
+## Admonitions
+
+The most common use of the registry is the admonition directives. With the `admonitionsPreset` opt-in feature enabled (as it is in this project), the following container directives are available:
+
+:::note
+This is a `:::note` admonition.
+:::
+
+:::tip
+Use `:::tip` for helpful suggestions.
+:::
+
+:::info
+Use `:::info` for supplemental information.
+:::
+
+:::warning
+Use `:::warning` for cautions that need attention.
+:::
+
+:::danger
+Use `:::danger` for critical warnings.
+:::
+
+:::details[Click to expand]
+Use `:::details[label]` for collapsible content.
+:::
+
+## Syntax
+
+```md
+:::note[Optional title]
+Content goes here.
+:::
+```
+
+The label in brackets is optional. Without a label the admonition renders with its default type name as the title.
+
+## Emitted markup
+
+A `:::note` directive renders as:
+
+```html
+<div data-admonition="note" class="admonition admonition-note">
+  <p class="admonition-title">Note</p>
+  <div class="admonition-body">…</div>
+</div>
+```
+
+The `data-admonition` attribute carries the variant name. The type-specific class (`admonition-note`, `admonition-tip`, etc.) is used for styling.
+
+## Custom directives
+
+Project-side components can register additional directive names through the `_mdx-components.ts` configuration, without writing any Rust code. See the [Components](../components/index.mdx) section for how component overrides are wired.
+
+## Notes
+
+- The `admonitionsPreset` variants (`note`, `tip`, `info`, `warning`, `danger`, `details`) are provided by the opt-in [Admonitions Preset](./admonitions-preset.mdx) feature, not by the Core registry itself. The registry is the mechanism; the preset supplies the component mappings.
+- Do not use `> [!IMPORTANT]` or `> [!CAUTION]` GitHub-alert syntax unless you have verified that `important` and `caution` components are registered. These map to `data-admonition="important"` / `data-admonition="caution"` respectively and will 500 if no component handles them.

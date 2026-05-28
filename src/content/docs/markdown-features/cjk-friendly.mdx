@@ -1,0 +1,41 @@
+---
+title: CJK Friendly
+description: Improves bold and italic parsing adjacent to CJK (Chinese, Japanese, Korean) characters.
+sidebar_position: 2
+---
+
+**Core feature** — always active, no configuration required.
+
+## What it does
+
+CommonMark's emphasis-flanking rules treat CJK ideographs and kana as neither whitespace nor punctuation. As a result, `**bold**` or `_italic_` markers placed immediately next to Chinese, Japanese, or Korean characters are parsed as literal asterisks and underscores rather than formatting delimiters.
+
+The CJK Friendly feature post-processes the markdown AST and re-tokenizes emphasis rules to account for CJK content, so bold and italic work correctly around ideographs and kana.
+
+## Example
+
+The following renders correctly with emphasis markers adjacent to Japanese text:
+
+```md
+これは **重要な** テキストです。
+_イタリック_ も正しく機能します。
+```
+
+## Disabling
+
+In rare cases where strict CommonMark compliance is required, you can turn the feature off in `zfb.config.ts`:
+
+```ts
+export default defineConfig({
+  markdown: {
+    cjkFriendly: false,
+  },
+});
+```
+
+Omitting `cjkFriendly` (the default) keeps the feature on.
+
+## Notes
+
+- GFM strikethrough (`~~text~~`) is handled independently by markdown-rs and is unaffected by this setting.
+- The feature operates as an AST post-processor; it does not modify the base parser.
