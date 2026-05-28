@@ -97,7 +97,7 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  mermaid: true,`);
   lines.push(`  sitemap: false,`);
   lines.push(`  docMetainfo: false,`);
-  lines.push(`  docTags: false,`);
+  lines.push(`  docTags: ${choices.features.includes("docTags")},`);
   lines.push(`  tagPlacement: "after-title" as TagPlacement,`);
   if (choices.features.includes("tagGovernance")) {
     lines.push(`  tagGovernance: "warn" as TagGovernanceMode,`);
