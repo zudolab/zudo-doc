@@ -1,0 +1,43 @@
+---
+title: Markdown Features
+description: Built-in and opt-in markdown pipeline features provided by zfb.
+sidebar_position: 1
+---
+
+zfb's markdown pipeline provides a set of **Core** features that are always active, plus a set of **Opt-in** features that you enable individually in `zfb.config.ts` under `markdown.features`.
+
+## Core features
+
+These 8 features are always active — no configuration required.
+
+| Feature | Description |
+| --- | --- |
+| [CJK Friendly](./cjk-friendly.mdx) | Improves spacing and line-breaking for CJK (Chinese, Japanese, Korean) prose. |
+| [Heading Links](./heading-links.mdx) | Adds anchor links to h2+ headings for direct deep-linking. |
+| [Code Title](./code-title.mdx) | Renders a filename/title bar above fenced code blocks when `title="…"` is set. |
+| [External Links](./external-links.mdx) | Marks outbound links with a visual indicator automatically. |
+| [Resolve Links](./resolve-links.mdx) | Resolves relative `.mdx`/`.md` links to clean doc URLs. |
+| [Strip .md Extension](./strip-md-ext.mdx) | Strips `.md`/`.mdx` from internal link hrefs in the final output. |
+| [Syntax Highlighting](./syntax-highlighting.mdx) | Build-time code highlighting via syntect (fixed `base16-ocean-dark` theme). |
+| [Directives Registry](./directives-registry.mdx) | Provides the `:::note`, `:::tip`, `:::warning`, `:::danger`, `:::info`, `:::details` admonition directives. |
+
+## Opt-in features
+
+These 14 features are disabled by default. Enable each one with the corresponding `markdown.features.*` key in `zfb.config.ts`.
+
+| Feature | Config key | Description |
+| --- | --- | --- |
+| [Admonitions Preset](./admonitions-preset.mdx) | `admonitionsPreset` | Enables the standard admonition directives (note/tip/warning/danger/info/details). |
+| [Mermaid](./mermaid.mdx) | `mermaid` | Renders ` ```mermaid ` fences as diagrams via the client-side Mermaid library. |
+| [Image Enlarge](./image-enlarge.mdx) | `imageEnlarge` | Wraps images in a `<figure>` that expands them on click. |
+| [Heading Marker TOC](./heading-marker-toc.mdx) | `headingMarkerToc` | Attaches per-heading anchor markers and feeds the TOC island. |
+| [GitHub Alerts](./github-alerts.mdx) | `githubAlerts` | Converts `> [!NOTE]`/`[!TIP]`/`[!WARNING]`/`[!IMPORTANT]`/`[!CAUTION]` blockquotes to admonition markup. |
+| [Reading Time](./reading-time.mdx) | `readingTime` | Computes estimated reading time and exposes it as page-level metadata. |
+| [GitHub Autolinks](./github-autolinks.mdx) | `githubAutolinks` | Auto-links issue numbers, cross-repo references, and commit SHAs to GitHub. |
+| [Code Enrichment](./code-enrichment.mdx) | `codeEnrichment` | Adds a title bar, copy button, and diff/line-highlight decorations to code blocks. |
+| [Code Tabs](./code-tabs.mdx) | `codeTabs` | Renders `:::code-group` directives as tabbed code panels via `<CodeGroup>`. |
+| [Ruby](./ruby.mdx) | `ruby` | Adds ruby annotation support (`{base}^{ruby}` syntax). Known-blocked at next.13 — see #1815. |
+| [TOC Export](./toc-export.mdx) | `tocExport` | Exports the page table-of-contents as an `export const toc` named export. Known-blocked at next.13 — see #1814. |
+| [Image Dimensions](./image-dimensions.mdx) | `imageDimensions` | Injects `width`/`height` attributes on images from disk metadata (no-op stub at next.13). |
+| [Link Validation](./link-validation.mdx) | `linkValidation` | Validates internal links at build time and warns (or errors) on broken references. |
+| [Transclude](./transclude.mdx) | `transclude` | Embeds the content of another file via `:::include{file="…"}` or `![[path]]`. Disabled in zudo-doc at next.13. |
