@@ -789,16 +789,53 @@ export default defineConfig({
   // a hop on every navigation and address-bar flicker.
   // Closes zudolab/zudo-doc#1579 (54 missing-trailing-slash entries).
   trailingSlash: settings.trailingSlash,
-  // zfb next.13 moved these four pipeline features from always-on (Core)
-  // to opt-in. Re-enable them explicitly so the existing corpus continues
-  // to render correctly after the bump. Other opt-in features land in
-  // later sub-issues (#1804 onwards) and are intentionally NOT listed here.
+  // zfb next.13 moved four pipeline features from always-on (Core) to
+  // opt-in (admonitionsPreset, mermaid, imageEnlarge, headingMarkerToc) and
+  // ships the rest as opt-in. This block re-enables the former-Core four so
+  // the existing corpus still renders, plus the remaining opt-in features
+  // (#1804) so the showcase exercises the full zfb markdown pipeline.
+  //
+  // Two opt-in features are intentionally NOT here:
+  //   - codeTabs: needs a paired <CodeGroup> component; wired up in #1805.
+  //   - tocExport: see the note below — it breaks the build at next.13.
+  //
+  // Value-shape note (verified empirically against the next.13 Rust loader):
+  // the object-typed features (githubAutolinks, codeEnrichment, tocExport,
+  // imageDimensions, transclude, linkValidation) REJECT the `true` shorthand
+  // and must be given an options object (`{}` or fields). The misleading
+  // "expected struct PluginConfig" error is what surfaces when one is `true`.
+  // The boolean-shorthand features (githubAlerts, readingTime, ruby,
+  // admonitionsPreset, mermaid, imageEnlarge, headingMarkerToc) accept `true`.
   markdown: {
     features: {
+      // Former-Core (restored in #1803).
       admonitionsPreset: true,
       mermaid: true,
       imageEnlarge: true,
       headingMarkerToc: true,
+      // Remaining opt-in features (#1804).
+      githubAlerts: true,
+      readingTime: true,
+      // owner/repo used to build `owner/repo#123`, `#123`, and SHA autolinks.
+      githubAutolinks: { repo: "zudolab/zudo-doc" },
+      codeEnrichment: {},
+      ruby: true,
+      // tocExport intentionally omitted: enabling it makes zfb next.13 inject
+      // an indented `export const toc = [{"depth":2,...}]` line that MDX
+      // parses as content, producing an esbuild "Expected }" failure across
+      // the whole corpus (153 errors, both locales). Tracked upstream as an
+      // agent-found issue; re-enable once zfb emits the export at column 0.
+      imageDimensions: {},
+      // transclude is enabled but unused by the corpus today. The working
+      // `:::include{file="..."}` directive emits an <include> element with
+      // no registered component (pages/_mdx-components.ts), so authoring it
+      // 500s the SSR render; the `![[...]]` wikilink form is not recognized
+      // and renders as literal text. See the S2 emitted-DOM contract (#1802).
+      transclude: {},
+      // warn-only: failOnBroken=false never fails the build. On this corpus
+      // it emits no output beyond the existing resolveMarkdownLinks "warn"
+      // (broken file links surface there; intra-page anchors are unchecked).
+      linkValidation: { failOnBroken: false },
     },
   },
   // ----------------------------------------------------------------------
