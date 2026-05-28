@@ -1,20 +1,20 @@
 ---
 title: Ruby
-description: Adds ruby annotation support for CJK text. Known-blocked at zfb next.13.
+description: Adds ruby annotation support for CJK text, rendering an inline caret syntax to native HTML ruby markup.
 sidebar_position: 19
 ---
 
 The `ruby` feature adds phonetic ruby annotations for CJK text, rendering an inline syntax to standard HTML `<ruby>` markup.
 
-:::danger[Known-blocked at zfb next.13]
+:::note[Requires zfb 0.1.0-next.14 or newer]
 
-The ruby annotation syntax currently **500s the SSR render** at zfb `0.1.0-next.13`. It is **disabled** in zudo-doc's `zfb.config.ts` and is documented here without a live example — the syntax below appears only inside fenced code blocks. Tracked upstream as [#1815](https://github.com/zudolab/zudo-doc/issues/1815). This page will gain a live demo once the upstream crate is fixed.
+The `{base}^{ruby}` syntax 500'd the SSR render at zfb `0.1.0-next.13` ([#1815](https://github.com/zudolab/zudo-doc/issues/1815)). It is fixed in zfb `0.1.0-next.14` (upstream Takazudo/zudo-front-builder#600) and is now enabled in zudo-doc's `zfb.config.ts` — the live example below is rendered by the running pipeline.
 
 :::
 
 ## Configuration
 
-Once the upstream issue is resolved, the feature is enabled with the `ruby` key. It accepts the `true` shorthand:
+Enable the feature with the `ruby` key. It accepts the `true` shorthand:
 
 ```ts title="zfb.config.ts"
 export default defineConfig({
@@ -28,24 +28,26 @@ export default defineConfig({
 
 ## Syntax
 
-The annotation uses a caret followed by the reading in braces, written immediately after the base text — `{base}^{ruby}`:
+The annotation uses a caret followed by the reading in braces, written immediately after the base text — `{base}^{ruby}`. The base is the run of characters directly preceding the caret:
 
 ```md
-漢字^{かんじ}を学^{まな}ぶ
+日本語^{にほんご}
 ```
 
-## Expected HTML output
+## Live example
 
-The feature is intended to render the annotation as semantic `<ruby>` markup:
+The source above, rendered by this page's pipeline:
+
+日本語^{にほんご}
+
+## HTML output
+
+The annotation is rendered as semantic `<ruby>` markup:
 
 ```html
-<ruby>漢字<rt>かんじ</rt></ruby>を学<rt>まな</rt>ぶ
+<ruby><rb>日本語</rb><rt>にほんご</rt></ruby>
 ```
-
-## Why it is blocked
-
-An isolated probe at next.13 confirmed that a page containing a single `^{…}` annotation fails the SSR render with a generic 500, while an otherwise identical control page (no annotation) builds cleanly. The failure originates inside zfb's Rust ruby pass — it is **not** a missing `<Ruby>` component, so registering a component stub does not fix it. Because no live syntax can be authored safely, the feature is left disabled until the upstream fix lands.
 
 ## Scope
 
-The feature parses only the explicit `{base}^{ruby}` syntax. It does not perform automatic kanji detection or morphological analysis to assign furigana — that is intentionally out of scope.
+The feature parses only the explicit `{base}^{ruby}` syntax. It does not perform automatic kanji detection or morphological analysis to assign furigana — that is intentionally out of scope. The base is taken greedily from the contiguous characters before the caret, so separate the base from preceding text with a delimiter when you need a narrower annotation.

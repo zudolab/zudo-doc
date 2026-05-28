@@ -1,20 +1,20 @@
 ---
 title: TOC Export
-description: ページの目次を `export const toc` 名前付きエクスポートとして出力します。zfb next.13 では既知のブロック。
+description: ページの目次を `export const toc` 名前付きエクスポートとして出力します。
 sidebar_position: 20
 ---
 
 `tocExport` 機能はドキュメントの見出しを走査し、処理した各ファイルの先頭に MDX の名前付きエクスポート（`export const toc`）を挿入します。これによりサイドバーやフローティング TOC コンポーネントに構造化された目次を提供します。
 
-:::danger[zfb next.13 では既知のブロック]
+:::note[zfb 0.1.0-next.14 以降が必要]
 
-`tocExport` を有効化すると、zfb `0.1.0-next.13` では**ビルドが壊れます**。挿入される `export const toc = [...]` 行がインデントされた列で出力されるため、MDX はそれを ESM エクスポートではなくコンテンツとして解析し、コーパス全体で約 153 件の esbuild `Expected "}"` エラーが発生します。zudo-doc の `zfb.config.ts` では**有効化していません**。このページではライブデモなしで解説します。アップストリームで [#1814](https://github.com/zudolab/zudo-doc/issues/1814) として追跡されています。zfb がエクスポートを列 0 で出力するようになり次第、再有効化します。
+`tocExport` を有効化すると、zfb `0.1.0-next.13` では**ビルドが壊れていました**。挿入される `export const toc = [...]` 行がインデントされた列で出力されるため、MDX がそれを ESM エクスポートではなくコンテンツとして解析し、コーパス全体で約 153 件の esbuild `Expected "}"` エラーが発生していました（[#1814](https://github.com/zudolab/zudo-doc/issues/1814)）。zfb `0.1.0-next.14`（アップストリーム Takazudo/zudo-front-builder#599 — エクスポートが列 0 へホイストされるよう修正）で解決され、zudo-doc の `zfb.config.ts` で有効化されています。このページを含むコーパス内のすべてのページが、実際の `export const toc` を持つようになりました。
 
 :::
 
 ## 設定
 
-アップストリームの問題が解決されたら、デフォルト（`maxDepth: 3`）で有効化します。オブジェクト型の機能であるため、オプションオブジェクトを渡す必要があります。
+オブジェクト型の機能であるため、オプションオブジェクトを渡す必要があります（`true` のショートハンドは受け付けません）。デフォルト（`maxDepth: 3`）で有効化します。
 
 ```ts title="zfb.config.ts"
 export default defineConfig({
