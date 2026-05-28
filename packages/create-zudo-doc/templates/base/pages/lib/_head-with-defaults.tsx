@@ -20,7 +20,8 @@
 
 import type { JSX } from "preact";
 import { OgTags, TwitterCard } from "@takazudo/zudo-doc/head";
-import { SidebarResizerRestore } from "@takazudo/zudo-doc/sidebar-resizer";
+// Inlined from @takazudo/zudo-doc sidebar-resizer-init.tsx (SIDEBAR_RESIZER_RESTORE_SCRIPT) — the published 0.1.0 dist doesn't export it yet; keep in sync if the clamp bounds [192,448] change.
+const SIDEBAR_RESIZER_RESTORE_SCRIPT = `(function(){try{var w=localStorage.getItem("zudo-doc-sidebar-width");if(!w)return;var n=parseFloat(w);if(!isFinite(n))return;if(n<192)n=192;else if(n>448)n=448;document.documentElement.style.setProperty("--zd-sidebar-w",n+"px");}catch(e){}})();`;
 // Don't import ColorSchemeProvider from "@takazudo/zudo-doc/theme" — that
 // barrel also re-exports DesignTokenTweakPanel + ColorTweakExportModal, which
 // transitively pull `src/components/design-token-tweak/*` and the v2 panel
@@ -118,7 +119,7 @@ export function HeadWithDefaults({
           drag-resizing the sidebar doesn't snap back to the CSS default
           clamp() width. Mirrors the sibling sidebar-toggle restore
           script emitted from the page's afterSidebar slot. */}
-      {settings.sidebarResizer && <SidebarResizerRestore />}
+      {settings.sidebarResizer && <script dangerouslySetInnerHTML={{ __html: SIDEBAR_RESIZER_RESTORE_SCRIPT }} />}
       {/* favicon set — withBase() handles the configured base path prefix */}
       <link rel="icon" href={withBase("/favicon.ico")} sizes="any" />
       <link rel="icon" type="image/png" sizes="32x32" href={withBase("/favicon-32x32.png")} />
