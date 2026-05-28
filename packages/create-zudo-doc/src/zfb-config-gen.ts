@@ -256,6 +256,48 @@ export function generateZfbConfig(choices: UserChoices): string {
   lines.push(`  },`);
   lines.push(`  base: settings.base,`);
   lines.push(`  trailingSlash: settings.trailingSlash,`);
+  // markdown.features block — mirrors the zfb next.13 opt-in model.
+  //
+  // Value-shape rule (empirically verified against the next.13 Rust loader):
+  // object-typed features (githubAutolinks, codeEnrichment, imageDimensions,
+  // linkValidation) REJECT the `true` shorthand and must be given an options
+  // object (`{}` or fields). Boolean-OR-object features (githubAlerts,
+  // readingTime, codeTabs, admonitionsPreset, mermaid, imageEnlarge,
+  // headingMarkerToc) accept `true`.
+  //
+  // Intentionally omitted features (known-blocked at zfb next.13):
+  //   - tocExport: injects indented `export const toc = [...]` that MDX
+  //     parses as content, breaking esbuild with "Expected }" across the
+  //     whole corpus. Re-enable when the upstream Rust pass emits the
+  //     export at column 0. (Filed as zudolab/zudo-doc#1814.)
+  //   - ruby: the `^{...}` annotation syntax 500s the SSR render at next.13.
+  //     A registered stub cannot fix it — the error is inside zfb's Rust
+  //     ruby pass. Re-enable when the upstream crate is fixed. (#1815.)
+  //   - transclude: `:::include{file="..."}` 500s SSR (no registered
+  //     <include> renderer); `![[...]]` wikilink form is a no-op.
+  //     Re-enable when a transclude renderer is wired.
+  //
+  // githubAutolinks is omitted intentionally: the showcase hardcodes
+  // `repo: "zudolab/zudo-doc"` but a scaffolded project belongs to a
+  // different repo. Users can add `githubAutolinks: { repo: "owner/repo" }`
+  // to their zfb.config.ts after scaffolding.
+  lines.push(`  markdown: {`);
+  lines.push(`    features: {`);
+  lines.push(`      // Former-Core features (were always-on before zfb next.12).`);
+  lines.push(`      admonitionsPreset: true,`);
+  lines.push(`      mermaid: true,`);
+  lines.push(`      imageEnlarge: true,`);
+  lines.push(`      headingMarkerToc: true,`);
+  lines.push(`      // Safe opt-in features.`);
+  lines.push(`      githubAlerts: true,`);
+  lines.push(`      readingTime: true,`);
+  lines.push(`      codeEnrichment: {},`);
+  lines.push(`      codeTabs: true,`);
+  lines.push(`      imageDimensions: {},`);
+  lines.push(`      // warn-only link validation — failOnBroken: false never fails the build.`);
+  lines.push(`      linkValidation: { failOnBroken: false },`);
+  lines.push(`    },`);
+  lines.push(`  },`);
   lines.push(`  plugins: integrationPlugins,`);
   lines.push(`});`);
 
