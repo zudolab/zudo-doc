@@ -1,0 +1,65 @@
+---
+title: Image Enlarge
+description: ブロックレベルの画像を、クリックで全画面表示に拡大する figure でラップします。
+sidebar_position: 12
+---
+
+**Image Enlarge** 機能は、単独のブロックレベル画像を、非表示の拡大ボタンを備えた `<figure>` でラップします。画像が描画されるカラムより大きい場合、ボタンが表示され、画像をクリックすると全画面のライトボックスで開きます。
+
+:::note Opt-in 機能
+
+`zfb.config.ts` の `imageEnlarge` キーで有効化します。
+
+```ts
+// zfb.config.ts
+export default defineConfig({
+  markdown: {
+    features: {
+      imageEnlarge: true,
+    },
+  },
+});
+```
+
+:::
+
+## 構文
+
+特別な構文は不要です。通常の Markdown 画像を単独の行に書くだけです（その画像 1 枚だけを含む段落にします）。
+
+```md
+![A wide placeholder image](/img/image-enlarge/image-wide.webp)
+```
+
+## ライブデモ
+
+以下の画像はコンテンツカラムより横幅が広いため、拡大ボタンが表示され、画像がクリック可能になります。クリックすると全画面表示が開きます。
+
+![A wide placeholder image](/img/image-enlarge/image-wide.webp)
+
+## オプトアウト
+
+特定の画像のラップをスキップするには、Markdown のタイトル属性に `"no-enlarge"` を指定します。このセンチネル属性は描画前に取り除かれるため、最終的な DOM には現れません。
+
+```md
+![alt text](./image.png "no-enlarge")
+```
+
+## 出力されるマークアップ
+
+条件を満たした画像は次のようにラップされます。
+
+```html
+<figure class="zd-enlargeable">
+  <img src="photo.png" alt="..." />
+  <button type="button" class="zd-enlarge-btn" aria-label="Enlarge image" hidden>
+    <!-- expand SVG icon -->
+  </button>
+</figure>
+```
+
+## メモ
+
+- ラップされるのは**単一**の画像を含む段落のみです。リンクや `<picture>` 要素の中にある画像、テキストと同じ段落にある画像はスキップされます。
+- ラップは冪等です。すでに `figure.zd-enlargeable` を含む段落は再処理されません。
+- クライアントアイランドが描画後のサイズを画像の固有幅（デバイスピクセル比を考慮）と比較し、画像が本当にカラムより大きいときだけボタンを表示します。

@@ -1,0 +1,63 @@
+---
+title: Reading Time
+description: Computes an estimated reading time and exposes it as page-level metadata.
+sidebar_position: 15
+---
+
+The **Reading Time** feature estimates how long a document takes to read and injects that value into the compiled MDX module. It is purely a **page-data feature** — it emits no DOM element and has no markup or selector to style. The value is available to your page templates, and you decide whether and how to display it.
+
+:::note Opt-in feature
+
+Enable it with the `readingTime` key in `zfb.config.ts`:
+
+```ts
+// zfb.config.ts
+export default defineConfig({
+  markdown: {
+    features: {
+      readingTime: true,
+    },
+  },
+});
+```
+
+:::
+
+## There is no live demo
+
+Unlike the other features in this category, Reading Time renders **nothing** on the page. It does not insert a widget, a badge, or any element. Instead it adds a named export to the compiled module, which your TSX page code can read and render however you like.
+
+## How the value surfaces
+
+The feature exports the estimate as `readingTimeMinutes` from the compiled MDX. In a TSX page that renders a collection entry, read it from the rendered entry:
+
+```tsx
+const { readingTimeMinutes, ...rest } = await entry.render();
+
+<p>{readingTimeMinutes} min read</p>;
+```
+
+The value is a whole number of minutes, with a minimum of `1`.
+
+:::info Not surfaced in this project
+
+zudo-doc's current doc layout does not display `readingTimeMinutes` anywhere, so on this site the value is computed-but-unused metadata. To show it, a layout component would need to read the field and render it (for example next to the page title or the document history block).
+
+:::
+
+## Options
+
+```ts
+// zfb.config.ts — custom words-per-minute
+readingTime: {
+  wpm: 250, // default is 200
+},
+```
+
+## Word-counting method
+
+- Latin text is split on whitespace — one token counts as one word.
+- CJK characters (Chinese, Japanese, Korean) each count as one word.
+- Code blocks and inline code are excluded from the count.
+
+The estimate is the total word count divided by the configured words-per-minute, ceiling-rounded, with a 1-minute minimum.

@@ -1,0 +1,87 @@
+---
+title: GitHub Alerts
+description: GitHub 形式の > [!NOTE] アラートブロック引用をアドモニションマークアップに変換します。
+sidebar_position: 14
+---
+
+**GitHub Alerts** 機能は、GitHub 形式のアラートブロック引用（README で見かける `> [!NOTE]` 構文）を、[Admonitions Preset](./admonitions-preset.mdx) が生成するのと同じアドモニションマークアップに変換します。これにより、使い慣れた GitHub 構文でコールアウトを書きながら、`:::note` 形式のディレクティブとまったく同じように描画できます。
+
+:::note Opt-in 機能
+
+`zfb.config.ts` の `githubAlerts` キーで有効化します。
+
+```ts
+// zfb.config.ts
+export default defineConfig({
+  markdown: {
+    features: {
+      githubAlerts: true,
+    },
+  },
+});
+```
+
+:::
+
+## 構文
+
+ブロック引用の 1 行目に `[!TYPE]` を前置します（タイプは大文字小文字を区別せずに一致）。
+
+```md
+> [!NOTE]
+> ユーザーが流し読みしていても知っておくべき有用な情報。
+```
+
+## バリアント
+
+5 種類のアラートタイプがサポートされています。それぞれがアドモニションバリアントに対応します。
+
+| 前置            | バリアント  |
+| --------------- | ----------- |
+| `[!NOTE]`       | `note`      |
+| `[!TIP]`        | `tip`       |
+| `[!IMPORTANT]`  | `important` |
+| `[!WARNING]`    | `warning`   |
+| `[!CAUTION]`    | `caution`   |
+
+:::warning コンポーネント依存
+
+`[!IMPORTANT]` と `[!CAUTION]` は `important`/`caution` アドモニションバリアントに対応し、これらはプロジェクト（`pages/_mdx-components.ts`）でコンポーネントが登録されている必要があります。zudo-doc は `Important`/`Caution` スタブを登録しているため、ここでは 5 つのバリアントすべてが描画されます。これら 2 つのコンポーネントを登録**せずに**別プロジェクトでこの機能を採用すると、`[!IMPORTANT]`/`[!CAUTION]` が SSR レンダリングを 500 にします。先にそれらを登録する（または NOTE/TIP/WARNING に限定する）必要があります。
+
+:::
+
+## ライブデモ
+
+以下に 5 つのバリアントすべてをライブで描画しています。
+
+> [!NOTE]
+> ユーザーが流し読みしていても知っておくべき有用な情報。
+
+> [!TIP]
+> 物事をより良く、より簡単に行うための役立つアドバイス。
+
+> [!IMPORTANT]
+> ユーザーが目的を達成するために知っておくべき重要な情報。
+
+> [!WARNING]
+> 問題を避けるためにユーザーの即時の注意が必要な緊急情報。
+
+> [!CAUTION]
+> 特定の操作のリスクや悪い結果について助言します。
+
+## 出力されるマークアップ
+
+出力は [Admonitions Preset](./admonitions-preset.mdx) と同一です。たとえば `> [!NOTE]` は次を生成します。
+
+```html
+<div data-admonition="note" class="admonition admonition-note">
+  <p class="admonition-title">…</p>
+  <div class="admonition-body">…</div>
+</div>
+```
+
+## メモ
+
+- サポートされる構文は `[!TYPE]` のみです。`> [!NOTE] My Title` のように末尾にインラインタイトルを付けると、アラートではなく通常のブロック引用として扱われます。
+- 複数段落がサポートされ、すべての本文がアドモニション内に収まります。
+- GitHub Alerts と [Admonitions Preset](./admonitions-preset.mdx) は共存します。GitHub アラートはアドモニションパスより前に処理されるため、両方を同時に有効化できます。

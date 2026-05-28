@@ -1,0 +1,65 @@
+---
+title: Image Enlarge
+description: Wraps block-level images in a figure that expands to a fullscreen view on click.
+sidebar_position: 12
+---
+
+The **Image Enlarge** feature wraps standalone block-level images in a `<figure>` with a hidden expand button. When an image is larger than its rendered column, the button becomes visible and clicking the image opens it in a fullscreen lightbox.
+
+:::note Opt-in feature
+
+Enable it with the `imageEnlarge` key in `zfb.config.ts`:
+
+```ts
+// zfb.config.ts
+export default defineConfig({
+  markdown: {
+    features: {
+      imageEnlarge: true,
+    },
+  },
+});
+```
+
+:::
+
+## Syntax
+
+No special syntax is needed — write a normal markdown image on its own line (a paragraph that contains only that single image):
+
+```md
+![A wide placeholder image](/img/image-enlarge/image-wide.webp)
+```
+
+## Live demo
+
+The image below is wider than the content column, so the expand button appears and the image becomes clickable. Click it to open the fullscreen view:
+
+![A wide placeholder image](/img/image-enlarge/image-wide.webp)
+
+## Opt-out
+
+Add `"no-enlarge"` as the markdown title attribute to skip wrapping a specific image. The sentinel attribute is stripped before rendering, so it never reaches the final DOM:
+
+```md
+![alt text](./image.png "no-enlarge")
+```
+
+## Emitted markup
+
+Images that qualify are wrapped as:
+
+```html
+<figure class="zd-enlargeable">
+  <img src="photo.png" alt="..." />
+  <button type="button" class="zd-enlarge-btn" aria-label="Enlarge image" hidden>
+    <!-- expand SVG icon -->
+  </button>
+</figure>
+```
+
+## Notes
+
+- Only paragraphs containing a **single** image are wrapped. Images nested inside links or `<picture>` elements, or sharing a paragraph with text, are skipped.
+- The wrap is idempotent — a paragraph already containing a `figure.zd-enlargeable` is not processed again.
+- A client island measures the rendered size against the image's intrinsic width (accounting for device pixel ratio) and only reveals the button when the image is genuinely larger than its column.

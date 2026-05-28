@@ -1,0 +1,70 @@
+---
+title: Heading Marker TOC
+description: Inserts an inline table of contents after a heading whose text matches a configured marker.
+sidebar_position: 13
+---
+
+The **Heading Marker TOC** feature inserts a nested table of contents directly into the page body — immediately after the first heading whose text matches a configured marker string. Unlike the floating sidebar TOC, this one lives inline in the content flow, so it appears exactly where you place the marker heading.
+
+:::note Opt-in feature
+
+Enable it with the `headingMarkerToc` key in `zfb.config.ts`. It accepts `true` for defaults or an options object:
+
+```ts
+// zfb.config.ts
+export default defineConfig({
+  markdown: {
+    features: {
+      headingMarkerToc: true,
+    },
+  },
+});
+```
+
+:::
+
+## How to trigger it
+
+This feature is **trigger-based**: it produces no output unless your document contains a heading matching the marker. The default marker is `TOC` (matched case-insensitively). Add a heading with that text where you want the inline list to appear:
+
+```md
+## TOC
+```
+
+The plugin then replaces nothing — it inserts a `<ul>/<li>` list of links to all subsequent headings (within the configured depth) right after the marker heading.
+
+## Live demo
+
+The `## TOC` heading below is the marker. Because this page has several h2 sections after it, the feature inserts a linked list of those sections here:
+
+## TOC
+
+## Background section
+
+Some prose for the first listed section.
+
+## Configuration options
+
+The feature accepts two options when given as an object:
+
+| Option     | Default | Description                                                       |
+| ---------- | ------- | ----------------------------------------------------------------- |
+| `heading`  | `"TOC"` | The marker text the plugin looks for (matched case-insensitively). |
+| `maxDepth` | `2`     | How many heading levels to include, starting at h2 (max 5).        |
+
+```ts
+// zfb.config.ts — custom marker and depth
+headingMarkerToc: {
+  heading: "Contents",
+  maxDepth: 3,
+},
+```
+
+## Output and processing order
+
+The generated list produces `<ul>/<li>` elements with `<a>` tags pointing at fragment identifiers (e.g. `#background-section`). Those IDs are the deduplicated slugs created by the core Heading Links pass, which runs first — so the anchors always match the headings they link to.
+
+## Notes
+
+- This is distinct from the always-on [Heading Links](./heading-links.mdx) core feature (which only adds anchor markers to headings) and from zudo-doc's floating sidebar TOC island. Heading Marker TOC is an opt-in *inline* list driven by a marker heading.
+- If your page has no heading matching the marker, the feature emits nothing — that is expected, not a failure.
