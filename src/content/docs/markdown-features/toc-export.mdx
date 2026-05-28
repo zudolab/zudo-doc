@@ -1,20 +1,20 @@
 ---
 title: TOC Export
-description: Exports the page table-of-contents as an `export const toc` named export. Known-blocked at zfb next.13.
+description: Exports the page table-of-contents as an `export const toc` named export.
 sidebar_position: 20
 ---
 
 The `tocExport` feature walks a document's headings and injects an MDX named export — `export const toc` — at the top of each processed file, giving sidebar and floating-TOC components a structured table-of-contents.
 
-:::danger[Known-blocked at zfb next.13]
+:::note[Requires zfb 0.1.0-next.14 or newer]
 
-Enabling `tocExport` **breaks the build** at zfb `0.1.0-next.13`: the injected `export const toc = [...]` line is emitted at an indented column, so MDX parses it as content rather than an ESM export, producing ~153 esbuild `Expected "}"` errors across the corpus. It is **not enabled** in zudo-doc's `zfb.config.ts`, and this page documents it without a live demo. Tracked upstream as [#1814](https://github.com/zudolab/zudo-doc/issues/1814). Re-enable once zfb emits the export at column 0.
+Enabling `tocExport` **broke the build** at zfb `0.1.0-next.13`: the injected `export const toc = [...]` line was emitted at an indented column, so MDX parsed it as content rather than an ESM export, producing ~153 esbuild `Expected "}"` errors across the corpus ([#1814](https://github.com/zudolab/zudo-doc/issues/1814)). It is fixed in zfb `0.1.0-next.14` (upstream Takazudo/zudo-front-builder#599 — the export is now hoisted to column 0) and is enabled in zudo-doc's `zfb.config.ts`. Every page in this corpus, including this one, now carries a real `export const toc`.
 
 :::
 
 ## Configuration
 
-Once the upstream issue is resolved, enable with defaults (`maxDepth: 3`). It is an object-typed feature, so it must be given an options object:
+It is an object-typed feature, so it must be given an options object (the `true` shorthand is rejected). Enable with defaults (`maxDepth: 3`):
 
 ```ts title="zfb.config.ts"
 export default defineConfig({

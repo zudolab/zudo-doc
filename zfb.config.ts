@@ -795,8 +795,9 @@ export default defineConfig({
   // the existing corpus still renders, plus the remaining opt-in features
   // (#1804) so the showcase exercises the full zfb markdown pipeline.
   //
-  // One opt-in feature is intentionally NOT here:
-  //   - tocExport: see the note below — it breaks the build at next.13.
+  // ruby and tocExport were disabled at next.13 (they 500'd / broke the build).
+  // Both are fixed in zfb 0.1.0-next.14 and re-enabled below (#1817 closes
+  // #1815 ruby + #1814 tocExport). transclude remains disabled (no renderer yet).
   //
   // Value-shape note (verified empirically against the next.13 Rust loader):
   // the object-typed features (githubAutolinks, codeEnrichment, tocExport,
@@ -824,15 +825,19 @@ export default defineConfig({
       // pages/_mdx-components.ts (reusing the Tabs/TabItem UI). FeatureToggle
       // accepts the `true` shorthand (boolean-OR-object per the S2 contract).
       codeTabs: true,
-      // ruby disabled (#1815) — the `^{...}` annotation syntax 500s the SSR
-      // render at zfb next.13 (NOT a missing component; a registered stub
-      // cannot fix it — the error is inside zfb's Rust ruby pass). Re-enable
-      // when the upstream crate is fixed. See the S3 probe note (#1802).
-      // tocExport intentionally omitted: enabling it makes zfb next.13 inject
-      // an indented `export const toc = [{"depth":2,...}]` line that MDX
-      // parses as content, producing an esbuild "Expected }" failure across
-      // the whole corpus (153 errors, both locales). Tracked upstream as an
-      // agent-found issue; re-enable once zfb emits the export at column 0.
+      // ruby (#1815): the `{base}^{ruby}` caret syntax 500'd the SSR render at
+      // zfb next.13 (the error was inside zfb's Rust ruby pass, NOT a missing
+      // component — a registered stub could not fix it). Fixed in zfb
+      // 0.1.0-next.14 (upstream Takazudo/zudo-front-builder#600); re-enabled
+      // here (#1817). Renders native `<ruby><rb>…</rb><rt>…</rt></ruby>` markup.
+      ruby: true,
+      // tocExport (#1814): at next.13 this injected an indented
+      // `export const toc = [{"depth":2,…}]` line that MDX parsed as content,
+      // breaking the build with ~153 esbuild "Expected }" errors across both
+      // locales. Fixed in next.14 (upstream #599 — the export is now hoisted to
+      // column 0); re-enabled here (#1817). Object-typed feature — pass `{}`
+      // (the `true` shorthand is rejected by the Rust loader, per the note above).
+      tocExport: {},
       imageDimensions: {},
       // transclude disabled (#1805) — directive form `:::include{file="..."}`
       // 500s SSR (no registered <include> component) and the `![[...]]`
