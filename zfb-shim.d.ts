@@ -102,6 +102,22 @@ declare module "zfb/config" {
      * haven't opted in.
      */
     trailingSlash?: boolean;
+    /**
+     * Markdown / MDX pipeline options. Mirrors `Config::markdown` →
+     * `MarkdownConfig` in crates/zfb/src/config.rs. zfb next.12 moved the
+     * former-Core features under `markdown.features` and next.13 ships the
+     * rest as opt-in; zudo-doc uses `markdown.features` to opt back into the
+     * former-Core four plus the additional opt-in features (#1804). Each
+     * `features` value is per-feature: `true` for boolean-shorthand features,
+     * or an options object for object-typed features.
+     */
+    markdown?: {
+      gfm?: boolean | Record<string, boolean>;
+      toc?: Record<string, unknown>;
+      externalLinks?: Record<string, unknown>;
+      cjkFriendly?: boolean;
+      features?: Record<string, boolean | Record<string, unknown>>;
+    };
   }
 
   /**
