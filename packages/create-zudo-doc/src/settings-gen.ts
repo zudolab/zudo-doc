@@ -94,6 +94,10 @@ export function generateSettingsFile(choices: UserChoices): string {
     lines.push(`  locales: {} as Record<string, LocaleConfig>,`);
   }
 
+  // mermaid is controlled by the markdown.features block in zfb.config.ts
+  // (zfb next.12+). This field is retained for compatibility with framework
+  // components that still read settings.mermaid. See the markdown.features
+  // block in the generated zfb.config.ts for the canonical opt-in.
   lines.push(`  mermaid: true,`);
   lines.push(`  sitemap: false,`);
   lines.push(`  docMetainfo: false,`);

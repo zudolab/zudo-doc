@@ -2657,6 +2657,31 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
   });
 });
 
+describe("scaffold — zfb next.13 pin bump (#1808)", () => {
+  /**
+   * S6 (#1808): generated package.json must pin all three zfb packages at
+   * 0.1.0-next.13 (absorbs the next.12 breaking change that moved 4
+   * former-Core markdown features to opt-in).
+   */
+  it("pins @takazudo/zfb at 0.1.0-next.13", async () => {
+    const choices: UserChoices = {
+      projectName: "test-pin-bump",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.13");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.13");
+    expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
+      "0.1.0-next.13",
+    );
+  });
+});
+
 describe("scaffold — W7C cross-feature union (i18n + docTags + versioning) (#1738)", () => {
   it("emits the union of all 8 feature-conditional pages when all three are selected", async () => {
     const choices: UserChoices = {
