@@ -192,6 +192,7 @@ export const settings = {
       children: [
         { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
         { label: "Components", labelKey: "nav.components", path: "/docs/components", categoryMatch: "components" },
+        { label: "Markdown Features", labelKey: "nav.markdownFeatures", path: "/docs/markdown-features", categoryMatch: "markdown-features" },
       ],
     },
     { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
