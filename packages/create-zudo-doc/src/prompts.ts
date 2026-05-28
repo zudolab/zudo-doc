@@ -15,6 +15,10 @@ export interface UserChoices {
   defaultMode?: "light" | "dark";
   // Features
   features: string[];
+  // Feature values explicitly disabled via --no-<flag> on the CLI. Used to
+  // emit a warning when an auto-enable (e.g. bodyFootUtil forces docHistory)
+  // overrides an explicit user choice. Never populated by interactive prompts.
+  explicitlyDisabledFeatures?: string[];
   // GitHub repository URL — drives the GitHub link in the header and the
   // "View source on GitHub" link in the body-foot util area. Empty = disabled.
   githubUrl?: string;
@@ -40,6 +44,9 @@ export interface PartialChoices {
   respectPrefersColorScheme?: boolean;
   defaultMode?: "light" | "dark";
   features?: Partial<Record<string, boolean>>;
+  // Feature values explicitly disabled via --no-<flag> on the CLI. Threaded
+  // through to UserChoices so scaffold.ts can warn on forced auto-enables.
+  explicitlyDisabledFeatures?: string[];
   githubUrl?: string;
   cjkFriendly?: boolean;
   packageManager?: "pnpm" | "npm" | "yarn" | "bun";
@@ -284,6 +291,7 @@ export async function runPrompts(
     respectPrefersColorScheme,
     defaultMode,
     features,
+    explicitlyDisabledFeatures: prefilled.explicitlyDisabledFeatures,
     githubUrl,
     cjkFriendly: prefilled.cjkFriendly,
     packageManager,
