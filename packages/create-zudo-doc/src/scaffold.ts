@@ -289,8 +289,8 @@ function generatePackageJson(choices: UserChoices) {
     // The two literals below must match root package.json's
     // dependencies["@takazudo/zfb"] / ["@takazudo/zfb-runtime"] —
     // enforced by scripts/check-pin-parity.mjs (W4A — #1732).
-    "@takazudo/zfb": "0.1.0-next.10",
-    "@takazudo/zfb-runtime": "0.1.0-next.10",
+    "@takazudo/zfb": "0.1.0-next.14",
+    "@takazudo/zfb-runtime": "0.1.0-next.14",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
