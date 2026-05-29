@@ -53,6 +53,11 @@ export const SIDEBAR_RESIZER_INIT_SCRIPT = `(function(){
     if(typeof document==="undefined")return;
     var sidebar=document.getElementById(SIDEBAR_ID);
     if(!sidebar||sidebar.querySelector("["+HANDLE_MARKER+"]"))return;
+    // Only attach to the real fixed desktop panel. On hide_sidebar pages the
+    // aside renders sr-only (position:absolute) purely for the ARIA landmark; a
+    // position:fixed handle would escape sr-only's clip and show a stray strip
+    // (below lg the panel is display:none but still fixed — handle appended, not rendered). zudolab/zudo-doc#1821
+    if(getComputedStyle(sidebar).position!=="fixed")return;
 
     function readCurrentWidth(){
       var raw=getComputedStyle(document.documentElement).getPropertyValue(CSS_PROP);
@@ -69,9 +74,15 @@ export const SIDEBAR_RESIZER_INIT_SCRIPT = `(function(){
     handle.setAttribute("aria-valuemin",String(MIN_W));
     handle.setAttribute("aria-valuemax",String(MAX_W));
     handle.setAttribute("aria-valuenow",String(Math.round(cachedWidth)));
-    // 20px hit area > native y-scrollbar (~12-17px) so a draggable strip stays
-    // visible to the LEFT of the scrollbar when sidebar overflows. zudolab/zudo-doc#1660
-    Object.assign(handle.style,{position:"absolute",top:"0",right:"0",width:"20px",height:"100%",cursor:"col-resize",zIndex:"10",transition:"background 0.15s"});
+    // position:fixed (not absolute) pins the handle to the viewport so it spans
+    // the sidebar's full height even while #desktop-sidebar scrolls. As an
+    // absolute child of the overflow-y:auto sidebar it scrolled away with the
+    // content and height:100% only covered the visible padding box. zudolab/zudo-doc#1821
+    // top:3.5rem + left:calc mirror the layout's #desktop-sidebar geometry
+    // (top-[3.5rem], left:0, width:var(--zd-sidebar-w)). 20px hit area > native
+    // y-scrollbar (~12-17px) keeps a draggable strip left of the scrollbar when
+    // the sidebar overflows. zudolab/zudo-doc#1660
+    Object.assign(handle.style,{position:"fixed",top:"3.5rem",bottom:"0",left:"calc(var(--zd-sidebar-w) - 20px)",width:"20px",cursor:"col-resize",zIndex:"10",transition:"background 0.15s"});
 
     var dragging=false,focused=false;
 
