@@ -86,7 +86,7 @@ export function getPathForLocale(
 ): string {
   let relativePath = stripBase(path);
   if (currentLang !== defaultLocale) {
-    relativePath = relativePath.replace(new RegExp(`^/${currentLang}/`), "/");
+    relativePath = relativePath.replace(new RegExp(`^/${currentLang}(?:/|$)`), "/");
   }
   if (targetLang !== defaultLocale) {
     relativePath = `/${targetLang}${relativePath}`;
@@ -98,7 +98,7 @@ export function getPathForLocale(
 export function buildLocaleLinks(currentPath: string, currentLang: Locale): LocaleLink[] {
   let defaultLocalePath = stripBase(currentPath);
   if (currentLang !== defaultLocale) {
-    defaultLocalePath = defaultLocalePath.replace(new RegExp(`^/${currentLang}/`), "/");
+    defaultLocalePath = defaultLocalePath.replace(new RegExp(`^/${currentLang}(?:/|$)`), "/");
   }
   if (isDefaultLocaleOnlyPath(defaultLocalePath)) {
     return [{

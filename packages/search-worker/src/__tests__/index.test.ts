@@ -128,7 +128,7 @@ describe("worker handler", () => {
     expect(body).toHaveProperty("results");
     expect(body).toHaveProperty("query", "getting started");
     expect(body).toHaveProperty("total");
-    expect(Array.isArray(body.results)).toBe(true);
+    expect(Array.isArray((body as { results?: unknown }).results)).toBe(true);
     expect(res.headers.get("Access-Control-Allow-Origin")).toBe("*");
   });
 

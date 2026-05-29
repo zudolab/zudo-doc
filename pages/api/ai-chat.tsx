@@ -318,6 +318,9 @@ async function callClaude(
   }
 
   const data: ClaudeApiResponse = await response.json();
+  if (!Array.isArray(data.content)) {
+    throw new Error("Unexpected Claude API response: missing content array");
+  }
   const textBlock = data.content.find((b): b is ClaudeTextBlock => b.type === "text");
   if (!textBlock) throw new Error("No text response from Claude");
   return textBlock.text;
