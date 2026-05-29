@@ -4,7 +4,7 @@ export function initSidebarResizer() {
   // Only attach to the real fixed desktop panel. On hide_sidebar pages the
   // aside renders sr-only (position:absolute) purely for the ARIA landmark; a
   // position:fixed handle would escape sr-only's clip and show a stray strip
-  // (below lg the panel is display:none, also non-fixed). zudolab/zudo-doc#1821
+  // (below lg the panel is display:none but still fixed — handle appended, not rendered). zudolab/zudo-doc#1821
   if (getComputedStyle(sidebar).position !== "fixed") return;
 
   // Resizer allows a wider range (192–448px) than the CSS default
