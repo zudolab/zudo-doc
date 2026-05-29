@@ -14,7 +14,7 @@
 //
 // What the resizer does
 // ---------------------
-// Finds `#desktop-sidebar` and grafts a 6px-wide drag handle onto its
+// Finds `#desktop-sidebar` and grafts a 20px-wide drag handle onto its
 // right edge. The handle:
 //
 //   * is keyboard-accessible (tab into it, then Arrow keys / Home / End
@@ -79,6 +79,12 @@ export function initSidebarResizer(): void {
 
   const sidebar = document.getElementById(SIDEBAR_ID);
   if (!sidebar || sidebar.querySelector(`[${HANDLE_MARKER}]`)) return;
+
+  // Only attach to the real fixed desktop panel. On hide_sidebar pages the
+  // aside renders sr-only (position:absolute) purely for the ARIA landmark; a
+  // position:fixed handle would escape sr-only's clip and show a stray strip
+  // (below lg the panel is display:none, also non-fixed). zudolab/zudo-doc#1821
+  if (getComputedStyle(sidebar).position !== "fixed") return;
 
   function readCurrentWidth(): number {
     const raw = getComputedStyle(document.documentElement).getPropertyValue(
