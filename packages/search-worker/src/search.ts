@@ -20,7 +20,11 @@ async function fetchSearchIndex(url: string): Promise<SearchIndexEntry[]> {
   if (!res.ok) {
     throw new Error(`Failed to fetch search index: ${res.status} ${res.statusText}`);
   }
-  return (await res.json()) as SearchIndexEntry[];
+  const parsed = await res.json();
+  if (!Array.isArray(parsed)) {
+    throw new Error("Search index is not an array");
+  }
+  return parsed as SearchIndexEntry[];
 }
 
 async function buildIndex(url: string): Promise<MiniSearch<SearchIndexEntry>> {

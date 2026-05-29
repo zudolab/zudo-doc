@@ -73,7 +73,9 @@ export function enumerateDocsRoutes(locale: string): string[] {
     const allDocs = [...localeDocs, ...fallbackDocs] as DocsEntry[];
 
     for (const doc of allDocs) {
-      urls.push(docsUrl(doc.data.slug ?? doc.id, locale as string));
+      // Mirror the default-locale branch (L61): fall back through toRouteSlug
+      // so a top-level locale index.mdx maps to "" not "index".
+      urls.push(docsUrl(doc.data.slug ?? toRouteSlug(doc.id), locale as string));
     }
 
     const localeConfig = (

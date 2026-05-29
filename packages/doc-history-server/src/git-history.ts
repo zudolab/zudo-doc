@@ -57,10 +57,15 @@ export function getFileCommits(
 /**
  * Get the oldest commit hash that touched a file (the file's "first" commit).
  *
- * Uses --follow + --reverse + --max-count=1. Note that git still has to walk
- * the file's full history once before applying --reverse, so this is O(history)
- * for that file path, not O(1). Acceptable here because the caller is a
- * build-time helper run once per content file, not a hot path.
+ * Uses --follow + --reverse and takes the first emitted line (the oldest
+ * commit). We must NOT pass --max-count=1: git applies the count limit during
+ * its newest-first traversal *before* --reverse is applied, so the combination
+ * emits nothing (verified empirically on git 2.43.0) — which previously made
+ * this function return null for every file, collapsing created==updated dates
+ * and attributing every page to its latest committer. git still walks the
+ * file's full history once, so this is O(history) for that path, not O(1).
+ * Acceptable because the caller is a build-time helper run once per content
+ * file, not a hot path.
  *
  * Returns null when the file has no git history (untracked / not yet committed).
  */
@@ -73,7 +78,6 @@ export function getFirstCommit(filePath: string): string | null {
         "--follow",
         "--reverse",
         "--format=%H",
-        "--max-count=1",
         "--",
         filePath,
       ],
@@ -81,7 +85,7 @@ export function getFirstCommit(filePath: string): string | null {
     ).trim();
     if (!output) return null;
     // git log can emit additional follow-related lines on some platforms;
-    // the first non-empty line is the commit hash we want.
+    // the first non-empty line is the oldest commit hash we want.
     const first = output.split("\n")[0]?.trim();
     return first ? first : null;
   } catch {

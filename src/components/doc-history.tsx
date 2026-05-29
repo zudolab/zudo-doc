@@ -472,6 +472,9 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
         throw new Error(`Failed to load history (${res.status})`);
       }
       const json: DocHistoryData = await res.json();
+      if (!json || !Array.isArray(json.entries)) {
+        throw new Error("Malformed history response");
+      }
       setData(json);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load history");
