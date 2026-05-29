@@ -378,6 +378,22 @@ export default async function AiChatHandler(): Promise<Response> {
   const clientIp = request.headers.get("cf-connecting-ip") ?? "unknown";
   const ipHash = await hashIp(clientIp);
 
+  // Rate limit FIRST — before parsing the body, running validation, or writing
+  // any audit-log entry. Every audit write touches KV, so gating audits behind
+  // the limiter is what stops an unauthenticated flood from amplifying into
+  // unbounded KV writes (and from exploiting the fail-open limiter). The
+  // tradeoff is deliberate: a malformed request from a legitimate caller also
+  // consumes quota. The rate-limited path writes no audit entry, so a blocked
+  // request performs no KV writes at all.
+  const rateLimit = await checkRateLimit(ipHash, env);
+  if (!rateLimit.allowed) {
+    return jsonResponse(
+      { error: "Too many requests" },
+      429,
+      { "Retry-After": String(rateLimit.retryAfter ?? 60) },
+    );
+  }
+
   /** Fire-and-forget audit entry via ctx.waitUntil. */
   function audit(
     message: string,
@@ -415,24 +431,13 @@ export default async function AiChatHandler(): Promise<Response> {
       );
     }
 
-    // Screen for prompt injection *before* rate limiting so injection attempts
-    // don't consume the caller's rate limit quota.
+    // Screen for prompt injection. Rate limiting already ran above, so a flood
+    // of injection attempts cannot amplify audit-log KV writes.
     if (!screenInput(body.message)) {
       audit(body.message, { blocked: true, blockReason: "prompt_injection" });
       return jsonResponse(
         { error: "I can only help with questions about the documentation." },
         400,
-      );
-    }
-
-    // Rate limit *after* validation so malformed requests don't consume quota.
-    const rateLimit = await checkRateLimit(ipHash, env);
-    if (!rateLimit.allowed) {
-      audit(body.message, { blocked: true, blockReason: "rate_limit" });
-      return jsonResponse(
-        { error: "Too many requests" },
-        429,
-        { "Retry-After": String(rateLimit.retryAfter ?? 60) },
       );
     }
 
