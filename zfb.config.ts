@@ -439,15 +439,21 @@
  *                round-3 (6754312) CSS-in-components policy carve-out +
  *                content-type cold-start fix + write-cache ordering +
  *                plugin-runner map leak guard + persist.rs tracing-warn.)
- *              → bumped to v0.1.0-next.18 (zudolab/zudo-doc#1824):
- *                next.18 hard-removed the built-in `imageEnlarge` markdown
- *                feature (`markdown.features.imageEnlarge: true` is now an
- *                unknown key that fails the Rust config loader). The feature
- *                is re-implemented in userland via an MDX paragraph (`p`)
+ *              → bumped to v0.1.0-next.19 (zudolab/zudo-doc#1824):
+ *                The next.18 markdown-overrides epic hard-removed the
+ *                built-in `imageEnlarge` markdown feature
+ *                (`markdown.features.imageEnlarge: true` is now an unknown
+ *                key that fails the Rust config loader). The feature is
+ *                re-implemented in userland via an MDX paragraph (`p`)
  *                component override in `pages/_mdx-components.ts` which
  *                emits `<figure class="zd-enlargeable">` + enlarge button
  *                for block-level images. The `imageEnlarge: true` line is
- *                deleted from this file in the same commit.
+ *                deleted from this file in the same commit. The pin is
+ *                next.19 (not next.18): next.19 carries next.18's removal
+ *                PLUS the islands esbuild `react/jsx-runtime`→preact alias
+ *                fix (Takazudo/zudo-front-builder#633) that next.18 lacked —
+ *                without it the islands bundle fails with
+ *                "Could not resolve react/jsx-runtime".
  */
 
 /**
