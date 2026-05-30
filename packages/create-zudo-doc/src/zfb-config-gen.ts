@@ -262,8 +262,12 @@ export function generateZfbConfig(choices: UserChoices): string {
   // object-typed features (githubAutolinks, codeEnrichment, imageDimensions,
   // linkValidation) REJECT the `true` shorthand and must be given an options
   // object (`{}` or fields). Boolean-OR-object features (githubAlerts,
-  // readingTime, codeTabs, admonitionsPreset, mermaid, imageEnlarge,
-  // headingMarkerToc) accept `true`.
+  // readingTime, codeTabs, admonitionsPreset, mermaid, headingMarkerToc)
+  // accept `true`.
+  // Note: imageEnlarge was formerly a Boolean-OR-object feature here, but
+  // next.18 hard-removed it from the Rust config schema — it is now
+  // re-implemented in userland via an MDX p-override in pages/_mdx-components.ts
+  // (gated on settings.imageEnlarge). Do NOT add imageEnlarge back here.
   //
   // Intentionally omitted features (known-blocked at zfb next.13):
   //   - tocExport: injects indented `export const toc = [...]` that MDX
@@ -284,9 +288,10 @@ export function generateZfbConfig(choices: UserChoices): string {
   lines.push(`  markdown: {`);
   lines.push(`    features: {`);
   lines.push(`      // Former-Core features (were always-on before zfb next.12).`);
+  lines.push(`      // imageEnlarge was a former-Core feature but was hard-removed in zfb`);
+  lines.push(`      // next.18 — it is now re-implemented via an MDX p-override.`);
   lines.push(`      admonitionsPreset: true,`);
   lines.push(`      mermaid: true,`);
-  lines.push(`      imageEnlarge: true,`);
   lines.push(`      headingMarkerToc: true,`);
   lines.push(`      // Safe opt-in features.`);
   lines.push(`      githubAlerts: true,`);

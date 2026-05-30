@@ -8,17 +8,13 @@ sidebar_position: 12
 
 :::note Opt-in 機能
 
-`zfb.config.ts` の `imageEnlarge` キーで有効化します。
+`src/config/settings.ts` の `imageEnlarge` キーで有効化します。
 
 ```ts
-// zfb.config.ts
-export default defineConfig({
-  markdown: {
-    features: {
-      imageEnlarge: true,
-    },
-  },
-});
+// src/config/settings.ts
+export const settings = {
+  imageEnlarge: true,
+};
 ```
 
 :::
@@ -61,5 +57,4 @@ export default defineConfig({
 ## メモ
 
 - ラップされるのは**単一**の画像を含む段落のみです。リンクや `<picture>` 要素の中にある画像、テキストと同じ段落にある画像はスキップされます。
-- ラップは冪等です。すでに `figure.zd-enlargeable` を含む段落は再処理されません。
 - クライアントアイランドが描画後のサイズを画像の固有幅（デバイスピクセル比を考慮）と比較し、画像が本当にカラムより大きいときだけボタンを表示します。

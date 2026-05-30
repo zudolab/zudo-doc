@@ -235,15 +235,19 @@ export function validateDependencies(
 
 /** Files that may contain injection anchors and need cleaning.
  *
- * The only anchor target today is `global.css`, where
- * `design-token-panel.ts` injects `@import "@takazudo/zdtp/styles.css";`
- * at `@slot:global-css:feature-styles`. The sibling
- * `@slot:global-css:theme-tokens` anchor in the same file is consumed
- * by the color-scheme palette generator and must remain. The .tsx
- * anchor form is still supported in `ANCHOR_LINE_RE` for forward
- * compatibility, but no current feature uses it.
+ * The anchor targets today are:
+ * - `global.css` — design-token-panel.ts injects
+ *   `@import "@takazudo/zdtp/styles.css";` at `@slot:global-css:feature-styles`.
+ *   The sibling `@slot:global-css:theme-tokens` anchor is consumed by the
+ *   color-scheme palette generator and must remain.
+ * - `pages/_mdx-components.ts` — image-enlarge.ts injects the
+ *   EnlargeableParagraph p-override (ENLARGE_SVG, EnlargeableParagraph def,
+ *   `p:` map entry) when imageEnlarge is enabled.
+ *
+ * The .tsx anchor form is still supported in `ANCHOR_LINE_RE` for forward
+ * compatibility.
  */
-export const ANCHOR_FILES = ["src/styles/global.css"];
+export const ANCHOR_FILES = ["src/styles/global.css", "pages/_mdx-components.ts"];
 
 /**
  * Main composition entry point. Orchestrates the full feature composition

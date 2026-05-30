@@ -439,6 +439,21 @@
  *                round-3 (6754312) CSS-in-components policy carve-out +
  *                content-type cold-start fix + write-cache ordering +
  *                plugin-runner map leak guard + persist.rs tracing-warn.)
+ *              → bumped to v0.1.0-next.19 (zudolab/zudo-doc#1824):
+ *                The next.18 markdown-overrides epic hard-removed the
+ *                built-in `imageEnlarge` markdown feature
+ *                (`markdown.features.imageEnlarge: true` is now an unknown
+ *                key that fails the Rust config loader). The feature is
+ *                re-implemented in userland via an MDX paragraph (`p`)
+ *                component override in `pages/_mdx-components.ts` which
+ *                emits `<figure class="zd-enlargeable">` + enlarge button
+ *                for block-level images. The `imageEnlarge: true` line is
+ *                deleted from this file in the same commit. The pin is
+ *                next.19 (not next.18): next.19 carries next.18's removal
+ *                PLUS the islands esbuild `react/jsx-runtime`→preact alias
+ *                fix (Takazudo/zudo-front-builder#633) that next.18 lacked —
+ *                without it the islands bundle fails with
+ *                "Could not resolve react/jsx-runtime".
  */
 
 /**
@@ -789,11 +804,16 @@ export default defineConfig({
   // a hop on every navigation and address-bar flicker.
   // Closes zudolab/zudo-doc#1579 (54 missing-trailing-slash entries).
   trailingSlash: settings.trailingSlash,
-  // zfb next.13 moved four pipeline features from always-on (Core) to
-  // opt-in (admonitionsPreset, mermaid, imageEnlarge, headingMarkerToc) and
-  // ships the rest as opt-in. This block re-enables the former-Core four so
-  // the existing corpus still renders, plus the remaining opt-in features
+  // zfb next.13 moved three pipeline features from always-on (Core) to
+  // opt-in (admonitionsPreset, mermaid, headingMarkerToc) and ships the
+  // rest as opt-in. This block re-enables the former-Core three so the
+  // existing corpus still renders, plus the remaining opt-in features
   // (#1804) so the showcase exercises the full zfb markdown pipeline.
+  //
+  // imageEnlarge was a fourth former-Core feature re-enabled at next.13,
+  // but next.18 hard-removed it from the Rust config schema. It is now
+  // re-implemented in userland via an MDX p-override in
+  // pages/_mdx-components.ts (#1824).
   //
   // ruby and tocExport were disabled at next.13 (they 500'd / broke the build).
   // Both are fixed in zfb 0.1.0-next.14 and re-enabled below (#1817 closes
@@ -805,13 +825,14 @@ export default defineConfig({
   // and must be given an options object (`{}` or fields). The misleading
   // "expected struct PluginConfig" error is what surfaces when one is `true`.
   // The boolean-shorthand features (githubAlerts, readingTime, ruby,
-  // admonitionsPreset, mermaid, imageEnlarge, headingMarkerToc) accept `true`.
+  // admonitionsPreset, mermaid, headingMarkerToc) accept `true`.
   markdown: {
     features: {
       // Former-Core (restored in #1803).
       admonitionsPreset: true,
       mermaid: true,
-      imageEnlarge: true,
+      // imageEnlarge removed from zfb at next.18 — re-implemented in userland
+      // via MDX p-override in pages/_mdx-components.ts (#1824).
       headingMarkerToc: true,
       // Remaining opt-in features (#1804).
       githubAlerts: true,

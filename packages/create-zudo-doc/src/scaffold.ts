@@ -294,11 +294,15 @@ function generatePackageJson(choices: UserChoices) {
     // Bumped to next.14 (#1817) — fixes the ruby SSR-500 (#1815) and the
     // tocExport indented-export build break (#1814), letting both features
     // be re-enabled in the showcase markdown.features block.
-    "@takazudo/zfb": "0.1.0-next.14",
-    "@takazudo/zfb-runtime": "0.1.0-next.14",
+    // Bumped to next.19 (#1824) — next.18 hard-removed the built-in
+    // imageEnlarge markdown feature (now re-implemented in userland via an MDX
+    // p-override); next.19 adds the islands esbuild react/jsx-runtime→preact
+    // alias fix (Takazudo/zudo-front-builder#633) that next.18 lacked.
+    "@takazudo/zfb": "0.1.0-next.19",
+    "@takazudo/zfb-runtime": "0.1.0-next.19",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.14",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.19",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's

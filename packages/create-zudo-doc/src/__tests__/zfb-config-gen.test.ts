@@ -157,19 +157,23 @@ describe("generateZfbConfig", () => {
     expect(result).toContain('name: "./plugins/copy-public-plugin.mjs"');
   });
 
-  it("emits a markdown.features block with the 4 former-Core features and safe opt-ins (#1808)", () => {
+  it("emits a markdown.features block with the former-Core features and safe opt-ins (#1808 updated by #1824)", () => {
     // S6 (#1808): zfb next.12+ moved admonitionsPreset/mermaid/imageEnlarge/
-    // headingMarkerToc from always-on (Core) to opt-in. The generator must
-    // re-enable them plus the safe opt-ins so scaffolded projects work out of
-    // the box.
+    // headingMarkerToc from always-on (Core) to opt-in. The generator re-enabled
+    // them plus the safe opt-ins so scaffolded projects work out of the box.
+    // S2 (#1825): imageEnlarge was hard-removed from the Rust config schema in
+    // zfb next.18 — it must NOT appear in the generated markdown.features block
+    // (it causes the Rust config loader to reject the config with "unknown key").
+    // Image-enlarge is now re-implemented via an MDX p-override.
     const result = generateZfbConfig(baseChoices);
     expect(result).toContain("markdown: {");
     expect(result).toContain("features: {");
-    // Former-Core (boolean-OR-object → true is fine)
+    // Former-Core (boolean-OR-object → true is fine) — imageEnlarge excluded
     expect(result).toContain("admonitionsPreset: true");
     expect(result).toContain("mermaid: true");
-    expect(result).toContain("imageEnlarge: true");
     expect(result).toContain("headingMarkerToc: true");
+    // imageEnlarge must NOT be in the generated markdown.features block.
+    expect(result).not.toContain("imageEnlarge:");
     // Safe opt-ins (boolean-OR-object)
     expect(result).toContain("githubAlerts: true");
     expect(result).toContain("readingTime: true");

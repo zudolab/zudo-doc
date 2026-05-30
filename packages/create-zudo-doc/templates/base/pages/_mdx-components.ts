@@ -38,6 +38,7 @@
 // The static export still exists for backward compatibility (using defaultLocale).
 
 import type { ComponentChildren } from "preact";
+// @slot:mdx-components:enlarge-imports
 import { htmlOverrides } from "@takazudo/zudo-doc/content";
 import { HtmlPreviewWrapper } from "@takazudo/zudo-doc/html-preview-wrapper";
 import { Tabs } from "@takazudo/zudo-doc/code-syntax";
@@ -74,7 +75,17 @@ function ContentImg(props: Record<string, unknown>) {
     typeof src === "string" && src.startsWith("/") && !src.startsWith("//")
       ? withBase(src)
       : src;
-  return { type: "img", props: { ...props, src: rewrittenSrc }, key: null, constructor: undefined };
+  // Strip the "no-enlarge" sentinel from the rendered DOM — it is read by the
+  // p-override before ContentImg is called (the VNode is still unlaunched at
+  // that point), so we must delete it here to avoid leaking the sentinel into
+  // the img title attribute.
+  const { title, ...restProps } = props;
+  const finalTitle = title === "no-enlarge" ? undefined : title;
+  const mergedProps: Record<string, unknown> = { ...restProps, src: rewrittenSrc };
+  if (finalTitle !== undefined) {
+    mergedProps.title = finalTitle;
+  }
+  return { type: "img", props: mergedProps, key: null, constructor: undefined };
 }
 
 /**
@@ -156,6 +167,7 @@ function makeAdmonitionStub(variant: string) {
   };
 }
 
+// @slot:mdx-components:enlarge-defs
 /**
  * Build a locale-aware MDX components map for the given locale.
  *
@@ -199,6 +211,7 @@ export function createMdxComponents(lang: Locale | string = defaultLocale) {
     // MDX images like ![alt](/img/foo.webp) resolve correctly on the deployed
     // site. withBase() is generic — any configured base value works.
     img: ContentImg,
+    // @slot:mdx-components:enlarge-p-entry
     HtmlPreview: HtmlPreviewWrapper,
     // Admonitions — proper bindings land in the doc-content-components
     // topic. Until then, render the children inside a
