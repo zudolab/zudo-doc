@@ -32,7 +32,7 @@ sidebar_position: 10
 
 この機能は 2 つの部分で構成されています。
 
-- **ビルド時** — rehype プラグインが、段落内で単独の `<img>` を `<figure class="zd-enlargeable">` でラップし、非表示の `<button class="zd-enlarge-btn">` を注入します。インラインテキストと混在する画像はラップされません。
+- **サーバーレンダリング（SSR）** — `pages/_mdx-components.ts` の MDX 段落（`p`）コンポーネントオーバーライドが、画像 1 枚だけを含む段落を `<figure class="zd-enlargeable">` でラップし、非表示の `<button class="zd-enlarge-btn">` を注入します。インラインテキストと混在する画像はラップされません。
 - **実行時** — Preact アイランド（`ImageEnlarge`）が `ResizeObserver` を使用して `naturalWidth` と `clientWidth × devicePixelRatio` を比較し、ボタンの `hidden` 属性を切り替えます。`hidden` が外れている間は画像全体がクリック対象となり、ホバー時のフィードバックも表示されるため、画像のどこをクリックしても `<dialog>` で開きます。**ESC** キー、ビューポート右上の閉じるボタン、または画像の外側をクリックすると閉じられます。
 
 :::note

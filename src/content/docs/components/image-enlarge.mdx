@@ -32,7 +32,7 @@ Add `"no-enlarge"` as the Markdown title attribute to disable the expand button 
 
 The feature has two parts:
 
-- **Build-time** — a rehype plugin wraps each lone `<img>` inside a paragraph in a `<figure class="zd-enlargeable">` and injects a hidden `<button class="zd-enlarge-btn">`. Images mixed with surrounding inline text are not wrapped.
+- **Server render (SSR)** — an MDX paragraph (`p`) component override in `pages/_mdx-components.ts` wraps single-image paragraphs in a `<figure class="zd-enlargeable">` and injects a hidden `<button class="zd-enlarge-btn">`. Images mixed with surrounding inline text are not wrapped.
 - **Runtime** — a Preact island (`ImageEnlarge`) uses `ResizeObserver` to compare `naturalWidth` against `clientWidth × devicePixelRatio` and toggles the button's `hidden` attribute accordingly. While that attribute is unset, the entire image becomes the click target and shows a hover affordance, so any click on the image opens it in a `<dialog>`. Press **ESC**, click the close button at the top-right of the viewport, or click outside the image to close it.
 
 :::note

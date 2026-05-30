@@ -8,17 +8,13 @@ The **Image Enlarge** feature wraps standalone block-level images in a `<figure>
 
 :::note Opt-in feature
 
-Enable it with the `imageEnlarge` key in `zfb.config.ts`:
+Enable it with the `imageEnlarge` key in `src/config/settings.ts`:
 
 ```ts
-// zfb.config.ts
-export default defineConfig({
-  markdown: {
-    features: {
-      imageEnlarge: true,
-    },
-  },
-});
+// src/config/settings.ts
+export const settings = {
+  imageEnlarge: true,
+};
 ```
 
 :::
@@ -61,5 +57,4 @@ Images that qualify are wrapped as:
 ## Notes
 
 - Only paragraphs containing a **single** image are wrapped. Images nested inside links or `<picture>` elements, or sharing a paragraph with text, are skipped.
-- The wrap is idempotent — a paragraph already containing a `figure.zd-enlargeable` is not processed again.
 - A client island measures the rendered size against the image's intrinsic width (accounting for device pixel ratio) and only reveals the button when the image is genuinely larger than its column.
