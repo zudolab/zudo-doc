@@ -29,11 +29,16 @@ interface ImageData {
 // constants closes the drift gap GCO flagged in light-review.
 const DIALOG_CLASS =
   "zd-enlarge-dialog mx-auto max-h-[90vh] max-w-[90vw] overflow-hidden border border-muted bg-surface p-0";
+// Center the modal with `inset: 0; margin: auto` rather than a transform.
+// A `transform` on the dialog would establish a containing block for its
+// `position: fixed` descendants, which would trap the `.zd-enlarge-dialog-close`
+// button at the dialog's corner instead of the viewport's — see the close
+// button's fixed positioning in global.css. Auto-margin centering keeps the
+// dialog transform-free so the close button anchors to the page top-right.
 const DIALOG_STYLE = {
   position: "fixed",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
+  inset: "0",
+  margin: "auto",
 } as const;
 
 export default function ImageEnlarge() {

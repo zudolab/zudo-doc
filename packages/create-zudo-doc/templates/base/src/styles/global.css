@@ -1074,7 +1074,10 @@ dialog.zd-enlarge-dialog::backdrop {
 }
 
 /* Close button is positioned to the VIEWPORT corner (not the dialog) so it
- * stays visually distinct against any image, regardless of the dialog's size. */
+ * stays visually distinct against any image, regardless of the dialog's size.
+ * This relies on the dialog being transform-free (see DIALOG_STYLE in
+ * image-enlarge.tsx) — a transform on the dialog would re-anchor this fixed
+ * button to the dialog corner. */
 .zd-enlarge-dialog-close {
   position: fixed;
   top: 4px;
@@ -1111,7 +1114,7 @@ dialog.zd-enlarge-dialog::backdrop {
   fill: currentColor;
 }
 
-/* Wide viewport: ~3× larger close button to read clearly against any image. */
+/* Wide viewport: ~2× larger close button to read clearly against any image. */
 @media (min-width: 1024px) {
   .zd-enlarge-dialog-close {
     top: 10px;
@@ -1119,8 +1122,8 @@ dialog.zd-enlarge-dialog::backdrop {
   }
 
   .zd-enlarge-dialog-close > svg {
-    width: calc(var(--spacing-icon-lg) * 3);
-    height: calc(var(--spacing-icon-lg) * 3);
+    width: calc(var(--spacing-icon-lg) * 2);
+    height: calc(var(--spacing-icon-lg) * 2);
   }
 }
 
