@@ -36,6 +36,16 @@
 // locale-bound wrappers for these nav components. Page modules should call it
 // with the active locale instead of using the static `mdxComponents` export.
 // The static export still exists for backward compatibility (using defaultLocale).
+//
+// ## Deferred: zfb next.16 global `mdx-components.tsx` convention
+//
+// zfb next.16 introduced a default-export `mdx-components.tsx` convention as
+// the idiomatic place to register MDX overrides (alongside next.18's
+// `defaultComponents` / `mergeMdxComponents`). zudo-doc consciously does NOT
+// adopt it: `createMdxComponents(lang)` is locale-bound — the nav components
+// above resolve their tree per-locale — and a single static default export
+// cannot be locale-parameterized, so a per-call `components` map is required
+// regardless. Revisit only if zfb makes the convention locale-aware.
 
 import type { ComponentChildren } from "preact";
 import { toChildArray } from "preact";
