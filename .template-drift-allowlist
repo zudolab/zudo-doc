@@ -2,7 +2,6 @@
 # production re-exports from @takazudo/zudo-doc-md-plugins
 src/plugins/rehype-code-title.ts
 src/plugins/rehype-heading-links.ts
-src/plugins/rehype-image-enlarge.ts
 src/plugins/rehype-mermaid.ts
 src/plugins/rehype-strip-md-extension.ts
 src/plugins/remark-admonitions.ts
@@ -151,6 +150,15 @@ src/components/preset-generator.tsx
 # can resolve the alias at typecheck. The doc-history prebuild step
 # overwrites this file at build time when the feature is enabled.
 .zfb/doc-history-meta.json
+
+# S2 (#1825) — pages/_mdx-components.ts template carries @slot: injection anchors
+# for the imageEnlarge p-override (ENLARGE_SVG, EnlargeableParagraph, p: entry).
+# The host version has the override installed unconditionally (always-on runtime
+# gate via settings.imageEnlarge); the template uses anchors so the compose
+# framework can inject or omit the block based on the imageEnlarge feature toggle.
+# These will never be byte-identical. Reconcile if/when host adopts conditional
+# injection too (unlikely — host does not use the compose framework).
+pages/_mdx-components.ts
 
 # W8A (#1739) — acceptance gate forced literal preact/compat imports in template
 # files where host uses react with tsconfig path aliasing. Aliasing didn't

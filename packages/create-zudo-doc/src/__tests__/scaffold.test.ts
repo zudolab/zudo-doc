@@ -1493,9 +1493,9 @@ describe("scaffold — imageEnlarge feature", () => {
     expect(content).toContain("ImageEnlargeSsrFallback");
   });
 
-  it("rehype-image-enlarge.ts always present in src/plugins/ (base template file)", async () => {
+  it("rehype-image-enlarge.ts is NOT present (removed in S2 — replaced by MDX p-override)", async () => {
     const choices: UserChoices = {
-      projectName: "test-ie-plugin",
+      projectName: "test-ie-no-plugin",
       defaultLang: "en",
       colorSchemeMode: "single",
       singleScheme: "Default Dark",
@@ -1505,9 +1505,9 @@ describe("scaffold — imageEnlarge feature", () => {
     await scaffold(choices);
     expect(
       await fs.pathExists(
-        projectPath("test-ie-plugin", "src/plugins/rehype-image-enlarge.ts"),
+        projectPath("test-ie-no-plugin", "src/plugins/rehype-image-enlarge.ts"),
       ),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("zfb.config.ts does not contain Astro-specific rehype symbols (imageEnlarge is a layout island)", async () => {
@@ -1524,8 +1524,54 @@ describe("scaffold — imageEnlarge feature", () => {
       projectPath("test-ie-zfb-on", "zfb.config.ts"),
       "utf-8",
     );
-    // imageEnlarge is a layout island — it is not wired via the zfb config.
+    // imageEnlarge is now a userland p-override — not wired via the zfb config.
     expect(config).not.toContain("rehypeImageEnlarge");
+    // imageEnlarge key was removed from zfb next.18 Rust config schema.
+    expect(config).not.toContain("imageEnlarge:");
+  });
+
+  it("pages/_mdx-components.ts installs EnlargeableParagraph p-override when imageEnlarge is enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-ie-override-on",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "imageEnlarge"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-ie-override-on", "pages/_mdx-components.ts"),
+      "utf-8",
+    );
+    // The p-override code must be present when imageEnlarge is enabled.
+    expect(content).toContain("EnlargeableParagraph");
+    expect(content).toContain("zd-enlargeable");
+    expect(content).toContain("p: EnlargeableParagraph");
+    // No leftover slot anchors in the generated output.
+    expect(content).not.toContain("@slot:");
+  });
+
+  it("pages/_mdx-components.ts does NOT install p-override when imageEnlarge is disabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-ie-override-off",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-ie-override-off", "pages/_mdx-components.ts"),
+      "utf-8",
+    );
+    // Override must be absent when imageEnlarge is disabled.
+    expect(content).not.toContain("EnlargeableParagraph");
+    expect(content).not.toContain("zd-enlargeable");
+    expect(content).not.toContain("p: EnlargeableParagraph");
+    // No leftover slot anchors in the generated output.
+    expect(content).not.toContain("@slot:");
   });
 
 });
@@ -2657,13 +2703,16 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
   });
 });
 
-describe("scaffold — zfb next.14 pin bump (#1817)", () => {
+describe("scaffold — zfb next.19 pin bump (#1824)", () => {
   /**
-   * S6 (#1808) pinned all three zfb packages at next.13. #1817 bumps them to
-   * 0.1.0-next.14 — fixes ruby SSR-500 (#1815) and tocExport indented-export
-   * build break (#1814). Generated package.json must pin all three packages.
+   * S6 (#1808) pinned all three zfb packages at next.13. #1817 bumped them to
+   * 0.1.0-next.14. #1824 bumps them to 0.1.0-next.19 — next.18 hard-removed
+   * the built-in imageEnlarge markdown feature (re-implemented in userland via
+   * MDX p-override); next.19 adds the islands esbuild react/jsx-runtime→preact
+   * alias fix (Takazudo/zudo-front-builder#633). Generated package.json must
+   * pin all three packages.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.14", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.19", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -2674,10 +2723,10 @@ describe("scaffold — zfb next.14 pin bump (#1817)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.14");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.14");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.19");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.19");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.14",
+      "0.1.0-next.19",
     );
   });
 });
