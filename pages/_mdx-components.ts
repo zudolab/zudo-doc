@@ -38,12 +38,15 @@
 // The static export still exists for backward compatibility (using defaultLocale).
 
 import type { ComponentChildren } from "preact";
+import { toChildArray } from "preact";
+import type { VNode } from "preact";
 import { htmlOverrides } from "@takazudo/zudo-doc/content";
 import { HtmlPreviewWrapper } from "@takazudo/zudo-doc/html-preview-wrapper";
 import { Tabs } from "@takazudo/zudo-doc/code-syntax";
 import { TabItem } from "@takazudo/zudo-doc/tab-item";
 import { defaultLocale, type Locale } from "@/config/i18n";
 import { withBase } from "@/utils/base";
+import { settings } from "@/config/settings";
 import { CategoryNavWrapper } from "./lib/_category-nav";
 import { CategoryTreeNavWrapper } from "./lib/_category-tree-nav";
 import { SiteTreeNavWrapper } from "./lib/_site-tree-nav";
@@ -74,7 +77,17 @@ function ContentImg(props: Record<string, unknown>) {
     typeof src === "string" && src.startsWith("/") && !src.startsWith("//")
       ? withBase(src)
       : src;
-  return { type: "img", props: { ...props, src: rewrittenSrc }, key: null, constructor: undefined };
+  // Strip the "no-enlarge" sentinel from the rendered DOM — it is read by the
+  // p-override before ContentImg is called (the VNode is still unlaunched at
+  // that point), so we must delete it here to avoid leaking the sentinel into
+  // the img title attribute.
+  const { title, ...restProps } = props;
+  const finalTitle = title === "no-enlarge" ? undefined : title;
+  const mergedProps: Record<string, unknown> = { ...restProps, src: rewrittenSrc };
+  if (finalTitle !== undefined) {
+    mergedProps.title = finalTitle;
+  }
+  return { type: "img", props: mergedProps, key: null, constructor: undefined };
 }
 
 /**
@@ -157,6 +170,148 @@ function makeAdmonitionStub(variant: string) {
 }
 
 /**
+ * SVG icon for the image-enlarge button (4-corner-arrows).
+ *
+ * Ported verbatim from
+ * packages/create-zudo-doc/templates/base/src/plugins/rehype-image-enlarge.ts
+ * makeEnlargeButton() — this is the same icon the old Rust plugin emitted.
+ * Must match exactly so the existing `.zd-enlarge-btn` CSS and the
+ * image-enlarge island (src/components/image-enlarge.tsx) keep working.
+ *
+ * Attribute spellings: HTML/Preact conventions — `focusable` stays a string
+ * ("false") because Preact's preact-render-to-string drops boolean false;
+ * `aria-hidden` is the HTML attribute name (not ariaHidden).
+ */
+const ENLARGE_SVG = {
+  type: "svg",
+  props: {
+    viewBox: "0 0 38.99 38.99",
+    fill: "currentColor",
+    focusable: "false",
+    "aria-hidden": "true",
+    children: [
+      {
+        type: "polygon",
+        props: {
+          points:
+            "16.2 13.74 5.92 3.47 11.2 3.47 11.2 0 3.47 0 0 0 0 3.47 0 11.2 3.47 11.2 3.47 5.92 13.74 16.2 16.2 13.74",
+        },
+        key: null,
+        constructor: undefined,
+      },
+      {
+        type: "polygon",
+        props: {
+          points:
+            "25.24 16.2 35.52 5.92 35.52 11.2 38.99 11.2 38.99 3.47 38.99 0 35.52 0 27.79 0 27.79 3.47 33.07 3.47 22.79 13.74 25.24 16.2",
+        },
+        key: null,
+        constructor: undefined,
+      },
+      {
+        type: "polygon",
+        props: {
+          points:
+            "22.79 25.24 33.07 35.52 27.79 35.52 27.79 38.99 35.52 38.99 38.99 38.99 38.99 35.52 38.99 27.79 35.52 27.79 35.52 33.07 25.24 22.79 22.79 25.24",
+        },
+        key: null,
+        constructor: undefined,
+      },
+      {
+        type: "polygon",
+        props: {
+          points:
+            "13.74 22.79 3.47 33.07 3.47 27.79 0 27.79 0 35.52 0 38.99 3.47 38.99 11.2 38.99 11.2 35.52 5.92 35.52 16.2 25.24 13.74 22.79",
+        },
+        key: null,
+        constructor: undefined,
+      },
+    ],
+  },
+  key: null,
+  constructor: undefined,
+};
+
+/**
+ * Enlarge-aware MDX paragraph override.
+ *
+ * When `settings.imageEnlarge` is enabled and a paragraph contains exactly
+ * one non-whitespace child that is a block-level image VNode (type ===
+ * ContentImg or "img"), this wraps the image in:
+ *   <figure class="zd-enlargeable">
+ *     <img ...>
+ *     <button type="button" class="zd-enlarge-btn" hidden aria-label="Enlarge image">
+ *       <svg ...>…</svg>
+ *     </button>
+ *   </figure>
+ *
+ * The `title="no-enlarge"` opt-out is read from the un-rendered VNode
+ * (Preact's h() is lazy — child.type is still the ContentImg function, not
+ * yet called). ContentImg strips the sentinel from the rendered img DOM.
+ *
+ * All other paragraphs delegate to htmlOverrides.p (ContentParagraph passthrough).
+ */
+function EnlargeableParagraph(props: {
+  children?: ComponentChildren;
+  [key: string]: unknown;
+}): unknown {
+  const { children, ...rest } = props;
+  // Collect children and drop whitespace-only text nodes.
+  const kids = toChildArray(children).filter((child) => {
+    if (typeof child === "string" || typeof child === "number") {
+      return String(child).trim() !== "";
+    }
+    return true;
+  });
+
+  // Check for a single-image block paragraph eligible for enlarge wrapping.
+  if (settings.imageEnlarge && kids.length === 1) {
+    const kid = kids[0];
+    // VNode type guard: must be an object with a `type` property.
+    if (
+      kid !== null &&
+      typeof kid === "object" &&
+      "type" in kid &&
+      "props" in kid
+    ) {
+      const vnode = kid as VNode<Record<string, unknown>>;
+      if (vnode.type === ContentImg || vnode.type === "img") {
+        const imgProps = (vnode.props ?? {}) as Record<string, unknown>;
+        // Opt-out: title="no-enlarge" — render plain paragraph (ContentImg
+        // will strip the sentinel title from the actual img DOM).
+        if (imgProps.title !== "no-enlarge") {
+          // Wrap in figure.zd-enlargeable with the enlarge button.
+          const enlargeBtn = {
+            type: "button",
+            props: {
+              type: "button",
+              class: "zd-enlarge-btn",
+              hidden: true,
+              "aria-label": "Enlarge image",
+              children: ENLARGE_SVG,
+            },
+            key: null,
+            constructor: undefined,
+          };
+          return {
+            type: "figure",
+            props: {
+              class: "zd-enlargeable",
+              children: [vnode, enlargeBtn],
+            },
+            key: null,
+            constructor: undefined,
+          };
+        }
+      }
+    }
+  }
+
+  // Fallback: delegate to the standard ContentParagraph passthrough.
+  return (htmlOverrides.p as (props: unknown) => unknown)(props);
+}
+
+/**
  * Build a locale-aware MDX components map for the given locale.
  *
  * Nav components (CategoryNav, CategoryTreeNav, SiteTreeNav, SiteTreeNavDemo)
@@ -199,6 +354,10 @@ export function createMdxComponents(lang: Locale | string = defaultLocale) {
     // MDX images like ![alt](/img/foo.webp) resolve correctly on the deployed
     // site. withBase() is generic — any configured base value works.
     img: ContentImg,
+    // p override: wraps block-level images in <figure class="zd-enlargeable">
+    // with an enlarge button when settings.imageEnlarge is enabled.
+    // Must come AFTER the ...htmlOverrides spread to override ContentParagraph.
+    p: EnlargeableParagraph,
     HtmlPreview: HtmlPreviewWrapper,
     // Admonitions — proper bindings land in the doc-content-components
     // topic. Until then, render the children inside a
