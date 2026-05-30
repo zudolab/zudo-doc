@@ -177,8 +177,8 @@ test.describe("Image Enlarge: browser behavior @local-only", () => {
     await expect(dialog).toBeVisible({ timeout: 3000 });
 
     // Click at viewport (0, 0) — outside the centered dialog content
-    // The dialog is centered via position:fixed with transform, so top-left
-    // viewport corner is outside its bounding rect.
+    // The dialog is centered via position:fixed with inset:0; margin:auto, so
+    // the top-left viewport corner is outside its bounding rect.
     await page.mouse.click(0, 0);
     await expect(dialog).toBeHidden({ timeout: 3000 });
   });
