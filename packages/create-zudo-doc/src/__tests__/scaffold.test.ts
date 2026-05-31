@@ -2703,7 +2703,7 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
   });
 });
 
-describe("scaffold — zfb next.21 pin bump", () => {
+describe("scaffold — zfb next.21 pin bump (#1832)", () => {
   /**
    * S6 (#1808) pinned all three zfb packages at next.13. #1817 bumped them to
    * 0.1.0-next.14. #1824 bumped them to 0.1.0-next.19 — next.18 hard-removed
