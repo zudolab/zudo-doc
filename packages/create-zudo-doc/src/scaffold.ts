@@ -298,11 +298,14 @@ function generatePackageJson(choices: UserChoices) {
     // imageEnlarge markdown feature (now re-implemented in userland via an MDX
     // p-override); next.19 adds the islands esbuild react/jsx-runtime→preact
     // alias fix (Takazudo/zudo-front-builder#633) that next.18 lacked.
-    "@takazudo/zfb": "0.1.0-next.19",
-    "@takazudo/zfb-runtime": "0.1.0-next.19",
+    // Bumped to next.21 — next.20/next.21 are Rust-engine-internal robustness
+    // releases (no SDK API change): dev cold-boot 200, dev watch-ADD discovery
+    // of newly-added content files, and bounded waits fixing build/dev hangs.
+    "@takazudo/zfb": "0.1.0-next.21",
+    "@takazudo/zfb-runtime": "0.1.0-next.21",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.19",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.21",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
