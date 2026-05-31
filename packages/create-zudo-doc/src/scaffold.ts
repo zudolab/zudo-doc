@@ -301,11 +301,15 @@ function generatePackageJson(choices: UserChoices) {
     // Bumped to next.21 — next.20/next.21 are Rust-engine-internal robustness
     // releases (no SDK API change): dev cold-boot 200, dev watch-ADD discovery
     // of newly-added content files, and bounded waits fixing build/dev hangs.
-    "@takazudo/zfb": "0.1.0-next.21",
-    "@takazudo/zfb-runtime": "0.1.0-next.21",
+    // Bumped to next.22 — additive bundler/markdown migration-parity release (no
+    // breaking config change): Vite import.meta.glob eager transform, bundle.exclude
+    // glob knob, opt-in markdown hardBreaks (default false), and config-eval V8
+    // web polyfills + tsconfig path-alias composition fixes.
+    "@takazudo/zfb": "0.1.0-next.22",
+    "@takazudo/zfb-runtime": "0.1.0-next.22",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.21",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.22",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's

@@ -462,6 +462,15 @@
  *                plus bounded waits across config-loader / cloudflare adapter
  *                dispatch / plugin-runner / v8-host that fix build/dev hang
  *                edge cases. Pin moved purely to pick up engine robustness.
+ *              → bumped to v0.1.0-next.22 (zudolab/zudo-doc#1833): no config
+ *                or feature impact for this repo — next.22 is an additive
+ *                bundler/markdown migration-parity release. It adds the Vite
+ *                `import.meta.glob` eager transform, a `bundle.exclude` glob
+ *                knob, an opt-in `hardBreaks` markdown option (default false),
+ *                and fixes config-eval V8 web polyfills (URL / URLSearchParams /
+ *                TextEncoder) plus tsconfig path-alias composition in a single
+ *                build. None of these change the config surface this repo uses;
+ *                pin moved to stay current and pick up the robustness fixes.
  */
 
 /**
