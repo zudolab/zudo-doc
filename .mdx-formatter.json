@@ -5,6 +5,7 @@
     "build/**",
     ".git/**",
     "worktrees/**",
+    "packages/md-plugins/__fixtures__/**",
     "src/content/docs/claude/**",
     "src/content/docs/claude-md/**",
     "src/content/docs/claude-skills/**",
