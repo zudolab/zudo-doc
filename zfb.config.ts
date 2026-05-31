@@ -454,6 +454,14 @@
  *                fix (Takazudo/zudo-front-builder#633) that next.18 lacked —
  *                without it the islands bundle fails with
  *                "Could not resolve react/jsx-runtime".
+ *              → bumped to v0.1.0-next.21 (zudolab/zudo-doc#1832): no config
+ *                or feature impact — next.20/next.21 are Rust-engine-internal
+ *                robustness releases with no SDK API change. next.20 makes
+ *                `zfb dev` serve 200 on cold boot; next.21 adds dev watch-ADD
+ *                discovery (newly-added content files picked up on a live tick)
+ *                plus bounded waits across config-loader / cloudflare adapter
+ *                dispatch / plugin-runner / v8-host that fix build/dev hang
+ *                edge cases. Pin moved purely to pick up engine robustness.
  */
 
 /**

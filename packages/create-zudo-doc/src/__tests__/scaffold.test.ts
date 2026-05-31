@@ -2703,16 +2703,18 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
   });
 });
 
-describe("scaffold — zfb next.19 pin bump (#1824)", () => {
+describe("scaffold — zfb next.21 pin bump", () => {
   /**
    * S6 (#1808) pinned all three zfb packages at next.13. #1817 bumped them to
-   * 0.1.0-next.14. #1824 bumps them to 0.1.0-next.19 — next.18 hard-removed
+   * 0.1.0-next.14. #1824 bumped them to 0.1.0-next.19 — next.18 hard-removed
    * the built-in imageEnlarge markdown feature (re-implemented in userland via
    * MDX p-override); next.19 adds the islands esbuild react/jsx-runtime→preact
-   * alias fix (Takazudo/zudo-front-builder#633). Generated package.json must
-   * pin all three packages.
+   * alias fix (Takazudo/zudo-front-builder#633). Now bumped to 0.1.0-next.21 —
+   * next.20/next.21 are Rust-engine-internal robustness releases (no SDK API
+   * change): dev cold-boot 200, dev watch-ADD discovery, bounded build/dev
+   * waits. Generated package.json must pin all three packages.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.19", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.21", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -2723,10 +2725,10 @@ describe("scaffold — zfb next.19 pin bump (#1824)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.19");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.19");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.21");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.21");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.19",
+      "0.1.0-next.21",
     );
   });
 });
