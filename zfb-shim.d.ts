@@ -1,17 +1,22 @@
-// Local type shim for `zfb/config`.
+// Local type shim for the bare `zfb/config` specifier.
 //
-// The `@takazudo/zfb` package itself now resolves through a local
-// `file:` dep on `~/repos/myoss/zfb/packages/zfb` (see root
-// `package.json`), so its types come from the real package and no
-// ambient declaration is needed.
+// `@takazudo/zfb` is consumed as a published npm package (version pinned
+// in the root `package.json`). The package exposes its real config types
+// under the *scoped* subpath `@takazudo/zfb/config` → `dist/config.d.ts`.
+// But `zfb.config.ts` imports from the *bare* specifier `zfb/config`,
+// which zfb's build tool aliases to a runtime-only stub at parse time
+// (`zfb-config-stub.mjs` — `defineConfig` is identity, carrying no types).
+// No real file backs `zfb/config` in `node_modules`, so this ambient
+// declaration is what supplies the `ZfbConfig` type to `zfb.config.ts`.
 //
-// `zfb/config` is a *virtual* module aliased internally by the zfb
-// build tool at parse time — no real file backs it in `node_modules`.
-// The declaration below is what lets `zfb.config.ts` (and any future
-// helper importing from `zfb/config`) typecheck under `pnpm check`.
-//
-// The real public types live in the zfb repo and mirror these shapes
-// one-for-one — keep the two in sync.
+// IMPORTANT — this block is the source of truth for the type `zfb check`
+// (plain `tsc --noEmit`) binds against the config. An ambient `declare
+// module` wins over node resolution AND over tsconfig `paths`, so it must
+// be kept in sync BY HAND with the published `@takazudo/zfb/config`
+// (`dist/config.d.ts`). When it lags the engine, valid config fields fail
+// `pnpm check` with TS2353 (see Takazudo/zudo-front-builder#678 +
+// zudolab/zudo-doc#1834 — `bundle` was missing here, blocking next.22's
+// `bundle.exclude`).
 
 declare module "zfb/config" {
   /** JSX framework runtime. */
@@ -42,6 +47,33 @@ declare module "zfb/config" {
     options?: Record<string, unknown>;
   }
 
+  /**
+   * Bundler options. Mirrors `BundleConfig` in crates/zfb/src/config.rs
+   * and the published `@takazudo/zfb/config` (`dist/config.d.ts`). Added
+   * in next.22 (`bundle.exclude`, #664) and extended in next.23
+   * (`mainFields` / `external`, #676).
+   */
+  export interface BundleConfig {
+    /**
+     * Project-relative, gitignore-style globs for source files the bundler
+     * must NOT pull into the esbuild graph (e.g. test fixtures or
+     * `*.stories.tsx`). Matched files are skipped from the shadow-tree walk
+     * and dropped from any eager `import.meta.glob(...)` expansion.
+     */
+    exclude?: string[];
+    /**
+     * Explicit esbuild `main-fields` for the `--platform=neutral` page/SSR
+     * pass (empty by default under `neutral`), letting CJS-`main`-only deps
+     * resolve. Mirrors `BundleConfig::main_fields`.
+     */
+    mainFields?: string[];
+    /**
+     * Bare specifiers to mark external in the `--platform=neutral` pass so
+     * esbuild leaves them unbundled. Mirrors `BundleConfig::external`.
+     */
+    external?: string[];
+  }
+
   /** Mirrors the Rust `Config` struct one-for-one. */
   export interface ZfbConfig {
     outDir?: string;
@@ -51,6 +83,13 @@ declare module "zfb/config" {
     framework?: Framework;
     collections?: CollectionDef[];
     tailwind?: TailwindConfig;
+    /**
+     * Bundler options. `bundle.exclude` keeps project-relative globs out of
+     * the esbuild graph — used here to skip `packages/md-plugins/__fixtures__/**`
+     * so the MDX link resolver no longer walks the test fixtures (silences
+     * ~15 pre-existing broken-link warnings). Mirrors `Config::bundle`.
+     */
+    bundle?: BundleConfig;
     plugins?: PluginConfig[];
     adapter?: string;
     /**

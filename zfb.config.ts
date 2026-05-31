@@ -471,6 +471,18 @@
  *                TextEncoder) plus tsconfig path-alias composition in a single
  *                build. None of these change the config surface this repo uses;
  *                pin moved to stay current and pick up the robustness fixes.
+ *              → bumped to v0.1.0-next.23 (zudolab/zudo-doc#1834): this bump
+ *                ALSO adopts `bundle.exclude` (added engine-side in next.22)
+ *                to drop the md-plugins `__fixtures__` from the bundler walk,
+ *                silencing ~15 pre-existing `broken markdown link` warnings.
+ *                Adoption was blocked at next.22 by a stale consumer-side
+ *                `zfb/config` ambient type missing the `bundle` field — NOT a
+ *                zfb-check bug (Takazudo/zudo-front-builder#678; root-caused by
+ *                the maintainer to the consumer's own ambient shim). Fixed by
+ *                adding `BundleConfig` + `bundle?` to `zfb-shim.d.ts` in this
+ *                same change. next.23 also ships `bundle.mainFields` /
+ *                `bundle.external` (#676), declared in the shim for parity but
+ *                unused here. See the `bundle:` field below.
  */
 
 /**
@@ -780,6 +792,16 @@ export default defineConfig({
   framework: "preact",
   tailwind: { enabled: true },
   collections,
+  // Keep the md-plugins test fixtures out of the bundler's shadow-tree
+  // walk. Those `__fixtures__/*.mdx` files are exact-match snapshot inputs
+  // (paired with `expected-html/`), not site content — but the bundler
+  // would otherwise run the Rust MDX link resolver over them and emit ~15
+  // `broken markdown link` warnings on every build/CI run. `bundle.exclude`
+  // (zfb next.22, #664) is the intended escape hatch. Adopting it was
+  // blocked until next.23 by a stale consumer-side `zfb/config` ambient
+  // type that lacked `bundle` (zudolab/zudo-doc#1834 /
+  // Takazudo/zudo-front-builder#678 — now fixed in zfb-shim.d.ts).
+  bundle: { exclude: ["packages/md-plugins/__fixtures__/**"] },
   // Strip `.md` / `.mdx` from in-page `<a href>` and append a trailing
   // slash so author-written `[label](./other.mdx)` references resolve
   // to the rendered route URL. Mirrors `rehypeStripMdExtension` from
