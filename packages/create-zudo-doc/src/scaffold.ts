@@ -305,11 +305,13 @@ function generatePackageJson(choices: UserChoices) {
     // breaking config change): Vite import.meta.glob eager transform, bundle.exclude
     // glob knob, opt-in markdown hardBreaks (default false), and config-eval V8
     // web polyfills + tsconfig path-alias composition fixes.
-    "@takazudo/zfb": "0.1.0-next.22",
-    "@takazudo/zfb-runtime": "0.1.0-next.22",
+    // Bumped to next.23 — zfb/config ambient type improvements (BundleConfig +
+    // bundle field in ZfbConfig; fixes Takazudo/zudo-front-builder#678).
+    "@takazudo/zfb": "0.1.0-next.23",
+    "@takazudo/zfb-runtime": "0.1.0-next.23",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.22",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.23",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
