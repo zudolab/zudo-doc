@@ -460,7 +460,8 @@ body {
 /* ========================================
  * Admonitions ([data-admonition])
  *
- * The admonition stub in pages/_mdx-components.ts emits:
+ * The admonition component (src/components/content/content-admonition.tsx,
+ * wired in pages/_mdx-components.ts) emits:
  *   <div data-admonition="<variant>" class="admonition admonition-<variant>">
  *     <p class="admonition-title">…</p>
  *     <div class="admonition-body">…</div>
