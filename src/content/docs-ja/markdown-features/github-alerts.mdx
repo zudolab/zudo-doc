@@ -4,7 +4,7 @@ description: GitHub 形式の > [!NOTE] アラートブロック引用をアド�
 sidebar_position: 14
 ---
 
-**GitHub Alerts** 機能は、GitHub 形式のアラートブロック引用（README で見かける `> [!NOTE]` 構文）を、[Admonitions Preset](./admonitions-preset.mdx) が生成するのと同じアドモニションマークアップに変換します。これにより、使い慣れた GitHub 構文でコールアウトを書きながら、`:::note` 形式のディレクティブとまったく同じように描画できます。
+**GitHub Alerts** 機能は、GitHub 形式のアラートブロック引用（README で見かける `> [!NOTE]` 構文）を、[アドモニションレシピ（`directives` マップ）](./admonitions-preset.mdx)が生成するのと同じアドモニションマークアップに変換します。これにより、使い慣れた GitHub 構文でコールアウトを書きながら、`:::note` 形式のディレクティブとまったく同じように描画できます。
 
 :::note Opt-in 機能
 
@@ -71,7 +71,7 @@ export default defineConfig({
 
 ## 出力されるマークアップ
 
-出力は [Admonitions Preset](./admonitions-preset.mdx) と同一です。たとえば `> [!NOTE]` は次を生成します。
+出力は[アドモニションレシピ（`directives` マップ）](./admonitions-preset.mdx)と同一です。たとえば `> [!NOTE]` は次を生成します。
 
 ```html
 <div data-admonition="note" class="admonition admonition-note">
@@ -84,4 +84,4 @@ export default defineConfig({
 
 - サポートされる構文は `[!TYPE]` のみです。`> [!NOTE] My Title` のように末尾にインラインタイトルを付けると、アラートではなく通常のブロック引用として扱われます。
 - 複数段落がサポートされ、すべての本文がアドモニション内に収まります。
-- GitHub Alerts と [Admonitions Preset](./admonitions-preset.mdx) は共存します。GitHub アラートはアドモニションパスより前に処理されるため、両方を同時に有効化できます。
+- GitHub Alerts と[アドモニションレシピ（`directives` マップ）](./admonitions-preset.mdx)は共存します。GitHub アラートはアドモニションパスより前に処理されるため、両方を同時に有効化できます。

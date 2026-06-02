@@ -4,7 +4,7 @@ description: Converts GitHub-style > [!NOTE] alert blockquotes into admonition m
 sidebar_position: 14
 ---
 
-The **GitHub Alerts** feature converts GitHub-style alert blockquotes — the `> [!NOTE]` syntax you see in README files — into the same admonition markup produced by the [Admonitions Preset](./admonitions-preset.mdx). This lets you author callouts with the familiar GitHub syntax and have them rendered identically to `:::note`-style directives.
+The **GitHub Alerts** feature converts GitHub-style alert blockquotes — the `> [!NOTE]` syntax you see in README files — into the same admonition markup produced by the [admonitions recipe (the `directives` map)](./admonitions-preset.mdx). This lets you author callouts with the familiar GitHub syntax and have them rendered identically to `:::note`-style directives.
 
 :::note Opt-in feature
 
@@ -71,7 +71,7 @@ All five variants are rendered live below:
 
 ## Emitted markup
 
-The output is identical to the [Admonitions Preset](./admonitions-preset.mdx) — for example `> [!NOTE]` produces:
+The output is identical to the [admonitions recipe (the `directives` map)](./admonitions-preset.mdx) — for example `> [!NOTE]` produces:
 
 ```html
 <div data-admonition="note" class="admonition admonition-note">
@@ -84,4 +84,4 @@ The output is identical to the [Admonitions Preset](./admonitions-preset.mdx) �
 
 - `[!TYPE]` is the only supported syntax. A trailing inline title like `> [!NOTE] My Title` is treated as a plain blockquote, not an alert.
 - Multiple paragraphs are supported — all body content lands inside the admonition.
-- GitHub Alerts and the [Admonitions Preset](./admonitions-preset.mdx) coexist: GitHub alerts are processed before the admonitions pass, so you can enable both at once.
+- GitHub Alerts and the [admonitions recipe (the `directives` map)](./admonitions-preset.mdx) coexist: GitHub alerts are processed before the admonitions pass, so you can enable both at once.

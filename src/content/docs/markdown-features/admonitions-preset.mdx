@@ -1,21 +1,29 @@
 ---
 title: Admonitions Preset
-description: Registers the standard note/tip/warning/danger/info/caution/details admonition directives.
+description: How this project registers the admonition vocabulary via the directives map.
 sidebar_position: 10
 ---
 
-The **Admonitions Preset** registers seven built-in admonition directive types — `note`, `tip`, `warning`, `danger`, `info`, `caution`, and `details` — so you can call out important content with the CommonMark Directives `:::` fence syntax.
+zfb provides the `directives` registry as a generic mechanism (the engine). This project registers the admonition vocabulary — `note`, `tip`, `warning`, `danger`, `info`, `caution`, and `details` — as the recipe, enabling the CommonMark Directives `:::` fence syntax for callout blocks.
 
 :::note Opt-in feature
 
-Enable it with the `admonitionsPreset` key in `zfb.config.ts`:
+Enable admonitions by adding the `directives` map to `zfb.config.ts`:
 
 ```ts
 // zfb.config.ts
 export default defineConfig({
   markdown: {
     features: {
-      admonitionsPreset: true,
+      directives: {
+        note: "Note",
+        tip: "Tip",
+        info: "Info",
+        warning: "Warning",
+        danger: "Danger",
+        caution: "Caution",
+        details: "Details",
+      },
     },
   },
 });
@@ -47,7 +55,7 @@ Body content.
 
 ## Live demo
 
-The seven directives below are rendered live by this feature.
+The seven directives below are rendered live by this admonitions recipe.
 
 :::note
 
@@ -107,6 +115,6 @@ The type class (`admonition-note`, `admonition-tip`, `admonition-warning`, `admo
 ## Notes
 
 - The `:::details` type also accepts the legacy `:::details title="Click me"` attribute form.
-- `:::caution` was added to the preset in zfb `v0.1.0-next.24`; it emits `<Caution>` (`data-admonition="caution"`), mirroring how `:::warning` emits `<Warning>`.
-- To add or override directives beyond this preset, use zfb's `DirectiveRegistry` through the pipeline API rather than this feature.
+- `:::caution` is part of the vocabulary this project registers; it emits `<Caution>` (`data-admonition="caution"`), mirroring how `:::warning` emits `<Warning>`.
+- To add or override directives, extend the `directives` map in `zfb.config.ts` with additional name → title pairs.
 - [GitHub Alerts](./github-alerts.mdx) emits the same admonition markup from `> [!NOTE]`-style blockquotes; the two features coexist cleanly.
