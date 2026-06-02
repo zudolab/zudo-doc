@@ -8,6 +8,15 @@
 #      pass without touching npm. Use this before the first real release to
 #      verify NPM_TOKEN is wired correctly.
 #
+# Workflow_dispatch caveat:
+#   The job-level `if:` requires the ref/tag to start with `v` (create-zudo-doc's
+#   namespace). Dispatching from `main` (or any non-`v` ref) makes this job skip
+#   NEUTRAL — it does not run, rather than failing red. For a dry-run auth smoke,
+#   dispatch with a candidate `v`-prefixed tag as the ref — NOT an already-published
+#   tag, since Safeguard 3 ("version not already published") runs before the dry-run
+#   auth check and would abort first. Safeguard 1 remains as defense-in-depth for a
+#   matching-prefix-but-invalid-semver ref.
+#
 # NPM_TOKEN must be an Automation token (type: "Automation" in npmjs.com).
 # Automation tokens bypass npm's 2FA for `npm publish`, which is required
 # for CI-driven publishing. Classic Publish tokens with 2FA enabled would
@@ -179,7 +188,7 @@ jobs:
           echo "  Package : create-zudo-doc"
           echo "  Version : $VERSION"
           echo "  Dist-tag: $DIST_TAG"
-          echo "  Flags   : --access public --provenance"
+          echo "  Flags   : --access public --provenance --tag $DIST_TAG"
           echo ""
           echo "Dry run complete. Remove dry_run input or set it to false to publish for real."
 

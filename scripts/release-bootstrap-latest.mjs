@@ -32,6 +32,14 @@ if (!version) {
   process.exit(1);
 }
 
+// Fail fast on a malformed version (e.g. a leading "v" or a typo) rather than
+// retrying `npm dist-tag add` 5× per package against a version that cannot exist.
+if (!/^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/.test(version)) {
+  console.error(`Invalid version '${version}'.`);
+  console.error('  Expected semver WITHOUT a leading "v" (e.g. 0.2.0-next.1).');
+  process.exit(1);
+}
+
 /**
  * Sleep for `ms` milliseconds.
  * @param {number} ms

@@ -16,9 +16,14 @@
 #   accidentally trigger this workflow.
 #
 # Workflow_dispatch caveat:
-#   When dispatching manually, choose a zudo-doc-history-server- prefixed tag
-#   as the ref — Safeguard 1 rejects refs that don't match. Dispatching from
-#   `main` will fail-fast with a clear message.
+#   The job-level `if:` requires the ref/tag to start with
+#   `zudo-doc-history-server-`. Dispatching from `main` (or any non-matching
+#   ref) makes this job skip NEUTRAL — it does not run, rather than failing
+#   red. For a dry-run auth smoke, dispatch with a candidate
+#   `zudo-doc-history-server-` prefixed tag as the ref — NOT an already-published
+#   tag, since Safeguard 3 ("version not already published") runs before the
+#   dry-run auth check and would abort first. Safeguard 1's anchored regex
+#   remains as defense-in-depth for a matching-prefix-but-invalid-semver ref.
 #
 # NPM_TOKEN must be an Automation token (type: "Automation" in npmjs.com).
 #
@@ -175,7 +180,7 @@ jobs:
           echo "  Package : @takazudo/zudo-doc-history-server"
           echo "  Version : $VERSION"
           echo "  Dist-tag: $DIST_TAG"
-          echo "  Flags   : --access public --provenance --no-git-checks"
+          echo "  Flags   : --access public --provenance --no-git-checks --tag $DIST_TAG"
           echo ""
           echo "Dry run complete. Remove dry_run input or set it to false to publish for real."
 
