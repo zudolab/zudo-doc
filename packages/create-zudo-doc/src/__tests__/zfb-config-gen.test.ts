@@ -157,7 +157,7 @@ describe("generateZfbConfig", () => {
     expect(result).toContain('name: "./plugins/copy-public-plugin.mjs"');
   });
 
-  it("emits a markdown.features block with the former-Core features and safe opt-ins (#1808 updated by #1824)", () => {
+  it("emits a markdown.features block with the former-Core features and safe opt-ins (#1808 updated by #1824 updated by #1841)", () => {
     // S6 (#1808): zfb next.12+ moved admonitionsPreset/mermaid/imageEnlarge/
     // headingMarkerToc from always-on (Core) to opt-in. The generator re-enabled
     // them plus the safe opt-ins so scaffolded projects work out of the box.
@@ -165,11 +165,17 @@ describe("generateZfbConfig", () => {
     // zfb next.18 — it must NOT appear in the generated markdown.features block
     // (it causes the Rust config loader to reject the config with "unknown key").
     // Image-enlarge is now re-implemented via an MDX p-override.
+    // S3 (#1841): admonitionsPreset was removed in zfb next.25 — replaced by
+    // the directives recipe map. The generator now emits directives: { ... }.
     const result = generateZfbConfig(baseChoices);
     expect(result).toContain("markdown: {");
     expect(result).toContain("features: {");
-    // Former-Core (boolean-OR-object → true is fine) — imageEnlarge excluded
-    expect(result).toContain("admonitionsPreset: true");
+    // Directives map replaces admonitionsPreset (removed in zfb next.25)
+    expect(result).toContain("directives: {");
+    expect(result).toContain('note: "Note"');
+    expect(result).toContain('details: "Details"');
+    // admonitionsPreset must NOT appear — it was removed from the zfb schema.
+    expect(result).not.toContain("admonitionsPreset");
     expect(result).toContain("mermaid: true");
     expect(result).toContain("headingMarkerToc: true");
     // imageEnlarge must NOT be in the generated markdown.features block.
