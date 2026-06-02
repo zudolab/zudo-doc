@@ -46,6 +46,10 @@ Use `:::warning` for cautions that need attention.
 Use `:::danger` for critical warnings.
 :::
 
+:::caution
+Use `:::caution` for risky steps that need extra care.
+:::
+
 :::details[Click to expand]
 Use `:::details[label]` for collapsible content.
 :::
@@ -79,5 +83,5 @@ Project-side components can register additional directive names through the `_md
 
 ## Notes
 
-- The `admonitionsPreset` variants (`note`, `tip`, `info`, `warning`, `danger`, `details`) are provided by the opt-in [Admonitions Preset](./admonitions-preset.mdx) feature, not by the Core registry itself. The registry is the mechanism; the preset supplies the component mappings.
+- The `admonitionsPreset` variants (`note`, `tip`, `info`, `warning`, `danger`, `caution`, `details`) are provided by the opt-in [Admonitions Preset](./admonitions-preset.mdx) feature, not by the Core registry itself. The registry is the mechanism; the preset supplies the component mappings. `:::caution` joined the preset in zfb `v0.1.0-next.24`.
 - Do not use `> [!IMPORTANT]` or `> [!CAUTION]` GitHub-alert syntax unless you have verified that `important` and `caution` components are registered. These map to `data-admonition="important"` / `data-admonition="caution"` respectively and will 500 if no component handles them.
