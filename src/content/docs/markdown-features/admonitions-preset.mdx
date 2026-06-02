@@ -1,10 +1,10 @@
 ---
 title: Admonitions Preset
-description: Registers the standard note/tip/warning/danger/info/details admonition directives.
+description: Registers the standard note/tip/warning/danger/info/caution/details admonition directives.
 sidebar_position: 10
 ---
 
-The **Admonitions Preset** registers six built-in admonition directive types — `note`, `tip`, `warning`, `danger`, `info`, and `details` — so you can call out important content with the CommonMark Directives `:::` fence syntax.
+The **Admonitions Preset** registers seven built-in admonition directive types — `note`, `tip`, `warning`, `danger`, `info`, `caution`, and `details` — so you can call out important content with the CommonMark Directives `:::` fence syntax.
 
 :::note Opt-in feature
 
@@ -47,7 +47,7 @@ Body content.
 
 ## Live demo
 
-The six directives below are rendered live by this feature.
+The seven directives below are rendered live by this feature.
 
 :::note
 
@@ -79,6 +79,12 @@ This is a **danger** callout. Use it for destructive or irreversible actions.
 
 :::
 
+:::caution
+
+This is a **caution** callout. Use it for risky steps the reader should approach carefully.
+
+:::
+
 :::details[Click to expand]
 
 This is a **details** block — a collapsible disclosure. The body stays hidden until the reader expands it.
@@ -96,10 +102,11 @@ Each directive compiles to a JSX element (for example `<Note title="Optional tit
 </div>
 ```
 
-The type class (`admonition-note`, `admonition-tip`, `admonition-warning`, `admonition-danger`, `admonition-info`) and the matching `data-admonition` attribute let the stylesheet color each variant distinctly.
+The type class (`admonition-note`, `admonition-tip`, `admonition-warning`, `admonition-danger`, `admonition-info`, `admonition-caution`) and the matching `data-admonition` attribute let the stylesheet color each variant distinctly.
 
 ## Notes
 
 - The `:::details` type also accepts the legacy `:::details title="Click me"` attribute form.
+- `:::caution` was added to the preset in zfb `v0.1.0-next.24`; it emits `<Caution>` (`data-admonition="caution"`), mirroring how `:::warning` emits `<Warning>`.
 - To add or override directives beyond this preset, use zfb's `DirectiveRegistry` through the pipeline API rather than this feature.
 - [GitHub Alerts](./github-alerts.mdx) emits the same admonition markup from `> [!NOTE]`-style blockquotes; the two features coexist cleanly.

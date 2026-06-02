@@ -307,11 +307,14 @@ function generatePackageJson(choices: UserChoices) {
     // web polyfills + tsconfig path-alias composition fixes.
     // Bumped to next.23 — zfb/config ambient type improvements (BundleConfig +
     // bundle field in ZfbConfig; fixes Takazudo/zudo-front-builder#678).
-    "@takazudo/zfb": "0.1.0-next.23",
-    "@takazudo/zfb-runtime": "0.1.0-next.23",
+    // Bumped to next.24 — adds :::caution to the built-in admonitionsPreset
+    // (Takazudo/zudo-front-builder#682; configurable AdmonitionsPresetFeature
+    // also landed). Back-compatible: `admonitionsPreset: true` keeps working.
+    "@takazudo/zfb": "0.1.0-next.24",
+    "@takazudo/zfb-runtime": "0.1.0-next.24",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.23",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.24",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's

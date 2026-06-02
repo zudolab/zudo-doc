@@ -52,6 +52,7 @@ import { DetailsWrapper } from "./lib/_details";
 import { PresetGeneratorFallback } from "./lib/_preset-generator";
 import { MathBlock } from "./lib/_math-block";
 import { CodeGroup } from "@/components/content/code-group";
+import { makeAdmonition } from "@/components/content/content-admonition";
 
 /**
  * MDX `<img>` override — rewrites root-relative src attributes to include the
@@ -118,55 +119,6 @@ function IslandWrapper(props: {
   return props.children ?? null;
 }
 
-/**
- * Build an admonition stub for the given variant — renders the
- * children inside `<div class="admonition admonition-<variant>">`
- * so the body text stays visible until the proper Preact bindings
- * land. Matches the `admonition` class hook the design system already
- * targets for the Astro-era components.
- *
- * The title row is ALWAYS rendered (defaulting to the capitalized
- * variant name when no `title` prop is given). The icon emoji is
- * supplied by `.admonition-title::before` in `global.css` keyed off
- * `data-admonition`, so the stub stays variant-agnostic. This mirrors
- * the Astro reference theme's structure (zudolab/zudo-doc#1456).
- *
- * Untyped (`unknown` props) on purpose: the stubs go away once the
- * proper bindings ship, so investing in a typed prop bag here would
- * just be deleted later.
- */
-function makeAdmonitionStub(variant: string) {
-  // Default title — capitalized variant name (e.g. "note" → "Note"),
-  // matching the Astro reference where every admonition shows a title row
-  // regardless of whether the author provided one in MDX.
-  const defaultTitle = variant.charAt(0).toUpperCase() + variant.slice(1);
-  // The tag name is passed through `h` indirectly by the MDX runtime
-  // (Preact's `h(tag, props, ...children)`), so we build a plain
-  // VNode-shaped object here. Returning a real Preact vnode via
-  // `h("div", ...)` would require pulling in `preact` at the call
-  // site; the literal-shape is what htmlOverrides downstream emit
-  // and it round-trips through `preact-render-to-string` cleanly.
-  return function AdmonitionStub(props: { title?: string; children?: unknown }): unknown {
-    const title = props.title && props.title.length > 0 ? props.title : defaultTitle;
-    return {
-      type: "div",
-      props: {
-        // `data-admonition` is the structural hook the smoke spec relies on
-        // (independent of styling classes); the design-system class hooks
-        // are kept too so existing CSS continues to apply.
-        "data-admonition": variant,
-        class: `admonition admonition-${variant}`,
-        children: [
-          { type: "p", props: { class: "admonition-title", children: title }, key: null, constructor: undefined },
-          { type: "div", props: { class: "admonition-body", children: props.children }, key: null, constructor: undefined },
-        ],
-      },
-      key: null,
-      constructor: undefined,
-    };
-  };
-}
-
 // @slot:mdx-components:enlarge-defs
 /**
  * Build a locale-aware MDX components map for the given locale.
@@ -213,20 +165,20 @@ export function createMdxComponents(lang: Locale | string = defaultLocale) {
     img: ContentImg,
     // @slot:mdx-components:enlarge-p-entry
     HtmlPreview: HtmlPreviewWrapper,
-    // Admonitions — proper bindings land in the doc-content-components
-    // topic. Until then, render the children inside a
-    // `<div class="admonition admonition-<variant>">` so the body text
-    // stays visible (and the design system's existing `.admonition` CSS
-    // hook still targets it).
-    Note: makeAdmonitionStub("note"),
-    Tip: makeAdmonitionStub("tip"),
-    Info: makeAdmonitionStub("info"),
-    Warning: makeAdmonitionStub("warning"),
-    Danger: makeAdmonitionStub("danger"),
+    // Admonitions — real typed Preact components (src/components/content/
+    // content-admonition.tsx) emitting the `.admonition` / `data-admonition`
+    // structure the design-system CSS targets. `admonitionsPreset` emits these
+    // tags from `:::note` directives; `<Note title="…">` JSX form is also
+    // authored directly.
+    Note: makeAdmonition("note"),
+    Tip: makeAdmonition("tip"),
+    Info: makeAdmonition("info"),
+    Warning: makeAdmonition("warning"),
+    Danger: makeAdmonition("danger"),
     // github-alerts [!IMPORTANT] and [!CAUTION] map to these variants.
     // Without these bindings, those two alert variants 500 the SSR render.
-    Important: makeAdmonitionStub("important"),
-    Caution: makeAdmonitionStub("caution"),
+    Important: makeAdmonition("important"),
+    Caution: makeAdmonition("caution"),
     // codeTabs Option A: zfb emits <CodeGroup tabs={[...]}> for :::code-group.
     // The framework does not ship this component; we implement it here and map
     // the tabs[] + <pre data-lang> children to the existing Tabs/TabItem UI.

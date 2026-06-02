@@ -1,10 +1,10 @@
 ---
 title: Admonitions Preset
-description: 標準の note/tip/warning/danger/info/details アドモニションディレクティブを登録します。
+description: 標準の note/tip/warning/danger/info/caution/details アドモニションディレクティブを登録します。
 sidebar_position: 10
 ---
 
-**Admonitions Preset** は、6 種類の組み込みアドモニションディレクティブ（`note`、`tip`、`warning`、`danger`、`info`、`details`）を登録します。CommonMark Directives の `:::` フェンス構文を使って、重要な内容を目立たせることができます。
+**Admonitions Preset** は、7 種類の組み込みアドモニションディレクティブ（`note`、`tip`、`warning`、`danger`、`info`、`caution`、`details`）を登録します。CommonMark Directives の `:::` フェンス構文を使って、重要な内容を目立たせることができます。
 
 :::note Opt-in 機能
 
@@ -47,7 +47,7 @@ export default defineConfig({
 
 ## ライブデモ
 
-以下の 6 つのディレクティブは、この機能によってライブで描画されています。
+以下の 7 つのディレクティブは、この機能によってライブで描画されています。
 
 :::note
 
@@ -79,6 +79,12 @@ export default defineConfig({
 
 :::
 
+:::caution
+
+これは **caution** コールアウトです。慎重に扱うべきリスクのある手順に使います。
+
+:::
+
 :::details[クリックで展開]
 
 これは **details** ブロック — 折りたたみ可能な開閉領域です。本文は読者が展開するまで非表示のままです。
@@ -96,10 +102,11 @@ export default defineConfig({
 </div>
 ```
 
-タイプクラス（`admonition-note`、`admonition-tip`、`admonition-warning`、`admonition-danger`、`admonition-info`）と対応する `data-admonition` 属性により、スタイルシートは各バリアントを個別に色分けできます。
+タイプクラス（`admonition-note`、`admonition-tip`、`admonition-warning`、`admonition-danger`、`admonition-info`、`admonition-caution`）と対応する `data-admonition` 属性により、スタイルシートは各バリアントを個別に色分けできます。
 
 ## メモ
 
 - `:::details` タイプはレガシーな `:::details title="Click me"` 属性形式も受け付けます。
+- `:::caution` は zfb `v0.1.0-next.24` でプリセットに追加されました。`:::warning` が `<Warning>` を出力するのと同様に、`<Caution>`（`data-admonition="caution"`）を出力します。
 - このプリセット以外のディレクティブを追加・上書きするには、この機能ではなく zfb の `DirectiveRegistry` をパイプライン API 経由で使います。
 - [GitHub Alerts](./github-alerts.mdx) は `> [!NOTE]` 形式のブロック引用から同じアドモニションマークアップを出力します。両機能はクリーンに共存します。

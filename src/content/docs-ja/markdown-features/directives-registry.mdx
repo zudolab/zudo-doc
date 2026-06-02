@@ -27,27 +27,45 @@ Directives Registry は、markdown における `:::name`（および `::name` /
 レジストリの最も一般的な使用方法はアドモニションディレクティブです。オプトインの `admonitionsPreset` 機能が有効な場合（このプロジェクトでは有効）、以下のコンテナディレクティブが使えます。
 
 :::note
+
 これは `:::note` アドモニションです。
+
 :::
 
 :::tip
+
 役立つ提案には `:::tip` を使います。
+
 :::
 
 :::info
+
 補足情報には `:::info` を使います。
+
 :::
 
 :::warning
+
 注意が必要な内容には `:::warning` を使います。
+
 :::
 
 :::danger
+
 重大な警告には `:::danger` を使います。
+
+:::
+
+:::caution
+
+慎重に扱うべきリスクのある手順には `:::caution` を使います。
+
 :::
 
 :::details[クリックして展開]
+
 折り畳み可能なコンテンツには `:::details[ラベル]` を使います。
+
 :::
 
 ## 構文
@@ -79,5 +97,5 @@ Directives Registry は、markdown における `:::name`（および `::name` /
 
 ## 補足
 
-- `admonitionsPreset` のバリアント（`note`、`tip`、`info`、`warning`、`danger`、`details`）はオプトインの [Admonitions Preset](./admonitions-preset.mdx) 機能が提供します。Core レジストリ自体ではありません。レジストリはメカニズムであり、プリセットがコンポーネントマッピングを提供します。
+- `admonitionsPreset` のバリアント（`note`、`tip`、`info`、`warning`、`danger`、`caution`、`details`）はオプトインの [Admonitions Preset](./admonitions-preset.mdx) 機能が提供します。Core レジストリ自体ではありません。レジストリはメカニズムであり、プリセットがコンポーネントマッピングを提供します。`:::caution` は zfb `v0.1.0-next.24` でプリセットに加わりました。
 - `important` と `caution` コンポーネントが登録されていることを確認しない限り、`> [!IMPORTANT]` や `> [!CAUTION]` の GitHub アラート構文は使用しないでください。それぞれ `data-admonition="important"` / `data-admonition="caution"` にマッピングされ、コンポーネントが存在しない場合は 500 エラーになります。
