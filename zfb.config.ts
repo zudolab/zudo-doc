@@ -844,7 +844,7 @@ export default defineConfig({
   // Closes zudolab/zudo-doc#1579 (54 missing-trailing-slash entries).
   trailingSlash: settings.trailingSlash,
   // zfb next.13 moved three pipeline features from always-on (Core) to
-  // opt-in (admonitionsPreset, mermaid, headingMarkerToc) and ships the
+  // opt-in (directives, mermaid, headingMarkerToc) and ships the
   // rest as opt-in. This block re-enables the former-Core three so the
   // existing corpus still renders, plus the remaining opt-in features
   // (#1804) so the showcase exercises the full zfb markdown pipeline.
@@ -864,11 +864,23 @@ export default defineConfig({
   // and must be given an options object (`{}` or fields). The misleading
   // "expected struct PluginConfig" error is what surfaces when one is `true`.
   // The boolean-shorthand features (githubAlerts, readingTime, ruby,
-  // admonitionsPreset, mermaid, headingMarkerToc) accept `true`.
+  // mermaid, headingMarkerToc) accept `true`. `directives` is a recipe map
+  // (next.25+): keys are directive names, values are the JSX component names
+  // they resolve to (registered in pages/_mdx-components.ts).
   markdown: {
     features: {
-      // Former-Core (restored in #1803).
-      admonitionsPreset: true,
+      // Former-Core (restored in #1803). next.25 replaced `admonitionsPreset`
+      // with the generic `directives` map (#1840) — hard-errors if the old key
+      // is still present.
+      directives: {
+        note: "Note",
+        tip: "Tip",
+        info: "Info",
+        warning: "Warning",
+        danger: "Danger",
+        caution: "Caution",
+        details: "Details", // routes to DetailsWrapper — a collapsible, NOT an admonition
+      },
       mermaid: true,
       // imageEnlarge removed from zfb at next.18 — re-implemented in userland
       // via MDX p-override in pages/_mdx-components.ts (#1824).

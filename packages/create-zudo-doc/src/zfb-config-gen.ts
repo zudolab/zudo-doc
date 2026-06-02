@@ -262,8 +262,8 @@ export function generateZfbConfig(choices: UserChoices): string {
   // object-typed features (githubAutolinks, codeEnrichment, imageDimensions,
   // linkValidation) REJECT the `true` shorthand and must be given an options
   // object (`{}` or fields). Boolean-OR-object features (githubAlerts,
-  // readingTime, codeTabs, admonitionsPreset, mermaid, headingMarkerToc)
-  // accept `true`.
+  // readingTime, codeTabs, mermaid, headingMarkerToc) accept `true`.
+  // (directives is object-typed — it takes a `name → component` map, not `true`.)
   // Note: imageEnlarge was formerly a Boolean-OR-object feature here, but
   // next.18 hard-removed it from the Rust config schema — it is now
   // re-implemented in userland via an MDX p-override in pages/_mdx-components.ts
@@ -290,7 +290,17 @@ export function generateZfbConfig(choices: UserChoices): string {
   lines.push(`      // Former-Core features (were always-on before zfb next.12).`);
   lines.push(`      // imageEnlarge was a former-Core feature but was hard-removed in zfb`);
   lines.push(`      // next.18 — it is now re-implemented via an MDX p-override.`);
-  lines.push(`      admonitionsPreset: true,`);
+  lines.push(`      // Admonitions recipe: register the :::name directive vocabulary`);
+  lines.push(`      // (note/tip/info/warning/danger/caution/details) → components.`);
+  lines.push(`      directives: {`);
+  lines.push(`        note: "Note",`);
+  lines.push(`        tip: "Tip",`);
+  lines.push(`        info: "Info",`);
+  lines.push(`        warning: "Warning",`);
+  lines.push(`        danger: "Danger",`);
+  lines.push(`        caution: "Caution",`);
+  lines.push(`        details: "Details", // collapsible — routes to DetailsWrapper`);
+  lines.push(`      },`);
   lines.push(`      mermaid: true,`);
   lines.push(`      headingMarkerToc: true,`);
   lines.push(`      // Safe opt-in features.`);

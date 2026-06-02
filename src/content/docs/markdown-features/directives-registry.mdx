@@ -24,7 +24,7 @@ Three shapes are supported:
 
 ## Admonitions
 
-The most common use of the registry is the admonition directives. With the `admonitionsPreset` opt-in feature enabled (as it is in this project), the following container directives are available:
+The most common use of the registry is the admonition directives. This project registers the admonition vocabulary via the `directives` map (the recipe), so the following container directives are available:
 
 :::note
 
@@ -97,5 +97,5 @@ Project-side components can register additional directive names through the `_md
 
 ## Notes
 
-- The `admonitionsPreset` variants (`note`, `tip`, `info`, `warning`, `danger`, `caution`, `details`) are provided by the opt-in [Admonitions Preset](./admonitions-preset.mdx) feature, not by the Core registry itself. The registry is the mechanism; the preset supplies the component mappings. `:::caution` joined the preset in zfb `v0.1.0-next.24`.
+- The admonition directives (`note`, `tip`, `info`, `warning`, `danger`, `caution`, `details`) are provided by the [admonitions recipe](./admonitions-preset.mdx) this project registers via the `directives` map — not by the Core registry itself. The registry is the engine; the `directives` map supplies the component mappings.
 - Do not use `> [!IMPORTANT]` or `> [!CAUTION]` GitHub-alert syntax unless you have verified that `important` and `caution` components are registered. These map to `data-admonition="important"` / `data-admonition="caution"` respectively and will 500 if no component handles them.

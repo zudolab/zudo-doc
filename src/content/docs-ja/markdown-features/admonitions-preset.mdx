@@ -1,21 +1,29 @@
 ---
 title: Admonitions Preset
-description: 標準の note/tip/warning/danger/info/caution/details アドモニションディレクティブを登録します。
+description: このプロジェクトが directives マップでアドモニションのボキャブラリを登録する方法。
 sidebar_position: 10
 ---
 
-**Admonitions Preset** は、7 種類の組み込みアドモニションディレクティブ（`note`、`tip`、`warning`、`danger`、`info`、`caution`、`details`）を登録します。CommonMark Directives の `:::` フェンス構文を使って、重要な内容を目立たせることができます。
+zfb は汎用的なメカニズム（エンジン）として `directives` レジストリを提供します。このプロジェクトはアドモニションのボキャブラリ — `note`、`tip`、`warning`、`danger`、`info`、`caution`、`details` — をレシピとして登録し、コールアウトブロックに CommonMark Directives の `:::` フェンス構文を使えるようにします。
 
 :::note Opt-in 機能
 
-`zfb.config.ts` の `admonitionsPreset` キーで有効化します。
+`zfb.config.ts` に `directives` マップを追加してアドモニションを有効化します。
 
 ```ts
 // zfb.config.ts
 export default defineConfig({
   markdown: {
     features: {
-      admonitionsPreset: true,
+      directives: {
+        note: "Note",
+        tip: "Tip",
+        info: "Info",
+        warning: "Warning",
+        danger: "Danger",
+        caution: "Caution",
+        details: "Details",
+      },
     },
   },
 });
@@ -47,7 +55,7 @@ export default defineConfig({
 
 ## ライブデモ
 
-以下の 7 つのディレクティブは、この機能によってライブで描画されています。
+以下の 7 つのディレクティブは、このアドモニションレシピによってライブで描画されています。
 
 :::note
 
@@ -107,6 +115,6 @@ export default defineConfig({
 ## メモ
 
 - `:::details` タイプはレガシーな `:::details title="Click me"` 属性形式も受け付けます。
-- `:::caution` は zfb `v0.1.0-next.24` でプリセットに追加されました。`:::warning` が `<Warning>` を出力するのと同様に、`<Caution>`（`data-admonition="caution"`）を出力します。
-- このプリセット以外のディレクティブを追加・上書きするには、この機能ではなく zfb の `DirectiveRegistry` をパイプライン API 経由で使います。
+- `:::caution` はこのプロジェクトが登録するボキャブラリの一部です。`:::warning` が `<Warning>` を出力するのと同様に、`<Caution>`（`data-admonition="caution"`）を出力します。
+- ディレクティブを追加・上書きするには、`zfb.config.ts` の `directives` マップに名前 → タイトルのペアを追加します。
 - [GitHub Alerts](./github-alerts.mdx) は `> [!NOTE]` 形式のブロック引用から同じアドモニションマークアップを出力します。両機能はクリーンに共存します。

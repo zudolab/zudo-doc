@@ -19,7 +19,7 @@ zfb の Markdown パイプラインは、常に有効な **Core（組み込み�
 | [Resolve Links](./resolve-links.mdx) | 相対パスの `.mdx`/`.md` リンクをクリーンなドキュメント URL に解決します。 |
 | [Strip .md Extension](./strip-md-ext.mdx) | 出力される内部リンクの href から `.md`/`.mdx` 拡張子を除去します。 |
 | [Syntax Highlighting](./syntax-highlighting.mdx) | syntect によるビルド時コードハイライト（固定テーマ: `base16-ocean-dark`）。 |
-| [Directives Registry](./directives-registry.mdx) | `:::note`、`:::tip`、`:::warning`、`:::danger`、`:::info`、`:::caution`、`:::details` などのアドモニションディレクティブを提供します。 |
+| [Directives Registry](./directives-registry.mdx) | 汎用的な `:::name` ディレクティブエンジン — ディレクティブ構文を JSX コンポーネントにマッピングします。アドモニションのボキャブラリはレシピとして別途登録されます。 |
 
 ## Opt-in 機能
 
@@ -27,7 +27,7 @@ zfb の Markdown パイプラインは、常に有効な **Core（組み込み�
 
 | 機能 | 設定キー | 説明 |
 | --- | --- | --- |
-| [Admonitions Preset](./admonitions-preset.mdx) | `admonitionsPreset` | 標準のアドモニションディレクティブ（note/tip/warning/danger/info/caution/details）を有効にします。 |
+| [Admonitions Preset](./admonitions-preset.mdx) | `directives` | `directives` マップでアドモニションのボキャブラリ（note/tip/warning/danger/info/caution/details）を登録します。 |
 | [Mermaid](./mermaid.mdx) | `mermaid` | ` ```mermaid ` フェンスをクライアントサイドの Mermaid ライブラリで図として描画します。 |
 | [Image Enlarge](./image-enlarge.mdx) | `imageEnlarge` | クリックで拡大できる `<figure>` に画像をラップします。 |
 | [Heading Marker TOC](./heading-marker-toc.mdx) | `headingMarkerToc` | 各見出しにアンカーマーカーを付与し、TOC アイランドにデータを提供します。 |

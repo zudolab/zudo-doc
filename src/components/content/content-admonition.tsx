@@ -6,7 +6,7 @@
 // component — restoring the first-class admonition components the Astro-era
 // theme shipped (zudolab/zudo-doc#1456), now on the zfb pipeline.
 //
-// These tags arrive from two zfb features: `admonitionsPreset` emits them from
+// These tags arrive from two zfb features: the `directives` map emits them from
 // `:::note` directives, and `githubAlerts` emits Important/Caution from
 // `[!IMPORTANT]`/`[!CAUTION]` blockquotes. The JSX form `<Note title="…">` is
 // also authored directly in MDX. All three paths render through here.
