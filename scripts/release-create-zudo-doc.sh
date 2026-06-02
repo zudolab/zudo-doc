@@ -14,14 +14,38 @@ set -euo pipefail
 #   (e.g. 1.0.0-next.1) which version-bump.sh's strict regex would reject.
 #
 # Usage:
-#   ./scripts/release-create-zudo-doc.sh <new-version>
+#   ./scripts/release-create-zudo-doc.sh [<new-version>|major|minor|patch|next|stable]
+#
+# Named bump modes:
+#   major   — (X+1).0.0-next.1  (from current, whatever it is)
+#   minor   — X.(Y+1).0-next.1  (from current)
+#   patch   — X.Y.(Z+1)-next.1  (from current)
+#   next    — from stable X.Y.Z → X.(Y+1).0-next.1
+#             from prerelease X.Y.Z-next.N → X.Y.Z-next.(N+1)  (same as auto)
+#   stable  — X.Y.Z (strip -next.N suffix; error if already stable)
+#   <semver>— use exactly this version (original explicit-version mode)
+#   (none)  — auto-derive: stable → minor+next.1; prerelease → N+1
+#
+# Dry / compute-only path (no mutations, no git):
+#   DRY=1 ./scripts/release-create-zudo-doc.sh [mode]
+#   FROM=<current> DRY=1 ./scripts/release-create-zudo-doc.sh [mode]
+#     FROM overrides the version read from package.json — useful for testing
+#     all acceptance cases without actually changing package.json.
+#   Prints:
+#     next version: <computed>
+#     pin string:   ^<computed>
+#   Then exits 0. No files are modified.
 #
 # Examples:
-#   ./scripts/release-create-zudo-doc.sh 0.2.0
-#   ./scripts/release-create-zudo-doc.sh 1.0.0-next.1
+#   ./scripts/release-create-zudo-doc.sh 0.2.0           # stable release (explicit)
+#   ./scripts/release-create-zudo-doc.sh 1.0.0-next.1    # prerelease (explicit)
+#   ./scripts/release-create-zudo-doc.sh minor            # X.(Y+1).0-next.1
+#   ./scripts/release-create-zudo-doc.sh stable           # strip -next.N suffix
+#   DRY=1 FROM=0.1.0 ./scripts/release-create-zudo-doc.sh         # 0.2.0-next.1
+#   DRY=1 FROM=0.2.0-next.1 ./scripts/release-create-zudo-doc.sh  # 0.2.0-next.2
 #
-# What it does:
-#   1. Validates version format (semver + optional prerelease suffix)
+# What it does (non-dry path):
+#   1. Validates/computes version format (semver + optional prerelease suffix)
 #   2. Bumps version in root package.json
 #   3. Bumps version in packages/create-zudo-doc/package.json
 #   4. Bumps version in packages/zudo-doc/package.json  (W4A — #1732)
@@ -41,28 +65,111 @@ ZUDO_DOC_PKG_JSON="$ROOT_DIR/packages/zudo-doc/package.json"
 DHS_PKG_JSON="$ROOT_DIR/packages/doc-history-server/package.json"
 SCAFFOLD_TS="$ROOT_DIR/packages/create-zudo-doc/src/scaffold.ts"
 
+# ── Version computation ───────────────────────────────────────────────────────
+#
+# compute_next_version <current> <mode>
+#   current — the existing version string (e.g. "0.1.0" or "0.2.0-next.1")
+#   mode    — one of: major | minor | patch | next | stable | auto
+#             "auto" applies the default derivation rule:
+#               - stable   → X.(Y+1).0-next.1
+#               - prerelease → X.Y.Z-next.(N+1)
+# Prints the computed next version to stdout and returns 0.
+# Exits non-zero on error (e.g. "stable" when already stable).
+compute_next_version() {
+  local cur="$1"
+  local mode="$2"
+
+  # Split into core (X.Y.Z) and prerelease (everything after the first "-")
+  local core pre_part
+  if echo "$cur" | grep -q -- '-'; then
+    core="${cur%%-*}"
+    pre_part="${cur#*-}"
+  else
+    core="$cur"
+    pre_part=""
+  fi
+
+  # Parse X, Y, Z from core
+  local IFS_SAVE="$IFS"
+  IFS='.' read -r ver_major ver_minor ver_patch <<< "$core"
+  IFS="$IFS_SAVE"
+
+  local is_prerelease=false
+  [ -n "$pre_part" ] && is_prerelease=true
+
+  case "$mode" in
+    major)
+      echo "$(( ver_major + 1 )).0.0-next.1"
+      ;;
+    minor)
+      echo "${ver_major}.$(( ver_minor + 1 )).0-next.1"
+      ;;
+    patch)
+      echo "${ver_major}.${ver_minor}.$(( ver_patch + 1 ))-next.1"
+      ;;
+    stable)
+      if [ "$is_prerelease" = false ]; then
+        echo "Error: current version '$cur' is already stable — nothing to strip" >&2
+        exit 1
+      fi
+      echo "$core"
+      ;;
+    next|auto)
+      if [ "$is_prerelease" = true ]; then
+        # X.Y.Z-next.N → X.Y.Z-next.(N+1)
+        # Extract the numeric suffix after the last dot in pre_part
+        local pre_label pre_n
+        pre_label="${pre_part%.*}"
+        pre_n="${pre_part##*.}"
+        echo "${core}-${pre_label}.$(( pre_n + 1 ))"
+      else
+        # stable → X.(Y+1).0-next.1  (both "next" keyword and "auto" default)
+        echo "${ver_major}.$(( ver_minor + 1 )).0-next.1"
+      fi
+      ;;
+    *)
+      # Explicit semver string passed in — validate and pass through
+      if ! echo "$mode" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+(\.[0-9]+)*)?$'; then
+        echo "Error: Version must be semver format with optional prerelease suffix." >&2
+        echo "  Valid:   0.2.0  1.0.0-next.1  2.0.0-beta.2  3.0.0-rc.1" >&2
+        echo "  Invalid: 1.0  v1.0.0  1.0.0.0" >&2
+        exit 1
+      fi
+      echo "$mode"
+      ;;
+  esac
+}
+
 # ── Parse arguments ──────────────────────────────────────────────────────────
 
-if [ $# -lt 1 ]; then
-  echo "Usage: $0 <new-version>"
-  echo ""
-  echo "Examples:"
-  echo "  $0 0.2.0           # stable release"
-  echo "  $0 1.0.0-next.1    # prerelease"
-  exit 1
+MODE="${1:-auto}"
+
+# ── Resolve current version (FROM env overrides package.json — for dry testing) ─
+
+if [ -n "${FROM:-}" ]; then
+  CURRENT_VERSION="$FROM"
+else
+  CURRENT_VERSION=$(node -p "require('$PKG_JSON').version" 2>/dev/null)
 fi
 
-NEW_VERSION="$1"
+# ── Compute target version ────────────────────────────────────────────────────
 
-# Validate: semver with optional prerelease (e.g. 1.0.0, 1.0.0-next.1, 1.0.0-beta.2, 1.0.0-rc.3)
-if ! echo "$NEW_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+(\.[0-9]+)*)?$'; then
-  echo "Error: Version must be semver format with optional prerelease suffix."
-  echo "  Valid:   0.2.0  1.0.0-next.1  2.0.0-beta.2  3.0.0-rc.1"
-  echo "  Invalid: 1.0  v1.0.0  1.0.0.0"
-  exit 1
+NEW_VERSION=$(compute_next_version "$CURRENT_VERSION" "$MODE")
+
+# ── Dry path ─────────────────────────────────────────────────────────────────
+#
+# DRY=1 prints the computed version and pin string, then exits without any
+# mutations to package.json, scaffold.ts, or the git tree.
+
+if [ "${DRY:-0}" = "1" ]; then
+  echo "current version: $CURRENT_VERSION"
+  echo "mode:            $MODE"
+  echo "next version:    $NEW_VERSION"
+  echo "pin string:      ^$NEW_VERSION"
+  exit 0
 fi
 
-# ── Read current versions ─────────────────────────────────────────────────────
+# ── Read current versions (real run) ─────────────────────────────────────────
 
 OLD_ROOT_VERSION=$(node -p "require('$PKG_JSON').version" 2>/dev/null)
 OLD_CREATE_VERSION=$(node -p "require('$CREATE_PKG_JSON').version" 2>/dev/null)
@@ -131,11 +238,12 @@ node -e "
 echo "  ✓ $DHS_PKG_JSON → $NEW_VERSION"
 
 # ── Step 2c: Align @takazudo/zudo-doc pin in scaffold.ts (W4A — #1732) ────
-# The generated downstream package.json pins ^X.Y.Z of @takazudo/zudo-doc;
+# The generated downstream package.json pins ^X.Y.Z(-next.N)? of @takazudo/zudo-doc;
 # when zudo-doc bumps, the pin must move with it so a fresh scaffold gets
-# the version we just published. The two zfb pins on adjacent lines are NOT
-# touched — those track the upstream zfb release cadence and are gated by
-# scripts/check-pin-parity.mjs against the root package.json.
+# the version we just published — including prerelease versions.
+# The regex matches both stable (^X.Y.Z) and prerelease (^X.Y.Z-next.N) pins.
+# The two zfb pins on adjacent lines are NOT touched — those track the upstream
+# zfb release cadence and are gated by scripts/check-pin-parity.mjs.
 
 echo ""
 echo "▶ Aligning @takazudo/zudo-doc pin in scaffold.ts..."
