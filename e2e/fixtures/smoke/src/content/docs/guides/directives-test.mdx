@@ -1,0 +1,36 @@
+---
+title: Directives Test
+sidebar_position: 98
+---
+
+{/*
+  Exercises the `markdown.features.directives` map (zfb 0.1.0-next.25+).
+  All three admonitions here are authored in ::: DIRECTIVE form — NOT JSX —
+  so a broken directives map will fail these assertions while the existing
+  JSX-authored smoke-admonitions.spec.ts tests continue to pass.
+  See zudolab/zudo-doc#1840.
+*/}
+
+## Note with custom title
+
+:::note[Custom Title]
+
+This note was rendered via the directives map.
+
+:::
+
+## Caution (no title)
+
+:::caution
+
+Proceed with care — this is a caution directive.
+
+:::
+
+## Collapsible details
+
+:::details[Click to expand]
+
+Hidden content inside a details block, rendered via the directives map.
+
+:::

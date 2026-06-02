@@ -2703,7 +2703,7 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
   });
 });
 
-describe("scaffold — zfb next.24 pin bump (#1831)", () => {
+describe("scaffold — zfb next.25 pin bump (#1840)", () => {
   /**
    * S6 (#1808) pinned all three zfb packages at next.13. #1817 bumped them to
    * 0.1.0-next.14. #1824 bumped them to 0.1.0-next.19 — next.18 hard-removed
@@ -2714,15 +2714,15 @@ describe("scaffold — zfb next.24 pin bump (#1831)", () => {
    * releases (no SDK API change). #1833 bumped them to 0.1.0-next.22 — an
    * additive bundler/markdown migration-parity release. #1834 bumped them to
    * 0.1.0-next.23: the host adopts bundle.exclude in its own zfb.config.ts
-   * (next.23 also ships bundle.mainFields / bundle.external). Now bumped to
-   * 0.1.0-next.24 (#1831): next.24 adds :::caution to the built-in
-   * admonitionsPreset (Takazudo/zudo-front-builder#682) plus a configurable
-   * AdmonitionsPresetFeature — back-compatible (`admonitionsPreset: true` keeps
-   * working). The generated project's Caution component stub + admonition-caution
-   * CSS already exist, so :::caution renders with no further wiring. Generated
-   * package.json must pin all three.
+   * (next.23 also ships bundle.mainFields / bundle.external). #1831 bumped them
+   * to 0.1.0-next.24: next.24 adds :::caution to admonitionsPreset. Now bumped
+   * to 0.1.0-next.25 (#1840): BREAKING — next.25 removes `admonitionsPreset`
+   * entirely (hard-errors at load); replaced by the generic
+   * `markdown.features.directives` map. Host zfb.config.ts migrated in #1840;
+   * generated projects must also pin next.25. Generated package.json must pin
+   * all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.24", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.25", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -2733,10 +2733,10 @@ describe("scaffold — zfb next.24 pin bump (#1831)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.24");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.24");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.25");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.25");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.24",
+      "0.1.0-next.25",
     );
   });
 });

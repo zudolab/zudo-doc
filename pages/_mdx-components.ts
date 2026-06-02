@@ -323,7 +323,7 @@ export function createMdxComponents(lang: Locale | string = defaultLocale) {
     HtmlPreview: HtmlPreviewWrapper,
     // Admonitions — real typed Preact components (src/components/content/
     // content-admonition.tsx) emitting the `.admonition` / `data-admonition`
-    // structure the design-system CSS targets. `admonitionsPreset` emits these
+    // structure the design-system CSS targets. The `directives` map emits these
     // tags from `:::note` directives; `<Note title="…">` JSX form is also
     // authored directly.
     Note: makeAdmonition("note"),
