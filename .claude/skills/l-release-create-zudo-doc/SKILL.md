@@ -7,7 +7,7 @@ description: >-
   (2) User wants to publish a new version of the create-zudo-doc npm package.
 user-invocable: true
 disable-model-invocation: false
-argument-description: "Optional: the exact version string (e.g. 0.2.0, 1.0.0-next.1)"
+argument-description: "Optional: version string or bump mode (e.g. 0.2.0, 1.0.0-next.1, minor, stable)"
 ---
 
 # /l-release-create-zudo-doc
@@ -30,6 +30,52 @@ downstream contract. This skill wraps and extends the same release flow for the
 
 The existing `/zudo-doc-version-bump` skill is **not modified** by this flow.
 
+## Version scheme
+
+The release script auto-derives the next version from the current one, or accepts
+explicit bump modes and version strings:
+
+| Current version   | Mode / arg       | Result              |
+|-------------------|------------------|---------------------|
+| `X.Y.Z` (stable)  | _(no arg / auto)_ | `X.(Y+1).0-next.1` |
+| `X.Y.Z-next.N`    | _(no arg / auto)_ | `X.Y.Z-next.(N+1)` |
+| any               | `major`          | `(X+1).0.0-next.1` |
+| any               | `minor`          | `X.(Y+1).0-next.1` |
+| any               | `patch`          | `X.Y.(Z+1)-next.1` |
+| `X.Y.Z` (stable)  | `next`           | `X.(Y+1).0-next.1` |
+| `X.Y.Z-next.N`    | `next`           | `X.Y.Z-next.(N+1)` |
+| `X.Y.Z-next.N`    | `stable`         | `X.Y.Z`            |
+| already stable    | `stable`         | _(error)_           |
+| any               | `<semver>`       | use exactly that    |
+
+All keyword modes except `stable` produce a prerelease version (with `-next.1` suffix).
+Stable is always an explicit promotion — never auto-derived from a stable base.
+
+### Dry path (compute-only, no mutations)
+
+```bash
+# Test auto-derive from a specific version without touching package.json:
+DRY=1 FROM=0.1.0 ./scripts/release-create-zudo-doc.sh
+# → next version: 0.2.0-next.1 / pin string: ^0.2.0-next.1
+
+DRY=1 FROM=0.2.0-next.1 ./scripts/release-create-zudo-doc.sh
+# → next version: 0.2.0-next.2 / pin string: ^0.2.0-next.2
+
+DRY=1 FROM=0.2.0-next.3 ./scripts/release-create-zudo-doc.sh stable
+# → next version: 0.2.0 / pin string: ^0.2.0
+```
+
+## One-time bootstrap (first release from a fresh repo)
+
+Before the very first release, if npm has never seen `@takazudo/zudo-doc` and the
+`latest` dist-tag is not yet set, run the bootstrap helper to seed it:
+
+```bash
+node scripts/release-bootstrap-latest.mjs <version>
+```
+
+This is a one-time operation — subsequent releases use the normal release script.
+
 ## Preconditions
 
 Verify ALL of the following before proceeding. If any check fails, stop and tell the user.
@@ -47,7 +93,9 @@ git tag -l 'v*' --sort=-v:refname | head -1
 
 ## Step 1 — Propose the new version
 
-If the user passed a version argument, use it directly. Otherwise:
+If the user passed an explicit version string (`0.2.0`, `1.0.0-next.1`), use it directly.
+If the user passed a bump mode keyword (`major`, `minor`, `patch`, `next`, `stable`), pass
+it to the script. Otherwise:
 
 ```bash
 git log <last-tag>..HEAD --oneline
@@ -55,26 +103,38 @@ git log <last-tag>..HEAD --oneline
 
 Categorize commits by conventional-commit prefix and propose:
 
-- Breaking changes (`feat!`, `BREAKING CHANGE`) → **major** bump
-- Features (`feat:`) → **minor** bump
-- Otherwise → **patch** bump
+- Breaking changes (`feat!`, `BREAKING CHANGE`) → `major` bump
+- Features (`feat:`) → `minor` bump
+- Otherwise → `patch` bump
 
-For prerelease candidates, use the `-next.N`, `-beta.N`, or `-rc.N` suffix as
-appropriate. Present the proposal and **wait for user confirmation**.
+For prerelease candidates, propose the appropriate keyword (`next`, or explicit `-next.N`).
+To preview the computed version without touching any files, use the dry path:
+
+```bash
+DRY=1 ./scripts/release-create-zudo-doc.sh [<version>|<mode>]
+```
+
+Present the proposal and **wait for user confirmation**.
 
 ## Step 2 — Run the release script
 
 ```bash
-./scripts/release-create-zudo-doc.sh <NEW_VERSION>
+./scripts/release-create-zudo-doc.sh [<version>|<mode>]
 ```
 
 This script (sibling to `version-bump.sh`, does NOT modify it):
 
-1. Validates the version format (accepts prerelease suffixes)
-2. Bumps `package.json` at the root
-3. Bumps `packages/create-zudo-doc/package.json`
-4. Scaffolds `src/content/docs/changelog/<NEW_VERSION>.mdx` (EN)
-5. Scaffolds `src/content/docs-ja/changelog/<NEW_VERSION>.mdx` (JA)
+1. Computes the next version from the arg or auto-derives it (see "Version scheme" above)
+2. Validates the version format (accepts prerelease suffixes)
+3. Bumps `package.json` at the root
+4. Bumps `packages/create-zudo-doc/package.json`
+5. Bumps `packages/zudo-doc/package.json` (W4A — #1732)
+6. Bumps `packages/doc-history-server/package.json` (W4A — #1732)
+7. Rewrites `@takazudo/zudo-doc` pin in `scaffold.ts` to `^<new-version>` — including
+   prerelease versions (e.g. `^0.2.0-next.1`) so a fresh downstream scaffold resolves
+   the version being released
+8. Scaffolds `src/content/docs/changelog/<NEW_VERSION>.mdx` (EN)
+9. Scaffolds `src/content/docs-ja/changelog/<NEW_VERSION>.mdx` (JA)
 
 ## Step 3 — Fill in the changelog
 
@@ -129,6 +189,9 @@ Stage and commit all changed files:
 ```bash
 git add package.json \
         packages/create-zudo-doc/package.json \
+        packages/zudo-doc/package.json \
+        packages/doc-history-server/package.json \
+        packages/create-zudo-doc/src/scaffold.ts \
         src/content/docs/changelog/<NEW_VERSION>.mdx \
         src/content/docs-ja/changelog/<NEW_VERSION>.mdx
 # Add any formatting fixes from b4push:
@@ -195,14 +258,22 @@ Publishing the draft releases `create-zudo-doc@<NEW_VERSION>` to npm — this is
 the human gate that cannot be undone after 72 hours (npm unpublish lock). Review
 carefully before clicking.
 
-## Dist-tag reference (CI determines this from the tag name)
+## Dual-tag behavior: `latest` and `next`
 
-| Tag pattern         | npm dist-tag |
-|---------------------|--------------|
-| `v1.2.3`            | `latest`     |
-| `v1.2.3-next.1`     | `next`       |
-| `v1.2.3-beta.2`     | `next`       |
-| `v1.2.3-rc.3`       | `next`       |
+Each package is published to npm with a dist-tag determined by the version string. CI
+reads the tag name and selects the tag automatically — the maintainer does NOT specify
+`--tag` manually. Publishing the DRAFT is the only irreversible step.
+
+| Tag pattern         | npm dist-tag | Who resolves it                  |
+|---------------------|--------------|----------------------------------|
+| `v1.2.3`            | `latest`     | `pnpm install create-zudo-doc`   |
+| `v1.2.3-next.1`     | `next`       | `pnpm install create-zudo-doc@next` |
+| `v1.2.3-beta.2`     | `next`       | `pnpm install create-zudo-doc@next` |
+| `v1.2.3-rc.3`       | `next`       | `pnpm install create-zudo-doc@next` |
+
+Prerelease versions (any tag containing a `-`) are published under `next`. Stable
+versions (no `-`) are published under `latest`. This ensures `npm install` / `pnpm dlx`
+without a dist-tag always pulls the last stable release, not a prerelease.
 
 ## Files involved (pin sources)
 
