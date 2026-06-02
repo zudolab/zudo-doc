@@ -224,7 +224,7 @@ describe("scaffold — sidebarToggle feature", () => {
       projectPath("test-sidebar-toggle-deps", "package.json"),
     );
     expect(pkg.dependencies["@takazudo/zudo-doc"]).toBeDefined();
-    expect(pkg.dependencies["@takazudo/zudo-doc"]).toMatch(/^\^?0\.1\./);
+    expect(pkg.dependencies["@takazudo/zudo-doc"]).toMatch(/^\^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/);
   });
 });
 
@@ -554,7 +554,7 @@ describe("scaffold — docHistory feature", () => {
     // this dep the plugin host fails at ERR_MODULE_NOT_FOUND before any
     // page builds.
     expect(pkg.dependencies["@takazudo/zudo-doc-history-server"]).toBeDefined();
-    expect(pkg.dependencies["@takazudo/zudo-doc-history-server"]).toMatch(/^\^0\.1\./);
+    expect(pkg.dependencies["@takazudo/zudo-doc-history-server"]).toMatch(/^\^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/);
   });
 
   it("does NOT include @takazudo/zudo-doc-history-server dep when docHistory is disabled", async () => {
@@ -1993,7 +1993,7 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
       expect(pkg.dependencies["@takazudo/zfb"]).toBeDefined();
       expect(pkg.dependencies["astro"]).toBeUndefined();
       expect(pkg.dependencies["@takazudo/zudo-doc"]).toBeDefined();
-      expect(pkg.dependencies["@takazudo/zudo-doc"]).toMatch(/^\^?0\.1\./);
+      expect(pkg.dependencies["@takazudo/zudo-doc"]).toMatch(/^\^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/);
     });
 
     // W6B (#1735) — runtime deps required by always-on scaffolded

@@ -260,6 +260,26 @@ node -e "
 "
 echo "  ✓ $SCAFFOLD_TS @takazudo/zudo-doc → ^$NEW_VERSION"
 
+# ── Step 2d: Align @takazudo/zudo-doc-history-server pin in scaffold.ts ───────
+# The docHistory feature adds a direct @takazudo/zudo-doc-history-server dep to
+# the generated package.json (different syntax — a deps[...] = "..." assignment,
+# not an object-literal key). It must move in lockstep too, otherwise the direct
+# pin (^0.1.0) conflicts with the transitive range @takazudo/zudo-doc carries.
+echo ""
+echo "▶ Aligning @takazudo/zudo-doc-history-server pin in scaffold.ts..."
+node -e "
+  const fs = require('fs');
+  const src = fs.readFileSync('$SCAFFOLD_TS', 'utf-8');
+  const re = /(deps\[\"@takazudo\/zudo-doc-history-server\"\]\s*=\s*\")\^?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?(\")/;
+  if (!re.test(src)) {
+    console.error('Error: could not locate @takazudo/zudo-doc-history-server pin in $SCAFFOLD_TS');
+    process.exit(1);
+  }
+  const next = src.replace(re, '\$1^$NEW_VERSION\$3');
+  fs.writeFileSync('$SCAFFOLD_TS', next);
+"
+echo "  ✓ $SCAFFOLD_TS @takazudo/zudo-doc-history-server → ^$NEW_VERSION"
+
 # ── Step 3: Scaffold EN + JA changelog entries ────────────────────────────────
 
 CHANGELOG_DIR="$ROOT_DIR/src/content/docs/changelog"

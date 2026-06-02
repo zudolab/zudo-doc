@@ -1,0 +1,12 @@
+---
+title: 0.2.0-next.1
+description: Release notes for 0.2.0-next.1.
+sidebar_position: 1002
+---
+
+First prerelease published on the project's new release pipeline. It supersedes the earlier `0.1.0` publish and re-launches versioning on the `X.Y.Z-next.N` prerelease scheme.
+
+### Changes
+
+- **npm release channels.** Prereleases are published under the `next` dist-tag. During the prerelease phase, `latest` also tracks the newest prerelease so `npm install` is never left on a stale version; this self-disables automatically once a stable release is published.
+- **Lockstep versioning.** `@takazudo/zudo-doc`, `@takazudo/zudo-doc-history-server`, and `create-zudo-doc` move together, and a freshly scaffolded project pins the matching `@takazudo/zudo-doc` release.
