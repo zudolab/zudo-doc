@@ -24,7 +24,7 @@ Directives Registry は、markdown における `:::name`（および `::name` /
 
 ## アドモニション
 
-レジストリの最も一般的な使用方法はアドモニションディレクティブです。オプトインの `admonitionsPreset` 機能が有効な場合（このプロジェクトでは有効）、以下のコンテナディレクティブが使えます。
+レジストリの最も一般的な使用方法はアドモニションディレクティブです。このプロジェクトは `directives` マップ（レシピ）でアドモニションのボキャブラリを登録しているため、以下のコンテナディレクティブが使えます。
 
 :::note
 
@@ -97,5 +97,5 @@ Directives Registry は、markdown における `:::name`（および `::name` /
 
 ## 補足
 
-- `admonitionsPreset` のバリアント（`note`、`tip`、`info`、`warning`、`danger`、`caution`、`details`）はオプトインの [Admonitions Preset](./admonitions-preset.mdx) 機能が提供します。Core レジストリ自体ではありません。レジストリはメカニズムであり、プリセットがコンポーネントマッピングを提供します。`:::caution` は zfb `v0.1.0-next.24` でプリセットに加わりました。
+- アドモニションディレクティブ（`note`、`tip`、`info`、`warning`、`danger`、`caution`、`details`）は、このプロジェクトが `directives` マップで登録している[アドモニションレシピ](./admonitions-preset.mdx)が提供します。Core レジストリ自体ではありません。レジストリはエンジンであり、`directives` マップがコンポーネントマッピングを提供します。
 - `important` と `caution` コンポーネントが登録されていることを確認しない限り、`> [!IMPORTANT]` や `> [!CAUTION]` の GitHub アラート構文は使用しないでください。それぞれ `data-admonition="important"` / `data-admonition="caution"` にマッピングされ、コンポーネントが存在しない場合は 500 エラーになります。
