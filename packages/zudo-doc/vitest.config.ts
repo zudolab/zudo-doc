@@ -53,10 +53,33 @@ export default defineConfig({
       // but not surfaced at root or package node_modules. Pin it explicitly so
       // JSX rendering tests work without bloating the package's own deps.
       "preact-render-to-string": findPreactRenderToString(),
+      // React → Preact compat aliases. This package runs Preact in React-compat
+      // mode (the production zfb/vite build aliases these too). Pre-compiled zfb
+      // island runtime (@takazudo/zfb/dist/island.js) hardcodes
+      // `import { jsx } from "react/jsx-runtime"`; without these aliases any test
+      // that loads an island (e.g. the doc-layout TOC-gating suite) fails with
+      // "Cannot find package 'react'" since this is a Preact project. Most
+      // specific keys first so `react/jsx-runtime` is not swallowed by `react`.
+      "react/jsx-runtime": "preact/jsx-runtime",
+      "react/jsx-dev-runtime": "preact/jsx-runtime",
+      "react-dom/test-utils": "preact/test-utils",
+      "react-dom": "preact/compat",
+      react: "preact/compat",
     },
   },
   test: {
     root: pkgRoot,
     include: ["src/**/__tests__/**/*.test.{ts,tsx}"],
+    server: {
+      deps: {
+        // Inline the zfb island runtime so vite transforms it through the
+        // resolve.alias pipeline above. Externalized node_modules deps are
+        // loaded by Node's native resolver, which bypasses the react →
+        // preact/compat aliases — so @takazudo/zfb/dist/island.js's
+        // `import "react/jsx-runtime"` would otherwise fail with
+        // "Cannot find package 'react'".
+        inline: [/@takazudo\/zfb/],
+      },
+    },
   },
 });
