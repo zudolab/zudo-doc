@@ -16,9 +16,14 @@
 #   accidentally trigger this workflow.
 #
 # Workflow_dispatch caveat:
-#   When dispatching manually, choose a zudo-doc-history-server- prefixed tag
-#   as the ref — Safeguard 1 rejects refs that don't match. Dispatching from
-#   `main` will fail-fast with a clear message.
+#   The job-level `if:` requires the ref/tag to start with
+#   `zudo-doc-history-server-`. Dispatching from `main` (or any non-matching
+#   ref) makes this job skip NEUTRAL — it does not run, rather than failing
+#   red. For a dry-run auth smoke, dispatch with a candidate
+#   `zudo-doc-history-server-` prefixed tag as the ref — NOT an already-published
+#   tag, since Safeguard 3 ("version not already published") runs before the
+#   dry-run auth check and would abort first. Safeguard 1's anchored regex
+#   remains as defense-in-depth for a matching-prefix-but-invalid-semver ref.
 #
 # NPM_TOKEN must be an Automation token (type: "Automation" in npmjs.com).
 #
@@ -65,6 +70,10 @@ jobs:
     name: Publish to npm
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Only run when the triggering tag starts with "zudo-doc-history-server-".
+    # bare v* (create-zudo-doc) and zudo-doc-v* (@takazudo/zudo-doc) do not
+    # start with "zudo-doc-history-server-", so those releases skip NEUTRAL.
+    if: ${{ startsWith(github.event.release.tag_name || github.ref_name, 'zudo-doc-history-server-') }}
 
     steps:
       # ── Checkout at the exact release tag ──────────────────────────────────
@@ -171,7 +180,7 @@ jobs:
           echo "  Package : @takazudo/zudo-doc-history-server"
           echo "  Version : $VERSION"
           echo "  Dist-tag: $DIST_TAG"
-          echo "  Flags   : --access public --provenance --no-git-checks"
+          echo "  Flags   : --access public --provenance --no-git-checks --tag $DIST_TAG"
           echo ""
           echo "Dry run complete. Remove dry_run input or set it to false to publish for real."
 
@@ -192,3 +201,77 @@ jobs:
             --no-git-checks \
             --tag "$DIST_TAG"
           echo "Published: https://www.npmjs.com/package/@takazudo/zudo-doc-history-server/v/$VERSION"
+
+      # ── Dual-tag: advance "latest" when publishing a prerelease ───────────
+      # Only runs for real publishes (not dry-run) and only when DIST_TAG=next.
+      # Policy: advance latest iff the registry's current latest is empty (first
+      # publish ever) or is itself a prerelease (contains "-"). This is
+      # self-disabling once a stable version holds "latest".
+      #
+      # Probe MUST fail CLOSED: a registry/network error must NOT be read as
+      # "empty latest". Stdout and stderr are captured separately; on non-zero
+      # exit the probe retries 3 times, then fails closed (dual-tag skipped).
+      - name: 'Dual-tag: advance latest → ${{ env.VERSION }} (prerelease only)'
+        if: ${{ inputs.dry_run != true && env.DIST_TAG == 'next' }}
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          PKG="@takazudo/zudo-doc-history-server"
+          echo "DIST_TAG=next — checking whether to advance 'latest' for $PKG..."
+
+          # Probe the registry for the current latest dist-tag.
+          # Capture stdout and exit status separately; stderr goes to a log file.
+          # GHA runs bash with -eo pipefail, so use if-form to avoid aborting on
+          # non-zero exit (the if-form is exempt from -e).
+          PROBE_OUT=""
+          PROBE_STATUS=1
+          for ATTEMPT in 1 2 3; do
+            if PROBE_OUT=$(npm view "$PKG" dist-tags.latest 2>/tmp/probe-err.log); then
+              PROBE_STATUS=0
+              break
+            else
+              PROBE_STATUS=$?
+              echo "Probe attempt $ATTEMPT failed (exit $PROBE_STATUS):"
+              cat /tmp/probe-err.log || true
+              if [[ $ATTEMPT -lt 3 ]]; then
+                echo "Retrying in 5s..."
+                sleep 5
+              fi
+            fi
+          done
+
+          if [[ $PROBE_STATUS -ne 0 ]]; then
+            echo "::warning::All 3 probe attempts failed — failing closed, dual-tag skipped."
+            echo "::warning::Registry may be temporarily unavailable. Retry the workflow or run manually:"
+            echo "::warning::  npm dist-tag add $PKG@$VERSION latest"
+            exit 0
+          fi
+
+          # Trim whitespace from stdout only (stderr was separated above).
+          CURRENT_LATEST=$(printf '%s' "$PROBE_OUT" | tr -d '[:space:]')
+          echo "Current latest: '${CURRENT_LATEST:-<empty>}'"
+
+          # Enable dual-tag iff latest is empty (never published) or is a prerelease.
+          if [[ -n "$CURRENT_LATEST" && "$CURRENT_LATEST" != *-* ]]; then
+            echo "latest is a stable release ('$CURRENT_LATEST') — self-disabled, skipping dual-tag."
+            exit 0
+          fi
+
+          echo "Advancing 'latest' → $PKG@$VERSION ..."
+          # Retry up to 5 times with exponential backoff (5, 10, 20, 40 s).
+          DELAY=5
+          for ATTEMPT in 1 2 3 4 5; do
+            if npm dist-tag add "$PKG@$VERSION" latest; then
+              echo "OK: dist-tag add succeeded on attempt $ATTEMPT."
+              exit 0
+            fi
+            if [[ $ATTEMPT -lt 5 ]]; then
+              echo "dist-tag add failed (attempt $ATTEMPT), retrying in ${DELAY}s..."
+              sleep "$DELAY"
+              DELAY=$((DELAY * 2))
+            fi
+          done
+
+          echo "::error::Manual remediation: npm dist-tag add $PKG@$VERSION latest"
+          exit 1
