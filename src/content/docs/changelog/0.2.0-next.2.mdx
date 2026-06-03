@@ -1,0 +1,12 @@
+---
+title: 0.2.0-next.2
+description: Release notes for 0.2.0-next.2.
+sidebar_position: 1003
+---
+
+Maintenance prerelease focused on internal cleanup and release-pipeline hardening. No user-facing API changes.
+
+### Changes
+
+- **Removed the deprecated `ai-chat-worker` package.** The AI chat API is served by the SSR `/api/ai-chat` endpoint; the standalone Cloudflare Worker package has been dropped from the repository.
+- **Release-pipeline hardening.** Internal `@takazudo/zudo-doc*` scaffold pins are now guarded against drift, publishable-package unit suites and the root unit suite run in PR CI, and the pin-parity check restores its file-path guidance on failure.
