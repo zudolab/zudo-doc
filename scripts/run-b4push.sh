@@ -112,11 +112,15 @@ fi
 # ── Step 8: Root unit tests ───────────────────────────
 # Root `test:unit` (vitest) guards src/**/__tests__ and scripts/__tests__,
 # which previously ran in no local gate and no CI workflow (#1856). Runs
-# before the expensive build for fast logic-level feedback. Assumes the
-# @takazudo/zudo-doc dist is present (same assumption as the build step
-# below); `pnpm dev` keeps it fresh via tsup --watch.
+# before the expensive site build for fast logic-level feedback.
+#
+# Build @takazudo/zudo-doc first: several root suites import
+# @takazudo/zudo-doc/theme, whose compiled dist/ does not exist on a fresh
+# clone (`pnpm install` does not run the package's tsup build). CI's package
+# and root test jobs build it for the same reason. Building here also leaves
+# dist/ ready for the site build in the next step.
 step "Root unit tests (test:unit)"
-if (cd "$ROOT_DIR" && pnpm test:unit); then
+if (cd "$ROOT_DIR" && pnpm --filter @takazudo/zudo-doc build && pnpm test:unit); then
   pass "Root unit tests passed"
 else
   fail "Root unit tests"
