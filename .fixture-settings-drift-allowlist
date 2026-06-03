@@ -95,12 +95,10 @@ theme:aiChatDemoMode
 versioning:aiChatDemoMode
 
 # ── designTokenPanel ──────────────────────────────────────────────────────────
-# reason: fixtures that test the panel use the deprecated colorTweakPanel alias;
-#         designTokenPanel (the new key) is not yet needed in fixtures
+# reason: the design token panel is only exercised in the theme and smoke
+#         fixtures (which set designTokenPanel directly); absent elsewhere
 sidebar:designTokenPanel
 i18n:designTokenPanel
-theme:designTokenPanel
-smoke:designTokenPanel
 versioning:designTokenPanel
 
 # ── sidebarResizer ────────────────────────────────────────────────────────────
@@ -154,13 +152,6 @@ sidebar:versions
 i18n:versions
 theme:versions
 smoke:versions
-
-# ── colorTweakPanel ───────────────────────────────────────────────────────────
-# reason: deprecated alias for designTokenPanel; only the fixtures that test the
-#         panel need it (theme, smoke); absent in sidebar/i18n/versioning
-sidebar:colorTweakPanel
-i18n:colorTweakPanel
-versioning:colorTweakPanel
 
 # ── footer ────────────────────────────────────────────────────────────────────
 # reason: footer content is not exercised in any fixture

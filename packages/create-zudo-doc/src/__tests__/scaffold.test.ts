@@ -512,9 +512,6 @@ describe("scaffold — generated settings.ts content", () => {
       "utf-8",
     );
     expect(content).toContain("designTokenPanel: true");
-    // Back-compat alias should still be emitted for one release so existing
-    // projects that reference `settings.colorTweakPanel` keep compiling.
-    expect(content).toContain("colorTweakPanel: undefined");
   });
 });
 

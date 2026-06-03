@@ -147,7 +147,7 @@ export function BodyEndIslands({
   // bootstrap module can drain and re-dispatch once the real zdtp listener
   // is registered. Mirrors the PageLoadingOverlay SSR-script pattern.
   const designTokenPanelBootstrap =
-    settings.designTokenPanel || settings.colorTweakPanel
+    settings.designTokenPanel
       ? (
           <>
             <script

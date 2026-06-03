@@ -282,4 +282,3 @@ These auto-load when working in the corresponding directory — read them when r
 - `src/content/CLAUDE.md` — doc-writing rules (frontmatter, admonitions, linking, bilingual workflow)
 - `e2e/CLAUDE.md` — Playwright fixture architecture and test patterns
 - `packages/*/CLAUDE.md` — per-package architecture notes (workers, generator, doc-history-server)
-- `vendor/design-token-lint/CLAUDE.md` — design-token-lint linter package

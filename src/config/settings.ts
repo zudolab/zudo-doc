@@ -101,16 +101,9 @@ export const settings = {
    * font, size and color tokens). The Color tab reproduces the former
    * Color-Tweak panel; other tabs are filled in by follow-up sub-issues.
    *
-   * Either `designTokenPanel` or the deprecated alias `colorTweakPanel` may
-   * be set to `true` — the panel is enabled when either one is truthy.
+   * Set to `true` to enable the panel.
    */
   designTokenPanel: true as boolean,
-  /**
-   * @deprecated Use `designTokenPanel` instead. Retained for one release so
-   * existing user projects keep working. When `true`, the panel is still
-   * enabled; when unset, only `designTokenPanel` is consulted.
-   */
-  colorTweakPanel: undefined as boolean | undefined,
   sidebarResizer: true as boolean,
   sidebarToggle: true as boolean,
   imageEnlarge: true as boolean,

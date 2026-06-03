@@ -2,7 +2,7 @@ import { settings } from "@/config/settings";
 import type { HeaderRightItem } from "@/config/settings-types";
 
 function isDesignTokenPanelEnabled(): boolean {
-  return Boolean(settings.designTokenPanel || settings.colorTweakPanel);
+  return Boolean(settings.designTokenPanel);
 }
 
 export function filterHeaderRightItems(
