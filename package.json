@@ -95,7 +95,7 @@
     "@types/pluralize": "^0.0.33",
     "@types/react": "^19.2.14",
     "@types/string-similarity": "^4.0.2",
-    "@zudolab/design-token-lint": "file:./vendor/design-token-lint",
+    "@takazudo/zudo-design-token-lint": "^1.0.0",
     "chokidar": "^4.0.0",
     "html-validate": "^10.15.0",
     "lefthook": "^2.1.4",
