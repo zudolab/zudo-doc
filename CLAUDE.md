@@ -101,7 +101,6 @@ pages/                   # File-routed pages (.tsx) — zfb resolves these
 ├── api/                 # API routes (e.g. ai-chat)
 └── sitemap.xml.tsx      # Sitemap generator
 packages/
-├── ai-chat-worker/       # CF Worker for AI chat API (deprecated; superseded by pages/api/ai-chat.tsx)
 ├── md-plugins/           # Shared remark/rehype plugins (link resolver, admonitions, etc.)
 ├── search-worker/        # CF Worker for search API
 ├── doc-history-server/   # Doc history REST API + CLI generator

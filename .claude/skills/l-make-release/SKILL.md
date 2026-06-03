@@ -1,16 +1,16 @@
 ---
-name: l-release-create-zudo-doc
+name: l-make-release
 description: >-
   Orchestrate a create-zudo-doc release: bump versions, fill changelog,
   validate, commit, push, wait for CI, tag, and create a DRAFT GitHub release.
-  Use when: (1) User says 'release create-zudo-doc' or 'l-release-create-zudo-doc',
+  Use when: (1) User says 'make release', 'l-make-release', or 'release create-zudo-doc',
   (2) User wants to publish a new version of the create-zudo-doc npm package.
 user-invocable: true
 disable-model-invocation: false
 argument-description: "Optional: version string or bump mode (e.g. 0.2.0, 1.0.0-next.1, minor, stable)"
 ---
 
-# /l-release-create-zudo-doc
+# /l-make-release
 
 Orchestrate the full create-zudo-doc release sequence, ending at a **DRAFT** GitHub
 release. Publishing that draft is the human gate that triggers the CI publish workflow.
