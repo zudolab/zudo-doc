@@ -70,53 +70,6 @@
  *           closing zudolab/zudo-doc#1579. Bumped 2026-05-10 in epic
  *           zudolab/zudo-doc#1581 (link-cleanup) sub-issues #1582 (T1)
  *           and #1583 (T3).
- *           Previous pin 6754312 (three post-deep-review fix rounds landing on main:
- *           8258782 fix(review-round-1): bugs, path traversal, and
- *           validation gaps surfaced by deep-review — fixes a `from`/`form`
- *           typo in client-router form-submit enctype handling
- *           (zfb-runtime/client-router/router.ts); gates the on-disk
- *           fallback in the dev server's serve_page behind
- *           `is_safe_url_path` so a percent-encoded `..` request cannot
- *           escape the dist root; extracts `push_canon_string` in
- *           zfb-render/paths.rs and applies it to object keys so
- *           PathsCache hashes no longer collide on keys containing `"` or
- *           `\`; rejects negative `src_line`/`src_col` in
- *           zfb-render/sourcemap.rs rather than silently wrapping; logs
- *           walkdir errors during the `public/` copy in commands/build.rs
- *           instead of dropping them with filter_map(.ok()); enforces the
- *           documented `..`-escape ban and a leading-`/` requirement on
- *           `base` in config.rs; drops an invalid `trust-policy=any` key
- *           from .npmrc.
- *           66b3ce9 fix(review-round-2): classifier root-anchor,
- *           source-directive escaping, schema overflow — anchors
- *           `classify_change` at the project root in zfb-build/policy.rs
- *           so a project hosted under a parent directory whose name
- *           matches `pages`/`content`/etc. no longer silently
- *           misclassifies every change (adds regression test + updates
- *           orchestrator caller); escapes `"` and `\` when interpolating
- *           the project root into the Tailwind `@source "..."` directive
- *           in zfb-css/engine.rs so paths containing those bytes produce
- *           a well-formed declaration; tightens the JSON-Schema `integer`
- *           type check in zfb-content/schema.rs to reject oversized
- *           floats (`1e30.fract() == 0.0` no longer passes).
- *           6754312 fix(review-round-3): CSS-in-components, content-type
- *           fallback, write-cache ordering, leak guards — carves out
- *           `.css` from the directory-precedence rules in
- *           zfb-build/policy.rs so co-located component CSS edits reach
- *           `dist/assets/` (adds regression test); fixes
- *           zfb-server/routes.rs so the on-disk cold-start fallback
- *           derives Content-Type from the file extension rather than
- *           hardcoding `text/html`, preventing `<script>` injection into
- *           non-HTML routes like `/sitemap.xml`; moves the
- *           `last_bytes` dedup-cache insert in
- *           zfb-build/pipeline/dev.rs to AFTER the atomic write so a
- *           transient write failure cannot poison the cache and silently
- *           suppress future writes; evicts the pending-map entry in
- *           plugin_runner.rs on stdin write failure to prevent unbounded
- *           map growth; replaces silent `filter_map(.ok())` walk in
- *           zfb-graph/persist.rs with a tracing-warn variant.
- *           Bumped 2026-05-09 in vt-chrome-static T1 under host epic
- *           zudolab/zudo-doc#1556.
  *           Previous pin 95058f0 (Takazudo/zudo-front-builder main, post-#227 merge:
  *           PR #227 fix/client-router-bootstrap-export — adds a public
  *           `./client-router` subpath export to @takazudo/zfb-runtime's
@@ -377,17 +330,7 @@
  *                               node:async_hooks — without this stub the
  *                               embedded V8 host fails at bundle-load time
  *                               with "no in-memory source for node:async_hooks")
- *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333) → bumped by epic
- *              zudolab/zudo-doc#1355 (Sig F finalisation + post-#131 hash-mismatch follow-up
- *              + Sig G island-resolver/esbuild parity + shared-bundle hydration glue
- *              + manifest-key alignment + wave 12 hydration prop serialisation
- *              + wave 13 Tailwind input-CSS path-probe gap) → bumped by epic
- *              zudolab/zudo-doc#1360 sub-issue #1361 (S1 BLOCKER: HTML asset URLs respect
- *              site `base`) → bumped by epic zudolab/zudo-doc#1386 sub-issue #1388
- *              (atomic three-point pin bump + e2e fixture roll-forward; closes #1384)
- *              → bumped by epic zudolab/zudo-doc#1407 (zfb-pin-bump-embed-v8: pick up
- *              PR #168 embedded deno_core + PR #170 cold-start-rebuild fix; hotfix
- *              bdbfbfb adds node:async_hooks stub surfaced during W3 build verification)
+ *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333)
  *              → bumped by epic zudolab/zudo-doc#1431 sub-issue #1435 (W3A
  *                manager-confirm gate: pin f68a9ba picks up migration-fixes
  *                PR #200 — walk-order fix #187, admonitions title_from_label
@@ -429,16 +372,6 @@
  *                throws at SSR render time. This pin enables reverting the
  *                W6A in-host workaround `ClientRouter({})` back to the
  *                cleaner `ClientRouter()` no-arg form.)
- *              → bumped by epic zudolab/zudo-doc#1556 sub-issue #1557 (T1
- *                vt-chrome-static pin bump: 6754312 picks up three post-
- *                deep-review fix rounds — round-1 (8258782) client-router
- *                typo + path-traversal gate + PathsCache collision + negative
- *                sourcemap cast + public/ walk logging + config validation;
- *                round-2 (66b3ce9) policy.rs root-anchor + CSS source-
- *                directive escaping + schema integer overflow tighten;
- *                round-3 (6754312) CSS-in-components policy carve-out +
- *                content-type cold-start fix + write-cache ordering +
- *                plugin-runner map leak guard + persist.rs tracing-warn.)
  *              → bumped to v0.1.0-next.19 (zudolab/zudo-doc#1824):
  *                The next.18 markdown-overrides epic hard-removed the
  *                built-in `imageEnlarge` markdown feature
@@ -454,14 +387,6 @@
  *                fix (Takazudo/zudo-front-builder#633) that next.18 lacked —
  *                without it the islands bundle fails with
  *                "Could not resolve react/jsx-runtime".
- *              → bumped to v0.1.0-next.21 (zudolab/zudo-doc#1832): no config
- *                or feature impact — next.20/next.21 are Rust-engine-internal
- *                robustness releases with no SDK API change. next.20 makes
- *                `zfb dev` serve 200 on cold boot; next.21 adds dev watch-ADD
- *                discovery (newly-added content files picked up on a live tick)
- *                plus bounded waits across config-loader / cloudflare adapter
- *                dispatch / plugin-runner / v8-host that fix build/dev hang
- *                edge cases. Pin moved purely to pick up engine robustness.
  *              → bumped to v0.1.0-next.22 (zudolab/zudo-doc#1833): no config
  *                or feature impact for this repo — next.22 is an additive
  *                bundler/markdown migration-parity release. It adds the Vite
