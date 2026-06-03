@@ -185,9 +185,13 @@ function main() {
     }
     console.error("");
   }
+  console.error("Fix — align the pin(s) in:");
+  console.error(`  - ${ROOT_PKG_PATH}`);
   console.error(
-    "Fix: align both sites to the intended version, then re-run this check.",
+    `      external pins live in "dependencies"; the internal release version is the "version" field`,
   );
+  console.error(`  - ${SCAFFOLD_TS_PATH}`);
+  console.error("then re-run this check.");
   return 1;
 }
 
