@@ -206,33 +206,6 @@ describe("VersionSwitcher", () => {
     expect(html).not.toContain("<style");
   });
 
-  it("disableInlineVisibilityStyle prop is a backwards-compat no-op", () => {
-    // The prop is retained on the public interface so callers that still
-    // pass it don't need to change. Whether passed or omitted, the output
-    // is identical (no inline <style> in either case).
-    const withProp = serialize(
-      <VersionSwitcher
-        versions={versions}
-        latestUrl="/docs/intro/"
-        versionsPageUrl="/docs/versions/"
-        versionUrls={versionUrls}
-        labels={labels}
-        disableInlineVisibilityStyle
-      />,
-    );
-    const withoutProp = serialize(
-      <VersionSwitcher
-        versions={versions}
-        latestUrl="/docs/intro/"
-        versionsPageUrl="/docs/versions/"
-        versionUrls={versionUrls}
-        labels={labels}
-      />,
-    );
-    expect(withProp).toBe(withoutProp);
-    expect(withProp).not.toContain("<style");
-  });
-
   it("VERSION_SWITCHER_VISIBILITY_STYLE is a self-contained CSS rule for the wrapper", () => {
     // The rule pins onto the `.hidden` baseline that Tailwind always
     // generates (because `pages/` references it directly), so it stays

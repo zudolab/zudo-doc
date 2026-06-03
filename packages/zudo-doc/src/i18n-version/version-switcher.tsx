@@ -62,11 +62,6 @@
 //   - zudolab/zudo-doc carries this rule in `src/styles/global.css`.
 //   - `create-zudo-doc` scaffolds it into the generated `src/styles/global.css`
 //     template so freshly-scaffolded projects get it without action.
-//
-//   The `disableInlineVisibilityStyle` prop is now a no-op (the component
-//   never emits a `<style>` regardless). It is retained on the public
-//   interface for backwards compatibility with consumers that may still
-//   pass it.
 
 import type { VNode } from "preact";
 import type { VersionEntry, VersionSwitcherLabels } from "./types.js";
@@ -115,15 +110,6 @@ export interface VersionSwitcherProps {
    * unique.
    */
   idSuffix?: string;
-
-  /**
-   * @deprecated No longer wired — the component never emits an inline
-   * `<style>`. Visibility CSS lives in the consumer's global stylesheet
-   * (see `VERSION_SWITCHER_VISIBILITY_STYLE` for the canonical rule).
-   * Retained on the public interface for backwards compatibility; passing
-   * any value is a no-op.
-   */
-  disableInlineVisibilityStyle?: boolean;
 }
 
 /** Concatenate Tailwind class strings, dropping falsy entries. */
