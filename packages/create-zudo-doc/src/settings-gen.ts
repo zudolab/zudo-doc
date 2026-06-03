@@ -153,10 +153,6 @@ export function generateSettingsFile(choices: UserChoices): string {
   } else {
     lines.push(`  designTokenPanel: false as boolean,`);
   }
-  // Deprecated alias — kept for one release so existing user projects keep
-  // working. Prefer `designTokenPanel` above; when this alias is unset, only
-  // the new flag is consulted.
-  lines.push(`  colorTweakPanel: undefined as boolean | undefined,`);
 
   if (choices.features.includes("sidebarResizer")) {
     lines.push(`  sidebarResizer: true as boolean,`);

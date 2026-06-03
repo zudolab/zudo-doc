@@ -23,7 +23,7 @@ When enabled, a palette icon appears in the header (to the left of the search ic
 
 <Note>
 
-`designTokenPanel` replaces the previous `colorTweakPanel` setting. The old key is still accepted as a deprecated alias for one release — set either one to `true` and the panel is enabled. New projects should use `designTokenPanel`.
+The setting key is `designTokenPanel` — set it to `true` to enable the panel.
 
 </Note>
 
@@ -156,7 +156,6 @@ The header trigger button dispatches the `toggle-design-token-panel` custom even
 | Setting | Type | Description |
 |---|---|---|
 | `designTokenPanel` | `boolean` | Enables the panel. Default `false`. |
-| `colorTweakPanel` | `boolean \| undefined` | **Deprecated** alias for `designTokenPanel`. When either is truthy the panel is enabled. Will be removed in a future release. |
 
 The tokens themselves — spacing scale, font scale, icon sizes, palette — are still configured in `src/styles/global.css` (`@theme`) and `src/config/color-schemes.ts`. The panel only tweaks the in-browser copy of those tokens; it never writes to source files.
 

@@ -52,7 +52,7 @@ Each tier only references the tier above it.
 
 ### Design Token Panel (zdtp)
 
-- Enabled via `designTokenPanel: true` in settings (`colorTweakPanel` is the deprecated alias)
+- Enabled via `designTokenPanel: true` in settings
 - Implemented by the external `@takazudo/zdtp` (zdtp) package; wired via `configurePanel(designTokenPanelConfig)` in `src/lib/design-token-panel-bootstrap.ts`; self-mounts as a side-effect — no Preact island registration needed
 - Interactive tabbed panel for live editing of spacing, font, size, and color tokens; includes JSON export/import workflow for AI-assisted token round-trips
 - The header trigger button dispatches `toggle-design-token-panel` on `window`; zdtp listens for this event natively
