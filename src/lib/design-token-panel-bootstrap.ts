@@ -2,8 +2,8 @@
  * Production bootstrap for @takazudo/zdtp (zdtp).
  *
  * Imported as a side-effect from _body-end-islands.tsx when
- * settings.designTokenPanel (or the deprecated alias colorTweakPanel) is
- * truthy. The dynamic import is gated there so this module is only bundled
+ * settings.designTokenPanel is truthy. The dynamic import is gated there so
+ * this module is only bundled
  * when the feature is enabled.
  *
  * Lifecycle adapter: wires zdtp's navigation hooks to zfb's own navigation

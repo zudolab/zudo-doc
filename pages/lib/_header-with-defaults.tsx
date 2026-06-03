@@ -334,7 +334,6 @@ export function HeaderWithDefaults(
     settings.headerRightItems ?? [],
     {
       designTokenPanel: Boolean(settings.designTokenPanel),
-      colorTweakPanel: Boolean(settings.colorTweakPanel),
       aiAssistant: Boolean(settings.aiAssistant),
       colorMode: Boolean(settings.colorMode),
       hasLocales: Object.keys(settings.locales).length > 0,

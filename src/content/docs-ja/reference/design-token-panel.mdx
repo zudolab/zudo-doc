@@ -23,7 +23,7 @@ export const settings = {
 
 <Note>
 
-`designTokenPanel` は従来の `colorTweakPanel` 設定を置き換えます。既存プロジェクトの互換性のため、`colorTweakPanel` は1リリースのあいだエイリアスとして受け付けます — どちらかが `true` であればパネルは有効になります。新規プロジェクトでは `designTokenPanel` を使ってください。
+設定キーは `designTokenPanel` です。`true` に設定するとパネルが有効になります。
 
 </Note>
 
@@ -156,7 +156,6 @@ Colorタブは、以前のColor Tweak Panelがタブの1つに収まった形で
 | 設定 | 型 | 説明 |
 |---|---|---|
 | `designTokenPanel` | `boolean` | パネルを有効にします。デフォルトは `false`。 |
-| `colorTweakPanel` | `boolean \| undefined` | `designTokenPanel` の**非推奨**エイリアス。いずれかが truthy のときパネルは有効になります。将来のリリースで削除される予定です。 |
 
 トークンそのもの（スペーシングスケール・フォントスケール・アイコンサイズ・パレット）は、引き続き `src/styles/global.css` の `@theme` と `src/config/color-schemes.ts` で設定します。パネルはブラウザ内のコピーを編集するだけで、ソースファイルに書き戻すことはありません。
 

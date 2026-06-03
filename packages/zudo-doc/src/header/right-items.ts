@@ -21,10 +21,7 @@ import type { HeaderRightItem } from "./types.js";
  * header-right-items.ts` pre-#1729). Each flag corresponds to a specific
  * `settings.*` switch the original implementation consulted directly:
  *
- *   - `designTokenPanel` — `settings.designTokenPanel || settings.colorTweakPanel`
- *   - `colorTweakPanel`  — retained for symmetry; treated as an OR with
- *     `designTokenPanel` so callers that still distinguish the deprecated
- *     alias get the same gate as the legacy helper.
+ *   - `designTokenPanel` — `settings.designTokenPanel`
  *   - `aiAssistant`      — `settings.aiAssistant`
  *   - `colorMode`        — `Boolean(settings.colorMode)`
  *   - `hasLocales`       — `Object.keys(settings.locales).length > 0`
@@ -33,7 +30,6 @@ import type { HeaderRightItem } from "./types.js";
  */
 export interface HeaderRightItemFlags {
   designTokenPanel: boolean;
-  colorTweakPanel: boolean;
   aiAssistant: boolean;
   colorMode: boolean;
   hasLocales: boolean;
@@ -55,7 +51,7 @@ export function filterHeaderRightItems(
   return items.filter((item) => {
     if (item.type === "trigger") {
       if (item.trigger === "design-token-panel") {
-        return flags.designTokenPanel || flags.colorTweakPanel;
+        return flags.designTokenPanel;
       }
       if (item.trigger === "ai-chat") {
         return flags.aiAssistant;
