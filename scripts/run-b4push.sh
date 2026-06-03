@@ -11,11 +11,12 @@ set -euo pipefail
 #   5. Tags audit (--ci)
 #   6. Design token lint
 #   7. Type checking (zfb check)
-#   8. Build (zfb build)
-#   9. Link check
-#  10. HTML validation (html-validate dist/**/*.html)
-#  11. Automated preview smoke (blocking)
-#  12. Manual interactive smoke (operator-driven)
+#   8. Root unit tests (test:unit)
+#   9. Build (zfb build)
+#  10. Link check
+#  11. HTML validation (html-validate dist/**/*.html)
+#  12. Automated preview smoke (blocking)
+#  13. Manual interactive smoke (operator-driven)
 #
 # CI parity (Playwright E2E + GitHub Actions) is intentionally parked
 # to E9b until the post-cutover migration window closes.
@@ -27,7 +28,7 @@ set -euo pipefail
 
 START_TIME=$(date +%s)
 FAILURES=()
-TOTAL_STEPS=12
+TOTAL_STEPS=13
 CURRENT_STEP=0
 
 step() {
@@ -108,7 +109,24 @@ else
   fail "Type checking"
 fi
 
-# ── Step 8: Build ─────────────────────────────────────
+# ── Step 8: Root unit tests ───────────────────────────
+# Root `test:unit` (vitest) guards src/**/__tests__ and scripts/__tests__,
+# which previously ran in no local gate and no CI workflow (#1856). Runs
+# before the expensive site build for fast logic-level feedback.
+#
+# Build @takazudo/zudo-doc first: several root suites import
+# @takazudo/zudo-doc/theme, whose compiled dist/ does not exist on a fresh
+# clone (`pnpm install` does not run the package's tsup build). CI's package
+# and root test jobs build it for the same reason. Building here also leaves
+# dist/ ready for the site build in the next step.
+step "Root unit tests (test:unit)"
+if (cd "$ROOT_DIR" && pnpm --filter @takazudo/zudo-doc build && pnpm test:unit); then
+  pass "Root unit tests passed"
+else
+  fail "Root unit tests"
+fi
+
+# ── Step 9: Build ─────────────────────────────────────
 step "Build (zfb build)"
 if (cd "$ROOT_DIR" && pnpm build); then
   pass "Build passed"
@@ -116,7 +134,7 @@ else
   fail "Build"
 fi
 
-# ── Step 9: Link check ────────────────────────────────
+# ── Step 10: Link check ───────────────────────────────
 #
 # Strict on broken links + absolute MDX-source warnings (real 404s
 # / sub-path bypass). Trailing-slash warnings stay warn-only — they
@@ -136,7 +154,7 @@ else
   fail "Link check"
 fi
 
-# ── Step 10: HTML validation ──────────────────────────
+# ── Step 11: HTML validation ──────────────────────────
 step "HTML validation (html-validate)"
 if [[ "${B4PUSH_SKIP_HTML_VALIDATE:-}" == "1" ]]; then
   skip "HTML validation (B4PUSH_SKIP_HTML_VALIDATE=1)"
@@ -148,7 +166,7 @@ else
   fi
 fi
 
-# ── Step 11: Automated preview smoke (blocking) ──────
+# ── Step 12: Automated preview smoke (blocking) ──────
 step "Preview smoke (automated)"
 if [[ "${B4PUSH_SKIP_PREVIEW_SMOKE:-}" == "1" ]]; then
   skip "Preview smoke (B4PUSH_SKIP_PREVIEW_SMOKE=1)"
@@ -160,7 +178,7 @@ else
   fi
 fi
 
-# ── Step 12: Manual interactive smoke ────────────────
+# ── Step 13: Manual interactive smoke ────────────────
 step "Manual interactive smoke"
 if [[ "${B4PUSH_SKIP_MANUAL_SMOKE:-}" == "1" ]]; then
   skip "Manual smoke (B4PUSH_SKIP_MANUAL_SMOKE=1)"

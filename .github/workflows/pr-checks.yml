@@ -148,6 +148,53 @@ jobs:
         run: pnpm test:packages
 
   # ---------------------------------------------------------------------------
+  # Job 1.6: Root unit suite
+  # ---------------------------------------------------------------------------
+  # Guards the gap from #1856: the root `test:unit` suite (vitest run, backed
+  # by the root vitest.config.ts — src/**/__tests__ and scripts/__tests__) ran
+  # in no CI workflow and was not in `pnpm b4push`, so a broken root-src/scripts
+  # test could land on a PR (and main) without turning anything red. This is a
+  # distinct scope from package-tests (#1851), which only gates packages/*.
+  #
+  # Kept as a separate named check (not folded into Package Unit Tests) so the
+  # `Package Unit Tests` context name stays stable for branch-protection /
+  # ruleset required-checks (#1857).
+  #
+  # Build step precedes the test run for clean-runner parity: the suite imports
+  # @takazudo/zudo-doc/theme, whose compiled dist/ (built by tsup) does not
+  # exist on a fresh runner — same reason package-tests builds it first.
+  root-tests:
+    name: Root Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Build @takazudo/zudo-doc before testing — clean-runner parity; the root
+      # suite imports built dist/ (@takazudo/zudo-doc/theme) which does not
+      # exist on a fresh runner.
+      - name: Build @takazudo/zudo-doc
+        run: pnpm --filter @takazudo/zudo-doc build
+
+      - name: Run root unit tests
+        run: pnpm test:unit
+
+  # ---------------------------------------------------------------------------
   # Job 2: Build the zfb docs site (full clone — needed for SSG meta dates)
   # ---------------------------------------------------------------------------
   # fetch-depth: 0 is required so the doc-history preBuild step can call
