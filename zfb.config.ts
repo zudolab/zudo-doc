@@ -16,81 +16,6 @@
  *           `crates/zfb-islands/src/esbuild.rs`, so both pipelines
  *           fold the value at bundle time. Ancestor check confirmed
  *           195be73 is on origin/main, no carries lost.
- *           Bumped 2026-05-20 in topic/bump-zfb-c93a7ec.
- *           Previous pin 195be73 (main — `feat(content): add include /
- *           exclude / idStripSuffix to CollectionDef` (#286) atop a
- *           stack of bundler / plugin / adapter fixes:
- *             - 195be73 Merge #286 collection-filters
- *             - a7491a2 feat(content): add include / exclude /
- *               idStripSuffix to CollectionDef
- *             - 67358cd Merge #285 sitemap prerender field
- *             - f053186 feat(plugins): expose prerender on postBuild
- *               route manifest
- *             - fd708ea Merge #284 cf-adapter prerender filter
- *             - 24ef06d test(zfb): new BundlerInput fields in
- *               framework_packages_no_pnpm fixture
- *             - 97864ee feat(bundler): trim runtime bundle to SSR-only
- *               routes for deploy adapters (#283)
- *             - 0774318 Merge #282 zzmod-wave2 papercuts
- *             - d49bd39 fix(jsx-types): widen VNode.type to accept
- *               class components).
- *           Previous pin 0f7aa62 (main — `build: add x-wt-teams
- *           worktree push-guard scaffold`, picked up at zudo-doc2
- *           introduction).
- *           Previous pin aa8e9ac (main — `build: commit Cargo.lock so
- *           transitive dep resolution is reproducible`. Removes
- *           Cargo.lock from .gitignore and ships a checked-in
- *           workspace lockfile so the consumer's `Build zfb Binary`
- *           job stops drifting against the cached `target/` on each CI
- *           run. Closes the follow-up called out in 9dcae3f and
- *           root-causes the rusty_v8 link-failure surfaced when the
- *           partial-rebuild path tries to re-link v8 against a
- *           librusty_v8.a path that no longer exists in OUT_DIR after
- *           rust-cache restore.
- *           Previous pin 6be1f38 (base/link-cleanup-zfb — link-pipeline parity:
- *           same content as c371e4c (parent commit) PLUS the TS-side
- *           type defs for `ZfbConfig.resolveMarkdownLinks` and
- *           `ZfbConfig.trailingSlash`. Fixes a `pnpm check` TS2353
- *           error on this consumer because the SDK type lookup walks
- *           `file:../zfb/packages/zfb` (which CI checks out at the
- *           pinned SHA) and the new fields needed type defs to match
- *           the new Rust Config fields.
- *   c371e4c (base/link-cleanup-zfb — link-pipeline parity:
- *           nested-route source map (preserves
- *           `components/code-blocks.mdx` → `/docs/components/code-blocks/`,
- *           sub #234 / zudolab/zudo-doc#1577); multi-locale
- *           `resolveMarkdownLinks.dirs` field so EN+JA mirrors map to
- *           `/docs/` vs `/ja/docs/`; bundler-side wiring of
- *           `Config::resolve_markdown_links` →
- *           `BundlerInput::resolve_markdown_links` (was missing — the
- *           snapshot path consumed it but the bundler MDX pipeline
- *           never appended ResolveLinksPlugin); basePath rewriter
- *           `compute_prefixed_with_trailing_slash` appends `/` to
- *           extensionless absolute hrefs when `trailingSlash: true`,
- *           closing zudolab/zudo-doc#1579. Bumped 2026-05-10 in epic
- *           zudolab/zudo-doc#1581 (link-cleanup) sub-issues #1582 (T1)
- *           and #1583 (T3).
- *           Previous pin 95058f0 (Takazudo/zudo-front-builder main, post-#227 merge:
- *           PR #227 fix/client-router-bootstrap-export — adds a public
- *           `./client-router` subpath export to @takazudo/zfb-runtime's
- *           package.json. Purely additive (no source changes); maps to
- *           the existing barrel at src/client-router/index.ts.
- *           Surfaced by W7A (zudolab/zudo-doc#1524) end-to-end Playwright
- *           verification — all 4 SPA-router GATEs failed because
- *           `<ClientRouter />`'s top-of-module side effect
- *           `if (typeof document !== "undefined") { init(); }` only fired
- *           server-side (where the guard is always false). The host's
- *           existing `import { ClientRouter } from "@takazudo/zfb-runtime"`
- *           in doc-layout.tsx happens during SSR, so the click/form
- *           intercepts were never registered in the browser; every
- *           navigation was a full page load with no View Transition.
- *           This pin bump exposes the client-router barrel as a subpath
- *           so a host-side "use client" island
- *           (src/components/client-router-bootstrap.tsx) can
- *           side-effect-import it from the browser, triggering init()
- *           on bundle parse without dragging in any server-only modules.
- *           Bumped 2026-05-08 in the W7A bootstrap-fix follow-up under
- *           host epic zudolab/zudo-doc#1510.
  *           Previous pin 5e679d3 (post-#226 merge) — added `= {}` default
  *           to the destructured props parameter on
  *           packages/zfb-runtime/src/client-router.ts so calling
@@ -118,131 +43,13 @@
  *           integration switches from Strategy A (CSS @view-transition
  *           at-rule) to Strategy B (<ClientRouter /> mount) in W6A/W6B
  *           (zudolab/zudo-doc#1510).
- *           Previous pin c34b821 (W5A first attempt, post-#224 merge) —
- *           broke embedded V8 SSG paths() at bundle load time because the
- *           V8 host did not stub the browser Event global; reverted-by-
- *           bumping-forward via #225 rather than literal git revert.
- *           Before that 1e0e6a7 (post-#221/#222/#223 merge: Wave 4 W4A
- *           bump from epic zudolab/zudo-doc#1492 — #222 made <ViewTransitions />
- *           a typed no-op with CSS at-rule as the VT opt-in; #223 fixed
- *           <span><pre> content-model; #221 wired embedded esbuild.))
- *   includes fixes:
- *     - zudolab/zfb#99  (ViewTransitions runtime + meta injection)
- *     - zudolab/zfb#100 (404 convention: emit dist/404.html at root)
- *     - zudolab/zfb#101 (plugin lifecycle hooks: preBuild, postBuild, devMiddleware)
- *     - zudolab/zfb#102 (CJK-aware emphasis/strong tokenisation in MDX pipeline)
- *     - zudolab/zfb#103 (ResolveLinksPlugin: probe extensionless candidates)
- *     - zudolab/zfb#104 (rehype output parity: heading-links, code-title, mermaid, image-enlarge, strip-md-ext)
- *     - zudolab/zfb#113 (tailwindcss v4 binary fetch script + ZFB_TAILWIND_BIN env var)
- *     - zudolab/zfb#118 (mdast-phase MDX pipeline wiring)
- *     - zudolab/zfb#121 (hast-phase MDX→JSX wiring)
- *     - zudolab/zfb#122 (islands prod-bundle workspace-probe fix)
- *     - zudolab/zfb#123 (doctest fence stabilization)
- *     - zudolab/zfb#124 (watcher test stabilization)
- *     - zudolab/zfb#126 / #131 (bundler threads Pipeline::with_defaults() through MDX pre-compile;
- *                               unblocks Sig F in zudolab/zudo-doc#1355)
- *     - zudolab/zfb#131 (opt-in `stripMdExt` config option through bundler + dev loader)
- *     - zudolab/zfb#132 / #133 (build_snapshot drives walk_collection with the default Pipeline so
- *                               snapshot module_specifier hashes match bridge map keys; closes the
- *                               post-#131 fallback-render regression)
- *     - Takazudo/zudo-front-builder#130 / PR #134 (Gap A: FsResolver::probe_package_entry consults
- *                               package.json `exports` for subpath bare imports so workspace island
- *                               modules under @takazudo/zudo-doc/{toc,sidebar,theme,...} resolve
- *                               to their src/.../index.ts entries; Gap B: EXPECTED_ESBUILD_VERSION
- *                               bumped 0.24.0 → 0.25.12 to match the host's installed esbuild —
- *                               unblocks Sig G island hydration in zudolab/zudo-doc#1355)
- *     - Takazudo/zudo-front-builder PR #137 (post-#134 follow-up: defer node:* imports in
- *                               zfb root barrel content.ts to inside function bodies so the islands
- *                               per-island bundler can tree-shake content collection helpers out of
- *                               browser-targeted bundles; defensive --platform=browser +
- *                               --external:node:* flags on the islands esbuild invocation)
- *     - Takazudo/zudo-front-builder#138 / #139 / PR #140 (#138: produce_bundle_js renders one
- *                               synthesized entry that imports every island so esbuild only ever
- *                               sees a single input + --outfile, fixing "Must use outdir when
- *                               there are multiple input files"; #139: FsResolver walks up to the
- *                               nearest tsconfig.json and resolves compilerOptions.paths aliases
- *                               (e.g. "@/*": ["src/*"]) with extends-chain support, so the
- *                               islands scanner can follow @/-aliased imports from host pages
- *                               into "use client" components — unblocks Sig G island hydration on
- *                               this consumer)
- *     - Takazudo/zudo-front-builder#141 / PR #142 (post-#140 follow-up: islands scanner walk now
- *                               whitelists .ts/.tsx/.js/.jsx/.mjs/.cjs and skips .json/CSS/asset
- *                               files before SWC parse, fixing the ExpectedSemiForExprStmt crash
- *                               when a tsconfig path alias resolves to a non-trivial JSON file —
- *                               e.g. the host's #doc-history-meta alias mapped to populated
- *                               .zfb/doc-history-meta.json in the smoke E2E fixture)
- *     - Takazudo/zudo-front-builder PR #143 (TS Bundler / NodeNext moduleResolution shape: when a
- *                               source writes import "./foo.js" against on-disk foo.tsx (the
- *                               canonical convention used by the @takazudo/zudo-doc workspace
- *                               package), the resolver now probes the .ts/.tsx/.mts/.cts sibling
- *                               first and falls back to .js only when no TS sibling exists. Pre-
- *                               #143 the islands scanner walked one chain into v2 and immediately
- *                               dead-ended at every ./foo.js, so only the directly-imported
- *                               Sidebar reached the bundle. With #143 the smoke fixture build
- *                               registers 13 islands and emits a complete client runtime — finally
- *                               unblocking Sig G island hydration on this consumer)
- *     - Takazudo/zudo-front-builder#144 / PR #145 (synthesised shared-bundle entry survives
- *                               esbuild tree-shaking when an island has no top-level side effect:
- *                               render_shared_bundle_entry_source now namespace-imports each
- *                               island and references the namespaces from a top-level
- *                               globalThis.__zfb_islands ??= [...] assignment. Pre-#145, host-side
- *                               islands authored as bare `export default function ComponentName`
- *                               with no top-level effect were tree-shaken out of the bundle, so
- *                               every data-zfb-island="ComponentName" SSR marker for a host-shape
- *                               island had no client runtime to mount. With #145 every island's
- *                               exports survive — closes the final Sig G hydration gap on this
- *                               consumer)
- *     - Takazudo/zudo-front-builder#146 / PR #147 (mountIslands invoked on shared-bundle
- *                               production path: post-#144 the bundle byte-content carried every
- *                               island's compiled source but the synthesised entry never called
- *                               mountIslands — so SSR'd data-zfb-island markers stayed un-hydrated
- *                               in production. IslandManifest widened from Record<string, string>
- *                               to Record<string, string | IslandModule>, render_shared_bundle_entry_source
- *                               now imports mountIslands and registers each island as an inline
- *                               IslandModule entry, finally wiring SSR markers to runtime
- *                               constructors and closing the Sig G hydration cascade on this
- *                               consumer)
- *     - Takazudo/zudo-front-builder PR #148 (post-#147 follow-up: shared-bundle synthesised
- *                               entry now derives manifest keys from each component's
- *                               displayName ?? name at module-init time so multiple host-shape
- *                               `export default function ComponentName()` islands no longer
- *                               collide on a static "default" key. Synthesised entry tempfile
- *                               relocated from $TMPDIR into EsbuildSubprocessConfig::working_dir
- *                               so esbuild's upward node_modules walk resolves "preact" and
- *                               "@takazudo/zfb/runtime" — fixes the smoke fixture build crash
- *                               introduced by #147 on this consumer)
- *     - Takazudo/zudo-front-builder#149 / PR #150 (shared-bundle manifest uses static SSR-marker
- *                               names from the scanner, not runtime introspection: scanner now
- *                               derives a marker_name per island (default-export identifier OR
- *                               literal first arg of renderSsrSkipPlaceholder("X", ...)), and
- *                               the bundler bakes that name as a static literal third argument
- *                               to __zfb_register. Drops __zfb_keyFor runtime introspection
- *                               entirely so esbuild minification and ssr-skip "Island" suffix
- *                               wrappers can no longer break manifest-key alignment with SSR
- *                               markers — closes the final Sig G hydration alignment gap on
- *                               this consumer)
+ *   includes fixes (representative load-bearing entries retained; the full
+ *   superseded migration-era PR list was trimmed in zudolab/zudo-doc#1867):
  *     - Takazudo/zudo-front-builder#151 / PR #152 (zfb-islands esbuild step now passes
  *                               --jsx=automatic --jsx-import-source=preact; fixes
  *                               ReferenceError: React is not defined at island mount when
  *                               host components use preact/compat for hooks; unblocks Sig G
  *                               hydration in zudolab/zudo-doc#1355)
- *     - Takazudo/zudo-front-builder PR #153 (CF adapter wrapper now probes env.ASSETS first
- *                               on GET/HEAD, falling through to the inner zfb worker only on
- *                               404; this restores SSG head injection — <link rel="stylesheet">
- *                               and <script type="module" src="/assets/islands-…"> — for
- *                               no-trailing-slash URLs like /docs/getting-started under
- *                               `zfb preview` and Cloudflare Pages, fixing Wave 10 Sig G e2e
- *                               failures in zudolab/zudo-doc#1355)
- *     - Takazudo/zudo-front-builder base/island-data-props-serialization (Island JSX wrapper now
- *                               JSON.stringifies the wrapped child's own props onto a `data-props`
- *                               attribute on the SSR marker div — the runtime hydration path has
- *                               always read that attribute via getAttribute("data-props") + JSON.parse
- *                               but no SSR site ever wrote it, so every caller-supplied prop bag
- *                               silently vanished across the SSR → hydrate boundary and every
- *                               island re-rendered with {} on the client; closes the prop-
- *                               serialisation gap that wave 12 of zudolab/zudo-doc#1355 traced as
- *                               the root cause of the remaining 20 failing e2e specs — i18n
- *                               sidebar fallback, mobile-toc, mobile-sidebar, smoke-pages)
  *     - Takazudo/zudo-front-builder wave13-css-path-probe (build_default_css_payload now probes
  *                               BOTH `<root>/styles/global.css` AND `<root>/src/styles/global.css`
  *                               for the Tailwind v4 input CSS, first match wins. Pre-fix the
@@ -259,84 +66,7 @@
  *                               doc-layout.tsx. With this pin the host's authored @theme block
  *                               flows through Tailwind as designed and the inline workaround
  *                               can be dropped — closes wave 13 topic 5 of zudolab/zudo-doc#1355)
- *     - Takazudo/zudo-front-builder PR #154 (config: support `base` for HTML asset URLs.
- *                               ZfbConfig grew a `base?: string` field (TS + Rust serde), and
- *                               commands::build now mounts each emitter slot's `stable_url`
- *                               under the configured prefix BEFORE handing it to the renderer
- *                               and to ProductionAssetPipeline::boundary_replace. Result: with
- *                               base = "/pj/zudo-doc/" the dist HTML emits
- *                               `<link rel="stylesheet" href="/pj/zudo-doc/assets/styles-<hash>.css">`
- *                               instead of the unprefixed `/assets/styles-<hash>.css` that
- *                               404'd under the sub-path mount on PR #669 preview. Closes the
- *                               BLOCKER sub-issue zudolab/zudo-doc#1361 of feature-audit
- *                               epic zudolab/zudo-doc#1360)
- *     - Takazudo/zudo-front-builder#155 (renderer-emission unit test for islands slot —
- *                               asserts the built dist HTML emits the configured `base`
- *                               prefix on `<script type="module">` tags for the islands
- *                               slot; guards against regression of the #154 wiring on the
- *                               Rust-side renderer. Pure test addition, no runtime change)
- *     - Takazudo/zudo-front-builder#156 (wave13 rebase: brings two commits onto main that
- *                               had previously lived only on the wave13-css-path-probe branch
- *                               and were never PR'd. (a) feat(island): SSR `<Island>` wrapper
- *                               serialises the wrapped child's props onto a `data-props`
- *                               attribute so the runtime hydration path can JSON.parse them
- *                               back; without this, every hydrated island sees `{}` and
- *                               findActiveSlug throws "e is not iterable" on every doc page.
- *                               (b) fix(build): build_default_css_payload probes
- *                               `<root>/src/styles/global.css` as a Tailwind v4 input fallback;
- *                               without this, the host's `@theme` block under `src/` never
- *                               reaches the Tailwind run and design tokens default. The
- *                               previous pin c2cff95 was HEAD of wave13-css-path-probe — when
- *                               PR #1388 of zudolab/zudo-doc#1386 bumped to PR-#155 main
- *                               (0f6f8c4), 73 of 145 e2e tests went red because both wave13
- *                               carries were silently lost. PR #156 brings them onto main
- *                               cleanly (textual rebase) so the bump path stays additive)
- *     - Takazudo/zudo-front-builder PR #157 (fix examples/basic-blog build
- *                               end-to-end — 6 bugs fixed; no consumer API
- *                               change)
- *     - Takazudo/zudo-front-builder PR #168 / sub-161 (ADR-007: author
- *                               embedded deno_core ADR, superseding ADR-005
- *                               miniflare subprocess)
- *     - Takazudo/zudo-front-builder PR #168 / sub-162 (implement
- *                               EmbeddedV8RenderHost: deno_core + node:*
- *                               runtime stubs + deno_fetch/web/url/console
- *                               Web API extensions)
- *     - Takazudo/zudo-front-builder PR #168 / sub-163 (CI: wire
- *                               Swatinem/rust-cache@v2; document 15-30 min
- *                               V8 first-build cost in CONTRIBUTING.md)
- *     - Takazudo/zudo-front-builder PR #168 / sub-164 (renderer: add
- *                               Backend::EmbeddedV8 + Backend::Stub,
- *                               WorkerDispatch enum; swap dispatch path)
- *     - Takazudo/zudo-front-builder PR #168 / sub-165 (test: ContentSnapshot
- *                               e2e verification tests)
- *     - Takazudo/zudo-front-builder PR #168 / sub-166 (cli: flip default
- *                               Backend from SpawnMiniflare → EmbeddedV8
- *                               in build/dev pipelines)
- *     - Takazudo/zudo-front-builder PR #168 / sub-167 (cleanup: delete
- *                               miniflare-bootstrap.mjs, strip
- *                               SpawnMiniflare backend, scrub all miniflare
- *                               references from code/docs/config)
- *     - Takazudo/zudo-front-builder PR #170 (fix(dev): cold-start rebuild
- *                               empty dirty set (DependencyGraph seeded with
- *                               all page IDs on startup; empty dirty escalates
- *                               to PageSelection::All) + PageCache disk
- *                               fallback (serve_page() reads from dist/ on
- *                               cache miss instead of returning 500))
- *     - Takazudo/zudo-front-builder bdbfbfb (fix(embedded-v8): add
- *                               node:async_hooks stub to v1 node:* list;
- *                               consumer bundles that import
- *                               @takazudo/zfb-adapter-cloudflare do a
- *                               top-level import of AsyncLocalStorage from
- *                               node:async_hooks — without this stub the
- *                               embedded V8 host fails at bundle-load time
- *                               with "no in-memory source for node:async_hooks")
  *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333)
- *              → bumped by epic zudolab/zudo-doc#1431 sub-issue #1435 (W3A
- *                manager-confirm gate: pin f68a9ba picks up migration-fixes
- *                PR #200 — walk-order fix #187, admonitions title_from_label
- *                #188 partial, copy-public-dir native, GFM table emission,
- *                CSS split-import fix #159, embedded binaries d6a1c46, runtime
- *                embed 16770a8)
  *              → re-bumped at W4 retry: pin 9239267 picks up upstream PR #202
  *                (Takazudo/zudo-front-builder#202) — snapshot/bundler pipeline
  *                alignment fix discovered when W4A's bilingual fallback audit
@@ -349,29 +79,6 @@
  *                content_hash to disagree with the bundler's bridge-map key
  *                so globalThis.__zfb.content.get(specifier) silently missed.
  *                After re-bump: 0 fallback markers on both EN and JA corpora.)
- *              → bumped by epic zudolab/zudo-doc#1492 sub-issue #1501 (W4A
- *                visible-bug-triage: pin 1e0e6a7 picks up PRs #221/#222/#223 —
- *                <ViewTransitions /> becomes typed no-op; cross-document VT
- *                opt-in moves to CSS @view-transition at-rule on the host side;
- *                HastNode::Raw block-level wrapping fix; embedded esbuild wiring)
- *              → bumped by epic zudolab/zudo-doc#1510 sub-issue #1521 (W5A
- *                VT Strategy B port: pin c34b821 picks up PR #224 —
- *                <ClientRouter /> ported into @takazudo/zfb-runtime as the
- *                supported opt-in for cross-document soft-swap navigation.
- *                Host integration switches Strategy A → B in W6A/W6B.)
- *              → re-bumped at W5A hotfix follow-up: pin 7e11ebd picks up
- *                upstream PR #225 — embedded V8 globalThis stubs for
- *                Event/CustomEvent/EventTarget; resolves the bundle-load
- *                regression where W4A's events.ts top-level `extends Event`
- *                hit `ReferenceError` in the SSG paths() pass.
- *              → bumped by epic zudolab/zudo-doc#1510 sub-issue #1522 W5A.5
- *                mini follow-up (W6A host-side switch landing): pin 5e679d3
- *                picks up upstream PR #226 — adds `= {}` default to the
- *                destructured props parameter on ClientRouter() so the
- *                no-arg call from the host's doc-layout mount no longer
- *                throws at SSR render time. This pin enables reverting the
- *                W6A in-host workaround `ClientRouter({})` back to the
- *                cleaner `ClientRouter()` no-arg form.)
  *              → bumped to v0.1.0-next.19 (zudolab/zudo-doc#1824):
  *                The next.18 markdown-overrides epic hard-removed the
  *                built-in `imageEnlarge` markdown feature
@@ -387,15 +94,6 @@
  *                fix (Takazudo/zudo-front-builder#633) that next.18 lacked —
  *                without it the islands bundle fails with
  *                "Could not resolve react/jsx-runtime".
- *              → bumped to v0.1.0-next.22 (zudolab/zudo-doc#1833): no config
- *                or feature impact for this repo — next.22 is an additive
- *                bundler/markdown migration-parity release. It adds the Vite
- *                `import.meta.glob` eager transform, a `bundle.exclude` glob
- *                knob, an opt-in `hardBreaks` markdown option (default false),
- *                and fixes config-eval V8 web polyfills (URL / URLSearchParams /
- *                TextEncoder) plus tsconfig path-alias composition in a single
- *                build. None of these change the config surface this repo uses;
- *                pin moved to stay current and pick up the robustness fixes.
  *              → bumped to v0.1.0-next.23 (zudolab/zudo-doc#1834): this bump
  *                ALSO adopts `bundle.exclude` (added engine-side in next.22)
  *                to drop the md-plugins `__fixtures__` from the bundler walk,
