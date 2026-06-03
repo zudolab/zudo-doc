@@ -2,7 +2,7 @@
 
 Framework primitives that sit on top of zfb's engine — the framework layer that zfb deliberately doesn't ship (per ADR-003).
 
-This package is part of the **Astro→zfb migration** (super-epic [#473](https://github.com/zudolab/zudo-doc/issues/473)). It implements the [E5 epic](https://github.com/zudolab/zudo-doc/issues/474) and provides the missing-by-design framework concerns:
+This package provides the missing-by-design framework concerns:
 
 - **Sidebar tree builder** (`./sidebar-tree`) — turns collection entries + `_category_.json` into a sidebar `SidebarNode[]`.
 - **Theme controls** (`./theme`) — color scheme provider + design-token tweak panel (Preact island that wraps an iframe).
@@ -10,7 +10,7 @@ This package is part of the **Astro→zfb migration** (super-epic [#473](https:/
 - **Breadcrumb** (`./breadcrumb`) — JSX breadcrumb fed by the sidebar tree.
 - **DocLayout** (`./doclayout`) — composable layout shell with explicit `<Header>`, `<Sidebar>`, `<Main>`, `<Toc>`, `<Footer>` props; ships a `<DocLayoutWithDefaults>` wrapper that holds the 16 `create-zudo-doc` injection anchors.
 - **View Transitions** (`./transitions`) — native View Transitions API shim (Chrome/Edge/Safari 18+); persistent regions via `view-transition-name`. No-op fallback in Firefox.
-- **Head injection** (`./head`) — canonical, og:\*, twitter:\*, robots, preload hints, RSS link, sitemap link, theme-color — byte-equal to today's Astro output.
+- **Head injection** (`./head`) — canonical, og:\*, twitter:\*, robots, preload hints, RSS link, sitemap link, theme-color — byte-equal to today's legacy doc-layout output.
 - **SSR-skip wrappers** (`./ssr-skip`) — `<AiChatModalIsland>`, `<ImageEnlargeIsland>`, `<DesignTokenTweakPanelIsland>`, `<MockInitIsland>` — wrap zfb's `<Island ssrFallback>` with the right fallback markup so doc pages don't have to re-implement the SSR-skip pattern.
 
 ## Pre-publish dev workflow

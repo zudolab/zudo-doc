@@ -17,12 +17,6 @@
 # strict gate then surfaces real regressions in the same category.
 #
 # ----- Broken Links in Built HTML (0 entries) ---------------------
-#
-# Previously held entries for JA-side cross-references to EN-only
-# resources. The remaining 2 entries (`ai-assistant-api/` and
-# `ai-assistant/` references from the JA `ai-chat-worker.mdx` page)
-# were resolved by T6 (#1614): JA mirror pages were translated, so
-# the resolver now finds the targets and the entries are obsolete.
 
 # ----- Absolute Links Bypassing Base Path (0 entries) ------------
 #
