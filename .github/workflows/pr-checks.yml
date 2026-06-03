@@ -105,6 +105,49 @@ jobs:
         run: pnpm check
 
   # ---------------------------------------------------------------------------
+  # Job 1.5: Package unit suites
+  # ---------------------------------------------------------------------------
+  # Guards the gap from #1851: package-scoped vitest suites previously ran
+  # only inside publish workflows, so a broken suite was invisible until a
+  # publish attempt. This job runs all 5 package suites on every PR so a
+  # broken suite turns the PR red instead of hiding until release day.
+  #
+  # Build step precedes the test run for clean-runner parity: @takazudo/zudo-doc
+  # ships compiled dist/ (built by tsup). The publish workflow runs
+  # `pnpm --filter @takazudo/zudo-doc build` before its test step for the same
+  # reason — a fresh CI runner has no pre-existing dist/ and the suite may
+  # import it.
+  package-tests:
+    name: Package Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Build @takazudo/zudo-doc before testing — clean-runner parity; the
+      # suite may import built dist/ which does not exist on a fresh runner.
+      - name: Build @takazudo/zudo-doc
+        run: pnpm --filter @takazudo/zudo-doc build
+
+      - name: Run package unit tests
+        run: pnpm test:packages
+
+  # ---------------------------------------------------------------------------
   # Job 2: Build the zfb docs site (full clone — needed for SSG meta dates)
   # ---------------------------------------------------------------------------
   # fetch-depth: 0 is required so the doc-history preBuild step can call
