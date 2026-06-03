@@ -66,6 +66,14 @@
  *                               doc-layout.tsx. With this pin the host's authored @theme block
  *                               flows through Tailwind as designed and the inline workaround
  *                               can be dropped — closes wave 13 topic 5 of zudolab/zudo-doc#1355)
+ *     - Takazudo/zudo-front-builder bdbfbfb (fix(embedded-v8): add
+ *                               node:async_hooks stub to v1 node:* list;
+ *                               consumer bundles that import
+ *                               @takazudo/zfb-adapter-cloudflare do a
+ *                               top-level import of AsyncLocalStorage from
+ *                               node:async_hooks — without this stub the
+ *                               embedded V8 host fails at bundle-load time
+ *                               with "no in-memory source for node:async_hooks")
  *   pinned by: epic zudolab/zudo-doc#1353 (super-epic #1333)
  *              → re-bumped at W4 retry: pin 9239267 picks up upstream PR #202
  *                (Takazudo/zudo-front-builder#202) — snapshot/bundler pipeline
