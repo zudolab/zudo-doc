@@ -36,7 +36,16 @@ export default function ImageEnlarge() {
 
   // Eligibility detection: toggle .zd-enlarge-btn[hidden] per image
   useEffect(() => {
-    const resizeObservers = new Map<HTMLImageElement, ResizeObserver>();
+    // Single shared ResizeObserver watching all observed images.
+    // One observer for N images is more efficient than N observers.
+    // The callback iterates entries so each image's eligibility is
+    // re-evaluated independently when its size changes.
+    const observedImages = new Set<HTMLImageElement>();
+    const sharedResizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        evaluateEligibility(entry.target as HTMLImageElement);
+      }
+    });
     let mutationObserver: MutationObserver | null = null;
     let resizeTimer = 0;
 
@@ -54,10 +63,9 @@ export default function ImageEnlarge() {
     }
 
     function observeImage(img: HTMLImageElement) {
-      if (resizeObservers.has(img)) return;
-      const ro = new ResizeObserver(() => evaluateEligibility(img));
-      ro.observe(img);
-      resizeObservers.set(img, ro);
+      if (observedImages.has(img)) return;
+      observedImages.add(img);
+      sharedResizeObserver.observe(img);
       if (img.complete) {
         evaluateEligibility(img);
       } else {
@@ -93,13 +101,13 @@ export default function ImageEnlarge() {
     function handleWindowResize() {
       clearTimeout(resizeTimer);
       resizeTimer = window.setTimeout(() => {
-        resizeObservers.forEach((_, img) => evaluateEligibility(img));
+        observedImages.forEach((img) => evaluateEligibility(img));
       }, 150);
     }
 
     function handleAfterSwap() {
-      resizeObservers.forEach((ro) => ro.disconnect());
-      resizeObservers.clear();
+      sharedResizeObserver.disconnect();
+      observedImages.clear();
       mutationObserver?.disconnect();
       mutationObserver = null;
       startObserving();
@@ -110,8 +118,8 @@ export default function ImageEnlarge() {
     document.addEventListener("DOMContentLoaded", handleAfterSwap);
 
     return () => {
-      resizeObservers.forEach((ro) => ro.disconnect());
-      resizeObservers.clear();
+      sharedResizeObserver.disconnect();
+      observedImages.clear();
       mutationObserver?.disconnect();
       window.removeEventListener("resize", handleWindowResize);
       document.removeEventListener("DOMContentLoaded", handleAfterSwap);
