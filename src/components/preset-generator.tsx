@@ -116,6 +116,43 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
+function HeaderRightItemRow({
+  spec,
+  checked,
+  onToggle,
+  moveControls,
+}: {
+  spec: HeaderRightItemSpec;
+  checked: boolean;
+  onToggle: () => void;
+  moveControls?: React.ReactNode;
+}) {
+  const label = HEADER_RIGHT_LABELS[spec.name] ?? spec.name;
+  const isAiChat = spec.name === "ai-chat";
+  return (
+    <li
+      className={`flex items-center gap-x-hsp-xs text-small ${checked ? "text-fg" : "text-muted"}`}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onToggle}
+        aria-label={`Include ${label}`}
+        className="accent-accent"
+      />
+      <span className="flex-1">
+        {label}
+        {isAiChat && (
+          <span className="ml-hsp-xs text-caption text-muted">
+            (requires aiAssistant — disabled in scaffold)
+          </span>
+        )}
+      </span>
+      {moveControls}
+    </li>
+  );
+}
+
 const inputClass =
   "w-full border border-muted bg-bg text-fg px-hsp-sm py-vsp-2xs text-small focus:border-accent focus:outline-none";
 
@@ -334,6 +371,19 @@ export default function PresetGenerator() {
     }));
   }, []);
 
+  const { orderedItems, missingItems } = useMemo(() => {
+    const allSpecs: HeaderRightItemSpec[] = [...DEFAULT_HEADER_RIGHT_ITEMS];
+    const presentKeys = new Set(
+      state.headerRightItems.map(headerRightItemKey),
+    );
+    const missingItems = allSpecs.filter(
+      (spec) => !presentKeys.has(headerRightItemKey(spec)),
+    );
+    const orderedItems: Array<{ spec: HeaderRightItemSpec; index: number }> =
+      state.headerRightItems.map((spec, index) => ({ spec, index }));
+    return { orderedItems, missingItems };
+  }, [state.headerRightItems]);
+
   return (
     <div className="zd-preset-gen flex flex-col gap-y-vsp-xl">
       {/* Project Name */}
@@ -547,99 +597,47 @@ export default function PresetGenerator() {
           ai-chat trigger is shown for forward-compatibility but the scaffold
           hardcodes <code>aiAssistant: false</code> so it never renders.
         </p>
+        {/* Show items in current state order first, then any default items
+            that the user has removed (so they can be re-enabled). */}
         <ul className="flex flex-col gap-y-vsp-2xs">
-          {(() => {
-            const allSpecs: HeaderRightItemSpec[] = [
-              ...DEFAULT_HEADER_RIGHT_ITEMS,
-            ];
-            // Show items in current state order first, then any default items
-            // that the user has removed (so they can be re-enabled).
-            const presentKeys = new Set(
-              state.headerRightItems.map(headerRightItemKey),
-            );
-            const missing = allSpecs.filter(
-              (spec) => !presentKeys.has(headerRightItemKey(spec)),
-            );
-            const ordered: Array<{ spec: HeaderRightItemSpec; index: number }> =
-              state.headerRightItems.map((spec, index) => ({ spec, index }));
-
-            return (
-              <>
-                {ordered.map(({ spec, index }) => {
-                  const key = headerRightItemKey(spec);
-                  const label = HEADER_RIGHT_LABELS[spec.name] ?? spec.name;
-                  const isAiChat = spec.name === "ai-chat";
-                  return (
-                    <li
-                      key={key}
-                      className="flex items-center gap-x-hsp-xs text-small text-fg"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={true}
-                        onChange={() => toggleHeaderRightItem(spec)}
-                        aria-label={`Include ${label}`}
-                        className="accent-accent"
-                      />
-                      <span className="flex-1">
-                        {label}
-                        {isAiChat && (
-                          <span className="ml-hsp-xs text-caption text-muted">
-                            (requires aiAssistant — disabled in scaffold)
-                          </span>
-                        )}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => moveHeaderRightItem(index, -1)}
-                        disabled={index === 0}
-                        aria-label={`Move ${label} up`}
-                        className="border border-muted bg-surface px-hsp-xs py-vsp-2xs text-caption text-fg transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        ↑
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => moveHeaderRightItem(index, 1)}
-                        disabled={index === ordered.length - 1}
-                        aria-label={`Move ${label} down`}
-                        className="border border-muted bg-surface px-hsp-xs py-vsp-2xs text-caption text-fg transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        ↓
-                      </button>
-                    </li>
-                  );
-                })}
-                {missing.map((spec) => {
-                  const key = headerRightItemKey(spec);
-                  const label = HEADER_RIGHT_LABELS[spec.name] ?? spec.name;
-                  const isAiChat = spec.name === "ai-chat";
-                  return (
-                    <li
-                      key={key}
-                      className="flex items-center gap-x-hsp-xs text-small text-muted"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={false}
-                        onChange={() => toggleHeaderRightItem(spec)}
-                        aria-label={`Include ${label}`}
-                        className="accent-accent"
-                      />
-                      <span className="flex-1">
-                        {label}
-                        {isAiChat && (
-                          <span className="ml-hsp-xs text-caption text-muted">
-                            (requires aiAssistant — disabled in scaffold)
-                          </span>
-                        )}
-                      </span>
-                    </li>
-                  );
-                })}
-              </>
-            );
-          })()}
+          {orderedItems.map(({ spec, index }) => (
+            <HeaderRightItemRow
+              key={headerRightItemKey(spec)}
+              spec={spec}
+              checked={true}
+              onToggle={() => toggleHeaderRightItem(spec)}
+              moveControls={
+                <>
+                  <button
+                    type="button"
+                    onClick={() => moveHeaderRightItem(index, -1)}
+                    disabled={index === 0}
+                    aria-label={`Move ${HEADER_RIGHT_LABELS[spec.name] ?? spec.name} up`}
+                    className="border border-muted bg-surface px-hsp-xs py-vsp-2xs text-caption text-fg transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveHeaderRightItem(index, 1)}
+                    disabled={index === orderedItems.length - 1}
+                    aria-label={`Move ${HEADER_RIGHT_LABELS[spec.name] ?? spec.name} down`}
+                    className="border border-muted bg-surface px-hsp-xs py-vsp-2xs text-caption text-fg transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    ↓
+                  </button>
+                </>
+              }
+            />
+          ))}
+          {missingItems.map((spec) => (
+            <HeaderRightItemRow
+              key={headerRightItemKey(spec)}
+              spec={spec}
+              checked={false}
+              onToggle={() => toggleHeaderRightItem(spec)}
+            />
+          ))}
         </ul>
         <div className="mt-vsp-xs">
           <button
