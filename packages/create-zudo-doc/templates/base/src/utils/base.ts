@@ -78,25 +78,36 @@ export function navHref(
   );
 }
 
+/**
+ * Split a leading /v/{version} prefix off a base-stripped path.
+ * Versioned routes nest the locale AFTER the version (/v/1.0/ja/docs/...),
+ * so locale stripping/prefixing must operate on the remainder only.
+ */
+function splitVersionPrefix(path: string): { versionPrefix: string; rest: string } {
+  const m = path.match(/^(\/v\/[^/]+)(\/.*|$)/);
+  return m ? { versionPrefix: m[1], rest: m[2] || "/" } : { versionPrefix: "", rest: path };
+}
+
 /** Build a locale-switched path from the current page path. */
 export function getPathForLocale(
   path: string,
   currentLang: Locale,
   targetLang: Locale,
 ): string {
-  let relativePath = stripBase(path);
+  const { versionPrefix, rest } = splitVersionPrefix(stripBase(path));
+  let relativePath = rest;
   if (currentLang !== defaultLocale) {
     relativePath = relativePath.replace(new RegExp(`^/${currentLang}(?:/|$)`), "/");
   }
   if (targetLang !== defaultLocale) {
     relativePath = `/${targetLang}${relativePath}`;
   }
-  return withBase(relativePath);
+  return withBase(`${versionPrefix}${relativePath}`);
 }
 
 /** Build locale links for locale switcher UI components. */
 export function buildLocaleLinks(currentPath: string, currentLang: Locale): LocaleLink[] {
-  let defaultLocalePath = stripBase(currentPath);
+  let defaultLocalePath = splitVersionPrefix(stripBase(currentPath)).rest;
   if (currentLang !== defaultLocale) {
     defaultLocalePath = defaultLocalePath.replace(new RegExp(`^/${currentLang}(?:/|$)`), "/");
   }

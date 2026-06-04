@@ -8,7 +8,7 @@
 // (`hsp-md`, `vsp-sm`, `text-body`, `radius-DEFAULT`). Adding new
 // assertions? Extend the fixture rather than reaching back into host config.
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { type TokenDef } from "@takazudo/zdtp";
+import type { TokenDef } from "@takazudo/zdtp";
 import {
   DESIGN_TOKEN_SCHEMA,
   DesignTokenSchemaError,

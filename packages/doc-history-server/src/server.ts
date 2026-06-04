@@ -86,16 +86,17 @@ export function startServer(options: ServerOptions): void {
       return;
     }
 
+    // Match routes against the pathname only — req.url includes any query
+    // string, which would make exact/$-anchored matches reject e.g. ?cachebust=1.
+    const pathname = url.split(/[?#]/, 1)[0];
+
     // Health check
-    if (url === "/health") {
+    if (pathname === "/health") {
       sendJson(res, 200, { status: "ok" });
       return;
     }
 
     // Doc history routes: /doc-history/{slug}.json
-    // Match against the pathname only — req.url includes any query string,
-    // which would make the $-anchored regex reject e.g. ?cachebust=1.
-    const pathname = url.split(/[?#]/, 1)[0];
     const match = pathname.match(/^\/doc-history\/(.+)\.json$/);
     if (match) {
       try {
