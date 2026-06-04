@@ -22,6 +22,30 @@ import { isDefaultLocaleOnlyPath } from "@/utils/base";
 import type { DocsEntry } from "@/types/docs-entry";
 
 // ---------------------------------------------------------------------------
+// mergeLocaleDocs memoization
+// ---------------------------------------------------------------------------
+//
+// WeakMap chain: baseDocs → localeDocs → optionBits(string) → result.
+// The option bits key encodes the two boolean flags so different flag
+// combinations produce distinct cache entries.
+//
+// This memoization is effective only when the caller passes stable array
+// references — i.e. when `loadDocs()` is memoized (see pages/_data.ts).
+// When arrays are fresh per call, cache misses are harmless (same O(n)
+// work as before).
+
+type MergeInner = Map<string, MergeLocaleDocsResult>;
+type MergeMiddle = WeakMap<DocsEntry[], MergeInner>;
+const mergeLocalDocsCache = new WeakMap<DocsEntry[], MergeMiddle>();
+
+function mergeOptionBits(
+  applyDefaultLocaleOnlyFilter: boolean,
+  keepUnlisted: boolean,
+): string {
+  return `${applyDefaultLocaleOnlyFilter ? "1" : "0"}:${keepUnlisted ? "1" : "0"}`;
+}
+
+// ---------------------------------------------------------------------------
 // mergeLocaleDocs
 // ---------------------------------------------------------------------------
 
@@ -64,10 +88,13 @@ export interface MergeLocaleDocsOptions {
 /**
  * Result of mergeLocaleDocs.
  *
- * **Array identity:** Each call returns a fresh array — no module-level
- * memoization is applied. If a caller keys a cache on the docs array identity
- * (e.g. a nav-tree cache), it should memoize the result itself rather than
- * relying on reference stability from this helper.
+ * **Array identity:** When `baseDocs` and `localeDocs` are stable array
+ * references (e.g. sourced from the memoized `loadDocs` helper), the
+ * result is memoized and the same `docs` array reference is returned for
+ * the same (baseDocs, localeDocs, options) combination. Callers that key
+ * a WeakMap on the returned `docs` array (e.g. `buildNavTree`'s nav-tree
+ * cache) will therefore hit on subsequent calls within the same build
+ * snapshot.
  */
 export interface MergeLocaleDocsResult {
   /**
@@ -94,8 +121,11 @@ export interface MergeLocaleDocsResult {
  * this key is consistent across all call sites regardless of whether they
  * loaded docs via `loadDocs` or `bridgeEntries`.
  *
- * **Array identity**: returns a fresh array on each call — see
- * {@link MergeLocaleDocsResult} for caching guidance.
+ * **Array identity**: when `baseDocs` and `localeDocs` are stable references
+ * (from the memoized `loadDocs` helper), the result is identity-memoized and
+ * the same `docs` array reference is returned for the same inputs — see
+ * {@link MergeLocaleDocsResult} for details. When the inputs are fresh arrays,
+ * memoization misses harmlessly and the function computes normally.
  */
 export function mergeLocaleDocs(
   options: MergeLocaleDocsOptions,
@@ -106,6 +136,21 @@ export function mergeLocaleDocs(
     applyDefaultLocaleOnlyFilter = false,
     keepUnlisted = false,
   } = options;
+
+  // Identity memoization: WeakMap chain baseDocs → localeDocs → optionBits.
+  const optBits = mergeOptionBits(applyDefaultLocaleOnlyFilter, keepUnlisted);
+  let middle = mergeLocalDocsCache.get(baseDocs);
+  if (!middle) {
+    middle = new WeakMap<DocsEntry[], MergeInner>();
+    mergeLocalDocsCache.set(baseDocs, middle);
+  }
+  let inner = middle.get(localeDocs);
+  if (!inner) {
+    inner = new Map<string, MergeLocaleDocsResult>();
+    middle.set(localeDocs, inner);
+  }
+  const cached = inner.get(optBits);
+  if (cached) return cached;
 
   const filteredLocale = keepUnlisted
     ? localeDocs
@@ -127,10 +172,12 @@ export function mergeLocaleDocs(
     );
   }
 
-  return {
+  const result: MergeLocaleDocsResult = {
     docs: [...filteredLocale, ...fallbackDocs],
     localeSlugSet,
   };
+  inner.set(optBits, result);
+  return result;
 }
 
 // ---------------------------------------------------------------------------

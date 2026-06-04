@@ -37,55 +37,67 @@ interface BuildNode {
   children: Map<string, BuildNode>;
 }
 
-// Module-level caches — persist across all page renders during a single Astro build.
+// Module-level caches — persist across all page renders during a single build.
 const categoryMetaCache = new Map<string, Map<string, CategoryMeta>>();
-const navTreeCache = new Map<string, NavNode[]>();
 
-/** Build a cache key from docs array + locale + category meta.
- *  Includes nav-affecting frontmatter so HMR picks up changes. */
-function navTreeCacheKey(
-  docs: DocsEntry[],
+// Nav-tree identity cache: WeakMap keyed on the docs array reference.
+// When callers use stable array references (from the memoized loadDocs +
+// mergeLocaleDocs helpers), the same (docs, lang, categoryMeta) combination
+// returns the cached tree in O(1) without re-hashing any doc content.
+//
+// HMR intent preserved: a new collection snapshot produces a new array
+// identity (the memoization in loadDocs is per-process; zfb dev spins up a
+// fresh Node worker on each content change, so the module-level WeakMap is
+// also fresh) — a new identity misses the cache and recomputes the tree.
+//
+// WeakMap chain: docs → lang+metaKey(string) → NavNode[].
+// The inner string key is cheap: lang (short enum) + a JSON of the small
+// categoryMeta map (a handful of directory entries). The O(n log n) full-
+// docs stringify+sort that existed before is eliminated entirely.
+const navTreeCache = new WeakMap<DocsEntry[], Map<string, NavNode[]>>();
+
+/** Build a cheap inner cache key from locale + categoryMeta.
+ *  categoryMeta is small (one entry per _category_.json dir), so
+ *  serializing it is negligible compared to the old full-docs hash. */
+function navTreeInnerKey(
   lang: Locale,
   categoryMeta?: Map<string, CategoryMeta>,
 ): string {
   const metaKey = categoryMeta
     ? JSON.stringify([...categoryMeta.entries()].sort(([a], [b]) => a.localeCompare(b)))
     : "_";
-  return `${lang}:${metaKey}:${docs
-    .map((d) => {
-      const { sidebar_position, sidebar_label, title, description, unlisted, standalone, slug } =
-        d.data;
-      return JSON.stringify([
-        d.id,
-        sidebar_position,
-        sidebar_label,
-        title,
-        description,
-        unlisted,
-        standalone,
-        slug,
-      ]);
-    })
-    .sort()
-    .join(",")}`;
+  return `${lang}:${metaKey}`;
 }
 
 /**
- * Build a recursive navigation tree from a flat Astro content collection.
+ * Build a recursive navigation tree from a flat content collection.
  * Mirrors the filesystem: directories become category nodes, files become leaves.
  *
- * Astro 5 glob() strips /index from IDs:
+ * zfb strips /index from IDs:
  *   getting-started/index.mdx → ID "getting-started" (category index)
  *   getting-started/intro.mdx → ID "getting-started/intro" (child page)
+ *
+ * Memoization: keyed on the docs array identity (WeakMap) + lang +
+ * categoryMeta signature. When the caller uses stable array references
+ * (via the memoized loadDocs + mergeLocaleDocs helpers), the nav tree is
+ * reused across all page renders in a single build — O(1) lookup, no
+ * per-doc stringify. A new array identity (HMR content change) causes a
+ * miss and recomputes the tree.
  */
 export function buildNavTree(
   docs: DocsEntry[],
   lang: Locale = defaultLocale,
   categoryMeta?: Map<string, CategoryMeta>,
 ): NavNode[] {
-  const cacheKey = navTreeCacheKey(docs, lang, categoryMeta);
-  const cached = navTreeCache.get(cacheKey);
-  if (cached) return cached;
+  const innerKey = navTreeInnerKey(lang, categoryMeta);
+  let innerMap = navTreeCache.get(docs);
+  if (innerMap) {
+    const cached = innerMap.get(innerKey);
+    if (cached) return cached;
+  } else {
+    innerMap = new Map<string, NavNode[]>();
+    navTreeCache.set(docs, innerMap);
+  }
 
   const root: BuildNode = {
     segment: "",
@@ -132,7 +144,7 @@ export function buildNavTree(
   }
 
   const result = toNavNodes(root, lang, categoryMeta);
-  navTreeCache.set(cacheKey, result);
+  innerMap.set(innerKey, result);
   return result;
 }
 
