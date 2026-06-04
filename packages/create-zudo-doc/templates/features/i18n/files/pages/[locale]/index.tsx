@@ -95,7 +95,7 @@ export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
   const locale = params.locale;
 
   const allDocs = mergeLocaleDocs(locale);
-  const localeConfig = (settings.locales as Record<string, { dir: string }>)[locale];
+  const localeConfig = settings.locales[locale];
   const categoryMeta = localeConfig
     ? loadCategoryMeta(localeConfig.dir)
     : loadCategoryMeta(settings.docsDir);

@@ -43,7 +43,7 @@ export const settings = {
   defaultLocale: "en" as string,
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },
-  } satisfies Record<string, LocaleConfig>,
+  } as Record<string, LocaleConfig>,
   mermaid: true,
   noindex: false as boolean, // When true, adds noindex/nofollow to all pages (for internal docs)
   editUrl: false as string | false,

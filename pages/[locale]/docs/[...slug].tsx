@@ -18,7 +18,6 @@
 //     pages not translated yet (shown with a fallback notice).
 
 import { getCollection } from "zfb/content";
-import type { CollectionEntry } from "zfb/content";
 import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
 import { t, getContentDir } from "@/config/i18n";
@@ -32,7 +31,6 @@ import {
   collectAutoIndexNodes,
   isNavVisible,
   type NavNode,
-  type BreadcrumbItem,
 } from "@/utils/docs";
 import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
 import { toRouteSlug } from "@/utils/slug";
@@ -46,6 +44,7 @@ import { createMdxComponents } from "../../_mdx-components";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../../_data";
 import { extractHeadings } from "../../lib/_extract-headings";
+import type { DocPageEntry, AutoIndexNode, DocPageEntryProps, DocPageAutoIndexProps } from "../../lib/doc-page-props";
 import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
 import { DocHistoryArea } from "../../lib/_doc-history-area";
 import { BodyEndIslands } from "../../lib/_body-end-islands";
@@ -68,28 +67,19 @@ export const frontmatter = { title: "Docs" };
 // Types
 // ---------------------------------------------------------------------------
 
-interface DocPageEntry extends DocsEntry {
-  Content: CollectionEntry<unknown>["Content"];
-  module_specifier: string;
-}
+// DocPageEntry, AutoIndexNode imported from pages/lib/doc-page-props.ts
 
-interface AutoIndexNode extends NavNode {
-  children: NavNode[];
-}
-
-interface DocPageProps {
-  entry: DocPageEntry | null;
-  autoIndex?: AutoIndexNode;
+/** Route-specific extra fields — present on both branches of the union. */
+interface LocaleDocPageExtra {
   /** Content directory for the active locale (or base EN for fallbacks). */
   contentDir: string;
   /** True when this page falls back to the base EN collection. */
   isFallback: boolean;
-  breadcrumbs: BreadcrumbItem[];
-  prev: NavNode | null;
-  next: NavNode | null;
-  /** Depth-2/3/4 headings extracted from the MDX body, for SSG TOC links. */
-  headings: ReturnType<typeof extractHeadings>;
 }
+
+type DocPageProps =
+  | (DocPageEntryProps & LocaleDocPageExtra)
+  | (DocPageAutoIndexProps & LocaleDocPageExtra);
 
 // ---------------------------------------------------------------------------
 // paths() — synchronous (ADR-004)
@@ -118,7 +108,7 @@ export function paths(): Array<{
   }> = [];
 
   for (const locale of Object.keys(settings.locales) as string[]) {
-    const localeConfig = (settings.locales as Record<string, { dir: string }>)[locale];
+    const localeConfig = settings.locales[locale];
     const contentDir = localeConfig?.dir ?? settings.docsDir;
 
     // Load locale + base docs, filter drafts
@@ -179,6 +169,7 @@ export function paths(): Array<{
       result.push({
         params: { locale, slug: slug.split("/") },
         props: {
+          kind: "entry",
           entry,
           contentDir: entryContentDir,
           isFallback,
@@ -195,7 +186,7 @@ export function paths(): Array<{
       result.push({
         params: { locale, slug: node.slug.split("/") },
         props: {
-          entry: null,
+          kind: "autoIndex",
           autoIndex: node as AutoIndexNode,
           contentDir,
           isFallback: false,
@@ -215,34 +206,25 @@ export function paths(): Array<{
 // Page component
 // ---------------------------------------------------------------------------
 
-interface PageArgs {
-  params: { locale: string; slug: string[] };
-  entry: DocPageProps["entry"];
-  autoIndex?: DocPageProps["autoIndex"];
-  contentDir: DocPageProps["contentDir"];
-  isFallback: DocPageProps["isFallback"];
-  breadcrumbs: DocPageProps["breadcrumbs"];
-  prev: DocPageProps["prev"];
-  next: DocPageProps["next"];
-  headings: DocPageProps["headings"];
-}
+type PageArgs = DocPageProps & { params: { locale: string; slug: string[] } };
 
-export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, isFallback, breadcrumbs, prev, next, headings }: PageArgs): JSX.Element {
-  const locale = params.locale;
+export default function LocaleDocsPage(props: PageArgs): JSX.Element {
+  const { breadcrumbs, prev, next, headings, contentDir, isFallback } = props;
+  const locale = props.params.locale;
 
-  const slug = autoIndex
-    ? autoIndex.slug
-    : (entry!.data.slug ?? toRouteSlug(entry!.slug));
+  const slug = props.kind === "autoIndex"
+    ? props.autoIndex.slug
+    : (props.entry.data.slug ?? toRouteSlug(props.entry.slug));
 
-  const title = autoIndex ? autoIndex.label : entry!.data.title;
-  const description = autoIndex ? autoIndex.description : entry!.data.description;
+  const title = props.kind === "autoIndex" ? props.autoIndex.label : props.entry.data.title;
+  const description = props.kind === "autoIndex" ? props.autoIndex.description : props.entry.data.description;
 
   // Locale-aware components bag — creates nav wrappers bound to the active
   // locale so CategoryNav/CategoryTreeNav/SiteTreeNav query the right collection.
   const components = createMdxComponents(locale);
 
-  const autoIndexChildren = autoIndex
-    ? autoIndex.children
+  const autoIndexChildren = props.kind === "autoIndex"
+    ? props.autoIndex.children
         .filter((c: NavNode) => c.hasPage || c.children.length > 0)
         .map((c: NavNode) => ({
           ...c,
@@ -261,7 +243,7 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
   // both lang (BCP-47 locale string) and navSection (filesystem-derived
   // kebab-case slug) come from controlled, trusted sources.
   const navSection = getNavSectionForSlug(slug);
-  const hideSidebar = entry?.data?.hide_sidebar;
+  const hideSidebar = props.kind === "entry" ? props.entry.data.hide_sidebar : undefined;
   const sidebarPersistKey = hideSidebar
     ? undefined
     : `sidebar-${locale}-${navSection ?? "default"}`;
@@ -274,7 +256,7 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
       lang={locale}
       noindex={settings.noindex}
       hideSidebar={hideSidebar}
-      hideToc={entry?.data?.hide_toc}
+      hideToc={props.kind === "entry" ? props.entry.data.hide_toc : undefined}
       headings={headings}
       canonical={canonical}
       sidebarPersistKey={sidebarPersistKey}
@@ -323,7 +305,7 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
         </>
       }
     >
-      {autoIndex ? (
+      {props.kind === "autoIndex" ? (
         /* Auto-index page: category without an index.mdx.
            Fragment (not <div>) so children become direct children of
            <article class="zd-content">, picking up the flow-space rule
@@ -331,7 +313,7 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
            Wrapping in <div> would make h1/description p children-of-children
            and the flow gap (~24px) would never apply — see #1460. */
         <>
-          <h1 class="text-heading font-bold mb-vsp-xs">{autoIndex.label}</h1>
+          <h1 class="text-heading font-bold mb-vsp-xs">{props.autoIndex.label}</h1>
 
           {/* Build-time date block — chrome parity (#1461). Auto-index pages
               previously rendered without doc-meta; reference site shows it on
@@ -339,9 +321,9 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
               entry exists for this slug. */}
           <DocMetainfoArea slug={slug} locale={locale} />
 
-          {autoIndex.description && (
+          {props.autoIndex.description && (
             <p class="mb-vsp-lg text-title text-muted">
-              {autoIndex.description}
+              {props.autoIndex.description}
             </p>
           )}
           <NavCardGrid children={autoIndexChildren} />
@@ -350,7 +332,7 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
         /* Regular doc page. Fragment (not <div>) for the same reason as
            the auto-index branch above — see #1460. */
         <>
-          <h1 class="text-heading font-bold mb-vsp-xs">{entry!.data.title}</h1>
+          <h1 class="text-heading font-bold mb-vsp-xs">{props.entry.data.title}</h1>
 
           {/* Build-time date block (Created / Updated / Author).
               doc-metainfo placement — between <h1> and description.
@@ -358,10 +340,10 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
           <DocMetainfoArea slug={slug} locale={locale} />
 
           {/* Page-level tag chips — matching doc-tags placement (#1658). */}
-          <DocTagsArea slug={slug} locale={locale} tags={entry!.data.tags} />
+          <DocTagsArea slug={slug} locale={locale} tags={props.entry.data.tags} />
 
           {/* Fallback notice for non-translated pages */}
-          {isFallback && !entry!.data.generated && (
+          {isFallback && !props.entry.data.generated && (
             <div
               class="mb-vsp-md border border-info/30 bg-info/5 px-hsp-lg py-vsp-sm text-small text-muted rounded"
               role="note"
@@ -370,9 +352,9 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
             </div>
           )}
 
-          {entry!.data.description && (
+          {props.entry.data.description && (
             <p class="mb-vsp-lg text-title text-muted">
-              {entry!.data.description}
+              {props.entry.data.description}
             </p>
           )}
 
@@ -382,16 +364,16 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
               from frontmatter-preview-renderers.tsx produce styled cells
               (pills, badges, etc.) instead of plain text. */}
           <FrontmatterPreview
-            entries={buildFrontmatterPreviewEntries(entry!.data)}
+            entries={buildFrontmatterPreviewEntries(props.entry.data)}
             title={t("frontmatter.preview.title", locale)}
             keyColLabel={t("frontmatter.preview.keyCol", locale)}
             valueColLabel={t("frontmatter.preview.valueCol", locale)}
             renderers={frontmatterRenderers}
-            data={entry!.data as Record<string, unknown>}
+            data={props.entry.data as Record<string, unknown>}
             locale={locale}
           />
 
-          {entry && <entry.Content components={components} />}
+          <props.entry.Content components={components} />
 
           {/* Prev / Next pagination — placed before the document utilities
               section to match the Astro reference order: content → pager →
@@ -452,11 +434,11 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
           </nav>
 
           {/* Document utilities (revision history + view-source link) — skipped for unlisted pages */}
-          {!entry!.data.unlisted && (
+          {!props.entry.data.unlisted && (
             <DocHistoryArea
               slug={slug}
               locale={locale}
-              entrySlug={entry!.slug}
+              entrySlug={props.entry.slug}
               contentDir={contentDir}
             />
           )}

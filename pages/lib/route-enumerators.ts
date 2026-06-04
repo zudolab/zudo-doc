@@ -78,9 +78,7 @@ export function enumerateDocsRoutes(locale: string): string[] {
       urls.push(docsUrl(doc.data.slug ?? toRouteSlug(doc.id), locale as string));
     }
 
-    const localeConfig = (
-      settings.locales as Record<string, { dir: string }>
-    )[locale];
+    const localeConfig = settings.locales[locale];
     const contentDir = localeConfig?.dir ?? settings.docsDir;
     const categoryMeta = new Map([
       ...loadCategoryMeta(settings.docsDir),
@@ -181,9 +179,7 @@ export function enumerateVersionedRoutes(
     }
   } else {
     const baseCollectionName = `docs-v-${version.slug}`;
-    const localeDir = (
-      version.locales as Record<string, { dir: string }> | undefined
-    )?.[locale]?.dir;
+    const localeDir = version.locales?.[locale]?.dir;
     const localeCollectionName = localeDir
       ? `docs-v-${version.slug}-${locale}`
       : null;
