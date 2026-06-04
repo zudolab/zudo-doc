@@ -1,13 +1,9 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-import type { ComponentChildren } from "preact";
+import type { JSX } from "preact";
 
-type Props = {
-  children?: ComponentChildren;
-  className?: string;
-  [key: string]: any;
-};
+type Props = JSX.IntrinsicElements["strong"];
 
 export function ContentStrong({ children, className, ...rest }: Props) {
   return (

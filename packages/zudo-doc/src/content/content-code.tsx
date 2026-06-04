@@ -1,20 +1,16 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-import type { ComponentChildren } from "preact";
+import type { JSX, VNode } from "preact";
 import { SmartBreak as SmartBreakImpl } from "../toc/smart-break.js";
 
-// Preact VNode vs ComponentChildren type mismatch under compat mode; cast so the
-// content override type-checks. Runtime is fine since the preact/compat alias is in effect.
+// Preact VNode vs JSX.IntrinsicElements["code"].children type mismatch under compat mode;
+// cast so the content override type-checks. Runtime is fine since the preact/compat alias is in effect.
 const SmartBreak = SmartBreakImpl as unknown as (props: {
   children?: unknown;
-}) => any;
+}) => VNode;
 
-type Props = {
-  children?: ComponentChildren;
-  className?: string;
-  [key: string]: any;
-};
+type Props = JSX.IntrinsicElements["code"];
 
 /**
  * Override for inline `<code>` in MDX. Wraps text-only inline code with

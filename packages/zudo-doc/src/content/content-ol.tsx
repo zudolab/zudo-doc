@@ -1,13 +1,9 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-import type { ComponentChildren } from "preact";
+import type { JSX } from "preact";
 
-type Props = {
-  children?: ComponentChildren;
-  className?: string;
-  [key: string]: any;
-};
+type Props = JSX.IntrinsicElements["ol"];
 
 // 2em indent: enough room for 2-digit markers like "66." (#244)
 // Inline style — Tailwind v4 does not generate arbitrary values from these TSX files

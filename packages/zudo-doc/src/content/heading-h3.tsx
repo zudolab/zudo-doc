@@ -1,14 +1,9 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-import type { ComponentChildren, JSX } from "preact";
+import type { JSX } from "preact";
 
-type Props = {
-  id?: string;
-  className?: string;
-  children?: ComponentChildren;
-  [key: string]: any;
-};
+type Props = JSX.IntrinsicElements["h3"];
 
 export function HeadingH3({ id, children, className, ...rest }: Props) {
   return (

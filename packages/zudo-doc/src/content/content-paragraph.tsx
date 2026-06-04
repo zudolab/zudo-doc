@@ -1,12 +1,9 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-import type { ComponentChildren } from "preact";
+import type { JSX } from "preact";
 
-type Props = {
-  children?: ComponentChildren;
-  [key: string]: any;
-};
+type Props = JSX.IntrinsicElements["p"];
 
 // Passthrough: no custom styles needed for <p> (inherits from .zd-content base).
 // Override claimed to enable future Tailwind utilities without CSS cascade conflicts.
