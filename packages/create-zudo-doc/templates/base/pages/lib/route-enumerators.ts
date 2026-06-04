@@ -82,7 +82,7 @@ export function enumerateDocsRoutes(locale: string): string[] {
     const categoryMeta = mergeCategoryMeta(settings.docsDir, contentDir);
 
     const navDocs = allDocs.filter(isNavVisible);
-    const tree = buildNavTree(navDocs as DocsEntry[], locale, categoryMeta);
+    const tree = buildNavTree(navDocs, locale, categoryMeta);
     for (const node of collectAutoIndexNodes(tree)) {
       urls.push(docsUrl(node.slug, locale as string));
     }
@@ -198,7 +198,7 @@ export function enumerateVersionedRoutes(
       : loadCategoryMeta(version.docsDir);
 
     const navDocs = allDocs.filter(isNavVisible);
-    const tree = buildNavTree(navDocs as DocsEntry[], locale, categoryMeta);
+    const tree = buildNavTree(navDocs, locale, categoryMeta);
 
     for (const doc of allDocs) {
       const slug = doc.data.slug ?? toRouteSlug(doc.id);

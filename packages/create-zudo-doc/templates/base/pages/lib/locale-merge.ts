@@ -47,9 +47,14 @@ export interface MergeLocaleDocsOptions {
    */
   applyDefaultLocaleOnlyFilter?: boolean;
   /**
-   * When true, base docs with `unlisted: true` are also excluded from the merge
-   * result. Set for tag-enumeration callers (which filter unlisted from both
-   * locale and base docs).
+   * Controls whether `unlisted: true` docs survive the merge.
+   *
+   * - `true`  — unlisted docs are RETAINED (locale + base). Route/sitemap
+   *             enumeration uses this: unlisted pages have real HTML files, so
+   *             they must be built; nav callers rely on `isNavVisible`
+   *             downstream to hide them from the tree.
+   * - `false` (default) — unlisted docs are DROPPED from both locale and base.
+   *             Tag aggregation uses this so hidden pages don't contribute tags.
    *
    * @default false
    */
