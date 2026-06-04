@@ -2717,7 +2717,7 @@ describe("scaffold — zfb next.28 pin bump (#1870)", () => {
    * entirely (hard-errors at load); replaced by the generic
    * `markdown.features.directives` map. Host zfb.config.ts migrated in #1840;
    * generated projects must also pin next.25. Now bumped to 0.1.0-next.28:
-   * next.26–next.28 are fix/feature releases with no consumer-facing breaking
+   * next.26/next.28 are fix/feature releases with no consumer-facing breaking
    * change (UTF-8 preserved in directive quoted attrs, `.mdx` route-template
    * extension strip, embedded-V8 worker console capture). next.27 is skipped
    * deliberately — its published adapter tarball omitted emit-worker.mjs and

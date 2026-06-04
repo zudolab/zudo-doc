@@ -310,12 +310,12 @@ function generatePackageJson(choices: UserChoices) {
     // still setting it hard-error at load). Replaced by the generic
     // `markdown.features.directives` map; host zfb.config.ts migrated
     // in zudolab/zudo-doc#1840.
-    // Bumped to next.28 — next.26/next.27/next.28 are fix/feature releases
-    // (no consumer-facing breaking change): UTF-8 preserved in directive
+    // Bumped to next.28 — next.26/next.28 are fix/feature releases (no
+    // consumer-facing breaking change): UTF-8 preserved in directive
     // quoted attrs (`:::note{title="日本語"}`), `.mdx` page-source extension
     // stripped from route templates, and embedded-V8 worker console capture
-    // so render failures surface `console.*` output. next.27 itself is
-    // unusable for adapter consumers — its tarball omitted emit-worker.mjs
+    // so render failures surface `console.*` output. next.27 is unusable
+    // for adapter consumers — its tarball omitted emit-worker.mjs
     // (Takazudo/zudo-front-builder#794, fixed in next.28) — so never pin 27.
     "@takazudo/zfb": "0.1.0-next.28",
     "@takazudo/zfb-runtime": "0.1.0-next.28",
