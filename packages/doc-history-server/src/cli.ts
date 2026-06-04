@@ -1,16 +1,50 @@
 #!/usr/bin/env node
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { cpus } from "node:os";
 import { parseCliArgs } from "./args.js";
 import { collectContentFiles, getDocHistory } from "./git-history.js";
 import { getContentDirEntries } from "./shared.js";
 
-function generate(options: {
+/**
+ * Tiny in-file semaphore for bounded parallelism — avoids a p-limit dependency.
+ * Limits concurrent async tasks to `concurrency` at a time.
+ */
+function makeSemaphore(concurrency: number) {
+  let running = 0;
+  const queue: Array<() => void> = [];
+
+  function next(): void {
+    if (queue.length > 0 && running < concurrency) {
+      running++;
+      queue.shift()!();
+    }
+  }
+
+  return function acquire(): Promise<() => void> {
+    return new Promise((resolve) => {
+      function tryRun() {
+        if (running < concurrency) {
+          running++;
+          resolve(() => {
+            running--;
+            next();
+          });
+        } else {
+          queue.push(tryRun);
+        }
+      }
+      tryRun();
+    });
+  };
+}
+
+async function generate(options: {
   contentDir: string;
   locales: Array<{ key: string; dir: string }>;
   outDir: string;
   maxEntries: number;
-}): void {
+}): Promise<void> {
   const { contentDir, locales, outDir, maxEntries } = options;
   const startTime = performance.now();
 
@@ -20,26 +54,41 @@ function generate(options: {
   let totalFiles = 0;
   let errorCount = 0;
 
+  // Bounded parallelism: default to CPU count (min 2, max 8) to saturate git
+  // without spawning excessively — each getDocHistory issues ~2 git processes.
+  const concurrency = Math.min(8, Math.max(2, cpus().length));
+  const acquire = makeSemaphore(concurrency);
+
+  const tasks: Promise<void>[] = [];
+
   for (const [localeKey, dir] of dirEntries) {
     const files = collectContentFiles(dir);
     const label = localeKey ?? "default";
     console.log(`Processing ${label}: ${files.length} files in ${dir}`);
 
     for (const { filePath, slug } of files) {
-      try {
-        const history = getDocHistory(filePath, slug, maxEntries);
-        const prefixedSlug = localeKey ? `${localeKey}/${slug}` : slug;
-        const jsonPath = join(outDir, `${prefixedSlug}.json`);
-        mkdirSync(dirname(jsonPath), { recursive: true });
-        writeFileSync(jsonPath, JSON.stringify(history));
-        totalFiles++;
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.warn(`  Skipped ${slug}: ${msg}`);
-        errorCount++;
-      }
+      const task = (async () => {
+        const release = await acquire();
+        try {
+          const history = getDocHistory(filePath, slug, maxEntries);
+          const prefixedSlug = localeKey ? `${localeKey}/${slug}` : slug;
+          const jsonPath = join(outDir, `${prefixedSlug}.json`);
+          mkdirSync(dirname(jsonPath), { recursive: true });
+          writeFileSync(jsonPath, JSON.stringify(history));
+          totalFiles++;
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn(`  Skipped ${slug}: ${msg}`);
+          errorCount++;
+        } finally {
+          release();
+        }
+      })();
+      tasks.push(task);
     }
   }
+
+  await Promise.all(tasks);
 
   const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
   console.log(
