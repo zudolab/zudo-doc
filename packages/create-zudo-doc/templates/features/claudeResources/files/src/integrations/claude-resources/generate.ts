@@ -156,35 +156,37 @@ function generateClaudemdDocs(
   const items: ClaudeMdItem[] = [];
 
   for (const filePath of files) {
-    const content = fs.readFileSync(filePath, "utf8");
     const relPath = path.relative(projectRoot, filePath);
     const displayPath = `/${relPath}`;
     const dirPart = path.dirname(relPath);
     const slug = dirPart === "." ? "root" : dirPart.replace(/\//g, "--");
-
     items.push({ displayPath, slug, relPath });
-
-    const pos = items.length + 1;
-    const mdx = `---
-title: "${escapeTitle(displayPath)}"
-description: "CLAUDE.md at ${escapeTitle(displayPath)}"
-sidebar_position: ${pos}
-sidebar_label: "${escapeTitle(relPath)}"
-generated: true
----
-
-**Path:** \`${relPath}\`
-
-${escapeForMdx(content.trim())}
-`;
-    fs.writeFileSync(path.join(outputDir, `${slug}.mdx`), mdx);
   }
 
-  // Sort: root first, then alphabetically
+  // Sort BEFORE writing: sidebar_position is baked into each generated .mdx,
+  // so the root-first/alphabetical order must be applied first — sorting after
+  // the write loop would leave positions in filesystem-walk order.
   items.sort((a, b) => {
     if (a.slug === "root") return -1;
     if (b.slug === "root") return 1;
     return a.displayPath.localeCompare(b.displayPath);
+  });
+
+  items.forEach((item, index) => {
+    const content = fs.readFileSync(path.join(projectRoot, item.relPath), "utf8");
+    const mdx = `---
+title: "${escapeTitle(item.displayPath)}"
+description: "CLAUDE.md at ${escapeTitle(item.displayPath)}"
+sidebar_position: ${index + 1}
+sidebar_label: "${escapeTitle(item.relPath)}"
+generated: true
+---
+
+**Path:** \`${item.relPath}\`
+
+${escapeForMdx(content.trim())}
+`;
+    fs.writeFileSync(path.join(outputDir, `${item.slug}.mdx`), mdx);
   });
 
   writeCategoryMeta(outputDir, "CLAUDE.md", 900, "Project-specific instructions");
