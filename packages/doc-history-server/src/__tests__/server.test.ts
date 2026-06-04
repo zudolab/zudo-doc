@@ -156,6 +156,16 @@ describe("Server routes", () => {
     expect(data!.error).toContain("No doc found");
   });
 
+  it("GET /doc-history/getting-started.json?cachebust=1 ignores the query string", async () => {
+    // Regression: the route used to match against raw req.url, so any query
+    // string failed the $-anchored regex and fell through to 404.
+    const { res, data } = await fetchJson(
+      `${baseUrl}/doc-history/getting-started.json?cachebust=1`,
+    );
+    expect(res.status).toBe(200);
+    expect(data!.slug).toBe("getting-started");
+  });
+
   it("OPTIONS /anything returns 204 with CORS headers", async () => {
     const res = await fetch(`${baseUrl}/anything`, { method: "OPTIONS" });
     expect(res.status).toBe(204);
