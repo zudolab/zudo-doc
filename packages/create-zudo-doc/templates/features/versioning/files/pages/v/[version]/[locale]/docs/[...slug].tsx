@@ -126,112 +126,112 @@ export function paths(): Array<{
 
   for (const version of settings.versions) {
     for (const locale of Object.keys(settings.locales) as string[]) {
-    const baseCollectionName = `docs-v-${version.slug}`;
-    const localeDir = (version.locales as Record<string, { dir: string }> | undefined)?.[locale]?.dir;
-    const localeCollectionName = localeDir ? `docs-v-${version.slug}-${locale}` : null;
+      const baseCollectionName = `docs-v-${version.slug}`;
+      const localeDir = (version.locales as Record<string, { dir: string }> | undefined)?.[locale]?.dir;
+      const localeCollectionName = localeDir ? `docs-v-${version.slug}-${locale}` : null;
 
-    const baseDocs = ((bridgeEntries(getCollection(baseCollectionName), baseCollectionName) as unknown as DocPageEntry[])).filter(
-      (doc) => !doc.data.draft,
-    );
-    const localeDocs = localeCollectionName
-      ? ((bridgeEntries(getCollection(localeCollectionName), localeCollectionName) as unknown as DocPageEntry[])).filter(
-          (doc) => !doc.data.draft,
-        )
-      : [];
+      const baseDocs = ((bridgeEntries(getCollection(baseCollectionName), baseCollectionName) as unknown as DocPageEntry[])).filter(
+        (doc) => !doc.data.draft,
+      );
+      const localeDocs = localeCollectionName
+        ? ((bridgeEntries(getCollection(localeCollectionName), localeCollectionName) as unknown as DocPageEntry[])).filter(
+            (doc) => !doc.data.draft,
+          )
+        : [];
 
-    // Build slug set from locale docs (locale takes priority)
-    const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? toRouteSlug(d.slug)));
+      // Build slug set from locale docs (locale takes priority)
+      const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? toRouteSlug(d.slug)));
 
-    // Merge: locale docs first, then base docs for missing pages
-    const fallbackDocs = baseDocs.filter(
-      (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.slug)) && !isDefaultLocaleOnlyPath(`/docs/${d.data.slug ?? toRouteSlug(d.slug)}`),
-    );
-    const fallbackSlugs = new Set(fallbackDocs.map((d) => d.data.slug ?? toRouteSlug(d.slug)));
-    const allDocs = [...localeDocs, ...fallbackDocs];
+      // Merge: locale docs first, then base docs for missing pages
+      const fallbackDocs = baseDocs.filter(
+        (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.slug)) && !isDefaultLocaleOnlyPath(`/docs/${d.data.slug ?? toRouteSlug(d.slug)}`),
+      );
+      const fallbackSlugs = new Set(fallbackDocs.map((d) => d.data.slug ?? toRouteSlug(d.slug)));
+      const allDocs = [...localeDocs, ...fallbackDocs];
 
-    // Merge category metadata: base first, locale overrides
-    const baseCategoryMeta = loadCategoryMeta(version.docsDir);
-    const localeCategoryMeta = localeDir ? loadCategoryMeta(localeDir) : new Map();
-    const categoryMeta = new Map([...baseCategoryMeta, ...localeCategoryMeta]);
+      // Merge category metadata: base first, locale overrides
+      const baseCategoryMeta = loadCategoryMeta(version.docsDir);
+      const localeCategoryMeta = localeDir ? loadCategoryMeta(localeDir) : new Map();
+      const categoryMeta = new Map([...baseCategoryMeta, ...localeCategoryMeta]);
 
-    const navDocs = allDocs.filter(isNavVisible);
-    const tree = buildNavTree(navDocs as unknown as DocsEntry[], locale, categoryMeta);
+      const navDocs = allDocs.filter(isNavVisible);
+      const tree = buildNavTree(navDocs as unknown as DocsEntry[], locale, categoryMeta);
 
-    // Regular doc pages
-    for (const entry of allDocs) {
-      const slug = entry.data.slug ?? toRouteSlug(entry.slug);
-      const isFallback = fallbackSlugs.has(slug);
-      const entryContentDir = isFallback ? version.docsDir : (localeDir ?? version.docsDir);
+      // Regular doc pages
+      for (const entry of allDocs) {
+        const slug = entry.data.slug ?? toRouteSlug(entry.slug);
+        const isFallback = fallbackSlugs.has(slug);
+        const entryContentDir = isFallback ? version.docsDir : (localeDir ?? version.docsDir);
 
-      const navSection = getNavSectionForSlug(slug);
-      const subtree = getNavSubtree(tree, navSection);
-      const flat = flattenTree(subtree);
-      const idx = flat.findIndex((n) => n.slug === slug);
+        const navSection = getNavSectionForSlug(slug);
+        const subtree = getNavSubtree(tree, navSection);
+        const flat = flattenTree(subtree);
+        const idx = flat.findIndex((n) => n.slug === slug);
 
-      let prevNode = idx > 0 ? flat[idx - 1] ?? null : null;
-      let nextNode = idx >= 0 && idx < flat.length - 1 ? flat[idx + 1] ?? null : null;
+        let prevNode = idx > 0 ? flat[idx - 1] ?? null : null;
+        let nextNode = idx >= 0 && idx < flat.length - 1 ? flat[idx + 1] ?? null : null;
 
-      if (entry.data.pagination_prev !== undefined) {
-        if (entry.data.pagination_prev === null) {
-          prevNode = null;
-        } else {
-          const found = findNode(tree, entry.data.pagination_prev);
-          prevNode = found ?? prevNode;
+        if (entry.data.pagination_prev !== undefined) {
+          if (entry.data.pagination_prev === null) {
+            prevNode = null;
+          } else {
+            const found = findNode(tree, entry.data.pagination_prev);
+            prevNode = found ?? prevNode;
+          }
         }
-      }
-      if (entry.data.pagination_next !== undefined) {
-        if (entry.data.pagination_next === null) {
-          nextNode = null;
-        } else {
-          const found = findNode(tree, entry.data.pagination_next);
-          nextNode = found ?? nextNode;
+        if (entry.data.pagination_next !== undefined) {
+          if (entry.data.pagination_next === null) {
+            nextNode = null;
+          } else {
+            const found = findNode(tree, entry.data.pagination_next);
+            nextNode = found ?? nextNode;
+          }
         }
+
+        result.push({
+          params: { version: version.slug, locale, slug: slug.split("/") },
+          props: {
+            entry,
+            version,
+            contentDir: entryContentDir,
+            isFallback,
+            breadcrumbs: buildBreadcrumbs(tree, slug, locale),
+            // Pre-resolve prev/next hrefs to versioned locale URLs
+            prev: prevNode
+              ? { ...prevNode, href: versionedDocsUrl(prevNode.slug, version.slug, locale) }
+              : null,
+            next: nextNode
+              ? { ...nextNode, href: versionedDocsUrl(nextNode.slug, version.slug, locale) }
+              : null,
+            headings: extractHeadings(entry.body ?? ""),
+          },
+        });
       }
 
-      result.push({
-        params: { version: version.slug, locale, slug: slug.split("/") },
-        props: {
-          entry,
-          version,
-          contentDir: entryContentDir,
-          isFallback,
-          breadcrumbs: buildBreadcrumbs(tree, slug, locale),
-          // Pre-resolve prev/next hrefs to versioned locale URLs
-          prev: prevNode
-            ? { ...prevNode, href: versionedDocsUrl(prevNode.slug, version.slug, locale) }
-            : null,
-          next: nextNode
-            ? { ...nextNode, href: versionedDocsUrl(nextNode.slug, version.slug, locale) }
-            : null,
-          headings: extractHeadings(entry.body ?? ""),
-        },
-      });
+      // Auto-generated index pages for categories without index.mdx
+      for (const node of collectAutoIndexNodes(tree)) {
+        result.push({
+          params: { version: version.slug, locale, slug: node.slug.split("/") },
+          props: {
+            entry: null,
+            autoIndex: {
+              ...node,
+              children: node.children.map((c: NavNode) => ({
+                ...c,
+                href: c.href ?? versionedDocsUrl(c.slug, version.slug, locale),
+              })) as NavNode[],
+            } as AutoIndexNode,
+            version,
+            contentDir: localeDir ?? version.docsDir,
+            isFallback: false,
+            breadcrumbs: buildBreadcrumbs(tree, node.slug, locale),
+            prev: null,
+            next: null,
+            headings: [],
+          },
+        });
+      }
     }
-
-    // Auto-generated index pages for categories without index.mdx
-    for (const node of collectAutoIndexNodes(tree)) {
-      result.push({
-        params: { version: version.slug, locale, slug: node.slug.split("/") },
-        props: {
-          entry: null,
-          autoIndex: {
-            ...node,
-            children: node.children.map((c: NavNode) => ({
-              ...c,
-              href: c.href ?? versionedDocsUrl(c.slug, version.slug, locale),
-            })) as NavNode[],
-          } as AutoIndexNode,
-          version,
-          contentDir: localeDir ?? version.docsDir,
-          isFallback: false,
-          breadcrumbs: buildBreadcrumbs(tree, node.slug, locale),
-          prev: null,
-          next: null,
-          headings: [],
-        },
-      });
-    }
-    } // end locale loop
   }
 
   return result;
