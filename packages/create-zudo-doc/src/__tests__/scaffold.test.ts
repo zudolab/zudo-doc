@@ -2700,7 +2700,7 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
   });
 });
 
-describe("scaffold — zfb next.25 pin bump (#1840)", () => {
+describe("scaffold — zfb next.28 pin bump (#1870)", () => {
   /**
    * S6 (#1808) pinned all three zfb packages at next.13. #1817 bumped them to
    * 0.1.0-next.14. #1824 bumped them to 0.1.0-next.19 — next.18 hard-removed
@@ -2716,10 +2716,15 @@ describe("scaffold — zfb next.25 pin bump (#1840)", () => {
    * to 0.1.0-next.25 (#1840): BREAKING — next.25 removes `admonitionsPreset`
    * entirely (hard-errors at load); replaced by the generic
    * `markdown.features.directives` map. Host zfb.config.ts migrated in #1840;
-   * generated projects must also pin next.25. Generated package.json must pin
-   * all three.
+   * generated projects must also pin next.25. Now bumped to 0.1.0-next.28:
+   * next.26/next.28 are fix/feature releases with no consumer-facing breaking
+   * change (UTF-8 preserved in directive quoted attrs, `.mdx` route-template
+   * extension strip, embedded-V8 worker console capture). next.27 is skipped
+   * deliberately — its published adapter tarball omitted emit-worker.mjs and
+   * crashes every adapter consumer (Takazudo/zudo-front-builder#794; fixed in
+   * next.28). Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.25", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.28", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -2730,10 +2735,10 @@ describe("scaffold — zfb next.25 pin bump (#1840)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.25");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.25");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.28");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.28");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.25",
+      "0.1.0-next.28",
     );
   });
 });

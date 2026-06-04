@@ -281,7 +281,6 @@ export async function scaffold(choices: UserChoices): Promise<void> {
 function generatePackageJson(choices: UserChoices) {
   // Intentionally absent from scaffolded deps:
   //   @takazudo/zudo-doc-md-plugins — zero references in generator templates/source
-  //   @takazudo/zfb-adapter-cloudflare — zero references in generator templates/source
   const deps: Record<string, string> = {
     // zfb engine — distributed as published npm packages (the prebuilt binary
     // ships via an optionalDependency of @takazudo/zfb-<platform>); pinned to
@@ -311,11 +310,18 @@ function generatePackageJson(choices: UserChoices) {
     // still setting it hard-error at load). Replaced by the generic
     // `markdown.features.directives` map; host zfb.config.ts migrated
     // in zudolab/zudo-doc#1840.
-    "@takazudo/zfb": "0.1.0-next.25",
-    "@takazudo/zfb-runtime": "0.1.0-next.25",
+    // Bumped to next.28 — next.26/next.28 are fix/feature releases (no
+    // consumer-facing breaking change): UTF-8 preserved in directive
+    // quoted attrs (`:::note{title="日本語"}`), `.mdx` page-source extension
+    // stripped from route templates, and embedded-V8 worker console capture
+    // so render failures surface `console.*` output. next.27 is unusable
+    // for adapter consumers — its tarball omitted emit-worker.mjs
+    // (Takazudo/zudo-front-builder#794, fixed in next.28) — so never pin 27.
+    "@takazudo/zfb": "0.1.0-next.28",
+    "@takazudo/zfb-runtime": "0.1.0-next.28",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.25",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.28",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
