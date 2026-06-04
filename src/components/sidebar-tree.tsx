@@ -10,6 +10,7 @@ import type { LocaleLink } from "@/types/locale";
 // pulled in by `./sidebar`'s runtime barrel.
 import type { SidebarRootMenuItem } from "@takazudo/zudo-doc/sidebar/types";
 import { INDENT, BASE_PAD, connectorLeft, ConnectorLines, CategoryLinkIcon } from "./tree-nav-shared";
+import { ChevronRight, ChevronLeft, Search } from "@takazudo/zudo-doc/icons";
 import ThemeToggle from "@/components/theme-toggle";
 import { smartBreakToHtml } from "@/utils/smart-break";
 // After zudolab/zudo-doc#1335 (E2 task 2 half B) the host components
@@ -20,17 +21,9 @@ import { AFTER_NAVIGATE_EVENT, BEFORE_NAVIGATE_EVENT } from "@takazudo/zudo-doc/
 
 function ToggleChevron({ isExpanded, className }: { isExpanded: boolean; className?: string }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
+    <ChevronRight
       className={`h-[0.625rem] w-[0.625rem] shrink-0 transition-transform duration-150 ${isExpanded ? "rotate-90" : ""} ${className ?? ""}`}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={2}
-      aria-hidden="true"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-    </svg>
+    />
   );
 }
 
@@ -315,9 +308,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
           onClick={() => setShowingRootMenu(false)}
           className="flex w-full items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-left text-small text-muted hover:text-fg border-b border-muted"
         >
-          <svg className="h-icon-sm w-icon-sm shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
+          <ChevronRight className="h-icon-sm w-icon-sm shrink-0" />
           {backToMenuLabel ?? "Back to main menu"}
         </button>
         {rootMenuItems.map((item) => (
@@ -349,17 +340,13 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
           onClick={() => setShowingRootMenu(true)}
           className="lg:hidden flex w-full items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-left text-small text-muted hover:text-fg border-b border-muted"
         >
-          <svg className="h-icon-sm w-icon-sm shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
+          <ChevronLeft className="h-icon-sm w-icon-sm shrink-0" />
           {backToMenuLabel ?? "Back to main menu"}
         </button>
       )}
       <div className="px-hsp-sm py-vsp-xs">
         <div className="flex items-center gap-hsp-xs bg-surface rounded px-hsp-sm py-vsp-2xs">
-          <svg className="h-[14px] w-[14px] text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+          <Search className="h-[14px] w-[14px] text-muted shrink-0" />
           <input
             ref={filterRef}
             type="text"

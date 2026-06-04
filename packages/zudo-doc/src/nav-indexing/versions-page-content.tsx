@@ -23,6 +23,7 @@
 import type { JSX } from "preact";
 
 import type { VersionPageEntry, VersionsPageLabels } from "./types.js";
+import { ChevronRight } from "../icons/index.js";
 
 export interface VersionsPageContentProps {
   /** Pre-resolved href to the latest version's default docs page. */
@@ -63,20 +64,7 @@ export function VersionsPageContent(
           class="inline-flex items-center gap-hsp-xs text-small text-accent underline hover:text-accent-hover"
         >
           {labels.latestLink}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-[0.875rem] w-[0.875rem]"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
+          <ChevronRight className="h-[0.875rem] w-[0.875rem]" />
         </a>
       </section>
 

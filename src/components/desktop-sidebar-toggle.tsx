@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'preact/hooks';
 import { BEFORE_NAVIGATE_EVENT, AFTER_NAVIGATE_EVENT } from '@takazudo/zudo-doc/transitions';
+import { ChevronRight, ChevronLeft } from '@takazudo/zudo-doc/icons';
 
 export const SIDEBAR_STORAGE_KEY = 'zudo-doc-sidebar-visible';
 
@@ -106,21 +107,10 @@ export default function DesktopSidebarToggle() {
       aria-pressed={visible}
       data-zfb-transition-persist="desktop-sidebar-toggle"
     >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-icon-sm w-icon-sm"
-        aria-hidden="true"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={2}
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d={visible ? 'M15 19l-7-7 7-7' : 'M9 5l7 7-7 7'}
-        />
-      </svg>
+      {visible
+        ? <ChevronLeft className="h-icon-sm w-icon-sm" />
+        : <ChevronRight className="h-icon-sm w-icon-sm" />
+      }
     </button>
   );
 }

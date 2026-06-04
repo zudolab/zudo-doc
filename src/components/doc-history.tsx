@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "preact/compat
 import { diffLines } from "diff";
 import type { DocHistoryData, DocHistoryEntry } from "@/types/doc-history";
 import { SmartBreak } from "@/utils/smart-break";
+import { History, Close, ArrowLeft } from "@takazudo/zudo-doc/icons";
 // After zudolab/zudo-doc#1335 (E2 task 2 half B) the host components
 // pull lifecycle event names from the v2 transitions module rather
 // than hard-coding `astro:*` literals.
@@ -21,62 +22,6 @@ type PanelView = "closed" | "revisions" | "diff";
 interface DiffSelection {
   older: DocHistoryEntry;
   newer: DocHistoryEntry;
-}
-
-/* ────────────────────────────────────────────
- * Icons
- * ──────────────────────────────────────────── */
-
-function HistoryIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-icon-md w-icon-md"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-icon-md w-icon-md"
-    >
-      <path d="M18 6L6 18M6 6l12 12" />
-    </svg>
-  );
-}
-
-function ArrowLeftIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-icon-sm w-icon-sm"
-    >
-      <path d="M19 12H5M12 19l-7-7 7-7" />
-    </svg>
-  );
 }
 
 /* ────────────────────────────────────────────
@@ -236,7 +181,7 @@ function DiffViewer({
             className="text-muted hover:text-fg lg:hidden"
             aria-label="Back to revisions"
           >
-            <ArrowLeftIcon />
+            <ArrowLeft className="h-icon-sm w-icon-sm" />
           </button>
         )}
         <div className="flex-1 min-w-0 flex">
@@ -569,7 +514,7 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
             className="doc-history-trigger flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-fg hover:border-fg transition-colors"
             aria-label="View document history"
           >
-            <HistoryIcon />
+            <History className="h-icon-md w-icon-md" />
             <span className="text-small">History</span>
           </button>
         </div>
@@ -593,7 +538,7 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
             className="text-muted hover:text-fg"
             aria-label="Close history panel"
           >
-            <CloseIcon />
+            <Close className="h-icon-md w-icon-md" />
           </button>
         </div>
 
