@@ -14,6 +14,7 @@
 import type { JSX } from "preact";
 import { t } from "@/config/i18n";
 import { ChevronLeft, ChevronRight } from "@takazudo/zudo-doc/icons";
+
 // NavNode is a superset; we only need the fields the pager uses.
 interface PagerNode {
   href?: string;
