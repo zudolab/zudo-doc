@@ -93,7 +93,10 @@ export function startServer(options: ServerOptions): void {
     }
 
     // Doc history routes: /doc-history/{slug}.json
-    const match = url.match(/^\/doc-history\/(.+)\.json$/);
+    // Match against the pathname only — req.url includes any query string,
+    // which would make the $-anchored regex reject e.g. ?cachebust=1.
+    const pathname = url.split(/[?#]/, 1)[0];
+    const match = pathname.match(/^\/doc-history\/(.+)\.json$/);
     if (match) {
       try {
         const requestedSlug = decodeURIComponent(match[1]);
