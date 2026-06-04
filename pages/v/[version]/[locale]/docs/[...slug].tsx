@@ -1,19 +1,20 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Page module for the versioned JA docs route.
+// Page module for the versioned non-default-locale docs route.
 //
-// Versioned JA docs route. paths() cross-products settings.versions with a
-// locale-first merge strategy: locale-specific collection (`docs-v-${version.slug}-ja`)
-// takes priority; the base EN collection (`docs-v-${version.slug}`) fills in
+// Versioned locale docs route. paths() cross-products settings.versions ×
+// configured per-version locales with a locale-first merge strategy:
+// locale-specific collection (`docs-v-${version.slug}-${locale}`) takes
+// priority; the base EN collection (`docs-v-${version.slug}`) fills in
 // pages not translated yet (shown with a fallback notice).
 //
-// If version.locales?.ja is not configured, only the base EN collection is used.
+// If version.locales?.[locale] is not configured, only the base EN collection is used.
 //
 // paths() contract (zfb ADR-004 — synchronous):
-//   params: { version: string; slug: string[] }
+//   params: { version: string; locale: string; slug: string[] }
 //   props:  { entry, autoIndex, version, contentDir, isFallback, breadcrumbs, prev, next }
 //
-// Prev/next hrefs are pre-resolved to the versioned JA URL form
+// Prev/next hrefs are pre-resolved to the versioned locale URL form
 // (e.g. /v/1.0/ja/docs/…) so the component needs no URL computation.
 
 import { getCollection } from "zfb/content";
@@ -98,32 +99,36 @@ interface DocPageProps {
 // ---------------------------------------------------------------------------
 
 /**
- * Emit one route per (version, slug) combination for JA locale.
+ * Emit one route per (version, locale, slug) combination for all non-default locales.
  *
- * Merge strategy per version:
- *   1. Load locale docs (e.g. "docs-v-1.0-ja") if version.locales.ja is set.
+ * Cross-products settings.versions × Object.keys(settings.locales) (which are
+ * the non-default locales — default EN is handled by v/[version]/docs/[...slug].tsx).
+ *
+ * Merge strategy per (version, locale):
+ *   1. Load locale docs (e.g. "docs-v-1.0-ja") if version.locales[locale] is set.
  *   2. Load base EN docs ("docs-v-1.0").
  *   3. Locale docs take priority; base EN fills in slugs not translated.
  *   4. Track fallback slugs for the fallback-notice banner.
- *   5. Build nav tree with "ja" locale, compute breadcrumbs and prev/next.
+ *   5. Build nav tree with the active locale, compute breadcrumbs and prev/next.
  *
- * Prev/next hrefs are pre-resolved to the versioned JA URL form.
+ * Prev/next hrefs are pre-resolved to the versioned locale URL form.
  */
 export function paths(): Array<{
-  params: { version: string; slug: string[] };
+  params: { version: string; locale: string; slug: string[] };
   props: DocPageProps;
 }> {
   if (!settings.versions) return [];
 
   const result: Array<{
-    params: { version: string; slug: string[] };
+    params: { version: string; locale: string; slug: string[] };
     props: DocPageProps;
   }> = [];
 
   for (const version of settings.versions) {
+    for (const locale of Object.keys(settings.locales) as string[]) {
     const baseCollectionName = `docs-v-${version.slug}`;
-    const localeDir = (version.locales as Record<string, { dir: string }> | undefined)?.ja?.dir;
-    const localeCollectionName = localeDir ? `docs-v-${version.slug}-ja` : null;
+    const localeDir = (version.locales as Record<string, { dir: string }> | undefined)?.[locale]?.dir;
+    const localeCollectionName = localeDir ? `docs-v-${version.slug}-${locale}` : null;
 
     const baseDocs = ((bridgeEntries(getCollection(baseCollectionName), baseCollectionName) as unknown as DocPageEntry[])).filter(
       (doc) => !doc.data.draft,
@@ -150,7 +155,7 @@ export function paths(): Array<{
     const categoryMeta = new Map([...baseCategoryMeta, ...localeCategoryMeta]);
 
     const navDocs = allDocs.filter(isNavVisible);
-    const tree = buildNavTree(navDocs as unknown as DocsEntry[], "ja", categoryMeta);
+    const tree = buildNavTree(navDocs as unknown as DocsEntry[], locale, categoryMeta);
 
     // Regular doc pages
     for (const entry of allDocs) {
@@ -184,19 +189,19 @@ export function paths(): Array<{
       }
 
       result.push({
-        params: { version: version.slug, slug: slug.split("/") },
+        params: { version: version.slug, locale, slug: slug.split("/") },
         props: {
           entry,
           version,
           contentDir: entryContentDir,
           isFallback,
-          breadcrumbs: buildBreadcrumbs(tree, slug, "ja"),
-          // Pre-resolve prev/next hrefs to versioned JA URLs
+          breadcrumbs: buildBreadcrumbs(tree, slug, locale),
+          // Pre-resolve prev/next hrefs to versioned locale URLs
           prev: prevNode
-            ? { ...prevNode, href: versionedDocsUrl(prevNode.slug, version.slug, "ja") }
+            ? { ...prevNode, href: versionedDocsUrl(prevNode.slug, version.slug, locale) }
             : null,
           next: nextNode
-            ? { ...nextNode, href: versionedDocsUrl(nextNode.slug, version.slug, "ja") }
+            ? { ...nextNode, href: versionedDocsUrl(nextNode.slug, version.slug, locale) }
             : null,
           headings: extractHeadings(entry.body ?? ""),
         },
@@ -206,26 +211,27 @@ export function paths(): Array<{
     // Auto-generated index pages for categories without index.mdx
     for (const node of collectAutoIndexNodes(tree)) {
       result.push({
-        params: { version: version.slug, slug: node.slug.split("/") },
+        params: { version: version.slug, locale, slug: node.slug.split("/") },
         props: {
           entry: null,
           autoIndex: {
             ...node,
             children: node.children.map((c: NavNode) => ({
               ...c,
-              href: c.href ?? versionedDocsUrl(c.slug, version.slug, "ja"),
+              href: c.href ?? versionedDocsUrl(c.slug, version.slug, locale),
             })) as NavNode[],
           } as AutoIndexNode,
           version,
           contentDir: localeDir ?? version.docsDir,
           isFallback: false,
-          breadcrumbs: buildBreadcrumbs(tree, node.slug, "ja"),
+          breadcrumbs: buildBreadcrumbs(tree, node.slug, locale),
           prev: null,
           next: null,
           headings: [],
         },
       });
     }
+    } // end locale loop
   }
 
   return result;
@@ -236,7 +242,7 @@ export function paths(): Array<{
 // ---------------------------------------------------------------------------
 
 interface PageArgs {
-  params: { version: string; slug: string[] };
+  params: { version: string; locale: string; slug: string[] };
   entry: DocPageProps["entry"];
   autoIndex?: DocPageProps["autoIndex"];
   version: DocPageProps["version"];
@@ -247,8 +253,8 @@ interface PageArgs {
   headings: DocPageProps["headings"];
 }
 
-export default function VersionedJaDocsPage({ entry, autoIndex, version, isFallback, breadcrumbs, prev, next, headings }: PageArgs): JSX.Element {
-  const locale = "ja";
+export default function VersionedLocaleDocsPage({ params, entry, autoIndex, version, isFallback, breadcrumbs, prev, next, headings }: PageArgs): JSX.Element {
+  const locale = params.locale;
 
   const slug = autoIndex
     ? autoIndex.slug
@@ -269,7 +275,7 @@ export default function VersionedJaDocsPage({ entry, autoIndex, version, isFallb
   // DocLayoutWithDefaults when `version.banner` is "unmaintained" or
   // "unreleased". The banner links out to the latest version of the
   // current page (slug-preserving — strips the /v/{version}/ prefix,
-  // keeps the /ja/ locale prefix).
+  // keeps the /{locale}/ locale prefix).
   const versionBannerType = version.banner ? version.banner : undefined;
   const versionBannerLatestUrl = versionBannerType
     ? docsUrl(slug, locale)
@@ -284,7 +290,7 @@ export default function VersionedJaDocsPage({ entry, autoIndex, version, isFallb
       }
     : undefined;
 
-  // Canonical URL — versioned JA pages use the versioned JA URL as canonical.
+  // Canonical URL — versioned locale pages use the versioned locale URL as canonical.
   const pageUrl = versionedDocsUrl(slug, version.slug, locale);
   const canonical = settings.siteUrl
     ? settings.siteUrl.replace(/\/$/, "") + pageUrl
