@@ -3,9 +3,6 @@
 src/plugins/rehype-code-title.ts
 src/plugins/rehype-heading-links.ts
 src/plugins/rehype-mermaid.ts
-src/plugins/rehype-strip-md-extension.ts
-src/plugins/remark-admonitions.ts
-src/plugins/remark-resolve-markdown-links.ts
 
 # Plugin utilities — template-only files (production uses @takazudo/zudo-doc-md-plugins)
 src/plugins/docs-source-map.ts
@@ -172,9 +169,7 @@ pages/_mdx-components.ts
 # doc-history, find-in-page-init — which had separate allowlist entries above
 # from earlier waves). Reconcile if/when the host adopts literal preact/compat
 # imports too.
-src/components/content/heading-h2.tsx
 src/components/content/heading-h3.tsx
-src/components/content/heading-h4.tsx
 src/components/html-preview/highlighted-code.tsx
 src/components/html-preview/html-preview.tsx
 src/components/html-preview/preview-base.tsx
