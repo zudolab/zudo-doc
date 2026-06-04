@@ -33,7 +33,11 @@
  * `DeserializeOptions.manifest`, preserving consumer override hooks.
  */
 
-import { type TokenDef } from "@takazudo/zdtp";
+// `import type` (not `import { type ... }`) — esbuild only erases the whole
+// statement in the former shape; the latter leaves a runtime
+// `import {} from "@takazudo/zdtp"` in dist, breaking consumers that don't
+// install zdtp themselves (zdtp is a types-only optional peer here).
+import type { TokenDef } from "@takazudo/zdtp";
 import {
   emptyOverrides,
   type ColorTweakState,
