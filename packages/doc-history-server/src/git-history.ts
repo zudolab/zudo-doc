@@ -1,4 +1,4 @@
-import { execFileSync, execFile } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { DocHistoryEntry, DocHistoryData } from "./types.js";

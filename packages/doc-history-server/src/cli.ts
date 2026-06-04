@@ -16,7 +16,7 @@ function makeSemaphore(concurrency: number) {
 
   function next(): void {
     if (queue.length > 0 && running < concurrency) {
-      running++;
+      // Do not increment running here — the dequeued tryRun call handles it.
       queue.shift()!();
     }
   }
