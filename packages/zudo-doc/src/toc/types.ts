@@ -12,11 +12,3 @@ export interface HeadingItem {
   readonly slug: string;
   readonly text: string;
 }
-
-/**
- * Alias kept for ergonomic imports — `TocItem` is the same shape the
- * TOC components consume after filtering by depth. Filtering does not
- * change the per-item shape, so the alias documents intent without
- * introducing a structural difference.
- */
-export type TocItem = HeadingItem;

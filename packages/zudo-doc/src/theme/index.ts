@@ -1,9 +1,11 @@
 // E5 framework primitives — theme controls.
 //
 // This subpath publishes the layout-level color scheme provider, the theme
-// toggle island, and the design token tweak panel (with its export modal
+// toggle island, and the design-token tweak support modules (export modal
 // and iframe bridge). The host project mounts these directly from
-// `@takazudo/zudo-doc/theme`.
+// `@takazudo/zudo-doc/theme`. The panel UI itself now lives in the external
+// @takazudo/zdtp package, bootstrapped as a side-effect — no panel component
+// is re-exported here.
 //
 // W3B (#1730): design-token SerDe + the shared tweak-state types live in v2
 // now (moved from `src/utils/design-token-{serde,types}.ts`). They are
@@ -16,10 +18,6 @@ export type {
   ColorSchemeProviderProps,
   ColorSchemeProviderColorMode,
 } from "./color-scheme-provider.js";
-export {
-  default as DesignTokenTweakPanel,
-  DesignTokenTweakPanelInner,
-} from "./design-token-tweak-panel.js";
 export { default as ColorTweakExportModal } from "./color-tweak-export-modal.js";
 export {
   DESIGN_TOKEN_SCHEMA,
