@@ -127,24 +127,6 @@ export function asDocsEntries(entries: ZfbDocsEntry[]): DocsEntry[] {
   return entries as unknown as DocsEntry[];
 }
 
-// Module-level cache: snapshot identity → (collection name → stable DocsEntry[]).
-// WeakMap keyed on the ContentSnapshot object (read via globalThis.__zfb) ensures
-// the cache is only valid for the snapshot that was active when entries were first
-// loaded. When the snapshot changes (HMR content change), the old WeakMap entry
-// becomes unreachable and the cache is effectively cleared.
-//
-// When no snapshot is installed (filesystem-fallback path: unit tests, direct
-// Node invocations), globalThis.__zfb?.contentSnapshot is undefined — the cache
-// is bypassed and every call recomputes. This preserves test isolation: test suites
-// that mock getCollection can replace data between test cases without worrying
-// about stale cached results.
-//
-// globalThis.__zfb is read directly (not via zfb/content's getContentSnapshot)
-// so the cache works even when zfb/content is mocked in tests without
-// getContentSnapshot.
-type ZfbSnapshot = { collections: Record<string, unknown[]> };
-const loadDocsCache = new WeakMap<ZfbSnapshot, Map<string, DocsEntry[]>>();
-
 /**
  * One-shot helper for paths()/render-time pages that just need a
  * `DocsEntry[]` for `@/utils/docs` consumption — wraps `getDocs` and
@@ -153,37 +135,8 @@ const loadDocsCache = new WeakMap<ZfbSnapshot, Map<string, DocsEntry[]>>();
  * `getCollection("docs") as unknown as DocsEntry[]` — that idiom
  * silently dropped the `id`/`collection` fields the utility helpers
  * read, which threw `Cannot read properties of undefined` at runtime.
- *
- * The result is memoized per (snapshot, collection name) pair so callers
- * receive a stable array reference across multiple calls within the same
- * build snapshot. WeakMap-based caches downstream (mergeLocaleDocs,
- * buildNavTree) rely on this identity stability.
- *
- * In non-snapshot contexts (unit tests using mocked getCollection),
- * memoization is bypassed so test cases that install fresh mock data
- * between runs are not affected by stale cached results.
  */
 export function loadDocs(collectionName: string): DocsEntry[] {
-  // Read the snapshot directly from globalThis.__zfb so this cache works
-  // even when zfb/content is fully mocked in tests (mocks need not export
-  // getContentSnapshot). When the snapshot is absent (test / fs-fallback),
-  // the cache is bypassed entirely, preserving test isolation.
-  const g = globalThis as { __zfb?: { contentSnapshot?: ZfbSnapshot } };
-  const snapshot = g.__zfb?.contentSnapshot;
-  if (snapshot !== undefined) {
-    // Snapshot path: stable cache keyed on the snapshot identity.
-    let byName = loadDocsCache.get(snapshot);
-    if (!byName) {
-      byName = new Map<string, DocsEntry[]>();
-      loadDocsCache.set(snapshot, byName);
-    }
-    const cached = byName.get(collectionName);
-    if (cached) return cached;
-    const result = asDocsEntries(getDocs(collectionName));
-    byName.set(collectionName, result);
-    return result;
-  }
-  // No snapshot (test / filesystem-fallback): bypass cache for isolation.
   return asDocsEntries(getDocs(collectionName));
 }
 
