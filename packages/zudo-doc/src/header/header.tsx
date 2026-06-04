@@ -475,95 +475,130 @@ interface RightItemContext {
   hasLocales: boolean;
 }
 
-function renderRightItem(
+/**
+ * Shared trigger-button shell for header-right items that dispatch a
+ * CustomEvent on click. The legacy template used an inline `onclick`
+ * attribute string; we preserve that DOM-level behaviour by spreading via
+ * a plain object — Preact's typed JSX rejects a string-valued `onclick`
+ * prop, but the renderer forwards the literal attribute through a spread.
+ */
+function TriggerButton({
+  index,
+  id,
+  ariaLabel,
+  event,
+  children,
+}: {
+  index: number;
+  id: string;
+  ariaLabel: string;
+  event: string;
+  children: ComponentChildren;
+}): VNode {
+  const inlineOnclick: Record<string, string> = {
+    onclick: `window.dispatchEvent(new CustomEvent('${event}'))`,
+  };
+  return (
+    <button
+      key={`right-${index}`}
+      id={id}
+      type="button"
+      class="flex items-center justify-center text-muted transition-colors hover:text-fg"
+      aria-label={ariaLabel}
+      {...inlineOnclick}
+    >
+      {children}
+    </button>
+  );
+}
+
+/**
+ * Shared wrapper div for header-right component slots. Pass `className`
+ * to apply Tailwind classes; omit it entirely (or pass `undefined`) for
+ * the plain `<div>` variant (search slot has no extra class).
+ */
+function SlotWrapper({
+  index,
+  className,
+  children,
+}: {
+  index: number;
+  className?: string;
+  children: ComponentChildren;
+}): VNode {
+  return (
+    <div key={`right-${index}`} class={className}>
+      {children}
+    </div>
+  );
+}
+
+type RightItemHandler = (
   item: HeaderRightItem,
   index: number,
   ctx: RightItemContext,
-): VNode | null {
-  if (item.type === "trigger" && item.trigger === "design-token-panel") {
-    // The legacy template used an inline `onclick` attribute string. We
-    // preserve that DOM-level behaviour by spreading the attribute via a
-    // plain object — Preact's typed JSX rejects a string-valued
-    // `onclick` prop because it expects an event handler function, but
-    // the underlying renderer happily forwards the literal attribute
-    // when the prop arrives through a spread.
-    const inlineOnclick: Record<string, string> = {
-      onclick:
-        "window.dispatchEvent(new CustomEvent('toggle-design-token-panel'))",
-    };
-    return (
-      <button
-        key={`right-${index}`}
-        id="design-token-trigger"
-        type="button"
-        class="flex items-center justify-center text-muted transition-colors hover:text-fg"
-        aria-label="Toggle design token panel"
-        {...inlineOnclick}
+) => VNode | null;
+
+// Dispatch table keyed by `${type}:${trigger|component}`, or just `type`
+// for link/html items that carry no sub-type discriminant.
+const RIGHT_ITEM_DISPATCH: Record<string, RightItemHandler> = {
+  "trigger:design-token-panel": (_item, index) => (
+    <TriggerButton
+      index={index}
+      id="design-token-trigger"
+      ariaLabel="Toggle design token panel"
+      event="toggle-design-token-panel"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <circle cx="13.5" cy="6.5" r="2.5" />
-          <circle cx="17.5" cy="10.5" r="2.5" />
-          <circle cx="8.5" cy="7.5" r="2.5" />
-          <circle cx="6.5" cy="12.5" r="2.5" />
-          <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
-        </svg>
-      </button>
-    );
-  }
+        <circle cx="13.5" cy="6.5" r="2.5" />
+        <circle cx="17.5" cy="10.5" r="2.5" />
+        <circle cx="8.5" cy="7.5" r="2.5" />
+        <circle cx="6.5" cy="12.5" r="2.5" />
+        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
+      </svg>
+    </TriggerButton>
+  ),
 
-  if (item.type === "trigger" && item.trigger === "ai-chat") {
-    // See the design-token branch above for why this goes through a spread.
-    const inlineOnclick: Record<string, string> = {
-      onclick: "window.dispatchEvent(new CustomEvent('toggle-ai-chat'))",
-    };
-    return (
-      <button
-        key={`right-${index}`}
-        id="ai-chat-trigger"
-        type="button"
-        class="flex items-center justify-center text-muted transition-colors hover:text-fg"
-        aria-label="Open AI assistant"
-        {...inlineOnclick}
+  "trigger:ai-chat": (_item, index) => (
+    <TriggerButton
+      index={index}
+      id="ai-chat-trigger"
+      ariaLabel="Open AI assistant"
+      event="toggle-ai-chat"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        aria-hidden="true"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          aria-hidden="true"
-        >
-          <path d="M9.5 2.5Q10.5 11.5 18 13Q10.5 14.5 9.5 23.5Q8.5 14.5 1 13Q8.5 11.5 9.5 2.5Z" />
-          <path d="M19 0.5Q19.5 4 23.5 5Q19.5 6 19 9.5Q18.5 6 14.5 5Q18.5 4 19 0.5Z" />
-        </svg>
-      </button>
-    );
-  }
+        <path d="M9.5 2.5Q10.5 11.5 18 13Q10.5 14.5 9.5 23.5Q8.5 14.5 1 13Q8.5 11.5 9.5 2.5Z" />
+        <path d="M19 0.5Q19.5 4 23.5 5Q19.5 6 19 9.5Q18.5 6 14.5 5Q18.5 4 19 0.5Z" />
+      </svg>
+    </TriggerButton>
+  ),
 
-  if (item.type === "component" && item.component === "version-switcher") {
-    return (
-      <div key={`right-${index}`} class="hidden lg:block">
-        {ctx.versionSwitcher}
-      </div>
-    );
-  }
+  "component:version-switcher": (_item, index, ctx) => (
+    <SlotWrapper index={index} className="hidden lg:block">
+      {ctx.versionSwitcher}
+    </SlotWrapper>
+  ),
 
-  if (
-    item.type === "component" &&
-    item.component === "github-link" &&
-    ctx.githubRepoUrl
-  ) {
+  "component:github-link": (_item, index, ctx) => {
+    if (!ctx.githubRepoUrl) return null;
     return (
       <a
         key={`right-${index}`}
@@ -578,9 +613,9 @@ function renderRightItem(
         <GitHubIcon />
       </a>
     );
-  }
+  },
 
-  if (item.type === "component" && item.component === "theme-toggle") {
+  "component:theme-toggle": (_item, index, ctx) => {
     // Mirrors the legacy template's two-gate behaviour: the
     // `filterHeaderRightItems` caller drops this item entirely when
     // color-mode is off, but the renderer still cross-checks the host
@@ -588,13 +623,13 @@ function renderRightItem(
     // stays a no-op instead of emitting an empty island slot.
     if (!ctx.colorModeEnabled) return null;
     return (
-      <div key={`right-${index}`} class="hidden lg:flex items-center">
+      <SlotWrapper index={index} className="hidden lg:flex items-center">
         {ctx.themeToggle}
-      </div>
+      </SlotWrapper>
     );
-  }
+  },
 
-  if (item.type === "component" && item.component === "language-switcher") {
+  "component:language-switcher": (_item, index, ctx) => {
     // Same two-gate shape as theme-toggle above. The legacy template
     // gated on `lang && locales.length > 1`; the host signals the
     // multi-locale half via `hasLocales`, and the `lang` half is still
@@ -602,17 +637,18 @@ function renderRightItem(
     // emit nothing.
     if (!(ctx.lang && ctx.hasLocales)) return null;
     return (
-      <div key={`right-${index}`} class="hidden lg:flex items-center">
+      <SlotWrapper index={index} className="hidden lg:flex items-center">
         {ctx.languageSwitcher}
-      </div>
+      </SlotWrapper>
     );
-  }
+  },
 
-  if (item.type === "component" && item.component === "search") {
-    return <div key={`right-${index}`}>{ctx.search}</div>;
-  }
+  "component:search": (_item, index, ctx) => (
+    <SlotWrapper index={index}>{ctx.search}</SlotWrapper>
+  ),
 
-  if (item.type === "link") {
+  link: (item, index) => {
+    if (item.type !== "link") return null;
     const label = item.label ?? item.ariaLabel;
     const isExternal = /^https?:\/\//.test(item.href);
     return (
@@ -635,9 +671,10 @@ function renderRightItem(
         )}
       </a>
     );
-  }
+  },
 
-  if (item.type === "html") {
+  html: (item, index) => {
+    if (item.type !== "html") return null;
     return (
       <span
         key={`right-${index}`}
@@ -647,7 +684,20 @@ function renderRightItem(
         dangerouslySetInnerHTML={{ __html: item.html }}
       />
     );
-  }
+  },
+};
 
-  return null;
+function renderRightItem(
+  item: HeaderRightItem,
+  index: number,
+  ctx: RightItemContext,
+): VNode | null {
+  const key =
+    item.type === "trigger"
+      ? `trigger:${item.trigger}`
+      : item.type === "component"
+        ? `component:${item.component}`
+        : item.type;
+  const handler = RIGHT_ITEM_DISPATCH[key];
+  return handler ? handler(item, index, ctx) : null;
 }
