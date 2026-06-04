@@ -26,6 +26,7 @@ import {
 import { settings } from "@/config/settings";
 import { defaultLocale, type Locale } from "@/config/i18n";
 import { loadDocs } from "../_data";
+import { mergeLocaleDocs, mergeCategoryMeta } from "./locale-merge";
 
 export interface CategoryTreeNavWrapperProps {
   /**
@@ -43,6 +44,8 @@ export interface CategoryTreeNavWrapperProps {
 /**
  * Load merged docs + categoryMeta for the given locale.
  * Matches the locale-merge strategy used by _category-nav.tsx.
+ * Note: applyDefaultLocaleOnlyFilter is intentionally omitted here so that
+ * category tree nav renders all EN pages even if they match defaultLocaleOnlyPrefixes.
  */
 function loadNavSource(
   locale: string,
@@ -54,22 +57,18 @@ function loadNavSource(
     };
   }
 
-  const localeDocs = loadDocs(`docs-${locale}`).filter((d) => !d.data.draft);
-  const baseDocs = loadDocs("docs").filter((d) => !d.data.draft);
-  const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? d.id));
-  const fallbackDocs = baseDocs.filter(
-    (d) => !localeSlugSet.has(d.data.slug ?? d.id),
-  );
+  // Non-default locale: locale-first merge with EN fallback.
+  // No isDefaultLocaleOnlyPath filter — category tree nav shows all EN pages.
+  const { docs } = mergeLocaleDocs({
+    baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
+    localeDocs: loadDocs(`docs-${locale}`).filter((d) => !d.data.draft),
+    keepUnlisted: true,
+  });
 
-  const localeDir =
-    (settings.locales as Record<string, { dir?: string }>)[locale]?.dir ??
-    settings.docsDir;
-  const categoryMeta = new Map([
-    ...loadCategoryMeta(settings.docsDir),
-    ...loadCategoryMeta(localeDir),
-  ]);
+  const localeDir = settings.locales[locale]?.dir ?? settings.docsDir;
+  const categoryMeta = mergeCategoryMeta(settings.docsDir, localeDir);
 
-  return { docs: [...localeDocs, ...fallbackDocs], categoryMeta };
+  return { docs, categoryMeta };
 }
 
 /**

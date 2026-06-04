@@ -31,6 +31,7 @@ import { tagVocabulary } from "@/config/tag-vocabulary";
 import { collectTags } from "@/utils/tags";
 import { toRouteSlug } from "@/utils/slug";
 import { loadDocs } from "../_data";
+import { mergeLocaleDocs } from "./locale-merge";
 import type { DocsEntry } from "@/types/docs-entry";
 
 // ---------------------------------------------------------------------------
@@ -114,21 +115,13 @@ export function FooterWithDefaults({
     if (lang === defaultLocale) {
       docs = loadDocs("docs").filter((d) => !d.data.draft && !d.data.unlisted);
     } else {
-      const localeDocs = loadDocs(`docs-${lang}`).filter(
-        (d) => !d.data.draft && !d.data.unlisted,
-      );
-      const baseDocs = loadDocs("docs").filter(
-        (d) => !d.data.draft && !d.data.unlisted,
-      );
-      const localeSlugSet = new Set(
-        localeDocs.map((d) => d.data.slug ?? toRouteSlug(d.id)),
-      );
-      docs = [
-        ...localeDocs,
-        ...baseDocs.filter(
-          (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id)),
-        ),
-      ];
+      // No isDefaultLocaleOnlyPath filter — footer taglist shows tags from all
+      // EN pages, not just locale-routable ones.
+      const result = mergeLocaleDocs({
+        baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
+        localeDocs: loadDocs(`docs-${lang}`).filter((d) => !d.data.draft),
+      });
+      docs = result.docs;
     }
 
     const tagMap = collectTags(

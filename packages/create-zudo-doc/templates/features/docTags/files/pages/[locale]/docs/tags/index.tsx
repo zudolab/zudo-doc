@@ -15,6 +15,7 @@
 //   props:  (none — tag map computed at render time)
 
 import { mergeLocaleDocs } from "../../../lib/locale-merge";
+import { loadDocs } from "../../../_data";
 import { collectTags } from "@/utils/tags";
 import { toRouteSlug } from "@/utils/slug";
 import { t } from "@/config/i18n";
@@ -52,7 +53,11 @@ export default function LocaleTagsIndexPage({
   const { locale } = params;
   const pageTitle = t("doc.allTags", locale);
 
-  const docs = mergeLocaleDocs(locale);
+  const { docs } = mergeLocaleDocs({
+    baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
+    localeDocs: loadDocs(`docs-${locale}`).filter((d) => !d.data.draft),
+    applyDefaultLocaleOnlyFilter: true,
+  });
   const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
 
   const labels: TagNavLabels = {

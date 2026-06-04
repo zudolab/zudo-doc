@@ -31,9 +31,9 @@ import {
 } from "@/utils/docs";
 import { settings } from "@/config/settings";
 import { defaultLocale, type Locale } from "@/config/i18n";
-import { isDefaultLocaleOnlyPath } from "@/utils/base";
 import { getCategoryOrder } from "@/utils/nav-scope";
 import { loadDocs } from "../_data";
+import { mergeLocaleDocs, mergeCategoryMeta } from "./locale-merge";
 
 export interface SiteTreeNavWrapperProps {
   /**
@@ -50,7 +50,7 @@ export interface SiteTreeNavWrapperProps {
 
 /**
  * Load merged docs + categoryMeta for the given locale.
- * Matches the locale-merge strategy used by _category-nav.tsx.
+ * Matches the locale-merge strategy used by _nav-source-docs.ts.
  */
 function loadNavSource(
   locale: string,
@@ -62,25 +62,17 @@ function loadNavSource(
     };
   }
 
-  const localeDocs = loadDocs(`docs-${locale}`).filter((d) => !d.data.draft);
-  const baseDocs = loadDocs("docs").filter((d) => !d.data.draft);
-  const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? d.id));
-  const fallbackDocs = baseDocs
-    .filter((d) => !localeSlugSet.has(d.data.slug ?? d.id))
-    .filter((d) => {
-      const slug = d.data.slug ?? d.id;
-      return !isDefaultLocaleOnlyPath(`/docs/${slug}/`);
-    });
+  const { docs } = mergeLocaleDocs({
+    baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
+    localeDocs: loadDocs(`docs-${locale}`).filter((d) => !d.data.draft),
+    applyDefaultLocaleOnlyFilter: true,
+    keepUnlisted: true,
+  });
 
-  const localeDir =
-    (settings.locales as Record<string, { dir?: string }>)[locale]?.dir ??
-    settings.docsDir;
-  const categoryMeta = new Map([
-    ...loadCategoryMeta(settings.docsDir),
-    ...loadCategoryMeta(localeDir),
-  ]);
+  const localeDir = settings.locales[locale]?.dir ?? settings.docsDir;
+  const categoryMeta = mergeCategoryMeta(settings.docsDir, localeDir);
 
-  return { docs: [...localeDocs, ...fallbackDocs], categoryMeta };
+  return { docs, categoryMeta };
 }
 
 /**

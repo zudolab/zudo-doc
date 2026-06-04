@@ -16,6 +16,7 @@
 //   Build tag map; emit one route per (locale, tag) pair.
 
 import { mergeLocaleDocs } from "../../../lib/locale-merge";
+import { loadDocs } from "../../../_data";
 import { collectTags } from "@/utils/tags";
 import type { TagInfo } from "@/utils/tags";
 import { toRouteSlug } from "@/utils/slug";
@@ -47,7 +48,11 @@ export function paths(): Array<{
   }> = [];
 
   for (const locale of Object.keys(settings.locales)) {
-    const docs = mergeLocaleDocs(locale);
+    const { docs } = mergeLocaleDocs({
+      baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
+      localeDocs: loadDocs(`docs-${locale}`).filter((d) => !d.data.draft),
+      applyDefaultLocaleOnlyFilter: true,
+    });
     const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
 
     for (const [tag, tagInfo] of tagMap.entries()) {
