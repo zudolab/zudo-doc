@@ -18,7 +18,6 @@
 // the DocLayoutWithDefaults version-banner prop drives the banner display.
 
 import { getCollection } from "zfb/content";
-import type { CollectionEntry } from "zfb/content";
 import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
 import type { VersionConfig } from "@/config/settings";
@@ -33,7 +32,6 @@ import {
   collectAutoIndexNodes,
   isNavVisible,
   type NavNode,
-  type BreadcrumbItem,
 } from "@/utils/docs";
 import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
 import { toRouteSlug } from "@/utils/slug";
@@ -47,6 +45,7 @@ import { createMdxComponents } from "../../../_mdx-components";
 import type { JSX } from "preact";
 import { bridgeEntries } from "../../../_data";
 import { extractHeadings } from "../../../lib/_extract-headings";
+import type { DocPageEntry, AutoIndexNode, DocPageEntryProps, DocPageAutoIndexProps } from "../../../lib/doc-page-props";
 import { FooterWithDefaults } from "../../../lib/_footer-with-defaults";
 import { SidebarWithDefaults } from "../../../lib/_sidebar-with-defaults";
 import { HeaderWithDefaults } from "../../../lib/_header-with-defaults";
@@ -69,26 +68,17 @@ export const frontmatter = { title: "Docs" };
 // Types
 // ---------------------------------------------------------------------------
 
-interface DocPageEntry extends DocsEntry {
-  Content: CollectionEntry<unknown>["Content"];
-  module_specifier: string;
-}
+// DocPageEntry, AutoIndexNode imported from pages/lib/doc-page-props.ts
 
-interface AutoIndexNode extends NavNode {
-  children: NavNode[];
-}
-
-interface DocPageProps {
-  entry: DocPageEntry | null;
-  autoIndex?: AutoIndexNode;
+/** Route-specific extra fields — present on both branches of the union. */
+interface VersionedDocPageExtra {
   /** The version config for the active version. */
   version: VersionConfig;
-  breadcrumbs: BreadcrumbItem[];
-  prev: NavNode | null;
-  next: NavNode | null;
-  /** Depth-2/3/4 headings extracted from the MDX body, for SSG TOC links. */
-  headings: ReturnType<typeof extractHeadings>;
 }
+
+type DocPageProps =
+  | (DocPageEntryProps & VersionedDocPageExtra)
+  | (DocPageAutoIndexProps & VersionedDocPageExtra);
 
 // ---------------------------------------------------------------------------
 // paths() — synchronous (ADR-004)
@@ -156,6 +146,7 @@ export function paths(): Array<{
       result.push({
         params: { version: version.slug, slug: slug.split("/") },
         props: {
+          kind: "entry",
           entry,
           version,
           breadcrumbs: buildBreadcrumbs(tree, slug, "en"),
@@ -176,7 +167,7 @@ export function paths(): Array<{
       result.push({
         params: { version: version.slug, slug: node.slug.split("/") },
         props: {
-          entry: null,
+          kind: "autoIndex",
           autoIndex: {
             ...node,
             children: node.children.map((c: NavNode) => ({
@@ -201,33 +192,25 @@ export function paths(): Array<{
 // Page component
 // ---------------------------------------------------------------------------
 
-interface PageArgs {
-  params: { version: string; slug: string[] };
-  entry: DocPageProps["entry"];
-  autoIndex?: DocPageProps["autoIndex"];
-  version: DocPageProps["version"];
-  breadcrumbs: DocPageProps["breadcrumbs"];
-  prev: DocPageProps["prev"];
-  next: DocPageProps["next"];
-  headings: DocPageProps["headings"];
-}
+type PageArgs = DocPageProps & { params: { version: string; slug: string[] } };
 
-export default function VersionedDocsPage({ entry, autoIndex, version, breadcrumbs, prev, next, headings }: PageArgs): JSX.Element {
+export default function VersionedDocsPage(props: PageArgs): JSX.Element {
+  const { breadcrumbs, prev, next, headings, version } = props;
   const locale = "en";
 
-  const slug = autoIndex
-    ? autoIndex.slug
-    : (entry!.data.slug ?? toRouteSlug(entry!.slug));
+  const slug = props.kind === "autoIndex"
+    ? props.autoIndex.slug
+    : (props.entry.data.slug ?? toRouteSlug(props.entry.slug));
 
-  const title = autoIndex ? autoIndex.label : entry!.data.title;
-  const description = autoIndex ? autoIndex.description : entry!.data.description;
+  const title = props.kind === "autoIndex" ? props.autoIndex.label : props.entry.data.title;
+  const description = props.kind === "autoIndex" ? props.autoIndex.description : props.entry.data.description;
 
   // Locale-aware components bag — creates nav wrappers bound to the active
   // locale so CategoryNav/CategoryTreeNav/SiteTreeNav query the right collection.
   const components = createMdxComponents(locale);
 
-  const autoIndexChildren = autoIndex
-    ? autoIndex.children.filter((c: NavNode) => c.hasPage || c.children.length > 0)
+  const autoIndexChildren = props.kind === "autoIndex"
+    ? props.autoIndex.children.filter((c: NavNode) => c.hasPage || c.children.length > 0)
     : [];
 
   // Version banner: drives the `<VersionBanner>` element inside
@@ -259,7 +242,7 @@ export default function VersionedDocsPage({ entry, autoIndex, version, breadcrum
   // both lang (BCP-47 locale string) and navSection (filesystem-derived
   // kebab-case slug) come from controlled, trusted sources.
   const navSection = getNavSectionForSlug(slug);
-  const hideSidebar = entry?.data?.hide_sidebar;
+  const hideSidebar = props.kind === "entry" ? props.entry.data.hide_sidebar : undefined;
   const sidebarPersistKey = hideSidebar
     ? undefined
     : `sidebar-${locale}-${navSection ?? "default"}`;
@@ -272,7 +255,7 @@ export default function VersionedDocsPage({ entry, autoIndex, version, breadcrum
       lang={locale}
       noindex={settings.noindex}
       hideSidebar={hideSidebar}
-      hideToc={entry?.data?.hide_toc}
+      hideToc={props.kind === "entry" ? props.entry.data.hide_toc : undefined}
       headings={headings}
       canonical={canonical}
       sidebarPersistKey={sidebarPersistKey}
@@ -326,7 +309,7 @@ export default function VersionedDocsPage({ entry, autoIndex, version, breadcrum
         </>
       }
     >
-      {autoIndex ? (
+      {props.kind === "autoIndex" ? (
         /* Auto-index page: category without an index.mdx.
            Fragment (not <div>) so children become direct children of
            <article class="zd-content">, picking up the flow-space rule
@@ -334,7 +317,7 @@ export default function VersionedDocsPage({ entry, autoIndex, version, breadcrum
            Wrapping in <div> would make h1/description p children-of-children
            and the flow gap (~24px) would never apply — see #1460. */
         <>
-          <h1 class="text-heading font-bold mb-vsp-xs">{autoIndex.label}</h1>
+          <h1 class="text-heading font-bold mb-vsp-xs">{props.autoIndex.label}</h1>
 
           {/* Build-time date block — chrome parity (#1461). Auto-index pages
               previously rendered without doc-meta; reference site shows it on
@@ -342,9 +325,9 @@ export default function VersionedDocsPage({ entry, autoIndex, version, breadcrum
               entry exists for this slug. */}
           <DocMetainfoArea slug={slug} locale={locale} />
 
-          {autoIndex.description && (
+          {props.autoIndex.description && (
             <p class="mb-vsp-lg text-title text-muted">
-              {autoIndex.description}
+              {props.autoIndex.description}
             </p>
           )}
           <NavCardGrid children={autoIndexChildren} />
@@ -353,7 +336,7 @@ export default function VersionedDocsPage({ entry, autoIndex, version, breadcrum
         /* Regular doc page. Fragment (not <div>) for the same reason as
            the auto-index branch above — see #1460. */
         <>
-          <h1 class="text-heading font-bold mb-vsp-xs">{entry!.data.title}</h1>
+          <h1 class="text-heading font-bold mb-vsp-xs">{props.entry.data.title}</h1>
 
           {/* Build-time date block (Created / Updated / Author).
               doc-metainfo placement — between <h1> and description.
@@ -361,11 +344,11 @@ export default function VersionedDocsPage({ entry, autoIndex, version, breadcrum
           <DocMetainfoArea slug={slug} locale={locale} />
 
           {/* Page-level tag chips — matching doc-tags placement (#1658). */}
-          <DocTagsArea slug={slug} locale={locale} tags={entry!.data.tags} />
+          <DocTagsArea slug={slug} locale={locale} tags={props.entry.data.tags} />
 
-          {entry!.data.description && (
+          {props.entry.data.description && (
             <p class="mb-vsp-lg text-title text-muted">
-              {entry!.data.description}
+              {props.entry.data.description}
             </p>
           )}
 
@@ -373,16 +356,16 @@ export default function VersionedDocsPage({ entry, autoIndex, version, breadcrum
               null when the entries array is empty, so pages without
               custom frontmatter emit nothing. */}
           <FrontmatterPreview
-            entries={buildFrontmatterPreviewEntries(entry!.data)}
+            entries={buildFrontmatterPreviewEntries(props.entry.data)}
             title={t("frontmatter.preview.title", locale)}
             keyColLabel={t("frontmatter.preview.keyCol", locale)}
             valueColLabel={t("frontmatter.preview.valueCol", locale)}
             renderers={frontmatterRenderers}
-            data={entry!.data as Record<string, unknown>}
+            data={props.entry.data as Record<string, unknown>}
             locale={locale}
           />
 
-          {entry && <entry.Content components={components} />}
+          <props.entry.Content components={components} />
 
           {/* Prev / Next pagination — placed before the document utilities
               section to match the Astro reference order: content → pager →
@@ -440,10 +423,8 @@ export default function VersionedDocsPage({ entry, autoIndex, version, breadcrum
             )}
           </nav>
 
-          {/* Document utilities (revision history) — gated on entry, matching regular slug page pattern */}
-          {entry && (
-            <DocHistoryArea slug={slug} locale={locale} />
-          )}
+          {/* Document utilities (revision history) — entry branch only */}
+          <DocHistoryArea slug={slug} locale={locale} />
         </>
       )}
     </DocLayoutWithDefaults>
