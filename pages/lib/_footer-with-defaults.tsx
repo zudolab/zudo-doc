@@ -115,11 +115,16 @@ export function FooterWithDefaults({
     if (lang === defaultLocale) {
       docs = loadDocs("docs").filter((d) => !d.data.draft && !d.data.unlisted);
     } else {
-      // No isDefaultLocaleOnlyPath filter — footer taglist shows tags from all
-      // EN pages, not just locale-routable ones.
+      // Apply the default-locale-only filter so the footer taglist only counts
+      // tags that have a locale-routable tag page — matching the tag-route
+      // pages ([tag].tsx / tags/index.tsx) and enumerateTagsRoutes, which all
+      // now filter. Without this, the footer would link to /{locale}/docs/tags/
+      // pages that are never built for tags living only on default-locale-only
+      // prefix pages.
       const result = mergeLocaleDocs({
         baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
         localeDocs: loadDocs(`docs-${lang}`).filter((d) => !d.data.draft),
+        applyDefaultLocaleOnlyFilter: true,
       });
       docs = result.docs;
     }
