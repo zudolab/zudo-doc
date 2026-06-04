@@ -600,36 +600,39 @@ export default function PresetGenerator() {
         {/* Show items in current state order first, then any default items
             that the user has removed (so they can be re-enabled). */}
         <ul className="flex flex-col gap-y-vsp-2xs">
-          {orderedItems.map(({ spec, index }) => (
-            <HeaderRightItemRow
-              key={headerRightItemKey(spec)}
-              spec={spec}
-              checked={true}
-              onToggle={() => toggleHeaderRightItem(spec)}
-              moveControls={
-                <>
-                  <button
-                    type="button"
-                    onClick={() => moveHeaderRightItem(index, -1)}
-                    disabled={index === 0}
-                    aria-label={`Move ${HEADER_RIGHT_LABELS[spec.name] ?? spec.name} up`}
-                    className="border border-muted bg-surface px-hsp-xs py-vsp-2xs text-caption text-fg transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => moveHeaderRightItem(index, 1)}
-                    disabled={index === orderedItems.length - 1}
-                    aria-label={`Move ${HEADER_RIGHT_LABELS[spec.name] ?? spec.name} down`}
-                    className="border border-muted bg-surface px-hsp-xs py-vsp-2xs text-caption text-fg transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    ↓
-                  </button>
-                </>
-              }
-            />
-          ))}
+          {orderedItems.map(({ spec, index }) => {
+            const label = HEADER_RIGHT_LABELS[spec.name] ?? spec.name;
+            return (
+              <HeaderRightItemRow
+                key={headerRightItemKey(spec)}
+                spec={spec}
+                checked={true}
+                onToggle={() => toggleHeaderRightItem(spec)}
+                moveControls={
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => moveHeaderRightItem(index, -1)}
+                      disabled={index === 0}
+                      aria-label={`Move ${label} up`}
+                      className="border border-muted bg-surface px-hsp-xs py-vsp-2xs text-caption text-fg transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveHeaderRightItem(index, 1)}
+                      disabled={index === orderedItems.length - 1}
+                      aria-label={`Move ${label} down`}
+                      className="border border-muted bg-surface px-hsp-xs py-vsp-2xs text-caption text-fg transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      ↓
+                    </button>
+                  </>
+                }
+              />
+            );
+          })}
           {missingItems.map((spec) => (
             <HeaderRightItemRow
               key={headerRightItemKey(spec)}
