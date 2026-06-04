@@ -86,15 +86,35 @@ interface AiChatErrorResponse {
 | `RATE_LIMIT_PER_DAY` | var | No | Max requests per IP per day (default `100`) |
 | `PUBLIC_ENABLE_MOCKS` | var | No | Set to `"true"` to enable MSW mock responses (dev mode only) |
 
+## Settings
+
+The following `src/config/settings.ts` fields control endpoint behavior (distinct from the CF env
+vars above, which are Cloudflare-side runtime configuration).
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `aiChatDemoMode` | `boolean` | `true` | Short-circuits the endpoint with a fixed reply; no API key or KV accessed |
+| `aiChatAllowedOrigins` | `string[]` | `[]` | CORS origin allowlist (non-demo only). Empty = all cross-origin requests blocked |
+| `aiChatGlobalDailyLimit` | `number \| false` | `false` | Global daily request ceiling across all IPs; `false` = no ceiling |
+
 ## Security
 
 The endpoint includes layered defenses ported from the legacy standalone worker:
 
 - **Hardened system prompt** — XML-tagged context with explicit guardrails prevents the model from leaking configuration or following off-topic instructions
 - **Input screening** — regex pre-filter rejects common prompt injection patterns before the Claude API is called, without consuming rate limit quota
-- **Rate limiting** — per-IP limits via `RATE_LIMIT` KV (best-effort, fail-open on KV outage)
+- **Rate limiting** — per-IP limits via `RATE_LIMIT` KV; **fail-closed** (KV outage → HTTP 429)
+  when `aiChatDemoMode` is `false`; fail-open in demo mode (demo short-circuit is first, so the
+  limiter is never reached in practice)
+- **CORS allowlist** — when not in demo mode, `Access-Control-Allow-Origin` is echoed only for
+  origins in `aiChatAllowedOrigins`; cross-origin requests from unlisted origins are blocked by
+  the browser. Demo mode always sends `*` for back-compat.
+- **Global daily ceiling** — optional `aiChatGlobalDailyLimit` backstop against IP rotation and
+  botnets; off by default
 - **Audit logging** — every interaction is logged to `RATE_LIMIT` KV with `audit:` prefix (7-day TTL, fire-and-forget)
 - **Message length cap** — messages over 4000 characters are rejected before reaching the API
+- **`cf-connecting-ip` caveat** — per-IP rate limiting uses this header, which is only trustworthy
+  when the Worker is deployed behind Cloudflare's network
 
 ## Documentation Context
 

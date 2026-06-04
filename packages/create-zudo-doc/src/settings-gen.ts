@@ -130,6 +130,8 @@ export function generateSettingsFile(choices: UserChoices): string {
   // the chat once they're wiring up a real `ANTHROPIC_API_KEY`. Defaulting
   // demo mode off avoids silently disabling chat for them.
   lines.push(`  aiChatDemoMode: false as boolean,`);
+  lines.push(`  aiChatAllowedOrigins: [] as string[],`);
+  lines.push(`  aiChatGlobalDailyLimit: false as number | false,`);
   if (choices.features.includes("docHistory")) {
     lines.push(`  docHistory: true,`);
   } else {
