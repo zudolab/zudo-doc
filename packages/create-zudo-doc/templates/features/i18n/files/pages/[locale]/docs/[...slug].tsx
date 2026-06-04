@@ -21,7 +21,7 @@ import { getCollection } from "zfb/content";
 import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
 import { t, getContentDir } from "@/config/i18n";
-import { docsUrl, isDefaultLocaleOnlyPath } from "@/utils/base";
+import { docsUrl } from "@/utils/base";
 import {
   buildNavTree,
   buildBreadcrumbs,
@@ -42,7 +42,8 @@ import { frontmatterRenderers } from "@/config/frontmatter-preview-renderers";
 // Shared MDX components bag — see `pages/_mdx-components.ts`.
 import { createMdxComponents } from "../../_mdx-components";
 import type { JSX } from "preact";
-import { bridgeEntries } from "../../_data";
+import { bridgeEntries, loadDocs } from "../../_data";
+import { mergeLocaleDocs, mergeCategoryMeta } from "../../lib/locale-merge";
 import { extractHeadings } from "../../lib/_extract-headings";
 import type { DocPageEntry, AutoIndexNode, DocPageEntryProps, DocPageAutoIndexProps } from "../../lib/doc-page-props";
 import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
@@ -111,7 +112,8 @@ export function paths(): Array<{
     const localeConfig = settings.locales[locale];
     const contentDir = localeConfig?.dir ?? settings.docsDir;
 
-    // Load locale + base docs, filter drafts
+    // Load locale + base docs, filter drafts (using bridgeEntries to keep
+    // DocPageEntry shape with Content/module_specifier for the render props).
     const localeDocs = ((bridgeEntries(getCollection(`docs-${locale}`), `docs-${locale}`) as unknown as DocPageEntry[])).filter(
       (d) => !d.data.draft,
     );
@@ -119,25 +121,30 @@ export function paths(): Array<{
       (d) => !d.data.draft,
     );
 
-    const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? toRouteSlug(d.slug)));
-    const fallbackDocs = baseDocs.filter(
-      (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.slug)) && !isDefaultLocaleOnlyPath(`/docs/${d.data.slug ?? toRouteSlug(d.slug)}`),
+    // Merge: locale docs first, base fallback for untranslated pages.
+    // localeSlugSet is returned so isFallback can be derived from it.
+    const { docs: allDocs, localeSlugSet } = mergeLocaleDocs({
+      baseDocs: baseDocs as unknown as DocsEntry[],
+      localeDocs: localeDocs as unknown as DocsEntry[],
+      applyDefaultLocaleOnlyFilter: true,
+      keepUnlisted: true,
+    });
+    // isFallback: page came from base docs, not the locale collection.
+    const fallbackSlugs = new Set(
+      (allDocs as unknown as DocPageEntry[])
+        .filter((d) => !localeSlugSet.has(d.data.slug ?? d.id))
+        .map((d) => d.data.slug ?? d.id),
     );
-    const fallbackSlugs = new Set(fallbackDocs.map((d) => d.data.slug ?? toRouteSlug(d.slug)));
-    const allDocs = [...localeDocs, ...fallbackDocs];
 
-    // Merge category metadata: base first, locale overrides
-    const baseCategoryMeta = loadCategoryMeta(settings.docsDir);
-    const localeCategoryMeta = loadCategoryMeta(contentDir);
-    const categoryMeta = new Map([...baseCategoryMeta, ...localeCategoryMeta]);
+    const categoryMeta = mergeCategoryMeta(settings.docsDir, contentDir);
 
     const navDocs = allDocs.filter(isNavVisible);
-    const tree = buildNavTree(navDocs as unknown as DocsEntry[], locale, categoryMeta);
-    const fullTree = buildNavTree(allDocs as unknown as DocsEntry[], locale, categoryMeta);
+    const tree = buildNavTree(navDocs, locale, categoryMeta);
+    const fullTree = buildNavTree(allDocs, locale, categoryMeta);
 
     // Regular doc pages
     for (const entry of allDocs) {
-      const slug = entry.data.slug ?? toRouteSlug(entry.slug);
+      const slug = entry.data.slug ?? entry.id;
       const isFallback = fallbackSlugs.has(slug);
       const entryContentDir = isFallback ? settings.docsDir : contentDir;
 
@@ -170,7 +177,7 @@ export function paths(): Array<{
         params: { locale, slug: slug.split("/") },
         props: {
           kind: "entry",
-          entry,
+          entry: entry as unknown as DocPageEntry,
           contentDir: entryContentDir,
           isFallback,
           breadcrumbs: buildBreadcrumbs(fullTree, slug, locale),

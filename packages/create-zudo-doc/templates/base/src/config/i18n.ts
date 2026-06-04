@@ -15,11 +15,9 @@ export const locales = [
 ] as const;
 export type Locale = (typeof locales)[number];
 
-type LocaleKey = keyof typeof settings.locales;
-
 /** Safely look up a locale in settings.locales. */
 function getLocaleConfig(locale: string) {
-  return (settings.locales as Record<string, (typeof settings.locales)[LocaleKey]>)[locale];
+  return settings.locales[locale];
 }
 
 /** Get the content directory for a locale. */

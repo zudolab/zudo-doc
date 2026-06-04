@@ -148,32 +148,3 @@ export function filterDrafts(entries: ZfbDocsEntry[]): ZfbDocsEntry[] {
   return entries.filter((e) => !e.data.draft);
 }
 
-/**
- * Merge locale docs with base (EN) fallbacks.
- *
- * Strategy (mirrors src/utils/locale-docs.ts):
- *   1. Load locale docs (e.g. "docs-ja")
- *   2. Load base docs ("docs")
- *   3. Locale docs take priority; base docs fill in missing slugs.
- *   4. Track which slugs came from base (fallbackSlugs).
- *
- * Returns { allDocs, fallbackSlugs }.
- * categoryMeta is not merged here — callers use loadCategoryMeta() directly.
- */
-export function mergeLocaleDocs(
-  locale: string,
-): { allDocs: ZfbDocsEntry[]; fallbackSlugs: Set<string> } {
-  const localeDocs = filterDrafts(getDocs(`docs-${locale}`));
-  const baseDocs = filterDrafts(getDocs("docs"));
-
-  const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? d.id));
-
-  const fallbackDocs = baseDocs.filter(
-    (d) => !localeSlugSet.has(d.data.slug ?? d.id),
-  );
-
-  return {
-    allDocs: [...localeDocs, ...fallbackDocs],
-    fallbackSlugs: new Set(fallbackDocs.map((d) => d.data.slug ?? d.id)),
-  };
-}

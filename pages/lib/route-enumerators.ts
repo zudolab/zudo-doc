@@ -17,12 +17,12 @@
 //     emitted by building the nav tree and calling collectAutoIndexNodes.
 
 import { loadDocs } from "../_data";
-import { mergeLocaleDocs } from "./locale-merge";
+import { mergeLocaleDocs, mergeCategoryMeta } from "./locale-merge";
 import { settings } from "@/config/settings";
 import { defaultLocale } from "@/config/i18n";
 import type { VersionConfig } from "@/config/settings";
 import type { DocsEntry } from "@/types/docs-entry";
-import { docsUrl, versionedDocsUrl, withBase, isDefaultLocaleOnlyPath } from "@/utils/base";
+import { docsUrl, versionedDocsUrl, withBase } from "@/utils/base";
 import { collectTags } from "@/utils/tags";
 import { toRouteSlug } from "@/utils/slug";
 import {
@@ -64,13 +64,12 @@ export function enumerateDocsRoutes(locale: string): string[] {
       urls.push(docsUrl(node.slug, locale as string));
     }
   } else {
-    const localeDocs = loadDocs(`docs-${locale}`).filter((d) => !d.data.draft);
-    const baseDocs = loadDocs("docs").filter((d) => !d.data.draft);
-    const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? d.id));
-    const fallbackDocs = baseDocs.filter(
-      (d) => !localeSlugSet.has(d.data.slug ?? d.id) && !isDefaultLocaleOnlyPath(`/docs/${d.data.slug ?? d.id}`),
-    );
-    const allDocs = [...localeDocs, ...fallbackDocs] as DocsEntry[];
+    const { docs: allDocs } = mergeLocaleDocs({
+      baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
+      localeDocs: loadDocs(`docs-${locale}`).filter((d) => !d.data.draft),
+      applyDefaultLocaleOnlyFilter: true,
+      keepUnlisted: true,
+    });
 
     for (const doc of allDocs) {
       // Mirror the default-locale branch (L61): fall back through toRouteSlug
@@ -80,10 +79,7 @@ export function enumerateDocsRoutes(locale: string): string[] {
 
     const localeConfig = settings.locales[locale];
     const contentDir = localeConfig?.dir ?? settings.docsDir;
-    const categoryMeta = new Map([
-      ...loadCategoryMeta(settings.docsDir),
-      ...loadCategoryMeta(contentDir),
-    ]);
+    const categoryMeta = mergeCategoryMeta(settings.docsDir, contentDir);
 
     const navDocs = allDocs.filter(isNavVisible);
     const tree = buildNavTree(navDocs, locale, categoryMeta);
@@ -119,13 +115,17 @@ export function enumerateTagsRoutes(locale: string): string[] {
   urls.push(withBase(tagsBase));
 
   // Collect tags from the same merged doc set the tag pages use.
-  // mergeLocaleDocs (locale-merge.ts) filters unlisted + draft — mirrors
-  // the tag [tag].tsx pages which do the same filter.
+  // Filter unlisted + draft — mirrors the tag [tag].tsx pages which do the same.
   let docs: DocsEntry[];
   if (locale === defaultLocale) {
     docs = loadDocs("docs").filter((d) => !d.data.unlisted && !d.data.draft);
   } else {
-    docs = mergeLocaleDocs(locale);
+    const result = mergeLocaleDocs({
+      baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
+      localeDocs: loadDocs(`docs-${locale}`).filter((d) => !d.data.draft),
+      applyDefaultLocaleOnlyFilter: true,
+    });
+    docs = result.docs;
   }
 
   const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
@@ -184,22 +184,18 @@ export function enumerateVersionedRoutes(
       ? `docs-v-${version.slug}-${locale}`
       : null;
 
-    const baseDocs = loadDocs(baseCollectionName).filter((d) => !d.data.draft);
-    const localeDocs = localeCollectionName
-      ? loadDocs(localeCollectionName).filter((d) => !d.data.draft)
-      : [];
+    const { docs: allDocs } = mergeLocaleDocs({
+      baseDocs: loadDocs(baseCollectionName).filter((d) => !d.data.draft),
+      localeDocs: localeCollectionName
+        ? loadDocs(localeCollectionName).filter((d) => !d.data.draft)
+        : [],
+      applyDefaultLocaleOnlyFilter: true,
+      keepUnlisted: true,
+    });
 
-    const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? d.id));
-    const fallbackDocs = baseDocs.filter(
-      (d) => !localeSlugSet.has(d.data.slug ?? d.id) && !isDefaultLocaleOnlyPath(`/docs/${d.data.slug ?? d.id}`),
-    );
-    const allDocs = [...localeDocs, ...fallbackDocs] as DocsEntry[];
-
-    const baseCategoryMeta = loadCategoryMeta(version.docsDir);
-    const localeCategoryMeta = localeDir
-      ? loadCategoryMeta(localeDir)
-      : new Map();
-    const categoryMeta = new Map([...baseCategoryMeta, ...localeCategoryMeta]);
+    const categoryMeta = localeDir
+      ? mergeCategoryMeta(version.docsDir, localeDir)
+      : loadCategoryMeta(version.docsDir);
 
     const navDocs = allDocs.filter(isNavVisible);
     const tree = buildNavTree(navDocs, locale, categoryMeta);

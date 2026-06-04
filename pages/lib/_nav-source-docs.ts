@@ -9,10 +9,10 @@
 
 import { defaultLocale, type Locale } from "@/config/i18n";
 import { settings } from "@/config/settings";
-import { docsUrl, isDefaultLocaleOnlyPath } from "@/utils/base";
 import { loadCategoryMeta, type CategoryMeta } from "@/utils/docs";
 import type { DocsEntry } from "@/types/docs-entry";
 import { loadDocs } from "../_data";
+import { mergeLocaleDocs, mergeCategoryMeta } from "./locale-merge";
 
 export type NavSourceDocs = {
   docs: DocsEntry[];
@@ -46,23 +46,17 @@ export function loadNavSourceDocs(
 
   // Non-default locale: locale-first merge with EN fallback so docs the
   // active locale has not yet translated still appear in the tree.
-  const localeDocs = loadDocs(`docs-${lang}`).filter((d) => !d.data.draft);
-  const baseDocs = loadDocs("docs").filter((d) => !d.data.draft);
-  const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? d.id));
-  const fallbackDocs = baseDocs
-    .filter((d) => !localeSlugSet.has(d.data.slug ?? d.id))
-    .filter((d) => !isDefaultLocaleOnlyPath(docsUrl(d.data.slug ?? d.id)));
-  const allDocs = [...localeDocs, ...fallbackDocs];
+  const { docs } = mergeLocaleDocs({
+    baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
+    localeDocs: loadDocs(`docs-${lang}`).filter((d) => !d.data.draft),
+    applyDefaultLocaleOnlyFilter: true,
+    keepUnlisted: true,
+  });
 
-  const localeDir =
-    (settings.locales as Record<string, { dir?: string }>)[lang]?.dir ??
-    settings.docsDir;
   // Base meta first, locale meta wins on overlapping keys — same merge
   // order [locale]/docs/[...slug].tsx uses in its paths() pass.
-  const categoryMeta = new Map<string, CategoryMeta>([
-    ...loadCategoryMeta(settings.docsDir),
-    ...loadCategoryMeta(localeDir),
-  ]);
+  const localeDir = settings.locales[lang]?.dir ?? settings.docsDir;
+  const categoryMeta = mergeCategoryMeta(settings.docsDir, localeDir);
 
-  return { docs: allDocs, categoryMeta };
+  return { docs, categoryMeta };
 }
