@@ -1,0 +1,18 @@
+---
+title: 0.2.0-next.3
+description: 0.2.0-next.3のリリースノート。
+sidebar_position: 1004
+---
+
+互換性クリーンアップのプレリリースです。zdtp 移行で残っていた非推奨の設定エイリアスと未使用のパブリック API スタブを削除し、design-token-lint を公開 npm パッケージへ移行し、zfb を `0.1.0-next.28` に更新しました。
+
+### 破壊的変更
+
+- **非推奨だった `colorTweakPanel` 設定エイリアスを削除しました。** `src/config/settings.ts` では `designTokenPanel` を使用してください。エイリアスは削除済みで、`colorTweakPanel` を設定しても効果はありません (#1862)。
+- **`@takazudo/zudo-doc` から未使用のパブリック API の名残を 3 つ削除しました** (#1866)。`DesignTokenTweakPanel` テーマスタブ（パネル UI は `@takazudo/zdtp` に移行済み）、`VersionSwitcherProps` の何もしない `disableInlineVisibilityStyle` プロパティ、`TocItem` 型エイリアス（`HeadingItem` を使用してください）です。
+
+### 変更点
+
+- **design-token-lint の依存関係を移行しました。** ベンダリングされた `@zudolab/design-token-lint`（`file:`）から、公開されている **`@takazudo/zudo-design-token-lint@^1.0.0`** npm パッケージに切り替えました。bin 名は変わらないため（`design-token-lint`）、既存の lint スクリプトはそのまま動作します (#1863)。
+- **zfb を `0.1.0-next.28` に更新しました。** ホストプロジェクトとジェネレーターのピンの両方を更新しています (#1870)。`0.1.0-next.27` は意図的にスキップしました — 公開された `zfb-adapter-cloudflare` の tarball に `emit-worker.mjs` が含まれておらず、アダプターを使うすべてのプロジェクトがビルド時にクラッシュするためです。パッケージングの修正は next.28 で提供されています。
+- **ドキュメントのクリーンアップ。** 設定とドキュメントから不要になった歴史的経緯・移行の記述を削除し (#1861, #1867)、削除済みの `ai-chat-worker` パッケージのリファレンスページを取り除きました (#1860)。

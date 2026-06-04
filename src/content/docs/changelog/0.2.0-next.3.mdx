@@ -1,0 +1,18 @@
+---
+title: 0.2.0-next.3
+description: Release notes for 0.2.0-next.3.
+sidebar_position: 1004
+---
+
+Compat-cleanup prerelease: removes the deprecated settings alias and vestigial public-surface stubs left from the zdtp migration, moves design-token-lint to a published npm package, and updates zfb to `0.1.0-next.28`.
+
+### Breaking Changes
+
+- **Removed the deprecated `colorTweakPanel` settings alias.** Projects must use `designTokenPanel` in `src/config/settings.ts` — the alias is gone and configs still setting `colorTweakPanel` no longer have any effect (#1862).
+- **Removed three unused public-surface vestiges from `@takazudo/zudo-doc`** (#1866): the `DesignTokenTweakPanel` theme stub (the panel UI lives in `@takazudo/zdtp`), the no-op `disableInlineVisibilityStyle` prop on `VersionSwitcherProps`, and the `TocItem` type alias (use `HeadingItem`).
+
+### Changes
+
+- **Migrated the design-token-lint dependency** from the vendored `@zudolab/design-token-lint` (`file:`) to the published **`@takazudo/zudo-design-token-lint@^1.0.0`** npm package. The bin name is unchanged (`design-token-lint`), so existing lint scripts keep working (#1863).
+- **Bumped zfb to `0.1.0-next.28`** across the host project and the generator pins (#1870). `0.1.0-next.27` is deliberately skipped — its published `zfb-adapter-cloudflare` tarball omitted `emit-worker.mjs` and crashed every adapter consumer at build time; the packaging fix shipped in next.28.
+- **Docs cleanup.** Purged dead historical/migration narration from configs and docs (#1861, #1867) and removed the reference pages for the deleted `ai-chat-worker` package (#1860).
