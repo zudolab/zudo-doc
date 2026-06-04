@@ -28,6 +28,37 @@ export const settings = {
 - ヘッダーバーにスパークルアイコンが表示されます
 - `POST /api/ai-chat`エンドポイントがCloudflare PagesのSSRルートとして利用可能になります
 
+## デモモード無効化時のセキュリティ警告
+
+<Warning title="デモモードを無効にする前にセキュリティを強化してください">
+
+`aiChatDemoMode: false` を設定すると、実際のAnthropicのAPIキーを使うエンドポイントが公開されます。
+設定を誤ると、認証なしのAPIコールによるコスト悪用のリスクがあります。本番稼働前に以下を確認してください：
+
+1. **CORSオリジンを制限する** — `aiChatAllowedOrigins` にデプロイ済みのドキュメントサイトのURL
+   を設定します。デフォルトの空配列はすべてのクロスオリジンブラウザリクエストをブロックします。
+2. **グローバルな1日の上限を設定する** — `aiChatGlobalDailyLimit` でIPローテーションや
+   ボットネットへの対策として、1日のリクエスト総数を制限します。
+3. **Cloudflare経由でデプロイする** — IPごとのレート制限に使用される `cf-connecting-ip` は、
+   Cloudflareのネットワークを経由したリクエストにのみ信頼できます。
+
+`aiChatDemoMode` が `false` のとき、レートリミッターも**フェイルクローズ**になります：
+KVが障害を起こすとリクエストを通過させる代わりにHTTP 429を返し、インフラ障害による
+無制限の費用発生を防ぎます。
+
+</Warning>
+
+```ts title="src/config/settings.ts"
+export const settings = {
+  aiChatDemoMode: false,
+  // クロスオリジンリクエストを許可するオリジンを限定する。
+  aiChatAllowedOrigins: ["https://your-docs-site.example.com"],
+  // コスト上限として1日のグローバルリクエスト数を制限する（false = 上限なし）。
+  aiChatGlobalDailyLimit: 500,
+  // ...
+};
+```
+
 ## 環境設定
 
 チャットエンドポイントはCloudflare PagesのSSRルート（`pages/api/ai-chat.tsx`）として動作し、設定は`wrangler.toml`に定義されたCloudflare環境バインディングから読み込みます。
