@@ -60,9 +60,9 @@ export function resolveHref(href: string): string {
 
 /**
  * Build a localized, versioned nav href.
- * Note: uses /{lang}/v/{version}/... ordering (for header/sidebar nav links).
- * This differs from versionedDocsUrl() which uses /v/{version}/{lang}/... (for doc page links).
- * Both orderings are handled by the routing layer.
+ * Uses /v/{version}/{lang}/... ordering — the only shape the routing layer
+ * serves (pages/v/[version]/ja/docs/...), matching versionedDocsUrl().
+ * The /{lang}/v/{version}/... ordering has no route and 404s.
  */
 export function navHref(
   path: string,
@@ -73,7 +73,7 @@ export function navHref(
   const versionPrefix = currentVersion ? `/v/${currentVersion}` : "";
   return withBase(
     isNonDefaultLocale
-      ? `/${lang}${versionPrefix}${path}`
+      ? `${versionPrefix}/${lang}${path}`
       : `${versionPrefix}${path}`,
   );
 }

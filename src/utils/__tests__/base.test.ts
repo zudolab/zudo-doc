@@ -46,9 +46,9 @@ describe("navHref", () => {
   });
 
   describe("with both locale and version", () => {
-    it("inserts locale before version prefix", () => {
+    it("inserts version prefix before locale (matching the /v/[version]/[lang] routes)", () => {
       expect(navHref("/docs/getting-started", "ja", "1.0")).toBe(
-        "/ja/v/1.0/docs/getting-started/",
+        "/v/1.0/ja/docs/getting-started/",
       );
     });
   });
