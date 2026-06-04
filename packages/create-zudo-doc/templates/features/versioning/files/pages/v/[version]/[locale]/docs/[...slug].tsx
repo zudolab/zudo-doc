@@ -38,8 +38,6 @@ import { toRouteSlug } from "@/utils/slug";
 import { DocLayoutWithDefaults } from "@takazudo/zudo-doc/doclayout";
 import { Breadcrumb } from "@takazudo/zudo-doc/breadcrumb";
 import { NavCardGrid } from "@takazudo/zudo-doc/nav-indexing";
-import { FrontmatterPreview } from "@takazudo/zudo-doc/metainfo";
-import { frontmatterRenderers } from "@/config/frontmatter-preview-renderers";
 // Locale-aware MDX components factory — see `pages/_mdx-components.ts`.
 import { createMdxComponents } from "../../../../_mdx-components";
 import type { JSX } from "preact";
@@ -52,16 +50,12 @@ import { SidebarWithDefaults } from "../../../../lib/_sidebar-with-defaults";
 import { HeaderWithDefaults } from "../../../../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../../../../lib/_head-with-defaults";
 import { DocHistoryArea } from "../../../../lib/_doc-history-area";
-import { DocMetainfoArea } from "../../../../lib/_doc-metainfo-area";
-import { DocTagsArea } from "../../../../lib/_doc-tags-area";
-import { BodyEndIslands } from "../../../../lib/_body-end-islands";
-import { buildFrontmatterPreviewEntries } from "../../../../lib/_frontmatter-preview-data";
 import { composeMetaTitle } from "../../../../lib/_compose-meta-title";
 import { buildInlineVersionSwitcher } from "../../../../lib/_inline-version-switcher";
-import DesktopSidebarToggle from "@/components/desktop-sidebar-toggle";
-import { SidebarResizerInit } from "@takazudo/zudo-doc/sidebar-resizer";
-import type { VNode } from "preact";
-import { Island } from "@takazudo/zfb";
+import { DocPager } from "../../../../lib/_doc-pager";
+import { DocContentHeader } from "../../../../lib/_doc-content-header";
+import { SidebarPrepaint } from "../../../../lib/_sidebar-prepaint";
+import { DocBodyEnd } from "../../../../lib/_doc-body-end";
 
 export const frontmatter = { title: "Docs" };
 
@@ -334,26 +328,9 @@ export default function VersionedLocaleDocsPage(props: PageArgs): JSX.Element {
           currentPath={versionedDocsUrl(slug, version.slug, locale)}
         />
       }
-      afterSidebar={
-        settings.sidebarToggle ? (
-          <>
-            <script dangerouslySetInnerHTML={{
-              __html: `(function(){try{if(localStorage.getItem('zudo-doc-sidebar-visible')==='false'){document.documentElement.setAttribute('data-sidebar-hidden','');}}catch(e){}})();`,
-            }} />
-            {Island({
-              when: "load",
-              children: <DesktopSidebarToggle />,
-            }) as unknown as VNode}
-          </>
-        ) : undefined
-      }
+      afterSidebar={<SidebarPrepaint />}
       footerOverride={<FooterWithDefaults lang={locale} />}
-      bodyEndComponents={
-        <>
-          <BodyEndIslands basePath={settings.base ?? "/"} />
-          {settings.sidebarResizer && <SidebarResizerInit />}
-        </>
-      }
+      bodyEndComponents={<DocBodyEnd />}
     >
       {props.kind === "autoIndex" ? (
         /* Auto-index page: category without an index.mdx.
@@ -375,102 +352,14 @@ export default function VersionedLocaleDocsPage(props: PageArgs): JSX.Element {
         /* Regular doc page. Fragment (not <div>) for the same reason as
            the auto-index branch above — see #1460. */
         <>
-          <h1 class="text-heading font-bold mb-vsp-xs">{props.entry.data.title}</h1>
-
-          {/* Build-time date block (Created / Updated / Author). Mirrors the
-              doc-metainfo placement — between <h1> and description.
-              Data from `.zfb/doc-history-meta.json` (esbuild-inlined, no fs). */}
-          <DocMetainfoArea slug={slug} locale={locale} />
-
-          {/* Page-level tag chips — matching doc-tags placement (#1658). */}
-          <DocTagsArea slug={slug} locale={locale} tags={props.entry.data.tags} />
-
-          {/* Fallback notice for non-translated pages */}
-          {isFallback && !props.entry.data.generated && (
-            <div
-              class="mb-vsp-md border border-info/30 bg-info/5 px-hsp-lg py-vsp-sm text-small text-muted rounded"
-              role="note"
-            >
-              {t("doc.fallbackNotice", locale)}
-            </div>
-          )}
-
-          {props.entry.data.description && (
-            <p class="mb-vsp-lg text-title text-muted">
-              {props.entry.data.description}
-            </p>
-          )}
-
-          {/* Frontmatter preview — non-system, custom keys only. Returns
-              null when the entries array is empty, so pages without
-              custom frontmatter emit nothing. */}
-          <FrontmatterPreview
-            entries={buildFrontmatterPreviewEntries(props.entry.data)}
-            title={t("frontmatter.preview.title", locale)}
-            keyColLabel={t("frontmatter.preview.keyCol", locale)}
-            valueColLabel={t("frontmatter.preview.valueCol", locale)}
-            renderers={frontmatterRenderers}
-            data={props.entry.data as Record<string, unknown>}
-            locale={locale}
-          />
+          <DocContentHeader entry={props.entry} slug={slug} locale={locale} isFallback={isFallback} />
 
           <props.entry.Content components={components} />
 
           {/* Prev / Next pagination — placed before the document utilities
               section to match the Astro reference order: content → pager →
               view-source / history. Fixes #1535. */}
-          <nav class="mt-vsp-2xl grid grid-cols-2 gap-hsp-xl">
-            {prev ? (
-              <a
-                href={prev.href}
-                class="group border border-muted rounded-lg p-hsp-lg hover:border-accent"
-              >
-                <div class="flex items-center gap-hsp-xs text-caption text-muted mb-vsp-2xs">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-[1.125rem] w-[1.125rem]"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-                  </svg>
-                  <span class="no-underline">{t("nav.previous", locale)}</span>
-                </div>
-                <p class="text-small font-semibold underline group-hover:text-accent">
-                  {prev.label}
-                </p>
-              </a>
-            ) : (
-              <div />
-            )}
-            {next ? (
-              <a
-                href={next.href}
-                class="group border border-muted rounded-lg p-hsp-lg hover:border-accent text-right"
-              >
-                <div class="flex items-center justify-end gap-hsp-xs text-caption text-muted mb-vsp-2xs">
-                  <span class="no-underline">{t("nav.next", locale)}</span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-[1.125rem] w-[1.125rem]"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-                <p class="text-small font-semibold underline group-hover:text-accent">
-                  {next.label}
-                </p>
-              </a>
-            ) : (
-              <div />
-            )}
-          </nav>
+          <DocPager prev={prev} next={next} locale={locale} />
 
           {/* Document utilities (revision history) — entry branch only */}
           <DocHistoryArea slug={slug} locale={locale} />
