@@ -46,9 +46,9 @@ describe("navHref", () => {
   });
 
   describe("with both locale and version", () => {
-    it("inserts locale before version prefix", () => {
+    it("inserts version prefix before locale (matching the /v/[version]/[lang] routes)", () => {
       expect(navHref("/docs/getting-started", "ja", "1.0")).toBe(
-        "/ja/v/1.0/docs/getting-started/",
+        "/v/1.0/ja/docs/getting-started/",
       );
     });
   });
@@ -131,6 +131,26 @@ describe("getPathForLocale", () => {
       ).toBe("/ja/docs/guides/");
     });
   });
+
+  describe("versioned paths (locale nests AFTER /v/{version})", () => {
+    it("adds locale after the version prefix (en → ja)", () => {
+      expect(
+        getPathForLocale("/v/1.0/docs/getting-started/", "en", "ja"),
+      ).toBe("/v/1.0/ja/docs/getting-started/");
+    });
+
+    it("removes locale after the version prefix (ja → en)", () => {
+      expect(
+        getPathForLocale("/v/1.0/ja/docs/getting-started/", "ja", "en"),
+      ).toBe("/v/1.0/docs/getting-started/");
+    });
+
+    it("keeps a versioned JA path intact for ja → ja (regression: used to emit /ja/v/1.0/ja/...)", () => {
+      expect(
+        getPathForLocale("/v/1.0/ja/docs/getting-started/", "ja", "ja"),
+      ).toBe("/v/1.0/ja/docs/getting-started/");
+    });
+  });
 });
 
 describe("buildLocaleLinks", () => {
@@ -165,5 +185,14 @@ describe("buildLocaleLinks", () => {
     expect(links).toHaveLength(1);
     expect(links[0].code).toBe("ja");
     expect(links[0].active).toBe(true);
+  });
+
+  it("builds routed hrefs on a versioned JA page (regression: switcher used to 404)", () => {
+    const links = buildLocaleLinks("/v/1.0/ja/docs/getting-started/", "ja");
+    const en = links.find((l) => l.code === "en");
+    const ja = links.find((l) => l.code === "ja");
+    expect(en?.href).toBe("/v/1.0/docs/getting-started/");
+    expect(ja?.href).toBe("/v/1.0/ja/docs/getting-started/");
+    expect(ja?.active).toBe(true);
   });
 });

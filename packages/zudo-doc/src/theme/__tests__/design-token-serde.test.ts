@@ -8,7 +8,7 @@
 // (`hsp-md`, `vsp-sm`, `text-body`, `radius-DEFAULT`). Adding new
 // assertions? Extend the fixture rather than reaching back into host config.
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { type TokenDef } from "@takazudo/zdtp";
+import type { TokenDef } from "@takazudo/zdtp";
 import {
   DESIGN_TOKEN_SCHEMA,
   DesignTokenSchemaError,
@@ -23,17 +23,17 @@ import type {
 } from "../design-token-types.js";
 
 const SPACING: readonly TokenDef[] = [
-  { id: "hsp-md", cssVar: "--spacing-hsp-md", label: "hsp-md", group: "hsp", default: "0.75rem", min: 0, max: 3, step: 0.025, unit: "rem" },
-  { id: "vsp-sm", cssVar: "--spacing-vsp-sm", label: "vsp-sm", group: "vsp", default: "1.25rem", min: 0, max: 4, step: 0.025, unit: "rem" },
+  { id: "hsp-md", cssVar: "--spacing-hsp-md", label: "hsp-md", group: "hsp", default: "0.75rem", step: 0.025, unit: "rem" },
+  { id: "vsp-sm", cssVar: "--spacing-vsp-sm", label: "vsp-sm", group: "vsp", default: "1.25rem", step: 0.025, unit: "rem" },
 ];
 
 const FONT: readonly TokenDef[] = [
-  { id: "text-body", cssVar: "--text-body", label: "text-body", group: "font-size", default: "1.2rem", min: 0.5, max: 5, step: 0.05, unit: "rem" },
+  { id: "text-body", cssVar: "--text-body", label: "text-body", group: "font-size", default: "1.2rem", step: 0.05, unit: "rem" },
 ];
 
 const SIZE: readonly TokenDef[] = [
-  { id: "radius-DEFAULT", cssVar: "--radius-DEFAULT", label: "radius-DEFAULT", group: "radius", default: "4px", min: 0, max: 100, step: 1, unit: "px" },
-  { id: "radius-lg", cssVar: "--radius-lg", label: "radius-lg", group: "radius", default: "8px", min: 0, max: 100, step: 1, unit: "px" },
+  { id: "radius-DEFAULT", cssVar: "--radius-DEFAULT", label: "radius-DEFAULT", group: "radius", default: "4px", step: 1, unit: "px" },
+  { id: "radius-lg", cssVar: "--radius-lg", label: "radius-lg", group: "radius", default: "8px", step: 1, unit: "px" },
 ];
 
 const MANIFEST: DesignTokenManifest = { spacing: SPACING, font: FONT, size: SIZE };

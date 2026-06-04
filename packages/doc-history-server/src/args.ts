@@ -95,9 +95,10 @@ export function parseCommonArgs(
         locales.push(parseLocaleArg(next()));
         break;
       case "--max-entries": {
-        const n = Number(next());
+        const raw = next();
+        const n = Number(raw);
         if (Number.isNaN(n) || n < 1) {
-          console.error(`Invalid --max-entries value: ${args[i]}`);
+          console.error(`Invalid --max-entries value: ${raw}`);
           process.exit(1);
         }
         maxEntries = n;

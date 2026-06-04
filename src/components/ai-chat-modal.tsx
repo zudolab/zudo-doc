@@ -5,7 +5,7 @@
 // components in this Preact app (configured project-wide). preact/compat
 // re-exports the same hooks under the React-compat names plus the `React.*`
 // type namespace this file references for event handlers.
-import { useState, useEffect, useRef, useCallback } from "preact/compat";
+import { useState, useEffect, useRef, useCallback, memo } from "preact/compat";
 import type { ChatMessage } from "@/types/ai-chat";
 import { renderMarkdown } from "@/utils/render-markdown";
 import { SmartBreak } from "@/utils/smart-break";
@@ -14,6 +14,28 @@ import { BEFORE_NAVIGATE_EVENT } from "@takazudo/zudo-doc/transitions";
 interface AiChatModalProps {
   basePath: string;
 }
+
+// Memoized row: message objects are immutable once appended, so rows skip
+// re-rendering on unrelated state changes — without this, every keystroke
+// (input state) re-runs renderMarkdown for every assistant message.
+const ChatMessageRow = memo(function ChatMessageRow({ msg }: { msg: ChatMessage }) {
+  return (
+    <div
+      className={`mb-vsp-xs flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+    >
+      {msg.role === "user" ? (
+        <div className="max-w-[85%] rounded-t-[1rem] rounded-bl-[1rem] rounded-br-[0.25rem] bg-chat-user-bg px-hsp-md py-vsp-2xs text-small leading-relaxed text-chat-user-text">
+          <SmartBreak>{msg.content}</SmartBreak>
+        </div>
+      ) : (
+        <div
+          className="ai-chat-md max-w-[85%] rounded-t-[1rem] rounded-br-[1rem] rounded-bl-[0.25rem] bg-chat-assistant-bg px-hsp-md py-vsp-2xs text-small leading-relaxed text-chat-assistant-text"
+          dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
+        />
+      )}
+    </div>
+  );
+});
 
 export default function AiChatModal({ basePath }: AiChatModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -169,22 +191,10 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
               Ask a question about the documentation.
             </p>
           )}
+          {/* Index keys are stable here: the list is append-only and only
+              resets wholesale on dialog close. */}
           {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`mb-vsp-xs flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-            >
-              {msg.role === "user" ? (
-                <div className="max-w-[85%] rounded-t-[1rem] rounded-bl-[1rem] rounded-br-[0.25rem] bg-chat-user-bg px-hsp-md py-vsp-2xs text-small leading-relaxed text-chat-user-text">
-                  <SmartBreak>{msg.content}</SmartBreak>
-                </div>
-              ) : (
-                <div
-                  className="ai-chat-md max-w-[85%] rounded-t-[1rem] rounded-br-[1rem] rounded-bl-[0.25rem] bg-chat-assistant-bg px-hsp-md py-vsp-2xs text-small leading-relaxed text-chat-assistant-text"
-                  dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
-                />
-              )}
-            </div>
+            <ChatMessageRow key={i} msg={msg} />
           ))}
           {loading && (
             <div className="mb-vsp-xs flex justify-start">

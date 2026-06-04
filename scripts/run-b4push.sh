@@ -10,7 +10,7 @@ set -euo pipefail
 #   4. Fixture settings drift check
 #   5. Tags audit (--ci)
 #   6. Design token lint
-#   7. Type checking (zfb check)
+#   7. Type checking (zfb check + workspace package typechecks)
 #   8. Root unit tests (test:unit)
 #   9. Build (zfb build)
 #  10. Link check
@@ -100,13 +100,23 @@ fi
 # Prefer `zfb check` (the post-cutover entry point). If it fails to
 # start (e.g. binary not yet built), fall back to `tsc --noEmit` so the
 # typecheck still gates pushes.
-step "Type checking (zfb check)"
+step "Type checking (zfb check + packages)"
 if (cd "$ROOT_DIR" && pnpm check); then
   pass "Type checking passed (zfb check)"
 elif (cd "$ROOT_DIR" && pnpm exec tsc --noEmit); then
   pass "Type checking passed (tsc --noEmit fallback)"
 else
   fail "Type checking"
+fi
+
+# Workspace package typechecks: `zfb check` only covers the root tsconfig
+# (packages/ are excluded), so a red package typecheck was invisible to
+# every gate until review-loop 2026-06-05 found one. Runs each package's
+# own `typecheck` script (packages without one are skipped by pnpm).
+if (cd "$ROOT_DIR" && pnpm -r --filter './packages/*' typecheck); then
+  pass "Package typechecks passed"
+else
+  fail "Package typechecks"
 fi
 
 # ── Step 8: Root unit tests ───────────────────────────
