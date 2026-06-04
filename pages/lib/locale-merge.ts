@@ -68,6 +68,13 @@ export interface MergeLocaleDocsOptions {
  * memoization is applied. If a caller keys a cache on the docs array identity
  * (e.g. a nav-tree cache), it should memoize the result itself rather than
  * relying on reference stability from this helper.
+ *
+ * This contract is intentionally unchanged. The identity-stable layer for
+ * nav-source arrays lives ABOVE this helper: `pages/lib/_nav-source-docs.ts`
+ * (`resolveNavSource` / `resolveVersionedLocaleSource`) memoizes the merge
+ * result on the snapshot-anchored input arrays + option signature (see
+ * `pages/lib/_nav-source-cache.ts`), so `mergeLocaleDocs` itself stays a pure,
+ * memo-free function (#1902).
  */
 export interface MergeLocaleDocsResult {
   /**

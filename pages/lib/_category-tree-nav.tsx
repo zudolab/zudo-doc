@@ -20,13 +20,9 @@ import {
   buildNavTree,
   groupSatelliteNodes,
   findNode,
-  loadCategoryMeta,
-  isNavVisible,
 } from "@/utils/docs";
-import { settings } from "@/config/settings";
 import { defaultLocale, type Locale } from "@/config/i18n";
-import { loadDocs } from "../_data";
-import { mergeLocaleDocs, mergeCategoryMeta } from "./locale-merge";
+import { resolveNavSource } from "./_nav-source-docs";
 
 export interface CategoryTreeNavWrapperProps {
   /**
@@ -39,36 +35,6 @@ export interface CategoryTreeNavWrapperProps {
    * Defaults to defaultLocale when not provided.
    */
   lang?: Locale | string;
-}
-
-/**
- * Load merged docs + categoryMeta for the given locale.
- * Matches the locale-merge strategy used by _category-nav.tsx.
- * Note: applyDefaultLocaleOnlyFilter is intentionally omitted here so that
- * category tree nav renders all EN pages even if they match defaultLocaleOnlyPrefixes.
- */
-function loadNavSource(
-  locale: string,
-): { docs: ReturnType<typeof loadDocs>; categoryMeta: Map<string, import("@/utils/docs").CategoryMeta> } {
-  if (locale === defaultLocale) {
-    return {
-      docs: loadDocs("docs").filter((d) => !d.data.draft),
-      categoryMeta: loadCategoryMeta(settings.docsDir),
-    };
-  }
-
-  // Non-default locale: locale-first merge with EN fallback.
-  // No isDefaultLocaleOnlyPath filter — category tree nav shows all EN pages.
-  const { docs } = mergeLocaleDocs({
-    baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
-    localeDocs: loadDocs(`docs-${locale}`).filter((d) => !d.data.draft),
-    keepUnlisted: true,
-  });
-
-  const localeDir = settings.locales[locale]?.dir ?? settings.docsDir;
-  const categoryMeta = mergeCategoryMeta(settings.docsDir, localeDir);
-
-  return { docs, categoryMeta };
 }
 
 /**
@@ -85,8 +51,11 @@ export function CategoryTreeNavWrapper({
 }: CategoryTreeNavWrapperProps): JSX.Element | null {
   const locale = lang as Locale;
 
-  const { docs, categoryMeta } = loadNavSource(locale);
-  const navDocs = docs.filter(isNavVisible);
+  // No defaultLocaleOnly filter — tree nav intentionally shows all EN pages
+  // (same variant as _category-nav.tsx).
+  const { navDocs, categoryMeta } = resolveNavSource(locale, undefined, {
+    keepUnlisted: true,
+  });
   const rawTree = buildNavTree(navDocs, locale, categoryMeta);
   // groupSatelliteNodes with [category] groups satellite nodes under the
   // target category — matching the original Astro component.

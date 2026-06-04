@@ -22,6 +22,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("zfb/content", () => ({
   getCollection: vi.fn((_name: string) => []),
+  // No installed snapshot in unit tests — the nav-source cache uses its
+  // fresh-each-call fallback path so the per-test mock swaps take effect.
+  getContentSnapshot: vi.fn(() => undefined),
 }));
 
 // Import the mock handle after vi.mock so it is the mocked version.

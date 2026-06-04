@@ -41,6 +41,23 @@ interface BuildNode {
 const categoryMetaCache = new Map<string, Map<string, CategoryMeta>>();
 const navTreeCache = new Map<string, NavNode[]>();
 
+// Identity fast-path cache. Keyed on the docs-array reference: when nav-source
+// loaders hand back the SAME stable array instance across the build's many
+// `buildNavTree` calls (route paths() re-invoked per page, per-page sidebar +
+// header), this lets us skip recomputing the O(n log n) stringify+sort key
+// entirely. Anchored per (lang, categoryMeta) since the same array can be
+// rendered under different locales / category metadata.
+//
+// This is ADDITIVE: a miss falls through to `navTreeCacheKey` + `navTreeCache`,
+// which still catches content-equal arrays that lack reference identity (e.g.
+// any caller that hasn't been routed through the stable loaders). HMR intent
+// is preserved because a content edit produces a new snapshot → new stable
+// array identity → fresh entry here AND a different content key downstream.
+const navTreeByIdentity = new WeakMap<
+  DocsEntry[],
+  Array<{ lang: Locale; categoryMeta: Map<string, CategoryMeta> | undefined; tree: NavNode[] }>
+>();
+
 /** Build a cache key from docs array + locale + category meta.
  *  Includes nav-affecting frontmatter so HMR picks up changes. */
 function navTreeCacheKey(
@@ -83,9 +100,23 @@ export function buildNavTree(
   lang: Locale = defaultLocale,
   categoryMeta?: Map<string, CategoryMeta>,
 ): NavNode[] {
+  // Identity fast-path: stable array instance already seen for this
+  // (lang, categoryMeta)? Return its tree without recomputing the key.
+  const byIdentity = navTreeByIdentity.get(docs);
+  if (byIdentity) {
+    for (const slot of byIdentity) {
+      if (slot.lang === lang && slot.categoryMeta === categoryMeta) {
+        return slot.tree;
+      }
+    }
+  }
+
   const cacheKey = navTreeCacheKey(docs, lang, categoryMeta);
   const cached = navTreeCache.get(cacheKey);
-  if (cached) return cached;
+  if (cached) {
+    rememberIdentity(docs, lang, categoryMeta, cached);
+    return cached;
+  }
 
   const root: BuildNode = {
     segment: "",
@@ -133,7 +164,26 @@ export function buildNavTree(
 
   const result = toNavNodes(root, lang, categoryMeta);
   navTreeCache.set(cacheKey, result);
+  rememberIdentity(docs, lang, categoryMeta, result);
   return result;
+}
+
+/** Record a (docs-array identity, lang, categoryMeta) → tree mapping for the
+ *  identity fast-path. No-op-safe to call multiple times for the same slot. */
+function rememberIdentity(
+  docs: DocsEntry[],
+  lang: Locale,
+  categoryMeta: Map<string, CategoryMeta> | undefined,
+  tree: NavNode[],
+): void {
+  let slots = navTreeByIdentity.get(docs);
+  if (!slots) {
+    slots = [];
+    navTreeByIdentity.set(docs, slots);
+  }
+  if (!slots.some((s) => s.lang === lang && s.categoryMeta === categoryMeta)) {
+    slots.push({ lang, categoryMeta, tree });
+  }
 }
 
 function toNavNodes(

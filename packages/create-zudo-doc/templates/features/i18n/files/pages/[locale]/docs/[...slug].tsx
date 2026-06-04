@@ -17,19 +17,15 @@
 //   - Locale-first merge: locale docs take priority; base EN docs fill in
 //     pages not translated yet (shown with a fallback notice).
 
-import { getCollection } from "zfb/content";
 import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
-import { getContentDir } from "@/config/i18n";
 import { docsUrl } from "@/utils/base";
 import {
   buildNavTree,
   buildBreadcrumbs,
   flattenTree,
   findNode,
-  loadCategoryMeta,
   collectAutoIndexNodes,
-  isNavVisible,
   type NavNode,
 } from "@/utils/docs";
 import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
@@ -40,8 +36,7 @@ import { NavCardGrid } from "@takazudo/zudo-doc/nav-indexing";
 // Shared MDX components bag — see `pages/_mdx-components.ts`.
 import { createMdxComponents } from "../../_mdx-components";
 import type { JSX } from "preact";
-import { bridgeEntries, loadDocs } from "../../_data";
-import { mergeLocaleDocs, mergeCategoryMeta } from "../../lib/locale-merge";
+import { resolveNavSource } from "../../lib/_nav-source-docs";
 import { extractHeadings } from "../../lib/_extract-headings";
 import type { DocPageEntry, AutoIndexNode, DocPageEntryProps, DocPageAutoIndexProps } from "../../lib/doc-page-props";
 import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
@@ -107,35 +102,24 @@ export function paths(): Array<{
     const localeConfig = settings.locales[locale];
     const contentDir = localeConfig?.dir ?? settings.docsDir;
 
-    // Load locale + base docs, filter drafts (using bridgeEntries to keep
-    // DocPageEntry shape with Content/module_specifier for the render props).
-    const localeDocs = ((bridgeEntries(getCollection(`docs-${locale}`), `docs-${locale}`) as unknown as DocPageEntry[])).filter(
-      (d) => !d.data.draft,
+    // Identity-stable, locale-first merge with EN fallback. The same `docs` /
+    // `navDocs` / `categoryMeta` instances are reused across this route's many
+    // per-page paths() invocations so buildNavTree's identity fast-path skips
+    // the key recomputation — see pages/lib/_nav-source-docs.ts (#1902).
+    const { docs: allDocs, navDocs, categoryMeta, localeSlugSet } = resolveNavSource(
+      locale,
+      undefined,
+      { applyDefaultLocaleOnlyFilter: true, keepUnlisted: true },
     );
-    const baseDocs = ((bridgeEntries(getCollection("docs"), "docs") as unknown as DocPageEntry[])).filter(
-      (d) => !d.data.draft,
-    );
-
-    // Merge: locale docs first, base fallback for untranslated pages.
-    // localeSlugSet is returned so isFallback can be derived from it.
-    const { docs: allDocs, localeSlugSet } = mergeLocaleDocs({
-      baseDocs: baseDocs as unknown as DocsEntry[],
-      localeDocs: localeDocs as unknown as DocsEntry[],
-      applyDefaultLocaleOnlyFilter: true,
-      keepUnlisted: true,
-    });
     // isFallback: page came from base docs, not the locale collection.
     const fallbackSlugs = new Set(
-      (allDocs as unknown as DocPageEntry[])
+      allDocs
         .filter((d) => !localeSlugSet.has(d.data.slug ?? d.id))
         .map((d) => d.data.slug ?? d.id),
     );
 
-    const categoryMeta = mergeCategoryMeta(settings.docsDir, contentDir);
-
-    const navDocs = allDocs.filter(isNavVisible);
-    const tree = buildNavTree(navDocs, locale, categoryMeta);
-    const fullTree = buildNavTree(allDocs, locale, categoryMeta);
+    const tree = buildNavTree(navDocs as unknown as DocsEntry[], locale, categoryMeta);
+    const fullTree = buildNavTree(allDocs as unknown as DocsEntry[], locale, categoryMeta);
 
     // Regular doc pages
     for (const entry of allDocs) {

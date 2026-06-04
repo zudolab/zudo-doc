@@ -17,9 +17,10 @@
 //     emitted by building the nav tree and calling collectAutoIndexNodes.
 
 import { loadDocs } from "../_data";
-import { mergeLocaleDocs, mergeCategoryMeta } from "./locale-merge";
+import { mergeLocaleDocs } from "./locale-merge";
+import { resolveNavSource, resolveVersionedLocaleSource } from "./_nav-source-docs";
 import { settings } from "@/config/settings";
-import { defaultLocale } from "@/config/i18n";
+import { defaultLocale, type Locale } from "@/config/i18n";
 import type { VersionConfig } from "@/config/settings";
 import type { DocsEntry } from "@/types/docs-entry";
 import { docsUrl, versionedDocsUrl, withBase } from "@/utils/base";
@@ -27,9 +28,7 @@ import { collectTags } from "@/utils/tags";
 import { toRouteSlug } from "@/utils/slug";
 import {
   buildNavTree,
-  loadCategoryMeta,
   collectAutoIndexNodes,
-  isNavVisible,
 } from "@/utils/docs";
 
 // ---------------------------------------------------------------------------
@@ -51,41 +50,21 @@ import {
 export function enumerateDocsRoutes(locale: string): string[] {
   const urls: string[] = [];
 
-  if (locale === defaultLocale) {
-    const allDocs = loadDocs("docs").filter((d) => !d.data.draft);
-    const categoryMeta = loadCategoryMeta(settings.docsDir);
-    const navDocs = allDocs.filter(isNavVisible);
-    const tree = buildNavTree(navDocs, locale, categoryMeta);
+  // Identity-stable nav source — same instances the doc routes use, so the
+  // nav-tree fast-path applies here too (#1902).
+  const { docs: allDocs, navDocs, categoryMeta } = resolveNavSource(
+    locale as Locale,
+    undefined,
+    { applyDefaultLocaleOnlyFilter: true, keepUnlisted: true },
+  );
+  const tree = buildNavTree(navDocs, locale as Locale, categoryMeta);
 
-    for (const doc of allDocs) {
-      urls.push(docsUrl(doc.data.slug ?? toRouteSlug(doc.id), locale as string));
-    }
-    for (const node of collectAutoIndexNodes(tree)) {
-      urls.push(docsUrl(node.slug, locale as string));
-    }
-  } else {
-    const { docs: allDocs } = mergeLocaleDocs({
-      baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
-      localeDocs: loadDocs(`docs-${locale}`).filter((d) => !d.data.draft),
-      applyDefaultLocaleOnlyFilter: true,
-      keepUnlisted: true,
-    });
-
-    for (const doc of allDocs) {
-      // Mirror the default-locale branch (L61): fall back through toRouteSlug
-      // so a top-level locale index.mdx maps to "" not "index".
-      urls.push(docsUrl(doc.data.slug ?? toRouteSlug(doc.id), locale as string));
-    }
-
-    const localeConfig = settings.locales[locale];
-    const contentDir = localeConfig?.dir ?? settings.docsDir;
-    const categoryMeta = mergeCategoryMeta(settings.docsDir, contentDir);
-
-    const navDocs = allDocs.filter(isNavVisible);
-    const tree = buildNavTree(navDocs, locale, categoryMeta);
-    for (const node of collectAutoIndexNodes(tree)) {
-      urls.push(docsUrl(node.slug, locale as string));
-    }
+  for (const doc of allDocs) {
+    // toRouteSlug fallback so a top-level index.mdx maps to "" not "index".
+    urls.push(docsUrl(doc.data.slug ?? toRouteSlug(doc.id), locale as string));
+  }
+  for (const node of collectAutoIndexNodes(tree)) {
+    urls.push(docsUrl(node.slug, locale as string));
   }
 
   return [...new Set(urls)];
@@ -164,10 +143,11 @@ export function enumerateVersionedRoutes(
   const urls: string[] = [];
 
   if (locale === defaultLocale) {
-    const collectionName = `docs-v-${version.slug}`;
-    const allDocs = loadDocs(collectionName).filter((d) => !d.data.draft);
-    const categoryMeta = loadCategoryMeta(version.docsDir);
-    const navDocs = allDocs.filter(isNavVisible);
+    // Versioned EN base — identity-stable source (#1902).
+    const { docs: allDocs, navDocs, categoryMeta } = resolveNavSource(
+      "en",
+      version.slug,
+    );
     const tree = buildNavTree(navDocs, "en", categoryMeta);
 
     for (const doc of allDocs) {
@@ -178,27 +158,18 @@ export function enumerateVersionedRoutes(
       urls.push(versionedDocsUrl(node.slug, version.slug));
     }
   } else {
-    const baseCollectionName = `docs-v-${version.slug}`;
     const localeDir = version.locales?.[locale]?.dir;
-    const localeCollectionName = localeDir
-      ? `docs-v-${version.slug}-${locale}`
-      : null;
 
-    const { docs: allDocs } = mergeLocaleDocs({
-      baseDocs: loadDocs(baseCollectionName).filter((d) => !d.data.draft),
-      localeDocs: localeCollectionName
-        ? loadDocs(localeCollectionName).filter((d) => !d.data.draft)
-        : [],
-      applyDefaultLocaleOnlyFilter: true,
-      keepUnlisted: true,
-    });
-
-    const categoryMeta = localeDir
-      ? mergeCategoryMeta(version.docsDir, localeDir)
-      : loadCategoryMeta(version.docsDir);
-
-    const navDocs = allDocs.filter(isNavVisible);
-    const tree = buildNavTree(navDocs, locale, categoryMeta);
+    // Versioned locale source — locale-first merge over the version's EN base
+    // (identity-stable; #1902).
+    const { docs: allDocs, navDocs, categoryMeta } = resolveVersionedLocaleSource(
+      version.slug,
+      version.docsDir,
+      locale as Locale,
+      localeDir,
+      { applyDefaultLocaleOnlyFilter: true, keepUnlisted: true },
+    );
+    const tree = buildNavTree(navDocs, locale as Locale, categoryMeta);
 
     for (const doc of allDocs) {
       const slug = doc.data.slug ?? toRouteSlug(doc.id);

@@ -17,7 +17,6 @@
 // Prev/next hrefs are pre-resolved to the versioned locale URL form
 // (e.g. /v/1.0/ja/docs/…) so the component needs no URL computation.
 
-import { getCollection } from "zfb/content";
 import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
 import type { VersionConfig } from "@/config/settings";
@@ -28,9 +27,7 @@ import {
   buildBreadcrumbs,
   flattenTree,
   findNode,
-  loadCategoryMeta,
   collectAutoIndexNodes,
-  isNavVisible,
   type NavNode,
 } from "@/utils/docs";
 import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
@@ -41,8 +38,7 @@ import { NavCardGrid } from "@takazudo/zudo-doc/nav-indexing";
 // Locale-aware MDX components factory — see `pages/_mdx-components.ts`.
 import { createMdxComponents } from "../../../../_mdx-components";
 import type { JSX } from "preact";
-import { bridgeEntries } from "../../../../_data";
-import { mergeLocaleDocs, mergeCategoryMeta } from "../../../../lib/locale-merge";
+import { resolveVersionedLocaleSource } from "../../../../lib/_nav-source-docs";
 import { extractHeadings } from "../../../../lib/_extract-headings";
 import type { DocPageEntry, AutoIndexNode, DocPageEntryProps, DocPageAutoIndexProps } from "../../../../lib/doc-page-props";
 import { FooterWithDefaults } from "../../../../lib/_footer-with-defaults";
@@ -111,40 +107,24 @@ export function paths(): Array<{
 
   for (const version of settings.versions) {
     for (const locale of Object.keys(settings.locales) as string[]) {
-      const baseCollectionName = `docs-v-${version.slug}`;
       const localeDir = version.locales?.[locale]?.dir;
-      const localeCollectionName = localeDir ? `docs-v-${version.slug}-${locale}` : null;
 
-      const baseDocs = ((bridgeEntries(getCollection(baseCollectionName), baseCollectionName) as unknown as DocPageEntry[])).filter(
-        (doc) => !doc.data.draft,
-      );
-      const localeDocs = localeCollectionName
-        ? ((bridgeEntries(getCollection(localeCollectionName), localeCollectionName) as unknown as DocPageEntry[])).filter(
-            (doc) => !doc.data.draft,
-          )
-        : [];
-
-      // Merge: locale docs first, base fallback for untranslated pages.
-      // localeSlugSet is returned so isFallback can be derived from it.
-      const { docs: allDocs, localeSlugSet } = mergeLocaleDocs({
-        baseDocs: baseDocs as unknown as DocsEntry[],
-        localeDocs: localeDocs as unknown as DocsEntry[],
-        applyDefaultLocaleOnlyFilter: true,
-        keepUnlisted: true,
-      });
+      // Identity-stable, locale-first merge over the version's EN base. Reused
+      // across the route's per-page paths() invocations so buildNavTree's
+      // identity fast-path applies — see pages/lib/_nav-source-docs.ts (#1902).
+      const { docs: allDocs, navDocs, categoryMeta, localeSlugSet } =
+        resolveVersionedLocaleSource(version.slug, version.docsDir, locale, localeDir, {
+          applyDefaultLocaleOnlyFilter: true,
+          keepUnlisted: true,
+        });
       // isFallback: page came from base docs, not the locale collection.
       const fallbackSlugs = new Set(
-        (allDocs as unknown as DocPageEntry[])
+        allDocs
           .filter((d) => !localeSlugSet.has(d.data.slug ?? d.id))
           .map((d) => d.data.slug ?? d.id),
       );
 
-      const categoryMeta = localeDir
-        ? mergeCategoryMeta(version.docsDir, localeDir)
-        : loadCategoryMeta(version.docsDir);
-
-      const navDocs = allDocs.filter(isNavVisible);
-      const tree = buildNavTree(navDocs, locale, categoryMeta);
+      const tree = buildNavTree(navDocs as unknown as DocsEntry[], locale, categoryMeta);
 
       // Regular doc pages
       for (const entry of allDocs) {

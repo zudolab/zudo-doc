@@ -12,16 +12,14 @@
 //   → collectTags()         counts unique tags for the tag section header
 //   → DocLayoutWithDefaults renders the page with no sidebar/TOC
 
-import { loadDocs } from "./_data";
 import { settings } from "@/config/settings";
 import { defaultLocale, t } from "@/config/i18n";
 import { withBase } from "@/utils/base";
 import {
   buildNavTree,
   groupSatelliteNodes,
-  isNavVisible,
 } from "@/utils/docs";
-import { loadCategoryMeta } from "@/utils/docs";
+import { resolveNavSource } from "./lib/_nav-source-docs";
 import { getCategoryOrder } from "@/utils/nav-scope";
 import { collectTags } from "@/utils/tags";
 import { toRouteSlug } from "@/utils/slug";
@@ -41,20 +39,15 @@ export const frontmatter = { title: "Home" };
 export default function IndexPage(): JSX.Element {
   const locale = defaultLocale;
 
-  // `loadDocs` bridges zfb's CollectionEntry → Astro-style DocsEntry
-  // (adds `id`/`collection`) so `@/utils/docs` helpers see the shape
-  // they expect.
-  const allDocs = loadDocs("docs");
-  const docs = allDocs.filter((doc) => !doc.data.draft);
-  const categoryMeta = loadCategoryMeta(settings.docsDir);
-  const navDocs = docs.filter(isNavVisible);
+  // Identity-stable nav source (draft-filtered, unlisted retained). navDocs is
+  // pre-filtered (isNavVisible) and shared with the nav-tree fast-path.
+  const { navDocs, categoryMeta } = resolveNavSource(locale, undefined);
   const tree = buildNavTree(navDocs, locale, categoryMeta);
   const categoryOrder = getCategoryOrder();
   const groupedTree = groupSatelliteNodes(tree, categoryOrder);
 
-  const tagDocs = docs.filter(isNavVisible);
   const tagCount = collectTags(
-    tagDocs,
+    navDocs,
     (id, data) => data.slug ?? toRouteSlug(id),
   ).size;
 

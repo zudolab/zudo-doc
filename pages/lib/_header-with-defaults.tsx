@@ -66,7 +66,6 @@ import {
   withBase,
 } from "@/utils/base";
 import {
-  isNavVisible,
   type NavNode,
 } from "@/utils/docs";
 import { buildSidebarForSection } from "@/utils/sidebar";
@@ -192,8 +191,7 @@ export function HeaderWithDefaults(
 
   let sidebarNodes: NavNode[] = [];
   if (navSection !== undefined) {
-    const { docs, categoryMeta } = loadNavSourceDocs(lang, currentVersion);
-    const navDocs = docs.filter(isNavVisible);
+    const { navDocs, categoryMeta } = loadNavSourceDocs(lang, currentVersion);
     const rawNodes = buildSidebarForSection(navDocs, lang, navSection, categoryMeta);
     sidebarNodes = currentVersion
       ? remapVersionedHrefs(rawNodes, currentVersion, lang)

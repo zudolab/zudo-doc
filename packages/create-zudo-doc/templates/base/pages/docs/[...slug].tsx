@@ -17,7 +17,6 @@
 // Locale: defaultLocale (EN). Non-default locales are handled by
 // pages/[locale]/docs/[...slug].tsx.
 
-import { getCollection } from "zfb/content";
 import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
 import { defaultLocale } from "@/config/i18n";
@@ -27,9 +26,7 @@ import {
   buildBreadcrumbs,
   flattenTree,
   findNode,
-  loadCategoryMeta,
   collectAutoIndexNodes,
-  isNavVisible,
   type NavNode,
 } from "@/utils/docs";
 import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
@@ -51,7 +48,7 @@ import { HeadWithDefaults } from "../lib/_head-with-defaults";
 import { composeMetaTitle } from "../lib/_compose-meta-title";
 import { buildInlineVersionSwitcher } from "../lib/_inline-version-switcher";
 import type { JSX } from "preact";
-import { bridgeEntries } from "../_data";
+import { resolveNavSource } from "../lib/_nav-source-docs";
 import { extractHeadings } from "../lib/_extract-headings";
 import type { DocPageEntry, AutoIndexNode, DocPageEntryProps, DocPageAutoIndexProps } from "../lib/doc-page-props";
 import { DocPager } from "../lib/_doc-pager";
@@ -85,13 +82,13 @@ export function paths(): Array<{
   props: DocPageProps;
 }> {
   const locale = defaultLocale;
-  const allDocs = (bridgeEntries(getCollection("docs"), "docs") as unknown as DocPageEntry[]);
-  // In static builds, always exclude drafts.
-  const docs = allDocs.filter((doc) => !doc.data.draft);
-  const categoryMeta = loadCategoryMeta(settings.docsDir);
+  // Identity-stable nav source (draft-filtered, unlisted retained). The same
+  // instances are returned across this route's many per-page paths()
+  // invocations, so buildNavTree's identity fast-path skips the key
+  // recomputation — see pages/lib/_nav-source-docs.ts (#1902).
+  const { docs, navDocs, categoryMeta } = resolveNavSource(locale, undefined);
 
   // Nav docs: exclude unlisted (for sidebar/prev-next) but keep for breadcrumbs
-  const navDocs = docs.filter(isNavVisible);
   const tree = buildNavTree(navDocs as unknown as DocsEntry[], locale, categoryMeta);
   // Full tree (including unlisted) for accurate breadcrumbs
   const fullTree = buildNavTree(docs as unknown as DocsEntry[], locale, categoryMeta);

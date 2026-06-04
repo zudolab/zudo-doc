@@ -21,14 +21,10 @@ import type { NavNode as V2NavNode } from "@takazudo/zudo-doc/nav-indexing/types
 import {
   buildNavTree,
   findNode,
-  loadCategoryMeta,
-  isNavVisible,
 } from "@/utils/docs";
-import { settings } from "@/config/settings";
 import { defaultLocale, type Locale } from "@/config/i18n";
 import { docsUrl } from "@/utils/base";
-import { loadDocs } from "../_data";
-import { mergeLocaleDocs, mergeCategoryMeta } from "./locale-merge";
+import { resolveNavSource } from "./_nav-source-docs";
 
 export interface CategoryNavWrapperProps {
   /**
@@ -57,36 +53,6 @@ export interface CategoryNavWrapperProps {
 }
 
 /**
- * Load merged docs + categoryMeta for the given locale.
- * default locale → "docs"; non-default → locale-first + EN fallback.
- * Note: applyDefaultLocaleOnlyFilter is intentionally omitted here so that
- * category cards render all EN pages even if they match defaultLocaleOnlyPrefixes.
- */
-function loadNavSource(
-  locale: string,
-): { docs: ReturnType<typeof loadDocs>; categoryMeta: Map<string, import("@/utils/docs").CategoryMeta> } {
-  if (locale === defaultLocale) {
-    return {
-      docs: loadDocs("docs").filter((d) => !d.data.draft),
-      categoryMeta: loadCategoryMeta(settings.docsDir),
-    };
-  }
-
-  // Non-default locale: locale-first merge with EN fallback.
-  // No isDefaultLocaleOnlyPath filter — category nav cards show all EN pages.
-  const { docs } = mergeLocaleDocs({
-    baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
-    localeDocs: loadDocs(`docs-${locale}`).filter((d) => !d.data.draft),
-    keepUnlisted: true,
-  });
-
-  const localeDir = settings.locales[locale]?.dir ?? settings.docsDir;
-  const categoryMeta = mergeCategoryMeta(settings.docsDir, localeDir);
-
-  return { docs, categoryMeta };
-}
-
-/**
  * MDX wrapper for CategoryNav. Resolves nav tree data host-side and forwards
  * the resolved category children into the v2 CategoryNav component.
  *
@@ -108,8 +74,12 @@ export function CategoryNavWrapper({
 }: CategoryNavWrapperProps): JSX.Element | null {
   const locale = lang as Locale;
 
-  const { docs, categoryMeta } = loadNavSource(locale);
-  const navDocs = docs.filter(isNavVisible);
+  // No defaultLocaleOnly filter — category cards intentionally show all EN
+  // pages even if they match defaultLocaleOnlyPrefixes (the option signature in
+  // resolveNavSource keeps this variant from colliding with the sidebar's).
+  const { navDocs, categoryMeta } = resolveNavSource(locale, undefined, {
+    keepUnlisted: true,
+  });
   const tree = buildNavTree(navDocs, locale, categoryMeta);
 
   let children: V2NavNode[];

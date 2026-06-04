@@ -26,14 +26,10 @@ import SiteTreeNav from "@/components/site-tree-nav";
 import {
   buildNavTree,
   groupSatelliteNodes,
-  loadCategoryMeta,
-  isNavVisible,
 } from "@/utils/docs";
-import { settings } from "@/config/settings";
 import { defaultLocale, type Locale } from "@/config/i18n";
 import { getCategoryOrder } from "@/utils/nav-scope";
-import { loadDocs } from "../_data";
-import { mergeLocaleDocs, mergeCategoryMeta } from "./locale-merge";
+import { resolveNavSource } from "./_nav-source-docs";
 
 export interface SiteTreeNavWrapperProps {
   /**
@@ -46,33 +42,6 @@ export interface SiteTreeNavWrapperProps {
    * Forwarded to the v2 SiteTreeNavDemo component.
    */
   ariaLabel?: string;
-}
-
-/**
- * Load merged docs + categoryMeta for the given locale.
- * Matches the locale-merge strategy used by _nav-source-docs.ts.
- */
-function loadNavSource(
-  locale: string,
-): { docs: ReturnType<typeof loadDocs>; categoryMeta: Map<string, import("@/utils/docs").CategoryMeta> } {
-  if (locale === defaultLocale) {
-    return {
-      docs: loadDocs("docs").filter((d) => !d.data.draft),
-      categoryMeta: loadCategoryMeta(settings.docsDir),
-    };
-  }
-
-  const { docs } = mergeLocaleDocs({
-    baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
-    localeDocs: loadDocs(`docs-${locale}`).filter((d) => !d.data.draft),
-    applyDefaultLocaleOnlyFilter: true,
-    keepUnlisted: true,
-  });
-
-  const localeDir = settings.locales[locale]?.dir ?? settings.docsDir;
-  const categoryMeta = mergeCategoryMeta(settings.docsDir, localeDir);
-
-  return { docs, categoryMeta };
 }
 
 /**
@@ -93,8 +62,12 @@ export function SiteTreeNavWrapper({
 }: SiteTreeNavWrapperProps): JSX.Element | null {
   const locale = lang as Locale;
 
-  const { docs, categoryMeta } = loadNavSource(locale);
-  const navDocs = docs.filter(isNavVisible);
+  // SiteTreeNav mirrors the route nav: applies the defaultLocaleOnly filter for
+  // non-default locales (same options the sidebar/route enumeration use).
+  const { navDocs, categoryMeta } = resolveNavSource(locale, undefined, {
+    applyDefaultLocaleOnlyFilter: true,
+    keepUnlisted: true,
+  });
   const tree = buildNavTree(navDocs, locale, categoryMeta);
   const categoryOrder = getCategoryOrder();
   const groupedTree = groupSatelliteNodes(tree, categoryOrder);

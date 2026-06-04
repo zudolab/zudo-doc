@@ -2149,6 +2149,7 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
     "pages/lib/_header-with-defaults.tsx",
     "pages/lib/_inline-version-switcher.tsx",
     "pages/lib/_math-block.tsx",
+    "pages/lib/_nav-source-cache.ts",
     "pages/lib/_nav-source-docs.ts",
     "pages/lib/_preset-generator.tsx",
     "pages/lib/_search-widget-script.ts",

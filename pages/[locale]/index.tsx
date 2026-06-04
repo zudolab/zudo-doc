@@ -21,7 +21,6 @@ import { withBase } from "@/utils/base";
 import {
   buildNavTree,
   groupSatelliteNodes,
-  isNavVisible,
   loadCategoryMeta,
 } from "@/utils/docs";
 import { getCategoryOrder } from "@/utils/nav-scope";
@@ -32,8 +31,7 @@ import type { JSX } from "preact";
 import type { VNode } from "preact";
 import { Island } from "@takazudo/zfb";
 import SiteTreeNav from "@/components/site-tree-nav";
-import { loadDocs } from "../_data";
-import { mergeLocaleDocs } from "../lib/locale-merge";
+import { resolveNavSource } from "../lib/_nav-source-docs";
 import { FooterWithDefaults } from "../lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../lib/_head-with-defaults";
@@ -69,9 +67,11 @@ interface PageArgs {
 export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
   const locale = params.locale;
 
-  const { docs: allDocs } = mergeLocaleDocs({
-    baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
-    localeDocs: loadDocs(`docs-${locale}`).filter((d) => !d.data.draft),
+  // Identity-stable, locale-first merge with EN fallback (shared `navDocs`
+  // instance). categoryMeta is intentionally locale-dir-only here — this page
+  // historically did NOT merge in base meta (unlike the locale doc route), so
+  // we keep that exact behavior to preserve output.
+  const { navDocs } = resolveNavSource(locale, undefined, {
     applyDefaultLocaleOnlyFilter: true,
     keepUnlisted: true,
   });
@@ -80,7 +80,6 @@ export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
     ? loadCategoryMeta(localeConfig.dir)
     : loadCategoryMeta(settings.docsDir);
 
-  const navDocs = allDocs.filter(isNavVisible);
   const tree = buildNavTree(navDocs, locale, categoryMeta);
   const categoryOrder = getCategoryOrder();
   const groupedTree = groupSatelliteNodes(tree, categoryOrder);

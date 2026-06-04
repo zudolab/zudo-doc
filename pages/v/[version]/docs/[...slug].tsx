@@ -17,7 +17,6 @@
 // Version banner: if version.banner is set ("unmaintained" | "unreleased"),
 // the DocLayoutWithDefaults version-banner prop drives the banner display.
 
-import { getCollection } from "zfb/content";
 import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
 import type { VersionConfig } from "@/config/settings";
@@ -28,9 +27,7 @@ import {
   buildBreadcrumbs,
   flattenTree,
   findNode,
-  loadCategoryMeta,
   collectAutoIndexNodes,
-  isNavVisible,
   type NavNode,
 } from "@/utils/docs";
 import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
@@ -41,7 +38,7 @@ import { NavCardGrid } from "@takazudo/zudo-doc/nav-indexing";
 // Locale-aware MDX components factory — see `pages/_mdx-components.ts`.
 import { createMdxComponents } from "../../../_mdx-components";
 import type { JSX } from "preact";
-import { bridgeEntries } from "../../../_data";
+import { resolveNavSource } from "../../../lib/_nav-source-docs";
 import { extractHeadings } from "../../../lib/_extract-headings";
 import type { DocPageEntry, AutoIndexNode, DocPageEntryProps, DocPageAutoIndexProps } from "../../../lib/doc-page-props";
 import { FooterWithDefaults } from "../../../lib/_footer-with-defaults";
@@ -100,13 +97,11 @@ export function paths(): Array<{
   }> = [];
 
   for (const version of settings.versions) {
-    const collectionName = `docs-v-${version.slug}`;
-    const allDocs = ((bridgeEntries(getCollection(collectionName), collectionName) as unknown as DocPageEntry[])).filter(
-      (doc) => !doc.data.draft,
-    );
-
-    const categoryMeta = loadCategoryMeta(version.docsDir);
-    const navDocs = allDocs.filter(isNavVisible);
+    // Identity-stable nav source for this version (EN base, draft-filtered,
+    // unlisted retained). Reused across the route's per-page paths()
+    // invocations so buildNavTree's identity fast-path applies — see
+    // pages/lib/_nav-source-docs.ts (#1902).
+    const { docs: allDocs, navDocs, categoryMeta } = resolveNavSource("en", version.slug);
     // Versioned docs always use EN locale for nav tree
     const tree = buildNavTree(navDocs as unknown as DocsEntry[], "en", categoryMeta);
 
