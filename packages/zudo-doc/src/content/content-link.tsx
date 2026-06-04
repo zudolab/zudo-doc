@@ -14,7 +14,8 @@ type Props = JSX.IntrinsicElements["a"];
 
 export function ContentLink({ href, className, children, ...rest }: Props) {
   // Block links and hash-links (heading anchors) should render without content link styling
-  const classes = className ? className.split(" ") : [];
+  // (className may be a Preact SignalLike under JSX.IntrinsicElements["a"]; only split real strings)
+  const classes = typeof className === "string" ? className.split(" ") : [];
   if (classes.includes("block") || classes.includes("hash-link")) {
     return (
       <a href={href} className={className} {...rest}>
