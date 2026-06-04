@@ -73,7 +73,9 @@ export default function LocaleVersionsPage({ params }: PageArgs): JSX.Element {
     ? settings.versions.map((v) => ({
         slug: v.slug,
         label: v.label ?? v.slug,
-        docsHref: withBase(`/${locale}/v/${v.slug}/docs/getting-started/`),
+        // Version prefix comes BEFORE the locale — the only routed shape is
+        // pages/v/[version]/{locale}/docs/...; /{locale}/v/... has no route.
+        docsHref: withBase(`/v/${v.slug}/${locale}/docs/getting-started/`),
         banner: v.banner as "unmaintained" | "unreleased" | undefined,
       }))
     : [];
