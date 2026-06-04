@@ -1191,15 +1191,12 @@ describe("scaffold — plugin copying and settings", () => {
 
   it("copies plugin files to src/plugins/", async () => {
     const pluginFiles = [
-      "remark-resolve-markdown-links.ts",
       "docs-source-map.ts",
-      "remark-admonitions.ts",
       "url-utils.ts",
       "hast-utils.ts",
       "rehype-code-title.ts",
       "rehype-heading-links.ts",
       "rehype-mermaid.ts",
-      "rehype-strip-md-extension.ts",
     ];
     for (const file of pluginFiles) {
       expect(
