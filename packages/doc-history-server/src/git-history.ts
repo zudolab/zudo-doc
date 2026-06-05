@@ -465,6 +465,16 @@ export function collectContentFiles(
       if (entry.isDirectory()) {
         walk(fullPath, baseDir);
       } else if (/\.mdx?$/.test(entry.name) && !entry.name.startsWith("_")) {
+        // Storage half of the doc-history "" <-> "index" sentinel (#1891).
+        // The leading-slash regex strips nested `x/index` → `x` but
+        // deliberately KEEPS a bare root `index` as `index` (no leading slash
+        // to match): doc-history JSON is stored/served under "index" because an
+        // empty path segment is unroutable (server regex below + the
+        // `<locale>/<slug>.json` composition both reject ""). The canonical
+        // ROUTE slug for the same page is "" (→ /docs/) — see
+        // src/utils/slug.ts `toRouteSlug` / `toHistorySlug` in the host repo;
+        // this package cannot import across the boundary (see its CLAUDE.md),
+        // so the one-line rule is duplicated here with this pointer.
         const rel = relative(baseDir, fullPath)
           .replace(/\.mdx?$/, "")
           .replace(/\/index$/, "");

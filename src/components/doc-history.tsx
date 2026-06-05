@@ -403,9 +403,18 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
   );
 
   const base = basePath.replace(/\/+$/, "");
+  // Doc-history storage sentinel ("" -> "index"): a root index page has the
+  // canonical route slug "" (→ /docs/), but the per-page JSON is stored/served
+  // under "index" (an empty path segment is unroutable — the server regex
+  // /^\/doc-history\/(.+)\.json$/ rejects ""). The host wrapper already passes
+  // the sentineled slug, but defend the boundary so the component is correct
+  // for any caller. Mirrors `toHistorySlug` in @/utils/slug (inlined here
+  // rather than imported to keep this bundled island free of host-util
+  // coupling — see .template-drift-allowlist). (#1891)
+  const historySlug = slug === "" ? "index" : slug;
   const fetchPath = locale
-    ? `${base}/doc-history/${locale}/${slug}.json`
-    : `${base}/doc-history/${slug}.json`;
+    ? `${base}/doc-history/${locale}/${historySlug}.json`
+    : `${base}/doc-history/${historySlug}.json`;
 
   const fetchHistory = useCallback(async () => {
     if (data) return; // already loaded

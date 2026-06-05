@@ -29,6 +29,7 @@ import { defaultLocale, t } from "@/config/i18n";
 import { BodyFootUtilArea } from "@takazudo/zudo-doc/body-foot-util";
 import { buildGitHubSourceUrl } from "@/utils/github";
 import { DocHistory } from "@/components/doc-history";
+import { toHistorySlug } from "@/utils/slug";
 // SSR author + date metadata comes from `.zfb/doc-history-meta.json`, a
 // build-time manifest emitted by `scripts/zfb-prebuild.mjs` (step 2:
 // doc-history-meta) before `zfb build` runs. esbuild inlines the JSON
@@ -95,10 +96,21 @@ export function DocHistoryArea({
 }: DocHistoryAreaProps): VNode | null {
   if (!settings.docHistory) return null;
 
+  // Doc-history storage sentinel ("" -> "index"): a root index page has the
+  // canonical route slug "" (→ /docs/), but doc-history JSON and the meta
+  // manifest store/serve the root entry under "index" (an empty path segment
+  // is unroutable — the server regex and the prebuild key composition both
+  // reject ""). Apply the sentinel to the slug segment BEFORE locale
+  // composition so root pages resolve to e.g. /doc-history/index.json and the
+  // meta key "ja/index". See @/utils/slug `toHistorySlug` and the
+  // collectContentFiles walk in packages/doc-history-server. (#1891)
+  const historySlug = toHistorySlug(slug);
+
   // Look up the build-time manifest entry for this page. The composedSlug
   // matches the key written by the prebuild step: bare slug for the default
   // locale, "<localeKey>/<slug>" for non-default locales.
-  const composedSlug = locale === defaultLocale ? slug : `${locale}/${slug}`;
+  const composedSlug =
+    locale === defaultLocale ? historySlug : `${locale}/${historySlug}`;
   type MetaEntry = { author: string; createdDate: string; updatedDate: string };
   const meta = (docHistoryMeta as Record<string, MetaEntry>)[composedSlug];
 
@@ -146,7 +158,7 @@ export function DocHistoryArea({
     ssrFallback: fallback,
     children: (
       <DocHistory
-        slug={slug}
+        slug={historySlug}
         locale={docHistoryLocale}
         basePath={docHistoryBasePath}
       />
