@@ -9,21 +9,33 @@ export interface LocaleEntry {
 }
 
 /**
- * Resolve a potentially-relative content path.
+ * Resolve a relative content/locale path to an absolute, existing directory.
  *
  * When invoked via `pnpm --filter <pkg>`, process.cwd() is the package
- * directory, not the repo root. INIT_CWD is set by pnpm to the directory
- * where pnpm was originally invoked — typically the repo root — so relative
- * paths like "src/content/docs" resolve correctly without requiring "../../"
- * prefixes in the root package.json scripts.
+ * directory, not the repo root. pnpm sets INIT_CWD to the directory where pnpm
+ * was originally invoked — typically the repo root — so the canonical clean
+ * form "src/content/docs" resolves correctly via INIT_CWD without any "../../"
+ * prefix. CI (`build-history`) and `dev:history` both pass this clean form.
  *
  * Resolution order:
  *   1. Absolute path → use as-is
  *   2. Relative + INIT_CWD set + resolves to an existing directory → use that
- *   3. Relative + fallback to process.cwd()
+ *   3. Relative → fall back to process.cwd()
+ *
+ * The resolved path MUST be an existing directory. A non-existent path is a
+ * HARD error (exit 1), not a silent fallthrough: scanning a missing dir yields
+ * zero history entries while the process still exits 0, hiding a misconfigured
+ * `--content-dir` behind a green CI run (the silent-empty-history class behind
+ * #1907 / #1913). Failing loud turns that into a visible CI failure.
  */
 export function resolveContentPath(p: string): string {
-  if (isAbsolute(p)) return p;
+  if (isAbsolute(p)) {
+    if (!existsSync(p)) {
+      console.error(`doc-history-server: content path "${p}" does not exist`);
+      process.exit(1);
+    }
+    return p;
+  }
   const initCwd = process.env["INIT_CWD"];
   if (initCwd) {
     const candidate = resolve(initCwd, p);
@@ -33,7 +45,16 @@ export function resolveContentPath(p: string): string {
       `doc-history-server: INIT_CWD candidate "${candidate}" does not exist; falling back to process.cwd()`,
     );
   }
-  return resolve(p);
+  const fallback = resolve(p);
+  if (!existsSync(fallback)) {
+    console.error(
+      `doc-history-server: content path "${p}" did not resolve to an existing directory ` +
+        `(tried INIT_CWD=${initCwd ? `"${initCwd}"` : "(unset)"}, cwd="${process.cwd()}"). ` +
+        `Pass a repo-root-relative path (pnpm sets INIT_CWD) or an absolute path.`,
+    );
+    process.exit(1);
+  }
+  return fallback;
 }
 
 /** Safely get the next argument, or exit with an error if missing */
