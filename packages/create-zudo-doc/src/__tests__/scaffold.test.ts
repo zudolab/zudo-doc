@@ -2698,7 +2698,7 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
   });
 });
 
-describe("scaffold — zfb next.29 pin bump (PR #1910)", () => {
+describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
   /**
    * S6 (#1808) pinned all three zfb packages at next.13. #1817 bumped them to
    * 0.1.0-next.14. #1824 bumped them to 0.1.0-next.19 — next.18 hard-removed
@@ -2720,13 +2720,17 @@ describe("scaffold — zfb next.29 pin bump (PR #1910)", () => {
    * extension strip, embedded-V8 worker console capture). next.27 is skipped
    * deliberately — its published adapter tarball omitted emit-worker.mjs and
    * crashes every adapter consumer (Takazudo/zudo-front-builder#794; fixed in
-   * next.28). Now bumped to 0.1.0-next.29 (PR #1910): islands code-splitting
+   * next.28). next.29 (PR #1910): islands code-splitting
    * (dynamic import() boundaries become self-hashed chunks), dev-server route
-   * pruning/SSR-reload fixes, and a symlink-safe outdir wipe at build start —
-   * no consumer-facing breaking change. Generated package.json must pin all
-   * three.
+   * pruning/SSR-reload fixes, and a symlink-safe outdir wipe at build start.
+   * Now bumped to 0.1.0-next.30 (PR #1910): adds Next.js-style `[[...slug]]`
+   * optional-catchall route syntax (Takazudo/zudo-front-builder#812) and raises
+   * the zfb-runtime hono floor to ^4.12.23, clearing 9 known advisories (#813);
+   * plus two router hardening fixes (overlapping-sibling rejection #816,
+   * per-segment rank sort for dev/prod parity) — no consumer-facing breaking
+   * change. Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.29", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.30", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -2737,10 +2741,10 @@ describe("scaffold — zfb next.29 pin bump (PR #1910)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.29");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.29");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.30");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.30");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.29",
+      "0.1.0-next.30",
     );
   });
 });
