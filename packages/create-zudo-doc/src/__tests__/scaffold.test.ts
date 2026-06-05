@@ -2133,7 +2133,7 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
     "pages/sitemap.xml.tsx",
     "pages/_data.ts",
     "pages/_mdx-components.ts",
-    "pages/docs/[...slug].tsx",
+    "pages/docs/[[...slug]].tsx",
     "pages/lib/_body-end-islands.tsx",
     "pages/lib/_category-nav.tsx",
     "pages/lib/_category-tree-nav.tsx",
@@ -2403,7 +2403,7 @@ describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)
 });
 
 // W7B (#1737) — i18n feature emits the locale-prefixed page set
-// (pages/[locale]/index.tsx + pages/[locale]/docs/[...slug].tsx) when
+// (pages/[locale]/index.tsx + pages/[locale]/docs/[[...slug]].tsx) when
 // selected, and zero pages/[locale]/** files when not selected. Both
 // emitted files must be byte-identical to their feature templates.
 //
@@ -2415,7 +2415,7 @@ describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)
 describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => {
   const I18N_PAGE_FILES = [
     "pages/[locale]/index.tsx",
-    "pages/[locale]/docs/[...slug].tsx",
+    "pages/[locale]/docs/[[...slug]].tsx",
   ];
 
   const I18N_ON: UserChoices = {
@@ -2445,7 +2445,7 @@ describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => 
     "templates/features/i18n/files/pages",
   );
 
-  it("emits pages/[locale]/index.tsx + pages/[locale]/docs/[...slug].tsx when i18n is selected", async () => {
+  it("emits pages/[locale]/index.tsx + pages/[locale]/docs/[[...slug]].tsx when i18n is selected", async () => {
     await scaffold(I18N_ON);
     for (const rel of I18N_PAGE_FILES) {
       expect(
@@ -2477,14 +2477,14 @@ describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => 
     expect(emitted).toEqual(template);
   });
 
-  it("emitted pages/[locale]/docs/[...slug].tsx is byte-identical to the feature template", async () => {
+  it("emitted pages/[locale]/docs/[[...slug]].tsx is byte-identical to the feature template", async () => {
     await scaffold(I18N_ON);
     const emitted = await fs.readFile(
-      projectPath("test-w7b-i18n-on", "pages/[locale]/docs/[...slug].tsx"),
+      projectPath("test-w7b-i18n-on", "pages/[locale]/docs/[[...slug]].tsx"),
       "utf-8",
     );
     const template = await fs.readFile(
-      path.join(FEATURE_PAGES_DIR, "[locale]/docs/[...slug].tsx"),
+      path.join(FEATURE_PAGES_DIR, "[locale]/docs/[[...slug]].tsx"),
       "utf-8",
     );
     expect(emitted).toEqual(template);

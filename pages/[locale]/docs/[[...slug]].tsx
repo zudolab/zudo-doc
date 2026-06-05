@@ -10,8 +10,15 @@
 //   params: { locale: string; slug: string[] }
 //   props:  { entry, autoIndex, contentDir, isFallback, breadcrumbs, prev, next }
 //
+// Route is the OPTIONAL catchall `[[...slug]]` so a locale root index.mdx can
+// build at `/{locale}/docs/` (canonical root URL — #1891). The root entry
+// emits `params.slug = []` via `toSlugParams`; a required `[...slug]` catchall
+// rejects an empty array and would drop the ENTIRE locale route (the EN-root
+// index leaks in via the locale-first EN fallback, so this fires even before a
+// locale-specific root index exists — probe-observed page-count collapse).
+//
 // i18n / locale routing:
-//   - Default locale (EN) is handled by pages/docs/[...slug].tsx
+//   - Default locale (EN) is handled by pages/docs/[[...slug]].tsx
 //     (prefixDefaultLocale: false).
 //   - Non-default locales emit /{locale}/docs/{slug}.
 //   - Locale-first merge: locale docs take priority; base EN docs fill in
@@ -29,7 +36,7 @@ import {
   type NavNode,
 } from "@/utils/docs";
 import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
-import { toRouteSlug } from "@/utils/slug";
+import { toRouteSlug, toSlugParams } from "@/utils/slug";
 import { DocLayoutWithDefaults } from "@takazudo/zudo-doc/doclayout";
 import { Breadcrumb } from "@takazudo/zudo-doc/breadcrumb";
 import { NavCardGrid } from "@takazudo/zudo-doc/nav-indexing";
@@ -123,7 +130,13 @@ export function paths(): Array<{
 
     // Regular doc pages
     for (const entry of allDocs) {
-      const slug = entry.data.slug ?? entry.id;
+      // Canonical route slug via the one shared rule (@/utils/slug). `entry.id`
+      // is already `toRouteSlug(entry.slug)` (bridgeEntries → stripIndexSuffix →
+      // toRouteSlug), so this is identical to the previous `entry.id` form for
+      // every entry — but stating it explicitly removes the historical id-vs-
+      // toRouteSlug asymmetry with the EN route and the component below, all of
+      // which now yield "" for a root index (URL /{locale}/docs/ — #1891).
+      const slug = entry.data.slug ?? toRouteSlug(entry.slug);
       const isFallback = fallbackSlugs.has(slug);
       const entryContentDir = isFallback ? settings.docsDir : contentDir;
 
@@ -153,7 +166,7 @@ export function paths(): Array<{
       }
 
       result.push({
-        params: { locale, slug: slug.split("/") },
+        params: { locale, slug: toSlugParams(slug) },
         props: {
           kind: "entry",
           entry: entry as unknown as DocPageEntry,
@@ -170,7 +183,7 @@ export function paths(): Array<{
     // Auto-generated index pages for categories without index.mdx
     for (const node of collectAutoIndexNodes(tree)) {
       result.push({
-        params: { locale, slug: node.slug.split("/") },
+        params: { locale, slug: toSlugParams(node.slug) },
         props: {
           kind: "autoIndex",
           autoIndex: node as AutoIndexNode,
