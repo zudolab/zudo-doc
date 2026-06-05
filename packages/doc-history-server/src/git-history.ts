@@ -14,10 +14,23 @@ let repoRootCache: string | null = null;
 
 function getRepoRoot(): string {
   if (repoRootCache) return repoRootCache;
+  // `rev-parse --show-toplevel` walks up from process.cwd(), so it works from
+  // any CWD (no explicit cwd needed here).
   repoRootCache = execFileSync("git", ["rev-parse", "--show-toplevel"], {
     encoding: "utf-8",
   }).trim();
   return repoRootCache;
+}
+
+/**
+ * Shared git options pinned to the repo root. Every git command MUST run with
+ * cwd = repo root: under `pnpm --filter <pkg>`, process.cwd() is the package
+ * dir (packages/doc-history-server/), so the repo-relative pathspecs we build
+ * via toRepoRelative() would match nothing and every file would yield 0
+ * entries (#1907). Running from the repo root happened to work by accident.
+ */
+function gitOpts(): typeof QUIET & { cwd: string } {
+  return { ...QUIET, cwd: getRepoRoot() };
 }
 
 /** Convert an absolute path to a repo-relative path for git commands */
@@ -46,7 +59,7 @@ export function getFileCommits(
         "--",
         filePath,
       ],
-      QUIET,
+      gitOpts(),
     ).trim();
     return output ? [...new Set(output.split("\n"))] : [];
   } catch {
@@ -81,7 +94,7 @@ export function getFirstCommit(filePath: string): string | null {
         "--",
         filePath,
       ],
-      QUIET,
+      gitOpts(),
     ).trim();
     if (!output) return null;
     // git log can emit additional follow-related lines on some platforms;
@@ -105,7 +118,7 @@ export function getCommitInfo(
     const output = execFileSync(
       "git",
       ["log", "-1", "--format=%H%n%aI%n%aN%n%s", hash, "--", filePath],
-      QUIET,
+      gitOpts(),
     ).trim();
     const lines = output.split("\n");
     return {
@@ -129,7 +142,7 @@ export function getFileAtCommit(hash: string, filePath: string): string {
   const relPath = isAbsolute ? toRepoRelative(filePath) : filePath;
 
   try {
-    return execFileSync("git", ["show", `${hash}:${relPath}`], QUIET);
+    return execFileSync("git", ["show", `${hash}:${relPath}`], gitOpts());
   } catch {
     // File may have been renamed — find the old path at this commit
     try {
@@ -146,10 +159,10 @@ export function getFileAtCommit(hash: string, filePath: string): string {
           "--",
           relPath,
         ],
-        QUIET,
+        gitOpts(),
       ).trim();
       if (oldPath) {
-        return execFileSync("git", ["show", `${hash}:${oldPath}`], QUIET);
+        return execFileSync("git", ["show", `${hash}:${oldPath}`], gitOpts());
       }
     } catch {
       // ignore
@@ -168,7 +181,7 @@ export function getFileAtCommit(hash: string, filePath: string): string {
           "--",
           relPath,
         ],
-        QUIET,
+        gitOpts(),
       ).trim();
       const lines = followOutput.split("\n").filter(Boolean);
       // Lines alternate: hash, filename, hash, filename...
@@ -177,7 +190,7 @@ export function getFileAtCommit(hash: string, filePath: string): string {
           return execFileSync(
             "git",
             ["show", `${hash}:${lines[i + 1]}`],
-            QUIET,
+            gitOpts(),
           );
         }
       }
@@ -242,7 +255,7 @@ function buildHashToPathMap(
         "--",
         relPath,
       ],
-      QUIET,
+      gitOpts(),
     ).trim();
     if (!output) return new Map();
 
@@ -309,7 +322,8 @@ function batchFetchContents(
       ["cat-file", "--batch"],
       // encoding must be omitted (or "buffer") to get a raw Buffer so that
       // byte offsets from the <size> field stay accurate across UTF-8 content.
-      { stdio: ["pipe", "pipe", "pipe"], input: inputBuf },
+      // cwd = repo root for the same reason as gitOpts() (see #1907 above).
+      { stdio: ["pipe", "pipe", "pipe"], input: inputBuf, cwd: getRepoRoot() },
     ) as unknown as Buffer;
 
     const result = new Map<string, string>();
@@ -377,7 +391,7 @@ export function getDocHistory(
         "--",
         relPath,
       ],
-      QUIET,
+      gitOpts(),
     ).trim();
     if (logOutput) {
       metaRecords = parseCommitLog(logOutput);
@@ -435,7 +449,7 @@ export function getFileCommitsMeta(
         "--",
         relPath,
       ],
-      QUIET,
+      gitOpts(),
     ).trim();
     if (!output) return [];
     return parseCommitLog(output);
