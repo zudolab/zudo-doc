@@ -117,12 +117,25 @@ export function resolveNavSource(
 ): NavSourceDocs {
   const sig = optionSig(options);
 
-  // --- Versioned (always EN base for the version; locale variant handled by
-  //     the versioned-locale route directly via resolveVersionedLocaleSource).
+  // --- Versioned. For a non-default locale the version IS configured for,
+  //     delegate to resolveVersionedLocaleSource so every nav surface uses the
+  //     SAME version-scoped locale-first merge the page body / route
+  //     enumeration use (#1909) — keeping nav labels and locale-only version
+  //     pages in sync. Otherwise (default locale, or the version not configured
+  //     for this locale) fall back to the version's EN base collection.
   if (currentVersion) {
-    const collectionName = `docs-v-${currentVersion}`;
     const versionConfig = settings.versions?.find((v) => v.slug === currentVersion);
-    const docs = stableDocs(collectionName);
+    const localeDir = versionConfig?.locales?.[lang]?.dir;
+    if (lang !== defaultLocale && localeDir) {
+      return resolveVersionedLocaleSource(
+        currentVersion,
+        versionConfig?.docsDir ?? settings.docsDir,
+        lang,
+        localeDir,
+        options,
+      );
+    }
+    const docs = stableDocs(`docs-v-${currentVersion}`);
     const categoryMeta = loadCategoryMeta(versionConfig?.docsDir ?? settings.docsDir);
     const navDocs = stableNavDocs(docs);
     return { docs, navDocs, categoryMeta, localeSlugSet: EMPTY_SLUG_SET as Set<string> };
