@@ -1,27 +1,32 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Page module for the versioned EN docs route.
+// Page module for the locale-prefixed docs route.
 //
-// Versioned EN docs route. paths() enumerates one route per (version, slug)
-// combination using the `docs-v-${version.slug}` collection for each version
-// configured in settings.versions.
+// Non-default-locale catch-all docs route. paths() emits one route per
+// (locale, slug) combination — one locale from settings.locales per each
+// doc in that locale's merged collection (locale-first + base fallback).
 //
 // paths() contract (zfb ADR-004 — synchronous):
-//   params: { version: string; slug: string[] }
-//   props:  { entry, autoIndex, version, breadcrumbs, prev, next }
+//   params: { locale: string; slug: string[] }
+//   props:  { entry, autoIndex, contentDir, isFallback, breadcrumbs, prev, next }
 //
-// Each version renders with its own nav tree (from the version's docsDir
-// category metadata). Prev/next hrefs are pre-resolved to the versioned URL
-// form (e.g. /v/1.0/docs/…) so the component needs no URL computation.
+// Route is the OPTIONAL catchall `[[...slug]]` so a locale root index.mdx can
+// build at `/{locale}/docs/` (canonical root URL — #1891). The root entry
+// emits `params.slug = []` via `toSlugParams`; a required `[...slug]` catchall
+// rejects an empty array and would drop the ENTIRE locale route (the EN-root
+// index leaks in via the locale-first EN fallback, so this fires even before a
+// locale-specific root index exists — probe-observed page-count collapse).
 //
-// Version banner: if version.banner is set ("unmaintained" | "unreleased"),
-// the DocLayoutWithDefaults version-banner prop drives the banner display.
+// i18n / locale routing:
+//   - Default locale (EN) is handled by pages/docs/[[...slug]].tsx
+//     (prefixDefaultLocale: false).
+//   - Non-default locales emit /{locale}/docs/{slug}.
+//   - Locale-first merge: locale docs take priority; base EN docs fill in
+//     pages not translated yet (shown with a fallback notice).
 
 import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
-import type { VersionConfig } from "@/config/settings";
-import { t } from "@/config/i18n";
-import { docsUrl, versionedDocsUrl } from "@/utils/base";
+import { docsUrl } from "@/utils/base";
 import {
   buildNavTree,
   buildBreadcrumbs,
@@ -31,28 +36,28 @@ import {
   type NavNode,
 } from "@/utils/docs";
 import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
-import { toRouteSlug } from "@/utils/slug";
+import { toRouteSlug, toSlugParams } from "@/utils/slug";
 import { DocLayoutWithDefaults } from "@takazudo/zudo-doc/doclayout";
 import { Breadcrumb } from "@takazudo/zudo-doc/breadcrumb";
 import { NavCardGrid } from "@takazudo/zudo-doc/nav-indexing";
-// Locale-aware MDX components factory — see `pages/_mdx-components.ts`.
-import { createMdxComponents } from "../../../_mdx-components";
+// Shared MDX components bag — see `pages/_mdx-components.ts`.
+import { createMdxComponents } from "../../_mdx-components";
 import type { JSX } from "preact";
-import { resolveNavSource } from "../../../lib/_nav-source-docs";
-import { extractHeadings } from "../../../lib/_extract-headings";
-import type { DocPageEntry, AutoIndexNode, DocPageEntryProps, DocPageAutoIndexProps } from "../../../lib/doc-page-props";
-import { FooterWithDefaults } from "../../../lib/_footer-with-defaults";
-import { SidebarWithDefaults } from "../../../lib/_sidebar-with-defaults";
-import { HeaderWithDefaults } from "../../../lib/_header-with-defaults";
-import { HeadWithDefaults } from "../../../lib/_head-with-defaults";
-import { DocHistoryArea } from "../../../lib/_doc-history-area";
-import { DocMetainfoArea } from "../../../lib/_doc-metainfo-area";
-import { composeMetaTitle } from "../../../lib/_compose-meta-title";
-import { buildInlineVersionSwitcher } from "../../../lib/_inline-version-switcher";
-import { DocPager } from "../../../lib/_doc-pager";
-import { DocContentHeader } from "../../../lib/_doc-content-header";
-import { SidebarPrepaint } from "../../../lib/_sidebar-prepaint";
-import { DocBodyEnd } from "../../../lib/_doc-body-end";
+import { resolveNavSource } from "../../lib/_nav-source-docs";
+import { extractHeadings } from "../../lib/_extract-headings";
+import type { DocPageEntry, AutoIndexNode, DocPageEntryProps, DocPageAutoIndexProps } from "../../lib/doc-page-props";
+import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
+import { DocHistoryArea } from "../../lib/_doc-history-area";
+import { DocMetainfoArea } from "../../lib/_doc-metainfo-area";
+import { SidebarWithDefaults } from "../../lib/_sidebar-with-defaults";
+import { HeaderWithDefaults } from "../../lib/_header-with-defaults";
+import { HeadWithDefaults } from "../../lib/_head-with-defaults";
+import { composeMetaTitle } from "../../lib/_compose-meta-title";
+import { buildInlineVersionSwitcher } from "../../lib/_inline-version-switcher";
+import { DocPager } from "../../lib/_doc-pager";
+import { DocContentHeader } from "../../lib/_doc-content-header";
+import { SidebarPrepaint } from "../../lib/_sidebar-prepaint";
+import { DocBodyEnd } from "../../lib/_doc-body-end";
 
 export const frontmatter = { title: "Docs" };
 
@@ -63,51 +68,78 @@ export const frontmatter = { title: "Docs" };
 // DocPageEntry, AutoIndexNode imported from pages/lib/doc-page-props.ts
 
 /** Route-specific extra fields — present on both branches of the union. */
-interface VersionedDocPageExtra {
-  /** The version config for the active version. */
-  version: VersionConfig;
+interface LocaleDocPageExtra {
+  /** Content directory for the active locale (or base EN for fallbacks). */
+  contentDir: string;
+  /** True when this page falls back to the base EN collection. */
+  isFallback: boolean;
 }
 
 type DocPageProps =
-  | (DocPageEntryProps & VersionedDocPageExtra)
-  | (DocPageAutoIndexProps & VersionedDocPageExtra);
+  | (DocPageEntryProps & LocaleDocPageExtra)
+  | (DocPageAutoIndexProps & LocaleDocPageExtra);
 
 // ---------------------------------------------------------------------------
 // paths() — synchronous (ADR-004)
 // ---------------------------------------------------------------------------
 
 /**
- * Emit one route per (version, slug) combination.
+ * Emit one route per (non-default locale, slug) combination.
  *
- * For each version in settings.versions, loads docs from
- * `docs-v-${version.slug}` and enumerates all pages plus
- * auto-generated category index pages.
+ * Merge strategy:
+ *   1. Load locale docs (e.g. "docs-ja").
+ *   2. Load base EN docs ("docs").
+ *   3. Locale docs take priority; base EN fills in slugs not translated.
+ *   4. Track fallback slugs for the fallback-notice banner.
+ *   5. Build nav tree, compute breadcrumbs and prev/next for each entry.
  *
- * Prev/next hrefs are pre-resolved to the versioned form.
+ * Fallback slug set drives `isFallback` which the component uses to show
+ * the "not yet translated" notice (matching the Astro original).
  */
 export function paths(): Array<{
-  params: { version: string; slug: string[] };
+  params: { locale: string; slug: string[] };
   props: DocPageProps;
 }> {
-  if (!settings.versions) return [];
-
   const result: Array<{
-    params: { version: string; slug: string[] };
+    params: { locale: string; slug: string[] };
     props: DocPageProps;
   }> = [];
 
-  for (const version of settings.versions) {
-    // Identity-stable nav source for this version (EN base, draft-filtered,
-    // unlisted retained). Reused across the route's per-page paths()
-    // invocations so buildNavTree's identity fast-path applies — see
-    // pages/lib/_nav-source-docs.ts (#1902).
-    const { docs: allDocs, navDocs, categoryMeta } = resolveNavSource("en", version.slug);
-    // Versioned docs always use EN locale for nav tree
-    const tree = buildNavTree(navDocs as unknown as DocsEntry[], "en", categoryMeta);
+  for (const locale of Object.keys(settings.locales) as string[]) {
+    const localeConfig = settings.locales[locale];
+    const contentDir = localeConfig?.dir ?? settings.docsDir;
+
+    // Identity-stable, locale-first merge with EN fallback. The same `docs` /
+    // `navDocs` / `categoryMeta` instances are reused across this route's many
+    // per-page paths() invocations so buildNavTree's identity fast-path skips
+    // the key recomputation — see pages/lib/_nav-source-docs.ts (#1902).
+    const { docs: allDocs, navDocs, categoryMeta, localeSlugSet } = resolveNavSource(
+      locale,
+      undefined,
+      { applyDefaultLocaleOnlyFilter: true, keepUnlisted: true },
+    );
+    // isFallback: page came from base docs, not the locale collection.
+    const fallbackSlugs = new Set(
+      allDocs
+        .filter((d) => !localeSlugSet.has(d.data.slug ?? d.id))
+        .map((d) => d.data.slug ?? d.id),
+    );
+
+    const tree = buildNavTree(navDocs as unknown as DocsEntry[], locale, categoryMeta);
+    const fullTree = buildNavTree(allDocs as unknown as DocsEntry[], locale, categoryMeta);
 
     // Regular doc pages
     for (const entry of allDocs) {
+      // Canonical route slug via the one shared rule (@/utils/slug). `entry.id`
+      // is already `toRouteSlug(entry.slug)` (bridgeEntries → stripIndexSuffix →
+      // toRouteSlug), so this is identical to the previous `entry.id` form for
+      // every entry — but stating it explicitly removes the historical id-vs-
+      // toRouteSlug asymmetry with the EN route and the component below, all of
+      // which now yield "" for a root index (URL /{locale}/docs/ — #1891).
       const slug = entry.data.slug ?? toRouteSlug(entry.slug);
+      const isFallback = fallbackSlugs.has(slug);
+      const entryContentDir = isFallback ? settings.docsDir : contentDir;
+
       const navSection = getNavSectionForSlug(slug);
       const subtree = getNavSubtree(tree, navSection);
       const flat = flattenTree(subtree);
@@ -134,19 +166,15 @@ export function paths(): Array<{
       }
 
       result.push({
-        params: { version: version.slug, slug: slug.split("/") },
+        params: { locale, slug: toSlugParams(slug) },
         props: {
           kind: "entry",
-          entry,
-          version,
-          breadcrumbs: buildBreadcrumbs(tree, slug, "en"),
-          // Pre-resolve prev/next hrefs to versioned URLs
-          prev: prevNode
-            ? { ...prevNode, href: versionedDocsUrl(prevNode.slug, version.slug) }
-            : null,
-          next: nextNode
-            ? { ...nextNode, href: versionedDocsUrl(nextNode.slug, version.slug) }
-            : null,
+          entry: entry as unknown as DocPageEntry,
+          contentDir: entryContentDir,
+          isFallback,
+          breadcrumbs: buildBreadcrumbs(fullTree, slug, locale),
+          prev: prevNode,
+          next: nextNode,
           headings: extractHeadings(entry.body ?? ""),
         },
       });
@@ -155,18 +183,13 @@ export function paths(): Array<{
     // Auto-generated index pages for categories without index.mdx
     for (const node of collectAutoIndexNodes(tree)) {
       result.push({
-        params: { version: version.slug, slug: node.slug.split("/") },
+        params: { locale, slug: toSlugParams(node.slug) },
         props: {
           kind: "autoIndex",
-          autoIndex: {
-            ...node,
-            children: node.children.map((c: NavNode) => ({
-              ...c,
-              href: c.href ?? versionedDocsUrl(c.slug, version.slug),
-            })) as NavNode[],
-          } as AutoIndexNode,
-          version,
-          breadcrumbs: buildBreadcrumbs(tree, node.slug, "en"),
+          autoIndex: node as AutoIndexNode,
+          contentDir,
+          isFallback: false,
+          breadcrumbs: buildBreadcrumbs(fullTree, node.slug, locale),
           prev: null,
           next: null,
           headings: [],
@@ -182,11 +205,11 @@ export function paths(): Array<{
 // Page component
 // ---------------------------------------------------------------------------
 
-type PageArgs = DocPageProps & { params: { version: string; slug: string[] } };
+type PageArgs = DocPageProps & { params: { locale: string; slug: string[] } };
 
-export default function VersionedDocsPage(props: PageArgs): JSX.Element {
-  const { breadcrumbs, prev, next, headings, version } = props;
-  const locale = "en";
+export default function LocaleDocsPage(props: PageArgs): JSX.Element {
+  const { breadcrumbs, prev, next, headings, contentDir, isFallback } = props;
+  const locale = props.params.locale;
 
   const slug = props.kind === "autoIndex"
     ? props.autoIndex.slug
@@ -200,29 +223,16 @@ export default function VersionedDocsPage(props: PageArgs): JSX.Element {
   const components = createMdxComponents(locale);
 
   const autoIndexChildren = props.kind === "autoIndex"
-    ? props.autoIndex.children.filter((c: NavNode) => c.hasPage || c.children.length > 0)
+    ? props.autoIndex.children
+        .filter((c: NavNode) => c.hasPage || c.children.length > 0)
+        .map((c: NavNode) => ({
+          ...c,
+          href: c.href ?? docsUrl(c.slug, locale),
+        }))
     : [];
 
-  // Version banner: drives the `<VersionBanner>` element inside
-  // DocLayoutWithDefaults when `version.banner` is "unmaintained" or
-  // "unreleased". The banner links out to the latest version of the
-  // current page (slug-preserving — strips the /v/{version}/ prefix).
-  const versionBannerType = version.banner ? version.banner : undefined;
-  const versionBannerLatestUrl = versionBannerType
-    ? docsUrl(slug, locale)
-    : undefined;
-  const versionBannerLabels = versionBannerType
-    ? {
-        message:
-          versionBannerType === "unmaintained"
-            ? t("version.banner.unmaintained", locale)
-            : t("version.banner.unreleased", locale),
-        latestLink: t("version.banner.latestLink", locale),
-      }
-    : undefined;
-
-  // Canonical URL — versioned pages use the versioned URL as canonical.
-  const pageUrl = versionedDocsUrl(slug, version.slug, locale);
+  // Canonical URL — only when siteUrl is configured.
+  const pageUrl = docsUrl(slug, locale);
   const canonical = settings.siteUrl
     ? settings.siteUrl.replace(/\/$/, "") + pageUrl
     : undefined;
@@ -249,23 +259,19 @@ export default function VersionedDocsPage(props: PageArgs): JSX.Element {
       headings={headings}
       canonical={canonical}
       sidebarPersistKey={sidebarPersistKey}
-      versionBanner={versionBannerType ?? false}
-      versionBannerLatestUrl={versionBannerLatestUrl}
-      versionBannerLabels={versionBannerLabels}
       headerOverride={
         <HeaderWithDefaults
           lang={locale}
           currentSlug={slug}
           navSection={getNavSectionForSlug(slug)}
-          currentVersion={version.slug}
-          currentPath={versionedDocsUrl(slug, version.slug, locale)}
+          currentPath={docsUrl(slug, locale)}
         />
       }
       breadcrumbOverride={
         breadcrumbs.length > 0 ? (
           <Breadcrumb
             items={breadcrumbs}
-            rightSlot={buildInlineVersionSwitcher(slug, locale, version.slug)}
+            rightSlot={buildInlineVersionSwitcher(slug, locale)}
           />
         ) : undefined
       }
@@ -274,8 +280,7 @@ export default function VersionedDocsPage(props: PageArgs): JSX.Element {
           currentSlug={slug}
           lang={locale}
           navSection={getNavSectionForSlug(slug)}
-          currentVersion={version.slug}
-          currentPath={versionedDocsUrl(slug, version.slug, locale)}
+          currentPath={docsUrl(slug, locale)}
         />
       }
       afterSidebar={<SidebarPrepaint />}
@@ -309,17 +314,26 @@ export default function VersionedDocsPage(props: PageArgs): JSX.Element {
         /* Regular doc page. Fragment (not <div>) for the same reason as
            the auto-index branch above — see #1460. */
         <>
-          <DocContentHeader entry={props.entry} slug={slug} locale={locale} />
+          <DocContentHeader entry={props.entry} slug={slug} locale={locale} isFallback={isFallback} />
 
           <props.entry.Content components={components} />
 
           {/* Prev / Next pagination — placed before the document utilities
               section to match the Astro reference order: content → pager →
-              view-source / history. Fixes #1535. */}
+              view-source / history. In the Astro layout, BodyFootUtilArea was
+              rendered by the doc-layout wrapper after the <slot /> content,
+              so the pager (inside the slot) came first. Fixes #1535. */}
           <DocPager prev={prev} next={next} locale={locale} />
 
-          {/* Document utilities (revision history) — entry branch only */}
-          <DocHistoryArea slug={slug} locale={locale} />
+          {/* Document utilities (revision history + view-source link) — skipped for unlisted pages */}
+          {!props.entry.data.unlisted && (
+            <DocHistoryArea
+              slug={slug}
+              locale={locale}
+              entrySlug={props.entry.slug}
+              contentDir={contentDir}
+            />
+          )}
         </>
       )}
     </DocLayoutWithDefaults>

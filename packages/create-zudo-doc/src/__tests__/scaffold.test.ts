@@ -2133,7 +2133,7 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
     "pages/sitemap.xml.tsx",
     "pages/_data.ts",
     "pages/_mdx-components.ts",
-    "pages/docs/[...slug].tsx",
+    "pages/docs/[[...slug]].tsx",
     "pages/lib/_body-end-islands.tsx",
     "pages/lib/_category-nav.tsx",
     "pages/lib/_category-tree-nav.tsx",
@@ -2403,7 +2403,7 @@ describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)
 });
 
 // W7B (#1737) — i18n feature emits the locale-prefixed page set
-// (pages/[locale]/index.tsx + pages/[locale]/docs/[...slug].tsx) when
+// (pages/[locale]/index.tsx + pages/[locale]/docs/[[...slug]].tsx) when
 // selected, and zero pages/[locale]/** files when not selected. Both
 // emitted files must be byte-identical to their feature templates.
 //
@@ -2415,7 +2415,7 @@ describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)
 describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => {
   const I18N_PAGE_FILES = [
     "pages/[locale]/index.tsx",
-    "pages/[locale]/docs/[...slug].tsx",
+    "pages/[locale]/docs/[[...slug]].tsx",
   ];
 
   const I18N_ON: UserChoices = {
@@ -2445,7 +2445,7 @@ describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => 
     "templates/features/i18n/files/pages",
   );
 
-  it("emits pages/[locale]/index.tsx + pages/[locale]/docs/[...slug].tsx when i18n is selected", async () => {
+  it("emits pages/[locale]/index.tsx + pages/[locale]/docs/[[...slug]].tsx when i18n is selected", async () => {
     await scaffold(I18N_ON);
     for (const rel of I18N_PAGE_FILES) {
       expect(
@@ -2477,14 +2477,14 @@ describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => 
     expect(emitted).toEqual(template);
   });
 
-  it("emitted pages/[locale]/docs/[...slug].tsx is byte-identical to the feature template", async () => {
+  it("emitted pages/[locale]/docs/[[...slug]].tsx is byte-identical to the feature template", async () => {
     await scaffold(I18N_ON);
     const emitted = await fs.readFile(
-      projectPath("test-w7b-i18n-on", "pages/[locale]/docs/[...slug].tsx"),
+      projectPath("test-w7b-i18n-on", "pages/[locale]/docs/[[...slug]].tsx"),
       "utf-8",
     );
     const template = await fs.readFile(
-      path.join(FEATURE_PAGES_DIR, "[locale]/docs/[...slug].tsx"),
+      path.join(FEATURE_PAGES_DIR, "[locale]/docs/[[...slug]].tsx"),
       "utf-8",
     );
     expect(emitted).toEqual(template);
@@ -2591,7 +2591,7 @@ describe("scaffold — W7C docTags feature pages (#1738)", () => {
 });
 
 describe("scaffold — W7C versioning feature pages (#1738)", () => {
-  it("emits docs/versions.tsx + v/[version]/docs/[...slug].tsx when versioning is selected (i18n off)", async () => {
+  it("emits docs/versions.tsx + v/[version]/docs/[[...slug]].tsx when versioning is selected (i18n off)", async () => {
     const choices: UserChoices = {
       projectName: "test-versioning-pages-only",
       defaultLang: "en",
@@ -2610,7 +2610,7 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
       await fs.pathExists(
         projectPath(
           "test-versioning-pages-only",
-          "pages/v/[version]/docs/[...slug].tsx",
+          "pages/v/[version]/docs/[[...slug]].tsx",
         ),
       ),
     ).toBe(true);
@@ -2641,7 +2641,7 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
     ).toBe(false);
   });
 
-  it("emits [locale]/docs/versions.tsx + v/[version]/[locale]/docs/[...slug].tsx when versioning + i18n are both selected", async () => {
+  it("emits [locale]/docs/versions.tsx + v/[version]/[locale]/docs/[[...slug]].tsx when versioning + i18n are both selected", async () => {
     const choices: UserChoices = {
       projectName: "test-versioning-i18n",
       defaultLang: "en",
@@ -2663,7 +2663,7 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
       await fs.pathExists(
         projectPath(
           "test-versioning-i18n",
-          "pages/v/[version]/[locale]/docs/[...slug].tsx",
+          "pages/v/[version]/[locale]/docs/[[...slug]].tsx",
         ),
       ),
     ).toBe(true);
@@ -2698,7 +2698,7 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
   });
 });
 
-describe("scaffold — zfb next.28 pin bump (#1870)", () => {
+describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
   /**
    * S6 (#1808) pinned all three zfb packages at next.13. #1817 bumped them to
    * 0.1.0-next.14. #1824 bumped them to 0.1.0-next.19 — next.18 hard-removed
@@ -2714,15 +2714,23 @@ describe("scaffold — zfb next.28 pin bump (#1870)", () => {
    * to 0.1.0-next.25 (#1840): BREAKING — next.25 removes `admonitionsPreset`
    * entirely (hard-errors at load); replaced by the generic
    * `markdown.features.directives` map. Host zfb.config.ts migrated in #1840;
-   * generated projects must also pin next.25. Now bumped to 0.1.0-next.28:
+   * generated projects must also pin next.25. #1870 bumped to 0.1.0-next.28:
    * next.26/next.28 are fix/feature releases with no consumer-facing breaking
    * change (UTF-8 preserved in directive quoted attrs, `.mdx` route-template
    * extension strip, embedded-V8 worker console capture). next.27 is skipped
    * deliberately — its published adapter tarball omitted emit-worker.mjs and
    * crashes every adapter consumer (Takazudo/zudo-front-builder#794; fixed in
-   * next.28). Generated package.json must pin all three.
+   * next.28). next.29 (PR #1910): islands code-splitting
+   * (dynamic import() boundaries become self-hashed chunks), dev-server route
+   * pruning/SSR-reload fixes, and a symlink-safe outdir wipe at build start.
+   * Now bumped to 0.1.0-next.30 (PR #1910): adds Next.js-style `[[...slug]]`
+   * optional-catchall route syntax (Takazudo/zudo-front-builder#812) and raises
+   * the zfb-runtime hono floor to ^4.12.23, clearing 9 known advisories (#813);
+   * plus two router hardening fixes (overlapping-sibling rejection #816,
+   * per-segment rank sort for dev/prod parity) — no consumer-facing breaking
+   * change. Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.28", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.30", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -2733,10 +2741,10 @@ describe("scaffold — zfb next.28 pin bump (#1870)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.28");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.28");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.30");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.30");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.28",
+      "0.1.0-next.30",
     );
   });
 });
@@ -2761,10 +2769,10 @@ describe("scaffold — W7C cross-feature union (i18n + docTags + versioning) (#1
       "pages/[locale]/docs/tags/index.tsx",
       // versioning — unconditional pair
       "pages/docs/versions.tsx",
-      "pages/v/[version]/docs/[...slug].tsx",
+      "pages/v/[version]/docs/[[...slug]].tsx",
       // versioning — locale pair
       "pages/[locale]/docs/versions.tsx",
-      "pages/v/[version]/[locale]/docs/[...slug].tsx",
+      "pages/v/[version]/[locale]/docs/[[...slug]].tsx",
     ];
     for (const rel of expected) {
       expect(
@@ -2782,7 +2790,7 @@ describe("scaffold — S8 versioned locale route generalization (#1892)", () => 
    * paths() must loop Object.keys(settings.locales) and emit params.locale;
    * the component must read locale from params, not hardcode "ja".
    * A project with a non-ja locale (e.g. fr) must get a
-   * v/[version]/[locale]/docs/[...slug].tsx route, not a dead 404.
+   * v/[version]/[locale]/docs/[[...slug]].tsx route, not a dead 404.
    */
   it("generated v/[version]/[locale] route uses params.locale — not hardcoded 'ja'", async () => {
     const choices: UserChoices = {
@@ -2796,11 +2804,11 @@ describe("scaffold — S8 versioned locale route generalization (#1892)", () => 
     await scaffold(choices);
     const routeFile = projectPath(
       "test-s8-locale-generic",
-      "pages/v/[version]/[locale]/docs/[...slug].tsx",
+      "pages/v/[version]/[locale]/docs/[[...slug]].tsx",
     );
     expect(
       await fs.pathExists(routeFile),
-      "v/[version]/[locale]/docs/[...slug].tsx should exist",
+      "v/[version]/[locale]/docs/[[...slug]].tsx should exist",
     ).toBe(true);
     const src = await fs.readFile(routeFile, "utf8");
     // Route must NOT hardcode "ja" as the locale
