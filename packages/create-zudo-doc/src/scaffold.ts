@@ -317,11 +317,11 @@ function generatePackageJson(choices: UserChoices) {
     // so render failures surface `console.*` output. next.27 is unusable
     // for adapter consumers — its tarball omitted emit-worker.mjs
     // (Takazudo/zudo-front-builder#794, fixed in next.28) — so never pin 27.
-    "@takazudo/zfb": "0.1.0-next.28",
-    "@takazudo/zfb-runtime": "0.1.0-next.28",
+    "@takazudo/zfb": "0.1.0-next.29",
+    "@takazudo/zfb-runtime": "0.1.0-next.29",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.28",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.29",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
