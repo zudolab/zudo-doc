@@ -2,6 +2,9 @@
 /** @jsxImportSource preact */
 // Page module for the versioned EN docs route.
 //
+// Optional-catchall [[...slug]] so slug=[] (empty) routes to /v/<ver>/docs/
+// when a versioned root index.mdx exists — toSlugParams("") returns [].
+//
 // Versioned EN docs route. paths() enumerates one route per (version, slug)
 // combination using the `docs-v-${version.slug}` collection for each version
 // configured in settings.versions.
@@ -31,7 +34,7 @@ import {
   type NavNode,
 } from "@/utils/docs";
 import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
-import { toRouteSlug } from "@/utils/slug";
+import { toRouteSlug, toSlugParams } from "@/utils/slug";
 import { DocLayoutWithDefaults } from "@takazudo/zudo-doc/doclayout";
 import { Breadcrumb } from "@takazudo/zudo-doc/breadcrumb";
 import { NavCardGrid } from "@takazudo/zudo-doc/nav-indexing";
@@ -134,7 +137,7 @@ export function paths(): Array<{
       }
 
       result.push({
-        params: { version: version.slug, slug: slug.split("/") },
+        params: { version: version.slug, slug: toSlugParams(slug) },
         props: {
           kind: "entry",
           entry,
@@ -155,7 +158,7 @@ export function paths(): Array<{
     // Auto-generated index pages for categories without index.mdx
     for (const node of collectAutoIndexNodes(tree)) {
       result.push({
-        params: { version: version.slug, slug: node.slug.split("/") },
+        params: { version: version.slug, slug: toSlugParams(node.slug) },
         props: {
           kind: "autoIndex",
           autoIndex: {
