@@ -60,7 +60,13 @@ export function enumerateDocsRoutes(locale: string): string[] {
   const tree = buildNavTree(navDocs, locale as Locale, categoryMeta);
 
   for (const doc of allDocs) {
-    // toRouteSlug fallback so a top-level index.mdx maps to "" not "index".
+    // Canonical route slug via the one shared rule (@/utils/slug). `doc.id` is
+    // already `toRouteSlug(doc.slug)` (bridged through stripIndexSuffix in
+    // pages/_data.ts), so a bare root index.mdx is "" here → `/docs/` — the
+    // canonical root URL (#1891). The `toRouteSlug` fallback is a redundant
+    // safety re-application of the same rule (idempotent on the already-
+    // stripped id); kept so this enumerator's slug derivation reads as a
+    // single explicit call to the canonical helper.
     urls.push(docsUrl(doc.data.slug ?? toRouteSlug(doc.id), locale as string));
   }
   for (const node of collectAutoIndexNodes(tree)) {

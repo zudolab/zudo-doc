@@ -73,9 +73,15 @@ export function collectMdFiles(
         if (entry.name.startsWith("_")) continue;
         walk(fullPath, baseDir);
       } else if (/\.mdx?$/.test(entry.name) && !entry.name.startsWith("_")) {
+        // Canonical route slug (zudo-doc#1891): nested `x/index` → `x` AND
+        // bare root `index` → "" so the search result links to `/docs/` (the
+        // built page) instead of `/docs/index/` (which is never built). The
+        // host route, sitemap, and llms-txt all canonicalize the same way; see
+        // src/utils/slug.ts `toRouteSlug` in the consuming repo (the one rule).
         const rel = relative(baseDir, fullPath)
           .replace(/\.mdx?$/, "")
-          .replace(/\/index$/, "");
+          .replace(/\/index$/, "")
+          .replace(/^index$/, "");
         results.push({ filePath: fullPath, slug: rel });
       }
     }

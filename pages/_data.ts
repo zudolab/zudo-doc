@@ -13,6 +13,7 @@
 import { getCollection } from "zfb/content";
 import type { CollectionEntry } from "zfb/content";
 import type { DocsEntry } from "@/types/docs-entry";
+import { toRouteSlug } from "@/utils/slug";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -92,9 +93,14 @@ export function getDocs(collectionName: string): ZfbDocsEntry[] {
   }));
 }
 
+// The `id` field bridged onto every entry is the canonical route slug, so it
+// routes through the one shared rule (`toRouteSlug` in @/utils/slug) — bare
+// root `index` → "" (URL /docs/), nested `x/index` → "x". Previously this was
+// a standalone copy of the strip logic (the lone "" dissenter of the five
+// index-stripping sites); consolidating it here means there is one source of
+// truth. See @/utils/slug for the canonical-root rationale (#1891 / #1873).
 function stripIndexSuffix(slug: string): string {
-  if (slug === "index") return "";
-  return slug.endsWith("/index") ? slug.slice(0, -"/index".length) : slug;
+  return toRouteSlug(slug);
 }
 
 /**
