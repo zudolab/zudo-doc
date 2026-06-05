@@ -2,10 +2,10 @@
 // scripts/check-pin-parity.mjs
 //
 // Pin-parity gate (W4A — #1732). Failure mode:
-//   "W1A §5#4 — three pin sources, only one bumped"
+//   "W1A §5#4 — pin sources out of lockstep"
 //
 // The same upstream version of @takazudo/zfb (and @takazudo/zfb-runtime)
-// is pinned in THREE places that must stay in lockstep:
+// is pinned in FIVE places that must stay in lockstep:
 //
 //   1. Root package.json `dependencies["@takazudo/zfb"]`
 //      (what this repo builds against)
@@ -13,11 +13,15 @@
 //   3. packages/create-zudo-doc/src/scaffold.ts — the literal version
 //      strings emitted into the generated downstream package.json by
 //      `generatePackageJson()`. A fresh scaffold gets EXACTLY this version.
+//   4. packages/zudo-doc/package.json `devDependencies["@takazudo/zfb"]`
+//      and `["@takazudo/zfb-runtime"]` — exact-equal to the root pins
+//      (used to build the package locally against the exact same version)
+//   5. packages/zudo-doc/package.json `peerDependencies["@takazudo/zfb"]`
+//      and `["@takazudo/zfb-runtime"]` — must be `^<root pin>`
+//      (root pins are exact, e.g. "0.1.0-next.28", so ^ is prepended directly)
 //
 // Historically, bumping #1/#2 (e.g. via `pnpm up @takazudo/zfb@latest`)
-// silently left #3 stale, so newly scaffolded projects shipped with an
-// older zfb than the showcase site they were modeled on. This script
-// makes that drift a CI/b4push error.
+// silently left #3/#4/#5 stale. This script makes that drift a CI/b4push error.
 //
 // Also checks internal @takazudo/zudo-doc* pins (#1850 / #1854): the scaffold
 // emits pins for this repo's own packages; they must match the root version.
@@ -39,6 +43,7 @@ const SCAFFOLD_TS_PATH = resolve(
   ROOT_DIR,
   "packages/create-zudo-doc/src/scaffold.ts",
 );
+const ZUDO_DOC_PKG_PATH = resolve(ROOT_DIR, "packages/zudo-doc/package.json");
 
 // External upstream packages: scaffold pin must equal root dependencies[pkg].
 const PINNED_PACKAGES = [
@@ -59,6 +64,12 @@ const INTERNAL_PINNED_PACKAGES = [
   "@takazudo/zudo-doc",
   "@takazudo/zudo-doc-history-server",
 ];
+
+// packages/zudo-doc/package.json carries zfb pins in two fields:
+//   devDependencies — exact-equal to the root pin (build-time version)
+//   peerDependencies — ^<root pin> (downstream compatibility range)
+// Note: @takazudo/zfb-adapter-cloudflare is NOT in packages/zudo-doc — only these two.
+const ZUDO_DOC_ZFB_PACKAGES = ["@takazudo/zfb", "@takazudo/zfb-runtime"];
 
 /**
  * Extract the literal version string for `pkgName` from scaffold.ts.
@@ -86,6 +97,7 @@ function readScaffoldPin(scaffoldSrc, pkgName) {
 function main() {
   const rootPkg = JSON.parse(readFileSync(ROOT_PKG_PATH, "utf-8"));
   const scaffoldSrc = readFileSync(SCAFFOLD_TS_PATH, "utf-8");
+  const zudoDocPkg = JSON.parse(readFileSync(ZUDO_DOC_PKG_PATH, "utf-8"));
 
   const mismatches = [];
 
@@ -152,9 +164,66 @@ function main() {
     }
   }
 
+  // ── packages/zudo-doc pins: devDependencies exact + peerDependencies ^ ──────
+  for (const pkgName of ZUDO_DOC_ZFB_PACKAGES) {
+    const rootPin = rootPkg.dependencies?.[pkgName];
+    const devPin = zudoDocPkg.devDependencies?.[pkgName];
+    const peerPin = zudoDocPkg.peerDependencies?.[pkgName];
+    const expectedPeerPin = rootPin !== undefined ? `^${rootPin}` : undefined;
+
+    if (rootPin === undefined) {
+      // Reported by the external pins loop above; skip here to avoid duplicate.
+      continue;
+    }
+
+    if (devPin === undefined) {
+      mismatches.push({
+        pkg: pkgName,
+        reason: `Missing in packages/zudo-doc/package.json devDependencies`,
+        expected: rootPin,
+        actual: "(missing)",
+        file: ZUDO_DOC_PKG_PATH,
+        field: "devDependencies",
+        kind: "workspace-package",
+      });
+    } else if (devPin !== rootPin) {
+      mismatches.push({
+        pkg: pkgName,
+        reason: `Pin drift in packages/zudo-doc/package.json devDependencies`,
+        expected: rootPin,
+        actual: devPin,
+        file: ZUDO_DOC_PKG_PATH,
+        field: "devDependencies",
+        kind: "workspace-package",
+      });
+    }
+
+    if (peerPin === undefined) {
+      mismatches.push({
+        pkg: pkgName,
+        reason: `Missing in packages/zudo-doc/package.json peerDependencies`,
+        expected: expectedPeerPin,
+        actual: "(missing)",
+        file: ZUDO_DOC_PKG_PATH,
+        field: "peerDependencies",
+        kind: "workspace-package",
+      });
+    } else if (peerPin !== expectedPeerPin) {
+      mismatches.push({
+        pkg: pkgName,
+        reason: `Pin drift in packages/zudo-doc/package.json peerDependencies`,
+        expected: expectedPeerPin,
+        actual: peerPin,
+        file: ZUDO_DOC_PKG_PATH,
+        field: "peerDependencies",
+        kind: "workspace-package",
+      });
+    }
+  }
+
   if (mismatches.length === 0) {
     console.log(
-      `OK — pin parity verified for ${PINNED_PACKAGES.length} external + ${INTERNAL_PINNED_PACKAGES.length} internal package(s):`,
+      `OK — pin parity verified for ${PINNED_PACKAGES.length} external + ${INTERNAL_PINNED_PACKAGES.length} internal + ${ZUDO_DOC_ZFB_PACKAGES.length * 2} workspace-package field(s):`,
     );
     for (const pkgName of PINNED_PACKAGES) {
       console.log(`  ${pkgName} = ${rootPkg.dependencies[pkgName]}`);
@@ -165,12 +234,21 @@ function main() {
         `  ${pkgName} = ${scaffoldPin} (matches release ${releaseVersion})`,
       );
     }
+    for (const pkgName of ZUDO_DOC_ZFB_PACKAGES) {
+      const rootPin = rootPkg.dependencies[pkgName];
+      console.log(
+        `  packages/zudo-doc devDependencies[${pkgName}] = ${zudoDocPkg.devDependencies?.[pkgName]} (exact)`,
+      );
+      console.log(
+        `  packages/zudo-doc peerDependencies[${pkgName}] = ${zudoDocPkg.peerDependencies?.[pkgName]} (^${rootPin})`,
+      );
+    }
     return 0;
   }
 
   console.error("");
   console.error(
-    "Pin parity check FAILED — failure mode: W1A §5#4 (three pin sources, only one bumped).",
+    "Pin parity check FAILED — failure mode: W1A §5#4 (pin sources out of lockstep).",
   );
   console.error("");
   for (const m of mismatches) {
@@ -178,10 +256,17 @@ function main() {
       console.error(`  [${m.pkg}]  ${m.reason}`);
       console.error(`    root dependencies: ${m.rootPin ?? "(missing)"}`);
       console.error(`    scaffold.ts:       ${m.scaffoldPin ?? "(missing)"}`);
-    } else {
+    } else if (m.kind === "internal") {
       console.error(`  [${m.pkg}]  ${m.reason}`);
       console.error(`    expected (release version): ${m.rootPin}`);
       console.error(`    scaffold.ts:                ${m.scaffoldPin ?? "(missing)"}`);
+    } else {
+      // workspace-package
+      console.error(`  [${m.pkg}]  ${m.reason}`);
+      console.error(`    file:     ${m.file}`);
+      console.error(`    field:    ${m.field}`);
+      console.error(`    expected: ${m.expected}`);
+      console.error(`    actual:   ${m.actual}`);
     }
     console.error("");
   }
@@ -191,6 +276,10 @@ function main() {
     `      external pins live in "dependencies"; the internal release version is the "version" field`,
   );
   console.error(`  - ${SCAFFOLD_TS_PATH}`);
+  console.error(`  - ${ZUDO_DOC_PKG_PATH}`);
+  console.error(
+    `      devDependencies must be exact-equal to root pins; peerDependencies must be ^<root pin>`,
+  );
   console.error("then re-run this check.");
   return 1;
 }

@@ -1,13 +1,9 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-import type { ComponentChildren } from "preact";
+import type { JSX } from "preact";
 
-type Props = {
-  children?: ComponentChildren;
-  className?: string;
-  [key: string]: any;
-};
+type Props = JSX.IntrinsicElements["ul"];
 
 // 2em indent via inline style — Tailwind v4 does not generate arbitrary values from these TSX files (#244)
 export function ContentUl({ children, className, ...rest }: Props) {

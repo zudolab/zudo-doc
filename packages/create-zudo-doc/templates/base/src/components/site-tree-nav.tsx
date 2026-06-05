@@ -6,6 +6,7 @@
 import { useState } from "preact/hooks";
 import type { NavNode } from "@/utils/docs";
 import { INDENT, connectorLeft, ConnectorLines, CategoryLinkIcon } from "./tree-nav-shared";
+import { ChevronRight } from "@takazudo/zudo-doc/icons";
 
 // site-tree-nav uses wider padding than the narrow sidebar
 const SITE_BASE_PAD = "clamp(0.5rem, 0.8vw, 1rem)";
@@ -164,20 +165,7 @@ function CategoryNode({
             aria-expanded={open}
             aria-label={open ? `Collapse ${node.label}` : `Expand ${node.label}`}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className={`h-icon-xs w-icon-xs transition-transform duration-150 ${open ? "rotate-90" : ""} text-muted`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
+            <ChevronRight className={`h-icon-xs w-icon-xs transition-transform duration-150 ${open ? "rotate-90" : ""} text-muted`} />
           </button>
         </div>
       </div>

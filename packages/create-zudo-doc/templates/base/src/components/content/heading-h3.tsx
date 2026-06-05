@@ -1,12 +1,6 @@
 import type { CSSProperties } from 'react';
-import type { ComponentChildren } from 'preact';
 
-type Props = {
-  id?: string;
-  className?: string;
-  children?: ComponentChildren;
-  [key: string]: any;
-};
+type Props = React.ComponentPropsWithoutRef<'h3'>;
 
 export function HeadingH3({ id, children, className, ...rest }: Props) {
   return (

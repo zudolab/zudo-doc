@@ -373,4 +373,73 @@ describe("generateClaudeResourcesDocs", () => {
       });
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Slug collision detection tests
+  // ---------------------------------------------------------------------------
+
+  describe("slug collision detection", () => {
+    it("throws when two CLAUDE.md paths produce the same slug", () => {
+      // foo/bar/CLAUDE.md → slug "foo--bar"
+      // foo--bar/CLAUDE.md → slug "foo--bar"  (collision)
+      fs.mkdirSync(path.join(tmpDir, "foo", "bar"), { recursive: true });
+      fs.writeFileSync(
+        path.join(tmpDir, "foo", "bar", "CLAUDE.md"),
+        "# foo/bar instructions",
+      );
+      fs.mkdirSync(path.join(tmpDir, "foo--bar"), { recursive: true });
+      fs.writeFileSync(
+        path.join(tmpDir, "foo--bar", "CLAUDE.md"),
+        "# foo--bar instructions",
+      );
+
+      expect(() =>
+        generateClaudeResourcesDocs({
+          claudeDir,
+          projectRoot: tmpDir,
+          docsDir,
+        }),
+      ).toThrow(/slug collision/);
+    });
+
+    it("names both colliding source paths in the error", () => {
+      fs.mkdirSync(path.join(tmpDir, "foo", "bar"), { recursive: true });
+      fs.writeFileSync(
+        path.join(tmpDir, "foo", "bar", "CLAUDE.md"),
+        "# foo/bar instructions",
+      );
+      fs.mkdirSync(path.join(tmpDir, "foo--bar"), { recursive: true });
+      fs.writeFileSync(
+        path.join(tmpDir, "foo--bar", "CLAUDE.md"),
+        "# foo--bar instructions",
+      );
+
+      let caughtMessage = "";
+      try {
+        generateClaudeResourcesDocs({
+          claudeDir,
+          projectRoot: tmpDir,
+          docsDir,
+        });
+      } catch (e) {
+        caughtMessage = (e as Error).message;
+      }
+
+      expect(caughtMessage).toContain("foo--bar");
+      // Both source paths must appear in the message
+      expect(caughtMessage).toMatch(/foo.bar.CLAUDE\.md/);
+      expect(caughtMessage).toMatch(/foo--bar.CLAUDE\.md/);
+    });
+
+    it("does not throw for a clean tree (no collisions)", () => {
+      // The default fixture has only root/CLAUDE.md — no collision
+      expect(() =>
+        generateClaudeResourcesDocs({
+          claudeDir,
+          projectRoot: tmpDir,
+          docsDir,
+        }),
+      ).not.toThrow();
+    });
+  });
 });

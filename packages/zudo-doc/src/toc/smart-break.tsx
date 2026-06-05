@@ -49,7 +49,6 @@ export function smartBreak(text: string): VNode | string {
  * Preact function component wrapper — pure, server-renderable.
  * Stringifies children and defers to smartBreak.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function SmartBreak({ children }: { children?: unknown }): any {
+export function SmartBreak({ children }: { children?: unknown }): VNode {
   return <>{smartBreak(String(children ?? ""))}</>;
 }

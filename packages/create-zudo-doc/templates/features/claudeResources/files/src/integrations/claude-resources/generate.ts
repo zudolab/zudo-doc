@@ -172,7 +172,15 @@ function generateClaudemdDocs(
     return a.displayPath.localeCompare(b.displayPath);
   });
 
+  const emittedSlugs = new Map<string, string>();
   items.forEach((item, index) => {
+    const previous = emittedSlugs.get(item.slug);
+    if (previous !== undefined) {
+      throw new Error(
+        `claude-resources: slug collision — "${item.slug}" is produced by both "${previous}" and "${item.relPath}". Rename one of the directories to resolve the conflict.`,
+      );
+    }
+    emittedSlugs.set(item.slug, item.relPath);
     const content = fs.readFileSync(path.join(projectRoot, item.relPath), "utf8");
     const mdx = `---
 title: "${escapeTitle(item.displayPath)}"

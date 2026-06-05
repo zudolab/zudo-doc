@@ -40,9 +40,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   collectContentFiles,
-  getFileCommits,
-  getFirstCommit,
-  getCommitInfo,
+  getFileCommitsMeta,
 } from "@takazudo/zudo-doc-history-server/git-history";
 
 /** A single non-default locale entry; mirrors `settings.locales[*]`. */
@@ -146,19 +144,16 @@ export async function runDocHistoryMetaStep(
   for (const [localeKey, contentDir] of dirEntries) {
     const files = collectContentFiles(contentDir);
     for (const { filePath, slug } of files) {
-      // Newest commit only — `getFileCommits` returns most-recent-first, so
-      // asking for n=1 cannot misidentify the oldest entry on long histories.
-      const commits = getFileCommits(filePath, 1);
-      if (commits.length === 0) continue; // untracked / not yet committed
+      // Single spawn: walk the full history with --follow, take first (newest)
+      // and last (oldest) records. Avoids the 3-4 spawns of the previous
+      // getFileCommits(1) + getCommitInfo + getFirstCommit + getCommitInfo
+      // pattern, and eliminates the unbounded --reverse walk in getFirstCommit.
+      // See issue #1875 for spawn-count analysis.
+      const allCommits = getFileCommitsMeta(filePath);
+      if (allCommits.length === 0) continue; // untracked / not yet committed
 
-      const newestInfo = getCommitInfo(commits[0], filePath);
-      // For the oldest commit we query git directly with --reverse so the
-      // result is correct regardless of how many commits the file has.
-      const firstHash = getFirstCommit(filePath);
-      const oldestInfo =
-        firstHash && firstHash !== commits[0]
-          ? getCommitInfo(firstHash, filePath)
-          : newestInfo;
+      const newestInfo = allCommits[0]!;
+      const oldestInfo = allCommits[allCommits.length - 1] ?? newestInfo;
 
       const composedSlug = localeKey ? `${localeKey}/${slug}` : slug;
       meta[composedSlug] = {

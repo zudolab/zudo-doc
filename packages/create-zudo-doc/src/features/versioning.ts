@@ -16,16 +16,12 @@ import type { FeatureModule } from "../compose.js";
  *
  *   docs/versions.tsx                       (always — versioning gate only)
  *   v/[version]/docs/[...slug].tsx          (always — versioning gate only)
- *   v/[version]/ja/docs/[...slug].tsx       (i18n + versioning — see below)
+ *   v/[version]/[locale]/docs/[...slug].tsx (i18n + versioning — see below)
  *   [locale]/docs/versions.tsx              (i18n + versioning)
  *
  * `copyFeatureFiles` (compose.ts) auto-copies everything under `files/`.
  * postProcess removes the i18n-gated subset when i18n is OFF so single-
  * locale projects don't ship orphan routes.
- *
- * Note: `v/[version]/ja/docs/[...slug].tsx` hardcodes `ja` per W2 spec-lock
- * Decision 9 / §6.4 — matches main verbatim. Future generalization to
- * `[locale]` is deferred (maintainer-question follow-up).
  */
 export const versioningFeature: FeatureModule = (choices) => ({
   name: "versioning",
@@ -41,15 +37,15 @@ export const versioningFeature: FeatureModule = (choices) => ({
       if (await fs.pathExists(localeVersions)) {
         await fs.remove(localeVersions);
       }
-      const jaVersionedDocs = path.join(
+      const localeVersionedDocs = path.join(
         targetDir,
         "pages",
         "v",
         "[version]",
-        "ja",
+        "[locale]",
       );
-      if (await fs.pathExists(jaVersionedDocs)) {
-        await fs.remove(jaVersionedDocs);
+      if (await fs.pathExists(localeVersionedDocs)) {
+        await fs.remove(localeVersionedDocs);
       }
     }
   },

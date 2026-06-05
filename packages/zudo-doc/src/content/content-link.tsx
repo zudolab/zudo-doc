@@ -1,26 +1,21 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-import type { ComponentChildren } from "preact";
+import type { JSX, VNode } from "preact";
 import { SmartBreak as SmartBreakBase } from "../toc/smart-break.js";
 
-// SmartBreak is defined with Preact's VNode return type, but content
-// components type children as ComponentChildren. Cast to a Preact-compatible
-// signature; at runtime Preact compat unifies the two.
+// SmartBreak returns VNode; cast to align with JSX.IntrinsicElements["a"].children
+// under compat mode. Runtime is fine since the preact/compat alias is in effect.
 const SmartBreak = SmartBreakBase as unknown as (props: {
-  children?: ComponentChildren;
-}) => any;
+  children?: JSX.IntrinsicElements["a"]["children"];
+}) => VNode;
 
-type Props = {
-  href?: string;
-  className?: string;
-  children?: ComponentChildren;
-  [key: string]: any;
-};
+type Props = JSX.IntrinsicElements["a"];
 
 export function ContentLink({ href, className, children, ...rest }: Props) {
   // Block links and hash-links (heading anchors) should render without content link styling
-  const classes = className ? className.split(" ") : [];
+  // (className may be a Preact SignalLike under JSX.IntrinsicElements["a"]; only split real strings)
+  const classes = typeof className === "string" ? className.split(" ") : [];
   if (classes.includes("block") || classes.includes("hash-link")) {
     return (
       <a href={href} className={className} {...rest}>

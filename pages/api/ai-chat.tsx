@@ -154,20 +154,43 @@ ${docsContent}
 // CORS
 // ---------------------------------------------------------------------------
 
-const CORS_HEADERS: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
+const CORS_STATIC_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
   "Access-Control-Expose-Headers": "Retry-After",
   "Access-Control-Max-Age": "86400",
 };
 
-function corsHeaders(): Record<string, string> {
-  return { ...CORS_HEADERS };
+/**
+ * Resolves the `Access-Control-Allow-Origin` value for a given request origin.
+ *
+ * - Demo mode: always returns `"*"` (back-compat — showcase runs without
+ *   `aiChatAllowedOrigins` configured).
+ * - Non-demo, origin matches `aiChatAllowedOrigins`: echoes the origin.
+ * - Non-demo, origin absent or not in the allowlist: returns `null` (no
+ *   origin header sent — browsers will block cross-origin requests).
+ */
+function resolveAllowOrigin(requestOrigin: string | null): string | null {
+  if (settings.aiChatDemoMode) return "*";
+  if (!requestOrigin) return null;
+  const allowed = settings.aiChatAllowedOrigins as string[];
+  return allowed.includes(requestOrigin) ? requestOrigin : null;
 }
 
-function handleOptions(): Response {
-  return new Response(null, { status: 204, headers: CORS_HEADERS });
+function corsHeaders(allowOrigin: string | null): Record<string, string> {
+  const headers: Record<string, string> = { ...CORS_STATIC_HEADERS };
+  if (allowOrigin !== null) {
+    headers["Access-Control-Allow-Origin"] = allowOrigin;
+    // Vary: Origin so caches don't serve the wrong allow-origin to other origins.
+    if (allowOrigin !== "*") {
+      headers["Vary"] = "Origin";
+    }
+  }
+  return headers;
+}
+
+function handleOptions(allowOrigin: string | null): Response {
+  return new Response(null, { status: 204, headers: corsHeaders(allowOrigin) });
 }
 
 // ---------------------------------------------------------------------------
@@ -221,7 +244,7 @@ function fireAuditLog(
 }
 
 // ---------------------------------------------------------------------------
-// Rate limiting (per-IP via KV, best-effort / fail-open)
+// Rate limiting (per-IP via KV; fail-closed when not in demo mode)
 // ---------------------------------------------------------------------------
 
 interface RateLimitResult {
@@ -238,26 +261,42 @@ async function checkRateLimit(ipHash: string, env: AiChatEnv): Promise<RateLimit
   const now = Date.now();
   const perMinute = parseLimit(env.RATE_LIMIT_PER_MINUTE, DEFAULT_PER_MINUTE);
   const perDay = parseLimit(env.RATE_LIMIT_PER_DAY, DEFAULT_PER_DAY);
+  const globalDailyLimit = settings.aiChatGlobalDailyLimit as number | false;
 
   const minBucket = Math.floor(now / MS_PER_MINUTE);
   const dayBucket = Math.floor(now / MS_PER_DAY);
   const minKey = `rate:min:${ipHash}:${minBucket}`;
   const dayKey = `rate:day:${ipHash}:${dayBucket}`;
+  const globalDayKey = globalDailyLimit !== false ? `rate:global:${dayBucket}` : null;
 
   let minCount: number;
   let dayCount: number;
+  let globalDayCount: number;
   try {
     const parseCount = (v: string | null): number => {
       const n = parseInt(v ?? "0", 10);
       return Number.isNaN(n) ? 0 : n;
     };
-    [minCount, dayCount] = await Promise.all([
+    const reads: Promise<number>[] = [
       env.RATE_LIMIT.get(minKey).then(parseCount),
       env.RATE_LIMIT.get(dayKey).then(parseCount),
-    ]);
+    ];
+    if (globalDayKey !== null) {
+      reads.push(env.RATE_LIMIT.get(globalDayKey).then(parseCount));
+    }
+    const results = await Promise.all(reads);
+    minCount = results[0]!;
+    dayCount = results[1]!;
+    globalDayCount = results[2] ?? 0;
   } catch (err) {
-    console.error("Rate limit KV read failed, allowing request:", err);
-    return { allowed: true };
+    // Fail-closed in non-demo mode: a KV outage must not unlock unbounded spend.
+    // In demo mode the rate limiter is never reached (demo short-circuit is first),
+    // so this branch is always non-demo in practice.
+    console.error(
+      `Rate limit KV read failed, ${settings.aiChatDemoMode ? "allowing" : "blocking"} request:`,
+      err,
+    );
+    return { allowed: settings.aiChatDemoMode };
   }
 
   if (minCount >= perMinute) {
@@ -270,12 +309,25 @@ async function checkRateLimit(ipHash: string, env: AiChatEnv): Promise<RateLimit
     return { allowed: false, retryAfter: Math.max(1, SECONDS_PER_DAY - secondsIntoDay) };
   }
 
-  // Increment both counters (not atomic, acceptable for best-effort limiting).
-  const results = await Promise.allSettled([
+  if (globalDailyLimit !== false && globalDayCount >= globalDailyLimit) {
+    const secondsIntoDay = Math.floor((now % MS_PER_DAY) / 1000);
+    return { allowed: false, retryAfter: Math.max(1, SECONDS_PER_DAY - secondsIntoDay) };
+  }
+
+  // Increment counters (not atomic, acceptable for best-effort limiting).
+  const writes: Promise<void>[] = [
     env.RATE_LIMIT.put(minKey, String(minCount + 1), { expirationTtl: MINUTE_KEY_TTL }),
     env.RATE_LIMIT.put(dayKey, String(dayCount + 1), { expirationTtl: DAY_KEY_TTL }),
-  ]);
-  for (const r of results) {
+  ];
+  if (globalDayKey !== null) {
+    writes.push(
+      env.RATE_LIMIT.put(globalDayKey, String(globalDayCount + 1), {
+        expirationTtl: DAY_KEY_TTL,
+      }),
+    );
+  }
+  const writeResults = await Promise.allSettled(writes);
+  for (const r of writeResults) {
     if (r.status === "rejected") {
       console.error("Rate limit KV write failed:", r.reason);
     }
@@ -333,13 +385,14 @@ async function callClaude(
 function jsonResponse(
   body: Record<string, unknown>,
   status: number,
+  allowOrigin: string | null,
   extraHeaders?: Record<string, string>,
 ): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       "Content-Type": "application/json",
-      ...corsHeaders(),
+      ...corsHeaders(allowOrigin),
       ...extraHeaders,
     },
   });
@@ -360,19 +413,32 @@ function isValidMessage(msg: unknown): msg is ChatMessage {
 export default async function AiChatHandler(): Promise<Response> {
   const { env, ctx, request } = getCloudflareContext<AiChatEnv>();
 
+  // Resolve CORS allow-origin once — used by every response in this handler.
+  // Must happen before OPTIONS so preflight returns the correct header.
+  const allowOrigin = resolveAllowOrigin(request.headers.get("Origin"));
+
+  /** Convenience wrapper that bakes `allowOrigin` into every JSON response. */
+  function reply(
+    body: Record<string, unknown>,
+    status: number,
+    extraHeaders?: Record<string, string>,
+  ): Response {
+    return jsonResponse(body, status, allowOrigin, extraHeaders);
+  }
+
   if (request.method === "OPTIONS") {
-    return handleOptions();
+    return handleOptions(allowOrigin);
   }
 
   if (request.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed" }, 405);
+    return reply({ error: "Method not allowed" }, 405);
   }
 
   // Demo-mode short-circuit: when enabled, reply with a fixed message before
   // touching the API key, KV namespace, audit logger, or rate limiter. Lets
   // the showcase deploy run without ANTHROPIC_API_KEY / RATE_LIMIT bindings.
   if (settings.aiChatDemoMode) {
-    return jsonResponse({ response: DEMO_MODE_MESSAGE }, 200);
+    return reply({ response: DEMO_MODE_MESSAGE }, 200);
   }
 
   const clientIp = request.headers.get("cf-connecting-ip") ?? "unknown";
@@ -387,7 +453,7 @@ export default async function AiChatHandler(): Promise<Response> {
   // request performs no KV writes at all.
   const rateLimit = await checkRateLimit(ipHash, env);
   if (!rateLimit.allowed) {
-    return jsonResponse(
+    return reply(
       { error: "Too many requests" },
       429,
       { "Retry-After": String(rateLimit.retryAfter ?? 60) },
@@ -415,17 +481,17 @@ export default async function AiChatHandler(): Promise<Response> {
       body = (await request.json()) as { message?: unknown; history?: unknown };
     } catch {
       audit("", { blocked: true, blockReason: "invalid_input" });
-      return jsonResponse({ error: "Invalid JSON body" }, 400);
+      return reply({ error: "Invalid JSON body" }, 400);
     }
 
     if (!body.message || typeof body.message !== "string") {
       audit("", { blocked: true, blockReason: "invalid_input" });
-      return jsonResponse({ error: "message is required" }, 400);
+      return reply({ error: "message is required" }, 400);
     }
 
     if (body.message.length > MAX_MESSAGE_LENGTH) {
       audit(body.message, { blocked: true, blockReason: "invalid_input" });
-      return jsonResponse(
+      return reply(
         { error: `message exceeds ${MAX_MESSAGE_LENGTH} character limit` },
         400,
       );
@@ -435,7 +501,7 @@ export default async function AiChatHandler(): Promise<Response> {
     // of injection attempts cannot amplify audit-log KV writes.
     if (!screenInput(body.message)) {
       audit(body.message, { blocked: true, blockReason: "prompt_injection" });
-      return jsonResponse(
+      return reply(
         { error: "I can only help with questions about the documentation." },
         400,
       );
@@ -445,11 +511,11 @@ export default async function AiChatHandler(): Promise<Response> {
     if (body.history !== undefined && body.history !== null) {
       if (!Array.isArray(body.history)) {
         audit(body.message, { blocked: true, blockReason: "invalid_input" });
-        return jsonResponse({ error: "history must be an array" }, 400);
+        return reply({ error: "history must be an array" }, 400);
       }
       if (body.history.length > MAX_HISTORY_LENGTH) {
         audit(body.message, { blocked: true, blockReason: "invalid_input" });
-        return jsonResponse(
+        return reply(
           { error: `history exceeds ${MAX_HISTORY_LENGTH} entry limit` },
           400,
         );
@@ -458,11 +524,11 @@ export default async function AiChatHandler(): Promise<Response> {
       for (const entry of candidates) {
         if (!isValidMessage(entry)) {
           audit(body.message, { blocked: true, blockReason: "invalid_input" });
-          return jsonResponse({ error: "history contains malformed entries" }, 400);
+          return reply({ error: "history contains malformed entries" }, 400);
         }
         if (entry.content.length > MAX_HISTORY_CONTENT_LENGTH) {
           audit(body.message, { blocked: true, blockReason: "invalid_input" });
-          return jsonResponse(
+          return reply(
             {
               error: `history content exceeds ${MAX_HISTORY_CONTENT_LENGTH} character limit`,
             },
@@ -475,7 +541,7 @@ export default async function AiChatHandler(): Promise<Response> {
         // language in normal answers.
         if (entry.role === "user" && !screenInput(entry.content)) {
           audit(body.message, { blocked: true, blockReason: "prompt_injection" });
-          return jsonResponse(
+          return reply(
             { error: "I can only help with questions about the documentation." },
             400,
           );
@@ -486,9 +552,9 @@ export default async function AiChatHandler(): Promise<Response> {
 
     const response = await callClaude(body.message, history, env);
     audit(body.message, { blocked: false, responsePreview: response });
-    return jsonResponse({ response }, 200);
+    return reply({ response }, 200);
   } catch (err) {
     console.error("Chat endpoint error:", err instanceof Error ? err.message : err);
-    return jsonResponse({ error: "Internal server error" }, 500);
+    return reply({ error: "Internal server error" }, 500);
   }
 }

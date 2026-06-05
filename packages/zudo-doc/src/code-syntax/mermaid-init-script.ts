@@ -65,7 +65,7 @@ import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
  * tests can override the URL — e.g. self-hosted mirrors, version-
  * locked deployments — without re-templating the whole script.
  */
-export const MERMAID_CDN_MODULE_URL = "https://esm.sh/mermaid@11.4.1";
+export const MERMAID_CDN_MODULE_URL = "https://esm.sh/mermaid@11.15.0";
 
 /**
  * Build the inline init script with a caller-supplied module URL.

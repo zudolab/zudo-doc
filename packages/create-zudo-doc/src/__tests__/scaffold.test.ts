@@ -1191,15 +1191,12 @@ describe("scaffold — plugin copying and settings", () => {
 
   it("copies plugin files to src/plugins/", async () => {
     const pluginFiles = [
-      "remark-resolve-markdown-links.ts",
       "docs-source-map.ts",
-      "remark-admonitions.ts",
       "url-utils.ts",
       "hast-utils.ts",
       "rehype-code-title.ts",
       "rehype-heading-links.ts",
       "rehype-mermaid.ts",
-      "rehype-strip-md-extension.ts",
     ];
     for (const file of pluginFiles) {
       expect(
@@ -2152,6 +2149,7 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
     "pages/lib/_header-with-defaults.tsx",
     "pages/lib/_inline-version-switcher.tsx",
     "pages/lib/_math-block.tsx",
+    "pages/lib/_nav-source-cache.ts",
     "pages/lib/_nav-source-docs.ts",
     "pages/lib/_preset-generator.tsx",
     "pages/lib/_search-widget-script.ts",
@@ -2638,12 +2636,12 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
     ).toBe(false);
     expect(
       await fs.pathExists(
-        projectPath("test-versioning-no-i18n", "pages/v/[version]/ja"),
+        projectPath("test-versioning-no-i18n", "pages/v/[version]/[locale]"),
       ),
     ).toBe(false);
   });
 
-  it("emits [locale]/docs/versions.tsx + v/[version]/ja/docs/[...slug].tsx when versioning + i18n are both selected", async () => {
+  it("emits [locale]/docs/versions.tsx + v/[version]/[locale]/docs/[...slug].tsx when versioning + i18n are both selected", async () => {
     const choices: UserChoices = {
       projectName: "test-versioning-i18n",
       defaultLang: "en",
@@ -2665,7 +2663,7 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
       await fs.pathExists(
         projectPath(
           "test-versioning-i18n",
-          "pages/v/[version]/ja/docs/[...slug].tsx",
+          "pages/v/[version]/[locale]/docs/[...slug].tsx",
         ),
       ),
     ).toBe(true);
@@ -2764,9 +2762,9 @@ describe("scaffold — W7C cross-feature union (i18n + docTags + versioning) (#1
       // versioning — unconditional pair
       "pages/docs/versions.tsx",
       "pages/v/[version]/docs/[...slug].tsx",
-      // versioning — locale + hardcoded-ja pair
+      // versioning — locale pair
       "pages/[locale]/docs/versions.tsx",
-      "pages/v/[version]/ja/docs/[...slug].tsx",
+      "pages/v/[version]/[locale]/docs/[...slug].tsx",
     ];
     for (const rel of expected) {
       expect(
@@ -2774,5 +2772,47 @@ describe("scaffold — W7C cross-feature union (i18n + docTags + versioning) (#1
         `expected ${rel} to exist in union scaffold`,
       ).toBe(true);
     }
+  });
+});
+
+describe("scaffold — S8 versioned locale route generalization (#1892)", () => {
+  /**
+   * Regression guard: the versioned non-default-locale route must use a
+   * generic [locale] dynamic segment (not a hardcoded 'ja' directory).
+   * paths() must loop Object.keys(settings.locales) and emit params.locale;
+   * the component must read locale from params, not hardcode "ja".
+   * A project with a non-ja locale (e.g. fr) must get a
+   * v/[version]/[locale]/docs/[...slug].tsx route, not a dead 404.
+   */
+  it("generated v/[version]/[locale] route uses params.locale — not hardcoded 'ja'", async () => {
+    const choices: UserChoices = {
+      projectName: "test-s8-locale-generic",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["i18n", "versioning"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const routeFile = projectPath(
+      "test-s8-locale-generic",
+      "pages/v/[version]/[locale]/docs/[...slug].tsx",
+    );
+    expect(
+      await fs.pathExists(routeFile),
+      "v/[version]/[locale]/docs/[...slug].tsx should exist",
+    ).toBe(true);
+    const src = await fs.readFile(routeFile, "utf8");
+    // Route must NOT hardcode "ja" as the locale
+    expect(src, "route must not contain const locale = \"ja\"").not.toContain(
+      'const locale = "ja"',
+    );
+    // Route must read locale from params
+    expect(src, "route must read locale from params").toContain("params.locale");
+    // paths() must loop over settings.locales keys (generic, not ja-specific)
+    expect(
+      src,
+      "paths() must enumerate Object.keys(settings.locales)",
+    ).toContain("Object.keys(settings.locales)");
   });
 });

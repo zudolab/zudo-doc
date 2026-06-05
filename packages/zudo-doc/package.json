@@ -146,6 +146,10 @@
     "./url-normalizer": {
       "types": "./dist/url-normalizer/index.d.ts",
       "default": "./dist/url-normalizer/index.js"
+    },
+    "./icons": {
+      "types": "./dist/icons/index.d.ts",
+      "default": "./dist/icons/index.js"
     }
   },
   "scripts": {

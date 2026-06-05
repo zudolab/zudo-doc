@@ -31,6 +31,7 @@ import { tagVocabulary } from "@/config/tag-vocabulary";
 import { collectTags } from "@/utils/tags";
 import { toRouteSlug } from "@/utils/slug";
 import { loadDocs } from "../_data";
+import { mergeLocaleDocs } from "./locale-merge";
 import type { DocsEntry } from "@/types/docs-entry";
 
 // ---------------------------------------------------------------------------
@@ -114,21 +115,18 @@ export function FooterWithDefaults({
     if (lang === defaultLocale) {
       docs = loadDocs("docs").filter((d) => !d.data.draft && !d.data.unlisted);
     } else {
-      const localeDocs = loadDocs(`docs-${lang}`).filter(
-        (d) => !d.data.draft && !d.data.unlisted,
-      );
-      const baseDocs = loadDocs("docs").filter(
-        (d) => !d.data.draft && !d.data.unlisted,
-      );
-      const localeSlugSet = new Set(
-        localeDocs.map((d) => d.data.slug ?? toRouteSlug(d.id)),
-      );
-      docs = [
-        ...localeDocs,
-        ...baseDocs.filter(
-          (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id)),
-        ),
-      ];
+      // Apply the default-locale-only filter so the footer taglist only counts
+      // tags that have a locale-routable tag page — matching the tag-route
+      // pages ([tag].tsx / tags/index.tsx) and enumerateTagsRoutes, which all
+      // now filter. Without this, the footer would link to /{locale}/docs/tags/
+      // pages that are never built for tags living only on default-locale-only
+      // prefix pages.
+      const result = mergeLocaleDocs({
+        baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
+        localeDocs: loadDocs(`docs-${lang}`).filter((d) => !d.data.draft),
+        applyDefaultLocaleOnlyFilter: true,
+      });
+      docs = result.docs;
     }
 
     const tagMap = collectTags(

@@ -1,68 +1,220 @@
-// Shared helper — pick the right loadDocs() collection and category-meta dir
-// for the active (locale, version) pair, applying the locale-first + EN-fallback
-// merge that pages/[locale]/docs/[...slug].tsx uses in its own paths() pass so
-// the sidebar tree mirrors what those pages enumerate.
+// Shared, identity-stable nav-source resolver.
 //
-// Used by _sidebar-with-defaults.tsx (desktop sidebar) and
-// _header-with-defaults.tsx (mobile SidebarToggle) so both nav surfaces apply
-// the same defaultLocaleOnlyPrefixes filter and stay in sync.
+// Picks the right collection(s) and category-meta dir for an active
+// (locale, version) pair, applying the locale-first + EN-fallback merge that
+// the doc-route `paths()` passes use, so every nav surface (desktop sidebar,
+// mobile SidebarToggle, route enumeration, MDX nav wrappers) sees the same
+// data the pages enumerate.
+//
+// IDENTITY STABILITY (why this is not a thin wrapper)
+// ---------------------------------------------------
+// Every returned `docs` / `navDocs` array and `categoryMeta` Map is memoized
+// so repeat callers within one build get the SAME instances. That is what lets
+// `buildNavTree`'s identity fast-path (`src/utils/docs.ts`) skip the O(n log n)
+// key computation on the ~900 calls a 251-page build makes. See
+// `_nav-source-cache.ts` for the snapshot-anchored memo and the original-issue
+// trace (zudolab/zudo-doc#1902 / #1882).
+//
+// Used by:
+//   - _sidebar-with-defaults.tsx / _header-with-defaults.tsx (per-page nav)
+//   - the 4 doc-route paths() files (route enumeration + nav tree)
+//   - route-enumerators.ts (sitemap) and the MDX nav wrappers
+// each picking the `NavSourceVariant` matching its filter needs.
 
 import { defaultLocale, type Locale } from "@/config/i18n";
 import { settings } from "@/config/settings";
-import { docsUrl, isDefaultLocaleOnlyPath } from "@/utils/base";
-import { loadCategoryMeta, type CategoryMeta } from "@/utils/docs";
+import {
+  loadCategoryMeta,
+  isNavVisible,
+  type CategoryMeta,
+} from "@/utils/docs";
 import type { DocsEntry } from "@/types/docs-entry";
-import { loadDocs } from "../_data";
+import type { DocPageEntry } from "./doc-page-props";
+import { stableDocs, memoizeDerived } from "./_nav-source-cache";
+import { mergeLocaleDocs } from "./locale-merge";
+
+// ---------------------------------------------------------------------------
+// Stable category-meta merge
+// ---------------------------------------------------------------------------
+
+// `loadCategoryMeta(dir)` is already memoized by dir (returns the same Map).
+// The locale merge of two such Maps, however, was minted fresh on every call —
+// breaking the `categoryMeta === categoryMeta` identity check in the nav-tree
+// fast-path. Memoize the merge on the (baseDir, localeDir) pair.
+const mergedCategoryMetaCache = new Map<string, Map<string, CategoryMeta>>();
+
+/** Base metadata first, locale overrides win on overlapping keys — same merge
+ *  order the locale doc-route paths() use. Returns a STABLE Map per
+ *  (baseDir, localeDir) pair. */
+export function stableMergeCategoryMeta(
+  baseDir: string,
+  localeDir: string,
+): Map<string, CategoryMeta> {
+  const key = `${baseDir}\n${localeDir}`;
+  const cached = mergedCategoryMetaCache.get(key);
+  if (cached) return cached;
+  const merged = new Map<string, CategoryMeta>([
+    ...loadCategoryMeta(baseDir),
+    ...loadCategoryMeta(localeDir),
+  ]);
+  mergedCategoryMetaCache.set(key, merged);
+  return merged;
+}
+
+// ---------------------------------------------------------------------------
+// Stable navDocs (isNavVisible filter) derived from a stable docs array
+// ---------------------------------------------------------------------------
+
+/** `docs.filter(isNavVisible)`, memoized on the stable `docs` identity so the
+ *  filtered array also has stable identity for the nav-tree fast-path. */
+export function stableNavDocs(docs: DocsEntry[]): DocsEntry[] {
+  return memoizeDerived([docs], "navVisible", () => docs.filter(isNavVisible));
+}
+
+// ---------------------------------------------------------------------------
+// Resolved nav source
+// ---------------------------------------------------------------------------
 
 export type NavSourceDocs = {
-  docs: DocsEntry[];
+  /** Full doc list (merged + draft-filtered; unlisted retained per options). */
+  docs: DocPageEntry[];
+  /** `docs.filter(isNavVisible)` — stable instance for buildNavTree. */
+  navDocs: DocPageEntry[];
+  /** Stable category-meta Map for the active (locale, version). */
   categoryMeta: Map<string, CategoryMeta>;
+  /** Slugs that came from the locale collection (for isFallback). Empty for
+   *  default-locale / single-collection cases. */
+  localeSlugSet: Set<string>;
 };
 
 /**
- * Pick the right `loadDocs(...)` collection name and category-meta dir
- * for the active (locale, version) pair, applying the same locale-first
- * + EN-fallback merge that `pages/[locale]/docs/[...slug].tsx` performs
- * in its own `paths()` so the sidebar tree mirrors what those pages
- * enumerate.
+ * How to filter the merged doc list. The locale merge takes different options
+ * at different call sites; the option signature is folded into the memo key so
+ * variants never collide on a shared cache entry.
+ */
+export interface NavSourceOptions {
+  /** Drop base docs matching `defaultLocaleOnlyPrefixes` (route/sidebar nav). */
+  applyDefaultLocaleOnlyFilter?: boolean;
+  /** Retain `unlisted: true` docs (route enumeration + nav). */
+  keepUnlisted?: boolean;
+}
+
+function optionSig(o: NavSourceOptions): string {
+  return `dlo=${o.applyDefaultLocaleOnlyFilter ? 1 : 0};ku=${o.keepUnlisted ? 1 : 0}`;
+}
+
+const EMPTY_SLUG_SET: ReadonlySet<string> = new Set();
+
+/**
+ * Resolve the identity-stable nav source for an EN/locale (optionally
+ * versioned) context. Every field is memoized so repeated calls with the same
+ * logical inputs return the same instances.
+ */
+export function resolveNavSource(
+  lang: Locale,
+  currentVersion: string | undefined,
+  options: NavSourceOptions = {},
+): NavSourceDocs {
+  const sig = optionSig(options);
+
+  // --- Versioned (always EN base for the version; locale variant handled by
+  //     the versioned-locale route directly via resolveVersionedLocaleSource).
+  if (currentVersion) {
+    const collectionName = `docs-v-${currentVersion}`;
+    const versionConfig = settings.versions?.find((v) => v.slug === currentVersion);
+    const docs = stableDocs(collectionName);
+    const categoryMeta = loadCategoryMeta(versionConfig?.docsDir ?? settings.docsDir);
+    const navDocs = stableNavDocs(docs);
+    return { docs, navDocs, categoryMeta, localeSlugSet: EMPTY_SLUG_SET as Set<string> };
+  }
+
+  // --- Default locale: the "docs" collection directly.
+  if (lang === defaultLocale) {
+    const docs = stableDocs("docs");
+    const categoryMeta = loadCategoryMeta(settings.docsDir);
+    const navDocs = stableNavDocs(docs);
+    return { docs, navDocs, categoryMeta, localeSlugSet: EMPTY_SLUG_SET as Set<string> };
+  }
+
+  // --- Non-default locale: locale-first merge with EN fallback.
+  const baseDocs = stableDocs("docs");
+  const localeDocs = stableDocs(`docs-${lang}`);
+
+  const merged = memoizeDerived([baseDocs, localeDocs], `merge;${sig}`, () =>
+    mergeLocaleDocs({
+      baseDocs: baseDocs as unknown as DocsEntry[],
+      localeDocs: localeDocs as unknown as DocsEntry[],
+      applyDefaultLocaleOnlyFilter: options.applyDefaultLocaleOnlyFilter,
+      keepUnlisted: options.keepUnlisted,
+    }),
+  );
+  const docs = merged.docs as unknown as DocPageEntry[];
+
+  const localeDir = settings.locales[lang]?.dir ?? settings.docsDir;
+  const categoryMeta = stableMergeCategoryMeta(settings.docsDir, localeDir);
+  const navDocs = stableNavDocs(docs);
+
+  return { docs, navDocs, categoryMeta, localeSlugSet: merged.localeSlugSet };
+}
+
+/**
+ * Resolve the identity-stable nav source for a versioned non-default-locale
+ * context — locale-specific version collection over the version's EN base.
+ */
+export function resolveVersionedLocaleSource(
+  versionSlug: string,
+  versionDocsDir: string,
+  lang: Locale,
+  localeDir: string | undefined,
+  options: NavSourceOptions = {},
+): NavSourceDocs {
+  const sig = optionSig(options);
+  const baseDocs = stableDocs(`docs-v-${versionSlug}`);
+  const localeDocs = localeDir ? stableDocs(`docs-v-${versionSlug}-${lang}`) : EMPTY_DOCS;
+
+  const merged = memoizeDerived(
+    localeDir ? [baseDocs, localeDocs] : [baseDocs],
+    `vmerge;${lang};${sig}`,
+    () =>
+      mergeLocaleDocs({
+        baseDocs: baseDocs as unknown as DocsEntry[],
+        localeDocs: localeDocs as unknown as DocsEntry[],
+        applyDefaultLocaleOnlyFilter: options.applyDefaultLocaleOnlyFilter,
+        keepUnlisted: options.keepUnlisted,
+      }),
+  );
+  const docs = merged.docs as unknown as DocPageEntry[];
+
+  const categoryMeta = localeDir
+    ? stableMergeCategoryMeta(versionDocsDir, localeDir)
+    : loadCategoryMeta(versionDocsDir);
+  const navDocs = stableNavDocs(docs);
+
+  return { docs, navDocs, categoryMeta, localeSlugSet: merged.localeSlugSet };
+}
+
+// Shared empty array for the "no locale collection" branch — stable identity
+// keeps the merge memo consistent.
+const EMPTY_DOCS: DocPageEntry[] = [];
+
+// ---------------------------------------------------------------------------
+// Back-compat: loadNavSourceDocs (sidebar + header consumers)
+// ---------------------------------------------------------------------------
+
+/**
+ * Per-page nav source for the desktop sidebar and mobile SidebarToggle.
+ *
+ * Thin adapter over {@link resolveNavSource} with the sidebar's filter options
+ * (`applyDefaultLocaleOnlyFilter`, `keepUnlisted`). Returns `navDocs` already
+ * filtered so callers pass it straight to `buildSidebarForSection` without a
+ * fresh `.filter(isNavVisible)` that would defeat the nav-tree fast-path.
  */
 export function loadNavSourceDocs(
   lang: Locale,
   currentVersion: string | undefined,
 ): NavSourceDocs {
-  if (currentVersion) {
-    const collectionName = `docs-v-${currentVersion}`;
-    const versionConfig = settings.versions?.find((v) => v.slug === currentVersion);
-    const docs = loadDocs(collectionName).filter((d) => !d.data.draft);
-    const categoryMeta = loadCategoryMeta(versionConfig?.docsDir ?? settings.docsDir);
-    return { docs, categoryMeta };
-  }
-
-  if (lang === defaultLocale) {
-    const docs = loadDocs("docs").filter((d) => !d.data.draft);
-    const categoryMeta = loadCategoryMeta(settings.docsDir);
-    return { docs, categoryMeta };
-  }
-
-  // Non-default locale: locale-first merge with EN fallback so docs the
-  // active locale has not yet translated still appear in the tree.
-  const localeDocs = loadDocs(`docs-${lang}`).filter((d) => !d.data.draft);
-  const baseDocs = loadDocs("docs").filter((d) => !d.data.draft);
-  const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? d.id));
-  const fallbackDocs = baseDocs
-    .filter((d) => !localeSlugSet.has(d.data.slug ?? d.id))
-    .filter((d) => !isDefaultLocaleOnlyPath(docsUrl(d.data.slug ?? d.id)));
-  const allDocs = [...localeDocs, ...fallbackDocs];
-
-  const localeDir =
-    (settings.locales as Record<string, { dir?: string }>)[lang]?.dir ??
-    settings.docsDir;
-  // Base meta first, locale meta wins on overlapping keys — same merge
-  // order [locale]/docs/[...slug].tsx uses in its paths() pass.
-  const categoryMeta = new Map<string, CategoryMeta>([
-    ...loadCategoryMeta(settings.docsDir),
-    ...loadCategoryMeta(localeDir),
-  ]);
-
-  return { docs: allDocs, categoryMeta };
+  return resolveNavSource(lang, currentVersion, {
+    applyDefaultLocaleOnlyFilter: true,
+    keepUnlisted: true,
+  });
 }

@@ -39,7 +39,6 @@ import { settings } from "@/config/settings";
 import { defaultLocale, locales, t, type Locale } from "@/config/i18n";
 import { buildLocaleLinks, navHref, versionedDocsUrl } from "@/utils/base";
 import {
-  isNavVisible,
   type NavNode,
 } from "@/utils/docs";
 import { buildSidebarForSection } from "@/utils/sidebar";
@@ -137,8 +136,7 @@ export function SidebarWithDefaults(
 
   const backToMenuLabel = navSection ? t("nav.backToMenu", lang) : undefined;
 
-  const { docs, categoryMeta } = loadNavSourceDocs(lang, currentVersion);
-  const navDocs = docs.filter(isNavVisible);
+  const { navDocs, categoryMeta } = loadNavSourceDocs(lang, currentVersion);
   const rawNodes = buildSidebarForSection(navDocs, lang, navSection, categoryMeta);
   const nodes = currentVersion
     ? remapVersionedHrefs(rawNodes, currentVersion, lang)

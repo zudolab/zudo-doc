@@ -17,50 +17,40 @@
 //   - Locale-first merge: locale docs take priority; base EN docs fill in
 //     pages not translated yet (shown with a fallback notice).
 
-import { getCollection } from "zfb/content";
-import type { CollectionEntry } from "zfb/content";
 import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
-import { t, getContentDir } from "@/config/i18n";
-import { docsUrl, isDefaultLocaleOnlyPath } from "@/utils/base";
+import { docsUrl } from "@/utils/base";
 import {
   buildNavTree,
   buildBreadcrumbs,
   flattenTree,
   findNode,
-  loadCategoryMeta,
   collectAutoIndexNodes,
-  isNavVisible,
   type NavNode,
-  type BreadcrumbItem,
 } from "@/utils/docs";
 import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
 import { toRouteSlug } from "@/utils/slug";
 import { DocLayoutWithDefaults } from "@takazudo/zudo-doc/doclayout";
 import { Breadcrumb } from "@takazudo/zudo-doc/breadcrumb";
 import { NavCardGrid } from "@takazudo/zudo-doc/nav-indexing";
-import { FrontmatterPreview } from "@takazudo/zudo-doc/metainfo";
-import { frontmatterRenderers } from "@/config/frontmatter-preview-renderers";
 // Shared MDX components bag — see `pages/_mdx-components.ts`.
 import { createMdxComponents } from "../../_mdx-components";
 import type { JSX } from "preact";
-import { bridgeEntries } from "../../_data";
+import { resolveNavSource } from "../../lib/_nav-source-docs";
 import { extractHeadings } from "../../lib/_extract-headings";
+import type { DocPageEntry, AutoIndexNode, DocPageEntryProps, DocPageAutoIndexProps } from "../../lib/doc-page-props";
 import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
 import { DocHistoryArea } from "../../lib/_doc-history-area";
-import { BodyEndIslands } from "../../lib/_body-end-islands";
 import { DocMetainfoArea } from "../../lib/_doc-metainfo-area";
-import { DocTagsArea } from "../../lib/_doc-tags-area";
 import { SidebarWithDefaults } from "../../lib/_sidebar-with-defaults";
 import { HeaderWithDefaults } from "../../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../../lib/_head-with-defaults";
-import { buildFrontmatterPreviewEntries } from "../../lib/_frontmatter-preview-data";
 import { composeMetaTitle } from "../../lib/_compose-meta-title";
 import { buildInlineVersionSwitcher } from "../../lib/_inline-version-switcher";
-import DesktopSidebarToggle from "@/components/desktop-sidebar-toggle";
-import { SidebarResizerInit } from "@takazudo/zudo-doc/sidebar-resizer";
-import type { VNode } from "preact";
-import { Island } from "@takazudo/zfb";
+import { DocPager } from "../../lib/_doc-pager";
+import { DocContentHeader } from "../../lib/_doc-content-header";
+import { SidebarPrepaint } from "../../lib/_sidebar-prepaint";
+import { DocBodyEnd } from "../../lib/_doc-body-end";
 
 export const frontmatter = { title: "Docs" };
 
@@ -68,28 +58,19 @@ export const frontmatter = { title: "Docs" };
 // Types
 // ---------------------------------------------------------------------------
 
-interface DocPageEntry extends DocsEntry {
-  Content: CollectionEntry<unknown>["Content"];
-  module_specifier: string;
-}
+// DocPageEntry, AutoIndexNode imported from pages/lib/doc-page-props.ts
 
-interface AutoIndexNode extends NavNode {
-  children: NavNode[];
-}
-
-interface DocPageProps {
-  entry: DocPageEntry | null;
-  autoIndex?: AutoIndexNode;
+/** Route-specific extra fields — present on both branches of the union. */
+interface LocaleDocPageExtra {
   /** Content directory for the active locale (or base EN for fallbacks). */
   contentDir: string;
   /** True when this page falls back to the base EN collection. */
   isFallback: boolean;
-  breadcrumbs: BreadcrumbItem[];
-  prev: NavNode | null;
-  next: NavNode | null;
-  /** Depth-2/3/4 headings extracted from the MDX body, for SSG TOC links. */
-  headings: ReturnType<typeof extractHeadings>;
 }
+
+type DocPageProps =
+  | (DocPageEntryProps & LocaleDocPageExtra)
+  | (DocPageAutoIndexProps & LocaleDocPageExtra);
 
 // ---------------------------------------------------------------------------
 // paths() — synchronous (ADR-004)
@@ -118,36 +99,31 @@ export function paths(): Array<{
   }> = [];
 
   for (const locale of Object.keys(settings.locales) as string[]) {
-    const localeConfig = (settings.locales as Record<string, { dir: string }>)[locale];
+    const localeConfig = settings.locales[locale];
     const contentDir = localeConfig?.dir ?? settings.docsDir;
 
-    // Load locale + base docs, filter drafts
-    const localeDocs = ((bridgeEntries(getCollection(`docs-${locale}`), `docs-${locale}`) as unknown as DocPageEntry[])).filter(
-      (d) => !d.data.draft,
+    // Identity-stable, locale-first merge with EN fallback. The same `docs` /
+    // `navDocs` / `categoryMeta` instances are reused across this route's many
+    // per-page paths() invocations so buildNavTree's identity fast-path skips
+    // the key recomputation — see pages/lib/_nav-source-docs.ts (#1902).
+    const { docs: allDocs, navDocs, categoryMeta, localeSlugSet } = resolveNavSource(
+      locale,
+      undefined,
+      { applyDefaultLocaleOnlyFilter: true, keepUnlisted: true },
     );
-    const baseDocs = ((bridgeEntries(getCollection("docs"), "docs") as unknown as DocPageEntry[])).filter(
-      (d) => !d.data.draft,
+    // isFallback: page came from base docs, not the locale collection.
+    const fallbackSlugs = new Set(
+      allDocs
+        .filter((d) => !localeSlugSet.has(d.data.slug ?? d.id))
+        .map((d) => d.data.slug ?? d.id),
     );
 
-    const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? toRouteSlug(d.slug)));
-    const fallbackDocs = baseDocs.filter(
-      (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.slug)) && !isDefaultLocaleOnlyPath(`/docs/${d.data.slug ?? toRouteSlug(d.slug)}`),
-    );
-    const fallbackSlugs = new Set(fallbackDocs.map((d) => d.data.slug ?? toRouteSlug(d.slug)));
-    const allDocs = [...localeDocs, ...fallbackDocs];
-
-    // Merge category metadata: base first, locale overrides
-    const baseCategoryMeta = loadCategoryMeta(settings.docsDir);
-    const localeCategoryMeta = loadCategoryMeta(contentDir);
-    const categoryMeta = new Map([...baseCategoryMeta, ...localeCategoryMeta]);
-
-    const navDocs = allDocs.filter(isNavVisible);
     const tree = buildNavTree(navDocs as unknown as DocsEntry[], locale, categoryMeta);
     const fullTree = buildNavTree(allDocs as unknown as DocsEntry[], locale, categoryMeta);
 
     // Regular doc pages
     for (const entry of allDocs) {
-      const slug = entry.data.slug ?? toRouteSlug(entry.slug);
+      const slug = entry.data.slug ?? entry.id;
       const isFallback = fallbackSlugs.has(slug);
       const entryContentDir = isFallback ? settings.docsDir : contentDir;
 
@@ -179,7 +155,8 @@ export function paths(): Array<{
       result.push({
         params: { locale, slug: slug.split("/") },
         props: {
-          entry,
+          kind: "entry",
+          entry: entry as unknown as DocPageEntry,
           contentDir: entryContentDir,
           isFallback,
           breadcrumbs: buildBreadcrumbs(fullTree, slug, locale),
@@ -195,7 +172,7 @@ export function paths(): Array<{
       result.push({
         params: { locale, slug: node.slug.split("/") },
         props: {
-          entry: null,
+          kind: "autoIndex",
           autoIndex: node as AutoIndexNode,
           contentDir,
           isFallback: false,
@@ -215,34 +192,25 @@ export function paths(): Array<{
 // Page component
 // ---------------------------------------------------------------------------
 
-interface PageArgs {
-  params: { locale: string; slug: string[] };
-  entry: DocPageProps["entry"];
-  autoIndex?: DocPageProps["autoIndex"];
-  contentDir: DocPageProps["contentDir"];
-  isFallback: DocPageProps["isFallback"];
-  breadcrumbs: DocPageProps["breadcrumbs"];
-  prev: DocPageProps["prev"];
-  next: DocPageProps["next"];
-  headings: DocPageProps["headings"];
-}
+type PageArgs = DocPageProps & { params: { locale: string; slug: string[] } };
 
-export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, isFallback, breadcrumbs, prev, next, headings }: PageArgs): JSX.Element {
-  const locale = params.locale;
+export default function LocaleDocsPage(props: PageArgs): JSX.Element {
+  const { breadcrumbs, prev, next, headings, contentDir, isFallback } = props;
+  const locale = props.params.locale;
 
-  const slug = autoIndex
-    ? autoIndex.slug
-    : (entry!.data.slug ?? toRouteSlug(entry!.slug));
+  const slug = props.kind === "autoIndex"
+    ? props.autoIndex.slug
+    : (props.entry.data.slug ?? toRouteSlug(props.entry.slug));
 
-  const title = autoIndex ? autoIndex.label : entry!.data.title;
-  const description = autoIndex ? autoIndex.description : entry!.data.description;
+  const title = props.kind === "autoIndex" ? props.autoIndex.label : props.entry.data.title;
+  const description = props.kind === "autoIndex" ? props.autoIndex.description : props.entry.data.description;
 
   // Locale-aware components bag — creates nav wrappers bound to the active
   // locale so CategoryNav/CategoryTreeNav/SiteTreeNav query the right collection.
   const components = createMdxComponents(locale);
 
-  const autoIndexChildren = autoIndex
-    ? autoIndex.children
+  const autoIndexChildren = props.kind === "autoIndex"
+    ? props.autoIndex.children
         .filter((c: NavNode) => c.hasPage || c.children.length > 0)
         .map((c: NavNode) => ({
           ...c,
@@ -261,7 +229,7 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
   // both lang (BCP-47 locale string) and navSection (filesystem-derived
   // kebab-case slug) come from controlled, trusted sources.
   const navSection = getNavSectionForSlug(slug);
-  const hideSidebar = entry?.data?.hide_sidebar;
+  const hideSidebar = props.kind === "entry" ? props.entry.data.hide_sidebar : undefined;
   const sidebarPersistKey = hideSidebar
     ? undefined
     : `sidebar-${locale}-${navSection ?? "default"}`;
@@ -274,7 +242,7 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
       lang={locale}
       noindex={settings.noindex}
       hideSidebar={hideSidebar}
-      hideToc={entry?.data?.hide_toc}
+      hideToc={props.kind === "entry" ? props.entry.data.hide_toc : undefined}
       headings={headings}
       canonical={canonical}
       sidebarPersistKey={sidebarPersistKey}
@@ -302,28 +270,11 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
           currentPath={docsUrl(slug, locale)}
         />
       }
-      afterSidebar={
-        settings.sidebarToggle ? (
-          <>
-            <script dangerouslySetInnerHTML={{
-              __html: `(function(){try{if(localStorage.getItem('zudo-doc-sidebar-visible')==='false'){document.documentElement.setAttribute('data-sidebar-hidden','');}}catch(e){}})();`,
-            }} />
-            {Island({
-              when: "load",
-              children: <DesktopSidebarToggle />,
-            }) as unknown as VNode}
-          </>
-        ) : undefined
-      }
+      afterSidebar={<SidebarPrepaint />}
       footerOverride={<FooterWithDefaults lang={locale} />}
-      bodyEndComponents={
-        <>
-          <BodyEndIslands basePath={settings.base ?? "/"} />
-          {settings.sidebarResizer && <SidebarResizerInit />}
-        </>
-      }
+      bodyEndComponents={<DocBodyEnd />}
     >
-      {autoIndex ? (
+      {props.kind === "autoIndex" ? (
         /* Auto-index page: category without an index.mdx.
            Fragment (not <div>) so children become direct children of
            <article class="zd-content">, picking up the flow-space rule
@@ -331,7 +282,7 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
            Wrapping in <div> would make h1/description p children-of-children
            and the flow gap (~24px) would never apply — see #1460. */
         <>
-          <h1 class="text-heading font-bold mb-vsp-xs">{autoIndex.label}</h1>
+          <h1 class="text-heading font-bold mb-vsp-xs">{props.autoIndex.label}</h1>
 
           {/* Build-time date block — chrome parity (#1461). Auto-index pages
               previously rendered without doc-meta; reference site shows it on
@@ -339,9 +290,9 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
               entry exists for this slug. */}
           <DocMetainfoArea slug={slug} locale={locale} />
 
-          {autoIndex.description && (
+          {props.autoIndex.description && (
             <p class="mb-vsp-lg text-title text-muted">
-              {autoIndex.description}
+              {props.autoIndex.description}
             </p>
           )}
           <NavCardGrid children={autoIndexChildren} />
@@ -350,113 +301,23 @@ export default function LocaleDocsPage({ params, entry, autoIndex, contentDir, i
         /* Regular doc page. Fragment (not <div>) for the same reason as
            the auto-index branch above — see #1460. */
         <>
-          <h1 class="text-heading font-bold mb-vsp-xs">{entry!.data.title}</h1>
+          <DocContentHeader entry={props.entry} slug={slug} locale={locale} isFallback={isFallback} />
 
-          {/* Build-time date block (Created / Updated / Author).
-              doc-metainfo placement — between <h1> and description.
-              Data from `.zfb/doc-history-meta.json` (esbuild-inlined, no fs). */}
-          <DocMetainfoArea slug={slug} locale={locale} />
-
-          {/* Page-level tag chips — matching doc-tags placement (#1658). */}
-          <DocTagsArea slug={slug} locale={locale} tags={entry!.data.tags} />
-
-          {/* Fallback notice for non-translated pages */}
-          {isFallback && !entry!.data.generated && (
-            <div
-              class="mb-vsp-md border border-info/30 bg-info/5 px-hsp-lg py-vsp-sm text-small text-muted rounded"
-              role="note"
-            >
-              {t("doc.fallbackNotice", locale)}
-            </div>
-          )}
-
-          {entry!.data.description && (
-            <p class="mb-vsp-lg text-title text-muted">
-              {entry!.data.description}
-            </p>
-          )}
-
-          {/* Frontmatter preview — non-system, custom keys only. Returns
-              null when the entries array is empty, so pages without
-              custom frontmatter emit nothing. Custom per-key renderers
-              from frontmatter-preview-renderers.tsx produce styled cells
-              (pills, badges, etc.) instead of plain text. */}
-          <FrontmatterPreview
-            entries={buildFrontmatterPreviewEntries(entry!.data)}
-            title={t("frontmatter.preview.title", locale)}
-            keyColLabel={t("frontmatter.preview.keyCol", locale)}
-            valueColLabel={t("frontmatter.preview.valueCol", locale)}
-            renderers={frontmatterRenderers}
-            data={entry!.data as Record<string, unknown>}
-            locale={locale}
-          />
-
-          {entry && <entry.Content components={components} />}
+          <props.entry.Content components={components} />
 
           {/* Prev / Next pagination — placed before the document utilities
               section to match the Astro reference order: content → pager →
               view-source / history. In the Astro layout, BodyFootUtilArea was
               rendered by the doc-layout wrapper after the <slot /> content,
               so the pager (inside the slot) came first. Fixes #1535. */}
-          <nav class="mt-vsp-2xl grid grid-cols-2 gap-hsp-xl">
-            {prev ? (
-              <a
-                href={prev.href}
-                class="group border border-muted rounded-lg p-hsp-lg hover:border-accent"
-              >
-                <div class="flex items-center gap-hsp-xs text-caption text-muted mb-vsp-2xs">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-[1.125rem] w-[1.125rem]"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-                  </svg>
-                  <span class="no-underline">{t("nav.previous", locale)}</span>
-                </div>
-                <p class="text-small font-semibold underline group-hover:text-accent">
-                  {prev.label}
-                </p>
-              </a>
-            ) : (
-              <div />
-            )}
-            {next ? (
-              <a
-                href={next.href}
-                class="group border border-muted rounded-lg p-hsp-lg hover:border-accent text-right"
-              >
-                <div class="flex items-center justify-end gap-hsp-xs text-caption text-muted mb-vsp-2xs">
-                  <span class="no-underline">{t("nav.next", locale)}</span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-[1.125rem] w-[1.125rem]"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-                <p class="text-small font-semibold underline group-hover:text-accent">
-                  {next.label}
-                </p>
-              </a>
-            ) : (
-              <div />
-            )}
-          </nav>
+          <DocPager prev={prev} next={next} locale={locale} />
 
           {/* Document utilities (revision history + view-source link) — skipped for unlisted pages */}
-          {!entry!.data.unlisted && (
+          {!props.entry.data.unlisted && (
             <DocHistoryArea
               slug={slug}
               locale={locale}
-              entrySlug={entry!.slug}
+              entrySlug={props.entry.slug}
               contentDir={contentDir}
             />
           )}

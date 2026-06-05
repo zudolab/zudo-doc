@@ -23,6 +23,10 @@ const ChatMessageRow = memo(function ChatMessageRow({ msg }: { msg: ChatMessage 
     <div
       className={`mb-vsp-xs flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
     >
+      {/* SR-only role prefix: visual distinction is bubble alignment/color only, so
+          screen readers need a text label to identify speaker. position:absolute
+          pulls it out of flex flow, preserving the bubble layout. */}
+      <span className="sr-only">{msg.role === "user" ? "You: " : "Assistant: "}</span>
       {msg.role === "user" ? (
         <div className="max-w-[85%] rounded-t-[1rem] rounded-bl-[1rem] rounded-br-[0.25rem] bg-chat-user-bg px-hsp-md py-vsp-2xs text-small leading-relaxed text-chat-user-text">
           <SmartBreak>{msg.content}</SmartBreak>
@@ -198,13 +202,23 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
           ))}
           {loading && (
             <div className="mb-vsp-xs flex justify-start">
-              <div className="rounded-t-[1rem] rounded-br-[1rem] rounded-bl-[0.25rem] bg-chat-assistant-bg px-hsp-md py-vsp-2xs text-small text-muted">
+              {/* role="status" marks this as a live status region distinct from the
+                  message log; it implies aria-live="polite" on its own node. */}
+              <div
+                role="status"
+                className="rounded-t-[1rem] rounded-br-[1rem] rounded-bl-[0.25rem] bg-chat-assistant-bg px-hsp-md py-vsp-2xs text-small text-muted"
+              >
                 Thinking...
               </div>
             </div>
           )}
           {error && (
-            <div className="mb-vsp-xs rounded-[0.75rem] border border-danger bg-bg px-hsp-md py-vsp-2xs text-small text-danger">
+            // role="alert" (assertive) rather than polite: a failed send is
+            // actionable — the user must know immediately so they can retry.
+            <div
+              role="alert"
+              className="mb-vsp-xs rounded-[0.75rem] border border-danger bg-bg px-hsp-md py-vsp-2xs text-small text-danger"
+            >
               {error}
             </div>
           )}
@@ -221,6 +235,8 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
               onChange={(e) => setInput(e.currentTarget.value)}
               onKeyDown={handleKeyDown}
               disabled={loading}
+              aria-label="Type your message"
+              aria-busy={loading}
               placeholder="Type your message..."
               className="flex-1 rounded-full border border-muted bg-bg px-hsp-lg py-vsp-2xs text-small text-fg placeholder:text-muted focus:border-accent focus:outline-none disabled:opacity-50"
             />
@@ -228,6 +244,7 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
               type="button"
               onClick={sendMessage}
               disabled={loading || !input.trim()}
+              aria-busy={loading}
               className="flex h-[2rem] w-[2rem] shrink-0 items-center justify-center rounded-full bg-accent text-bg transition-colors hover:bg-accent-hover disabled:opacity-50"
               aria-label="Send message"
             >

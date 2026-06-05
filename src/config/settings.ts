@@ -43,7 +43,7 @@ export const settings = {
   defaultLocale: "en" as string,
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },
-  } satisfies Record<string, LocaleConfig>,
+  } as Record<string, LocaleConfig>,
   mermaid: true,
   noindex: false as boolean, // When true, adds noindex/nofollow to all pages (for internal docs)
   editUrl: false as string | false,
@@ -94,8 +94,39 @@ export const settings = {
    * Default `true` for this showcase repo. Downstream projects that wire up
    * their own `ANTHROPIC_API_KEY` flip this to `false` to enable the real
    * Claude-backed chat.
+   *
+   * **Security warning**: flipping this to `false` exposes a real Anthropic
+   * API key endpoint. Harden your deployment with the settings below:
+   * - `aiChatAllowedOrigins` — restrict CORS to known origins (default blocks
+   *   all cross-origin requests when not in demo mode).
+   * - `aiChatGlobalDailyLimit` — cap total daily requests as a cost backstop.
+   * Rate limiting also becomes fail-closed (KV errors → HTTP 429) when
+   * `aiChatDemoMode` is `false`, so a KV outage cannot unlock unbounded spend.
+   * Note: `cf-connecting-ip` is only trustworthy when deployed behind Cloudflare.
    */
   aiChatDemoMode: true as boolean,
+  /**
+   * Allowed CORS origins for `POST /api/ai-chat` when `aiChatDemoMode` is
+   * `false`. The request `Origin` header is echoed only if it matches one of
+   * these values; non-matching (or missing) origins receive no
+   * `Access-Control-Allow-Origin` header, so browsers block the request.
+   *
+   * - Empty array (default) — all cross-origin browser requests are blocked;
+   *   same-origin requests (no `Origin` header) are always allowed.
+   * - `["https://your-docs-site.example.com"]` — allow a specific origin.
+   * - Has no effect in demo mode (`aiChatDemoMode: true`), which always sends
+   *   `Access-Control-Allow-Origin: *` for back-compat.
+   */
+  aiChatAllowedOrigins: [] as string[],
+  /**
+   * Optional global daily request ceiling across all IPs as a cost backstop
+   * against IP rotation / botnets. `false` (default) disables the ceiling.
+   * When set to a positive integer (e.g. `500`), the endpoint returns HTTP 429
+   * once that many requests have been served in the current UTC day.
+   *
+   * Has no effect in demo mode (`aiChatDemoMode: true`).
+   */
+  aiChatGlobalDailyLimit: false as number | false,
   /**
    * Enables the interactive Design Token Tweak panel (tabbed UI for spacing,
    * font, size and color tokens). The Color tab reproduces the former

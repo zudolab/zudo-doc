@@ -15,15 +15,12 @@
 //   → buildNavTree()   → groupSatelliteNodes()
 //   → collectTags()    → tag section
 
-import { getCollection } from "zfb/content";
-import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
 import { t } from "@/config/i18n";
-import { withBase, isDefaultLocaleOnlyPath } from "@/utils/base";
+import { withBase } from "@/utils/base";
 import {
   buildNavTree,
   groupSatelliteNodes,
-  isNavVisible,
   loadCategoryMeta,
 } from "@/utils/docs";
 import { getCategoryOrder } from "@/utils/nav-scope";
@@ -34,7 +31,7 @@ import type { JSX } from "preact";
 import type { VNode } from "preact";
 import { Island } from "@takazudo/zfb";
 import SiteTreeNav from "@/components/site-tree-nav";
-import { bridgeEntries } from "../_data";
+import { resolveNavSource } from "../lib/_nav-source-docs";
 import { FooterWithDefaults } from "../lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../lib/_head-with-defaults";
@@ -59,30 +56,6 @@ export function paths(): Array<{
 }
 
 // ---------------------------------------------------------------------------
-// helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Merge locale docs with base (EN) fallbacks.
- * Mirrors the merge strategy in src/utils/locale-docs.ts.
- */
-function mergeLocaleDocs(locale: string): DocsEntry[] {
-  const localeDocs = ((bridgeEntries(getCollection(`docs-${locale}`), `docs-${locale}`) as unknown as DocsEntry[])).filter(
-    (d) => !d.data.draft,
-  );
-  const baseDocs = ((bridgeEntries(getCollection("docs"), "docs") as unknown as DocsEntry[])).filter(
-    (d) => !d.data.draft,
-  );
-  const localeSlugSet = new Set(localeDocs.map((d) => d.data.slug ?? toRouteSlug(d.slug)));
-  const fallbackDocs = baseDocs.filter((d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.slug)));
-  const filteredFallback = fallbackDocs.filter((d) => {
-    const slug = d.data.slug ?? toRouteSlug(d.slug);
-    return !isDefaultLocaleOnlyPath(`/docs/${slug}/`);
-  });
-  return [...localeDocs, ...filteredFallback];
-}
-
-// ---------------------------------------------------------------------------
 // Page component
 // ---------------------------------------------------------------------------
 
@@ -94,13 +67,19 @@ interface PageArgs {
 export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
   const locale = params.locale;
 
-  const allDocs = mergeLocaleDocs(locale);
-  const localeConfig = (settings.locales as Record<string, { dir: string }>)[locale];
+  // Identity-stable, locale-first merge with EN fallback (shared `navDocs`
+  // instance). categoryMeta is intentionally locale-dir-only here — this page
+  // historically did NOT merge in base meta (unlike the locale doc route), so
+  // we keep that exact behavior to preserve output.
+  const { navDocs } = resolveNavSource(locale, undefined, {
+    applyDefaultLocaleOnlyFilter: true,
+    keepUnlisted: true,
+  });
+  const localeConfig = settings.locales[locale];
   const categoryMeta = localeConfig
     ? loadCategoryMeta(localeConfig.dir)
     : loadCategoryMeta(settings.docsDir);
 
-  const navDocs = allDocs.filter(isNavVisible);
   const tree = buildNavTree(navDocs, locale, categoryMeta);
   const categoryOrder = getCategoryOrder();
   const groupedTree = groupSatelliteNodes(tree, categoryOrder);
