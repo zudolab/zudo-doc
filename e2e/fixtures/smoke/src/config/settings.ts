@@ -28,6 +28,8 @@ export const settings = {
   math: false,
   aiAssistant: true as boolean,
   aiChatDemoMode: true as boolean,
+  aiChatAllowedOrigins: [] as string[],
+  aiChatGlobalDailyLimit: false as number | false,
   designTokenPanel: true as boolean,
   imageEnlarge: true as boolean,
   frontmatterPreview: {} as FrontmatterPreviewConfig,

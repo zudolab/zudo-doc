@@ -166,3 +166,19 @@ versioning:footer
 #         in the sidebar and i18n fixtures
 sidebar:headerRightItems
 i18n:headerRightItems
+
+# ── aiChatAllowedOrigins ──────────────────────────────────────────────────────
+# reason: CORS allowlist only applies when aiChatDemoMode is false; these fixtures
+#         omit aiAssistant entirely (mirrors aiChatDemoMode allowlist pattern)
+sidebar:aiChatAllowedOrigins
+i18n:aiChatAllowedOrigins
+theme:aiChatAllowedOrigins
+versioning:aiChatAllowedOrigins
+
+# ── aiChatGlobalDailyLimit ────────────────────────────────────────────────────
+# reason: global daily ceiling only applies when aiChatDemoMode is false; these
+#         fixtures omit aiAssistant entirely (mirrors aiChatDemoMode allowlist pattern)
+sidebar:aiChatGlobalDailyLimit
+i18n:aiChatGlobalDailyLimit
+theme:aiChatGlobalDailyLimit
+versioning:aiChatGlobalDailyLimit
