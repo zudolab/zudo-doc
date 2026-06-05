@@ -1,4 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
+// resolveContentPath (args.ts) now requires resolved content/locale paths to
+// exist (fail-loud, #1913). These are ARGUMENT-PARSING tests, not filesystem
+// tests, so mock existsSync to decouple them from the real content dirs / CWD.
+// Individual tests flip it to false to exercise the fail-loud branch.
+vi.mock("node:fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs")>();
+  return { ...actual, existsSync: vi.fn(() => true) };
+});
+
+import { existsSync } from "node:fs";
 import { parseCliArgs, parseServerArgs } from "../args.js";
 
 beforeEach(() => {
@@ -6,6 +17,8 @@ beforeEach(() => {
     throw new Error(`process.exit(${code})`);
   });
   vi.spyOn(console, "error").mockImplementation(() => {});
+  vi.spyOn(console, "warn").mockImplementation(() => {});
+  vi.mocked(existsSync).mockReturnValue(true); // default: resolved paths exist
 });
 
 afterEach(() => {
@@ -130,6 +143,18 @@ describe("parseCliArgs", () => {
     ).toThrow("process.exit(1)");
     expect(console.error).toHaveBeenCalledWith(
       "Unknown option: --unknown-flag",
+    );
+  });
+
+  it("exits with error when --content-dir does not resolve to an existing directory", () => {
+    // Fail-loud guard (#1913): a content path that resolves to a missing dir
+    // must hard-error instead of silently producing zero history entries.
+    vi.mocked(existsSync).mockReturnValue(false);
+    expect(() =>
+      parseCliArgs(["--content-dir", "does/not/exist", "--out-dir", "dist"]),
+    ).toThrow("process.exit(1)");
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringContaining("did not resolve to an existing directory"),
     );
   });
 });

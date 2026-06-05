@@ -54,7 +54,7 @@ Root `pnpm dev` runs both the zfb dev server and this server via `run-p`.
 - **Synchronous git** — `execFileSync` is acceptable for dev server (same as original integration). CI uses the CLI which is inherently sequential
 - **Repo-relative paths** — API responses use relative file paths to avoid leaking absolute server paths
 - **`--follow` for renames** — tracks file history across renames with multiple fallback strategies
-- **pnpm --filter paths** — when run via `pnpm --filter`, CWD is the package dir, so content paths need `../../` prefix for repo-relative resolution in CI
+- **pnpm --filter paths** — when run via `pnpm --filter`, `process.cwd()` is the package dir, but pnpm sets `INIT_CWD` to where pnpm was invoked (the repo root). `resolveContentPath` resolves relative `--content-dir` / `--locale` paths against `INIT_CWD`, so pass the clean repo-root-relative form (`src/content/docs`, `ja:src/content/docs-ja`) with NO `../../` prefix — the same form `dev:history` and CI's `build-history` use. A path that resolves to a non-existent directory is a hard error (exit 1), not a silent zero-entry run (#1907 / #1913). `--out-dir` is the exception: it is stored verbatim (not resolved via `INIT_CWD`), so CI keeps `../../doc-history-out` to write the artifact at the repo root.
 
 ## CLI Arguments
 
