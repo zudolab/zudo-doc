@@ -1,0 +1,34 @@
+---
+title: 0.2.0-next.4
+description: Release notes for 0.2.0-next.4.
+sidebar_position: 1005
+---
+
+Prerelease consolidating the Epic #1884 review-backlog sweep and the #1891 canonical `/docs/` root work, plus the latest zfb bump. Headline: `@takazudo/zudo-doc` now ships a published `./icons` subpath export, so freshly-scaffolded projects resolve `@takazudo/zudo-doc/icons` from npm.
+
+### Features
+
+- **`@takazudo/zudo-doc/icons` subpath export.** A shared icon module is published as a dedicated subpath export and adopted across the framework's components; generated projects import `@takazudo/zudo-doc/icons` directly (#1906).
+- **Canonical root docs URL `/docs/`.** The root documentation page now serves at a canonical `/docs/` via an optional-catchall route; search, llms.txt, and doc-history all canonicalize the bare root to the empty slug so links target `/docs/` consistently (#1891).
+- **Hardened AI-chat API for non-demo deployments.** Added an origin allowlist and a global daily request limit so the AI-chat endpoint is safe to deploy beyond the demo (#1889).
+- **Generic versioned + locale routing.** Versioned non-default-locale pages route through `/v/{version}/{locale}/docs/...` instead of a hardcoded `ja` path.
+
+### Bug Fixes
+
+- **doc-history CLI returned 0 entries via `pnpm --filter`.** Git commands now run with the repo root as their working directory, so the generator produces entries regardless of invocation CWD (#1907).
+- **Versioned nav ignored per-version locales.** The versioned branch of nav resolution now applies the locale-first + base-fallback merge, so header/sidebar nav on versioned-locale pages show localized labels and locale-only version pages (#1909).
+- **doc-history content-dir resolution.** CI now passes the clean repo-root-relative `--content-dir` form (resolved via `INIT_CWD`), and a path that doesn't resolve to an existing directory fails loud instead of silently producing empty history (#1913).
+- **doc-history concurrency.** Fixed a semaphore double-increment deadlock in the generator.
+- **AI-chat modal accessibility.** Closed three screen-reader gaps in the modal.
+- **Dependencies.** Bumped mermaid to 11.15.0 and added overrides to clear transitive advisories.
+
+### Performance
+
+- **doc-history.** Collapsed N+1 git spawns into batched calls (#1875).
+- **Navigation cache.** Identity-memoized the nav source and nav tree to cut redundant recomputation (#1902).
+
+### Changes
+
+- **zfb `0.1.0-next.30`.** Bumped the zfb pins across all sources (next.29 → next.30).
+- **Pin-parity coverage.** `check-pin-parity` now also covers the `packages/zudo-doc` zfb pins (#1885).
+- **Dead-code removal & typing.** Removed orphaned content-override and plugin-shim code (#1893) and tightened types across content components and doc props.
