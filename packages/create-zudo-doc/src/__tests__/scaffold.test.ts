@@ -2591,7 +2591,7 @@ describe("scaffold — W7C docTags feature pages (#1738)", () => {
 });
 
 describe("scaffold — W7C versioning feature pages (#1738)", () => {
-  it("emits docs/versions.tsx + v/[version]/docs/[...slug].tsx when versioning is selected (i18n off)", async () => {
+  it("emits docs/versions.tsx + v/[version]/docs/[[...slug]].tsx when versioning is selected (i18n off)", async () => {
     const choices: UserChoices = {
       projectName: "test-versioning-pages-only",
       defaultLang: "en",
@@ -2610,7 +2610,7 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
       await fs.pathExists(
         projectPath(
           "test-versioning-pages-only",
-          "pages/v/[version]/docs/[...slug].tsx",
+          "pages/v/[version]/docs/[[...slug]].tsx",
         ),
       ),
     ).toBe(true);
@@ -2641,7 +2641,7 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
     ).toBe(false);
   });
 
-  it("emits [locale]/docs/versions.tsx + v/[version]/[locale]/docs/[...slug].tsx when versioning + i18n are both selected", async () => {
+  it("emits [locale]/docs/versions.tsx + v/[version]/[locale]/docs/[[...slug]].tsx when versioning + i18n are both selected", async () => {
     const choices: UserChoices = {
       projectName: "test-versioning-i18n",
       defaultLang: "en",
@@ -2663,7 +2663,7 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
       await fs.pathExists(
         projectPath(
           "test-versioning-i18n",
-          "pages/v/[version]/[locale]/docs/[...slug].tsx",
+          "pages/v/[version]/[locale]/docs/[[...slug]].tsx",
         ),
       ),
     ).toBe(true);
@@ -2769,10 +2769,10 @@ describe("scaffold — W7C cross-feature union (i18n + docTags + versioning) (#1
       "pages/[locale]/docs/tags/index.tsx",
       // versioning — unconditional pair
       "pages/docs/versions.tsx",
-      "pages/v/[version]/docs/[...slug].tsx",
+      "pages/v/[version]/docs/[[...slug]].tsx",
       // versioning — locale pair
       "pages/[locale]/docs/versions.tsx",
-      "pages/v/[version]/[locale]/docs/[...slug].tsx",
+      "pages/v/[version]/[locale]/docs/[[...slug]].tsx",
     ];
     for (const rel of expected) {
       expect(
@@ -2790,7 +2790,7 @@ describe("scaffold — S8 versioned locale route generalization (#1892)", () => 
    * paths() must loop Object.keys(settings.locales) and emit params.locale;
    * the component must read locale from params, not hardcode "ja".
    * A project with a non-ja locale (e.g. fr) must get a
-   * v/[version]/[locale]/docs/[...slug].tsx route, not a dead 404.
+   * v/[version]/[locale]/docs/[[...slug]].tsx route, not a dead 404.
    */
   it("generated v/[version]/[locale] route uses params.locale — not hardcoded 'ja'", async () => {
     const choices: UserChoices = {
@@ -2804,11 +2804,11 @@ describe("scaffold — S8 versioned locale route generalization (#1892)", () => 
     await scaffold(choices);
     const routeFile = projectPath(
       "test-s8-locale-generic",
-      "pages/v/[version]/[locale]/docs/[...slug].tsx",
+      "pages/v/[version]/[locale]/docs/[[...slug]].tsx",
     );
     expect(
       await fs.pathExists(routeFile),
-      "v/[version]/[locale]/docs/[...slug].tsx should exist",
+      "v/[version]/[locale]/docs/[[...slug]].tsx should exist",
     ).toBe(true);
     const src = await fs.readFile(routeFile, "utf8");
     // Route must NOT hardcode "ja" as the locale

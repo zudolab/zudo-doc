@@ -2,6 +2,9 @@
 /** @jsxImportSource preact */
 // Page module for the versioned non-default-locale docs route.
 //
+// Optional-catchall [[...slug]] so slug=[] (empty) routes to /v/<ver>/<locale>/docs/
+// when a versioned locale root index.mdx exists — toSlugParams("") returns [].
+//
 // Versioned locale docs route. paths() cross-products settings.versions ×
 // configured per-version locales with a locale-first merge strategy:
 // locale-specific collection (`docs-v-${version.slug}-${locale}`) takes
@@ -31,7 +34,7 @@ import {
   type NavNode,
 } from "@/utils/docs";
 import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
-import { toRouteSlug } from "@/utils/slug";
+import { toRouteSlug, toSlugParams } from "@/utils/slug";
 import { DocLayoutWithDefaults } from "@takazudo/zudo-doc/doclayout";
 import { Breadcrumb } from "@takazudo/zudo-doc/breadcrumb";
 import { NavCardGrid } from "@takazudo/zudo-doc/nav-indexing";
@@ -118,17 +121,20 @@ export function paths(): Array<{
           keepUnlisted: true,
         });
       // isFallback: page came from base docs, not the locale collection.
+      // toRouteSlug keeps Set keys and lookup keys in lockstep — a versioned
+      // root index has entry.slug="index" (storage form) but route slug="" so
+      // d.id would diverge from the lookup key after the #1891 toRouteSlug flip.
       const fallbackSlugs = new Set(
         allDocs
-          .filter((d) => !localeSlugSet.has(d.data.slug ?? d.id))
-          .map((d) => d.data.slug ?? d.id),
+          .filter((d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.slug)))
+          .map((d) => d.data.slug ?? toRouteSlug(d.slug)),
       );
 
       const tree = buildNavTree(navDocs as unknown as DocsEntry[], locale, categoryMeta);
 
       // Regular doc pages
       for (const entry of allDocs) {
-        const slug = entry.data.slug ?? entry.id;
+        const slug = entry.data.slug ?? toRouteSlug(entry.slug);
         const isFallback = fallbackSlugs.has(slug);
         const entryContentDir = isFallback ? version.docsDir : (localeDir ?? version.docsDir);
 
@@ -158,7 +164,7 @@ export function paths(): Array<{
         }
 
         result.push({
-          params: { version: version.slug, locale, slug: slug.split("/") },
+          params: { version: version.slug, locale, slug: toSlugParams(slug) },
           props: {
             kind: "entry",
             entry: entry as unknown as DocPageEntry,
@@ -181,7 +187,7 @@ export function paths(): Array<{
       // Auto-generated index pages for categories without index.mdx
       for (const node of collectAutoIndexNodes(tree)) {
         result.push({
-          params: { version: version.slug, locale, slug: node.slug.split("/") },
+          params: { version: version.slug, locale, slug: toSlugParams(node.slug) },
           props: {
             kind: "autoIndex",
             autoIndex: {
