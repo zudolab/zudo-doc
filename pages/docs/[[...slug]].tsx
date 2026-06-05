@@ -11,11 +11,16 @@
 //   params: { slug: string[] }   — e.g. ["getting-started", "intro"]
 //   props:  { entry, autoIndex, breadcrumbs, prev, next }
 //
+// Route is the OPTIONAL catchall `[[...slug]]` so a bare root index.mdx can
+// build at `/docs/` (canonical root URL — #1891). The root entry emits
+// `params.slug = []` (zero segments) via `toSlugParams`; a required `[...slug]`
+// catchall rejects an empty array and would drop the whole route.
+//
 // The catchall slug is an array per zfb spec — the component joins it when
 // deriving the string form (e.g. for Content lookups, breadcrumbs, etc.).
 //
 // Locale: defaultLocale (EN). Non-default locales are handled by
-// pages/[locale]/docs/[...slug].tsx.
+// pages/[locale]/docs/[[...slug]].tsx.
 
 import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
@@ -30,7 +35,7 @@ import {
   type NavNode,
 } from "@/utils/docs";
 import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
-import { toRouteSlug } from "@/utils/slug";
+import { toRouteSlug, toSlugParams } from "@/utils/slug";
 import { DocLayoutWithDefaults } from "@takazudo/zudo-doc/doclayout";
 import { Breadcrumb } from "@takazudo/zudo-doc/breadcrumb";
 import { NavCardGrid } from "@takazudo/zudo-doc/nav-indexing";
@@ -125,7 +130,7 @@ export function paths(): Array<{
     }
 
     result.push({
-      params: { slug: slug.split("/") },
+      params: { slug: toSlugParams(slug) },
       props: {
         kind: "entry",
         entry,
@@ -140,7 +145,7 @@ export function paths(): Array<{
   // Auto-generated index pages for categories without index.mdx
   for (const node of collectAutoIndexNodes(tree)) {
     result.push({
-      params: { slug: node.slug.split("/") },
+      params: { slug: toSlugParams(node.slug) },
       props: {
         kind: "autoIndex",
         autoIndex: node as AutoIndexNode,

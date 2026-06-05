@@ -2133,7 +2133,7 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
     "pages/sitemap.xml.tsx",
     "pages/_data.ts",
     "pages/_mdx-components.ts",
-    "pages/docs/[...slug].tsx",
+    "pages/docs/[[...slug]].tsx",
     "pages/lib/_body-end-islands.tsx",
     "pages/lib/_category-nav.tsx",
     "pages/lib/_category-tree-nav.tsx",
@@ -2403,7 +2403,7 @@ describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)
 });
 
 // W7B (#1737) — i18n feature emits the locale-prefixed page set
-// (pages/[locale]/index.tsx + pages/[locale]/docs/[...slug].tsx) when
+// (pages/[locale]/index.tsx + pages/[locale]/docs/[[...slug]].tsx) when
 // selected, and zero pages/[locale]/** files when not selected. Both
 // emitted files must be byte-identical to their feature templates.
 //
@@ -2415,7 +2415,7 @@ describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)
 describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => {
   const I18N_PAGE_FILES = [
     "pages/[locale]/index.tsx",
-    "pages/[locale]/docs/[...slug].tsx",
+    "pages/[locale]/docs/[[...slug]].tsx",
   ];
 
   const I18N_ON: UserChoices = {
@@ -2445,7 +2445,7 @@ describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => 
     "templates/features/i18n/files/pages",
   );
 
-  it("emits pages/[locale]/index.tsx + pages/[locale]/docs/[...slug].tsx when i18n is selected", async () => {
+  it("emits pages/[locale]/index.tsx + pages/[locale]/docs/[[...slug]].tsx when i18n is selected", async () => {
     await scaffold(I18N_ON);
     for (const rel of I18N_PAGE_FILES) {
       expect(
@@ -2477,14 +2477,14 @@ describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => 
     expect(emitted).toEqual(template);
   });
 
-  it("emitted pages/[locale]/docs/[...slug].tsx is byte-identical to the feature template", async () => {
+  it("emitted pages/[locale]/docs/[[...slug]].tsx is byte-identical to the feature template", async () => {
     await scaffold(I18N_ON);
     const emitted = await fs.readFile(
-      projectPath("test-w7b-i18n-on", "pages/[locale]/docs/[...slug].tsx"),
+      projectPath("test-w7b-i18n-on", "pages/[locale]/docs/[[...slug]].tsx"),
       "utf-8",
     );
     const template = await fs.readFile(
-      path.join(FEATURE_PAGES_DIR, "[locale]/docs/[...slug].tsx"),
+      path.join(FEATURE_PAGES_DIR, "[locale]/docs/[[...slug]].tsx"),
       "utf-8",
     );
     expect(emitted).toEqual(template);
@@ -2591,7 +2591,7 @@ describe("scaffold — W7C docTags feature pages (#1738)", () => {
 });
 
 describe("scaffold — W7C versioning feature pages (#1738)", () => {
-  it("emits docs/versions.tsx + v/[version]/docs/[...slug].tsx when versioning is selected (i18n off)", async () => {
+  it("emits docs/versions.tsx + v/[version]/docs/[[...slug]].tsx when versioning is selected (i18n off)", async () => {
     const choices: UserChoices = {
       projectName: "test-versioning-pages-only",
       defaultLang: "en",
@@ -2610,7 +2610,7 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
       await fs.pathExists(
         projectPath(
           "test-versioning-pages-only",
-          "pages/v/[version]/docs/[...slug].tsx",
+          "pages/v/[version]/docs/[[...slug]].tsx",
         ),
       ),
     ).toBe(true);
@@ -2641,7 +2641,7 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
     ).toBe(false);
   });
 
-  it("emits [locale]/docs/versions.tsx + v/[version]/[locale]/docs/[...slug].tsx when versioning + i18n are both selected", async () => {
+  it("emits [locale]/docs/versions.tsx + v/[version]/[locale]/docs/[[...slug]].tsx when versioning + i18n are both selected", async () => {
     const choices: UserChoices = {
       projectName: "test-versioning-i18n",
       defaultLang: "en",
@@ -2663,7 +2663,7 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
       await fs.pathExists(
         projectPath(
           "test-versioning-i18n",
-          "pages/v/[version]/[locale]/docs/[...slug].tsx",
+          "pages/v/[version]/[locale]/docs/[[...slug]].tsx",
         ),
       ),
     ).toBe(true);
@@ -2769,10 +2769,10 @@ describe("scaffold — W7C cross-feature union (i18n + docTags + versioning) (#1
       "pages/[locale]/docs/tags/index.tsx",
       // versioning — unconditional pair
       "pages/docs/versions.tsx",
-      "pages/v/[version]/docs/[...slug].tsx",
+      "pages/v/[version]/docs/[[...slug]].tsx",
       // versioning — locale pair
       "pages/[locale]/docs/versions.tsx",
-      "pages/v/[version]/[locale]/docs/[...slug].tsx",
+      "pages/v/[version]/[locale]/docs/[[...slug]].tsx",
     ];
     for (const rel of expected) {
       expect(
@@ -2790,7 +2790,7 @@ describe("scaffold — S8 versioned locale route generalization (#1892)", () => 
    * paths() must loop Object.keys(settings.locales) and emit params.locale;
    * the component must read locale from params, not hardcode "ja".
    * A project with a non-ja locale (e.g. fr) must get a
-   * v/[version]/[locale]/docs/[...slug].tsx route, not a dead 404.
+   * v/[version]/[locale]/docs/[[...slug]].tsx route, not a dead 404.
    */
   it("generated v/[version]/[locale] route uses params.locale — not hardcoded 'ja'", async () => {
     const choices: UserChoices = {
@@ -2804,11 +2804,11 @@ describe("scaffold — S8 versioned locale route generalization (#1892)", () => 
     await scaffold(choices);
     const routeFile = projectPath(
       "test-s8-locale-generic",
-      "pages/v/[version]/[locale]/docs/[...slug].tsx",
+      "pages/v/[version]/[locale]/docs/[[...slug]].tsx",
     );
     expect(
       await fs.pathExists(routeFile),
-      "v/[version]/[locale]/docs/[...slug].tsx should exist",
+      "v/[version]/[locale]/docs/[[...slug]].tsx should exist",
     ).toBe(true);
     const src = await fs.readFile(routeFile, "utf8");
     // Route must NOT hardcode "ja" as the locale

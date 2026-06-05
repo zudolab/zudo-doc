@@ -416,9 +416,15 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
   );
 
   const base = basePath.replace(/\/+$/, "");
+  // Doc-history storage sentinel ("" -> "index"): a root index page has the
+  // canonical route slug "" (-> /docs/), but the per-page JSON is stored/served
+  // under "index" because an empty path segment is unroutable (the server regex
+  // /^\/doc-history\/(.+)\.json$/ rejects ""). Map "" back to "index" so the
+  // fetch path is well-formed.
+  const historySlug = slug === "" ? "index" : slug;
   const fetchPath = locale
-    ? `${base}/doc-history/${locale}/${slug}.json`
-    : `${base}/doc-history/${slug}.json`;
+    ? `${base}/doc-history/${locale}/${historySlug}.json`
+    : `${base}/doc-history/${historySlug}.json`;
 
   const fetchHistory = useCallback(async () => {
     if (data) return; // already loaded

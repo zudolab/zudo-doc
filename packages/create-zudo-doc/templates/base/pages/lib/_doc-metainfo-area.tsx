@@ -24,6 +24,7 @@ import type { VNode } from "preact";
 import { settings } from "@/config/settings";
 import { defaultLocale, t } from "@/config/i18n";
 import { DocMetainfo } from "@takazudo/zudo-doc/metainfo";
+import { toHistorySlug } from "@/utils/slug";
 // SSR author + date metadata comes from `.zfb/doc-history-meta.json`, a
 // build-time manifest emitted by `scripts/zfb-prebuild.mjs` (step 2:
 // doc-history-meta) before `zfb build` runs. esbuild inlines the JSON
@@ -78,9 +79,18 @@ interface DocMetainfoAreaProps {
 export function DocMetainfoArea({ slug, locale }: DocMetainfoAreaProps): VNode | null {
   if (!settings.docMetainfo) return null;
 
+  // Doc-history storage sentinel ("" -> "index"): a root index page has the
+  // canonical route slug "" (→ /docs/), but the prebuild keys the root entry
+  // under "index" (collectContentFiles keeps the bare root; an empty path
+  // segment is unroutable). Apply the sentinel BEFORE locale composition so
+  // the visible Created/Updated/Author block resolves for a root page — see
+  // @/utils/slug `toHistorySlug` and _doc-history-area.tsx. (#1891)
+  const historySlug = toHistorySlug(slug);
+
   // Key format: bare slug for default locale, "<locale>/<slug>" for others.
-  // Matches the prebuild step's composedSlug logic in scripts/zfb-prebuild.mjs.
-  const composedSlug = locale === defaultLocale ? slug : `${locale}/${slug}`;
+  // Matches the prebuild step's composedSlug logic (pre-build.ts).
+  const composedSlug =
+    locale === defaultLocale ? historySlug : `${locale}/${historySlug}`;
 
   type MetaEntry = { author: string; createdDate: string; updatedDate: string };
   const meta = (docHistoryMeta as Record<string, MetaEntry>)[composedSlug];
