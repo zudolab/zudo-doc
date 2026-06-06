@@ -162,7 +162,7 @@ function matchLlmsRoute(
   url: string,
   localeCodes: Set<string>,
 ): { kind: "llms" | "llms-full"; locale: string | null } | null {
-  const pathname = url.split("?")[0];
+  const pathname = url.split("?")[0] ?? url;
   const m = pathname.match(LLMS_KIND_PATTERN);
   if (!m) return null;
   const prefix = m[1];

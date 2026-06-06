@@ -89,3 +89,212 @@ describe("extractHeadings — slug fidelity", () => {
     expect(heading?.text).toBe("Enable fast mode");
   });
 });
+
+describe("extractHeadings — cross-level dedup (h5/h6 counter parity)", () => {
+  it("h5 duplicating an earlier h2 advances the renderer counter — second h2 gets -2 suffix", () => {
+    // The renderer slugs ALL headings (h2–h6), so an h5 with text "Dup" that
+    // follows the first h2 "Dup" advances the shared counter. Without the fix,
+    // extractHeadings only slugged h2–h4 and the second h2 anchor would be
+    // "#dup-1" while the rendered id would be "#dup-2" — a broken TOC link.
+    const body = [
+      "## Dup",    // rendered id: "dup"  / TOC slug: "dup"
+      "##### Dup", // rendered id: "dup-1" (renderer counts it; not in TOC)
+      "## Dup",   // rendered id: "dup-2" / TOC slug must also be "dup-2"
+    ].join("\n");
+    const headings = extractHeadings(body);
+    // Only depth-2 items are pushed; the h5 is invisible to the result.
+    expect(headings).toHaveLength(2);
+    expect(headings[0]?.slug).toBe("dup");
+    // Post-fix: second h2 gets "dup-2" (h5 consumed "dup-1" in the counter).
+    // Pre-fix: would have been "dup-1" (counter didn't advance for the h5).
+    expect(headings[1]?.slug).toBe("dup-2");
+  });
+
+  it("h6 duplicating an earlier h3 advances the renderer counter — second h3 gets -2 suffix", () => {
+    const body = [
+      "### Alpha",   // slug: "alpha"
+      "###### Alpha", // not in TOC, but advances counter to "alpha-1"
+      "### Alpha",   // slug must be "alpha-2", not "alpha-1"
+    ].join("\n");
+    const headings = extractHeadings(body);
+    expect(headings).toHaveLength(2);
+    expect(headings[0]?.slug).toBe("alpha");
+    expect(headings[1]?.slug).toBe("alpha-2");
+  });
+
+  it("multiple h5/h6 dup entries each advance the counter correctly", () => {
+    // Each intermediate h5/h6 with the same text advances the counter by one.
+    const body = [
+      "## Foo",    // slug: "foo"
+      "##### Foo", // not in TOC, counter: "foo-1"
+      "##### Foo", // not in TOC, counter: "foo-2"
+      "## Foo",   // slug must be "foo-3"
+    ].join("\n");
+    const headings = extractHeadings(body);
+    expect(headings).toHaveLength(2);
+    expect(headings[0]?.slug).toBe("foo");
+    expect(headings[1]?.slug).toBe("foo-3");
+  });
+
+  it("h5 with unique text does not affect counter for different h2 text", () => {
+    // Counter is per-text (slug-based), so an h5 with a different slug does
+    // not affect the dedup count for unrelated headings.
+    const body = [
+      "## Setup",       // slug: "setup"
+      "##### Details",  // slug: "details" (different text; does not affect "setup" counter)
+      "## Setup",       // slug must be "setup-1"
+    ].join("\n");
+    const headings = extractHeadings(body);
+    expect(headings).toHaveLength(2);
+    expect(headings[0]?.slug).toBe("setup");
+    expect(headings[1]?.slug).toBe("setup-1");
+  });
+});
+
+describe("extractHeadings — tilde fence (~~~) recognition", () => {
+  it("does not extract headings inside a tilde fence block", () => {
+    const body = [
+      "## Before fence",
+      "",
+      "~~~md",
+      "## Inside tilde fence — not a heading",
+      "~~~",
+      "",
+      "## After fence",
+    ].join("\n");
+    const headings = extractHeadings(body);
+    expect(headings).toHaveLength(2);
+    expect(headings[0]?.text).toBe("Before fence");
+    expect(headings[1]?.text).toBe("After fence");
+  });
+
+  it("backtick fence does not close a tilde fence", () => {
+    // A ``` line inside a ~~~ fence is content, not a fence boundary.
+    const body = [
+      "~~~",
+      "```",            // content — should not close the tilde fence
+      "## Still inside",
+      "```",            // content — still inside
+      "~~~",            // closes the tilde fence
+      "",
+      "## Real heading",
+    ].join("\n");
+    const headings = extractHeadings(body);
+    expect(headings).toHaveLength(1);
+    expect(headings[0]?.text).toBe("Real heading");
+  });
+
+  it("tilde fence does not close a backtick fence", () => {
+    const body = [
+      "```",
+      "~~~",            // content — should not close the backtick fence
+      "## Still inside",
+      "~~~",            // content — still inside
+      "```",            // closes the backtick fence
+      "",
+      "## Real heading",
+    ].join("\n");
+    const headings = extractHeadings(body);
+    expect(headings).toHaveLength(1);
+    expect(headings[0]?.text).toBe("Real heading");
+  });
+});
+
+describe("extractHeadings — configurable depth window (opts override)", () => {
+  it("default depth (no opts) emits h2–h4 only", () => {
+    const body = [
+      "# H1 title",
+      "## H2 section",
+      "### H3 sub",
+      "#### H4 deep",
+      "##### H5 too deep",
+      "###### H6 too deep",
+    ].join("\n");
+    const headings = extractHeadings(body);
+    expect(headings).toHaveLength(3);
+    expect(headings[0]?.depth).toBe(2);
+    expect(headings[1]?.depth).toBe(3);
+    expect(headings[2]?.depth).toBe(4);
+  });
+
+  it("h1 does NOT advance the slugger counter (renderer assigns no id to h1)", () => {
+    // The renderer's heading-links plugin slugs h2–h6 only; an h1 in the body
+    // (rare — the frontmatter title is the page h1) must NOT consume a slug, or
+    // a same-text h2 would diverge from its rendered id. Regression for #1938.
+    const body = ["# Intro", "## Intro"].join("\n");
+    const headings = extractHeadings(body);
+    expect(headings).toHaveLength(1);
+    expect(headings[0]?.slug).toBe("intro");
+  });
+
+  it("tocMinDepth:3 excludes h2 from result", () => {
+    const body = [
+      "## H2 excluded",
+      "### H3 included",
+      "#### H4 included",
+    ].join("\n");
+    const headings = extractHeadings(body, { tocMinDepth: 3, tocMaxDepth: 4 });
+    expect(headings).toHaveLength(2);
+    expect(headings[0]?.depth).toBe(3);
+    expect(headings[1]?.depth).toBe(4);
+  });
+
+  it("tocMaxDepth:2 emits only h2", () => {
+    const body = [
+      "## H2 included",
+      "### H3 excluded",
+      "#### H4 excluded",
+    ].join("\n");
+    const headings = extractHeadings(body, { tocMinDepth: 2, tocMaxDepth: 2 });
+    expect(headings).toHaveLength(1);
+    expect(headings[0]?.depth).toBe(2);
+  });
+
+  it("window-excluded h2 still advances counter for subsequent same-text h3 in window", () => {
+    // When tocMinDepth:3, h2 headings are not pushed but must still be slugged
+    // so that a subsequent h3 with the same text gets the correct dedup suffix.
+    const body = [
+      "## Concept",   // excluded from result, but slugger consumes "concept"
+      "### Concept",  // included; slug must be "concept-1" (not "concept")
+    ].join("\n");
+    const headings = extractHeadings(body, { tocMinDepth: 3, tocMaxDepth: 4 });
+    expect(headings).toHaveLength(1);
+    expect(headings[0]?.slug).toBe("concept-1");
+  });
+
+  it("invalid tocMinDepth > tocMaxDepth falls back to 2/4", () => {
+    // min > max is invalid — fall back to the full default window.
+    const body = [
+      "## H2",
+      "### H3",
+      "#### H4",
+    ].join("\n");
+    const headings = extractHeadings(body, { tocMinDepth: 4, tocMaxDepth: 2 });
+    // Fallback: 2/4, so all three headings are emitted.
+    expect(headings).toHaveLength(3);
+  });
+
+  it("tocMinDepth below 2 falls back to 2/4", () => {
+    const body = "## H2\n### H3";
+    const headings = extractHeadings(body, { tocMinDepth: 1, tocMaxDepth: 4 });
+    // min:1 < 2 → invalid → fallback 2/4: both headings emitted
+    expect(headings).toHaveLength(2);
+  });
+
+  it("tocMaxDepth above 4 falls back to 2/4", () => {
+    const body = "## H2\n### H3";
+    const headings = extractHeadings(body, { tocMinDepth: 2, tocMaxDepth: 5 });
+    // max:5 > 4 → invalid → fallback 2/4: both headings emitted
+    expect(headings).toHaveLength(2);
+  });
+
+  it("non-integer values are truncated before validation", () => {
+    // 2.9 truncates to 2, 4.9 truncates to 4 — both valid after truncation.
+    const body = "## H2\n### H3\n#### H4";
+    const headings = extractHeadings(body, { tocMinDepth: 2.9, tocMaxDepth: 3.9 });
+    // min:2, max:3 after trunc → valid → emit h2+h3 only
+    expect(headings).toHaveLength(2);
+    expect(headings[0]?.depth).toBe(2);
+    expect(headings[1]?.depth).toBe(3);
+  });
+});

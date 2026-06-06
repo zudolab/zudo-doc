@@ -27,12 +27,16 @@ import type { DocsEntry } from "@/types/docs-entry";
 
 /**
  * Options for mergeLocaleDocs.
+ *
+ * The generic parameter `T` allows callers to pass arrays of a DocsEntry
+ * subtype (e.g. `DocPageEntry[]`) and get back results of the same subtype,
+ * eliminating the need for `as unknown as` casts at call sites.
  */
-export interface MergeLocaleDocsOptions {
+export interface MergeLocaleDocsOptions<T extends DocsEntry = DocsEntry> {
   /** Pre-loaded base (EN/default-locale) docs array, already draft-filtered. */
-  baseDocs: DocsEntry[];
+  baseDocs: T[];
   /** Pre-loaded locale-specific docs array, already draft-filtered. */
-  localeDocs: DocsEntry[];
+  localeDocs: T[];
   /**
    * When true, base docs whose path matches a `defaultLocaleOnlyPrefixes`
    * entry are excluded from the merge result. This matches the behavior of the
@@ -75,13 +79,16 @@ export interface MergeLocaleDocsOptions {
  * result on the snapshot-anchored input arrays + option signature (see
  * `pages/lib/_nav-source-cache.ts`), so `mergeLocaleDocs` itself stays a pure,
  * memo-free function (#1902).
+ *
+ * The generic `T` mirrors the parameter on {@link MergeLocaleDocsOptions} so
+ * the returned `docs` array preserves the subtype of the input arrays.
  */
-export interface MergeLocaleDocsResult {
+export interface MergeLocaleDocsResult<T extends DocsEntry = DocsEntry> {
   /**
    * Merged doc array: locale docs first, followed by base docs for slugs not
    * present in the locale collection (and not excluded by filter options).
    */
-  docs: DocsEntry[];
+  docs: T[];
   /**
    * Set of slugs that came from the locale collection.
    * Useful for callers that need to determine whether a page is a fallback
@@ -104,9 +111,9 @@ export interface MergeLocaleDocsResult {
  * **Array identity**: returns a fresh array on each call — see
  * {@link MergeLocaleDocsResult} for caching guidance.
  */
-export function mergeLocaleDocs(
-  options: MergeLocaleDocsOptions,
-): MergeLocaleDocsResult {
+export function mergeLocaleDocs<T extends DocsEntry = DocsEntry>(
+  options: MergeLocaleDocsOptions<T>,
+): MergeLocaleDocsResult<T> {
   const {
     baseDocs,
     localeDocs,

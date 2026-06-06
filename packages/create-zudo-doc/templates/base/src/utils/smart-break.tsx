@@ -62,7 +62,7 @@ export function smartBreak(text: string): VNode | string {
   const parts = text.split(DELIM_SPLIT);
   const nodes: (string | VNode)[] = [];
   for (let i = 0; i < parts.length; i++) {
-    const part = parts[i];
+    const part = parts[i] ?? "";
     if (part === "") continue;
     nodes.push(part);
     // Captured delimiter groups always land at odd indices.
@@ -97,7 +97,7 @@ export function escapeAndInjectWbr(text: string): string {
   const parts = text.split(DELIM_SPLIT);
   let out = "";
   for (let i = 0; i < parts.length; i++) {
-    const part = parts[i];
+    const part = parts[i] ?? "";
     if (part === "") continue;
     out += htmlEscape(part);
     if (i % 2 === 1) out += "<wbr>";

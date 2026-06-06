@@ -21,13 +21,12 @@ import { toRouteSlug } from "@/utils/slug";
 import { t, defaultLocale } from "@/config/i18n";
 import { settings } from "@/config/settings";
 import { withBase, docsUrl } from "@/utils/base";
-import type { DocsEntry } from "@/types/docs-entry";
 import { DocLayoutWithDefaults } from "@takazudo/zudo-doc/doclayout";
 import { Breadcrumb } from "@takazudo/zudo-doc/breadcrumb";
 import type { BreadcrumbItem } from "@takazudo/zudo-doc/breadcrumb";
 import { DocCardGrid } from "@takazudo/zudo-doc/nav-indexing";
 import type { JSX } from "preact";
-import { bridgeEntries } from "../../_data";
+import { bridgeDocsEntries, type ZfbDocsData } from "../../_data";
 import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
 import { HeaderWithDefaults } from "../../lib/_header-with-defaults";
 import { HeadWithDefaults } from "../../lib/_head-with-defaults";
@@ -42,7 +41,7 @@ export function paths(): Array<{
   params: { tag: string };
   props: { tagInfo: TagInfo };
 }> {
-  const allDocs = (bridgeEntries(getCollection("docs"), "docs") as unknown as DocsEntry[]);
+  const allDocs = bridgeDocsEntries(getCollection<ZfbDocsData>("docs"), "docs");
   const docs = allDocs.filter((doc) => !doc.data.unlisted && !doc.data.draft);
   const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
 

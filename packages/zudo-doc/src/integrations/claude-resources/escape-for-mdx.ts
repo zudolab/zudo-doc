@@ -88,7 +88,7 @@ export function escapeForMdx(content: string): string {
       // Restore inline code placeholders
       escaped = escaped.replace(
         new RegExp(`${inlinePlaceholder}(\\d+)\x00`, "g"),
-        (_, idx: string) => inlineCodes[Number(idx)],
+        (_, idx: string) => inlineCodes[Number(idx)] ?? "",
       );
 
       return escaped;

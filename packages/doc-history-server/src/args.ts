@@ -59,11 +59,12 @@ export function resolveContentPath(p: string): string {
 
 /** Safely get the next argument, or exit with an error if missing */
 function requireNextArg(args: string[], index: number, flag: string): string {
-  if (index >= args.length) {
+  const value = args[index];
+  if (value === undefined) {
     console.error(`Missing value for ${flag}`);
     process.exit(1);
   }
-  return args[index];
+  return value;
 }
 
 /** Parse --locale value into { key, dir } — dir is resolved via resolveContentPath */
@@ -106,6 +107,7 @@ export function parseCommonArgs(
 
   for (let i = 0; i < args.length; i++) {
     const flag = args[i];
+    if (flag === undefined) continue;
     const next = () => requireNextArg(args, ++i, flag);
 
     switch (flag) {

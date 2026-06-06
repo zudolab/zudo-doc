@@ -513,6 +513,24 @@ describe("scaffold — generated settings.ts content", () => {
     );
     expect(content).toContain("designTokenPanel: true");
   });
+
+  it("tocMinDepth and tocMaxDepth default to 2 and 4 in generated settings", async () => {
+    const choices: UserChoices = {
+      projectName: "test-toc-depth-defaults",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-toc-depth-defaults", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("tocMinDepth: 2");
+    expect(content).toContain("tocMaxDepth: 4");
+  });
 });
 
 describe("scaffold — docHistory feature", () => {
@@ -734,7 +752,8 @@ describe("scaffold — headerRightItems preset override (sub #440)", () => {
     );
     expect(match).toBeTruthy();
     // Block should be empty (whitespace only) — no fallback entries leaked in.
-    expect(match![1].trim()).toBe("");
+    const matchedBlock = match?.[1] ?? "";
+    expect(matchedBlock.trim()).toBe("");
     // Specifically, the legacy fallback's design-token-panel trigger must not
     // appear even though designTokenPanel is in the features list.
     expect(content).not.toContain('trigger: "design-token-panel"');

@@ -268,6 +268,7 @@ function getSkillFileTree(
 
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i];
+    if (!entry) continue;
     const isLast = i === entries.length - 1;
     const prefix = isLast ? "└── " : "├── ";
 
@@ -277,6 +278,7 @@ function getSkillFileTree(
       lines.push(`${prefix}${entry.name}/`);
       for (let j = 0; j < entry.children.length; j++) {
         const child = entry.children[j];
+        if (!child) continue;
         const childIsLast = j === entry.children.length - 1;
         const continuation = isLast ? "    " : "│   ";
         const childPrefix = childIsLast ? "└── " : "├── ";
@@ -292,9 +294,10 @@ function getScriptDescription(filePath: string): string {
   try {
     const topLines = fs.readFileSync(filePath, "utf8").split("\n", 2);
     // Skip shebang, use second line if available
-    const commentLine = topLines[0].startsWith("#!")
-      ? topLines[1] || ""
-      : topLines[0];
+    const firstLine = topLines[0] ?? "";
+    const commentLine = firstLine.startsWith("#!")
+      ? topLines[1] ?? ""
+      : firstLine;
     // Match # comments (shell/python) or // comments (JS/TS)
     const match = commentLine.match(/^(?:#|\/\/)\s*(.+)/);
     return match ? ` — ${match[1]}` : "";
@@ -317,7 +320,7 @@ function getSkillReferences(
       const content = fs.readFileSync(path.join(refsDir, f), "utf8");
       const name = f.replace(/\.md$/, "");
       const h1Match = content.match(/^#\s+(.+)$/m);
-      const title = h1Match ? h1Match[1] : name;
+      const title = h1Match?.[1] ?? name;
       return { name, title, content };
     })
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -449,7 +452,7 @@ ${escapeForMdx(ref.content.trim())}
         "utf8",
       );
       const h1Match = raw.match(/^#\s+(.+)$/m);
-      const title = h1Match ? h1Match[1] : slug;
+      const title = h1Match?.[1] ?? slug;
       fs.writeFileSync(
         path.join(outputDir, `${dir}--script-${slug}.mdx`),
         `---\ntitle: "${escapeTitle(title)}"\nslug: "${subSlug}"\nunlisted: true\ngenerated: true\n---\n\n${escapeForMdx(raw.trim())}\n`,
@@ -464,7 +467,7 @@ ${escapeForMdx(ref.content.trim())}
         "utf8",
       );
       const h1Match = raw.match(/^#\s+(.+)$/m);
-      const title = h1Match ? h1Match[1] : slug;
+      const title = h1Match?.[1] ?? slug;
       fs.writeFileSync(
         path.join(outputDir, `${dir}--asset-${slug}.mdx`),
         `---\ntitle: "${escapeTitle(title)}"\nslug: "${subSlug}"\nunlisted: true\ngenerated: true\n---\n\n${escapeForMdx(raw.trim())}\n`,

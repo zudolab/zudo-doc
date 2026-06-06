@@ -156,6 +156,9 @@ export function generateSettingsFile(choices: UserChoices): string {
     lines.push(`  designTokenPanel: false as boolean,`);
   }
 
+  lines.push(`  tocMinDepth: 2 as number,`);
+  lines.push(`  tocMaxDepth: 4 as number,`);
+
   if (choices.features.includes("sidebarResizer")) {
     lines.push(`  sidebarResizer: true as boolean,`);
   } else {

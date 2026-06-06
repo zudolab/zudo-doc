@@ -52,8 +52,10 @@ describe("search", () => {
 
     expect(total).toBeGreaterThan(0);
     expect(results.length).toBeGreaterThan(0);
-    expect(results[0].title).toBe("Getting Started");
-    expect(results[0].url).toBe("/docs/getting-started");
+    const firstResult = results[0];
+    if (firstResult === undefined) throw new Error("Expected at least one result");
+    expect(firstResult.title).toBe("Getting Started");
+    expect(firstResult.url).toBe("/docs/getting-started");
   });
 
   it("returns empty results for non-matching query", async () => {
@@ -76,6 +78,7 @@ describe("search", () => {
 
     expect(results.length).toBeGreaterThan(0);
     const result = results[0];
+    if (result === undefined) throw new Error("Expected at least one result");
     expect(result).toHaveProperty("id");
     expect(result).toHaveProperty("title");
     expect(result).toHaveProperty("url");

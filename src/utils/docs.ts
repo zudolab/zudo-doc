@@ -145,7 +145,7 @@ export function buildNavTree(
       // Multi-segment: walk the tree creating intermediate nodes as needed
       let current = root;
       for (let i = 0; i < parts.length; i++) {
-        const segment = parts[i];
+        const segment = parts[i] ?? "";
         const fullPath = parts.slice(0, i + 1).join("/");
         if (!current.children.has(segment)) {
           current.children.set(segment, {
@@ -240,16 +240,19 @@ export function groupSatelliteNodes(tree: NavNode[], prefixes: string[]): NavNod
     const primaryIdx = result.findIndex((n) => n.slug === prefix);
     if (primaryIdx < 0) continue;
     const primary = result[primaryIdx];
+    if (!primary) continue;
     const satelliteIdxs: number[] = [];
     for (let i = 0; i < result.length; i++) {
-      if (i !== primaryIdx && result[i].slug.startsWith(`${prefix}-`)) {
+      const node = result[i];
+      if (node && i !== primaryIdx && node.slug.startsWith(`${prefix}-`)) {
         satelliteIdxs.push(i);
       }
     }
     if (satelliteIdxs.length === 0) continue;
     const extraChildren: NavNode[] = [];
     for (const idx of satelliteIdxs) {
-      extraChildren.push(result[idx]);
+      const node = result[idx];
+      if (node) extraChildren.push(node);
     }
     result[primaryIdx] = {
       ...primary,

@@ -88,7 +88,7 @@ export function startServer(options: ServerOptions): void {
 
     // Match routes against the pathname only — req.url includes any query
     // string, which would make exact/$-anchored matches reject e.g. ?cachebust=1.
-    const pathname = url.split(/[?#]/, 1)[0];
+    const pathname = url.split(/[?#]/, 1)[0] ?? "";
 
     // Health check
     if (pathname === "/health") {
@@ -100,7 +100,7 @@ export function startServer(options: ServerOptions): void {
     const match = pathname.match(/^\/doc-history\/(.+)\.json$/);
     if (match) {
       try {
-        const requestedSlug = decodeURIComponent(match[1]);
+        const requestedSlug = decodeURIComponent(match[1] ?? "");
         handleDocHistory(requestedSlug, fileIndex, maxEntries, res);
       } catch (err) {
         sendJson(res, 500, {

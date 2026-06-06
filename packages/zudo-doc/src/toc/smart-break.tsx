@@ -38,7 +38,7 @@ export function smartBreak(text: string): VNode | string {
   const nodes: (string | VNode)[] = [];
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
-    if (part === "") continue;
+    if (!part) continue;
     nodes.push(part);
     if (i % 2 === 1) nodes.push(<wbr key={`wbr-${i}`} />);
   }

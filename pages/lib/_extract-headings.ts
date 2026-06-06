@@ -8,31 +8,38 @@
 //
 // Algorithm:
 //   1. Walk the body line-by-line looking for ATX-style markdown headings
-//      (`## Text`, `### Text`, `#### Text`).
+//      (`## Text` through `###### Text`, h2–h6).
 //   2. Strip inline markdown markup (links, inline code, bold, italic) from the
 //      heading text to get the plain visible text — matching what the renderer's
 //      `extractText` HAST walker sees after MDX → HTML conversion.
 //   3. Compute a GitHub-compatible slug using the same `GithubSlugger` that
-//      the `rehype-heading-links` plugin uses at render time, so the TOC
-//      anchor hrefs match the rendered heading IDs in the HTML.
-//   4. Return only depth 2–4 headings — depth 1 is the page title (rendered
-//      separately as an <h1>); depth 5–6 are too granular for the TOC.
+//      the `rehype-heading-links` plugin uses at render time, advancing the
+//      shared counter for ALL h2–h6 (even those not emitted into the TOC)
+//      so TOC anchor hrefs match the rendered heading IDs in the HTML. h1 is
+//      NOT slugged — the renderer never assigns an id to h1 (it's the title).
+//   4. Return only depth 2–4 headings by default (h1 is the page title; h5–h6
+//      are too granular). The window is configurable via `tocMinDepth` /
+//      `tocMaxDepth` in settings (restriction-only: min 2, max 4).
 //
 // Caveats:
 //   - This is a regex walk over raw text, not an AST parse. MDX JSX expressions
-//     or code fences that contain `##` on their own line are matched. In
-//     practice this is rare.
-//   - Lines inside code fences (``` … ```) are skipped to avoid treating
-//     literal `## code` examples as real headings. Fence detection uses
-//     `line.trimStart()` to handle indented fences correctly.
+//     that contain `##` on their own line may be matched. In practice this is
+//     rare.
+//   - Lines inside code fences (``` … ``` or ~~~ … ~~~) are skipped to avoid
+//     treating literal `## code` examples as real headings. Fence detection
+//     uses `line.trimStart()` to handle indented fences correctly.
 //   - Reference-style links (`[text][id]`) and image links (`![alt](url)`)
 //     are not stripped — uncommon in headings, treated as plain text.
-//   - h5/h6 headings are slugged by `rehype-heading-links` but not extracted
-//     here. If a doc has h5/h6 text that duplicates an h2–h4, the shared
-//     GithubSlugger dedup counter diverges from the renderer's counter, so
-//     slugs may mismatch for such pages.
+//   - Slugger parity is counter-level (npm `github-slugger` vs zfb Rust) — the
+//     renderer slugs all h2–h6 regardless of `tocMinDepth`/`tocMaxDepth`, so
+//     this extractor must also slug all matched headings (including those outside
+//     the emit window) to keep the shared dedup counter in sync.
+//   - Residual risks: slugger-parity (npm `github-slugger` vs zfb Rust — an
+//     external-binary contract) and text-extraction parity (inline JSX / reference
+//     links not fully stripped).
 
 import GithubSlugger from "github-slugger";
+import { settings } from "../../src/config/settings";
 
 export interface HeadingItem {
   readonly depth: number;
@@ -69,53 +76,109 @@ function stripInlineMarkdown(raw: string): string {
 }
 
 /**
- * Extract depth-2/3/4 headings from a raw MDX/markdown body.
+ * Resolve and clamp the depth window from raw (possibly invalid) inputs.
+ *
+ * Enforces `2 <= min <= max <= 4`. If either value is NaN or the chain breaks,
+ * falls back to the full default window [2, 4].
+ */
+function resolveDepthWindow(
+  rawMin: unknown,
+  rawMax: unknown,
+): { lo: number; hi: number } {
+  const min = Math.trunc(Number(rawMin));
+  const max = Math.trunc(Number(rawMax));
+  if (
+    Number.isFinite(min) &&
+    Number.isFinite(max) &&
+    min >= 2 &&
+    min <= max &&
+    max <= 4
+  ) {
+    return { lo: min, hi: max };
+  }
+  return { lo: 2, hi: 4 };
+}
+
+/**
+ * Extract TOC headings from a raw MDX/markdown body.
  *
  * Uses the same slugging algorithm as `rehype-heading-links` so the
  * `href="#slug"` values in the TOC match the rendered heading element IDs.
+ * Slugs ALL matched h2–h6 (advancing the shared dedup counter) but only
+ * pushes depth 2–4 items into the result (configurable via settings). h1 is
+ * not matched — the renderer does not assign ids to h1.
  *
  * @param body - Raw markdown body string (frontmatter already stripped).
+ * @param opts - Optional override for the depth window (used by tests only;
+ *   production call sites pass no arguments and read from settings).
  * @returns Array of `{ depth, slug, text }` items in document order.
  */
-export function extractHeadings(body: string): HeadingItem[] {
+export function extractHeadings(
+  body: string,
+  opts?: { tocMinDepth?: number; tocMaxDepth?: number },
+): HeadingItem[] {
+  const { lo, hi } = resolveDepthWindow(
+    opts?.tocMinDepth ?? settings.tocMinDepth,
+    opts?.tocMaxDepth ?? settings.tocMaxDepth,
+  );
+
   const slugger = new GithubSlugger();
   const headings: HeadingItem[] = [];
 
-  // Track the opening fence string (`` ``` `` or ```` ```` ````) so we match the
-  // correct closing fence — Markdown allows longer fences to nest shorter ones.
+  // Track the opening fence character and length so we correctly match the
+  // closing fence. Markdown allows backtick and tilde fences (``` or ~~~),
+  // and longer fences to nest shorter same-character ones.
   let codeFenceOpener: string | null = null;
   for (const line of body.split("\n")) {
-    // Detect code fence open/close. A fence is 3+ backticks optionally followed
-    // by a language specifier. The closing fence must match the opener's length.
+    // Detect code fence open/close. A fence is 3+ backticks OR 3+ tildes,
+    // optionally followed by a language specifier. The closing fence must use
+    // the same character and match or exceed the opener's length.
     // Use trimStart() so indented fences (e.g. inside lists) are also detected.
-    const fenceMatch = /^(`{3,})/.exec(line.trimStart());
+    const trimmed = line.trimStart();
+    const fenceMatch = /^([`~]{3,})/.exec(trimmed);
     if (fenceMatch) {
-      const fence = fenceMatch[1] as string;
+      const fence = fenceMatch[1];
+      if (fence === undefined) continue;
       if (codeFenceOpener === null) {
+        // Opening fence: record character + length.
         codeFenceOpener = fence;
-      } else if (fence.length >= codeFenceOpener.length) {
+      } else if (
+        fence[0] === codeFenceOpener[0] &&
+        fence.length >= codeFenceOpener.length
+      ) {
+        // Closing fence: must match opener's character and be at least as long.
         codeFenceOpener = null;
       }
+      // Whether opening, closing, or a mismatched-character line (content inside
+      // a fence), always skip — do not try to parse as a heading.
       continue;
     }
     if (codeFenceOpener !== null) continue;
 
-    // Match ATX headings at depth 2, 3, or 4. Allow one or more spaces/tabs
-    // after the hash characters (both are valid per the CommonMark spec).
-    const match = /^(#{2,4})[ \t]+(.+)$/.exec(line.trim());
+    // Match ATX headings at depth h2–h6. The renderer's heading-links plugin
+    // slugs h2–h6 only (h1 is never assigned an id — the frontmatter title is
+    // the page's h1), so matching h1 here would advance the shared dedup counter
+    // out of step with the renderer and break the TOC anchor for a same-text h2.
+    // Allow one or more spaces/tabs after the hashes (both valid per CommonMark).
+    const match = /^(#{2,6})[ \t]+(.+)$/.exec(line.trim());
     if (!match) continue;
 
-    const depth = (match[1] as string).length;
-    const raw = (match[2] as string).trim();
+    const hashes = match[1];
+    const rawText = match[2];
+    if (hashes === undefined || rawText === undefined) continue;
+
+    const depth = hashes.length;
     // Strip inline markup to get the plain text the renderer sees, so the slug
     // matches the heading element's rendered id attribute.
-    const text = stripInlineMarkdown(raw);
+    const text = stripInlineMarkdown(rawText.trim());
 
-    headings.push({
-      depth,
-      slug: slugger.slug(text),
-      text,
-    });
+    // Always advance the slugger counter (maintaining parity with the renderer's
+    // shared dedup counter across all h1–h6), but only push within the configured
+    // depth window.
+    const slug = slugger.slug(text);
+    if (depth >= lo && depth <= hi) {
+      headings.push({ depth, slug, text });
+    }
   }
 
   return headings;

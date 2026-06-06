@@ -91,7 +91,7 @@ describe("DocTags", () => {
 
   it("includes aria-label using the default taggedWithLabel", () => {
     const html = serialize(
-      <DocTags placement="after-title" tags={[sampleTags[0]]} />,
+      <DocTags placement="after-title" tags={sampleTags.slice(0, 1)} />,
     );
     expect(html).toContain('aria-label="Tagged with: typescript"');
   });
@@ -100,7 +100,7 @@ describe("DocTags", () => {
     const html = serialize(
       <DocTags
         placement="after-title"
-        tags={[sampleTags[0]]}
+        tags={sampleTags.slice(0, 1)}
         taggedWithLabel="タグ付き"
       />,
     );
