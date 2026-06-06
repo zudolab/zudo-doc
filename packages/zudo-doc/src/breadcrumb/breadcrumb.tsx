@@ -26,6 +26,7 @@ export function buildBreadcrumbItems(
   const path = findPath(tree, currentId);
   for (let i = 0; i < path.length; i++) {
     const node = path[i];
+    if (!node) continue;
     const isLast = i === path.length - 1;
     items.push({
       label: node.label,
@@ -55,7 +56,7 @@ function SmartLabel({ label }: SmartLabelProps): VNode | string {
   const nodes: (string | VNode)[] = [];
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
-    if (part === "") continue;
+    if (!part) continue;
     nodes.push(part);
     if (i % 2 === 1) nodes.push(<wbr key={`wbr-${i}`} />);
   }

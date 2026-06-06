@@ -69,7 +69,7 @@ describe("LanguageSwitcher", () => {
     const noneRendered =
       LanguageSwitcher({ links: [] as LocaleLink[] }) === null;
     const oneRendered =
-      LanguageSwitcher({ links: [enJa[0]] }) === null;
+      LanguageSwitcher({ links: enJa.slice(0, 1) }) === null;
     expect(noneRendered).toBe(true);
     expect(oneRendered).toBe(true);
   });

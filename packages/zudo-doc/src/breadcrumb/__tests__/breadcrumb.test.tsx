@@ -109,7 +109,7 @@ describe("buildBreadcrumbItems", () => {
 
   it("omits href on the final (current page) item", () => {
     const items = buildBreadcrumbItems(tree, "guides/advanced/perf", "/");
-    expect(items[items.length - 1].href).toBeUndefined();
+    expect(items[items.length - 1]?.href).toBeUndefined();
   });
 
   it("returns only the home rung when target is not in the tree", () => {

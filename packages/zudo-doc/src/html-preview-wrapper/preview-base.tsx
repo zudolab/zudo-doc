@@ -89,7 +89,7 @@ export function PreviewBase({
     return () => clearTimeout(id);
   }, [activeViewport, syncHeight, height]);
 
-  const containerWidth = VIEWPORTS[activeViewport].width;
+  const containerWidth = VIEWPORTS[activeViewport]?.width ?? "100%";
 
   return (
     <div class="border border-muted rounded-lg overflow-hidden my-vsp-md">
