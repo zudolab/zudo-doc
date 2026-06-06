@@ -44,7 +44,7 @@ async function generate(options: {
   locales: Array<{ key: string; dir: string }>;
   outDir: string;
   maxEntries: number;
-}): Promise<void> {
+}): Promise<number> {
   const { contentDir, locales, outDir, maxEntries } = options;
   const startTime = performance.now();
 
@@ -94,6 +94,8 @@ async function generate(options: {
   console.log(
     `\nGenerated ${totalFiles} history files in ${elapsed}s${errorCount ? ` (${errorCount} errors)` : ""}`,
   );
+
+  return errorCount;
 }
 
 const options = parseCliArgs(process.argv.slice(2));
@@ -101,4 +103,21 @@ console.log(`doc-history-server: content-dir resolved to ${options.contentDir}`)
 for (const locale of options.locales) {
   console.log(`doc-history-server: locale ${locale.key} resolved to ${locale.dir}`);
 }
-generate(options);
+generate(options)
+  .then((errorCount) => {
+    // Fail loud, not silent: a partial git failure must not ship incomplete
+    // doc-history JSON behind a green CI (same fail-loud intent as args.ts /
+    // #1907 / #1913).
+    if (errorCount > 0) {
+      console.error(
+        `doc-history-server: ${errorCount} file(s) failed to generate — exiting non-zero so CI does not ship incomplete doc-history.`,
+      );
+      process.exit(1);
+    }
+  })
+  .catch((err) => {
+    console.error(
+      `doc-history-server: generation failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    process.exit(1);
+  });
