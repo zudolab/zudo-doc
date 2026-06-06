@@ -20,7 +20,6 @@
 // Prev/next hrefs are pre-resolved to the versioned locale URL form
 // (e.g. /v/1.0/ja/docs/…) so the component needs no URL computation.
 
-import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
 import type { VersionConfig } from "@/config/settings";
 import { t } from "@/config/i18n";
@@ -119,7 +118,7 @@ export function paths(): Array<{
           .map((d) => d.data.slug ?? toRouteSlug(d.slug)),
       );
 
-      const tree = buildNavTree(navDocs as unknown as DocsEntry[], locale, categoryMeta);
+      const tree = buildNavTree(navDocs, locale, categoryMeta);
 
       // URL closure for THIS (version, locale) — every versioned-locale href
       // (prev/next, breadcrumb crumbs, auto-index cards) is produced by this
@@ -147,7 +146,7 @@ export function paths(): Array<{
           params: { version: version.slug, locale, slug: toSlugParams(slug) },
           props: {
             kind: "entry",
-            entry: entry as unknown as DocPageEntry,
+            entry,
             version,
             contentDir: entryContentDir,
             isFallback,

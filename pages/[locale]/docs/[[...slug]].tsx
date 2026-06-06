@@ -24,7 +24,6 @@
 //   - Locale-first merge: locale docs take priority; base EN docs fill in
 //     pages not translated yet (shown with a fallback notice).
 
-import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
 import { docsUrl, absoluteUrl } from "@/utils/base";
 import {
@@ -114,8 +113,8 @@ export function paths(): Array<{
         .map((d) => d.data.slug ?? d.id),
     );
 
-    const tree = buildNavTree(navDocs as unknown as DocsEntry[], locale, categoryMeta);
-    const fullTree = buildNavTree(allDocs as unknown as DocsEntry[], locale, categoryMeta);
+    const tree = buildNavTree(navDocs, locale, categoryMeta);
+    const fullTree = buildNavTree(allDocs, locale, categoryMeta);
 
     // Regular doc pages
     for (const entry of allDocs) {
@@ -145,7 +144,7 @@ export function paths(): Array<{
         params: { locale, slug: toSlugParams(slug) },
         props: {
           kind: "entry",
-          entry: entry as unknown as DocPageEntry,
+          entry,
           contentDir: entryContentDir,
           isFallback,
           breadcrumbs: buildBreadcrumbs(fullTree, slug, locale),

@@ -13,6 +13,7 @@
 import { getCollection } from "zfb/content";
 import type { CollectionEntry } from "zfb/content";
 import type { DocsEntry } from "@/types/docs-entry";
+import type { DocPageEntry } from "./lib/doc-page-props";
 import { toRouteSlug } from "@/utils/slug";
 
 // ---------------------------------------------------------------------------
@@ -79,7 +80,7 @@ export type ZfbDocsEntry = CollectionEntry<ZfbDocsData> & {
  *   - `collection` — the collection name, for DocsEntry compat
  */
 export function getDocs(collectionName: string): ZfbDocsEntry[] {
-  const entries = getCollection(collectionName) as unknown as CollectionEntry<ZfbDocsData>[];
+  const entries = getCollection<ZfbDocsData>(collectionName);
   return entries.map((e) => ({
     ...e,
     // Astro-compat: strip a trailing `/index` from the entry id so
@@ -123,27 +124,43 @@ export function bridgeEntries<T = ZfbDocsData>(
 }
 
 /**
- * Cast ZfbDocsEntry[] to DocsEntry[] for passing to @/utils/docs utilities.
+ * Typed bridge from a raw zfb collection result to `DocPageEntry[]`.
  *
- * The types are structurally compatible: ZfbDocsEntry has every required field
- * of DocsEntry (id, collection, data, body). The optional `rendered` and
- * `filePath` fields of DocsEntry are absent but not required.
+ * This is the **single, justified** cast at the zfb/DocsEntry boundary.
+ * `CollectionEntry<ZfbDocsData> & { id, collection }` structurally satisfies
+ * `DocPageEntry` because:
+ *   - `id` and `collection` are added by `bridgeEntries`
+ *   - `data` (ZfbDocsData) structurally satisfies `DocsEntry.data` (all
+ *     required/optional fields are present; the index signature is wider)
+ *   - `body`, `slug`, `module_specifier`, `Content` are provided by
+ *     `CollectionEntry<ZfbDocsData>`
+ * The plain `as DocPageEntry[]` (not `as unknown as`) is intentional — it
+ * expresses that this is a well-understood structural subtype relationship,
+ * not an escape from the type system. The zfb type is the source of truth;
+ * DocsEntry/DocPageEntry are local compatibility shapes for @/utils/docs.
  */
-export function asDocsEntries(entries: ZfbDocsEntry[]): DocsEntry[] {
-  return entries as unknown as DocsEntry[];
+export function bridgeDocsEntries(
+  entries: ReadonlyArray<CollectionEntry<ZfbDocsData>>,
+  collectionName: string,
+): DocPageEntry[] {
+  return bridgeEntries(entries, collectionName) as DocPageEntry[];
 }
 
 /**
  * One-shot helper for paths()/render-time pages that just need a
- * `DocsEntry[]` for `@/utils/docs` consumption — wraps `getDocs` and
- * the `asDocsEntries` cast so call sites stay one-line. Use this from
- * any page that previously did
+ * `DocsEntry[]` for `@/utils/docs` consumption — wraps `getDocs` so
+ * call sites stay one-line. Use this from any page that previously did
  * `getCollection("docs") as unknown as DocsEntry[]` — that idiom
  * silently dropped the `id`/`collection` fields the utility helpers
  * read, which threw `Cannot read properties of undefined` at runtime.
+ *
+ * `ZfbDocsEntry` structurally satisfies `DocsEntry`: it carries `id`,
+ * `collection`, `data` (ZfbDocsData satisfies DocsEntry.data field-for-
+ * field), `body`, plus the zfb-specific extras (`slug`, `Content`, etc.)
+ * that DocsEntry does not require.
  */
 export function loadDocs(collectionName: string): DocsEntry[] {
-  return asDocsEntries(getDocs(collectionName));
+  return getDocs(collectionName);
 }
 
 /**

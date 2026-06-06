@@ -34,7 +34,7 @@
 // recomputes — matching the old content-keyed cache's change detection.
 
 import { getCollection, getContentSnapshot } from "zfb/content";
-import { bridgeEntries } from "../_data";
+import { bridgeDocsEntries, type ZfbDocsData } from "../_data";
 import type { DocPageEntry } from "./doc-page-props";
 
 // ---------------------------------------------------------------------------
@@ -56,8 +56,8 @@ function snapshotAnchor(name: string): readonly unknown[] | undefined {
 const bridgedByAnchor = new WeakMap<object, DocPageEntry[]>();
 
 function buildBridged(collectionName: string): DocPageEntry[] {
-  const raw = getCollection(collectionName);
-  return (bridgeEntries(raw, collectionName) as unknown as DocPageEntry[]).filter(
+  const raw = getCollection<ZfbDocsData>(collectionName);
+  return bridgeDocsEntries(raw, collectionName).filter(
     (d) => !d.data.draft,
   );
 }
