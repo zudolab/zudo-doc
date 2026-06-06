@@ -15,16 +15,38 @@ function normalizeBaseUrl(raw: string): string {
   return raw.replace(/\/+$/, "");
 }
 
+/** Runtime guard: verifies each raw entry has the required string fields. */
+function isSearchIndexEntry(entry: unknown): entry is SearchIndexEntry {
+  if (typeof entry !== "object" || entry === null) return false;
+  const e = entry as Record<string, unknown>;
+  return (
+    typeof e.id === "string" &&
+    typeof e.title === "string" &&
+    typeof e.body === "string" &&
+    typeof e.url === "string" &&
+    typeof e.description === "string"
+  );
+}
+
 async function fetchSearchIndex(url: string): Promise<SearchIndexEntry[]> {
   const res = await fetch(url);
   if (!res.ok) {
     throw new Error(`Failed to fetch search index: ${res.status} ${res.statusText}`);
   }
-  const parsed = await res.json();
+  const parsed: unknown = await res.json();
   if (!Array.isArray(parsed)) {
     throw new Error("Search index is not an array");
   }
-  return parsed as SearchIndexEntry[];
+  // Validate each entry's shape rather than blindly casting the fetched data.
+  const entries: SearchIndexEntry[] = [];
+  for (let i = 0; i < parsed.length; i++) {
+    const entry = parsed[i];
+    if (!isSearchIndexEntry(entry)) {
+      throw new Error(`Search index entry at index ${i} has unexpected shape`);
+    }
+    entries.push(entry);
+  }
+  return entries;
 }
 
 async function buildIndex(url: string): Promise<MiniSearch<SearchIndexEntry>> {

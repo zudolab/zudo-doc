@@ -180,4 +180,73 @@ describe("worker handler", () => {
       "Retry-After",
     );
   });
+
+  it("responds 415 when Content-Type is missing", async () => {
+    const handler = await getHandler();
+    const env = createMockEnv();
+    const req = new Request("https://worker.example.com/", {
+      method: "POST",
+      body: JSON.stringify({ query: "test" }),
+      // No Content-Type header
+    });
+
+    const res = await handler.fetch(req, env);
+    const body = await res.json();
+
+    expect(res.status).toBe(415);
+    expect(body).toHaveProperty("error", "Content-Type must be application/json");
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe("*");
+  });
+
+  it("responds 415 when Content-Type is not application/json", async () => {
+    const handler = await getHandler();
+    const env = createMockEnv();
+    const req = new Request("https://worker.example.com/", {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({ query: "test" }),
+    });
+
+    const res = await handler.fetch(req, env);
+    const body = await res.json();
+
+    expect(res.status).toBe(415);
+    expect(body).toHaveProperty("error", "Content-Type must be application/json");
+  });
+
+  it("accepts application/json with charset suffix", async () => {
+    const handler = await getHandler();
+    const env = createMockEnv();
+    const req = new Request("https://worker.example.com/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify({ query: "getting started" }),
+    });
+
+    const res = await handler.fetch(req, env);
+
+    expect(res.status).toBe(200);
+  });
+
+  it("responds 400 when limit is not a number", async () => {
+    const handler = await getHandler();
+    const env = createMockEnv();
+    const req = makeRequest("POST", { query: "test", limit: "ten" });
+
+    const res = await handler.fetch(req, env);
+    const body = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(body).toHaveProperty("error", "limit must be a number");
+  });
+
+  it("accepts a valid numeric limit", async () => {
+    const handler = await getHandler();
+    const env = createMockEnv();
+    const req = makeRequest("POST", { query: "getting started", limit: 5 });
+
+    const res = await handler.fetch(req, env);
+
+    expect(res.status).toBe(200);
+  });
 });
