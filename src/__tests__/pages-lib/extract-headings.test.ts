@@ -14,7 +14,25 @@
 
 import { describe, it, expect } from "vitest";
 import GithubSlugger from "github-slugger";
-import { extractHeadings } from "../../../pages/lib/_extract-headings";
+import {
+  extractHeadings as extractHeadingsRaw,
+  type HeadingIdStrategy,
+} from "../../../pages/lib/_extract-headings";
+
+/**
+ * The suites below test the FLAT heading-ID contract. Production now defaults
+ * to "hierarchical" (`settings.headingIdStrategy`), so pin these calls to flat
+ * via a thin wrapper — existing call sites stay unchanged and decoupled from
+ * the showcase default. The hierarchical contract has its own suite at the
+ * bottom (calling `extractHeadingsRaw` with `strategy: "hierarchical"`), plus a
+ * settings-default guard that calls `extractHeadingsRaw` with no strategy.
+ */
+function extractHeadings(
+  body: string,
+  opts?: { tocMinDepth?: number; tocMaxDepth?: number; strategy?: HeadingIdStrategy },
+) {
+  return extractHeadingsRaw(body, { strategy: "flat", ...opts });
+}
 
 /**
  * Reference: compute the slug the same way rehype-heading-links does —
@@ -296,5 +314,81 @@ describe("extractHeadings — configurable depth window (opts override)", () => 
     expect(headings).toHaveLength(2);
     expect(headings[0]?.depth).toBe(2);
     expect(headings[1]?.depth).toBe(3);
+  });
+});
+
+describe("extractHeadings — hierarchical strategy (zfb#871 contract)", () => {
+  // These cases are ported verbatim from zfb's own Rust unit tests
+  // (crates/zfb-content/src/plugins/heading_links.rs) — they ARE the contract
+  // the host TOC builder must mirror so TOC anchors match the rendered ids.
+  const hier = (body: string, opts?: { tocMinDepth?: number; tocMaxDepth?: number }) =>
+    extractHeadingsRaw(body, { ...opts, strategy: "hierarchical" });
+
+  const slugs = (body: string, opts?: { tocMinDepth?: number; tocMaxDepth?: number }) =>
+    hier(body, opts).map((h) => h.slug);
+
+  it("the headline example: ## Foo / ### Moo / #### Mew → foo, foo-moo, foo-moo-mew", () => {
+    expect(slugs("## Foo\n### Moo\n#### Mew")).toEqual(["foo", "foo-moo", "foo-moo-mew"]);
+  });
+
+  it("a sibling pops its predecessor; a new h2 resets the chain", () => {
+    // h2 A / h3 B / h3 C / h2 D / h3 E
+    expect(slugs("## A\n### B\n### C\n## D\n### E")).toEqual([
+      "a",
+      "a-b",
+      "a-c",
+      "d",
+      "d-e",
+    ]);
+  });
+
+  it("a depth jump (h2 → h4, no h3) prefixes with the nearest real ancestor", () => {
+    // h2 A / h4 B / h3 C — both nest under "a".
+    expect(slugs("## A\n#### B\n### C")).toEqual(["a", "a-b", "a-c"]);
+  });
+
+  it("duplicate siblings under the same parent are deduped on the full path", () => {
+    // h2 A / h3 B / h3 B → a, a-b, a-b-1
+    expect(slugs("## A\n### B\n### B")).toEqual(["a", "a-b", "a-b-1"]);
+  });
+
+  it("a deduped parent contributes its FINAL id to children", () => {
+    // h2 Foo / h2 Foo / h3 Bar → foo, foo-1, foo-1-bar
+    expect(slugs("## Foo\n## Foo\n### Bar")).toEqual(["foo", "foo-1", "foo-1-bar"]);
+  });
+
+  it("h1 is untouched — a following h2 starts an unprefixed chain", () => {
+    // h1 Title / h2 A / h3 B → (h1 not emitted) a, a-b
+    expect(slugs("# Title\n## A\n### B")).toEqual(["a", "a-b"]);
+  });
+
+  it("each call is its own document — no ancestor stack leaks across calls", () => {
+    expect(slugs("## A\n### B")).toEqual(["a", "a-b"]);
+    // A fresh call must NOT inherit the stale "a" ancestor from the previous one.
+    expect(slugs("### B")).toEqual(["b"]);
+  });
+
+  it("an out-of-window h5 still advances the chain for a following in-window h3", () => {
+    // h2 A / h3 B / h5 C (out of [2,4] window) / h3 D.
+    // The h5 is allocated (id "a-b-c", pushed to the ancestor stack) but not
+    // emitted; the following h3 D pops past it and re-roots under "a" → "a-d".
+    const headings = hier("## A\n### B\n##### C\n### D");
+    expect(headings.map((h) => h.slug)).toEqual(["a", "a-b", "a-d"]);
+    expect(headings.map((h) => h.depth)).toEqual([2, 3, 3]);
+  });
+
+  it("preserves CJK heading text in the ancestor chain", () => {
+    // github-slugger preserves CJK; the hierarchical prefix joins them with "-".
+    expect(slugs("## 概要\n### 詳細")).toEqual(["概要", "概要-詳細"]);
+  });
+});
+
+describe("extractHeadings — settings default", () => {
+  it("uses settings.headingIdStrategy (hierarchical) when no strategy override is passed", () => {
+    // Guards the showcase config: settings.headingIdStrategy is "hierarchical",
+    // and zfb.config.ts reads the same value — so an unqualified call must
+    // produce ancestor-prefixed ids matching the rendered output.
+    const headings = extractHeadingsRaw("## Foo\n### Moo");
+    expect(headings.map((h) => h.slug)).toEqual(["foo", "foo-moo"]);
   });
 });

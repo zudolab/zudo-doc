@@ -560,6 +560,15 @@ export default defineConfig({
       // it emits no output beyond the existing resolveMarkdownLinks "warn"
       // (broken file links surface there; intra-page anchors are unchecked).
       linkValidation: { failOnBroken: false },
+      // Hierarchical (ancestor-prefixed) heading IDs (upstream zfb#871;
+      // original finding #1938). `## Foo` / `### Moo` / `#### Mew` render as
+      // `id="foo"` / `id="foo-moo"` / `id="foo-moo-mew"` instead of the flat
+      // `foo`/`moo`/`mew`. The host TOC builder (`pages/lib/_extract-headings.ts`)
+      // mirrors this scheme so TOC anchors match the rendered IDs. The strategy
+      // is a single source of truth in `settings.headingIdStrategy` (read by
+      // both this config and the TOC builder). Anchor-breaking for existing
+      // deep links to nested headings — accepted (no backward-compat) per #1939.
+      headingIds: { strategy: settings.headingIdStrategy },
     },
   },
   // ----------------------------------------------------------------------

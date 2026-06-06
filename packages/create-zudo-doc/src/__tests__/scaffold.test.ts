@@ -531,6 +531,25 @@ describe("scaffold — generated settings.ts content", () => {
     expect(content).toContain("tocMinDepth: 2");
     expect(content).toContain("tocMaxDepth: 4");
   });
+
+  it("headingIdStrategy defaults to hierarchical in generated settings", async () => {
+    const choices: UserChoices = {
+      projectName: "test-heading-id-strategy-default",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-heading-id-strategy-default", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain(
+      'headingIdStrategy: "hierarchical" as "flat" | "hierarchical"',
+    );
+  });
 });
 
 describe("scaffold — docHistory feature", () => {

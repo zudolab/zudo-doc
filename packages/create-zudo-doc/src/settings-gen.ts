@@ -158,6 +158,13 @@ export function generateSettingsFile(choices: UserChoices): string {
 
   lines.push(`  tocMinDepth: 2 as number,`);
   lines.push(`  tocMaxDepth: 4 as number,`);
+  // Heading-ID (anchor) strategy — single source of truth shared by
+  // zfb.config.ts (markdown.features.headingIds) and the host TOC builder
+  // (pages/lib/_extract-headings.ts). "hierarchical" emits ancestor-prefixed
+  // anchors (foo / foo-moo / foo-moo-mew); "flat" is zfb's legacy scheme.
+  // Default to "hierarchical": safe for greenfield (no existing deep links to
+  // break) and the recommended scheme (upstream zfb#871).
+  lines.push(`  headingIdStrategy: "hierarchical" as "flat" | "hierarchical",`);
 
   if (choices.features.includes("sidebarResizer")) {
     lines.push(`  sidebarResizer: true as boolean,`);

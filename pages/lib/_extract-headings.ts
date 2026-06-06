@@ -12,11 +12,19 @@
 //   2. Strip inline markdown markup (links, inline code, bold, italic) from the
 //      heading text to get the plain visible text — matching what the renderer's
 //      `extractText` HAST walker sees after MDX → HTML conversion.
-//   3. Compute a GitHub-compatible slug using the same `GithubSlugger` that
-//      the `rehype-heading-links` plugin uses at render time, advancing the
-//      shared counter for ALL h2–h6 (even those not emitted into the TOC)
-//      so TOC anchor hrefs match the rendered heading IDs in the HTML. h1 is
-//      NOT slugged — the renderer never assigns an id to h1 (it's the title).
+//   3. Compute a heading ID that matches what zfb's Rust `HeadingLinks` plugin
+//      emits at render time, using the strategy in `settings.headingIdStrategy`
+//      (single source of truth, also read by `zfb.config.ts`):
+//        - `"flat"`: github-slugger slugs with one dedup counter shared across
+//          ALL h2–h6 (even those not emitted into the TOC), so TOC anchor hrefs
+//          match the rendered IDs.
+//        - `"hierarchical"`: ancestor-prefixed IDs (`## Foo` / `### Moo` /
+//          `#### Mew` → `foo`, `foo-moo`, `foo-moo-mew`), deduped on the full
+//          path — see `SlugAllocator` below, a faithful mirror of zfb's Rust
+//          allocator (upstream zfb#871).
+//      Either way the allocator runs over ALL matched h2–h6 so its per-document
+//      state (dedup counter + ancestor stack) stays in lockstep with the
+//      renderer. h1 is NOT slugged — the renderer never assigns an id to h1.
 //   4. Return only depth 2–4 headings by default (h1 is the page title; h5–h6
 //      are too granular). The window is configurable via `tocMinDepth` /
 //      `tocMaxDepth` in settings (restriction-only: min 2, max 4).
@@ -33,18 +41,83 @@
 //   - Slugger parity is counter-level (npm `github-slugger` vs zfb Rust) — the
 //     renderer slugs all h2–h6 regardless of `tocMinDepth`/`tocMaxDepth`, so
 //     this extractor must also slug all matched headings (including those outside
-//     the emit window) to keep the shared dedup counter in sync.
+//     the emit window) to keep the shared dedup counter / ancestor stack in sync.
 //   - Residual risks: slugger-parity (npm `github-slugger` vs zfb Rust — an
 //     external-binary contract) and text-extraction parity (inline JSX / reference
 //     links not fully stripped).
 
-import GithubSlugger from "github-slugger";
+// Default export = the stateful, dedup-tracking slugger (flat strategy).
+// Named `slug` = the stateless one-shot slugifier with NO dedup — used to
+// compute the per-heading base slug in the hierarchical strategy before the
+// ancestor prefix + full-path dedup are applied.
+import GithubSlugger, { slug as slugifyBase } from "github-slugger";
 import { settings } from "../../src/config/settings";
+
+/** Heading-ID (anchor) strategy. Mirrors `settings.headingIdStrategy`. */
+export type HeadingIdStrategy = "flat" | "hierarchical";
 
 export interface HeadingItem {
   readonly depth: number;
   readonly slug: string;
   readonly text: string;
+}
+
+/**
+ * Per-document heading-ID allocator — a faithful TS mirror of zfb's Rust
+ * `SlugAllocator` (`crates/zfb-content/src/plugins/heading_links.rs`). Construct
+ * one per document; call `allocate(depth, text)` for every matched h2–h6 in
+ * document order (the result is the rendered heading `id`).
+ *
+ * - `"flat"`: delegates to a `GithubSlugger` instance — byte-identical to the
+ *   pre-zfb#871 scheme (one dedup counter shared across all levels).
+ * - `"hierarchical"`: `base = slug(text)` (no dedup); pop the ancestor stack
+ *   while its top is at or deeper than `depth`; `candidate = {parent.id}-{base}`
+ *   (just `base` at the top of the outline); dedup the *full candidate* through
+ *   a per-document counter; push `(depth, finalId)`. A deduped parent therefore
+ *   contributes its FINAL id to children. Empty-text headings get the empty
+ *   string and touch no state (the renderer skips them entirely).
+ */
+class SlugAllocator {
+  private readonly strategy: HeadingIdStrategy;
+  private readonly flatSlugger = new GithubSlugger();
+  /** Hierarchical dedup counter, keyed by full candidate path. */
+  private readonly seen = new Map<string, number>();
+  /** Hierarchical ancestor stack of `{ depth, final id }`. */
+  private readonly stack: { depth: number; id: string }[] = [];
+
+  constructor(strategy: HeadingIdStrategy) {
+    this.strategy = strategy;
+  }
+
+  allocate(depth: number, text: string): string {
+    if (this.strategy === "flat") {
+      return this.flatSlugger.slug(text);
+    }
+    const base = slugifyBase(text);
+    if (base === "") return "";
+    // Pop ancestors at or below this depth so a sibling/shallower heading
+    // re-roots the chain (h2 → h4 jumps nest under the nearest real ancestor).
+    for (let top = this.stack.at(-1); top !== undefined && top.depth >= depth; top = this.stack.at(-1)) {
+      this.stack.pop();
+    }
+    const parent = this.stack.at(-1);
+    const candidate = parent !== undefined ? `${parent.id}-${base}` : base;
+    const id = this.nextSlug(candidate);
+    this.stack.push({ depth, id });
+    return id;
+  }
+
+  /**
+   * github-slugger repeat-numbering on an already-slugified candidate: first
+   * occurrence returns `candidate`, later ones `candidate-1`, `candidate-2`, …
+   * Mirrors zfb's `next_slug` (does NOT re-slugify — the candidate is already
+   * a valid slug path).
+   */
+  private nextSlug(candidate: string): string {
+    const count = this.seen.get(candidate) ?? 0;
+    this.seen.set(candidate, count + 1);
+    return count === 0 ? candidate : `${candidate}-${count}`;
+  }
 }
 
 /**
@@ -102,27 +175,34 @@ function resolveDepthWindow(
 /**
  * Extract TOC headings from a raw MDX/markdown body.
  *
- * Uses the same slugging algorithm as `rehype-heading-links` so the
+ * Uses the same slugging algorithm as zfb's `HeadingLinks` plugin (selected by
+ * `settings.headingIdStrategy`, or the `opts.strategy` override) so the
  * `href="#slug"` values in the TOC match the rendered heading element IDs.
- * Slugs ALL matched h2–h6 (advancing the shared dedup counter) but only
- * pushes depth 2–4 items into the result (configurable via settings). h1 is
- * not matched — the renderer does not assign ids to h1.
+ * Allocates over ALL matched h2–h6 (keeping the dedup counter and hierarchical
+ * ancestor stack in sync with the renderer) but only pushes depth 2–4 items
+ * into the result (configurable via settings). h1 is not matched — the renderer
+ * does not assign ids to h1.
  *
  * @param body - Raw markdown body string (frontmatter already stripped).
- * @param opts - Optional override for the depth window (used by tests only;
- *   production call sites pass no arguments and read from settings).
+ * @param opts - Optional overrides for the depth window and heading-ID
+ *   strategy (used by tests only; production call sites pass no arguments and
+ *   read from settings).
  * @returns Array of `{ depth, slug, text }` items in document order.
  */
 export function extractHeadings(
   body: string,
-  opts?: { tocMinDepth?: number; tocMaxDepth?: number },
+  opts?: {
+    tocMinDepth?: number;
+    tocMaxDepth?: number;
+    strategy?: HeadingIdStrategy;
+  },
 ): HeadingItem[] {
   const { lo, hi } = resolveDepthWindow(
     opts?.tocMinDepth ?? settings.tocMinDepth,
     opts?.tocMaxDepth ?? settings.tocMaxDepth,
   );
 
-  const slugger = new GithubSlugger();
+  const allocator = new SlugAllocator(opts?.strategy ?? settings.headingIdStrategy);
   const headings: HeadingItem[] = [];
 
   // Track the opening fence character and length so we correctly match the
@@ -172,10 +252,10 @@ export function extractHeadings(
     // matches the heading element's rendered id attribute.
     const text = stripInlineMarkdown(rawText.trim());
 
-    // Always advance the slugger counter (maintaining parity with the renderer's
-    // shared dedup counter across all h1–h6), but only push within the configured
-    // depth window.
-    const slug = slugger.slug(text);
+    // Always allocate (advancing the dedup counter and, in hierarchical mode,
+    // the ancestor stack — maintaining parity with the renderer across all
+    // h2–h6), but only push within the configured depth window.
+    const slug = allocator.allocate(depth, text);
     if (depth >= lo && depth <= hi) {
       headings.push({ depth, slug, text });
     }
