@@ -67,9 +67,18 @@ export function escapeForMdx(content: string): string {
             return `&lt;/${name}&gt;`;
           },
         )
-        // Note: self-closing tags like <Foo /> are already matched by the
-        // opening-tag regex above ((\s[^>]*)? matches " /", then > closes).
-        // The dedicated self-closing branch was removed as dead code.
+        // Escape self-closing tags. The spaced form <Foo /> is already handled
+        // by the opening-tag regex above ((\s[^>]*)? matches " /", then > closes),
+        // but the COMPACT form <Foo/> (no space before the slash) is NOT — the
+        // name is consumed, (\s[^>]*)? matches empty, then the regex needs ">"
+        // and finds "/". So this branch is still required for the compact form.
+        .replace(
+          /<([A-Za-z][A-Za-z0-9_-]*)(\s[^>]*)?\s*\/>/g,
+          (match, name: string) => {
+            if (htmlTags.has(name.toLowerCase())) return match;
+            return match.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          },
+        )
         .replace(/<(-+|=+)/g, "&lt;$1")
         .replace(/<(\d)/g, "&lt;$1")
         // Escape curly braces (MDX interprets them as JSX expressions)
