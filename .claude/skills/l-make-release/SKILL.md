@@ -2,18 +2,39 @@
 name: l-make-release
 description: >-
   Orchestrate a create-zudo-doc release: bump versions, fill changelog,
-  validate, commit, push, wait for CI, tag, and create a DRAFT GitHub release.
+  validate, commit, push, wait for CI, tag all three lockstep packages, create a
+  GitHub release for each, and publish them to npm. Autonomous by default — no
+  confirmation prompts; pass --confirm to gate the irreversible npm publish.
   Use when: (1) User says 'make release', 'l-make-release', or 'release create-zudo-doc',
   (2) User wants to publish a new version of the create-zudo-doc npm package.
 user-invocable: true
 disable-model-invocation: false
-argument-description: "Optional: version string or bump mode (e.g. 0.2.0, 1.0.0-next.1, minor, stable)"
+argument-description: "Optional: version string or bump mode (e.g. 0.2.0, 1.0.0-next.1, minor, stable), and/or --confirm to ask before publishing to npm"
 ---
 
 # /l-make-release
 
-Orchestrate the full create-zudo-doc release sequence, ending at a **DRAFT** GitHub
-release. Publishing that draft is the human gate that triggers the CI publish workflow.
+Orchestrate the full create-zudo-doc release sequence end-to-end: bump → changelog →
+validate → commit → push → CI → tag → create three GitHub releases (one each for
+`@takazudo/zudo-doc-history-server`, `@takazudo/zudo-doc`, and `create-zudo-doc`, all in
+lockstep at the same version) → **publish all three to npm**. The publish step fires each
+package's CI publish workflow and is irreversible.
+
+## Autonomy — runs to a published release by default
+
+**Default behavior is fully autonomous: this skill takes the release all the way to
+published on npm without asking the user for permission at any gate** (not at the version
+proposal, not at tagging, not at publish). The user invoked `/l-make-release` to get a
+release — deliver one.
+
+**`--confirm`** — when this flag is passed, insert a single confirmation gate **right
+before the irreversible npm publish** (Step 9): show the version + the three packages + a
+one-line changelog summary and ask "Correct — publish now?". Only publish on an
+affirmative answer; otherwise stop with the drafts left in place. `--confirm` does NOT add
+prompts anywhere else — the rest of the flow stays autonomous.
+
+(Everything before Step 9 — bump, changelog, commit, push, tag, create drafts — is
+reversible or local, so it always runs without asking regardless of `--confirm`.)
 
 ## Why a new skill — not editing `/zudo-doc-version-bump`
 
@@ -26,7 +47,9 @@ downstream contract. This skill wraps and extends the same release flow for the
   in lockstep (the existing skill only bumps the root).
 - Accepts prerelease versions (`1.0.0-next.1`, `1.0.0-beta.2`, `1.0.0-rc.1`) which
   `scripts/version-bump.sh` rejects due to its strict semver regex.
-- Ends at a **DRAFT release** — CI handles the actual `npm publish` upon draft publish.
+- Drives the release **all the way to published on npm** (three lockstep packages) by
+  default — each GitHub release publish fires that package's CI `npm publish` workflow.
+  Pass `--confirm` to gate the publish; otherwise it is autonomous.
 
 The existing `/zudo-doc-version-bump` skill is **not modified** by this flow.
 
@@ -114,7 +137,10 @@ To preview the computed version without touching any files, use the dry path:
 DRY=1 ./scripts/release-create-zudo-doc.sh [<version>|<mode>]
 ```
 
-Present the proposal and **wait for user confirmation**.
+**Announce** the proposed version and proceed — do NOT wait for confirmation (the version
+is derived deterministically and everything through Step 8 is reversible). The single
+confirmation gate, if `--confirm` was passed, comes at Step 9 before the irreversible
+npm publish.
 
 ## Step 2 — Run the release script
 
@@ -211,52 +237,142 @@ If CI fails, investigate with `gh run view <run-id> --log-failed`, fix, and push
 
 **Do not tag until CI is green.**
 
-## Step 7 — Tag
+## Step 7 — Tag all three packages (lockstep)
 
-**Ask the user for confirmation before tagging.**
+Tag without asking (autonomous). Tags are cheap and easily deleted; the only
+irreversible step is the npm publish in Step 9.
+
+The release script bumps all four `package.json` versions in lockstep, and
+`create-zudo-doc`'s generated scaffold pins `@takazudo/zudo-doc@^<ver>` **and**
+`@takazudo/zudo-doc-history-server@^<ver>`. So all three publishable packages
+MUST be released at the same version every time — if you tag/publish only
+`create-zudo-doc`, a fresh downstream scaffold's `pnpm install` 404s on the
+unpublished `@takazudo/*` pin. **Always create all three tags** (the old
+"only if its source changed" guidance is wrong for the lockstep model):
 
 ```bash
+git tag zudo-doc-history-server-<NEW_VERSION>
+git tag zudo-doc-v<NEW_VERSION>
 git tag v<NEW_VERSION>
-git push --tags
+git push origin \
+  zudo-doc-history-server-<NEW_VERSION> \
+  zudo-doc-v<NEW_VERSION> \
+  v<NEW_VERSION>
 ```
 
-## Step 8 — Create a DRAFT GitHub release
+The three tag namespaces are distinct so each fires exactly one publish workflow:
+`zudo-doc-history-server-*`, `zudo-doc-v*`, and the bare `v*` (create-zudo-doc).
 
-Use the changelog body from Step 3 (strip the YAML frontmatter with awk):
+## Step 8 — Create three DRAFT GitHub releases (one per package)
+
+Extract the changelog body once (strip the YAML frontmatter), then create a
+DRAFT release for **each of the three tags**. **Title each with the package
+name + bare version** to match the existing release history — NOT the raw tag
+(`create-zudo-doc 0.2.0-next.4`, not `v0.2.0-next.4`). Mark every prerelease
+(`-next` / `-beta` / `-rc`) with `--prerelease`:
+
+| Tag | `--title` (package + bare version) |
+|-----|------------------------------------|
+| `zudo-doc-history-server-<NEW_VERSION>` | `@takazudo/zudo-doc-history-server <NEW_VERSION>` |
+| `zudo-doc-v<NEW_VERSION>` | `@takazudo/zudo-doc <NEW_VERSION>` |
+| `v<NEW_VERSION>` | `create-zudo-doc <NEW_VERSION>` |
 
 ```bash
 NOTES=$(awk 'BEGIN{f=0} /^---$/{f++; next} f>=2' \
         src/content/docs/changelog/<NEW_VERSION>.mdx)
+
+# --prerelease for any version containing a hyphen (next/beta/rc); empty for stable.
+PRE=""; case "<NEW_VERSION>" in *-*) PRE="--prerelease";; esac
+
+gh release create "zudo-doc-history-server-<NEW_VERSION>" \
+  --title "@takazudo/zudo-doc-history-server <NEW_VERSION>" \
+  --notes "$NOTES" --draft $PRE
+
+gh release create "zudo-doc-v<NEW_VERSION>" \
+  --title "@takazudo/zudo-doc <NEW_VERSION>" \
+  --notes "$NOTES" --draft $PRE
+
 gh release create "v<NEW_VERSION>" \
-  --title "v<NEW_VERSION>" \
-  --notes "$NOTES" \
-  --draft
+  --title "create-zudo-doc <NEW_VERSION>" \
+  --notes "$NOTES" --draft $PRE
 ```
 
-The `--draft` flag is critical. A draft release does NOT trigger the publish workflow.
+The `--draft` flag is critical on all three. A draft release does NOT trigger
+its publish workflow. (The same `$NOTES` body is used for all three — the
+changelog is a single lockstep release note covering every package.)
 
-## THE SKILL ENDS HERE — the human publishes the draft
+## Step 9 — Publish the three releases to npm (autonomous by default)
 
-The release is now a GitHub Draft. **Stop here and tell the user:**
+This is the only irreversible step (npm's unpublish lock kicks in after 72 h).
+Flipping a GitHub release from draft → published (`gh release edit <tag>
+--draft=false`) fires that package's `publish-*.yml` workflow, which runs the
+actual `npm publish`.
+
+**`--confirm` gate (only when the flag was passed):** before publishing, show the
+user what is about to ship and ask once. Default (no `--confirm`) skips this and
+publishes immediately.
 
 ```
-Draft release v<NEW_VERSION> created: <gh release URL>
-
-Before publishing the draft, verify:
-  ✓ Tag v<NEW_VERSION> appears correctly on the release page
-  ✓ If this is a prerelease (e.g. -next.1), the "Pre-release" checkbox is checked
-    → The CI workflow will publish with --tag next (not latest)
-  ✓ If this is a stable release, the "Pre-release" checkbox is UNchecked
-    → The CI workflow will publish with --tag latest
-  ✓ Changelog content looks correct
-
-When you click "Publish release" on GitHub, the publish-create-zudo-doc CI
-workflow fires automatically and publishes to npm. That step is irreversible.
+About to publish <NEW_VERSION> to npm — IRREVERSIBLE:
+  1. @takazudo/zudo-doc-history-server
+  2. @takazudo/zudo-doc
+  3. create-zudo-doc
+Changelog: <one-line summary>
+Correct — publish now? (yes / no)
 ```
 
-Publishing the draft releases `create-zudo-doc@<NEW_VERSION>` to npm — this is
-the human gate that cannot be undone after 72 hours (npm unpublish lock). Review
-carefully before clicking.
+Proceed only on an affirmative answer; otherwise STOP and leave the three drafts
+in place for the user to publish later.
+
+**Publish in dependency order, one at a time, verifying each is live on npm before
+the next.** `create-zudo-doc`'s scaffold pins the other two at `<NEW_VERSION>`, so
+an out-of-order publish 404s a fresh downstream install. For each package:
+
+1. `gh release edit <tag> --draft=false --prerelease` (drop `--prerelease` for a
+   stable version — but the npm dist-tag is derived from the tag name regardless:
+   hyphen → `next`, no hyphen → `latest`).
+2. Watch the triggered workflow run to **success** (a background watcher on the
+   newest `release`-event run of that workflow file works well). If it fails, STOP
+   and report — do NOT publish the next package.
+3. Confirm the version is live: poll `npm view <pkg>@<NEW_VERSION> version` until it
+   returns, before moving to the next package.
+
+```bash
+# Order: history-server → zudo-doc → create-zudo-doc.
+# Per package: flip draft→published, watch publish-*.yml to success, verify on npm.
+# 1) @takazudo/zudo-doc-history-server
+gh release edit "zudo-doc-history-server-<NEW_VERSION>" --draft=false --prerelease
+#    watch publish-zudo-doc-history-server.yml run to success, then:
+until npm view @takazudo/zudo-doc-history-server@<NEW_VERSION> version 2>/dev/null; do sleep 10; done
+
+# 2) @takazudo/zudo-doc
+gh release edit "zudo-doc-v<NEW_VERSION>" --draft=false --prerelease
+#    watch publish-zudo-doc.yml run to success, then:
+until npm view @takazudo/zudo-doc@<NEW_VERSION> version 2>/dev/null; do sleep 10; done
+
+# 3) create-zudo-doc (LAST — its pins now resolve)
+gh release edit "v<NEW_VERSION>" --draft=false --prerelease
+#    watch publish-create-zudo-doc.yml run to success, then:
+until npm view create-zudo-doc@<NEW_VERSION> version 2>/dev/null; do sleep 10; done
+```
+
+## Step 10 — Report
+
+Confirm all three are live and report the final state:
+
+```bash
+for p in @takazudo/zudo-doc-history-server @takazudo/zudo-doc create-zudo-doc; do
+  npm view "$p" dist-tags --json
+done
+```
+
+Each should show `<NEW_VERSION>` under `next` (prerelease) or `latest` (stable),
+with `latest` left untouched for a prerelease. Report the three release URLs and
+the published versions. **The skill ends here — the release is live on npm.**
+
+(Optional but recommended for confidence: a fresh-scaffold smoke —
+`pnpm dlx create-zudo-doc@<NEW_VERSION> <dir> --yes ...` then `pnpm install` — proves
+every published pin resolves from npm. See the prior release session for the pattern.)
 
 ## Dual-tag behavior: `latest` and `next`
 
@@ -293,21 +409,22 @@ The release script writes to ALL of these in one pass:
 
 ## Publish ORDER matters (W4A — #1732)
 
-When zudo-doc or doc-history-server has changed, publish them BEFORE
-`create-zudo-doc`, because the generated `package.json` from
-`create-zudo-doc` pins `@takazudo/zudo-doc: ^<version>`. If that
-version is not yet on npm, a fresh scaffold's `pnpm install` will fail
-with a 404 on the @takazudo/zudo-doc package.
+**Step 9 publishes the three releases in this order automatically** (the CREATE order in
+Steps 7–8 doesn't matter; the PUBLISH order does). This section is the rationale and the
+manual fallback. `create-zudo-doc`'s generated `package.json` pins
+`@takazudo/zudo-doc: ^<version>` and `@takazudo/zudo-doc-history-server: ^<version>`, so
+those two must be **live on npm** before `create-zudo-doc` is published — otherwise a fresh
+scaffold's `pnpm install` 404s on the unpublished pin.
 
-Recommended sequence after `b4push` is green and the commit is pushed:
+All three are released at the same version every time (lockstep — the release script
+bumps all four `package.json` files together), so this is **always all three**, never a
+subset. The order (Step 9 follows it; replicate it if publishing by hand), waiting for
+each to appear on npm before the next:
 
-1. Tag and draft-publish `zudo-doc-history-server-<X.Y.Z>` if its
-   `packages/doc-history-server/` source has changed.
-2. Tag and draft-publish `zudo-doc-v<X.Y.Z>` if its `packages/zudo-doc/`
-   source or pin range has changed.
-3. After both above are live on npm, tag and draft-publish
-   `v<X.Y.Z>` for `create-zudo-doc`.
+1. Publish `@takazudo/zudo-doc-history-server <X.Y.Z>` (tag `zudo-doc-history-server-<X.Y.Z>`).
+2. Publish `@takazudo/zudo-doc <X.Y.Z>` (tag `zudo-doc-v<X.Y.Z>`).
+3. After #1 and #2 are live on npm, publish `create-zudo-doc <X.Y.Z>` (tag `v<X.Y.Z>`).
 
-Each draft-publish fires its own dedicated workflow (concurrency groups
-are distinct, so they can run in parallel within a single wave once
-their tags are pushed).
+Each draft-publish fires its own dedicated workflow (`publish-zudo-doc-history-server.yml`,
+`publish-zudo-doc.yml`, `publish-create-zudo-doc.yml`; concurrency groups are distinct).
+Verify each on npm with `npm view <pkg>@<X.Y.Z> version` before publishing the next.
