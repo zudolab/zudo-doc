@@ -136,8 +136,9 @@ export function memoizeDerived<T>(
     derivedMemo.set(primary, sub);
   }
   const key = `${inputs.map((a) => idOf(a)).join("/")}::${optionSig}`;
-  const hit = sub.get(key);
-  if (hit !== undefined) return hit as T;
+  // Use has(): a legitimately-`undefined` computed result must still register
+  // as a cache hit, otherwise it recomputes every call.
+  if (sub.has(key)) return sub.get(key) as T;
   const computed = compute();
   sub.set(key, computed);
   return computed;

@@ -233,9 +233,7 @@ function fireAuditLog(
   kv: MinimalKV,
   entry: AuditLogEntry,
 ): void {
-  const key = `audit:${entry.timestamp.slice(0, 10)}:${Date.now()}:${Math.random()
-    .toString(36)
-    .slice(2, 8)}`;
+  const key = `audit:${entry.timestamp.slice(0, 10)}:${Date.now()}:${crypto.randomUUID()}`;
   waitUntil(
     kv
       .put(key, JSON.stringify(entry), { expirationTtl: 7 * 24 * 60 * 60 })
