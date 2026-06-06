@@ -154,6 +154,11 @@ ${docsContent}
 // CORS
 // ---------------------------------------------------------------------------
 
+// CORS shape note: search-worker/src/cors.ts always uses "*" for Allow-Origin (no origin
+// whitelist — it is an opt-in, non-metered service). This module uses a per-origin allowlist
+// via aiChatAllowedOrigins (or "*" in demo mode). The two CORS implementations intentionally
+// diverge because they serve different threat models; a shared module is not extracted
+// (different build targets: pages/api esbuild host vs standalone Wrangler worker package).
 const CORS_STATIC_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
@@ -210,7 +215,16 @@ const INJECTION_PATTERNS = [
   /pretend\s+(you\s+)?(are|were)\s+(not|no longer)\s+(bound|restricted)/i,
 ];
 
-/** Returns true if the message is safe, false if a pattern matched. */
+/**
+ * Returns true if the message is safe, false if a pattern matched.
+ *
+ * NOTE: This is NOT a security boundary. The actual defenses are:
+ *   1. The system prompt (buildSystemPrompt) instructs the model to refuse injection attempts.
+ *   2. The escape-first renderer on the client — assistant output is rendered as escaped text,
+ *      not raw HTML, so even a jailbroken reply cannot inject markup into the page.
+ * This regex is a best-effort early-exit that reduces cost and audit noise from obvious
+ * probes; it does not protect against crafted inputs that bypass string matching.
+ */
 function screenInput(message: string): boolean {
   return !INJECTION_PATTERNS.some((p) => p.test(message));
 }
@@ -259,6 +273,9 @@ async function checkRateLimit(ipHash: string, env: AiChatEnv): Promise<RateLimit
   const now = Date.now();
   const perMinute = parseLimit(env.RATE_LIMIT_PER_MINUTE, DEFAULT_PER_MINUTE);
   const perDay = parseLimit(env.RATE_LIMIT_PER_DAY, DEFAULT_PER_DAY);
+  // aiChatGlobalDailyLimit defaults to false (unbounded). Set it to a finite number
+  // in settings.ts before going non-demo, or a single day of traffic may exhaust your
+  // Anthropic API budget across all callers combined.
   const globalDailyLimit = settings.aiChatGlobalDailyLimit as number | false;
 
   const minBucket = Math.floor(now / MS_PER_MINUTE);
@@ -287,7 +304,10 @@ async function checkRateLimit(ipHash: string, env: AiChatEnv): Promise<RateLimit
     dayCount = results[1]!;
     globalDayCount = results[2] ?? 0;
   } catch (err) {
-    // Fail-closed in non-demo mode: a KV outage must not unlock unbounded spend.
+    // Fail-CLOSED on KV error (#1918): a KV outage must not unlock unbounded API spend.
+    // This deliberately diverges from search-worker/src/rate-limit.ts, which fails OPEN
+    // because search has no metered per-call cost — callers get degraded rate-guard,
+    // not blocked results. Here the cost is real (Anthropic API tokens), so we block.
     // In demo mode the rate limiter is never reached (demo short-circuit is first),
     // so this branch is always non-demo in practice.
     console.error(
@@ -367,9 +387,9 @@ async function callClaude(
     throw new Error(`Claude API error ${response.status}: ${errorText}`);
   }
 
-  const data: ClaudeApiResponse = await response.json();
-  if (!Array.isArray(data.content)) {
-    throw new Error("Unexpected Claude API response: missing content array");
+  const data: unknown = await response.json();
+  if (!isClaudeApiResponse(data)) {
+    throw new Error("Unexpected Claude API response shape");
   }
   const textBlock = data.content.find((b): b is ClaudeTextBlock => b.type === "text");
   if (!textBlock) throw new Error("No text response from Claude");
@@ -402,6 +422,14 @@ function isValidMessage(msg: unknown): msg is ChatMessage {
   return (
     (m.role === "user" || m.role === "assistant") && typeof m.content === "string"
   );
+}
+
+/** Runtime type guard for the Claude API response shape. Prevents laundering an
+ *  untrusted `response.json()` value into ClaudeApiResponse via a bare cast. */
+function isClaudeApiResponse(data: unknown): data is ClaudeApiResponse {
+  if (typeof data !== "object" || data === null) return false;
+  const d = data as Record<string, unknown>;
+  return Array.isArray(d.content) && typeof d.stop_reason === "string";
 }
 
 // ---------------------------------------------------------------------------
@@ -439,6 +467,9 @@ export default async function AiChatHandler(): Promise<Response> {
     return reply({ response: DEMO_MODE_MESSAGE }, 200);
   }
 
+  // cf-connecting-ip is only set by the Cloudflare edge. On non-Cloudflare deployments
+  // this header is absent, collapsing all callers into one shared "unknown" rate-limit
+  // bucket — every caller competes against the same counters, effectively a global cap.
   const clientIp = request.headers.get("cf-connecting-ip") ?? "unknown";
   const ipHash = await hashIp(clientIp);
 
@@ -471,6 +502,15 @@ export default async function AiChatHandler(): Promise<Response> {
       blocked: opts.blocked,
       blockReason: opts.blockReason,
     });
+  }
+
+  // Content-Type guard: reject non-JSON bodies with 415 Unsupported Media Type.
+  // A missing or non-JSON Content-Type on a cross-origin POST forces the browser to
+  // send a CORS preflight (OPTIONS) first, which this handler allows-or-denies via
+  // the allowlist, preventing credentialed cross-origin reads without a preflight.
+  const contentType = request.headers.get("Content-Type") ?? "";
+  if (!contentType.startsWith("application/json")) {
+    return reply({ error: "Content-Type must be application/json" }, 415);
   }
 
   try {
