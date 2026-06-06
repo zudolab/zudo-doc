@@ -8,8 +8,34 @@ import {
 import {
   LIGHT_DARK_PAIRINGS,
 } from "../../packages/create-zudo-doc/src/constants";
-import { DEFAULT_HEADER_RIGHT_ITEMS } from "../lib/preset-generator-logic";
+import {
+  DEFAULT_HEADER_RIGHT_ITEMS,
+  SINGLE_SCHEMES as HOST_SINGLE_SCHEMES,
+  LIGHT_SCHEMES as HOST_LIGHT_SCHEMES,
+  SUPPORTED_LANGS as HOST_SUPPORTED_LANGS,
+  HEADER_RIGHT_LABELS as HOST_HEADER_RIGHT_LABELS,
+} from "../lib/preset-generator-logic";
 import { validateArgs } from "../../packages/create-zudo-doc/src/cli";
+
+// ── Host mirror ↔ canonical constants.ts parity ─────────────────────────────
+// preset-generator-logic.ts mirrors these four lists (it is bundled into a
+// client island and cannot reach the generator package's source at build time).
+// This block fails if either side drifts — the single-source-of-truth guard.
+
+describe("host preset-generator lists mirror constants.ts exactly", () => {
+  it("SINGLE_SCHEMES matches", () => {
+    expect(HOST_SINGLE_SCHEMES).toEqual(SINGLE_SCHEMES);
+  });
+  it("LIGHT_SCHEMES matches", () => {
+    expect(HOST_LIGHT_SCHEMES).toEqual(LIGHT_SCHEMES);
+  });
+  it("SUPPORTED_LANGS matches", () => {
+    expect(HOST_SUPPORTED_LANGS).toEqual(SUPPORTED_LANGS);
+  });
+  it("HEADER_RIGHT_LABELS matches", () => {
+    expect(HOST_HEADER_RIGHT_LABELS).toEqual(HEADER_RIGHT_LABELS);
+  });
+});
 
 // ── SINGLE_SCHEMES / LIGHT_SCHEMES ──────────────────────────────────────────
 
