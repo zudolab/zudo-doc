@@ -231,7 +231,7 @@ export async function runDocHistoryMetaStep(
   const meta: DocHistoryMetaManifest = {};
   for (let i = 0; i < jobs.length; i++) {
     const result = results[i];
-    if (result === null) continue; // untracked / not yet committed
+    if (result == null) continue; // untracked / not yet committed
 
     meta[jobs[i]!.composedSlug] = {
       // Author comes from the FIRST (oldest) commit.
