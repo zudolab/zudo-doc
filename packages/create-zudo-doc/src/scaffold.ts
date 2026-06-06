@@ -322,11 +322,16 @@ function generatePackageJson(choices: UserChoices) {
     // hono floor to ^4.12.23, clearing 9 advisories (#813); also two router
     // hardening fixes (overlapping-sibling rejection #816, per-segment rank
     // sort for dev/prod parity). No consumer-facing breaking change.
-    "@takazudo/zfb": "0.1.0-next.30",
-    "@takazudo/zfb-runtime": "0.1.0-next.30",
+    // Bumped to next.31 — CSS-pipeline and islands-scanner fixes (no
+    // consumer-facing breaking change): authored-CSS path when Tailwind is
+    // disabled, reproducible CSS-Modules scoped names (project-relative paths),
+    // dev-mode git-restore detection, Tailwind temp-file cleanup, and a
+    // near-miss `"use client"` directive scanner.
+    "@takazudo/zfb": "0.1.0-next.31",
+    "@takazudo/zfb-runtime": "0.1.0-next.31",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.30",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.31",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
