@@ -287,7 +287,10 @@ export function rewriteAliasesByteStable(
 
   const fmMatch = content.match(/^(---\r?\n)([\s\S]*?)(\r?\n---(?:\r?\n|$))/);
   if (!fmMatch) return { content, changed: false };
-  const [whole, open, fmBody, close] = fmMatch;
+  const whole = fmMatch[0] ?? "";
+  const open = fmMatch[1] ?? "";
+  const fmBody = fmMatch[2] ?? "";
+  const close = fmMatch[3] ?? "";
 
   let changed = false;
   let newBody = fmBody;
