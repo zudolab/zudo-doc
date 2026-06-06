@@ -308,11 +308,20 @@ export interface BreadcrumbItem {
 
 /**
  * Build breadcrumb trail by walking the nav tree.
+ *
+ * Nav-node hrefs are always the LATEST `docsUrl(slug, lang)` values (see
+ * `toNavNodes`). On versioned routes that would make breadcrumbs link back to
+ * latest content (#1916 #1). Pass an optional `hrefFor(slug)` to remap each
+ * intermediate crumb's href to the route's own URL space (e.g.
+ * `versionedDocsUrl`-bound). The home crumb and the current/last crumb carry no
+ * remappable href and are left untouched. Omit `hrefFor` (latest routes) to
+ * keep the unversioned hrefs.
  */
 export function buildBreadcrumbs(
   tree: NavNode[],
   slug: string,
   lang: Locale = defaultLocale,
+  hrefFor?: (slug: string) => string,
 ): BreadcrumbItem[] {
   const parts = slug.split("/");
   const homeHref = lang === defaultLocale ? withBase("/") : withBase(`/${lang}/`);
@@ -325,9 +334,14 @@ export function buildBreadcrumbs(
     if (!node) break;
 
     const isLast = i === parts.length - 1;
+    const href = isLast
+      ? undefined
+      : hrefFor && node.href !== undefined
+        ? hrefFor(node.slug)
+        : node.href;
     crumbs.push({
       label: node.label,
-      href: isLast ? undefined : node.href,
+      href,
     });
     nodes = node.children;
   }

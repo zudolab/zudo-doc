@@ -25,41 +25,30 @@
 import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
 import { defaultLocale } from "@/config/i18n";
-import { docsUrl } from "@/utils/base";
+import { docsUrl, absoluteUrl } from "@/utils/base";
 import {
   buildNavTree,
   buildBreadcrumbs,
-  flattenTree,
-  findNode,
   collectAutoIndexNodes,
   type NavNode,
 } from "@/utils/docs";
 import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
 import { toRouteSlug, toSlugParams } from "@/utils/slug";
-import { DocLayoutWithDefaults } from "@takazudo/zudo-doc/doclayout";
-import { Breadcrumb } from "@takazudo/zudo-doc/breadcrumb";
-import { NavCardGrid } from "@takazudo/zudo-doc/nav-indexing";
 // Shared MDX-tag → Preact-component bag. Includes htmlOverrides
 // (native typography), HtmlPreviewWrapper (Island), and stub bindings
 // for every other custom tag the MDX corpus references — see
 // `pages/_mdx-components.ts` for the full list and rationale.
 import { createMdxComponents } from "../_mdx-components";
-import { FooterWithDefaults } from "../lib/_footer-with-defaults";
 import { DocHistoryArea } from "../lib/_doc-history-area";
 import { DocMetainfoArea } from "../lib/_doc-metainfo-area";
-import { SidebarWithDefaults } from "../lib/_sidebar-with-defaults";
-import { HeaderWithDefaults } from "../lib/_header-with-defaults";
-import { HeadWithDefaults } from "../lib/_head-with-defaults";
-import { composeMetaTitle } from "../lib/_compose-meta-title";
 import { buildInlineVersionSwitcher } from "../lib/_inline-version-switcher";
 import type { JSX } from "preact";
 import { resolveNavSource } from "../lib/_nav-source-docs";
 import { extractHeadings } from "../lib/_extract-headings";
 import type { DocPageEntry, AutoIndexNode, DocPageEntryProps, DocPageAutoIndexProps } from "../lib/doc-page-props";
-import { DocPager } from "../lib/_doc-pager";
 import { DocContentHeader } from "../lib/_doc-content-header";
-import { SidebarPrepaint } from "../lib/_sidebar-prepaint";
-import { DocBodyEnd } from "../lib/_doc-body-end";
+import { DocPageShell } from "../lib/_doc-page-shell";
+import { resolveDocPrevNext, flattenSubtree } from "../lib/_doc-route-paths";
 
 export const frontmatter = { title: "Docs" };
 
@@ -105,29 +94,15 @@ export function paths(): Array<{
     const slug = entry.data.slug ?? toRouteSlug(entry.slug);
     const navSection = getNavSectionForSlug(slug);
     const subtree = getNavSubtree(tree, navSection);
-    const flat = flattenTree(subtree);
-    const idx = flat.findIndex((n) => n.slug === slug);
 
-    let prevNode = idx > 0 ? flat[idx - 1] ?? null : null;
-    let nextNode = idx >= 0 && idx < flat.length - 1 ? flat[idx + 1] ?? null : null;
-
-    // Frontmatter pagination overrides
-    if (entry.data.pagination_prev !== undefined) {
-      if (entry.data.pagination_prev === null) {
-        prevNode = null;
-      } else {
-        const found = findNode(tree, entry.data.pagination_prev);
-        prevNode = found ?? prevNode;
-      }
-    }
-    if (entry.data.pagination_next !== undefined) {
-      if (entry.data.pagination_next === null) {
-        nextNode = null;
-      } else {
-        const found = findNode(tree, entry.data.pagination_next);
-        nextNode = found ?? nextNode;
-      }
-    }
+    // Prev/next + frontmatter pagination overrides resolved against THIS
+    // route's own `tree`. Latest route — hrefs stay unversioned (no rewrite).
+    const { prev: prevNode, next: nextNode } = resolveDocPrevNext(
+      tree,
+      flattenSubtree(subtree),
+      slug,
+      entry.data,
+    );
 
     result.push({
       params: { slug: toSlugParams(slug) },
@@ -181,7 +156,8 @@ export default function DocsPage(props: PageArgs): JSX.Element {
   // locale so CategoryNav/CategoryTreeNav/SiteTreeNav query the right collection.
   const components = createMdxComponents(locale);
 
-  // Resolve child hrefs for auto-index pages
+  // Resolve child hrefs for auto-index pages — latest route keeps the nav
+  // node's own docsUrl href (fallback for a noPage parent without an href).
   const autoIndexChildren = props.kind === "autoIndex"
     ? props.autoIndex.children
         .filter((c: NavNode) => c.hasPage || c.children.length > 0)
@@ -191,12 +167,9 @@ export default function DocsPage(props: PageArgs): JSX.Element {
         }))
     : [];
 
-  // Canonical URL — only when siteUrl is configured. pageUrl is the
-  // base-prefixed path for this page without the siteUrl origin.
-  const pageUrl = docsUrl(slug, locale);
-  const canonical = settings.siteUrl
-    ? settings.siteUrl.replace(/\/$/, "") + pageUrl
-    : undefined;
+  // Canonical URL — base-prefixed page path, absolutized against siteUrl.
+  const currentPath = docsUrl(slug, locale);
+  const canonical = absoluteUrl(currentPath);
 
   // Persist key: locale + nav-section so the sidebar DOM node is reused
   // across same-locale + same-section navigations only. No sanitizer needed —
@@ -209,95 +182,46 @@ export default function DocsPage(props: PageArgs): JSX.Element {
     : `sidebar-${locale}-${navSection ?? "default"}`;
 
   return (
-    <DocLayoutWithDefaults
-      title={composeMetaTitle(title)}
+    <DocPageShell
+      kind={props.kind}
+      locale={locale}
+      slug={slug}
+      title={title}
       description={description}
-      head={<HeadWithDefaults title={title} description={description} canonical={canonical} />}
-      lang={locale}
-      noindex={settings.noindex}
+      canonical={canonical}
+      breadcrumbs={breadcrumbs}
+      prev={prev}
+      next={next}
+      headings={headings}
+      navSection={navSection}
+      sidebarPersistKey={sidebarPersistKey}
       hideSidebar={hideSidebar}
       hideToc={props.kind === "entry" ? props.entry.data.hide_toc : undefined}
-      headings={headings}
-      canonical={canonical}
-      sidebarPersistKey={sidebarPersistKey}
-      headerOverride={
-        <HeaderWithDefaults
-          lang={locale}
-          currentSlug={slug}
-          navSection={getNavSectionForSlug(slug)}
-          currentPath={docsUrl(slug, locale)}
-        />
+      currentPath={currentPath}
+      versionSwitcher={buildInlineVersionSwitcher(slug, locale)}
+      autoIndexLabel={props.kind === "autoIndex" ? props.autoIndex.label : undefined}
+      autoIndexChildren={autoIndexChildren}
+      metainfoSlot={
+        props.kind === "autoIndex" ? <DocMetainfoArea slug={slug} locale={locale} /> : null
       }
-      breadcrumbOverride={
-        breadcrumbs.length > 0 ? (
-          <Breadcrumb
-            items={breadcrumbs}
-            rightSlot={buildInlineVersionSwitcher(slug, locale)}
-          />
+      contentHeaderSlot={
+        props.kind === "entry" ? (
+          <DocContentHeader entry={props.entry} slug={slug} locale={locale} />
         ) : undefined
       }
-      sidebarOverride={
-        <SidebarWithDefaults
-          currentSlug={slug}
-          lang={locale}
-          navSection={getNavSectionForSlug(slug)}
-          currentPath={docsUrl(slug, locale)}
-        />
+      contentSlot={
+        props.kind === "entry" ? <props.entry.Content components={components} /> : undefined
       }
-      afterSidebar={<SidebarPrepaint />}
-      footerOverride={<FooterWithDefaults lang={locale} />}
-      bodyEndComponents={<DocBodyEnd />}
-    >
-      {props.kind === "autoIndex" ? (
-        /* Auto-index page: category without an index.mdx.
-           Fragment (not <div>) so children become direct children of
-           <article class="zd-content">, picking up the flow-space rule
-           (.zd-content > :where(* + *) { margin-top: var(--flow-space) }).
-           Wrapping in <div> would make h1/description p children-of-children
-           and the flow gap (~24px) would never apply — see #1460. */
-        <>
-          <h1 class="text-heading font-bold mb-vsp-xs">{props.autoIndex.label}</h1>
-
-          {/* Build-time date block — chrome parity (#1461). Auto-index pages
-              previously rendered without doc-meta; reference site shows it on
-              every docs page. The component returns null when no manifest
-              entry exists for this slug. */}
-          <DocMetainfoArea slug={slug} locale={locale} />
-
-          {props.autoIndex.description && (
-            <p class="mb-vsp-lg text-title text-muted">
-              {props.autoIndex.description}
-            </p>
-          )}
-          <NavCardGrid children={autoIndexChildren} />
-        </>
-      ) : (
-        /* Regular doc page. Fragment (not <div>) for the same reason as
-           the auto-index branch above — see #1460. */
-        <>
-          <DocContentHeader entry={props.entry} slug={slug} locale={locale} />
-
-          {/* MDX content rendered via zfb's Content bridge */}
-          <props.entry.Content components={components} />
-
-          {/* Prev / Next pagination — placed before the document utilities
-              section to match the Astro reference order: content → pager →
-              view-source / history. In the Astro layout, BodyFootUtilArea was
-              rendered by the doc-layout wrapper after the <slot /> content,
-              so the pager (inside the slot) came first. Fixes #1535. */}
-          <DocPager prev={prev} next={next} locale={locale} />
-
-          {/* Document utilities (revision history + view-source link) — skipped for unlisted pages */}
-          {!props.entry.data.unlisted && (
-            <DocHistoryArea
-              slug={slug}
-              locale={locale}
-              entrySlug={props.entry.slug}
-              contentDir={settings.docsDir}
-            />
-          )}
-        </>
-      )}
-    </DocLayoutWithDefaults>
+      docHistorySlot={
+        props.kind === "entry" && !props.entry.data.unlisted ? (
+          <DocHistoryArea
+            slug={slug}
+            locale={locale}
+            entrySlug={props.entry.slug}
+            contentDir={settings.docsDir}
+          />
+        ) : null
+      }
+    />
   );
 }

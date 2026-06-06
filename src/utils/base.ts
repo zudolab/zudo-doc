@@ -42,6 +42,18 @@ export function stripBase(path: string): string {
     : path;
 }
 
+/**
+ * Build an absolute URL by joining `settings.siteUrl` (trailing slash stripped)
+ * with a base-prefixed page path. Returns `undefined` when `siteUrl` is unset
+ * (e.g. a freshly scaffolded project), so callers can skip emitting a useless
+ * relative canonical / og:image. Replaces the `siteUrl.replace(/\/$/, "") +
+ * pageUrl` pattern that was copy-pasted across the 4 doc routes and
+ * `_head-with-defaults.tsx` (#1917).
+ */
+export function absoluteUrl(pageUrl: string): string | undefined {
+  return settings.siteUrl ? settings.siteUrl.replace(/\/$/, "") + pageUrl : undefined;
+}
+
 /** Build a docs URL for the given slug and lang. */
 export function docsUrl(slug: string, lang: Locale = defaultLocale): string {
   const path = lang === defaultLocale ? `/docs/${slug}` : `/${lang}/docs/${slug}`;
