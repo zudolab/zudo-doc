@@ -22,8 +22,9 @@
 // As real components land, they replace their stub here and propagate to every page automatically.
 //
 // `htmlOverrides` (basic typography — h2/h3/h4/p/a/ul/ol/blockquote/strong/table)
-// and `HtmlPreview: HtmlPreviewWrapper` (Island wrapper) stay in their
-// non-stub form because their Preact bindings already exist.
+// and `HtmlPreview: HtmlPreviewIsland` (call-site Island wrapper around the
+// bare `HtmlPreviewWrapper`) stay in their non-stub form because their Preact
+// bindings already exist.
 //
 // ## Locale-aware bindings (createMdxComponents factory)
 //
@@ -40,7 +41,7 @@
 import type { ComponentChildren } from "preact";
 // @slot:mdx-components:enlarge-imports
 import { htmlOverrides } from "@takazudo/zudo-doc/content";
-import { HtmlPreviewWrapper } from "@takazudo/zudo-doc/html-preview-wrapper";
+import { HtmlPreviewIsland } from "@takazudo/zudo-doc/html-preview-wrapper";
 import { Tabs } from "@takazudo/zudo-doc/code-syntax";
 import { TabItem } from "@takazudo/zudo-doc/tab-item";
 import { defaultLocale, type Locale } from "@/config/i18n";
@@ -135,7 +136,8 @@ function IslandWrapper(props: {
  * - `htmlOverrides` — element-level overrides for native tags (h2..h4,
  *   p, a, ul/ol, blockquote, strong, table). Defined in
  *   `@takazudo/zudo-doc/content`.
- * - `HtmlPreview` — Island-wrapped preview component.
+ * - `HtmlPreview` — `HtmlPreviewIsland`: a call-site `<Island when="visible">`
+ *   wrapper around the bare `HtmlPreviewWrapper` (the hydration target).
  * - Real Preact wrappers for CategoryNav, CategoryTreeNav, SiteTreeNav,
  *   SiteTreeNavDemo, and Details.
  * - `Island` — SSR pass-through wrapper so children render server-side.
@@ -164,7 +166,7 @@ export function createMdxComponents(lang: Locale | string = defaultLocale) {
     // site. withBase() is generic — any configured base value works.
     img: ContentImg,
     // @slot:mdx-components:enlarge-p-entry
-    HtmlPreview: HtmlPreviewWrapper,
+    HtmlPreview: HtmlPreviewIsland,
     // Admonitions — real typed Preact components (src/components/content/
     // content-admonition.tsx) emitting the `.admonition` / `data-admonition`
     // structure the design-system CSS targets. The `directives` map in

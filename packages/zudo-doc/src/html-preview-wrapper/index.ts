@@ -2,6 +2,7 @@
 // and the full html-preview stack.
 export {
   HtmlPreviewWrapper,
+  HtmlPreviewIsland,
 } from "./html-preview-wrapper.js";
 export type {
   HtmlPreviewWrapperProps,
