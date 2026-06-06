@@ -20,7 +20,6 @@
 // Version banner: if version.banner is set ("unmaintained" | "unreleased"),
 // the DocLayoutWithDefaults version-banner prop drives the banner display.
 
-import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
 import type { VersionConfig } from "@/config/settings";
 import { t } from "@/config/i18n";
@@ -94,7 +93,7 @@ export function paths(): Array<{
     // pages/lib/_nav-source-docs.ts (#1902).
     const { docs: allDocs, navDocs, categoryMeta } = resolveNavSource("en", version.slug);
     // Versioned docs always use EN locale for nav tree
-    const tree = buildNavTree(navDocs as unknown as DocsEntry[], "en", categoryMeta);
+    const tree = buildNavTree(navDocs, "en", categoryMeta);
 
     // URL closure for THIS version — every versioned href (prev/next,
     // breadcrumb crumbs, auto-index cards) is produced by this single

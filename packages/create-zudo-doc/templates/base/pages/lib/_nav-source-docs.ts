@@ -67,7 +67,7 @@ export function stableMergeCategoryMeta(
 
 /** `docs.filter(isNavVisible)`, memoized on the stable `docs` identity so the
  *  filtered array also has stable identity for the nav-tree fast-path. */
-export function stableNavDocs(docs: DocsEntry[]): DocsEntry[] {
+export function stableNavDocs<T extends DocsEntry>(docs: T[]): T[] {
   return memoizeDerived([docs], "navVisible", () => docs.filter(isNavVisible));
 }
 
@@ -154,14 +154,14 @@ export function resolveNavSource(
   const localeDocs = stableDocs(`docs-${lang}`);
 
   const merged = memoizeDerived([baseDocs, localeDocs], `merge;${sig}`, () =>
-    mergeLocaleDocs({
-      baseDocs: baseDocs as unknown as DocsEntry[],
-      localeDocs: localeDocs as unknown as DocsEntry[],
+    mergeLocaleDocs<DocPageEntry>({
+      baseDocs,
+      localeDocs,
       applyDefaultLocaleOnlyFilter: options.applyDefaultLocaleOnlyFilter,
       keepUnlisted: options.keepUnlisted,
     }),
   );
-  const docs = merged.docs as unknown as DocPageEntry[];
+  const docs = merged.docs;
 
   const localeDir = settings.locales[lang]?.dir ?? settings.docsDir;
   const categoryMeta = stableMergeCategoryMeta(settings.docsDir, localeDir);
@@ -189,14 +189,14 @@ export function resolveVersionedLocaleSource(
     localeDir ? [baseDocs, localeDocs] : [baseDocs],
     `vmerge;${lang};${sig}`,
     () =>
-      mergeLocaleDocs({
-        baseDocs: baseDocs as unknown as DocsEntry[],
-        localeDocs: localeDocs as unknown as DocsEntry[],
+      mergeLocaleDocs<DocPageEntry>({
+        baseDocs,
+        localeDocs,
         applyDefaultLocaleOnlyFilter: options.applyDefaultLocaleOnlyFilter,
         keepUnlisted: options.keepUnlisted,
       }),
   );
-  const docs = merged.docs as unknown as DocPageEntry[];
+  const docs = merged.docs;
 
   const categoryMeta = localeDir
     ? stableMergeCategoryMeta(versionDocsDir, localeDir)

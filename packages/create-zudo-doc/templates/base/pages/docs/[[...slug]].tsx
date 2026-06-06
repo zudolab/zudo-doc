@@ -22,7 +22,6 @@
 // Locale: defaultLocale (EN). Non-default locales are handled by
 // pages/[locale]/docs/[[...slug]].tsx.
 
-import type { DocsEntry } from "@/types/docs-entry";
 import { settings } from "@/config/settings";
 import { defaultLocale } from "@/config/i18n";
 import { docsUrl, absoluteUrl } from "@/utils/base";
@@ -83,9 +82,9 @@ export function paths(): Array<{
   const { docs, navDocs, categoryMeta } = resolveNavSource(locale, undefined);
 
   // Nav docs: exclude unlisted (for sidebar/prev-next) but keep for breadcrumbs
-  const tree = buildNavTree(navDocs as unknown as DocsEntry[], locale, categoryMeta);
+  const tree = buildNavTree(navDocs, locale, categoryMeta);
   // Full tree (including unlisted) for accurate breadcrumbs
-  const fullTree = buildNavTree(docs as unknown as DocsEntry[], locale, categoryMeta);
+  const fullTree = buildNavTree(docs, locale, categoryMeta);
 
   const result: Array<{ params: { slug: string[] }; props: DocPageProps }> = [];
 
