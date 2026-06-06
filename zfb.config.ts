@@ -4,9 +4,8 @@
  *             - c93a7ec Merge #288 islands env defines
  *             - d438061 fix(zfb-islands): define
  *               `import.meta.env.{PROD,DEV}` in esbuild args
- *           Closes the latent hydration-crash path on this consumer:
- *           `src/components/mock-init.tsx` (a `"use client"` island)
- *           dynamically imports `src/mocks/init.ts`, which references
+ *           Closes the latent hydration-crash path where an island
+ *           dynamically imports a module that references
  *           `import.meta.env.DEV`. Before this fix the islands esbuild
  *           pipeline shipped that read verbatim into
  *           `assets/islands.js`, where `import.meta.env` is undefined
@@ -376,6 +375,7 @@ const integrationPlugins = [
           options: {
             docsDir: settings.docsDir,
             locales: localeRecord,
+            base: settings.base,
           },
         },
       ]
@@ -457,6 +457,16 @@ export default defineConfig({
         dir: locale.dir,
         routePrefix: `/${code}/docs/`,
       })),
+      // Versioned collections: each version's EN dir + per-locale dirs.
+      ...(settings.versions
+        ? settings.versions.flatMap((version) => [
+            { dir: version.docsDir, routePrefix: `/v/${version.slug}/docs/` },
+            ...Object.entries(version.locales ?? {}).map(([code, locale]) => ({
+              dir: locale.dir,
+              routePrefix: `/v/${version.slug}/${code}/docs/`,
+            })),
+          ])
+        : []),
     ],
     onBrokenLinks: "warn",
   },

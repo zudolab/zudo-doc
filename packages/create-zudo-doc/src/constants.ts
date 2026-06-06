@@ -63,6 +63,20 @@ export const SINGLE_SCHEMES = [
   "Ayu Light",
 ];
 
+// Light-only subset of SINGLE_SCHEMES. Used by the preset generator to populate
+// the "Light scheme" dropdown (dark schemes are derived as SINGLE_SCHEMES minus these).
+export const LIGHT_SCHEMES = [
+  "Default Light",
+  "GitHub Light",
+  "Catppuccin Latte",
+  "Solarized Light",
+  "Rose Pine Dawn",
+  "Atom One Light",
+  "Everforest Light",
+  "Gruvbox Light",
+  "Ayu Light",
+];
+
 export interface SupportedLang {
   value: string;
   label: string;
@@ -244,3 +258,17 @@ export const FEATURES: Feature[] = [
     cliFlag: "footer-taglist",
   },
 ];
+
+// Display labels for header-right items. Keys are canonical component/trigger
+// names from HeaderRightComponentName / HeaderRightTriggerName
+// (src/config/settings-types.ts in the host); they are deliberately not imported
+// here so constants.ts stays pure data with no cross-package dependencies.
+export const HEADER_RIGHT_LABELS: Record<string, string> = {
+  "version-switcher": "Version switcher",
+  "design-token-panel": "Design token panel (trigger)",
+  "ai-chat": "AI chat (trigger)",
+  "github-link": "GitHub link",
+  "theme-toggle": "Theme toggle",
+  search: "Search",
+  "language-switcher": "Language switcher",
+};

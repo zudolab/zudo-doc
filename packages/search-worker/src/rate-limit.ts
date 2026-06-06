@@ -46,6 +46,9 @@ export async function checkRateLimit(
       env.RATE_LIMIT.get(dayKey).then(parseCount),
     ]);
   } catch (err) {
+    // Fail-OPEN on KV error (#1918): search has no metered per-call cost, so callers
+    // get degraded rate-guard rather than blocked results. This deliberately diverges
+    // from pages/api/ai-chat.tsx, which fails CLOSED to protect Anthropic API spend.
     console.error("Rate limit KV read failed, allowing request:", err);
     return { allowed: true };
   }

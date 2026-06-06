@@ -32,7 +32,7 @@ const SIDEBAR_RESIZER_RESTORE_SCRIPT = `(function(){try{var w=localStorage.getIt
 // head emission free of the panel-module dependency chain.
 import ColorSchemeProvider from "@takazudo/zudo-doc/theme/color-scheme-provider";
 import { composeMetaTitle } from "./_compose-meta-title";
-import { withBase } from "@/utils/base";
+import { withBase, absoluteUrl } from "@/utils/base";
 import { settings } from "@/config/settings";
 // W3B (#1730): cssText + colorMode are precomputed here — the v2
 // ColorSchemeProvider no longer reaches into the host config tree.
@@ -48,9 +48,9 @@ export interface HeadWithDefaultsProps {
   description?: string;
   /**
    * Absolute canonical URL for this page. When supplied, emits
-   * <link rel="canonical" href="...">. Compute as:
-   *   settings.siteUrl.replace(/\/$/, '') + pageUrl
-   * in each host page and pass only when settings.siteUrl is non-empty.
+   * <link rel="canonical" href="...">. Compute via `absoluteUrl(pageUrl)`
+   * (@/utils/base) in each host page; it returns undefined when
+   * settings.siteUrl is empty so the link is simply omitted.
    */
   canonical?: string;
 }
@@ -76,16 +76,14 @@ export function HeadWithDefaults({
   canonical,
 }: HeadWithDefaultsProps): JSX.Element {
   // og:image / twitter:image must be absolute URLs — crawlers silently drop
-  // relative og:image values. Compute as siteUrl (no trailing slash) + the
-  // base-prefixed asset path, and skip emission entirely when siteUrl is
-  // empty (e.g. a freshly scaffolded create-zudo-doc project that hasn't
-  // configured siteUrl yet) so we never ship a useless relative og:image.
-  // OgTags / TwitterCard already gate their image emission on the prop being
-  // defined; the og:image:* companion tags below are gated explicitly because
-  // they would dangle without the parent og:image.
-  const ogImageUrl = settings.siteUrl
-    ? `${settings.siteUrl.replace(/\/$/, "")}${withBase("/img/ogp.png")}`
-    : undefined;
+  // relative og:image values. absoluteUrl joins siteUrl (no trailing slash) +
+  // the base-prefixed asset path, and returns undefined when siteUrl is empty
+  // (e.g. a freshly scaffolded create-zudo-doc project that hasn't configured
+  // siteUrl yet) so we never ship a useless relative og:image. OgTags /
+  // TwitterCard already gate their image emission on the prop being defined;
+  // the og:image:* companion tags below are gated explicitly because they
+  // would dangle without the parent og:image.
+  const ogImageUrl = absoluteUrl(withBase("/img/ogp.png"));
 
   // Resolve the palette CSS body once per page render (the v2 component
   // is pure SSR — no caching needed).

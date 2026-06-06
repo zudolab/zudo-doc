@@ -13,9 +13,10 @@
 // (b11-2 pattern).
 //
 // Date formatting uses Intl.DateTimeFormat (browser-safe). We do NOT
-// import `formatDate` from `src/utils/git-info.ts` because that module
-// has top-level Node.js imports (`execFileSync`, `existsSync`) that
-// would be dragged into the client bundle — the B-11 lesson.
+// import the old `formatDate` from `src/utils/git-info.ts` — that module
+// carried top-level Node.js imports (`execFileSync`, `existsSync`) that
+// would be dragged into the client bundle (the B-11 lesson). That file
+// was removed in S1 cleanup (#1928); the mirror below is the canonical copy.
 //
 // Labels are resolved from the project's i18n table so non-default
 // locales (e.g. /ja/) get translated "作成" / "更新" strings.
@@ -36,9 +37,8 @@ import { toHistorySlug } from "@/utils/slug";
 import docHistoryMeta from "#doc-history-meta";
 
 // BCP-47 locale tag mapping used by Intl.DateTimeFormat.
-// Kept in sync with `src/utils/git-info.ts` manually; we cannot import
-// that module here because it carries top-level Node.js imports
-// (`execFileSync`, `existsSync`) — the B-11 lesson applies here too.
+// Originally mirrored from `src/utils/git-info.ts` (removed in S1 #1928).
+// The formatDate function below is the stable copy; kept in sync manually.
 const LOCALE_TO_BCP47: Record<string, string> = {
   en: "en-US",
   ja: "ja-JP",

@@ -6,6 +6,10 @@ import {
   buildJson,
   buildCliCommand,
   DEFAULT_HEADER_RIGHT_ITEMS,
+  SINGLE_SCHEMES,
+  LIGHT_SCHEMES,
+  SUPPORTED_LANGS,
+  HEADER_RIGHT_LABELS,
   type FormState,
   type HeaderRightItemSpec,
 } from "../lib/preset-generator-logic";
@@ -13,94 +17,11 @@ import { HeadingH3 } from "./content/heading-h3";
 
 // ── Data ──
 
-const SINGLE_SCHEMES = [
-  "Default Dark",
-  "Dracula",
-  "Catppuccin Mocha",
-  "GitHub Dark",
-  "Nord",
-  "TokyoNight",
-  "Gruvbox Dark",
-  "Atom One Dark",
-  "Rose Pine",
-  "Solarized Dark",
-  "Material Ocean",
-  "Monokai Pro",
-  "Everforest Dark",
-  "Kanagawa Wave",
-  "Night Owl",
-  "Ayu Dark",
-  "VS Code Dark+",
-  "Doom One",
-  "Challenger Deep",
-  "Catppuccin Frappe",
-  "Catppuccin Macchiato",
-  "Gruvbox Dark Hard",
-  "Rose Pine Moon",
-  "GitHub Dark Dimmed",
-  "Ayu Mirage",
-  "Material Darker",
-  "Material Dark",
-  "Monokai Remastered",
-  "Monokai Vivid",
-  "Monokai Soda",
-  "Solarized Dark Higher Contrast",
-  "Gruvbox Material Dark",
-  "Kanagawa Dragon",
-  "Default Light",
-  "GitHub Light",
-  "Catppuccin Latte",
-  "Solarized Light",
-  "Rose Pine Dawn",
-  "Atom One Light",
-  "Everforest Light",
-  "Gruvbox Light",
-  "Ayu Light",
-] as const;
-
-const LIGHT_SCHEMES = [
-  "Default Light",
-  "GitHub Light",
-  "Catppuccin Latte",
-  "Solarized Light",
-  "Rose Pine Dawn",
-  "Atom One Light",
-  "Everforest Light",
-  "Gruvbox Light",
-  "Ayu Light",
-] as const;
-
 const DARK_SCHEMES = SINGLE_SCHEMES.filter(
   (s) => !(LIGHT_SCHEMES as readonly string[]).includes(s),
 );
 
-const SUPPORTED_LANGS = [
-  { value: "en", label: "English" },
-  { value: "ja", label: "Japanese" },
-  { value: "zh-cn", label: "Chinese (Simplified)" },
-  { value: "zh-tw", label: "Chinese (Traditional)" },
-  { value: "ko", label: "Korean" },
-  { value: "es", label: "Spanish" },
-  { value: "fr", label: "French" },
-  { value: "de", label: "German" },
-  { value: "pt", label: "Portuguese" },
-] as const;
-
 const PACKAGE_MANAGERS = ["pnpm", "npm", "yarn", "bun"] as const;
-
-// Display labels for header-right items. Keep in sync with the canonical names
-// defined in src/config/settings-types.ts (HeaderRightComponentName /
-// HeaderRightTriggerName). Order does not matter here — the user reorders
-// state.headerRightItems directly.
-const HEADER_RIGHT_LABELS: Record<string, string> = {
-  "version-switcher": "Version switcher",
-  "design-token-panel": "Design token panel (trigger)",
-  "ai-chat": "AI chat (trigger)",
-  "github-link": "GitHub link",
-  "theme-toggle": "Theme toggle",
-  search: "Search",
-  "language-switcher": "Language switcher",
-};
 
 function headerRightItemKey(item: HeaderRightItemSpec): string {
   return `${item.kind}:${item.name}`;

@@ -4,8 +4,9 @@
 
 - All components are **Preact `.tsx`** — there are no `.astro` files. Pages, layouts, and component overrides are all written as Preact function components.
 - Default to **server-rendered Preact** (no `client:*` directive) — emits zero JS for static markup.
-- Promote a component to a **client island** only when it needs interactivity. zfb hydration is opt-in via the `ssr-islands.tsx` registry / standard `client:*`-style props on island wrappers.
-- Current client islands: `toc.tsx`, `mobile-toc.tsx`, `sidebar-toggle.tsx`, `sidebar-tree.tsx`, `theme-toggle.tsx`, `doc-history.tsx`, `find-bar.tsx`, `image-enlarge.tsx`, `ai-chat-modal.tsx`; the zdtp panel self-mounts via `configurePanel()` and is not registered in the island registry.
+- Promote a component to a **client island** only when it needs interactivity. zfb hydration is opt-in — islands are wired by direct `<Island>` wrapping (no central registry file).
+- Island wiring locations: `pages/lib/_body-end-islands.tsx` (AiChatModal, ClientRouterBootstrap, DesignTokenPanelBootstrap, ImageEnlarge); `pages/lib/_header-with-defaults.tsx` (ThemeToggle, SidebarToggle); `pages/lib/_sidebar-with-defaults.tsx` (SidebarTree); Toc and MobileToc come from `@takazudo/zudo-doc/toc` via `packages/zudo-doc/src/doclayout/doc-layout-with-defaults.tsx`.
+- Current client islands: `sidebar-toggle.tsx`, `sidebar-tree.tsx`, `theme-toggle.tsx`, `doc-history.tsx`, `image-enlarge.tsx`, `ai-chat-modal.tsx`; the zdtp panel self-mounts via `configurePanel()` and needs no Island wrapper. Toc and MobileToc are in the `@takazudo/zudo-doc` package.
 - Content typography components (`src/components/content/`): server-rendered Preact functions that override HTML elements emitted by MDX via the `<Content components={...} />` mapping in `pages/_mdx-components.ts`. Includes: headings (h2-h4), paragraph, link, strong, blockquote, lists (ul/ol), table.
 
 ## Design Token System

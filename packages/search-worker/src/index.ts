@@ -41,10 +41,18 @@ export default {
       return jsonResponse({ error: "Not found" }, 404);
     }
 
+    // Content-Type guard: reject non-JSON bodies with 415. Forces a CORS preflight
+    // on cross-origin callers (same rationale as the ai-chat endpoint), even though
+    // this worker uses wildcard CORS — it still prevents form-submission CSRF attacks.
+    const contentType = request.headers.get("Content-Type") ?? "";
+    if (!contentType.startsWith("application/json")) {
+      return jsonResponse({ error: "Content-Type must be application/json" }, 415);
+    }
+
     try {
-      let body: SearchRequest;
+      let body: { query?: unknown; limit?: unknown };
       try {
-        body = (await request.json()) as SearchRequest;
+        body = (await request.json()) as { query?: unknown; limit?: unknown };
       } catch {
         return jsonResponse({ error: "Invalid JSON body" }, 400);
       }
@@ -57,6 +65,19 @@ export default {
         return jsonResponse({ error: "query exceeds 500 character limit" }, 400);
       }
 
+      // Validate body.limit explicitly before passing to search(). clampLimit handles
+      // the numeric clamping, but a non-numeric string value would silently become
+      // NaN and fall back to the default — validate the type here instead.
+      let limitArg: number | undefined;
+      if (body.limit !== undefined && body.limit !== null) {
+        if (typeof body.limit !== "number") {
+          return jsonResponse({ error: "limit must be a number" }, 400);
+        }
+        limitArg = body.limit;
+      }
+
+      // cf-connecting-ip is only set by the Cloudflare edge; absent on other platforms,
+      // collapsing all callers into a shared "unknown" rate-limit bucket.
       const clientIp = request.headers.get("cf-connecting-ip") || "unknown";
       const ipHash = await hashIp(clientIp);
 
@@ -69,7 +90,7 @@ export default {
         );
       }
 
-      const { results, total } = await search(body.query, body.limit, env);
+      const { results, total } = await search(body.query, limitArg, env);
       return jsonResponse({ results, query: body.query, total }, 200);
     } catch (err) {
       console.error(

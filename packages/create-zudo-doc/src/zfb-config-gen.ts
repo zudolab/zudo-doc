@@ -189,6 +189,7 @@ export function generateZfbConfig(choices: UserChoices): string {
     lines.push(`          options: {`);
     lines.push(`            docsDir: settings.docsDir,`);
     lines.push(`            locales: localeRecord,`);
+    lines.push(`            base: settings.base,`);
     lines.push(`          },`);
     lines.push(`        },`);
     lines.push(`      ]`);
@@ -251,6 +252,24 @@ export function generateZfbConfig(choices: UserChoices): string {
   lines.push(`        dir: locale.dir,`);
   lines.push(`        routePrefix: \`/\${code}/docs/\`,`);
   lines.push(`      })),`);
+  lines.push(
+    `      // Versioned collections: each version's EN dir + per-locale dirs.`,
+  );
+  lines.push(`      ...(settings.versions`);
+  lines.push(`        ? settings.versions.flatMap((version) => [`);
+  lines.push(
+    `            { dir: version.docsDir, routePrefix: \`/v/\${version.slug}/docs/\` },`,
+  );
+  lines.push(
+    `            ...Object.entries(version.locales ?? {}).map(([code, locale]) => ({`,
+  );
+  lines.push(`              dir: locale.dir,`);
+  lines.push(
+    `              routePrefix: \`/v/\${version.slug}/\${code}/docs/\`,`,
+  );
+  lines.push(`            })),`);
+  lines.push(`          ])`);
+  lines.push(`        : []),`);
   lines.push(`    ],`);
   lines.push(`    onBrokenLinks: "warn",`);
   lines.push(`  },`);

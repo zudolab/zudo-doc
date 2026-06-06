@@ -1,4 +1,95 @@
-// Keep in sync with packages/create-zudo-doc/src/constants.ts
+// Single source of truth: packages/create-zudo-doc/src/constants.ts.
+// These four lists are mirrored here (not runtime-imported) because this file
+// is bundled by zfb into a client island, and the host cannot reach into the
+// generator package's source across the e2e-fixture symlink boundary (the
+// package is not a host dependency). Parity with constants.ts is enforced by
+// src/__tests__/preset-generator-lists-sync.test.ts — editing either side
+// without the other fails that test. This matches the FEATURES drift pattern.
+
+export interface SupportedLang {
+  value: string;
+  label: string;
+}
+
+export const SINGLE_SCHEMES = [
+  "Default Dark",
+  "Dracula",
+  "Catppuccin Mocha",
+  "GitHub Dark",
+  "Nord",
+  "TokyoNight",
+  "Gruvbox Dark",
+  "Atom One Dark",
+  "Rose Pine",
+  "Solarized Dark",
+  "Material Ocean",
+  "Monokai Pro",
+  "Everforest Dark",
+  "Kanagawa Wave",
+  "Night Owl",
+  "Ayu Dark",
+  "VS Code Dark+",
+  "Doom One",
+  "Challenger Deep",
+  "Catppuccin Frappe",
+  "Catppuccin Macchiato",
+  "Gruvbox Dark Hard",
+  "Rose Pine Moon",
+  "GitHub Dark Dimmed",
+  "Ayu Mirage",
+  "Material Darker",
+  "Material Dark",
+  "Monokai Remastered",
+  "Monokai Vivid",
+  "Monokai Soda",
+  "Solarized Dark Higher Contrast",
+  "Gruvbox Material Dark",
+  "Kanagawa Dragon",
+  // Light schemes
+  "Default Light",
+  "GitHub Light",
+  "Catppuccin Latte",
+  "Solarized Light",
+  "Rose Pine Dawn",
+  "Atom One Light",
+  "Everforest Light",
+  "Gruvbox Light",
+  "Ayu Light",
+];
+
+export const LIGHT_SCHEMES = [
+  "Default Light",
+  "GitHub Light",
+  "Catppuccin Latte",
+  "Solarized Light",
+  "Rose Pine Dawn",
+  "Atom One Light",
+  "Everforest Light",
+  "Gruvbox Light",
+  "Ayu Light",
+];
+
+export const SUPPORTED_LANGS: SupportedLang[] = [
+  { value: "en", label: "English" },
+  { value: "ja", label: "Japanese" },
+  { value: "zh-cn", label: "Chinese (Simplified)" },
+  { value: "zh-tw", label: "Chinese (Traditional)" },
+  { value: "ko", label: "Korean" },
+  { value: "es", label: "Spanish" },
+  { value: "fr", label: "French" },
+  { value: "de", label: "German" },
+  { value: "pt", label: "Portuguese" },
+];
+
+export const HEADER_RIGHT_LABELS: Record<string, string> = {
+  "version-switcher": "Version switcher",
+  "design-token-panel": "Design token panel (trigger)",
+  "ai-chat": "AI chat (trigger)",
+  "github-link": "GitHub link",
+  "theme-toggle": "Theme toggle",
+  search: "Search",
+  "language-switcher": "Language switcher",
+};
 
 import type {
   HeaderRightComponentName,

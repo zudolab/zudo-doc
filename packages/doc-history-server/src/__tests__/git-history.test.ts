@@ -11,6 +11,19 @@ const execFileSyncMock = vi.fn();
 
 vi.mock("node:child_process", () => ({
   execFileSync: (...args: unknown[]) => execFileSyncMock(...args),
+  // getFileCommitsMetaAsync (#1920) uses promisify(execFile); route async git
+  // calls through the same mock so they observe the same cwd/stdout behaviour
+  // as the sync path. Without an execFile export here, the module-level
+  // promisify(execFile) throws at import.
+  execFile: (...args: unknown[]) => {
+    const callback = args[args.length - 1] as (
+      err: Error | null,
+      result: { stdout: string; stderr: string },
+    ) => void;
+    const [cmd, gitArgs, opts] = args as [string, string[], unknown];
+    const stdout = String(execFileSyncMock(cmd, gitArgs, opts) ?? "");
+    callback(null, { stdout, stderr: "" });
+  },
 }));
 
 // Default behaviour: `rev-parse --show-toplevel` returns the fake root; any

@@ -24,9 +24,9 @@
  *   PERMANENT (this file + siblings): DOM identity on 4 scopes, sidebar
  *     highlight, sidebar scroll, cross-locale identity NOT preserved,
  *     locale-toggle clickability (W7A), version-switcher state on /v/...
- *   ONE-SHOT ONLY (scripts/wave2-vt-chrome-persist-confirm.ts only):
- *     viewTransition.finished resolves, document.getAnimations() non-empty
- *     (both timing-sensitive in CI), cross-section sidebar re-render (D1).
+ *   ONE-SHOT ONLY (scripts/wave2-vt-chrome-persist-confirm.ts — removed in
+ *     S1 #1928): viewTransition.finished resolves, document.getAnimations()
+ *     non-empty (timing-sensitive in CI), cross-section sidebar re-render (D1).
  *
  * b4push: this spec auto-picks up via the smoke*.spec.ts glob in
  * playwright.config.ts → no manual wiring to run-b4push.sh needed.
