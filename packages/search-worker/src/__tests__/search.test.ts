@@ -148,6 +148,36 @@ describe("search", () => {
       "https://my-docs.example.com/search-index.json",
     );
   });
+
+  it("throws when search index contains a malformed entry", async () => {
+    const malformedEntries = [
+      { id: "1", title: "Good Entry", body: "ok", url: "/ok", description: "ok" },
+      { id: 2, title: "Bad id (number)", body: "x", url: "/x", description: "x" }, // id is number, not string
+    ];
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(JSON.stringify(malformedEntries), { status: 200 }),
+    );
+
+    const { search } = await import("../search");
+    const env = createMockEnv();
+
+    await expect(search("test", undefined, env)).rejects.toThrow(
+      "Search index entry at index 1 has unexpected shape",
+    );
+  });
+
+  it("throws when search index response is not an array", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(JSON.stringify({ entries: [] }), { status: 200 }),
+    );
+
+    const { search } = await import("../search");
+    const env = createMockEnv();
+
+    await expect(search("test", undefined, env)).rejects.toThrow(
+      "Search index is not an array",
+    );
+  });
 });
 
 describe("clampLimit", () => {
