@@ -18,14 +18,14 @@
  *   - versioning-vt-chrome-persist.spec.ts (version-switcher state)
  *
  * Root cause: zudolab/zudo-doc#1556 (VT Chrome Static epic)
- * Shaped by T3 confirm-gate V1-V8b: scripts/wave2-vt-chrome-persist-confirm.ts
+ * Shaped by T3 confirm-gate V1-V8b: scripts/wave2-vt-chrome-persist-confirm.ts (removed S1 #1928)
  * Lesson: .claude/skills/l-lessons-zfb-migration-parity/SKILL.md W7A entries
  *   ("permanent regression coverage locks the contract")
  *
  * Permanent vs one-shot coverage manifest:
  *   PERMANENT (this file): computed viewTransitionName on all 4 chrome elements,
  *     named-chrome animation count === 0, total animation count >= 1 during nav.
- *   ONE-SHOT ONLY (scripts/wave2-vt-chrome-persist-confirm.ts V5/V6 only):
+ *   ONE-SHOT ONLY (scripts/wave2-vt-chrome-persist-confirm.ts V5/V6 — removed S1 #1928):
  *     V7 cross-locale named-chrome suppression, V8a/V8b cross-section edge cases
  *     (timing-sensitive; covered by T3 confirm-gate, not in permanent CI).
  *
@@ -51,7 +51,7 @@ const GUIDES_PAGE_1 = "/docs/guides/page-1";
 // The 12 named-chrome pseudo-element strings we expect to be animation-free.
 // Exact-match set — NEVER use .includes("zfb-") substring matching, which is
 // too loose and would catch unknown nesting levels or future pseudo variants.
-// Mirrors the namedChromePseudos Set from scripts/wave2-vt-chrome-persist-confirm.ts V5.
+// Mirrors the namedChromePseudos Set from scripts/wave2-vt-chrome-persist-confirm.ts V5 (removed S1 #1928).
 const NAMED_CHROME_PSEUDOS = new Set([
   "::view-transition-old(zfb-header)",
   "::view-transition-new(zfb-header)",
@@ -189,7 +189,7 @@ test.describe("VT Chrome Static: getAnimations() during same-locale + same-secti
       document.startViewTransition = (cb) => {
         const vt = origSVT(cb);
         // Exact-match Set of the 12 named-chrome pseudo strings.
-        // Mirrors namedChromePseudos in scripts/wave2-vt-chrome-persist-confirm.ts V5.
+        // Mirrors namedChromePseudos in scripts/wave2-vt-chrome-persist-confirm.ts V5 (removed S1 #1928).
         // NEVER use .includes("zfb-") — too loose.
         const namedSet = new Set([
           "::view-transition-old(zfb-header)",
@@ -269,7 +269,7 @@ test.describe("VT Chrome Static: getAnimations() during same-locale + same-secti
     // the pre-existing B6 assertion) as a reliable proxy that the
     // view-transition is still running. We do NOT filter by pseudoElement
     // for the root pseudo because headless Chromium may suppress it.
-    // See: scripts/wave2-vt-chrome-persist-confirm.ts V6 for the upstream pattern.
+    // See: scripts/wave2-vt-chrome-persist-confirm.ts V6 for the upstream pattern (removed S1 #1928).
     await page.evaluate(() => {
       const origSVT = document.startViewTransition?.bind(document);
       if (!origSVT) return;

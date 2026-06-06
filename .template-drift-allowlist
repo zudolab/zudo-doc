@@ -170,7 +170,24 @@ pages/_mdx-components.ts
 # from earlier waves). Reconcile if/when the host adopts literal preact/compat
 # imports too.
 src/components/content/heading-h3.tsx
-src/components/html-preview/highlighted-code.tsx
-src/components/html-preview/html-preview.tsx
-src/components/html-preview/preview-base.tsx
 src/hooks/use-active-heading.ts
+
+# S1 (#1928) — orphaned host-side Astro→zfb migration files deleted from the
+# host; their template counterparts remain as live generator assets.
+#
+# find-bar.tsx / find-in-page.ts: host no longer uses find-in-page; the
+# tauri feature template still ships them to generated tauri projects.
+# find-in-page-init.tsx: already allowlisted above (W8A preact/compat entry).
+#
+# content-files.ts / git-info.ts: host no longer uses these Node-only utils
+# (see pages/lib/_doc-metainfo-area.tsx B-11 lesson); base template keeps
+# them because docHistory feature's doc-history.ts imports content-files, and
+# generated projects still need both files.
+#
+# doc-history.ts: host replaced by @takazudo/zudo-doc-history-server; the
+# docHistory feature template ships its own copy for generated projects.
+src/components/find-bar.tsx
+src/utils/find-in-page.ts
+src/utils/content-files.ts
+src/utils/git-info.ts
+src/utils/doc-history.ts
