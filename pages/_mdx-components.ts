@@ -22,9 +22,8 @@
 // As real components land, they replace their stub here and propagate to every page automatically.
 //
 // `htmlOverrides` (basic typography — h2/h3/h4/p/a/ul/ol/blockquote/strong/table)
-// and `HtmlPreview: HtmlPreviewIsland` (call-site Island wrapper around the
-// bare `HtmlPreviewWrapper`) stay in their non-stub form because their Preact
-// bindings already exist.
+// and `HtmlPreview: HtmlPreviewWrapper` (Island wrapper) stay in their
+// non-stub form because their Preact bindings already exist.
 //
 // ## Locale-aware bindings (createMdxComponents factory)
 //
@@ -52,7 +51,7 @@ import type { ComponentChildren } from "preact";
 import { toChildArray } from "preact";
 import type { VNode } from "preact";
 import { htmlOverrides } from "@takazudo/zudo-doc/content";
-import { HtmlPreviewIsland } from "@takazudo/zudo-doc/html-preview-wrapper";
+import { HtmlPreviewWrapper } from "@takazudo/zudo-doc/html-preview-wrapper";
 import { Tabs } from "@takazudo/zudo-doc/code-syntax";
 import { TabItem } from "@takazudo/zudo-doc/tab-item";
 import { defaultLocale, type Locale } from "@/config/i18n";
@@ -289,8 +288,7 @@ function EnlargeableParagraph(props: {
  * - `htmlOverrides` — element-level overrides for native tags (h2..h4,
  *   p, a, ul/ol, blockquote, strong, table). Defined in
  *   `@takazudo/zudo-doc/content`.
- * - `HtmlPreview` — `HtmlPreviewIsland`: a call-site `<Island when="visible">`
- *   wrapper around the bare `HtmlPreviewWrapper` (the hydration target).
+ * - `HtmlPreview` — Island-wrapped preview component.
  * - Real Preact wrappers for CategoryNav, CategoryTreeNav, SiteTreeNav,
  *   SiteTreeNavDemo, and Details.
  * - `Island` — SSR pass-through wrapper so children render server-side.
@@ -322,7 +320,7 @@ export function createMdxComponents(lang: Locale | string = defaultLocale) {
     // with an enlarge button when settings.imageEnlarge is enabled.
     // Must come AFTER the ...htmlOverrides spread to override ContentParagraph.
     p: EnlargeableParagraph,
-    HtmlPreview: HtmlPreviewIsland,
+    HtmlPreview: HtmlPreviewWrapper,
     // Admonitions — real typed Preact components (src/components/content/
     // content-admonition.tsx) emitting the `.admonition` / `data-admonition`
     // structure the design-system CSS targets. The `directives` map emits these

@@ -55,32 +55,33 @@ export interface HtmlPreviewWrapperProps {
 }
 
 /**
- * Bare HTML preview island component — the hydration target.
+ * Bare HTML preview body — the actual island **hydration target**.
  *
  * Merges global (`settings.htmlPreview`) config with per-usage props and
  * forwards everything to `<HtmlPreview>`. Renders the preview tree
- * **directly**: it does NOT wrap itself in `<Island>`. The caller is
- * responsible for applying the `<Island when="visible">` wrapper — use the
- * `HtmlPreviewIsland` export below (which MDX registers as `HtmlPreview`).
+ * **directly**: it does NOT wrap itself in `<Island>`. `HtmlPreviewWrapper`
+ * below applies the `<Island when="visible">` wrapper around it.
  *
- * Why the wrapper lives at the call site, not here:
+ * ## Island invariant (read before touching the displayName / Island wiring)
  *
- * Pre-this-fix, `HtmlPreviewWrapper` called `Island(...)` internally and an
- * inner component carried `displayName = "HtmlPreviewWrapper"`. The zfb
- * island scanner picked the exported wrapper as the hydration target, so on
- * the client `mountIslands` ran `hydrate(<HtmlPreviewWrapper/>, dataIslandDiv)`
- * where the vnode itself rendered to *another*
- * `<div data-zfb-island="HtmlPreviewWrapper">…</div>`. Preact then reused the
- * SSR'd marker's children one level off, re-parenting the preview + code
- * sections inside the title bar instead of in-place hydrating them — the same
- * class of bug fixed for Toc / MobileToc / Sidebar in zudolab/zudo-doc#1355
- * (see the leading comment in `../toc/toc.tsx`). Moving the `<Island>` wrapper
- * to the call site lets the bundle hydrate this bare component against the
- * existing DOM in-place. This was an Astro→zfb migration regression: the same
- * component rendered correctly under Astro/React, whose hydration tolerated
- * the double-wrap.
+ * The hydration-target export's NAME must equal its `displayName` (which
+ * becomes the `data-zfb-island="…"` marker), AND that export must NOT itself
+ * render an `<Island>`. The zfb scanner resolves the client hydration
+ * component by marker-name → export-name lookup; if the resolved export
+ * re-wraps in `Island()`, the client re-emits a second `data-zfb-island`
+ * wrapper and Preact reuses the SSR'd children one level off — re-parenting
+ * the preview + code sections inside the flex title bar (the broken
+ * side-by-side layout). This is the same class of bug fixed for
+ * Toc / MobileToc / Sidebar in zudolab/zudo-doc#1355 and was the original
+ * defect here (zudolab/zudo-doc#1925, an Astro→zfb migration regression):
+ * the inner bare component carried the *outer* wrapper's name
+ * (`displayName = "HtmlPreviewWrapper"`) and was not exported, so the marker
+ * resolved to the exported self-wrapping `HtmlPreviewWrapper` and the client
+ * double-wrapped. Fix: the bare component carries its OWN name
+ * (`HtmlPreviewWrapperInner`) and is exported, so the marker resolves to
+ * THIS bare component and the bundle hydrates it in-place.
  */
-export function HtmlPreviewWrapper(
+export function HtmlPreviewWrapperInner(
   props: HtmlPreviewWrapperProps,
 ): VNode {
   const { globalConfig, html, css, head, js, title, height, defaultOpen } =
@@ -108,27 +109,34 @@ export function HtmlPreviewWrapper(
     />
   );
 }
-// Pin the marker name to "HtmlPreviewWrapper" explicitly so the SSR `<Island>`
-// wrapper resolves a stable component identity even after esbuild minification
-// renames the function — see Toc/MobileToc for rationale.
-HtmlPreviewWrapper.displayName = "HtmlPreviewWrapper";
+// Pin the marker name to "HtmlPreviewWrapperInner" (its own name) so the SSR
+// `<Island>` marker resolves to THIS bare export even after esbuild
+// minification renames the function. Per the invariant above, it must equal
+// the export name and must not match the self-wrapping `HtmlPreviewWrapper`.
+HtmlPreviewWrapperInner.displayName = "HtmlPreviewWrapperInner";
 
 /**
- * Call-site Island wrapper for `<HtmlPreviewWrapper>`.
+ * HTML preview wrapper component — the public MDX-registered binding
+ * (`HtmlPreview: HtmlPreviewWrapper`).
  *
- * Emits the `data-zfb-island="HtmlPreviewWrapper"` SSG marker and defers
- * hydration until the preview scrolls into view (`when="visible"`, mirroring
- * the legacy `client:visible` timing — the iframe is heavy and off the
- * critical path). MDX registers THIS component as `HtmlPreview` so the zfb
- * island bundle hydrates the bare `HtmlPreviewWrapper` against the SSR'd
- * marker in-place. Keeping the wrapper here (not inside `HtmlPreviewWrapper`)
- * is what prevents the double-wrap hydration mis-nest described above.
+ * Wraps the bare `HtmlPreviewWrapperInner` in `<Island when="visible">`,
+ * mirroring the legacy `client:visible` hydration timing — the iframe is
+ * heavy and not on the critical path, so hydration is deferred until the
+ * preview enters the viewport. The SSG output emits
+ * `data-zfb-island="HtmlPreviewWrapperInner"` around the bare tree, and the
+ * client bundle hydrates `HtmlPreviewWrapperInner` against it in-place.
+ *
+ * The public export name and signature are unchanged from before the
+ * zudolab/zudo-doc#1925 fix, so existing consumers that register
+ * `HtmlPreview: HtmlPreviewWrapper` keep working (and now hydrate correctly)
+ * with no call-site change.
  */
-export function HtmlPreviewIsland(
+export function HtmlPreviewWrapper(
   props: HtmlPreviewWrapperProps,
 ): VNode {
-  return Island({
+  const rendered = Island({
     when: "visible",
-    children: <HtmlPreviewWrapper {...props} />,
-  }) as unknown as VNode;
+    children: <HtmlPreviewWrapperInner {...props} />,
+  });
+  return rendered as unknown as VNode;
 }
