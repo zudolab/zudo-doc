@@ -1,0 +1,13 @@
+---
+title: 0.2.0-next.6
+description: Release notes for 0.2.0-next.6.
+sidebar_position: 1007
+---
+
+Released: 2026-06-06
+
+A focused prerelease that fixes the HTML Preview component's post-hydration layout — an Astro-to-zfb migration regression — with a backward-compatible approach that keeps existing scaffolds working on upgrade.
+
+### Bug Fixes
+
+- **HTML Preview now hydrates into the correct vertical-stack layout.** On `/docs/components/html-preview/` the component re-parented its preview and code sections inside the title bar after hydration, producing a broken side-by-side layout. The root cause was an island double-wrap: the bare hydration target carried the outer wrapper's `displayName`, so the SSG island marker resolved to the self-wrapping export and the client hydrated one level off (the same class of bug fixed for Toc/MobileToc/Sidebar in #1355). The bare inner now carries its own name and marker (`HtmlPreviewWrapperInner`) while `HtmlPreviewWrapper` stays the public `<Island when="visible">` export — so host, template, and existing downstream scaffolds keep working with no call-site change and now hydrate into the correct vertical stack (title bar / preview / code) (#1925).
