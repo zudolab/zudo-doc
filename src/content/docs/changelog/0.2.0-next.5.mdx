@@ -1,0 +1,17 @@
+---
+title: 0.2.0-next.5
+description: Release notes for 0.2.0-next.5.
+sidebar_position: 1006
+---
+
+Prerelease folding in the first round of the latest review-loop sweep — CI fail-loud hardening plus two correctness fixes — and the zfb bump to `0.1.0-next.31`.
+
+### Bug Fixes
+
+- **doc-history `generate` now fails loud on partial git failures.** The CI `generate` command counted per-file git errors but always exited 0, and its top-level call was unawaited — so a partial git failure shipped incomplete doc-history JSON behind a green CI. It now returns the error count, exits non-zero when any file fails, and surfaces a top-level rejection, matching the established fail-loud policy (#1907, #1913).
+- **nav-source-cache memoization missed `undefined` results.** `memoizeDerived` keyed cache hits on `hit !== undefined`, so a legitimately `undefined` computed result never registered as a hit and recomputed on every call; switched to `sub.has(key)` (host file and the create-zudo-doc template kept in sync).
+- **AI-chat audit-log key collisions.** Replaced the `Math.random()` collision suffix with `crypto.randomUUID()` to avoid silent same-millisecond key overwrites.
+
+### Changes
+
+- **zfb `0.1.0-next.31`.** Bumped the zfb pins across all sources (next.30 → next.31): CSS-pipeline and islands-scanner fixes — authored-CSS path when Tailwind is disabled, reproducible CSS-Modules scoped names (project-relative paths), dev-mode git-restore detection, Tailwind temp-file cleanup, and a near-miss `"use client"` directive scanner. No consumer-facing breaking change.

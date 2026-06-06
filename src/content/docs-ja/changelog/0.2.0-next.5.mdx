@@ -1,0 +1,17 @@
+---
+title: 0.2.0-next.5
+description: 0.2.0-next.5のリリースノート。
+sidebar_position: 1006
+---
+
+最新の review-loop スイープ第1ラウンド（CI の fail-loud 強化と2件の正当性修正）と、zfb の `0.1.0-next.31` への更新を取り込んだプレリリースです。
+
+### バグ修正
+
+- **doc-history の `generate` が部分的な git 失敗で明示的に失敗するように。** CI の `generate` コマンドはファイル単位の git エラーを数えていたものの常に終了コード0で終了し、トップレベルの呼び出しも await されていなかったため、部分的な git 失敗が不完全な doc-history JSON を green な CI の裏で出荷していました。エラー数を返し、いずれかのファイルが失敗したら非ゼロで終了し、トップレベルの reject を表面化するようにしました。既存の fail-loud ポリシーに準拠します（#1907, #1913）。
+- **nav-source-cache のメモ化が `undefined` の結果を取りこぼしていた問題。** `memoizeDerived` は `hit !== undefined` でキャッシュヒットを判定していたため、正当に `undefined` となる計算結果がヒットとして登録されず毎回再計算していました。`sub.has(key)` に切り替えました（ホストファイルと create-zudo-doc テンプレートを同期）。
+- **AI チャットの監査ログキーの衝突。** `Math.random()` による衝突回避サフィックスを `crypto.randomUUID()` に置き換え、同一ミリ秒でのキー上書きを防止しました。
+
+### その他の変更
+
+- **zfb `0.1.0-next.31`。** すべてのソースで zfb のピンを更新しました（next.30 → next.31）。CSS パイプラインと islands スキャナの修正（Tailwind 無効時の authored-CSS パス、再現可能な CSS Modules のスコープ名、dev での git 復元検知、Tailwind の一時ファイル整理、near-miss な `"use client"` ディレクティブスキャナ）を含み、コンシューマー向けの破壊的変更はありません。
