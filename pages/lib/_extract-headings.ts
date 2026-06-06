@@ -15,9 +15,8 @@
 //   3. Compute a heading ID that matches what zfb's Rust `HeadingLinks` plugin
 //      emits at render time, using the strategy in `settings.headingIdStrategy`
 //      (single source of truth, also read by `zfb.config.ts`):
-//        - `"flat"`: github-slugger slugs with one dedup counter shared across
-//          ALL h2–h6 (even those not emitted into the TOC), so TOC anchor hrefs
-//          match the rendered IDs.
+//        - `"flat"`: one dedup counter shared across ALL h2–h6 (even those not
+//          emitted into the TOC), so TOC anchor hrefs match the rendered IDs.
 //        - `"hierarchical"`: ancestor-prefixed IDs (`## Foo` / `### Moo` /
 //          `#### Mew` → `foo`, `foo-moo`, `foo-moo-mew`), deduped on the full
 //          path — see `SlugAllocator` below, a faithful mirror of zfb's Rust
@@ -38,23 +37,59 @@
 //     uses `line.trimStart()` to handle indented fences correctly.
 //   - Reference-style links (`[text][id]`) and image links (`![alt](url)`)
 //     are not stripped — uncommon in headings, treated as plain text.
-//   - Slugger parity is counter-level (npm `github-slugger` vs zfb Rust) — the
-//     renderer slugs all h2–h6 regardless of `tocMinDepth`/`tocMaxDepth`, so
-//     this extractor must also slug all matched headings (including those outside
-//     the emit window) to keep the shared dedup counter / ancestor stack in sync.
-//   - Residual risks: slugger-parity (npm `github-slugger` vs zfb Rust — an
-//     external-binary contract) and text-extraction parity (inline JSX / reference
-//     links not fully stripped).
+//   - The renderer slugs all h2–h6 regardless of `tocMinDepth`/`tocMaxDepth`, so
+//     this extractor must also allocate over every matched heading (including
+//     those outside the emit window) to keep the shared dedup counter / ancestor
+//     stack in sync.
+//   - Slug parity: we port zfb's exact Rust `slugify` (see `slugify` below)
+//     instead of using npm `github-slugger`, because the two diverge on
+//     punctuation (`.` → `-` vs removed, `/`/`—` collapsing, etc.) and that
+//     divergence would desync the TOC anchor from the rendered heading id.
+//   - Residual risk: text-extraction parity (inline JSX / reference links not
+//     fully stripped) — the slug parity itself is now exact.
 
-// Default export = the stateful, dedup-tracking slugger (flat strategy).
-// Named `slug` = the stateless one-shot slugifier with NO dedup — used to
-// compute the per-heading base slug in the hierarchical strategy before the
-// ancestor prefix + full-path dedup are applied.
-import GithubSlugger, { slug as slugifyBase } from "github-slugger";
 import { settings } from "../../src/config/settings";
 
 /** Heading-ID (anchor) strategy. Mirrors `settings.headingIdStrategy`. */
 export type HeadingIdStrategy = "flat" | "hierarchical";
+
+// Punctuation stripped (treated as a separator) by zfb's slugify — the ASCII
+// set from `crates/zfb-content/src/plugins/heading_links.rs::slugify`. Note `-`
+// and `_` are NOT here: they are kept verbatim.
+const SLUGIFY_STRIPPED = new Set(
+  "!\"#$%&'()*+,./:;<=>?@[\\]^`{|}~".split(""),
+);
+
+/**
+ * Slugify one heading's text — a byte-faithful TS port of zfb's Rust `slugify`
+ * (`crates/zfb-content/src/plugins/heading_links.rs`). Using the exact upstream
+ * algorithm (rather than npm `github-slugger`, which strips punctuation
+ * differently) is what keeps the TOC anchor identical to the rendered `id`.
+ *
+ * Rule: walk code points; whitespace, ASCII control, or a {@link SLUGIFY_STRIPPED}
+ * char collapses to a single `-` (runs coalesce); every other char is lowercased
+ * and kept (Unicode letters/digits, `-`, `_` survive). A single trailing `-` is
+ * dropped; a leading `-` is never emitted.
+ */
+export function slugify(input: string): string {
+  let out = "";
+  let lastDash = true; // suppress a leading dash
+  for (const ch of input) {
+    const cp = ch.codePointAt(0) ?? 0;
+    const isControl = cp <= 0x1f || (cp >= 0x7f && cp <= 0x9f);
+    if (isControl || /\s/u.test(ch) || SLUGIFY_STRIPPED.has(ch)) {
+      if (!lastDash) {
+        out += "-";
+        lastDash = true;
+      }
+    } else {
+      out += ch.toLowerCase();
+      lastDash = false;
+    }
+  }
+  if (out.endsWith("-")) out = out.slice(0, -1);
+  return out;
+}
 
 export interface HeadingItem {
   readonly depth: number;
@@ -68,21 +103,23 @@ export interface HeadingItem {
  * one per document; call `allocate(depth, text)` for every matched h2–h6 in
  * document order (the result is the rendered heading `id`).
  *
- * - `"flat"`: delegates to a `GithubSlugger` instance — byte-identical to the
- *   pre-zfb#871 scheme (one dedup counter shared across all levels).
- * - `"hierarchical"`: `base = slug(text)` (no dedup); pop the ancestor stack
- *   while its top is at or deeper than `depth`; `candidate = {parent.id}-{base}`
- *   (just `base` at the top of the outline); dedup the *full candidate* through
- *   a per-document counter; push `(depth, finalId)`. A deduped parent therefore
- *   contributes its FINAL id to children. Empty-text headings get the empty
- *   string and touch no state (the renderer skips them entirely).
+ * Both strategies share one `slugify` (the exact zfb port) and one per-document
+ * dedup counter:
+ *
+ * - `"flat"`: `id = nextSlug(slugify(text))` — one counter shared across all
+ *   levels (`overview`, `overview-1`, …). Byte-identical to zfb's flat path.
+ * - `"hierarchical"`: `base = slugify(text)`; pop the ancestor stack while its
+ *   top is at or deeper than `depth`; `candidate = {parent.id}-{base}` (just
+ *   `base` at the top of the outline); `id = nextSlug(candidate)` (dedup on the
+ *   *full path*); push `(depth, id)`. A deduped parent therefore contributes its
+ *   FINAL id to children. Empty-text headings get the empty string and touch no
+ *   state (the renderer skips them entirely).
  */
 class SlugAllocator {
   private readonly strategy: HeadingIdStrategy;
-  private readonly flatSlugger = new GithubSlugger();
-  /** Hierarchical dedup counter, keyed by full candidate path. */
+  /** Dedup counter, keyed by the (possibly ancestor-prefixed) slug path. */
   private readonly seen = new Map<string, number>();
-  /** Hierarchical ancestor stack of `{ depth, final id }`. */
+  /** Hierarchical ancestor stack of `{ depth, final id }` (unused when flat). */
   private readonly stack: { depth: number; id: string }[] = [];
 
   constructor(strategy: HeadingIdStrategy) {
@@ -90,10 +127,10 @@ class SlugAllocator {
   }
 
   allocate(depth: number, text: string): string {
+    const base = slugify(text);
     if (this.strategy === "flat") {
-      return this.flatSlugger.slug(text);
+      return this.nextSlug(base);
     }
-    const base = slugifyBase(text);
     if (base === "") return "";
     // Pop ancestors at or below this depth so a sibling/shallower heading
     // re-roots the chain (h2 → h4 jumps nest under the nearest real ancestor).
@@ -108,12 +145,14 @@ class SlugAllocator {
   }
 
   /**
-   * github-slugger repeat-numbering on an already-slugified candidate: first
-   * occurrence returns `candidate`, later ones `candidate-1`, `candidate-2`, …
-   * Mirrors zfb's `next_slug` (does NOT re-slugify — the candidate is already
-   * a valid slug path).
+   * Repeat-numbering on an already-slugified candidate: first occurrence returns
+   * `candidate`, later ones `candidate-1`, `candidate-2`, …. Mirrors zfb's
+   * `next_slug` — including the empty-string short-circuit (an empty base never
+   * advances the counter), so it does NOT re-slugify (the candidate is already a
+   * valid slug path).
    */
   private nextSlug(candidate: string): string {
+    if (candidate === "") return "";
     const count = this.seen.get(candidate) ?? 0;
     this.seen.set(candidate, count + 1);
     return count === 0 ? candidate : `${candidate}-${count}`;
@@ -129,6 +168,13 @@ class SlugAllocator {
  *   - Inline code spans: `` `code` `` → `code`
  *   - Bold: `**text**` or `__text__` → `text`
  *   - Italic: `*text*` or `_text_` → `text`
+ *
+ * Underscore emphasis (`__`/`_`) only fires at word boundaries, per CommonMark's
+ * intraword rule: `_` inside a word is literal. Without this guard, identifiers
+ * like `SKIP_DOC_HISTORY` or `DOCS_SITE_URL` lose their underscores here, and the
+ * resulting slug diverges from the rendered heading `id` (the renderer keeps the
+ * underscores). Asterisk emphasis (`*`) is left intraword-greedy — `*` does not
+ * appear in identifiers and CommonMark does allow intraword `*`.
  */
 function stripInlineMarkdown(raw: string): string {
   return (
@@ -138,12 +184,12 @@ function stripInlineMarkdown(raw: string): string {
       .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
       // Inline code spans `code` — replace with code text.
       .replace(/`([^`]+)`/g, "$1")
-      // Bold **text** or __text__
+      // Bold **text** or __text__ (underscore form only at word boundaries)
       .replace(/\*\*([^*]+)\*\*/g, "$1")
-      .replace(/__([^_]+)__/g, "$1")
-      // Italic *text* or _text_ (single delimiter, not already consumed above)
+      .replace(/(?<![\w])__([^_]+)__(?![\w])/g, "$1")
+      // Italic *text* or _text_ (underscore form only at word boundaries)
       .replace(/\*([^*]+)\*/g, "$1")
-      .replace(/_([^_]+)_/g, "$1")
+      .replace(/(?<![\w])_([^_]+)_(?![\w])/g, "$1")
       .trim()
   );
 }

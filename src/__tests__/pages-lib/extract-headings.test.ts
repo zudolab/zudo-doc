@@ -13,9 +13,9 @@
  */
 
 import { describe, it, expect } from "vitest";
-import GithubSlugger from "github-slugger";
 import {
   extractHeadings as extractHeadingsRaw,
+  slugify,
   type HeadingIdStrategy,
 } from "../../../pages/lib/_extract-headings";
 
@@ -35,11 +35,12 @@ function extractHeadings(
 }
 
 /**
- * Reference: compute the slug the same way rehype-heading-links does —
- * slug the plain visible text (no markdown markup).
+ * Reference: the slug the renderer assigns is `slugify(plainText)` for a first
+ * (non-duplicated) occurrence — the same exact-zfb-port slugify the extractor
+ * uses. (For clean text this also equals github-slugger's output.)
  */
 function renderedSlug(plainText: string): string {
-  return new GithubSlugger().slug(plainText);
+  return slugify(plainText);
 }
 
 describe("extractHeadings — slug fidelity", () => {
@@ -105,6 +106,24 @@ describe("extractHeadings — slug fidelity", () => {
     const [heading] = extractHeadings(body);
     expect(heading?.slug).toBe(renderedSlug("Enable fast mode"));
     expect(heading?.text).toBe("Enable fast mode");
+  });
+
+  it("keeps intraword underscores in identifiers (CommonMark: not emphasis)", () => {
+    // Regression: the naive `_x_` italic strip used to eat the underscores in
+    // `SKIP_DOC_HISTORY`, producing slug "skipdochistory" that diverged from the
+    // renderer's "skip_doc_history". The renderer keeps the underscores.
+    const body = "## The `SKIP_DOC_HISTORY` env var\n\nContent.";
+    const [heading] = extractHeadings(body);
+    expect(heading?.text).toBe("The SKIP_DOC_HISTORY env var");
+    expect(heading?.slug).toBe("the-skip_doc_history-env-var");
+    expect(heading?.slug).toBe(renderedSlug("The SKIP_DOC_HISTORY env var"));
+  });
+
+  it("still strips underscore emphasis at word boundaries", () => {
+    const body = "## Enable _fast_ mode\n\nContent.";
+    const [heading] = extractHeadings(body);
+    expect(heading?.text).toBe("Enable fast mode");
+    expect(heading?.slug).toBe("enable-fast-mode");
   });
 });
 
@@ -390,5 +409,57 @@ describe("extractHeadings — settings default", () => {
     // produce ancestor-prefixed ids matching the rendered output.
     const headings = extractHeadingsRaw("## Foo\n### Moo");
     expect(headings.map((h) => h.slug)).toEqual(["foo", "foo-moo"]);
+  });
+});
+
+describe("slugify — exact port of zfb's Rust slugify", () => {
+  // Vectors copied verbatim from zfb's own unit tests
+  // (crates/zfb-content/src/plugins/heading_links.rs). These pin the parity that
+  // npm github-slugger could not provide (punctuation handling, CJK, emoji).
+  it("strips punctuation to single dashes and lowercases", () => {
+    expect(slugify("Hello, World!")).toBe("hello-world");
+  });
+  it("keeps existing hyphens verbatim (no collapsing of `-`)", () => {
+    expect(slugify("  --weird-- ")).toBe("--weird--");
+  });
+  it("lowercases mixed case and keeps digits", () => {
+    expect(slugify("MixedCase 123")).toBe("mixedcase-123");
+  });
+  it("empty / all-stripped / whitespace-only inputs slug to empty", () => {
+    expect(slugify("")).toBe("");
+    expect(slugify("!@#$%")).toBe("");
+    expect(slugify("   \t\n  ")).toBe("");
+  });
+  it("preserves CJK and Korean (with spaces → dash)", () => {
+    expect(slugify("コンポーネント構文")).toBe("コンポーネント構文");
+    expect(slugify("中文标题")).toBe("中文标题");
+    expect(slugify("한국어 제목")).toBe("한국어-제목");
+    expect(slugify("Section 一")).toBe("section-一");
+  });
+  it("preserves emoji as a single code point", () => {
+    expect(slugify("🚀 Launch")).toBe("🚀-launch");
+  });
+  it("preserves accented Latin", () => {
+    expect(slugify("Café au lait")).toBe("café-au-lait");
+  });
+
+  // The cases that DIVERGE from npm github-slugger — the whole reason for the
+  // port. github-slugger removes `.` (→ `pr-checksyml`); zfb treats it as a
+  // separator (→ `pr-checks-yml`), matching the rendered heading id.
+  it("treats `.` as a separator (matches zfb, unlike github-slugger)", () => {
+    expect(slugify("pr-checks.yml")).toBe("pr-checks-yml");
+    expect(slugify("CLAUDE.md files")).toBe("claude-md-files");
+  });
+  it("keeps underscores verbatim", () => {
+    expect(slugify("SKIP_DOC_HISTORY env var")).toBe("skip_doc_history-env-var");
+  });
+  it("collapses an ASCII ` / ` (with surrounding spaces) to a single dash", () => {
+    expect(slugify("zfb / zdtp")).toBe("zfb-zdtp");
+  });
+  it("keeps non-ASCII punctuation (em-dash) verbatim, matching zfb's ASCII-only strip set", () => {
+    // zfb's `is_stripped` only covers ASCII punctuation, so a U+2014 em-dash is
+    // NOT a separator — it is kept (surrounded by dashes from the spaces). The
+    // host port must match this exactly, or the TOC anchor would desync.
+    expect(slugify("Mode 1 — Standalone")).toBe("mode-1-—-standalone");
   });
 });
