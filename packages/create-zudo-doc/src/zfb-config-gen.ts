@@ -330,6 +330,10 @@ export function generateZfbConfig(choices: UserChoices): string {
   lines.push(`      imageDimensions: {},`);
   lines.push(`      // warn-only link validation — failOnBroken: false never fails the build.`);
   lines.push(`      linkValidation: { failOnBroken: false },`);
+  lines.push(`      // Heading-ID (anchor) strategy — single source of truth in`);
+  lines.push(`      // settings.headingIdStrategy, also mirrored by the host TOC builder`);
+  lines.push(`      // (pages/lib/_extract-headings.ts) so TOC anchors match rendered ids.`);
+  lines.push(`      headingIds: { strategy: settings.headingIdStrategy },`);
   lines.push(`    },`);
   lines.push(`  },`);
   lines.push(`  plugins: integrationPlugins,`);

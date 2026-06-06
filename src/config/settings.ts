@@ -151,6 +151,23 @@ export const settings = {
    * back to the default of 4.
    */
   tocMaxDepth: 4 as number,
+  /**
+   * Heading-ID (anchor) strategy. Single source of truth shared by the zfb
+   * engine config (`markdown.features.headingIds.strategy` in `zfb.config.ts`)
+   * and the host TOC builder (`extractHeadings` in `pages/lib/_extract-headings.ts`)
+   * so the rendered `<hN id>` and the TOC `href="#…"` can never diverge.
+   *
+   * - `"flat"` (zfb default): github-slugger slugs with one dedup counter shared
+   *   across h2–h6 (`overview`, `overview-1`, …).
+   * - `"hierarchical"`: each heading's slug is prefixed with its ancestor chain
+   *   (`## Foo` / `### Moo` / `#### Mew` → `foo`, `foo-moo`, `foo-moo-mew`),
+   *   deduped on the full path — anchors become reconstructible from the
+   *   heading outline and collide far less often.
+   *
+   * Switching to `"hierarchical"` is **anchor-breaking** for existing deep
+   * links to nested headings (upstream zfb#871; original finding #1938).
+   */
+  headingIdStrategy: "hierarchical" as "flat" | "hierarchical",
   sidebarResizer: true as boolean,
   sidebarToggle: true as boolean,
   imageEnlarge: true as boolean,

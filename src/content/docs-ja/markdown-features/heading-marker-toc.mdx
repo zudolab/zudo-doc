@@ -62,7 +62,7 @@ headingMarkerToc: {
 
 ## 出力と処理順
 
-生成されるリストは、フラグメント識別子（例: `#background-section`）を指す `<a>` タグ付きの `<ul>/<li>` 要素を出力します。これらの ID は、先に実行される Core の Heading Links パスが作る重複排除済みスラッグです。そのため、アンカーは常にリンク先の見出しと一致します。
+生成されるリストは、フラグメント識別子（例: `#background-section`）を指す `<a>` タグ付きの `<ul>/<li>` 要素を出力します。これらの ID は、先に実行される Core の Heading Links パスが作る重複排除済みスラッグです。そのため、アンカーは常にリンク先の見出しと一致します。ID は設定された [見出し ID 方式](./heading-links.mdx#id-方式) に従います。このサイトは `hierarchical` を使用しているため、ネストした見出しのアンカーは祖先プレフィックス付きになります（例: `#overview-background-section`）。
 
 ## メモ
 

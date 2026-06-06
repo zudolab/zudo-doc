@@ -61,14 +61,16 @@ export const toc = [
     depth: 2,
     id: "introduction",
     text: "Introduction",
-    children: [{ depth: 3, id: "background", text: "Background", children: [] }],
+    children: [{ depth: 3, id: "introduction-background", text: "Background", children: [] }],
   },
   { depth: 2, id: "conclusion", text: "Conclusion", children: [] },
 ];
 ```
 
+ネストした `id: "introduction-background"` は、このサイトの `hierarchical` な [Heading Links](./heading-links.mdx#id-方式) 方式を反映しています（h3 の `id` に h2 の祖先がプレフィックスされます）。`flat` 方式では単に `id: "background"` になります。
+
 ## 補足
 
-- このエクスポートは見出しリンクパスの後に実行されるため、`id` スラッグは最終的で重複が解消されています。
+- このエクスポートは見出しリンクパスの後に実行されるため、`id` スラッグは最終的で重複が解消されており、設定された [見出し ID 方式](./heading-links.mdx#id-方式) に従います。
 - `tocExport` は [Heading Marker TOC](./heading-marker-toc.mdx) とは独立して動作します — 一方を有効化しても他方に干渉しません。
 - zudo-doc の既存の TOC アイランドはこのエクスポートで駆動されていません。両者は別々の仕組みです。

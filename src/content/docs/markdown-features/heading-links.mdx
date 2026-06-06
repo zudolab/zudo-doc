@@ -4,7 +4,7 @@ description: Adds slug-based id attributes and self-referencing anchor links to 
 sidebar_position: 3
 ---
 
-**Core feature** — always active, no configuration required.
+**Core feature** — always active. The anchor-ID _strategy_ is configurable (see below).
 
 ## What it does
 
@@ -12,34 +12,62 @@ Every heading at `h2` and below automatically receives:
 
 1. A slug-based `id` attribute derived from the heading text using GitHub-slugger-compatible rules.
 2. A self-referencing anchor element wrapping the heading text, so readers can copy a direct deep-link.
-3. Deduplication: when the same heading text appears more than once in a document, a counter suffix is appended (`overview`, `overview-1`, `overview-2`, …).
+3. Deduplication: when the same slug would appear more than once in a document, a counter suffix is appended (`overview`, `overview-1`, `overview-2`, …).
 
-## Example
+`h1` is never assigned an `id` — the page title (from frontmatter) is the document's only `h1`.
 
-The following markdown headings:
+## ID strategy
+
+The scheme used to build the `id` is selected by `markdown.features.headingIds.strategy` in `zfb.config.ts`. zudo-doc wires this to a single setting, `headingIdStrategy` in `src/config/settings.ts`, so the rendered IDs and the right-hand TOC anchors are driven by one source of truth.
+
+```ts
+// zfb.config.ts
+markdown: {
+  features: {
+    headingIds: { strategy: settings.headingIdStrategy }, // "flat" | "hierarchical"
+  },
+}
+```
+
+### `flat`
+
+GitHub-slugger slugs with one dedup counter shared across `h2`–`h6` (`overview`, `overview-1`, …). This is zfb's default scheme.
+
+### `hierarchical` (used by this site)
+
+Each heading's `id` is prefixed with its ancestor chain, joined by `-`:
 
 ```md
-## Introduction
+## Foo
 
-## Introduction
+### Moo
+
+#### Mew
 ```
 
-Render to:
+renders as `id="foo"`, `id="foo-moo"`, `id="foo-moo-mew"` (instead of the flat `foo`, `moo`, `mew`). The in-heading anchor `href`, the right-hand TOC, the [Heading Marker TOC](./heading-marker-toc.mdx), and the [TOC export](./toc-export.mdx) all follow the same IDs.
 
-```html
-<h2 id="introduction"><a href="#introduction">Introduction</a></h2>
-<h2 id="introduction-1"><a href="#introduction-1">Introduction</a></h2>
-```
+Details:
+
+- A duplicated full path still gets the dedup counter (`a-b`, `a-b-1`).
+- A deduplicated parent contributes its **final** ID to children: a second `## Foo` becomes `foo-1`, so its `### Bar` becomes `foo-1-bar`.
+- Hierarchical anchors are reconstructible from the heading outline and collide far less often than flat slugs, at the cost of longer URLs.
+
+:::warning[Anchor-breaking]
+
+Switching strategies is **anchor-breaking**: existing deep links to nested headings (`#moo`) stop resolving once IDs become `#foo-moo`. zudo-doc adopted `hierarchical` deliberately (upstream [zfb#871](https://github.com/Takazudo/zudo-front-builder/issues/871); original finding [#1938](https://github.com/zudolab/zudo-doc/issues/1938)) with no backward-compat for old anchors.
+
+:::
 
 ## Deep-linking
 
-Because each heading carries a stable `id`, you can link to any section of a page from another page:
+Because each heading carries a stable `id`, you can link to any section of a page from another page. Under the `hierarchical` strategy, use the ancestor-prefixed form for nested headings:
 
 ```md
-[See the Introduction](./other-page.mdx#introduction)
+[See the Moo section](./other-page.mdx#foo-moo)
 ```
 
 ## Notes
 
-- The slug algorithm follows fixed GitHub-slugger rules and cannot be modified through `zfb.config.ts`.
+- zudo-doc's right-hand TOC builder (`pages/lib/_extract-headings.ts`) mirrors the same strategy, so the TOC `href="#…"` values always match the rendered heading `id`s.
 - The Heading Marker TOC opt-in feature depends on the stable heading identifiers produced by this plugin. When `headingMarkerToc` is enabled, it runs after heading links have been applied.

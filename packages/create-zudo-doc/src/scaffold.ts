@@ -327,11 +327,14 @@ function generatePackageJson(choices: UserChoices) {
     // disabled, reproducible CSS-Modules scoped names (project-relative paths),
     // dev-mode git-restore detection, Tailwind temp-file cleanup, and a
     // near-miss `"use client"` directive scanner.
-    "@takazudo/zfb": "0.1.0-next.31",
-    "@takazudo/zfb-runtime": "0.1.0-next.31",
+    // Bumped to next.33 — adds the opt-in hierarchical heading-ID strategy
+    // (Takazudo/zudo-front-builder#871): `markdown.features.headingIds.strategy`.
+    // The generated config + TOC builder use it via settings.headingIdStrategy.
+    "@takazudo/zfb": "0.1.0-next.33",
+    "@takazudo/zfb-runtime": "0.1.0-next.33",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.31",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.33",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's

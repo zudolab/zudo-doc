@@ -40,7 +40,7 @@ tags: [deployment, hosting]
 
 タグが 1 つ以上付いたページでは、タグバッジの列が表示され、各バッジはそのタグのインデックスページへリンクします。これは `DocTags` コンポーネント（`TagNav` に `variant="page"` を指定したもの）によって描画されます。
 
-バッジ列の表示位置は [`tagPlacement`](./configuration.mdx#tagplacement) 設定で次の 2 つから選べます。
+バッジ列の表示位置は [`tagPlacement`](./configuration.mdx#サイト設定-tagplacement) 設定で次の 2 つから選べます。
 
 - `"after-title"`（デフォルト） — ページタイトルの直下、本文の上にバッジ列を表示します。タグがページの概要を一目で示すラベルであり、スクロールせずに見せたいときに向いています。
 - `"before-pager"` — コンテンツの末尾、前後ページャーのすぐ上にバッジ列を表示します。タグがページを読み終えたあとに参照するメタデータ的な位置づけのときに向いています。
@@ -105,4 +105,4 @@ tags: [deployment, hosting]
 - **`unlisted: true`** — unlisted のページは、サイドバーから除外されるのと同様に、タグインデックス（`/ja/docs/tags/[tag]` の一覧）やホームページの「All Tags」セクションから除外されます。ただし、ページ自体を URL から直接開いた場合、そのページ下部のタグバッジ列は引き続き表示されます。
 - **`draft: true`** — draft のページは本番ビルドから完全に除外されるため、本番環境ではいずれのタグページにも表示されません。
 
-フィールド全体の一覧は [Frontmatter](./frontmatter.mdx#tags) を参照してください。
+フィールド全体の一覧は [Frontmatter](./frontmatter.mdx#フィールド詳細-tags) を参照してください。

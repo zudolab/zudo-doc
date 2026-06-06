@@ -188,6 +188,8 @@ describe("generateZfbConfig", () => {
     expect(result).toContain("codeEnrichment: {}");
     expect(result).toContain("imageDimensions: {}");
     expect(result).toContain("linkValidation: { failOnBroken: false }");
+    // Heading-ID strategy reads from the single-source-of-truth setting.
+    expect(result).toContain("headingIds: { strategy: settings.headingIdStrategy }");
   });
 
   it("does NOT emit ruby, tocExport, or transclude as enabled (known-blocked at next.13) (#1808)", () => {
