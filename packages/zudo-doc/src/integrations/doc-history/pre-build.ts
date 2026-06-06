@@ -38,9 +38,10 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { cpus } from "node:os";
 import {
   collectContentFiles,
-  getFileCommitsMeta,
+  getFileCommitsMetaAsync,
 } from "@takazudo/zudo-doc-history-server/git-history";
 
 /** A single non-default locale entry; mirrors `settings.locales[*]`. */
@@ -93,6 +94,40 @@ const META_OUT_RELATIVE_DIR = ".zfb";
 const META_OUT_FILENAME = "doc-history-meta.json";
 
 /**
+ * Tiny in-file semaphore for bounded parallelism — avoids a p-limit dependency.
+ * Limits concurrent async tasks to `concurrency` at a time.
+ * Ported from packages/doc-history-server/src/cli.ts.
+ */
+export function makeSemaphore(concurrency: number) {
+  let running = 0;
+  const queue: Array<() => void> = [];
+
+  function next(): void {
+    if (queue.length > 0 && running < concurrency) {
+      // Do not increment running here — the dequeued tryRun call handles it.
+      queue.shift()!();
+    }
+  }
+
+  return function acquire(): Promise<() => void> {
+    return new Promise((resolve) => {
+      function tryRun() {
+        if (running < concurrency) {
+          running++;
+          resolve(() => {
+            running--;
+            next();
+          });
+        } else {
+          queue.push(tryRun);
+        }
+      }
+      tryRun();
+    });
+  };
+}
+
+/**
  * Emit `<projectRoot>/.zfb/doc-history-meta.json` from git history.
  *
  * Honours the `SKIP_DOC_HISTORY=1` env-var short-circuit (see header
@@ -139,31 +174,72 @@ export async function runDocHistoryMetaStep(
     }
   }
 
-  const meta: DocHistoryMetaManifest = {};
+  // Bounded parallelism: default to CPU count (min 2, max 8) to saturate git
+  // without spawning excessively — each getFileCommitsMetaAsync issues one
+  // git process. Ported from packages/doc-history-server/src/cli.ts.
+  const concurrency = Math.min(8, Math.max(2, cpus().length));
+  const acquire = makeSemaphore(concurrency);
 
+  // Build the flat job list in deterministic order (locale-then-file). Ordering
+  // is critical for byte-identical JSON output: we assemble the manifest in
+  // this same index order AFTER all async git calls resolve, regardless of
+  // which tasks finish first.
+  const jobs: Array<{ composedSlug: string; filePath: string }> = [];
   for (const [localeKey, contentDir] of dirEntries) {
     const files = collectContentFiles(contentDir);
     for (const { filePath, slug } of files) {
-      // Single spawn: walk the full history with --follow, take first (newest)
-      // and last (oldest) records. Avoids the 3-4 spawns of the previous
-      // getFileCommits(1) + getCommitInfo + getFirstCommit + getCommitInfo
-      // pattern, and eliminates the unbounded --reverse walk in getFirstCommit.
-      // See issue #1875 for spawn-count analysis.
-      const allCommits = getFileCommitsMeta(filePath);
-      if (allCommits.length === 0) continue; // untracked / not yet committed
-
-      const newestInfo = allCommits[0]!;
-      const oldestInfo = allCommits[allCommits.length - 1] ?? newestInfo;
-
       const composedSlug = localeKey ? `${localeKey}/${slug}` : slug;
-      meta[composedSlug] = {
-        // Author comes from the FIRST (oldest) commit.
-        author: oldestInfo.author,
-        // createdDate = oldest commit; updatedDate = newest commit.
-        createdDate: oldestInfo.date,
-        updatedDate: newestInfo.date,
-      };
+      jobs.push({ composedSlug, filePath });
     }
+  }
+
+  // Run all git calls concurrently up to the semaphore cap. Results are stored
+  // in a pre-allocated array keyed by the original job index so that insertion
+  // order into `meta` is always the deterministic iteration order, not
+  // completion order. This preserves JSON key order (= byte-identical output).
+  type CommitMeta = { author: string; date: string };
+  const results: Array<
+    { newest: CommitMeta; oldest: CommitMeta } | null
+  > = new Array(jobs.length).fill(null);
+
+  await Promise.all(
+    jobs.map(async ({ filePath }, i) => {
+      const release = await acquire();
+      try {
+        // Single spawn: walk the full history with --follow, take first (newest)
+        // and last (oldest) records. Avoids the 3-4 spawns of the previous
+        // getFileCommits(1) + getCommitInfo + getFirstCommit + getCommitInfo
+        // pattern, and eliminates the unbounded --reverse walk in getFirstCommit.
+        // See issue #1875 for spawn-count analysis.
+        const allCommits = await getFileCommitsMetaAsync(filePath);
+        if (allCommits.length === 0) return; // untracked / not yet committed
+
+        const newestInfo = allCommits[0]!;
+        const oldestInfo = allCommits[allCommits.length - 1] ?? newestInfo;
+        results[i] = {
+          newest: { author: newestInfo.author, date: newestInfo.date },
+          oldest: { author: oldestInfo.author, date: oldestInfo.date },
+        };
+      } finally {
+        release();
+      }
+    }),
+  );
+
+  // Assemble manifest in deterministic job order (preserves key insertion order
+  // for byte-identical JSON.stringify output).
+  const meta: DocHistoryMetaManifest = {};
+  for (let i = 0; i < jobs.length; i++) {
+    const result = results[i];
+    if (result === null) continue; // untracked / not yet committed
+
+    meta[jobs[i]!.composedSlug] = {
+      // Author comes from the FIRST (oldest) commit.
+      author: result.oldest.author,
+      // createdDate = oldest commit; updatedDate = newest commit.
+      createdDate: result.oldest.date,
+      updatedDate: result.newest.date,
+    };
   }
 
   fs.mkdirSync(zfbDir, { recursive: true });
