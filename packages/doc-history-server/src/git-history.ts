@@ -1,7 +1,10 @@
-import { execFileSync } from "node:child_process";
+import { execFile, execFileSync } from "node:child_process";
+import { promisify } from "node:util";
 import { readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { DocHistoryEntry, DocHistoryData } from "./types.js";
+
+const execFileAsync = promisify(execFile);
 
 /** Shared options to suppress git stderr noise */
 const QUIET: { encoding: "utf-8"; stdio: ["pipe", "pipe", "pipe"] } = {
@@ -453,6 +456,40 @@ export function getFileCommitsMeta(
     ).trim();
     if (!output) return [];
     return parseCommitLog(output);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Async variant of getFileCommitsMeta. Runs the same `git log --follow`
+ * via execFile (non-blocking) so callers can issue multiple git spawns
+ * concurrently. Returns an array of records newest-first (no -n limit).
+ * Used by the pre-build parallelization path.
+ */
+export async function getFileCommitsMetaAsync(
+  filePath: string,
+): Promise<Array<Omit<DocHistoryEntry, "content">>> {
+  const relPath = filePath.startsWith("/") ? toRepoRelative(filePath) : filePath;
+  try {
+    const { stdout } = await execFileAsync(
+      "git",
+      [
+        "log",
+        "--follow",
+        "--format=%H%n%aI%n%aN%n%s%n",
+        "--",
+        relPath,
+      ],
+      // Use the same opts as the sync variant (stdio suppressed, cwd = repo root).
+      // maxBuffer default (1 MB) is intentionally kept — matching execFileSync's
+      // behaviour: a file whose full history exceeds 1 MB would throw, get caught,
+      // and return [], keeping the key absent from the manifest (same semantics
+      // as the sync path's catch→[]).
+      { ...gitOpts() },
+    );
+    if (!stdout.trim()) return [];
+    return parseCommitLog(stdout.trim());
   } catch {
     return [];
   }
