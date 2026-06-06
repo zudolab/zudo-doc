@@ -1,4 +1,12 @@
-// Keep in sync with packages/create-zudo-doc/src/constants.ts
+// SINGLE_SCHEMES, LIGHT_SCHEMES, SUPPORTED_LANGS, HEADER_RIGHT_LABELS are
+// single-sourced from packages/create-zudo-doc/src/constants.ts. Re-exported
+// here so preset-generator.tsx only needs one import point.
+export {
+  SINGLE_SCHEMES,
+  LIGHT_SCHEMES,
+  SUPPORTED_LANGS,
+  HEADER_RIGHT_LABELS,
+} from "../../packages/create-zudo-doc/src/constants";
 
 import type {
   HeaderRightComponentName,
