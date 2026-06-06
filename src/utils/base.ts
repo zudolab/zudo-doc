@@ -97,7 +97,7 @@ export function navHref(
  */
 function splitVersionPrefix(path: string): { versionPrefix: string; rest: string } {
   const m = path.match(/^(\/v\/[^/]+)(\/.*|$)/);
-  return m ? { versionPrefix: m[1], rest: m[2] || "/" } : { versionPrefix: "", rest: path };
+  return m ? { versionPrefix: m[1] ?? "", rest: m[2] ?? "/" } : { versionPrefix: "", rest: path };
 }
 
 /** Build a locale-switched path from the current page path. */

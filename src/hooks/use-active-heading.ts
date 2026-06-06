@@ -14,7 +14,9 @@ function getActiveHeadingId(
 
   let firstVisibleIndex = -1;
   for (let i = 0; i < headingIds.length; i++) {
-    const el = elementMap.get(headingIds[i]);
+    const id = headingIds[i];
+    if (id === undefined) continue;
+    const el = elementMap.get(id);
     if (!el) continue;
     const { top } = el.getBoundingClientRect();
     if (top >= SCROLL_MARGIN_TOP) {
@@ -24,29 +26,35 @@ function getActiveHeadingId(
   }
 
   if (firstVisibleIndex === -1) {
-    return headingIds[headingIds.length - 1];
+    return headingIds[headingIds.length - 1] ?? null;
   }
 
   if (firstVisibleIndex === 0) {
-    const el = elementMap.get(headingIds[0]);
-    if (el) {
-      const { top } = el.getBoundingClientRect();
-      if (top < viewportHeight / 2) {
-        return headingIds[0];
+    const firstId = headingIds[0];
+    if (firstId !== undefined) {
+      const el = elementMap.get(firstId);
+      if (el) {
+        const { top } = el.getBoundingClientRect();
+        if (top < viewportHeight / 2) {
+          return firstId;
+        }
       }
     }
     return null;
   }
 
-  const el = elementMap.get(headingIds[firstVisibleIndex]);
-  if (el) {
-    const { top } = el.getBoundingClientRect();
-    if (top < viewportHeight / 2) {
-      return headingIds[firstVisibleIndex];
+  const visibleId = headingIds[firstVisibleIndex];
+  if (visibleId !== undefined) {
+    const el = elementMap.get(visibleId);
+    if (el) {
+      const { top } = el.getBoundingClientRect();
+      if (top < viewportHeight / 2) {
+        return visibleId;
+      }
     }
   }
 
-  return headingIds[firstVisibleIndex - 1];
+  return headingIds[firstVisibleIndex - 1] ?? null;
 }
 
 interface UseActiveHeadingResult {

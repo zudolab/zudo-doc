@@ -534,7 +534,7 @@ describe("check-links", () => {
 
       const warnings = await checkMdxLinks([docsDir], tmpDir);
       expect(warnings).toHaveLength(1);
-      expect(warnings[0].href).toBe("/docs/ref");
+      expect(warnings[0]?.href).toBe("/docs/ref");
     });
 
     it("skips non-existent directories", async () => {

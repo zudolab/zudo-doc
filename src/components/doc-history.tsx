@@ -66,6 +66,7 @@ function buildSideBySideRows(
   let i = 0;
   while (i < changes.length) {
     const change = changes[i];
+    if (!change) { i++; continue; }
 
     if (!change.added && !change.removed) {
       // Context lines — show on both sides
@@ -76,25 +77,35 @@ function buildSideBySideRows(
         rows.push({ leftLine: line, rightLine: line, leftNum, rightNum, type: "context" });
       }
       i++;
-    } else if (change.removed && i + 1 < changes.length && changes[i + 1].added) {
-      // Paired remove+add — show side by side
-      const removedLines = change.value.replace(/\n$/, "").split("\n");
-      const addedLines = changes[i + 1].value.replace(/\n$/, "").split("\n");
-      const maxLen = Math.max(removedLines.length, addedLines.length);
-      for (let j = 0; j < maxLen; j++) {
-        const left = j < removedLines.length ? removedLines[j] : null;
-        const right = j < addedLines.length ? addedLines[j] : null;
-        if (left !== null) leftNum++;
-        if (right !== null) rightNum++;
-        rows.push({
-          leftLine: left,
-          rightLine: right,
-          leftNum: left !== null ? leftNum : null,
-          rightNum: right !== null ? rightNum : null,
-          type: "changed",
-        });
+    } else if (change.removed && i + 1 < changes.length) {
+      const nextChange = changes[i + 1];
+      if (nextChange?.added) {
+        // Paired remove+add — show side by side
+        const removedLines = change.value.replace(/\n$/, "").split("\n");
+        const addedLines = nextChange.value.replace(/\n$/, "").split("\n");
+        const maxLen = Math.max(removedLines.length, addedLines.length);
+        for (let j = 0; j < maxLen; j++) {
+          const left = j < removedLines.length ? (removedLines[j] ?? null) : null;
+          const right = j < addedLines.length ? (addedLines[j] ?? null) : null;
+          if (left !== null) leftNum++;
+          if (right !== null) rightNum++;
+          rows.push({
+            leftLine: left,
+            rightLine: right,
+            leftNum: left !== null ? leftNum : null,
+            rightNum: right !== null ? rightNum : null,
+            type: "changed",
+          });
+        }
+        i += 2;
+      } else {
+        const lines = change.value.replace(/\n$/, "").split("\n");
+        for (const line of lines) {
+          leftNum++;
+          rows.push({ leftLine: line, rightLine: null, leftNum, rightNum: null, type: "removed" });
+        }
+        i++;
       }
-      i += 2;
     } else if (change.removed) {
       const lines = change.value.replace(/\n$/, "").split("\n");
       for (const line of lines) {
@@ -277,9 +288,12 @@ function RevisionList({
     if (!canCompare) return;
     const idxOlder = Math.max(selectedA, selectedB);
     const idxNewer = Math.min(selectedA, selectedB);
+    const olderEntry = entries[idxOlder];
+    const newerEntry = entries[idxNewer];
+    if (!olderEntry || !newerEntry) return;
     onSelectDiff({
-      older: entries[idxOlder],
-      newer: entries[idxNewer],
+      older: olderEntry,
+      newer: newerEntry,
     });
   }
 
