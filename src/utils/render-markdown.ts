@@ -64,7 +64,7 @@ function renderInline(text: string): string {
     });
 
   // Restore inline code spans
-  return processed.replace(/%%CODE_(\d+)%%/g, (_match, idx) => codeSpans[parseInt(idx, 10)]);
+  return processed.replace(/%%CODE_(\d+)%%/g, (_match, idx) => codeSpans[parseInt(idx, 10)] ?? "");
 }
 
 export function renderMarkdown(src: string): string {
@@ -92,7 +92,7 @@ export function renderMarkdown(src: string): string {
 
       // Code block placeholder
       const cbMatch = trimmed.match(/^%%CODEBLOCK_(\d+)%%$/);
-      if (cbMatch) return codeBlocks[parseInt(cbMatch[1], 10)];
+      if (cbMatch) return codeBlocks[parseInt(cbMatch[1] ?? "0", 10)] ?? "";
 
       // Unordered list (lines starting with - or *)
       if (/^[-*] /m.test(trimmed)) {
@@ -117,8 +117,10 @@ export function renderMarkdown(src: string): string {
       // Heading (# to ###)
       const headingMatch = trimmed.match(/^(#{1,3}) (.+)$/);
       if (headingMatch) {
-        const level = headingMatch[1].length;
-        return `<h${level + 3}>${renderInline(headingMatch[2])}</h${level + 3}>`;
+        const hashes = headingMatch[1] ?? "";
+        const headingText = headingMatch[2] ?? "";
+        const level = hashes.length;
+        return `<h${level + 3}>${renderInline(headingText)}</h${level + 3}>`;
       }
 
       // Regular paragraph — convert single newlines to <br>
