@@ -217,6 +217,16 @@ describe("extractHeadings — configurable depth window (opts override)", () => 
     expect(headings[2]?.depth).toBe(4);
   });
 
+  it("h1 does NOT advance the slugger counter (renderer assigns no id to h1)", () => {
+    // The renderer's heading-links plugin slugs h2–h6 only; an h1 in the body
+    // (rare — the frontmatter title is the page h1) must NOT consume a slug, or
+    // a same-text h2 would diverge from its rendered id. Regression for #1938.
+    const body = ["# Intro", "## Intro"].join("\n");
+    const headings = extractHeadings(body);
+    expect(headings).toHaveLength(1);
+    expect(headings[0]?.slug).toBe("intro");
+  });
+
   it("tocMinDepth:3 excludes h2 from result", () => {
     const body = [
       "## H2 excluded",

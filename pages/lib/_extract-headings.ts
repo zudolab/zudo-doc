@@ -8,14 +8,15 @@
 //
 // Algorithm:
 //   1. Walk the body line-by-line looking for ATX-style markdown headings
-//      (`# Text` through `###### Text`, h1–h6).
+//      (`## Text` through `###### Text`, h2–h6).
 //   2. Strip inline markdown markup (links, inline code, bold, italic) from the
 //      heading text to get the plain visible text — matching what the renderer's
 //      `extractText` HAST walker sees after MDX → HTML conversion.
 //   3. Compute a GitHub-compatible slug using the same `GithubSlugger` that
 //      the `rehype-heading-links` plugin uses at render time, advancing the
-//      shared counter for ALL h1–h6 (even those not emitted into the TOC)
-//      so TOC anchor hrefs match the rendered heading IDs in the HTML.
+//      shared counter for ALL h2–h6 (even those not emitted into the TOC)
+//      so TOC anchor hrefs match the rendered heading IDs in the HTML. h1 is
+//      NOT slugged — the renderer never assigns an id to h1 (it's the title).
 //   4. Return only depth 2–4 headings by default (h1 is the page title; h5–h6
 //      are too granular). The window is configurable via `tocMinDepth` /
 //      `tocMaxDepth` in settings (restriction-only: min 2, max 4).
@@ -103,8 +104,9 @@ function resolveDepthWindow(
  *
  * Uses the same slugging algorithm as `rehype-heading-links` so the
  * `href="#slug"` values in the TOC match the rendered heading element IDs.
- * Slugs ALL matched h1–h6 (advancing the shared dedup counter) but only
- * pushes depth 2–4 items into the result (configurable via settings).
+ * Slugs ALL matched h2–h6 (advancing the shared dedup counter) but only
+ * pushes depth 2–4 items into the result (configurable via settings). h1 is
+ * not matched — the renderer does not assign ids to h1.
  *
  * @param body - Raw markdown body string (frontmatter already stripped).
  * @param opts - Optional override for the depth window (used by tests only;
@@ -153,9 +155,12 @@ export function extractHeadings(
     }
     if (codeFenceOpener !== null) continue;
 
-    // Match ATX headings at any depth h1–h6. Allow one or more spaces/tabs
-    // after the hash characters (both are valid per the CommonMark spec).
-    const match = /^(#{1,6})[ \t]+(.+)$/.exec(line.trim());
+    // Match ATX headings at depth h2–h6. The renderer's heading-links plugin
+    // slugs h2–h6 only (h1 is never assigned an id — the frontmatter title is
+    // the page's h1), so matching h1 here would advance the shared dedup counter
+    // out of step with the renderer and break the TOC anchor for a same-text h2.
+    // Allow one or more spaces/tabs after the hashes (both valid per CommonMark).
+    const match = /^(#{2,6})[ \t]+(.+)$/.exec(line.trim());
     if (!match) continue;
 
     const hashes = match[1];
