@@ -22,7 +22,9 @@ describe("getContentDirEntries", () => {
 
   it("resolves paths to absolute", () => {
     const result = getContentDirEntries("relative/path", []);
-    const [, dir] = result[0];
+    const first = result[0];
+    if (first === undefined) throw new Error("Expected at least one entry");
+    const [, dir] = first;
     expect(dir).toBe(resolve("relative/path"));
     // Absolute paths start with /
     expect(dir.startsWith("/")).toBe(true);

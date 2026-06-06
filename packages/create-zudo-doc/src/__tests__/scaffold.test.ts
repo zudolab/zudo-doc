@@ -734,7 +734,8 @@ describe("scaffold — headerRightItems preset override (sub #440)", () => {
     );
     expect(match).toBeTruthy();
     // Block should be empty (whitespace only) — no fallback entries leaked in.
-    expect(match![1].trim()).toBe("");
+    const matchedBlock = match?.[1] ?? "";
+    expect(matchedBlock.trim()).toBe("");
     // Specifically, the legacy fallback's design-token-panel trigger must not
     // appear even though designTokenPanel is in the features list.
     expect(content).not.toContain('trigger: "design-token-panel"');
