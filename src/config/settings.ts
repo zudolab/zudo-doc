@@ -135,6 +135,22 @@ export const settings = {
    * Set to `true` to enable the panel.
    */
   designTokenPanel: true as boolean,
+  /**
+   * Minimum heading depth included in the TOC (restriction-only: 2–4, default 2).
+   *
+   * Raise to 3 or 4 to hide shallower headings from the TOC. Cannot go below 2
+   * (h1 is always the page title) or above `tocMaxDepth`. Invalid values fall
+   * back to the default of 2.
+   */
+  tocMinDepth: 2 as number,
+  /**
+   * Maximum heading depth included in the TOC (restriction-only: 2–4, default 4).
+   *
+   * Lower to 2 or 3 to hide deeper headings from the TOC. Cannot exceed 4
+   * (h5–h6 are never shown) or go below `tocMinDepth`. Invalid values fall
+   * back to the default of 4.
+   */
+  tocMaxDepth: 4 as number,
   sidebarResizer: true as boolean,
   sidebarToggle: true as boolean,
   imageEnlarge: true as boolean,
