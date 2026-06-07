@@ -10,13 +10,18 @@
 //      `@takazudo/zudo-doc-history-server` running on port 4322 (the
 //      package's CLI default). Mounted only in dev mode.
 //
-//   2. **Post-build hook** — a function that, when the env flag
-//      `SKIP_DOC_HISTORY` is anything other than `"1"`, spawns the
+//   2. **Post-build hook** — a function that spawns the
 //      `doc-history-generate` CLI from `@takazudo/zudo-doc-history-server`
-//      to write `<outDir>/doc-history/<slug>.json` files. CI sets
-//      `SKIP_DOC_HISTORY=1` because the dedicated `build-history` job
-//      generates the same output in parallel; local builds and E2E
-//      runs leave the env unset and use this inline path.
+//      to write `<outDir>/doc-history/<slug>.json` files, gated by
+//      `shouldGeneratePostBuild`: skipped by default on local builds (opt
+//      in with `GEN_DOC_HISTORY=1`), run in CI, and always suppressed by
+//      `SKIP_DOC_HISTORY=1` (#1986). CI does NOT set `SKIP_DOC_HISTORY` on
+//      the build-site job — that env also gates the preBuild meta step, and
+//      build-site needs it unset so the Created/Updated/Author manifest gets
+//      real git dates. The per-page dropdown JSON that actually deploys comes
+//      from the dedicated parallel `build-history` job (the CLI directly),
+//      which is merged into `dist/doc-history/` at deploy time; the build-site
+//      postBuild output is redundant with it.
 //
 // zfb's plugin runtime API for dev middleware and post-build hooks is
 // still TBD in v0 (see `packages/zfb/src/config.ts` — `plugins?` is
@@ -214,31 +219,78 @@ export interface PostBuildContext {
   logger?: PostBuildLogger;
 }
 
+/** Env var that opts a LOCAL build back into postBuild per-page JSON generation. */
+export const DOC_HISTORY_GEN_ENV = "GEN_DOC_HISTORY";
+
+/**
+ * Decide whether the postBuild hook should generate per-page doc-history JSON.
+ *
+ * The per-page JSON is redundant on the normal paths: dev reads it live from
+ * the standalone `:4322` server, and CI generates it in the dedicated parallel
+ * `build-history` job (the CLI directly, NOT this hook). Running it inline
+ * during a plain local `pnpm build` issues ~3 serial `git log --follow` calls
+ * per content file, which on a large corpus exceeds zfb's 120s postBuild
+ * lifecycle-hook budget (#1986). So the default flips to opt-in:
+ *
+ *   - `SKIP_DOC_HISTORY=1` → never generate (highest priority; back-compat).
+ *   - `GEN_DOC_HISTORY=1`  → always generate (explicit local opt-in).
+ *   - CI                   → generate (keeps the CI build-site artifact
+ *                            byte-identical to before; D1's async generator
+ *                            keeps it within budget).
+ *   - otherwise (local)    → skip (the #1986 fix).
+ *
+ * This gates ONLY the postBuild per-page dropdown JSON. The preBuild meta step
+ * (the visible Created/Updated/Author block) is unaffected — it keys off
+ * `SKIP_DOC_HISTORY` alone — so a plain local build still shows real page
+ * metadata; only the per-page history dropdown JSON is absent until opt-in.
+ */
+export function shouldGeneratePostBuild(
+  env: NodeJS.ProcessEnv = process.env,
+): { generate: boolean; reason: string } {
+  if (env.SKIP_DOC_HISTORY === "1") {
+    return { generate: false, reason: "SKIP_DOC_HISTORY=1" };
+  }
+  if (env[DOC_HISTORY_GEN_ENV] === "1") {
+    return { generate: true, reason: `${DOC_HISTORY_GEN_ENV}=1` };
+  }
+  if (isCiEnv(env)) {
+    return { generate: true, reason: "CI" };
+  }
+  return {
+    generate: false,
+    reason: `local default — set ${DOC_HISTORY_GEN_ENV}=1 to generate`,
+  };
+}
+
+/** GitHub Actions (and most CI) set CI=true; GITHUB_ACTIONS=true is belt-and-suspenders. */
+function isCiEnv(env: NodeJS.ProcessEnv): boolean {
+  return env.CI === "true" || env.CI === "1" || env.GITHUB_ACTIONS === "true";
+}
+
 /**
  * Post-build hook. Spawns the `doc-history-generate` CLI from
  * `@takazudo/zudo-doc-history-server` to write per-page git history JSON
  * files into `<outDir>/doc-history/`.
  *
- * Returns early when `SKIP_DOC_HISTORY=1` is set in the environment;
- * the CI `build-history` job uses that flag because it generates the
- * same output as a separate parallel artifact. Local `pnpm build`
- * runs leave the flag unset so the inline path is taken.
+ * Generation is gated by `shouldGeneratePostBuild` (see its docs): skipped by
+ * default on local builds (opt in with `GEN_DOC_HISTORY=1`), run in CI and
+ * when explicitly opted in, and always suppressed by `SKIP_DOC_HISTORY=1`.
  *
- * The CLI is spawned through the platform shell so that the
- * `node_modules/.bin/doc-history-generate` symlink (created by pnpm /
- * npm at install time) resolves naturally. Output is inherited so
- * progress and warnings surface in the user's terminal exactly as
- * they do in CI.
+ * The CLI is spawned as `node <cli> <args>` (shell: false) so option-derived
+ * paths are never interpolated into a command line. Output is inherited so
+ * progress and warnings surface in the user's terminal exactly as in CI.
  */
 export async function runDocHistoryPostBuild(
   options: DocHistoryOptions,
   ctx: PostBuildContext,
 ): Promise<void> {
-  if (process.env.SKIP_DOC_HISTORY === "1") {
-    ctx.logger?.info("Skipping doc history generation (SKIP_DOC_HISTORY=1)");
+  const { generate, reason } = shouldGeneratePostBuild();
+  if (!generate) {
+    ctx.logger?.info(`Skipping doc history generation (${reason})`);
     return;
   }
 
+  ctx.logger?.info(`Generating doc history JSON (${reason})`);
   const args = buildGenerateCliArgs(options, ctx.outDir);
   await spawnDocHistoryGenerate(args, ctx.logger);
 }

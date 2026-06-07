@@ -155,6 +155,17 @@ It runs in two modes:
 
 When `SKIP_DOC_HISTORY=1` is set, the doc-history plugin short-circuits and writes an empty manifest (`{}`), skipping all git history calls. This causes the visible Created/Updated/Author block to be absent from every SSG page. Use only when intentionally bypassing git-based meta generation (e.g. a truly shallow clone or a custom CI variant).
 
+### `GEN_DOC_HISTORY` env var (local postBuild opt-in)
+
+The plugin's **postBuild** step (which writes the per-page history-dropdown JSON into `dist/doc-history/`) is **skipped by default on local builds** and opt-in via `GEN_DOC_HISTORY=1` (#1986). It defaults off locally because that step runs one `git log --follow` chain per content file, which on a large corpus exceeds zfb's 120s postBuild lifecycle-hook budget and fails a plain `pnpm build`. The JSON is redundant for the normal paths anyway: dev reads it live from the `:4322` server, and CI generates it in the dedicated parallel `build-history` job. The decision table (in `runDocHistoryPostBuild` / `shouldGeneratePostBuild`):
+
+- `SKIP_DOC_HISTORY=1` → never generate (wins over everything).
+- `GEN_DOC_HISTORY=1` → generate (local opt-in — e.g. before `pnpm preview` of a locally-built `dist/`).
+- CI (`CI` / `GITHUB_ACTIONS`) → generate (keeps the CI build-site artifact identical; the async generator stays within budget).
+- otherwise (plain local build) → skip.
+
+This gates **only** the postBuild dropdown JSON. The **preBuild** Created/Updated/Author manifest (gated by `SKIP_DOC_HISTORY` alone) still runs locally, so a plain `pnpm build` keeps real page metadata.
+
 ## CI Pipeline
 
 All three workflows (`main-deploy.yml`, `pr-checks.yml`, `preview-deploy.yml`) use parallel build jobs:
@@ -248,7 +259,11 @@ zudo-doc ships two independent Tauri apps:
 Bundles zudo-doc's own pre-built `dist/` into a self-contained desktop app.
 
 - **Build (shipped product):** `cargo tauri build`
-  Embeds `dist/` via `frontendDist`; WebView loads `WebviewUrl::App`.
+  Embeds `dist/` via `frontendDist`; WebView loads `WebviewUrl::App`. There is no
+  `beforeBuildCommand`, so build the embedded `dist/` first — and use
+  **`GEN_DOC_HISTORY=1 pnpm build`** so the offline reader includes the per-page
+  history-dropdown JSON (postBuild JSON is opt-in for local builds, #1986; a plain
+  `pnpm build` would silently ship a `dist/` without it).
 - **`cargo tauri dev` (contributor convenience only):**
   Runs `pnpm dev` via `beforeDevCommand` and opens the WebView at
   `http://localhost:4321/` (the zfb dev server). This is NOT a shipped product — it exists
