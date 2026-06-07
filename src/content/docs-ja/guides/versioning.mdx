@@ -51,7 +51,7 @@ versions: false,
 | `slug` | string | はい | URLパスで使用されるバージョン識別子（例：`"1.0"`、`"v2"`） |
 | `label` | string | はい | バージョン切り替えに表示されるラベル（例：`"1.0.0"`） |
 | `docsDir` | string | はい | このバージョンの英語ドキュメント用コンテンツディレクトリ |
-| `locales` | object | いいえ | ロケールごとのコンテンツディレクトリ（メインの`locales`設定と同じ形式） |
+| `locales` | `Record<string, { dir: string }>` | いいえ | ロケールごとのコンテンツディレクトリ；各エントリは`{ dir }`のみ（`label`なし） |
 | `banner` | `"unmaintained"` \| `"unreleased"` \| `false` | いいえ | バージョンページに表示されるバナーの種類 |
 
 ## ディレクトリ構造

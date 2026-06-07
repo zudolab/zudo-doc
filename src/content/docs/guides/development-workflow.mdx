@@ -28,14 +28,14 @@ Use `pnpm dev:stable` when you're adding or removing content files frequently. S
 |---|---|
 | `pnpm build` | Static HTML export to `dist/` |
 | `pnpm check` | TypeScript type checking |
-| `pnpm b4push` | Pre-push validation: format check → typecheck → build → link check → E2E tests |
+| `pnpm b4push` | Pre-push validation: 13-step pipeline (format check → ... → build → link check → HTML validation → preview smoke); E2E is parked |
 | `pnpm format` | Format MDX files |
 | `pnpm test:unit` | Run unit tests (Vitest) |
 | `pnpm test:e2e` | Run E2E tests (Playwright) |
 
 <Note>
 
-Run `pnpm b4push` before pushing to verify the full site builds, all links resolve, and E2E tests pass. This catches broken cross-doc links and TypeScript errors that the dev server tolerates.
+Run `pnpm b4push` before pushing to verify the full site builds and all links resolve. It runs 13 steps (format check through preview smoke); E2E tests are intentionally parked and not part of this pipeline.
 
 </Note>
 

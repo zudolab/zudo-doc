@@ -107,7 +107,7 @@ The dev server starts on port 4321 with Vite for instant hot module replacement.
 
 <Warning>
 
-Make sure port 4321 is available. If another process is using it, the dev server will automatically pick the next available port.
+Make sure port 4321 is available. If another process is already using it, `pnpm dev` will fail with `EADDRINUSE` — kill the conflicting process and retry.
 
 </Warning>
 

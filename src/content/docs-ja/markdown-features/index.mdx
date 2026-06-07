@@ -29,15 +29,15 @@ zfb の Markdown パイプラインは、常に有効な **Core（組み込み�
 | --- | --- | --- |
 | [Admonitions Preset](./admonitions-preset.mdx) | `directives` | `directives` マップでアドモニションのボキャブラリ（note/tip/warning/danger/info/caution/details）を登録します。 |
 | [Mermaid](./mermaid.mdx) | `mermaid` | ` ```mermaid ` フェンスをクライアントサイドの Mermaid ライブラリで図として描画します。 |
-| [Image Enlarge](./image-enlarge.mdx) | `imageEnlarge` | クリックで拡大できる `<figure>` に画像をラップします。 |
+| [Image Enlarge](./image-enlarge.mdx) | `settings.imageEnlarge` | クリックで拡大できる `<figure>` に画像をラップします。ユーザーランド設定 — 組み込みの `markdown.features` キーは next.18 で削除されました。 |
 | [Heading Marker TOC](./heading-marker-toc.mdx) | `headingMarkerToc` | 各見出しにアンカーマーカーを付与し、TOC アイランドにデータを提供します。 |
 | [GitHub Alerts](./github-alerts.mdx) | `githubAlerts` | `> [!NOTE]`/`[!TIP]`/`[!WARNING]`/`[!IMPORTANT]`/`[!CAUTION]` ブロック引用をアドモニションマークアップに変換します。 |
 | [Reading Time](./reading-time.mdx) | `readingTime` | 推定読了時間を計算し、ページレベルのメタデータとして公開します。 |
 | [GitHub Autolinks](./github-autolinks.mdx) | `githubAutolinks` | Issue 番号、クロスリポジトリ参照、コミット SHA を GitHub へ自動リンクします。 |
 | [Code Enrichment](./code-enrichment.mdx) | `codeEnrichment` | コードブロックにタイトルバー、コピーボタン、diff/行ハイライト装飾を追加します。 |
 | [Code Tabs](./code-tabs.mdx) | `codeTabs` | `:::code-group` ディレクティブを `<CodeGroup>` 経由でタブ付きコードパネルとして描画します。 |
-| [Ruby](./ruby.mdx) | `ruby` | ルビ注釈サポートを追加します（`{base}^{ruby}` 構文）。next.13 では既知のブロック — #1815 参照。 |
-| [TOC Export](./toc-export.mdx) | `tocExport` | ページの目次を `export const toc` 名前付きエクスポートとして出力します。next.13 では既知のブロック — #1814 参照。 |
-| [Image Dimensions](./image-dimensions.mdx) | `imageDimensions` | ディスクのメタデータから画像に `width`/`height` 属性を付与します（next.13 では no-op）。 |
+| [Ruby](./ruby.mdx) | `ruby` | ルビ注釈サポートを追加します（`{base}^{ruby}` 構文）。 |
+| [TOC Export](./toc-export.mdx) | `tocExport` | ページの目次を `export const toc` 名前付きエクスポートとして出力します。 |
+| [Image Dimensions](./image-dimensions.mdx) | `imageDimensions` | ディスクのメタデータから画像に `width`/`height` 属性を付与します（next.35 時点でも no-op）。 |
 | [Link Validation](./link-validation.mdx) | `linkValidation` | ビルド時に内部リンクを検証し、壊れた参照に警告（またはエラー）を出します。 |
 | [Transclude](./transclude.mdx) | `transclude` | `:::include{file="…"}` または `![[path]]` で別ファイルの内容を埋め込みます。next.13 では zudo-doc で無効化。 |

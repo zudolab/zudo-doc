@@ -163,7 +163,6 @@ The same `number | string` type (called `ColorRef`) is also supported for `curso
   selectionBg: "#3a3a5e",
   selectionFg: 15,       // use palette[15]
   palette: [...],
-  shikiTheme: "one-dark-pro",
 },
 ```
 
@@ -278,7 +277,6 @@ Add a new entry to the `colorSchemes` object in `src/config/color-schemes.ts`:
     "#2c3e50", "#1a1a2e", "#2a2a4e", "#e0e0e0",  // p8-11: muted, background, surface, text
     "#5dade2", "#bb8fce", "#48c9b0", "#c0c0c0",  // p12-15: accent variant, decorative, hover, text secondary
   ],
-  shikiTheme: "one-dark-pro",
   // Optional: override semantic defaults
   semantic: {
     accent: 12,       // use p12 as accent instead of default p5
@@ -292,7 +290,6 @@ The `ColorScheme` interface requires:
 - `background`, `foreground` — `ColorRef` (palette index or color string, typically p9 and p11)
 - `cursor`, `selectionBg`, `selectionFg` — `ColorRef` (palette index or color string)
 - `palette` — 16-element tuple (color slots 0–15)
-- `shikiTheme` — a Shiki theme name for syntax highlighting
 - `semantic` (optional) — override default palette-slot mappings using `ColorRef` values (palette index or color string)
 
 ## What NOT to Do

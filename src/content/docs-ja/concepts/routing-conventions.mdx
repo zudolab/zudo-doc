@@ -18,7 +18,7 @@ zfbの`paths()`はビルド時に**miniflare**内で実行され、**同期的**
 関数シグネチャは`async`ではなく`function paths(): PathEntry[]`です。
 
 ```tsx
-// pages/docs/[...slug].tsx
+// pages/docs/[[...slug]].tsx
 import { getCollection, getEntry } from "zfb/content";
 
 export function paths() {
@@ -162,7 +162,7 @@ zudo-docで最も一般的な`paths()`の使い方は、docsキャッチオー�
 各エントリのスラグはURLセグメントの`string[]`にマッピングされます：
 
 ```tsx
-// pages/docs/[...slug].tsx
+// pages/docs/[[...slug]].tsx
 import { getCollection, getEntry } from "zfb/content";
 
 export function paths() {

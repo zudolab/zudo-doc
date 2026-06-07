@@ -363,7 +363,7 @@ See the [Design Token Panel reference](../reference/design-token-panel.mdx) for 
 
 ### aiAssistant
 
-Enables the AI assistant chat widget. When `true`, a chat button appears in the page that opens an AI-powered assistant for answering questions about your documentation. The chat API runs as a Cloudflare Pages SSR endpoint (`pages/api/ai-chat.tsx`) — requires `ANTHROPIC_API_KEY`, `DOCS_SITE_URL`, and a `RATE_LIMIT` KV namespace configured in `wrangler.toml`.
+Enables the AI assistant chat widget. When `true`, a chat button appears in the page that opens an AI-powered assistant for answering questions about your documentation. The chat API runs as a Cloudflare Workers SSR endpoint (`pages/api/ai-chat.tsx`) — requires `ANTHROPIC_API_KEY`, `DOCS_SITE_URL`, and a `RATE_LIMIT` KV namespace configured in `wrangler.toml`.
 
 Type: `boolean`
 
@@ -371,6 +371,38 @@ Default: `false`
 
 ```ts
 aiAssistant: true,
+```
+
+### aiChatDemoMode
+
+When `true`, the `POST /api/ai-chat` endpoint returns a fixed "disabled on this demo" reply without touching any API key, KV namespace, or rate limiter. Set to `false` in downstream projects that wire up a real `ANTHROPIC_API_KEY` to enable live Claude-backed chat.
+
+Type: `boolean`
+
+Default: `true`
+
+### aiChatAllowedOrigins
+
+Allowed CORS origins for `POST /api/ai-chat` when `aiChatDemoMode` is `false`. Non-matching origins receive no `Access-Control-Allow-Origin` header, so browsers block the request. An empty array (default) blocks all cross-origin browser requests while still allowing same-origin requests.
+
+Type: `string[]`
+
+Default: `[]`
+
+```ts
+aiChatAllowedOrigins: ["https://your-docs-site.example.com"],
+```
+
+### aiChatGlobalDailyLimit
+
+Optional global daily request ceiling across all IPs as a cost backstop. `false` (default) disables the ceiling. When set to a positive integer (e.g. `500`), the endpoint returns HTTP 429 once that many requests have been served in the current UTC day. Has no effect in demo mode.
+
+Type: `number | false`
+
+Default: `false`
+
+```ts
+aiChatGlobalDailyLimit: 500,
 ```
 
 ### sidebarToggle
@@ -410,6 +442,47 @@ Default: `false` (set to `true` to enable)
 See the [Document History guide](./doc-history.mdx) for usage details, keyboard shortcuts, and technical information.
 
 </Tip>
+
+### tocMinDepth
+
+Minimum heading depth included in the table of contents (restriction-only: 2–4, default 2). Raise to 3 or 4 to hide shallower headings from the TOC. Cannot go below 2 (h1 is always the page title) or above `tocMaxDepth`.
+
+Type: `number`
+
+Default: `2`
+
+```ts
+tocMinDepth: 3, // hide h2 headings from the TOC
+```
+
+### tocMaxDepth
+
+Maximum heading depth included in the table of contents (restriction-only: 2–4, default 4). Lower to 2 or 3 to hide deeper headings from the TOC. Cannot exceed 4 or go below `tocMinDepth`.
+
+Type: `number`
+
+Default: `4`
+
+```ts
+tocMaxDepth: 3, // hide h4 headings from the TOC
+```
+
+### headingIdStrategy
+
+Controls how heading anchor IDs are generated.
+
+- `"flat"` (zfb default) — github-slugger slugs with one dedup counter shared across h2–h6 (e.g., `overview`, `overview-1`).
+- `"hierarchical"` — each heading's slug is prefixed with its ancestor chain (e.g., `## Foo` / `### Bar` → `foo`, `foo-bar`), deduped on the full path so anchors collide far less often.
+
+Switching from `"flat"` to `"hierarchical"` is anchor-breaking for existing deep links to nested headings.
+
+Type: `"flat" | "hierarchical"`
+
+Default: `"hierarchical"`
+
+```ts
+headingIdStrategy: "flat",
+```
 
 ### htmlPreview
 
@@ -559,16 +632,10 @@ Key aspects:
 - **framework**: Preact — every component is a `.tsx` file (server-rendered by default; client islands hydrate via zfb's runtime)
 - **tailwind**: First-class Tailwind CSS v4 integration
 - **collections**: Generated from `settings.docsDir` and `settings.locales`, validated by zod schemas defined in the same file
-- **adapter**: Cloudflare Pages — wraps the SSR bundle into `dist/_worker.js`, required for any route exporting `prerender = false`
+- **adapter**: Cloudflare Workers — wraps the SSR bundle into `dist/_worker.js`, required for any route exporting `prerender = false`
 - **plugins**: Each integration (doc-history, search-index, llms-txt, claude-resources) is a small wrapper module under `./plugins/` whose default export is a `ZfbPlugin`
 - **i18n routing**: English (default at `/docs/...`) and additional locales declared in `settings.locales`. Default locale has no URL prefix
-- **Shiki theme**: Automatically derived from the active color scheme's `shikiTheme` property — no manual sync needed
-
-<Note>
-
-The Shiki code highlighting theme is tied to the color scheme. When you change `colorScheme` in settings, the syntax highlighting theme updates automatically.
-
-</Note>
+- **Build-time highlighting**: Powered by syntect (zfb's Rust pipeline) with a single fixed theme (`base16-ocean-dark`); not derived from `colorScheme`
 
 ## Logo
 
@@ -580,12 +647,11 @@ Because the banner is rendered as a plain `<img>` element, there are no constrai
 
 ## Color Scheme Config
 
-Color schemes are defined in `src/config/color-schemes.ts`. Each scheme provides 22 color properties plus a `shikiTheme`:
+Color schemes are defined in `src/config/color-schemes.ts`. Each scheme provides 21 color properties:
 
 - `background`, `foreground`, `cursor`, `selectionBg`, `selectionFg`
 - `palette` — 16 color slots (`palette[0]` through `palette[15]`)
-- `shikiTheme` — matching Shiki theme name for syntax highlighting
-- `semantic` (optional) — overrides for `surface`, `muted`, `accent`, and `accentHover`
+- `semantic` (optional) — overrides for `surface`, `muted`, `accent`, `accentHover`, and more
 
 <Info>
 

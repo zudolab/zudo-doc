@@ -163,7 +163,6 @@ zudo-docのカラーシステムは**16色パレット**を採用しています
   selectionBg: "#3a3a5e",
   selectionFg: 15,       // palette[15]を使用
   palette: [...],
-  shikiTheme: "one-dark-pro",
 },
 ```
 
@@ -278,7 +277,6 @@ zudo-docにはライトテーマとダークテーマのデフォルトが含ま
     "#2c3e50", "#e67e73", "#55d98d", "#f5b041",  // 8-11: Bright Black–Yellow
     "#5dade2", "#bb8fce", "#48c9b0", "#fdfefe",  // 12-15: Bright Blue–White
   ],
-  shikiTheme: "one-dark-pro",
   // オプション：セマンティックのデフォルトをオーバーライド
   semantic: {
     muted: "#7f8c8d",
@@ -289,10 +287,9 @@ zudo-docにはライトテーマとダークテーマのデフォルトが含ま
 
 `ColorScheme`インターフェースに必要なプロパティ：
 
-- `background`、`foreground` — ベースカラー文字列
+- `background`、`foreground` — `ColorRef`（パレットインデックスまたはカラー文字列）
 - `cursor`、`selectionBg`、`selectionFg` — `ColorRef`（パレットインデックスまたはカラー文字列）
 - `palette` — 16要素のタプル（カラースロット 0〜15）
-- `shikiTheme` — シンタックスハイライト用のShikiテーマ名
 - `semantic`（オプション）— `ColorRef`値（パレットインデックスまたはカラー文字列）によるデフォルトパレットスロットマッピングのオーバーライド
 
 ## やってはいけないこと

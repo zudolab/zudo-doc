@@ -22,6 +22,7 @@ You can also use the [Setup Preset Generator](../getting-started/setup-preset-ge
 |------|-------------|---------|
 | `--name <name>` | Project name (or first positional arg) | `my-docs` |
 | `--lang <code>` | Default language code | `en` |
+| `--github-url <url>` | GitHub repository URL (drives header link + source link) | — |
 | `--pm <manager>` | Package manager: `pnpm`, `npm`, `yarn`, `bun` | `pnpm` |
 | `--[no-]install` | Install dependencies after scaffolding | prompt |
 
@@ -43,19 +44,25 @@ You can also use the [Setup Preset Generator](../getting-started/setup-preset-ge
 | `--[no-]i18n` | Multi-language support | off |
 | `--[no-]search` | Pagefind full-text search | on |
 | `--[no-]sidebar-filter` | Real-time sidebar filtering | on |
+| `--[no-]claude-resources` | Claude Code docs generation | off |
+| `--[no-]claude-skills` | Ship zudo-doc-* Claude Code skills (design-system, translate, version-bump) | off |
 | `--[no-]design-token-panel` | Interactive tabbed panel for tweaking spacing, font, size, and color tokens | off |
 | `--[no-]sidebar-resizer` | Draggable sidebar width | off |
 | `--[no-]sidebar-toggle` | Show/hide desktop sidebar | off |
 | `--[no-]versioning` | Multi-version documentation support | off |
-| `--[no-]claude-resources` | Claude Code docs generation | off |
 | `--[no-]doc-history` | Document edit history | off |
+| `--[no-]body-foot-util` | Right-aligned strip below each doc: doc history trigger + View source on GitHub link | off |
 | `--[no-]llms-txt` | Generate llms.txt for LLM consumption | off |
 | `--[no-]skill-symlinker` | Symlink documentation skills | off |
 | `--[no-]tauri` | Tauri desktop app (Mode 1) — macOS offline reader with in-page search | off |
 | `--[no-]tauri-dev` | Tauri dev wrapper (Mode 2) — configurable desktop dev wrapper for any project | off |
 | `--[no-]footer-nav-group` | Navigation links in the footer | off |
+| `--[no-]image-enlarge` | Click-to-enlarge for oversized markdown images | on |
 | `--[no-]footer-copyright` | Copyright notice in the footer | off |
 | `--[no-]changelog` | Changelog page | off |
+| `--[no-]tag-governance` | Vocabulary-aware tag audit + suggest scripts | on |
+| `--[no-]doc-tags` | Per-tag and tag-index browsing routes (docs/tags/...) | off |
+| `--[no-]footer-taglist` | Grouped tag index in the footer (requires tagGovernance) | off |
 
 ### Preset
 

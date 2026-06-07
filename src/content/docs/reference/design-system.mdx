@@ -19,14 +19,14 @@ zudo-doc solves this with selective imports in `src/styles/global.css` — only 
 @import "tailwindcss/utilities";
 
 @theme {
-  /* Only define what we need — no resets necessary */
+  --color-*: initial;  /* reset Tailwind color defaults */
   --color-bg: var(--zd-bg);
   --color-fg: var(--zd-fg);
   /* ... */
 }
 ```
 
-Because the default theme is never loaded, no `--*: initial` reset block is needed. Only explicitly defined tokens in `@theme` work. Using an undefined token (like `p-4` or `bg-gray-500`) produces no effect — the value simply doesn't exist. This gives you a guarantee: **invalid tokens cause build errors or missing styles, not visual bugs**.
+The `@theme` block opens with `--color-*: initial` to wipe all Tailwind default color tokens before defining project tokens — only project-defined colors are available. Only explicitly defined tokens in `@theme` work. Using an undefined token (like `p-4` or `bg-gray-500`) produces no effect — the value simply doesn't exist. This gives you a guarantee: **invalid tokens cause build errors or missing styles, not visual bugs**.
 
 <Info>
 
