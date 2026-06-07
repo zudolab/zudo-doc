@@ -16,7 +16,13 @@ Bundles the files in `../dist/` into a `.app` (macOS), `.exe` (Windows), or AppI
 (Linux). The WebView loads `WebviewUrl::App`, which maps directly to the embedded
 `frontendDist` (`../dist`).
 
-Run `pnpm build` first to populate `dist/` if it is stale.
+Run `pnpm build` first to populate `dist/` if it is stale. For the shipped
+offline reader, build with **`GEN_DOC_HISTORY=1 pnpm build`** so the per-page
+doc-history dropdown JSON (`dist/doc-history/*.json`) is included — that
+postBuild generation is opt-in for local builds (#1986), and a plain
+`pnpm build` would embed a `dist/` without it, silently dropping the history
+widget from the offline app. (The Created/Updated/Author block comes from the
+preBuild meta and is present either way.)
 
 ### Contributor dev convenience (NOT a shipped product)
 

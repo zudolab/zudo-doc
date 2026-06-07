@@ -259,7 +259,11 @@ zudo-doc ships two independent Tauri apps:
 Bundles zudo-doc's own pre-built `dist/` into a self-contained desktop app.
 
 - **Build (shipped product):** `cargo tauri build`
-  Embeds `dist/` via `frontendDist`; WebView loads `WebviewUrl::App`.
+  Embeds `dist/` via `frontendDist`; WebView loads `WebviewUrl::App`. There is no
+  `beforeBuildCommand`, so build the embedded `dist/` first — and use
+  **`GEN_DOC_HISTORY=1 pnpm build`** so the offline reader includes the per-page
+  history-dropdown JSON (postBuild JSON is opt-in for local builds, #1986; a plain
+  `pnpm build` would silently ship a `dist/` without it).
 - **`cargo tauri dev` (contributor convenience only):**
   Runs `pnpm dev` via `beforeDevCommand` and opens the WebView at
   `http://localhost:4321/` (the zfb dev server). This is NOT a shipped product — it exists
