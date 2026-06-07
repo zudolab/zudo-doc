@@ -42,19 +42,13 @@ src/config/tag-vocabulary.ts
 # These will be reconciled via /l-update-generator post super-epic merge
 # (Phase D follow-up). Allowlisting here keeps PR-checks green on epic-PRs.
 #
-# Wave 11 (#1355 / PR #1356) reshaped sidebar-toggle.tsx (always-render
-# hamburger/X icons with hidden-class toggling, AFTER_NAVIGATE_EVENT instead
-# of DOMContentLoaded, explicit aria-expanded) and sidebar-tree.tsx
-# (URL-derived currentSlug lazy-init via deriveActiveSlugFromUrl) to fix
-# host-side island state-defaults exposed by Wave 10's hydration unblock.
-# Template counterparts under packages/create-zudo-doc/templates/ are
-# intentionally NOT synced in PR #1356 — the post-super-epic
-# /l-update-generator pass is the single reconciliation point. theme-toggle
-# drift predates Wave 11.
+# i18n.ts: host ships showcase-specific keys (search, nav.markdownFeatures,
+# doc.history) that the template omits; template ships a leaner baseline.
+# sidebar-tree.tsx: intentional divergence — template uses literal preact/compat
+# imports (W8A preact/compat note in the W8A block below) and the URL-derived
+# currentSlug lazy-init is needed only in the host's island setup.
 src/config/i18n.ts
-src/components/sidebar-toggle.tsx
 src/components/sidebar-tree.tsx
-src/components/theme-toggle.tsx
 
 # Phase B-11-2 — new TS path alias `#doc-history-meta` -> .zfb/doc-history-meta.json
 # enables the host wrapper to import the build-time manifest without dragging
