@@ -2770,13 +2770,15 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
    * (authored-CSS path when Tailwind is disabled, reproducible CSS-Modules
    * scoped names via project-relative paths, dev-mode git-restore detection,
    * Tailwind temp-file cleanup, near-miss `"use client"` directive scanner) —
-   * no consumer-facing breaking change. Now bumped to 0.1.0-next.33: adds the
+   * no consumer-facing breaking change. Bumped to 0.1.0-next.33: adds the
    * opt-in hierarchical heading-ID strategy
    * (Takazudo/zudo-front-builder#871) — `markdown.features.headingIds.strategy`,
    * which the generated config + TOC builder consume via
-   * `settings.headingIdStrategy`. Generated package.json must pin all three.
+   * `settings.headingIdStrategy`. Now bumped to 0.1.0-next.34: a routine
+   * bin-wrapper signal-handling release (no consumer-facing change).
+   * Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.33", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.34", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -2787,10 +2789,10 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.33");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.33");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.34");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.34");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.33",
+      "0.1.0-next.34",
     );
   });
 });
