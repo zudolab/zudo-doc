@@ -99,18 +99,18 @@ src/content/docs/
 
 ## ネストカテゴリ（サブグループ）
 
-カテゴリディレクトリ内にサブディレクトリを作成すると、サイドバーにネストされた折りたたみグループが生成されます。各サブディレクトリには `_category_.json` ファイルが必要です：
+カテゴリディレクトリ内にサブディレクトリを作成すると、サイドバーにネストされた折りたたみグループが生成されます。各サブディレクトリには `category_no_page: true` を含む `index.mdx` ファイルが必要です：
 
 ```
 src/content/docs/
   methodology/
     index.mdx
     architecture/
-      _category_.json       → { "label": "Architecture", "position": 1, "noPage": true }
+      index.mdx             → title: Architecture, sidebar_position: 1, category_no_page: true
       bem-strategy.mdx
       component-first.mdx
     design-systems/
-      _category_.json       → { "label": "Design Systems", "position": 2, "noPage": true }
+      index.mdx             → title: Design Systems, sidebar_position: 2, category_no_page: true
       tight-token.mdx
       two-tier-size.mdx
 ```
@@ -176,17 +176,23 @@ Methodology            (depth 0, リーフリンク)
 
 ## ソート順（昇順・降順）
 
-デフォルトでは、カテゴリ内のアイテムは昇順（`sidebar_position`が小さい順、次にアルファベット順）でソートされます。`_category_.json`を使用してカテゴリごとに降順に変更できます：
+デフォルトでは、カテゴリ内のアイテムは昇順（`sidebar_position`が小さい順、次にアルファベット順）でソートされます。カテゴリの `index.mdx` の `category_sort_order` フロントマターフィールドを使用してカテゴリごとに降順に変更できます：
 
-```json title="_category_.json"
-{
-  "label": "Changelog",
-  "position": 10,
-  "sortOrder": "desc"
-}
+```mdx title="changelog/index.mdx"
+---
+title: Changelog
+sidebar_position: 10
+category_sort_order: "desc"
+---
 ```
 
-`sortOrder`が`"desc"`の場合、アイテムは逆順でソートされます — positionが大きい順、次に逆アルファベット順。これは日付ベースのコンテンツ（変更履歴、リリースノート）で、最新のアイテムを上部に表示したい場合に便利です。
+`category_sort_order`が`"desc"`の場合、アイテムは逆順でソートされます — positionが大きい順、次に逆アルファベット順。これは日付ベースのコンテンツ（変更履歴、リリースノート）で、最新のアイテムを上部に表示したい場合に便利です。
+
+<Note>
+
+`_category_.json` は引き続き動作しますが、zfb のビルド警告が発生します。新しいカテゴリには `index.mdx` のフロントマターを使用してください。
+
+</Note>
 
 `src/config/sidebars.ts`でも手動サイドバー設定で`sortOrder`を設定できます：
 
@@ -213,4 +219,4 @@ Methodology            (depth 0, リーフリンク)
 - カテゴリインデックスページには`sidebar_position: 0`を使用する
 - 各カテゴリ内のページには連番（1, 2, 3...）を使用する
 - 後でページを挿入する予定がある場合は番号に間隔を空ける（例：10, 20, 30）
-- 最新順のカテゴリには`_category_.json`で`sortOrder: "desc"`を使用する
+- 最新順のカテゴリには`index.mdx`で`category_sort_order: "desc"`を使用する

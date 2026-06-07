@@ -57,7 +57,7 @@ Welcome to the Getting Started section. Choose a topic below to begin.
 <CategoryNav categories={["claude-md", "claude-skills", "claude-agents"]} />
 ```
 
-各スラッグは対応するナビゲーションノードに解決され、カードとして表示されます。ツリー内で見つからないスラッグは、エラーにならず単に無視されます。`index.mdx`を持たないカテゴリ（`noPage: true`）の場合、カードのリンク先は自動生成されるカテゴリインデックスのURLになります。
+各スラッグは対応するナビゲーションノードに解決され、カードとして表示されます。ツリー内で見つからないスラッグは、エラーにならず単に無視されます。no-pageカテゴリ（`index.mdx` の `category_no_page: true`、またはレガシーの `_category_.json` の `noPage: true`）の場合、カードのリンク先は自動生成されるカテゴリインデックスのURLになります。
 
 ## 特徴
 
