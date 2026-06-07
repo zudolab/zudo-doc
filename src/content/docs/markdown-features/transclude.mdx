@@ -1,14 +1,14 @@
 ---
 title: Transclude
-description: "Embeds the content of another file via :::include{file=\"…\"} or ![[path]]. Disabled in zudo-doc at zfb next.13."
+description: "Embeds the content of another file via :::include{file=\"…\"} or ![[path]]. Disabled in zudo-doc (transclude renderer not yet wired)."
 sidebar_position: 23
 ---
 
 The `transclude` feature embeds the content of another file into a Markdown document. The included file is parsed as Markdown and its AST is merged in before the rest of the pipeline runs.
 
-:::danger[Disabled in zudo-doc — non-functional at zfb next.13]
+:::danger[Disabled in zudo-doc — transclude renderer not yet wired]
 
-`transclude` is **disabled** (omitted from zudo-doc's `zfb.config.ts`). At zfb `0.1.0-next.13` it is non-functional: the `:::include{file="…"}` directive **500s the SSR render** (no registered `<include>` component), and the `![[path]]` wikilink form is a **no-op** (it renders as the literal text `![[path]]`). The syntax below appears only inside fenced code blocks; no live `:::include` directive is authored on this page. A one-line comment in `zfb.config.ts` marks it for re-enable once a transclude renderer is wired.
+`transclude` is **disabled** (omitted from zudo-doc's `zfb.config.ts`). The root reason is that **no transclude renderer is wired yet** — there is no registered `<include>` component to turn the directive into output. As a result the `:::include{file="…"}` directive **500s the SSR render**, and the `![[path]]` wikilink form is a **no-op** at zfb `0.1.0-next.13` (it renders as the literal text `![[path]]`). The syntax below appears only inside fenced code blocks; no live `:::include` directive is authored on this page. A one-line comment in `zfb.config.ts` marks it for re-enable once a transclude renderer is wired.
 
 :::
 

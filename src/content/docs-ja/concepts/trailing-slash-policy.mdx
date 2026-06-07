@@ -72,6 +72,25 @@ const canonical = normalizePathname(rawPathname); // 末尾スラッシュがな
 
 :::
 
+### Cloudflare Workers Static Assets
+
+zudo-docは現在、Cloudflare Pagesではなく**Cloudflare Workers**にデプロイされ（`wrangler.toml`）、ビルド済みの `dist/` をWorkersの静的アセットレイヤーを通じて配信します。静的ビルドはすでに末尾スラッシュのディレクトリ構造（`dist/docs/getting-started/index.html`）を出力しているため、Workersのアセットレイヤーは各正規 `/<route>/` URLをビルド済みの `index.html` から直接配信します。
+
+そのため、Pagesセクションで説明している手動の `public/_redirects` ルールはWorkersでは**配信されません**。これはPages → Workersへの移行（[zudolab/zudo-doc#1691](https://github.com/zudolab/zudo-doc/issues/1691)）で廃止されました。関連する `wrangler.toml` の設定は以下のとおりです：
+
+```toml
+[assets]
+directory = "./dist"
+not_found_handling = "404-page"   # マッチしないGETに対して dist/404.html を配信
+run_worker_first = false          # アセットレイヤーがワーカーより先に参照される
+```
+
+:::note
+
+上記のPagesセクションは参考のために残してあります。このサイトをCloudflare Pagesや他のホストにデプロイする場合は、引き続き適用されます。Workersの静的アセットでは、プラットフォーム組み込みのアセット処理が末尾スラッシュのケースをカバーするため、`_redirects` ファイルはデプロイ成果物に含まれません。
+
+:::
+
 ### その他のホスト
 
 | ホスト | メカニズム |

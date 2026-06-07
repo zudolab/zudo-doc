@@ -90,6 +90,35 @@ platform-agnostic.
 
 :::
 
+### Cloudflare Workers Static Assets
+
+zudo-doc now deploys to **Cloudflare Workers** (`wrangler.toml`), serving the
+built `dist/` through the Workers static-assets layer rather than Cloudflare
+Pages. Because the static build already emits the trailing-slash directory
+layout (`dist/docs/getting-started/index.html`), the Workers asset layer serves
+each canonical `/<route>/` URL from its pre-built `index.html` directly.
+
+As a result, the manual `public/_redirects` rule the Pages section describes is
+**not** shipped on Workers — it was dropped in the Pages → Workers migration
+([zudolab/zudo-doc#1691](https://github.com/zudolab/zudo-doc/issues/1691)). The
+relevant `wrangler.toml` settings are:
+
+```toml
+[assets]
+directory = "./dist"
+not_found_handling = "404-page"   # serves dist/404.html for unmatched GETs
+run_worker_first = false          # asset layer is consulted before the worker
+```
+
+:::note
+
+The Pages section above is retained for reference — it still applies if you
+deploy this site to Cloudflare Pages or another host. On Workers static assets,
+the platform's built-in asset handling covers the trailing-slash case, so no
+`_redirects` file is part of the deployed artifact.
+
+:::
+
 ### Other hosts
 
 | Host | Mechanism |

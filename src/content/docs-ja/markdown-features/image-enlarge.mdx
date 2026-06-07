@@ -19,6 +19,12 @@ export const settings = {
 
 :::
 
+:::note `markdown.features.*` キーではなく `settings.*` で設定する理由
+
+他のオプトイン Markdown 機能とは異なり、Image Enlarge は `zfb.config.ts` の `markdown.features` 配下では設定しません。zfb は組み込みの `markdown.features.imageEnlarge` 機能を `0.1.0-next.18` で完全に削除しており、今これを設定すると **Rust の設定ローダーが失敗する未知のキー**になります。zudo-doc はこの挙動を、`pages/_mdx-components.ts` にある MDX の段落（`p`）コンポーネントのオーバーライドとしてユーザーランドで再実装しており、条件を満たすブロック画像に対して `<figure class="zd-enlargeable">` マークアップを出力します。このオーバーライドは `settings.imageEnlarge` を参照するため、この画像機能だけが Markdown パイプライン設定ではなく `src/config/settings.ts` で切り替える唯一の機能になっています。
+
+:::
+
 ## 構文
 
 特別な構文は不要です。通常の Markdown 画像を単独の行に書くだけです（その画像 1 枚だけを含む段落にします）。

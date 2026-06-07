@@ -37,6 +37,8 @@ Use `pnpm dev:stable` when you're adding or removing content files frequently. S
 
 Run `pnpm b4push` before pushing to verify the full site builds and all links resolve. It runs 13 steps (format check through preview smoke); E2E tests are intentionally parked and not part of this pipeline.
 
+The canonical, authoritative b4push step list lives in the header comment of `scripts/run-b4push.sh` — treat that script as the single source of truth, and consult it rather than any inline summary if the steps appear to disagree.
+
 </Note>
 
 ## Component Development

@@ -14,7 +14,7 @@ zudo-docは`src/config/`ディレクトリ内の少数のファイルとルー�
 export const settings = {
   colorScheme: "Default Dark",
   colorMode: {
-    defaultMode: "light",
+    defaultMode: "dark",
     lightScheme: "Default Light",
     darkScheme: "Default Dark",
     respectPrefersColorScheme: true,
@@ -22,7 +22,7 @@ export const settings = {
   siteName: "zudo-doc",
   siteDescription: "Documentation base framework...",
   base: "/",
-  trailingSlash: false,
+  trailingSlash: true,
   docsDir: "src/content/docs",
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },
@@ -30,7 +30,8 @@ export const settings = {
   mermaid: true,
   noindex: false,
   editUrl: false,
-  siteUrl: "",
+  githubUrl: "https://github.com/zudolab/zudo-doc",
+  siteUrl: "https://zudo-doc.takazudomodular.com",
   sitemap: true,
   designTokenPanel: true,
   docMetainfo: true,
@@ -49,6 +50,12 @@ export const settings = {
   ],
 };
 ```
+
+<Note>
+
+ここに示すデフォルト値は、すべての機能を見せるためにほとんどの機能を有効にしている**このショーケース**の`settings.ts`を反映したものです。`create-zudo-doc`で新規にスキャフォールドしたプロジェクトはもっとミニマルな状態から始まり、多くの機能（例：`docHistory`、`designTokenPanel`、`sidebarToggle`、`sidebarResizer`、`llmsTxt`、`githubUrl`）はデフォルトで無効になっており、スキャフォールドのプロンプトで個別に有効化します。デフォルト値に迷ったときは、上流のスキャフォールドをベースラインとして、このページを「すべて有効にした」リファレンスとして扱ってください。
+
+</Note>
 
 ### colorScheme
 
@@ -264,6 +271,20 @@ cjkFriendly: true,
 editUrl: "https://github.com/my-org/my-repo/edit/main/",
 // または無効化:
 editUrl: false,
+```
+
+### githubUrl
+
+サイトヘッダーにGitHubリンクとして表示されるリポジトリURL。文字列を設定すると、そのURLへのGitHubアイコンリンクがヘッダー右側のアイテム（`headerRightItems`内で`github-link`コンポーネントが配置された位置）に表示されます。ヘッダーのGitHubリンクを表示しないようにするには`false`を設定します。
+
+型：`string | false`
+
+デフォルト：`false`（`create-zudo-doc`のスキャフォールドでは無効。このショーケースではリポジトリURLを設定）
+
+```ts
+githubUrl: "https://github.com/my-org/my-repo",
+// またはヘッダーのGitHubリンクを表示しない:
+githubUrl: false,
 ```
 
 ### sitemap

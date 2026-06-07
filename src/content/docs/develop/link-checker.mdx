@@ -82,6 +82,8 @@ The link checker runs as step 10 of 13 in the pre-push validation (`pnpm b4push`
 12. Automated preview smoke (blocking)
 13. Manual interactive smoke (operator-driven)
 
+The canonical, authoritative b4push step list lives in the header comment of `scripts/run-b4push.sh` — treat that script as the single source of truth. The list above is a summary; if it ever drifts, the script wins.
+
 ### In CI
 
 The link checker runs in the `build-site` job of the PR checks workflow (`pr-checks.yml`), immediately after `pnpm build`.

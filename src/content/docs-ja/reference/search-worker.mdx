@@ -92,6 +92,7 @@ interface SearchResult {
 | 400        | 無効なJSONボディ                        |
 | 400        | `query`が空でない文字列ではない         |
 | 400        | `query`が500文字の制限を超えている      |
+| 400        | `limit`が指定されているが数値ではない   |
 | 404        | リクエストパスが`/`ではない             |
 | 405        | リクエストメソッドがPOSTではない        |
 | 415        | Content-Typeが`application/json`ではない |
@@ -99,6 +100,12 @@ interface SearchResult {
 | 500        | 内部サーバーエラー（インデックス取得失敗等）  |
 
 すべてのエラーレスポンスは`{ "error": string }`形式を使用します。
+
+<Note>
+
+Search Workerは**ワイルドカードCORS**を使用します。すべてのレスポンスで`Access-Control-Allow-Origin: *`を送信するため、どのオリジンからでも呼び出せます。これは**オリジンごとの許可リスト（`aiChatAllowedOrigins`）を使用する[AI Assistant API](./ai-assistant-api.mdx)とは意図的に異なります**。Search Workerはメーター課金のないオプトインサービスで、ゲートすべき呼び出しごとのコストがないため、オリジンを制限しません。2つのエンドポイントが同じCORSポリシーを共有していると仮定しないでください。
+
+</Note>
 
 ## 環境設定
 

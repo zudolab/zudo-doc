@@ -41,10 +41,23 @@ Welcome to the Getting Started section. Choose a topic below to begin.
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `category` | `string` | (required) | The category slug (e.g., `"guides"`, `"reference"`) |
+| `category` | `string` | — | The category slug whose immediate children are listed (e.g., `"guides"`, `"reference"`) |
+| `categories` | `string[]` | — | Explicit list of category slugs to render as cards. Use when the targets are siblings in the nav tree rather than children of a common parent |
 | `lang` | `Locale` | auto-detected | Override the locale for the content collection |
 
+Provide either `category` or `categories`. When both are set, `categories` takes precedence and `category` is ignored; when neither is set, the component renders nothing.
+
 The `lang` prop is automatically detected from the current URL path, so you typically don't need to set it.
+
+### The `categories` prop
+
+By default `CategoryNav` infers a single parent and lists its immediate children. Pass `categories` instead when the targets are not children of one common parent but top-level siblings in the nav tree — for example `claude-md` and `claude-skills` are top-level peers of `claude`, not nested under it:
+
+```mdx
+<CategoryNav categories={["claude-md", "claude-skills", "claude-agents"]} />
+```
+
+Each slug is resolved to its nav node and rendered as a card; slugs not found in the tree are silently skipped. For categories with no `index.mdx` (`noPage: true`), the card links to the auto-generated category index URL.
 
 ## Features
 
