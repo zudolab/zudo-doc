@@ -51,7 +51,7 @@ Each version entry accepts the following properties:
 | `slug` | string | Yes | Version identifier used in URL paths (e.g., `"1.0"`, `"v2"`) |
 | `label` | string | Yes | Display label shown in the version switcher (e.g., `"1.0.0"`) |
 | `docsDir` | string | Yes | Content directory for this version's English docs |
-| `locales` | object | No | Per-locale content directories (same shape as main `locales` setting) |
+| `locales` | `Record<string, { dir: string }>` | No | Per-locale content directories; each entry takes only `{ dir }` (no `label`) |
 | `banner` | `"unmaintained"` \| `"unreleased"` \| `false` | No | Banner type displayed on versioned pages |
 
 ## Directory Structure

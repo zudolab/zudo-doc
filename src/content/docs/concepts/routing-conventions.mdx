@@ -18,7 +18,7 @@ zfb's `paths()` runs inside **miniflare** at build time and is **synchronous** b
 The function signature is `function paths(): PathEntry[]` — not `async`.
 
 ```tsx
-// pages/docs/[...slug].tsx
+// pages/docs/[[...slug]].tsx
 import { getCollection, getEntry } from "zfb/content";
 
 export function paths() {
@@ -170,7 +170,7 @@ The most common `paths()` usage in zudo-doc is the docs catchall route.
 Each entry's slug maps to a `string[]` of URL segments:
 
 ```tsx
-// pages/docs/[...slug].tsx
+// pages/docs/[[...slug]].tsx
 import { getCollection, getEntry } from "zfb/content";
 
 export function paths() {
