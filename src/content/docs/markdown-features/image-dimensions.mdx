@@ -1,14 +1,14 @@
 ---
 title: Image Dimensions
-description: Injects width/height attributes on images from disk metadata. No-op stub at zfb next.13.
+description: Injects width/height attributes on images from disk metadata. Still a no-op as of zfb next.35.
 sidebar_position: 21
 ---
 
 The `imageDimensions` feature is designed to read image file headers at build time and inject `width` and `height` attributes onto local `<img>` elements, preventing Cumulative Layout Shift (CLS) by letting the browser reserve space before the image loads.
 
-:::warning[No-op at zfb next.13]
+:::warning[Still a no-op as of zfb next.35]
 
-`imageDimensions` is **enabled** in zudo-doc's `zfb.config.ts`, but at zfb `0.1.0-next.13` it is a **no-op** for public-directory absolute paths: an image such as `![alt](/img/x.png)` is emitted as `<img src alt>` with **no** `width`/`height` injected. The configuration and syntax below are documented for completeness, but no dimensions are produced on this corpus today.
+`imageDimensions` is **enabled** in zudo-doc's `zfb.config.ts`, but as of zfb `0.1.0-next.35` it is still a **no-op** for public-directory absolute paths: an image such as `![alt](/img/x.png)` is emitted as `<img src alt>` with **no** `width`/`height` injected. The configuration and syntax below are documented for completeness, but no dimensions are produced on this corpus today.
 
 :::
 
@@ -66,4 +66,4 @@ When the feature is functional, the intended output for a 400×300 PNG would be:
 <img src="/img/hero.png" alt="Hero image" width="400" height="300" />
 ```
 
-At next.13, the `width`/`height` attributes are **not** injected for public-directory absolute paths, so the emitted markup is `<img src="/img/hero.png" alt="Hero image" />` unchanged.
+As of next.35, the `width`/`height` attributes are still **not** injected for public-directory absolute paths, so the emitted markup is `<img src="/img/hero.png" alt="Hero image" />` unchanged.

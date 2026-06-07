@@ -29,15 +29,15 @@ These 14 features are disabled by default. Enable each one with the correspondin
 | --- | --- | --- |
 | [Admonitions Preset](./admonitions-preset.mdx) | `directives` | Registers the admonition vocabulary (note/tip/warning/danger/info/caution/details) via the `directives` map. |
 | [Mermaid](./mermaid.mdx) | `mermaid` | Renders ` ```mermaid ` fences as diagrams via the client-side Mermaid library. |
-| [Image Enlarge](./image-enlarge.mdx) | `imageEnlarge` | Wraps images in a `<figure>` that expands them on click. |
+| [Image Enlarge](./image-enlarge.mdx) | `settings.imageEnlarge` | Wraps images in a `<figure>` that expands them on click. Userland setting — the built-in `markdown.features` key was removed at next.18. |
 | [Heading Marker TOC](./heading-marker-toc.mdx) | `headingMarkerToc` | Attaches per-heading anchor markers and feeds the TOC island. |
 | [GitHub Alerts](./github-alerts.mdx) | `githubAlerts` | Converts `> [!NOTE]`/`[!TIP]`/`[!WARNING]`/`[!IMPORTANT]`/`[!CAUTION]` blockquotes to admonition markup. |
 | [Reading Time](./reading-time.mdx) | `readingTime` | Computes estimated reading time and exposes it as page-level metadata. |
 | [GitHub Autolinks](./github-autolinks.mdx) | `githubAutolinks` | Auto-links issue numbers, cross-repo references, and commit SHAs to GitHub. |
 | [Code Enrichment](./code-enrichment.mdx) | `codeEnrichment` | Adds a title bar, copy button, and diff/line-highlight decorations to code blocks. |
 | [Code Tabs](./code-tabs.mdx) | `codeTabs` | Renders `:::code-group` directives as tabbed code panels via `<CodeGroup>`. |
-| [Ruby](./ruby.mdx) | `ruby` | Adds ruby annotation support (`{base}^{ruby}` syntax). Known-blocked at next.13 — see #1815. |
-| [TOC Export](./toc-export.mdx) | `tocExport` | Exports the page table-of-contents as an `export const toc` named export. Known-blocked at next.13 — see #1814. |
-| [Image Dimensions](./image-dimensions.mdx) | `imageDimensions` | Injects `width`/`height` attributes on images from disk metadata (no-op stub at next.13). |
+| [Ruby](./ruby.mdx) | `ruby` | Adds ruby annotation support (`{base}^{ruby}` syntax). |
+| [TOC Export](./toc-export.mdx) | `tocExport` | Exports the page table-of-contents as an `export const toc` named export. |
+| [Image Dimensions](./image-dimensions.mdx) | `imageDimensions` | Injects `width`/`height` attributes on images from disk metadata (still a no-op as of next.35). |
 | [Link Validation](./link-validation.mdx) | `linkValidation` | Validates internal links at build time and warns (or errors) on broken references. |
 | [Transclude](./transclude.mdx) | `transclude` | Embeds the content of another file via `:::include{file="…"}` or `![[path]]`. Disabled in zudo-doc at next.13. |

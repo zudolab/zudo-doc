@@ -1,14 +1,14 @@
 ---
 title: Image Dimensions
-description: ディスクのメタデータから画像に width/height 属性を付与します。zfb next.13 では no-op。
+description: ディスクのメタデータから画像に width/height 属性を付与します。zfb next.35 時点でも no-op。
 sidebar_position: 21
 ---
 
 `imageDimensions` 機能は、ビルド時に画像ファイルのヘッダーを読み取り、ローカルの `<img>` 要素に `width` と `height` 属性を付与するように設計されています。画像の読み込み前にブラウザが領域を確保できるようにすることで、Cumulative Layout Shift（CLS）を防ぎます。
 
-:::warning[zfb next.13 では no-op]
+:::warning[zfb next.35 時点でも no-op]
 
-`imageDimensions` は zudo-doc の `zfb.config.ts` で**有効化**されていますが、zfb `0.1.0-next.13` では public ディレクトリの絶対パスに対して **no-op** です。`![alt](/img/x.png)` のような画像は、`width`/`height` が**付与されないまま** `<img src alt>` として出力されます。以下の設定と構文は網羅性のために記載していますが、現時点でこのコーパス上では寸法は生成されません。
+`imageDimensions` は zudo-doc の `zfb.config.ts` で**有効化**されていますが、zfb `0.1.0-next.35` 時点でも public ディレクトリの絶対パスに対して **no-op** のままです。`![alt](/img/x.png)` のような画像は、`width`/`height` が**付与されないまま** `<img src alt>` として出力されます。以下の設定と構文は網羅性のために記載していますが、現時点でこのコーパス上では寸法は生成されません。
 
 :::
 
@@ -66,4 +66,4 @@ export default defineConfig({
 <img src="/img/hero.png" alt="Hero image" width="400" height="300" />
 ```
 
-next.13 では public ディレクトリの絶対パスに `width`/`height` 属性が**付与されない**ため、出力されるマークアップは `<img src="/img/hero.png" alt="Hero image" />` のまま変わりません。
+next.35 時点でも public ディレクトリの絶対パスに `width`/`height` 属性が**付与されない**ため、出力されるマークアップは `<img src="/img/hero.png" alt="Hero image" />` のまま変わりません。
