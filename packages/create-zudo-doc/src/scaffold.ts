@@ -330,12 +330,14 @@ function generatePackageJson(choices: UserChoices) {
     // next.33 added the opt-in hierarchical heading-ID strategy
     // (Takazudo/zudo-front-builder#871): `markdown.features.headingIds.strategy`.
     // The generated config + TOC builder use it via settings.headingIdStrategy.
-    // next.34 is a routine bin-wrapper signal-handling bump (no feature change).
-    "@takazudo/zfb": "0.1.0-next.34",
-    "@takazudo/zfb-runtime": "0.1.0-next.34",
+    // next.35 fixes resolve_links rewriting bare same-page `[text](#anchor)` /
+    // `[text](?query)` links to `/<parent-dir>/#anchor` (zudolab/zudo-doc#1948,
+    // upstream Takazudo/zudo-front-builder#875).
+    "@takazudo/zfb": "0.1.0-next.35",
+    "@takazudo/zfb-runtime": "0.1.0-next.35",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.34",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.35",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
