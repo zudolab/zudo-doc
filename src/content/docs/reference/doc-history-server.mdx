@@ -98,15 +98,15 @@ pnpm generate -- --content-dir src/content/docs --locale ja:src/content/docs-ja 
 
 The CI pipeline runs history generation as a parallel job alongside the zfb site build:
 
-- **build-site** job: shallow clone (`fetch-depth: 1`), builds the zfb site with `SKIP_DOC_HISTORY=1`
+- **build-site** job: full clone (`fetch-depth: 0`), builds the zfb site with `pnpm build` (no `SKIP_DOC_HISTORY` — the preBuild step runs `git log --follow` to populate `.zfb/doc-history-meta.json` with real dates, inlined into the SSG HTML as the visible Created/Updated/Author block)
 - **build-history** job: full clone (`fetch-depth: 0`), runs `@takazudo/zudo-doc-history-server generate`
-- **deploy** job: merges both artifacts and deploys to Cloudflare Pages
+- **deploy** job: merges both artifacts and deploys to Cloudflare Workers
 
 This parallelization is possible because the history generation is fully independent of the zfb build.
 
 <Tip>
 
-The `build-history` job requires a full git clone (`fetch-depth: 0`) because it needs the complete commit history to extract revision data. The `build-site` job can use a shallow clone since it only needs the current file contents.
+Both the `build-history` and `build-site` jobs require a full clone (`fetch-depth: 0`). `build-history` needs the complete commit history to extract revision data for the DocHistory island dropdown. `build-site` needs it so the preBuild step can populate the SSG meta block (Created/Updated/Author) with real git dates.
 
 </Tip>
 
@@ -172,7 +172,7 @@ The `--follow` flag tracks file history across renames with multiple fallback st
 
 ### Key Design Decisions
 
-- **Synchronous git** -- `execFileSync` is acceptable for the dev server (same-process, sequential). The CI CLI is inherently sequential as well
+- **Synchronous git** -- `execFileSync` is acceptable for the dev server (same-process, sequential). The CI CLI uses bounded parallelism: tasks run via `Promise.all` with a semaphore limited to `Math.min(8, Math.max(2, cpus().length))` concurrent workers
 - **Repo-relative paths** -- API responses use relative file paths to avoid leaking absolute server paths
 - **Standalone package** -- decoupled from zfb to enable parallel CI builds and independent versioning
 
