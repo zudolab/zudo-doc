@@ -2774,11 +2774,13 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
    * opt-in hierarchical heading-ID strategy
    * (Takazudo/zudo-front-builder#871) — `markdown.features.headingIds.strategy`,
    * which the generated config + TOC builder consume via
-   * `settings.headingIdStrategy`. Now bumped to 0.1.0-next.34: a routine
-   * bin-wrapper signal-handling release (no consumer-facing change).
-   * Generated package.json must pin all three.
+   * `settings.headingIdStrategy`. next.34 was a routine bin-wrapper
+   * signal-handling release. Now bumped to 0.1.0-next.35: fixes resolve_links
+   * rewriting bare same-page `[text](#anchor)` / `[text](?query)` links to
+   * `/<parent-dir>/#anchor` (zudolab/zudo-doc#1948, upstream
+   * Takazudo/zudo-front-builder#875). Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.34", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.35", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -2789,10 +2791,10 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.34");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.34");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.35");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.35");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.34",
+      "0.1.0-next.35",
     );
   });
 });
