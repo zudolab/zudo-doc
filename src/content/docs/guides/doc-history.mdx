@@ -114,8 +114,8 @@ Git history extraction is handled by a standalone package: `@takazudo/zudo-doc-h
 
 In production, a standalone CLI generator batch-processes all content files and writes JSON history files to `dist/doc-history/`. This runs as an independent CI job, parallel to the zfb site build:
 
-- **build-site** job: shallow clone, builds the zfb site with `SKIP_DOC_HISTORY=1`
-- **build-history** job: full clone, runs `@takazudo/zudo-doc-history-server generate`
+- **build-site** job: full clone (`fetch-depth: 0`), builds the zfb site with `pnpm build` (no `SKIP_DOC_HISTORY` — preBuild needs full git history for the SSG meta block)
+- **build-history** job: full clone (`fetch-depth: 0`), runs `@takazudo/zudo-doc-history-server generate`
 - **deploy** job: merges both artifacts and deploys
 
 This parallel strategy reduces total CI build time because the history generation (which requires a full git clone and walks every commit) runs independently of the zfb build.

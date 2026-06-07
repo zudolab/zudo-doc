@@ -98,15 +98,15 @@ pnpm generate -- --content-dir src/content/docs --locale ja:src/content/docs-ja 
 
 CIパイプラインはzfbサイトビルドと並行して履歴生成を実行します：
 
-- **build-site**ジョブ：シャロークローン（`fetch-depth: 1`）、`SKIP_DOC_HISTORY=1`でzfbサイトをビルド
+- **build-site**ジョブ：フルクローン（`fetch-depth: 0`）、`pnpm build`でzfbサイトをビルド（`SKIP_DOC_HISTORY`なし — preBuildステップが`git log --follow`を実行して`.zfb/doc-history-meta.json`に実際の日付を書き込み、SSG HTMLに作成日・更新日・著者ブロックとしてインライン展開される）
 - **build-history**ジョブ：フルクローン（`fetch-depth: 0`）、`@takazudo/zudo-doc-history-server generate`を実行
-- **deploy**ジョブ：両方のアーティファクトをマージしてCloudflare Pagesにデプロイ
+- **deploy**ジョブ：両方のアーティファクトをマージしてCloudflare Workersにデプロイ
 
 この並列化は、履歴生成がzfbビルドから完全に独立しているため可能です。
 
 <Tip>
 
-`build-history`ジョブはリビジョンデータを抽出するために完全なコミット履歴が必要なため、フルgitクローン（`fetch-depth: 0`）が必要です。`build-site`ジョブは現在のファイル内容のみ必要なため、シャロークローンを使用できます。
+`build-history`と`build-site`の両ジョブともフルクローン（`fetch-depth: 0`）が必要です。`build-history`はDocHistoryアイランドのドロップダウン用にリビジョンデータを抽出するため、`build-site`はpreBuildステップがSSGメタブロック（作成日・更新日・著者）に実際のgit日付を埋め込むために完全なコミット履歴が必要です。
 
 </Tip>
 
@@ -172,7 +172,7 @@ dist/doc-history/
 
 ### 主要な設計判断
 
-- **同期git** -- `execFileSync`は開発サーバー（同一プロセス、逐次処理）で問題ありません。CI CLIも本質的に逐次処理です
+- **同期git** -- `execFileSync`は開発サーバー（同一プロセス、逐次処理）で問題ありません。CI CLIは境界付き並列処理を使用します：`Promise.all`とセマフォで`Math.min(8, Math.max(2, cpus().length))`の同時ワーカー数に制限して実行します
 - **リポジトリ相対パス** -- APIレスポンスは絶対サーバーパスの漏洩を避けるために相対ファイルパスを使用します
 - **スタンドアロンパッケージ** -- 並列CIビルドと独立したバージョニングを可能にするためにzfbから分離されています
 
