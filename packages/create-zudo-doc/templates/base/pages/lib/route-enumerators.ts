@@ -107,7 +107,9 @@ export function enumerateTagsRoutes(locale: string): string[] {
   // Filter unlisted + draft + category_no_page — mirrors the tag [tag].tsx
   // pages so the sitemap lists exactly the tag pages that get built (a
   // category_no_page index has no route, so a tag it carries must not coin a
-  // tag page that links back to it).
+  // tag page that links back to it). The category_no_page drop happens AFTER
+  // the locale merge so a locale override carrying the flag first wins the
+  // merge — pre-merge filtering would let the unflagged base doc resurface.
   let docs: DocsEntry[];
   if (locale === defaultLocale) {
     docs = loadDocs("docs").filter(
@@ -115,15 +117,11 @@ export function enumerateTagsRoutes(locale: string): string[] {
     );
   } else {
     const result = mergeLocaleDocs({
-      baseDocs: loadDocs("docs").filter(
-        (d) => !d.data.draft && !d.data.category_no_page,
-      ),
-      localeDocs: loadDocs(`docs-${locale}`).filter(
-        (d) => !d.data.draft && !d.data.category_no_page,
-      ),
+      baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
+      localeDocs: loadDocs(`docs-${locale}`).filter((d) => !d.data.draft),
       applyDefaultLocaleOnlyFilter: true,
     });
-    docs = result.docs;
+    docs = result.docs.filter((d) => !d.data.category_no_page);
   }
 
   const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));

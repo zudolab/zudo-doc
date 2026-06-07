@@ -53,17 +53,17 @@ export default function LocaleTagsIndexPage({
   const { locale } = params;
   const pageTitle = t("doc.allTags", locale);
 
-  // category_no_page index files build no route — drop them so a tag they
-  // carry doesn't surface a card linking to a non-existent locale doc page.
-  const { docs } = mergeLocaleDocs({
-    baseDocs: loadDocs("docs").filter(
-      (d) => !d.data.draft && !d.data.category_no_page,
-    ),
-    localeDocs: loadDocs(`docs-${locale}`).filter(
-      (d) => !d.data.draft && !d.data.category_no_page,
-    ),
+  const { docs: mergedDocs } = mergeLocaleDocs({
+    baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
+    localeDocs: loadDocs(`docs-${locale}`).filter((d) => !d.data.draft),
     applyDefaultLocaleOnlyFilter: true,
   });
+  // category_no_page index files build no route — drop them AFTER the merge
+  // so a locale override carrying the flag first wins the merge (suppressing
+  // the base doc); pre-merge filtering would drop it from localeSlugSet and
+  // the unflagged base doc would resurface as a card linking to a locale
+  // route the docs route never builds.
+  const docs = mergedDocs.filter((d) => !d.data.category_no_page);
   const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
 
   const labels: TagNavLabels = {
