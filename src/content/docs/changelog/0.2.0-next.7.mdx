@@ -1,0 +1,32 @@
+---
+title: 0.2.0-next.7
+description: Release notes for 0.2.0-next.7.
+sidebar_position: 1008
+---
+
+Released: 2026-06-07
+
+A broad prerelease: hierarchical TOC heading IDs ported from zfb, `noUncheckedIndexedAccess` turned on across every package, versioned-docs link correctness, the zfb bump to `0.1.0-next.35`, and a large documentation-drift sweep.
+
+### Features
+
+- **Hierarchical TOC heading IDs.** Adopted zfb's hierarchical heading-ID strategy and ported its exact slugify so the TOC anchors match the rendered headings; the TOC slugger now shares a single counter, and TOC depth is configurable (restriction-only) (#1943, #1946).
+- **`noUncheckedIndexedAccess` enabled across the board.** Turned the flag on in the root tsconfig, `packages/zudo-doc`, and the standalone package tsconfigs, fixing every resulting error; the same guards were synced into the `create-zudo-doc` templates so fresh scaffolds inherit them.
+- **AI-chat prompt caching.** Added a prompt-caching breakpoint on the system corpus block to cut repeat-request cost.
+
+### Bug Fixes
+
+- **zfb `0.1.0-next.35` — bare in-content `#anchor` resolution.** Bumped the zfb pins (next.31 → next.35, via next.33/next.34) in lockstep; next.35 fixes resolution of bare `#anchor` links inside content (#1948).
+- **Versioned-docs link & display correctness on `/v/` routes.** Fixed link resolution and display on versioned routes, and added the versioned directories to `resolveMarkdownLinks` and the doc-history base so cross-links and history resolve there too (#1916).
+- **`extract-headings` slug fidelity.** Strip inline markdown before slugging for slug/text fidelity, and only slug `h2`–`h6` to match the renderer.
+- **`preset-generator` constants.** Mirror the shared constants instead of importing across packages, avoiding a fragile cross-package dependency (#1919).
+- **`escape-for-mdx`.** Restored compact self-closing tag escaping.
+- **Request-boundary hardening.** Hardened the request boundary in the search worker and AI-chat handler, and documented the rate-limit/CORS/security divergences between them (#1931).
+- **JA footer taglist anchor.** Repointed the Japanese footer-taglist i18n anchor to the translated heading.
+
+### Changes
+
+- **Parallelized doc-history git walks.** The pre-build doc-history pass now walks git history in parallel via a new async path, cutting build time on large doc sets (#1930).
+- **Type-safety & route refactors.** Removed `as unknown as DocsEntry/DocPageEntry` casts, extracted a shared doc-route prop-builder + render shell (dedup canonical URL), and single-sourced the preset-generator scheme/lang/label constants (#1917, #1942).
+- **Documentation-drift sweep.** Applied 10 reviewed doc improvements plus a t1–t8 batch correcting config/settings, AI-search, CI/deploy (Pages → Workers), b4push, component, markdown-feature, and reference docs (#1953–#1960, #1963).
+- **Cleanup & tests.** Deleted orphaned Astro→zfb host files, and added behavioral URL-builder tests for versioned routes plus an `execFile` mock for the new async doc-history git path (#1916, #1917, #1920, #1928).
