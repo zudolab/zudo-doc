@@ -48,9 +48,15 @@ export function paths(): Array<{
   }> = [];
 
   for (const locale of Object.keys(settings.locales)) {
+    // category_no_page index files build no route — drop them so a tag they
+    // carry doesn't surface a card linking to a non-existent locale doc page.
     const { docs } = mergeLocaleDocs({
-      baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
-      localeDocs: loadDocs(`docs-${locale}`).filter((d) => !d.data.draft),
+      baseDocs: loadDocs("docs").filter(
+        (d) => !d.data.draft && !d.data.category_no_page,
+      ),
+      localeDocs: loadDocs(`docs-${locale}`).filter(
+        (d) => !d.data.draft && !d.data.category_no_page,
+      ),
       applyDefaultLocaleOnlyFilter: true,
     });
     const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));

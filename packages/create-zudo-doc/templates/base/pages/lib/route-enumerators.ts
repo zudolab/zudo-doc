@@ -104,14 +104,23 @@ export function enumerateTagsRoutes(locale: string): string[] {
   urls.push(withBase(tagsBase));
 
   // Collect tags from the same merged doc set the tag pages use.
-  // Filter unlisted + draft — mirrors the tag [tag].tsx pages which do the same.
+  // Filter unlisted + draft + category_no_page — mirrors the tag [tag].tsx
+  // pages so the sitemap lists exactly the tag pages that get built (a
+  // category_no_page index has no route, so a tag it carries must not coin a
+  // tag page that links back to it).
   let docs: DocsEntry[];
   if (locale === defaultLocale) {
-    docs = loadDocs("docs").filter((d) => !d.data.unlisted && !d.data.draft);
+    docs = loadDocs("docs").filter(
+      (d) => !d.data.unlisted && !d.data.draft && !d.data.category_no_page,
+    );
   } else {
     const result = mergeLocaleDocs({
-      baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
-      localeDocs: loadDocs(`docs-${locale}`).filter((d) => !d.data.draft),
+      baseDocs: loadDocs("docs").filter(
+        (d) => !d.data.draft && !d.data.category_no_page,
+      ),
+      localeDocs: loadDocs(`docs-${locale}`).filter(
+        (d) => !d.data.draft && !d.data.category_no_page,
+      ),
       applyDefaultLocaleOnlyFilter: true,
     });
     docs = result.docs;

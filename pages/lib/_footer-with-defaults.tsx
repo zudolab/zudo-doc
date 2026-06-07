@@ -113,17 +113,25 @@ export function FooterWithDefaults({
     // Load docs synchronously (zfb ADR-004 — synchronous content snapshot).
     let docs: DocsEntry[];
     if (lang === defaultLocale) {
-      docs = loadDocs("docs").filter((d) => !d.data.draft && !d.data.unlisted);
+      // category_no_page index files build no route — drop them so the footer
+      // taglist matches the tag-route pages (which all now filter too).
+      docs = loadDocs("docs").filter(
+        (d) => !d.data.draft && !d.data.unlisted && !d.data.category_no_page,
+      );
     } else {
       // Apply the default-locale-only filter so the footer taglist only counts
       // tags that have a locale-routable tag page — matching the tag-route
       // pages ([tag].tsx / tags/index.tsx) and enumerateTagsRoutes, which all
       // now filter. Without this, the footer would link to /{locale}/docs/tags/
       // pages that are never built for tags living only on default-locale-only
-      // prefix pages.
+      // prefix pages. category_no_page is dropped for the same reason.
       const result = mergeLocaleDocs({
-        baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
-        localeDocs: loadDocs(`docs-${lang}`).filter((d) => !d.data.draft),
+        baseDocs: loadDocs("docs").filter(
+          (d) => !d.data.draft && !d.data.category_no_page,
+        ),
+        localeDocs: loadDocs(`docs-${lang}`).filter(
+          (d) => !d.data.draft && !d.data.category_no_page,
+        ),
         applyDefaultLocaleOnlyFilter: true,
       });
       docs = result.docs;
