@@ -73,9 +73,16 @@ interface AiChatErrorResponse {
 | 400        | `message`が4000文字の制限を超えている                           |
 | 400        | 入力スクリーニング（プロンプトインジェクションガード）で拒否された |
 | 400        | `history`の形式が不正（フィールド説明を参照）                   |
+| 405        | リクエストメソッドが`POST`でも`OPTIONS`でもない                 |
 | 415        | Content-Typeが`application/json`ではない                        |
 | 429        | レート制限超過（`Retry-After`ヘッダーを含む）                   |
 | 500        | Anthropic APIコール失敗                                         |
+
+このエンドポイントは`POST`（チャット）と`OPTIONS`（CORSプリフライト）のみを受け付けます。それ以外のメソッドはすべて`{ "error": "Method not allowed" }`とともに`405`を返します。
+
+### CORS
+
+このエンドポイントは**オリジンごとの許可リスト**を使用します。`aiChatDemoMode`が`false`の場合、`Access-Control-Allow-Origin`は`aiChatAllowedOrigins`設定にリストされたリクエストオリジンに対してのみエコーされます。それ以外のオリジンにはallow-originヘッダーが返されず、ブラウザによってブロックされます。（デモモードでは後方互換性のため常に`*`が返されます。）これは**ワイルドカードCORS（`*`）を使用する[Search Worker](./search-worker.mdx)よりも意図的に厳格**です。各コールに実際のAnthropic APIコストが伴うAIチャットエンドポイントはオリジンでゲートしますが、検索はメーター課金のないオプトインサービスだからです。2つのエンドポイントが同じCORSポリシーを共有していると仮定しないでください。
 
 ## CF環境バインディング
 

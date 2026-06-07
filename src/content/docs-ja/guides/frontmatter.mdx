@@ -50,6 +50,7 @@ title: Quick Start
 | `doc_history` | boolean | いいえ | 自動 | doc-historyボタンの表示を上書き（自動：`*/index`ページは非表示、詳細ページは表示） |
 | `standalone` | boolean | いいえ | `false` | サイドバーナビゲーションから非表示だがインデックスされる（`unlisted`とは異なる） |
 | `slug` | string | いいえ | ファイルパスから導出 | カスタムURLスラグのオーバーライド |
+| `generated` | boolean | いいえ | `false` | ビルド時に自動生成されたコンテンツであることを示す。バイリンガルの日本語翻訳要件から除外される |
 | `pagination_next` | string \| null | いいえ | 自動 | 次のページリンクをオーバーライド、`null`で非表示 |
 | `pagination_prev` | string \| null | いいえ | 自動 | 前のページリンクをオーバーライド、`null`で非表示 |
 
@@ -300,6 +301,27 @@ slug: quickstart
 ```
 
 このページはファイルの場所から導出されるデフォルトパスの代わりに`/docs/quickstart`でアクセスできるようになります。
+
+### `generated`
+
+- **型：** `boolean`
+- **必須：** いいえ
+- **デフォルト：** `false`
+
+ページがビルド時に自動生成されたコンテンツであること（例：`.claude/`ソースファイルから生成される`claude-*`リファレンスページ）を示します。`generated: true`を設定すると、そのページはバイリンガルルールから除外されます。自動生成されたページは、`docs-ja/`配下に対応する日本語翻訳を用意する必要がありません。このフィールドはフレームワークが管理するキーでもあるため、デフォルトではフロントマタープレビューから非表示になります。
+
+```mdx
+---
+title: Auto-generated Reference
+generated: true
+---
+```
+
+<Note>
+
+通常`generated`を手動で設定することはありません。ジェネレーターが自動的に付与します。バイリンガルワークフローでは手書きのページにのみ日本語ミラーが必要なため、`generated: true`のページは翻訳対象から除外されます。
+
+</Note>
 
 ### `pagination_next`
 

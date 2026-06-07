@@ -10,7 +10,7 @@ sidebar_position: 3
 
 `h2` 以上のすべての見出しに以下が自動的に付与されます。
 
-1. GitHub-slugger 互換のルールで見出しテキストから生成されたスラグベースの `id` 属性。
+1. zfb 独自の `slugify` で見出しテキストから生成されたスラグベースの `id` 属性（github-slugger に近い挙動ですが、`.` や `/` などの記号を除去せず `-` にまとめます）。
 2. 見出しテキストをラップする自己参照アンカー要素。読者がページ内の直接リンクをコピーできます。
 3. 重複解消: 同じスラグが複数生成される場合、カウンターサフィックスが付与されます（`overview`、`overview-1`、`overview-2` など）。
 
@@ -31,7 +31,7 @@ markdown: {
 
 ### `flat`
 
-`h2`–`h6` 全体で 1 つの重複カウンターを共有する GitHub-slugger スラグ方式（`overview`、`overview-1` など）。zfb のデフォルトです。
+`h2`–`h6` 全体で 1 つの重複カウンターを共有するスラグ方式（`overview`、`overview-1` など）。スラグは npm の `github-slugger` ではなく zfb 独自の `slugify` で生成されます。zfb のデフォルトです。
 
 ### `hierarchical`（このサイトで使用）
 

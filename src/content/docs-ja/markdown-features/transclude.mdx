@@ -1,14 +1,14 @@
 ---
 title: Transclude
-description: ":::include{file=\"…\"} または ![[path]] で別ファイルの内容を埋め込みます。zudo-doc では zfb next.13 で無効化。"
+description: ":::include{file=\"…\"} または ![[path]] で別ファイルの内容を埋め込みます。zudo-doc では無効（transclude レンダラー未配線）。"
 sidebar_position: 23
 ---
 
 `transclude` 機能は、別ファイルの内容を Markdown ドキュメントに埋め込みます。インクルードされたファイルは Markdown として解析され、その AST がパイプラインの残りが実行される前にマージされます。
 
-:::danger[zudo-doc では無効 — zfb next.13 で非機能]
+:::danger[zudo-doc では無効 — transclude レンダラー未配線]
 
-`transclude` は zudo-doc の `zfb.config.ts` から省略され**無効化**されています。zfb `0.1.0-next.13` では非機能です。`:::include{file="…"}` ディレクティブは **SSR レンダリングが 500 を返し**（`<include>` コンポーネントが未登録）、`![[path]]` ウィキリンク形式は **no-op** です（リテラルテキスト `![[path]]` として描画されます）。以下の構文はフェンスコードブロック内にのみ記載されており、このページでライブの `:::include` ディレクティブは記述していません。`zfb.config.ts` の 1 行コメントが、transclude レンダラーが配線され次第の再有効化を示しています。
+`transclude` は zudo-doc の `zfb.config.ts` から省略され**無効化**されています。根本的な理由は、**transclude レンダラーがまだ配線されていない**ことです。ディレクティブを出力に変換する `<include>` コンポーネントが登録されていません。その結果、`:::include{file="…"}` ディレクティブは **SSR レンダリングが 500 を返し**、`![[path]]` ウィキリンク形式は zfb `0.1.0-next.13` で **no-op** になります（リテラルテキスト `![[path]]` として描画されます）。以下の構文はフェンスコードブロック内にのみ記載されており、このページでライブの `:::include` ディレクティブは記述していません。`zfb.config.ts` の 1 行コメントが、transclude レンダラーが配線され次第の再有効化を示しています。
 
 :::
 

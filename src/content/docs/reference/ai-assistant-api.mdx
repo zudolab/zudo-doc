@@ -73,9 +73,16 @@ interface AiChatErrorResponse {
 | 400 | `message` exceeds 4000 character limit |
 | 400 | Message rejected by input screening (prompt injection guard) |
 | 400 | `history` is malformed (see field description) |
+| 405 | Request method is not `POST` or `OPTIONS` |
 | 415 | Content-Type is not application/json |
 | 429 | Rate limit exceeded (includes `Retry-After` header) |
 | 500 | Anthropic API call failed |
+
+The endpoint accepts `POST` (chat) and `OPTIONS` (CORS preflight) only; every other method returns `405` with `{ "error": "Method not allowed" }`.
+
+### CORS
+
+This endpoint uses a **per-origin allowlist**. When `aiChatDemoMode` is `false`, `Access-Control-Allow-Origin` is echoed back only for request origins listed in the `aiChatAllowedOrigins` setting — any other origin receives no allow-origin header and is blocked by the browser. (In demo mode, `*` is always returned for back-compat.) This is intentionally **stricter than the [Search Worker](./search-worker.mdx), which uses wildcard CORS (`*`)** — the AI chat endpoint gates by origin because each call carries a real Anthropic API cost, whereas search is an unmetered, opt-in service. Do not assume the two endpoints share a CORS policy.
 
 ## CF Env Bindings
 

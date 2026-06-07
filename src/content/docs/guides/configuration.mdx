@@ -14,7 +14,7 @@ The main settings file is `src/config/settings.ts`:
 export const settings = {
   colorScheme: "Default Dark",
   colorMode: {
-    defaultMode: "light",
+    defaultMode: "dark",
     lightScheme: "Default Light",
     darkScheme: "Default Dark",
     respectPrefersColorScheme: true,
@@ -22,7 +22,7 @@ export const settings = {
   siteName: "zudo-doc",
   siteDescription: "Documentation base framework...",
   base: "/",
-  trailingSlash: false,
+  trailingSlash: true,
   docsDir: "src/content/docs",
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },
@@ -30,7 +30,8 @@ export const settings = {
   mermaid: true,
   noindex: false,
   editUrl: false,
-  siteUrl: "",
+  githubUrl: "https://github.com/zudolab/zudo-doc",
+  siteUrl: "https://zudo-doc.takazudomodular.com",
   sitemap: true,
   designTokenPanel: true,
   docMetainfo: true,
@@ -49,6 +50,12 @@ export const settings = {
   ],
 };
 ```
+
+<Note>
+
+The defaults shown here reflect **this showcase's** `settings.ts`, which enables most features so every capability is on display. A fresh project scaffolded with `create-zudo-doc` starts more minimal — many features (for example `docHistory`, `designTokenPanel`, `sidebarToggle`, `sidebarResizer`, `llmsTxt`, and `githubUrl`) default to off/disabled and are opted in during the scaffold prompts. When in doubt about a default, treat the upstream scaffold as the baseline and this page as the "everything enabled" reference.
+
+</Note>
 
 ### colorScheme
 
@@ -264,6 +271,20 @@ Default: `false` (disabled)
 editUrl: "https://github.com/my-org/my-repo/edit/main/",
 // or disable:
 editUrl: false,
+```
+
+### githubUrl
+
+The repository URL shown as the GitHub link in the site header. When set to a string, a GitHub icon link to that URL appears in the header's right-side items (wherever the `github-link` component is placed in `headerRightItems`). Set to `false` to omit the header GitHub link.
+
+Type: `string | false`
+
+Default: `false` (the `create-zudo-doc` scaffold leaves it off; this showcase sets the repo URL)
+
+```ts
+githubUrl: "https://github.com/my-org/my-repo",
+// or omit the header GitHub link:
+githubUrl: false,
 ```
 
 ### sitemap

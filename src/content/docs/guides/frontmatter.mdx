@@ -50,6 +50,7 @@ title: Quick Start
 | `doc_history` | boolean | No | Auto | Override doc-history button visibility (auto: hidden on `*/index` pages, shown on detail pages) |
 | `standalone` | boolean | No | `false` | Hidden from sidebar nav but still indexed (unlike `unlisted`) |
 | `slug` | string | No | Derived from file path | Custom URL slug override |
+| `generated` | boolean | No | `false` | Marks build-time auto-generated content; exempts the page from the bilingual JA-translation requirement |
 | `pagination_next` | string \| null | No | Auto | Override next page link, set to `null` to hide |
 | `pagination_prev` | string \| null | No | Auto | Override previous page link, set to `null` to hide |
 
@@ -300,6 +301,27 @@ slug: quickstart
 ```
 
 This page would be accessible at `/docs/quickstart` instead of the default path derived from its file location.
+
+### `generated`
+
+- **Type:** `boolean`
+- **Required:** No
+- **Default:** `false`
+
+Marks a page as build-time auto-generated content (for example, the `claude-*` reference pages produced from `.claude/` source files). Setting `generated: true` exempts the page from the bilingual rule — auto-generated pages do not require a matching Japanese translation under `docs-ja/`. The field is also a framework-managed key, so it is hidden from the frontmatter preview by default.
+
+```mdx
+---
+title: Auto-generated Reference
+generated: true
+---
+```
+
+<Note>
+
+You normally do not set `generated` by hand — generators add it automatically. The bilingual workflow only requires a JA mirror for hand-authored pages, so `generated: true` pages are skipped during translation.
+
+</Note>
 
 ### `pagination_next`
 

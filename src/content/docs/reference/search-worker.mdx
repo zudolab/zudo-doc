@@ -92,6 +92,7 @@ Example:
 | 400    | Invalid JSON body                        |
 | 400    | `query` is not a non-empty string        |
 | 400    | `query` exceeds 500 character limit      |
+| 400    | `limit` is provided but is not a number  |
 | 404    | Request path is not `/`                  |
 | 405    | Request method is not POST               |
 | 415    | Content-Type is not application/json     |
@@ -99,6 +100,12 @@ Example:
 | 500    | Internal server error (index fetch failed, etc.)     |
 
 All error responses use the format `{ "error": string }`.
+
+<Note>
+
+The Search Worker uses **wildcard CORS** — every response sends `Access-Control-Allow-Origin: *`, so any origin can call it. This is intentionally **different from the [AI Assistant API](./ai-assistant-api.mdx), which uses a per-origin allowlist** (`aiChatAllowedOrigins`). The Search Worker is an unmetered, opt-in service with no per-call cost to gate, so it does not restrict origins. Do not assume the two endpoints share a CORS policy.
+
+</Note>
 
 ## Environment Setup
 

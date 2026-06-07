@@ -41,10 +41,23 @@ Welcome to the Getting Started section. Choose a topic below to begin.
 
 | プロップ | 型 | デフォルト | 説明 |
 |------|------|---------|-------------|
-| `category` | `string` | （必須） | カテゴリスラッグ（例：`"guides"`、`"reference"`） |
+| `category` | `string` | — | 直下の子ページを一覧表示するカテゴリスラッグ（例：`"guides"`、`"reference"`） |
+| `categories` | `string[]` | — | カードとして表示するカテゴリスラッグの明示的なリスト。対象が共通の親の子ではなく、ナビゲーションツリー上の兄弟関係にある場合に使用 |
 | `lang` | `Locale` | 自動検出 | コンテンツコレクションのロケールを上書き |
 
+`category`または`categories`のいずれかを指定します。両方を指定した場合は`categories`が優先され、`category`は無視されます。どちらも指定しない場合は、コンポーネントは何も表示しません。
+
 `lang`プロップは現在のURLパスから自動的に検出されるため、通常は設定する必要はありません。
+
+### `categories`プロップ
+
+デフォルトでは、`CategoryNav`は単一の親を推測し、その直下の子を一覧表示します。対象が1つの共通の親の子ではなく、ナビゲーションツリー上の最上位の兄弟である場合は、代わりに`categories`を渡します。たとえば`claude-md`と`claude-skills`は`claude`の子ではなく、`claude`と同じ最上位の階層に並ぶ兄弟です：
+
+```mdx
+<CategoryNav categories={["claude-md", "claude-skills", "claude-agents"]} />
+```
+
+各スラッグは対応するナビゲーションノードに解決され、カードとして表示されます。ツリー内で見つからないスラッグは、エラーにならず単に無視されます。`index.mdx`を持たないカテゴリ（`noPage: true`）の場合、カードのリンク先は自動生成されるカテゴリインデックスのURLになります。
 
 ## 特徴
 
