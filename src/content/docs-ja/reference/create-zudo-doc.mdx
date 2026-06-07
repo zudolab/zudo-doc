@@ -22,6 +22,7 @@ create-zudo-doc [project-name] [options]
 |--------|------|-----------|
 | `--name <name>` | プロジェクト名（または最初の位置引数） | `my-docs` |
 | `--lang <code>` | デフォルト言語コード | `en` |
+| `--github-url <url>` | GitHub リポジトリ URL（ヘッダーリンク + ソースリンクに使用） | — |
 | `--pm <manager>` | パッケージマネージャー: `pnpm`, `npm`, `yarn`, `bun` | `pnpm` |
 | `--[no-]install` | スキャフォールディング後に依存関係をインストール | プロンプト |
 
@@ -43,19 +44,25 @@ create-zudo-doc [project-name] [options]
 | `--[no-]i18n` | 多言語対応 | オフ |
 | `--[no-]search` | Pagefind 全文検索 | オン |
 | `--[no-]sidebar-filter` | サイドバーのリアルタイムフィルタリング | オン |
+| `--[no-]claude-resources` | Claude Code ドキュメント生成 | オフ |
+| `--[no-]claude-skills` | zudo-doc-* Claude Code スキルを同梱（design-system、translate、version-bump） | オフ |
 | `--[no-]design-token-panel` | スペーシング・フォント・サイズ・カラーの各トークンを編集するタブ型パネル | オフ |
 | `--[no-]sidebar-resizer` | ドラッグでサイドバー幅を変更 | オフ |
 | `--[no-]sidebar-toggle` | デスクトップサイドバーの表示/非表示 | オフ |
 | `--[no-]versioning` | 複数バージョンのドキュメント対応 | オフ |
-| `--[no-]claude-resources` | Claude Code ドキュメント生成 | オフ |
 | `--[no-]doc-history` | ドキュメント編集履歴 | オフ |
+| `--[no-]body-foot-util` | ドキュメント下部の右寄せストリップ: ドキュメント履歴トリガー + GitHub でソースを表示リンク | オフ |
 | `--[no-]llms-txt` | LLM 向け llms.txt を生成 | オフ |
 | `--[no-]skill-symlinker` | ドキュメントスキルのシンボリックリンク | オフ |
 | `--[no-]tauri` | Tauri デスクトップアプリ（Mode 1）— ページ内検索付き macOS オフラインリーダー | オフ |
 | `--[no-]tauri-dev` | Tauri 開発ラッパー（Mode 2）— 任意プロジェクト向けの設定可能なデスクトップ開発ラッパー | オフ |
 | `--[no-]footer-nav-group` | フッターのナビゲーションリンク | オフ |
+| `--[no-]image-enlarge` | マークダウン画像のクリック拡大表示 | オン |
 | `--[no-]footer-copyright` | フッターの著作権表示 | オフ |
 | `--[no-]changelog` | 変更履歴ページ | オフ |
+| `--[no-]tag-governance` | 語彙対応タグ監査・サジェストスクリプト | オン |
+| `--[no-]doc-tags` | タグ別・タグ一覧の閲覧ルート（docs/tags/...） | オフ |
+| `--[no-]footer-taglist` | フッターのグループ化されたタグ一覧（tagGovernance が必要） | オフ |
 
 ### プリセット
 

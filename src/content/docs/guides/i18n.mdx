@@ -98,11 +98,10 @@ To add a new language (e.g., Korean):
 
 2. Create a content directory: `src/content/docs-ko/`
 3. Mirror the English directory structure with translated files
-4. Add a new page route at `pages/ko/docs/[...slug].tsx` (copy from an existing locale route)
-5. Add UI translations for the new locale
+4. Add UI translations for the new locale
 
 <Tip>
 
-Step 1 is the key step — adding the locale to `settings.ts` automatically creates the content collection and registers the i18n routing. The remaining steps provide the content and page routes.
+Step 1 is the key step — adding the locale to `settings.ts` automatically creates the content collection and registers the i18n routing. No per-locale page route file is needed; the parameterized route at `pages/[locale]/docs/[[...slug]].tsx` handles every locale automatically.
 
 </Tip>
