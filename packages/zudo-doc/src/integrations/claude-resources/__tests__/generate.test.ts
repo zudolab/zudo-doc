@@ -91,7 +91,7 @@ describe("generateClaudeResourcesDocs", () => {
       expect(fs.existsSync(path.join(docsDir, "claude-agents"))).toBe(true);
     });
 
-    it("generates _category_.json with noPage for sub-categories", () => {
+    it("generates index.mdx with category_no_page for sub-categories", () => {
       generateClaudeResourcesDocs({
         claudeDir,
         projectRoot: tmpDir,
@@ -100,14 +100,14 @@ describe("generateClaudeResourcesDocs", () => {
 
       const dirs = ["claude-md", "claude-commands", "claude-skills", "claude-agents"];
       for (const dir of dirs) {
-        const catPath = path.join(docsDir, dir, "_category_.json");
-        expect(fs.existsSync(catPath)).toBe(true);
+        const indexPath = path.join(docsDir, dir, "index.mdx");
+        expect(fs.existsSync(indexPath)).toBe(true);
 
-        const cat = JSON.parse(fs.readFileSync(catPath, "utf8"));
-        expect(cat).toHaveProperty("label");
-        expect(cat).toHaveProperty("position");
-        expect(cat).toHaveProperty("description");
-        expect(cat.noPage).toBe(true);
+        const parsed = matter(fs.readFileSync(indexPath, "utf8"));
+        expect(parsed.data).toHaveProperty("title");
+        expect(parsed.data).toHaveProperty("sidebar_position");
+        expect(parsed.data).toHaveProperty("description");
+        expect(parsed.data.category_no_page).toBe(true);
       }
     });
 
@@ -332,7 +332,7 @@ describe("generateClaudeResourcesDocs", () => {
   // ---------------------------------------------------------------------------
 
   describe("category metadata", () => {
-    it("_category_.json positions are ordered correctly", () => {
+    it("index.mdx sidebar_position values are ordered correctly", () => {
       generateClaudeResourcesDocs({
         claudeDir,
         projectRoot: tmpDir,
@@ -340,16 +340,36 @@ describe("generateClaudeResourcesDocs", () => {
       });
 
       const readPos = (dir: string) => {
-        const cat = JSON.parse(
-          fs.readFileSync(path.join(docsDir, dir, "_category_.json"), "utf8"),
+        const parsed = matter(
+          fs.readFileSync(path.join(docsDir, dir, "index.mdx"), "utf8"),
         );
-        return cat.position;
+        return parsed.data.sidebar_position;
       };
 
       expect(readPos("claude-md")).toBe(900);
       expect(readPos("claude-commands")).toBe(901);
       expect(readPos("claude-skills")).toBe(902);
       expect(readPos("claude-agents")).toBe(903);
+    });
+
+    it("index.mdx has correct label as title for each sub-category", () => {
+      generateClaudeResourcesDocs({
+        claudeDir,
+        projectRoot: tmpDir,
+        docsDir,
+      });
+
+      const readTitle = (dir: string) => {
+        const parsed = matter(
+          fs.readFileSync(path.join(docsDir, dir, "index.mdx"), "utf8"),
+        );
+        return parsed.data.title;
+      };
+
+      expect(readTitle("claude-md")).toBe("CLAUDE.md");
+      expect(readTitle("claude-commands")).toBe("Commands");
+      expect(readTitle("claude-skills")).toBe("Skills");
+      expect(readTitle("claude-agents")).toBe("Agents");
     });
   });
 
@@ -440,6 +460,76 @@ describe("generateClaudeResourcesDocs", () => {
           docsDir,
         }),
       ).not.toThrow();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Reserved "index" slug guard tests
+  // ---------------------------------------------------------------------------
+
+  describe("reserved index slug guard", () => {
+    it("throws when a CLAUDE.md directory maps to the reserved index slug", () => {
+      // index/CLAUDE.md → slug "index" — reserved for category index.mdx
+      fs.mkdirSync(path.join(tmpDir, "index"), { recursive: true });
+      fs.writeFileSync(
+        path.join(tmpDir, "index", "CLAUDE.md"),
+        "# index dir instructions",
+      );
+
+      expect(() =>
+        generateClaudeResourcesDocs({
+          claudeDir,
+          projectRoot: tmpDir,
+          docsDir,
+        }),
+      ).toThrow(/reserved slug "index"/);
+    });
+
+    it("throws when a command file is named index.md", () => {
+      fs.writeFileSync(
+        path.join(claudeDir, "commands", "index.md"),
+        '---\ndescription: "Index command"\n---\n\nIndex body.',
+      );
+
+      expect(() =>
+        generateClaudeResourcesDocs({
+          claudeDir,
+          projectRoot: tmpDir,
+          docsDir,
+        }),
+      ).toThrow(/reserved name "index"/);
+    });
+
+    it("throws when a skill directory is named index", () => {
+      const indexSkillDir = path.join(claudeDir, "skills", "index");
+      fs.mkdirSync(indexSkillDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(indexSkillDir, "SKILL.md"),
+        '---\nname: index\ndescription: "Index skill"\n---\n\nIndex skill body.',
+      );
+
+      expect(() =>
+        generateClaudeResourcesDocs({
+          claudeDir,
+          projectRoot: tmpDir,
+          docsDir,
+        }),
+      ).toThrow(/reserved name "index"/);
+    });
+
+    it("throws when an agent file is named index.md", () => {
+      fs.writeFileSync(
+        path.join(claudeDir, "agents", "index.md"),
+        '---\nname: index-agent\ndescription: "Index agent"\nmodel: sonnet\n---\n\nIndex agent body.',
+      );
+
+      expect(() =>
+        generateClaudeResourcesDocs({
+          claudeDir,
+          projectRoot: tmpDir,
+          docsDir,
+        }),
+      ).toThrow(/reserved name "index"/);
     });
   });
 });

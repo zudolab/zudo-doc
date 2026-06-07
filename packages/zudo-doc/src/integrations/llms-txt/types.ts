@@ -23,6 +23,12 @@ export interface LlmsTxtFrontmatter {
    * Mirrors the `search_exclude` flag used by the existing project.
    */
   search_exclude?: boolean;
+  /**
+   * A `category_no_page` index.mdx carries category metadata only and builds
+   * no route — so it must NOT appear in llms.txt (the link would 404). Mirrors
+   * the route/sitemap/search exclusion in the host project.
+   */
+  category_no_page?: boolean;
   [key: string]: unknown;
 }
 

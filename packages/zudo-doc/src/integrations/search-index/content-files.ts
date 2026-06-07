@@ -106,6 +106,12 @@ export interface DocFrontmatter {
   draft?: boolean;
   unlisted?: boolean;
   search_exclude?: boolean;
+  /**
+   * A `category_no_page` index.mdx carries category metadata only and builds
+   * no route — so its slug must NOT enter the search index (the result link
+   * would 404). Mirrors the route/sitemap exclusion in the host project.
+   */
+  category_no_page?: boolean;
   [key: string]: unknown;
 }
 
@@ -121,7 +127,16 @@ export function parseMarkdownFile(
   }
 }
 
-/** A page is excluded from indexing when explicitly opted out, drafted, or unlisted. */
+/**
+ * A page is excluded from indexing when explicitly opted out, drafted,
+ * unlisted, or a `category_no_page` metadata-only category index (no built
+ * route to link to).
+ */
 export function isExcluded(data: DocFrontmatter): boolean {
-  return !!(data.search_exclude || data.draft || data.unlisted);
+  return !!(
+    data.search_exclude ||
+    data.draft ||
+    data.unlisted ||
+    data.category_no_page
+  );
 }

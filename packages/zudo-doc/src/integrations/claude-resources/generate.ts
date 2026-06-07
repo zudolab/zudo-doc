@@ -76,19 +76,21 @@ function listFiles(dir: string): string[] {
     .sort();
 }
 
-function writeCategoryMeta(
+function writeCategoryIndex(
   outputDir: string,
   label: string,
   position: number,
   description: string,
-  noPage = true,
 ) {
-  const meta: Record<string, unknown> = { label, position, description };
-  if (noPage) meta.noPage = true;
-  fs.writeFileSync(
-    path.join(outputDir, "_category_.json"),
-    JSON.stringify(meta, null, 2) + "\n",
-  );
+  const mdx = `---
+title: "${escapeTitle(label)}"
+description: "${escapeTitle(description)}"
+sidebar_position: ${position}
+category_no_page: true
+generated: true
+---
+`;
+  fs.writeFileSync(path.join(outputDir, "index.mdx"), mdx);
 }
 
 // ---------------------------------------------------------------------------
@@ -174,6 +176,11 @@ function generateClaudemdDocs(
 
   const emittedSlugs = new Map<string, string>();
   items.forEach((item, index) => {
+    if (item.slug === "index") {
+      throw new Error(
+        `claude-resources: "${item.relPath}" maps to the reserved slug "index", which is used for the category metadata file. Rename the directory to resolve the conflict.`,
+      );
+    }
     const previous = emittedSlugs.get(item.slug);
     if (previous !== undefined) {
       throw new Error(
@@ -197,7 +204,7 @@ ${escapeForMdx(content.trim())}
     fs.writeFileSync(path.join(outputDir, `${item.slug}.mdx`), mdx);
   });
 
-  writeCategoryMeta(outputDir, "CLAUDE.md", 900, "Project-specific instructions");
+  writeCategoryIndex(outputDir, "CLAUDE.md", 900, "Project-specific instructions");
   return items;
 }
 
@@ -225,6 +232,11 @@ function generateCommandsDocs(config: ClaudeResourcesConfig): CommandItem[] {
     if (!parsed) continue;
 
     const name = file.replace(/\.md$/, "");
+    if (name === "index") {
+      throw new Error(
+        `claude-resources: ".claude/commands/index.md" uses the reserved name "index", which is used for the category metadata file. Rename the command file to resolve the conflict.`,
+      );
+    }
     const description = (parsed.data.description as string) || "";
 
     items.push({ name, description });
@@ -243,7 +255,7 @@ ${escapeForMdx(parsed.content.trim())}
 
   items.sort((a, b) => a.name.localeCompare(b.name));
 
-  writeCategoryMeta(outputDir, "Commands", 901, "Custom slash commands");
+  writeCategoryIndex(outputDir, "Commands", 901, "Custom slash commands");
   return items;
 }
 
@@ -348,6 +360,11 @@ function generateSkillsDocs(config: ClaudeResourcesConfig): SkillItem[] {
   const items: SkillItem[] = [];
 
   for (const dir of dirs) {
+    if (dir === "index") {
+      throw new Error(
+        `claude-resources: skill directory ".claude/skills/index/" uses the reserved name "index", which is used for the category metadata file. Rename the skill directory to resolve the conflict.`,
+      );
+    }
     const content = fs.readFileSync(
       path.join(skillsDir, dir, "SKILL.md"),
       "utf8",
@@ -477,7 +494,7 @@ ${escapeForMdx(ref.content.trim())}
 
   items.sort((a, b) => a.name.localeCompare(b.name));
 
-  writeCategoryMeta(outputDir, "Skills", 902, "Skill packages");
+  writeCategoryIndex(outputDir, "Skills", 902, "Skill packages");
   return items;
 }
 
@@ -508,6 +525,11 @@ function generateAgentsDocs(config: ClaudeResourcesConfig): AgentItem[] {
     const description = (parsed.data.description as string) || "";
     const model = (parsed.data.model as string) || "";
     const fileSlug = file.replace(/\.md$/, "");
+    if (fileSlug === "index") {
+      throw new Error(
+        `claude-resources: ".claude/agents/index.md" uses the reserved name "index", which is used for the category metadata file. Rename the agent file to resolve the conflict.`,
+      );
+    }
 
     items.push({ name, file: fileSlug, description, model });
 
@@ -528,7 +550,7 @@ ${escapeForMdx(parsed.content.trim())}
 
   items.sort((a, b) => a.name.localeCompare(b.name));
 
-  writeCategoryMeta(outputDir, "Agents", 903, "Custom subagents");
+  writeCategoryIndex(outputDir, "Agents", 903, "Custom subagents");
   return items;
 }
 

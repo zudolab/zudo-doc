@@ -97,7 +97,10 @@ export function HeadWithDefaults({
       <OgTags
         title={composeMetaTitle(title)}
         description={description}
+        ogType="website"
+        ogUrl={canonical}
         ogImage={ogImageUrl}
+        ogSiteName={settings.siteName}
       />
       {/* og:image:width / og:image:height / og:image:alt — not in OgTags API;
           emitted here directly to avoid expanding the shared HeadProps surface.

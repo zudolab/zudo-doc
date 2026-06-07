@@ -215,6 +215,13 @@ const docsSchema = z
     standalone: z.boolean().optional(),
     slug: z.string().optional(),
     generated: z.boolean().optional(),
+    // Category metadata expressed as a directory index.mdx's frontmatter — the
+    // frontmatter form of `_category_.json`. `category_no_page` makes the index
+    // a non-linked sidebar header excluded from routes/sitemap/search;
+    // `category_sort_order` sets the child sort direction. Frontmatter wins
+    // over the sidecar.
+    category_no_page: z.boolean().optional(),
+    category_sort_order: z.enum(["asc", "desc"]).optional(),
   })
   .passthrough();
 

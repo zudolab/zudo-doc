@@ -8,6 +8,7 @@
 #   Template Drift Check     — pure-shell, no install; scripts/check-template-drift.sh
 #   Pin Parity Check         — pure-Node, no install; scripts/check-pin-parity.mjs
 #   Fixture Settings Drift   — pure-Node, no install; scripts/check-fixture-settings-drift.mjs
+#   Package Safelist Check   — pure-Node, no install; scripts/check-package-safelist.mjs
 #   B4push/CI Parity Check   — pure-Node, no install; scripts/check-b4push-ci-parity.mjs
 #   Lint Gates               — pnpm install; pnpm tags:audit --ci + pnpm lint:tokens
 #   Type Check               — pnpm install; pnpm check (zfb check → tsc --noEmit)
@@ -100,6 +101,27 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Check fixture settings drift
         run: node scripts/check-fixture-settings-drift.mjs
+
+  # ---------------------------------------------------------------------------
+  # Job 0.63: Package safelist drift check (#1982)
+  # ---------------------------------------------------------------------------
+  # Verifies that the @source inline() safelist in the scaffold template
+  # (packages/create-zudo-doc/templates/base/src/styles/global.css) covers
+  # every responsive-variant + arbitrary-value utility class used in
+  # packages/zudo-doc/src/**/*.tsx. Closes the silent-drift gap from #1971:
+  # a new bracket/responsive utility in the package reaches the host repo
+  # (which @source's the package source directly) but silently misses
+  # consumers (which rely solely on the template safelist).
+  # Pure-Node script — uses preinstalled Node 22 on the runner image, no pnpm.
+  check-package-safelist:
+    name: Package Safelist Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Check package safelist drift
+        run: node scripts/check-package-safelist.mjs
 
   # ---------------------------------------------------------------------------
   # Job 0.65: B4push/CI parity check (guard manifest meta-check)

@@ -59,8 +59,8 @@ Use relative file paths with `.mdx` extension:
 Navigation is filesystem-driven. Directory structure becomes sidebar navigation.
 
 - Pages ordered by `sidebar_position` (ascending)
-- Category index pages (`index.mdx`) control category position
-- `_category_.json` for category-level metadata (label, position, noPage)
+- Category index pages (`index.mdx`) control category position via `sidebar_position`; add `sidebar_label` for a custom sidebar name; add `category_sort_order: "desc"` for newest-first ordering; add `category_no_page: true` to create a non-linked category header (no route/sitemap/search entry)
+- `_category_.json` still works but triggers a zfb build warning; prefer `index.mdx` frontmatter
 - Header nav defined in `src/config/settings.ts` via `headerNav` with `categoryMatch`
 
 ## Content Creation Workflow

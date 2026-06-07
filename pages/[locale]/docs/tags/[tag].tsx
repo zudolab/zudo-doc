@@ -48,11 +48,17 @@ export function paths(): Array<{
   }> = [];
 
   for (const locale of Object.keys(settings.locales)) {
-    const { docs } = mergeLocaleDocs({
+    const { docs: mergedDocs } = mergeLocaleDocs({
       baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
       localeDocs: loadDocs(`docs-${locale}`).filter((d) => !d.data.draft),
       applyDefaultLocaleOnlyFilter: true,
     });
+    // category_no_page index files build no route — drop them AFTER the merge
+    // so a locale override carrying the flag first wins the merge (suppressing
+    // the base doc); pre-merge filtering would drop it from localeSlugSet and
+    // the unflagged base doc would resurface as a card linking to a locale
+    // route the docs route never builds.
+    const docs = mergedDocs.filter((d) => !d.data.category_no_page);
     const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
 
     for (const [tag, tagInfo] of tagMap.entries()) {

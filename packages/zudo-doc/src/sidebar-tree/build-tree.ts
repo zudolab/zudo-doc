@@ -139,7 +139,9 @@ function toSidebarNodes<T extends SidebarFrontmatter>(
   for (const child of parent.children.values()) {
     const doc = child.doc;
     const meta = categoryMeta?.get(child.fullPath);
-    const sortOrder = meta?.sortOrder ?? "asc";
+    // Frontmatter wins over the `_category_.json` sidecar when both exist.
+    const noPage = doc?.data.category_no_page ?? meta?.noPage;
+    const sortOrder = doc?.data.category_sort_order ?? meta?.sortOrder ?? "asc";
     const children = toSidebarNodes(
       child,
       locale,
@@ -148,7 +150,13 @@ function toSidebarNodes<T extends SidebarFrontmatter>(
       sortOrder,
     );
 
-    const hasPage = !!doc;
+    // A `category_no_page` index.mdx carries metadata only — it must behave
+    // exactly like a `_category_.json` `noPage` category, which has no backing
+    // file at all (doc undefined → hasPage false). Forcing hasPage false here
+    // keeps the node a non-linked category header AND drops it from
+    // flattenSidebarTree (prev/next), so the excluded route never appears as a
+    // pagination target.
+    const hasPage = !!doc && noPage !== true;
     const isCategory = !hasPage && children.length > 0;
 
     const label =
@@ -162,11 +170,14 @@ function toSidebarNodes<T extends SidebarFrontmatter>(
     // 999 mirrors the legacy fallback so tied entries sort alphabetically.
     const position = positionRaw ?? 999;
 
-    const href = meta?.noPage
+    const href = noPage
       ? undefined
       : doc || children.length > 0
         ? buildHref(child.fullPath, locale)
         : undefined;
+
+    const hasSortOrder =
+      doc?.data.category_sort_order !== undefined || meta?.sortOrder !== undefined;
 
     nodes.push({
       type: isCategory ? "category" : "doc",
@@ -176,7 +187,7 @@ function toSidebarNodes<T extends SidebarFrontmatter>(
       ...(positionRaw !== undefined ? { sidebar_position: positionRaw } : {}),
       ...(href !== undefined ? { href } : {}),
       hasPage,
-      ...(meta?.sortOrder ? { sortOrder } : {}),
+      ...(hasSortOrder ? { sortOrder } : {}),
       children,
     });
 

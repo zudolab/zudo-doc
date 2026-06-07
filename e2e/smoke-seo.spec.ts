@@ -27,4 +27,16 @@ test.describe("SEO: meta tags render correctly", () => {
       'content="A page for testing code blocks, tabs, details, and mermaid diagrams."',
     );
   });
+
+  test("og:type meta tag is present with value website", () => {
+    const html = readDistFile("docs/guides/page-1/index.html");
+    expect(html).toMatch(/<meta property="og:type" content="website"\s*\/?>/);
+  });
+
+  test("og:site_name meta tag is present with correct site name", () => {
+    const html = readDistFile("docs/guides/page-1/index.html");
+    expect(html).toMatch(
+      /<meta property="og:site_name" content="Smoke Test"\s*\/?>/,
+    );
+  });
 });

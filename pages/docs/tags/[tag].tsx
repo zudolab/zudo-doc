@@ -42,7 +42,12 @@ export function paths(): Array<{
   props: { tagInfo: TagInfo };
 }> {
   const allDocs = bridgeDocsEntries(getCollection<ZfbDocsData>("docs"), "docs");
-  const docs = allDocs.filter((doc) => !doc.data.unlisted && !doc.data.draft);
+  // category_no_page index.mdx builds no route — drop it so a tag it carries
+  // doesn't render a DocCard linking to a non-existent /docs/<cat>/ page.
+  const docs = allDocs.filter(
+    (doc) =>
+      !doc.data.unlisted && !doc.data.draft && !doc.data.category_no_page,
+  );
   const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
 
   return [...tagMap.entries()].map(([tag, tagInfo]) => ({
