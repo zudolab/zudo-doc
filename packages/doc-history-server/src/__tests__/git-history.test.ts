@@ -24,6 +24,16 @@ vi.mock("node:child_process", () => ({
     const stdout = String(execFileSyncMock(cmd, gitArgs, opts) ?? "");
     callback(null, { stdout, stderr: "" });
   },
+  // getDocHistoryAsync's batchFetchContentsAsync (#1986) imports `spawn`. The
+  // sync tests here never exercise the async batch path, but a full-module
+  // factory mock must still export every binding git-history.ts imports —
+  // otherwise `spawn` is undefined at module load. Async-path behaviour is
+  // covered by git-history-async.test.ts; here `spawn` only needs to exist.
+  spawn: () => {
+    throw new Error(
+      "spawn() should not be called by the sync git-history tests",
+    );
+  },
 }));
 
 // Default behaviour: `rev-parse --show-toplevel` returns the fake root; any
