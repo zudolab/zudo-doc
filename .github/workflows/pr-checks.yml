@@ -8,6 +8,7 @@
 #   Template Drift Check     — pure-shell, no install; scripts/check-template-drift.sh
 #   Pin Parity Check         — pure-Node, no install; scripts/check-pin-parity.mjs
 #   Fixture Settings Drift   — pure-Node, no install; scripts/check-fixture-settings-drift.mjs
+#   B4push/CI Parity Check   — pure-Node, no install; scripts/check-b4push-ci-parity.mjs
 #   Lint Gates               — pnpm install; pnpm tags:audit --ci + pnpm lint:tokens
 #   Type Check               — pnpm install; pnpm check (zfb check → tsc --noEmit)
 #   Package Unit Tests       — pnpm install; pnpm test:packages (all 5 package suites)
@@ -99,6 +100,23 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Check fixture settings drift
         run: node scripts/check-fixture-settings-drift.mjs
+
+  # ---------------------------------------------------------------------------
+  # Job 0.65: B4push/CI parity check (guard manifest meta-check)
+  # ---------------------------------------------------------------------------
+  # Verifies that every lightweight guard gate in scripts/run-b4push.sh also
+  # has a corresponding job in this workflow. Closes the silent-drift gap where
+  # a b4push guard could be added without a matching CI job (#1967).
+  # Pure-Node script — uses preinstalled Node 22 on the runner image, no pnpm.
+  check-b4push-ci-parity:
+    name: B4push/CI Parity Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Check b4push/CI parity
+        run: node scripts/check-b4push-ci-parity.mjs
 
   # ---------------------------------------------------------------------------
   # Job 0.7: Lint gates (tags audit + design token lint)
