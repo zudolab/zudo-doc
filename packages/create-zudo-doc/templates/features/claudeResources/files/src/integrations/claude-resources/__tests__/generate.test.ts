@@ -462,4 +462,74 @@ describe("generateClaudeResourcesDocs", () => {
       ).not.toThrow();
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Reserved "index" slug guard tests
+  // ---------------------------------------------------------------------------
+
+  describe("reserved index slug guard", () => {
+    it("throws when a CLAUDE.md directory maps to the reserved index slug", () => {
+      // index/CLAUDE.md → slug "index" — reserved for category index.mdx
+      fs.mkdirSync(path.join(tmpDir, "index"), { recursive: true });
+      fs.writeFileSync(
+        path.join(tmpDir, "index", "CLAUDE.md"),
+        "# index dir instructions",
+      );
+
+      expect(() =>
+        generateClaudeResourcesDocs({
+          claudeDir,
+          projectRoot: tmpDir,
+          docsDir,
+        }),
+      ).toThrow(/reserved slug "index"/);
+    });
+
+    it("throws when a command file is named index.md", () => {
+      fs.writeFileSync(
+        path.join(claudeDir, "commands", "index.md"),
+        '---\ndescription: "Index command"\n---\n\nIndex body.',
+      );
+
+      expect(() =>
+        generateClaudeResourcesDocs({
+          claudeDir,
+          projectRoot: tmpDir,
+          docsDir,
+        }),
+      ).toThrow(/reserved name "index"/);
+    });
+
+    it("throws when a skill directory is named index", () => {
+      const indexSkillDir = path.join(claudeDir, "skills", "index");
+      fs.mkdirSync(indexSkillDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(indexSkillDir, "SKILL.md"),
+        '---\nname: index\ndescription: "Index skill"\n---\n\nIndex skill body.',
+      );
+
+      expect(() =>
+        generateClaudeResourcesDocs({
+          claudeDir,
+          projectRoot: tmpDir,
+          docsDir,
+        }),
+      ).toThrow(/reserved name "index"/);
+    });
+
+    it("throws when an agent file is named index.md", () => {
+      fs.writeFileSync(
+        path.join(claudeDir, "agents", "index.md"),
+        '---\nname: index-agent\ndescription: "Index agent"\nmodel: sonnet\n---\n\nIndex agent body.',
+      );
+
+      expect(() =>
+        generateClaudeResourcesDocs({
+          claudeDir,
+          projectRoot: tmpDir,
+          docsDir,
+        }),
+      ).toThrow(/reserved name "index"/);
+    });
+  });
 });
