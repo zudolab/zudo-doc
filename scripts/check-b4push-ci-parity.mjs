@@ -77,6 +77,12 @@ const REQUIRED_CI_GUARDS = [
     comment: "Design token lint",
   },
   {
+    // Package safelist: node scripts/check-package-safelist.mjs (CI) / pnpm check:package-safelist (b4push)
+    ciNeedle: "check-package-safelist.mjs",
+    b4pushScript: "check:package-safelist",
+    comment: "Package safelist drift check (#1982)",
+  },
+  {
     // This parity check itself — must also appear in CI
     ciNeedle: "check-b4push-ci-parity.mjs",
     b4pushScript: "check:b4push-ci-parity",
