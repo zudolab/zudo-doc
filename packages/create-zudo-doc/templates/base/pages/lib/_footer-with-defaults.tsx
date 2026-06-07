@@ -124,17 +124,15 @@ export function FooterWithDefaults({
       // pages ([tag].tsx / tags/index.tsx) and enumerateTagsRoutes, which all
       // now filter. Without this, the footer would link to /{locale}/docs/tags/
       // pages that are never built for tags living only on default-locale-only
-      // prefix pages. category_no_page is dropped for the same reason.
+      // prefix pages. category_no_page is dropped for the same reason — AFTER
+      // the merge, so a locale override carrying the flag first wins the merge
+      // (pre-merge filtering would let the unflagged base doc resurface).
       const result = mergeLocaleDocs({
-        baseDocs: loadDocs("docs").filter(
-          (d) => !d.data.draft && !d.data.category_no_page,
-        ),
-        localeDocs: loadDocs(`docs-${lang}`).filter(
-          (d) => !d.data.draft && !d.data.category_no_page,
-        ),
+        baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
+        localeDocs: loadDocs(`docs-${lang}`).filter((d) => !d.data.draft),
         applyDefaultLocaleOnlyFilter: true,
       });
-      docs = result.docs;
+      docs = result.docs.filter((d) => !d.data.category_no_page);
     }
 
     const tagMap = collectTags(
