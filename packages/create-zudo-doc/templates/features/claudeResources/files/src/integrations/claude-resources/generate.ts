@@ -76,19 +76,21 @@ function listFiles(dir: string): string[] {
     .sort();
 }
 
-function writeCategoryMeta(
+function writeCategoryIndex(
   outputDir: string,
   label: string,
   position: number,
   description: string,
-  noPage = true,
 ) {
-  const meta: Record<string, unknown> = { label, position, description };
-  if (noPage) meta.noPage = true;
-  fs.writeFileSync(
-    path.join(outputDir, "_category_.json"),
-    JSON.stringify(meta, null, 2) + "\n",
-  );
+  const mdx = `---
+title: "${escapeTitle(label)}"
+description: "${escapeTitle(description)}"
+sidebar_position: ${position}
+category_no_page: true
+generated: true
+---
+`;
+  fs.writeFileSync(path.join(outputDir, "index.mdx"), mdx);
 }
 
 // ---------------------------------------------------------------------------
@@ -197,7 +199,7 @@ ${escapeForMdx(content.trim())}
     fs.writeFileSync(path.join(outputDir, `${item.slug}.mdx`), mdx);
   });
 
-  writeCategoryMeta(outputDir, "CLAUDE.md", 900, "Project-specific instructions");
+  writeCategoryIndex(outputDir, "CLAUDE.md", 900, "Project-specific instructions");
   return items;
 }
 
@@ -243,7 +245,7 @@ ${escapeForMdx(parsed.content.trim())}
 
   items.sort((a, b) => a.name.localeCompare(b.name));
 
-  writeCategoryMeta(outputDir, "Commands", 901, "Custom slash commands");
+  writeCategoryIndex(outputDir, "Commands", 901, "Custom slash commands");
   return items;
 }
 
@@ -474,7 +476,7 @@ ${escapeForMdx(ref.content.trim())}
 
   items.sort((a, b) => a.name.localeCompare(b.name));
 
-  writeCategoryMeta(outputDir, "Skills", 902, "Skill packages");
+  writeCategoryIndex(outputDir, "Skills", 902, "Skill packages");
   return items;
 }
 
@@ -525,7 +527,7 @@ ${escapeForMdx(parsed.content.trim())}
 
   items.sort((a, b) => a.name.localeCompare(b.name));
 
-  writeCategoryMeta(outputDir, "Agents", 903, "Custom subagents");
+  writeCategoryIndex(outputDir, "Agents", 903, "Custom subagents");
   return items;
 }
 
