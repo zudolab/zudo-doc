@@ -120,6 +120,18 @@ In production, a standalone CLI generator batch-processes all content files and 
 
 This parallel strategy reduces total CI build time because the history generation (which requires a full git clone and walks every commit) runs independently of the zfb build.
 
+<Note>
+
+The per-page dropdown JSON in `dist/doc-history/` is generated automatically in CI, but for **local** builds it is opt-in. A plain `pnpm build` followed by `pnpm preview` will **not** show the history dropdown — the Created/Updated/Author block still appears, only the dropdown data is absent. To include it, build with:
+
+```sh
+GEN_DOC_HISTORY=1 pnpm build
+```
+
+This is useful when previewing a locally-built `dist/` or bundling an offline reader. See the [deployment guide](./deployment.mdx) for details.
+
+</Note>
+
 The output structure mirrors the content directory:
 
 ```

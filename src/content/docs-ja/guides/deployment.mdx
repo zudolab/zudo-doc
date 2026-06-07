@@ -77,11 +77,28 @@ CIはwranglerの出力から正確なホストを解析し、**preview**ジョ�
 |---|---|---|
 | CI `build-site`ジョブ | 未設定 | preBuildがSSGメタブロック（作成日・更新日・著者）を生成するためにフルgit履歴が必要 |
 | CI `e2e`ジョブ | 未設定 | E2Eテストはインラインで履歴機能を検証する |
-| ローカル`pnpm build` | 未設定 | 履歴はビルド出力に直接埋め込まれる |
+| ローカル`pnpm build` | 未設定 | 作成日・更新日・著者のメタブロックは埋め込まれる（preBuild）。ページごとの履歴ドロップダウンJSONはデフォルトではローカル生成**されない** — 後述のGEN_DOC_HISTORYを参照 |
 
 <Tip>
 
 `SKIP_DOC_HISTORY=1`はシャロークローンやgit履歴が利用できないカスタムCIバリアント向けのエスケープハッチです。設定するとすべてのページから作成日・更新日・著者ブロックが消えます。
+
+</Tip>
+
+## GEN_DOC_HISTORY
+
+`GEN_DOC_HISTORY=1`（#1986で導入）はdoc-historyプラグインの**postBuild**フックを制御します — `dist/doc-history/`にページごとのリビジョン／差分JSONを書き出し、DocHistoryドロップダウンアイランドに供給するステップです。プラグインの**preBuild**フック（表示される作成日・更新日・著者のメタブロック）はこれに影響されず、`SKIP_DOC_HISTORY`のみで制御されます。postBuildは次の決定表に従います：
+
+| コンテキスト | postBuild JSON | 理由 |
+|---|---|---|
+| `SKIP_DOC_HISTORY=1` | スキップ | `GEN_DOC_HISTORY`とCIを上書きする — すべてに優先する |
+| `GEN_DOC_HISTORY=1` | 生成 | 明示的なローカルオプトイン |
+| `CI` / `GITHUB_ACTIONS`が設定 | 生成 | `build-site`アーティファクトを以前とバイト単位で同一に保つ |
+| 通常のローカル`pnpm build` | スキップ | #1986のデフォルト — 下記のTipを参照 |
+
+<Tip>
+
+postBuildがローカルでデフォルトオフなのは、コンテンツファイルごとの`git log --follow`チェーンが大規模なコーパスではzfbの120秒のpostBuildライフサイクル予算を超え、通常の`pnpm build`を失敗させるためです。ローカルでは冗長でもあります：開発時は履歴をスタンドアロンの`:4322`サーバーからライブで読み取り、CIは専用の並列`build-history`ジョブでJSONを生成します。ローカルビルドした`dist/`をプレビューするとき（またはTauriオフラインリーダーをビルドするとき）にドロップダウンを動作させるには、`GEN_DOC_HISTORY=1 pnpm build`を実行します。これはzfbプラグインのpostBuildのみを制御する点に注意してください — `build-history`ジョブで使われるスタンドアロンの`@takazudo/zudo-doc-history-server generate` CLIは制御対象外で、呼び出されると常に生成します。
 
 </Tip>
 
