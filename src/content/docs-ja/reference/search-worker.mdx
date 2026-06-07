@@ -94,6 +94,7 @@ interface SearchResult {
 | 400        | `query`が500文字の制限を超えている      |
 | 404        | リクエストパスが`/`ではない             |
 | 405        | リクエストメソッドがPOSTではない        |
+| 415        | Content-Typeが`application/json`ではない |
 | 429        | レート制限超過（`Retry-After`ヘッダーを含む） |
 | 500        | 内部サーバーエラー（インデックス取得失敗等）  |
 

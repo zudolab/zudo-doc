@@ -26,7 +26,7 @@ export const settings = {
 When enabled:
 
 - A sparkle icon appears in the header bar
-- The `POST /api/ai-chat` endpoint becomes available as a Cloudflare Pages SSR route
+- The `POST /api/ai-chat` endpoint becomes available as a Cloudflare Workers SSR route
 
 ## Security Warning for Non-Demo Deployments
 
@@ -61,7 +61,7 @@ export const settings = {
 
 ## Environment Setup
 
-The chat endpoint runs as a Cloudflare Pages SSR route (`pages/api/ai-chat.tsx`) and reads its
+The chat endpoint runs as a Cloudflare Workers SSR route (`pages/api/ai-chat.tsx`) and reads its
 configuration from Cloudflare env bindings set in `wrangler.toml`.
 
 ### Required CF bindings
@@ -159,5 +159,5 @@ src/
     └── render-markdown.ts      # Lightweight markdown-to-HTML renderer
 pages/
 └── api/
-    └── ai-chat.tsx             # CF Pages SSR endpoint (prerender = false)
+    └── ai-chat.tsx             # CF Workers SSR endpoint (prerender = false)
 ```
