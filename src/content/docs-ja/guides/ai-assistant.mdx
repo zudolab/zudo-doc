@@ -26,7 +26,7 @@ export const settings = {
 有効にすると：
 
 - ヘッダーバーにスパークルアイコンが表示されます
-- `POST /api/ai-chat`エンドポイントがCloudflare PagesのSSRルートとして利用可能になります
+- `POST /api/ai-chat`エンドポイントがCloudflare WorkersのSSRルートとして利用可能になります
 
 ## デモモード無効化時のセキュリティ警告
 
@@ -61,7 +61,7 @@ export const settings = {
 
 ## 環境設定
 
-チャットエンドポイントはCloudflare PagesのSSRルート（`pages/api/ai-chat.tsx`）として動作し、設定は`wrangler.toml`に定義されたCloudflare環境バインディングから読み込みます。
+チャットエンドポイントはCloudflare WorkersのSSRルート（`pages/api/ai-chat.tsx`）として動作し、設定は`wrangler.toml`に定義されたCloudflare環境バインディングから読み込みます。
 
 ### 必要なCFバインディング
 
@@ -158,5 +158,5 @@ src/
     └── render-markdown.ts      # Lightweight markdown-to-HTML renderer
 pages/
 └── api/
-    └── ai-chat.tsx             # CF Pages SSR endpoint (prerender = false)
+    └── ai-chat.tsx             # CF Workers SSR endpoint (prerender = false)
 ```
