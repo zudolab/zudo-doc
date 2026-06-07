@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { cpus } from "node:os";
 import { parseCliArgs } from "./args.js";
-import { collectContentFiles, getDocHistory } from "./git-history.js";
+import { collectContentFiles, getDocHistoryAsync } from "./git-history.js";
 import { getContentDirEntries } from "./shared.js";
 
 /**
@@ -55,7 +55,10 @@ async function generate(options: {
   let errorCount = 0;
 
   // Bounded parallelism: default to CPU count (min 2, max 8) to saturate git
-  // without spawning excessively — each getDocHistory issues ~2 git processes.
+  // without spawning excessively — each getDocHistoryAsync issues ~3 git
+  // processes. The async variant is load-bearing here: the prior sync
+  // getDocHistory blocked the event loop on execFileSync, so this semaphore's
+  // concurrency cap was a no-op and every file ran serially (issue #1986).
   const concurrency = Math.min(8, Math.max(2, cpus().length));
   const acquire = makeSemaphore(concurrency);
 
@@ -70,7 +73,7 @@ async function generate(options: {
       const task = (async () => {
         const release = await acquire();
         try {
-          const history = getDocHistory(filePath, slug, maxEntries);
+          const history = await getDocHistoryAsync(filePath, slug, maxEntries);
           const prefixedSlug = localeKey ? `${localeKey}/${slug}` : slug;
           const jsonPath = join(outDir, `${prefixedSlug}.json`);
           mkdirSync(dirname(jsonPath), { recursive: true });
