@@ -2,16 +2,22 @@
 #
 # Triggered on PRs targeting `main` or any `base/**` branch (epic-PRs in
 # the zfb migration parity super-epic stack into base/zfb-migration-parity
-# so each child epic-PR also needs CI gating). The pipeline mirrors the
-# local `pnpm b4push` script:
-#   0. Template drift check (no install needed — pure shell)
-#   1. Type checking (`zfb check` → tsc --noEmit)
-#   2. Build the zfb docs site (full clone — needed for SSG meta dates)
-#   3. HTML validate the built dist/
-#   4. Build doc history JSONs (full clone, standalone server package)
-#   5. E2E & smoke tests (Playwright)
-#   6. Merge build outputs and deploy a preview to Cloudflare Workers static assets
-#   7. Post the preview URL as a PR comment
+# so each child epic-PR also needs CI gating).
+#
+# CI jobs (in approximate execution order):
+#   Template Drift Check     — pure-shell, no install; scripts/check-template-drift.sh
+#   Pin Parity Check         — pure-Node, no install; scripts/check-pin-parity.mjs
+#   Fixture Settings Drift   — pure-Node, no install; scripts/check-fixture-settings-drift.mjs
+#   B4push/CI Parity Check   — pure-Node, no install; scripts/check-b4push-ci-parity.mjs
+#   Lint Gates               — pnpm install; pnpm tags:audit --ci + pnpm lint:tokens
+#   Type Check               — pnpm install; pnpm check (zfb check → tsc --noEmit)
+#   Package Unit Tests       — pnpm install; pnpm test:packages (all 5 package suites)
+#   Root Unit Tests          — pnpm install; pnpm test:unit (src/**/__tests__, scripts/__tests__)
+#   Build Site               — full clone, pnpm install; pnpm build + check:links
+#   HTML validate            — needs build-site; pnpm check:html
+#   Build Doc History        — full clone, pnpm install; doc-history-server generate
+#   E2E Tests                — pnpm install (Playwright container); pnpm test:e2e:ci
+#   Preview Deploy           — needs build-site + build-history; wrangler deploy + smoke gates
 #
 # zfb and zdtp are consumed directly from npm (see package.json):
 #   - @takazudo/zfb + @takazudo/zfb-runtime + @takazudo/zfb-adapter-cloudflare
@@ -75,6 +81,77 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Check pin parity
         run: node scripts/check-pin-parity.mjs
+
+  # ---------------------------------------------------------------------------
+  # Job 0.6: Fixture settings drift check (lightweight, no pnpm install needed)
+  # ---------------------------------------------------------------------------
+  # Verifies that every top-level key in src/config/settings.ts (canonical)
+  # is either present in each of the five e2e fixture settings.ts files or
+  # explicitly listed in .fixture-settings-drift-allowlist.
+  # Closes the headingIdStrategy gap (#1946): that drift reached main because
+  # this check existed only in pnpm b4push, not CI.
+  # Pure-Node script — uses preinstalled Node 22 on the runner image, no pnpm.
+  check-fixture-settings-drift:
+    name: Fixture Settings Drift Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Check fixture settings drift
+        run: node scripts/check-fixture-settings-drift.mjs
+
+  # ---------------------------------------------------------------------------
+  # Job 0.65: B4push/CI parity check (guard manifest meta-check)
+  # ---------------------------------------------------------------------------
+  # Verifies that every lightweight guard gate in scripts/run-b4push.sh also
+  # has a corresponding job in this workflow. Closes the silent-drift gap where
+  # a b4push guard could be added without a matching CI job (#1967).
+  # Pure-Node script — uses preinstalled Node 22 on the runner image, no pnpm.
+  check-b4push-ci-parity:
+    name: B4push/CI Parity Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Check b4push/CI parity
+        run: node scripts/check-b4push-ci-parity.mjs
+
+  # ---------------------------------------------------------------------------
+  # Job 0.7: Lint gates (tags audit + design token lint)
+  # ---------------------------------------------------------------------------
+  # Runs pnpm tags:audit --ci (tsx scripts/tags-audit.ts) and pnpm lint:tokens
+  # (design-token-lint bin from @takazudo/zudo-design-token-lint). Both require
+  # the installed node_modules, so a pnpm install is needed. Combined into one
+  # job (single install, two run steps) to avoid a redundant install.
+  lint-gates:
+    name: Lint Gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tags audit
+        run: pnpm tags:audit --ci
+
+      - name: Run design token lint
+        run: pnpm lint:tokens
 
   # ---------------------------------------------------------------------------
   # Job 1: Type checking

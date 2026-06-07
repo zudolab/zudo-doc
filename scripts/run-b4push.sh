@@ -10,13 +10,14 @@ set -euo pipefail
 #   4. Fixture settings drift check
 #   5. Tags audit (--ci)
 #   6. Design token lint
-#   7. Type checking (zfb check + workspace package typechecks)
-#   8. Root unit tests (test:unit)
-#   9. Build (zfb build)
-#  10. Link check
-#  11. HTML validation (html-validate dist/**/*.html)
-#  12. Automated preview smoke (blocking)
-#  13. Manual interactive smoke (operator-driven)
+#   7. B4push/CI parity check (guard manifest meta-check — #1967)
+#   8. Type checking (zfb check + workspace package typechecks)
+#   9. Root unit tests (test:unit)
+#  10. Build (zfb build)
+#  11. Link check
+#  12. HTML validation (html-validate dist/**/*.html)
+#  13. Automated preview smoke (blocking)
+#  14. Manual interactive smoke (operator-driven)
 #
 # CI parity (Playwright E2E + GitHub Actions) is intentionally parked
 # to E9b until the post-cutover migration window closes.
@@ -28,7 +29,7 @@ set -euo pipefail
 
 START_TIME=$(date +%s)
 FAILURES=()
-TOTAL_STEPS=13
+TOTAL_STEPS=14
 CURRENT_STEP=0
 
 step() {
@@ -45,9 +46,14 @@ skip() { echo "⏭  $1 (skipped)"; }
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
+# >>> b4push-ci-parity:guards
+# Steps 1–7 are lightweight guard gates. They are delimited by the markers
+# above/below so check-b4push-ci-parity.mjs can cross-check them against the
+# REQUIRED_CI_GUARDS manifest without brittle full-file parsing.
+
 # ── Step 1: Format check (mdx only) ───────────────────
 step "Format check (mdx)"
-if (cd "$ROOT_DIR" && pnpm run format:check); then
+if (cd "$ROOT_DIR" && pnpm format:check:mdx); then
   pass "Format check passed"
 else
   fail "Format check"
@@ -96,7 +102,19 @@ else
   fail "Design token lint"
 fi
 
-# ── Step 7: Type checking ─────────────────────────────
+# ── Step 7: B4push/CI parity check ───────────────────
+# Pure-Node check — verifies every lightweight guard gate in this file also
+# has a corresponding CI job. See scripts/check-b4push-ci-parity.mjs.
+step "B4push/CI parity check (check:b4push-ci-parity)"
+if (cd "$ROOT_DIR" && pnpm check:b4push-ci-parity); then
+  pass "B4push/CI parity check passed"
+else
+  fail "B4push/CI parity check"
+fi
+
+# <<< b4push-ci-parity:guards
+
+# ── Step 8: Type checking ─────────────────────────────
 # Prefer `zfb check` (the post-cutover entry point). If it fails to
 # start (e.g. binary not yet built), fall back to `tsc --noEmit` so the
 # typecheck still gates pushes.
@@ -119,7 +137,7 @@ else
   fail "Package typechecks"
 fi
 
-# ── Step 8: Root unit tests ───────────────────────────
+# ── Step 9: Root unit tests ───────────────────────────
 # Root `test:unit` (vitest) guards src/**/__tests__ and scripts/__tests__,
 # which previously ran in no local gate and no CI workflow (#1856). Runs
 # before the expensive site build for fast logic-level feedback.
@@ -136,7 +154,7 @@ else
   fail "Root unit tests"
 fi
 
-# ── Step 9: Build ─────────────────────────────────────
+# ── Step 10: Build ────────────────────────────────────
 step "Build (zfb build)"
 if (cd "$ROOT_DIR" && pnpm build); then
   pass "Build passed"
@@ -144,7 +162,7 @@ else
   fail "Build"
 fi
 
-# ── Step 10: Link check ───────────────────────────────
+# ── Step 11: Link check ───────────────────────────────
 #
 # Strict on broken links + absolute MDX-source warnings (real 404s
 # / sub-path bypass). Trailing-slash warnings stay warn-only — they
@@ -164,7 +182,7 @@ else
   fail "Link check"
 fi
 
-# ── Step 11: HTML validation ──────────────────────────
+# ── Step 12: HTML validation ──────────────────────────
 step "HTML validation (html-validate)"
 if [[ "${B4PUSH_SKIP_HTML_VALIDATE:-}" == "1" ]]; then
   skip "HTML validation (B4PUSH_SKIP_HTML_VALIDATE=1)"
@@ -176,7 +194,7 @@ else
   fi
 fi
 
-# ── Step 12: Automated preview smoke (blocking) ──────
+# ── Step 13: Automated preview smoke (blocking) ──────
 step "Preview smoke (automated)"
 if [[ "${B4PUSH_SKIP_PREVIEW_SMOKE:-}" == "1" ]]; then
   skip "Preview smoke (B4PUSH_SKIP_PREVIEW_SMOKE=1)"
@@ -188,7 +206,7 @@ else
   fi
 fi
 
-# ── Step 13: Manual interactive smoke ────────────────
+# ── Step 14: Manual interactive smoke ────────────────
 step "Manual interactive smoke"
 if [[ "${B4PUSH_SKIP_MANUAL_SMOKE:-}" == "1" ]]; then
   skip "Manual smoke (B4PUSH_SKIP_MANUAL_SMOKE=1)"

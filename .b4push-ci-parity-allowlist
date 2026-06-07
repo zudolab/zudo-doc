@@ -1,0 +1,25 @@
+# .b4push-ci-parity-allowlist
+#
+# Each entry is an intentional CI exemption — a pnpm script that appears in
+# the run-b4push.sh guard region but is NOT required to have its own CI job.
+#
+# Convention (enforced by review, not tooling):
+#   - SEED ONCE: entries are added when the check is introduced, for scripts
+#     whose absence from CI is genuinely intentional.
+#   - NEW GUARDS: when a new pnpm script is added to the run-b4push.sh guard
+#     region, the parity check fires. To resolve: either (a) add a CI job and
+#     an entry in REQUIRED_CI_GUARDS, OR (b) add the script name here with a
+#     "# reason:" comment explaining why CI enforcement is not needed.
+#   - NO SILENT EXTENSIONS: every new allowlist entry needs a # reason: comment.
+#
+# Format: one entry per line — exact pnpm script name (no "pnpm " prefix).
+# Comments: lines starting with # are ignored. Blank lines are ignored.
+# Exact-match only (no globs, no wildcards).
+#
+
+# ── format:check:mdx ──────────────────────────────────────────────────────────
+# reason: enforced by lefthook pre-commit hook on every commit, so staged files
+#         are always checked before they reach CI. A dedicated CI job would be
+#         redundant overhead given the hook fires reliably on every developer's
+#         machine (auto-installed by pnpm install via the prepare lifecycle script).
+format:check:mdx

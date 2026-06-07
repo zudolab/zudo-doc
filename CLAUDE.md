@@ -235,6 +235,8 @@ When adding or removing a feature from zudo-doc, update the `create-zudo-doc` ge
 7. **`packages/create-zudo-doc/src/__tests__/scaffold.test.ts`** — Update tests
 8. Run `/l-update-generator` to verify no drift remains
 
+**e2e fixture sync**: Adding a field to `src/config/settings.ts` also requires mirroring it into all five `e2e/fixtures/*/src/config/settings.ts` files — or adding an allowlist entry in `.fixture-settings-drift-allowlist` with a `# reason:` comment. This is now enforced in CI by the `Fixture Settings Drift Check` job.
+
 **Important**: This checklist also applies to incremental improvements (CSS token migrations, icon sizing, spacing changes, etc.) — not just new features. If you change a file that has a template counterpart, update the template too. Run `pnpm check:template-drift` to verify (note: allowlisted files such as `src/styles/global.css`, plugin re-exports, and other slot-based files listed in `.template-drift-allowlist` are excluded from automated checks and need manual review).
 
 ## Tauri (two modes)
