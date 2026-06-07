@@ -1,48 +1,36 @@
 ---
 title: Math Equations
-description: KaTeX math equation support for inline, block, and fenced code block math.
+description: KaTeX math equation support using the MathBlock JSX component.
 sidebar_position: 5
 ---
 
-When `math` is enabled in settings (default: `true`), you can render mathematical equations using KaTeX.
+When `math` is enabled in settings (default: `true`), you can render mathematical equations using KaTeX via the `<MathBlock>` JSX component.
+
+<Info>
+
+`$...$`, `$$...$$`, and `` ```math `` fences are **not supported** in zfb. The zfb Rust MDX emitter does not process those syntaxes — use `<MathBlock latex="..." />` instead (see [`pages/lib/_math-block.tsx`](https://github.com/zudolab/zudo-doc/blob/main/pages/lib/_math-block.tsx)).
+
+</Info>
 
 ## Inline Math
 
-Use single dollar signs to embed math within a line of text.
+Use `<MathBlock latex="..." />` (without the `block` prop) to embed math within a line of text.
 
 The formula <MathBlock latex="E = mc^2" /> is inline.
 
 ```mdx
-The formula $E = mc^2$ is inline.
+The formula <MathBlock latex="E = mc^2" /> is inline.
 ```
 
 ## Block Math
 
-Use double dollar signs to render a centered display equation.
+Add the `block` prop to render a centered display equation.
 
 <MathBlock latex="\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}" block />
 
 ```mdx
-$$
-\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
-$$
+<MathBlock latex="\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}" block />
 ```
-
-## Fenced Code Block
-
-Use a fenced code block with the `math` language identifier.
-
-```math
-\nabla \times \mathbf{E} = -\frac{\partial \mathbf{B}}{\partial t}
-```
-
-````mdx
-```math
-
-\nabla \times \mathbf{E} = -\frac{\partial \mathbf{B}}{\partial t}
-
-```
-````
 
 ## Configuration
 
@@ -62,9 +50,7 @@ export const settings = {
 <MathBlock latex="x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}" block />
 
 ```mdx
-$$
-x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
-$$
+<MathBlock latex="x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}" block />
 ```
 
 ### Summation
@@ -72,9 +58,7 @@ $$
 <MathBlock latex="\sum_{i=1}^{n} i = \frac{n(n+1)}{2}" block />
 
 ```mdx
-$$
-\sum_{i=1}^{n} i = \frac{n(n+1)}{2}
-$$
+<MathBlock latex="\sum_{i=1}^{n} i = \frac{n(n+1)}{2}" block />
 ```
 
 ### Matrix
@@ -82,19 +66,5 @@ $$
 <MathBlock latex="\begin{bmatrix} a & b \\ c & d \end{bmatrix} \begin{bmatrix} x \\ y \end{bmatrix} = \begin{bmatrix} ax + by \\ cx + dy \end{bmatrix}" block />
 
 ```mdx
-$$
-\begin{bmatrix}
-a & b \\
-c & d
-\end{bmatrix}
-\begin{bmatrix}
-x \\
-y
-\end{bmatrix}
-=
-\begin{bmatrix}
-ax + by \\
-cx + dy
-\end{bmatrix}
-$$
+<MathBlock latex="\begin{bmatrix} a & b \\ c & d \end{bmatrix} \begin{bmatrix} x \\ y \end{bmatrix} = \begin{bmatrix} ax + by \\ cx + dy \end{bmatrix}" block />
 ```

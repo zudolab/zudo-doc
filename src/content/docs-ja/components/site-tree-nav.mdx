@@ -27,17 +27,15 @@ sidebar_position: 7
 ```tsx
 // pages/index.tsx
 import { buildNavTree, groupSatelliteNodes } from "@/utils/docs";
-import { loadCategoryMeta } from "@/utils/docs";
 import { getCategoryOrder } from "@/utils/nav-scope";
 import SiteTreeNav from "@/components/site-tree-nav";
-import { loadDocs } from "./_data";
-import { settings } from "@/config/settings";
+import { resolveNavSource } from "./lib/_nav-source-docs";
+import { defaultLocale } from "@/config/i18n";
 
 export default function IndexPage() {
-  const allDocs = loadDocs("docs");
-  const navDocs = allDocs.filter((doc) => !doc.data.unlisted);
-  const categoryMeta = loadCategoryMeta(settings.docsDir);
-  const tree = buildNavTree(navDocs, "en", categoryMeta);
+  const locale = defaultLocale;
+  const { navDocs, categoryMeta } = resolveNavSource(locale, undefined);
+  const tree = buildNavTree(navDocs, locale, categoryMeta);
   const categoryOrder = getCategoryOrder();
   const groupedTree = groupSatelliteNodes(tree, categoryOrder);
 
@@ -45,7 +43,7 @@ export default function IndexPage() {
     <SiteTreeNav
       tree={groupedTree}
       categoryOrder={categoryOrder}
-      categoryIgnore={["inbox"]}
+      categoryIgnore={["inbox", "develop"]}
     />
   );
 }

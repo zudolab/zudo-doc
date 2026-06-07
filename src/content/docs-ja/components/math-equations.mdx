@@ -1,48 +1,36 @@
 ---
 title: 数式
-description: インライン、ブロック、フェンスドコードブロックに対応した KaTeX 数式サポートです。
+description: MathBlock JSXコンポーネントを使用した KaTeX 数式サポートです。
 sidebar_position: 5
 ---
 
-設定で `math` が有効になっている場合（デフォルト：`true`）、KaTeX を使用して数式をレンダリングできます。
+設定で `math` が有効になっている場合（デフォルト：`true`）、`<MathBlock>` JSX コンポーネントを使用して KaTeX で数式をレンダリングできます。
+
+<Info>
+
+`$...$`、`$$...$$`、および `` ```math `` フェンスは **zfb では非対応です**。zfb の Rust MDX エミッタはこれらの構文を処理しません — 代わりに `<MathBlock latex="..." />` を使用してください（[`pages/lib/_math-block.tsx`](https://github.com/zudolab/zudo-doc/blob/main/pages/lib/_math-block.tsx) を参照）。
+
+</Info>
 
 ## インライン数式
 
-テキスト内に数式を埋め込むには、単一のドル記号を使用します。
+`<MathBlock latex="..." />`（`block` プロップなし）を使用して、テキスト内に数式を埋め込みます。
 
 数式 <MathBlock latex="E = mc^2" /> はインラインで表示されます。
 
 ```mdx
-数式 $E = mc^2$ はインラインで表示されます。
+数式 <MathBlock latex="E = mc^2" /> はインラインで表示されます。
 ```
 
 ## ブロック数式
 
-中央揃えのディスプレイ数式をレンダリングするには、二重のドル記号を使用します。
+`block` プロップを追加すると、中央揃えのディスプレイ数式をレンダリングできます。
 
 <MathBlock latex="\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}" block />
 
 ```mdx
-$$
-\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
-$$
+<MathBlock latex="\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}" block />
 ```
-
-## フェンスドコードブロック
-
-`math` 言語識別子を指定したフェンスドコードブロックを使用します。
-
-```math
-\nabla \times \mathbf{E} = -\frac{\partial \mathbf{B}}{\partial t}
-```
-
-````mdx
-```math
-
-\nabla \times \mathbf{E} = -\frac{\partial \mathbf{B}}{\partial t}
-
-```
-````
 
 ## 設定
 
@@ -62,9 +50,7 @@ export const settings = {
 <MathBlock latex="x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}" block />
 
 ```mdx
-$$
-x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
-$$
+<MathBlock latex="x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}" block />
 ```
 
 ### 総和
@@ -72,9 +58,7 @@ $$
 <MathBlock latex="\sum_{i=1}^{n} i = \frac{n(n+1)}{2}" block />
 
 ```mdx
-$$
-\sum_{i=1}^{n} i = \frac{n(n+1)}{2}
-$$
+<MathBlock latex="\sum_{i=1}^{n} i = \frac{n(n+1)}{2}" block />
 ```
 
 ### 行列
@@ -82,19 +66,5 @@ $$
 <MathBlock latex="\begin{bmatrix} a & b \\ c & d \end{bmatrix} \begin{bmatrix} x \\ y \end{bmatrix} = \begin{bmatrix} ax + by \\ cx + dy \end{bmatrix}" block />
 
 ```mdx
-$$
-\begin{bmatrix}
-a & b \\
-c & d
-\end{bmatrix}
-\begin{bmatrix}
-x \\
-y
-\end{bmatrix}
-=
-\begin{bmatrix}
-ax + by \\
-cx + dy
-\end{bmatrix}
-$$
+<MathBlock latex="\begin{bmatrix} a & b \\ c & d \end{bmatrix} \begin{bmatrix} x \\ y \end{bmatrix} = \begin{bmatrix} ax + by \\ cx + dy \end{bmatrix}" block />
 ```
