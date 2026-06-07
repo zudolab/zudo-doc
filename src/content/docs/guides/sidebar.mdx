@@ -99,18 +99,18 @@ src/content/docs/
 
 ## Nested Categories (Sub-Groups)
 
-Subdirectories within a category directory create nested collapsible groups in the sidebar. Each sub-directory needs a `_category_.json` file to set its label and position:
+Subdirectories within a category directory create nested collapsible groups in the sidebar. Each sub-directory needs an `index.mdx` file with `category_no_page: true` to set its label and position without creating a route:
 
 ```
 src/content/docs/
   methodology/
     index.mdx
     architecture/
-      _category_.json       → { "label": "Architecture", "position": 1, "noPage": true }
+      index.mdx             → title: Architecture, sidebar_position: 1, category_no_page: true
       bem-strategy.mdx
       component-first.mdx
     design-systems/
-      _category_.json       → { "label": "Design Systems", "position": 2, "noPage": true }
+      index.mdx             → title: Design Systems, sidebar_position: 2, category_no_page: true
       tight-token.mdx
       two-tier-size.mdx
 ```
@@ -176,17 +176,23 @@ This pattern is recommended when categories have sub-groups. The explicit config
 
 ## Sort Order (Ascending / Descending)
 
-By default, items within a category are sorted in ascending order (lowest `sidebar_position` first, then alphabetical). You can reverse this to descending order per category using `_category_.json`:
+By default, items within a category are sorted in ascending order (lowest `sidebar_position` first, then alphabetical). You can reverse this to descending order per category using the `category_sort_order` frontmatter field on the category's `index.mdx`:
 
-```json title="_category_.json"
-{
-  "label": "Changelog",
-  "position": 10,
-  "sortOrder": "desc"
-}
+```mdx title="changelog/index.mdx"
+---
+title: Changelog
+sidebar_position: 10
+category_sort_order: "desc"
+---
 ```
 
-When `sortOrder` is `"desc"`, items are sorted in reverse — highest position first, then reverse alphabetical. This is useful for date-based content (changelogs, release notes) where the newest items should appear at the top.
+When `category_sort_order` is `"desc"`, items are sorted in reverse — highest position first, then reverse alphabetical. This is useful for date-based content (changelogs, release notes) where the newest items should appear at the top.
+
+<Note>
+
+`_category_.json` still works but triggers a zfb build warning. Prefer frontmatter on `index.mdx` for new categories.
+
+</Note>
 
 You can also set `sortOrder` in `src/config/sidebars.ts` for manual sidebar configurations:
 
@@ -213,4 +219,4 @@ For changelog-style categories, combine `sortOrder: "desc"` with date-prefixed f
 - Use `sidebar_position: 0` on category index pages
 - Use sequential numbers (1, 2, 3...) for pages within each category
 - Leave gaps between numbers (e.g., 10, 20, 30) if you expect to insert pages later
-- Use `sortOrder: "desc"` in `_category_.json` for newest-first categories
+- Use `category_sort_order: "desc"` in `index.mdx` for newest-first categories

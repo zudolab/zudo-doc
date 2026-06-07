@@ -13,25 +13,24 @@ zudo-docには、リリースノートとバージョン履歴を追跡するた
 ```
 src/content/docs/
 └── changelog/
-    ├── _category_.json    # 降順ソート付きカテゴリ設定
-    ├── index.mdx          # カテゴリインデックスページ
+    ├── index.mdx          # カテゴリインデックスページ（降順ソートを設定）
     ├── 0.2.0.mdx          # 新しいエントリ (sidebar_position: 2)
     └── 0.1.0.mdx          # 古いエントリ (sidebar_position: 1)
 ```
 
 ## カテゴリ設定
 
-`_category_.json`ファイルで降順ソートを設定し、新しいエントリがサイドバーの先頭に表示されるようにします：
+`index.mdx` の `category_sort_order` フロントマターで降順ソートを設定し、新しいエントリがサイドバーの先頭に表示されるようにします：
 
-```json title="_category_.json"
-{
-  "label": "Changelog",
-  "position": 10,
-  "sortOrder": "desc"
-}
+```mdx title="changelog/index.mdx"
+---
+title: Changelog
+sidebar_position: 10
+category_sort_order: "desc"
+---
 ```
 
-`sortOrder: "desc"`を設定すると、`sidebar_position`の値が大きいエントリが先に表示されます。これにより、新しいバージョンが自然に先頭にソートされます。
+`category_sort_order: "desc"`を設定すると、`sidebar_position`の値が大きいエントリが先に表示されます。これにより、新しいバージョンが自然に先頭にソートされます。
 
 ## 新しいエントリの追加
 
@@ -62,7 +61,7 @@ sidebar_position: 2
 
 <Tip>
 
-新しいバージョンごとに`sidebar_position`の値を増やしてください。カテゴリ設定の`sortOrder: "desc"`と組み合わせることで、最新のエントリが常にサイドバーの先頭に表示されます。
+新しいバージョンごとに`sidebar_position`の値を増やしてください。カテゴリの`index.mdx`の`category_sort_order: "desc"`と組み合わせることで、最新のエントリが常にサイドバーの先頭に表示されます。
 
 </Tip>
 
@@ -148,4 +147,4 @@ headerNav: [
 
 ## i18n
 
-翻訳されたリリースノートを提供するために、変更履歴エントリを日本語コンテンツディレクトリ（`src/content/docs-ja/changelog/`）にミラーしてください。`_category_.json`とディレクトリ構造は英語版と一致させる必要があります。
+翻訳されたリリースノートを提供するために、変更履歴エントリを日本語コンテンツディレクトリ（`src/content/docs-ja/changelog/`）にミラーしてください。`index.mdx`とディレクトリ構造は英語版と一致させる必要があります。

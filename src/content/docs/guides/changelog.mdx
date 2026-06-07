@@ -13,25 +13,24 @@ Changelog entries live in a dedicated content directory:
 ```
 src/content/docs/
 └── changelog/
-    ├── _category_.json    # Category config with desc sort
-    ├── index.mdx          # Category index page
+    ├── index.mdx          # Category index page (sets desc sort order)
     ├── 0.2.0.mdx          # Newer entry (sidebar_position: 2)
     └── 0.1.0.mdx          # Older entry (sidebar_position: 1)
 ```
 
 ## Category Configuration
 
-The `_category_.json` file configures descending sort order so newer entries appear first in the sidebar:
+The `index.mdx` file configures descending sort order so newer entries appear first in the sidebar:
 
-```json title="_category_.json"
-{
-  "label": "Changelog",
-  "position": 10,
-  "sortOrder": "desc"
-}
+```mdx title="changelog/index.mdx"
+---
+title: Changelog
+sidebar_position: 10
+category_sort_order: "desc"
+---
 ```
 
-With `sortOrder: "desc"`, entries with higher `sidebar_position` values appear first. This means newer versions naturally sort to the top.
+With `category_sort_order: "desc"`, entries with higher `sidebar_position` values appear first. This means newer versions naturally sort to the top.
 
 ## Adding a New Entry
 
@@ -62,7 +61,7 @@ Summary of changes in this release.
 
 <Tip>
 
-Use incrementing `sidebar_position` values for each new version. Combined with `sortOrder: "desc"` in the category config, this ensures the newest entry always appears at the top of the sidebar.
+Use incrementing `sidebar_position` values for each new version. Combined with `category_sort_order: "desc"` in the category's `index.mdx`, this ensures the newest entry always appears at the top of the sidebar.
 
 </Tip>
 
@@ -148,4 +147,4 @@ headerNav: [
 
 ## i18n
 
-Mirror changelog entries in the Japanese content directory (`src/content/docs-ja/changelog/`) to provide translated release notes. The `_category_.json` and directory structure should match the English version.
+Mirror changelog entries in the Japanese content directory (`src/content/docs-ja/changelog/`) to provide translated release notes. The `index.mdx` and directory structure should match the English version.
