@@ -56,7 +56,7 @@ Each fixture shares the project tree from repo root via **symlinks**, but has it
 - **Fixture-specific** (kept in git per fixture): `src/config/settings.ts`, `src/content/`, optionally `public/<fixture-only-files>/`
 - **Seed file**: `.zfb/doc-history-meta.json` is created as `{}` so the bundler's static `#doc-history-meta` import resolves on the first run; the doc-history plugin's preBuild hook overwrites it on subsequent builds.
 
-All fixtures are pre-built sequentially with `zfb build` (with `SKIP_DOC_HISTORY=1` for non-smoke fixtures) before Playwright runs; the runner then only spawns `zfb preview` per fixture. The smoke fixture also initialises a git repo for doc-history specs (2 commits) and is built *with* doc-history enabled so the per-page JSON manifests land in `dist/doc-history/`.
+All fixtures are pre-built sequentially with `zfb build` (with `SKIP_DOC_HISTORY=1` for non-smoke fixtures) before Playwright runs; the runner then only spawns `zfb preview` per fixture. The smoke fixture also initialises a git repo for doc-history specs (2 commits) and is built with `GEN_DOC_HISTORY=1` so the per-page JSON manifests land in `dist/doc-history/` — the postBuild JSON generation is opt-in for local builds (#1986), so the smoke fixture requests it explicitly.
 
 ## Commands
 

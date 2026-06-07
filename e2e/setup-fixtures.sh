@@ -55,8 +55,8 @@
 #
 # `SKIP_DOC_HISTORY=1` keeps the bootstrap independent of the host's
 # git state. The smoke fixture needs real history for doc-history specs
-# and gets its own per-fixture init() repo + a second fixture-local
-# build pass *with* doc-history enabled.
+# and gets its own per-fixture init() repo + a fixture-local build pass
+# with `GEN_DOC_HISTORY=1` (postBuild JSON is opt-in for local builds, #1986).
 
 set -euo pipefail
 
@@ -265,14 +265,18 @@ echo "  Done: smoke git repo"
 # that share the symlinked `pages/` tree.
 #
 # SKIP_DOC_HISTORY=1 keeps the build independent of the host's git state
-# for non-smoke fixtures. The smoke fixture overrides this so its
+# for non-smoke fixtures. The smoke fixture instead builds with
+# GEN_DOC_HISTORY=1 (postBuild JSON is opt-in for local builds, #1986) so its
 # per-fixture two-commit repo (above) actually drives history output.
 echo ""
 echo "Pre-building fixtures sequentially..."
 for fixture in "${FIXTURES[@]}"; do
   echo "  Building: $fixture"
   if [ "$fixture" = "smoke" ]; then
-    (cd "$REPO_ROOT/e2e/fixtures/$fixture" && "$REPO_ROOT/node_modules/.bin/zfb" build 2>&1) || {
+    # GEN_DOC_HISTORY=1: the doc-history postBuild per-page JSON is opt-in for
+    # local builds (#1986), so the smoke fixture must request it explicitly —
+    # its @local-only doc-history specs read those JSON manifests from dist/.
+    (cd "$REPO_ROOT/e2e/fixtures/$fixture" && GEN_DOC_HISTORY=1 "$REPO_ROOT/node_modules/.bin/zfb" build 2>&1) || {
       echo "  FAILED: $fixture build failed" >&2
       exit 1
     }
