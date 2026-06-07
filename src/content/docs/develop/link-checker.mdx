@@ -66,13 +66,21 @@ pnpm check:links --strict
 
 ### As part of b4push
 
-The link checker runs as Step 4 of 5 in the pre-push validation (`pnpm b4push`):
+The link checker runs as step 10 of 13 in the pre-push validation (`pnpm b4push`):
 
-1. Format check
-2. Type checking
-3. Build
-4. **Link check**
-5. E2E tests
+1. Format check (mdx)
+2. Template drift check
+3. Pin parity check
+4. Fixture settings drift check
+5. Tags audit (--ci)
+6. Design token lint
+7. Type checking
+8. Root unit tests
+9. Build
+10. **Link check**
+11. HTML validation
+12. Automated preview smoke (blocking)
+13. Manual interactive smoke (operator-driven)
 
 ### In CI
 
