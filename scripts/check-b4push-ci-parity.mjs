@@ -136,15 +136,29 @@ function extractB4pushGuardRegion(src) {
   return tokens;
 }
 
+/**
+ * Strip YAML comment lines so ciNeedle substring checks only match
+ * actual step definitions (run:, name:, etc.), not comment text.
+ * Lines where the first non-whitespace character is '#' are removed.
+ */
+function stripYamlComments(src) {
+  return src
+    .split("\n")
+    .filter((line) => !/^\s*#/.test(line))
+    .join("\n");
+}
+
 function main() {
-  const workflowSrc = readFileSync(WORKFLOW_PATH, "utf8");
+  const workflowSrc = stripYamlComments(readFileSync(WORKFLOW_PATH, "utf8"));
   const b4pushSrc = readFileSync(B4PUSH_PATH, "utf8");
   const allowlist = readAllowlist();
 
   const errors = [];
 
   // ── Direction 1: manifest → CI ────────────────────────────────────────────
-  // Assert each required guard's ciNeedle appears somewhere in the workflow YAML.
+  // Assert each required guard's ciNeedle appears in a non-comment workflow line.
+  // Comments are stripped first so a guard removed from CI but still mentioned
+  // in a header comment does NOT produce a false "present" result.
   for (const guard of REQUIRED_CI_GUARDS) {
     if (!workflowSrc.includes(guard.ciNeedle)) {
       errors.push(
