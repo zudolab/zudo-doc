@@ -90,6 +90,8 @@ export function generateZfbConfig(choices: UserChoices): string {
   lines.push(`    standalone: z.boolean().optional(),`);
   lines.push(`    slug: z.string().optional(),`);
   lines.push(`    generated: z.boolean().optional(),`);
+  lines.push(`    category_no_page: z.boolean().optional(),`);
+  lines.push(`    category_sort_order: z.enum(["asc", "desc"]).optional(),`);
   lines.push(`  })`);
   lines.push(`  .passthrough();`);
   lines.push(``);

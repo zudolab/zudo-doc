@@ -28,6 +28,20 @@ export interface SidebarFrontmatter {
    * the slug from the entry's id (stripping a trailing `/index`).
    */
   slug?: string;
+  /**
+   * Category metadata carried on a directory's `index.mdx` frontmatter — the
+   * frontmatter equivalent of `_category_.json`'s `noPage`. When `true`, this
+   * index file exists only to label/position the category: it renders as a
+   * non-linked sidebar header and is excluded from routes, the sitemap, and
+   * the search index. Frontmatter wins over the sidecar when both are present.
+   */
+  category_no_page?: boolean;
+  /**
+   * Frontmatter equivalent of `_category_.json`'s `sortOrder`. Controls the
+   * sort direction of this category's children. Frontmatter wins over the
+   * sidecar when both are present.
+   */
+  category_sort_order?: "asc" | "desc";
 }
 
 /**

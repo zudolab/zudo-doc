@@ -88,9 +88,16 @@ export function slugToUrl(
   return path;
 }
 
-/** Whether a given doc should be excluded from the llms.txt index. */
+/** Whether a given doc should be excluded from the llms.txt index.
+ *  `category_no_page` index files are metadata-only with no built route, so
+ *  they are excluded alongside search_exclude / draft / unlisted. */
 export function isExcluded(data: LlmsTxtFrontmatter): boolean {
-  return Boolean(data.search_exclude || data.draft || data.unlisted);
+  return Boolean(
+    data.search_exclude ||
+      data.draft ||
+      data.unlisted ||
+      data.category_no_page,
+  );
 }
 
 /**

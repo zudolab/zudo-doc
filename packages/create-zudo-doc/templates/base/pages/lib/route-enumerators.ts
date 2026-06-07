@@ -60,6 +60,10 @@ export function enumerateDocsRoutes(locale: string): string[] {
   const tree = buildNavTree(navDocs, locale as Locale, categoryMeta);
 
   for (const doc of allDocs) {
+    // A `category_no_page` index.mdx is metadata-only — no route, so no sitemap
+    // URL. Same exclusion the doc-route paths() apply (zfb retains every .mdx
+    // as a collection entry, so the skip must be explicit).
+    if (doc.data.category_no_page === true) continue;
     // Canonical route slug via the one shared rule (@/utils/slug). `doc.id` is
     // already `toRouteSlug(doc.slug)` (bridged through stripIndexSuffix in
     // pages/_data.ts), so a bare root index.mdx is "" here → `/docs/` — the
@@ -157,6 +161,8 @@ export function enumerateVersionedRoutes(
     const tree = buildNavTree(navDocs, "en", categoryMeta);
 
     for (const doc of allDocs) {
+      // category_no_page index.mdx → no route, no sitemap URL (see paths()).
+      if (doc.data.category_no_page === true) continue;
       const slug = doc.data.slug ?? toRouteSlug(doc.id);
       urls.push(versionedDocsUrl(slug, version.slug));
     }
@@ -178,6 +184,8 @@ export function enumerateVersionedRoutes(
     const tree = buildNavTree(navDocs, locale as Locale, categoryMeta);
 
     for (const doc of allDocs) {
+      // category_no_page index.mdx → no route, no sitemap URL (see paths()).
+      if (doc.data.category_no_page === true) continue;
       const slug = doc.data.slug ?? toRouteSlug(doc.id);
       urls.push(versionedDocsUrl(slug, version.slug, locale as string));
     }
