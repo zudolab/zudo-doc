@@ -259,6 +259,7 @@ export default function LocaleDocsPage(props: PageArgs): JSX.Element {
             locale={locale}
             entrySlug={props.entry.slug}
             contentDir={contentDir}
+            isFallback={isFallback}
           />
         ) : null
       }
