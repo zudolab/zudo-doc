@@ -176,6 +176,11 @@ function generateClaudemdDocs(
 
   const emittedSlugs = new Map<string, string>();
   items.forEach((item, index) => {
+    if (item.slug === "index") {
+      throw new Error(
+        `claude-resources: "${item.relPath}" maps to the reserved slug "index", which is used for the category metadata file. Rename the directory to resolve the conflict.`,
+      );
+    }
     const previous = emittedSlugs.get(item.slug);
     if (previous !== undefined) {
       throw new Error(
@@ -227,6 +232,11 @@ function generateCommandsDocs(config: ClaudeResourcesConfig): CommandItem[] {
     if (!parsed) continue;
 
     const name = file.replace(/\.md$/, "");
+    if (name === "index") {
+      throw new Error(
+        `claude-resources: ".claude/commands/index.md" uses the reserved name "index", which is used for the category metadata file. Rename the command file to resolve the conflict.`,
+      );
+    }
     const description = (parsed.data.description as string) || "";
 
     items.push({ name, description });
@@ -350,6 +360,11 @@ function generateSkillsDocs(config: ClaudeResourcesConfig): SkillItem[] {
   const items: SkillItem[] = [];
 
   for (const dir of dirs) {
+    if (dir === "index") {
+      throw new Error(
+        `claude-resources: skill directory ".claude/skills/index/" uses the reserved name "index", which is used for the category metadata file. Rename the skill directory to resolve the conflict.`,
+      );
+    }
     const content = fs.readFileSync(
       path.join(skillsDir, dir, "SKILL.md"),
       "utf8",
@@ -510,6 +525,11 @@ function generateAgentsDocs(config: ClaudeResourcesConfig): AgentItem[] {
     const description = (parsed.data.description as string) || "";
     const model = (parsed.data.model as string) || "";
     const fileSlug = file.replace(/\.md$/, "");
+    if (fileSlug === "index") {
+      throw new Error(
+        `claude-resources: ".claude/agents/index.md" uses the reserved name "index", which is used for the category metadata file. Rename the agent file to resolve the conflict.`,
+      );
+    }
 
     items.push({ name, file: fileSlug, description, model });
 
