@@ -10,26 +10,27 @@ set -euo pipefail
 #   4. Fixture settings drift check
 #   5. Tags audit (--ci)
 #   6. Design token lint
-#   7. B4push/CI parity check (guard manifest meta-check — #1967)
-#   8. Type checking (zfb check + workspace package typechecks)
-#   9. Root unit tests (test:unit)
-#  10. Build (zfb build)
-#  11. Link check
-#  12. HTML validation (html-validate dist/**/*.html)
-#  13. Automated preview smoke (blocking)
-#  14. Manual interactive smoke (operator-driven)
+#   7. Package safelist check (#1982)
+#   8. B4push/CI parity check (guard manifest meta-check — #1967)
+#   9. Type checking (zfb check + workspace package typechecks)
+#  10. Root unit tests (test:unit)
+#  11. Build (zfb build)
+#  12. Link check
+#  13. HTML validation (html-validate dist/**/*.html)
+#  14. Automated preview smoke (blocking)
+#  15. Manual interactive smoke (operator-driven)
 #
 # CI parity (Playwright E2E + GitHub Actions) is intentionally parked
 # to E9b until the post-cutover migration window closes.
 #
 # Env overrides for non-interactive use:
-#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 10)
+#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 13)
 #   B4PUSH_SKIP_PREVIEW_SMOKE=1  — skip the automated preview smoke
 #   B4PUSH_SKIP_MANUAL_SMOKE=1   — skip the manual interactive smoke
 
 START_TIME=$(date +%s)
 FAILURES=()
-TOTAL_STEPS=14
+TOTAL_STEPS=15
 CURRENT_STEP=0
 
 step() {
@@ -102,7 +103,21 @@ else
   fail "Design token lint"
 fi
 
-# ── Step 7: B4push/CI parity check ───────────────────
+# ── Step 7: Package safelist check ───────────────────
+# Pure-Node check — verifies the @source inline() safelist in the scaffold
+# template covers every responsive-variant + arbitrary-value utility class
+# used in packages/zudo-doc/src/**/*.tsx. Closes the silent-drift gap from
+# #1971/#1982: a new bracket/responsive utility in the package would reach
+# the host repo (which @source's the package source directly) but silently
+# miss consumers (which rely solely on the template safelist).
+step "Package safelist check (check:package-safelist)"
+if (cd "$ROOT_DIR" && pnpm check:package-safelist); then
+  pass "Package safelist check passed"
+else
+  fail "Package safelist check"
+fi
+
+# ── Step 8: B4push/CI parity check ───────────────────
 # Pure-Node check — verifies every lightweight guard gate in this file also
 # has a corresponding CI job. See scripts/check-b4push-ci-parity.mjs.
 step "B4push/CI parity check (check:b4push-ci-parity)"
@@ -114,7 +129,7 @@ fi
 
 # <<< b4push-ci-parity:guards
 
-# ── Step 8: Type checking ─────────────────────────────
+# ── Step 9: Type checking ─────────────────────────────
 # Prefer `zfb check` (the post-cutover entry point). If it fails to
 # start (e.g. binary not yet built), fall back to `tsc --noEmit` so the
 # typecheck still gates pushes.
@@ -137,7 +152,7 @@ else
   fail "Package typechecks"
 fi
 
-# ── Step 9: Root unit tests ───────────────────────────
+# ── Step 10: Root unit tests ───────────────────────────
 # Root `test:unit` (vitest) guards src/**/__tests__ and scripts/__tests__,
 # which previously ran in no local gate and no CI workflow (#1856). Runs
 # before the expensive site build for fast logic-level feedback.
@@ -154,7 +169,7 @@ else
   fail "Root unit tests"
 fi
 
-# ── Step 10: Build ────────────────────────────────────
+# ── Step 11: Build ────────────────────────────────────
 step "Build (zfb build)"
 if (cd "$ROOT_DIR" && pnpm build); then
   pass "Build passed"
@@ -162,7 +177,7 @@ else
   fail "Build"
 fi
 
-# ── Step 11: Link check ───────────────────────────────
+# ── Step 12: Link check ───────────────────────────────
 #
 # Strict on broken links + absolute MDX-source warnings (real 404s
 # / sub-path bypass). Trailing-slash warnings stay warn-only — they
@@ -182,7 +197,7 @@ else
   fail "Link check"
 fi
 
-# ── Step 12: HTML validation ──────────────────────────
+# ── Step 13: HTML validation ──────────────────────────
 step "HTML validation (html-validate)"
 if [[ "${B4PUSH_SKIP_HTML_VALIDATE:-}" == "1" ]]; then
   skip "HTML validation (B4PUSH_SKIP_HTML_VALIDATE=1)"
@@ -194,7 +209,7 @@ else
   fi
 fi
 
-# ── Step 13: Automated preview smoke (blocking) ──────
+# ── Step 14: Automated preview smoke (blocking) ──────
 step "Preview smoke (automated)"
 if [[ "${B4PUSH_SKIP_PREVIEW_SMOKE:-}" == "1" ]]; then
   skip "Preview smoke (B4PUSH_SKIP_PREVIEW_SMOKE=1)"
@@ -206,7 +221,7 @@ else
   fi
 fi
 
-# ── Step 14: Manual interactive smoke ────────────────
+# ── Step 15: Manual interactive smoke ────────────────
 step "Manual interactive smoke"
 if [[ "${B4PUSH_SKIP_MANUAL_SMOKE:-}" == "1" ]]; then
   skip "Manual smoke (B4PUSH_SKIP_MANUAL_SMOKE=1)"
