@@ -106,6 +106,10 @@ export function paths(): Array<{
 
     // Regular doc pages
     for (const entry of allDocs) {
+      // A `category_no_page` index.mdx is metadata-only — kept in the nav tree
+      // for breadcrumbs but emits no route (zfb retains every .mdx as a
+      // collection entry, so the skip must be explicit).
+      if (entry.data.category_no_page === true) continue;
       const slug = entry.data.slug ?? toRouteSlug(entry.slug);
       const navSection = getNavSectionForSlug(slug);
       const subtree = getNavSubtree(tree, navSection);

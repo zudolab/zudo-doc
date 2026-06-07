@@ -39,7 +39,12 @@ export default function DocsTagsIndexPage(): JSX.Element {
   const pageTitle = t("doc.allTags", locale);
 
   const allDocs = bridgeDocsEntries(getCollection<ZfbDocsData>("docs"), "docs");
-  const docs = allDocs.filter((doc) => !doc.data.unlisted && !doc.data.draft);
+  // category_no_page index.mdx builds no route — drop it so a tag it carries
+  // doesn't inflate the tag list with a card linking to a non-existent page.
+  const docs = allDocs.filter(
+    (doc) =>
+      !doc.data.unlisted && !doc.data.draft && !doc.data.category_no_page,
+  );
   const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
 
   const labels: TagNavLabels = {

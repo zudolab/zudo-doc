@@ -70,8 +70,17 @@ function navTreeCacheKey(
     : "_";
   return `${lang}:${metaKey}:${docs
     .map((d) => {
-      const { sidebar_position, sidebar_label, title, description, unlisted, standalone, slug } =
-        d.data;
+      const {
+        sidebar_position,
+        sidebar_label,
+        title,
+        description,
+        unlisted,
+        standalone,
+        slug,
+        category_no_page,
+        category_sort_order,
+      } = d.data;
       return JSON.stringify([
         d.id,
         sidebar_position,
@@ -81,6 +90,8 @@ function navTreeCacheKey(
         unlisted,
         standalone,
         slug,
+        category_no_page,
+        category_sort_order,
       ]);
     })
     .sort()
@@ -197,7 +208,9 @@ function toNavNodes(
   for (const child of parent.children.values()) {
     const doc = child.doc;
     const meta = categoryMeta?.get(child.fullPath);
-    const sortOrder = meta?.sortOrder ?? "asc";
+    // Frontmatter wins over the `_category_.json` sidecar when both exist.
+    const noPage = doc?.data.category_no_page ?? meta?.noPage;
+    const sortOrder = doc?.data.category_sort_order ?? meta?.sortOrder ?? "asc";
     const children = toNavNodes(child, lang, categoryMeta, sortOrder);
 
     nodes.push({
@@ -206,12 +219,16 @@ function toNavNodes(
         doc?.data.sidebar_label ?? doc?.data.title ?? meta?.label ?? toTitleCase(child.segment),
       description: doc?.data.description ?? meta?.description,
       position: doc?.data.sidebar_position ?? meta?.position ?? 999,
-      href: meta?.noPage
+      href: noPage
         ? undefined
         : doc || children.length > 0
           ? docsUrl(child.fullPath, lang)
           : undefined,
-      hasPage: !!doc,
+      // A `category_no_page` index.mdx is metadata-only — force hasPage false so
+      // it matches a `_category_.json` noPage category (no backing file): a
+      // non-linked header that flattenTree drops from prev/next. Otherwise the
+      // route-excluded slug would surface as a 404 pagination target.
+      hasPage: !!doc && noPage !== true,
       children,
       sortOrder,
     });

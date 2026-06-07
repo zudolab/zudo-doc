@@ -106,6 +106,11 @@ describe("generateZfbConfig", () => {
     expect(result).toContain("sidebar_position: z.number().optional()");
     expect(result).toContain("draft: z.boolean().optional()");
     expect(result).toContain("slug: z.string().optional()");
+    // Category-metadata-via-frontmatter fields (mirrors the host docsSchema).
+    expect(result).toContain("category_no_page: z.boolean().optional()");
+    expect(result).toContain(
+      'category_sort_order: z.enum(["asc", "desc"]).optional()',
+    );
   });
 
   it("emits .passthrough() to preserve unknown frontmatter keys", () => {

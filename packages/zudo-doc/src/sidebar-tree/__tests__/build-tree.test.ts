@@ -188,6 +188,100 @@ describe("buildSidebarTree", () => {
     expect(guides.href).toBeUndefined();
   });
 
+  it("treats a category_no_page index.mdx like a _category_.json noPage category", () => {
+    // The index.mdx exists (carries label/position) but is metadata-only:
+    // non-linked header, NOT a backing page.
+    const tree = buildSidebarTree(
+      [
+        entry("guides/index", {
+          title: "Guides",
+          sidebar_label: "Guides",
+          sidebar_position: 3,
+          category_no_page: true,
+        }),
+        entry("guides/intro", { title: "Intro" }),
+      ],
+      "en",
+    );
+    const guides = tree.find((n) => n.id === "guides")!;
+    // (a) non-linked header with correct label/position
+    expect(guides.type).toBe("category");
+    expect(guides.label).toBe("Guides");
+    expect(guides.sidebar_position).toBe(3);
+    expect(guides.href).toBeUndefined();
+    // hasPage false so it matches the no-index noPage case exactly.
+    expect(guides.hasPage).toBe(false);
+  });
+
+  it("excludes a category_no_page node from flattenSidebarTree (no prev/next 404 target)", () => {
+    const tree = buildSidebarTree(
+      [
+        entry("guides/index", {
+          title: "Guides",
+          category_no_page: true,
+        }),
+        entry("guides/intro", { title: "Intro", sidebar_position: 1 }),
+        entry("guides/advanced", { title: "Advanced", sidebar_position: 2 }),
+      ],
+      "en",
+    );
+    const flatIds = flattenSidebarTree(tree).map((n) => n.id);
+    expect(flatIds).not.toContain("guides");
+    expect(flatIds).toEqual(["guides/intro", "guides/advanced"]);
+  });
+
+  it("frontmatter category_no_page wins over a _category_.json without noPage", () => {
+    const meta = new Map<string, CategoryMeta>([
+      ["guides", { label: "Sidecar Label" }],
+    ]);
+    const tree = buildSidebarTree(
+      [
+        entry("guides/index", { title: "Guides", category_no_page: true }),
+        entry("guides/intro", { title: "Intro" }),
+      ],
+      "en",
+      { categoryMeta: meta },
+    );
+    const guides = tree.find((n) => n.id === "guides")!;
+    // Frontmatter index.mdx label wins; noPage from frontmatter suppresses href.
+    expect(guides.href).toBeUndefined();
+    expect(guides.hasPage).toBe(false);
+  });
+
+  it("respects category_sort_order=desc from index.mdx frontmatter", () => {
+    const tree = buildSidebarTree(
+      [
+        entry("log/index", { title: "Changelog", category_sort_order: "desc" }),
+        entry("log/2025-01", { title: "2025-01", sidebar_position: 1 }),
+        entry("log/2025-02", { title: "2025-02", sidebar_position: 2 }),
+      ],
+      "en",
+    );
+    const log = tree.find((n) => n.id === "log")!;
+    expect(log.children.map((c) => c.id)).toEqual([
+      "log/2025-02",
+      "log/2025-01",
+    ]);
+    expect(log.sortOrder).toBe("desc");
+  });
+
+  it("frontmatter category_sort_order wins over a _category_.json sortOrder", () => {
+    const meta = new Map<string, CategoryMeta>([
+      ["log", { sortOrder: "asc" }],
+    ]);
+    const tree = buildSidebarTree(
+      [
+        entry("log/index", { title: "Changelog", category_sort_order: "desc" }),
+        entry("log/a", { title: "A", sidebar_position: 1 }),
+        entry("log/b", { title: "B", sidebar_position: 2 }),
+      ],
+      "en",
+      { categoryMeta: meta },
+    );
+    const log = tree.find((n) => n.id === "log")!;
+    expect(log.children.map((c) => c.id)).toEqual(["log/b", "log/a"]);
+  });
+
   it("uses the default href builder when none is supplied", () => {
     const tree = buildSidebarTree([entry("intro", { title: "Intro" })], "en");
     expect(tree[0]!.href).toBe("/en/docs/intro/");
