@@ -8,11 +8,23 @@ Maintainer reference for publishing packages to npm.
 
 | Release type | Version pattern | npm dist-tag |
 |---|---|---|
-| Stable | `X.Y.Z` (no suffix) | `latest` |
-| Prerelease | `X.Y.Z-next.N`, `X.Y.Z-beta.N`, `X.Y.Z-rc.N` | `next` |
+| Stable / `0.x` mainline | `X.Y.Z` (no suffix) | `latest` |
+| Prerelease (opt-in preview) | `X.Y.Z-next.N`, `X.Y.Z-beta.N`, `X.Y.Z-rc.N` | `next` |
 
-Stable releases are the default install (`npm install <pkg>`).
+A clean `X.Y.Z` (no suffix) is the default install (`npm install <pkg>`).
 Prerelease releases are opt-in (`npm install <pkg>@next`).
+
+**Pre-1.0 policy (Scheme B).** While the project is `0.x`, the development
+mainline ships **clean `0.MINOR.PATCH`** straight to `latest` — there is no
+`-next` suffix on the mainline. `0.x` (major zero) is itself SemVer's "anything
+may change" signal, so a breaking change rides a **minor** bump (`0.2` → `0.3`)
+and everything else a **patch** bump. Because every mainline release is a clean,
+monotonically-increasing version, npm routes it to `latest` automatically and a
+tagless `npm install` always gets the newest build — no extra machinery, nothing
+to get stuck. The `-next` / `next` channel stays available as an **opt-in**
+escape hatch for a deliberate preview or the eventual `1.0.0-beta` run-up. Once a
+real `1.0.0` ships, the normal stable-on-`latest` / preview-on-`next` split
+resumes automatically.
 
 ---
 
@@ -32,23 +44,28 @@ version containing `-` gets `--tag next`; a clean `X.Y.Z` gets `--tag latest`.
 
 ---
 
-## Dual-tag self-disabling policy
+## How `latest` stays current (Scheme B)
 
-During a prerelease cycle the publish workflow also advances the `latest` dist-tag
-alongside `next`. This **dual-tag behaviour** activates only when the registry's
-current `latest` for that package is either:
+There is **no dual-tag machinery** — by design. Under Scheme B the `0.x` mainline
+ships clean `X.Y.Z` versions, and the publish workflow routes a clean version to
+`--tag latest` directly (see the dist-tag table above). Because each mainline
+release is the highest published version, npm keeps `latest` pointed at the newest
+build with no probe, no retry loop, and nothing to self-disable.
 
-- absent (package newly created), or
-- itself a prerelease (contains `-`).
+> **History.** Earlier releases used a `0.2.0-next.N` mainline plus a "dual-tag
+> self-disabling probe" that tried to advance `latest` alongside `next` during the
+> prerelease cycle. The probe shut off the moment `latest` held a clean `X.Y.Z`,
+> which is exactly how `latest` got stranded on the old `0.1.0`
+> (zudolab/zudo-doc#1999). Scheme B removes the prerelease mainline and the probe
+> entirely — the probe step has been deleted from all three `publish-*.yml`
+> workflows.
 
-It **self-disables** once a real stable version (`X.Y.Z` with no suffix) holds
-`latest`. After that, stable publishes update `latest` through the normal single-tag
-path and prerelease publishes touch only `next`.
+### Manual remediation (rare)
 
-### Manual remediation
-
-If the workflow's automatic dual-tag retries exhaust (e.g. a transient npm registry
-error), run these commands manually:
+If `latest` is ever stranded behind the newest version (e.g. the #1999 state
+before the first clean release), the standing fix is simply to **ship a clean
+version** — it routes to `latest` automatically through the normal publish path.
+As a stopgap when you cannot cut a release immediately, re-point `latest` directly:
 
 ```sh
 npm dist-tag add create-zudo-doc@<ver> latest
@@ -56,7 +73,8 @@ npm dist-tag add @takazudo/zudo-doc@<ver> latest
 npm dist-tag add @takazudo/zudo-doc-history-server@<ver> latest
 ```
 
-Replace `<ver>` with the exact version string (no leading `v`), e.g. `0.2.0-next.1`.
+Replace `<ver>` with the exact version string (no leading `v`), e.g. `0.2.0`. The
+helper `scripts/release-bootstrap-latest.mjs <ver>` runs all three with retries.
 
 ---
 
@@ -123,30 +141,21 @@ to call `npm publish`. An unpublished draft fires no workflow.
 
 ---
 
-## One-time stale-`latest` bootstrap
+## `release-bootstrap-latest.mjs` — one-time remediation helper
 
-After publishing the very first new prerelease (e.g. `0.2.0-next.1`) via CI, the
-`latest` dist-tag for all three packages may still point at the old stable version
-(`0.1.0`). Until `latest` is moved to a prerelease string, the dual-tag probe in the
-publish workflow sees a stable `latest` and self-disables — so subsequent prerelease
-publishes never advance `latest`.
+`scripts/release-bootstrap-latest.mjs <version>` re-points the `latest` dist-tag
+of all three packages to a given already-published version, with retries. It does
+**not** publish anything — it only moves dist-tags.
 
-Run the bootstrap helper **once** after the first new prerelease lands on npm:
-
-```sh
-node scripts/release-bootstrap-latest.mjs <version>
-```
-
-Example:
+Under Scheme B this is **not part of the normal release flow** (a clean release
+moves `latest` on its own). Keep it for one-time remediation of a stranded
+`latest` — most relevantly, to unstick the current `latest = 0.1.0`
+(zudolab/zudo-doc#1999) if the fix is needed before the first clean `0.2.0` ships:
 
 ```sh
-node scripts/release-bootstrap-latest.mjs 0.2.0-next.1
+node scripts/release-bootstrap-latest.mjs 0.2.0-next.9
 ```
 
-This moves `latest` for all three packages to the given prerelease version. The
-workflow's dual-tag probe then re-enables itself: from that point on, every
-subsequent prerelease publish automatically advances `latest` alongside `next`, and
-once a real stable version is published the policy self-heals — `latest` will hold
-a stable version and the probe disables itself permanently.
-
-The script is idempotent: re-running it with the same version is safe.
+It is idempotent: re-running with the same version is a no-op. The **preferred**
+fix, though, is simply to ship a clean version (e.g. `0.2.0`), which supersedes the
+stranded tag through the normal publish path.

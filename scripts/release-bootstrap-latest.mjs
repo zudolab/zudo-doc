@@ -1,8 +1,14 @@
 #!/usr/bin/env node
-// One-time migration nudge to move npm `latest` off the stale stable `0.1.0`
-// onto the first new prerelease. Once `latest` points at a prerelease version
-// (one containing `-`), the publish-workflow dual-tag probe re-enables itself
-// for every subsequent `next.N` publish and advances `latest` automatically.
+// One-time remediation helper: re-point npm `latest` for all three packages to a
+// given ALREADY-PUBLISHED version. Use it to unstick a stranded `latest` — e.g.
+// the `latest = 0.1.0` state in zudolab/zudo-doc#1999, before the first clean
+// release ships.
+//
+// Under Scheme B (RELEASE.md) the 0.x mainline ships clean `X.Y.Z` versions that
+// the publish workflow routes to `latest` automatically, so this is NOT part of
+// the normal release flow — the preferred fix for a stale `latest` is simply to
+// ship a clean version. (Historical note: this helper predates Scheme B, when it
+// re-enabled a since-removed dual-tag probe in the publish workflows.)
 //
 // Idempotent: re-pointing `latest` to the same version is a no-op on npm —
 // safe to re-run if the previous run partially failed.
@@ -11,7 +17,7 @@
 // publish anything to the registry.
 //
 // Usage: node scripts/release-bootstrap-latest.mjs <version>
-//   version — semver string WITHOUT a leading "v" (e.g. 0.2.0-next.1)
+//   version — semver string WITHOUT a leading "v" (e.g. 0.2.0 or 0.2.0-next.9)
 
 import { execFileSync } from 'node:child_process';
 
@@ -115,7 +121,7 @@ async function main() {
   console.log('');
   console.log('Done. All packages now have latest → ' + version);
   console.log(
-    'The publish workflow dual-tag probe will self-enable for the next prerelease publish.',
+    'Reminder: the standing fix under Scheme B is to ship a clean version, which moves latest automatically.',
   );
 }
 

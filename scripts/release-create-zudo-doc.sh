@@ -16,15 +16,24 @@ set -euo pipefail
 # Usage:
 #   ./scripts/release-create-zudo-doc.sh [<new-version>|major|minor|patch|next|stable]
 #
+# Versioning policy — Scheme B (pre-1.0): the 0.x dev mainline ships CLEAN
+# 0.MINOR.PATCH straight to the npm `latest` dist-tag. The 0.x major-zero is
+# itself SemVer's "anything may change" signal, so no `-next` suffix is used on
+# the mainline; a breaking 0.x change rides a minor bump (0.2 → 0.3), everything
+# else a patch bump. `-next` prereleases are an OPT-IN escape hatch (the `next`
+# keyword / an explicit X.Y.Z-next.N) for deliberate previews and the eventual
+# 1.0.0-beta run-up — never the default. (See RELEASE.md.)
+#
 # Named bump modes:
-#   major   — (X+1).0.0-next.1  (from current, whatever it is)
-#   minor   — X.(Y+1).0-next.1  (from current)
-#   patch   — X.Y.(Z+1)-next.1  (from current)
-#   next    — from stable X.Y.Z → X.(Y+1).0-next.1
-#             from prerelease X.Y.Z-next.N → X.Y.Z-next.(N+1)  (same as auto)
+#   major   — (X+1).0.0           (clean)
+#   minor   — X.(Y+1).0           (clean; use for a breaking 0.x change)
+#   patch   — X.Y.(Z+1)           (clean)
+#   next    — opt-in prerelease escape hatch:
+#               from stable X.Y.Z            → X.(Y+1).0-next.1
+#               from prerelease X.Y.Z-next.N → X.Y.Z-next.(N+1)
 #   stable  — X.Y.Z (strip -next.N suffix; error if already stable)
 #   <semver>— use exactly this version (original explicit-version mode)
-#   (none)  — auto-derive: stable → minor+next.1; prerelease → N+1
+#   (none)  — auto: prerelease → graduate to clean X.Y.Z; stable → patch X.Y.(Z+1)
 #
 # Dry / compute-only path (no mutations, no git):
 #   DRY=1 ./scripts/release-create-zudo-doc.sh [mode]
@@ -37,12 +46,13 @@ set -euo pipefail
 #   Then exits 0. No files are modified.
 #
 # Examples:
-#   ./scripts/release-create-zudo-doc.sh 0.2.0           # stable release (explicit)
-#   ./scripts/release-create-zudo-doc.sh 1.0.0-next.1    # prerelease (explicit)
-#   ./scripts/release-create-zudo-doc.sh minor            # X.(Y+1).0-next.1
-#   ./scripts/release-create-zudo-doc.sh stable           # strip -next.N suffix
-#   DRY=1 FROM=0.1.0 ./scripts/release-create-zudo-doc.sh         # 0.2.0-next.1
-#   DRY=1 FROM=0.2.0-next.1 ./scripts/release-create-zudo-doc.sh  # 0.2.0-next.2
+#   ./scripts/release-create-zudo-doc.sh 0.2.0            # explicit clean release
+#   ./scripts/release-create-zudo-doc.sh minor            # X.(Y+1).0 (breaking 0.x change)
+#   ./scripts/release-create-zudo-doc.sh patch            # X.Y.(Z+1)
+#   ./scripts/release-create-zudo-doc.sh stable           # strip -next.N suffix → X.Y.Z
+#   ./scripts/release-create-zudo-doc.sh next             # opt-in prerelease preview
+#   DRY=1 FROM=0.2.0-next.9 ./scripts/release-create-zudo-doc.sh         # 0.2.0  (graduate)
+#   DRY=1 FROM=0.2.0 ./scripts/release-create-zudo-doc.sh patch          # 0.2.1
 #
 # What it does (non-dry path):
 #   1. Validates/computes version format (semver + optional prerelease suffix)
@@ -68,11 +78,11 @@ SCAFFOLD_TS="$ROOT_DIR/packages/create-zudo-doc/src/scaffold.ts"
 # ── Version computation ───────────────────────────────────────────────────────
 #
 # compute_next_version <current> <mode>
-#   current — the existing version string (e.g. "0.1.0" or "0.2.0-next.1")
+#   current — the existing version string (e.g. "0.2.0" or "0.2.0-next.9")
 #   mode    — one of: major | minor | patch | next | stable | auto
-#             "auto" applies the default derivation rule:
-#               - stable   → X.(Y+1).0-next.1
-#               - prerelease → X.Y.Z-next.(N+1)
+#             "auto" applies the default derivation rule (Scheme B — clean):
+#               - prerelease → graduate to the clean X.Y.Z (strip -next.N)
+#               - stable     → patch bump X.Y.(Z+1)
 # Prints the computed next version to stdout and returns 0.
 # Exits non-zero on error (e.g. "stable" when already stable).
 compute_next_version() {
@@ -99,13 +109,13 @@ compute_next_version() {
 
   case "$mode" in
     major)
-      echo "$(( ver_major + 1 )).0.0-next.1"
+      echo "$(( ver_major + 1 )).0.0"
       ;;
     minor)
-      echo "${ver_major}.$(( ver_minor + 1 )).0-next.1"
+      echo "${ver_major}.$(( ver_minor + 1 )).0"
       ;;
     patch)
-      echo "${ver_major}.${ver_minor}.$(( ver_patch + 1 ))-next.1"
+      echo "${ver_major}.${ver_minor}.$(( ver_patch + 1 ))"
       ;;
     stable)
       if [ "$is_prerelease" = false ]; then
@@ -114,7 +124,10 @@ compute_next_version() {
       fi
       echo "$core"
       ;;
-    next|auto)
+    next)
+      # Explicit prerelease escape hatch — opt-in only. Scheme B keeps the 0.x
+      # mainline CLEAN, so prereleases are NOT the default; use this keyword for a
+      # deliberate preview or the 1.0.0-beta run-up.
       if [ "$is_prerelease" = true ]; then
         # X.Y.Z-next.N → X.Y.Z-next.(N+1)
         # Extract the numeric suffix after the last dot in pre_part
@@ -123,8 +136,18 @@ compute_next_version() {
         pre_n="${pre_part##*.}"
         echo "${core}-${pre_label}.$(( pre_n + 1 ))"
       else
-        # stable → X.(Y+1).0-next.1  (both "next" keyword and "auto" default)
+        # stable → X.(Y+1).0-next.1  (preview the next minor)
         echo "${ver_major}.$(( ver_minor + 1 )).0-next.1"
+      fi
+      ;;
+    auto)
+      # Scheme B default: always produce a CLEAN version (no -next suffix).
+      if [ "$is_prerelease" = true ]; then
+        # In-flight prerelease X.Y.Z-next.N → graduate to the clean X.Y.Z.
+        echo "$core"
+      else
+        # stable X.Y.Z → patch bump X.Y.(Z+1).  Use `minor` for a breaking 0.x change.
+        echo "${ver_major}.${ver_minor}.$(( ver_patch + 1 ))"
       fi
       ;;
     *)
