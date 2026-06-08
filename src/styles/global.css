@@ -154,7 +154,8 @@
   --spacing-hsp-xl: 1.5rem;     /* 24px — generous padding */
   --spacing-hsp-2xl: 2rem;      /* 32px — large padding */
 
-  /* Vertical spacing (7 steps) */
+  /* Vertical spacing (8 steps) */
+  --spacing-vsp-3xs: 0.25rem;     /* 4px — hairline gap */
   --spacing-vsp-2xs: 0.4375rem;   /* 7px — tight gap */
   --spacing-vsp-xs: 0.875rem;    /* 14px — small gap */
   --spacing-vsp-sm: 1.25rem;     /* 20px — compact gap */
@@ -173,6 +174,16 @@
 
   /* Image overlay button chrome */
   --spacing-image-overlay-inset: 0.5rem;  /* 8px — overlay button corner inset + internal padding */
+
+  /* ========================================
+   * Elevation — the tight `@import "tailwindcss/utilities"` (no default
+   * @theme) drops Tailwind's default shadow scale, so `shadow-*` utilities
+   * generate nothing. Re-add the one elevation the components use: header
+   * and version-switcher dropdown panels apply `shadow-lg`. Value is
+   * Tailwind v4's default shadow-lg; the black is intentionally
+   * theme-independent (a drop shadow is absence of light, not a themed color).
+   * ======================================== */
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
   /* ========================================
    * Typography
