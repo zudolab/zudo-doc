@@ -39,6 +39,7 @@ export const SPACING_TOKENS: readonly TokenDef[] = [
   { id: "hsp-2xl", cssVar: "--spacing-hsp-2xl", label: "hsp-2xl", group: "hsp", default: "2rem",     step: 0.025, unit: "rem" },
 
   // --- Vertical spacing ---
+  { id: "vsp-3xs", cssVar: "--spacing-vsp-3xs", label: "vsp-3xs", group: "vsp", default: "0.25rem",   step: 0.025, unit: "rem" },
   { id: "vsp-2xs", cssVar: "--spacing-vsp-2xs", label: "vsp-2xs", group: "vsp", default: "0.4375rem", step: 0.025, unit: "rem" },
   { id: "vsp-xs",  cssVar: "--spacing-vsp-xs",  label: "vsp-xs",  group: "vsp", default: "0.875rem",  step: 0.025, unit: "rem" },
   { id: "vsp-sm",  cssVar: "--spacing-vsp-sm",  label: "vsp-sm",  group: "vsp", default: "1.25rem",   step: 0.025, unit: "rem" },
