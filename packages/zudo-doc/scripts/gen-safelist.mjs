@@ -381,4 +381,10 @@ function main() {
   );
 }
 
-main();
+// Run the CLI only when executed directly (node scripts/gen-safelist.mjs), NOT
+// when imported. The unit test imports this module for extractTokens/emitSafelist;
+// without this guard the import would scan + rewrite dist/safelist.css as a side
+// effect and process.exit(1) on a dist-less checkout, breaking `pnpm test`.
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+  main();
+}
