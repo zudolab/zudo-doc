@@ -1,0 +1,30 @@
+---
+title: 0.2.0-next.8
+description: Release notes for 0.2.0-next.8.
+sidebar_position: 1009
+---
+
+Released: 2026-06-08
+
+The Consumer Parity Fixes prerelease (epic #1974): the published `@takazudo/zudo-doc` package and `create-zudo-doc` scaffolds now match the showcase site. The headline change is the claude-resources generator switching from `_category_.json` sidecars to `index.mdx` frontmatter, which clears the `unsupported data-file extension` build warnings that downstream consumers saw against earlier prereleases (#1985). Also includes a package-generated CSS safelist, doc-history postBuild made opt-in, OGP meta tags, and several scaffold-template parity fixes.
+
+### Features
+
+- **Category metadata via `index.mdx` frontmatter.** The claude-resources generator now emits `index.mdx` with `category_no_page` / `sidebar_position` frontmatter instead of `_category_.json`, and the read side resolves category metadata from that frontmatter — eliminating the `unsupported data-file extension` warning for consumers of the published package (#1980, #1978, #1985). Hand-authored `_category_.json` files in the showcase were migrated to `index.mdx` to match.
+- **Package-generated CSS safelist.** `@takazudo/zudo-doc` now generates `dist/safelist.css` at build and exposes it via a `./safelist.css` export; the scaffold template `@import`s it and a repurposed drift guard keeps it honest, so Tailwind v4 builds in downstream projects keep dynamic classes (#1993, #1994).
+- **OGP meta tags.** `HeadWithDefaults` now emits `og:type`, `og:url`, and `og:site_name` (#1975).
+- **b4push / CI parity meta-check.** Added a guard that detects silent drift between local `b4push` and CI gates, and wired fixture-drift, tags-audit, and design-token-lint into `pr-checks.yml` (#1967, #1982).
+
+### Bug Fixes
+
+- **CategoryNav no longer emits dead links for no-page categories.** In `categories=` mode, a `category_no_page` category has no route of its own, but the wrapper fabricated a `docsUrl(slug)` href — producing broken links (the Claude overview's `/docs/claude-md/`, `/docs/claude-skills/`, `/docs/claude-agents/`). Each such card now links to the category's first routed descendant page (and is skipped when the category has no reachable page). CI's `check:links` step is now strict (`--strict-broken`) to match `b4push`, so this class of regression fails CI instead of false-greening (#1985).
+- **doc-history postBuild made opt-in.** Local builds now skip the per-page history-dropdown JSON generation by default (gated behind `GEN_DOC_HISTORY=1`), so a plain `pnpm build` no longer risks exceeding zfb's postBuild lifecycle budget on large corpora; CI and dev are unaffected (#1986).
+- **`category_no_page` enumeration leaks.** Excluded `category_no_page` docs from tag aggregation, frontmatter preview, and (after locale merge) the tag/footer/sitemap enumerators; mirrored the same filter into the footer template twin (#1978).
+- **claude-resources generator robustness.** Guarded against a reserved `index` slug collision, and restored `concepts` as a real landing page rather than a `category_no_page` header.
+- **i18n doc-history fallback.** EN-fallback locale pages now use `defaultLocale` for their history data paths so history resolves correctly.
+- **Scaffold-template parity.** Re-synced the sidebar-toggle / theme-toggle templates and re-armed the drift check; added `@source` for the `zudo-doc` dist plus an inlined safelist in the scaffold's `global.css`; collapsed multi-line `@source inline()` to a single line in the consumer template; shipped a real client-router bootstrap instead of the no-op stub; and added the `vsp-3xs` spacing + `shadow-lg` theme tokens (registered in the design-tokens manifest) (#1991, #1990).
+
+### Changes
+
+- **doc-history parallelization.** Made `getDocHistory` async so the CLI semaphore can parallelize git-history walks, with matching test mocks (sync child_process `spawn` export, E2E smoke fixture built with `GEN_DOC_HISTORY=1`).
+- **Docs.** Documented the `GEN_DOC_HISTORY` local opt-in (EN + JA), the Tauri Mode 1 offline-reader build with `GEN_DOC_HISTORY=1`, and reconciled stale doc-history CI notes.

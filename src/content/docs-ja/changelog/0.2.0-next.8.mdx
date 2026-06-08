@@ -1,0 +1,30 @@
+---
+title: 0.2.0-next.8
+description: 0.2.0-next.8のリリースノート。
+sidebar_position: 1009
+---
+
+リリース日: 2026-06-08
+
+Consumer Parity Fixes プレリリース（エピック #1974）です。公開済みの `@takazudo/zudo-doc` パッケージと `create-zudo-doc` のスキャフォールドがショーケースサイトと一致するようになりました。目玉は、claude-resources ジェネレータが `_category_.json` サイドカーから `index.mdx` フロントマターへ切り替わったことで、以前のプレリリースに対して下流の利用者が目にしていた `unsupported data-file extension` のビルド警告が解消されます（#1985）。あわせて、パッケージ生成の CSS セーフリスト、doc-history postBuild のオプトイン化、OGP メタタグ、いくつかのスキャフォールドテンプレートのパリティ修正を含みます。
+
+### 機能
+
+- **`index.mdx` フロントマターによるカテゴリメタデータ。** claude-resources ジェネレータが `_category_.json` の代わりに `category_no_page` / `sidebar_position` フロントマター付きの `index.mdx` を出力するようになり、読み取り側もそのフロントマターからカテゴリメタデータを解決するようになりました。これにより、公開パッケージの利用者向けに `unsupported data-file extension` 警告が解消されます（#1980, #1978, #1985）。ショーケースの手書き `_category_.json` ファイルも、これに合わせて `index.mdx` へ移行しました。
+- **パッケージ生成の CSS セーフリスト。** `@takazudo/zudo-doc` がビルド時に `dist/safelist.css` を生成し、`./safelist.css` エクスポートとして公開するようになりました。スキャフォールドテンプレートはこれを `@import` し、用途変更したドリフトガードが整合性を保つため、下流プロジェクトの Tailwind v4 ビルドで動的クラスが保持されます（#1993, #1994）。
+- **OGP メタタグ。** `HeadWithDefaults` が `og:type`、`og:url`、`og:site_name` を出力するようになりました（#1975）。
+- **b4push / CI のパリティメタチェック。** ローカルの `b4push` と CI ゲートの間の暗黙のドリフトを検出するガードを追加し、fixture-drift・tags-audit・design-token-lint を `pr-checks.yml` に組み込みました（#1967, #1982）。
+
+### バグ修正
+
+- **CategoryNav が no-page カテゴリでリンク切れを出力しないように。** `categories=` モードでは、`category_no_page` カテゴリはそれ自体のルートを持たないにもかかわらず、ラッパーが `docsUrl(slug)` の href を生成してしまい、リンク切れ（Claude オーバービューの `/docs/claude-md/`・`/docs/claude-skills/`・`/docs/claude-agents/`）が発生していました。各カードは、そのカテゴリ配下で最初にルートを持つ子ページへリンクするようになりました（到達可能なページがないカテゴリはスキップ）。あわせて CI の `check:links` ステップを `b4push` に合わせて strict（`--strict-broken`）にし、この種のリグレッションが false-green にならず CI で失敗するようにしました（#1985）。
+- **doc-history postBuild のオプトイン化。** ローカルビルドでは、ページごとの履歴ドロップダウン JSON 生成をデフォルトでスキップするようにしました（`GEN_DOC_HISTORY=1` でゲート）。これにより、素の `pnpm build` が大規模コーパスで zfb の postBuild ライフサイクル予算を超過するリスクがなくなります。CI と dev には影響しません（#1986）。
+- **`category_no_page` の列挙漏れ。** `category_no_page` のドキュメントを、タグ集計・フロントマタープレビュー・（ロケールマージ後の）タグ/フッター/サイトマップの各列挙から除外し、同じフィルタをフッターテンプレートの双子側にもミラーしました（#1978）。
+- **claude-resources ジェネレータの堅牢化。** 予約済みの `index` slug の衝突をガードし、`concepts` を `category_no_page` ヘッダーではなく実体のあるランディングページとして復元しました。
+- **i18n doc-history フォールバック。** EN フォールバックのロケールページが、履歴データパスに `defaultLocale` を使うようになり、履歴が正しく解決されるようになりました。
+- **スキャフォールドテンプレートのパリティ。** sidebar-toggle / theme-toggle テンプレートを再同期してドリフトチェックを再武装し、`zudo-doc` の dist 向け `@source` とスキャフォールドの `global.css` にインライン化したセーフリストを追加、コンシューマーテンプレートの複数行 `@source inline()` を1行へ集約、no-op スタブの代わりに実体のあるクライアントルーターブートストラップを同梱、そして `vsp-3xs` スペーシング + `shadow-lg` テーマトークンを（design-tokens マニフェストに登録した上で）追加しました（#1991, #1990）。
+
+### その他の変更
+
+- **doc-history の並列化。** `getDocHistory` を非同期化し、CLI のセマフォが git 履歴のウォークを並列化できるようにしました。対応するテストモック（同期 child_process の `spawn` エクスポート、`GEN_DOC_HISTORY=1` でビルドする E2E スモークフィクスチャ）も追加しています。
+- **ドキュメント。** `GEN_DOC_HISTORY` のローカルオプトイン（EN + JA）、`GEN_DOC_HISTORY=1` を用いた Tauri Mode 1 オフラインリーダーのビルドを文書化し、古くなった doc-history の CI 記述を整合させました。
