@@ -96,7 +96,12 @@ const CLASS_SHAPE = new RegExp(
 );
 
 // After masking brackets, only these chars (plus the placeholder) may remain.
-const MASKED_CHARSET = new RegExp(`^[a-zA-Z0-9:_/!.%${PLACEHOLDER}-]*$`);
+// Lowercase-only outside brackets: real Tailwind utilities / variants / modifiers
+// are never uppercase, so an uppercase letter outside a [...] arbitrary value marks
+// the token as captured prose or a JS/Preact identifier (Activate, Breadcrumb,
+// ColorSchemeProvider, B7B7B7, !moreContainer). Uppercase inside an arbitrary value
+// (e.g. bg-[#FFF]) is fine — those regions are masked before this check.
+const MASKED_CHARSET = new RegExp(`^[a-z0-9:_/!.%${PLACEHOLDER}-]*$`);
 
 /** Replace each balanced [...] region with a single placeholder char. */
 function maskBrackets(token) {

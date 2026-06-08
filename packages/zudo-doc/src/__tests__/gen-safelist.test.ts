@@ -184,6 +184,16 @@ describe("extractTokens", () => {
     "(/^#",
     "()",
     "#!",
+    // Uppercase-outside-brackets = captured prose / JS-Preact identifiers, never
+    // real Tailwind utilities. Must be dropped (a bare lowercase word like "catch"
+    // is shape-valid and inert, but capitalized identifiers are pure noise).
+    "Activate",
+    "Breadcrumb",
+    "ColorSchemeProvider",
+    "ArrowLeft",
+    "B7B7B7",
+    "!moreContainer",
+    "ARIA",
   ];
 
   it.each(MUST_KEEP)("class-shape filter keeps real class %s", (tok) => {
