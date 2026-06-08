@@ -60,14 +60,70 @@ function findJsFiles(dir) {
 // The scanner emits the raw text content of every string literal / quasi.
 // Tokenisation into whitespace-separated Tailwind candidates happens after.
 
-const JUNK_RE = /['"` \t\n\r<>]/;
+// Class-shape filter. The dist JS contains far more than Tailwind class
+// strings — JS code fragments, HTML entities, hex colors, regex bits all live
+// inside string literals. We must keep ONLY real Tailwind class candidates,
+// because Tailwind v4's @source inline() parses each token as a class
+// candidate and ABORTS on malformed ones (e.g. `catch(e){` →
+// "Error: The pattern `catch(e){` is not balanced.").
+//
+// Per token, in order:
+//   1. Mask balanced [...] arbitrary-value regions to a placeholder. Arbitrary
+//      values legitimately contain # ( ) , % . _ so they must be exempt from
+//      the char check below. Unbalanced [ or ] after masking ⇒ reject.
+//   2. On the masked token, the char set outside brackets is restricted to
+//      [a-zA-Z0-9:_/!.%-] plus the placeholder — this kills ( ) { } < > # & $
+//      ; = ^ backtick quotes that appear OUTSIDE brackets (the JS/HTML junk).
+//   3. The masked token must match the anchored Tailwind class shape:
+//      variant prefixes, optional ! and -, a letter-led utility root (or a
+//      lone arbitrary placeholder), optional -<placeholder> arbitrary value,
+//      optional /modifier.
+//   4. Require at least one ASCII letter (drops all-digit / all-punct tokens).
 
-/** Return true when a token is safe for the quoted @source inline("…") */
+const PLACEHOLDER = "\x00";
+
+// One masked variant prefix: `name:` where name is class-ident or a masked
+// arbitrary variant (e.g. `[&_nav]:` → `<placeholder>:`).
+const VARIANT = `(?:(?:[a-zA-Z0-9_-]+|${PLACEHOLDER})[:])`;
+// Utility root: a letter-led identifier, OR a lone placeholder (pure-arbitrary
+// token like `[&_a]:underline`'s value, or `[mask-type:luminance]`).
+const ROOT = `(?:[a-zA-Z][a-zA-Z0-9-]*|${PLACEHOLDER})`;
+// Optional arbitrary-value suffix and optional opacity/modifier.
+const ARBITRARY_SUFFIX = `(?:-${PLACEHOLDER})?`;
+const MODIFIER = `(?:/[a-zA-Z0-9.%-]+)?`;
+const CLASS_SHAPE = new RegExp(
+  `^${VARIANT}*!?-?${ROOT}${ARBITRARY_SUFFIX}${MODIFIER}$`,
+);
+
+// After masking brackets, only these chars (plus the placeholder) may remain.
+const MASKED_CHARSET = new RegExp(`^[a-zA-Z0-9:_/!.%${PLACEHOLDER}-]*$`);
+
+/** Replace each balanced [...] region with a single placeholder char. */
+function maskBrackets(token) {
+  return token.replace(/\[[^\]]*\]/g, PLACEHOLDER);
+}
+
+/**
+ * Return true when a token is a plausible Tailwind class candidate that is
+ * safe to emit into @source inline("…").
+ */
 function isValidToken(token) {
-  // Must not contain anything that would break the surrounding double-quote
-  // or introduce a parse/security hazard. Parens, commas, underscores, #, %
-  // must SURVIVE (bracket utilities like shadow-[0_1px…] and bg-[#fff]).
-  return token.length > 0 && !JUNK_RE.test(token);
+  if (token.length === 0) return false;
+  // Quotes / backticks / angle braces can never be class chars and would
+  // break the quoted @source string — reject up front.
+  if (/['"`<>]/.test(token)) return false;
+
+  const masked = maskBrackets(token);
+  // Any leftover bracket means the [...] was unbalanced.
+  if (masked.includes("[") || masked.includes("]")) return false;
+  // Outside-bracket char set: kills ( ) { } # & $ ; = ^ etc.
+  if (!MASKED_CHARSET.test(masked)) return false;
+  // Anchored Tailwind class shape.
+  if (!CLASS_SHAPE.test(masked)) return false;
+  // Must contain at least one ASCII letter somewhere in the ORIGINAL token
+  // (the masked form hides letters inside brackets, so check the original).
+  if (!/[a-zA-Z]/.test(token)) return false;
+  return true;
 }
 
 /**

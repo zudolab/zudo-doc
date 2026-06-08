@@ -135,6 +135,75 @@ describe("extractTokens", () => {
     expect(flexCount).toBe(1);
   });
 
+  // Class-shape filter (#1993 fix). The dist JS holds far more than Tailwind
+  // class strings — JS fragments, HTML entities, hex colors — and Tailwind v4
+  // ABORTS the build on a malformed @source inline() candidate (e.g.
+  // "Error: The pattern `catch(e){` is not balanced."). The filter must keep
+  // every real Tailwind class candidate and drop everything else.
+
+  // Wrap each token in a minimal double-quoted string so the lexer hands it to
+  // the class-shape filter exactly as it would from real dist content.
+  function keepsToken(tok: string): boolean {
+    return extractTokens(`"${tok}"`, new Set()).has(tok);
+  }
+
+  const MUST_KEEP = [
+    "sticky",
+    "top-0",
+    "z-50",
+    "border-muted",
+    "bg-surface",
+    "px-hsp-lg",
+    "lg:block",
+    "xl:hidden",
+    "top-[3.5rem]",
+    "w-[var(--zd-sidebar-w)]",
+    "h-[calc(100vh-3.5rem)]",
+    "bg-[#fff]",
+    "border-l-[3px]",
+    "[&_nav]:mb-0",
+    "[&::-webkit-details-marker]:hidden",
+    "hover:bg-[color-mix(in_srgb,var(--color-surface)_80%,var(--color-fg)_20%)]",
+    "shadow-[0_1px_3px_color-mix(in_srgb,var(--color-fg)_8%,transparent)]",
+    "grid-cols-[repeat(auto-fit,minmax(12rem,1fr))]",
+    "focus-visible:outline-2",
+    "backdrop:bg-bg/80",
+  ];
+
+  const MUST_DROP = [
+    "catch(e){",
+    "&gt;",
+    "&lt;",
+    "&#123;",
+    "#000000",
+    "#ffffff",
+    "$1",
+    "&&",
+    "!==",
+    "!important;",
+    "(/^#",
+    "()",
+    "#!",
+  ];
+
+  it.each(MUST_KEEP)("class-shape filter keeps real class %s", (tok) => {
+    expect(keepsToken(tok)).toBe(true);
+  });
+
+  it.each(MUST_DROP)("class-shape filter drops junk %s", (tok) => {
+    expect(keepsToken(tok)).toBe(false);
+  });
+
+  it("drops a JS code fragment that would abort the Tailwind build", () => {
+    // The exact token from the real failure: `catch(e){` is unbalanced.
+    const result = tokens(`try { foo(); } catch(e){ bar(); }`);
+    for (const t of result) {
+      // No emitted token may contain bracket/brace/paren code chars outside [].
+      const masked = t.replace(/\[[^\]]*\]/g, "");
+      expect(masked).not.toMatch(/[(){}]/);
+    }
+  });
+
   it("skips line comments", () => {
     const result = tokens(`// "commented-out-class"\n"real-class"`);
     expect(result.has("commented-out-class")).toBe(false);
