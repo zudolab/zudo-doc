@@ -150,7 +150,9 @@
     "./icons": {
       "types": "./dist/icons/index.d.ts",
       "default": "./dist/icons/index.js"
-    }
+    },
+    "./safelist.css": "./dist/safelist.css",
+    "./safelist": "./dist/safelist.css"
   },
   "scripts": {
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsup",
