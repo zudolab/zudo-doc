@@ -1,0 +1,16 @@
+---
+title: 0.2.0-next.9
+description: Release notes for 0.2.0-next.9.
+sidebar_position: 1010
+---
+
+Released: 2026-06-08
+
+A security-maintenance prerelease: an audit-driven cleanup that clears every open `pnpm audit` advisory. No product-facing behavior changed.
+
+### Security
+
+- **Resolved all 31 `pnpm audit` advisories (31 → 0).** Audit-driven cleanup of dev/build tooling transitives, since this repo has no Dependabot configured (a5010712).
+  - Tier 1 — transitive leaves pinned via `pnpm.overrides` plus direct bumps: `picomatch>=4.0.4`, `postcss>=8.5.10`, `undici>=7.24.0`, `ws>=8.20.1`; scoped pins for dual-major trees (`yaml@2>=2.8.3`, `brace-expansion@2>=2.0.3`, `brace-expansion@5>=5.0.6`) to avoid force-upgrading the other major line; root `vite` `^7.3.1 → ^7.3.2`; search-worker `wrangler` `^4.0.0 → ^4.85.0` (dedupes miniflare onto patched `undici`/`ws`) and `@cloudflare/workers-types → ^4.20260424.1`.
+  - Tier 2 — the critical `vitest` advisory has no 3.x patch (fixed `>=4.1.0` only), so `vitest` was bumped `3 → ^4.1.0` in `doc-history-server`, `md-plugins`, `search-worker`, and `zudo-doc` (matching root + `create-zudo-doc`, and dropping the vite-6 chain those pulled in).
+  - Verified green on the final state: typecheck, 1336 unit/package tests, and the 260-page build.
