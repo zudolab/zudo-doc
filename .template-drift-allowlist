@@ -122,15 +122,23 @@ src/utils/header-right-items.ts
 # in templates/base/src/components/ so the mirrored unconditional pages
 # (templates/base/pages/lib/_body-end-islands.tsx and friends) resolve their
 # @/components/* imports without dragging full feature implementations into
-# every scaffold. The five files below have no feature template to swap them
+# every scaffold. The four files below have no feature template to swap them
 # out — they ship as permanent no-ops in base; a future PR can introduce a
 # feature flag if downstream consumers ask. The other two stubs
 # (doc-history.tsx, image-enlarge.tsx) are already allowlisted above via the
 # Wave-11 / E2-task-2 entries; the imageEnlarge feature now also ships the
 # ImageEnlargeSsrFallback named export to mirror the host shape.
 # Spec-lock §1.5 + Decision 5 — see #1728.
+#
+# client-router-bootstrap.tsx was REMOVED from this list (#1991): the no-op
+# stub silently disabled SPA page transitions in fresh scaffolds (the island
+# marker + <ClientRouter/> SSR meta + view-transition CSS were all present,
+# but the bundle shipped zero client-router code, so every internal link was
+# a full page reload). It now ships the REAL bootstrap, byte-identical to the
+# host src/components/client-router-bootstrap.tsx, so the drift checker
+# enforces parity going forward — same rationale as the W4A
+# desktop-sidebar-toggle de-allowlisting above.
 src/components/ai-chat-modal.tsx
-src/components/client-router-bootstrap.tsx
 src/components/design-token-panel-bootstrap.tsx
 src/components/desktop-sidebar-toggle.tsx
 src/components/preset-generator.tsx
