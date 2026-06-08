@@ -1,0 +1,54 @@
+---
+title: 0.2.0
+description: 0.2.0のリリースノート。
+sidebar_position: 1011
+---
+
+リリース日: 2026-06-09
+
+`0.2.0`系列の最初の安定版リリースです。`0.2.0-next.1`〜`0.2.0-next.9`のプレリリース系列を安定版へ昇格させ、npmの`latest` dist-tagを`0.1.0`から`0.2.0`へ切り替えます。これにより、タグ指定なしの`npm install` / `pnpm dlx create-zudo-doc`が`0.2.0`系列を解決するようになります。`@takazudo/zudo-doc`、`@takazudo/zudo-doc-history-server`、`create-zudo-doc`はロックステップで同時にリリースされます。以下はプレリリース系列の主な変更点の集約です。詳細は各`0.2.0-next.N`のノートを参照してください。
+
+### 破壊的変更
+
+- **非推奨だった`colorTweakPanel`設定エイリアスを削除。** `src/config/settings.ts`では`designTokenPanel`を使用してください。`colorTweakPanel`を設定しても効果はなくなりました（#1862）。
+- **`@takazudo/zudo-doc`から未使用の公開API残骸を3つ削除**（#1866）: `DesignTokenTweakPanel`テーマスタブ（パネルUIは`@takazudo/zdtp`にあります）、`VersionSwitcherProps`の無効化された`disableInlineVisibilityStyle`プロパティ、`TocItem`型エイリアス（`HeadingItem`を使用してください）。
+- **非推奨だった`ai-chat-worker`パッケージを削除。** AIチャットAPIはSSRの`/api/ai-chat`エンドポイントで提供されます。スタンドアロンのCloudflare Workerパッケージは削除されました。
+
+### 機能
+
+- **`@takazudo/zudo-doc/icons`サブパスエクスポート。** 共有アイコンモジュールを専用のサブパスエクスポートとして提供し、フレームワーク全体で採用しました。生成されたプロジェクトはnpmから`@takazudo/zudo-doc/icons`を直接importします（#1906）。
+- **`index.mdx`フロントマターによるカテゴリメタデータ。** claude-resourcesジェネレーターが`_category_.json`サイドカーの代わりに`category_no_page` / `sidebar_position`フロントマターを持つ`index.mdx`を出力するようになり、公開パッケージ利用者で発生していた`unsupported data-file extension`ビルド警告を解消しました（#1980、#1978、#1985）。
+- **パッケージ生成のCSSセーフリスト。** `@takazudo/zudo-doc`がビルド時に`dist/safelist.css`を生成し`./safelist.css`エクスポートで公開するため、下流プロジェクトのTailwind v4ビルドが動的クラスを保持します（#1993、#1994）。
+- **正規のルートドキュメントURL `/docs/`。** ルートのドキュメントページがオプショナルキャッチオールルート経由で正規の`/docs/`に配信されます。検索・llms.txt・doc-historyはすべてベアルートを一貫して正規化します（#1891）。
+- **汎用的なバージョン付き＋ロケールルーティング。** バージョン付きの非デフォルトロケールページがハードコードされた`ja`パスではなく`/v/{version}/{locale}/docs/...`を経由するようになりました。
+- **階層的なTOC見出しID。** zfbの階層的な見出しID戦略とslugifyを採用し、TOCアンカーがレンダリングされた見出しと一致するようにしました。TOCの深さは設定可能です（#1943、#1946）。
+- **`noUncheckedIndexedAccess`を全体で有効化** — ルートtsconfig、`packages/zudo-doc`、各スタンドアロンパッケージ、`create-zudo-doc`テンプレートで有効にし、新規スキャフォルドがより厳密なガードを継承するようにしました。
+- **非デモ環境向けにAIチャットAPIを強化。** オリジン許可リスト、グローバルな1日あたりリクエスト上限、システムコーパスブロックのプロンプトキャッシュを追加し、デモ以外でも安全かつ低コストに配置できるようにしました（#1889）。
+- **OGPメタタグ。** `HeadWithDefaults`が`og:type`・`og:url`・`og:site_name`を出力します（#1975）。
+- **b4push / CIパリティメタチェック。** ローカルの`b4push`とCIゲート間の暗黙的なドリフトを検出するガードを追加し、fixture-drift・tags-audit・design-token-lintを`pr-checks.yml`に組み込みました（#1967、#1982）。
+
+### バグ修正
+
+- **HTML Previewが正しい縦積みレイアウトでハイドレートされるように。** アイランドの二重ラップ（Astro→zfb移行の回帰）を修正し、ホスト・テンプレート・既存の下流スキャフォルドが呼び出し側の変更なしでタイトルバー／プレビュー／コードの積み重ねにハイドレートされるようにしました（#1925）。
+- **CategoryNavがno-pageカテゴリでデッドリンクを生成しないように。** `categories=`モードで、`category_no_page`カードがカテゴリの最初のルーティング済み子孫へリンクするように（到達可能なページがなければスキップ）。CIの`check:links`は`b4push`に合わせて厳格（`--strict-broken`）になりました（#1985）。
+- **doc-historyの正確性。** gitコマンドがリポジトリルートをCWDとして実行され、CIがクリーンなリポジトリルート相対の`--content-dir`を渡し、`generate`コマンドが部分的なgit失敗時にfail loud（非ゼロ終了）するようになり、ジェネレーターのセマフォのデッドロックを修正しました（#1907、#1913）。
+- **`/v/`ルートでのバージョン付きドキュメントのリンクと表示の正確性,** バージョン付きロケールページのローカライズされたナビと履歴／クロスリンクの解決を含みます（#1916、#1909）。
+- **doc-historyのpostBuildをオプトインに**（`GEN_DOC_HISTORY=1`）。これにより、素の`pnpm build`が大規模コーパスでzfbのpostBuild予算を超過するリスクがなくなりました。CIと開発には影響しません（#1986）。
+- **nav-source-cacheのメモ化**が正当に`undefined`となる結果をキャッシュヒットとして登録するように（`sub.has(key)`）。また**AIチャットの監査ログキー**が同一ミリ秒の衝突を避けるため`crypto.randomUUID()`を使用するようにしました。
+- **スキャフォルドテンプレートのパリティ修正** — sidebar-toggle / theme-toggleテンプレート、`zudo-doc` dist向けの`@source`＋インライン化したセーフリスト、実際のクライアントルーターブートストラップ、新しい`vsp-3xs` / `shadow-lg`トークンにまたがる修正（#1991、#1990）。
+
+### パフォーマンス
+
+- **doc-history。** N+1のgit spawnをバッチ呼び出しに集約し、新しい非同期パス経由でgit履歴の探索を並列化して、大規模ドキュメントセットでのビルド時間を短縮しました（#1875、#1930）。
+- **ナビゲーションキャッシュ。** ナビソースとナビツリーを同一性メモ化し、冗長な再計算を削減しました（#1902）。
+
+### セキュリティ
+
+- **`pnpm audit`の全31件の脆弱性勧告を解消（31 → 0）。** `pnpm.overrides`と直接バンプによる開発／ビルドツール推移依存の監査駆動クリーンアップ。`vitest` `3 → ^4.1.0`（クリティカルな勧告に3.x系の修正がないため）を含みます。typecheck・全ユニット／パッケージスイート・本番ビルドでグリーンを確認済み（a5010712）。
+
+### その他の変更
+
+- **新しいリリースパイプライン＋ロックステップバージョニング。** 3つの公開パッケージが同時に動き、新規スキャフォルドプロジェクトが対応する`@takazudo/zudo-doc` / `@takazudo/zudo-doc-history-server`リリースをpinします。プレリリースは`next`、安定版は`latest`で公開されます。
+- **design-token-lintを移行** — ベンダリングされた`file:`依存から公開済みの`@takazudo/zudo-design-token-lint@^1.0.0` npmパッケージへ。`design-token-lint`のbin名は変更ありません（#1863）。
+- **zfbをバンプ** — ホストとジェネレーターのpinをプレリリース系列を通して`0.1.0-next.35`まで（CSSパイプライン、islandsスキャナー、コンテンツ内のベアな`#anchor`解決の修正）。
+- **ドキュメントドリフトの一掃＋デッドコード削除** — 設定・ドキュメント・孤立したAstro→zfbホストファイルにまたがる整理に加え、型安全性のリファクタリングとバージョン付きルート／非同期doc-historyパスの振る舞いテストを追加しました。

@@ -1,0 +1,54 @@
+---
+title: 0.2.0
+description: Release notes for 0.2.0.
+sidebar_position: 1011
+---
+
+Released: 2026-06-09
+
+First stable release of the `0.2.0` line. It promotes the `0.2.0-next.1` → `0.2.0-next.9` prerelease series to stable and moves the `latest` npm dist-tag from `0.1.0` to `0.2.0`, so a plain `npm install` / `pnpm dlx create-zudo-doc` now resolves the `0.2.0` line. `@takazudo/zudo-doc`, `@takazudo/zudo-doc-history-server`, and `create-zudo-doc` are released together in lockstep. The sections below aggregate the headline changes from the prerelease line; see the individual `0.2.0-next.N` notes for full detail.
+
+### Breaking Changes
+
+- **Removed the deprecated `colorTweakPanel` settings alias.** Projects must use `designTokenPanel` in `src/config/settings.ts`; configs still setting `colorTweakPanel` no longer have any effect (#1862).
+- **Removed three unused public-surface vestiges from `@takazudo/zudo-doc`** (#1866): the `DesignTokenTweakPanel` theme stub (the panel UI lives in `@takazudo/zdtp`), the no-op `disableInlineVisibilityStyle` prop on `VersionSwitcherProps`, and the `TocItem` type alias (use `HeadingItem`).
+- **Removed the deprecated `ai-chat-worker` package.** The AI chat API is served by the SSR `/api/ai-chat` endpoint; the standalone Cloudflare Worker package has been dropped.
+
+### Features
+
+- **`@takazudo/zudo-doc/icons` subpath export.** A shared icon module ships as a dedicated subpath export adopted across the framework; generated projects import `@takazudo/zudo-doc/icons` directly from npm (#1906).
+- **Category metadata via `index.mdx` frontmatter.** The claude-resources generator emits `index.mdx` with `category_no_page` / `sidebar_position` frontmatter instead of `_category_.json` sidecars, eliminating the `unsupported data-file extension` build warning for consumers of the published package (#1980, #1978, #1985).
+- **Package-generated CSS safelist.** `@takazudo/zudo-doc` generates `dist/safelist.css` at build and exposes it via a `./safelist.css` export, so Tailwind v4 builds in downstream projects keep dynamic classes (#1993, #1994).
+- **Canonical root docs URL `/docs/`.** The root documentation page serves at a canonical `/docs/` via an optional-catchall route; search, llms.txt, and doc-history all canonicalize the bare root consistently (#1891).
+- **Generic versioned + locale routing.** Versioned non-default-locale pages route through `/v/{version}/{locale}/docs/...` instead of a hardcoded `ja` path.
+- **Hierarchical TOC heading IDs.** Adopted zfb's hierarchical heading-ID strategy and slugify so TOC anchors match rendered headings; TOC depth is configurable (#1943, #1946).
+- **`noUncheckedIndexedAccess` enabled across the board** — root tsconfig, `packages/zudo-doc`, the standalone packages, and the `create-zudo-doc` templates, so fresh scaffolds inherit the stricter guards.
+- **Hardened AI-chat API for non-demo deployments.** Added an origin allowlist, a global daily request limit, and prompt caching on the system corpus block so the endpoint is safe and cheaper to deploy beyond the demo (#1889).
+- **OGP meta tags.** `HeadWithDefaults` emits `og:type`, `og:url`, and `og:site_name` (#1975).
+- **b4push / CI parity meta-check.** A guard detects silent drift between local `b4push` and CI gates; fixture-drift, tags-audit, and design-token-lint are wired into `pr-checks.yml` (#1967, #1982).
+
+### Bug Fixes
+
+- **HTML Preview now hydrates into the correct vertical-stack layout.** Fixed an island double-wrap (an Astro→zfb migration regression) so host, template, and existing downstream scaffolds hydrate into the title-bar / preview / code stack with no call-site change (#1925).
+- **CategoryNav no longer emits dead links for no-page categories.** In `categories=` mode, `category_no_page` cards now link to the category's first routed descendant (or are skipped); CI's `check:links` is strict (`--strict-broken`) to match `b4push` (#1985).
+- **doc-history correctness.** Git commands run with the repo root as CWD; CI passes a clean repo-root-relative `--content-dir`; the `generate` command fails loud (non-zero) on partial git failures; and a generator semaphore deadlock was fixed (#1907, #1913).
+- **Versioned-docs link & display correctness on `/v/` routes,** including localized nav on versioned-locale pages and history/cross-link resolution (#1916, #1909).
+- **doc-history postBuild made opt-in** (`GEN_DOC_HISTORY=1`), so a plain `pnpm build` no longer risks exceeding zfb's postBuild budget on large corpora; CI and dev are unaffected (#1986).
+- **nav-source-cache memoization** now registers legitimately `undefined` results as cache hits (`sub.has(key)`), and **AI-chat audit-log keys** use `crypto.randomUUID()` to avoid same-millisecond collisions.
+- **Scaffold-template parity fixes** across sidebar-toggle / theme-toggle templates, `@source` for the `zudo-doc` dist + inlined safelist, a real client-router bootstrap, and new `vsp-3xs` / `shadow-lg` tokens (#1991, #1990).
+
+### Performance
+
+- **doc-history.** Collapsed N+1 git spawns into batched calls and parallelized git-history walks via a new async path, cutting build time on large doc sets (#1875, #1930).
+- **Navigation cache.** Identity-memoized the nav source and nav tree to cut redundant recomputation (#1902).
+
+### Security
+
+- **Resolved all 31 `pnpm audit` advisories (31 → 0).** Audit-driven cleanup of dev/build tooling transitives via `pnpm.overrides` and direct bumps, including `vitest` `3 → ^4.1.0` (the critical advisory has no 3.x patch). Verified green on typecheck, the full unit/package suites, and the production build (a5010712).
+
+### Changes
+
+- **New release pipeline + lockstep versioning.** The three publishable packages move together and a freshly scaffolded project pins the matching `@takazudo/zudo-doc` / `@takazudo/zudo-doc-history-server` release; prereleases publish under `next`, stable under `latest`.
+- **Migrated design-token-lint** from the vendored `file:` dependency to the published `@takazudo/zudo-design-token-lint@^1.0.0` npm package; the `design-token-lint` bin name is unchanged (#1863).
+- **Bumped zfb** across the host and generator pins through the prerelease line to `0.1.0-next.35` (CSS-pipeline, islands-scanner, and bare in-content `#anchor` resolution fixes).
+- **Documentation-drift sweep & dead-code removal** across configs, docs, and orphaned Astro→zfb host files, plus added type-safety refactors and behavioral tests for the versioned routes and async doc-history path.
