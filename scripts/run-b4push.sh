@@ -10,10 +10,10 @@ set -euo pipefail
 #   4. Fixture settings drift check
 #   5. Tags audit (--ci)
 #   6. Design token lint
-#   7. Package safelist check (#1982)
-#   8. B4push/CI parity check (guard manifest meta-check — #1967)
-#   9. Type checking (zfb check + workspace package typechecks)
-#  10. Root unit tests (test:unit)
+#   7. B4push/CI parity check (guard manifest meta-check — #1967)
+#   8. Type checking (zfb check + workspace package typechecks)
+#   9. Root unit tests (test:unit) — builds @takazudo/zudo-doc as a side-effect
+#  10. Package safelist check (#1994) — requires dist/safelist.css from step 9
 #  11. Build (zfb build)
 #  12. Link check
 #  13. HTML validation (html-validate dist/**/*.html)
@@ -48,7 +48,7 @@ skip() { echo "⏭  $1 (skipped)"; }
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 # >>> b4push-ci-parity:guards
-# Steps 1–7 are lightweight guard gates. They are delimited by the markers
+# Steps 1–6 are lightweight guard gates. They are delimited by the markers
 # above/below so check-b4push-ci-parity.mjs can cross-check them against the
 # REQUIRED_CI_GUARDS manifest without brittle full-file parsing.
 
@@ -103,21 +103,7 @@ else
   fail "Design token lint"
 fi
 
-# ── Step 7: Package safelist check ───────────────────
-# Pure-Node check — verifies the @source inline() safelist in the scaffold
-# template covers every responsive-variant + arbitrary-value utility class
-# used in packages/zudo-doc/src/**/*.tsx. Closes the silent-drift gap from
-# #1971/#1982: a new bracket/responsive utility in the package would reach
-# the host repo (which @source's the package source directly) but silently
-# miss consumers (which rely solely on the template safelist).
-step "Package safelist check (check:package-safelist)"
-if (cd "$ROOT_DIR" && pnpm check:package-safelist); then
-  pass "Package safelist check passed"
-else
-  fail "Package safelist check"
-fi
-
-# ── Step 8: B4push/CI parity check ───────────────────
+# ── Step 7: B4push/CI parity check ───────────────────
 # Pure-Node check — verifies every lightweight guard gate in this file also
 # has a corresponding CI job. See scripts/check-b4push-ci-parity.mjs.
 step "B4push/CI parity check (check:b4push-ci-parity)"
@@ -129,7 +115,7 @@ fi
 
 # <<< b4push-ci-parity:guards
 
-# ── Step 9: Type checking ─────────────────────────────
+# ── Step 8: Type checking ─────────────────────────────
 # Prefer `zfb check` (the post-cutover entry point). If it fails to
 # start (e.g. binary not yet built), fall back to `tsc --noEmit` so the
 # typecheck still gates pushes.
@@ -152,7 +138,7 @@ else
   fail "Package typechecks"
 fi
 
-# ── Step 10: Root unit tests ───────────────────────────
+# ── Step 9: Root unit tests ───────────────────────────
 # Root `test:unit` (vitest) guards src/**/__tests__ and scripts/__tests__,
 # which previously ran in no local gate and no CI workflow (#1856). Runs
 # before the expensive site build for fast logic-level feedback.
@@ -161,12 +147,25 @@ fi
 # @takazudo/zudo-doc/theme, whose compiled dist/ does not exist on a fresh
 # clone (`pnpm install` does not run the package's tsup build). CI's package
 # and root test jobs build it for the same reason. Building here also leaves
-# dist/ ready for the site build in the next step.
+# dist/safelist.css ready for the safelist check in step 10.
 step "Root unit tests (test:unit)"
 if (cd "$ROOT_DIR" && pnpm --filter @takazudo/zudo-doc build && pnpm test:unit); then
   pass "Root unit tests passed"
 else
   fail "Root unit tests"
+fi
+
+# ── Step 10: Package safelist check ──────────────────
+# Verifies that the generated dist/safelist.css in packages/zudo-doc/ covers
+# every responsive-variant + arbitrary-value utility class used in
+# packages/zudo-doc/src/**/*.tsx. Catches regressions where gen-safelist.mjs
+# misses a new utility class before it reaches consumers (#1994).
+# Requires dist/safelist.css — produced by the package build in step 9.
+step "Package safelist check (check:package-safelist)"
+if (cd "$ROOT_DIR" && pnpm check:package-safelist); then
+  pass "Package safelist check passed"
+else
+  fail "Package safelist check"
 fi
 
 # ── Step 11: Build ────────────────────────────────────

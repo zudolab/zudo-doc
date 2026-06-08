@@ -2,22 +2,38 @@
 @import "tailwindcss/utilities";
 
 /* ========================================
+ * @takazudo/zudo-doc package safelist
+ *
+ * The package ships a build-generated safelist at `dist/safelist.css`
+ * (zudolab/zudo-doc#1993). Importing it via the module resolver is
+ * reliable across all consumer environments — same code path as the
+ * existing `@import "@takazudo/zdtp/styles.css"` below.
+ *
+ * Why not @source the package dist/ glob? The old approach
+ * (`@source "../../node_modules/@takazudo/zudo-doc/dist/**"`) was
+ * unreliable: pnpm stores packages in a content-addressable store and
+ * surfaces them to node_modules via symlinks. Tailwind v4's file
+ * scanner does not reliably traverse those symlinks, so arbitrary-value
+ * candidates (e.g. `w-[var(--zd-sidebar-w)]`, `h-[calc(100vh-3.5rem)]`)
+ * were intermittently dropped across rebuilds (zudolab/zudo-doc#1971,
+ * #1989). The package-generated `@source inline()` in dist/safelist.css
+ * contains the full set, extracted at package build time — no drift, no
+ * symlink traversal, auto-syncs on package upgrade (zudolab/zudo-doc#1994).
+ * ======================================== */
+
+@import "@takazudo/zudo-doc/safelist.css";
+
+/* ========================================
  * Tailwind v4 content sources
  *
  * Without a `.git` directory in the project root Tailwind v4's content
  * scanner falls back to explicit @source directives for class detection.
  * Builds that run outside a git checkout (E2E fixtures, CI containers
  * that copy the source tree without history, etc.) hit this fallback,
- * and zfb's default content roots only cover `pages/`. Components and
- * shared package code that hold responsive variants (`lg:hidden`,
- * `lg:block`, `xl:hidden`), design-token utilities (`h-icon-lg`,
- * `bg-bg`, `text-fg`), and absolute-position primitives (`sticky`,
- * `inset-0`, `top-[3.5rem]`) live outside pages/, so without these
- * directives Tailwind drops every utility class those modules emit and
- * the dist stylesheet collapses — breaking mobile-sidebar visibility,
- * desktop-sidebar reveal, and mobile-toc accordion at non-git build
- * targets. Keep these in sync with `src/styles/global.css` in the host
- * repo (zudolab/zudo-doc#1355 wave 13 topic 2; pages/ added in #1444).
+ * and zfb's default content roots only cover `pages/`. Components live
+ * outside pages/, so these directives ensure the consumer's own code is
+ * always scanned for utility classes. The package's utilities are now
+ * covered by the @import above — these directives cover consumer code only.
  * ======================================== */
 
 @source "src/components/**/*.{tsx,ts,jsx,js,mdx,md}";
@@ -25,33 +41,6 @@
 @source "src/hooks/**/*.{tsx,ts,jsx,js}";
 @source "src/utils/**/*.{tsx,ts,jsx,js}";
 @source "pages/**/*.{tsx,ts,jsx,js}";
-
-/* ========================================
- * @takazudo/zudo-doc package sources
- *
- * Primary fix for zudolab/zudo-doc#1971: consumers scaffolded via
- * create-zudo-doc were missing `lg:block` and bracket utilities (e.g.
- * `w-[var(--zd-sidebar-w)]`, `h-[calc(100vh-3.5rem)]`) that are used
- * by @takazudo/zudo-doc's layout components. The host repo works only
- * because its src/styles/global.css also @source's the monorepo path
- * `packages/zudo-doc/src/**` — a path consumers don't have.
- *
- * Fix (1): @source the package dist. The package ships non-minified
- * ESM (tsup bundle:false), so class strings like `"hidden lg:block
- * fixed top-[3.5rem] …"` survive verbatim in dist JS. Path depth:
- * src/styles/ is two directories below the consumer project root.
- *
- * Fix (2): @source inline() safelist. Tailwind v4's scanner is
- * INTERMITTENTLY unreliable for arbitrary-value candidates extracted
- * from node_modules JS (observed across rebuilds in real consumers).
- * Requires Tailwind v4.1+; the scaffold pins ^4.2.0 so this is safe.
- * Inventory re-derived from packages/zudo-doc/src/**\/*.tsx (excluding
- * __tests__) — do NOT prune without re-running the derivation grep.
- * ======================================== */
-
-@source "../../node_modules/@takazudo/zudo-doc/dist/**/*.{js,mjs}";
-
-@source inline("lg:block lg:flex lg:ml-[var(--zd-sidebar-w)] lg:px-hsp-2xl lg:py-vsp-2xl lg:pt-vsp-2xl lg:grid-cols-[repeat(auto-fit,minmax(12rem,1fr))] xl:hidden xl:flex sm:grid-cols-2 sm:justify-between sm:items-center sm:flex-row top-[3.5rem] w-[var(--zd-sidebar-w)] h-[calc(100vh-3.5rem)] min-h-[calc(100vh-3.5rem)] gap-[clamp(1.5rem,3vw,4rem)] max-w-[clamp(50rem,75vw,90rem)] max-w-[80rem] max-w-[46rem] min-w-[8rem] min-w-[10rem] max-h-[80vh] h-[3.5rem] h-[0.875rem] w-[0.875rem] h-[0.5rem] w-[0.5rem] h-[1.575rem] w-[1.575rem] w-[280px] w-[16px] h-[1lh] pl-[1.25rem] border-l-[3px] border-b-[5px] border-t-[2px] border-t-[3px] transition-[background,color,border-color] shadow-[0_1px_3px_color-mix(in_srgb,var(--color-fg)_8%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-surface)_80%,var(--color-fg)_20%)] bg-[#fff]");
 
 /* ========================================
  * Design Token System
