@@ -60,44 +60,45 @@ explicit bump modes and version strings:
 
 | Current version   | Mode / arg       | Result              |
 |-------------------|------------------|---------------------|
-| `X.Y.Z` (stable)  | _(no arg / auto)_ | `X.(Y+1).0-next.1` |
-| `X.Y.Z-next.N`    | _(no arg / auto)_ | `X.Y.Z-next.(N+1)` |
-| any               | `major`          | `(X+1).0.0-next.1` |
-| any               | `minor`          | `X.(Y+1).0-next.1` |
-| any               | `patch`          | `X.Y.(Z+1)-next.1` |
+| `X.Y.Z` (stable)  | _(no arg / auto)_ | `X.Y.(Z+1)`        |
+| `X.Y.Z-next.N`    | _(no arg / auto)_ | `X.Y.Z` (graduate)  |
+| any               | `major`          | `(X+1).0.0`         |
+| any               | `minor`          | `X.(Y+1).0`         |
+| any               | `patch`          | `X.Y.(Z+1)`         |
 | `X.Y.Z` (stable)  | `next`           | `X.(Y+1).0-next.1` |
 | `X.Y.Z-next.N`    | `next`           | `X.Y.Z-next.(N+1)` |
 | `X.Y.Z-next.N`    | `stable`         | `X.Y.Z`            |
 | already stable    | `stable`         | _(error)_           |
 | any               | `<semver>`       | use exactly that    |
 
-All keyword modes except `stable` produce a prerelease version (with `-next.1` suffix).
-Stable is always an explicit promotion — never auto-derived from a stable base.
+**Scheme B (pre-1.0):** the `0.x` mainline ships **clean** `0.MINOR.PATCH` — no
+`-next` suffix. `major` / `minor` / `patch` and the `auto` default all produce a
+clean version (a breaking `0.x` change rides a `minor` bump). The `next` keyword is
+the **opt-in** prerelease escape hatch (deliberate previews / the `1.0.0-beta`
+run-up); `auto` from an in-flight prerelease **graduates** it to the clean `X.Y.Z`.
 
 ### Dry path (compute-only, no mutations)
 
 ```bash
 # Test auto-derive from a specific version without touching package.json:
-DRY=1 FROM=0.1.0 ./scripts/release-create-zudo-doc.sh
-# → next version: 0.2.0-next.1 / pin string: ^0.2.0-next.1
+DRY=1 FROM=0.2.0-next.9 ./scripts/release-create-zudo-doc.sh
+# → next version: 0.2.0 / pin string: ^0.2.0   (auto graduates a prerelease to clean)
 
-DRY=1 FROM=0.2.0-next.1 ./scripts/release-create-zudo-doc.sh
-# → next version: 0.2.0-next.2 / pin string: ^0.2.0-next.2
+DRY=1 FROM=0.2.0 ./scripts/release-create-zudo-doc.sh
+# → next version: 0.2.1 / pin string: ^0.2.1   (auto from a stable = patch bump)
 
-DRY=1 FROM=0.2.0-next.3 ./scripts/release-create-zudo-doc.sh stable
-# → next version: 0.2.0 / pin string: ^0.2.0
+DRY=1 FROM=0.2.0 ./scripts/release-create-zudo-doc.sh minor
+# → next version: 0.3.0 / pin string: ^0.3.0   (breaking 0.x change = minor bump)
 ```
 
-## One-time bootstrap (first release from a fresh repo)
+## `latest` dist-tag (Scheme B — no bootstrap needed)
 
-Before the very first release, if npm has never seen `@takazudo/zudo-doc` and the
-`latest` dist-tag is not yet set, run the bootstrap helper to seed it:
-
-```bash
-node scripts/release-bootstrap-latest.mjs <version>
-```
-
-This is a one-time operation — subsequent releases use the normal release script.
+Under Scheme B the `0.x` mainline ships clean `X.Y.Z` versions, which the publish
+workflow routes to `latest` automatically — there is no dual-tag probe to seed and
+no bootstrap step in the normal flow. `scripts/release-bootstrap-latest.mjs` is
+retained only as a one-time **remediation** helper for a stranded `latest` (see
+RELEASE.md → "`release-bootstrap-latest.mjs`"). The standing fix for a stale
+`latest` is simply to ship a clean version.
 
 ## Preconditions
 
@@ -124,13 +125,18 @@ it to the script. Otherwise:
 git log <last-tag>..HEAD --oneline
 ```
 
-Categorize commits by conventional-commit prefix and propose:
+Categorize commits by conventional-commit prefix and propose. **During `0.x`
+(Scheme B — see "Version scheme")** the major stays at `0` and a breaking change
+rides a minor bump, NOT a jump to `1.0.0`:
 
-- Breaking changes (`feat!`, `BREAKING CHANGE`) → `major` bump
-- Features (`feat:`) → `minor` bump
-- Otherwise → `patch` bump
+- Breaking changes (`feat!`, `BREAKING CHANGE`) → `minor` bump (`0.2` → `0.3`)
+- Everything else (`feat:`, `fix:`, …) → `patch` bump
 
-For prerelease candidates, propose the appropriate keyword (`next`, or explicit `-next.N`).
+(Post-1.0, switch to standard SemVer: breaking → `major`, `feat:` → `minor`,
+otherwise → `patch`. The deliberate jump to `1.0.0` itself is always an explicit
+`major` / `<semver>` arg.)
+
+For an opt-in preview, propose the `next` keyword (or an explicit `-next.N`).
 To preview the computed version without touching any files, use the dry path:
 
 ```bash
@@ -366,15 +372,16 @@ for p in @takazudo/zudo-doc-history-server @takazudo/zudo-doc create-zudo-doc; d
 done
 ```
 
-Each should show `<NEW_VERSION>` under `next` (prerelease) or `latest` (stable),
-with `latest` left untouched for a prerelease. Report the three release URLs and
-the published versions. **The skill ends here — the release is live on npm.**
+Each should show `<NEW_VERSION>` under `latest` for a clean `0.x` release (the
+normal Scheme B path), or under `next` for an opt-in prerelease (with `latest`
+left untouched). Report the three release URLs and the published versions.
+**The skill ends here — the release is live on npm.**
 
 (Optional but recommended for confidence: a fresh-scaffold smoke —
 `pnpm dlx create-zudo-doc@<NEW_VERSION> <dir> --yes ...` then `pnpm install` — proves
 every published pin resolves from npm. See the prior release session for the pattern.)
 
-## Dual-tag behavior: `latest` and `next`
+## dist-tag behavior: `latest` and `next`
 
 Each package is published to npm with a dist-tag determined by the version string. CI
 reads the tag name and selects the tag automatically — the maintainer does NOT specify
@@ -387,9 +394,11 @@ reads the tag name and selects the tag automatically — the maintainer does NOT
 | `v1.2.3-beta.2`     | `next`       | `pnpm install create-zudo-doc@next` |
 | `v1.2.3-rc.3`       | `next`       | `pnpm install create-zudo-doc@next` |
 
-Prerelease versions (any tag containing a `-`) are published under `next`. Stable
-versions (no `-`) are published under `latest`. This ensures `npm install` / `pnpm dlx`
-without a dist-tag always pulls the last stable release, not a prerelease.
+Clean versions (no `-`) publish under `latest`; prereleases (any tag containing a
+`-`) publish under `next`. There is **no dual-tag probe** — see RELEASE.md. Under
+**Scheme B** the `0.x` mainline ships clean `0.MINOR.PATCH`, so each release moves
+`latest` to the newest build and a tagless `npm install` / `pnpm dlx` always gets
+it. `-next` is reserved for opt-in previews and the `1.0.0-beta` run-up.
 
 ## Files involved (pin sources)
 
