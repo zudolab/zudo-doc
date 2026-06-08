@@ -42,4 +42,7 @@ export default defineConfig({
   // splitting + external are irrelevant when bundle:false — imports
   // stay as written and resolve against the consumer's node_modules
   // at runtime.
+  // Regenerate dist/safelist.css after every compilation (build, prepare,
+  // and --watch). Must run AFTER tsup because clean:true wipes dist/ first.
+  onSuccess: "node scripts/gen-safelist.mjs",
 });
