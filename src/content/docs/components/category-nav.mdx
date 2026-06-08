@@ -57,7 +57,7 @@ By default `CategoryNav` infers a single parent and lists its immediate children
 <CategoryNav categories={["claude-md", "claude-skills", "claude-agents"]} />
 ```
 
-Each slug is resolved to its nav node and rendered as a card; slugs not found in the tree are silently skipped. For no-page categories (`category_no_page: true` in `index.mdx`, or `noPage: true` in a legacy `_category_.json`), the card links to the auto-generated category index URL.
+Each slug is resolved to its nav node and rendered as a card; slugs not found in the tree are silently skipped. A no-page category (`category_no_page: true` in `index.mdx`, or `noPage: true` in a legacy `_category_.json`) has no route of its own, so its card links to the category's first routed descendant page; a no-page category with no reachable page is skipped rather than rendering a dead link.
 
 ## Features
 

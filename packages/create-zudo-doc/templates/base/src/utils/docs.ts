@@ -321,6 +321,25 @@ export function findNode(nodes: NavNode[], slug: string): NavNode | undefined {
   return undefined;
 }
 
+/**
+ * Return the href of the first routed descendant (a node with `hasPage` and an
+ * `href`), walking children depth-first in order. Returns undefined when the
+ * subtree has no routed page.
+ *
+ * Used by CategoryNav's `categories=` mode to give a `category_no_page` card a
+ * real destination: such a category has no route of its own (collectAutoIndexNodes
+ * skips noPage nodes), so a card linking to its own slug URL would be a dead
+ * link. Linking to the first child page keeps the route surface unchanged.
+ */
+export function firstRoutedHref(node: NavNode): string | undefined {
+  for (const child of node.children) {
+    if (child.hasPage && child.href) return child.href;
+    const nested = firstRoutedHref(child);
+    if (nested) return nested;
+  }
+  return undefined;
+}
+
 export interface BreadcrumbItem {
   label: string;
   href?: string;
