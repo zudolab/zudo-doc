@@ -156,7 +156,11 @@ export function DocHistoryArea({
   const createdDate = meta?.createdDate;
   const updatedDate = meta?.updatedDate;
 
-  const fallback: VNode = (
+  // Explicit type annotation omitted: inferred JSX return is structurally
+  // compatible with zfb's VNode (the ssrFallback prop target). Preact's
+  // VNode<{}> generic form is not directly assignable to zfb's VNode at the
+  // type level even though the runtime shapes are identical.
+  const fallback = (
     <div class="sr-only">
       {author && <span>{author}</span>}
       <span>

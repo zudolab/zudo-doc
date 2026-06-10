@@ -220,6 +220,19 @@ jobs:
       - name: Run type checking
         run: pnpm check
 
+      # pages/ typecheck: root tsconfig excludes pages/ by design (zfb injects
+      # its own page-runner types at build time). tsconfig.pages.json provides
+      # the needed zfb/* path mappings so the ~50 page files that had zero
+      # typecheck coverage are now gated in CI (#2018).
+      - name: Run pages/ type checking
+        run: pnpm check:pages
+
+      # Workspace package typechecks: `pnpm check` (root tsconfig) excludes
+      # packages/ so a broken package typecheck was previously invisible in CI.
+      # Mirrors the per-package typecheck step that local b4push already runs.
+      - name: Run workspace package typechecks
+        run: pnpm -r --filter './packages/*' typecheck
+
   # ---------------------------------------------------------------------------
   # Job 1.5: Package unit suites
   # ---------------------------------------------------------------------------

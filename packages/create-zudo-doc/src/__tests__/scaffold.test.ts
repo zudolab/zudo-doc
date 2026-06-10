@@ -1307,6 +1307,15 @@ describe("scaffold — plugin copying and settings", () => {
       'html-validate "dist/**/*.html"',
     );
   });
+
+  it("includes check:pages script", async () => {
+    const pkg = await fs.readJson(
+      projectPath("test-minimal", "package.json"),
+    );
+    expect(pkg.scripts["check:pages"]).toBe(
+      "tsc --noEmit -p tsconfig.pages.json",
+    );
+  });
 });
 
 describe("scaffold — CLAUDE.md generation", () => {
