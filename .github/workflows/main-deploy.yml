@@ -239,7 +239,10 @@ jobs:
 
       - name: Deploy to Cloudflare Workers (production)
         id: deploy
-        run: npx wrangler@4 deploy
+        # Pinned: wrangler 4.99.0 fails the post-upload /subdomain API call with
+        # Cloudflare error 10013 (deploy itself succeeds, job exits red).
+        # 4.98.0 is the last-known-good. Re-float to @4 once upstream fixes it.
+        run: npx wrangler@4.98.0 deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

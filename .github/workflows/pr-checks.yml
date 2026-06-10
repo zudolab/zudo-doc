@@ -545,7 +545,9 @@ jobs:
           # alias URL (subdomain starts with the alias) — not the per-version
           # hash URL — so smoke gates + PR comments hit a stable host.
           DEPLOY_LOG=$(mktemp)
-          npx wrangler@4 versions upload \
+          # Pinned to 4.98.0 like main-deploy.yml: 4.99.0 hits Cloudflare
+          # error 10013 post-upload. Re-float to @4 once upstream fixes it.
+          npx wrangler@4.98.0 versions upload \
             --preview-alias "$ALIAS" \
             2>&1 | tee "$DEPLOY_LOG"
           DEPLOY_URL=$(grep -oE "https://${ALIAS}-[a-z0-9.-]+\.workers\.dev" "$DEPLOY_LOG" | head -1)

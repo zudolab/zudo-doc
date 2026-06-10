@@ -258,7 +258,9 @@ jobs:
           # Parse it — not the per-version hash URL — so smoke gates and PR
           # comments always target the stable, predictable alias host.
           DEPLOY_LOG=$(mktemp)
-          npx wrangler@4 versions upload \
+          # Pinned to 4.98.0 like main-deploy.yml: 4.99.0 hits Cloudflare
+          # error 10013 post-upload. Re-float to @4 once upstream fixes it.
+          npx wrangler@4.98.0 versions upload \
             --preview-alias="$SLUG" \
             --message="Preview: ${SLUG} @ ${GITHUB_SHA:0:7}" \
             2>&1 | tee "$DEPLOY_LOG"
