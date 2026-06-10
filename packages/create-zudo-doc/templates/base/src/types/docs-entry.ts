@@ -18,6 +18,8 @@ import type { DocsData } from "@/config/docs-schema";
 type RenderedContent = unknown;
 export interface DocsEntry {
   id: string;
+  /** zfb content engine slug (filename without `.md`/`.mdx`; used by toRouteSlug). */
+  slug: string;
   body?: string;
   collection: string;
   data: DocsData;

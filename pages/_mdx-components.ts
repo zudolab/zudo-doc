@@ -305,7 +305,7 @@ export function createMdxComponents(lang: Locale | string = defaultLocale) {
   const CategoryNavBound = (props: Record<string, unknown>) =>
     CategoryNavWrapper({ ...(props as Parameters<typeof CategoryNavWrapper>[0]), lang });
   const CategoryTreeNavBound = (props: Record<string, unknown>) =>
-    CategoryTreeNavWrapper({ ...(props as Parameters<typeof CategoryTreeNavWrapper>[0]), lang });
+    CategoryTreeNavWrapper({ ...(props as unknown as Parameters<typeof CategoryTreeNavWrapper>[0]), lang });
   const SiteTreeNavBound = (props: Record<string, unknown>) =>
     SiteTreeNavWrapper({ ...(props as Parameters<typeof SiteTreeNavWrapper>[0]), lang });
 

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["src/*"],
+      "#doc-history-meta": [".zfb/doc-history-meta.json"],
+      "react": ["./node_modules/preact/compat/"],
+      "react/jsx-runtime": ["./node_modules/preact/jsx-runtime"],
+      "react-dom": ["./node_modules/preact/compat/"],
+      "zfb": ["./node_modules/@takazudo/zfb/dist/index.d.ts"],
+      "zfb/content": ["./node_modules/@takazudo/zfb/dist/content.d.ts"],
+      "zfb/runtime": ["./node_modules/@takazudo/zfb-runtime/dist/index.d.ts"],
+      "zfb/config": ["./node_modules/@takazudo/zfb/dist/config.d.ts"],
+      "zfb/plugins": ["./node_modules/@takazudo/zfb/dist/plugins.d.ts"],
+      "zfb/frontmatter": ["./node_modules/@takazudo/zfb/dist/frontmatter.d.ts"],
+      "zfb/paginate": ["./node_modules/@takazudo/zfb/dist/paginate.d.ts"]
+    }
+  },
+  "include": ["pages/**/*", "src/types/**/*"],
+  "exclude": ["dist", "packages", "worktrees", "vendor", "__inbox", "node_modules"]
+}

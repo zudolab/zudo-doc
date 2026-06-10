@@ -436,6 +436,7 @@ function generatePackageJson(choices: UserChoices) {
     build: "zfb build",
     preview: "zfb preview",
     check: "zfb check",
+    "check:pages": "tsc --noEmit -p tsconfig.pages.json",
     "check:html": "html-validate \"dist/**/*.html\"",
   };
 
