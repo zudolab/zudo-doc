@@ -298,10 +298,22 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
         )}
         {afterSidebar}
 
-        <div class={showSidebar ? "lg:ml-[var(--zd-sidebar-w)]" : undefined}>
+        {/*
+          Stable hook classes for the attribute-driven sidebar-toggle CSS in
+          global.css. `zd-sidebar-content-wrapper` lets `html[data-sidebar-hidden]`
+          zero the left margin, and `zd-doc-content-band` lets it narrow the
+          content band to the hide_sidebar width (80rem) — so the JS toggle
+          reproduces the `hide_sidebar: true` centered layout purely via CSS.
+          See "Desktop sidebar toggle" in src/styles/global.css. (#2002)
+        */}
+        <div
+          class={`zd-sidebar-content-wrapper${
+            showSidebar ? " lg:ml-[var(--zd-sidebar-w)]" : ""
+          }`}
+        >
           <div class="flex min-h-[calc(100vh-3.5rem)] justify-center">
             <div
-              class={`flex w-full gap-[clamp(1.5rem,3vw,4rem)] ${
+              class={`zd-doc-content-band flex w-full gap-[clamp(1.5rem,3vw,4rem)] ${
                 showSidebar
                   ? "max-w-[clamp(50rem,75vw,90rem)]"
                   : "max-w-[80rem]"
