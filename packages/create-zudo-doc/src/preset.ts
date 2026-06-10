@@ -1,6 +1,7 @@
 import fs from "fs";
 import { FEATURES, SINGLE_SCHEMES, SUPPORTED_LANGS } from "./constants.js";
 import type { PartialChoices } from "./prompts.js";
+import { validateProjectName } from "./utils.js";
 
 /**
  * Header-right item shapes accepted in v1 of preset support. Mirrors
@@ -88,6 +89,15 @@ export function validatePreset(json: unknown): string | null {
     return "Preset must be a JSON object";
   }
   const p = json as PresetJson;
+  if (p.projectName !== undefined) {
+    // Untyped JSON — guard the type before the string validator, otherwise
+    // RegExp.test would coerce numbers/booleans and could accept them.
+    if (typeof p.projectName !== "string") {
+      return "Invalid projectName: must be a string";
+    }
+    const nameError = validateProjectName(p.projectName);
+    if (nameError) return `Invalid projectName: ${nameError}`;
+  }
   if (p.features !== undefined && !Array.isArray(p.features)) {
     return `"features" must be an array in preset`;
   }

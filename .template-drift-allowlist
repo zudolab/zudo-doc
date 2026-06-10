@@ -1,14 +1,3 @@
-# Plugin re-exports — generated projects use inline implementations,
-# production re-exports from @takazudo/zudo-doc-md-plugins
-src/plugins/rehype-code-title.ts
-src/plugins/rehype-heading-links.ts
-src/plugins/rehype-mermaid.ts
-
-# Plugin utilities — template-only files (production uses @takazudo/zudo-doc-md-plugins)
-src/plugins/docs-source-map.ts
-src/plugins/hast-utils.ts
-src/plugins/url-utils.ts
-
 # Slot-based files — templates use @slot: injection anchors,
 # production has features inlined
 src/styles/global.css
@@ -159,20 +148,12 @@ src/components/preset-generator.tsx
 # injection too (unlikely — host does not use the compose framework).
 pages/_mdx-components.ts
 
-# W8A (#1739) — acceptance gate forced literal preact/compat imports in template
-# files where host uses react with tsconfig path aliasing. Aliasing didn't
-# reach these files in scaffolded projects' bundling pipeline, so the W8
-# scaffold-smoke gate required the literal-import migration. Host versions
-# keep the react import + alias pattern (works inside the monorepo). Template
-# versions ship the literal preact/compat form (works downstream).
-#
-# These 5 files were touched by W8A's react→preact/compat sweep alongside the
-# 5 originally-flagged ones (sidebar-toggle, theme-toggle, image-enlarge,
-# doc-history, find-in-page-init — which had separate allowlist entries above
-# from earlier waves). Reconcile if/when the host adopts literal preact/compat
-# imports too.
-src/components/content/heading-h3.tsx
-src/hooks/use-active-heading.ts
+# W8A (#1739) entries for src/components/content/heading-h3.tsx and
+# src/hooks/use-active-heading.ts were REMOVED in #2012 (S3 package-boundary
+# cleanup): heading-h3 is de-duplicated into @takazudo/zudo-doc/content and
+# use-active-heading was dead in both host and templates (the package keeps
+# its own internal copy under packages/zudo-doc/src/toc/). Both the host
+# files and their template counterparts are deleted.
 
 # S1 (#1928) — orphaned host-side Astro→zfb migration files deleted from the
 # host; their template counterparts remain as live generator assets.

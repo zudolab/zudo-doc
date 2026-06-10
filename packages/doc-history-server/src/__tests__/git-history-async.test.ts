@@ -3,9 +3,8 @@ import { EventEmitter } from "node:events";
 
 // #1986: getDocHistoryAsync issues each git command via execFile / spawn
 // instead of execFileSync, so the CLI's per-file semaphore actually
-// parallelizes (the sync getDocHistory blocked the event loop, making the
-// concurrency cap a no-op). These cases prove (1) byte-for-byte output parity
-// with the sync getDocHistory, (2) the heavy git work never touches
+// parallelizes the work. These cases prove (1) the function returns correct
+// output from async git calls, (2) the heavy git work never touches
 // execFileSync (i.e. it really is async), and (3) every git call runs with
 // cwd = repo root (#1907).
 
@@ -105,27 +104,23 @@ afterEach(() => {
 });
 
 describe("getDocHistoryAsync (#1986)", () => {
-  it("produces output identical to the sync getDocHistory", async () => {
-    const { getDocHistory, getDocHistoryAsync } = await import(
-      "../git-history.js"
-    );
+  it("returns correct output from async git calls", async () => {
+    const { getDocHistoryAsync } = await import("../git-history.js");
 
-    const sync = getDocHistory(ABS, "page", 50);
-    const asyncResult = await getDocHistoryAsync(ABS, "page", 50);
+    const result = await getDocHistoryAsync(ABS, "page", 50);
 
-    expect(asyncResult).toEqual(sync);
     // Sanity: it actually parsed the fixture (2 commits, real content).
-    expect(asyncResult.entries).toHaveLength(2);
-    expect(asyncResult.entries[0]).toMatchObject({
+    expect(result.entries).toHaveLength(2);
+    expect(result.entries[0]).toMatchObject({
       hash: HASH_A,
       author: "Alice",
       content: "newest\n",
     });
-    expect(asyncResult.entries[1]).toMatchObject({
+    expect(result.entries[1]).toMatchObject({
       hash: HASH_B,
       content: "oldest\n",
     });
-    expect(asyncResult).toMatchObject({ slug: "page", filePath: REL });
+    expect(result).toMatchObject({ slug: "page", filePath: REL });
   });
 
   it("does the heavy git work via execFile / spawn, never execFileSync", async () => {

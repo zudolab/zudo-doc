@@ -7,7 +7,9 @@ import { useState, useCallback, useEffect, useMemo, useRef } from "preact/hooks"
 import type { NavNode } from "@/utils/docs";
 import type { LocaleLink } from "@/types/locale";
 import { INDENT, BASE_PAD, connectorLeft, ConnectorLines, CategoryLinkIcon } from "./tree-nav-shared";
-import ThemeToggle from "@/components/theme-toggle";
+// BARE ThemeToggle (#2012 E2) — this footer toggle renders inside the
+// SidebarToggle island, so it must NOT bring its own island wrapper.
+import { ThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
 import { smartBreakToHtml } from "@/utils/smart-break";
 
 function ToggleChevron({ isExpanded, className }: { isExpanded: boolean; className?: string }) {

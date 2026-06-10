@@ -3,36 +3,21 @@
 // Page module for the locale-prefixed "All Tags" index route.
 //
 // Non-default-locale "All Tags" index page. paths() emits one route per
-// locale defined in settings.locales (English has no /en prefix — it is
-// handled by pages/docs/tags/index.tsx). The component recomputes the tag
+// locale defined in settings.locales (the default locale has no prefix — it
+// is handled by pages/docs/tags/index.tsx). The component recomputes the tag
 // map at render time using a locale-doc + base-doc fallback strategy
 // (see pages/lib/locale-merge.ts for the merge logic).
 //
-// Fallback strategy (locale first, base as fill): see pages/lib/locale-merge.ts
+// Tag collection + rendering are shared with the default-locale route via
+// pages/lib/_tag-pages.tsx (#2010).
 //
 // paths() contract (zfb ADR-004 — synchronous):
 //   params: { locale: string }
 //   props:  (none — tag map computed at render time)
 
-import { mergeLocaleDocs } from "../../../lib/locale-merge";
-import { loadDocs } from "../../../_data";
-import { collectTags } from "@/utils/tags";
-import { toRouteSlug } from "@/utils/slug";
-import { t } from "@/config/i18n";
-import { withBase } from "@/utils/base";
 import { settings } from "@/config/settings";
-import { DocLayoutWithDefaults } from "@takazudo/zudo-doc/doclayout";
-import { Breadcrumb } from "@takazudo/zudo-doc/breadcrumb";
-import type { BreadcrumbItem } from "@takazudo/zudo-doc/breadcrumb";
-import { TagNav } from "@takazudo/zudo-doc/nav-indexing";
-import type { TagItem, TagNavLabels } from "@takazudo/zudo-doc/nav-indexing";
 import type { JSX } from "preact";
-import { FooterWithDefaults } from "../../../lib/_footer-with-defaults";
-import { HeaderWithDefaults } from "../../../lib/_header-with-defaults";
-import { HeadWithDefaults } from "../../../lib/_head-with-defaults";
-import { composeMetaTitle } from "../../../lib/_compose-meta-title";
-import { DocHistoryArea } from "../../../lib/_doc-history-area";
-import { BodyEndIslands } from "../../../lib/_body-end-islands";
+import { TagsIndexPageView } from "../../../lib/_tag-pages";
 
 export const frontmatter = { title: "All Tags" };
 
@@ -50,61 +35,5 @@ interface PageProps {
 export default function LocaleTagsIndexPage({
   params,
 }: PageProps): JSX.Element {
-  const { locale } = params;
-  const pageTitle = t("doc.allTags", locale);
-
-  const { docs: mergedDocs } = mergeLocaleDocs({
-    baseDocs: loadDocs("docs").filter((d) => !d.data.draft),
-    localeDocs: loadDocs(`docs-${locale}`).filter((d) => !d.data.draft),
-    applyDefaultLocaleOnlyFilter: true,
-  });
-  // category_no_page index files build no route — drop them AFTER the merge
-  // so a locale override carrying the flag first wins the merge (suppressing
-  // the base doc); pre-merge filtering would drop it from localeSlugSet and
-  // the unflagged base doc would resurface as a card linking to a locale
-  // route the docs route never builds.
-  const docs = mergedDocs.filter((d) => !d.data.category_no_page);
-  const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
-
-  const labels: TagNavLabels = {
-    tags: t("doc.tags", locale),
-    taggedWith: t("doc.taggedWith", locale),
-  };
-
-  // Sort alphabetically using the page locale — matches documented tag-nav sort order.
-  const tags: TagItem[] = [...tagMap.values()]
-    .sort((a, b) => a.tag.localeCompare(b.tag, locale))
-    .map((info) => ({
-      tag: info.tag,
-      count: info.count,
-      href: withBase(`/${locale}/docs/tags/${info.tag}`),
-    }));
-
-  const breadcrumbItems: BreadcrumbItem[] = [
-    { label: "Docs" },
-    { label: pageTitle },
-  ];
-
-  return (
-    <DocLayoutWithDefaults
-      title={composeMetaTitle(pageTitle)}
-      head={<HeadWithDefaults title={pageTitle} />}
-      lang={locale}
-      noindex={settings.noindex}
-      hideSidebar={true}
-      hideToc={true}
-      headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase(`/${locale}/docs/tags`)} />}
-      breadcrumbOverride={<Breadcrumb items={breadcrumbItems} />}
-      footerOverride={<FooterWithDefaults lang={locale} />}
-      bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
-    >
-      <h1 class="text-heading font-bold mb-vsp-lg">{pageTitle}</h1>
-      {!settings.docTags || tags.length === 0 ? (
-        <p class="text-muted">{t("doc.noTags", locale)}</p>
-      ) : (
-        <TagNav variant="all" tags={tags} labels={labels} />
-      )}
-      <DocHistoryArea slug="tags" locale={locale} />
-    </DocLayoutWithDefaults>
-  );
+  return <TagsIndexPageView locale={params.locale} />;
 }

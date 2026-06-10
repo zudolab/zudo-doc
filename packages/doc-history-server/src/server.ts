@@ -1,10 +1,12 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { resolve } from "node:path";
-import { collectContentFiles, getDocHistory } from "./git-history.js";
+import { collectContentFiles, getDocHistoryAsync } from "./git-history.js";
 import { getContentDirEntries } from "./shared.js";
 
 export interface ServerOptions {
   port: number;
+  /** Network interface to bind. Defaults to "127.0.0.1" (localhost only). */
+  host: string;
   contentDir: string;
   locales: Array<{ key: string; dir: string }>;
   maxEntries: number;
@@ -43,15 +45,15 @@ function buildFileIndex(
 }
 
 /** Handle a doc-history request */
-function handleDocHistory(
+async function handleDocHistory(
   requestedSlug: string,
   fileIndex: Map<string, { filePath: string; slug: string }>,
   maxEntries: number,
   res: ServerResponse,
-): void {
+): Promise<void> {
   const found = fileIndex.get(requestedSlug);
   if (found) {
-    const history = getDocHistory(found.filePath, found.slug, maxEntries);
+    const history = await getDocHistoryAsync(found.filePath, found.slug, maxEntries);
     sendJson(res, 200, history);
     return;
   }
@@ -61,7 +63,7 @@ function handleDocHistory(
 
 /** Create and start the HTTP server */
 export function startServer(options: ServerOptions): void {
-  const { port, contentDir, locales, maxEntries } = options;
+  const { port, host, contentDir, locales, maxEntries } = options;
   const dirEntries = getContentDirEntries(contentDir, locales);
   let fileIndex = buildFileIndex(dirEntries);
   console.log(`Indexed ${fileIndex.size} documents`);
@@ -99,22 +101,29 @@ export function startServer(options: ServerOptions): void {
     // Doc history routes: /doc-history/{slug}.json
     const match = pathname.match(/^\/doc-history\/(.+)\.json$/);
     if (match) {
+      // decodeURIComponent throws synchronously on malformed percent-encoding
+      // (e.g. /doc-history/%E0%A4.json) — without the guard that URIError
+      // escapes before the async .catch() attaches and kills the server.
+      let requestedSlug: string;
       try {
-        const requestedSlug = decodeURIComponent(match[1] ?? "");
-        handleDocHistory(requestedSlug, fileIndex, maxEntries, res);
-      } catch (err) {
+        requestedSlug = decodeURIComponent(match[1] ?? "");
+      } catch {
+        sendJson(res, 400, { error: "Malformed percent-encoding in slug" });
+        return;
+      }
+      handleDocHistory(requestedSlug, fileIndex, maxEntries, res).catch((err) => {
         sendJson(res, 500, {
           error: err instanceof Error ? err.message : "Internal error",
         });
-      }
+      });
       return;
     }
 
     sendJson(res, 404, { error: "Not found" });
   });
 
-  server.listen(port, () => {
-    console.log(`Doc history server listening on http://localhost:${port}`);
+  server.listen(port, host, () => {
+    console.log(`Doc history server listening on http://${host}:${port}`);
     console.log(`Content dir: ${resolve(contentDir)}`);
     for (const locale of locales) {
       console.log(`Locale ${locale.key}: ${resolve(locale.dir)}`);

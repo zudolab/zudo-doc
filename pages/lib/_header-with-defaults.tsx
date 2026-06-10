@@ -25,8 +25,8 @@
 //     hides it on pages with hide_sidebar). When `navSection` is defined the
 //     panel gets the full section tree; when undefined (home, 404, tags,
 //     versions) nodes=[] so the panel shows only rootMenuItems.
-//   - ThemeToggle from the package (self-island-wrapped) is always passed to
-//     Header.themeToggle so the ThemeToggle island marker appears in the
+//   - The bare package ThemeToggle (wrapped in Island below) is always passed
+//     to Header.themeToggle so the ThemeToggle island marker appears in the
 //     header on every page — matching the documented header contract.
 //
 // Locale switcher strategy (refs #1453):
@@ -45,14 +45,11 @@ import {
   VersionSwitcher,
   type VersionSwitcherLabels,
 } from "@takazudo/zudo-doc/i18n-version";
-// Don't import ThemeToggle from "@takazudo/zudo-doc/theme" — that barrel
-// also re-exports DesignTokenTweakPanel and ColorTweakExportModal, which
-// transitively pull `src/components/design-token-tweak/*` and the v2 panel
-// modules into the zfb esbuild graph. Those files import `react`, which
-// zfb does not alias to `preact/compat`, so the build fails. Use the host's
-// local ThemeToggle (already on `preact/hooks`) and wrap it in Island here
-// so the SSG output still emits the `data-zfb-island="ThemeToggle"` marker.
-import ThemeToggle from "@/components/theme-toggle";
+// BARE (non-island-wrapped) ThemeToggle from the dedicated subpath
+// (#2012 E2). The `./theme` barrel exports an Island-wrapped variant;
+// this wrapper composes its own Island below, and the bare subpath
+// avoids nesting an island inside an island.
+import { ThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
 import SidebarToggle from "@/components/sidebar-toggle";
 import { settings } from "@/config/settings";
 import { defaultLocale, locales, t, type Locale } from "@/config/i18n";
@@ -211,8 +208,25 @@ export function HeaderWithDefaults(
   // nested as a JSX child its data was dropped during hydration and
   // SidebarToggle re-rendered with `children=undefined`, wiping the SSR
   // tree DOM. zudolab/zudo-doc#1355 wave 13.5.
+  //
+  // C4 — media-gated hydration.  zfb only supports load|idle|visible
+  // strategies (no "media" strategy; matchMedia inside the component is too
+  // late — props are already emitted, bundle already downloaded).
+  // Upstream feature request: Takazudo/zudo-front-builder#969.
+  //
+  // Best achievable downstream: when="visible" + all SidebarToggle children
+  // are lg:hidden, so on desktop the Island wrapper div has zero rendered
+  // dimensions.  IntersectionObserver fires isIntersecting=false on desktop
+  // (zero-size element) → Preact hydrate() is never called.  On mobile (and
+  // on desktop→mobile resize) the children become visible, the element gains
+  // size, IO fires isIntersecting=true, and hydration completes normally.
+  //
+  // Residual: data-props JSON (~2.4 KB) is still emitted in the SSR HTML on
+  // every page regardless of viewport, because it is serialised at build time
+  // and not gated by media. Eliminating it requires a zfb "media" hydration
+  // strategy — tracked in Takazudo/zudo-front-builder#969.
   const sidebarToggle = Island({
-    when: "load",
+    when: "visible",
     children: (
       <SidebarToggle
         nodes={sidebarNodes}
@@ -225,12 +239,9 @@ export function HeaderWithDefaults(
     ),
   }) as unknown as VNode;
 
-  // Wrap the host's local ThemeToggle in Island({when:"load"}) so the SSG
+  // Wrap the bare ThemeToggle in Island({when:"load"}) so the SSG
   // output emits a data-zfb-island="ThemeToggle" marker the hydration
-  // runtime can find — matching the documented header contract. The v2
-  // package's <ThemeToggle> already does this internally, but importing it
-  // forces the v2 theme barrel into the bundle (see import note at the top
-  // of this file).
+  // runtime can find — matching the documented header contract.
   const themeToggle = Island({
     when: "load",
     children: <ThemeToggle />,
