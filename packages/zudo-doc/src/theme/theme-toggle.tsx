@@ -11,7 +11,8 @@
 import type { VNode } from "preact";
 // `@takazudo/zfb` is provided by the consumer at integration time.
 import { Island } from "@takazudo/zfb";
-import ThemeToggleBare, {
+import {
+  ThemeToggle as ThemeToggleBare,
   type ThemeToggleProps,
 } from "../theme-toggle/index.js";
 

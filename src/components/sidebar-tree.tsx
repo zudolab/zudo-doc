@@ -14,7 +14,7 @@ import { INDENT, BASE_PAD, connectorLeft, ConnectorLines, CategoryLinkIcon } fro
 import { ChevronRight, ChevronLeft, Search } from "@takazudo/zudo-doc/icons";
 // BARE ThemeToggle (#2012 E2) — this footer toggle renders inside the
 // SidebarToggle island, so it must NOT bring its own island wrapper.
-import ThemeToggle from "@takazudo/zudo-doc/theme-toggle";
+import { ThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
 import { smartBreakToHtml } from "@/utils/smart-break";
 // After zudolab/zudo-doc#1335 (E2 task 2 half B) the host components
 // also pull lifecycle event names from the v2 transitions module

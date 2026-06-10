@@ -71,7 +71,13 @@ export interface ThemeToggleProps {
   defaultMode?: ColorSchemeMode;
 }
 
-export default function ThemeToggle({
+// NAMED export (not default) on purpose: tsup compiles a default export
+// to `export { ThemeToggle as default }`, an alias shape zfb's island
+// scanner does not recognize — the island then never registers and the
+// header toggle ships dead (zero hydration). Named exports compile to
+// `export { ThemeToggle }`, which the scanner handles (same pattern as
+// the package's MobileToc island).
+export function ThemeToggle({
   defaultMode = "dark",
 }: ThemeToggleProps) {
   // Initial state must match server render to avoid hydration mismatch.

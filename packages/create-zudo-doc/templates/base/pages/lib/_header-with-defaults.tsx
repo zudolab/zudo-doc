@@ -49,7 +49,7 @@ import {
 // (#2012 E2). The `./theme` barrel exports an Island-wrapped variant;
 // this wrapper composes its own Island below, and the bare subpath
 // avoids nesting an island inside an island.
-import ThemeToggle from "@takazudo/zudo-doc/theme-toggle";
+import { ThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
 import SidebarToggle from "@/components/sidebar-toggle";
 import { settings } from "@/config/settings";
 import { defaultLocale, locales, t, type Locale } from "@/config/i18n";
