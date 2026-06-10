@@ -123,6 +123,23 @@ describe("check-links", () => {
         "src/content/docs-v1-ja",
       ]);
     });
+
+    it("returns localeKeys matching the locale block keys", async () => {
+      const file = join(tmpDir, "settings.ts");
+      writeFileSync(
+        file,
+        `export const settings = {\n  docsDir: "src/content/docs",\n  locales: {\n    ja: { label: "JA", dir: "src/content/docs-ja" },\n    de: { label: "DE", dir: "src/content/docs-de" },\n  },\n};`,
+      );
+      const result = await parseContentDirs(file);
+      expect(result.localeKeys).toEqual(["ja", "de"]);
+    });
+
+    it("returns empty localeKeys when no locales are declared", async () => {
+      const file = join(tmpDir, "settings.ts");
+      writeFileSync(file, `export const settings = {};`);
+      const result = await parseContentDirs(file);
+      expect(result.localeKeys).toEqual([]);
+    });
   });
 
   // --- collectFiles ---
@@ -490,6 +507,39 @@ describe("check-links", () => {
     it("does not match partial paths like /documentary/", () => {
       const content = `[link](/documentary/something)`;
       expect(extractMdxAbsoluteLinks(content)).toEqual([]);
+    });
+
+    it("finds /de/docs/... link when 'de' locale is in the locales list", () => {
+      const content = `See [guide](/de/docs/guides/foo) for details.`;
+      expect(extractMdxAbsoluteLinks(content, ["de"])).toEqual([
+        { href: "/de/docs/guides/foo", line: 1 },
+      ]);
+    });
+
+    it("does NOT find /de/docs/... link when no locales list is provided (legacy ja-only default)", () => {
+      const content = `See [guide](/de/docs/guides/foo) for details.`;
+      expect(extractMdxAbsoluteLinks(content)).toEqual([]);
+    });
+
+    it("finds links for all declared locales when multiple locales are provided", () => {
+      const content = [
+        "[a](/ja/docs/a)",
+        "[b](/de/docs/b)",
+        "[c](/zh/docs/c)",
+      ].join("\n");
+      const result = extractMdxAbsoluteLinks(content, ["ja", "de", "zh"]);
+      expect(result).toEqual([
+        { href: "/ja/docs/a", line: 1 },
+        { href: "/de/docs/b", line: 2 },
+        { href: "/zh/docs/c", line: 3 },
+      ]);
+    });
+
+    it("finds JSX href with declared locale", () => {
+      const content = `<a href="/de/docs/guides/foo">link</a>`;
+      expect(extractMdxAbsoluteLinks(content, ["de"])).toEqual([
+        { href: "/de/docs/guides/foo", line: 1 },
+      ]);
     });
 
     it("skips links inside fenced code blocks", () => {

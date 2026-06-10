@@ -164,13 +164,8 @@ pages/_mdx-components.ts
 #
 # content-files.ts / git-info.ts: host no longer uses these Node-only utils
 # (see pages/lib/_doc-metainfo-area.tsx B-11 lesson); base template keeps
-# them because docHistory feature's doc-history.ts imports content-files, and
-# generated projects still need both files.
-#
-# doc-history.ts: host replaced by @takazudo/zudo-doc-history-server; the
-# docHistory feature template ships its own copy for generated projects.
+# them because generated projects still need both files.
 src/components/find-bar.tsx
 src/utils/find-in-page.ts
 src/utils/content-files.ts
 src/utils/git-info.ts
-src/utils/doc-history.ts

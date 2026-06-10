@@ -35,20 +35,33 @@ export async function parseContentDirs(settingsPath) {
   const docsDirMatch = content.match(/docsDir:\s*["']([^"']*)["']/);
   const docsDir = docsDirMatch ? docsDirMatch[1] : "src/content/docs";
 
-  // Extract locale content dirs from `locales: { ja: { dir: "..." } }` entries
-  // (top-level and per-version). The legacy `docsJaDir:`-style keys this used
-  // to match were removed from settings, which silently emptied localeDirs.
+  // Extract locale keys and dirs from `locales: { ja: { dir: "..." } }` entries
+  // (top-level and per-version). Locale keys (e.g. "ja", "de") are captured so
+  // the MDX link scanner can build a dynamic alternation instead of hardcoding
+  // `(?:ja/)?`.
   const localeDirs = [];
-  const localeRegex = /\bdir:\s*["']([^"']*)["']/g;
-  let localeMatch;
-  while ((localeMatch = localeRegex.exec(content)) !== null) {
-    const dir = localeMatch[1];
+  const localeKeys = [];
+  // Match locale block entries: `  ja: { ... dir: "..." ... }` or `ja: { dir: "..." }`
+  const localeBlockRegex = /\b([a-z]{2,5})\s*:\s*\{[^}]*\bdir:\s*["']([^"']*)["'][^}]*\}/g;
+  let blockMatch;
+  while ((blockMatch = localeBlockRegex.exec(content)) !== null) {
+    const key = blockMatch[1];
+    const dir = blockMatch[2];
+    if (!dir || dir === docsDir) continue;
+    if (!localeDirs.includes(dir)) localeDirs.push(dir);
+    if (!localeKeys.includes(key)) localeKeys.push(key);
+  }
+  // Fallback: if block regex missed any dir: entries, capture them without keys
+  const dirOnlyRegex = /\bdir:\s*["']([^"']*)["']/g;
+  let dirMatch;
+  while ((dirMatch = dirOnlyRegex.exec(content)) !== null) {
+    const dir = dirMatch[1];
     if (dir && dir !== docsDir && !localeDirs.includes(dir)) {
       localeDirs.push(dir);
     }
   }
 
-  return { docsDir, localeDirs };
+  return { docsDir, localeDirs, localeKeys };
 }
 
 async function fileExists(filePath) {
@@ -194,7 +207,17 @@ export function stripInlineCode(line) {
   return result;
 }
 
-export function extractMdxAbsoluteLinks(content) {
+export function extractMdxAbsoluteLinks(content, locales = []) {
+  // Build a locale prefix alternation from the provided locale keys.
+  // Falls back to the legacy "ja" only when no locale list is given, to
+  // keep existing call sites working. The alternation is escaped for use
+  // inside a regex character group, then wrapped in `(?:<locale>/)?` so
+  // the pattern matches both bare `/docs/...` and `/de/docs/...` etc.
+  const localeAlternation = locales.length > 0
+    ? `(?:${locales.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\/").join("|")})?`
+    : "(?:ja\\/)?";
+  // e.g. ["ja","de"] → "(?:ja\/|de\/)?" so the regex matches /ja/docs/... and /de/docs/...
+
   const issues = [];
   const lines = content.split("\n");
   let inCodeBlock = false;
@@ -210,15 +233,15 @@ export function extractMdxAbsoluteLinks(content) {
 
     const searchLine = stripInlineCode(line);
 
-    // Markdown link syntax: [text](/docs/...) or [text](/ja/docs/...)
-    const mdRegex = /\]\((\/(?:ja\/)?docs\/[^)]*)\)/g;
+    // Markdown link syntax: [text](/docs/...) or [text](/<locale>/docs/...)
+    const mdRegex = new RegExp(`\\]\\((\\/${localeAlternation}docs\\/[^)]*)\\)`, "g");
     let match;
     while ((match = mdRegex.exec(searchLine)) !== null) {
       issues.push({ href: match[1], line: i + 1 });
     }
 
-    // JSX href attributes: href="/docs/..." or href="/ja/docs/..."
-    const jsxRegex = /href="(\/(?:ja\/)?docs\/[^"]*)"/g;
+    // JSX href attributes: href="/docs/..." or href="/<locale>/docs/..."
+    const jsxRegex = new RegExp(`href="(\\/${localeAlternation}docs\\/[^"]*)"`, "g");
     while ((match = jsxRegex.exec(searchLine)) !== null) {
       issues.push({ href: match[1], line: i + 1 });
     }
@@ -306,7 +329,7 @@ export async function checkTrailingSlashLinks(distDir, rootDir, basePath = "/", 
   return warnings;
 }
 
-export async function checkMdxLinks(contentDirs, rootDir, distDir = null, basePath = "/") {
+export async function checkMdxLinks(contentDirs, rootDir, distDir = null, basePath = "/", locales = []) {
   const warnings = [];
 
   for (const dir of contentDirs) {
@@ -315,7 +338,7 @@ export async function checkMdxLinks(contentDirs, rootDir, distDir = null, basePa
 
     for (const file of files) {
       const content = await readFile(file, "utf-8");
-      const issues = extractMdxAbsoluteLinks(content);
+      const issues = extractMdxAbsoluteLinks(content, locales);
 
       for (const { href, line } of issues) {
         // If dist/ is available, drop warnings for hrefs that resolve to built routes
@@ -424,12 +447,12 @@ async function main() {
   // Exclude versioned docs links — version content may be incomplete
   const excludePatterns = [/\/v\/[^/]+\//];
 
-  const { docsDir, localeDirs } = await parseContentDirs(settingsPath);
+  const { docsDir, localeDirs, localeKeys } = await parseContentDirs(settingsPath);
   const contentDirs = [join(rootDir, docsDir), ...localeDirs.map((d) => join(rootDir, d))];
 
   const checks = [
     checkHtmlLinks(distDir, rootDir, basePath, excludePatterns),
-    checkMdxLinks(contentDirs, rootDir, distDir, basePath),
+    checkMdxLinks(contentDirs, rootDir, distDir, basePath, localeKeys),
   ];
 
   if (trailingSlash) {

@@ -123,12 +123,28 @@ describe("Server routes", () => {
     expect(data).toEqual({ status: "ok" });
   });
 
-  it("GET /health has CORS headers", async () => {
-    const { res } = await fetchJson(`${baseUrl}/health`);
-    expect(res.headers.get("access-control-allow-origin")).toBe("*");
+  it("GET /health has CORS headers when request origin is localhost", async () => {
+    const { res } = await fetchJson(`${baseUrl}/health`, {
+      headers: { Origin: "http://localhost:4321" },
+    });
+    expect(res.headers.get("access-control-allow-origin")).toBe(
+      "http://localhost:4321",
+    );
     expect(res.headers.get("access-control-allow-methods")).toBe(
       "GET, OPTIONS",
     );
+  });
+
+  it("GET /health has no CORS headers when request has no origin", async () => {
+    const { res } = await fetchJson(`${baseUrl}/health`);
+    expect(res.headers.get("access-control-allow-origin")).toBeNull();
+  });
+
+  it("GET /health has no CORS headers for non-localhost origin", async () => {
+    const { res } = await fetchJson(`${baseUrl}/health`, {
+      headers: { Origin: "https://example.com" },
+    });
+    expect(res.headers.get("access-control-allow-origin")).toBeNull();
   });
 
   it("GET /doc-history/getting-started.json returns 200 with history", async () => {
@@ -169,10 +185,15 @@ describe("Server routes", () => {
     expect(data!.slug).toBe("getting-started");
   });
 
-  it("OPTIONS /anything returns 204 with CORS headers", async () => {
-    const res = await fetch(`${baseUrl}/anything`, { method: "OPTIONS" });
+  it("OPTIONS /anything returns 204 with CORS headers for localhost origin", async () => {
+    const res = await fetch(`${baseUrl}/anything`, {
+      method: "OPTIONS",
+      headers: { Origin: "http://localhost:4321" },
+    });
     expect(res.status).toBe(204);
-    expect(res.headers.get("access-control-allow-origin")).toBe("*");
+    expect(res.headers.get("access-control-allow-origin")).toBe(
+      "http://localhost:4321",
+    );
     expect(res.headers.get("access-control-allow-methods")).toBe(
       "GET, OPTIONS",
     );
@@ -181,20 +202,28 @@ describe("Server routes", () => {
     );
   });
 
+  it("OPTIONS /anything returns 204 with no CORS headers when no origin", async () => {
+    const res = await fetch(`${baseUrl}/anything`, { method: "OPTIONS" });
+    expect(res.status).toBe(204);
+    expect(res.headers.get("access-control-allow-origin")).toBeNull();
+  });
+
   it("GET /unknown-path returns 404", async () => {
     const { res, data } = await fetchJson(`${baseUrl}/unknown-path`);
     expect(res.status).toBe(404);
     expect(data!.error).toBe("Not found");
   });
 
-  it("all responses have CORS headers", async () => {
+  it("all responses have CORS headers when request origin is localhost", async () => {
     const paths = ["/health", "/doc-history/getting-started.json", "/unknown"];
     for (const path of paths) {
-      const { res } = await fetchJson(`${baseUrl}${path}`);
+      const { res } = await fetchJson(`${baseUrl}${path}`, {
+        headers: { Origin: "http://localhost:4321" },
+      });
       expect(
         res.headers.get("access-control-allow-origin"),
         `CORS header missing for ${path}`,
-      ).toBe("*");
+      ).toBe("http://localhost:4321");
     }
   });
 });
