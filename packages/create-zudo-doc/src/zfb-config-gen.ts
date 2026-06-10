@@ -21,7 +21,6 @@ export function generateZfbConfig(choices: UserChoices): string {
   const hasDocHistory = choices.features.includes("docHistory");
   const hasLlmsTxt = choices.features.includes("llmsTxt");
   const hasClaudeResources = choices.features.includes("claudeResources");
-  const hasTagGovernance = choices.features.includes("tagGovernance");
 
   const lines: string[] = [];
 
@@ -29,71 +28,17 @@ export function generateZfbConfig(choices: UserChoices): string {
   lines.push(`import { z } from "zod";`);
   lines.push(`import { defineConfig } from "zfb/config";`);
   lines.push(`import { settings } from "./src/config/settings";`);
-
-  if (hasTagGovernance) {
-    lines.push(
-      `import { tagVocabulary } from "./src/config/tag-vocabulary";`,
-    );
-  }
+  lines.push(`import { buildDocsSchema } from "./src/config/docs-schema";`);
 
   lines.push(``);
 
-  // --- Tags schema builder (only when tagGovernance is selected) ---
-  if (hasTagGovernance) {
-    lines.push(`function buildTagsSchema() {`);
-    lines.push(
-      `  const vocabularyActive = settings.tagVocabulary && settings.tagGovernance === "strict";`,
-    );
-    lines.push(
-      `  if (!vocabularyActive) return z.array(z.string()).optional();`,
-    );
-    lines.push(`  const allowed = new Set<string>();`);
-    lines.push(`  for (const entry of tagVocabulary) {`);
-    lines.push(`    allowed.add(entry.id);`);
-    lines.push(
-      `    for (const alias of entry.aliases ?? []) allowed.add(alias);`,
-    );
-    lines.push(`  }`);
-    lines.push(`  const allowedList = [...allowed];`);
-    lines.push(
-      `  if (allowedList.length === 0) return z.array(z.string()).optional();`,
-    );
-    lines.push(`  const [first, ...rest] = allowedList;`);
-    lines.push(
-      `  return z.array(z.enum([first, ...rest] as [string, ...string[]])).optional();`,
-    );
-    lines.push(`}`);
-    lines.push(``);
-  }
-
-  // --- Schema definition ---
-  lines.push(`const docsSchema = z`);
-  lines.push(`  .object({`);
-  lines.push(`    title: z.string(),`);
-  lines.push(`    description: z.string().optional(),`);
-  lines.push(`    category: z.string().optional(),`);
-  lines.push(`    sidebar_position: z.number().optional(),`);
-  lines.push(`    sidebar_label: z.string().optional(),`);
-  if (hasTagGovernance) {
-    lines.push(`    tags: buildTagsSchema(),`);
-  } else {
-    lines.push(`    tags: z.array(z.string()).optional(),`);
-  }
-  lines.push(`    search_exclude: z.boolean().optional(),`);
-  lines.push(`    pagination_next: z.string().nullable().optional(),`);
-  lines.push(`    pagination_prev: z.string().nullable().optional(),`);
-  lines.push(`    draft: z.boolean().optional(),`);
-  lines.push(`    unlisted: z.boolean().optional(),`);
-  lines.push(`    hide_sidebar: z.boolean().optional(),`);
-  lines.push(`    hide_toc: z.boolean().optional(),`);
-  lines.push(`    doc_history: z.boolean().optional(),`);
-  lines.push(`    standalone: z.boolean().optional(),`);
-  lines.push(`    slug: z.string().optional(),`);
-  lines.push(`    generated: z.boolean().optional(),`);
-  lines.push(`    category_no_page: z.boolean().optional(),`);
-  lines.push(`    category_sort_order: z.enum(["asc", "desc"]).optional(),`);
-  lines.push(`  })`);
-  lines.push(`  .passthrough();`);
+  // --- Schema definition — delegated to the single source of truth ---
+  // buildDocsSchema() lives in src/config/docs-schema.ts and is shared by
+  // pages/_data.ts (ZfbDocsData alias) and src/types/docs-entry.ts (DocsData).
+  // tagGovernance projects: docs-schema.ts reads settings + tagVocabulary
+  // internally, so the generated zfb.config.ts needs no extra import or
+  // inline buildTagsSchema — the schema builder encapsulates all of that.
+  lines.push(`const docsSchema = buildDocsSchema();`);
   lines.push(``);
   lines.push(
     `const docsSchemaJson = z.toJSONSchema(docsSchema) as Record<string, unknown>;`,

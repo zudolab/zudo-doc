@@ -99,23 +99,19 @@ describe("generateZfbConfig", () => {
     expect(result).toContain('name: `docs-v-${version.slug}`');
   });
 
-  it("emits docsSchema with all frontmatter fields", () => {
+  it("imports buildDocsSchema from docs-schema (single source of truth) and calls it", () => {
+    // S7 (#2016): the schema definition is now the single source of truth in
+    // src/config/docs-schema.ts — generated zfb.config.ts imports the builder
+    // rather than inlining the field list. This keeps pages/_data.ts and
+    // src/types/docs-entry.ts in sync via z.infer without duplication.
     const result = generateZfbConfig(baseChoices);
-    expect(result).toContain("title: z.string()");
-    expect(result).toContain("description: z.string().optional()");
-    expect(result).toContain("sidebar_position: z.number().optional()");
-    expect(result).toContain("draft: z.boolean().optional()");
-    expect(result).toContain("slug: z.string().optional()");
-    // Category-metadata-via-frontmatter fields (mirrors the host docsSchema).
-    expect(result).toContain("category_no_page: z.boolean().optional()");
     expect(result).toContain(
-      'category_sort_order: z.enum(["asc", "desc"]).optional()',
+      'import { buildDocsSchema } from "./src/config/docs-schema"',
     );
-  });
-
-  it("emits .passthrough() to preserve unknown frontmatter keys", () => {
-    const result = generateZfbConfig(baseChoices);
-    expect(result).toContain(".passthrough()");
+    expect(result).toContain("const docsSchema = buildDocsSchema();");
+    // The inline field list must NOT appear — it lives in docs-schema.ts.
+    expect(result).not.toContain("title: z.string()");
+    expect(result).not.toContain("z.object({");
   });
 
   it("emits z.toJSONSchema conversion for zfb collection schema format", () => {
@@ -131,20 +127,24 @@ describe("generateZfbConfig", () => {
     expect(result).toContain("schema: Record<string, unknown>;");
   });
 
-  it("uses plain z.array(z.string()) for tags when tagGovernance is off", () => {
-    const result = generateZfbConfig(baseChoices);
-    expect(result).toContain("z.array(z.string()).optional()");
-    expect(result).not.toContain("buildTagsSchema");
-    expect(result).not.toContain("tagVocabulary");
-  });
+  it("does NOT emit inline buildTagsSchema or tagVocabulary import (encapsulated in docs-schema.ts)", () => {
+    // S7 (#2016): tag governance is now encapsulated inside buildDocsSchema()
+    // in src/config/docs-schema.ts — the generated zfb.config.ts needs no
+    // inline schema builder or extra tagVocabulary import for any feature set.
+    const baseResult = generateZfbConfig(baseChoices);
+    expect(baseResult).not.toContain("buildTagsSchema");
+    expect(baseResult).not.toContain("tagVocabulary");
 
-  it("emits buildTagsSchema and tagVocabulary import when tagGovernance is selected", () => {
-    const choices = { ...baseChoices, features: ["tagGovernance"] };
-    const result = generateZfbConfig(choices);
-    expect(result).toContain('import { tagVocabulary } from "./src/config/tag-vocabulary"');
-    expect(result).toContain("function buildTagsSchema()");
-    expect(result).toContain('settings.tagGovernance === "strict"');
-    expect(result).toContain("tags: buildTagsSchema()");
+    const tagGovernanceChoices = { ...baseChoices, features: ["tagGovernance"] };
+    const tagResult = generateZfbConfig(tagGovernanceChoices);
+    expect(tagResult).not.toContain("function buildTagsSchema");
+    expect(tagResult).not.toContain(
+      'import { tagVocabulary } from "./src/config/tag-vocabulary"',
+    );
+    // The schema builder import is always present regardless of features.
+    expect(tagResult).toContain(
+      'import { buildDocsSchema } from "./src/config/docs-schema"',
+    );
   });
 
   it("includes every plugin entry when all integration features are selected", () => {
