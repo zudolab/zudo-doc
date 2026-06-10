@@ -244,7 +244,7 @@ export function HeaderWithDefaults(
   // runtime can find — matching the documented header contract.
   const themeToggle = Island({
     when: "load",
-    children: <ThemeToggle />,
+    children: <ThemeToggle defaultMode={themeDefaultMode} />,
   }) as unknown as VNode;
 
   // Locale-aware search widget. Renders the full dialog markup in SSR
@@ -280,7 +280,9 @@ export function HeaderWithDefaults(
     );
     // "Latest" entry links to the current page in the latest (unversioned)
     // docs when a slug is available, or falls back to the versions index page.
-    const latestUrl = currentSlug
+    // Null check, not truthiness: "" is the canonical root-index slug (#1891)
+    // and must produce real per-version root URLs.
+    const latestUrl = currentSlug != null
       ? docsUrl(currentSlug, lang)
       : versionsPageUrl;
 
@@ -289,7 +291,7 @@ export function HeaderWithDefaults(
     // index — matching the documented version-switcher contract.
     const versionUrls: Record<string, string> = {};
     for (const v of settings.versions) {
-      versionUrls[v.slug] = currentSlug
+      versionUrls[v.slug] = currentSlug != null
         ? versionedDocsUrl(currentSlug, v.slug, lang)
         : versionsPageUrl;
     }
