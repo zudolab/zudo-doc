@@ -9,6 +9,7 @@ import { History, Close, ArrowLeft } from "@takazudo/zudo-doc/icons";
 // pull lifecycle event names from the v2 transitions module rather
 // than hard-coding `astro:*` literals.
 import { AFTER_NAVIGATE_EVENT } from "@takazudo/zudo-doc/transitions";
+import { useModalDialog } from "@/hooks/use-modal-dialog";
 
 interface DocHistoryProps {
   slug: string;
@@ -507,38 +508,16 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [view, handleClose]);
 
-  // Close on View Transition navigation
-  useEffect(() => {
-    document.addEventListener(AFTER_NAVIGATE_EVENT, handleClose);
-    return () => document.removeEventListener(AFTER_NAVIGATE_EVENT, handleClose);
-  }, [handleClose]);
-
   const isOpen = view !== "closed";
   const hasDiff = view === "diff" && diffSelection;
 
-  const dialogRef = useRef<HTMLDialogElement>(null);
-
-  // Sync dialog open/close with React state
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (isOpen && !dialog.open) {
-      dialog.showModal();
-    } else if (!isOpen && dialog.open) {
-      dialog.close();
-    }
-  }, [isOpen]);
-
-  // Close React state when dialog is closed natively (Escape key)
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    function onClose() {
-      if (isOpen) handleClose();
-    }
-    dialog.addEventListener("close", onClose);
-    return () => dialog.removeEventListener("close", onClose);
-  }, [isOpen, handleClose]);
+  // Shared dialog lifecycle: showModal/close sync, native-close callback,
+  // and navigation-close — delegated to useModalDialog.
+  const { dialogRef } = useModalDialog({
+    isOpen,
+    onClose: handleClose,
+    navigateEvent: AFTER_NAVIGATE_EVENT,
+  });
 
   return (
     <>

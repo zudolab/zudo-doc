@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo, useRef, useEffect } from "preact/hooks";
+import { useModalDialog } from "@/hooks/use-modal-dialog";
 import {
   FEATURES,
   buildJson,
@@ -86,7 +87,6 @@ function PresetModal({
 }) {
   const [showCli, setShowCli] = useState(false);
   const [copyLabel, setCopyLabel] = useState("Copy");
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   const output = useMemo(
@@ -97,38 +97,21 @@ function PresetModal({
     [showCli, state],
   );
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    dialog.showModal();
-    return () => {
-      if (dialog.open) dialog.close();
-    };
-  }, []);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    function handleClose() {
-      onClose();
-    }
-    dialog.addEventListener("close", handleClose);
-    return () => dialog.removeEventListener("close", handleClose);
-  }, [onClose]);
+  // PresetModal opens immediately on mount and stays open until the parent
+  // unmounts it (modalState === null). isOpen is always true here — the
+  // parent mounts/unmounts to control visibility. useModalDialog handles
+  // the native showModal() call, the close-event callback, and backdrop click.
+  const { dialogRef, handleBackdropClick } = useModalDialog({
+    isOpen: true,
+    onClose,
+    backdropClickClose: true,
+  });
 
   useEffect(() => {
     return () => {
       if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
     };
   }, []);
-
-  function handleBackdropClick(e: React.MouseEvent<HTMLDialogElement>) {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    // Native <dialog> backdrop clicks fire with e.target === the dialog
-    // itself; child element clicks bubble with target set to that child.
-    if (e.target === dialog) dialog.close();
-  }
 
   async function handleCopy() {
     let ok = false;
