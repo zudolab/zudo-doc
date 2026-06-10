@@ -161,69 +161,19 @@
 import { z } from "zod";
 import { defineConfig } from "zfb/config";
 import { settings } from "./src/config/settings";
-import { tagVocabulary } from "./src/config/tag-vocabulary";
+import { buildDocsSchema } from "./src/config/docs-schema";
 
 // ---------------------------------------------------------------------------
-// Schema definitions (vanilla zod — no astro/zod dependency).
+// Schema definitions (single source of truth: src/config/docs-schema.ts).
 // ---------------------------------------------------------------------------
-
-/**
- * Build the `tags` schema based on governance mode. `"strict"` tightens to a
- * `z.enum` of every canonical id plus every alias (content still uses
- * aliases verbatim — resolution happens at the aggregation layer, after
- * parsing). Mirrors the equivalent helper in `src/content.config.ts`.
- */
-function buildTagsSchema() {
-  const vocabularyActive = settings.tagVocabulary && settings.tagGovernance === "strict";
-  if (!vocabularyActive) return z.array(z.string()).optional();
-  const allowed = new Set<string>();
-  for (const entry of tagVocabulary) {
-    allowed.add(entry.id);
-    for (const alias of entry.aliases ?? []) allowed.add(alias);
-  }
-  const allowedList = [...allowed];
-  if (allowedList.length === 0) return z.array(z.string()).optional();
-  const [first, ...rest] = allowedList;
-  return z.array(z.enum([first, ...rest] as [string, ...string[]])).optional();
-}
 
 /**
  * Single zod schema reused for every docs collection (default + per-locale
- * + per-version + per-version-per-locale). Field set is byte-for-byte
- * identical to `src/content.config.ts`'s `docsSchema`.
- *
- * `.passthrough()` keeps custom frontmatter keys (e.g. `author`, `status`)
- * available downstream — the frontmatter-preview UI relies on this to
- * surface arbitrary keys without us having to declare each one here.
+ * + per-version + per-version-per-locale). Defined in `src/config/docs-schema.ts`
+ * so that `pages/_data.ts` and `src/types/docs-entry.ts` can import the
+ * inferred `DocsData` type instead of maintaining hand-mirrored field lists.
  */
-const docsSchema = z
-  .object({
-    title: z.string(),
-    description: z.string().optional(),
-    category: z.string().optional(),
-    sidebar_position: z.number().optional(),
-    sidebar_label: z.string().optional(),
-    tags: buildTagsSchema(),
-    search_exclude: z.boolean().optional(),
-    pagination_next: z.string().nullable().optional(),
-    pagination_prev: z.string().nullable().optional(),
-    draft: z.boolean().optional(),
-    unlisted: z.boolean().optional(),
-    hide_sidebar: z.boolean().optional(),
-    hide_toc: z.boolean().optional(),
-    doc_history: z.boolean().optional(),
-    standalone: z.boolean().optional(),
-    slug: z.string().optional(),
-    generated: z.boolean().optional(),
-    // Category metadata expressed as a directory index.mdx's frontmatter — the
-    // frontmatter form of `_category_.json`. `category_no_page` makes the index
-    // a non-linked sidebar header excluded from routes/sitemap/search;
-    // `category_sort_order` sets the child sort direction. Frontmatter wins
-    // over the sidecar.
-    category_no_page: z.boolean().optional(),
-    category_sort_order: z.enum(["asc", "desc"]).optional(),
-  })
-  .passthrough();
+const docsSchema = buildDocsSchema();
 
 // `z.toJSONSchema` is a runtime call but the result is a stable JSON
 // document. We compute it once and reuse the same object across every
