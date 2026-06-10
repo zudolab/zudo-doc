@@ -101,7 +101,16 @@ export function startServer(options: ServerOptions): void {
     // Doc history routes: /doc-history/{slug}.json
     const match = pathname.match(/^\/doc-history\/(.+)\.json$/);
     if (match) {
-      const requestedSlug = decodeURIComponent(match[1] ?? "");
+      // decodeURIComponent throws synchronously on malformed percent-encoding
+      // (e.g. /doc-history/%E0%A4.json) — without the guard that URIError
+      // escapes before the async .catch() attaches and kills the server.
+      let requestedSlug: string;
+      try {
+        requestedSlug = decodeURIComponent(match[1] ?? "");
+      } catch {
+        sendJson(res, 400, { error: "Malformed percent-encoding in slug" });
+        return;
+      }
       handleDocHistory(requestedSlug, fileIndex, maxEntries, res).catch((err) => {
         sendJson(res, 500, {
           error: err instanceof Error ? err.message : "Internal error",
