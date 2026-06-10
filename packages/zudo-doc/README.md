@@ -30,6 +30,8 @@ The fix is to import the package's build-generated safelist into your Tailwind C
 
 **Migrating from a pre-0.2.0 workaround?** If you vendored or copied the package `dist/` to get its styles, delete that workaround and replace it with the single `@import "@takazudo/zudo-doc/safelist.css";` line above.
 
-## Pre-publish dev workflow
+## Dev workflow (in this repo)
 
-Phase A npm publish is deferred (see super-epic comment 2026-04-28). During pre-publish dev, this package references zfb via the local checkout at `$HOME/repos/myoss/zfb`. Use `/refer-another-project zfb` to read zfb's APIs. If a zfb bug is discovered, fix it directly on zfb's `main` and push (zfb is not public yet).
+This package is published to npm as `@takazudo/zudo-doc` (since `0.2.0`, `latest` tracks the current line). Inside this repo the host site consumes it as a workspace package through its compiled `dist/` — `pnpm dev` at the repo root runs `tsup --watch` so edits under `src/` rebuild automatically; for a one-off rebuild use `pnpm --filter @takazudo/zudo-doc build`.
+
+zfb itself comes from npm (versions pinned in the root `package.json`). To develop against a local zfb checkout, use the temporary `pnpm.overrides` link escape hatch documented in the root `CLAUDE.md` — do not commit the override.
