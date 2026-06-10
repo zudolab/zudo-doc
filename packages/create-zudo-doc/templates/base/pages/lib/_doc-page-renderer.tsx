@@ -150,11 +150,22 @@ export function renderDocPage(
       autoIndexLabel={props.kind === "autoIndex" ? props.autoIndex.label : undefined}
       autoIndexChildren={autoIndexChildren}
       metainfoSlot={
-        props.kind === "autoIndex" ? <DocMetainfoArea slug={slug} locale={locale} /> : null
+        // Versioned gate mirrors DocContentHeader: the doc-history-meta
+        // manifest is built from latest dirs only, so a bare versioned slug
+        // would surface the LATEST page's Created/Updated/Author.
+        !version && props.kind === "autoIndex" ? (
+          <DocMetainfoArea slug={slug} locale={locale} isFallback={isFallback} />
+        ) : null
       }
       contentHeaderSlot={
         props.kind === "entry" ? (
-          <DocContentHeader entry={props.entry} slug={slug} locale={locale} isFallback={isFallback} />
+          <DocContentHeader
+            entry={props.entry}
+            slug={slug}
+            locale={locale}
+            isFallback={isFallback}
+            version={version?.slug}
+          />
         ) : undefined
       }
       contentSlot={
