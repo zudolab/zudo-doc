@@ -10,11 +10,13 @@
  * nested categories, frontmatter-vs-sidecar precedence, noPage, sort orders,
  * custom slugs, position fallbacks, and locale-prefixed hrefs.
  *
- * Documented non-parity edge (intentionally NOT asserted): an entry whose
- * derived slug is empty ("" — only reachable via an explicit `slug: ""` or a
- * bare root id "", which _data.ts can produce only when a root index.mdx
- * exists; this corpus has none). The legacy builder minted a node keyed ""
- * for it; the shared builder drops the entry. See the #2030 report.
+ * Root docs index (id "" — _data.ts bridging of a root index.mdx): the shared
+ * builder drops empty slugs, so the host adapter re-creates the legacy ""
+ * node explicitly; parity is asserted below. Documented non-parity edge
+ * (intentionally NOT asserted): an explicit `slug: ""` on an entry with a
+ * non-empty id — legacy fell back to keying the node by the RAW id (even a
+ * slashed one, producing a nonsense category node); the adapter normalizes
+ * that to the root "" node instead. See the #2030 report.
  */
 
 import { describe, it, expect } from "vitest";
@@ -206,6 +208,31 @@ describe("buildNavTree parity with the frozen legacy builder (#2030)", () => {
 
   it("matches on an empty corpus", () => {
     expect(buildNavTree([], "en", richMeta)).toEqual(legacyBuildNavTree([], "en", richMeta));
+  });
+
+  it("matches when a root docs index (id '') is present", () => {
+    const corpus = [
+      entry("", { title: "Docs Home", sidebar_position: 1 }),
+      ...richCorpus,
+    ];
+    const mine = buildNavTree(corpus, "en", richMeta);
+    expect(mine).toEqual(legacyBuildNavTree(corpus, "en", richMeta));
+    expect(JSON.stringify(mine)).toBe(JSON.stringify(legacyBuildNavTree(corpus, "en", richMeta)));
+    const root = mine.find((n) => n.slug === "");
+    expect(root?.href).toBe(docsUrl("", "en"));
+    expect(root?.hasPage).toBe(true);
+  });
+
+  it("matches root docs index ordering without an explicit position (999 tie → first)", () => {
+    const corpus = [...richCorpus, entry("", { title: "Docs Home" })];
+    const mine = buildNavTree(corpus, "ja" as Locale);
+    expect(mine).toEqual(legacyBuildNavTree(corpus, "ja" as Locale));
+    expect(JSON.stringify(mine)).toBe(JSON.stringify(legacyBuildNavTree(corpus, "ja" as Locale)));
+  });
+
+  it("matches a root docs index carrying category_no_page", () => {
+    const corpus = [entry("", { title: "Docs Home", category_no_page: true }), ...richCorpus];
+    expect(buildNavTree(corpus, "en")).toEqual(legacyBuildNavTree(corpus, "en"));
   });
 
   it("matches JSON-serialized output exactly (key presence parity for hydration payloads)", () => {

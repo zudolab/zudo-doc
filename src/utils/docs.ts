@@ -177,9 +177,63 @@ export function buildNavTree(
   );
   const result = sidebarTree.map(toNavNode);
 
+  // Root docs-index entry (derived slug "" — a root index.mdx arrives from
+  // _data.ts bridging as id ""). The shared builder drops empty slugs, but the
+  // legacy host builder minted a top-level node keyed "" (href /docs/) so the
+  // root page stayed present in sidebar/breadcrumb/prev-next data. Re-create
+  // that node here with the exact legacy field derivation, then re-sort with
+  // the same comparator the builder used (stable sort → idempotent for the
+  // already-sorted rest).
+  const rootDoc = findRootIndexDoc(docs);
+  if (rootDoc) {
+    result.push(toRootNavNode(rootDoc, lang, categoryMeta));
+    result.sort((a, b) => {
+      const posCompare = a.position - b.position;
+      if (posCompare !== 0) return posCompare;
+      return a.slug.localeCompare(b.slug);
+    });
+  }
+
   navTreeCacheSet(cacheKey, result);
   rememberIdentity(docs, lang, categoryMeta, result);
   return result;
+}
+
+/** Last entry whose package-derived slug is empty ("") — i.e. the entry the
+ *  shared builder skips. Last one wins, mirroring the legacy builder's
+ *  `node.doc = doc` overwrite. (A bare id "index" is NOT matched here: both
+ *  the legacy and shared builders resolve it to a node keyed "index".) */
+function findRootIndexDoc(docs: DocsEntry[]): DocsEntry | undefined {
+  let found: DocsEntry | undefined;
+  for (const d of docs) {
+    const slug = d.data.slug ?? d.id.replace(/\/index$/, "");
+    if (slug === "") found = d;
+  }
+  return found;
+}
+
+/** Legacy-faithful node for the root docs index (slug ""): no children are
+ *  possible (a multi-segment slug never has an empty first part), label falls
+ *  back through the same chain (title is required, so it always resolves),
+ *  and href is the locale docs root. */
+function toRootNavNode(
+  doc: DocsEntry,
+  lang: Locale,
+  categoryMeta?: Map<string, CategoryMeta>,
+): NavNode {
+  const meta = categoryMeta?.get("");
+  const noPage = doc.data.category_no_page ?? meta?.noPage;
+  const sortOrder = doc.data.category_sort_order ?? meta?.sortOrder ?? "asc";
+  return {
+    slug: "",
+    label: doc.data.sidebar_label ?? doc.data.title ?? meta?.label ?? "",
+    description: doc.data.description ?? meta?.description,
+    position: doc.data.sidebar_position ?? meta?.position ?? 999,
+    href: noPage ? undefined : docsUrl("", lang),
+    hasPage: noPage !== true,
+    children: [],
+    sortOrder,
+  };
 }
 
 /** Map the shared builder's SidebarNode shape onto the host NavNode shape.
