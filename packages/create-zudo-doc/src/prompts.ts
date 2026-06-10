@@ -1,6 +1,7 @@
 import * as p from "@clack/prompts";
 import { LIGHT_DARK_PAIRINGS, SINGLE_SCHEMES, FEATURES, SUPPORTED_LANGS } from "./constants.js";
 import type { PresetHeaderRightItem } from "./preset.js";
+import { validateProjectName } from "./utils.js";
 
 export interface UserChoices {
   projectName: string;
@@ -66,11 +67,7 @@ export async function runPrompts(
       placeholder: "my-docs",
       defaultValue: "my-docs",
       validate(value) {
-        if (!value.trim()) return "Project name is required";
-        if (/^[./]|\.\./.test(value))
-          return "Project name must not contain path traversal characters";
-        if (/[<>:"|?*\\]/.test(value))
-          return "Project name contains invalid characters";
+        return validateProjectName(value) ?? undefined;
       },
     });
     if (p.isCancel(result)) process.exit(0);
