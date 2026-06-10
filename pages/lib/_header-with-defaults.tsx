@@ -55,55 +55,20 @@ import { settings } from "@/config/settings";
 import { defaultLocale, locales, t, type Locale } from "@/config/i18n";
 import { buildGitHubRepoUrl } from "@/utils/github";
 import {
-  buildLocaleLinks,
   docsUrl,
   navHref,
   stripBase,
   versionedDocsUrl,
   withBase,
 } from "@/utils/base";
-import {
-  type NavNode,
-} from "@/utils/docs";
-import { buildSidebarForSection } from "@/utils/sidebar";
 import { filterHeaderRightItems } from "@takazudo/zudo-doc/header";
 import { SearchWidget } from "./_search-widget";
-import { loadNavSourceDocs } from "./_nav-source-docs";
-
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Walk the nav tree and rewrite each node's `href` to its versioned form.
- *
- * `buildNavTree` always emits hrefs via `docsUrl()`; when the active route
- * lives under `/v/{version}/...` we need the same nodes pointing at the
- * versioned URL so internal nav clicks stay inside the version. Skips
- * nodes without an href (link-only or category placeholders).
- *
- * Intentionally kept as a local copy in this module (not extracted) —
- * T2 only dedupes loadNavSourceDocs; remapVersionedHrefs is out of scope.
- */
-function remapVersionedHrefs(
-  nodes: NavNode[],
-  version: string,
-  nodeLang: Locale,
-): NavNode[] {
-  return nodes.map((node) => {
-    const children =
-      node.children.length > 0
-        ? remapVersionedHrefs(node.children, version, nodeLang)
-        : node.children;
-
-    if (!node.href || node.slug.startsWith("__link__")) {
-      return children !== node.children ? { ...node, children } : node;
-    }
-
-    const newHref = versionedDocsUrl(node.slug, version, nodeLang);
-    return { ...node, href: newHref, children };
-  });
-}
+import {
+  buildRootMenuItems,
+  buildLocaleLinksForNav,
+  buildSidebarNodes,
+  getThemeDefaultMode,
+} from "./_nav-data-prep";
 
 // ---------------------------------------------------------------------------
 // Component
@@ -159,20 +124,10 @@ export function HeaderWithDefaults(
   // without a Locale variable don't need to cast (e.g. _tag-pages.tsx).
   const lang = langProp as Locale;
 
-  // Root-menu items for the mobile sidebar's "back to menu" list.
-  // Mirrors the data-prep in _sidebar-with-defaults.tsx.
-  const rootMenuItems = settings.headerNav.map((item) => ({
-    label: item.labelKey
-      ? t(item.labelKey as Parameters<typeof t>[0], lang)
-      : item.label,
-    href: navHref(item.path, lang, currentVersion),
-    children: item.children?.map((child) => ({
-      label: child.labelKey
-        ? t(child.labelKey as Parameters<typeof t>[0], lang)
-        : child.label,
-      href: navHref(child.path, lang, currentVersion),
-    })),
-  }));
+  // Root-menu items, locale links, sidebar nodes, and theme mode — all
+  // delegated to the shared _nav-data-prep helpers so header and sidebar
+  // wrappers stay in sync without duplicating the logic.
+  const rootMenuItems = buildRootMenuItems(lang, currentVersion);
 
   // Build the mobile sidebar toggle unconditionally — SidebarToggle is rendered
   // on every page (refs #1453); the host CSS hides it where unneeded. When navSection is
@@ -183,21 +138,11 @@ export function HeaderWithDefaults(
 
   // Locale-switcher links in the mobile sidebar footer — only when
   // multiple locales are configured (mirrors _sidebar-with-defaults.tsx).
-  const localeLinks =
-    locales.length > 1 ? buildLocaleLinks(currentPath, lang) : undefined;
+  const localeLinks = buildLocaleLinksForNav(currentPath, lang, locales.length);
 
-  const themeDefaultMode = settings.colorMode
-    ? settings.colorMode.defaultMode
-    : undefined;
+  const themeDefaultMode = getThemeDefaultMode();
 
-  let sidebarNodes: NavNode[] = [];
-  if (navSection !== undefined) {
-    const { navDocs, categoryMeta } = loadNavSourceDocs(lang, currentVersion);
-    const rawNodes = buildSidebarForSection(navDocs, lang, navSection, categoryMeta);
-    sidebarNodes = currentVersion
-      ? remapVersionedHrefs(rawNodes, currentVersion, lang)
-      : rawNodes;
-  }
+  const sidebarNodes = buildSidebarNodes(lang, navSection, currentVersion);
 
   // Wrap SidebarToggle (hamburger button + slide-in aside + SidebarTree) in
   // Island so the SSG output carries the full tree HTML AND the
