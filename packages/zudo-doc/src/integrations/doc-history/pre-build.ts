@@ -38,11 +38,14 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { cpus } from "node:os";
 import {
   collectContentFiles,
   getFileCommitsMetaAsync,
 } from "@takazudo/zudo-doc-history-server/git-history";
+import {
+  makeSemaphore,
+  defaultGitConcurrency,
+} from "@takazudo/zudo-doc-history-server/concurrency";
 
 /** A single non-default locale entry; mirrors `settings.locales[*]`. */
 export interface DocHistoryMetaLocaleConfig {
@@ -111,40 +114,6 @@ export function deriveSourceExt(filePath: string): ".mdx" | ".md" {
 }
 
 /**
- * Tiny in-file semaphore for bounded parallelism — avoids a p-limit dependency.
- * Limits concurrent async tasks to `concurrency` at a time.
- * Ported from packages/doc-history-server/src/cli.ts.
- */
-export function makeSemaphore(concurrency: number) {
-  let running = 0;
-  const queue: Array<() => void> = [];
-
-  function next(): void {
-    if (queue.length > 0 && running < concurrency) {
-      // Do not increment running here — the dequeued tryRun call handles it.
-      queue.shift()!();
-    }
-  }
-
-  return function acquire(): Promise<() => void> {
-    return new Promise((resolve) => {
-      function tryRun() {
-        if (running < concurrency) {
-          running++;
-          resolve(() => {
-            running--;
-            next();
-          });
-        } else {
-          queue.push(tryRun);
-        }
-      }
-      tryRun();
-    });
-  };
-}
-
-/**
  * Emit `<projectRoot>/.zfb/doc-history-meta.json` from git history.
  *
  * Honours the `SKIP_DOC_HISTORY=1` env-var short-circuit (see header
@@ -193,8 +162,8 @@ export async function runDocHistoryMetaStep(
 
   // Bounded parallelism: default to CPU count (min 2, max 8) to saturate git
   // without spawning excessively — each getFileCommitsMetaAsync issues one
-  // git process. Ported from packages/doc-history-server/src/cli.ts.
-  const concurrency = Math.min(8, Math.max(2, cpus().length));
+  // git process.
+  const concurrency = defaultGitConcurrency();
   const acquire = makeSemaphore(concurrency);
 
   // Build the flat job list in deterministic order (locale-then-file). Ordering
