@@ -136,76 +136,6 @@ export function getCommitInfo(
 }
 
 /**
- * Get the file content at a specific commit.
- * Accepts absolute paths and converts to repo-relative for git show.
- * Handles renamed files by falling back to the old path via git log --follow.
- */
-export function getFileAtCommit(hash: string, filePath: string): string {
-  const isAbsolute = filePath.startsWith("/");
-  const relPath = isAbsolute ? toRepoRelative(filePath) : filePath;
-
-  try {
-    return execFileSync("git", ["show", `${hash}:${relPath}`], gitOpts());
-  } catch {
-    // File may have been renamed — find the old path at this commit
-    try {
-      const oldPath = execFileSync(
-        "git",
-        [
-          "log",
-          "-1",
-          "--follow",
-          "--diff-filter=R",
-          "--format=",
-          "--name-only",
-          hash,
-          "--",
-          relPath,
-        ],
-        gitOpts(),
-      ).trim();
-      if (oldPath) {
-        return execFileSync("git", ["show", `${hash}:${oldPath}`], gitOpts());
-      }
-    } catch {
-      // ignore
-    }
-
-    // Last resort: use git log --follow to find the path at this revision
-    try {
-      const followOutput = execFileSync(
-        "git",
-        [
-          "log",
-          "--follow",
-          "--format=%H",
-          "--name-only",
-          "--diff-filter=AMRC",
-          "--",
-          relPath,
-        ],
-        gitOpts(),
-      ).trim();
-      const lines = followOutput.split("\n").filter(Boolean);
-      // Lines alternate: hash, filename, hash, filename...
-      for (let i = 0; i < lines.length - 1; i += 2) {
-        if (lines[i] === hash && lines[i + 1]) {
-          return execFileSync(
-            "git",
-            ["show", `${hash}:${lines[i + 1]}`],
-            gitOpts(),
-          );
-        }
-      }
-    } catch {
-      // ignore
-    }
-
-    return "";
-  }
-}
-
-/**
  * Parse the output of `git log --follow --format=%H%n%aI%n%aN%n%s%n` into
  * an array of commit metadata records. Records are separated by blank lines
  * (the trailing `%n` in the format adds one blank line after each 4-line block).
@@ -230,33 +160,6 @@ function parseCommitLog(
   return records;
 }
 
-/**
- * Build a map from commit hash → file path at that commit, using
- * `git log --follow --name-only`. Needed to batch-fetch content via
- * git cat-file --batch: the file may have been at a different path before
- * a rename.
- *
- * Returns a Map<hash, pathAtCommit>. Only commits that touched the file
- * are included (git omits the filename line for commits that don't change it
- * under some traversal modes, so we filter carefully).
- */
-function buildHashToPathMap(
-  filePath: string,
-  maxEntries: number,
-): Map<string, string> {
-  const relPath = filePath.startsWith("/") ? toRepoRelative(filePath) : filePath;
-  try {
-    const output = execFileSync(
-      "git",
-      hashToPathArgs(relPath, maxEntries),
-      gitOpts(),
-    ).trim();
-    return parseHashToPathMap(output);
-  } catch {
-    return new Map();
-  }
-}
-
 /** git args for the hash→path `git log --follow --name-only` walk. */
 function hashToPathArgs(relPath: string, maxEntries: number): string[] {
   return [
@@ -272,8 +175,7 @@ function hashToPathArgs(relPath: string, maxEntries: number): string[] {
 }
 
 /**
- * Pure parser for `git log --follow --format=%H --name-only` output. Shared
- * by the sync and async hash→path builders so both produce identical maps.
+ * Pure parser for `git log --follow --format=%H --name-only` output.
  */
 function parseHashToPathMap(output: string): Map<string, string> {
   if (!output) return new Map();
@@ -307,10 +209,14 @@ function parseHashToPathMap(output: string): Map<string, string> {
 }
 
 /**
- * Async variant of buildHashToPathMap. Runs the same `git log --follow
- * --name-only` walk via execFile (non-blocking) so the CLI's per-file tasks
- * can issue git spawns concurrently. Shares parseHashToPathMap with the sync
- * path for byte-identical results.
+ * Build a map from commit hash → file path at that commit, using
+ * `git log --follow --name-only`. Needed to batch-fetch content via
+ * git cat-file --batch: the file may have been at a different path before
+ * a rename. Runs via execFile (non-blocking) so the CLI's per-file tasks
+ * can issue git spawns concurrently.
+ *
+ * Returns a Map<hash, pathAtCommit>. Only commits that touched the file
+ * are included.
  */
 async function buildHashToPathMapAsync(
   filePath: string,
@@ -329,48 +235,6 @@ async function buildHashToPathMapAsync(
   }
 }
 
-/**
- * Batch-fetch file contents for multiple (hash, path) pairs using a single
- * `git cat-file --batch` process. Returns a Map<hash, content>.
- *
- * Pairs that produce "missing" responses are excluded from the result; the
- * caller should fall back to per-commit logic for those (rename misses).
- *
- * git cat-file --batch reads one `<object> LF` request per line from stdin,
- * then for each object emits either:
- *   `<objecthash> blob <size>\n<content-bytes>\n`
- * or:
- *   `<objecthash> missing\n`
- *
- * We operate on the raw Buffer (not a utf-8 string) so that the byte-count
- * `<size>` field lines up with buffer offsets — MDX files can contain
- * multi-byte UTF-8 characters where byte count != character count.
- */
-function batchFetchContents(
-  pairs: Array<{ hash: string; path: string }>,
-): Map<string, string> {
-  if (pairs.length === 0) return new Map();
-
-  try {
-    const rawBuf = execFileSync(
-      "git",
-      ["cat-file", "--batch"],
-      // encoding must be omitted (or "buffer") to get a raw Buffer so that
-      // byte offsets from the <size> field stay accurate across UTF-8 content.
-      // cwd = repo root for the same reason as gitOpts() (see #1907 above).
-      {
-        stdio: ["pipe", "pipe", "pipe"],
-        input: catFileBatchInput(pairs),
-        cwd: getRepoRoot(),
-      },
-    ) as unknown as Buffer;
-
-    return parseBatchContents(rawBuf, pairs);
-  } catch {
-    return new Map();
-  }
-}
-
 /** Build the `<hash>:<path>` stdin request buffer for `git cat-file --batch`. */
 function catFileBatchInput(
   pairs: Array<{ hash: string; path: string }>,
@@ -382,10 +246,10 @@ function catFileBatchInput(
 }
 
 /**
- * Pure parser for `git cat-file --batch` raw output. Shared by the sync and
- * async content fetchers. Operates on the raw Buffer (not a utf-8 string) so
- * the byte-count `<size>` field lines up with buffer offsets — MDX files can
- * contain multi-byte UTF-8 characters where byte count != character count.
+ * Pure parser for `git cat-file --batch` raw output. Operates on the raw
+ * Buffer (not a utf-8 string) so the byte-count `<size>` field lines up with
+ * buffer offsets — MDX files can contain multi-byte UTF-8 characters where
+ * byte count != character count.
  */
 function parseBatchContents(
   rawBuf: Buffer,
@@ -422,10 +286,14 @@ function parseBatchContents(
 }
 
 /**
- * Async variant of batchFetchContents. `git cat-file --batch` reads its
- * request list from stdin, which execFile's promisified form can't supply,
- * so this spawns the process and writes the request buffer to stdin directly.
- * Collects raw stdout chunks and shares parseBatchContents with the sync path.
+ * Batch-fetch file contents for multiple (hash, path) pairs using a single
+ * `git cat-file --batch` process. Returns a Map<hash, content>.
+ *
+ * `git cat-file --batch` reads its request list from stdin, which execFile's
+ * promisified form can't supply, so this spawns the process and writes the
+ * request buffer to stdin directly. Pairs that produce "missing" responses
+ * are excluded from the result; the caller should fall back to per-commit
+ * logic for those (rename misses).
  */
 function batchFetchContentsAsync(
   pairs: Array<{ hash: string; path: string }>,
@@ -459,69 +327,6 @@ function batchFetchContentsAsync(
   });
 }
 
-/**
- * Get the complete history for a document file.
- *
- * Optimised: uses ONE `git log --follow` for commit metadata and ONE
- * `git log --follow --name-only` for the hash→path map, then a single
- * `git cat-file --batch` for all content fetches. Falls back to the
- * original per-commit logic only for batch misses (renamed-path entries
- * where the current path didn't exist at that commit).
- *
- * Returns DocHistoryData with all entries populated.
- */
-export function getDocHistory(
-  filePath: string,
-  slug: string,
-  maxEntries = 50,
-): DocHistoryData {
-  const relPath = filePath.startsWith("/") ? toRepoRelative(filePath) : filePath;
-
-  // Single spawn: get all commit metadata (hash, date, author, message)
-  let metaRecords: Array<Omit<DocHistoryEntry, "content">> = [];
-  try {
-    const logOutput = execFileSync(
-      "git",
-      commitMetaArgs(relPath, maxEntries),
-      gitOpts(),
-    ).trim();
-    if (logOutput) {
-      metaRecords = parseCommitLog(logOutput);
-    }
-  } catch {
-    // fall through to empty
-  }
-
-  if (metaRecords.length === 0) {
-    return { slug, filePath: relPath, entries: [] };
-  }
-
-  // Build hash→path mapping (needed for rename-aware content fetching)
-  const hashToPath = buildHashToPathMap(relPath, maxEntries);
-
-  // Build pairs for batched content fetch, using the correct path at each commit
-  const pairs = metaRecords.map((rec) => ({
-    hash: rec.hash,
-    path: hashToPath.get(rec.hash) ?? relPath,
-  }));
-
-  // Batch-fetch all content in a single git cat-file --batch spawn
-  const contentMap = batchFetchContents(pairs);
-
-  // Assemble entries; fall back to per-commit logic for batch misses
-  const entries: DocHistoryEntry[] = metaRecords.map((rec, i) => {
-    const pair = pairs[i]!;
-    if (contentMap.has(rec.hash)) {
-      return { ...rec, content: contentMap.get(rec.hash)! };
-    }
-    // Batch miss: rename path not in map or object missing — use original fallback
-    const content = getFileAtCommit(rec.hash, filePath);
-    return { ...rec, content };
-  });
-
-  return { slug, filePath: relPath, entries };
-}
-
 /** git args for the per-file commit-metadata `git log --follow` walk. */
 function commitMetaArgs(relPath: string, maxEntries: number): string[] {
   return [
@@ -536,16 +341,16 @@ function commitMetaArgs(relPath: string, maxEntries: number): string[] {
 }
 
 /**
- * Async variant of getDocHistory.
+ * Get the complete history for a document file.
  *
- * Byte-for-byte equivalent to the sync version (shares every parser and the
- * same git invocations) but issues each git command via execFile / spawn
- * instead of execFileSync. This matters for the CLI batch generator
- * (`cli.ts`): its semaphore wraps each file in a Promise, but the sync
- * getDocHistory's execFileSync blocks the event loop, so the "concurrency"
- * cap was a no-op and all files ran serially — blowing zfb's 120s postBuild
- * budget on large corpora (issue #1986). With genuine async git calls the
- * semaphore actually parallelizes the work.
+ * Optimised: uses ONE `git log --follow` for commit metadata and ONE
+ * `git log --follow --name-only` for the hash→path map, then a single
+ * `git cat-file --batch` for all content fetches. Falls back to
+ * per-commit logic only for batch misses (renamed-path entries where the
+ * current path didn't exist at that commit).
+ *
+ * Issues all git commands via execFile / spawn (non-blocking) so the CLI's
+ * semaphore-bounded concurrency actually parallelizes across files (#1986).
  */
 export async function getDocHistoryAsync(
   filePath: string,
@@ -602,10 +407,10 @@ export async function getDocHistoryAsync(
 }
 
 /**
- * Async variant of getFileAtCommit. Mirrors the sync fallback chain
- * (direct show → rename-aware old-path show → --follow path walk) but uses
- * execFile so it never blocks the event loop. Only hit for batch misses
- * (renamed-path entries), which are rare.
+ * Get the file content at a specific commit. Accepts absolute paths and
+ * converts to repo-relative for git show. Handles renamed files by falling
+ * back through a 3-stage rename-detection chain. Uses execFile (non-blocking).
+ * Only hit for batch misses (renamed-path entries), which are rare.
  */
 async function getFileAtCommitAsync(
   hash: string,
@@ -716,10 +521,10 @@ export function getFileCommitsMeta(
 }
 
 /**
- * Async variant of getFileCommitsMeta. Runs the same `git log --follow`
- * via execFile (non-blocking) so callers can issue multiple git spawns
- * concurrently. Returns an array of records newest-first (no -n limit).
- * Used by the pre-build parallelization path.
+ * Get commit metadata for a file using a single `git log --follow` walk
+ * (async variant). Runs via execFile (non-blocking) so callers can issue
+ * multiple git spawns concurrently. Returns an array of records newest-first
+ * (no -n limit). Used by the pre-build parallelization path.
  */
 export async function getFileCommitsMetaAsync(
   filePath: string,
