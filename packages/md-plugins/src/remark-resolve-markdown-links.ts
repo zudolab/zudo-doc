@@ -7,6 +7,50 @@ import { isExternal } from "./url-utils";
 export interface ResolveMarkdownLinksOptions extends DocsSourceMapOptions {
   /** Behavior on broken links: 'warn' (default), 'error', 'ignore' */
   onBrokenLinks?: "warn" | "error" | "ignore";
+  /**
+   * Pre-built source map to use instead of building one at plugin-call time.
+   *
+   * Pass a shared `Map<string, string>` (built once via `buildDocsSourceMap`)
+   * to avoid repeated fs walks when the same options are used across many
+   * transformed files (e.g. a full build). When provided, `buildDocsSourceMap`
+   * is never called inside the plugin's per-file transform function.
+   *
+   * If omitted, the plugin falls back to a module-level cache keyed on the
+   * options signature (rootDir + docsDir + locales + versions + base +
+   * trailingSlash) so repeated calls with identical options still only trigger
+   * one fs walk — no explicit sharing is required for typical build usage.
+   */
+  sourceMap?: Map<string, string>;
+}
+
+// ---------------------------------------------------------------------------
+// Module-level source-map cache (one fs walk per unique options signature)
+// ---------------------------------------------------------------------------
+
+// Keyed on a JSON-serialized canonical options signature so the same config
+// always hits the same cache entry. The cache intentionally lives for the
+// lifetime of the process (no TTL) — a new process starts for each build, and
+// during dev the user explicitly re-runs the file watcher or build command.
+const sourceMapCache = new Map<string, Map<string, string>>();
+
+function optionsCacheKey(opts: DocsSourceMapOptions): string {
+  return JSON.stringify({
+    rootDir: opts.rootDir,
+    docsDir: opts.docsDir,
+    locales: opts.locales,
+    versions: opts.versions,
+    base: opts.base,
+    trailingSlash: opts.trailingSlash,
+  });
+}
+
+function cachedSourceMap(opts: DocsSourceMapOptions): Map<string, string> {
+  const key = optionsCacheKey(opts);
+  const cached = sourceMapCache.get(key);
+  if (cached) return cached;
+  const built = buildDocsSourceMap(opts);
+  sourceMapCache.set(key, built);
+  return built;
 }
 
 /** Check if pathname has a markdown (.md / .mdx) extension. */
@@ -59,9 +103,10 @@ export function remarkResolveMarkdownLinks(
   const onBrokenLinks = options.onBrokenLinks ?? "warn";
 
   return (tree: Root, file: { path?: string }) => {
-    // Rebuild source map on every call so new/removed files are picked up
-    // during dev server. The filesystem scan is fast (~1ms for typical doc sites).
-    const sourceMap = buildDocsSourceMap(options);
+    // Use caller-supplied map → module-level cache → fresh build (in that order).
+    // The cache means one fs walk per unique option signature per process; the
+    // caller-supplied path lets integrations share a pre-built map across plugins.
+    const sourceMap = options.sourceMap ?? cachedSourceMap(options);
 
     const currentFilePath = file.path;
     if (!currentFilePath) return;
