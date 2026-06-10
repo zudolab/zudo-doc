@@ -68,6 +68,7 @@
       "postcss": ">=8.5.10",
       "undici": ">=7.24.0",
       "ws": ">=8.20.1",
+      "shell-quote": ">=1.8.4",
       "yaml@2": ">=2.8.3 <3",
       "brace-expansion@2": ">=2.0.3 <3",
       "brace-expansion@5": ">=5.0.6 <6"
