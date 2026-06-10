@@ -88,6 +88,8 @@ export interface CommonArgs {
 
 export interface ServerArgs extends CommonArgs {
   port: number;
+  /** Network interface to bind. Defaults to "127.0.0.1" (localhost only). */
+  host: string;
 }
 
 export interface CliArgs extends CommonArgs {
@@ -149,6 +151,10 @@ export function parseCommonArgs(
 /** Parse server-specific args */
 export function parseServerArgs(args: string[]): ServerArgs {
   let port = 4322;
+  // Bind to loopback by default; pass --host 0.0.0.0 to expose on the LAN.
+  // The zfb dev plugin proxies /doc-history/* server-side, so localhost-only
+  // is sufficient for both `pnpm dev` and `pnpm dev:network`.
+  let host = "127.0.0.1";
   const common = parseCommonArgs(args, {
     onFlag: (flag, next) => {
       if (flag === "--port") {
@@ -160,10 +166,14 @@ export function parseServerArgs(args: string[]): ServerArgs {
         port = n;
         return true;
       }
+      if (flag === "--host") {
+        host = next();
+        return true;
+      }
       return false;
     },
   });
-  return { ...common, port };
+  return { ...common, port, host };
 }
 
 /** Parse CLI-specific args */

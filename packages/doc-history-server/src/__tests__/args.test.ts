@@ -172,12 +172,28 @@ describe("parseServerArgs", () => {
       locales: [],
       maxEntries: 50,
       port: 3000,
+      host: "127.0.0.1",
     });
   });
 
   it("uses default port 4322 when --port is not specified", () => {
     const result = parseServerArgs(["--content-dir", "src/content/docs"]);
     expect(result.port).toBe(4322);
+  });
+
+  it("defaults host to 127.0.0.1 (localhost-only)", () => {
+    const result = parseServerArgs(["--content-dir", "src/content/docs"]);
+    expect(result.host).toBe("127.0.0.1");
+  });
+
+  it("accepts --host to override bind address", () => {
+    const result = parseServerArgs([
+      "--content-dir",
+      "src/content/docs",
+      "--host",
+      "0.0.0.0",
+    ]);
+    expect(result.host).toBe("0.0.0.0");
   });
 
   it("exits with error when --port is NaN", () => {

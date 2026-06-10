@@ -17,19 +17,21 @@ vi.mock("../git-history.js", () => ({
     { filePath: "/fake/docs/getting-started.mdx", slug: "getting-started" },
     { filePath: "/fake/docs/guides/page-1.mdx", slug: "guides/page-1" },
   ]),
-  getDocHistory: vi.fn().mockImplementation((_filePath, slug) => ({
-    slug,
-    filePath: "src/content/docs/" + slug + ".mdx",
-    entries: [
-      {
-        hash: "abc1234567890",
-        date: "2024-01-15T10:00:00Z",
-        author: "Test User",
-        message: "Initial commit",
-        content: "# Test\n\nContent here",
-      },
-    ],
-  })),
+  getDocHistoryAsync: vi.fn().mockImplementation((_filePath, slug) =>
+    Promise.resolve({
+      slug,
+      filePath: "src/content/docs/" + slug + ".mdx",
+      entries: [
+        {
+          hash: "abc1234567890",
+          date: "2024-01-15T10:00:00Z",
+          author: "Test User",
+          message: "Initial commit",
+          content: "# Test\n\nContent here",
+        },
+      ],
+    }),
+  ),
 }));
 
 // Import after mocks are set up
@@ -84,6 +86,7 @@ beforeAll(async () => {
 
   startServer({
     port: 0,
+    host: "127.0.0.1",
     contentDir: "/fake/docs",
     locales: [],
     maxEntries: 50,
