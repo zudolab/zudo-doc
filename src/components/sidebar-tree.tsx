@@ -4,6 +4,7 @@
 // lets us consume React-typed components in this Preact app (configured
 // project-wide). Same pattern as packages/zudo-doc/src/theme-toggle/index.tsx.
 import { useState, useCallback, useEffect, useMemo, useRef } from "preact/hooks";
+import { memo } from "preact/compat";
 import type { NavNode } from "@/utils/docs";
 import type { LocaleLink } from "@/types/locale";
 // Types-only subpath (`./sidebar/types`) sidesteps the JSX type-graph
@@ -370,7 +371,10 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
   );
 }
 
-function NodeList({
+// NodeList is memo-wrapped so that when only the filter query changes but
+// a subtree's nodes/currentSlug/depth/forceOpen are unchanged, Preact can
+// skip re-rendering the whole subtree.
+const NodeList = memo(function NodeList({
   nodes,
   currentSlug,
   depth,
@@ -406,7 +410,7 @@ function NodeList({
       })}
     </>
   );
-}
+});
 
 /** Check if currentSlug is anywhere in this node's subtree */
 function subtreeContainsSlug(node: NavNode, slug?: string): boolean {
@@ -415,7 +419,10 @@ function subtreeContainsSlug(node: NavNode, slug?: string): boolean {
   return node.children.some((child) => subtreeContainsSlug(child, slug));
 }
 
-function CategoryNode({
+// CategoryNode is memo-wrapped so unchanged category nodes are skipped during
+// filter-query re-renders. subtreeContainsSlug and smartBreakToHtml are also
+// memoised per-node so they are not recomputed when only unrelated state changes.
+const CategoryNode = memo(function CategoryNode({
   node,
   currentSlug,
   depth,
@@ -428,8 +435,16 @@ function CategoryNode({
   isLast: boolean;
   forceOpen: boolean;
 }) {
-  const containsCurrent = subtreeContainsSlug(node, currentSlug);
+  // Hoist subtreeContainsSlug — O(subtree-size) walk that only needs to
+  // rerun when the node identity or currentSlug changes.
+  const containsCurrent = useMemo(
+    () => subtreeContainsSlug(node, currentSlug),
+    [node, currentSlug],
+  );
   const isActive = node.slug === currentSlug;
+  // Hoist smartBreakToHtml — pure string transform; stable as long as label
+  // doesn't change (memoised to avoid recomputing on every render).
+  const labelHtml = useMemo(() => smartBreakToHtml(node.label), [node.label]);
 
   // Initial state must match server render (no sessionStorage access)
   // to avoid hydration mismatch. Stored state is restored in useEffect below.
@@ -510,7 +525,7 @@ function CategoryNode({
                   <CategoryLinkIcon className={`w-[14px] ${isActive ? "text-bg" : ""}`} />
                 </span>
               )}
-              <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(node.label) }} />
+              <span dangerouslySetInnerHTML={{ __html: labelHtml }} />
             </a>
             <button
               type="button"
@@ -534,7 +549,7 @@ function CategoryNode({
             <span className="aspect-square flex items-center justify-center w-[1.5rem] shrink-0 border border-muted">
               <ToggleChevron isExpanded={isExpanded} className="text-muted" />
             </span>
-            <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(node.label) }} />
+            <span dangerouslySetInnerHTML={{ __html: labelHtml }} />
           </button>
         )}
       </div>
@@ -550,9 +565,11 @@ function CategoryNode({
       )}
     </div>
   );
-}
+});
 
-function LeafNode({
+// LeafNode is memo-wrapped and labelHtml is memoised so pure leaf rows are
+// skipped entirely during filter-query re-renders when their props are stable.
+const LeafNode = memo(function LeafNode({
   node,
   currentSlug,
   depth,
@@ -567,6 +584,8 @@ function LeafNode({
   const isActive = node.slug === currentSlug;
   const isRoot = depth === 0;
   const paddingLeft = padLeft(depth, isRoot);
+  // Hoist smartBreakToHtml — pure transform; only recomputes when label changes.
+  const labelHtml = useMemo(() => smartBreakToHtml(node.label), [node.label]);
 
   // For nested last leaves, add visual breathing space as margin on the outer wrapper
   // rather than padding on the anchor — padding would grow the row box and throw off
@@ -606,9 +625,9 @@ function LeafNode({
               <CategoryLinkIcon className={`w-[14px] ${isActive ? "text-bg" : ""}`} />
             </span>
           )}
-          <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(node.label) }} />
+          <span dangerouslySetInnerHTML={{ __html: labelHtml }} />
         </a>
       </div>
     </div>
   );
-}
+});
