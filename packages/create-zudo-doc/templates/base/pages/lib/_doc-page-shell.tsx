@@ -32,8 +32,8 @@ import { DocBodyEnd } from "./_doc-body-end";
 import { DocPager } from "./_doc-pager";
 import type { BreadcrumbItem } from "@/utils/docs";
 import type { VersionBannerLabels } from "@takazudo/zudo-doc/i18n-version";
-import type { extractHeadings } from "./_extract-headings";
 import type { Locale } from "@/config/i18n";
+import type { extractHeadings } from "./_extract-headings";
 
 /** Slots and parameters that vary between the 4 doc routes. */
 export interface DocPageShellProps {
