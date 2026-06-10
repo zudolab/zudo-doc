@@ -122,7 +122,9 @@ export function TagDetailPageView({
       noindex={settings.noindex}
       hideSidebar={true}
       hideToc={true}
-      headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase(`${prefix}/docs/tags/${tag}`)} />}
+      // Tag segment URL-encoded — emitted href/path sites only; route params
+      // stay raw (e.g. "type:guide" → "type%3Aguide").
+      headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase(`${prefix}/docs/tags/${encodeURIComponent(tag)}`)} />}
       breadcrumbOverride={<Breadcrumb items={breadcrumbItems} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
       bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
@@ -155,7 +157,8 @@ export function TagsIndexPageView({ locale }: { locale: string }): JSX.Element {
     .map((info) => ({
       tag: info.tag,
       count: info.count,
-      href: withBase(`${prefix}/docs/tags/${info.tag}`),
+      // Tag segment URL-encoded — href sites only; route params stay raw.
+      href: withBase(`${prefix}/docs/tags/${encodeURIComponent(info.tag)}`),
     }));
 
   const breadcrumbItems: BreadcrumbItem[] = [

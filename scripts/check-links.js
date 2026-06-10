@@ -113,6 +113,21 @@ export function extractHtmlLinks(html) {
 // --- Link Resolution ---
 
 /**
+ * Decode percent-encoding the way a static server / browser does before
+ * mapping a URL path to the filesystem. Tag hrefs are emitted URL-encoded
+ * (e.g. /docs/tags/type%3Aguide/) while the built output dir keeps the raw
+ * tag name (dist/docs/tags/type:guide/), so the checker must decode to
+ * find the file. Malformed sequences (stray "%") pass through unchanged.
+ */
+function safeDecodePath(path) {
+  try {
+    return decodeURIComponent(path);
+  } catch {
+    return path;
+  }
+}
+
+/**
  * Resolve a link and return its resolution type:
  *   'root'           — empty path or resolves to the site root (always valid)
  *   'file'           — resolved to a file with an extension or a .html file
@@ -120,7 +135,7 @@ export function extractHtmlLinks(html) {
  *   'missing'        — target does not exist
  */
 export async function resolveLinkDetail(href, distDir, basePath = "/", fileDir = "") {
-  const clean = href.split("#")[0].split("?")[0];
+  const clean = safeDecodePath(href.split("#")[0].split("?")[0]);
   if (!clean) return "root";
 
   let absolute = clean;

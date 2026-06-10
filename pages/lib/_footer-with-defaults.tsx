@@ -51,12 +51,18 @@ function localizeHref(href: string, lang: string): string {
   return resolveHref(href);
 }
 
-/** Build the base-prefixed tag detail page href for the given locale. */
+/**
+ * Build the base-prefixed tag detail page href for the given locale.
+ * The tag segment is URL-encoded at the href site only — route params stay
+ * raw, so the built output dir keeps the raw tag name and the server decodes
+ * the percent-encoded href back to it (e.g. "type:guide" → "type%3Aguide").
+ */
 function tagHref(tag: string, lang: string): string {
+  const encoded = encodeURIComponent(tag);
   const path =
     lang === defaultLocale
-      ? `/docs/tags/${tag}`
-      : `/${lang}/docs/tags/${tag}`;
+      ? `/docs/tags/${encoded}`
+      : `/${lang}/docs/tags/${encoded}`;
   return withBase(path);
 }
 

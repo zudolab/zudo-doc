@@ -384,6 +384,49 @@ describe("check-links", () => {
     it("returns 'missing' for non-existent asset", async () => {
       expect(await resolveLinkDetail("/pj/zudo-doc/_astro/nope.css", tmpDir, BASE)).toBe("missing");
     });
+
+    // Tag hrefs are emitted percent-encoded (e.g. /docs/tags/type%3Aguide/)
+    // while the built output dir keeps the raw tag name — the checker must
+    // decode like a static server before the filesystem lookup.
+    it("decodes percent-encoded path segments before resolving (with trailing slash)", async () => {
+      mkdirSync(join(tmpDir, "docs", "tags", "type:guide"), { recursive: true });
+      writeFileSync(join(tmpDir, "docs", "tags", "type:guide", "index.html"), "");
+      expect(
+        await resolveLinkDetail("/pj/zudo-doc/docs/tags/type%3Aguide/", tmpDir, BASE),
+      ).toBe("directoryIndex");
+    });
+
+    it("decodes percent-encoded path segments before resolving (no trailing slash)", async () => {
+      mkdirSync(join(tmpDir, "docs", "tags", "type:guide"), { recursive: true });
+      writeFileSync(join(tmpDir, "docs", "tags", "type:guide", "index.html"), "");
+      expect(
+        await resolveLinkDetail("/pj/zudo-doc/docs/tags/type%3Aguide", tmpDir, BASE),
+      ).toBe("directoryIndex");
+    });
+
+    it("decodes non-ASCII percent-encoded segments", async () => {
+      mkdirSync(join(tmpDir, "docs", "tags", "ガイド"), { recursive: true });
+      writeFileSync(join(tmpDir, "docs", "tags", "ガイド", "index.html"), "");
+      expect(
+        await resolveLinkDetail(
+          `/pj/zudo-doc/docs/tags/${encodeURIComponent("ガイド")}/`,
+          tmpDir,
+          BASE,
+        ),
+      ).toBe("directoryIndex");
+    });
+
+    it("returns 'missing' for an encoded href whose decoded target does not exist", async () => {
+      expect(
+        await resolveLinkDetail("/pj/zudo-doc/docs/tags/type%3Anope/", tmpDir, BASE),
+      ).toBe("missing");
+    });
+
+    it("treats a malformed percent sequence as a literal path (no crash)", async () => {
+      expect(
+        await resolveLinkDetail("/pj/zudo-doc/docs/100%-done", tmpDir, BASE),
+      ).toBe("missing");
+    });
   });
 
   // --- extractMdxAbsoluteLinks ---

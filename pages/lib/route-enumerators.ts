@@ -127,10 +127,14 @@ export function enumerateTagsRoutes(locale: string): string[] {
   const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
 
   for (const tag of tagMap.keys()) {
+    // Tag segment URL-encoded — these URLs feed the sitemap, which must
+    // carry well-formed encoded URLs (e.g. "type:guide" → "type%3Aguide").
+    // Route params (the page paths() functions) stay raw.
+    const encoded = encodeURIComponent(tag);
     const tagPath =
       locale === defaultLocale
-        ? `/docs/tags/${tag}`
-        : `/${locale}/docs/tags/${tag}`;
+        ? `/docs/tags/${encoded}`
+        : `/${locale}/docs/tags/${encoded}`;
     urls.push(withBase(tagPath));
   }
 
