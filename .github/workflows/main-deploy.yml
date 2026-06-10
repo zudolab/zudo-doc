@@ -355,14 +355,16 @@ jobs:
             STATUS="zudo-doc deploy cancelled"
           fi
 
-          COMMIT_MSG=$(echo "$RAW_COMMIT_MSG" | head -1 | sed 's/"/\\"/g')
+          COMMIT_MSG=$(echo "$RAW_COMMIT_MSG" | head -1)
           SHORT_SHA=$(echo "$GITHUB_SHA_VAL" | cut -c1-7)
           RUN_URL="${SERVER_URL}/${REPO}/actions/runs/${RUN_ID}"
 
+          PAYLOAD=$(jq -n \
+            --arg v1 "$STATUS" \
+            --arg v2 "$SHORT_SHA $COMMIT_MSG" \
+            --arg v3 "$RUN_URL" \
+            '{"value1":$v1,"value2":$v2,"value3":$v3}')
+
           curl -sSf --max-time 10 -X POST "$IFTTT_PROD_NOTIFY" \
             -H 'Content-Type: application/json' \
-            -d "{
-              \"value1\": \"${STATUS}\",
-              \"value2\": \"${SHORT_SHA} ${COMMIT_MSG}\",
-              \"value3\": \"${RUN_URL}\"
-            }" || echo "::warning::IFTTT notification failed"
+            -d "$PAYLOAD" || echo "::warning::IFTTT notification failed"

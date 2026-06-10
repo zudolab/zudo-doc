@@ -15,16 +15,31 @@ export interface ServerOptions {
 /** Interval (ms) at which the file index is refreshed to pick up new/renamed files */
 const FILE_INDEX_REFRESH_MS = 10_000;
 
-/** Set CORS headers for local dev */
-function setCorsHeaders(res: ServerResponse): void {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+/**
+ * Set CORS headers for local dev, scoped to localhost origins only.
+ *
+ * The zfb dev plugin proxies `/doc-history/*` requests server-side, so
+ * same-origin fetch from the browser does not need CORS at all. The
+ * headers are kept for direct API access from browser devtools or
+ * alternative local tooling, but the wildcard is replaced with an
+ * origin-reflected allow only when the request comes from localhost.
+ * Non-localhost origins get no CORS header, leaving the browser's
+ * default same-origin policy in place.
+ */
+function setCorsHeaders(res: ServerResponse, origin?: string): void {
+  const isLocalhost =
+    origin !== undefined &&
+    /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+  if (isLocalhost) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  }
 }
 
 /** Send a JSON response */
-function sendJson(res: ServerResponse, status: number, data: unknown): void {
-  setCorsHeaders(res);
+function sendJson(res: ServerResponse, status: number, data: unknown, origin?: string): void {
+  setCorsHeaders(res, origin);
   res.writeHead(status, { "Content-Type": "application/json" });
   res.end(JSON.stringify(data));
 }
@@ -50,15 +65,16 @@ async function handleDocHistory(
   fileIndex: Map<string, { filePath: string; slug: string }>,
   maxEntries: number,
   res: ServerResponse,
+  origin?: string,
 ): Promise<void> {
   const found = fileIndex.get(requestedSlug);
   if (found) {
     const history = await getDocHistoryAsync(found.filePath, found.slug, maxEntries);
-    sendJson(res, 200, history);
+    sendJson(res, 200, history, origin);
     return;
   }
 
-  sendJson(res, 404, { error: `No doc found for slug: ${requestedSlug}` });
+  sendJson(res, 404, { error: `No doc found for slug: ${requestedSlug}` }, origin);
 }
 
 /** Create and start the HTTP server */
@@ -79,10 +95,11 @@ export function startServer(options: ServerOptions): void {
 
   const server = createServer((req: IncomingMessage, res: ServerResponse) => {
     const url = req.url ?? "";
+    const origin = req.headers.origin;
 
     // Handle CORS preflight
     if (req.method === "OPTIONS") {
-      setCorsHeaders(res);
+      setCorsHeaders(res, origin);
       res.writeHead(204);
       res.end();
       return;
@@ -94,7 +111,7 @@ export function startServer(options: ServerOptions): void {
 
     // Health check
     if (pathname === "/health") {
-      sendJson(res, 200, { status: "ok" });
+      sendJson(res, 200, { status: "ok" }, origin);
       return;
     }
 
@@ -108,18 +125,18 @@ export function startServer(options: ServerOptions): void {
       try {
         requestedSlug = decodeURIComponent(match[1] ?? "");
       } catch {
-        sendJson(res, 400, { error: "Malformed percent-encoding in slug" });
+        sendJson(res, 400, { error: "Malformed percent-encoding in slug" }, origin);
         return;
       }
-      handleDocHistory(requestedSlug, fileIndex, maxEntries, res).catch((err) => {
+      handleDocHistory(requestedSlug, fileIndex, maxEntries, res, origin).catch((err) => {
         sendJson(res, 500, {
           error: err instanceof Error ? err.message : "Internal error",
-        });
+        }, origin);
       });
       return;
     }
 
-    sendJson(res, 404, { error: "Not found" });
+    sendJson(res, 404, { error: "Not found" }, origin);
   });
 
   server.listen(port, host, () => {

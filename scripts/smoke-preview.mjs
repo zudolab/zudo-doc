@@ -101,18 +101,17 @@ function ssrJsonResponse(_body, response) {
 }
 
 function cleanup(child) {
+  // Kill the entire process group spawned with detached:true so that
+  // wrangler and its workerd child are both terminated. Negative PID
+  // targets the process group. Fall back to child.kill() if the group
+  // kill fails (e.g. process already exited).
   try {
-    child.kill("SIGTERM");
-  } catch {}
-  // wrangler spawns workerd as a sub-process tree; SIGTERM on the
-  // parent should propagate, but a stuck workerd can leave the port
-  // bound. Best-effort sweep so the next b4push step does not collide.
-  try {
-    spawn("pkill", ["-f", "wrangler pages dev"], {
-      stdio: "ignore",
-    }).unref();
-    spawn("pkill", ["-f", "workerd"], { stdio: "ignore" }).unref();
-  } catch {}
+    process.kill(-child.pid, "SIGTERM");
+  } catch {
+    try {
+      child.kill("SIGTERM");
+    } catch {}
+  }
 }
 
 async function waitForReady(child) {
@@ -170,6 +169,9 @@ async function main() {
       // for the migration window; bypass the gate so the smoke runs.
       env: { ...process.env, ZFB_SKIP_WRANGLER_VERSION_CHECK: "1" },
       stdio: ["ignore", "pipe", "pipe"],
+      // detached:true creates a new process group so cleanup() can kill
+      // the entire tree (wrangler + workerd) via process.kill(-pid).
+      detached: true,
     },
   );
 
