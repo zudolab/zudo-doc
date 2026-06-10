@@ -532,6 +532,7 @@ export default async function AiChatHandler(): Promise<Response> {
         );
       }
       const candidates = body.history as unknown[];
+      const sanitizedHistory: ChatMessage[] = [];
       for (const entry of candidates) {
         if (!isValidMessage(entry)) {
           audit(body.message, { blocked: true, blockReason: "invalid_input" });
@@ -557,8 +558,12 @@ export default async function AiChatHandler(): Promise<Response> {
             400,
           );
         }
+        // Rebuild each entry from the validated fields only — a bare cast
+        // would smuggle unknown extra fields (e.g. cache_control) verbatim
+        // into the Anthropic API request body.
+        sanitizedHistory.push({ role: entry.role, content: entry.content });
       }
-      history = candidates as ChatMessage[];
+      history = sanitizedHistory;
     }
 
     const response = await callClaude(body.message, history, env);

@@ -67,6 +67,42 @@ function renderInline(text: string): string {
   return processed.replace(/%%CODE_(\d+)%%/g, (_match, idx) => codeSpans[parseInt(idx, 10)] ?? "");
 }
 
+/**
+ * Render a block containing list lines without dropping interleaved prose
+ * lines (e.g. "Here are the steps:\n- a\n- b" keeps the lead-in as a <p>).
+ */
+function renderListBlock(block: string, marker: RegExp, tag: "ul" | "ol"): string {
+  const parts: string[] = [];
+  let proseLines: string[] = [];
+  let listItems: string[] = [];
+  const flushProse = () => {
+    if (proseLines.length > 0) {
+      parts.push(`<p>${proseLines.map(renderInline).join("<br>")}</p>`);
+      proseLines = [];
+    }
+  };
+  const flushList = () => {
+    if (listItems.length > 0) {
+      parts.push(`<${tag}>${listItems.join("")}</${tag}>`);
+      listItems = [];
+    }
+  };
+  for (const rawLine of block.split("\n")) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    if (marker.test(line)) {
+      flushProse();
+      listItems.push(`<li>${renderInline(line.replace(marker, ""))}</li>`);
+    } else {
+      flushList();
+      proseLines.push(line);
+    }
+  }
+  flushProse();
+  flushList();
+  return parts.join("");
+}
+
 export function renderMarkdown(src: string): string {
   // Escape HTML first — all subsequent replacements only add safe tags
   const escaped = escapeHtml(src);
@@ -96,22 +132,12 @@ export function renderMarkdown(src: string): string {
 
       // Unordered list (lines starting with - or *)
       if (/^[-*] /m.test(trimmed)) {
-        const items = trimmed
-          .split("\n")
-          .filter((l) => /^[-*] /.test(l.trim()))
-          .map((l) => `<li>${renderInline(l.trim().replace(/^[-*] /, ""))}</li>`)
-          .join("");
-        return `<ul>${items}</ul>`;
+        return renderListBlock(trimmed, /^[-*] /, "ul");
       }
 
       // Ordered list (lines starting with 1. 2. etc.)
       if (/^\d+\. /m.test(trimmed)) {
-        const items = trimmed
-          .split("\n")
-          .filter((l) => /^\d+\. /.test(l.trim()))
-          .map((l) => `<li>${renderInline(l.trim().replace(/^\d+\. /, ""))}</li>`)
-          .join("");
-        return `<ol>${items}</ol>`;
+        return renderListBlock(trimmed, /^\d+\. /, "ol");
       }
 
       // Heading (# to ###)

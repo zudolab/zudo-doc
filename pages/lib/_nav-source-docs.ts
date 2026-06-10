@@ -124,7 +124,11 @@ export function resolveNavSource(
   //     pages in sync. Otherwise (default locale, or the version not configured
   //     for this locale) fall back to the version's EN base collection.
   if (currentVersion) {
-    const versionConfig = settings.versions?.find((v) => v.slug === currentVersion);
+    // `versions` is `VersionConfig[] | false` — `false?.find` would throw
+    // (optional chaining only short-circuits on null/undefined).
+    const versionConfig = Array.isArray(settings.versions)
+      ? settings.versions.find((v) => v.slug === currentVersion)
+      : undefined;
     const localeDir = versionConfig?.locales?.[lang]?.dir;
     if (lang !== defaultLocale && localeDir) {
       return resolveVersionedLocaleSource(

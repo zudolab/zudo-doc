@@ -31,6 +31,16 @@ describe("pathForMatch", () => {
   it("handles an empty path safely", () => {
     expect(pathForMatch("", "ja", "en")).toBe("");
   });
+
+  it("does not strip a leading segment that merely starts with the locale code", () => {
+    expect(pathForMatch("/ja-tutorial/docs/intro", "ja", "en")).toBe(
+      "/ja-tutorial/docs/intro",
+    );
+  });
+
+  it("strips a bare locale-root path to empty", () => {
+    expect(pathForMatch("/ja", "ja", "en")).toBe("");
+  });
 });
 
 describe("computeActiveNavPath", () => {
@@ -70,6 +80,15 @@ describe("computeActiveNavPath", () => {
 
   it("handles items with no children at all", () => {
     expect(computeActiveNavPath(nav, "/blog/post-1/")).toBe("/blog/");
+  });
+
+  it("requires a segment boundary for slashless nav paths", () => {
+    const slashless: NavItemLike[] = [{ path: "/docs/guides" }];
+    expect(computeActiveNavPath(slashless, "/docs/guideship")).toBeUndefined();
+    expect(computeActiveNavPath(slashless, "/docs/guides")).toBe("/docs/guides");
+    expect(computeActiveNavPath(slashless, "/docs/guides/advanced")).toBe(
+      "/docs/guides",
+    );
   });
 });
 

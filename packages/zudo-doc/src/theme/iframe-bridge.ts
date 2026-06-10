@@ -74,10 +74,10 @@ export function sendApplyCssVars(
     type: "apply-css-vars",
     vars,
   };
-  // targetOrigin "*" because the iframe is same-origin (sandboxed via srcdoc
-  // or a sibling URL). If a future caller embeds a cross-origin preview they
-  // can pass a stricter origin via a wrapping helper.
-  win.postMessage(message, "*");
+  // The preview iframe is same-origin by design (srcdoc inheriting the host
+  // origin, or a sibling URL), so pin targetOrigin to our own origin instead
+  // of "*" — a hijacked/cross-origin frame then never receives the payload.
+  win.postMessage(message, window.location.origin);
 }
 
 /** Send `clear-css-vars` to the iframe so it removes inline overrides. */
@@ -92,7 +92,7 @@ export function sendClearCssVars(
     type: "clear-css-vars",
     names,
   };
-  win.postMessage(message, "*");
+  win.postMessage(message, window.location.origin);
 }
 
 // --- Receiver (iframe-side) -------------------------------------------------
@@ -104,6 +104,8 @@ export function sendClearCssVars(
  */
 export function installIframeReceiver(target: Window = window): () => void {
   function handler(event: MessageEvent): void {
+    // Only the same-origin host page may drive CSS-var mutations.
+    if (event.origin !== target.location.origin) return;
     const data = event.data;
     if (!isBridgeMessage(data)) return;
     if (data.type === "apply-css-vars") {
@@ -126,7 +128,7 @@ export function installIframeReceiver(target: Window = window): () => void {
   const parent = target.parent;
   if (parent && parent !== target) {
     const ready: ReadyMessage = { source: BRIDGE_SOURCE, type: "ready" };
-    parent.postMessage(ready, "*");
+    parent.postMessage(ready, target.location.origin);
   }
   return () => target.removeEventListener("message", handler);
 }
@@ -140,6 +142,7 @@ export function onIframeReady(
   callback: () => void,
 ): () => void {
   function handler(event: MessageEvent): void {
+    if (event.origin !== window.location.origin) return;
     if (expectedSource && event.source !== expectedSource) return;
     if (!isBridgeMessage(event.data)) return;
     if (event.data.type === "ready") callback();

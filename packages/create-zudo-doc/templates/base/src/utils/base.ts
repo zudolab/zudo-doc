@@ -37,8 +37,10 @@ export function withBase(path: string): string {
 /** Strip the base prefix from a URL pathname. */
 export function stripBase(path: string): string {
   if (normalizedBase === "") return path;
-  return path.startsWith(normalizedBase)
-    ? path.slice(normalizedBase.length) || "/"
+  // Require a segment boundary so base "/app" doesn't strip "/application/...".
+  if (path === normalizedBase) return "/";
+  return path.startsWith(`${normalizedBase}/`)
+    ? path.slice(normalizedBase.length)
     : path;
 }
 

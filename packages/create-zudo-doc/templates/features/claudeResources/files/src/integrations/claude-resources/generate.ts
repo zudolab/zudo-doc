@@ -64,7 +64,9 @@ function parseFrontmatter(content: string) {
 }
 
 function escapeTitle(s: string): string {
-  return s.replace(/"/g, '\\"');
+  // Backslashes must be escaped first — the value is embedded in
+  // double-quoted YAML frontmatter where `\d` or `C:\path` is invalid.
+  return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 
 function listFiles(dir: string): string[] {

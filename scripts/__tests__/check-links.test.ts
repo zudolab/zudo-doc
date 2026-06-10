@@ -82,7 +82,7 @@ describe("check-links", () => {
       const file = join(tmpDir, "settings.ts");
       writeFileSync(
         file,
-        `export const settings = {\n  docsDir: "src/content/docs",\n  docsJaDir: "src/content/docs-ja",\n};`,
+        `export const settings = {\n  docsDir: "src/content/docs",\n  locales: {\n    ja: { label: "JA", dir: "src/content/docs-ja" },\n  },\n};`,
       );
       const result = await parseContentDirs(file);
       expect(result.docsDir).toBe("src/content/docs");
@@ -101,12 +101,26 @@ describe("check-links", () => {
       const file = join(tmpDir, "settings.ts");
       writeFileSync(
         file,
-        `export const settings = {\n  docsDir: "src/content/docs",\n  docsJaDir: "src/content/docs-ja",\n  docsZhDir: "src/content/docs-zh",\n};`,
+        `export const settings = {\n  docsDir: "src/content/docs",\n  locales: {\n    ja: { label: "JA", dir: "src/content/docs-ja" },\n    zh: { label: "ZH", dir: "src/content/docs-zh" },\n  },\n};`,
       );
       const result = await parseContentDirs(file);
       expect(result.localeDirs).toEqual([
         "src/content/docs-ja",
         "src/content/docs-zh",
+      ]);
+    });
+
+    it("extracts per-version locale dirs and dedupes repeats", async () => {
+      const file = join(tmpDir, "settings.ts");
+      writeFileSync(
+        file,
+        `export const settings = {\n  docsDir: "src/content/docs",\n  locales: {\n    ja: { label: "JA", dir: "src/content/docs-ja" },\n  },\n  versions: [\n    {\n      slug: "1.0",\n      docsDir: "src/content/docs-v1",\n      locales: { ja: { dir: "src/content/docs-v1-ja" } },\n    },\n  ],\n};`,
+      );
+      const result = await parseContentDirs(file);
+      expect(result.docsDir).toBe("src/content/docs");
+      expect(result.localeDirs).toEqual([
+        "src/content/docs-ja",
+        "src/content/docs-v1-ja",
       ]);
     });
   });

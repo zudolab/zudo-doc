@@ -35,12 +35,17 @@ export async function parseContentDirs(settingsPath) {
   const docsDirMatch = content.match(/docsDir:\s*["']([^"']*)["']/);
   const docsDir = docsDirMatch ? docsDirMatch[1] : "src/content/docs";
 
-  // Extract locale content dirs (e.g. docsJaDir)
+  // Extract locale content dirs from `locales: { ja: { dir: "..." } }` entries
+  // (top-level and per-version). The legacy `docsJaDir:`-style keys this used
+  // to match were removed from settings, which silently emptied localeDirs.
   const localeDirs = [];
-  const localeRegex = /docs[A-Z][a-z]+Dir:\s*["']([^"']*)["']/g;
+  const localeRegex = /\bdir:\s*["']([^"']*)["']/g;
   let localeMatch;
   while ((localeMatch = localeRegex.exec(content)) !== null) {
-    localeDirs.push(localeMatch[1]);
+    const dir = localeMatch[1];
+    if (dir && dir !== docsDir && !localeDirs.includes(dir)) {
+      localeDirs.push(dir);
+    }
   }
 
   return { docsDir, localeDirs };
