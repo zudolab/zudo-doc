@@ -57,7 +57,7 @@ export function absoluteUrl(pageUrl: string): string | undefined {
 }
 
 /** Build a docs URL for the given slug and lang. */
-export function docsUrl(slug: string, lang: Locale = defaultLocale): string {
+export function docsUrl(slug: string, lang: Locale | string = defaultLocale): string {
   const path = lang === defaultLocale ? `/docs/${slug}` : `/${lang}/docs/${slug}`;
   return withBase(path);
 }

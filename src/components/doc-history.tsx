@@ -2,7 +2,6 @@
 
 // preact/compat shim — see src/components/ai-chat-modal.tsx for rationale.
 import { useState, useEffect, useCallback, useMemo, useRef } from "preact/compat";
-import { diffLines } from "diff";
 import type { DocHistoryData, DocHistoryEntry } from "@/types/doc-history";
 import { SmartBreak } from "@/utils/smart-break";
 import { History, Close, ArrowLeft } from "@takazudo/zudo-doc/icons";
@@ -10,6 +9,7 @@ import { History, Close, ArrowLeft } from "@takazudo/zudo-doc/icons";
 // pull lifecycle event names from the v2 transitions module rather
 // than hard-coding `astro:*` literals.
 import { AFTER_NAVIGATE_EVENT } from "@takazudo/zudo-doc/transitions";
+import { useModalDialog } from "@/hooks/use-modal-dialog";
 
 interface DocHistoryProps {
   slug: string;
@@ -57,7 +57,7 @@ interface DiffRow {
 }
 
 function buildSideBySideRows(
-  changes: ReturnType<typeof diffLines>,
+  changes: DiffChanges,
 ): DiffRow[] {
   const rows: DiffRow[] = [];
   let leftNum = 0;
@@ -133,16 +133,19 @@ function buildSideBySideRows(
 
 // Hashes — not full file content — are the cache key so the keys stay
 // short regardless of doc size. Map insertion order is the LRU.
-type DiffChanges = ReturnType<typeof diffLines>;
+// The diff module is lazy-imported (only loaded when the user opens the Compare
+// view) to avoid eagerly bundling it into the per-page islands chunk.
+import type { Change } from "diff";
+type DiffChanges = Change[];
 const DIFF_CACHE_LIMIT = 32;
 const diffCache = new Map<string, DiffChanges>();
 
-function getCachedDiff(
+async function getCachedDiff(
   olderHash: string,
   newerHash: string,
   olderContent: string,
   newerContent: string,
-): DiffChanges {
+): Promise<DiffChanges> {
   const key = `${olderHash}::${newerHash}`;
   const hit = diffCache.get(key);
   if (hit) {
@@ -151,6 +154,9 @@ function getCachedDiff(
     diffCache.set(key, hit);
     return hit;
   }
+  // Lazy-load diff — only needed after History → Compare. This keeps the
+  // module out of the eager islands bundle.
+  const { diffLines } = await import("diff");
   const changes = diffLines(olderContent, newerContent);
   diffCache.set(key, changes);
   if (diffCache.size > DIFF_CACHE_LIMIT) {
@@ -169,17 +175,25 @@ function DiffViewer({
   onBack: () => void;
   showBackButton: boolean;
 }) {
-  const changes = useMemo(
-    () =>
-      getCachedDiff(
-        selection.older.hash,
-        selection.newer.hash,
-        selection.older.content,
-        selection.newer.content,
-      ),
-    [selection.older.hash, selection.newer.hash],
+  const [changes, setChanges] = useState<DiffChanges | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCachedDiff(
+      selection.older.hash,
+      selection.newer.hash,
+      selection.older.content,
+      selection.newer.content,
+    ).then((result) => {
+      if (!cancelled) setChanges(result);
+    });
+    return () => { cancelled = true; };
+  }, [selection.older.hash, selection.newer.hash]);
+
+  const rows = useMemo(
+    () => (changes ? buildSideBySideRows(changes) : []),
+    [changes],
   );
-  const rows = useMemo(() => buildSideBySideRows(changes), [changes]);
 
   return (
     <div className="flex flex-col h-full">
@@ -205,8 +219,9 @@ function DiffViewer({
         </div>
       </div>
 
-      {/* Side-by-side diff */}
-      <div className="flex-1 overflow-auto">
+      {/* Side-by-side diff — shows a spinner while the diff module lazy-loads */}
+      {!changes && <Spinner />}
+      <div className={`flex-1 overflow-auto${!changes ? " hidden" : ""}`}>
         <table className="w-full border-collapse" style={{ tableLayout: "fixed" }}>
           <colgroup>
             <col style={{ width: "2.5rem" }} />
@@ -493,38 +508,16 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [view, handleClose]);
 
-  // Close on View Transition navigation
-  useEffect(() => {
-    document.addEventListener(AFTER_NAVIGATE_EVENT, handleClose);
-    return () => document.removeEventListener(AFTER_NAVIGATE_EVENT, handleClose);
-  }, [handleClose]);
-
   const isOpen = view !== "closed";
   const hasDiff = view === "diff" && diffSelection;
 
-  const dialogRef = useRef<HTMLDialogElement>(null);
-
-  // Sync dialog open/close with React state
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (isOpen && !dialog.open) {
-      dialog.showModal();
-    } else if (!isOpen && dialog.open) {
-      dialog.close();
-    }
-  }, [isOpen]);
-
-  // Close React state when dialog is closed natively (Escape key)
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    function onClose() {
-      if (isOpen) handleClose();
-    }
-    dialog.addEventListener("close", onClose);
-    return () => dialog.removeEventListener("close", onClose);
-  }, [isOpen, handleClose]);
+  // Shared dialog lifecycle: showModal/close sync, native-close callback,
+  // and navigation-close — delegated to useModalDialog.
+  const { dialogRef } = useModalDialog({
+    isOpen,
+    onClose: handleClose,
+    navigateEvent: AFTER_NAVIGATE_EVENT,
+  });
 
   return (
     <>

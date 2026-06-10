@@ -27,6 +27,7 @@
 
 import { settings } from "@/config/settings";
 import type { VersionConfig } from "@/config/settings";
+import { type Locale } from "@/config/i18n";
 import { versionedDocsUrl } from "@/utils/base";
 import type { JSX } from "preact";
 import { resolveVersionedLocaleSource } from "../../../../lib/_nav-source-docs";
@@ -95,7 +96,7 @@ export function paths(): Array<{
       const source = resolveVersionedLocaleSource(
         version.slug,
         version.docsDir,
-        locale,
+        locale as Locale,
         localeDir,
         { applyDefaultLocaleOnlyFilter: true, keepUnlisted: true },
       );
@@ -104,11 +105,11 @@ export function paths(): Array<{
       // (prev/next, breadcrumb crumbs, auto-index cards) is produced by this
       // single function bound to the version slug + locale, resolved against
       // this route's own tree (#1916).
-      const urlFor = (s: string): string => versionedDocsUrl(s, version.slug, locale);
+      const urlFor = (s: string): string => versionedDocsUrl(s, version.slug, locale as Locale);
 
       for (const item of buildDocRouteEntries({
         source,
-        locale,
+        locale: locale as Locale,
         routeSig: `v-locale-docs;${version.slug};${locale}`,
         urlFor,
       })) {
@@ -143,7 +144,7 @@ type PageArgs = DocPageProps & { params: { version: string; locale: string; slug
 
 export default function VersionedLocaleDocsPage(props: PageArgs): JSX.Element {
   return renderDocPage(props, {
-    locale: props.params.locale,
+    locale: props.params.locale as Locale,
     version: props.version,
     isFallback: props.isFallback,
   });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { makeSemaphore } from "../pre-build.js";
+import { makeSemaphore } from "@takazudo/zudo-doc-history-server/concurrency";
 
 describe("makeSemaphore", () => {
   it("allows up to concurrency tasks to run simultaneously", async () => {

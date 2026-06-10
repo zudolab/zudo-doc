@@ -3,118 +3,30 @@
  * parses frontmatter via `gray-matter`, and emits sorted
  * {@link LlmsDocEntry} records ready for the generator stage.
  *
- * Lives in the framework layer (no `@/...` imports) so any consumer
- * project — Astro today, zfb tomorrow, fixture-driven unit tests in
- * between — can drive the emitter without dragging in the legacy
- * `src/utils/content-files.ts` module.
+ * The directory walk / frontmatter / URL helpers live in the shared
+ * `md-utils` module (one implementation for search-index and llms-txt,
+ * zudo-doc#2024); they are re-exported here so the integration's public
+ * surface is unchanged.
  */
 
-import { readFileSync, readdirSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { resolve } from "node:path";
 
-import matter from "gray-matter";
+import {
+  collectMdFiles,
+  isExcluded,
+  parseMarkdownFile,
+  slugToUrl,
+  stripMarkdown,
+} from "../../md-utils/index.js";
+import { stripImportsAndJsx } from "./strip.js";
+import type { LlmsDocEntry, LlmsTxtLoadOptions } from "./types.js";
 
-import { stripImportsAndJsx, stripMarkdown } from "./strip.js";
-import type {
-  LlmsDocEntry,
-  LlmsTxtFrontmatter,
-  LlmsTxtLoadOptions,
-} from "./types.js";
-
-/**
- * Walk `dir` recursively and return every `*.md` / `*.mdx` file's
- * absolute path together with its docs-relative slug. Files (or whole
- * directories) whose name starts with `_` are skipped, matching the
- * Content Collections convention.
- */
-export function collectMdFiles(
-  dir: string,
-): Array<{ filePath: string; slug: string }> {
-  const results: Array<{ filePath: string; slug: string }> = [];
-
-  function walk(currentDir: string, baseDir: string): void {
-    let entries;
-    try {
-      entries = readdirSync(currentDir, { withFileTypes: true });
-    } catch {
-      return;
-    }
-    for (const entry of entries) {
-      const fullPath = join(currentDir, entry.name);
-      if (entry.isDirectory()) {
-        // Skip `_`-prefixed dirs to match the Content Collections convention
-        // (and zfb's routing): docs under them are not built as pages, so
-        // emitting them here would yield entries whose links 404.
-        if (entry.name.startsWith("_")) continue;
-        walk(fullPath, baseDir);
-      } else if (/\.mdx?$/.test(entry.name) && !entry.name.startsWith("_")) {
-        // Canonical route slug (zudo-doc#1891): nested `x/index` → `x` AND
-        // bare root `index` → "" so the llms-txt entry links to `/docs/` (the
-        // built page) instead of `/docs/index/` (which is never built). The
-        // host route, sitemap, and search-index all canonicalize the same way;
-        // see src/utils/slug.ts `toRouteSlug` in the consuming repo (one rule).
-        const rel = relative(baseDir, fullPath)
-          .replace(/\.mdx?$/, "")
-          .replace(/\/index$/, "")
-          .replace(/^index$/, "");
-        results.push({ filePath: fullPath, slug: rel });
-      }
-    }
-  }
-
-  walk(dir, dir);
-  return results;
-}
-
-/**
- * Compute a docs URL for a given slug + locale. Mirrors the legacy
- * `slugToUrl(slug, locale, true)` call site exactly: when `siteUrl` is
- * empty, the URL is path-only; when `siteUrl` is set, a fully qualified
- * URL is produced.
- */
-export function slugToUrl(
-  slug: string,
-  locale: string | null,
-  base: string,
-  siteUrl?: string,
-): string {
-  const trimmedBase = base.replace(/\/$/, "");
-  const path = locale
-    ? `${trimmedBase}/${locale}/docs/${slug}`
-    : `${trimmedBase}/docs/${slug}`;
-  if (siteUrl) {
-    return `${siteUrl.replace(/\/$/, "")}${path}`;
-  }
-  return path;
-}
-
-/** Whether a given doc should be excluded from the llms.txt index.
- *  `category_no_page` index files are metadata-only with no built route, so
- *  they are excluded alongside search_exclude / draft / unlisted. */
-export function isExcluded(data: LlmsTxtFrontmatter): boolean {
-  return Boolean(
-    data.search_exclude ||
-      data.draft ||
-      data.unlisted ||
-      data.category_no_page,
-  );
-}
-
-/**
- * Parse a markdown file into frontmatter + body. Returns `null` when
- * the file is unreadable so callers can simply skip it.
- */
-export function parseMarkdownFile(
-  filePath: string,
-): { data: LlmsTxtFrontmatter; content: string } | null {
-  try {
-    const raw = readFileSync(filePath, "utf-8");
-    const parsed = matter(raw);
-    return { data: parsed.data as LlmsTxtFrontmatter, content: parsed.content };
-  } catch {
-    return null;
-  }
-}
+export {
+  collectMdFiles,
+  isExcluded,
+  parseMarkdownFile,
+  slugToUrl,
+} from "../../md-utils/index.js";
 
 /**
  * Build the sorted {@link LlmsDocEntry} list for a single content root.
@@ -130,12 +42,17 @@ export function loadDocEntries(options: LlmsTxtLoadOptions): LlmsDocEntry[] {
   const files = collectMdFiles(absDir);
   const entries: LlmsDocEntry[] = [];
 
-  for (const { filePath, slug } of files) {
+  for (const { filePath, slug: fileSlug } of files) {
     const parsed = parseMarkdownFile(filePath);
     if (!parsed) continue;
     const { data, content } = parsed;
 
     if (isExcluded(data)) continue;
+
+    // Honor the frontmatter `slug:` override the same way the route layer
+    // does (`data.slug ?? toRouteSlug(id)`) — otherwise the llms.txt entry
+    // links at the filesystem path, which 404s for overridden pages.
+    const slug = data.slug ?? fileSlug;
 
     let description = data.description ?? "";
     if (!description) {

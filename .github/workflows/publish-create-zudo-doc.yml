@@ -78,8 +78,9 @@ jobs:
       # bad tags fail fast with a clear message.
       - name: '[Safeguard 1/4] Reject non-v* release tags'
         shell: bash
+        env:
+          TAG: ${{ github.event.release.tag_name || github.ref_name }}
         run: |
-          TAG="${{ github.event.release.tag_name || github.ref_name }}"
           echo "Release tag: $TAG"
           if [[ "$TAG" != v* ]]; then
             echo "::error::Release tag '$TAG' does not start with 'v'."

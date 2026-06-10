@@ -80,7 +80,7 @@ describe("enumerateTagsRoutes", () => {
     expect(urls.some((u) => u.endsWith("/docs/tags/"))).toBe(true);
   });
 
-  it("emits per-tag URLs for each tag in the EN collection", () => {
+  it("emits per-tag URLs for each tag in the EN collection (URL-encoded)", () => {
     mockGetCollection.mockImplementation((name: string) => {
       if (name === "docs") {
         return [
@@ -92,8 +92,12 @@ describe("enumerateTagsRoutes", () => {
     });
 
     const urls = enumerateTagsRoutes("en");
-    expect(urls.some((u) => u.endsWith("/docs/tags/type:guide/"))).toBe(true);
-    expect(urls.some((u) => u.endsWith("/docs/tags/type:reference/"))).toBe(true);
+    // Tag segments are emitted percent-encoded (sitemap-safe URLs); the
+    // built output dir keeps the raw tag name and servers decode on lookup.
+    expect(urls.some((u) => u.endsWith("/docs/tags/type%3Aguide/"))).toBe(true);
+    expect(urls.some((u) => u.endsWith("/docs/tags/type%3Areference/"))).toBe(true);
+    // No raw (unencoded) variant alongside the encoded one.
+    expect(urls.some((u) => u.includes("/docs/tags/type:"))).toBe(false);
   });
 
   it("does not emit duplicate tag URLs", () => {
@@ -139,7 +143,7 @@ describe("enumerateTagsRoutes", () => {
     });
 
     const urls = enumerateTagsRoutes("ja");
-    expect(urls.some((u) => u.endsWith("/ja/docs/tags/type:guide/"))).toBe(true);
+    expect(urls.some((u) => u.endsWith("/ja/docs/tags/type%3Aguide/"))).toBe(true);
   });
 });
 

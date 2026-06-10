@@ -114,6 +114,7 @@ export const SEARCH_WIDGET_SCRIPT = /* javascript */ `(function () {
       this._countNarrow = null;
       this._entries = null;
       this._loading = false;
+      this._indexUnavailable = false;
       this._debounce = null;
       this._currentQuery = "";
       this._allResults = [];
@@ -255,7 +256,10 @@ export const SEARCH_WIDGET_SCRIPT = /* javascript */ `(function () {
         })
         .catch(function() {
           self._loading = false;
-          // Index unavailable — silently degrade
+          self._indexUnavailable = true;
+          if (self._results) {
+            self._results.innerHTML = "<p class=\\"text-small text-muted\\">Search unavailable</p>";
+          }
         });
     }
 

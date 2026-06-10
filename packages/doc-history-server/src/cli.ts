@@ -1,43 +1,10 @@
 #!/usr/bin/env node
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { cpus } from "node:os";
 import { parseCliArgs } from "./args.js";
 import { collectContentFiles, getDocHistoryAsync } from "./git-history.js";
 import { getContentDirEntries } from "./shared.js";
-
-/**
- * Tiny in-file semaphore for bounded parallelism — avoids a p-limit dependency.
- * Limits concurrent async tasks to `concurrency` at a time.
- */
-function makeSemaphore(concurrency: number) {
-  let running = 0;
-  const queue: Array<() => void> = [];
-
-  function next(): void {
-    if (queue.length > 0 && running < concurrency) {
-      // Do not increment running here — the dequeued tryRun call handles it.
-      queue.shift()!();
-    }
-  }
-
-  return function acquire(): Promise<() => void> {
-    return new Promise((resolve) => {
-      function tryRun() {
-        if (running < concurrency) {
-          running++;
-          resolve(() => {
-            running--;
-            next();
-          });
-        } else {
-          queue.push(tryRun);
-        }
-      }
-      tryRun();
-    });
-  };
-}
+import { makeSemaphore, defaultGitConcurrency } from "./concurrency.js";
 
 async function generate(options: {
   contentDir: string;
@@ -59,7 +26,7 @@ async function generate(options: {
   // processes. The async variant is load-bearing here: the prior sync
   // getDocHistory blocked the event loop on execFileSync, so this semaphore's
   // concurrency cap was a no-op and every file ran serially (issue #1986).
-  const concurrency = Math.min(8, Math.max(2, cpus().length));
+  const concurrency = defaultGitConcurrency();
   const acquire = makeSemaphore(concurrency);
 
   const tasks: Promise<void>[] = [];

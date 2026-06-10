@@ -34,16 +34,16 @@ export const settings = {
     lightScheme: "Default Light",
     darkScheme: "Default Dark",
     respectPrefersColorScheme: true,
-  } as ColorModeConfig | false,
+  } satisfies ColorModeConfig as ColorModeConfig | false,
   siteName: "zudo-doc",
   siteDescription: "Documentation base framework built with zfb, MDX, and Tailwind CSS v4." as string,
   base: "/",
   trailingSlash: true as boolean,
   docsDir: "src/content/docs",
-  defaultLocale: "en" as string,
+  defaultLocale: "en" as const,
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },
-  } as Record<string, LocaleConfig>,
+  } satisfies Record<string, LocaleConfig>,
   mermaid: true,
   noindex: false as boolean, // When true, adds noindex/nofollow to all pages (for internal docs)
   editUrl: false as string | false,
@@ -185,7 +185,7 @@ export const settings = {
       docsDir: "src/content/docs-v1",
       banner: "unmaintained",
     },
-  ] as VersionConfig[] | false,
+  ] satisfies VersionConfig[] as VersionConfig[] | false,
   claudeResources: {
     claudeDir: ".claude",
   } as { claudeDir: string; projectRoot?: string } | false,
@@ -256,7 +256,7 @@ export const settings = {
     { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude" },
     { label: "Changelog", labelKey: "nav.changelog", path: "/docs/changelog", categoryMatch: "changelog" },
     { label: "Develop", labelKey: "nav.develop", path: "/docs/develop", categoryMatch: "develop" },
-  ] as HeaderNavItem[],
+  ] satisfies HeaderNavItem[] as HeaderNavItem[],
   headerRightItems: [
     { type: "component", component: "version-switcher" },
     { type: "trigger", trigger: "design-token-panel" },
@@ -265,5 +265,5 @@ export const settings = {
     { type: "component", component: "theme-toggle" },
     { type: "component", component: "search" },
     { type: "component", component: "language-switcher" },
-  ] as HeaderRightItem[],
+  ] satisfies HeaderRightItem[] as HeaderRightItem[],
 };
