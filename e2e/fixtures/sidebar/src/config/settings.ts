@@ -11,8 +11,8 @@ export const settings = {
   siteDescription: "Test fixture for sidebar E2E tests" as string,
   base: "/",
   docsDir: "src/content/docs",
-  defaultLocale: "en",
-  locales: {} as Record<string, LocaleConfig>,
+  defaultLocale: "en" as const,
+  locales: {} satisfies Record<string, LocaleConfig>,
   mermaid: false,
   noindex: true as boolean,
   editUrl: false as string | false,
@@ -34,5 +34,5 @@ export const settings = {
       categoryMatch: "getting-started",
     },
     { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
-  ] as HeaderNavItem[],
+  ] satisfies HeaderNavItem[] as HeaderNavItem[],
 };

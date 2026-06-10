@@ -9,7 +9,7 @@
 // default-vs-locale href shapes live here.
 
 import { settings } from "@/config/settings";
-import { defaultLocale, t } from "@/config/i18n";
+import { defaultLocale, t, type Locale } from "@/config/i18n";
 import { withBase } from "@/utils/base";
 import { DocLayoutWithDefaults } from "@takazudo/zudo-doc/doclayout";
 import { VersionsPageContent } from "@takazudo/zudo-doc/nav-indexing";
@@ -65,7 +65,7 @@ export function VersionsPageView({ locale }: { locale: string }): JSX.Element {
       noindex={settings.noindex}
       hideSidebar={true}
       hideToc={true}
-      headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase(`${prefix}/docs/versions`)} />}
+      headerOverride={<HeaderWithDefaults lang={locale as Locale} currentPath={withBase(`${prefix}/docs/versions`)} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
       bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
     >

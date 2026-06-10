@@ -29,6 +29,7 @@
 // file owns only the route's nav source and the param/prop shapes.
 
 import { settings } from "@/config/settings";
+import { getLocaleConfig, type Locale } from "@/config/i18n";
 import type { JSX } from "preact";
 import { resolveNavSource } from "../../lib/_nav-source-docs";
 import type { DocPageEntryProps, DocPageAutoIndexProps } from "../../lib/doc-page-props";
@@ -81,7 +82,7 @@ export function paths(): Array<{
   }> = [];
 
   for (const locale of Object.keys(settings.locales) as string[]) {
-    const localeConfig = settings.locales[locale];
+    const localeConfig = getLocaleConfig(locale);
     const contentDir = localeConfig?.dir ?? settings.docsDir;
 
     // Identity-stable, locale-first merge with EN fallback. The same `docs` /
@@ -89,14 +90,14 @@ export function paths(): Array<{
     // per-page paths() invocations so both buildNavTree's identity fast-path
     // and the buildDocRouteEntries memo key on them — see
     // pages/lib/_nav-source-docs.ts (#1902).
-    const source = resolveNavSource(locale, undefined, {
+    const source = resolveNavSource(locale as Locale, undefined, {
       applyDefaultLocaleOnlyFilter: true,
       keepUnlisted: true,
     });
 
     for (const item of buildDocRouteEntries({
       source,
-      locale,
+      locale: locale as Locale,
       routeSig: `locale-docs;${locale}`,
     })) {
       // isFallback: page came from base docs, not the locale collection.
@@ -126,7 +127,7 @@ type PageArgs = DocPageProps & { params: { locale: string; slug: string[] } };
 
 export default function LocaleDocsPage(props: PageArgs): JSX.Element {
   return renderDocPage(props, {
-    locale: props.params.locale,
+    locale: props.params.locale as Locale,
     isFallback: props.isFallback,
     docHistoryContentDir: props.contentDir,
   });

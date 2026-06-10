@@ -71,10 +71,10 @@ export function enumerateDocsRoutes(locale: string): string[] {
     // safety re-application of the same rule (idempotent on the already-
     // stripped id); kept so this enumerator's slug derivation reads as a
     // single explicit call to the canonical helper.
-    urls.push(docsUrl(doc.data.slug ?? toRouteSlug(doc.id), locale as string));
+    urls.push(docsUrl(doc.data.slug ?? toRouteSlug(doc.id), locale as Locale));
   }
   for (const node of collectAutoIndexNodes(tree)) {
-    urls.push(docsUrl(node.slug, locale as string));
+    urls.push(docsUrl(node.slug, locale as Locale));
   }
 
   return [...new Set(urls)];
@@ -198,10 +198,10 @@ export function enumerateVersionedRoutes(
       // category_no_page index.mdx → no route, no sitemap URL (see paths()).
       if (doc.data.category_no_page === true) continue;
       const slug = doc.data.slug ?? toRouteSlug(doc.id);
-      urls.push(versionedDocsUrl(slug, version.slug, locale as string));
+      urls.push(versionedDocsUrl(slug, version.slug, locale as Locale));
     }
     for (const node of collectAutoIndexNodes(tree)) {
-      urls.push(versionedDocsUrl(node.slug, version.slug, locale as string));
+      urls.push(versionedDocsUrl(node.slug, version.slug, locale as Locale));
     }
   }
 
