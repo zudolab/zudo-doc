@@ -26,7 +26,19 @@ const cache = new Map<string, Map<string, CategoryMeta>>();
  * files for each page is wasteful.
  */
 export function loadCategoryMeta(contentDir: string): Map<string, CategoryMeta> {
-  const absolute = path.resolve(contentDir);
+  // zfb's SSG runtime stubs node:* — ANY property access on fs/path throws
+  // ("node:* is not available under the SSG runtime"). The legacy host
+  // implementation only touched node APIs inside scanDir's try/catch, so under
+  // that runtime it silently yielded an empty map (routes still enumerate;
+  // sidecar meta just doesn't apply). Preserve that exact degradation: fall
+  // back to the raw string as the cache key and let scanDir's try/catch
+  // produce the empty result (#2030).
+  let absolute: string;
+  try {
+    absolute = path.resolve(contentDir);
+  } catch {
+    absolute = contentDir;
+  }
   const cached = cache.get(absolute);
   if (cached) return cached;
   const result = new Map<string, CategoryMeta>();
