@@ -320,6 +320,9 @@ importers:
       preact-render-to-string:
         specifier: ^6.6.6
         version: 6.6.6(preact@10.29.2)
+      shiki:
+        specifier: ^4.0.2
+        version: 4.0.2
       tsup:
         specifier: ^8.0.0
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.15)(tsx@4.21.0)(typescript@5.9.3)

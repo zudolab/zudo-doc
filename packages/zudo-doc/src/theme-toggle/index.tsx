@@ -1,11 +1,25 @@
 "use client";
 
-// Use preact hook entrypoints directly — the "react" → "preact/compat" alias
-// lets us consume React-typed components in this Preact app (configured
-// project-wide). Same pattern as packages/zudo-doc/src/theme/theme-toggle.tsx.
+/** @jsxRuntime automatic */
+/** @jsxImportSource preact */
+// BARE (non-island-wrapped) theme toggle — the single ThemeToggle
+// implementation (#2012 E2). Published as the dedicated
+// `@takazudo/zudo-doc/theme-toggle` subpath so hosts can compose it
+// into their own `<Island>` wrappers (or nest it inside another island,
+// e.g. the mobile sidebar footer) without inheriting an extra island
+// layer. The island-wrapped variant for the `./theme` barrel lives in
+// `../theme/theme-toggle.tsx`, which wraps this component.
+//
+// Use the preact hook entrypoints directly — zfb's esbuild step does
+// not alias "react" to "preact/compat", so importing from "react" here
+// would fail to resolve.
 import { useState, useEffect } from "preact/hooks";
-
-const STORAGE_KEY = "zudo-doc-theme";
+import {
+  applyColorScheme,
+  readColorSchemeFromDom,
+  subscribeColorSchemeChanged,
+  type ColorSchemeMode,
+} from "./color-scheme-sync.js";
 
 function SunIcon() {
   return (
@@ -53,35 +67,30 @@ function MoonIcon() {
   );
 }
 
-interface ThemeToggleProps {
-  defaultMode?: "light" | "dark";
+export interface ThemeToggleProps {
+  defaultMode?: ColorSchemeMode;
 }
 
-export default function ThemeToggle({ defaultMode = "dark" }: ThemeToggleProps) {
+export default function ThemeToggle({
+  defaultMode = "dark",
+}: ThemeToggleProps) {
   // Initial state must match server render to avoid hydration mismatch.
   // Actual theme is synced from DOM in useEffect below.
-  const [mode, setMode] = useState<"light" | "dark">(defaultMode);
+  const [mode, setMode] = useState<ColorSchemeMode>(defaultMode);
 
   useEffect(() => {
-    const actual =
-      (document.documentElement.getAttribute("data-theme") as
-        | "light"
-        | "dark") || defaultMode;
-    if (actual !== mode) {
-      setMode(actual);
-    }
+    const sync = () => setMode(readColorSchemeFromDom(defaultMode));
+    sync();
+    // Cross-instance sync (#2012 E3): every mounted toggle re-reads the
+    // DOM whenever any instance (or the zdtp panel) applies a scheme,
+    // so the header toggle and the sidebar-footer toggle never disagree.
+    return subscribeColorSchemeChanged(sync);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggle() {
     const next = mode === "dark" ? "light" : "dark";
     setMode(next);
-    document.documentElement.setAttribute("data-theme", next);
-    document.documentElement.style.colorScheme = next;
-    localStorage.setItem(STORAGE_KEY, next);
-    // Clear both v1 and v2 tweak state so the new scheme's palette takes effect.
-    localStorage.removeItem("zudo-doc-tweak-state");
-    localStorage.removeItem("zudo-doc-tweak-state-v2");
-    window.dispatchEvent(new CustomEvent("color-scheme-changed"));
+    applyColorScheme(next);
   }
 
   const nextMode = mode === "dark" ? "light" : "dark";
@@ -96,12 +105,10 @@ export default function ThemeToggle({ defaultMode = "dark" }: ThemeToggleProps) 
     </button>
   );
 }
-// Pin the island marker name to "ThemeToggle" regardless of esbuild's
-// identifier deduplication. Both this host component and the v2 package's
-// ThemeToggleInner share the plain name "ThemeToggle"; when both land in the
-// same SSR bundle esbuild renames one to "ThemeToggle2", making
-// captureComponentName() emit "ThemeToggle2" — a name that has no entry in
-// the island manifest. Setting displayName explicitly ensures Island() reads
-// the attribute-level name (displayName is preferred over .name) and emits
-// the correct data-zfb-island="ThemeToggle" marker. zudolab/zudo-doc#1446.
+// Pin the island marker name to "ThemeToggle" regardless of bundler
+// identifier mangling: zfb's Island() derives the SSR marker via
+// `displayName ?? name`, and esbuild may rename the function when
+// another binding shares the name in the same bundle. Setting
+// displayName explicitly keeps the emitted marker aligned with the
+// island-manifest entry. zudolab/zudo-doc#1446.
 ThemeToggle.displayName = "ThemeToggle";
