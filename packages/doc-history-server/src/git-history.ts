@@ -596,3 +596,11 @@ export function collectContentFiles(
   walk(dir, dir);
   return results;
 }
+
+/**
+ * Back-compat alias for the public `./git-history` subpath: the sync
+ * `getDocHistory` was removed when the duplicated sync orchestration
+ * family was deleted (#2011). The alias keeps the exported name resolving
+ * for existing consumers — note it is now async (returns a Promise).
+ */
+export const getDocHistory = getDocHistoryAsync;
