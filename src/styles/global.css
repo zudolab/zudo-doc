@@ -1064,6 +1064,20 @@ pre[class^="syntect-"] .line .highlighted-word {
   html[data-sidebar-hidden] .zd-sidebar-content-wrapper {
     margin-left: 0;
   }
+
+  /* When hidden via the toggle, narrow the content band to the
+   * hide_sidebar frontmatter width so it centers (the flex parent already
+   * applies justify-content: center) instead of leaving a dead gap where
+   * the sidebar was. 80rem must match the `max-w-[80rem]` hide_sidebar
+   * branch in doc-layout.tsx. These rules are unlayered, so they win over
+   * the Tailwind `max-w-[clamp(...)]` utility (utilities layer). (#2002) */
+  .zd-doc-content-band {
+    transition: max-width 200ms ease-in-out;
+  }
+
+  html[data-sidebar-hidden] .zd-doc-content-band {
+    max-width: 80rem;
+  }
 }
 
 /* Sidebar toggle button — left position uses CSS variable, needs global rule */
