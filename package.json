@@ -75,28 +75,21 @@
     }
   },
   "dependencies": {
-    "@shikijs/transformers": "^4.0.1",
     "@takazudo/zdtp": "0.2.0-next.2",
     "@takazudo/zfb": "0.1.0-next.35",
     "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.35",
     "@takazudo/zfb-runtime": "0.1.0-next.35",
     "@types/hast": "^3.0.4",
-    "@takazudo/zudo-doc-md-plugins": "workspace:*",
     "@takazudo/zudo-doc": "workspace:*",
     "clsx": "^2.1.1",
     "diff": "^8.0.3",
     "gray-matter": "^4.0.3",
     "katex": "^0.16.38",
     "mermaid": "^11.15.0",
-    "minisearch": "^7.2.0",
     "preact": "^10.29.1",
     "preact-render-to-string": "^6.6.6",
     "rehype-katex": "^7.0.1",
-    "remark-cjk-friendly": "^2.0.1",
-    "remark-directive": "^4.0.0",
-    "remark-math": "^6.0.0",
     "shiki": "^4.0.2",
-    "unist-util-visit": "^5.1.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

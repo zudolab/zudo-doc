@@ -101,7 +101,7 @@ pages/                   # File-routed pages (.tsx) — zfb resolves these
 ├── api/                 # API routes (e.g. ai-chat)
 └── sitemap.xml.tsx      # Sitemap generator
 packages/
-├── md-plugins/           # Shared remark/rehype plugins (link resolver, admonitions, etc.)
+├── md-plugins/           # Legacy JS remark/rehype plugins (superseded by zfb Rust pipeline; kept for fixture/unit-test coverage)
 ├── search-worker/        # CF Worker for search API
 ├── doc-history-server/   # Doc history REST API + CLI generator
 ├── zudo-doc/          # Shared layout + integration package (header, doc-layout, ...)
@@ -211,7 +211,7 @@ wrangler deploy --var DOCS_SITE_URL=<preview-url>
 
 Or override via the Cloudflare dashboard per environment to avoid preview workers pointing at production docs.
 
-> **Search worker (optional, opt-in deployment).** The showcase site does NOT deploy `packages/search-worker/` — on-site search is served by the client-side MiniSearch island (`pages/lib/_search-widget.tsx`) reading `search-index.json` from `dist/`. The worker exists as a template/example for downstream users who want a server-side search API for huge doc bases or programmatic API consumers. If you choose to deploy it, two caveats apply:
+> **Search worker (optional, opt-in deployment).** The showcase site does NOT deploy `packages/search-worker/` — on-site search is a custom-scorer widget (`pages/lib/_search-widget.tsx`) that fetches `search-index.json` from `dist/` and runs a built-in word-match scoring loop (MiniSearch is **not** imported by the host; the worker package has its own `minisearch` dep). The worker exists as a template/example for downstream users who want a server-side search API for huge doc bases or programmatic API consumers. If you choose to deploy it, two caveats apply:
 >
 > - `packages/search-worker/wrangler.toml` carries its **own** `DOCS_SITE_URL` (used for CORS/referrer). A Cloudflare **dashboard environment-variable override** on the search Worker **shadows** the file value and persists across deploys, so if you've ever set one, clear/replace it when redeploying.
 > - The search worker also has its **own `RATE_LIMIT` KV namespace** (separate from the main worker's). `packages/search-worker/wrangler.toml` ships with a placeholder id — see `packages/search-worker/README.md` for the creation runbook (`wrangler kv namespace create RATE_LIMIT` run from that directory). Deploying without replacing the placeholder produces error code 10042.
