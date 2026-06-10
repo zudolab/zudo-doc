@@ -711,7 +711,7 @@ describe("scaffold — headerRightItems preset override (sub #440)", () => {
     );
     // Extract the headerRightItems block to assert exact order.
     const blockMatch = content.match(
-      /headerRightItems:\s*\[([\s\S]*?)\]\s*as\s+HeaderRightItem\[\],/,
+      /headerRightItems:\s*\[([\s\S]*?)\]\s*satisfies\s+HeaderRightItem\[\]\s*as\s+HeaderRightItem\[\],/,
     );
     expect(blockMatch).not.toBeNull();
     const block = blockMatch![1]!;
@@ -769,7 +769,7 @@ describe("scaffold — headerRightItems preset override (sub #440)", () => {
       "utf-8",
     );
     const match = content.match(
-      /headerRightItems:\s*\[([\s\S]*?)\]\s*as\s+HeaderRightItem\[\],/,
+      /headerRightItems:\s*\[([\s\S]*?)\]\s*satisfies\s+HeaderRightItem\[\]\s*as\s+HeaderRightItem\[\],/,
     );
     expect(match).toBeTruthy();
     // Block should be empty (whitespace only) — no fallback entries leaked in.

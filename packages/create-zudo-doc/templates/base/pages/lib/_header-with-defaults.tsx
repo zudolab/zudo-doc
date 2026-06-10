@@ -111,7 +111,7 @@ function remapVersionedHrefs(
 
 export interface HeaderWithDefaultsProps {
   /** Active locale; defaults to the configured defaultLocale. */
-  lang?: Locale;
+  lang?: Locale | string;
   /**
    * Current page URL path (as the layout passes from Astro.url.pathname or
    * the zfb equivalent). Used by the Header to compute the active nav item
@@ -148,12 +148,16 @@ export function HeaderWithDefaults(
   props: HeaderWithDefaultsProps,
 ): JSX.Element {
   const {
-    lang = defaultLocale,
+    lang: langProp = defaultLocale,
     currentPath = "",
     currentVersion,
     currentSlug,
     navSection,
   } = props;
+  // Route params arrive as `string`; cast to Locale since keys of settings.locales
+  // are always valid locale codes. The prop accepts `Locale | string` so callers
+  // without a Locale variable don't need to cast (e.g. _tag-pages.tsx).
+  const lang = langProp as Locale;
 
   // Root-menu items for the mobile sidebar's "back to menu" list.
   // Mirrors the data-prep in _sidebar-with-defaults.tsx.

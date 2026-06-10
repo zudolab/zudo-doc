@@ -1,4 +1,5 @@
 import { settings } from "./settings";
+import type { LocaleConfig } from "./settings-types";
 
 // Collection name string used by zfb's content engine (`getCollection(...)`).
 // Kept as a structural string-literal alias so callers don't have to redeclare
@@ -15,9 +16,9 @@ export const locales = [
 ] as const;
 export type Locale = (typeof locales)[number];
 
-/** Safely look up a locale in settings.locales. */
-function getLocaleConfig(locale: string) {
-  return settings.locales[locale];
+/** Safely look up a locale in settings.locales by string key. */
+export function getLocaleConfig(locale: string): LocaleConfig | undefined {
+  return (settings.locales as Record<string, LocaleConfig | undefined>)[locale];
 }
 
 /** Get the content directory for a locale. */

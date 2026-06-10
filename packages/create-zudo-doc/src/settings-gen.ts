@@ -59,7 +59,7 @@ export function generateSettingsFile(choices: UserChoices): string {
     lines.push(
       `    respectPrefersColorScheme: ${choices.respectPrefersColorScheme ?? true},`,
     );
-    lines.push(`  } satisfies ColorModeConfig,`);
+    lines.push(`  } satisfies ColorModeConfig as ColorModeConfig | false,`);
   }
 
   lines.push(
@@ -79,7 +79,7 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  siteUrl: "" as string,`);
   lines.push(`  docsDir: "src/content/docs",`);
   lines.push(
-    `  defaultLocale: ${JSON.stringify(choices.defaultLang ?? "en")} as string,`,
+    `  defaultLocale: ${JSON.stringify(choices.defaultLang ?? "en")} as const,`,
   );
 
   if (choices.features.includes("i18n")) {
@@ -89,9 +89,9 @@ export function generateSettingsFile(choices: UserChoices): string {
     lines.push(
       `    ${secondaryLang}: { label: ${JSON.stringify(secondaryLabel)}, dir: "src/content/docs-${secondaryLang}" },`,
     );
-    lines.push(`  } as Record<string, LocaleConfig>,`);
+    lines.push(`  } satisfies Record<string, LocaleConfig>,`);
   } else {
-    lines.push(`  locales: {} as Record<string, LocaleConfig>,`);
+    lines.push(`  locales: {} satisfies Record<string, LocaleConfig>,`);
   }
 
   // mermaid is controlled by the markdown.features block in zfb.config.ts
@@ -189,7 +189,7 @@ export function generateSettingsFile(choices: UserChoices): string {
   );
 
   if (choices.features.includes("versioning")) {
-    lines.push(`  versions: [] as VersionConfig[],`);
+    lines.push(`  versions: [] satisfies VersionConfig[] as VersionConfig[] | false,`);
   } else {
     lines.push(`  versions: false as VersionConfig[] | false,`);
   }
@@ -262,7 +262,7 @@ export function generateSettingsFile(choices: UserChoices): string {
       `    { label: "Changelog", path: "/docs/changelog", categoryMatch: "changelog" },`,
     );
   }
-  lines.push(`  ] as HeaderNavItem[],`);
+  lines.push(`  ] satisfies HeaderNavItem[] as HeaderNavItem[],`);
   lines.push(`  headerRightItems: [`);
   if (choices.headerRightItems !== undefined) {
     // User-supplied override (including empty array): emit each entry verbatim,
@@ -295,7 +295,7 @@ export function generateSettingsFile(choices: UserChoices): string {
       lines.push(`    { type: "component", component: "language-switcher" },`);
     }
   }
-  lines.push(`  ] as HeaderRightItem[],`);
+  lines.push(`  ] satisfies HeaderRightItem[] as HeaderRightItem[],`);
   lines.push(`};`);
 
   return lines.join("\n") + "\n";

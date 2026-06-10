@@ -17,8 +17,8 @@ export const settings = {
   siteDescription: "Test fixture for theme toggle E2E tests" as string,
   base: "/",
   docsDir: "src/content/docs",
-  defaultLocale: "en",
-  locales: {} as Record<string, LocaleConfig>,
+  defaultLocale: "en" as const,
+  locales: {} satisfies Record<string, LocaleConfig>,
   mermaid: false,
   noindex: true as boolean,
   editUrl: false as string | false,
@@ -40,9 +40,9 @@ export const settings = {
       path: "/docs/getting-started",
       categoryMatch: "getting-started",
     },
-  ] as HeaderNavItem[],
+  ] satisfies HeaderNavItem[] as HeaderNavItem[],
   headerRightItems: [
     { type: "trigger", trigger: "design-token-panel" },
     { type: "component", component: "theme-toggle" },
-  ] as HeaderRightItem[],
+  ] satisfies HeaderRightItem[] as HeaderRightItem[],
 };

@@ -11,7 +11,7 @@ export const settings = {
   siteDescription: "Test fixture for i18n E2E tests" as string,
   base: "/",
   docsDir: "src/content/docs",
-  defaultLocale: "en",
+  defaultLocale: "en" as const,
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },
     de: { label: "DE", dir: "src/content/docs-de" },
@@ -37,5 +37,5 @@ export const settings = {
       categoryMatch: "getting-started",
     },
     { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
-  ] as HeaderNavItem[],
+  ] satisfies HeaderNavItem[] as HeaderNavItem[],
 };
