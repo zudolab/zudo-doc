@@ -13,7 +13,7 @@ import {
   type FormState,
   type HeaderRightItemSpec,
 } from "../lib/preset-generator-logic";
-import { HeadingH3 } from "./content/heading-h3";
+import { HeadingH3 } from "@takazudo/zudo-doc/content";
 
 // ── Data ──
 

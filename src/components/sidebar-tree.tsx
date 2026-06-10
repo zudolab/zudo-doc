@@ -2,7 +2,7 @@
 
 // Use preact hook entrypoints directly — the "react" → "preact/compat" alias
 // lets us consume React-typed components in this Preact app (configured
-// project-wide). Same pattern as packages/zudo-doc/src/theme/theme-toggle.tsx.
+// project-wide). Same pattern as packages/zudo-doc/src/theme-toggle/index.tsx.
 import { useState, useCallback, useEffect, useMemo, useRef } from "preact/hooks";
 import type { NavNode } from "@/utils/docs";
 import type { LocaleLink } from "@/types/locale";
@@ -11,7 +11,9 @@ import type { LocaleLink } from "@/types/locale";
 import type { SidebarRootMenuItem } from "@takazudo/zudo-doc/sidebar/types";
 import { INDENT, BASE_PAD, connectorLeft, ConnectorLines, CategoryLinkIcon } from "./tree-nav-shared";
 import { ChevronRight, ChevronLeft, Search } from "@takazudo/zudo-doc/icons";
-import ThemeToggle from "@/components/theme-toggle";
+// BARE ThemeToggle (#2012 E2) — this footer toggle renders inside the
+// SidebarToggle island, so it must NOT bring its own island wrapper.
+import ThemeToggle from "@takazudo/zudo-doc/theme-toggle";
 import { smartBreakToHtml } from "@/utils/smart-break";
 // After zudolab/zudo-doc#1335 (E2 task 2 half B) the host components
 // also pull lifecycle event names from the v2 transitions module

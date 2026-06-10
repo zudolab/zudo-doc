@@ -7,6 +7,11 @@
 // @takazudo/zdtp package, bootstrapped as a side-effect — no panel component
 // is re-exported here.
 //
+// The `ThemeToggle` exported here is the Island-wrapped variant. The BARE
+// component (for call sites that wrap in `<Island>` themselves or nest the
+// toggle inside another island) lives on the dedicated
+// `@takazudo/zudo-doc/theme-toggle` subpath (#2012 E2).
+//
 // W3B (#1730): design-token SerDe + the shared tweak-state types live in v2
 // now (moved from `src/utils/design-token-{serde,types}.ts`). They are
 // re-exported here so host config modules can pull them via

@@ -114,7 +114,6 @@ src/
 ├── content/
 │   ├── docs/            # English MDX content
 │   └── docs-ja/         # Japanese MDX content (mirrors docs/)
-├── hooks/               # Preact hooks (scroll spy)
 └── styles/
     └── global.css       # Design tokens (@theme) & Tailwind config
 ```
