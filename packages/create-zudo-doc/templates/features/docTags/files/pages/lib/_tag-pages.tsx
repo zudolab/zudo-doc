@@ -116,6 +116,8 @@ export function TagDetailPageView({
     <DocLayoutWithDefaults
       title={composeMetaTitle(pageTitle)}
       head={<HeadWithDefaults title={pageTitle} />}
+      // The original default-locale page omitted `lang` entirely; passing
+      // undefined relies on Preact treating an undefined prop as absent.
       lang={isDefault ? undefined : locale}
       noindex={settings.noindex}
       hideSidebar={true}
@@ -165,6 +167,7 @@ export function TagsIndexPageView({ locale }: { locale: string }): JSX.Element {
     <DocLayoutWithDefaults
       title={composeMetaTitle(pageTitle)}
       head={<HeadWithDefaults title={pageTitle} />}
+      // Same undefined-≡-absent reliance as TagDetailPageView above.
       lang={isDefault ? undefined : locale}
       noindex={settings.noindex}
       hideSidebar={true}
