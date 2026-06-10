@@ -10,9 +10,18 @@ import type { ChatMessage } from "@/types/ai-chat";
 import { renderMarkdown } from "@/utils/render-markdown";
 import { SmartBreak } from "@/utils/smart-break";
 import { BEFORE_NAVIGATE_EVENT } from "@takazudo/zudo-doc/transitions";
+import { useModalDialog } from "@/hooks/use-modal-dialog";
 
 interface AiChatModalProps {
   basePath: string;
+}
+
+/** Runtime type guard for the AI chat API response. The server returns
+ *  `{ response: string }` on 2xx and `{ error: string }` on 4xx/5xx.
+ *  Prevents laundering an untrusted `res.json()` value (typed as `any`)
+ *  into the component's typed code without validation. */
+function isAiChatResponse(data: unknown): data is Record<string, unknown> {
+  return typeof data === "object" && data !== null;
 }
 
 // Memoized row: message objects are immutable once appended, so rows skip
@@ -42,69 +51,62 @@ const ChatMessageRow = memo(function ChatMessageRow({ msg }: { msg: ChatMessage 
 });
 
 export default function AiChatModal({ basePath }: AiChatModalProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Listen for toggle event
+  const resetState = useCallback(() => {
+    setIsOpen(false);
+    setMessages([]);
+    setInput("");
+    setError(null);
+    setLoading(false);
+  }, []);
+
+  // Shared dialog lifecycle: showModal/close sync, native-close callback,
+  // backdrop click, and navigation-close (before swap to avoid stale-ref
+  // errors on next open — refs #1621) — delegated to useModalDialog.
+  const { dialogRef, handleBackdropClick } = useModalDialog({
+    isOpen,
+    onClose: resetState,
+    navigateEvent: BEFORE_NAVIGATE_EVENT,
+    backdropClickClose: true,
+  });
+
+  // Listen for toggle event dispatched by the header AI-chat trigger button.
+  // Guard against stale refs from detached DOM after SPA navigation (#1621).
   useEffect(() => {
     function handleToggle() {
       const dialog = dialogRef.current;
-      // Guard against stale refs from detached DOM after SPA navigation (#1621)
       if (!dialog || !dialog.isConnected) return;
       if (dialog.open) {
         dialog.close();
       } else {
-        dialog.showModal();
-        inputRef.current?.focus();
+        setIsOpen(true);
       }
     }
     window.addEventListener("toggle-ai-chat", handleToggle);
     return () => window.removeEventListener("toggle-ai-chat", handleToggle);
-  }, []);
+  }, [dialogRef]);
 
-  // Reset state when dialog closes
+  // Focus the input once the dialog is open. useModalDialog calls
+  // dialog.showModal() in a layout effect; focusing in a separate effect
+  // that runs after ensures the dialog is in the top layer before focus.
   useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    function handleClose() {
-      setMessages([]);
-      setInput("");
-      setError(null);
-      setLoading(false);
+    if (isOpen) {
+      inputRef.current?.focus();
     }
-    dialog.addEventListener("close", handleClose);
-    return () => dialog.removeEventListener("close", handleClose);
-  }, []);
-
-  // Close dialog before SPA body swap to avoid stale-ref errors on next open (#1621)
-  useEffect(() => {
-    function handleBeforeNavigate() {
-      const dialog = dialogRef.current;
-      if (dialog?.open) dialog.close();
-    }
-    document.addEventListener(BEFORE_NAVIGATE_EVENT, handleBeforeNavigate);
-    return () => document.removeEventListener(BEFORE_NAVIGATE_EVENT, handleBeforeNavigate);
-  }, []);
+  }, [isOpen]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
-
-  // Backdrop click
-  function handleBackdropClick(e: React.MouseEvent<HTMLDialogElement>) {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    // Native <dialog> backdrop clicks fire with e.target === the dialog
-    // itself; child element clicks bubble with target set to that child.
-    if (e.target === dialog) dialog.close();
-  }
 
   const sendMessage = useCallback(async () => {
     const trimmed = input.trim();
@@ -128,14 +130,20 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
         }),
       });
 
-      const data = await res.json();
+      const raw: unknown = await res.json();
+      // isAiChatResponse acts as a runtime type guard — res.json() returns
+      // `any` which would launder an untrusted network payload into typed
+      // code without validation. The server returns { response: string } on
+      // 2xx and { error: string } on 4xx/5xx (mirrors _ai-chat-types.ts
+      // isClaudeApiResponse pattern used on the server side).
+      const data = isAiChatResponse(raw) ? raw : {};
 
       if (!res.ok) {
-        setError(data.error || "Something went wrong");
-      } else if (typeof data.response === "string" && data.response) {
+        setError(("error" in data && typeof data.error === "string" ? data.error : null) || "Something went wrong");
+      } else if ("response" in data && typeof data.response === "string" && data.response) {
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: data.response },
+          { role: "assistant", content: data.response as string },
         ]);
       } else {
         setError("Received an empty or invalid response");
