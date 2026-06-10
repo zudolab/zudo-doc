@@ -7,7 +7,7 @@
 // inlines it; this avoids pulling Node-only `fs` / `child_process` code
 // into the client bundle.
 //
-// Schema: `{ [composedSlug]: { author, createdDate, updatedDate } }`,
+// Schema: `{ [composedSlug]: { author, createdDate, updatedDate, ext } }`,
 // where `composedSlug` is the bare slug for the default locale
 // (e.g. `getting-started/intro`) and `<localeKey>/<slug>` for non-default
 // locales (e.g. `ja/getting-started/intro`). Pages with no manifest entry
@@ -85,6 +85,14 @@ export interface DocHistoryMetaEntry {
   author: string;
   createdDate: string;
   updatedDate: string;
+  /**
+   * Source file extension (".mdx" or ".md") — the content walkers accept
+   * both (`collectContentFiles` matches `\.mdx?$`), so the view-source URL
+   * builder in the host's `_doc-history-area.tsx` reads this instead of
+   * hardcoding ".mdx". Optional in older manifests; readers fall back to
+   * ".mdx" when absent.
+   */
+  ext?: ".mdx" | ".md";
 }
 
 /** Manifest shape — keyed by composedSlug. */
@@ -92,6 +100,15 @@ export type DocHistoryMetaManifest = Record<string, DocHistoryMetaEntry>;
 
 const META_OUT_RELATIVE_DIR = ".zfb";
 const META_OUT_FILENAME = "doc-history-meta.json";
+
+/**
+ * Derive the manifest `ext` value from a content file path. The walkers
+ * only collect `.md` / `.mdx` files (`collectContentFiles` matches
+ * `\.mdx?$`), so anything not ending in ".md" is ".mdx".
+ */
+export function deriveSourceExt(filePath: string): ".mdx" | ".md" {
+  return filePath.endsWith(".md") ? ".md" : ".mdx";
+}
 
 /**
  * Tiny in-file semaphore for bounded parallelism — avoids a p-limit dependency.
@@ -239,6 +256,8 @@ export async function runDocHistoryMetaStep(
       // createdDate = oldest commit; updatedDate = newest commit.
       createdDate: result.oldest.date,
       updatedDate: result.newest.date,
+      // Source extension for the view-source URL (".md" walkers accepted).
+      ext: deriveSourceExt(jobs[i]!.filePath),
     };
   }
 
