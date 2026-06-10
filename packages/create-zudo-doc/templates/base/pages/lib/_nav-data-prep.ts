@@ -100,15 +100,23 @@ export function buildLocaleLinksForNav(
  * Build the resolved sidebar node list for a given section + version.
  *
  * Loads the nav source, filters to the active section, then optionally
- * remaps hrefs for versioned routes. Returns `[]` when `navSection` is
- * undefined (non-doc pages: home, 404, tags, versions).
+ * remaps hrefs for versioned routes.
+ *
+ * `emptyWhenUnsectioned` controls the `navSection === undefined` case —
+ * the two legacy call sites deliberately disagreed: the header's mobile
+ * drawer returned `[]` (root menu only), while the desktop sidebar fell
+ * through to `buildSidebarForSection(..., undefined)` = the FULL tree
+ * (pages whose slug matches no headerNav categoryMatch still get a
+ * sidebar). Collapsing both to `[]` shipped an empty desktop sidebar for
+ * unsectioned pages — keep the divergence explicit here.
  */
 export function buildSidebarNodes(
   lang: Locale,
   navSection: string | undefined,
   currentVersion?: string,
+  emptyWhenUnsectioned = true,
 ): NavNode[] {
-  if (navSection === undefined) return [];
+  if (navSection === undefined && emptyWhenUnsectioned) return [];
   const { navDocs, categoryMeta } = loadNavSourceDocs(lang, currentVersion);
   const rawNodes = buildSidebarForSection(navDocs, lang, navSection, categoryMeta);
   return currentVersion

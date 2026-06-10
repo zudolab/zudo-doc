@@ -14,13 +14,19 @@ export interface ResolveMarkdownLinksOptions extends DocsSourceMapOptions {
    * to avoid repeated fs walks when the same options are used across many
    * transformed files (e.g. a full build). When provided, `buildDocsSourceMap`
    * is never called inside the plugin's per-file transform function.
-   *
-   * If omitted, the plugin falls back to a module-level cache keyed on the
-   * options signature (rootDir + docsDir + locales + versions + base +
-   * trailingSlash) so repeated calls with identical options still only trigger
-   * one fs walk — no explicit sharing is required for typical build usage.
    */
   sourceMap?: Map<string, string>;
+  /**
+   * Opt-in module-level caching of the built source map, keyed on the
+   * options signature (rootDir + docsDir + locales + versions + base +
+   * trailingSlash). One fs walk per unique config per process — right for
+   * one-shot builds/CI.
+   *
+   * Default OFF: a long-lived dev-server process would otherwise never see
+   * files added/renamed (or `slug:` frontmatter edits) after the first
+   * transform — the per-call rebuild is what keeps dev links live.
+   */
+  cache?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -28,9 +34,9 @@ export interface ResolveMarkdownLinksOptions extends DocsSourceMapOptions {
 // ---------------------------------------------------------------------------
 
 // Keyed on a JSON-serialized canonical options signature so the same config
-// always hits the same cache entry. The cache intentionally lives for the
-// lifetime of the process (no TTL) — a new process starts for each build, and
-// during dev the user explicitly re-runs the file watcher or build command.
+// always hits the same cache entry. Process-lifetime, no TTL — which is why
+// it is opt-in (`cache: true`): correct for one-shot builds, stale for
+// long-lived dev servers.
 const sourceMapCache = new Map<string, Map<string, string>>();
 
 function optionsCacheKey(opts: DocsSourceMapOptions): string {
@@ -106,7 +112,9 @@ export function remarkResolveMarkdownLinks(
     // Use caller-supplied map → module-level cache → fresh build (in that order).
     // The cache means one fs walk per unique option signature per process; the
     // caller-supplied path lets integrations share a pre-built map across plugins.
-    const sourceMap = options.sourceMap ?? cachedSourceMap(options);
+    const sourceMap =
+      options.sourceMap ??
+      (options.cache ? cachedSourceMap(options) : buildDocsSourceMap(options));
 
     const currentFilePath = file.path;
     if (!currentFilePath) return;

@@ -95,7 +95,10 @@ export function SidebarWithDefaults(
 
   const backToMenuLabel = navSection ? t("nav.backToMenu", lang) : undefined;
 
-  const nodes = buildSidebarNodes(lang, navSection, currentVersion);
+  // emptyWhenUnsectioned=false: the desktop sidebar falls back to the FULL
+  // tree for pages whose slug matches no headerNav categoryMatch (legacy
+  // behavior) — only the header's mobile drawer collapses to root menu.
+  const nodes = buildSidebarNodes(lang, navSection, currentVersion, false);
 
   // Locale-switcher links are only meaningful when more than one locale is
   // configured — matches the Astro template's guard.
