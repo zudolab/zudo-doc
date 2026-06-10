@@ -196,4 +196,19 @@ describe("validatePreset — projectName (F4 #2013)", () => {
   it("accepts a name exactly 214 characters long", () => {
     expect(validatePreset({ projectName: "a".repeat(214) })).toBeNull();
   });
+
+  // Codex review finding: RegExp.test coerces non-strings (123 → "123",
+  // true → "true"), which would pass the grammar and crash later at
+  // path.resolve/scaffold. The type guard must fire first.
+  it("rejects a numeric projectName (non-string JSON value)", () => {
+    expect(validatePreset({ projectName: 123 })).toMatch(/must be a string/);
+  });
+
+  it("rejects a boolean projectName (non-string JSON value)", () => {
+    expect(validatePreset({ projectName: true })).toMatch(/must be a string/);
+  });
+
+  it("rejects a null projectName (non-string JSON value)", () => {
+    expect(validatePreset({ projectName: null })).toMatch(/must be a string/);
+  });
 });

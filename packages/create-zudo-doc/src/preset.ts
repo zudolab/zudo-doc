@@ -90,6 +90,11 @@ export function validatePreset(json: unknown): string | null {
   }
   const p = json as PresetJson;
   if (p.projectName !== undefined) {
+    // Untyped JSON — guard the type before the string validator, otherwise
+    // RegExp.test would coerce numbers/booleans and could accept them.
+    if (typeof p.projectName !== "string") {
+      return "Invalid projectName: must be a string";
+    }
     const nameError = validateProjectName(p.projectName);
     if (nameError) return `Invalid projectName: ${nameError}`;
   }
