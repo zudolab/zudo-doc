@@ -222,7 +222,7 @@ export function enumerateVersionedRoutes(
  * slash). The sitemap renderer prefixes each with settings.siteUrl.
  */
 export function enumerateAllRoutes(): Map<string, string> {
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString().split("T")[0] ?? "";
   const routes = new Map<string, string>();
 
   function add(url: string): void {

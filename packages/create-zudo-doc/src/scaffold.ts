@@ -436,7 +436,11 @@ function generatePackageJson(choices: UserChoices) {
     build: "zfb build",
     preview: "zfb preview",
     check: "zfb check",
-    "check:pages": "tsc --noEmit -p tsconfig.pages.json",
+    // NOTE: no `check:pages` here — the host repo's pages/ typecheck
+    // (tsconfig.pages.json, #2018) is host-only for now. The base template's
+    // no-op feature stubs (e.g. doc-history.tsx) are not type-clean against
+    // the pages/lib call sites, so emitting the script would fail on a fresh
+    // scaffold. Revisit once the template stubs carry typed props.
     "check:html": "html-validate \"dist/**/*.html\"",
   };
 

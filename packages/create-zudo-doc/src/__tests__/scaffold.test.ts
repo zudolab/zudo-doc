@@ -1308,13 +1308,11 @@ describe("scaffold — plugin copying and settings", () => {
     );
   });
 
-  it("includes check:pages script", async () => {
+  it("does not emit check:pages (host-only gate — template stubs not type-clean, #2018)", async () => {
     const pkg = await fs.readJson(
       projectPath("test-minimal", "package.json"),
     );
-    expect(pkg.scripts["check:pages"]).toBe(
-      "tsc --noEmit -p tsconfig.pages.json",
-    );
+    expect(pkg.scripts["check:pages"]).toBeUndefined();
   });
 });
 
