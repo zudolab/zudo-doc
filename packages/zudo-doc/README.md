@@ -13,6 +13,23 @@ This package provides the missing-by-design framework concerns:
 - **Head injection** (`./head`) — canonical, og:\*, twitter:\*, robots, preload hints, RSS link, sitemap link, theme-color — byte-equal to today's legacy doc-layout output.
 - **SSR-skip wrappers** (`./ssr-skip`) — `<AiChatModalIsland>`, `<ImageEnlargeIsland>`, `<DesignTokenTweakPanelIsland>`, `<MockInitIsland>` — wrap zfb's `<Island ssrFallback>` with the right fallback markup so doc pages don't have to re-implement the SSR-skip pattern.
 
+## Styling — Tailwind setup for consumers
+
+This package ships **no precompiled CSS** — the component utility classes are inlined in the `dist/` JavaScript, and Tailwind v4 does not scan `node_modules`. Without help, those utilities never make it into your build, so the components render unstyled.
+
+The fix is to import the package's build-generated safelist into your Tailwind CSS entry, right next to your `@import "tailwindcss";`:
+
+```css
+@import "tailwindcss";
+@import "@takazudo/zudo-doc/safelist.css";
+```
+
+`dist/safelist.css` is generated at package build time and contains an `@source inline()` set covering every utility the components use (including arbitrary-value classes like `w-[var(--zd-sidebar-w)]`). It auto-syncs whenever you upgrade the package — no drift, no manual maintenance. Available in `@takazudo/zudo-doc` **>= 0.2.0**.
+
+> **Don't `@source` into `node_modules`.** A glob like `@source "../node_modules/@takazudo/zudo-doc/dist/**"` looks plausible but is unreliable: pnpm surfaces packages via symlinks and Tailwind v4's file scanner does not reliably traverse them, so utilities get intermittently dropped across rebuilds (see zudolab/zudo-doc#1989). Import the package safelist instead.
+
+**Migrating from a pre-0.2.0 workaround?** If you vendored or copied the package `dist/` to get its styles, delete that workaround and replace it with the single `@import "@takazudo/zudo-doc/safelist.css";` line above.
+
 ## Pre-publish dev workflow
 
 Phase A npm publish is deferred (see super-epic comment 2026-04-28). During pre-publish dev, this package references zfb via the local checkout at `$HOME/repos/myoss/zfb`. Use `/refer-another-project zfb` to read zfb's APIs. If a zfb bug is discovered, fix it directly on zfb's `main` and push (zfb is not public yet).
