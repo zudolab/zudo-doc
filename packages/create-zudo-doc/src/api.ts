@@ -1,6 +1,6 @@
 import path from "path";
 import { scaffold } from "./scaffold.js";
-import { installDependencies } from "./utils.js";
+import { installDependencies, validateProjectName } from "./utils.js";
 
 export type { UserChoices } from "./prompts.js";
 
@@ -25,6 +25,8 @@ export interface CreateOptions {
 
 export async function createZudoDoc(options: CreateOptions): Promise<string> {
   const { install = false, ...rest } = options;
+  const nameError = validateProjectName(rest.projectName);
+  if (nameError) throw new Error(`Invalid projectName: ${nameError}`);
   const choices = { ...rest, defaultLang: rest.defaultLang ?? "en" };
   await scaffold(choices);
   const targetDir = path.resolve(process.cwd(), choices.projectName);

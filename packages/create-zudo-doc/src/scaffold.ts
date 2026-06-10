@@ -366,11 +366,9 @@ function generatePackageJson(choices: UserChoices) {
     "@shikijs/transformers": "^4.0.0",
     clsx: "^2.1.0",
     "gray-matter": "^4.0.0",
-    "github-slugger": "^2.0.0",
     mermaid: "^11.12.3",
     "remark-cjk-friendly": "^2.0.1",
     "remark-directive": "^3.0.0",
-    "unist-util-visit": "^5.1.0",
     // katex — server-side LaTeX renderer used by the always-on
     // pages/lib/_math-block.tsx (called from pages/_mdx-components.ts
     // for `$…$` and `$$…$$` math nodes). Caught by W6B (#1735)
@@ -384,8 +382,6 @@ function generatePackageJson(choices: UserChoices) {
     tailwindcss: "^4.2.0",
 
     typescript: "^5.9.0",
-    "@types/hast": "^3.0.4",
-    "@types/mdast": "^4.0.4",
     "@types/node": "^22.0.0",
     "@types/react": "^19.2.0", // needed for preact/compat type resolution
     "html-validate": "^10.0.0",

@@ -1,14 +1,3 @@
-# Plugin re-exports — generated projects use inline implementations,
-# production re-exports from @takazudo/zudo-doc-md-plugins
-src/plugins/rehype-code-title.ts
-src/plugins/rehype-heading-links.ts
-src/plugins/rehype-mermaid.ts
-
-# Plugin utilities — template-only files (production uses @takazudo/zudo-doc-md-plugins)
-src/plugins/docs-source-map.ts
-src/plugins/hast-utils.ts
-src/plugins/url-utils.ts
-
 # Slot-based files — templates use @slot: injection anchors,
 # production has features inlined
 src/styles/global.css

@@ -1,6 +1,7 @@
 import minimist from "minimist";
 import pc from "picocolors";
 import { FEATURES, SINGLE_SCHEMES, SUPPORTED_LANGS } from "./constants.js";
+import { validateProjectName } from "./utils.js";
 
 export interface CliArgs {
   name?: string;
@@ -194,12 +195,8 @@ export function validateArgs(args: CliArgs): string | null {
   }
 
   if (args.name) {
-    if (/^[./]|\.\./.test(args.name)) {
-      return "Project name must not contain path traversal characters";
-    }
-    if (/[<>:"|?*\\]/.test(args.name)) {
-      return "Project name contains invalid characters";
-    }
+    const nameError = validateProjectName(args.name);
+    if (nameError) return nameError;
   }
 
   return null;

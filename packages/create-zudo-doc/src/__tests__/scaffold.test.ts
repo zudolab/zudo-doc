@@ -5,6 +5,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import type { UserChoices } from "../prompts.js";
 import { scaffold } from "../scaffold.js";
+import { validateProjectName } from "../utils.js";
+import { createZudoDoc } from "../api.js";
 
 const TEMP_PREFIX = "create-zudo-doc-test-";
 
@@ -1227,8 +1229,12 @@ describe("scaffold — plugin copying and settings", () => {
     await scaffold(choices);
   });
 
-  it("copies plugin files to src/plugins/", async () => {
-    const pluginFiles = [
+  // F1 (S4 #2013): the 6 Astro/Shiki-era files (docs-source-map, hast-utils,
+  // rehype-code-title, rehype-heading-links, rehype-mermaid, url-utils) were
+  // confirmed dead — no generated file imports them. They were deleted from
+  // templates/base/src/plugins/ and their deps pruned from generatePackageJson().
+  it("does NOT copy dead Astro-era plugin files to src/plugins/ (F1 — #2013)", async () => {
+    const deadFiles = [
       "docs-source-map.ts",
       "url-utils.ts",
       "hast-utils.ts",
@@ -1236,30 +1242,14 @@ describe("scaffold — plugin copying and settings", () => {
       "rehype-heading-links.ts",
       "rehype-mermaid.ts",
     ];
-    for (const file of pluginFiles) {
+    for (const file of deadFiles) {
       expect(
         await fs.pathExists(
           projectPath("test-minimal", "src/plugins", file),
         ),
-        `expected src/plugins/${file} to exist`,
-      ).toBe(true);
+        `dead plugin file src/plugins/${file} must NOT be present in generated output`,
+      ).toBe(false);
     }
-  });
-
-  it("does NOT copy __tests__/ directory to src/plugins/", async () => {
-    expect(
-      await fs.pathExists(
-        projectPath("test-minimal", "src/plugins/__tests__"),
-      ),
-    ).toBe(false);
-  });
-
-  it("does NOT copy index.ts to src/plugins/", async () => {
-    expect(
-      await fs.pathExists(
-        projectPath("test-minimal", "src/plugins/index.ts"),
-      ),
-    ).toBe(false);
   });
 
   it("generated settings.ts contains onBrokenMarkdownLinks set to warn", async () => {
@@ -1271,25 +1261,35 @@ describe("scaffold — plugin copying and settings", () => {
     expect(content).toContain('"warn"');
   });
 
-  it("includes github-slugger in dependencies", async () => {
+  // F1 (S4 #2013): github-slugger, @types/hast, @types/mdast, unist-util-visit
+  // were only used by the dead src/plugins/*.ts files — pruned from generated
+  // package.json.
+  it("does NOT include github-slugger in dependencies (F1 — dead dep)", async () => {
     const pkg = await fs.readJson(
       projectPath("test-minimal", "package.json"),
     );
-    expect(pkg.dependencies["github-slugger"]).toBeDefined();
+    expect(pkg.dependencies["github-slugger"]).toBeUndefined();
   });
 
-  it("includes @types/hast in devDependencies", async () => {
+  it("does NOT include @types/hast in devDependencies (F1 — dead dep)", async () => {
     const pkg = await fs.readJson(
       projectPath("test-minimal", "package.json"),
     );
-    expect(pkg.devDependencies["@types/hast"]).toBeDefined();
+    expect(pkg.devDependencies["@types/hast"]).toBeUndefined();
   });
 
-  it("includes @types/mdast in devDependencies", async () => {
+  it("does NOT include @types/mdast in devDependencies (F1 — dead dep)", async () => {
     const pkg = await fs.readJson(
       projectPath("test-minimal", "package.json"),
     );
-    expect(pkg.devDependencies["@types/mdast"]).toBeDefined();
+    expect(pkg.devDependencies["@types/mdast"]).toBeUndefined();
+  });
+
+  it("does NOT include unist-util-visit in dependencies (F1 — dead dep)", async () => {
+    const pkg = await fs.readJson(
+      projectPath("test-minimal", "package.json"),
+    );
+    expect(pkg.dependencies["unist-util-visit"]).toBeUndefined();
   });
 
   it("includes html-validate in devDependencies", async () => {
@@ -2872,5 +2872,121 @@ describe("scaffold — S8 versioned locale route generalization (#1892)", () => 
       src,
       "paths() must enumerate Object.keys(settings.locales)",
     ).toContain("Object.keys(settings.locales)");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F4 (S4 #2013) — centralized project-name validation
+// Tests validateProjectName utility (shared by CLI arg, prompt, preset, and
+// programmatic API paths).
+// ---------------------------------------------------------------------------
+
+describe("validateProjectName — locked grammar (F4 #2013)", () => {
+  it("accepts a valid lowercase kebab name", () => {
+    expect(validateProjectName("my-docs")).toBeNull();
+  });
+
+  it("accepts a single-char name", () => {
+    expect(validateProjectName("a")).toBeNull();
+  });
+
+  it("accepts a name starting with a digit", () => {
+    expect(validateProjectName("1my-docs")).toBeNull();
+  });
+
+  it("accepts a name with dots", () => {
+    expect(validateProjectName("my.docs")).toBeNull();
+  });
+
+  it("accepts a name with underscores", () => {
+    expect(validateProjectName("my_docs")).toBeNull();
+  });
+
+  it("accepts a name with hyphens", () => {
+    expect(validateProjectName("my-docs-v2")).toBeNull();
+  });
+
+  it("accepts a name exactly 214 characters", () => {
+    expect(validateProjectName("a".repeat(214))).toBeNull();
+  });
+
+  it("rejects an empty string", () => {
+    expect(validateProjectName("")).toMatch(/required/);
+  });
+
+  it("rejects a name longer than 214 characters", () => {
+    expect(validateProjectName("a".repeat(215))).toMatch(/214/);
+  });
+
+  it("rejects a name with uppercase letters", () => {
+    expect(validateProjectName("My-Docs")).toMatch(/lowercase/);
+  });
+
+  it("rejects a name with spaces", () => {
+    expect(validateProjectName("my docs")).toMatch(/lowercase/);
+  });
+
+  it("rejects a name starting with a hyphen", () => {
+    expect(validateProjectName("-my-docs")).toMatch(/lowercase/);
+  });
+
+  it("rejects a name starting with a dot", () => {
+    expect(validateProjectName(".my-docs")).toMatch(/lowercase/);
+  });
+
+  it("rejects a name starting with an underscore", () => {
+    expect(validateProjectName("_my-docs")).toMatch(/lowercase/);
+  });
+
+  it("rejects a name with a slash", () => {
+    expect(validateProjectName("my/docs")).toMatch(/lowercase/);
+  });
+
+  it("rejects a name with a backslash", () => {
+    expect(validateProjectName("my\\docs")).toMatch(/lowercase/);
+  });
+
+  it("rejects a scoped npm name", () => {
+    expect(validateProjectName("@scope/my-docs")).toMatch(/lowercase/);
+  });
+});
+
+describe("scaffold — programmatic API rejects invalid project names (F4 #2013)", () => {
+  // Exercises the createZudoDoc() entry point directly — the validator fires
+  // before scaffold() is called, so no directory is created.
+  it("createZudoDoc() throws for an invalid project name with uppercase", async () => {
+    await expect(
+      createZudoDoc({
+        projectName: "My-Invalid-Docs",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        features: [],
+        packageManager: "pnpm",
+      }),
+    ).rejects.toThrow(/Invalid projectName/);
+  });
+
+  it("createZudoDoc() throws for a name with spaces", async () => {
+    await expect(
+      createZudoDoc({
+        projectName: "my invalid",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        features: [],
+        packageManager: "pnpm",
+      }),
+    ).rejects.toThrow(/Invalid projectName/);
+  });
+
+  it("createZudoDoc() throws for a name longer than 214 chars", async () => {
+    await expect(
+      createZudoDoc({
+        projectName: "a".repeat(215),
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        features: [],
+        packageManager: "pnpm",
+      }),
+    ).rejects.toThrow(/Invalid projectName/);
   });
 });

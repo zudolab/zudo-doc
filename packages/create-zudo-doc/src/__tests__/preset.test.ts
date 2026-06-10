@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { presetToChoices, validatePreset } from "../preset.js";
+// F4 (S4 #2013) — project-name validation on preset path
 
 describe("presetToChoices — cjkFriendly", () => {
   it("forwards cjkFriendly: true", () => {
@@ -152,5 +153,47 @@ describe("presetToChoices — headerRightItems (sub #440)", () => {
   it("forwards an empty array as-is", () => {
     const choices = presetToChoices({ headerRightItems: [] });
     expect(choices.headerRightItems).toEqual([]);
+  });
+});
+
+describe("validatePreset — projectName (F4 #2013)", () => {
+  it("accepts a valid lowercase kebab name", () => {
+    expect(validatePreset({ projectName: "my-docs" })).toBeNull();
+  });
+
+  it("accepts name starting with a digit", () => {
+    expect(validatePreset({ projectName: "1my-docs" })).toBeNull();
+  });
+
+  it("accepts name with dots and underscores", () => {
+    expect(validatePreset({ projectName: "my.docs_v2" })).toBeNull();
+  });
+
+  it("accepts preset with no projectName (omitted = fill later by prompts)", () => {
+    expect(validatePreset({})).toBeNull();
+  });
+
+  it("rejects a name with uppercase letters", () => {
+    expect(validatePreset({ projectName: "My-Docs" })).toMatch(/Invalid projectName/);
+  });
+
+  it("rejects a name with spaces", () => {
+    expect(validatePreset({ projectName: "my docs" })).toMatch(/Invalid projectName/);
+  });
+
+  it("rejects a name starting with a hyphen", () => {
+    expect(validatePreset({ projectName: "-my-docs" })).toMatch(/Invalid projectName/);
+  });
+
+  it("rejects a name with a slash (path-like)", () => {
+    expect(validatePreset({ projectName: "my/docs" })).toMatch(/Invalid projectName/);
+  });
+
+  it("rejects a name longer than 214 characters", () => {
+    expect(validatePreset({ projectName: "a".repeat(215) })).toMatch(/Invalid projectName/);
+  });
+
+  it("accepts a name exactly 214 characters long", () => {
+    expect(validatePreset({ projectName: "a".repeat(214) })).toBeNull();
   });
 });
