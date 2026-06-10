@@ -208,8 +208,25 @@ export function HeaderWithDefaults(
   // nested as a JSX child its data was dropped during hydration and
   // SidebarToggle re-rendered with `children=undefined`, wiping the SSR
   // tree DOM. zudolab/zudo-doc#1355 wave 13.5.
+  //
+  // C4 — media-gated hydration.  zfb only supports load|idle|visible
+  // strategies (no "media" strategy; matchMedia inside the component is too
+  // late — props are already emitted, bundle already downloaded).
+  // Upstream feature request: Takazudo/zudo-front-builder#969.
+  //
+  // Best achievable downstream: when="visible" + all SidebarToggle children
+  // are lg:hidden, so on desktop the Island wrapper div has zero rendered
+  // dimensions.  IntersectionObserver fires isIntersecting=false on desktop
+  // (zero-size element) → Preact hydrate() is never called.  On mobile (and
+  // on desktop→mobile resize) the children become visible, the element gains
+  // size, IO fires isIntersecting=true, and hydration completes normally.
+  //
+  // Residual: data-props JSON (~2.4 KB) is still emitted in the SSR HTML on
+  // every page regardless of viewport, because it is serialised at build time
+  // and not gated by media. Eliminating it requires a zfb "media" hydration
+  // strategy — tracked in Takazudo/zudo-front-builder#969.
   const sidebarToggle = Island({
-    when: "load",
+    when: "visible",
     children: (
       <SidebarToggle
         nodes={sidebarNodes}
