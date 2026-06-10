@@ -20,8 +20,7 @@
 
 import type { JSX } from "preact";
 import { OgTags, TwitterCard } from "@takazudo/zudo-doc/head";
-// Inlined from @takazudo/zudo-doc sidebar-resizer-init.tsx (SIDEBAR_RESIZER_RESTORE_SCRIPT) — the published 0.1.0 dist doesn't export it yet; keep in sync if the clamp bounds [192,448] change.
-const SIDEBAR_RESIZER_RESTORE_SCRIPT = `(function(){try{var w=localStorage.getItem("zudo-doc-sidebar-width");if(!w)return;var n=parseFloat(w);if(!isFinite(n))return;if(n<192)n=192;else if(n>448)n=448;document.documentElement.style.setProperty("--zd-sidebar-w",n+"px");}catch(e){}})();`;
+import { SIDEBAR_RESIZER_RESTORE_SCRIPT } from "@takazudo/zudo-doc/sidebar-resizer";
 // Import ColorSchemeProvider from the dedicated
 // `./theme/color-scheme-provider` subpath rather than the
 // "@takazudo/zudo-doc/theme" barrel — the barrel also re-exports the
