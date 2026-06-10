@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "github-slugger": "^2.0.0",
+    "gray-matter": "^4.0.3",
     "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {

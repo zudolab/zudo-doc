@@ -8,29 +8,15 @@
  * in a unit test, etc.
  */
 
+import type { MdDocFrontmatter } from "../../md-utils/index.js";
+
 /**
  * Frontmatter fields the loader reads off of each MDX/MD file. Callers
- * are free to extend this; unrecognised fields are ignored.
+ * are free to extend this; unrecognised fields are ignored. Alias of the
+ * shared {@link MdDocFrontmatter} shape (`md-utils`, zudo-doc#2024) —
+ * search-index and llms-txt read the same fields.
  */
-export interface LlmsTxtFrontmatter {
-  title?: string;
-  description?: string;
-  sidebar_position?: number;
-  draft?: boolean;
-  unlisted?: boolean;
-  /**
-   * `true` when the page is excluded from search and llms.txt indexing.
-   * Mirrors the `search_exclude` flag used by the existing project.
-   */
-  search_exclude?: boolean;
-  /**
-   * A `category_no_page` index.mdx carries category metadata only and builds
-   * no route — so it must NOT appear in llms.txt (the link would 404). Mirrors
-   * the route/sitemap/search exclusion in the host project.
-   */
-  category_no_page?: boolean;
-  [key: string]: unknown;
-}
+export type LlmsTxtFrontmatter = MdDocFrontmatter;
 
 /**
  * One entry in the generated llms.txt / llms-full.txt files. Pure data,

@@ -19,6 +19,13 @@ export function touch(base: string, filePath: string): void {
   writeFileSync(full, "# Test");
 }
 
+/** Create a file (and parent dirs) with the given content. */
+export function write(base: string, filePath: string, content: string): void {
+  const full = resolve(base, filePath);
+  mkdirSync(resolve(full, ".."), { recursive: true });
+  writeFileSync(full, content);
+}
+
 /** Remove a temporary directory. */
 export function cleanupTempProject(dir: string): void {
   rmSync(dir, { recursive: true, force: true });
