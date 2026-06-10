@@ -258,7 +258,7 @@ export const SEARCH_WIDGET_SCRIPT = /* javascript */ `(function () {
           self._loading = false;
           self._indexUnavailable = true;
           if (self._results) {
-            self._results.innerHTML = "<p class=\"text-small text-muted\">Search unavailable</p>";
+            self._results.innerHTML = "<p class=\\"text-small text-muted\\">Search unavailable</p>";
           }
         });
     }
