@@ -182,3 +182,14 @@ src/components/find-bar.tsx
 src/utils/find-in-page.ts
 src/utils/content-files.ts
 src/utils/git-info.ts
+
+# #2057 — TOC-title resolver for the scanner-visible Toc/MobileToc shims.
+# Deliberate, behaviour-preserving divergence: the HOST resolves
+# @takazudo/zudo-doc as a workspace package and imports the real `getTocTitle`
+# from the /toc barrel (a single re-export line). The TEMPLATE hand-mirrors the
+# lang→title map locally because scaffolded projects install the PUBLISHED
+# @takazudo/zudo-doc (<= 0.2.2), which does not export `getTocTitle` yet.
+# Keep the two in behavioural sync; the template can switch to the import once
+# its pinned @takazudo/zudo-doc dependency moves past 0.2.2. Confined to this
+# tiny helper so the byte-identical _doc-page-shell.tsx stays fully drift-checked.
+pages/lib/_toc-title.ts

@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { getTocTitle } from "../toc-title.js";
+import { getTocTitle as getTocTitleFromBarrel } from "../index.js";
+
+describe("toc barrel public API", () => {
+  it("re-exports getTocTitle from @takazudo/zudo-doc/toc (zudolab/zudo-doc#2057)", () => {
+    expect(getTocTitleFromBarrel).toBe(getTocTitle);
+    expect(getTocTitleFromBarrel("ja")).toBe("目次");
+  });
+});
 
 describe("getTocTitle", () => {
   it("returns English label for undefined input", () => {
