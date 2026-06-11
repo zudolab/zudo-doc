@@ -36,17 +36,30 @@ export function readColorSchemeFromDom(
 
 /**
  * Apply `next` as the active color scheme: mutate the DOM, persist the
- * preference, clear stale tweak state, and notify every subscriber
- * (including other mounted ThemeToggle instances) via the
+ * preference, and notify every subscriber (including other mounted
+ * ThemeToggle instances and the zdtp design-token panel) via the
  * `color-scheme-changed` window event.
+ *
+ * Tweak-state reconciliation is intentionally NOT done here (#2037). The zdtp
+ * panel owns its own storage lifecycle: it persists the unified tweak envelope
+ * under `zudo-doc-tweak-state-v3` (auto-migrating the legacy
+ * `zudo-doc-tweak-state-v2` / `zudo-doc-tweak-state` keys into it), and its own
+ * `color-scheme-changed` listener clears applied inline styles and re-seeds the
+ * color slice from the newly active scheme. An earlier version of this function
+ * deleted `zudo-doc-tweak-state` + `-v2` on every toggle, which (a) targeted
+ * stale keys after zdtp moved to v3 — so it no longer did anything — and
+ * (b) when it did fire, wiped the whole envelope including scheme-independent
+ * spacing/typography/size tweaks, contradicting the documented carry-over
+ * guarantee. So the host no longer touches zdtp's private storage keys.
+ *
+ * Whether palette tweaks should instead persist per-scheme (so a light/dark
+ * round-trip keeps them) is a zdtp design question tracked upstream at
+ * Takazudo/zudo-design-token-panel#343. See zudo-doc#2037.
  */
 export function applyColorScheme(next: ColorSchemeMode): void {
   document.documentElement.setAttribute("data-theme", next);
   document.documentElement.style.colorScheme = next;
   localStorage.setItem(STORAGE_KEY, next);
-  // Clear both v1 and v2 tweak state so the new scheme's palette takes effect.
-  localStorage.removeItem("zudo-doc-tweak-state");
-  localStorage.removeItem("zudo-doc-tweak-state-v2");
   window.dispatchEvent(new CustomEvent(COLOR_SCHEME_CHANGED_EVENT));
 }
 

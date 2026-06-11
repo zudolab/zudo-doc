@@ -1,6 +1,7 @@
 import type { Env, SearchRequest } from "./types";
 import { corsHeaders, handleOptions } from "./cors";
 import { checkRateLimit } from "./rate-limit";
+import { hashIp } from "./hash-ip";
 import { search } from "./search";
 
 function jsonResponse(
@@ -16,14 +17,6 @@ function jsonResponse(
       ...extraHeaders,
     },
   });
-}
-
-async function hashIp(ip: string): Promise<string> {
-  const data = new TextEncoder().encode(ip);
-  const hash = await crypto.subtle.digest("SHA-256", data);
-  return [...new Uint8Array(hash)]
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
 }
 
 export default {
@@ -79,7 +72,9 @@ export default {
       // cf-connecting-ip is only set by the Cloudflare edge; absent on other platforms,
       // collapsing all callers into a shared "unknown" rate-limit bucket.
       const clientIp = request.headers.get("cf-connecting-ip") || "unknown";
-      const ipHash = await hashIp(clientIp);
+      // HMAC-SHA-256 keyed by the optional IP_HASH_SECRET when provisioned;
+      // falls back to unsalted SHA-256 when it is absent (#2038).
+      const ipHash = await hashIp(clientIp, env.IP_HASH_SECRET);
 
       const rateLimit = await checkRateLimit(ipHash, env);
       if (!rateLimit.allowed) {

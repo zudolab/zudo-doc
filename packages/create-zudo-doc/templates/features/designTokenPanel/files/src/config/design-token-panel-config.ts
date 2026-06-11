@@ -6,11 +6,12 @@
  *
  * Type notes:
  * - zdtp's `ColorScheme` requires a `shikiTheme: string` field that is not
- *   present in zudo-doc's local `ColorScheme` type or data. The cast below
- *   (`as unknown as Record<string, ZdtpColorScheme>`) is intentional: zdtp
- *   uses `shikiTheme` only for the code-block preview inside the panel; when
- *   absent at runtime it falls back to `colorExtras.defaultShikiTheme`. No
- *   user-visible regression results from the missing field.
+ *   present in this project's local `ColorScheme` type or data (zdtp uses it
+ *   only for the panel's client-side code-block preview). Rather than an unsafe
+ *   `as unknown as Record<string, ZdtpColorScheme>` double-cast, every local
+ *   scheme map is run through `toZdtpColorSchemes()` below, which supplies
+ *   `DEFAULT_SHIKI_THEME` as the fallback so the result satisfies zdtp's
+ *   required-field shape with an ordinary type-checked assignment.
  */
 
 import type {
@@ -28,6 +29,7 @@ import {
   SIZE_TOKENS,
 } from "./design-tokens-manifest";
 import { colorSchemes } from "./color-schemes";
+import type { ColorScheme as LocalColorScheme } from "./color-schemes";
 import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "./color-scheme-utils";
 import { settings } from "./settings";
 import { DESIGN_TOKEN_SCHEMA } from "@takazudo/zudo-doc/theme";
@@ -48,6 +50,30 @@ const BASE_DEFAULTS = {
  * Fallback Shiki theme used when a color scheme's `shikiTheme` field is absent.
  */
 const DEFAULT_SHIKI_THEME = "github-dark";
+
+/**
+ * Normalize this project's local `ColorScheme` records into zdtp's
+ * `ColorScheme` shape. zdtp's type requires `shikiTheme: string`; the local
+ * scheme type makes it optional. This helper fills `DEFAULT_SHIKI_THEME` only
+ * when a scheme doesn't declare its own, so the result is assignable to
+ * `Record<string, ZdtpColorScheme>` via an ordinary type-checked assignment —
+ * replacing the previous `as unknown as` double-cast that bypassed every field
+ * check. Tracked upstream at Takazudo/zudo-design-token-panel#342 (shikiTheme
+ * should be optional in zdtp's `ColorScheme` type); drop this helper once that
+ * lands.
+ */
+function toZdtpColorSchemes(
+  schemes: Record<string, LocalColorScheme>,
+): Record<string, ZdtpColorScheme> {
+  const normalized: Record<string, ZdtpColorScheme> = {};
+  for (const [name, scheme] of Object.entries(schemes)) {
+    normalized[name] = {
+      ...scheme,
+      shikiTheme: scheme.shikiTheme ?? DEFAULT_SHIKI_THEME,
+    };
+  }
+  return normalized;
+}
 
 /**
  * Initial palette taken from the configured active scheme.
@@ -178,9 +204,9 @@ const COLOR_EXTRAS: ColorClusterExtras = {
   },
   baseDefaults: BASE_DEFAULTS,
   defaultShikiTheme: DEFAULT_SHIKI_THEME,
-  // Local ColorScheme lacks shikiTheme; cast is safe — zdtp falls back to
-  // defaultShikiTheme when shikiTheme is absent at runtime.
-  colorSchemes: colorSchemes as unknown as Record<string, ZdtpColorScheme>,
+  // toZdtpColorSchemes fills the fallback only for schemes without their own
+  // shikiTheme, so this is a type-checked assignment rather than an unsafe cast.
+  colorSchemes: toZdtpColorSchemes(colorSchemes),
   panelSettings: {
     colorScheme: settings.colorScheme,
     // colorMode: strip off respectPrefersColorScheme (not in zdtp's shape).

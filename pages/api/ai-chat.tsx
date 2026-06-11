@@ -19,6 +19,9 @@
 //   RATE_LIMIT            — KV namespace (wrangler kv namespace create RATE_LIMIT)
 //   RATE_LIMIT_PER_MINUTE — optional var (default 10)
 //   RATE_LIMIT_PER_DAY    — optional var (default 100)
+//   IP_HASH_SECRET        — optional secret (wrangler secret put IP_HASH_SECRET);
+//                           when set, client IPs are keyed with HMAC-SHA-256
+//                           instead of unsalted SHA-256 (#2038)
 
 import { getCloudflareContext } from "@takazudo/zfb-adapter-cloudflare";
 
@@ -124,7 +127,9 @@ export default async function AiChatHandler(): Promise<Response> {
   // this header is absent, collapsing all callers into one shared "unknown" rate-limit
   // bucket — every caller competes against the same counters, effectively a global cap.
   const clientIp = request.headers.get("cf-connecting-ip") ?? "unknown";
-  const ipHash = await hashIp(clientIp);
+  // HMAC-SHA-256 keyed by the optional IP_HASH_SECRET when provisioned; falls
+  // back to unsalted SHA-256 when it is absent (#2038).
+  const ipHash = await hashIp(clientIp, env.IP_HASH_SECRET);
 
   // Rate limit FIRST — before parsing the body, running validation, or writing
   // any audit-log entry. Every audit write touches KV, so gating audits behind
@@ -231,6 +236,17 @@ export default async function AiChatHandler(): Promise<Response> {
         // assistant turns are model-emitted text already constrained by
         // the system prompt and may legitimately quote injection-shaped
         // language in normal answers.
+        //
+        // RESIDUAL RISK (accepted by design — see issue #2036, Option 1):
+        // `history` is client-supplied and the server is stateless, so it
+        // cannot verify that an `assistant`-role entry was actually emitted
+        // by a prior model response. A caller can forge an `assistant` turn
+        // carrying hostile instructions, which skips this screening. We accept
+        // this rather than (a) screening assistant turns too — false positives
+        // on legitimate quoted content — or (b) server-issued signed history,
+        // which would add a secret and change the client/server payload
+        // contract. The blast radius is low (docs-chat only) and the system
+        // prompt instructs the model to treat all prior turns as untrusted.
         if (entry.role === "user" && !screenInput(entry.content)) {
           audit(body.message, { blocked: true, blockReason: "prompt_injection" });
           return reply(

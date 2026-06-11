@@ -198,6 +198,26 @@ htmlPreview: {
 />
 ````
 
+## セキュリティと `sandbox` プロップ
+
+プレビューは分離された `<iframe srcdoc>` 内に描画されます。その `sandbox` 属性は、プレビューにスクリプトが含まれる場合（`js` プロップまたは `head` 内の `<script>`）は `allow-scripts allow-same-origin`、含まれない場合は `allow-same-origin` を**デフォルト**とします。
+
+:::danger[信頼の前提]
+`allow-scripts` と `allow-same-origin` を組み合わせると、**iframe のサンドボックスは実質的に無効化されます** — プレビュー内のスクリプトが親ページのオリジンを共有し、親ドキュメントにアクセスできます。zudo-doc がこのデフォルトを採用しているのは、プレビューの内容が**作成者が信頼できる MDX** であるためで、また `allow-same-origin` が高さの自動計測を可能にしているためです。
+
+**半信頼またはユーザー投稿の** HTML を描画するプロジェクトでは、`sandbox` プロップでより厳しい値に上書きしてください。
+:::
+
+```mdx
+<!-- 最も厳格: スクリプト実行なし、オリジンは不透明 -->
+<HtmlPreview html={untrusted} sandbox="" height={400} />
+
+<!-- スクリプトは許可するがオリジンは不透明（親にアクセス不可） -->
+<HtmlPreview html={untrusted} sandbox="allow-scripts" height={400} />
+```
+
+`allow-same-origin` を外すと iframe のオリジンが不透明になり、親から `iframe.contentDocument` を読み取れなくなります — つまり**高さの自動調整が無効になります**。厳しい `sandbox` を指定するときは、必ず固定の `height` も併用してください。空文字列 `""` はそのまま尊重され、プロップを省略したときだけ計算済みのデフォルトにフォールバックします。
+
 ## Props
 
 | プロップ | 型 | デフォルト | 説明 |
@@ -209,6 +229,7 @@ htmlPreview: {
 | `title` | string | `undefined` | プレビューヘッダーバーに表示するタイトル |
 | `height` | number | auto | iframe の固定高さ（ピクセル）。省略時はコンテンツに合わせて自動調整 |
 | `defaultOpen` | boolean | `false` | ソースコードパネルをデフォルトで展開表示する |
+| `sandbox` | string | auto | iframe の `sandbox` 属性。省略時は計算済みのデフォルト（スクリプトありなら `allow-scripts allow-same-origin`、なしなら `allow-same-origin`）。信頼できないコンテンツにはより厳しい値を指定 — ただし `allow-same-origin` を外すと高さ自動調整が無効になるため `height` も併せて指定する |
 
 ## サポートされている言語
 
@@ -223,7 +244,7 @@ htmlPreview: {
 ## 注意事項
 
 - プレビューは CSS リセット（Tailwind v4 preflight）を含む分離された `<iframe>` 内で描画されるため、スタイルが外部に漏れることはありません。
-- プレビューは `sandbox="allow-same-origin"`（`js` プロップまたは `<script>` がある場合は `sandbox="allow-scripts allow-same-origin"`）を使用し、`contentDocument` 経由で iframe の高さを自動同期します。`srcdoc` の内容は作成者が管理する MDX です。
+- プレビューはデフォルトで `sandbox="allow-same-origin"`（`js` プロップまたは `<script>` がある場合は `sandbox="allow-scripts allow-same-origin"`）を使用し、`contentDocument` 経由で iframe の高さを自動同期します。`srcdoc` の内容は作成者が管理する MDX です。信頼できないコンテンツには `sandbox` プロップで上書きしてください — 上記の[セキュリティと `sandbox` プロップ](#セキュリティと-sandbox-プロップ)を参照。
 - `settings.htmlPreview` のグローバルリソースは、コンポーネント単位のプロップの前に挿入されます。
 - `html`、`css`、`js` プロップはインデント付きのテンプレートリテラルに対応しています。先頭の空白はソースコード表示時に自動的に除去されます。
 - クライアントサイドのハイドレーションはコンポーネントラッパーにより自動的に処理されるため、MDX 内で `client:load` ディレクティブを付ける必要はありません。
