@@ -40,11 +40,13 @@ This replaces the old "copy everything then strip" approach. Features are added,
 
 ### Injection Anchors
 
-The only file shipped with anchors in `templates/base/` today is:
+The files shipped with anchors in `templates/base/` today are:
 
 - `src/styles/global.css` — 2 anchors (`@slot:global-css:theme-tokens`, `@slot:global-css:feature-styles`)
+- `pages/_mdx-components.ts` — anchors consumed by the imageEnlarge feature
+- `pages/lib/_body-end-islands.tsx` — anchors consumed by the tauri feature
 
-Only `src/styles/global.css` carries injection anchors. Feature-specific files are copied wholesale from `templates/features/<name>/files/`; no anchor injection into doc-layout/header is required post-zfb-cutover. The `ANCHOR_FILES` list in `src/compose.ts` is the source of truth for which files are anchor-cleaned after composition.
+The `ANCHOR_FILES` list in `src/compose.ts` is the source of truth for which files are anchor-cleaned after composition. Feature-specific files are copied wholesale from `templates/features/<name>/files/`; no anchor injection into doc-layout/header is required post-zfb-cutover.
 
 `src/compose.ts` `ANCHOR_LINE_RE` accepts JSX-comment (`{/* @slot:… */}`), block-comment, line-comment, HTML-comment, and shell-comment forms so anchors work across `.tsx`, `.ts`, and `.css`.
 
