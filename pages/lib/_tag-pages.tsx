@@ -131,6 +131,11 @@ export function TagDetailPageView({
       noindex={settings.noindex}
       hideSidebar={true}
       hideToc={true}
+      // Empty fragment suppresses DocLayoutWithDefaults' empty-data default
+      // Sidebar island — its marker never hydrates for published-package
+      // consumers (zfb#999) and zfb >= next.38 warns about it; the sidebar is
+      // hidden on this page anyway (zudolab/zudo-doc#2057).
+      sidebarOverride={<></>}
       // Tag segment URL-encoded — emitted href/path sites only; route params
       // stay raw (e.g. "type:guide" → "type%3Aguide").
       headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase(`${prefix}/docs/tags/${encodeURIComponent(tag)}`)} />}
@@ -184,6 +189,11 @@ export function TagsIndexPageView({ locale }: { locale: string }): JSX.Element {
       noindex={settings.noindex}
       hideSidebar={true}
       hideToc={true}
+      // Empty fragment suppresses DocLayoutWithDefaults' empty-data default
+      // Sidebar island — its marker never hydrates for published-package
+      // consumers (zfb#999) and zfb >= next.38 warns about it; the sidebar is
+      // hidden on this page anyway (zudolab/zudo-doc#2057).
+      sidebarOverride={<></>}
       headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase(`${prefix}/docs/tags`)} />}
       breadcrumbOverride={<Breadcrumb items={breadcrumbItems} />}
       footerOverride={<FooterWithDefaults lang={locale} />}

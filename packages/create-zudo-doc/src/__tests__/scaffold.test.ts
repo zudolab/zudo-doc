@@ -146,6 +146,58 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     expect(content).toContain("export default");
   });
 
+  // #2057: scanner-visible Toc/MobileToc shims ship in the base template so
+  // generated projects (which install the PUBLISHED @takazudo/zudo-doc, whose
+  // "use client" island modules zfb's scanner skips under node_modules — zfb#999)
+  // get a local binding the scanner can register. _doc-page-shell.tsx mounts
+  // them via tocOverride/mobileTocOverride.
+  it("ships scanner-visible Toc/MobileToc shims with 'use client' + pinned displayName (#2057)", async () => {
+    const tocPath = projectPath("test-minimal", "src/components/toc.tsx");
+    const mobileTocPath = projectPath(
+      "test-minimal",
+      "src/components/mobile-toc.tsx",
+    );
+    expect(await fs.pathExists(tocPath)).toBe(true);
+    expect(await fs.pathExists(mobileTocPath)).toBe(true);
+
+    const toc = await fs.readFile(tocPath, "utf-8");
+    expect(toc.startsWith('"use client";')).toBe(true);
+    expect(toc).toContain('from "@takazudo/zudo-doc/toc"');
+    expect(toc).toContain('Toc.displayName = "Toc";');
+
+    const mobileToc = await fs.readFile(mobileTocPath, "utf-8");
+    expect(mobileToc.startsWith('"use client";')).toBe(true);
+    expect(mobileToc).toContain('from "@takazudo/zudo-doc/toc"');
+    expect(mobileToc).toContain('MobileToc.displayName = "MobileToc";');
+  });
+
+  // #2057: the doc-page shell mounts the local shims via the override props and
+  // derives the TOC title from the hand-mirrored _toc-title helper (the
+  // published package this scaffold installs does not export getTocTitle yet).
+  it("wires tocOverride/mobileTocOverride in _doc-page-shell with the _toc-title helper (#2057)", async () => {
+    const shellPath = projectPath(
+      "test-minimal",
+      "pages/lib/_doc-page-shell.tsx",
+    );
+    const shell = await fs.readFile(shellPath, "utf-8");
+    expect(shell).toContain('import { Toc } from "@/components/toc";');
+    expect(shell).toContain(
+      'import { MobileToc } from "@/components/mobile-toc";',
+    );
+    expect(shell).toContain('import { getTocTitle } from "./_toc-title";');
+    expect(shell).toContain("tocOverride={tocOverride}");
+    expect(shell).toContain("mobileTocOverride={mobileTocOverride}");
+
+    const tocTitlePath = projectPath(
+      "test-minimal",
+      "pages/lib/_toc-title.ts",
+    );
+    expect(await fs.pathExists(tocTitlePath)).toBe(true);
+    const tocTitle = await fs.readFile(tocTitlePath, "utf-8");
+    expect(tocTitle).toContain("export function getTocTitle");
+    expect(tocTitle).toContain('"目次"');
+  });
+
   it(".gitignore includes standard Node + macOS + Cloudflare entries", async () => {
     const gitignore = await fs.readFile(
       projectPath("test-minimal", ".gitignore"),
@@ -1188,6 +1240,41 @@ describe("scaffold — tauri feature", () => {
       "utf-8",
     );
     expect(bodyEnd).not.toContain("FindInPageInit");
+    // No leftover slot anchors in the generated output.
+    expect(bodyEnd).not.toContain("@slot:");
+  });
+});
+
+describe("scaffold — body-end-islands feature gating (#2058)", () => {
+  // pages/lib/_body-end-islands.tsx feature-gates the AiChatModal island +
+  // sr-only "AI Assistant" landmark on settings.aiAssistant and the
+  // ImageEnlarge island on settings.imageEnlarge, mirroring the existing
+  // designTokenPanel gating. The conditionals are part of the wholesale-copied
+  // base template, so every scaffold variant carries them regardless of the
+  // flag values — a feature-off consumer (aiAssistant/imageEnlarge false) then
+  // ships neither the dead island marker nor the misleading landmark heading.
+  it("gates AiChatModal/heading on aiAssistant and ImageEnlarge on imageEnlarge", async () => {
+    const choices: UserChoices = {
+      projectName: "test-body-end-gating",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "imageEnlarge"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+
+    const bodyEnd = await fs.readFile(
+      projectPath("test-body-end-gating", "pages/lib/_body-end-islands.tsx"),
+      "utf-8",
+    );
+    // AI assistant gating wraps both the island and the landmark heading.
+    expect(bodyEnd).toContain("settings.aiAssistant ?");
+    expect(bodyEnd).toContain('<h2 class="sr-only">AI Assistant</h2>');
+    // Image-enlarge island gating.
+    expect(bodyEnd).toContain("settings.imageEnlarge");
+    // designTokenPanel gating stays in place and untouched.
+    expect(bodyEnd).toContain("settings.designTokenPanel");
     // No leftover slot anchors in the generated output.
     expect(bodyEnd).not.toContain("@slot:");
   });

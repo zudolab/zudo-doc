@@ -65,6 +65,11 @@ export function VersionsPageView({ locale }: { locale: string }): JSX.Element {
       noindex={settings.noindex}
       hideSidebar={true}
       hideToc={true}
+      // Empty fragment suppresses DocLayoutWithDefaults' empty-data default
+      // Sidebar island — its marker never hydrates for published-package
+      // consumers (zfb#999) and zfb >= next.38 warns about it; the sidebar is
+      // hidden on this page anyway (zudolab/zudo-doc#2057).
+      sidebarOverride={<></>}
       headerOverride={<HeaderWithDefaults lang={locale as Locale} currentPath={withBase(`${prefix}/docs/versions`)} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
       bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}

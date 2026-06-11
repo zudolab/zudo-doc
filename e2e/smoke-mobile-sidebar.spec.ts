@@ -108,4 +108,45 @@ test.describe("Mobile sidebar", () => {
     // Sidebar should be closed after navigation (via astro:after-swap handler)
     await expect(page.locator('button[aria-label="Open sidebar"]')).toBeVisible({ timeout: 5000 });
   });
+
+  test("closed sidebar panel is inert and unfocusable; opening clears inert", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto(DOCS_PAGE, { waitUntil: "load" });
+
+    const sidebarPanel = page.locator("header aside");
+    await expect(sidebarPanel).toBeAttached();
+
+    // Closed by default: the panel is only visually hidden via
+    // `-translate-x-full`, so it must be `inert` to keep its links/filter/
+    // buttons out of the tab order and the accessibility tree
+    // (zudolab/zudo-doc#2059). `inert` is present in the SSR markup, so this
+    // holds even before hydration.
+    const closedState = await sidebarPanel.evaluate((el) => ({
+      inertProp: (el as HTMLElement).inert,
+      hasAttr: el.hasAttribute("inert"),
+    }));
+    expect(closedState.inertProp).toBe(true);
+    expect(closedState.hasAttr).toBe(true);
+
+    // A link inside the inert panel cannot take focus (inert blocks focus).
+    const closedLink = sidebarPanel.locator("a").first();
+    if (await closedLink.count()) {
+      const focusedWhileInert = await closedLink.evaluate((el) => {
+        (el as HTMLElement).focus();
+        return document.activeElement === el;
+      });
+      expect(focusedWhileInert).toBe(false);
+    }
+
+    // Opening the drawer clears `inert`, restoring focusability.
+    await page.locator('button[aria-label="Open sidebar"]').click();
+    await expect(page.locator('button[aria-label="Close sidebar"]')).toBeVisible();
+
+    const openState = await sidebarPanel.evaluate((el) => ({
+      inertProp: (el as HTMLElement).inert,
+      hasAttr: el.hasAttribute("inert"),
+    }));
+    expect(openState.inertProp).toBe(false);
+    expect(openState.hasAttr).toBe(false);
+  });
 });
