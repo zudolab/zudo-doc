@@ -1,5 +1,6 @@
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import matter from "gray-matter";
 
 export interface DocsSourceMapOptions {
   /** Absolute root directory of the project */
@@ -14,6 +15,22 @@ export interface DocsSourceMapOptions {
   base: string;
   /** Whether to append trailing slash to URLs */
   trailingSlash: boolean;
+}
+
+/**
+ * Read a file's frontmatter `slug:` override, if any. Returns `undefined`
+ * when the file is unreadable or the frontmatter declares no string slug,
+ * so callers can `??`-fall back to the filesystem slug — the same
+ * resolution the route layer applies (`data.slug ?? toRouteSlug(id)`).
+ */
+function frontmatterSlug(absFile: string): string | undefined {
+  try {
+    const raw = readFileSync(absFile, "utf-8");
+    const slug: unknown = matter(raw).data.slug;
+    return typeof slug === "string" ? slug : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -62,12 +79,16 @@ export function buildDocsSourceMap(
     for (const file of files) {
       const absFile = resolve(absDir, file);
       // Convert file path to slug: strip extension, strip /index suffix
-      const slug = file
+      const fileSlug = file
         .replace(/\.(md|mdx)$/, "")
         .replace(/(^|\/)index$/, "$1") // Strip index (root or nested)
         .replace(/(^|\\)index$/, "$1") // Windows
         .replace(/\\/g, "/") // Windows path sep
         .replace(/\/$/, ""); // Trailing slash from index strip
+      // Honor the frontmatter `slug:` override the same way the route layer
+      // does (`data.slug ?? toRouteSlug(id)`) — otherwise resolved markdown
+      // links point at the filesystem path, which 404s for overridden pages.
+      const slug = frontmatterSlug(absFile) ?? fileSlug;
       const url = withBase(`${urlPrefix}/${slug}`);
       map.set(absFile, url);
 

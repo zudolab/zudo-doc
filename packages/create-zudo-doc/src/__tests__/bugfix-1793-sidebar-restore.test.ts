@@ -1,7 +1,8 @@
-// Regression test for #1793: generated projects must not import
-// SidebarResizerRestore from @takazudo/zudo-doc/sidebar-resizer because the
-// published 0.1.0 dist does not export it. The fix inlines the restore
-// script as a local constant (SIDEBAR_RESIZER_RESTORE_SCRIPT) instead.
+// Regression test for #1793 / #2029: generated projects must import
+// SIDEBAR_RESIZER_RESTORE_SCRIPT from @takazudo/zudo-doc/sidebar-resizer
+// (exported since 0.2.0) rather than inlining it as a local constant.
+// The inline workaround was required when 0.1.0 didn't export it yet; it
+// was replaced with a proper dist import in #2029.
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "fs-extra";
 import os from "os";
@@ -25,7 +26,7 @@ afterEach(async () => {
   await fs.remove(tempDir);
 });
 
-describe("bugfix #1793 — sidebar restore script inlined, not imported", () => {
+describe("bugfix #1793 / #2029 — sidebar restore script imported from dist", () => {
   const choices: UserChoices = {
     projectName: "test-bugfix-1793",
     defaultLang: "en",
@@ -35,21 +36,23 @@ describe("bugfix #1793 — sidebar restore script inlined, not imported", () => 
     packageManager: "pnpm",
   };
 
-  it("generated _head-with-defaults.tsx does NOT import SidebarResizerRestore", async () => {
+  it("generated _head-with-defaults.tsx imports SIDEBAR_RESIZER_RESTORE_SCRIPT from the package", async () => {
     await scaffold(choices);
     const content = await fs.readFile(
       path.join(tempDir, "test-bugfix-1793", "pages/lib/_head-with-defaults.tsx"),
       "utf-8",
     );
-    expect(content).not.toContain("import { SidebarResizerRestore }");
+    expect(content).toContain(
+      'import { SIDEBAR_RESIZER_RESTORE_SCRIPT } from "@takazudo/zudo-doc/sidebar-resizer"',
+    );
   });
 
-  it("generated _head-with-defaults.tsx DOES contain inlined SIDEBAR_RESIZER_RESTORE_SCRIPT constant", async () => {
+  it("generated _head-with-defaults.tsx does NOT inline the restore script as a local constant", async () => {
     await scaffold(choices);
     const content = await fs.readFile(
       path.join(tempDir, "test-bugfix-1793", "pages/lib/_head-with-defaults.tsx"),
       "utf-8",
     );
-    expect(content).toContain("SIDEBAR_RESIZER_RESTORE_SCRIPT");
+    expect(content).not.toContain("const SIDEBAR_RESIZER_RESTORE_SCRIPT");
   });
 });

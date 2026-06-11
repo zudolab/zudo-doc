@@ -6,22 +6,16 @@
 // settings.locales. Locale string is passed as a prop to drive label
 // translation in the component.
 //
+// Rendering is shared with the default-locale route via
+// pages/lib/_versions-page.tsx (#2010).
+//
 // paths() contract (zfb ADR-004 — synchronous):
 //   params: { locale: string }
 //   props:  { locale }
 
 import { settings } from "@/config/settings";
-import { t } from "@/config/i18n";
-import { withBase } from "@/utils/base";
-import { DocLayoutWithDefaults } from "@takazudo/zudo-doc/doclayout";
-import { VersionsPageContent } from "@takazudo/zudo-doc/nav-indexing";
-import type { VersionPageEntry, VersionsPageLabels } from "@takazudo/zudo-doc/nav-indexing";
 import type { JSX } from "preact";
-import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
-import { HeaderWithDefaults } from "../../lib/_header-with-defaults";
-import { HeadWithDefaults } from "../../lib/_head-with-defaults";
-import { composeMetaTitle } from "../../lib/_compose-meta-title";
-import { BodyEndIslands } from "../../lib/_body-end-islands";
+import { VersionsPageView } from "../../lib/_versions-page";
 
 export const frontmatter = { title: "Versions" };
 
@@ -50,53 +44,5 @@ interface PageArgs {
 }
 
 export default function LocaleVersionsPage({ params }: PageArgs): JSX.Element {
-  const locale = params.locale;
-  const pageTitle = t("version.page.title", locale);
-
-  const labels: VersionsPageLabels = {
-    pageTitle,
-    latestTitle: t("version.page.latest.title", locale),
-    latestDescription: t("version.page.latest.description", locale),
-    latestLink: t("version.page.latest.link", locale),
-    pastTitle: t("version.page.past.title", locale),
-    pastDescription: t("version.page.past.description", locale),
-    unmaintained: t("version.page.unmaintained", locale),
-    unreleased: t("version.page.unreleased", locale),
-    versionCol: t("version.switcher.label", locale),
-    statusCol: t("version.page.status", locale),
-    docsCol: t("version.page.docs", locale),
-  };
-
-  const latestHref = withBase(`/${locale}/docs/getting-started`);
-
-  const versions: VersionPageEntry[] = settings.versions
-    ? settings.versions.map((v) => ({
-        slug: v.slug,
-        label: v.label ?? v.slug,
-        // Version prefix comes BEFORE the locale — the only routed shape is
-        // pages/v/[version]/{locale}/docs/...; /{locale}/v/... has no route.
-        docsHref: withBase(`/v/${v.slug}/${locale}/docs/getting-started/`),
-        banner: v.banner as "unmaintained" | "unreleased" | undefined,
-      }))
-    : [];
-
-  return (
-    <DocLayoutWithDefaults
-      title={composeMetaTitle(pageTitle)}
-      head={<HeadWithDefaults title={pageTitle} />}
-      lang={locale}
-      noindex={settings.noindex}
-      hideSidebar={true}
-      hideToc={true}
-      headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase(`/${locale}/docs/versions`)} />}
-      footerOverride={<FooterWithDefaults lang={locale} />}
-      bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
-    >
-      <VersionsPageContent
-        latestHref={latestHref}
-        versions={versions}
-        labels={labels}
-      />
-    </DocLayoutWithDefaults>
-  );
+  return <VersionsPageView locale={params.locale} />;
 }

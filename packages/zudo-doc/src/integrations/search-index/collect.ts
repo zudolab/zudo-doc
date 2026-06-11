@@ -11,7 +11,7 @@ import {
   parseMarkdownFile,
   slugToUrl,
   stripMarkdown,
-} from "./content-files.js";
+} from "../../md-utils/index.js";
 import {
   MAX_BODY_LENGTH,
   type SearchIndexConfig,
@@ -34,13 +34,17 @@ function buildEntries(
   const files = collectMdFiles(absDir);
   const entries: SearchIndexEntry[] = [];
 
-  for (const { filePath, slug } of files) {
+  for (const { filePath, slug: fileSlug } of files) {
     const parsed = parseMarkdownFile(filePath);
     if (!parsed) continue;
     const { data, content } = parsed;
 
     if (isExcluded(data)) continue;
 
+    // Honor the frontmatter `slug:` override the same way the route layer
+    // does (`data.slug ?? toRouteSlug(id)`) — otherwise the search result
+    // links at the filesystem path, which 404s for overridden pages.
+    const slug = data.slug ?? fileSlug;
     const id = locale ? `${locale}/${slug}` : slug;
     entries.push({
       id,

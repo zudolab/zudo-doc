@@ -7,25 +7,21 @@
  * so that edits to CLAUDE.md, skills/*, commands/*, agents/* reflect in the
  * zfb dev server without a full restart.
  *
- * Invocation pattern mirrors plugins/claude-resources-plugin.mjs exactly
- * (tsx -e subprocess) — keep in sync. The gray-matter CJS/ESM issue forces
- * the subprocess approach; see the plugin's top-level comment for details.
+ * Imports runClaudeResourcesPreStep directly — the package now ships compiled
+ * dist/ so the tsx subprocess workaround is no longer needed. See the
+ * updated plugins/claude-resources-plugin.mjs header for the history.
  *
  * Defaults for claudeDir / docsDir match src/config/settings.ts —
  * update here if those settings change.
  */
 
 import { watch } from "chokidar";
-import { spawn } from "node:child_process";
+import { runClaudeResourcesPreStep } from "@takazudo/zudo-doc/integrations/claude-resources";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(HERE, "..");
-
-// Mirrors plugins/claude-resources-plugin.mjs — same binary resolution strategy
-// so the watcher doesn't depend on PATH.
-const TSX_BIN = resolve(PROJECT_ROOT, "node_modules", ".bin", "tsx");
 
 // Defaults from src/config/settings.ts (claudeResources.claudeDir and docsDir).
 // Update here if those settings drift.
@@ -40,45 +36,19 @@ let rerunQueued = false;
 let shuttingDown = false;
 
 // ---------------------------------------------------------------------------
-// Runner — mirrors runRunnerUnderTsx from plugins/claude-resources-plugin.mjs
-// Inherits stdio rather than parsing JSON so the user sees runner logs live.
+// Runner — direct import replaces the old tsx -e subprocess approach
+// Runs synchronously in-process for faster regen and visible errors.
 // ---------------------------------------------------------------------------
 
-function runRunner() {
-  const childScript = `
-    (async () => {
-      const { runClaudeResourcesPreStep } = await import("@takazudo/zudo-doc/integrations/claude-resources");
-      const result = await runClaudeResourcesPreStep({
-        claudeDir: ${JSON.stringify(CLAUDE_DIR)},
-        projectRoot: ${JSON.stringify(PROJECT_ROOT)},
-        docsDir: ${JSON.stringify(DOCS_DIR)},
-      });
-      console.log(
-        \`[claude-watch] done: \${result.claudemd} CLAUDE.md, \${result.commands} commands, \${result.skills} skills, \${result.agents} agents\`
-      );
-    })().catch((err) => {
-      process.stderr.write((err && err.stack ? err.stack : String(err)) + "\\n");
-      process.exit(1);
-    });
-  `;
-
-  return new Promise((resolve, reject) => {
-    const child = spawn(TSX_BIN, ["-e", childScript], {
-      cwd: PROJECT_ROOT,
-      stdio: "inherit",
-    });
-    child.on("error", reject);
-    child.on("close", (code) => {
-      if (code === 0) {
-        resolve();
-      } else {
-        // Non-zero exit: log but don't crash the watcher — a syntax error in
-        // a CLAUDE.md shouldn't kill the whole dev session.
-        console.error(`[claude-watch] runner exited with code ${code}`);
-        resolve();
-      }
-    });
+async function runRunner() {
+  const result = await runClaudeResourcesPreStep({
+    claudeDir: CLAUDE_DIR,
+    projectRoot: PROJECT_ROOT,
+    docsDir: DOCS_DIR,
   });
+  console.log(
+    `[claude-watch] done: ${result.claudemd} CLAUDE.md, ${result.commands} commands, ${result.skills} skills, ${result.agents} agents`,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -87,7 +57,7 @@ function runRunner() {
 
 // Runs the generator, serialized. If changes arrive while a run is in flight,
 // they coalesce into exactly one follow-up run (rerunQueued) — never two
-// concurrent `tsx -e` subprocesses writing the same MDX output.
+// concurrent regeneration calls writing the same MDX output.
 async function regenerate() {
   if (shuttingDown) return;
   if (inFlight) {
@@ -96,7 +66,10 @@ async function regenerate() {
   }
   do {
     rerunQueued = false;
-    const run = runRunner();
+    const run = runRunner().catch((err) => {
+      // Non-fatal: a syntax error in a CLAUDE.md shouldn't kill the whole dev session.
+      console.error("[claude-watch] runner error:", err instanceof Error ? err.message : String(err));
+    });
     inFlight = run;
     try {
       await run;
@@ -160,7 +133,7 @@ async function shutdown(signal) {
     try {
       await inFlight;
     } catch {
-      // already logged inside runRunner
+      // already logged inside regenerate
     }
   }
 

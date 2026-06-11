@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { resolve } from "node:path";
 import { buildDocsSourceMap, type DocsSourceMapOptions } from "../docs-source-map";
-import { createTempProject, touch, cleanupTempProject } from "./test-helpers";
+import {
+  createTempProject,
+  touch,
+  write,
+  cleanupTempProject,
+} from "./test-helpers";
 
 describe("buildDocsSourceMap", () => {
   let rootDir: string;
@@ -125,6 +130,64 @@ describe("buildDocsSourceMap", () => {
     // Both extensions should resolve to the same URL
     expect(map.get(mdxFile)).toBe("/docs/guide/");
     expect(map.get(mdFile)).toBe("/docs/guide/");
+  });
+
+  describe("frontmatter slug override", () => {
+    it("emits the overridden URL (route-layer parity: data.slug ?? filesystem slug)", () => {
+      write(
+        rootDir,
+        "src/content/docs/guides/getting-started-quickly.mdx",
+        '---\ntitle: "Quickstart"\nslug: quickstart\n---\n\n# Quickstart\n',
+      );
+
+      const map = buildDocsSourceMap(baseOptions());
+      const absFile = resolve(
+        rootDir,
+        "src/content/docs/guides/getting-started-quickly.mdx",
+      );
+      expect(map.get(absFile)).toBe("/docs/quickstart/");
+    });
+
+    it("registers the alternative extension under the overridden URL too", () => {
+      write(
+        rootDir,
+        "src/content/docs/guide.mdx",
+        "---\nslug: quickstart\n---\n\n# Guide\n",
+      );
+
+      const map = buildDocsSourceMap(baseOptions());
+      const mdFile = resolve(rootDir, "src/content/docs/guide.md");
+      expect(map.get(mdFile)).toBe("/docs/quickstart/");
+    });
+
+    it("applies the override inside locale directories", () => {
+      write(
+        rootDir,
+        "src/content/docs-ja/guides/getting-started-quickly.mdx",
+        "---\nslug: quickstart\n---\n\n# クイックスタート\n",
+      );
+
+      const map = buildDocsSourceMap(
+        baseOptions({ locales: { ja: { dir: "src/content/docs-ja" } } }),
+      );
+      const absFile = resolve(
+        rootDir,
+        "src/content/docs-ja/guides/getting-started-quickly.mdx",
+      );
+      expect(map.get(absFile)).toBe("/ja/docs/quickstart/");
+    });
+
+    it("falls back to the filesystem slug when frontmatter has no slug", () => {
+      write(
+        rootDir,
+        "src/content/docs/guide.mdx",
+        '---\ntitle: "Guide"\n---\n\n# Guide\n',
+      );
+
+      const map = buildDocsSourceMap(baseOptions());
+      const absFile = resolve(rootDir, "src/content/docs/guide.mdx");
+      expect(map.get(absFile)).toBe("/docs/guide/");
+    });
   });
 
   describe("non-default configs", () => {

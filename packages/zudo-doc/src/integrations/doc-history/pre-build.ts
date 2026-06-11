@@ -7,7 +7,7 @@
 // inlines it; this avoids pulling Node-only `fs` / `child_process` code
 // into the client bundle.
 //
-// Schema: `{ [composedSlug]: { author, createdDate, updatedDate } }`,
+// Schema: `{ [composedSlug]: { author, createdDate, updatedDate, ext } }`,
 // where `composedSlug` is the bare slug for the default locale
 // (e.g. `getting-started/intro`) and `<localeKey>/<slug>` for non-default
 // locales (e.g. `ja/getting-started/intro`). Pages with no manifest entry
@@ -38,11 +38,14 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { cpus } from "node:os";
 import {
   collectContentFiles,
   getFileCommitsMetaAsync,
 } from "@takazudo/zudo-doc-history-server/git-history";
+import {
+  makeSemaphore,
+  defaultGitConcurrency,
+} from "@takazudo/zudo-doc-history-server/concurrency";
 
 /** A single non-default locale entry; mirrors `settings.locales[*]`. */
 export interface DocHistoryMetaLocaleConfig {
@@ -85,6 +88,14 @@ export interface DocHistoryMetaEntry {
   author: string;
   createdDate: string;
   updatedDate: string;
+  /**
+   * Source file extension (".mdx" or ".md") — the content walkers accept
+   * both (`collectContentFiles` matches `\.mdx?$`), so the view-source URL
+   * builder in the host's `_doc-history-area.tsx` reads this instead of
+   * hardcoding ".mdx". Optional in older manifests; readers fall back to
+   * ".mdx" when absent.
+   */
+  ext?: ".mdx" | ".md";
 }
 
 /** Manifest shape — keyed by composedSlug. */
@@ -94,37 +105,12 @@ const META_OUT_RELATIVE_DIR = ".zfb";
 const META_OUT_FILENAME = "doc-history-meta.json";
 
 /**
- * Tiny in-file semaphore for bounded parallelism — avoids a p-limit dependency.
- * Limits concurrent async tasks to `concurrency` at a time.
- * Ported from packages/doc-history-server/src/cli.ts.
+ * Derive the manifest `ext` value from a content file path. The walkers
+ * only collect `.md` / `.mdx` files (`collectContentFiles` matches
+ * `\.mdx?$`), so anything not ending in ".md" is ".mdx".
  */
-export function makeSemaphore(concurrency: number) {
-  let running = 0;
-  const queue: Array<() => void> = [];
-
-  function next(): void {
-    if (queue.length > 0 && running < concurrency) {
-      // Do not increment running here — the dequeued tryRun call handles it.
-      queue.shift()!();
-    }
-  }
-
-  return function acquire(): Promise<() => void> {
-    return new Promise((resolve) => {
-      function tryRun() {
-        if (running < concurrency) {
-          running++;
-          resolve(() => {
-            running--;
-            next();
-          });
-        } else {
-          queue.push(tryRun);
-        }
-      }
-      tryRun();
-    });
-  };
+export function deriveSourceExt(filePath: string): ".mdx" | ".md" {
+  return filePath.endsWith(".md") ? ".md" : ".mdx";
 }
 
 /**
@@ -176,8 +162,8 @@ export async function runDocHistoryMetaStep(
 
   // Bounded parallelism: default to CPU count (min 2, max 8) to saturate git
   // without spawning excessively — each getFileCommitsMetaAsync issues one
-  // git process. Ported from packages/doc-history-server/src/cli.ts.
-  const concurrency = Math.min(8, Math.max(2, cpus().length));
+  // git process.
+  const concurrency = defaultGitConcurrency();
   const acquire = makeSemaphore(concurrency);
 
   // Build the flat job list in deterministic order (locale-then-file). Ordering
@@ -239,6 +225,8 @@ export async function runDocHistoryMetaStep(
       // createdDate = oldest commit; updatedDate = newest commit.
       createdDate: result.oldest.date,
       updatedDate: result.newest.date,
+      // Source extension for the view-source URL (".md" walkers accepted).
+      ext: deriveSourceExt(jobs[i]!.filePath),
     };
   }
 

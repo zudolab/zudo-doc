@@ -128,6 +128,25 @@ else
   fail "Type checking"
 fi
 
+# pages/ typecheck: `zfb check` (root tsconfig) excludes pages/ by design
+# (zfb injects its own page-runner types at build time). tsconfig.pages.json
+# provides the needed zfb/* path mappings to cover the ~50 page files that
+# had zero typecheck coverage before this gate was added (#2018).
+if (cd "$ROOT_DIR" && pnpm check:pages); then
+  pass "pages/ typecheck passed"
+else
+  fail "pages/ typecheck"
+fi
+
+# plugins/ typecheck: root tsconfig excludes plugins/ (plain .mjs files).
+# tsconfig.plugins.json enables checkJs with strict mode for all six
+# plugins/*.mjs files (#2026).
+if (cd "$ROOT_DIR" && pnpm check:plugins); then
+  pass "plugins/ typecheck passed"
+else
+  fail "plugins/ typecheck"
+fi
+
 # Workspace package typechecks: `zfb check` only covers the root tsconfig
 # (packages/ are excluded), so a red package typecheck was invisible to
 # every gate until review-loop 2026-06-05 found one. Runs each package's

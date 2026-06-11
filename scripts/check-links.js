@@ -35,15 +35,33 @@ export async function parseContentDirs(settingsPath) {
   const docsDirMatch = content.match(/docsDir:\s*["']([^"']*)["']/);
   const docsDir = docsDirMatch ? docsDirMatch[1] : "src/content/docs";
 
-  // Extract locale content dirs (e.g. docsJaDir)
+  // Extract locale keys and dirs from `locales: { ja: { dir: "..." } }` entries
+  // (top-level and per-version). Locale keys (e.g. "ja", "de") are captured so
+  // the MDX link scanner can build a dynamic alternation instead of hardcoding
+  // `(?:ja/)?`.
   const localeDirs = [];
-  const localeRegex = /docs[A-Z][a-z]+Dir:\s*["']([^"']*)["']/g;
-  let localeMatch;
-  while ((localeMatch = localeRegex.exec(content)) !== null) {
-    localeDirs.push(localeMatch[1]);
+  const localeKeys = [];
+  // Match locale block entries: `  ja: { ... dir: "..." ... }` or `ja: { dir: "..." }`
+  const localeBlockRegex = /\b([a-z]{2,5})\s*:\s*\{[^}]*\bdir:\s*["']([^"']*)["'][^}]*\}/g;
+  let blockMatch;
+  while ((blockMatch = localeBlockRegex.exec(content)) !== null) {
+    const key = blockMatch[1];
+    const dir = blockMatch[2];
+    if (!dir || dir === docsDir) continue;
+    if (!localeDirs.includes(dir)) localeDirs.push(dir);
+    if (!localeKeys.includes(key)) localeKeys.push(key);
+  }
+  // Fallback: if block regex missed any dir: entries, capture them without keys
+  const dirOnlyRegex = /\bdir:\s*["']([^"']*)["']/g;
+  let dirMatch;
+  while ((dirMatch = dirOnlyRegex.exec(content)) !== null) {
+    const dir = dirMatch[1];
+    if (dir && dir !== docsDir && !localeDirs.includes(dir)) {
+      localeDirs.push(dir);
+    }
   }
 
-  return { docsDir, localeDirs };
+  return { docsDir, localeDirs, localeKeys };
 }
 
 async function fileExists(filePath) {
@@ -108,6 +126,21 @@ export function extractHtmlLinks(html) {
 // --- Link Resolution ---
 
 /**
+ * Decode percent-encoding the way a static server / browser does before
+ * mapping a URL path to the filesystem. Tag hrefs are emitted URL-encoded
+ * (e.g. /docs/tags/type%3Aguide/) while the built output dir keeps the raw
+ * tag name (dist/docs/tags/type:guide/), so the checker must decode to
+ * find the file. Malformed sequences (stray "%") pass through unchanged.
+ */
+function safeDecodePath(path) {
+  try {
+    return decodeURIComponent(path);
+  } catch {
+    return path;
+  }
+}
+
+/**
  * Resolve a link and return its resolution type:
  *   'root'           — empty path or resolves to the site root (always valid)
  *   'file'           — resolved to a file with an extension or a .html file
@@ -115,7 +148,7 @@ export function extractHtmlLinks(html) {
  *   'missing'        — target does not exist
  */
 export async function resolveLinkDetail(href, distDir, basePath = "/", fileDir = "") {
-  const clean = href.split("#")[0].split("?")[0];
+  const clean = safeDecodePath(href.split("#")[0].split("?")[0]);
   if (!clean) return "root";
 
   let absolute = clean;
@@ -174,7 +207,17 @@ export function stripInlineCode(line) {
   return result;
 }
 
-export function extractMdxAbsoluteLinks(content) {
+export function extractMdxAbsoluteLinks(content, locales = []) {
+  // Build a locale prefix alternation from the provided locale keys.
+  // Falls back to the legacy "ja" only when no locale list is given, to
+  // keep existing call sites working. The alternation is escaped for use
+  // inside a regex character group, then wrapped in `(?:<locale>/)?` so
+  // the pattern matches both bare `/docs/...` and `/de/docs/...` etc.
+  const localeAlternation = locales.length > 0
+    ? `(?:${locales.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\/").join("|")})?`
+    : "(?:ja\\/)?";
+  // e.g. ["ja","de"] → "(?:ja\/|de\/)?" so the regex matches /ja/docs/... and /de/docs/...
+
   const issues = [];
   const lines = content.split("\n");
   let inCodeBlock = false;
@@ -190,15 +233,15 @@ export function extractMdxAbsoluteLinks(content) {
 
     const searchLine = stripInlineCode(line);
 
-    // Markdown link syntax: [text](/docs/...) or [text](/ja/docs/...)
-    const mdRegex = /\]\((\/(?:ja\/)?docs\/[^)]*)\)/g;
+    // Markdown link syntax: [text](/docs/...) or [text](/<locale>/docs/...)
+    const mdRegex = new RegExp(`\\]\\((\\/${localeAlternation}docs\\/[^)]*)\\)`, "g");
     let match;
     while ((match = mdRegex.exec(searchLine)) !== null) {
       issues.push({ href: match[1], line: i + 1 });
     }
 
-    // JSX href attributes: href="/docs/..." or href="/ja/docs/..."
-    const jsxRegex = /href="(\/(?:ja\/)?docs\/[^"]*)"/g;
+    // JSX href attributes: href="/docs/..." or href="/<locale>/docs/..."
+    const jsxRegex = new RegExp(`href="(\\/${localeAlternation}docs\\/[^"]*)"`, "g");
     while ((match = jsxRegex.exec(searchLine)) !== null) {
       issues.push({ href: match[1], line: i + 1 });
     }
@@ -209,62 +252,37 @@ export function extractMdxAbsoluteLinks(content) {
 
 // --- Main Check Functions ---
 
-export async function checkHtmlLinks(distDir, rootDir, basePath = "/", excludePatterns = []) {
+/**
+ * Single-pass dist walker: collects broken links and (optionally) trailing-
+ * slash warnings in one read of every HTML file. Both `checkHtmlLinks` and
+ * `checkTrailingSlashLinks` previously re-walked and re-read the same dist
+ * tree — merging them halves the I/O on large builds.
+ *
+ * When `checkTrailing` is false the trailing-slash warnings array is always
+ * empty; callers that don't need it pay no extra cost.
+ */
+export async function checkHtmlLinksAndTrailing(
+  distDir,
+  rootDir,
+  basePath = "/",
+  excludePatterns = [],
+  checkTrailing = false,
+) {
   const broken = [];
+  const trailingSlash = [];
   const htmlFiles = await collectFiles(distDir, [".html"]);
+  // One shared cache keyed by resolution type ("root"|"file"|"directoryIndex"|"missing").
+  // Both checks read from the same resolved detail so each href is stat'd once.
   const cache = new Map();
 
   for (const file of htmlFiles) {
     const content = await readFile(file, "utf-8");
     const links = extractHtmlLinks(content);
     const fileDir = dirname(file);
+    const relFile = relative(rootDir, file);
 
     for (const { href, line } of links) {
       if (excludePatterns.some((p) => p.test(href))) continue;
-
-      // Cache key: absolute links use href only; relative links include fileDir
-      const cacheKey = href.startsWith("/") ? href : `${fileDir}:${href}`;
-      let exists;
-      if (cache.has(cacheKey)) {
-        exists = cache.get(cacheKey);
-      } else {
-        exists = await resolveLink(href, distDir, basePath, fileDir);
-        cache.set(cacheKey, exists);
-      }
-
-      if (!exists) {
-        broken.push({ file: relative(rootDir, file), line, href });
-      }
-    }
-  }
-
-  return broken;
-}
-
-export async function checkTrailingSlashLinks(distDir, rootDir, basePath = "/", excludePatterns = []) {
-  const warnings = [];
-  const htmlFiles = await collectFiles(distDir, [".html"]);
-  const cache = new Map();
-
-  for (const file of htmlFiles) {
-    const content = await readFile(file, "utf-8");
-    const links = extractHtmlLinks(content);
-    const fileDir = dirname(file);
-
-    for (const { href, line } of links) {
-      if (excludePatterns.some((p) => p.test(href))) continue;
-
-      // Extract path portion (strip query string and fragment)
-      const pathPart = href.split("#")[0].split("?")[0];
-
-      // Skip root-like paths: empty, "/", ".", "./"
-      if (!pathPart || pathPart === "/" || pathPart === "." || pathPart === "./") continue;
-
-      // Skip links that already have a trailing slash
-      if (pathPart.endsWith("/")) continue;
-
-      // Skip links with file extensions (assets)
-      if (extname(pathPart)) continue;
 
       // Cache key: absolute links use href only; relative links include fileDir
       const cacheKey = href.startsWith("/") ? href : `${fileDir}:${href}`;
@@ -276,17 +294,46 @@ export async function checkTrailingSlashLinks(distDir, rootDir, basePath = "/", 
         cache.set(cacheKey, type);
       }
 
-      // Only warn for links that resolve to a directory index (page links missing trailing slash)
-      if (type === "directoryIndex") {
-        warnings.push({ file: relative(rootDir, file), line, href });
+      // Broken-link check
+      if (type === "missing") {
+        broken.push({ file: relFile, line, href });
+      }
+
+      // Trailing-slash check (opt-in)
+      if (checkTrailing) {
+        const pathPart = href.split("#")[0].split("?")[0];
+        // Skip root-like paths, links already with trailing slash, and assets
+        if (
+          pathPart &&
+          pathPart !== "/" &&
+          pathPart !== "." &&
+          pathPart !== "./" &&
+          !pathPart.endsWith("/") &&
+          !extname(pathPart) &&
+          type === "directoryIndex"
+        ) {
+          trailingSlash.push({ file: relFile, line, href });
+        }
       }
     }
   }
 
-  return warnings;
+  return { broken, trailingSlash };
 }
 
-export async function checkMdxLinks(contentDirs, rootDir, distDir = null, basePath = "/") {
+/** @deprecated Use checkHtmlLinksAndTrailing — retained for test compatibility. */
+export async function checkHtmlLinks(distDir, rootDir, basePath = "/", excludePatterns = []) {
+  const { broken } = await checkHtmlLinksAndTrailing(distDir, rootDir, basePath, excludePatterns, false);
+  return broken;
+}
+
+/** @deprecated Use checkHtmlLinksAndTrailing — retained for test compatibility. */
+export async function checkTrailingSlashLinks(distDir, rootDir, basePath = "/", excludePatterns = []) {
+  const { trailingSlash } = await checkHtmlLinksAndTrailing(distDir, rootDir, basePath, excludePatterns, true);
+  return trailingSlash;
+}
+
+export async function checkMdxLinks(contentDirs, rootDir, distDir = null, basePath = "/", locales = []) {
   const warnings = [];
 
   for (const dir of contentDirs) {
@@ -295,7 +342,7 @@ export async function checkMdxLinks(contentDirs, rootDir, distDir = null, basePa
 
     for (const file of files) {
       const content = await readFile(file, "utf-8");
-      const issues = extractMdxAbsoluteLinks(content);
+      const issues = extractMdxAbsoluteLinks(content, locales);
 
       for (const { href, line } of issues) {
         // If dist/ is available, drop warnings for hrefs that resolve to built routes
@@ -404,19 +451,15 @@ async function main() {
   // Exclude versioned docs links — version content may be incomplete
   const excludePatterns = [/\/v\/[^/]+\//];
 
-  const { docsDir, localeDirs } = await parseContentDirs(settingsPath);
+  const { docsDir, localeDirs, localeKeys } = await parseContentDirs(settingsPath);
   const contentDirs = [join(rootDir, docsDir), ...localeDirs.map((d) => join(rootDir, d))];
 
-  const checks = [
-    checkHtmlLinks(distDir, rootDir, basePath, excludePatterns),
-    checkMdxLinks(contentDirs, rootDir, distDir, basePath),
-  ];
-
-  if (trailingSlash) {
-    checks.push(checkTrailingSlashLinks(distDir, rootDir, basePath, excludePatterns));
-  }
-
-  let [brokenLinks, mdxWarnings, trailingSlashWarnings = []] = await Promise.all(checks);
+  // Single-pass dist walk: broken links + trailing-slash warnings in one read.
+  const [{ broken: brokenLinks, trailingSlash: trailingSlashWarnings }, mdxWarnings] =
+    await Promise.all([
+      checkHtmlLinksAndTrailing(distDir, rootDir, basePath, excludePatterns, trailingSlash),
+      checkMdxLinks(contentDirs, rootDir, distDir, basePath, localeKeys),
+    ]);
 
   // --- Flag parsing ---
   //

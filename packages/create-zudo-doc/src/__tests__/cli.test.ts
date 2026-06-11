@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseArgs, type CliArgs } from "../cli.js";
+import { parseArgs, validateArgs, type CliArgs } from "../cli.js";
 import { FEATURES } from "../constants.js";
 
 describe("parseArgs", () => {
@@ -128,5 +128,48 @@ describe("parseArgs", () => {
       expect(result.pm).toBe("pnpm");
       expect(result.yes).toBe(true);
     });
+  });
+});
+
+// F4 (S4 #2013) — project-name validation on CLI arg path
+describe("validateArgs — project-name validation (F4 #2013)", () => {
+  it("accepts a valid lowercase kebab name", () => {
+    expect(validateArgs({ name: "my-docs" })).toBeNull();
+  });
+
+  it("accepts a name starting with a digit", () => {
+    expect(validateArgs({ name: "1my-docs" })).toBeNull();
+  });
+
+  it("accepts a name with dots and underscores", () => {
+    expect(validateArgs({ name: "my.docs_v2" })).toBeNull();
+  });
+
+  it("rejects a name with uppercase letters", () => {
+    expect(validateArgs({ name: "My-Docs" })).toMatch(/lowercase/);
+  });
+
+  it("rejects a name with spaces", () => {
+    expect(validateArgs({ name: "my docs" })).toMatch(/lowercase/);
+  });
+
+  it("rejects a name starting with a dot", () => {
+    expect(validateArgs({ name: ".my-docs" })).toMatch(/lowercase/);
+  });
+
+  it("rejects a name starting with a hyphen", () => {
+    expect(validateArgs({ name: "-my-docs" })).toMatch(/lowercase/);
+  });
+
+  it("rejects a name with a slash (path-like)", () => {
+    expect(validateArgs({ name: "my/docs" })).toMatch(/lowercase/);
+  });
+
+  it("rejects a name longer than 214 characters", () => {
+    expect(validateArgs({ name: "a".repeat(215) })).toMatch(/214/);
+  });
+
+  it("accepts a name exactly 214 characters long", () => {
+    expect(validateArgs({ name: "a".repeat(214) })).toBeNull();
   });
 });

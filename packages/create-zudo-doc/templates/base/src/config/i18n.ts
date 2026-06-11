@@ -1,4 +1,5 @@
 import { settings } from "./settings";
+import type { LocaleConfig } from "./settings-types";
 
 // Collection name string used by zfb's content engine (`getCollection(...)`).
 // Kept as a structural string-literal alias so callers don't have to redeclare
@@ -15,9 +16,9 @@ export const locales = [
 ] as const;
 export type Locale = (typeof locales)[number];
 
-/** Safely look up a locale in settings.locales. */
-function getLocaleConfig(locale: string) {
-  return settings.locales[locale];
+/** Safely look up a locale in settings.locales by string key. */
+export function getLocaleConfig(locale: string): LocaleConfig | undefined {
+  return (settings.locales as Record<string, LocaleConfig | undefined>)[locale];
 }
 
 /** Get the content directory for a locale. */
@@ -70,6 +71,8 @@ const translations: Record<string, Record<string, string>> = {
     "toc.title": "On this page",
     "docs.browseAll": "Browse all documentation sections.",
     "search.label": "Search",
+    "search.placeholder": "Type to search...",
+    "search.shortcutHint": "to open search from anywhere",
     "search.resultCount": "{count} results",
     "code.copy": "Copy code",
     "code.copied": "Copied!",
@@ -128,6 +131,8 @@ const translations: Record<string, Record<string, string>> = {
     "toc.title": "目次",
     "docs.browseAll": "すべてのドキュメントセクションを閲覧",
     "search.label": "検索",
+    "search.placeholder": "検索したい単語を入力",
+    "search.shortcutHint": "いつでも検索バーを開ける",
     "search.resultCount": "{count} 件",
     "code.copy": "コードをコピー",
     "code.copied": "コピーしました！",
@@ -186,6 +191,8 @@ const translations: Record<string, Record<string, string>> = {
     "toc.title": "Auf dieser Seite",
     "docs.browseAll": "Alle Dokumentationsabschnitte durchsuchen.",
     "search.label": "Suche",
+    "search.placeholder": "Suchbegriff eingeben...",
+    "search.shortcutHint": "Suche von überall öffnen",
     "search.resultCount": "{count} Ergebnisse",
     "code.copy": "Code kopieren",
     "code.copied": "Kopiert!",

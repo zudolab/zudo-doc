@@ -6,12 +6,23 @@ This package provides the missing-by-design framework concerns:
 
 - **Sidebar tree builder** (`./sidebar-tree`) — turns collection entries + `_category_.json` into a sidebar `SidebarNode[]`.
 - **Theme controls** (`./theme`) — color scheme provider + design-token tweak panel (Preact island that wraps an iframe).
+- **Theme toggle (bare)** (`./theme-toggle`) — the un-wrapped ThemeToggle component for call sites that compose their own `<Island>` (the `./theme` barrel exports an Island-wrapped variant of the same component).
 - **TOC** (`./toc`) — desktop and mobile TOC Preact islands fed by MDX `headings` export.
 - **Breadcrumb** (`./breadcrumb`) — JSX breadcrumb fed by the sidebar tree.
 - **DocLayout** (`./doclayout`) — composable layout shell with explicit `<Header>`, `<Sidebar>`, `<Main>`, `<Toc>`, `<Footer>` props; ships a `<DocLayoutWithDefaults>` wrapper that holds the 16 `create-zudo-doc` injection anchors.
 - **View Transitions** (`./transitions`) — native View Transitions API shim (Chrome/Edge/Safari 18+); persistent regions via `view-transition-name`. No-op fallback in Firefox.
 - **Head injection** (`./head`) — canonical, og:\*, twitter:\*, robots, preload hints, RSS link, sitemap link, theme-color — byte-equal to today's legacy doc-layout output.
 - **SSR-skip wrappers** (`./ssr-skip`) — `<AiChatModalIsland>`, `<ImageEnlargeIsland>`, `<DesignTokenTweakPanelIsland>`, `<MockInitIsland>` — wrap zfb's `<Island ssrFallback>` with the right fallback markup so doc pages don't have to re-implement the SSR-skip pattern.
+
+## Optional peer dependency: shiki
+
+`./html-preview-wrapper`'s `<HighlightedCode>` lazily `import("shiki")`s at runtime for client-side syntax highlighting. `shiki` is declared as an **optional peerDependency** — install it in your project if you use that subpath:
+
+```sh
+pnpm add shiki
+```
+
+Projects scaffolded by `create-zudo-doc` already include it. If you never render `<HtmlPreview>` / `<HighlightedCode>`, you can omit it.
 
 ## Styling — Tailwind setup for consumers
 

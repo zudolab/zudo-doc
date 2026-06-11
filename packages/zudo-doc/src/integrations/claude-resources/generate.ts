@@ -64,7 +64,9 @@ function parseFrontmatter(content: string) {
 }
 
 function escapeTitle(s: string): string {
-  return s.replace(/"/g, '\\"');
+  // Backslashes must be escaped first — the value is embedded in
+  // double-quoted YAML frontmatter where `\d` or `C:\path` is invalid.
+  return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 
 function listFiles(dir: string): string[] {
@@ -91,6 +93,35 @@ generated: true
 ---
 `;
   fs.writeFileSync(path.join(outputDir, "index.mdx"), mdx);
+}
+
+/**
+ * Writes an unlisted sub-page MDX file (flat file with a custom nested slug).
+ * Used for skill references, scripts, and assets.
+ */
+function writeUnlistedSubPage(
+  outputPath: string,
+  title: string,
+  slug: string,
+  body: string,
+) {
+  fs.writeFileSync(
+    outputPath,
+    `---\ntitle: "${escapeTitle(title)}"\nslug: "${slug}"\nunlisted: true\ngenerated: true\n---\n\n${body}\n`,
+  );
+}
+
+/**
+ * Guards that the given name/slug is not the reserved "index" value.
+ * Throws with a contextual message if it is.
+ */
+function assertNotIndexReserved(
+  nameOrSlug: string,
+  errorMessage: string,
+) {
+  if (nameOrSlug === "index") {
+    throw new Error(errorMessage);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -176,11 +207,10 @@ function generateClaudemdDocs(
 
   const emittedSlugs = new Map<string, string>();
   items.forEach((item, index) => {
-    if (item.slug === "index") {
-      throw new Error(
-        `claude-resources: "${item.relPath}" maps to the reserved slug "index", which is used for the category metadata file. Rename the directory to resolve the conflict.`,
-      );
-    }
+    assertNotIndexReserved(
+      item.slug,
+      `claude-resources: "${item.relPath}" maps to the reserved slug "index", which is used for the category metadata file. Rename the directory to resolve the conflict.`,
+    );
     const previous = emittedSlugs.get(item.slug);
     if (previous !== undefined) {
       throw new Error(
@@ -232,11 +262,10 @@ function generateCommandsDocs(config: ClaudeResourcesConfig): CommandItem[] {
     if (!parsed) continue;
 
     const name = file.replace(/\.md$/, "");
-    if (name === "index") {
-      throw new Error(
-        `claude-resources: ".claude/commands/index.md" uses the reserved name "index", which is used for the category metadata file. Rename the command file to resolve the conflict.`,
-      );
-    }
+    assertNotIndexReserved(
+      name,
+      `claude-resources: ".claude/commands/index.md" uses the reserved name "index", which is used for the category metadata file. Rename the command file to resolve the conflict.`,
+    );
     const description = (parsed.data.description as string) || "";
 
     items.push({ name, description });
@@ -360,11 +389,10 @@ function generateSkillsDocs(config: ClaudeResourcesConfig): SkillItem[] {
   const items: SkillItem[] = [];
 
   for (const dir of dirs) {
-    if (dir === "index") {
-      throw new Error(
-        `claude-resources: skill directory ".claude/skills/index/" uses the reserved name "index", which is used for the category metadata file. Rename the skill directory to resolve the conflict.`,
-      );
-    }
+    assertNotIndexReserved(
+      dir,
+      `claude-resources: skill directory ".claude/skills/index/" uses the reserved name "index", which is used for the category metadata file. Rename the skill directory to resolve the conflict.`,
+    );
     const content = fs.readFileSync(
       path.join(skillsDir, dir, "SKILL.md"),
       "utf8",
@@ -448,46 +476,43 @@ ${body}`;
     const skillSlugBase = `claude-skills/${dir}`;
 
     for (const ref of references) {
-      const subSlug = `${skillSlugBase}/ref-${ref.name}`;
-      const refMdx = `---
-title: "${escapeTitle(ref.title)}"
-slug: "${subSlug}"
-unlisted: true
-generated: true
----
-
-${escapeForMdx(ref.content.trim())}
-`;
-      fs.writeFileSync(path.join(outputDir, `${dir}--ref-${ref.name}.mdx`), refMdx);
+      writeUnlistedSubPage(
+        path.join(outputDir, `${dir}--ref-${ref.name}.mdx`),
+        ref.title,
+        `${skillSlugBase}/ref-${ref.name}`,
+        escapeForMdx(ref.content.trim()),
+      );
     }
 
     for (const f of scriptFiles.filter((s) => s.endsWith(".md"))) {
       const slug = f.replace(/\.md$/, "");
-      const subSlug = `${skillSlugBase}/script-${slug}`;
       const raw = fs.readFileSync(
         path.join(skillsDir, dir, "scripts", f),
         "utf8",
       );
       const h1Match = raw.match(/^#\s+(.+)$/m);
       const title = h1Match?.[1] ?? slug;
-      fs.writeFileSync(
+      writeUnlistedSubPage(
         path.join(outputDir, `${dir}--script-${slug}.mdx`),
-        `---\ntitle: "${escapeTitle(title)}"\nslug: "${subSlug}"\nunlisted: true\ngenerated: true\n---\n\n${escapeForMdx(raw.trim())}\n`,
+        title,
+        `${skillSlugBase}/script-${slug}`,
+        escapeForMdx(raw.trim()),
       );
     }
 
     for (const f of assetFiles.filter((a) => a.endsWith(".md"))) {
       const slug = f.replace(/\.md$/, "");
-      const subSlug = `${skillSlugBase}/asset-${slug}`;
       const raw = fs.readFileSync(
         path.join(skillsDir, dir, "assets", f),
         "utf8",
       );
       const h1Match = raw.match(/^#\s+(.+)$/m);
       const title = h1Match?.[1] ?? slug;
-      fs.writeFileSync(
+      writeUnlistedSubPage(
         path.join(outputDir, `${dir}--asset-${slug}.mdx`),
-        `---\ntitle: "${escapeTitle(title)}"\nslug: "${subSlug}"\nunlisted: true\ngenerated: true\n---\n\n${escapeForMdx(raw.trim())}\n`,
+        title,
+        `${skillSlugBase}/asset-${slug}`,
+        escapeForMdx(raw.trim()),
       );
     }
   }
@@ -525,11 +550,10 @@ function generateAgentsDocs(config: ClaudeResourcesConfig): AgentItem[] {
     const description = (parsed.data.description as string) || "";
     const model = (parsed.data.model as string) || "";
     const fileSlug = file.replace(/\.md$/, "");
-    if (fileSlug === "index") {
-      throw new Error(
-        `claude-resources: ".claude/agents/index.md" uses the reserved name "index", which is used for the category metadata file. Rename the agent file to resolve the conflict.`,
-      );
-    }
+    assertNotIndexReserved(
+      fileSlug,
+      `claude-resources: ".claude/agents/index.md" uses the reserved name "index", which is used for the category metadata file. Rename the agent file to resolve the conflict.`,
+    );
 
     items.push({ name, file: fileSlug, description, model });
 

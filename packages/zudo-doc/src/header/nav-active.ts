@@ -28,7 +28,8 @@ export function pathForMatch(
   defaultLocale: string,
 ): string {
   if (lang == null || lang === defaultLocale) return pathWithoutBase;
-  return pathWithoutBase.replace(new RegExp(`^/${lang}`), "");
+  // Segment boundary required: "/ja-tutorial/..." must not lose its "/ja".
+  return pathWithoutBase.replace(new RegExp(`^/${lang}(?=/|$)`), "");
 }
 
 /**
@@ -42,6 +43,16 @@ export function pathForMatch(
  * Returns `undefined` when no nav entry matches; callers should treat
  * that as "no active link."
  */
+/**
+ * Segment-aware prefix test: nav path `/docs/guides` matches `/docs/guides`
+ * and `/docs/guides/...` but NOT `/docs/guideship`.
+ */
+function pathMatchesNavPath(currentPath: string, navPath: string): boolean {
+  if (currentPath === navPath) return true;
+  const prefix = navPath.endsWith("/") ? navPath : `${navPath}/`;
+  return currentPath.startsWith(prefix);
+}
+
 export function computeActiveNavPath(
   navItems: readonly NavItemLike[],
   pathForMatchValue: string,
@@ -54,7 +65,7 @@ export function computeActiveNavPath(
     return paths;
   });
   return allNavPaths
-    .filter((p) => pathForMatchValue.startsWith(p))
+    .filter((p) => pathMatchesNavPath(pathForMatchValue, p))
     .sort((a, b) => b.length - a.length)[0];
 }
 

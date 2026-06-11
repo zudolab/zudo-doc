@@ -2,89 +2,19 @@
 /** @jsxImportSource preact */
 // Page module for the default-locale "All Tags" index route.
 //
-// Default-locale (en) "All Tags" index page. Collects every tag across the
+// Default-locale "All Tags" index page. Collects every tag across the
 // "docs" collection, sorts them alphabetically, and renders a full tag cloud
 // via the v2 TagNav component. No dynamic params — single static route.
 //
-// Data flow:
-//   getCollection("docs")   [sync, zfb/content]
-//   → collectTags()         builds { tag → { count, docs[] } }
-//   → sort by tag           preserves sort parity with Astro original
-//   → TagNav variant="all"  renders the chip cloud
+// Tag collection + rendering are shared with the locale-prefixed route via
+// pages/lib/_tag-pages.tsx (#2010).
 
-import { getCollection } from "zfb/content";
-import { collectTags } from "@/utils/tags";
-import { toRouteSlug } from "@/utils/slug";
-import { t, defaultLocale } from "@/config/i18n";
-import { withBase } from "@/utils/base";
-import { settings } from "@/config/settings";
-import { DocLayoutWithDefaults } from "@takazudo/zudo-doc/doclayout";
-import { Breadcrumb } from "@takazudo/zudo-doc/breadcrumb";
-import type { BreadcrumbItem } from "@takazudo/zudo-doc/breadcrumb";
-import { TagNav } from "@takazudo/zudo-doc/nav-indexing";
-import type { TagItem, TagNavLabels } from "@takazudo/zudo-doc/nav-indexing";
+import { defaultLocale } from "@/config/i18n";
 import type { JSX } from "preact";
-import { bridgeDocsEntries, type ZfbDocsData } from "../../_data";
-import { FooterWithDefaults } from "../../lib/_footer-with-defaults";
-import { HeaderWithDefaults } from "../../lib/_header-with-defaults";
-import { HeadWithDefaults } from "../../lib/_head-with-defaults";
-import { composeMetaTitle } from "../../lib/_compose-meta-title";
-import { DocHistoryArea } from "../../lib/_doc-history-area";
-import { BodyEndIslands } from "../../lib/_body-end-islands";
+import { TagsIndexPageView } from "../../lib/_tag-pages";
 
 export const frontmatter = { title: "All Tags" };
 
 export default function DocsTagsIndexPage(): JSX.Element {
-  const locale = defaultLocale;
-  const pageTitle = t("doc.allTags", locale);
-
-  const allDocs = bridgeDocsEntries(getCollection<ZfbDocsData>("docs"), "docs");
-  // category_no_page index.mdx builds no route — drop it so a tag it carries
-  // doesn't inflate the tag list with a card linking to a non-existent page.
-  const docs = allDocs.filter(
-    (doc) =>
-      !doc.data.unlisted && !doc.data.draft && !doc.data.category_no_page,
-  );
-  const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
-
-  const labels: TagNavLabels = {
-    tags: t("doc.tags", locale),
-    taggedWith: t("doc.taggedWith", locale),
-  };
-
-  // Sort alphabetically — matches documented tag-nav sort order.
-  const tags: TagItem[] = [...tagMap.values()]
-    .sort((a, b) => a.tag.localeCompare(b.tag, locale))
-    .map((info) => ({
-      tag: info.tag,
-      count: info.count,
-      href: withBase(`/docs/tags/${info.tag}`),
-    }));
-
-  const breadcrumbItems: BreadcrumbItem[] = [
-    { label: "Docs" },
-    { label: pageTitle },
-  ];
-
-  return (
-    <DocLayoutWithDefaults
-      title={composeMetaTitle(pageTitle)}
-      head={<HeadWithDefaults title={pageTitle} />}
-      noindex={settings.noindex}
-      hideSidebar={true}
-      hideToc={true}
-      headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase("/docs/tags")} />}
-      breadcrumbOverride={<Breadcrumb items={breadcrumbItems} />}
-      footerOverride={<FooterWithDefaults lang={locale} />}
-      bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
-    >
-      <h1 class="text-heading font-bold mb-vsp-lg">{pageTitle}</h1>
-      {!settings.docTags || tags.length === 0 ? (
-        <p class="text-muted">{t("doc.noTags", locale)}</p>
-      ) : (
-        <TagNav variant="all" tags={tags} labels={labels} />
-      )}
-      <DocHistoryArea slug="tags" locale={locale} />
-    </DocLayoutWithDefaults>
-  );
+  return <TagsIndexPageView locale={defaultLocale} />;
 }

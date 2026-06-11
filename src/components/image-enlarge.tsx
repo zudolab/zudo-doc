@@ -2,14 +2,15 @@
 
 // Use `preact/compat` so the bundle resolves to Preact's React-shim at
 // runtime (zfb's esbuild step doesn't alias bare `react` to `preact/compat`).
-// See `src/components/theme-toggle.tsx` for the same workaround in the
-// hook-only case. preact/compat re-exports the same hooks plus the
+// See `packages/zudo-doc/src/theme-toggle/index.tsx` for the same
+// workaround in the hook-only case. preact/compat re-exports the same hooks plus the
 // `React.*` type namespace for event handlers.
-import { useState, useEffect, useRef } from "preact/compat";
+import { useState, useEffect } from "preact/compat";
 // After zudolab/zudo-doc#1335 (E2 task 2 half B) the host components
 // pull lifecycle event names from the v2 transitions module rather
 // than hard-coding `astro:*` literals.
 import { AFTER_NAVIGATE_EVENT } from "@takazudo/zudo-doc/transitions";
+import { useModalDialog } from "@/hooks/use-modal-dialog";
 
 interface ImageData {
   src: string;
@@ -43,7 +44,6 @@ const DIALOG_STYLE = {
 
 export default function ImageEnlarge() {
   const [imgData, setImgData] = useState<ImageData | null>(null);
-  const dialogRef = useRef<HTMLDialogElement>(null);
 
   // Eligibility detection: toggle .zd-enlarge-btn[hidden] per image
   useEffect(() => {
@@ -162,54 +162,16 @@ export default function ImageEnlarge() {
     return () => document.removeEventListener("click", handleDocumentClick);
   }, []);
 
-  // Open dialog when imgData is set
-  useEffect(() => {
-    if (!imgData) return;
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    dialog.showModal();
-  }, [imgData]);
+  const handleClose = () => setImgData(null);
 
-  // Handle cancel event (ESC key)
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    function handleCancel() {
-      setImgData(null);
-    }
-    dialog.addEventListener("cancel", handleCancel);
-    return () => dialog.removeEventListener("cancel", handleCancel);
-  }, []);
-
-  // Reset state when dialog closes
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    function handleClose() {
-      setImgData(null);
-    }
-    dialog.addEventListener("close", handleClose);
-    return () => dialog.removeEventListener("close", handleClose);
-  }, []);
-
-  // Close and reset on page navigation
-  useEffect(() => {
-    function handleAfterSwap() {
-      const dialog = dialogRef.current;
-      if (dialog?.open) dialog.close();
-      setImgData(null);
-    }
-    document.addEventListener(AFTER_NAVIGATE_EVENT, handleAfterSwap);
-    return () => document.removeEventListener(AFTER_NAVIGATE_EVENT, handleAfterSwap);
-  }, []);
-
-  function handleBackdropClick(e: React.MouseEvent<HTMLDialogElement>) {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    // Native <dialog> backdrop clicks fire with e.target === the dialog
-    // itself; child element clicks bubble with target set to that child.
-    if (e.target === dialog) dialog.close();
-  }
+  // Shared dialog lifecycle: showModal/close sync, native-close callback,
+  // backdrop click, and navigation-close — delegated to useModalDialog.
+  const { dialogRef, handleBackdropClick } = useModalDialog({
+    isOpen: imgData !== null,
+    onClose: handleClose,
+    navigateEvent: AFTER_NAVIGATE_EVENT,
+    backdropClickClose: true,
+  });
 
   return (
     <dialog

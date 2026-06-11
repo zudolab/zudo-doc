@@ -23,7 +23,12 @@
 import { getCloudflareContext } from "@takazudo/zfb-adapter-cloudflare";
 
 import { settings } from "@/config/settings";
-import { buildClaudeRequestBody } from "./_ai-chat-payload";
+import { resolveAllowOrigin, corsHeaders, handleOptions } from "./_ai-chat-cors";
+import { screenInput } from "./_ai-chat-screening";
+import { hashIp, fireAuditLog } from "./_ai-chat-audit";
+import { checkRateLimit } from "./_ai-chat-rate-limit";
+import { callClaude } from "./_ai-chat-client";
+import type { AiChatEnv, ChatMessage, BlockReason } from "./_ai-chat-types";
 
 // `frontmatter` is required by zfb's TSX page contract (see
 // `crates/zfb-content/src/tsx_frontmatter.rs`). Without it, zfb defaults
@@ -32,50 +37,6 @@ import { buildClaudeRequestBody } from "./_ai-chat-payload";
 export const frontmatter = { title: "AI Chat API" };
 
 export const prerender = false;
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-/** Minimal KV namespace shape — avoids a hard dep on @cloudflare/workers-types. */
-interface MinimalKV {
-  get(key: string): Promise<string | null>;
-  put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
-}
-
-interface AiChatEnv {
-  ANTHROPIC_API_KEY: string;
-  DOCS_SITE_URL: string;
-  RATE_LIMIT: MinimalKV;
-  RATE_LIMIT_PER_MINUTE?: string;
-  RATE_LIMIT_PER_DAY?: string;
-}
-
-interface ChatMessage {
-  role: "user" | "assistant";
-  content: string;
-}
-
-type BlockReason = "rate_limit" | "invalid_input" | "prompt_injection";
-
-interface AuditLogEntry {
-  timestamp: string;
-  ipHash: string;
-  message: string;
-  responsePreview: string;
-  blocked: boolean;
-  blockReason?: BlockReason;
-}
-
-interface ClaudeTextBlock {
-  type: "text";
-  text: string;
-}
-
-interface ClaudeApiResponse {
-  content: Array<ClaudeTextBlock | { type: string; [key: string]: unknown }>;
-  stop_reason: string;
-}
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -95,279 +56,6 @@ const MAX_MESSAGE_LENGTH = 4000;
 // context-window cost; exceeds the live `message` cap so callers can
 // still replay a full prior turn without resubmitting it.
 const MAX_HISTORY_CONTENT_LENGTH = 8192;
-
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-
-const MS_PER_MINUTE = 60_000;
-const MS_PER_DAY = 86_400_000;
-const SECONDS_PER_MINUTE = MS_PER_MINUTE / 1000;
-const SECONDS_PER_DAY = MS_PER_DAY / 1000;
-const MINUTE_KEY_TTL = 2 * SECONDS_PER_MINUTE;
-const DAY_KEY_TTL = 2 * SECONDS_PER_DAY;
-const DEFAULT_PER_MINUTE = 10;
-const DEFAULT_PER_DAY = 100;
-
-// ---------------------------------------------------------------------------
-// Docs context (in-memory cache, best-effort for CF Workers isolate lifespan)
-// ---------------------------------------------------------------------------
-
-let cachedDocsContext: string | null = null;
-let cachedAt = 0;
-
-async function fetchDocsContext(docsUrl: string): Promise<string> {
-  const now = Date.now();
-  if (cachedDocsContext !== null && now - cachedAt < CACHE_TTL_MS) {
-    return cachedDocsContext;
-  }
-  const url = `${docsUrl.replace(/\/$/, "")}/llms-full.txt`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch docs context: ${response.status}`);
-  }
-  cachedDocsContext = await response.text();
-  cachedAt = now;
-  return cachedDocsContext;
-}
-
-// ---------------------------------------------------------------------------
-// CORS
-// ---------------------------------------------------------------------------
-
-// CORS shape note: search-worker/src/cors.ts always uses "*" for Allow-Origin (no origin
-// whitelist — it is an opt-in, non-metered service). This module uses a per-origin allowlist
-// via aiChatAllowedOrigins (or "*" in demo mode). The two CORS implementations intentionally
-// diverge because they serve different threat models; a shared module is not extracted
-// (different build targets: pages/api esbuild host vs standalone Wrangler worker package).
-const CORS_STATIC_HEADERS: Record<string, string> = {
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Access-Control-Expose-Headers": "Retry-After",
-  "Access-Control-Max-Age": "86400",
-};
-
-/**
- * Resolves the `Access-Control-Allow-Origin` value for a given request origin.
- *
- * - Demo mode: always returns `"*"` (back-compat — showcase runs without
- *   `aiChatAllowedOrigins` configured).
- * - Non-demo, origin matches `aiChatAllowedOrigins`: echoes the origin.
- * - Non-demo, origin absent or not in the allowlist: returns `null` (no
- *   origin header sent — browsers will block cross-origin requests).
- */
-function resolveAllowOrigin(requestOrigin: string | null): string | null {
-  if (settings.aiChatDemoMode) return "*";
-  if (!requestOrigin) return null;
-  const allowed = settings.aiChatAllowedOrigins as string[];
-  return allowed.includes(requestOrigin) ? requestOrigin : null;
-}
-
-function corsHeaders(allowOrigin: string | null): Record<string, string> {
-  const headers: Record<string, string> = { ...CORS_STATIC_HEADERS };
-  if (allowOrigin !== null) {
-    headers["Access-Control-Allow-Origin"] = allowOrigin;
-    // Vary: Origin so caches don't serve the wrong allow-origin to other origins.
-    if (allowOrigin !== "*") {
-      headers["Vary"] = "Origin";
-    }
-  }
-  return headers;
-}
-
-function handleOptions(allowOrigin: string | null): Response {
-  return new Response(null, { status: 204, headers: corsHeaders(allowOrigin) });
-}
-
-// ---------------------------------------------------------------------------
-// Input screening (prompt injection guard)
-// ---------------------------------------------------------------------------
-
-const INJECTION_PATTERNS = [
-  /ignore\s+(all\s+)?(previous|prior|above)\s+(instructions?|prompts?|rules?)/i,
-  /system\s*prompt/i,
-  /reveal\s+(your|the)\s+(instructions?|prompt|config)/i,
-  /what\s+(are|is)\s+your\s+(instructions?|rules?|system\s*prompt)/i,
-  /api[_\s]?key/i,
-  /anthropic[_\s]?key/i,
-  /secret[_\s]?key/i,
-  /\bDAN\s+mode\b/i,
-  /act\s+as\s+(if\s+)?(you\s+)?(have\s+)?(no|without)\s+(restrictions?|rules?|limits?)/i,
-  /pretend\s+(you\s+)?(are|were)\s+(not|no longer)\s+(bound|restricted)/i,
-];
-
-/**
- * Returns true if the message is safe, false if a pattern matched.
- *
- * NOTE: This is NOT a security boundary. The actual defenses are:
- *   1. The system prompt (buildSystemPrompt) instructs the model to refuse injection attempts.
- *   2. The escape-first renderer on the client — assistant output is rendered as escaped text,
- *      not raw HTML, so even a jailbroken reply cannot inject markup into the page.
- * This regex is a best-effort early-exit that reduces cost and audit noise from obvious
- * probes; it does not protect against crafted inputs that bypass string matching.
- */
-function screenInput(message: string): boolean {
-  return !INJECTION_PATTERNS.some((p) => p.test(message));
-}
-
-// ---------------------------------------------------------------------------
-// Audit logging (fire-and-forget via ctx.waitUntil)
-// ---------------------------------------------------------------------------
-
-async function hashIp(ip: string): Promise<string> {
-  const data = new TextEncoder().encode(ip);
-  const hash = await crypto.subtle.digest("SHA-256", data);
-  const bytes = new Uint8Array(hash);
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-function fireAuditLog(
-  waitUntil: (p: Promise<unknown>) => void,
-  kv: MinimalKV,
-  entry: AuditLogEntry,
-): void {
-  const key = `audit:${entry.timestamp.slice(0, 10)}:${Date.now()}:${crypto.randomUUID()}`;
-  waitUntil(
-    kv
-      .put(key, JSON.stringify(entry), { expirationTtl: 7 * 24 * 60 * 60 })
-      .catch((err) => console.error("Audit log write failed:", err)),
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Rate limiting (per-IP via KV; fail-closed when not in demo mode)
-// ---------------------------------------------------------------------------
-
-interface RateLimitResult {
-  allowed: boolean;
-  retryAfter?: number;
-}
-
-function parseLimit(value: string | undefined, fallback: number): number {
-  const parsed = parseInt(value ?? String(fallback), 10);
-  return Number.isNaN(parsed) || parsed <= 0 ? fallback : parsed;
-}
-
-async function checkRateLimit(ipHash: string, env: AiChatEnv): Promise<RateLimitResult> {
-  const now = Date.now();
-  const perMinute = parseLimit(env.RATE_LIMIT_PER_MINUTE, DEFAULT_PER_MINUTE);
-  const perDay = parseLimit(env.RATE_LIMIT_PER_DAY, DEFAULT_PER_DAY);
-  // aiChatGlobalDailyLimit defaults to false (unbounded). Set it to a finite number
-  // in settings.ts before going non-demo, or a single day of traffic may exhaust your
-  // Anthropic API budget across all callers combined.
-  const globalDailyLimit = settings.aiChatGlobalDailyLimit as number | false;
-
-  const minBucket = Math.floor(now / MS_PER_MINUTE);
-  const dayBucket = Math.floor(now / MS_PER_DAY);
-  const minKey = `rate:min:${ipHash}:${minBucket}`;
-  const dayKey = `rate:day:${ipHash}:${dayBucket}`;
-  const globalDayKey = globalDailyLimit !== false ? `rate:global:${dayBucket}` : null;
-
-  let minCount: number;
-  let dayCount: number;
-  let globalDayCount: number;
-  try {
-    const parseCount = (v: string | null): number => {
-      const n = parseInt(v ?? "0", 10);
-      return Number.isNaN(n) ? 0 : n;
-    };
-    const reads: Promise<number>[] = [
-      env.RATE_LIMIT.get(minKey).then(parseCount),
-      env.RATE_LIMIT.get(dayKey).then(parseCount),
-    ];
-    if (globalDayKey !== null) {
-      reads.push(env.RATE_LIMIT.get(globalDayKey).then(parseCount));
-    }
-    const results = await Promise.all(reads);
-    minCount = results[0]!;
-    dayCount = results[1]!;
-    globalDayCount = results[2] ?? 0;
-  } catch (err) {
-    // Fail-CLOSED on KV error (#1918): a KV outage must not unlock unbounded API spend.
-    // This deliberately diverges from search-worker/src/rate-limit.ts, which fails OPEN
-    // because search has no metered per-call cost — callers get degraded rate-guard,
-    // not blocked results. Here the cost is real (Anthropic API tokens), so we block.
-    // In demo mode the rate limiter is never reached (demo short-circuit is first),
-    // so this branch is always non-demo in practice.
-    console.error(
-      `Rate limit KV read failed, ${settings.aiChatDemoMode ? "allowing" : "blocking"} request:`,
-      err,
-    );
-    return { allowed: settings.aiChatDemoMode };
-  }
-
-  if (minCount >= perMinute) {
-    const secondsIntoMinute = Math.floor((now % MS_PER_MINUTE) / 1000);
-    return { allowed: false, retryAfter: Math.max(1, SECONDS_PER_MINUTE - secondsIntoMinute) };
-  }
-
-  if (dayCount >= perDay) {
-    const secondsIntoDay = Math.floor((now % MS_PER_DAY) / 1000);
-    return { allowed: false, retryAfter: Math.max(1, SECONDS_PER_DAY - secondsIntoDay) };
-  }
-
-  if (globalDailyLimit !== false && globalDayCount >= globalDailyLimit) {
-    const secondsIntoDay = Math.floor((now % MS_PER_DAY) / 1000);
-    return { allowed: false, retryAfter: Math.max(1, SECONDS_PER_DAY - secondsIntoDay) };
-  }
-
-  // Increment counters (not atomic, acceptable for best-effort limiting).
-  const writes: Promise<void>[] = [
-    env.RATE_LIMIT.put(minKey, String(minCount + 1), { expirationTtl: MINUTE_KEY_TTL }),
-    env.RATE_LIMIT.put(dayKey, String(dayCount + 1), { expirationTtl: DAY_KEY_TTL }),
-  ];
-  if (globalDayKey !== null) {
-    writes.push(
-      env.RATE_LIMIT.put(globalDayKey, String(globalDayCount + 1), {
-        expirationTtl: DAY_KEY_TTL,
-      }),
-    );
-  }
-  const writeResults = await Promise.allSettled(writes);
-  for (const r of writeResults) {
-    if (r.status === "rejected") {
-      console.error("Rate limit KV write failed:", r.reason);
-    }
-  }
-
-  return { allowed: true };
-}
-
-// ---------------------------------------------------------------------------
-// Claude API call (raw fetch — no SDK, keeps CF Workers bundle lean)
-// ---------------------------------------------------------------------------
-
-async function callClaude(
-  message: string,
-  history: ChatMessage[],
-  env: AiChatEnv,
-): Promise<string> {
-  const docsContent = await fetchDocsContext(env.DOCS_SITE_URL);
-  const requestBody = buildClaudeRequestBody(message, history, docsContent);
-
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": env.ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify(requestBody),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Claude API error ${response.status}: ${errorText}`);
-  }
-
-  const data: unknown = await response.json();
-  if (!isClaudeApiResponse(data)) {
-    throw new Error("Unexpected Claude API response shape");
-  }
-  const textBlock = data.content.find((b): b is ClaudeTextBlock => b.type === "text");
-  if (!textBlock) throw new Error("No text response from Claude");
-  return textBlock.text;
-}
 
 // ---------------------------------------------------------------------------
 // Response helpers
@@ -395,14 +83,6 @@ function isValidMessage(msg: unknown): msg is ChatMessage {
   return (
     (m.role === "user" || m.role === "assistant") && typeof m.content === "string"
   );
-}
-
-/** Runtime type guard for the Claude API response shape. Prevents laundering an
- *  untrusted `response.json()` value into ClaudeApiResponse via a bare cast. */
-function isClaudeApiResponse(data: unknown): data is ClaudeApiResponse {
-  if (typeof data !== "object" || data === null) return false;
-  const d = data as Record<string, unknown>;
-  return Array.isArray(d.content) && typeof d.stop_reason === "string";
 }
 
 // ---------------------------------------------------------------------------
@@ -532,6 +212,7 @@ export default async function AiChatHandler(): Promise<Response> {
         );
       }
       const candidates = body.history as unknown[];
+      const sanitizedHistory: ChatMessage[] = [];
       for (const entry of candidates) {
         if (!isValidMessage(entry)) {
           audit(body.message, { blocked: true, blockReason: "invalid_input" });
@@ -557,8 +238,12 @@ export default async function AiChatHandler(): Promise<Response> {
             400,
           );
         }
+        // Rebuild each entry from the validated fields only — a bare cast
+        // would smuggle unknown extra fields (e.g. cache_control) verbatim
+        // into the Anthropic API request body.
+        sanitizedHistory.push({ role: entry.role, content: entry.content });
       }
-      history = candidates as ChatMessage[];
+      history = sanitizedHistory;
     }
 
     const response = await callClaude(body.message, history, env);

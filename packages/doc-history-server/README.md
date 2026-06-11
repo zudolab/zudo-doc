@@ -17,12 +17,15 @@ pnpm dev -- \
   --port 4322
 ```
 
-| Flag               | Required | Default | Description                                   |
-| ------------------ | -------- | ------- | --------------------------------------------- |
-| `--content-dir`    | Yes      | —       | Primary content directory to scan             |
-| `--locale <k>:<d>` | No       | —       | Extra locale directory (repeatable)           |
-| `--port`           | No       | `4322`  | HTTP port                                     |
-| `--max-entries`    | No       | `50`    | Max commits to include per file               |
+| Flag               | Required | Default       | Description                                   |
+| ------------------ | -------- | ------------- | --------------------------------------------- |
+| `--content-dir`    | Yes      | —             | Primary content directory to scan             |
+| `--locale <k>:<d>` | No       | —             | Extra locale directory (repeatable)           |
+| `--port`           | No       | `4322`        | HTTP port                                     |
+| `--host`           | No       | `127.0.0.1`   | Network interface to bind (see note below)    |
+| `--max-entries`    | No       | `50`          | Max commits to include per file               |
+
+> **Security note — `--host`:** The server exposes full git revision history including file content at every commit. It binds to `127.0.0.1` (loopback only) by default so it is not reachable from the LAN. The zfb dev plugin proxies `/doc-history/*` requests server-side, so both `pnpm dev` and `pnpm dev:network` work without LAN exposure. Pass `--host 0.0.0.0` only when you have a specific reason to accept remote connections.
 
 #### Endpoints
 
@@ -30,7 +33,7 @@ pnpm dev -- \
 - `GET /doc-history/{locale}/{slug}.json` — History for a localized document
 - `GET /health` — Health check
 
-The file index is refreshed every 10 seconds so newly added or renamed files are picked up without restarting the server. All responses include CORS headers for cross-origin dev access.
+The file index is refreshed every 10 seconds so newly added or renamed files are picked up without restarting the server. All responses include CORS headers.
 
 ### CLI mode (CI builds)
 
@@ -50,9 +53,9 @@ pnpm generate -- \
 | `--out-dir`        | Yes      | —       | Output directory for the generated JSONs  |
 | `--max-entries`    | No       | `50`    | Max commits to include per file           |
 
-## Astro integration
+## zfb integration
 
-In dev mode, the Astro integration at `src/integrations/doc-history.ts` proxies `/doc-history/*` requests to this server. In build mode, the integration falls back to inline generation unless `SKIP_DOC_HISTORY=1` is set — which is the case in the CI `build-site` job so that the Astro build completes fast while the CLI `build-history` job generates the JSONs in parallel.
+In dev mode, the zfb integration at `packages/zudo-doc/src/integrations/doc-history/` proxies `/doc-history/*` requests to this server. In build mode, the integration falls back to inline generation unless `SKIP_DOC_HISTORY=1` is set — which is the case in the CI `build-site` job so that the zfb build completes fast while the CLI `build-history` job generates the JSONs in parallel.
 
 ## Build
 
@@ -64,7 +67,7 @@ Uses `tsup` to emit ESM output + DTS into `dist/`.
 
 ## Design notes
 
-- **Synchronous git** — uses `execFileSync` for `git log` calls. The dev server is single-user and CI is inherently sequential, so async streaming is not needed.
+- **Async git** — all git calls use `execFile` / `spawn` (non-blocking). The CLI batch generator wraps each file in a semaphore-bounded Promise, so the async variant genuinely parallelizes across files (#1986). The server also uses the same async path so the event loop is never blocked.
 - **Repo-relative paths** — responses use relative file paths to avoid leaking absolute server paths.
 - **`--follow` for renames** — file history is tracked across renames with multiple fallback strategies.
-- **pnpm --filter CWD** — when run via `pnpm --filter`, the CWD is this package dir, so content paths passed from CI need `../../` prefix for repo-relative resolution.
+- **pnpm --filter CWD** — when run via `pnpm --filter`, the CWD is this package dir. pnpm sets `INIT_CWD` to the repo root, so pass repo-root-relative content paths (e.g. `src/content/docs`) without any `../../` prefix.

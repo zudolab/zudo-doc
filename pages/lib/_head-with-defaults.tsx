@@ -20,16 +20,13 @@
 
 import type { JSX } from "preact";
 import { OgTags, TwitterCard } from "@takazudo/zudo-doc/head";
-// Inlined from @takazudo/zudo-doc sidebar-resizer-init.tsx (SIDEBAR_RESIZER_RESTORE_SCRIPT) — the published 0.1.0 dist doesn't export it yet; keep in sync if the clamp bounds [192,448] change.
-const SIDEBAR_RESIZER_RESTORE_SCRIPT = `(function(){try{var w=localStorage.getItem("zudo-doc-sidebar-width");if(!w)return;var n=parseFloat(w);if(!isFinite(n))return;if(n<192)n=192;else if(n>448)n=448;document.documentElement.style.setProperty("--zd-sidebar-w",n+"px");}catch(e){}})();`;
-// Don't import ColorSchemeProvider from "@takazudo/zudo-doc/theme" — that
-// barrel also re-exports DesignTokenTweakPanel + ColorTweakExportModal, which
-// transitively pull `src/components/design-token-tweak/*` and the v2 panel
-// modules (and react-dependent code) into the zfb esbuild graph. Same hazard
-// the host's `_header-with-defaults.tsx` documents for ThemeToggle. The v2
-// package exposes a dedicated `./theme/color-scheme-provider` subpath whose
-// only output is the SSR-only ColorSchemeProvider component, keeping this
-// head emission free of the panel-module dependency chain.
+import { SIDEBAR_RESIZER_RESTORE_SCRIPT } from "@takazudo/zudo-doc/sidebar-resizer";
+// Import ColorSchemeProvider from the dedicated
+// `./theme/color-scheme-provider` subpath rather than the
+// "@takazudo/zudo-doc/theme" barrel — the barrel also re-exports the
+// ColorTweakExportModal island and the design-token SerDe/iframe-bridge
+// modules, which this SSR-only head emission does not need in its zfb
+// esbuild graph.
 import ColorSchemeProvider from "@takazudo/zudo-doc/theme/color-scheme-provider";
 import { composeMetaTitle } from "./_compose-meta-title";
 import { withBase, absoluteUrl } from "@/utils/base";
