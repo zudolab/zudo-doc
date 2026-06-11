@@ -91,7 +91,10 @@ export function generateSettingsFile(choices: UserChoices): string {
     );
     lines.push(`  } satisfies Record<string, LocaleConfig>,`);
   } else {
-    lines.push(`  locales: {} satisfies Record<string, LocaleConfig>,`);
+    // `as`, not `satisfies`: satisfies keeps the inferred type at literal {},
+    // so Object.entries(settings.locales) in the generated zfb.config.ts
+    // yields unknown values and `zfb check` fails with TS18046 (#2053).
+    lines.push(`  locales: {} as Record<string, LocaleConfig>,`);
   }
 
   // mermaid is controlled by the markdown.features block in zfb.config.ts
