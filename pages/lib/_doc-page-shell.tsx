@@ -21,8 +21,7 @@ import { Island } from "@takazudo/zfb";
 import { settings } from "@/config/settings";
 import type { NavNode } from "@/utils/docs";
 import { DocLayoutWithDefaults } from "@takazudo/zudo-doc/doclayout";
-import { Toc } from "@/components/toc";
-import { MobileToc } from "@/components/mobile-toc";
+import { Toc, MobileToc } from "@takazudo/zudo-doc/toc";
 import { getTocTitle } from "./_toc-title";
 import { Breadcrumb } from "@takazudo/zudo-doc/breadcrumb";
 import { NavCardGrid } from "@takazudo/zudo-doc/nav-indexing";
@@ -149,16 +148,16 @@ export function DocPageShell(props: DocPageShellProps): JSX.Element {
     docHistorySlot,
   } = props;
 
-  // TOC overrides: mount the scanner-visible local Toc/MobileToc shims instead
-  // of DocLayoutWithDefaults' package-internal default islands. zfb's island
-  // scanner skips "use client" modules under node_modules
-  // (Takazudo/zudo-front-builder#999), so the package defaults emit markers
-  // that never hydrate for published-package consumers (zudolab/zudo-doc#2057).
-  // The gating mirrors the package's `shouldRenderDefaultToc` exactly
-  // (`!hideToc && headings.length > 0`) so an undefined override never silently
-  // falls back to the dead package default. Each shim is wrapped in
-  // `<Island when="load">` here (the call site), matching how the package wraps
-  // its own default — the bundle then hydrates the bare nav/panel in place.
+  // TOC overrides: mount the package Toc/MobileToc with the host-resolved
+  // locale-aware `tocTitle`. The gating mirrors the package's
+  // `shouldRenderDefaultToc` exactly (`!hideToc && headings.length > 0`) so an
+  // undefined override never silently falls back to the package default with a
+  // different title. Each is wrapped in `<Island when="load">` here (the call
+  // site), matching how the package wraps its own default. Hydrating these
+  // npm-dist "use client" components requires zfb >= 0.1.0-next.39, whose
+  // scanner registers node_modules islands (zfb#999/#1001) — the former
+  // scanner-visible local shims (#2057) are gone; re-adding them would
+  // recreate island marker-name collisions.
   const tocTitle = getTocTitle(locale);
   const shouldRenderToc = !hideToc && headings.length > 0;
   const tocOverride = shouldRenderToc

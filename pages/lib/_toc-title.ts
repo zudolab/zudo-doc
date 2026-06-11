@@ -1,5 +1,5 @@
-// TOC section-label resolver for the scanner-visible Toc/MobileToc shims
-// (zudolab/zudo-doc#2057). The host resolves @takazudo/zudo-doc as a workspace
+// TOC section-label resolver for the Toc/MobileToc overrides mounted by
+// `_doc-page-shell.tsx`. The host resolves @takazudo/zudo-doc as a workspace
 // package, so it imports the real `getTocTitle` straight from the /toc barrel.
 //
 // The create-zudo-doc TEMPLATE counterpart

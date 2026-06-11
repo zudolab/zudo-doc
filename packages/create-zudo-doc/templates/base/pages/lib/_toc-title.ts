@@ -1,5 +1,5 @@
-// TOC section-label resolver for the scanner-visible Toc/MobileToc shims
-// (zudolab/zudo-doc#2057). Hand-mirrors `getTocTitle`, which the zudo-doc
+// TOC section-label resolver for the Toc/MobileToc overrides mounted by
+// `_doc-page-shell.tsx`. Hand-mirrors `getTocTitle`, which the zudo-doc
 // package exports from "@takazudo/zudo-doc/toc" in versions > 0.2.2. The
 // published version this scaffold installs (<= 0.2.2) does not yet export it,
 // so the tiny lang→title map is duplicated here. After bumping the
