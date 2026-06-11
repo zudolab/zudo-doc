@@ -31,12 +31,24 @@ fi
 # warnings. See zudolab/zudo-doc#2047.
 #
 # check_directive_parity() therefore enforces directive parity for every
-# template/host pair INDEPENDENTLY of the content allowlist. A few template
-# files are intentional no-op base stubs that legitimately ship WITHOUT the
-# host's directive (permanent stubs with no feature counterpart, not registered
-# as live islands in the generated page tree). They are keyed by their
-# template-relative path so the exemption applies to the base stub ONLY — the
-# real feature-template counterparts (which DO carry the directive) stay checked.
+# template/host pair INDEPENDENTLY of the content allowlist (.template-drift-
+# allowlist entries, keyed by prod path, do NOT exempt a file here; this list
+# is keyed by TEMPLATE-relative path and gates the directive check only).
+#
+# The exempted files are deliberate no-op base stubs whose host counterparts
+# are real "use client" islands. They ship WITHOUT the directive because the
+# stub never emits an island marker in a generated project:
+# - design-token-panel-bootstrap / desktop-sidebar-toggle: the real,
+#   directive-carrying implementations are feature overlays (designTokenPanel /
+#   sidebarToggle) that replace the stub when the feature is enabled; the base
+#   stub serves feature-disabled scaffolds, where it renders nothing. The
+#   overlay copies have different template-relative keys and stay checked.
+# - preset-generator: renders null and is only reachable through the MDX
+#   component map when a doc page uses it; downstream projects replace the
+#   stub to wire a real implementation (see the stub's header comment).
+# Contrast ai-chat-modal: its base copy is Island-wrapped unconditionally in
+# pages/lib/_body-end-islands.tsx, so even as a minimal component it MUST
+# carry the directive — that is why it is NOT exempt (zudolab/zudo-doc#2047).
 declare -A DIRECTIVE_EXEMPT=(
   ["base/src/components/design-token-panel-bootstrap.tsx"]=1
   ["base/src/components/desktop-sidebar-toggle.tsx"]=1
@@ -51,6 +63,10 @@ TEMPLATES_DIR="$ROOT_DIR/packages/create-zudo-doc/templates"
 has_use_client() {
   local first
   first="$(head -1 "$1")"
+  # Tolerate a UTF-8 BOM and CRLF line ending so a byte-level oddity in one
+  # copy cannot silently flip parity into a false result.
+  first="${first#$'\xef\xbb\xbf'}"
+  first="${first%$'\r'}"
   [[ "$first" == '"use client";' || "$first" == "'use client';" \
     || "$first" == '"use client"' || "$first" == "'use client'" ]]
 }
@@ -109,6 +125,21 @@ check_directive_parity() {
     DRIFTED+=("$prod_path (\"use client\" directive)")
   fi
 }
+
+# Guard against exemption rot: every DIRECTIVE_EXEMPT key must still point at
+# an existing template file that still ships WITHOUT the directive. A renamed
+# or deleted stub — or a stub that gained "use client" — leaves a stale entry
+# that would silently exempt a future file of the same name.
+for tmpl_key in "${!DIRECTIVE_EXEMPT[@]}"; do
+  exempt_file="$TEMPLATES_DIR/$tmpl_key"
+  if [[ ! -f "$exempt_file" ]]; then
+    echo "  [STALE EXEMPT] $tmpl_key — no such template file; remove the DIRECTIVE_EXEMPT entry"
+    DRIFTED+=("$tmpl_key (stale DIRECTIVE_EXEMPT entry)")
+  elif has_use_client "$exempt_file"; then
+    echo "  [STALE EXEMPT] $tmpl_key — template now carries \"use client\"; remove the DIRECTIVE_EXEMPT entry"
+    DRIFTED+=("$tmpl_key (obsolete DIRECTIVE_EXEMPT entry)")
+  fi
+done
 
 echo "Checking base template files..."
 
