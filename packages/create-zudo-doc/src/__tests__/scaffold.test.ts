@@ -2782,12 +2782,18 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
    * (Takazudo/zudo-front-builder#871) — `markdown.features.headingIds.strategy`,
    * which the generated config + TOC builder consume via
    * `settings.headingIdStrategy`. next.34 was a routine bin-wrapper
-   * signal-handling release. Now bumped to 0.1.0-next.35: fixes resolve_links
+   * signal-handling release. Bumped to 0.1.0-next.35: fixes resolve_links
    * rewriting bare same-page `[text](#anchor)` / `[text](?query)` links to
    * `/<parent-dir>/#anchor` (zudolab/zudo-doc#1948, upstream
-   * Takazudo/zudo-front-builder#875). Generated package.json must pin all three.
+   * Takazudo/zudo-front-builder#875). next.36/next.37 were docs-site and CLI
+   * ergonomics releases (no engine/SDK change). Now bumped to 0.1.0-next.38:
+   * adds client scripts (`.client.*` + `clientScript()`), the `when="media"`
+   * island strategy, exported VNode types, and stricter cross-file anchor
+   * validation. Upstream BREAKING: removes the no-op
+   * `linkValidation.allowExternal` knob — never emitted by the generator, so
+   * no migration needed. Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.35", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.38", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -2798,10 +2804,10 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.35");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.35");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.38");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.38");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.35",
+      "0.1.0-next.38",
     );
   });
 });

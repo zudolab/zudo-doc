@@ -333,11 +333,16 @@ function generatePackageJson(choices: UserChoices) {
     // next.35 fixes resolve_links rewriting bare same-page `[text](#anchor)` /
     // `[text](?query)` links to `/<parent-dir>/#anchor` (zudolab/zudo-doc#1948,
     // upstream Takazudo/zudo-front-builder#875).
-    "@takazudo/zfb": "0.1.0-next.35",
-    "@takazudo/zfb-runtime": "0.1.0-next.35",
+    // next.38 adds client scripts (`.client.*` + `clientScript()`), the
+    // `when="media"` island strategy, exported VNode types, and stricter
+    // cross-file anchor validation. BREAKING upstream: the no-op
+    // `linkValidation.allowExternal` knob was removed — neither the host nor
+    // the generated config ever emitted it, so no migration is needed here.
+    "@takazudo/zfb": "0.1.0-next.38",
+    "@takazudo/zfb-runtime": "0.1.0-next.38",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.35",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.38",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
