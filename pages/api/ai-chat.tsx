@@ -231,6 +231,17 @@ export default async function AiChatHandler(): Promise<Response> {
         // assistant turns are model-emitted text already constrained by
         // the system prompt and may legitimately quote injection-shaped
         // language in normal answers.
+        //
+        // RESIDUAL RISK (accepted by design — see issue #2036, Option 1):
+        // `history` is client-supplied and the server is stateless, so it
+        // cannot verify that an `assistant`-role entry was actually emitted
+        // by a prior model response. A caller can forge an `assistant` turn
+        // carrying hostile instructions, which skips this screening. We accept
+        // this rather than (a) screening assistant turns too — false positives
+        // on legitimate quoted content — or (b) server-issued signed history,
+        // which would add a secret and change the client/server payload
+        // contract. The blast radius is low (docs-chat only) and the system
+        // prompt instructs the model to treat all prior turns as untrusted.
         if (entry.role === "user" && !screenInput(entry.content)) {
           audit(body.message, { blocked: true, blockReason: "prompt_injection" });
           return reply(
