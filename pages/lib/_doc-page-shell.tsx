@@ -17,9 +17,13 @@
 // keeping the create-zudo-doc template copies byte-identical to the host.
 
 import type { ComponentChildren, JSX, VNode } from "preact";
+import { Island } from "@takazudo/zfb";
 import { settings } from "@/config/settings";
 import type { NavNode } from "@/utils/docs";
 import { DocLayoutWithDefaults } from "@takazudo/zudo-doc/doclayout";
+import { Toc } from "@/components/toc";
+import { MobileToc } from "@/components/mobile-toc";
+import { getTocTitle } from "./_toc-title";
 import { Breadcrumb } from "@takazudo/zudo-doc/breadcrumb";
 import { NavCardGrid } from "@takazudo/zudo-doc/nav-indexing";
 import { HeadWithDefaults } from "./_head-with-defaults";
@@ -145,6 +149,31 @@ export function DocPageShell(props: DocPageShellProps): JSX.Element {
     docHistorySlot,
   } = props;
 
+  // TOC overrides: mount the scanner-visible local Toc/MobileToc shims instead
+  // of DocLayoutWithDefaults' package-internal default islands. zfb's island
+  // scanner skips "use client" modules under node_modules
+  // (Takazudo/zudo-front-builder#999), so the package defaults emit markers
+  // that never hydrate for published-package consumers (zudolab/zudo-doc#2057).
+  // The gating mirrors the package's `shouldRenderDefaultToc` exactly
+  // (`!hideToc && headings.length > 0`) so an undefined override never silently
+  // falls back to the dead package default. Each shim is wrapped in
+  // `<Island when="load">` here (the call site), matching how the package wraps
+  // its own default — the bundle then hydrates the bare nav/panel in place.
+  const tocTitle = getTocTitle(locale);
+  const shouldRenderToc = !hideToc && headings.length > 0;
+  const tocOverride = shouldRenderToc
+    ? (Island({
+        when: "load",
+        children: <Toc headings={headings} title={tocTitle} />,
+      }) as unknown as VNode)
+    : undefined;
+  const mobileTocOverride = shouldRenderToc
+    ? (Island({
+        when: "load",
+        children: <MobileToc headings={headings} title={tocTitle} />,
+      }) as unknown as VNode)
+    : undefined;
+
   return (
     <DocLayoutWithDefaults
       title={composeMetaTitle(title)}
@@ -183,6 +212,8 @@ export function DocPageShell(props: DocPageShellProps): JSX.Element {
           currentPath={currentPath}
         />
       }
+      tocOverride={tocOverride}
+      mobileTocOverride={mobileTocOverride}
       afterSidebar={<SidebarPrepaint />}
       footerOverride={<FooterWithDefaults lang={locale} />}
       bodyEndComponents={<DocBodyEnd />}
