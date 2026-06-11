@@ -1,0 +1,45 @@
+---
+title: 0.2.1
+description: Release notes for 0.2.1.
+sidebar_position: 1012
+---
+
+Released: 2026-06-11
+
+Maintenance release. Aggregates two full-project review waves, a batch of agent-found hardening fixes, the zfb `0.1.0-next.38` engine bump, and dev-experience fixes. `@takazudo/zudo-doc`, `@takazudo/zudo-doc-history-server`, and `create-zudo-doc` are released together in lockstep.
+
+### Features
+
+- **Optional HMAC IP hashing for the AI-chat endpoint.** When the `IP_HASH_SECRET` Cloudflare secret is set, rate-limit and audit-log keys derive from HMAC-SHA-256(ip) instead of unsalted SHA-256, defeating hash reversal by IPv4 enumeration. Without the secret, behavior is unchanged — the step is optional and non-breaking (#2038).
+- **Configurable `sandbox` prop on HTML Preview.** The preview iframe's sandbox attribute can now be configured per call site instead of being hardcoded (#2035).
+- **Theme toggle: bare subpath, cross-instance sync.** `@takazudo/zudo-doc` ships the theme toggle as a bare subpath export with cross-instance state synchronization and a shiki peer dependency (#2012).
+- **`pages/` and `plugins/` typecheck coverage.** The host's file-routed `pages/` and all six zfb engine plugins are now type-checked (`check:pages`; `check:plugins` via `@ts-check` JSDoc + `checkJs`), wired into both `b4push` and CI (#2018).
+
+### Bug Fixes
+
+- **zfb engine bumped to `0.1.0-next.38` with a warning-clean build.** Pins move from `0.1.0-next.35` across the host and generator. Two broken hierarchical anchors were fixed, e2e fixture trees are excluded from the host bundler walk (the now-functional `imageDimensions` feature otherwise stats fixture image refs against the host `public/`), and the `linkValidation` / `imageDimensions` docs were rewritten for the new behavior — the no-op `allowExternal` option was removed upstream, and `imageDimensions` now actually injects `width`/`height` (#2045).
+- **Design-token panel state survives color-scheme toggles.** The theme toggle no longer wipes zdtp tweak state, and per-scheme `shikiTheme` survives the `toZdtpColorSchemes` conversion (#2037).
+- **AI-chat history trust policy hardened and documented.** Strict `user`/`assistant` role whitelist, entry-count and per-entry length caps, smuggled-field stripping, and a recorded decision on the forged-assistant-turn residual risk (#2036).
+- **Versioned-page metadata correctness.** Stale metainfo/tag chips are hidden on `/v/` pages, EN-fallback metainfo parity restored, tag URL segments are percent-encoded at every emitter, and view-source links honor the recorded source extension instead of assuming `.mdx` (#2022).
+- **Sidebar and navigation fixes.** The root docs-index node is preserved through the sidebar-tree delegation (#2030), unsectioned pages fall back to the full nav tree, and content centers correctly when the sidebar is hidden via the toggle (#2002).
+- **Generator input validation.** `create-zudo-doc` rejects a non-string preset `projectName` before the grammar check, dead template plugins were deleted, and project-name validation is centralized (#2013).
+- **doc-history-server robustness.** Malformed percent-encoded slugs return HTTP 400 instead of crashing the server, `getDocHistory` remains exported as an async alias, and the server binds to localhost by default (#2011).
+- **Theme-toggle island hydration.** The compiled island uses a named export so it actually hydrates (#2012).
+- **Dev server: pinned port, watcher loop fixed.** `pnpm dev` pins port 4321 (failing fast on `EADDRINUSE`) and the `.claude/` watcher no longer triggers a symlink feedback loop (#2044).
+- **Two full-project review waves.** Dozens of small correctness fixes: empty-slug falsiness sites, hook-order issues, header toggle mode, template i18n, an 8-item small-fixes batch, `Locale` literal-union type hygiene, and ai-chat route-handler fixture tests (#2008, #2020, #2025, #2034).
+
+### Performance
+
+- **Client hydration and search.** `SidebarToggle` hydration is gated with `when=visible`, sidebar node components are memoized, and search-index fields are pre-lowercased once at load time.
+- **Build-time memoization.** Tag-map, footer taglist, and the md-plugins source-map are memoized, and the `check:links` dist walk was merged into a single pass.
+
+### Security
+
+- **`shell-quote` advisory resolved.** The transitive `shell-quote` dependency is overridden to `>=1.8.4` (GHSA-w7jw-789q-3m8p).
+- **`.npmrc` trust policy tightened** from `any` to `no-downgrade`, with the rationale documented inline (#2039).
+
+### Other Changes
+
+- **Host-wide consolidation.** The nav-tree builder is deduped into the sidebar-tree package behind a bounded LRU cache (#2030), the sidebar resizer is consolidated to a single canonical implementation (#2029), the four doc catch-all routes share one module (#2010), a `useModalDialog` hook replaces four-way dialog plumbing, the ai-chat endpoint is split into focused modules, search-index/llms-txt utilities are deduped and honor frontmatter `slug` overrides (#2024), docs frontmatter has a single zod source of truth (#2016), and seven unused root dependencies were pruned.
+- **CI: wrangler pinned to 4.98.0** while the Cloudflare `/subdomain` API failure (error 10013) on production deploys is handled by Cloudflare support (#2007). The failure is Cloudflare-side; uploads succeed and content deploys.
+- **Documentation.** The stale pre-publish dev-workflow README section was replaced (#2005) and the consumer Tailwind safelist import is documented.
