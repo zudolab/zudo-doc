@@ -2939,14 +2939,17 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
    * rewriting bare same-page `[text](#anchor)` / `[text](?query)` links to
    * `/<parent-dir>/#anchor` (zudolab/zudo-doc#1948, upstream
    * Takazudo/zudo-front-builder#875). next.36/next.37 were docs-site and CLI
-   * ergonomics releases (no engine/SDK change). Now bumped to 0.1.0-next.38:
-   * adds client scripts (`.client.*` + `clientScript()`), the `when="media"`
-   * island strategy, exported VNode types, and stricter cross-file anchor
-   * validation. Upstream BREAKING: removes the no-op
-   * `linkValidation.allowExternal` knob — never emitted by the generator, so
-   * no migration needed. Generated package.json must pin all three.
+   * ergonomics releases (no engine/SDK change). next.38 added client scripts
+   * (`.client.*` + `clientScript()`), the `when="media"` island strategy,
+   * exported VNode types, and stricter cross-file anchor validation; upstream
+   * BREAKING: removed the no-op `linkValidation.allowExternal` knob — never
+   * emitted by the generator, so no migration needed. Now bumped to
+   * 0.1.0-next.39: features + fixes, no breaking changes — npm-dist
+   * `"use client"` island scanning, link-resolution fixes for directory-style
+   * hrefs, and island-registry hardening (warns on island marker-name
+   * collisions). Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.38", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.39", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -2957,10 +2960,10 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.38");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.38");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.39");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.39");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.38",
+      "0.1.0-next.39",
     );
   });
 });
