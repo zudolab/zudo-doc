@@ -21,10 +21,15 @@
  *
  * Type notes:
  * - zdtp's `ColorScheme` requires a `shikiTheme: string` field that is not
- *   present in zudo-doc's local `ColorScheme` type or data. The cast below
- *   (`as unknown as Record<string, ZdtpColorScheme>`) is intentional: zdtp
- *   uses `shikiTheme` only for the code-block preview inside the panel; when
- *   absent at runtime it falls back to `colorExtras.defaultShikiTheme`.
+ *   present in zudo-doc's local `ColorScheme` type or data (zdtp uses it only
+ *   for the panel's client-side code-block preview). Rather than an unsafe
+ *   `as unknown as Record<string, ZdtpColorScheme>` double-cast, every local
+ *   scheme map is run through `toZdtpColorSchemes()` below, which supplies
+ *   `DEFAULT_SHIKI_THEME` as the fallback so the result satisfies zdtp's
+ *   required-field shape with an ordinary type-checked assignment. Tracked
+ *   upstream at Takazudo/zudo-design-token-panel#342 (shikiTheme should be
+ *   optional in zdtp's `ColorScheme` type); drop the helper once that lands.
+ *   See zudo-doc#2037.
  * - Do NOT add `legacyIdRenameMap` here. The upstream typography-id rename
  *   map maps zudo-doc's canonical ids (text-caption, text-body, …) to
  *   non-existent keys. Omit the field so zdtp keeps its empty rename map.
@@ -45,6 +50,7 @@ import {
   SIZE_TOKENS,
 } from "./design-tokens-manifest";
 import { colorSchemes } from "./color-schemes";
+import type { ColorScheme as LocalColorScheme } from "./color-schemes";
 import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "./color-scheme-utils";
 import { colorTweakPresets } from "./color-tweak-presets";
 import { settings } from "./settings";
@@ -70,6 +76,26 @@ const BASE_DEFAULTS = {
  * highlighting (syntect via zfb's Rust pipeline) is unaffected.
  */
 const DEFAULT_SHIKI_THEME = "github-dark";
+
+/**
+ * Normalize zudo-doc's local `ColorScheme` records into zdtp's `ColorScheme`
+ * shape. zdtp's type requires `shikiTheme: string`; zudo-doc's local scheme
+ * type and data omit it (static highlighting is handled by zfb's Rust pipeline,
+ * not Shiki). This helper supplies `DEFAULT_SHIKI_THEME` as the fallback so the
+ * result is assignable to `Record<string, ZdtpColorScheme>` via an ordinary
+ * type-checked assignment — replacing the previous `as unknown as` double-cast
+ * that silently bypassed every field check. The local scheme already carries a
+ * superset of the semantic keys zdtp reads, so only `shikiTheme` needs filling.
+ */
+function toZdtpColorSchemes(
+  schemes: Record<string, LocalColorScheme>,
+): Record<string, ZdtpColorScheme> {
+  const normalized: Record<string, ZdtpColorScheme> = {};
+  for (const [name, scheme] of Object.entries(schemes)) {
+    normalized[name] = { ...scheme, shikiTheme: DEFAULT_SHIKI_THEME };
+  }
+  return normalized;
+}
 
 /**
  * Initial palette taken from the configured active scheme. The 16 colors
@@ -217,9 +243,9 @@ const COLOR_EXTRAS: ColorClusterExtras = {
   },
   baseDefaults: BASE_DEFAULTS,
   defaultShikiTheme: DEFAULT_SHIKI_THEME,
-  // Local ColorScheme lacks shikiTheme; cast is safe — zdtp falls back to
-  // defaultShikiTheme when shikiTheme is absent at runtime.
-  colorSchemes: colorSchemes as unknown as Record<string, ZdtpColorScheme>,
+  // Local ColorScheme lacks shikiTheme; toZdtpColorSchemes fills the fallback
+  // so this is a type-checked assignment rather than an unsafe cast.
+  colorSchemes: toZdtpColorSchemes(colorSchemes),
   panelSettings: {
     colorScheme: settings.colorScheme,
     // colorMode: strip off respectPrefersColorScheme (not in zdtp's shape).
@@ -333,6 +359,6 @@ export const designTokenPanelConfig: PanelConfig = {
   schemaId: DESIGN_TOKEN_SCHEMA,
   exportFilenameBase: "zudo-doc-design-tokens",
   tabs: [COLOR_TAB, FONT_TAB, SPACING_TAB, SIZE_TAB],
-  // colorTweakPresets also lacks shikiTheme; same cast reasoning as colorSchemes.
-  colorPresets: colorTweakPresets as unknown as Record<string, ZdtpColorScheme>,
+  // colorTweakPresets also lacks shikiTheme; normalized the same way.
+  colorPresets: toZdtpColorSchemes(colorTweakPresets),
 };
