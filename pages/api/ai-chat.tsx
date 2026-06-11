@@ -19,6 +19,9 @@
 //   RATE_LIMIT            — KV namespace (wrangler kv namespace create RATE_LIMIT)
 //   RATE_LIMIT_PER_MINUTE — optional var (default 10)
 //   RATE_LIMIT_PER_DAY    — optional var (default 100)
+//   IP_HASH_SECRET        — optional secret (wrangler secret put IP_HASH_SECRET);
+//                           when set, client IPs are keyed with HMAC-SHA-256
+//                           instead of unsalted SHA-256 (#2038)
 
 import { getCloudflareContext } from "@takazudo/zfb-adapter-cloudflare";
 
@@ -124,7 +127,9 @@ export default async function AiChatHandler(): Promise<Response> {
   // this header is absent, collapsing all callers into one shared "unknown" rate-limit
   // bucket — every caller competes against the same counters, effectively a global cap.
   const clientIp = request.headers.get("cf-connecting-ip") ?? "unknown";
-  const ipHash = await hashIp(clientIp);
+  // HMAC-SHA-256 keyed by the optional IP_HASH_SECRET when provisioned; falls
+  // back to unsalted SHA-256 when it is absent (#2038).
+  const ipHash = await hashIp(clientIp, env.IP_HASH_SECRET);
 
   // Rate limit FIRST — before parsing the body, running validation, or writing
   // any audit-log entry. Every audit write touches KV, so gating audits behind

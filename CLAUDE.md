@@ -201,6 +201,16 @@ wrangler secret put ANTHROPIC_API_KEY
 
 Paste the key when prompted. The value is stored in Cloudflare's secret store and never appears in `wrangler.toml`.
 
+### 2b. (Optional) Add the IP-hash HMAC secret
+
+```sh
+wrangler secret put IP_HASH_SECRET
+```
+
+Optional and non-breaking. When set, the ai-chat rate limiter and 7-day audit log key client IPs with **HMAC-SHA-256(ip)** instead of unsalted `SHA-256(ip)`, which defeats reversing the stored hashes by enumerating the (small) IPv4 space (#2038). When the secret is absent the worker falls back to the original unsalted SHA-256, so existing deployments behave identically and the step can be skipped.
+
+> **Rotation caveat.** Setting or rotating `IP_HASH_SECRET` changes every derived key. In-flight rate-limit buckets reset (acceptable — 60s windows) and audit-entry hash continuity breaks for the current 7-day window (acceptable — entries age out).
+
 ### 3. Verify DOCS_SITE_URL
 
 `wrangler.toml` already sets `DOCS_SITE_URL = "https://zudo-doc.takazudomodular.com"`. For preview deploys, override per-deploy:

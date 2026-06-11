@@ -3,6 +3,9 @@ export interface Env {
   RATE_LIMIT: KVNamespace;
   RATE_LIMIT_PER_MINUTE?: string;
   RATE_LIMIT_PER_DAY?: string;
+  // Optional HMAC key for IP hashing (#2038). When set, rate-limit KV keys
+  // derive from HMAC-SHA-256(ip) instead of unsalted SHA-256(ip).
+  IP_HASH_SECRET?: string;
 }
 
 export interface SearchRequest {
