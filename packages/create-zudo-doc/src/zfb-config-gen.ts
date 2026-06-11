@@ -186,6 +186,9 @@ export function generateZfbConfig(choices: UserChoices): string {
   // --- Export ---
   lines.push(`export default defineConfig({`);
   lines.push(`  framework: "preact",`);
+  lines.push(`  // Pin the dev/preview port — zfb defaults to 3000, but the generated`);
+  lines.push(`  // CLAUDE.md and the Tauri dev wrappers assume 4321.`);
+  lines.push(`  port: 4321,`);
   lines.push(`  tailwind: { enabled: true },`);
   lines.push(`  collections,`);
   lines.push(`  stripMdExt: true,`);

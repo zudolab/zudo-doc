@@ -378,6 +378,9 @@ const integrationPlugins = [
 
 export default defineConfig({
   framework: "preact",
+  // Pin the dev/preview port — zfb defaults to 3000, but CLAUDE.md, the
+  // EADDRINUSE guidance, and the Tauri Mode-1 devUrl all assume 4321 (#2043).
+  port: 4321,
   tailwind: { enabled: true },
   collections,
   // Keep the md-plugins test fixtures out of the bundler's shadow-tree
