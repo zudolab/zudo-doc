@@ -100,6 +100,12 @@ const watcher = watch(CLAUDE_DIR, {
   ignoreInitial: true, // preBuild already ran at zfb startup
   persistent: true,
   awaitWriteFinish: false,
+  // The doc-skill (.claude/skills/*/docs/) symlinks INTO src/content/docs —
+  // i.e. into this watcher's own regeneration OUTPUT. Following symlinks made
+  // every regen write re-appear as a .claude change, looping regeneration
+  // forever and starving zfb's content snapshot (#2042). Real .claude sources
+  // are regular files, so not following symlinks loses nothing.
+  followSymlinks: false,
 });
 
 watcher
