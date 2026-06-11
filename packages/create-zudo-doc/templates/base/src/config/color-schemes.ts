@@ -12,7 +12,8 @@ export interface ColorScheme {
     string, string, string, string, string, string, string, string,
   ];
   /** Optional Shiki theme for the zdtp panel's client-side code-block preview.
-   *  Falls back to the panel config's DEFAULT_SHIKI_THEME when omitted. */
+   *  Falls back to the panel config's DEFAULT_SHIKI_THEME when omitted.
+   *  Static highlighting (syntect via zfb's Rust pipeline) is unaffected. */
   shikiTheme?: string;
   /** Optional semantic overrides — when omitted, defaults are used:
    *  surface=p0, muted=p8, accent=p5, accentHover=p14
