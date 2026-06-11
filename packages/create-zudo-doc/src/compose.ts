@@ -243,11 +243,14 @@ export function validateDependencies(
  * - `pages/_mdx-components.ts` — image-enlarge.ts injects the
  *   EnlargeableParagraph p-override (ENLARGE_SVG, EnlargeableParagraph def,
  *   `p:` map entry) when imageEnlarge is enabled.
- *
- * The .tsx anchor form is still supported in `ANCHOR_LINE_RE` for forward
- * compatibility.
+ * - `pages/lib/_body-end-islands.tsx` — tauri.ts injects the FindInPageInit
+ *   island (import, displayName, Island mount) when tauri is enabled.
  */
-export const ANCHOR_FILES = ["src/styles/global.css", "pages/_mdx-components.ts"];
+export const ANCHOR_FILES = [
+  "src/styles/global.css",
+  "pages/_mdx-components.ts",
+  "pages/lib/_body-end-islands.tsx",
+];
 
 /**
  * Main composition entry point. Orchestrates the full feature composition

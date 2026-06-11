@@ -1125,6 +1125,72 @@ describe("scaffold — tauri feature", () => {
     );
     expect(pkg.scripts["dev:tauri"]).toBeUndefined();
   });
+
+  it("wires the FindInPageInit island into pages/lib/_body-end-islands.tsx when tauri is enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-tauri-find-in-page",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "tauri"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+
+    const bodyEnd = await fs.readFile(
+      projectPath(
+        "test-tauri-find-in-page",
+        "pages/lib/_body-end-islands.tsx",
+      ),
+      "utf-8",
+    );
+    // The three injections: import, displayName, Island mount. Without them
+    // the component files are orphaned and zfb's island scanner never
+    // registers FindInPageInit (#2052).
+    expect(bodyEnd).toContain(
+      'import FindInPageInit from "@/components/find-in-page-init";',
+    );
+    expect(bodyEnd).toContain('displayName = "FindInPageInit"');
+    expect(bodyEnd).toContain("<FindInPageInit />");
+    // Keybind interceptor must hydrate at load, not idle.
+    expect(bodyEnd).toMatch(/when: "load",\s*\n\s*children: <FindInPageInit \/>/);
+    // No leftover slot anchors in the generated output.
+    expect(bodyEnd).not.toContain("@slot:");
+
+    // The island entry module must carry the "use client" directive so it
+    // is bundled as a live island.
+    const initComponent = await fs.readFile(
+      projectPath(
+        "test-tauri-find-in-page",
+        "src/components/find-in-page-init.tsx",
+      ),
+      "utf-8",
+    );
+    expect(initComponent.split("\n")[0]).toBe('"use client";');
+  });
+
+  it("does NOT reference FindInPageInit in pages/lib/_body-end-islands.tsx when tauri is disabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-no-tauri-find-in-page",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+
+    const bodyEnd = await fs.readFile(
+      projectPath(
+        "test-no-tauri-find-in-page",
+        "pages/lib/_body-end-islands.tsx",
+      ),
+      "utf-8",
+    );
+    expect(bodyEnd).not.toContain("FindInPageInit");
+    // No leftover slot anchors in the generated output.
+    expect(bodyEnd).not.toContain("@slot:");
+  });
 });
 
 describe("scaffold — tauri-dev feature (Mode 2)", () => {

@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useRef } from "preact/compat";
 import { FindBar } from "./find-bar";
 import { createFindInPage } from "@/utils/find-in-page";
@@ -30,14 +32,18 @@ export default function FindInPageInit() {
     return () => document.removeEventListener("keydown", handler);
   }, [isTauri]);
 
-  // Clear search on zfb page navigation
+  // Clear search on zfb page navigation. zfb navigates via SPA body swap and
+  // fires "zfb:before-preparation" on document before nav — it never fires the
+  // native "pagehide" (full-unload) event. The literal is inlined because
+  // downstream scaffolds do not depend on @takazudo/zudo-doc as a runtime dep
+  // (same reason as the designTokenPanel bootstrap).
   useEffect(() => {
     const handler = () => {
       findInPageRef.current.stop();
       setVisible(false);
     };
-    document.addEventListener("pagehide", handler);
-    return () => document.removeEventListener("pagehide", handler);
+    document.addEventListener("zfb:before-preparation", handler);
+    return () => document.removeEventListener("zfb:before-preparation", handler);
   }, []);
 
   if (!isTauri) return null;

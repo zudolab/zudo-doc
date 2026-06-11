@@ -153,6 +153,14 @@ src/components/preset-generator.tsx
 # injection too (unlikely — host does not use the compose framework).
 pages/_mdx-components.ts
 
+# #2052 — pages/lib/_body-end-islands.tsx template carries @slot: injection
+# anchors (imports / display-names / extra-islands) so the tauri feature can
+# inject the FindInPageInit island mount. The host has no find-in-page wiring
+# (its counterparts were deleted in S1 #1928), so the anchors exist only in
+# the template — same anchor-carrying-template precedent as
+# pages/_mdx-components.ts above. These will never be byte-identical.
+pages/lib/_body-end-islands.tsx
+
 # W8A (#1739) entries for src/components/content/heading-h3.tsx and
 # src/hooks/use-active-heading.ts were REMOVED in #2012 (S3 package-boundary
 # cleanup): heading-h3 is de-duplicated into @takazudo/zudo-doc/content and
