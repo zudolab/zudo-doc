@@ -71,28 +71,32 @@ const BASE_DEFAULTS = {
 
 /**
  * Fallback Shiki theme when a color scheme lacks one. zudo-doc's local
- * `ColorScheme` type doesn't carry `shikiTheme`; the zdtp panel uses this
- * default for its client-side code-block preview. Static syntax
- * highlighting (syntect via zfb's Rust pipeline) is unaffected.
+ * `ColorScheme` type carries an optional `shikiTheme`; the zdtp panel uses
+ * this default for its client-side code-block preview when a scheme omits
+ * it. Static syntax highlighting (syntect via zfb's Rust pipeline) is
+ * unaffected.
  */
 const DEFAULT_SHIKI_THEME = "github-dark";
 
 /**
  * Normalize zudo-doc's local `ColorScheme` records into zdtp's `ColorScheme`
  * shape. zdtp's type requires `shikiTheme: string`; zudo-doc's local scheme
- * type and data omit it (static highlighting is handled by zfb's Rust pipeline,
- * not Shiki). This helper supplies `DEFAULT_SHIKI_THEME` as the fallback so the
- * result is assignable to `Record<string, ZdtpColorScheme>` via an ordinary
- * type-checked assignment — replacing the previous `as unknown as` double-cast
- * that silently bypassed every field check. The local scheme already carries a
- * superset of the semantic keys zdtp reads, so only `shikiTheme` needs filling.
+ * type makes it optional (static highlighting is handled by zfb's Rust
+ * pipeline, not Shiki). This helper fills `DEFAULT_SHIKI_THEME` only when a
+ * scheme doesn't declare its own, so the result is assignable to
+ * `Record<string, ZdtpColorScheme>` via an ordinary type-checked assignment —
+ * replacing the previous `as unknown as` double-cast that silently bypassed
+ * every field check.
  */
 function toZdtpColorSchemes(
   schemes: Record<string, LocalColorScheme>,
 ): Record<string, ZdtpColorScheme> {
   const normalized: Record<string, ZdtpColorScheme> = {};
   for (const [name, scheme] of Object.entries(schemes)) {
-    normalized[name] = { ...scheme, shikiTheme: DEFAULT_SHIKI_THEME };
+    normalized[name] = {
+      ...scheme,
+      shikiTheme: scheme.shikiTheme ?? DEFAULT_SHIKI_THEME,
+    };
   }
   return normalized;
 }

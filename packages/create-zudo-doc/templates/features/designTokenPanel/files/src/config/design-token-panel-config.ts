@@ -54,19 +54,23 @@ const DEFAULT_SHIKI_THEME = "github-dark";
 /**
  * Normalize this project's local `ColorScheme` records into zdtp's
  * `ColorScheme` shape. zdtp's type requires `shikiTheme: string`; the local
- * scheme type and data omit it. This helper supplies `DEFAULT_SHIKI_THEME` as
- * the fallback so the result is assignable to `Record<string, ZdtpColorScheme>`
- * via an ordinary type-checked assignment — replacing the previous
- * `as unknown as` double-cast that bypassed every field check. Tracked upstream
- * at Takazudo/zudo-design-token-panel#342 (shikiTheme should be optional in
- * zdtp's `ColorScheme` type); drop this helper once that lands.
+ * scheme type makes it optional. This helper fills `DEFAULT_SHIKI_THEME` only
+ * when a scheme doesn't declare its own, so the result is assignable to
+ * `Record<string, ZdtpColorScheme>` via an ordinary type-checked assignment —
+ * replacing the previous `as unknown as` double-cast that bypassed every field
+ * check. Tracked upstream at Takazudo/zudo-design-token-panel#342 (shikiTheme
+ * should be optional in zdtp's `ColorScheme` type); drop this helper once that
+ * lands.
  */
 function toZdtpColorSchemes(
   schemes: Record<string, LocalColorScheme>,
 ): Record<string, ZdtpColorScheme> {
   const normalized: Record<string, ZdtpColorScheme> = {};
   for (const [name, scheme] of Object.entries(schemes)) {
-    normalized[name] = { ...scheme, shikiTheme: DEFAULT_SHIKI_THEME };
+    normalized[name] = {
+      ...scheme,
+      shikiTheme: scheme.shikiTheme ?? DEFAULT_SHIKI_THEME,
+    };
   }
   return normalized;
 }
@@ -200,8 +204,8 @@ const COLOR_EXTRAS: ColorClusterExtras = {
   },
   baseDefaults: BASE_DEFAULTS,
   defaultShikiTheme: DEFAULT_SHIKI_THEME,
-  // Local ColorScheme lacks shikiTheme; toZdtpColorSchemes fills the fallback
-  // so this is a type-checked assignment rather than an unsafe cast.
+  // toZdtpColorSchemes fills the fallback only for schemes without their own
+  // shikiTheme, so this is a type-checked assignment rather than an unsafe cast.
   colorSchemes: toZdtpColorSchemes(colorSchemes),
   panelSettings: {
     colorScheme: settings.colorScheme,
