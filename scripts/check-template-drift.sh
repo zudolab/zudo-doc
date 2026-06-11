@@ -114,7 +114,10 @@ check_directive_parity() {
   local prod_file="$ROOT_DIR/$prod_path"
   # No host counterpart → nothing to compare. The content-drift pass already
   # reports genuinely-missing prod files when they are not allowlisted.
-  [[ -f "$prod_file" ]] || return
+  # "return 0" is load-bearing: a bare "return" after the failed [[ -f ]]
+  # propagates status 1 and set -e aborts the whole scan on the first
+  # template-only file.
+  [[ -f "$prod_file" ]] || return 0
 
   local host_has=0 tmpl_has=0
   has_use_client "$prod_file" && host_has=1
