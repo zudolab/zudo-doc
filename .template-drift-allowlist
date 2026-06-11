@@ -1,3 +1,8 @@
+# NOTE: entries here exempt files from the whole-file CONTENT check only.
+# "use client" directive parity is checked separately and is NOT exempted by
+# this list — its exemptions live in DIRECTIVE_EXEMPT inside
+# scripts/check-template-drift.sh, keyed by template-relative path.
+
 # Slot-based files — templates use @slot: injection anchors,
 # production has features inlined
 src/styles/global.css
