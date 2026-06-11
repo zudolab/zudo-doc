@@ -1,0 +1,20 @@
+---
+title: 0.2.2
+description: 0.2.2のリリースノート。
+sidebar_position: 1013
+---
+
+リリース日: 2026-06-11
+
+### バグ修正
+
+- Tauri の FindInPageInit アイランドを body-end islands に配線し、生成された Tauri デスクトップアプリで Cmd/Ctrl+F が動作するように修正 (9d9ec662)
+- zfb の SPA ナビゲーション時に find-in-page の状態をクリア — アプリ内ナビゲーションをまたいで検索バーが古いマッチ状態のまま開きっぱなしになる問題を修正 (81ac79e3)
+- 生成されたプロジェクトが最初から `zfb check` を通るように修正: 非 i18n の `locales` を `Record<string, LocaleConfig>` として型付けし、ベーステンプレートに `zfb-shim.d.ts` を同梱 (4fcb5953)
+- アイランドコンポーネントのテンプレートに `"use client"` を追加し、ホスト/テンプレート間のディレクティブ整合チェックを導入 (5217290d)
+- スキャナーから見える ThemeToggle シムを追加し、同期した利用側プロジェクトでヘッダーのテーマトグルがハイドレートされるように修正 (4cf95525)
+- sidebar-tree のフィルター入力ハンドラーで `e.currentTarget.value` を使用するように修正 (dd281916)
+
+### その他の変更
+
+- ディレクティブ整合チェックの堅牢化: BOM/CRLF の許容、失効した除外エントリのガード、`set -e` 下でスキャンが中断される early-return の修正 (d0a055b0, 13c48cf9)

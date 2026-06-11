@@ -1,0 +1,20 @@
+---
+title: 0.2.2
+description: Release notes for 0.2.2.
+sidebar_position: 1013
+---
+
+Released: 2026-06-11
+
+### Bug Fixes
+
+- Wire the Tauri FindInPageInit island into body-end islands so Cmd/Ctrl+F works in generated Tauri desktop apps (9d9ec662)
+- Clear find-in-page state on zfb SPA navigation — the find bar no longer stays open with stale match state across in-app navigation (81ac79e3)
+- Make generated projects pass `zfb check` out of the box: type the non-i18n `locales` as `Record<string, LocaleConfig>` and ship `zfb-shim.d.ts` in the base template (4fcb5953)
+- Add `"use client"` to island component templates and enforce host/template directive parity (5217290d)
+- Add a scanner-visible ThemeToggle shim so synced consumers hydrate the header theme toggle (4cf95525)
+- Use `e.currentTarget.value` in the sidebar-tree filter input handler (dd281916)
+
+### Other Changes
+
+- Harden the directive-parity check: tolerate BOM/CRLF, guard stale exempt entries, and fix an early-return aborting the scan under `set -e` (d0a055b0, 13c48cf9)
