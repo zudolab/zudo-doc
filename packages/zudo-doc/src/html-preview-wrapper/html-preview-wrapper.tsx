@@ -52,6 +52,20 @@ export interface HtmlPreviewWrapperProps {
   height?: number;
   /** When true, the code section is expanded by default. */
   defaultOpen?: boolean;
+
+  /**
+   * iframe `sandbox` attribute value, forwarded to `<HtmlPreview>`. Omit to
+   * use the computed default (`allow-scripts allow-same-origin` when scripts
+   * are present, `allow-same-origin` otherwise).
+   *
+   * ⚠️ The default voids iframe sandboxing (preview scripts can reach the
+   * parent origin) and is only safe for **author-trusted** content.
+   * Downstream consumers rendering semi-trusted HTML should pass a stricter
+   * value (e.g. `"allow-scripts"` or `""`) — but note that dropping
+   * `allow-same-origin` disables auto-height, so pair it with a fixed
+   * `height`. See `HtmlPreviewProps.sandbox` for details.
+   */
+  sandbox?: string;
 }
 
 /**
@@ -84,8 +98,17 @@ export interface HtmlPreviewWrapperProps {
 export function HtmlPreviewWrapperInner(
   props: HtmlPreviewWrapperProps,
 ): VNode {
-  const { globalConfig, html, css, head, js, title, height, defaultOpen } =
-    props;
+  const {
+    globalConfig,
+    html,
+    css,
+    head,
+    js,
+    title,
+    height,
+    defaultOpen,
+    sandbox,
+  } = props;
 
   const mergedHead =
     [globalConfig?.head, head].filter(Boolean).join("\n") || undefined;
@@ -103,6 +126,7 @@ export function HtmlPreviewWrapperInner(
       title={title}
       height={height}
       defaultOpen={defaultOpen}
+      sandbox={sandbox}
       componentCss={css}
       componentHead={head}
       componentJs={js}

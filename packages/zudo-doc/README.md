@@ -24,6 +24,27 @@ pnpm add shiki
 
 Projects scaffolded by `create-zudo-doc` already include it. If you never render `<HtmlPreview>` / `<HighlightedCode>`, you can omit it.
 
+## ⚠️ HTML preview iframe sandbox — trust assumption
+
+`<HtmlPreview>` / `<HtmlPreviewWrapper>` render their preview inside an `<iframe srcdoc>` whose `sandbox` attribute **defaults** to:
+
+- `allow-scripts allow-same-origin` when the preview contains scripts (a `js` prop or a `<script>` in `head`), or
+- `allow-same-origin` when it does not.
+
+**`allow-scripts` + `allow-same-origin` together effectively void the sandbox** — scripts running inside the preview share the parent page's origin and can reach the parent document. This default is intentional and safe for zudo-doc's own use case, where preview content is **author-trusted** MDX. The `allow-same-origin` token is what lets the component auto-measure the iframe body and sync its height.
+
+If your project renders **semi-trusted or user-submitted** HTML in a preview, override the sandbox with a stricter value via the `sandbox` prop:
+
+```tsx
+// Maximally restrictive — no script execution, opaque origin
+<HtmlPreviewWrapper html={untrustedHtml} sandbox="" height={400} />
+
+// Allow scripts but keep an opaque origin (script can't reach the parent)
+<HtmlPreviewWrapper html={untrustedHtml} sandbox="allow-scripts" height={400} />
+```
+
+**Caveat:** removing `allow-same-origin` gives the iframe an opaque origin, which blocks the parent from reading `iframe.contentDocument`. That **disables auto-height** — always pair a stricter `sandbox` with a fixed `height`. Passing the empty string `""` is honored verbatim (only omitting the prop falls back to the computed default).
+
 ## Styling — Tailwind setup for consumers
 
 This package ships **no precompiled CSS** — the component utility classes are inlined in the `dist/` JavaScript, and Tailwind v4 does not scan `node_modules`. Without help, those utilities never make it into your build, so the components render unstyled.

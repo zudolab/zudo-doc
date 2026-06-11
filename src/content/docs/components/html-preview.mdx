@@ -198,6 +198,26 @@ Use `head` and `js` props to add resources to individual previews. These are mer
 />
 ````
 
+## Security & the `sandbox` prop
+
+Previews render inside an isolated `<iframe srcdoc>`. Its `sandbox` attribute **defaults** to `allow-scripts allow-same-origin` when the preview contains scripts (a `js` prop or a `<script>` in `head`), and `allow-same-origin` otherwise.
+
+:::danger[Trust assumption]
+`allow-scripts` + `allow-same-origin` together **void the iframe sandbox** — scripts inside the preview share the parent page's origin and can reach the parent document. zudo-doc keeps this default because preview content is **author-trusted MDX**, and `allow-same-origin` is what powers the auto-height measurement.
+
+If your project renders **semi-trusted or user-submitted** HTML, override it with a stricter value via the `sandbox` prop.
+:::
+
+```mdx
+<!-- Maximally restrictive: no script execution, opaque origin -->
+<HtmlPreview html={untrusted} sandbox="" height={400} />
+
+<!-- Allow scripts but keep an opaque origin (script can't reach the parent) -->
+<HtmlPreview html={untrusted} sandbox="allow-scripts" height={400} />
+```
+
+Removing `allow-same-origin` gives the iframe an opaque origin, which blocks the parent from reading `iframe.contentDocument` — so it **disables auto-height**. Always pair a stricter `sandbox` with a fixed `height`. The empty string `""` is honored verbatim; only omitting the prop falls back to the computed default.
+
 ## Props
 
 | Prop | Type | Default | Description |
@@ -209,6 +229,7 @@ Use `head` and `js` props to add resources to individual previews. These are mer
 | `title` | string | `undefined` | Title displayed in the preview header bar |
 | `height` | number | auto | Fixed iframe height in pixels. When omitted, height auto-adjusts to content |
 | `defaultOpen` | boolean | `false` | Show the source code panel expanded by default |
+| `sandbox` | string | auto | iframe `sandbox` attribute. Omit for the computed default (`allow-scripts allow-same-origin` with scripts, `allow-same-origin` without). Pass a stricter value for untrusted content — but disables auto-height when `allow-same-origin` is dropped, so set `height` too |
 
 ## Supported Languages
 
@@ -223,7 +244,7 @@ Unsupported languages fall back to plain text (no highlighting). This is a small
 ## Notes
 
 - The preview renders inside an isolated `<iframe>` with a CSS reset (Tailwind v4 preflight), so styles do not leak in or out.
-- Previews use `sandbox="allow-same-origin"` (or `sandbox="allow-scripts allow-same-origin"` when a `js` prop or `<script>` is present) so the iframe height auto-syncs via `contentDocument`. The `srcdoc` content is author-controlled MDX.
+- Previews default to `sandbox="allow-same-origin"` (or `sandbox="allow-scripts allow-same-origin"` when a `js` prop or `<script>` is present) so the iframe height auto-syncs via `contentDocument`. The `srcdoc` content is author-controlled MDX. Override with the `sandbox` prop for untrusted content — see [Security & the `sandbox` prop](#security--the-sandbox-prop) above.
 - Global resources from `settings.htmlPreview` are injected before per-component props.
 - The `html`, `css`, and `js` props support template literals with indentation. Leading whitespace is automatically stripped (dedented) in the source code display.
 - Client-side hydration is handled automatically by the component wrapper — no `client:load` directive needed in MDX.
