@@ -5,15 +5,58 @@ import type { FeatureModule } from "../compose.js";
 /**
  * Tauri feature.
  *
- * W7A (#1736): post-cutover, the FindInPage island is mounted by the
- * pages/lib body-end wrapper. The find-match highlight CSS is unconditional
- * in `templates/base/src/styles/global.css` (matches host). Only the
- * postProcess hooks (Cargo.toml / tauri.conf.json / .gitignore patches)
- * remain feature-scoped.
+ * #2052: the FindInPageInit island (Cmd/Ctrl+F find bar for the Tauri
+ * WebView, where the browser-native find UI is unavailable) is wired into
+ * `pages/lib/_body-end-islands.tsx` via the three injections below — import,
+ * displayName, and Island mount. zfb's island scanner only registers
+ * components reachable through static import chains (page → wrapper →
+ * component), so without this injection the feature-copied component files
+ * are orphaned dead code that never hydrates. The find-match highlight CSS
+ * is unconditional in `templates/base/src/styles/global.css` (matches host);
+ * the component runtime-gates itself (renders null unless
+ * `window.__TAURI_INTERNALS__` exists), so no settings field is needed.
  */
 export const tauriFeature: FeatureModule = (choices) => ({
   name: "tauri",
-  injections: [],
+  injections: [
+    // 1. Import the island entry. Inserted AFTER the
+    //    `// @slot:body-end-islands:imports` anchor.
+    {
+      file: "pages/lib/_body-end-islands.tsx",
+      anchor: "// @slot:body-end-islands:imports",
+      position: "after",
+      content: `import FindInPageInit from "@/components/find-in-page-init";`,
+    },
+    // 2. Stable island marker name (same belt-and-braces guard as the
+    //    sibling islands in the file). Inserted AFTER the
+    //    `// @slot:body-end-islands:display-names` anchor.
+    {
+      file: "pages/lib/_body-end-islands.tsx",
+      anchor: "// @slot:body-end-islands:display-names",
+      position: "after",
+      content: `(FindInPageInit as { displayName?: string }).displayName = "FindInPageInit";`,
+    },
+    // 3. Island mount. Inserted AFTER the
+    //    `{/* @slot:body-end-islands:extra-islands */}` anchor.
+    //    when="load" (not "idle"): the island's job is to intercept
+    //    Cmd/Ctrl+F via a keydown listener, so it must hydrate as soon as
+    //    the islands runtime mounts — same rationale as the
+    //    clientRouterBootstrap click intercept above it. Deferring to idle
+    //    would leave a post-load window where Cmd+F does nothing, which is
+    //    the very bug this injection fixes.
+    {
+      file: "pages/lib/_body-end-islands.tsx",
+      anchor: "{/* @slot:body-end-islands:extra-islands */}",
+      position: "after",
+      content: `      {/* Tauri-only find-in-page (Cmd/Ctrl+F) bar. Renders null outside
+          a Tauri WebView, so the island is inert in plain browser builds
+          of the same scaffold. */}
+      {Island({
+        when: "load",
+        children: <FindInPageInit />,
+      }) as unknown as VNode}`,
+    },
+  ],
   postProcess: async (targetDir) => {
     // Patch Cargo.toml package name
     const cargoPath = path.join(targetDir, "src-tauri/Cargo.toml");
