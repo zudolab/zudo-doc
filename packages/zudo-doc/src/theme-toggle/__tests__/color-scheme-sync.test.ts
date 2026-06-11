@@ -76,10 +76,7 @@ describe("readColorSchemeFromDom", () => {
 });
 
 describe("applyColorScheme", () => {
-  it("mutates the DOM, persists, and clears tweak state", () => {
-    fakeStorage.setItem("zudo-doc-tweak-state", "{}");
-    fakeStorage.setItem("zudo-doc-tweak-state-v2", "{}");
-
+  it("mutates the DOM and persists the active mode", () => {
     applyColorScheme("light");
 
     expect(fakeDocument.documentElement.getAttribute("data-theme")).toBe(
@@ -87,8 +84,25 @@ describe("applyColorScheme", () => {
     );
     expect(fakeDocument.documentElement.style.colorScheme).toBe("light");
     expect(fakeStorage.getItem("zudo-doc-theme")).toBe("light");
-    expect(fakeStorage.getItem("zudo-doc-tweak-state")).toBeNull();
-    expect(fakeStorage.getItem("zudo-doc-tweak-state-v2")).toBeNull();
+  });
+
+  it("preserves zdtp tweak-state keys so saved tweaks carry over (#2037)", () => {
+    // Carry-over contract: zdtp owns the tweak-state lifecycle. It persists the
+    // unified envelope under `zudo-doc-tweak-state-v3` (auto-migrating the
+    // legacy v2/v1 keys into it) and re-seeds the color slice from the newly
+    // active scheme on the `color-scheme-changed` event this function fires.
+    // The host must NOT reach into zdtp's private storage keys — deleting them
+    // on every toggle wiped scheme-independent spacing/typography/size tweaks
+    // and contradicted the documented carry-over guarantee.
+    fakeStorage.setItem("zudo-doc-tweak-state", "{}"); // legacy v1
+    fakeStorage.setItem("zudo-doc-tweak-state-v2", "{}"); // legacy v2
+    fakeStorage.setItem("zudo-doc-tweak-state-v3", "{}"); // current
+
+    applyColorScheme("light");
+
+    expect(fakeStorage.getItem("zudo-doc-tweak-state")).toBe("{}");
+    expect(fakeStorage.getItem("zudo-doc-tweak-state-v2")).toBe("{}");
+    expect(fakeStorage.getItem("zudo-doc-tweak-state-v3")).toBe("{}");
   });
 
   it("dispatches the color-scheme-changed window event", () => {

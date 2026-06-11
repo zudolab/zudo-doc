@@ -131,17 +131,19 @@ Because the default export is a diff, the AI only sees the tokens you care about
 
 ## Persistence and Migration
 
-State is persisted to `localStorage` under the key `zudo-doc-tweak-state-v2`. The v2 format is a single object containing every tab's state side-by-side, so a single read restores the whole panel.
+State is persisted to `localStorage` under the key `zudo-doc-tweak-state-v3`. The v3 envelope is a single object holding every tab's state side-by-side (color, spacing, typography, size, and any generic tabs), so a single read restores the whole panel.
 
-Older projects that persisted the v1 Color-Tweak state under `zudo-doc-tweak-state` are migrated automatically:
+Older projects that persisted an earlier format — `zudo-doc-tweak-state-v2` (v2) or `zudo-doc-tweak-state` (v1, color-only) — are migrated automatically:
 
-- On load, the panel reads v2 first. If absent, it falls back to parsing the v1 state (which only contained color tokens) and promotes it into the v2 color tab.
-- The FOUC-prevention script injected into `<head>` by the doc layout (`@takazudo/zudo-doc/doclayout`) performs the same v2-then-v1 lookup so saved colors apply before first paint on old devices too.
-- Clicking **Reset all** in the panel header clears both keys, restoring the color scheme declared in `src/config/settings.ts`.
+- On load, the panel reads v3 first. If absent, it falls back to the v2 envelope, then the v1 color-only state, promotes whichever it finds into the v3 envelope, writes the v3 key, and removes the legacy key.
+- The FOUC-prevention script injected into `<head>` by the doc layout (`@takazudo/zudo-doc/doclayout`) performs the same lookup so saved tokens apply before first paint on old devices too.
+- Clicking **Reset all** in the panel header clears the v3 envelope (and any lingering legacy keys), restoring the color scheme declared in `src/config/settings.ts`.
+
+Switching the light/dark theme does **not** delete your saved tweaks. The theme toggle dispatches a `color-scheme-changed` event; the panel responds by re-seeding the color palette from the newly active scheme (so the new scheme's colors take effect) while leaving the persisted envelope — including your spacing, typography, and size tweaks — intact.
 
 <Note title="Storage prefix continuity guarantee">
 
-The storage prefix `zudo-doc-tweak` is locked in `src/config/design-token-panel-config.ts` and will not change across the zdtp migration. Any tokens a user saved before the migration continue to load automatically — no manual migration step is needed.
+The storage prefix `zudo-doc-tweak` is locked in `src/config/design-token-panel-config.ts` and will not change. Any tokens a user saved under an older key version continue to load automatically — they are migrated into the current `zudo-doc-tweak-state-v3` envelope on first load, with no manual migration step needed.
 
 </Note>
 
