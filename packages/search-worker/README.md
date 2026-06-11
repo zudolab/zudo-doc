@@ -26,6 +26,18 @@ id = "<paste-id-here>"
 
 The `wrangler.toml` currently contains a placeholder that must be replaced before `wrangler deploy` will succeed (deploying with the placeholder produces error code 10042).
 
+> This worker has its **own** secret store, separate from the main site worker's. Set `IP_HASH_SECRET` here too if you want the salted hash on this deployment.
+
+### 2b. (Optional) Add the IP-hash HMAC secret
+
+```sh
+wrangler secret put IP_HASH_SECRET
+```
+
+Optional and non-breaking. When set, the rate limiter keys client IPs with **HMAC-SHA-256(ip)** instead of unsalted `SHA-256(ip)`, defeating reversal of the stored hashes by enumerating the (small) IPv4 space (#2038). When the secret is absent the worker falls back to the original unsalted SHA-256, so existing deployments behave identically and the step can be skipped.
+
+> **Rotation caveat.** Setting or rotating `IP_HASH_SECRET` changes every derived key, so in-flight rate-limit buckets reset (acceptable — 60s windows).
+
 ### 3. Deploy
 
 ```sh
