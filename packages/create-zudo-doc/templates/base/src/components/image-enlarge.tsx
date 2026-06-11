@@ -1,3 +1,5 @@
+"use client";
+
 // W6A stub — no-op default + ImageEnlargeSsrFallback named exports.
 //
 // When the imageEnlarge feature is enabled, the feature template

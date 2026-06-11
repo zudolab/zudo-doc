@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useRef } from "preact/compat";
 import type { JSX } from "preact";
 

@@ -1,3 +1,5 @@
+"use client";
+
 // W6A stub — no-op default + DocHistory named exports.
 //
 // When the docHistory feature is enabled, the feature template

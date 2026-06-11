@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useCallback, useMemo, useRef } from "preact/compat";
 import type { Change } from "diff";
 import type { DocHistoryData, DocHistoryEntry } from "@/types/doc-history";
