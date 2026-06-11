@@ -43,15 +43,16 @@ linkValidation: { failOnBroken: true },
 | Option | Default | Description |
 | --- | --- | --- |
 | `failOnBroken` | `false` | When `true`, broken links produce `Error` diagnostics and fail the build. When `false`, they are warnings only. |
-| `allowExternal` | `true` | When `false`, external URLs are validated instead of being silently skipped. |
+
+An `allowExternal` option existed in earlier zfb releases but never had any effect; it was removed in zfb `0.1.0-next.38`. Remove it from your config if present.
 
 ## What gets validated
 
 - Bare anchor fragments (`#section-id`) against heading IDs in the current file.
 - File links without anchors (`./other.md`) — the target file must exist.
-- File links with anchors (`./other.md#section-id`) — both the file and the heading ID must resolve.
+- File links with anchors (`./other.md#section-id`) — both the file and the heading ID must resolve. As of zfb `0.1.0-next.38`, the anchor is checked against the target file's actual headings (including transcluded ones), not just file existence; targets outside the bundler's walked directories degrade to existence-only validation.
 
-External URLs (`http://`, `https://`, `mailto:`, `tel:`) are skipped while `allowExternal` is `true`.
+External URLs (`http://`, `https://`, `mailto:`, `tel:`) are always skipped.
 
 ## Relationship to `resolveMarkdownLinks`
 

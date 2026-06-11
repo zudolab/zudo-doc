@@ -1,14 +1,14 @@
 ---
 title: Image Dimensions
-description: ディスクのメタデータから画像に width/height 属性を付与します。zfb next.35 時点でも no-op。
+description: ビルド時にディスクのメタデータから画像に width/height 属性を付与します。
 sidebar_position: 21
 ---
 
-`imageDimensions` 機能は、ビルド時に画像ファイルのヘッダーを読み取り、ローカルの `<img>` 要素に `width` と `height` 属性を付与するように設計されています。画像の読み込み前にブラウザが領域を確保できるようにすることで、Cumulative Layout Shift（CLS）を防ぎます。
+`imageDimensions` 機能は、ビルド時に画像ファイルのヘッダーを読み取り、ローカルの `<img>` 要素に `width` と `height` 属性を付与します。画像の読み込み前にブラウザが領域を確保できるようにすることで、Cumulative Layout Shift（CLS）を防ぎます。
 
-:::warning[zfb next.35 時点でも no-op]
+:::note[zfb next.38 から機能するようになりました]
 
-`imageDimensions` は zudo-doc の `zfb.config.ts` で**有効化**されていますが、zfb `0.1.0-next.35` 時点でも public ディレクトリの絶対パスに対して **no-op** のままです。`![alt](/img/x.png)` のような画像は、`width`/`height` が**付与されないまま** `<img src alt>` として出力されます。以下の設定と構文は網羅性のために記載していますが、現時点でこのコーパス上では寸法は生成されません。
+zfb `0.1.0-next.35` までは、この機能は public ディレクトリの絶対パスに対して no-op でした — `![alt](/img/x.png)` のような画像は `width`/`height` が付与されないまま出力されていました。zfb `0.1.0-next.38` からは動作します。このコーパス上でも public ディレクトリの画像に寸法が付与され、ファイルが見つからない場合は `cannot stat` のビルド警告が出力されます。
 
 :::
 
@@ -26,9 +26,9 @@ export default defineConfig({
 });
 ```
 
-## 意図された動作
+## 動作
 
-各画像要素に対して、この機能は次のように動作するよう設計されています。
+各画像要素に対して、この機能は次のように動作します。
 
 1. すでに `width` または `height` 属性を持つ要素はスキップします。
 2. リモート URL（`http://`、`https://`、`//`）と `data:` URL は無視します。
@@ -36,7 +36,7 @@ export default defineConfig({
 4. 画像ファイルのヘッダーのみを読み取り、解決した寸法を付与します。
 5. ファイルが見つからない、または認識できない場合はビルド警告を出力します。
 
-意図されている対応フォーマット: PNG、JPEG、GIF、WebP、AVIF。
+対応フォーマット: PNG、JPEG、GIF、WebP、AVIF。
 
 ## パス解決
 
@@ -60,10 +60,8 @@ export default defineConfig({
 ![Hero image](/img/hero.png)
 ```
 
-機能が動作している場合、400×300 の PNG に対して意図される出力は次のようになります。
+400×300 の PNG に対する出力は次のようになります。
 
 ```html
 <img src="/img/hero.png" alt="Hero image" width="400" height="300" />
 ```
-
-next.35 時点でも public ディレクトリの絶対パスに `width`/`height` 属性が**付与されない**ため、出力されるマークアップは `<img src="/img/hero.png" alt="Hero image" />` のまま変わりません。
