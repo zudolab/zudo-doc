@@ -38,12 +38,20 @@ next.38 がこれらのアイランドを壊したわけではありません �
 
 0.2.1 テンプレートを取り込むと、next.38 では `ThemeToggle` が**新たに**死にます。0.2.1 の `_header-with-defaults.tsx` は、ローカルの `src/components/theme-toggle.tsx` コピーから `import { ThemeToggle } from "@takazudo/zudo-doc/theme-toggle"`（npm dist）へ切り替えます。next.38 のアイランドスキャナーは `node_modules` パッケージ内のアイランドを登録しないため (zfb #999)、テンプレートを同期した利用者は「6 個が死、ThemeToggle は動作」から「7 個が死」へ移ります。
 
-下記のフォワード修正を含む zfb リリースに上がるまでの回避策: ローカルにスキャナーから見えるパススルーのシムを残し、ヘッダーのインポートをそれに向けます。
+下記のフォワード修正を含む zfb リリースに上がるまでの回避策: ローカルにスキャナーから見えるパススルーのシムを残し、ヘッダーのインポートをそれに向けます。`displayName` を固定した**ローカルのラッパーコンポーネント**にしてください — `export { ThemeToggle } from …` という単なる再エクスポートでは、next.38 スキャナーに登録対象のローカルバインディングを与えられず、トグルは死んだままになります。
 
 ```tsx
 // src/components/theme-toggle.tsx
 "use client";
-export { ThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
+import type { ComponentProps } from "preact";
+import { ThemeToggle as PackageThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
+
+// Local wrapper (not a bare re-export) so the next.38 island scanner sees a
+// component binding it can register; displayName names the island marker.
+export function ThemeToggle(props: ComponentProps<typeof PackageThemeToggle>) {
+  return <PackageThemeToggle {...props} />;
+}
+ThemeToggle.displayName = "ThemeToggle";
 ```
 
 #### 残った 3 つのレイアウトアイランドのシムを同期する (#2061)
@@ -54,7 +62,11 @@ PR #2061 は、スキャナーから見える `Toc` / `MobileToc` シムと、`h
 
 #### 不要になったローカルモジュールを削除する
 
-0.2.1 は、パッケージ側が所有するようになったいくつかのモジュールのローカルコピーの同梱をやめました: rehype プラグイン、hast-utils、url-utils、docs-source-map、use-active-heading、toc、theme-toggle、sidebar-resizer、doc-history util です。テンプレートを同期すると、これらを参照するものは何もなくなります — 削除してください。（zudo-css-wisdom のアップグレードでは 13 ファイルを削除しました。）
+0.2.1 は、パッケージ側が所有するようになったいくつかのモジュールのローカルコピーの同梱をやめました。テンプレートを同期すると、古いフルのローカル実装は参照されなくなります — 削除してください: rehype プラグイン、hast-utils、url-utils、docs-source-map、use-active-heading、sidebar-resizer、doc-history util です。（差し替えられた theme-toggle / Toc のコピーを含め、zudo-css-wisdom のアップグレードでは 13 ファイルを削除しました。）
+
+:::warning[next.38 の間はスキャナー可視のシムを残す]
+next.38 では `src/components/theme-toggle.tsx`、`src/components/toc.tsx`、`src/components/mobile-toc.tsx` を**削除しないでください**。これらのファイル名は、上記 2 セクションの薄いスキャナー可視シムを保持するようになっており、ヘッダーとページシェルが依然としてこれらをインポートします — 削除すると死んだアイランドの警告が再発します。next.39 以降に上がれば削除できます（下記参照）。
+:::
 
 #### フォワード修正: zfb `0.1.0-next.39`
 
