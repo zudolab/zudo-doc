@@ -1193,6 +1193,41 @@ describe("scaffold — tauri feature", () => {
   });
 });
 
+describe("scaffold — body-end-islands feature gating (#2058)", () => {
+  // pages/lib/_body-end-islands.tsx feature-gates the AiChatModal island +
+  // sr-only "AI Assistant" landmark on settings.aiAssistant and the
+  // ImageEnlarge island on settings.imageEnlarge, mirroring the existing
+  // designTokenPanel gating. The conditionals are part of the wholesale-copied
+  // base template, so every scaffold variant carries them regardless of the
+  // flag values — a feature-off consumer (aiAssistant/imageEnlarge false) then
+  // ships neither the dead island marker nor the misleading landmark heading.
+  it("gates AiChatModal/heading on aiAssistant and ImageEnlarge on imageEnlarge", async () => {
+    const choices: UserChoices = {
+      projectName: "test-body-end-gating",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "imageEnlarge"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+
+    const bodyEnd = await fs.readFile(
+      projectPath("test-body-end-gating", "pages/lib/_body-end-islands.tsx"),
+      "utf-8",
+    );
+    // AI assistant gating wraps both the island and the landmark heading.
+    expect(bodyEnd).toContain("settings.aiAssistant ?");
+    expect(bodyEnd).toContain('<h2 class="sr-only">AI Assistant</h2>');
+    // Image-enlarge island gating.
+    expect(bodyEnd).toContain("settings.imageEnlarge");
+    // designTokenPanel gating stays in place and untouched.
+    expect(bodyEnd).toContain("settings.designTokenPanel");
+    // No leftover slot anchors in the generated output.
+    expect(bodyEnd).not.toContain("@slot:");
+  });
+});
+
 describe("scaffold — tauri-dev feature (Mode 2)", () => {
   it("generates src-tauri-dev/ when tauriDev is enabled", async () => {
     const choices: UserChoices = {
