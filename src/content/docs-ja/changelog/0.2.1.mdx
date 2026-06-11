@@ -8,6 +8,76 @@ sidebar_position: 1012
 
 メンテナンスリリースです。プロジェクト全体のレビュー 2 巡分、エージェント発見の堅牢化修正バッチ、zfb `0.1.0-next.38` エンジンバンプ、開発体験の修正をまとめています。`@takazudo/zudo-doc`、`@takazudo/zudo-doc-history-server`、`create-zudo-doc` はロックステップで同時リリースされます。
 
+### 0.2.0 利用者の移行
+
+`create-zudo-doc` で生成した下流サイトを保守している場合、0.2.0 から 0.2.1 への移行は単なるバージョンバンプ以上のものになります。テンプレートの配線が相互に絡み合う形で進化しており、本リリースに同梱される zfb `0.1.0-next.38` エンジンバンプが、以前から存在していたアイランドのハイドレーションの欠落を表面化させます。このセクションでは、実際の 3 件の利用者アップグレードで遭遇した内容をまとめ、移行を 1 回でやり切れるようにします。
+
+#### 新しいアイランド警告は、すでに死んでいたアイランドを暴き出す
+
+zfb `0.1.0-next.38` はアイランドマーカーのレジストリ警告を追加します (zfb #984 / #990)。0.2.0 時代の配線では、出力されているのに未登録のマーカーごとに最大 7 件の警告が突然現れます: `ThemeToggle`、`Toc`、`MobileToc`、`Sidebar`、`DocHistory`、`ImageEnlarge`、`AiChatModal`。これらのアイランドはサーバーレンダリングは正しく行われますが、ハイドレートされません。アイランドレジストリの登録数が、ページが出力するマーカーに足りていないためです。ビルドはそれでも 0 で終了します。
+
+:::warning[ハイドレーションの欠落は 0.2.1 以前から存在する]
+next.38 がこれらのアイランドを壊したわけではありません — **暴き出した**だけです。next.38 未満の zfb リリースでは、同じトグルや TOC が警告なしで死んだ（非インタラクティブな）まま出荷されていました。警告は本リリースが持ち込んだリグレッションではなく、長く存在していた欠落の診断として読んでください。
+:::
+
+#### 0.2.1 のテンプレート変更は 1 波としてまとめて取り込む
+
+`pnpm check:template-drift` を実行します。0.2.0 ベースラインでは、相互に絡み合う一式全体 — 最後にどのテンプレート世代を同期したかにより、おおよそ 17〜31 ファイル — がフラグされます。内訳:
+
+- #2010 — doc ルートの統合（新しい `_doc-page-renderer` / `_doc-route-entries` モジュール）
+- #2030 — nav-data の重複排除（新しい `_nav-data-prep` モジュール）
+- #2012 — bare な `theme-toggle` サブパスエクスポート
+- #2016 — `docs-schema` の抽出（単一の zod ソース）
+- #2022, #2024, #2037 — バージョン付きページのメタデータ、search-index / llms-txt の重複排除、zdtp 状態の保持
+
+これらの変更は互いを参照し合うため、**部分的な取り込みは死んだ接続コードを残します**。まとめて同期してください。
+
+ひとつの実地データ点 (zudolab/zudo-css-wisdom#103): フル取り込みでは 31 ファイルと 4 つの新規モジュールが 1 波でクリーンに同期できました。唯一のビルド破損は、`src/config/i18n.ts` に新たに期待される `getLocaleConfig` エクスポートでした — このファイルをカスタマイズしている場合は、そのエクスポートを追加してください。
+
+#### next.38 ではスキャナーから見える `ThemeToggle` シムを残す
+
+0.2.1 テンプレートを取り込むと、next.38 では `ThemeToggle` が**新たに**死にます。0.2.1 の `_header-with-defaults.tsx` は、ローカルの `src/components/theme-toggle.tsx` コピーから `import { ThemeToggle } from "@takazudo/zudo-doc/theme-toggle"`（npm dist）へ切り替えます。next.38 のアイランドスキャナーは `node_modules` パッケージ内のアイランドを登録しないため (zfb #999)、テンプレートを同期した利用者は「6 個が死、ThemeToggle は動作」から「7 個が死」へ移ります。
+
+下記のフォワード修正を含む zfb リリースに上がるまでの回避策: ローカルにスキャナーから見えるパススルーのシムを残し、ヘッダーのインポートをそれに向けます。`displayName` を固定した**ローカルのラッパーコンポーネント**にしてください — `export { ThemeToggle } from …` という単なる再エクスポートでは、next.38 スキャナーに登録対象のローカルバインディングを与えられず、トグルは死んだままになります。
+
+```tsx
+// src/components/theme-toggle.tsx
+"use client";
+import type { ComponentProps } from "preact";
+import { ThemeToggle as PackageThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
+
+// Local wrapper (not a bare re-export) so the next.38 island scanner sees a
+// component binding it can register; displayName names the island marker.
+export function ThemeToggle(props: ComponentProps<typeof PackageThemeToggle>) {
+  return <PackageThemeToggle {...props} />;
+}
+ThemeToggle.displayName = "ThemeToggle";
+```
+
+#### 残った 3 つのレイアウトアイランドのシムを同期する (#2061)
+
+リリース済みの next.38 では、zudo-doc ≤ 0.2.2 の利用者は依然として 3 つの死んだレイアウトアイランドを見ます: docs ページの `Toc` と `MobileToc`、そして `hide_sidebar` ページの空データ `Sidebar` です。これらは少なくとも 0.2.0 以降、静かに死んでいました。
+
+PR #2061 は、スキャナーから見える `Toc` / `MobileToc` シムと、`hide_sidebar` ページでの空フラグメント `sidebarOverride` により、テンプレート利用者向けにこれを修正します。該当ファイルを手動で同期するか、デフォルトでそれらを同梱する次の `create-zudo-doc` リリースを待ってください。
+
+#### 不要になったローカルモジュールを削除する
+
+0.2.1 は、パッケージ側が所有するようになったいくつかのモジュールのローカルコピーの同梱をやめました。テンプレートを同期すると、古いフルのローカル実装は参照されなくなります — 削除してください: rehype プラグイン、hast-utils、url-utils、docs-source-map、use-active-heading、sidebar-resizer、doc-history util です。（差し替えられた theme-toggle / Toc のコピーを含め、zudo-css-wisdom のアップグレードでは 13 ファイルを削除しました。）
+
+:::warning[next.38 の間はスキャナー可視のシムを残す]
+next.38 では `src/components/theme-toggle.tsx`、`src/components/toc.tsx`、`src/components/mobile-toc.tsx` を**削除しないでください**。これらのファイル名は、上記 2 セクションの薄いスキャナー可視シムを保持するようになっており、ヘッダーとページシェルが依然としてこれらをインポートします — 削除すると死んだアイランドの警告が再発します。next.39 以降に上がれば削除できます（下記参照）。
+:::
+
+#### フォワード修正: zfb `0.1.0-next.39`
+
+上記のスキャナー可視シムはすべて、next.38 スキャナーのための暫定的な負債です。zfb `0.1.0-next.39`（2026-06-12 リリース、0.2.1 と 0.2.2 がともに next.38 に対して出荷された後）は、npm dist パッケージ向けの `"use client"` アイランドスキャンを追加します (zfb #999 / PR #1001): `node_modules` 内の通常のパッケージにあるアイランドが、そのパッケージの `exports` マップを通じて解決され、登録・ハイドレートされます。
+
+:::tip[next.39 以降に上がったら]
+スキャナー可視の `ThemeToggle` / `Toc` / `MobileToc` シムは不要になり、暫定的なシム負債を片付けられます。0.2.1 自体は next.38 に対して出荷された点に注意してください — next.39 は後続のエンジン修正であり、本リリースの一部ではありません。
+:::
+
+テンプレートページを使わずに（スキャフォルドなしで）パッケージから直接 `DocLayoutWithDefaults` をレンダリングしている利用者は、テンプレートシムでは一切癒されません — その経路には zfb next.39 以降が必要です。
+
 ### 機能
 
 - **AI チャットエンドポイントのオプショナルな HMAC IP ハッシュ化。** Cloudflare シークレット `IP_HASH_SECRET` を設定すると、レートリミットと監査ログのキーがソルトなし SHA-256 ではなく HMAC-SHA-256(ip) から導出され、IPv4 全列挙によるハッシュ逆引きを防ぎます。シークレット未設定時の挙動は従来どおりで、オプショナルかつ非破壊的です (#2038)。

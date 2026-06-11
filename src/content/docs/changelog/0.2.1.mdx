@@ -8,6 +8,76 @@ Released: 2026-06-11
 
 Maintenance release. Aggregates two full-project review waves, a batch of agent-found hardening fixes, the zfb `0.1.0-next.38` engine bump, and dev-experience fixes. `@takazudo/zudo-doc`, `@takazudo/zudo-doc-history-server`, and `create-zudo-doc` are released together in lockstep.
 
+### Migrating a 0.2.0 consumer
+
+If you maintain a downstream site scaffolded from `create-zudo-doc`, the jump from 0.2.0 to 0.2.1 is more than a version bump. The template wiring evolved in interlocking ways, and the zfb `0.1.0-next.38` engine bump that ships with this release surfaces a pre-existing island-hydration gap. This section collects what three real consumer upgrades ran into, so you can do the migration in one pass.
+
+#### The new island warnings expose islands that were already dead
+
+zfb `0.1.0-next.38` adds an island-marker registry warning (zfb #984 / #990). On a 0.2.0-era wiring you will suddenly see up to seven of them — one per emitted-but-unregistered marker: `ThemeToggle`, `Toc`, `MobileToc`, `Sidebar`, `DocHistory`, `ImageEnlarge`, and `AiChatModal`. These islands server-render correctly but never hydrate, because the island registry under-registers against the markers the page emits. The build still exits 0.
+
+:::warning[The hydration gap predates 0.2.1]
+next.38 did not break these islands — it **revealed** them. On any zfb release below next.38 the same toggles and TOCs ship dead (non-interactive) with no warning at all. Read the warnings as a diagnosis of a long-standing gap, not as a regression introduced by this release.
+:::
+
+#### Adopt the 0.2.1 template changes as one wave
+
+Run `pnpm check:template-drift`. On a 0.2.0 baseline it flags the full interlocked set — roughly 17 to 31 files, depending on which template generation you last synced — spanning:
+
+- #2010 — doc route consolidation (new `_doc-page-renderer` / `_doc-route-entries` modules)
+- #2030 — nav-data dedupe (new `_nav-data-prep` module)
+- #2012 — bare `theme-toggle` subpath export
+- #2016 — `docs-schema` extraction (a single zod source of truth)
+- #2022, #2024, #2037 — versioned-page metadata, search-index / llms-txt dedupe, and zdtp state survival
+
+These changes reference one another, so **partial adoption leaves dead glue behind**. Sync them together.
+
+One field data point (zudolab/zudo-css-wisdom#103): a full adoption synced 31 flagged files plus 4 new modules cleanly in a single wave. The only build break was a new `getLocaleConfig` export now expected from `src/config/i18n.ts` — if you have customized that file, add the export.
+
+#### Keep a scanner-visible `ThemeToggle` shim on next.38
+
+Adopting the 0.2.1 templates makes `ThemeToggle` **newly** dead on next.38. The 0.2.1 `_header-with-defaults.tsx` switches from a local `src/components/theme-toggle.tsx` copy to `import { ThemeToggle } from "@takazudo/zudo-doc/theme-toggle"` (the npm dist). The next.38 island scanner does not register islands that live inside a `node_modules` package (zfb #999), so a consumer that syncs templates goes from "six dead, ThemeToggle still works" to "seven dead."
+
+Workaround until you are on a zfb release with the forward fix (below): keep a local, scanner-visible pass-through shim and point the header import at it. Make it a **local wrapper component** with a pinned `displayName` — a bare `export { ThemeToggle } from …` re-export does not give the next.38 scanner a local binding to register, so the toggle stays dead.
+
+```tsx
+// src/components/theme-toggle.tsx
+"use client";
+import type { ComponentProps } from "preact";
+import { ThemeToggle as PackageThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
+
+// Local wrapper (not a bare re-export) so the next.38 island scanner sees a
+// component binding it can register; displayName names the island marker.
+export function ThemeToggle(props: ComponentProps<typeof PackageThemeToggle>) {
+  return <PackageThemeToggle {...props} />;
+}
+ThemeToggle.displayName = "ThemeToggle";
+```
+
+#### Sync the residual layout-island shims (#2061)
+
+On released next.38, consumers of zudo-doc ≤ 0.2.2 still see three dead layout islands: `Toc` and `MobileToc` on docs pages, and an empty-data `Sidebar` on `hide_sidebar` pages. These have been silently dead since at least 0.2.0.
+
+PR #2061 fixes this for template consumers with scanner-visible `Toc` / `MobileToc` shims and an empty-fragment `sidebarOverride` on `hide_sidebar` pages. Hand-sync those files, or wait for the next `create-zudo-doc` release, which ships them by default.
+
+#### Prune the now-orphaned local modules
+
+0.2.1 stopped shipping local copies of several modules that the package now owns. After you sync the templates, the old full local implementations are unreferenced — delete them: the rehype plugins, hast-utils, url-utils, docs-source-map, use-active-heading, sidebar-resizer, and the doc-history util. (Counting the replaced theme-toggle / Toc copies, the zudo-css-wisdom upgrade removed 13 such files.)
+
+:::warning[Keep the scanner-visible shims while on next.38]
+Do **not** delete `src/components/theme-toggle.tsx`, `src/components/toc.tsx`, or `src/components/mobile-toc.tsx` on next.38. Those filenames now hold the thin scanner-visible shims from the two sections above, and the header and page shell still import them — pruning them reintroduces the dead-island warnings. They can go once you are on next.39 or later (see below).
+:::
+
+#### The forward fix: zfb `0.1.0-next.39`
+
+Every scanner-visible shim above is interim debt for the next.38 scanner. zfb `0.1.0-next.39` (released 2026-06-12, after both 0.2.1 and 0.2.2 had shipped against next.38) adds `"use client"` island scanning for npm-dist packages (zfb #999 / PR #1001): islands inside a regular package under `node_modules` are registered and hydrated, resolved through that package's `exports` map.
+
+:::tip[Once you are on next.39 or later]
+The scanner-visible `ThemeToggle` / `Toc` / `MobileToc` shims are no longer needed, and the interim shim debt can be retired. Note that 0.2.1 itself shipped against next.38 — next.39 is the follow-on engine fix, not part of this release.
+:::
+
+Consumers that render `DocLayoutWithDefaults` directly from the package **without** template pages (no scaffold) are not healed by the template shims at all — that path needs zfb next.39 or later.
+
 ### Features
 
 - **Optional HMAC IP hashing for the AI-chat endpoint.** When the `IP_HASH_SECRET` Cloudflare secret is set, rate-limit and audit-log keys derive from HMAC-SHA-256(ip) instead of unsalted SHA-256, defeating hash reversal by IPv4 enumeration. Without the secret, behavior is unchanged — the step is optional and non-breaking (#2038).
