@@ -392,7 +392,13 @@ export default defineConfig({
   // blocked until next.23 by a stale consumer-side `zfb/config` ambient
   // type that lacked `bundle` (zudolab/zudo-doc#1834 /
   // Takazudo/zudo-front-builder#678 — now fixed in zfb-shim.d.ts).
-  bundle: { exclude: ["packages/md-plugins/__fixtures__/**"] },
+  // e2e/fixtures/** are standalone Playwright fixture projects with their
+  // own zfb.config.ts and public/ dirs; since next.38 made imageDimensions
+  // functional, the host build would otherwise stat their absolute image
+  // paths (e.g. /test-images/*.png) against the HOST public dir and warn.
+  bundle: {
+    exclude: ["packages/md-plugins/__fixtures__/**", "e2e/fixtures/**"],
+  },
   // Strip `.md` / `.mdx` from in-page `<a href>` and append a trailing
   // slash so author-written `[label](./other.mdx)` references resolve
   // to the rendered route URL. Mirrors `rehypeStripMdExtension` from

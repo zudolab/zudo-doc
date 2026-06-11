@@ -1,14 +1,14 @@
 ---
 title: Image Dimensions
-description: Injects width/height attributes on images from disk metadata. Still a no-op as of zfb next.35.
+description: Injects width/height attributes on images from disk metadata at build time.
 sidebar_position: 21
 ---
 
-The `imageDimensions` feature is designed to read image file headers at build time and inject `width` and `height` attributes onto local `<img>` elements, preventing Cumulative Layout Shift (CLS) by letting the browser reserve space before the image loads.
+The `imageDimensions` feature reads image file headers at build time and injects `width` and `height` attributes onto local `<img>` elements, preventing Cumulative Layout Shift (CLS) by letting the browser reserve space before the image loads.
 
-:::warning[Still a no-op as of zfb next.35]
+:::note[Functional since zfb next.38]
 
-`imageDimensions` is **enabled** in zudo-doc's `zfb.config.ts`, but as of zfb `0.1.0-next.35` it is still a **no-op** for public-directory absolute paths: an image such as `![alt](/img/x.png)` is emitted as `<img src alt>` with **no** `width`/`height` injected. The configuration and syntax below are documented for completeness, but no dimensions are produced on this corpus today.
+Through zfb `0.1.0-next.35` this feature was a no-op for public-directory absolute paths — an image such as `![alt](/img/x.png)` was emitted with no `width`/`height` injected. As of zfb `0.1.0-next.38` it works: dimensions are injected for public-directory images on this corpus, and a missing file produces a `cannot stat` build warning.
 
 :::
 
@@ -26,17 +26,17 @@ export default defineConfig({
 });
 ```
 
-## Intended behavior
+## Behavior
 
-For each image element, the feature is designed to:
+For each image element, the feature:
 
-1. Skip elements that already carry a `width` or `height` attribute.
-2. Ignore remote URLs (`http://`, `https://`, `//`) and `data:` URLs.
-3. Resolve the `src` to an absolute file path on disk.
-4. Read only the image file header and inject the resolved dimensions.
-5. Emit a build warning if the file is missing or unrecognized.
+1. Skips elements that already carry a `width` or `height` attribute.
+2. Ignores remote URLs (`http://`, `https://`, `//`) and `data:` URLs.
+3. Resolves the `src` to an absolute file path on disk.
+4. Reads only the image file header and injects the resolved dimensions.
+5. Emits a build warning if the file is missing or unrecognized.
 
-Intended supported formats: PNG, JPEG, GIF, WebP, AVIF.
+Supported formats: PNG, JPEG, GIF, WebP, AVIF.
 
 ## Path resolution
 
@@ -60,10 +60,8 @@ A standard markdown image is all that is required — no special syntax:
 ![Hero image](/img/hero.png)
 ```
 
-When the feature is functional, the intended output for a 400×300 PNG would be:
+The output for a 400×300 PNG is:
 
 ```html
 <img src="/img/hero.png" alt="Hero image" width="400" height="300" />
 ```
-
-As of next.35, the `width`/`height` attributes are still **not** injected for public-directory absolute paths, so the emitted markup is `<img src="/img/hero.png" alt="Hero image" />` unchanged.
