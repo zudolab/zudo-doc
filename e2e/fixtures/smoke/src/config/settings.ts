@@ -6,6 +6,7 @@ import type {
   LocaleConfig,
   FrontmatterPreviewConfig,
   BodyFootUtilAreaConfig,
+  MetaTagsConfig,
 } from "./settings-types";
 
 export const settings = {
@@ -22,6 +23,13 @@ export const settings = {
   editUrl: "https://github.com/example/repo/edit/main" as string | false,
   githubUrl: "https://github.com/example/repo" as string | false,
   siteUrl: "" as string,
+  metaTags: {
+    description: true,
+    keywords: false,
+    ogImage: false,
+    ogSiteName: true,
+    twitterCard: false,
+  } satisfies MetaTagsConfig as MetaTagsConfig,
   sitemap: false,
   docMetainfo: false,
   docTags: false,
