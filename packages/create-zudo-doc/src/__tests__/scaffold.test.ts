@@ -633,6 +633,43 @@ describe("scaffold — docHistory feature", () => {
     expect(content).toContain("docHistory: true");
   });
 
+  it("injects the diff-viewer CSS into global.css when docHistory is enabled (#2081)", async () => {
+    const choices: UserChoices = {
+      projectName: "test-dh-diff-css",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "docHistory"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const css = await fs.readFile(
+      projectPath("test-dh-diff-css", "src/styles/global.css"),
+      "utf-8",
+    );
+    expect(css).toContain(".diff-row {");
+    expect(css).toContain(".diff-line-num {");
+    // Per-line separators ship at the demoted 15% muted mix (#2077)
+    expect(css).toContain("color-mix(in oklch, var(--color-muted) 15%, transparent)");
+  });
+
+  it("does NOT inject the diff-viewer CSS when docHistory is disabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-dh-no-diff-css",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const css = await fs.readFile(
+      projectPath("test-dh-no-diff-css", "src/styles/global.css"),
+      "utf-8",
+    );
+    expect(css).not.toContain(".diff-row {");
+  });
+
   it("includes @takazudo/zudo-doc-history-server dep when docHistory is enabled (W8A — #1739)", async () => {
     const choices: UserChoices = {
       projectName: "test-dh-history-server-dep",
