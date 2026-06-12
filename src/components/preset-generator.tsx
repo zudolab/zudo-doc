@@ -7,6 +7,7 @@ import {
   buildJson,
   buildCliCommand,
   DEFAULT_HEADER_RIGHT_ITEMS,
+  INITIAL_HEADER_RIGHT_ITEMS,
   SINGLE_SCHEMES,
   LIGHT_SCHEMES,
   SUPPORTED_LANGS,
@@ -208,7 +209,7 @@ export default function PresetGenerator() {
     features: FEATURES.filter((f) => f.default).map((f) => f.value),
     cjkFriendly: true,
     packageManager: "pnpm",
-    headerRightItems: [...DEFAULT_HEADER_RIGHT_ITEMS],
+    headerRightItems: [...INITIAL_HEADER_RIGHT_ITEMS],
   });
 
   const [modalState, setModalState] = useState<FormState | null>(null);
@@ -271,7 +272,7 @@ export default function PresetGenerator() {
   const resetHeaderRightItems = useCallback(() => {
     setState((prev) => ({
       ...prev,
-      headerRightItems: [...DEFAULT_HEADER_RIGHT_ITEMS],
+      headerRightItems: [...INITIAL_HEADER_RIGHT_ITEMS],
     }));
   }, []);
 

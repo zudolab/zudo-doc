@@ -126,6 +126,13 @@ export const DEFAULT_HEADER_RIGHT_ITEMS: readonly HeaderRightItemSpec[] = [
   { kind: "component", name: "language-switcher" },
 ];
 
+export const INITIAL_HEADER_RIGHT_ITEMS: readonly HeaderRightItemSpec[] = [
+  { kind: "component", name: "github-link" },
+  { kind: "component", name: "theme-toggle" },
+  { kind: "component", name: "search" },
+  { kind: "component", name: "language-switcher" },
+];
+
 /**
  * Map a UI-internal {@link HeaderRightItemSpec} to the canonical
  * `HeaderRightItem` shape consumed by `settings.ts`.
@@ -157,7 +164,7 @@ export const FEATURES = [
   { value: "imageEnlarge", label: "Image enlarge", cliFlag: "image-enlarge", default: true },
   { value: "footerCopyright", label: "Footer copyright", cliFlag: "footer-copyright", default: false },
   { value: "changelog", label: "Changelog", cliFlag: "changelog", default: false },
-  { value: "tagGovernance", label: "Tag governance", cliFlag: "tag-governance", default: true },
+  { value: "tagGovernance", label: "Tag governance", cliFlag: "tag-governance", default: false },
   { value: "docTags", label: "Doc tags pages", cliFlag: "doc-tags", default: false },
   { value: "footerTaglist", label: "Footer taglist", cliFlag: "footer-taglist", default: false },
 ] as const;
