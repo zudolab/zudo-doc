@@ -3245,3 +3245,80 @@ describe("scaffold — programmatic API rejects invalid project names (F4 #2013)
     ).rejects.toThrow(/Invalid projectName/);
   });
 });
+
+describe("scaffold — metaTags preset override (S5 #2079)", () => {
+  it("emits S4 defaults when metaTags is absent from choices", async () => {
+    const choices: UserChoices = {
+      projectName: "test-metatags-default",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-metatags-default", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("metaTags: {");
+    expect(content).toContain("description: true");
+    expect(content).toContain("keywords: false");
+    expect(content).toContain("ogImage: false");
+    expect(content).toContain("ogSiteName: true");
+    expect(content).toContain("twitterCard: false");
+  });
+
+  it("emits chosen values when ogImage is enabled in the preset", async () => {
+    const choices: UserChoices = {
+      projectName: "test-metatags-ogimage",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+      metaTags: {
+        description: true,
+        keywords: false,
+        ogImage: "/img/ogp.png",
+        ogSiteName: true,
+        twitterCard: false,
+      },
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-metatags-ogimage", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("metaTags: {");
+    expect(content).toContain('ogImage: "/img/ogp.png"');
+  });
+
+  it("emits twitterCard and handles when full twitter config is set", async () => {
+    const choices: UserChoices = {
+      projectName: "test-metatags-twitter",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+      metaTags: {
+        description: true,
+        keywords: false,
+        ogImage: false,
+        ogSiteName: true,
+        twitterCard: "summary_large_image",
+        twitterSite: "@brand",
+        twitterCreator: "@author",
+      },
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-metatags-twitter", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain('"summary_large_image"');
+    expect(content).toContain('"@brand"');
+    expect(content).toContain('"@author"');
+  });
+});

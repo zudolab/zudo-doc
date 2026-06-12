@@ -14,6 +14,18 @@ sidebar_position: 2.5
 
 2 種類のアイテム — `link`(任意の外部リンク)と `html`(生 HTML)— は、意図的に UI に出していません。これらを使う場合はスキャフォールド後に `settings.ts` を直接編集してください。discriminated union のスキーマと使用例は [ヘッダー右側アイテム](../guides/header-right-items.mdx) を参照してください。
 
+## メタタグ
+
+「Meta tags」セクションは `settings.metaTags` — 各ページの `<head>` に出力されるメタタグを設定します。設定できる項目は以下のとおりです。
+
+- **SEO description meta** — `<meta name="description">` を出力します。デフォルトでオン。
+- **Keywords** — カンマ区切りのキーワードリストを持つ `<meta name="keywords">` を出力します。デフォルトでオフ。有効にするとテキスト入力欄が表示されます。
+- **OGP image (og:image)** — `og:image`（と `twitter:image`）を出力します。デフォルトでオフ。有効にするとパス入力欄（デフォルト `/img/ogp.png`）が表示されます。
+- **og:site_name** — `og:site_name` を出力します。デフォルトでオン。
+- **Twitter card** — `twitter:card` ブロックを出力します。デフォルトでオフ。有効にするとカードタイプ選択（`summary` / `summary_large_image`）とオプションの `twitter:site` / `twitter:creator` ハンドル入力欄が表示されます。
+
+`og:title` は常に出力され、ここには表示されません — DocHead の契約であり、この設定では無効化できません。
+
 ## 新しく追加された機能
 
 Features セクションには、いくつか押さえておきたい新項目があります。

@@ -212,3 +212,110 @@ describe("validatePreset — projectName (F4 #2013)", () => {
     expect(validatePreset({ projectName: null })).toMatch(/must be a string/);
   });
 });
+
+describe("validatePreset — metaTags (S5 #2079)", () => {
+  it("accepts absent metaTags", () => {
+    expect(validatePreset({})).toBeNull();
+  });
+
+  it("accepts a minimal valid metaTags object", () => {
+    expect(validatePreset({ metaTags: { description: true } })).toBeNull();
+  });
+
+  it("accepts a full valid metaTags object", () => {
+    expect(
+      validatePreset({
+        metaTags: {
+          description: true,
+          keywords: "docs, guide",
+          ogImage: "/img/ogp.png",
+          ogSiteName: true,
+          twitterCard: "summary_large_image",
+          twitterSite: "@brand",
+          twitterCreator: "@author",
+        },
+      }),
+    ).toBeNull();
+  });
+
+  it("accepts metaTags with false values", () => {
+    expect(
+      validatePreset({
+        metaTags: { keywords: false, ogImage: false, twitterCard: false },
+      }),
+    ).toBeNull();
+  });
+
+  it("rejects metaTags as a non-object", () => {
+    expect(validatePreset({ metaTags: "yes" })).toMatch(/"metaTags" must be an object/);
+  });
+
+  it("rejects metaTags.description as non-boolean", () => {
+    expect(validatePreset({ metaTags: { description: "yes" } })).toMatch(
+      /"metaTags.description" must be a boolean/,
+    );
+  });
+
+  it("rejects metaTags.keywords as a non-string/non-false value", () => {
+    expect(validatePreset({ metaTags: { keywords: 42 } })).toMatch(
+      /"metaTags.keywords" must be a string or false/,
+    );
+  });
+
+  it("rejects metaTags.ogImage as a non-string/non-false value", () => {
+    expect(validatePreset({ metaTags: { ogImage: 42 } })).toMatch(
+      /"metaTags.ogImage" must be a string or false/,
+    );
+  });
+
+  it("rejects metaTags.ogSiteName as non-boolean", () => {
+    expect(validatePreset({ metaTags: { ogSiteName: "yes" } })).toMatch(
+      /"metaTags.ogSiteName" must be a boolean/,
+    );
+  });
+
+  it("rejects metaTags.twitterCard with an invalid enum value", () => {
+    expect(validatePreset({ metaTags: { twitterCard: "player" } })).toMatch(
+      /"metaTags.twitterCard" must be "summary", "summary_large_image", or false/,
+    );
+  });
+
+  it("rejects metaTags.twitterSite as non-string", () => {
+    expect(validatePreset({ metaTags: { twitterSite: 42 } })).toMatch(
+      /"metaTags.twitterSite" must be a string/,
+    );
+  });
+
+  it("rejects metaTags.twitterCreator as non-string", () => {
+    expect(validatePreset({ metaTags: { twitterCreator: 42 } })).toMatch(
+      /"metaTags.twitterCreator" must be a string/,
+    );
+  });
+});
+
+describe("presetToChoices — metaTags (S5 #2079)", () => {
+  it("forwards metaTags when present", () => {
+    const mt = { description: false, twitterCard: "summary" as const };
+    const choices = presetToChoices({ metaTags: mt });
+    expect(choices.metaTags).toEqual(mt);
+  });
+
+  it("leaves metaTags undefined when omitted", () => {
+    const choices = presetToChoices({});
+    expect(choices.metaTags).toBeUndefined();
+  });
+
+  it("forwards a full metaTags config", () => {
+    const mt = {
+      description: true,
+      keywords: "a, b",
+      ogImage: "/img/og.png",
+      ogSiteName: false,
+      twitterCard: "summary_large_image" as const,
+      twitterSite: "@x",
+      twitterCreator: "@y",
+    };
+    const choices = presetToChoices({ metaTags: mt });
+    expect(choices.metaTags).toEqual(mt);
+  });
+});

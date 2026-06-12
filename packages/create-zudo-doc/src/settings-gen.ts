@@ -80,11 +80,34 @@ export function generateSettingsFile(choices: UserChoices): string {
   }
   lines.push(`  siteUrl: "" as string,`);
   lines.push(`  metaTags: {`);
-  lines.push(`    description: true,`);
-  lines.push(`    keywords: false,`);
-  lines.push(`    ogImage: false,`);
-  lines.push(`    ogSiteName: true,`);
-  lines.push(`    twitterCard: false,`);
+  if (choices.metaTags) {
+    const mt = choices.metaTags;
+    lines.push(`    description: ${mt.description !== undefined ? mt.description : true},`);
+    lines.push(
+      `    keywords: ${mt.keywords !== undefined ? JSON.stringify(mt.keywords) : false},`,
+    );
+    lines.push(
+      `    ogImage: ${mt.ogImage !== undefined ? JSON.stringify(mt.ogImage) : false},`,
+    );
+    lines.push(`    ogSiteName: ${mt.ogSiteName !== undefined ? mt.ogSiteName : true},`);
+    if (mt.twitterCard) {
+      lines.push(`    twitterCard: ${JSON.stringify(mt.twitterCard)},`);
+      if (mt.twitterSite) {
+        lines.push(`    twitterSite: ${JSON.stringify(mt.twitterSite)},`);
+      }
+      if (mt.twitterCreator) {
+        lines.push(`    twitterCreator: ${JSON.stringify(mt.twitterCreator)},`);
+      }
+    } else {
+      lines.push(`    twitterCard: false,`);
+    }
+  } else {
+    lines.push(`    description: true,`);
+    lines.push(`    keywords: false,`);
+    lines.push(`    ogImage: false,`);
+    lines.push(`    ogSiteName: true,`);
+    lines.push(`    twitterCard: false,`);
+  }
   lines.push(`  } satisfies MetaTagsConfig as MetaTagsConfig,`);
   lines.push(`  docsDir: "src/content/docs",`);
   lines.push(

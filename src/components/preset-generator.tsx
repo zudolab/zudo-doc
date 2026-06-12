@@ -8,6 +8,7 @@ import {
   buildCliCommand,
   DEFAULT_HEADER_RIGHT_ITEMS,
   INITIAL_HEADER_RIGHT_ITEMS,
+  DEFAULT_META_TAGS,
   SINGLE_SCHEMES,
   LIGHT_SCHEMES,
   SUPPORTED_LANGS,
@@ -210,6 +211,7 @@ export default function PresetGenerator() {
     cjkFriendly: true,
     packageManager: "pnpm",
     headerRightItems: [...INITIAL_HEADER_RIGHT_ITEMS],
+    metaTags: { ...DEFAULT_META_TAGS },
   });
 
   const [modalState, setModalState] = useState<FormState | null>(null);
@@ -556,6 +558,179 @@ export default function PresetGenerator() {
             Reset to default
           </button>
         </div>
+      </section>
+
+      {/* Meta tags */}
+      <section>
+        <SectionHeading>Meta tags</SectionHeading>
+        <p className="mb-vsp-xs text-caption text-muted">
+          Configure which meta tags are emitted in the document head.
+          og:title is always emitted (DocHead contract) and is not listed here.
+        </p>
+        <ul className="flex flex-col gap-y-vsp-xs">
+          {/* description */}
+          <li className={`text-small ${state.metaTags.description ? "text-fg" : "text-muted"}`}>
+            <label className="flex items-center gap-x-hsp-xs">
+              <input
+                type="checkbox"
+                checked={state.metaTags.description}
+                onChange={(e) =>
+                  setState((prev) => ({
+                    ...prev,
+                    metaTags: { ...prev.metaTags, description: (e.target as HTMLInputElement).checked },
+                  }))
+                }
+                className="accent-accent"
+              />
+              SEO description meta
+            </label>
+          </li>
+          {/* keywords */}
+          <li className={`text-small ${state.metaTags.keywordsEnabled ? "text-fg" : "text-muted"}`}>
+            <label className="flex items-center gap-x-hsp-xs">
+              <input
+                type="checkbox"
+                checked={state.metaTags.keywordsEnabled}
+                onChange={(e) =>
+                  setState((prev) => ({
+                    ...prev,
+                    metaTags: { ...prev.metaTags, keywordsEnabled: (e.target as HTMLInputElement).checked },
+                  }))
+                }
+                className="accent-accent"
+              />
+              Keywords (comma-separated)
+            </label>
+            {state.metaTags.keywordsEnabled && (
+              <input
+                type="text"
+                value={state.metaTags.keywords}
+                placeholder="docs, guide, reference"
+                aria-label="Keywords (comma-separated)"
+                onChange={(e) =>
+                  setState((prev) => ({
+                    ...prev,
+                    metaTags: { ...prev.metaTags, keywords: (e.target as HTMLInputElement).value },
+                  }))
+                }
+                className={`mt-vsp-2xs ${inputClass}`}
+              />
+            )}
+          </li>
+          {/* og:image */}
+          <li className={`text-small ${state.metaTags.ogImageEnabled ? "text-fg" : "text-muted"}`}>
+            <label className="flex items-center gap-x-hsp-xs">
+              <input
+                type="checkbox"
+                checked={state.metaTags.ogImageEnabled}
+                onChange={(e) =>
+                  setState((prev) => ({
+                    ...prev,
+                    metaTags: { ...prev.metaTags, ogImageEnabled: (e.target as HTMLInputElement).checked },
+                  }))
+                }
+                className="accent-accent"
+              />
+              OGP image (og:image)
+            </label>
+            {state.metaTags.ogImageEnabled && (
+              <input
+                type="text"
+                value={state.metaTags.ogImage}
+                placeholder="/img/ogp.png"
+                aria-label="OGP image path"
+                onChange={(e) =>
+                  setState((prev) => ({
+                    ...prev,
+                    metaTags: { ...prev.metaTags, ogImage: (e.target as HTMLInputElement).value },
+                  }))
+                }
+                className={`mt-vsp-2xs ${inputClass}`}
+              />
+            )}
+          </li>
+          {/* og:site_name */}
+          <li className={`text-small ${state.metaTags.ogSiteName ? "text-fg" : "text-muted"}`}>
+            <label className="flex items-center gap-x-hsp-xs">
+              <input
+                type="checkbox"
+                checked={state.metaTags.ogSiteName}
+                onChange={(e) =>
+                  setState((prev) => ({
+                    ...prev,
+                    metaTags: { ...prev.metaTags, ogSiteName: (e.target as HTMLInputElement).checked },
+                  }))
+                }
+                className="accent-accent"
+              />
+              og:site_name
+            </label>
+          </li>
+          {/* Twitter card */}
+          <li className={`text-small ${state.metaTags.twitterCardEnabled ? "text-fg" : "text-muted"}`}>
+            <label className="flex items-center gap-x-hsp-xs">
+              <input
+                type="checkbox"
+                checked={state.metaTags.twitterCardEnabled}
+                onChange={(e) =>
+                  setState((prev) => ({
+                    ...prev,
+                    metaTags: { ...prev.metaTags, twitterCardEnabled: (e.target as HTMLInputElement).checked },
+                  }))
+                }
+                className="accent-accent"
+              />
+              Twitter card
+            </label>
+            {state.metaTags.twitterCardEnabled && (
+              <div className="mt-vsp-2xs flex flex-col gap-y-vsp-2xs">
+                <select
+                  value={state.metaTags.twitterCard}
+                  aria-label="Twitter card type"
+                  onChange={(e) =>
+                    setState((prev) => ({
+                      ...prev,
+                      metaTags: {
+                        ...prev.metaTags,
+                        twitterCard: (e.target as HTMLSelectElement).value as "summary" | "summary_large_image",
+                      },
+                    }))
+                  }
+                  className={inputClass}
+                >
+                  <option value="summary">summary</option>
+                  <option value="summary_large_image">summary_large_image</option>
+                </select>
+                <input
+                  type="text"
+                  value={state.metaTags.twitterSite}
+                  placeholder="@yourbrand (optional)"
+                  aria-label="twitter:site handle"
+                  onChange={(e) =>
+                    setState((prev) => ({
+                      ...prev,
+                      metaTags: { ...prev.metaTags, twitterSite: (e.target as HTMLInputElement).value },
+                    }))
+                  }
+                  className={inputClass}
+                />
+                <input
+                  type="text"
+                  value={state.metaTags.twitterCreator}
+                  placeholder="@author (optional)"
+                  aria-label="twitter:creator handle"
+                  onChange={(e) =>
+                    setState((prev) => ({
+                      ...prev,
+                      metaTags: { ...prev.metaTags, twitterCreator: (e.target as HTMLInputElement).value },
+                    }))
+                  }
+                  className={inputClass}
+                />
+              </div>
+            )}
+          </li>
+        </ul>
       </section>
 
       {/* CJK Friendly */}

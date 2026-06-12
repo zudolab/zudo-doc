@@ -1,6 +1,6 @@
 import * as p from "@clack/prompts";
 import { LIGHT_DARK_PAIRINGS, SINGLE_SCHEMES, FEATURES, SUPPORTED_LANGS } from "./constants.js";
-import type { PresetHeaderRightItem } from "./preset.js";
+import type { PresetHeaderRightItem, PresetMetaTagsConfig } from "./preset.js";
 import { validateProjectName } from "./utils.js";
 
 export interface UserChoices {
@@ -33,6 +33,9 @@ export interface UserChoices {
   // or CLI args. When omitted, settings-gen.ts emits the existing hardcoded
   // fallback.
   headerRightItems?: PresetHeaderRightItem[];
+  // Meta tags config. Preset-only — no interactive prompt.
+  // When omitted, settings-gen.ts emits the S4 scaffold defaults.
+  metaTags?: PresetMetaTagsConfig;
 }
 
 export interface PartialChoices {
@@ -52,6 +55,8 @@ export interface PartialChoices {
   cjkFriendly?: boolean;
   packageManager?: "pnpm" | "npm" | "yarn" | "bun";
   headerRightItems?: PresetHeaderRightItem[];
+  // Meta tags config. Preset-only — no interactive prompt.
+  metaTags?: PresetMetaTagsConfig;
 }
 
 export async function runPrompts(
@@ -293,5 +298,6 @@ export async function runPrompts(
     cjkFriendly: prefilled.cjkFriendly,
     packageManager,
     headerRightItems: prefilled.headerRightItems,
+    metaTags: prefilled.metaTags,
   };
 }
