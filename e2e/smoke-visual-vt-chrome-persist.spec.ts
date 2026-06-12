@@ -11,6 +11,9 @@
  *   3. On the same transition, document.getAnimations() total count >= 1 (regression
  *      sanity: content cross-fade still runs — named-chrome suppression has not
  *      eliminated all view-transition activity).
+ *   4. On cross-type navigation (sidebar page ↔ no-sidebar top page), the lone
+ *      chrome snapshot cross-fades with the content via the :only-child
+ *      entry/exit rules instead of freezing (#2072).
  *
  * Sibling spec files cover DOM-node identity and sidebar assertions:
  *   - smoke-vt-chrome-persist.spec.ts   (DOM identity, sidebar highlight/scroll)
@@ -307,5 +310,185 @@ test.describe("VT Chrome Static: getAnimations() during same-locale + same-secti
       totalCount,
       `Total animation count should be >= 1 at 50ms into transition (root content cross-fade should still be running); got ${totalCount}. Named-chrome suppression may have accidentally eliminated all view-transition activity.`,
     ).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Test 4 + Test 5: entry/exit cross-fade on cross-type navigation (#2072)
+//
+// When a chrome element exists on only ONE side of a navigation (docs page
+// with sidebar → top page without, or the reverse), its named view-transition
+// group holds a single snapshot. The unconditional `animation: none` rules
+// used to freeze that lone snapshot at full opacity for the whole transition,
+// after which it vanished abruptly. The :only-child rules in global.css now
+// cross-fade the lone snapshot in sync with the root content fade.
+//
+// Assertion strategy: count CSSAnimations by animationName instead of
+// pseudoElement string — headless Chromium does not reliably expose
+// pseudoElement on view-transition Animation objects (see the V6 note in
+// Test 3). The contentFadeOut/contentFadeIn keyframes are referenced ONLY by
+// the view-transition rules in global.css, so per-name counts are exact:
+//   same-section nav: 1 contentFadeOut (root old), 1 contentFadeIn (root new)
+//   exit nav (sidebar → none): >= 2 contentFadeOut (root old + lone zfb-sidebar old)
+//   entry nav (none → sidebar): >= 2 contentFadeIn (root new + lone zfb-sidebar new)
+// ---------------------------------------------------------------------------
+
+// Helper: JS-click the first anchor matching a CSS selector and wait for the
+// zfb:after-swap event. Selector-based variant of spaClick for links whose
+// exact href shape (trailing slash, base prefix) we don't want to hardcode.
+async function spaClickSelector(
+  page: import("@playwright/test").Page,
+  selector: string,
+): Promise<boolean> {
+  const swapFired = await page.evaluate((sel: string) => {
+    return new Promise<boolean>((resolve) => {
+      let tid: ReturnType<typeof setTimeout> | null = null;
+      document.addEventListener(
+        "zfb:after-swap",
+        () => {
+          if (tid !== null) clearTimeout(tid);
+          resolve(true);
+        },
+        { once: true },
+      );
+      const anchor = document.querySelector<HTMLElement>(sel);
+      if (anchor) {
+        tid = setTimeout(() => resolve(false), 8000);
+        anchor.click();
+      } else {
+        resolve(false);
+      }
+    });
+  }, selector);
+  await page.waitForLoadState("networkidle").catch(() => null);
+  await page.waitForTimeout(200);
+  return swapFired;
+}
+
+// Helper: install a startViewTransition hook that samples getAnimations()
+// right after the transition's `ready` promise resolves and records how many
+// CSSAnimations run the given keyframe name. Unlike Tests 2/3's fixed 50ms
+// window, `ready` is used here because the swap callback for a heavy
+// destination (e.g. the guides page with the full sidebar tree) can exceed
+// 50ms — a fixed-delay sample would land before the pseudo-element
+// animations exist and read 0. `ready` resolves exactly when the pseudo
+// tree is built and its animations have started.
+async function installKeyframeCountHook(
+  page: import("@playwright/test").Page,
+  keyframeName: string,
+): Promise<void> {
+  await page.evaluate((name: string) => {
+    const origSVT = document.startViewTransition?.bind(document);
+    if (!origSVT) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (document as any).__keyframeCount__ = null;
+    document.startViewTransition = (cb) => {
+      const vt = origSVT(cb);
+      vt.ready
+        .then(() => {
+          // One rAF so the freshly-started animations are observable.
+          requestAnimationFrame(() => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (document as any).__keyframeCount__ = document
+              .getAnimations()
+              .filter(
+                (a) => (a as CSSAnimation).animationName === name,
+              ).length;
+          });
+        })
+        .catch(() => {
+          // Transition was skipped — record a distinct sentinel so the
+          // assertion fails with a recognizable value instead of null.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (document as any).__keyframeCount__ = -1;
+        });
+      return vt;
+    };
+  }, keyframeName);
+}
+
+async function readKeyframeCount(
+  page: import("@playwright/test").Page,
+): Promise<number | null> {
+  // Allow vt.ready + rAF to fire and record the count. Poll rather than wait a
+  // fixed window so a loaded CI runner pushing vt.ready + rAF past a fixed
+  // delay doesn't cause a spurious null read; the not-null assertion in the
+  // caller remains the failure reporter.
+  await page
+    .waitForFunction(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      () => (document as any).__keyframeCount__ !== null,
+      undefined,
+      { timeout: 5000 },
+    )
+    .catch(() => null); // fall through — the not-null assertion reports the failure
+  return page.evaluate(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    () => (document as any).__keyframeCount__ as number | null,
+  );
+}
+
+test.describe("VT chrome entry/exit cross-fade on cross-type nav (#2072)", () => {
+  test("exit: lone zfb-sidebar old snapshot fades out when navigating to a page without sidebar", async ({
+    page,
+  }) => {
+    await page.goto(GUIDES_INDEX, { waitUntil: "domcontentloaded" });
+    await waitForSidebarHydration(page);
+
+    // The header logo links to the top page (withBase("/")), which renders
+    // with hideSidebar=true and no sidebar persist key.
+    const logoFound = await page.evaluate(
+      () => !!document.querySelector('header a[href="/"]'),
+    );
+    expect(
+      logoFound,
+      `Expected the header logo link to "/" on ${GUIDES_INDEX}`,
+    ).toBe(true);
+
+    await installKeyframeCountHook(page, "contentFadeOut");
+
+    const swapFired = await spaClickSelector(page, 'header a[href="/"]');
+    expect(swapFired, "zfb:after-swap did not fire within 8 s").toBe(true);
+
+    const count = await readKeyframeCount(page);
+    expect(
+      count,
+      "startViewTransition hook was not active — animation snapshot not captured",
+    ).not.toBeNull();
+    expect(
+      count,
+      `Expected >= 2 contentFadeOut animations during sidebar→no-sidebar nav (root old + lone zfb-sidebar old via :only-child); got ${count}. The lone sidebar snapshot may be frozen again (#2072 regression).`,
+    ).toBeGreaterThanOrEqual(2);
+  });
+
+  test("entry: lone zfb-sidebar new snapshot fades in when navigating from a page without sidebar", async ({
+    page,
+  }) => {
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+
+    // Any internal link into the guides section works — the destination
+    // renders the desktop sidebar with a persist key.
+    const linkFound = await page.evaluate(
+      () => !!document.querySelector('a[href^="/docs/guides"]'),
+    );
+    expect(
+      linkFound,
+      'Expected a link matching a[href^="/docs/guides"] on the top page',
+    ).toBe(true);
+
+    await installKeyframeCountHook(page, "contentFadeIn");
+
+    const swapFired = await spaClickSelector(page, 'a[href^="/docs/guides"]');
+    expect(swapFired, "zfb:after-swap did not fire within 8 s").toBe(true);
+
+    const count = await readKeyframeCount(page);
+    expect(
+      count,
+      "startViewTransition hook was not active — animation snapshot not captured",
+    ).not.toBeNull();
+    expect(
+      count,
+      `Expected >= 2 contentFadeIn animations during no-sidebar→sidebar nav (root new + lone zfb-sidebar new via :only-child); got ${count}. The entering sidebar may be popping in without the cross-fade (#2072 regression).`,
+    ).toBeGreaterThanOrEqual(2);
   });
 });
