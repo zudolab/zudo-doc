@@ -183,7 +183,7 @@ src/utils/find-in-page.ts
 src/utils/content-files.ts
 src/utils/git-info.ts
 
-# #2057 — TOC-title resolver for the scanner-visible Toc/MobileToc shims.
+# #2057 — TOC-title resolver for the Toc/MobileToc overrides in _doc-page-shell.
 # Deliberate, behaviour-preserving divergence: the HOST resolves
 # @takazudo/zudo-doc as a workspace package and imports the real `getTocTitle`
 # from the /toc barrel (a single re-export line). The TEMPLATE hand-mirrors the

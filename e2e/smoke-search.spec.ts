@@ -167,4 +167,50 @@ test.describe("Search dialog", () => {
     expect(zdTokens.zdBg.length, "expected --zd-matched-keyword-bg to be emitted on :root by ColorSchemeProvider").toBeGreaterThan(0);
     expect(zdTokens.zdFg.length, "expected --zd-matched-keyword-fg to be emitted on :root by ColorSchemeProvider").toBeGreaterThan(0);
   });
+
+  // Regression guard (#2062): when search-index.json fails to load, the widget
+  // must show a terminal "Search unavailable" state and STOP refetching on every
+  // keystroke. The _indexUnavailable flag used to be write-only, so search()
+  // would replace the message with "Loading search index…" and refetch the index
+  // on each debounce tick (flicker + a request per keystroke). The fix
+  // short-circuits search() while the flag is set; only the open() reload path
+  // retries. The fetch-count assertion is the deterministic discriminator.
+  test("search index load failure shows persistent 'Search unavailable' without a refetch loop", async ({
+    page,
+  }) => {
+    // Force every search-index.json request to fail, and count how many fire.
+    let indexFetches = 0;
+    await page.route("**/search-index.json", (route) => {
+      indexFetches += 1;
+      return route.abort();
+    });
+
+    await page.goto(DOCS_PAGE, { waitUntil: "domcontentloaded" });
+
+    // Open search — openDialog() triggers the (now failing) index load. This is
+    // the intended retry trigger and is allowed exactly one fetch.
+    await page.keyboard.press("Control+k");
+    const input = page.locator("[data-search-input]");
+    await expect(input).toBeFocused({ timeout: 3000 });
+
+    const results = page.locator("[data-search-results]");
+    await expect(results.getByText("Search unavailable")).toBeVisible({ timeout: 10000 });
+    expect(indexFetches, "open() reload path should fire exactly one index fetch").toBe(1);
+
+    // Type a query (first debounce tick > 150ms). With the bug this replaces the
+    // message with "Loading search index…" and refetches.
+    await input.fill("alpha");
+    await page.waitForTimeout(300);
+
+    // Type again (second debounce tick) — another chance for the buggy refetch.
+    await input.fill("alpha beta");
+    await page.waitForTimeout(300);
+
+    // "Search unavailable" stays put; "Loading search index…" must never linger.
+    await expect(results.getByText("Search unavailable")).toBeVisible();
+    await expect(results.getByText("Loading search index")).toHaveCount(0);
+
+    // Keystrokes fired no extra fetches — still just the single open() load.
+    expect(indexFetches, "keystrokes while unavailable must not refetch the index").toBe(1);
+  });
 });

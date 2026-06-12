@@ -146,43 +146,35 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     expect(content).toContain("export default");
   });
 
-  // #2057: scanner-visible Toc/MobileToc shims ship in the base template so
-  // generated projects (which install the PUBLISHED @takazudo/zudo-doc, whose
-  // "use client" island modules zfb's scanner skips under node_modules — zfb#999)
-  // get a local binding the scanner can register. _doc-page-shell.tsx mounts
-  // them via tocOverride/mobileTocOverride.
-  it("ships scanner-visible Toc/MobileToc shims with 'use client' + pinned displayName (#2057)", async () => {
-    const tocPath = projectPath("test-minimal", "src/components/toc.tsx");
-    const mobileTocPath = projectPath(
-      "test-minimal",
+  // #2057 → zfb#1001: the scanner-visible Toc/MobileToc/ThemeToggle shims were
+  // removed once generated projects' pinned zfb (>= 0.1.0-next.39) began
+  // scanning npm-dist "use client" modules — the package islands register
+  // directly. Shipping the shims again would recreate island marker-name
+  // collisions (zfb keeps one and warns).
+  it("does not ship scanner-visible Toc/MobileToc/ThemeToggle shims (zfb#1001)", async () => {
+    for (const shim of [
+      "src/components/toc.tsx",
       "src/components/mobile-toc.tsx",
-    );
-    expect(await fs.pathExists(tocPath)).toBe(true);
-    expect(await fs.pathExists(mobileTocPath)).toBe(true);
-
-    const toc = await fs.readFile(tocPath, "utf-8");
-    expect(toc.startsWith('"use client";')).toBe(true);
-    expect(toc).toContain('from "@takazudo/zudo-doc/toc"');
-    expect(toc).toContain('Toc.displayName = "Toc";');
-
-    const mobileToc = await fs.readFile(mobileTocPath, "utf-8");
-    expect(mobileToc.startsWith('"use client";')).toBe(true);
-    expect(mobileToc).toContain('from "@takazudo/zudo-doc/toc"');
-    expect(mobileToc).toContain('MobileToc.displayName = "MobileToc";');
+      "src/components/theme-toggle.tsx",
+    ]) {
+      expect(await fs.pathExists(projectPath("test-minimal", shim))).toBe(
+        false,
+      );
+    }
   });
 
-  // #2057: the doc-page shell mounts the local shims via the override props and
-  // derives the TOC title from the hand-mirrored _toc-title helper (the
-  // published package this scaffold installs does not export getTocTitle yet).
+  // #2057: the doc-page shell mounts the package Toc/MobileToc via the override
+  // props and derives the TOC title from the hand-mirrored _toc-title helper
+  // (the published package this scaffold installs does not export getTocTitle
+  // yet).
   it("wires tocOverride/mobileTocOverride in _doc-page-shell with the _toc-title helper (#2057)", async () => {
     const shellPath = projectPath(
       "test-minimal",
       "pages/lib/_doc-page-shell.tsx",
     );
     const shell = await fs.readFile(shellPath, "utf-8");
-    expect(shell).toContain('import { Toc } from "@/components/toc";');
     expect(shell).toContain(
-      'import { MobileToc } from "@/components/mobile-toc";',
+      'import { Toc, MobileToc } from "@takazudo/zudo-doc/toc";',
     );
     expect(shell).toContain('import { getTocTitle } from "./_toc-title";');
     expect(shell).toContain("tocOverride={tocOverride}");
@@ -2939,14 +2931,17 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
    * rewriting bare same-page `[text](#anchor)` / `[text](?query)` links to
    * `/<parent-dir>/#anchor` (zudolab/zudo-doc#1948, upstream
    * Takazudo/zudo-front-builder#875). next.36/next.37 were docs-site and CLI
-   * ergonomics releases (no engine/SDK change). Now bumped to 0.1.0-next.38:
-   * adds client scripts (`.client.*` + `clientScript()`), the `when="media"`
-   * island strategy, exported VNode types, and stricter cross-file anchor
-   * validation. Upstream BREAKING: removes the no-op
-   * `linkValidation.allowExternal` knob — never emitted by the generator, so
-   * no migration needed. Generated package.json must pin all three.
+   * ergonomics releases (no engine/SDK change). next.38 added client scripts
+   * (`.client.*` + `clientScript()`), the `when="media"` island strategy,
+   * exported VNode types, and stricter cross-file anchor validation; upstream
+   * BREAKING: removed the no-op `linkValidation.allowExternal` knob — never
+   * emitted by the generator, so no migration needed. Now bumped to
+   * 0.1.0-next.39: features + fixes, no breaking changes — npm-dist
+   * `"use client"` island scanning, link-resolution fixes for directory-style
+   * hrefs, and island-registry hardening (warns on island marker-name
+   * collisions). Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.38", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.39", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -2957,10 +2952,10 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.38");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.38");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.39");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.39");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.38",
+      "0.1.0-next.39",
     );
   });
 });
