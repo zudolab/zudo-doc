@@ -647,6 +647,8 @@ Persist in zfb is a **two-part contract** that must be explicitly implemented an
 **Part 2 — Visual extraction (host CSS layer):**
 CSS attribute selectors that map `[data-zfb-transition-persist^="<prefix>"]` to `view-transition-name: <name>` on the matching elements. Plus `animation: none` on the named pseudos — `::view-transition-old(<name>)`, `::view-transition-new(<name>)`, and `::view-transition-group(<name>)` (see below) — so the named elements are held static while the rest of the page crossfades.
 
+> **Amendment (#2072):** "held static" holds only when the chrome element exists on BOTH pages of a navigation — when it exists on one side only, `:only-child`-scoped rules cross-fade the lone snapshot in sync with the root content fade instead of holding it static.
+
 The W7A correction added Part 1 and missed Part 2. The W8 epic (this epic, #1556) adds Part 2 and the visual assertions V1–V8b in T3 to lock both halves in.
 
 The full correct CSS shape for each persisted chrome region is:
@@ -667,7 +669,7 @@ The full correct CSS shape for each persisted chrome region is:
 
 When `::view-transition-old(<name>)` and `::view-transition-new(<name>)` are both `animation: none`, there is still a third UA-generated pseudo-element: `::view-transition-group(<name>)`. This pseudo animates the bounding-box geometry of the named element between its captured position in the old snapshot and its captured position in the new snapshot. If the element's size or position changes between pages (e.g. sidebar width differs across locales, or header height changes on pages with different nav states), the UA will produce a geometry-morph animation on the group even when old/new are frozen.
 
-For the "named chrome element never visually animates" contract to be robust, all three pseudos must be neutralised. The original W8 plan (before Codex and gcoc reviews during planning) only neutralised old/new. Codex's planning review explicitly flagged the group pseudo as a missing neutralisation — surfacing a would-be silent regression before the CSS was written. The final T2 implementation neutralises all three pseudos.
+For the "named chrome element never visually animates" contract to be robust, all three pseudos must be neutralised (with the #2072 amendment above: this "never animates" guarantee applies to chrome present on both sides of a navigation, not to a lone one-sided snapshot). The original W8 plan (before Codex and gcoc reviews during planning) only neutralised old/new. Codex's planning review explicitly flagged the group pseudo as a missing neutralisation — surfacing a would-be silent regression before the CSS was written. The final T2 implementation neutralises all three pseudos.
 
 The lesson: when writing `animation: none` rules for a named VT element, enumerate `::view-transition-old(<name>)`, `::view-transition-new(<name>)`, AND `::view-transition-group(<name>)` as a unit. Missing any one of the three leaves a door open for geometry-morph animations on geometry changes.
 

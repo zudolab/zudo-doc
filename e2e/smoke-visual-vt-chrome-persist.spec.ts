@@ -410,8 +410,18 @@ async function installKeyframeCountHook(
 async function readKeyframeCount(
   page: import("@playwright/test").Page,
 ): Promise<number | null> {
-  // Allow the 50ms setTimeout to fire and settle.
-  await page.waitForTimeout(200);
+  // Allow vt.ready + rAF to fire and record the count. Poll rather than wait a
+  // fixed window so a loaded CI runner pushing vt.ready + rAF past a fixed
+  // delay doesn't cause a spurious null read; the not-null assertion in the
+  // caller remains the failure reporter.
+  await page
+    .waitForFunction(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      () => (document as any).__keyframeCount__ !== null,
+      undefined,
+      { timeout: 5000 },
+    )
+    .catch(() => null); // fall through — the not-null assertion reports the failure
   return page.evaluate(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     () => (document as any).__keyframeCount__ as number | null,
