@@ -163,10 +163,10 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     }
   });
 
-  // #2057: the doc-page shell mounts the package Toc/MobileToc via the override
-  // props and derives the TOC title from the hand-mirrored _toc-title helper
-  // (the published package this scaffold installs does not export getTocTitle
-  // yet).
+  // #2057/#2067: the doc-page shell mounts the package Toc/MobileToc via the
+  // override props and derives the TOC title from the `_toc-title` helper, which
+  // re-exports `getTocTitle` from "@takazudo/zudo-doc/toc" (exported by the
+  // scaffolded package since 0.2.3 — no local hand-mirror anymore).
   it("wires tocOverride/mobileTocOverride in _doc-page-shell with the _toc-title helper (#2057)", async () => {
     const shellPath = projectPath(
       "test-minimal",
@@ -186,8 +186,25 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     );
     expect(await fs.pathExists(tocTitlePath)).toBe(true);
     const tocTitle = await fs.readFile(tocTitlePath, "utf-8");
-    expect(tocTitle).toContain("export function getTocTitle");
-    expect(tocTitle).toContain('"目次"');
+    // Re-export, not a hand-mirrored map — and definitely no stale TOC_TITLES.
+    expect(tocTitle).toContain(
+      'export { getTocTitle } from "@takazudo/zudo-doc/toc";',
+    );
+    expect(tocTitle).not.toContain("TOC_TITLES");
+    expect(tocTitle).not.toContain("export function getTocTitle");
+
+    // The re-export only resolves because the scaffolded @takazudo/zudo-doc
+    // exports ./toc (getTocTitle), which landed in 0.2.3. Guard the pinned
+    // version so dropping below 0.2.3 fails loudly instead of silently
+    // reintroducing the duplicate map (#2067).
+    const pkg = await fs.readJson(projectPath("test-minimal", "package.json"));
+    const zudoDocDep = pkg.dependencies["@takazudo/zudo-doc"] as string;
+    const versionMatch = zudoDocDep.match(/^\^?(\d+)\.(\d+)\.(\d+)/);
+    expect(versionMatch).not.toBeNull();
+    const major = Number(versionMatch![1]);
+    const minor = Number(versionMatch![2]);
+    const patch = Number(versionMatch![3]);
+    expect(major > 0 || minor > 2 || (minor === 2 && patch >= 3)).toBe(true);
   });
 
   it(".gitignore includes standard Node + macOS + Cloudflare entries", async () => {

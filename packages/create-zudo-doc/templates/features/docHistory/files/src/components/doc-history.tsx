@@ -610,7 +610,12 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
               {/* Right: diff viewer (on mobile, replaces the sidebar) */}
               {hasDiff && (
                 <div className="flex-1 min-w-0 h-full">
+                  {/* Key on the compared pair forces a fresh mount whenever the
+                      selection changes, so the previous pair's diff rows can
+                      never render under the new header hashes while the lazy
+                      import("diff") recompute is in flight (#2068). */}
                   <DiffViewer
+                    key={`${diffSelection.older.hash}:${diffSelection.newer.hash}`}
                     selection={diffSelection}
                     onBack={handleBackToRevisions}
                     showBackButton={true}
