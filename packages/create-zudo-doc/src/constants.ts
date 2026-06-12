@@ -240,7 +240,7 @@ export const FEATURES: Feature[] = [
     value: "tagGovernance",
     label: "Tag governance",
     hint: "Vocabulary-aware tag audit + suggest scripts",
-    default: true,
+    default: false,
     cliFlag: "tag-governance",
   },
   {

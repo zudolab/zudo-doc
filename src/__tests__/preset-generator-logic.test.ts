@@ -4,6 +4,7 @@ import {
   buildJson,
   buildCliCommand,
   DEFAULT_HEADER_RIGHT_ITEMS,
+  INITIAL_HEADER_RIGHT_ITEMS,
   type FormState,
   type HeaderRightItemSpec,
 } from "../lib/preset-generator-logic";
@@ -245,5 +246,43 @@ describe("buildJson — headerRightItems mapping", () => {
   it("emits headerRightItems even when it equals the default (always present)", () => {
     const json = buildJson(makeState());
     expect(json).toHaveProperty("headerRightItems");
+  });
+});
+
+describe("default generator state — regression: matches target JSON", () => {
+  it("buildJson() with initial state deep-equals the target JSON exactly", () => {
+    const initialState: FormState = {
+      projectName: "my-docs",
+      defaultLang: "en",
+      colorSchemeMode: "light-dark",
+      singleScheme: "Default Dark",
+      lightScheme: "Default Light",
+      darkScheme: "Default Dark",
+      defaultMode: "dark",
+      respectPrefersColorScheme: true,
+      features: FEATURES.filter((f) => f.default).map((f) => f.value),
+      cjkFriendly: true,
+      packageManager: "pnpm",
+      headerRightItems: [...INITIAL_HEADER_RIGHT_ITEMS],
+    };
+
+    expect(buildJson(initialState)).toEqual({
+      projectName: "my-docs",
+      defaultLang: "en",
+      colorSchemeMode: "light-dark",
+      lightScheme: "Default Light",
+      darkScheme: "Default Dark",
+      defaultMode: "dark",
+      respectPrefersColorScheme: true,
+      features: ["search", "sidebarFilter", "imageEnlarge"],
+      cjkFriendly: true,
+      packageManager: "pnpm",
+      headerRightItems: [
+        { type: "component", component: "github-link" },
+        { type: "component", component: "theme-toggle" },
+        { type: "component", component: "search" },
+        { type: "component", component: "language-switcher" },
+      ],
+    });
   });
 });
