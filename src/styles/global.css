@@ -895,7 +895,7 @@ pre[class^="syntect-"] .line .highlighted-word {
  * ======================================== */
 
 .diff-row {
-  border-bottom: 1px solid color-mix(in oklch, var(--color-muted) 30%, transparent);
+  border-bottom: 1px solid color-mix(in oklch, var(--color-muted) 15%, transparent);
 }
 
 .diff-line-num {
@@ -907,7 +907,7 @@ pre[class^="syntect-"] .line .highlighted-word {
   color: var(--color-muted);
   user-select: none;
   vertical-align: top;
-  border-right: 1px solid color-mix(in oklch, var(--color-muted) 30%, transparent);
+  border-right: 1px solid color-mix(in oklch, var(--color-muted) 15%, transparent);
 }
 
 .diff-line-content {
