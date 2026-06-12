@@ -994,6 +994,27 @@ pre[class^="syntect-"] .line .highlighted-word {
   animation: 300ms ease-out both contentFadeIn;
 }
 
+/* Reduced motion: collapse all view-transition animation to an instant
+ * swap (zudolab/zudo-doc#2086). With every snapshot animation at none the
+ * transition settles immediately — no cross-fade, no translateY slide.
+ * Covers the root cross-fade and the #2072 :only-child entry/exit rules;
+ * the both-sides chrome layers are already animation: none above. Equal
+ * specificity per selector, but later in source order, so these win. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  ::view-transition-old(zfb-header):only-child,
+  ::view-transition-old(zfb-sidebar):only-child,
+  ::view-transition-old(zfb-footer):only-child,
+  ::view-transition-old(zfb-sidebar-toggle):only-child,
+  ::view-transition-new(zfb-header):only-child,
+  ::view-transition-new(zfb-sidebar):only-child,
+  ::view-transition-new(zfb-footer):only-child,
+  ::view-transition-new(zfb-sidebar-toggle):only-child {
+    animation: none;
+  }
+}
+
 /* Version-switcher responsive visibility (moved out of the component to
  * avoid <style>-inside-<div> HTML5 content-model violation; required when
  * the i18nVersion feature ships a <VersionSwitcher> wrapped in
