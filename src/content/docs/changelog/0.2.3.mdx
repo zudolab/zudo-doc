@@ -1,0 +1,25 @@
+---
+title: 0.2.3
+description: Release notes for 0.2.3.
+sidebar_position: 1014
+---
+
+Released: 2026-06-12
+
+### Features
+
+- Export `getTocTitle` (the locale→TOC-title resolver) from the public `@takazudo/zudo-doc/toc` barrel (aa3741eb)
+
+### Bug Fixes
+
+- Stop the search widget flickering and re-fetching the index on every keystroke after `search-index.json` fails to load — it now shows a stable "Search unavailable" message and recovers cleanly on retry (47334892)
+- Gate the AiChatModal and ImageEnlarge body-end islands on their feature flags so feature-off consumers no longer ship dead island markers and a misleading screen-reader "AI Assistant" landmark (29417afa)
+- Make the closed mobile sidebar drawer `inert` so its off-screen links and filter input no longer stay in the tab order and accessibility tree (6caa7f80)
+- Suppress dead Sidebar island markers and restore Toc/MobileToc hydration in synced consumers (d27c653d, c2cb4f83)
+
+### Other Changes
+
+- Retire the scanner-visible Toc/MobileToc/ThemeToggle shims — zfb ≥ 0.1.0-next.39 scans npm-dist `"use client"` modules, so the package islands register directly and the shims caused marker-name collisions (241b8a41)
+- Bump the zfb family to 0.1.0-next.40 (cc7ec7c8, f31e0ea2)
+- Add a 0.2.0 → 0.2.1 consumer migration note to the changelog (9ee33dbf, d69d225d)
+- Drop the Cloudflare 10013 incident notes from CI docs and re-float wrangler to `@4` (d050c9cb)
