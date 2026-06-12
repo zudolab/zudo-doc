@@ -126,6 +126,13 @@ export const DEFAULT_HEADER_RIGHT_ITEMS: readonly HeaderRightItemSpec[] = [
   { kind: "component", name: "language-switcher" },
 ];
 
+export const INITIAL_HEADER_RIGHT_ITEMS: readonly HeaderRightItemSpec[] = [
+  { kind: "component", name: "github-link" },
+  { kind: "component", name: "theme-toggle" },
+  { kind: "component", name: "search" },
+  { kind: "component", name: "language-switcher" },
+];
+
 /**
  * Map a UI-internal {@link HeaderRightItemSpec} to the canonical
  * `HeaderRightItem` shape consumed by `settings.ts`.
@@ -157,12 +164,40 @@ export const FEATURES = [
   { value: "imageEnlarge", label: "Image enlarge", cliFlag: "image-enlarge", default: true },
   { value: "footerCopyright", label: "Footer copyright", cliFlag: "footer-copyright", default: false },
   { value: "changelog", label: "Changelog", cliFlag: "changelog", default: false },
-  { value: "tagGovernance", label: "Tag governance", cliFlag: "tag-governance", default: true },
+  { value: "tagGovernance", label: "Tag governance", cliFlag: "tag-governance", default: false },
   { value: "docTags", label: "Doc tags pages", cliFlag: "doc-tags", default: false },
   { value: "footerTaglist", label: "Footer taglist", cliFlag: "footer-taglist", default: false },
 ] as const;
 
 export type ColorSchemeMode = "single" | "light-dark";
+
+/** Mirrors MetaTagsConfig from src/config/settings-types.ts for preset-generator form state. */
+export interface MetaTagsFormState {
+  description: boolean;
+  keywordsEnabled: boolean;
+  keywords: string;
+  ogImageEnabled: boolean;
+  ogImage: string;
+  ogSiteName: boolean;
+  twitterCardEnabled: boolean;
+  twitterCard: "summary" | "summary_large_image";
+  twitterSite: string;
+  twitterCreator: string;
+}
+
+/** Defaults that mirror S4 scaffold defaults exactly. */
+export const DEFAULT_META_TAGS: MetaTagsFormState = {
+  description: true,
+  keywordsEnabled: false,
+  keywords: "",
+  ogImageEnabled: false,
+  ogImage: "/img/ogp.png",
+  ogSiteName: true,
+  twitterCardEnabled: false,
+  twitterCard: "summary",
+  twitterSite: "",
+  twitterCreator: "",
+};
 
 export interface FormState {
   projectName: string;
@@ -177,6 +212,7 @@ export interface FormState {
   cjkFriendly: boolean;
   packageManager: string;
   headerRightItems: HeaderRightItemSpec[];
+  metaTags: MetaTagsFormState;
 }
 
 export function buildJson(state: FormState): Record<string, unknown> {
@@ -201,6 +237,41 @@ export function buildJson(state: FormState): Record<string, unknown> {
   // Always emit the canonical {type, trigger|component} shape (not the internal
   // kind/name shape) — self-documents the preset for users who copy-paste.
   base.headerRightItems = state.headerRightItems.map(specToHeaderRightItem);
+
+  // Omit metaTags entirely when every value equals the S4 scaffold defaults —
+  // keeps the default JSON clean (S2 regression test asserts no metaTags key).
+  // state.metaTags may be absent in tests using makeState() without it.
+  const mt = state.metaTags ?? DEFAULT_META_TAGS;
+  const d = DEFAULT_META_TAGS;
+  const isDefault =
+    mt.description === d.description &&
+    mt.keywordsEnabled === d.keywordsEnabled &&
+    mt.keywords === d.keywords &&
+    mt.ogImageEnabled === d.ogImageEnabled &&
+    mt.ogImage === d.ogImage &&
+    mt.ogSiteName === d.ogSiteName &&
+    mt.twitterCardEnabled === d.twitterCardEnabled &&
+    mt.twitterCard === d.twitterCard &&
+    mt.twitterSite === d.twitterSite &&
+    mt.twitterCreator === d.twitterCreator;
+
+  if (!isDefault) {
+    const metaTagsJson: Record<string, unknown> = {
+      description: mt.description,
+      keywords: mt.keywordsEnabled ? mt.keywords || "" : false,
+      ogImage: mt.ogImageEnabled ? mt.ogImage || "/img/ogp.png" : false,
+      ogSiteName: mt.ogSiteName,
+      twitterCard: mt.twitterCardEnabled ? mt.twitterCard : false,
+    };
+    if (mt.twitterCardEnabled && mt.twitterSite) {
+      metaTagsJson.twitterSite = mt.twitterSite;
+    }
+    if (mt.twitterCardEnabled && mt.twitterCreator) {
+      metaTagsJson.twitterCreator = mt.twitterCreator;
+    }
+    base.metaTags = metaTagsJson;
+  }
+
   return base;
 }
 
@@ -234,11 +305,11 @@ export function buildCliCommand(state: FormState): string {
   parts.push(`--pm ${pm}`);
   parts.push("--yes");
 
-  // Trailing comment: headerRightItems is an array of discriminated unions
-  // that does not fit the --flag CLI model. Surfaced as a shell comment line
-  // so users know to use a JSON preset (--preset) for header-right ordering.
+  // Trailing comments: array/object configs that don't fit the --flag CLI model.
+  // Surfaced as shell comment lines so users know to use a JSON preset (--preset).
   const trailingNote =
-    "\n# headerRightItems: use a JSON preset (--preset) — array configs are not expressible as CLI flags";
+    "\n# headerRightItems: use a JSON preset (--preset) — array configs are not expressible as CLI flags" +
+    "\n# metaTags: use a JSON preset (--preset) — object config is not expressible as CLI flags";
 
   return parts.join(" ") + trailingNote;
 }

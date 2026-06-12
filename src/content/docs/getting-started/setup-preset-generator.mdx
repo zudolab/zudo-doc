@@ -14,12 +14,24 @@ The "Header right items" section configures `settings.headerRightItems` — the 
 
 Two item kinds — `link` (custom external link) and `html` (raw HTML) — are intentionally not exposed in the UI. Add those by editing `settings.ts` directly after scaffolding. See [Header Right Items](../guides/header-right-items.mdx) for the full discriminated-union schema and examples.
 
+## Meta tags
+
+The "Meta tags" section configures `settings.metaTags` — which meta tags are emitted in each page's `<head>`. The available options are:
+
+- **SEO description meta** — emit `<meta name="description">`. On by default.
+- **Keywords** — emit `<meta name="keywords">` with a comma-separated list you provide. Off by default; enabling it reveals a text input.
+- **OGP image (og:image)** — emit `og:image` (and `twitter:image`). Off by default; enabling it reveals a path input defaulting to `/img/ogp.png`.
+- **og:site_name** — emit `og:site_name`. On by default.
+- **Twitter card** — emit the `twitter:card` block. Off by default; enabling it reveals a card-type selector (`summary` / `summary_large_image`) and optional `twitter:site` / `twitter:creator` handle inputs.
+
+`og:title` is always emitted and is not listed here — it is a DocHead contract that cannot be disabled via this setting.
+
 ## Newly available features
 
 The Features section now includes a few additions worth calling out:
 
 - **Image enlarge** — click-to-zoom for content images. Enabled by default.
-- **Tag governance** — vocabulary-rule audit for tags. Enabled by default. See [Tag governance](../guides/tag-governance.mdx).
+- **Tag governance** — vocabulary-rule audit for tags. See [Tag governance](../guides/tag-governance.mdx).
 - **Body foot util area** — slot at the bottom of the article body for util widgets like a tag list or feedback link. See [Body foot util area](../guides/body-foot-util-area.mdx).
 - **Footer taglist** — render the global tag cloud in the site footer. See [Footer taglist](../guides/footer-taglist.mdx).
 - **Design Token Panel** — renamed from "Color tweak panel". The setting key is `designTokenPanel`.

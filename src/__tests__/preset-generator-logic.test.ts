@@ -4,9 +4,16 @@ import {
   buildJson,
   buildCliCommand,
   DEFAULT_HEADER_RIGHT_ITEMS,
+  INITIAL_HEADER_RIGHT_ITEMS,
+  DEFAULT_META_TAGS,
   type FormState,
   type HeaderRightItemSpec,
+  type MetaTagsFormState,
 } from "../lib/preset-generator-logic";
+
+function makeMetaState(overrides: Partial<MetaTagsFormState> = {}): MetaTagsFormState {
+  return { ...DEFAULT_META_TAGS, ...overrides };
+}
 
 function makeState(overrides: Partial<FormState> = {}): FormState {
   return {
@@ -245,5 +252,142 @@ describe("buildJson — headerRightItems mapping", () => {
   it("emits headerRightItems even when it equals the default (always present)", () => {
     const json = buildJson(makeState());
     expect(json).toHaveProperty("headerRightItems");
+  });
+});
+
+describe("default generator state — regression: matches target JSON", () => {
+  it("buildJson() with initial state deep-equals the target JSON exactly", () => {
+    const initialState: FormState = {
+      projectName: "my-docs",
+      defaultLang: "en",
+      colorSchemeMode: "light-dark",
+      singleScheme: "Default Dark",
+      lightScheme: "Default Light",
+      darkScheme: "Default Dark",
+      defaultMode: "dark",
+      respectPrefersColorScheme: true,
+      features: FEATURES.filter((f) => f.default).map((f) => f.value),
+      cjkFriendly: true,
+      packageManager: "pnpm",
+      headerRightItems: [...INITIAL_HEADER_RIGHT_ITEMS],
+    };
+
+    expect(buildJson(initialState)).toEqual({
+      projectName: "my-docs",
+      defaultLang: "en",
+      colorSchemeMode: "light-dark",
+      lightScheme: "Default Light",
+      darkScheme: "Default Dark",
+      defaultMode: "dark",
+      respectPrefersColorScheme: true,
+      features: ["search", "sidebarFilter", "imageEnlarge"],
+      cjkFriendly: true,
+      packageManager: "pnpm",
+      headerRightItems: [
+        { type: "component", component: "github-link" },
+        { type: "component", component: "theme-toggle" },
+        { type: "component", component: "search" },
+        { type: "component", component: "language-switcher" },
+      ],
+    });
+  });
+});
+
+describe("buildJson — metaTags (S5 #2079)", () => {
+  it("omits metaTags key when all values equal defaults (S2 regression guard)", () => {
+    const json = buildJson(makeState({ metaTags: makeMetaState() }));
+    expect(json).not.toHaveProperty("metaTags");
+  });
+
+  it("also omits metaTags when state.metaTags is absent (makeState backward compat)", () => {
+    const json = buildJson(makeState());
+    expect(json).not.toHaveProperty("metaTags");
+  });
+
+  it("emits metaTags when description is turned off", () => {
+    const json = buildJson(makeState({ metaTags: makeMetaState({ description: false }) }));
+    expect(json).toHaveProperty("metaTags");
+    expect((json.metaTags as Record<string, unknown>).description).toBe(false);
+  });
+
+  it("emits metaTags with keywords string when keywordsEnabled is true", () => {
+    const json = buildJson(makeState({
+      metaTags: makeMetaState({ keywordsEnabled: true, keywords: "docs, guide" }),
+    }));
+    expect(json).toHaveProperty("metaTags");
+    const mt = json.metaTags as Record<string, unknown>;
+    expect(mt.keywords).toBe("docs, guide");
+  });
+
+  it("emits keywords: false when keywordsEnabled is false (default)", () => {
+    const json = buildJson(makeState({ metaTags: makeMetaState({ description: false }) }));
+    const mt = json.metaTags as Record<string, unknown>;
+    expect(mt.keywords).toBe(false);
+  });
+
+  it("emits metaTags with ogImage path when ogImageEnabled is true", () => {
+    const json = buildJson(makeState({
+      metaTags: makeMetaState({ ogImageEnabled: true, ogImage: "/img/custom.png" }),
+    }));
+    expect(json).toHaveProperty("metaTags");
+    const mt = json.metaTags as Record<string, unknown>;
+    expect(mt.ogImage).toBe("/img/custom.png");
+  });
+
+  it("emits ogImage with default path when ogImageEnabled is true and path is empty", () => {
+    const json = buildJson(makeState({
+      metaTags: makeMetaState({ ogImageEnabled: true, ogImage: "" }),
+    }));
+    const mt = json.metaTags as Record<string, unknown>;
+    expect(mt.ogImage).toBe("/img/ogp.png");
+  });
+
+  it("emits metaTags when ogSiteName is turned off", () => {
+    const json = buildJson(makeState({ metaTags: makeMetaState({ ogSiteName: false }) }));
+    expect(json).toHaveProperty("metaTags");
+    const mt = json.metaTags as Record<string, unknown>;
+    expect(mt.ogSiteName).toBe(false);
+  });
+
+  it("emits metaTags with twitterCard when twitterCardEnabled is true", () => {
+    const json = buildJson(makeState({
+      metaTags: makeMetaState({ twitterCardEnabled: true, twitterCard: "summary_large_image" }),
+    }));
+    expect(json).toHaveProperty("metaTags");
+    const mt = json.metaTags as Record<string, unknown>;
+    expect(mt.twitterCard).toBe("summary_large_image");
+  });
+
+  it("emits twitterCard: false when twitterCardEnabled is false", () => {
+    const json = buildJson(makeState({ metaTags: makeMetaState({ description: false }) }));
+    const mt = json.metaTags as Record<string, unknown>;
+    expect(mt.twitterCard).toBe(false);
+  });
+
+  it("emits twitterSite and twitterCreator when set and twitterCardEnabled", () => {
+    const json = buildJson(makeState({
+      metaTags: makeMetaState({
+        twitterCardEnabled: true,
+        twitterCard: "summary",
+        twitterSite: "@brand",
+        twitterCreator: "@author",
+      }),
+    }));
+    const mt = json.metaTags as Record<string, unknown>;
+    expect(mt.twitterSite).toBe("@brand");
+    expect(mt.twitterCreator).toBe("@author");
+  });
+
+  it("omits twitterSite and twitterCreator when twitterCardEnabled is false", () => {
+    const json = buildJson(makeState({
+      metaTags: makeMetaState({
+        description: false,
+        twitterSite: "@brand",
+        twitterCreator: "@author",
+      }),
+    }));
+    const mt = json.metaTags as Record<string, unknown>;
+    expect(mt.twitterSite).toBeUndefined();
+    expect(mt.twitterCreator).toBeUndefined();
   });
 });

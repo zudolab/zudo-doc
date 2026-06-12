@@ -48,6 +48,16 @@ const VALID_HEADER_RIGHT_TRIGGERS = new Set<PresetHeaderRightTriggerName>([
   "ai-chat",
 ]);
 
+export interface PresetMetaTagsConfig {
+  description?: boolean;
+  keywords?: string | false;
+  ogImage?: string | false;
+  ogSiteName?: boolean;
+  twitterCard?: "summary" | "summary_large_image" | false;
+  twitterSite?: string;
+  twitterCreator?: string;
+}
+
 export interface PresetJson {
   projectName?: string;
   defaultLang?: string;
@@ -62,6 +72,7 @@ export interface PresetJson {
   cjkFriendly?: boolean;
   packageManager?: "pnpm" | "npm" | "yarn" | "bun";
   headerRightItems?: PresetHeaderRightItem[];
+  metaTags?: PresetMetaTagsConfig;
 }
 
 export function loadPreset(pathOrStdin: string): PartialChoices {
@@ -167,6 +178,38 @@ export function validatePreset(json: unknown): string | null {
       }
     }
   }
+  if (p.metaTags !== undefined) {
+    if (typeof p.metaTags !== "object" || p.metaTags === null || Array.isArray(p.metaTags)) {
+      return `"metaTags" must be an object in preset`;
+    }
+    const mt = p.metaTags as PresetMetaTagsConfig;
+    if (mt.description !== undefined && typeof mt.description !== "boolean") {
+      return `"metaTags.description" must be a boolean`;
+    }
+    if (mt.keywords !== undefined && mt.keywords !== false && typeof mt.keywords !== "string") {
+      return `"metaTags.keywords" must be a string or false`;
+    }
+    if (mt.ogImage !== undefined && mt.ogImage !== false && typeof mt.ogImage !== "string") {
+      return `"metaTags.ogImage" must be a string or false`;
+    }
+    if (mt.ogSiteName !== undefined && typeof mt.ogSiteName !== "boolean") {
+      return `"metaTags.ogSiteName" must be a boolean`;
+    }
+    if (
+      mt.twitterCard !== undefined &&
+      mt.twitterCard !== false &&
+      mt.twitterCard !== "summary" &&
+      mt.twitterCard !== "summary_large_image"
+    ) {
+      return `"metaTags.twitterCard" must be "summary", "summary_large_image", or false`;
+    }
+    if (mt.twitterSite !== undefined && typeof mt.twitterSite !== "string") {
+      return `"metaTags.twitterSite" must be a string`;
+    }
+    if (mt.twitterCreator !== undefined && typeof mt.twitterCreator !== "string") {
+      return `"metaTags.twitterCreator" must be a string`;
+    }
+  }
   // Cross-field validation
   if (p.colorSchemeMode === "single" && (p.lightScheme || p.darkScheme)) {
     return `lightScheme/darkScheme are only valid with colorSchemeMode "light-dark"`;
@@ -197,6 +240,9 @@ export function presetToChoices(json: PresetJson): PartialChoices {
   if (json.cjkFriendly !== undefined) choices.cjkFriendly = json.cjkFriendly;
   if (json.headerRightItems !== undefined) {
     choices.headerRightItems = json.headerRightItems;
+  }
+  if (json.metaTags !== undefined) {
+    choices.metaTags = json.metaTags;
   }
 
   if (json.features) {

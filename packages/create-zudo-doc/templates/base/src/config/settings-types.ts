@@ -160,3 +160,20 @@ export interface VersionConfig {
   /** Banner text shown on versioned pages (e.g., "unmaintained", "unreleased") */
   banner?: "unmaintained" | "unreleased" | false;
 }
+
+export interface MetaTagsConfig {
+  /** Emit <meta name="description">. Default true. */
+  description: boolean;
+  /** Emit <meta name="keywords"> with a comma-separated string. false = omit. Default false. */
+  keywords: string | false;
+  /** og:image (and twitter:image) path. false = omit. Default false. Showcase: '/img/ogp.png'. */
+  ogImage: string | false;
+  /** Emit og:site_name. Default true (preserves current og:site_name). */
+  ogSiteName: boolean;
+  /** TwitterCard type. false = omit entire twitter:card block. Default false. Showcase: 'summary_large_image'. */
+  twitterCard: "summary" | "summary_large_image" | false;
+  /** twitter:site handle (e.g. '@yourbrand'). Optional. */
+  twitterSite?: string;
+  /** twitter:creator handle. Optional. */
+  twitterCreator?: string;
+}

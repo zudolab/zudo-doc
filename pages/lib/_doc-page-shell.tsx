@@ -176,7 +176,9 @@ export function DocPageShell(props: DocPageShellProps): JSX.Element {
   return (
     <DocLayoutWithDefaults
       title={composeMetaTitle(title)}
-      description={description}
+      // Plain <meta name="description"> is emitted by DocLayout from this prop —
+      // gate it here alongside the og:description gate inside HeadWithDefaults (#2078)
+      description={settings.metaTags.description ? description : undefined}
       head={<HeadWithDefaults title={title} description={description} canonical={canonical} />}
       lang={locale}
       noindex={settings.noindex}

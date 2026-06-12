@@ -19,6 +19,7 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  TagPlacement,`);
   lines.push(`  TagGovernanceMode,`);
   lines.push(`  TagVocabularyEntry,`);
+  lines.push(`  MetaTagsConfig,`);
   lines.push(`} from "./settings-types";`);
   lines.push(`import type {`);
   lines.push(`  HeaderNavItem,`);
@@ -32,6 +33,7 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  BodyFootUtilAreaConfig,`);
   lines.push(`  TagPlacement,`);
   lines.push(`  TagGovernanceMode,`);
+  lines.push(`  MetaTagsConfig,`);
   lines.push(`} from "./settings-types";`);
   lines.push(``);
 
@@ -77,6 +79,36 @@ export function generateSettingsFile(choices: UserChoices): string {
     lines.push(`  githubUrl: false as string | false,`);
   }
   lines.push(`  siteUrl: "" as string,`);
+  lines.push(`  metaTags: {`);
+  if (choices.metaTags) {
+    const mt = choices.metaTags;
+    lines.push(`    description: ${mt.description !== undefined ? mt.description : true},`);
+    lines.push(
+      `    keywords: ${mt.keywords !== undefined ? JSON.stringify(mt.keywords) : false},`,
+    );
+    lines.push(
+      `    ogImage: ${mt.ogImage !== undefined ? JSON.stringify(mt.ogImage) : false},`,
+    );
+    lines.push(`    ogSiteName: ${mt.ogSiteName !== undefined ? mt.ogSiteName : true},`);
+    if (mt.twitterCard) {
+      lines.push(`    twitterCard: ${JSON.stringify(mt.twitterCard)},`);
+      if (mt.twitterSite) {
+        lines.push(`    twitterSite: ${JSON.stringify(mt.twitterSite)},`);
+      }
+      if (mt.twitterCreator) {
+        lines.push(`    twitterCreator: ${JSON.stringify(mt.twitterCreator)},`);
+      }
+    } else {
+      lines.push(`    twitterCard: false,`);
+    }
+  } else {
+    lines.push(`    description: true,`);
+    lines.push(`    keywords: false,`);
+    lines.push(`    ogImage: false,`);
+    lines.push(`    ogSiteName: true,`);
+    lines.push(`    twitterCard: false,`);
+  }
+  lines.push(`  } satisfies MetaTagsConfig as MetaTagsConfig,`);
   lines.push(`  docsDir: "src/content/docs",`);
   lines.push(
     `  defaultLocale: ${JSON.stringify(choices.defaultLang ?? "en")} as const,`,

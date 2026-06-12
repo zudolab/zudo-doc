@@ -2,6 +2,7 @@ import type {
   HeaderNavItem,
   ColorModeConfig,
   LocaleConfig,
+  MetaTagsConfig,
 } from "./settings-types";
 
 export const settings = {
@@ -20,6 +21,13 @@ export const settings = {
   noindex: true as boolean,
   editUrl: false as string | false,
   siteUrl: "" as string,
+  metaTags: {
+    description: true,
+    keywords: false,
+    ogImage: false,
+    ogSiteName: true,
+    twitterCard: false,
+  } satisfies MetaTagsConfig as MetaTagsConfig,
   sitemap: false,
   docMetainfo: false,
   docTags: false,
