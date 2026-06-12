@@ -2955,13 +2955,17 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
    * emitted by the generator, so no migration needed. next.39: features +
    * fixes, no breaking changes — npm-dist `"use client"` island scanning,
    * link-resolution fixes for directory-style hrefs, and island-registry
-   * hardening (warns on island marker-name collisions). Now bumped to
-   * 0.1.0-next.40: `zfb dev` lazy rendering on by default (pages render on
-   * first request; `ZFB_DEV_EAGER=1` restores eager mode,
-   * Takazudo/zudo-front-builder#1029) — dev-server-only, no breaking
-   * changes. Generated package.json must pin all three.
+   * hardening (warns on island marker-name collisions). next.40: `zfb dev`
+   * lazy rendering on by default (pages render on first request;
+   * `ZFB_DEV_EAGER=1` restores eager mode, Takazudo/zudo-front-builder#1029)
+   * — dev-server-only, no breaking changes. Now bumped to 0.1.0-next.41:
+   * URL-space fallback in resolve_links for dir-style hrefs written from
+   * non-index pages (Takazudo/zudo-front-builder#1030), and the data-file
+   * skip warning now respects collection include/exclude globs (#1032) — no
+   * consumer-facing breaking change. Generated package.json must pin all
+   * three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.40", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.41", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -2972,10 +2976,10 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.40");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.40");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.41");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.41");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.40",
+      "0.1.0-next.41",
     );
   });
 });

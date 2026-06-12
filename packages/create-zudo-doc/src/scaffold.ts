@@ -342,15 +342,21 @@ function generatePackageJson(choices: UserChoices) {
     // npm-dist `"use client"` island scanning, link-resolution fixes for
     // directory-style hrefs, and island-registry hardening (warns on island
     // marker-name collisions).
-    // next.40 (current pin) flips `zfb dev` to lazy rendering by default —
+    // next.40 flips `zfb dev` to lazy rendering by default —
     // pages render on first request instead of on every file-change tick
     // (Takazudo/zudo-front-builder#1029); `ZFB_DEV_EAGER=1` restores eager
     // mode. Dev-server-only change, no build/config migration needed.
-    "@takazudo/zfb": "0.1.0-next.40",
-    "@takazudo/zfb-runtime": "0.1.0-next.40",
+    // next.41 (current pin) adds a URL-space fallback in resolve_links —
+    // dir-style hrefs written from non-index pages now resolve against the
+    // page's URL directory when the file-space lookup misses
+    // (Takazudo/zudo-front-builder#1030) — and the data-file skip warning
+    // (e.g. for `_category_.json`) now respects the collection's
+    // include/exclude globs (#1032). No consumer-facing breaking change.
+    "@takazudo/zfb": "0.1.0-next.41",
+    "@takazudo/zfb-runtime": "0.1.0-next.41",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.40",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.41",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
