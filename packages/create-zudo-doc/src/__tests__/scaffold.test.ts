@@ -963,6 +963,76 @@ describe("scaffold — footer features", () => {
     expect(content).toContain("copyright:");
   });
 
+  // S4 (#2078): metaTags block is emitted unconditionally with scaffold defaults
+  // so scaffolded projects are type-correct against the updated
+  // _head-with-defaults.tsx template. Choice-driven values (ogImage path,
+  // twitterCard type) come in S5.
+  it("emits metaTags block unconditionally with scaffold defaults (S4 #2078)", async () => {
+    const choices: UserChoices = {
+      projectName: "test-meta-tags-defaults",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-meta-tags-defaults", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("metaTags: {");
+    expect(content).toContain("description: true,");
+    expect(content).toContain("keywords: false,");
+    expect(content).toContain("ogImage: false,");
+    expect(content).toContain("ogSiteName: true,");
+    expect(content).toContain("twitterCard: false,");
+    expect(content).toContain("MetaTagsConfig");
+  });
+
+  // S4 (#2078): fresh-scaffold head assertion — with scaffold defaults
+  // (ogImage: false, twitterCard: false, keywords: false), the generated
+  // _head-with-defaults.tsx must gate those tags via settings.metaTags.
+  // This test confirms the generated template emits og:title + description
+  // + og:site_name and does NOT unconditionally emit og:image / twitter:* /
+  // keywords. We assert this by inspecting the template source directly
+  // (a full scaffold render is not feasible in unit tests — pnpm build is
+  // run by the manager after merge per task spec).
+  it("_head-with-defaults.tsx template gates og:image/twitter:card/keywords via settings.metaTags (S4 #2078)", async () => {
+    const choices: UserChoices = {
+      projectName: "test-head-template-gates",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const headSrc = await fs.readFile(
+      projectPath(
+        "test-head-template-gates",
+        "pages/lib/_head-with-defaults.tsx",
+      ),
+      "utf-8",
+    );
+    // og:title is always emitted — DocHead contract (OgTags always emits og:title)
+    expect(headSrc).toContain("composeMetaTitle(title)");
+    // description is gated on metaTags.description
+    expect(headSrc).toContain("metaTags.description");
+    // og:site_name is gated on metaTags.ogSiteName
+    expect(headSrc).toContain("metaTags.ogSiteName");
+    // og:image and twitter:image are gated on metaTags.ogImage
+    expect(headSrc).toContain("metaTags.ogImage");
+    // twitterCard block is gated on metaTags.twitterCard
+    expect(headSrc).toContain("metaTags.twitterCard");
+    // keywords are gated on metaTags.keywords
+    expect(headSrc).toContain("metaTags.keywords");
+    // No hardcoded og:image path (must come from metaTags.ogImage)
+    expect(headSrc).not.toContain('"/img/ogp.png"');
+    // No unconditional TwitterCard emission
+    expect(headSrc).not.toContain('card="summary_large_image"');
+  });
+
 });
 
 

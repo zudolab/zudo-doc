@@ -63,6 +63,10 @@ export interface HeadWithDefaultsProps {
  * (the legacy Astro layout produced both shapes; the zfb host has to
  * compose them itself).
  *
+ * og:title is always emitted — it is the unconditional DocHead contract
+ * (OgTags always emits og:title regardless of settings). All other tags
+ * are gated by settings.metaTags.
+ *
  * Pure SSR — no state, no client-only imports. Intended for use as:
  *   head={<HeadWithDefaults title={title} description={description} canonical={canonical} />}
  * on every DocLayoutWithDefaults call site in the host pages.
@@ -72,6 +76,8 @@ export function HeadWithDefaults({
   description,
   canonical,
 }: HeadWithDefaultsProps): JSX.Element {
+  const { metaTags } = settings;
+
   // og:image / twitter:image must be absolute URLs — crawlers silently drop
   // relative og:image values. absoluteUrl joins siteUrl (no trailing slash) +
   // the base-prefixed asset path, and returns undefined when siteUrl is empty
@@ -80,7 +86,10 @@ export function HeadWithDefaults({
   // TwitterCard already gate their image emission on the prop being defined;
   // the og:image:* companion tags below are gated explicitly because they
   // would dangle without the parent og:image.
-  const ogImageUrl = absoluteUrl(withBase("/img/ogp.png"));
+  const ogImageUrl =
+    metaTags.ogImage !== false
+      ? absoluteUrl(withBase(metaTags.ogImage))
+      : undefined;
 
   // Resolve the palette CSS body once per page render (the v2 component
   // is pure SSR — no caching needed).
@@ -93,12 +102,15 @@ export function HeadWithDefaults({
     <>
       <OgTags
         title={composeMetaTitle(title)}
-        description={description}
+        description={metaTags.description ? description : undefined}
         ogType="website"
         ogUrl={canonical}
         ogImage={ogImageUrl}
-        ogSiteName={settings.siteName}
+        ogSiteName={metaTags.ogSiteName ? settings.siteName : undefined}
       />
+      {metaTags.keywords !== false && metaTags.keywords.length > 0 && (
+        <meta name="keywords" content={metaTags.keywords} />
+      )}
       {/* og:image:width / og:image:height / og:image:alt — not in OgTags API;
           emitted here directly to avoid expanding the shared HeadProps surface.
           Standard 1200×630 social preview dimensions. Gated on ogImageUrl so
@@ -110,7 +122,14 @@ export function HeadWithDefaults({
           <meta property="og:image:alt" content={composeMetaTitle(title)} />
         </>
       )}
-      <TwitterCard card="summary_large_image" image={ogImageUrl} />
+      {metaTags.twitterCard !== false && (
+        <TwitterCard
+          card={metaTags.twitterCard}
+          image={ogImageUrl}
+          site={metaTags.twitterSite}
+          creator={metaTags.twitterCreator}
+        />
+      )}
       <ColorSchemeProvider cssText={cssText} colorMode={colorMode} />
       {/* Pre-paint inline script: restore persisted sidebar width to
           --zd-sidebar-w on :root before first paint, so a reload after

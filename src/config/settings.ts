@@ -12,6 +12,7 @@ export type {
   TagPlacement,
   TagGovernanceMode,
   TagVocabularyEntry,
+  MetaTagsConfig,
 } from "./settings-types";
 import type {
   HeaderNavItem,
@@ -25,6 +26,7 @@ import type {
   BodyFootUtilAreaConfig,
   TagPlacement,
   TagGovernanceMode,
+  MetaTagsConfig,
 } from "./settings-types";
 
 export const settings = {
@@ -49,6 +51,13 @@ export const settings = {
   editUrl: false as string | false,
   githubUrl: "https://github.com/zudolab/zudo-doc" as string | false,
   siteUrl: "https://zudo-doc.takazudomodular.com" as string, // canonical prod host; sitemap/canonical links use this regardless of deploy URL
+  metaTags: {
+    description: true,
+    keywords: false,
+    ogImage: "/img/ogp.png",
+    ogSiteName: true,
+    twitterCard: "summary_large_image",
+  } satisfies MetaTagsConfig as MetaTagsConfig,
   sitemap: true,
   docMetainfo: true,
   docTags: true,
