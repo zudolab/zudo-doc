@@ -1,0 +1,16 @@
+---
+title: 0.2.4
+description: Release notes for 0.2.4.
+sidebar_position: 1015
+---
+
+Released: 2026-06-12
+
+### Bug Fixes
+
+- Switch the scaffolded `_toc-title.ts` template to a re-export from `@takazudo/zudo-doc/toc`, dropping the hand-mirrored `TOC_TITLES` map that was stale-by-construction now that the package exports `getTocTitle` (f3a9b058)
+- Key `DiffViewer` by the compared revision pair so picking a new Compare pair on desktop remounts the viewer — the new header hashes no longer briefly render over the previous pair's stale diff rows (e6d39bb9)
+
+### Other Changes
+
+- Bump the zfb family to 0.1.0-next.41 — adds a URL-space fallback for dir-style hrefs written from non-index pages and makes the data-file skip warning respect collection include/exclude globs (cbab69c5)
