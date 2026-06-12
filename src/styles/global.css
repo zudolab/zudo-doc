@@ -1264,7 +1264,17 @@ dialog.zd-enlarge-dialog::backdrop {
  * article, TOC, etc.). The twelve ::view-transition-{old,new,group}(<name>)
  * rules disable animation for all four chrome layers. The group pseudo must be
  * neutralised too — even when old/new are static the group container can still
- * produce a geometry-morph animation when snapshot size/position differs. */
+ * produce a geometry-morph animation when snapshot size/position differs.
+ *
+ * Entry/exit cross-fade (zudolab/zudo-doc#2072): animation: none is only
+ * correct when the chrome element exists on BOTH pages of a navigation.
+ * When it exists on one side only (docs page with sidebar → top page
+ * without), the named group holds a single snapshot — frozen at full
+ * opacity for the whole transition, then dropped abruptly at finish. The
+ * :only-child rules below detect that one-sided case and cross-fade the
+ * lone snapshot in sync with the root content fade (spec-standard
+ * entry/exit pattern; :only-child outranks the animation: none rules via
+ * the extra pseudo-class specificity). */
 
 /* Chrome extraction — assign view-transition-name from data-zfb-transition-persist */
 [data-zfb-transition-persist^="header-"]               { view-transition-name: zfb-header; }
@@ -1285,6 +1295,22 @@ dialog.zd-enlarge-dialog::backdrop {
 ::view-transition-old(zfb-sidebar-toggle),
 ::view-transition-new(zfb-sidebar-toggle),
 ::view-transition-group(zfb-sidebar-toggle) { animation: none; }
+
+/* Entry/exit: chrome element present on one side only (#2072).
+ * Exit — lone old snapshot fades out with the content cross-fade. */
+::view-transition-old(zfb-header):only-child,
+::view-transition-old(zfb-sidebar):only-child,
+::view-transition-old(zfb-footer):only-child,
+::view-transition-old(zfb-sidebar-toggle):only-child {
+  animation: 150ms ease-in both contentFadeOut;
+}
+/* Entry — lone new snapshot fades in with the content cross-fade. */
+::view-transition-new(zfb-header):only-child,
+::view-transition-new(zfb-sidebar):only-child,
+::view-transition-new(zfb-footer):only-child,
+::view-transition-new(zfb-sidebar-toggle):only-child {
+  animation: 300ms ease-out both contentFadeIn;
+}
 
 /* Root cross-fade rules — animate only the non-chrome snapshot */
 ::view-transition-old(root) {
