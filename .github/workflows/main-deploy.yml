@@ -239,11 +239,7 @@ jobs:
 
       - name: Deploy to Cloudflare Workers (production)
         id: deploy
-        # Pinned for determinism while investigating: the post-upload
-        # /subdomain API call fails with Cloudflare error 10013 on BOTH
-        # 4.98.0 and 4.99.0 (CF-side; upload itself succeeds, job exits
-        # red, site content still deploys). Last green: Jun 8 (4.98.0).
-        run: npx wrangler@4.98.0 deploy
+        run: npx wrangler@4 deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

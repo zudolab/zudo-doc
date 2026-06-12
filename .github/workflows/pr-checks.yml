@@ -564,10 +564,7 @@ jobs:
           # alias URL (subdomain starts with the alias) — not the per-version
           # hash URL — so smoke gates + PR comments hit a stable host.
           DEPLOY_LOG=$(mktemp)
-          # Pinned to 4.98.0 like main-deploy.yml for determinism (CF error
-          # 10013 affects `deploy` post-upload on both 4.98/4.99; `versions
-          # upload` here is unaffected so far).
-          npx wrangler@4.98.0 versions upload \
+          npx wrangler@4 versions upload \
             --preview-alias "$ALIAS" \
             2>&1 | tee "$DEPLOY_LOG"
           DEPLOY_URL=$(grep -oE "https://${ALIAS}-[a-z0-9.-]+\.workers\.dev" "$DEPLOY_LOG" | head -1)

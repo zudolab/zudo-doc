@@ -175,18 +175,6 @@ All three workflows (`main-deploy.yml`, `pr-checks.yml`, `preview-deploy.yml`) u
 
 E2E tests also run with full clone (no `SKIP_DOC_HISTORY`).
 
-### Known issue: Cloudflare API error 10013 on deploy (2026-06, temporary)
-
-The **Deploy to Cloudflare Workers** job currently fails with
-`A request to the Cloudflare API (/accounts/.../workers/scripts/zudo-doc/subdomain) failed. [code: 10013]`.
-This is a **confirmed Cloudflare-side incident** — the worker upload itself succeeds
-("Uploaded zudo-doc"); only the post-upload workers.dev `/subdomain` API call 500s.
-**Treat a deploy-job failure with this exact error as green**: do not block releases,
-tagging, or npm publishes on it, and do not try to "fix" it in this repo (it is not
-caused by our code or config). All other jobs (Build Site, Build Doc History, HTML
-validate) must still pass. Remove this section once Cloudflare resolves the incident
-and main deploys go green again.
-
 ## Workers Cutover Runbook
 
 One-time setup steps required before the first `wrangler deploy` succeeds for this project (epic zudolab/zudo-doc#1691). Run from the repo root with Wrangler authenticated.
