@@ -5,12 +5,12 @@
  *   6. Header version-switcher reflects the correct version label on a
  *      /v/{version}/docs/... route. Verified in two ways:
  *      a. Direct navigation: goto the versioned page, assert toggle shows "1.0.0".
- *      b. SPA swap: navigate within the versioned section (when multiple pages
- *         exist) and assert the toggle still shows "1.0.0" — confirming the
- *         persisted header's version-switcher island stays consistent.
- *         Since the versioning fixture only has one page per version, the SPA
- *         swap sub-test is a best-effort check (skipped when there is no second
- *         versioned page to navigate to).
+ *      b. SPA swap: navigate within the versioned section (getting-started →
+ *         installation) and assert the toggle still shows "1.0.0" — confirming
+ *         the persisted header's version-switcher island stays consistent.
+ *         The versioning fixture has two pages per version (getting-started and
+ *         installation), so the SPA swap sub-test always has a second page to
+ *         navigate to.
  *
  * The cross-version SPA swap (Latest → /v/1.0) is intentionally NOT checked
  * here: both pages share the same header persist key (header-en), so the
@@ -30,11 +30,13 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { spaClick } from "./nav-helpers";
 
 // Desktop viewport so the header is fully rendered.
 test.use({ viewport: { width: 1280, height: 900 } });
 
 const VERSIONED_PAGE = "/v/1.0/docs/getting-started/";
+const VERSIONED_PAGE_2 = "/v/1.0/docs/installation/";
 const LATEST_PAGE = "/docs/getting-started/";
 
 // ---------------------------------------------------------------------------
@@ -95,64 +97,18 @@ test.describe("VT Chrome Persist: version-switcher state on versioned routes", (
     const toggle = headerBanner.locator("[data-version-toggle]");
     await expect(toggle).toBeVisible();
 
-    // Check if there is a second versioned page to navigate to (SPA swap).
-    // If the versioning fixture only has one page per version, skip the swap.
-    const hasSecondVersionedPage = await page.evaluate(() => {
-      const links = Array.from(document.querySelectorAll<HTMLAnchorElement>(
-        "#desktop-sidebar a[href*='/v/1.0/']"
-      ));
-      // We want a link that is NOT the current page
-      const current = window.location.pathname;
-      return links.some(l => l.getAttribute("href") !== current && l.getAttribute("href") !== current + "/");
-    });
-
-    if (!hasSecondVersionedPage) {
-      // Only one versioned page — skip the SPA swap sub-check.
-      // The direct-navigation test above still covers the SSR state.
-      test.skip();
-      return;
-    }
-
-    // Find a second versioned page link.
-    const secondHref = await page.evaluate(() => {
-      const links = Array.from(document.querySelectorAll<HTMLAnchorElement>(
-        "#desktop-sidebar a[href*='/v/1.0/']"
-      ));
-      const current = window.location.pathname;
-      const other = links.find(l => l.getAttribute("href") !== current && l.getAttribute("href") !== current + "/");
-      return other?.getAttribute("href") ?? null;
-    });
-
-    if (!secondHref) {
-      test.skip();
-      return;
-    }
+    // Assert that the second versioned page link exists in the sidebar.
+    // The fixture includes docs-v1/installation/index.mdx so this always holds.
+    const secondLinkLocator = page.locator(
+      `#desktop-sidebar a[href="${VERSIONED_PAGE_2}"]`,
+    );
+    await expect(
+      secondLinkLocator,
+      `Expected a sidebar link to ${VERSIONED_PAGE_2} — the versioning fixture must include docs-v1/installation/index.mdx`,
+    ).toBeAttached();
 
     // Perform SPA swap within the versioned section.
-    const swapFired = await page.evaluate((h: string) => {
-      return new Promise<boolean>((resolve) => {
-        let tid: ReturnType<typeof setTimeout> | null = null;
-        document.addEventListener(
-          "zfb:after-swap",
-          () => {
-            if (tid !== null) clearTimeout(tid);
-            resolve(true);
-          },
-          { once: true },
-        );
-        const anchor = document.querySelector<HTMLElement>(`a[href="${h}"]`);
-        if (anchor) {
-          tid = setTimeout(() => resolve(false), 8000);
-          anchor.click();
-        } else {
-          resolve(false);
-        }
-      });
-    }, secondHref);
-
-    await page.waitForLoadState("networkidle").catch(() => null);
-    await page.waitForTimeout(300);
-
+    const swapFired = await spaClick(page, VERSIONED_PAGE_2);
     expect(
       swapFired,
       "zfb:after-swap should fire for same-locale SPA swap within /v/1.0/",
