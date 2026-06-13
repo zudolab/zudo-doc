@@ -40,9 +40,8 @@ interface DocPagerProps {
  * per #1535).
  */
 export function DocPager({ prev, next, locale }: DocPagerProps): JSX.Element {
-  // --flow-space override: mt-vsp-2xl alone is dead here — the .zd-content flow rule wins the cascade (see #2075)
   return (
-    <nav class="mt-vsp-2xl [--flow-space:var(--spacing-vsp-2xl)] grid grid-cols-2 gap-hsp-xl">
+    <nav class="mt-vsp-2xl grid grid-cols-2 gap-hsp-xl">
       {prev ? (
         <a
           href={prev.href}
