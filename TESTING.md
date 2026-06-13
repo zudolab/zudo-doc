@@ -96,14 +96,26 @@ Every new E2E test defaults to the CI-safe lane. Tags opt tests into special han
 | Tag | Meaning | CI behavior | Requirements |
 |-----|---------|-------------|--------------|
 | (none) | CI-safe default — stable, deterministic | Runs in `test:e2e:ci` (pr-checks) and `test:e2e` (exam CI-safe lane) | None |
-| `@flaky` | Quarantined — intermittent failure, known root cause | Excluded from `test:e2e:ci`; runs allowed-to-fail in exam's `@flaky` lane | Inline tracking-issue URL comment on the line above the `test()` call; fix/demote/delete deadline in the issue |
+| `@flaky` | Quarantined — **non-deterministic** (intermittent) failure, known root cause | Excluded from `test:e2e:ci`; runs allowed-to-fail in exam's `@flaky` lane | Inline tracking-issue URL comment on the line above the `test()` call; fix/demote/delete deadline in the issue |
+| `@local-only` | **Deterministically environment-dependent** — trustworthy on a real dev machine, not runnable in the CI container | Excluded from `test:e2e:ci` AND the ubuntu exam lane (it would fail there identically); runs in the full local `pnpm test:e2e` | Inline tracking-issue URL comment on the line above the `test()` call, documenting the environmental cause |
 | `@heavy` | Slow-but-deterministic (hypothetical) | Would run in CI but in a separate slow lane | N/A — no `@heavy` tests currently exist |
 
-### The current quarantine set is empty — that is the healthy state
+`@flaky` and `@local-only` are **distinct, single-meaning** tags — this is deliberate.
+The pre-refactor `@local-only` was a graveyard that conflated "flaky", "heavy", and
+"environment-specific", ran nowhere, and carried no tracking issue. The redefinition
+splits those meanings: non-determinism → `@flaky`, slowness → `@heavy`, genuine
+environment-dependence → `@local-only`. Each now **requires a tracking issue**.
 
-Burn-in during the testing refactor found all previously intermittent tests to be
-deterministic under investigation: they were fixed, demoted to L3 static reads, or
-deleted. Zero `@flaky` tests means the CI-safe lane is exactly the full suite.
+### Why the burn-in alone could not place every test
+
+A local burn-in (`--repeat-each=N`) proves *determinism* but not *CI-capability* — it
+runs on a dev machine, not in the CI container. During the refactor it cleared 26
+previously-`@local-only` tests as genuinely stable AND CI-safe (untagged), but the
+4 `smoke-doc-history` revision-data tests passed locally yet fail in CI because the
+doc-history git-history JSON is only generated in a real local git/build environment
+(see zudolab/zudo-doc#2106). CI is the gate that caught that environmental dependence —
+the layered design working as intended. Those 4 are the only current `@local-only`
+tests; the `@flaky` set is empty (the healthy state for non-determinism).
 
 ### How to tag a test as @flaky
 

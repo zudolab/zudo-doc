@@ -29,7 +29,7 @@
     "test:unit": "vitest run",
     "test:packages": "pnpm -r --filter './packages/*' run test",
     "test:e2e": "bash e2e/setup-fixtures.sh && playwright test",
-    "test:e2e:ci": "bash e2e/setup-fixtures.sh && playwright test --grep-invert @flaky",
+    "test:e2e:ci": "bash e2e/setup-fixtures.sh && playwright test --grep-invert \"@flaky|@local-only\"",
     "check:links": "node scripts/check-links.js",
     "check:html": "html-validate \"dist/**/*.html\"",
     "smoke:preview": "node scripts/smoke-preview.mjs",

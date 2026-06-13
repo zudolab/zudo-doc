@@ -65,7 +65,7 @@ All fixtures are pre-built sequentially with `zfb build` (with `SKIP_DOC_HISTORY
 
 ```bash
 pnpm test:e2e                                           # Full suite (setup + all tests)
-pnpm test:e2e:ci                                        # CI suite (excludes @flaky tests)
+pnpm test:e2e:ci                                        # CI suite (excludes @flaky + @local-only tests)
 npx playwright test e2e/smoke-search.spec.ts --project smoke  # Single test file
 npx playwright test --project smoke                      # All tests for one fixture
 E2E_FIXTURES=smoke npx playwright test --project smoke  # Fast path: build + boot only smoke
