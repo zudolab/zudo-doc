@@ -13,24 +13,25 @@ set -euo pipefail
 #   7. B4push/CI parity check (guard manifest meta-check — #1967)
 #   8. Type checking (zfb check + workspace package typechecks)
 #   9. Root unit tests (test:unit) — builds @takazudo/zudo-doc as a side-effect
-#  10. Package safelist check (#1994) — requires dist/safelist.css from step 9
-#  11. Build (zfb build)
-#  12. Link check
-#  13. HTML validation (html-validate dist/**/*.html)
-#  14. Automated preview smoke (blocking)
-#  15. Manual interactive smoke (operator-driven)
+#  10. Package tests (test:packages) — ~993 suite tests across workspace packages
+#  11. Package safelist check (#1994) — requires dist/safelist.css from step 9
+#  12. Build (zfb build)
+#  13. Link check
+#  14. HTML validation (html-validate dist/**/*.html)
+#  15. Automated preview smoke (blocking)
+#  16. Manual interactive smoke (operator-driven)
 #
-# CI parity (Playwright E2E + GitHub Actions) is intentionally parked
-# to E9b until the post-cutover migration window closes.
+# Playwright E2E runs in CI (pr-checks e2e job); b4push intentionally excludes
+# it for time-budget reasons — the bounded fast pass stays fast.
 #
 # Env overrides for non-interactive use:
-#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 13)
+#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 14)
 #   B4PUSH_SKIP_PREVIEW_SMOKE=1  — skip the automated preview smoke
 #   B4PUSH_SKIP_MANUAL_SMOKE=1   — skip the manual interactive smoke
 
 START_TIME=$(date +%s)
 FAILURES=()
-TOTAL_STEPS=15
+TOTAL_STEPS=16
 CURRENT_STEP=0
 
 step() {
@@ -166,7 +167,7 @@ fi
 # @takazudo/zudo-doc/theme, whose compiled dist/ does not exist on a fresh
 # clone (`pnpm install` does not run the package's tsup build). CI's package
 # and root test jobs build it for the same reason. Building here also leaves
-# dist/safelist.css ready for the safelist check in step 10.
+# dist/safelist.css ready for the safelist check in step 11.
 step "Root unit tests (test:unit)"
 if (cd "$ROOT_DIR" && pnpm --filter @takazudo/zudo-doc build && pnpm test:unit); then
   pass "Root unit tests passed"
@@ -174,7 +175,18 @@ else
   fail "Root unit tests"
 fi
 
-# ── Step 10: Package safelist check ──────────────────
+# ── Step 10: Package tests ────────────────────────────
+# Runs all workspace package test suites (~993 tests). Closes the local/CI
+# asymmetry where package tests ran in CI but not in b4push (#1851/#1856).
+# dist/ is already built by step 9 — no extra prep needed.
+step "Package tests (test:packages)"
+if (cd "$ROOT_DIR" && pnpm test:packages); then
+  pass "Package tests passed"
+else
+  fail "Package tests"
+fi
+
+# ── Step 11: Package safelist check ──────────────────
 # Verifies that the generated dist/safelist.css in packages/zudo-doc/ covers
 # every responsive-variant + arbitrary-value utility class used in
 # packages/zudo-doc/src/**/*.tsx. Catches regressions where gen-safelist.mjs
@@ -187,7 +199,7 @@ else
   fail "Package safelist check"
 fi
 
-# ── Step 11: Build ────────────────────────────────────
+# ── Step 12: Build ────────────────────────────────────
 step "Build (zfb build)"
 if (cd "$ROOT_DIR" && pnpm build); then
   pass "Build passed"
@@ -195,7 +207,7 @@ else
   fail "Build"
 fi
 
-# ── Step 12: Link check ───────────────────────────────
+# ── Step 13: Link check ───────────────────────────────
 #
 # Strict on broken links + absolute MDX-source warnings (real 404s
 # / sub-path bypass). Trailing-slash warnings stay warn-only — they
@@ -215,7 +227,7 @@ else
   fail "Link check"
 fi
 
-# ── Step 13: HTML validation ──────────────────────────
+# ── Step 14: HTML validation ──────────────────────────
 step "HTML validation (html-validate)"
 if [[ "${B4PUSH_SKIP_HTML_VALIDATE:-}" == "1" ]]; then
   skip "HTML validation (B4PUSH_SKIP_HTML_VALIDATE=1)"
@@ -227,7 +239,7 @@ else
   fi
 fi
 
-# ── Step 14: Automated preview smoke (blocking) ──────
+# ── Step 15: Automated preview smoke (blocking) ──────
 step "Preview smoke (automated)"
 if [[ "${B4PUSH_SKIP_PREVIEW_SMOKE:-}" == "1" ]]; then
   skip "Preview smoke (B4PUSH_SKIP_PREVIEW_SMOKE=1)"
@@ -239,7 +251,7 @@ else
   fi
 fi
 
-# ── Step 15: Manual interactive smoke ────────────────
+# ── Step 16: Manual interactive smoke ────────────────
 step "Manual interactive smoke"
 if [[ "${B4PUSH_SKIP_MANUAL_SMOKE:-}" == "1" ]]; then
   skip "Manual smoke (B4PUSH_SKIP_MANUAL_SMOKE=1)"

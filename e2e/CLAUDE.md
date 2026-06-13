@@ -75,7 +75,7 @@ Tests that are too specific for CI (flaky DOM operations, timing-sensitive UI ch
 test("HSL picker opens from color swatch @local-only", async ({ page }) => { ... });
 ```
 
-- `pnpm test:e2e` — runs everything (local dev, `b4push`)
+- `pnpm test:e2e` — runs everything (local dev only; b4push intentionally excludes e2e for time-budget reasons — CI is the authoritative T1 gate)
 - `pnpm test:e2e:ci` — skips `@local-only` tests (CI workflows)
 
 ## Sidebar Test Helper
