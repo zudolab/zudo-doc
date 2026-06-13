@@ -405,38 +405,78 @@ echo "All fixtures set up."
 # Run even if smoke wasn't in FIXTURES? No — only when smoke is targeted,
 # otherwise we leave the existing smoke git repo intact (the freshness check
 # below will skip rebuilding if inputs are unchanged anyway).
+#
+# Outer-tree hygiene (#2104): synthesizing commit #2 requires mutating the
+# OUTER-tracked seed file on disk (`--allow-empty` won't do — it leaves the
+# file untouched, so `git log --follow` yields 1 entry, not the 2 the
+# doc-history data specs assert on). To keep the outer working tree clean
+# between runs we register an EXIT finalizer (restore_smoke_seed) that
+# `git checkout HEAD`s the file back. The finalizer runs on success,
+# fresh-skip (the build below is bypassed), AND failure — because the
+# freshness hash covers `src/content` bytes, a restore wired only into the
+# build-executed path would leave the tree dirty on the common fresh-skip run.
+smoke_targeted=0
 for fixture in "${FIXTURES[@]}"; do
   if [ "$fixture" = "smoke" ]; then
-    echo ""
-    echo "Setting up git repo for smoke fixture (doc history)..."
-    smoke_dir="$REPO_ROOT/e2e/fixtures/smoke"
-    smoke_history_target="src/content/docs/getting-started/index.mdx"
-
-    # Reset the seed file to its repo-committed state every run so the
-    # "Updated for history test." block doesn't accumulate across re-bootstraps.
-    # (The previous .git was a *fixture-local* repo seeded by the last run, so we
-    # reach back to the *outer* repo for the canonical contents.)
-    rm -rf "$smoke_dir/.git"
-    (
-      cd "$REPO_ROOT"
-      if git ls-files --error-unmatch "e2e/fixtures/smoke/$smoke_history_target" >/dev/null 2>&1; then
-        git checkout HEAD -- "e2e/fixtures/smoke/$smoke_history_target"
-      fi
-    )
-    (
-      cd "$smoke_dir"
-      git init -q
-      git add src/content/
-      git -c user.email="test@example.com" -c user.name="Test" commit -q -m "Initial content"
-      echo "" >> "$smoke_history_target"
-      echo "Updated for history test." >> "$smoke_history_target"
-      git add -A
-      git -c user.email="test@example.com" -c user.name="Test" commit -q -m "Update getting started content"
-    )
-    echo "  Done: smoke git repo"
+    smoke_targeted=1
     break
   fi
 done
+
+smoke_history_outer_path="e2e/fixtures/smoke/src/content/docs/getting-started/index.mdx"
+
+# EXIT finalizer: restore the outer-tracked seed file to HEAD so a `pnpm
+# test:e2e` / `bash e2e/setup-fixtures.sh smoke` run never leaves the outer
+# working tree dirty for this file. By the time this fires the smoke build has
+# already consumed the on-disk "Updated for history test." content into dist/
+# (or the build was skipped as fresh, in which case dist/ already has it), so
+# discarding the on-disk mutation here is safe.
+#
+# NOTE: this restores ONLY the OUTER repo's working-tree copy of the file. The
+# nested fixture repo at e2e/fixtures/smoke/.git is intentionally left dirty vs
+# its own HEAD (its commit #2 captured the mutated bytes) — that is fine for
+# `git log` / `git cat-file --follow` history walks and for the already-built
+# dist/, and is the whole point of seeding a 2-commit history.
+restore_smoke_seed() {
+  [ "$smoke_targeted" = "1" ] || return 0
+  (
+    cd "$REPO_ROOT"
+    if git ls-files --error-unmatch "$smoke_history_outer_path" >/dev/null 2>&1; then
+      git checkout HEAD -- "$smoke_history_outer_path" 2>/dev/null || true
+    fi
+  )
+}
+trap restore_smoke_seed EXIT
+
+if [ "$smoke_targeted" = "1" ]; then
+  echo ""
+  echo "Setting up git repo for smoke fixture (doc history)..."
+  smoke_dir="$REPO_ROOT/e2e/fixtures/smoke"
+  smoke_history_target="src/content/docs/getting-started/index.mdx"
+
+  # Reset the seed file to its repo-committed state every run so the
+  # "Updated for history test." block doesn't accumulate across re-bootstraps.
+  # (The previous .git was a *fixture-local* repo seeded by the last run, so we
+  # reach back to the *outer* repo for the canonical contents.)
+  rm -rf "$smoke_dir/.git"
+  (
+    cd "$REPO_ROOT"
+    if git ls-files --error-unmatch "$smoke_history_outer_path" >/dev/null 2>&1; then
+      git checkout HEAD -- "$smoke_history_outer_path"
+    fi
+  )
+  (
+    cd "$smoke_dir"
+    git init -q
+    git add src/content/
+    git -c user.email="test@example.com" -c user.name="Test" commit -q -m "Initial content"
+    echo "" >> "$smoke_history_target"
+    echo "Updated for history test." >> "$smoke_history_target"
+    git add -A
+    git -c user.email="test@example.com" -c user.name="Test" commit -q -m "Update getting started content"
+  )
+  echo "  Done: smoke git repo"
+fi
 
 # ---------------------------------------------------------------------------
 # Pre-build all targeted fixtures sequentially (with freshness skip).
