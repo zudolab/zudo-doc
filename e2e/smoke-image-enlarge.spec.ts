@@ -3,11 +3,11 @@ import { readDistFile } from "./smoke-dist-helper";
 
 const PAGE = "/docs/guides/image-enlarge-test";
 
-// The image-enlarge ResizeObserver callback is debounced at 150ms (see
-// ImageEnlargeObserver in the client-side island). RESIZE_DEBOUNCE_BUFFER_MS
-// is the minimum safe polling interval after dispatching a resize event — it
-// must exceed the debounce window so the eligibility re-evaluation completes
-// before expect.poll samples the DOM.
+// The image-enlarge island's handleWindowResize debounces evaluateEligibility at
+// 150ms via setTimeout (see image-enlarge.tsx). RESIZE_DEBOUNCE_BUFFER_MS is the
+// minimum wait after dispatching a resize event — it must equal or exceed the
+// debounce window so the eligibility re-evaluation (which toggles [hidden] on each
+// button) completes before each test's own expect(btn).toBeVisible/Hidden assertion.
 const RESIZE_DEBOUNCE_BUFFER_MS = 150;
 
 // Inject max-width CSS and trigger re-evaluation.
@@ -25,28 +25,12 @@ async function applyImageConstraints(page: Page) {
     `,
   });
   await page.evaluate(() => window.dispatchEvent(new Event("resize")));
-  // Poll until the first figure's enlarge button has resolved its hidden/visible
-  // state — this waits for the ResizeObserver debounce (RESIZE_DEBOUNCE_BUFFER_MS)
-  // to complete without a fixed sleep.
-  await expect
-    .poll(
-      async () => {
-        // The button state flips from SSR-hidden to JS-evaluated within one
-        // debounce cycle; polling the hidden attribute is the minimal observable.
-        const el = await page.$("figure.zd-enlargeable .zd-enlarge-btn");
-        if (!el) return null;
-        // Return the current hidden attribute presence as a stable signal.
-        return await el.evaluate(
-          (b) => (b as HTMLElement).hasAttribute("hidden"),
-        );
-      },
-      {
-        intervals: [RESIZE_DEBOUNCE_BUFFER_MS, 100, 100],
-        timeout: 3000,
-        message: "enlarge button did not settle after resize debounce",
-      },
-    )
-    .not.toBeNull();
+  // Wait for the ResizeObserver debounce to complete before each test samples
+  // button visibility. The island's handleWindowResize fires evaluateEligibility
+  // after a 150ms setTimeout (RESIZE_DEBOUNCE_BUFFER_MS). Each test's own
+  // `expect(btn).toBeVisible()` / `expect(btn).toBeHidden()` assertion then
+  // provides the actual deterministic final-state wait with its own timeout.
+  await page.waitForTimeout(RESIZE_DEBOUNCE_BUFFER_MS);
 }
 
 // ---------------------------------------------------------------------------
@@ -140,7 +124,7 @@ test.describe("Image Enlarge: browser behavior @local-only", () => {
     const page = await ctx.newPage();
     try {
       await page.goto(PAGE, { waitUntil: "domcontentloaded" });
-    await page.locator("figure.zd-enlargeable").first().waitFor({ state: "attached" });
+      await page.locator("figure.zd-enlargeable").first().waitFor({ state: "attached" });
       await applyImageConstraints(page);
 
       const mediumFigure = page.locator("figure.zd-enlargeable").filter({
@@ -223,45 +207,17 @@ test.describe("Image Enlarge: browser behavior @local-only", () => {
 
     // Simulate zfb:after-swap (the event the component listens to for re-init;
     // migrated from the Astro-era astro:after-swap in E9b task-3b).
-    // This tests that handleAfterSwap clears old observers and re-scans content.
-    // Register a flag listener BEFORE dispatching so we can poll for it.
+    // handleAfterSwap disconnects the ResizeObserver, clears observedImages, then
+    // calls startObserving() — the island re-scans and reconnects observers.
     await page.evaluate(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).__zdAfterSwapFired__ = false;
-      document.addEventListener(
-        "zfb:after-swap",
-        () => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (window as any).__zdAfterSwapFired__ = true;
-        },
-        { once: true },
-      );
       document.dispatchEvent(new Event("zfb:after-swap"));
     });
-    // Wait for the flag — confirms the event was dispatched and the listener fired.
-    await page.waitForFunction(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      () => (window as any).__zdAfterSwapFired__ === true,
-      undefined,
-      { timeout: 3000 },
-    );
     // Trigger resize so re-initialised observers re-evaluate button eligibility,
-    // then poll until the button state has settled (replaces the old fixed sleep).
+    // then wait for the 150ms debounce to complete (same RESIZE_DEBOUNCE_BUFFER_MS
+    // as applyImageConstraints). The following expect(btn).toBeVisible() provides
+    // the final deterministic state assertion.
     await page.evaluate(() => window.dispatchEvent(new Event("resize")));
-    await expect
-      .poll(
-        async () => {
-          const el = await page.$("figure.zd-enlargeable .zd-enlarge-btn");
-          if (!el) return null;
-          return await el.evaluate((b) => (b as HTMLElement).hasAttribute("hidden"));
-        },
-        {
-          intervals: [RESIZE_DEBOUNCE_BUFFER_MS, 100, 100],
-          timeout: 3000,
-          message: "enlarge button did not settle after zfb:after-swap re-init",
-        },
-      )
-      .not.toBeNull();
+    await page.waitForTimeout(RESIZE_DEBOUNCE_BUFFER_MS);
 
     const figure = page.locator("figure.zd-enlargeable").first();
     const btn = figure.locator(".zd-enlarge-btn");
