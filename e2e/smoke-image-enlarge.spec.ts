@@ -206,7 +206,7 @@ test.describe("Image Enlarge: browser behavior", () => {
     await applyImageConstraints(page);
 
     // Simulate zfb:after-swap (the event the component listens to for re-init;
-    // migrated from the Astro-era astro:after-swap in E9b task-3b).
+    // zfb:after-swap re-registration).
     // handleAfterSwap disconnects the ResizeObserver, clears observedImages, then
     // calls startObserving() — the island re-scans and reconnects observers.
     await page.evaluate(() => {

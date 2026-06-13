@@ -24,7 +24,8 @@
 //   - .github/workflows/pr-checks.yml (lightweight pure-Node job)
 
 import { readdirSync, readFileSync, existsSync } from "node:fs";
-import { resolve, dirname, join } from "node:path";
+import { execFileSync } from "node:child_process";
+import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -52,26 +53,17 @@ function readAllowlist() {
 }
 
 /**
- * Recursively find all *.spec.ts files under the given directory.
+ * Find all git-TRACKED *.spec.ts files in the repo.
+ * Tracked-only scanning respects .gitignore, so build output, nested
+ * node_modules, and scratch dirs (e.g. __inbox/) never trip the guard.
  * Returns paths relative to ROOT.
  */
-function findSpecFiles(dir) {
-  const results = [];
-  let entries;
-  try {
-    entries = readdirSync(dir, { withFileTypes: true });
-  } catch {
-    return results;
-  }
-  for (const entry of entries) {
-    const fullPath = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      results.push(...findSpecFiles(fullPath));
-    } else if (entry.isFile() && entry.name.endsWith(".spec.ts")) {
-      results.push(fullPath.slice(ROOT.length + 1)); // relative to repo root
-    }
-  }
-  return results;
+function findSpecFiles() {
+  const out = execFileSync("git", ["ls-files", "*.spec.ts", "**/*.spec.ts"], {
+    cwd: ROOT,
+    encoding: "utf8",
+  });
+  return out.split("\n").filter((line) => line.length > 0);
 }
 
 function main() {
@@ -105,14 +97,8 @@ function main() {
     }
   }
 
-  // ── Rule (b): no *.spec.ts outside e2e/ unless allowlisted ─────────────────
-  // Scan the full repo tree for spec files, excluding e2e/ itself.
-  const allSpecs = findSpecFiles(ROOT).filter(
-    (p) => !p.startsWith("e2e/") && !p.startsWith("node_modules/"),
-  );
-
-  // Also skip worktrees/ — child worktrees may have their own e2e copies.
-  const repoSpecs = allSpecs.filter((p) => !p.startsWith("worktrees/"));
+  // ── Rule (b): no tracked *.spec.ts outside e2e/ unless allowlisted ─────────
+  const repoSpecs = findSpecFiles().filter((p) => !p.startsWith("e2e/"));
 
   for (const specPath of repoSpecs) {
     if (!allowlist.has(specPath)) {
