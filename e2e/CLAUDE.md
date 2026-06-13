@@ -62,7 +62,7 @@ All fixtures are pre-built sequentially with `zfb build` (with `SKIP_DOC_HISTORY
 
 ```bash
 pnpm test:e2e                                           # Full suite (setup + all tests)
-pnpm test:e2e:ci                                        # CI suite (skips @local-only tests)
+pnpm test:e2e:ci                                        # CI suite (excludes @flaky tests)
 npx playwright test e2e/smoke-search.spec.ts --project smoke  # Single test file
 npx playwright test --project smoke                      # All tests for one fixture
 E2E_FIXTURES=smoke npx playwright test --project smoke  # Fast path: build + boot only smoke
@@ -70,16 +70,22 @@ E2E_FIXTURES=smoke npx playwright test --project smoke  # Fast path: build + boo
 
 **Fast path**: `E2E_FIXTURES=<name>` scopes both `setup-fixtures.sh` (builds only that fixture) and `playwright.config.ts` (boots only its webServer, zero stagger); repeated runs skip the build when inputs are unchanged (`e2e/fixtures/<name>/.build-marker.sha256` tracks the hash); `E2E_FORCE_REBUILD=1` forces a full rebuild.
 
-## `@local-only` Tag
+## Test Tag Taxonomy
 
-Tests that are too specific for CI (flaky DOM operations, timing-sensitive UI checks) can be tagged `@local-only` in the test title:
+| Tag | Meaning | CI behavior |
+|-----|---------|-------------|
+| (none) | CI-safe default — stable, deterministic | Runs in `test:e2e:ci` |
+| `@flaky` | Quarantined intermittent — tracked with an inline issue URL comment on the line above the test | Excluded from `test:e2e:ci` via `--grep-invert @flaky`; runs allowed-to-fail in the scheduled exam; must have a fix/demote/delete exit deadline |
+
+To tag a test as flaky, add the tracking issue URL as a comment on the preceding line and append `@flaky` to the test title:
 
 ```typescript
-test("HSL picker opens from color swatch @local-only", async ({ page }) => { ... });
+// zudolab/zudo-doc#NNNN — brief description of the flake cause; deadline: YYYY-MM
+test("feature works correctly @flaky", async ({ page }) => { ... });
 ```
 
-- `pnpm test:e2e` — runs everything (local dev only; b4push intentionally excludes e2e for time-budget reasons — CI is the authoritative T1 gate)
-- `pnpm test:e2e:ci` — skips `@local-only` tests (CI workflows)
+- `pnpm test:e2e` — runs everything (local dev only; b4push intentionally excludes e2e for time-budget reasons — CI is the authoritative gate)
+- `pnpm test:e2e:ci` — excludes `@flaky` tests (CI workflows)
 
 ## Sidebar Test Helper
 

@@ -83,7 +83,7 @@ test.describe("Image Enlarge: static HTML structure", () => {
 // Level 4: Browser assertions
 // ---------------------------------------------------------------------------
 
-test.describe("Image Enlarge: browser behavior @local-only", () => {
+test.describe("Image Enlarge: browser behavior", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   test("wide viewport: enlarge button visible for oversized (2000px) image", async ({ page }) => {
@@ -230,7 +230,7 @@ test.describe("Image Enlarge: browser behavior @local-only", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Level 4: Two-layer CSS sanity (non-@local-only — runs in CI)
+// Level 4: Two-layer CSS sanity (CI-safe, untagged — runs in CI)
 // ---------------------------------------------------------------------------
 
 // The smoke fixture's CSS is not bundled as a static asset (it lives in the

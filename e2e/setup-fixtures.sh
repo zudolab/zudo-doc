@@ -458,7 +458,7 @@ for fixture in "${FIXTURES[@]}"; do
   if [ "$fixture" = "smoke" ]; then
     # GEN_DOC_HISTORY=1: the doc-history postBuild per-page JSON is opt-in for
     # local builds (#1986), so the smoke fixture must request it explicitly —
-    # its @local-only doc-history specs read those JSON manifests from dist/.
+    # its doc-history specs read those JSON manifests from dist/.
     (cd "$REPO_ROOT/e2e/fixtures/$fixture" && GEN_DOC_HISTORY=1 "$REPO_ROOT/node_modules/.bin/zfb" build 2>&1) || {
       echo "  FAILED: $fixture build failed" >&2
       exit 1

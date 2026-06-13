@@ -40,7 +40,7 @@
 import type { ComponentChildren } from "preact";
 // @slot:mdx-components:enlarge-imports
 import { htmlOverrides } from "@takazudo/zudo-doc/content";
-import { HtmlPreviewWrapper } from "@takazudo/zudo-doc/html-preview-wrapper";
+import { HtmlPreviewWrapper, type HtmlPreviewWrapperProps } from "@takazudo/zudo-doc/html-preview-wrapper";
 import { Tabs } from "@takazudo/zudo-doc/code-syntax";
 import { TabItem } from "@takazudo/zudo-doc/tab-item";
 import { defaultLocale, type Locale } from "@/config/i18n";
@@ -120,6 +120,9 @@ function IslandWrapper(props: {
 }
 
 // @slot:mdx-components:enlarge-defs
+const HtmlPreviewWithGlobalConfig = (props: HtmlPreviewWrapperProps) =>
+  HtmlPreviewWrapper({ globalConfig: settings.htmlPreview ?? null, ...props });
+
 /**
  * Build a locale-aware MDX components map for the given locale.
  *
@@ -164,7 +167,7 @@ export function createMdxComponents(lang: Locale | string = defaultLocale) {
     // site. withBase() is generic — any configured base value works.
     img: ContentImg,
     // @slot:mdx-components:enlarge-p-entry
-    HtmlPreview: HtmlPreviewWrapper,
+    HtmlPreview: HtmlPreviewWithGlobalConfig,
     // Admonitions — real typed Preact components (src/components/content/
     // content-admonition.tsx) emitting the `.admonition` / `data-admonition`
     // structure the design-system CSS targets. The `directives` map in

@@ -11,5 +11,3 @@
 #   - Blank lines and lines starting with # are ignored.
 #   - Exact-match only (no globs).
 
-# reason: orphaned spec — disposition decided in W3A (#2098)
-tests/e2e/specs/palette-click-once.spec.ts

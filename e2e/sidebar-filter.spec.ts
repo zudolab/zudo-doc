@@ -21,7 +21,7 @@ import { desktopSidebar, waitForSidebarHydration } from "./sidebar-helpers";
 
 const GUIDES_PAGE = "/docs/guides/sub-a/page-1";
 
-test.describe("Sidebar filter @local-only", () => {
+test.describe("Sidebar filter", () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
   });

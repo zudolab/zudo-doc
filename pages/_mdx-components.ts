@@ -51,7 +51,10 @@ import type { ComponentChildren } from "preact";
 import { toChildArray } from "preact";
 import type { VNode } from "preact";
 import { htmlOverrides } from "@takazudo/zudo-doc/content";
-import { HtmlPreviewWrapper } from "@takazudo/zudo-doc/html-preview-wrapper";
+import { HtmlPreviewWrapper, type HtmlPreviewWrapperProps } from "@takazudo/zudo-doc/html-preview-wrapper";
+
+const HtmlPreviewWithGlobalConfig = (props: HtmlPreviewWrapperProps) =>
+  HtmlPreviewWrapper({ globalConfig: settings.htmlPreview ?? null, ...props });
 import { Tabs } from "@takazudo/zudo-doc/code-syntax";
 import { TabItem } from "@takazudo/zudo-doc/tab-item";
 import { defaultLocale, type Locale } from "@/config/i18n";
@@ -320,7 +323,7 @@ export function createMdxComponents(lang: Locale | string = defaultLocale) {
     // with an enlarge button when settings.imageEnlarge is enabled.
     // Must come AFTER the ...htmlOverrides spread to override ContentParagraph.
     p: EnlargeableParagraph,
-    HtmlPreview: HtmlPreviewWrapper,
+    HtmlPreview: HtmlPreviewWithGlobalConfig,
     // Admonitions — real typed Preact components (src/components/content/
     // content-admonition.tsx) emitting the `.admonition` / `data-admonition`
     // structure the design-system CSS targets. The `directives` map emits these

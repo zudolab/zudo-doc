@@ -129,3 +129,37 @@ test.describe("AI chat dialog", () => {
     await expect(input).toHaveValue("");
   });
 });
+
+// Regression guard for #1624 T3: reopening the chat dialog after an SPA
+// navigation must not throw InvalidStateError (dialog.showModal on a dialog
+// detached/re-attached by the swap).
+test("opening chat after SPA navigation does not throw InvalidStateError", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("console", (m) => {
+    if (m.type() === "error") errors.push(m.text());
+  });
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  await page.goto("/docs/getting-started", { waitUntil: "load" });
+  const trigger = page.locator("#ai-chat-trigger");
+  await expect(trigger).toBeVisible();
+  await trigger.click();
+  const dialog = page.locator("dialog").filter({ hasText: "AI Assistant" });
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).not.toBeVisible();
+
+  await page.locator('header a[href="/docs/guides"]').first().click();
+  await page.waitForURL(/\/docs\/guides/, { timeout: 15000 });
+
+  const triggerAfterNav = page.locator("#ai-chat-trigger");
+  await expect(triggerAfterNav).toBeVisible({ timeout: 5000 });
+  await triggerAfterNav.click();
+  const dialogAfterNav = page.locator("dialog").filter({ hasText: "AI Assistant" });
+  await expect(dialogAfterNav).toBeVisible({ timeout: 5000 });
+
+  const invalidStateErrors = errors.filter((e) => e.includes("InvalidStateError"));
+  expect(invalidStateErrors).toHaveLength(0);
+  const isOpen = await dialogAfterNav.evaluate((el) => (el as HTMLDialogElement).open);
+  expect(isOpen).toBe(true);
+});

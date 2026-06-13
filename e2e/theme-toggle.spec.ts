@@ -17,7 +17,7 @@ const STORAGE_KEY = "zudo-doc-theme";
 // one inside the mobile header sidebar panel).
 const DESKTOP_TOGGLE_SELECTOR = 'header .ml-auto button[aria-label*="Switch to"]';
 
-test.describe("Theme toggle @local-only", () => {
+test.describe("Theme toggle", () => {
   test("no hydration error when stored theme is light (differs from SSR default)", async ({
     browser,
     assertNoConsoleErrors,

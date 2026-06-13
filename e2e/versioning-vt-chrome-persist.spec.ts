@@ -26,7 +26,7 @@
  * W7A retro lesson: .claude/skills/l-lessons-zfb-migration-parity/SKILL.md
  *
  * b4push: auto-picked up by versioning*.spec.ts glob in playwright.config.ts.
- * CI: test:e2e (pnpm test:e2e) and test:e2e:ci (skips @local-only).
+ * CI: test:e2e (pnpm test:e2e) and test:e2e:ci (excludes @flaky).
  */
 
 import { test, expect } from "@playwright/test";
@@ -87,7 +87,7 @@ test.describe("VT Chrome Persist: version-switcher state on versioned routes", (
     ).toContain("Latest");
   });
 
-  test("version-switcher toggle still shows '1.0.0' after same-locale SPA swap within versioned section @local-only", async ({
+  test("version-switcher toggle still shows '1.0.0' after same-locale SPA swap within versioned section", async ({
     page,
   }) => {
     // Navigate directly to the versioned page first.

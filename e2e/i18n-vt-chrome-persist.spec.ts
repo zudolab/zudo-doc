@@ -18,7 +18,7 @@
  *   ("VT Strategy B port" — clickability is the load-bearing assertion)
  *
  * b4push: auto-picked up by i18n*.spec.ts glob in playwright.config.ts.
- * CI: test:e2e (pnpm test:e2e) and test:e2e:ci (skips @local-only).
+ * CI: test:e2e (pnpm test:e2e) and test:e2e:ci (excludes @flaky).
  */
 
 import { test, expect } from "@playwright/test";

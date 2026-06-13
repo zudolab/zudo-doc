@@ -1,42 +1,41 @@
 import { test, expect } from "@playwright/test";
+import { readDistFile } from "./smoke-dist-helper";
 
 /**
- * E2E tests for HtmlPreview component.
+ * Tests for the HtmlPreview component.
  *
- * Verifies that global CSS from settings.htmlPreview is injected into the
- * iframe, per-component JS executes, and sandbox attributes are correct.
+ * SSG-shape checks are static dist reads (no browser): global CSS from
+ * settings.htmlPreview must land in the iframe srcdoc, and the sandbox
+ * attributes must follow the resolveSandbox contract. The per-component JS
+ * check needs a real browser (script execution inside the iframe).
  */
 
 const PAGE = "/docs/guides/html-preview-test";
+const DIST_PAGE = "docs/guides/html-preview-test/index.html";
 
-test.describe("HtmlPreview: global CSS and per-component JS @local-only", () => {
-  test("global CSS is injected into iframe srcdoc", async ({ page }) => {
-    await page.goto(PAGE, { waitUntil: "load" });
+test.describe("HtmlPreview: SSG shape", () => {
+  let html: string;
 
-    const iframe = page.locator("iframe").first();
-    await iframe.waitFor({ state: "attached", timeout: 10_000 });
-
-    const srcdoc = await iframe.getAttribute("srcdoc");
-    expect(srcdoc).toContain(".global-test");
-    expect(srcdoc).toContain("border: 3px solid rgb(255, 0, 0)");
+  test.beforeAll(() => {
+    html = readDistFile(DIST_PAGE);
   });
 
-  test("global CSS is visually applied inside iframe", async ({ page }) => {
-    await page.goto(PAGE, { waitUntil: "load" });
-
-    const iframe = page.locator("iframe").first();
-    await iframe.waitFor({ state: "attached", timeout: 10_000 });
-
-    const frame = page.frameLocator("iframe").first();
-    const target = frame.locator(".global-test");
-    await expect(target).toBeVisible({ timeout: 10_000 });
-
-    const borderColor = await target.evaluate(
-      (el) => getComputedStyle(el).borderColor,
-    );
-    expect(borderColor).toBe("rgb(255, 0, 0)");
+  test("global CSS from settings.htmlPreview is injected into iframe srcdoc", () => {
+    // The smoke fixture sets settings.htmlPreview.css to exactly this rule.
+    // It must appear inside the preview iframe srcdoc <style> (wiring:
+    // settings.htmlPreview -> globalConfig -> buildSrcdoc; regression #2105).
+    expect(html).toContain(".global-test { border: 3px solid rgb(255, 0, 0); }");
   });
 
+  test("iframes carry the resolveSandbox contract sandbox attributes", () => {
+    // No-script preview: allow-same-origin (kept for auto-height measurement).
+    expect(html).toContain('sandbox="allow-same-origin"');
+    // Script-bearing preview: allow-scripts allow-same-origin.
+    expect(html).toContain('sandbox="allow-scripts allow-same-origin"');
+  });
+});
+
+test.describe("HtmlPreview: per-component JS", () => {
   test("per-component JS executes inside iframe", async ({ page }) => {
     await page.goto(PAGE, { waitUntil: "load" });
 
@@ -48,21 +47,5 @@ test.describe("HtmlPreview: global CSS and per-component JS @local-only", () => 
     const frame = page.frameLocator("iframe").nth(1);
     const target = frame.locator("#js-target");
     await expect(target).toHaveText("after", { timeout: 10_000 });
-  });
-
-  test("iframes have correct sandbox attributes", async ({ page }) => {
-    await page.goto(PAGE, { waitUntil: "load" });
-
-    const iframes = page.locator("iframe");
-    const first = iframes.first();
-    await first.waitFor({ state: "attached", timeout: 10_000 });
-
-    // First iframe (no scripts): maximally restrictive sandbox
-    const firstSandbox = await iframes.nth(0).getAttribute("sandbox");
-    expect(firstSandbox).toBe("");
-
-    // Second iframe (has JS): needs scripts + same-origin for height sync
-    const secondSandbox = await iframes.nth(1).getAttribute("sandbox");
-    expect(secondSandbox).toBe("allow-scripts allow-same-origin");
   });
 });

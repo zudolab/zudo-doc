@@ -30,7 +30,7 @@
  *
  * b4push: this spec auto-picks up via the smoke*.spec.ts glob in
  * playwright.config.ts → no manual wiring to run-b4push.sh needed.
- * CI: test:e2e (pnpm test:e2e) and test:e2e:ci (skips @local-only).
+ * CI: test:e2e (pnpm test:e2e) and test:e2e:ci (excludes @flaky).
  */
 
 import { test, expect } from "@playwright/test";
