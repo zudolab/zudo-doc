@@ -16,7 +16,7 @@
  * Related: epic #1618, sub-issue #1624, branch base/tweaks-0510.
  */
 
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 // ──────────────────────────────────────────────────────────────────
 // T1 fix1 — CategoryNav description underline on hover / focus
@@ -60,7 +60,10 @@ test.describe("T2: Search results layout spacing @local-only", () => {
     const dialog = page.locator("[data-search-dialog]");
     await expect(dialog).toBeVisible();
 
-    // Type a query that yields ≥3 results
+    // Type a query that yields ≥2 results.
+    // The smoke fixture content contains "source" in at least 3 pages
+    // (getting-started/index.mdx, guides/index.mdx, guides/page-1.mdx),
+    // so this search reliably returns multiple results.
     const input = dialog.locator("[data-search-input]");
     await input.fill("source");
 
@@ -73,11 +76,9 @@ test.describe("T2: Search results layout spacing @local-only", () => {
     await expect(resultItems.first()).toBeVisible({ timeout: 5000 });
 
     const count = await resultItems.count();
-    if (count < 2) {
-      // Not enough results to compare spacing — skip gracefully
-      test.skip();
-      return;
-    }
+    // Hard expectation: fixture content must yield ≥2 results for "source".
+    // If this fails, the smoke fixture content needs more "source" occurrences.
+    expect(count, `Search for "source" must return ≥2 results; got ${count}`).toBeGreaterThanOrEqual(2);
 
     // Compare top-spacing gap: first-item top relative to input row bottom
     // should be within 2px of the gap between first and second items.
@@ -87,13 +88,15 @@ test.describe("T2: Search results layout spacing @local-only", () => {
     const firstBox = await resultItems.nth(0).boundingBox();
     const secondBox = await resultItems.nth(1).boundingBox();
 
-    if (!inputRowBox || !firstBox || !secondBox) {
-      test.skip();
-      return;
-    }
+    // Hard expectations: all bounding boxes must be non-null.
+    // If any returns null the fixture or the component has a layout regression.
+    expect(inputRowBox, "Input row bounding box must not be null").not.toBeNull();
+    expect(firstBox, "First result item bounding box must not be null").not.toBeNull();
+    expect(secondBox, "Second result item bounding box must not be null").not.toBeNull();
 
-    const topGap = firstBox.y - (inputRowBox.y + inputRowBox.height);
-    const itemGap = secondBox.y - (firstBox.y + firstBox.height);
+    // TypeScript narrowing: asserted non-null above
+    const topGap = firstBox!.y - (inputRowBox!.y + inputRowBox!.height);
+    const itemGap = secondBox!.y - (firstBox!.y + firstBox!.height);
 
     // The fix ensures no extra top padding on the results container.
     // The first item's distance from the input row should be within 2px of
@@ -112,17 +115,8 @@ test.describe("T2: Search results layout spacing @local-only", () => {
 test.describe("T3: AI chat modal no InvalidStateError on SPA nav @local-only", () => {
   test("opening chat after SPA navigation does not throw InvalidStateError", async ({
     page,
+    consoleErrors,
   }) => {
-    const consoleErrors: string[] = [];
-    page.on("console", (msg) => {
-      if (msg.type() === "error") {
-        consoleErrors.push(msg.text());
-      }
-    });
-    page.on("pageerror", (err) => {
-      consoleErrors.push(err.message);
-    });
-
     // Start on a doc page and open the chat
     await page.goto("/docs/getting-started/", { waitUntil: "load" });
 
@@ -203,14 +197,9 @@ test.describe("T4: Tree nav underline on hover @local-only", () => {
 test.describe("T5: Design Token Panel opens and closes @local-only", () => {
   test("clicking design-token trigger opens and closes the zdtp panel", async ({
     page,
+    consoleErrors,
+    assertNoConsoleErrors,
   }) => {
-    const consoleErrors: string[] = [];
-    page.on("console", (msg) => {
-      if (msg.type() === "error") {
-        consoleErrors.push(msg.text());
-      }
-    });
-
     await page.goto("/docs/getting-started/", { waitUntil: "load" });
 
     const trigger = page.locator("#design-token-trigger");
@@ -229,18 +218,14 @@ test.describe("T5: Design Token Panel opens and closes @local-only", () => {
       expect(panelBox.width).toBeGreaterThan(0);
     } else {
       // Fallback: assert no console errors (panel mounted without crash)
-      expect(consoleErrors.filter((e) => !e.includes("favicon"))).toHaveLength(
-        0,
-      );
+      const nonFaviconErrors = consoleErrors.filter((e) => !e.includes("favicon"));
+      expect(nonFaviconErrors).toHaveLength(0);
     }
 
     // Click again to close
     await trigger.click();
 
-    // No console errors throughout
-    const criticalErrors = consoleErrors.filter(
-      (e) => !e.includes("favicon") && !e.includes("net::ERR"),
-    );
-    expect(criticalErrors).toHaveLength(0);
+    // No console errors throughout (uses shared fixture allowlist)
+    assertNoConsoleErrors();
   });
 });

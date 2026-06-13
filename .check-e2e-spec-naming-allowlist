@@ -1,0 +1,15 @@
+# .check-e2e-spec-naming-allowlist
+#
+# Spec files that live outside e2e/ and are intentionally exempt from
+# the location rule enforced by scripts/check-e2e-spec-naming.mjs.
+#
+# Convention:
+#   - Every entry MUST have a "# reason:" comment on the preceding line
+#     (or an inline comment on the same line) explaining why the file
+#     is outside e2e/ rather than following the standard layout.
+#   - Format: one entry per line — path relative to the repo root.
+#   - Blank lines and lines starting with # are ignored.
+#   - Exact-match only (no globs).
+
+# reason: orphaned spec — disposition decided in W3A (#2098)
+tests/e2e/specs/palette-click-once.spec.ts

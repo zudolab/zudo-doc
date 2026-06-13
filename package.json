@@ -48,6 +48,7 @@
     "check:fixture-settings-drift": "node scripts/check-fixture-settings-drift.mjs",
     "check:pin-parity": "node scripts/check-pin-parity.mjs",
     "check:b4push-ci-parity": "node scripts/check-b4push-ci-parity.mjs",
+    "check:e2e-spec-naming": "node scripts/check-e2e-spec-naming.mjs",
     "check:package-safelist": "node scripts/check-package-safelist.mjs",
     "// ── Tags ────────────────────────────────────────": "",
     "tags:audit": "tsx scripts/tags-audit.ts",
