@@ -1,0 +1,33 @@
+---
+title: 0.2.5
+description: 0.2.5のリリースノート。
+sidebar_position: 1016
+---
+
+リリース日: 2026-06-14
+
+### 機能
+
+- `metaTags` 設定オブジェクトを追加し、head 出力をこれ経由でゲートするようにしました。これにより、ダウンストリームのプロジェクトはドキュメントページの meta description、Open Graph、Twitter Card タグを設定（または無効化）できます (f5d292b9)
+- プリセットジェネレーターの UI に meta タグ領域を追加し、対応する CLI プリセットの配線を行いました (5b556792)
+
+### バグ修正
+
+- ビュートランジションのクロスフェードで `prefers-reduced-motion` を尊重するようにし、アニメーションに敏感なユーザーには即時のページ切り替えを行うようにしました (eca934f8)
+- ページタイプをまたぐ遷移で単独の chrome スナップショットをクロスフェードするようにし、ページタイプ間を移動する際のサイドバーのちらつきを修正しました (78072d5b)
+- `docHistory` フィーチャー経由でスキャフォールドされた `global.css` に diff-viewer の CSS を注入するようにし、新規スキャフォールドでも履歴 diff が正しくレンダリングされるようにしました (1667369a)
+- ドキュメントページシェルにおいて、プレーンな meta description を `metaTags.description` 経由でゲートするようにしました (9f1be44c)
+- `.zd-content` の flow-space と Tailwind ユーティリティのカスケード競合を解消し、flow spacing が preflight リセットより上のレイヤーに配置されるようにしました (2ecd68b8, 75ab7210)
+- ページャーの上部スペーシングを `--flow-space` のオーバーライド経由で `vsp-2xl` でレンダリングするようにしました (ec663543)
+- プリセットジェネレーターのデフォルト状態をターゲット JSON に合わせました (46635753)
+- diff-viewer の行ごとのセパレーターの不透明度を 30% から 15% に下げました (f29eb4cd)
+
+### その他の変更
+
+- テストレベル、ティア、タグの分類体系、隔離（quarantine）パイプラインを文書化した `TESTING.md` を追加しました (8236dc91)
+- テスト戦略のリファクタリング: スコープ付きサーバーと skip-rebuild-when-fresh を備えた `E2E_FIXTURES` 高速パス、共有 `consoleErrors` フィクスチャ、spec-to-fixture の命名ガード、sleep ベースの spec のフレーク解消、共有 SPA ナビゲーションヘルパー (1366a4f9, 7d9ddd65, 627db2d6, f7d05014, be277c34)
+- CI: `exam.yml` の夜間 T3 スケジュールティアを追加し、pass-on-retry を GitHub Actions の警告として表面化しました (903c2309, c988ddee)
+- b4push/ドキュメントの整合: パッケージテストとルートの `pnpm test` を配線し、古くなったドキュメントの記述を修正しました (de0a3765)
+- wrangler の inspector-port 競合を避けるため、e2e の web サーバー起動をずらすようにしました (7e952cc9)
+- `@takazudo/zfb` ファミリーを 0.1.0-next.43 に更新しました (609b8ef9)
+- Node 24 ランタイム向けに `actions/cache` を 4.3.0 → 5.0.5 に更新しました (2433d1da)

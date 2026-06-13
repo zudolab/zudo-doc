@@ -1,0 +1,33 @@
+---
+title: 0.2.5
+description: Release notes for 0.2.5.
+sidebar_position: 1016
+---
+
+Released: 2026-06-14
+
+### Features
+
+- Add a `metaTags` settings object and gate head emissions through it, so downstream projects can configure (or disable) the doc page's meta description, Open Graph, and Twitter Card tags (f5d292b9)
+- Add a meta-tags area to the preset generator UI and wire the corresponding CLI preset plumbing (5b556792)
+
+### Bug Fixes
+
+- Honor `prefers-reduced-motion` for view-transition cross-fades so animation-sensitive users get instant page swaps (eca934f8)
+- Cross-fade lone chrome snapshots on cross-type page transitions, fixing the sidebar flash when navigating between page types (78072d5b)
+- Inject the diff-viewer CSS into the scaffolded `global.css` via the `docHistory` feature so a fresh scaffold renders the history diff correctly (1667369a)
+- Gate the plain meta description through `metaTags.description` in the doc page shell (9f1be44c)
+- Resolve the `.zd-content` flow-space vs Tailwind utility cascade and keep flow spacing layered above the preflight reset (2ecd68b8, 75ab7210)
+- Render the pager's upper spacing at `vsp-2xl` via a `--flow-space` override (ec663543)
+- Align the preset generator's default state with the target JSON (46635753)
+- Lower the diff-viewer per-line separator opacity from 30% to 15% (f29eb4cd)
+
+### Other Changes
+
+- Add `TESTING.md` documenting the test levels, tiers, tag taxonomy, and quarantine pipeline (8236dc91)
+- Testing-strategy refactor: `E2E_FIXTURES` fast path with scoped servers and skip-rebuild-when-fresh, a shared `consoleErrors` fixture, a spec-to-fixture naming guard, deflaked sleep-driven specs, and shared SPA-nav helpers (1366a4f9, 7d9ddd65, 627db2d6, f7d05014, be277c34)
+- CI: add the `exam.yml` nightly T3 scheduled tier and surface pass-on-retry as GitHub Actions warnings (903c2309, c988ddee)
+- b4push/docs truth-up: wire package tests and a root `pnpm test`, and fix stale documentation claims (de0a3765)
+- Stagger the e2e web-server startup to avoid the wrangler inspector-port race (7e952cc9)
+- Bump the `@takazudo/zfb` family to 0.1.0-next.43 (609b8ef9)
+- Bump `actions/cache` 4.3.0 → 5.0.5 for the Node 24 runtime (2433d1da)
