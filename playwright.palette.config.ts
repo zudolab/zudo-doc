@@ -3,8 +3,8 @@
  *
  * This config is SEPARATE from the main `playwright.config.ts` (which wires
  * the fixture-based e2e suite). The palette spec targets the main zudo-doc
- * dev/preview server directly and is NOT part of the b4push or CI gate — E2E
- * parity is parked under E9b until the post-cutover migration window closes.
+ * dev/preview server directly and is NOT part of the b4push gate — Playwright
+ * E2E runs in CI (pr-checks e2e job); b4push excludes it for time-budget reasons.
  *
  * Manual run:
  *   # Start the dev server first (in a separate terminal):

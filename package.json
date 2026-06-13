@@ -25,6 +25,7 @@
     "check": "zfb check",
     "check:pages": "tsc --noEmit -p tsconfig.pages.json",
     "check:plugins": "tsc --noEmit -p tsconfig.plugins.json",
+    "test": "pnpm --filter @takazudo/zudo-doc build && pnpm test:unit && pnpm test:packages",
     "test:unit": "vitest run",
     "test:packages": "pnpm -r --filter './packages/*' run test",
     "test:e2e": "bash e2e/setup-fixtures.sh && playwright test",

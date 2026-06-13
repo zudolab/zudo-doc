@@ -25,7 +25,8 @@ Minimal documentation framework built with zfb, MDX, Tailwind CSS v4, and Preact
 - `pnpm build` — static HTML export to `dist/` (runs `zfb build`)
 - `pnpm preview` — serve the built `dist/` (runs `zfb preview`)
 - `pnpm check` — type checking (runs `zfb check`, which delegates to `tsc --noEmit`)
-- `pnpm b4push` — pre-push validation: format check → template drift check → tags audit (`tags:audit --ci`) → design token lint → typecheck → build → link check → preview smoke (E2E parity is parked under E9b until the post-cutover migration window closes)
+- `pnpm b4push` — pre-push validation: 16-step suite (format check → template drift → pin parity → fixture drift → tags audit → token lint → b4push/CI parity → typecheck → root unit tests → package tests → safelist check → build → link check → html validation → preview smoke → manual smoke); Playwright E2E runs in CI (pr-checks e2e job) and is intentionally excluded from b4push for time-budget reasons
+- `pnpm test` — unified test entry point: builds `@takazudo/zudo-doc` dist/ then runs root unit tests (`test:unit`) and workspace package tests (`test:packages`); does not include e2e
 
 ## First-time setup on a new machine
 
