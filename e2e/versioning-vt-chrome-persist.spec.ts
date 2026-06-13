@@ -97,16 +97,19 @@ test.describe("VT Chrome Persist: version-switcher state on versioned routes", (
     const toggle = headerBanner.locator("[data-version-toggle]");
     await expect(toggle).toBeVisible();
 
-    // Assert that the second versioned page link exists in the sidebar.
-    // The fixture includes docs-v1/installation/index.mdx so this always holds.
-    // Sidebar hrefs may be emitted without a trailing slash — accept both forms.
+    // Assert that the second versioned page link exists in the page CONTENT.
+    // The fixture's docs-v1/getting-started page carries an in-content link to
+    // docs-v1/installation — content links are static HTML, unlike the sidebar
+    // tree (whose versioned composition is hydration-dependent and does not
+    // list v1-only pages from other pages). Hrefs may be emitted without a
+    // trailing slash — accept both forms.
     const versionedPage2Bare = VERSIONED_PAGE_2.replace(/\/$/, "");
     const secondLinkLocator = page.locator(
-      `#desktop-sidebar a[href="${versionedPage2Bare}"], #desktop-sidebar a[href="${versionedPage2Bare}/"]`,
+      `main a[href="${versionedPage2Bare}"], main a[href="${versionedPage2Bare}/"]`,
     );
     await expect(
       secondLinkLocator,
-      `Expected a sidebar link to ${VERSIONED_PAGE_2} — the versioning fixture must include docs-v1/installation/index.mdx`,
+      `Expected an in-content link to ${VERSIONED_PAGE_2} — the versioning fixture's docs-v1/getting-started page must link to docs-v1/installation`,
     ).toBeAttached();
 
     // Perform SPA swap within the versioned section.
