@@ -25,7 +25,7 @@ Minimal documentation framework built with zfb, MDX, Tailwind CSS v4, and Preact
 - `pnpm build` — static HTML export to `dist/` (runs `zfb build`)
 - `pnpm preview` — serve the built `dist/` (runs `zfb preview`)
 - `pnpm check` — type checking (runs `zfb check`, which delegates to `tsc --noEmit`)
-- `pnpm b4push` — pre-push validation: 16-step suite (format check → template drift → pin parity → fixture drift → tags audit → token lint → b4push/CI parity → typecheck → root unit tests → package tests → safelist check → build → link check → html validation → preview smoke → manual smoke); Playwright E2E runs in CI (pr-checks e2e job) and is intentionally excluded from b4push for time-budget reasons
+- `pnpm b4push` — pre-push validation: 17-step suite (format check → template drift → pin parity → fixture drift → tags audit → token lint → e2e spec naming guard → b4push/CI parity → typecheck → root unit tests → package tests → safelist check → build → link check → html validation → preview smoke → manual smoke); Playwright E2E runs in CI (pr-checks e2e job) and is intentionally excluded from b4push for time-budget reasons — see [TESTING.md](./TESTING.md) for the full tier rationale
 - `pnpm test` — unified test entry point: builds `@takazudo/zudo-doc` dist/ then runs root unit tests (`test:unit`) and workspace package tests (`test:packages`); does not include e2e
 
 ## First-time setup on a new machine
@@ -300,6 +300,10 @@ any project (configurable, shipped as a standalone installer).
 
 See `src-tauri/README.md` for a full comparison table.
 
+## Testing
+
+See [TESTING.md](./TESTING.md) for the full testing strategy — levels (L1 vitest through L6 test-flow skills), tiers (T0 local fast pass / T1 CI gates / T3 nightly exam), tag taxonomy (`@flaky` quarantine rules), retry budgets, anti-gaming rules, and wait-pattern rules.
+
 ## Directory-scoped CLAUDE.md files
 
 These auto-load when working in the corresponding directory — read them when relevant work is in scope:
@@ -307,5 +311,5 @@ These auto-load when working in the corresponding directory — read them when r
 - `src/CLAUDE.md` — components, design tokens, three-tier color/font-size strategy, CSS rules
 - `src/config/CLAUDE.md` — tag vocabulary and tag governance
 - `src/content/CLAUDE.md` — doc-writing rules (frontmatter, admonitions, linking, bilingual workflow)
-- `e2e/CLAUDE.md` — Playwright fixture architecture and test patterns
+- `e2e/CLAUDE.md` — Playwright fixture architecture and how-to (policy in TESTING.md)
 - `packages/*/CLAUDE.md` — per-package architecture notes (workers, generator, doc-history-server)

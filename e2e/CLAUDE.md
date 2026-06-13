@@ -2,6 +2,9 @@
 
 > **Status (post-zfb cutover):** the fixture setup harness (`setup-fixtures.sh`, `playwright.config.ts`) is now retargeted onto zfb (epic 1337 task 3a). Per-spec selector retargeting (task 3b) is the remaining E9b work — some specs may still encode Astro-era markup until that lands.
 
+For test policy (levels, tiers, tag taxonomy, quarantine pipeline, retry budgets,
+anti-gaming rules, wait-pattern rules) see **[TESTING.md](../TESTING.md)** at repo root.
+
 ## Architecture
 
 5 Playwright fixtures, each with its own port, build, and `settings.ts`:
@@ -32,7 +35,7 @@ To add content for tests: add MDX files to the fixture's `src/content/docs/` dir
 **Static HTML tests** (no browser needed) — read pre-built `dist/` with `readFileSync`:
 
 ```typescript
-import { readFileSync } from "node:fs";
+import { readDistFile } from "./smoke-dist-helper";
 const html = readDistFile("docs/some-page/index.html");
 expect(html).toContain("expected string");
 ```
@@ -70,31 +73,20 @@ E2E_FIXTURES=smoke npx playwright test --project smoke  # Fast path: build + boo
 
 **Fast path**: `E2E_FIXTURES=<name>` scopes both `setup-fixtures.sh` (builds only that fixture) and `playwright.config.ts` (boots only its webServer, zero stagger); repeated runs skip the build when inputs are unchanged (`e2e/fixtures/<name>/.build-marker.sha256` tracks the hash); `E2E_FORCE_REBUILD=1` forces a full rebuild.
 
-## Test Tag Taxonomy
-
-| Tag | Meaning | CI behavior |
-|-----|---------|-------------|
-| (none) | CI-safe default — stable, deterministic | Runs in `test:e2e:ci` |
-| `@flaky` | Quarantined intermittent — tracked with an inline issue URL comment on the line above the test | Excluded from `test:e2e:ci` via `--grep-invert @flaky`; runs allowed-to-fail in the scheduled exam; must have a fix/demote/delete exit deadline |
-
-To tag a test as flaky, add the tracking issue URL as a comment on the preceding line and append `@flaky` to the test title:
-
-```typescript
-// zudolab/zudo-doc#NNNN — brief description of the flake cause; deadline: YYYY-MM
-test("feature works correctly @flaky", async ({ page }) => { ... });
-```
-
-- `pnpm test:e2e` — runs everything (local dev only; b4push intentionally excludes e2e for time-budget reasons — CI is the authoritative gate)
-- `pnpm test:e2e:ci` — excludes `@flaky` tests (CI workflows)
-
-## Sidebar Test Helper
+## Sidebar Test Helpers
 
 `e2e/sidebar-helpers.ts` exports `desktopSidebar(page)` and `waitForSidebarHydration(page)` for tests that interact with the sidebar Preact island.
 
+`e2e/nav-helpers.ts` exports `spaClick`, `spaClickSelector` (SPA navigation via `zfb:after-swap`), and `waitForSidebarNav` (i18n fixture sidebar hydration wait).
+
 ## Console-Error Fixture
 
-`e2e/fixtures.ts` exports an extended `test` with a `consoleErrors` fixture (collects `console` type=error + `pageerror`) and an `assertNoConsoleErrors()` helper; import from `"./fixtures"` instead of `"@playwright/test"` when a spec needs zero-error assertions.
+`e2e/fixtures.ts` exports an extended `test` with a `consoleErrors` fixture (collects `console` type=error + `pageerror`) and an `assertNoConsoleErrors()` helper; import from `"./fixtures"` instead of `"@playwright/test"` when a spec needs zero-error assertions. Every allowlist entry in the `ALLOWLIST` array must have a `reason` string — do not add entries without justification.
 
 ## Nightly Exam Dispatch
 
-To trigger the full nightly suite (`exam.yml`) against any branch on demand: `gh workflow run exam.yml --ref <branch>`
+To trigger the full nightly suite (`exam.yml`) against any branch on demand:
+
+```bash
+gh workflow run exam.yml --ref <branch>
+```
