@@ -110,19 +110,12 @@ environment-dependence → `@local-only`. Each now **requires a tracking issue**
 
 A local burn-in (`--repeat-each=N`) proves *determinism* but not *CI-capability* — it
 runs on a dev machine, not in the CI container. During the refactor it cleared 26
-previously-`@local-only` tests as genuinely stable AND CI-safe (untagged), and 4
-`smoke-doc-history` revision-data tests were quarantined `@local-only` because they
-passed locally yet rendered 0 entries in CI: the doc-history git-history JSON came back
-empty in the Playwright container. CI was the gate that caught that environmental
-dependence — the layered design working as intended. The cause was later root-caused
-(zudolab/zudo-doc#2106 / #2108): the container runs as `--user 1001` while the
-`actions/checkout` workspace is owned by a different uid, so git rejected the
-runtime-created smoke fixture `.git` with "dubious ownership" and the generator's
-catch-to-empty fallback yielded 0-entry JSON. `e2e/setup-fixtures.sh` now registers the
-fixture repo via `safe.directory`, reproduced locally with
-`GIT_TEST_ASSUME_DIFFERENT_OWNER=1` (without it: 0 files generated; with it: the JSON
-regains its 2 entries), so those 4 tests are **un-quarantined**. Both the `@local-only`
-and `@flaky` sets are now empty (the healthy state).
+previously-`@local-only` tests as genuinely stable AND CI-safe (untagged), but the
+4 `smoke-doc-history` revision-data tests passed locally yet fail in CI because the
+doc-history git-history JSON is only generated in a real local git/build environment
+(see zudolab/zudo-doc#2106). CI is the gate that caught that environmental dependence —
+the layered design working as intended. Those 4 are the only current `@local-only`
+tests; the `@flaky` set is empty (the healthy state for non-determinism).
 
 ### How to tag a test as @flaky
 

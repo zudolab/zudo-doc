@@ -468,27 +468,6 @@ if [ "$smoke_targeted" = "1" ]; then
   (
     cd "$smoke_dir"
     git init -q
-
-    # safe.directory for the fixture repo (#2106 — CI empty doc-history data).
-    # The doc-history generator (@takazudo/zudo-doc-history-server) walks this
-    # repo via `git rev-parse --show-toplevel` + `git log --follow` from the
-    # fixture cwd; on ANY git failure it catches and yields an empty result, so
-    # the per-page JSON lands with 0 revision entries. In the CI E2E job the
-    # Playwright container runs as `--user 1001` (see .github/workflows/
-    # pr-checks.yml) while the actions/checkout workspace is owned by a
-    # different uid, so git rejects this nested runtime-created repo with
-    # "fatal: detected dubious ownership" and the walk returns nothing.
-    # actions/checkout auto-registers only the checkout ROOT as safe, not this
-    # nested .git, so register it explicitly. safe.directory is only honoured
-    # from GLOBAL/system config (git ignores a repo-local value by design), and
-    # `--add` is idempotent enough — guard against duplicate lines on repeat
-    # runs by checking first. Reproduced locally with
-    # GIT_TEST_ASSUME_DIFFERENT_OWNER=1: without this, generate writes 0 files;
-    # with it, the fixture JSON regains its 2 entries.
-    if ! git config --global --get-all safe.directory 2>/dev/null | grep -qxF "$smoke_dir"; then
-      git config --global --add safe.directory "$smoke_dir" 2>/dev/null || true
-    fi
-
     git add src/content/
     git -c user.email="test@example.com" -c user.name="Test" commit -q -m "Initial content"
     echo "" >> "$smoke_history_target"

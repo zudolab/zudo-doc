@@ -33,10 +33,8 @@ test.describe("Doc History: revision panel and diff", () => {
     await expect(panel).toHaveAttribute("open", "", { timeout: 5000 });
   });
 
-  // un-quarantined #2106: the CI empty-data gap was the Playwright container
-  // (--user 1001) rejecting the runtime-created fixture .git with "dubious
-  // ownership"; setup-fixtures.sh now registers it via safe.directory.
-  test("revision list shows 2+ entries after data loads", async ({ page }) => {
+  // quarantined (env-dependent, CI-incapable): https://github.com/zudolab/zudo-doc/issues/2106
+  test("revision list shows 2+ entries after data loads @local-only", async ({ page }) => {
     await page.goto(PAGE, { waitUntil: "load" });
 
     const triggerBtn = page.locator('[aria-label="View document history"]');
@@ -52,8 +50,8 @@ test.describe("Doc History: revision panel and diff", () => {
     await expect(entryButtons).toHaveCount(2, { timeout: 10_000 });
   });
 
-  // un-quarantined #2106 (safe.directory fix in setup-fixtures.sh)
-  test("A/B selection buttons are present for each revision", async ({
+  // quarantined (env-dependent, CI-incapable): https://github.com/zudolab/zudo-doc/issues/2106
+  test("A/B selection buttons are present for each revision @local-only", async ({
     page,
   }) => {
     await page.goto(PAGE, { waitUntil: "load" });
@@ -79,8 +77,8 @@ test.describe("Doc History: revision panel and diff", () => {
     await expect(bButtons).toHaveCount(2);
   });
 
-  // un-quarantined #2106 (safe.directory fix in setup-fixtures.sh)
-  test("Compare button is present", async ({ page }) => {
+  // quarantined (env-dependent, CI-incapable): https://github.com/zudolab/zudo-doc/issues/2106
+  test("Compare button is present @local-only", async ({ page }) => {
     await page.goto(PAGE, { waitUntil: "load" });
 
     const triggerBtn = page.locator('[aria-label="View document history"]');
@@ -98,8 +96,8 @@ test.describe("Doc History: revision panel and diff", () => {
     await expect(compareBtn).toBeVisible();
   });
 
-  // un-quarantined #2106 (safe.directory fix in setup-fixtures.sh)
-  test("clicking Compare shows diff viewer with a table", async ({ page }) => {
+  // quarantined (env-dependent, CI-incapable): https://github.com/zudolab/zudo-doc/issues/2106
+  test("clicking Compare shows diff viewer with a table @local-only", async ({ page }) => {
     await page.goto(PAGE, { waitUntil: "load" });
 
     const triggerBtn = page.locator('[aria-label="View document history"]');
