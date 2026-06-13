@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 import { readdirSync, statSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -46,10 +46,7 @@ pages.sort((a, b) => a.url.localeCompare(b.url));
 
 test.describe("Smoke: all pages load without errors", () => {
   for (const { url, label } of pages) {
-    test(label, async ({ page }) => {
-      const errors: string[] = [];
-      page.on("pageerror", (err) => errors.push(err.message));
-
+    test(label, async ({ page, assertNoConsoleErrors }) => {
       const response = await page.goto(url, { waitUntil: "load" });
 
       // Page should return 200
@@ -60,10 +57,8 @@ test.describe("Smoke: all pages load without errors", () => {
       expect(title).not.toBe("");
       expect(title).not.toContain("404");
 
-      // No uncaught JavaScript errors
-      expect(errors, `JS errors on ${url}: ${errors.join(", ")}`).toHaveLength(
-        0,
-      );
+      // No uncaught JavaScript errors or console errors
+      assertNoConsoleErrors();
     });
   }
 });

@@ -81,3 +81,7 @@ test("HSL picker opens from color swatch @local-only", async ({ page }) => { ...
 ## Sidebar Test Helper
 
 `e2e/sidebar-helpers.ts` exports `desktopSidebar(page)` and `waitForSidebarHydration(page)` for tests that interact with the sidebar Preact island.
+
+## Console-Error Fixture
+
+`e2e/fixtures.ts` exports an extended `test` with a `consoleErrors` fixture (collects `console` type=error + `pageerror`) and an `assertNoConsoleErrors()` helper; import from `"./fixtures"` instead of `"@playwright/test"` when a spec needs zero-error assertions.
