@@ -1,4 +1,15 @@
-@import "tailwindcss/preflight";
+/* Cascade-layer order for the flow-space fix (zudolab/zudo-doc#2082 / #2109):
+ *   zd-preflight  — Tailwind's preflight reset (incl. `* { margin: 0 }`)
+ *   zd-flow       — the .zd-content flow-space margin-top rule (below)
+ *   (unlayered)   — `tailwindcss/utilities` (mt-* etc.) — highest priority
+ * Unlayered always beats any layer, so `mt-*` utilities win over the flow
+ * rule; the flow rule (zd-flow) sits above zd-preflight so it still beats the
+ * preflight `margin: 0` reset and the .zd-content vertical rhythm is preserved.
+ * Preflight is the de-facto lowest-priority origin already, so moving it into
+ * the lowest layer is observably inert for every other author rule (which stay
+ * unlayered and continue to outrank it). */
+@layer zd-preflight, zd-flow;
+@import "tailwindcss/preflight" layer(zd-preflight);
 @import "tailwindcss/utilities";
 /* Design token panel chrome — the panel package's bundled stylesheet defines
    the panel shell and modal chrome. Imported here so the rules land in the
@@ -289,17 +300,19 @@ body {
 
 /* ── Flow spacing (vertical rhythm) ── */
 
-/* Wrapped in a named cascade layer so the unlayered `tailwindcss/utilities`
- * import (global.css:2) wins over it: unlayered declarations always beat
- * layered ones regardless of specificity or source order. Both this rule and a
- * `mt-*` utility have specificity (0,1,0); without the layer this rule comes
- * later in source order and silently kills every `mt-*` on a `.zd-content`
- * direct child (e.g. body-foot-util-area's `mt-vsp-xl`). The layer is scoped to
- * ONLY this flow rule — every other `.zd-content` author rule (links, code,
- * lists, headings, the `:first-child` reset, etc.) stays unlayered so utilities
- * do NOT flip those. Custom-property resolution (the heading `--flow-space`
- * overrides) is layer-independent, so the per-heading flow gaps are unaffected.
- * See zudolab/zudo-doc#2082 / #2109. */
+/* In the `zd-flow` cascade layer (declared at the top of this file) so the
+ * unlayered `tailwindcss/utilities` import wins over it: unlayered declarations
+ * always beat layered ones regardless of specificity or source order. Both this
+ * rule and a `mt-*` utility have specificity (0,1,0); without the layer this
+ * rule comes later in source order and silently kills every `mt-*` on a
+ * `.zd-content` direct child (e.g. body-foot-util-area's `mt-vsp-xl`). zd-flow
+ * sits ABOVE zd-preflight so this rule still beats preflight's `* { margin: 0 }`
+ * reset and the .zd-content rhythm is preserved for plain content blocks. The
+ * layer is scoped to ONLY this flow rule — every other `.zd-content` author rule
+ * (links, code, lists, headings, the `:first-child` reset, etc.) stays unlayered
+ * so utilities do NOT flip those. Custom-property resolution (the heading
+ * `--flow-space` overrides) is layer-independent, so the per-heading flow gaps
+ * are unaffected. See zudolab/zudo-doc#2082 / #2109. */
 @layer zd-flow {
   .zd-content > :where(* + *) {
     margin-top: var(--flow-space, var(--spacing-vsp-md));
