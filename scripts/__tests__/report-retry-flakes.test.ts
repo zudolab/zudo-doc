@@ -1,38 +1,53 @@
 import { describe, it, expect } from "vitest";
 import { findRetryFlakes } from "../report-retry-flakes.mjs";
 
-// Minimal synthetic Playwright JSON report fixtures used to verify the parsing
-// logic without running the actual E2E suite.
+// These fixtures mirror the ACTUAL Playwright JSON report shape:
+//   report.suites[].specs[].tests[].results[]
+// with the per-test outcome on `test.status` ("expected"|"flaky"|...) and the
+// per-attempt status + 0-based `retry` on each result. The earlier version of
+// this test used a `suite.tests[]` shape that Playwright never emits, which is
+// why a parser walking the wrong shape passed its unit test yet found nothing
+// against real reports. Keep these fixtures faithful to the real shape.
 
-/** Builds a minimal Playwright TestCase object. */
-function makeTest(
+type ResultStatus = "passed" | "failed" | "timedOut";
+type TestOutcome = "expected" | "unexpected" | "flaky" | "skipped";
+
+/** Builds a real Playwright spec object (one test() call). */
+function makeSpec(
   title: string,
   file: string,
-  status: "passed" | "failed" | "skipped",
-  resultStatuses: Array<"passed" | "failed" | "timedOut">,
+  outcome: TestOutcome,
+  attempts: ResultStatus[],
 ) {
   return {
     title,
     file,
-    status,
-    results: resultStatuses.map((s) => ({ status: s })),
+    tests: [
+      {
+        projectName: "smoke",
+        status: outcome,
+        results: attempts.map((status, i) => ({ status, retry: i })),
+      },
+    ],
   };
 }
 
-/** Wraps test cases in the minimal suite+report envelope. */
-function makeReport(tests: ReturnType<typeof makeTest>[]) {
+/** Wraps specs in the real suites envelope, with file on the suite. */
+function makeReport(specs: ReturnType<typeof makeSpec>[]) {
   return {
     suites: [
       {
         title: "root",
+        file: "e2e/suite.spec.ts",
         suites: [
           {
-            title: "e2e suite",
-            tests,
+            title: "describe block",
+            file: "e2e/suite.spec.ts",
+            specs,
             suites: [],
           },
         ],
-        tests: [],
+        specs: [],
       },
     ],
   };
@@ -41,23 +56,20 @@ function makeReport(tests: ReturnType<typeof makeTest>[]) {
 describe("findRetryFlakes", () => {
   it("returns no annotations for a test that passed on the first try", () => {
     const report = makeReport([
-      makeTest("loads the home page", "e2e/smoke.spec.ts", "passed", [
+      makeSpec("loads the home page", "e2e/smoke.spec.ts", "expected", [
         "passed",
       ]),
     ]);
-
-    const flakes = findRetryFlakes(report);
-    expect(flakes).toEqual([]);
+    expect(findRetryFlakes(report)).toEqual([]);
   });
 
-  it("returns an annotation for a test that passed on retry", () => {
+  it("returns an annotation for a flaky test (passed on retry)", () => {
     const report = makeReport([
-      makeTest("sidebar opens", "e2e/sidebar.spec.ts", "passed", [
+      makeSpec("sidebar opens", "e2e/sidebar.spec.ts", "flaky", [
         "failed",
         "passed",
       ]),
     ]);
-
     const flakes = findRetryFlakes(report);
     expect(flakes).toHaveLength(1);
     expect(flakes[0]).toEqual({
@@ -67,36 +79,72 @@ describe("findRetryFlakes", () => {
     });
   });
 
-  it("returns no annotations for a test that ultimately failed", () => {
-    // Even if there were multiple attempts, if it did not pass we do not emit.
+  it("detects a retry-pass structurally even if outcome is not labelled flaky", () => {
+    // Belt-and-suspenders: a passing final result after a real retry.
     const report = makeReport([
-      makeTest("i18n page loads", "e2e/i18n.spec.ts", "failed", [
-        "failed",
-        "failed",
-      ]),
-    ]);
-
-    const flakes = findRetryFlakes(report);
-    expect(flakes).toEqual([]);
-  });
-
-  it("handles multiple tests with mixed outcomes", () => {
-    const report = makeReport([
-      makeTest("passes first try", "e2e/smoke.spec.ts", "passed", ["passed"]),
-      makeTest("flaky test", "e2e/theme.spec.ts", "passed", [
+      makeSpec("structural retry", "e2e/theme.spec.ts", "expected", [
         "failed",
         "passed",
       ]),
-      makeTest("total failure", "e2e/i18n.spec.ts", "failed", [
+    ]);
+    const flakes = findRetryFlakes(report);
+    expect(flakes).toHaveLength(1);
+    expect(flakes[0]?.title).toBe("structural retry");
+  });
+
+  it("returns no annotations for a test that ultimately failed", () => {
+    const report = makeReport([
+      makeSpec("i18n page loads", "e2e/i18n.spec.ts", "unexpected", [
         "failed",
         "failed",
       ]),
     ]);
+    expect(findRetryFlakes(report)).toEqual([]);
+  });
 
+  it("handles multiple specs with mixed outcomes", () => {
+    const report = makeReport([
+      makeSpec("passes first try", "e2e/smoke.spec.ts", "expected", ["passed"]),
+      makeSpec("flaky test", "e2e/theme.spec.ts", "flaky", ["failed", "passed"]),
+      makeSpec("total failure", "e2e/i18n.spec.ts", "unexpected", [
+        "failed",
+        "failed",
+      ]),
+    ]);
     const flakes = findRetryFlakes(report);
     expect(flakes).toHaveLength(1);
     expect(flakes[0]?.title).toBe("flaky test");
     expect(flakes[0]?.retryNumber).toBe(1);
+  });
+
+  it("inherits the spec file from the parent suite when omitted", () => {
+    // Specs sometimes carry the file only on the enclosing suite.
+    const report = {
+      suites: [
+        {
+          title: "root",
+          file: "e2e/inherited.spec.ts",
+          specs: [
+            {
+              title: "no own file",
+              tests: [
+                {
+                  status: "flaky",
+                  results: [
+                    { status: "failed", retry: 0 },
+                    { status: "passed", retry: 1 },
+                  ],
+                },
+              ],
+            },
+          ],
+          suites: [],
+        },
+      ],
+    };
+    const flakes = findRetryFlakes(report);
+    expect(flakes).toHaveLength(1);
+    expect(flakes[0]?.file).toBe("e2e/inherited.spec.ts");
   });
 
   it("returns empty array for an empty report", () => {
@@ -110,16 +158,15 @@ describe("findRetryFlakes", () => {
     expect(findRetryFlakes(undefined)).toEqual([]);
   });
 
-  it("correctly sets retryNumber to the 1-based attempt that succeeded", () => {
-    // 3 attempts: failed, failed, passed → retryNumber should be 2
+  it("sets retryNumber to the retry index of the passing attempt", () => {
+    // 3 attempts: failed (retry 0), failed (retry 1), passed (retry 2).
     const report = makeReport([
-      makeTest("double retry", "e2e/versioning.spec.ts", "passed", [
+      makeSpec("double retry", "e2e/versioning.spec.ts", "flaky", [
         "failed",
         "failed",
         "passed",
       ]),
     ]);
-
     const flakes = findRetryFlakes(report);
     expect(flakes).toHaveLength(1);
     expect(flakes[0]?.retryNumber).toBe(2);

@@ -64,12 +64,14 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # Step A: CI-safe suite (grep-invert @local-only, same as pr-checks e2e)
-      # Playwright JSON reporter: `reporter=json:<path>` writes output to the
-      # given path. The env-var PLAYWRIGHT_JSON_OUTPUT_NAME is a legacy mechanism
-      # that only renames the file within a pre-configured JSON reporter directory
-      # and does not activate JSON reporting on its own — so we wire it inline.
+      # JSON output path is set via PLAYWRIGHT_JSON_OUTPUT_NAME with `--reporter=json`.
+      # Playwright 1.58 does NOT support the `--reporter=json:<path>` colon syntax
+      # (it treats the suffix as a reporter MODULE name → MODULE_NOT_FOUND); the
+      # env var is the supported way to redirect the json reporter's file output.
       - name: Run CI-safe E2E suite
-        run: pnpm test:e2e:ci -- --reporter=json:playwright-report/ci-results.json
+        run: pnpm test:e2e:ci -- --reporter=list,json
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-report/ci-results.json
 
       # Step B: quarantine @flaky lane — zero tests is acceptable; pass-with-no-tests
       # avoids "no tests found" being treated as an error in a currently-empty lane.
@@ -77,9 +79,11 @@ jobs:
         run: >
           npx playwright test
           --grep @flaky
-          --reporter=json:playwright-report/flaky-results.json
+          --reporter=list,json
           --pass-with-no-tests
         continue-on-error: true
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-report/flaky-results.json
 
       - name: Report quarantine telemetry
         if: always()

@@ -122,10 +122,13 @@ if (process.argv[1] && process.argv[1].endsWith("report-flaky-lane.mjs")) {
     if (node.specs) {
       for (const spec of node.specs) {
         const ok = spec.ok ?? spec.tests?.every((t) => t.results?.every((r) => r.status === "passed")) ?? true;
-        const error = spec.tests
+        const failingResult = spec.tests
           ?.flatMap((t) => t.results ?? [])
-          .find((r) => r.status !== "passed")
-          ?.error?.message;
+          .find((r) => r.status !== "passed");
+        // Playwright 1.5x results carry `errors[]` (array); older shapes used a
+        // singular `error`. Read both so the failure signature is never blank.
+        const error =
+          failingResult?.errors?.[0]?.message ?? failingResult?.error?.message;
         testResults.push({ title: spec.title, ok, file: file ?? "", error });
       }
     }

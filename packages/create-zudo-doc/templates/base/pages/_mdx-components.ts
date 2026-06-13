@@ -44,6 +44,7 @@ import { HtmlPreviewWrapper, type HtmlPreviewWrapperProps } from "@takazudo/zudo
 import { Tabs } from "@takazudo/zudo-doc/code-syntax";
 import { TabItem } from "@takazudo/zudo-doc/tab-item";
 import { defaultLocale, type Locale } from "@/config/i18n";
+import { settings } from "@/config/settings";
 import { withBase } from "@/utils/base";
 import { CategoryNavWrapper } from "./lib/_category-nav";
 import { CategoryTreeNavWrapper } from "./lib/_category-tree-nav";

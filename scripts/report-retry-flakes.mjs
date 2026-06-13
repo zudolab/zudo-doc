@@ -13,23 +13,48 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+// Playwright JSON report shape (the part we consume):
+//
+//   report.suites[]                      ← top-level, one per spec file (nested)
+//     .file                              ← spec file path (inherited by children)
+//     .specs[]                           ← one per test() in the file
+//       .title                           ← the test title
+//       .file                            ← spec file path
+//       .tests[]                         ← one per project (e.g. "smoke", "i18n")
+//         .status                        ← OUTCOME: expected|unexpected|flaky|skipped
+//         .results[]                     ← one per attempt
+//           .status                      ← passed|failed|timedOut|...
+//           .retry                       ← 0-based attempt index
+//     .suites[]                          ← nested describe() blocks
+//
+// A "passed on retry" is exactly Playwright's `flaky` outcome: the test failed
+// on attempt 0 and passed on a later retry. We also detect it structurally
+// (a passing final result after >1 attempts) as a belt-and-suspenders fallback.
+
 /**
- * @typedef {Object} TestResult
+ * @typedef {Object} PwResult
  * @property {"passed"|"failed"|"timedOut"|"interrupted"|"skipped"} status
+ * @property {number} [retry] - 0-based attempt index
  */
 
 /**
- * @typedef {Object} TestCase
+ * @typedef {Object} PwTest
+ * @property {"expected"|"unexpected"|"flaky"|"skipped"} status
+ * @property {PwResult[]} [results]
+ */
+
+/**
+ * @typedef {Object} PwSpec
  * @property {string} title
- * @property {string} file
- * @property {TestResult[]} results
- * @property {"passed"|"failed"|"timedOut"|"interrupted"|"skipped"|"unexpected"|"flaky"} status
+ * @property {string} [file]
+ * @property {PwTest[]} [tests]
  */
 
 /**
  * @typedef {Object} Suite
  * @property {string} [title]
- * @property {TestCase[]} [tests]
+ * @property {string} [file]
+ * @property {PwSpec[]} [specs]
  * @property {Suite[]} [suites]
  */
 
@@ -37,42 +62,41 @@ import { fileURLToPath } from "node:url";
  * @typedef {Object} FlakeAnnotation
  * @property {string} file
  * @property {string} title
- * @property {number} retryNumber - 1-based index of the passing attempt
+ * @property {number} retryNumber - the retry index of the passing attempt (>=1)
  */
 
 /**
- * Recursively collects all TestCase objects from a suite tree.
+ * Recursively collects all spec objects from a suite tree, threading the
+ * inherited `file` down to specs that omit it.
  *
  * @param {Suite} suite
- * @returns {TestCase[]}
+ * @param {string} inheritedFile
+ * @returns {Array<PwSpec & { file: string }>}
  */
-function collectTests(suite) {
-  /** @type {TestCase[]} */
-  const tests = [];
-  if (suite.tests) {
-    tests.push(...suite.tests);
-  }
-  if (suite.suites) {
-    for (const child of suite.suites) {
-      tests.push(...collectTests(child));
+function collectSpecs(suite, inheritedFile) {
+  const file = suite.file ?? inheritedFile;
+  /** @type {Array<PwSpec & { file: string }>} */
+  const specs = [];
+  if (Array.isArray(suite.specs)) {
+    for (const spec of suite.specs) {
+      specs.push({ ...spec, file: spec.file ?? file });
     }
   }
-  return tests;
+  if (Array.isArray(suite.suites)) {
+    for (const child of suite.suites) {
+      specs.push(...collectSpecs(child, file));
+    }
+  }
+  return specs;
 }
 
 /**
  * Parses a Playwright JSON report object and returns an array of flake
  * annotations for tests that passed only after retrying.
  *
- * A test is considered a retry-pass when:
- *   - Its final `.status` is "passed"
- *   - It has more than one result attempt (the first attempt(s) failed,
- *     the last succeeded)
- *
  * This function is pure (no I/O) so it can be unit-tested directly.
  *
  * @param {object} report - Parsed Playwright JSON report
- * @param {Suite[]} report.suites
  * @returns {FlakeAnnotation[]}
  */
 export function findRetryFlakes(report) {
@@ -83,21 +107,31 @@ export function findRetryFlakes(report) {
     return flakes;
   }
 
-  /** @type {TestCase[]} */
-  const allTests = [];
+  const specs = [];
   for (const suite of report.suites) {
-    allTests.push(...collectTests(suite));
+    specs.push(...collectSpecs(suite, ""));
   }
 
-  for (const test of allTests) {
-    const results = test.results ?? [];
-    // Passed on retry: final status is "passed" and there were multiple attempts.
-    if (test.status === "passed" && results.length > 1) {
-      flakes.push({
-        file: test.file ?? "(unknown file)",
-        title: test.title,
-        retryNumber: results.length - 1,
-      });
+  for (const spec of specs) {
+    for (const test of spec.tests ?? []) {
+      const results = test.results ?? [];
+      const lastResult = results[results.length - 1];
+      const maxRetry = results.reduce(
+        (max, r) => Math.max(max, r.retry ?? 0),
+        0,
+      );
+      // Canonical signal: Playwright's own `flaky` outcome. Structural
+      // fallback: a passing final result after a retry actually happened.
+      const passedOnRetry =
+        test.status === "flaky" ||
+        (maxRetry > 0 && lastResult?.status === "passed");
+      if (passedOnRetry) {
+        flakes.push({
+          file: spec.file || "(unknown file)",
+          title: spec.title,
+          retryNumber: Math.max(maxRetry, results.length - 1),
+        });
+      }
     }
   }
 

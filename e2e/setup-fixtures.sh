@@ -175,11 +175,20 @@ compute_build_hash() {
       fi
     fi
 
-    # --- Shared inputs (tracked by git — fast path) ---
+    # --- Shared inputs (git-tracked file LIST, working-tree CONTENT) ---
     # pages/, plugins/, src/{components,hooks,...}, packages/zudo-doc/
+    #
+    # `git ls-files` gives the tracked path list (respecting .gitignore, so
+    # build output / nested node_modules never enter the hash); piping those
+    # paths to `shasum` hashes their CURRENT WORKING-TREE bytes. This is
+    # deliberately NOT `git ls-files -s` — the `-s` form hashes the *index*
+    # blob, so an unstaged edit to a shared source (e.g. packages/zudo-doc/src
+    # or pages/) would leave the hash unchanged and let a stale dist/ slip
+    # through. A deleted tracked file makes shasum error → different hash →
+    # rebuild (conservative, correct).
     (
       cd "$REPO_ROOT"
-      git ls-files -s -- \
+      git ls-files -z -- \
         pages/ \
         plugins/ \
         src/components/ \
@@ -197,7 +206,7 @@ compute_build_hash() {
         zfb.config.ts \
         zfb-shim.d.ts \
         tsconfig.json \
-        2>/dev/null || true
+        2>/dev/null | sort -z | xargs -0 shasum 2>/dev/null || true
     )
 
     # --- This script itself (structural change → rebuild) ---

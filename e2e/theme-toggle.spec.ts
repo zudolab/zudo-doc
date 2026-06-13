@@ -18,14 +18,18 @@ const STORAGE_KEY = "zudo-doc-theme";
 const DESKTOP_TOGGLE_SELECTOR = 'header .ml-auto button[aria-label*="Switch to"]';
 
 test.describe("Theme toggle", () => {
+  // NOTE: these tests use the default `page` fixture — NOT browser.newContext()
+  // — because the shared consoleErrors fixture attaches its console/pageerror
+  // listeners to `page`. Driving a separately-created context.newPage() would
+  // leave the collector watching an unused page, so assertNoConsoleErrors()
+  // would always see an empty list. Playwright gives each test a fresh context
+  // anyway, and page.addInitScript() runs before the first goto(), so a fresh
+  // `page` covers the "pre-seed localStorage before navigation" need.
+
   test("no hydration error when stored theme is light (differs from SSR default)", async ({
-    browser,
+    page,
     assertNoConsoleErrors,
   }) => {
-    // Use a fresh context so we can set localStorage before navigation
-    const context = await browser.newContext();
-    const page = await context.newPage();
-
     // Pre-set light theme in localStorage (SSR default is "dark")
     await page.addInitScript((key) => {
       localStorage.setItem(key, "light");
@@ -40,17 +44,12 @@ test.describe("Theme toggle", () => {
     await expect(toggle).toHaveAttribute("aria-label", "Switch to dark mode", { timeout: 5000 });
 
     assertNoConsoleErrors();
-
-    await context.close();
   });
 
   test("no hydration error when stored theme is dark (matches SSR default)", async ({
-    browser,
+    page,
     assertNoConsoleErrors,
   }) => {
-    const context = await browser.newContext();
-    const page = await context.newPage();
-
     await page.addInitScript((key) => {
       localStorage.setItem(key, "dark");
     }, STORAGE_KEY);
@@ -63,17 +62,12 @@ test.describe("Theme toggle", () => {
     await expect(toggle).toHaveAttribute("aria-label", "Switch to light mode", { timeout: 5000 });
 
     assertNoConsoleErrors();
-
-    await context.close();
   });
 
   test("no hydration error with no stored theme (first visit)", async ({
-    browser,
+    page,
     assertNoConsoleErrors,
   }) => {
-    const context = await browser.newContext();
-    const page = await context.newPage();
-
     await page.goto(HOME, { waitUntil: "load" });
 
     // Wait for the toggle to be present — any aria-label value is acceptable
@@ -83,8 +77,6 @@ test.describe("Theme toggle", () => {
     await expect(toggle).toBeVisible({ timeout: 5000 });
 
     assertNoConsoleErrors();
-
-    await context.close();
   });
 
   test("toggle click switches theme and persists to localStorage", async ({
@@ -111,12 +103,9 @@ test.describe("Theme toggle", () => {
   });
 
   test("theme persists across View Transition navigation", async ({
-    browser,
+    page,
     assertNoConsoleErrors,
   }) => {
-    const context = await browser.newContext();
-    const page = await context.newPage();
-
     // Pre-set light theme
     await page.addInitScript((key) => {
       localStorage.setItem(key, "light");
@@ -140,7 +129,5 @@ test.describe("Theme toggle", () => {
     await expect(toggleAfterNav).toHaveAttribute("aria-label", "Switch to dark mode", { timeout: 5000 });
 
     assertNoConsoleErrors();
-
-    await context.close();
   });
 });
