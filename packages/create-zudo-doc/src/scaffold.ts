@@ -346,7 +346,7 @@ function generatePackageJson(choices: UserChoices) {
     // pages render on first request instead of on every file-change tick
     // (Takazudo/zudo-front-builder#1029); `ZFB_DEV_EAGER=1` restores eager
     // mode. Dev-server-only change, no build/config migration needed.
-    // next.41 (current pin) adds a URL-space fallback in resolve_links —
+    // next.41 adds a URL-space fallback in resolve_links —
     // dir-style hrefs written from non-index pages now resolve against the
     // page's URL directory when the file-space lookup misses
     // (Takazudo/zudo-front-builder#1030) — and the data-file skip warning
@@ -354,11 +354,15 @@ function generatePackageJson(choices: UserChoices) {
     // include/exclude globs (#1032). No consumer-facing breaking change.
     // next.42/next.43: release-tooling + formatter-glob fixes only (npm-publish
     // idempotency, gitignored-artifact excludes). No consumer-facing change.
-    "@takazudo/zfb": "0.1.0-next.43",
-    "@takazudo/zfb-runtime": "0.1.0-next.43",
+    // next.44 (current pin): embed-as-library enhancements only — ServerBuilder
+    // ::with_page_cache for live content, an opt-in ExternalInvalidationHook to
+    // narrow extraWatchPaths rebuilds, and TS-config-loader path canonicalization
+    // (Takazudo/zudo-front-builder#1036–#1043). No consumer-facing / CLI change.
+    "@takazudo/zfb": "0.1.0-next.44",
+    "@takazudo/zfb-runtime": "0.1.0-next.44",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.43",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.44",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
