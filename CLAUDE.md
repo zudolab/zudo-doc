@@ -25,7 +25,7 @@ Minimal documentation framework built with zfb, MDX, Tailwind CSS v4, and Preact
 - `pnpm build` — static HTML export to `dist/` (runs `zfb build`)
 - `pnpm preview` — serve the built `dist/` (runs `zfb preview`)
 - `pnpm check` — type checking (runs `zfb check`, which delegates to `tsc --noEmit`)
-- `pnpm b4push` — pre-push validation: 17-step suite (format check → template drift → pin parity → fixture drift → tags audit → token lint → e2e spec naming guard → b4push/CI parity → typecheck → root unit tests → package tests → safelist check → build → link check → html validation → preview smoke → manual smoke); Playwright E2E runs in CI (pr-checks e2e job) and is intentionally excluded from b4push for time-budget reasons — see [TESTING.md](./TESTING.md) for the full tier rationale
+- `pnpm b4push` — pre-push validation: 17-step suite (format check → template drift → pin parity → fixture drift → tags audit → token lint → e2e spec naming guard → b4push/CI parity → typecheck → root unit tests → package tests → safelist check → build → link check → html validation → preview smoke → manual smoke); Playwright E2E runs in CI (pr-checks e2e job) and is intentionally excluded from b4push for time-budget reasons — see `TESTING.md` for the full tier rationale
 - `pnpm test` — unified test entry point: builds `@takazudo/zudo-doc` dist/ then runs root unit tests (`test:unit`) and workspace package tests (`test:packages`); does not include e2e
 
 ## First-time setup on a new machine
@@ -302,7 +302,7 @@ See `src-tauri/README.md` for a full comparison table.
 
 ## Testing
 
-See [TESTING.md](./TESTING.md) for the full testing strategy — levels (L1 vitest through L6 test-flow skills), tiers (T0 local fast pass / T1 CI gates / T3 nightly exam), tag taxonomy (`@flaky` quarantine rules), retry budgets, anti-gaming rules, and wait-pattern rules.
+See `TESTING.md` (repo root) for the full testing strategy — levels (L1 vitest through L6 test-flow skills), tiers (T0 local fast pass / T1 CI gates / T3 nightly exam), tag taxonomy (`@flaky` quarantine rules), retry budgets, anti-gaming rules, and wait-pattern rules.
 
 ## Directory-scoped CLAUDE.md files
 

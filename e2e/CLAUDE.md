@@ -3,7 +3,7 @@
 > **Status (post-zfb cutover):** the fixture setup harness (`setup-fixtures.sh`, `playwright.config.ts`) is now retargeted onto zfb (epic 1337 task 3a). Per-spec selector retargeting (task 3b) is the remaining E9b work — some specs may still encode Astro-era markup until that lands.
 
 For test policy (levels, tiers, tag taxonomy, quarantine pipeline, retry budgets,
-anti-gaming rules, wait-pattern rules) see **[TESTING.md](../TESTING.md)** at repo root.
+anti-gaming rules, wait-pattern rules) see **`TESTING.md`** at repo root.
 
 ## Architecture
 
