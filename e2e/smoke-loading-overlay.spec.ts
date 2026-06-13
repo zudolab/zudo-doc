@@ -72,7 +72,12 @@ test.describe("Loading overlay: SSG shape", () => {
 test(
   "overlay has pointer-events: none even when [data-visible] is set @local-only",
   async ({ page }) => {
-    await page.goto("/docs/guides/page-1/");
+    await page.goto("/docs/guides/page-1/", { waitUntil: "domcontentloaded" });
+    // Wait for the overlay element to be in the DOM before reading its style —
+    // replaces a racy implicit load-wait with a deterministic locator state wait.
+    await page
+      .locator(`#${PAGE_LOADING_OVERLAY_ID}`)
+      .waitFor({ state: "attached", timeout: 5000 });
 
     // Inject [data-visible] synchronously and read computed style.
     const pointerEvents = await page.evaluate((id) => {
@@ -93,7 +98,7 @@ test(
 test(
   "clicking a sidebar link sets data-zd-nav-pending before zfb:after-swap @local-only",
   async ({ page }) => {
-    await page.goto("/docs/guides/page-1/");
+    await page.goto("/docs/guides/page-1/", { waitUntil: "domcontentloaded" });
 
     // Grab the first internal sidebar link.
     const sidebarLink = page.locator(

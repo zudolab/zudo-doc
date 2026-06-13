@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "./fixtures";
 /**
  * E2E tests for theme toggle hydration and persistence.
  *
@@ -13,24 +13,14 @@ import { test, expect, type Page } from "@playwright/test";
 const HOME = "/";
 const STORAGE_KEY = "zudo-doc-theme";
 
-/** Collect React hydration errors from the console during a page visit */
-async function collectHydrationErrors(page: Page, url: string): Promise<string[]> {
-  const errors: string[] = [];
-  page.on("pageerror", (err) => errors.push(err.message));
-  page.on("console", (msg) => {
-    if (msg.type() === "error" && msg.text().toLowerCase().includes("hydration")) {
-      errors.push(msg.text());
-    }
-  });
-  await page.goto(url, { waitUntil: "load" });
-  // Give React time to hydrate and report errors
-  await page.waitForTimeout(1000);
-  return errors;
-}
+// Selector for the desktop-visible theme toggle button (as opposed to the
+// one inside the mobile header sidebar panel).
+const DESKTOP_TOGGLE_SELECTOR = 'header .ml-auto button[aria-label*="Switch to"]';
 
 test.describe("Theme toggle @local-only", () => {
   test("no hydration error when stored theme is light (differs from SSR default)", async ({
     browser,
+    assertNoConsoleErrors,
   }) => {
     // Use a fresh context so we can set localStorage before navigation
     const context = await browser.newContext();
@@ -41,19 +31,22 @@ test.describe("Theme toggle @local-only", () => {
       localStorage.setItem(key, "light");
     }, STORAGE_KEY);
 
-    const errors = await collectHydrationErrors(page, HOME);
-    expect(errors, `Hydration errors: ${errors.join(", ")}`).toHaveLength(0);
+    await page.goto(HOME, { waitUntil: "load" });
 
-    // Toggle button should reflect the stored light theme (offer to switch to dark).
-    // Target the desktop-visible toggle; mobile sidebar also has one inside <header>.
-    const toggle = page.locator('header .ml-auto button[aria-label*="Switch to"]');
-    await expect(toggle).toHaveAttribute("aria-label", "Switch to dark mode", { timeout: 3000 });
+    // Wait for the toggle to reflect the stored light theme (offer to switch to
+    // dark). This confirms the ThemeToggle island has hydrated and synced from
+    // the DOM — replaces the old fixed waitForTimeout(1000) sleep.
+    const toggle = page.locator(DESKTOP_TOGGLE_SELECTOR);
+    await expect(toggle).toHaveAttribute("aria-label", "Switch to dark mode", { timeout: 5000 });
+
+    assertNoConsoleErrors();
 
     await context.close();
   });
 
   test("no hydration error when stored theme is dark (matches SSR default)", async ({
     browser,
+    assertNoConsoleErrors,
   }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -62,24 +55,34 @@ test.describe("Theme toggle @local-only", () => {
       localStorage.setItem(key, "dark");
     }, STORAGE_KEY);
 
-    const errors = await collectHydrationErrors(page, HOME);
-    expect(errors, `Hydration errors: ${errors.join(", ")}`).toHaveLength(0);
+    await page.goto(HOME, { waitUntil: "load" });
 
-    // Target the desktop-visible toggle
-    const toggle = page.locator('header .ml-auto button[aria-label*="Switch to"]');
-    await expect(toggle).toHaveAttribute("aria-label", "Switch to light mode", { timeout: 3000 });
+    // Wait for the toggle to reflect the stored dark theme (offer to switch to
+    // light). Hydration is complete once the aria-label is stable.
+    const toggle = page.locator(DESKTOP_TOGGLE_SELECTOR);
+    await expect(toggle).toHaveAttribute("aria-label", "Switch to light mode", { timeout: 5000 });
+
+    assertNoConsoleErrors();
 
     await context.close();
   });
 
   test("no hydration error with no stored theme (first visit)", async ({
     browser,
+    assertNoConsoleErrors,
   }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
 
-    const errors = await collectHydrationErrors(page, HOME);
-    expect(errors, `Hydration errors: ${errors.join(", ")}`).toHaveLength(0);
+    await page.goto(HOME, { waitUntil: "load" });
+
+    // Wait for the toggle to be present — any aria-label value is acceptable
+    // on a first visit (whichever is the SSR default). Hydration is implied by
+    // the toggle being interactive.
+    const toggle = page.locator(DESKTOP_TOGGLE_SELECTOR);
+    await expect(toggle).toBeVisible({ timeout: 5000 });
+
+    assertNoConsoleErrors();
 
     await context.close();
   });
@@ -90,7 +93,8 @@ test.describe("Theme toggle @local-only", () => {
     await page.goto(HOME, { waitUntil: "load" });
 
     // Target the desktop-visible toggle; mobile sidebar also has one inside <header>
-    const toggle = page.locator('header .ml-auto button[aria-label*="Switch to"]');
+    const toggle = page.locator(DESKTOP_TOGGLE_SELECTOR);
+    await expect(toggle).toBeVisible({ timeout: 5000 });
     const initialLabel = await toggle.getAttribute("aria-label");
 
     // Click the toggle
@@ -108,6 +112,7 @@ test.describe("Theme toggle @local-only", () => {
 
   test("theme persists across View Transition navigation", async ({
     browser,
+    assertNoConsoleErrors,
   }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -119,26 +124,22 @@ test.describe("Theme toggle @local-only", () => {
 
     // Visit home page
     await page.goto(HOME, { waitUntil: "load" });
-    // Target the desktop-visible toggle; mobile sidebar also has one inside <header>
-    const toggle = page.locator('header .ml-auto button[aria-label*="Switch to"]');
-    await expect(toggle).toHaveAttribute("aria-label", "Switch to dark mode", { timeout: 3000 });
+
+    // Wait for toggle to reflect stored light theme before navigating.
+    const toggle = page.locator(DESKTOP_TOGGLE_SELECTOR);
+    await expect(toggle).toHaveAttribute("aria-label", "Switch to dark mode", { timeout: 5000 });
 
     // Navigate to a doc page via sidebar link (View Transition)
     await page.getByRole("link", { name: "Getting Started" }).first().click();
     await page.waitForURL(/getting-started/);
 
-    // Theme should still be light after navigation
-    const errors: string[] = [];
-    page.on("console", (msg) => {
-      if (msg.type() === "error" && msg.text().toLowerCase().includes("hydration")) {
-        errors.push(msg.text());
-      }
-    });
-    await page.waitForTimeout(1000);
+    // Theme should still be light after navigation.
+    // Poll until the toggle settles on the expected label — confirms hydration
+    // completed on the new page without resorting to a fixed waitForTimeout(1000).
+    const toggleAfterNav = page.locator(DESKTOP_TOGGLE_SELECTOR);
+    await expect(toggleAfterNav).toHaveAttribute("aria-label", "Switch to dark mode", { timeout: 5000 });
 
-    const toggleAfterNav = page.locator('header .ml-auto button[aria-label*="Switch to"]');
-    await expect(toggleAfterNav).toHaveAttribute("aria-label", "Switch to dark mode", { timeout: 3000 });
-    expect(errors).toHaveLength(0);
+    assertNoConsoleErrors();
 
     await context.close();
   });
