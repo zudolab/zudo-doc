@@ -110,12 +110,20 @@ environment-dependence → `@local-only`. Each now **requires a tracking issue**
 
 A local burn-in (`--repeat-each=N`) proves *determinism* but not *CI-capability* — it
 runs on a dev machine, not in the CI container. During the refactor it cleared 26
-previously-`@local-only` tests as genuinely stable AND CI-safe (untagged), but the
-4 `smoke-doc-history` revision-data tests passed locally yet fail in CI because the
-doc-history git-history JSON is only generated in a real local git/build environment
-(see zudolab/zudo-doc#2106). CI is the gate that caught that environmental dependence —
-the layered design working as intended. Those 4 are the only current `@local-only`
-tests; the `@flaky` set is empty (the healthy state for non-determinism).
+previously-`@local-only` tests as genuinely stable AND CI-safe (untagged), and 4
+`smoke-doc-history` revision-data tests were quarantined `@local-only` because they
+passed locally yet rendered 0 entries in CI: the smoke fixture's doc-history JSON came
+back empty in the Playwright container. CI was the gate that caught that
+environment-dependence — the layered design working as intended. The cause was later
+root-caused and fixed (zudolab/zudo-doc#2106): under `pnpm test:e2e:ci`, pnpm sets
+`INIT_CWD=<repo-root>`, so the smoke fixture's `doc-history-generate` resolved its
+relative `--content-dir src/content/docs` against the **outer** repo instead of the
+fixture, walking paths outside the nested smoke `.git` → 0 entries. `setup-fixtures.sh`
+now pins `INIT_CWD` to the fixture dir for the smoke build, so the two-commit history
+generates correctly and those 4 tests are **un-quarantined**. (An earlier
+`safe.directory` attempt addressed a different, *simulated* mechanism — dubious
+ownership via `GIT_TEST_ASSUME_DIFFERENT_OWNER=1` — and was disproven by CI.) Both the
+`@local-only` and `@flaky` sets are now empty (the healthy state).
 
 ### How to tag a test as @flaky
 
