@@ -65,7 +65,10 @@ pnpm test:e2e                                           # Full suite (setup + al
 pnpm test:e2e:ci                                        # CI suite (skips @local-only tests)
 npx playwright test e2e/smoke-search.spec.ts --project smoke  # Single test file
 npx playwright test --project smoke                      # All tests for one fixture
+E2E_FIXTURES=smoke npx playwright test --project smoke  # Fast path: build + boot only smoke
 ```
+
+**Fast path**: `E2E_FIXTURES=<name>` scopes both `setup-fixtures.sh` (builds only that fixture) and `playwright.config.ts` (boots only its webServer, zero stagger); repeated runs skip the build when inputs are unchanged (`e2e/fixtures/<name>/.build-marker.sha256` tracks the hash); `E2E_FORCE_REBUILD=1` forces a full rebuild.
 
 ## `@local-only` Tag
 
