@@ -18,8 +18,9 @@ import type { Page } from "@playwright/test";
 // ---------------------------------------------------------------------------
 
 /**
- * Click the first anchor whose `href` attribute exactly matches `href`, then
- * wait for the `zfb:after-swap` event to fire.
+ * Click the first anchor whose `href` attribute matches `href` (tolerating a
+ * trailing-slash difference — fixtures differ in their emitted URL style),
+ * then wait for the `zfb:after-swap` event to fire.
  *
  * Returns `true` when the swap fires, `false` when the anchor was not found.
  * Throws (via Playwright's expect timeout) when the swap does not fire within
@@ -36,7 +37,10 @@ import type { Page } from "@playwright/test";
 export async function spaClick(page: Page, href: string): Promise<boolean> {
   // Install listener and click atomically so there is no race window.
   const anchorFound = await page.evaluate((h: string) => {
-    const anchor = document.querySelector<HTMLElement>(`a[href="${h}"]`);
+    const bare = h.replace(/\/$/, "");
+    const anchor = document.querySelector<HTMLElement>(
+      `a[href="${bare}"], a[href="${bare}/"]`,
+    );
     if (!anchor) return false;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).__zfbSwapFired__ = false;

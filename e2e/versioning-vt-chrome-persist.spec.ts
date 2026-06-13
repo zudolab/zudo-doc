@@ -99,8 +99,10 @@ test.describe("VT Chrome Persist: version-switcher state on versioned routes", (
 
     // Assert that the second versioned page link exists in the sidebar.
     // The fixture includes docs-v1/installation/index.mdx so this always holds.
+    // Sidebar hrefs may be emitted without a trailing slash — accept both forms.
+    const versionedPage2Bare = VERSIONED_PAGE_2.replace(/\/$/, "");
     const secondLinkLocator = page.locator(
-      `#desktop-sidebar a[href="${VERSIONED_PAGE_2}"]`,
+      `#desktop-sidebar a[href="${versionedPage2Bare}"], #desktop-sidebar a[href="${versionedPage2Bare}/"]`,
     );
     await expect(
       secondLinkLocator,
