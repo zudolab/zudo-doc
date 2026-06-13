@@ -88,3 +88,7 @@ test("HSL picker opens from color swatch @local-only", async ({ page }) => { ...
 ## Console-Error Fixture
 
 `e2e/fixtures.ts` exports an extended `test` with a `consoleErrors` fixture (collects `console` type=error + `pageerror`) and an `assertNoConsoleErrors()` helper; import from `"./fixtures"` instead of `"@playwright/test"` when a spec needs zero-error assertions.
+
+## Nightly Exam Dispatch
+
+To trigger the full nightly suite (`exam.yml`) against any branch on demand: `gh workflow run exam.yml --ref <branch>`
