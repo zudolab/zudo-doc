@@ -263,8 +263,20 @@ body {
 
 /* ── Flow spacing (vertical rhythm) ── */
 
-.zd-content > :where(* + *) {
-  margin-top: var(--flow-space, var(--spacing-vsp-md));
+/* Wrapped in a named cascade layer so the unlayered `tailwindcss/utilities`
+ * import (global.css:2) wins over it: unlayered declarations always beat
+ * layered ones regardless of specificity or source order. Both this rule and a
+ * `mt-*` utility have specificity (0,1,0); without the layer this rule comes
+ * later in source order and silently kills every `mt-*` on a `.zd-content`
+ * direct child. The layer is scoped to ONLY this flow rule — every other
+ * `.zd-content` author rule (links, code, lists, headings, the `:first-child`
+ * reset, etc.) stays unlayered so utilities do NOT flip those. Custom-property
+ * resolution (the heading `--flow-space` overrides) is layer-independent, so
+ * the per-heading flow gaps are unaffected. See zudolab/zudo-doc#2082 / #2109. */
+@layer zd-flow {
+  .zd-content > :where(* + *) {
+    margin-top: var(--flow-space, var(--spacing-vsp-md));
+  }
 }
 
 /* ── Headings ── */
