@@ -508,7 +508,22 @@ for fixture in "${FIXTURES[@]}"; do
     # GEN_DOC_HISTORY=1: the doc-history postBuild per-page JSON is opt-in for
     # local builds (#1986), so the smoke fixture must request it explicitly —
     # its doc-history specs read those JSON manifests from dist/.
-    (cd "$REPO_ROOT/e2e/fixtures/$fixture" && GEN_DOC_HISTORY=1 "$REPO_ROOT/node_modules/.bin/zfb" build 2>&1) || {
+    #
+    # INIT_CWD pin (#2106 — the real CI empty-data root cause): the postBuild
+    # spawns `doc-history-generate` with a RELATIVE `--content-dir src/content/docs`,
+    # which @takazudo/zudo-doc-history-server's resolveContentPath() resolves
+    # against INIT_CWD (the pnpm --filter dev:history / CI build-history contract).
+    # Under `pnpm test:e2e:ci`, pnpm sets INIT_CWD=<repo-root>, so the generate
+    # scans the OUTER repo's src/content/docs (136 files) instead of THIS fixture's
+    # (12). The git walk roots at the nested smoke .git (cwd), so the outer paths
+    # become ../../../src/content/docs/... — outside the nested repo — and
+    # `git log --follow` returns 0 entries, shipping an empty getting-started.json.
+    # The smoke fixture build's true project root IS the fixture dir, so pin
+    # INIT_CWD to it: content-dir then resolves to the fixture's own content and
+    # the two-commit history is generated correctly. (The previously-attempted
+    # safe.directory fix targeted a different, simulated mechanism and was
+    # disproven by CI; this is the confirmed cause.)
+    (cd "$REPO_ROOT/e2e/fixtures/$fixture" && INIT_CWD="$REPO_ROOT/e2e/fixtures/$fixture" GEN_DOC_HISTORY=1 "$REPO_ROOT/node_modules/.bin/zfb" build 2>&1) || {
       echo "  FAILED: $fixture build failed" >&2
       exit 1
     }
