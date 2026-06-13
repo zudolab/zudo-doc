@@ -352,11 +352,13 @@ function generatePackageJson(choices: UserChoices) {
     // (Takazudo/zudo-front-builder#1030) — and the data-file skip warning
     // (e.g. for `_category_.json`) now respects the collection's
     // include/exclude globs (#1032). No consumer-facing breaking change.
-    "@takazudo/zfb": "0.1.0-next.41",
-    "@takazudo/zfb-runtime": "0.1.0-next.41",
+    // next.42/next.43: release-tooling + formatter-glob fixes only (npm-publish
+    // idempotency, gitignored-artifact excludes). No consumer-facing change.
+    "@takazudo/zfb": "0.1.0-next.43",
+    "@takazudo/zfb-runtime": "0.1.0-next.43",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.41",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.43",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
