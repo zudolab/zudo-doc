@@ -31,6 +31,11 @@ export default defineConfig({
   // CI-only single retry: tolerate the intermittent first-navigation flake
   // (page.goto ERR_ABORTED / 30 s timeout) without masking real failures locally.
   retries: process.env.CI ? 1 : 0,
+  // In CI: list reporter for readable logs + JSON for retry-flake detection
+  // (scripts/report-retry-flakes.mjs parses the JSON after the run).
+  reporter: process.env.CI
+    ? [["list"], ["json", { outputFile: "playwright-report/report.json" }]]
+    : "list",
   use: {
     baseURL: `http://localhost:${BASE_PORT}`,
   },
