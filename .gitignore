@@ -85,6 +85,10 @@ e2e/fixtures/*/public/mockServiceWorker.js
 # migration-check harness workspace (throwaway build artifacts)
 .l-zfb-migration-check/
 
+# Per-fixture build-freshness marker (written by setup-fixtures.sh after each
+# successful build; used to skip rebuilds when inputs are unchanged).
+e2e/fixtures/*/.build-marker.sha256
+
 # wrangler dev/preview state (zfb's preview server hands off to wrangler;
 # its on-disk cache lands here per fixture)
 .wrangler/

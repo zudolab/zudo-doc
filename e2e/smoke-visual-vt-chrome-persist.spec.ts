@@ -34,11 +34,12 @@
  *
  * b4push: this spec auto-picks up via the smoke*.spec.ts glob in
  * playwright.config.ts → no manual wiring to run-b4push.sh needed.
- * CI: test:e2e (pnpm test:e2e) and test:e2e:ci (skips @local-only).
+ * CI: test:e2e (pnpm test:e2e) and test:e2e:ci (excludes @flaky).
  */
 
 import { test, expect } from "@playwright/test";
 import { waitForSidebarHydration } from "./sidebar-helpers";
+import { spaClick, spaClickSelector } from "./nav-helpers";
 
 // Desktop viewport so the desktop sidebar (#desktop-sidebar) is always
 // visible. The smoke fixture renders the sidebar island at ≥1024px.
@@ -69,40 +70,6 @@ const NAMED_CHROME_PSEUDOS = new Set([
   "::view-transition-new(zfb-sidebar-toggle)",
   "::view-transition-group(zfb-sidebar-toggle)",
 ]);
-
-// ---------------------------------------------------------------------------
-// Helper: perform a SPA navigation by JS-clicking an anchor and waiting for
-// the zfb:after-swap event. Returns true if swap fired within 8 s.
-// ---------------------------------------------------------------------------
-async function spaClick(
-  page: import("@playwright/test").Page,
-  href: string,
-): Promise<boolean> {
-  const swapFired = await page.evaluate((h: string) => {
-    return new Promise<boolean>((resolve) => {
-      let tid: ReturnType<typeof setTimeout> | null = null;
-      document.addEventListener(
-        "zfb:after-swap",
-        () => {
-          if (tid !== null) clearTimeout(tid);
-          resolve(true);
-        },
-        { once: true },
-      );
-      const anchor = document.querySelector<HTMLElement>(`a[href="${h}"]`);
-      if (anchor) {
-        tid = setTimeout(() => resolve(false), 8000);
-        anchor.click();
-      } else {
-        resolve(false);
-      }
-    });
-  }, href);
-  // Let the page settle before assertions.
-  await page.waitForLoadState("networkidle").catch(() => null);
-  await page.waitForTimeout(200);
-  return swapFired;
-}
 
 // ---------------------------------------------------------------------------
 // Test 1: Computed view-transition-name on chrome elements
@@ -226,10 +193,17 @@ test.describe("VT Chrome Static: getAnimations() during same-locale + same-secti
     });
 
     const swapFired = await spaClick(page, GUIDES_PAGE_1);
-    expect(swapFired, "zfb:after-swap did not fire within 8 s").toBe(true);
+    expect(swapFired, "zfb:after-swap did not fire within 10 s").toBe(true);
 
-    // Allow the 50ms setTimeout to fire and settle.
-    await page.waitForTimeout(200);
+    // Poll until the in-page 50ms hook has written the count.
+    // waitForFunction uses Playwright's timeout so the runner sees a clear
+    // error if the hook never fires (rather than a confusing null assertion).
+    await page.waitForFunction(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      () => (document as any).__v5ChromeCount__ !== null,
+      undefined,
+      { timeout: 5000 },
+    );
 
     const chromeCount = await page.evaluate(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -291,10 +265,15 @@ test.describe("VT Chrome Static: getAnimations() during same-locale + same-secti
     });
 
     const swapFired = await spaClick(page, GUIDES_PAGE_1);
-    expect(swapFired, "zfb:after-swap did not fire within 8 s").toBe(true);
+    expect(swapFired, "zfb:after-swap did not fire within 10 s").toBe(true);
 
-    // Allow the 50ms setTimeout to fire and settle.
-    await page.waitForTimeout(200);
+    // Poll until the in-page 50ms hook has written the count.
+    await page.waitForFunction(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      () => (document as any).__v6TotalCount__ !== null,
+      undefined,
+      { timeout: 5000 },
+    );
 
     const totalCount = await page.evaluate(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -332,38 +311,6 @@ test.describe("VT Chrome Static: getAnimations() during same-locale + same-secti
 //   exit nav (sidebar → none): >= 2 contentFadeOut (root old + lone zfb-sidebar old)
 //   entry nav (none → sidebar): >= 2 contentFadeIn (root new + lone zfb-sidebar new)
 // ---------------------------------------------------------------------------
-
-// Helper: JS-click the first anchor matching a CSS selector and wait for the
-// zfb:after-swap event. Selector-based variant of spaClick for links whose
-// exact href shape (trailing slash, base prefix) we don't want to hardcode.
-async function spaClickSelector(
-  page: import("@playwright/test").Page,
-  selector: string,
-): Promise<boolean> {
-  const swapFired = await page.evaluate((sel: string) => {
-    return new Promise<boolean>((resolve) => {
-      let tid: ReturnType<typeof setTimeout> | null = null;
-      document.addEventListener(
-        "zfb:after-swap",
-        () => {
-          if (tid !== null) clearTimeout(tid);
-          resolve(true);
-        },
-        { once: true },
-      );
-      const anchor = document.querySelector<HTMLElement>(sel);
-      if (anchor) {
-        tid = setTimeout(() => resolve(false), 8000);
-        anchor.click();
-      } else {
-        resolve(false);
-      }
-    });
-  }, selector);
-  await page.waitForLoadState("networkidle").catch(() => null);
-  await page.waitForTimeout(200);
-  return swapFired;
-}
 
 // Helper: install a startViewTransition hook that samples getAnimations()
 // right after the transition's `ready` promise resolves and records how many
@@ -410,18 +357,15 @@ async function installKeyframeCountHook(
 async function readKeyframeCount(
   page: import("@playwright/test").Page,
 ): Promise<number | null> {
-  // Allow vt.ready + rAF to fire and record the count. Poll rather than wait a
-  // fixed window so a loaded CI runner pushing vt.ready + rAF past a fixed
-  // delay doesn't cause a spurious null read; the not-null assertion in the
-  // caller remains the failure reporter.
-  await page
-    .waitForFunction(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      () => (document as any).__keyframeCount__ !== null,
-      undefined,
-      { timeout: 5000 },
-    )
-    .catch(() => null); // fall through — the not-null assertion reports the failure
+  // Poll for vt.ready + rAF to write the count. waitForFunction uses
+  // Playwright's timeout so a loaded CI runner pushing vt.ready + rAF past
+  // the window produces a clear error rather than a confusing null read.
+  await page.waitForFunction(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    () => (document as any).__keyframeCount__ !== null,
+    undefined,
+    { timeout: 5000 },
+  );
   return page.evaluate(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     () => (document as any).__keyframeCount__ as number | null,
@@ -448,7 +392,7 @@ test.describe("VT chrome entry/exit cross-fade on cross-type nav (#2072)", () =>
     await installKeyframeCountHook(page, "contentFadeOut");
 
     const swapFired = await spaClickSelector(page, 'header a[href="/"]');
-    expect(swapFired, "zfb:after-swap did not fire within 8 s").toBe(true);
+    expect(swapFired, "zfb:after-swap did not fire within 10 s").toBe(true);
 
     const count = await readKeyframeCount(page);
     expect(
@@ -479,7 +423,7 @@ test.describe("VT chrome entry/exit cross-fade on cross-type nav (#2072)", () =>
     await installKeyframeCountHook(page, "contentFadeIn");
 
     const swapFired = await spaClickSelector(page, 'a[href^="/docs/guides"]');
-    expect(swapFired, "zfb:after-swap did not fire within 8 s").toBe(true);
+    expect(swapFired, "zfb:after-swap did not fire within 10 s").toBe(true);
 
     const count = await readKeyframeCount(page);
     expect(

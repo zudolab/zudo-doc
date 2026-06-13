@@ -57,11 +57,49 @@
 # git state. The smoke fixture needs real history for doc-history specs
 # and gets its own per-fixture init() repo + a fixture-local build pass
 # with `GEN_DOC_HISTORY=1` (postBuild JSON is opt-in for local builds, #1986).
+#
+# Fast path — E2E_FIXTURES env var:
+#   E2E_FIXTURES=smoke ./e2e/setup-fixtures.sh  — set up and build only the
+#   smoke fixture. Combine with the same var in playwright.config.ts to boot
+#   only that fixture's webServer (zero stagger, one port). Default (unset)
+#   keeps all 5.
+#
+# Skip-rebuild-when-fresh:
+#   Each fixture stores a hash marker at <fixture>/.build-marker.sha256
+#   covering all build inputs (fixture src/content + src/config, shared
+#   inputs: pages/, plugins/, src/ dirs, packages/zudo-doc sources,
+#   pnpm-lock.yaml, zfb.config.ts, and this script). When the hash matches
+#   the marker on disk the build is skipped. E2E_FORCE_REBUILD=1 bypasses.
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-FIXTURES=(sidebar i18n theme smoke versioning)
+ALL_FIXTURES=(sidebar i18n theme smoke versioning)
+
+# ---------------------------------------------------------------------------
+# Resolve which fixtures to operate on (E2E_FIXTURES scoping).
+# ---------------------------------------------------------------------------
+# E2E_FIXTURES=smoke,i18n  — operate on those fixtures only.
+# Default (unset or empty)  — operate on all 5.
+if [ -n "${E2E_FIXTURES:-}" ]; then
+  IFS=',' read -ra REQUESTED <<< "$E2E_FIXTURES"
+  FIXTURES=()
+  for req in "${REQUESTED[@]}"; do
+    req="${req// /}"  # trim spaces
+    for known in "${ALL_FIXTURES[@]}"; do
+      if [ "$req" = "$known" ]; then
+        FIXTURES+=("$req")
+        break
+      fi
+    done
+  done
+  if [ "${#FIXTURES[@]}" -eq 0 ]; then
+    echo "Warning: E2E_FIXTURES='${E2E_FIXTURES}' matched no known fixtures; falling back to all." >&2
+    FIXTURES=("${ALL_FIXTURES[@]}")
+  fi
+else
+  FIXTURES=("${ALL_FIXTURES[@]}")
+fi
 
 # Source dirs under repo-root `src/` that fixtures consume verbatim.
 # `config` is intentionally NOT here — fixtures supply their own
@@ -93,6 +131,142 @@ ROOT_SYMLINKED_DIRS=(
   packages
   node_modules
 )
+
+# ---------------------------------------------------------------------------
+# Hash helper — computes a build-input hash for a given fixture.
+# ---------------------------------------------------------------------------
+# Covers everything the build actually consumes:
+#   1. Fixture-specific inputs: src/content/ + src/config/
+#   2. Shared inputs consumed via symlink/copy:
+#      pages/, plugins/, src/{components,hooks,...}, packages/zudo-doc/
+#   3. Root config files copied into fixture: zfb.config.ts, tsconfig.json, etc.
+#   4. Lock file (pins zfb version): pnpm-lock.yaml
+#   5. This script itself (structural change → rebuild needed)
+#
+# Strategy: use `git ls-files -s` for tracked paths (fast, content-addressed)
+# and fall back to checksumming untracked files via find+shasum. This handles
+# both clean checkouts (all tracked) and working-tree edits (untracked
+# fixture content changes invalidate the marker correctly).
+#
+# Conservative default: if git or shasum is unavailable, return empty string
+# so the marker never matches and we always rebuild.
+compute_build_hash() {
+  local fixture="$1"
+  local fixture_dir="$REPO_ROOT/e2e/fixtures/$fixture"
+
+  # Require shasum (macOS / Linux coreutils both ship it).
+  if ! command -v shasum >/dev/null 2>&1; then
+    echo ""
+    return
+  fi
+
+  {
+    # --- Fixture-specific inputs (content + per-fixture config) ---
+    # Use find+shasum to capture actual file contents including untracked
+    # edits, so local content changes always invalidate the marker.
+    if [ -d "$fixture_dir/src/content" ]; then
+      find "$fixture_dir/src/content" -type f | sort | xargs shasum 2>/dev/null || true
+    fi
+    if [ -d "$fixture_dir/src/config" ]; then
+      # Only the committed settings.ts — copied configs are covered by the
+      # shared inputs below.
+      if [ -f "$fixture_dir/src/config/settings.ts" ]; then
+        shasum "$fixture_dir/src/config/settings.ts" 2>/dev/null || true
+      fi
+    fi
+
+    # --- Shared inputs (git-tracked file LIST, working-tree CONTENT) ---
+    # pages/, plugins/, src/{components,hooks,...}, packages/zudo-doc/
+    #
+    # `git ls-files` gives the tracked path list (respecting .gitignore, so
+    # build output / nested node_modules never enter the hash); piping those
+    # paths to `shasum` hashes their CURRENT WORKING-TREE bytes. This is
+    # deliberately NOT `git ls-files -s` — the `-s` form hashes the *index*
+    # blob, so an unstaged edit to a shared source (e.g. packages/zudo-doc/src
+    # or pages/) would leave the hash unchanged and let a stale dist/ slip
+    # through. A deleted tracked file makes shasum error → different hash →
+    # rebuild (conservative, correct).
+    (
+      cd "$REPO_ROOT"
+      git ls-files -z -- \
+        pages/ \
+        plugins/ \
+        src/components/ \
+        src/hooks/ \
+        src/lib/ \
+        src/mocks/ \
+        src/plugins/ \
+        src/scripts/ \
+        src/styles/ \
+        src/types/ \
+        src/utils/ \
+        src/config/ \
+        packages/zudo-doc/ \
+        pnpm-lock.yaml \
+        zfb.config.ts \
+        zfb-shim.d.ts \
+        tsconfig.json \
+        2>/dev/null | sort -z | xargs -0 shasum 2>/dev/null || true
+    )
+
+    # --- This script itself (structural change → rebuild) ---
+    shasum "$REPO_ROOT/e2e/setup-fixtures.sh" 2>/dev/null || true
+
+  } | shasum | awk '{print $1}'
+}
+
+# ---------------------------------------------------------------------------
+# Check if a fixture's build is still fresh.
+# Returns 0 (true) if fresh (skip build), 1 (false) if stale (must build).
+# ---------------------------------------------------------------------------
+is_build_fresh() {
+  local fixture="$1"
+  local fixture_dir="$REPO_ROOT/e2e/fixtures/$fixture"
+  local marker="$fixture_dir/.build-marker.sha256"
+
+  # E2E_FORCE_REBUILD=1 bypasses the freshness check unconditionally.
+  if [ "${E2E_FORCE_REBUILD:-0}" = "1" ]; then
+    return 1
+  fi
+
+  # dist/ must exist — if the build never ran or was cleaned, rebuild.
+  if [ ! -d "$fixture_dir/dist" ]; then
+    return 1
+  fi
+
+  # Marker must exist and be non-empty.
+  if [ ! -s "$marker" ]; then
+    return 1
+  fi
+
+  local current_hash
+  current_hash="$(compute_build_hash "$fixture")"
+
+  # If hash computation failed (empty string), conservatively rebuild.
+  if [ -z "$current_hash" ]; then
+    return 1
+  fi
+
+  local stored_hash
+  stored_hash="$(cat "$marker")"
+
+  [ "$current_hash" = "$stored_hash" ]
+}
+
+# ---------------------------------------------------------------------------
+# Write the build marker for a fixture (call after a successful build).
+# ---------------------------------------------------------------------------
+write_build_marker() {
+  local fixture="$1"
+  local fixture_dir="$REPO_ROOT/e2e/fixtures/$fixture"
+  local marker="$fixture_dir/.build-marker.sha256"
+
+  local hash
+  hash="$(compute_build_hash "$fixture")"
+  if [ -n "$hash" ]; then
+    printf '%s\n' "$hash" > "$marker"
+  fi
+}
 
 setup_fixture() {
   local fixture="$1"
@@ -227,42 +401,56 @@ echo "All fixtures set up."
 # (not the repo root's) so we need a self-contained two-commit repo here.
 # This mirrors the legacy harness — only the build invocation downstream
 # changed.
-echo ""
-echo "Setting up git repo for smoke fixture (doc history)..."
-smoke_dir="$REPO_ROOT/e2e/fixtures/smoke"
-smoke_history_target="src/content/docs/getting-started/index.mdx"
+#
+# Run even if smoke wasn't in FIXTURES? No — only when smoke is targeted,
+# otherwise we leave the existing smoke git repo intact (the freshness check
+# below will skip rebuilding if inputs are unchanged anyway).
+for fixture in "${FIXTURES[@]}"; do
+  if [ "$fixture" = "smoke" ]; then
+    echo ""
+    echo "Setting up git repo for smoke fixture (doc history)..."
+    smoke_dir="$REPO_ROOT/e2e/fixtures/smoke"
+    smoke_history_target="src/content/docs/getting-started/index.mdx"
 
-# Reset the seed file to its repo-committed state every run so the
-# "Updated for history test." block doesn't accumulate across re-bootstraps.
-# (The previous .git was a *fixture-local* repo seeded by the last run, so we
-# reach back to the *outer* repo for the canonical contents.)
-rm -rf "$smoke_dir/.git"
-(
-  cd "$REPO_ROOT"
-  if git ls-files --error-unmatch "e2e/fixtures/smoke/$smoke_history_target" >/dev/null 2>&1; then
-    git checkout HEAD -- "e2e/fixtures/smoke/$smoke_history_target"
+    # Reset the seed file to its repo-committed state every run so the
+    # "Updated for history test." block doesn't accumulate across re-bootstraps.
+    # (The previous .git was a *fixture-local* repo seeded by the last run, so we
+    # reach back to the *outer* repo for the canonical contents.)
+    rm -rf "$smoke_dir/.git"
+    (
+      cd "$REPO_ROOT"
+      if git ls-files --error-unmatch "e2e/fixtures/smoke/$smoke_history_target" >/dev/null 2>&1; then
+        git checkout HEAD -- "e2e/fixtures/smoke/$smoke_history_target"
+      fi
+    )
+    (
+      cd "$smoke_dir"
+      git init -q
+      git add src/content/
+      git -c user.email="test@example.com" -c user.name="Test" commit -q -m "Initial content"
+      echo "" >> "$smoke_history_target"
+      echo "Updated for history test." >> "$smoke_history_target"
+      git add -A
+      git -c user.email="test@example.com" -c user.name="Test" commit -q -m "Update getting started content"
+    )
+    echo "  Done: smoke git repo"
+    break
   fi
-)
-(
-  cd "$smoke_dir"
-  git init -q
-  git add src/content/
-  git -c user.email="test@example.com" -c user.name="Test" commit -q -m "Initial content"
-  echo "" >> "$smoke_history_target"
-  echo "Updated for history test." >> "$smoke_history_target"
-  git add -A
-  git -c user.email="test@example.com" -c user.name="Test" commit -q -m "Update getting started content"
-)
-echo "  Done: smoke git repo"
+done
 
 # ---------------------------------------------------------------------------
-# Pre-build all fixtures sequentially.
+# Pre-build all targeted fixtures sequentially (with freshness skip).
 # ---------------------------------------------------------------------------
 # Playwright's webServer entries only run `zfb preview` per fixture; the
 # actual `zfb build` happens once here so we surface bundler errors at
 # bootstrap time instead of inside the test runner. Sequential keeps the
 # log readable and avoids any future races between concurrent zfb builds
 # that share the symlinked `pages/` tree.
+#
+# Skip-rebuild-when-fresh: each fixture tracks a hash of its build inputs
+# in <fixture>/.build-marker.sha256. When the hash matches the stored
+# marker and dist/ exists, the build is skipped. E2E_FORCE_REBUILD=1
+# bypasses this check unconditionally.
 #
 # SKIP_DOC_HISTORY=1 keeps the build independent of the host's git state
 # for non-smoke fixtures. The smoke fixture instead builds with
@@ -271,11 +459,15 @@ echo "  Done: smoke git repo"
 echo ""
 echo "Pre-building fixtures sequentially..."
 for fixture in "${FIXTURES[@]}"; do
+  if is_build_fresh "$fixture"; then
+    echo "  Skipping (fresh): $fixture"
+    continue
+  fi
   echo "  Building: $fixture"
   if [ "$fixture" = "smoke" ]; then
     # GEN_DOC_HISTORY=1: the doc-history postBuild per-page JSON is opt-in for
     # local builds (#1986), so the smoke fixture must request it explicitly —
-    # its @local-only doc-history specs read those JSON manifests from dist/.
+    # its doc-history specs read those JSON manifests from dist/.
     (cd "$REPO_ROOT/e2e/fixtures/$fixture" && GEN_DOC_HISTORY=1 "$REPO_ROOT/node_modules/.bin/zfb" build 2>&1) || {
       echo "  FAILED: $fixture build failed" >&2
       exit 1
@@ -286,6 +478,7 @@ for fixture in "${FIXTURES[@]}"; do
       exit 1
     }
   fi
+  write_build_marker "$fixture"
   echo "  Built: $fixture"
 done
 echo "All fixtures built."

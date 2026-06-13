@@ -1,0 +1,158 @@
+# Nightly scheduled full-suite run (T3 tier) + on-demand workflow_dispatch.
+#
+# Runs everything that is intentionally excluded from PR checks (too slow,
+# quarantine lane, slow integration tests) so regressions surface before
+# they accumulate.
+#
+# Jobs:
+#   e2e-full     — full e2e suite (CI-safe lane) + quarantine @flaky lane
+#   slow-create  — create-zudo-doc slow integration tests (real npm install + zfb build)
+#
+# Failure reporting:
+#   scripts/file-exam-issue.sh  — deduped failure issue (one open issue per workflow)
+#   scripts/report-flaky-lane.mjs — posts pass/fail telemetry to each @flaky test's
+#                                    linked tracking issue
+#
+# To run on-demand against any branch:
+#   gh workflow run exam.yml --ref <branch>
+
+name: Nightly Exam
+
+on:
+  schedule:
+    # 02:43 JST (17:43 UTC the previous day) — off-peak, not :00 or :30
+    - cron: '43 17 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1: Full E2E — CI-safe suite + quarantine @flaky lane
+  # ---------------------------------------------------------------------------
+  e2e-full:
+    name: Full E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      # renovate: datasource=docker depName=mcr.microsoft.com/playwright versioning=docker
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --user 1001 --ipc=host
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Step A: CI-safe suite (grep-invert @local-only, same as pr-checks e2e)
+      # JSON output path is set via PLAYWRIGHT_JSON_OUTPUT_NAME with `--reporter=json`.
+      # Playwright 1.58 does NOT support the `--reporter=json:<path>` colon syntax
+      # (it treats the suffix as a reporter MODULE name → MODULE_NOT_FOUND); the
+      # env var is the supported way to redirect the json reporter's file output.
+      - name: Run CI-safe E2E suite
+        run: pnpm test:e2e:ci -- --reporter=list,json
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-report/ci-results.json
+
+      # Step B: quarantine @flaky lane — zero tests is acceptable; pass-with-no-tests
+      # avoids "no tests found" being treated as an error in a currently-empty lane.
+      - name: Run quarantine @flaky lane
+        run: >
+          npx playwright test
+          --grep @flaky
+          --reporter=list,json
+          --pass-with-no-tests
+        continue-on-error: true
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-report/flaky-results.json
+
+      - name: Report quarantine telemetry
+        if: always()
+        run: |
+          if [ -f playwright-report/flaky-results.json ]; then
+            node scripts/report-flaky-lane.mjs \
+              --report playwright-report/flaky-results.json \
+              --run-url "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          else
+            echo "No flaky lane report found — skipping telemetry"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: File failure issue (CI-safe suite)
+        if: failure()
+        run: |
+          bash scripts/file-exam-issue.sh \
+            --report playwright-report/ci-results.json \
+            --run-url "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --workflow "Nightly Exam / Full E2E Tests"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
+      - name: Upload E2E artifacts
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: exam-e2e-reports
+          path: playwright-report/
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # Job 2: create-zudo-doc slow integration tests
+  # ---------------------------------------------------------------------------
+  # Runs `test:slow` which exercises real `pnpm install` against the registry
+  # + a full zfb build. Too expensive for every PR; runs nightly here.
+  slow-create:
+    name: create-zudo-doc Slow Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run create-zudo-doc slow tests
+        run: pnpm --filter create-zudo-doc test:slow
+
+      - name: File failure issue
+        if: failure()
+        run: |
+          bash scripts/file-exam-issue.sh \
+            --run-url "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --workflow "Nightly Exam / create-zudo-doc Slow Tests"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}

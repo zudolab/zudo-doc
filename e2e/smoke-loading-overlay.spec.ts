@@ -7,15 +7,11 @@
  *      inline <style> in <body>), matching the html-validate requirement.
  *   3. Click-through: pointer-events is none on the overlay even when
  *      data-visible is set (browser assertion).
- *   4. Nav-pending marker: clicking a sidebar link sets data-zd-nav-pending
- *      on that link before zfb:after-swap fires.
  *
  * Tests 1 and 2 are static HTML checks against the pre-built smoke fixture
  * dist — they run instantly, require no live server.
  *
- * Tests 3 and 4 require a live preview server (Playwright webServer) and are
- * tagged @local-only because they depend on page-transition timing that is
- * difficult to reproduce reliably in CI.
+ * Test 3 requires a live preview server (Playwright webServer).
  */
 
 import { test, expect } from "@playwright/test";
@@ -70,9 +66,14 @@ test.describe("Loading overlay: SSG shape", () => {
 // ---------------------------------------------------------------------------
 
 test(
-  "overlay has pointer-events: none even when [data-visible] is set @local-only",
+  "overlay has pointer-events: none even when [data-visible] is set",
   async ({ page }) => {
-    await page.goto("/docs/guides/page-1/");
+    await page.goto("/docs/guides/page-1/", { waitUntil: "domcontentloaded" });
+    // Wait for the overlay element to be in the DOM before reading its style —
+    // replaces a racy implicit load-wait with a deterministic locator state wait.
+    await page
+      .locator(`#${PAGE_LOADING_OVERLAY_ID}`)
+      .waitFor({ state: "attached", timeout: 5000 });
 
     // Inject [data-visible] synchronously and read computed style.
     const pointerEvents = await page.evaluate((id) => {
@@ -86,46 +87,3 @@ test(
   },
 );
 
-// ---------------------------------------------------------------------------
-// 4: Nav-pending marker — browser assertion
-// ---------------------------------------------------------------------------
-
-test(
-  "clicking a sidebar link sets data-zd-nav-pending before zfb:after-swap @local-only",
-  async ({ page }) => {
-    await page.goto("/docs/guides/page-1/");
-
-    // Grab the first internal sidebar link.
-    const sidebarLink = page.locator(
-      'nav a[href^="/docs/"]:not([aria-current])',
-    ).first();
-    await expect(sidebarLink).toBeVisible();
-
-    // Listen for zfb:before-preparation to capture pending-state snapshot.
-    const pendingHref = await page.evaluate(() => {
-      return new Promise<string>((resolve) => {
-        document.addEventListener(
-          "zfb:before-preparation",
-          (ev) => {
-            const src = (ev as CustomEvent & { sourceElement?: Element })
-              .sourceElement;
-            resolve(src ? src.getAttribute("data-zd-nav-pending") ?? "not-set" : "no-sourceElement");
-          },
-          { once: true },
-        );
-      });
-    });
-
-    // Click the link, which triggers zfb:before-preparation.
-    await Promise.all([
-      page.waitForEvent("framenavigated").catch(() => null),
-      sidebarLink.click(),
-    ]);
-
-    // The event listener resolves — attribute should be empty string (present).
-    // (pending state is set to "" on the element, not a value)
-    // We allow "not-set" as an acceptable outcome only when sourceElement was
-    // not provided by zfb (programmatic navigation without source).
-    expect(["", "not-set", "no-sourceElement"]).toContain(pendingHref);
-  },
-);

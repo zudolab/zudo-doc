@@ -30,11 +30,12 @@
  *
  * b4push: this spec auto-picks up via the smoke*.spec.ts glob in
  * playwright.config.ts → no manual wiring to run-b4push.sh needed.
- * CI: test:e2e (pnpm test:e2e) and test:e2e:ci (skips @local-only).
+ * CI: test:e2e (pnpm test:e2e) and test:e2e:ci (excludes @flaky).
  */
 
 import { test, expect } from "@playwright/test";
 import { waitForSidebarHydration } from "./sidebar-helpers";
+import { spaClick } from "./nav-helpers";
 
 // Desktop viewport so the desktop sidebar (#desktop-sidebar) is always
 // visible. The smoke fixture renders the sidebar island at ≥1024px.
@@ -46,40 +47,6 @@ test.use({ viewport: { width: 1280, height: 900 } });
 // so sidebar links use /docs/guides/page-1 not /docs/guides/page-1/.
 const GUIDES_INDEX = "/docs/guides/";
 const GUIDES_PAGE_1 = "/docs/guides/page-1";
-
-// ---------------------------------------------------------------------------
-// Helper: perform a SPA navigation by JS-clicking an anchor and waiting for
-// the zfb:after-swap event. Returns true if swap fired within 8 s.
-// ---------------------------------------------------------------------------
-async function spaClick(
-  page: import("@playwright/test").Page,
-  href: string,
-): Promise<boolean> {
-  const swapFired = await page.evaluate((h: string) => {
-    return new Promise<boolean>((resolve) => {
-      let tid: ReturnType<typeof setTimeout> | null = null;
-      document.addEventListener(
-        "zfb:after-swap",
-        () => {
-          if (tid !== null) clearTimeout(tid);
-          resolve(true);
-        },
-        { once: true },
-      );
-      const anchor = document.querySelector<HTMLElement>(`a[href="${h}"]`);
-      if (anchor) {
-        tid = setTimeout(() => resolve(false), 8000);
-        anchor.click();
-      } else {
-        resolve(false);
-      }
-    });
-  }, href);
-  // Let the page settle before assertions.
-  await page.waitForLoadState("networkidle").catch(() => null);
-  await page.waitForTimeout(200);
-  return swapFired;
-}
 
 // ---------------------------------------------------------------------------
 // Test 1: DOM-node identity preserved across same-locale same-section nav
@@ -124,7 +91,7 @@ test.describe("VT Chrome Persist: DOM-node identity (same-locale, same-section)"
     ).toBe(true);
 
     const swapFired = await spaClick(page, GUIDES_PAGE_1);
-    expect(swapFired, "zfb:after-swap did not fire within 8 s").toBe(true);
+    expect(swapFired, "zfb:after-swap did not fire within 10 s").toBe(true);
 
     // Read back markers from the post-swap DOM.
     const post = await page.evaluate(
@@ -171,14 +138,16 @@ test.describe("VT Chrome Persist: sidebar active-link highlight", () => {
     await waitForSidebarHydration(page);
 
     const swapFired = await spaClick(page, GUIDES_PAGE_1);
-    expect(swapFired, "zfb:after-swap did not fire within 8 s").toBe(true);
-
-    // Wait for Preact to update aria-current.
-    await page.waitForTimeout(400);
+    expect(swapFired, "zfb:after-swap did not fire within 10 s").toBe(true);
 
     // The sidebar Preact island sets aria-current="page" on the active link.
     // The link href in the sidebar matches the exact href from the built HTML
     // (no trailing slash in the smoke fixture static export).
+    // Wait for Preact to update aria-current using an attached-state poll.
+    await page
+      .locator(`#desktop-sidebar a[href="${GUIDES_PAGE_1}"][aria-current="page"]`)
+      .waitFor({ state: "attached", timeout: 5000 });
+
     const activeLink = await page.evaluate((href: string) => {
       const aside = document.querySelector("#desktop-sidebar");
       if (!aside) return null;
@@ -211,9 +180,10 @@ test.describe("VT Chrome Persist: sidebar scroll preservation", () => {
     });
 
     const swapFired = await spaClick(page, GUIDES_PAGE_1);
-    expect(swapFired, "zfb:after-swap did not fire within 8 s").toBe(true);
+    expect(swapFired, "zfb:after-swap did not fire within 10 s").toBe(true);
 
-    await page.waitForTimeout(200);
+    // Wait for the sidebar to remain attached after the swap (persisted node).
+    await page.locator("#desktop-sidebar").waitFor({ state: "attached", timeout: 5000 });
 
     const scrollTopAfter = await page.evaluate(() => {
       const aside = document.querySelector("#desktop-sidebar");

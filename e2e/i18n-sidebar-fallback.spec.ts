@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 import { desktopSidebar, waitForSidebarHydration } from "./sidebar-helpers";
 
 /**
@@ -70,10 +70,10 @@ test.describe("i18n sidebar fallback: JA locale", () => {
     await expect(banner).toHaveCount(0);
   });
 
-  test("JA fallback page renders EN content correctly", async ({ page }) => {
-    const errors: string[] = [];
-    page.on("pageerror", (err) => errors.push(err.message));
-
+  test("JA fallback page renders EN content correctly", async ({
+    page,
+    assertNoConsoleErrors,
+  }) => {
     await page.goto(`/ja/docs/guides/sub-a/page-1`);
 
     // The page should load successfully with a title
@@ -81,8 +81,8 @@ test.describe("i18n sidebar fallback: JA locale", () => {
     await expect(h1).toBeVisible();
     await expect(h1).not.toBeEmpty();
 
-    // No uncaught JS errors
-    expect(errors).toHaveLength(0);
+    // No uncaught JS errors or console errors
+    assertNoConsoleErrors();
   });
 
   test("navigating from JA sidebar to another fallback page works", async ({

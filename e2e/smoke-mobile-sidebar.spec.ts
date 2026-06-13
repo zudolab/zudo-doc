@@ -6,7 +6,7 @@ import { test, expect } from "@playwright/test";
  * The mobile sidebar is rendered inside the <header> via SidebarToggle
  * with client:media="(max-width: 1023px)". It includes a hamburger
  * button, a backdrop overlay, body scroll locking, and sidebar
- * navigation that closes on link click (via astro:after-swap).
+ * navigation that closes on link click (via zfb:after-swap).
  */
 
 const DOCS_PAGE = "/docs/getting-started";
@@ -105,7 +105,7 @@ test.describe("Mobile sidebar", () => {
     // Should navigate to the page
     await page.waitForURL(/page-1/, { timeout: 5000 });
 
-    // Sidebar should be closed after navigation (via astro:after-swap handler)
+    // Sidebar should be closed after navigation (via zfb:after-swap handler)
     await expect(page.locator('button[aria-label="Open sidebar"]')).toBeVisible({ timeout: 5000 });
   });
 

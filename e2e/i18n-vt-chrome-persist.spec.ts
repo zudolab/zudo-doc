@@ -18,10 +18,11 @@
  *   ("VT Strategy B port" — clickability is the load-bearing assertion)
  *
  * b4push: auto-picked up by i18n*.spec.ts glob in playwright.config.ts.
- * CI: test:e2e (pnpm test:e2e) and test:e2e:ci (skips @local-only).
+ * CI: test:e2e (pnpm test:e2e) and test:e2e:ci (excludes @flaky).
  */
 
 import { test, expect } from "@playwright/test";
+import { spaClick, waitForSidebarNav } from "./nav-helpers";
 
 // Desktop viewport so the desktop sidebar is visible.
 test.use({ viewport: { width: 1280, height: 900 } });
@@ -29,50 +30,9 @@ test.use({ viewport: { width: 1280, height: 900 } });
 // i18n fixture pages.
 // The i18n fixture's getting-started section has a single page, so the
 // sidebar may not have category collapse/expand buttons. We use a simpler
-// wait (sidebar nav attached) rather than waitForSidebarNav().
+// wait (sidebar nav attached) rather than waitForSidebarHydration().
 const PAGE_EN = "/docs/getting-started/";
 const PAGE_JA = "/ja/docs/getting-started/";
-
-/** Wait for the sidebar island nav to be present (no collapse buttons required). */
-async function waitForSidebarNav(
-  page: import("@playwright/test").Page,
-): Promise<void> {
-  await page.locator("#desktop-sidebar").waitFor({ state: "attached", timeout: 10000 });
-  // Give the Preact island a moment to finish rendering.
-  await page.waitForTimeout(300);
-}
-
-// ---------------------------------------------------------------------------
-// Helper: perform a SPA navigation and wait for zfb:after-swap.
-// ---------------------------------------------------------------------------
-async function spaClick(
-  page: import("@playwright/test").Page,
-  href: string,
-): Promise<boolean> {
-  const swapFired = await page.evaluate((h: string) => {
-    return new Promise<boolean>((resolve) => {
-      let tid: ReturnType<typeof setTimeout> | null = null;
-      document.addEventListener(
-        "zfb:after-swap",
-        () => {
-          if (tid !== null) clearTimeout(tid);
-          resolve(true);
-        },
-        { once: true },
-      );
-      const anchor = document.querySelector<HTMLElement>(`a[href="${h}"]`);
-      if (anchor) {
-        tid = setTimeout(() => resolve(false), 8000);
-        anchor.click();
-      } else {
-        resolve(false);
-      }
-    });
-  }, href);
-  await page.waitForLoadState("networkidle").catch(() => null);
-  await page.waitForTimeout(200);
-  return swapFired;
-}
 
 // ---------------------------------------------------------------------------
 // Test 4: DOM-node identity NOT preserved across EN→JA
@@ -114,7 +74,8 @@ test.describe("VT Chrome Persist: cross-locale DOM node identity", () => {
     const swapFired = await spaClick(page, jaHref!);
     expect(swapFired, "zfb:after-swap did not fire for EN→JA navigation").toBe(true);
 
-    await page.waitForTimeout(500);
+    // Wait for the URL to reflect the JA locale before reading post-swap DOM.
+    await page.waitForURL((url) => url.pathname.includes("/ja/"), { timeout: 5000 });
 
     const post = await page.evaluate(
       (expectedMarker: number) => {
@@ -180,7 +141,9 @@ test.describe("VT Chrome Persist: locale-toggle clickability post-EN→JA (W7A)"
 
     const firstSwap = await spaClick(page, jaHref!);
     expect(firstSwap, "EN→JA SPA swap should fire").toBe(true);
-    await page.waitForTimeout(500);
+
+    // Wait for the URL to reflect the JA locale before querying the new header.
+    await page.waitForURL((url) => url.pathname.includes("/ja/"), { timeout: 5000 });
 
     // After EN→JA swap: the header should show EN as an <a> (clickable)
     // and JA as the active (non-link) element.
@@ -221,8 +184,9 @@ test.describe("VT Chrome Persist: locale-toggle clickability post-EN→JA (W7A)"
       "clicking the EN anchor on the JA page should trigger a second SPA swap (W7A regression gate)",
     ).toBe(true);
 
-    // Confirm we are back on the EN page.
-    await page.waitForTimeout(300);
+    // Confirm we are back on the EN page by waiting for the URL to no longer
+    // contain "/ja/".
+    await page.waitForURL((url) => !url.pathname.includes("/ja/"), { timeout: 5000 });
     const finalUrl = page.url();
     expect(
       finalUrl,

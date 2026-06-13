@@ -11,7 +11,7 @@ import { test, expect } from "@playwright/test";
 
 const PAGE = "/docs/getting-started";
 
-test.describe("Doc History: revision panel and diff @local-only", () => {
+test.describe("Doc History: revision panel and diff", () => {
   test("history trigger button is present", async ({ page }) => {
     await page.goto(PAGE, { waitUntil: "load" });
 
@@ -33,7 +33,8 @@ test.describe("Doc History: revision panel and diff @local-only", () => {
     await expect(panel).toHaveAttribute("open", "", { timeout: 5000 });
   });
 
-  test("revision list shows 2+ entries after data loads", async ({ page }) => {
+  // quarantined (env-dependent, CI-incapable): https://github.com/zudolab/zudo-doc/issues/2106
+  test("revision list shows 2+ entries after data loads @local-only", async ({ page }) => {
     await page.goto(PAGE, { waitUntil: "load" });
 
     const triggerBtn = page.locator('[aria-label="View document history"]');
@@ -49,7 +50,8 @@ test.describe("Doc History: revision panel and diff @local-only", () => {
     await expect(entryButtons).toHaveCount(2, { timeout: 10_000 });
   });
 
-  test("A/B selection buttons are present for each revision", async ({
+  // quarantined (env-dependent, CI-incapable): https://github.com/zudolab/zudo-doc/issues/2106
+  test("A/B selection buttons are present for each revision @local-only", async ({
     page,
   }) => {
     await page.goto(PAGE, { waitUntil: "load" });
@@ -75,7 +77,8 @@ test.describe("Doc History: revision panel and diff @local-only", () => {
     await expect(bButtons).toHaveCount(2);
   });
 
-  test("Compare button is present", async ({ page }) => {
+  // quarantined (env-dependent, CI-incapable): https://github.com/zudolab/zudo-doc/issues/2106
+  test("Compare button is present @local-only", async ({ page }) => {
     await page.goto(PAGE, { waitUntil: "load" });
 
     const triggerBtn = page.locator('[aria-label="View document history"]');
@@ -93,7 +96,8 @@ test.describe("Doc History: revision panel and diff @local-only", () => {
     await expect(compareBtn).toBeVisible();
   });
 
-  test("clicking Compare shows diff viewer with a table", async ({ page }) => {
+  // quarantined (env-dependent, CI-incapable): https://github.com/zudolab/zudo-doc/issues/2106
+  test("clicking Compare shows diff viewer with a table @local-only", async ({ page }) => {
     await page.goto(PAGE, { waitUntil: "load" });
 
     const triggerBtn = page.locator('[aria-label="View document history"]');

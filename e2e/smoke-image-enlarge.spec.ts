@@ -3,6 +3,13 @@ import { readDistFile } from "./smoke-dist-helper";
 
 const PAGE = "/docs/guides/image-enlarge-test";
 
+// The image-enlarge island's handleWindowResize debounces evaluateEligibility at
+// 150ms via setTimeout (see image-enlarge.tsx). RESIZE_DEBOUNCE_BUFFER_MS is the
+// minimum wait after dispatching a resize event — it must equal or exceed the
+// debounce window so the eligibility re-evaluation (which toggles [hidden] on each
+// button) completes before each test's own expect(btn).toBeVisible/Hidden assertion.
+const RESIZE_DEBOUNCE_BUFFER_MS = 150;
+
 // Inject max-width CSS and trigger re-evaluation.
 // The smoke fixture's Tailwind CSS is bundled into the SSR entry, not served
 // as a static asset, so getComputedStyle shows no max-width on images.
@@ -18,8 +25,12 @@ async function applyImageConstraints(page: Page) {
     `,
   });
   await page.evaluate(() => window.dispatchEvent(new Event("resize")));
-  // Wait for the 150ms debounce + buffer
-  await page.waitForTimeout(400);
+  // Wait for the ResizeObserver debounce to complete before each test samples
+  // button visibility. The island's handleWindowResize fires evaluateEligibility
+  // after a 150ms setTimeout (RESIZE_DEBOUNCE_BUFFER_MS). Each test's own
+  // `expect(btn).toBeVisible()` / `expect(btn).toBeHidden()` assertion then
+  // provides the actual deterministic final-state wait with its own timeout.
+  await page.waitForTimeout(RESIZE_DEBOUNCE_BUFFER_MS);
 }
 
 // ---------------------------------------------------------------------------
@@ -72,11 +83,12 @@ test.describe("Image Enlarge: static HTML structure", () => {
 // Level 4: Browser assertions
 // ---------------------------------------------------------------------------
 
-test.describe("Image Enlarge: browser behavior @local-only", () => {
+test.describe("Image Enlarge: browser behavior", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   test("wide viewport: enlarge button visible for oversized (2000px) image", async ({ page }) => {
-    await page.goto(PAGE, { waitUntil: "networkidle" });
+    await page.goto(PAGE, { waitUntil: "domcontentloaded" });
+    await page.locator("figure.zd-enlargeable").first().waitFor({ state: "attached" });
     await applyImageConstraints(page);
 
     const figure = page.locator("figure.zd-enlargeable").first();
@@ -87,7 +99,8 @@ test.describe("Image Enlarge: browser behavior @local-only", () => {
   });
 
   test("wide viewport: enlarge button hidden for small (300px) image", async ({ page }) => {
-    await page.goto(PAGE, { waitUntil: "networkidle" });
+    await page.goto(PAGE, { waitUntil: "domcontentloaded" });
+    await page.locator("figure.zd-enlargeable").first().waitFor({ state: "attached" });
     await applyImageConstraints(page);
 
     const smallFigure = page.locator("figure.zd-enlargeable").filter({
@@ -110,7 +123,8 @@ test.describe("Image Enlarge: browser behavior @local-only", () => {
     });
     const page = await ctx.newPage();
     try {
-      await page.goto(PAGE, { waitUntil: "networkidle" });
+      await page.goto(PAGE, { waitUntil: "domcontentloaded" });
+      await page.locator("figure.zd-enlargeable").first().waitFor({ state: "attached" });
       await applyImageConstraints(page);
 
       const mediumFigure = page.locator("figure.zd-enlargeable").filter({
@@ -126,7 +140,8 @@ test.describe("Image Enlarge: browser behavior @local-only", () => {
   });
 
   test("click enlarge button opens dialog with correct src and alt", async ({ page }) => {
-    await page.goto(PAGE, { waitUntil: "networkidle" });
+    await page.goto(PAGE, { waitUntil: "domcontentloaded" });
+    await page.locator("figure.zd-enlargeable").first().waitFor({ state: "attached" });
     await applyImageConstraints(page);
 
     const figure = page.locator("figure.zd-enlargeable").first();
@@ -147,7 +162,8 @@ test.describe("Image Enlarge: browser behavior @local-only", () => {
   });
 
   test("Escape key closes the enlarge dialog", async ({ page }) => {
-    await page.goto(PAGE, { waitUntil: "networkidle" });
+    await page.goto(PAGE, { waitUntil: "domcontentloaded" });
+    await page.locator("figure.zd-enlargeable").first().waitFor({ state: "attached" });
     await applyImageConstraints(page);
 
     const figure = page.locator("figure.zd-enlargeable").first();
@@ -164,7 +180,8 @@ test.describe("Image Enlarge: browser behavior @local-only", () => {
   });
 
   test("backdrop click closes the enlarge dialog", async ({ page }) => {
-    await page.goto(PAGE, { waitUntil: "networkidle" });
+    await page.goto(PAGE, { waitUntil: "domcontentloaded" });
+    await page.locator("figure.zd-enlargeable").first().waitFor({ state: "attached" });
     await applyImageConstraints(page);
 
     const figure = page.locator("figure.zd-enlargeable").first();
@@ -184,16 +201,23 @@ test.describe("Image Enlarge: browser behavior @local-only", () => {
   });
 
   test("client-side navigation away and back: enlarge button still works", async ({ page }) => {
-    await page.goto(PAGE, { waitUntil: "networkidle" });
+    await page.goto(PAGE, { waitUntil: "domcontentloaded" });
+    await page.locator("figure.zd-enlargeable").first().waitFor({ state: "attached" });
     await applyImageConstraints(page);
 
-    // Simulate astro:after-swap (the event the component listens to for re-init)
-    // This tests that handleAfterSwap clears old observers and re-scans content
-    await page.evaluate(() => document.dispatchEvent(new Event("astro:after-swap")));
-    await page.waitForTimeout(300); // let observers re-register and evaluate
-    // Trigger resize so new observers re-evaluate eligibility after re-init
+    // Simulate zfb:after-swap (the event the component listens to for re-init;
+    // zfb:after-swap re-registration).
+    // handleAfterSwap disconnects the ResizeObserver, clears observedImages, then
+    // calls startObserving() — the island re-scans and reconnects observers.
+    await page.evaluate(() => {
+      document.dispatchEvent(new Event("zfb:after-swap"));
+    });
+    // Trigger resize so re-initialised observers re-evaluate button eligibility,
+    // then wait for the 150ms debounce to complete (same RESIZE_DEBOUNCE_BUFFER_MS
+    // as applyImageConstraints). The following expect(btn).toBeVisible() provides
+    // the final deterministic state assertion.
     await page.evaluate(() => window.dispatchEvent(new Event("resize")));
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(RESIZE_DEBOUNCE_BUFFER_MS);
 
     const figure = page.locator("figure.zd-enlargeable").first();
     const btn = figure.locator(".zd-enlarge-btn");
@@ -206,7 +230,7 @@ test.describe("Image Enlarge: browser behavior @local-only", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Level 4: Two-layer CSS sanity (non-@local-only — runs in CI)
+// Level 4: Two-layer CSS sanity (CI-safe, untagged — runs in CI)
 // ---------------------------------------------------------------------------
 
 // The smoke fixture's CSS is not bundled as a static asset (it lives in the
@@ -261,7 +285,8 @@ test.describe("Image Enlarge: two-layer button CSS", () => {
   test("enlarge button ::before has non-transparent background; svg color is set; button bg is transparent", async ({
     page,
   }) => {
-    await page.goto(PAGE, { waitUntil: "networkidle" });
+    await page.goto(PAGE, { waitUntil: "domcontentloaded" });
+    await page.locator("figure.zd-enlargeable").first().waitFor({ state: "attached" });
     await applyEnlargeButtonCss(page);
     await applyImageConstraints(page);
     await showEnlargeButtonsRegardlessOfEligibility(page);

@@ -5,12 +5,12 @@
  *   6. Header version-switcher reflects the correct version label on a
  *      /v/{version}/docs/... route. Verified in two ways:
  *      a. Direct navigation: goto the versioned page, assert toggle shows "1.0.0".
- *      b. SPA swap: navigate within the versioned section (when multiple pages
- *         exist) and assert the toggle still shows "1.0.0" — confirming the
- *         persisted header's version-switcher island stays consistent.
- *         Since the versioning fixture only has one page per version, the SPA
- *         swap sub-test is a best-effort check (skipped when there is no second
- *         versioned page to navigate to).
+ *      b. SPA swap: navigate within the versioned section (getting-started →
+ *         installation) and assert the toggle still shows "1.0.0" — confirming
+ *         the persisted header's version-switcher island stays consistent.
+ *         The versioning fixture has two pages per version (getting-started and
+ *         installation), so the SPA swap sub-test always has a second page to
+ *         navigate to.
  *
  * The cross-version SPA swap (Latest → /v/1.0) is intentionally NOT checked
  * here: both pages share the same header persist key (header-en), so the
@@ -26,15 +26,17 @@
  * W7A retro lesson: .claude/skills/l-lessons-zfb-migration-parity/SKILL.md
  *
  * b4push: auto-picked up by versioning*.spec.ts glob in playwright.config.ts.
- * CI: test:e2e (pnpm test:e2e) and test:e2e:ci (skips @local-only).
+ * CI: test:e2e (pnpm test:e2e) and test:e2e:ci (excludes @flaky).
  */
 
 import { test, expect } from "@playwright/test";
+import { spaClick } from "./nav-helpers";
 
 // Desktop viewport so the header is fully rendered.
 test.use({ viewport: { width: 1280, height: 900 } });
 
 const VERSIONED_PAGE = "/v/1.0/docs/getting-started/";
+const VERSIONED_PAGE_2 = "/v/1.0/docs/installation/";
 const LATEST_PAGE = "/docs/getting-started/";
 
 // ---------------------------------------------------------------------------
@@ -85,7 +87,7 @@ test.describe("VT Chrome Persist: version-switcher state on versioned routes", (
     ).toContain("Latest");
   });
 
-  test("version-switcher toggle still shows '1.0.0' after same-locale SPA swap within versioned section @local-only", async ({
+  test("version-switcher toggle still shows '1.0.0' after same-locale SPA swap within versioned section", async ({
     page,
   }) => {
     // Navigate directly to the versioned page first.
@@ -95,64 +97,23 @@ test.describe("VT Chrome Persist: version-switcher state on versioned routes", (
     const toggle = headerBanner.locator("[data-version-toggle]");
     await expect(toggle).toBeVisible();
 
-    // Check if there is a second versioned page to navigate to (SPA swap).
-    // If the versioning fixture only has one page per version, skip the swap.
-    const hasSecondVersionedPage = await page.evaluate(() => {
-      const links = Array.from(document.querySelectorAll<HTMLAnchorElement>(
-        "#desktop-sidebar a[href*='/v/1.0/']"
-      ));
-      // We want a link that is NOT the current page
-      const current = window.location.pathname;
-      return links.some(l => l.getAttribute("href") !== current && l.getAttribute("href") !== current + "/");
-    });
-
-    if (!hasSecondVersionedPage) {
-      // Only one versioned page — skip the SPA swap sub-check.
-      // The direct-navigation test above still covers the SSR state.
-      test.skip();
-      return;
-    }
-
-    // Find a second versioned page link.
-    const secondHref = await page.evaluate(() => {
-      const links = Array.from(document.querySelectorAll<HTMLAnchorElement>(
-        "#desktop-sidebar a[href*='/v/1.0/']"
-      ));
-      const current = window.location.pathname;
-      const other = links.find(l => l.getAttribute("href") !== current && l.getAttribute("href") !== current + "/");
-      return other?.getAttribute("href") ?? null;
-    });
-
-    if (!secondHref) {
-      test.skip();
-      return;
-    }
+    // Assert that the second versioned page link exists in the page CONTENT.
+    // The fixture's docs-v1/getting-started page carries an in-content link to
+    // docs-v1/installation — content links are static HTML, unlike the sidebar
+    // tree (whose versioned composition is hydration-dependent and does not
+    // list v1-only pages from other pages). Hrefs may be emitted without a
+    // trailing slash — accept both forms.
+    const versionedPage2Bare = VERSIONED_PAGE_2.replace(/\/$/, "");
+    const secondLinkLocator = page.locator(
+      `main a[href="${versionedPage2Bare}"], main a[href="${versionedPage2Bare}/"]`,
+    );
+    await expect(
+      secondLinkLocator,
+      `Expected an in-content link to ${VERSIONED_PAGE_2} — the versioning fixture's docs-v1/getting-started page must link to docs-v1/installation`,
+    ).toBeAttached();
 
     // Perform SPA swap within the versioned section.
-    const swapFired = await page.evaluate((h: string) => {
-      return new Promise<boolean>((resolve) => {
-        let tid: ReturnType<typeof setTimeout> | null = null;
-        document.addEventListener(
-          "zfb:after-swap",
-          () => {
-            if (tid !== null) clearTimeout(tid);
-            resolve(true);
-          },
-          { once: true },
-        );
-        const anchor = document.querySelector<HTMLElement>(`a[href="${h}"]`);
-        if (anchor) {
-          tid = setTimeout(() => resolve(false), 8000);
-          anchor.click();
-        } else {
-          resolve(false);
-        }
-      });
-    }, secondHref);
-
-    await page.waitForLoadState("networkidle").catch(() => null);
-    await page.waitForTimeout(300);
-
+    const swapFired = await spaClick(page, VERSIONED_PAGE_2);
     expect(
       swapFired,
       "zfb:after-swap should fire for same-locale SPA swap within /v/1.0/",

@@ -88,6 +88,12 @@ const REQUIRED_CI_GUARDS = [
     b4pushScript: "check:b4push-ci-parity",
     comment: "B4push/CI parity meta-check (this script, #1967)",
   },
+  {
+    // E2E spec naming guard: asserts fixture-prefix + no orphan specs (#2095)
+    ciNeedle: "check-e2e-spec-naming.mjs",
+    b4pushScript: "check:e2e-spec-naming",
+    comment: "E2E spec naming guard (scripts/check-e2e-spec-naming.mjs, #2095)",
+  },
 ];
 
 const ALLOWLIST_PATH = resolve(ROOT, ".b4push-ci-parity-allowlist");

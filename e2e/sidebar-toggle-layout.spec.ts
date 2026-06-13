@@ -28,7 +28,7 @@ const DOC_PAGE = "/docs/guides/sub-a/page-1";
 // 80rem at the default 16px root font-size — the hide_sidebar content-band width.
 const HIDE_SIDEBAR_BAND_MAX_WIDTH = "1280px";
 
-test.describe("Desktop sidebar toggle layout @local-only", () => {
+test.describe("Desktop sidebar toggle layout", () => {
   test("hiding the sidebar removes the content gap and narrows the band", async ({
     page,
   }) => {
