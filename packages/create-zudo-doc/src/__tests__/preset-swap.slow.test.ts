@@ -67,6 +67,53 @@ function runOrThrow(
   }
 }
 
+/**
+ * Resilient `pnpm install` for the network-dependent install step.
+ *
+ * This test resolves the scaffolded project's deps against the public npm
+ * registry. The generated `package.json` pins ranges (e.g. `@types/node`
+ * `^22.0.0`), so a fresh patch release can land in the range that is not yet
+ * in the local pnpm store — pnpm then has to fetch it, and that fetch can
+ * transiently fail (registry hiccup, network blip). This is exactly the
+ * nightly-exam failure tracked in zudolab/zudo-doc#2123: a one-off
+ * `--prefer-offline` install of `@types/node@22.19.21`'s transitive
+ * `undici-types` failed to download, even though the version range itself is
+ * healthy and installs fine on a warm store.
+ *
+ * Strategy: try `--prefer-offline` first (fast once the store is warm). If it
+ * fails, retry without `--prefer-offline` so the retry does a full online
+ * resolution and cannot be tripped by a cold/stale offline cache, with a
+ * short backoff between attempts. Only after the final attempt fails do we
+ * surface the captured diagnostics. This keeps a transient registry flake
+ * from re-filing the nightly issue without masking a genuine resolution bug
+ * (a real bad pin fails every attempt and still throws).
+ */
+function installScaffoldedDeps(cwd: string): void {
+  const attempts = [
+    "pnpm install --prefer-offline --ignore-workspace",
+    "pnpm install --ignore-workspace",
+    "pnpm install --ignore-workspace",
+  ];
+  let lastErr: unknown;
+  for (const [i, cmd] of attempts.entries()) {
+    try {
+      runOrThrow(cmd, cwd);
+      return;
+    } catch (err) {
+      lastErr = err;
+      if (i < attempts.length - 1) {
+        // Synchronous backoff (~3s, ~6s) between retries. The surrounding
+        // execSync is already blocking, so a blocking sleep here is fine and
+        // avoids turning beforeAll async-racy. Atomics.wait is the standard
+        // no-busy-loop synchronous sleep idiom.
+        const waitMs = 3000 * (i + 1);
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, waitMs);
+      }
+    }
+  }
+  throw lastErr;
+}
+
 let tempDir: string;
 let projectDir: string;
 let originalCwd: string;
@@ -139,10 +186,13 @@ beforeAll(async () => {
 
   // 5. Install + build. We use pnpm because that is the package manager the
   //    scaffolder defaults to and the dev environment guarantees.
-  //    `--prefer-offline` keeps repeated local runs fast once the store is
-  //    warm. We capture stdout/stderr and surface them on failure so
-  //    diagnosing a broken scaffold/build does not require re-running.
-  runOrThrow("pnpm install --prefer-offline --ignore-workspace", projectDir);
+  //    `installScaffoldedDeps` tries `--prefer-offline` first (fast on a warm
+  //    store) and retries online on failure, so a transient registry flake on
+  //    a freshly-released patch version does not fail the slow tier
+  //    (zudolab/zudo-doc#2123). We capture stdout/stderr and surface them on
+  //    the final failure so diagnosing a broken scaffold/build does not
+  //    require re-running.
+  installScaffoldedDeps(projectDir);
   runOrThrow("pnpm build", projectDir, { SKIP_DOC_HISTORY: "1" });
 }, 5 * 60 * 1000);
 
