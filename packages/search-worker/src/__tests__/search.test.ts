@@ -149,6 +149,7 @@ describe("search", () => {
 
     expect(fetch).toHaveBeenCalledWith(
       "https://my-docs.example.com/search-index.json",
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
   });
 

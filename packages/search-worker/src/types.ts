@@ -31,7 +31,7 @@ export interface SearchErrorResponse {
   error: string;
 }
 
-/** Shape of entries in search-index.json (matches SearchIndexEntry from the Astro integration) */
+/** Shape of entries in search-index.json (matches SearchIndexEntry from the zfb search-index integration) */
 export interface SearchIndexEntry {
   id: string;
   title: string;

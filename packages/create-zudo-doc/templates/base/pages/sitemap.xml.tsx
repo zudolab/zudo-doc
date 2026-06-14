@@ -30,6 +30,14 @@ function escapeXml(str: string): string {
 }
 
 export default function Sitemap(): string {
+  // When sitemap is disabled, return an empty urlset so the route still
+  // resolves (returns XML, not 404) but contains no URLs.
+  if (!settings.sitemap) {
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+</urlset>`;
+  }
+
   const routeMap = enumerateAllRoutes();
   const siteUrlBase = (settings.siteUrl ?? "").replace(/\/$/, "");
 

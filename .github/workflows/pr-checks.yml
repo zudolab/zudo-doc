@@ -541,6 +541,9 @@ jobs:
   preview:
     name: Preview Deploy
     needs: [build-site, build-history]
+    # Skip on fork PRs: CF secrets are not available to fork-originated workflows,
+    # so the deploy step would fail with an empty token. Same-repo PRs always run.
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -588,7 +591,7 @@ jobs:
           # alias URL (subdomain starts with the alias) — not the per-version
           # hash URL — so smoke gates + PR comments hit a stable host.
           DEPLOY_LOG=$(mktemp)
-          npx wrangler@4 versions upload \
+          npx wrangler@4.85.0 versions upload \
             --preview-alias "$ALIAS" \
             2>&1 | tee "$DEPLOY_LOG"
           DEPLOY_URL=$(grep -oE "https://${ALIAS}-[a-z0-9.-]+\.workers\.dev" "$DEPLOY_LOG" | head -1)

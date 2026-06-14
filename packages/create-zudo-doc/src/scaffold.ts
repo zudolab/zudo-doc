@@ -379,6 +379,7 @@ function generatePackageJson(choices: UserChoices) {
     // ^10.29.1 floor satisfies @takazudo/zdtp's preact peer range so the app
     // and zdtp resolve a single preact instance — a lower floor can split into
     // two copies and crash hook-using SSR islands with "undefined reading __H".
+    // See the designTokenPanel dep block below (~line 443) for the coupling.
     preact: "^10.29.1",
     // preact-render-to-string — zfb's emitted entry.mjs imports
     // `renderToString` from this package as `__zfb_renderToString` to
@@ -441,6 +442,8 @@ function generatePackageJson(choices: UserChoices) {
   }
 
   if (choices.features.includes("designTokenPanel")) {
+    // @takazudo/zdtp requires preact >= 10.29.1 — see the preact floor comment
+    // above (~line 382) for why the floor is set there and the coupling this creates.
     deps["@takazudo/zdtp"] = "0.2.0-next.2";
   }
 

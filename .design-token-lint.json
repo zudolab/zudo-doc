@@ -13,10 +13,11 @@
   "ignore": [
     "src/content/**",
     "packages/create-zudo-doc/templates/**",
-    "**/*.test.*"
+    "**/*.test.*",
+    "**/dist/**"
   ],
   "patterns": [
-    "src/**/*.{tsx,jsx,astro}",
-    "packages/**/*.{tsx,jsx,astro}"
+    "src/**/*.{tsx,jsx}",
+    "packages/**/*.{tsx,jsx}"
   ]
 }

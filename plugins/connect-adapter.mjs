@@ -123,19 +123,15 @@ export function connectToZfbHandler(middleware) {
          * @param {string | number | readonly string[]} value
          */
         setHeader(name, value) {
-          headers[name] = String(value);
+          // Store under lowercased key to avoid duplicate-case collisions
+          // when finish() merges headers — last-wins is then unambiguous.
+          headers[name.toLowerCase()] = String(value);
         },
         /** @param {string} name */
         getHeader(name) {
-          // Header lookup is case-insensitive in Node's real
-          // ServerResponse — mirror that so middlewares that probe an
-          // existing header before overwriting it (`if
-          // (!res.getHeader("Content-Type"))`) keep working.
-          const lower = name.toLowerCase();
-          for (const [k, v] of Object.entries(headers)) {
-            if (k.toLowerCase() === lower) return v;
-          }
-          return undefined;
+          // Keys are always stored lowercased (see setHeader), so a direct
+          // lowercased lookup is sufficient and avoids an O(n) scan.
+          return headers[name.toLowerCase()];
         },
         get headersSent() {
           return settled;

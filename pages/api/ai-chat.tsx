@@ -193,6 +193,11 @@ export default async function AiChatHandler(): Promise<Response> {
       );
     }
 
+    if (body.message.trim().length === 0) {
+      audit(body.message, { blocked: true, blockReason: "invalid_input" });
+      return reply({ error: "message must not be empty" }, 400);
+    }
+
     // Screen for prompt injection. Rate limiting already ran above, so a flood
     // of injection attempts cannot amplify audit-log KV writes.
     if (!screenInput(body.message)) {
@@ -260,6 +265,21 @@ export default async function AiChatHandler(): Promise<Response> {
         sanitizedHistory.push({ role: entry.role, content: entry.content });
       }
       history = sanitizedHistory;
+
+      // Defense-in-depth against forged assistant turns (residual risk #2036).
+      // A well-formed transcript alternates: the number of assistant turns may
+      // never exceed the number of user turns + 1 (one model-primed opener is
+      // valid; more means the caller injected extra assistant-role entries).
+      // Cheap structural guard — does not replace system-prompt sandboxing.
+      const userTurns = history.filter((m) => m.role === "user").length;
+      const assistantTurns = history.filter((m) => m.role === "assistant").length;
+      if (assistantTurns > userTurns + 1) {
+        audit(body.message, { blocked: true, blockReason: "invalid_input" });
+        return reply(
+          { error: "history structure is invalid" },
+          400,
+        );
+      }
     }
 
     const response = await callClaude(body.message, history, env);

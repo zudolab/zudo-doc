@@ -25,7 +25,7 @@ zudo-docは全文サイト検索に[MiniSearch](https://lucaong.github.io/minise
 
 - **開発モード**（`pnpm dev`）：検索インデックスはzfbのdevMiddleware経由でオンザフライで生成
 - **本番ビルド**（`pnpm build`）：インデックスは静的サイトとともに`search-index.json`に出力
-- **Electron**：同じインデックスファイルを読み込み — 特別な処理は不要
+- **Tauri**（オフラインリーダー）：バンドルされた`dist/`から同じインデックスファイルを読み込み — 特別な処理は不要
 
 <Tip>
 

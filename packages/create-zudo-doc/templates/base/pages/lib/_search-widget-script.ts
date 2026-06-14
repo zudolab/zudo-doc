@@ -24,6 +24,19 @@ export const SEARCH_WIDGET_SCRIPT = /* javascript */ `(function () {
 
   var PAGE_SIZE = 10;
 
+  // Allowlist-based href sanitizer: only relative paths and http(s) URLs are
+  // permitted. Anything else (e.g. javascript:, data:) falls back to "#" so a
+  // malicious entry in search-index.json cannot turn a result link into a
+  // script-injection vector.
+  function safeHref(url) {
+    if (!url) return "#";
+    var s = String(url);
+    if (s.startsWith("/") || s.startsWith("http://") || s.startsWith("https://")) {
+      return s;
+    }
+    return "#";
+  }
+
   function escapeHtml(text) {
     return String(text)
       .replace(/&/g, "&amp;")
@@ -401,7 +414,7 @@ export const SEARCH_WIDGET_SCRIPT = /* javascript */ `(function () {
       var article = document.createElement("article");
       article.className = "-mx-hsp-lg border-b border-muted";
       var link = document.createElement("a");
-      link.href = entry.url || "#";
+      link.href = safeHref(entry.url);
       link.className =
         "group block px-hsp-lg py-vsp-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
       var title = document.createElement("span");

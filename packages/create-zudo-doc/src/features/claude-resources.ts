@@ -3,6 +3,9 @@ import type { FeatureModule } from "../compose.js";
 export const claudeResourcesFeature: FeatureModule = () => ({
   name: "claudeResources",
   injections: [
-    // Plugin entry is handled by zfb-config-gen.ts — no shared file injection needed
+    // No shared file injection needed — this feature's touch points are:
+    //   - plugin entry: zfb-config-gen.ts (claudeResources conditional import/plugin)
+    //   - settings: settings-gen.ts (claudeResources object + defaultLocaleOnlyPrefixes array)
+    //   - devDep: scaffold.ts (tsx devDep — same subprocess runner as docHistory)
   ],
 });

@@ -43,6 +43,18 @@ export default {
     }
 
     try {
+      // Reject oversized bodies BEFORE buffering. A legitimate search request
+      // (query ≤ 500 chars + limit field) is well under 1 KB; 4 KB is a
+      // generous cap that stops memory exhaustion from large payloads without
+      // affecting real callers.
+      const contentLength = request.headers.get("Content-Length");
+      if (contentLength !== null) {
+        const bodySize = parseInt(contentLength, 10);
+        if (!Number.isNaN(bodySize) && bodySize > 4096) {
+          return jsonResponse({ error: "Request body too large" }, 413);
+        }
+      }
+
       let body: { query?: unknown; limit?: unknown };
       try {
         body = (await request.json()) as { query?: unknown; limit?: unknown };

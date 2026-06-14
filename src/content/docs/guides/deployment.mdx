@@ -28,7 +28,7 @@ The site URL is configured via `[[routes]]` in `wrangler.toml` (custom domain bi
 
 ## CI Pipeline Structure
 
-The project uses two GitHub Actions workflows.
+The project uses three GitHub Actions workflows: production deploys (`main-deploy.yml`), PR checks and previews (`pr-checks.yml`), and branch previews (`preview-deploy.yml`).
 
 ### Production (`main-deploy.yml`)
 
@@ -44,18 +44,23 @@ Triggered on push to `main`. Runs five jobs:
 
 ### PR Checks (`pr-checks.yml`)
 
-Triggered on pull requests targeting `main`. Runs ten jobs:
+Triggered on pull requests targeting `main`. Runs fifteen jobs:
 
 1. **check-template-drift** — verifies no drift between source files and generator templates
 2. **check-pin-parity** — verifies `@takazudo/zfb` pin is consistent across all package sources
-3. **typecheck** — runs `pnpm check` (TypeScript type checking)
-4. **package-tests** — runs all package-scoped vitest suites
-5. **root-tests** — runs the root unit test suite
-6. **build-site** — full clone (`fetch-depth: 0`), `pnpm build`, then `check:links` (no `SKIP_DOC_HISTORY` — same rationale as production: preBuild needs full history for SSG meta dates)
-7. **html-validate** — validates the built `dist/` for HTML element errors
-8. **build-history** — full clone, doc history generation
-9. **e2e** — runs Playwright end-to-end tests
-10. **preview** — merges artifacts and uploads a preview via `wrangler versions upload --preview-alias`, then posts the URL as a PR comment
+3. **check-fixture-settings-drift** — verifies every key in `src/config/settings.ts` is present in all e2e fixture settings files (or allowlisted)
+4. **check-package-safelist** — verifies the generated `dist/safelist.css` covers all responsive/arbitrary utility classes in the `@takazudo/zudo-doc` package
+5. **check-b4push-ci-parity** — verifies every lightweight guard gate in `scripts/run-b4push.sh` has a matching CI job
+6. **check-e2e-spec-naming** — verifies all e2e spec filenames use known fixture prefixes so Playwright picks them up
+7. **lint-gates** — runs `pnpm tags:audit --ci` and `pnpm lint:tokens` (design token lint)
+8. **typecheck** — runs `pnpm check` (TypeScript type checking)
+9. **package-tests** — runs all package-scoped vitest suites
+10. **root-tests** — runs the root unit test suite
+11. **build-site** — full clone (`fetch-depth: 0`), `pnpm build`, then `check:links` (no `SKIP_DOC_HISTORY` — same rationale as production: preBuild needs full history for SSG meta dates)
+12. **html-validate** — validates the built `dist/` for HTML element errors
+13. **build-history** — full clone, doc history generation
+14. **e2e** — runs Playwright end-to-end tests
+15. **preview** — merges artifacts and uploads a preview via `wrangler versions upload --preview-alias`, then posts the URL as a PR comment
 
 **Concurrency:** `group: pr-checks-{pr-number}, cancel-in-progress: true` — outdated runs are cancelled to save CI minutes.
 

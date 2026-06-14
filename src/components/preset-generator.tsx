@@ -117,27 +117,29 @@ function PresetModal({
 
   async function handleCopy() {
     let ok = false;
-    const dialog = dialogRef.current;
-    if (dialog) {
-      try {
-        const textarea = document.createElement("textarea");
-        textarea.value = output;
-        textarea.style.cssText = "position:fixed;opacity:0;left:-9999px";
-        dialog.appendChild(textarea);
-        textarea.focus();
-        textarea.select();
-        ok = document.execCommand("copy");
-        dialog.removeChild(textarea);
-      } catch {
-        /* ignore */
-      }
+    // Prefer the modern async Clipboard API when available; fall back to the
+    // legacy execCommand path for environments that lack it (#2136 L4).
+    try {
+      await navigator.clipboard.writeText(output);
+      ok = true;
+    } catch {
+      /* ignore — fall through to execCommand */
     }
     if (!ok) {
-      try {
-        await navigator.clipboard.writeText(output);
-        ok = true;
-      } catch {
-        /* ignore */
+      const dialog = dialogRef.current;
+      if (dialog) {
+        try {
+          const textarea = document.createElement("textarea");
+          textarea.value = output;
+          textarea.style.cssText = "position:fixed;opacity:0;left:-9999px";
+          dialog.appendChild(textarea);
+          textarea.focus();
+          textarea.select();
+          ok = document.execCommand("copy");
+          dialog.removeChild(textarea);
+        } catch {
+          /* ignore */
+        }
       }
     }
     setCopyLabel(ok ? "Copied!" : "Failed");

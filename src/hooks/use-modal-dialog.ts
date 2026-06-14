@@ -87,13 +87,18 @@ export function useModalDialog({
     return () => dialog.removeEventListener("close", onDialogClose);
   }, [isOpen, onClose]);
 
-  // Close on SPA navigation events.
+  // Close on SPA navigation events — only when the dialog is actually open.
+  // The sibling native-close effect already guards with the open state; calling
+  // onClose() unconditionally here churned state on every navigation even for
+  // closed/persisted modals (fixes #2136 H1).
   useEffect(() => {
     if (!navigateEvent) return;
     function handleNavigation() {
       const dialog = dialogRef.current;
-      if (dialog?.open) dialog.close();
-      onClose();
+      if (dialog?.open) {
+        dialog.close();
+        onClose();
+      }
     }
     document.addEventListener(navigateEvent, handleNavigation);
     return () => document.removeEventListener(navigateEvent, handleNavigation);
