@@ -37,6 +37,82 @@ create-zudo-doc [project-name] [options]
 | `--default-mode <mode>` | `light` または `dark`（light-dark モード） | `dark` |
 | `--[no-]respect-system-preference` | OS のカラースキーム設定を尊重 | `true` |
 
+## 利用可能なカラースキーム
+
+### シングルモードのスキーム（`--color-scheme-mode single`）
+
+`--scheme <name>` で指定します。デフォルトは `Dracula` です。
+
+**ダークスキーム:**
+
+| 名前 |
+|------|
+| Default Dark |
+| Dracula |
+| Catppuccin Mocha |
+| GitHub Dark |
+| Nord |
+| TokyoNight |
+| Gruvbox Dark |
+| Atom One Dark |
+| Rose Pine |
+| Solarized Dark |
+| Material Ocean |
+| Monokai Pro |
+| Everforest Dark |
+| Kanagawa Wave |
+| Night Owl |
+| Ayu Dark |
+| VS Code Dark+ |
+| Doom One |
+| Challenger Deep |
+| Catppuccin Frappe |
+| Catppuccin Macchiato |
+| Gruvbox Dark Hard |
+| Rose Pine Moon |
+| GitHub Dark Dimmed |
+| Ayu Mirage |
+| Material Darker |
+| Material Dark |
+| Monokai Remastered |
+| Monokai Vivid |
+| Monokai Soda |
+| Solarized Dark Higher Contrast |
+| Gruvbox Material Dark |
+| Kanagawa Dragon |
+
+**ライトスキーム:**
+
+| 名前 |
+|------|
+| Default Light |
+| GitHub Light |
+| Catppuccin Latte |
+| Solarized Light |
+| Rose Pine Dawn |
+| Atom One Light |
+| Everforest Light |
+| Gruvbox Light |
+| Ayu Light |
+
+### ライト/ダークペアリング（`--color-scheme-mode light-dark`）
+
+`--light-scheme` と `--dark-scheme` で指定します。デフォルトはライトが `Default Light`、ダークが `Default Dark` です。
+
+| ペアリング名 | ライトスキーム | ダークスキーム |
+|-------------|--------------|---------------|
+| Default | Default Light | Default Dark |
+| GitHub | GitHub Light | GitHub Dark |
+| Catppuccin | Catppuccin Latte | Catppuccin Mocha |
+| Solarized | Solarized Light | Solarized Dark |
+| Rosé Pine | Rose Pine Dawn | Rose Pine |
+| Atom One | Atom One Light | Atom One Dark |
+| Everforest | Everforest Light | Everforest Dark |
+| Gruvbox | Gruvbox Light | Gruvbox Dark |
+| Ayu | Ayu Light | Ayu Dark |
+
+ペアリング名は対話式ウィザードおよびセットアッププリセットジェネレーターで表示されます。CLI フラグを直接使用する場合は、ライトとダーク各スキームの名前を個別に指定してください。
+
 ### 機能
 
 | フラグ | 説明 | デフォルト |
