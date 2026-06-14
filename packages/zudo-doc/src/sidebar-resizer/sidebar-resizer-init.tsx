@@ -82,7 +82,7 @@ export const SIDEBAR_RESIZER_INIT_SCRIPT = `(function(){
     // (top-[3.5rem], left:0, width:var(--zd-sidebar-w)). 20px hit area > native
     // y-scrollbar (~12-17px) keeps a draggable strip left of the scrollbar when
     // the sidebar overflows. zudolab/zudo-doc#1660
-    Object.assign(handle.style,{position:"fixed",top:"3.5rem",bottom:"0",left:"calc(var(--zd-sidebar-w) - 20px)",width:"20px",cursor:"col-resize",zIndex:"10",transition:"background 0.15s"});
+    Object.assign(handle.style,{position:"fixed",top:"3.5rem",bottom:"0",left:"calc(var(--zd-sidebar-w) - 20px)",width:"20px",cursor:"col-resize",zIndex:"var(--z-index-sidebar)",transition:"background 0.15s"});
 
     var dragging=false,focused=false;
 
@@ -117,7 +117,7 @@ export const SIDEBAR_RESIZER_INIT_SCRIPT = `(function(){
       document.documentElement.style.cursor="col-resize";
       document.documentElement.style.userSelect="none";
       var ghost=document.createElement("div");
-      Object.assign(ghost.style,{position:"fixed",top:"0",width:"2px",height:"100vh",background:ACCENT_GHOST,pointerEvents:"none",zIndex:"9999"});
+      Object.assign(ghost.style,{position:"fixed",top:"0",width:"2px",height:"100vh",background:ACCENT_GHOST,pointerEvents:"none",zIndex:"var(--z-index-drag)"});
       var sidebarRect=sidebar.getBoundingClientRect();
       var sidebarLeft=sidebarRect.left;
       ghost.style.left=sidebarLeft+sidebarRect.width+"px";

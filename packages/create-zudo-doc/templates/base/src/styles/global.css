@@ -727,7 +727,7 @@ pre[class^="syntect-"].word-wrap code {
   gap: var(--spacing-hsp-2xs);
   opacity: 0;
   transition: opacity 0.15s;
-  z-index: 1;
+  z-index: var(--z-index-local-1);
 }
 
 .code-block-wrapper:hover .code-buttons,
@@ -1183,7 +1183,7 @@ pre[class^="syntect-"] .line .highlighted-word {
   border: none;
   background: transparent;
   cursor: pointer;
-  z-index: 1;
+  z-index: var(--z-index-local-1);
   transition: opacity var(--default-transition-duration);
 }
 
@@ -1192,12 +1192,12 @@ pre[class^="syntect-"] .line .highlighted-word {
   position: absolute;
   inset: 0;
   background: color-mix(in oklch, var(--color-image-overlay-bg) 80%, transparent);
-  z-index: 0;
+  z-index: var(--z-index-local-1);
 }
 
 .zd-enlarge-btn > svg {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-index-local-2);
   width: var(--spacing-icon-sm);
   height: var(--spacing-icon-sm);
   color: var(--color-image-overlay-fg);
@@ -1232,7 +1232,7 @@ dialog.zd-enlarge-dialog::backdrop {
   border: none;
   background: transparent;
   cursor: pointer;
-  z-index: 1;
+  z-index: var(--z-index-local-1);
   transition: opacity var(--default-transition-duration);
 }
 
@@ -1245,12 +1245,12 @@ dialog.zd-enlarge-dialog::backdrop {
   position: absolute;
   inset: 0;
   background: color-mix(in oklch, var(--color-image-overlay-bg) 80%, transparent);
-  z-index: 0;
+  z-index: var(--z-index-local-1);
 }
 
 .zd-enlarge-dialog-close > svg {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-index-local-2);
   width: var(--spacing-icon-lg);
   height: var(--spacing-icon-lg);
   color: var(--color-image-overlay-fg);
