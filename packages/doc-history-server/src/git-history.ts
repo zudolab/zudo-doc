@@ -274,7 +274,11 @@ function parseBatchContents(
     const headerParts = header.split(" ");
     const sizeStr = headerParts[headerParts.length - 1];
     const size = parseInt(sizeStr ?? "0", 10);
-    if (isNaN(size)) continue;
+    // Guard against NaN, negative sizes, and headers that claim more bytes
+    // than the buffer contains. Any of these indicate a corrupt or truncated
+    // cat-file response; stop parsing rather than desyncing `pos` and
+    // producing garbage for later entries.
+    if (isNaN(size) || size < 0 || pos + size > rawBuf.length) break;
 
     // Read exactly `size` bytes (the content), then skip the trailing \n separator
     const content = rawBuf.toString("utf-8", pos, pos + size);
@@ -391,17 +395,23 @@ export async function getDocHistoryAsync(
   // Batch-fetch all content in a single git cat-file --batch spawn
   const contentMap = await batchFetchContentsAsync(pairs);
 
-  // Assemble entries; fall back to per-commit logic for batch misses
-  const entries: DocHistoryEntry[] = await Promise.all(
-    metaRecords.map(async (rec) => {
-      if (contentMap.has(rec.hash)) {
-        return { ...rec, content: contentMap.get(rec.hash)! };
-      }
+  // Assemble entries; fall back to per-commit logic for batch misses.
+  // Batch hits are synchronous (no I/O). Misses (renamed paths not in the
+  // batch) are fetched sequentially rather than via Promise.all to bound the
+  // number of concurrent git processes: a file with many renames could
+  // otherwise spawn dozens of git-show processes inside a single semaphore
+  // permit, overwhelming the global git-process budget set in cli.ts.
+  // Renames are documented as rare, so sequential fallback is acceptable.
+  const entries: DocHistoryEntry[] = [];
+  for (const rec of metaRecords) {
+    if (contentMap.has(rec.hash)) {
+      entries.push({ ...rec, content: contentMap.get(rec.hash)! });
+    } else {
       // Batch miss: rename path not in map or object missing — use fallback
       const content = await getFileAtCommitAsync(rec.hash, filePath);
-      return { ...rec, content };
-    }),
-  );
+      entries.push({ ...rec, content });
+    }
+  }
 
   return { slug, filePath: relPath, entries };
 }

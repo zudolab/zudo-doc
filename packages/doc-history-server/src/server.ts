@@ -84,14 +84,17 @@ export function startServer(options: ServerOptions): void {
   let fileIndex = buildFileIndex(dirEntries);
   console.log(`Indexed ${fileIndex.size} documents`);
 
-  // Periodically refresh file index to pick up new/renamed files during dev
-  setInterval(() => {
+  // Periodically refresh file index to pick up new/renamed files during dev.
+  // .unref() so the timer does not prevent the process from exiting when the
+  // HTTP server itself is closed (e.g. in tests or graceful shutdown).
+  const refreshTimer = setInterval(() => {
     try {
       fileIndex = buildFileIndex(dirEntries);
     } catch {
       // Ignore refresh errors — keep using the last good index
     }
   }, FILE_INDEX_REFRESH_MS);
+  refreshTimer.unref();
 
   const server = createServer((req: IncomingMessage, res: ServerResponse) => {
     const url = req.url ?? "";
