@@ -33,11 +33,22 @@
  * `DeserializeOptions.manifest`, preserving consumer override hooks.
  */
 
-// `import type` (not `import { type ... }`) — esbuild only erases the whole
-// statement in the former shape; the latter leaves a runtime
-// `import {} from "@takazudo/zdtp"` in dist, breaking consumers that don't
-// install zdtp themselves (zdtp is a types-only optional peer here).
-import type { TokenDef } from "@takazudo/zdtp";
+// Structural copy of @takazudo/zdtp's TokenDef — keeps the optional peer out of
+// the emitted public .d.ts (#2138). Only the four fields consumed by this module
+// are included (id, cssVar, default, readonly); the full upstream interface has
+// additional display-only fields (label, group, step, unit, control, options, pill)
+// that are irrelevant here. Structurally compatible: any real TokenDef satisfies
+// this narrower shape, so callers that pass a zdtp manifest array still type-check.
+interface TokenDef {
+  /** Stable id used as the Record key in persisted state (e.g. `hsp-2xs`). */
+  id: string;
+  /** CSS custom property name written to `:root` (e.g. `--zd-spacing-hgap-2xs`). */
+  cssVar: string;
+  /** Default value as a CSS length string (e.g. `0.125rem`). */
+  default: string;
+  /** Read-only tokens are displayed but not editable. */
+  readonly?: true;
+}
 import {
   emptyOverrides,
   type ColorTweakState,
