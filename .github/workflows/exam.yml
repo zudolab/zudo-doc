@@ -69,7 +69,7 @@ jobs:
       # (it treats the suffix as a reporter MODULE name → MODULE_NOT_FOUND); the
       # env var is the supported way to redirect the json reporter's file output.
       - name: Run CI-safe E2E suite
-        run: pnpm test:e2e:ci -- --reporter=list,json
+        run: pnpm test:e2e:ci:json
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-report/ci-results.json
 
