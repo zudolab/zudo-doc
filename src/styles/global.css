@@ -138,11 +138,9 @@
   --color-overlay: #000;
   --color-image-overlay-bg: var(--zd-image-overlay-bg);
   --color-image-overlay-fg: var(--zd-image-overlay-fg);
-  --color-mermaid-node-bg: var(--zd-mermaid-node-bg);
-  --color-mermaid-text: var(--zd-mermaid-text);
-  --color-mermaid-line: var(--zd-mermaid-line);
-  --color-mermaid-label-bg: var(--zd-mermaid-label-bg);
-  --color-mermaid-note-bg: var(--zd-mermaid-note-bg);
+  /* --color-mermaid-* aliases removed: mermaid-init-script.ts reads --zd-mermaid-* directly;
+     these @theme registrations were unused (no Tailwind utility references). --zd-mermaid-*
+     injection in color-scheme-utils.ts is preserved and remains the live source. */
   --color-chat-user-bg: var(--zd-chat-user-bg);
   --color-chat-user-text: var(--zd-chat-user-text);
   --color-chat-assistant-bg: var(--zd-chat-assistant-bg);
@@ -205,7 +203,7 @@
   --text-caption:    var(--text-scale-xs);   /* labels, timestamps */
   --text-small:      var(--text-scale-sm);   /* secondary text, nav items */
   --text-body:       var(--text-scale-md);   /* paragraphs, default */
-  --text-title: var(--text-scale-lg);   /* card titles, section labels */
+  --text-title:      var(--text-scale-lg);   /* card titles, section labels */
   --text-heading:    var(--text-scale-xl);   /* page headings */
   --text-display:    var(--text-scale-2xl);  /* hero text */
 
@@ -254,7 +252,7 @@
   --text-scale-xl:  3rem;       /* 48px */
   --text-scale-2xl: 3.75rem;    /* 60px */
 
-  --default-transition-duration: 150ms;
+  --default-transition-duration: 150ms; /* consumed by image-enlarge; other transitions use 150ms/200ms/300ms literals — only partially tokenized */
 }
 
 /* ========================================
@@ -368,7 +366,7 @@ body {
   text-decoration: none;
   margin-left: var(--spacing-hsp-sm);
   opacity: 0;
-  transition: opacity 0.15s;
+  transition: opacity 150ms;
 }
 
 .zd-content :where(h2, h3, h4, h5, h6) .hash-link::after {
@@ -694,7 +692,7 @@ pre[class^="syntect-"].word-wrap code {
   display: flex;
   gap: var(--spacing-hsp-2xs);
   opacity: 0;
-  transition: opacity 0.15s;
+  transition: opacity 150ms;
   z-index: 1;
 }
 
@@ -707,8 +705,8 @@ pre[class^="syntect-"].word-wrap code {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--spacing-hsp-2xl);
-  height: var(--spacing-hsp-2xl);
+  width: 2rem; /* 32px — one-off button box; no --spacing-icon-* at this size (two-tier: keep as arbitrary) */
+  height: 2rem; /* 32px — see above */
   padding: 0;
   border: 1px solid var(--color-muted);
   border-radius: var(--radius-lg);
@@ -716,9 +714,9 @@ pre[class^="syntect-"].word-wrap code {
   color: var(--color-fg);
   cursor: pointer;
   transition:
-    color 0.15s,
-    border-color 0.15s,
-    background-color 0.15s;
+    color 150ms,
+    border-color 150ms,
+    background-color 150ms;
 }
 
 .code-btn:hover {
@@ -727,8 +725,8 @@ pre[class^="syntect-"].word-wrap code {
 }
 
 .code-btn .code-icon {
-  width: var(--spacing-hsp-lg);
-  height: var(--spacing-hsp-lg);
+  width: var(--spacing-icon-sm);  /* 16px — standard UI icon */
+  height: var(--spacing-icon-sm); /* 16px — standard UI icon */
 }
 
 /* Copy: icon swap */
@@ -798,8 +796,8 @@ pre[class^="syntect-"].word-wrap code {
  * These rules only adjust layout and background for the preview context. */
 .zd-html-preview-code pre.shiki {
   margin: 0;
-  padding: 0.75rem;
-  font-size: 0.875rem;
+  padding: var(--spacing-hsp-md);
+  font-size: var(--text-caption);
   line-height: 1.6;
   overflow-x: auto;
 }
@@ -1017,11 +1015,18 @@ pre[class^="syntect-"] .line .highlighted-word {
   color: var(--color-accent-hover);
 }
 
+/* Chat inline-code / pre share intentional sub-token radii (3px inline, 6px block)
+   that are deliberately smaller than --radius-DEFAULT (4px) / --radius-lg (8px). */
+.ai-chat-md {
+  --_chat-code-radius: 3px;   /* inline code — tighter than --radius-DEFAULT (4px) */
+  --_chat-pre-radius: 6px;    /* pre block   — tighter than --radius-lg (8px)      */
+}
+
 .ai-chat-md :where(code:not(pre code)) {
-  font-size: 0.9em;
+  font-size: 0.9em; /* em-relative: scales proportionally with the chat bubble's font size */
   background: color-mix(in oklch, var(--color-muted) 20%, transparent);
   padding: 0.1em 0.3em;
-  border-radius: 3px;
+  border-radius: var(--_chat-code-radius);
 }
 
 .ai-chat-md :where(pre) {
@@ -1031,7 +1036,7 @@ pre[class^="syntect-"] .line .highlighted-word {
   background: var(--color-code-bg);
   color: var(--color-code-fg);
   padding: var(--spacing-vsp-2xs) var(--spacing-hsp-sm);
-  border-radius: 6px;
+  border-radius: var(--_chat-pre-radius);
   overflow-x: auto;
   margin: var(--spacing-vsp-2xs) 0;
 }
