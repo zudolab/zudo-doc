@@ -178,6 +178,26 @@ jobs:
         run: node scripts/check-e2e-spec-naming.mjs
 
   # ---------------------------------------------------------------------------
+  # Job 0.68: Z-index codegen drift check (#2148)
+  # ---------------------------------------------------------------------------
+  # Re-runs the z-index @theme codegen into a buffer and fails if
+  # src/styles/global.css has drifted from src/config/z-index-tokens.ts (the
+  # single source of truth). Also the structural guard for CSS-file raw
+  # z-index: every z-index now flows through the generated @theme block, so a
+  # hand-edited block (or a stale commit after editing the tokens file) turns
+  # the PR red here.
+  # Pure-Node script — uses preinstalled Node 22 on the runner image, no pnpm.
+  check-z-index:
+    name: Z-Index Codegen Drift Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Check z-index codegen drift
+        run: node scripts/gen-z-index.mjs --check
+
+  # ---------------------------------------------------------------------------
   # Job 0.7: Lint gates (tags audit + design token lint)
   # ---------------------------------------------------------------------------
   # Runs pnpm tags:audit --ci (tsx scripts/tags-audit.ts) and pnpm lint:tokens

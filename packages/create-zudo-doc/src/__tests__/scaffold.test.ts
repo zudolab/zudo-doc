@@ -1686,6 +1686,16 @@ describe("scaffold — plugin copying and settings", () => {
     );
   });
 
+  it("includes z-index codegen scripts (#2148)", async () => {
+    const pkg = await fs.readJson(
+      projectPath("test-minimal", "package.json"),
+    );
+    expect(pkg.scripts["gen:z-index"]).toBe("node scripts/gen-z-index.mjs");
+    expect(pkg.scripts["check:z-index"]).toBe(
+      "node scripts/gen-z-index.mjs --check",
+    );
+  });
+
   it("does not emit check:pages (host-only gate — template stubs not type-clean, #2018)", async () => {
     const pkg = await fs.readJson(
       projectPath("test-minimal", "package.json"),
