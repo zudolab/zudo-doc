@@ -59,6 +59,9 @@ export default function ImageEnlarge() {
     });
     let mutationObserver: MutationObserver | null = null;
     let resizeTimer = 0;
+    // AbortController for per-image "load" listeners — aborted on SPA swap and
+    // on effect cleanup so listeners don't outlive the observation scope (#2136 M2).
+    let loadAbortController = new AbortController();
 
     function evaluateEligibility(img: HTMLImageElement) {
       const container = img.closest(".zd-enlargeable");
@@ -80,7 +83,11 @@ export default function ImageEnlarge() {
       if (img.complete) {
         evaluateEligibility(img);
       } else {
-        img.addEventListener("load", () => evaluateEligibility(img), { once: true });
+        img.addEventListener(
+          "load",
+          () => evaluateEligibility(img),
+          { once: true, signal: loadAbortController.signal },
+        );
       }
     }
 
@@ -121,6 +128,10 @@ export default function ImageEnlarge() {
       observedImages.clear();
       mutationObserver?.disconnect();
       mutationObserver = null;
+      // Abort any pending load listeners from the previous page, then issue a
+      // fresh controller for the incoming page's images (#2136 M2).
+      loadAbortController.abort();
+      loadAbortController = new AbortController();
       startObserving();
     }
 
@@ -132,6 +143,7 @@ export default function ImageEnlarge() {
       sharedResizeObserver.disconnect();
       observedImages.clear();
       mutationObserver?.disconnect();
+      loadAbortController.abort();
       window.removeEventListener("resize", handleWindowResize);
       document.removeEventListener(AFTER_NAVIGATE_EVENT, handleAfterSwap);
       clearTimeout(resizeTimer);
@@ -143,6 +155,9 @@ export default function ImageEnlarge() {
       const target = e.target as Element;
       const container = target.closest(".zd-enlargeable");
       if (!container) return;
+      // Target gate: only open when the click is on the expand button or the
+      // image itself — not on arbitrary children of .zd-enlargeable (#2136 M1).
+      if (!target.closest(".zd-enlarge-btn") && !target.closest("img")) return;
       const btn = container.querySelector(".zd-enlarge-btn") as HTMLElement | null;
       // Eligibility gate: only open when the expand button is visible (image is large enough).
       if (!btn || btn.hasAttribute("hidden")) return;
@@ -186,7 +201,7 @@ export default function ImageEnlarge() {
             <img
               src={imgData.currentSrc || imgData.src}
               srcSet={imgData.srcset}
-              sizes={imgData.srcset ? "100vw" : undefined}
+              sizes={imgData.srcset ? "85vw" : undefined}
               alt={imgData.alt}
               className="block max-h-[85vh] max-w-[85vw] object-contain"
             />
