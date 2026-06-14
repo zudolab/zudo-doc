@@ -905,6 +905,115 @@ describe("scaffold — headerRightItems preset override (sub #440)", () => {
   });
 });
 
+describe("scaffold — search item in default headerRightItems fallback (#2139)", () => {
+  // The host header slots the search widget at the `search` component position.
+  // Without this item in the generated settings, scaffolded projects silently
+  // show no search box even when the search feature is selected (default: true).
+
+  it("emits search item in headerRightItems when search feature is selected (no override)", async () => {
+    const choices: UserChoices = {
+      projectName: "test-hri-search-on",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-hri-search-on", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain('component: "search"');
+  });
+
+  it("does NOT emit search item in headerRightItems when search feature is absent", async () => {
+    // Bare-minimum choices: search removed so the fallback must omit the search entry.
+    const choices: UserChoices = {
+      projectName: "test-hri-search-off",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: [],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-hri-search-off", "src/config/settings.ts"),
+      "utf-8",
+    );
+    // Only the headerRightItems block must be checked — not any other potential
+    // occurrence of "search" in the file.
+    const blockMatch = content.match(
+      /headerRightItems:\s*\[([\s\S]*?)\]\s*satisfies\s+HeaderRightItem\[\]\s*as\s+HeaderRightItem\[\],/,
+    );
+    expect(blockMatch).not.toBeNull();
+    const block = blockMatch![1]!;
+    expect(block).not.toContain('"search"');
+  });
+
+  it("search item appears after theme-toggle and before language-switcher in default fallback", async () => {
+    const choices: UserChoices = {
+      projectName: "test-hri-search-order",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "i18n"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-hri-search-order", "src/config/settings.ts"),
+      "utf-8",
+    );
+    const blockMatch = content.match(
+      /headerRightItems:\s*\[([\s\S]*?)\]\s*satisfies\s+HeaderRightItem\[\]\s*as\s+HeaderRightItem\[\],/,
+    );
+    expect(blockMatch).not.toBeNull();
+    const block = blockMatch![1]!;
+    const lines = block
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+    const themeIdx = lines.findIndex((l) => l.includes('"theme-toggle"'));
+    const searchIdx = lines.findIndex((l) => l.includes('"search"'));
+    const langIdx = lines.findIndex((l) => l.includes('"language-switcher"'));
+    expect(themeIdx).toBeGreaterThanOrEqual(0);
+    expect(searchIdx).toBeGreaterThan(themeIdx);
+    expect(langIdx).toBeGreaterThan(searchIdx);
+  });
+
+  it("explicit headerRightItems override is unaffected by the search feature gate (#2139)", async () => {
+    // User-supplied override must pass through verbatim — the search gate only
+    // applies to the default-fallback path, not when choices.headerRightItems
+    // is explicitly set.
+    const choices: UserChoices = {
+      projectName: "test-hri-search-override",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+      headerRightItems: [
+        { type: "component", component: "theme-toggle" },
+      ],
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-hri-search-override", "src/config/settings.ts"),
+      "utf-8",
+    );
+    const blockMatch = content.match(
+      /headerRightItems:\s*\[([\s\S]*?)\]\s*satisfies\s+HeaderRightItem\[\]\s*as\s+HeaderRightItem\[\],/,
+    );
+    expect(blockMatch).not.toBeNull();
+    const block = blockMatch![1]!;
+    // Only the explicitly-listed theme-toggle; no auto-injected search.
+    expect(block).not.toContain('"search"');
+    expect(block).toContain('"theme-toggle"');
+  });
+});
+
 describe("scaffold — llmsTxt feature", () => {
   it("settings have llmsTxt: true when enabled", async () => {
     const choices: UserChoices = {
