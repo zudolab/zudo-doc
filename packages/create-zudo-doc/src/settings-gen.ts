@@ -11,10 +11,10 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  HeaderRightItem,`);
   lines.push(`  ColorModeConfig,`);
   lines.push(`  HtmlPreviewConfig,`);
-  lines.push(`  FrontmatterPreviewConfig,`);
   lines.push(`  LocaleConfig,`);
   lines.push(`  VersionConfig,`);
   lines.push(`  FooterConfig,`);
+  lines.push(`  FrontmatterPreviewConfig,`);
   lines.push(`  BodyFootUtilAreaConfig,`);
   lines.push(`  TagPlacement,`);
   lines.push(`  TagGovernanceMode,`);
@@ -26,10 +26,10 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  HeaderRightItem,`);
   lines.push(`  ColorModeConfig,`);
   lines.push(`  HtmlPreviewConfig,`);
-  lines.push(`  FrontmatterPreviewConfig,`);
   lines.push(`  LocaleConfig,`);
   lines.push(`  VersionConfig,`);
   lines.push(`  FooterConfig,`);
+  lines.push(`  FrontmatterPreviewConfig,`);
   lines.push(`  BodyFootUtilAreaConfig,`);
   lines.push(`  TagPlacement,`);
   lines.push(`  TagGovernanceMode,`);
@@ -145,6 +145,8 @@ export function generateSettingsFile(choices: UserChoices): string {
     lines.push(`  tagGovernance: "off" as TagGovernanceMode,`);
     lines.push(`  tagVocabulary: false as boolean,`);
   }
+  // Default false — fresh scaffolds typically don't need live frontmatter preview;
+  // users opt in once they're ready to wire up the preview panel.
   lines.push(
     `  frontmatterPreview: false as FrontmatterPreviewConfig | false,`,
   );
@@ -326,6 +328,9 @@ export function generateSettingsFile(choices: UserChoices): string {
     }
     lines.push(`    { type: "component", component: "github-link" },`);
     lines.push(`    { type: "component", component: "theme-toggle" },`);
+    if (choices.features.includes("search")) {
+      lines.push(`    { type: "component", component: "search" },`);
+    }
     if (choices.features.includes("i18n")) {
       lines.push(`    { type: "component", component: "language-switcher" },`);
     }
