@@ -79,6 +79,9 @@
       "yaml@2": ">=2.8.3 <3",
       "brace-expansion@2": ">=2.0.3 <3",
       "brace-expansion@5": ">=5.0.6 <6"
+    },
+    "patchedDependencies": {
+      "@takazudo/zudo-design-token-lint@1.0.0": "patches/@takazudo__zudo-design-token-lint@1.0.0.patch"
     }
   },
   "dependencies": {
@@ -86,8 +89,8 @@
     "@takazudo/zfb": "0.1.0-next.44",
     "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.44",
     "@takazudo/zfb-runtime": "0.1.0-next.44",
-    "@types/hast": "^3.0.4",
     "@takazudo/zudo-doc": "workspace:*",
+    "@types/hast": "^3.0.4",
     "clsx": "^2.1.1",
     "diff": "^8.0.3",
     "gray-matter": "^4.0.3",
@@ -103,12 +106,12 @@
     "@inquirer/prompts": "^8.4.2",
     "@playwright/test": "1.58.2",
     "@tailwindcss/vite": "^4.2.1",
+    "@takazudo/zudo-design-token-lint": "^1.0.0",
     "@types/mdast": "^4.0.4",
     "@types/node": "^25.3.5",
     "@types/pluralize": "^0.0.33",
     "@types/react": "^19.2.14",
     "@types/string-similarity": "^4.0.2",
-    "@takazudo/zudo-design-token-lint": "^1.0.0",
     "chokidar": "^4.0.0",
     "html-validate": "^10.15.0",
     "lefthook": "^2.1.4",
