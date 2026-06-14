@@ -29,6 +29,53 @@ Outputs a link pointing to `/docs/markdown-features/resolve-links`, not the raw 
 
 When the target file does not exist in the source map, zfb emits a diagnostic warning. The build does not fail on broken links by default. To escalate warnings to errors, enable the opt-in [Link Validation](./link-validation.mdx) feature.
 
+## Advanced: multiple directories, locales, and versions
+
+Resolve Links maps each content directory to a route prefix. zfb registers one entry per directory so the rewriter knows which URL prefix corresponds to each source tree.
+
+The default single-locale setup registers one directory:
+
+```ts
+resolveMarkdownLinks: {
+  enabled: true,
+  dirs: [
+    { dir: settings.docsDir, routePrefix: "/docs/" },
+  ],
+}
+```
+
+When locales are configured, each locale's content directory gets its own entry with a locale-prefixed route:
+
+```ts
+resolveMarkdownLinks: {
+  enabled: true,
+  dirs: [
+    { dir: settings.docsDir, routePrefix: "/docs/" },
+    // Per-locale: each locale dir maps to /<code>/docs/
+    { dir: settings.locales.ja.dir, routePrefix: "/ja/docs/" },
+  ],
+}
+```
+
+This is why a relative link such as `[page](./other.mdx)` inside a Japanese source file resolves to `/ja/docs/...` rather than `/docs/...` — the rewriter matches the file's source directory to the correct prefix.
+
+When versioned collections are also enabled, the same pattern extends to each version's EN directory and its per-locale mirrors:
+
+```ts
+resolveMarkdownLinks: {
+  enabled: true,
+  dirs: [
+    { dir: settings.docsDir, routePrefix: "/docs/" },
+    { dir: settings.locales.ja.dir, routePrefix: "/ja/docs/" },
+    // Versioned: EN dir + per-locale dirs for each version
+    { dir: version.docsDir, routePrefix: "/v/1.0/docs/" },
+    { dir: version.locales.ja.dir, routePrefix: "/v/1.0/ja/docs/" },
+  ],
+}
+```
+
+The actual `zfb.config.ts` in this project builds the `dirs` array dynamically from `settings.locales` and `settings.versions`, so entries are added automatically as new locales or versions are registered — no manual `dirs` edits are needed when you add a locale or a version.
+
 ## Notes
 
 - The plugin operates during the mdast phase, before hast processing.
