@@ -67,6 +67,15 @@ interface PageArgs {
 export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
   const locale = params.locale;
 
+  // Guard: paths() only emits routes for locales defined in settings.locales,
+  // but the component can still be exercised with an unconfigured locale value
+  // (e.g. during testing or if the router dispatches an unexpected param).
+  // Fail loudly rather than silently serving EN content under a bogus prefix.
+  const cfg = getLocaleConfig(locale);
+  if (!cfg) {
+    throw new Error(`LocaleIndexPage: locale "${locale}" is not configured in settings.locales`);
+  }
+
   // Identity-stable, locale-first merge with EN fallback (shared `navDocs`
   // instance). categoryMeta is intentionally locale-dir-only here — this page
   // historically did NOT merge in base meta (unlike the locale doc route), so
@@ -75,10 +84,7 @@ export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
     applyDefaultLocaleOnlyFilter: true,
     keepUnlisted: true,
   });
-  const localeConfig = getLocaleConfig(locale);
-  const categoryMeta = localeConfig
-    ? loadCategoryMeta(localeConfig.dir)
-    : loadCategoryMeta(settings.docsDir);
+  const categoryMeta = loadCategoryMeta(cfg.dir);
 
   const tree = buildNavTree(navDocs, locale as Locale, categoryMeta);
   const categoryOrder = getCategoryOrder();

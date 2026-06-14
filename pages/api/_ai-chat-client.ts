@@ -51,6 +51,19 @@ export async function callClaude(
   history: ChatMessage[],
   env: AiChatEnv,
 ): Promise<string> {
+  // DOCS_SITE_URL must be a non-empty absolute http(s) URL set via wrangler.toml
+  // (see Workers Cutover Runbook step 3). An absent/malformed value would silently
+  // fetch `undefined/llms-full.txt` or a relative path, making the failure very
+  // hard to diagnose.
+  if (
+    !env.DOCS_SITE_URL ||
+    !/^https?:\/\/.+/.test(env.DOCS_SITE_URL)
+  ) {
+    throw new Error(
+      `DOCS_SITE_URL is not set or not a valid http(s) URL (got: ${JSON.stringify(env.DOCS_SITE_URL)}). ` +
+        "Set it in wrangler.toml or via --var DOCS_SITE_URL=<url>.",
+    );
+  }
   const docsContent = await fetchDocsContext(env.DOCS_SITE_URL);
   const requestBody = buildClaudeRequestBody(message, history, docsContent);
 
