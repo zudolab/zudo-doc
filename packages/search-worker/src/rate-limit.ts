@@ -1,3 +1,31 @@
+// SOFT-LIMIT SEMANTICS — read before modifying this module.
+//
+// This rate limiter is a best-effort guard, NOT a hard cap. Three properties
+// of Cloudflare Workers + KV make enforcement inherently approximate:
+//
+// 1. Non-atomic read-modify-write. checkRateLimit reads the current counter,
+//    checks it, then writes count+1. Concurrent requests in the same isolate
+//    (or across isolates) that race between the read and the write will all
+//    observe the pre-increment value and be allowed through, so a burst can
+//    exceed the advertised 60/min or 1000/day limits by up to the degree of
+//    parallelism in flight at that instant.
+//
+// 2. Eventually-consistent KV. Cloudflare KV propagates writes globally with
+//    typical consistency in the seconds range. Requests routed to different
+//    PoPs during that window operate on stale counts, allowing per-colo
+//    leakage proportional to the number of PoPs involved.
+//
+// 3. Fail-open by design (#1918). Any KV error returns { allowed: true } to
+//    avoid blocking search results when the rate-limit store is unavailable.
+//    This deliberately diverges from the ai-chat endpoint, which fails closed
+//    to protect Anthropic API spend. Do NOT change the fail-open behavior here.
+//
+// A full rewrite using Durable Objects (atomic counters, single-actor model)
+// would eliminate the non-atomicity and per-colo leakage, but is out of scope.
+// This guard is appropriate for its use case: search has no metered per-call
+// cost, so the cost of occasional over-allowance is low compared to the risk
+// of blocking users on KV errors or consistency delays.
+
 import type { Env } from "./types";
 
 export interface RateLimitResult {

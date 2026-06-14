@@ -7,6 +7,16 @@ const MAX_LIMIT = 100;
 /** Cache TTL: 5 minutes (in ms) */
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
+/** Fetch timeout: abort if the docs site doesn't respond within 5 seconds */
+const FETCH_TIMEOUT_MS = 5_000;
+
+/**
+ * Maximum number of entries accepted from search-index.json.
+ * A response far beyond a plausible doc corpus is likely corrupt or malicious;
+ * reject early rather than feeding unbounded data into MiniSearch.addAll.
+ */
+const MAX_INDEX_ENTRIES = 100_000;
+
 let cachedPromise: Promise<MiniSearch<SearchIndexEntry>> | null = null;
 let cachedUrl: string | null = null;
 let cachedAt = 0;
@@ -29,13 +39,23 @@ function isSearchIndexEntry(entry: unknown): entry is SearchIndexEntry {
 }
 
 async function fetchSearchIndex(url: string): Promise<SearchIndexEntry[]> {
-  const res = await fetch(url);
+  // AbortSignal.timeout aborts the fetch if the docs site is unresponsive,
+  // preventing one slow load from hanging all coalesced callers indefinitely.
+  const res = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
   if (!res.ok) {
     throw new Error(`Failed to fetch search index: ${res.status} ${res.statusText}`);
   }
   const parsed: unknown = await res.json();
   if (!Array.isArray(parsed)) {
     throw new Error("Search index is not an array");
+  }
+  // Sanity cap: reject implausibly large indexes before feeding them to
+  // MiniSearch.addAll. Throwing here causes the cache to reset (see getIndex
+  // .catch handler), so the next request retries a fresh fetch.
+  if (parsed.length > MAX_INDEX_ENTRIES) {
+    throw new Error(
+      `Search index has ${parsed.length} entries, exceeding the ${MAX_INDEX_ENTRIES} cap`,
+    );
   }
   // Validate each entry's shape rather than blindly casting the fetched data.
   const entries: SearchIndexEntry[] = [];
@@ -69,14 +89,23 @@ function getIndex(env: Env): Promise<MiniSearch<SearchIndexEntry>> {
   }
 
   cachedUrl = url;
-  cachedAt = now;
-  cachedPromise = buildIndex(url).catch((err) => {
-    // Reset cache on failure so next request retries
-    cachedPromise = null;
-    cachedUrl = null;
-    cachedAt = 0;
-    throw err;
-  });
+  // cachedAt is set in .then() (after the index builds successfully) rather
+  // than here. Setting it before the fetch resolves burns TTL during a slow
+  // load: a 4-second fetch on a 5-minute TTL would serve a stale index for
+  // only ~4m56s before the next refresh. By stamping the clock only on
+  // success, the full TTL window starts when the index is actually ready.
+  cachedPromise = buildIndex(url)
+    .then((ms) => {
+      cachedAt = Date.now();
+      return ms;
+    })
+    .catch((err) => {
+      // Reset cache on failure so next request retries
+      cachedPromise = null;
+      cachedUrl = null;
+      cachedAt = 0;
+      throw err;
+    });
   return cachedPromise;
 }
 
