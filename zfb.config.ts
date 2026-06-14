@@ -434,7 +434,7 @@ export default defineConfig({
           ])
         : []),
     ],
-    onBrokenLinks: "warn",
+    onBrokenLinks: settings.onBrokenMarkdownLinks,
   },
   // Public URL prefix for `<link rel="stylesheet">` and `<script
   // type="module">` tags emitted into dist HTML. Currently "/" (root)
@@ -488,7 +488,7 @@ export default defineConfig({
         caution: "Caution",
         details: "Details", // routes to DetailsWrapper — a collapsible, NOT an admonition
       },
-      mermaid: true,
+      mermaid: settings.mermaid,
       // imageEnlarge removed from zfb at next.18 — re-implemented in userland
       // via MDX p-override in pages/_mdx-components.ts (#1824).
       headingMarkerToc: true,

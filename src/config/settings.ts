@@ -48,6 +48,7 @@ export const settings = {
   } satisfies Record<string, LocaleConfig>,
   mermaid: true,
   noindex: false as boolean, // When true, adds noindex/nofollow to all pages (for internal docs)
+  // Not yet wired: wiring requires adding an editLink slot to BodyFootUtilArea (v2 package API change, #2140).
   editUrl: false as string | false,
   githubUrl: "https://github.com/zudolab/zudo-doc" as string | false,
   siteUrl: "https://zudo-doc.takazudomodular.com" as string, // canonical prod host; sitemap/canonical links use this regardless of deploy URL
@@ -61,6 +62,7 @@ export const settings = {
   sitemap: true,
   docMetainfo: true,
   docTags: true,
+  // Not yet wired: settings uses "before-pager" but DocTags (v2 package) expects "before-footer" — types must align first (#2140).
   tagPlacement: "after-title" as TagPlacement,
   /**
    * Tag governance enforcement level.
@@ -89,6 +91,7 @@ export const settings = {
    */
   tagVocabulary: true as boolean,
   llmsTxt: true,
+  // Reserved: not yet consumed by the zfb pipeline; wiring site TBD (#2140).
   math: true,
   cjkFriendly: true as boolean,
   onBrokenMarkdownLinks: "warn" as "warn" | "error" | "ignore",
@@ -186,9 +189,15 @@ export const settings = {
     docHistory: true,
     viewSourceLink: true,
   } satisfies BodyFootUtilAreaConfig as BodyFootUtilAreaConfig | false,
+  // Kept as `undefined` (not `false`) because the consumer uses `?? null`
+  // (pages/_mdx-components.ts), which converts undefined→null but passes
+  // false as-is; `false` doesn't satisfy `HtmlPreviewGlobalConfig | null` (#2140).
   htmlPreview: undefined as HtmlPreviewConfig | undefined,
   versions: [
     {
+      // Intentionally English-only: no `locales` field and no docs-v1-ja directory.
+      // Versioned docs are not translated for archived versions; the bilingual rule
+      // applies to the current docs only (#2140).
       slug: "1.0",
       label: "1.0.0",
       docsDir: "src/content/docs-v1",
