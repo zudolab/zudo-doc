@@ -2,6 +2,6 @@
   "identifier": "default",
   "description": "Default capabilities for the main window",
   "windows": ["main"],
-  "remote": { "urls": ["http://localhost:*/*"] },
+  "remote": { "urls": ["http://localhost:*/**"] },
   "permissions": ["core:default"]
 }
