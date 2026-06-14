@@ -1426,6 +1426,9 @@ dialog.zd-enlarge-dialog::backdrop {
 .page-loading-overlay {
   position: fixed;
   inset: 0;
+  /* Full-screen blocking load overlay — modal tier (was a raw z-index:9999).
+     It sits below the transient `drag` tier (sidebar-resizer ghost), which is
+     fine: a full page-load overlay and an active pointer-drag never coexist. */
   z-index: var(--z-index-modal);
   display: flex;
   align-items: center;

@@ -114,7 +114,7 @@ export const Z_INDEX_TIERS: ZIndexTier[] = [
     name: "tooltip",
     value: 80,
     purpose:
-      "reserved — highest steady UI layer (canonical scale; not yet used)",
+      "reserved — highest steady UI layer, below only the transient drag tier (canonical scale; not yet used)",
     kind: "global",
   },
   {

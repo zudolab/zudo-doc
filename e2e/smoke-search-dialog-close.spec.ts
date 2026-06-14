@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 /**
  * Regression spec for epic #2148 — the two linked search-dialog defects:
@@ -24,7 +24,10 @@ import { test, expect } from "@playwright/test";
 const DOCS_PAGE = "/docs/getting-started";
 
 test.describe("Search dialog closes on result click (#2148)", () => {
-  test("clicking a result closes the dialog AND navigates", async ({ page }) => {
+  test("clicking a result closes the dialog AND navigates", async ({
+    page,
+    assertNoConsoleErrors,
+  }) => {
     await page.goto(DOCS_PAGE, { waitUntil: "domcontentloaded" });
 
     const startUrl = page.url();
@@ -51,6 +54,11 @@ test.describe("Search dialog closes on result click (#2148)", () => {
     // (a) Dialog is closed. Assert via both the visibility locator and the
     // native <dialog>.open property (showModal/close drives `open`).
     await expect(dialog).not.toBeVisible({ timeout: 5000 });
+    // The <dialog> element itself must still exist after the SPA swap (the
+    // header persists across same-locale swaps via data-zfb-transition-persist).
+    // Assert presence first so a missing element gives a clear diagnostic rather
+    // than an opaque `expect(null).toBe(false)`.
+    await expect(dialog).toHaveCount(1);
     const dialogOpen = await page.evaluate(() => {
       const d = document.querySelector<HTMLDialogElement>("[data-search-dialog]");
       return d ? d.open : null;
@@ -68,5 +76,8 @@ test.describe("Search dialog closes on result click (#2148)", () => {
 
     // The dialog stays closed after the swap settles (no flash / re-open).
     await expect(dialog).not.toBeVisible();
+
+    // No errors thrown during close + SPA swap (e.g. inside closeDialog()).
+    assertNoConsoleErrors();
   });
 });
