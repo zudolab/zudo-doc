@@ -164,7 +164,7 @@ function findClaudeMdFiles(dir: string, excludeDirs: string[]): string[] {
 function generateClaudemdDocs(
   config: ClaudeResourcesConfig,
 ): ClaudeMdItem[] {
-  const projectRoot = config.projectRoot ?? path.dirname(config.claudeDir);
+  const projectRoot = config.projectRoot ?? config.claudeDir;
   const outputDir = path.join(config.docsDir, "claude-md");
 
   cleanDir(outputDir);

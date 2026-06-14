@@ -532,4 +532,36 @@ describe("generateClaudeResourcesDocs", () => {
       ).toThrow(/reserved name "index"/);
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // projectRoot default scope regression test
+  // ---------------------------------------------------------------------------
+
+  describe("projectRoot default scope", () => {
+    it("walks claudeDir (not its parent) when projectRoot is omitted", () => {
+      // The fixture already writes tmpDir/CLAUDE.md (outside claudeDir).
+      // With the old bug (projectRoot = path.dirname(claudeDir) = tmpDir), the
+      // walk starts at tmpDir and picks up tmpDir/CLAUDE.md. With the fix
+      // (projectRoot = claudeDir), the walk starts inside claudeDir and does NOT
+      // reach tmpDir/CLAUDE.md (parent dirs are never walked upward).
+      //
+      // To distinguish, we write a CLAUDE.md inside claudeDir with unique content
+      // and verify the generated page body matches IT, not the outside one.
+      fs.writeFileSync(
+        path.join(claudeDir, "CLAUDE.md"),
+        "# Claude dir unique content xyz123",
+      );
+
+      // Call with NO projectRoot.
+      generateClaudeResourcesDocs({ claudeDir, docsDir });
+
+      // The generated root.mdx body must contain the inside-claudeDir content.
+      const claudeMdDir = path.join(docsDir, "claude-md");
+      const rootMdx = fs.readFileSync(path.join(claudeMdDir, "root.mdx"), "utf8");
+      expect(rootMdx).toContain("xyz123");
+
+      // And must NOT contain the outside content (from tmpDir/CLAUDE.md).
+      expect(rootMdx).not.toContain("Project instructions");
+    });
+  });
 });
