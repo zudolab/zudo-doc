@@ -42,6 +42,13 @@ resumes automatically.
 The CI publish workflow computes the dist-tag from the version string: any
 version containing `-` gets `--tag next`; a clean `X.Y.Z` gets `--tag latest`.
 
+**`next` is removed on stable graduation.** When a clean `X.Y.Z` publish
+graduates the prerelease line, each publish workflow runs an extra step that
+removes the `next` dist-tag (`npm dist-tag rm <pkg> next`). This prevents
+`npm install <pkg>@next` from silently resolving to a stale prerelease. The
+step is idempotent and non-fatal — if `next` does not exist (e.g. the first
+stable release ever), the step logs a notice and succeeds anyway.
+
 ---
 
 ## How `latest` stays current (Scheme B)
@@ -159,3 +166,23 @@ node scripts/release-bootstrap-latest.mjs 0.2.0-next.9
 It is idempotent: re-running with the same version is a no-op. The **preferred**
 fix, though, is simply to ship a clean version (e.g. `0.2.0`), which supersedes the
 stranded tag through the normal publish path.
+
+---
+
+## One-time manual cleanup: remove stale `next` dist-tag (#2121)
+
+As of the first stable `0.2.x` graduation, the `next` dist-tag on all three
+packages is frozen at `0.2.0-next.9` — a stale prerelease from before Scheme B
+was adopted. The publish workflows now automatically remove `next` on each future
+stable graduation (see the dist-tag table note above), but the **currently-stale
+tag must be cleared once by a maintainer**:
+
+```sh
+npm dist-tag rm @takazudo/zudo-doc next
+npm dist-tag rm @takazudo/zudo-doc-history-server next
+npm dist-tag rm create-zudo-doc next
+```
+
+Run these from any machine with an npm Automation token (`npm login` or
+`NPM_TOKEN` set). Each command is idempotent — safe to re-run if the tag has
+already been removed.
