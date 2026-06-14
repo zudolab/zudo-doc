@@ -70,7 +70,7 @@ export function FindBar({ visible, onClose, findInPage, containerSelector }: Fin
   if (!visible) return null;
 
   return (
-    <div className="fixed top-[3.5rem] right-0 z-50 flex items-center gap-hsp-sm py-hsp-xs px-hsp-md bg-surface border-b border-l border-muted rounded-bl-lg shadow-md">
+    <div className="fixed top-[3.5rem] right-0 z-toolbar flex items-center gap-hsp-sm py-hsp-xs px-hsp-md bg-surface border-b border-l border-muted rounded-bl-lg shadow-md">
       <input
         ref={inputRef}
         className="w-48 py-[4px] px-hsp-sm rounded text-small bg-bg border border-muted text-fg outline-none focus:border-accent"

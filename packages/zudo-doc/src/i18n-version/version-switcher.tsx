@@ -213,7 +213,7 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
 
       <ul
         id={menuId}
-        class="absolute right-0 top-full z-10 mt-vsp-3xs hidden min-w-[8rem] border border-muted rounded bg-surface shadow-lg whitespace-nowrap py-vsp-3xs"
+        class="absolute right-0 top-full z-dropdown mt-vsp-3xs hidden min-w-[8rem] border border-muted rounded bg-surface shadow-lg whitespace-nowrap py-vsp-3xs"
         data-version-menu
       >
         <li>

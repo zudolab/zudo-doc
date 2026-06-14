@@ -364,7 +364,7 @@ export function DocLayoutWithDefaults(
             // every page. Pages with bespoke chrome should pass
             // `headerOverride` to swap this out wholesale.
             <header
-              class="sticky top-0 z-50 flex h-[3.5rem] items-center justify-end border-b border-muted bg-surface px-hsp-lg"
+              class="sticky top-0 z-toolbar flex h-[3.5rem] items-center justify-end border-b border-muted bg-surface px-hsp-lg"
               data-header
             >
               <ThemeToggle />

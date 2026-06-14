@@ -118,7 +118,7 @@ function CategoryNode({
     <div className={`${depth >= 1 && !isLast ? "relative" : ""}`}>
       {depth >= 1 && !isLast && open && (
         <div
-          className="absolute border-l border-dashed border-muted z-10"
+          className="absolute border-l border-dashed border-muted z-local-1"
           style={{
             left: connectorLeft(depth),
             top: 0,

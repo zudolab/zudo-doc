@@ -126,7 +126,7 @@ export default function SidebarToggle({
           the SSR DOM tree matches the hydrated tree (no subtree
           mount/unmount across the hydration boundary). */}
       <div
-        className={clsx("fixed inset-0 z-30 bg-overlay/30 lg:hidden", !open && "hidden")}
+        className={clsx("fixed inset-0 z-modal-backdrop bg-overlay/30 lg:hidden", !open && "hidden")}
         aria-hidden={!open}
         onClick={() => setOpen(false)}
       />
@@ -141,7 +141,7 @@ export default function SidebarToggle({
       <aside
         inert={!open}
         className={`
-          fixed top-[3.5rem] left-0 z-40 h-[calc(100vh-3.5rem)] w-[16rem] flex flex-col
+          fixed top-[3.5rem] left-0 z-modal h-[calc(100vh-3.5rem)] w-[16rem] flex flex-col
           border-r border-muted bg-bg transition-transform duration-200
           lg:hidden
           ${open ? "translate-x-0" : "-translate-x-full"}
