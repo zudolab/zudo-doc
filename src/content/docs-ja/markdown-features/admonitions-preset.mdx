@@ -115,6 +115,7 @@ export default defineConfig({
 ## メモ
 
 - `:::details` タイプはレガシーな `:::details title="Click me"` 属性形式も受け付けます。
-- `:::caution` はこのプロジェクトが登録するボキャブラリの一部です。`:::warning` が `<Warning>` を出力するのと同様に、`<Caution>`（`data-admonition="caution"`）を出力します。
+- `:::caution` はこのプロジェクトが登録するボキャブラリの一部です。`:::warning` が `<Warning>` を出力するのと同様に、`<Caution>`（`data-admonition="caution"`）を出力します。また `caution` は [GitHub Alerts](./github-alerts.mdx) の `> [!CAUTION]` からも使用できるため、両方のパスで利用可能です。
+- `important` は `directives` マップに含まれておらず、`:::important` としては使用できません。[GitHub Alerts](./github-alerts.mdx) の `> [!IMPORTANT]` を通じてのみ利用でき、`<Important>` コンポーネント（`data-admonition="important"`）にマッピングされます。
 - ディレクティブを追加・上書きするには、`zfb.config.ts` の `directives` マップに名前 → タイトルのペアを追加します。
 - [GitHub Alerts](./github-alerts.mdx) は `> [!NOTE]` 形式のブロック引用から同じアドモニションマークアップを出力します。両機能はクリーンに共存します。

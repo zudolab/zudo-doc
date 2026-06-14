@@ -85,8 +85,41 @@ export const greeting = "hello";
 
 フレームワークは `<CodeGroup>` を同梱していません — zudo-doc は `pages/_mdx-components.ts` で独自の実装を登録し、`tabs` 配列と `<pre data-lang>` の子要素を既存の `<Tabs>` / `<TabItem>` UI にマッピングします。各 `<pre>` 内のコードは生のテキストです（Rust パイプラインは `:::code-group` フェンス内でシンタックスハイライトを実行しません）。
 
+## `name` によるタブの同期
+
+オプションの `name` 属性を使うと、同じページ内で同じ名前を持つすべての `:::code-group` ブロックが連動します。一方のグループでタブをクリックすると、同じ名前を持つほかのグループも — 対応するラベルのタブが存在する場合に — 自動的に切り替わります。
+
+````md
+:::code-group{name="package-manager"}
+
+```sh title="npm"
+npm install my-lib
+```
+
+```sh title="pnpm"
+pnpm add my-lib
+```
+
+:::
+
+:::code-group{name="package-manager"}
+
+```sh title="npm"
+npm run dev
+```
+
+```sh title="pnpm"
+pnpm dev
+```
+
+:::
+````
+
+選択したタブは `localStorage` の `tabs-group-{name}` というキーにも保存されます。次回のページ読み込み時、同じ名前を持つすべてのグループが保存済みのタブを復元します（保存されたラベルがグループに存在しない場合はデフォルトのタブにフォールバックします）。
+
+内部的には、`name` は zfb によって `<CodeGroup>` コンポーネントへの prop として転送され、`<CodeGroup>` はそれを下層の `<Tabs>` コンポーネントの `groupId` として渡します。`TabsInit` スクリプトはレンダリングされた DOM の `data-group-id` を読み取り、クリック時に同じ `groupId` を持つすべてのコンテナを同期しながら、`localStorage` への読み書きによってページをまたいだ永続化を行います。
+
 ## 補足
 
-- ディレクティブのオプション属性 `name`（`:::code-group{name="install"}`）は、ナビゲーションをまたいでアクティブなタブを保持するためにコンシューマーコンポーネントが利用できます。
 - 空の `:::code-group` コンテナ（フェンスなし）は、プレーンテキストのまま変更されません。
 - ネストした `:::code-group` ディレクティブはサポートされていません。

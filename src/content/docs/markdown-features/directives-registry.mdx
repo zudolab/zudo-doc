@@ -93,9 +93,41 @@ The `data-admonition` attribute carries the variant name. The type-specific clas
 
 ## Custom directives
 
-Project-side components can register additional directive names through the `_mdx-components.ts` configuration, without writing any Rust code. See the [Components](../components/index.mdx) section for how component overrides are wired.
+Registering a custom directive requires two steps: mapping the directive name in `zfb.config.ts`, and providing the component implementation in `pages/_mdx-components.ts`.
+
+**Step 1 — Add the directive name → component name mapping in `zfb.config.ts`:**
+
+```ts title="zfb.config.ts"
+export default defineConfig({
+  markdown: {
+    features: {
+      directives: {
+        // existing entries...
+        callout: "Callout", // :::callout → <Callout>
+      },
+    },
+  },
+});
+```
+
+The value (`"Callout"`) is the JSX tag name zfb emits in the compiled MDX output. It must match the key you register in the components map.
+
+**Step 2 — Bind the component name to its implementation in `pages/_mdx-components.ts`:**
+
+```ts title="pages/_mdx-components.ts"
+import { Callout } from "@/components/content/callout";
+
+export function createMdxComponents(lang) {
+  return {
+    // existing entries...
+    Callout,
+  };
+}
+```
+
+When an author writes `:::callout`, zfb emits `<Callout>` in the compiled MDX. The `<entry.Content components={createMdxComponents(lang)} />` call resolves `Callout` to your component via this map. No Rust code is needed.
 
 ## Notes
 
-- The admonition directives (`note`, `tip`, `info`, `warning`, `danger`, `caution`, `details`) are provided by the [admonitions recipe](./admonitions-preset.mdx) this project registers via the `directives` map — not by the Core registry itself. The registry is the engine; the `directives` map supplies the component mappings.
+- The admonition directives (`note`, `tip`, `info`, `warning`, `danger`, `caution`, `details`) are provided by the [admonitions recipe](./admonitions-preset.mdx) this project registers via the `directives` map — not by the Core registry itself. The registry is the engine; the `directives` map in `zfb.config.ts` supplies the directive-name → component-name bindings, and `pages/_mdx-components.ts` supplies the component-name → implementation bindings.
 - Do not use `> [!IMPORTANT]` or `> [!CAUTION]` GitHub-alert syntax unless you have verified that `important` and `caution` components are registered. These map to `data-admonition="important"` / `data-admonition="caution"` respectively and will 500 if no component handles them.

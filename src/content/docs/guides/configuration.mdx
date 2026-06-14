@@ -159,6 +159,18 @@ docsDir: "docs",  // content in ./docs/ at project root
 
 This is similar to Docusaurus' `docs.path` option — useful when using zudo-doc as a documentation tool for a larger project where docs live at the project root level.
 
+### defaultLocale
+
+The BCP 47 code for the default (prefix-less) locale. Used by zfb's i18n router to map the root `/docs/...` routes.
+
+Type: `string`
+
+Default: `"en"`
+
+```ts
+defaultLocale: "en",
+```
+
 ### locales
 
 A map of additional locale configurations. Each key is a locale code, and the value is an object with `label` (display name for the language switcher) and `dir` (content directory path).
@@ -177,6 +189,23 @@ For each locale entry, zudo-doc automatically:
 - Creates a zfb content collection (`docs-{code}`)
 - Registers the locale in zfb's i18n routing
 - Adds it to the language switcher
+
+### defaultLocaleOnlyPrefixes
+
+An array of URL prefixes that exist only in the default locale. Pages under these prefixes are not translated and should have no mirror under any locale prefix. The language switcher omits them when on an affected page.
+
+Type: `string[]`
+
+Default: `[]`
+
+```ts
+defaultLocaleOnlyPrefixes: [
+  "/docs/claude-md/",
+  "/docs/claude-skills/",
+],
+```
+
+See [Default-locale-only prefixes](./i18n.mdx#default-locale-only-prefixes) for the full authoring workflow.
 
 ### versions
 
@@ -230,6 +259,33 @@ Default: `""`
 The full base URL of your site (e.g., `"https://example.com"`). Required for generating absolute URLs in the sitemap.
 
 Default: `""`
+
+### metaTags
+
+Fine-grained control over which `<meta>` tags are emitted. Set individual sub-fields to `false` to omit a tag entirely.
+
+Type: `MetaTagsConfig`
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `description` | `boolean` | Emit `<meta name="description">`. Default `true` |
+| `keywords` | `string \| false` | Emit `<meta name="keywords">` with this value. `false` = omit. Default `false` |
+| `ogImage` | `string \| false` | Path for `og:image` (and `twitter:image`). `false` = omit. Default `false` |
+| `ogSiteName` | `boolean` | Emit `og:site_name`. Default `true` |
+| `twitterCard` | `"summary" \| "summary_large_image" \| false` | Twitter Card type. `false` = omit entire block. Default `false` |
+| `twitterSite` | `string` (optional) | `twitter:site` handle (e.g. `"@yourbrand"`) |
+| `twitterCreator` | `string` (optional) | `twitter:creator` handle |
+
+```ts
+metaTags: {
+  description: true,
+  keywords: false,
+  ogImage: "/img/ogp.png",
+  ogSiteName: true,
+  twitterCard: "summary_large_image",
+  twitterSite: "@yourbrand",
+},
+```
 
 ### noindex
 
@@ -335,6 +391,22 @@ tagPlacement: "before-pager",
 ```
 
 Has no effect when `docTags` is `false` or when a page carries no tags.
+
+### tagGovernance
+
+Enforcement level applied when the tag vocabulary is active. See [Tag governance](./tag-governance.mdx) for the full reference.
+
+Type: `"off" | "warn" | "strict"`
+
+Default: `"warn"`
+
+### tagVocabulary
+
+Whether `tag-vocabulary.ts` is consulted at runtime (alias resolution, deprecation filtering, grouped footer). Set to `false` to ignore the file entirely regardless of `tagGovernance`. See [Tag governance](./tag-governance.mdx) for details.
+
+Type: `boolean`
+
+Default: `true`
 
 ### frontmatterPreview
 
@@ -463,6 +535,28 @@ Default: `false` (set to `true` to enable)
 See the [Document History guide](./doc-history.mdx) for usage details, keyboard shortcuts, and technical information.
 
 </Tip>
+
+### bodyFootUtilArea
+
+Controls which utility items appear in the bottom-of-body action area on every doc page. Set to `false` to hide the area entirely.
+
+Type: `BodyFootUtilAreaConfig | false`
+
+Default: `false`
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `docHistory` | `boolean` (optional) | Show the **History** button (requires `docHistory: true`) |
+| `viewSourceLink` | `boolean` (optional) | Show a link to the raw source file (requires `editUrl`) |
+
+```ts
+bodyFootUtilArea: {
+  docHistory: true,
+  viewSourceLink: true,
+},
+// or hide entirely:
+bodyFootUtilArea: false,
+```
 
 ### tocMinDepth
 
@@ -631,6 +725,33 @@ headerNav: [
   { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
   { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
   { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude" },
+],
+```
+
+### headerRightItems
+
+Controls the items rendered in the right side of the site header, in order. Each item is a discriminated union on the `type` field.
+
+Type: `HeaderRightItem[]`
+
+| `type` | Additional fields | Description |
+|--------|-------------------|-------------|
+| `"component"` | `component` — one of `"theme-toggle"`, `"language-switcher"`, `"version-switcher"`, `"github-link"`, `"search"` | Renders a built-in header component |
+| `"trigger"` | `trigger` — one of `"design-token-panel"`, `"ai-chat"` | Renders a button that opens a panel (requires the matching feature to be enabled) |
+| `"link"` | `href` (string), `label?` (string), `ariaLabel?` (string), `icon?` (`"github"`) | Renders a custom link |
+| `"html"` | `html` (string) | Renders raw HTML |
+
+```ts
+headerRightItems: [
+  { type: "component", component: "version-switcher" },
+  { type: "trigger", trigger: "design-token-panel" },
+  { type: "trigger", trigger: "ai-chat" },
+  { type: "component", component: "github-link" },
+  { type: "component", component: "theme-toggle" },
+  { type: "component", component: "search" },
+  { type: "component", component: "language-switcher" },
+  // custom external link:
+  { type: "link", href: "https://example.com", label: "Blog", ariaLabel: "Blog" },
 ],
 ```
 

@@ -159,6 +159,18 @@ docsDir: "docs",  // プロジェクトルートの./docs/にコンテンツを�
 
 これはDocusaurusの`docs.path`オプションに似ています — zudo-docをドキュメントがプロジェクトルートレベルにある大規模プロジェクトのドキュメントツールとして使用する場合に便利です。
 
+### defaultLocale
+
+デフォルト（プレフィックスなし）ロケールのBCP 47コード。zfbのi18nルーターがルートの`/docs/...`ルートをマッピングするために使用します。
+
+型：`string`
+
+デフォルト：`"en"`
+
+```ts
+defaultLocale: "en",
+```
+
 ### locales
 
 追加ロケール設定のマップ。各キーはロケールコードで、値は`label`（言語切り替えの表示名）と`dir`（コンテンツディレクトリパス）を持つオブジェクトです。
@@ -177,6 +189,23 @@ locales: {
 - zfbコンテンツコレクション（`docs-{code}`）を作成
 - zfbのi18nルーティングにロケールを登録
 - 言語切り替えに追加
+
+### defaultLocaleOnlyPrefixes
+
+デフォルトロケールにのみ存在するURLプレフィックスの配列。これらのプレフィックス下のページは翻訳されず、どのロケールプレフィックス下にもミラーを持つべきではありません。該当ページでは言語切り替えがそれらを省略します。
+
+型：`string[]`
+
+デフォルト：`[]`
+
+```ts
+defaultLocaleOnlyPrefixes: [
+  "/docs/claude-md/",
+  "/docs/claude-skills/",
+],
+```
+
+オーサリングワークフローの詳細については[デフォルトロケール専用プレフィックス](./i18n.mdx#default-locale-only-prefixes)を参照してください。
 
 ### versions
 
@@ -230,6 +259,33 @@ versions: false,
 サイトの完全なベースURL（例：`"https://example.com"`）。サイトマップでの絶対URL生成に必要です。
 
 デフォルト：`""`
+
+### metaTags
+
+出力される`<meta>`タグを細かく制御します。個々のサブフィールドを`false`に設定するとそのタグが省略されます。
+
+型：`MetaTagsConfig`
+
+| プロパティ | 型 | 説明 |
+|----------|------|-------------|
+| `description` | `boolean` | `<meta name="description">`を出力。デフォルト `true` |
+| `keywords` | `string \| false` | この値で`<meta name="keywords">`を出力。`false` = 省略。デフォルト `false` |
+| `ogImage` | `string \| false` | `og:image`（および`twitter:image`）のパス。`false` = 省略。デフォルト `false` |
+| `ogSiteName` | `boolean` | `og:site_name`を出力。デフォルト `true` |
+| `twitterCard` | `"summary" \| "summary_large_image" \| false` | Twitter Cardの種類。`false` = ブロック全体を省略。デフォルト `false` |
+| `twitterSite` | `string`（オプション） | `twitter:site`ハンドル（例：`"@yourbrand"`） |
+| `twitterCreator` | `string`（オプション） | `twitter:creator`ハンドル |
+
+```ts
+metaTags: {
+  description: true,
+  keywords: false,
+  ogImage: "/img/ogp.png",
+  ogSiteName: true,
+  twitterCard: "summary_large_image",
+  twitterSite: "@yourbrand",
+},
+```
 
 ### noindex
 
@@ -335,6 +391,22 @@ tagPlacement: "before-pager",
 ```
 
 `docTags` が `false` の場合、またはページにタグが付いていない場合は効果がありません。
+
+### tagGovernance
+
+タグボキャブラリーが有効な場合に適用される強制レベル。詳細なリファレンスは[タグガバナンス](./tag-governance.mdx)を参照してください。
+
+型：`"off" | "warn" | "strict"`
+
+デフォルト：`"warn"`
+
+### tagVocabulary
+
+`tag-vocabulary.ts`を実行時に参照するかどうか（エイリアス解決、非推奨フィルタリング、グループ化フッター）。`false`に設定すると`tagGovernance`に関わらずファイルを完全に無視します。詳細は[タグガバナンス](./tag-governance.mdx)を参照してください。
+
+型：`boolean`
+
+デフォルト：`true`
 
 ### frontmatterPreview
 
@@ -463,6 +535,28 @@ sidebarResizer: true,
 使用方法の詳細、キーボードショートカット、技術情報については[ドキュメント履歴ガイド](./doc-history.mdx)を参照してください。
 
 </Tip>
+
+### bodyFootUtilArea
+
+各ドキュメントページのボディ末尾のユーティリティアクションエリアに表示する項目を制御します。エリアを完全に非表示にするには`false`を設定します。
+
+型：`BodyFootUtilAreaConfig | false`
+
+デフォルト：`false`
+
+| プロパティ | 型 | 説明 |
+|----------|------|-------------|
+| `docHistory` | `boolean`（オプション） | **History**ボタンを表示（`docHistory: true`が必要） |
+| `viewSourceLink` | `boolean`（オプション） | ソースファイルへのリンクを表示（`editUrl`が必要） |
+
+```ts
+bodyFootUtilArea: {
+  docHistory: true,
+  viewSourceLink: true,
+},
+// またはエリアを非表示:
+bodyFootUtilArea: false,
+```
 
 ### tocMinDepth
 
@@ -631,6 +725,33 @@ headerNav: [
   { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
   { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
   { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude" },
+],
+```
+
+### headerRightItems
+
+サイトヘッダーの右側にレンダリングされる項目を順番に制御します。各項目は`type`フィールドによる直和型です。
+
+型：`HeaderRightItem[]`
+
+| `type` | 追加フィールド | 説明 |
+|--------|-------------------|-------------|
+| `"component"` | `component` — `"theme-toggle"`, `"language-switcher"`, `"version-switcher"`, `"github-link"`, `"search"` のいずれか | 組み込みヘッダーコンポーネントをレンダリング |
+| `"trigger"` | `trigger` — `"design-token-panel"`, `"ai-chat"` のいずれか | パネルを開くボタンをレンダリング（対応する機能の有効化が必要） |
+| `"link"` | `href`（string）、`label?`（string）、`ariaLabel?`（string）、`icon?`（`"github"`） | カスタムリンクをレンダリング |
+| `"html"` | `html`（string） | 生のHTMLをレンダリング |
+
+```ts
+headerRightItems: [
+  { type: "component", component: "version-switcher" },
+  { type: "trigger", trigger: "design-token-panel" },
+  { type: "trigger", trigger: "ai-chat" },
+  { type: "component", component: "github-link" },
+  { type: "component", component: "theme-toggle" },
+  { type: "component", component: "search" },
+  { type: "component", component: "language-switcher" },
+  // カスタム外部リンク:
+  { type: "link", href: "https://example.com", label: "Blog", ariaLabel: "Blog" },
 ],
 ```
 

@@ -29,6 +29,53 @@ mdast フェーズでの書き換えプロセスは以下のとおりです。
 
 ターゲットファイルがソースマップに存在しない場合、zfb は診断警告を出力します。デフォルトでは壊れたリンクによってビルドは失敗しません。警告をエラーにエスカレートするには、オプトインの [Link Validation](./link-validation.mdx) 機能を有効にしてください。
 
+## 上級: 複数ディレクトリ、ロケール、バージョン
+
+Resolve Links は各コンテンツディレクトリをルートプレフィックスにマッピングします。zfb はディレクトリごとに 1 つのエントリを登録し、リライターが各ソースツリーに対応する URL プレフィックスを特定できるようにします。
+
+デフォルトのシングルロケール構成では、1 つのディレクトリが登録されます。
+
+```ts
+resolveMarkdownLinks: {
+  enabled: true,
+  dirs: [
+    { dir: settings.docsDir, routePrefix: "/docs/" },
+  ],
+}
+```
+
+ロケールが設定されている場合、各ロケールのコンテンツディレクトリにはロケールプレフィックス付きのルートエントリが追加されます。
+
+```ts
+resolveMarkdownLinks: {
+  enabled: true,
+  dirs: [
+    { dir: settings.docsDir, routePrefix: "/docs/" },
+    // ロケールごと: 各ロケールディレクトリを /<code>/docs/ にマッピング
+    { dir: settings.locales.ja.dir, routePrefix: "/ja/docs/" },
+  ],
+}
+```
+
+日本語ソースファイル内の相対リンク（例: `[page](./other.mdx)`）が `/docs/...` ではなく `/ja/docs/...` に解決されるのはこのためです。リライターはファイルのソースディレクトリを正しいプレフィックスに照合します。
+
+バージョン管理されたコレクションも有効な場合、同じパターンが各バージョンの英語ディレクトリおよびそのロケールごとのミラーにも適用されます。
+
+```ts
+resolveMarkdownLinks: {
+  enabled: true,
+  dirs: [
+    { dir: settings.docsDir, routePrefix: "/docs/" },
+    { dir: settings.locales.ja.dir, routePrefix: "/ja/docs/" },
+    // バージョン管理: バージョンごとに英語ディレクトリ + ロケールディレクトリ
+    { dir: version.docsDir, routePrefix: "/v/1.0/docs/" },
+    { dir: version.locales.ja.dir, routePrefix: "/v/1.0/ja/docs/" },
+  ],
+}
+```
+
+このプロジェクトの実際の `zfb.config.ts` では、`dirs` 配列が `settings.locales` および `settings.versions` から動的に構築されます。そのため、新しいロケールやバージョンを追加しても `dirs` を手動で編集する必要はありません。
+
 ## 補足
 
 - このプラグインは hast 処理の前、mdast フェーズで動作します。
