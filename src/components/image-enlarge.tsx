@@ -28,8 +28,18 @@ interface ImageData {
 // dist HTML and the post-hydration DOM disagree on size / position
 // and the first interaction flashes. Sourcing both from the same
 // constants closes the drift gap GCO flagged in light-review.
+//
+// z-modal / backdrop:z-modal-backdrop are defense-in-depth for the SPA-swap
+// window (zfb Strategy-B `zfb:after-swap`): if this dialog is still open while
+// the page body is swapped, a native showModal() dialog can lose top-layer
+// promotion and fall back to z-index:auto, flashing behind the header/sidebar.
+// `backdrop:z-modal-backdrop` targets the native `::backdrop` (present for every
+// showModal() dialog even with no backdrop tint). The explicit modal-tier
+// z-index keeps it above all chrome during that window. Intentionally redundant
+// in the normal (top-layer) case — do not remove as "redundant" (epic #2148 /
+// issue #2157).
 const DIALOG_CLASS =
-  "zd-enlarge-dialog mx-auto max-h-[90vh] max-w-[90vw] overflow-hidden border border-muted bg-surface p-0";
+  "zd-enlarge-dialog z-modal mx-auto max-h-[90vh] max-w-[90vw] overflow-hidden border border-muted bg-surface p-0 backdrop:z-modal-backdrop";
 // Center the modal with `inset: 0; margin: auto` rather than a transform.
 // A `transform` on the dialog would establish a containing block for its
 // `position: fixed` descendants, which would trap the `.zd-enlarge-dialog-close`
