@@ -85,8 +85,41 @@ The `:::code-group` directive produces a `<CodeGroup>` JSX element with a `tabs`
 
 The framework does not ship `<CodeGroup>` — zudo-doc registers its own implementation in `pages/_mdx-components.ts`, mapping the `tabs` array and `<pre data-lang>` children onto the existing `<Tabs>` / `<TabItem>` UI. The code inside each `<pre>` is raw text (the Rust pipeline does not run syntax highlighting inside `:::code-group` fences).
 
+## Syncing tabs with `name`
+
+The optional `name` attribute links all `:::code-group` blocks on the page that share the same name. When a user clicks a tab in one group, every other group with the same name switches to the matching tab automatically — if a tab with that label exists.
+
+````md
+:::code-group{name="package-manager"}
+
+```sh title="npm"
+npm install my-lib
+```
+
+```sh title="pnpm"
+pnpm add my-lib
+```
+
+:::
+
+:::code-group{name="package-manager"}
+
+```sh title="npm"
+npm run dev
+```
+
+```sh title="pnpm"
+pnpm dev
+```
+
+:::
+````
+
+The chosen tab is also written to `localStorage` under the key `tabs-group-{name}`. On the next page load, every group with that name restores the stored tab (falling back to the default tab if the stored label is not present in the group).
+
+Internally, `name` is forwarded by zfb as a prop to the `<CodeGroup>` component, which passes it as `groupId` to the underlying `<Tabs>` component. The `TabsInit` script reads `data-group-id` from the rendered DOM, syncs all same-`groupId` containers on click, and reads/writes `localStorage` for cross-visit persistence.
+
 ## Notes
 
-- An optional `name` attribute on the directive (`:::code-group{name="install"}`) can be used by the consumer component to persist the active tab across navigation.
 - Empty `:::code-group` containers (no fences) are left unchanged as plain text.
 - Nested `:::code-group` directives are not supported.
