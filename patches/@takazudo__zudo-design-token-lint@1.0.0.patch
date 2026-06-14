@@ -1,0 +1,22 @@
+diff --git a/dist/cli.js b/dist/cli.js
+index f9b520dde7af992a6c0307ac0e04e3478375ce65..b82782e77c6749e2c9a448a569848073e9823b37 100755
+--- a/dist/cli.js
++++ b/dist/cli.js
+@@ -10,7 +10,7 @@
+  */
+ import { glob } from 'glob';
+ import chalk from 'chalk';
+-import { readFileSync } from 'node:fs';
++import { readFileSync, realpathSync } from 'node:fs';
+ import { fileURLToPath } from 'node:url';
+ import { dirname, join, isAbsolute, resolve } from 'node:path';
+ import { loadConfig, compileConfig } from './config.js';
+@@ -170,7 +170,7 @@ export async function runMain(opts) {
+ // Detect if this module is being run directly (vs imported by tests).
+ const isMain = (() => {
+     try {
+-        return process.argv[1] === fileURLToPath(import.meta.url);
++        return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+     }
+     catch {
+         return false;

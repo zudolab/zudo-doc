@@ -17,6 +17,11 @@ overrides:
   brace-expansion@2: '>=2.0.3 <3'
   brace-expansion@5: '>=5.0.6 <6'
 
+patchedDependencies:
+  '@takazudo/zudo-design-token-lint@1.0.0':
+    hash: 6a157fd850449b055cf64a8a7dd1faed5b1da9eebe6c81cca08488ac0de85182
+    path: patches/@takazudo__zudo-design-token-lint@1.0.0.patch
+
 importers:
 
   .:
@@ -81,7 +86,7 @@ importers:
         version: 4.2.1(vite@7.3.5(@types/node@25.3.5)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
       '@takazudo/zudo-design-token-lint':
         specifier: ^1.0.0
-        version: 1.0.0
+        version: 1.0.0(patch_hash=6a157fd850449b055cf64a8a7dd1faed5b1da9eebe6c81cca08488ac0de85182)
       '@types/mdast':
         specifier: ^4.0.4
         version: 4.0.4
@@ -4101,7 +4106,7 @@ snapshots:
       '@takazudo/zfb-linux-x64-gnu': 0.1.0-next.44
       '@takazudo/zfb-win32-x64-msvc': 0.1.0-next.44
 
-  '@takazudo/zudo-design-token-lint@1.0.0':
+  '@takazudo/zudo-design-token-lint@1.0.0(patch_hash=6a157fd850449b055cf64a8a7dd1faed5b1da9eebe6c81cca08488ac0de85182)':
     dependencies:
       chalk: 5.6.2
       glob: 10.5.0
