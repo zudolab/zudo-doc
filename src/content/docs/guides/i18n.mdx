@@ -105,3 +105,73 @@ To add a new language (e.g., Korean):
 Step 1 is the key step — adding the locale to `settings.ts` automatically creates the content collection and registers the i18n routing. No per-locale page route file is needed; the parameterized route at `pages/[locale]/docs/[[...slug]].tsx` handles every locale automatically.
 
 </Tip>
+
+## defaultLocale
+
+`defaultLocale` identifies which locale is served without a URL prefix. It defaults to `"en"` and must match one of the keys that zfb uses for its default-locale routing:
+
+```ts
+export const settings = {
+  // ...
+  defaultLocale: "en" as const,
+  locales: {
+    ja: { label: "JA", dir: "src/content/docs-ja" },
+  },
+};
+```
+
+With `prefixDefaultLocale: false` (configured in `zfb.config.ts`), the default locale is served at `/docs/...` with no language code in the path, while every other locale uses its key as a prefix — `/ja/docs/...` for Japanese. Changing `defaultLocale` requires updating the corresponding routing and collection wiring in `zfb.config.ts`.
+
+## Default-locale-only prefixes
+
+Some content is intentionally only available in the default locale. These routes are called **default-locale-only prefixes** and are controlled by the `defaultLocaleOnlyPrefixes` setting in `src/config/settings.ts`:
+
+```ts
+export const settings = {
+  // ...
+  defaultLocaleOnlyPrefixes: [
+    "/docs/claude-md/",
+    "/docs/claude-skills/",
+    "/docs/claude-agents/",
+    "/docs/claude-commands/",
+  ] as string[],
+};
+```
+
+### What it means
+
+Any page whose URL starts with one of these prefixes exists **only** in the default locale (English). The language switcher suppresses the alternate-locale link for those pages, and no Japanese mirror file should be created under `docs-ja/` for them.
+
+### Current entries
+
+The four prefixes above cover the Claude-resource sections — the auto-generated pages that surface `CLAUDE.md`, skills, agents, and commands from the project's `.claude/` directory. These are English-only because the source material (Claude config files) is not translated.
+
+<Note>
+
+The top-level `/docs/claude/` index page is **not** in this list — it has a bilingual stub at `docs-ja/claude/index.mdx`. Only the four deeper prefixes (`claude-md/`, `claude-skills/`, `claude-agents/`, `claude-commands/`) are default-locale-only.
+
+</Note>
+
+### How the router enforces this
+
+The page route at `pages/[locale]/docs/[[...slug]].tsx` checks each slug against `defaultLocaleOnlyPrefixes` in its `paths()` export. If the reconstructed URL matches a prefix, that path is omitted from the non-default-locale path list, so no `/ja/docs/claude-md/...` route is ever generated.
+
+### Adding your own prefix
+
+If you have a section that should remain English-only (for example, auto-generated API reference pages), add its URL prefix to the array:
+
+```ts
+defaultLocaleOnlyPrefixes: [
+  "/docs/claude-md/",
+  "/docs/claude-skills/",
+  "/docs/claude-agents/",
+  "/docs/claude-commands/",
+  "/docs/api-reference/", // your new prefix
+] as string[],
+```
+
+Make sure the prefix:
+
+- Starts with `/docs/` (or the equivalent path for your content directory)
+- Ends with a trailing slash
+- Does not overlap with a prefix you want to keep bilingual
