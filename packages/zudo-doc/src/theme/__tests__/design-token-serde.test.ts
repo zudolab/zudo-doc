@@ -8,7 +8,19 @@
 // (`hsp-md`, `vsp-sm`, `text-body`, `radius-DEFAULT`). Adding new
 // assertions? Extend the fixture rather than reaching back into host config.
 import { describe, it, expect, vi, afterEach } from "vitest";
-import type { TokenDef } from "@takazudo/zdtp";
+// Local fixture type: a superset of the serde-module's narrower TokenDef that
+// includes display-only fields (label, group, step, unit) used only by the
+// test fixtures below. Keeps the test file free of the optional zdtp peer (#2138).
+interface TokenDef {
+  id: string;
+  cssVar: string;
+  default: string;
+  readonly?: true;
+  label?: string;
+  group?: string;
+  step?: number;
+  unit?: string;
+}
 import {
   DESIGN_TOKEN_SCHEMA,
   DesignTokenSchemaError,
