@@ -400,6 +400,13 @@ Clean versions (no `-`) publish under `latest`; prereleases (any tag containing 
 `latest` to the newest build and a tagless `npm install` / `pnpm dlx` always gets
 it. `-next` is reserved for opt-in previews and the `1.0.0-beta` run-up.
 
+**`next` is removed on stable graduation.** Each publish workflow runs an extra
+step after a clean `X.Y.Z` publish that removes the `next` dist-tag
+(`npm dist-tag rm <pkg> next`). This prevents `@next` from silently resolving to a
+stale prerelease once the line graduates. The step is idempotent and non-fatal.
+See RELEASE.md — "One-time manual cleanup" — for the manual runbook that clears
+the currently-stale `next` tag (frozen at `0.2.0-next.9` as of #2121).
+
 ## Files involved (pin sources)
 
 The release script writes to ALL of these in one pass:
