@@ -135,6 +135,10 @@ export const SEARCH_WIDGET_SCRIPT = /* javascript */ `(function () {
       this._shortcut = "";
       this._resultCountTemplate = "";
       this._keydownHandler = null;
+      // Delegated click handler on the results container: closing the dialog
+      // when a result link is activated (epic #2148). Held so disconnectedCallback
+      // can detach it on body swap.
+      this._resultsClickHandler = null;
       this._observer = null;
       this._sentinel = null;
       this._isLoadingBatch = false;
@@ -191,6 +195,24 @@ export const SEARCH_WIDGET_SCRIPT = /* javascript */ `(function () {
         this._input.addEventListener("input", function() { self.handleInput(); });
       }
 
+      // Close-on-result-click (epic #2148): result links are created dynamically
+      // in renderResult(), so use one delegated listener on the results container
+      // instead of per-link handlers. We do NOT preventDefault — the link's own
+      // navigation (zfb Strategy-B SPA swap or a plain load) must still proceed;
+      // we only close the <dialog> so it does not linger over the swapped page.
+      // closeDialog() runs synchronously before navigation; the dialog's close
+      // restores documentElement overflow via the existing "close" listener.
+      if (this._results) {
+        this._resultsClickHandler = function(e) {
+          var t = e.target;
+          while (t && t !== self._results) {
+            if (t.tagName === "A") { self.closeDialog(); return; }
+            t = t.parentNode;
+          }
+        };
+        this._results.addEventListener("click", this._resultsClickHandler);
+      }
+
       // Global keyboard shortcut (⌘K / Ctrl+K to open)
       this._keydownHandler = function(e) {
         if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -205,6 +227,11 @@ export const SEARCH_WIDGET_SCRIPT = /* javascript */ `(function () {
       // body swap when this element is NOT persisted via
       // data-zfb-transition-persist (zudolab/zudo-doc#1523).
       this._afterNavHandler = function() {
+        // Backstop for the original bug (epic #2148): if the dialog is somehow
+        // still open after an SPA body swap (e.g. a nav path that bypassed the
+        // result-click handler), close it so it does not linger / flash over the
+        // newly-swapped page. Safe no-op when already closed.
+        if (self._dialog && self._dialog.open) self.closeDialog();
         var kbdEl2 = self.querySelector("[data-kbd-shortcut]");
         if (kbdEl2) kbdEl2.textContent = self._shortcut;
       };
@@ -219,6 +246,10 @@ export const SEARCH_WIDGET_SCRIPT = /* javascript */ `(function () {
       if (this._afterNavHandler) {
         document.removeEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)}, this._afterNavHandler);
         this._afterNavHandler = null;
+      }
+      if (this._resultsClickHandler && this._results) {
+        this._results.removeEventListener("click", this._resultsClickHandler);
+        this._resultsClickHandler = null;
       }
       this.teardownSentinel();
     }
