@@ -35,6 +35,22 @@ export default {
   /** @param {ZfbBuildHookContext} ctx */
   async preBuild(ctx) {
     const { docsDir, locales } = ctx.options;
+    // Validate each locale entry before passing downstream so a misconfigured
+    // locales map surfaces a clear error instead of a confusing runtime crash.
+    if (locales != null) {
+      for (const [key, entry] of Object.entries(/** @type {Record<string, unknown>} */ (locales))) {
+        if (
+          entry == null ||
+          typeof entry !== "object" ||
+          typeof /** @type {any} */ (entry).dir !== "string" ||
+          /** @type {any} */ (entry).dir.length === 0
+        ) {
+          throw new Error(
+            `[doc-history] invalid locales entry "${key}": expected { dir: string }`,
+          );
+        }
+      }
+    }
     await runDocHistoryMetaStep({
       projectRoot: ctx.projectRoot,
       docsDir: typeof docsDir === "string" ? docsDir : "src/content/docs",
@@ -47,10 +63,22 @@ export default {
 
   /** @param {ZfbBuildHookContext} ctx */
   async postBuild(ctx) {
-    await runDocHistoryPostBuild(
-      /** @type {import("@takazudo/zudo-doc/integrations/doc-history").DocHistoryOptions} */ (/** @type {unknown} */ (ctx.options)),
-      { outDir: ctx.outDir, logger: ctx.logger },
-    );
+    try {
+      await runDocHistoryPostBuild(
+        /** @type {import("@takazudo/zudo-doc/integrations/doc-history").DocHistoryOptions} */ (/** @type {unknown} */ (ctx.options)),
+        { outDir: ctx.outDir, logger: ctx.logger },
+      );
+    } catch (err) {
+      // postBuild dropdown JSON is redundant: the parallel build-history CI job
+      // is the deployed source of truth. Downgrade failures to a warning so a
+      // transient git/CLI error does not red the build-site job.
+      const msg = err instanceof Error ? err.message : String(err);
+      if (ctx.logger?.warn) {
+        ctx.logger.warn(`[doc-history] postBuild failed (non-fatal): ${msg}`);
+      } else {
+        console.warn(`[doc-history] postBuild failed (non-fatal): ${msg}`);
+      }
+    }
   },
 
   /** @param {ZfbDevMiddlewareContext} ctx */

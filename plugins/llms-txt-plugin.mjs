@@ -33,7 +33,7 @@ export default {
 
   /** @param {ZfbBuildHookContext} ctx */
   async postBuild(ctx) {
-    return emitLlmsTxt(/** @type {LlmsTxtEmitOptions} */ (/** @type {unknown} */ ({
+    await emitLlmsTxt(/** @type {LlmsTxtEmitOptions} */ (/** @type {unknown} */ ({
       ...ctx.options,
       outDir: ctx.outDir,
       // siteUrl is normalised to undefined when falsy because the runner

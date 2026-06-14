@@ -29,7 +29,7 @@ export default {
 
   /** @param {ZfbBuildHookContext} ctx */
   async postBuild(ctx) {
-    return emitSearchIndex(/** @type {SearchIndexBuildOptions} */ (/** @type {unknown} */ ({
+    await emitSearchIndex(/** @type {SearchIndexBuildOptions} */ (/** @type {unknown} */ ({
       ...ctx.options,
       outDir: ctx.outDir,
       logger: ctx.logger,
