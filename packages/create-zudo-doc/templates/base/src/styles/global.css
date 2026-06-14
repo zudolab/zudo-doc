@@ -216,6 +216,37 @@
   --breakpoint-xl: 1280px;
 }
 
+/* ========================================
+ * Z-index tiers — semantic, single-namespace scale.
+ *
+ * The @theme block below is GENERATED from src/config/z-index-tokens.ts
+ * (the single source of truth) by `pnpm gen:z-index`. Tailwind v4 reads the
+ * --z-index-<name> theme key and generates a `z-<name>` utility, so e.g.
+ * --z-index-toolbar: 20 produces `.z-toolbar { z-index: 20 }`; raw CSS can
+ * also reference `z-index: var(--z-index-<name>)`. `pnpm check:z-index` fails
+ * on drift. Do NOT hand-edit between the BEGIN/END markers.
+ * ======================================== */
+  /* GENERATED:Z_INDEX_BEGIN
+   * GENERATED:Z_INDEX — do not hand-edit; run pnpm gen:z-index.
+   * Source of truth: src/config/z-index-tokens.ts. Tailwind v4 reads the
+   * --z-index-<name> theme key and generates a z-<name> utility. */
+  @theme {
+    --z-index-content: 0;
+    --z-index-local-1: 1;
+    --z-index-local-2: 2;
+    --z-index-local-3: 3;
+    --z-index-sidebar: 10;
+    --z-index-toolbar: 20;
+    --z-index-dropdown: 30;
+    --z-index-popover: 40;
+    --z-index-modal-backdrop: 50;
+    --z-index-modal: 60;
+    --z-index-toast: 70;
+    --z-index-tooltip: 80;
+    --z-index-drag: 90;
+  }
+  /* GENERATED:Z_INDEX_END */
+
 :root {
   /* Default responsive range; sidebar-resizer.ts allows 192–448px for explicit resizing */
   --zd-sidebar-w: clamp(14rem, 20vw, 22rem);
@@ -696,7 +727,7 @@ pre[class^="syntect-"].word-wrap code {
   gap: var(--spacing-hsp-2xs);
   opacity: 0;
   transition: opacity 0.15s;
-  z-index: 1;
+  z-index: var(--z-index-local-1);
 }
 
 .code-block-wrapper:hover .code-buttons,
@@ -1152,7 +1183,7 @@ pre[class^="syntect-"] .line .highlighted-word {
   border: none;
   background: transparent;
   cursor: pointer;
-  z-index: 1;
+  z-index: var(--z-index-local-1);
   transition: opacity var(--default-transition-duration);
 }
 
@@ -1161,12 +1192,12 @@ pre[class^="syntect-"] .line .highlighted-word {
   position: absolute;
   inset: 0;
   background: color-mix(in oklch, var(--color-image-overlay-bg) 80%, transparent);
-  z-index: 0;
+  z-index: var(--z-index-local-1);
 }
 
 .zd-enlarge-btn > svg {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-index-local-2);
   width: var(--spacing-icon-sm);
   height: var(--spacing-icon-sm);
   color: var(--color-image-overlay-fg);
@@ -1201,7 +1232,7 @@ dialog.zd-enlarge-dialog::backdrop {
   border: none;
   background: transparent;
   cursor: pointer;
-  z-index: 1;
+  z-index: var(--z-index-local-1);
   transition: opacity var(--default-transition-duration);
 }
 
@@ -1214,12 +1245,12 @@ dialog.zd-enlarge-dialog::backdrop {
   position: absolute;
   inset: 0;
   background: color-mix(in oklch, var(--color-image-overlay-bg) 80%, transparent);
-  z-index: 0;
+  z-index: var(--z-index-local-1);
 }
 
 .zd-enlarge-dialog-close > svg {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-index-local-2);
   width: var(--spacing-icon-lg);
   height: var(--spacing-icon-lg);
   color: var(--color-image-overlay-fg);

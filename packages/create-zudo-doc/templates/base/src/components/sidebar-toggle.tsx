@@ -124,9 +124,14 @@ export default function SidebarToggle({
       {/* Backdrop overlay - mobile only.
           Rendered unconditionally; CSS `hidden` toggles visibility so
           the SSR DOM tree matches the hydrated tree (no subtree
-          mount/unmount across the hydration boundary). */}
+          mount/unmount across the hydration boundary).
+          `z-modal-backdrop` (50) intentionally sits ABOVE the header
+          (`z-toolbar`, 20): the open mobile drawer is a modal surface that
+          dims the whole viewport, header included. Closing is via tapping the
+          backdrop (onClick below), so the header hamburger being dimmed under
+          it is fine. */}
       <div
-        className={clsx("fixed inset-0 z-30 bg-overlay/30 lg:hidden", !open && "hidden")}
+        className={clsx("fixed inset-0 z-modal-backdrop bg-overlay/30 lg:hidden", !open && "hidden")}
         aria-hidden={!open}
         onClick={() => setOpen(false)}
       />
@@ -141,7 +146,7 @@ export default function SidebarToggle({
       <aside
         inert={!open}
         className={`
-          fixed top-[3.5rem] left-0 z-40 h-[calc(100vh-3.5rem)] w-[16rem] flex flex-col
+          fixed top-[3.5rem] left-0 z-modal h-[calc(100vh-3.5rem)] w-[16rem] flex flex-col
           border-r border-muted bg-bg transition-transform duration-200
           lg:hidden
           ${open ? "translate-x-0" : "-translate-x-full"}
