@@ -18,7 +18,7 @@ compatibility_flags = ["nodejs_compat"]
 # deploys (consumed by preview-deploy.yml / pr-checks.yml via
 # `wrangler versions upload --preview-alias`).
 preview_urls = true
-# workers_dev = false  # uncomment to prevent serving on *.workers.dev prod route
+workers_dev = false  # prevent serving on *.workers.dev prod route; previews use preview_urls above
 
 # ---------------------------------------------------------------------------
 # Static asset serving

@@ -104,6 +104,12 @@ jobs:
       - name: Build site
         run: pnpm build
 
+      - name: Check links
+        # Strict mode to match pr-checks.yml and scripts/run-b4push.sh — bare
+        # check:links is non-strict (exit 0 on findings), which previously
+        # false-greened real broken links on main (#1985).
+        run: pnpm run check:links -- --strict-broken --strict-absolute --allowlist=.check-links-allowlist
+
       - name: Cache site build output
         uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
@@ -239,7 +245,7 @@ jobs:
 
       - name: Deploy to Cloudflare Workers (production)
         id: deploy
-        run: npx wrangler@4 deploy
+        run: npx wrangler@4.85.0 deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -351,7 +357,7 @@ jobs:
             STATUS="zudo-doc deploy cancelled"
           fi
 
-          COMMIT_MSG=$(echo "$RAW_COMMIT_MSG" | head -1)
+          COMMIT_MSG=$(printf '%s\n' "$RAW_COMMIT_MSG" | head -1)
           SHORT_SHA=$(echo "$GITHUB_SHA_VAL" | cut -c1-7)
           RUN_URL="${SERVER_URL}/${REPO}/actions/runs/${RUN_ID}"
 
