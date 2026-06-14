@@ -250,3 +250,22 @@ jobs:
             --no-git-checks \
             --tag "$DIST_TAG"
           echo "Published: https://www.npmjs.com/package/@takazudo/zudo-doc/v/$VERSION"
+
+      # ── Remove stale `next` dist-tag on stable graduation ─────────────────
+      # When a clean X.Y.Z version graduates the prerelease line, the `next`
+      # dist-tag is left dangling at the old prerelease. Remove it so
+      # `npm install @takazudo/zudo-doc@next` returns a clear "tag not found"
+      # rather than silently resolving to a stale build.
+      # Only runs for clean versions (no `-`); prerelease publishes still set
+      # `next` normally via the Compute dist-tag step above.
+      # Non-fatal: tolerates "tag does not exist" so a re-run or a first-ever
+      # stable publish (where `next` was never set) does not fail the workflow.
+      - name: Remove stale npm next dist-tag (stable graduation only)
+        if: ${{ inputs.dry_run != true && !contains(env.VERSION, '-') }}
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "Stable version $VERSION — removing stale 'next' dist-tag if present..."
+          npm dist-tag rm @takazudo/zudo-doc next || true
+          echo "Done (tag may not have existed — that is fine)."

@@ -71,13 +71,24 @@ echo "Label ready."
 FAILING_SPECS=""
 if [[ -n "$REPORT_PATH" && -f "$REPORT_PATH" ]]; then
   echo "Parsing failing specs from $REPORT_PATH..."
-  # Extract test titles from failed tests using jq
+  # Extract test titles from failed tests using node (no jq dependency required).
   # Playwright JSON report structure: { suites: [ { suites: [ { specs: [ { ok, title } ] } ] } ] }
-  FAILING_SPECS=$(jq -r '
-    [ .. | objects | select(has("ok") and has("title") and (.ok == false)) | .title ]
-    | unique
-    | .[]
-  ' "$REPORT_PATH" 2>/dev/null || true)
+  FAILING_SPECS=$(node --eval "
+    const fs = require('fs');
+    const report = JSON.parse(fs.readFileSync(process.argv[1], 'utf8'));
+    const titles = new Set();
+    function walk(obj) {
+      if (obj && typeof obj === 'object') {
+        if (Array.isArray(obj)) { obj.forEach(walk); }
+        else {
+          if ('ok' in obj && 'title' in obj && obj.ok === false) titles.add(obj.title);
+          for (const v of Object.values(obj)) walk(v);
+        }
+      }
+    }
+    walk(report);
+    if (titles.size) process.stdout.write([...titles].join('\n') + '\n');
+  " -- "$REPORT_PATH" 2>/dev/null || true)
 fi
 
 # ---------------------------------------------------------------------------
