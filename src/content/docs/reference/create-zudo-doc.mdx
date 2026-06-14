@@ -37,6 +37,82 @@ You can also use the [Setup Preset Generator](../getting-started/setup-preset-ge
 | `--default-mode <mode>` | `light` or `dark` (light-dark mode) | `dark` |
 | `--[no-]respect-system-preference` | Respect OS color scheme preference | `true` |
 
+## Available Color Schemes
+
+### Single-mode schemes (`--color-scheme-mode single`)
+
+Used with `--scheme <name>`. The default is `Dracula`.
+
+**Dark schemes:**
+
+| Name |
+|------|
+| Default Dark |
+| Dracula |
+| Catppuccin Mocha |
+| GitHub Dark |
+| Nord |
+| TokyoNight |
+| Gruvbox Dark |
+| Atom One Dark |
+| Rose Pine |
+| Solarized Dark |
+| Material Ocean |
+| Monokai Pro |
+| Everforest Dark |
+| Kanagawa Wave |
+| Night Owl |
+| Ayu Dark |
+| VS Code Dark+ |
+| Doom One |
+| Challenger Deep |
+| Catppuccin Frappe |
+| Catppuccin Macchiato |
+| Gruvbox Dark Hard |
+| Rose Pine Moon |
+| GitHub Dark Dimmed |
+| Ayu Mirage |
+| Material Darker |
+| Material Dark |
+| Monokai Remastered |
+| Monokai Vivid |
+| Monokai Soda |
+| Solarized Dark Higher Contrast |
+| Gruvbox Material Dark |
+| Kanagawa Dragon |
+
+**Light schemes:**
+
+| Name |
+|------|
+| Default Light |
+| GitHub Light |
+| Catppuccin Latte |
+| Solarized Light |
+| Rose Pine Dawn |
+| Atom One Light |
+| Everforest Light |
+| Gruvbox Light |
+| Ayu Light |
+
+### Light-dark pairings (`--color-scheme-mode light-dark`)
+
+Used with `--light-scheme` and `--dark-scheme`. The defaults are `Default Light` (light) and `Default Dark` (dark).
+
+| Pairing label | Light scheme | Dark scheme |
+|---------------|-------------|------------|
+| Default | Default Light | Default Dark |
+| GitHub | GitHub Light | GitHub Dark |
+| Catppuccin | Catppuccin Latte | Catppuccin Mocha |
+| Solarized | Solarized Light | Solarized Dark |
+| Rosé Pine | Rose Pine Dawn | Rose Pine |
+| Atom One | Atom One Light | Atom One Dark |
+| Everforest | Everforest Light | Everforest Dark |
+| Gruvbox | Gruvbox Light | Gruvbox Dark |
+| Ayu | Ayu Light | Ayu Dark |
+
+The pairing label is used in the interactive wizard and the Setup Preset Generator. When using CLI flags directly, specify the individual light and dark scheme names.
+
 ### Features
 
 | Flag | Description | Default |
