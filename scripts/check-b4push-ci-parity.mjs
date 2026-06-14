@@ -94,6 +94,14 @@ const REQUIRED_CI_GUARDS = [
     b4pushScript: "check:e2e-spec-naming",
     comment: "E2E spec naming guard (scripts/check-e2e-spec-naming.mjs, #2095)",
   },
+  {
+    // Z-index codegen drift: node scripts/gen-z-index.mjs --check (CI) /
+    // pnpm check:z-index (b4push). Fails if the generated @theme block in
+    // src/styles/global.css drifts from src/config/z-index-tokens.ts (#2148).
+    ciNeedle: "gen-z-index.mjs",
+    b4pushScript: "check:z-index",
+    comment: "Z-index codegen drift check (scripts/gen-z-index.mjs, #2148)",
+  },
 ];
 
 const ALLOWLIST_PATH = resolve(ROOT, ".b4push-ci-parity-allowlist");

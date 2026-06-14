@@ -45,6 +45,8 @@
     "setup:zudo-doc-wisdom": "bash scripts/setup-zudo-doc-wisdom.sh",
     "// ── Linting ─────────────────────────────────────": "",
     "lint:tokens": "design-token-lint",
+    "gen:z-index": "node scripts/gen-z-index.mjs",
+    "check:z-index": "node scripts/gen-z-index.mjs --check",
     "check:template-drift": "bash scripts/check-template-drift.sh",
     "check:fixture-settings-drift": "node scripts/check-fixture-settings-drift.mjs",
     "check:pin-parity": "node scripts/check-pin-parity.mjs",

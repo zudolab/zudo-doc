@@ -470,6 +470,12 @@ function generatePackageJson(choices: UserChoices) {
     // the pages/lib call sites, so emitting the script would fail on a fresh
     // scaffold. Revisit once the template stubs carry typed props.
     "check:html": "html-validate \"dist/**/*.html\"",
+    // Z-index token codegen (#2148): regenerate the GENERATED:Z_INDEX @theme
+    // block in src/styles/global.css from src/config/z-index-tokens.ts, and a
+    // drift check for pre-push/CI. Both ship in base — the z-index token system
+    // is part of every scaffold.
+    "gen:z-index": "node scripts/gen-z-index.mjs",
+    "check:z-index": "node scripts/gen-z-index.mjs --check",
   };
 
   if (choices.features.includes("tagGovernance")) {
