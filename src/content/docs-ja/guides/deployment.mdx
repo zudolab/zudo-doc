@@ -28,7 +28,7 @@ CIパイプラインは合計ビルド時間を短縮するために並列ジョ
 
 ## CIパイプラインの構造
 
-プロジェクトでは2つのGitHub Actionsワークフローを使用します。
+プロジェクトでは3つのGitHub Actionsワークフローを使用します：本番デプロイ（`main-deploy.yml`）、PRチェックとプレビュー（`pr-checks.yml`）、ブランチプレビュー（`preview-deploy.yml`）。
 
 ### 本番環境（`main-deploy.yml`）
 
@@ -44,18 +44,23 @@ CIパイプラインは合計ビルド時間を短縮するために並列ジョ
 
 ### PRチェック（`pr-checks.yml`）
 
-`main`を対象としたプルリクエストでトリガーされます。10のジョブが実行されます：
+`main`を対象としたプルリクエストでトリガーされます。15のジョブが実行されます：
 
 1. **check-template-drift** — ソースファイルとジェネレーターテンプレート間のドリフトを検証
 2. **check-pin-parity** — `@takazudo/zfb`のピンがすべてのパッケージソース間で一致しているか確認
-3. **typecheck** — `pnpm check`を実行（TypeScript型チェック）
-4. **package-tests** — すべてのパッケージスコープのvitestスイートを実行
-5. **root-tests** — ルートユニットテストスイートを実行
-6. **build-site** — フルクローン（`fetch-depth: 0`）、`pnpm build`、その後`check:links`（`SKIP_DOC_HISTORY`なし — 本番と同じ理由：preBuildにSSGメタ日付のためのフルgit履歴が必要）
-7. **html-validate** — ビルド済み`dist/`のHTMLエレメントエラーを検証
-8. **build-history** — フルクローン、docヒストリーの生成
-9. **e2e** — Playwrightエンドツーエンドテストを実行
-10. **preview** — アーティファクトをマージして`wrangler versions upload --preview-alias`でプレビューをアップロード、PRコメントとしてURLを投稿
+3. **check-fixture-settings-drift** — `src/config/settings.ts`のすべてのキーがe2eフィクスチャー設定ファイルに存在するか（またはアローリスト済みか）を確認
+4. **check-package-safelist** — `@takazudo/zudo-doc`パッケージ内のすべてのレスポンシブ・任意値ユーティリティクラスを生成済みの`dist/safelist.css`がカバーしているか検証
+5. **check-b4push-ci-parity** — `scripts/run-b4push.sh`の軽量ガードゲートすべてに対応するCIジョブが存在するか確認
+6. **check-e2e-spec-naming** — すべてのe2eスペックファイル名が既知のフィクスチャープレフィックスを使用しているか確認（Playwrightが確実に検出できるよう）
+7. **lint-gates** — `pnpm tags:audit --ci`と`pnpm lint:tokens`（デザイントークンリント）を実行
+8. **typecheck** — `pnpm check`を実行（TypeScript型チェック）
+9. **package-tests** — すべてのパッケージスコープのvitestスイートを実行
+10. **root-tests** — ルートユニットテストスイートを実行
+11. **build-site** — フルクローン（`fetch-depth: 0`）、`pnpm build`、その後`check:links`（`SKIP_DOC_HISTORY`なし — 本番と同じ理由：preBuildにSSGメタ日付のためのフルgit履歴が必要）
+12. **html-validate** — ビルド済み`dist/`のHTMLエレメントエラーを検証
+13. **build-history** — フルクローン、docヒストリーの生成
+14. **e2e** — Playwrightエンドツーエンドテストを実行
+15. **preview** — アーティファクトをマージして`wrangler versions upload --preview-alias`でプレビューをアップロード、PRコメントとしてURLを投稿
 
 **コンカレンシー:** `group: pr-checks-{pr-number}, cancel-in-progress: true` — 古い実行はCIの消費を節約するためにキャンセルされます。
 

@@ -25,7 +25,7 @@ Search works in all environments:
 
 - **Dev mode** (`pnpm dev`): The search index is generated on-the-fly via zfb's devMiddleware
 - **Production build** (`pnpm build`): The index is written to `search-index.json` alongside the static site
-- **Electron**: Loads the same index file — no special handling needed
+- **Tauri** (offline reader): Loads the same index file from the bundled `dist/` — no special handling needed
 
 <Tip>
 

@@ -129,7 +129,7 @@ Some hosting platforms (e.g., AWS Amplify, Cloudflare Pages) work better with tr
 
 </Note>
 
-When enabled, the dev server automatically redirects URLs without a trailing slash to their trailing-slash version with a **301 redirect** (e.g., `/docs/guides` → `/docs/guides/`) so navigation behaves the same way locally as on production. Static assets (files with extensions like `.js`, `.css`, `.png`) and framework-internal paths (`/_astro/`, `/_image` — preserved for cross-framework asset compatibility, as assets historically emitted under those prefixes are still respected) are excluded from the redirect.
+When enabled, the dev server automatically redirects URLs without a trailing slash to their trailing-slash version with a **301 redirect** (e.g., `/docs/guides` → `/docs/guides/`) so navigation behaves the same way locally as on production. Static assets (files with extensions like `.js`, `.css`, `.png`) and the Astro-legacy paths (`/_astro/`, `/_image` — preserved for backward-compat with existing/cached links; zfb does not emit these prefixes) are excluded from the redirect.
 
 ### onBrokenMarkdownLinks
 

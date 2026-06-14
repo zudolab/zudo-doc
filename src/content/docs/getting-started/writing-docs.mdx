@@ -29,7 +29,7 @@ Your content here.
 
 <Warning>
 
-Do not use `# h1` headings in your document content. The frontmatter `title` is automatically rendered as the page title (h1). Starting your content with `## h2` headings instead.
+Do not use `# h1` headings in your document content. The frontmatter `title` is automatically rendered as the page title (h1). Start your content with `## h2` headings instead.
 
 </Warning>
 
@@ -193,7 +193,7 @@ import MyComponent from "@/components/my-component";
 
 <Info>
 
-Components that need interactivity register with zfb's island runtime through their own `useEffect` / event-binding code. Components that only render static HTML render server-side and ship zero JavaScript.
+A plain component import renders server-side only and ships zero JavaScript. Interactive islands are registered via the project's island runtime — a bare component import does not hydrate on the client; only components wired up as islands do.
 
 </Info>
 

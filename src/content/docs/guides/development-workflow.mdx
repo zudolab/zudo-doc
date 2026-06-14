@@ -28,14 +28,14 @@ Use `pnpm dev:stable` when you're adding or removing content files frequently. S
 |---|---|
 | `pnpm build` | Static HTML export to `dist/` |
 | `pnpm check` | TypeScript type checking |
-| `pnpm b4push` | Pre-push validation: 13-step pipeline (format check → ... → build → link check → HTML validation → preview smoke); E2E is parked |
+| `pnpm b4push` | Pre-push validation: 17-step pipeline (format check → ... → build → link check → HTML validation → preview smoke); E2E is parked |
 | `pnpm format` | Format MDX files |
 | `pnpm test:unit` | Run unit tests (Vitest) |
 | `pnpm test:e2e` | Run E2E tests (Playwright) |
 
 <Note>
 
-Run `pnpm b4push` before pushing to verify the full site builds and all links resolve. It runs 13 steps (format check through preview smoke); E2E tests are intentionally parked and not part of this pipeline.
+Run `pnpm b4push` before pushing to verify the full site builds and all links resolve. It runs 17 steps (format check through preview smoke); E2E tests are intentionally parked and not part of this pipeline.
 
 The canonical, authoritative b4push step list lives in the header comment of `scripts/run-b4push.sh` — treat that script as the single source of truth, and consult it rather than any inline summary if the steps appear to disagree.
 
@@ -57,7 +57,7 @@ By default, every `.tsx` component renders to HTML at build time and ships zero 
 
 When a component needs interactivity — local state, event handlers, animations — it registers itself with zfb's island runtime through its own `useEffect` / event-binding code. Server-render output is reused; only the interactive part hydrates.
 
-Current islands in the project: `toc.tsx`, `mobile-toc.tsx`, `sidebar-toggle.tsx`, `sidebar-tree.tsx`, `theme-toggle.tsx`, `doc-history.tsx`, zdtp panel (Design Token Panel — self-mounted via `configurePanel()` from the `@takazudo/zdtp` package, not registered in the island registry), `ai-chat-modal`, `find-bar`.
+Current islands in the project: `toc.tsx`, `mobile-toc.tsx`, `sidebar-toggle.tsx`, `sidebar-tree.tsx`, `theme-toggle.tsx`, `doc-history.tsx`, zdtp panel (Design Token Panel — self-mounted via `configurePanel()` from the `@takazudo/zdtp` package, not registered in the island registry), `ai-chat-modal`.
 
 Use client-hydrated islands for:
 
