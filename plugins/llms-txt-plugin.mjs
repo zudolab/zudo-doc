@@ -32,8 +32,8 @@ export default {
   name: "llms-txt",
 
   /** @param {ZfbBuildHookContext} ctx */
-  postBuild(ctx) {
-    emitLlmsTxt(/** @type {LlmsTxtEmitOptions} */ (/** @type {unknown} */ ({
+  async postBuild(ctx) {
+    return emitLlmsTxt(/** @type {LlmsTxtEmitOptions} */ (/** @type {unknown} */ ({
       ...ctx.options,
       outDir: ctx.outDir,
       // siteUrl is normalised to undefined when falsy because the runner
@@ -70,6 +70,13 @@ export default {
         if (locale && typeof locale === "object" && typeof locale.code === "string") {
           ctx.register(`${basePrefix}/${locale.code}/llms.txt`, handler);
           ctx.register(`${basePrefix}/${locale.code}/llms-full.txt`, handler);
+        } else {
+          const repr = JSON.stringify(locale);
+          if (ctx.logger?.warn) {
+            ctx.logger.warn(`[llms-txt] skipping malformed locale entry (expected { code: string }): ${repr}`);
+          } else {
+            console.warn(`[llms-txt] skipping malformed locale entry (expected { code: string }): ${repr}`);
+          }
         }
       }
     }
