@@ -24,8 +24,17 @@ export interface RateLimitResult {
 }
 
 export function parseLimit(value: string | undefined, fallback: number): number {
-  const parsed = parseInt(value ?? String(fallback), 10);
-  return Number.isNaN(parsed) || parsed <= 0 ? fallback : parsed;
+  if (value !== undefined) {
+    const parsed = parseInt(value, 10);
+    if (Number.isNaN(parsed) || parsed <= 0) {
+      console.warn(
+        `parseLimit: env value ${JSON.stringify(value)} is not a positive integer; using default ${fallback}`,
+      );
+      return fallback;
+    }
+    return parsed;
+  }
+  return fallback;
 }
 
 export async function checkRateLimit(ipHash: string, env: AiChatEnv): Promise<RateLimitResult> {
@@ -91,7 +100,14 @@ export async function checkRateLimit(ipHash: string, env: AiChatEnv): Promise<Ra
     return { allowed: false, retryAfter: Math.max(1, SECONDS_PER_DAY - secondsIntoDay) };
   }
 
-  // Increment counters (not atomic, acceptable for best-effort limiting).
+  // Increment counters (non-atomic read-modify-write: KV has no CAS primitive).
+  // Worst-case overshoot ≈ the number of concurrent in-flight requests from the
+  // same IP within the same window — typically 1-2 for a chat UI.
+  // The per-minute limit is therefore a SOFT guard against casual over-use.
+  // The hard spend backstop is the global daily limit (aiChatGlobalDailyLimit),
+  // which bounds total Anthropic API cost across all callers regardless of this
+  // overshoot. Do not remove or loosen aiChatGlobalDailyLimit for production
+  // deployments.
   const writes: Promise<void>[] = [
     env.RATE_LIMIT.put(minKey, String(minCount + 1), { expirationTtl: MINUTE_KEY_TTL }),
     env.RATE_LIMIT.put(dayKey, String(dayCount + 1), { expirationTtl: DAY_KEY_TTL }),
