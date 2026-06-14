@@ -151,3 +151,68 @@ path with documented purpose. Values are deliberately gapped but otherwise arbit
 - `pnpm check:template-drift` + `pnpm check:fixture-settings-drift` pass (template mirrored).
 - `pnpm b4push` green; the search-dialog E2E passes in CI.
 - No raw `z-index:` integer or numeric `z-{n}` utility remains outside the escape hatch.
+
+## Review addenda (incorporated from Step-5 plan review)
+
+These corrections are authoritative and override anything above that conflicts. The
+wave structure is unchanged; only scope details tightened.
+
+**A1 (foundation):**
+
+- **b4push ⇄ CI parity (do NOT skip a touch-point).** `check:z-index` must be wired in
+  THREE places or `pnpm check:b4push-ci-parity` fails:
+  1. `scripts/run-b4push.sh` — add the step **inside** the
+     `# >>> b4push-ci-parity:guards` / `# <<< b4push-ci-parity:guards` marker region
+     (a step added after the close marker escapes the scan), and bump `TOTAL_STEPS`.
+  2. `scripts/check-b4push-ci-parity.mjs` — add a `REQUIRED_CI_GUARDS` entry with its
+     `ciNeedle` + `b4pushScript`.
+  3. `.github/workflows/pr-checks.yml` — add the matching CI job/step.
+- **Tailwind v4 namespace (confirmed):** the `z` utility reads the `--z-index` theme key,
+  so `@theme { --z-index-toolbar: 20 }` generates `.z-toolbar { z-index: 20 }`. The
+  `--z-index-*` namespace is independent of the existing `--color-*: initial` reset at
+  `global.css:96` — do NOT add a `--z-index-*: initial` reset; it isn't needed.
+
+**A2 (migration) — additions/corrections:**
+
+- **MISSED usage — add it:** `src/styles/global.css:696` `.code-buttons { z-index: 1 }`
+  → `var(--z-index-local-1)`. `.code-block-wrapper` (its stacking parent) already has
+  `position: relative` at ~666. (Plus the template mirror `templates/base/src/styles/global.css:699`.)
+- Drop the `~` from line numbers — these exact lines are accurate now: global.css 696,
+  1166, 1175, 1180, 1215, 1228, 1233, 1398.
+- **Deliberate behavioral change (call out, don't "fix"):** desktop sidebar drops 30→`z-sidebar`(10)
+  and mobile drawer backdrop goes 30→`z-modal-backdrop`(50). Previously backdrop and desktop
+  sidebar shared z=30 (paint-order dependent); now the backdrop is definitively above the
+  sidebar (50 > 10). This is intended and harmless.
+- `header.tsx:422` dropdown is a child of the sticky header's stacking context, so its
+  own z-index is inoperative (it escapes visually via `top-full`, not z-order). Migrate to
+  `z-dropdown` for consistency anyway; do not try to "make it work" — no behavior change.
+- `find-bar.tsx` is **template-only** (Tauri feature); there is no host-side counterpart —
+  the template edit is the whole story for that file.
+- **Definition of done additions:** after migrating `packages/zudo-doc/src/**`, run
+  `pnpm build` (or the package's `tsup` build) so `gen-safelist.mjs` regenerates
+  `packages/zudo-doc/dist/safelist.css`; verify it now contains the new semantic `z-*`
+  classes (and no stale `z-10/z-30/z-50` from removed code), and that
+  `pnpm check:package-safelist` passes. (`gen-safelist.test.ts` tests the extractor logic,
+  not the literal class set — it stays green; don't be thrown by its `z-50` fixtures.)
+- Confirm no third-party CSS (zdtp panel, Mermaid) sets a z-index above the new `modal`(60)
+  that would be newly exposed by lowering `page-loading-overlay` 9999→`modal`(60).
+
+**B (search dialog) — scope clarification:**
+
+- The `<dialog>` currently has **no** explicit z-index and relies on native `showModal()`
+  top-layer promotion. The real fix is **close-on-result-click** under `zfb:after-swap`.
+  The `z-modal` + `::backdrop` `--z-index-modal-backdrop` hardening is **defense-in-depth**
+  for the SPA-swap window where the dialog can momentarily lose top-layer promotion and
+  flash behind the header — it is intentionally redundant in the normal case, not a no-op.
+  State this in the issue so the implementer doesn't "simplify" it away.
+
+**A3 (lint) — scope decision (pick this one):**
+
+- The current `@takazudo/zudo-design-token-lint` config only scans `*.{tsx,jsx}`
+  (`patterns` field). A3's PRIMARY pass is therefore the **Tailwind class** prohibition:
+  add the numeric `z-{n}` utilities to `prohibited`, with `z-auto` allowed and the
+  documented escape-hatch comment. **CSS-file raw `z-index:` integers are NOT linted by
+  this tool** — they are instead guarded structurally by `check:z-index` (the codegen
+  drift check) since every CSS z-index now flows through the generated `@theme` block.
+  Do not attempt to extend the linter to `.css` files; rely on `check:z-index` for that
+  surface and say so in the issue.
