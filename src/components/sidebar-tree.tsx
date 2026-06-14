@@ -357,6 +357,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
           <input
             ref={filterRef}
             type="text"
+            aria-label="Filter navigation"
             placeholder={filterPlaceholder}
             value={query}
             onChange={(e) => setQuery(e.currentTarget.value)}

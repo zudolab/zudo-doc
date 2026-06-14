@@ -197,7 +197,13 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-hsp-lg py-vsp-sm" aria-live="polite">
+        {/* role="log" implies aria-live="polite" aria-relevant="additions" per
+            the ARIA spec; it does NOT re-announce prior entries when the list
+            grows, which is the correct behavior for a chat transcript.
+            The previous aria-live="polite" on this whole container caused every
+            prior message and the user's own message to be re-announced on each
+            update (#2136 M4). */}
+        <div role="log" aria-label="Chat messages" className="flex-1 overflow-y-auto px-hsp-lg py-vsp-sm">
           {messages.length === 0 && !loading && (
             <p className="py-vsp-xl text-center text-small text-muted">
               Ask a question about the documentation.
@@ -208,6 +214,19 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
           {messages.map((msg, i) => (
             <ChatMessageRow key={i} msg={msg} />
           ))}
+          {/* Scoped polite live region: only announces the latest assistant reply.
+              Rendered as a visually hidden node that is updated when a new assistant
+              message arrives so the screen reader reads only the new content (#2136 M4). */}
+          <div
+            aria-live="polite"
+            aria-atomic="true"
+            className="sr-only"
+          >
+            {(() => {
+              const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
+              return lastAssistant ? lastAssistant.content : "";
+            })()}
+          </div>
           {loading && (
             <div className="mb-vsp-xs flex justify-start">
               {/* role="status" marks this as a live status region distinct from the

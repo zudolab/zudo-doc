@@ -498,16 +498,6 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
     };
   }, [view]);
 
-  // Close on Escape key
-  useEffect(() => {
-    if (view === "closed") return;
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") handleClose();
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [view, handleClose]);
-
   const isOpen = view !== "closed";
   const hasDiff = view === "diff" && diffSelection;
 
