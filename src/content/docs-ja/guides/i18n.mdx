@@ -105,3 +105,73 @@ zudo-docは組み込みUI文字列に翻訳キーシステムを使用してい�
 ステップ1が最も重要です — `settings.ts`にロケールを追加すると、コンテンツコレクションの作成とi18nルーティングの登録が自動的に行われます。ロケールごとのページルートファイルを作成する必要はありません。`pages/[locale]/docs/[[...slug]].tsx` のパラメーター化されたルートがすべてのロケールを自動的に処理します。
 
 </Tip>
+
+## defaultLocale
+
+`defaultLocale`はURLプレフィックスなしで配信されるロケールを指定します。デフォルトは`"en"`で、zfbのデフォルトロケールルーティングに使用するキーと一致している必要があります：
+
+```ts
+export const settings = {
+  // ...
+  defaultLocale: "en" as const,
+  locales: {
+    ja: { label: "JA", dir: "src/content/docs-ja" },
+  },
+};
+```
+
+`zfb.config.ts`で設定された`prefixDefaultLocale: false`により、デフォルトロケールはパスに言語コードを含まない`/docs/...`で配信され、他のすべてのロケールはキーをプレフィックスとして使用します（日本語の場合は`/ja/docs/...`）。`defaultLocale`を変更する場合は、`zfb.config.ts`内の対応するルーティングとコレクションの設定も更新する必要があります。
+
+## Default-locale-only prefixes
+
+一部のコンテンツはデフォルトロケールでのみ提供されるよう意図的に設計されています。これらのルートは**デフォルトロケール専用プレフィックス**と呼ばれ、`src/config/settings.ts`の`defaultLocaleOnlyPrefixes`設定で管理されます：
+
+```ts
+export const settings = {
+  // ...
+  defaultLocaleOnlyPrefixes: [
+    "/docs/claude-md/",
+    "/docs/claude-skills/",
+    "/docs/claude-agents/",
+    "/docs/claude-commands/",
+  ] as string[],
+};
+```
+
+### 意味するところ
+
+これらのプレフィックスのいずれかで始まるURLを持つページは、**デフォルトロケール（英語）のみ**に存在します。言語切り替えはこれらのページに対して別ロケールへのリンクを表示しません。また、`docs-ja/`配下にこれらのページの日本語ミラーファイルを作成すべきではありません。
+
+### 現在のエントリ
+
+上記の4つのプレフィックスは、プロジェクトの`.claude/`ディレクトリにあるClaude設定ファイル（`CLAUDE.md`、スキル、エージェント、コマンド）を表示する自動生成ページ（Claudeリソースセクション）をカバーしています。ソース素材（Claude設定ファイル）は翻訳されていないため、これらは英語専用となっています。
+
+<Note>
+
+トップレベルの`/docs/claude/`インデックスページはこのリストに含まれて**いません** — `docs-ja/claude/index.mdx`にバイリンガルのスタブが存在します。デフォルトロケール専用なのは、より深い4つのプレフィックス（`claude-md/`、`claude-skills/`、`claude-agents/`、`claude-commands/`）のみです。
+
+</Note>
+
+### ルーターによる適用方法
+
+`pages/[locale]/docs/[[...slug]].tsx`のページルートは、`paths()`エクスポート内で各スラッグを`defaultLocaleOnlyPrefixes`と照合します。再構築されたURLがプレフィックスと一致する場合、そのパスはデフォルト以外のロケールのパスリストから除外されるため、`/ja/docs/claude-md/...`のようなルートは生成されません。
+
+### 独自プレフィックスの追加
+
+英語専用にしたいセクション（例：自動生成されたAPIリファレンスページ）がある場合は、配列にURLプレフィックスを追加します：
+
+```ts
+defaultLocaleOnlyPrefixes: [
+  "/docs/claude-md/",
+  "/docs/claude-skills/",
+  "/docs/claude-agents/",
+  "/docs/claude-commands/",
+  "/docs/api-reference/", // 追加するプレフィックス
+] as string[],
+```
+
+プレフィックスが以下の条件を満たしていることを確認してください：
+
+- `/docs/`（またはコンテンツディレクトリに対応するパス）で始まる
+- 末尾にスラッシュがある
+- バイリンガルで保持したいプレフィックスと重複しない
