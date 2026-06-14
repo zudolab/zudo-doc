@@ -115,6 +115,7 @@ The type class (`admonition-note`, `admonition-tip`, `admonition-warning`, `admo
 ## Notes
 
 - The `:::details` type also accepts the legacy `:::details title="Click me"` attribute form.
-- `:::caution` is part of the vocabulary this project registers; it emits `<Caution>` (`data-admonition="caution"`), mirroring how `:::warning` emits `<Warning>`.
+- `:::caution` is part of the vocabulary this project registers; it emits `<Caution>` (`data-admonition="caution"`), mirroring how `:::warning` emits `<Warning>`. `caution` is also reachable via [GitHub Alerts](./github-alerts.mdx) as `> [!CAUTION]`, so it is available through both paths.
+- `important` is **not** in the `directives` map and cannot be used as `:::important`. It is only available via [GitHub Alerts](./github-alerts.mdx) as `> [!IMPORTANT]`, which maps to the `<Important>` component (`data-admonition="important"`).
 - To add or override directives, extend the `directives` map in `zfb.config.ts` with additional name → title pairs.
 - [GitHub Alerts](./github-alerts.mdx) emits the same admonition markup from `> [!NOTE]`-style blockquotes; the two features coexist cleanly.
