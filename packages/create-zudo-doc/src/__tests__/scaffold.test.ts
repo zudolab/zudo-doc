@@ -1475,11 +1475,13 @@ describe("scaffold — tauri feature", () => {
 describe("scaffold — body-end-islands feature gating (#2058)", () => {
   // pages/lib/_body-end-islands.tsx feature-gates the AiChatModal island +
   // sr-only "AI Assistant" landmark on settings.aiAssistant and the
-  // ImageEnlarge island on settings.imageEnlarge, mirroring the existing
-  // designTokenPanel gating. The conditionals are part of the wholesale-copied
-  // base template, so every scaffold variant carries them regardless of the
-  // flag values — a feature-off consumer (aiAssistant/imageEnlarge false) then
-  // ships neither the dead island marker nor the misleading landmark heading.
+  // ImageEnlarge island on settings.imageEnlarge. These conditionals are part
+  // of the wholesale-copied base template, so every scaffold variant carries
+  // them regardless of the flag values — a feature-off consumer
+  // (aiAssistant/imageEnlarge false) then ships neither the dead island marker
+  // nor the misleading landmark heading. The designTokenPanel island is NOT in
+  // the base template — it is injected by the designTokenPanel feature (#2162),
+  // so with the feature off the file carries no panel reference at all.
   it("gates AiChatModal/heading on aiAssistant and ImageEnlarge on imageEnlarge", async () => {
     const choices: UserChoices = {
       projectName: "test-body-end-gating",
@@ -1500,8 +1502,10 @@ describe("scaffold — body-end-islands feature gating (#2058)", () => {
     expect(bodyEnd).toContain('<h2 class="sr-only">AI Assistant</h2>');
     // Image-enlarge island gating.
     expect(bodyEnd).toContain("settings.imageEnlarge");
-    // designTokenPanel gating stays in place and untouched.
-    expect(bodyEnd).toContain("settings.designTokenPanel");
+    // designTokenPanel feature is OFF here, so its gating/island is injected
+    // by the feature elsewhere and the base output carries no panel reference.
+    expect(bodyEnd).not.toContain("settings.designTokenPanel");
+    expect(bodyEnd).not.toContain("DesignTokenPanel");
     // No leftover slot anchors in the generated output.
     expect(bodyEnd).not.toContain("@slot:");
   });

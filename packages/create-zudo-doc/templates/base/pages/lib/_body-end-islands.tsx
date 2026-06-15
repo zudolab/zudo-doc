@@ -75,14 +75,17 @@ export interface BodyEndIslandsProps {
 }
 
 /**
- * The default body-end islands a doc page may mount: the design-token
- * tweak panel (overlay, fixed-position), the AI chat modal (`<dialog>`
- * overlay), and the image-enlarge dialog (mounted lazily based on
- * viewport scan). Each is feature-gated — the design-token panel on
- * `settings.designTokenPanel`, the AI chat modal (and its sr-only
- * landmark heading) on `settings.aiAssistant`, and image-enlarge on
- * `settings.imageEnlarge` — so a feature-off consumer ships neither the
+ * The default body-end islands a doc page may mount: the AI chat modal
+ * (`<dialog>` overlay) and the image-enlarge dialog (mounted lazily based
+ * on viewport scan). Each is feature-gated — the AI chat modal (and its
+ * sr-only landmark heading) on `settings.aiAssistant`, and image-enlarge
+ * on `settings.imageEnlarge` — so a feature-off consumer ships neither the
  * island marker nor a misleading landmark (zudolab/zudo-doc#2058).
+ *
+ * Optional feature islands (e.g. the design token panel bootstrap) are not
+ * listed here: they are injected at the body-end-islands composition
+ * anchors only when their feature is selected, so a feature-off scaffold
+ * carries no trace of them.
  *
  * Each island is wrapped in `<Island ssrFallback>` so the heavy
  * component is NOT evaluated server-side — they depend on
@@ -114,7 +117,7 @@ export function BodyEndIslands({
   // sr-only "AI Assistant" landmark heading should reach the SSG output —
   // otherwise feature-off consumers ship a dead island marker plus a
   // misleading screen-reader landmark for a section that never hydrates.
-  // Mirrors the `designTokenPanel` gating above.
+  // Same feature-gating pattern as the other optional body-end islands.
   //
   // KNOWN CAVEAT: zfb's island scanner walks the static `"use client"`
   // import chain, so gating this JSX removes the SSR marker and heading but
