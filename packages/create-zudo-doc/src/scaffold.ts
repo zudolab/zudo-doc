@@ -354,15 +354,21 @@ function generatePackageJson(choices: UserChoices) {
     // include/exclude globs (#1032). No consumer-facing breaking change.
     // next.42/next.43: release-tooling + formatter-glob fixes only (npm-publish
     // idempotency, gitignored-artifact excludes). No consumer-facing change.
-    // next.44 (current pin): embed-as-library enhancements only — ServerBuilder
-    // ::with_page_cache for live content, an opt-in ExternalInvalidationHook to
-    // narrow extraWatchPaths rebuilds, and TS-config-loader path canonicalization
-    // (Takazudo/zudo-front-builder#1036–#1043). No consumer-facing / CLI change.
-    "@takazudo/zfb": "0.1.0-next.44",
-    "@takazudo/zfb-runtime": "0.1.0-next.44",
+    // next.44: embed-as-library enhancements only — ServerBuilder::with_page_cache
+    // for live content, an opt-in ExternalInvalidationHook to narrow
+    // extraWatchPaths rebuilds, and TS-config-loader path canonicalization
+    // (Takazudo/zudo-front-builder#1036–#1043). next.45: docs-only. next.46:
+    // opt-in dev boot-lazy mode (#1057) + client-router timer lifecycle fixes —
+    // dev-server-only. next.47 (current pin): dual light/dark syntect themes
+    // (themeLight/themeDark on CodeHighlightConfig, --shiki-light/--shiki-dark,
+    // #1067) plus stricter build-start validation that rejects unknown theme
+    // names — additive; a fresh scaffold sets no explicit codeHighlight.theme so
+    // the default still applies. No consumer-facing / CLI breaking change.
+    "@takazudo/zfb": "0.1.0-next.47",
+    "@takazudo/zfb-runtime": "0.1.0-next.47",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.44",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.47",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's

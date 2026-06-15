@@ -3188,13 +3188,14 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
    * resolve_links for dir-style hrefs written from non-index pages
    * (Takazudo/zudo-front-builder#1030), and the data-file skip warning now
    * respects collection include/exclude globs (#1032). Now bumped to
-   * 0.1.0-next.44: next.42/next.43 were release-tooling + formatter-glob fixes;
-   * next.44 is embed-as-library enhancements only (ServerBuilder::with_page_cache,
-   * opt-in ExternalInvalidationHook, TS-config-loader path canonicalization) —
-   * no consumer-facing breaking change. Generated package.json must pin all
-   * three.
+   * 0.1.0-next.47: next.42–next.44 were release-tooling, formatter-glob, and
+   * embed-as-library enhancements; next.45 docs-only; next.46 opt-in dev
+   * boot-lazy mode + client-router timer lifecycle fixes; next.47 dual
+   * light/dark syntect themes (themeLight/themeDark, #1067) plus stricter
+   * build-start rejection of unknown theme names — additive, no consumer-facing
+   * breaking change. Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.44", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.47", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -3205,10 +3206,10 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.44");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.44");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.47");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.47");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.44",
+      "0.1.0-next.47",
     );
   });
 });
