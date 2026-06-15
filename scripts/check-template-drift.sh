@@ -38,11 +38,15 @@ fi
 # The exempted files are deliberate no-op base stubs whose host counterparts
 # are real "use client" islands. They ship WITHOUT the directive because the
 # stub never emits an island marker in a generated project:
-# - design-token-panel-bootstrap / desktop-sidebar-toggle: the real,
-#   directive-carrying implementations are feature overlays (designTokenPanel /
-#   sidebarToggle) that replace the stub when the feature is enabled; the base
-#   stub serves feature-disabled scaffolds, where it renders nothing. The
-#   overlay copies have different template-relative keys and stay checked.
+# - desktop-sidebar-toggle: the real, directive-carrying implementation is a
+#   feature overlay (sidebarToggle) that replaces the stub when the feature is
+#   enabled; the base stub serves feature-disabled scaffolds, where it renders
+#   nothing. The overlay copy has a different template-relative key and stays
+#   checked.
+# - design-token-panel-bootstrap: base stub was DELETED in #2162 (gating zdtp
+#   scaffolding behind the designTokenPanel feature). The real implementation
+#   now lives only in the designTokenPanel feature overlay and is NOT in the
+#   base template at all.
 # - preset-generator: renders null and is only reachable through the MDX
 #   component map when a doc page uses it; downstream projects replace the
 #   stub to wire a real implementation (see the stub's header comment).
@@ -50,7 +54,6 @@ fi
 # pages/lib/_body-end-islands.tsx, so even as a minimal component it MUST
 # carry the directive — that is why it is NOT exempt (zudolab/zudo-doc#2047).
 declare -A DIRECTIVE_EXEMPT=(
-  ["base/src/components/design-token-panel-bootstrap.tsx"]=1
   ["base/src/components/desktop-sidebar-toggle.tsx"]=1
   ["base/src/components/preset-generator.tsx"]=1
 )

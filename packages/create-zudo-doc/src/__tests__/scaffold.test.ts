@@ -792,7 +792,9 @@ describe("scaffold — headerRightItems preset override (sub #440)", () => {
       defaultLang: "en",
       colorSchemeMode: "single",
       singleScheme: "Default Dark",
-      features: ["search"],
+      // designTokenPanel must be in features so the "design-token-panel" trigger
+      // is not stripped by the defensive filter in settings-gen (#2162).
+      features: ["search", "designTokenPanel"],
       packageManager: "pnpm",
       headerRightItems: [
         { type: "component", component: "theme-toggle" },
@@ -3480,5 +3482,158 @@ describe("scaffold — metaTags preset override (S5 #2079)", () => {
     expect(content).toContain('"summary_large_image"');
     expect(content).toContain('"@brand"');
     expect(content).toContain('"@author"');
+  });
+});
+
+// #2162 — zdtp scaffolding gated behind designTokenPanel feature
+describe("scaffold — designTokenPanel zdtp gating (#2162)", () => {
+  describe("feature OFF — zero zdtp / design-token-panel references", () => {
+    const choices: UserChoices = {
+      projectName: "test-zdtp-off",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+
+    beforeEach(async () => {
+      await scaffold(choices);
+    });
+
+    it("_body-end-islands.tsx contains no zdtp import, displayName, or Island", async () => {
+      const content = await fs.readFile(
+        projectPath("test-zdtp-off", "pages/lib/_body-end-islands.tsx"),
+        "utf-8",
+      );
+      expect(content).not.toContain("zdtp");
+      expect(content).not.toContain("design-token-panel");
+      expect(content).not.toContain("DesignTokenPanel");
+    });
+
+    it("settings-types.ts contains no 'design-token-panel' literal", async () => {
+      const content = await fs.readFile(
+        projectPath("test-zdtp-off", "src/config/settings-types.ts"),
+        "utf-8",
+      );
+      expect(content).not.toContain("design-token-panel");
+    });
+
+    it("settings-types.ts still exports HeaderRightTriggerName (ai-chat only)", async () => {
+      const content = await fs.readFile(
+        projectPath("test-zdtp-off", "src/config/settings-types.ts"),
+        "utf-8",
+      );
+      expect(content).toContain("HeaderRightTriggerName");
+      expect(content).toContain('"ai-chat"');
+    });
+
+    it("design-token-panel-bootstrap component is NOT copied to feature-off scaffold", async () => {
+      expect(
+        await fs.pathExists(
+          projectPath(
+            "test-zdtp-off",
+            "src/components/design-token-panel-bootstrap.tsx",
+          ),
+        ),
+      ).toBe(false);
+    });
+
+    it("settings-gen: user-supplied headerRightItems with design-token-panel trigger is filtered out", async () => {
+      const choicesWithDtpTrigger: UserChoices = {
+        projectName: "test-zdtp-hri-filter",
+        defaultLang: "en",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        features: ["search"],
+        packageManager: "pnpm",
+        // Explicit design-token-panel trigger without the feature — must be
+        // dropped silently so the generated settings.ts type-checks
+        // (HeaderRightTriggerName doesn't include "design-token-panel" when off).
+        headerRightItems: [
+          { type: "trigger", trigger: "design-token-panel" },
+          { type: "component", component: "github-link" },
+        ],
+      };
+      await scaffold(choicesWithDtpTrigger);
+      const content = await fs.readFile(
+        projectPath("test-zdtp-hri-filter", "src/config/settings.ts"),
+        "utf-8",
+      );
+      // The design-token-panel trigger must be stripped.
+      expect(content).not.toContain('trigger: "design-token-panel"');
+      // The github-link entry must still be present.
+      expect(content).toContain('component: "github-link"');
+    });
+  });
+
+  describe("feature ON — zdtp import, displayName, toggle shim, and Island present", () => {
+    const choices: UserChoices = {
+      projectName: "test-zdtp-on",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "designTokenPanel"],
+      packageManager: "pnpm",
+    };
+
+    beforeEach(async () => {
+      await scaffold(choices);
+    });
+
+    it("_body-end-islands.tsx contains DesignTokenPanelBootstrap import", async () => {
+      const content = await fs.readFile(
+        projectPath("test-zdtp-on", "pages/lib/_body-end-islands.tsx"),
+        "utf-8",
+      );
+      expect(content).toContain(
+        'import DesignTokenPanelBootstrap from "@/components/design-token-panel-bootstrap"',
+      );
+    });
+
+    it("_body-end-islands.tsx contains DesignTokenPanelBootstrap displayName", async () => {
+      const content = await fs.readFile(
+        projectPath("test-zdtp-on", "pages/lib/_body-end-islands.tsx"),
+        "utf-8",
+      );
+      expect(content).toContain(
+        '(DesignTokenPanelBootstrap as { displayName?: string }).displayName = "DesignTokenPanelBootstrap"',
+      );
+    });
+
+    it("_body-end-islands.tsx contains the pre-hydration toggle shim script", async () => {
+      const content = await fs.readFile(
+        projectPath("test-zdtp-on", "pages/lib/_body-end-islands.tsx"),
+        "utf-8",
+      );
+      expect(content).toContain("__zdtpToggleShimInstalled");
+      expect(content).toContain("toggle-design-token-panel");
+      expect(content).toContain("__zdtpReadyClicks");
+    });
+
+    it("_body-end-islands.tsx contains the DesignTokenPanelBootstrap Island mount", async () => {
+      const content = await fs.readFile(
+        projectPath("test-zdtp-on", "pages/lib/_body-end-islands.tsx"),
+        "utf-8",
+      );
+      expect(content).toContain("<DesignTokenPanelBootstrap />");
+    });
+
+    it("settings-types.ts contains 'design-token-panel' in HeaderRightTriggerName", async () => {
+      const content = await fs.readFile(
+        projectPath("test-zdtp-on", "src/config/settings-types.ts"),
+        "utf-8",
+      );
+      expect(content).toContain('"design-token-panel"');
+      expect(content).toContain("HeaderRightTriggerName");
+    });
+
+    it("design-token-panel trigger appears in default headerRightItems fallback", async () => {
+      const content = await fs.readFile(
+        projectPath("test-zdtp-on", "src/config/settings.ts"),
+        "utf-8",
+      );
+      expect(content).toContain('trigger: "design-token-panel"');
+    });
   });
 });

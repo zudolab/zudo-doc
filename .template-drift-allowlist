@@ -105,12 +105,21 @@ src/utils/design-token-types.ts
 # W3A (#1729 / generator-pages-migration Wave 3) — header-right-items moved into
 # @takazudo/zudo-doc/header for production. The host (this repo) imports
 # filterHeaderRightItems from the v2 package directly and the source-of-truth
-# lives in packages/zudo-doc/src/header/right-items.ts. The template ships
-# a self-contained copy under templates/base/src/utils/ for downstream scaffolds
-# that don't depend on v2 as a runtime dep — same intentional divergence pattern
-# as design-token-panel-bootstrap.ts and desktop-sidebar-toggle.tsx above.
-# Reconcile if/when create-zudo-doc migrates onto the v2 header module wholesale.
-src/utils/header-right-items.ts
+# lives in packages/zudo-doc/src/header/right-items.ts. The template's copy
+# (templates/base/src/utils/header-right-items.ts) was deleted in #2162 as
+# part of gating zdtp scaffolding behind the designTokenPanel feature — the file
+# was orphaned (nothing in the base template imported it), and deleting it was
+# the cleanest path to removing the "design-token-panel" literal from
+# feature-off scaffolds. This entry is retained to document the history.
+# src/utils/header-right-items.ts — DELETED from template in #2162 (orphaned)
+
+# #2162 — src/config/settings-types.ts template carries @slot: replace-range
+# anchors around the HeaderRightTriggerName union so the designTokenPanel feature
+# can inject "design-token-panel" | only when the feature is enabled. The host
+# unconditionally includes both trigger names; the template ships "ai-chat" only
+# as the base and the feature overlay adds "design-token-panel" via injection.
+# These will never be byte-identical.
+src/config/settings-types.ts
 
 # W6A (#1734 / generator-pages-migration Wave 6A) — missing-src stubs landed
 # in templates/base/src/components/ so the mirrored unconditional pages
@@ -132,8 +141,14 @@ src/utils/header-right-items.ts
 # host src/components/client-router-bootstrap.tsx, so the drift checker
 # enforces parity going forward — same rationale as the W4A
 # desktop-sidebar-toggle de-allowlisting above.
+#
+# design-token-panel-bootstrap.tsx stub was REMOVED from this list (#2162):
+# the base stub (a no-op that never carried "use client") was deleted as part
+# of gating zdtp scaffolding behind the designTokenPanel feature. The real,
+# directive-carrying implementation lives only in the designTokenPanel feature
+# overlay (templates/features/designTokenPanel/files/src/components/) and is
+# copied only when the feature is on.
 src/components/ai-chat-modal.tsx
-src/components/design-token-panel-bootstrap.tsx
 src/components/desktop-sidebar-toggle.tsx
 src/components/preset-generator.tsx
 
@@ -153,12 +168,13 @@ src/components/preset-generator.tsx
 # injection too (unlikely — host does not use the compose framework).
 pages/_mdx-components.ts
 
-# #2052 — pages/lib/_body-end-islands.tsx template carries @slot: injection
-# anchors (imports / display-names / extra-islands) so the tauri feature can
-# inject the FindInPageInit island mount. The host has no find-in-page wiring
-# (its counterparts were deleted in S1 #1928), so the anchors exist only in
-# the template — same anchor-carrying-template precedent as
-# pages/_mdx-components.ts above. These will never be byte-identical.
+# #2052 / #2162 — pages/lib/_body-end-islands.tsx template carries @slot:
+# injection anchors (imports / display-names / extra-islands) so the tauri
+# and designTokenPanel features can inject their islands (FindInPageInit and
+# DesignTokenPanelBootstrap respectively). The host inlines zdtp unconditionally
+# (always-on) while the template uses anchors so the compose framework can
+# inject or omit the zdtp island based on the designTokenPanel feature toggle.
+# These will never be byte-identical.
 pages/lib/_body-end-islands.tsx
 
 # W8A (#1739) entries for src/components/content/heading-h3.tsx and

@@ -245,11 +245,18 @@ export function validateDependencies(
  *   `p:` map entry) when imageEnlarge is enabled.
  * - `pages/lib/_body-end-islands.tsx` — tauri.ts injects the FindInPageInit
  *   island (import, displayName, Island mount) when tauri is enabled.
+ *   design-token-panel.ts injects the DesignTokenPanelBootstrap island
+ *   (import, displayName, Island mount + toggle shim) when designTokenPanel
+ *   is enabled.
+ * - `src/config/settings-types.ts` — design-token-panel.ts injects the
+ *   `"design-token-panel"` member into `HeaderRightTriggerName` when the
+ *   feature is enabled (replace-range between the :start/:end anchors).
  */
 export const ANCHOR_FILES = [
   "src/styles/global.css",
   "pages/_mdx-components.ts",
   "pages/lib/_body-end-islands.tsx",
+  "src/config/settings-types.ts",
 ];
 
 /**

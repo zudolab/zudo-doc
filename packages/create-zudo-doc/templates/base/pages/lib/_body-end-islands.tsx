@@ -34,7 +34,6 @@ import { settings } from "@/config/settings";
 
 import AiChatModal from "@/components/ai-chat-modal";
 import ClientRouterBootstrap from "@/components/client-router-bootstrap";
-import DesignTokenPanelBootstrap from "@/components/design-token-panel-bootstrap";
 import ImageEnlarge, { ImageEnlargeSsrFallback } from "@/components/image-enlarge";
 import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";
 // @slot:body-end-islands:imports
@@ -49,8 +48,6 @@ import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";
 (AiChatModal as { displayName?: string }).displayName = "AiChatModal";
 (ClientRouterBootstrap as { displayName?: string }).displayName =
   "ClientRouterBootstrap";
-(DesignTokenPanelBootstrap as { displayName?: string }).displayName =
-  "DesignTokenPanelBootstrap";
 (ImageEnlarge as { displayName?: string }).displayName = "ImageEnlarge";
 // @slot:body-end-islands:display-names
 
@@ -63,37 +60,6 @@ import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";
  * localise.
  */
 const DEFAULT_AI_CHAT_BODY_LABEL = "Ask a question about the documentation.";
-
-/**
- * SSR-emitted inline script that acts as a pre-hydration shim for the
- * `toggle-design-token-panel` window event. Because the
- * DesignTokenPanelBootstrap Island is deferred, zdtp's real
- * `toggle-design-token-panel` listener (registered in index.tsx at
- * module init) is not yet installed when the user clicks the header
- * palette button. This shim:
- *
- *  1. Records the first (and only meaningful) click as a boolean flag.
- *  2. Exposes `window.__zdtpReadyClicks` so the bootstrap Island can
- *     drain the queue and re-dispatch a single event once the real
- *     listener is live.
- *  3. Guards against double-installation across any re-evaluation path
- *     (SPA body swap, HMR, etc.) via `__zdtpToggleShimInstalled`.
- *
- * A single boolean (not an array) is used because the panel is a toggle —
- * any number of pre-hydration clicks should result in at most one open.
- */
-const ZDTP_TOGGLE_SHIM_SRC = `(function(){
-if(window.__zdtpToggleShimInstalled)return;
-window.__zdtpToggleShimInstalled=true;
-var pending=false;
-function shim(){pending=true;}
-window.addEventListener('toggle-design-token-panel',shim);
-window.__zdtpReadyClicks=function(){
-window.removeEventListener('toggle-design-token-panel',shim);
-delete window.__zdtpReadyClicks;
-if(pending){pending=false;window.dispatchEvent(new CustomEvent('toggle-design-token-panel'));}
-};
-})();`;
 
 /** Props for {@link BodyEndIslands}. */
 export interface BodyEndIslandsProps {
@@ -142,31 +108,6 @@ export function BodyEndIslands({
     when: "load",
     children: <ClientRouterBootstrap />,
   }) as unknown as VNode;
-
-  // Hydrates on load so configurePanel() runs as early as possible and
-  // the `toggle-design-token-panel` window listener is registered before
-  // the user can click the header trigger. Renders nothing visually —
-  // the zdtp panel self-mounts as a side-effect (zudolab/zudo-doc#1623).
-  //
-  // The inline <script> emitted alongside the Island is the pre-hydration
-  // toggle shim (zudolab/zudo-doc#1627 Part B). It captures the first
-  // click as a boolean flag and exposes window.__zdtpReadyClicks so the
-  // bootstrap module can drain and re-dispatch once the real zdtp listener
-  // is registered. Mirrors the PageLoadingOverlay SSR-script pattern.
-  const designTokenPanelBootstrap =
-    settings.designTokenPanel
-      ? (
-          <>
-            <script
-              dangerouslySetInnerHTML={{ __html: ZDTP_TOGGLE_SHIM_SRC }}
-            />
-            {Island({
-              when: "load",
-              children: <DesignTokenPanelBootstrap />,
-            }) as unknown as VNode}
-          </>
-        )
-      : null;
 
   // Gated on `settings.aiAssistant` (zudolab/zudo-doc#2058): when the AI
   // assistant feature is off, neither the AiChatModal island marker nor the
@@ -222,7 +163,6 @@ export function BodyEndIslands({
           zfb:before-preparation / zfb:after-swap listeners at runtime. */}
       <PageLoadingOverlay />
       {clientRouterBootstrap}
-      {designTokenPanelBootstrap}
       {aiAssistant}
       {imageEnlarge}
       {/* @slot:body-end-islands:extra-islands */}

@@ -304,10 +304,19 @@ export function generateSettingsFile(choices: UserChoices): string {
   if (choices.headerRightItems !== undefined) {
     // User-supplied override (including empty array): emit each entry verbatim,
     // in the chosen order. An empty array means "no header-right items" — honor it.
-    // filterHeaderRightItems (src/utils/header-right-items.ts) handles runtime
-    // hiding of items whose feature is disabled — no need to gate emission
-    // here on choices.features.
+    // DEFENSIVE STRIP: drop any "design-token-panel" trigger when the
+    // designTokenPanel feature is off — the type "design-token-panel" is absent
+    // from HeaderRightTriggerName in a feature-off scaffold (gated via
+    // @slot:settings-types:trigger-names), so emitting it would cause a TS error
+    // (zudolab/zudo-doc#2162).
     for (const item of choices.headerRightItems) {
+      if (
+        item.type === "trigger" &&
+        item.trigger === "design-token-panel" &&
+        !choices.features.includes("designTokenPanel")
+      ) {
+        continue;
+      }
       if (item.type === "trigger") {
         lines.push(
           `    { type: "trigger", trigger: ${JSON.stringify(item.trigger)} },`,
