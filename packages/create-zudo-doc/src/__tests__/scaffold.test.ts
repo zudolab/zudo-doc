@@ -239,6 +239,18 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     expect(gitignore).not.toContain("src-tauri/target");
     expect(gitignore).not.toContain("src-tauri/gen");
   });
+
+  it(".npmrc exempts undici-types from pnpm's trust-downgrade policy", async () => {
+    // Regression guard for zudolab/zudo-doc#2150: without this exclusion a
+    // consumer (or the preset-swap slow test) running `pnpm install` under
+    // trust-policy=no-downgrade aborts with ERR_PNPM_TRUST_DOWNGRADE on
+    // undici-types@6.21.0 (transitive dep of @types/node@^22).
+    const npmrc = await fs.readFile(
+      projectPath("test-minimal", ".npmrc"),
+      "utf-8",
+    );
+    expect(npmrc).toContain("trust-policy-exclude[]=undici-types@6.21.0");
+  });
 });
 
 describe("scaffold — sidebarToggle feature", () => {
