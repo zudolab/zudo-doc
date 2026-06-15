@@ -44,7 +44,8 @@ The files shipped with anchors in `templates/base/` today are:
 
 - `src/styles/global.css` — 2 anchors (`@slot:global-css:theme-tokens`, `@slot:global-css:feature-styles`)
 - `pages/_mdx-components.ts` — anchors consumed by the imageEnlarge feature
-- `pages/lib/_body-end-islands.tsx` — anchors consumed by the tauri feature
+- `pages/lib/_body-end-islands.tsx` — anchors consumed by the tauri and designTokenPanel features
+- `src/config/settings-types.ts` — replace-range anchors (`@slot:settings-types:trigger-names:start`/`:end`) consumed by the designTokenPanel feature to inject `"design-token-panel"` into `HeaderRightTriggerName`
 
 The `ANCHOR_FILES` list in `src/compose.ts` is the source of truth for which files are anchor-cleaned after composition. Feature-specific files are copied wholesale from `templates/features/<name>/files/`; no anchor injection into doc-layout/header is required post-zfb-cutover.
 

@@ -17,8 +17,9 @@
  *
  * The package ships a build-generated safelist at `dist/safelist.css`
  * (zudolab/zudo-doc#1993). Importing it via the module resolver is
- * reliable across all consumer environments — same code path as the
- * existing `@import "@takazudo/zdtp/styles.css"` below.
+ * reliable across all consumer environments — the same module-resolver
+ * code path used for any feature stylesheet injected at the
+ * `@slot:global-css:feature-styles` anchor below.
  *
  * Why not @source the package dist/ glob? The old approach
  * (`@source "../../node_modules/@takazudo/zudo-doc/dist/**"`) was

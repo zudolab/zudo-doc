@@ -16,7 +16,9 @@ export type HeaderRightComponentName =
   | "github-link"
   | "search";
 
-export type HeaderRightTriggerName = "design-token-panel" | "ai-chat";
+// @slot:settings-types:trigger-names:start
+export type HeaderRightTriggerName = "ai-chat";
+// @slot:settings-types:trigger-names:end
 
 export interface HeaderRightComponentItem {
   type: "component";
