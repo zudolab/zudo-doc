@@ -137,12 +137,13 @@ headerRightItems: [
 
 ## Customizing the theme toggle
 
-The built-in `theme-toggle` component is enough for most sites, but some consumers want their own toggle markup — a different icon, an extra label, custom placement. If you build a custom toggle, **import `ThemeToggle` from the dedicated `@takazudo/zudo-doc/theme-toggle` subpath** and wrap your own UI around it (or re-export it under the same name). Do not hand-copy a local `ThemeToggle` component into your project.
+The built-in `theme-toggle` component is enough for most sites. Some consumers still keep their **own** `ThemeToggle` in their project — to place it in a custom spot, compose it into their own island wrapper, or because they were avoiding the `@takazudo/zudo-doc/theme` barrel (which has a React-resolution hazard — see below). In all of these cases, **import `ThemeToggle` from the dedicated `@takazudo/zudo-doc/theme-toggle` subpath** instead of hand-copying a local component.
 
 ```tsx
-// Use the package island, then customize around it.
 import { ThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
 ```
+
+The exported `ThemeToggle` renders its own `<button>` with built-in sun/moon icons and accepts a single prop, `defaultMode` (`"light"` or `"dark"`). You can place it anywhere and compose UI around it, but its button markup and icons are fixed — importing it is about reusing the package's toggle (and avoiding the collision below), not restyling it. If you need genuinely different toggle markup or icons, build your own component and give it a name **other than** `ThemeToggle`, so it doesn't claim the package's island marker.
 
 ### Why import the package island
 
