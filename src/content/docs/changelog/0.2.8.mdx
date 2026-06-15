@@ -1,0 +1,16 @@
+---
+title: 0.2.8
+description: Release notes for 0.2.8.
+sidebar_position: 1019
+---
+
+Released: 2026-06-16
+
+### Features
+
+- Dual-theme syntect code highlighting — code blocks now follow the light/dark toggle with no client JS. `codeHighlight.themeLight`/`themeDark` (`base16-ocean.light` / `base16-ocean.dark`) emit `--shiki-light`/`--shiki-dark` CSS custom properties that `global.css` resolves via `light-dark()`, fixing the previously near-invisible code on the light theme (#2160, 491652dc)
+
+### Other Changes
+
+- Bump `@takazudo/zfb` 0.1.0-next.44 → 0.1.0-next.47 and `@takazudo/zdtp` 0.2.0-next.2 → 0.2.3 to enable the dual-theme syntect mode; align workspace pin parity across `packages/zudo-doc` and the `create-zudo-doc` scaffold (#2160, 491652dc)
+- Purge stale "zdtp re-highlights code via Shiki" claims across CLAUDE.md, source comments, and EN/JA content — zdtp's Shiki integration is a no-op stub and `shikiTheme` is now optional (zdtp 0.2.3) and vestigial (#2160, 491652dc)

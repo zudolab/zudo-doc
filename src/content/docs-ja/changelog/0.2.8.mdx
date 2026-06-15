@@ -1,0 +1,16 @@
+---
+title: 0.2.8
+description: 0.2.8のリリースノート。
+sidebar_position: 1019
+---
+
+リリース日: 2026-06-16
+
+### 機能
+
+- デュアルテーマの syntect コードハイライトに対応しました。コードブロックがクライアント JS なしでライト/ダークの切り替えに追従するようになりました。`codeHighlight.themeLight`/`themeDark`（`base16-ocean.light` / `base16-ocean.dark`）が `--shiki-light`/`--shiki-dark` の CSS カスタムプロパティを出力し、`global.css` がそれを `light-dark()` で解決します。これにより、これまでライトテーマでほぼ見えなくなっていたコードの表示を修正しました (#2160, 491652dc)
+
+### その他の変更
+
+- デュアルテーマ syntect モードを有効化するため、`@takazudo/zfb` を 0.1.0-next.44 → 0.1.0-next.47 へ、`@takazudo/zdtp` を 0.2.0-next.2 → 0.2.3 へ更新しました。あわせて `packages/zudo-doc` と `create-zudo-doc` スキャフォールド全体でピンの整合性を揃えました (#2160, 491652dc)
+- CLAUDE.md・ソースコメント・EN/JA コンテンツ全体から「zdtp が Shiki でコードを再ハイライトする」という古い記述を一掃しました。zdtp の Shiki 連携は no-op スタブであり、`shikiTheme` は（zdtp 0.2.3 以降）任意かつ無用な項目です (#2160, 491652dc)
