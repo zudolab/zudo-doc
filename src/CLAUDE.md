@@ -48,7 +48,7 @@ Each tier only references the tier above it.
 
 - Edit `colorScheme` in `src/config/settings.ts`
 - Available: Dracula, Catppuccin Mocha, Nord, TokyoNight, Gruvbox Dark, Atom One Dark
-- Add schemes in `src/config/color-schemes.ts` (22 color props + `shikiTheme`)
+- Add schemes in `src/config/color-schemes.ts` (22 color props + an optional, vestigial `shikiTheme` — no effect on rendering; highlighting is syntect's, configured via `codeHighlight` in `zfb.config.ts`)
 - `ColorRef` type: `background`, `foreground`, `cursor`, `selectionBg`, `selectionFg`, and semantic overrides accept `number | string` — number = palette index, string = direct color
 
 ### Design Token Panel (zdtp)

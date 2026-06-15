@@ -538,6 +538,27 @@ export default defineConfig({
     },
   },
   // ----------------------------------------------------------------------
+  // Code highlighting — dual-theme syntect (zfb >= 0.1.0-next.45).
+  // ----------------------------------------------------------------------
+  // Single-theme mode (the default, `{ theme }`) bakes one syntect theme's
+  // colors as inline `style="color:#hex"` on every token — unreadable on the
+  // opposite background, which is why the dark-only default washed out in light
+  // mode. Dual-theme mode highlights twice and emits CSS custom properties
+  // (`--shiki-light` / `--shiki-dark`, plus `--shiki-*-bg` on the `<pre>`, which
+  // also gains `class="syntect-dual"`) instead of inline colors. The host CSS in
+  // src/styles/global.css resolves them with `light-dark(var(--shiki-light),
+  // var(--shiki-dark))` — driven by the same `color-scheme` property the
+  // ColorSchemeProvider/ThemeToggle already toggle per active theme, so code
+  // follows the in-page light/dark switch with zero client-side JS (no
+  // re-highlighting). Theme names are SYNTECT built-ins, NOT Shiki names.
+  // base16-ocean.dark keeps the dark output identical to the prior default;
+  // base16-ocean.light is its matching light-palette counterpart.
+  // (Upstream Takazudo/zudo-front-builder — dual-theme follow-up to syntect #188.)
+  codeHighlight: {
+    themeLight: "base16-ocean.light",
+    themeDark: "base16-ocean.dark",
+  },
+  // ----------------------------------------------------------------------
   // Cloudflare adapter — wraps the SSR bundle into `dist/_worker.js`
   // (the explicit main entry for Workers static assets) plus a sidecar
   // `dist/_zfb_inner.mjs`. The adapter is a hard requirement for any

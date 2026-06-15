@@ -258,6 +258,201 @@ Three properties make this work:
       border-left: 3px solid hsl(142 50% 40%);
     }`}
 >
+      <div class="ztk-demo__col">
+        <div class="ztk-demo__heading">Magic numbers (anti-pattern)</div>
+        <pre class="ztk-demo__code ztk-demo__code--bad"><code>{".modal       { z-index: 9999; }\\n.toast       { z-index: 100; }\\n.tooltip     { z-index: 21; }\\n.dropdown    { z-index: 50; }\\n.toolbar     { z-index: 5; }"}</code></pre>
+        <div class="ztk-demo__verdict ztk-demo__verdict--bad">No shared scale. No way to know what \`100\` means without reading it.</div>
+      </div>
+      <div class="ztk-demo__col">
+        <div class="ztk-demo__heading">Semantic tokens</div>
+        <pre class="ztk-demo__code ztk-demo__code--good"><code>{".modal    { z-index: var(--z-modal); }\\n.toast    { z-index: var(--z-toast); }\\n.tooltip  { z-index: var(--z-tooltip); }\\n.dropdown { z-index: var(--z-dropdown); }\\n.toolbar  { z-index: var(--z-toolbar); }"}</code></pre>
+        <div class="ztk-demo__verdict ztk-demo__verdict--good">Each line states intent. Tier order lives in one generated file.</div>
+      </div>
+    </div>`}
+  css={`    .ztk-demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 1rem;
+      font-family: system-ui, sans-serif;
+      color: hsl(222 47% 11%);
+    }
+    .ztk-demo__col {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .ztk-demo__heading {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: hsl(215 16% 47%);
+    }
+    .ztk-demo__code {
+      background: hsl(222 47% 11%);
+      color: hsl(210 20% 85%);
+      padding: 0.55rem 0.7rem;
+      border-radius: 6px;
+      margin: 0;
+      font-size: 0.75rem;
+      font-family: ui-monospace, monospace;
+      line-height: 1.55;
+      overflow-x: auto;
+    }
+    .ztk-demo__code--bad {
+      border-left: 3px solid hsl(0 60% 50%);
+    }
+    .ztk-demo__code--good {
+      border-left: 3px solid hsl(142 50% 40%);
+    }
+    .ztk-demo__verdict {
+      font-size: 0.75rem;
+      padding: 0.4rem 0.6rem;
+      border-radius: 6px;
+      line-height: 1.4;
+    }
+    .ztk-demo__verdict--bad {
+      color: hsl(0 60% 30%);
+      background: hsl(0 80% 95%);
+      border-left: 3px solid hsl(0 60% 50%);
+    }
+    .ztk-demo__verdict--good {
+      color: hsl(142 50% 25%);
+      background: hsl(142 50% 93%);
+      border-left: 3px solid hsl(142 50% 40%);
+    }`}
+>
+      <div class="ztk-demo__col">
+        <div class="ztk-demo__heading">Magic numbers (anti-pattern)</div>
+        <pre class="ztk-demo__code ztk-demo__code--bad"><code>{".modal       { z-index: 9999; }\\n.toast       { z-index: 100; }\\n.tooltip     { z-index: 21; }\\n.dropdown    { z-index: 50; }\\n.toolbar     { z-index: 5; }"}</code></pre>
+        <div class="ztk-demo__verdict ztk-demo__verdict--bad">No shared scale. No way to know what \`100\` means without reading it.</div>
+      </div>
+      <div class="ztk-demo__col">
+        <div class="ztk-demo__heading">Semantic tokens</div>
+        <pre class="ztk-demo__code ztk-demo__code--good"><code>{".modal    { z-index: var(--z-modal); }\\n.toast    { z-index: var(--z-toast); }\\n.tooltip  { z-index: var(--z-tooltip); }\\n.dropdown { z-index: var(--z-dropdown); }\\n.toolbar  { z-index: var(--z-toolbar); }"}</code></pre>
+        <div class="ztk-demo__verdict ztk-demo__verdict--good">Each line states intent. Tier order lives in one generated file.</div>
+      </div>
+    </div>`}
+  css={`    .ztk-demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 1rem;
+      font-family: system-ui, sans-serif;
+      color: hsl(222 47% 11%);
+    }
+    .ztk-demo__col {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .ztk-demo__heading {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: hsl(215 16% 47%);
+    }
+    .ztk-demo__code {
+      background: hsl(222 47% 11%);
+      color: hsl(210 20% 85%);
+      padding: 0.55rem 0.7rem;
+      border-radius: 6px;
+      margin: 0;
+      font-size: 0.75rem;
+      font-family: ui-monospace, monospace;
+      line-height: 1.55;
+      overflow-x: auto;
+    }
+    .ztk-demo__code--bad {
+      border-left: 3px solid hsl(0 60% 50%);
+    }
+    .ztk-demo__code--good {
+      border-left: 3px solid hsl(142 50% 40%);
+    }
+    .ztk-demo__verdict {
+      font-size: 0.75rem;
+      padding: 0.4rem 0.6rem;
+      border-radius: 6px;
+      line-height: 1.4;
+    }
+    .ztk-demo__verdict--bad {
+      color: hsl(0 60% 30%);
+      background: hsl(0 80% 95%);
+      border-left: 3px solid hsl(0 60% 50%);
+    }
+    .ztk-demo__verdict--good {
+      color: hsl(142 50% 25%);
+      background: hsl(142 50% 93%);
+      border-left: 3px solid hsl(142 50% 40%);
+    }`}
+>
+      <div class="ztk-demo__col">
+        <div class="ztk-demo__heading">Magic numbers (anti-pattern)</div>
+        <pre class="ztk-demo__code ztk-demo__code--bad"><code>{".modal       { z-index: 9999; }\\n.toast       { z-index: 100; }\\n.tooltip     { z-index: 21; }\\n.dropdown    { z-index: 50; }\\n.toolbar     { z-index: 5; }"}</code></pre>
+        <div class="ztk-demo__verdict ztk-demo__verdict--bad">No shared scale. No way to know what \`100\` means without reading it.</div>
+      </div>
+      <div class="ztk-demo__col">
+        <div class="ztk-demo__heading">Semantic tokens</div>
+        <pre class="ztk-demo__code ztk-demo__code--good"><code>{".modal    { z-index: var(--z-modal); }\\n.toast    { z-index: var(--z-toast); }\\n.tooltip  { z-index: var(--z-tooltip); }\\n.dropdown { z-index: var(--z-dropdown); }\\n.toolbar  { z-index: var(--z-toolbar); }"}</code></pre>
+        <div class="ztk-demo__verdict ztk-demo__verdict--good">Each line states intent. Tier order lives in one generated file.</div>
+      </div>
+    </div>`}
+  css={`    .ztk-demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 1rem;
+      font-family: system-ui, sans-serif;
+      color: hsl(222 47% 11%);
+    }
+    .ztk-demo__col {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .ztk-demo__heading {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: hsl(215 16% 47%);
+    }
+    .ztk-demo__code {
+      background: hsl(222 47% 11%);
+      color: hsl(210 20% 85%);
+      padding: 0.55rem 0.7rem;
+      border-radius: 6px;
+      margin: 0;
+      font-size: 0.75rem;
+      font-family: ui-monospace, monospace;
+      line-height: 1.55;
+      overflow-x: auto;
+    }
+    .ztk-demo__code--bad {
+      border-left: 3px solid hsl(0 60% 50%);
+    }
+    .ztk-demo__code--good {
+      border-left: 3px solid hsl(142 50% 40%);
+    }
+    .ztk-demo__verdict {
+      font-size: 0.75rem;
+      padding: 0.4rem 0.6rem;
+      border-radius: 6px;
+      line-height: 1.4;
+    }
+    .ztk-demo__verdict--bad {
+      color: hsl(0 60% 30%);
+      background: hsl(0 80% 95%);
+      border-left: 3px solid hsl(0 60% 50%);
+    }
+    .ztk-demo__verdict--good {
+      color: hsl(142 50% 25%);
+      background: hsl(142 50% 93%);
+      border-left: 3px solid hsl(142 50% 40%);
+    }`}
+>
 </CssPreview>
 
 ## Why not Tailwind-numeric?

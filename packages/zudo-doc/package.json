@@ -175,7 +175,7 @@
     "@takazudo/zfb": "^0.1.0-next.47",
     "@takazudo/zfb-runtime": "^0.1.0-next.47",
     "@takazudo/zudo-doc-history-server": "workspace:^",
-    "@takazudo/zdtp": "^0.2.0-next.2",
+    "@takazudo/zdtp": "^0.2.3",
     "shiki": "^4.0.2"
   },
   "peerDependenciesMeta": {

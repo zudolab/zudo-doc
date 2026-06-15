@@ -100,6 +100,6 @@ const x = 1;
 
 ## Syntax-highlight Theme
 
-The build-time highlighter is syntect, which renders each token's color as inline `style="color:#hex"` against a single theme. The current theme is `base16-ocean-dark`.
+The build-time highlighter is syntect, configured in **dual-theme** mode (`codeHighlight.themeLight`/`themeDark` in `zfb.config.ts` — `base16-ocean.light` / `base16-ocean.dark`). Each token's two colors are emitted as `--shiki-light` / `--shiki-dark` CSS custom properties (not inline `color:#hex`), and the stylesheet resolves them with `light-dark()` so code follows the active light/dark theme with no client-side JavaScript.
 
-The `shikiTheme` field is a separate, runtime-only setting consumed by the zdtp panel (`@takazudo/zdtp`): when that panel is open it re-highlights code blocks via Shiki on the client to preview color-scheme tweaks live. The static page render does not use it.
+The `shikiTheme` field on a color scheme is unrelated to this and has no effect on the rendered page: it is a vestigial field carried in the zdtp panel's color-scheme envelope (`@takazudo/zdtp`; optional since zdtp 0.2.3). The panel does not re-highlight code — its Shiki integration is a no-op stub.
