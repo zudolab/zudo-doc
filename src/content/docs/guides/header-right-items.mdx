@@ -135,6 +135,39 @@ headerRightItems: [
 ],
 ```
 
+## Customizing the theme toggle
+
+The built-in `theme-toggle` component is enough for most sites, but some consumers want their own toggle markup — a different icon, an extra label, custom placement. If you build a custom toggle, **import `ThemeToggle` from the dedicated `@takazudo/zudo-doc/theme-toggle` subpath** and wrap your own UI around it (or re-export it under the same name). Do not hand-copy a local `ThemeToggle` component into your project.
+
+```tsx
+// Use the package island, then customize around it.
+import { ThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
+```
+
+### Why import the package island
+
+zfb (since `0.1.0-next.39`) scans the `"use client"` modules shipped in npm `dist/`, and `@takazudo/zudo-doc` ships a scanner-visible `ThemeToggle` island. If you hand-copy a local `ThemeToggle` of the same name, zfb sees **two** components claiming the `ThemeToggle` island marker and emits a collision warning on every build:
+
+```
+⚠ island marker name collision: "ThemeToggle" is produced by two different source files —
+keeping <consumer>/src/components/theme-toggle.tsx and dropping
+<pkg>/@takazudo/zudo-doc/dist/theme-toggle/index.js. ...
+```
+
+The warning is benign — your local component wins and hydrates correctly — but it is noisy and the "keep one, drop one" resolution is scan-order-dependent. Importing `ThemeToggle` from the package registers under the same marker, so there is nothing to collide with, and you drop the maintenance burden of a hand-rolled copy.
+
+<Warning title="Import from /theme-toggle, not /theme">
+
+Pull the toggle from the dedicated `@takazudo/zudo-doc/theme-toggle` subpath specifically. Do **not** import it from the broader `@takazudo/zudo-doc/theme` barrel: that barrel drags the react-importing design-token-panel modules into the esbuild graph, and `react` is **not** aliased to `preact/compat` there. The `/theme-toggle` subpath is a clean, preact-only module with no react-barrel hazard.
+
+</Warning>
+
+<Note title="Tweak-state is not cleared on scheme change">
+
+The package's `applyColorScheme` (in `theme-toggle/color-scheme-sync.ts`) deliberately does **not** clear the design-token tweak-state keys (`zudo-doc-tweak-state` / `zudo-doc-tweak-state-v2`) when the color scheme changes — zdtp owns its own storage lifecycle. If you use the design-token tweak panel and you are migrating from a hand-rolled toggle that used to wipe tweak state on toggle, be aware the package toggle preserves it instead.
+
+</Note>
+
 ## Ordering
 
 Items render in the order they appear in the array. The cluster is right-aligned, so the first entry sits closest to the nav and the last entry sits closest to the viewport edge.
