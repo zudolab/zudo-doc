@@ -255,7 +255,7 @@ export function Header(props: HeaderProps): JSX.Element {
 
   return (
     <header
-      class="sticky top-0 z-50 flex h-[3.5rem] items-center border-b border-muted bg-surface px-hsp-lg"
+      class="sticky top-0 z-toolbar flex h-[3.5rem] items-center border-b border-muted bg-surface px-hsp-lg"
       data-header
       // Strategy B persist (zudolab/zudo-doc#1546): the header now carries
       // data-zfb-transition-persist when a locale-keyed persistKey is
@@ -324,7 +324,7 @@ export function Header(props: HeaderProps): JSX.Element {
             {"···"}
           </button>
           <ul
-            class="absolute right-0 top-full z-10 mt-vsp-3xs hidden min-w-[8rem] border border-muted rounded bg-surface shadow-lg whitespace-nowrap"
+            class="absolute right-0 top-full z-dropdown mt-vsp-3xs hidden min-w-[8rem] border border-muted rounded bg-surface shadow-lg whitespace-nowrap"
             data-nav-more-menu
           />
         </div>
@@ -419,7 +419,7 @@ function renderNavItem(
             />
           </svg>
         </a>
-        <div class="absolute left-0 top-full z-50 hidden group-hover:block group-focus-within:block pt-vsp-3xs">
+        <div class="absolute left-0 top-full z-dropdown hidden group-hover:block group-focus-within:block pt-vsp-3xs">
           <div class="min-w-[10rem] border border-muted rounded bg-surface shadow-lg py-vsp-3xs">
             {item.children.map((child) => {
               const childHref = urlHelpers.navHref(child.path, lang, currentVersion);

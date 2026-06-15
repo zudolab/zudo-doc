@@ -163,10 +163,17 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
   }
 
   return (
+    // z-modal / backdrop:z-modal-backdrop are defense-in-depth for the SPA-swap
+    // window (zfb Strategy-B `zfb:before-swap`): if this dialog is still open
+    // while the page body is swapped, a native showModal() dialog can lose
+    // top-layer promotion and fall back to z-index:auto, flashing behind the
+    // header/sidebar. The explicit modal-tier z-index keeps it above all chrome
+    // during that window. Intentionally redundant in the normal (top-layer)
+    // case — do not remove as "redundant" (epic #2148 / issue #2157).
     <dialog
       ref={dialogRef}
       onClick={handleBackdropClick}
-      className="m-0 h-dvh max-h-none w-dvw max-w-none border-none bg-surface p-0 text-fg backdrop:bg-bg/80 lg:m-auto lg:h-[90vh] lg:max-h-[90vh] lg:w-[90vw] lg:max-w-[52.5rem] lg:border-solid lg:border lg:border-fg"
+      className="z-modal m-0 h-dvh max-h-none w-dvw max-w-none border-none bg-surface p-0 text-fg backdrop:z-modal-backdrop backdrop:bg-bg/80 lg:m-auto lg:h-[90vh] lg:max-h-[90vh] lg:w-[90vw] lg:max-w-[52.5rem] lg:border-solid lg:border lg:border-fg"
     >
       <div className="flex h-full flex-col">
         {/* Header */}

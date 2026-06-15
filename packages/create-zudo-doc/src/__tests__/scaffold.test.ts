@@ -1686,6 +1686,16 @@ describe("scaffold — plugin copying and settings", () => {
     );
   });
 
+  it("includes z-index codegen scripts (#2148)", async () => {
+    const pkg = await fs.readJson(
+      projectPath("test-minimal", "package.json"),
+    );
+    expect(pkg.scripts["gen:z-index"]).toBe("node scripts/gen-z-index.mjs");
+    expect(pkg.scripts["check:z-index"]).toBe(
+      "node scripts/gen-z-index.mjs --check",
+    );
+  });
+
   it("does not emit check:pages (host-only gate — template stubs not type-clean, #2018)", async () => {
     const pkg = await fs.readJson(
       projectPath("test-minimal", "package.json"),
@@ -3178,13 +3188,12 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
    * resolve_links for dir-style hrefs written from non-index pages
    * (Takazudo/zudo-front-builder#1030), and the data-file skip warning now
    * respects collection include/exclude globs (#1032). Now bumped to
-   * 0.1.0-next.44: next.42/next.43 were release-tooling + formatter-glob fixes;
-   * next.44 is embed-as-library enhancements only (ServerBuilder::with_page_cache,
-   * opt-in ExternalInvalidationHook, TS-config-loader path canonicalization) —
-   * no consumer-facing breaking change. Now bumped to 0.1.0-next.47: next.45
-   * added dual-theme syntect highlighting (codeHighlight.themeLight/themeDark),
-   * next.46/next.47 are follow-on fixes — no breaking change for the single-theme
-   * default the scaffold emits. Generated package.json must pin all three.
+   * 0.1.0-next.47: next.42–next.44 were release-tooling, formatter-glob, and
+   * embed-as-library enhancements; next.45 docs-only; next.46 opt-in dev
+   * boot-lazy mode + client-router timer lifecycle fixes; next.47 dual
+   * light/dark syntect themes (themeLight/themeDark, #1067) plus stricter
+   * build-start rejection of unknown theme names — additive, no consumer-facing
+   * breaking change. Generated package.json must pin all three.
    */
   it("pins @takazudo/zfb at 0.1.0-next.47", async () => {
     const choices: UserChoices = {

@@ -559,10 +559,17 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
       )}
 
       {/* Full-screen dialog — renders in top layer, above all stacking contexts */}
+      {/* z-modal / backdrop:z-modal-backdrop are defense-in-depth for the
+          SPA-swap window: clicking a history entry link swaps the page body
+          while this dialog is still open, and a native showModal() dialog can
+          momentarily lose top-layer promotion and fall back to z-index:auto,
+          flashing behind the header/sidebar. The explicit modal-tier z-index
+          keeps it above all chrome during that window. Intentionally redundant
+          in the normal (top-layer) case — do not remove as "redundant". */}
       <dialog
         ref={dialogRef}
         aria-label="Document revision history"
-        className="doc-history-panel fixed inset-0 m-0 h-full w-full max-h-full max-w-full bg-bg border-none p-0 backdrop:bg-bg/30"
+        className="doc-history-panel z-modal fixed inset-0 m-0 h-full w-full max-h-full max-w-full bg-bg border-none p-0 backdrop:z-modal-backdrop backdrop:bg-bg/30"
         style={{ color: "var(--color-fg)" }}
       >
         {/* Panel header */}

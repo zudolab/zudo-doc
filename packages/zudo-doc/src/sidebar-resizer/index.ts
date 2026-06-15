@@ -123,7 +123,7 @@ export function initSidebarResizer(): void {
     left: "calc(var(--zd-sidebar-w) - 20px)",
     width: "20px",
     cursor: "col-resize",
-    zIndex: "10",
+    zIndex: "var(--z-index-sidebar)",
     transition: "background 0.15s",
   });
 
@@ -209,7 +209,7 @@ export function initSidebarResizer(): void {
       height: "100vh",
       background: ACCENT_GHOST,
       pointerEvents: "none",
-      zIndex: "9999",
+      zIndex: "var(--z-index-drag)",
     });
     const sidebarRect = sidebar.getBoundingClientRect();
     const sidebarLeft = sidebarRect.left;

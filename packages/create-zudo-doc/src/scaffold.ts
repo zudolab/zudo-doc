@@ -354,10 +354,16 @@ function generatePackageJson(choices: UserChoices) {
     // include/exclude globs (#1032). No consumer-facing breaking change.
     // next.42/next.43: release-tooling + formatter-glob fixes only (npm-publish
     // idempotency, gitignored-artifact excludes). No consumer-facing change.
-    // next.44 (current pin): embed-as-library enhancements only — ServerBuilder
-    // ::with_page_cache for live content, an opt-in ExternalInvalidationHook to
-    // narrow extraWatchPaths rebuilds, and TS-config-loader path canonicalization
-    // (Takazudo/zudo-front-builder#1036–#1043). No consumer-facing / CLI change.
+    // next.44: embed-as-library enhancements only — ServerBuilder::with_page_cache
+    // for live content, an opt-in ExternalInvalidationHook to narrow
+    // extraWatchPaths rebuilds, and TS-config-loader path canonicalization
+    // (Takazudo/zudo-front-builder#1036–#1043). next.45: docs-only. next.46:
+    // opt-in dev boot-lazy mode (#1057) + client-router timer lifecycle fixes —
+    // dev-server-only. next.47 (current pin): dual light/dark syntect themes
+    // (themeLight/themeDark on CodeHighlightConfig, --shiki-light/--shiki-dark,
+    // #1067) plus stricter build-start validation that rejects unknown theme
+    // names — additive; a fresh scaffold sets no explicit codeHighlight.theme so
+    // the default still applies. No consumer-facing / CLI breaking change.
     "@takazudo/zfb": "0.1.0-next.47",
     "@takazudo/zfb-runtime": "0.1.0-next.47",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
@@ -367,7 +373,7 @@ function generatePackageJson(choices: UserChoices) {
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
     // version moves, so a fresh scaffold pulls the version we just published.
-    "@takazudo/zudo-doc": "^0.2.6",
+    "@takazudo/zudo-doc": "^0.2.7",
     // zod — used by the generated zfb.config.ts. zfb-config-gen emits
     // `import { z } from "zod"` for the content-collection schema +
     // `z.toJSONSchema(...)` conversion. Without this dep, the consumer
@@ -426,7 +432,7 @@ function generatePackageJson(choices: UserChoices) {
     // @takazudo/zudo-doc/integrations/doc-history which in turn imports
     // @takazudo/zudo-doc-history-server/git-history. Without this dep the
     // plugin host fails at init with ERR_MODULE_NOT_FOUND — W8A (#1739).
-    deps["@takazudo/zudo-doc-history-server"] = "^0.2.6";
+    deps["@takazudo/zudo-doc-history-server"] = "^0.2.7";
     // W7A (#1736): doc-history-plugin.mjs spawns `tsx -e <inline-script>` to
     // run the v2 runtime in a TS-aware Node subprocess; without tsx the
     // plugin's preBuild step exits with ENOENT before zfb finishes config
@@ -470,6 +476,12 @@ function generatePackageJson(choices: UserChoices) {
     // the pages/lib call sites, so emitting the script would fail on a fresh
     // scaffold. Revisit once the template stubs carry typed props.
     "check:html": "html-validate \"dist/**/*.html\"",
+    // Z-index token codegen (#2148): regenerate the GENERATED:Z_INDEX @theme
+    // block in src/styles/global.css from src/config/z-index-tokens.ts, and a
+    // drift check for pre-push/CI. Both ship in base — the z-index token system
+    // is part of every scaffold.
+    "gen:z-index": "node scripts/gen-z-index.mjs",
+    "check:z-index": "node scripts/gen-z-index.mjs --check",
   };
 
   if (choices.features.includes("tagGovernance")) {

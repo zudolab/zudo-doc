@@ -88,9 +88,17 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
             static HTML for no-JS users and crawlers. The browser treats
             it as a closed <dialog> until the custom element calls
             showModal(). */}
+        {/* z-modal / backdrop:z-modal-backdrop are defense-in-depth for the
+            SPA-swap window (zfb Strategy-B `zfb:after-swap`): a native
+            showModal() dialog normally sits in the top layer, but if it is
+            still open while the page body is swapped it can lose top-layer
+            promotion and fall back to z-index:auto, flashing behind the
+            header/sidebar. The explicit modal-tier z-index keeps it above all
+            chrome during that window. Intentionally redundant in the normal
+            (top-layer) case — do not remove as "redundant" (epic #2148). */}
         <dialog
           data-search-dialog
-          class="m-0 h-full w-full max-w-none border-none bg-transparent p-0 backdrop:bg-overlay/60 sm:mx-auto sm:my-[10vh] sm:h-auto sm:max-h-[80vh] sm:max-w-[52rem] sm:rounded-lg"
+          class="z-modal m-0 h-full w-full max-w-none border-none bg-transparent p-0 backdrop:z-modal-backdrop backdrop:bg-overlay/60 sm:mx-auto sm:my-[10vh] sm:h-auto sm:max-h-[80vh] sm:max-w-[52rem] sm:rounded-lg"
         >
           <div class="flex h-full flex-col overflow-hidden bg-surface sm:rounded-lg sm:border sm:border-muted">
             {/* ── Dialog header (input row) ─────────────────────────── */}

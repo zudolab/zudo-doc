@@ -10,29 +10,30 @@ set -euo pipefail
 #   4. Fixture settings drift check
 #   5. Tags audit (--ci)
 #   6. Design token lint
-#   7. E2E spec naming guard (#2095) — asserts fixture-prefix + no orphan specs
-#   8. B4push/CI parity check (guard manifest meta-check — #1967)
-#   9. Type checking (zfb check + workspace package typechecks)
-#  10. Root unit tests (test:unit) — builds @takazudo/zudo-doc as a side-effect
-#  11. Package tests (test:packages) — ~993 suite tests across workspace packages
-#  12. Package safelist check (#1994) — requires dist/safelist.css from step 10
-#  13. Build (zfb build)
-#  14. Link check
-#  15. HTML validation (html-validate dist/**/*.html)
-#  16. Automated preview smoke (blocking)
-#  17. Manual interactive smoke (operator-driven)
+#   7. Z-index codegen drift check (check:z-index — #2148)
+#   8. E2E spec naming guard (#2095) — asserts fixture-prefix + no orphan specs
+#   9. B4push/CI parity check (guard manifest meta-check — #1967)
+#  10. Type checking (zfb check + workspace package typechecks)
+#  11. Root unit tests (test:unit) — builds @takazudo/zudo-doc as a side-effect
+#  12. Package tests (test:packages) — ~993 suite tests across workspace packages
+#  13. Package safelist check (#1994) — requires dist/safelist.css from step 11
+#  14. Build (zfb build)
+#  15. Link check
+#  16. HTML validation (html-validate dist/**/*.html)
+#  17. Automated preview smoke (blocking)
+#  18. Manual interactive smoke (operator-driven)
 #
 # Playwright E2E runs in CI (pr-checks e2e job); b4push intentionally excludes
 # it for time-budget reasons — the bounded fast pass stays fast.
 #
 # Env overrides for non-interactive use:
-#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 15)
+#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 16)
 #   B4PUSH_SKIP_PREVIEW_SMOKE=1  — skip the automated preview smoke
 #   B4PUSH_SKIP_MANUAL_SMOKE=1   — skip the manual interactive smoke
 
 START_TIME=$(date +%s)
 FAILURES=()
-TOTAL_STEPS=17
+TOTAL_STEPS=18
 CURRENT_STEP=0
 
 step() {
@@ -50,7 +51,7 @@ skip() { echo "⏭  $1 (skipped)"; }
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 # >>> b4push-ci-parity:guards
-# Steps 1–6 are lightweight guard gates. They are delimited by the markers
+# Steps 1–9 are lightweight guard gates. They are delimited by the markers
 # above/below so check-b4push-ci-parity.mjs can cross-check them against the
 # REQUIRED_CI_GUARDS manifest without brittle full-file parsing.
 
@@ -105,7 +106,20 @@ else
   fail "Design token lint"
 fi
 
-# ── Step 7: E2E spec naming guard (#2095) ─────────────
+# ── Step 7: Z-index codegen drift check ──────────────
+# Pure-Node check (scripts/gen-z-index.mjs --check) — re-runs the z-index
+# @theme codegen into a buffer and fails if src/styles/global.css drifts from
+# src/config/z-index-tokens.ts (the single source of truth). Also the
+# structural guard for CSS-file raw z-index: every z-index now flows through
+# this generated block.
+step "Z-index codegen drift check (check:z-index)"
+if (cd "$ROOT_DIR" && pnpm check:z-index); then
+  pass "Z-index codegen drift check passed"
+else
+  fail "Z-index codegen drift check"
+fi
+
+# ── Step 8: E2E spec naming guard (#2095) ─────────────
 # Pure-Node check — asserts (a) every e2e/*.spec.ts starts with a known
 # fixture prefix so Playwright's testMatch glob actually picks it up, and
 # (b) no *.spec.ts files exist outside e2e/ except those allowlisted in
@@ -117,7 +131,7 @@ else
   fail "E2E spec naming guard"
 fi
 
-# ── Step 8: B4push/CI parity check ───────────────────
+# ── Step 9: B4push/CI parity check ───────────────────
 # Pure-Node check — verifies every lightweight guard gate in this file also
 # has a corresponding CI job. See scripts/check-b4push-ci-parity.mjs.
 step "B4push/CI parity check (check:b4push-ci-parity)"
@@ -129,7 +143,7 @@ fi
 
 # <<< b4push-ci-parity:guards
 
-# ── Step 9: Type checking ─────────────────────────────
+# ── Step 10: Type checking ─────────────────────────────
 # Prefer `zfb check` (the post-cutover entry point). If it fails to
 # start (e.g. binary not yet built), fall back to `tsc --noEmit` so the
 # typecheck still gates pushes.
@@ -171,7 +185,7 @@ else
   fail "Package typechecks"
 fi
 
-# ── Step 10: Root unit tests ──────────────────────────
+# ── Step 11: Root unit tests ──────────────────────────
 # Root `test:unit` (vitest) guards src/**/__tests__ and scripts/__tests__,
 # which previously ran in no local gate and no CI workflow (#1856). Runs
 # before the expensive site build for fast logic-level feedback.
@@ -188,7 +202,7 @@ else
   fail "Root unit tests"
 fi
 
-# ── Step 11: Package tests ────────────────────────────
+# ── Step 12: Package tests ────────────────────────────
 # Runs all workspace package test suites (~993 tests). Closes the local/CI
 # asymmetry where package tests ran in CI but not in b4push (#1851/#1856).
 # dist/ is already built by step 10 — no extra prep needed.
@@ -199,7 +213,7 @@ else
   fail "Package tests"
 fi
 
-# ── Step 12: Package safelist check ──────────────────
+# ── Step 13: Package safelist check ──────────────────
 # Verifies that the generated dist/safelist.css in packages/zudo-doc/ covers
 # every responsive-variant + arbitrary-value utility class used in
 # packages/zudo-doc/src/**/*.tsx. Catches regressions where gen-safelist.mjs
@@ -212,7 +226,7 @@ else
   fail "Package safelist check"
 fi
 
-# ── Step 13: Build ────────────────────────────────────
+# ── Step 14: Build ────────────────────────────────────
 step "Build (zfb build)"
 if (cd "$ROOT_DIR" && pnpm build); then
   pass "Build passed"
@@ -220,7 +234,7 @@ else
   fail "Build"
 fi
 
-# ── Step 14: Link check ───────────────────────────────
+# ── Step 15: Link check ───────────────────────────────
 #
 # Strict on broken links + absolute MDX-source warnings (real 404s
 # / sub-path bypass). Trailing-slash warnings stay warn-only — they
@@ -240,7 +254,7 @@ else
   fail "Link check"
 fi
 
-# ── Step 15: HTML validation ──────────────────────────
+# ── Step 16: HTML validation ──────────────────────────
 step "HTML validation (html-validate)"
 if [[ "${B4PUSH_SKIP_HTML_VALIDATE:-}" == "1" ]]; then
   skip "HTML validation (B4PUSH_SKIP_HTML_VALIDATE=1)"
@@ -252,7 +266,7 @@ else
   fi
 fi
 
-# ── Step 16: Automated preview smoke (blocking) ──────
+# ── Step 17: Automated preview smoke (blocking) ──────
 step "Preview smoke (automated)"
 if [[ "${B4PUSH_SKIP_PREVIEW_SMOKE:-}" == "1" ]]; then
   skip "Preview smoke (B4PUSH_SKIP_PREVIEW_SMOKE=1)"
@@ -264,7 +278,7 @@ else
   fi
 fi
 
-# ── Step 17: Manual interactive smoke ────────────────
+# ── Step 18: Manual interactive smoke ────────────────
 step "Manual interactive smoke"
 if [[ "${B4PUSH_SKIP_MANUAL_SMOKE:-}" == "1" ]]; then
   skip "Manual smoke (B4PUSH_SKIP_MANUAL_SMOKE=1)"

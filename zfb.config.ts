@@ -397,7 +397,7 @@ export default defineConfig({
   // functional, the host build would otherwise stat their absolute image
   // paths (e.g. /test-images/*.png) against the HOST public dir and warn.
   bundle: {
-    exclude: ["packages/md-plugins/__fixtures__/**", "e2e/fixtures/**"],
+    exclude: ["packages/md-plugins/__fixtures__/**", "e2e/fixtures/**", "_temp-resource/**"],
   },
   // Strip `.md` / `.mdx` from in-page `<a href>` and append a trailing
   // slash so author-written `[label](./other.mdx)` references resolve

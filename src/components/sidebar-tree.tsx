@@ -360,7 +360,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
             aria-label="Filter navigation"
             placeholder={filterPlaceholder}
             value={query}
-            onChange={(e) => setQuery(e.currentTarget.value)}
+            onInput={(e) => setQuery(e.currentTarget.value)}
             className="bg-transparent text-small outline-none w-full text-fg placeholder:text-muted"
           />
         </div>
@@ -505,7 +505,7 @@ const CategoryNode = memo(function CategoryNode({
     <div className={`${depth === 0 ? "border-t border-muted" : ""} ${depth >= 1 && !isLast ? "relative" : ""}`}>
       {depth >= 1 && !isLast && isExpanded && (
         <div
-          className="absolute border-l border-solid border-muted z-10"
+          className="absolute border-l border-solid border-muted z-local-1"
           style={{
             left: connectorLeft(depth),
             top: 0,

@@ -1,0 +1,34 @@
+---
+title: 0.2.7
+description: 0.2.7のリリースノート。
+sidebar_position: 1018
+---
+
+リリース日: 2026-06-15
+
+### 機能
+
+- セマンティックな z-index トークンシステムを導入しました。単一の信頼できる情報源となるトークン群に加え、コード生成・ドリフトチェック・生成される `@theme` ブロックを備えています。すべての z-index 使用箇所をトークンへ移行し、生の数値 `z-{n}` Tailwind ユーティリティを禁止する Lint ルールを追加しました (#2148, 1ba07ea1)
+- ジェネレーターがデフォルトで検索ヘッダー項目を出力するようになりました (#2139, 45d496f4)
+- `mermaid`・`onBrokenLinks`・サイトマップの設定を config 経由で配線し、予約済みの設定をドキュメント化しました (#2140, 7c56eee3)
+
+### バグ修正
+
+- 検索ダイアログを結果クリックで閉じるようにし、オーバーレイの z-index を堅牢化しました (#2148, 794827f1)
+- ダイアログの SPA スワップ z-index 防御（`z-modal` / `z-modal-backdrop`）を doc-history・ai-chat・image-enlarge の各ダイアログへ適用しました (#2157, 0f91b276)
+- シンボリックリンクに耐性のある pnpm パッチ経由で `lint:tokens` の強制を復元しました (#2156, e16e122e)
+- 非 compat な Preact ビルドでも動作するよう、サイドバーのライブフィルターに `onInput` を使用するようにしました (348ae115)
+- アイランド: モーダルナビゲーションのチャーン、image-enlarge のゲーティング/ティアダウン、アクセシビリティの問題を修正しました (#2136, 03a6a36d)
+- ロケールガードと入力/URL バリデーションを加えて ai-chat API を堅牢化しました (#2142, f240b64e)
+- doc-history / search: タイムアウト、ファンアウトの上限、バッチパースのガードを追加しました (#2141, 1c4c39be)
+- doc-history の postBuild とロケールバリデーションを堅牢化し、ヘッダーの大文字小文字を修正しました (#2137, 68221856)
+- `projectRoot` が省略された場合に `claude-resources` の CLAUDE.md 探索を `claudeDir` に限定するようにしました (#2115, dfb4c28b)
+
+### その他の変更
+
+- `@takazudo/zfb` ファミリーを 0.1.0-next.44 から 0.1.0-next.47 へ更新しました。追加的な変更（ライト/ダークのデュアル syntect テーマ、dev の boot-lazy モード、client-router のタイマー修正）のみで、利用側への破壊的変更はありません (#2159, 650b17fb)
+- zdtp を公開型から分離し、パッケージの safelist をガードしました (#2138, feeb0d40)
+- アイコンサイズトークンの追加、リテラルサイズのトークン化、Lint 設定のクリーンアップを行いました (#2143, fcfb3d91)
+- CI: wrangler のピン留め、`workers_dev` の無効化、本番リンクチェックの追加、フォーク PR のガードを行いました (#2144, 283b1963)。安定版への昇格時に古い npm `next` dist-tag を削除します (#2121, 08c8f6ef)。exam の Full-E2E レポーター受け渡しを修正し、issue 起票を jq 非依存にしました (#2122, 509176d5)
+- ドキュメントを拡充しました — code-group の name/groupId とカスタムディレクティブ登録、設定オプション（`defaultLocale`・`defaultLocaleOnlyPrefixes`・`metaTags`・`bodyFootUtilArea`・`headerRightItems`・タグ設定）、resolve-links の高度な `dirs`/`routePrefix`、admonitions の `important` バリアント、i18n の `defaultLocale`、利用可能なカラースキームの列挙 — あわせて古い件数・文法・参照の誤りを修正しました (#2134, #2145)
+- create-zudo-doc の preset-swap テストをレジストリの不安定さに強くしました (#2123, bda63e20)
