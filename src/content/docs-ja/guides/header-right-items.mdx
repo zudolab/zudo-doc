@@ -135,6 +135,40 @@ headerRightItems: [
 ],
 ```
 
+## テーマ切替のカスタマイズ
+
+組み込みの `theme-toggle` コンポーネントでたいていのサイトは事足ります。それでも、トグルを独自の場所に配置したい、自前の island ラッパーに組み込みたい、あるいは `@takazudo/zudo-doc/theme` バレル(React 解決の落とし穴があります — 後述)を避けたいといった理由で、プロジェクト内に **自前の** `ThemeToggle` を持ち続ける場合があります。いずれの場合も、ローカルにコンポーネントを手でコピーするのではなく、**専用の `@takazudo/zudo-doc/theme-toggle` サブパスから `ThemeToggle` をインポート**してください。
+
+```tsx
+import { ThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
+```
+
+エクスポートされる `ThemeToggle` は、自前の `<button>` と組み込みの太陽/月アイコンを描画し、受け取るプロップは `defaultMode`(`"light"` または `"dark"`)の 1 つだけです。好きな場所に配置してその周りに UI を組み合わせることはできますが、ボタンのマークアップとアイコンは固定です — インポートはパッケージのトグルを再利用する(そして後述の衝突を避ける)ためのものであって、見た目を変えるためのものではありません。本当に異なるトグルのマークアップやアイコンが必要な場合は、自前のコンポーネントを作り、パッケージの island マーカーを主張しないように `ThemeToggle` **以外の**名前を付けてください。
+
+### なぜパッケージの island をインポートするのか
+
+zfb は(`0.1.0-next.39` 以降)npm の `dist/` に同梱された `"use client"` モジュールをスキャンします。`@takazudo/zudo-doc` はスキャナから見える `ThemeToggle` island を同梱しています。同じ名前のローカル `ThemeToggle` を手でコピーすると、zfb は `ThemeToggle` という island マーカーを主張するコンポーネントを **2 つ** 検出し、ビルドのたびに衝突警告を出します:
+
+```
+⚠ island marker name collision: "ThemeToggle" is produced by two different source files —
+keeping <consumer>/src/components/theme-toggle.tsx and dropping
+<pkg>/@takazudo/zudo-doc/dist/theme-toggle/index.js. ...
+```
+
+この警告は無害です — ローカルのコンポーネントが勝ち、正しくハイドレートされます — が、ノイズになりますし、「片方を残し、片方を捨てる」という解決はスキャン順に依存します。パッケージから `ThemeToggle` をインポートすれば同じマーカーに登録されるため、衝突するものがなくなり、手書きコピーの保守負担からも解放されます。
+
+<Warning title="/theme ではなく /theme-toggle からインポートする">
+
+トグルは必ず専用の `@takazudo/zudo-doc/theme-toggle` サブパスからインポートしてください。より広い `@takazudo/zudo-doc/theme` バレルからは **インポートしないでください**: このバレルは react をインポートする design-token-panel モジュールを esbuild のグラフに引き込み、そこでは `react` が `preact/compat` にエイリアスされて **いません**。`/theme-toggle` サブパスは preact のみのクリーンなモジュールで、react バレルの落とし穴がありません。
+
+</Warning>
+
+<Note title="スキーム変更時に tweak 状態はクリアされない">
+
+パッケージの `applyColorScheme`(`theme-toggle/color-scheme-sync.ts` 内)は、カラースキームの変更時にデザイントークンの tweak 状態キー(`zudo-doc-tweak-state` / `zudo-doc-tweak-state-v2`)を意図的に **クリアしません** — ストレージのライフサイクルは zdtp が管理します。デザイントークンの tweak パネルを使っていて、トグル時に tweak 状態を消していた手書きトグルから移行する場合は、パッケージのトグルは tweak 状態を保持する点に注意してください。
+
+</Note>
+
 ## 並び順
 
 配列に書いた順にレンダリングされます。クラスタは右寄せなので、最初のエントリがナビ寄り、末尾のエントリがビューポート端寄りに配置されます。

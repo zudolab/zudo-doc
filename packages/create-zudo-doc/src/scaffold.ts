@@ -268,6 +268,20 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     ].join("\n"),
   );
 
+  // Emit an .npmrc exempting undici-types from pnpm's trust-downgrade policy.
+  // External pnpm supply-chain quirk (pnpm >= 10.21, https://github.com/pnpm/pnpm/issues/8889):
+  // when a consumer enables `trust-policy=no-downgrade` (off by default, but a
+  // common hardened posture), `pnpm install` aborts with ERR_PNPM_TRUST_DOWNGRADE
+  // on undici-types@6.21.0 — a transitive dep of @types/node@^22 whose earlier
+  // releases carried provenance attestation that 6.21.0 dropped. The package is a
+  // type-only stub and safe; this narrow exclusion lets a fresh scaffold install
+  // under a strict trust policy without disabling the guard wholesale. Pinned to
+  // the exact known-safe version so a future undici-types bump is re-reviewed.
+  await fs.outputFile(
+    path.join(targetDir, ".npmrc"),
+    "trust-policy-exclude[]=undici-types@6.21.0\n",
+  );
+
   const claudeContent = generateCLAUDEFile(choices);
   await fs.outputFile(path.join(targetDir, "CLAUDE.md"), claudeContent);
 
