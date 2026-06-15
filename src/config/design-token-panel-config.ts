@@ -20,15 +20,14 @@
  *    refers to (which the bridge looks up to materialise the index).
  *
  * Type notes:
- * - zdtp's `ColorScheme` requires a `shikiTheme: string` field that is not
- *   present in zudo-doc's local `ColorScheme` type or data (zdtp uses it only
- *   for the panel's client-side code-block preview). Rather than an unsafe
- *   `as unknown as Record<string, ZdtpColorScheme>` double-cast, every local
- *   scheme map is run through `toZdtpColorSchemes()` below, which supplies
- *   `DEFAULT_SHIKI_THEME` as the fallback so the result satisfies zdtp's
- *   required-field shape with an ordinary type-checked assignment. Tracked
- *   upstream at Takazudo/zudo-design-token-panel#342 (shikiTheme should be
- *   optional in zdtp's `ColorScheme` type); drop the helper once that lands.
+ * - zdtp's `ColorScheme.shikiTheme` is OPTIONAL as of zdtp 0.2.3 (upstream
+ *   Takazudo/zudo-design-token-panel#342 — it was previously required, which is
+ *   the reason `toZdtpColorSchemes()` below exists). The field is vestigial:
+ *   zdtp's Shiki integration is a no-op stub and page code highlighting is done
+ *   by syntect (dual-theme, via `codeHighlight` in zfb.config.ts), not Shiki.
+ *   With #342 landed, local schemes are now directly assignable, so the helper
+ *   is no longer strictly required; it is kept only so every scheme handed to
+ *   zdtp carries an explicit `DEFAULT_SHIKI_THEME` instead of `undefined`.
  *   See zudo-doc#2037.
  * - Do NOT add `legacyIdRenameMap` here. The upstream typography-id rename
  *   map maps zudo-doc's canonical ids (text-caption, text-body, …) to
@@ -70,23 +69,19 @@ const BASE_DEFAULTS = {
 } as const;
 
 /**
- * Fallback Shiki theme when a color scheme lacks one. zudo-doc's local
- * `ColorScheme` type carries an optional `shikiTheme`; the zdtp panel uses
- * this default for its client-side code-block preview when a scheme omits
- * it. Static syntax highlighting (syntect via zfb's Rust pipeline) is
- * unaffected.
+ * Fallback value for zdtp's still-required `ColorClusterExtras.defaultShikiTheme`
+ * and for `toZdtpColorSchemes()` below. The value is inert — zdtp's Shiki
+ * integration is a no-op stub and page highlighting is syntect's (see the type
+ * note above) — but the cluster field is typed `string`, so a value is required.
  */
 const DEFAULT_SHIKI_THEME = "github-dark";
 
 /**
  * Normalize zudo-doc's local `ColorScheme` records into zdtp's `ColorScheme`
- * shape. zdtp's type requires `shikiTheme: string`; zudo-doc's local scheme
- * type makes it optional (static highlighting is handled by zfb's Rust
- * pipeline, not Shiki). This helper fills `DEFAULT_SHIKI_THEME` only when a
- * scheme doesn't declare its own, so the result is assignable to
- * `Record<string, ZdtpColorScheme>` via an ordinary type-checked assignment —
- * replacing the previous `as unknown as` double-cast that silently bypassed
- * every field check.
+ * shape by filling `DEFAULT_SHIKI_THEME` when a scheme omits `shikiTheme`.
+ * Since zdtp 0.2.3 made `shikiTheme` optional (#342), local schemes are already
+ * assignable and this helper is no longer strictly required; it is kept so the
+ * schemes handed to zdtp carry an explicit value rather than `undefined`.
  */
 function toZdtpColorSchemes(
   schemes: Record<string, LocalColorScheme>,

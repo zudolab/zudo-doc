@@ -423,7 +423,7 @@ describe("scaffold — designTokenPanel package.json wiring", () => {
     const pkg = await fs.readJson(
       projectPath("test-zdtp-deps", "package.json"),
     );
-    expect(pkg.dependencies["@takazudo/zdtp"]).toBe("0.2.0-next.2");
+    expect(pkg.dependencies["@takazudo/zdtp"]).toBe("0.2.3");
   });
 });
 
@@ -3181,10 +3181,12 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
    * 0.1.0-next.44: next.42/next.43 were release-tooling + formatter-glob fixes;
    * next.44 is embed-as-library enhancements only (ServerBuilder::with_page_cache,
    * opt-in ExternalInvalidationHook, TS-config-loader path canonicalization) —
-   * no consumer-facing breaking change. Generated package.json must pin all
-   * three.
+   * no consumer-facing breaking change. Now bumped to 0.1.0-next.47: next.45
+   * added dual-theme syntect highlighting (codeHighlight.themeLight/themeDark),
+   * next.46/next.47 are follow-on fixes — no breaking change for the single-theme
+   * default the scaffold emits. Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.44", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.47", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -3195,10 +3197,10 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.44");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.44");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.47");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.47");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.44",
+      "0.1.0-next.47",
     );
   });
 });

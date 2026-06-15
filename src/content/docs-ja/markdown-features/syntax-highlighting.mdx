@@ -1,6 +1,6 @@
 ---
 title: Syntax Highlighting
-description: syntect による固定テーマ base16-ocean-dark でのビルド時コードハイライト。
+description: syntect によるビルド時コードハイライト。アクティブなカラースキームに追従するライト/ダークのデュアルテーマ対応。
 sidebar_position: 8
 ---
 
@@ -12,9 +12,11 @@ sidebar_position: 8
 
 ## テーマ
 
-zudo-doc では単一の固定ハイライトテーマ **`base16-ocean-dark`** を使用します。
+zudo-doc はコードを**デュアルテーマ**でハイライトします。ライトテーマ（`base16-ocean.light`）とダークテーマ（`base16-ocean.dark`）を、`zfb.config.ts` の `codeHighlight.themeLight` / `codeHighlight.themeDark` で設定します。
 
-テーマはビルドに組み込まれています。すべての `<pre>` 要素には `syntect-base16-ocean-dark` クラスが付与されます。
+単一テーマの色を `color:#hex` としてインラインで焼き込む（シングルテーマ時のデフォルト。反対の背景では読めなくなります）のではなく、syntect は2回ハイライトを行い、各トークンの2色を CSS カスタムプロパティ `--shiki-light` と `--shiki-dark` として出力します。スタイルシートはこれらを `light-dark()` で解決します。これはテーマトグルが設定する `color-scheme` プロパティと同じ仕組みで駆動されるため、**クライアントサイドの JavaScript なし**でコードがライト/ダークの切り替えに追従します。すべての `<pre>` 要素には `syntect-dual` クラスが付与されます。
+
+テーマ名は syntect の組み込み名（例: `base16-ocean.light`、`InspiredGitHub`、`Solarized (dark)`）であり、Shiki のテーマ名ではありません。
 
 ## 対応言語
 
@@ -39,7 +41,9 @@ const greeting: string = "hello";
 ハイライトされたコードブロックは以下のようにレンダリングされます。
 
 ```html
-<pre class="syntect-base16-ocean-dark"><code>…</code></pre>
+<pre class="syntect-dual" style="--shiki-light-bg:#eff1f5;--shiki-dark-bg:#2b303b">
+  <code><span style="--shiki-light:#4f5b66;--shiki-dark:#c0c5ce">…</span></code>
+</pre>
 ```
 
 [Code Title](./code-title.mdx) 機能と組み合わせると、`<pre>` は `.code-block-container` div の中にラップされます。UI に表示されるコピーボタンはクライアントサイドの JavaScript で注入されます（オプトインの [Code Enrichment](./code-enrichment.mdx) 機能の一部です）。
@@ -50,5 +54,5 @@ const greeting: string = "hello";
 
 ## 補足
 
-- ハイライトはビルド時にすべて Rust で処理されます。Shiki、Prism などの JS ハイライターはビルド時にも配信時にも実行されません。
-- カラースキーム設定の `shikiTheme` フィールドは、デザイントークンパネルのクライアントサイド Shiki プレビューで使用される別のランタイム専用設定です。ビルド出力には影響しません。
+- ハイライトはビルド時にすべて Rust で処理されます。Shiki、Prism などの JS ハイライターはビルド時にも配信時にも実行されません。デュアルテーマの切り替えも純粋な CSS（出力されたカスタムプロパティに対する `light-dark()`）で行われるため、JS は不要です。
+- カラースキーム設定の `shikiTheme` フィールドは無関係で、ビルド出力には影響しません。これはデザイントークンパネルのカラースキームエンベロープに含まれる名残りのフィールド（zdtp 0.2.3 以降はオプショナル）であり、パネルの Shiki プレビューは no-op スタブです。
