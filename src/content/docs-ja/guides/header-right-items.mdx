@@ -135,6 +135,39 @@ headerRightItems: [
 ],
 ```
 
+## テーマ切替のカスタマイズ
+
+組み込みの `theme-toggle` コンポーネントでたいていのサイトは事足りますが、独自のトグルマークアップ — 別のアイコン、ラベルの追加、配置の変更 — を使いたい場合もあります。独自のトグルを作るなら、**専用の `@takazudo/zudo-doc/theme-toggle` サブパスから `ThemeToggle` をインポート**し、その周りに自前の UI をかぶせてください(あるいは同じ名前で再エクスポートします)。ローカルに `ThemeToggle` コンポーネントを手でコピーするのはやめてください。
+
+```tsx
+// Use the package island, then customize around it.
+import { ThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
+```
+
+### なぜパッケージの island をインポートするのか
+
+zfb は(`0.1.0-next.39` 以降)npm の `dist/` に同梱された `"use client"` モジュールをスキャンします。`@takazudo/zudo-doc` はスキャナから見える `ThemeToggle` island を同梱しています。同じ名前のローカル `ThemeToggle` を手でコピーすると、zfb は `ThemeToggle` という island マーカーを主張するコンポーネントを **2 つ** 検出し、ビルドのたびに衝突警告を出します:
+
+```
+⚠ island marker name collision: "ThemeToggle" is produced by two different source files —
+keeping <consumer>/src/components/theme-toggle.tsx and dropping
+<pkg>/@takazudo/zudo-doc/dist/theme-toggle/index.js. ...
+```
+
+この警告は無害です — ローカルのコンポーネントが勝ち、正しくハイドレートされます — が、ノイズになりますし、「片方を残し、片方を捨てる」という解決はスキャン順に依存します。パッケージから `ThemeToggle` をインポートすれば同じマーカーに登録されるため、衝突するものがなくなり、手書きコピーの保守負担からも解放されます。
+
+<Warning title="/theme ではなく /theme-toggle からインポートする">
+
+トグルは必ず専用の `@takazudo/zudo-doc/theme-toggle` サブパスからインポートしてください。より広い `@takazudo/zudo-doc/theme` バレルからは **インポートしないでください**: このバレルは react をインポートする design-token-panel モジュールを esbuild のグラフに引き込み、そこでは `react` が `preact/compat` にエイリアスされて **いません**。`/theme-toggle` サブパスは preact のみのクリーンなモジュールで、react バレルの落とし穴がありません。
+
+</Warning>
+
+<Note title="スキーム変更時に tweak 状態はクリアされない">
+
+パッケージの `applyColorScheme`(`theme-toggle/color-scheme-sync.ts` 内)は、カラースキームの変更時にデザイントークンの tweak 状態キー(`zudo-doc-tweak-state` / `zudo-doc-tweak-state-v2`)を意図的に **クリアしません** — ストレージのライフサイクルは zdtp が管理します。デザイントークンの tweak パネルを使っていて、トグル時に tweak 状態を消していた手書きトグルから移行する場合は、パッケージのトグルは tweak 状態を保持する点に注意してください。
+
+</Note>
+
 ## 並び順
 
 配列に書いた順にレンダリングされます。クラスタは右寄せなので、最初のエントリがナビ寄り、末尾のエントリがビューポート端寄りに配置されます。
