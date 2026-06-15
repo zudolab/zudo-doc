@@ -373,16 +373,18 @@ function generatePackageJson(choices: UserChoices) {
     // extraWatchPaths rebuilds, and TS-config-loader path canonicalization
     // (Takazudo/zudo-front-builder#1036–#1043). next.45: docs-only. next.46:
     // opt-in dev boot-lazy mode (#1057) + client-router timer lifecycle fixes —
-    // dev-server-only. next.47 (current pin): dual light/dark syntect themes
-    // (themeLight/themeDark on CodeHighlightConfig, --shiki-light/--shiki-dark,
-    // #1067) plus stricter build-start validation that rejects unknown theme
-    // names — additive; a fresh scaffold sets no explicit codeHighlight.theme so
-    // the default still applies. No consumer-facing / CLI breaking change.
-    "@takazudo/zfb": "0.1.0-next.47",
-    "@takazudo/zfb-runtime": "0.1.0-next.47",
+    // dev-server-only. next.47: dual light/dark syntect themes (themeLight/
+    // themeDark on CodeHighlightConfig, --shiki-light/--shiki-dark, #1067) plus
+    // stricter build-start validation that rejects unknown theme names. next.48
+    // (current pin): re-export @takazudo/zfb/config from the zfb-shim.d.ts type
+    // shim — type-only fix, additive; a fresh scaffold sets no explicit
+    // codeHighlight.theme so the default still applies. No consumer-facing / CLI
+    // breaking change.
+    "@takazudo/zfb": "0.1.0-next.48",
+    "@takazudo/zfb-runtime": "0.1.0-next.48",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.47",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.48",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
