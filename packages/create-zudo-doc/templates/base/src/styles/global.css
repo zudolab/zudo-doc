@@ -558,6 +558,12 @@ body {
   padding: var(--spacing-vsp-md) var(--spacing-hsp-lg) var(--spacing-vsp-2xs);
   background-color: color-mix(in srgb, var(--color-muted) 12%, var(--color-bg));
   border-radius: 0 var(--radius-DEFAULT) var(--radius-DEFAULT) 0;
+  /* External gap to the next block. In this per-element rhythm model every
+     .zd-content block owns its margin-bottom; the admonition needs one too —
+     the snug bottom *padding* above is internal only, and the following
+     paragraph's flow margin-top is zeroed by `.zd-content :where(p)`, so
+     without this the box would collapse onto the next paragraph. */
+  margin-bottom: var(--spacing-vsp-md);
 }
 
 .admonition-title {
