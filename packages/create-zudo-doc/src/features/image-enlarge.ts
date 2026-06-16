@@ -13,7 +13,7 @@ import type { FeatureModule } from "../compose.js";
  * feature, the server-side figure/button emission is re-implemented via an
  * MDX paragraph (p) component override in pages/_mdx-components.ts. When
  * imageEnlarge is enabled, three injections into the template file install:
- *   1. Additional imports: toChildArray + VNode from preact, settings.
+ *   1. Additional imports: toChildArray + VNode from preact.
  *   2. ENLARGE_SVG const + EnlargeableParagraph function definition.
  *   3. `p: EnlargeableParagraph` entry in the createMdxComponents return map.
  * When imageEnlarge is OFF, none of these are injected, so the override is
@@ -23,15 +23,17 @@ import type { FeatureModule } from "../compose.js";
 export const imageEnlargeFeature: FeatureModule = () => ({
   name: "imageEnlarge",
   injections: [
-    // 1. Import additions: toChildArray + VNode from preact, settings.
+    // 1. Import additions: toChildArray + VNode from preact.
     //    Inserted AFTER the `// @slot:mdx-components:enlarge-imports` anchor.
+    //    NOTE: `settings` is NOT injected here — the base template already
+    //    imports it (#2172); injecting it again caused a duplicate ES-module
+    //    lexical binding.
     {
       file: "pages/_mdx-components.ts",
       anchor: "// @slot:mdx-components:enlarge-imports",
       position: "after",
       content: `import { toChildArray } from "preact";
-import type { VNode } from "preact";
-import { settings } from "@/config/settings";`,
+import type { VNode } from "preact";`,
     },
     // 2. ENLARGE_SVG const + EnlargeableParagraph function.
     //    Inserted AFTER the `// @slot:mdx-components:enlarge-defs` anchor

@@ -3660,3 +3660,29 @@ describe("scaffold — designTokenPanel zdtp gating (#2162)", () => {
     });
   });
 });
+
+// Regression guard for #2172: the base template already imports `settings`,
+// so the imageEnlarge feature must NOT inject a second
+// `import { settings } from "@/config/settings";` line — a duplicate would be
+// an illegal ES-module re-declaration of the same lexical binding.
+describe("scaffold — imageEnlarge does not duplicate the settings import (#2172)", () => {
+  it("pages/_mdx-components.ts imports settings exactly once when imageEnlarge is enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-ie-dup-import",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "imageEnlarge"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-ie-dup-import", "pages/_mdx-components.ts"),
+      "utf-8",
+    );
+    const matches = content.match(
+      /import\s*\{\s*settings\s*\}\s*from\s*["']@\/config\/settings["'];?/g,
+    );
+    expect(matches).toHaveLength(1);
+  });
+});
