@@ -3284,10 +3284,14 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
    * returns to the previous page); next.50 client-router fix to commit the SPA
    * history entry before the View Transition so on WebKit/iOS a single browser
    * Back creates a distinct entry instead of falling off the site — both
-   * runtime-only bug fixes, additive, no consumer-facing breaking change.
+   * runtime-only bug fixes, additive, no consumer-facing breaking change. Now
+   * bumped to 0.1.0-next.51: additive public-API surface (VNode/VNodeArray/
+   * VNodeObject exported from "@takazudo/zfb", #972) plus removal of the no-op
+   * linkValidation.allowExternal knob (#925) — both non-breaking for a fresh
+   * scaffold.
    * Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.50", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.51", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -3298,10 +3302,10 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.50");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.50");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.51");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.51");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.50",
+      "0.1.0-next.51",
     );
   });
 });
