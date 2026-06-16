@@ -31,7 +31,10 @@ test.describe("Mermaid: async diagram rendering", () => {
     const rendered = page.locator("[data-mermaid-rendered]");
     await rendered.waitFor({ state: "attached", timeout: 30_000 });
 
-    const svg = rendered.locator("svg");
+    // Direct-child svg only: the mermaid-enlarge island injects an enlarge
+    // button whose own icon svg is a descendant of this container, so a plain
+    // `svg` descendant locator would match two elements (#2176).
+    const svg = rendered.locator("> svg");
     await expect(svg).toBeAttached();
   });
 
@@ -44,8 +47,9 @@ test.describe("Mermaid: async diagram rendering", () => {
     await rendered.waitFor({ state: "attached", timeout: 30_000 });
 
     // The raw text "graph LR" should no longer be visible as plain text
-    // (mermaid replaces the text content with an SVG)
-    const svg = rendered.locator("svg");
+    // (mermaid replaces the text content with an SVG). Direct-child svg only —
+    // the mermaid-enlarge button's icon svg is also inside this container (#2176).
+    const svg = rendered.locator("> svg");
     await expect(svg).toBeVisible();
   });
 });

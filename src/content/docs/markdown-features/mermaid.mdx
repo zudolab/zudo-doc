@@ -64,6 +64,39 @@ sequenceDiagram
   App-->>User: Render result
 ```
 
+## Enlarge & zoom/pan
+
+Every rendered diagram gets an **enlarge** button at its top-right corner, mirroring the [Image Enlarge](./image-enlarge.mdx) affordance. Clicking it opens the diagram in a dialog with Google-Maps-style controls so you can inspect dense diagrams comfortably.
+
+The dialog provides three controls:
+
+- **Zoom in (`+`)** — magnifies the diagram.
+- **Zoom out (`−`)** — shrinks the diagram, but never below the dialog's full width.
+- **Pan (hand)** — when active, drag the diagram to move it within the dialog.
+
+The controls follow this enable/disable logic:
+
+- On open, the diagram fills the dialog at full size. Only `+` is clickable; `−` and **pan** are **disabled** (you cannot zoom out below the starting size, and there is nothing to pan yet).
+- Clicking `+` zooms in and **enables** both `−` and **pan**.
+- With **pan** active, dragging moves the diagram around the viewport.
+- Clicking `−` zooms back out. Once the diagram returns to its original full-width size, `−` and **pan** **disable** again.
+
+Try it on the flowchart below — click the enlarge button at its top-right, then use `+` to zoom and the hand to pan:
+
+```mermaid
+flowchart TB
+  subgraph Build
+    A[MDX source] --> B[Mermaid pass]
+    B --> C[Wrapper div]
+  end
+  subgraph Runtime
+    C --> D[Client island]
+    D --> E[Rendered SVG]
+    E --> F[Enlarge button]
+  end
+  F --> G((Dialog\n+ / − / pan))
+```
+
 ## How it works
 
 At build time the markdown pipeline replaces the `<pre><code class="language-mermaid">` block with a `<div class="mermaid">` wrapper, leaving the diagram source unescaped so the renderer receives the raw Mermaid DSL. The mermaid pass runs before syntax highlighting, so syntect never touches the diagram source. At runtime a client island detects the wrapper and renders the diagram.
