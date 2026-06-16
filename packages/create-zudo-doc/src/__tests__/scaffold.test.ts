@@ -1287,6 +1287,73 @@ describe("scaffold — skillSymlinker feature", () => {
   });
 });
 
+describe("scaffold — .gitignore skill block (#2173)", () => {
+  it("ignores the deterministic <projectName>-wisdom skill directory when skillSymlinker is on", async () => {
+    const choices: UserChoices = {
+      projectName: "gitignore-skill-proj",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["skillSymlinker"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const gitignore = await fs.readFile(
+      projectPath("gitignore-skill-proj", ".gitignore"),
+      "utf-8",
+    );
+    expect(gitignore).toContain(
+      ".claude/skills/gitignore-skill-proj-wisdom/SKILL.md",
+    );
+    expect(gitignore).toContain(
+      ".claude/skills/gitignore-skill-proj-wisdom/docs",
+    );
+    // No i18n → the script never creates a docs-ja symlink, so no ignore entry.
+    expect(gitignore).not.toContain(
+      ".claude/skills/gitignore-skill-proj-wisdom/docs-ja",
+    );
+  });
+
+  it("ignores the docs-ja symlink only when i18n is also enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "gitignore-skill-ja",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["skillSymlinker", "i18n"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const gitignore = await fs.readFile(
+      projectPath("gitignore-skill-ja", ".gitignore"),
+      "utf-8",
+    );
+    expect(gitignore).toContain(
+      ".claude/skills/gitignore-skill-ja-wisdom/docs-ja",
+    );
+  });
+
+  it("emits no skill ignore block when skillSymlinker is off", async () => {
+    const choices: UserChoices = {
+      projectName: "gitignore-skill-none",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: [],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const gitignore = await fs.readFile(
+      projectPath("gitignore-skill-none", ".gitignore"),
+      "utf-8",
+    );
+    // The setup-doc-skill.sh script and `setup:doc-skill` npm script are gated
+    // on skillSymlinker, so its ignore entries must not be emitted without it.
+    expect(gitignore).not.toContain("# Generated doc-lookup skill");
+    expect(gitignore).not.toContain(".claude/skills/");
+  });
+});
+
 describe("scaffold — claudeSkills feature", () => {
   it("ships user-facing zudo-doc-* skills when enabled", async () => {
     const choices: UserChoices = {
@@ -3658,5 +3725,31 @@ describe("scaffold — designTokenPanel zdtp gating (#2162)", () => {
       );
       expect(content).toContain('trigger: "design-token-panel"');
     });
+  });
+});
+
+// Regression guard for #2172: the base template already imports `settings`,
+// so the imageEnlarge feature must NOT inject a second
+// `import { settings } from "@/config/settings";` line — a duplicate would be
+// an illegal ES-module re-declaration of the same lexical binding.
+describe("scaffold — imageEnlarge does not duplicate the settings import (#2172)", () => {
+  it("pages/_mdx-components.ts imports settings exactly once when imageEnlarge is enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-ie-dup-import",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "imageEnlarge"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-ie-dup-import", "pages/_mdx-components.ts"),
+      "utf-8",
+    );
+    const matches = content.match(
+      /import\s*\{\s*settings\s*\}\s*from\s*["']@\/config\/settings["'];?/g,
+    );
+    expect(matches).toHaveLength(1);
   });
 });

@@ -240,32 +240,57 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     JSON.stringify(pkg, null, 2) + "\n",
   );
 
+  const gitignoreLines = [
+    "# Build output",
+    "node_modules",
+    "dist",
+    ".zfb",
+    "",
+    "# macOS",
+    ".DS_Store",
+    "",
+    "# Environment",
+    ".env",
+    ".env.local",
+    ".env.*.local",
+    "",
+    "# Logs",
+    "*.log",
+    "npm-debug.log*",
+    "yarn-debug.log*",
+    "pnpm-debug.log*",
+    "",
+    "# Cloudflare Wrangler",
+    ".wrangler/",
+    "",
+  ];
+
+  // The doc-lookup skill is only generated when skillSymlinker is selected
+  // (the setup-doc-skill.sh script and `setup:doc-skill` npm script are gated
+  // on the same feature above), so only emit its ignore entries then —
+  // otherwise they would be dead rules that could silently hide an unrelated
+  // skill a user later installs under a matching name. The skill name is
+  // deterministic (always `<projectName>-wisdom`, matching DEFAULT_SKILL_NAME
+  // in scripts/setup-doc-skill.sh and the package name), so these entries match
+  // the directory the script creates. The docs-ja symlink only exists for i18n
+  // projects (the script creates it conditionally), so gate that line on i18n.
+  if (choices.features.includes("skillSymlinker")) {
+    gitignoreLines.push(
+      "# Generated doc-lookup skill",
+      `.claude/skills/${choices.projectName}-wisdom/SKILL.md`,
+      `.claude/skills/${choices.projectName}-wisdom/docs`,
+    );
+    if (choices.features.includes("i18n")) {
+      gitignoreLines.push(
+        `.claude/skills/${choices.projectName}-wisdom/docs-ja`,
+      );
+    }
+    gitignoreLines.push("");
+  }
+
   await fs.outputFile(
     path.join(targetDir, ".gitignore"),
-    [
-      "# Build output",
-      "node_modules",
-      "dist",
-      ".zfb",
-      "",
-      "# macOS",
-      ".DS_Store",
-      "",
-      "# Environment",
-      ".env",
-      ".env.local",
-      ".env.*.local",
-      "",
-      "# Logs",
-      "*.log",
-      "npm-debug.log*",
-      "yarn-debug.log*",
-      "pnpm-debug.log*",
-      "",
-      "# Cloudflare Wrangler",
-      ".wrangler/",
-      "",
-    ].join("\n"),
+    gitignoreLines.join("\n"),
   );
 
   // Emit an .npmrc exempting undici-types from pnpm's trust-downgrade policy.

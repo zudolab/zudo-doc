@@ -13,12 +13,18 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 PROJECT_NAME=$(node -e "console.log(require('$ROOT_DIR/package.json').name || 'my-project')")
 DEFAULT_SKILL_NAME="${PROJECT_NAME}-wisdom"
 
-# Prompt for skill name
 echo ""
 echo "=== zudo-doc Skill Setup ==="
 echo ""
-read -rp "Skill name [$DEFAULT_SKILL_NAME]: " SKILL_NAME
-SKILL_NAME="${SKILL_NAME:-$DEFAULT_SKILL_NAME}"
+
+# Skill name is DETERMINISTIC: always `<projectName>-wisdom`. The scaffolded
+# .gitignore (emitted by create-zudo-doc) hard-codes this exact name, so the
+# generated skill directory must match it — an interactive prompt would let the
+# name drift from the gitignore entry and leave the skill showing as untracked
+# (zudolab/zudo-doc#2173). An explicit override is still allowed via the first
+# CLI arg or the SKILL_NAME env var (consumers who override must also update
+# their .gitignore), but never via an interactive prompt.
+SKILL_NAME="${1:-${SKILL_NAME:-$DEFAULT_SKILL_NAME}}"
 
 # Validate skill name (allow only alphanumeric, hyphens, underscores)
 if [[ ! "$SKILL_NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then

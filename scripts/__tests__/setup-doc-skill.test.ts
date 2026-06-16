@@ -11,15 +11,15 @@ const TEST_SKILL_NAME = "test-wisdom";
 /**
  * Run setup-doc-skill.sh in the real project directory with a custom
  * HOME so the global symlink goes to a temp directory instead of ~/.claude/skills/.
- * The skill name is passed via stdin using execSync's input option.
+ * The skill name is passed as the first CLI arg — the script is non-interactive
+ * (deterministic name) since #2173, so it no longer reads the name from stdin.
  */
 function runScript(skillName: string, fakeHome: string): string {
   return execSync(
-    `bash "${SCRIPT_PATH}"`,
+    `bash "${SCRIPT_PATH}" "${skillName}"`,
     {
       cwd: PROJECT_ROOT,
       encoding: "utf-8",
-      input: skillName + "\n",
       timeout: 30_000,
       env: {
         ...process.env,
