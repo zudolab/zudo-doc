@@ -84,6 +84,33 @@ stateDiagram-v2
 ```
 ````
 
+## Enlarge & Zoom/Pan
+
+Every rendered diagram shows an **enlarge** button at its top-right corner — the same affordance used by [Image Enlarge](../markdown-features/image-enlarge.mdx). Clicking it opens the diagram in a dialog with Google-Maps-style zoom and pan controls, so dense diagrams can be inspected up close.
+
+The dialog has three controls:
+
+- **`+`** zooms in.
+- **`−`** zooms out, but never below the dialog's original full-width size.
+- **pan (hand)** lets you drag the diagram around once it's zoomed in.
+
+Their enable/disable behavior:
+
+- On open, the diagram is shown at full size. `−` and **pan** are **disabled** — only `+` is clickable.
+- Clicking `+` zooms in and **enables** `−` and **pan**.
+- With **pan** active, dragging pans the diagram.
+- Clicking `−` zooms out; back at the original full width, `−` and **pan** **disable** again.
+
+Try it on the diagram below — click its enlarge button, zoom with `+`, then pan with the hand:
+
+```mermaid
+flowchart LR
+  A[Author MDX] --> B[Build]
+  B --> C[Render diagram]
+  C --> D[Enlarge button]
+  D --> E[Dialog: + / − / pan]
+```
+
 ## Configuration
 
 Mermaid support is controlled by the `mermaid` setting in `src/config/settings.ts`:
