@@ -1,0 +1,21 @@
+---
+title: 0.2.9
+description: 0.2.9のリリースノート。
+sidebar_position: 1020
+---
+
+リリース日: 2026-06-16
+
+### 機能
+
+- `create-zudo-doc` で zdtp（デザイントークンパネル）のスキャフォールドを `designTokenPanel` フィーチャーの背後にゲートしました。フィーチャーが無効の場合、生成プロジェクトに zdtp 関連の記述が一切出力されなくなります（#2165, fa6b23aa）
+
+### バグ修正
+
+- `create-zudo-doc` のスキャフォールド時の `pnpm install` で発生する pnpm `ERR_PNPM_TRUST_DOWNGRADE` を解消しました（#2150, e43b7f3e）
+
+### その他の変更
+
+- パネルなしスキャフォールドに不要な参照が残らないよう、barebone な `create-zudo-doc` 出力から残存する zdtp の記述を除去しました（#2165, a22725f0）
+- カスタムテーマトグルには `@takazudo/zudo-doc/theme-toggle` サブパスを推奨するようにし、テーミングドキュメントの ThemeToggle カスタマイズ範囲の記述を修正しました（#2164, de7f31bd）
+- `@takazudo/zfb` を 0.1.0-next.47 → 0.1.0-next.49 にバンプしました（#2167, #2168）

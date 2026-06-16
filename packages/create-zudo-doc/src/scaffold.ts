@@ -392,7 +392,7 @@ function generatePackageJson(choices: UserChoices) {
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
     // version moves, so a fresh scaffold pulls the version we just published.
-    "@takazudo/zudo-doc": "^0.2.8",
+    "@takazudo/zudo-doc": "^0.2.9",
     // zod — used by the generated zfb.config.ts. zfb-config-gen emits
     // `import { z } from "zod"` for the content-collection schema +
     // `z.toJSONSchema(...)` conversion. Without this dep, the consumer
@@ -451,7 +451,7 @@ function generatePackageJson(choices: UserChoices) {
     // @takazudo/zudo-doc/integrations/doc-history which in turn imports
     // @takazudo/zudo-doc-history-server/git-history. Without this dep the
     // plugin host fails at init with ERR_MODULE_NOT_FOUND — W8A (#1739).
-    deps["@takazudo/zudo-doc-history-server"] = "^0.2.8";
+    deps["@takazudo/zudo-doc-history-server"] = "^0.2.9";
     // W7A (#1736): doc-history-plugin.mjs spawns `tsx -e <inline-script>` to
     // run the v2 runtime in a TS-aware Node subprocess; without tsx the
     // plugin's preBuild step exits with ENOENT before zfb finishes config

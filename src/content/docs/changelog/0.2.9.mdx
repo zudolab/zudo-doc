@@ -1,0 +1,21 @@
+---
+title: 0.2.9
+description: Release notes for 0.2.9.
+sidebar_position: 1020
+---
+
+Released: 2026-06-16
+
+### Features
+
+- Gate zdtp (Design Token Panel) scaffolding behind the `designTokenPanel` feature in `create-zudo-doc` — when the feature is off, the generated project no longer emits any zdtp wiring (#2165, fa6b23aa)
+
+### Bug Fixes
+
+- Resolve pnpm `ERR_PNPM_TRUST_DOWNGRADE` during the scaffold's `pnpm install` in `create-zudo-doc` (#2150, e43b7f3e)
+
+### Other Changes
+
+- Scrub residual zdtp mentions from barebone `create-zudo-doc` output so a panel-less scaffold has no stray references (#2165, a22725f0)
+- Recommend the `@takazudo/zudo-doc/theme-toggle` subpath for custom theme toggles and correct the ThemeToggle customization scope in the theming docs (#2164, de7f31bd)
+- Bump `@takazudo/zfb` 0.1.0-next.47 → 0.1.0-next.49 (#2167, #2168)
