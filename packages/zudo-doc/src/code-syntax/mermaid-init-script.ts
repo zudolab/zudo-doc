@@ -168,6 +168,56 @@ export function buildMermaidInitScript(cdnUrl: string): string {
     return value;
   }
 
+  // The --zd-* tokens the value-reader v() consumes. The observer gate
+  // snapshots their RESOLVED computed values so a :root[style] mutation
+  // that touches none of them correctly no-ops, while one that changes a
+  // tracked token (or data-theme) re-renders (zudolab/zudo-doc#2181).
+  var TRACKED_TOKENS = [
+    "--zd-bg",
+    "--zd-mermaid-node-bg",
+    "--zd-mermaid-text",
+    "--zd-mermaid-line",
+    "--zd-mermaid-note-bg",
+    "--zd-mermaid-label-bg",
+  ];
+
+  /**
+   * Snapshot the active theme state: the data-theme attribute plus the
+   * RESOLVED computed value of every tracked token. getComputedStyle is
+   * read fresh (not the raw style-attribute string) so an unrelated
+   * :root[style] change does not look like a token change, and a real
+   * token change is caught even when written indirectly.
+   */
+  function captureThemeState() {
+    var cs = getComputedStyle(document.documentElement);
+    var tokens = {};
+    TRACKED_TOKENS.forEach(function (name) {
+      tokens[name] = cs.getPropertyValue(name).trim();
+    });
+    return {
+      theme: document.documentElement.getAttribute("data-theme"),
+      tokens: tokens,
+    };
+  }
+
+  /**
+   * Decide whether a genuine theme/token change occurred between two
+   * snapshots. Treats an empty/undefined -> real-value transition as a
+   * change: --zd-bg may be UNSET at first paint (luminance NaN); the
+   * observer is exactly what reinits once ColorSchemeProvider later
+   * populates the tokens, so that first colorization MUST still fire
+   * (zudolab/zudo-doc#2181).
+   */
+  function hasThemeStateChanged(prev, next) {
+    if (!prev) return true;
+    if (prev.theme !== next.theme) return true;
+    for (var i = 0; i < TRACKED_TOKENS.length; i++) {
+      var name = TRACKED_TOKENS[i];
+      if (prev.tokens[name] !== next.tokens[name]) return true;
+    }
+    return false;
+  }
+
   async function initMermaid() {
     var els = document.querySelectorAll("[data-mermaid]:not([data-mermaid-rendered])");
     if (els.length === 0) return;
@@ -264,6 +314,18 @@ export function buildMermaidInitScript(cdnUrl: string): string {
         theme: "base",
         themeVariables: themeVariables,
       });
+      // Cache each diagram's source BEFORE mermaid.run consumes it
+      // (mermaid replaces the graph text with the rendered <svg> and
+      // sets data-processed). Use textContent — the DECODED source
+      // mermaid consumes — NOT innerHTML, which would re-encode/decode
+      // entities and corrupt diagrams containing \`-->\` arrows or \`&\`.
+      // Only set when absent so repeated reinits keep the ORIGINAL
+      // source (zudolab/zudo-doc#2181).
+      els.forEach(function (el) {
+        if (!el.hasAttribute("data-mermaid-src")) {
+          el.setAttribute("data-mermaid-src", el.textContent);
+        }
+      });
       await mermaid.run({ nodes: Array.from(els) });
       els.forEach(function (el) { el.setAttribute("data-mermaid-rendered", ""); });
     } catch (e) {
@@ -271,14 +333,31 @@ export function buildMermaidInitScript(cdnUrl: string): string {
     }
   }
 
-  /** Re-render all mermaid diagrams (clear rendered state so initMermaid picks them up). */
+  /**
+   * Re-render all mermaid diagrams from their cached source text.
+   *
+   * By the time this runs, mermaid.run has already CONSUMED the source
+   * (replaced the graph text with the rendered <svg> and set
+   * data-processed), so clearing data-mermaid-rendered alone leaves the
+   * node permanently blank — initMermaid re-selects it but mermaid.run
+   * skips nodes that still have data-processed, and there is no source
+   * left to regenerate from. Restore the cached source, drop the SVG,
+   * and remove BOTH data-processed AND data-mermaid-rendered so the next
+   * initMermaid pass regenerates cleanly. Keep data-mermaid-src so
+   * repeated theme toggles keep working (zudolab/zudo-doc#2181).
+   */
   function reinitMermaid() {
     document.querySelectorAll("[data-mermaid-rendered]").forEach(function (el) {
-      el.removeAttribute("data-mermaid-rendered");
-      // Remove rendered SVG so mermaid regenerates from source text.
+      var src = el.getAttribute("data-mermaid-src");
+      if (src !== null) el.textContent = src;
       var svg = el.querySelector("svg");
       if (svg) svg.remove();
+      el.removeAttribute("data-processed");
+      el.removeAttribute("data-mermaid-rendered");
     });
+    // Refresh the theme snapshot now that the genuine change is applied,
+    // so the observer's gate measures the NEXT change against this state.
+    lastThemeState = captureThemeState();
     initMermaid();
   }
 
@@ -299,8 +378,26 @@ export function buildMermaidInitScript(cdnUrl: string): string {
   //     the new theme's hex picks from parseLightDark).
   // Debounced so a synchronous flip of both attributes triggers a
   // single re-render.
+  //
+  // zudolab/zudo-doc#2181: gate on a REAL theme/token change. zfb-runtime's
+  // client router (swapRootAttributes) removes+re-adds ALL :root attributes
+  // on every soft navigation, so unchanged data-theme/style still fire
+  // mutations — without this gate the observer reinits ~300ms after every
+  // nav and (combined with the old destructive reinit) blanks every
+  // diagram. New diagrams reached by soft-nav are already handled by the
+  // AFTER_NAVIGATE_EVENT -> initMermaid() listener above, so the observer
+  // only needs to fire for genuine theme/token changes.
+  //
+  // Seed the snapshot at script-eval time — BEFORE ColorSchemeProvider
+  // runs, so the tokens are likely empty. hasThemeStateChanged treats
+  // empty -> real as a change, so the first legitimate colorization still
+  // fires; reinitMermaid then refreshes the snapshot.
+  var lastThemeState = captureThemeState();
   var tweakTimer;
   new MutationObserver(function () {
+    var next = captureThemeState();
+    if (!hasThemeStateChanged(lastThemeState, next)) return;
+    lastThemeState = next;
     clearTimeout(tweakTimer);
     tweakTimer = setTimeout(reinitMermaid, 300);
   }).observe(document.documentElement, {

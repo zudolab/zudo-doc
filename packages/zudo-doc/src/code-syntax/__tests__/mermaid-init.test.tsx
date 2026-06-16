@@ -147,6 +147,134 @@ describe("MERMAID_INIT_SCRIPT", () => {
       );
     expect(observesDataTheme).toBe(true);
   });
+
+  // zudolab/zudo-doc#2181 — Fix 2: reinitMermaid must regenerate from a
+  // cached source. mermaid.run consumes the diagram source text (replaces
+  // it with the SVG, sets data-processed), so the script caches the
+  // DECODED source into data-mermaid-src BEFORE running, and reinitMermaid
+  // restores it and clears data-processed so mermaid.run won't skip the
+  // node.
+  it("caches the diagram source into data-mermaid-src before running", () => {
+    expect(MERMAID_INIT_SCRIPT).toContain("data-mermaid-src");
+    // Must cache via textContent (decoded) — NOT innerHTML, which would
+    // re-encode entities and corrupt `-->` / `&` diagrams.
+    expect(MERMAID_INIT_SCRIPT).toContain("el.textContent");
+    expect(MERMAID_INIT_SCRIPT).not.toContain("el.innerHTML");
+  });
+
+  it("reinitMermaid restores the cached source and removes data-processed", () => {
+    // Without removing data-processed, mermaid.run skips the node and it
+    // stays blank. Both data-processed and data-mermaid-rendered must be
+    // removed so initMermaid regenerates cleanly.
+    expect(MERMAID_INIT_SCRIPT).toContain("data-processed");
+    expect(MERMAID_INIT_SCRIPT).toMatch(
+      /removeAttribute\(\s*"data-processed"\s*\)/,
+    );
+    expect(MERMAID_INIT_SCRIPT).toMatch(
+      /removeAttribute\(\s*"data-mermaid-rendered"\s*\)/,
+    );
+    // Restores the cached source so there is graph text to regenerate.
+    expect(MERMAID_INIT_SCRIPT).toContain('getAttribute("data-mermaid-src")');
+  });
+
+  // zudolab/zudo-doc#2181 — Fix 1: the observer must gate on a REAL
+  // theme/token change. zfb-runtime's swapRootAttributes removes+re-adds
+  // all :root attributes on every soft nav, so the observer over-fires
+  // unless it compares resolved state against the last-seen snapshot.
+  it("gates the observer on a real theme/token change", () => {
+    expect(MERMAID_INIT_SCRIPT).toContain("hasThemeStateChanged");
+    expect(MERMAID_INIT_SCRIPT).toContain("getComputedStyle");
+    // Cites the root cause so a future reader knows why the gate exists.
+    expect(MERMAID_INIT_SCRIPT).toContain("swapRootAttributes");
+  });
+
+  it("hasThemeStateChanged returns false when nothing tracked changed", () => {
+    const fn = extractHasThemeStateChanged(MERMAID_INIT_SCRIPT);
+    const state = {
+      theme: "light",
+      tokens: {
+        "--zd-bg": "#ffffff",
+        "--zd-mermaid-node-bg": "#eeeeee",
+        "--zd-mermaid-text": "#111111",
+        "--zd-mermaid-line": "#222222",
+        "--zd-mermaid-note-bg": "#333333",
+        "--zd-mermaid-label-bg": "#444444",
+      },
+    };
+    // Same values in a fresh object — an unrelated :root[style] mutation
+    // that touched no tracked token resolves to identical snapshots.
+    const same = {
+      theme: "light",
+      tokens: { ...state.tokens },
+    };
+    expect(fn(state, same)).toBe(false);
+  });
+
+  it("hasThemeStateChanged returns true on a real data-theme change", () => {
+    const fn = extractHasThemeStateChanged(MERMAID_INIT_SCRIPT);
+    const tokens = {
+      "--zd-bg": "#ffffff",
+      "--zd-mermaid-node-bg": "#eeeeee",
+      "--zd-mermaid-text": "#111111",
+      "--zd-mermaid-line": "#222222",
+      "--zd-mermaid-note-bg": "#333333",
+      "--zd-mermaid-label-bg": "#444444",
+    };
+    const prev = { theme: "light", tokens: { ...tokens } };
+    const next = { theme: "dark", tokens: { ...tokens } };
+    expect(fn(prev, next)).toBe(true);
+  });
+
+  it("hasThemeStateChanged returns true on a real tracked-token change", () => {
+    const fn = extractHasThemeStateChanged(MERMAID_INIT_SCRIPT);
+    const base = {
+      "--zd-bg": "#ffffff",
+      "--zd-mermaid-node-bg": "#eeeeee",
+      "--zd-mermaid-text": "#111111",
+      "--zd-mermaid-line": "#222222",
+      "--zd-mermaid-note-bg": "#333333",
+      "--zd-mermaid-label-bg": "#444444",
+    };
+    const prev = { theme: "light", tokens: { ...base } };
+    const next = {
+      theme: "light",
+      tokens: { ...base, "--zd-mermaid-text": "#999999" },
+    };
+    expect(fn(prev, next)).toBe(true);
+  });
+
+  it("hasThemeStateChanged treats first-paint empty->populated as a change", () => {
+    // CRITICAL: --zd-bg may be UNSET at first paint (empty string); the
+    // observer is exactly what reinits once ColorSchemeProvider populates
+    // the tokens, so empty -> real MUST count as a change, otherwise the
+    // first legitimate colorization is suppressed.
+    const fn = extractHasThemeStateChanged(MERMAID_INIT_SCRIPT);
+    const seed = {
+      theme: null,
+      tokens: {
+        "--zd-bg": "",
+        "--zd-mermaid-node-bg": "",
+        "--zd-mermaid-text": "",
+        "--zd-mermaid-line": "",
+        "--zd-mermaid-note-bg": "",
+        "--zd-mermaid-label-bg": "",
+      },
+    };
+    const populated = {
+      theme: "light",
+      tokens: {
+        "--zd-bg": "#ffffff",
+        "--zd-mermaid-node-bg": "#eeeeee",
+        "--zd-mermaid-text": "#111111",
+        "--zd-mermaid-line": "#222222",
+        "--zd-mermaid-note-bg": "#333333",
+        "--zd-mermaid-label-bg": "#444444",
+      },
+    };
+    expect(fn(seed, populated)).toBe(true);
+    // A missing prev snapshot (no seed at all) also counts as a change.
+    expect(fn(undefined, populated)).toBe(true);
+  });
 });
 
 /**
@@ -173,6 +301,41 @@ function extractParseLightDark(
     raw: string,
     theme: string | undefined,
   ) => string | null;
+}
+
+type ThemeSnapshot = {
+  theme: string | null;
+  tokens: Record<string, string>;
+};
+
+/**
+ * Pull `TRACKED_TOKENS` and `hasThemeStateChanged` out of the IIFE and
+ * return the change-detector as a callable. `hasThemeStateChanged`
+ * closes over `TRACKED_TOKENS`, so both declarations are re-emitted into
+ * the `new Function` body (zudolab/zudo-doc#2181).
+ */
+function extractHasThemeStateChanged(
+  script: string,
+): (
+  prev: ThemeSnapshot | undefined,
+  next: ThemeSnapshot,
+) => boolean {
+  const tokens = script.match(
+    /var\s+TRACKED_TOKENS\s*=\s*\[[\s\S]*?\];/,
+  );
+  const fn = script.match(
+    /function\s+hasThemeStateChanged\s*\([^)]*\)\s*\{[\s\S]*?\n\s{2}\}/,
+  );
+  if (!tokens) {
+    throw new Error("TRACKED_TOKENS not found in MERMAID_INIT_SCRIPT");
+  }
+  if (!fn) {
+    throw new Error("hasThemeStateChanged not found in MERMAID_INIT_SCRIPT");
+  }
+  // eslint-disable-next-line @typescript-eslint/no-implied-eval
+  return new Function(
+    `${tokens[0]}\n${fn[0]}\nreturn hasThemeStateChanged;`,
+  )() as (prev: ThemeSnapshot | undefined, next: ThemeSnapshot) => boolean;
 }
 
 describe("MERMAID_CDN_MODULE_URL", () => {
