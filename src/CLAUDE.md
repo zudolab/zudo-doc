@@ -29,7 +29,7 @@ Uses a 16-color palette system.
 
 **Tier 3 — Component tokens** (scoped to specific components):
 
-- Content: `.zd-content` direct element styling in `global.css` (consumes Tier 2)
+- Content: `.zd-content` direct element styling in the shared `@takazudo/zudo-doc/content.css` (imported by `global.css`; consumes Tier 2 tokens the project defines)
 
 Each tier only references the tier above it.
 
@@ -79,7 +79,7 @@ Uses the same three-tier approach as colors: abstract scale → semantic roles �
 **Tier 3 — Component usage** (Tailwind classes in markup):
 
 - Components consume Tier 2 tokens: `<p class="text-body">`, `<h1 class="text-heading">`
-- `.zd-content` typography in `global.css` also references Tier 2 tokens
+- `.zd-content` typography (shipped in `@takazudo/zudo-doc/content.css`, imported by `global.css`) also references Tier 2 tokens
 - For a genuinely component-specific size that should not become a global role, add a scoped CSS custom property on the component (e.g. `--_card-amount: var(--text-scale-2xl)`) referencing Tier 1/Tier 2 — do NOT widen a Tier 2 role to fit one component.
 
 To add a new font size: add the raw value to Tier 1, then create a semantic token in Tier 2 that references it. Keep the panel in sync by adding the role→scale mapping in `FONT_ROLE_TO_SCALE` (`design-token-panel-config.ts`).
@@ -110,6 +110,6 @@ Element dimensions (icons, toggles, etc.) follow a two-tier approach:
 - Before writing or editing CSS, Tailwind classes, color tokens, or component markup, invoke `/zudo-doc-design-system` to load project-specific rules
 - Tailwind v4: imports `tailwindcss/preflight` + `tailwindcss/utilities` (no default theme)
 - `@theme` has `--color-*: initial;` at the top — project tight-token guardrail: wipes all Tailwind default color tokens so only project-defined tokens are available. The upstream split-import fix (zfb#159 / 9e37551) shipped in f68a9ba and eliminated the original leak cause; the reset is retained as an explicit design rule per the "NEVER use Tailwind default colors" policy. Do NOT remove.
-- Content typography: component-first approach — major HTML elements (h2-h4, p, a, strong, blockquote, ul, ol, table) are overridden via Preact components in `src/components/content/` registered through `component-map.ts`. Minor elements (li, th/td, code, pre, hr, img, h5/h6, dt/dd, etc.) and structural rules (flow-space, consecutive heading tightening, hash-links) remain in `.zd-content` in `global.css`.
+- Content typography: component-first approach — major HTML elements (h2-h4, p, a, strong, blockquote, ul, ol, table) are overridden via Preact components in `src/components/content/` registered through `component-map.ts`. Minor elements (li, th/td, code, pre, hr, img, h5/h6, dt/dd, etc.) and structural rules (flow-space, consecutive heading tightening, hash-links) plus the admonitions live in `.zd-content` in the package-shipped `@takazudo/zudo-doc/content.css` (source: `packages/zudo-doc/src/content.css`), imported by `global.css`. This is the **single source of truth** for content rendering — both this showcase and every `create-zudo-doc` project `@import` it, so edit `content.css` there, not per-project `global.css` (zudolab/zudo-doc#2188). `global.css` keeps only `@theme` tokens, feature styles, and slots.
 - **Component-first strategy**: always use Tailwind utility classes directly in component markup — never create CSS module files or custom CSS class names. The component itself is the abstraction.
 - **Tight token strategy**: prefer existing spacing (`hsp-*`, `vsp-*`), typography (`text-caption`, `text-small`, etc.), and color tokens. Avoid arbitrary values (`text-[0.8rem]`, `py-[0.35rem]`) when an existing token is close enough.
