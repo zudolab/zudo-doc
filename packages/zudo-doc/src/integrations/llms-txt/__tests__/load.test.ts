@@ -61,3 +61,34 @@ describe("loadDocEntries frontmatter slug override", () => {
     expect(entries[0]?.url).toBe("https://example.com/ja/docs/quickstart");
   });
 });
+
+describe("loadDocEntries JSX comment stripping (zudo-doc#2175)", () => {
+  it("does not let a leading JSX comment become the fallback description", () => {
+    writeDoc(
+      "claude/index.mdx",
+      'title: "Claude"',
+      "{/* The EN /docs/claude/ index does NOT exist as a static page */}\n\n## Heading\n\nBody prose.",
+    );
+
+    const entries = loadDocEntries({ contentDir, locale: null, base: "" });
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.description).not.toContain("{/");
+    expect(entries[0]?.description).not.toContain("does NOT exist");
+    expect(entries[0]?.description).toBe("Heading");
+  });
+
+  it("strips a multi-line JSX comment from the full-text body", () => {
+    writeDoc(
+      "guides/intro.mdx",
+      'title: "Intro"\ndescription: "An intro"',
+      "Welcome.\n\n{/* a maintenance note\nspanning several\nlines */}\n\nMore prose.",
+    );
+
+    const entries = loadDocEntries({ contentDir, locale: null, base: "" });
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.content).not.toContain("{/*");
+    expect(entries[0]?.content).not.toContain("maintenance note");
+    expect(entries[0]?.content).toContain("Welcome.");
+    expect(entries[0]?.content).toContain("More prose.");
+  });
+});
