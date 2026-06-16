@@ -29,9 +29,9 @@ export function stripImportsAndJsx(content: string): string {
       // Remove export statements
       .replace(/^export\s+.*$/gm, "")
       // Remove JSX/MDX block comments ({/* ... */}) — they never render to
-      // users in MDX, so they must not leak into the plain-text feed. Runs
-      // before the tag rule below so the comment is removed whole rather than
-      // partially mangled into a stray `{/` (zudo-doc#2175).
+      // users in MDX, so they must not leak into the plain-text feed
+      // (zudo-doc#2175). Placed before the tag rule defensively, so a comment
+      // that embeds a JSX tag ({/* <Foo /> */}) is removed whole.
       .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
       // Remove all HTML/JSX tags (both uppercase components and lowercase elements)
       .replace(/<\/?[a-zA-Z][a-zA-Z0-9]*[^>]*>/g, "")

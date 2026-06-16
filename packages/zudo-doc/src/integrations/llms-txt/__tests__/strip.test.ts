@@ -27,9 +27,7 @@ describe("stripImportsAndJsx JSX comment removal (zudo-doc#2175)", () => {
     expect(out).toContain("Trailing prose.");
   });
 
-  it("does not leave a stray `{/` from the angle-bracket tag rule", () => {
-    // The legacy emitter mangled `{/* ... */}` into a leading `{/` because
-    // the tag rule partially matched it; the new rule removes it cleanly.
+  it("removes a bare comment entirely (it previously leaked whole into the body)", () => {
     const out = stripImportsAndJsx("{/* The EN /docs/x index does NOT exist */}");
     expect(out).toBe("");
   });

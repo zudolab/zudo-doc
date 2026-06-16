@@ -58,8 +58,8 @@ export function stripMarkdown(md: string): string {
       .replace(/`[^`]+`/g, "")
       // Remove JSX/MDX block comments ({/* ... */}) — they never render to
       // users in MDX, so a leading comment must not become a page's fallback
-      // description (zudo-doc#2175). Runs before the HTML-tag rule so the
-      // braces aren't left behind.
+      // description (zudo-doc#2175). Must precede the emphasis rule below,
+      // which would otherwise mangle the `/* … */` asterisks into `{/ … /}`.
       .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
       // Remove HTML tags
       .replace(/<[^>]+>/g, "")
