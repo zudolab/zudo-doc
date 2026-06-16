@@ -1364,15 +1364,29 @@ dialog.zd-mermaid-dialog::backdrop {
   will-change: transform;
 }
 
-/* SVG sizing reset — mermaid's cloned svg carries inline width/height/max-width
- * (in px); without neutralizing it the diagram renders tiny inside the dialog.
- * Force it to fill the viewport at scale 1. Scoped to .zd-mermaid-transform (the
- * cloned-diagram wrapper) so it does NOT hit the toolbar / close-button icon svgs
- * that also live inside the dialog. */
+/* SVG sizing — fit the cloned mermaid svg inside the dialog like
+ * object-fit:contain. The svg fills the viewport box (100% x 100%) and its
+ * viewBox content is letterboxed/centered by the default
+ * preserveAspectRatio="xMidYMid meet". A TALL diagram (e.g. a state diagram) no
+ * longer gets forced to full dialog width with `height:auto` driving the height
+ * far past the viewport via its aspect ratio — it now shrinks to fit the height
+ * instead. max-width/max-height !important neutralize the inline px sizing
+ * mermaid bakes onto the svg (without it the diagram renders tiny). Scoped to
+ * .zd-mermaid-transform (the cloned-diagram wrapper) so it does NOT hit the
+ * toolbar / close-button icon svgs that also live inside the dialog. */
 .zd-mermaid-transform svg {
   max-width: 100% !important;
+  max-height: 100% !important;
   width: 100%;
-  height: auto;
+  height: 100%;
+}
+
+/* Edge labels (e.g. "Yes"/"No") render inside a tightly-sized <foreignObject>;
+ * when the cloned diagram is upscaled to fill the dialog, sub-pixel overflow
+ * makes the browser clip the last glyph at the foreignObject's right edge.
+ * Letting the foreignObject overflow render keeps the full label visible. */
+.zd-mermaid-transform svg foreignObject {
+  overflow: visible;
 }
 
 /* Toolbar — bottom-center pill of zoom/pan controls. */
