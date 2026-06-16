@@ -29,6 +29,13 @@ const AWAY_PAGE = "/docs/guides/page-1";
 // minimum that catches the regression while staying well inside the test timeout.
 const POST_DEBOUNCE_WAIT_MS = 700;
 
+// The smoke fixture enables the mermaid-enlarge feature, which injects an
+// "Enlarge diagram" <button> containing its OWN <svg> icon into the rendered
+// [data-mermaid-rendered] element. A bare `svg` descendant selector therefore
+// matches two svgs (the flowchart + the icon) and trips Playwright strict mode.
+// Target the mermaid flowchart svg specifically (mermaid emits class="flowchart").
+const DIAGRAM_SVG = "svg.flowchart";
+
 test.describe("Mermaid: SPA soft-navigation regression (#2181)", () => {
   test("mermaid diagram stays rendered after SPA nav away-and-back", async ({
     page,
@@ -41,7 +48,7 @@ test.describe("Mermaid: SPA soft-navigation regression (#2181)", () => {
     await renderedLocator.waitFor({ state: "attached", timeout: 30_000 });
 
     // Confirm baseline SVG present on direct load.
-    await expect(renderedLocator.locator("svg")).toBeAttached();
+    await expect(renderedLocator.locator(DIAGRAM_SVG)).toBeAttached();
 
     // ── Step 2: SPA-navigate away, then back ─────────────────────────────────
     const awayFired = await spaClick(page, AWAY_PAGE);
@@ -54,7 +61,7 @@ test.describe("Mermaid: SPA soft-navigation regression (#2181)", () => {
     // The mermaid init fires asynchronously after zfb:after-swap; give it a
     // generous window to render before the 300ms debounce deadline.
     await expect(
-      page.locator("[data-mermaid-rendered] svg"),
+      page.locator(`[data-mermaid-rendered] ${DIAGRAM_SVG}`),
       "SVG should appear inside [data-mermaid-rendered] after SPA nav back",
     ).toBeAttached({ timeout: 10_000 });
 
@@ -64,7 +71,7 @@ test.describe("Mermaid: SPA soft-navigation regression (#2181)", () => {
     await page.waitForTimeout(POST_DEBOUNCE_WAIT_MS);
 
     const svgContent = await page.evaluate(() => {
-      const svg = document.querySelector("[data-mermaid-rendered] svg");
+      const svg = document.querySelector("[data-mermaid-rendered] svg.flowchart");
       return svg ? svg.innerHTML.trim() : null;
     });
 
