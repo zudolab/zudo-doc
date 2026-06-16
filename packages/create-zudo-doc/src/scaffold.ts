@@ -421,6 +421,13 @@ function generatePackageJson(choices: UserChoices) {
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
     // version moves, so a fresh scaffold pulls the version we just published.
+    // RELEASE DEPENDENCY (zudolab/zudo-doc#2188): the base template's
+    // global.css now `@import`s `@takazudo/zudo-doc/content.css`, an export
+    // added alongside this pin. The pinned range MUST resolve to a PUBLISHED
+    // version that ships that export — published 0.2.9 does NOT. check-pin-parity
+    // ties this pin to packages/zudo-doc's version, so the lockstep release
+    // bumps both together; do not cut a create-zudo-doc release until the
+    // matching @takazudo/zudo-doc version (with content.css) is on npm.
     "@takazudo/zudo-doc": "^0.2.9",
     // zod — used by the generated zfb.config.ts. zfb-config-gen emits
     // `import { z } from "zod"` for the content-collection schema +
