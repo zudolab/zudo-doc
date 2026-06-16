@@ -193,7 +193,11 @@ test.describe("Versioning: version switcher interaction", () => {
     // `<slug>/` form, which is what the static asset server serves), so
     // the matcher accepts either shape.
     await page.waitForURL(/\/v\/1\.0\/docs\/getting-started\/?$/);
-    const content = await page.textContent("body");
-    expect(content).toContain("version 1.0");
+    // zfb's client-router (>= zfb 0.1.0-next.50) commits the SPA history entry
+    // BEFORE the View Transition content swap, so waitForURL can resolve before
+    // the destination page's body is in the DOM. Use a web-first auto-retrying
+    // assertion to wait for the swapped content instead of reading textContent
+    // once (which races the swap and reads the stale source page).
+    await expect(page.locator("body")).toContainText("version 1.0");
   });
 });
