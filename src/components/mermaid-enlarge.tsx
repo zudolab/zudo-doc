@@ -74,7 +74,7 @@ const DIAGRAM_SVG_SELECTOR = ":scope > svg";
 // re-render that regenerates the inner `<svg>` doesn't drop or duplicate it.
 const BTN_INJECTED_ATTR = "data-mermaid-enlarge-ready";
 
-// Zoom step + clamps. scale 1 = diagram fills the dialog width.
+// Zoom step + clamps. scale 1 = diagram fits the dialog (contain).
 const ZOOM_STEP = 1.25;
 const MIN_SCALE = 1;
 const MAX_SCALE = 4;
@@ -124,7 +124,7 @@ interface OpenDiagram {
 export default function MermaidEnlarge() {
   const [open, setOpen] = useState<OpenDiagram | null>(null);
 
-  // Zoom/pan state. scale 1 = diagram fills the dialog width; translate 0,0.
+  // Zoom/pan state. scale 1 = diagram fits the dialog (contain); translate 0,0.
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
   const [panActive, setPanActive] = useState(false);
