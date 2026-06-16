@@ -42,7 +42,10 @@ export default defineConfig({
   // splitting + external are irrelevant when bundle:false — imports
   // stay as written and resolve against the consumer's node_modules
   // at runtime.
-  // Regenerate dist/safelist.css after every compilation (build, prepare,
-  // and --watch). Must run AFTER tsup because clean:true wipes dist/ first.
-  onSuccess: "node scripts/gen-safelist.mjs",
+  // After every compilation (build, prepare, and --watch): copy the static
+  // content stylesheet into dist/ (shipped as `@takazudo/zudo-doc/content.css`),
+  // then regenerate dist/safelist.css. Both must run AFTER tsup because
+  // clean:true wipes dist/ first; gen-safelist only scans dist/*.js so the
+  // copied .css does not affect it.
+  onSuccess: "node scripts/copy-content-css.mjs && node scripts/gen-safelist.mjs",
 });

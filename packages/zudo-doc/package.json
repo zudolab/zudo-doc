@@ -156,13 +156,14 @@
       "default": "./dist/icons/index.js"
     },
     "./safelist.css": "./dist/safelist.css",
-    "./safelist": "./dist/safelist.css"
+    "./safelist": "./dist/safelist.css",
+    "./content.css": "./dist/content.css"
   },
   "scripts": {
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsup",
     "dev": "tsup --watch",
     "prepare": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsup --silent",
-    "prepack": "node scripts/check-safelist.mjs",
+    "prepack": "node scripts/check-safelist.mjs && node scripts/check-content-css.mjs",
     "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc --noEmit"
   },

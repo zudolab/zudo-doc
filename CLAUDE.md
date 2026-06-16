@@ -116,7 +116,8 @@ src/
 │   ├── docs/            # English MDX content
 │   └── docs-ja/         # Japanese MDX content (mirrors docs/)
 └── styles/
-    └── global.css       # Design tokens (@theme) & Tailwind config
+    └── global.css       # @theme tokens, feature styles, slots; @imports the
+                         # shared content stylesheet @takazudo/zudo-doc/content.css
 ```
 
 ## Content Collections
@@ -259,6 +260,8 @@ When adding or removing a feature from zudo-doc, update the `create-zudo-doc` ge
 **e2e fixture sync**: Adding a field to `src/config/settings.ts` also requires mirroring it into all five `e2e/fixtures/*/src/config/settings.ts` files — or adding an allowlist entry in `.fixture-settings-drift-allowlist` with a `# reason:` comment. This is now enforced in CI by the `Fixture Settings Drift Check` job.
 
 **Important**: This checklist also applies to incremental improvements (CSS token migrations, icon sizing, spacing changes, etc.) — not just new features. If you change a file that has a template counterpart, update the template too. Run `pnpm check:template-drift` to verify (note: allowlisted files such as `src/styles/global.css`, plugin re-exports, and other slot-based files listed in `.template-drift-allowlist` are excluded from automated checks and need manual review).
+
+**Content typography (`.zd-content`) is NOT per-project — it ships from the package.** The content/markdown stylesheet lives once at `packages/zudo-doc/src/content.css` (shipped as `@takazudo/zudo-doc/content.css`) and is `@import`ed by both `src/styles/global.css` and the generator template. Change content typography there — do NOT re-inline `.zd-content` rules into either `global.css` (that copy-drift is exactly what zudolab/zudo-doc#2188 retired). Both `global.css` files keep only `@theme` tokens, feature styles, and slots. When editing `content.css`, rebuild the package (`pnpm --filter @takazudo/zudo-doc build`) so `dist/content.css` updates for consumers. Note: generated projects only pick up `content.css` changes after a new `@takazudo/zudo-doc` version is published and `create-zudo-doc`'s pinned dependency is bumped (the lockstep release handles this).
 
 ## Tauri (two modes)
 
