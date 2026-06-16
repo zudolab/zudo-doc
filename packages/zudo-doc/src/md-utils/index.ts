@@ -45,8 +45,10 @@ export interface MdDocFrontmatter {
  * Strip markdown formatting to plain text. Conservative-by-design — the
  * regex pipeline matches the legacy Astro integrations byte-for-byte so
  * search excerpts and llms-txt descriptions stay byte-equal across the
- * cutover. Do not add new rules without also updating the byte-equality
- * fixtures (topic-plugin-audit).
+ * cutover, with one deliberate divergence: it also strips JSX/MDX block
+ * comments (the `{/*`-delimited MDX comment form), which the legacy
+ * pipeline leaked into descriptions (zudo-doc#2175). Do not add other new
+ * rules without also updating the byte-equality fixtures (topic-plugin-audit).
  */
 export function stripMarkdown(md: string): string {
   return (
@@ -54,6 +56,11 @@ export function stripMarkdown(md: string): string {
       // Remove code blocks
       .replace(/```[\s\S]*?```/g, "")
       .replace(/`[^`]+`/g, "")
+      // Remove JSX/MDX block comments ({/* ... */}) — they never render to
+      // users in MDX, so a leading comment must not become a page's fallback
+      // description (zudo-doc#2175). Must precede the emphasis rule below,
+      // which would otherwise mangle the `/* … */` asterisks into `{/ … /}`.
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
       // Remove HTML tags
       .replace(/<[^>]+>/g, "")
       // Remove headings markers

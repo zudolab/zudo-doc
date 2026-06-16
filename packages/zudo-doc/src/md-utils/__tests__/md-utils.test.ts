@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { isExcluded, slugToUrl, type MdDocFrontmatter } from "../index.js";
+import {
+  isExcluded,
+  slugToUrl,
+  stripMarkdown,
+  type MdDocFrontmatter,
+} from "../index.js";
 
 // Consolidates the formerly-duplicated is-excluded suites of the
 // search-index and llms-txt integrations (zudo-doc#2024) — both now run
@@ -24,6 +29,27 @@ describe("md-utils isExcluded", () => {
     expect(isExcluded({ title: "Guides", category_no_page: false })).toBe(
       false,
     );
+  });
+});
+
+describe("md-utils stripMarkdown JSX comment removal (zudo-doc#2175)", () => {
+  it("removes a leading single-line JSX comment so it can't become a summary", () => {
+    const stripped = stripMarkdown("{/* internal note */}\n\nReal first line.");
+    const firstLine = stripped
+      .split("\n")
+      .find((l) => l.trim().length > 0);
+    expect(firstLine).toBe("Real first line.");
+    expect(stripped).not.toContain("internal note");
+  });
+
+  it("removes a multi-line JSX comment from the body", () => {
+    const stripped = stripMarkdown(
+      "Intro line.\n\n{/* a comment\nspanning lines */}\n\nOutro line.",
+    );
+    expect(stripped).not.toContain("{/*");
+    expect(stripped).not.toContain("spanning lines");
+    expect(stripped).toContain("Intro line.");
+    expect(stripped).toContain("Outro line.");
   });
 });
 
