@@ -1288,7 +1288,7 @@ describe("scaffold — skillSymlinker feature", () => {
 });
 
 describe("scaffold — .gitignore skill block (#2173)", () => {
-  it("ignores the deterministic <projectName>-wisdom skill directory", async () => {
+  it("ignores the deterministic <projectName>-wisdom skill directory when skillSymlinker is on", async () => {
     const choices: UserChoices = {
       projectName: "gitignore-skill-proj",
       defaultLang: "en",
@@ -1308,9 +1308,49 @@ describe("scaffold — .gitignore skill block (#2173)", () => {
     expect(gitignore).toContain(
       ".claude/skills/gitignore-skill-proj-wisdom/docs",
     );
-    expect(gitignore).toContain(
+    // No i18n → the script never creates a docs-ja symlink, so no ignore entry.
+    expect(gitignore).not.toContain(
       ".claude/skills/gitignore-skill-proj-wisdom/docs-ja",
     );
+  });
+
+  it("ignores the docs-ja symlink only when i18n is also enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "gitignore-skill-ja",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["skillSymlinker", "i18n"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const gitignore = await fs.readFile(
+      projectPath("gitignore-skill-ja", ".gitignore"),
+      "utf-8",
+    );
+    expect(gitignore).toContain(
+      ".claude/skills/gitignore-skill-ja-wisdom/docs-ja",
+    );
+  });
+
+  it("emits no skill ignore block when skillSymlinker is off", async () => {
+    const choices: UserChoices = {
+      projectName: "gitignore-skill-none",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: [],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const gitignore = await fs.readFile(
+      projectPath("gitignore-skill-none", ".gitignore"),
+      "utf-8",
+    );
+    // The setup-doc-skill.sh script and `setup:doc-skill` npm script are gated
+    // on skillSymlinker, so its ignore entries must not be emitted without it.
+    expect(gitignore).not.toContain("# Generated doc-lookup skill");
+    expect(gitignore).not.toContain(".claude/skills/");
   });
 });
 
