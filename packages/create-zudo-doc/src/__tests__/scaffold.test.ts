@@ -1287,6 +1287,33 @@ describe("scaffold — skillSymlinker feature", () => {
   });
 });
 
+describe("scaffold — .gitignore skill block (#2173)", () => {
+  it("ignores the deterministic <projectName>-wisdom skill directory", async () => {
+    const choices: UserChoices = {
+      projectName: "gitignore-skill-proj",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["skillSymlinker"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const gitignore = await fs.readFile(
+      projectPath("gitignore-skill-proj", ".gitignore"),
+      "utf-8",
+    );
+    expect(gitignore).toContain(
+      ".claude/skills/gitignore-skill-proj-wisdom/SKILL.md",
+    );
+    expect(gitignore).toContain(
+      ".claude/skills/gitignore-skill-proj-wisdom/docs",
+    );
+    expect(gitignore).toContain(
+      ".claude/skills/gitignore-skill-proj-wisdom/docs-ja",
+    );
+  });
+});
+
 describe("scaffold — claudeSkills feature", () => {
   it("ships user-facing zudo-doc-* skills when enabled", async () => {
     const choices: UserChoices = {

@@ -265,6 +265,15 @@ export async function scaffold(choices: UserChoices): Promise<void> {
       "# Cloudflare Wrangler",
       ".wrangler/",
       "",
+      // Generated doc-lookup skill (scripts/setup-doc-skill.sh). The skill name
+      // is deterministic — always `<projectName>-wisdom` — so these entries
+      // match the directory the script creates. Keep in sync with
+      // DEFAULT_SKILL_NAME in scripts/setup-doc-skill.sh.
+      "# Generated doc-lookup skill",
+      `.claude/skills/${choices.projectName}-wisdom/SKILL.md`,
+      `.claude/skills/${choices.projectName}-wisdom/docs`,
+      `.claude/skills/${choices.projectName}-wisdom/docs-ja`,
+      "",
     ].join("\n"),
   );
 
