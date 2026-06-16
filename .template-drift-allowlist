@@ -76,6 +76,11 @@ src/components/design-token-tweak/index.tsx
 src/components/doc-history.tsx
 src/components/image-enlarge.tsx
 src/components/find-in-page-init.tsx
+# mermaid-enlarge.tsx: host imports @/hooks/use-modal-dialog (which does not
+# exist in template projects — no src/hooks/ directory) and uses it to inline
+# dialog open/close sync. The template version inlines the same logic directly
+# without the hook so no src/hooks/ dependency is required downstream.
+src/components/mermaid-enlarge.tsx
 
 # zdtp panel template variants — intentionally differ from production in the
 # following ways:

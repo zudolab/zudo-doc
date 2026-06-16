@@ -35,6 +35,7 @@ import { settings } from "@/config/settings";
 import AiChatModal from "@/components/ai-chat-modal";
 import ClientRouterBootstrap from "@/components/client-router-bootstrap";
 import ImageEnlarge, { ImageEnlargeSsrFallback } from "@/components/image-enlarge";
+import MermaidEnlarge, { MermaidEnlargeSsrFallback } from "@/components/mermaid-enlarge";
 import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";
 // @slot:body-end-islands:imports
 
@@ -49,6 +50,7 @@ import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";
 (ClientRouterBootstrap as { displayName?: string }).displayName =
   "ClientRouterBootstrap";
 (ImageEnlarge as { displayName?: string }).displayName = "ImageEnlarge";
+(MermaidEnlarge as { displayName?: string }).displayName = "MermaidEnlarge";
 // @slot:body-end-islands:display-names
 
 /**
@@ -159,6 +161,20 @@ export function BodyEndIslands({
       }) as unknown as VNode)
     : null;
 
+  // Gated on `settings.mermaid`. Mirrors the imageEnlarge block: the SSR
+  // fallback is an empty, closed `<dialog class="zd-mermaid-dialog ...">` so
+  // the dist HTML carries one dialog from the start and hydration (when="idle")
+  // swaps in the real component. Unlike images (SSR-wrapped by the MDX paragraph
+  // override), mermaid renders client-side, so this island injects the enlarge
+  // button into each rendered diagram container itself.
+  const mermaidEnlarge = settings.mermaid
+    ? (Island({
+        when: "idle",
+        ssrFallback: <MermaidEnlargeSsrFallback />,
+        children: <MermaidEnlarge />,
+      }) as unknown as VNode)
+    : null;
+
   return (
     <>
       {/* Pure SSR — no Island wrap. The component emits its overlay div,
@@ -168,6 +184,7 @@ export function BodyEndIslands({
       {clientRouterBootstrap}
       {aiAssistant}
       {imageEnlarge}
+      {mermaidEnlarge}
       {/* @slot:body-end-islands:extra-islands */}
     </>
   );
