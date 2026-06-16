@@ -73,20 +73,10 @@ const ZOOM_STEP = 1.25;
 const MIN_SCALE = 1;
 const MAX_SCALE = 4;
 
-// Inline SVG for the enlarge button — the same 4-corner-arrows icon the
-// image-enlarge button uses (ported from ENLARGE_SVG in pages/_mdx-components.ts).
-// Kept as JSX here (this is a .tsx module) rather than the plain-object VNode
-// form the MDX-components bag uses.
-function EnlargeIcon() {
-  return (
-    <svg viewBox="0 0 38.99 38.99" fill="currentColor" focusable="false" aria-hidden="true">
-      <polygon points="16.2 13.74 5.92 3.47 11.2 3.47 11.2 0 3.47 0 0 0 0 3.47 0 11.2 3.47 11.2 3.47 5.92 13.74 16.2 16.2 13.74" />
-      <polygon points="25.24 16.2 35.52 5.92 35.52 11.2 38.99 11.2 38.99 3.47 38.99 0 35.52 0 27.79 0 27.79 3.47 33.07 3.47 22.79 13.74 25.24 16.2" />
-      <polygon points="22.79 25.24 33.07 35.52 27.79 35.52 27.79 38.99 35.52 38.99 38.99 38.99 38.99 35.52 38.99 27.79 35.52 27.79 35.52 33.07 25.24 22.79 22.79 25.24" />
-      <polygon points="13.74 22.79 3.47 33.07 3.47 27.79 0 27.79 0 35.52 0 38.99 3.47 38.99 11.2 38.99 11.2 35.52 5.92 35.52 16.2 25.24 13.74 22.79" />
-    </svg>
-  );
-}
+// The enlarge button's 4-corner-arrows icon (same shape as ENLARGE_SVG in
+// pages/_mdx-components.ts) is injected as an innerHTML string in injectButton()
+// below — the button itself is created via document.createElement because the
+// mermaid container is plain DOM, not part of this island's render tree.
 
 // Toolbar icons. currentColor + aria-hidden so they inherit the toolbar button
 // color and are skipped by assistive tech (the buttons carry aria-labels).
