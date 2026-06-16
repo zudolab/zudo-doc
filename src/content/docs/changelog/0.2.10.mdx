@@ -1,0 +1,25 @@
+---
+title: 0.2.10
+description: Release notes for 0.2.10.
+sidebar_position: 1021
+---
+
+Released: 2026-06-17
+
+### Features
+
+- Mermaid diagrams now have an enlarge button that opens a zoom/pan dialog for inspecting large flowcharts (#2186, ad08b5b5)
+
+### Bug Fixes
+
+- Keep mermaid diagrams rendered across SPA soft navigation so they no longer disappear after client-side route changes (#2181, a37b4907)
+- Contain the enlarged mermaid diagram and stop edge-label clipping in the zoom/pan dialog (#2193, 63e2f82f)
+- Strip JSX/MDX block comments from `llms.txt` output so generated text no longer leaks raw comment markers (#2192, edd361e4)
+- `create-zudo-doc`: gate the generated `.gitignore` doc-skill block on the `skillSymlinker`/`i18n` features so barebone scaffolds omit it (#2182, 1dc8de35)
+- `create-zudo-doc`: gitignore the generated doc-lookup skill deterministically (#2173, 10d0b183)
+- `create-zudo-doc`: drop a duplicate settings import in the `imageEnlarge` feature (#2172, ba66300f)
+
+### Other Changes
+
+- Ship the `.zd-content` content typography stylesheet from `@takazudo/zudo-doc` as `content.css`, imported by both the host `global.css` and the generated template — retiring the copy-drift between the two (#2196, 44eb0dfe)
+- Bump `@takazudo/zfb` 0.1.0-next.49 → 0.1.0-next.51 (#2171, d91aae48)
