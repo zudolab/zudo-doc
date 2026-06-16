@@ -409,14 +409,17 @@ function generatePackageJson(choices: UserChoices) {
     // pin): client-router fix to commit the SPA history entry BEFORE the View
     // Transition, so on WebKit/iOS a single browser Back after an SPA navigation
     // creates a distinct history entry instead of falling off the site —
-    // runtime-only bug fix, additive. A fresh scaffold sets no explicit
-    // codeHighlight.theme so the default still applies. No consumer-facing /
-    // CLI breaking change.
-    "@takazudo/zfb": "0.1.0-next.50",
-    "@takazudo/zfb-runtime": "0.1.0-next.50",
+    // runtime-only bug fix, additive. next.51 (current pin): additive public-API
+    // surface — VNode/VNodeArray/VNodeObject are now exported from
+    // "@takazudo/zfb" (#972) — plus removal of the no-op linkValidation.allowExternal
+    // knob (#925); both are non-breaking for a fresh scaffold. A fresh scaffold
+    // sets no explicit codeHighlight.theme so the default still applies. No
+    // consumer-facing / CLI breaking change.
+    "@takazudo/zfb": "0.1.0-next.51",
+    "@takazudo/zfb-runtime": "0.1.0-next.51",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.50",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.51",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
