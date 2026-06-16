@@ -26,6 +26,7 @@
 // Use `preact/compat` so the bundle resolves to Preact's React-shim at runtime
 // (zfb's esbuild step doesn't alias bare `react` to `preact/compat`). Mirrors
 // image-enlarge.tsx.
+import type { JSX } from "preact";
 import { useState, useEffect, useRef, useCallback } from "preact/compat";
 import { AFTER_NAVIGATE_EVENT } from "@takazudo/zudo-doc/transitions";
 
@@ -60,6 +61,13 @@ const DIALOG_STYLE = {
 // scope with `.querySelectorAll(".mermaid")` — no deeper constant needed.
 const CONTENT_SCOPE_SELECTOR = "main .zd-content";
 
+// The diagram svg is a DIRECT child of the `.mermaid` container; the injected
+// enlarge button's own icon svg is a grandchild. Selecting `:scope > svg` (not a
+// descendant `svg`) so we never pick up the button icon — which matters during a
+// theme/tweak re-render, when the diagram svg is briefly removed and a bare
+// `querySelector("svg")` would fall back to the button's icon.
+const DIAGRAM_SVG_SELECTOR = ":scope > svg";
+
 // Container-keyed dedupe marker. Set on the `.mermaid` container (which persists
 // across theme/tweak re-renders) once its enlarge button is injected, so the
 // re-render that regenerates the inner `<svg>` doesn't drop or duplicate it.
@@ -79,7 +87,7 @@ const MAX_SCALE = 4;
 // color and are skipped by assistive tech (the buttons carry aria-labels).
 function PlusIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" focusable="false">
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
@@ -88,7 +96,7 @@ function PlusIcon() {
 
 function MinusIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" focusable="false">
       <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
   );
@@ -96,7 +104,7 @@ function MinusIcon() {
 
 function PanIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true" focusable="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" focusable="false">
       <path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11" />
       <path d="M12 11V4.5a1.5 1.5 0 0 1 3 0V11" />
       <path d="M15 11V6a1.5 1.5 0 0 1 3 0v6.5a6.5 6.5 0 0 1-6.5 6.5h-1a6 6 0 0 1-4.6-2.16l-2.2-2.86a1.5 1.5 0 0 1 2.3-1.92L9 13" />
@@ -148,7 +156,7 @@ export default function MermaidEnlarge() {
       // meaningless before there's an <svg> to enlarge.
       const rendered =
         container.hasAttribute("data-mermaid-rendered") ||
-        container.querySelector("svg") !== null;
+        container.querySelector(DIAGRAM_SVG_SELECTOR) !== null;
       if (!rendered) return;
 
       container.setAttribute(BTN_INJECTED_ATTR, "");
@@ -221,7 +229,7 @@ export default function MermaidEnlarge() {
       const container = target.closest(".zd-mermaid-enlargeable") as HTMLElement | null;
       if (!container) return;
       if (!target.closest(".zd-enlarge-btn")) return;
-      const svg = container.querySelector("svg");
+      const svg = container.querySelector(DIAGRAM_SVG_SELECTOR);
       if (!svg) return;
       // Reset zoom/pan on every open.
       setScale(1);
@@ -241,7 +249,7 @@ export default function MermaidEnlarge() {
     if (!open) return;
     const { container } = open;
     const observer = new MutationObserver(() => {
-      const svg = container.querySelector("svg");
+      const svg = container.querySelector(DIAGRAM_SVG_SELECTOR);
       if (svg && svg.outerHTML !== open.svgHtml) {
         setOpen({ container, svgHtml: svg.outerHTML });
       }
@@ -294,7 +302,9 @@ export default function MermaidEnlarge() {
   }, [handleClose]);
 
   // Backdrop-click handler: close when the click target is the dialog itself.
-  function handleBackdropClick(e: React.MouseEvent<HTMLDialogElement>): void {
+  // Preact-native event type so the template does not depend on @types/react
+  // being present in the scaffolded project.
+  function handleBackdropClick(e: JSX.TargetedMouseEvent<HTMLDialogElement>): void {
     const dialog = dialogRef.current;
     if (!dialog) return;
     if (e.target === dialog) dialog.close();
@@ -388,6 +398,7 @@ export default function MermaidEnlarge() {
     <dialog
       ref={dialogRef}
       onClick={handleBackdropClick}
+      aria-label="Enlarged diagram"
       className={DIALOG_CLASS}
       style={DIALOG_STYLE}
     >
@@ -475,5 +486,5 @@ export default function MermaidEnlarge() {
  * `<dialog>` above. Mirrors `ImageEnlargeSsrFallback`.
  */
 export function MermaidEnlargeSsrFallback() {
-  return <dialog className={DIALOG_CLASS} style={DIALOG_STYLE} />;
+  return <dialog aria-label="Enlarged diagram" className={DIALOG_CLASS} style={DIALOG_STYLE} />;
 }

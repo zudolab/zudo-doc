@@ -1351,6 +1351,10 @@ dialog.zd-mermaid-dialog::backdrop {
   cursor: grab;
 }
 
+.zd-mermaid-viewport[data-pan-active]:active {
+  cursor: grabbing;
+}
+
 .zd-mermaid-transform {
   width: 100%;
   height: 100%;
@@ -1362,8 +1366,10 @@ dialog.zd-mermaid-dialog::backdrop {
 
 /* SVG sizing reset — mermaid's cloned svg carries inline width/height/max-width
  * (in px); without neutralizing it the diagram renders tiny inside the dialog.
- * Force it to fill the viewport at scale 1. */
-.zd-mermaid-dialog svg {
+ * Force it to fill the viewport at scale 1. Scoped to .zd-mermaid-transform (the
+ * cloned-diagram wrapper) so it does NOT hit the toolbar / close-button icon svgs
+ * that also live inside the dialog. */
+.zd-mermaid-transform svg {
   max-width: 100% !important;
   width: 100%;
   height: auto;
