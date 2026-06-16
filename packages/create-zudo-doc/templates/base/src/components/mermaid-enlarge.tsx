@@ -56,10 +56,8 @@ const DIALOG_STYLE = {
   margin: "auto",
 } as const;
 
-// Selector for the content-scope mermaid diagram containers. zfb's pipeline
-// emits `<div class="mermaid" data-mermaid>` for each ```mermaid fence; the init
-// script adds `data-mermaid-rendered` once the svg is drawn.
-const MERMAID_SELECTOR = "main .zd-content .mermaid";
+// Selector for the content-scope root. The button injector scans within this
+// scope with `.querySelectorAll(".mermaid")` — no deeper constant needed.
 const CONTENT_SCOPE_SELECTOR = "main .zd-content";
 
 // Container-keyed dedupe marker. Set on the `.mermaid` container (which persists
