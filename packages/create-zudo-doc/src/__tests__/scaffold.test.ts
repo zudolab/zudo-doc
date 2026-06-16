@@ -3206,16 +3206,18 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
    * resolve_links for dir-style hrefs written from non-index pages
    * (Takazudo/zudo-front-builder#1030), and the data-file skip warning now
    * respects collection include/exclude globs (#1032). Now bumped to
-   * 0.1.0-next.48: next.42–next.44 were release-tooling, formatter-glob, and
+   * 0.1.0-next.49: next.42–next.44 were release-tooling, formatter-glob, and
    * embed-as-library enhancements; next.45 docs-only; next.46 opt-in dev
    * boot-lazy mode + client-router timer lifecycle fixes; next.47 dual
    * light/dark syntect themes (themeLight/themeDark, #1067) plus stricter
    * build-start rejection of unknown theme names; next.48 re-exports
-   * @takazudo/zfb/config from the zfb-shim.d.ts type shim — type-only fix,
-   * additive, no consumer-facing breaking change. Generated package.json must
-   * pin all three.
+   * @takazudo/zfb/config from the zfb-shim.d.ts type shim — type-only fix;
+   * next.49 client-router WebKit bfcache fix (re-sync history index +
+   * originalLocation on bfcache restore so browser Back after an SPA navigation
+   * returns to the previous page) — runtime-only bug fix, additive, no
+   * consumer-facing breaking change. Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.48", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.49", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -3226,10 +3228,10 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.48");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.48");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.49");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.49");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.48",
+      "0.1.0-next.49",
     );
   });
 });
