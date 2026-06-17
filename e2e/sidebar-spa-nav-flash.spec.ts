@@ -62,9 +62,28 @@ test.describe("Desktop sidebar SPA-nav flash (#2198)", () => {
       { timeout: 5000 },
     );
 
-    // Record the hidden-state transform as the baseline. The transition itself
-    // has already settled here (we waited for the attribute, and the click
-    // animation has completed by hydration + attribute wait).
+    // Wait for the collapse animation to FULLY settle before snapshotting the
+    // baseline. Clicking the toggle starts a 200ms transform transition, but
+    // `data-sidebar-hidden` is committed on <html> immediately on click — so
+    // waiting for the attribute alone races the animation and would snapshot a
+    // mid-slide transform (e.g. -4px instead of the settled -320px), making the
+    // final-state assertion below spuriously fail (#2198 verification). Poll the
+    // computed transform until two consecutive reads are equal (stable).
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector("#desktop-sidebar");
+        if (!el) return false;
+        const w = window as unknown as { __prevHiddenTransform__?: string };
+        const cur = getComputedStyle(el).transform;
+        const stable = w.__prevHiddenTransform__ === cur;
+        w.__prevHiddenTransform__ = cur;
+        return stable;
+      },
+      undefined,
+      { timeout: 5000, polling: 100 },
+    );
+
+    // Record the now-settled hidden-state transform as the baseline.
     const hiddenTransform = await sidebar.evaluate(
       (el) => getComputedStyle(el).transform,
     );
