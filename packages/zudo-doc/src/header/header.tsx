@@ -391,8 +391,10 @@ function renderNavItem(
   urlHelpers: HeaderUrlHelpers,
   i18n: HeaderI18n,
 ): VNode {
-  // Prefer category matching (the page's resolved big category) and fall
-  // back to URL-path matching when the host supplies no `activeCategory`.
+  // Category matching (the page's resolved big category) is the primary
+  // signal; URL-path matching stays as a secondary fallback so items that
+  // declare no `categoryMatch`, and pages with no resolved section (home,
+  // 404, tag, version), still highlight as they did before.
   const isActive =
     isNavItemActiveByCategory(item, activeCategory) ||
     isNavItemActive(item, activeNavPath);

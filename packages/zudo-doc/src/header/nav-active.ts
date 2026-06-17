@@ -112,15 +112,10 @@ export function isNavItemActiveByCategory(
   activeCategory: string | undefined,
 ): boolean {
   if (activeCategory == null) return false;
-  if (item.categoryMatch != null && item.categoryMatch === activeCategory) {
-    return true;
-  }
-  if (
-    item.children?.some(
-      (child) =>
-        child.categoryMatch != null && child.categoryMatch === activeCategory,
-    )
-  ) {
+  // `activeCategory` is non-null here, so a plain `===` already rejects an
+  // entry whose `categoryMatch` is undefined — no extra null guard needed.
+  if (item.categoryMatch === activeCategory) return true;
+  if (item.children?.some((child) => child.categoryMatch === activeCategory)) {
     return true;
   }
   return false;
