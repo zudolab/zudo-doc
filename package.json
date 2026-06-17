@@ -64,7 +64,6 @@
     "onlyBuiltDependencies": [
       "esbuild",
       "lefthook",
-      "sharp",
       "workerd"
     ],
     "overrides": {
@@ -90,15 +89,12 @@
     "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.51",
     "@takazudo/zfb-runtime": "0.1.0-next.51",
     "@takazudo/zudo-doc": "workspace:*",
-    "@types/hast": "^3.0.4",
-    "clsx": "^2.1.1",
     "diff": "^8.0.3",
     "gray-matter": "^4.0.3",
     "katex": "^0.16.38",
     "mermaid": "^11.15.0",
     "preact": "^10.29.1",
     "preact-render-to-string": "^6.6.6",
-    "rehype-katex": "^7.0.1",
     "shiki": "^4.0.2",
     "zod": "^4.3.6"
   },
@@ -107,7 +103,6 @@
     "@playwright/test": "1.58.2",
     "@tailwindcss/vite": "^4.2.1",
     "@takazudo/zudo-design-token-lint": "^1.0.0",
-    "@types/mdast": "^4.0.4",
     "@types/node": "^25.3.5",
     "@types/pluralize": "^0.0.33",
     "@types/react": "^19.2.14",
@@ -115,12 +110,9 @@
     "chokidar": "^4.0.0",
     "html-validate": "^10.15.0",
     "lefthook": "^2.1.4",
-    "msw": "^2.12.12",
     "npm-run-all2": "^7.0.2",
     "picocolors": "^1.1.1",
     "pluralize": "^8.0.0",
-    "prettier": "^3.8.1",
-    "sharp": "^0.34.5",
     "string-similarity": "^4.0.4",
     "tailwindcss": "^4.2.1",
     "tsx": "^4.21.0",
@@ -128,10 +120,5 @@
     "vite": "^7.3.2",
     "vitest": "^4.1.0",
     "wrangler": "4.85.0"
-  },
-  "msw": {
-    "workerDirectory": [
-      "public"
-    ]
   }
 }

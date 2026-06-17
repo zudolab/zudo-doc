@@ -6,7 +6,6 @@
 // packages/zudo-doc/src/theme-toggle/index.tsx. Type references via
 // the global React namespace still resolve via @types/react.
 import { useState, useEffect } from "preact/hooks";
-import clsx from "clsx";
 // After zudolab/zudo-doc#1335 (E2 task 2 half B) the host components
 // pull lifecycle event names from the v2 transitions module rather
 // than hard-coding `astro:*` literals.
@@ -17,6 +16,9 @@ import type { LocaleLink } from "@/types/locale";
 // Types-only subpath (`./sidebar/types`) sidesteps the JSX type-graph
 // pulled in by `./sidebar`'s runtime barrel.
 import type { SidebarRootMenuItem } from "@takazudo/zudo-doc/sidebar/types";
+
+const cx = (...classes: Array<string | false | null | undefined>) =>
+  classes.filter(Boolean).join(" ");
 
 // Mobile drawer hosts the SidebarTree directly (rather than receiving it as
 // JSX children) so the tree's data props ride across the SSR → hydrate
@@ -90,7 +92,7 @@ export default function SidebarToggle({
         {/* X icon — visible only when open */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className={clsx("h-icon-lg w-icon-lg", !open && "hidden")}
+          className={cx("h-icon-lg w-icon-lg", !open && "hidden")}
           aria-hidden="true"
           fill="none"
           viewBox="0 0 24 24"
@@ -106,7 +108,7 @@ export default function SidebarToggle({
         {/* Hamburger icon — visible only when closed */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className={clsx("h-icon-lg w-icon-lg", open && "hidden")}
+          className={cx("h-icon-lg w-icon-lg", open && "hidden")}
           aria-hidden="true"
           fill="none"
           viewBox="0 0 24 24"
@@ -131,7 +133,7 @@ export default function SidebarToggle({
           backdrop (onClick below), so the header hamburger being dimmed under
           it is fine. */}
       <div
-        className={clsx("fixed inset-0 z-modal-backdrop bg-overlay/30 lg:hidden", !open && "hidden")}
+        className={cx("fixed inset-0 z-modal-backdrop bg-overlay/30 lg:hidden", !open && "hidden")}
         aria-hidden={!open}
         onClick={() => setOpen(false)}
       />
