@@ -2,11 +2,10 @@
  * Tiny `clsx`-style class name joiner. Accepts strings, falsy values,
  * and arrays/objects of the same — only truthy strings survive.
  *
- * The host project depends on `clsx`, but framework primitives keep
- * their dependency surface minimal so that a downstream consumer of
- * `@takazudo/zudo-doc/toc` does not need an extra runtime dep just
- * for class name composition. The behavior here is the subset the TOC
- * primitives use; see clsx for the full feature set.
+ * Framework primitives keep their dependency surface minimal so that a
+ * downstream consumer of `@takazudo/zudo-doc/toc` does not need an extra
+ * runtime dep just for class name composition. The behavior here is the
+ * subset the TOC primitives use; see `clsx` for the full feature set.
  */
 type ClassValue =
   | string
