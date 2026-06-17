@@ -23,6 +23,9 @@
 # and the consumer's fail-on-cache-miss restore then hard-failed the run — a
 # false-red that reddened main (re-runs also hit the run_id key-reservation
 # collision). Artifacts are the purpose-built mechanism for intra-run handoff.
+# Each handoff is tar'd into a single archive before upload: upload-artifact
+# rejects paths containing ':' (tag routes like docs/tags/type:guide/), and a
+# single-file transfer beats per-file upload of ~900 files.
 #
 # Concurrency: only one production deploy runs at a time.
 # We do NOT cancel in-progress runs -- the earlier deploy should finish.
@@ -115,13 +118,17 @@ jobs:
         # false-greened real broken links on main (#1985).
         run: pnpm run check:links -- --strict-broken --strict-absolute --allowlist=.check-links-allowlist
 
+      - name: Archive site build output
+        # tar preserves arbitrary route paths (upload-artifact rejects ':' in
+        # paths, e.g. dist/docs/tags/type:guide/) and includes dotfiles.
+        run: tar -cf "$RUNNER_TEMP/site-dist.tar" -C dist .
+
       - name: Upload site build output
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: site-dist
-          path: dist/
+          path: ${{ runner.temp }}/site-dist.tar
           retention-days: 1
-          include-hidden-files: true
 
   # ---------------------------------------------------------------------------
   # Job: HTML validate (block-in-inline guard for #1490 regression)
@@ -154,7 +161,9 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: site-dist
-          path: dist/
+          path: ${{ runner.temp }}
+      - name: Extract site build output
+        run: mkdir -p dist && tar -xf "$RUNNER_TEMP/site-dist.tar" -C dist
 
       - name: Run html-validate
         run: pnpm check:html
@@ -195,11 +204,14 @@ jobs:
             --locale ja:src/content/docs-ja \
             --out-dir ../../doc-history-out
 
+      - name: Archive doc history output
+        run: tar -cf "$RUNNER_TEMP/doc-history.tar" -C doc-history-out .
+
       - name: Upload doc history output
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: doc-history
-          path: doc-history-out/
+          path: ${{ runner.temp }}/doc-history.tar
           retention-days: 1
 
   # ---------------------------------------------------------------------------
@@ -219,7 +231,9 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: site-dist
-          path: dist/
+          path: ${{ runner.temp }}
+      - name: Extract site build output
+        run: mkdir -p dist && tar -xf "$RUNNER_TEMP/site-dist.tar" -C dist
 
       - name: Download doc history output (from build-history)
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
@@ -229,7 +243,10 @@ jobs:
         continue-on-error: true
         with:
           name: doc-history
-          path: doc-history-out/
+          path: ${{ runner.temp }}
+      - name: Extract doc history output
+        continue-on-error: true
+        run: mkdir -p doc-history-out && tar -xf "$RUNNER_TEMP/doc-history.tar" -C doc-history-out
 
       - name: Prepare deploy directory
         # Layout produced (Workers static assets, epic #1691):
