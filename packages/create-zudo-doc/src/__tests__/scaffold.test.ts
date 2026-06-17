@@ -254,14 +254,14 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
 });
 
 describe("scaffold — sidebarToggle feature", () => {
-  // W4A (#1732): @takazudo/zudo-doc is now a runtime dep of every scaffold
-  // (published via .github/workflows/publish-zudo-doc.yml), so the
-  // desktop-sidebar-toggle component imports BEFORE_NAVIGATE_EVENT /
-  // AFTER_NAVIGATE_EVENT from @takazudo/zudo-doc/transitions directly
-  // instead of inlining them as string literals. The two tests below were
-  // previously asserting the inverse (v2 absent), which encoded the
-  // "v2 is workspace-private/unpublished" constraint that W4A removes.
-  it("desktop-sidebar-toggle.tsx imports lifecycle events from @takazudo/zudo-doc/transitions", async () => {
+  // #2200: the desktop-sidebar-toggle no longer carries a host-side SPA-nav
+  // flash guard. zfb-runtime >= 0.1.0-next.52 preserves runtime <html>
+  // attributes across swaps via <ClientRouter preserveHtmlAttrs={[…]} /> (mounted
+  // in @takazudo/zudo-doc's doc-layout), so `data-sidebar-hidden` survives the
+  // swap before paint. The component just persists the toggle state — it does
+  // NOT import the navigation lifecycle events or set the
+  // `data-sidebar-no-transition` marker (the retired #2198 workaround).
+  it("desktop-sidebar-toggle.tsx persists sidebar state without a host-side SPA-nav flash guard (#2200)", async () => {
     const choices: UserChoices = {
       projectName: "test-sidebar-toggle-on",
       defaultLang: "en",
@@ -278,11 +278,17 @@ describe("scaffold — sidebarToggle feature", () => {
       ),
       "utf-8",
     );
-    expect(content).toMatch(
+    // Still persists the collapsed state to <html> + localStorage.
+    expect(content).toContain("data-sidebar-hidden");
+    expect(content).toContain("SIDEBAR_STORAGE_KEY");
+    // The retired #2198 workaround must be gone: no lifecycle-event import,
+    // no per-swap capture/restore guard, no transition-suppression marker.
+    expect(content).not.toMatch(
       /from\s+['"]@takazudo\/zudo-doc\/transitions['"]/,
     );
-    expect(content).toContain("BEFORE_NAVIGATE_EVENT");
-    expect(content).toContain("AFTER_NAVIGATE_EVENT");
+    expect(content).not.toContain("BEFORE_NAVIGATE_EVENT");
+    expect(content).not.toContain("AFTER_NAVIGATE_EVENT");
+    expect(content).not.toContain("data-sidebar-no-transition");
   });
 
   it("generated package.json pins @takazudo/zudo-doc (W4A — runtime dep)", async () => {
@@ -3295,10 +3301,13 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
    * bumped to 0.1.0-next.51: additive public-API surface (VNode/VNodeArray/
    * VNodeObject exported from "@takazudo/zfb", #972) plus removal of the no-op
    * linkValidation.allowExternal knob (#925) — both non-breaking for a fresh
-   * scaffold.
+   * scaffold. Now bumped to 0.1.0-next.52: adds the
+   * ClientRouter({ preserveHtmlAttrs }) option (zfb#1104) so runtime <html>
+   * attributes (data-sidebar-hidden / data-theme) survive SPA swaps
+   * (zudolab/zudo-doc#2200) — additive, non-breaking for a fresh scaffold.
    * Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.51", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.52", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -3309,10 +3318,10 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.51");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.51");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.52");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.52");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.51",
+      "0.1.0-next.52",
     );
   });
 });
