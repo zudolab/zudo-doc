@@ -101,11 +101,22 @@ src/config/design-token-panel-config.ts
 src/lib/design-token-panel-bootstrap.ts
 src/utils/design-token-types.ts
 
-# W4A (#1732) — desktop-sidebar-toggle.tsx no longer drifts. Now that
-# @takazudo/zudo-doc is published and pinned in the generated package.json,
-# the template imports BEFORE_NAVIGATE_EVENT / AFTER_NAVIGATE_EVENT from
-# @takazudo/zudo-doc/transitions directly (was: inlined literals). Allowlist
-# entry removed; the file is now byte-identical between template and host.
+# W4A (#1732) — desktop-sidebar-toggle.tsx was briefly de-allowlisted here.
+# At the time, @takazudo/zudo-doc had just been published and pinned in the
+# generated package.json, so the single template copy imported
+# BEFORE_NAVIGATE_EVENT / AFTER_NAVIGATE_EVENT from @takazudo/zudo-doc/transitions
+# directly (was: inlined literals) and matched the host byte-for-byte, so the
+# entry was removed.
+#
+# SUPERSEDED by W6A (#1734; reconciled in #2209): the base template now ships a
+# no-op stub (templates/base/src/components/desktop-sidebar-toggle.tsx returns
+# null) while the host ships the real island (imports ChevronRight / ChevronLeft
+# from @takazudo/zudo-doc/icons), and the real implementation moved into the
+# sidebarToggle feature overlay (templates/features/sidebarToggle/, which inlines
+# its own chevron SVG). The drift-checked pair — base stub vs host — legitimately
+# differs again, so the entry is RE-allowlisted in the W6A block below (search:
+# src/components/desktop-sidebar-toggle.tsx). The "byte-identical / entry removed"
+# claim above describes the short-lived W4A state only and no longer holds today.
 
 # W3A (#1729 / generator-pages-migration Wave 3) — header-right-items moved into
 # @takazudo/zudo-doc/header for production. The host (this repo) imports
@@ -144,8 +155,10 @@ src/config/settings-types.ts
 # but the bundle shipped zero client-router code, so every internal link was
 # a full page reload). It now ships the REAL bootstrap, byte-identical to the
 # host src/components/client-router-bootstrap.tsx, so the drift checker
-# enforces parity going forward — same rationale as the W4A
-# desktop-sidebar-toggle de-allowlisting above.
+# enforces parity going forward — same principle the W4A block describes
+# (de-allowlist once the template matches the host byte-for-byte). Unlike
+# desktop-sidebar-toggle (which W6A later re-allowlisted, see above),
+# client-router-bootstrap has stayed byte-identical and remains de-allowlisted.
 #
 # design-token-panel-bootstrap.tsx stub was REMOVED from this list (#2162):
 # the base stub (a no-op that never carried "use client") was deleted as part
