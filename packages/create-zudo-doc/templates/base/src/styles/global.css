@@ -920,6 +920,10 @@ dialog.zd-mermaid-dialog::backdrop {
 
 .zd-mermaid-viewport[data-pan-active] {
   cursor: grab;
+  /* In pan mode a drag should pan, not select diagram text. Scoped to
+   * [data-pan-active] so text stays selectable when pan mode is off. */
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .zd-mermaid-viewport[data-pan-active]:active {
@@ -960,15 +964,14 @@ dialog.zd-mermaid-dialog::backdrop {
   overflow: visible;
 }
 
-/* Toolbar — bottom-center pill of zoom/pan controls. */
+/* Toolbar — bottom-right pill of zoom/pan controls (2× sized buttons). */
 .zd-mermaid-toolbar {
   position: absolute;
   bottom: var(--spacing-image-overlay-inset);
-  left: 50%;
-  transform: translateX(-50%);
+  right: var(--spacing-image-overlay-inset);
   display: flex;
-  gap: var(--spacing-hsp-2xs);
-  padding: var(--spacing-hsp-2xs);
+  gap: var(--spacing-hsp-xs);
+  padding: var(--spacing-hsp-xs);
   border: 1px solid var(--color-muted);
   border-radius: var(--radius-DEFAULT);
   background: color-mix(in oklch, var(--color-surface) 92%, transparent);
@@ -979,8 +982,8 @@ dialog.zd-mermaid-dialog::backdrop {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--spacing-icon-lg);
-  height: var(--spacing-icon-lg);
+  width: calc(var(--spacing-icon-lg) * 2);
+  height: calc(var(--spacing-icon-lg) * 2);
   padding: var(--spacing-vsp-2xs);
   border: none;
   border-radius: var(--radius-DEFAULT);
@@ -1007,8 +1010,8 @@ dialog.zd-mermaid-dialog::backdrop {
 }
 
 .zd-mermaid-tool-btn > svg {
-  width: var(--spacing-icon-md);
-  height: var(--spacing-icon-md);
+  width: calc(var(--spacing-icon-md) * 2);
+  height: calc(var(--spacing-icon-md) * 2);
 }
 
 /* @slot:global-css:feature-styles */
