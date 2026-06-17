@@ -1,0 +1,16 @@
+---
+title: 0.2.11
+description: Release notes for 0.2.11.
+sidebar_position: 1022
+---
+
+Released: 2026-06-17
+
+### Bug Fixes
+
+- Suppress the desktop sidebar flash during SPA (client-side) navigation, so the sidebar no longer flickers between route changes (#2198, 3da4ec2f)
+- Enlarge the mermaid zoom toolbar 2×, move it to the bottom-right, and disable text selection while panning (#2202, 4dd984e6)
+
+### Other Changes
+
+- Add e2e regression coverage for the sidebar SPA-nav flash and settle the collapse animation before snapshotting the sidebar baseline (#2198, 9455cab7)
