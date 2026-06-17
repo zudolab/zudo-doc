@@ -99,30 +99,37 @@ export default function DesktopSidebarToggle() {
   // path in zfb-runtime's router) would leave the marker set with no restore to
   // clear it, permanently killing toggle animations. A superseding navigation
   // self-heals (its own capture → restore cycle clears it), but a lone aborted
-  // nav with no follow-up would not. So `capture` also schedules a double-rAF
-  // sweep that removes the marker if no `restore` has run by then — a no-op on
-  // the normal path (restore already removed it), a safety net on the aborted
-  // path. (We cannot listen for the abort directly — @takazudo/zudo-doc/
+  // nav with no follow-up would not. So `capture` arms a timeout that removes
+  // the marker if no `restore` has run by then — a no-op on the normal path
+  // (restore already removed it via the token guard), a safety net on the
+  // aborted path. (We cannot listen for the abort directly — @takazudo/zudo-doc/
   // transitions re-exports only the before/after constants, and raw "zfb:*"
   // strings are disallowed.)
+  //
+  // IMPORTANT (#2198 verification): the safety-net delay MUST outlast the swap.
+  // zfb's Strategy-B navigation wraps the DOM swap in document.startViewTransition,
+  // whose snapshot phase sits between BEFORE_NAVIGATE_EVENT and the actual body
+  // swap — the swap (where swapRootAttributes wipes data-sidebar-hidden) and the
+  // AFTER_NAVIGATE_EVENT restore do not fire until ~100ms+ after capture. A
+  // 2-frame (~32ms) sweep therefore removed the marker BEFORE the swap, so the
+  // wipe re-enabled live transitions and the sidebar still flashed. Use a
+  // generous timeout that any real swap+restore comfortably beats; the token
+  // guard no-ops it once restore (or a newer navigation) has run.
   useEffect(() => {
     let wasHidden = false;
     let swapToken = 0;
+    // Long enough to outlast the View-Transition swap pipeline on slow
+    // machines/CI; short enough that an aborted nav self-heals quickly.
+    const STUCK_MARKER_FALLBACK_MS = 1500;
     const capture = () => {
       wasHidden = document.documentElement.hasAttribute('data-sidebar-hidden');
       document.documentElement.setAttribute('data-sidebar-no-transition', '');
       const token = ++swapToken;
-      // Safety net: if this navigation never reaches `restore` (which bumps
-      // swapToken via clearMarker), drop the marker after two frames so it
-      // cannot stay stuck. The token guard makes this a no-op once a real
-      // restore — or a newer navigation — has occurred.
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (token === swapToken) {
-            document.documentElement.removeAttribute('data-sidebar-no-transition');
-          }
-        });
-      });
+      window.setTimeout(() => {
+        if (token === swapToken) {
+          document.documentElement.removeAttribute('data-sidebar-no-transition');
+        }
+      }, STUCK_MARKER_FALLBACK_MS);
     };
     const restore = () => {
       if (wasHidden) {
