@@ -15,6 +15,10 @@ export const settings = {
   defaultLocale: "en" as const,
   locales: {} satisfies Record<string, LocaleConfig>,
   mermaid: false,
+  // Enabled so the persisted DesktopSidebarToggle island + pre-paint script
+  // mount in this fixture — required to exercise the SPA-nav flash regression
+  // (#2198), which only reproduces with the toggle island present.
+  sidebarToggle: true as boolean,
   noindex: true as boolean,
   editUrl: false as string | false,
   siteUrl: "" as string,
