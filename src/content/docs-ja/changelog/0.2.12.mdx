@@ -1,0 +1,16 @@
+---
+title: 0.2.12
+description: 0.2.12のリリースノート。
+sidebar_position: 1023
+---
+
+リリース日: 2026-06-18
+
+### 機能
+
+- ランタイムで設定される `<html>` 属性 — サイドバーの折りたたみ状態 (`data-sidebar-hidden`) とテーマ (`data-theme`) — が、zfb の新しい `ClientRouter` の `preserveHtmlAttrs` オプションにより SPA（View Transition）ナビゲーションをまたいで保持されるようになりました。折りたたんだサイドバーがページ遷移時に一瞬開いてしまうフラッシュがなくなり、これまでホスト側に持っていたフラッシュ回避策は上流の仕組みに置き換えて廃止しました。(#2200)
+
+### その他の変更
+
+- `@takazudo/zfb` スタック（`@takazudo/zfb`、`@takazudo/zfb-runtime`、`@takazudo/zfb-adapter-cloudflare`）を `0.1.0-next.52` に更新しました（`preserveHtmlAttrs` API を含むバージョン）。(#2200)
+- 不要・重複していた依存関係を削除し、ロックファイルを更新しました。

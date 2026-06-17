@@ -1,0 +1,16 @@
+---
+title: 0.2.12
+description: Release notes for 0.2.12.
+sidebar_position: 1023
+---
+
+Released: 2026-06-18
+
+### Features
+
+- Runtime `<html>` attributes — the collapsed-sidebar state (`data-sidebar-hidden`) and the active theme (`data-theme`) — now persist across SPA (View Transition) navigations via zfb's new `ClientRouter` `preserveHtmlAttrs` option. A collapsed sidebar no longer briefly flashes open on navigation, and the previous host-side flash workaround is retired in favour of the upstream mechanism. (#2200)
+
+### Other Changes
+
+- Bumped the `@takazudo/zfb` stack (`@takazudo/zfb`, `@takazudo/zfb-runtime`, `@takazudo/zfb-adapter-cloudflare`) to `0.1.0-next.52`, which ships the `preserveHtmlAttrs` API. (#2200)
+- Removed stale/redundant dependencies and refreshed the lockfile.
