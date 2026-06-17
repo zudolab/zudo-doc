@@ -1755,6 +1755,13 @@ describe("scaffold — plugin copying and settings", () => {
     expect(pkg.dependencies["unist-util-visit"]).toBeUndefined();
   });
 
+  it("does NOT include clsx in dependencies (F1 — dead dep)", async () => {
+    const pkg = await fs.readJson(
+      projectPath("test-minimal", "package.json"),
+    );
+    expect(pkg.dependencies["clsx"]).toBeUndefined();
+  });
+
   it("includes html-validate in devDependencies", async () => {
     const pkg = await fs.readJson(
       projectPath("test-minimal", "package.json"),
