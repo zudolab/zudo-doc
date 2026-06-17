@@ -15,9 +15,14 @@
 # `pnpm install --frozen-lockfile` is all each job needs. Dep versions are
 # pinned in package.json (single source of truth).
 #
-# Inter-job data sharing uses actions/cache (not upload-artifact) to avoid
-# Actions storage accumulation. Cache keys are scoped to github.run_id so
-# each run gets a fresh, unique cache that won't be reused by other runs.
+# Inter-job data sharing uses actions/upload-artifact + actions/download-artifact
+# (retention-days: 1 keeps storage bounded; artifacts are scoped to a single run
+# by default). This replaced an earlier actions/cache approach keyed by
+# github.run_id: cache/save is best-effort and only WARNS on a failed key
+# reservation, so the producer job stayed green while the cache never persisted,
+# and the consumer's fail-on-cache-miss restore then hard-failed the run — a
+# false-red that reddened main (re-runs also hit the run_id key-reservation
+# collision). Artifacts are the purpose-built mechanism for intra-run handoff.
 #
 # ----------------------------------------------------------------------------
 # Deployed artifact contract — see main-deploy.yml top-of-file for the
@@ -94,11 +99,13 @@ jobs:
       - name: Build site
         run: pnpm build
 
-      - name: Cache site build output
-        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      - name: Upload site build output
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
+          name: site-dist
           path: dist/
-          key: dist-${{ github.run_id }}
+          retention-days: 1
+          include-hidden-files: true
 
   # ---------------------------------------------------------------------------
   # Job: HTML validate (block-in-inline guard for #1490 regression)
@@ -127,12 +134,11 @@ jobs:
       - name: Install deps (no scripts)
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Restore dist cache (built by build-site)
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      - name: Download site build output (from build-site)
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
+          name: site-dist
           path: dist/
-          key: dist-${{ github.run_id }}
-          fail-on-cache-miss: true
 
       - name: Run html-validate
         run: pnpm check:html
@@ -173,11 +179,12 @@ jobs:
             --locale ja:src/content/docs-ja \
             --out-dir ../../doc-history-out
 
-      - name: Cache doc history output
-        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      - name: Upload doc history output
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
+          name: doc-history
           path: doc-history-out/
-          key: doc-history-${{ github.run_id }}
+          retention-days: 1
 
   # ---------------------------------------------------------------------------
   # Job 3: Deploy to Cloudflare Workers Assets (preview alias)
@@ -195,18 +202,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
-      - name: Restore site build cache
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      - name: Download site build output (from build-site)
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
+          name: site-dist
           path: dist/
-          key: dist-${{ github.run_id }}
-          fail-on-cache-miss: true
 
-      - name: Restore doc history cache
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      - name: Download doc history output (from build-history)
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        # Tolerant: doc history is an enhancement, not required to deploy. Mirrors
+        # the original restore that omitted fail-on-cache-miss — the Prepare step
+        # guards on the dir existing before merging.
+        continue-on-error: true
         with:
+          name: doc-history
           path: doc-history-out/
-          key: doc-history-${{ github.run_id }}
 
       - name: Determine branch slug
         id: branch
