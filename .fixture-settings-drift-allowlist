@@ -110,8 +110,9 @@ smoke:sidebarResizer
 versioning:sidebarResizer
 
 # ── sidebarToggle ─────────────────────────────────────────────────────────────
-# reason: sidebar toggle (mobile) feature is not exercised in any fixture
-sidebar:sidebarToggle
+# reason: the desktop sidebar-toggle island (+ pre-paint script) is now exercised
+#         in the sidebar fixture (SPA-nav flash regression #2198); the remaining
+#         fixtures do not enable it
 i18n:sidebarToggle
 theme:sidebarToggle
 smoke:sidebarToggle
