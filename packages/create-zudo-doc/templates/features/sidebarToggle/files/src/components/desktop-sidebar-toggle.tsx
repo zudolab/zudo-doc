@@ -78,16 +78,69 @@ export default function DesktopSidebarToggle() {
   // restore it once the swap completes (AFTER_NAVIGATE_EVENT). This is
   // authoritative regardless of how the attribute was set (toggle click,
   // localStorage, or external mutation). (#1551, #1552 B10)
+  //
+  // Flash suppression (#2198): swapRootAttributes wipes data-sidebar-hidden
+  // during the body swap, so for one frame the attribute is ABSENT — the CSS
+  // (html[data-sidebar-hidden] #desktop-sidebar etc.) sees the sidebar as
+  // visible and the 200ms transitions begin animating it open. Our restore on
+  // AFTER_NAVIGATE_EVENT re-adds the attribute, but that just reverses the
+  // animation (visible → hidden slide), which is the visible flash + slide.
+  // Fix: on BEFORE_NAVIGATE_EVENT add a transient `data-sidebar-no-transition`
+  // marker that zeroes those transitions (see global.css), so the wipe and the
+  // restore both apply instantly with no painted/animated frame. Remove the
+  // marker on a double rAF AFTER the restore so the restored hidden state has
+  // already been committed with transitions off; a later user toggle (which
+  // happens without the marker) still animates normally.
+  //
+  // Self-healing against a stuck marker: the marker is normally removed by
+  // `restore` (double rAF) on a successful swap. But a navigation that fires
+  // BEFORE_NAVIGATE_EVENT and never reaches AFTER_NAVIGATE_EVENT (aborted or
+  // superseded swap, fetch failure, MPA fallback — the `zfb:navigation-aborted`
+  // path in zfb-runtime's router) would leave the marker set with no restore to
+  // clear it, permanently killing toggle animations. A superseding navigation
+  // self-heals (its own capture → restore cycle clears it), but a lone aborted
+  // nav with no follow-up would not. So `capture` also schedules a double-rAF
+  // sweep that removes the marker if no `restore` has run by then — a no-op on
+  // the normal path (restore already removed it), a safety net on the aborted
+  // path. (We cannot listen for the abort directly — @takazudo/zudo-doc/
+  // transitions re-exports only the before/after constants, and raw "zfb:*"
+  // strings are disallowed.)
   useEffect(() => {
     let wasHidden = false;
+    let swapToken = 0;
     const capture = () => {
       wasHidden = document.documentElement.hasAttribute('data-sidebar-hidden');
+      document.documentElement.setAttribute('data-sidebar-no-transition', '');
+      const token = ++swapToken;
+      // Safety net: if this navigation never reaches `restore` (which bumps
+      // swapToken via clearMarker), drop the marker after two frames so it
+      // cannot stay stuck. The token guard makes this a no-op once a real
+      // restore — or a newer navigation — has occurred.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (token === swapToken) {
+            document.documentElement.removeAttribute('data-sidebar-no-transition');
+          }
+        });
+      });
     };
     const restore = () => {
       if (wasHidden) {
         document.documentElement.setAttribute('data-sidebar-hidden', '');
       }
       // If not hidden, swapRootAttributes already cleared it — nothing to do.
+      // Drop the no-transition marker only after the restored state has been
+      // committed. A single rAF can still coincide with the same style recalc
+      // that applies the restore and animate it, so defer one extra frame.
+      // Bump the token so capture's safety-net sweep for this swap no-ops.
+      const token = ++swapToken;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (token === swapToken) {
+            document.documentElement.removeAttribute('data-sidebar-no-transition');
+          }
+        });
+      });
     };
     document.addEventListener(BEFORE_NAVIGATE_EVENT, capture);
     document.addEventListener(AFTER_NAVIGATE_EVENT, restore);
