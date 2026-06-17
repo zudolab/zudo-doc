@@ -8,7 +8,14 @@
 /** Minimal shape the active-path resolver needs from a header nav item. */
 export interface NavItemLike {
   path: string;
-  children?: { path: string }[];
+  /**
+   * The "big category" this nav entry claims (mirrors the host's
+   * `getNavSectionForSlug` / sidebar `categoryMatch`). When the host knows
+   * which category the current page belongs to, category matching is
+   * preferred over URL-path heuristics — see `isNavItemActiveByCategory`.
+   */
+  categoryMatch?: string;
+  children?: { path: string; categoryMatch?: string }[];
 }
 
 /**
@@ -80,5 +87,41 @@ export function isNavItemActive(
 ): boolean {
   if (activeNavPath === item.path) return true;
   if (item.children?.some((child) => activeNavPath === child.path)) return true;
+  return false;
+}
+
+/**
+ * Category-based active-state predicate. A nav entry is active when its
+ * own `categoryMatch` equals the page's resolved big category
+ * (`activeCategory`), or when any of its children claim that category.
+ *
+ * This is the authoritative "is the page under this big category?" check
+ * — it mirrors how the sidebar scopes its tree (`getNavSectionForSlug`),
+ * so the header highlight stays correct even when a category's page URLs
+ * do not share a prefix with the nav item's `path` (the case the older
+ * path-only heuristic missed). Callers prefer this over `isNavItemActive`
+ * and fall back to path matching when `activeCategory` is absent (e.g.
+ * home, 404, tag, and version pages, which carry no nav section).
+ *
+ * Works for both top-level items and child items: a child has no
+ * `children` of its own, so the call collapses to a single
+ * `categoryMatch` comparison.
+ */
+export function isNavItemActiveByCategory(
+  item: NavItemLike,
+  activeCategory: string | undefined,
+): boolean {
+  if (activeCategory == null) return false;
+  if (item.categoryMatch != null && item.categoryMatch === activeCategory) {
+    return true;
+  }
+  if (
+    item.children?.some(
+      (child) =>
+        child.categoryMatch != null && child.categoryMatch === activeCategory,
+    )
+  ) {
+    return true;
+  }
   return false;
 }

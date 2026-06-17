@@ -41,6 +41,7 @@ import type { ComponentChildren, JSX, VNode } from "preact";
 import {
   computeActiveNavPath,
   isNavItemActive,
+  isNavItemActiveByCategory,
   pathForMatch,
 } from "./nav-active.js";
 import { NAV_OVERFLOW_SCRIPT } from "./nav-overflow-script.js";
@@ -89,6 +90,16 @@ export interface HeaderProps {
   currentPath?: string;
   /** Optional active version slug. Forwarded into `navHref` for nav links. */
   currentVersion?: string;
+
+  /**
+   * The page's resolved "big category" (the host's nav section — see
+   * `getNavSectionForSlug`). When supplied, the header highlights the
+   * nav item whose `categoryMatch` (or a child's) equals this value,
+   * which is the authoritative "page is under this category" signal.
+   * Falls back to URL-path matching when omitted (home, 404, tag, and
+   * version pages carry no section).
+   */
+  activeCategory?: string;
 
   /**
    * Children projected into the mobile `<SidebarToggle>` island —
@@ -229,6 +240,7 @@ export function Header(props: HeaderProps): JSX.Element {
     lang,
     currentPath = "",
     currentVersion,
+    activeCategory,
     sidebarSlot,
     sidebarToggle,
     themeToggle,
@@ -308,6 +320,7 @@ export function Header(props: HeaderProps): JSX.Element {
         {headerNav.map((item) => renderNavItem(
           item,
           activeNavPath,
+          activeCategory,
           lang,
           currentVersion,
           urlHelpers,
@@ -372,12 +385,17 @@ function SidebarSlotFallback({
 function renderNavItem(
   item: HeaderNavItem,
   activeNavPath: string | undefined,
+  activeCategory: string | undefined,
   lang: Locale | undefined,
   currentVersion: string | undefined,
   urlHelpers: HeaderUrlHelpers,
   i18n: HeaderI18n,
 ): VNode {
-  const isActive = isNavItemActive(item, activeNavPath);
+  // Prefer category matching (the page's resolved big category) and fall
+  // back to URL-path matching when the host supplies no `activeCategory`.
+  const isActive =
+    isNavItemActiveByCategory(item, activeCategory) ||
+    isNavItemActive(item, activeNavPath);
   const href = urlHelpers.navHref(item.path, lang, currentVersion);
   const label = item.labelKey ? i18n.t(item.labelKey, lang) : item.label;
 
@@ -426,7 +444,9 @@ function renderNavItem(
               const childLabel = child.labelKey
                 ? i18n.t(child.labelKey, lang)
                 : child.label;
-              const childActive = activeNavPath === child.path;
+              const childActive =
+                isNavItemActiveByCategory(child, activeCategory) ||
+                activeNavPath === child.path;
               return (
                 <a
                   href={childHref}
