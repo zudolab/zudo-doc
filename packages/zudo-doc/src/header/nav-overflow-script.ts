@@ -35,8 +35,111 @@ import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
 export const NAV_OVERFLOW_SCRIPT = `(function () {
   var cleanupNavOverflow = null;
 
+  function trimSlashes(p) {
+    while (p.length > 1 && p.charAt(p.length - 1) === "/") p = p.slice(0, -1);
+    return p || "/";
+  }
+
+  function navPathname(a) {
+    try { return trimSlashes(new URL(a.href, location.href).pathname); }
+    catch (e) { return ""; }
+  }
+
+  function isUnderPath(cur, p) {
+    if (!p) return false;
+    if (cur === p) return true;
+    return p !== "/" && cur.indexOf(p + "/") === 0;
+  }
+
+  // Recompute which header nav item is "active" from the CURRENT URL and
+  // repaint the highlight. SSR sets the active item on first paint, but the
+  // header is persisted across same-locale client-router swaps
+  // (data-zfb-transition-persist), so without this the highlight would stay
+  // frozen on the page where the header was first rendered. Mirrors the
+  // sidebar island's client-side approach (match location.pathname against
+  // each entry's href) and the SSR longest-match + dropdown-parent rules.
+  // URL-based: hrefs and location.pathname both carry the base + locale
+  // prefix, so they compare directly without stripping.
+  function applyActiveNav() {
+    var nav = document.querySelector("[data-header-nav]");
+    if (!nav) return;
+    var topItems = Array.from(nav.querySelectorAll(":scope > [data-nav-item]"));
+    if (topItems.length === 0) return;
+
+    var cur = trimSlashes(location.pathname);
+
+    // Deepest (longest) nav path the current URL lives under, across both
+    // top-level and dropdown-child paths — matches computeActiveNavPath.
+    var activePath = "";
+    topItems.forEach(function (it) {
+      var isDropdown = it.hasAttribute("data-nav-item-dropdown");
+      var topA = isDropdown ? it.querySelector(":scope > a") : it;
+      if (topA) {
+        var tp = navPathname(topA);
+        if (isUnderPath(cur, tp) && tp.length > activePath.length) activePath = tp;
+      }
+      if (isDropdown) {
+        it.querySelectorAll(":scope > div a").forEach(function (c) {
+          var cp = navPathname(c);
+          if (isUnderPath(cur, cp) && cp.length > activePath.length) activePath = cp;
+        });
+      }
+    });
+
+    function setTopActive(a, active) {
+      if (!a) return;
+      if (active) {
+        a.classList.add("bg-fg", "text-bg");
+        a.classList.remove("text-muted", "hover:underline", "focus:underline");
+        a.setAttribute("aria-current", "page");
+      } else {
+        a.classList.remove("bg-fg", "text-bg");
+        a.classList.add("text-muted", "hover:underline", "focus:underline");
+        a.removeAttribute("aria-current");
+      }
+    }
+
+    topItems.forEach(function (it) {
+      var isDropdown = it.hasAttribute("data-nav-item-dropdown");
+      var topA = isDropdown ? it.querySelector(":scope > a") : it;
+      var topActive = false;
+
+      if (isDropdown) {
+        var parentMatch = !!topA && navPathname(topA) === activePath && activePath !== "";
+        var anyChild = false;
+        it.querySelectorAll(":scope > div a").forEach(function (c) {
+          var childActive = navPathname(c) === activePath && activePath !== "";
+          if (childActive) {
+            anyChild = true;
+            c.setAttribute("data-active", "");
+            c.classList.add("font-bold", "text-accent");
+            c.classList.remove("text-fg");
+          } else {
+            c.removeAttribute("data-active");
+            c.classList.remove("font-bold", "text-accent");
+            c.classList.add("text-fg");
+          }
+        });
+        topActive = parentMatch || anyChild;
+        var svg = topA ? topA.querySelector("svg") : null;
+        if (svg) {
+          if (topActive) { svg.classList.add("text-bg"); svg.classList.remove("text-muted"); }
+          else { svg.classList.add("text-muted"); svg.classList.remove("text-bg"); }
+        }
+      } else {
+        topActive = activePath !== "" && navPathname(topA) === activePath;
+      }
+
+      setTopActive(topA, topActive);
+    });
+  }
+
   function initNavOverflow() {
     if (cleanupNavOverflow) cleanupNavOverflow();
+
+    // Repaint the active highlight for the current URL before measuring /
+    // cloning, so the overflow "···" menu mirrors the correct active state.
+    applyActiveNav();
 
     var nav = document.querySelector("[data-header-nav]");
     var moreContainer = document.querySelector("[data-nav-more]");
