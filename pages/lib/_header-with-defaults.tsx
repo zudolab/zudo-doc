@@ -311,6 +311,7 @@ export function HeaderWithDefaults(
       lang={lang}
       currentPath={currentPath}
       currentVersion={currentVersion}
+      activeCategory={navSection}
       sidebarToggle={sidebarToggle}
       themeToggle={themeToggle}
       search={searchWidget}

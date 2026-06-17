@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   computeActiveNavPath,
   isNavItemActive,
+  isNavItemActiveByCategory,
   pathForMatch,
   type NavItemLike,
 } from "../nav-active.js";
@@ -119,5 +120,59 @@ describe("isNavItemActive", () => {
     const flat: NavItemLike = { path: "/blog/" };
     expect(isNavItemActive(flat, "/blog/")).toBe(true);
     expect(isNavItemActive(flat, "/docs/")).toBe(false);
+  });
+});
+
+describe("isNavItemActiveByCategory", () => {
+  const gettingStarted: NavItemLike = {
+    path: "/docs/getting-started",
+    categoryMatch: "getting-started",
+  };
+  const learn: NavItemLike = {
+    path: "/docs/guides",
+    categoryMatch: "guides",
+    children: [
+      { path: "/docs/guides", categoryMatch: "guides" },
+      { path: "/docs/components", categoryMatch: "components" },
+      { path: "/docs/markdown-features", categoryMatch: "markdown-features" },
+    ],
+  };
+
+  it("matches when the item's own categoryMatch equals the active category", () => {
+    // The reported bug: a sub-page under "Getting Started" (e.g.
+    // /docs/getting-started/installation) must light up the top-level item.
+    expect(isNavItemActiveByCategory(gettingStarted, "getting-started")).toBe(
+      true,
+    );
+  });
+
+  it("matches a parent when one of its children claims the active category", () => {
+    expect(isNavItemActiveByCategory(learn, "components")).toBe(true);
+    expect(isNavItemActiveByCategory(learn, "markdown-features")).toBe(true);
+    expect(isNavItemActiveByCategory(learn, "guides")).toBe(true);
+  });
+
+  it("returns false when no category matches", () => {
+    expect(isNavItemActiveByCategory(gettingStarted, "guides")).toBe(false);
+    expect(isNavItemActiveByCategory(learn, "reference")).toBe(false);
+  });
+
+  it("returns false when the active category is undefined", () => {
+    expect(isNavItemActiveByCategory(gettingStarted, undefined)).toBe(false);
+    expect(isNavItemActiveByCategory(learn, undefined)).toBe(false);
+  });
+
+  it("does not match an item that carries no categoryMatch", () => {
+    const bare: NavItemLike = { path: "/docs/reference" };
+    expect(isNavItemActiveByCategory(bare, "reference")).toBe(false);
+  });
+
+  it("collapses to a single comparison for a child entry (no children)", () => {
+    const child: NavItemLike = {
+      path: "/docs/components",
+      categoryMatch: "components",
+    };
+    expect(isNavItemActiveByCategory(child, "components")).toBe(true);
+    expect(isNavItemActiveByCategory(child, "guides")).toBe(false);
   });
 });
