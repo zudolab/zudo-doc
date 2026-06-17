@@ -22,6 +22,85 @@ function setDataAttribute(isVisible: boolean) {
   }
 }
 
+// SPA-navigation guard for the desktop sidebar's hidden-state (#2198).
+//
+// zfb's Strategy-B client router wipes EVERY <html> attribute during the body
+// swap (swapRootAttributes re-adds only NON_OVERRIDABLE_ZFB_ATTRS plus the
+// incoming SSR document's attributes), so the persisted `data-sidebar-hidden`
+// runtime value is lost on every navigation, and the pre-paint inline script
+// does not re-run on SPA hops. Left alone, the freshly-rendered sidebar paints
+// visible and then animates shut when the value is restored — the flash + slide.
+//
+// These listeners MUST live at module scope, NOT in the island's useEffect:
+// zfb-runtime (>= 0.1.0-next.51) calls unmountIslands() BEFORE the swap and
+// before firing AFTER_NAVIGATE_EVENT, so a useEffect-registered listener is torn
+// down (effect cleanup) before the swap and never sees the after-swap event —
+// the restore would never run (#2198 verification). Registering once on
+// `document` at bundle load — the same lifecycle-independent pattern as
+// client-router-bootstrap.tsx — keeps the guard alive across island
+// unmount/remount. SSR-safe: no-ops when `document` is undefined.
+//
+// Strategy: on BEFORE_NAVIGATE_EVENT, record whether the sidebar was hidden and
+// set a transient `data-sidebar-no-transition` marker (global.css zeroes the
+// sidebar/wrapper/band/toggle transitions). The swap then wipes BOTH the marker
+// and data-sidebar-hidden. On AFTER_NAVIGATE_EVENT (swap done → the live <html>
+// is no longer wiped) RE-SET the marker, then re-add data-sidebar-hidden in the
+// same synchronous batch, so the hidden geometry snaps in with transitions
+// suppressed (no slide, no open frame). Remove the marker on a double rAF
+// afterward so a later user toggle still animates.
+let spaNavGuardRegistered = false;
+function registerSidebarSpaNavGuard() {
+  if (typeof document === 'undefined' || spaNavGuardRegistered) return;
+  spaNavGuardRegistered = true;
+
+  let wasHidden = false;
+  let swapToken = 0;
+  // Long enough to outlast the View-Transition swap pipeline on slow
+  // machines/CI; short enough that an aborted nav self-heals quickly. Only a
+  // safety net for a nav that never reaches `restore` (aborted/superseded).
+  const STUCK_MARKER_FALLBACK_MS = 1500;
+
+  const capture = () => {
+    wasHidden = document.documentElement.hasAttribute('data-sidebar-hidden');
+    document.documentElement.setAttribute('data-sidebar-no-transition', '');
+    const token = ++swapToken;
+    window.setTimeout(() => {
+      if (token === swapToken) {
+        document.documentElement.removeAttribute('data-sidebar-no-transition');
+      }
+    }, STUCK_MARKER_FALLBACK_MS);
+  };
+
+  const restore = () => {
+    // Marker first, then the attribute, in one synchronous batch — so the
+    // hidden geometry is restored with transitions off (the swap already wiped
+    // the capture-time marker, so re-setting it here on the post-swap <html> is
+    // what actually suppresses the animation).
+    document.documentElement.setAttribute('data-sidebar-no-transition', '');
+    if (wasHidden) {
+      document.documentElement.setAttribute('data-sidebar-hidden', '');
+    }
+    // Drop the marker only after the restored state is committed. A single rAF
+    // can coincide with the restore's style recalc and animate it, so defer one
+    // extra frame. The token bump no-ops capture's safety-net for this swap.
+    const token = ++swapToken;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (token === swapToken) {
+          document.documentElement.removeAttribute('data-sidebar-no-transition');
+        }
+      });
+    });
+  };
+
+  document.addEventListener(BEFORE_NAVIGATE_EVENT, capture);
+  document.addEventListener(AFTER_NAVIGATE_EVENT, restore);
+}
+
+// Register at module load (browser-only via the guard) so the listeners exist
+// before the first navigation and survive island unmount/remount.
+registerSidebarSpaNavGuard();
+
 export default function DesktopSidebarToggle() {
   // Initial state must match server render (always `true`) to avoid a
   // hydration mismatch when the persisted preference is "hidden". The
@@ -66,107 +145,10 @@ export default function DesktopSidebarToggle() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Re-apply data-sidebar-hidden to <html> after every SPA nav.
-  // zfb's swapRootAttributes wipes all non-preserved <html> attributes on
-  // each navigation (data-sidebar-hidden is not in NON_OVERRIDABLE_ZFB_ATTRS),
-  // and the pre-paint inline script does not re-run on SPA nav. Since this
-  // island is persisted (data-zfb-transition-persist), this listener stays
-  // registered across SPA swaps.
-  //
-  // Strategy: capture the attribute presence just before the swap
-  // (BEFORE_NAVIGATE_EVENT fires before swapRootAttributes runs), then
-  // restore it once the swap completes (AFTER_NAVIGATE_EVENT). This is
-  // authoritative regardless of how the attribute was set (toggle click,
-  // localStorage, or external mutation). (#1551, #1552 B10)
-  //
-  // Flash suppression (#2198): swapRootAttributes wipes data-sidebar-hidden
-  // during the body swap, so for one frame the attribute is ABSENT — the CSS
-  // (html[data-sidebar-hidden] #desktop-sidebar etc.) sees the sidebar as
-  // visible and the 200ms transitions begin animating it open. Our restore on
-  // AFTER_NAVIGATE_EVENT re-adds the attribute, but that just reverses the
-  // animation (visible → hidden slide), which is the visible flash + slide.
-  // Fix: on BEFORE_NAVIGATE_EVENT add a transient `data-sidebar-no-transition`
-  // marker that zeroes those transitions (see global.css), so the wipe and the
-  // restore both apply instantly with no painted/animated frame. Remove the
-  // marker on a double rAF AFTER the restore so the restored hidden state has
-  // already been committed with transitions off; a later user toggle (which
-  // happens without the marker) still animates normally.
-  //
-  // Self-healing against a stuck marker: the marker is normally removed by
-  // `restore` (double rAF) on a successful swap. But a navigation that fires
-  // BEFORE_NAVIGATE_EVENT and never reaches AFTER_NAVIGATE_EVENT (aborted or
-  // superseded swap, fetch failure, MPA fallback — the `zfb:navigation-aborted`
-  // path in zfb-runtime's router) would leave the marker set with no restore to
-  // clear it, permanently killing toggle animations. A superseding navigation
-  // self-heals (its own capture → restore cycle clears it), but a lone aborted
-  // nav with no follow-up would not. So `capture` arms a timeout that removes
-  // the marker if no `restore` has run by then — a no-op on the normal path
-  // (restore already removed it via the token guard), a safety net on the
-  // aborted path. (We cannot listen for the abort directly — @takazudo/zudo-doc/
-  // transitions re-exports only the before/after constants, and raw "zfb:*"
-  // strings are disallowed.)
-  //
-  // IMPORTANT (#2198 verification): the safety-net delay MUST outlast the swap.
-  // zfb's Strategy-B navigation wraps the DOM swap in document.startViewTransition,
-  // whose snapshot phase sits between BEFORE_NAVIGATE_EVENT and the actual body
-  // swap — the swap (where swapRootAttributes wipes data-sidebar-hidden) and the
-  // AFTER_NAVIGATE_EVENT restore do not fire until ~100ms+ after capture. A
-  // 2-frame (~32ms) sweep therefore removed the marker BEFORE the swap, so the
-  // wipe re-enabled live transitions and the sidebar still flashed. Use a
-  // generous timeout that any real swap+restore comfortably beats; the token
-  // guard no-ops it once restore (or a newer navigation) has run.
-  useEffect(() => {
-    let wasHidden = false;
-    let swapToken = 0;
-    // Long enough to outlast the View-Transition swap pipeline on slow
-    // machines/CI; short enough that an aborted nav self-heals quickly.
-    const STUCK_MARKER_FALLBACK_MS = 1500;
-    const capture = () => {
-      wasHidden = document.documentElement.hasAttribute('data-sidebar-hidden');
-      document.documentElement.setAttribute('data-sidebar-no-transition', '');
-      const token = ++swapToken;
-      window.setTimeout(() => {
-        if (token === swapToken) {
-          document.documentElement.removeAttribute('data-sidebar-no-transition');
-        }
-      }, STUCK_MARKER_FALLBACK_MS);
-    };
-    const restore = () => {
-      // zfb's swapRootAttributes wipes EVERY <html> attribute during the swap
-      // and re-adds only NON_OVERRIDABLE_ZFB_ATTRS (data-zfb-transition*) plus
-      // the incoming SSR document's attributes — so the marker we set in
-      // `capture` is already GONE by now, and the freshly-rendered sidebar is in
-      // its visible (no data-sidebar-hidden) state with live transitions. We
-      // must RE-SET the marker here, on the live <html> (the swap is done, so it
-      // is no longer wiped), BEFORE re-adding data-sidebar-hidden — so the
-      // hidden geometry is applied with transitions suppressed (no slide) and
-      // snaps in before the next paint (no open frame). Setting it only in
-      // `capture` was the #2198 bug: that marker never survived the swap. Order
-      // matters: marker first, then the attribute, in one synchronous batch.
-      document.documentElement.setAttribute('data-sidebar-no-transition', '');
-      if (wasHidden) {
-        document.documentElement.setAttribute('data-sidebar-hidden', '');
-      }
-      // Drop the no-transition marker only after the restored state has been
-      // committed. A single rAF can still coincide with the same style recalc
-      // that applies the restore and animate it, so defer one extra frame.
-      // Bump the token so capture's safety-net sweep for this swap no-ops.
-      const token = ++swapToken;
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (token === swapToken) {
-            document.documentElement.removeAttribute('data-sidebar-no-transition');
-          }
-        });
-      });
-    };
-    document.addEventListener(BEFORE_NAVIGATE_EVENT, capture);
-    document.addEventListener(AFTER_NAVIGATE_EVENT, restore);
-    return () => {
-      document.removeEventListener(BEFORE_NAVIGATE_EVENT, capture);
-      document.removeEventListener(AFTER_NAVIGATE_EVENT, restore);
-    };
-  }, []);
+  // The SPA-navigation flash guard (data-sidebar-hidden preservation +
+  // transition suppression) is NOT registered here. It must outlive this
+  // island's mount/unmount, so it lives at module scope — see
+  // registerSidebarSpaNavGuard() above. (#2198)
 
   return (
     <button
