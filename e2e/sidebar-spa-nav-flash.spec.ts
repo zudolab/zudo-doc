@@ -3,37 +3,37 @@ import { spaClick } from "./nav-helpers";
 import { desktopSidebar, waitForSidebarHydration } from "./sidebar-helpers";
 
 /**
- * E2E regression for the desktop sidebar SPA-navigation flash (#2198).
+ * E2E regression for the desktop sidebar SPA-navigation flash (#2198 / #2200).
  *
  * Bug: a CLOSED desktop sidebar briefly flashed open and animated shut on every
- * same-section SPA navigation. zfb's `swapRootAttributes` wipes the
- * `data-sidebar-hidden` attribute off <html> during the body swap, so for one
- * frame the CSS saw the sidebar as visible and the 200ms transitions began
- * animating it open; the toggle island's `zfb:after-swap` restore then reversed
- * the animation (visible -> hidden slide). The net effect was a visible flash +
- * slide on a sidebar the user had deliberately collapsed.
+ * same-section SPA navigation. zfb's `swapRootAttributes` copied the incoming
+ * server-rendered document's `<html>` attributes over the live root during the
+ * body swap, dropping the runtime `data-sidebar-hidden` value — so for one frame
+ * the CSS saw the sidebar as visible and the 200ms transitions began animating
+ * it open.
  *
- * Fix: on `zfb:before-preparation` the persisted `DesktopSidebarToggle` island
- * adds a transient `data-sidebar-no-transition` marker on <html> that zeroes the
- * sidebar geometry transitions (global.css), and removes it on a double rAF
- * AFTER the `zfb:after-swap` restore — so the wipe and the restore both apply
- * instantly (no painted/animated frame) while a later user toggle still
- * animates normally.
+ * Fix (#2200): doc-layout now mounts
+ * `<ClientRouter preserveHtmlAttrs={["data-sidebar-hidden", "data-theme"]} />`
+ * (zfb-runtime >= 0.1.0-next.52, zfb#1104). The router re-applies those runtime
+ * attributes within the same synchronous swap, before paint, so the attribute is
+ * NEVER absent on a painted frame and the freshly-swapped `<aside>` renders
+ * directly in its hidden state (a newly-inserted element has no prior computed
+ * value to transition from). The host-side capture/restore +
+ * `data-sidebar-no-transition` guard was retired.
  *
  * This fixture enables `sidebarToggle`, so the real persisted toggle island and
  * pre-paint script are present — unlike sidebar-toggle-layout.spec.ts, which
  * sets `data-sidebar-hidden` via page.evaluate against a fixture WITHOUT the
  * island and therefore cannot exercise the swap-time race at all.
  *
- * Assertion technique (per #2198 brief): we do NOT assert only the final
- * resting state — a 200ms transform settles back to hidden long before most
- * polls, so a final-state check would pass even with a visible flash. Instead
- * we instrument the swap window itself:
- *   1. Confirm the marker is active for the full duration of the swap (set on
- *      before-preparation, still present at after-swap).
- *   2. rAF-sample `getComputedStyle(#desktop-sidebar).transitionProperty`
- *      throughout the swap and assert it is `none` on every frame — i.e. the
- *      sidebar geometry can never animate while the swap is in flight.
+ * Assertion technique: we do NOT assert only the final resting state — a 200ms
+ * transform settles back to hidden long before most polls, so a final-state
+ * check would pass even with a visible flash. Instead we instrument the swap
+ * window itself and prove the invariant directly:
+ *   1. `data-sidebar-hidden` is present at before-preparation AND after-swap, and
+ *      on EVERY rAF-sampled frame of the swap (the attribute is never wiped).
+ *   2. On every frame where `#desktop-sidebar` exists, its computed transform is
+ *      the settled hidden transform — i.e. the sidebar can never paint open.
  */
 
 const START_PAGE = "/docs/guides/sub-a/page-1";
@@ -41,8 +41,8 @@ const START_PAGE = "/docs/guides/sub-a/page-1";
 // a genuine same-section SPA hop (the case the bug fired on).
 const NEXT_PAGE = "/docs/guides/sub-a/page-2";
 
-test.describe("Desktop sidebar SPA-nav flash (#2198)", () => {
-  test("closed sidebar never animates across an SPA navigation", async ({
+test.describe("Desktop sidebar SPA-nav flash (#2198 / #2200)", () => {
+  test("closed sidebar's data-sidebar-hidden survives an SPA navigation (never flashes open)", async ({
     page,
   }) => {
     // >=1024px so the `lg:` desktop-sidebar rules (and the toggle) are active.
@@ -52,6 +52,18 @@ test.describe("Desktop sidebar SPA-nav flash (#2198)", () => {
 
     const sidebar = desktopSidebar(page);
     await expect(sidebar).toHaveCount(1);
+
+    // The fix is wired via the SSR meta the ClientRouter emits — assert it lists
+    // data-sidebar-hidden, so a regression that drops the option fails loudly
+    // here rather than only as a flaky timing failure below.
+    const preserved = await page.evaluate(() => {
+      const meta = document.querySelector(
+        'meta[name="zfb-preserve-html-attrs"]',
+      );
+      return meta?.getAttribute("content") ?? null;
+    });
+    expect(preserved).not.toBeNull();
+    expect(preserved!.toLowerCase()).toContain("data-sidebar-hidden");
 
     // Collapse the sidebar via the real toggle button and wait for the island
     // to commit `data-sidebar-hidden` on <html>.
@@ -66,8 +78,7 @@ test.describe("Desktop sidebar SPA-nav flash (#2198)", () => {
     // baseline. Clicking the toggle starts a 200ms transform transition, but
     // `data-sidebar-hidden` is committed on <html> immediately on click — so
     // waiting for the attribute alone races the animation and would snapshot a
-    // mid-slide transform (e.g. -4px instead of the settled -320px), making the
-    // final-state assertion below spuriously fail (#2198 verification). Poll the
+    // mid-slide transform (e.g. -4px instead of the settled -320px). Poll the
     // computed transform until two consecutive reads are equal (stable).
     await page.waitForFunction(
       () => {
@@ -88,27 +99,26 @@ test.describe("Desktop sidebar SPA-nav flash (#2198)", () => {
       (el) => getComputedStyle(el).transform,
     );
 
-    // Instrument the swap: install probes that (a) record marker presence at the
-    // two swap boundaries and (b) rAF-sample the sidebar's transition-property
-    // across the entire swap window. The before-preparation listener starts the
-    // sampler; the after-swap listener records the boundary state. Sampling
-    // continues for a few extra frames after after-swap to cover the double-rAF
-    // marker removal so we also prove the marker is gone afterwards.
+    // Instrument the swap: rAF-sample, across the entire swap window, whether
+    // `data-sidebar-hidden` is present on <html> and the sidebar's transform.
+    // The before-preparation listener starts the sampler; the after-swap
+    // listener records the boundary state. Sampling continues a few frames past
+    // after-swap to cover the post-swap resting state.
     await page.evaluate(() => {
       const w = window as unknown as {
         __flashProbe__: {
-          markerAtBeforePrep: boolean | null;
-          markerAtAfterSwap: boolean | null;
+          hiddenAtBeforePrep: boolean | null;
+          hiddenAtAfterSwap: boolean | null;
           // One tuple per sampled frame, kept in lockstep so a frame where
           // #desktop-sidebar is momentarily absent (the aside is NOT persisted
-          // across swaps — #1510) cannot desync marker vs transition.
-          samples: Array<{ marker: boolean; transition: string | null }>;
+          // across swaps — #1510) cannot desync the hidden flag vs transform.
+          samples: Array<{ hidden: boolean; transform: string | null }>;
           done: boolean;
         };
       };
       w.__flashProbe__ = {
-        markerAtBeforePrep: null,
-        markerAtAfterSwap: null,
+        hiddenAtBeforePrep: null,
+        hiddenAtAfterSwap: null,
         samples: [],
         done: false,
       };
@@ -121,12 +131,10 @@ test.describe("Desktop sidebar SPA-nav flash (#2198)", () => {
         if (!sampling) return;
         const el = document.querySelector("#desktop-sidebar");
         probe.samples.push({
-          marker: html.hasAttribute("data-sidebar-no-transition"),
-          transition: el ? getComputedStyle(el).transitionProperty : null,
+          hidden: html.hasAttribute("data-sidebar-hidden"),
+          transform: el ? getComputedStyle(el).transform : null,
         });
-        // Stop a few frames after after-swap so we also capture the marker
-        // removal (double rAF) and the post-swap resting state.
-        if (probe.markerAtAfterSwap !== null) {
+        if (probe.hiddenAtAfterSwap !== null) {
           framesAfterSwap += 1;
           if (framesAfterSwap > 5) {
             sampling = false;
@@ -140,9 +148,7 @@ test.describe("Desktop sidebar SPA-nav flash (#2198)", () => {
       document.addEventListener(
         "zfb:before-preparation",
         () => {
-          probe.markerAtBeforePrep = html.hasAttribute(
-            "data-sidebar-no-transition",
-          );
+          probe.hiddenAtBeforePrep = html.hasAttribute("data-sidebar-hidden");
           sampling = true;
           requestAnimationFrame(sample);
         },
@@ -151,9 +157,7 @@ test.describe("Desktop sidebar SPA-nav flash (#2198)", () => {
       document.addEventListener(
         "zfb:after-swap",
         () => {
-          probe.markerAtAfterSwap = html.hasAttribute(
-            "data-sidebar-no-transition",
-          );
+          probe.hiddenAtAfterSwap = html.hasAttribute("data-sidebar-hidden");
         },
         { once: true },
       );
@@ -163,55 +167,54 @@ test.describe("Desktop sidebar SPA-nav flash (#2198)", () => {
     const navigated = await spaClick(page, NEXT_PAGE);
     expect(navigated).toBe(true);
 
-    // Let the sampler finish (covers the post-swap double-rAF marker removal).
-    await page.waitForFunction(() => {
-      const w = window as unknown as { __flashProbe__: { done: boolean } };
-      return w.__flashProbe__.done === true;
-    }, undefined, { timeout: 5000 });
+    // Let the sampler finish (covers the post-swap resting state).
+    await page.waitForFunction(
+      () => {
+        const w = window as unknown as { __flashProbe__: { done: boolean } };
+        return w.__flashProbe__.done === true;
+      },
+      undefined,
+      { timeout: 5000 },
+    );
 
     const probe = await page.evaluate(() => {
       const w = window as unknown as {
         __flashProbe__: {
-          markerAtBeforePrep: boolean | null;
-          markerAtAfterSwap: boolean | null;
-          samples: Array<{ marker: boolean; transition: string | null }>;
+          hiddenAtBeforePrep: boolean | null;
+          hiddenAtAfterSwap: boolean | null;
+          samples: Array<{ hidden: boolean; transform: string | null }>;
         };
       };
       return w.__flashProbe__;
     });
 
-    // The marker must be set the moment the swap begins and still present when
-    // the body has been swapped + the attribute restored — i.e. it brackets the
-    // entire wipe/restore race.
-    expect(probe.markerAtBeforePrep).toBe(true);
-    expect(probe.markerAtAfterSwap).toBe(true);
+    // The attribute is present when the swap begins and STILL present once the
+    // body has been swapped — i.e. zfb-runtime preserved it across the wipe.
+    expect(probe.hiddenAtBeforePrep).toBe(true);
+    expect(probe.hiddenAtAfterSwap).toBe(true);
 
     // The sampler must have actually run during the swap.
     expect(probe.samples.length).toBeGreaterThan(0);
 
-    // While the marker is active, the sidebar geometry transition must be
-    // suppressed — so no frame can paint a partially-open sidebar. For every
-    // frame where the marker was present AND the sidebar element existed, its
-    // computed transition-property must be `none`. (Frames where the aside is
-    // momentarily absent contribute `transition: null` and are skipped — they
-    // cannot paint a sidebar anyway.)
-    const suppressedWhileMarked = probe.samples.every(
-      (s) => !s.marker || s.transition === null || s.transition === "none",
-    );
-    expect(suppressedWhileMarked).toBe(true);
+    // `data-sidebar-hidden` must be present on EVERY painted frame of the swap —
+    // there is no frame where the CSS could see the sidebar as visible.
+    const hiddenEveryFrame = probe.samples.every((s) => s.hidden);
+    expect(hiddenEveryFrame).toBe(true);
 
-    // The probe must have actually observed the marker active on at least one
-    // frame with the sidebar present (otherwise the suppression check above is
-    // vacuously true).
-    const observedSuppression = probe.samples.some(
-      (s) => s.marker && s.transition === "none",
+    // For every frame where the sidebar element existed, it was at the settled
+    // hidden transform — never partially or fully open. (Frames where the aside
+    // is momentarily absent contribute `transform: null` and are skipped.)
+    const neverPaintedOpen = probe.samples.every(
+      (s) => s.transform === null || s.transform === hiddenTransform,
     );
-    expect(observedSuppression).toBe(true);
+    expect(neverPaintedOpen).toBe(true);
 
-    // The marker is eventually removed (double rAF after after-swap), so a later
-    // user toggle still animates. The tail of the samples must show it gone.
-    const lastSample = probe.samples[probe.samples.length - 1];
-    expect(lastSample?.marker).toBe(false);
+    // Non-vacuous: at least one frame observed the sidebar present at the hidden
+    // transform during the swap window.
+    const observedHiddenSidebar = probe.samples.some(
+      (s) => s.transform === hiddenTransform,
+    );
+    expect(observedHiddenSidebar).toBe(true);
 
     // After everything settles the sidebar is still hidden and at the exact
     // same hidden transform it had before the nav — never opened.

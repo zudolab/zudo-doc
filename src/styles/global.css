@@ -782,19 +782,11 @@ pre[class^="syntect-"] .line .highlighted-word {
   }
 }
 
-/* Suppress sidebar geometry transitions during an SPA swap (#2198).
- * swapRootAttributes wipes data-sidebar-hidden mid-swap, so without this the
- * sidebar would animate open (attribute absent) and then animate shut again
- * when the toggle island restores the attribute on zfb:after-swap — a visible
- * flash + slide. The island sets data-sidebar-no-transition for the swap
- * window and removes it (double rAF) after restoring the hidden state, so the
- * wipe/restore apply instantly and a later user toggle still animates. */
-html[data-sidebar-no-transition] #desktop-sidebar,
-html[data-sidebar-no-transition] .zd-sidebar-content-wrapper,
-html[data-sidebar-no-transition] .zd-doc-content-band,
-html[data-sidebar-no-transition] .zd-desktop-sidebar-toggle {
-  transition: none !important;
-}
+/* The SPA-swap flash guard (`data-sidebar-no-transition`) was removed once
+ * doc-layout adopted <ClientRouter preserveHtmlAttrs={["data-sidebar-hidden",
+ * ...]} /> (zfb-runtime >= 0.1.0-next.52): the attribute now survives the swap
+ * before paint, so the sidebar never wipes-and-restores and no geometry
+ * transition fires mid-swap. Retires the #2198 workaround (zudolab/zudo-doc#2200). */
 
 /* ========================================
  * Image enlarge (.zd-enlargeable)

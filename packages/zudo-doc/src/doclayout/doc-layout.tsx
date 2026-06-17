@@ -260,11 +260,26 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
           Strategy B SPA router. Emits the opt-in meta tags and the global
           .zfb-route-announcer stylesheet. Intercepts same-origin link
           clicks and swaps the DOM via document.startViewTransition.
+
+          preserveHtmlAttrs (zfb-runtime >= 0.1.0-next.52, zfb#1104): names the
+          *runtime* `<html>` attributes that islands set from localStorage and
+          that the SSR document does not carry. Without this, swapRootAttributes
+          copies the incoming server-rendered root's attributes over the live
+          root on every SPA swap and drops these — the sidebar flashes open
+          (`data-sidebar-hidden` lost) and the theme can revert
+          (`data-theme`). Listing them here makes the router re-apply their
+          current value within the same synchronous swap (before paint), which
+          retires the host-side flash workaround that zudolab/zudo-doc#2198
+          shipped and resolves zudolab/zudo-doc#2200. Must be the same list on
+          every page (read from the outgoing page's meta at swap time).
+
           Cast through `unknown` because ClientRouter() returns a readonly
           array of structural VNode objects — Preact's JSX typing does not
           directly accept that array shape, but at runtime the elements are
           valid VNode descriptors. */}
-        {ClientRouter() as unknown as JSX.Element}
+        {ClientRouter({
+          preserveHtmlAttrs: ["data-sidebar-hidden", "data-theme"],
+        }) as unknown as JSX.Element}
         {head}
       </head>
       <body class="min-h-screen antialiased">
