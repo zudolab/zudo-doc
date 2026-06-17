@@ -418,11 +418,17 @@ jobs:
         # broken links on main (zudolab/zudo-doc#1985).
         run: pnpm run check:links -- --strict-broken --strict-absolute --allowlist=.check-links-allowlist
 
-      - name: Cache site build output
-        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      - name: Archive site build output
+        # tar preserves arbitrary route paths (upload-artifact rejects ':' in
+        # paths, e.g. dist/docs/tags/type:guide/) and includes dotfiles.
+        run: tar -cf "$RUNNER_TEMP/site-dist.tar" -C dist .
+
+      - name: Upload site build output
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
-          path: dist/
-          key: dist-${{ github.run_id }}
+          name: site-dist
+          path: ${{ runner.temp }}/site-dist.tar
+          retention-days: 1
 
   # ---------------------------------------------------------------------------
   # Job: HTML validate (block-in-inline guard for #1490 regression)
@@ -451,12 +457,13 @@ jobs:
       - name: Install deps (no scripts)
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Restore dist cache (built by build-site)
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      - name: Download site build output (from build-site)
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          path: dist/
-          key: dist-${{ github.run_id }}
-          fail-on-cache-miss: true
+          name: site-dist
+          path: ${{ runner.temp }}
+      - name: Extract site build output
+        run: mkdir -p dist && tar -xf "$RUNNER_TEMP/site-dist.tar" -C dist
 
       - name: Run html-validate
         run: pnpm check:html
@@ -498,11 +505,15 @@ jobs:
             --locale ja:src/content/docs-ja \
             --out-dir ../../doc-history-out
 
-      - name: Cache doc history output
-        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      - name: Archive doc history output
+        run: tar -cf "$RUNNER_TEMP/doc-history.tar" -C doc-history-out .
+
+      - name: Upload doc history output
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
-          path: doc-history-out/
-          key: doc-history-${{ github.run_id }}
+          name: doc-history
+          path: ${{ runner.temp }}/doc-history.tar
+          retention-days: 1
 
   # ---------------------------------------------------------------------------
   # Job 4: E2E & smoke tests
@@ -571,18 +582,26 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
-      - name: Restore site build cache
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      - name: Download site build output (from build-site)
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          path: dist/
-          key: dist-${{ github.run_id }}
-          fail-on-cache-miss: true
+          name: site-dist
+          path: ${{ runner.temp }}
+      - name: Extract site build output
+        run: mkdir -p dist && tar -xf "$RUNNER_TEMP/site-dist.tar" -C dist
 
-      - name: Restore doc history cache
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      - name: Download doc history output (from build-history)
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        # Tolerant: doc history is an enhancement, not required to deploy. Mirrors
+        # the original restore that omitted fail-on-cache-miss — the Prepare step
+        # guards on the dir existing before merging.
+        continue-on-error: true
         with:
-          path: doc-history-out/
-          key: doc-history-${{ github.run_id }}
+          name: doc-history
+          path: ${{ runner.temp }}
+      - name: Extract doc history output
+        continue-on-error: true
+        run: mkdir -p doc-history-out && tar -xf "$RUNNER_TEMP/doc-history.tar" -C doc-history-out
 
       - name: Prepare dist for deployment
         # Workers static assets: deploy directly from dist/ (no deploy/pj/zudo-doc/
