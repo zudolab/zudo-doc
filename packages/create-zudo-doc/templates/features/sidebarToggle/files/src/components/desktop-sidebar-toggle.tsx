@@ -132,10 +132,21 @@ export default function DesktopSidebarToggle() {
       }, STUCK_MARKER_FALLBACK_MS);
     };
     const restore = () => {
+      // zfb's swapRootAttributes wipes EVERY <html> attribute during the swap
+      // and re-adds only NON_OVERRIDABLE_ZFB_ATTRS (data-zfb-transition*) plus
+      // the incoming SSR document's attributes — so the marker we set in
+      // `capture` is already GONE by now, and the freshly-rendered sidebar is in
+      // its visible (no data-sidebar-hidden) state with live transitions. We
+      // must RE-SET the marker here, on the live <html> (the swap is done, so it
+      // is no longer wiped), BEFORE re-adding data-sidebar-hidden — so the
+      // hidden geometry is applied with transitions suppressed (no slide) and
+      // snaps in before the next paint (no open frame). Setting it only in
+      // `capture` was the #2198 bug: that marker never survived the swap. Order
+      // matters: marker first, then the attribute, in one synchronous batch.
+      document.documentElement.setAttribute('data-sidebar-no-transition', '');
       if (wasHidden) {
         document.documentElement.setAttribute('data-sidebar-hidden', '');
       }
-      // If not hidden, swapRootAttributes already cleared it — nothing to do.
       // Drop the no-transition marker only after the restored state has been
       // committed. A single rAF can still coincide with the same style recalc
       // that applies the restore and animate it, so defer one extra frame.
