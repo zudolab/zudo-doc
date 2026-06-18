@@ -257,6 +257,13 @@ export const FEATURES: Feature[] = [
     default: false,
     cliFlag: "footer-taglist",
   },
+  {
+    value: "noindex",
+    label: "Avoid robots indexing",
+    hint: "Keep search engines out (noindex meta + robots.txt)",
+    default: false,
+    cliFlag: "noindex",
+  },
 ];
 
 // Display labels for header-right items. Keys are canonical component/trigger
