@@ -273,12 +273,26 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
           shipped and resolves zudolab/zudo-doc#2200. Must be the same list on
           every page (read from the outgoing page's meta at swap time).
 
+          `style` is preserved for the same reason: the sidebar-resizer island
+          (gated on settings.sidebarResizer) writes the user's dragged width to
+          `--zd-sidebar-w` in the live root's inline `style`, and a reload
+          re-applies it pre-paint from localStorage (SidebarResizerRestore) —
+          but neither runs on an SPA swap, so without preserving `style` the
+          swap drops `--zd-sidebar-w` and the widened sidebar snaps back to the
+          CSS default on every soft navigation (zudolab/zudo-doc#2227). Preserve
+          is by attribute *name* (swapRootAttributes re-applies the whole live
+          `style` last), which is safe here because this layout never renders a
+          server-side `htmlStyle` — the only inline root style is runtime state
+          we want to keep. A no-op when the resizer is disabled (no inline
+          style is ever set), so it stays unconditional and keeps the meta
+          identical on every page.
+
           Cast through `unknown` because ClientRouter() returns a readonly
           array of structural VNode objects — Preact's JSX typing does not
           directly accept that array shape, but at runtime the elements are
           valid VNode descriptors. */}
         {ClientRouter({
-          preserveHtmlAttrs: ["data-sidebar-hidden", "data-theme"],
+          preserveHtmlAttrs: ["data-sidebar-hidden", "data-theme", "style"],
         }) as unknown as JSX.Element}
         {head}
       </head>
