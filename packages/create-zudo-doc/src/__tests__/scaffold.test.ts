@@ -79,6 +79,62 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     ).toBe(true);
   });
 
+  it("getting-started/index.mdx is a category-top with <CategoryNav", async () => {
+    const content = await fs.readFile(
+      projectPath(
+        "test-minimal",
+        "src/content/docs/getting-started/index.mdx",
+      ),
+      "utf-8",
+    );
+    expect(content).toContain("<CategoryNav");
+  });
+
+  it("getting-started/index.mdx does NOT contain an h1 heading (no '# ' line)", async () => {
+    const content = await fs.readFile(
+      projectPath(
+        "test-minimal",
+        "src/content/docs/getting-started/index.mdx",
+      ),
+      "utf-8",
+    );
+    const lines = content.split("\n");
+    const h1Lines = lines.filter((line) => /^# /.test(line));
+    expect(h1Lines).toHaveLength(0);
+  });
+
+  it("creates getting-started child docs (introduction.mdx and installation.mdx)", async () => {
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-minimal",
+          "src/content/docs/getting-started/introduction.mdx",
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-minimal",
+          "src/content/docs/getting-started/installation.mdx",
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it("child docs contain sidebar_position frontmatter", async () => {
+    for (const child of ["introduction.mdx", "installation.mdx"]) {
+      const content = await fs.readFile(
+        projectPath(
+          "test-minimal",
+          `src/content/docs/getting-started/${child}`,
+        ),
+        "utf-8",
+      );
+      expect(content).toContain("sidebar_position:");
+    }
+  });
+
   it("does NOT create [locale] pages directory (i18n off)", async () => {
     expect(
       await fs.pathExists(projectPath("test-minimal", "src/pages/[locale]")),
@@ -341,6 +397,49 @@ describe("scaffold — full features (i18n, light-dark, all features)", () => {
         ),
       ),
     ).toBe(true);
+  });
+
+  it("docs-ja/getting-started/index.mdx is a category-top with <CategoryNav", async () => {
+    const content = await fs.readFile(
+      projectPath(
+        "test-full",
+        "src/content/docs-ja/getting-started/index.mdx",
+      ),
+      "utf-8",
+    );
+    expect(content).toContain("<CategoryNav");
+  });
+
+  it("creates docs-ja getting-started child docs (introduction.mdx and installation.mdx)", async () => {
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-full",
+          "src/content/docs-ja/getting-started/introduction.mdx",
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-full",
+          "src/content/docs-ja/getting-started/installation.mdx",
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it("docs-ja child docs contain sidebar_position frontmatter", async () => {
+    for (const child of ["introduction.mdx", "installation.mdx"]) {
+      const content = await fs.readFile(
+        projectPath(
+          "test-full",
+          `src/content/docs-ja/getting-started/${child}`,
+        ),
+        "utf-8",
+      );
+      expect(content).toContain("sidebar_position:");
+    }
   });
 
   it("includes Claude Resources integration", async () => {

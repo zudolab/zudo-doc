@@ -96,6 +96,23 @@ src/content/docs/guides/        ← sidebar category "Guides"
 
 Each `.mdx` file appears as a sidebar item. Subdirectories become nested collapsible categories.
 
+### Category Top Page (index.mdx)
+
+Every category directory should have an `index.mdx` that acts as the **landing page** for that category. Keep it minimal: a 1–2 sentence description of the category followed by a `<CategoryNav>` component, which automatically renders links to all sibling pages.
+
+```mdx
+---
+title: Guides
+sidebar_position: 1
+---
+
+Step-by-step guides for common zudo-doc tasks.
+
+<CategoryNav category="guides" />
+```
+
+The `category` prop is the top-level directory name (e.g. `"guides"` for `src/content/docs/guides/`). Do not put full documentation content in the index — keep real docs in sibling `.mdx` files under the same directory.
+
 ## Concrete Real-World Example
 
 Imagine building a **gaming wiki**. Here is how you would structure the navigation:
