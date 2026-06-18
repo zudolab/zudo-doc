@@ -1,0 +1,18 @@
+---
+title: 0.2.13
+description: Release notes for 0.2.13.
+sidebar_position: 1024
+---
+
+Released: 2026-06-18
+
+### Bug Fixes
+
+- Header navigation now highlights the active item by its **big category**, not just an exact URL-path match, so a doc page correctly lights up its parent category in the nav. (#2213)
+- The header's active-nav highlight now updates correctly across SPA (client-router) navigations, instead of staying stuck on the previously active item after a View Transition swap. (#2215)
+
+### Other Changes
+
+- Bumped the `@takazudo/zfb` stack (`@takazudo/zfb`, `@takazudo/zfb-runtime`, `@takazudo/zfb-adapter-cloudflare`) to `0.1.0-next.53`, which terminates GFM autolinks at CJK boundaries (zfb#1105) — relevant to Japanese and other CJK content. (#2216)
+- CI: build output is handed between jobs via tarred artifacts (preserving colon-containing route paths) instead of a run-id cache, making the cross-job handoff reliable. (#2211)
+- Docs: reconciled stale `desktop-sidebar-toggle` prose in the template-drift allowlist. (#2212)
