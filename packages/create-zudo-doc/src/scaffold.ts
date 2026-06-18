@@ -42,27 +42,115 @@ function shouldCopyBaseFile(srcAbs: string, baseDir: string): boolean {
 }
 
 const STARTER_CONTENT_EN = (siteName: string) => `---
-title: Welcome
+title: Getting Started
 sidebar_position: 1
 ---
 
-# Welcome to ${siteName}
+Welcome to ${siteName}. Choose a topic below to get started.
 
-This documentation site was created with [zudo-doc](https://github.com/zudolab/zudo-doc).
-
-## Getting Started
-
-Edit the files in \`src/content/docs/\` to add your documentation.
+<CategoryNav category="getting-started" />
 `;
 
 const STARTER_CONTENT_JA = () => `---
-title: ようこそ
+title: はじめに
 sidebar_position: 1
 ---
 
-# ようこそ
+ドキュメントへようこそ。以下のトピックから始めてください。
 
-このドキュメントサイトは [zudo-doc](https://github.com/zudolab/zudo-doc) で作成されました。
+<CategoryNav category="getting-started" />
+`;
+
+const STARTER_CHILD_INTRODUCTION_EN = (siteName: string) => `---
+title: Introduction
+sidebar_position: 1
+---
+
+## What is ${siteName}?
+
+${siteName} is a documentation site built with [zudo-doc](https://github.com/zudolab/zudo-doc), a minimal documentation framework powered by zfb, MDX, and Tailwind CSS.
+
+## Key Features
+
+- MDX authoring with rich component support
+- Fast static site generation via zfb
+- Tailwind CSS v4 for styling
+- Optional i18n, search, and more
+`;
+
+const STARTER_CHILD_INTRODUCTION_JA = (siteName: string) => `---
+title: はじめに
+sidebar_position: 1
+---
+
+## ${siteName} とは？
+
+${siteName} は [zudo-doc](https://github.com/zudolab/zudo-doc) で構築されたドキュメントサイトです。zfb・MDX・Tailwind CSS を使ったミニマルなドキュメントフレームワークです。
+
+## 主な機能
+
+- MDX によるリッチなコンポーネントサポート
+- zfb による高速な静的サイト生成
+- スタイリングには Tailwind CSS v4
+- i18n・検索などオプション機能も充実
+`;
+
+const STARTER_CHILD_INSTALLATION_EN = () => `---
+title: Installation
+sidebar_position: 2
+---
+
+## Requirements
+
+- Node.js 18 or later
+- pnpm (recommended), npm, yarn, or bun
+
+## Create a New Project
+
+Run the scaffolding tool to create a new project:
+
+\`\`\`sh
+pnpm create zudo-doc my-docs
+\`\`\`
+
+## Start the Dev Server
+
+\`\`\`sh
+cd my-docs
+pnpm install
+pnpm dev
+\`\`\`
+
+Open [http://localhost:4321](http://localhost:4321) to view your docs.
+`;
+
+const STARTER_CHILD_INSTALLATION_JA = () => `---
+title: インストール
+sidebar_position: 2
+---
+
+## 動作要件
+
+- Node.js 18 以降
+- pnpm（推奨）、npm、yarn、または bun
+
+## 新しいプロジェクトを作成する
+
+スキャフォールドツールを実行して新しいプロジェクトを作成します：
+
+\`\`\`sh
+pnpm create zudo-doc my-docs
+\`\`\`
+
+## 開発サーバーを起動する
+
+\`\`\`sh
+cd my-docs
+pnpm install
+pnpm dev
+\`\`\`
+
+[http://localhost:4321](http://localhost:4321) を開いてドキュメントを確認してください。
 `;
 
 const CHANGELOG_CONTENT_EN = () => `---
@@ -180,6 +268,24 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     primaryContent,
   );
 
+  // Primary language child docs under getting-started/
+  const primaryIntroductionContent =
+    defaultLang === "ja"
+      ? STARTER_CHILD_INTRODUCTION_JA(escapedName)
+      : STARTER_CHILD_INTRODUCTION_EN(escapedName);
+  await fs.outputFile(
+    path.join(targetDir, "src/content/docs/getting-started/introduction.mdx"),
+    primaryIntroductionContent,
+  );
+  const primaryInstallationContent =
+    defaultLang === "ja"
+      ? STARTER_CHILD_INSTALLATION_JA()
+      : STARTER_CHILD_INSTALLATION_EN();
+  await fs.outputFile(
+    path.join(targetDir, "src/content/docs/getting-started/installation.mdx"),
+    primaryInstallationContent,
+  );
+
   // When i18n is ON, place secondary language content
   if (choices.features.includes("i18n")) {
     const secondaryLang = getSecondaryLang(defaultLang);
@@ -193,6 +299,30 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     await fs.outputFile(
       path.join(targetDir, `${secondaryDir}/getting-started/index.mdx`),
       secondaryContent,
+    );
+
+    // Secondary language child docs under getting-started/
+    const secondaryIntroductionContent =
+      secondaryLang === "ja"
+        ? STARTER_CHILD_INTRODUCTION_JA(escapedName)
+        : STARTER_CHILD_INTRODUCTION_EN(escapedName);
+    await fs.outputFile(
+      path.join(
+        targetDir,
+        `${secondaryDir}/getting-started/introduction.mdx`,
+      ),
+      secondaryIntroductionContent,
+    );
+    const secondaryInstallationContent =
+      secondaryLang === "ja"
+        ? STARTER_CHILD_INSTALLATION_JA()
+        : STARTER_CHILD_INSTALLATION_EN();
+    await fs.outputFile(
+      path.join(
+        targetDir,
+        `${secondaryDir}/getting-started/installation.mdx`,
+      ),
+      secondaryInstallationContent,
     );
   }
 
