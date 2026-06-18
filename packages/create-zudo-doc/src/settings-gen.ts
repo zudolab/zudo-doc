@@ -70,7 +70,7 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(`  siteDescription: "" as string,`);
   lines.push(`  base: "/",`);
   lines.push(`  trailingSlash: false as boolean,`);
-  lines.push(`  noindex: false as boolean,`);
+  lines.push(`  noindex: ${choices.features.includes("noindex")} as boolean,`);
   lines.push(`  editUrl: false as string | false,`);
   const rawGithubUrl = (choices.githubUrl ?? "").trim();
   if (rawGithubUrl) {

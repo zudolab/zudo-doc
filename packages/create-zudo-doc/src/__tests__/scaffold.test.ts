@@ -3776,3 +3776,41 @@ describe("scaffold — imageEnlarge does not duplicate the settings import (#217
     expect(matches).toHaveLength(1);
   });
 });
+
+describe("scaffold — noindex feature (#2218)", () => {
+  it("settings have noindex: true when noindex feature is selected", async () => {
+    const choices: UserChoices = {
+      projectName: "test-noindex-on",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "noindex"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-noindex-on", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("noindex: true as boolean");
+    expect(content).not.toContain("noindex: false as boolean");
+  });
+
+  it("settings have noindex: false when noindex feature is not selected", async () => {
+    const choices: UserChoices = {
+      projectName: "test-noindex-off",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-noindex-off", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("noindex: false as boolean");
+    expect(content).not.toContain("noindex: true as boolean");
+  });
+});

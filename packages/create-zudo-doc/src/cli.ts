@@ -32,6 +32,7 @@ export interface CliArgs {
   tagGovernance?: boolean;
   footerTaglist?: boolean;
   bodyFootUtil?: boolean;
+  noindex?: boolean;
   githubUrl?: string;
   preset?: string;
   pm?: "pnpm" | "npm" | "yarn" | "bun";

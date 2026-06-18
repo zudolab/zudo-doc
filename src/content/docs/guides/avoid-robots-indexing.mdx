@@ -1,0 +1,83 @@
+---
+title: Avoid Robots Indexing
+description: Keep search engine crawlers off your documentation site using the noindex setting.
+sidebar_position: 8.5
+tags:
+  - type:guide
+---
+
+When you are running a staging site, an internal documentation portal, or a work-in-progress docs build, you likely do not want search engines to index or crawl those pages. The `noindex` setting in zudo-doc gives you a single switch to block all crawlers.
+
+## What the setting does
+
+Setting `noindex: true` in `src/config/settings.ts` triggers two complementary behaviors at build time:
+
+1. **Robots meta tag** — every rendered page receives:
+   ```html
+   <meta name="robots" content="noindex, nofollow">
+   ```
+
+   This instructs crawlers that discover a page (through a link, for example) not to index it and not to follow outbound links.
+
+2. **`robots.txt` disallow** — the generated `robots.txt` at the site root contains:
+   ```
+   User-agent: *
+   Disallow: /
+   ```
+
+   This tells crawlers not to crawl any path under the site at all. When `noindex` is enabled, the `Sitemap:` line is intentionally omitted from `robots.txt` — advertising a sitemap while simultaneously disallowing all crawling is contradictory.
+
+## Enabling the setting
+
+### Via the preset generator (recommended for new projects)
+
+When scaffolding a new project with `create-zudo-doc`, check the **"Avoid robots indexing"** checkbox in the interactive [Setup Preset Generator](../getting-started/setup-preset-generator.mdx). This emits `noindex: true` in the generated `settings.ts`.
+
+### Via the CLI flag
+
+Pass `--noindex` to the `create-zudo-doc` CLI:
+
+```sh
+npx create-zudo-doc@latest --noindex
+```
+
+### Directly in settings.ts
+
+Open `src/config/settings.ts` and set:
+
+```ts
+export const settings = {
+  // ...
+  noindex: true,
+};
+```
+
+The default is `false`, meaning crawlers are allowed.
+
+## Caveats
+
+<Warning title="Existing indexed pages are not removed automatically">
+
+Enabling `noindex` prevents future indexing but does **not** retroactively remove pages already indexed by search engines. To remove those, you must submit removal requests to each search engine's tooling (for example, Google Search Console's URL removal tool).
+
+</Warning>
+
+<Note title="Crawl directives vs. index directives">
+
+`robots.txt Disallow: /` is a *crawl* directive — it tells crawlers not to fetch pages. The `noindex` meta tag is an *index* directive — it tells a crawler that has fetched a page not to add it to the index.
+
+These two directives are complementary: `Disallow` reduces crawl budget exposure, while `noindex` handles any pages a crawler has already retrieved via a direct link. Using them together is the standard approach for a complete "keep everything out" toggle.
+
+One subtle consequence: if a crawler respects `robots.txt` and never fetches a page, it never sees the `noindex` meta tag inside that page. In practice this is fine — a crawler that obeys `Disallow: /` will not index the page anyway. For crawlers that ignore `robots.txt`, the meta tag remains the safety net.
+
+</Note>
+
+<Note title="robots.txt omits the Sitemap line when noindex is enabled">
+
+When `noindex: true`, zudo-doc intentionally omits the `Sitemap:` entry from `robots.txt`. Pointing crawlers at a sitemap while also blocking all crawling sends contradictory signals. If you later re-enable indexing, the `Sitemap:` line is restored automatically.
+
+</Note>
+
+## See also
+
+- [Configuration reference — `noindex`](./configuration.mdx#noindex) for the full settings reference
