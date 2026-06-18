@@ -18,6 +18,15 @@
 // instance handle DOM is rebuilt each time and the existing-handle guard
 // (`sidebar.querySelector("["+HANDLE_MARKER+"]")`) keeps re-runs idempotent.
 //
+// NOTE: this re-init only rebuilds the drag *handle*. The persisted *width*
+// (`--zd-sidebar-w` on the live root's inline style) survives the swap on its
+// own — the doc-layout shell mounts <ClientRouter preserveHtmlAttrs={[…,
+// "style"]} />, so zfb-runtime re-applies the live root `style` within the
+// synchronous swap (before paint). Re-applying the width here would be both
+// redundant and flash-prone (it runs after the swap, not within it), so this
+// script deliberately leaves width persistence to that upstream mechanism
+// (zudolab/zudo-doc#2227).
+//
 // Pre-paint restore (SidebarResizerRestore / SIDEBAR_RESIZER_RESTORE_SCRIPT):
 // the init script above only mutates `--zd-sidebar-w` in response to user
 // input. Without a separate pre-paint reader, a page reload after a drag
