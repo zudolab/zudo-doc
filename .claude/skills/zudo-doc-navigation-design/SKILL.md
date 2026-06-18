@@ -63,13 +63,36 @@ Before creating any new doc page, check this list:
 - [ ] Is the file name in kebab-case?
 - [ ] For bilingual projects: have you created the matching file under `src/content/docs-ja/` (or added `generated: true` if it is skipped)?
 
+## Category Top Page (index.mdx)
+
+Every category directory must have an `index.mdx`. This file is the **landing page** for that category — keep it short:
+
+- A 1–2 sentence intro describing what the category covers.
+- A `<CategoryNav category="<dir>" />` component that auto-renders links to sibling pages.
+- **No full content or prose beyond the intro.** Real documentation lives in sibling `.mdx` files under the same directory.
+
+The `category` prop value is the **top-level directory name** (e.g. `category="reference"` for `src/content/docs/reference/`). Do not include path separators or the full path.
+
+Example `index.mdx` for a `guides/` category:
+
+```mdx
+---
+title: Guides
+sidebar_position: 1
+---
+
+Step-by-step guides for common zudo-doc tasks.
+
+<CategoryNav category="guides" />
+```
+
 ## Checklist for Adding a New Category
 
 Before creating any new category directory:
 
 - [ ] Is this really a new category, or does it belong under an existing one? Default to "fewer categories."
 - [ ] Does it need a header nav entry, or is it a nested sidebar category inside an existing header entry?
-- [ ] Have you created `index.mdx` with a descriptive landing page and `sidebar_position`?
+- [ ] Have you created `index.mdx` with a short intro + `<CategoryNav>` (not full content) and `sidebar_position`?
 - [ ] If you added a header entry, does its `categoryMatch` value equal the new top-level directory name (single segment)?
 - [ ] Does the new category have at least 3 pages? Fewer than 3 usually means the pages belong under a broader category instead.
 
@@ -82,6 +105,7 @@ Before creating any new category directory:
 - **Missing `index.mdx` in category directories.** Category has no landing page.
 - **Multi-segment `categoryMatch`** (e.g. `"platforms/xbox"`). Breaks active highlighting — use a single top-level directory name.
 - **Reorganizing via config instead of filesystem.** If you are tempted to add a custom sidebar config override, the underlying filesystem is probably wrong. Fix the files instead.
+- **Stuffing a category `index.mdx` with full content/prose.** The index is a landing page — keep it to a short intro + `<CategoryNav>` and put real content in sibling files.
 
 ## When in Doubt
 

@@ -96,6 +96,23 @@ src/content/docs/guides/        ← サイドバーカテゴリ「Guides」
 
 各 `.mdx` ファイルがサイドバー項目として表示されます。サブディレクトリはネストされた折りたたみ可能なカテゴリになります。
 
+### カテゴリトップページ（index.mdx）
+
+各カテゴリディレクトリには、そのカテゴリの**ランディングページ**となる `index.mdx` を用意してください。内容はシンプルに保ちます。カテゴリの説明を 1〜2 文で書き、その後に `<CategoryNav>` コンポーネントを置くだけです。このコンポーネントは兄弟ページへのリンクを自動的に表示します。
+
+```mdx
+---
+title: Guides
+sidebar_position: 1
+---
+
+Step-by-step guides for common zudo-doc tasks.
+
+<CategoryNav category="guides" />
+```
+
+`category` プロパティにはトップレベルのディレクトリ名を指定します（例：`src/content/docs/guides/` なら `"guides"`）。index にドキュメントの本文を書かないでください。実際のドキュメントは同じディレクトリ内の兄弟 `.mdx` ファイルに置きましょう。
+
 ## 具体的な実例
 
 **ゲーム攻略 Wiki** を構築する場合のナビゲーション構造です。
