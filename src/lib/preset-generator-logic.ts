@@ -167,6 +167,7 @@ export const FEATURES = [
   { value: "tagGovernance", label: "Tag governance", cliFlag: "tag-governance", default: false },
   { value: "docTags", label: "Doc tags pages", cliFlag: "doc-tags", default: false },
   { value: "footerTaglist", label: "Footer taglist", cliFlag: "footer-taglist", default: false },
+  { value: "noindex", label: "Avoid robots indexing", cliFlag: "noindex", default: false },
 ] as const;
 
 export type ColorSchemeMode = "single" | "light-dark";
