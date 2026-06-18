@@ -145,30 +145,39 @@ export function specToHeaderRightItem(spec: HeaderRightItemSpec): HeaderRightIte
 }
 
 export const FEATURES = [
-  { value: "i18n", label: "i18n (multi-language)", cliFlag: "i18n", default: false },
-  { value: "search", label: "Pagefind search", cliFlag: "search", default: true },
-  { value: "sidebarFilter", label: "Sidebar filter", cliFlag: "sidebar-filter", default: true },
-  { value: "claudeResources", label: "Claude Resources", cliFlag: "claude-resources", default: false },
+  { value: "i18n", label: "i18n (multi-language)", cliFlag: "i18n", default: false, docPath: "/docs/guides/i18n/" },
+  { value: "search", label: "Pagefind search", cliFlag: "search", default: true, docPath: "/docs/guides/search/" },
+  { value: "sidebarFilter", label: "Sidebar filter", cliFlag: "sidebar-filter", default: true, docPath: "/docs/guides/sidebar-filter/" },
+  { value: "claudeResources", label: "Claude Resources", cliFlag: "claude-resources", default: false, docPath: "/docs/guides/claude-resources/" },
   { value: "claudeSkills", label: "Claude skills (user-facing)", cliFlag: "claude-skills", default: false },
-  { value: "designTokenPanel", label: "Design Token Panel", cliFlag: "design-token-panel", default: false },
-  { value: "sidebarResizer", label: "Sidebar resizer", cliFlag: "sidebar-resizer", default: false },
-  { value: "sidebarToggle", label: "Sidebar toggle", cliFlag: "sidebar-toggle", default: false },
-  { value: "versioning", label: "Versioning", cliFlag: "versioning", default: false },
-  { value: "docHistory", label: "Document history", cliFlag: "doc-history", default: false },
-  { value: "bodyFootUtil", label: "Body foot util area", cliFlag: "body-foot-util", default: false },
-  { value: "llmsTxt", label: "llms.txt", cliFlag: "llms-txt", default: false },
-  { value: "skillSymlinker", label: "Skill symlinker", cliFlag: "skill-symlinker", default: false },
-  { value: "tauri", label: "Tauri desktop app", cliFlag: "tauri", default: false },
-  { value: "tauriDev", label: "Tauri dev wrapper (Mode 2)", cliFlag: "tauri-dev", default: false },
-  { value: "footerNavGroup", label: "Footer nav group", cliFlag: "footer-nav-group", default: false },
-  { value: "imageEnlarge", label: "Image enlarge", cliFlag: "image-enlarge", default: true },
-  { value: "footerCopyright", label: "Footer copyright", cliFlag: "footer-copyright", default: false },
-  { value: "changelog", label: "Changelog", cliFlag: "changelog", default: false },
-  { value: "tagGovernance", label: "Tag governance", cliFlag: "tag-governance", default: false },
-  { value: "docTags", label: "Doc tags pages", cliFlag: "doc-tags", default: false },
-  { value: "footerTaglist", label: "Footer taglist", cliFlag: "footer-taglist", default: false },
-  { value: "noindex", label: "Avoid robots indexing", cliFlag: "noindex", default: false },
+  { value: "designTokenPanel", label: "Design Token Panel", cliFlag: "design-token-panel", default: false, docPath: "/docs/reference/design-token-panel/" },
+  { value: "sidebarResizer", label: "Sidebar resizer", cliFlag: "sidebar-resizer", default: false, docPath: "/docs/guides/configuration/#sidebarresizer" },
+  { value: "sidebarToggle", label: "Sidebar toggle", cliFlag: "sidebar-toggle", default: false, docPath: "/docs/guides/configuration/#sidebartoggle" },
+  { value: "versioning", label: "Versioning", cliFlag: "versioning", default: false, docPath: "/docs/guides/versioning/" },
+  { value: "docHistory", label: "Document history", cliFlag: "doc-history", default: false, docPath: "/docs/guides/doc-history/" },
+  { value: "bodyFootUtil", label: "Body foot util area", cliFlag: "body-foot-util", default: false, docPath: "/docs/guides/body-foot-util-area/" },
+  { value: "llmsTxt", label: "llms.txt", cliFlag: "llms-txt", default: false, docPath: "/docs/guides/llms-txt/" },
+  { value: "skillSymlinker", label: "Skill symlinker", cliFlag: "skill-symlinker", default: false, docPath: "/docs/guides/doc-skill-symlinker/" },
+  { value: "tauri", label: "Tauri desktop app", cliFlag: "tauri", default: false, docPath: "/docs/guides/tauri-modes/" },
+  { value: "tauriDev", label: "Tauri dev wrapper (Mode 2)", cliFlag: "tauri-dev", default: false, docPath: "/docs/guides/tauri-modes/" },
+  { value: "footerNavGroup", label: "Footer nav group", cliFlag: "footer-nav-group", default: false, docPath: "/docs/guides/footer/" },
+  { value: "imageEnlarge", label: "Image enlarge", cliFlag: "image-enlarge", default: true, docPath: "/docs/markdown-features/image-enlarge/" },
+  { value: "footerCopyright", label: "Footer copyright", cliFlag: "footer-copyright", default: false, docPath: "/docs/guides/footer/" },
+  { value: "changelog", label: "Changelog", cliFlag: "changelog", default: false, docPath: "/docs/guides/changelog/" },
+  { value: "tagGovernance", label: "Tag governance", cliFlag: "tag-governance", default: false, docPath: "/docs/guides/tag-governance/" },
+  { value: "docTags", label: "Doc tags pages", cliFlag: "doc-tags", default: false, docPath: "/docs/guides/tags/" },
+  { value: "footerTaglist", label: "Footer taglist", cliFlag: "footer-taglist", default: false, docPath: "/docs/guides/footer-taglist/" },
+  { value: "noindex", label: "Avoid robots indexing", cliFlag: "noindex", default: false, docPath: "/docs/guides/avoid-robots-indexing/" },
 ] as const;
+
+/** Each entry in FEATURES; docPath is optional (absent means no docs link). */
+export type FeatureEntry = {
+  value: string;
+  label: string;
+  cliFlag: string;
+  default: boolean;
+  docPath?: string;
+};
 
 export type ColorSchemeMode = "single" | "light-dark";
 

@@ -15,6 +15,7 @@ import {
   HEADER_RIGHT_LABELS,
   type FormState,
   type HeaderRightItemSpec,
+  type FeatureEntry,
 } from "../lib/preset-generator-logic";
 import { HeadingH3 } from "@takazudo/zudo-doc/content";
 
@@ -472,7 +473,7 @@ export default function PresetGenerator() {
       <section>
         <SectionHeading>Features</SectionHeading>
         <div className="flex flex-col gap-y-vsp-xs">
-          {FEATURES.map((feat) => (
+          {(FEATURES as readonly FeatureEntry[]).map((feat) => (
             <label
               key={feat.value}
               className="flex items-center gap-x-hsp-xs text-small text-fg"
@@ -483,7 +484,21 @@ export default function PresetGenerator() {
                 onChange={() => toggleFeature(feat.value)}
                 className="accent-accent"
               />
-              {feat.label}
+              <span className="flex items-center gap-x-hsp-xs">
+                {feat.label}
+                {feat.docPath && (
+                  <a
+                    href={feat.docPath}
+                    target="_blank"
+                    rel="noopener"
+                    aria-label={`${feat.label} documentation`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-caption text-muted hover:text-accent"
+                  >
+                    docs ↗
+                  </a>
+                )}
+              </span>
             </label>
           ))}
           <label className="flex items-center gap-x-hsp-xs text-small text-muted cursor-not-allowed opacity-50">
