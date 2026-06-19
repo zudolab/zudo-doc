@@ -343,10 +343,14 @@ jobs:
           DEPLOY_URL: ${{ steps.deploy.outputs.deploy_url }}
         run: |
           set -euo pipefail
-          CSS_PATH=$(curl -fsSL "$DEPLOY_URL/" | grep -oE 'href="[^"]*assets/styles-[^"]*\.css"' | head -1 | sed 's/href="//;s/"$//')
+          # Retry both fetches: right after deploy the homepage HTML can reference a new
+          # hashed styles-<hash>.css before that asset has propagated, so an immediate
+          # curl 404s. --retry-all-errors retries HTTP 4xx too (plain --retry does not).
+          # Propagation race, not a real failure (#2236).
+          CSS_PATH=$(curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors "$DEPLOY_URL/" | grep -oE 'href="[^"]*assets/styles-[^"]*\.css"' | head -1 | sed 's/href="//;s/"$//')
           [ -n "$CSS_PATH" ] || { echo "::error::no CSS link found in $DEPLOY_URL/"; exit 1; }
           # CSS href is root-relative (/assets/...); prepend the deploy origin.
-          curl -fsSL "${DEPLOY_URL}${CSS_PATH}" -o /tmp/deployed-css.css
+          curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors "${DEPLOY_URL}${CSS_PATH}" -o /tmp/deployed-css.css
 
           CSS_BYTES=$(wc -c < /tmp/deployed-css.css)
           MIN_CSS_BYTES=50000  # post-zfb#159 split-import fix (in pin 9239267) drops leaked Tailwind defaults; healthy baseline ~64-66 KB (down from pre-fix ~77.7 KB). Threshold sits well above the ~30-40 KB broken-scanner floor with headroom for future intentional shrinkage.
