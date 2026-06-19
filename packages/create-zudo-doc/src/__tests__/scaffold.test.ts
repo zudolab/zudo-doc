@@ -1344,6 +1344,43 @@ describe("scaffold — changelog feature", () => {
     );
     expect(content).not.toContain("/docs/changelog");
   });
+
+  it("headerNav includes Claude when claudeResources enabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-claude-nav-on",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "claudeResources"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-claude-nav-on", "src/config/settings.ts"),
+      "utf-8",
+    );
+    // The "claude" categoryMatch is what drives both the header link and the
+    // groupSatelliteNodes() nesting of claude-md/claude-skills/... on the index.
+    expect(content).toContain('categoryMatch: "claude"');
+    expect(content).toContain("/docs/claude");
+  });
+
+  it("headerNav does NOT include Claude when claudeResources disabled", async () => {
+    const choices: UserChoices = {
+      projectName: "test-claude-nav-off",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-claude-nav-off", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).not.toContain('categoryMatch: "claude"');
+  });
 });
 
 describe("scaffold — skillSymlinker feature", () => {

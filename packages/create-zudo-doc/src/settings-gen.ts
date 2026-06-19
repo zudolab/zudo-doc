@@ -294,6 +294,15 @@ export function generateSettingsFile(choices: UserChoices): string {
   lines.push(
     `    { label: "Getting Started", path: "/docs/getting-started", categoryMatch: "getting-started" },`,
   );
+  // The "claude" categoryMatch is load-bearing beyond the header link: getCategoryOrder()
+  // derives the satellite-grouping prefixes from headerNav, so without this entry
+  // groupSatelliteNodes() never nests claude-md/claude-skills/... under the "claude"
+  // overview node and they spread out as separate top-level cards on the index sitemap.
+  if (choices.features.includes("claudeResources")) {
+    lines.push(
+      `    { label: "Claude", path: "/docs/claude", categoryMatch: "claude" },`,
+    );
+  }
   if (choices.features.includes("changelog")) {
     lines.push(
       `    { label: "Changelog", path: "/docs/changelog", categoryMatch: "changelog" },`,
