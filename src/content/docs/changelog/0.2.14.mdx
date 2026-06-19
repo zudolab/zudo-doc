@@ -1,0 +1,22 @@
+---
+title: 0.2.14
+description: Release notes for 0.2.14.
+sidebar_position: 1025
+---
+
+Released: 2026-06-19
+
+### Features
+
+- Added an `avoid robots indexing` capability: a new `noindex` toggle is selectable as a generator feature, and enabling it scaffolds a `robots.txt` page route that asks search engines not to index the site. (#2218, #2219)
+- The PresetGenerator UI now shows a documentation link next to each feature, so you can jump straight to the relevant guide while configuring a scaffold. (#2220)
+- The generator can now scaffold the category-top + `CategoryNav` navigation pattern, producing a category landing page wired up with its child docs. (#2230)
+
+### Bug Fixes
+
+- The sidebar resizer now preserves a manually dragged width across SPA (client-router) navigations, instead of resetting after a View Transition swap. (#2231)
+
+### Other Changes
+
+- Docs: added a bilingual (EN + JA) "avoid robots indexing" guide, with cross-links explaining the `noindex` feature and the generated `robots.txt` route. (#2221)
+- Docs: documented the category-top + `CategoryNav` convention in the navigation-design skill and the structuring-navigations guide. (#2230)
