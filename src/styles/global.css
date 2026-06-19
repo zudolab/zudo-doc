@@ -1166,10 +1166,16 @@ dialog.zd-mermaid-dialog::backdrop {
  * transition settles immediately — no cross-fade, no translateY slide.
  * Covers the root cross-fade and the #2072 :only-child entry/exit rules;
  * the both-sides chrome layers are already animation: none above. Equal
- * specificity per selector, but later in source order, so these win. */
+ * specificity per selector, but later in source order, so these win.
+ * ::view-transition-group(root) must be neutralized too (zudolab/zzmod#845):
+ * the UA animates the root group for its full duration even when the old/new
+ * root snapshots are at animation: none, leaving a brief frozen,
+ * non-interactive frame. The chrome groups are already animation: none in the
+ * unconditional chrome block above, so only the root group is added here. */
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-old(root),
   ::view-transition-new(root),
+  ::view-transition-group(root),
   ::view-transition-old(zfb-header):only-child,
   ::view-transition-old(zfb-sidebar):only-child,
   ::view-transition-old(zfb-footer):only-child,
