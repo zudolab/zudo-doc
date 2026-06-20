@@ -117,7 +117,7 @@ Inline markdown links within MDX content (e.g., `[link text](/docs/some-page)`) 
 
 Controls whether URLs end with a trailing slash. When `true`, all internal links are generated with a trailing slash (e.g., `/docs/guides/` instead of `/docs/guides`). The build-time URL helpers in `@takazudo/zudo-doc/url-normalizer` enforce this policy across every emitted route — see [Trailing-Slash Policy](../concepts/trailing-slash-policy.mdx) for how the rule splits between build time and the deployment host.
 
-Default: `false`
+Default: `true` (the showcase sets this to `true`; `create-zudo-doc` scaffolded projects also default to `true`)
 
 ```ts
 trailingSlash: true,
@@ -129,7 +129,13 @@ Some hosting platforms (e.g., AWS Amplify, Cloudflare Pages) work better with tr
 
 </Note>
 
-When enabled, the dev server automatically redirects URLs without a trailing slash to their trailing-slash version with a **301 redirect** (e.g., `/docs/guides` → `/docs/guides/`) so navigation behaves the same way locally as on production. Static assets (files with extensions like `.js`, `.css`, `.png`) and the Astro-legacy paths (`/_astro/`, `/_image` — preserved for backward-compat with existing/cached links; zfb does not emit these prefixes) are excluded from the redirect.
+When enabled, the dev server automatically redirects URLs without a trailing slash to their trailing-slash version with a **301 redirect** (e.g., `/docs/guides` → `/docs/guides/`) so navigation behaves the same way locally as on production. Static assets (files with extensions like `.js`, `.css`, `.png`) are excluded from the redirect.
+
+<Note>
+
+Earlier versions of this doc referenced `/_astro/` and `/_image` as additional redirect exclusions. Those are legacy Astro-era paths; zfb does not emit them. They are preserved in the redirect skip-list only for backward compatibility with existing cached links.
+
+</Note>
 
 ### onBrokenMarkdownLinks
 

@@ -41,6 +41,8 @@ title: Quick Start
 | `sidebar_position` | number | いいえ | `999` | サイドバーカテゴリ内のソート順 |
 | `sidebar_label` | string | いいえ | `title`の値 | サイドバーに表示されるラベルのオーバーライド |
 | `category` | string | いいえ | ディレクトリ名 | 将来の使用のために予約 |
+| `category_no_page` | boolean | いいえ | `false` | カテゴリをリンクなしのヘッダーにする（ルート・サイトマップ・検索エントリなし） |
+| `category_sort_order` | string | いいえ | — | カテゴリ内ページのソート順（例：新しい順に`"desc"`） |
 | `search_exclude` | boolean | いいえ | `false` | ページを検索インデックスから除外 |
 | `tags` | string[] | いいえ | -- | 横断的なナビゲーション用タグ |
 | `draft` | boolean | いいえ | `false` | 本番ビルドから除外（開発時は表示） |
@@ -132,6 +134,38 @@ sidebar_label: Color Schemes
 ページをカテゴリに整理するには、`src/content/docs/`の下にディレクトリを作成してその中に配置します。ディレクトリ名がカテゴリ名になります。
 
 </Note>
+
+### `category_no_page`
+
+- **型：** `boolean`
+- **必須：** いいえ
+- **デフォルト：** `false`
+
+カテゴリの`index.mdx`に設定すると、サイドバーでそのカテゴリがリンクなしのヘッダーとして表示されます。インデックスページ自体のルート・サイトマップエントリ・検索エントリは生成されず、配下のページをラベル付けしてグループ化するためだけに存在します。
+
+```mdx
+---
+title: Internals
+category_no_page: true
+sidebar_position: 10
+---
+```
+
+### `category_sort_order`
+
+- **型：** `string`
+- **必須：** いいえ
+- **デフォルト：** — （`sidebar_position`の昇順）
+
+カテゴリの`index.mdx`に設定すると、そのカテゴリ内ページのデフォルトの昇順ソートをオーバーライドします。`"desc"`を設定すると新しい順（降順）になります。最新のエントリを先頭に表示したい変更履歴やリリースノートのカテゴリに便利です。
+
+```mdx
+---
+title: Changelog
+category_sort_order: "desc"
+sidebar_position: 20
+---
+```
 
 ### `search_exclude`
 
