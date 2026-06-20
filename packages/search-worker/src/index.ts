@@ -62,11 +62,24 @@ export default {
         return jsonResponse({ error: "Invalid JSON body" }, 400);
       }
 
+      // Defensive post-parse size check: chunked/streamed POSTs omit Content-Length,
+      // so the header check above is bypassed. Re-measure after parsing to close the gap.
+      if (JSON.stringify(body).length > 4096) {
+        return jsonResponse({ error: "Request body too large" }, 413);
+      }
+
       if (!body.query || typeof body.query !== "string") {
         return jsonResponse({ error: "query is required" }, 400);
       }
 
-      if (body.query.length > 500) {
+      // Trim before further validation so whitespace-only strings ("   ") are
+      // treated the same as an empty query rather than reaching MiniSearch.
+      const query = body.query.trim();
+      if (!query) {
+        return jsonResponse({ error: "query is required" }, 400);
+      }
+
+      if (query.length > 500) {
         return jsonResponse({ error: "query exceeds 500 character limit" }, 400);
       }
 
@@ -97,8 +110,8 @@ export default {
         );
       }
 
-      const { results, total } = await search(body.query, limitArg, env);
-      return jsonResponse({ results, query: body.query, total }, 200);
+      const { results, total } = await search(query, limitArg, env);
+      return jsonResponse({ results, query, total }, 200);
     } catch (err) {
       console.error(
         "Search endpoint error:",
