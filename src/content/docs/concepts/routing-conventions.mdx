@@ -1,20 +1,16 @@
 ---
 title: Routing Conventions
-description: "How paths() enumerates routes in zfb and how to migrate from Astro's getStaticPaths"
+description: How paths() enumerates routes in zfb — synchronous, collection-backed, and SSG-safe.
 sidebar_position: 10
 ---
 
-If you're migrating from Astro, `paths()` is zfb's replacement for `getStaticPaths()`.
-Both tell the build which concrete URLs a dynamic or catchall route should emit,
-but their execution models differ significantly.
-This page explains the convention and the migration path.
+In zfb, every dynamic or catchall page exports a `paths()` function that tells the
+build which concrete URLs to emit. This page explains how `paths()` works,
+what to put inside it, and what to avoid.
 
 ## paths() is synchronous
 
-In Astro, `getStaticPaths()` was an `async` function that ran in Node.js at build time.
-It could `await` anything: file reads, database queries, or live HTTP requests.
-
-zfb's `paths()` runs inside **miniflare** at build time and is **synchronous** by contract.
+`paths()` runs inside **miniflare** at build time and is **synchronous** by contract.
 The function signature is `function paths(): PathEntry[]` — not `async`.
 
 ```tsx
@@ -95,7 +91,40 @@ This pattern causes several problems:
 The content layer exists precisely to avoid this: fetch once, snapshot at build time,
 query synchronously from that snapshot.
 
+## Collection-backed paths: the full docs pattern
+
+The most common `paths()` usage in zudo-doc is the docs catchall route.
+Each entry's slug maps to a `string[]` of URL segments:
+
+```tsx
+// pages/docs/[[...slug]].tsx
+import { getCollection, getEntry } from "zfb/content";
+
+export function paths() {
+  const docs = getCollection("docs");
+  return docs
+    .filter((entry) => !entry.data.draft)
+    .map((entry) => ({
+      params: { slug: entry.slug.split("/") },
+    }));
+}
+
+export default function DocsPage({ params }: { params: { slug: string[] } }) {
+  const slugPath = params.slug.join("/");
+  const entry = getEntry("docs", slugPath);
+  if (!entry) return <p>Not found.</p>;
+  return <entry.Content />;
+}
+```
+
+`/docs/guides/configuration` matches with `params.slug === ["guides", "configuration"]`.
+Rejoin with `slug.join("/")` to reconstruct the lookup key for `getEntry`.
+
 ## Migration from Astro's getStaticPaths
+
+If you're migrating a project from Astro, `paths()` replaces `getStaticPaths()`.
+The main difference is that `paths()` is synchronous and all data must be pre-loaded
+into content collections before the build runs.
 
 Astro's `getStaticPaths()` accepted any async operation.
 Patterns like the following were common:
@@ -164,36 +193,7 @@ For data that never changes between deploys (e.g. an initial dataset committed t
 you can skip the generator script entirely and author the JSON files directly in
 `src/content/`.
 
-## Collection-backed paths: the full docs pattern
-
-The most common `paths()` usage in zudo-doc is the docs catchall route.
-Each entry's slug maps to a `string[]` of URL segments:
-
-```tsx
-// pages/docs/[[...slug]].tsx
-import { getCollection, getEntry } from "zfb/content";
-
-export function paths() {
-  const docs = getCollection("docs");
-  return docs
-    .filter((entry) => !entry.data.draft)
-    .map((entry) => ({
-      params: { slug: entry.slug.split("/") },
-    }));
-}
-
-export default function DocsPage({ params }: { params: { slug: string[] } }) {
-  const slugPath = params.slug.join("/");
-  const entry = getEntry("docs", slugPath);
-  if (!entry) return <p>Not found.</p>;
-  return <entry.Content />;
-}
-```
-
-`/docs/guides/configuration` matches with `params.slug === ["guides", "configuration"]`.
-Rejoin with `slug.join("/")` to reconstruct the lookup key for `getEntry`.
-
-## Quick reference
+### Quick comparison
 
 | | Astro `getStaticPaths` | zfb `paths` |
 | --- | --- | --- |

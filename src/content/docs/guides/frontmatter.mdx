@@ -41,6 +41,8 @@ title: Quick Start
 | `sidebar_position` | number | No | `999` | Sort order within the sidebar category |
 | `sidebar_label` | string | No | Value of `title` | Override label shown in sidebar |
 | `category` | string | No | Directory name | Reserved for future use |
+| `category_no_page` | boolean | No | `false` | Makes the category a non-linked header (no route, sitemap entry, or search entry) |
+| `category_sort_order` | string | No | — | Sort order for pages within the category (e.g., `"desc"` for newest-first) |
 | `search_exclude` | boolean | No | `false` | Exclude the page from search indexing |
 | `tags` | string[] | No | -- | Tags for cross-cutting navigation |
 | `draft` | boolean | No | `false` | Exclude from production build (visible in dev) |
@@ -132,6 +134,38 @@ Reserved for future use. This field is defined in the content schema but is not 
 Organize pages into categories by placing them in directories under `src/content/docs/`. The directory name becomes the category name.
 
 </Note>
+
+### `category_no_page`
+
+- **Type:** `boolean`
+- **Required:** No
+- **Default:** `false`
+
+When set to `true` on a category `index.mdx`, the category appears as a non-linked header in the sidebar. No route, sitemap entry, or search entry is generated for the index page itself — it exists solely to label and group the pages beneath it.
+
+```mdx
+---
+title: Internals
+category_no_page: true
+sidebar_position: 10
+---
+```
+
+### `category_sort_order`
+
+- **Type:** `string`
+- **Required:** No
+- **Default:** — (ascending by `sidebar_position`)
+
+When set on a category `index.mdx`, overrides the default ascending sort order for pages within that category. Set to `"desc"` for newest-first ordering (useful for changelog or release-notes categories where the most recent entry should appear at the top).
+
+```mdx
+---
+title: Changelog
+category_sort_order: "desc"
+sidebar_position: 20
+---
+```
 
 ### `search_exclude`
 

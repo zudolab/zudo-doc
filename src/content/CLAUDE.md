@@ -14,6 +14,7 @@ Writing rules for MDX content under `docs/` (English) and `docs-ja/` (Japanese).
 - Pages with `generated: true` in frontmatter do not require Japanese translations.
 - Pages whose paths fall under `settings.defaultLocaleOnlyPrefixes` are default-locale-only by design — no JA mirror should be created for them. Current entries: `/docs/claude-md/`, `/docs/claude-skills/`, `/docs/claude-agents/`, `/docs/claude-commands/`.
 - Note: the top-level `/docs/claude/` index is bilingual (JA stub at `docs-ja/claude/index.mdx`); only the four deep prefixes above are default-locale-only.
+- `docs-ja/claude/index.mdx` is a deliberate JA-only stub with no EN-parity obligation: its EN counterpart `docs/claude/index.mdx` is **build-generated**, so hand-editing the JA file to mirror EN content would be clobbered on the next generate. Keep the JA stub minimal — do not attempt to translate the generated EN index into it.
 
 ## Frontmatter Fields
 

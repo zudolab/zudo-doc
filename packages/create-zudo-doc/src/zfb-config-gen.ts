@@ -225,6 +225,14 @@ export function generateZfbConfig(choices: UserChoices): string {
   lines.push(`  },`);
   lines.push(`  base: settings.base,`);
   lines.push(`  trailingSlash: settings.trailingSlash,`);
+  // codeHighlight — dual-theme syntect output so CSS can resolve tokens via
+  // light-dark(var(--shiki-light), var(--shiki-dark)) and code blocks follow
+  // the active light/dark toggle with no client JS. Theme names are syntect
+  // built-ins shipped with zfb (not Shiki names). Matches the host config.
+  lines.push(`  codeHighlight: {`);
+  lines.push(`    themeLight: "base16-ocean.light",`);
+  lines.push(`    themeDark: "base16-ocean.dark",`);
+  lines.push(`  },`);
   // markdown.features block — mirrors the zfb next.13 opt-in model.
   //
   // Value-shape rule (empirically verified against the next.13 Rust loader):

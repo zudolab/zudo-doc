@@ -49,10 +49,23 @@ function renderInline(text: string): string {
     return `%%CODE_${idx}%%`;
   });
 
+  // Tokenize bold spans before the italic pass so that `**` boundaries
+  // are not misread as stray `*` by the italic regex (same placeholder
+  // technique used above for inline code spans).
+  const boldSpans: string[] = [];
   processed = processed
-    // bold: **text** or __text__
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/__(.+?)__/g, "<strong>$1</strong>")
+    .replace(/\*\*(.+?)\*\*/g, (_match, inner) => {
+      const idx = boldSpans.length;
+      boldSpans.push(`<strong>${inner}</strong>`);
+      return `%%BOLD_${idx}%%`;
+    })
+    .replace(/__(.+?)__/g, (_match, inner) => {
+      const idx = boldSpans.length;
+      boldSpans.push(`<strong>${inner}</strong>`);
+      return `%%BOLD_${idx}%%`;
+    });
+
+  processed = processed
     // italic: *text* or _text_ (not inside words for _)
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
     .replace(/(?<!\w)_(.+?)_(?!\w)/g, "<em>$1</em>")
@@ -63,7 +76,8 @@ function renderInline(text: string): string {
       return `<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`;
     });
 
-  // Restore inline code spans
+  // Restore bold spans, then inline code spans
+  processed = processed.replace(/%%BOLD_(\d+)%%/g, (_match, idx) => boldSpans[parseInt(idx, 10)] ?? "");
   return processed.replace(/%%CODE_(\d+)%%/g, (_match, idx) => codeSpans[parseInt(idx, 10)] ?? "");
 }
 

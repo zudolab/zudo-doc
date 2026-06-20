@@ -543,7 +543,7 @@ function generatePackageJson(choices: UserChoices) {
     // surface — VNode/VNodeArray/VNodeObject are now exported from
     // "@takazudo/zfb" (#972) — plus removal of the no-op linkValidation.allowExternal
     // knob (#925); both are non-breaking for a fresh scaffold. A fresh scaffold
-    // sets no explicit codeHighlight.theme so the default still applies. No
+    // sets codeHighlight.themeLight/themeDark for dual-theme syntect output. No
     // consumer-facing / CLI breaking change. next.52: adds the
     // `ClientRouter({ preserveHtmlAttrs })` option (zfb#1104) — consumers can
     // declare runtime `<html>` attribute names to preserve across SPA swaps so

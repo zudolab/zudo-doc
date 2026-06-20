@@ -48,24 +48,61 @@ export function Footer({ copyright }: Props) {
 
 `.footer`クラスなし。`footer.module.css`なし。コンポーネント**が**抽象化です。
 
+### クライアントでハイドレートされるアイランド
+
+インタラクティブなコンポーネントは、独自の`useEffect`やイベントバインディングのコードを通じてzfbのアイランドランタイムに自身を登録しますが、同じユーティリティクラスのアプローチを使用します：
+
+```tsx
+// src/components/sidebar-toggle.tsx
+export function SidebarToggle({ label }: Props) {
+  const [open, setOpen] = useState(false);
+  return (
+    <button
+      class="lg:hidden flex items-center gap-hsp-xs text-fg"
+      onClick={() => setOpen(!open)}
+    >
+      {label}
+    </button>
+  );
+}
+```
+
 ### アンチパターン
+
+zudo-docプロジェクトでCSSクラス名を作成しては**いけません**：
 
 ```css
 /* 間違い — カスタムCSSクラスを作成しない */
-.profile-card { display: flex; gap: 1rem; }
+.profile-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+.profile-card__name {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
 ```
 
 ```tsx
 // 間違い — カスタムクラス名はデザインシステムをバイパスする
-<div class="profile-card">...</div>
+<div class="profile-card">
+  <h3 class="profile-card__name">{name}</h3>
+</div>
+```
 
+代わりに：
+
+```tsx
 // 正しい — ユーティリティクラス、コンポーネントが抽象化
-<div class="flex gap-hsp-md p-hsp-lg">...</div>
+<div class="flex gap-hsp-md p-hsp-lg">
+  <h3 class="text-body font-semibold">{name}</h3>
+</div>
 ```
 
 ## バリアントはPropsで
 
-CSSモディファイアクラス（`.btn--primary`）ではなく、コンポーネントプロップスを使用：
+CSSモディファイアクラス（`.btn--primary`、`.btn--secondary`）ではなく、コンポーネントプロップスを使用：
 
 ```tsx
 function Button({ variant = "primary", children }) {
@@ -80,6 +117,35 @@ function Button({ variant = "primary", children }) {
   );
 }
 ```
+
+使い方：
+
+```tsx
+<Button variant="primary">Save</Button>
+<Button variant="secondary">Cancel</Button>
+```
+
+維持すべき`.btn-primary`クラスはありません。`variant`プロップは型安全で、補完が効き、自己文書化されています。
+
+## コンポーネントの組み合わせ
+
+複雑なレイアウトは、より多くのCSSを追加するのではなく、より小さなコンポーネントを組み合わせて構築します：
+
+```tsx
+<div class="divide-y divide-muted">
+  {users.map((user) => (
+    <div class="flex items-center gap-hsp-md py-vsp-sm">
+      <Avatar src={user.avatar} size="sm" />
+      <div class="flex-1 min-w-0">
+        <p class="text-small font-medium text-fg truncate">{user.name}</p>
+        <p class="text-caption text-muted truncate">{user.email}</p>
+      </div>
+    </div>
+  ))}
+</div>
+```
+
+各要素（`<Avatar>`、リストレイアウト）はコンポーネントです。`.user-list__item`や`.user-list__avatar`といったクラス名は不要です。
 
 ## デザイントークンを使用
 
