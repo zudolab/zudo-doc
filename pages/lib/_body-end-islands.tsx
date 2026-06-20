@@ -138,10 +138,16 @@ export function BodyEndIslands({
   // component renders nothing visually — the island bundle's top-level
   // `import "@takazudo/zfb-runtime/client-router"` is what actually
   // wires up the router (zudolab/zudo-doc#1524 W7A fix).
-  const clientRouterBootstrap = Island({
-    when: "load",
-    children: <ClientRouterBootstrap />,
-  }) as unknown as VNode;
+  //
+  // Gated on `settings.dynamicPageTransition` (zudolab/zudo-doc#2266): when
+  // the SPA page-transition feature is off, neither the router bootstrap
+  // island marker nor the page-loading overlay should reach the SSG output.
+  const clientRouterBootstrap = settings.dynamicPageTransition
+    ? (Island({
+        when: "load",
+        children: <ClientRouterBootstrap />,
+      }) as unknown as VNode)
+    : null;
 
   // Hydrates on load so configurePanel() runs as early as possible and
   // the `toggle-design-token-panel` window listener is registered before
@@ -233,8 +239,10 @@ export function BodyEndIslands({
     <>
       {/* Pure SSR — no Island wrap. The component emits its overlay div,
           inline styles, and a small inline script that self-wires
-          zfb:before-preparation / zfb:after-swap listeners at runtime. */}
-      <PageLoadingOverlay />
+          zfb:before-preparation / zfb:after-swap listeners at runtime.
+          Gated on `settings.dynamicPageTransition` alongside the router
+          bootstrap above (zudolab/zudo-doc#2266): no transition → no overlay. */}
+      {settings.dynamicPageTransition ? <PageLoadingOverlay /> : null}
       {clientRouterBootstrap}
       {designTokenPanelBootstrap}
       {aiAssistant}

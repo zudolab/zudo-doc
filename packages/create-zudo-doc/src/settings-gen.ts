@@ -221,6 +221,12 @@ export function generateSettingsFile(choices: UserChoices): string {
     lines.push(`  imageEnlarge: false as boolean,`);
   }
 
+  if (choices.features.includes("dynamicPageTransition")) {
+    lines.push(`  dynamicPageTransition: true as boolean,`);
+  } else {
+    lines.push(`  dynamicPageTransition: false as boolean,`);
+  }
+
   lines.push(
     `  htmlPreview: undefined as HtmlPreviewConfig | undefined,`,
   );

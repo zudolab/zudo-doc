@@ -160,6 +160,13 @@ src/config/settings-types.ts
 # desktop-sidebar-toggle (which W6A later re-allowlisted, see above),
 # client-router-bootstrap has stayed byte-identical and remains de-allowlisted.
 #
+# (#2265): client-router-bootstrap.tsx MOVED from templates/base/src/components/
+# to templates/features/dynamicPageTransition/files/src/components/ as part of
+# gating the SPA router behind the dynamicPageTransition feature. The file
+# remains byte-identical to the host and is now enforced by the feature-template
+# loop in check-template-drift.sh (which maps templates/features/*/files/<path>
+# → host <path>). Do NOT add it to the allowlist — drift enforcement continues.
+#
 # design-token-panel-bootstrap.tsx stub was REMOVED from this list (#2162):
 # the base stub (a no-op that never carried "use client") was deleted as part
 # of gating zdtp scaffolding behind the designTokenPanel feature. The real,

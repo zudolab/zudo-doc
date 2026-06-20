@@ -1,0 +1,71 @@
+---
+title: Claude Skills (User-Facing)
+description: Ship the curated zudo-doc-* Claude Code skills with your generated project.
+sidebar_position: 11
+tags:
+  - type:guide
+---
+
+## Overview
+
+When you scaffold a project with `create-zudo-doc`, the **Claude skills (user-facing)** option ships a curated set of `zudo-doc-*` [Claude Code skills](https://docs.anthropic.com/en/docs/claude-code/skills) into your project's `.claude/skills/` directory. These are working skills — not generated documentation — that help you (and anyone working in your project with Claude Code) edit the design system, translate docs, and cut releases following zudo-doc's own conventions.
+
+This feature is **off by default**. Enable it when scaffolding if you want the bundled skills copied into your new project.
+
+<Info>
+
+This is distinct from [Claude Code Resources](./claude-resources.mdx), which auto-generates documentation **pages** from your `.claude/` directory, and from the [Documentation Skill Symlinker](./doc-skill-symlinker.mdx), which turns your docs into a lookup skill. Claude skills (user-facing) instead **ships ready-made authoring skills** into your project.
+
+</Info>
+
+## What Gets Shipped
+
+Enabling the feature copies three skills from the zudo-doc monorepo into your scaffolded project's `.claude/skills/`:
+
+| Skill | Purpose |
+|-------|---------|
+| `zudo-doc-design-system` | Project-specific CSS and component rules — design tokens, the three-tier color architecture, and the component-first strategy. Consult it before editing CSS, Tailwind classes, color tokens, or component markup. |
+| `zudo-doc-translate` | Translate documentation between English and Japanese following zudo-doc's bilingual conventions. |
+| `zudo-doc-version-bump` | Bump the package version, generate changelog docs, commit, tag, and create a GitHub release. |
+
+Each skill is a self-contained `SKILL.md` (plus any bundled references) that becomes available as a slash command in Claude Code sessions opened inside your project.
+
+## Enabling the Feature
+
+Select **Claude skills (user-facing)** in the interactive `create-zudo-doc` prompts, or pass the CLI flag:
+
+```bash
+pnpm create zudo-doc my-docs --claude-skills
+```
+
+The feature is off unless you opt in.
+
+## What Else It Wires Up
+
+Because `zudo-doc-version-bump` runs `<package-manager> b4push` as part of its release flow, enabling this feature also adds a minimal `b4push` script to your generated `package.json` so the skill does not fail with a missing-script error on a fresh project:
+
+```jsonc
+{
+  "scripts": {
+    "b4push": "pnpm check && pnpm build"
+  }
+}
+```
+
+This is a deliberately small stub — type-check then build. You are free to expand it into a richer pre-push pipeline later.
+
+## Using the Skills
+
+Once scaffolded, open your project in Claude Code and invoke a skill as a slash command. For example, before touching styles:
+
+```
+/zudo-doc-design-system colors
+```
+
+Claude reads the design-system rules and applies them to your change. The translate and version-bump skills work the same way — invoke them by name when you need them.
+
+<Tip>
+
+The shipped skills live in your project's `.claude/skills/` and are yours to edit. Treat them as a starting point — adjust the conventions to fit how your team works.
+
+</Tip>
