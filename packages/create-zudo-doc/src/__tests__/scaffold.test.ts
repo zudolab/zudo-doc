@@ -3441,12 +3441,15 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
    * ClientRouter({ preserveHtmlAttrs }) option (zfb#1104) so runtime <html>
    * attributes (data-sidebar-hidden / data-theme) survive SPA swaps
    * (zudolab/zudo-doc#2200) — additive, non-breaking for a fresh scaffold.
-   * Now bumped to 0.1.0-next.53: zfb-content GFM-autolink fix terminating the
+   * Bumped to 0.1.0-next.53: zfb-content GFM-autolink fix terminating the
    * autolink path at CJK boundaries (zfb#1105) - content-rendering bug fix,
    * additive, no consumer-facing breaking change.
+   * Now bumped to 0.1.0-next.54: bug-fix + perf release (cross-OS CSS hash
+   * stability, multi-valued response headers, supplementary-plane CJK
+   * reading-time, CLI/server/runtime hardening) — no breaking changes.
    * Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.53", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.54", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -3457,10 +3460,10 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.53");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.53");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.54");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.54");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.53",
+      "0.1.0-next.54",
     );
   });
 });

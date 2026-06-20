@@ -548,15 +548,19 @@ function generatePackageJson(choices: UserChoices) {
     // `ClientRouter({ preserveHtmlAttrs })` option (zfb#1104) — consumers can
     // declare runtime `<html>` attribute names to preserve across SPA swaps so
     // e.g. `data-sidebar-hidden` / `data-theme` survive (zudolab/zudo-doc#2200).
-    // Additive, non-breaking for a fresh scaffold. next.53 (current pin):
+    // Additive, non-breaking for a fresh scaffold. next.53:
     // zfb-content GFM-autolink fix — terminate the autolink path at CJK
     // boundaries (zfb#1105). Content-rendering bug fix, additive; relevant for
     // CJK (e.g. Japanese) docs. No consumer-facing / CLI breaking change.
-    "@takazudo/zfb": "0.1.0-next.53",
-    "@takazudo/zfb-runtime": "0.1.0-next.53",
+    // next.54 (current pin): bug-fix + perf release — cross-OS CSS hash
+    // stability, multi-valued response headers (e.g. multiple Set-Cookie),
+    // supplementary-plane CJK reading-time, plus CLI/server/runtime hardening
+    // and render perf passes. No consumer-facing / CLI breaking change.
+    "@takazudo/zfb": "0.1.0-next.54",
+    "@takazudo/zfb-runtime": "0.1.0-next.54",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.53",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.54",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
