@@ -1,0 +1,16 @@
+---
+title: 0.2.15
+description: 0.2.15のリリースノート。
+sidebar_position: 1026
+---
+
+リリース日: 2026-06-20
+
+### バグ修正
+
+- `claudeResources` 機能を有効にして scaffold したプロジェクトで「Claude」ヘッダーナビ項目が出力されるようになりました。生成サイトで Claude 関連のドキュメントリソース（claude-md/claude-skills/claude-commands/claude-agents）がトップレベルのカードに分散せず、単一の「Claude」カテゴリにまとまります。(#2234)
+- `prefers-reduced-motion` 環境でルートの View Transition グループも無効化するようにしました。reduced-motion のユーザーに一瞬の固まった操作不能なルートスナップショットが表示されず、即座にページが切り替わります。(#2235)
+
+### その他の変更
+
+- CI: デプロイ後の CSS 形状スモークゲートが、ホームページとハッシュ付きアセットの fetch をリトライするようになりました。デプロイ直後にハッシュが更新された CSS アセットが一時的に 404 になりうる Cloudflare エッジの伝播レースを吸収します。(#2237)

@@ -1,0 +1,16 @@
+---
+title: 0.2.15
+description: Release notes for 0.2.15.
+sidebar_position: 1026
+---
+
+Released: 2026-06-20
+
+### Bug Fixes
+
+- A scaffolded project with the `claudeResources` feature enabled now emits a "Claude" header-nav entry, so the generated site groups the Claude doc resources under a single "Claude" category instead of scattering claude-md/claude-skills/claude-commands/claude-agents as top-level cards. (#2234)
+- Under `prefers-reduced-motion`, the root View Transition group is now neutralized as well, so reduced-motion users get an instant page swap instead of a brief frozen, non-interactive root snapshot. (#2235)
+
+### Other Changes
+
+- CI: the post-deploy CSS-shape smoke gate now retries its homepage and hashed-asset fetches, absorbing the brief Cloudflare edge propagation race that could transiently 404 a freshly-hashed CSS asset right after deploy. (#2237)
