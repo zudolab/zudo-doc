@@ -33,6 +33,7 @@ export const settings = {
   docTags: false,
   math: false,
   docHistory: false,
+  dynamicPageTransition: true as boolean,
   claudeResources: false as { claudeDir: string; projectRoot?: string } | false,
   defaultLocaleOnlyPrefixes: [] as string[],
   tocMinDepth: 2 as number,

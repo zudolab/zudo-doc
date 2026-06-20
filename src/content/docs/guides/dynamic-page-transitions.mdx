@@ -1,0 +1,97 @@
+---
+title: Dynamic Page Transition
+description: SPA-style soft navigation with a cross-fade, a loading overlay, and preserved chrome between pages.
+sidebar_position: 10
+tags:
+  - customization
+---
+
+## Overview
+
+By default, zudo-doc navigates between pages without a full browser reload. Instead of fetching a brand-new document and repainting the whole window, it swaps only the page body in place, keeps the surrounding chrome (header, sidebar, footer) untouched, and animates the change with a cross-fade. The result feels like a single-page app (SPA): fast, smooth, and free of the white flash that a hard navigation produces.
+
+This behaviour is called **Dynamic page transition**, and it is **on by default**.
+
+<Note>
+
+Dynamic page transition is purely a presentational enhancement. The site is still a fully static export — every page exists as standalone HTML and works without JavaScript. The transition layer only intercepts in-app link clicks when JS is available; everything degrades to ordinary navigation otherwise.
+
+</Note>
+
+## What It Does
+
+A dynamic navigation combines three pieces:
+
+1. **Same-document body swap.** When you click an internal link, the router fetches the target page in the background, then replaces the current page's body content with the new page's content — without tearing down and rebuilding the entire document. The header, sidebar, and footer DOM nodes persist across the navigation, so their scroll position and state are preserved.
+2. **History handling.** The router updates the browser history with `pushState` so the URL changes and the Back/Forward buttons work exactly as they would with a normal navigation. Pressing Back fires a `popstate` event, which the router handles by swapping back to the previous page — again without a full reload.
+3. **View Transitions API cross-fade.** The swap is wrapped in the browser's [View Transitions API](https://developer.mozilla.org/en-US/docs/Web/API/View_Transitions_API), which captures a snapshot of the old and new states and animates between them. The non-chrome content cross-fades, while the header, sidebar, and footer are extracted into their own transition layers and held static so they don't flicker.
+
+<Info>
+
+The chrome elements (`<header>`, the desktop sidebar, `<footer>`, and the sidebar-toggle button) are pinned with a stable `view-transition-name`, which is what lets the cross-fade animate only the article area. When a chrome element exists on one page but not the next (for example, moving from a docs page with a sidebar to a top page without one), that element fades in or out in sync with the content instead of snapping.
+
+</Info>
+
+## The Loading Overlay
+
+While the target page is being fetched, zudo-doc shows a full-screen **loading overlay** with a centered spinner. It appears when the navigation begins and disappears as soon as the new content is swapped in, giving immediate feedback that a click was registered — especially useful on slower connections where the fetch takes a moment.
+
+The link or button you clicked is also briefly highlighted while its navigation is pending, so it's clear which action is in flight.
+
+<Tip>
+
+The overlay only shows for the brief window between click and swap. For fast local navigations it may flash by almost instantly — that's expected. Its job is to cover the perceptible delay on slower fetches, not to add an artificial pause.
+
+</Tip>
+
+## Reduced Motion
+
+zudo-doc respects the user's `prefers-reduced-motion` setting. When a visitor has reduced motion enabled at the OS level:
+
+- The cross-fade animation is collapsed to an **instant swap** — the new page appears immediately with no fade or slide.
+- The spinner stops rotating and is shown as a **static** dimmed ring instead of an animated one.
+
+The navigation itself still works the same way (same-document swap, history handling); only the motion is removed. This keeps the experience comfortable for users who are sensitive to animation while preserving the performance benefit of soft navigation.
+
+## Toggling the Feature
+
+Dynamic page transition is controlled by the `dynamicPageTransition` setting, and it is **enabled by default**.
+
+### In `settings.ts`
+
+```ts
+export const settings = {
+  // ...
+  dynamicPageTransition: true,
+};
+```
+
+Set it to `false` to disable dynamic transitions entirely.
+
+### In the preset generator
+
+When scaffolding a new project with `create-zudo-doc`, the option is labelled **"Dynamic page transition"** and is enabled by default. You can control it non-interactively with CLI flags:
+
+```sh
+# Explicitly enable (this is the default)
+create-zudo-doc my-docs --dynamic-page-transition
+
+# Disable — generate a project with plain full-page navigation
+create-zudo-doc my-docs --no-dynamic-page-transition
+```
+
+## What "Off" Means
+
+With dynamic page transition disabled, navigation falls back to **plain full-page loads**:
+
+- Every internal link triggers a normal browser navigation — the document is fetched and the whole page is repainted.
+- There is **no SPA body swap**: the header, sidebar, and footer are rebuilt on each navigation rather than persisting.
+- There is **no loading overlay** and **no cross-fade** — you get the browser's default navigation behaviour.
+
+This is a simpler model with zero transition JavaScript. Choose it if you prefer a classic multi-page experience, need to rule out any interaction between the soft-swap router and custom client-side scripts, or simply don't want the animation.
+
+<Note>
+
+Turning the feature off does not change your content or routes in any way — only how the browser moves between pages. Every page remains a standalone, statically exported HTML document either way.
+
+</Note>

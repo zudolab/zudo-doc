@@ -3913,6 +3913,120 @@ describe("scaffold — imageEnlarge does not duplicate the settings import (#217
   });
 });
 
+describe("scaffold — dynamicPageTransition feature (#2267)", () => {
+  it("feature ON: generates client-router-bootstrap.tsx", async () => {
+    const choices: UserChoices = {
+      projectName: "test-dpt-on-file",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "dynamicPageTransition"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-dpt-on-file",
+          "src/components/client-router-bootstrap.tsx",
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it("feature ON: global.css contains page-loading overlay/spinner CSS and ::view-transition- rule", async () => {
+    const choices: UserChoices = {
+      projectName: "test-dpt-on-css",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "dynamicPageTransition"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const css = await fs.readFile(
+      projectPath("test-dpt-on-css", "src/styles/global.css"),
+      "utf-8",
+    );
+    expect(css).toContain(".page-loading-overlay");
+    expect(css).toContain(".page-loading-spinner");
+    expect(css).toContain("@keyframes page-loading-spin");
+    expect(css).toMatch(/::view-transition-/);
+  });
+
+  it("feature ON: settings.ts contains dynamicPageTransition: true", async () => {
+    const choices: UserChoices = {
+      projectName: "test-dpt-on-settings",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "dynamicPageTransition"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-dpt-on-settings", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("dynamicPageTransition: true");
+  });
+
+  it("feature OFF: does NOT generate client-router-bootstrap.tsx", async () => {
+    const choices: UserChoices = {
+      projectName: "test-dpt-off-file",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-dpt-off-file",
+          "src/components/client-router-bootstrap.tsx",
+        ),
+      ),
+    ).toBe(false);
+  });
+
+  it("feature OFF: global.css does NOT contain page-loading overlay or ::view-transition- rules", async () => {
+    const choices: UserChoices = {
+      projectName: "test-dpt-off-css",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const css = await fs.readFile(
+      projectPath("test-dpt-off-css", "src/styles/global.css"),
+      "utf-8",
+    );
+    expect(css).not.toContain(".page-loading-overlay");
+    expect(css).not.toMatch(/::view-transition-/);
+  });
+
+  it("feature OFF: settings.ts contains dynamicPageTransition: false", async () => {
+    const choices: UserChoices = {
+      projectName: "test-dpt-off-settings",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-dpt-off-settings", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("dynamicPageTransition: false");
+  });
+});
+
 describe("scaffold — noindex feature (#2218)", () => {
   it("settings have noindex: true when noindex feature is selected", async () => {
     const choices: UserChoices = {

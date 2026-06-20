@@ -223,6 +223,13 @@ export const FEATURES: Feature[] = [
     cliFlag: "image-enlarge",
   },
   {
+    value: "dynamicPageTransition",
+    label: "Dynamic page transition",
+    hint: "SPA-style page transition with history handling",
+    default: true,
+    cliFlag: "dynamic-page-transition",
+  },
+  {
     value: "footerCopyright",
     label: "Footer copyright",
     hint: "Copyright notice in the footer",

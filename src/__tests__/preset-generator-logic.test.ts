@@ -280,7 +280,7 @@ describe("default generator state — regression: matches target JSON", () => {
       darkScheme: "Default Dark",
       defaultMode: "dark",
       respectPrefersColorScheme: true,
-      features: ["search", "sidebarFilter", "imageEnlarge"],
+      features: ["search", "sidebarFilter", "imageEnlarge", "dynamicPageTransition"],
       cjkFriendly: true,
       packageManager: "pnpm",
       headerRightItems: [

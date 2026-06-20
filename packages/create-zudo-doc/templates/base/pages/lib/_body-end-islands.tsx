@@ -33,10 +33,8 @@ import { Island } from "@takazudo/zfb";
 import { settings } from "@/config/settings";
 
 import AiChatModal from "@/components/ai-chat-modal";
-import ClientRouterBootstrap from "@/components/client-router-bootstrap";
 import ImageEnlarge, { ImageEnlargeSsrFallback } from "@/components/image-enlarge";
 import MermaidEnlarge, { MermaidEnlargeSsrFallback } from "@/components/mermaid-enlarge";
-import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";
 // @slot:body-end-islands:imports
 
 // Set explicit `displayName` on each default-exported island so zfb's
@@ -47,8 +45,6 @@ import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";
 // function names by default, but the explicit assignment is a
 // belt-and-braces guard for production minification regressions.
 (AiChatModal as { displayName?: string }).displayName = "AiChatModal";
-(ClientRouterBootstrap as { displayName?: string }).displayName =
-  "ClientRouterBootstrap";
 (ImageEnlarge as { displayName?: string }).displayName = "ImageEnlarge";
 (MermaidEnlarge as { displayName?: string }).displayName = "MermaidEnlarge";
 // @slot:body-end-islands:display-names
@@ -104,16 +100,6 @@ export function BodyEndIslands({
   basePath,
   aiChatBodyLabel = DEFAULT_AI_CHAT_BODY_LABEL,
 }: BodyEndIslandsProps): JSX.Element {
-  // Hydrates first (when="load") so the SPA-router click intercept is
-  // registered as soon as the islands runtime mounts the marker. The
-  // component renders nothing visually — the island bundle's top-level
-  // `import "@takazudo/zfb-runtime/client-router"` is what actually
-  // wires up the router (zudolab/zudo-doc#1524 W7A fix).
-  const clientRouterBootstrap = Island({
-    when: "load",
-    children: <ClientRouterBootstrap />,
-  }) as unknown as VNode;
-
   // Gated on `settings.aiAssistant` (zudolab/zudo-doc#2058): when the AI
   // assistant feature is off, neither the AiChatModal island marker nor the
   // sr-only "AI Assistant" landmark heading should reach the SSG output —
@@ -177,11 +163,6 @@ export function BodyEndIslands({
 
   return (
     <>
-      {/* Pure SSR — no Island wrap. The component emits its overlay div,
-          inline styles, and a small inline script that self-wires
-          zfb:before-preparation / zfb:after-swap listeners at runtime. */}
-      <PageLoadingOverlay />
-      {clientRouterBootstrap}
       {aiAssistant}
       {imageEnlarge}
       {mermaidEnlarge}

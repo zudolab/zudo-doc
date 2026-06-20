@@ -27,6 +27,7 @@ export interface CliArgs {
   tauri?: boolean;
   tauriDev?: boolean;
   footerNavGroup?: boolean;
+  dynamicPageTransition?: boolean;
   footerCopyright?: boolean;
   changelog?: boolean;
   tagGovernance?: boolean;

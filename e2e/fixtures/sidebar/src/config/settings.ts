@@ -19,6 +19,7 @@ export const settings = {
   // mount in this fixture — required to exercise the SPA-nav flash regression
   // (#2198), which only reproduces with the toggle island present.
   sidebarToggle: true as boolean,
+  dynamicPageTransition: true as boolean,
   noindex: true as boolean,
   editUrl: false as string | false,
   siteUrl: "" as string,

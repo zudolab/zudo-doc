@@ -33,6 +33,7 @@ export const settings = {
   llmsTxt: false,
   math: false,
   docHistory: false,
+  dynamicPageTransition: true as boolean,
   versions: [
     {
       slug: "1.0",
