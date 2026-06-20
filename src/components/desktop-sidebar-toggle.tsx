@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'preact/hooks';
 import { ChevronRight, ChevronLeft } from '@takazudo/zudo-doc/icons';
+import { AFTER_NAVIGATE_EVENT } from "@takazudo/zudo-doc/transitions";
 
 export const SIDEBAR_STORAGE_KEY = 'zudo-doc-sidebar-visible';
 
@@ -64,6 +65,14 @@ export default function DesktopSidebarToggle() {
       setVisible(actual);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // After each soft SPA navigation, re-apply the data-attribute so a
+  // "hidden" preference is not lost when the router swaps root attributes.
+  useEffect(() => {
+    const handler = () => setDataAttribute(readState());
+    document.addEventListener(AFTER_NAVIGATE_EVENT, handler);
+    return () => document.removeEventListener(AFTER_NAVIGATE_EVENT, handler);
   }, []);
 
   // The SPA-navigation flash (a collapsed sidebar briefly painting open on
