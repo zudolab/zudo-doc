@@ -59,7 +59,7 @@ export default defineConfig({
       // is a symlink back to the repo root, so the binary path is shared.
       command: `${stagger}cd e2e/fixtures/${name} && ./node_modules/.bin/zfb preview --port ${BASE_PORT + i}`,
       url: `http://localhost:${BASE_PORT + i}/`,
-      reuseExistingServer: true,
+      reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     };
   }),
