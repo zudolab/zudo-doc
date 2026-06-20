@@ -13,6 +13,7 @@ These commands start the local development servers.
 | `pnpm dev` | Runs the zfb dev server (port 4321) and doc-history-server (port 4322) concurrently |
 | `pnpm dev:zfb` | zfb dev server only (port 4321) |
 | `pnpm dev:history` | Doc history API server only (port 4322) |
+| `pnpm dev:zudo-doc` | tsup `--watch` for the `@takazudo/zudo-doc` package |
 | `pnpm dev:stable` | Alternative build-then-serve mode (avoids HMR crashes on content file add/remove) |
 | `pnpm dev:network` | zfb dev server with `--host 0.0.0.0` for LAN access |
 
@@ -81,7 +82,7 @@ Follow these steps when adding new documentation pages:
 2. Write content starting with `## h2` headings. Do not add `# h1` — the frontmatter `title` renders as the page h1.
 3. Create a matching file under `src/content/docs-ja/` with translated prose.
 4. Keep all code blocks identical between EN and JA — only translate the surrounding prose.
-5. Run `pnpm format` (or `pnpm format:mdx`) to format MDX files.
+5. Run `pnpm format` to format MDX files.
 6. Run `pnpm build` to verify the site builds correctly.
 
 <Tip>

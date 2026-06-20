@@ -13,6 +13,7 @@ sidebar_position: 17
 | `pnpm dev` | zfb開発サーバー（ポート4321）とdoc-history-server（ポート4322）を同時に起動 |
 | `pnpm dev:zfb` | zfb開発サーバーのみ（ポート4321） |
 | `pnpm dev:history` | docヒストリーAPIサーバーのみ（ポート4322） |
+| `pnpm dev:zudo-doc` | `@takazudo/zudo-doc`パッケージのtsup `--watch` |
 | `pnpm dev:stable` | ビルドしてからサーブする代替モード（コンテンツファイルの追加・削除時のHMRクラッシュを回避） |
 | `pnpm dev:network` | `--host 0.0.0.0`でzfb開発サーバーを起動（LAN経由アクセス用） |
 
@@ -81,7 +82,7 @@ zudo-docはzfb上で動作するPreact専用プロジェクトです。すべて
 2. `## h2`見出しからコンテンツを書き始めます。`# h1`は追加しません — フロントマターの`title`がページのh1としてレンダリングされます。
 3. `src/content/docs-ja/`以下に日本語訳を含む対応ファイルを作成します。
 4. ENとJAのコードブロックは同一に保ちます — 翻訳するのは周囲のプロズのみです。
-5. `pnpm format`（または`pnpm format:mdx`）を実行してMDXファイルをフォーマットします。
+5. `pnpm format`を実行してMDXファイルをフォーマットします。
 6. `pnpm build`を実行してサイトが正常にビルドされることを確認します。
 
 <Tip>
