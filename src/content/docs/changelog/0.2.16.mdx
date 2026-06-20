@@ -1,0 +1,26 @@
+---
+title: 0.2.16
+description: Release notes for 0.2.16.
+sidebar_position: 1027
+---
+
+Released: 2026-06-21
+
+### Features
+
+- **Dynamic page transitions** are now a toggleable `create-zudo-doc` feature (`dynamicPageTransition`, default on). The SPA View-Transition page swap and the page-loading overlay/spinner are gated behind the feature and shipped to scaffolded projects, with EN + JA docs. (#2269)
+- Added a baseline `:focus-visible` outline in `@layer base` so keyboard focus is visible on raw-CSS buttons (code copy, image-enlarge, mermaid tools, …) after the tight-token reset wiped Tailwind defaults; mirrored into the generator template. (#2256)
+
+### Bug Fixes
+
+- The generated `zfb.config.ts` now emits the `codeHighlight` dual-theme block, so scaffolded projects produce the `--shiki-light` / `--shiki-dark` tokens their `global.css` expects. (#2257)
+- The page-loading overlay/spinner CSS now actually reaches scaffolded projects — it was previously never injected into the template. (#2269)
+- `render-markdown` tokenizes bold spans before the italic pass, fixing stray `<em>` wrapping on inputs like `**a** and **b**`. (#2260)
+- The desktop sidebar toggle re-applies `data-sidebar-hidden` after a soft SPA navigation, so a hidden sidebar no longer reappears. (#2255)
+- The search worker adds a post-parse body-size cap (413) that closes a chunked-POST bypass, and whitespace-only queries now short-circuit with a 400 instead of reaching the index. (#2258)
+- Three small hardening fixes: truncate Claude API error bodies to 500 chars, use a real `^0.2.15` semver range (not `workspace:^`) in `@takazudo/zudo-doc` peer dependencies so npm/yarn installs resolve, and stop reusing a stale Playwright dev server in CI. (#2259)
+
+### Other Changes
+
+- Bumped the `@takazudo/zfb` stack (`@takazudo/zfb`, `@takazudo/zfb-runtime`, `@takazudo/zfb-adapter-cloudflare`) to `0.1.0-next.54` — a bug-fix + perf release with no breaking changes. (#2271)
+- Documentation: reframed the routing-conventions and trailing-slash pages around zfb (not Astro), corrected the `trailingSlash` default, documented the `category_no_page` / `category_sort_order` frontmatter fields and the `dev:zudo-doc` command, updated getting-started to Node 22+ / zfb framing, and restored JA parity for the component-first, doc-skill-symlinker, and introduction pages. (#2253)

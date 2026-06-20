@@ -1,0 +1,26 @@
+---
+title: 0.2.16
+description: 0.2.16のリリースノート。
+sidebar_position: 1027
+---
+
+リリース日: 2026-06-21
+
+### 機能
+
+- **動的ページトランジション**が `create-zudo-doc` の切り替え可能な機能（`dynamicPageTransition`、デフォルト有効）になりました。SPA の View Transition によるページ切り替えとページ読み込みオーバーレイ／スピナーが機能としてゲートされ、ドキュメント（EN + JA）付きで生成プロジェクトに同梱されます。(#2269)
+- キーボードフォーカスが見えるように、`@layer base` にベースラインの `:focus-visible` アウトラインを追加しました。タイトトークンのリセットで Tailwind のデフォルトが消えた後にフォーカススタイルを失っていた素の CSS ボタン（コードコピー、画像拡大、mermaid ツールなど）に適用され、ジェネレーターのテンプレートにも反映されています。(#2256)
+
+### バグ修正
+
+- 生成される `zfb.config.ts` が `codeHighlight` のデュアルテーマブロックを出力するようになり、生成プロジェクトの `global.css` が期待する `--shiki-light` / `--shiki-dark` トークンが生成されるようになりました。(#2257)
+- ページ読み込みオーバーレイ／スピナーの CSS が実際に生成プロジェクトへ届くようになりました（以前はテンプレートに注入されていませんでした）。(#2269)
+- `render-markdown` が斜体パスの前に太字スパンをトークン化するようになり、`**a** and **b**` のような入力で余分な `<em>` が付く問題を修正しました。(#2260)
+- ソフトな SPA ナビゲーション後にデスクトップのサイドバートグルが `data-sidebar-hidden` を再適用するようになり、非表示のサイドバーが再表示されなくなりました。(#2255)
+- 検索ワーカーにパース後のボディサイズ上限（413）を追加してチャンク POST によるバイパスを塞ぎ、空白のみのクエリはインデックスに到達せず 400 で短絡するようになりました。(#2258)
+- 3 つの小さな堅牢化修正: Claude API のエラーボディを 500 文字に切り詰め、`@takazudo/zudo-doc` の peer 依存を `workspace:^` ではなく実際の `^0.2.15` semver 範囲にして npm/yarn のインストールを解決し、CI で古い Playwright dev サーバーを再利用しないようにしました。(#2259)
+
+### その他の変更
+
+- `@takazudo/zfb` スタック（`@takazudo/zfb`、`@takazudo/zfb-runtime`、`@takazudo/zfb-adapter-cloudflare`）を `0.1.0-next.54` に更新しました。バグ修正＋パフォーマンスのリリースで、破壊的変更はありません。(#2271)
+- ドキュメント: ルーティング規約と末尾スラッシュのページを Astro ではなく zfb 中心に書き直し、`trailingSlash` のデフォルトを修正し、`category_no_page` / `category_sort_order` のフロントマターフィールドと `dev:zudo-doc` コマンドを文書化し、getting-started を Node 22+ / zfb の枠組みに更新し、component-first・doc-skill-symlinker・introduction ページの JA パリティを復元しました。(#2253)
