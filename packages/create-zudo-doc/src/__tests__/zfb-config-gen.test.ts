@@ -240,4 +240,17 @@ describe("generateZfbConfig", () => {
     expect(result).toContain("resolveMarkdownLinks: {");
     expect(result).toContain('onBrokenLinks: "warn"');
   });
+
+  it("emits codeHighlight block with dual-theme syntect themes matching host (#2257)", () => {
+    // The base template's global.css resolves code tokens via
+    // light-dark(var(--shiki-light), var(--shiki-dark)). Without a
+    // codeHighlight block, zfb emits single-theme tokens and the CSS
+    // expectation is never met — code is invisible on one theme. The
+    // generated config must declare both themeLight and themeDark to
+    // enable dual-theme output, matching the host's zfb.config.ts.
+    const result = generateZfbConfig(baseChoices);
+    expect(result).toContain("codeHighlight: {");
+    expect(result).toContain('themeLight: "base16-ocean.light"');
+    expect(result).toContain('themeDark: "base16-ocean.dark"');
+  });
 });
