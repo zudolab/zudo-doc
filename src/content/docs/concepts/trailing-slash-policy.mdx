@@ -8,18 +8,20 @@ sidebar_position: 1
 
 zudo-doc enforces a "trailing slash always" URL policy: every page lives at a path
 ending with `/` — for example `/docs/getting-started/` rather than
-`/docs/getting-started`. This matches the convention zudo-doc used in its Astro era (`trailingSlash: "always"`
-setting that was active before the zfb migration).
-
-Historically (Astro era), the enforcement ran in two places:
-
-- The **build**: Astro emitted `dist/docs/getting-started/index.html`, so
-  `trailingSlash: "always"` was baked into the output paths.
-- **Dev server middleware**: `src/middleware-handler.ts` issued a 301 redirect for
-  any request that arrived without the trailing slash.
+`/docs/getting-started`.
 
 zfb is a **static-only** builder — there is no server-side middleware layer. The
 enforcement therefore splits cleanly into two concerns with different owners.
+
+:::note[Astro background]
+
+zudo-doc originated on Astro, which enforced trailing slashes in two places: the build
+emitted `dist/docs/getting-started/index.html` (controlled by `trailingSlash: "always"`),
+and `src/middleware-handler.ts` issued 301 redirects for bare-path requests.
+In zfb those two concerns map to the same split described below — build time and
+deployment host — but the enforcement mechanism is different in each case.
+
+:::
 
 ## Build time — owned by zfb / url-normalizer
 
@@ -54,8 +56,7 @@ const canonical = normalizePathname(rawPathname); // adds "/" if missing
 
 ### Skip rules
 
-`normalizePathname()` and its underlying `shouldSkipNormalization()` preserve
-the same skip rules that were in the legacy middleware:
+`normalizePathname()` and its underlying `shouldSkipNormalization()` apply these skip rules:
 
 | Condition | Behaviour |
 |---|---|

@@ -6,14 +6,16 @@ sidebar_position: 1
 
 ## 概要
 
-zudo-docは「常に末尾スラッシュあり」のURLポリシーを採用しています。すべてのページは末尾が `/` で終わるパスに配置されます。例えば `/docs/getting-started` ではなく `/docs/getting-started/` です。この規則は、zudo-docがAstro時代に採用していた規約（zfb移行前に有効だった `trailingSlash: "always"` 設定）に基づいています。
-
-歴史的に（Astro時代）、この適用は2箇所で行われていました：
-
-- **ビルド**: Astroは `dist/docs/getting-started/index.html` を出力するため、`trailingSlash: "always"` が出力パスに組み込まれていました。
-- **開発サーバーミドルウェア**: `src/middleware-handler.ts` が末尾スラッシュなしでリクエストが到着した場合に301リダイレクトを発行していました。
+zudo-docは「常に末尾スラッシュあり」のURLポリシーを採用しています。すべてのページは末尾が `/` で終わるパスに配置されます。例えば `/docs/getting-started` ではなく `/docs/getting-started/` です。
 
 zfbは**静的サイトビルダーのみ**であり、サーバーサイドのミドルウェアレイヤーはありません。そのため、適用は異なる担当者を持つ2つの関心事に明確に分割されます。
+
+:::note[Astroについての背景]
+
+zudo-docはもともとAstroで構築されており、2箇所で末尾スラッシュを強制していました。ビルド時には `trailingSlash: "always"` の設定により `dist/docs/getting-started/index.html` が出力され、`src/middleware-handler.ts` がパスに末尾スラッシュのないリクエストに対して301リダイレクトを発行していました。
+zfbでは、この2つの関心事は以下で説明するのと同じ分割（ビルド時とデプロイホスト）に対応しますが、それぞれの強制メカニズムは異なります。
+
+:::
 
 ## ビルド時 — zfb / url-normalizerの担当
 
@@ -44,7 +46,7 @@ const canonical = normalizePathname(rawPathname); // 末尾スラッシュがな
 
 ### スキップルール
 
-`normalizePathname()` とその内部の `shouldSkipNormalization()` は、レガシーミドルウェアと同じスキップルールを保持しています：
+`normalizePathname()` とその内部の `shouldSkipNormalization()` は、以下のスキップルールを適用します：
 
 | 条件 | 動作 |
 |---|---|
