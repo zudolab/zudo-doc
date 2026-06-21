@@ -3447,9 +3447,14 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
    * Now bumped to 0.1.0-next.54: bug-fix + perf release (cross-OS CSS hash
    * stability, multi-valued response headers, supplementary-plane CJK
    * reading-time, CLI/server/runtime hardening) — no breaking changes.
+   * Bumped to 0.1.0-next.55: dev-perf + bug-fix release — `zfb dev`
+   * incremental shadow materialise (per-session skip cache, dev tick
+   * ~6.7s→2.5s) plus a materialise skip-cache wipe on pipeline
+   * config-fingerprint change; production builds byte-for-byte unchanged,
+   * no consumer-facing breaking change.
    * Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.54", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.55", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -3460,10 +3465,10 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.54");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.54");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.55");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.55");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.54",
+      "0.1.0-next.55",
     );
   });
 });
