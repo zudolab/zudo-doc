@@ -63,6 +63,7 @@ export default function IndexPage(): JSX.Element {
       head={<HeadWithDefaults title={settings.siteName} />}
       lang={locale}
       noindex={settings.noindex}
+      enableClientRouter={settings.dynamicPageTransition}
       hideSidebar={true}
       hideToc={true}
       // Empty fragment suppresses DocLayoutWithDefaults' empty-data default

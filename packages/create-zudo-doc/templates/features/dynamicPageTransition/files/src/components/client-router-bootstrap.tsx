@@ -47,10 +47,11 @@ import "@takazudo/zfb-runtime/client-router";
 import type { JSX } from "preact";
 
 /**
- * Renders nothing. The island marker exists only so zfb's island scanner
- * walks page → BodyEndIslands → ClientRouterBootstrap and includes the
- * client-router barrel in the per-island bundle, where the side-effect
- * import above can fire on the client.
+ * Renders nothing. The SSR `<ClientRouter />` rendered by DocLayout (when
+ * `enableClientRouter` is true) self-activates on the client as a top-level
+ * module side effect — this island is now a redundant belt-and-suspenders
+ * fallback. The island marker keeps the client-router barrel in the bundle
+ * for environments where the SSR path alone is insufficient.
  */
 function ClientRouterBootstrap(): JSX.Element | null {
   return null;

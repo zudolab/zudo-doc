@@ -182,6 +182,7 @@ export function DocPageShell(props: DocPageShellProps): JSX.Element {
       head={<HeadWithDefaults title={title} description={description} canonical={canonical} />}
       lang={locale}
       noindex={settings.noindex}
+      enableClientRouter={settings.dynamicPageTransition}
       hideSidebar={hideSidebar}
       hideToc={hideToc}
       headings={headings}

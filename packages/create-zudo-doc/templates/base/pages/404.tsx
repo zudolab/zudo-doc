@@ -34,6 +34,7 @@ export default function NotFoundPage(): JSX.Element {
       head={<HeadWithDefaults title={title} />}
       lang={locale}
       noindex={true}
+      enableClientRouter={settings.dynamicPageTransition}
       hideSidebar={true}
       hideToc={true}
       // Empty fragment suppresses DocLayoutWithDefaults' empty-data default

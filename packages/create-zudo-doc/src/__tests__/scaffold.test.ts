@@ -4033,6 +4033,113 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
     );
     expect(content).toContain("dynamicPageTransition: false");
   });
+
+  // #2276: every <DocLayoutWithDefaults> render site must thread
+  // enableClientRouter={settings.dynamicPageTransition} so the SPA router is
+  // gated per-page by the settings flag.
+  it("feature ON: _doc-page-shell.tsx contains enableClientRouter={settings.dynamicPageTransition}", async () => {
+    const choices: UserChoices = {
+      projectName: "test-dpt-on-ecr-shell",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "dynamicPageTransition"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-dpt-on-ecr-shell", "pages/lib/_doc-page-shell.tsx"),
+      "utf-8",
+    );
+    expect(content).toContain("enableClientRouter={settings.dynamicPageTransition}");
+  });
+
+  it("feature OFF: _doc-page-shell.tsx contains enableClientRouter={settings.dynamicPageTransition}", async () => {
+    const choices: UserChoices = {
+      projectName: "test-dpt-off-ecr-shell",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-dpt-off-ecr-shell", "pages/lib/_doc-page-shell.tsx"),
+      "utf-8",
+    );
+    // The prop must be present regardless of feature state — the value
+    // (settings.dynamicPageTransition) is false at runtime when feature is off.
+    expect(content).toContain("enableClientRouter={settings.dynamicPageTransition}");
+  });
+
+  it("feature ON: pages/index.tsx contains enableClientRouter={settings.dynamicPageTransition}", async () => {
+    const choices: UserChoices = {
+      projectName: "test-dpt-on-ecr-index",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "dynamicPageTransition"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-dpt-on-ecr-index", "pages/index.tsx"),
+      "utf-8",
+    );
+    expect(content).toContain("enableClientRouter={settings.dynamicPageTransition}");
+  });
+
+  it("feature OFF: pages/index.tsx contains enableClientRouter={settings.dynamicPageTransition}", async () => {
+    const choices: UserChoices = {
+      projectName: "test-dpt-off-ecr-index",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-dpt-off-ecr-index", "pages/index.tsx"),
+      "utf-8",
+    );
+    expect(content).toContain("enableClientRouter={settings.dynamicPageTransition}");
+  });
+
+  it("feature ON: pages/404.tsx contains enableClientRouter={settings.dynamicPageTransition}", async () => {
+    const choices: UserChoices = {
+      projectName: "test-dpt-on-ecr-404",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search", "dynamicPageTransition"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-dpt-on-ecr-404", "pages/404.tsx"),
+      "utf-8",
+    );
+    expect(content).toContain("enableClientRouter={settings.dynamicPageTransition}");
+  });
+
+  it("feature OFF: pages/404.tsx contains enableClientRouter={settings.dynamicPageTransition}", async () => {
+    const choices: UserChoices = {
+      projectName: "test-dpt-off-ecr-404",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-dpt-off-ecr-404", "pages/404.tsx"),
+      "utf-8",
+    );
+    expect(content).toContain("enableClientRouter={settings.dynamicPageTransition}");
+  });
 });
 
 describe("scaffold — noindex feature (#2218)", () => {

@@ -129,6 +129,7 @@ export function TagDetailPageView({
       // undefined relies on Preact treating an undefined prop as absent.
       lang={isDefault ? undefined : locale}
       noindex={settings.noindex}
+      enableClientRouter={settings.dynamicPageTransition}
       hideSidebar={true}
       hideToc={true}
       // Empty fragment suppresses DocLayoutWithDefaults' empty-data default
@@ -187,6 +188,7 @@ export function TagsIndexPageView({ locale }: { locale: string }): JSX.Element {
       // Same undefined-≡-absent reliance as TagDetailPageView above.
       lang={isDefault ? undefined : locale}
       noindex={settings.noindex}
+      enableClientRouter={settings.dynamicPageTransition}
       hideSidebar={true}
       hideToc={true}
       // Empty fragment suppresses DocLayoutWithDefaults' empty-data default

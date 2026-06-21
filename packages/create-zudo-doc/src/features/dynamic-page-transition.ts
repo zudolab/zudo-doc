@@ -3,10 +3,15 @@ import type { FeatureModule } from "../compose.js";
 /**
  * Dynamic page transition feature.
  *
- * When enabled, wires the SPA client-side router (ClientRouterBootstrap
- * island) and the page-loading overlay (PageLoadingOverlay, pure SSR) into
- * body-end-islands, and injects the View-Transitions CSS + page-loading
- * overlay CSS into global.css.
+ * When enabled:
+ * - Sets `enableClientRouter={settings.dynamicPageTransition}` on every
+ *   `<DocLayoutWithDefaults>` render site — the SSR `<ClientRouter />` render
+ *   self-activates the SPA router on the client as a top-level module side
+ *   effect (primary activation path).
+ * - Wires the ClientRouterBootstrap island and the PageLoadingOverlay (pure
+ *   SSR) into body-end-islands — the island is now a redundant fallback;
+ *   PageLoadingOverlay provides the loading spinner UI.
+ * - Injects the View-Transitions CSS + page-loading overlay CSS into global.css.
  *
  * Bug fix (#2265): the page-loading overlay CSS (.page-loading-overlay /
  * .page-loading-spinner / @keyframes page-loading-spin / [data-zd-nav-pending])
