@@ -11,13 +11,24 @@ import type { FeatureModule } from "../compose.js";
  * - Wires the ClientRouterBootstrap island and the PageLoadingOverlay (pure
  *   SSR) into body-end-islands — the island is now a redundant fallback;
  *   PageLoadingOverlay provides the loading spinner UI.
- * - Injects the View-Transitions CSS + page-loading overlay CSS into global.css.
+ * - Injects `@import "@takazudo/zudo-doc/page-loading.css"` at the
+ *   `@slot:global-css:imports` anchor (top of global.css, before rule blocks).
+ * - Injects the `--color-page-loading-overlay` token into `@theme` at the
+ *   `@slot:global-css:theme-tokens` anchor.
+ * - Injects the View-Transitions CSS into global.css at
+ *   `@slot:global-css:feature-styles`.
  *
  * Bug fix (#2265): the page-loading overlay CSS (.page-loading-overlay /
  * .page-loading-spinner / @keyframes page-loading-spin / [data-zd-nav-pending])
  * was never reaching scaffolded projects because it lived unconditionally in
  * the host global.css but had no corresponding injection for the template.
  * Gating this feature makes both the JS island and the CSS land together.
+ *
+ * The page-loading CSS now ships as a package artifact
+ * `@takazudo/zudo-doc/page-loading.css` (Topic A, #2283) — the generator
+ * injects a gated `@import` instead of inline rule bodies. The
+ * `--color-page-loading-overlay` token is defined inline (inside `@theme`) so
+ * it lives alongside the other project tokens and can be overridden per-project.
  *
  * The ClientRouterBootstrap component lives in
  * templates/features/dynamicPageTransition/files/src/components/ and is
@@ -71,7 +82,28 @@ import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";`,
         </>
       ) : null}`,
     },
-    // 4. View-Transitions CSS (chrome extraction + cross-fade + reduced motion).
+    // 4. Page-loading CSS import — gated at the top-of-file imports anchor.
+    //    `@import` must precede rule blocks in CSS; the `@slot:global-css:imports`
+    //    anchor sits immediately after the content.css import line so this lands
+    //    in a legal position. The CSS itself (overlay, spinner, keyframes) now
+    //    ships as a package artifact `@takazudo/zudo-doc/page-loading.css`
+    //    (see #2283 — Topic A) instead of being duplicated inline here.
+    {
+      file: "src/styles/global.css",
+      anchor: "/* @slot:global-css:imports */",
+      position: "after",
+      content: `@import "@takazudo/zudo-doc/page-loading.css";`,
+    },
+    // 5. `--color-page-loading-overlay` token — injected inside `@theme`.
+    //    Defined here so each scaffolded project can override it per-project.
+    //    Uses the same `--color-overlay` base token as the dialog backdrops.
+    {
+      file: "src/styles/global.css",
+      anchor: "/* @slot:global-css:theme-tokens */",
+      position: "after",
+      content: `--color-page-loading-overlay: color-mix(in oklch, var(--color-overlay) 60%, transparent);`,
+    },
+    // 6. View-Transitions CSS (chrome extraction + cross-fade + reduced motion).
     //    Injected AFTER `/* @slot:global-css:feature-styles */` in global.css.
     //    These rules are required for SPA page transitions via ClientRouter.
     {
@@ -179,67 +211,6 @@ import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";`,
   ::view-transition-new(zfb-footer):only-child,
   ::view-transition-new(zfb-sidebar-toggle):only-child {
     animation: none;
-  }
-}
-
-/* Page-loading overlay CSS — moved out of PageLoadingOverlay's inline
- * <style> block to avoid the <style>-inside-<body> HTML5 content-model
- * violation flagged by html-validate (same pattern as version-switcher
- * fix in zudolab/zudo-doc#1505; see W2A confirm zudolab/zudo-doc#1543). */
-.page-loading-overlay {
-  position: fixed;
-  inset: 0;
-  /* Full-screen blocking load overlay — modal tier (was a raw z-index:9999).
-     It sits below the transient \`drag\` tier (sidebar-resizer ghost), which is
-     fine: a full page-load overlay and an active pointer-drag never coexist. */
-  z-index: var(--z-index-modal);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: color-mix(in oklch, var(--color-overlay) 60%, transparent);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 150ms ease-out;
-}
-
-.page-loading-overlay[data-visible] {
-  opacity: 1;
-}
-
-a[data-zd-nav-pending],
-button[data-zd-nav-pending] {
-  color: var(--color-accent);
-}
-
-.page-loading-spinner {
-  width: 48px;
-  height: 48px;
-  border: 5px solid var(--color-fg, #fff);
-  border-bottom-color: transparent;
-  border-radius: 50%;
-  display: inline-block;
-  box-sizing: border-box;
-  animation: page-loading-spin 1s linear infinite;
-}
-
-@media (min-width: 1024px) {
-  .page-loading-spinner {
-    width: 64px;
-    height: 64px;
-    border-width: 6px;
-  }
-}
-
-@keyframes page-loading-spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .page-loading-spinner {
-    animation: none;
-    border-bottom-color: var(--color-fg, #fff);
-    opacity: 0.5;
   }
 }`,
     },
