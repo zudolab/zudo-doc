@@ -4,9 +4,27 @@ description: Release notes for 0.2.19.
 sidebar_position: 1030
 ---
 
-Released: 2026-06-21
+Released: 2026-06-22
 
 ### Features
 
 - `@takazudo/zudo-doc` now ships the page-loading overlay CSS as a standalone export, `@takazudo/zudo-doc/page-loading.css`. Standalone consumers that wire their own layout (not `DocLayoutWithDefaults`) can `@import` it alongside the `PageLoadingOverlay` component instead of hand-copying the overlay/spinner/pending-link rules into their `global.css`. (#2280, #2279)
 - Added a decoupled scrim token, `--color-page-loading-overlay`, that controls the loading overlay background independently of the lightbox `--color-overlay`. It defaults to `color-mix(in oklch, var(--color-overlay) 60%, transparent)`, so existing projects are unchanged; override it to retone the loading scrim on its own. (#2280, #2279)
+- Added a WCAG contrast guard test and corrected the **Default Light** color scheme so its text/background pairs meet AA contrast. (#2298)
+
+### Bug Fixes
+
+- Mirrored the **Default Light** palette AA darkening into the `create-zudo-doc` template, so freshly scaffolded projects ship the contrast-corrected palette too. (#2300)
+- Hardened the image lightbox: restore focus to the trigger on close, support keyboard panning, and guard against stray text selection while dragging. (#2295)
+
+### Other Changes
+
+- Bumped the `@takazudo/zfb` stack from `0.1.0-next.55` to `next.57`. (#2299)
+- `@takazudo/zudo-doc-history-server`: parallel directory walks, an `mtime` gate, a `maxBuffer` overflow warning, opt-in LAN exposure, and structured `git log` parsing for better performance and safety. (#2293)
+- Added negative-cache + backoff to the search worker and the ai-chat docs fetch so transient upstream failures degrade gracefully.
+- Design-token cleanup: tokenized transition durations and scroll-margin, documented highlight tokens, and marked the inert cursor token.
+- Added unit-test suites for the ai-chat security modules and the legacy plugin transforms. (#2291)
+- Test governance: a `@flaky` tracking-issue guard, parity-marker split, and step-count reconciliation. (#2292)
+- Quarantined the legacy `md-plugins` package as a private fixture/parity-test asset. (#2289)
+- CI hardening: single-sourced the wrangler version, pinned action digests, deduped the CSS smoke gate, and hardened the slow-test install retry with exponential backoff. (#2297)
+- Review-sweep safe-batch cleanup of 2026-06-20 review findings plus a dependency bump. (#2302)

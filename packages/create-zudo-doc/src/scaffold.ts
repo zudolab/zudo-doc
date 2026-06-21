@@ -573,7 +573,7 @@ function generatePackageJson(choices: UserChoices) {
     // ties this pin to packages/zudo-doc's version, so the lockstep release
     // bumps both together; do not cut a create-zudo-doc release until the
     // matching @takazudo/zudo-doc version (with content.css) is on npm.
-    "@takazudo/zudo-doc": "^0.2.18",
+    "@takazudo/zudo-doc": "^0.2.19",
     // zod — used by the generated zfb.config.ts. zfb-config-gen emits
     // `import { z } from "zod"` for the content-collection schema +
     // `z.toJSONSchema(...)` conversion. Without this dep, the consumer
@@ -631,7 +631,7 @@ function generatePackageJson(choices: UserChoices) {
     // @takazudo/zudo-doc/integrations/doc-history which in turn imports
     // @takazudo/zudo-doc-history-server/git-history. Without this dep the
     // plugin host fails at init with ERR_MODULE_NOT_FOUND — W8A (#1739).
-    deps["@takazudo/zudo-doc-history-server"] = "^0.2.18";
+    deps["@takazudo/zudo-doc-history-server"] = "^0.2.19";
     // W7A (#1736): doc-history-plugin.mjs spawns `tsx -e <inline-script>` to
     // run the v2 runtime in a TS-aware Node subprocess; without tsx the
     // plugin's preBuild step exits with ENOENT before zfb finishes config
