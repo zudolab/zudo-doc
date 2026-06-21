@@ -1,5 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { resolve } from "node:path";
+import { statSync } from "node:fs";
 import { collectContentFiles, getDocHistoryAsync } from "./git-history.js";
 import { getContentDirEntries } from "./shared.js";
 
@@ -14,6 +15,28 @@ export interface ServerOptions {
 
 /** Interval (ms) at which the file index is refreshed to pick up new/renamed files */
 const FILE_INDEX_REFRESH_MS = 10_000;
+
+/**
+ * Collect the most recent mtime (ms) across all watched content directories.
+ * Used to skip the full recursive readdir walk when nothing has changed on
+ * disk. A new file, rename, or delete changes the parent directory's mtime;
+ * a file content edit changes the file's own mtime — both are covered by
+ * checking each dir recursively via a single statSync per entry.
+ *
+ * Returns 0 if stat fails (forces a rebuild on the next tick).
+ */
+function getContentDirsMtime(dirEntries: Array<[string | null, string]>): number {
+  let latest = 0;
+  for (const [, dir] of dirEntries) {
+    try {
+      const ms = statSync(dir).mtimeMs;
+      if (ms > latest) latest = ms;
+    } catch {
+      return 0; // missing dir → force rebuild
+    }
+  }
+  return latest;
+}
 
 /**
  * Set CORS headers for local dev, scoped to localhost origins only.
@@ -85,11 +108,20 @@ export function startServer(options: ServerOptions): void {
   console.log(`Indexed ${fileIndex.size} documents`);
 
   // Periodically refresh file index to pick up new/renamed files during dev.
+  // An mtime check gates the full recursive readdir walk: if none of the
+  // content dirs have a newer mtime than at the last successful build, the
+  // walk is skipped entirely. A new/renamed/deleted file changes the parent
+  // directory mtime, so this catches all structural changes without polling
+  // every file individually.
   // .unref() so the timer does not prevent the process from exiting when the
   // HTTP server itself is closed (e.g. in tests or graceful shutdown).
+  let lastMtime = getContentDirsMtime(dirEntries);
   const refreshTimer = setInterval(() => {
     try {
+      const currentMtime = getContentDirsMtime(dirEntries);
+      if (currentMtime === lastMtime) return; // nothing changed — skip walk
       fileIndex = buildFileIndex(dirEntries);
+      lastMtime = currentMtime;
     } catch {
       // Ignore refresh errors — keep using the last good index
     }

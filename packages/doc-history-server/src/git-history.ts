@@ -176,33 +176,62 @@ function hashToPathArgs(relPath: string, maxEntries: number): string[] {
 
 /**
  * Pure parser for `git log --follow --format=%H --name-only` output.
+ *
+ * git emits records with the structure:
+ *   <40-hex-hash>\n\n<filepath>\n
+ * where the blank line (`\n\n`) appears between the hash and the filepath —
+ * it is git's commit separator emitted for every --format output even when
+ * using the minimal %H format. Consecutive records are delimited by the
+ * filepath of the previous record followed immediately by the next hash line
+ * (single `\n` between them, not a blank line).
+ *
+ * Parsing strategy: scan line by line, using a state machine that transitions
+ * from EXPECT_HASH → EXPECT_BLANK → EXPECT_PATH and back. The blank-line
+ * state is the structural record boundary — it distinguishes the separator
+ * git injects after each format output from ordinary non-hash lines. This
+ * avoids the previous two-pass approach (collect all hashes → re-classify)
+ * and is robust against file paths that happen to be 40-char hex strings.
  */
-function parseHashToPathMap(output: string): Map<string, string> {
+export function parseHashToPathMap(output: string): Map<string, string> {
   if (!output) return new Map();
 
   const map = new Map<string, string>();
-  // git log --format=%H --name-only output pattern (with --follow):
-  //   <hash>\n\n<filepath>\n<hash>\n\n<filepath>\n...
-  // The blank line between hash and filepath is git's commit separator
-  // emitted even for minimal --format=%H. We collect all non-hash, non-blank
-  // lines after each hash until the next hash appears.
   const lines = output.split("\n");
-  // Collect all hashes to detect hash lines
-  const hashSet = new Set<string>();
+
+  type State = "expect_hash" | "expect_blank" | "expect_path";
+  let state: State = "expect_hash";
+  let currentHash = "";
+
   for (const line of lines) {
     const t = line.trim();
-    // Full SHA-1 hashes are exactly 40 hex chars
-    if (/^[0-9a-f]{40}$/.test(t)) hashSet.add(t);
-  }
-  let currentHash: string | null = null;
-  for (const line of lines) {
-    const t = line.trim();
-    if (!t) continue;
-    if (hashSet.has(t)) {
-      currentHash = t;
-    } else if (currentHash && !map.has(currentHash)) {
-      // First non-hash, non-blank line after a hash = the file path
-      map.set(currentHash, t);
+    switch (state) {
+      case "expect_hash":
+        // A record starts with a 40-hex hash line (standard SHA-1)
+        if (/^[0-9a-f]{40,64}$/.test(t)) {
+          currentHash = t;
+          state = "expect_blank";
+        }
+        break;
+      case "expect_blank":
+        // git always emits a blank line after the hash (commit separator)
+        if (t === "") {
+          state = "expect_path";
+        } else {
+          // Unexpected non-blank after hash — reset and re-try this line
+          currentHash = "";
+          state = "expect_hash";
+        }
+        break;
+      case "expect_path":
+        if (t === "") break; // skip extra blank lines
+        // First non-blank line after the separator is the file path
+        if (currentHash && !map.has(currentHash)) {
+          map.set(currentHash, t);
+        }
+        // Next line could be the next hash (no blank between path and next hash)
+        currentHash = "";
+        state = "expect_hash";
+        break;
     }
   }
   return map;
@@ -347,8 +376,9 @@ function commitMetaArgs(relPath: string, maxEntries: number): string[] {
 /**
  * Get the complete history for a document file.
  *
- * Optimised: uses ONE `git log --follow` for commit metadata and ONE
- * `git log --follow --name-only` for the hash→path map, then a single
+ * Optimised: uses ONE `git log --follow` for commit metadata AND ONE
+ * `git log --follow --name-only` for the hash→path map, run in PARALLEL
+ * via Promise.all (they are independent git walks). Then a single
  * `git cat-file --batch` for all content fetches. Falls back to
  * per-commit logic only for batch misses (renamed-path entries where the
  * current path didn't exist at that commit).
@@ -363,28 +393,21 @@ export async function getDocHistoryAsync(
 ): Promise<DocHistoryData> {
   const relPath = filePath.startsWith("/") ? toRepoRelative(filePath) : filePath;
 
-  // Single spawn: get all commit metadata (hash, date, author, message)
-  let metaRecords: Array<Omit<DocHistoryEntry, "content">> = [];
-  try {
-    const { stdout } = await execFileAsync(
-      "git",
-      commitMetaArgs(relPath, maxEntries),
-      { ...gitOpts() },
-    );
-    const logOutput = stdout.trim();
-    if (logOutput) {
-      metaRecords = parseCommitLog(logOutput);
-    }
-  } catch {
-    // fall through to empty
-  }
+  // Run the two independent git walks in parallel:
+  // (1) commit metadata (hash, date, author, message)
+  // (2) hash→path map (needed for rename-aware content fetching)
+  // They both do `--follow` traversals of the same file history but emit
+  // different fields — neither depends on the other's output.
+  const [metaRecords, hashToPath] = await Promise.all([
+    execFileAsync("git", commitMetaArgs(relPath, maxEntries), { ...gitOpts() })
+      .then(({ stdout }) => (stdout.trim() ? parseCommitLog(stdout.trim()) : []))
+      .catch((): Array<Omit<DocHistoryEntry, "content">> => []),
+    buildHashToPathMapAsync(relPath, maxEntries),
+  ]);
 
   if (metaRecords.length === 0) {
     return { slug, filePath: relPath, entries: [] };
   }
-
-  // Build hash→path mapping (needed for rename-aware content fetching)
-  const hashToPath = await buildHashToPathMapAsync(relPath, maxEntries);
 
   // Build pairs for batched content fetch, using the correct path at each commit
   const pairs = metaRecords.map((rec) => ({
@@ -531,10 +554,27 @@ export function getFileCommitsMeta(
 }
 
 /**
+ * 32 MB maxBuffer for `getFileCommitsMetaAsync`. The Node default (1 MB) is
+ * too small for a doc corpus with long histories: an RangeError / ERR_CHILD_PROCESS_STDIO_MAXBUFFER
+ * from execFile's promisified form was previously silently caught and returned
+ * [], causing the file to disappear from the manifest without any trace (#2293).
+ * 32 MB covers a corpus of ~16 000 commits × 2 KB average format output before
+ * the guard kicks in; adjust via the exported MAX_BUFFER_BYTES constant if your
+ * project needs a different bound.
+ */
+export const MAX_BUFFER_BYTES = 32 * 1024 * 1024; // 32 MB
+
+/**
  * Get commit metadata for a file using a single `git log --follow` walk
  * (async variant). Runs via execFile (non-blocking) so callers can issue
  * multiple git spawns concurrently. Returns an array of records newest-first
  * (no -n limit). Used by the pre-build parallelization path.
+ *
+ * maxBuffer is raised to MAX_BUFFER_BYTES (32 MB) to avoid silent data loss
+ * for files with very long histories — previously the default 1 MB limit
+ * caused the catch block to swallow the error and return [], dropping the
+ * file from the manifest. A warning is now logged on any catch so the
+ * failure is visible (#2293).
  */
 export async function getFileCommitsMetaAsync(
   filePath: string,
@@ -550,16 +590,18 @@ export async function getFileCommitsMetaAsync(
         "--",
         relPath,
       ],
-      // Use the same opts as the sync variant (stdio suppressed, cwd = repo root).
-      // maxBuffer default (1 MB) is intentionally kept — matching execFileSync's
-      // behaviour: a file whose full history exceeds 1 MB would throw, get caught,
-      // and return [], keeping the key absent from the manifest (same semantics
-      // as the sync path's catch→[]).
-      { ...gitOpts() },
+      { ...gitOpts(), maxBuffer: MAX_BUFFER_BYTES },
     );
     if (!stdout.trim()) return [];
     return parseCommitLog(stdout.trim());
-  } catch {
+  } catch (err) {
+    // Log a warning instead of silently returning [] — a maxBuffer overflow or
+    // git error here drops the file from the pre-build manifest entirely, which
+    // is a hard-to-diagnose data-loss class (#2293).
+    console.warn(
+      `doc-history-server: getFileCommitsMetaAsync failed for "${relPath}" — file will be absent from the manifest.`,
+      err instanceof Error ? err.message : String(err),
+    );
     return [];
   }
 }
