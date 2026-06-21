@@ -182,6 +182,15 @@ export interface DocLayoutProps extends DocLayoutHtmlAttrs {
    * the sidebar resizer) inject into the scripts slot specifically.
    */
   bodyEndScripts?: ComponentChildren;
+
+  /**
+   * When `false`, the zfb SPA soft-swap router (`ClientRouter`) is not
+   * mounted — the page uses plain full-page navigation instead. This
+   * also omits the `zfb-view-transitions-enabled` /
+   * `zfb-preserve-html-attrs` meta tags and the route-announcer that
+   * `ClientRouter` emits. Defaults to `true` (router enabled).
+   */
+  enableClientRouter?: boolean;
 }
 
 /**
@@ -222,6 +231,7 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
     footer,
     bodyEndComponents,
     bodyEndScripts,
+    enableClientRouter = true,
   } = props;
 
   // `hasSidebar` tracks whether sidebar content was supplied at all.
@@ -291,9 +301,11 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
           array of structural VNode objects — Preact's JSX typing does not
           directly accept that array shape, but at runtime the elements are
           valid VNode descriptors. */}
-        {ClientRouter({
-          preserveHtmlAttrs: ["data-sidebar-hidden", "data-theme", "style"],
-        }) as unknown as JSX.Element}
+        {enableClientRouter !== false
+          ? (ClientRouter({
+              preserveHtmlAttrs: ["data-sidebar-hidden", "data-theme", "style"],
+            }) as unknown as JSX.Element)
+          : null}
         {head}
       </head>
       <body class="min-h-screen antialiased">
