@@ -1,6 +1,7 @@
 {
   "name": "@takazudo/zudo-doc-md-plugins",
   "version": "0.0.1",
+  "description": "PRIVATE — internal fixture/parity-test asset; not published, not shippable API. Do not import from app code. See AUDIT.md.",
   "private": true,
   "type": "module",
   "exports": {

@@ -449,7 +449,8 @@ export async function scaffold(choices: UserChoices): Promise<void> {
 
 function generatePackageJson(choices: UserChoices) {
   // Intentionally absent from scaffolded deps:
-  //   @takazudo/zudo-doc-md-plugins — zero references in generator templates/source
+  //   @takazudo/zudo-doc-md-plugins — private fixture/parity-test asset; not published,
+  //   not for app import. Zero references in generator templates/source.
   const deps: Record<string, string> = {
     // zfb engine — distributed as published npm packages (the prebuilt binary
     // ships via an optionalDependency of @takazudo/zfb-<platform>); pinned to

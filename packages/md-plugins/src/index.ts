@@ -1,23 +1,29 @@
-// Remark plugins
+// INTERNAL FIXTURE/PARITY-TEST ASSET — not published, not shippable API.
+// Do not import from app code. These exports exist solely so that
+// src/__tests__/ and __fixtures__/ can exercise the JS-side plugin logic
+// against the zfb Rust pipeline for parity diffing. See AUDIT.md for the
+// full classification and the two pending upstream zfb follow-ups.
+
+// Remark plugins — kept because tests reference them
 export { remarkAdmonitions } from "./remark-admonitions";
 export { remarkMathToJsx } from "./remark-math-to-jsx";
 export { remarkResolveMarkdownLinks } from "./remark-resolve-markdown-links";
 export type { ResolveMarkdownLinksOptions } from "./remark-resolve-markdown-links";
 
-// Rehype plugins
+// Rehype plugins — kept because tests reference them
 //
 // rehypeCodeTitle / rehypeHeadingLinks / rehypeImageEnlarge / rehypeMermaid
 // were retired after zfb #104 brought the Rust ports to byte-for-byte parity
 // with the JS shims. The zfb pipeline emits the same HTML shape natively, so
-// no JS counterpart is shipped from this package.
+// no JS counterpart is needed in production.
 //
-// rehypeStripMdExtension is still exported because the zfb port intentionally
+// rehypeStripMdExtension is still here because the zfb port intentionally
 // fixes a JS-side regex bug (`./other.md?foo=bar` was left unrewritten in the
 // JS plugin); the divergence is tracked in AUDIT.md pending a downstream
 // follow-up.
 export { rehypeStripMdExtension } from "./rehype-strip-md-extension";
 
-// Utilities
+// Utilities — kept because tests reference them
 export { extractText } from "./hast-utils";
 export { isExternal } from "./url-utils";
 export { buildDocsSourceMap } from "./docs-source-map";
