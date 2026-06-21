@@ -111,33 +111,65 @@ describe("search", () => {
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 
-  it("resets cache on fetch failure so next request retries", async () => {
+  it("coalesces concurrent failure onto the same rejected promise (negative cache)", async () => {
     const { search } = await import("../search");
     const env = createMockEnv();
 
-    // First call succeeds
-    await search("getting started", undefined, env);
-    expect(fetch).toHaveBeenCalledTimes(1);
-
-    // Advance past TTL to force refetch
+    // Advance past positive-cache TTL to ensure the next call fetches.
     vi.advanceTimersByTime(5 * 60 * 1000 + 1);
 
-    // Make fetch fail
-    vi.mocked(fetch).mockRejectedValueOnce(new Error("Network error"));
+    // Make fetch fail persistently.
+    vi.mocked(fetch).mockRejectedValue(new Error("Network error"));
 
     await expect(search("getting started", undefined, env)).rejects.toThrow(
       "Network error",
     );
 
-    // Next call should retry (cache was reset by failure)
+    // Second call within the 30-second negative-cache window must NOT
+    // launch a new fetch — it coalesces onto the still-rejected promise.
+    vi.advanceTimersByTime(10_000); // 10s into 30s window
+    await expect(search("getting started", undefined, env)).rejects.toThrow(
+      "Network error",
+    );
+
+    // Only one fetch attempt should have been made despite two search calls.
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries after the negative-cache window expires", async () => {
+    const { search } = await import("../search");
+    const env = createMockEnv();
+
+    // First call succeeds.
+    await search("getting started", undefined, env);
+    expect(fetch).toHaveBeenCalledTimes(1);
+
+    // Advance past positive-cache TTL to force a refetch.
+    vi.advanceTimersByTime(5 * 60 * 1000 + 1);
+
+    // Make fetch fail.
+    vi.mocked(fetch).mockRejectedValueOnce(new Error("Network error"));
+    await expect(search("getting started", undefined, env)).rejects.toThrow(
+      "Network error",
+    );
+
+    // Still within 30-second negative-cache window — no new fetch.
+    vi.advanceTimersByTime(15_000);
+    await expect(search("getting started", undefined, env)).rejects.toThrow(
+      "Network error",
+    );
+    expect(fetch).toHaveBeenCalledTimes(2); // initial + 1 failed attempt
+
+    // Advance past the 30-second negative-cache window.
+    vi.advanceTimersByTime(30_000 + 1);
+
+    // Fetch succeeds again — the retry should go through.
     vi.mocked(fetch).mockResolvedValueOnce(
       new Response(JSON.stringify(FAKE_ENTRIES), { status: 200 }),
     );
-
     const { results } = await search("getting started", undefined, env);
     expect(results).toBeDefined();
-    // 1 (initial) + 1 (failed) + 1 (retry) = 3
-    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(fetch).toHaveBeenCalledTimes(3); // initial + failed + retry
   });
 
   it("fetches the correct URL from env", async () => {
