@@ -1,0 +1,15 @@
+---
+title: 0.2.18
+description: Release notes for 0.2.18.
+sidebar_position: 1029
+---
+
+Released: 2026-06-21
+
+### Features
+
+- Added an `enableClientRouter` prop to `@takazudo/zudo-doc`'s `DocLayout` (default `true`). When set to `false`, the zfb SPA `ClientRouter` — together with its view-transition meta tags and route announcer — is omitted from the SSG output, so a project can ship fully static pages with no client-side soft navigation. (9316a23c)
+
+### Bug Fixes
+
+- The `dynamicPageTransition: false` setting now actually disables the SPA client router. Previously the prop existed but neither the showcase host nor generated projects forwarded `settings.dynamicPageTransition` to it, so the router stayed on regardless of the setting; it is now wired through every `DocLayoutWithDefaults` call site in both the host and the `create-zudo-doc` templates. (a72e5b90, 42305193)

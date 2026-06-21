@@ -1,0 +1,15 @@
+---
+title: 0.2.18
+description: 0.2.18のリリースノート。
+sidebar_position: 1029
+---
+
+リリース日: 2026-06-21
+
+### 機能
+
+- `@takazudo/zudo-doc` の `DocLayout` に `enableClientRouter` プロパティ（デフォルト `true`）を追加しました。`false` に設定すると、zfb の SPA `ClientRouter` と、それに付随するビュートランジション用の meta タグおよびルートアナウンサーが SSG 出力から除外されます。これにより、クライアントサイドのソフトナビゲーションを持たない完全な静的ページを出力できます。(9316a23c)
+
+### バグ修正
+
+- `dynamicPageTransition: false` の設定で SPA クライアントルーターが実際に無効化されるようになりました。これまではプロパティ自体は存在していたものの、ショーケースホストも生成プロジェクトも `settings.dynamicPageTransition` をそのプロパティに渡しておらず、設定に関わらずルーターが常に有効なままでした。ホストと `create-zudo-doc` テンプレートの両方で、すべての `DocLayoutWithDefaults` の呼び出し箇所に配線しました。(a72e5b90, 42305193)
