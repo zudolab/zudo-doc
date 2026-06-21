@@ -6,13 +6,13 @@ Components are Preact `.tsx` compiled by tsup (`bundle:false`, 1:1 source→`dis
 so `"use client"` directives survive — see `tsup.config.ts`). The `exports` map
 in `package.json` is the API surface; consumers import from `dist/`.
 
-## Shipped CSS artifacts (two)
+## Shipped CSS artifacts (three)
 
 tsup only compiles `.ts/.tsx`. CSS is produced by the tsup `onSuccess` hook
 (runs after every build/`--watch`, because `clean:true` wipes `dist/` first):
 
 ```
-onSuccess: "node scripts/copy-content-css.mjs && node scripts/gen-safelist.mjs"
+onSuccess: "node scripts/copy-content-css.mjs && node scripts/copy-page-loading-css.mjs && node scripts/gen-safelist.mjs"
 ```
 
 1. **`dist/content.css`** ← copied verbatim from `src/content.css` by
@@ -42,6 +42,23 @@ onSuccess: "node scripts/copy-content-css.mjs && node scripts/gen-safelist.mjs"
    Consumers import it so the utilities the components emit (which the consumer's
    own Tailwind scanner can't see inside `node_modules`) are generated.
 
-`prepack` guards both (`check-safelist.mjs && check-content-css.mjs`) so a build
-that skipped the `onSuccess` step fails loudly instead of publishing a package
-whose `./content.css` / `./safelist.css` export 404s for consumers.
+3. **`dist/page-loading.css`** ← copied verbatim from `src/page-loading.css` by
+   `scripts/copy-page-loading-css.mjs`. Exported as `@takazudo/zudo-doc/page-loading.css`.
+   Provides the full visual contract for the page-loading overlay, spinner, and
+   pending-navigation link indicator. Consumers `@import` it alongside the
+   `<PageLoadingOverlay>` component rather than inlining these rules per-project.
+   - **Consumer contract**: the stylesheet consumes host tokens
+     `--color-page-loading-overlay` (falling back to
+     `color-mix(in oklch, var(--color-overlay, #000) 60%, transparent)`),
+     `--color-fg` (spinner border; falls back to `#fff`), `--color-accent`
+     (pending-nav link colour), and `--z-index-modal` (overlay stack level;
+     falls back to `100`). All tokens are optional — bare consumers get sensible
+     defaults.
+   - **Editing**: change `src/page-loading.css`, then rebuild the package so
+     `dist/page-loading.css` updates. `tsup --watch` does NOT re-copy on a bare
+     `.css` change (it only watches `.ts/.tsx`), so re-run `pnpm build` after
+     editing the stylesheet.
+
+`prepack` guards all three (`check-safelist.mjs && check-content-css.mjs && check-page-loading-css.mjs`)
+so a build that skipped the `onSuccess` step fails loudly instead of publishing a package
+whose `./content.css` / `./safelist.css` / `./page-loading.css` export 404s for consumers.
