@@ -107,7 +107,7 @@ create-zudo-doc my-docs --no-dynamic-page-transition
 `PageLoadingOverlay`をインポートし、bodyの末尾のスロット（他のbody-endプロバイダーをマウントしているのと同じ場所）に**レイアウトごとに一度だけ**レンダリングします。これはサーバーレンダリングされ、**ハイドレーションは不要**です。表示・非表示をナビゲーションのライフサイクル（`zfb:before-preparation` / `zfb:after-swap`）に自動で結びつける小さなインラインスクリプトを出力するため、登録すべきislandも、追加すべき`client:*`ディレクティブもありません。
 
 ```tsx
-import PageLoadingOverlay from "@takazudo/zudo-doc/page-loading";
+import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";
 
 // ...レイアウト内、<body>の末尾で:
 <PageLoadingOverlay />;

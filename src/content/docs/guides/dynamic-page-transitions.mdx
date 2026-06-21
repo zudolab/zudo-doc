@@ -107,7 +107,7 @@ The overlay ships from `@takazudo/zudo-doc` as two pieces you wire yourself: the
 Import `PageLoadingOverlay` and render it **once per layout**, in a body-end slot (the same place you mount your other body-end providers). It is server-rendered with **no hydration** — it emits a small inline script that self-wires its visibility to the navigation lifecycle (`zfb:before-preparation` / `zfb:after-swap`), so there is no island to register and no `client:*` directive to add.
 
 ```tsx
-import PageLoadingOverlay from "@takazudo/zudo-doc/page-loading";
+import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";
 
 // ...inside your layout, at the end of <body>:
 <PageLoadingOverlay />;
