@@ -95,3 +95,78 @@ This is a simpler model with zero transition JavaScript. Choose it if you prefer
 Turning the feature off does not change your content or routes in any way — only how the browser moves between pages. Every page remains a standalone, statically exported HTML document either way.
 
 </Note>
+
+## Wiring the Overlay in a Standalone Layout
+
+If you build your layout with `DocLayoutWithDefaults`, the loading overlay is already wired for you — there is nothing to do, and you can skip this section. It applies only when you assemble your own layout (without `DocLayoutWithDefaults`) and want the same overlay behaviour.
+
+The overlay ships from `@takazudo/zudo-doc` as two pieces you wire yourself: the `PageLoadingOverlay` component and its stylesheet, `@takazudo/zudo-doc/page-loading.css`.
+
+### Mount the component
+
+Import `PageLoadingOverlay` and render it **once per layout**, in a body-end slot (the same place you mount your other body-end providers). It is server-rendered with **no hydration** — it emits a small inline script that self-wires its visibility to the navigation lifecycle (`zfb:before-preparation` / `zfb:after-swap`), so there is no island to register and no `client:*` directive to add.
+
+```tsx
+import PageLoadingOverlay from "@takazudo/zudo-doc/page-loading";
+
+// ...inside your layout, at the end of <body>:
+<PageLoadingOverlay />;
+```
+
+The component takes one optional prop, `id`, which overrides the DOM `id` of the overlay element (useful only when more than one overlay could co-exist on a page, such as in tests). Leave it unset for the stable default.
+
+<Warning>
+
+Mount it **once** per layout. A second instance would render a duplicate overlay element and a second bootstrap script.
+
+</Warning>
+
+### Import the stylesheet
+
+The component renders the overlay markup but not its CSS. Import the shipped stylesheet at the **top** of your `global.css`, alongside the other package CSS imports:
+
+```css
+@import "@takazudo/zudo-doc/page-loading.css";
+```
+
+<Warning>
+
+The import must appear **before** any rule statements in your `global.css`. CSS requires all `@import` rules to precede other rules — placing it after a selector or `@theme` block silently drops the import, and the overlay renders unstyled.
+
+</Warning>
+
+### Host tokens the stylesheet consumes
+
+The stylesheet reads a handful of host design tokens. **All are optional** — each has a sensible built-in fallback, so the overlay works on a bare project that defines none of them:
+
+| Token                          | Used for                                  | Fallback                                                            |
+| ------------------------------ | ----------------------------------------- | ------------------------------------------------------------------ |
+| `--color-page-loading-overlay` | The scrim (overlay background)            | `color-mix(in oklch, var(--color-overlay) 60%, transparent)`       |
+| `--color-overlay`              | Backing colour for the scrim fallback     | `#000` (used only inside the fallback above)                       |
+| `--color-fg`                   | Spinner border colour                     | `#fff`                                                             |
+| `--color-accent`               | Highlight on the pending link/button      | _(no fallback — the highlight is simply omitted if unset)_         |
+| `--z-index-modal`              | Stack level of the overlay                | `100`                                                             |
+
+If your project already defines the standard zudo-doc semantic tokens, the overlay picks them up automatically and matches your theme with no extra work.
+
+### Retoning the scrim independently
+
+The scrim now reads its **own** token, `--color-page-loading-overlay`, which is **decoupled from the lightbox/image-enlarge backdrop** (`--color-overlay`). Set it to retone the loading scrim without touching any other overlay:
+
+```css
+@theme {
+  /* A light, frosted brand scrim for the loading overlay only —
+     the image lightbox keeps using --color-overlay. */
+  --color-page-loading-overlay: color-mix(
+    in oklch,
+    var(--color-bg) 70%,
+    transparent
+  );
+}
+```
+
+When `--color-page-loading-overlay` is unset, the stylesheet falls back to a 60%-opacity mix of `--color-overlay`, so existing projects keep their previous appearance with no change.
+
+### Drop any hand-copied overlay rules
+
+Before this stylesheet shipped, standalone consumers had to **hand-copy** the overlay, spinner, and pending-link rules into their own `global.css`. If you did this, **remove those copied rules** when you adopt the `@import`. Keeping both leaves a duplicate `@keyframes page-loading-spin` and colliding `.page-loading-overlay` / `.page-loading-spinner` declarations, where whichever rule wins is order-dependent and easy to get wrong. The shipped stylesheet is now the single source of truth.
