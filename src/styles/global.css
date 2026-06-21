@@ -293,7 +293,10 @@
   --text-scale-xl:  3rem;       /* 48px */
   --text-scale-2xl: 3.75rem;    /* 60px */
 
-  --default-transition-duration: 150ms; /* consumed by image-enlarge; other transitions use 150ms/200ms/300ms literals — only partially tokenized */
+  --default-transition-duration: 150ms; /* consumed by image-enlarge and hash-link opacity fade */
+  --zd-transition-slow: 200ms;          /* sidebar transform/visibility and content-band max-width */
+  --zd-transition-slower: 300ms;        /* view-transition fade-in (contentFadeIn animation) */
+  --zd-header-h: 80px;                  /* sticky header height; consumed by scroll-margin-top on [id] anchors */
 }
 
 /* ========================================
@@ -301,7 +304,7 @@
  * ======================================== */
 
 [id] {
-  scroll-margin-top: 80px;
+  scroll-margin-top: var(--zd-header-h);
 }
 
 body {
@@ -629,6 +632,11 @@ pre[class^="syntect-"] .line .highlighted-word {
 }
 
 /* ── Find-in-page highlight ── */
+/* Deliberate ephemeral-vs-persistent split: find-in-page uses color-mix(warning)
+ * because it is a transient browser-controlled overlay that appears and disappears
+ * without page navigation. Search results use --color-matched-keyword-bg/fg because
+ * they are persistent semantic highlights tied to the current query state.
+ * Do NOT unify these two highlight strategies — the visual distinction is intentional. */
 .find-match {
   background-color: color-mix(in oklch, var(--color-warning) 40%, transparent);
   border-radius: 2px;
@@ -746,8 +754,8 @@ pre[class^="syntect-"] .line .highlighted-word {
 @media (min-width: 1024px) {
   #desktop-sidebar {
     transition:
-      transform 200ms ease-in-out,
-      visibility 200ms;
+      transform var(--zd-transition-slow) ease-in-out,
+      visibility var(--zd-transition-slow);
   }
 
   html[data-sidebar-hidden] #desktop-sidebar {
@@ -756,7 +764,7 @@ pre[class^="syntect-"] .line .highlighted-word {
   }
 
   .zd-sidebar-content-wrapper {
-    transition: margin-left 200ms ease-in-out;
+    transition: margin-left var(--zd-transition-slow) ease-in-out;
   }
 
   html[data-sidebar-hidden] .zd-sidebar-content-wrapper {
@@ -770,7 +778,7 @@ pre[class^="syntect-"] .line .highlighted-word {
    * branch in doc-layout.tsx. These rules are unlayered, so they win over
    * the Tailwind `max-w-[clamp(...)]` utility (utilities layer). (#2002) */
   .zd-doc-content-band {
-    transition: max-width 200ms ease-in-out;
+    transition: max-width var(--zd-transition-slow) ease-in-out;
   }
 
   html[data-sidebar-hidden] .zd-doc-content-band {
@@ -1150,22 +1158,22 @@ dialog.zd-mermaid-dialog::backdrop {
 ::view-transition-old(zfb-sidebar):only-child,
 ::view-transition-old(zfb-footer):only-child,
 ::view-transition-old(zfb-sidebar-toggle):only-child {
-  animation: 150ms ease-in both contentFadeOut;
+  animation: var(--default-transition-duration) ease-in both contentFadeOut;
 }
 /* Entry — lone new snapshot fades in with the content cross-fade. */
 ::view-transition-new(zfb-header):only-child,
 ::view-transition-new(zfb-sidebar):only-child,
 ::view-transition-new(zfb-footer):only-child,
 ::view-transition-new(zfb-sidebar-toggle):only-child {
-  animation: 300ms ease-out both contentFadeIn;
+  animation: var(--zd-transition-slower) ease-out both contentFadeIn;
 }
 
 /* Root cross-fade rules — animate only the non-chrome snapshot */
 ::view-transition-old(root) {
-  animation: 150ms ease-in both contentFadeOut;
+  animation: var(--default-transition-duration) ease-in both contentFadeOut;
 }
 ::view-transition-new(root) {
-  animation: 300ms ease-out both contentFadeIn;
+  animation: var(--zd-transition-slower) ease-out both contentFadeIn;
 }
 
 /* Reduced motion: collapse all view-transition animation to an instant

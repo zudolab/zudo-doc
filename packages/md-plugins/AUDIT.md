@@ -1,5 +1,24 @@
 # md-plugins audit — Astro → zfb migration
 
+## Package status — PRIVATE fixture/parity-test asset
+
+**This package is NOT published and is NOT shippable API.**
+
+It exists solely to:
+
+1. Hold the JS-side plugin implementations as a reference corpus for parity
+   diffing against the zfb Rust pipeline.
+2. Run `src/__tests__/` and exercise `__fixtures__/` so regressions in either
+   the JS or zfb side are caught by `pnpm test` before merge.
+
+`scaffold.ts` (`packages/create-zudo-doc`) explicitly excludes this package
+from generated project dependencies. `zfb.config.ts` references it only in
+comments. **Do not import from app code.**
+
+See `src/index.ts` for the surviving exports and their test-only rationale.
+
+---
+
 ## Status note (deep-review #1338, 2026-05-04)
 
 `stripMdExt: true` is now wired in `zfb.config.ts` so author-written
@@ -120,6 +139,50 @@ These are tracked as follow-up GitHub issues against this repo
    project-level source-map provider. JS shim retained until then.
 9. **remarkAdmonitions** — JS implementation does not handle
    `:::details`; zfb does. Align before cutover.
+
+## NOTE — pending upstream zfb follow-ups (out of scope for this repo)
+
+The two items below require changes to `Takazudo/zudo-front-builder` (the
+upstream zfb repository) and are tracked here so the status is visible when
+reviewing this package. No action in `zudolab/zudo-doc` is needed until the
+upstream issues land.
+
+### NOTE-1: `ResolveLinksPlugin` orchestrator wiring
+
+**Status:** JS shim retained; production build unresolved (see item 8 above).
+
+The zfb port of `remarkResolveMarkdownLinks` lives in
+`crates/zfb-content/src/plugins/resolve_links.rs` and was added in zfb #103.
+However, the zfb **orchestrator** (`zfb-build` / `zfb-render`) does not yet
+instantiate `ResolveLinksPlugin` for the production build — no project-level
+source-map provider is wired. Until the orchestrator is updated:
+
+- `.md`/`.mdx` explicit links and extensionless candidates pass through
+  unresolved in `dist/`.
+- The JS shim (`remark-resolve-markdown-links.ts`) remains the reference
+  implementation for the fixture corpus and unit tests.
+
+Upstream follow-up needed: add orchestrator wiring for `ResolveLinksPlugin`
+plus a project-level source-map provider API to `Takazudo/zudo-front-builder`.
+When the follow-up lands, file a consumer-side adoption issue in
+`zudolab/zudo-doc` and update item 8 above.
+
+### NOTE-2: `rehypeStripMdExtension` query-string divergence
+
+**Status:** JS shim retained; divergence documented in fixture
+`__fixtures__/expected-html/08-md-links.html` line 6.
+
+The JS regex `/\.mdx?(#.*)?$/` does not match query strings, so
+`./other.md?foo=bar` is left unchanged in the JS pipeline. The zfb port
+(`StripMdExtensionPlugin`, zfb #104) intentionally fixes this bug and emits
+`./other/?foo=bar` instead.
+
+The fix is the correct behaviour. A follow-up issue against
+`Takazudo/zudo-front-builder` should formally document that the query-string
+rewrite is the defined contract (not an accidental divergence), so downstream
+consumers who relied on the JS bug-behaviour know to update. Until the
+upstream issue explicitly closes this, the JS fixture preserves the old output
+as the divergence reference.
 
 ## Fixture corpus
 

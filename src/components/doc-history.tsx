@@ -430,6 +430,12 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
   const [diffSelection, setDiffSelection] = useState<DiffSelection | null>(
     null,
   );
+  // Holds the history trigger button element captured in handleOpen() so the
+  // hook can restore focus to it when the dialog closes. We capture it there
+  // (synchronously in the click handler, before React re-renders) rather than
+  // inside the hook's effect because the button is unmounted when isOpen=true
+  // (conditional render) — by the time the open-effect fires, it's gone (#2295).
+  const returnFocusRef = useRef<HTMLElement | null>(null);
 
   const base = basePath.replace(/\/+$/, "");
   // Doc-history storage sentinel ("" -> "index"): a root index page has the
@@ -466,7 +472,11 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
     }
   }, [data, fetchPath]);
 
-  function handleOpen() {
+  function handleOpen(e: React.MouseEvent<HTMLButtonElement>) {
+    // Capture the trigger button BEFORE setState causes a re-render that
+    // unmounts it (it's only rendered when !isOpen). The hook reads this ref
+    // to restore focus when the dialog closes (a11y #2295).
+    returnFocusRef.current = e.currentTarget;
     setView("revisions");
     fetchHistory();
   }
@@ -503,10 +513,16 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
 
   // Shared dialog lifecycle: showModal/close sync, native-close callback,
   // and navigation-close — delegated to useModalDialog.
+  // manageFocus: move focus to the close button on open, restore to the
+  // history trigger button on close (a11y interaction #2295).
+  // returnFocusRef: pre-captured trigger element (button is unmounted when
+  // isOpen=true, so capture must happen in the click handler, not the effect).
   const { dialogRef } = useModalDialog({
     isOpen,
     onClose: handleClose,
     navigateEvent: AFTER_NAVIGATE_EVENT,
+    manageFocus: true,
+    returnFocusRef,
   });
 
   return (

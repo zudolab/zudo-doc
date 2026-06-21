@@ -79,6 +79,9 @@ const ZOOM_STEP = 1.25;
 const MIN_SCALE = 1;
 const MAX_SCALE = 4;
 
+// Keyboard pan: pixels to move per arrow-key press.
+const ARROW_PAN_STEP = 40;
+
 // The enlarge button's 4-corner-arrows icon (same shape as ENLARGE_SVG in
 // pages/_mdx-components.ts) is injected as an innerHTML string in injectButton()
 // below — the button itself is created via document.createElement because the
@@ -348,6 +351,27 @@ export default function MermaidEnlarge() {
     (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
   }, []);
 
+  // -----------------------------------------------------------------------
+  // Arrow-key panning — active when the viewport is focused and zoomed in.
+  // Prevents the dialog from scrolling while panning, so the diagram stays
+  // centred in the viewport during keyboard navigation (a11y #2295).
+  // -----------------------------------------------------------------------
+  const onViewportKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (scale <= MIN_SCALE) return;
+      let dx = 0;
+      let dy = 0;
+      if (e.key === "ArrowLeft") dx = ARROW_PAN_STEP;
+      else if (e.key === "ArrowRight") dx = -ARROW_PAN_STEP;
+      else if (e.key === "ArrowUp") dy = ARROW_PAN_STEP;
+      else if (e.key === "ArrowDown") dy = -ARROW_PAN_STEP;
+      else return;
+      e.preventDefault();
+      setTranslate((t) => clampTranslate(t.x + dx, t.y + dy, scale));
+    },
+    [scale, clampTranslate],
+  );
+
   const zoomed = scale > MIN_SCALE;
   const atMax = scale >= MAX_SCALE;
 
@@ -363,13 +387,17 @@ export default function MermaidEnlarge() {
         <>
           <div
             className="zd-mermaid-viewport"
+            // tabIndex makes the viewport keyboard-focusable so arrow-key
+            // panning works without requiring pointer interaction first (a11y #2295).
             // Pointer handlers live on the viewport so a drag started anywhere
             // over the diagram pans it. `touch-action: none` (in CSS) lets the
             // pointer events fire on touch without the browser scrolling.
+            tabIndex={0}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
+            onKeyDown={onViewportKeyDown}
             data-pan-active={panActive && zoomed ? "" : undefined}
           >
             <div

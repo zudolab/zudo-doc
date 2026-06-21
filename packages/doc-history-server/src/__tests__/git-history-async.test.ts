@@ -171,4 +171,115 @@ describe("getDocHistoryAsync (#1986)", () => {
     const result = await getDocHistoryAsync(ABS, "page", 50);
     expect(result).toEqual({ slug: "page", filePath: REL, entries: [] });
   });
+
+  it("issues both git log walks in parallel (Promise.all)", async () => {
+    // The two independent git walks (metadata + hash→path) must fire
+    // concurrently. We verify this by recording the order of execFile
+    // invocations: both should fire before either resolves, i.e. both must
+    // appear in the execFile call list before the promise chain settles.
+    // A simpler proxy: execFile is called AT LEAST twice before spawn (cat-file).
+    const { getDocHistoryAsync } = await import("../git-history.js");
+    await getDocHistoryAsync(ABS, "page", 50);
+
+    const logCalls = mocks.execFile.mock.calls.filter(
+      (c) => (c[1] as string[])[0] === "log",
+    );
+    // Both walks are `git log` calls — we must see at least 2 (one for
+    // --format=%H%n..., one for --format=%H --name-only).
+    expect(logCalls.length).toBeGreaterThanOrEqual(2);
+    const hasMetaWalk = logCalls.some((c) =>
+      (c[1] as string[]).some((a) => a.startsWith("--format=%H%n")),
+    );
+    const hasNameOnly = logCalls.some((c) =>
+      (c[1] as string[]).includes("--name-only"),
+    );
+    expect(hasMetaWalk).toBe(true);
+    expect(hasNameOnly).toBe(true);
+  });
+});
+
+describe("getFileCommitsMetaAsync — maxBuffer warning (#2293)", () => {
+  it("logs a console.warn when the git command fails (e.g. maxBuffer exceeded)", async () => {
+    const { getFileCommitsMetaAsync } = await import("../git-history.js");
+
+    // Simulate execFile throwing an error (e.g. RangeError from maxBuffer overflow)
+    mocks.execFile.mockImplementation((...callArgs: unknown[]) => {
+      const callback = callArgs[callArgs.length - 1] as (
+        err: Error,
+        result?: unknown,
+      ) => void;
+      callback(new RangeError("stdout maxBuffer length exceeded"));
+    });
+
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const result = await getFileCommitsMetaAsync(ABS);
+
+    // Must return [] (not throw) so the caller can keep processing other files
+    expect(result).toEqual([]);
+
+    // Must emit a warning — silent swallowing was the bug
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("getFileCommitsMetaAsync failed"),
+      expect.stringContaining("maxBuffer"),
+    );
+
+    warnSpy.mockRestore();
+  });
+
+  it("passes maxBuffer option to execFile", async () => {
+    const { getFileCommitsMetaAsync, MAX_BUFFER_BYTES } = await import("../git-history.js");
+    await getFileCommitsMetaAsync(ABS);
+
+    const logCall = mocks.execFile.mock.calls.find(
+      (c) => (c[1] as string[])[0] === "log",
+    );
+    expect(logCall).toBeDefined();
+    const opts = logCall?.[2] as Record<string, unknown>;
+    expect(opts?.["maxBuffer"]).toBe(MAX_BUFFER_BYTES);
+  });
+});
+
+describe("parseHashToPathMap — structured parse (#2293)", () => {
+  it("parses standard git log --format=%H --name-only output correctly", async () => {
+    const { parseHashToPathMap } = await import("../git-history.js");
+    const HASH_A = "a".repeat(40);
+    const HASH_B = "b".repeat(40);
+    const output = `${HASH_A}\n\nsrc/content/docs/page.mdx\n${HASH_B}\n\nsrc/content/docs/old-name.mdx\n`;
+    const map = parseHashToPathMap(output);
+    expect(map.get(HASH_A)).toBe("src/content/docs/page.mdx");
+    expect(map.get(HASH_B)).toBe("src/content/docs/old-name.mdx");
+  });
+
+  it("returns an empty map for empty input", async () => {
+    const { parseHashToPathMap } = await import("../git-history.js");
+    expect(parseHashToPathMap("").size).toBe(0);
+  });
+
+  it("ignores blocks with no path (hash only)", async () => {
+    const { parseHashToPathMap } = await import("../git-history.js");
+    const HASH_A = "a".repeat(40);
+    // Only a hash, no path line — should produce no entry
+    const output = `${HASH_A}\n\n`;
+    const map = parseHashToPathMap(output);
+    expect(map.has(HASH_A)).toBe(false);
+  });
+
+  it("ignores blocks whose first line is not a valid hash", async () => {
+    const { parseHashToPathMap } = await import("../git-history.js");
+    // If someone has a file path that happens to not start with hex, it should
+    // be skipped gracefully.
+    const output = `not-a-hash\n\nsome/file.mdx\n`;
+    const map = parseHashToPathMap(output);
+    expect(map.size).toBe(0);
+  });
+
+  it("does not overwrite an earlier entry with the same hash (keeps first)", async () => {
+    const { parseHashToPathMap } = await import("../git-history.js");
+    const HASH_A = "a".repeat(40);
+    // Two blocks with the same hash — only the first path should be retained
+    const output = `${HASH_A}\n\nfirst-path.mdx\n\n${HASH_A}\n\nsecond-path.mdx\n`;
+    const map = parseHashToPathMap(output);
+    expect(map.get(HASH_A)).toBe("first-path.mdx");
+  });
 });

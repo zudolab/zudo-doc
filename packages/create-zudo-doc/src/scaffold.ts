@@ -449,7 +449,8 @@ export async function scaffold(choices: UserChoices): Promise<void> {
 
 function generatePackageJson(choices: UserChoices) {
   // Intentionally absent from scaffolded deps:
-  //   @takazudo/zudo-doc-md-plugins — zero references in generator templates/source
+  //   @takazudo/zudo-doc-md-plugins — private fixture/parity-test asset; not published,
+  //   not for app import. Zero references in generator templates/source.
   const deps: Record<string, string> = {
     // zfb engine — distributed as published npm packages (the prebuilt binary
     // ships via an optionalDependency of @takazudo/zfb-<platform>); pinned to
@@ -556,11 +557,11 @@ function generatePackageJson(choices: UserChoices) {
     // stability, multi-valued response headers (e.g. multiple Set-Cookie),
     // supplementary-plane CJK reading-time, plus CLI/server/runtime hardening
     // and render perf passes. No consumer-facing / CLI breaking change.
-    "@takazudo/zfb": "0.1.0-next.55",
-    "@takazudo/zfb-runtime": "0.1.0-next.55",
+    "@takazudo/zfb": "0.1.0-next.57",
+    "@takazudo/zfb-runtime": "0.1.0-next.57",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.55",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.57",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's

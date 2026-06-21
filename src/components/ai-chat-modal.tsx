@@ -71,11 +71,15 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
   // Shared dialog lifecycle: showModal/close sync, native-close callback,
   // backdrop click, and navigation-close (before swap to avoid stale-ref
   // errors on next open — refs #1621) — delegated to useModalDialog.
+  // restoreFocusOnly: this component focuses `inputRef` in its own effect
+  // (line below), so we only need trigger-capture + focus restore on close
+  // (a11y interaction #2295).
   const { dialogRef, handleBackdropClick } = useModalDialog({
     isOpen,
     onClose: resetState,
     navigateEvent: BEFORE_NAVIGATE_EVENT,
     backdropClickClose: true,
+    restoreFocusOnly: true,
   });
 
   // Listen for toggle event dispatched by the header AI-chat trigger button.

@@ -56,10 +56,20 @@ its Playwright webServer. Repeated runs skip the build when inputs are unchanged
 **pr-checks e2e** is the authoritative pass/fail gate for E2E. It runs the full
 5-fixture suite with `pnpm test:e2e:ci` (excluding `@flaky` tests).
 
-**b4push** (`pnpm b4push`) is the bounded local convenience pass — a 17-step suite
+**b4push** (`pnpm b4push`) is the bounded local convenience pass — a 19-step suite
 (format → template drift → pin parity → fixture drift → tags audit → token lint →
-e2e spec naming guard → b4push/CI parity → typecheck → unit tests → package tests →
-safelist check → build → link check → HTML validation → preview smoke → manual smoke).
+z-index drift → e2e spec naming guard → @flaky tracking-issue guard → b4push/CI parity →
+typecheck → unit tests → package tests → safelist check → build → link check →
+HTML validation → preview smoke → manual smoke).
+
+**b4push/CI parity scope.** The `check:b4push-ci-parity` guard (step 10) only cross-checks
+the lightweight guard steps 1–10 (the `# >>> b4push-ci-parity:guards:begin` / `:end` region).
+The heavy steps — typecheck, unit tests, package tests, safelist check, build, link check,
+HTML validation, preview smoke — are intentionally outside this region and outside the parity
+manifest. They run in CI as separate full-install jobs (not redundant pure-Node scripts), so
+a straightforward ciNeedle match would need a different contract. The asymmetry is intentional:
+b4push runs the heavy steps locally on the developer's machine; CI runs them in isolated
+clean-runner jobs. Both paths cover the same behaviors, just orchestrated differently.
 
 **E2E is CI-enforced, not local-gated.** `pnpm b4push` intentionally excludes
 Playwright for two reasons:

@@ -228,9 +228,10 @@ if (settings.versions) {
 // MDX content pipeline — driven by zfb's Rust port, NOT JS plugins.
 // ---------------------------------------------------------------------------
 //
-// Background: this project's `packages/md-plugins/src/` ships a JS-side
+// Background: this project's `packages/md-plugins/src/` holds a JS-side
 // `remarkAdmonitions` + `remarkResolveMarkdownLinks` + `rehypeStripMdExtension`
-// (legacy Astro-era pipeline). The current zfb pin (`9239267`, post-#202
+// as a private fixture/parity-test asset (not published, not used in production —
+// legacy Astro-era pipeline, retained for test coverage only). The current zfb pin (`9239267`, post-#202
 // fix) has Rust ports of all three plus four more (`HeadingLinks`,
 // `CodeTitle`, `ImageEnlarge`, `Mermaid`, `Syntect`, `CjkFriendlyPlugin`)
 // in `crates/zfb-content/src/plugins/`, all wired automatically via
@@ -401,8 +402,10 @@ export default defineConfig({
   },
   // Strip `.md` / `.mdx` from in-page `<a href>` and append a trailing
   // slash so author-written `[label](./other.mdx)` references resolve
-  // to the rendered route URL. Mirrors `rehypeStripMdExtension` from
-  // packages/md-plugins. Without this, dist HTML carries unrouted
+  // to the rendered route URL. The JS-side `rehypeStripMdExtension` in
+  // packages/md-plugins (a private fixture asset) is the historical reference
+  // for this behaviour; the Rust `StripMdExtensionPlugin` is the production
+  // implementation. Without this, dist HTML carries unrouted
   // `href="./other.mdx"` links — the deep-review #1338 finding 12
   // verification surfaced this on roughly two dozen pages.
   stripMdExt: true,

@@ -270,6 +270,11 @@
   --text-scale-lg:  1.4rem;     /* 22.4px */
   --text-scale-xl:  3rem;       /* 48px */
   --text-scale-2xl: 3.75rem;    /* 60px */
+
+  --default-transition-duration: 150ms; /* consumed by hash-link opacity fade */
+  --zd-transition-slow: 200ms;          /* sidebar transform/visibility and content-band max-width */
+  --zd-transition-slower: 300ms;        /* view-transition fade-in (contentFadeIn animation) */
+  --zd-header-h: 80px;                  /* sticky header height; consumed by scroll-margin-top on [id] anchors */
 }
 
 /* ========================================
@@ -277,7 +282,7 @@
  * ======================================== */
 
 [id] {
-  scroll-margin-top: 80px;
+  scroll-margin-top: var(--zd-header-h);
 }
 
 body {
@@ -581,8 +586,8 @@ pre[class^="syntect-"] .line .highlighted-word {
 @media (min-width: 1024px) {
   #desktop-sidebar {
     transition:
-      transform 200ms ease-in-out,
-      visibility 200ms;
+      transform var(--zd-transition-slow) ease-in-out,
+      visibility var(--zd-transition-slow);
   }
 
   html[data-sidebar-hidden] #desktop-sidebar {
@@ -591,7 +596,7 @@ pre[class^="syntect-"] .line .highlighted-word {
   }
 
   .zd-sidebar-content-wrapper {
-    transition: margin-left 200ms ease-in-out;
+    transition: margin-left var(--zd-transition-slow) ease-in-out;
   }
 
   html[data-sidebar-hidden] .zd-sidebar-content-wrapper {
@@ -605,7 +610,7 @@ pre[class^="syntect-"] .line .highlighted-word {
    * branch in doc-layout.tsx. These rules are unlayered, so they win over
    * the Tailwind `max-w-[clamp(...)]` utility (utilities layer). (#2002) */
   .zd-doc-content-band {
-    transition: max-width 200ms ease-in-out;
+    transition: max-width var(--zd-transition-slow) ease-in-out;
   }
 
   html[data-sidebar-hidden] .zd-doc-content-band {

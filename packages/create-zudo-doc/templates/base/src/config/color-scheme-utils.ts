@@ -116,7 +116,7 @@ export function schemeToCssPairs(scheme: ColorScheme): [string, string][] {
   return [
     ["--zd-bg", resolveColor(scheme.background, p, p[0])],
     ["--zd-fg", resolveColor(scheme.foreground, p, p[15])],
-    ["--zd-cursor", resolveColor(scheme.cursor, p, p[6])],
+    ["--zd-cursor", resolveColor(scheme.cursor, p, p[6])], // intentionally inert/vestigial: exposed in the design-token panel but no CSS rule consumes it (no caret-color wiring); mirrors shikiTheme's status
     ["--zd-sel-bg", resolveColor(scheme.selectionBg, p, resolveColor(scheme.background, p, p[0]))],
     ["--zd-sel-fg", resolveColor(scheme.selectionFg, p, resolveColor(scheme.foreground, p, p[15]))],
     ...p.map((color, i) => [`--zd-${i}`, color] as [string, string]),
