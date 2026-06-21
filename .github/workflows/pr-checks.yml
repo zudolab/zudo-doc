@@ -11,6 +11,7 @@
 #   Package Safelist Check   — pnpm install + package build; scripts/check-package-safelist.mjs
 #   B4push/CI Parity Check   — pure-Node, no install; scripts/check-b4push-ci-parity.mjs
 #   E2E Spec Naming Guard    — pure-Node, no install; scripts/check-e2e-spec-naming.mjs
+#   Flaky Tracking-Issue Guard — pure-Node, no install; scripts/check-flaky-tracking-issue.mjs
 #   Lint Gates               — pnpm install; pnpm tags:audit --ci + pnpm lint:tokens
 #   Type Check               — pnpm install; pnpm check (zfb check → tsc --noEmit)
 #   Package Unit Tests       — pnpm install; pnpm test:packages (all 5 package suites)
@@ -176,6 +177,25 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Check E2E spec naming
         run: node scripts/check-e2e-spec-naming.mjs
+
+  # ---------------------------------------------------------------------------
+  # Job 0.69: @flaky/@local-only tracking-issue guard (#2292)
+  # ---------------------------------------------------------------------------
+  # Asserts every test tagged @flaky or @local-only in e2e/**/*.spec.ts has a
+  # GitHub issue URL in a comment on the line(s) immediately preceding the
+  # test() call. Without the URL, quarantine telemetry (report-flaky-lane.mjs)
+  # is silent and the exit deadline is untracked — the exact graveyard pattern
+  # the @flaky refactor was designed to prevent.
+  # Pure-Node script — uses preinstalled Node 22 on the runner image, no pnpm.
+  check-flaky-tracking-issue:
+    name: Flaky Tracking-Issue Guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Check @flaky/@local-only tracking-issue URLs
+        run: node scripts/check-flaky-tracking-issue.mjs
 
   # ---------------------------------------------------------------------------
   # Job 0.68: Z-index codegen drift check (#2148)

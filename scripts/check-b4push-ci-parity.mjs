@@ -102,6 +102,15 @@ const REQUIRED_CI_GUARDS = [
     b4pushScript: "check:z-index",
     comment: "Z-index codegen drift check (scripts/gen-z-index.mjs, #2148)",
   },
+  {
+    // @flaky/@local-only tracking-issue guard: asserts every @flaky and
+    // @local-only tagged test has a GitHub issue URL comment on the preceding
+    // line(s). Closes the enforcement gap where TESTING.md required the URL but
+    // nothing mechanically checked for it (#2292).
+    ciNeedle: "check-flaky-tracking-issue.mjs",
+    b4pushScript: "check:flaky-tracking-issue",
+    comment: "@flaky/@local-only tracking-issue guard (scripts/check-flaky-tracking-issue.mjs, #2292)",
+  },
 ];
 
 const ALLOWLIST_PATH = resolve(ROOT, ".b4push-ci-parity-allowlist");
@@ -111,8 +120,10 @@ const B4PUSH_PATH = resolve(ROOT, "scripts/run-b4push.sh");
 // Open/close marker comments that delimit the lightweight guard region in
 // scripts/run-b4push.sh. Only pnpm invocations inside this region are
 // extracted — heavy steps (build, typecheck, e2e) are outside.
-const REGION_OPEN_MARKER = "b4push-ci-parity:guards";
-const REGION_CLOSE_MARKER = "b4push-ci-parity:guards";
+// Distinct open/close strings prevent a stray close-marker from accidentally
+// matching the open-marker line (and vice versa) during parsing.
+const REGION_OPEN_MARKER = "b4push-ci-parity:guards:begin";
+const REGION_CLOSE_MARKER = "b4push-ci-parity:guards:end";
 
 /** Read and parse the allowlist file. Returns a Set of allowed b4push script names. */
 function readAllowlist() {
