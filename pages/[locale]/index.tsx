@@ -117,6 +117,7 @@ export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
       headerOverride={<HeaderWithDefaults lang={locale as Locale} currentPath={withBase(`/${locale}/`)} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
       bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
+      enableClientRouter={settings.dynamicPageTransition}
     >
       {/* Hero: logo left, title+desc+links right, block centered */}
       <div class="flex justify-center mb-vsp-xl">

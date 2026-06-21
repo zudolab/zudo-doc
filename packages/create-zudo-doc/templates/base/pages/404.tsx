@@ -44,6 +44,7 @@ export default function NotFoundPage(): JSX.Element {
       headerOverride={<HeaderWithDefaults lang={locale} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
       bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
+      enableClientRouter={settings.dynamicPageTransition}
     >
       <div class="min-h-[60vh] flex flex-col items-center justify-center px-hsp-2xl py-vsp-xl">
         <h1 class="text-display font-bold mb-vsp-md">404</h1>

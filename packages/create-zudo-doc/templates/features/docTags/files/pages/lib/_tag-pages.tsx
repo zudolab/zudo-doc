@@ -142,6 +142,7 @@ export function TagDetailPageView({
       breadcrumbOverride={<Breadcrumb items={breadcrumbItems} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
       bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
+      enableClientRouter={settings.dynamicPageTransition}
     >
       <h1 class="text-heading font-bold mb-vsp-xs">{pageTitle}</h1>
       <p class="text-muted mb-vsp-lg">{countText}</p>
@@ -198,6 +199,7 @@ export function TagsIndexPageView({ locale }: { locale: string }): JSX.Element {
       breadcrumbOverride={<Breadcrumb items={breadcrumbItems} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
       bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
+      enableClientRouter={settings.dynamicPageTransition}
     >
       <h1 class="text-heading font-bold mb-vsp-lg">{pageTitle}</h1>
       {!settings.docTags || tags.length === 0 ? (

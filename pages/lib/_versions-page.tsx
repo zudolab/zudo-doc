@@ -73,6 +73,7 @@ export function VersionsPageView({ locale }: { locale: string }): JSX.Element {
       headerOverride={<HeaderWithDefaults lang={locale as Locale} currentPath={withBase(`${prefix}/docs/versions`)} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
       bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
+      enableClientRouter={settings.dynamicPageTransition}
     >
       <VersionsPageContent
         latestHref={latestHref}
