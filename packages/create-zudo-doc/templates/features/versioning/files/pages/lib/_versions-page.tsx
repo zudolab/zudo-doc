@@ -63,7 +63,6 @@ export function VersionsPageView({ locale }: { locale: string }): JSX.Element {
       head={<HeadWithDefaults title={pageTitle} />}
       lang={locale}
       noindex={settings.noindex}
-      enableClientRouter={settings.dynamicPageTransition}
       hideSidebar={true}
       hideToc={true}
       // Empty fragment suppresses DocLayoutWithDefaults' empty-data default
@@ -74,6 +73,7 @@ export function VersionsPageView({ locale }: { locale: string }): JSX.Element {
       headerOverride={<HeaderWithDefaults lang={locale as Locale} currentPath={withBase(`${prefix}/docs/versions`)} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
       bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
+      enableClientRouter={settings.dynamicPageTransition}
     >
       <VersionsPageContent
         latestHref={latestHref}

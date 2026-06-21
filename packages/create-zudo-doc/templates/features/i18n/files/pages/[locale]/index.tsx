@@ -107,7 +107,6 @@ export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
       head={<HeadWithDefaults title={settings.siteName} />}
       lang={locale}
       noindex={settings.noindex}
-      enableClientRouter={settings.dynamicPageTransition}
       hideSidebar={true}
       hideToc={true}
       // Empty fragment suppresses DocLayoutWithDefaults' empty-data default
@@ -118,6 +117,7 @@ export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
       headerOverride={<HeaderWithDefaults lang={locale as Locale} currentPath={withBase(`/${locale}/`)} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
       bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
+      enableClientRouter={settings.dynamicPageTransition}
     >
       {/* Hero: logo left, title+desc+links right, block centered */}
       <div class="flex justify-center mb-vsp-xl">

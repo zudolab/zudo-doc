@@ -47,11 +47,18 @@ import "@takazudo/zfb-runtime/client-router";
 import type { JSX } from "preact";
 
 /**
- * Renders nothing. The SSR `<ClientRouter />` rendered by DocLayout (when
- * `enableClientRouter` is true) self-activates on the client as a top-level
- * module side effect — this island is now a redundant belt-and-suspenders
- * fallback. The island marker keeps the client-router barrel in the bundle
- * for environments where the SSR path alone is insufficient.
+ * Renders nothing. The island marker exists only so zfb's island scanner
+ * walks page → BodyEndIslands → ClientRouterBootstrap and includes the
+ * client-router barrel in the per-island bundle, where the side-effect
+ * import above can fire on the client.
+ *
+ * Note: the SSR `<ClientRouter />` mounted by `DocLayout` (via
+ * `enableClientRouter`) self-activates the SPA router when its head meta
+ * tags reach the browser. This host island is therefore a no-op for
+ * router activation — it is kept only for the `when="load"` hydration
+ * slot and bundle inclusion. The actual on/off gate is
+ * `enableClientRouter` on `<DocLayoutWithDefaults>`, set to
+ * `settings.dynamicPageTransition` at every call site.
  */
 function ClientRouterBootstrap(): JSX.Element | null {
   return null;

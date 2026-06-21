@@ -63,7 +63,6 @@ export default function IndexPage(): JSX.Element {
       head={<HeadWithDefaults title={settings.siteName} />}
       lang={locale}
       noindex={settings.noindex}
-      enableClientRouter={settings.dynamicPageTransition}
       hideSidebar={true}
       hideToc={true}
       // Empty fragment suppresses DocLayoutWithDefaults' empty-data default
@@ -74,6 +73,7 @@ export default function IndexPage(): JSX.Element {
       headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase("/")} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
       bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
+      enableClientRouter={settings.dynamicPageTransition}
     >
       {/* Hero: logo left, title+desc+links right, block centered */}
       <div class="flex justify-center mb-vsp-xl">

@@ -182,7 +182,6 @@ export function DocPageShell(props: DocPageShellProps): JSX.Element {
       head={<HeadWithDefaults title={title} description={description} canonical={canonical} />}
       lang={locale}
       noindex={settings.noindex}
-      enableClientRouter={settings.dynamicPageTransition}
       hideSidebar={hideSidebar}
       hideToc={hideToc}
       headings={headings}
@@ -219,6 +218,7 @@ export function DocPageShell(props: DocPageShellProps): JSX.Element {
       afterSidebar={<SidebarPrepaint />}
       footerOverride={<FooterWithDefaults lang={locale} />}
       bodyEndComponents={<DocBodyEnd />}
+      enableClientRouter={settings.dynamicPageTransition}
     >
       {kind === "autoIndex" ? (
         /* Auto-index page: category without an index.mdx.

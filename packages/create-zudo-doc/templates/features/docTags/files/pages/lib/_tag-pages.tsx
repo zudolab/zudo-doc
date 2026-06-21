@@ -129,7 +129,6 @@ export function TagDetailPageView({
       // undefined relies on Preact treating an undefined prop as absent.
       lang={isDefault ? undefined : locale}
       noindex={settings.noindex}
-      enableClientRouter={settings.dynamicPageTransition}
       hideSidebar={true}
       hideToc={true}
       // Empty fragment suppresses DocLayoutWithDefaults' empty-data default
@@ -143,6 +142,7 @@ export function TagDetailPageView({
       breadcrumbOverride={<Breadcrumb items={breadcrumbItems} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
       bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
+      enableClientRouter={settings.dynamicPageTransition}
     >
       <h1 class="text-heading font-bold mb-vsp-xs">{pageTitle}</h1>
       <p class="text-muted mb-vsp-lg">{countText}</p>
@@ -188,7 +188,6 @@ export function TagsIndexPageView({ locale }: { locale: string }): JSX.Element {
       // Same undefined-≡-absent reliance as TagDetailPageView above.
       lang={isDefault ? undefined : locale}
       noindex={settings.noindex}
-      enableClientRouter={settings.dynamicPageTransition}
       hideSidebar={true}
       hideToc={true}
       // Empty fragment suppresses DocLayoutWithDefaults' empty-data default
@@ -200,6 +199,7 @@ export function TagsIndexPageView({ locale }: { locale: string }): JSX.Element {
       breadcrumbOverride={<Breadcrumb items={breadcrumbItems} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
       bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
+      enableClientRouter={settings.dynamicPageTransition}
     >
       <h1 class="text-heading font-bold mb-vsp-lg">{pageTitle}</h1>
       {!settings.docTags || tags.length === 0 ? (
