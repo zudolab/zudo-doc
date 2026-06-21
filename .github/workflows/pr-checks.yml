@@ -32,8 +32,8 @@
 # `pnpm install --frozen-lockfile` is all each job needs. Dep versions are
 # pinned in package.json (single source of truth).
 #
-# Inter-job data sharing uses actions/cache (not upload-artifact) for build
-# outputs to avoid Actions storage accumulation.
+# Inter-job data sharing uses upload-artifact/download-artifact (retention-days: 1
+# keeps storage bounded; artifacts are the purpose-built mechanism for intra-run handoff).
 #
 # Concurrency: cancel in-progress runs for the same PR to save resources.
 
@@ -677,34 +677,12 @@ jobs:
 
       # CSS-shape gate — defends against #1395 (Sub-4 host-side workaround:
       # @theme { --color-*: initial; --spacing: initial; } reset).
-      # Three structural invariants (no class-name greps — fragile against
-      # Tailwind escaping and minification churn).
+      # Three structural invariants live in the composite action so all three
+      # deploy workflows stay in sync automatically.
       - name: CSS-shape smoke gate (#1395)
-        env:
-          DEPLOY_URL: ${{ steps.cf-deploy.outputs.deploy_url }}
-        run: |
-          set -euo pipefail
-          # Retry both fetches: right after deploy the homepage HTML can reference a new
-          # hashed styles-<hash>.css before that asset has propagated, so an immediate
-          # curl 404s. --retry-all-errors retries HTTP 4xx too (plain --retry does not).
-          # Propagation race, not a real failure (#2236).
-          CSS_PATH=$(curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors "$DEPLOY_URL/" | grep -oE 'href="[^"]*assets/styles-[^"]*\.css"' | head -1 | sed 's/href="//;s/"$//')
-          [ -n "$CSS_PATH" ] || { echo "::error::no CSS link found in $DEPLOY_URL/"; exit 1; }
-          curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors "${DEPLOY_URL}${CSS_PATH}" -o /tmp/deployed-css.css
-
-          CSS_BYTES=$(wc -c < /tmp/deployed-css.css)
-          MIN_CSS_BYTES=50000  # post-zfb#159 split-import fix (in pin 9239267) drops leaked Tailwind defaults; healthy baseline ~64-66 KB (down from pre-fix ~77.7 KB). Threshold sits well above the ~30-40 KB broken-scanner floor with headroom for future intentional shrinkage.
-          [ "$CSS_BYTES" -ge "$MIN_CSS_BYTES" ] || { echo "::error::deployed CSS is $CSS_BYTES bytes, below threshold $MIN_CSS_BYTES (broken scanner produces ~30-40 KB)"; exit 1; }
-
-          MEDIA_COUNT=$(grep -cE '^@media' /tmp/deployed-css.css || true)
-          MIN_MEDIA=3  # tuned from the Sub-2 manager-confirm baseline (post-fix has 4 @media; threshold 3 leaves one block of safety)
-          [ "$MEDIA_COUNT" -ge "$MIN_MEDIA" ] || { echo "::error::deployed CSS has $MEDIA_COUNT @media blocks, below threshold $MIN_MEDIA"; exit 1; }
-
-          LEAKED_DEFAULT_COLORS=$(grep -cE -- '--color-(gray|zinc|red|amber|green|cyan|blue|indigo|purple|slate)-[0-9]+:' /tmp/deployed-css.css || true)
-          MAX_DEFAULT_THEME_COLOR_TOKENS=2  # tuned from the Sub-2 manager-confirm baseline (post-fix has 0; broken state has 36)
-          [ "$LEAKED_DEFAULT_COLORS" -le "$MAX_DEFAULT_THEME_COLOR_TOKENS" ] || { echo "::error::deployed CSS has $LEAKED_DEFAULT_COLORS leaked Tailwind default color tokens, above threshold $MAX_DEFAULT_THEME_COLOR_TOKENS (zfb user_has_import blind-spot regression)"; exit 1; }
-
-          echo "OK: deployed CSS is $CSS_BYTES bytes, $MEDIA_COUNT @media blocks, $LEAKED_DEFAULT_COLORS leaked default color tokens"
+        uses: ./.github/actions/css-shape-smoke-gate
+        with:
+          deploy-url: ${{ steps.cf-deploy.outputs.deploy_url }}
 
       # AI-chat endpoint smoke gate — assert POST /api/ai-chat returns a JSON
       # content-type (not a static 404 page). A text/html response means the
