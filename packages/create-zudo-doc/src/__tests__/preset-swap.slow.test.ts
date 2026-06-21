@@ -80,17 +80,63 @@ function runOrThrow(
  * `undici-types` failed to download, even though the version range itself is
  * healthy and installs fine on a warm store.
  *
- * Strategy: try `--prefer-offline` first (fast once the store is warm). If it
- * fails, retry without `--prefer-offline` so the retry does a full online
- * resolution and cannot be tripped by a cold/stale offline cache, with a
- * short backoff between attempts. Only after the final attempt fails do we
- * surface the captured diagnostics. This keeps a transient registry flake
- * from re-filing the nightly issue without masking a genuine resolution bug
- * (a real bad pin fails every attempt and still throws).
+ * Strategy: try `--prefer-offline` first (fast once the store is warm). If
+ * it fails with a transient network/registry error, retry with full online
+ * resolution using exponential backoff. Only after all attempts are exhausted
+ * do we surface the captured diagnostics. Non-transient failures (e.g. a
+ * genuinely bad version pin that 404s every time) are re-thrown immediately
+ * once we have confirmed it is not a transient error class, since repeated
+ * retries would only add latency.
+ *
+ * Why broader error matching (zudolab/zudo-doc#2123, zudolab/zudo-doc#2270):
+ * The original narrow retry caught some undici fetch failures but missed
+ * ECONNRESET, ETIMEDOUT, registry 5xx responses surfaced as non-zero exit
+ * without a recognisable pnpm error code, and mid-stream undici drops that
+ * pnpm formats as "fetch failed" / "UND_ERR_SOCKET" in stderr. The revised
+ * heuristic treats any of those patterns as transient and worth retrying,
+ * while still letting genuine resolution failures (missing package, version
+ * constraint impossible) propagate after the final attempt.
  */
+
+/** Patterns that indicate a transient network / registry error worth retrying. */
+const TRANSIENT_ERROR_PATTERNS = [
+  /ECONNRESET/,
+  /ETIMEDOUT/,
+  /ECONNREFUSED/,
+  /ENOTFOUND/,
+  /EAI_AGAIN/,
+  /fetch failed/i,
+  /UND_ERR/,
+  /undici/i,
+  /network\s+error/i,
+  /socket\s+hang\s+up/i,
+  // Registry 5xx responses: pnpm prints the status line in stderr
+  /50[0-9]\s/,
+  // pnpm's own "GET https://registry…" fetch-failure lines
+  /GET https?:\/\/.+\s+5\d{2}/,
+];
+
+function isTransientInstallError(err: unknown): boolean {
+  const e = err as { stdout?: Buffer; stderr?: Buffer; message?: string };
+  const combined = [
+    e.message ?? "",
+    e.stdout?.toString() ?? "",
+    e.stderr?.toString() ?? "",
+  ].join("\n");
+  return TRANSIENT_ERROR_PATTERNS.some((re) => re.test(combined));
+}
+
 function installScaffoldedDeps(cwd: string): void {
+  // Attempt 0: prefer-offline (fast when store is warm).
+  // Attempts 1-4: full online resolution with exponential backoff.
+  // Total: 5 attempts, backoff ceiling ~16s per inter-attempt gap.
+  // Rationale for 5 attempts: zudolab/zudo-doc#2123 shows single-attempt
+  // flakes; zudolab/zudo-doc#2270 observed two back-to-back hiccups before
+  // recovery, so 2 retries were still not enough in the worst case.
   const attempts = [
     "pnpm install --prefer-offline --ignore-workspace",
+    "pnpm install --ignore-workspace",
+    "pnpm install --ignore-workspace",
     "pnpm install --ignore-workspace",
     "pnpm install --ignore-workspace",
   ];
@@ -101,12 +147,19 @@ function installScaffoldedDeps(cwd: string): void {
       return;
     } catch (err) {
       lastErr = err;
-      if (i < attempts.length - 1) {
-        // Synchronous backoff (~3s, ~6s) between retries. The surrounding
+      const isLast = i === attempts.length - 1;
+      if (!isLast) {
+        // Only retry if the error looks transient. A genuine resolution
+        // failure (bad pin, impossible constraint) fails identically on every
+        // attempt — retrying only wastes nightly-exam minutes.
+        if (!isTransientInstallError(err)) {
+          throw err;
+        }
+        // Synchronous exponential backoff: 2s, 4s, 8s, 16s. The surrounding
         // execSync is already blocking, so a blocking sleep here is fine and
         // avoids turning beforeAll async-racy. Atomics.wait is the standard
         // no-busy-loop synchronous sleep idiom.
-        const waitMs = 3000 * (i + 1);
+        const waitMs = 2000 * Math.pow(2, i);
         Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, waitMs);
       }
     }
