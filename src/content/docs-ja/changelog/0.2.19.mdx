@@ -1,0 +1,12 @@
+---
+title: 0.2.19
+description: 0.2.19のリリースノート。
+sidebar_position: 1030
+---
+
+リリース日: 2026-06-21
+
+### 機能
+
+- `@takazudo/zudo-doc` が、ページローディングオーバーレイのCSSを独立したエクスポート `@takazudo/zudo-doc/page-loading.css` として提供するようになりました。`DocLayoutWithDefaults` を使わず独自にレイアウトを組む利用者は、オーバーレイ・スピナー・遷移待ちリンクのルールを `global.css` に手でコピーする代わりに、`PageLoadingOverlay` コンポーネントと並べてこれを `@import` できます。(#2280, #2279)
+- ライトボックスの `--color-overlay` から切り離された専用のスクリムトークン `--color-page-loading-overlay` を追加しました。ローディングオーバーレイの背景を独立して制御できます。デフォルトは `color-mix(in oklch, var(--color-overlay) 60%, transparent)` のため既存のプロジェクトは変わりません。これを上書きすればローディングのスクリムだけを調整できます。(#2280, #2279)
