@@ -1,0 +1,82 @@
+/* ============================================================================
+ * @takazudo/zudo-doc — page-loading stylesheet
+ *
+ * Shipped to consumers as `@takazudo/zudo-doc/page-loading.css` (copied to
+ * `dist/page-loading.css` by scripts/copy-page-loading-css.mjs on build).
+ * Provides the full visual contract for the page-loading overlay, pending-link
+ * indicator, and spinner — so consumers can @import a single file rather than
+ * inlining these rules per-project.
+ *
+ * ── Consumer contract ──────────────────────────────────────────────────────
+ * Host tokens consumed (all are optional — sensible fallbacks are built in):
+ *   --color-page-loading-overlay
+ *       Overlay background. Defaults to:
+ *       color-mix(in oklch, var(--color-overlay, #000) 60%, transparent)
+ *       Override to change the scrim colour or opacity independently of the
+ *       host's --color-overlay token.
+ *   --color-overlay   Semi-opaque backdrop colour (used by the fallback chain
+ *                     above when --color-page-loading-overlay is not set).
+ *   --color-fg        Spinner border colour. Falls back to #fff.
+ *   --color-accent    Colour applied to links/buttons with data-zd-nav-pending.
+ *   --z-index-modal   Stack level for the overlay. Falls back to 100.
+ * ========================================================================== */
+
+.page-loading-overlay {
+  position: fixed;
+  inset: 0;
+  /* Full-screen blocking load overlay — modal tier.
+     --z-index-modal fallback (100) ensures the overlay stacks on top even for
+     bare consumers that have not defined the token. */
+  z-index: var(--z-index-modal, 100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(
+    --color-page-loading-overlay,
+    color-mix(in oklch, var(--color-overlay, #000) 60%, transparent)
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease-out;
+}
+
+.page-loading-overlay[data-visible] {
+  opacity: 1;
+}
+
+a[data-zd-nav-pending],
+button[data-zd-nav-pending] {
+  color: var(--color-accent);
+}
+
+.page-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid var(--color-fg, #fff);
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: page-loading-spin 1s linear infinite;
+}
+
+@media (min-width: 1024px) {
+  .page-loading-spinner {
+    width: 64px;
+    height: 64px;
+    border-width: 6px;
+  }
+}
+
+@keyframes page-loading-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-loading-spinner {
+    animation: none;
+    border-bottom-color: var(--color-fg, #fff);
+    opacity: 0.5;
+  }
+}

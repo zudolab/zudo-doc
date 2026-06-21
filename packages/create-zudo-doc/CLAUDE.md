@@ -42,7 +42,7 @@ This replaces the old "copy everything then strip" approach. Features are added,
 
 The files shipped with anchors in `templates/base/` today are:
 
-- `src/styles/global.css` — 2 anchors (`@slot:global-css:theme-tokens`, `@slot:global-css:feature-styles`)
+- `src/styles/global.css` — 3 anchors (`@slot:global-css:imports`, `@slot:global-css:theme-tokens`, `@slot:global-css:feature-styles`)
 - `pages/_mdx-components.ts` — anchors consumed by the imageEnlarge feature
 - `pages/lib/_body-end-islands.tsx` — anchors consumed by the tauri and designTokenPanel features
 - `src/config/settings-types.ts` — replace-range anchors (`@slot:settings-types:trigger-names:start`/`:end`) consumed by the designTokenPanel feature to inject `"design-token-panel"` into `HeaderRightTriggerName`

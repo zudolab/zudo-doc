@@ -42,6 +42,7 @@
    above (line 11); the safelist import above generates the component utilities
    its headings/links/etc. depend on. */
 @import "@takazudo/zudo-doc/content.css";
+/* @slot:global-css:imports */
 
 /* ========================================
  * Tailwind v4 content sources

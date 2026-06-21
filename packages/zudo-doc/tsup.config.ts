@@ -47,5 +47,5 @@ export default defineConfig({
   // then regenerate dist/safelist.css. Both must run AFTER tsup because
   // clean:true wipes dist/ first; gen-safelist only scans dist/*.js so the
   // copied .css does not affect it.
-  onSuccess: "node scripts/copy-content-css.mjs && node scripts/gen-safelist.mjs",
+  onSuccess: "node scripts/copy-content-css.mjs && node scripts/copy-page-loading-css.mjs && node scripts/gen-safelist.mjs",
 });
