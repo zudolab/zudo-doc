@@ -1,0 +1,12 @@
+---
+title: 0.2.19
+description: Release notes for 0.2.19.
+sidebar_position: 1030
+---
+
+Released: 2026-06-21
+
+### Features
+
+- `@takazudo/zudo-doc` now ships the page-loading overlay CSS as a standalone export, `@takazudo/zudo-doc/page-loading.css`. Standalone consumers that wire their own layout (not `DocLayoutWithDefaults`) can `@import` it alongside the `PageLoadingOverlay` component instead of hand-copying the overlay/spinner/pending-link rules into their `global.css`. (#2280, #2279)
+- Added a decoupled scrim token, `--color-page-loading-overlay`, that controls the loading overlay background independently of the lightbox `--color-overlay`. It defaults to `color-mix(in oklch, var(--color-overlay) 60%, transparent)`, so existing projects are unchanged; override it to retone the loading scrim on its own. (#2280, #2279)
