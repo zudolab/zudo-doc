@@ -162,6 +162,10 @@ export default function ImageEnlarge() {
 
   useEffect(() => {
     function handleDocumentClick(e: MouseEvent) {
+      // Selection guard: a click that ends a text-drag (non-collapsed selection)
+      // should not open the lightbox — the user was selecting, not clicking (#2295).
+      const sel = window.getSelection();
+      if (sel && !sel.isCollapsed) return;
       const target = e.target as Element;
       const container = target.closest(".zd-enlargeable");
       if (!container) return;
