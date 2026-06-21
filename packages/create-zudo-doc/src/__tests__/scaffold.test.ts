@@ -3942,7 +3942,7 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
     ).toBe(true);
   });
 
-  it("feature ON: global.css contains page-loading overlay/spinner CSS and ::view-transition- rule", async () => {
+  it("feature ON: global.css contains page-loading.css import, overlay token, and ::view-transition- rule", async () => {
     const choices: UserChoices = {
       projectName: "test-dpt-on-css",
       defaultLang: "en",
@@ -3956,9 +3956,13 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
       projectPath("test-dpt-on-css", "src/styles/global.css"),
       "utf-8",
     );
-    expect(css).toContain(".page-loading-overlay");
-    expect(css).toContain(".page-loading-spinner");
-    expect(css).toContain("@keyframes page-loading-spin");
+    // Page-loading CSS is now shipped as a package artifact (#2283) — expect
+    // a gated @import, not inline rule bodies.
+    expect(css).toContain('@import "@takazudo/zudo-doc/page-loading.css";');
+    expect(css).toContain("--color-page-loading-overlay");
+    expect(css).not.toContain(".page-loading-overlay {");
+    expect(css).not.toContain("@keyframes page-loading-spin");
+    // View-Transitions CSS must still be present.
     expect(css).toMatch(/::view-transition-/);
   });
 
@@ -3999,7 +4003,7 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
     ).toBe(false);
   });
 
-  it("feature OFF: global.css does NOT contain page-loading overlay or ::view-transition- rules", async () => {
+  it("feature OFF: global.css does NOT contain page-loading import, overlay token, or ::view-transition- rules; imports anchor is cleaned", async () => {
     const choices: UserChoices = {
       projectName: "test-dpt-off-css",
       defaultLang: "en",
@@ -4013,8 +4017,12 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
       projectPath("test-dpt-off-css", "src/styles/global.css"),
       "utf-8",
     );
+    expect(css).not.toContain("page-loading.css");
+    expect(css).not.toContain("--color-page-loading-overlay");
     expect(css).not.toContain(".page-loading-overlay");
     expect(css).not.toMatch(/::view-transition-/);
+    // The @slot:global-css:imports anchor must have been cleaned up.
+    expect(css).not.toContain("@slot:global-css:imports");
   });
 
   it("feature OFF: settings.ts contains dynamicPageTransition: false", async () => {
