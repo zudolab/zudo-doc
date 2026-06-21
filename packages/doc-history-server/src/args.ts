@@ -90,6 +90,13 @@ export interface ServerArgs extends CommonArgs {
   port: number;
   /** Network interface to bind. Defaults to "127.0.0.1" (localhost only). */
   host: string;
+  /**
+   * Whether the caller explicitly opted in to LAN exposure via --allow-lan-history.
+   * Required when --host is a non-loopback address; the server refuses to bind
+   * a non-loopback address without this flag, preventing accidental LAN exposure
+   * of full git history (including unpublished content).
+   */
+  allowLan: boolean;
 }
 
 export interface CliArgs extends CommonArgs {
@@ -148,13 +155,32 @@ export function parseCommonArgs(
   return { contentDir, locales, maxEntries };
 }
 
+/**
+ * Return true when `host` is a loopback address (IPv4 or IPv6).
+ * Only loopback addresses are considered safe for localhost-only binding;
+ * everything else requires --allow-lan-history.
+ */
+function isLoopback(host: string): boolean {
+  return (
+    host === "127.0.0.1" ||
+    host === "::1" ||
+    host === "localhost"
+  );
+}
+
 /** Parse server-specific args */
 export function parseServerArgs(args: string[]): ServerArgs {
   let port = 4322;
-  // Bind to loopback by default; pass --host 0.0.0.0 to expose on the LAN.
-  // The zfb dev plugin proxies /doc-history/* server-side, so localhost-only
-  // is sufficient for both `pnpm dev` and `pnpm dev:network`.
+  // Bind to loopback by default; pass --host 0.0.0.0 AND --allow-lan-history
+  // to expose on the LAN.  The zfb dev plugin proxies /doc-history/* server-
+  // side, so localhost-only is sufficient for both `pnpm dev` and
+  // `pnpm dev:network`.
   let host = "127.0.0.1";
+  // --allow-lan-history is a separate explicit opt-in distinct from --host so
+  // that copy-pasted `--host 0.0.0.0` snippets don't silently expose full git
+  // history (including unpublished draft content) on the LAN.  The server will
+  // refuse to bind a non-loopback host without this flag.
+  let allowLan = false;
   const common = parseCommonArgs(args, {
     onFlag: (flag, next) => {
       if (flag === "--port") {
@@ -170,10 +196,28 @@ export function parseServerArgs(args: string[]): ServerArgs {
         host = next();
         return true;
       }
+      if (flag === "--allow-lan-history") {
+        // Boolean flag — consumes no next argument.
+        allowLan = true;
+        return true;
+      }
       return false;
     },
   });
-  return { ...common, port, host };
+
+  // Safety gate: refuse non-loopback binding without explicit opt-in.
+  // This prevents `--host 0.0.0.0` (commonly copy-pasted from zfb docs) from
+  // silently broadcasting the full git history, including unpublished drafts,
+  // to every device on the local network.
+  if (!isLoopback(host) && !allowLan) {
+    console.error(
+      `doc-history-server: binding to "${host}" exposes full git history on the LAN, ` +
+        `including unpublished content. Pass --allow-lan-history to confirm this is intentional.`,
+    );
+    process.exit(1);
+  }
+
+  return { ...common, port, host, allowLan };
 }
 
 /** Parse CLI-specific args */

@@ -173,6 +173,7 @@ describe("parseServerArgs", () => {
       maxEntries: 50,
       port: 3000,
       host: "127.0.0.1",
+      allowLan: false,
     });
   });
 
@@ -186,14 +187,21 @@ describe("parseServerArgs", () => {
     expect(result.host).toBe("127.0.0.1");
   });
 
-  it("accepts --host to override bind address", () => {
+  it("defaults allowLan to false", () => {
+    const result = parseServerArgs(["--content-dir", "src/content/docs"]);
+    expect(result.allowLan).toBe(false);
+  });
+
+  it("accepts --host to override bind address when --allow-lan-history is set", () => {
     const result = parseServerArgs([
       "--content-dir",
       "src/content/docs",
       "--host",
       "0.0.0.0",
+      "--allow-lan-history",
     ]);
     expect(result.host).toBe("0.0.0.0");
+    expect(result.allowLan).toBe(true);
   });
 
   it("exits with error when --port is NaN", () => {
@@ -201,5 +209,56 @@ describe("parseServerArgs", () => {
       parseServerArgs(["--content-dir", "src/content/docs", "--port", "abc"]),
     ).toThrow("process.exit(1)");
     expect(console.error).toHaveBeenCalledWith("Invalid --port value");
+  });
+
+  it("exits with error when --host is non-loopback without --allow-lan-history", () => {
+    // LAN-exposure safety gate (#2293): a non-loopback host without the explicit
+    // opt-in must be rejected so that copy-pasted `--host 0.0.0.0` snippets
+    // don't silently broadcast git history (including drafts) on the LAN.
+    expect(() =>
+      parseServerArgs([
+        "--content-dir",
+        "src/content/docs",
+        "--host",
+        "0.0.0.0",
+      ]),
+    ).toThrow("process.exit(1)");
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringContaining("--allow-lan-history"),
+    );
+  });
+
+  it("allows non-loopback host when --allow-lan-history is present", () => {
+    const result = parseServerArgs([
+      "--content-dir",
+      "src/content/docs",
+      "--host",
+      "0.0.0.0",
+      "--allow-lan-history",
+    ]);
+    expect(result.host).toBe("0.0.0.0");
+    expect(result.allowLan).toBe(true);
+  });
+
+  it("allows ::1 (IPv6 loopback) without --allow-lan-history", () => {
+    const result = parseServerArgs([
+      "--content-dir",
+      "src/content/docs",
+      "--host",
+      "::1",
+    ]);
+    expect(result.host).toBe("::1");
+    expect(result.allowLan).toBe(false);
+  });
+
+  it("allows localhost hostname without --allow-lan-history", () => {
+    const result = parseServerArgs([
+      "--content-dir",
+      "src/content/docs",
+      "--host",
+      "localhost",
+    ]);
+    expect(result.host).toBe("localhost");
+    expect(result.allowLan).toBe(false);
   });
 });
