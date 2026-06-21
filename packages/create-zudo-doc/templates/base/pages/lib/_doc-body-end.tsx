@@ -18,8 +18,14 @@ import { SidebarResizerInit } from "@takazudo/zudo-doc/sidebar-resizer";
 
 /**
  * The `bodyEndComponents` slot content shared by all four doc-route page
- * components: `BodyEndIslands` (modal overlays, client-router bootstrap,
- * image-enlarge) and the optional `SidebarResizerInit` drag handle.
+ * components: `BodyEndIslands` (modal overlays, image-enlarge, and — when
+ * dynamicPageTransition is enabled — the ClientRouterBootstrap island) and
+ * the optional `SidebarResizerInit` drag handle.
+ *
+ * Note: the SPA router is primarily activated by `enableClientRouter` on
+ * `DocLayoutWithDefaults` (SSR render). The ClientRouterBootstrap island
+ * inside BodyEndIslands is now redundant for that activation path; it
+ * remains as a belt-and-suspenders fallback.
  */
 export function DocBodyEnd(): JSX.Element {
   return (

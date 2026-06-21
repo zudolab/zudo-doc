@@ -63,6 +63,7 @@ export function VersionsPageView({ locale }: { locale: string }): JSX.Element {
       head={<HeadWithDefaults title={pageTitle} />}
       lang={locale}
       noindex={settings.noindex}
+      enableClientRouter={settings.dynamicPageTransition}
       hideSidebar={true}
       hideToc={true}
       // Empty fragment suppresses DocLayoutWithDefaults' empty-data default
