@@ -7,6 +7,17 @@ const MAX_LIMIT = 100;
 /** Cache TTL: 5 minutes (in ms) */
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
+/**
+ * Negative-cache window after a fetch failure (in ms).
+ * During this window concurrent requests coalesce onto the same rejected
+ * promise instead of each launching its own 5-second fetch against a
+ * DOCS_SITE_URL that is known to be down. After this window expires the
+ * next request is allowed to retry once. 30 seconds is short enough to
+ * recover quickly from transient blips while preventing a thundering-herd
+ * during a longer outage.
+ */
+const NEGATIVE_CACHE_TTL_MS = 30 * 1000;
+
 /** Fetch timeout: abort if the docs site doesn't respond within 5 seconds */
 const FETCH_TIMEOUT_MS = 5_000;
 
@@ -20,6 +31,8 @@ const MAX_INDEX_ENTRIES = 100_000;
 let cachedPromise: Promise<MiniSearch<SearchIndexEntry>> | null = null;
 let cachedUrl: string | null = null;
 let cachedAt = 0;
+/** Timestamp of the most recent fetch failure; 0 when no failure is recorded. */
+let failedAt = 0;
 
 function normalizeBaseUrl(raw: string): string {
   return raw.replace(/\/+$/, "");
@@ -84,11 +97,21 @@ function getIndex(env: Env): Promise<MiniSearch<SearchIndexEntry>> {
   const url = `${normalizeBaseUrl(env.DOCS_SITE_URL)}/search-index.json`;
   const now = Date.now();
 
-  if (cachedPromise && cachedUrl === url && now - cachedAt < CACHE_TTL_MS) {
+  // Positive-cache hit: index loaded successfully and TTL has not expired.
+  if (cachedPromise && cachedUrl === url && cachedAt > 0 && now - cachedAt < CACHE_TTL_MS) {
+    return cachedPromise;
+  }
+
+  // Negative-cache hit: the previous fetch failed within the backoff window.
+  // Return the still-pending (rejected) promise so all concurrent callers
+  // receive the same error instead of each spawning a new 5-second timeout
+  // fetch against a DOCS_SITE_URL that is known to be unavailable.
+  if (cachedPromise && cachedUrl === url && failedAt > 0 && now - failedAt < NEGATIVE_CACHE_TTL_MS) {
     return cachedPromise;
   }
 
   cachedUrl = url;
+  failedAt = 0;
   // cachedAt is set in .then() (after the index builds successfully) rather
   // than here. Setting it before the fetch resolves burns TTL during a slow
   // load: a 4-second fetch on a 5-minute TTL would serve a stale index for
@@ -97,13 +120,18 @@ function getIndex(env: Env): Promise<MiniSearch<SearchIndexEntry>> {
   cachedPromise = buildIndex(url)
     .then((ms) => {
       cachedAt = Date.now();
+      failedAt = 0;
       return ms;
     })
     .catch((err) => {
-      // Reset cache on failure so next request retries
-      cachedPromise = null;
-      cachedUrl = null;
+      // Record the failure timestamp so subsequent requests within
+      // NEGATIVE_CACHE_TTL_MS coalesce onto this rejected promise
+      // rather than each launching an independent fetch. After the
+      // backoff window expires the next request clears failedAt and
+      // retries. cachedAt stays 0 so the positive-cache branch never
+      // fires for a failed build.
       cachedAt = 0;
+      failedAt = Date.now();
       throw err;
     });
   return cachedPromise;

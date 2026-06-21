@@ -12,22 +12,79 @@ import type { AiChatEnv, ChatMessage, ClaudeTextBlock, ClaudeApiResponse } from 
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
+/**
+ * Negative-cache backoff after a fetch failure (in ms).
+ *
+ * KV vs in-memory decision: we deliberately do NOT store the failure state in
+ * the RATE_LIMIT KV namespace (or a new binding). Reasons:
+ *   1. A KV put/get per chat request adds latency and cost for a signal that
+ *      is already captured more cheaply in module memory.
+ *   2. The RATE_LIMIT KV namespace is semantically rate-limiting, not a
+ *      general-purpose cache; reusing it for failure state couples unrelated
+ *      concerns and complicates the key space.
+ *   3. CF Workers isolates are single-threaded; module-level state is
+ *      sufficient to coalesce failures within the same isolate, which is the
+ *      primary thundering-herd scenario we are defending against. Cross-isolate
+ *      coalescing would require KV but is not needed here — each isolate caps
+ *      at one in-flight fetch anyway, and isolate recycling is infrequent.
+ * A 30-second window is short enough to recover quickly from transient blips
+ * while preventing a flood of outbound fetches during a longer outage.
+ */
+const NEGATIVE_CACHE_TTL_MS = 30 * 1000;
+
 let cachedDocsContext: string | null = null;
 let cachedAt = 0;
+/** Timestamp of the most recent docs-fetch failure; 0 when no failure is recorded. */
+let failedAt = 0;
+/** In-flight promise for the current fetch; null when no fetch is running. */
+let inflightPromise: Promise<string> | null = null;
 
 export async function fetchDocsContext(docsUrl: string): Promise<string> {
   const now = Date.now();
+
+  // Positive-cache hit: context loaded successfully and TTL has not expired.
   if (cachedDocsContext !== null && now - cachedAt < CACHE_TTL_MS) {
     return cachedDocsContext;
   }
-  const url = `${docsUrl.replace(/\/$/, "")}/llms-full.txt`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch docs context: ${response.status}`);
+
+  // Negative-cache hit: the previous fetch failed within the backoff window.
+  // Propagate the same error so concurrent callers do not each launch an
+  // independent fetch against a URL that is known to be unreachable.
+  if (inflightPromise !== null && failedAt > 0 && now - failedAt < NEGATIVE_CACHE_TTL_MS) {
+    return inflightPromise;
   }
-  cachedDocsContext = await response.text();
-  cachedAt = now;
-  return cachedDocsContext;
+
+  // If there is already an in-flight fetch (not yet resolved) coalesce onto it.
+  // This prevents concurrent cold-isolate requests each launching their own fetch.
+  if (inflightPromise !== null && failedAt === 0) {
+    return inflightPromise;
+  }
+
+  // No valid cache or in-flight request — start a new fetch.
+  failedAt = 0;
+  const url = `${docsUrl.replace(/\/$/, "")}/llms-full.txt`;
+  inflightPromise = fetch(url)
+    .then(async (response) => {
+      if (!response.ok) {
+        throw new Error(`Failed to fetch docs context: ${response.status}`);
+      }
+      const text = await response.text();
+      cachedDocsContext = text;
+      cachedAt = Date.now();
+      failedAt = 0;
+      inflightPromise = null;
+      return text;
+    })
+    .catch((err: unknown) => {
+      // Record failure timestamp for the negative-cache window.
+      // Keep inflightPromise set so the negative-cache branch above can
+      // return the same rejected promise to subsequent callers within the
+      // backoff window, instead of each launching a new fetch.
+      failedAt = Date.now();
+      throw err;
+    });
+
+  return inflightPromise;
 }
 
 // ---------------------------------------------------------------------------
