@@ -23,15 +23,30 @@ import { Island } from "@takazudo/zfb";
 import { settings } from "@/config/settings";
 import DesktopSidebarToggle from "@/components/desktop-sidebar-toggle";
 
+/** Props for {@link SidebarPrepaint}. */
+export interface SidebarPrepaintProps {
+  /**
+   * Whether the current page hides the sidebar (`hide_sidebar: true`
+   * frontmatter). When true, the desktop toggle is meaningless — there is no
+   * visible sidebar to collapse — so the whole block is skipped. Without this
+   * gate the toggle button rendered on no-sidebar pages too (e.g. the
+   * `hide_sidebar` JA `/ja/docs/claude/` stub), where clicking it did nothing.
+   */
+  hideSidebar?: boolean;
+}
+
 /**
  * The `afterSidebar` slot content shared by all four doc-route page components.
  *
  * Returns the pre-paint localStorage script + `DesktopSidebarToggle` Island
- * when `settings.sidebarToggle` is enabled; returns `undefined` when it is
- * disabled (matching the conditional the route files used inline).
+ * when `settings.sidebarToggle` is enabled AND the page actually shows a
+ * sidebar; returns `undefined` when the toggle is disabled or the page hides
+ * the sidebar (matching the conditional the route files used inline).
  */
-export function SidebarPrepaint(): JSX.Element | undefined {
-  if (!settings.sidebarToggle) return undefined;
+export function SidebarPrepaint({
+  hideSidebar,
+}: SidebarPrepaintProps = {}): JSX.Element | undefined {
+  if (!settings.sidebarToggle || hideSidebar) return undefined;
 
   return (
     <>

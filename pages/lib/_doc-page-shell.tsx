@@ -215,7 +215,7 @@ export function DocPageShell(props: DocPageShellProps): JSX.Element {
       }
       tocOverride={tocOverride}
       mobileTocOverride={mobileTocOverride}
-      afterSidebar={<SidebarPrepaint />}
+      afterSidebar={<SidebarPrepaint hideSidebar={hideSidebar} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
       bodyEndComponents={<DocBodyEnd />}
       enableClientRouter={settings.dynamicPageTransition}
