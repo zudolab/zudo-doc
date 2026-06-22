@@ -26,11 +26,8 @@ import DesktopSidebarToggle from "@/components/desktop-sidebar-toggle";
 /** Props for {@link SidebarPrepaint}. */
 export interface SidebarPrepaintProps {
   /**
-   * Whether the current page hides the sidebar (`hide_sidebar: true`
-   * frontmatter). When true, the desktop toggle is meaningless — there is no
-   * visible sidebar to collapse — so the whole block is skipped. Without this
-   * gate the toggle button rendered on no-sidebar pages too (e.g. the
-   * `hide_sidebar` JA `/ja/docs/claude/` stub), where clicking it did nothing.
+   * Mirrors the page's `hide_sidebar: true` frontmatter. When true the desktop
+   * toggle is skipped — there is no visible sidebar for it to collapse.
    */
   hideSidebar?: boolean;
 }
@@ -45,16 +42,16 @@ export interface SidebarPrepaintProps {
  */
 export function SidebarPrepaint({
   hideSidebar,
-}: SidebarPrepaintProps = {}): JSX.Element | undefined {
+}: SidebarPrepaintProps): JSX.Element | undefined {
   if (!settings.sidebarToggle || hideSidebar) return undefined;
 
   return (
     <>
       {/* Pre-paint inline script: restore persisted sidebar visibility to
           <html data-sidebar-hidden> before first paint to avoid flash.
-          Runs unconditionally when sidebarToggle is enabled; the attribute
-          is only set when localStorage says "false" so the default (visible)
-          needs no attribute and causes no layout shift. */}
+          Rendered only when the toggle is enabled and the page shows a
+          sidebar; the attribute is only set when localStorage says "false"
+          so the default (visible) needs no attribute and causes no layout shift. */}
       <script dangerouslySetInnerHTML={{
         __html: `(function(){try{if(localStorage.getItem('zudo-doc-sidebar-visible')==='false'){document.documentElement.setAttribute('data-sidebar-hidden','');}}catch(e){}})();`,
       }} />
