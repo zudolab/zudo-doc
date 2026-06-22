@@ -1405,6 +1405,9 @@ describe("scaffold — skillSymlinker feature", () => {
     expect(pkg.scripts["setup:doc-skill"]).toBe(
       "bash scripts/setup-doc-skill.sh",
     );
+    expect(pkg.scripts["setup:doc-skill-silent"]).toBe(
+      "bash scripts/setup-doc-skill.sh --silent",
+    );
   });
 
   it("does NOT include setup-doc-skill.sh when disabled", async () => {
@@ -1426,6 +1429,7 @@ describe("scaffold — skillSymlinker feature", () => {
       projectPath("test-symlinker-off", "package.json"),
     );
     expect(pkg.scripts["setup:doc-skill"]).toBeUndefined();
+    expect(pkg.scripts["setup:doc-skill-silent"]).toBeUndefined();
   });
 });
 

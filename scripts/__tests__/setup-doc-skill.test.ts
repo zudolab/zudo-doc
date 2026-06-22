@@ -115,4 +115,24 @@ describe("setup-doc-skill.sh", () => {
     expect(skillMd).toContain("Japanese Documentation");
     expect(skillMd).toContain("docs-ja");
   });
+
+  it("accepts the --silent flag without treating it as the skill name", () => {
+    // Scaffolded sites expose `setup:doc-skill-silent` =
+    // `bash scripts/setup-doc-skill.sh --silent`. The flag must be consumed,
+    // never mistaken for the positional skill-name override.
+    execSync(`bash "${SCRIPT_PATH}" --silent "${TEST_SKILL_NAME}"`, {
+      cwd: PROJECT_ROOT,
+      encoding: "utf-8",
+      timeout: 30_000,
+      env: { ...process.env, HOME: fakeHome },
+    });
+
+    // Skill is created under the real name, not a skill literally named "--silent".
+    expect(
+      existsSync(join(fakeHome, ".claude", "skills", TEST_SKILL_NAME)),
+    ).toBe(true);
+    expect(
+      existsSync(join(PROJECT_ROOT, ".claude", "skills", "--silent")),
+    ).toBe(false);
+  });
 });
