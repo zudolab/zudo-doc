@@ -473,9 +473,10 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
   }, [data, fetchPath]);
 
   function handleOpen(e: React.MouseEvent<HTMLButtonElement>) {
-    // Capture the trigger button BEFORE setState causes a re-render that
-    // unmounts it (it's only rendered when !isOpen). The hook reads this ref
-    // to restore focus when the dialog closes (a11y #2295).
+    // Capture the trigger so the dialog hook can restore focus to it on close
+    // (a11y #2295). The button now stays mounted while the panel is open (see
+    // the render below), so this ref stays a *connected* node — required for
+    // .focus() to actually land on close (zudolab/zudo-doc#2303).
     returnFocusRef.current = e.currentTarget;
     setView("revisions");
     fetchHistory();
@@ -527,20 +528,26 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
 
   return (
     <>
-      {/* History button */}
-      {!isOpen && (
-        <div className="flex justify-end mt-vsp-xl">
-          <button
-            type="button"
-            onClick={handleOpen}
-            className="doc-history-trigger flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-fg hover:border-fg transition-colors"
-            aria-label="View document history"
-          >
-            <History className="h-icon-md w-icon-md" />
-            <span className="text-small">History</span>
-          </button>
-        </div>
-      )}
+      {/* History button. Kept mounted even while the panel is open: it sits
+          behind the full-screen showModal() dialog, which renders the rest of
+          the document inert, so the button is neither visible nor tabbable
+          while open. It must stay mounted so `returnFocusRef` (captured in
+          handleOpen) remains a *connected* node — the dialog hook restores
+          focus to it on close (a11y #2295). Conditionally unmounting it
+          (the old `{!isOpen && …}`) left the ref pointing at a detached node,
+          so `.focus()` no-op'd and focus fell to <body> on close
+          (zudolab/zudo-doc#2303). */}
+      <div className="flex justify-end mt-vsp-xl">
+        <button
+          type="button"
+          onClick={handleOpen}
+          className="doc-history-trigger flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-fg hover:border-fg transition-colors"
+          aria-label="View document history"
+        >
+          <History className="h-icon-md w-icon-md" />
+          <span className="text-small">History</span>
+        </button>
+      </div>
 
       {/* Full-screen dialog — renders in top layer, above all stacking contexts */}
       {/* z-modal / backdrop:z-modal-backdrop are defense-in-depth for the
