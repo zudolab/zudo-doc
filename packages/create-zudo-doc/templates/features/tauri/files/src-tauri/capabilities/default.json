@@ -1,10 +1,7 @@
 {
   "identifier": "default",
-  "description": "Default capabilities for the main window",
+  "description": "Default capabilities for the main window. The shipped offline reader loads the embedded dist/ via the tauri:// protocol (WebviewUrl::App), so it needs no remote-origin grant. The previous `remote.urls: http://localhost:*/**` grant was dropped (zudolab/zudo-doc#2240) so no localhost-served page can reach core:default. `cargo tauri dev` still loads http://localhost:4321, but the zudo-doc site invokes no Tauri commands, so it does not need the grant either.",
   "windows": ["main"],
-  "remote": {
-    "urls": ["http://localhost:*/**"]
-  },
   "permissions": [
     "core:default"
   ]

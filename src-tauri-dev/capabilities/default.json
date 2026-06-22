@@ -1,6 +1,6 @@
 {
   "identifier": "default",
-  "description": "Default capabilities for the main window",
+  "description": "Default capabilities for the main window. TRUST NOTE (zudolab/zudo-doc#2240): Mode 2 displays an arbitrary, user-configured localhost project in this webview, and `remote.urls` grants core:default to any http://localhost:*/** origin. Combined with withGlobalTauri (required by frontend/index.html's launch-error listener + retry_launch invoke), a malicious dependency in the wrapped project would gain Tauri reach. This is an accepted trust assumption for a developer-only wrapper: only point Mode 2 at projects you trust. The grant is intentionally dev-scoped (localhost only). Narrowing it to the single configured port, or splitting the local-frontend capability from the remote-project capability, is tracked as a future hardening.",
   "windows": ["main"],
   "remote": { "urls": ["http://localhost:*/**"] },
   "permissions": ["core:default"]

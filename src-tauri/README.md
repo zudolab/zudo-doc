@@ -65,3 +65,54 @@ For the shipped configurable dev wrapper, see `../src-tauri-dev/`.
   Keep this field alongside `beforeDevCommand`.
 - `bundle.active: false` — bundling is opt-in; pass `--bundles` flags to `cargo tauri build`
   when creating distributable installers.
+
+## Security hardening (zudolab/zudo-doc#2240)
+
+Both Tauri apps previously shipped `"csp": null` and an over-broad
+`remote.urls: ["http://localhost:*/**"]` capability. This was tightened:
+
+### Mode 1 (this directory) — Content Security Policy
+
+`app.security.csp` is now a restrictive policy instead of `null`. The reader
+serves only the local `dist/` (via `tauri://`), so the policy locks down
+exfiltration vectors (`default-src 'self'`, `connect-src` limited to self +
+the two CDNs the content genuinely uses, `object-src 'none'`,
+`frame-ancestors 'none'`) while still allowing the doc content to render:
+
+- `script-src … https://esm.sh` — Mermaid is loaded at runtime via
+  `import("https://esm.sh/mermaid@11…")` (`packages/zudo-doc/src/code-syntax/mermaid-init-script.ts`).
+- `style-src` / `font-src … https://cdn.jsdelivr.net` — KaTeX CSS + fonts are
+  pulled from jsDelivr when a page uses math (`packages/zudo-doc/src/head/doc-head.tsx`).
+- `'unsafe-inline'` on `script-src`/`style-src` — the site relies on inline
+  pre-paint scripts (sidebar/theme/page-loading) and inline `style=` attributes.
+  Exfiltration is still blocked by `connect-src`/`img-src`/`default-src`.
+- `api.anthropic.com` is **not** allowlisted: the AI-chat client calls it
+  **server-side** (`pages/api/_ai-chat-client.ts`), never from the browser, and
+  the offline reader has no server anyway.
+
+> **On-device verification still required (mac).** This CSP was reasoned from the
+> site's measured resource use but has **not** been verified inside a built Tauri
+> webview. In particular, when a CSP is set Tauri injects a nonce for its own IPC
+> script, which can cause the browser to ignore `'unsafe-inline'` and block the
+> site's inline pre-paint scripts. Run `cargo tauri build` (or `cargo tauri dev`)
+> and confirm the reader still renders — Mermaid diagrams, KaTeX math, code
+> highlighting, sidebar/theme pre-paint — before relying on the bundled app.
+> `bundle.active` is `false`, so nothing ships this CSP until a deliberate bundle.
+
+### Capabilities — `remote.urls`
+
+`capabilities/default.json` dropped the `remote` block. The shipped reader uses
+`tauri://` and needs no remote grant; `cargo tauri dev` loads `localhost:4321`
+but the doc site invokes no Tauri commands, so it needs none either.
+
+### Mode 2 (`../src-tauri-dev/`) — `withGlobalTauri` trust assumption
+
+Mode 2 keeps `withGlobalTauri: true` and its localhost `remote.urls` grant
+because its own `frontend/index.html` requires them (it listens for
+`launch-error` events and invokes the `retry_launch` command via
+`window.__TAURI__`). Disabling either would break the wrapper's error/retry UI.
+The residual risk — a malicious dependency in the *wrapped* project gaining
+Tauri reach — is documented as an accepted trust assumption in
+`../src-tauri-dev/capabilities/default.json` (only point Mode 2 at trusted
+projects). A future hardening could split the local-frontend capability from the
+remote-project one so the wrapped site inherits no command access.
