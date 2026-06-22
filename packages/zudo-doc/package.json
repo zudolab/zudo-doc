@@ -174,8 +174,8 @@
   ],
   "peerDependencies": {
     "preact": "^10.29.1",
-    "@takazudo/zfb": "^0.1.0-next.57",
-    "@takazudo/zfb-runtime": "^0.1.0-next.57",
+    "@takazudo/zfb": "^0.1.0-next.58",
+    "@takazudo/zfb-runtime": "^0.1.0-next.58",
     "@takazudo/zudo-doc-history-server": "^0.2.15",
     "@takazudo/zdtp": "^0.2.3",
     "shiki": "^4.0.2"
@@ -203,7 +203,7 @@
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
     "vitest": "^4.1.0",
-    "@takazudo/zfb": "0.1.0-next.57",
-    "@takazudo/zfb-runtime": "0.1.0-next.57"
+    "@takazudo/zfb": "0.1.0-next.58",
+    "@takazudo/zfb-runtime": "0.1.0-next.58"
   }
 }
