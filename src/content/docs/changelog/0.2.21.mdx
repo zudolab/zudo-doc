@@ -1,0 +1,23 @@
+---
+title: 0.2.21
+description: Release notes for 0.2.21.
+sidebar_position: 1032
+---
+
+Released: 2026-06-23
+
+### Features
+
+- Scaffold a `setup:doc-skill-silent` variant in `create-zudo-doc` (3896602d)
+
+### Bug Fixes
+
+- Restore focus to the document-history trigger when the modal closes — keyboard and screen-reader users no longer lose their place (a11y) (bbfd15ef)
+- Hide the desktop sidebar toggle on no-sidebar (`hide_sidebar`) pages (63751bbd)
+
+### Other Changes
+
+- Harden the Tauri apps: a restrictive Content Security Policy for the offline reader, a scoped capability that drops the unneeded `remote.urls` grant, and a documented Mode 2 trust assumption (846b1d74)
+- Bump the `@takazudo/zfb` stack to `0.1.0-next.59` (e558b5ae)
+- Apply the accent color to the category-nav card description on hover (c343afb7)
+- Tighten the sidebar pre-paint script after review (d871e45f)
