@@ -7,6 +7,20 @@ set -euo pipefail
 # the user-scope skills directory (~/.claude/skills/).
 # ────────────────────────────────────────────────────────
 
+# Accept --silent (alias -y) for parity with the consuming-site convention:
+# scaffolded sites expose `setup:doc-skill-silent` = `bash scripts/setup-doc-skill.sh
+# --silent`. This script is already non-interactive (the skill name is deterministic
+# — see below), so the flag is a no-op here; it is consumed only so it is never
+# mistaken for the positional skill-name override (`$1`).
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --silent|-y) shift ;;
+    --) shift; break ;;
+    -*) echo "Error: unknown flag '$1'" >&2; exit 1 ;;
+    *) break ;;
+  esac
+done
+
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 # Read project name from package.json

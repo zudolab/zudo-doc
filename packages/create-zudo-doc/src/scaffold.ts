@@ -690,6 +690,8 @@ function generatePackageJson(choices: UserChoices) {
 
   if (choices.features.includes("skillSymlinker")) {
     scripts["setup:doc-skill"] = "bash scripts/setup-doc-skill.sh";
+    scripts["setup:doc-skill-silent"] =
+      "bash scripts/setup-doc-skill.sh --silent";
   }
 
   const runCmd = choices.packageManager === "npm" || choices.packageManager === "bun" ? `${choices.packageManager} run` : choices.packageManager;
