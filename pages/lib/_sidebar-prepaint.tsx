@@ -23,23 +23,35 @@ import { Island } from "@takazudo/zfb";
 import { settings } from "@/config/settings";
 import DesktopSidebarToggle from "@/components/desktop-sidebar-toggle";
 
+/** Props for {@link SidebarPrepaint}. */
+export interface SidebarPrepaintProps {
+  /**
+   * Mirrors the page's `hide_sidebar: true` frontmatter. When true the desktop
+   * toggle is skipped — there is no visible sidebar for it to collapse.
+   */
+  hideSidebar?: boolean;
+}
+
 /**
  * The `afterSidebar` slot content shared by all four doc-route page components.
  *
  * Returns the pre-paint localStorage script + `DesktopSidebarToggle` Island
- * when `settings.sidebarToggle` is enabled; returns `undefined` when it is
- * disabled (matching the conditional the route files used inline).
+ * when `settings.sidebarToggle` is enabled AND the page actually shows a
+ * sidebar; returns `undefined` when the toggle is disabled or the page hides
+ * the sidebar (matching the conditional the route files used inline).
  */
-export function SidebarPrepaint(): JSX.Element | undefined {
-  if (!settings.sidebarToggle) return undefined;
+export function SidebarPrepaint({
+  hideSidebar,
+}: SidebarPrepaintProps): JSX.Element | undefined {
+  if (!settings.sidebarToggle || hideSidebar) return undefined;
 
   return (
     <>
       {/* Pre-paint inline script: restore persisted sidebar visibility to
           <html data-sidebar-hidden> before first paint to avoid flash.
-          Runs unconditionally when sidebarToggle is enabled; the attribute
-          is only set when localStorage says "false" so the default (visible)
-          needs no attribute and causes no layout shift. */}
+          Rendered only when the toggle is enabled and the page shows a
+          sidebar; the attribute is only set when localStorage says "false"
+          so the default (visible) needs no attribute and causes no layout shift. */}
       <script dangerouslySetInnerHTML={{
         __html: `(function(){try{if(localStorage.getItem('zudo-doc-sidebar-visible')==='false'){document.documentElement.setAttribute('data-sidebar-hidden','');}}catch(e){}})();`,
       }} />
