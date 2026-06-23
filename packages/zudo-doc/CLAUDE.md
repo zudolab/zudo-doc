@@ -62,13 +62,13 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
   that single instance — avoiding a dual-zod hazard for `toJSONSchema` and a
   `Cannot find package 'zod'` at config-eval time in generated projects.
 
-## Shipped CSS artifacts (three)
+## Shipped CSS artifacts (four)
 
 tsup only compiles `.ts/.tsx`. CSS is produced by the tsup `onSuccess` hook
 (runs after every build/`--watch`, because `clean:true` wipes `dist/` first):
 
 ```
-onSuccess: "node scripts/copy-content-css.mjs && node scripts/copy-page-loading-css.mjs && node scripts/gen-safelist.mjs"
+onSuccess: "node scripts/copy-content-css.mjs && node scripts/copy-page-loading-css.mjs && node scripts/copy-features-css.mjs && node scripts/gen-safelist.mjs"
 ```
 
 1. **`dist/content.css`** ← copied verbatim from `src/content.css` by
@@ -115,6 +115,22 @@ onSuccess: "node scripts/copy-content-css.mjs && node scripts/copy-page-loading-
      `.css` change (it only watches `.ts/.tsx`), so re-run `pnpm build` after
      editing the stylesheet.
 
-`prepack` guards all three (`check-safelist.mjs && check-content-css.mjs && check-page-loading-css.mjs`)
+4. **`dist/features.css`** ← copied verbatim from `src/features.css` by
+   `scripts/copy-features-css.mjs`. Exported as `@takazudo/zudo-doc/features.css`.
+   Contains all **non-island** feature CSS that every project using the package
+   needs: code block buttons, syntect/shiki dual-theme token color rule,
+   `.zd-html-preview-code`, KaTeX, desktop sidebar toggle geometry, and
+   view-transition chrome. Island-coupled CSS (enlarge / ai-chat / diff) stays
+   in the project's `global.css` until a later epic moves it. See zudolab/zudo-doc#2331.
+   - **Consumer contract**: must @import AFTER `@takazudo/zudo-doc/content.css`
+     and `@takazudo/zudo-doc/page-loading.css` (the `@import` order in
+     `global.css` is: `@takazudo/zdtp/styles.css`, `content.css`,
+     `page-loading.css`, `features.css`). Cascade order matters: features.css
+     rules are unlayered and rely on the token definitions from `@theme` which
+     must precede this file in the compiled output.
+   - **Editing**: change `src/features.css`, then rebuild the package. `tsup
+     --watch` does NOT re-copy on a bare `.css` change — re-run `pnpm build`.
+
+`prepack` guards all four (`check-safelist.mjs && check-content-css.mjs && check-page-loading-css.mjs && check-features-css.mjs`)
 so a build that skipped the `onSuccess` step fails loudly instead of publishing a package
-whose `./content.css` / `./safelist.css` / `./page-loading.css` export 404s for consumers.
+whose `./content.css` / `./safelist.css` / `./page-loading.css` / `./features.css` export 404s for consumers.

@@ -206,13 +206,14 @@
     "./safelist.css": "./dist/safelist.css",
     "./safelist": "./dist/safelist.css",
     "./content.css": "./dist/content.css",
-    "./page-loading.css": "./dist/page-loading.css"
+    "./page-loading.css": "./dist/page-loading.css",
+    "./features.css": "./dist/features.css"
   },
   "scripts": {
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsup",
     "dev": "tsup --watch",
     "prepare": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsup --silent",
-    "prepack": "node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs && node scripts/check-plugins.mjs",
+    "prepack": "node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs && node scripts/check-features-css.mjs && node scripts/check-plugins.mjs",
     "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc --noEmit"
   },
