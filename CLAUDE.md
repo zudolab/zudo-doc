@@ -252,7 +252,7 @@ When adding or removing a feature from zudo-doc, update the `create-zudo-doc` ge
 2. **`packages/create-zudo-doc/src/settings-gen.ts`** — Add/remove the setting in generated output
 3. **`packages/create-zudo-doc/src/features/<name>.ts`** — Create/update feature module with injections
 4. **`packages/create-zudo-doc/templates/features/<name>/files/`** — Add/remove feature-specific files
-5. **`packages/create-zudo-doc/src/zfb-config-gen.ts`** — Add/remove conditional imports/plugins if feature affects the generated `zfb.config.ts`
+5. **`packages/zudo-doc/src/preset.ts`** — If the feature introduces a new plugin or collection, update `zudoDocPreset()` to wire it from `settings.*`. The generated `zfb.config.ts` is now a thin preset-based file (S5b #2329) — it delegates all plugin/collection/markdown logic to the preset and reads the settings field you added in step 1. `packages/create-zudo-doc/src/zfb-config-gen.ts` does NOT need updating for features that are settings-driven (the preset handles them).
 6. **`packages/create-zudo-doc/src/scaffold.ts`** — Add/remove dependencies in `generatePackageJson()`
 7. **`packages/create-zudo-doc/src/__tests__/scaffold.test.ts`** — Update tests
 8. Run `/l-update-generator` to verify no drift remains
