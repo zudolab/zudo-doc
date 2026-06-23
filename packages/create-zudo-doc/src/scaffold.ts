@@ -557,11 +557,11 @@ function generatePackageJson(choices: UserChoices) {
     // stability, multi-valued response headers (e.g. multiple Set-Cookie),
     // supplementary-plane CJK reading-time, plus CLI/server/runtime hardening
     // and render perf passes. No consumer-facing / CLI breaking change.
-    "@takazudo/zfb": "0.1.0-next.60",
-    "@takazudo/zfb-runtime": "0.1.0-next.60",
+    "@takazudo/zfb": "0.1.0-next.61",
+    "@takazudo/zfb-runtime": "0.1.0-next.61",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.60",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.61",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
@@ -649,7 +649,7 @@ function generatePackageJson(choices: UserChoices) {
   if (choices.features.includes("designTokenPanel")) {
     // @takazudo/zdtp requires preact >= 10.29.1 — see the preact floor comment
     // above (~line 382) for why the floor is set there and the coupling this creates.
-    deps["@takazudo/zdtp"] = "0.3.2";
+    deps["@takazudo/zdtp"] = "0.3.3";
   }
 
   if (choices.features.includes("tagGovernance")) {
