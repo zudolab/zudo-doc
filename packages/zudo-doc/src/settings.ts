@@ -249,6 +249,8 @@ export interface Settings {
   noindex: boolean;
   editUrl: string | false;
   githubUrl: string | false;
+  /** "owner/repo" — enables `#123` / SHA autolinks in markdown. Omit or leave undefined to disable. */
+  githubAutolinksRepo?: string;
   siteUrl: string;
   metaTags: MetaTagsConfig;
   sitemap: boolean;

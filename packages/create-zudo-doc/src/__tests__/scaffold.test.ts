@@ -2539,9 +2539,20 @@ describe("drift detection — generator vs main project settings", () => {
       "utf-8",
     );
 
+    // Fields intentionally absent from generated projects (with justification).
+    // "Opt-in showcase-only" fields are set in the showcase's src/config/settings.ts
+    // but must NOT appear in generated projects because the default (absent/undefined)
+    // is the correct value for a blank project.
+    const SHOWCASE_ONLY_FIELDS = new Set([
+      // Showcase-specific: only zudolab/zudo-doc should auto-link issue refs in its own docs.
+      // Generated projects must opt in explicitly — omitting gives "no autolinks" (old behaviour).
+      // See zudo-doc#2321 Wave-0 correctness fix.
+      "githubAutolinksRepo",
+    ]);
+
     // Check that every field in the main settings exists in the generated output
     const missingFields = mainFields.filter(
-      (field) => !generated.includes(`${field}:`),
+      (field) => !SHOWCASE_ONLY_FIELDS.has(field) && !generated.includes(`${field}:`),
     );
     expect(
       missingFields,

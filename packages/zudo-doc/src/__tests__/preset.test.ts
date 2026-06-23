@@ -184,6 +184,7 @@ const fixtureSettings: PresetSettings = {
   llmsTxt: true,
   docHistory: true,
   claudeResources: { claudeDir: ".claude" },
+  githubAutolinksRepo: "zudolab/zudo-doc",
 };
 
 const fixtureDirectives: DirectiveVocabulary = {
@@ -351,6 +352,24 @@ describe("zudoDocPreset markdown.features", () => {
     });
     expect(r.markdown.features.mermaid).toBe(false);
     expect(r.markdown.features.headingIds).toEqual({ strategy: "flat" });
+  });
+
+  it("omits githubAutolinks when githubAutolinksRepo is absent (#2321)", () => {
+    const r = zudoDocPreset({
+      settings: { ...fixtureSettings, githubAutolinksRepo: undefined },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    expect(r.markdown.features).not.toHaveProperty("githubAutolinks");
+  });
+
+  it("includes githubAutolinks when githubAutolinksRepo is set (#2321)", () => {
+    const r = zudoDocPreset({
+      settings: { ...fixtureSettings, githubAutolinksRepo: "owner/repo" },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    expect(r.markdown.features.githubAutolinks).toEqual({ repo: "owner/repo" });
   });
 });
 
