@@ -65,7 +65,7 @@ import { CategoryTreeNavWrapper } from "./lib/_category-tree-nav";
 import { SiteTreeNavWrapper } from "./lib/_site-tree-nav";
 import { DetailsWrapper } from "./lib/_details";
 import { PresetGeneratorFallback } from "./lib/_preset-generator";
-import { MathBlock } from "./lib/_math-block";
+import { MathBlock } from "@takazudo/zudo-doc/math-block";
 import { CodeGroup } from "@/components/content/code-group";
 import { makeAdmonition } from "@/components/content/content-admonition";
 

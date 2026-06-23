@@ -223,3 +223,17 @@ src/components/find-bar.tsx
 src/utils/find-in-page.ts
 src/utils/content-files.ts
 src/utils/git-info.ts
+
+# S4 (#2327 / package-first-migration epic #2321) — pure-helper content
+# components moved into @takazudo/zudo-doc. The host (this repo) now re-exports
+# / imports these from the package (the source-of-truth lives under
+# packages/zudo-doc/src/{content-admonition,code-group,math-block,extract-headings}),
+# while the base template still ships the full implementations to generated
+# projects. The drift is intentional: the template counterparts will migrate to
+# the same re-export form in a follow-up generator-sync wave (after the package
+# version that ships these subpaths is published and create-zudo-doc's pin is
+# bumped). Until then the host↔template pairs legitimately differ.
+src/components/content/code-group.tsx
+src/components/content/content-admonition.tsx
+pages/lib/_math-block.tsx
+pages/lib/_extract-headings.ts

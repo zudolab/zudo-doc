@@ -27,6 +27,7 @@ import type {
   TagPlacement,
   TagGovernanceMode,
   MetaTagsConfig,
+  Settings,
 } from "./settings-types";
 
 export const settings = {
@@ -285,4 +286,4 @@ export const settings = {
     { type: "component", component: "search" },
     { type: "component", component: "language-switcher" },
   ] satisfies HeaderRightItem[] as HeaderRightItem[],
-};
+} satisfies Settings;

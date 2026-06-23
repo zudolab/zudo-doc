@@ -183,6 +183,26 @@
       "types": "./dist/plugins/claude-resources.d.ts",
       "default": "./dist/plugins/claude-resources.js"
     },
+    "./content-admonition": {
+      "types": "./dist/content-admonition/index.d.ts",
+      "default": "./dist/content-admonition/index.js"
+    },
+    "./code-group": {
+      "types": "./dist/code-group/index.d.ts",
+      "default": "./dist/code-group/index.js"
+    },
+    "./math-block": {
+      "types": "./dist/math-block/index.d.ts",
+      "default": "./dist/math-block/index.js"
+    },
+    "./extract-headings": {
+      "types": "./dist/extract-headings/index.d.ts",
+      "default": "./dist/extract-headings/index.js"
+    },
+    "./settings": {
+      "types": "./dist/settings.d.ts",
+      "default": "./dist/settings.js"
+    },
     "./safelist.css": "./dist/safelist.css",
     "./safelist": "./dist/safelist.css",
     "./content.css": "./dist/content.css",
@@ -207,7 +227,8 @@
     "@takazudo/zudo-doc-history-server": "^0.2.21",
     "@takazudo/zdtp": "^0.3.3",
     "shiki": "^4.0.2",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "katex": "^0.16.0"
   },
   "peerDependenciesMeta": {
     "@takazudo/zudo-doc-history-server": {
@@ -217,6 +238,9 @@
       "optional": true
     },
     "shiki": {
+      "optional": true
+    },
+    "katex": {
       "optional": true
     }
   },
