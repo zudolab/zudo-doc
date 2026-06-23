@@ -85,10 +85,10 @@
     }
   },
   "dependencies": {
-    "@takazudo/zdtp": "0.2.3",
-    "@takazudo/zfb": "0.1.0-next.59",
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.59",
-    "@takazudo/zfb-runtime": "0.1.0-next.59",
+    "@takazudo/zdtp": "0.3.2",
+    "@takazudo/zfb": "0.1.0-next.60",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.60",
+    "@takazudo/zfb-runtime": "0.1.0-next.60",
     "@takazudo/zudo-doc": "workspace:*",
     "diff": "^8.0.3",
     "gray-matter": "^4.0.3",
