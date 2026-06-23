@@ -134,6 +134,12 @@ export const SEARCH_WIDGET_SCRIPT = /* javascript */ `(function () {
       this._shownCount = 0;
       this._shortcut = "";
       this._resultCountTemplate = "";
+      // Locale-aware status strings (threaded from the SSR component via
+      // data-* attributes, same mechanism as _resultCountTemplate). English
+      // literals below in connectedCallback are fallbacks only.
+      this._searchUnavailable = "";
+      this._loadingIndex = "";
+      this._noResults = "";
       this._keydownHandler = null;
       // Delegated click handler on the results container: closing the dialog
       // when a result link is activated (epic #2148). Held so disconnectedCallback
@@ -163,6 +169,9 @@ export const SEARCH_WIDGET_SCRIPT = /* javascript */ `(function () {
       this._countWide = this.querySelector("[data-search-count]");
       this._countNarrow = this.querySelector("[data-search-count-narrow]");
       this._resultCountTemplate = this.dataset.resultCountTemplate || "{count} results";
+      this._searchUnavailable = this.dataset.searchUnavailable || "Search unavailable";
+      this._loadingIndex = this.dataset.loadingIndex || "Loading search index\\u2026";
+      this._noResults = this.dataset.noResults || "No results found.";
       // Snapshot the placeholder HTML before any search renders overwrite it.
       this._placeholderHtml = this._results ? this._results.innerHTML : "";
 
@@ -305,7 +314,7 @@ export const SEARCH_WIDGET_SCRIPT = /* javascript */ `(function () {
           self._loading = false;
           self._indexUnavailable = true;
           if (self._results) {
-            self._results.innerHTML = "<p class=\\"text-small text-muted\\">Search unavailable</p>";
+            self._results.innerHTML = "<p class=\\"text-small text-muted\\">" + escapeHtml(self._searchUnavailable) + "</p>";
           }
         });
     }
@@ -333,13 +342,13 @@ export const SEARCH_WIDGET_SCRIPT = /* javascript */ `(function () {
           this._allResults = [];
           this._shownCount = 0;
           if (this._results) {
-            this._results.innerHTML = "<p class=\\"text-small text-muted\\">Search unavailable</p>";
+            this._results.innerHTML = "<p class=\\"text-small text-muted\\">" + escapeHtml(this._searchUnavailable) + "</p>";
           }
           this.updateCount();
           return;
         }
         if (this._results) {
-          this._results.innerHTML = "<p class=\\"text-small text-muted\\">Loading search index\\u2026</p>";
+          this._results.innerHTML = "<p class=\\"text-small text-muted\\">" + escapeHtml(this._loadingIndex) + "</p>";
         }
         if (!this._loading) this.loadIndex();
         return;
@@ -362,7 +371,7 @@ export const SEARCH_WIDGET_SCRIPT = /* javascript */ `(function () {
 
       if (!scored.length) {
         if (this._results) {
-          this._results.innerHTML = "<p class=\\"text-small text-muted\\">No results found.</p>";
+          this._results.innerHTML = "<p class=\\"text-small text-muted\\">" + escapeHtml(this._noResults) + "</p>";
         }
         return;
       }
