@@ -14,6 +14,14 @@ import type { UserChoices } from "./prompts.js";
  * Replaces the former astro-config-gen.ts + content-config-gen.ts pair.
  * In the zfb world, content-collection schemas live inside zfb.config.ts
  * itself — there is no separate content.config.ts.
+ *
+ * `_choices` is intentionally unused: post-S5b the emitted config is a
+ * CONSTANT. All feature variation is driven by `settings.*` (read at
+ * zfb-load time inside `zudoDocPreset()`), so the generated file is byte
+ * identical for every feature combination. The parameter is retained only
+ * for call-site compatibility (`scaffold.ts` passes `choices`). Do NOT add
+ * feature-gated branches here — wire new feature behaviour into
+ * `packages/zudo-doc/src/preset.ts` and the project's `settings.ts` instead.
  */
 export function generateZfbConfig(_choices: UserChoices): string {
   const lines: string[] = [];
