@@ -61,7 +61,7 @@ describe("search-index plugin shape", () => {
 describe("claude-resources plugin shape", () => {
   it("has a name string", () => {
     expect(typeof claudeResources.name).toBe("string");
-    expect(claudeResources.name.length).toBeGreaterThan(0);
+    expect(claudeResources.name).toBe("@takazudo/zudo-doc-claude-resources");
   });
 
   it("has a preBuild function", () => {
