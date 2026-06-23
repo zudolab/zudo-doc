@@ -159,6 +159,10 @@
       "types": "./dist/robots.d.ts",
       "default": "./dist/robots.js"
     },
+    "./preset": {
+      "types": "./dist/preset.d.ts",
+      "default": "./dist/preset.js"
+    },
     "./safelist.css": "./dist/safelist.css",
     "./safelist": "./dist/safelist.css",
     "./content.css": "./dist/content.css",
