@@ -264,6 +264,9 @@ importers:
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
+      katex:
+        specifier: ^0.16.0
+        version: 0.16.38
     devDependencies:
       '@takazudo/zfb':
         specifier: 0.1.0-next.61
