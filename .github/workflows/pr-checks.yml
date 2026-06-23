@@ -206,7 +206,11 @@ jobs:
   # z-index: every z-index now flows through the generated @theme block, so a
   # hand-edited block (or a stale commit after editing the tokens file) turns
   # the PR red here.
-  # Pure-Node script — uses preinstalled Node 22 on the runner image, no pnpm.
+  # Pure-Node bin — uses preinstalled Node 22 on the runner image, no pnpm.
+  # The generator now ships as the @takazudo/zudo-doc `gen-z-index` bin
+  # (S9b #2334); CI invokes the in-repo bin file directly (it is dependency-free
+  # ESM) so this job keeps its no-install optimization while exercising the
+  # actual shipped tool rather than a stale project-side copy.
   check-z-index:
     name: Z-Index Codegen Drift Check
     runs-on: ubuntu-latest
@@ -215,7 +219,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Check z-index codegen drift
-        run: node scripts/gen-z-index.mjs --check
+        run: node packages/zudo-doc/bin/gen-z-index.mjs --check
 
   # ---------------------------------------------------------------------------
   # Job 0.7: Lint gates (tags audit + design token lint)

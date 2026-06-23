@@ -68,7 +68,7 @@ const REQUIRED_CI_GUARDS = [
     // Tags audit: pnpm tags:audit --ci (both CI and b4push)
     ciNeedle: "tags:audit",
     b4pushScript: "tags:audit",
-    comment: "Tags audit (tsx scripts/tags-audit.ts)",
+    comment: "Tags audit (tags-audit package bin, S9b #2334)",
   },
   {
     // Design token lint: pnpm lint:tokens (both CI and b4push)
@@ -95,12 +95,14 @@ const REQUIRED_CI_GUARDS = [
     comment: "E2E spec naming guard (scripts/check-e2e-spec-naming.mjs, #2095)",
   },
   {
-    // Z-index codegen drift: node scripts/gen-z-index.mjs --check (CI) /
-    // pnpm check:z-index (b4push). Fails if the generated @theme block in
-    // src/styles/global.css drifts from src/config/z-index-tokens.ts (#2148).
+    // Z-index codegen drift: node packages/zudo-doc/bin/gen-z-index.mjs --check
+    // (CI) / pnpm check:z-index (b4push, routes through the same gen-z-index
+    // bin). Fails if the generated @theme block in src/styles/global.css drifts
+    // from src/config/z-index-tokens.ts (#2148). The generator ships as the
+    // @takazudo/zudo-doc `gen-z-index` bin (S9b #2334).
     ciNeedle: "gen-z-index.mjs",
     b4pushScript: "check:z-index",
-    comment: "Z-index codegen drift check (scripts/gen-z-index.mjs, #2148)",
+    comment: "Z-index codegen drift check (gen-z-index package bin, S9b #2334)",
   },
   {
     // @flaky/@local-only tracking-issue guard: asserts every @flaky and
