@@ -37,3 +37,13 @@ Never silently delete an entry — existing docs may still reference it. Options
 ### resolveTag / resolvePageTags
 
 `src/utils/tags.ts` exports `resolveTag(raw)` and `resolvePageTags(raw[])`. Both are no-ops when the vocabulary is inactive (`tagVocabulary: false` or `tagGovernance: "off"`). Covered by `src/utils/__tests__/tags.test.ts`.
+
+## Tags-Audit Tooling Ownership (S9b #2334)
+
+The core audit logic now ships from `@takazudo/zudo-doc`:
+
+- **Core library (package-side):** `@takazudo/zudo-doc/tags-audit` — exports `audit()`, `computeRewrites()`, `applyFixes()`, `rewriteAliasesByteStable()`, `hasHardIssues()`, `formatTextReport()`, and all types. The package bin runner imports from this compiled module.
+- **Data (project-side, stays here):** `src/config/tag-vocabulary.ts` and `src/config/settings.ts` — the vocabulary entries and settings (docsDir, tagGovernance, locales, etc.) remain project-specific.
+- **Bin (package-side):** `tags-audit` — provided by `@takazudo/zudo-doc`. At runtime, the bin spawns tsx to load this project's TypeScript config and run the audit.
+- **Script:** `pnpm tags:audit` (via the `tags-audit` package bin) — equivalent to the old `tsx scripts/tags-audit.ts` but the logic now lives in the package.
+- **Suggest script** (`tags:suggest`) still runs `tsx scripts/tags-suggest.ts` — the suggest logic imports from `@takazudo/zudo-doc/tags-audit` for shared types but the interactive prompt logic remains project-side.

@@ -678,13 +678,16 @@ function generatePackageJson(choices: UserChoices) {
     // Z-index token codegen (#2148): regenerate the GENERATED:Z_INDEX @theme
     // block in src/styles/global.css from src/config/z-index-tokens.ts, and a
     // drift check for pre-push/CI. Both ship in base — the z-index token system
-    // is part of every scaffold.
-    "gen:z-index": "node scripts/gen-z-index.mjs",
-    "check:z-index": "node scripts/gen-z-index.mjs --check",
+    // is part of every scaffold. Bin provided by @takazudo/zudo-doc (S9b #2334).
+    "gen:z-index": "gen-z-index",
+    "check:z-index": "gen-z-index --check",
   };
 
   if (choices.features.includes("tagGovernance")) {
-    scripts["tags:audit"] = "tsx scripts/tags-audit.ts";
+    // tags-audit bin is provided by @takazudo/zudo-doc (S9b #2334);
+    // tsx is still required as a devDep because the bin's runner imports
+    // the project's TypeScript config files at runtime via tsx.
+    scripts["tags:audit"] = "tags-audit";
     scripts["tags:suggest"] = "tsx scripts/tags-suggest.ts";
   }
 

@@ -1924,14 +1924,12 @@ describe("scaffold — plugin copying and settings", () => {
     );
   });
 
-  it("includes z-index codegen scripts (#2148)", async () => {
+  it("includes z-index codegen scripts (#2148, bin re-pointed to package S9b #2334)", async () => {
     const pkg = await fs.readJson(
       projectPath("test-minimal", "package.json"),
     );
-    expect(pkg.scripts["gen:z-index"]).toBe("node scripts/gen-z-index.mjs");
-    expect(pkg.scripts["check:z-index"]).toBe(
-      "node scripts/gen-z-index.mjs --check",
-    );
+    expect(pkg.scripts["gen:z-index"]).toBe("gen-z-index");
+    expect(pkg.scripts["check:z-index"]).toBe("gen-z-index --check");
   });
 
   it("does not emit check:pages (host-only gate — template stubs not type-clean, #2018)", async () => {
@@ -2276,7 +2274,8 @@ describe("scaffold — tagGovernance feature", () => {
     const pkg = await fs.readJson(
       projectPath("test-tag-gov-on", "package.json"),
     );
-    expect(pkg.scripts["tags:audit"]).toBe("tsx scripts/tags-audit.ts");
+    // S9b #2334: tags:audit now uses the package bin
+    expect(pkg.scripts["tags:audit"]).toBe("tags-audit");
     expect(pkg.scripts["tags:suggest"]).toBe("tsx scripts/tags-suggest.ts");
     for (const dep of [
       "string-similarity",
