@@ -1,0 +1,470 @@
+/* ============================================================================
+ * @takazudo/zudo-doc — non-island feature stylesheet
+ *
+ * Shipped to consumers as `@takazudo/zudo-doc/features.css` (copied to
+ * `dist/features.css` by scripts/copy-features-css.mjs on build). Provides
+ * feature CSS that is NOT coupled to a specific Preact island — it is shared
+ * across all projects that use @takazudo/zudo-doc regardless of which islands
+ * are active. See zudolab/zudo-doc#2331.
+ *
+ * ── Consumer contract ──────────────────────────────────────────────────────
+ * The consumer's @theme MUST define the custom properties consumed below:
+ *   --color-{fg,muted,accent,surface,code-bg,code-fg,success,warning,
+ *            matched-keyword-bg,matched-keyword-fg}
+ *   --spacing-{hsp-sm,hsp-2xs,hsp-lg,hsp-md,hsp-xl,vsp-xs,vsp-2xs,vsp-md,
+ *              icon-sm}
+ *   --z-index-local-1
+ *   --radius-{DEFAULT,lg}
+ *   --font-{mono,sans}
+ *   --text-{small,caption}
+ *   --leading-relaxed
+ *   --zd-fg
+ *   --zd-sidebar-w
+ *   --zd-header-h
+ *   --zd-transition-slow
+ *   --zd-transition-slower
+ *   --default-transition-duration
+ * All of these are defined by the project's @theme block (which is a
+ * pre-condition before @importing this file).
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/* ========================================
+ * Code block buttons (copy + word wrap)
+ * ======================================== */
+
+.code-block-wrapper {
+  position: relative;
+}
+
+pre[class^="syntect-"].word-wrap {
+  overflow-x: hidden;
+}
+
+pre[class^="syntect-"].word-wrap code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.code-block-sr-announce {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.code-buttons {
+  position: absolute;
+  top: var(--spacing-hsp-sm);
+  right: var(--spacing-hsp-sm);
+  display: flex;
+  gap: var(--spacing-hsp-2xs);
+  opacity: 0;
+  transition: opacity 150ms;
+  z-index: var(--z-index-local-1);
+}
+
+.code-block-wrapper:hover .code-buttons,
+.code-block-wrapper:focus-within .code-buttons {
+  opacity: 1;
+}
+
+.code-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem; /* 32px — one-off button box; no --spacing-icon-* at this size (two-tier: keep as arbitrary) */
+  height: 2rem; /* 32px — see above */
+  padding: 0;
+  border: 1px solid var(--color-muted);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  color: var(--color-fg);
+  cursor: pointer;
+  transition:
+    color 150ms,
+    border-color 150ms,
+    background-color 150ms;
+}
+
+.code-btn:hover {
+  color: var(--color-fg);
+  border-color: var(--color-fg);
+}
+
+.code-btn .code-icon {
+  width: var(--spacing-icon-sm);  /* 16px — standard UI icon */
+  height: var(--spacing-icon-sm); /* 16px — standard UI icon */
+}
+
+/* Copy: icon swap */
+.code-btn-copy .code-icon-check {
+  display: none;
+}
+.code-btn-copy .code-icon-copy {
+  display: block;
+}
+.code-btn-copy.copied .code-icon-check {
+  display: block;
+  color: var(--color-success);
+}
+.code-btn-copy.copied .code-icon-copy {
+  display: none;
+}
+
+/* Word wrap active state */
+.code-btn-wrap.active {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+@media (scripting: none) {
+  .code-buttons {
+    display: none;
+  }
+}
+
+/* ========================================
+ * Code-block syntax-highlight token color rule
+ * ======================================== */
+
+/* Code-block token colors come from CSS custom properties in two cases on this
+ * site, both resolved here via light-dark():
+ *
+ *   1. Build-time — zfb DUAL-theme syntect (codeHighlight.themeLight/themeDark
+ *      in zfb.config.ts). Emits <pre class="syntect-dual"> whose token spans
+ *      carry style="--shiki-light:#X;--shiki-dark:#Y" (no `color` declaration)
+ *      and whose <pre> carries --shiki-{light,dark}-bg. Zero client JS.
+ *
+ *   2. Runtime — the HtmlPreview component's Shiki blocks (<pre class="shiki">),
+ *      which emit the same --shiki-* custom properties.
+ *
+ * Both resolve through the `color-scheme` property, which ColorSchemeProvider /
+ * ThemeToggle toggle per active theme — the same mechanism the palette tokens
+ * use — so code follows the in-page light/dark switch.
+ *
+ * Compatibility: SINGLE-theme syntect (the zfb default, NOT used here) instead
+ * bakes inline style="color:#hex". This rule deliberately uses NO !important so
+ * that such an inline `color` — a higher-precedence author declaration — still
+ * wins, leaving single-theme output untouched. The --shiki-* spans have no
+ * inline `color`, so the rule applies cleanly. Same logic for background-color
+ * on the <pre>. See zudolab/zudo-doc#1457.
+ *
+ * NOTE: the zdtp design-token panel does NOT highlight code — its Shiki
+ * integration is a no-op stub upstream. Earlier revisions of this comment
+ * wrongly attributed the --shiki-* vars to a zdtp client-side re-highlight. */
+/* Token color + font-style on the spans (and harmlessly on the <pre>/<code>,
+ * where the per-token --shiki-* vars are undefined so the declaration is
+ * ignored). */
+[data-theme] .shiki,
+[data-theme] .shiki span,
+[data-theme] pre[class^="syntect-"],
+[data-theme] pre[class^="syntect-"] span {
+  color: light-dark(var(--shiki-light), var(--shiki-dark));
+  font-style: light-dark(
+    var(--shiki-light-font-style, inherit),
+    var(--shiki-dark-font-style, inherit)
+  );
+}
+
+/* Background only on the <pre> wrapper — deliberately NOT on token spans. The
+ * --shiki-*-bg vars are set inline on the <pre> and inherit down to spans;
+ * painting them per-span would lay an opaque base background over the
+ * translucent line-/word-highlight backgrounds that sit on the enclosing
+ * .line span (see .line.highlighted below). */
+[data-theme] .shiki,
+[data-theme] pre[class^="syntect-"] {
+  background-color: light-dark(var(--shiki-light-bg), var(--shiki-dark-bg));
+}
+
+/* HtmlPreview component — Shiki code blocks
+ * Token colors inherit from the global [data-theme] .shiki rule above.
+ * These rules only adjust layout and background for the preview context. */
+.zd-html-preview-code pre.shiki {
+  margin: 0;
+  padding: var(--spacing-hsp-md);
+  font-size: var(--text-caption);
+  line-height: 1.6;
+  overflow-x: auto;
+}
+
+.zd-html-preview-code pre.shiki code {
+  font-family: var(--font-mono);
+  white-space: pre;
+}
+
+/* ========================================
+ * Code block line highlighting
+ * ======================================== */
+
+/* Line highlighting via {1,3-5} meta syntax.
+ * zfb emits data-line-highlight="true" on the <span class="line"> element
+ * (verified empirically at next.13). The .highlighted class form is kept for
+ * forward-compat in case a future zfb version emits both. */
+pre[class^="syntect-"] .line.highlighted,
+pre[class^="syntect-"] [data-line-highlight="true"] {
+  background-color: color-mix(in srgb, var(--color-accent) 15%, transparent);
+}
+
+/* Word highlighting via /word/ meta syntax */
+pre[class^="syntect-"] .line .highlighted-word {
+  background-color: color-mix(in srgb, var(--color-accent) 25%, transparent);
+  border-bottom: 1px solid var(--color-accent);
+}
+
+/* ========================================
+ * Code block titles
+ * ======================================== */
+
+.code-block-container {
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+.code-block-title {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  color: var(--color-muted);
+  background-color: var(--color-code-bg);
+  border: 1px solid var(--color-muted);
+  border-bottom: none;
+  padding: var(--spacing-vsp-2xs) var(--spacing-hsp-lg);
+}
+
+.code-block-container pre[class^="syntect-"] {
+  margin-top: 0 !important;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+/* ========================================
+ * CodeGroup raw-code panels (codeTabs Option A)
+ *
+ * zfb's :::code-group emits <CodeGroup tabs={[...]}> with one
+ * <pre data-lang="…">{RAW text}</pre> child per fence. These <pre> elements
+ * are NOT syntect-highlighted (the Rust pipeline doesn't highlight inside
+ * code-group fences), so they get no `.syntect-*` class. Apply explicit
+ * code-block visual treatment via tokens to match the syntect-highlighted
+ * code blocks surrounding them.
+ * ======================================== */
+
+.code-group-panel pre[data-lang] {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  line-height: var(--leading-relaxed);
+  background-color: var(--color-code-bg);
+  color: var(--color-code-fg);
+  padding: var(--spacing-vsp-xs) var(--spacing-hsp-lg);
+  overflow-x: auto;
+  border-radius: 0 0 var(--radius-DEFAULT) var(--radius-DEFAULT);
+  margin: 0;
+}
+
+/* ========================================
+ * KaTeX math equations
+ * ======================================== */
+
+.katex {
+  font-size: 1.1em;
+}
+
+.katex-display {
+  margin: var(--spacing-vsp-md) 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: var(--spacing-vsp-xs) 0;
+}
+
+.katex-display > .katex {
+  white-space: nowrap;
+}
+
+/* Make KaTeX respect our color scheme */
+.katex .base {
+  color: var(--zd-fg);
+}
+
+/* ========================================
+ * Desktop sidebar toggle
+ * ======================================== */
+
+@media (min-width: 1024px) {
+  #desktop-sidebar {
+    transition:
+      transform var(--zd-transition-slow) ease-in-out,
+      visibility var(--zd-transition-slow);
+  }
+
+  html[data-sidebar-hidden] #desktop-sidebar {
+    transform: translateX(calc(-1 * var(--zd-sidebar-w)));
+    visibility: hidden;
+  }
+
+  .zd-sidebar-content-wrapper {
+    transition: margin-left var(--zd-transition-slow) ease-in-out;
+  }
+
+  html[data-sidebar-hidden] .zd-sidebar-content-wrapper {
+    margin-left: 0;
+  }
+
+  /* When hidden via the toggle, narrow the content band to the
+   * hide_sidebar frontmatter width so it centers (the flex parent already
+   * applies justify-content: center) instead of leaving a dead gap where
+   * the sidebar was. 80rem must match the `max-w-[80rem]` hide_sidebar
+   * branch in doc-layout.tsx. These rules are unlayered, so they win over
+   * the Tailwind `max-w-[clamp(...)]` utility (utilities layer). (#2002) */
+  .zd-doc-content-band {
+    transition: max-width var(--zd-transition-slow) ease-in-out;
+  }
+
+  html[data-sidebar-hidden] .zd-doc-content-band {
+    max-width: 80rem;
+  }
+}
+
+/* Sidebar toggle button — left position uses CSS variable, needs global rule */
+@media (min-width: 1024px) {
+  .zd-desktop-sidebar-toggle {
+    left: var(--zd-sidebar-w);
+  }
+
+  html[data-sidebar-hidden] .zd-desktop-sidebar-toggle {
+    left: 0;
+  }
+}
+
+/* The SPA-swap flash guard (`data-sidebar-no-transition`) was removed once
+ * doc-layout adopted <ClientRouter preserveHtmlAttrs={["data-sidebar-hidden",
+ * ...]} /> (zfb-runtime >= 0.1.0-next.52): the attribute now survives the swap
+ * before paint, so the sidebar never wipes-and-restores and no geometry
+ * transition fires mid-swap. Retires the #2198 workaround (zudolab/zudo-doc#2200). */
+
+/* ========================================
+ * Page transition animations (view-transition chrome)
+ * ======================================== */
+
+@keyframes contentFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes contentFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Root cross-fade for same-document View Transitions (Strategy B).
+ *
+ * @view-transition { navigation: auto; } (Strategy A, cross-document) is
+ * deleted — Strategy B uses <ClientRouter /> which drives same-document
+ * transitions via document.startViewTransition on each navigation.
+ *
+ * Chrome extraction via view-transition-name (Strategy B+, zudolab/zudo-doc#1558):
+ * <header>, <aside id="desktop-sidebar">, <footer>, and the desktop-sidebar-toggle
+ * button each carry a data-zfb-transition-persist attribute whose value is keyed
+ * by locale and nav-section. The four attribute selectors below assign a stable
+ * view-transition-name based on the attribute value prefix, extracting those
+ * elements from the root snapshot into their own named layers:
+ *   - header-{lang}          → zfb-header
+ *   - sidebar-{locale}-…     → zfb-sidebar
+ *   - footer-{lang}          → zfb-footer
+ *   - desktop-sidebar-toggle → zfb-sidebar-toggle
+ *
+ * Once extracted, the root cross-fade animates only non-chrome content (main,
+ * article, TOC, etc.). The twelve ::view-transition-{old,new,group}(<name>)
+ * rules disable animation for all four chrome layers. The group pseudo must be
+ * neutralised too — even when old/new are static the group container can still
+ * produce a geometry-morph animation when snapshot size/position differs.
+ *
+ * Entry/exit cross-fade (zudolab/zudo-doc#2072): animation: none is only
+ * correct when the chrome element exists on BOTH pages of a navigation.
+ * When it exists on one side only (docs page with sidebar → top page
+ * without), the named group holds a single snapshot — frozen at full
+ * opacity for the whole transition, then dropped abruptly at finish. The
+ * :only-child rules below detect that one-sided case and cross-fade the
+ * lone snapshot in sync with the root content fade (spec-standard
+ * entry/exit pattern; :only-child outranks the animation: none rules via
+ * the extra pseudo-class specificity). */
+
+/* Chrome extraction — assign view-transition-name from data-zfb-transition-persist */
+[data-zfb-transition-persist^="header-"]               { view-transition-name: zfb-header; }
+[data-zfb-transition-persist^="sidebar-"]              { view-transition-name: zfb-sidebar; }
+[data-zfb-transition-persist^="footer-"]               { view-transition-name: zfb-footer; }
+[data-zfb-transition-persist="desktop-sidebar-toggle"] { view-transition-name: zfb-sidebar-toggle; }
+
+/* Disable animation for all four chrome layers (old, new, and group) */
+::view-transition-old(zfb-header),
+::view-transition-new(zfb-header),
+::view-transition-group(zfb-header),
+::view-transition-old(zfb-sidebar),
+::view-transition-new(zfb-sidebar),
+::view-transition-group(zfb-sidebar),
+::view-transition-old(zfb-footer),
+::view-transition-new(zfb-footer),
+::view-transition-group(zfb-footer),
+::view-transition-old(zfb-sidebar-toggle),
+::view-transition-new(zfb-sidebar-toggle),
+::view-transition-group(zfb-sidebar-toggle) { animation: none; }
+
+/* Entry/exit: chrome element present on one side only (#2072).
+ * Exit — lone old snapshot fades out with the content cross-fade. */
+::view-transition-old(zfb-header):only-child,
+::view-transition-old(zfb-sidebar):only-child,
+::view-transition-old(zfb-footer):only-child,
+::view-transition-old(zfb-sidebar-toggle):only-child {
+  animation: var(--default-transition-duration) ease-in both contentFadeOut;
+}
+/* Entry — lone new snapshot fades in with the content cross-fade. */
+::view-transition-new(zfb-header):only-child,
+::view-transition-new(zfb-sidebar):only-child,
+::view-transition-new(zfb-footer):only-child,
+::view-transition-new(zfb-sidebar-toggle):only-child {
+  animation: var(--zd-transition-slower) ease-out both contentFadeIn;
+}
+
+/* Root cross-fade rules — animate only the non-chrome snapshot */
+::view-transition-old(root) {
+  animation: var(--default-transition-duration) ease-in both contentFadeOut;
+}
+::view-transition-new(root) {
+  animation: var(--zd-transition-slower) ease-out both contentFadeIn;
+}
+
+/* Reduced motion: collapse all view-transition animation to an instant
+ * swap (zudolab/zudo-doc#2086). With every snapshot animation at none the
+ * transition settles immediately — no cross-fade, no translateY slide.
+ * Covers the root cross-fade and the #2072 :only-child entry/exit rules;
+ * the both-sides chrome layers are already animation: none above. Equal
+ * specificity per selector, but later in source order, so these win.
+ * ::view-transition-group(root) must be neutralized too (zudolab/zzmod#845):
+ * the UA animates the root group for its full duration even when the old/new
+ * root snapshots are at animation: none, leaving a brief frozen,
+ * non-interactive frame. The chrome groups are already animation: none in the
+ * unconditional chrome block above, so only the root group is added here. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  ::view-transition-group(root),
+  ::view-transition-old(zfb-header):only-child,
+  ::view-transition-old(zfb-sidebar):only-child,
+  ::view-transition-old(zfb-footer):only-child,
+  ::view-transition-old(zfb-sidebar-toggle):only-child,
+  ::view-transition-new(zfb-header):only-child,
+  ::view-transition-new(zfb-sidebar):only-child,
+  ::view-transition-new(zfb-footer):only-child,
+  ::view-transition-new(zfb-sidebar-toggle):only-child {
+    animation: none;
+  }
+}
