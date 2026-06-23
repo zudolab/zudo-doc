@@ -155,6 +155,10 @@
       "types": "./dist/icons/index.d.ts",
       "default": "./dist/icons/index.js"
     },
+    "./robots": {
+      "types": "./dist/robots.d.ts",
+      "default": "./dist/robots.js"
+    },
     "./safelist.css": "./dist/safelist.css",
     "./safelist": "./dist/safelist.css",
     "./content.css": "./dist/content.css",
