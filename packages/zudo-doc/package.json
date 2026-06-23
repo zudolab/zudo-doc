@@ -215,6 +215,14 @@
     "./tags-audit": {
       "types": "./dist/tags-audit.d.ts",
       "default": "./dist/tags-audit.js"
+    },
+    "./color-scheme-utils": {
+      "types": "./dist/color-scheme-utils.d.ts",
+      "default": "./dist/color-scheme-utils.js"
+    },
+    "./design-token-panel-bootstrap": {
+      "types": "./dist/design-token-panel-bootstrap.d.ts",
+      "default": "./dist/design-token-panel-bootstrap.js"
     }
   },
   "bin": {
