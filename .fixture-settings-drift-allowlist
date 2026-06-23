@@ -183,3 +183,14 @@ sidebar:aiChatGlobalDailyLimit
 i18n:aiChatGlobalDailyLimit
 theme:aiChatGlobalDailyLimit
 versioning:aiChatGlobalDailyLimit
+
+# ── githubAutolinksRepo ───────────────────────────────────────────────────────
+# reason: optional showcase-only setting — omitting it disables github issue/SHA
+#         autolinks entirely, which is the correct default for generated projects
+#         and E2E fixtures. Only zudo-doc's own showcase sets this field.
+#         See zudo-doc#2321 Wave-0 correctness fix.
+sidebar:githubAutolinksRepo
+i18n:githubAutolinksRepo
+theme:githubAutolinksRepo
+smoke:githubAutolinksRepo
+versioning:githubAutolinksRepo

@@ -52,6 +52,7 @@ export const settings = {
   // Not yet wired: wiring requires adding an editLink slot to BodyFootUtilArea (v2 package API change, #2140).
   editUrl: false as string | false,
   githubUrl: "https://github.com/zudolab/zudo-doc" as string | false,
+  githubAutolinksRepo: "zudolab/zudo-doc",
   siteUrl: "https://zudo-doc.takazudomodular.com" as string, // canonical prod host; sitemap/canonical links use this regardless of deploy URL
   metaTags: {
     description: true,

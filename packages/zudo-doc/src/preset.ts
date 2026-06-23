@@ -79,6 +79,8 @@ export interface PresetSettings {
   llmsTxt?: boolean;
   docHistory?: boolean;
   claudeResources?: PresetClaudeResourcesConfig | false;
+  /** "owner/repo" — when set, enables `#123` / SHA autolinks in markdown. Omit to disable entirely. */
+  githubAutolinksRepo?: string;
 }
 
 /**
@@ -294,7 +296,12 @@ function buildMarkdownFeatures(
     githubAlerts: true,
     readingTime: true,
     // owner/repo used to build `owner/repo#123`, `#123`, and SHA autolinks.
-    githubAutolinks: { repo: "zudolab/zudo-doc" },
+    // Included only when settings.githubAutolinksRepo is set; omitted entirely
+    // for projects that don't configure a repo (restores old generated-project
+    // behaviour — zudo-doc#2321 Wave-0 correctness fix).
+    ...(settings.githubAutolinksRepo
+      ? { githubAutolinks: { repo: settings.githubAutolinksRepo } }
+      : {}),
     codeEnrichment: {},
     // codeTabs accepts the `true` shorthand; <CodeGroup> is registered host-side.
     codeTabs: true,
