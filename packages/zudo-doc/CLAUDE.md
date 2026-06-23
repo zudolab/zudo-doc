@@ -47,9 +47,20 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
   their `node:fs`/`node:path` graph into the config eval. `copy-public` stays a
   project-relative `./plugins/copy-public-plugin.mjs` descriptor (not relocated).
 - **Node-free eval-graph guard** (`src/__tests__/preset.test.ts`): esbuild-bundles
-  `src/preset.ts` with `--platform=neutral` (mirrors zfb's `loader.rs:277`) and
-  FAILS on any surviving `node:*` import. Non-negotiable — keep it green when
-  adding imports to the preset.
+  `src/preset.ts` with `--platform=neutral` (mirrors zfb's `loader.rs:277`),
+  no `external`, and FAILS on any reachable `node:*` builtin. Under
+  `platform: neutral` esbuild does NOT shim builtins — an unresolvable `node:*`
+  makes `build()` **reject** with a `Could not resolve "node:…"` diagnostic, so
+  the guard scans BOTH the rejection's `.errors` AND (defensively) the emitted
+  bundle for a literal passthrough. A companion self-test bundles a `node:fs`
+  probe to prove the detector stays live (not dead code). Non-negotiable — keep
+  it green when adding imports to the preset.
+- **`zod` is a required peerDependency.** `preset.ts` imports `zod` for
+  `z.toJSONSchema`; with `bundle:false` that bare import ships verbatim in
+  `dist/preset.js` and resolves against the consumer's `node_modules`. The host
+  already supplies zod (it owns `buildDocsSchema`), so a required peer shares
+  that single instance — avoiding a dual-zod hazard for `toJSONSchema` and a
+  `Cannot find package 'zod'` at config-eval time in generated projects.
 
 ## Shipped CSS artifacts (three)
 

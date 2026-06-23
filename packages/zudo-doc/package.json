@@ -186,7 +186,8 @@
     "@takazudo/zfb-runtime": "^0.1.0-next.61",
     "@takazudo/zudo-doc-history-server": "^0.2.21",
     "@takazudo/zdtp": "^0.3.3",
-    "shiki": "^4.0.2"
+    "shiki": "^4.0.2",
+    "zod": "^4.3.6"
   },
   "peerDependenciesMeta": {
     "@takazudo/zudo-doc-history-server": {
@@ -211,6 +212,7 @@
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
     "vitest": "^4.1.0",
+    "zod": "^4.3.6",
     "@takazudo/zfb": "0.1.0-next.61",
     "@takazudo/zfb-runtime": "0.1.0-next.61"
   }

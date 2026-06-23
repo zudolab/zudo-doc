@@ -17,6 +17,9 @@ const repoRoot = resolve(__dirname, "../../../..");
 // esbuild has no type-declaration entry resolvable from this package (it is
 // not a declared dep), so type the surface we use rather than importing
 // `typeof import("esbuild")`.
+interface EsbuildBuildError extends Error {
+  errors?: Array<{ text?: string }>;
+}
 interface EsbuildLike {
   build(opts: Record<string, unknown>): Promise<{
     errors: unknown[];
@@ -32,54 +35,129 @@ function loadEsbuild(): EsbuildLike {
   return viteRequire("esbuild") as EsbuildLike;
 }
 
+// (success-path) Match `node:*` only as a real module specifier in BUNDLED
+// CODE — in an import/export `from "node:..."`, a bare `import "node:..."`, or
+// a `require("node:...")` call — so a `node:` substring inside an unrelated
+// string literal in the output can't trip a false positive.
+const NODE_CODE_RE = /(?:\bfrom\s*|\bimport\s*|\brequire\s*\(\s*)["'](node:[^"']+)["']/g;
+
+function nodeSpecifiersInCode(text: string): string[] {
+  const found = new Set<string>();
+  for (const m of text.matchAll(NODE_CODE_RE)) {
+    if (m[1]) found.add(m[1]);
+  }
+  return [...found];
+}
+
+// (throw-path) Match any quoted `node:*` in an esbuild DIAGNOSTIC message
+// (e.g. `Could not resolve "node:fs"`). These have no import keyword, so the
+// code regex above would miss them — a distinct scanner is required.
+const NODE_DIAGNOSTIC_RE = /["'](node:[^"']+)["']/g;
+
+function nodeSpecifiersInDiagnostics(text: string): string[] {
+  const found = new Set<string>();
+  for (const m of text.matchAll(NODE_DIAGNOSTIC_RE)) {
+    if (m[1]) found.add(m[1]);
+  }
+  return [...found];
+}
+
 // ───────────────────────────────────────────────────────────────────────────
 // NODE-FREE EVAL-GRAPH GUARD (mandatory, per #2325).
 //
 // zfb evaluates the config module through esbuild with `--platform=neutral`
 // (mirrors zfb's `loader.rs:277`). A transitive `node:*` import would fail
 // that load. The preset is the central node in the config eval graph, so this
-// test bundles `src/preset.ts` exactly as zfb would and asserts zero `node:*`
-// imports survive in the output. This is the guard against the eval-graph
-// footgun — NOT discipline.
+// test bundles `src/preset.ts` exactly as zfb would — no `external`, so every
+// bare specifier (incl. zod) is resolved & bundled — and asserts no `node:*`
+// builtin is reachable.
+//
+// MECHANISM (verified against esbuild 0.27.x): under `--platform=neutral`
+// esbuild does NOT shim `node:*` — it tries to RESOLVE it, and an unresolvable
+// `node:fs`/`node:path`/… makes `build()` **reject** with a "Could not resolve"
+// diagnostic on the thrown error's `.errors`. It does NOT succeed-with-a-literal
+// `import "node:..."`. So the guard checks BOTH paths:
+//   (1) throw path — a build failure whose diagnostics reference a `node:*`
+//       specifier is a leak (fail with the offending names); any other build
+//       error is a genuine test failure (re-thrown).
+//   (2) success path — defense-in-depth: scan the emitted bundle for a literal
+//       `node:*` specifier in case a future esbuild/config passes one through.
+// This is the guard against the eval-graph footgun — NOT discipline.
 // ───────────────────────────────────────────────────────────────────────────
 describe("preset eval-graph is node-builtin-free (--platform=neutral)", () => {
-  it("bundles under platform=neutral and emits no node:* imports", async () => {
+  it("bundles under platform=neutral with no reachable node:* builtin", async () => {
     const esbuild = loadEsbuild();
 
-    const result = await esbuild.build({
-      entryPoints: [presetSrc],
+    let result: Awaited<ReturnType<EsbuildLike["build"]>>;
+    try {
+      result = await esbuild.build({
+        entryPoints: [presetSrc],
+        bundle: true,
+        write: false,
+        platform: "neutral",
+        format: "esm",
+        logLevel: "silent",
+      });
+    } catch (err) {
+      // (1) Throw path. Inspect the build diagnostics for a node:* specifier.
+      const buildErr = err as EsbuildBuildError;
+      const diagnostics = (buildErr.errors ?? [])
+        .map((e) => e.text ?? "")
+        .join("\n");
+      const leaked = nodeSpecifiersInDiagnostics(diagnostics);
+      if (leaked.length > 0) {
+        throw new Error(
+          `preset eval graph leaked node:* builtins (unresolvable under platform=neutral): ${leaked.join(", ")}`,
+        );
+      }
+      // A build failure unrelated to node:* is a genuine test failure.
+      throw err;
+    }
+
+    // (2) Success path. No node:* in the emitted bundle.
+    expect(result.errors).toEqual([]);
+    expect(result.outputFiles.length).toBeGreaterThan(0);
+
+    const bundled = result.outputFiles.map((f: { text: string }) => f.text).join("\n");
+    const offenders = nodeSpecifiersInCode(bundled);
+
+    expect(
+      offenders,
+      `preset eval graph leaked node:* builtins: ${offenders.join(", ")}`,
+    ).toEqual([]);
+  });
+
+  // Self-test: prove the detector is LIVE, not dead code. A module that imports
+  // a node builtin MUST be flagged by the same throw/scan logic the guard above
+  // uses. If this ever stops flagging, the guard has silently lost its teeth
+  // (the exact "refactored into a disabled state" failure mode raised in
+  // review). Bundles a stdin probe so no temp file is written.
+  it("DETECTS a node:* import (guard is not dead code)", async () => {
+    const esbuild = loadEsbuild();
+    const probe = {
+      stdin: {
+        contents: `import { readFileSync } from "node:fs"; export const x = typeof readFileSync;`,
+        resolveDir: __dirname,
+        loader: "ts",
+      },
       bundle: true,
       write: false,
       platform: "neutral",
       format: "esm",
       logLevel: "silent",
-      // Match zfb's loader: bare specifiers are resolved & bundled (no
-      // `external`), so any node:* that a dependency drags in would surface
-      // in the output. esbuild leaves unresolved `node:*` builtins as
-      // `import "node:..."` literals under platform=neutral rather than
-      // shimming them, which is exactly what we scan for.
-    });
+    } as Record<string, unknown>;
 
-    expect(result.errors).toEqual([]);
-    expect(result.outputFiles.length).toBeGreaterThan(0);
-
-    const bundled = result.outputFiles.map((f: { text: string }) => f.text).join("\n");
-
-    // Match `node:*` only as a real module specifier — in an import/export
-    // `from "node:..."`, a bare `import "node:..."`, or a `require("node:...")`
-    // call — so a `node:` substring inside an unrelated string literal can't
-    // trip a false positive.
-    const specifierRe =
-      /(?:\bfrom\s*|\bimport\s*|\brequire\s*\(\s*)["'](node:[^"']+)["']/g;
-    const offenders = new Set<string>();
-    for (const m of bundled.matchAll(specifierRe)) {
-      if (m[1]) offenders.add(m[1]);
+    let leaked: string[];
+    try {
+      const r = await esbuild.build(probe);
+      leaked = nodeSpecifiersInCode(r.outputFiles.map((f: { text: string }) => f.text).join("\n"));
+    } catch (err) {
+      const buildErr = err as EsbuildBuildError;
+      leaked = nodeSpecifiersInDiagnostics(
+        (buildErr.errors ?? []).map((e) => e.text ?? "").join("\n"),
+      );
     }
-
-    expect(
-      [...offenders],
-      `preset eval graph leaked node:* builtins: ${[...offenders].join(", ")}`,
-    ).toEqual([]);
+    expect(leaked).toContain("node:fs");
   });
 });
 
