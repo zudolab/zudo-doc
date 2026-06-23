@@ -20,7 +20,7 @@ This replaces the old "copy everything then strip" approach. Features are added,
 | `src/scaffold.ts` | Orchestrates the scaffold pipeline: copy base, generate configs, compose features |
 | `src/compose.ts` | Composition engine: injection system, anchor cleanup, feature resolution |
 | `src/features/*.ts` | Feature modules defining injections for each optional feature (15 modules) |
-| `src/zfb-config-gen.ts` | Programmatic `zfb.config.ts` generator (schema, collections, conditional plugins) |
+| `src/zfb-config-gen.ts` | Programmatic `zfb.config.ts` generator — S5b: now emits a thin preset-based config that spreads `zudoDocPreset()` from `@takazudo/zudo-doc/preset`; feature-agnostic (same output for all feature combinations) |
 | `src/settings-gen.ts` | Generates `src/config/settings.ts` with user-chosen options |
 | `src/claude-md-gen.ts` | Generates the per-project `CLAUDE.md` for the scaffolded site |
 | `src/preset.ts` | Resolves the user-chosen preset into a concrete feature set |
@@ -97,7 +97,7 @@ When adding a feature to the main zudo-doc project that the generator should sup
 3. **`src/features/index.ts`** — Register the feature module
 4. **`templates/features/<name>/files/`** — Add feature-specific files to copy (use `.tsx` for components, `.ts` for utilities — no `.astro`)
 5. **`src/scaffold.ts`** — Add dependencies in `generatePackageJson()` if needed
-6. **`src/zfb-config-gen.ts`** — Add conditional imports/plugins if the feature affects `zfb.config.ts`; add collection entries if the feature introduces new content directories
+6. **`packages/zudo-doc/src/preset.ts`** — If the feature introduces a new plugin or collection, add the settings-driven logic to `zudoDocPreset()`. The generated `zfb.config.ts` is a thin preset-based file (S5b #2329) — it does NOT need updating for features that are settings-driven (the preset reads the new `settings.*` field directly). Only update `src/zfb-config-gen.ts` if the generated config shape itself must change (rare).
 7. **`src/settings-gen.ts`** — Add the setting field to generated `settings.ts`
 8. **`src/__tests__/scaffold.test.ts`** — Update tests
 

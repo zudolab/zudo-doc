@@ -12,119 +12,102 @@ const baseChoices: UserChoices = {
 };
 
 describe("generateZfbConfig", () => {
-  it("generates valid zfb config for barebone project", () => {
+  // S5b (#2329): collapsed to the thin preset-based shape — all collection
+  // wiring, plugin descriptors, markdown features, codeHighlight,
+  // resolveMarkdownLinks, and trailingSlash are now delegated to
+  // `zudoDocPreset()` from `@takazudo/zudo-doc/preset`. The generated config
+  // spreads the preset result into `defineConfig` and keeps only the
+  // project-owned shell fields (framework, port, tailwind, base).
+
+  it("generates thin preset-based zfb config for barebone project", () => {
     const result = generateZfbConfig(baseChoices);
-    expect(result).toContain('import { z } from "zod"');
+
+    // Must import defineConfig and zudoDocPreset
     expect(result).toContain('import { defineConfig } from "zfb/config"');
-    expect(result).toContain('import { settings } from "./src/config/settings"');
+    expect(result).toContain(
+      'import { zudoDocPreset } from "@takazudo/zudo-doc/preset"',
+    );
+    expect(result).toContain(
+      'import { settings } from "./src/config/settings"',
+    );
+    expect(result).toContain(
+      'import { buildDocsSchema } from "./src/config/docs-schema"',
+    );
     expect(result).toContain("export default defineConfig({");
+
+    // Must spread the preset result
+    expect(result).toContain(
+      "...zudoDocPreset({ settings, buildDocsSchema, directiveVocabulary })",
+    );
+
+    // Host-owned shell fields must be present
     expect(result).toContain('framework: "preact"');
     expect(result).toContain("tailwind: { enabled: true }");
-    expect(result).toContain("collections,");
-    expect(result).toContain("plugins: integrationPlugins,");
+    expect(result).toContain("base: settings.base,");
 
-    // W7A (#1736): the pre-cutover factory-import pattern is retired —
-    // plugins are inline objects pointing at `.mjs` modules shipped by
-    // the templates, NOT factory imports from `./src/integrations/*`.
-    expect(result).not.toContain('from "./src/integrations/');
-    expect(result).not.toContain("searchIndexPlugin(");
-    expect(result).not.toContain("docHistoryPlugin(");
-    expect(result).not.toContain("llmsTxtPlugin(");
-    expect(result).not.toContain("claudeResourcesPlugin(");
-
-    // search-index and copy-public are always-on (matches host) — the
-    // search widget mounts unconditionally and consumers may need
-    // public/ copied. They appear even on a barebone project.
-    expect(result).toContain('name: "./plugins/search-index-plugin.mjs"');
-    expect(result).toContain('name: "./plugins/copy-public-plugin.mjs"');
-
-    // Optional plugins should NOT be present on a barebone project.
-    expect(result).not.toContain("doc-history-plugin.mjs");
-    expect(result).not.toContain("llms-txt-plugin.mjs");
-    expect(result).not.toContain("claude-resources-plugin.mjs");
+    // Preset-owned fields must NOT be inlined (delegate to preset)
+    expect(result).not.toContain("  collections,");
+    expect(result).not.toContain("plugins: integrationPlugins,");
+    expect(result).not.toContain('name: "./plugins/search-index-plugin.mjs"');
+    expect(result).not.toContain('name: "./plugins/copy-public-plugin.mjs"');
+    expect(result).not.toContain("markdown: {");
+    expect(result).not.toContain("codeHighlight: {");
+    expect(result).not.toContain("resolveMarkdownLinks: {");
+    expect(result).not.toContain("stripMdExt:");
+    expect(result).not.toContain("trailingSlash: settings.trailingSlash,");
 
     // migration guards: generated package.json must never include Astro deps
     expect(result).not.toContain("astro/config");
     expect(result).not.toContain("@astrojs/mdx");
     expect(result).not.toContain("@astrojs/preact");
     expect(result).not.toContain("output: ");
-    expect(result).not.toContain("i18n:");
+    // i18n: is a settings key pattern but the thin config has no i18n block
+    expect(result).not.toContain("i18n: {");
   });
 
-  it("search-index plugin entry uses inline-object shape with docsDir/locales/base options", () => {
-    const choices = { ...baseChoices, features: ["search"] };
-    const result = generateZfbConfig(choices);
-    expect(result).toContain('name: "./plugins/search-index-plugin.mjs"');
-    expect(result).toContain("docsDir: settings.docsDir,");
-    expect(result).toContain("locales: localeRecord,");
-    expect(result).toContain("base: settings.base,");
-  });
-
-  it("doc-history plugin entry uses inline-object shape and gates on settings.docHistory", () => {
-    const choices = { ...baseChoices, features: ["docHistory"] };
-    const result = generateZfbConfig(choices);
-    expect(result).toContain('name: "./plugins/doc-history-plugin.mjs"');
-    expect(result).toContain("settings.docHistory");
-    expect(result).toContain("locales: localeRecord,");
-  });
-
-  it("llms-txt plugin entry uses inline-object shape and gates on settings.llmsTxt", () => {
-    const choices = { ...baseChoices, features: ["llmsTxt"] };
-    const result = generateZfbConfig(choices);
-    expect(result).toContain('name: "./plugins/llms-txt-plugin.mjs"');
-    expect(result).toContain("settings.llmsTxt");
-    expect(result).toContain("siteName: settings.siteName,");
-    expect(result).toContain("siteUrl: settings.siteUrl,");
-    expect(result).toContain("locales: localeArray,");
-  });
-
-  it("claude-resources plugin entry uses inline-object shape and gates on settings.claudeResources", () => {
-    const choices = { ...baseChoices, features: ["claudeResources"] };
-    const result = generateZfbConfig(choices);
-    expect(result).toContain('name: "./plugins/claude-resources-plugin.mjs"');
-    expect(result).toContain("settings.claudeResources");
-    expect(result).toContain("claudeDir: settings.claudeResources.claudeDir,");
-  });
-
-  it("always emits locale loop (no-op when locales is empty)", () => {
+  it("directiveVocabulary block is always emitted (passed into preset)", () => {
     const result = generateZfbConfig(baseChoices);
-    // Loop is always present — it produces nothing when locales is {}.
-    expect(result).toContain("Object.entries(settings.locales)");
-    expect(result).toContain('name: `docs-${code}`');
+    // The seven canonical directives are always emitted as a const and passed
+    // to zudoDocPreset — the preset wires them into markdown.features.directives.
+    expect(result).toContain("const directiveVocabulary = {");
+    expect(result).toContain('note: "Note"');
+    expect(result).toContain('details: "Details"');
   });
 
-  it("always emits version block (short-circuits when versions is false)", () => {
-    const result = generateZfbConfig(baseChoices);
-    expect(result).toContain("if (settings.versions)");
-    expect(result).toContain('name: `docs-v-${version.slug}`');
+  it("generated config is feature-agnostic (same output for barebone and full-features)", () => {
+    // S5b: features are now driven entirely by settings.* (read at zfb-load
+    // time by the preset). The generated zfb.config.ts is identical regardless
+    // of which features were selected — feature data lives in settings.ts.
+    const barebone = generateZfbConfig(baseChoices);
+    const full = generateZfbConfig({
+      ...baseChoices,
+      features: ["search", "docHistory", "llmsTxt", "claudeResources", "i18n"],
+    });
+    expect(barebone).toBe(full);
   });
 
-  it("imports buildDocsSchema from docs-schema (single source of truth) and calls it", () => {
-    // S7 (#2016): the schema definition is now the single source of truth in
-    // src/config/docs-schema.ts — generated zfb.config.ts imports the builder
-    // rather than inlining the field list. This keeps pages/_data.ts and
-    // src/types/docs-entry.ts in sync via z.infer without duplication.
+  it("does not inline zod or schema boilerplate (delegated to preset)", () => {
     const result = generateZfbConfig(baseChoices);
-    expect(result).toContain(
-      'import { buildDocsSchema } from "./src/config/docs-schema"',
-    );
-    expect(result).toContain("const docsSchema = buildDocsSchema();");
-    // The inline field list must NOT appear — it lives in docs-schema.ts.
-    expect(result).not.toContain("title: z.string()");
-    expect(result).not.toContain("z.object({");
+    // zod is a @takazudo/zudo-doc/preset internal; not needed in the generated
+    // config file itself. The preset calls z.toJSONSchema internally.
+    expect(result).not.toContain('from "zod"');
+    expect(result).not.toContain("z.toJSONSchema");
+    expect(result).not.toContain("const docsSchema");
+    expect(result).not.toContain("interface CollectionEntryShape");
   });
 
-  it("emits z.toJSONSchema conversion for zfb collection schema format", () => {
-    const result = generateZfbConfig(baseChoices);
-    expect(result).toContain("z.toJSONSchema(docsSchema)");
-  });
-
-  it("emits CollectionEntryShape interface", () => {
-    const result = generateZfbConfig(baseChoices);
-    expect(result).toContain("interface CollectionEntryShape");
-    expect(result).toContain("name: string;");
-    expect(result).toContain("path: string;");
-    expect(result).toContain("schema: Record<string, unknown>;");
+  it("does NOT emit inline plugin .mjs references (delegated to preset via package specifiers)", () => {
+    // S5b: preset now references plugins via @takazudo/zudo-doc/plugins/*
+    // package specifiers. No project-local .mjs file references appear in
+    // the thin generated config (except copy-public which the preset handles).
+    const result = generateZfbConfig({
+      ...baseChoices,
+      features: ["docHistory", "llmsTxt", "claudeResources"],
+    });
+    expect(result).not.toContain("doc-history-plugin.mjs");
+    expect(result).not.toContain("llms-txt-plugin.mjs");
+    expect(result).not.toContain("claude-resources-plugin.mjs");
+    expect(result).not.toContain("search-index-plugin.mjs");
   });
 
   it("does NOT emit inline buildTagsSchema or tagVocabulary import (encapsulated in docs-schema.ts)", () => {
@@ -147,75 +130,6 @@ describe("generateZfbConfig", () => {
     );
   });
 
-  it("includes every plugin entry when all integration features are selected", () => {
-    const choices: UserChoices = {
-      ...baseChoices,
-      features: ["search", "docHistory", "llmsTxt", "claudeResources"],
-    };
-    const result = generateZfbConfig(choices);
-    // All five plugin .mjs references should appear (search + copy-public
-    // always-on; doc-history + llms-txt + claude-resources from feature flags).
-    expect(result).toContain('name: "./plugins/search-index-plugin.mjs"');
-    expect(result).toContain('name: "./plugins/doc-history-plugin.mjs"');
-    expect(result).toContain('name: "./plugins/llms-txt-plugin.mjs"');
-    expect(result).toContain('name: "./plugins/claude-resources-plugin.mjs"');
-    expect(result).toContain('name: "./plugins/copy-public-plugin.mjs"');
-  });
-
-  it("emits a markdown.features block with the former-Core features and safe opt-ins (#1808 updated by #1824 updated by #1841)", () => {
-    // S6 (#1808): zfb next.12+ moved admonitionsPreset/mermaid/imageEnlarge/
-    // headingMarkerToc from always-on (Core) to opt-in. The generator re-enabled
-    // them plus the safe opt-ins so scaffolded projects work out of the box.
-    // S2 (#1825): imageEnlarge was hard-removed from the Rust config schema in
-    // zfb next.18 — it must NOT appear in the generated markdown.features block
-    // (it causes the Rust config loader to reject the config with "unknown key").
-    // Image-enlarge is now re-implemented via an MDX p-override.
-    // S3 (#1841): admonitionsPreset was removed in zfb next.25 — replaced by
-    // the directives recipe map. The generator now emits directives: { ... }.
-    const result = generateZfbConfig(baseChoices);
-    expect(result).toContain("markdown: {");
-    expect(result).toContain("features: {");
-    // Directives map replaces admonitionsPreset (removed in zfb next.25)
-    expect(result).toContain("directives: {");
-    expect(result).toContain('note: "Note"');
-    expect(result).toContain('details: "Details"');
-    // admonitionsPreset must NOT appear — it was removed from the zfb schema.
-    expect(result).not.toContain("admonitionsPreset");
-    expect(result).toContain("mermaid: true");
-    expect(result).toContain("headingMarkerToc: true");
-    // imageEnlarge must NOT be in the generated markdown.features block.
-    expect(result).not.toContain("imageEnlarge:");
-    // Safe opt-ins (boolean-OR-object)
-    expect(result).toContain("githubAlerts: true");
-    expect(result).toContain("readingTime: true");
-    expect(result).toContain("codeTabs: true");
-    // Object-typed features — must use {} or options, NOT `true`
-    expect(result).toContain("codeEnrichment: {}");
-    expect(result).toContain("imageDimensions: {}");
-    expect(result).toContain("linkValidation: { failOnBroken: false }");
-    // Heading-ID strategy reads from the single-source-of-truth setting.
-    expect(result).toContain("headingIds: { strategy: settings.headingIdStrategy }");
-  });
-
-  it("does NOT emit ruby, tocExport, or transclude as enabled (known-blocked at next.13) (#1808)", () => {
-    // ruby (#1815) and tocExport (#1814) break SSR at next.13; transclude
-    // 500s without a registered renderer. None of these should appear as
-    // enabled (un-commented) in the generated config.
-    const result = generateZfbConfig(baseChoices);
-    // These must not appear as enabled keys — commented-out or absent is fine.
-    // We check they don't appear on their own uncommented line.
-    expect(result).not.toMatch(/^\s+ruby:\s+true/m);
-    expect(result).not.toMatch(/^\s+tocExport:/m);
-    expect(result).not.toMatch(/^\s+transclude:/m);
-  });
-
-  it("does NOT emit githubAutolinks (repo is project-specific — user configures manually) (#1808)", () => {
-    // The showcase hardcodes repo: "zudolab/zudo-doc" but generated projects
-    // belong to a different repo. Omit and let users add it themselves.
-    const result = generateZfbConfig(baseChoices);
-    expect(result).not.toContain("githubAutolinks");
-  });
-
   it("does not include Astro-specific markdown config (shiki, remark, rehype at config level)", () => {
     const choices: UserChoices = {
       ...baseChoices,
@@ -229,28 +143,27 @@ describe("generateZfbConfig", () => {
     expect(result).not.toContain("tailwindcss()");
   });
 
-  it("emits base/trailingSlash/stripMdExt/resolveMarkdownLinks fields matching host", () => {
-    // W7A (#1736): host's zfb.config.ts threads these settings through —
-    // the generator must do the same so scaffolds inherit the same routing
-    // semantics (link rewriting, trailing-slash, base prefix).
+  it("does NOT emit ruby, tocExport, or transclude as enabled (not in thin config — preset concerns)", () => {
+    // The thin generated config has no inline markdown.features block.
+    // This guard ensures no accidental inline features slip back in.
     const result = generateZfbConfig(baseChoices);
-    expect(result).toContain("base: settings.base,");
-    expect(result).toContain("trailingSlash: settings.trailingSlash,");
-    expect(result).toContain("stripMdExt: true,");
-    expect(result).toContain("resolveMarkdownLinks: {");
-    expect(result).toContain('onBrokenLinks: "warn"');
+    expect(result).not.toMatch(/^\s+ruby:\s+true/m);
+    expect(result).not.toMatch(/^\s+tocExport:/m);
+    expect(result).not.toMatch(/^\s+transclude:/m);
   });
 
-  it("emits codeHighlight block with dual-theme syntect themes matching host (#2257)", () => {
-    // The base template's global.css resolves code tokens via
-    // light-dark(var(--shiki-light), var(--shiki-dark)). Without a
-    // codeHighlight block, zfb emits single-theme tokens and the CSS
-    // expectation is never met — code is invisible on one theme. The
-    // generated config must declare both themeLight and themeDark to
-    // enable dual-theme output, matching the host's zfb.config.ts.
+  it("does NOT emit githubAutolinks (repo is project-specific — user configures manually) (#1808)", () => {
+    // The showcase hardcodes repo: "zudolab/zudo-doc" but generated projects
+    // belong to a different repo. Omit and let users add it themselves.
     const result = generateZfbConfig(baseChoices);
-    expect(result).toContain("codeHighlight: {");
-    expect(result).toContain('themeLight: "base16-ocean.light"');
-    expect(result).toContain('themeDark: "base16-ocean.dark"');
+    expect(result).not.toContain("githubAutolinks");
+  });
+
+  it("imageEnlarge must NOT appear in the generated config", () => {
+    // imageEnlarge was hard-removed from zfb's Rust config schema in next.18.
+    // It is re-implemented as a userland MDX p-override, not a config flag.
+    const result = generateZfbConfig(baseChoices);
+    expect(result).not.toContain("imageEnlarge:");
+    expect(result).not.toContain("rehypeImageEnlarge");
   });
 });
