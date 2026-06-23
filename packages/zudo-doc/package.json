@@ -163,6 +163,26 @@
       "types": "./dist/preset.d.ts",
       "default": "./dist/preset.js"
     },
+    "./plugins/connect-adapter": {
+      "types": "./dist/plugins/connect-adapter.d.ts",
+      "default": "./dist/plugins/connect-adapter.js"
+    },
+    "./plugins/doc-history": {
+      "types": "./dist/plugins/doc-history.d.ts",
+      "default": "./dist/plugins/doc-history.js"
+    },
+    "./plugins/llms-txt": {
+      "types": "./dist/plugins/llms-txt.d.ts",
+      "default": "./dist/plugins/llms-txt.js"
+    },
+    "./plugins/search-index": {
+      "types": "./dist/plugins/search-index.d.ts",
+      "default": "./dist/plugins/search-index.js"
+    },
+    "./plugins/claude-resources": {
+      "types": "./dist/plugins/claude-resources.d.ts",
+      "default": "./dist/plugins/claude-resources.js"
+    },
     "./safelist.css": "./dist/safelist.css",
     "./safelist": "./dist/safelist.css",
     "./content.css": "./dist/content.css",
@@ -172,7 +192,7 @@
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsup",
     "dev": "tsup --watch",
     "prepare": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsup --silent",
-    "prepack": "node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs",
+    "prepack": "node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs && node scripts/check-plugins.mjs",
     "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc --noEmit"
   },
