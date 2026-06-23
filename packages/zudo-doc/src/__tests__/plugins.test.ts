@@ -1,20 +1,19 @@
 // Shape tests for the relocated package plugins.
 //
-// Each plugin module re-exports a `ZfbPlugin`-shaped default. These tests
-// import the compiled dist entries (via the package exports map) and assert:
+// Each plugin module exports a `ZfbPlugin`-shaped default. These tests
+// import the source modules (vitest resolves the `.js` specifiers to the
+// `.ts` sources) and assert:
 //   - the default export is an object with a `name` string
 //   - the expected lifecycle method(s) are functions
 //
 // They intentionally do NOT invoke the lifecycle hooks (which require
 // a real file system / git repo / running server) — just structural
-// presence guards so a botched relocation surfaces immediately.
+// presence guards so a botched relocation surfaces immediately. The
+// dist/exports-map surface is verified separately by the build + the
+// `check-plugins.mjs` prepack guard, not here.
 
 import { describe, it, expect } from "vitest";
 
-// Import from dist (the package's public API surface, post-build).
-// Because tsup bundle:false preserves all `.js` extensions from source,
-// these paths resolve via the package.json exports map when imported
-// from tests that run from the package root.
 import docHistory from "../plugins/doc-history.js";
 import llmsTxt from "../plugins/llms-txt.js";
 import searchIndex from "../plugins/search-index.js";
