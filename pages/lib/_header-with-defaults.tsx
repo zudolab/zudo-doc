@@ -207,6 +207,9 @@ export function HeaderWithDefaults(
       shortcutHint={t("search.shortcutHint", lang)}
       resultCountTemplate={t("search.resultCount", lang)}
       searchLabel={t("search.label", lang)}
+      searchUnavailableText={t("search.unavailable", lang)}
+      loadingIndexText={t("search.loadingIndex", lang)}
+      noResultsText={t("search.noResults", lang)}
     />
   );
 

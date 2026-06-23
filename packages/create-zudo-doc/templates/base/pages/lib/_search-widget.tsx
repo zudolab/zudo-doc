@@ -38,6 +38,12 @@ export interface SearchWidgetProps {
   resultCountTemplate: string;
   /** Accessible label for the search trigger button */
   searchLabel: string;
+  /** Locale-aware status: shown when the search index fails to load */
+  searchUnavailableText: string;
+  /** Locale-aware status: shown while the search index is loading */
+  loadingIndexText: string;
+  /** Locale-aware status: shown when a query returns no matches */
+  noResultsText: string;
 }
 
 /**
@@ -50,7 +56,15 @@ export interface SearchWidgetProps {
  * only on the client.
  */
 export function SearchWidget(props: SearchWidgetProps): JSX.Element {
-  const { placeholderText, shortcutHint, resultCountTemplate, searchLabel } = props;
+  const {
+    placeholderText,
+    shortcutHint,
+    resultCountTemplate,
+    searchLabel,
+    searchUnavailableText,
+    loadingIndexText,
+    noResultsText,
+  } = props;
   const base = withBase("/");
 
   return (
@@ -59,6 +73,9 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
       <site-search
         data-base={base}
         data-result-count-template={resultCountTemplate}
+        data-search-unavailable={searchUnavailableText}
+        data-loading-index={loadingIndexText}
+        data-no-results={noResultsText}
       >
         {/* Header trigger button — search magnifier icon */}
         <button
@@ -98,6 +115,7 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
             (top-layer) case — do not remove as "redundant" (epic #2148). */}
         <dialog
           data-search-dialog
+          aria-label={searchLabel}
           class="z-modal m-0 h-full w-full max-w-none border-none bg-transparent p-0 backdrop:z-modal-backdrop backdrop:bg-overlay/60 sm:mx-auto sm:my-[10vh] sm:h-auto sm:max-h-[80vh] sm:max-w-[52rem] sm:rounded-lg"
         >
           <div class="flex h-full flex-col overflow-hidden bg-surface sm:rounded-lg sm:border sm:border-muted">
@@ -150,6 +168,7 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
                   stroke-width="2"
                   stroke-linecap="round"
                   stroke-linejoin="round"
+                  aria-hidden="true"
                 >
                   <path d="M18 6 6 18" />
                   <path d="m6 6 12 12" />
