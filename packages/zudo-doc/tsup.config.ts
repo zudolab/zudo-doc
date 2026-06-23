@@ -26,6 +26,15 @@ export default defineConfig({
   // Compile every .ts / .tsx under src/, except test fixtures and
   // vitest configs. The exports map filters what consumers can
   // import; this list is just what gets compiled.
+  //
+  // PACKAGE-FIRST APPEND CONVENTION (owned by S2 #2325; used by S3/S7/S8/S9):
+  //   - Any new `.ts`/`.tsx` source under `src/**` (e.g. `src/preset.ts`) is
+  //     picked up automatically by the globs below — NO entry edit needed.
+  //     Just add the matching subpath to `package.json#exports` (one entry per
+  //     line, at the APPEND POINT marker there).
+  //   - Source files that the globs do NOT match (e.g. relocated `.mjs`
+  //     plugin wrappers in S3) must be appended as their own entry line below,
+  //     or copied via the `onSuccess` chain. Append at the marked points.
   entry: [
     "src/**/*.ts",
     "src/**/*.tsx",
@@ -33,6 +42,9 @@ export default defineConfig({
     "!src/**/*.test.ts",
     "!src/**/*.test.tsx",
     "!src/**/vitest.config.ts",
+    // ── PACKAGE-FIRST ENTRY APPEND POINT ──────────────────────────────────
+    // Non-glob-matched compile entries (e.g. S3 `.mjs`→`.ts` plugin wrappers)
+    // append here, one per line.
   ],
   format: "esm",
   dts: true,
