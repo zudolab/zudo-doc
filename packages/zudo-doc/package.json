@@ -211,7 +211,15 @@
     "./safelist": "./dist/safelist.css",
     "./content.css": "./dist/content.css",
     "./page-loading.css": "./dist/page-loading.css",
-    "./features.css": "./dist/features.css"
+    "./features.css": "./dist/features.css",
+    "./tags-audit": {
+      "types": "./dist/tags-audit.d.ts",
+      "default": "./dist/tags-audit.js"
+    }
+  },
+  "bin": {
+    "gen-z-index": "./bin/gen-z-index.mjs",
+    "tags-audit": "./bin/tags-audit.mjs"
   },
   "scripts": {
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsup",
@@ -223,6 +231,7 @@
   },
   "files": [
     "dist",
+    "bin",
     "README.md"
   ],
   "peerDependencies": {

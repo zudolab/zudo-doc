@@ -1,32 +1,39 @@
 #!/usr/bin/env node
-// scripts/gen-z-index.mjs
+// @takazudo/zudo-doc/bin/gen-z-index.mjs
 //
-// Codegen: rewrite the GENERATED:Z_INDEX marker block inside
-// src/styles/global.css from the single source of truth in
+// Package bin: regenerate (or check) the GENERATED:Z_INDEX marker block inside
+// a project's src/styles/global.css from the single source of truth in
 // src/config/z-index-tokens.ts.
 //
+// Reads from the project root (process.cwd()). Conventional paths:
+//   - Tokens: src/config/z-index-tokens.ts
+//   - CSS:    src/styles/global.css
+//
+// Usage (after pnpm install, via scripts in package.json):
+//   gen-z-index            # rewrite the @theme block in global.css
+//   gen-z-index --check    # verify committed block is up to date (exit 1 on drift)
+//
+// MUST be run with the project root as cwd (it resolves source paths against
+// process.cwd(), NOT against this file's location). The package.json scripts and
+// b4push satisfy this; CI's no-install z-index job invokes the file by path
+// from the repo root: `node packages/zudo-doc/bin/gen-z-index.mjs --check`.
+//
 // The block is a Tailwind v4 `@theme { --z-index-<name>: <value>; }` for every
-// tier, so Tailwind generates `z-<name>` utilities (e.g. `--z-index-toolbar: 20`
-// → `.z-toolbar { z-index: 20 }`) and raw CSS can reference the same var via
+// tier, so Tailwind generates `z-<name>` utilities and raw CSS can reference
 // `z-index: var(--z-index-<name>)`.
 //
 // Pure Node (fs only — NO npm deps). Idempotent: running twice produces no diff.
-//
-// Usage:
-//   node scripts/gen-z-index.mjs           # rewrite the block in global.css
-//   node scripts/gen-z-index.mjs --check   # verify committed block is up to date
-//                                          # (exit 1 on drift, no write)
 //
 // MAINTENANCE: edit src/config/z-index-tokens.ts (the source of truth), then run
 // `pnpm gen:z-index` and commit the regenerated global.css. Never hand-edit the
 // block between the BEGIN/END markers.
 
 import { readFileSync, writeFileSync } from "node:fs";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = resolve(__dirname, "..");
+// Project root is always the current working directory — this is a project bin,
+// not a monorepo script.
+const ROOT = process.cwd();
 
 const TOKENS_PATH = resolve(ROOT, "src/config/z-index-tokens.ts");
 const CSS_PATH = resolve(ROOT, "src/styles/global.css");
@@ -36,7 +43,7 @@ const END_MARKER = "GENERATED:Z_INDEX_END";
 
 /**
  * Parse the Z_INDEX_TIERS array out of z-index-tokens.ts WITHOUT importing it
- * (this script is a dependency-free .mjs and cannot resolve TypeScript). Reads
+ * (this bin is a dependency-free .mjs and cannot resolve TypeScript). Reads
  * each `{ name: "...", value: <n>, ... }` object literal. Throws on a malformed
  * source so drift between the parser and the file surfaces loudly.
  */
