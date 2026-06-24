@@ -86,9 +86,9 @@
   },
   "dependencies": {
     "@takazudo/zdtp": "0.3.3",
-    "@takazudo/zfb": "0.1.0-next.61",
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.61",
-    "@takazudo/zfb-runtime": "0.1.0-next.61",
+    "@takazudo/zfb": "0.1.0-next.62",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.62",
+    "@takazudo/zfb-runtime": "0.1.0-next.62",
     "@takazudo/zudo-doc": "workspace:*",
     "diff": "^8.0.3",
     "gray-matter": "^4.0.3",
