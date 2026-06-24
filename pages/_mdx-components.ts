@@ -72,9 +72,9 @@ export function createMdxComponents(lang: Locale | string = defaultLocale) {
     settings,
     locale: lang,
     navData: {
-      CategoryNav: CategoryNavWrapper as (props: Record<string, unknown>) => unknown,
-      CategoryTreeNav: CategoryTreeNavWrapper as (props: Record<string, unknown>) => unknown,
-      SiteTreeNav: SiteTreeNavWrapper as (props: Record<string, unknown>) => unknown,
+      CategoryNav: CategoryNavWrapper as unknown as (props: Record<string, unknown>) => unknown,
+      CategoryTreeNav: CategoryTreeNavWrapper as unknown as (props: Record<string, unknown>) => unknown,
+      SiteTreeNav: SiteTreeNavWrapper as unknown as (props: Record<string, unknown>) => unknown,
     },
     extras: {
       HtmlPreview: HtmlPreviewWithGlobalConfig,
