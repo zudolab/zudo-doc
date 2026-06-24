@@ -28,6 +28,7 @@ import {
   createDocHistoryDevMiddleware,
 } from "../integrations/doc-history/index.js";
 import { connectToZfbHandler } from "./connect-adapter.js";
+import { getBasePrefix } from "./plugin-utils.js";
 
 const plugin: ZfbPlugin = {
   name: "doc-history",
@@ -91,16 +92,9 @@ const plugin: ZfbPlugin = {
     // and the route is `/doc-history` as expected. The v2 middleware
     // itself is base-tolerant (matches via `url.includes("/doc-history/")`)
     // and slices from `/doc-history/` onward when proxying upstream.
-    const basePrefix = stripTrailingSlash(
-      typeof ctx.options["base"] === "string" ? ctx.options["base"] : "",
-    );
+    const basePrefix = getBasePrefix(ctx.options["base"]);
     ctx.register(`${basePrefix}/doc-history`, connectToZfbHandler(middleware));
   },
 };
 
 export default plugin;
-
-function stripTrailingSlash(s: string): string {
-  if (typeof s !== "string" || s.length === 0) return "";
-  return s.endsWith("/") ? s.slice(0, -1) : s;
-}

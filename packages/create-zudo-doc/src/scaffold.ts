@@ -627,24 +627,19 @@ function generatePackageJson(choices: UserChoices) {
     deps["diff"] = "^8.0.3";
     // @takazudo/zudo-doc has @takazudo/zudo-doc-history-server as an optional
     // peer dep. When docHistory is selected the zfb plugin
-    // (plugins/doc-history-plugin.mjs) eagerly imports
+    // (@takazudo/zudo-doc/plugins/doc-history) eagerly imports
     // @takazudo/zudo-doc/integrations/doc-history which in turn imports
     // @takazudo/zudo-doc-history-server/git-history. Without this dep the
     // plugin host fails at init with ERR_MODULE_NOT_FOUND — W8A (#1739).
     deps["@takazudo/zudo-doc-history-server"] = "^0.2.21";
-    // W7A (#1736): doc-history-plugin.mjs spawns `tsx -e <inline-script>` to
-    // run the v2 runtime in a TS-aware Node subprocess; without tsx the
-    // plugin's preBuild step exits with ENOENT before zfb finishes config
-    // load.
-    devDeps["tsx"] = "^4.21.0";
+    // tsx is no longer needed here: the relocated package plugin imports the
+    // runner directly (no `tsx -e` spawn) since the package ships compiled
+    // dist/ — package-first migration #2321 (#2337).
   }
 
-  if (choices.features.includes("claudeResources")) {
-    // W7A (#1736): claude-resources-plugin.mjs spawns `tsx -e <inline-script>`
-    // for the same reason as doc-history (TS-aware Node subprocess wrapping
-    // the v2 runner).
-    devDeps["tsx"] = "^4.21.0";
-  }
+  // claudeResources: tsx is no longer needed. The relocated package plugin
+  // (@takazudo/zudo-doc/plugins/claude-resources) imports the runner directly
+  // since the package ships compiled dist/ — package-first migration #2321 (#2337).
 
   if (choices.features.includes("designTokenPanel")) {
     // @takazudo/zdtp requires preact >= 10.29.1 — see the preact floor comment

@@ -1,24 +1,29 @@
 /**
  * plugins-transforms.test.ts
  *
- * Focused vitest tests for the pure-function layer that plugins/
- * thin wrappers delegate to: the @takazudo/zudo-doc integration transforms.
+ * Focused vitest tests for the pure-function layer that the zfb plugin modules
+ * delegate to: the @takazudo/zudo-doc integration transforms.
+ *
+ * After the package-first migration (#2321) and cleanup (#2337), the host-side
+ * plugin .mjs wrappers (doc-history, search-index, llms-txt, claude-resources)
+ * were deleted. Plugins now live in @takazudo/zudo-doc/plugins/* and are referenced
+ * by the preset at zfb config-eval time. The connect-adapter.mjs in this repo's
+ * plugins/ is the project-local copy used by the host's own zfb config; the
+ * canonical source lives in packages/zudo-doc/src/plugins/connect-adapter.ts.
  *
  * Per-plugin accounting:
  *
- * doc-history-plugin.mjs
- *   No pure-function surface to test here. Its two exported functions
+ * @takazudo/zudo-doc/plugins/doc-history
+ *   No pure-function surface to test here. Its exported functions
  *   (runDocHistoryMetaStep, runDocHistoryPostBuild) perform filesystem I/O and
- *   git-log subprocess calls. The plugin itself is a thin lifecycle hook wrapper
- *   with one pure helper: stripTrailingSlash (duplicated in llms-txt-plugin.mjs
- *   and search-index-plugin.mjs as well). We test stripTrailingSlash below via
- *   the connect-adapter path and directly from the shared helper.
+ *   git-log subprocess calls. The shared basePrefix/stripTrailingSlash helpers
+ *   were extracted into plugin-utils.ts (#2338); they are not re-tested here.
  *
- * search-index-plugin.mjs
+ * @takazudo/zudo-doc/integrations/search-index
  *   Pure transforms: `stripMarkdown` (strips markdown from body text) and the
  *   body-truncation logic (MAX_BODY_LENGTH=300). Tested below.
  *
- * llms-txt-plugin.mjs
+ * @takazudo/zudo-doc/integrations/llms-txt
  *   Pure transforms: `generateLlmsTxt` and `generateLlmsFullTxt` (format llms.txt
  *   output from an entries array). Tested below.
  *
@@ -28,18 +33,15 @@
  *   (treat missing publicDir as a no-op) which is an fs error path, not a
  *   pure transform. Testing would require a real or mocked filesystem.
  *
- * connect-adapter.mjs
+ * connect-adapter.mjs (host-local copy, mirrors package source)
  *   Pure adapter: connectToZfbHandler wraps Connect middleware into the zfb
  *   devMiddleware shape. Tested below — covers: next() passthrough, res.end()
  *   capture, next(err) rejection, binary body base64 encoding, header
  *   normalisation.
  *
- * claude-resources-plugin.mjs
- *   No pure-function surface. preBuild delegates entirely to
- *   runClaudeResourcesPreStep which performs filesystem reads and MDX
- *   generation; the plugin's own logic is only a claudeDir validation guard
- *   (tested separately via the handler integration test). The escapeForMdx
- *   helper inside the integration package IS a pure function — tested below.
+ * @takazudo/zudo-doc/integrations/claude-resources
+ *   No pure-function surface for the plugin hooks. The escapeForMdx helper
+ *   inside the integration package IS a pure function — tested below.
  */
 
 import { describe, it, expect } from "vitest";

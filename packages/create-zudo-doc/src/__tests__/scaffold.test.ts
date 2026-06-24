@@ -3015,10 +3015,27 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
 // `zfb build` fails at config bundling (the W6B-flagged blocker). These
 // tests assert the import-resolution chain end-to-end at scaffold time so
 // the consumer build only fails for *new* drift, not for known-broken state.
+//
+// Package-first migration cleanup (#2337): the 5 feature plugin .mjs wrappers
+// (search-index, connect-adapter, doc-history, llms-txt, claude-resources)
+// were deleted from the templates because generated projects now use the
+// preset approach — plugins are referenced via `@takazudo/zudo-doc/plugins/*`
+// package specifiers inside the preset. Only copy-public-plugin.mjs remains
+// project-local (the preset still resolves it relative to the project root).
+// tsx is no longer emitted for docHistory/claudeResources features: the
+// package plugins import the runner directly (no `tsx -e` spawn) since
+// @takazudo/zudo-doc now ships compiled dist/.
 // ---------------------------------------------------------------------------
 
 describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)", () => {
-  it("barebone scaffold ships base/plugins/{search-index,copy-public,connect-adapter}.mjs", async () => {
+  it("barebone scaffold ships only copy-public-plugin.mjs (preset owns all others)", async () => {
+    // S5b (#2329) + #2337: the preset-based zfb.config.ts has no inline
+    // `./plugins/*.mjs` references. Plugins are referenced via
+    // `@takazudo/zudo-doc/plugins/*` package specifiers inside the preset.
+    // The only project-local plugin is copy-public-plugin.mjs — the preset
+    // resolves it relative to the project root at zfb-load time.
+    // All other .mjs wrappers (search-index, connect-adapter, doc-history,
+    // llms-txt, claude-resources) have been removed from templates (#2337).
     const choices: UserChoices = {
       projectName: "test-w7a-plugins-barebone",
       defaultLang: "en",
@@ -3028,23 +3045,17 @@ describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)
       packageManager: "pnpm",
     };
     await scaffold(choices);
+    expect(
+      await fs.pathExists(
+        projectPath("test-w7a-plugins-barebone", "plugins/copy-public-plugin.mjs"),
+      ),
+      "expected plugins/copy-public-plugin.mjs to ship in every scaffold",
+    ).toBe(true);
+    // All other .mjs plugin wrappers must NOT ship — they are dead code since
+    // the preset references the package plugins directly (#2337).
     for (const file of [
       "plugins/search-index-plugin.mjs",
-      "plugins/copy-public-plugin.mjs",
       "plugins/connect-adapter.mjs",
-    ]) {
-      expect(
-        await fs.pathExists(
-          projectPath("test-w7a-plugins-barebone", file),
-        ),
-        `expected ${file} to ship in every scaffold`,
-      ).toBe(true);
-    }
-    // Optional-feature plugins must NOT ship when the feature is off,
-    // otherwise the generated zfb.config.ts (which lacks the matching
-    // inline entry) would leave the `.mjs` files as orphans and any
-    // future bare-grep validator could flag them.
-    for (const file of [
       "plugins/doc-history-plugin.mjs",
       "plugins/llms-txt-plugin.mjs",
       "plugins/claude-resources-plugin.mjs",
@@ -3053,7 +3064,7 @@ describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)
         await fs.pathExists(
           projectPath("test-w7a-plugins-barebone", file),
         ),
-        `expected ${file} to be absent from barebone scaffold`,
+        `expected ${file} to be absent (orphaned after #2337)`,
       ).toBe(false);
     }
   });
@@ -3092,7 +3103,12 @@ describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)
     expect(inlinePluginRefs.length).toBe(0);
   });
 
-  it("doc-history scaffold ships tsx devDep (plugin spawns `tsx -e`)", async () => {
+  it("doc-history scaffold does NOT ship tsx devDep (package plugin imports runner directly)", async () => {
+    // #2337: doc-history-plugin.mjs was removed from the templates. The
+    // package plugin (@takazudo/zudo-doc/plugins/doc-history) imports the
+    // runner directly since @takazudo/zudo-doc ships compiled dist/ — no
+    // `tsx -e` spawn, so tsx is not needed as a devDep for this feature.
+    // tsx is still emitted for tagGovernance (scripts/tags-suggest.ts).
     const choices: UserChoices = {
       projectName: "test-w7a-dh-tsx",
       defaultLang: "en",
@@ -3105,7 +3121,7 @@ describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)
     const pkg = await fs.readJson(
       projectPath("test-w7a-dh-tsx", "package.json"),
     );
-    expect(pkg.devDependencies?.tsx).toBeTruthy();
+    expect(pkg.devDependencies?.tsx).toBeUndefined();
   });
 });
 
