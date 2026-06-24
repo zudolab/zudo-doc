@@ -20,6 +20,7 @@ import type { ZfbBuildHookContext, ZfbDevMiddlewareContext, ZfbPlugin } from "@t
 import type { SearchIndexBuildOptions, SearchIndexConfig } from "../integrations/search-index/index.js";
 import { emitSearchIndex, createSearchIndexDevMiddleware } from "../integrations/search-index/index.js";
 import { connectToZfbHandler } from "./connect-adapter.js";
+import { getBasePrefix } from "./plugin-utils.js";
 
 const plugin: ZfbPlugin = {
   name: "search-index",
@@ -44,16 +45,9 @@ const plugin: ZfbPlugin = {
     // middleware itself is base-tolerant (matches via
     // `endsWith("/search-index.json")`), so it does not need a
     // separate base-stripping pass.
-    const basePrefix = stripTrailingSlash(
-      typeof ctx.options["base"] === "string" ? ctx.options["base"] : "",
-    );
+    const basePrefix = getBasePrefix(ctx.options["base"]);
     ctx.register(`${basePrefix}/search-index.json`, connectToZfbHandler(middleware));
   },
 };
 
 export default plugin;
-
-function stripTrailingSlash(s: string): string {
-  if (typeof s !== "string" || s.length === 0) return "";
-  return s.endsWith("/") ? s.slice(0, -1) : s;
-}

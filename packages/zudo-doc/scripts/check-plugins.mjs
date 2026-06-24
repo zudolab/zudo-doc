@@ -5,8 +5,12 @@
 // that skipped compilation fails loudly instead of publishing a package whose
 // `./plugins/*` exports 404 for consumers.
 //
-// Exit 0 → all 5 plugin files exist and are non-empty.
+// Exit 0 → all 4 plugin files exist and are non-empty.
 // Exit 1 → any file is missing or empty (with a clear diagnostic message).
+//
+// connect-adapter.js is intentionally absent from this list: it is an
+// internal module imported by the other plugins via relative path and no
+// longer exported as a public subpath (#2338).
 
 import { statSync } from "node:fs";
 import { resolve, dirname } from "node:path";
@@ -16,7 +20,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = resolve(__dirname, "../dist");
 
 const PLUGIN_FILES = [
-  "plugins/connect-adapter.js",
   "plugins/doc-history.js",
   "plugins/llms-txt.js",
   "plugins/search-index.js",

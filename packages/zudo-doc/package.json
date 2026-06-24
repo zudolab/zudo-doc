@@ -163,10 +163,6 @@
       "types": "./dist/preset.d.ts",
       "default": "./dist/preset.js"
     },
-    "./plugins/connect-adapter": {
-      "types": "./dist/plugins/connect-adapter.d.ts",
-      "default": "./dist/plugins/connect-adapter.js"
-    },
     "./plugins/doc-history": {
       "types": "./dist/plugins/doc-history.d.ts",
       "default": "./dist/plugins/doc-history.js"

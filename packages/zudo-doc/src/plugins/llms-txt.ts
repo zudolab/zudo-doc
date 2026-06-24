@@ -24,6 +24,7 @@ import type { ZfbBuildHookContext, ZfbDevMiddlewareContext, ZfbPlugin } from "@t
 import type { LlmsTxtEmitOptions, LlmsTxtDevMiddlewareOptions } from "../integrations/llms-txt/index.js";
 import { emitLlmsTxt, createLlmsTxtDevMiddleware } from "../integrations/llms-txt/index.js";
 import { connectToZfbHandler } from "./connect-adapter.js";
+import { getBasePrefix } from "./plugin-utils.js";
 
 const plugin: ZfbPlugin = {
   name: "llms-txt",
@@ -54,9 +55,7 @@ const plugin: ZfbPlugin = {
     // empty and routes are `/llms.txt` etc. as expected. The middleware
     // accepts base-prefixed URLs via the matcher (see `matchLlmsRoute`
     // in `dev-middleware.ts`).
-    const basePrefix = stripTrailingSlash(
-      typeof ctx.options["base"] === "string" ? ctx.options["base"] : "",
-    );
+    const basePrefix = getBasePrefix(ctx.options["base"]);
     ctx.register(`${basePrefix}/llms.txt`, handler);
     ctx.register(`${basePrefix}/llms-full.txt`, handler);
     const locales = ctx.options["locales"];
@@ -80,8 +79,3 @@ const plugin: ZfbPlugin = {
 };
 
 export default plugin;
-
-function stripTrailingSlash(s: string): string {
-  if (typeof s !== "string" || s.length === 0) return "";
-  return s.endsWith("/") ? s.slice(0, -1) : s;
-}
