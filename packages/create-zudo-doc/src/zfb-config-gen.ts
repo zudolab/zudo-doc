@@ -3,298 +3,63 @@ import type { UserChoices } from "./prompts.js";
 /**
  * Programmatically generate zfb.config.ts from user choices.
  *
- * W7A (#1736): emits zfb plugins in the host's INLINE-OBJECT shape —
- * `{ name: "./plugins/<plugin>.mjs", options: {...} }` — not the
- * pre-cutover factory-import pattern (`import { fooPlugin } from
- * "./src/integrations/foo"`). Inline functions are not supported by zfb's
- * plugin runtime (see `@takazudo/zfb/plugins` source); plugins MUST be
- * authored as standalone `.mjs` modules referenced from `zfb.config.ts`
- * by `name`. The plugin source files are shipped by the base/feature
- * templates under `plugins/<plugin>.mjs` and `templates/features/<feature>/
- * files/plugins/<plugin>.mjs`.
+ * S5b (#2329): collapsed to the thin preset-based shape that mirrors the
+ * showcase `zfb.config.ts` after S5a. All collection wiring, plugin
+ * descriptors, markdown features, codeHighlight, resolveMarkdownLinks, and
+ * trailingSlash are now owned by `zudoDocPreset()` in
+ * `@takazudo/zudo-doc/preset`. The generated config spreads the preset
+ * result into `defineConfig` and keeps only the project-owned shell fields
+ * (`framework`, `port`, `tailwind`, `base`).
  *
  * Replaces the former astro-config-gen.ts + content-config-gen.ts pair.
  * In the zfb world, content-collection schemas live inside zfb.config.ts
  * itself — there is no separate content.config.ts.
+ *
+ * `_choices` is intentionally unused: post-S5b the emitted config is a
+ * CONSTANT. All feature variation is driven by `settings.*` (read at
+ * zfb-load time inside `zudoDocPreset()`), so the generated file is byte
+ * identical for every feature combination. The parameter is retained only
+ * for call-site compatibility (`scaffold.ts` passes `choices`). Do NOT add
+ * feature-gated branches here — wire new feature behaviour into
+ * `packages/zudo-doc/src/preset.ts` and the project's `settings.ts` instead.
  */
-export function generateZfbConfig(choices: UserChoices): string {
-  const hasDocHistory = choices.features.includes("docHistory");
-  const hasLlmsTxt = choices.features.includes("llmsTxt");
-  const hasClaudeResources = choices.features.includes("claudeResources");
-
+export function generateZfbConfig(_choices: UserChoices): string {
   const lines: string[] = [];
 
   // --- Imports ---
-  lines.push(`import { z } from "zod";`);
   lines.push(`import { defineConfig } from "zfb/config";`);
+  lines.push(`import { zudoDocPreset } from "@takazudo/zudo-doc/preset";`);
   lines.push(`import { settings } from "./src/config/settings";`);
   lines.push(`import { buildDocsSchema } from "./src/config/docs-schema";`);
-
   lines.push(``);
 
-  // --- Schema definition — delegated to the single source of truth ---
-  // buildDocsSchema() lives in src/config/docs-schema.ts and is shared by
-  // pages/_data.ts (ZfbDocsData alias) and src/types/docs-entry.ts (DocsData).
-  // tagGovernance projects: docs-schema.ts reads settings + tagVocabulary
-  // internally, so the generated zfb.config.ts needs no extra import or
-  // inline buildTagsSchema — the schema builder encapsulates all of that.
-  lines.push(`const docsSchema = buildDocsSchema();`);
-  lines.push(``);
-  lines.push(
-    `const docsSchemaJson = z.toJSONSchema(docsSchema) as Record<string, unknown>;`,
-  );
-  lines.push(``);
-
-  // --- Collection type ---
-  lines.push(`interface CollectionEntryShape {`);
-  lines.push(`  name: string;`);
-  lines.push(`  path: string;`);
-  lines.push(`  schema: Record<string, unknown>;`);
-  lines.push(`}`);
-  lines.push(``);
-
-  // --- Collections array ---
-  lines.push(`const collections: CollectionEntryShape[] = [];`);
-  lines.push(``);
-  lines.push(
-    `collections.push({ name: "docs", path: settings.docsDir, schema: docsSchemaJson });`,
-  );
-  lines.push(``);
-  // Locale collections — empty loop when locales is {} (i18n disabled).
-  lines.push(
-    `for (const [code, config] of Object.entries(settings.locales)) {`,
-  );
-  lines.push(
-    `  collections.push({ name: \`docs-\${code}\`, path: config.dir, schema: docsSchemaJson });`,
-  );
-  lines.push(`}`);
-  lines.push(``);
-  // Version collections — outer `if` short-circuits when versions is false.
-  lines.push(`if (settings.versions) {`);
-  lines.push(`  for (const version of settings.versions) {`);
-  lines.push(`    collections.push({`);
-  lines.push(`      name: \`docs-v-\${version.slug}\`,`);
-  lines.push(`      path: version.docsDir,`);
-  lines.push(`      schema: docsSchemaJson,`);
-  lines.push(`    });`);
-  lines.push(`    if (version.locales) {`);
-  lines.push(
-    `      for (const [code, config] of Object.entries(version.locales)) {`,
-  );
-  lines.push(`        collections.push({`);
-  lines.push(`          name: \`docs-v-\${version.slug}-\${code}\`,`);
-  lines.push(`          path: config.dir,`);
-  lines.push(`          schema: docsSchemaJson,`);
-  lines.push(`        });`);
-  lines.push(`      }`);
-  lines.push(`    }`);
-  lines.push(`  }`);
-  lines.push(`}`);
-  lines.push(``);
-
-  // --- Locale helpers used by integrationPlugins (always emitted because
-  //     search-index + copy-public are always-on; locale-shaped data is
-  //     consumed by search-index even when there's only the default locale).
-  lines.push(
-    `const localeArray = Object.entries(settings.locales).map(([code, locale]) => ({`,
-  );
-  lines.push(`  code,`);
-  lines.push(`  dir: locale.dir,`);
-  lines.push(`}));`);
-  lines.push(`const localeRecord = Object.fromEntries(`);
-  lines.push(
-    `  Object.entries(settings.locales).map(([code, locale]) => [code, { dir: locale.dir }]),`,
-  );
-  lines.push(`);`);
-  lines.push(``);
-
-  // --- Plugins — inline-object shape matches host. Each entry's `name`
-  //     is a relative path to a `.mjs` plugin module shipped by the
-  //     base/feature templates. zfb's plugin runtime resolves the module
-  //     and dispatches lifecycle hooks (preBuild / postBuild / devMiddleware)
-  //     on its default export. ---
-  lines.push(`const integrationPlugins = [`);
-  if (hasClaudeResources) {
-    lines.push(`  ...(settings.claudeResources`);
-    lines.push(`    ? [`);
-    lines.push(`        {`);
-    lines.push(`          name: "./plugins/claude-resources-plugin.mjs",`);
-    lines.push(`          options: {`);
-    lines.push(`            claudeDir: settings.claudeResources.claudeDir,`);
-    lines.push(`            projectRoot: settings.claudeResources.projectRoot,`);
-    lines.push(`            docsDir: settings.docsDir,`);
-    lines.push(`          },`);
-    lines.push(`        },`);
-    lines.push(`      ]`);
-    lines.push(`    : []),`);
-  }
-  if (hasDocHistory) {
-    lines.push(`  ...(settings.docHistory`);
-    lines.push(`    ? [`);
-    lines.push(`        {`);
-    lines.push(`          name: "./plugins/doc-history-plugin.mjs",`);
-    lines.push(`          options: {`);
-    lines.push(`            docsDir: settings.docsDir,`);
-    lines.push(`            locales: localeRecord,`);
-    lines.push(`            base: settings.base,`);
-    lines.push(`          },`);
-    lines.push(`        },`);
-    lines.push(`      ]`);
-    lines.push(`    : []),`);
-  }
-  // search-index is always-on (matches host) — emits dist/search-index.json
-  // even when no <Search /> widget mounts; ~few-KB cost is acceptable and
-  // keeps the dev-middleware route registered for the always-mounted
-  // search widget in pages/lib/_header-with-defaults.tsx.
-  lines.push(`  {`);
-  lines.push(`    name: "./plugins/search-index-plugin.mjs",`);
-  lines.push(`    options: {`);
-  lines.push(`      docsDir: settings.docsDir,`);
-  lines.push(`      locales: localeRecord,`);
-  lines.push(`      base: settings.base,`);
-  lines.push(`    },`);
-  lines.push(`  },`);
-  if (hasLlmsTxt) {
-    lines.push(`  ...(settings.llmsTxt`);
-    lines.push(`    ? [`);
-    lines.push(`        {`);
-    lines.push(`          name: "./plugins/llms-txt-plugin.mjs",`);
-    lines.push(`          options: {`);
-    lines.push(`            siteName: settings.siteName,`);
-    lines.push(`            siteDescription: settings.siteDescription,`);
-    lines.push(`            base: settings.base,`);
-    lines.push(`            siteUrl: settings.siteUrl,`);
-    lines.push(`            defaultLocaleDir: settings.docsDir,`);
-    lines.push(`            locales: localeArray,`);
-    lines.push(`          },`);
-    lines.push(`        },`);
-    lines.push(`      ]`);
-    lines.push(`    : []),`);
-  }
-  // copy-public is always-on (matches host) — workaround for upstream zfb
-  // gap where `zfb build` does not copy `public/` to dist/. Empty/missing
-  // public/ is a no-op, so the cost to projects without public/ is zero.
-  lines.push(`  {`);
-  lines.push(`    name: "./plugins/copy-public-plugin.mjs",`);
-  lines.push(`    options: {`);
-  lines.push(`      publicDir: "public",`);
-  lines.push(`    },`);
-  lines.push(`  },`);
-  lines.push(`];`);
+  // --- Directive vocabulary ---
+  // The seven canonical directives registered in pages/_mdx-components.ts.
+  // "details" routes to DetailsWrapper — a collapsible, NOT an admonition.
+  lines.push(`const directiveVocabulary = {`);
+  lines.push(`  note: "Note",`);
+  lines.push(`  tip: "Tip",`);
+  lines.push(`  info: "Info",`);
+  lines.push(`  warning: "Warning",`);
+  lines.push(`  danger: "Danger",`);
+  lines.push(`  caution: "Caution",`);
+  lines.push(`  details: "Details",`);
+  lines.push(`};`);
   lines.push(``);
 
   // --- Export ---
   lines.push(`export default defineConfig({`);
+  lines.push(`  // ── Host-owned shell fields ──────────────────────────────────────────────`);
   lines.push(`  framework: "preact",`);
   lines.push(`  // Pin the dev/preview port — zfb defaults to 3000, but the generated`);
   lines.push(`  // CLAUDE.md and the Tauri dev wrappers assume 4321.`);
   lines.push(`  port: 4321,`);
   lines.push(`  tailwind: { enabled: true },`);
-  lines.push(`  collections,`);
-  lines.push(`  stripMdExt: true,`);
-  lines.push(`  resolveMarkdownLinks: {`);
-  lines.push(`    enabled: true,`);
-  lines.push(`    dirs: [`);
-  lines.push(`      { dir: settings.docsDir, routePrefix: "/docs/" },`);
-  lines.push(
-    `      ...Object.entries(settings.locales).map(([code, locale]) => ({`,
-  );
-  lines.push(`        dir: locale.dir,`);
-  lines.push(`        routePrefix: \`/\${code}/docs/\`,`);
-  lines.push(`      })),`);
-  lines.push(
-    `      // Versioned collections: each version's EN dir + per-locale dirs.`,
-  );
-  lines.push(`      ...(settings.versions`);
-  lines.push(`        ? settings.versions.flatMap((version) => [`);
-  lines.push(
-    `            { dir: version.docsDir, routePrefix: \`/v/\${version.slug}/docs/\` },`,
-  );
-  lines.push(
-    `            ...Object.entries(version.locales ?? {}).map(([code, locale]) => ({`,
-  );
-  lines.push(`              dir: locale.dir,`);
-  lines.push(
-    `              routePrefix: \`/v/\${version.slug}/\${code}/docs/\`,`,
-  );
-  lines.push(`            })),`);
-  lines.push(`          ])`);
-  lines.push(`        : []),`);
-  lines.push(`    ],`);
-  lines.push(`    onBrokenLinks: "warn",`);
-  lines.push(`  },`);
+  lines.push(`  // Public URL prefix for <link rel="stylesheet"> and <script> tags.`);
   lines.push(`  base: settings.base,`);
-  lines.push(`  trailingSlash: settings.trailingSlash,`);
-  // codeHighlight — dual-theme syntect output so CSS can resolve tokens via
-  // light-dark(var(--shiki-light), var(--shiki-dark)) and code blocks follow
-  // the active light/dark toggle with no client JS. Theme names are syntect
-  // built-ins shipped with zfb (not Shiki names). Matches the host config.
-  lines.push(`  codeHighlight: {`);
-  lines.push(`    themeLight: "base16-ocean.light",`);
-  lines.push(`    themeDark: "base16-ocean.dark",`);
-  lines.push(`  },`);
-  // markdown.features block — mirrors the zfb next.13 opt-in model.
-  //
-  // Value-shape rule (empirically verified against the next.13 Rust loader):
-  // object-typed features (githubAutolinks, codeEnrichment, imageDimensions,
-  // linkValidation) REJECT the `true` shorthand and must be given an options
-  // object (`{}` or fields). Boolean-OR-object features (githubAlerts,
-  // readingTime, codeTabs, mermaid, headingMarkerToc) accept `true`.
-  // (directives is object-typed — it takes a `name → component` map, not `true`.)
-  // Note: imageEnlarge was formerly a Boolean-OR-object feature here, but
-  // next.18 hard-removed it from the Rust config schema — it is now
-  // re-implemented in userland via an MDX p-override in pages/_mdx-components.ts
-  // (gated on settings.imageEnlarge). Do NOT add imageEnlarge back here.
-  //
-  // Intentionally omitted features (known-blocked at zfb next.13):
-  //   - tocExport: injects indented `export const toc = [...]` that MDX
-  //     parses as content, breaking esbuild with "Expected }" across the
-  //     whole corpus. Re-enable when the upstream Rust pass emits the
-  //     export at column 0. (Filed as zudolab/zudo-doc#1814.)
-  //   - ruby: the `^{...}` annotation syntax 500s the SSR render at next.13.
-  //     A registered stub cannot fix it — the error is inside zfb's Rust
-  //     ruby pass. Re-enable when the upstream crate is fixed. (#1815.)
-  //   - transclude: `:::include{file="..."}` 500s SSR (no registered
-  //     <include> renderer); `![[...]]` wikilink form is a no-op.
-  //     Re-enable when a transclude renderer is wired.
-  //
-  // githubAutolinks is omitted intentionally: the showcase hardcodes
-  // `repo: "zudolab/zudo-doc"` but a scaffolded project belongs to a
-  // different repo. Users can add `githubAutolinks: { repo: "owner/repo" }`
-  // to their zfb.config.ts after scaffolding.
-  lines.push(`  markdown: {`);
-  lines.push(`    features: {`);
-  lines.push(`      // Former-Core features (were always-on before zfb next.12).`);
-  lines.push(`      // imageEnlarge was a former-Core feature but was hard-removed in zfb`);
-  lines.push(`      // next.18 — it is now re-implemented via an MDX p-override.`);
-  lines.push(`      // Admonitions recipe: register the :::name directive vocabulary`);
-  lines.push(`      // (note/tip/info/warning/danger/caution/details) → components.`);
-  lines.push(`      directives: {`);
-  lines.push(`        note: "Note",`);
-  lines.push(`        tip: "Tip",`);
-  lines.push(`        info: "Info",`);
-  lines.push(`        warning: "Warning",`);
-  lines.push(`        danger: "Danger",`);
-  lines.push(`        caution: "Caution",`);
-  lines.push(`        details: "Details", // collapsible — routes to DetailsWrapper`);
-  lines.push(`      },`);
-  lines.push(`      mermaid: true,`);
-  lines.push(`      headingMarkerToc: true,`);
-  lines.push(`      // Safe opt-in features.`);
-  lines.push(`      githubAlerts: true,`);
-  lines.push(`      readingTime: true,`);
-  lines.push(`      codeEnrichment: {},`);
-  lines.push(`      codeTabs: true,`);
-  lines.push(`      imageDimensions: {},`);
-  lines.push(`      // warn-only link validation — failOnBroken: false never fails the build.`);
-  lines.push(`      linkValidation: { failOnBroken: false },`);
-  lines.push(`      // Heading-ID (anchor) strategy — single source of truth in`);
-  lines.push(`      // settings.headingIdStrategy, also mirrored by the host TOC builder`);
-  lines.push(`      // (pages/lib/_extract-headings.ts) so TOC anchors match rendered ids.`);
-  lines.push(`      headingIds: { strategy: settings.headingIdStrategy },`);
-  lines.push(`    },`);
-  lines.push(`  },`);
-  lines.push(`  plugins: integrationPlugins,`);
+  lines.push(``);
+  lines.push(`  // ── Preset-owned fields (content collections, plugins, markdown, …) ────────`);
+  lines.push(`  ...zudoDocPreset({ settings, buildDocsSchema, directiveVocabulary }),`);
   lines.push(`});`);
 
   return lines.join("\n") + "\n";

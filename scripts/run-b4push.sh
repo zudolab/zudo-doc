@@ -108,11 +108,11 @@ else
 fi
 
 # ── Step 7: Z-index codegen drift check ──────────────
-# Pure-Node check (scripts/gen-z-index.mjs --check) — re-runs the z-index
-# @theme codegen into a buffer and fails if src/styles/global.css drifts from
-# src/config/z-index-tokens.ts (the single source of truth). Also the
-# structural guard for CSS-file raw z-index: every z-index now flows through
-# this generated block.
+# pnpm check:z-index routes through the @takazudo/zudo-doc `gen-z-index` bin
+# (--check mode, S9b #2334) — re-runs the z-index @theme codegen into a buffer
+# and fails if src/styles/global.css drifts from src/config/z-index-tokens.ts
+# (the single source of truth). Also the structural guard for CSS-file raw
+# z-index: every z-index now flows through this generated block.
 step "Z-index codegen drift check (check:z-index)"
 if (cd "$ROOT_DIR" && pnpm check:z-index); then
   pass "Z-index codegen drift check passed"

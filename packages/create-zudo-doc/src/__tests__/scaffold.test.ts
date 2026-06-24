@@ -1924,14 +1924,12 @@ describe("scaffold — plugin copying and settings", () => {
     );
   });
 
-  it("includes z-index codegen scripts (#2148)", async () => {
+  it("includes z-index codegen scripts (#2148, bin re-pointed to package S9b #2334)", async () => {
     const pkg = await fs.readJson(
       projectPath("test-minimal", "package.json"),
     );
-    expect(pkg.scripts["gen:z-index"]).toBe("node scripts/gen-z-index.mjs");
-    expect(pkg.scripts["check:z-index"]).toBe(
-      "node scripts/gen-z-index.mjs --check",
-    );
+    expect(pkg.scripts["gen:z-index"]).toBe("gen-z-index");
+    expect(pkg.scripts["check:z-index"]).toBe("gen-z-index --check");
   });
 
   it("does not emit check:pages (host-only gate — template stubs not type-clean, #2018)", async () => {
@@ -2276,7 +2274,8 @@ describe("scaffold — tagGovernance feature", () => {
     const pkg = await fs.readJson(
       projectPath("test-tag-gov-on", "package.json"),
     );
-    expect(pkg.scripts["tags:audit"]).toBe("tsx scripts/tags-audit.ts");
+    // S9b #2334: tags:audit now uses the package bin
+    expect(pkg.scripts["tags:audit"]).toBe("tags-audit");
     expect(pkg.scripts["tags:suggest"]).toBe("tsx scripts/tags-suggest.ts");
     for (const dep of [
       "string-similarity",
@@ -2539,9 +2538,20 @@ describe("drift detection — generator vs main project settings", () => {
       "utf-8",
     );
 
+    // Fields intentionally absent from generated projects (with justification).
+    // "Opt-in showcase-only" fields are set in the showcase's src/config/settings.ts
+    // but must NOT appear in generated projects because the default (absent/undefined)
+    // is the correct value for a blank project.
+    const SHOWCASE_ONLY_FIELDS = new Set([
+      // Showcase-specific: only zudolab/zudo-doc should auto-link issue refs in its own docs.
+      // Generated projects must opt in explicitly — omitting gives "no autolinks" (old behaviour).
+      // See zudo-doc#2321 Wave-0 correctness fix.
+      "githubAutolinksRepo",
+    ]);
+
     // Check that every field in the main settings exists in the generated output
     const missingFields = mainFields.filter(
-      (field) => !generated.includes(`${field}:`),
+      (field) => !SHOWCASE_ONLY_FIELDS.has(field) && !generated.includes(`${field}:`),
     );
     expect(
       missingFields,
@@ -2622,21 +2632,24 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
       expect(config).toContain("tailwind:");
     });
 
-    it("zfb.config.ts declares docs collection derived from settings.docsDir", async () => {
+    it("zfb.config.ts uses zudoDocPreset (S5b — collections/plugins/markdown delegated to preset)", async () => {
+      // S5b (#2329): the thin preset-based shape delegates collections, plugins,
+      // markdown features, codeHighlight, resolveMarkdownLinks, and trailingSlash
+      // to zudoDocPreset() from @takazudo/zudo-doc/preset. The generated config
+      // spreads the result and keeps only the host-owned shell fields.
       const config = await fs.readFile(
         projectPath("test-zfb-minimal", "zfb.config.ts"),
         "utf-8",
       );
-      expect(config).toContain('"docs"');
-      expect(config).toContain("settings.docsDir");
-    });
-
-    it("zfb.config.ts has a plugins array", async () => {
-      const config = await fs.readFile(
-        projectPath("test-zfb-minimal", "zfb.config.ts"),
-        "utf-8",
+      expect(config).toContain(
+        'import { zudoDocPreset } from "@takazudo/zudo-doc/preset"',
       );
-      expect(config).toContain("plugins:");
+      expect(config).toContain(
+        "...zudoDocPreset({ settings, buildDocsSchema, directiveVocabulary })",
+      );
+      // The inline boilerplate must NOT appear — it lives inside the preset.
+      expect(config).not.toContain("  collections,");
+      expect(config).not.toContain("plugins: integrationPlugins,");
     });
 
     it("src/content.config.ts is NOT emitted (content config lives in zfb.config.ts)", async () => {
@@ -2665,9 +2678,13 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
     // pages/lib code or by the zfb engine bundler. Each was caught by
     // the consumer-build verification gate (one missing-dep error per
     // round). Without these, `zfb build` fails before any page compiles:
-    //   - zod                       → zfb-config-gen emits
-    //                                 `import { z } from "zod"` for the
-    //                                 collection schema + z.toJSONSchema()
+    //   - zod                       → @takazudo/zudo-doc/preset calls
+    //                                 z.toJSONSchema internally; zod is a
+    //                                 required peer dep of the preset module.
+    //                                 S5b: no longer emitted directly by
+    //                                 zfb-config-gen, but still needed so the
+    //                                 preset's bare `import { z } from "zod"`
+    //                                 resolves in the consumer's node_modules.
     //   - preact-render-to-string   → zfb's emitted entry.mjs SSR's pages
     //                                 via `renderToString` from this pkg
     //   - katex                     → pages/lib/_math-block.tsx renders
@@ -2751,25 +2768,43 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
       await scaffold(choices);
     });
 
-    it("zfb.config.ts contains locale collection entries for i18n", async () => {
+    it("zfb.config.ts uses preset (feature data is in settings, not inlined in config)", async () => {
+      // S5b (#2329): the thin preset-based config is feature-agnostic.
+      // Collections (including locale collections) and plugin wiring are
+      // driven by settings.* at zfb-load time inside zudoDocPreset().
+      // No inline locale loops, plugin conditionals, or docHistory/llmsTxt/
+      // claudeResources mentions are needed in the generated file.
       const config = await fs.readFile(
         projectPath("test-zfb-full", "zfb.config.ts"),
         "utf-8",
       );
-      // Locale collections are derived at zfb-load time from
-      // settings.locales, so the literal locale ids (docs-ja, etc.)
-      // do not appear in the emitted file. Assert the loop is wired.
-      expect(config).toContain("Object.entries(settings.locales)");
+      expect(config).toContain(
+        'import { zudoDocPreset } from "@takazudo/zudo-doc/preset"',
+      );
+      expect(config).toContain(
+        "...zudoDocPreset({ settings, buildDocsSchema, directiveVocabulary })",
+      );
+      // Inline collection loops must NOT appear — they live in the preset.
+      expect(config).not.toContain("Object.entries(settings.locales)");
+      // Plugin conditionals must NOT appear — they live in the preset.
+      expect(config).not.toContain("docHistory-plugin");
+      expect(config).not.toContain("llms-txt-plugin");
+      expect(config).not.toContain("claude-resources-plugin");
     });
 
-    it("zfb.config.ts wires docHistory, llmsTxt, and claudeResources plugins", async () => {
+    it("zfb.config.ts wires docHistory/llmsTxt/claudeResources via preset (not inline)", async () => {
+      // S5b (#2329): feature routing is entirely settings-driven via the
+      // preset. The generated config uses zudoDocPreset() — there are no
+      // inline `settings.docHistory`, `settings.llmsTxt`, or
+      // `settings.claudeResources` conditionals in the config file itself.
       const config = await fs.readFile(
         projectPath("test-zfb-full", "zfb.config.ts"),
         "utf-8",
       );
-      expect(config).toContain("docHistory");
-      expect(config).toContain("llmsTxt");
-      expect(config).toContain("claudeResources");
+      // The config itself must not contain these — they live in the preset.
+      expect(config).not.toContain("settings.docHistory");
+      expect(config).not.toContain("settings.llmsTxt");
+      expect(config).not.toContain("settings.claudeResources");
     });
 
     // imageEnlarge is a layout island, not a markdown rehype plugin in
@@ -3023,7 +3058,13 @@ describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)
     }
   });
 
-  it("all-features scaffold ships every plugin .mjs the zfb config references", async () => {
+  it("all-features scaffold ships copy-public-plugin.mjs (still project-local via preset)", async () => {
+    // S5b (#2329): the thin preset-based zfb.config.ts has no inline
+    // `./plugins/*.mjs` references — plugins are referenced via
+    // `@takazudo/zudo-doc/plugins/*` package specifiers inside the preset.
+    // The only project-local plugin that remains is copy-public-plugin.mjs,
+    // referenced as `"./plugins/copy-public-plugin.mjs"` inside the preset
+    // runtime at zfb-load time. It must still be shipped by the base template.
     const choices: UserChoices = {
       projectName: "test-w7a-plugins-all",
       defaultLang: "en",
@@ -3033,27 +3074,22 @@ describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)
       packageManager: "pnpm",
     };
     await scaffold(choices);
+    // copy-public-plugin.mjs must be present (preset references it project-locally)
+    expect(
+      await fs.pathExists(
+        projectPath("test-w7a-plugins-all", "plugins/copy-public-plugin.mjs"),
+      ),
+      "expected plugins/copy-public-plugin.mjs to ship in every scaffold",
+    ).toBe(true);
+    // The thin generated config must not reference any ./plugins/*.mjs inline
     const config = await fs.readFile(
       projectPath("test-w7a-plugins-all", "zfb.config.ts"),
       "utf-8",
     );
-    // For every `./plugins/<name>.mjs` reference in zfb.config.ts, the
-    // file must actually exist at that path. This is the precise gate
-    // the W6B verification was hitting: imports without files = bundler
-    // failure at config load.
-    const matches = [
+    const inlinePluginRefs = [
       ...config.matchAll(/"\.\/plugins\/([\w-]+\.mjs)"/g),
     ];
-    expect(matches.length).toBeGreaterThan(0);
-    for (const match of matches) {
-      const relPath = `plugins/${match[1]!}`;
-      expect(
-        await fs.pathExists(
-          projectPath("test-w7a-plugins-all", relPath),
-        ),
-        `zfb.config.ts references ${relPath} but the file was not shipped`,
-      ).toBe(true);
-    }
+    expect(inlinePluginRefs.length).toBe(0);
   });
 
   it("doc-history scaffold ships tsx devDep (plugin spawns `tsx -e`)", async () => {

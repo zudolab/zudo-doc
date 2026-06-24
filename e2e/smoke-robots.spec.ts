@@ -3,7 +3,8 @@ import { readDistFile } from "./smoke-dist-helper";
 
 // The smoke fixture has noindex: true + siteUrl: "" + sitemap: false, so only
 // the disallow-all branch is exercised here. The allow branch (noindex: false
-// with an optional Sitemap: line) is unit-covered only — no existing fixture
+// with an optional Sitemap: line) is unit-covered in
+// packages/zudo-doc/src/__tests__/robots.test.ts — no existing fixture
 // combines noindex: false with a non-empty siteUrl.
 
 test.describe("robots.txt: noindex fixture emits disallow-all", () => {

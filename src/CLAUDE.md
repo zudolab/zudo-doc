@@ -105,6 +105,14 @@ Element dimensions (icons, toggles, etc.) follow a two-tier approach:
 - Tokenize when 2+ components share the same size for the same purpose (e.g., "standard icon")
 - Keep arbitrary values for layout dimensions, modal sizes, and component-specific one-offs
 
+## Z-index Tooling (gen-z-index)
+
+The `@theme` z-index block in `src/styles/global.css` is **code-generated** from the single source of truth in `src/config/z-index-tokens.ts`. The tooling that does this now ships as a package bin from `@takazudo/zudo-doc` (S9b #2334):
+
+- **Source of truth (project-side):** `src/config/z-index-tokens.ts` — defines `Z_INDEX_TIERS`. Edit here; never hand-edit the generated `@theme` block.
+- **Generator bin (package-side):** `gen-z-index` — provided by `@takazudo/zudo-doc`. Reads `src/config/z-index-tokens.ts` and writes the `GENERATED:Z_INDEX_BEGIN…END` block in `src/styles/global.css`.
+- **Scripts:** `pnpm gen:z-index` (rewrite) · `pnpm check:z-index` (drift check, used by b4push).
+
 ## CSS & Components
 
 - Before writing or editing CSS, Tailwind classes, color tokens, or component markup, invoke `/zudo-doc-design-system` to load project-specific rules

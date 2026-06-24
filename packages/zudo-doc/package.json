@@ -155,21 +155,91 @@
       "types": "./dist/icons/index.d.ts",
       "default": "./dist/icons/index.js"
     },
+    "./robots": {
+      "types": "./dist/robots.d.ts",
+      "default": "./dist/robots.js"
+    },
+    "./preset": {
+      "types": "./dist/preset.d.ts",
+      "default": "./dist/preset.js"
+    },
+    "./plugins/connect-adapter": {
+      "types": "./dist/plugins/connect-adapter.d.ts",
+      "default": "./dist/plugins/connect-adapter.js"
+    },
+    "./plugins/doc-history": {
+      "types": "./dist/plugins/doc-history.d.ts",
+      "default": "./dist/plugins/doc-history.js"
+    },
+    "./plugins/llms-txt": {
+      "types": "./dist/plugins/llms-txt.d.ts",
+      "default": "./dist/plugins/llms-txt.js"
+    },
+    "./plugins/search-index": {
+      "types": "./dist/plugins/search-index.d.ts",
+      "default": "./dist/plugins/search-index.js"
+    },
+    "./plugins/claude-resources": {
+      "types": "./dist/plugins/claude-resources.d.ts",
+      "default": "./dist/plugins/claude-resources.js"
+    },
+    "./content-admonition": {
+      "types": "./dist/content-admonition/index.d.ts",
+      "default": "./dist/content-admonition/index.js"
+    },
+    "./code-group": {
+      "types": "./dist/code-group/index.d.ts",
+      "default": "./dist/code-group/index.js"
+    },
+    "./math-block": {
+      "types": "./dist/math-block/index.d.ts",
+      "default": "./dist/math-block/index.js"
+    },
+    "./extract-headings": {
+      "types": "./dist/extract-headings/index.d.ts",
+      "default": "./dist/extract-headings/index.js"
+    },
+    "./settings": {
+      "types": "./dist/settings.d.ts",
+      "default": "./dist/settings.js"
+    },
+    "./mdx-components": {
+      "types": "./dist/mdx-components/index.d.ts",
+      "default": "./dist/mdx-components/index.js"
+    },
     "./safelist.css": "./dist/safelist.css",
     "./safelist": "./dist/safelist.css",
     "./content.css": "./dist/content.css",
-    "./page-loading.css": "./dist/page-loading.css"
+    "./page-loading.css": "./dist/page-loading.css",
+    "./features.css": "./dist/features.css",
+    "./tags-audit": {
+      "types": "./dist/tags-audit.d.ts",
+      "default": "./dist/tags-audit.js"
+    },
+    "./color-scheme-utils": {
+      "types": "./dist/color-scheme-utils.d.ts",
+      "default": "./dist/color-scheme-utils.js"
+    },
+    "./design-token-panel-bootstrap": {
+      "types": "./dist/design-token-panel-bootstrap.d.ts",
+      "default": "./dist/design-token-panel-bootstrap.js"
+    }
+  },
+  "bin": {
+    "gen-z-index": "./bin/gen-z-index.mjs",
+    "tags-audit": "./bin/tags-audit.mjs"
   },
   "scripts": {
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsup",
     "dev": "tsup --watch",
     "prepare": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsup --silent",
-    "prepack": "node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs",
+    "prepack": "node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs && node scripts/check-features-css.mjs && node scripts/check-plugins.mjs",
     "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "files": [
     "dist",
+    "bin",
     "README.md"
   ],
   "peerDependencies": {
@@ -178,7 +248,9 @@
     "@takazudo/zfb-runtime": "^0.1.0-next.61",
     "@takazudo/zudo-doc-history-server": "^0.2.21",
     "@takazudo/zdtp": "^0.3.3",
-    "shiki": "^4.0.2"
+    "shiki": "^4.0.2",
+    "zod": "^4.3.6",
+    "katex": "^0.16.0"
   },
   "peerDependenciesMeta": {
     "@takazudo/zudo-doc-history-server": {
@@ -188,6 +260,9 @@
       "optional": true
     },
     "shiki": {
+      "optional": true
+    },
+    "katex": {
       "optional": true
     }
   },
@@ -203,6 +278,7 @@
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
     "vitest": "^4.1.0",
+    "zod": "^4.3.6",
     "@takazudo/zfb": "0.1.0-next.61",
     "@takazudo/zfb-runtime": "0.1.0-next.61"
   }
