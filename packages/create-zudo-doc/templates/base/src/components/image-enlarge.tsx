@@ -1,12 +1,13 @@
-"use client";
-
-// W6A stub — no-op default + ImageEnlargeSsrFallback named exports.
+// W6A stub — no-op default + ImageEnlarge / ImageEnlargeSsrFallback exports.
 //
-// When the imageEnlarge feature is enabled, the feature template
-// overwrites this file with the real island and SSR fallback. Generated
-// projects without the feature ship the no-op so the unconditional
-// `pages/lib/_body-end-islands` import resolves (the body-end islands
-// renderer references both the default and the SSR fallback).
+// The real ImageEnlarge island and its SSR fallback now ship from the
+// package (`@takazudo/zudo-doc/image-enlarge`); the unconditional
+// `pages/lib/_body-end-islands.tsx` imports them directly from there. When
+// the imageEnlarge feature is enabled the feature template overwrites this
+// file with a re-export shim pointing at the package island. Generated
+// projects without the feature ship this no-op so any project-local code
+// that references the `@/components/image-enlarge` path still resolves (the
+// body-end renderer references both the default and the SSR fallback).
 import type { JSX } from "preact";
 
 function ImageEnlarge(): JSX.Element | null {
@@ -15,6 +16,8 @@ function ImageEnlarge(): JSX.Element | null {
 ImageEnlarge.displayName = "ImageEnlarge";
 
 export default ImageEnlarge;
+
+export { ImageEnlarge };
 
 export function ImageEnlargeSsrFallback(): JSX.Element | null {
   return null;

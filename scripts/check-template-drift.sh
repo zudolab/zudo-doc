@@ -56,6 +56,14 @@ fi
 declare -A DIRECTIVE_EXEMPT=(
   ["base/src/components/desktop-sidebar-toggle.tsx"]=1
   ["base/src/components/preset-generator.tsx"]=1
+  # S2 (#2344) — sidebar-tree.tsx, sidebar-toggle.tsx, site-tree-nav.tsx (base)
+  # and desktop-sidebar-toggle.tsx (sidebarToggle feature overlay) are thin
+  # re-export stubs.  "use client" lives in the package island source;
+  # the local shim does not need to repeat it.
+  ["base/src/components/sidebar-tree.tsx"]=1
+  ["base/src/components/sidebar-toggle.tsx"]=1
+  ["base/src/components/site-tree-nav.tsx"]=1
+  ["features/sidebarToggle/files/src/components/desktop-sidebar-toggle.tsx"]=1
 )
 
 TEMPLATES_DIR="$ROOT_DIR/packages/create-zudo-doc/templates"

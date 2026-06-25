@@ -219,6 +219,210 @@
     "./design-token-panel-bootstrap": {
       "types": "./dist/design-token-panel-bootstrap.d.ts",
       "default": "./dist/design-token-panel-bootstrap.js"
+    },
+    "./render-markdown": {
+      "types": "./dist/render-markdown/index.d.ts",
+      "default": "./dist/render-markdown/index.js"
+    },
+    "./slug": {
+      "types": "./dist/slug/index.d.ts",
+      "default": "./dist/slug/index.js"
+    },
+    "./smart-break": {
+      "types": "./dist/smart-break/index.d.ts",
+      "default": "./dist/smart-break/index.js"
+    },
+    "./use-modal-dialog": {
+      "types": "./dist/use-modal-dialog/index.d.ts",
+      "default": "./dist/use-modal-dialog/index.js"
+    },
+    "./island-types": {
+      "types": "./dist/island-types/index.d.ts",
+      "default": "./dist/island-types/index.js"
+    },
+    "./url-helpers": {
+      "types": "./dist/url-helpers/index.d.ts",
+      "default": "./dist/url-helpers/index.js"
+    },
+    "./factory-context": {
+      "types": "./dist/factory-context/index.d.ts",
+      "default": "./dist/factory-context/index.js"
+    },
+    "./compose-meta-title": {
+      "types": "./dist/compose-meta-title/index.d.ts",
+      "default": "./dist/compose-meta-title/index.js"
+    },
+    "./frontmatter-preview-data": {
+      "types": "./dist/frontmatter-preview-data/index.d.ts",
+      "default": "./dist/frontmatter-preview-data/index.js"
+    },
+    "./tree-nav-shared": {
+      "types": "./dist/tree-nav-shared/index.d.ts",
+      "default": "./dist/tree-nav-shared/index.js"
+    },
+    "./sidebar-tree-island": {
+      "types": "./dist/sidebar-tree-island/index.d.ts",
+      "default": "./dist/sidebar-tree-island/index.js"
+    },
+    "./sidebar-toggle-island": {
+      "types": "./dist/sidebar-toggle-island/index.d.ts",
+      "default": "./dist/sidebar-toggle-island/index.js"
+    },
+    "./desktop-sidebar-toggle-island": {
+      "types": "./dist/desktop-sidebar-toggle-island/index.d.ts",
+      "default": "./dist/desktop-sidebar-toggle-island/index.js"
+    },
+    "./site-tree-nav-island": {
+      "types": "./dist/site-tree-nav-island/index.d.ts",
+      "default": "./dist/site-tree-nav-island/index.js"
+    },
+    "./image-enlarge": {
+      "types": "./dist/image-enlarge/index.d.ts",
+      "default": "./dist/image-enlarge/index.js"
+    },
+    "./mermaid-enlarge": {
+      "types": "./dist/mermaid-enlarge/index.d.ts",
+      "default": "./dist/mermaid-enlarge/index.js"
+    },
+    "./ai-chat-modal": {
+      "types": "./dist/ai-chat-modal/index.d.ts",
+      "default": "./dist/ai-chat-modal/index.js"
+    },
+    "./doc-history": {
+      "types": "./dist/doc-history/index.d.ts",
+      "default": "./dist/doc-history/index.js"
+    },
+    "./nav-scope": {
+      "types": "./dist/nav-scope/index.d.ts",
+      "default": "./dist/nav-scope/index.js"
+    },
+    "./nav-data-prep": {
+      "types": "./dist/nav-data-prep/index.d.ts",
+      "default": "./dist/nav-data-prep/index.js"
+    },
+    "./sidebar-utils": {
+      "types": "./dist/sidebar-utils/index.d.ts",
+      "default": "./dist/sidebar-utils/index.js"
+    },
+    "./search-widget-script": {
+      "types": "./dist/search-widget-script/index.d.ts",
+      "default": "./dist/search-widget-script/index.js"
+    },
+    "./search-widget": {
+      "types": "./dist/search-widget/index.d.ts",
+      "default": "./dist/search-widget/index.js"
+    },
+    "./head-with-defaults": {
+      "types": "./dist/head-with-defaults/index.d.ts",
+      "default": "./dist/head-with-defaults/index.js"
+    },
+    "./sidebar-prepaint": {
+      "types": "./dist/sidebar-prepaint/index.d.ts",
+      "default": "./dist/sidebar-prepaint/index.js"
+    },
+    "./sidebar-with-defaults": {
+      "types": "./dist/sidebar-with-defaults/index.d.ts",
+      "default": "./dist/sidebar-with-defaults/index.js"
+    },
+    "./footer-with-defaults": {
+      "types": "./dist/footer-with-defaults/index.d.ts",
+      "default": "./dist/footer-with-defaults/index.js"
+    },
+    "./header-with-defaults": {
+      "types": "./dist/header-with-defaults/index.d.ts",
+      "default": "./dist/header-with-defaults/index.js"
+    },
+    "./doc-page-shell": {
+      "types": "./dist/doc-page-shell/index.d.ts",
+      "default": "./dist/doc-page-shell/index.js"
+    },
+    "./doc-page-props": {
+      "types": "./dist/doc-page-props/index.d.ts",
+      "default": "./dist/doc-page-props/index.js"
+    },
+    "./locale-merge": {
+      "types": "./dist/locale-merge/index.d.ts",
+      "default": "./dist/locale-merge/index.js"
+    },
+    "./doc-route-paths": {
+      "types": "./dist/doc-route-paths/index.d.ts",
+      "default": "./dist/doc-route-paths/index.js"
+    },
+    "./nav-source-cache": {
+      "types": "./dist/nav-source-cache/index.d.ts",
+      "default": "./dist/nav-source-cache/index.js"
+    },
+    "./nav-source-docs": {
+      "types": "./dist/nav-source-docs/index.d.ts",
+      "default": "./dist/nav-source-docs/index.js"
+    },
+    "./doc-route-entries": {
+      "types": "./dist/doc-route-entries/index.d.ts",
+      "default": "./dist/doc-route-entries/index.js"
+    },
+    "./route-enumerators": {
+      "types": "./dist/route-enumerators/index.d.ts",
+      "default": "./dist/route-enumerators/index.js"
+    },
+    "./github-helpers": {
+      "types": "./dist/github-helpers/index.d.ts",
+      "default": "./dist/github-helpers/index.js"
+    },
+    "./tag-helpers": {
+      "types": "./dist/tag-helpers/index.d.ts",
+      "default": "./dist/tag-helpers/index.js"
+    },
+    "./doc-metainfo-area": {
+      "types": "./dist/doc-metainfo-area/index.d.ts",
+      "default": "./dist/doc-metainfo-area/index.js"
+    },
+    "./doc-tags-area": {
+      "types": "./dist/doc-tags-area/index.d.ts",
+      "default": "./dist/doc-tags-area/index.js"
+    },
+    "./doc-pager": {
+      "types": "./dist/doc-pager/index.d.ts",
+      "default": "./dist/doc-pager/index.js"
+    },
+    "./doc-body-end": {
+      "types": "./dist/doc-body-end/index.d.ts",
+      "default": "./dist/doc-body-end/index.js"
+    },
+    "./doc-history-area": {
+      "types": "./dist/doc-history-area/index.d.ts",
+      "default": "./dist/doc-history-area/index.js"
+    },
+    "./doc-content-header": {
+      "types": "./dist/doc-content-header/index.d.ts",
+      "default": "./dist/doc-content-header/index.js"
+    },
+    "./doc-page-renderer": {
+      "types": "./dist/doc-page-renderer/index.d.ts",
+      "default": "./dist/doc-page-renderer/index.js"
+    },
+    "./inline-version-switcher": {
+      "types": "./dist/inline-version-switcher/index.d.ts",
+      "default": "./dist/inline-version-switcher/index.js"
+    },
+    "./versions-page": {
+      "types": "./dist/versions-page/index.d.ts",
+      "default": "./dist/versions-page/index.js"
+    },
+    "./tag-pages": {
+      "types": "./dist/tag-pages/index.d.ts",
+      "default": "./dist/tag-pages/index.js"
+    },
+    "./category-nav": {
+      "types": "./dist/category-nav/index.d.ts",
+      "default": "./dist/category-nav/index.js"
+    },
+    "./category-tree-nav": {
+      "types": "./dist/category-tree-nav/index.d.ts",
+      "default": "./dist/category-tree-nav/index.js"
+    },
+    "./site-tree-nav": {
+      "types": "./dist/site-tree-nav/index.d.ts",
+      "default": "./dist/site-tree-nav/index.js"
     }
   },
   "bin": {
@@ -226,9 +430,9 @@
     "tags-audit": "./bin/tags-audit.mjs"
   },
   "scripts": {
-    "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsup",
+    "build": "tsup && tsc -p tsconfig.build.json",
     "dev": "tsup --watch",
-    "prepare": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsup --silent",
+    "prepare": "tsup --silent && tsc -p tsconfig.build.json",
     "prepack": "node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs && node scripts/check-features-css.mjs && node scripts/check-plugins.mjs",
     "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc --noEmit"
@@ -246,7 +450,8 @@
     "@takazudo/zdtp": "^0.3.3",
     "shiki": "^4.0.2",
     "zod": "^4.3.6",
-    "katex": "^0.16.0"
+    "katex": "^0.16.0",
+    "diff": "^8.0.0"
   },
   "peerDependenciesMeta": {
     "@takazudo/zudo-doc-history-server": {
@@ -259,6 +464,9 @@
       "optional": true
     },
     "katex": {
+      "optional": true
+    },
+    "diff": {
       "optional": true
     }
   },

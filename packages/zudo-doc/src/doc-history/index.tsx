@@ -1,15 +1,23 @@
 "use client";
 
-// preact/compat shim — see src/components/ai-chat-modal.tsx for rationale.
+/** @jsxRuntime automatic */
+/** @jsxImportSource preact */
+
+// DocHistory island — relocated from src/components/doc-history.tsx (epic #2344, S4).
+// Uses the shared hook and types shipped by S1a instead of re-inlining them:
+//   - useModalDialog from @takazudo/zudo-doc/use-modal-dialog (open/close sync, focus management)
+//   - DocHistoryData / DocHistoryEntry from @takazudo/zudo-doc/island-types
+//   - SmartBreak from @takazudo/zudo-doc/smart-break
+//
+// CSS: island-coupled .diff-* rules are now in packages/zudo-doc/src/features.css
+// (moved from src/styles/global.css in this same commit).
+
 import { useState, useEffect, useCallback, useMemo, useRef } from "preact/compat";
-import type { DocHistoryData, DocHistoryEntry } from "@/types/doc-history";
-import { SmartBreak } from "@/utils/smart-break";
-import { History, Close, ArrowLeft } from "@takazudo/zudo-doc/icons";
-// After zudolab/zudo-doc#1335 (E2 task 2 half B) the host components
-// pull lifecycle event names from the v2 transitions module rather
-// than hard-coding `astro:*` literals.
-import { AFTER_NAVIGATE_EVENT } from "@takazudo/zudo-doc/transitions";
-import { useModalDialog } from "@/hooks/use-modal-dialog";
+import type { DocHistoryData, DocHistoryEntry } from "../island-types/index.js";
+import { SmartBreak } from "../smart-break/index.js";
+import { History, Close, ArrowLeft } from "../icons/index.js";
+import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
+import { useModalDialog } from "../use-modal-dialog/index.js";
 
 interface DocHistoryProps {
   slug: string;
@@ -176,9 +184,11 @@ function DiffViewer({
   showBackButton: boolean;
 }) {
   const [changes, setChanges] = useState<DiffChanges | null>(null);
+  const [diffError, setDiffError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    setDiffError(null);
     getCachedDiff(
       selection.older.hash,
       selection.newer.hash,
@@ -186,6 +196,10 @@ function DiffViewer({
       selection.newer.content,
     ).then((result) => {
       if (!cancelled) setChanges(result);
+    }).catch((e: unknown) => {
+      if (!cancelled) {
+        setDiffError(e instanceof Error ? e.message : "Failed to compute diff");
+      }
     });
     return () => { cancelled = true; };
   }, [selection.older.hash, selection.newer.hash]);
@@ -220,7 +234,10 @@ function DiffViewer({
       </div>
 
       {/* Side-by-side diff — shows a spinner while the diff module lazy-loads */}
-      {!changes && <Spinner />}
+      {diffError && (
+        <div className="px-hsp-lg py-vsp-lg text-danger text-small">{diffError}</div>
+      )}
+      {!changes && !diffError && <Spinner />}
       <div className={`flex-1 overflow-auto${!changes ? " hidden" : ""}`}>
         <table className="w-full border-collapse" style={{ tableLayout: "fixed" }}>
           <colgroup>
@@ -628,3 +645,5 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
     </>
   );
 }
+
+DocHistory.displayName = "DocHistory";

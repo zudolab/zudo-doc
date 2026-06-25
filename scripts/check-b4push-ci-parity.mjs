@@ -83,6 +83,14 @@ const REQUIRED_CI_GUARDS = [
     comment: "Package safelist drift check (#1982)",
   },
   {
+    // No-host-alias-in-package: node scripts/check-no-host-alias-in-package.mjs
+    // (CI) / pnpm check:no-host-alias-in-package (b4push). Fails if
+    // packages/zudo-doc/src/** imports the host `@/` alias (#2344, S1a).
+    ciNeedle: "check-no-host-alias-in-package.mjs",
+    b4pushScript: "check:no-host-alias-in-package",
+    comment: "No-host-alias-in-package guard (scripts/check-no-host-alias-in-package.mjs, #2344)",
+  },
+  {
     // This parity check itself — must also appear in CI
     ciNeedle: "check-b4push-ci-parity.mjs",
     b4pushScript: "check:b4push-ci-parity",

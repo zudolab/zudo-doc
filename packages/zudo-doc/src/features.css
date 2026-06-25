@@ -468,3 +468,415 @@ pre[class^="syntect-"] .line .highlighted-word {
     animation: none;
   }
 }
+
+/* ========================================
+ * AI Chat markdown (.ai-chat-md)
+ *
+ * Compact typography for chat bubbles.
+ * Moved from src/styles/global.css to the package by S3 (epic #2344).
+ * ======================================== */
+
+.ai-chat-md :where(p) {
+  margin: 0 0 var(--spacing-vsp-2xs);
+}
+
+.ai-chat-md :where(p:last-child) {
+  margin-bottom: 0;
+}
+
+.ai-chat-md :where(strong) {
+  font-weight: var(--font-weight-bold);
+}
+
+.ai-chat-md :where(em) {
+  font-style: italic;
+}
+
+.ai-chat-md :where(a) {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+.ai-chat-md :where(a:hover) {
+  color: var(--color-accent-hover);
+}
+
+/* Chat inline-code / pre share intentional sub-token radii (3px inline, 6px block)
+   that are deliberately smaller than --radius-DEFAULT (4px) / --radius-lg (8px). */
+.ai-chat-md {
+  --_chat-code-radius: 3px;   /* inline code — tighter than --radius-DEFAULT (4px) */
+  --_chat-pre-radius: 6px;    /* pre block   — tighter than --radius-lg (8px)      */
+}
+
+.ai-chat-md :where(code:not(pre code)) {
+  font-size: 0.9em; /* em-relative: scales proportionally with the chat bubble's font size */
+  background: color-mix(in oklch, var(--color-muted) 20%, transparent);
+  padding: 0.1em 0.3em;
+  border-radius: var(--_chat-code-radius);
+}
+
+.ai-chat-md :where(pre) {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  line-height: var(--leading-relaxed);
+  background: var(--color-code-bg);
+  color: var(--color-code-fg);
+  padding: var(--spacing-vsp-2xs) var(--spacing-hsp-sm);
+  border-radius: var(--_chat-pre-radius);
+  overflow-x: auto;
+  margin: var(--spacing-vsp-2xs) 0;
+}
+
+.ai-chat-md :where(pre code) {
+  background: transparent;
+  padding: 0;
+  font-size: inherit;
+}
+
+.ai-chat-md :where(ul) {
+  list-style-type: disc;
+  padding-left: var(--spacing-hsp-lg);
+  margin: var(--spacing-vsp-2xs) 0;
+}
+
+.ai-chat-md :where(ol) {
+  list-style-type: decimal;
+  padding-left: var(--spacing-hsp-lg);
+  margin: var(--spacing-vsp-2xs) 0;
+}
+
+.ai-chat-md :where(li) {
+  margin-bottom: 0.15em;
+}
+
+.ai-chat-md :where(li::marker) {
+  color: var(--color-muted);
+}
+
+.ai-chat-md :where(h4, h5, h6) {
+  font-weight: var(--font-weight-bold);
+  margin: var(--spacing-vsp-xs) 0 var(--spacing-vsp-2xs);
+}
+
+/* ========================================
+ * Image enlarge (.zd-enlargeable)
+ * Moved from src/styles/global.css to the package by S3 (epic #2344).
+ * ======================================== */
+
+.zd-enlargeable {
+  position: relative;
+  display: block;
+  margin-inline: 0;
+  margin-block-end: 0;
+  border: 1px solid transparent;
+  transition: border-color var(--default-transition-duration);
+}
+
+/* Eligible images (expand-btn visible): the entire image becomes the click target.
+ * Show a subtle border as the interactivity affordance, accent on hover. */
+.zd-enlargeable:has(.zd-enlarge-btn:not([hidden])) {
+  border-color: var(--color-muted);
+  cursor: pointer;
+}
+
+.zd-enlargeable:has(.zd-enlarge-btn:not([hidden])):hover {
+  border-color: var(--color-accent);
+}
+
+.zd-enlargeable img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.zd-enlarge-btn {
+  position: absolute;
+  top: var(--spacing-image-overlay-inset);
+  right: var(--spacing-image-overlay-inset);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-image-overlay-inset);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  z-index: var(--z-index-local-1);
+  transition: opacity var(--default-transition-duration);
+}
+
+.zd-enlarge-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in oklch, var(--color-image-overlay-bg) 80%, transparent);
+  z-index: var(--z-index-local-1);
+}
+
+.zd-enlarge-btn > svg {
+  position: relative;
+  z-index: var(--z-index-local-2);
+  width: var(--spacing-icon-sm);
+  height: var(--spacing-icon-sm);
+  color: var(--color-image-overlay-fg);
+  fill: currentColor;
+}
+
+.zd-enlarge-btn:hover {
+  opacity: 0.8;
+}
+
+.zd-enlarge-btn[hidden] {
+  display: none !important;
+}
+
+dialog.zd-enlarge-dialog::backdrop {
+  background: color-mix(in oklch, var(--color-overlay) 80%, transparent);
+}
+
+/* Close button is positioned to the VIEWPORT corner (not the dialog) so it
+ * stays visually distinct against any image, regardless of the dialog's size.
+ * This relies on the dialog being transform-free (see ENLARGE_DIALOG_STYLE in
+ * island-types) — a transform on the dialog would re-anchor this fixed
+ * button to the dialog corner. */
+.zd-enlarge-dialog-close {
+  position: fixed;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-image-overlay-inset);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  z-index: var(--z-index-local-1);
+  transition: opacity var(--default-transition-duration);
+}
+
+.zd-enlarge-dialog-close:hover {
+  opacity: 0.8;
+}
+
+.zd-enlarge-dialog-close::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in oklch, var(--color-image-overlay-bg) 80%, transparent);
+  z-index: var(--z-index-local-1);
+}
+
+.zd-enlarge-dialog-close > svg {
+  position: relative;
+  z-index: var(--z-index-local-2);
+  width: var(--spacing-icon-lg);
+  height: var(--spacing-icon-lg);
+  color: var(--color-image-overlay-fg);
+  fill: currentColor;
+}
+
+/* Wide viewport: ~2× larger close button to read clearly against any image. */
+@media (min-width: 1024px) {
+  .zd-enlarge-dialog-close {
+    top: 10px;
+    right: 10px;
+  }
+
+  .zd-enlarge-dialog-close > svg {
+    width: calc(var(--spacing-icon-lg) * 2);
+    height: calc(var(--spacing-icon-lg) * 2);
+  }
+}
+
+/* ========================================
+ * Mermaid enlarge (.zd-mermaid-enlargeable) — issue #2176 / #2178
+ *
+ * Unlike images (SSR-wrapped in figure.zd-enlargeable), mermaid diagrams render
+ * client-side, so the mermaid-enlarge island injects the `.zd-enlarge-btn` into
+ * each rendered `.mermaid` container and adds `.zd-mermaid-enlargeable` (which
+ * makes the container position:relative so the button anchors to it). The
+ * button + close-button visuals are SHARED with image-enlarge above
+ * (`.zd-enlarge-btn`, `.zd-enlarge-dialog-close`).
+ * Moved from src/styles/global.css to the package by S3 (epic #2344).
+ * ======================================== */
+
+.zd-mermaid-enlargeable {
+  position: relative;
+  border: 1px solid transparent;
+  border-radius: var(--radius-DEFAULT);
+  transition: border-color var(--default-transition-duration);
+}
+
+/* The diagram is always enlargeable once the button is injected — show a subtle
+ * border affordance, accent on hover (mirrors the image-enlarge affordance). */
+.zd-mermaid-enlargeable:has(.zd-enlarge-btn) {
+  cursor: pointer;
+  border-color: var(--color-muted);
+}
+
+.zd-mermaid-enlargeable:has(.zd-enlarge-btn):hover {
+  border-color: var(--color-accent);
+}
+
+/* Zoom/pan dialog. The `<dialog>` stays transform-free (see ENLARGE_DIALOG_STYLE in
+ * island-types); the transform lives on .zd-mermaid-transform. */
+dialog.zd-mermaid-dialog::backdrop {
+  background: color-mix(in oklch, var(--color-overlay) 80%, transparent);
+}
+
+/* Pan viewport — fills the dialog and clips the (possibly zoomed) diagram.
+ * touch-action:none so pointer-drag pans on touch without the browser
+ * intercepting the gesture for scrolling. */
+.zd-mermaid-viewport {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+}
+
+.zd-mermaid-viewport[data-pan-active] {
+  cursor: grab;
+  /* In pan mode a drag should pan, not select diagram text. Scoped to
+   * [data-pan-active] so text stays selectable when pan mode is off. */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.zd-mermaid-viewport[data-pan-active]:active {
+  cursor: grabbing;
+}
+
+.zd-mermaid-transform {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform;
+}
+
+/* SVG sizing — fit the cloned mermaid svg inside the dialog like
+ * object-fit:contain. The svg fills the viewport box (100% x 100%) and its
+ * viewBox content is letterboxed/centered by the default
+ * preserveAspectRatio="xMidYMid meet". A TALL diagram (e.g. a state diagram) no
+ * longer gets forced to full dialog width with `height:auto` driving the height
+ * far past the viewport via its aspect ratio — it now shrinks to fit the height
+ * instead. max-width/max-height !important neutralize the inline px sizing
+ * mermaid bakes onto the svg (without it the diagram renders tiny). Scoped to
+ * .zd-mermaid-transform (the cloned-diagram wrapper) so it does NOT hit the
+ * toolbar / close-button icon svgs that also live inside the dialog. */
+.zd-mermaid-transform svg {
+  max-width: 100% !important;
+  max-height: 100% !important;
+  width: 100%;
+  height: 100%;
+}
+
+/* Edge labels (e.g. "Yes"/"No") render inside a tightly-sized <foreignObject>;
+ * when the cloned diagram is upscaled to fill the dialog, sub-pixel overflow
+ * makes the browser clip the last glyph at the foreignObject's right edge.
+ * Letting the foreignObject overflow render keeps the full label visible. */
+.zd-mermaid-transform svg foreignObject {
+  overflow: visible;
+}
+
+/* Toolbar — bottom-right pill of zoom/pan controls (2× sized buttons). */
+.zd-mermaid-toolbar {
+  position: absolute;
+  bottom: var(--spacing-image-overlay-inset);
+  right: var(--spacing-image-overlay-inset);
+  display: flex;
+  gap: var(--spacing-hsp-xs);
+  padding: var(--spacing-hsp-xs);
+  border: 1px solid var(--color-muted);
+  border-radius: var(--radius-DEFAULT);
+  background: color-mix(in oklch, var(--color-surface) 92%, transparent);
+  z-index: var(--z-index-local-2);
+}
+
+.zd-mermaid-tool-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--spacing-icon-lg) * 2);
+  height: calc(var(--spacing-icon-lg) * 2);
+  padding: var(--spacing-vsp-2xs);
+  border: none;
+  border-radius: var(--radius-DEFAULT);
+  background: transparent;
+  color: var(--color-fg);
+  cursor: pointer;
+  transition:
+    background-color var(--default-transition-duration),
+    opacity var(--default-transition-duration);
+}
+
+.zd-mermaid-tool-btn:hover:not([disabled]) {
+  background: color-mix(in oklch, var(--color-muted) 25%, transparent);
+}
+
+.zd-mermaid-tool-btn[aria-pressed="true"] {
+  background: color-mix(in oklch, var(--color-accent) 30%, transparent);
+  color: var(--color-accent);
+}
+
+.zd-mermaid-tool-btn[disabled] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.zd-mermaid-tool-btn > svg {
+  width: calc(var(--spacing-icon-md) * 2);
+  height: calc(var(--spacing-icon-md) * 2);
+}
+
+/* ========================================
+ * Doc History Diff Viewer (side-by-side)
+ * Moved from src/styles/global.css (epic #2344, S4).
+ * Coupled to the DocHistory island (packages/zudo-doc/src/doc-history/).
+ * ======================================== */
+
+.diff-row {
+  border-bottom: 1px solid color-mix(in oklch, var(--color-muted) 15%, transparent);
+}
+
+.diff-line-num {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--text-caption);
+  line-height: 1.5;
+  padding: 0 var(--spacing-hsp-xs);
+  text-align: right;
+  color: var(--color-muted);
+  user-select: none;
+  vertical-align: top;
+  border-right: 1px solid color-mix(in oklch, var(--color-muted) 15%, transparent);
+}
+
+.diff-line-content {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--text-caption);
+  line-height: 1.5;
+  padding: 0 var(--spacing-hsp-sm);
+  white-space: pre-wrap;
+  word-break: break-all;
+  vertical-align: top;
+}
+
+/* Left column right border to separate the two sides */
+.diff-row td:nth-child(2) {
+  border-right: 2px solid var(--color-muted);
+}
+
+.diff-line-added {
+  background-color: color-mix(in oklch, var(--color-success) 15%, transparent);
+}
+
+.diff-line-removed {
+  background-color: color-mix(in oklch, var(--color-danger) 15%, transparent);
+}
+
+.diff-line-empty {
+  background-color: color-mix(in oklch, var(--color-muted) 8%, transparent);
+}

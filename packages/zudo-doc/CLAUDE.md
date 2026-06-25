@@ -6,6 +6,21 @@ Components are Preact `.tsx` compiled by tsup (`bundle:false`, 1:1 source→`dis
 so `"use client"` directives survive — see `tsup.config.ts`). The `exports` map
 in `package.json` is the API surface; consumers import from `dist/`.
 
+## Build: tsup (JS) + tsc (DTS) — two passes, not one
+
+`build`/`prepare` run **tsup THEN `tsc -p tsconfig.build.json`** (`--emitDeclarationOnly`).
+tsup emits only the JS (`dts:false`); `tsc` emits the `.d.ts`. The split exists
+because tsup's `dts:true` rollup-based declaration bundler is **combinatorial in
+memory across entries** — with `bundle:false` + ~200 source entries it OOMs even
+at an 8GB Node heap (the JS pass alone finishes in ~150ms). `tsc
+--emitDeclarationOnly` emits per-file 1:1 (same flat layout as the `bundle:false`
+JS), is **linear in file count**, and completes under the default ~2GB heap, so
+CI no longer needs (and the scripts no longer set) a raised `NODE_OPTIONS` heap.
+`tsconfig.build.json` extends `tsconfig.json` with `emitDeclarationOnly`/`outDir:dist`/
+`rootDir:src` and excludes test globs so test files don't emit. `dev` stays
+`tsup --watch` (JS only — types lag during package dev; `pnpm check` is the type
+gate). See zudolab/zudo-doc epic #2344.
+
 ## Shared-surface (exports / tsup) append convention — package-first migration
 
 The `package.json#exports` map and `tsup.config.ts` are a **shared surface** that
@@ -27,6 +42,76 @@ by S2 (#2325) is:
 - **Source files the tsup globs do NOT match** (e.g. S3's relocated `.mjs`
   plugin wrappers) append at the marked `ENTRY APPEND POINT` in
   `tsup.config.ts#entry`, or copy via the `onSuccess` chain.
+
+## Factory context type + foundation primitives (epic #2344, S1a)
+
+The package-first Wave 3 migration relocates the `pages/lib/*` rendering/data
+modules into this package behind **injected-context factories**. The shared
+contract those factories receive is the factory-context TYPE, and the
+load-bearing pure primitives they build on ship from S1a. None of these import
+node builtins or the host `@/` alias (enforced by `check:no-host-alias-in-package`
+and the `foundation-eval-graph` node-free guard).
+
+### `./factory-context` — `FactoryContext` (types only)
+
+Signature **`{ settings, i18n, components, navSource }`** — deliberately NO
+generic `utils` bag (a `utils` key would re-couple the factory API to this
+project's util surface and defeat the migration). A factory receives exactly
+these four typed slots and builds everything else from them.
+
+- **`settings`** — the host's resolved `Settings` object (single config source).
+- **`i18n`** (`FactoryI18n`) — `{ defaultLocale, locales, getLocaleLabel, t? }`.
+- **`components`** (`FactoryComponents`) — the **allowlist** below.
+- **`navSource`** — opaque per-locale nav-source handle (host owns the loader;
+  factories pass it to the pure nav builders without inspecting it).
+
+#### ALLOWED `{ components }` slots (explicit allowlist — NOT a dumping ground)
+
+Every key is a component the package CANNOT own because it depends on the host's
+content collections / settings wiring / showcase markup. All slots are optional.
+Adding a slot requires a real cross-package coupling reason AND an entry here —
+do not widen this into a generic component bag.
+
+| Slot | Why it can't live in the package |
+|---|---|
+| `CategoryNav` | locale-aware; reads the project's content collection |
+| `CategoryTreeNav` | locale-aware category-tree wrapper |
+| `SiteTreeNav` | locale-aware site-tree wrapper (also serves the demo variant) |
+| `HtmlPreview` | bound to the host's preview config |
+| `Details` | `<details>` content override |
+| `Island` | zfb `<Island>` pass-through (host owns the import so the scanner walks it) |
+| `PresetGenerator` | showcase-only SSR shell; downstream projects stub it |
+
+### Foundation primitive exports (S1a)
+
+- **`./render-markdown`** — `renderMarkdown(src)`: the chat-message markdown→HTML
+  renderer (escape-first, safe by construction).
+- **`./slug`** — `toRouteSlug` / `toHistorySlug` / `toSlugParams` / `toTitleCase`:
+  the canonical root-slug rule (#1891 / #1873). The package `md-utils` imports
+  `toRouteSlug` from here instead of re-inlining the rule.
+- **`./smart-break`** — `isPathLike` / `smartBreak` / `SmartBreak` /
+  `escapeAndInjectWbr` / `smartBreakToHtml`. The former toc-local copy
+  (`toc/smart-break.tsx`) was consolidated into this single module; toc and
+  content overrides import it from here.
+- **`./use-modal-dialog`** — `useModalDialog(...)`: the shared `<dialog>` modal
+  hook (open/close sync, native-close callback, backdrop click, SPA-navigation
+  close, opt-in focus management). Carries `"use client"`. The S3/S4 enlarge /
+  ai-chat / doc-history islands import it.
+- **`./island-types`** — shared island prop/type contracts: `ChatMessage`,
+  `DocHistoryData` (+ `DocHistoryEntry`), and the enlarge-dialog shared
+  constants (`ENLARGE_DIALOG_STYLE`, `IMAGE_ENLARGE_DIALOG_CLASS`,
+  `MERMAID_ENLARGE_DIALOG_CLASS`, `EnlargeDialogProps`).
+- **`./url-helpers`** — `makeUrlHelpers(settings, i18n)`: the base.ts URL logic
+  parameterized into a constructor (withBase / docsUrl / navHref /
+  getPathForLocale / buildLocaleLinks / versionedDocsUrl / …). The host's
+  `src/utils/base.ts` keeps the singleton import; the logic lives here.
+
+The host originals `src/utils/{render-markdown,slug,smart-break}` are now thin
+re-export shims pointing at these subpaths (kept so the many `@/utils/*` call
+sites — and their byte-identical create-zudo-doc template copies — stay
+unchanged). `buildNavTree(entries, lang, categoryMeta, { buildHref })` in
+`src/utils/docs.ts` gained an optional `buildHref` injection point
+(backward-compatible — existing 3-arg call sites are unchanged).
 
 ## `./preset` — `zudoDocPreset()`
 

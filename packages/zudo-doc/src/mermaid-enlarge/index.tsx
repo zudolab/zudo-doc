@@ -1,94 +1,34 @@
 "use client";
 
-// Mermaid-enlarge island — adds an "enlarge" affordance to client-rendered
-// mermaid diagrams plus a Google-Maps-style zoom/pan dialog.
-//
-// Unlike images (which the MDX paragraph override SSR-wraps in
-// `<figure class="zd-enlargeable">` with the enlarge button already in the
-// markup — see pages/_mdx-components.ts), mermaid diagrams render CLIENT-SIDE:
-// the mermaid init script (packages/zudo-doc/src/code-syntax/mermaid-init-script.ts)
-// imports mermaid from a CDN, runs `mermaid.run()`, then sets
-// `data-mermaid-rendered` on each `.mermaid` container and injects the `<svg>`.
-// So there is no server markup to wrap — this island must INJECT the enlarge
-// button into each diagram container after it renders.
-//
-// Lifecycle coupling with the mermaid init script:
-//   * Primary trigger: a MutationObserver on the content scope watching for the
-//     `data-mermaid-rendered` attribute appearing (and the `<svg>` child).
-//   * SPA hops: AFTER_NAVIGATE_EVENT re-scans the (swapped) content body.
-//   * Theme/tweak re-render: the init script's `reinitMermaid` REMOVES and
-//     regenerates the `<svg>` (debounced 300ms). The button lives on the
-//     `.mermaid` CONTAINER (which persists), and the dedupe guard is keyed by
-//     the container — so the button is neither dropped nor duplicated when the
-//     svg is regenerated. If the dialog is open during a re-render, the open
-//     diagram's fresh `<svg>` is re-cloned.
+/** @jsxRuntime automatic */
+/** @jsxImportSource preact */
 
-// Use `preact/compat` so the bundle resolves to Preact's React-shim at runtime
-// (zfb's esbuild step doesn't alias bare `react` to `preact/compat`). Mirrors
-// image-enlarge.tsx.
+// Mermaid-enlarge island — relocated from src/components/mermaid-enlarge.tsx
+// (host showcase) into the package as part of Package-First Wave 3 (S3,
+// epic #2344). Uses shared hook + constants from S1a foundation:
+//   - useModalDialog  from @takazudo/zudo-doc/use-modal-dialog
+//   - MERMAID_ENLARGE_DIALOG_CLASS / ENLARGE_DIALOG_STYLE from @takazudo/zudo-doc/island-types
+//
+// CSS blocks (.zd-mermaid-*) are shipped in @takazudo/zudo-doc/features.css
+// (moved from src/styles/global.css by S3).
+
 import { useState, useEffect, useRef, useCallback } from "preact/compat";
-import { AFTER_NAVIGATE_EVENT } from "@takazudo/zudo-doc/transitions";
-import { useModalDialog } from "@/hooks/use-modal-dialog";
+import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
+import { useModalDialog } from "../use-modal-dialog/index.js";
+import {
+  MERMAID_ENLARGE_DIALOG_CLASS,
+  ENLARGE_DIALOG_STYLE,
+} from "../island-types/index.js";
 
-// ---------------------------------------------------------------------------
-// Shared dialog shell constants
-//
-// The hydrated component and the SSR fallback below render into the same Island
-// container, so they MUST agree on class string and inline style — otherwise
-// the dist HTML and the post-hydration DOM disagree and the first interaction
-// flashes. Sourcing both from the same constants closes that drift gap.
-//
-// The dialog itself is intentionally transform-FREE (centered via
-// position:fixed; inset:0; margin:auto). The zoom/pan transform lives on an
-// INNER wrapper — a transform on the `<dialog>` would establish a containing
-// block for its `position: fixed` descendants, re-anchoring the fixed close
-// button to the dialog corner instead of the viewport. Mirrors image-enlarge.
-//
-// z-modal / backdrop:z-modal-backdrop are defense-in-depth for the SPA-swap
-// window: a still-open showModal() dialog can lose top-layer promotion when the
-// page body is swapped, so the explicit modal-tier z-index keeps it above all
-// chrome. Intentionally redundant in the normal top-layer case.
-// ---------------------------------------------------------------------------
-const DIALOG_CLASS =
-  "zd-mermaid-dialog z-modal mx-auto h-[90vh] max-h-[90vh] w-[90vw] max-w-[90vw] overflow-hidden border border-muted bg-surface p-0 backdrop:z-modal-backdrop";
-const DIALOG_STYLE = {
-  position: "fixed",
-  inset: "0",
-  margin: "auto",
-} as const;
-
-// The content scope scanned for mermaid diagram containers. zfb's pipeline emits
-// `<div class="mermaid" data-mermaid>` for each ```mermaid fence; the init script
-// adds `data-mermaid-rendered` once the svg is drawn.
 const CONTENT_SCOPE_SELECTOR = "main .zd-content";
-
-// The diagram svg is a DIRECT child of the `.mermaid` container; the injected
-// enlarge button's own icon svg is a grandchild. Selecting `:scope > svg` (not a
-// descendant `svg`) so we never pick up the button icon — which matters during a
-// theme/tweak re-render, when the diagram svg is briefly removed and a bare
-// `querySelector("svg")` would fall back to the button's icon.
 const DIAGRAM_SVG_SELECTOR = ":scope > svg";
-
-// Container-keyed dedupe marker. Set on the `.mermaid` container (which persists
-// across theme/tweak re-renders) once its enlarge button is injected, so the
-// re-render that regenerates the inner `<svg>` doesn't drop or duplicate it.
 const BTN_INJECTED_ATTR = "data-mermaid-enlarge-ready";
 
-// Zoom step + clamps. scale 1 = diagram fits the dialog (contain).
 const ZOOM_STEP = 1.25;
 const MIN_SCALE = 1;
 const MAX_SCALE = 4;
-
-// Keyboard pan: pixels to move per arrow-key press.
 const ARROW_PAN_STEP = 40;
 
-// The enlarge button's 4-corner-arrows icon (same shape as ENLARGE_SVG in
-// pages/_mdx-components.ts) is injected as an innerHTML string in injectButton()
-// below — the button itself is created via document.createElement because the
-// mermaid container is plain DOM, not part of this island's render tree.
-
-// Toolbar icons. currentColor + aria-hidden so they inherit the toolbar button
-// color and are skipped by assistive tech (the buttons carry aria-labels).
 function PlusIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" focusable="false">
@@ -118,22 +58,17 @@ function PanIcon() {
 }
 
 interface OpenDiagram {
-  /** The live `.mermaid` container being shown — used to re-clone on re-render. */
   container: HTMLElement;
-  /** The cloned `<svg>` outerHTML to render inside the pan viewport. */
   svgHtml: string;
 }
 
-export default function MermaidEnlarge() {
+export function MermaidEnlarge() {
   const [open, setOpen] = useState<OpenDiagram | null>(null);
-
-  // Zoom/pan state. scale 1 = diagram fits the dialog (contain); translate 0,0.
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
   const [panActive, setPanActive] = useState(false);
 
   const innerRef = useRef<HTMLDivElement>(null);
-  // Pointer-drag bookkeeping (refs so the handlers don't re-create on each move).
   const dragState = useRef<{
     dragging: boolean;
     startX: number;
@@ -142,21 +77,12 @@ export default function MermaidEnlarge() {
     originY: number;
   }>({ dragging: false, startX: 0, startY: 0, originX: 0, originY: 0 });
 
-  // -----------------------------------------------------------------------
-  // Button injection: scan the content scope, inject one enlarge button into
-  // each RENDERED diagram container, and add `.zd-mermaid-enlargeable` (which
-  // makes the container position:relative so the absolutely-positioned button
-  // anchors to it).
-  // -----------------------------------------------------------------------
+  // Button injection effect
   useEffect(() => {
     let mutationObserver: MutationObserver | null = null;
 
     function injectButton(container: HTMLElement) {
-      // Container-keyed guard: the theme/tweak re-render regenerates the inner
-      // <svg> but the container (and this marker) persists.
       if (container.hasAttribute(BTN_INJECTED_ATTR)) return;
-      // Only inject once the diagram has actually rendered — the button is
-      // meaningless before there's an <svg> to enlarge.
       const rendered =
         container.hasAttribute("data-mermaid-rendered") ||
         container.querySelector(DIAGRAM_SVG_SELECTOR) !== null;
@@ -169,7 +95,6 @@ export default function MermaidEnlarge() {
       btn.type = "button";
       btn.className = "zd-enlarge-btn";
       btn.setAttribute("aria-label", "Enlarge diagram");
-      // 4-corner-arrows icon (matches ENLARGE_SVG used by image-enlarge).
       btn.innerHTML =
         '<svg viewBox="0 0 38.99 38.99" fill="currentColor" focusable="false" aria-hidden="true">' +
         '<polygon points="16.2 13.74 5.92 3.47 11.2 3.47 11.2 0 3.47 0 0 0 0 3.47 0 11.2 3.47 11.2 3.47 5.92 13.74 16.2 16.2 13.74" />' +
@@ -183,18 +108,12 @@ export default function MermaidEnlarge() {
     function scan() {
       const scope = document.querySelector(CONTENT_SCOPE_SELECTOR);
       if (!scope) return;
-      scope
-        .querySelectorAll<HTMLElement>(".mermaid")
-        .forEach((el) => injectButton(el));
+      scope.querySelectorAll<HTMLElement>(".mermaid").forEach((el) => injectButton(el));
     }
 
     function startObserving() {
       const scope = document.querySelector(CONTENT_SCOPE_SELECTOR);
       if (scope) {
-        // Watch for: new `.mermaid` containers (childList), the
-        // `data-mermaid-rendered` attribute flipping on (attributes), and the
-        // svg child appearing (childList subtree). Any of these means a diagram
-        // is now eligible for the button.
         mutationObserver = new MutationObserver(() => scan());
         mutationObserver.observe(scope, {
           childList: true,
@@ -221,11 +140,7 @@ export default function MermaidEnlarge() {
     };
   }, []);
 
-  // -----------------------------------------------------------------------
-  // Delegated open handler: a click on an injected `.zd-enlarge-btn` inside a
-  // `.zd-mermaid-enlargeable` clones that diagram's `<svg>` into the dialog.
-  // Mirrors image-enlarge's document-level delegated click.
-  // -----------------------------------------------------------------------
+  // Delegated open handler
   useEffect(() => {
     function handleDocumentClick(e: MouseEvent) {
       const target = e.target as Element;
@@ -234,7 +149,6 @@ export default function MermaidEnlarge() {
       if (!target.closest(".zd-enlarge-btn")) return;
       const svg = container.querySelector(DIAGRAM_SVG_SELECTOR);
       if (!svg) return;
-      // Reset zoom/pan on every open.
       setScale(1);
       setTranslate({ x: 0, y: 0 });
       setPanActive(false);
@@ -244,10 +158,7 @@ export default function MermaidEnlarge() {
     return () => document.removeEventListener("click", handleDocumentClick);
   }, []);
 
-  // -----------------------------------------------------------------------
-  // Re-clone the fresh `<svg>` if the underlying diagram re-renders while the
-  // dialog is open (theme/tweak flip removes & regenerates the svg).
-  // -----------------------------------------------------------------------
+  // Re-clone svg when underlying diagram re-renders while dialog is open
   useEffect(() => {
     if (!open) return;
     const { container } = open;
@@ -270,9 +181,6 @@ export default function MermaidEnlarge() {
     backdropClickClose: true,
   });
 
-  // -----------------------------------------------------------------------
-  // Zoom controls
-  // -----------------------------------------------------------------------
   const zoomIn = useCallback(() => {
     setScale((s) => Math.min(MAX_SCALE, s * ZOOM_STEP));
   }, []);
@@ -280,8 +188,6 @@ export default function MermaidEnlarge() {
   const zoomOut = useCallback(() => {
     setScale((s) => {
       const next = Math.max(MIN_SCALE, s / ZOOM_STEP);
-      // At full width, recenter (translate has no meaning when not zoomed in)
-      // and turn off pan mode.
       if (next <= MIN_SCALE) {
         setTranslate({ x: 0, y: 0 });
         setPanActive(false);
@@ -294,16 +200,11 @@ export default function MermaidEnlarge() {
     setPanActive((p) => !p);
   }, []);
 
-  // Clamp a candidate translate so the diagram can't be dragged fully
-  // offscreen — keep the scaled content overlapping the viewport. The max
-  // offset on each axis is half the overflow (scaled size minus base size).
   const clampTranslate = useCallback(
     (x: number, y: number, s: number) => {
       const inner = innerRef.current;
       if (!inner) return { x, y };
       const rect = inner.getBoundingClientRect();
-      // rect already reflects the current transform; derive the un-scaled base
-      // from the applied scale so the bound is stable across repeated drags.
       const baseW = rect.width / s;
       const baseH = rect.height / s;
       const maxX = Math.max(0, (baseW * s - baseW) / 2);
@@ -316,9 +217,6 @@ export default function MermaidEnlarge() {
     [],
   );
 
-  // -----------------------------------------------------------------------
-  // Pan drag (pointer events) — active only when pan mode is on and zoomed in.
-  // -----------------------------------------------------------------------
   const onPointerDown = useCallback(
     (e: PointerEvent) => {
       if (!panActive || scale <= MIN_SCALE) return;
@@ -351,11 +249,6 @@ export default function MermaidEnlarge() {
     (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
   }, []);
 
-  // -----------------------------------------------------------------------
-  // Arrow-key panning — active when the viewport is focused and zoomed in.
-  // Prevents the dialog from scrolling while panning, so the diagram stays
-  // centred in the viewport during keyboard navigation (a11y #2295).
-  // -----------------------------------------------------------------------
   const onViewportKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (scale <= MIN_SCALE) return;
@@ -380,18 +273,13 @@ export default function MermaidEnlarge() {
       ref={dialogRef}
       onClick={handleBackdropClick}
       aria-label="Enlarged diagram"
-      className={DIALOG_CLASS}
-      style={DIALOG_STYLE}
+      className={MERMAID_ENLARGE_DIALOG_CLASS}
+      style={ENLARGE_DIALOG_STYLE}
     >
       {open && (
         <>
           <div
             className="zd-mermaid-viewport"
-            // tabIndex makes the viewport keyboard-focusable so arrow-key
-            // panning works without requiring pointer interaction first (a11y #2295).
-            // Pointer handlers live on the viewport so a drag started anywhere
-            // over the diagram pans it. `touch-action: none` (in CSS) lets the
-            // pointer events fire on touch without the browser scrolling.
             tabIndex={0}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
@@ -407,8 +295,6 @@ export default function MermaidEnlarge() {
                 transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
                 transformOrigin: "center",
               }}
-              // The cloned mermaid svg is trusted markup produced by the local
-              // mermaid render; re-cloned here verbatim.
               dangerouslySetInnerHTML={{ __html: open.svgHtml }}
             />
           </div>
@@ -459,17 +345,14 @@ export default function MermaidEnlarge() {
     </dialog>
   );
 }
+MermaidEnlarge.displayName = "MermaidEnlarge";
 
 /**
  * Static SSR fallback for the {@link MermaidEnlarge} island.
  *
- * The body-end Island wrapper renders this on the server so the dist HTML
- * carries an empty, closed `<dialog class="zd-mermaid-dialog ...">` even before
- * hydration (a `<dialog>` without `open` is `display:none` per UA stylesheet).
- * The classes and inline style come from the shared `DIALOG_CLASS` /
- * `DIALOG_STYLE` constants so the SSR fallback cannot drift from the hydrated
- * `<dialog>` above. Mirrors `ImageEnlargeSsrFallback`.
+ * Renders an empty, closed `<dialog class="zd-mermaid-dialog ...">` so the
+ * dist HTML carries the dialog shell even before hydration.
  */
 export function MermaidEnlargeSsrFallback() {
-  return <dialog aria-label="Enlarged diagram" className={DIALOG_CLASS} style={DIALOG_STYLE} />;
+  return <dialog aria-label="Enlarged diagram" className={MERMAID_ENLARGE_DIALOG_CLASS} style={ENLARGE_DIALOG_STYLE} />;
 }
