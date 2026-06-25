@@ -287,6 +287,10 @@
     "./ai-chat-modal": {
       "types": "./dist/ai-chat-modal/index.d.ts",
       "default": "./dist/ai-chat-modal/index.js"
+    },
+    "./doc-history": {
+      "types": "./dist/doc-history/index.d.ts",
+      "default": "./dist/doc-history/index.js"
     }
   },
   "bin": {
@@ -314,7 +318,8 @@
     "@takazudo/zdtp": "^0.3.3",
     "shiki": "^4.0.2",
     "zod": "^4.3.6",
-    "katex": "^0.16.0"
+    "katex": "^0.16.0",
+    "diff": "^8.0.0"
   },
   "peerDependenciesMeta": {
     "@takazudo/zudo-doc-history-server": {
@@ -327,6 +332,9 @@
       "optional": true
     },
     "katex": {
+      "optional": true
+    },
+    "diff": {
       "optional": true
     }
   },
