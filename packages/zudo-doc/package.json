@@ -219,6 +219,34 @@
     "./design-token-panel-bootstrap": {
       "types": "./dist/design-token-panel-bootstrap.d.ts",
       "default": "./dist/design-token-panel-bootstrap.js"
+    },
+    "./render-markdown": {
+      "types": "./dist/render-markdown/index.d.ts",
+      "default": "./dist/render-markdown/index.js"
+    },
+    "./slug": {
+      "types": "./dist/slug/index.d.ts",
+      "default": "./dist/slug/index.js"
+    },
+    "./smart-break": {
+      "types": "./dist/smart-break/index.d.ts",
+      "default": "./dist/smart-break/index.js"
+    },
+    "./use-modal-dialog": {
+      "types": "./dist/use-modal-dialog/index.d.ts",
+      "default": "./dist/use-modal-dialog/index.js"
+    },
+    "./island-types": {
+      "types": "./dist/island-types/index.d.ts",
+      "default": "./dist/island-types/index.js"
+    },
+    "./url-helpers": {
+      "types": "./dist/url-helpers/index.d.ts",
+      "default": "./dist/url-helpers/index.js"
+    },
+    "./factory-context": {
+      "types": "./dist/factory-context/index.d.ts",
+      "default": "./dist/factory-context/index.js"
     }
   },
   "bin": {

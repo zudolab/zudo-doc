@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { isPathLike, smartBreak } from "../smart-break.js";
+import {
+  isPathLike,
+  smartBreak,
+  escapeAndInjectWbr,
+  smartBreakToHtml,
+} from "../index.js";
 
 describe("isPathLike", () => {
   it("returns false for empty input", () => {
@@ -45,5 +50,28 @@ describe("smartBreak", () => {
     // VNode is an object; non-path-like returned the raw string.
     expect(typeof result).toBe("object");
     expect(result).not.toBeNull();
+  });
+});
+
+describe("escapeAndInjectWbr", () => {
+  it("escapes HTML and injects <wbr> after each delimiter unconditionally", () => {
+    // No isPathLike gate — the <wbr> follows the delimiter (a/<wbr>b).
+    expect(escapeAndInjectWbr("a/b")).toBe("a/<wbr>b");
+  });
+
+  it("HTML-escapes the surrounding text (& is itself a break delimiter)", () => {
+    expect(escapeAndInjectWbr("<x>/&")).toBe("&lt;x&gt;/<wbr>&amp;<wbr>");
+  });
+});
+
+describe("smartBreakToHtml", () => {
+  it("injects <wbr> after each delimiter for path-like input", () => {
+    // `/etc/passwd` is path-like (leading slash); `<wbr>` follows each slash.
+    expect(smartBreakToHtml("/etc/passwd")).toBe("/<wbr>etc/<wbr>passwd");
+  });
+
+  it("HTML-escapes but does NOT inject <wbr> for non-path input", () => {
+    expect(smartBreakToHtml("well-known")).toBe("well-known");
+    expect(smartBreakToHtml("a<b")).toBe("a&lt;b");
   });
 });

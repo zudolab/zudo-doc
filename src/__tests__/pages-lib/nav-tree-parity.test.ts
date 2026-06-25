@@ -243,3 +243,39 @@ describe("buildNavTree parity with the frozen legacy builder (#2030)", () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// buildHref injection × caching (#2344, S1a — codex review finding)
+// ---------------------------------------------------------------------------
+// Both nav-tree cache layers are keyed by (docs, lang, categoryMeta) and assume
+// the default docsUrl href space. A custom buildHref mints a different href
+// space for the SAME key, so it must bypass the cache — otherwise a prior
+// default-href build returns a stale tree, and a custom-href build poisons the
+// cache for later default callers.
+describe("buildNavTree buildHref × cache isolation", () => {
+  it("custom buildHref mints hrefs in the injected space even after a default-href build cached the same docs", () => {
+    const corpus = [entry("getting-started/intro", { title: "Intro" })];
+    // 1. Warm the cache via the default href space (stable array instance →
+    //    populates both the identity and content cache).
+    const def = buildNavTree(corpus, "en");
+    expect(def.find((n) => n.slug === "getting-started")?.href).toBe(docsUrl("getting-started", "en"));
+    // 2. Same docs/lang/categoryMeta, custom buildHref — must NOT return the
+    //    cached default-href tree.
+    const versioned = buildNavTree(corpus, "en", undefined, {
+      buildHref: (slug) => `/v/1.0/docs/${slug}/`,
+    });
+    expect(versioned.find((n) => n.slug === "getting-started")?.href).toBe("/v/1.0/docs/getting-started/");
+  });
+
+  it("a custom-buildHref build does not poison the default-href cache for later callers", () => {
+    const corpus = [entry("guides/writing", { title: "Writing" })];
+    // 1. Custom-href build first.
+    const versioned = buildNavTree(corpus, "en", undefined, {
+      buildHref: (slug) => `/v/2.0/docs/${slug}/`,
+    });
+    expect(versioned.find((n) => n.slug === "guides")?.href).toBe("/v/2.0/docs/guides/");
+    // 2. Default-href build of the SAME docs must still get default hrefs.
+    const def = buildNavTree(corpus, "en");
+    expect(def.find((n) => n.slug === "guides")?.href).toBe(docsUrl("guides", "en"));
+  });
+});

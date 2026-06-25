@@ -2,7 +2,7 @@
 /** @jsxImportSource preact */
 
 import type { JSX, VNode } from "preact";
-import { SmartBreak as SmartBreakBase } from "../toc/smart-break.js";
+import { SmartBreak as SmartBreakBase } from "../smart-break/index.js";
 
 // SmartBreak returns VNode; cast to align with JSX.IntrinsicElements["a"].children
 // under compat mode. Runtime is fine since the preact/compat alias is in effect.

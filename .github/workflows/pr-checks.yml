@@ -6,6 +6,7 @@
 #
 # CI jobs (in approximate execution order):
 #   Template Drift Check     — pure-shell, no install; scripts/check-template-drift.sh
+#   No-Host-Alias Guard      — pure-Node, no install; scripts/check-no-host-alias-in-package.mjs
 #   Pin Parity Check         — pure-Node, no install; scripts/check-pin-parity.mjs
 #   Fixture Settings Drift   — pure-Node, no install; scripts/check-fixture-settings-drift.mjs
 #   Package Safelist Check   — pnpm install + package build; scripts/check-package-safelist.mjs
@@ -67,6 +68,24 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Check template drift
         run: bash scripts/check-template-drift.sh
+
+  # ---------------------------------------------------------------------------
+  # Job 0.4: No-host-alias-in-package guard (#2344, S1a)
+  # ---------------------------------------------------------------------------
+  # Fails if any source file under packages/zudo-doc/src/** imports the host
+  # `@/` path alias, which does not exist in published/scaffolded consumers —
+  # a silent package-boundary leak. Structural enforcement of the package-first
+  # core constraint.
+  # Pure-Node script — uses preinstalled Node on the runner image, no pnpm.
+  check-no-host-alias-in-package:
+    name: No-Host-Alias-In-Package Guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Check no host alias in package
+        run: node scripts/check-no-host-alias-in-package.mjs
 
   # ---------------------------------------------------------------------------
   # Job 0.5: Pin parity check (lightweight, no pnpm install needed)
