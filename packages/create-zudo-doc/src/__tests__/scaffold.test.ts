@@ -2269,7 +2269,7 @@ describe("scaffold — imageEnlarge feature", () => {
     expect(config).not.toContain("imageEnlarge:");
   });
 
-  it("pages/_mdx-components.ts installs EnlargeableParagraph p-override when imageEnlarge is enabled", async () => {
+  it("pages/_mdx-components.ts uses the factory pattern (imageEnlarge handled inside package)", async () => {
     const choices: UserChoices = {
       projectName: "test-ie-override-on",
       defaultLang: "en",
@@ -2283,15 +2283,17 @@ describe("scaffold — imageEnlarge feature", () => {
       projectPath("test-ie-override-on", "pages/_mdx-components.ts"),
       "utf-8",
     );
-    // The p-override code must be present when imageEnlarge is enabled.
-    expect(content).toContain("EnlargeableParagraph");
-    expect(content).toContain("zd-enlargeable");
-    expect(content).toContain("p: EnlargeableParagraph");
-    // No leftover slot anchors in the generated output.
+    // S8 / #2360: imageEnlarge p-override is now handled inside the
+    // @takazudo/zudo-doc/mdx-components factory; the generated file only
+    // calls createMdxComponentsBase({ settings, ... }) and the factory reads
+    // settings.imageEnlarge at render time. No EnlargeableParagraph in the
+    // generated file in either case.
+    expect(content).toContain("createMdxComponents");
+    expect(content).toContain("@takazudo/zudo-doc/mdx-components");
     expect(content).not.toContain("@slot:");
   });
 
-  it("pages/_mdx-components.ts does NOT install p-override when imageEnlarge is disabled", async () => {
+  it("pages/_mdx-components.ts does NOT contain EnlargeableParagraph when imageEnlarge is disabled", async () => {
     const choices: UserChoices = {
       projectName: "test-ie-override-off",
       defaultLang: "en",
@@ -2305,11 +2307,12 @@ describe("scaffold — imageEnlarge feature", () => {
       projectPath("test-ie-override-off", "pages/_mdx-components.ts"),
       "utf-8",
     );
-    // Override must be absent when imageEnlarge is disabled.
+    // Factory form — EnlargeableParagraph lives inside the package factory,
+    // not in the generated file. Both on and off produce the same factory call;
+    // runtime gating is via settings.imageEnlarge (read by the factory).
+    expect(content).toContain("createMdxComponents");
+    expect(content).toContain("@takazudo/zudo-doc/mdx-components");
     expect(content).not.toContain("EnlargeableParagraph");
-    expect(content).not.toContain("zd-enlargeable");
-    expect(content).not.toContain("p: EnlargeableParagraph");
-    // No leftover slot anchors in the generated output.
     expect(content).not.toContain("@slot:");
   });
 
