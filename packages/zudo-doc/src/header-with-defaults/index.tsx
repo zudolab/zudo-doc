@@ -60,7 +60,7 @@ export interface HeaderWithDefaultsSettings {
   colorMode?: { defaultMode?: string } | null | false;
   locales: Record<string, unknown>;
   versions?: HeaderVersionEntry[] | false;
-  githubUrl?: string;
+  githubUrl?: string | false;
 }
 
 /** Dependencies injected by the host stub. */

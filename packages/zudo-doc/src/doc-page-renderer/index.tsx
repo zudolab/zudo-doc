@@ -31,8 +31,8 @@ export type { DocPageBaseProps };
 export interface RenderDocPageVersionConfig {
   /** Version slug, e.g. "1.0". */
   slug: string;
-  /** Banner type drives the VersionBanner element. */
-  banner?: "unmaintained" | "unreleased";
+  /** Banner type drives the VersionBanner element (`false` = no banner). */
+  banner?: "unmaintained" | "unreleased" | false;
 }
 
 export interface RenderDocPageOptions {

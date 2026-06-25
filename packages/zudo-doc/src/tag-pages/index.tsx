@@ -76,7 +76,7 @@ export interface TagPagesComponents {
   HeaderWithDefaults: (props: { lang?: string; currentPath?: string }) => JSX.Element;
   FooterWithDefaults: (props: { lang?: string }) => JSX.Element;
   BodyEndIslands: (props: { basePath: string }) => JSX.Element;
-  DocHistoryArea: (props: { slug: string; locale: string }) => JSX.Element;
+  DocHistoryArea: (props: { slug: string; locale: string }) => JSX.Element | null;
 }
 
 /** Injected dependencies for {@link createTagPages}. */

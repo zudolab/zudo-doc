@@ -9,6 +9,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import type { VNode } from "preact";
 import { render } from "preact-render-to-string";
 import { Island } from "@takazudo/zfb";
 import { SiteTreeNav } from "../index.js";
@@ -93,10 +94,12 @@ describe("SiteTreeNav — displayName pin", () => {
 describe("SiteTreeNav — call-site Island marker", () => {
   it("emits data-zfb-island=SiteTreeNav in SSG output when wrapped with Island(when:idle)", () => {
     const html = render(
+      // Island() returns the public IslandElement shape ({ type, props, key });
+      // it is a real Preact VNode at runtime, so re-view it as VNode for render().
       Island({
         when: "idle",
         children: <SiteTreeNav tree={SAMPLE_TREE} />,
-      }) as ReturnType<typeof Island>,
+      }) as unknown as VNode,
     );
     expect(html).toContain('data-zfb-island="SiteTreeNav"');
   });

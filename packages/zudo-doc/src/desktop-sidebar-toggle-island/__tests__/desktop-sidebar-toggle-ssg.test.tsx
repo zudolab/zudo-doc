@@ -9,6 +9,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import type { VNode } from "preact";
 import { render } from "preact-render-to-string";
 import { Island } from "@takazudo/zfb";
 import { DesktopSidebarToggle } from "../index.js";
@@ -46,10 +47,12 @@ describe("DesktopSidebarToggle — displayName pin", () => {
 describe("DesktopSidebarToggle — call-site Island marker", () => {
   it("emits data-zfb-island=DesktopSidebarToggle in SSG output", () => {
     const html = render(
+      // Island() returns the public IslandElement shape ({ type, props, key });
+      // it is a real Preact VNode at runtime, so re-view it as VNode for render().
       Island({
         when: "load",
         children: <DesktopSidebarToggle />,
-      }) as ReturnType<typeof Island>,
+      }) as unknown as VNode,
     );
     expect(html).toContain('data-zfb-island="DesktopSidebarToggle"');
   });

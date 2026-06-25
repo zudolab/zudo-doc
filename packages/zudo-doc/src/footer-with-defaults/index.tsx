@@ -57,7 +57,7 @@ export interface FooterWithDefaultsSettings {
 export interface FooterWithDefaultsDeps {
   settings: FooterWithDefaultsSettings;
   defaultLocale: string;
-  tagVocabulary: FooterVocabularyEntry[];
+  tagVocabulary: readonly FooterVocabularyEntry[];
   isExternal: (href: string) => boolean;
   resolveHref: (href: string) => string;
   withBase: (path: string) => string;

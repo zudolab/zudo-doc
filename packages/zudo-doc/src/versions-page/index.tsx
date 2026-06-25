@@ -21,7 +21,7 @@ import type { VersionPageEntry, VersionsPageLabels } from "../nav-indexing/index
 export interface VersionsPageVersionEntry {
   slug: string;
   label?: string;
-  banner?: "unmaintained" | "unreleased";
+  banner?: "unmaintained" | "unreleased" | false;
 }
 
 /** Settings subset read by the versions page factory. */
