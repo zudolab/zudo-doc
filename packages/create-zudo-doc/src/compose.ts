@@ -240,9 +240,6 @@ export function validateDependencies(
  *   `@import "@takazudo/zdtp/styles.css";` at `@slot:global-css:feature-styles`.
  *   The sibling `@slot:global-css:theme-tokens` anchor is consumed by the
  *   color-scheme palette generator and must remain.
- * - `pages/_mdx-components.ts` — image-enlarge.ts injects the
- *   EnlargeableParagraph p-override (ENLARGE_SVG, EnlargeableParagraph def,
- *   `p:` map entry) when imageEnlarge is enabled.
  * - `pages/lib/_body-end-islands.tsx` — tauri.ts injects the FindInPageInit
  *   island (import, displayName, Island mount) when tauri is enabled.
  *   design-token-panel.ts injects the DesignTokenPanelBootstrap island
@@ -251,10 +248,15 @@ export function validateDependencies(
  * - `src/config/settings-types.ts` — design-token-panel.ts injects the
  *   `"design-token-panel"` member into `HeaderRightTriggerName` when the
  *   feature is enabled (replace-range between the :start/:end anchors).
+ *
+ * NOTE: `pages/_mdx-components.ts` was removed (#2360 / E2). The imageEnlarge
+ * p-override injections (ENLARGE_SVG, EnlargeableParagraph, p: entry) are now
+ * handled inside the @takazudo/zudo-doc/mdx-components factory — the template
+ * no longer carries @slot anchors for this file and the feature module's
+ * injections are a no-op (the factory reads settings.imageEnlarge at render time).
  */
 export const ANCHOR_FILES = [
   "src/styles/global.css",
-  "pages/_mdx-components.ts",
   "pages/lib/_body-end-islands.tsx",
   "src/config/settings-types.ts",
 ];

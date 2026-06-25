@@ -84,6 +84,16 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     ).toBe(true);
   });
 
+  it("seeds .zudo-doc.json with packageVersion and empty ejected map", async () => {
+    const provenancePath = projectPath("test-minimal", ".zudo-doc.json");
+    expect(await fs.pathExists(provenancePath)).toBe(true);
+    const provenance = await fs.readJson(provenancePath);
+    expect(typeof provenance.packageVersion).toBe("string");
+    // Version must be a bare semver (no caret), e.g. "0.2.22"
+    expect(provenance.packageVersion).toMatch(/^\d+\.\d+\.\d+/);
+    expect(provenance.ejected).toEqual({});
+  });
+
   it("creates starter content", async () => {
     expect(
       await fs.pathExists(
@@ -2269,7 +2279,7 @@ describe("scaffold — imageEnlarge feature", () => {
     expect(config).not.toContain("imageEnlarge:");
   });
 
-  it("pages/_mdx-components.ts installs EnlargeableParagraph p-override when imageEnlarge is enabled", async () => {
+  it("pages/_mdx-components.ts uses the factory pattern (imageEnlarge handled inside package)", async () => {
     const choices: UserChoices = {
       projectName: "test-ie-override-on",
       defaultLang: "en",
@@ -2283,15 +2293,17 @@ describe("scaffold — imageEnlarge feature", () => {
       projectPath("test-ie-override-on", "pages/_mdx-components.ts"),
       "utf-8",
     );
-    // The p-override code must be present when imageEnlarge is enabled.
-    expect(content).toContain("EnlargeableParagraph");
-    expect(content).toContain("zd-enlargeable");
-    expect(content).toContain("p: EnlargeableParagraph");
-    // No leftover slot anchors in the generated output.
+    // S8 / #2360: imageEnlarge p-override is now handled inside the
+    // @takazudo/zudo-doc/mdx-components factory; the generated file only
+    // calls createMdxComponentsBase({ settings, ... }) and the factory reads
+    // settings.imageEnlarge at render time. No EnlargeableParagraph in the
+    // generated file in either case.
+    expect(content).toContain("createMdxComponents");
+    expect(content).toContain("@takazudo/zudo-doc/mdx-components");
     expect(content).not.toContain("@slot:");
   });
 
-  it("pages/_mdx-components.ts does NOT install p-override when imageEnlarge is disabled", async () => {
+  it("pages/_mdx-components.ts does NOT contain EnlargeableParagraph when imageEnlarge is disabled", async () => {
     const choices: UserChoices = {
       projectName: "test-ie-override-off",
       defaultLang: "en",
@@ -2305,11 +2317,12 @@ describe("scaffold — imageEnlarge feature", () => {
       projectPath("test-ie-override-off", "pages/_mdx-components.ts"),
       "utf-8",
     );
-    // Override must be absent when imageEnlarge is disabled.
+    // Factory form — EnlargeableParagraph lives inside the package factory,
+    // not in the generated file. Both on and off produce the same factory call;
+    // runtime gating is via settings.imageEnlarge (read by the factory).
+    expect(content).toContain("createMdxComponents");
+    expect(content).toContain("@takazudo/zudo-doc/mdx-components");
     expect(content).not.toContain("EnlargeableParagraph");
-    expect(content).not.toContain("zd-enlargeable");
-    expect(content).not.toContain("p: EnlargeableParagraph");
-    // No leftover slot anchors in the generated output.
     expect(content).not.toContain("@slot:");
   });
 
@@ -2623,6 +2636,12 @@ describe("drift detection — generator vs main project settings", () => {
       // Generated projects must opt in explicitly — omitting gives "no autolinks" (old behaviour).
       // See zudo-doc#2321 Wave-0 correctness fix.
       "githubAutolinksRepo",
+      // Internal/advanced build-time route injection, intentionally NOT surfaced
+      // in generated projects this epic (Package-First Finale #2356; ADR
+      // packages/zudo-doc/docs/adr/route-injection-seam.md, Decision 4). Default
+      // (absent → false) is the correct dormant value for a blank project; a
+      // fast-follow flips it on once upstream zfb dev-render support lands.
+      "packageOwnedRoutes",
     ]);
 
     // Check that every field in the main settings exists in the generated output
@@ -3096,22 +3115,20 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
 // (search-index, connect-adapter, doc-history, llms-txt, claude-resources)
 // were deleted from the templates because generated projects now use the
 // preset approach — plugins are referenced via `@takazudo/zudo-doc/plugins/*`
-// package specifiers inside the preset. Only copy-public-plugin.mjs remains
-// project-local (the preset still resolves it relative to the project root).
+// package specifiers inside the preset.
+// #2358: copy-public-plugin.mjs also removed — zfb native `publicDir` replaces it.
 // tsx is no longer emitted for docHistory/claudeResources features: the
 // package plugins import the runner directly (no `tsx -e` spawn) since
 // @takazudo/zudo-doc now ships compiled dist/.
 // ---------------------------------------------------------------------------
 
 describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)", () => {
-  it("barebone scaffold ships only copy-public-plugin.mjs (preset owns all others)", async () => {
-    // S5b (#2329) + #2337: the preset-based zfb.config.ts has no inline
+  it("barebone scaffold ships NO project-local .mjs plugins (all owned by preset or native zfb)", async () => {
+    // S5b (#2329) + #2337 + #2358: the preset-based zfb.config.ts has no inline
     // `./plugins/*.mjs` references. Plugins are referenced via
     // `@takazudo/zudo-doc/plugins/*` package specifiers inside the preset.
-    // The only project-local plugin is copy-public-plugin.mjs — the preset
-    // resolves it relative to the project root at zfb-load time.
-    // All other .mjs wrappers (search-index, connect-adapter, doc-history,
-    // llms-txt, claude-resources) have been removed from templates (#2337).
+    // copy-public-plugin.mjs was removed (#2358) — zfb native publicDir replaces it.
+    // All .mjs plugin wrappers are absent from templates.
     const choices: UserChoices = {
       projectName: "test-w7a-plugins-barebone",
       defaultLang: "en",
@@ -3121,15 +3138,11 @@ describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)
       packageManager: "pnpm",
     };
     await scaffold(choices);
-    expect(
-      await fs.pathExists(
-        projectPath("test-w7a-plugins-barebone", "plugins/copy-public-plugin.mjs"),
-      ),
-      "expected plugins/copy-public-plugin.mjs to ship in every scaffold",
-    ).toBe(true);
-    // All other .mjs plugin wrappers must NOT ship — they are dead code since
-    // the preset references the package plugins directly (#2337).
+    // All .mjs plugin wrappers must NOT ship — they are dead code since
+    // the preset references the package plugins directly (#2337) and
+    // copy-public is handled by zfb natively (#2358).
     for (const file of [
+      "plugins/copy-public-plugin.mjs",
       "plugins/search-index-plugin.mjs",
       "plugins/connect-adapter.mjs",
       "plugins/doc-history-plugin.mjs",
@@ -3140,18 +3153,16 @@ describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)
         await fs.pathExists(
           projectPath("test-w7a-plugins-barebone", file),
         ),
-        `expected ${file} to be absent (orphaned after #2337)`,
+        `expected ${file} to be absent (orphaned after #2337/#2358)`,
       ).toBe(false);
     }
   });
 
-  it("all-features scaffold ships copy-public-plugin.mjs (still project-local via preset)", async () => {
-    // S5b (#2329): the thin preset-based zfb.config.ts has no inline
-    // `./plugins/*.mjs` references — plugins are referenced via
+  it("all-features scaffold has no project-local .mjs plugins (preset owns all, publicDir native)", async () => {
+    // S5b (#2329) + #2337 + #2358: the thin preset-based zfb.config.ts has no
+    // inline `./plugins/*.mjs` references — plugins are referenced via
     // `@takazudo/zudo-doc/plugins/*` package specifiers inside the preset.
-    // The only project-local plugin that remains is copy-public-plugin.mjs,
-    // referenced as `"./plugins/copy-public-plugin.mjs"` inside the preset
-    // runtime at zfb-load time. It must still be shipped by the base template.
+    // copy-public-plugin.mjs was removed in #2358 (zfb native publicDir).
     const choices: UserChoices = {
       projectName: "test-w7a-plugins-all",
       defaultLang: "en",
@@ -3161,13 +3172,13 @@ describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)
       packageManager: "pnpm",
     };
     await scaffold(choices);
-    // copy-public-plugin.mjs must be present (preset references it project-locally)
+    // copy-public-plugin.mjs must NOT be present (removed in #2358)
     expect(
       await fs.pathExists(
         projectPath("test-w7a-plugins-all", "plugins/copy-public-plugin.mjs"),
       ),
-      "expected plugins/copy-public-plugin.mjs to ship in every scaffold",
-    ).toBe(true);
+      "copy-public-plugin.mjs must be absent after #2358",
+    ).toBe(false);
     // The thin generated config must not reference any ./plugins/*.mjs inline
     const config = await fs.readFile(
       projectPath("test-w7a-plugins-all", "zfb.config.ts"),

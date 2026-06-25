@@ -285,4 +285,17 @@ export interface Settings {
   footer: FooterConfig | false;
   headerNav: HeaderNavItem[];
   headerRightItems: HeaderRightItem[];
+  /**
+   * Build-time package-owned route injection (epic Package-First Finale #2356,
+   * ADR `docs/adr/route-injection-seam.md`). When `true`, the preset adds the
+   * `@takazudo/zudo-doc/plugins/routes` plugin, which injects the doc routes
+   * from the package instead of requiring project-shipped `pages/*.tsx` stubs.
+   *
+   * Default **false** — internal/advanced, dormant. With the flag off the
+   * capability is fully inert and the build is byte-unchanged. Even with it on,
+   * any injected route whose URL shape collides with a kept `pages/` stub is
+   * silently dropped (user `pages/` wins), so flipping it on in a project that
+   * still ships the stubs is a harmless no-op.
+   */
+  packageOwnedRoutes?: boolean;
 }

@@ -179,6 +179,10 @@
       "types": "./dist/plugins/claude-resources.d.ts",
       "default": "./dist/plugins/claude-resources.js"
     },
+    "./plugins/routes": {
+      "types": "./dist/plugins/routes.d.ts",
+      "default": "./dist/plugins/routes.js"
+    },
     "./content-admonition": {
       "types": "./dist/content-admonition/index.d.ts",
       "default": "./dist/content-admonition/index.js"
@@ -423,6 +427,70 @@
     "./site-tree-nav": {
       "types": "./dist/site-tree-nav/index.d.ts",
       "default": "./dist/site-tree-nav/index.js"
+    },
+    "./routes/index": {
+      "types": "./dist/routes/index.d.ts",
+      "default": "./dist/routes/index.js"
+    },
+    "./routes/404": {
+      "types": "./dist/routes/404.d.ts",
+      "default": "./dist/routes/404.js"
+    },
+    "./routes/sitemap.xml": {
+      "types": "./dist/routes/sitemap.xml.d.ts",
+      "default": "./dist/routes/sitemap.xml.js"
+    },
+    "./routes/robots.txt": {
+      "types": "./dist/routes/robots.txt.d.ts",
+      "default": "./dist/routes/robots.txt.js"
+    },
+    "./routes/docs-slug": {
+      "types": "./dist/routes/docs-slug.d.ts",
+      "default": "./dist/routes/docs-slug.js"
+    },
+    "./routes/docs-versions": {
+      "types": "./dist/routes/docs-versions.d.ts",
+      "default": "./dist/routes/docs-versions.js"
+    },
+    "./routes/docs-tags-index": {
+      "types": "./dist/routes/docs-tags-index.d.ts",
+      "default": "./dist/routes/docs-tags-index.js"
+    },
+    "./routes/docs-tags-tag": {
+      "types": "./dist/routes/docs-tags-tag.d.ts",
+      "default": "./dist/routes/docs-tags-tag.js"
+    },
+    "./routes/api-ai-chat": {
+      "types": "./dist/routes/api-ai-chat.d.ts",
+      "default": "./dist/routes/api-ai-chat.js"
+    },
+    "./routes/locale-index": {
+      "types": "./dist/routes/locale-index.d.ts",
+      "default": "./dist/routes/locale-index.js"
+    },
+    "./routes/locale-docs-slug": {
+      "types": "./dist/routes/locale-docs-slug.d.ts",
+      "default": "./dist/routes/locale-docs-slug.js"
+    },
+    "./routes/locale-docs-versions": {
+      "types": "./dist/routes/locale-docs-versions.d.ts",
+      "default": "./dist/routes/locale-docs-versions.js"
+    },
+    "./routes/locale-docs-tags-index": {
+      "types": "./dist/routes/locale-docs-tags-index.d.ts",
+      "default": "./dist/routes/locale-docs-tags-index.js"
+    },
+    "./routes/locale-docs-tags-tag": {
+      "types": "./dist/routes/locale-docs-tags-tag.d.ts",
+      "default": "./dist/routes/locale-docs-tags-tag.js"
+    },
+    "./routes/v-docs-slug": {
+      "types": "./dist/routes/v-docs-slug.d.ts",
+      "default": "./dist/routes/v-docs-slug.js"
+    },
+    "./routes/v-locale-docs-slug": {
+      "types": "./dist/routes/v-locale-docs-slug.d.ts",
+      "default": "./dist/routes/v-locale-docs-slug.js"
     }
   },
   "bin": {
@@ -433,13 +501,14 @@
     "build": "tsup && tsc -p tsconfig.build.json",
     "dev": "tsup --watch",
     "prepare": "tsup --silent && tsc -p tsconfig.build.json",
-    "prepack": "node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs && node scripts/check-features-css.mjs && node scripts/check-plugins.mjs",
+    "prepack": "node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs && node scripts/check-features-css.mjs && node scripts/check-plugins.mjs && node scripts/check-eject-sources.mjs",
     "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "files": [
     "dist",
     "bin",
+    "eject",
     "README.md"
   ],
   "peerDependencies": {

@@ -2,6 +2,8 @@
 
 CLI scaffold tool for creating new zudo-doc documentation sites. Generates a project with configurable features, color schemes, and i18n support.
 
+> **Eject CLI contract:** the per-component `zudo-doc eject <component>` swizzle CLI + `.zudo-doc.json` provenance marker are specified in `docs/eject-contract.md` (C0 #2359; implemented by C1 #2362).
+
 ## Architecture
 
 The generator uses an **additive composition** approach:

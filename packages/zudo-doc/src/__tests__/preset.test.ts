@@ -253,14 +253,13 @@ describe("zudoDocPreset collections", () => {
 });
 
 describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
-  it("emits the package plugin specifiers + project-relative copy-public, in order", () => {
+  it("emits the package plugin specifiers in order (no project-relative copy-public since #2358)", () => {
     const { plugins } = preset();
     expect(plugins.map((p) => p.name)).toEqual([
       "@takazudo/zudo-doc/plugins/claude-resources",
       "@takazudo/zudo-doc/plugins/doc-history",
       "@takazudo/zudo-doc/plugins/search-index",
       "@takazudo/zudo-doc/plugins/llms-txt",
-      "./plugins/copy-public-plugin.mjs",
     ]);
   });
 
@@ -289,7 +288,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       defaultLocaleDir: "src/content/docs",
       locales: [{ code: "ja", dir: "src/content/docs-ja" }],
     });
-    expect(byName["./plugins/copy-public-plugin.mjs"]).toEqual({ publicDir: "public" });
+    // copy-public-plugin.mjs was removed in #2358; no project-relative plugin expected.
   });
 
   it("omits claude-resources / doc-history / llms-txt when their settings are falsy", () => {
@@ -300,8 +299,34 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     });
     expect(r.plugins.map((p) => p.name)).toEqual([
       "@takazudo/zudo-doc/plugins/search-index",
-      "./plugins/copy-public-plugin.mjs",
     ]);
+  });
+
+  // ── packageOwnedRoutes gate (Package-First Finale #2356, ADR
+  //    route-injection-seam.md Decision 4) — dormant unless the flag is true.
+  it("omits the routes plugin by default (packageOwnedRoutes dormant)", () => {
+    const { plugins } = preset();
+    expect(plugins.map((p) => p.name)).not.toContain("@takazudo/zudo-doc/plugins/routes");
+  });
+
+  it("adds the routes bare-specifier descriptor only when packageOwnedRoutes is true", () => {
+    const r = zudoDocPreset({
+      settings: { ...fixtureSettings, packageOwnedRoutes: true },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+      translations: { en: { "doc.allTags": "All Tags" } },
+      tagVocabulary: [{ id: "ai" }],
+    });
+    const routes = r.plugins.find((p) => p.name === "@takazudo/zudo-doc/plugins/routes");
+    expect(routes).toBeDefined();
+    // It is FIRST so injection happens before the other plugins' preBuild work.
+    expect(r.plugins[0]?.name).toBe("@takazudo/zudo-doc/plugins/routes");
+    // Options carry serializable settings/translations/tagVocabulary only.
+    expect(routes?.options).toMatchObject({
+      translations: { en: { "doc.allTags": "All Tags" } },
+      tagVocabulary: [{ id: "ai" }],
+    });
+    expect((routes?.options as { settings: { packageOwnedRoutes?: boolean } }).settings.packageOwnedRoutes).toBe(true);
   });
 });
 

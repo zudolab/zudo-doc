@@ -6,6 +6,10 @@ Components are Preact `.tsx` compiled by tsup (`bundle:false`, 1:1 source→`dis
 so `"use client"` directives survive — see `tsup.config.ts`). The `exports` map
 in `package.json` is the API surface; consumers import from `dist/`.
 
+The frozen 1.0 public API contract is documented in `API.md` (this directory):
+subpath exports, `zudoDocPreset` options (`Settings`), `@theme` design tokens,
+`doclayout` slot anchors, and the ejectable component list.
+
 ## Build: tsup (JS) + tsc (DTS) — two passes, not one
 
 `build`/`prepare` run **tsup THEN `tsc -p tsconfig.build.json`** (`--emitDeclarationOnly`).
@@ -129,8 +133,9 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
   stays node-builtin-free.
 - **Plugins are bare-specifier descriptors** (`{ name: "@takazudo/zudo-doc/plugins/<x>", options }`),
   never imported plugin functions — importing the plugin modules would drag
-  their `node:fs`/`node:path` graph into the config eval. `copy-public` stays a
-  project-relative `./plugins/copy-public-plugin.mjs` descriptor (not relocated).
+  their `node:fs`/`node:path` graph into the config eval. All integration plugins
+  now resolve via `@takazudo/zudo-doc/plugins/*`; the old project-relative
+  `copy-public-plugin.mjs` was removed in #2358 (zfb native `publicDir` replaces it).
 - **Node-free eval-graph guard** (`src/__tests__/preset.test.ts`): esbuild-bundles
   `src/preset.ts` with `--platform=neutral` (mirrors zfb's `loader.rs:277`),
   no `external`, and FAILS on any reachable `node:*` builtin. Under
@@ -146,6 +151,12 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
   already supplies zod (it owns `buildDocsSchema`), so a required peer shares
   that single instance — avoiding a dual-zod hazard for `toJSONSchema` and a
   `Cannot find package 'zod'` at config-eval time in generated projects.
+- **Package-owned route injection** (dormant, `settings.packageOwnedRoutes`,
+  default off) is pinned in `docs/adr/route-injection-seam.md` — the authoritative
+  seam spec for the `@takazudo/zudo-doc/plugins/routes` plugin + `routes/*`
+  entrypoints (virtual module carries serializable `settings`/`translations`/
+  `tagVocabulary`; everything callable is an importable package subpath; package
+  routes use `@takazudo/zfb/content`, not the host `zfb/content` tsconfig alias).
 
 ## Shipped CSS artifacts (four)
 

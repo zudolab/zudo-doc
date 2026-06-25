@@ -90,6 +90,27 @@
 
 @theme {
   /* ========================================
+   * Project tight-token color reset
+   *
+   * Wipes all Tailwind default color tokens (`--color-*`) so only
+   * project-defined palette and semantic tokens remain. This enforces the
+   * tight-token policy: "NEVER use Tailwind default colors" (per Color Rules
+   * in src/CLAUDE.md). Project color tokens (defined below) are added back
+   * after this reset.
+   *
+   * The upstream split-import fix (zfb#159 / 9e37551, shipped in f68a9ba)
+   * eliminated the original leak cause (zfb no longer prepends the full
+   * @import "tailwindcss" bundle). The reset is retained as an explicit
+   * design guardrail — it prevents accidental default palette bleed from any
+   * future upstream change and keeps the project's color surface intentional.
+   *
+   * NOT reset: `--spacing` (the base spacing scale, default 0.25rem).
+   * Tailwind spacing utilities compute as calc(var(--spacing) * N); wiping
+   * `--spacing` collapses them to zero (observed in Wave 4 Sub-7 #1403).
+   * ======================================== */
+  --color-*: initial;
+
+  /* ========================================
    * Colors — Three-tier token system
    * ======================================== */
 
@@ -130,13 +151,19 @@
   --color-info: var(--zd-info);
   /* Overlay is intentionally theme-independent (always dark, not scheme-driven) */
   --color-overlay: #000;
+  /* The page-loading overlay scrim token is feature-gated: the dynamicPageTransition
+     feature injects it into @slot:global-css:theme-tokens when enabled, so it is
+     intentionally absent from this base @theme block (the host showcase global.css
+     carries it inline only because the host is fully featured). Do not re-add it here. */
   --color-image-overlay-bg: var(--zd-image-overlay-bg);
   --color-image-overlay-fg: var(--zd-image-overlay-fg);
-  --color-mermaid-node-bg: var(--zd-mermaid-node-bg);
-  --color-mermaid-text: var(--zd-mermaid-text);
-  --color-mermaid-line: var(--zd-mermaid-line);
-  --color-mermaid-label-bg: var(--zd-mermaid-label-bg);
-  --color-mermaid-note-bg: var(--zd-mermaid-note-bg);
+  /* --color-mermaid-* aliases removed: mermaid-init-script.ts reads --zd-mermaid-* directly;
+     these @theme registrations were unused (no Tailwind utility references). --zd-mermaid-*
+     injection in color-scheme-utils.ts is preserved and remains the live source. */
+  --color-chat-user-bg: var(--zd-chat-user-bg);
+  --color-chat-user-text: var(--zd-chat-user-text);
+  --color-chat-assistant-bg: var(--zd-chat-assistant-bg);
+  --color-chat-assistant-text: var(--zd-chat-assistant-text);
   --color-matched-keyword-bg: var(--zd-matched-keyword-bg);
   --color-matched-keyword-fg: var(--zd-matched-keyword-fg);
   /* @slot:global-css:theme-tokens */
@@ -196,7 +223,7 @@
   --text-caption:    var(--text-scale-xs);   /* labels, timestamps */
   --text-small:      var(--text-scale-sm);   /* secondary text, nav items */
   --text-body:       var(--text-scale-md);   /* paragraphs, default */
-  --text-title: var(--text-scale-lg);   /* card titles, section labels */
+  --text-title:      var(--text-scale-lg);   /* card titles, section labels */
   --text-heading:    var(--text-scale-xl);   /* page headings */
   --text-display:    var(--text-scale-2xl);  /* hero text */
 
@@ -263,7 +290,7 @@
   /* GENERATED:Z_INDEX_END */
 
 :root {
-  /* Default responsive range; sidebar-resizer.ts allows 192–448px for explicit resizing */
+  /* Default responsive range; sidebar-resizer.ts allows 192–448px for explicit resizing. */
   --zd-sidebar-w: clamp(14rem, 20vw, 22rem);
 
   /* ── Tier 1: Abstract font-size scale (raw values — NOT for direct component use) ── */
@@ -276,7 +303,7 @@
   --text-scale-xl:  3rem;       /* 48px */
   --text-scale-2xl: 3.75rem;    /* 60px */
 
-  --default-transition-duration: 150ms; /* consumed by hash-link opacity fade */
+  --default-transition-duration: 150ms; /* consumed by image-enlarge and hash-link opacity fade */
   --zd-transition-slow: 200ms;          /* sidebar transform/visibility and content-band max-width */
   --zd-transition-slower: 300ms;        /* view-transition fade-in (contentFadeIn animation) */
   --zd-header-h: 80px;                  /* sticky header height; consumed by scroll-margin-top on [id] anchors */
