@@ -1,0 +1,306 @@
+/** @jsxRuntime automatic */
+/** @jsxImportSource preact */
+// doc-page-shell — factory for the shared render shell used by all 4
+// doc-route page components (epic #2344, S5).
+//
+// The host's `pages/lib/_doc-page-shell.tsx` previously imported host
+// singletons (`@/config/settings`) and host-bound components
+// (`_head-with-defaults`, `_sidebar-with-defaults`, etc.). This factory
+// receives those as injected dependencies so the logic lives in the package
+// while the host stub keeps the singleton imports.
+//
+// This module is intentionally version- and i18n-AGNOSTIC: everything
+// version/locale-specific is threaded in as plain props or pre-built VNode
+// slots. The base EN route (shipped in every scaffold) can depend on it
+// without dragging in the versioning/i18n feature surface.
+
+import type { ComponentChildren, JSX, VNode } from "preact";
+import { Island } from "@takazudo/zfb";
+import { DocLayoutWithDefaults } from "../doclayout/index.js";
+import { Toc, MobileToc } from "../toc/index.js";
+import { Breadcrumb } from "../breadcrumb/index.js";
+import { NavCardGrid } from "../nav-indexing/index.js";
+import type { VersionBannerLabels } from "../i18n-version/index.js";
+
+/** A heading item for the TOC. */
+export interface DocPageHeading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+/** A breadcrumb item. */
+export interface DocPageBreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
+/** A nav node for prev/next/autoIndex. */
+export interface DocPageNavNode {
+  slug: string;
+  label: string;
+  href?: string;
+  hasPage: boolean;
+  children: DocPageNavNode[];
+}
+
+/** Slots and parameters that vary between the 4 doc routes. */
+export interface DocPageShellProps {
+  /** Discriminates the body: a real entry vs an auto-generated category index. */
+  kind: "entry" | "autoIndex";
+  /** Active locale string, e.g. "en", "ja". */
+  locale: string;
+  /** Canonical route slug for this page (no version/locale prefix). */
+  slug: string;
+  /** Page title (entry title or auto-index label). */
+  title: string;
+  /** Page description (may be undefined). */
+  description?: string;
+  /** Absolute canonical URL, or undefined when siteUrl is unset. */
+  canonical?: string;
+  /** Pre-resolved breadcrumb trail (hrefs already remapped per route). */
+  breadcrumbs: DocPageBreadcrumbItem[];
+  /** Pre-resolved prev/next nav nodes (hrefs already remapped per route). */
+  prev: DocPageNavNode | null;
+  next: DocPageNavNode | null;
+  /** Depth-2/3/4 headings for the SSG TOC. */
+  headings: DocPageHeading[];
+
+  /** Sidebar/header nav-section key for this slug. */
+  navSection: string | undefined;
+  /** Per-page sidebar persist key (undefined when the sidebar is hidden). */
+  sidebarPersistKey: string | undefined;
+  /** Whether to hide the sidebar entirely (entry frontmatter). */
+  hideSidebar?: boolean;
+  /** Whether to hide the TOC (entry frontmatter). */
+  hideToc?: boolean;
+
+  /** Path of THIS page used by Header/Sidebar to mark the active item. */
+  currentPath: string;
+  /** Version slug for Header/Sidebar active-state, or undefined on latest routes. */
+  currentVersion?: string;
+  /** Inline version switcher VNode for the breadcrumb right-slot. */
+  versionSwitcher: ComponentChildren;
+
+  /** Version banner type ("unmaintained" | "unreleased") or undefined on latest. */
+  versionBanner?: "unmaintained" | "unreleased";
+  /** URL of the latest equivalent page for the version banner link. */
+  versionBannerLatestUrl?: string;
+  /** Localized version-banner labels. */
+  versionBannerLabels?: VersionBannerLabels;
+
+  /** Auto-index branch: label heading text. */
+  autoIndexLabel?: string;
+  /** Auto-index branch: pre-filtered + href-remapped child cards. */
+  autoIndexChildren?: DocPageNavNode[];
+
+  /**
+   * Auto-index branch slot: the build-time date block (DocMetainfoArea), or
+   * null to omit it.
+   */
+  metainfoSlot?: VNode | null;
+
+  /**
+   * Entry branch slot: the content header (h1 + meta + tags + description +
+   * frontmatter preview), built per route (carries isFallback).
+   */
+  contentHeaderSlot?: VNode;
+  /** Entry branch slot: the rendered MDX `<Content />`. */
+  contentSlot?: VNode;
+  /**
+   * Entry branch slot: the document-utilities area (DocHistoryArea), or null
+   * to omit it.
+   */
+  docHistorySlot?: VNode | null;
+}
+
+/** Settings subset read by {@link createDocPageShell}. */
+export interface DocPageShellSettings {
+  metaTags: {
+    description?: boolean | null;
+  };
+  noindex?: boolean;
+  dynamicPageTransition?: boolean;
+}
+
+/** Dependencies injected by the host stub. */
+export interface DocPageShellDeps {
+  settings: DocPageShellSettings;
+  composeMetaTitle: (title: string) => string;
+  getTocTitle: (locale: string) => string;
+  HeadWithDefaults: (props: { title: string; description?: string; canonical?: string }) => JSX.Element;
+  SidebarWithDefaults: (props: {
+    currentSlug?: string;
+    lang?: string;
+    navSection?: string;
+    currentVersion?: string;
+    currentPath?: string;
+  }) => JSX.Element;
+  HeaderWithDefaults: (props: {
+    lang?: string;
+    currentSlug?: string;
+    navSection?: string;
+    currentVersion?: string;
+    currentPath?: string;
+  }) => JSX.Element;
+  FooterWithDefaults: (props: { lang?: string }) => JSX.Element;
+  SidebarPrepaint: (props: { hideSidebar?: boolean }) => JSX.Element | undefined;
+  DocBodyEnd: (props: Record<string, never>) => JSX.Element;
+  DocPager: (props: {
+    prev: DocPageNavNode | null;
+    next: DocPageNavNode | null;
+    locale: string;
+  }) => JSX.Element;
+}
+
+/**
+ * Create a `DocPageShell` component bound to the host's settings and
+ * component dependencies.
+ */
+export function createDocPageShell(
+  deps: DocPageShellDeps,
+): (props: DocPageShellProps) => JSX.Element {
+  const {
+    settings,
+    composeMetaTitle,
+    getTocTitle,
+    HeadWithDefaults,
+    SidebarWithDefaults,
+    HeaderWithDefaults,
+    FooterWithDefaults,
+    SidebarPrepaint,
+    DocBodyEnd,
+    DocPager,
+  } = deps;
+
+  /**
+   * Render shell shared by all 4 doc-route page components.
+   */
+  function DocPageShell(props: DocPageShellProps): JSX.Element {
+    const {
+      kind,
+      locale,
+      title,
+      description,
+      canonical,
+      breadcrumbs,
+      prev,
+      next,
+      headings,
+      navSection,
+      sidebarPersistKey,
+      hideSidebar,
+      hideToc,
+      currentPath,
+      currentVersion,
+      versionSwitcher,
+      versionBanner,
+      versionBannerLatestUrl,
+      versionBannerLabels,
+      autoIndexLabel,
+      autoIndexChildren,
+      metainfoSlot,
+      contentHeaderSlot,
+      contentSlot,
+      docHistorySlot,
+    } = props;
+
+    // TOC overrides: mount the package Toc/MobileToc with the host-resolved
+    // locale-aware `tocTitle`. The gating mirrors the package's
+    // `shouldRenderDefaultToc` exactly so an undefined override never silently
+    // falls back to the package default with a different title.
+    const tocTitle = getTocTitle(locale);
+    const shouldRenderToc = !hideToc && headings.length > 0;
+    const tocOverride = shouldRenderToc
+      ? (Island({
+          when: "load",
+          children: <Toc headings={headings} title={tocTitle} />,
+        }) as unknown as VNode)
+      : undefined;
+    const mobileTocOverride = shouldRenderToc
+      ? (Island({
+          when: "load",
+          children: <MobileToc headings={headings} title={tocTitle} />,
+        }) as unknown as VNode)
+      : undefined;
+
+    return (
+      <DocLayoutWithDefaults
+        title={composeMetaTitle(title)}
+        description={settings.metaTags.description ? description : undefined}
+        head={<HeadWithDefaults title={title} description={description} canonical={canonical} />}
+        lang={locale}
+        noindex={settings.noindex}
+        hideSidebar={hideSidebar}
+        hideToc={hideToc}
+        headings={headings}
+        canonical={canonical}
+        sidebarPersistKey={sidebarPersistKey}
+        versionBanner={versionBanner ?? false}
+        versionBannerLatestUrl={versionBannerLatestUrl}
+        versionBannerLabels={versionBannerLabels}
+        headerOverride={
+          <HeaderWithDefaults
+            lang={locale}
+            currentSlug={props.slug}
+            navSection={navSection}
+            currentVersion={currentVersion}
+            currentPath={currentPath}
+          />
+        }
+        breadcrumbOverride={
+          breadcrumbs.length > 0 ? (
+            <Breadcrumb items={breadcrumbs} rightSlot={versionSwitcher} />
+          ) : undefined
+        }
+        sidebarOverride={
+          <SidebarWithDefaults
+            currentSlug={props.slug}
+            lang={locale}
+            navSection={navSection}
+            currentVersion={currentVersion}
+            currentPath={currentPath}
+          />
+        }
+        tocOverride={tocOverride}
+        mobileTocOverride={mobileTocOverride}
+        afterSidebar={<SidebarPrepaint hideSidebar={hideSidebar} />}
+        footerOverride={<FooterWithDefaults lang={locale} />}
+        bodyEndComponents={<DocBodyEnd />}
+        enableClientRouter={settings.dynamicPageTransition}
+      >
+        {kind === "autoIndex" ? (
+          /* Auto-index page: category without an index.mdx.
+             Fragment (not <div>) so children become direct children of
+             <article class="zd-content">, picking up the flow-space rule. */
+          <>
+            <h1 class="text-heading font-bold mb-vsp-xs">{autoIndexLabel}</h1>
+
+            {/* Build-time date block — chrome parity (#1461). */}
+            {metainfoSlot}
+
+            {description && (
+              <p class="mb-vsp-lg text-title text-muted">{description}</p>
+            )}
+            <NavCardGrid children={autoIndexChildren ?? []} />
+          </>
+        ) : (
+          /* Regular doc page. Fragment (not <div>) for the same reason. */
+          <>
+            {contentHeaderSlot}
+
+            {contentSlot}
+
+            {/* Prev / Next pagination. */}
+            <DocPager prev={prev} next={next} locale={locale} />
+
+            {/* Document utilities (revision history + view-source link). */}
+            {docHistorySlot}
+          </>
+        )}
+      </DocLayoutWithDefaults>
+    );
+  }
+
+  return DocPageShell;
+}

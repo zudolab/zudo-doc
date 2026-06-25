@@ -291,6 +291,50 @@
     "./doc-history": {
       "types": "./dist/doc-history/index.d.ts",
       "default": "./dist/doc-history/index.js"
+    },
+    "./nav-scope": {
+      "types": "./dist/nav-scope/index.d.ts",
+      "default": "./dist/nav-scope/index.js"
+    },
+    "./nav-data-prep": {
+      "types": "./dist/nav-data-prep/index.d.ts",
+      "default": "./dist/nav-data-prep/index.js"
+    },
+    "./sidebar-utils": {
+      "types": "./dist/sidebar-utils/index.d.ts",
+      "default": "./dist/sidebar-utils/index.js"
+    },
+    "./search-widget-script": {
+      "types": "./dist/search-widget-script/index.d.ts",
+      "default": "./dist/search-widget-script/index.js"
+    },
+    "./search-widget": {
+      "types": "./dist/search-widget/index.d.ts",
+      "default": "./dist/search-widget/index.js"
+    },
+    "./head-with-defaults": {
+      "types": "./dist/head-with-defaults/index.d.ts",
+      "default": "./dist/head-with-defaults/index.js"
+    },
+    "./sidebar-prepaint": {
+      "types": "./dist/sidebar-prepaint/index.d.ts",
+      "default": "./dist/sidebar-prepaint/index.js"
+    },
+    "./sidebar-with-defaults": {
+      "types": "./dist/sidebar-with-defaults/index.d.ts",
+      "default": "./dist/sidebar-with-defaults/index.js"
+    },
+    "./footer-with-defaults": {
+      "types": "./dist/footer-with-defaults/index.d.ts",
+      "default": "./dist/footer-with-defaults/index.js"
+    },
+    "./header-with-defaults": {
+      "types": "./dist/header-with-defaults/index.d.ts",
+      "default": "./dist/header-with-defaults/index.js"
+    },
+    "./doc-page-shell": {
+      "types": "./dist/doc-page-shell/index.d.ts",
+      "default": "./dist/doc-page-shell/index.js"
     }
   },
   "bin": {
