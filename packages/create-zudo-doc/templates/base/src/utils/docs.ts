@@ -154,22 +154,33 @@ export function buildNavTree(
   options?: BuildNavTreeOptions,
 ): NavNode[] {
   const buildHref: BuildHref = options?.buildHref ?? ((slug, locale) => docsUrl(slug, locale));
+  // Both cache layers are keyed by (docs, lang, categoryMeta) and assume the
+  // default `docsUrl` href space. A custom `buildHref` mints a DIFFERENT href
+  // space for the same key, so it must skip both the read (would return a tree
+  // with default hrefs) and the write (would poison the default-href cache for
+  // later callers). Only the default-href path — every current call site — is
+  // cached; custom-href callers (versioned routes, S6/S7/S8) recompute. The
+  // cache exists for the hot default path, which this preserves exactly.
+  const useCache = options?.buildHref === undefined;
+
   // Identity fast-path: stable array instance already seen for this
   // (lang, categoryMeta)? Return its tree without recomputing the key.
-  const byIdentity = navTreeByIdentity.get(docs);
-  if (byIdentity) {
-    for (const slot of byIdentity) {
-      if (slot.lang === lang && slot.categoryMeta === categoryMeta) {
-        return slot.tree;
+  if (useCache) {
+    const byIdentity = navTreeByIdentity.get(docs);
+    if (byIdentity) {
+      for (const slot of byIdentity) {
+        if (slot.lang === lang && slot.categoryMeta === categoryMeta) {
+          return slot.tree;
+        }
       }
     }
-  }
 
-  const cacheKey = navTreeCacheKey(docs, lang, categoryMeta);
-  const cached = navTreeCacheGet(cacheKey);
-  if (cached) {
-    rememberIdentity(docs, lang, categoryMeta, cached);
-    return cached;
+    const cacheKey = navTreeCacheKey(docs, lang, categoryMeta);
+    const cached = navTreeCacheGet(cacheKey);
+    if (cached) {
+      rememberIdentity(docs, lang, categoryMeta, cached);
+      return cached;
+    }
   }
 
   const sidebarTree = buildSidebarTree(
@@ -211,8 +222,10 @@ export function buildNavTree(
     });
   }
 
-  navTreeCacheSet(cacheKey, result);
-  rememberIdentity(docs, lang, categoryMeta, result);
+  if (useCache) {
+    navTreeCacheSet(navTreeCacheKey(docs, lang, categoryMeta), result);
+    rememberIdentity(docs, lang, categoryMeta, result);
+  }
   return result;
 }
 
