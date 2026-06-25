@@ -28,7 +28,7 @@ import { settings } from "@/config/settings";
 import { defaultLocale, t } from "@/config/i18n";
 import { BodyFootUtilArea } from "@takazudo/zudo-doc/body-foot-util";
 import { buildGitHubSourceUrl } from "@/utils/github";
-import { DocHistory } from "@/components/doc-history";
+import { DocHistory } from "@takazudo/zudo-doc/doc-history";
 import { toHistorySlug } from "@/utils/slug";
 // SSR author + date metadata comes from `.zfb/doc-history-meta.json`, a
 // build-time manifest emitted by `scripts/zfb-prebuild.mjs` (step 2:
