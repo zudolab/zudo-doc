@@ -317,6 +317,11 @@ describe("scaffold — sidebarToggle feature", () => {
   // swap before paint. The component just persists the toggle state — it does
   // NOT import the navigation lifecycle events or set the
   // `data-sidebar-no-transition` marker (the retired #2198 workaround).
+  //
+  // S2 (#2347 / package-first-migration Wave 3 epic #2344): DesktopSidebarToggle
+  // island relocated into @takazudo/zudo-doc/desktop-sidebar-toggle-island.
+  // The generated file is now a thin re-export shim; the sidebar-state logic
+  // (`data-sidebar-hidden`, `SIDEBAR_STORAGE_KEY`) lives in the package.
   it("desktop-sidebar-toggle.tsx persists sidebar state without a host-side SPA-nav flash guard (#2200)", async () => {
     const choices: UserChoices = {
       projectName: "test-sidebar-toggle-on",
@@ -334,9 +339,16 @@ describe("scaffold — sidebarToggle feature", () => {
       ),
       "utf-8",
     );
-    // Still persists the collapsed state to <html> + localStorage.
-    expect(content).toContain("data-sidebar-hidden");
+    // S2: the file is a thin re-export shim — the implementation moved into
+    // @takazudo/zudo-doc/desktop-sidebar-toggle-island. Verify the shim:
+    // (a) forwards DesktopSidebarToggle and SIDEBAR_STORAGE_KEY from the package,
+    // (b) does not inline the retired #2198 SPA-nav workaround, and
+    // (c) does not duplicate the island implementation.
+    expect(content).toContain("DesktopSidebarToggle");
     expect(content).toContain("SIDEBAR_STORAGE_KEY");
+    expect(content).toMatch(
+      /from\s+['"]@takazudo\/zudo-doc\/desktop-sidebar-toggle-island['"]/,
+    );
     // The retired #2198 workaround must be gone: no lifecycle-event import,
     // no per-swap capture/restore guard, no transition-suppression marker.
     expect(content).not.toMatch(
@@ -345,6 +357,9 @@ describe("scaffold — sidebarToggle feature", () => {
     expect(content).not.toContain("BEFORE_NAVIGATE_EVENT");
     expect(content).not.toContain("AFTER_NAVIGATE_EVENT");
     expect(content).not.toContain("data-sidebar-no-transition");
+    // Not a full island implementation — no useState, no useEffect.
+    expect(content).not.toContain("useState");
+    expect(content).not.toContain("data-sidebar-hidden");
   });
 
   it("generated package.json pins @takazudo/zudo-doc (W4A — runtime dep)", async () => {
