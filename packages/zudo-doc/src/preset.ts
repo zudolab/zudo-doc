@@ -323,9 +323,10 @@ function buildMarkdownFeatures(
 // Plugins — bare-specifier descriptors. zfb's plugin runtime loads each
 // `name` as a module specifier and dispatches lifecycle hooks against it;
 // these are descriptors, NOT imported functions (that would drag the plugins'
-// `node:*` graph into the config eval). The 5 package-shipped plugins resolve
-// against `@takazudo/zudo-doc/plugins/*` (relocated in S3); copy-public stays
-// project-relative (deleted in place in a later epic, not relocated).
+// `node:*` graph into the config eval). All 5 package-shipped plugins resolve
+// against `@takazudo/zudo-doc/plugins/*` (relocated in S3). The copy-public
+// workaround was removed — zfb >= 0.1.0-next.62 ships native `publicDir`
+// (defaults to "public") which replaces it (#2358).
 // ---------------------------------------------------------------------------
 
 function buildPlugins(settings: PresetSettings): PresetPlugin[] {
@@ -385,14 +386,5 @@ function buildPlugins(settings: PresetSettings): PresetPlugin[] {
           },
         ]
       : []),
-    // copy-public stays a PROJECT-relative descriptor (NOT relocated in S3).
-    // Native zfb copy_public_dir is not yet validated for base="/", so the
-    // host plugin remains until that lands; deleted in place in a later epic.
-    {
-      name: "./plugins/copy-public-plugin.mjs",
-      options: {
-        publicDir: "public",
-      },
-    },
   ];
 }

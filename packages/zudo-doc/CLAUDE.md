@@ -129,8 +129,9 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
   stays node-builtin-free.
 - **Plugins are bare-specifier descriptors** (`{ name: "@takazudo/zudo-doc/plugins/<x>", options }`),
   never imported plugin functions — importing the plugin modules would drag
-  their `node:fs`/`node:path` graph into the config eval. `copy-public` stays a
-  project-relative `./plugins/copy-public-plugin.mjs` descriptor (not relocated).
+  their `node:fs`/`node:path` graph into the config eval. All integration plugins
+  now resolve via `@takazudo/zudo-doc/plugins/*`; the old project-relative
+  `copy-public-plugin.mjs` was removed in #2358 (zfb native `publicDir` replaces it).
 - **Node-free eval-graph guard** (`src/__tests__/preset.test.ts`): esbuild-bundles
   `src/preset.ts` with `--platform=neutral` (mirrors zfb's `loader.rs:277`),
   no `external`, and FAILS on any reachable `node:*` builtin. Under

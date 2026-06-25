@@ -253,14 +253,13 @@ describe("zudoDocPreset collections", () => {
 });
 
 describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
-  it("emits the package plugin specifiers + project-relative copy-public, in order", () => {
+  it("emits the package plugin specifiers in order (no project-relative copy-public since #2358)", () => {
     const { plugins } = preset();
     expect(plugins.map((p) => p.name)).toEqual([
       "@takazudo/zudo-doc/plugins/claude-resources",
       "@takazudo/zudo-doc/plugins/doc-history",
       "@takazudo/zudo-doc/plugins/search-index",
       "@takazudo/zudo-doc/plugins/llms-txt",
-      "./plugins/copy-public-plugin.mjs",
     ]);
   });
 
@@ -289,7 +288,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       defaultLocaleDir: "src/content/docs",
       locales: [{ code: "ja", dir: "src/content/docs-ja" }],
     });
-    expect(byName["./plugins/copy-public-plugin.mjs"]).toEqual({ publicDir: "public" });
+    // copy-public-plugin.mjs was removed in #2358; no project-relative plugin expected.
   });
 
   it("omits claude-resources / doc-history / llms-txt when their settings are falsy", () => {
@@ -300,7 +299,6 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     });
     expect(r.plugins.map((p) => p.name)).toEqual([
       "@takazudo/zudo-doc/plugins/search-index",
-      "./plugins/copy-public-plugin.mjs",
     ]);
   });
 });

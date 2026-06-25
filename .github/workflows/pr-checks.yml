@@ -707,9 +707,10 @@ jobs:
             || { echo "::error::Preview HTML missing root islands script src"; exit 1; }
           echo "OK: deployed PR preview has root asset URLs"
 
-      # Public-asset HTTP 200 gate — defends against #1394 (public/ assets
-      # served at root under Workers static assets).
-      - name: Public-asset smoke gate (#1394)
+      # Public-asset HTTP 200 gate — validates zfb native publicDir (>= 0.1.0-next.62)
+      # copies public/ → dist/ at base="/" so /img/logo.svg serves 200 (#2358,
+      # replacing the old copy-public-plugin.mjs workaround from #1394).
+      - name: Public-asset smoke gate (native publicDir)
         env:
           DEPLOY_URL: ${{ steps.cf-deploy.outputs.deploy_url }}
         run: |

@@ -3096,22 +3096,20 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
 // (search-index, connect-adapter, doc-history, llms-txt, claude-resources)
 // were deleted from the templates because generated projects now use the
 // preset approach — plugins are referenced via `@takazudo/zudo-doc/plugins/*`
-// package specifiers inside the preset. Only copy-public-plugin.mjs remains
-// project-local (the preset still resolves it relative to the project root).
+// package specifiers inside the preset.
+// #2358: copy-public-plugin.mjs also removed — zfb native `publicDir` replaces it.
 // tsx is no longer emitted for docHistory/claudeResources features: the
 // package plugins import the runner directly (no `tsx -e` spawn) since
 // @takazudo/zudo-doc now ships compiled dist/.
 // ---------------------------------------------------------------------------
 
 describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)", () => {
-  it("barebone scaffold ships only copy-public-plugin.mjs (preset owns all others)", async () => {
-    // S5b (#2329) + #2337: the preset-based zfb.config.ts has no inline
+  it("barebone scaffold ships NO project-local .mjs plugins (all owned by preset or native zfb)", async () => {
+    // S5b (#2329) + #2337 + #2358: the preset-based zfb.config.ts has no inline
     // `./plugins/*.mjs` references. Plugins are referenced via
     // `@takazudo/zudo-doc/plugins/*` package specifiers inside the preset.
-    // The only project-local plugin is copy-public-plugin.mjs — the preset
-    // resolves it relative to the project root at zfb-load time.
-    // All other .mjs wrappers (search-index, connect-adapter, doc-history,
-    // llms-txt, claude-resources) have been removed from templates (#2337).
+    // copy-public-plugin.mjs was removed (#2358) — zfb native publicDir replaces it.
+    // All .mjs plugin wrappers are absent from templates.
     const choices: UserChoices = {
       projectName: "test-w7a-plugins-barebone",
       defaultLang: "en",
@@ -3121,15 +3119,11 @@ describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)
       packageManager: "pnpm",
     };
     await scaffold(choices);
-    expect(
-      await fs.pathExists(
-        projectPath("test-w7a-plugins-barebone", "plugins/copy-public-plugin.mjs"),
-      ),
-      "expected plugins/copy-public-plugin.mjs to ship in every scaffold",
-    ).toBe(true);
-    // All other .mjs plugin wrappers must NOT ship — they are dead code since
-    // the preset references the package plugins directly (#2337).
+    // All .mjs plugin wrappers must NOT ship — they are dead code since
+    // the preset references the package plugins directly (#2337) and
+    // copy-public is handled by zfb natively (#2358).
     for (const file of [
+      "plugins/copy-public-plugin.mjs",
       "plugins/search-index-plugin.mjs",
       "plugins/connect-adapter.mjs",
       "plugins/doc-history-plugin.mjs",
@@ -3140,18 +3134,16 @@ describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)
         await fs.pathExists(
           projectPath("test-w7a-plugins-barebone", file),
         ),
-        `expected ${file} to be absent (orphaned after #2337)`,
+        `expected ${file} to be absent (orphaned after #2337/#2358)`,
       ).toBe(false);
     }
   });
 
-  it("all-features scaffold ships copy-public-plugin.mjs (still project-local via preset)", async () => {
-    // S5b (#2329): the thin preset-based zfb.config.ts has no inline
-    // `./plugins/*.mjs` references — plugins are referenced via
+  it("all-features scaffold has no project-local .mjs plugins (preset owns all, publicDir native)", async () => {
+    // S5b (#2329) + #2337 + #2358: the thin preset-based zfb.config.ts has no
+    // inline `./plugins/*.mjs` references — plugins are referenced via
     // `@takazudo/zudo-doc/plugins/*` package specifiers inside the preset.
-    // The only project-local plugin that remains is copy-public-plugin.mjs,
-    // referenced as `"./plugins/copy-public-plugin.mjs"` inside the preset
-    // runtime at zfb-load time. It must still be shipped by the base template.
+    // copy-public-plugin.mjs was removed in #2358 (zfb native publicDir).
     const choices: UserChoices = {
       projectName: "test-w7a-plugins-all",
       defaultLang: "en",
@@ -3161,13 +3153,13 @@ describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)
       packageManager: "pnpm",
     };
     await scaffold(choices);
-    // copy-public-plugin.mjs must be present (preset references it project-locally)
+    // copy-public-plugin.mjs must NOT be present (removed in #2358)
     expect(
       await fs.pathExists(
         projectPath("test-w7a-plugins-all", "plugins/copy-public-plugin.mjs"),
       ),
-      "expected plugins/copy-public-plugin.mjs to ship in every scaffold",
-    ).toBe(true);
+      "copy-public-plugin.mjs must be absent after #2358",
+    ).toBe(false);
     // The thin generated config must not reference any ./plugins/*.mjs inline
     const config = await fs.readFile(
       projectPath("test-w7a-plugins-all", "zfb.config.ts"),
