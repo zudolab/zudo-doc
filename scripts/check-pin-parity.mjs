@@ -74,16 +74,24 @@ const ZUDO_DOC_ZFB_PACKAGES = ["@takazudo/zfb", "@takazudo/zfb-runtime"];
 /**
  * Extract the literal version string for `pkgName` from scaffold.ts.
  *
- * scaffold.ts uses two forms for package pins:
+ * scaffold.ts uses three forms for package pins:
  *   Colon form (object literal):
  *     "@takazudo/zudo-doc": "^0.2.0-next.1",
  *   Bracket-assignment form:
  *     deps["@takazudo/zudo-doc-history-server"] = "^0.2.0-next.1";
+ *   Constant-reference form (C1 #2362 — the pin is hoisted to a module
+ *   constant so the dep pin and the `.zudo-doc.json` provenance seed can't
+ *   drift):
+ *     export const ZUDO_DOC_PIN = "^0.2.22";
+ *     ...
+ *     "@takazudo/zudo-doc": ZUDO_DOC_PIN,
  *
- * The regex handles both by accepting either `:` or `] =` as the separator.
- * The closing quote immediately after the key name is what prevents
- * `@takazudo/zudo-doc` from matching inside `@takazudo/zudo-doc-history-server`
- * (no closing quote follows `zudo-doc` in the longer name).
+ * The first regex handles the two literal forms by accepting either `:` or
+ * `] =` as the separator. The closing quote immediately after the key name is
+ * what prevents `@takazudo/zudo-doc` from matching inside
+ * `@takazudo/zudo-doc-history-server` (no closing quote follows `zudo-doc` in
+ * the longer name). When the value is a bare identifier instead of a quoted
+ * literal, we resolve that identifier's `const NAME = "..."` declaration.
  */
 function readScaffoldPin(scaffoldSrc, pkgName) {
   const escaped = pkgName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -91,7 +99,20 @@ function readScaffoldPin(scaffoldSrc, pkgName) {
     `["']${escaped}["']\\s*(?::|\\]\\s*=)\\s*["']([^"']+)["']`,
   );
   const match = scaffoldSrc.match(re);
-  return match ? match[1] : null;
+  if (match) return match[1];
+
+  // Constant-reference form: `"<pkg>": IDENTIFIER` / `deps["<pkg>"] = IDENTIFIER`.
+  // Resolve IDENTIFIER to its `const IDENTIFIER = "<literal>";` declaration.
+  const refRe = new RegExp(
+    `["']${escaped}["']\\s*(?::|\\]\\s*=)\\s*([A-Za-z_$][A-Za-z0-9_$]*)`,
+  );
+  const refMatch = scaffoldSrc.match(refRe);
+  if (!refMatch) return null;
+  const constRe = new RegExp(
+    `\\b${refMatch[1]}\\s*=\\s*["']([^"']+)["']`,
+  );
+  const constMatch = scaffoldSrc.match(constRe);
+  return constMatch ? constMatch[1] : null;
 }
 
 function main() {
