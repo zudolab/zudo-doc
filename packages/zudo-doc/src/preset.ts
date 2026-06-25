@@ -81,6 +81,14 @@ export interface PresetSettings {
   claudeResources?: PresetClaudeResourcesConfig | false;
   /** "owner/repo" — when set, enables `#123` / SHA autolinks in markdown. Omit to disable entirely. */
   githubAutolinksRepo?: string;
+  /** When `true`, the preset adds the package-owned route-injection plugin
+   *  (`@takazudo/zudo-doc/plugins/routes`). Default off — dormant. See
+   *  `docs/adr/route-injection-seam.md`. */
+  packageOwnedRoutes?: boolean;
+  /** Gate for the `/docs/tags` + `/docs/tags/[tag]` injected routes. */
+  docTags?: boolean;
+  /** Gate for the SSR `/api/ai-chat` injected route (`prerender: false`). */
+  aiAssistant?: boolean;
 }
 
 /**
@@ -91,6 +99,29 @@ export interface PresetSettings {
  * the canonical seven (note/tip/info/warning/danger/caution/details).
  */
 export type DirectiveVocabulary = Record<string, string>;
+
+/**
+ * The UI-string translation table (`src/config/i18n.ts` `translations`).
+ * Locale code → key → translated string. Passed (not imported) so the preset's
+ * import graph stays node-builtin-free; rides into the route-context virtual
+ * module verbatim when `packageOwnedRoutes` is on. Optional — only consumed by
+ * the routes plugin; omitting it makes the virtual module carry `{}`.
+ */
+export type PresetTranslations = Record<string, Record<string, string>>;
+
+/**
+ * The tag vocabulary entries (`src/config/tag-vocabulary.ts`). Serializable
+ * data, threaded into the route-context virtual module when
+ * `packageOwnedRoutes` is on. Optional — only consumed by the routes plugin.
+ */
+export type PresetTagVocabularyEntry = {
+  id: string;
+  label?: string;
+  description?: string;
+  group?: string;
+  aliases?: readonly string[];
+  deprecated?: boolean | { redirect?: string };
+};
 
 /** Arguments to `zudoDocPreset`. */
 export interface ZudoDocPresetArgs {
@@ -108,6 +139,17 @@ export interface ZudoDocPresetArgs {
    * The directives recipe map. See {@link DirectiveVocabulary}.
    */
   directiveVocabulary: DirectiveVocabulary;
+  /**
+   * The host's UI-string translation table. Only consumed when
+   * `settings.packageOwnedRoutes` is true (rides into the route-context virtual
+   * module). Optional — defaults to `{}`. See {@link PresetTranslations}.
+   */
+  translations?: PresetTranslations;
+  /**
+   * The host's tag vocabulary entries. Only consumed when
+   * `settings.packageOwnedRoutes` is true. Optional — defaults to `[]`.
+   */
+  tagVocabulary?: readonly PresetTagVocabularyEntry[];
 }
 
 // ---------------------------------------------------------------------------
@@ -179,6 +221,8 @@ export function zudoDocPreset({
   settings,
   buildDocsSchema,
   directiveVocabulary,
+  translations,
+  tagVocabulary,
 }: ZudoDocPresetArgs): ZudoDocPresetResult {
   // `z.toJSONSchema` is a runtime call but the result is a stable JSON
   // document. Compute it once and reuse the same object across every
@@ -187,7 +231,7 @@ export function zudoDocPreset({
 
   return {
     collections: buildCollections(settings, docsSchemaJson),
-    plugins: buildPlugins(settings),
+    plugins: buildPlugins(settings, { translations, tagVocabulary }),
     markdown: { features: buildMarkdownFeatures(settings, directiveVocabulary) },
     // Dual-theme syntect (zfb >= 0.1.0-next.45). Theme names are SYNTECT
     // built-ins, NOT Shiki names. Tokens emit `--shiki-light`/`--shiki-dark`
@@ -329,7 +373,13 @@ function buildMarkdownFeatures(
 // (defaults to "public") which replaces it (#2358).
 // ---------------------------------------------------------------------------
 
-function buildPlugins(settings: PresetSettings): PresetPlugin[] {
+function buildPlugins(
+  settings: PresetSettings,
+  routeContext: {
+    translations?: PresetTranslations;
+    tagVocabulary?: readonly PresetTagVocabularyEntry[];
+  },
+): PresetPlugin[] {
   const localeArray = Object.entries(settings.locales).map(([code, locale]) => ({
     code,
     dir: locale.dir,
@@ -339,6 +389,31 @@ function buildPlugins(settings: PresetSettings): PresetPlugin[] {
   );
 
   return [
+    // Package-owned route injection — dormant by default (Decision 4). The
+    // descriptor is a BARE SPECIFIER, never an imported plugin function: the
+    // preset's node-free eval-graph guard (preset.test.ts) bundles this module
+    // under --platform=neutral, and importing the plugin would drag its
+    // `injectRoute`/`node:*` graph into the config eval. The plugin's `setup`
+    // hook reads `options` to (a) emit the route-context virtual module
+    // (serializable settings/translations/tagVocabulary only) and (b) derive
+    // the route catalog from `settings.locales` / `settings.versions`. Listed
+    // FIRST so an injected route is registered before the other plugins'
+    // preBuild work runs (ordering is cosmetic — injection happens in `setup`).
+    ...(settings.packageOwnedRoutes
+      ? [
+          {
+            name: "@takazudo/zudo-doc/plugins/routes",
+            options: {
+              // Serializable project settings — JSON.stringify-d verbatim into
+              // the virtual module. No function-valued fields (verified in
+              // src/config/settings.ts), so it round-trips losslessly.
+              settings: settings as unknown as Record<string, unknown>,
+              translations: routeContext.translations ?? {},
+              tagVocabulary: routeContext.tagVocabulary ?? [],
+            },
+          },
+        ]
+      : []),
     ...(settings.claudeResources
       ? [
           {
