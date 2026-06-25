@@ -2626,6 +2626,12 @@ describe("drift detection — generator vs main project settings", () => {
       // Generated projects must opt in explicitly — omitting gives "no autolinks" (old behaviour).
       // See zudo-doc#2321 Wave-0 correctness fix.
       "githubAutolinksRepo",
+      // Internal/advanced build-time route injection, intentionally NOT surfaced
+      // in generated projects this epic (Package-First Finale #2356; ADR
+      // packages/zudo-doc/docs/adr/route-injection-seam.md, Decision 4). Default
+      // (absent → false) is the correct dormant value for a blank project; a
+      // fast-follow flips it on once upstream zfb dev-render support lands.
+      "packageOwnedRoutes",
     ]);
 
     // Check that every field in the main settings exists in the generated output

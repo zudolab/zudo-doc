@@ -301,6 +301,33 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       "@takazudo/zudo-doc/plugins/search-index",
     ]);
   });
+
+  // ── packageOwnedRoutes gate (Package-First Finale #2356, ADR
+  //    route-injection-seam.md Decision 4) — dormant unless the flag is true.
+  it("omits the routes plugin by default (packageOwnedRoutes dormant)", () => {
+    const { plugins } = preset();
+    expect(plugins.map((p) => p.name)).not.toContain("@takazudo/zudo-doc/plugins/routes");
+  });
+
+  it("adds the routes bare-specifier descriptor only when packageOwnedRoutes is true", () => {
+    const r = zudoDocPreset({
+      settings: { ...fixtureSettings, packageOwnedRoutes: true },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+      translations: { en: { "doc.allTags": "All Tags" } },
+      tagVocabulary: [{ id: "ai" }],
+    });
+    const routes = r.plugins.find((p) => p.name === "@takazudo/zudo-doc/plugins/routes");
+    expect(routes).toBeDefined();
+    // It is FIRST so injection happens before the other plugins' preBuild work.
+    expect(r.plugins[0]?.name).toBe("@takazudo/zudo-doc/plugins/routes");
+    // Options carry serializable settings/translations/tagVocabulary only.
+    expect(routes?.options).toMatchObject({
+      translations: { en: { "doc.allTags": "All Tags" } },
+      tagVocabulary: [{ id: "ai" }],
+    });
+    expect((routes?.options as { settings: { packageOwnedRoutes?: boolean } }).settings.packageOwnedRoutes).toBe(true);
+  });
 });
 
 describe("zudoDocPreset markdown.features", () => {
