@@ -363,6 +363,42 @@
     "./route-enumerators": {
       "types": "./dist/route-enumerators/index.d.ts",
       "default": "./dist/route-enumerators/index.js"
+    },
+    "./github-helpers": {
+      "types": "./dist/github-helpers/index.d.ts",
+      "default": "./dist/github-helpers/index.js"
+    },
+    "./tag-helpers": {
+      "types": "./dist/tag-helpers/index.d.ts",
+      "default": "./dist/tag-helpers/index.js"
+    },
+    "./doc-metainfo-area": {
+      "types": "./dist/doc-metainfo-area/index.d.ts",
+      "default": "./dist/doc-metainfo-area/index.js"
+    },
+    "./doc-tags-area": {
+      "types": "./dist/doc-tags-area/index.d.ts",
+      "default": "./dist/doc-tags-area/index.js"
+    },
+    "./doc-pager": {
+      "types": "./dist/doc-pager/index.d.ts",
+      "default": "./dist/doc-pager/index.js"
+    },
+    "./doc-body-end": {
+      "types": "./dist/doc-body-end/index.d.ts",
+      "default": "./dist/doc-body-end/index.js"
+    },
+    "./doc-history-area": {
+      "types": "./dist/doc-history-area/index.d.ts",
+      "default": "./dist/doc-history-area/index.js"
+    },
+    "./doc-content-header": {
+      "types": "./dist/doc-content-header/index.d.ts",
+      "default": "./dist/doc-content-header/index.js"
+    },
+    "./doc-page-renderer": {
+      "types": "./dist/doc-page-renderer/index.d.ts",
+      "default": "./dist/doc-page-renderer/index.js"
     }
   },
   "bin": {
