@@ -1,0 +1,236 @@
+/** @jsxRuntime automatic */
+/** @jsxImportSource preact */
+// doc-history-area — factory for the locale-aware DocHistory area wrapper
+// (epic #2344, S7).
+//
+// The host's `pages/lib/_doc-history-area.tsx` previously read
+// `settings.docHistory`, `settings.bodyFootUtilArea`, `settings.base`,
+// `defaultLocale`, and imported `buildGitHubSourceUrl` from `@/utils/github`
+// (which itself read `settings.githubUrl` at module scope). This factory
+// receives all these as injected dependencies.
+//
+// DocHistory island: the host stub must still import `DocHistory` from
+// `@takazudo/zudo-doc/doc-history` so zfb's scanner walks the page →
+// stub → DocHistory chain. The factory receives the DocHistory constructor via
+// deps so no `@/` alias is imported here.
+//
+// docHistoryMeta JSON: stays in the host stub — the `#doc-history-meta` alias
+// resolves only in the host project's tsconfig. The factory receives the parsed
+// manifest as a plain object.
+
+import type { VNode } from "preact";
+import { Island } from "@takazudo/zfb";
+import { BodyFootUtilArea } from "../body-foot-util/index.js";
+
+/** Per-entry metadata shape from the doc-history manifest. */
+export interface DocHistoryMetaEntry {
+  author: string;
+  createdDate: string;
+  updatedDate: string;
+  /** Source file extension (".mdx" | ".md") — optional in older manifests. */
+  ext?: string;
+}
+
+/** Settings subset read by the DocHistoryArea factory. */
+export interface DocHistoryAreaSettings {
+  docHistory: boolean;
+  bodyFootUtilArea: { viewSourceLink?: boolean } | false | undefined;
+  base?: string | null;
+}
+
+/**
+ * DocHistory component constructor type.
+ * Must match the interface of `@takazudo/zudo-doc/doc-history`'s DocHistory.
+ */
+export type DocHistoryComponent = (props: {
+  slug: string;
+  locale?: string;
+  basePath?: string;
+}) => VNode;
+
+/** Dependencies injected by the host stub. */
+export interface DocHistoryAreaDeps {
+  settings: DocHistoryAreaSettings;
+  /** Default locale code (e.g. "en"). */
+  defaultLocale: string;
+  /** The parsed `#doc-history-meta` JSON manifest (host-side import). */
+  docHistoryMeta: Record<string, DocHistoryMetaEntry>;
+  /** Translate a UI string key for a locale. */
+  t: (key: string, locale: string) => string;
+  /** Convert a canonical route slug to a history slug (sentinel: "" → "index"). */
+  toHistorySlug: (slug: string) => string;
+  /**
+   * Build a view-source GitHub URL, or null when githubUrl is not set.
+   * Host passes a partially applied version binding `settings.githubUrl`.
+   */
+  buildGitHubSourceUrl: (contentDir: string, entryId: string) => string | null;
+  /**
+   * The DocHistory island component (host-side — must be imported in the stub so
+   * zfb's scanner walks page → stub → DocHistory).
+   */
+  DocHistory: DocHistoryComponent;
+}
+
+export interface DocHistoryAreaProps {
+  /** Page slug, e.g. "getting-started/intro". */
+  slug: string;
+  /** Active locale string, e.g. "en", "ja". */
+  locale: string;
+  /**
+   * Raw zfb entry slug (relative path without extension), e.g.
+   * "getting-started/intro" or "getting-started/index". Appended with
+   * the source extension from the build-time manifest (".mdx" fallback)
+   * to form the file path passed to buildGitHubSourceUrl.
+   * Omit for auto-index pages (no underlying MDX file) — sourceUrl
+   * will be suppressed automatically.
+   */
+  entrySlug?: string;
+  /**
+   * Content directory for the active locale, e.g. "src/content/docs"
+   * or "src/content/docs-ja". Combined with entrySlug to build the
+   * view-source GitHub URL. Omit to suppress the view-source link.
+   */
+  contentDir?: string;
+  /**
+   * True when this locale page falls back to the base EN collection
+   * (i.e. the slug has no translation for the active locale). When true,
+   * the history data-path derivations use defaultLocale so the island
+   * fetches the correct bare-slug JSON and the SSR manifest lookup hits
+   * the bare key — both of which only exist for EN-origin files.
+   */
+  isFallback?: boolean;
+}
+
+/**
+ * Create a `DocHistoryArea` component bound to the host's settings and
+ * injected dependencies.
+ */
+export function createDocHistoryArea(
+  deps: DocHistoryAreaDeps,
+): (props: DocHistoryAreaProps) => VNode | null {
+  const {
+    settings,
+    defaultLocale,
+    docHistoryMeta,
+    t,
+    toHistorySlug,
+    buildGitHubSourceUrl,
+    DocHistory,
+  } = deps;
+
+  // Set explicit `displayName` on the named-export DocHistory so zfb's
+  // `captureComponentName` produces a stable marker even after the SSR
+  // pipeline runs the component through a function-name-rewriting layer.
+  (DocHistory as { displayName?: string }).displayName = "DocHistory";
+
+  function DocHistoryArea({
+    slug,
+    locale,
+    entrySlug,
+    contentDir,
+    isFallback,
+  }: DocHistoryAreaProps): VNode | null {
+    if (!settings.docHistory) return null;
+
+    // Doc-history storage sentinel ("" -> "index"): a root index page has the
+    // canonical route slug "" (→ /docs/), but doc-history JSON and the meta
+    // manifest store/serve the root entry under "index" (an empty path segment
+    // is unroutable — the server regex and the prebuild key composition both
+    // reject ""). Apply the sentinel to the slug segment BEFORE locale
+    // composition so root pages resolve to e.g. /doc-history/index.json and the
+    // meta key "ja/index". See @/utils/slug `toHistorySlug` and the
+    // collectContentFiles walk in packages/doc-history-server. (#1891)
+    const historySlug = toHistorySlug(slug);
+
+    // On EN-fallback locale pages the history data exists only at the bare
+    // (non-locale-prefixed) path — the prebuild/server writes locale-prefixed
+    // keys/paths only for files physically present in the locale collection.
+    // Use defaultLocale for data lookups when isFallback is true; keep locale
+    // for all display label calls (t()) so JA users see JA labels.
+    const effectiveHistoryLocale = isFallback ? defaultLocale : locale;
+
+    // Look up the build-time manifest entry for this page. The composedSlug
+    // matches the key written by the prebuild step: bare slug for the default
+    // locale, "<localeKey>/<slug>" for non-default locales.
+    const composedSlug =
+      effectiveHistoryLocale === defaultLocale ? historySlug : `${effectiveHistoryLocale}/${historySlug}`;
+    const meta = docHistoryMeta[composedSlug];
+
+    // Locale-aware labels for the SSR fallback.
+    const createdLabel = t("doc.created", locale);
+    const updatedLabel = t("doc.updated", locale);
+    const historyLabel = t("doc.history", locale);
+
+    // Real-component props — locale omitted for the default locale.
+    // Use effectiveHistoryLocale so fallback pages fetch the bare (non-ja/) path.
+    const docHistoryLocale = effectiveHistoryLocale === defaultLocale ? undefined : effectiveHistoryLocale;
+    const docHistoryBasePath = settings.base ?? "/";
+
+    // Build the SSR fallback with only the sr-only metadata block so the
+    // author marker and Created/Updated labels are present in SSG output
+    // before JS hydration, discoverable by screen readers and crawlers.
+    const author = meta?.author;
+    const createdDate = meta?.createdDate;
+    const updatedDate = meta?.updatedDate;
+
+    const fallback = (
+      <div class="sr-only">
+        {author && <span>{author}</span>}
+        <span>
+          {createdLabel}
+          {createdDate ? `: ${createdDate}` : ""}
+        </span>
+        <span>
+          {updatedLabel}
+          {updatedDate ? `: ${updatedDate}` : ""}
+        </span>
+      </div>
+    );
+
+    // Compose the SSR-skip island with zfb's native `<Island ssrFallback>` API.
+    const docHistoryIsland = Island({
+      when: "idle",
+      ssrFallback: fallback,
+      children: (
+        <DocHistory
+          slug={historySlug}
+          locale={docHistoryLocale}
+          basePath={docHistoryBasePath}
+        />
+      ),
+    }) as unknown as VNode;
+
+    // Compute the view-source GitHub URL host-side so the v2 BodyFootUtilArea
+    // component stays oblivious to project settings. Gate on
+    // bodyFootUtilArea.viewSourceLink, and require both entrySlug and contentDir
+    // (auto-index pages pass neither). The real source extension comes from the
+    // build-time manifest (`ext`, written by pre-build.ts) — the content walkers
+    // accept both .mdx and .md, so hardcoding ".mdx" produced broken view-source
+    // URLs for .md pages. ".mdx" remains the fallback for entries without a
+    // manifest record (untracked files, SKIP_DOC_HISTORY=1, stale manifests).
+    const utilSettings = settings.bodyFootUtilArea;
+    const sourceExt = meta?.ext ?? ".mdx";
+    const sourceUrl =
+      utilSettings && utilSettings.viewSourceLink && entrySlug && contentDir
+        ? buildGitHubSourceUrl(contentDir, entrySlug + sourceExt)
+        : null;
+
+    // Resolve the i18n label host-side; pass the result so the v2 component
+    // stays framework-agnostic.
+    const viewSourceLabel = t("doc.viewSource", locale);
+
+    // Suppress TS warning about historyLabel being unused — it is retained
+    // for future use and parity with the original file.
+    void historyLabel;
+
+    return (
+      <BodyFootUtilArea
+        docHistoryIsland={docHistoryIsland}
+        sourceUrl={sourceUrl}
+        viewSourceLabel={viewSourceLabel}
+      />
+    );
+  }
+
+  return DocHistoryArea;
+}
