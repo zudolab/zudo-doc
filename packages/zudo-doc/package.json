@@ -363,6 +363,30 @@
     "./route-enumerators": {
       "types": "./dist/route-enumerators/index.d.ts",
       "default": "./dist/route-enumerators/index.js"
+    },
+    "./inline-version-switcher": {
+      "types": "./dist/inline-version-switcher/index.d.ts",
+      "default": "./dist/inline-version-switcher/index.js"
+    },
+    "./versions-page": {
+      "types": "./dist/versions-page/index.d.ts",
+      "default": "./dist/versions-page/index.js"
+    },
+    "./tag-pages": {
+      "types": "./dist/tag-pages/index.d.ts",
+      "default": "./dist/tag-pages/index.js"
+    },
+    "./category-nav": {
+      "types": "./dist/category-nav/index.d.ts",
+      "default": "./dist/category-nav/index.js"
+    },
+    "./category-tree-nav": {
+      "types": "./dist/category-tree-nav/index.d.ts",
+      "default": "./dist/category-tree-nav/index.js"
+    },
+    "./site-tree-nav": {
+      "types": "./dist/site-tree-nav/index.d.ts",
+      "default": "./dist/site-tree-nav/index.js"
     }
   },
   "bin": {
