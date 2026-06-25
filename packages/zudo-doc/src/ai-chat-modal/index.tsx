@@ -1,40 +1,41 @@
 "use client";
 
-// Use `preact/compat` so the bundle resolves to Preact's React-shim at
-// runtime. The "react" → "preact/compat" alias lets us consume React-typed
-// components in this Preact app (configured project-wide). preact/compat
-// re-exports the same hooks under the React-compat names plus the `React.*`
-// type namespace this file references for event handlers.
+/** @jsxRuntime automatic */
+/** @jsxImportSource preact */
+
+// AI Chat Modal island — relocated from src/components/ai-chat-modal.tsx
+// (host showcase) into the package as part of Package-First Wave 3 (S3,
+// epic #2344). Uses shared hook + utils from S1a foundation:
+//   - useModalDialog  from @takazudo/zudo-doc/use-modal-dialog
+//   - renderMarkdown  from @takazudo/zudo-doc/render-markdown
+//   - SmartBreak      from @takazudo/zudo-doc/smart-break
+//   - ChatMessage     from @takazudo/zudo-doc/island-types
+//
+// The /api/ai-chat endpoint stays host-side (showcase-only).
+// The CSS block (.ai-chat-md) is shipped in @takazudo/zudo-doc/features.css
+// (moved from src/styles/global.css by S3).
+
 import { useState, useEffect, useRef, useCallback, memo } from "preact/compat";
-import type { ChatMessage } from "@/types/ai-chat";
-import { renderMarkdown } from "@/utils/render-markdown";
-import { SmartBreak } from "@/utils/smart-break";
-import { BEFORE_NAVIGATE_EVENT } from "@takazudo/zudo-doc/transitions";
-import { useModalDialog } from "@/hooks/use-modal-dialog";
+import type { ChatMessage } from "../island-types/index.js";
+import { renderMarkdown } from "../render-markdown/index.js";
+import { SmartBreak } from "../smart-break/index.js";
+import { BEFORE_NAVIGATE_EVENT } from "../transitions/index.js";
+import { useModalDialog } from "../use-modal-dialog/index.js";
 
 interface AiChatModalProps {
   basePath: string;
 }
 
-/** Runtime type guard for the AI chat API response. The server returns
- *  `{ response: string }` on 2xx and `{ error: string }` on 4xx/5xx.
- *  Prevents laundering an untrusted `res.json()` value (typed as `any`)
- *  into the component's typed code without validation. */
 function isAiChatResponse(data: unknown): data is Record<string, unknown> {
   return typeof data === "object" && data !== null;
 }
 
-// Memoized row: message objects are immutable once appended, so rows skip
-// re-rendering on unrelated state changes — without this, every keystroke
-// (input state) re-runs renderMarkdown for every assistant message.
+// Memoized row: message objects are immutable once appended.
 const ChatMessageRow = memo(function ChatMessageRow({ msg }: { msg: ChatMessage }) {
   return (
     <div
       className={`mb-vsp-xs flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
     >
-      {/* SR-only role prefix: visual distinction is bubble alignment/color only, so
-          screen readers need a text label to identify speaker. position:absolute
-          pulls it out of flex flow, preserving the bubble layout. */}
       <span className="sr-only">{msg.role === "user" ? "You: " : "Assistant: "}</span>
       {msg.role === "user" ? (
         <div className="max-w-[85%] rounded-t-[1rem] rounded-bl-[1rem] rounded-br-[0.25rem] bg-chat-user-bg px-hsp-md py-vsp-2xs text-small leading-relaxed text-chat-user-text">
@@ -50,7 +51,7 @@ const ChatMessageRow = memo(function ChatMessageRow({ msg }: { msg: ChatMessage 
   );
 });
 
-export default function AiChatModal({ basePath }: AiChatModalProps) {
+export function AiChatModal({ basePath }: AiChatModalProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -68,12 +69,6 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
     setLoading(false);
   }, []);
 
-  // Shared dialog lifecycle: showModal/close sync, native-close callback,
-  // backdrop click, and navigation-close (before swap to avoid stale-ref
-  // errors on next open — refs #1621) — delegated to useModalDialog.
-  // restoreFocusOnly: this component focuses `inputRef` in its own effect
-  // (line below), so we only need trigger-capture + focus restore on close
-  // (a11y interaction #2295).
   const { dialogRef, handleBackdropClick } = useModalDialog({
     isOpen,
     onClose: resetState,
@@ -82,8 +77,6 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
     restoreFocusOnly: true,
   });
 
-  // Listen for toggle event dispatched by the header AI-chat trigger button.
-  // Guard against stale refs from detached DOM after SPA navigation (#1621).
   useEffect(() => {
     function handleToggle() {
       const dialog = dialogRef.current;
@@ -98,16 +91,12 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
     return () => window.removeEventListener("toggle-ai-chat", handleToggle);
   }, [dialogRef]);
 
-  // Focus the input once the dialog is open. useModalDialog calls
-  // dialog.showModal() in a layout effect; focusing in a separate effect
-  // that runs after ensures the dialog is in the top layer before focus.
   useEffect(() => {
     if (isOpen) {
       inputRef.current?.focus();
     }
   }, [isOpen]);
 
-  // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
@@ -135,11 +124,6 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
       });
 
       const raw: unknown = await res.json();
-      // isAiChatResponse acts as a runtime type guard — res.json() returns
-      // `any` which would launder an untrusted network payload into typed
-      // code without validation. The server returns { response: string } on
-      // 2xx and { error: string } on 4xx/5xx (mirrors _ai-chat-types.ts
-      // isClaudeApiResponse pattern used on the server side).
       const data = isAiChatResponse(raw) ? raw : {};
 
       if (!res.ok) {
@@ -159,7 +143,7 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
     }
   }, [input, loading, messages, basePath]);
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+  function handleKeyDown(e: KeyboardEvent) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -167,20 +151,12 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
   }
 
   return (
-    // z-modal / backdrop:z-modal-backdrop are defense-in-depth for the SPA-swap
-    // window (zfb Strategy-B `zfb:before-swap`): if this dialog is still open
-    // while the page body is swapped, a native showModal() dialog can lose
-    // top-layer promotion and fall back to z-index:auto, flashing behind the
-    // header/sidebar. The explicit modal-tier z-index keeps it above all chrome
-    // during that window. Intentionally redundant in the normal (top-layer)
-    // case — do not remove as "redundant" (epic #2148 / issue #2157).
     <dialog
       ref={dialogRef}
       onClick={handleBackdropClick}
       className="z-modal m-0 h-dvh max-h-none w-dvw max-w-none border-none bg-surface p-0 text-fg backdrop:z-modal-backdrop backdrop:bg-bg/80 lg:m-auto lg:h-[90vh] lg:max-h-[90vh] lg:w-[90vw] lg:max-w-[52.5rem] lg:border-solid lg:border lg:border-fg"
     >
       <div className="flex h-full flex-col">
-        {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-muted px-hsp-lg py-vsp-xs">
           <h2 className="text-title font-bold text-fg">AI Assistant</h2>
           <button
@@ -207,41 +183,31 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
           </button>
         </div>
 
-        {/* Messages */}
-        {/* role="log" implies aria-live="polite" aria-relevant="additions" per
-            the ARIA spec; it does NOT re-announce prior entries when the list
-            grows, which is the correct behavior for a chat transcript.
-            The previous aria-live="polite" on this whole container caused every
-            prior message and the user's own message to be re-announced on each
-            update (#2136 M4). */}
         <div role="log" aria-label="Chat messages" className="flex-1 overflow-y-auto px-hsp-lg py-vsp-sm">
           {messages.length === 0 && !loading && (
             <p className="py-vsp-xl text-center text-small text-muted">
               Ask a question about the documentation.
             </p>
           )}
-          {/* Index keys are stable here: the list is append-only and only
-              resets wholesale on dialog close. */}
           {messages.map((msg, i) => (
             <ChatMessageRow key={i} msg={msg} />
           ))}
-          {/* Scoped polite live region: only announces the latest assistant reply.
-              Rendered as a visually hidden node that is updated when a new assistant
-              message arrives so the screen reader reads only the new content (#2136 M4). */}
           <div
             aria-live="polite"
             aria-atomic="true"
             className="sr-only"
           >
             {(() => {
-              const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
-              return lastAssistant ? lastAssistant.content : "";
+              // findLast is not in current tsconfig lib target; loop from end.
+              for (let i = messages.length - 1; i >= 0; i--) {
+                const msg = messages[i];
+                if (msg && msg.role === "assistant") return msg.content;
+              }
+              return "";
             })()}
           </div>
           {loading && (
             <div className="mb-vsp-xs flex justify-start">
-              {/* role="status" marks this as a live status region distinct from the
-                  message log; it implies aria-live="polite" on its own node. */}
               <div
                 role="status"
                 className="rounded-t-[1rem] rounded-br-[1rem] rounded-bl-[0.25rem] bg-chat-assistant-bg px-hsp-md py-vsp-2xs text-small text-muted"
@@ -251,8 +217,6 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
             </div>
           )}
           {error && (
-            // role="alert" (assertive) rather than polite: a failed send is
-            // actionable — the user must know immediately so they can retry.
             <div
               role="alert"
               className="mb-vsp-xs rounded-[0.75rem] border border-danger bg-bg px-hsp-md py-vsp-2xs text-small text-danger"
@@ -263,7 +227,6 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input area */}
         <div className="shrink-0 border-t border-muted px-hsp-lg py-vsp-xs">
           <div className="flex items-center gap-x-hsp-sm">
             <input
@@ -308,3 +271,4 @@ export default function AiChatModal({ basePath }: AiChatModalProps) {
     </dialog>
   );
 }
+AiChatModal.displayName = "AiChatModal";

@@ -32,11 +32,11 @@ import type { VNode, JSX } from "preact";
 import { Island } from "@takazudo/zfb";
 import { settings } from "@/config/settings";
 
-import AiChatModal from "@/components/ai-chat-modal";
 import ClientRouterBootstrap from "@/components/client-router-bootstrap";
 import DesignTokenPanelBootstrap from "@/components/design-token-panel-bootstrap";
-import ImageEnlarge, { ImageEnlargeSsrFallback } from "@/components/image-enlarge";
-import MermaidEnlarge, { MermaidEnlargeSsrFallback } from "@/components/mermaid-enlarge";
+import { AiChatModal } from "@takazudo/zudo-doc/ai-chat-modal";
+import { ImageEnlarge, ImageEnlargeSsrFallback } from "@takazudo/zudo-doc/image-enlarge";
+import { MermaidEnlarge, MermaidEnlargeSsrFallback } from "@takazudo/zudo-doc/mermaid-enlarge";
 import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";
 
 // Set explicit `displayName` on each default-exported island so zfb's
@@ -46,13 +46,12 @@ import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";
 // for the same source-level identifier (zfb PR #150). esbuild preserves
 // function names by default, but the explicit assignment is a
 // belt-and-braces guard for production minification regressions.
-(AiChatModal as { displayName?: string }).displayName = "AiChatModal";
+// AiChatModal, ImageEnlarge, MermaidEnlarge pin displayName internally in
+// the package (packages/zudo-doc/src/{ai-chat-modal,image-enlarge,mermaid-enlarge}).
 (ClientRouterBootstrap as { displayName?: string }).displayName =
   "ClientRouterBootstrap";
 (DesignTokenPanelBootstrap as { displayName?: string }).displayName =
   "DesignTokenPanelBootstrap";
-(ImageEnlarge as { displayName?: string }).displayName = "ImageEnlarge";
-(MermaidEnlarge as { displayName?: string }).displayName = "MermaidEnlarge";
 
 /**
  * Default sr-only label rendered as the AiChatModal SSR fallback. This

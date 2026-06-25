@@ -1,16 +1,25 @@
 "use client";
 
-// Use `preact/compat` so the bundle resolves to Preact's React-shim at
-// runtime (zfb's esbuild step doesn't alias bare `react` to `preact/compat`).
-// See `packages/zudo-doc/src/theme-toggle/index.tsx` for the same
-// workaround in the hook-only case. preact/compat re-exports the same hooks plus the
-// `React.*` type namespace for event handlers.
+/** @jsxRuntime automatic */
+/** @jsxImportSource preact */
+
+// Image-enlarge island — relocated from src/components/image-enlarge.tsx
+// (host showcase) into the package as part of Package-First Wave 3 (S3,
+// epic #2344). Uses shared hook + constants from S1a foundation:
+//   - useModalDialog  from @takazudo/zudo-doc/use-modal-dialog
+//   - IMAGE_ENLARGE_DIALOG_CLASS / ENLARGE_DIALOG_STYLE from @takazudo/zudo-doc/island-types
+//
+// The `/api/ai-chat` endpoint stays host-side (showcase-only).
+// CSS blocks (.zd-enlargeable, .zd-enlarge-btn, .zd-enlarge-dialog*) are
+// shipped in @takazudo/zudo-doc/features.css (moved from src/styles/global.css).
+
 import { useState, useEffect } from "preact/compat";
-// After zudolab/zudo-doc#1335 (E2 task 2 half B) the host components
-// pull lifecycle event names from the v2 transitions module rather
-// than hard-coding `astro:*` literals.
-import { AFTER_NAVIGATE_EVENT } from "@takazudo/zudo-doc/transitions";
-import { useModalDialog } from "@/hooks/use-modal-dialog";
+import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
+import { useModalDialog } from "../use-modal-dialog/index.js";
+import {
+  IMAGE_ENLARGE_DIALOG_CLASS,
+  ENLARGE_DIALOG_STYLE,
+} from "../island-types/index.js";
 
 interface ImageData {
   src: string;
@@ -22,45 +31,11 @@ interface ImageData {
   naturalHeight: number;
 }
 
-// Shared shell for the enlarge `<dialog>`. The hydrated component and
-// the SSR fallback below render into the same Island container, so
-// they MUST agree on class string and inline style — otherwise the
-// dist HTML and the post-hydration DOM disagree on size / position
-// and the first interaction flashes. Sourcing both from the same
-// constants closes the drift gap GCO flagged in light-review.
-//
-// z-modal / backdrop:z-modal-backdrop are defense-in-depth for the SPA-swap
-// window (zfb Strategy-B `zfb:after-swap`): if this dialog is still open while
-// the page body is swapped, a native showModal() dialog can lose top-layer
-// promotion and fall back to z-index:auto, flashing behind the header/sidebar.
-// `backdrop:z-modal-backdrop` targets the native `::backdrop` (present for every
-// showModal() dialog even with no backdrop tint). The explicit modal-tier
-// z-index keeps it above all chrome during that window. Intentionally redundant
-// in the normal (top-layer) case — do not remove as "redundant" (epic #2148 /
-// issue #2157).
-const DIALOG_CLASS =
-  "zd-enlarge-dialog z-modal mx-auto max-h-[90vh] max-w-[90vw] overflow-hidden border border-muted bg-surface p-0 backdrop:z-modal-backdrop";
-// Center the modal with `inset: 0; margin: auto` rather than a transform.
-// A `transform` on the dialog would establish a containing block for its
-// `position: fixed` descendants, which would trap the `.zd-enlarge-dialog-close`
-// button at the dialog's corner instead of the viewport's — see the close
-// button's fixed positioning in global.css. Auto-margin centering keeps the
-// dialog transform-free so the close button anchors to the page top-right.
-const DIALOG_STYLE = {
-  position: "fixed",
-  inset: "0",
-  margin: "auto",
-} as const;
-
-export default function ImageEnlarge() {
+export function ImageEnlarge() {
   const [imgData, setImgData] = useState<ImageData | null>(null);
 
   // Eligibility detection: toggle .zd-enlarge-btn[hidden] per image
   useEffect(() => {
-    // Single shared ResizeObserver watching all observed images.
-    // One observer for N images is more efficient than N observers.
-    // The callback iterates entries so each image's eligibility is
-    // re-evaluated independently when its size changes.
     const observedImages = new Set<HTMLImageElement>();
     const sharedResizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
@@ -69,8 +44,6 @@ export default function ImageEnlarge() {
     });
     let mutationObserver: MutationObserver | null = null;
     let resizeTimer = 0;
-    // AbortController for per-image "load" listeners — aborted on SPA swap and
-    // on effect cleanup so listeners don't outlive the observation scope (#2136 M2).
     let loadAbortController = new AbortController();
 
     function evaluateEligibility(img: HTMLImageElement) {
@@ -138,8 +111,6 @@ export default function ImageEnlarge() {
       observedImages.clear();
       mutationObserver?.disconnect();
       mutationObserver = null;
-      // Abort any pending load listeners from the previous page, then issue a
-      // fresh controller for the incoming page's images (#2136 M2).
       loadAbortController.abort();
       loadAbortController = new AbortController();
       startObserving();
@@ -162,18 +133,13 @@ export default function ImageEnlarge() {
 
   useEffect(() => {
     function handleDocumentClick(e: MouseEvent) {
-      // Selection guard: a click that ends a text-drag (non-collapsed selection)
-      // should not open the lightbox — the user was selecting, not clicking (#2295).
       const sel = window.getSelection();
       if (sel && !sel.isCollapsed) return;
       const target = e.target as Element;
       const container = target.closest(".zd-enlargeable");
       if (!container) return;
-      // Target gate: only open when the click is on the expand button or the
-      // image itself — not on arbitrary children of .zd-enlargeable (#2136 M1).
       if (!target.closest(".zd-enlarge-btn") && !target.closest("img")) return;
       const btn = container.querySelector(".zd-enlarge-btn") as HTMLElement | null;
-      // Eligibility gate: only open when the expand button is visible (image is large enough).
       if (!btn || btn.hasAttribute("hidden")) return;
       const img = container.querySelector("img") as HTMLImageElement | null;
       if (!img) return;
@@ -193,8 +159,6 @@ export default function ImageEnlarge() {
 
   const handleClose = () => setImgData(null);
 
-  // Shared dialog lifecycle: showModal/close sync, native-close callback,
-  // backdrop click, and navigation-close — delegated to useModalDialog.
   const { dialogRef, handleBackdropClick } = useModalDialog({
     isOpen: imgData !== null,
     onClose: handleClose,
@@ -206,8 +170,8 @@ export default function ImageEnlarge() {
     <dialog
       ref={dialogRef}
       onClick={handleBackdropClick}
-      className={DIALOG_CLASS}
-      style={DIALOG_STYLE}
+      className={IMAGE_ENLARGE_DIALOG_CLASS}
+      style={ENLARGE_DIALOG_STYLE}
     >
       {imgData && (
         <>
@@ -235,31 +199,21 @@ export default function ImageEnlarge() {
     </dialog>
   );
 }
+ImageEnlarge.displayName = "ImageEnlarge";
 
 /**
  * Static SSR fallback for the {@link ImageEnlarge} island.
  *
- * Wave 11 (zudolab/zudo-doc#1355): the body-end Island wrapper renders
- * this on the server so the dist HTML carries an empty, closed
- * `<dialog class="zd-enlarge-dialog ...">` even before hydration. This:
- *
- *   1. Lets the smoke "exactly one zd-enlarge-dialog element" static
- *      HTML assertion pass without booting Preact.
- *   2. Gives the no-JS path a hidden-by-default dialog (a `<dialog>`
- *      without `open` is `display:none` per UA stylesheet), so screen
- *      readers and crawlers see the same shape they would post-hydration.
- *
- * The classes and inline style come from the shared `DIALOG_CLASS` /
- * `DIALOG_STYLE` constants at the top of this file so the SSR fallback
- * cannot drift from the hydrated `<dialog>` above. The post-hydration
- * component re-renders into the same Island container; any drift
- * would surface as a cosmetic flash on first interaction.
+ * Renders an empty, closed `<dialog class="zd-enlarge-dialog ...">` so the
+ * dist HTML carries the dialog shell even before hydration. Sources its
+ * class and inline style from the shared constants in island-types so the
+ * SSR fallback cannot drift from the hydrated dialog above.
  */
 export function ImageEnlargeSsrFallback() {
   return (
     <dialog
-      className={DIALOG_CLASS}
-      style={DIALOG_STYLE}
+      className={IMAGE_ENLARGE_DIALOG_CLASS}
+      style={ENLARGE_DIALOG_STYLE}
     />
   );
 }
