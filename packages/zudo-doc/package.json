@@ -247,6 +247,26 @@
     "./factory-context": {
       "types": "./dist/factory-context/index.d.ts",
       "default": "./dist/factory-context/index.js"
+    },
+    "./tree-nav-shared": {
+      "types": "./dist/tree-nav-shared/index.d.ts",
+      "default": "./dist/tree-nav-shared/index.js"
+    },
+    "./sidebar-tree-island": {
+      "types": "./dist/sidebar-tree-island/index.d.ts",
+      "default": "./dist/sidebar-tree-island/index.js"
+    },
+    "./sidebar-toggle-island": {
+      "types": "./dist/sidebar-toggle-island/index.d.ts",
+      "default": "./dist/sidebar-toggle-island/index.js"
+    },
+    "./desktop-sidebar-toggle-island": {
+      "types": "./dist/desktop-sidebar-toggle-island/index.d.ts",
+      "default": "./dist/desktop-sidebar-toggle-island/index.js"
+    },
+    "./site-tree-nav-island": {
+      "types": "./dist/site-tree-nav-island/index.d.ts",
+      "default": "./dist/site-tree-nav-island/index.js"
     }
   },
   "bin": {
