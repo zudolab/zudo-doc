@@ -23,7 +23,7 @@
 // Tailwind compilation runs in ~30s on a warm machine; 180s provides CI headroom.
 
 import { describe, it, expect, afterAll } from "vitest";
-import { execSync, ExecSyncOptions } from "node:child_process";
+import { execSync, type ExecSyncOptions } from "node:child_process";
 import { mkdtempSync, mkdirSync, cpSync, symlinkSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";

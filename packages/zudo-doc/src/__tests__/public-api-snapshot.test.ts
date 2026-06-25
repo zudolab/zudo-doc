@@ -195,14 +195,14 @@ describe("Settings public field set snapshot", () => {
       throw new Error("Could not locate `export interface Settings {` in settings.ts");
     }
 
-    const interfaceBody = settingsMatch[1];
+    const interfaceBody = settingsMatch[1]!;
 
     // Match field declarations:  fieldName or  fieldName?  (leading spaces, no extra indent)
     const fieldRe = /^\s{2}(\w+)\??\s*:/gm;
     const fields: string[] = [];
     let m: RegExpExecArray | null;
     while ((m = fieldRe.exec(interfaceBody)) !== null) {
-      const name = m[1];
+      const name = m[1]!;
       // Exclude packageOwnedRoutes — internal/unstable, NOT part of 1.0 contract.
       // See API.md § "Internal / Unstable" and the JSDoc comment in settings.ts.
       if (name !== "packageOwnedRoutes") {
