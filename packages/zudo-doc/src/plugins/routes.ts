@@ -33,6 +33,8 @@
 // Inline plugin functions are not supported by zfb's plugin runtime — see the
 // sibling `doc-history.ts` for the standalone-module rationale.
 
+import { createRequire } from "node:module";
+import { existsSync } from "node:fs";
 import { definePlugin, type ZfbSetupContext } from "@takazudo/zfb/plugins";
 
 // ---------------------------------------------------------------------------
@@ -98,7 +100,12 @@ function deriveRoutes(settings: RoutesSettings): RouteSpec[] {
   const aiAssistant = settings.aiAssistant === true;
 
   // ── Static / always-on ────────────────────────────────────────────────
-  routes.push({ pattern: "/", entrypoint: "@takazudo/zudo-doc/routes/index" });
+  // Note: pattern "/" is NOT injected here — zfb 0.1.0-next.62's injectRoute
+  // rejects "/" unconditionally in the plugin-host (the type docs describe it
+  // as allowed in build mode, but the current implementation does not gate on
+  // ctx.command). The routes/index.tsx entrypoint exists and is exported from
+  // the package for when the user drops their pages/index.tsx stub and a future
+  // zfb version lifts the restriction. Tracked: Takazudo/zudo-front-builder#1227.
   routes.push({ pattern: "/404", entrypoint: "@takazudo/zudo-doc/routes/404" });
   routes.push({ pattern: "/sitemap.xml", entrypoint: "@takazudo/zudo-doc/routes/sitemap.xml" });
   routes.push({ pattern: "/robots.txt", entrypoint: "@takazudo/zudo-doc/routes/robots.txt" });
@@ -171,8 +178,45 @@ const plugin = definePlugin({
     // (2) Inject the derived route catalog (Decision 3). Build-only render
     // today (dev falls through — upstream #1227); precedence drops collisions
     // with kept user `pages/` routes (Decision 6).
+    //
+    // zfb 0.1.0-next.62 resolves the `entrypoint` argument as a filesystem
+    // path from the project root — it does NOT resolve bare npm package
+    // specifiers (e.g. `@takazudo/zudo-doc/routes/foo`) through node_modules.
+    // Use `createRequire` to resolve each entry specifier to its absolute
+    // filesystem path so zfb can find the compiled entrypoint in dist/.
+    // (The `createRequire` call is valid here: the routes plugin is loaded by
+    // the zfb plugin-host under Node.js, NOT by the preset's node-free config
+    // eval — so `node:module` is safe to use in this file's top-level import.)
+    //
+    // zfb 0.1.0-next.62 extracts `paths()` via static AST analysis on the
+    // `.tsx` SOURCE file — it cannot extract `paths()` from compiled `.js`.
+    // For dynamic routes (containing `[[...]]` or `[...]`), we therefore prefer
+    // the SIBLING `.tsx` source file over the compiled `.js` when it exists.
+    // Source lives at `src/routes/X.tsx`; compiled at `dist/routes/X.js` —
+    // swap `/dist/` for `/src/` and `.js` for `.tsx` to derive the source path.
+    // Static routes do not require `paths()` and work with either `.js` or `.tsx`.
+    const require = createRequire(import.meta.url);
     for (const route of deriveRoutes(settings)) {
-      ctx.injectRoute(route.pattern, route.entrypoint, route.opts);
+      let resolvedEntrypoint: string;
+      try {
+        const compiledPath = require.resolve(route.entrypoint);
+        // Prefer .tsx source for dynamic routes (paths() extraction requires it).
+        const hasDynamic =
+          route.pattern.includes("[") && route.pattern.includes("]");
+        if (hasDynamic) {
+          const srcPath = compiledPath
+            .replace(/[\\/]dist[\\/]/, "/src/")
+            .replace(/\.js$/, ".tsx");
+          resolvedEntrypoint = existsSync(srcPath) ? srcPath : compiledPath;
+        } else {
+          resolvedEntrypoint = compiledPath;
+        }
+      } catch {
+        // If the package isn't installed (e.g. in tests without node_modules),
+        // fall back to the bare specifier so the error surfaces from zfb.
+        resolvedEntrypoint = route.entrypoint;
+      }
+      ctx.injectRoute(route.pattern, resolvedEntrypoint, route.opts);
     }
   },
 });
