@@ -247,6 +247,14 @@
     "./factory-context": {
       "types": "./dist/factory-context/index.d.ts",
       "default": "./dist/factory-context/index.js"
+    },
+    "./compose-meta-title": {
+      "types": "./dist/compose-meta-title/index.d.ts",
+      "default": "./dist/compose-meta-title/index.js"
+    },
+    "./frontmatter-preview-data": {
+      "types": "./dist/frontmatter-preview-data/index.d.ts",
+      "default": "./dist/frontmatter-preview-data/index.js"
     }
   },
   "bin": {
