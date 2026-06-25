@@ -129,12 +129,14 @@ src/utils/design-token-types.ts
 # feature-off scaffolds. This entry is retained to document the history.
 # src/utils/header-right-items.ts — DELETED from template in #2162 (orphaned)
 
-# #2162 — src/config/settings-types.ts template carries @slot: replace-range
+# #2162 / #2360 — src/config/settings-types.ts template carries @slot: replace-range
 # anchors around the HeaderRightTriggerName union so the designTokenPanel feature
 # can inject "design-token-panel" | only when the feature is enabled. The host
-# unconditionally includes both trigger names; the template ships "ai-chat" only
-# as the base and the feature overlay adds "design-token-panel" via injection.
-# These will never be byte-identical.
+# unconditionally re-exports HeaderRightTriggerName (both trigger names) from
+# @takazudo/zudo-doc/settings; the template ships "ai-chat" only as the base
+# (with the @slot anchor) and the feature overlay adds "design-token-panel" via
+# injection. All other types are now forwarded from the package; the file is now
+# minimal and only differs due to the @slot anchor. These will never be byte-identical.
 src/config/settings-types.ts
 
 # W6A (#1734 / generator-pages-migration Wave 6A) — missing-src stubs landed
@@ -184,14 +186,11 @@ src/components/preset-generator.tsx
 # overwrites this file at build time when the feature is enabled.
 .zfb/doc-history-meta.json
 
-# S2 (#1825) — pages/_mdx-components.ts template carries @slot: injection anchors
-# for the imageEnlarge p-override (ENLARGE_SVG, EnlargeableParagraph, p: entry).
-# The host version has the override installed unconditionally (always-on runtime
-# gate via settings.imageEnlarge); the template uses anchors so the compose
-# framework can inject or omit the block based on the imageEnlarge feature toggle.
-# These will never be byte-identical. Reconcile if/when host adopts conditional
-# injection too (unlikely — host does not use the compose framework).
-pages/_mdx-components.ts
+# pages/_mdx-components.ts — REMOVED from allowlist in #2360 (E2 reconciliation):
+# the template now adopts createMdxComponents() from @takazudo/zudo-doc/mdx-components
+# (S8 #2332); the factory handles imageEnlarge runtime-gating internally (via
+# settings.imageEnlarge), so the old @slot injection anchors are no longer needed.
+# The template is now byte-identical to the host.
 
 # #2052 / #2162 — pages/lib/_body-end-islands.tsx template carries @slot:
 # injection anchors (imports / display-names / extra-islands) so the tauri
@@ -224,19 +223,11 @@ src/utils/find-in-page.ts
 src/utils/content-files.ts
 src/utils/git-info.ts
 
-# S4 (#2327 / package-first-migration epic #2321) — pure-helper content
-# components moved into @takazudo/zudo-doc. The host (this repo) now re-exports
-# / imports these from the package (the source-of-truth lives under
-# packages/zudo-doc/src/{content-admonition,code-group,math-block,extract-headings}),
-# while the base template still ships the full implementations to generated
-# projects. The drift is intentional: the template counterparts will migrate to
-# the same re-export form in a follow-up generator-sync wave (after the package
-# version that ships these subpaths is published and create-zudo-doc's pin is
-# bumped). Until then the host↔template pairs legitimately differ.
-src/components/content/code-group.tsx
-src/components/content/content-admonition.tsx
-pages/lib/_math-block.tsx
-pages/lib/_extract-headings.ts
+# S4 (#2327 / package-first-migration epic #2321) content components — REMOVED from
+# allowlist in #2360 (E2 reconciliation): @takazudo/zudo-doc 0.2.22 published the
+# subpaths (code-group, content-admonition, math-block, extract-headings), and
+# create-zudo-doc's pin is now ≥ 0.2.22. The four template files now use the same
+# re-export form as the host and are byte-identical.
 
 # S2 (#2347 / package-first-migration Wave 3 epic #2344) — SiteTreeNav island
 # relocated into @takazudo/zudo-doc/site-tree-nav-island. The host
