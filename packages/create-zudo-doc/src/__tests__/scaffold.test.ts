@@ -29,6 +29,22 @@ function projectPath(...segments: string[]): string {
   return path.join(tempDir, segments[0]!, ...segments.slice(1));
 }
 
+/**
+ * Absolute path to a `@takazudo/zudo-doc` package factory source, relative to
+ * this test file. Several behaviors that used to live in the generated
+ * `pages/lib/*` stubs were relocated into package factories in epic #2344 (S5);
+ * the regression tests for those behaviors now assert the package source so the
+ * behavior stays guarded where it actually lives. Resolution: src/__tests__ →
+ * repo root → packages/zudo-doc/src/...
+ */
+function packageSrcPath(...segments: string[]): string {
+  return path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "../../../../packages/zudo-doc/src",
+    ...segments,
+  );
+}
+
 describe("scaffold — minimal (no i18n, search only, single dark scheme)", () => {
   const choices: UserChoices = {
     projectName: "test-minimal",
@@ -223,18 +239,43 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
   // override props and derives the TOC title from the `_toc-title` helper, which
   // re-exports `getTocTitle` from "@takazudo/zudo-doc/toc" (exported by the
   // scaffolded package since 0.2.3 — no local hand-mirror anymore).
+  //
+  // Post-relocation (epic #2344, S5): the Toc/MobileToc mount and the
+  // tocOverride/mobileTocOverride wiring moved OFF the generated
+  // `_doc-page-shell.tsx` stub and INTO the package factory
+  // `@takazudo/zudo-doc/doc-page-shell` (`createDocPageShell`). So we assert the
+  // wiring in the package factory source, while the generated stub must still
+  // pass the host-resolved `getTocTitle` helper into the factory (the locale-aware
+  // TOC title is host config the package can't own). The `_toc-title.ts`
+  // re-export + version-pin guard below are unchanged.
   it("wires tocOverride/mobileTocOverride in _doc-page-shell with the _toc-title helper (#2057)", async () => {
     const shellPath = projectPath(
       "test-minimal",
       "pages/lib/_doc-page-shell.tsx",
     );
     const shell = await fs.readFile(shellPath, "utf-8");
+    // The generated stub delegates to the package factory and injects the
+    // host-resolved getTocTitle helper (the factory uses it to derive tocTitle).
     expect(shell).toContain(
-      'import { Toc, MobileToc } from "@takazudo/zudo-doc/toc";',
+      'import { createDocPageShell } from "@takazudo/zudo-doc/doc-page-shell";',
     );
     expect(shell).toContain('import { getTocTitle } from "./_toc-title";');
-    expect(shell).toContain("tocOverride={tocOverride}");
-    expect(shell).toContain("mobileTocOverride={mobileTocOverride}");
+    expect(shell).toContain("createDocPageShell({");
+    expect(shell).toContain("getTocTitle,");
+
+    // The Toc/MobileToc mount + override wiring now lives in the package factory.
+    const shellFactory = await fs.readFile(
+      packageSrcPath("doc-page-shell/index.tsx"),
+      "utf-8",
+    );
+    expect(shellFactory).toContain(
+      'import { Toc, MobileToc } from "../toc/index.js";',
+    );
+    expect(shellFactory).toContain("tocOverride={tocOverride}");
+    expect(shellFactory).toContain("mobileTocOverride={mobileTocOverride}");
+    // The factory derives the title from the injected getTocTitle dependency
+    // (the host's _toc-title helper), not a re-inlined map.
+    expect(shellFactory).toContain("getTocTitle(locale)");
 
     const tocTitlePath = projectPath(
       "test-minimal",
@@ -1270,15 +1311,20 @@ describe("scaffold — footer features", () => {
     expect(content).toContain("MetaTagsConfig");
   });
 
-  // S4 (#2078): fresh-scaffold head assertion — with scaffold defaults
-  // (ogImage: false, twitterCard: false, keywords: false), the generated
-  // _head-with-defaults.tsx must gate those tags via settings.metaTags.
-  // This test confirms the generated template emits og:title + description
-  // + og:site_name and does NOT unconditionally emit og:image / twitter:* /
-  // keywords. We assert this by inspecting the template source directly
-  // (a full scaffold render is not feasible in unit tests — pnpm build is
-  // run by the manager after merge per task spec).
-  it("_head-with-defaults.tsx template gates og:image/twitter:card/keywords via settings.metaTags (S4 #2078)", async () => {
+  // S4 (#2078): with scaffold defaults (ogImage: false, twitterCard: false,
+  // keywords: false) the head injection must gate those tags via
+  // settings.metaTags, emit og:title + description + og:site_name, and NOT
+  // unconditionally emit og:image / twitter:* / keywords.
+  //
+  // Post-relocation (epic #2344, S5): the metaTags gating + composeMetaTitle
+  // call moved OFF the generated `_head-with-defaults.tsx` stub and INTO the
+  // package factory `@takazudo/zudo-doc/head-with-defaults`
+  // (`createHeadWithDefaults`). So the gating logic is asserted against the
+  // package factory source, while the generated stub must still delegate to the
+  // factory and inject the host's `composeMetaTitle` + settings (which carry the
+  // metaTags config). A full scaffold render is not feasible in unit tests —
+  // pnpm build is run by the manager after merge per task spec.
+  it("_head-with-defaults gates og:image/twitter:card/keywords via settings.metaTags (S4 #2078)", async () => {
     const choices: UserChoices = {
       projectName: "test-head-template-gates",
       defaultLang: "en",
@@ -1288,11 +1334,26 @@ describe("scaffold — footer features", () => {
       packageManager: "pnpm",
     };
     await scaffold(choices);
-    const headSrc = await fs.readFile(
+    // The generated stub delegates to the package factory and injects the host
+    // composeMetaTitle + settings (settings carries metaTags); it no longer
+    // contains the gating logic itself.
+    const headStub = await fs.readFile(
       projectPath(
         "test-head-template-gates",
         "pages/lib/_head-with-defaults.tsx",
       ),
+      "utf-8",
+    );
+    expect(headStub).toContain(
+      'import { createHeadWithDefaults } from "@takazudo/zudo-doc/head-with-defaults"',
+    );
+    expect(headStub).toContain("createHeadWithDefaults({");
+    expect(headStub).toContain("composeMetaTitle,");
+    expect(headStub).toContain("settings,");
+
+    // The metaTags gating + composeMetaTitle emission now lives in the factory.
+    const headSrc = await fs.readFile(
+      packageSrcPath("head-with-defaults/index.tsx"),
       "utf-8",
     );
     // og:title is always emitted — DocHead contract (OgTags always emits og:title)
@@ -4128,7 +4189,17 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
   // #2276: every <DocLayoutWithDefaults> render site must thread
   // enableClientRouter={settings.dynamicPageTransition} so the SPA router is
   // gated per-page by the settings flag.
-  it("feature ON: _doc-page-shell.tsx contains enableClientRouter={settings.dynamicPageTransition}", async () => {
+  //
+  // Post-relocation (epic #2344, S5): the doc-page-shell's <DocLayoutWithDefaults>
+  // render moved OFF the generated `_doc-page-shell.tsx` stub and INTO the package
+  // factory `@takazudo/zudo-doc/doc-page-shell` (`createDocPageShell`). So for the
+  // shell render site we assert the `enableClientRouter={settings.dynamicPageTransition}`
+  // prop in the package factory source, while the generated stub must still inject
+  // the host `settings` into the factory (settings carries dynamicPageTransition).
+  // The other two render sites — `pages/index.tsx` and `pages/404.tsx` — were NOT
+  // relocated and still contain the literal prop directly (their tests below are
+  // unchanged).
+  it("feature ON: _doc-page-shell.tsx threads enableClientRouter={settings.dynamicPageTransition} via the package factory", async () => {
     const choices: UserChoices = {
       projectName: "test-dpt-on-ecr-shell",
       defaultLang: "en",
@@ -4142,10 +4213,25 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
       projectPath("test-dpt-on-ecr-shell", "pages/lib/_doc-page-shell.tsx"),
       "utf-8",
     );
-    expect(content).toContain("enableClientRouter={settings.dynamicPageTransition}");
+    // The generated stub delegates to the factory and injects host settings,
+    // which carry the dynamicPageTransition flag the factory reads.
+    expect(content).toContain(
+      'import { createDocPageShell } from "@takazudo/zudo-doc/doc-page-shell";',
+    );
+    expect(content).toContain("createDocPageShell({");
+    expect(content).toContain("settings,");
+
+    // The actual prop on <DocLayoutWithDefaults> now lives in the factory.
+    const shellFactory = await fs.readFile(
+      packageSrcPath("doc-page-shell/index.tsx"),
+      "utf-8",
+    );
+    expect(shellFactory).toContain(
+      "enableClientRouter={settings.dynamicPageTransition}",
+    );
   });
 
-  it("feature OFF: _doc-page-shell.tsx contains enableClientRouter={settings.dynamicPageTransition}", async () => {
+  it("feature OFF: _doc-page-shell.tsx threads enableClientRouter={settings.dynamicPageTransition} via the package factory", async () => {
     const choices: UserChoices = {
       projectName: "test-dpt-off-ecr-shell",
       defaultLang: "en",
@@ -4159,9 +4245,23 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
       projectPath("test-dpt-off-ecr-shell", "pages/lib/_doc-page-shell.tsx"),
       "utf-8",
     );
-    // The prop must be present regardless of feature state — the value
-    // (settings.dynamicPageTransition) is false at runtime when feature is off.
-    expect(content).toContain("enableClientRouter={settings.dynamicPageTransition}");
+    // The stub is feature-agnostic — it always delegates to the factory and
+    // injects settings; the value (settings.dynamicPageTransition) is false at
+    // runtime when the feature is off.
+    expect(content).toContain(
+      'import { createDocPageShell } from "@takazudo/zudo-doc/doc-page-shell";',
+    );
+    expect(content).toContain("createDocPageShell({");
+    expect(content).toContain("settings,");
+
+    // The prop must be present in the factory regardless of feature state.
+    const shellFactory = await fs.readFile(
+      packageSrcPath("doc-page-shell/index.tsx"),
+      "utf-8",
+    );
+    expect(shellFactory).toContain(
+      "enableClientRouter={settings.dynamicPageTransition}",
+    );
   });
 
   it("feature ON: pages/index.tsx contains enableClientRouter={settings.dynamicPageTransition}", async () => {
