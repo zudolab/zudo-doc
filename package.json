@@ -54,6 +54,7 @@
     "check:e2e-spec-naming": "node scripts/check-e2e-spec-naming.mjs",
     "check:flaky-tracking-issue": "node scripts/check-flaky-tracking-issue.mjs",
     "check:package-safelist": "node scripts/check-package-safelist.mjs",
+    "check:no-host-alias-in-package": "node scripts/check-no-host-alias-in-package.mjs",
     "// ── Tags ────────────────────────────────────────": "",
     "tags:audit": "tags-audit",
     "tags:suggest": "tsx scripts/tags-suggest.ts",
