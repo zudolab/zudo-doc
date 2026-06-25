@@ -1,11 +1,11 @@
 // Re-export most types from the shared package — moved to @takazudo/zudo-doc/settings
 // as part of the package-first migration (epic #2321, S4 #2327).
 // HeaderRightTriggerName and HeaderRightTriggerItem are defined locally rather than
-// re-exported from the package because the designTokenPanel feature injects
-// "design-token-panel" | into HeaderRightTriggerName via the @slot anchor; the
+// re-exported from the package because the designTokenPanel feature injects its
+// extra trigger-name variant into HeaderRightTriggerName via the @slot anchor; the
 // package unconditionally includes both trigger names but the base template
-// ships only "ai-chat", and the feature overlay adds the design-token-panel
-// variant via the compose engine.  HeaderRightTriggerItem references the local
+// ships only "ai-chat", and the feature overlay adds the panel trigger variant
+// via the compose engine.  HeaderRightTriggerItem references the local
 // HeaderRightTriggerName, so it stays local too.
 export type {
   TagGovernanceMode,

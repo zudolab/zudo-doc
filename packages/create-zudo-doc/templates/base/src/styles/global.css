@@ -151,8 +151,10 @@
   --color-info: var(--zd-info);
   /* Overlay is intentionally theme-independent (always dark, not scheme-driven) */
   --color-overlay: #000;
-  /* Decoupled scrim for page-loading overlay — lets projects retone independently of the lightbox overlay */
-  --color-page-loading-overlay: color-mix(in oklch, var(--color-overlay) 60%, transparent);
+  /* The page-loading overlay scrim token is feature-gated: the dynamicPageTransition
+     feature injects it into @slot:global-css:theme-tokens when enabled, so it is
+     intentionally absent from this base @theme block (the host showcase global.css
+     carries it inline only because the host is fully featured). Do not re-add it here. */
   --color-image-overlay-bg: var(--zd-image-overlay-bg);
   --color-image-overlay-fg: var(--zd-image-overlay-fg);
   /* --color-mermaid-* aliases removed: mermaid-init-script.ts reads --zd-mermaid-* directly;
