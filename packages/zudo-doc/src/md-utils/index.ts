@@ -9,6 +9,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import matter from "gray-matter";
+import { toRouteSlug } from "../slug/index.js";
 
 /**
  * Frontmatter fields the integrations read off each MDX/MD file. Extra
@@ -117,14 +118,12 @@ export function collectMdFiles(
       } else if (/\.mdx?$/.test(entry.name) && !entry.name.startsWith("_")) {
         // Canonical route slug (zudo-doc#1891): nested `x/index` → `x` AND
         // bare root `index` → "" so the entry links to `/docs/` (the built
-        // page) instead of `/docs/index/` (which is never built). The host
-        // route, sitemap, search-index and llms-txt all canonicalize the
-        // same way; see src/utils/slug.ts `toRouteSlug` in the consuming
-        // repo (the one rule).
-        const rel = relative(baseDir, fullPath)
-          .replace(/\.mdx?$/, "")
-          .replace(/\/index$/, "")
-          .replace(/^index$/, "");
+        // page) instead of `/docs/index/` (which is never built). Routes
+        // through the one shared rule (`toRouteSlug` in `../slug`) — the host
+        // route, sitemap, search-index and llms-txt all canonicalize the same
+        // way (#2344, S1a: md-utils now imports the shared rule instead of
+        // re-inlining it).
+        const rel = toRouteSlug(relative(baseDir, fullPath).replace(/\.mdx?$/, ""));
         results.push({ filePath: fullPath, slug: rel });
       }
     }

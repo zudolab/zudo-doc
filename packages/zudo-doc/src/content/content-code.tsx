@@ -2,7 +2,7 @@
 /** @jsxImportSource preact */
 
 import type { JSX, VNode } from "preact";
-import { SmartBreak as SmartBreakImpl } from "../toc/smart-break.js";
+import { SmartBreak as SmartBreakImpl } from "../smart-break/index.js";
 
 // Preact VNode vs JSX.IntrinsicElements["code"].children type mismatch under compat mode;
 // cast so the content override type-checks. Runtime is fine since the preact/compat alias is in effect.

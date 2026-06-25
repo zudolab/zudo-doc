@@ -8,7 +8,7 @@ import { useMemo } from "preact/hooks";
 
 import { useActiveHeading } from "./use-active-heading.js";
 import type { HeadingItem } from "./types.js";
-import { SmartBreak } from "./smart-break.js";
+import { SmartBreak } from "../smart-break/index.js";
 import { cx } from "./cx.js";
 
 export interface TocProps {
