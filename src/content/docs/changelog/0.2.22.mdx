@@ -1,0 +1,29 @@
+---
+title: 0.2.22
+description: Release notes for 0.2.22.
+sidebar_position: 1033
+---
+
+Released: 2026-06-25
+
+Package-First Wave 3: the remaining `pages/lib/*` rendering/data modules and the
+structural islands now live in `@takazudo/zudo-doc` behind injected-context
+factories, so a scaffolded project's `pages/lib/*` files are thin re-export stubs.
+No zfb engine change.
+
+### Features
+
+- `@takazudo/zudo-doc` ships the doc-page rendering and data layer as injected-context factories taking `{ settings, i18n, components, navSource }` (no generic `utils` bag): shell wrappers (header/footer/head/sidebar/doc-page-shell/search-widget), data layer + route enumeration (nav-source/locale-merge/doc-route/route-enumerators), doc-page rendering internals, and index/tag/version renderers. (#2350, #2351, #2352, #2353)
+- The eight structural islands moved into the package as `"use client"` exports with pinned `displayName`s: `SidebarTree`, `SidebarToggle`, `DesktopSidebarToggle`, `SiteTreeNav` (`when:"idle"`), `ImageEnlarge`, `MermaidEnlarge`, `AiChatModal`, `DocHistory`. Their coupled CSS (`.zd-enlarge*`, `.zd-mermaid*`, `.ai-chat-md`, `.diff-*`) moved into `@takazudo/zudo-doc/features.css`. (#2347, #2348, #2349)
+- New foundation exports: `factory-context` (the typed context + allowed `components` slot allowlist), `render-markdown`, `slug`, `smart-break`, `use-modal-dialog`, `island-types`, and `url-helpers` (`makeUrlHelpers`). (#2345, #2346)
+- New `check:no-host-alias-in-package` guard (b4push + CI) fails if `packages/zudo-doc/src/**` imports a host `@/` alias, structurally enforcing the package's host-independence. (#2345)
+
+### Bug Fixes
+
+- `buildNavTree` no longer serves a stale default-href tree from cache when a custom `buildHref` is injected. (#2345)
+- create-zudo-doc generator: restored the W6A no-op stubs (and body-end-islands feature gating) for `image-enlarge` / `ai-chat-modal` / `doc-history` so a scaffold with the feature off ships a render-nothing stub rather than pulling the island in. (#2348, #2349)
+- Aligned the factory injection-boundary types surfaced by the stricter `check:pages` / package typecheck gates (locale param variance, `readonly` vocabulary arrays, factory-specific settings shapes). No runtime change.
+
+### Other Changes
+
+- Package declaration output moved from tsup's rollup-DTS to a linear `tsc --emitDeclarationOnly` pass (`tsconfig.build.json`); tsup still emits the per-file JS (`bundle:false`, `"use client"` preserved). The previous rollup-DTS was combinatorial in memory and OOMed at ~200 entries — the package now builds under the default Node heap, keeping CI green.

@@ -1,0 +1,30 @@
+---
+title: 0.2.22
+description: 0.2.22のリリースノート。
+sidebar_position: 1033
+---
+
+リリース日: 2026-06-25
+
+Package-First Wave 3: 残りの `pages/lib/*` のレンダリング/データ層モジュールと
+構造的アイランドが、注入コンテキストを受け取るファクトリの背後で
+`@takazudo/zudo-doc` に移設されました。これによりスキャフォールドされた
+プロジェクトの `pages/lib/*` は薄い re-export スタブになります。zfb エンジンの
+変更はありません。
+
+### 機能
+
+- `@takazudo/zudo-doc` がドキュメントページのレンダリング層とデータ層を、`{ settings, i18n, components, navSource }` を受け取る注入コンテキスト型ファクトリとして提供するようになりました（汎用の `utils` バッグは持ちません）。対象: シェルラッパー（header/footer/head/sidebar/doc-page-shell/search-widget）、データ層 + ルート列挙（nav-source/locale-merge/doc-route/route-enumerators）、ドキュメントページのレンダリング内部、index/tag/version レンダラ。(#2350, #2351, #2352, #2353)
+- 8 つの構造的アイランドを、`displayName` を明示的に固定した `"use client"` エクスポートとしてパッケージに移設しました: `SidebarTree`、`SidebarToggle`、`DesktopSidebarToggle`、`SiteTreeNav`（`when:"idle"`）、`ImageEnlarge`、`MermaidEnlarge`、`AiChatModal`、`DocHistory`。関連 CSS（`.zd-enlarge*`、`.zd-mermaid*`、`.ai-chat-md`、`.diff-*`）も `@takazudo/zudo-doc/features.css` へ移動しました。(#2347, #2348, #2349)
+- 新しい基盤エクスポート: `factory-context`（型付きコンテキスト + 許可された `components` スロットの許可リスト）、`render-markdown`、`slug`、`smart-break`、`use-modal-dialog`、`island-types`、`url-helpers`（`makeUrlHelpers`）。(#2345, #2346)
+- 新しい `check:no-host-alias-in-package` ガード（b4push + CI）。`packages/zudo-doc/src/**` がホストの `@/` エイリアスを import すると失敗し、パッケージのホスト非依存性を構造的に保証します。(#2345)
+
+### バグ修正
+
+- カスタム `buildHref` を注入した場合に、`buildNavTree` がキャッシュから古いデフォルト href のツリーを返してしまう問題を修正しました。(#2345)
+- create-zudo-doc ジェネレータ: `image-enlarge` / `ai-chat-modal` / `doc-history` の W6A no-op スタブ（および body-end-islands の機能ゲーティング）を復元しました。機能が無効なスキャフォールドでは、アイランドを取り込まず何も描画しないスタブが出力されます。(#2348, #2349)
+- より厳格な `check:pages` / パッケージ型チェックで顕在化したファクトリ注入境界の型を整合させました（locale パラメータの分散、`readonly` の語彙配列、ファクトリ固有の settings 形状）。ランタイムの変更はありません。
+
+### その他の変更
+
+- パッケージの型宣言出力を tsup の rollup-DTS から、線形な `tsc --emitDeclarationOnly` パス（`tsconfig.build.json`）に変更しました。JS は引き続き tsup がファイル単位で出力します（`bundle:false`、`"use client"` 保持）。従来の rollup-DTS はメモリ消費が組み合わせ的で、約 200 エントリで OOM していました。これによりパッケージはデフォルトの Node ヒープでビルドでき、CI がグリーンを維持します。
