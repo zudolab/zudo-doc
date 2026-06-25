@@ -38,8 +38,8 @@ import { MermaidEnlarge, MermaidEnlargeSsrFallback } from "@takazudo/zudo-doc/me
 // @slot:body-end-islands:imports
 
 // AiChatModal, ImageEnlarge, MermaidEnlarge pin displayName internally in the
-// package. ClientRouterBootstrap / DesignTokenPanelBootstrap (feature overlays)
-// still need explicit pinning at the call site.
+// package. Optional feature islands that still need explicit call-site pinning
+// inject their displayName assignment at the slot below only when selected.
 // @slot:body-end-islands:display-names
 
 /**
