@@ -237,3 +237,13 @@ src/components/content/code-group.tsx
 src/components/content/content-admonition.tsx
 pages/lib/_math-block.tsx
 pages/lib/_extract-headings.ts
+
+# S2 (#2347 / package-first-migration Wave 3 epic #2344) — SiteTreeNav island
+# relocated into @takazudo/zudo-doc/site-tree-nav-island. The host
+# src/components/site-tree-nav.tsx retains the full island implementation (the
+# source-of-truth is now packages/zudo-doc/src/site-tree-nav-island/); the base
+# template ships a thin re-export shim that forwards to the package. The
+# "use client" directive drift is separately gated by DIRECTIVE_EXEMPT in
+# check-template-drift.sh. Content drift here is intentional — reconcile after
+# the package version is published and create-zudo-doc's pin is bumped.
+src/components/site-tree-nav.tsx
