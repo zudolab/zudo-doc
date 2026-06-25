@@ -24,8 +24,10 @@
 #     plugins/               → ../../../plugins
 #     packages/              → ../../../packages
 #     node_modules/          → ../../../node_modules
-#     public/                (mixed: fixture-specific files plus
-#                             symlinked top-level entries from root public/)
+#     public/                (mixed: fixture-specific files plus COPIED
+#                             top-level entries from root public/ — copied, not
+#                             symlinked, because native publicDir #2358 does not
+#                             follow symlinks)
 #     .zfb/doc-history-meta.json   (always-empty — preBuild contract)
 #     src/
 #       config/
@@ -319,19 +321,29 @@ setup_fixture() {
 
   # ----- Public dir: merge fixture-specific files with root public/ -----
   # Fixture-specific files (e.g. smoke/public/test-images/) are kept in
-  # git; on top of that we symlink each top-level entry from the root
-  # `public/` so /img/logo.svg etc. resolve in the fixture build.
+  # git; on top of that we materialise each top-level entry from the root
+  # `public/` so /img/logo.svg, the favicons, etc. resolve in the fixture build.
+  #
+  # These are COPIED (dereferencing symlinks via `cp -RL`), NOT symlinked:
+  # zfb's native `publicDir` — which replaced the old copy-public-plugin in
+  # #2358 — does NOT follow symlinks when copying `public/` → `dist/`, so a
+  # symlinked favicon/img would silently never reach `dist/` and 404 at
+  # runtime (the old plugin's recursive copy followed symlinks; native
+  # publicDir does not). Real generated projects ship real files here, so this
+  # only affects the symlink-sharing fixture topology.
   if [ -d "$REPO_ROOT/public" ]; then
     mkdir -p "$fixture_dir/public"
     for entry in "$REPO_ROOT"/public/*; do
       [ -e "$entry" ] || continue
       local entry_name
       entry_name="$(basename "$entry")"
-      # Don't clobber a fixture-owned entry of the same name.
+      # Don't clobber a fixture-owned real entry of the same name (git-tracked).
+      # A leftover symlink from the old symlink-based setup IS replaced.
       if [ -e "$fixture_dir/public/$entry_name" ] && [ ! -L "$fixture_dir/public/$entry_name" ]; then
         continue
       fi
-      ln -sfn "$entry" "$fixture_dir/public/$entry_name"
+      rm -rf "$fixture_dir/public/$entry_name"
+      cp -RL "$entry" "$fixture_dir/public/$entry_name"
     done
   fi
 
