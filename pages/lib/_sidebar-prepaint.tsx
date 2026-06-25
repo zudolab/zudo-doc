@@ -21,7 +21,7 @@
 import type { VNode, JSX } from "preact";
 import { Island } from "@takazudo/zfb";
 import { settings } from "@/config/settings";
-import DesktopSidebarToggle from "@/components/desktop-sidebar-toggle";
+import { DesktopSidebarToggle } from "@takazudo/zudo-doc/desktop-sidebar-toggle-island";
 
 /** Props for {@link SidebarPrepaint}. */
 export interface SidebarPrepaintProps {
