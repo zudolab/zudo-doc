@@ -430,9 +430,9 @@
     "tags-audit": "./bin/tags-audit.mjs"
   },
   "scripts": {
-    "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsup",
+    "build": "tsup && tsc -p tsconfig.build.json",
     "dev": "tsup --watch",
-    "prepare": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsup --silent",
+    "prepare": "tsup --silent && tsc -p tsconfig.build.json",
     "prepack": "node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs && node scripts/check-features-css.mjs && node scripts/check-plugins.mjs",
     "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc --noEmit"

@@ -6,6 +6,21 @@ Components are Preact `.tsx` compiled by tsup (`bundle:false`, 1:1 source→`dis
 so `"use client"` directives survive — see `tsup.config.ts`). The `exports` map
 in `package.json` is the API surface; consumers import from `dist/`.
 
+## Build: tsup (JS) + tsc (DTS) — two passes, not one
+
+`build`/`prepare` run **tsup THEN `tsc -p tsconfig.build.json`** (`--emitDeclarationOnly`).
+tsup emits only the JS (`dts:false`); `tsc` emits the `.d.ts`. The split exists
+because tsup's `dts:true` rollup-based declaration bundler is **combinatorial in
+memory across entries** — with `bundle:false` + ~200 source entries it OOMs even
+at an 8GB Node heap (the JS pass alone finishes in ~150ms). `tsc
+--emitDeclarationOnly` emits per-file 1:1 (same flat layout as the `bundle:false`
+JS), is **linear in file count**, and completes under the default ~2GB heap, so
+CI no longer needs (and the scripts no longer set) a raised `NODE_OPTIONS` heap.
+`tsconfig.build.json` extends `tsconfig.json` with `emitDeclarationOnly`/`outDir:dist`/
+`rootDir:src` and excludes test globs so test files don't emit. `dev` stays
+`tsup --watch` (JS only — types lag during package dev; `pnpm check` is the type
+gate). See zudolab/zudo-doc epic #2344.
+
 ## Shared-surface (exports / tsup) append convention — package-first migration
 
 The `package.json#exports` map and `tsup.config.ts` are a **shared surface** that
