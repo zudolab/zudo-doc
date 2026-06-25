@@ -84,6 +84,16 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     ).toBe(true);
   });
 
+  it("seeds .zudo-doc.json with packageVersion and empty ejected map", async () => {
+    const provenancePath = projectPath("test-minimal", ".zudo-doc.json");
+    expect(await fs.pathExists(provenancePath)).toBe(true);
+    const provenance = await fs.readJson(provenancePath);
+    expect(typeof provenance.packageVersion).toBe("string");
+    // Version must be a bare semver (no caret), e.g. "0.2.22"
+    expect(provenance.packageVersion).toMatch(/^\d+\.\d+\.\d+/);
+    expect(provenance.ejected).toEqual({});
+  });
+
   it("creates starter content", async () => {
     expect(
       await fs.pathExists(
