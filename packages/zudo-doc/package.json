@@ -291,6 +291,34 @@
     "./doc-history": {
       "types": "./dist/doc-history/index.d.ts",
       "default": "./dist/doc-history/index.js"
+    },
+    "./doc-page-props": {
+      "types": "./dist/doc-page-props/index.d.ts",
+      "default": "./dist/doc-page-props/index.js"
+    },
+    "./locale-merge": {
+      "types": "./dist/locale-merge/index.d.ts",
+      "default": "./dist/locale-merge/index.js"
+    },
+    "./doc-route-paths": {
+      "types": "./dist/doc-route-paths/index.d.ts",
+      "default": "./dist/doc-route-paths/index.js"
+    },
+    "./nav-source-cache": {
+      "types": "./dist/nav-source-cache/index.d.ts",
+      "default": "./dist/nav-source-cache/index.js"
+    },
+    "./nav-source-docs": {
+      "types": "./dist/nav-source-docs/index.d.ts",
+      "default": "./dist/nav-source-docs/index.js"
+    },
+    "./doc-route-entries": {
+      "types": "./dist/doc-route-entries/index.d.ts",
+      "default": "./dist/doc-route-entries/index.js"
+    },
+    "./route-enumerators": {
+      "types": "./dist/route-enumerators/index.d.ts",
+      "default": "./dist/route-enumerators/index.js"
     }
   },
   "bin": {
