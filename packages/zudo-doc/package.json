@@ -247,6 +247,18 @@
     "./factory-context": {
       "types": "./dist/factory-context/index.d.ts",
       "default": "./dist/factory-context/index.js"
+    },
+    "./image-enlarge": {
+      "types": "./dist/image-enlarge/index.d.ts",
+      "default": "./dist/image-enlarge/index.js"
+    },
+    "./mermaid-enlarge": {
+      "types": "./dist/mermaid-enlarge/index.d.ts",
+      "default": "./dist/mermaid-enlarge/index.js"
+    },
+    "./ai-chat-modal": {
+      "types": "./dist/ai-chat-modal/index.d.ts",
+      "default": "./dist/ai-chat-modal/index.js"
     }
   },
   "bin": {

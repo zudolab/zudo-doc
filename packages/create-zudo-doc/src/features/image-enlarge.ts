@@ -6,8 +6,9 @@ import type { FeatureModule } from "../compose.js";
  * W7A (#1736): post-cutover, the image-enlarge island is mounted by the
  * pages/lib body-end wrapper (always present; runtime-gated via the
  * always-loaded stub-or-real ImageEnlarge component). Image-enlarge CSS
- * lives unconditionally in `templates/base/src/styles/global.css` — the
- * selectors only activate when the runtime mounts the .zd-enlarge-btn.
+ * lives unconditionally in `@takazudo/zudo-doc/features.css` (moved from
+ * `global.css` in S3 #2348) — the selectors only activate when the runtime
+ * mounts the .zd-enlarge-btn.
  *
  * S2 (#1825): after zfb next.18 removed the built-in imageEnlarge Rust
  * feature, the server-side figure/button emission is re-implemented via an
@@ -19,6 +20,13 @@ import type { FeatureModule } from "../compose.js";
  * When imageEnlarge is OFF, none of these are injected, so the override is
  * absent and paragraphs render plain (the Rust built-in is gone — "off" must
  * mean no wrapping at all).
+ *
+ * S3 (#2348): the ImageEnlarge island and its SSR fallback moved from
+ * src/components/image-enlarge.tsx into @takazudo/zudo-doc/image-enlarge.
+ * The pages/lib/_body-end-islands.tsx template now imports them from the
+ * package, so the local component file overlay was removed from
+ * templates/features/imageEnlarge/files/. No file-copy injections remain
+ * in this feature module — only _mdx-components.ts injections.
  */
 export const imageEnlargeFeature: FeatureModule = () => ({
   name: "imageEnlarge",
