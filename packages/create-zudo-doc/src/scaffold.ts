@@ -12,6 +12,18 @@ import { capitalize, getSecondaryLang } from "./utils.js";
 export { getSecondaryLang };
 
 /**
+ * Pinned `@takazudo/zudo-doc` version used in both `generatePackageJson()`
+ * and the `.zudo-doc.json` seed written by `scaffold()`. Hoisted as a shared
+ * constant so the dep pin and the provenance seed can never drift.
+ *
+ * Strip the caret from this string to get the bare version for provenance:
+ *   ZUDO_DOC_PIN.replace(/^\^/, "")   →  "0.2.22"
+ *
+ * Bumped in lockstep by scripts/release-create-zudo-doc.sh.
+ */
+export const ZUDO_DOC_PIN = "^0.2.22";
+
+/**
  * Files in `templates/base/**` that must never be copied into a generated
  * project. Each entry is matched against the path relative to `templates/base/`
  * (POSIX-style, forward slashes).
@@ -370,6 +382,22 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     JSON.stringify(pkg, null, 2) + "\n",
   );
 
+  // Seed .zudo-doc.json — provenance marker for `zudo-doc eject <component>`.
+  // packageVersion is the bare version string (caret stripped from ZUDO_DOC_PIN)
+  // so it records the concrete version the scaffold targets; the eject CLI
+  // records the actually-installed version on first eject.
+  await fs.outputFile(
+    path.join(targetDir, ".zudo-doc.json"),
+    JSON.stringify(
+      {
+        packageVersion: ZUDO_DOC_PIN.replace(/^\^/, ""),
+        ejected: {},
+      },
+      null,
+      2,
+    ) + "\n",
+  );
+
   const gitignoreLines = [
     "# Build output",
     "node_modules",
@@ -573,7 +601,9 @@ function generatePackageJson(choices: UserChoices) {
     // ties this pin to packages/zudo-doc's version, so the lockstep release
     // bumps both together; do not cut a create-zudo-doc release until the
     // matching @takazudo/zudo-doc version (with content.css) is on npm.
-    "@takazudo/zudo-doc": "^0.2.22",
+    // ZUDO_DOC_PIN is the shared constant — scaffold() uses the same value
+    // to seed .zudo-doc.json so the provenance and the dep can never drift.
+    "@takazudo/zudo-doc": ZUDO_DOC_PIN,
     // zod — used by the generated zfb.config.ts. zfb-config-gen emits
     // `import { z } from "zod"` for the content-collection schema +
     // `z.toJSONSchema(...)` conversion. Without this dep, the consumer
