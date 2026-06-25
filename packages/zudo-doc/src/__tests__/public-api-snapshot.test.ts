@@ -1,0 +1,266 @@
+// Snapshot guard for the @takazudo/zudo-doc 1.0 public API contract.
+//
+// Covers two previously-unguarded surfaces:
+//   (a) package.json#exports keyset
+//   (b) Settings / PresetSettings public field set
+//
+// The doclayout slot anchors and @theme design tokens are already guarded by
+// existing tooling (check:template-drift and design-token-lint respectively)
+// and are NOT duplicated here — see packages/zudo-doc/API.md for references.
+//
+// packageOwnedRoutes is explicitly marked internal/unstable and excluded from
+// the stable field-set snapshot — it is a dormant, advanced flag and should
+// NOT silently become a broad 1.0 user contract.
+
+import { describe, it, expect } from "vitest";
+import { createRequire } from "node:module";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+// src/__tests__/ → src/ → packages/zudo-doc/
+const pkgRoot = resolve(__dirname, "../..");
+
+// ── (a) package.json#exports keyset ──────────────────────────────────────────
+//
+// Fails when a subpath is added or removed without a deliberate, reviewed
+// snapshot update. To update: run the test, inspect the diff, and update the
+// snapshot with `vitest run --update-snapshots`.
+
+describe("package.json exports keyset snapshot", () => {
+  it("matches the frozen 1.0 exports keyset", () => {
+    const require = createRequire(import.meta.url);
+    const pkgJson = require(resolve(pkgRoot, "package.json")) as {
+      exports: Record<string, unknown>;
+    };
+
+    const exportKeys = Object.keys(pkgJson.exports).sort();
+
+    // Snapshot the sorted keyset — any addition or removal breaks this test.
+    expect(exportKeys).toMatchInlineSnapshot(`
+      [
+        ".",
+        "./ai-chat-modal",
+        "./body-foot-util",
+        "./breadcrumb",
+        "./category-nav",
+        "./category-tree-nav",
+        "./code-group",
+        "./code-syntax",
+        "./color-scheme-utils",
+        "./compose-meta-title",
+        "./content",
+        "./content-admonition",
+        "./content.css",
+        "./design-token-panel-bootstrap",
+        "./desktop-sidebar-toggle-island",
+        "./details",
+        "./doc-body-end",
+        "./doc-content-header",
+        "./doc-history",
+        "./doc-history-area",
+        "./doc-metainfo-area",
+        "./doc-page-props",
+        "./doc-page-renderer",
+        "./doc-page-shell",
+        "./doc-pager",
+        "./doc-route-entries",
+        "./doc-route-paths",
+        "./doc-tags-area",
+        "./doclayout",
+        "./extract-headings",
+        "./factory-context",
+        "./features.css",
+        "./footer",
+        "./footer-with-defaults",
+        "./frontmatter-preview-data",
+        "./github-helpers",
+        "./head",
+        "./head-with-defaults",
+        "./header",
+        "./header-with-defaults",
+        "./html-preview-wrapper",
+        "./i18n-version",
+        "./icons",
+        "./image-enlarge",
+        "./inline-version-switcher",
+        "./integrations/claude-resources",
+        "./integrations/doc-history",
+        "./integrations/llms-txt",
+        "./integrations/search-index",
+        "./island-types",
+        "./locale-merge",
+        "./math-block",
+        "./mdx-components",
+        "./mermaid-enlarge",
+        "./metainfo",
+        "./nav-data-prep",
+        "./nav-indexing",
+        "./nav-indexing/types",
+        "./nav-scope",
+        "./nav-source-cache",
+        "./nav-source-docs",
+        "./page-loading",
+        "./page-loading.css",
+        "./plugins/claude-resources",
+        "./plugins/doc-history",
+        "./plugins/llms-txt",
+        "./plugins/routes",
+        "./plugins/search-index",
+        "./preset",
+        "./render-markdown",
+        "./robots",
+        "./route-enumerators",
+        "./routes/404",
+        "./routes/api-ai-chat",
+        "./routes/docs-slug",
+        "./routes/docs-tags-index",
+        "./routes/docs-tags-tag",
+        "./routes/docs-versions",
+        "./routes/index",
+        "./routes/locale-docs-slug",
+        "./routes/locale-docs-tags-index",
+        "./routes/locale-docs-tags-tag",
+        "./routes/locale-docs-versions",
+        "./routes/locale-index",
+        "./routes/robots.txt",
+        "./routes/sitemap.xml",
+        "./routes/v-docs-slug",
+        "./routes/v-locale-docs-slug",
+        "./safelist",
+        "./safelist.css",
+        "./search-widget",
+        "./search-widget-script",
+        "./settings",
+        "./sidebar",
+        "./sidebar-prepaint",
+        "./sidebar-resizer",
+        "./sidebar-toggle-island",
+        "./sidebar-tree",
+        "./sidebar-tree-island",
+        "./sidebar-utils",
+        "./sidebar-with-defaults",
+        "./sidebar/types",
+        "./site-tree-nav",
+        "./site-tree-nav-island",
+        "./slug",
+        "./smart-break",
+        "./tab-item",
+        "./tag-helpers",
+        "./tag-pages",
+        "./tags-audit",
+        "./theme",
+        "./theme-toggle",
+        "./theme/color-scheme-provider",
+        "./toc",
+        "./transitions",
+        "./tree-nav-shared",
+        "./url-helpers",
+        "./url-normalizer",
+        "./use-modal-dialog",
+        "./versions-page",
+      ]
+    `);
+  });
+});
+
+// ── (b) Settings / PresetSettings public field set ────────────────────────────
+//
+// Reads Settings interface field names from the compiled dist/settings.js.
+// Because TypeScript interfaces erase to nothing at runtime, we extract the
+// field names from the source text of settings.ts via a simple regex — this
+// avoids any coupling to tsup output format while staying robust against
+// accidental field additions or removals.
+//
+// packageOwnedRoutes is EXCLUDED: it is marked internal/unstable in the
+// source file and in API.md. Adding it to this snapshot would silently make
+// it a broad 1.0 user contract.
+
+describe("Settings public field set snapshot", () => {
+  it("matches the frozen 1.0 stable field set (packageOwnedRoutes excluded as internal)", async () => {
+    const fs = await import("node:fs/promises");
+    const settingsSrc = await fs.readFile(
+      resolve(pkgRoot, "src/settings.ts"),
+      "utf8",
+    );
+
+    // Extract the Settings interface body — everything between
+    // `export interface Settings {` and the closing `}`.
+    // We look for lines of the form `  fieldName` or `  fieldName?` at the top
+    // of an interface body (single-level indent, no deeper nesting).
+    const settingsMatch = settingsSrc.match(
+      /export interface Settings \{([\s\S]*?)\n\}/,
+    );
+    if (!settingsMatch) {
+      throw new Error("Could not locate `export interface Settings {` in settings.ts");
+    }
+
+    const interfaceBody = settingsMatch[1];
+
+    // Match field declarations:  fieldName or  fieldName?  (leading spaces, no extra indent)
+    const fieldRe = /^\s{2}(\w+)\??\s*:/gm;
+    const fields: string[] = [];
+    let m: RegExpExecArray | null;
+    while ((m = fieldRe.exec(interfaceBody)) !== null) {
+      const name = m[1];
+      // Exclude packageOwnedRoutes — internal/unstable, NOT part of 1.0 contract.
+      // See API.md § "Internal / Unstable" and the JSDoc comment in settings.ts.
+      if (name !== "packageOwnedRoutes") {
+        fields.push(name);
+      }
+    }
+
+    expect(fields).toMatchInlineSnapshot(`
+      [
+        "colorScheme",
+        "colorMode",
+        "siteName",
+        "siteDescription",
+        "base",
+        "trailingSlash",
+        "docsDir",
+        "defaultLocale",
+        "locales",
+        "mermaid",
+        "noindex",
+        "editUrl",
+        "githubUrl",
+        "githubAutolinksRepo",
+        "siteUrl",
+        "metaTags",
+        "sitemap",
+        "docMetainfo",
+        "docTags",
+        "tagPlacement",
+        "tagGovernance",
+        "tagVocabulary",
+        "llmsTxt",
+        "math",
+        "cjkFriendly",
+        "onBrokenMarkdownLinks",
+        "aiAssistant",
+        "aiChatDemoMode",
+        "aiChatAllowedOrigins",
+        "aiChatGlobalDailyLimit",
+        "designTokenPanel",
+        "tocMinDepth",
+        "tocMaxDepth",
+        "headingIdStrategy",
+        "sidebarResizer",
+        "sidebarToggle",
+        "imageEnlarge",
+        "dynamicPageTransition",
+        "frontmatterPreview",
+        "docHistory",
+        "bodyFootUtilArea",
+        "htmlPreview",
+        "versions",
+        "claudeResources",
+        "defaultLocaleOnlyPrefixes",
+        "footer",
+        "headerNav",
+        "headerRightItems",
+      ]
+    `);
+  });
+});

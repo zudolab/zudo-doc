@@ -6,6 +6,10 @@ Components are Preact `.tsx` compiled by tsup (`bundle:false`, 1:1 source→`dis
 so `"use client"` directives survive — see `tsup.config.ts`). The `exports` map
 in `package.json` is the API surface; consumers import from `dist/`.
 
+The frozen 1.0 public API contract is documented in `API.md` (this directory):
+subpath exports, `zudoDocPreset` options (`Settings`), `@theme` design tokens,
+`doclayout` slot anchors, and the ejectable component list.
+
 ## Build: tsup (JS) + tsc (DTS) — two passes, not one
 
 `build`/`prepare` run **tsup THEN `tsc -p tsconfig.build.json`** (`--emitDeclarationOnly`).
