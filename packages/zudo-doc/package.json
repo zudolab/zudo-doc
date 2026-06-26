@@ -491,17 +491,22 @@
     "./routes/v-locale-docs-slug": {
       "types": "./dist/routes/v-locale-docs-slug.d.ts",
       "default": "./dist/routes/v-locale-docs-slug.js"
+    },
+    "./eject": {
+      "types": "./dist/eject/index.d.ts",
+      "default": "./dist/eject/index.js"
     }
   },
   "bin": {
     "gen-z-index": "./bin/gen-z-index.mjs",
-    "tags-audit": "./bin/tags-audit.mjs"
+    "tags-audit": "./bin/tags-audit.mjs",
+    "zudo-doc": "./bin/zudo-doc.mjs"
   },
   "scripts": {
     "build": "tsup && tsc -p tsconfig.build.json",
     "dev": "tsup --watch",
     "prepare": "tsup --silent && tsc -p tsconfig.build.json",
-    "prepack": "node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs && node scripts/check-features-css.mjs && node scripts/check-plugins.mjs && node scripts/check-eject-sources.mjs",
+    "prepack": "node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs && node scripts/check-features-css.mjs && node scripts/check-plugins.mjs && node scripts/check-eject-sources.mjs && node scripts/check-routes-src.mjs",
     "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc --noEmit"
   },
@@ -509,12 +514,13 @@
     "dist",
     "bin",
     "eject",
+    "routes-src",
     "README.md"
   ],
   "peerDependencies": {
     "preact": "^10.29.1",
-    "@takazudo/zfb": "^0.1.0-next.62",
-    "@takazudo/zfb-runtime": "^0.1.0-next.62",
+    "@takazudo/zfb": "^0.1.0-next.65",
+    "@takazudo/zfb-runtime": "^0.1.0-next.65",
     "@takazudo/zudo-doc-history-server": "^0.2.21",
     "@takazudo/zdtp": "^0.3.3",
     "shiki": "^4.0.2",
@@ -540,9 +546,14 @@
     }
   },
   "dependencies": {
-    "gray-matter": "^4.0.3"
+    "fs-extra": "^11.3.0",
+    "gray-matter": "^4.0.3",
+    "minimist": "^1.2.8",
+    "picocolors": "^1.1.1"
   },
   "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/minimist": "^1.2.5",
     "@types/node": "^25.3.5",
     "cross-env": "^7.0.3",
     "preact": "^10.29.1",
@@ -552,7 +563,7 @@
     "typescript": "^5.0.0",
     "vitest": "^4.1.0",
     "zod": "^4.3.6",
-    "@takazudo/zfb": "0.1.0-next.62",
-    "@takazudo/zfb-runtime": "0.1.0-next.62"
+    "@takazudo/zfb": "0.1.0-next.65",
+    "@takazudo/zfb-runtime": "0.1.0-next.65"
   }
 }

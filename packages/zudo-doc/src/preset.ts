@@ -82,8 +82,12 @@ export interface PresetSettings {
   /** "owner/repo" — when set, enables `#123` / SHA autolinks in markdown. Omit to disable entirely. */
   githubAutolinksRepo?: string;
   /** When `true`, the preset adds the package-owned route-injection plugin
-   *  (`@takazudo/zudo-doc/plugins/routes`). Default off — dormant. See
-   *  `docs/adr/route-injection-seam.md`. */
+   *  (`@takazudo/zudo-doc/plugins/routes`). On by default since the fast-follow
+   *  (#2372): the showcase and create-zudo-doc both EMIT `packageOwnedRoutes: true`
+   *  into their generated `settings.ts`. `buildPlugins` reads this value truthily
+   *  and does NO central defaulting — a hand-written settings object that OMITS the
+   *  field is treated as off; set it explicitly to control injection.
+   *  See `docs/adr/route-injection-seam.md`. */
   packageOwnedRoutes?: boolean;
   /** Gate for the `/docs/tags` + `/docs/tags/[tag]` injected routes. */
   docTags?: boolean;

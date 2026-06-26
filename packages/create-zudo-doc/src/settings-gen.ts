@@ -174,6 +174,10 @@ export function generateSettingsFile(choices: UserChoices): string {
   } else {
     lines.push(`  docHistory: false,`);
   }
+  // Package-owned route injection is on by default since the fast-follow (#2372).
+  // Generated projects include the field explicitly so settings.ts stays in sync
+  // with src/config/settings.ts (checked by check-fixture-settings-drift.mjs).
+  lines.push(`  packageOwnedRoutes: true,`);
   if (choices.features.includes("bodyFootUtil")) {
     lines.push(`  bodyFootUtilArea: {`);
     lines.push(`    docHistory: ${choices.features.includes("docHistory")},`);

@@ -103,23 +103,30 @@ on the `.zudo-doc.json` `ejected[<component>]` entry. If present, the CLI prints
 edits) and **without** adding a duplicate provenance entry. Destination-dir existence is
 the secondary guard.
 
-### 5. CLI shape — **new `zudo-doc` bin in `create-zudo-doc`**
+### 5. CLI shape — **`zudo-doc` bin in `@takazudo/zudo-doc`** (revised S4 #2373)
 
-Add a second bin to `packages/create-zudo-doc/package.json`:
+> **Note (S4 #2373):** The initial C1 implementation placed the `zudo-doc` bin in
+> `create-zudo-doc` (as originally specced). S4 relocated it into `@takazudo/zudo-doc`
+> so generated projects (which depend on `@takazudo/zudo-doc`, not `create-zudo-doc`)
+> have `node_modules/.bin/zudo-doc` available post-scaffold. The `EJECTABLE` map,
+> `eject()` function, and `ZudoDocJson` type also moved to
+> `packages/zudo-doc/src/eject/index.ts` (exported as `@takazudo/zudo-doc/eject`).
+
+The bin is declared in `packages/zudo-doc/package.json`:
 
 ```jsonc
 "bin": {
-  "create-zudo-doc": "bin/create-zudo-doc.js",
-  "zudo-doc": "bin/zudo-doc.js"            // NEW
+  "gen-z-index": "./bin/gen-z-index.mjs",
+  "tags-audit": "./bin/tags-audit.mjs",
+  "zudo-doc": "./bin/zudo-doc.mjs"
 }
 ```
 
-`bin/zudo-doc.js` (`#!/usr/bin/env node`, `import "../dist/zudo-doc-cli.js"`) →
-`src/zudo-doc-cli.ts` parses `zudo-doc eject <component>` with `minimist` (same dep
-already present) and calls `eject()` in `src/eject.ts`. A separate bin (not a dispatched
-subcommand of the scaffold CLI) keeps the scaffold entry single-purpose and matches the
-Docusaurus `docusaurus swizzle` analogue: the framework-name binary owns ongoing project
-ops; `create-*` owns first-run scaffolding only.
+`bin/zudo-doc.mjs` (tsx-runner pattern, mirrors `bin/tags-audit.mjs`) spawns
+`bin/zudo-doc-cli-runner.ts` via `tsx`. The runner imports `eject` and `EJECTABLE` from
+`@takazudo/zudo-doc/eject` and parses `zudo-doc eject <component>` with `minimist`.
+A separate bin keeps the scaffold entry (`create-zudo-doc`) single-purpose — the
+framework-name binary owns ongoing project ops; `create-*` owns first-run scaffolding only.
 
 ## Why these calls
 

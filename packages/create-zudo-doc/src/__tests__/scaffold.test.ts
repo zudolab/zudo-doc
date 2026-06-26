@@ -336,6 +336,8 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     expect(gitignore).toContain("pnpm-debug.log*");
     // Cloudflare Wrangler
     expect(gitignore).toContain(".wrangler/");
+    // zudo-doc build artifact (routes-src/ staged here for packageOwnedRoutes)
+    expect(gitignore).toContain(".zudo-doc/");
   });
 
   it(".gitignore does NOT include Tauri entries when tauri is disabled", async () => {
@@ -724,6 +726,23 @@ describe("scaffold — generated settings.ts content", () => {
       "utf-8",
     );
     expect(content).toContain("cjkFriendly: false");
+  });
+
+  it("packageOwnedRoutes: generated settings always contain packageOwnedRoutes: true", async () => {
+    const choices: UserChoices = {
+      projectName: "test-package-owned-routes",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-package-owned-routes", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("packageOwnedRoutes: true");
   });
 
   it("tagPlacement: generated settings default to after-title", async () => {
@@ -2636,12 +2655,6 @@ describe("drift detection — generator vs main project settings", () => {
       // Generated projects must opt in explicitly — omitting gives "no autolinks" (old behaviour).
       // See zudo-doc#2321 Wave-0 correctness fix.
       "githubAutolinksRepo",
-      // Internal/advanced build-time route injection, intentionally NOT surfaced
-      // in generated projects this epic (Package-First Finale #2356; ADR
-      // packages/zudo-doc/docs/adr/route-injection-seam.md, Decision 4). Default
-      // (absent → false) is the correct dormant value for a blank project; a
-      // fast-follow flips it on once upstream zfb dev-render support lands.
-      "packageOwnedRoutes",
     ]);
 
     // Check that every field in the main settings exists in the generated output
@@ -2923,15 +2936,16 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
   });
 });
 
-// W6A (#1734) — page mirror parity assertions. The 29 unconditional pages
+// W6A (#1734) — page mirror parity assertions. The 27 unconditional pages
 // from the host repo's pages/ tree are mirrored into templates/base/pages/
 // and must show up in every scaffold variant; pages/api/** is excluded as
 // worker-only per spec-lock Decision 5.
+// Note: pages/404.tsx and pages/sitemap.xml.tsx were removed from the
+// template in the Stub-Deletion Fast-Follow (epic #2369) — those routes are
+// now injected by the package (packageOwnedRoutes), not scaffolded.
 describe("scaffold — W6A page mirror (templates/base/pages)", () => {
   const UNCONDITIONAL_PAGES = [
     "pages/index.tsx",
-    "pages/404.tsx",
-    "pages/sitemap.xml.tsx",
     "pages/_data.ts",
     "pages/_mdx-components.ts",
     "pages/docs/[[...slug]].tsx",
@@ -3000,7 +3014,7 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
     packageManager: "pnpm",
   };
 
-  it("emits all 29 unconditional page files in a barebone scaffold", async () => {
+  it("emits all 27 unconditional page files in a barebone scaffold", async () => {
     await scaffold(BAREBONE);
     for (const rel of UNCONDITIONAL_PAGES) {
       expect(
@@ -3010,7 +3024,7 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
     }
   });
 
-  it("emits all 29 unconditional page files in an all-features scaffold", async () => {
+  it("emits all 27 unconditional page files in an all-features scaffold", async () => {
     await scaffold(ALL_FEATURES);
     for (const rel of UNCONDITIONAL_PAGES) {
       expect(
@@ -3312,7 +3326,10 @@ describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => 
 // ---------------------------------------------------------------------------
 
 describe("scaffold — W7C docTags feature pages (#1738)", () => {
-  it("emits docs/tags/[tag].tsx + docs/tags/index.tsx when docTags is selected (i18n off)", async () => {
+  // Route stubs for tags were removed in the Stub-Deletion Fast-Follow (epic
+  // #2369). These routes are now injected by the package (packageOwnedRoutes)
+  // so the scaffold must NOT emit them as files.
+  it("does NOT emit docs/tags/[tag].tsx + docs/tags/index.tsx as scaffold files (package-injected)", async () => {
     const choices: UserChoices = {
       projectName: "test-doctags-only",
       defaultLang: "en",
@@ -3326,12 +3343,12 @@ describe("scaffold — W7C docTags feature pages (#1738)", () => {
       await fs.pathExists(
         projectPath("test-doctags-only", "pages/docs/tags/[tag].tsx"),
       ),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       await fs.pathExists(
         projectPath("test-doctags-only", "pages/docs/tags/index.tsx"),
       ),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("strips [locale]/docs/tags/** when docTags is selected but i18n is OFF", async () => {
@@ -3351,7 +3368,7 @@ describe("scaffold — W7C docTags feature pages (#1738)", () => {
     ).toBe(false);
   });
 
-  it("emits [locale]/docs/tags/{[tag].tsx,index.tsx} when docTags + i18n are both selected", async () => {
+  it("does NOT emit [locale]/docs/tags/{[tag].tsx,index.tsx} as scaffold files (package-injected)", async () => {
     const choices: UserChoices = {
       projectName: "test-doctags-i18n",
       defaultLang: "en",
@@ -3368,7 +3385,7 @@ describe("scaffold — W7C docTags feature pages (#1738)", () => {
           "pages/[locale]/docs/tags/[tag].tsx",
         ),
       ),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       await fs.pathExists(
         projectPath(
@@ -3376,7 +3393,7 @@ describe("scaffold — W7C docTags feature pages (#1738)", () => {
           "pages/[locale]/docs/tags/index.tsx",
         ),
       ),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("does NOT emit any docs/tags/** when docTags is not selected", async () => {
@@ -3401,7 +3418,11 @@ describe("scaffold — W7C docTags feature pages (#1738)", () => {
 });
 
 describe("scaffold — W7C versioning feature pages (#1738)", () => {
-  it("emits docs/versions.tsx + v/[version]/docs/[[...slug]].tsx when versioning is selected (i18n off)", async () => {
+  // pages/docs/versions.tsx was removed in the Stub-Deletion Fast-Follow
+  // (epic #2369) — that route is now injected by the package
+  // (packageOwnedRoutes). The v/[version]/** routes are NOT package-owned
+  // (they are project-specific versioning configuration) and remain emitted.
+  it("does NOT emit docs/versions.tsx (package-injected) but DOES emit v/[version]/docs/[[...slug]].tsx when versioning is selected (i18n off)", async () => {
     const choices: UserChoices = {
       projectName: "test-versioning-pages-only",
       defaultLang: "en",
@@ -3415,7 +3436,7 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
       await fs.pathExists(
         projectPath("test-versioning-pages-only", "pages/docs/versions.tsx"),
       ),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       await fs.pathExists(
         projectPath(
@@ -3451,7 +3472,7 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
     ).toBe(false);
   });
 
-  it("emits [locale]/docs/versions.tsx + v/[version]/[locale]/docs/[[...slug]].tsx when versioning + i18n are both selected", async () => {
+  it("does NOT emit [locale]/docs/versions.tsx (package-injected) but DOES emit v/[version]/[locale]/docs/[[...slug]].tsx when versioning + i18n are both selected", async () => {
     const choices: UserChoices = {
       projectName: "test-versioning-i18n",
       defaultLang: "en",
@@ -3468,7 +3489,7 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
           "pages/[locale]/docs/versions.tsx",
         ),
       ),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       await fs.pathExists(
         projectPath(
@@ -3607,9 +3628,13 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
    * (next.62) — carries build-time package-owned-routes capability
    * (injectRoute in build, definePreset, presets[], addClientEntry) plus
    * router/build fixes. No consumer-facing breaking change.
+   * Bumped to 0.1.0-next.65: dev-render of injected routes (zfb#1227, next.63)
+   * + islands bundler seeds the host tsconfig `paths` (e.g. `@/*`) into its
+   * synthetic tsconfig (zfb#1238) — fixes silent island hydration failure under
+   * route injection; unblocks packageOwnedRoutes. No consumer-facing change.
    * Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.62", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.65", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -3620,16 +3645,22 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.62");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.62");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.65");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.65");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.62",
+      "0.1.0-next.65",
     );
   });
 });
 
 describe("scaffold — W7C cross-feature union (i18n + docTags + versioning) (#1738)", () => {
-  it("emits the union of all 8 feature-conditional pages when all three are selected", async () => {
+  // After the Stub-Deletion Fast-Follow (epic #2369), several routes that were
+  // previously scaffolded as files are now injected by the package
+  // (packageOwnedRoutes). The union test was originally "all 8 feature-
+  // conditional pages"; the 6 deleted routes (tags pages + versions pages) are
+  // no longer emitted. Only the versioning v/[version]/** routes remain as
+  // scaffold files (they are project-specific, not package-owned).
+  it("emits only the versioning v/[version]/** routes as scaffold files; tags+versions route stubs are package-injected", async () => {
     const choices: UserChoices = {
       projectName: "test-union-all",
       defaultLang: "en",
@@ -3639,25 +3670,31 @@ describe("scaffold — W7C cross-feature union (i18n + docTags + versioning) (#1
       packageManager: "pnpm",
     };
     await scaffold(choices);
-    const expected = [
-      // docTags — unconditional pair
-      "pages/docs/tags/[tag].tsx",
-      "pages/docs/tags/index.tsx",
-      // docTags — locale pair
-      "pages/[locale]/docs/tags/[tag].tsx",
-      "pages/[locale]/docs/tags/index.tsx",
-      // versioning — unconditional pair
-      "pages/docs/versions.tsx",
+    // These routes ARE still emitted as scaffold files
+    const presentExpected = [
       "pages/v/[version]/docs/[[...slug]].tsx",
-      // versioning — locale pair
-      "pages/[locale]/docs/versions.tsx",
       "pages/v/[version]/[locale]/docs/[[...slug]].tsx",
     ];
-    for (const rel of expected) {
+    for (const rel of presentExpected) {
       expect(
         await fs.pathExists(projectPath("test-union-all", rel)),
         `expected ${rel} to exist in union scaffold`,
       ).toBe(true);
+    }
+    // These routes are now package-injected — NOT emitted as scaffold files
+    const absentExpected = [
+      "pages/docs/tags/[tag].tsx",
+      "pages/docs/tags/index.tsx",
+      "pages/[locale]/docs/tags/[tag].tsx",
+      "pages/[locale]/docs/tags/index.tsx",
+      "pages/docs/versions.tsx",
+      "pages/[locale]/docs/versions.tsx",
+    ];
+    for (const rel of absentExpected) {
+      expect(
+        await fs.pathExists(projectPath("test-union-all", rel)),
+        `expected ${rel} to be ABSENT (package-injected, not scaffolded)`,
+      ).toBe(false);
     }
   });
 });
@@ -4207,9 +4244,9 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
   // shell render site we assert the `enableClientRouter={settings.dynamicPageTransition}`
   // prop in the package factory source, while the generated stub must still inject
   // the host `settings` into the factory (settings carries dynamicPageTransition).
-  // The other two render sites — `pages/index.tsx` and `pages/404.tsx` — were NOT
-  // relocated and still contain the literal prop directly (their tests below are
-  // unchanged).
+  // `pages/index.tsx` was NOT relocated and still contains the literal prop
+  // directly. `pages/404.tsx` was removed from the scaffold template in the
+  // Stub-Deletion Fast-Follow (epic #2369) — it is now package-injected.
   it("feature ON: _doc-page-shell.tsx threads enableClientRouter={settings.dynamicPageTransition} via the package factory", async () => {
     const choices: UserChoices = {
       projectName: "test-dpt-on-ecr-shell",
@@ -4309,7 +4346,11 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
     expect(content).toContain("enableClientRouter={settings.dynamicPageTransition}");
   });
 
-  it("feature ON: pages/404.tsx contains enableClientRouter={settings.dynamicPageTransition}", async () => {
+  // pages/404.tsx was removed from the scaffold template in the Stub-Deletion
+  // Fast-Follow (epic #2369) — the 404 route is now injected by the package
+  // (packageOwnedRoutes). The enableClientRouter prop is handled inside the
+  // package factory; no scaffold file needs to thread it for 404.
+  it("does NOT emit pages/404.tsx as a scaffold file (package-injected) when dynamicPageTransition is ON", async () => {
     const choices: UserChoices = {
       projectName: "test-dpt-on-ecr-404",
       defaultLang: "en",
@@ -4319,14 +4360,12 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
       packageManager: "pnpm",
     };
     await scaffold(choices);
-    const content = await fs.readFile(
-      projectPath("test-dpt-on-ecr-404", "pages/404.tsx"),
-      "utf-8",
-    );
-    expect(content).toContain("enableClientRouter={settings.dynamicPageTransition}");
+    expect(
+      await fs.pathExists(projectPath("test-dpt-on-ecr-404", "pages/404.tsx")),
+    ).toBe(false);
   });
 
-  it("feature OFF: pages/404.tsx contains enableClientRouter={settings.dynamicPageTransition}", async () => {
+  it("does NOT emit pages/404.tsx as a scaffold file (package-injected) when dynamicPageTransition is OFF", async () => {
     const choices: UserChoices = {
       projectName: "test-dpt-off-ecr-404",
       defaultLang: "en",
@@ -4336,11 +4375,11 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
       packageManager: "pnpm",
     };
     await scaffold(choices);
-    const content = await fs.readFile(
-      projectPath("test-dpt-off-ecr-404", "pages/404.tsx"),
-      "utf-8",
-    );
-    expect(content).toContain("enableClientRouter={settings.dynamicPageTransition}");
+    expect(
+      await fs.pathExists(
+        projectPath("test-dpt-off-ecr-404", "pages/404.tsx"),
+      ),
+    ).toBe(false);
   });
 });
 

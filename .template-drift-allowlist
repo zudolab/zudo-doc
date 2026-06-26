@@ -229,12 +229,8 @@ src/utils/git-info.ts
 # create-zudo-doc's pin is now ≥ 0.2.22. The four template files now use the same
 # re-export form as the host and are byte-identical.
 
-# S2 (#2347 / package-first-migration Wave 3 epic #2344) — SiteTreeNav island
-# relocated into @takazudo/zudo-doc/site-tree-nav-island. The host
-# src/components/site-tree-nav.tsx retains the full island implementation (the
-# source-of-truth is now packages/zudo-doc/src/site-tree-nav-island/); the base
-# template ships a thin re-export shim that forwards to the package. The
-# "use client" directive drift is separately gated by DIRECTIVE_EXEMPT in
-# check-template-drift.sh. Content drift here is intentional — reconcile after
-# the package version is published and create-zudo-doc's pin is bumped.
-src/components/site-tree-nav.tsx
+# S2 (#2347) SiteTreeNav island re-export shim removed in #2371/#2374 fast-follow:
+# the host src/components/site-tree-nav.tsx was deleted (it imports directly from
+# @takazudo/zudo-doc/site-tree-nav-island now), and the base template's shim was
+# likewise removed — both index pages import the package island directly, so there
+# is no longer a local site-tree-nav file in either tree to drift-check.

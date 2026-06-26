@@ -143,7 +143,8 @@ When the user chooses **eject** (or accepts the default), call the C1 eject CLI:
 zudo-doc eject <component>
 ```
 
-The CLI (from `packages/create-zudo-doc`) performs:
+The CLI (ships from `@takazudo/zudo-doc`, reachable in generated projects as `node_modules/.bin/zudo-doc`) performs:
+
 1. Copies the component's TS source from the published `eject/` bundle into
    `src/components/zudo-doc/<component>/` inside the target project.
 2. Rewrites parent-relative cross-component imports to `@takazudo/zudo-doc/<dir>` subpath
@@ -209,6 +210,7 @@ pnpm dev &
 ```
 
 **If any island fails the hydration check:**
+
 1. Stop immediately — do not proceed to Step 6.
 2. Report which component is dead (grep `dist/` for the island marker pattern).
 3. Offer to re-eject or restore the file from git: `git checkout -- <path>`.
@@ -285,7 +287,7 @@ After Steps 3–6 complete (or at any early stop), print a structured summary:
 | `.template-drift-allowlist` | Files excluded from the automated drift check (still need manual review) |
 | `packages/create-zudo-doc/templates/base/` | Pristine base template |
 | `packages/create-zudo-doc/templates/features/*/files/` | Pristine feature-specific templates |
-| `packages/create-zudo-doc/docs/eject-contract.md` | Full eject CLI contract (C0 #2359) |
-| `packages/create-zudo-doc/src/eject.ts` | `EJECTABLE` map (authoritative list of valid component names) |
+| `packages/create-zudo-doc/docs/eject-contract.md` | Full eject CLI contract (C0 #2359; Decision 5 revised S4 #2373) |
+| `packages/zudo-doc/src/eject/index.ts` | `EJECTABLE` map and `eject()` — now in `@takazudo/zudo-doc` (S4 #2373); `zudo-doc` bin ships from `@takazudo/zudo-doc`, not `create-zudo-doc` |
 | `.zudo-doc.json` | Provenance marker in the target project (records ejected components + version) |
 | `.claude/skills/l-lessons-zfb-migration-parity/SKILL.md` | Lessons on why hydration smoke is mandatory |

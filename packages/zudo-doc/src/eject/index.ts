@@ -8,9 +8,9 @@ import pc from "picocolors";
 // Values are the local destination dir (project-relative POSIX, no trailing
 // slash) where the component source will be copied.
 //
-// Must stay in sync with:
-//   - EJECTABLE list in packages/zudo-doc/scripts/copy-eject-sources.mjs
-//   - EJECTABLE list in packages/zudo-doc/scripts/check-eject-sources.mjs
+// This is the single source of truth for the ejectable list.
+// packages/zudo-doc/scripts/copy-eject-sources.mjs and check-eject-sources.mjs
+// import this constant so all three are always in sync (S4 de-dup — #2373).
 
 export interface EjectableEntry {
   /** Package subpath, e.g. `@takazudo/zudo-doc/header` */
@@ -341,8 +341,8 @@ export async function eject(
     console.log(
       pc.dim(
         `  No host call sites found for ${entry.packageSubpath}.\n` +
-          `  Update your imports manually: change \`from "${entry.packageSubpath}"\`\n` +
-          `  to the local path (e.g. \`from "@/${localDir}/index.js"\` or a relative path).`,
+          `  Update your imports manually: change the \`"${entry.packageSubpath}"\`\n` +
+          `  specifier to a local one, e.g. \`"@/${localDir}/index.js"\` or a relative path.`,
       ),
     );
   }

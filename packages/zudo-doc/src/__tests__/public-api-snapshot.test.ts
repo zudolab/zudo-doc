@@ -68,6 +68,7 @@ describe("package.json exports keyset snapshot", () => {
         "./doc-route-paths",
         "./doc-tags-area",
         "./doclayout",
+        "./eject",
         "./extract-headings",
         "./factory-context",
         "./features.css",

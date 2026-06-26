@@ -421,6 +421,9 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     "# Cloudflare Wrangler",
     ".wrangler/",
     "",
+    "# zudo-doc build artifact (routes-src/ staged here at build time)",
+    ".zudo-doc/",
+    "",
   ];
 
   // The doc-lookup skill is only generated when skillSymlinker is selected
@@ -581,15 +584,20 @@ function generatePackageJson(choices: UserChoices) {
     // zfb-content GFM-autolink fix — terminate the autolink path at CJK
     // boundaries (zfb#1105). Content-rendering bug fix, additive; relevant for
     // CJK (e.g. Japanese) docs. No consumer-facing / CLI breaking change.
-    // next.54 (current pin): bug-fix + perf release — cross-OS CSS hash
-    // stability, multi-valued response headers (e.g. multiple Set-Cookie),
+    // next.54: bug-fix + perf release — cross-OS CSS hash stability,
+    // multi-valued response headers (e.g. multiple Set-Cookie),
     // supplementary-plane CJK reading-time, plus CLI/server/runtime hardening
     // and render perf passes. No consumer-facing / CLI breaking change.
-    "@takazudo/zfb": "0.1.0-next.62",
-    "@takazudo/zfb-runtime": "0.1.0-next.62",
+    // next.65 (current pin): dev-render of package-injected routes (zfb#1227,
+    // landed next.63) + islands bundler now seeds the host tsconfig `paths`
+    // (e.g. `@/*`) into its synthetic tsconfig (zfb#1238) — fixes silent island
+    // hydration failure under route injection. Unblocks packageOwnedRoutes.
+    // No consumer-facing / CLI breaking change.
+    "@takazudo/zfb": "0.1.0-next.65",
+    "@takazudo/zfb-runtime": "0.1.0-next.65",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.62",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.65",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's

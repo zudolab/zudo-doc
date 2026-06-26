@@ -1,21 +1,31 @@
-// zudo-doc-cli.ts — entry point for the `zudo-doc` bin
+#!/usr/bin/env node
+// @takazudo/zudo-doc/bin/zudo-doc.mjs
 //
-// Parses `zudo-doc eject <component>` and dispatches to the eject() function.
-// Uses minimist (same dep as the scaffold CLI) for argument parsing.
+// Package bin: `zudo-doc eject <component>` swizzle CLI.
 //
-// Decision 5 — C0 #2359: separate bin keeps the scaffold entry (`create-zudo-doc`)
-// single-purpose; the framework-name binary owns ongoing project operations.
+// Self-contained ESM — runs on plain `node` with NO `tsx` requirement. The eject
+// logic is imported from the package's COMPILED `../dist/eject/index.js`, and the
+// only runtime deps are `minimist` + `picocolors` (declared deps of this package,
+// so they are present transitively in any consumer's node_modules). This is the
+// key difference from the tsx-runner pattern used by `bin/tags-audit.mjs`:
+// tags-audit must load the *project's* TypeScript config files at runtime (hence
+// tsx), whereas eject only copies files + rewrites imports — no TS eval needed —
+// so it works in a default generated project that never installed tsx (#2367).
+//
+// Usage:
+//   zudo-doc eject <component>   # eject a component's TS source into the project
+//   zudo-doc --help              # show help
 
 import minimist from "minimist";
 import pc from "picocolors";
-import { eject, EJECTABLE } from "./eject.js";
+import { eject, EJECTABLE } from "../dist/eject/index.js";
 
 const argv = minimist(process.argv.slice(2), {
   boolean: ["help"],
   alias: { h: "help" },
 });
 
-function printHelp(): void {
+function printHelp() {
   const validNames = Object.keys(EJECTABLE).sort().join(", ");
   console.log(`
 ${pc.bold("Usage:")} zudo-doc <subcommand> [options]
@@ -39,13 +49,13 @@ ${pc.bold("Examples:")}
 `);
 }
 
-async function main(): Promise<void> {
-  if (argv.help || argv._.length === 0) {
+async function main() {
+  if (argv["help"] || argv._.length === 0) {
     printHelp();
     process.exit(0);
   }
 
-  const [subcommand, componentArg] = argv._ as string[];
+  const [subcommand, componentArg] = argv._;
 
   if (subcommand !== "eject") {
     console.error(
@@ -67,7 +77,7 @@ async function main(): Promise<void> {
   await eject(componentArg, { cwd: process.cwd() });
 }
 
-main().catch((err: unknown) => {
+main().catch((err) => {
   console.error(pc.red(String(err)));
   process.exit(1);
 });
