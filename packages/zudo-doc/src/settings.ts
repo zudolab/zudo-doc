@@ -291,8 +291,11 @@ export interface Settings {
    * `@takazudo/zudo-doc/plugins/routes` plugin, which injects the doc routes
    * from the package instead of requiring project-shipped `pages/*.tsx` stubs.
    *
-   * Default **true** (on since the fast-follow, #2372 — upstream zfb dev-render
-   * support landed). Any injected route whose URL shape collides with a kept
+   * On by default since the fast-follow (#2372 — upstream zfb dev-render support
+   * landed): the showcase and create-zudo-doc emit `packageOwnedRoutes: true` into
+   * their generated `settings.ts`. The preset reads this value truthily with no
+   * central defaulting, so a hand-written settings object that omits the field is
+   * treated as off. Any injected route whose URL shape collides with a kept
    * `pages/` stub is silently dropped (user `pages/` wins), so existing stubs
    * are a harmless no-op.
    */

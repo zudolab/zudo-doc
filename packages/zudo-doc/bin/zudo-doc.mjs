@@ -3,60 +3,81 @@
 //
 // Package bin: `zudo-doc eject <component>` swizzle CLI.
 //
-// Spawns tsx (from the project's node_modules) to run the TypeScript runner
-// (bin/zudo-doc-cli-runner.ts) which imports eject logic from this package.
-//
-// Mirrors the bin/tags-audit.mjs + bin/tags-audit-runner.ts tsx-runner pattern.
-//
-// Requires tsx in the project's devDependencies. pnpm puts ./node_modules/.bin
-// in PATH for npm scripts, so `pnpm run` scripts always find tsx.
+// Self-contained ESM — runs on plain `node` with NO `tsx` requirement. The eject
+// logic is imported from the package's COMPILED `../dist/eject/index.js`, and the
+// only runtime deps are `minimist` + `picocolors` (declared deps of this package,
+// so they are present transitively in any consumer's node_modules). This is the
+// key difference from the tsx-runner pattern used by `bin/tags-audit.mjs`:
+// tags-audit must load the *project's* TypeScript config files at runtime (hence
+// tsx), whereas eject only copies files + rewrites imports — no TS eval needed —
+// so it works in a default generated project that never installed tsx (#2367).
 //
 // Usage:
 //   zudo-doc eject <component>   # eject a component's TS source into the project
 //   zudo-doc --help              # show help
 
-import { spawnSync } from "node:child_process";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-import { existsSync } from "node:fs";
+import minimist from "minimist";
+import pc from "picocolors";
+import { eject, EJECTABLE } from "../dist/eject/index.js";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-// The TypeScript runner lives alongside this bin, published in the package.
-// tsx treats it as a TypeScript file and handles the import graph.
-const RUNNER_PATH = resolve(__dirname, "zudo-doc-cli-runner.ts");
-
-// Locate tsx in the project's node_modules/.bin.
-// Walk up from cwd to handle monorepo setups where node_modules is hoisted.
-function findTsxBin() {
-  let dir = process.cwd();
-  for (let i = 0; i < 10; i++) {
-    const candidate = resolve(dir, "node_modules/.bin/tsx");
-    if (existsSync(candidate)) return candidate;
-    const parent = dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-  // Last resort: tsx on PATH (e.g. globally installed or nix-shell)
-  return "tsx";
-}
-
-const tsxBin = findTsxBin();
-
-const result = spawnSync(tsxBin, [RUNNER_PATH, ...process.argv.slice(2)], {
-  stdio: "inherit",
-  env: process.env,
-  cwd: process.cwd(),
+const argv = minimist(process.argv.slice(2), {
+  boolean: ["help"],
+  alias: { h: "help" },
 });
 
-if (result.error) {
-  // tsx binary not found or failed to spawn
-  process.stderr.write(
-    `\n[zudo-doc] ERROR: Could not run tsx to execute the zudo-doc CLI runner.\n` +
-      `  Ensure tsx is in your project's devDependencies and run \`pnpm install\`.\n` +
-      `  tsx searched for: ${tsxBin}\n\n`,
-  );
-  process.exit(1);
+function printHelp() {
+  const validNames = Object.keys(EJECTABLE).sort().join(", ");
+  console.log(`
+${pc.bold("Usage:")} zudo-doc <subcommand> [options]
+
+${pc.bold("Subcommands:")}
+  eject <component>   Copy a component's TS source into your project and
+                      rewrite imports so it resolves locally.
+
+${pc.bold("Ejectable components:")}
+  ${validNames}
+
+${pc.bold("Options:")}
+  -h, --help   Show this help message
+
+${pc.bold("Examples:")}
+  ${pc.dim("# Eject the header component")}
+  zudo-doc eject header
+
+  ${pc.dim("# Eject the theme-toggle component")}
+  zudo-doc eject theme-toggle
+`);
 }
 
-process.exit(result.status ?? 1);
+async function main() {
+  if (argv["help"] || argv._.length === 0) {
+    printHelp();
+    process.exit(0);
+  }
+
+  const [subcommand, componentArg] = argv._;
+
+  if (subcommand !== "eject") {
+    console.error(
+      pc.red(`Unknown subcommand "${subcommand}".`) +
+        `\nRun \`zudo-doc --help\` for usage.`,
+    );
+    process.exit(1);
+  }
+
+  if (!componentArg) {
+    console.error(
+      pc.red(`Missing component name.`) +
+        `\nUsage: zudo-doc eject <component>` +
+        `\nRun \`zudo-doc --help\` for the list of ejectable components.`,
+    );
+    process.exit(1);
+  }
+
+  await eject(componentArg, { cwd: process.cwd() });
+}
+
+main().catch((err) => {
+  console.error(pc.red(String(err)));
+  process.exit(1);
+});
