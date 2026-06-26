@@ -11,7 +11,7 @@
 // The full ejectable surface is documented in packages/zudo-doc/API.md § 5.
 
 import { describe, it, expect } from "vitest";
-import { EJECTABLE } from "../eject.js";
+import { EJECTABLE } from "@takazudo/zudo-doc/eject";
 
 describe("EJECTABLE map 1.0 snapshot", () => {
   it("matches the frozen 1.0 ejectable component list", () => {

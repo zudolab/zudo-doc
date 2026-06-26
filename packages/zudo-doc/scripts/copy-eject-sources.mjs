@@ -24,22 +24,12 @@ const PKG_ROOT = resolve(__dirname, "..");
 const SRC_ROOT = resolve(PKG_ROOT, "src");
 const EJECT_ROOT = resolve(PKG_ROOT, "eject");
 
-/** Ejectable component names — must stay in sync with EJECTABLE in
- *  packages/create-zudo-doc/src/eject.ts. */
-const EJECTABLE = [
-  "header",
-  "footer",
-  "breadcrumb",
-  "toc",
-  "sidebar",
-  "theme-toggle",
-  "page-loading",
-  "tab-item",
-  "doc-pager",
-  "content-admonition",
-  "code-group",
-  "details",
-];
+// Import EJECTABLE from the compiled package (single source of truth — S4 #2373).
+// This script runs in onSuccess, AFTER tsup has compiled dist/eject/index.js.
+const { EJECTABLE: EJECTABLE_MAP } = await import(resolve(PKG_ROOT, "dist/eject/index.js"));
+
+/** Ejectable component names — derived from the canonical EJECTABLE map. */
+const EJECTABLE = Object.keys(EJECTABLE_MAP);
 
 /** Returns true for paths that should be excluded from the eject copy. */
 function shouldExclude(srcAbs, srcBase) {

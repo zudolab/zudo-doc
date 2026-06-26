@@ -14,24 +14,15 @@ import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const EJECT_ROOT = resolve(__dirname, "../eject");
+const PKG_ROOT = resolve(__dirname, "..");
+const EJECT_ROOT = resolve(PKG_ROOT, "eject");
 
-/** Must stay in sync with EJECTABLE in packages/create-zudo-doc/src/eject.ts
- *  and the EJECTABLE list in copy-eject-sources.mjs. */
-const EJECTABLE = [
-  "header",
-  "footer",
-  "breadcrumb",
-  "toc",
-  "sidebar",
-  "theme-toggle",
-  "page-loading",
-  "tab-item",
-  "doc-pager",
-  "content-admonition",
-  "code-group",
-  "details",
-];
+// Import EJECTABLE from the compiled package (single source of truth — S4 #2373).
+// prepack runs after `pnpm build`, so dist/eject/index.js is guaranteed to exist.
+const { EJECTABLE: EJECTABLE_MAP } = await import(resolve(PKG_ROOT, "dist/eject/index.js"));
+
+/** Ejectable component names — derived from the canonical EJECTABLE map. */
+const EJECTABLE = Object.keys(EJECTABLE_MAP);
 
 /** Recursively count files in a directory. */
 function countFiles(dir) {

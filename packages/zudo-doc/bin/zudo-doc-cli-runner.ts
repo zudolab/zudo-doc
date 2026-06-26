@@ -1,14 +1,21 @@
-// zudo-doc-cli.ts — entry point for the `zudo-doc` bin
-//
-// Parses `zudo-doc eject <component>` and dispatches to the eject() function.
-// Uses minimist (same dep as the scaffold CLI) for argument parsing.
-//
-// Decision 5 — C0 #2359: separate bin keeps the scaffold entry (`create-zudo-doc`)
-// single-purpose; the framework-name binary owns ongoing project operations.
+#!/usr/bin/env -S tsx
+/**
+ * @takazudo/zudo-doc/bin/zudo-doc-cli-runner.ts
+ *
+ * TypeScript runner for the zudo-doc package bin. Spawned by
+ * bin/zudo-doc.mjs via tsx so it can import the eject logic from this
+ * package's compiled dist/.
+ *
+ * This file is published as-is in the package's `bin/` directory.
+ * Do NOT compile it — it is only ever run through tsx.
+ *
+ * Subcommands:
+ *   eject <component>   Copy a component's TS source into your project
+ */
 
 import minimist from "minimist";
 import pc from "picocolors";
-import { eject, EJECTABLE } from "./eject.js";
+import { eject, EJECTABLE } from "@takazudo/zudo-doc/eject";
 
 const argv = minimist(process.argv.slice(2), {
   boolean: ["help"],
@@ -40,7 +47,7 @@ ${pc.bold("Examples:")}
 }
 
 async function main(): Promise<void> {
-  if (argv.help || argv._.length === 0) {
+  if (argv["help"] || argv._.length === 0) {
     printHelp();
     process.exit(0);
   }

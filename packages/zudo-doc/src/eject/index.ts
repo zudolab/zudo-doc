@@ -8,9 +8,9 @@ import pc from "picocolors";
 // Values are the local destination dir (project-relative POSIX, no trailing
 // slash) where the component source will be copied.
 //
-// Must stay in sync with:
-//   - EJECTABLE list in packages/zudo-doc/scripts/copy-eject-sources.mjs
-//   - EJECTABLE list in packages/zudo-doc/scripts/check-eject-sources.mjs
+// This is the single source of truth for the ejectable list.
+// packages/zudo-doc/scripts/copy-eject-sources.mjs and check-eject-sources.mjs
+// import this constant so all three are always in sync (S4 de-dup — #2373).
 
 export interface EjectableEntry {
   /** Package subpath, e.g. `@takazudo/zudo-doc/header` */
