@@ -67,8 +67,8 @@ afterEach(async () => {
 // ── EJECTABLE map ─────────────────────────────────────────────────────────────
 
 describe("EJECTABLE map", () => {
-  it("contains exactly 12 components", () => {
-    expect(Object.keys(EJECTABLE)).toHaveLength(12);
+  it("contains exactly 18 components", () => {
+    expect(Object.keys(EJECTABLE)).toHaveLength(18);
   });
 
   it("includes all required components", () => {
@@ -85,6 +85,12 @@ describe("EJECTABLE map", () => {
       "content-admonition",
       "code-group",
       "details",
+      "sidebar-tree-island",
+      "sidebar-toggle-island",
+      "desktop-sidebar-toggle-island",
+      "image-enlarge",
+      "doc-history",
+      "site-tree-nav-island",
     ];
     for (const name of required) {
       expect(EJECTABLE).toHaveProperty(name);
@@ -373,6 +379,92 @@ describe("eject() — idempotency", () => {
       "src/components/zudo-doc/breadcrumb",
     );
   });
+});
+
+// ── eject() — island smoke tests ─────────────────────────────────────────────
+//
+// Verify that each island can be ejected: source is copied and parent-relative
+// cross-component imports are rewritten to @takazudo/zudo-doc/<seg>.
+// Islands have parent-relative imports in their top-level index.tsx; no nested
+// subdirectory files exist, so the existing rewireImports top-level pass covers them.
+
+describe("eject() — island smoke tests", () => {
+  const islandCases: Array<{
+    component: string;
+    // A parent-relative import that must be rewritten
+    crossImport: string;
+    // Expected segment after rewrite
+    expectedSeg: string;
+  }> = [
+    {
+      component: "sidebar-tree-island",
+      crossImport: `import { ChevronRight } from "../icons/index.js";`,
+      expectedSeg: "icons",
+    },
+    {
+      component: "sidebar-toggle-island",
+      crossImport: `import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";`,
+      expectedSeg: "transitions",
+    },
+    {
+      component: "desktop-sidebar-toggle-island",
+      crossImport: `import { ChevronRight, ChevronLeft } from "../icons/index.js";`,
+      expectedSeg: "icons",
+    },
+    {
+      component: "image-enlarge",
+      crossImport: `import { useModalDialog } from "../use-modal-dialog/index.js";`,
+      expectedSeg: "use-modal-dialog",
+    },
+    {
+      component: "doc-history",
+      crossImport: `import { History, Close, ArrowLeft } from "../icons/index.js";`,
+      expectedSeg: "icons",
+    },
+    {
+      component: "site-tree-nav-island",
+      crossImport: `import { ChevronRight } from "../icons/index.js";`,
+      expectedSeg: "icons",
+    },
+  ];
+
+  for (const { component, crossImport, expectedSeg } of islandCases) {
+    it(`ejects ${component} and rewrites cross-component imports`, async () => {
+      const projectDir = path.join(tempDir, `project-${component}`);
+      await fs.ensureDir(projectDir);
+
+      const files: Record<string, string> = {
+        "index.tsx": [
+          `"use client";`,
+          `/** @jsxRuntime automatic */`,
+          crossImport,
+          `export function Component() { return null; }`,
+        ].join("\n") + "\n",
+      };
+
+      const pkgRoot = await buildFixturePackage(tempDir, component, files);
+      await eject(component, {
+        cwd: projectDir,
+        resolvePackageRoot: makeResolver(pkgRoot),
+      });
+
+      const destDir = path.join(
+        projectDir,
+        `src/components/zudo-doc/${component}`,
+      );
+      expect(await fs.pathExists(destDir)).toBe(true);
+
+      const indexPath = path.join(destDir, "index.tsx");
+      expect(await fs.pathExists(indexPath)).toBe(true);
+
+      const content = await fs.readFile(indexPath, "utf8");
+      // Parent-relative import must be rewritten to the package subpath
+      expect(content).toContain(
+        `from "@takazudo/zudo-doc/${expectedSeg}"`,
+      );
+      expect(content).not.toContain(`from "../${expectedSeg}/`);
+    });
+  }
 });
 
 // ── eject() — unknown component ───────────────────────────────────────────────
