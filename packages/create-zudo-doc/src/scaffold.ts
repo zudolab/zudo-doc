@@ -421,6 +421,9 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     "# Cloudflare Wrangler",
     ".wrangler/",
     "",
+    "# zudo-doc build artifact (routes-src/ staged here at build time)",
+    ".zudo-doc/",
+    "",
   ];
 
   // The doc-lookup skill is only generated when skillSymlinker is selected

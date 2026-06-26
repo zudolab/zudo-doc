@@ -77,4 +77,5 @@ export const settings = {
     { type: "component", component: "search" },
     { type: "component", component: "theme-toggle" },
   ] satisfies HeaderRightItem[] as HeaderRightItem[],
+  packageOwnedRoutes: true,
 };

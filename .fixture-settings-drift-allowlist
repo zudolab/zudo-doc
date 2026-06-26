@@ -194,15 +194,3 @@ i18n:githubAutolinksRepo
 theme:githubAutolinksRepo
 smoke:githubAutolinksRepo
 versioning:githubAutolinksRepo
-
-# ── packageOwnedRoutes ────────────────────────────────────────────────────────
-# reason: build-time package-owned route injection (epic Package-First Finale
-#         #2356; ADR packages/zudo-doc/docs/adr/route-injection-seam.md). Dormant
-#         internal/advanced flag — NOT surfaced in create-zudo-doc settings-gen
-#         or mirrored into e2e fixtures this epic (A0 Decision 4). A fast-follow
-#         flips it on once upstream zfb dev-render support lands.
-sidebar:packageOwnedRoutes
-i18n:packageOwnedRoutes
-theme:packageOwnedRoutes
-smoke:packageOwnedRoutes
-versioning:packageOwnedRoutes

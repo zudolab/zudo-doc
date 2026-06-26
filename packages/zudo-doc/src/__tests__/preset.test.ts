@@ -185,6 +185,7 @@ const fixtureSettings: PresetSettings = {
   docHistory: true,
   claudeResources: { claudeDir: ".claude" },
   githubAutolinksRepo: "zudolab/zudo-doc",
+  packageOwnedRoutes: true,
 };
 
 const fixtureDirectives: DirectiveVocabulary = {
@@ -256,6 +257,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
   it("emits the package plugin specifiers in order (no project-relative copy-public since #2358)", () => {
     const { plugins } = preset();
     expect(plugins.map((p) => p.name)).toEqual([
+      "@takazudo/zudo-doc/plugins/routes",
       "@takazudo/zudo-doc/plugins/claude-resources",
       "@takazudo/zudo-doc/plugins/doc-history",
       "@takazudo/zudo-doc/plugins/search-index",
@@ -293,7 +295,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
 
   it("omits claude-resources / doc-history / llms-txt when their settings are falsy", () => {
     const r = zudoDocPreset({
-      settings: { ...fixtureSettings, claudeResources: false, docHistory: false, llmsTxt: false },
+      settings: { ...fixtureSettings, claudeResources: false, docHistory: false, llmsTxt: false, packageOwnedRoutes: false },
       buildDocsSchema: buildFixtureSchema,
       directiveVocabulary: fixtureDirectives,
     });
@@ -303,10 +305,14 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
   });
 
   // ── packageOwnedRoutes gate (Package-First Finale #2356, ADR
-  //    route-injection-seam.md Decision 4) — dormant unless the flag is true.
-  it("omits the routes plugin by default (packageOwnedRoutes dormant)", () => {
-    const { plugins } = preset();
-    expect(plugins.map((p) => p.name)).not.toContain("@takazudo/zudo-doc/plugins/routes");
+  //    route-injection-seam.md Decision 4) — off only when explicitly false.
+  it("omits the routes plugin when packageOwnedRoutes is explicitly false", () => {
+    const r = zudoDocPreset({
+      settings: { ...fixtureSettings, packageOwnedRoutes: false },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    expect(r.plugins.map((p) => p.name)).not.toContain("@takazudo/zudo-doc/plugins/routes");
   });
 
   it("adds the routes bare-specifier descriptor only when packageOwnedRoutes is true", () => {

@@ -47,4 +47,5 @@ export const settings = {
     },
     { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
   ] satisfies HeaderNavItem[] as HeaderNavItem[],
+  packageOwnedRoutes: true,
 };
