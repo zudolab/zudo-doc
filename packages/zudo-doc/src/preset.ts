@@ -93,6 +93,9 @@ export interface PresetSettings {
   docTags?: boolean;
   /** Gate for the SSR `/api/ai-chat` injected route (`prerender: false`). */
   aiAssistant?: boolean;
+  /** When `false`, disables zfb's CJK-friendly line-break behaviour.
+   *  Absent means "use the engine default" (currently `true`). */
+  cjkFriendly?: boolean;
 }
 
 /**
@@ -182,6 +185,7 @@ export interface PresetResolveMarkdownLinks {
 
 export interface PresetMarkdown {
   features: Record<string, boolean | Record<string, unknown>>;
+  cjkFriendly?: boolean;
 }
 
 export interface PresetCodeHighlight {
@@ -236,7 +240,10 @@ export function zudoDocPreset({
   return {
     collections: buildCollections(settings, docsSchemaJson),
     plugins: buildPlugins(settings, { translations, tagVocabulary }),
-    markdown: { features: buildMarkdownFeatures(settings, directiveVocabulary) },
+    markdown: {
+      features: buildMarkdownFeatures(settings, directiveVocabulary),
+      ...(settings.cjkFriendly !== undefined ? { cjkFriendly: settings.cjkFriendly } : {}),
+    },
     // Dual-theme syntect (zfb >= 0.1.0-next.45). Theme names are SYNTECT
     // built-ins, NOT Shiki names. Tokens emit `--shiki-light`/`--shiki-dark`
     // CSS custom properties resolved by the host CSS via `light-dark()`, so
