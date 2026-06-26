@@ -2801,7 +2801,7 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
       const pkg = await fs.readJson(
         projectPath("test-zfb-minimal", "package.json"),
       );
-      expect(pkg.dependencies["zod"]).toBeDefined();
+      expect(pkg.dependencies["zod"]).toBe("^4.3.6"); // must match @takazudo/zudo-doc peer floor
       expect(pkg.dependencies["preact-render-to-string"]).toBeDefined();
       expect(pkg.dependencies["katex"]).toBeDefined();
     });
