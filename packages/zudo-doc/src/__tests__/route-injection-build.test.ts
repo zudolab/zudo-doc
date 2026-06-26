@@ -309,6 +309,37 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
     expect(html).toContain("injected-route-render-proof");
   });
 
+  // #2390 (supersedes #2377) — the package chrome's createMdxComponentsBound
+  // must wire the host-only MDX components (Details / HtmlPreview / Island) so
+  // an INJECTED docs route renders them without the
+  // "MDX requires '<X>' to be passed via the 'components' prop" error. This is
+  // exercised through the PUBLISHED (no-`src/`, npm-packed) package, so it
+  // proves a real consumer gets the refreshed routes-src wiring.
+  it("mdx-components: <Details> renders a real <details>/<summary> via the injected route", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).toContain("<details");
+    expect(html).toContain("<summary");
+    // The summary label and collapsed body both come from the package Details.
+    expect(html).toContain("DETAILS-SUMMARY-MARKER");
+    expect(html).toContain("DETAILS-BODY-MARKER: details-render-proof");
+  });
+
+  it("mdx-components: <Island> SSR pass-through renders its children", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    // The package Island binding is an SSR pass-through, so the child text is
+    // present in the rendered HTML.
+    expect(html).toContain("ISLAND-PASSTHROUGH-MARKER: island-render-proof");
+  });
+
+  it("mdx-components: <HtmlPreview> SSR-renders (title bar + island marker)", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    // Title bar text from PreviewBase.
+    expect(html).toContain("HTMLPREVIEW-TITLE-MARKER");
+    // HtmlPreviewWrapper wraps the bare preview in <Island when="visible">, so
+    // the SSR output carries the island marker for the inner hydration target.
+    expect(html).toContain('data-zfb-island="HtmlPreviewWrapperInner"');
+  });
+
   it("dynamic: locale /ja/docs/getting-started/ renders from routes-src/locale-docs-slug.tsx", () => {
     // The /[locale]/docs/[[...slug]] injected route — only emitted because the
     // i18n fixture configures a `ja` locale. Proves the locale-index routes-src

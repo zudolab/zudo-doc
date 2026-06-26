@@ -2936,19 +2936,21 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
   });
 });
 
-// W6A (#1734) — page mirror parity assertions. The 27 unconditional pages
+// W6A (#1734) — page mirror parity assertions. The 26 unconditional pages
 // from the host repo's pages/ tree are mirrored into templates/base/pages/
 // and must show up in every scaffold variant; pages/api/** is excluded as
 // worker-only per spec-lock Decision 5.
 // Note: pages/404.tsx and pages/sitemap.xml.tsx were removed from the
 // template in the Stub-Deletion Fast-Follow (epic #2369) — those routes are
-// now injected by the package (packageOwnedRoutes), not scaffolded.
+// now injected by the package (packageOwnedRoutes), not scaffolded. The docs
+// catch-all stub pages/docs/[[...slug]].tsx was removed the same way in #2390
+// (supersedes #2377): generated projects render docs via the package-injected
+// route, whose chrome now wires the Details/HtmlPreview/Island MDX components.
 describe("scaffold — W6A page mirror (templates/base/pages)", () => {
   const UNCONDITIONAL_PAGES = [
     "pages/index.tsx",
     "pages/_data.ts",
     "pages/_mdx-components.ts",
-    "pages/docs/[[...slug]].tsx",
     "pages/lib/_body-end-islands.tsx",
     "pages/lib/_category-nav.tsx",
     "pages/lib/_category-tree-nav.tsx",
@@ -3014,7 +3016,7 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
     packageManager: "pnpm",
   };
 
-  it("emits all 27 unconditional page files in a barebone scaffold", async () => {
+  it("emits all 26 unconditional page files in a barebone scaffold", async () => {
     await scaffold(BAREBONE);
     for (const rel of UNCONDITIONAL_PAGES) {
       expect(
@@ -3024,7 +3026,7 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
     }
   });
 
-  it("emits all 27 unconditional page files in an all-features scaffold", async () => {
+  it("emits all 26 unconditional page files in an all-features scaffold", async () => {
     await scaffold(ALL_FEATURES);
     for (const rel of UNCONDITIONAL_PAGES) {
       expect(
@@ -3047,6 +3049,23 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
       ).toBe(false);
       const aiChat = projectPath(choices.projectName, "pages/api/ai-chat.tsx");
       expect(await fs.pathExists(aiChat)).toBe(false);
+    }
+  });
+
+  it("does NOT emit the docs catch-all stub pages/docs/[[...slug]].tsx (package-injected, #2390)", async () => {
+    // The default-locale docs catch-all is now injected by the package
+    // (packageOwnedRoutes); its host stub was deleted from templates/base so
+    // generated projects render docs through the package-owned route, whose
+    // chrome wires the Details/HtmlPreview/Island MDX components. Asserts both
+    // a barebone and an all-features scaffold.
+    for (const choices of [BAREBONE, ALL_FEATURES]) {
+      await scaffold(choices);
+      expect(
+        await fs.pathExists(
+          projectPath(choices.projectName, "pages/docs/[[...slug]].tsx"),
+        ),
+        `pages/docs/[[...slug]].tsx must not be emitted in ${choices.projectName}`,
+      ).toBe(false);
     }
   });
 
@@ -3226,10 +3245,15 @@ describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)
   });
 });
 
-// W7B (#1737) — i18n feature emits the locale-prefixed page set
-// (pages/[locale]/index.tsx + pages/[locale]/docs/[[...slug]].tsx) when
-// selected, and zero pages/[locale]/** files when not selected. Both
-// emitted files must be byte-identical to their feature templates.
+// W7B (#1737) — i18n feature emits the locale-prefixed page set when selected,
+// and zero pages/[locale]/** files when not selected. The emitted file(s) must
+// be byte-identical to their feature templates.
+//
+// #2390 (supersedes #2377): the locale docs catch-all stub
+// pages/[locale]/docs/[[...slug]].tsx was removed from the i18n feature
+// template — that route is now package-injected (packageOwnedRoutes), so i18n
+// ships only [locale]/index.tsx and the negative assertion below proves the
+// catch-all is NOT scaffolded.
 //
 // Cross-feature note: versioning + docTags also emit pages/[locale]/**
 // files (versions.tsx, tags/[tag].tsx, tags/index.tsx) — those are W7C
@@ -3237,10 +3261,7 @@ describe("scaffold — W7A zfb plugin .mjs files exist after composition (#1736)
 // below uses a feature set that selects neither i18n, versioning, nor
 // docTags so the [locale]/** namespace is provably empty.
 describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => {
-  const I18N_PAGE_FILES = [
-    "pages/[locale]/index.tsx",
-    "pages/[locale]/docs/[[...slug]].tsx",
-  ];
+  const I18N_PAGE_FILES = ["pages/[locale]/index.tsx"];
 
   const I18N_ON: UserChoices = {
     projectName: "test-w7b-i18n-on",
@@ -3269,7 +3290,7 @@ describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => 
     "templates/features/i18n/files/pages",
   );
 
-  it("emits pages/[locale]/index.tsx + pages/[locale]/docs/[[...slug]].tsx when i18n is selected", async () => {
+  it("emits pages/[locale]/index.tsx when i18n is selected", async () => {
     await scaffold(I18N_ON);
     for (const rel of I18N_PAGE_FILES) {
       expect(
@@ -3277,6 +3298,16 @@ describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => 
         `expected ${rel} to exist when i18n is selected`,
       ).toBe(true);
     }
+  });
+
+  it("does NOT emit pages/[locale]/docs/[[...slug]].tsx even when i18n is selected (package-injected, #2390)", async () => {
+    await scaffold(I18N_ON);
+    expect(
+      await fs.pathExists(
+        projectPath("test-w7b-i18n-on", "pages/[locale]/docs/[[...slug]].tsx"),
+      ),
+      "locale docs catch-all is package-injected — must not be scaffolded",
+    ).toBe(false);
   });
 
   it("does NOT emit any pages/[locale]/** files when i18n is not selected", async () => {
@@ -3296,19 +3327,6 @@ describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => 
     );
     const template = await fs.readFile(
       path.join(FEATURE_PAGES_DIR, "[locale]/index.tsx"),
-      "utf-8",
-    );
-    expect(emitted).toEqual(template);
-  });
-
-  it("emitted pages/[locale]/docs/[[...slug]].tsx is byte-identical to the feature template", async () => {
-    await scaffold(I18N_ON);
-    const emitted = await fs.readFile(
-      projectPath("test-w7b-i18n-on", "pages/[locale]/docs/[[...slug]].tsx"),
-      "utf-8",
-    );
-    const template = await fs.readFile(
-      path.join(FEATURE_PAGES_DIR, "[locale]/docs/[[...slug]].tsx"),
       "utf-8",
     );
     expect(emitted).toEqual(template);
@@ -3420,9 +3438,12 @@ describe("scaffold — W7C docTags feature pages (#1738)", () => {
 describe("scaffold — W7C versioning feature pages (#1738)", () => {
   // pages/docs/versions.tsx was removed in the Stub-Deletion Fast-Follow
   // (epic #2369) — that route is now injected by the package
-  // (packageOwnedRoutes). The v/[version]/** routes are NOT package-owned
-  // (they are project-specific versioning configuration) and remain emitted.
-  it("does NOT emit docs/versions.tsx (package-injected) but DOES emit v/[version]/docs/[[...slug]].tsx when versioning is selected (i18n off)", async () => {
+  // (packageOwnedRoutes). The versioned DOC catch-all routes
+  // (v/[version]/docs/[[...slug]].tsx and v/[version]/[locale]/docs/[[...slug]].tsx)
+  // were removed the same way in #2390 (supersedes #2377): they are now
+  // package-injected too, so the scaffold must NOT emit them as files. The
+  // versioning feature now ships only pages/lib/_versions-page.tsx.
+  it("does NOT emit docs/versions.tsx OR v/[version]/docs/[[...slug]].tsx (both package-injected) when versioning is selected (i18n off)", async () => {
     const choices: UserChoices = {
       projectName: "test-versioning-pages-only",
       defaultLang: "en",
@@ -3444,7 +3465,7 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
           "pages/v/[version]/docs/[[...slug]].tsx",
         ),
       ),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("strips [locale]/docs/versions.tsx + v/[version]/ja/** when versioning is selected but i18n is OFF", async () => {
@@ -3472,7 +3493,7 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
     ).toBe(false);
   });
 
-  it("does NOT emit [locale]/docs/versions.tsx (package-injected) but DOES emit v/[version]/[locale]/docs/[[...slug]].tsx when versioning + i18n are both selected", async () => {
+  it("does NOT emit [locale]/docs/versions.tsx OR v/[version]/[locale]/docs/[[...slug]].tsx (both package-injected) when versioning + i18n are both selected", async () => {
     const choices: UserChoices = {
       projectName: "test-versioning-i18n",
       defaultLang: "en",
@@ -3497,7 +3518,7 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
           "pages/v/[version]/[locale]/docs/[[...slug]].tsx",
         ),
       ),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("does NOT emit any docs/versions.tsx or v/[version]/** when versioning is not selected", async () => {
@@ -3654,13 +3675,13 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
 });
 
 describe("scaffold — W7C cross-feature union (i18n + docTags + versioning) (#1738)", () => {
-  // After the Stub-Deletion Fast-Follow (epic #2369), several routes that were
-  // previously scaffolded as files are now injected by the package
-  // (packageOwnedRoutes). The union test was originally "all 8 feature-
-  // conditional pages"; the 6 deleted routes (tags pages + versions pages) are
-  // no longer emitted. Only the versioning v/[version]/** routes remain as
-  // scaffold files (they are project-specific, not package-owned).
-  it("emits only the versioning v/[version]/** routes as scaffold files; tags+versions route stubs are package-injected", async () => {
+  // After the Stub-Deletion Fast-Follow (epic #2369) and #2390 (supersedes
+  // #2377), every feature-conditional DOC route is now injected by the package
+  // (packageOwnedRoutes) — the tags pages, the versions pages, AND the
+  // versioned-docs catch-alls (v/[version]/** ) — so NONE are emitted as
+  // scaffold files. The only feature-conditional page the versioning feature
+  // still ships is the lib renderer pages/lib/_versions-page.tsx.
+  it("emits no feature-conditional doc route stubs as scaffold files; all are package-injected", async () => {
     const choices: UserChoices = {
       projectName: "test-union-all",
       defaultLang: "en",
@@ -3670,18 +3691,7 @@ describe("scaffold — W7C cross-feature union (i18n + docTags + versioning) (#1
       packageManager: "pnpm",
     };
     await scaffold(choices);
-    // These routes ARE still emitted as scaffold files
-    const presentExpected = [
-      "pages/v/[version]/docs/[[...slug]].tsx",
-      "pages/v/[version]/[locale]/docs/[[...slug]].tsx",
-    ];
-    for (const rel of presentExpected) {
-      expect(
-        await fs.pathExists(projectPath("test-union-all", rel)),
-        `expected ${rel} to exist in union scaffold`,
-      ).toBe(true);
-    }
-    // These routes are now package-injected — NOT emitted as scaffold files
+    // These routes are all package-injected — NOT emitted as scaffold files.
     const absentExpected = [
       "pages/docs/tags/[tag].tsx",
       "pages/docs/tags/index.tsx",
@@ -3689,6 +3699,8 @@ describe("scaffold — W7C cross-feature union (i18n + docTags + versioning) (#1
       "pages/[locale]/docs/tags/index.tsx",
       "pages/docs/versions.tsx",
       "pages/[locale]/docs/versions.tsx",
+      "pages/v/[version]/docs/[[...slug]].tsx",
+      "pages/v/[version]/[locale]/docs/[[...slug]].tsx",
     ];
     for (const rel of absentExpected) {
       expect(
@@ -3696,6 +3708,13 @@ describe("scaffold — W7C cross-feature union (i18n + docTags + versioning) (#1
         `expected ${rel} to be ABSENT (package-injected, not scaffolded)`,
       ).toBe(false);
     }
+    // The versioning lib renderer IS still scaffolded.
+    expect(
+      await fs.pathExists(
+        projectPath("test-union-all", "pages/lib/_versions-page.tsx"),
+      ),
+      "pages/lib/_versions-page.tsx should still be scaffolded",
+    ).toBe(true);
   });
 });
 
@@ -3707,24 +3726,25 @@ describe("scaffold — S8 versioned locale route generalization (#1892)", () => 
    * the component must read locale from params, not hardcode "ja".
    * A project with a non-ja locale (e.g. fr) must get a
    * v/[version]/[locale]/docs/[[...slug]].tsx route, not a dead 404.
+   *
+   * #2390 (supersedes #2377): this route is no longer scaffolded as a host
+   * stub — it is package-injected (packageOwnedRoutes). The regression guard
+   * therefore now targets the route at its new home: the published
+   * `@takazudo/zudo-doc/routes-src/v-locale-docs-slug.tsx` source the routes
+   * plugin injects. (The package route uses settings.defaultLocale instead of
+   * a hardcoded "en" base — strictly more generic than the old stub.)
    */
-  it("generated v/[version]/[locale] route uses params.locale — not hardcoded 'ja'", async () => {
-    const choices: UserChoices = {
-      projectName: "test-s8-locale-generic",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["i18n", "versioning"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
-    const routeFile = projectPath(
-      "test-s8-locale-generic",
-      "pages/v/[version]/[locale]/docs/[[...slug]].tsx",
+  it("package-injected v/[version]/[locale] route uses params.locale — not hardcoded 'ja'", async () => {
+    const routeFile = path.resolve(
+      path.dirname(fileURLToPath(import.meta.url)),
+      "..",
+      "..",
+      "..",
+      "zudo-doc/routes-src/v-locale-docs-slug.tsx",
     );
     expect(
       await fs.pathExists(routeFile),
-      "v/[version]/[locale]/docs/[[...slug]].tsx should exist",
+      "package routes-src/v-locale-docs-slug.tsx should exist (run the package build first)",
     ).toBe(true);
     const src = await fs.readFile(routeFile, "utf8");
     // Route must NOT hardcode "ja" as the locale

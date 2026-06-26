@@ -28,7 +28,7 @@ sidebar_position: 7
 // pages/index.tsx
 import { buildNavTree, groupSatelliteNodes } from "@/utils/docs";
 import { getCategoryOrder } from "@/utils/nav-scope";
-import SiteTreeNav from "@/components/site-tree-nav";
+import { SiteTreeNav } from "@takazudo/zudo-doc/site-tree-nav-island";
 import { resolveNavSource } from "./lib/_nav-source-docs";
 import { defaultLocale } from "@/config/i18n";
 
@@ -70,4 +70,4 @@ export default function IndexPage() {
 
 ## ソース
 
-コンポーネントは`src/components/site-tree-nav.tsx`に定義されています。
+`SiteTreeNav`は`@takazudo/zudo-doc`パッケージから提供されています。`@takazudo/zudo-doc/site-tree-nav-island`からインポートしてください。（このリポジトリ内では、アイランドのソースは`packages/zudo-doc/src/site-tree-nav-island/`にあります。）

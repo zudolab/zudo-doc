@@ -37,7 +37,7 @@ export const i18nFeature: FeatureModule = (_choices) => {
   if (!stat || !stat.isDirectory() || fs.readdirSync(pagesDir).length === 0) {
     throw new Error(
       `i18n feature template dir is missing or empty: ${pagesDir}\n` +
-        `Expected to find [locale]/index.tsx and [locale]/docs/[...slug].tsx.\n` +
+        `Expected to find [locale]/index.tsx.\n` +
         `This is a generator bug — please file an issue.`,
     );
   }
