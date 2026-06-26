@@ -89,7 +89,7 @@ export function DocCardGrid(props: DocCardGridProps): JSX.Element | null {
             </span>
           </span>
           {item.description && (
-            <span class="mt-vsp-2xs block text-small text-muted">
+            <span class="mt-vsp-2xs block text-small text-muted group-hover:text-accent group-focus-visible:text-accent">
               {item.description}
             </span>
           )}
