@@ -264,18 +264,20 @@ echo "  ✓ $DHS_PKG_JSON → $NEW_VERSION"
 # The generated downstream package.json pins ^X.Y.Z(-next.N)? of @takazudo/zudo-doc;
 # when zudo-doc bumps, the pin must move with it so a fresh scaffold gets
 # the version we just published — including prerelease versions.
-# The regex matches both stable (^X.Y.Z) and prerelease (^X.Y.Z-next.N) pins.
-# The two zfb pins on adjacent lines are NOT touched — those track the upstream
+# The pin now lives in the exported `ZUDO_DOC_PIN` constant (scaffold.ts uses it
+# in both generatePackageJson() and scaffold()); check-pin-parity.mjs resolves
+# that constant. The regex matches both stable (^X.Y.Z) and prerelease
+# (^X.Y.Z-next.N) pins. The zfb pins are NOT touched — those track the upstream
 # zfb release cadence and are gated by scripts/check-pin-parity.mjs.
 
 echo ""
-echo "▶ Aligning @takazudo/zudo-doc pin in scaffold.ts..."
+echo "▶ Aligning @takazudo/zudo-doc pin (ZUDO_DOC_PIN) in scaffold.ts..."
 node -e "
   const fs = require('fs');
   const src = fs.readFileSync('$SCAFFOLD_TS', 'utf-8');
-  const re = /(\"@takazudo\/zudo-doc\"\s*:\s*\")\^?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?(\")/;
+  const re = /(export const ZUDO_DOC_PIN\s*=\s*\")\^?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?(\")/;
   if (!re.test(src)) {
-    console.error('Error: could not locate @takazudo/zudo-doc pin in $SCAFFOLD_TS');
+    console.error('Error: could not locate ZUDO_DOC_PIN constant in $SCAFFOLD_TS');
     process.exit(1);
   }
   const next = src.replace(re, '\$1^$NEW_VERSION\$3');

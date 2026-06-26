@@ -1,0 +1,39 @@
+---
+title: 1.0.0
+description: Release notes for 1.0.0.
+sidebar_position: 1034
+---
+
+Released: 2026-06-26
+
+**1.0.0 — the package-first milestone.** zudo-doc graduates to a package-first
+architecture: the framework's routes, rendering layer, structural islands, eject
+CLI, and content styles all ship from `@takazudo/zudo-doc`, and a scaffolded
+project's `pages/` is now nearly empty. This completes the Package-First Finale
+(#2356) and the Stub-Deletion Fast-Follow (#2369).
+
+### Breaking Changes
+
+- Package-owned routes are now **ON by default** (`packageOwnedRoutes`): `@takazudo/zudo-doc` injects the site's routes at build time, and 26 redundant route stubs (13 showcase + 13 generator-template — 404, sitemap, robots, tags, versions, and their locale variants) were deleted. A scaffolded project no longer carries those `pages/` files. The four `docs/[[...slug]]` catch-all routes remain host-owned for now. (#2370, #2372, #2374)
+- The copy-public plugin is gone — projects rely on zfb's native `publicDir` instead of `./plugins/copy-public-plugin.mjs`. Generated `zfb.config.ts` no longer references it, so a fresh scaffold's `pnpm build` no longer fails on a missing plugin file. (#2358)
+- The 1.0 public API surface of `@takazudo/zudo-doc` is frozen and snapshot-guarded — the export set is now a stability contract. (#2356)
+
+### Features
+
+- `zudo-doc eject <component>` per-component swizzle CLI, shipped from `@takazudo/zudo-doc` so it is reachable in generated projects post-scaffold; a `.zudo-doc.json` provenance marker is seeded at scaffold time. (#2362, #2367, #2373)
+- Package-owned route layer: route `.tsx` sources ship as `routes-src/`, with a typed route-context seam and a routes plugin behind the `packageOwnedRoutes` gate (now default-on). (#2357, #2363, #2370)
+- New `/l-migrate-to-preset-style` skill to migrate existing projects onto the preset-based `zfb.config.ts`. (#2364)
+- Generated templates now re-export content components from the package, forward `settings-types` to the package, adopt the `createMdxComponents()` factory, and use reconciled `global.css` semantic tokens — reducing per-project copy drift. (#2360)
+
+### Bug Fixes
+
+- Fixed generated-project `pnpm build` failure caused by the published preset still emitting the removed copy-public plugin; resolved by the native `publicDir` migration in this release. (#2358, #2342)
+- Keep the `docs/[[...slug]]` catch-all routes host-owned where the injected route cannot yet render host-only MDX components (`Details`, `HtmlPreview`, `Island`). Completing this is tracked separately. (#2377)
+- Cleared island marker-name collisions by removing local island duplicates and repointing the `SiteTreeNav` island in the index templates.
+- Made the `zudo-doc` bin tsx-free so it runs in generated projects without a `tsx` dependency.
+- Taught the pin-parity check to resolve the `ZUDO_DOC_PIN` scaffold constant; e2e fixtures now copy root `public/` instead of symlinking it (native `publicDir`).
+
+### Other Changes
+
+- Bumped the `@takazudo/zfb` stack to `0.1.0-next.65`.
+- Pinned the route-injection seam and eject-contract ADRs; added a build-time proof for no-stub package-owned routes and expanded eject / `packageOwnedRoutes` test coverage. (#2357, #2359, #2363)
