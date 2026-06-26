@@ -1,0 +1,11 @@
+---
+title: 1.0.2
+description: Release notes for 1.0.2.
+sidebar_position: 1036
+---
+
+Released: 2026-06-27
+
+### Other Changes
+
+- Align the `@takazudo/zudo-doc-history-server` optional peer dependency in `@takazudo/zudo-doc` to the `1.x` line (`^0.2.21` → `^1.0.1`). The stale pin was unsatisfiable by the published `1.x` package, so installs silently pulled the outdated `0.2.21`; the peer contract now matches the workspace package and the `create-zudo-doc` scaffold pin (c86861e6).
