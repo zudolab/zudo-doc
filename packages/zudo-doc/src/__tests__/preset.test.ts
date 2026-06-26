@@ -444,3 +444,33 @@ describe("zudoDocPreset top-level pipeline fields", () => {
     expect(r.resolveMarkdownLinks.onBrokenLinks).toBe("error");
   });
 });
+
+describe("zudoDocPreset markdown.cjkFriendly", () => {
+  it("forwards cjkFriendly: false to markdown.cjkFriendly", () => {
+    const r = zudoDocPreset({
+      settings: { ...fixtureSettings, cjkFriendly: false },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    expect(r.markdown.cjkFriendly).toBe(false);
+  });
+
+  it("forwards cjkFriendly: true to markdown.cjkFriendly", () => {
+    const r = zudoDocPreset({
+      settings: { ...fixtureSettings, cjkFriendly: true },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    expect(r.markdown.cjkFriendly).toBe(true);
+  });
+
+  it("leaves markdown.cjkFriendly absent when the setting is omitted", () => {
+    const { cjkFriendly: _omitted, ...settingsWithoutCjk } = { ...fixtureSettings, cjkFriendly: undefined };
+    const r = zudoDocPreset({
+      settings: settingsWithoutCjk,
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    expect(r.markdown).not.toHaveProperty("cjkFriendly");
+  });
+});
