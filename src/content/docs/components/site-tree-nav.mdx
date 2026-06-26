@@ -28,7 +28,7 @@ Below is `SiteTreeNav` rendered with the full documentation tree (same as the [h
 // pages/index.tsx
 import { buildNavTree, groupSatelliteNodes } from "@/utils/docs";
 import { getCategoryOrder } from "@/utils/nav-scope";
-import SiteTreeNav from "@/components/site-tree-nav";
+import { SiteTreeNav } from "@takazudo/zudo-doc/site-tree-nav-island";
 import { resolveNavSource } from "./lib/_nav-source-docs";
 import { defaultLocale } from "@/config/i18n";
 
@@ -70,4 +70,4 @@ The component uses Preact state for expand/collapse interactivity, so it hydrate
 
 ## Source
 
-The component is defined at `src/components/site-tree-nav.tsx`.
+`SiteTreeNav` ships from the `@takazudo/zudo-doc` package — import it from `@takazudo/zudo-doc/site-tree-nav-island`. (Within this repository the island source lives at `packages/zudo-doc/src/site-tree-nav-island/`.)

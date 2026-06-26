@@ -27,7 +27,7 @@
 // bindings — is A2's job (#2363). With `packageOwnedRoutes` off this module is
 // never evaluated; it only needs to typecheck and import.
 
-import type { JSX, VNode } from "preact";
+import type { JSX, VNode, ComponentChildren } from "preact";
 import {
   settings,
   defaultLocale,
@@ -92,6 +92,11 @@ import {
   getThemeDefaultMode as getThemeDefaultModeBase,
 } from "../nav-data-prep/index.js";
 import { buildSidebarForSection } from "../sidebar-utils/index.js";
+import { Details } from "../details/index.js";
+import {
+  HtmlPreviewWrapper,
+  type HtmlPreviewWrapperProps,
+} from "../html-preview-wrapper/index.js";
 
 // ---------------------------------------------------------------------------
 // Package-default host-only bindings (see module header).
@@ -371,6 +376,49 @@ const SiteTreeNavWrapper = createSiteTreeNavWrapper({
   getCategoryOrder,
 });
 
+/** HtmlPreview MDX binding (package default).
+ *
+ *  Mirrors the host stub (`pages/_mdx-components.ts`): the global preview
+ *  config is `settings.htmlPreview`, a SERIALIZABLE setting that DOES ride in
+ *  the route-context virtual module, so the package can read it directly (no
+ *  host config needed). `HtmlPreviewWrapper` wraps the bare preview in
+ *  `<Island when="visible">`, which SSR-renders the preview tree — so an
+ *  injected docs page using `<HtmlPreview html="…" />` renders correct HTML.
+ *
+ *  Hydration caveat: the interactive code-toggle hydrates only if zfb's islands
+ *  scanner reaches the `@takazudo/zfb` <Island> import inside
+ *  `HtmlPreviewWrapper`. The esbuild islands bundler does NOT walk imports of
+ *  modules whose realpath is under `node_modules` (the same gap the routes
+ *  plugin stages around — see `plugins/routes.ts`; upstream report:
+ *  Takazudo/zudo-front-builder, "islands bundler skips addVirtualModule /
+ *  import-walk for node_modules route realpaths"). SSR output is unaffected. */
+function HtmlPreviewBound(props: HtmlPreviewWrapperProps): JSX.Element {
+  return HtmlPreviewWrapper({
+    globalConfig: settings.htmlPreview ?? null,
+    ...props,
+  }) as JSX.Element;
+}
+
+/** Island MDX binding (package default) — an SSR pass-through that renders its
+ *  children, deliberately NOT the real `@takazudo/zfb` <Island>.
+ *
+ *  Why a pass-through and not `Island → @takazudo/zfb` (the sub-issue's literal
+ *  ask): the MDX corpus never uses `<Island>` as a real render tag (only inside
+ *  changelog prose), and the host stub itself uses this same pass-through. The
+ *  real zfb <Island> emits `data-zfb-island="<firstChildTagName>"` for generic
+ *  MDX children, i.e. a hydration marker pointing at a non-existent manifest
+ *  entry — and the islands scanner can't register it anyway from a package
+ *  (node_modules) import (upstream report above). A pass-through renders the
+ *  server-renderable children correctly with no bogus marker, which is the
+ *  complete and correct behaviour for the corpus. `when` is ignored at SSR
+ *  time (it only matters to the client hydration runtime). */
+function IslandPassthrough(props: {
+  when?: "load" | "idle" | "visible" | "media";
+  children?: ComponentChildren;
+}): ComponentChildren {
+  return props.children ?? null;
+}
+
 export function createMdxComponentsBound(lang: string = defaultLocale) {
   return createMdxComponents({
     settings,
@@ -380,9 +428,22 @@ export function createMdxComponentsBound(lang: string = defaultLocale) {
       CategoryTreeNav: CategoryTreeNavWrapper as never,
       SiteTreeNav: SiteTreeNavWrapper as never,
     },
-    // PresetGenerator and other showcase-only slots resolve to a package stub
-    // (render nothing) — they are project-bound and not in the package.
+    // Package-owned content components wired here so an INJECTED docs route
+    // (packageOwnedRoutes, no host `pages/` stub) renders MDX using these tags
+    // without the "MDX requires '<X>' to be passed via the 'components' prop"
+    // error (sub-issue #2390 / supersedes #2377).
+    //   - Details      → fully functional (pure <details>, no client JS).
+    //   - HtmlPreview  → SSR-renders; see HtmlPreviewBound for the hydration
+    //                    caveat tied to the node_modules islands-scanner gap.
+    //   - Island       → SSR pass-through; see IslandPassthrough.
+    // PresetGenerator stays a package stub (render nothing): it is the
+    // showcase's project-bound interactive island and downstream projects stub
+    // it. The showcase keeps its host-owned docs catch-all routes (allowlisted)
+    // so its real PresetGenerator still renders.
     extras: {
+      Details: Details as never,
+      HtmlPreview: HtmlPreviewBound as never,
+      Island: IslandPassthrough as never,
       PresetGenerator: (_props: unknown) => null,
     },
   });

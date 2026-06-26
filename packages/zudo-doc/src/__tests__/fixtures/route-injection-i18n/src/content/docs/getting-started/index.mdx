@@ -8,3 +8,18 @@ description: A minimal doc for the no-src route-injection build proof (EN)
 This page is rendered by the package-owned injected route (no `pages/` stub).
 
 A2-UNIQUE-MARKER: injected-route-render-proof
+
+{/* #2390 — host-only MDX components must render through the package-injected
+    route's chrome (createMdxComponentsBound). Each carries a unique marker the
+    no-src build test asserts on, proving the wiring reaches a published
+    consumer. */}
+
+<Details title="DETAILS-SUMMARY-MARKER">
+
+DETAILS-BODY-MARKER: details-render-proof
+
+</Details>
+
+<Island when="visible">ISLAND-PASSTHROUGH-MARKER: island-render-proof</Island>
+
+<HtmlPreview html="<p>HTMLPREVIEW-BODY-MARKER</p>" title="HTMLPREVIEW-TITLE-MARKER" />
