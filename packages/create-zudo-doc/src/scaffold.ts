@@ -653,6 +653,9 @@ function generatePackageJson(choices: UserChoices) {
     // into the bundle. With packageOwnedRoutes default ON (1.0), a
     // docHistory-off project still bundles that path, so without `diff` here
     // `zfb build` fails at esbuild with "Could not resolve 'diff'" (#2342).
+    // `diff` is an *optional* peerDependency of @takazudo/zudo-doc, so a
+    // missing copy produces no `pnpm install` warning — which is why this gap
+    // shipped silently and only surfaced at build time.
     diff: "^8.0.3",
   };
 
