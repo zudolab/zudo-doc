@@ -259,8 +259,8 @@ importers:
         specifier: ^0.3.3
         version: 0.3.3(preact@10.29.2)
       '@takazudo/zudo-doc-history-server':
-        specifier: ^0.2.21
-        version: 0.2.21
+        specifier: ^1.0.1
+        version: 1.0.1
       diff:
         specifier: ^8.0.0
         version: 8.0.3
@@ -1432,8 +1432,8 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  '@takazudo/zudo-doc-history-server@0.2.21':
-    resolution: {integrity: sha512-l3zZNWipVyjt+mS1MKDBYetPlC7+AFRXjh8ZfMiI+bvrDlkes1+0Q2BO6h8OVMn6oqvDSU32HNUJum1fueHv3A==}
+  '@takazudo/zudo-doc-history-server@1.0.1':
+    resolution: {integrity: sha512-NJQ+Jpo1zgInZyLK2HjDWiGkrq4mC9YbF8jHsVQFmLIUrf1TMf/NOZeacsxVS78DV4wgSRmY2/zk/vLpnUZJxg==}
     hasBin: true
 
   '@types/chai@5.2.3':
@@ -4121,7 +4121,7 @@ snapshots:
       chalk: 5.6.2
       glob: 10.5.0
 
-  '@takazudo/zudo-doc-history-server@0.2.21': {}
+  '@takazudo/zudo-doc-history-server@1.0.1': {}
 
   '@types/chai@5.2.3':
     dependencies:
