@@ -93,7 +93,7 @@ export function NavCardGrid(props: NavCardGridProps): JSX.Element | null {
             </span>
           </span>
           {child.description && (
-            <span class="mt-vsp-2xs block text-small text-muted group-hover:underline decoration-muted">
+            <span class="mt-vsp-2xs block text-small text-muted group-hover:text-accent group-hover:underline group-focus-visible:text-accent decoration-muted">
               {child.description}
             </span>
           )}

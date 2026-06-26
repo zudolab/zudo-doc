@@ -619,7 +619,7 @@ function generatePackageJson(choices: UserChoices) {
     // any page compiles. The Astro→zfb retarget (3f0042f7) added the
     // import without the runtime dep; W6B (#1735) consumer-build
     // verification was the first to actually exercise it.
-    zod: "^4.0.0",
+    zod: "^4.3.6", // floor matches @takazudo/zudo-doc's peer dep (package.json peerDependencies)
     // ^10.29.1 floor satisfies @takazudo/zdtp's preact peer range so the app
     // and zdtp resolve a single preact instance — a lower floor can split into
     // two copies and crash hook-using SSR islands with "undefined reading __H".

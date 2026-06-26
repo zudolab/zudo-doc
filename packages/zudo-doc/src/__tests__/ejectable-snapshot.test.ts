@@ -40,9 +40,17 @@ describe("EJECTABLE map 1.0 snapshot", () => {
           "localDir": "src/components/zudo-doc/content-admonition",
           "packageSubpath": "@takazudo/zudo-doc/content-admonition",
         },
+        "desktop-sidebar-toggle-island": {
+          "localDir": "src/components/zudo-doc/desktop-sidebar-toggle-island",
+          "packageSubpath": "@takazudo/zudo-doc/desktop-sidebar-toggle-island",
+        },
         "details": {
           "localDir": "src/components/zudo-doc/details",
           "packageSubpath": "@takazudo/zudo-doc/details",
+        },
+        "doc-history": {
+          "localDir": "src/components/zudo-doc/doc-history",
+          "packageSubpath": "@takazudo/zudo-doc/doc-history",
         },
         "doc-pager": {
           "localDir": "src/components/zudo-doc/doc-pager",
@@ -56,6 +64,10 @@ describe("EJECTABLE map 1.0 snapshot", () => {
           "localDir": "src/components/zudo-doc/header",
           "packageSubpath": "@takazudo/zudo-doc/header",
         },
+        "image-enlarge": {
+          "localDir": "src/components/zudo-doc/image-enlarge",
+          "packageSubpath": "@takazudo/zudo-doc/image-enlarge",
+        },
         "page-loading": {
           "localDir": "src/components/zudo-doc/page-loading",
           "packageSubpath": "@takazudo/zudo-doc/page-loading",
@@ -63,6 +75,18 @@ describe("EJECTABLE map 1.0 snapshot", () => {
         "sidebar": {
           "localDir": "src/components/zudo-doc/sidebar",
           "packageSubpath": "@takazudo/zudo-doc/sidebar",
+        },
+        "sidebar-toggle-island": {
+          "localDir": "src/components/zudo-doc/sidebar-toggle-island",
+          "packageSubpath": "@takazudo/zudo-doc/sidebar-toggle-island",
+        },
+        "sidebar-tree-island": {
+          "localDir": "src/components/zudo-doc/sidebar-tree-island",
+          "packageSubpath": "@takazudo/zudo-doc/sidebar-tree-island",
+        },
+        "site-tree-nav-island": {
+          "localDir": "src/components/zudo-doc/site-tree-nav-island",
+          "packageSubpath": "@takazudo/zudo-doc/site-tree-nav-island",
         },
         "tab-item": {
           "localDir": "src/components/zudo-doc/tab-item",
@@ -80,7 +104,7 @@ describe("EJECTABLE map 1.0 snapshot", () => {
     `);
   });
 
-  it("contains exactly 12 components in the 1.0 contract", () => {
-    expect(Object.keys(EJECTABLE)).toHaveLength(12);
+  it("contains exactly 18 components in the 1.0 contract", () => {
+    expect(Object.keys(EJECTABLE)).toHaveLength(18);
   });
 });
