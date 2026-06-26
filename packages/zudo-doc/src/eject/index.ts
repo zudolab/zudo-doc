@@ -341,8 +341,8 @@ export async function eject(
     console.log(
       pc.dim(
         `  No host call sites found for ${entry.packageSubpath}.\n` +
-          `  Update your imports manually: change \`from "${entry.packageSubpath}"\`\n` +
-          `  to the local path (e.g. \`from "@/${localDir}/index.js"\` or a relative path).`,
+          `  Update your imports manually: change the \`"${entry.packageSubpath}"\`\n` +
+          `  specifier to a local one, e.g. \`"@/${localDir}/index.js"\` or a relative path.`,
       ),
     );
   }
