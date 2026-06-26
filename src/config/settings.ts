@@ -288,9 +288,9 @@ export const settings = {
     { type: "component", component: "language-switcher" },
   ] satisfies HeaderRightItem[] as HeaderRightItem[],
   // Build-time package-owned route injection (epic Package-First Finale #2356;
-  // ADR packages/zudo-doc/docs/adr/route-injection-seam.md). Dormant by
-  // default — internal/advanced. With this off, the showcase keeps shipping its
-  // pages/*.tsx route stubs and the build is byte-unchanged. A fast-follow
-  // flips it on once upstream zfb dev-render support lands.
-  packageOwnedRoutes: false,
+  // ADR packages/zudo-doc/docs/adr/route-injection-seam.md). The preset adds
+  // `@takazudo/zudo-doc/plugins/routes`; kept user `pages/*.tsx` stubs take
+  // precedence on a URL collision (user route wins). Flipped ON in this
+  // fast-follow once upstream zfb dev-render support landed (#2372).
+  packageOwnedRoutes: true,
 } satisfies Settings;

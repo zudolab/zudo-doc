@@ -54,4 +54,5 @@ export const settings = {
     { type: "trigger", trigger: "design-token-panel" },
     { type: "component", component: "theme-toggle" },
   ] satisfies HeaderRightItem[] as HeaderRightItem[],
+  packageOwnedRoutes: true,
 };

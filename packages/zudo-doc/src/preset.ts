@@ -82,8 +82,8 @@ export interface PresetSettings {
   /** "owner/repo" — when set, enables `#123` / SHA autolinks in markdown. Omit to disable entirely. */
   githubAutolinksRepo?: string;
   /** When `true`, the preset adds the package-owned route-injection plugin
-   *  (`@takazudo/zudo-doc/plugins/routes`). Default off — dormant. See
-   *  `docs/adr/route-injection-seam.md`. */
+   *  (`@takazudo/zudo-doc/plugins/routes`). Default true (on since the
+   *  fast-follow, #2372). See `docs/adr/route-injection-seam.md`. */
   packageOwnedRoutes?: boolean;
   /** Gate for the `/docs/tags` + `/docs/tags/[tag]` injected routes. */
   docTags?: boolean;

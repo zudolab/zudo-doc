@@ -291,11 +291,10 @@ export interface Settings {
    * `@takazudo/zudo-doc/plugins/routes` plugin, which injects the doc routes
    * from the package instead of requiring project-shipped `pages/*.tsx` stubs.
    *
-   * Default **false** — internal/advanced, dormant. With the flag off the
-   * capability is fully inert and the build is byte-unchanged. Even with it on,
-   * any injected route whose URL shape collides with a kept `pages/` stub is
-   * silently dropped (user `pages/` wins), so flipping it on in a project that
-   * still ships the stubs is a harmless no-op.
+   * Default **true** (on since the fast-follow, #2372 — upstream zfb dev-render
+   * support landed). Any injected route whose URL shape collides with a kept
+   * `pages/` stub is silently dropped (user `pages/` wins), so existing stubs
+   * are a harmless no-op.
    */
   packageOwnedRoutes?: boolean;
 }

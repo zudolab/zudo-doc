@@ -336,6 +336,8 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     expect(gitignore).toContain("pnpm-debug.log*");
     // Cloudflare Wrangler
     expect(gitignore).toContain(".wrangler/");
+    // zudo-doc build artifact (routes-src/ staged here for packageOwnedRoutes)
+    expect(gitignore).toContain(".zudo-doc/");
   });
 
   it(".gitignore does NOT include Tauri entries when tauri is disabled", async () => {
@@ -724,6 +726,23 @@ describe("scaffold — generated settings.ts content", () => {
       "utf-8",
     );
     expect(content).toContain("cjkFriendly: false");
+  });
+
+  it("packageOwnedRoutes: generated settings always contain packageOwnedRoutes: true", async () => {
+    const choices: UserChoices = {
+      projectName: "test-package-owned-routes",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-package-owned-routes", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("packageOwnedRoutes: true");
   });
 
   it("tagPlacement: generated settings default to after-title", async () => {
@@ -2636,12 +2655,6 @@ describe("drift detection — generator vs main project settings", () => {
       // Generated projects must opt in explicitly — omitting gives "no autolinks" (old behaviour).
       // See zudo-doc#2321 Wave-0 correctness fix.
       "githubAutolinksRepo",
-      // Internal/advanced build-time route injection, intentionally NOT surfaced
-      // in generated projects this epic (Package-First Finale #2356; ADR
-      // packages/zudo-doc/docs/adr/route-injection-seam.md, Decision 4). Default
-      // (absent → false) is the correct dormant value for a blank project; a
-      // fast-follow flips it on once upstream zfb dev-render support lands.
-      "packageOwnedRoutes",
     ]);
 
     // Check that every field in the main settings exists in the generated output

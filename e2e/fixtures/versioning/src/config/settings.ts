@@ -57,4 +57,5 @@ export const settings = {
   headerRightItems: [
     { type: "component", component: "version-switcher" },
   ] satisfies HeaderRightItem[] as HeaderRightItem[],
+  packageOwnedRoutes: true,
 };
