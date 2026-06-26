@@ -68,6 +68,30 @@ export const EJECTABLE: Record<string, EjectableEntry> = {
     packageSubpath: "@takazudo/zudo-doc/details",
     localDir: "src/components/zudo-doc/details",
   },
+  "sidebar-tree-island": {
+    packageSubpath: "@takazudo/zudo-doc/sidebar-tree-island",
+    localDir: "src/components/zudo-doc/sidebar-tree-island",
+  },
+  "sidebar-toggle-island": {
+    packageSubpath: "@takazudo/zudo-doc/sidebar-toggle-island",
+    localDir: "src/components/zudo-doc/sidebar-toggle-island",
+  },
+  "desktop-sidebar-toggle-island": {
+    packageSubpath: "@takazudo/zudo-doc/desktop-sidebar-toggle-island",
+    localDir: "src/components/zudo-doc/desktop-sidebar-toggle-island",
+  },
+  "image-enlarge": {
+    packageSubpath: "@takazudo/zudo-doc/image-enlarge",
+    localDir: "src/components/zudo-doc/image-enlarge",
+  },
+  "doc-history": {
+    packageSubpath: "@takazudo/zudo-doc/doc-history",
+    localDir: "src/components/zudo-doc/doc-history",
+  },
+  "site-tree-nav-island": {
+    packageSubpath: "@takazudo/zudo-doc/site-tree-nav-island",
+    localDir: "src/components/zudo-doc/site-tree-nav-island",
+  },
 };
 
 // ── .zudo-doc.json schema ─────────────────────────────────────────────────────
