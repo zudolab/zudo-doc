@@ -34,7 +34,8 @@
 // sibling `doc-history.ts` for the standalone-module rationale.
 
 import { createRequire } from "node:module";
-import { existsSync } from "node:fs";
+import { existsSync, cpSync, rmSync, mkdirSync } from "node:fs";
+import { dirname, basename, join } from "node:path";
 import { definePlugin, type ZfbSetupContext } from "@takazudo/zfb/plugins";
 
 // ---------------------------------------------------------------------------
@@ -188,27 +189,83 @@ const plugin = definePlugin({
     // the zfb plugin-host under Node.js, NOT by the preset's node-free config
     // eval — so `node:module` is safe to use in this file's top-level import.)
     //
-    // zfb 0.1.0-next.62 extracts `paths()` via static AST analysis on the
-    // `.tsx` SOURCE file — it cannot extract `paths()` from compiled `.js`.
-    // For dynamic routes (containing `[[...]]` or `[...]`), we therefore prefer
-    // the SIBLING `.tsx` source file over the compiled `.js` when it exists.
-    // Source lives at `src/routes/X.tsx`; compiled at `dist/routes/X.js` —
-    // swap `/dist/` for `/src/` and `.js` for `.tsx` to derive the source path.
-    // Static routes do not require `paths()` and work with either `.js` or `.tsx`.
+    // zfb (0.1.0-next.65) extracts `paths()` via static AST analysis on the
+    // `.tsx` SOURCE file — it CANNOT extract `paths()` from a compiled `.js`
+    // (SPIKE-verified in S1 #2370: pointing injectRoute at dist/routes/*.js
+    // fails the build with "no top-level `paths` export found"). So every route
+    // — static AND dynamic — must inject a `.tsx` SOURCE entrypoint. We resolve
+    // the source for each route from one of two locations, probed in order:
+    //
+    //   1. PUBLISHED consumers — the package ships the route sources (with
+    //      parent-relative imports rewritten to bare `@takazudo/zudo-doc/*`
+    //      specifiers) under `routes-src/`. The published tree has NO `src/`,
+    //      so this is the ONLY source available there. Derive it from the
+    //      compiled path: `…/dist/routes/X.js` → `…/routes-src/X.tsx`.
+    //   2. IN-REPO (workspace) — the package is consumed via `workspace:*`,
+    //      so the original `src/routes/X.tsx` is on disk next to `dist/`.
+    //      Derive it: `…/dist/routes/X.js` → `…/src/routes/X.tsx`.
+    //
+    // STAGING (the node_modules virtual-module gap — S1 #2370):
+    //   zfb's esbuild bundler does NOT run the `addVirtualModule` resolver on
+    //   imports of files whose REALPATH is inside `node_modules` — so a route
+    //   `.tsx` resolved at `node_modules/@takazudo/zudo-doc/routes-src/X.tsx`
+    //   fails with `Could not resolve "virtual:zudo-doc-route-context"` (its
+    //   transitive `./_context` import pulls in the virtual module). Verified
+    //   empirically: the SAME tree builds when its realpath is OUTSIDE
+    //   node_modules. The workspace case never hit this because the symlinked
+    //   package's realpath is `packages/zudo-doc/…` (outside node_modules).
+    //   FIX: when the resolved source lives under node_modules, copy the entire
+    //   `routes-src/` tree ONCE into a project-local cache dir
+    //   (`<projectRoot>/.zudo-doc/routes-src/`, outside node_modules) and point
+    //   every injected route at the staged copy. The same-dir helpers
+    //   (`_context`, `_chrome`, `_docs-helpers`, `_virtual.d.ts`) are co-located
+    //   in that tree; the bare `@takazudo/zudo-doc/*` imports still resolve via
+    //   node from the staged location. The in-repo (workspace) path needs no
+    //   staging — its realpath is already outside node_modules.
     const require = createRequire(import.meta.url);
+
+    /** Lazily-prepared stage dir (set on first node_modules-resolved route). */
+    let stagedRoutesDir: string | undefined;
+    /** Stage `routesSrcDir` → `<projectRoot>/.zudo-doc/routes-src/` once. */
+    const ensureStaged = (routesSrcDir: string): string => {
+      if (stagedRoutesDir) return stagedRoutesDir;
+      const dest = join(ctx.projectRoot, ".zudo-doc", "routes-src");
+      rmSync(dest, { recursive: true, force: true });
+      mkdirSync(dirname(dest), { recursive: true });
+      cpSync(routesSrcDir, dest, { recursive: true });
+      stagedRoutesDir = dest;
+      return dest;
+    };
+
     for (const route of deriveRoutes(settings)) {
       let resolvedEntrypoint: string;
       try {
         const compiledPath = require.resolve(route.entrypoint);
-        // Prefer .tsx source for dynamic routes (paths() extraction requires it).
-        const hasDynamic =
-          route.pattern.includes("[") && route.pattern.includes("]");
-        if (hasDynamic) {
-          const srcPath = compiledPath
-            .replace(/[\\/]dist[\\/]/, "/src/")
-            .replace(/\.js$/, ".tsx");
-          resolvedEntrypoint = existsSync(srcPath) ? srcPath : compiledPath;
+        const tsxName = basename(compiledPath).replace(/\.js$/, ".tsx");
+        // (1) Published `routes-src/X.tsx` — probed FIRST.
+        const routesSrcDir = dirname(compiledPath).replace(
+          /dist[\\/]routes$/,
+          "routes-src",
+        );
+        const routesSrcPath = join(routesSrcDir, tsxName);
+        // (2) In-repo `src/routes/X.tsx` — fallback for workspace consumers.
+        const srcPath = compiledPath
+          .replace(/[\\/]dist[\\/]/, "/src/")
+          .replace(/\.js$/, ".tsx");
+
+        if (existsSync(routesSrcPath)) {
+          // Published-package source. If it lives under node_modules, stage the
+          // tree outside node_modules so the virtual module resolves.
+          const underNodeModules = /[\\/]node_modules[\\/]/.test(routesSrcPath);
+          resolvedEntrypoint = underNodeModules
+            ? join(ensureStaged(routesSrcDir), tsxName)
+            : routesSrcPath;
+        } else if (existsSync(srcPath)) {
+          // Workspace source (realpath already outside node_modules).
+          resolvedEntrypoint = srcPath;
         } else {
+          // No source on disk — fall back to the compiled `.js` so zfb surfaces
+          // the loud missing-`paths()` / virtual-module error.
           resolvedEntrypoint = compiledPath;
         }
       } catch {

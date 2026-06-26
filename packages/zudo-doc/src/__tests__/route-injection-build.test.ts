@@ -24,7 +24,7 @@
 
 import { describe, it, expect, afterAll } from "vitest";
 import { execSync, type ExecSyncOptions } from "node:child_process";
-import { mkdtempSync, mkdirSync, cpSync, symlinkSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, cpSync, symlinkSync, existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -34,6 +34,13 @@ import { tmpdir } from "node:os";
 
 /** The committed fixture source (config, content, stubs — no node_modules). */
 const FIXTURE_SRC = resolve(__dirname, "fixtures/route-injection");
+
+/** i18n variant fixture (one non-default locale `ja`) — used by the no-src test
+ *  to exercise the locale-prefixed injected route (`/[locale]/docs/[[...slug]]`). */
+const FIXTURE_I18N_SRC = resolve(__dirname, "fixtures/route-injection-i18n");
+
+/** The `@takazudo/zudo-doc` package root (…/packages/zudo-doc). */
+const PKG_ROOT = resolve(__dirname, "../..");
 
 // Resolve to the workspace/worktree root that owns the node_modules for this
 // package. From packages/zudo-doc/src/__tests__/ we go up 4 levels:
@@ -197,5 +204,117 @@ describe("A2 precedence: pages/ stub wins over injected route when both claim th
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
     // No pages/docs/[[...slug]].tsx stub was added → injected route still runs.
     expect(html).toContain("Getting Started");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Case C — NO-`src/` (published-package shape): the resolver picks `routes-src/`
+//          (S1 #2370). This is the gap that let #2368 ship — Case A/B above use
+//          a SYMLINK to the in-repo package (whose realpath has `src/` AND lands
+//          OUTSIDE node_modules), so they could never prove the published shape.
+//
+// This case builds the package via `npm pack`, extracts the tarball into the
+// fixture's `node_modules/@takazudo/zudo-doc` as a REAL directory (the exact
+// published file set: includes `routes-src/`, EXCLUDES `src/`), and symlinks
+// every OTHER workspace dep (incl. `@takazudo/zfb*`) so the build resolves.
+// It asserts BOTH a plain dynamic route AND a `/[locale]/...` dynamic route
+// render — the latter exercises the `locale-docs-slug` routes-src path and the
+// staging fix for the node_modules virtual-module gap (see plugins/routes.ts).
+// ---------------------------------------------------------------------------
+
+/** `npm pack` the package → return the absolute tarball path (in a fresh temp
+ *  dir tracked for cleanup). `npm pack` runs the package `prepack` guards, so a
+ *  build that skipped `copy-routes-src.mjs` fails here loudly. */
+function packPackage(): string {
+  const packDir = mkdtempSync(join(tmpdir(), "zudo-doc-pack-"));
+  tempDirs.push(packDir);
+  // Do NOT parse `--json` stdout — the prepack guards print to stdout and
+  // pollute it. Pack to a known dir and find the produced .tgz instead.
+  execSync(`npm pack --pack-destination "${packDir}"`, {
+    cwd: PKG_ROOT,
+    stdio: "pipe",
+    encoding: "utf-8",
+  });
+  const tgz = readdirSync(packDir).find((f) => f.endsWith(".tgz"));
+  if (!tgz) throw new Error(`npm pack produced no .tgz in ${packDir}`);
+  return join(packDir, tgz);
+}
+
+/** Set up a no-`src/` fixture from `fixtureSrc`: extract the packed tarball into
+ *  a REAL `node_modules/@takazudo/zudo-doc` dir, symlink every other workspace
+ *  dep, empty `pages/`, seed `.zfb/`. Returns the temp fixture dir. */
+function setupNoSrcFixture(fixtureSrc: string, tarballPath: string): string {
+  const dir = mkdtempSync(join(tmpdir(), "zudo-doc-nosrc-"));
+  tempDirs.push(dir);
+  cpSync(fixtureSrc, dir, { recursive: true });
+
+  const wsNm = join(WORKSPACE_ROOT, "node_modules");
+  const nm = join(dir, "node_modules");
+  mkdirSync(nm);
+  // Symlink every top-level workspace node_modules entry EXCEPT @takazudo
+  // (`.bin`, `.pnpm`, preact, zod, gray-matter, … all needed at build time).
+  for (const entry of readdirSync(wsNm)) {
+    if (entry === "@takazudo") continue;
+    symlinkSync(join(wsNm, entry), join(nm, entry));
+  }
+  // @takazudo: real dir; symlink every @takazudo/* EXCEPT zudo-doc.
+  const scopeDir = join(nm, "@takazudo");
+  mkdirSync(scopeDir);
+  for (const entry of readdirSync(join(wsNm, "@takazudo"))) {
+    if (entry === "zudo-doc") continue;
+    symlinkSync(join(wsNm, "@takazudo", entry), join(scopeDir, entry));
+  }
+  // @takazudo/zudo-doc: REAL directory extracted from the tarball (npm tars
+  // carry a `package/` root → --strip-components=1). This is the published file
+  // set: NO `src/`, WITH `routes-src/`.
+  const pkgDest = join(scopeDir, "zudo-doc");
+  mkdirSync(pkgDest);
+  execSync(`tar -xzf "${tarballPath}" -C "${pkgDest}" --strip-components=1`, {
+    stdio: "pipe",
+  });
+
+  // Empty pages/ → injected routes own the URLs.
+  mkdirSync(join(dir, "pages"));
+  // .zfb seed for the #doc-history-meta import.
+  mkdirSync(join(dir, ".zfb"), { recursive: true });
+  writeFileSync(join(dir, ".zfb/doc-history-meta.json"), "{}");
+
+  return dir;
+}
+
+describe("S1 no-src: published package (routes-src/, no src/) renders injected routes", () => {
+  let tarballPath: string;
+  let pkgDest: string;
+  let fixtureDir: string;
+
+  it("setup: pack the package and confirm the published shape (routes-src/ present, src/ absent)", { timeout: 180_000 }, () => {
+    tarballPath = packPackage();
+    fixtureDir = setupNoSrcFixture(FIXTURE_I18N_SRC, tarballPath);
+    pkgDest = join(fixtureDir, "node_modules/@takazudo/zudo-doc");
+    // The published tree must EXCLUDE src/ and INCLUDE routes-src/ — this is
+    // the exact divergence that #2368 missed.
+    expect(existsSync(join(pkgDest, "src"))).toBe(false);
+    expect(existsSync(join(pkgDest, "routes-src"))).toBe(true);
+    expect(existsSync(join(pkgDest, "routes-src/docs-slug.tsx"))).toBe(true);
+    expect(existsSync(join(pkgDest, "routes-src/locale-docs-slug.tsx"))).toBe(true);
+  });
+
+  it("setup: build succeeds from the published package (no src/)", { timeout: 180_000 }, () => {
+    runZfbBuild(fixtureDir);
+  });
+
+  it("dynamic: plain /docs/getting-started/ renders from routes-src/docs-slug.tsx", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).toContain("Getting Started");
+    expect(html).toContain("injected-route-render-proof");
+  });
+
+  it("dynamic: locale /ja/docs/getting-started/ renders from routes-src/locale-docs-slug.tsx", () => {
+    // The /[locale]/docs/[[...slug]] injected route — only emitted because the
+    // i18n fixture configures a `ja` locale. Proves the locale-index routes-src
+    // path AND the staging fix for the node_modules virtual-module gap.
+    const html = readBuiltHtml(fixtureDir, "ja/docs/getting-started/index.html");
+    expect(html).toContain("はじめに");
+    expect(html).toContain("locale-injected-route-render-proof");
   });
 });
