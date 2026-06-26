@@ -30,142 +30,16 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { execSync } from "node:child_process";
 import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
 import { scaffold } from "../scaffold.js";
 import type { UserChoices } from "../prompts.js";
+// Robust scaffold→install→build plumbing (with transient-flake install retry)
+// is shared with barebone-build.slow.test.ts — see ./slow-build-helpers.ts.
+import { runOrThrow, installScaffoldedDeps } from "./slow-build-helpers.js";
 
 const TEMP_PREFIX = "create-zudo-doc-preset-swap-";
-
-/**
- * Wrapper around execSync that captures combined stdout/stderr and re-throws
- * with the captured output appended to the error message. Without this, a
- * failed `pnpm install` or `pnpm build` inside `beforeAll` surfaces only
- * vitest's generic "command failed" error and the actual diagnostic output
- * is lost.
- */
-function runOrThrow(
-  cmd: string,
-  cwd: string,
-  extraEnv: NodeJS.ProcessEnv = {},
-): void {
-  try {
-    execSync(cmd, {
-      cwd,
-      stdio: "pipe",
-      env: { ...process.env, ...extraEnv },
-    });
-  } catch (err) {
-    const e = err as { stdout?: Buffer; stderr?: Buffer; message?: string };
-    const stdout = e.stdout?.toString() ?? "";
-    const stderr = e.stderr?.toString() ?? "";
-    throw new Error(
-      `Command failed: ${cmd}\n  cwd: ${cwd}\n--- stdout ---\n${stdout}\n--- stderr ---\n${stderr}`,
-    );
-  }
-}
-
-/**
- * Resilient `pnpm install` for the network-dependent install step.
- *
- * This test resolves the scaffolded project's deps against the public npm
- * registry. The generated `package.json` pins ranges (e.g. `@types/node`
- * `^22.0.0`), so a fresh patch release can land in the range that is not yet
- * in the local pnpm store — pnpm then has to fetch it, and that fetch can
- * transiently fail (registry hiccup, network blip). This is exactly the
- * nightly-exam failure tracked in zudolab/zudo-doc#2123: a one-off
- * `--prefer-offline` install of `@types/node@22.19.21`'s transitive
- * `undici-types` failed to download, even though the version range itself is
- * healthy and installs fine on a warm store.
- *
- * Strategy: try `--prefer-offline` first (fast once the store is warm). If
- * it fails with a transient network/registry error, retry with full online
- * resolution using exponential backoff. Only after all attempts are exhausted
- * do we surface the captured diagnostics. Non-transient failures (e.g. a
- * genuinely bad version pin that 404s every time) are re-thrown immediately
- * once we have confirmed it is not a transient error class, since repeated
- * retries would only add latency.
- *
- * Why broader error matching (zudolab/zudo-doc#2123, zudolab/zudo-doc#2270):
- * The original narrow retry caught some undici fetch failures but missed
- * ECONNRESET, ETIMEDOUT, registry 5xx responses surfaced as non-zero exit
- * without a recognisable pnpm error code, and mid-stream undici drops that
- * pnpm formats as "fetch failed" / "UND_ERR_SOCKET" in stderr. The revised
- * heuristic treats any of those patterns as transient and worth retrying,
- * while still letting genuine resolution failures (missing package, version
- * constraint impossible) propagate after the final attempt.
- */
-
-/** Patterns that indicate a transient network / registry error worth retrying. */
-const TRANSIENT_ERROR_PATTERNS = [
-  /ECONNRESET/,
-  /ETIMEDOUT/,
-  /ECONNREFUSED/,
-  /ENOTFOUND/,
-  /EAI_AGAIN/,
-  /fetch failed/i,
-  /UND_ERR/,
-  /undici/i,
-  /network\s+error/i,
-  /socket\s+hang\s+up/i,
-  // Registry 5xx responses: pnpm prints the status line in stderr
-  /50[0-9]\s/,
-  // pnpm's own "GET https://registry…" fetch-failure lines
-  /GET https?:\/\/.+\s+5\d{2}/,
-];
-
-function isTransientInstallError(err: unknown): boolean {
-  const e = err as { stdout?: Buffer; stderr?: Buffer; message?: string };
-  const combined = [
-    e.message ?? "",
-    e.stdout?.toString() ?? "",
-    e.stderr?.toString() ?? "",
-  ].join("\n");
-  return TRANSIENT_ERROR_PATTERNS.some((re) => re.test(combined));
-}
-
-function installScaffoldedDeps(cwd: string): void {
-  // Attempt 0: prefer-offline (fast when store is warm).
-  // Attempts 1-4: full online resolution with exponential backoff.
-  // Total: 5 attempts, backoff ceiling ~16s per inter-attempt gap.
-  // Rationale for 5 attempts: zudolab/zudo-doc#2123 shows single-attempt
-  // flakes; zudolab/zudo-doc#2270 observed two back-to-back hiccups before
-  // recovery, so 2 retries were still not enough in the worst case.
-  const attempts = [
-    "pnpm install --prefer-offline --ignore-workspace",
-    "pnpm install --ignore-workspace",
-    "pnpm install --ignore-workspace",
-    "pnpm install --ignore-workspace",
-    "pnpm install --ignore-workspace",
-  ];
-  let lastErr: unknown;
-  for (const [i, cmd] of attempts.entries()) {
-    try {
-      runOrThrow(cmd, cwd);
-      return;
-    } catch (err) {
-      lastErr = err;
-      const isLast = i === attempts.length - 1;
-      if (!isLast) {
-        // Only retry if the error looks transient. A genuine resolution
-        // failure (bad pin, impossible constraint) fails identically on every
-        // attempt — retrying only wastes nightly-exam minutes.
-        if (!isTransientInstallError(err)) {
-          throw err;
-        }
-        // Synchronous exponential backoff: 2s, 4s, 8s, 16s. The surrounding
-        // execSync is already blocking, so a blocking sleep here is fine and
-        // avoids turning beforeAll async-racy. Atomics.wait is the standard
-        // no-busy-loop synchronous sleep idiom.
-        const waitMs = 2000 * Math.pow(2, i);
-        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, waitMs);
-      }
-    }
-  }
-  throw lastErr;
-}
 
 let tempDir: string;
 let projectDir: string;

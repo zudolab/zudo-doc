@@ -644,6 +644,19 @@ function generatePackageJson(choices: UserChoices) {
     // consumer-build verification — the import lives in the mirrored
     // pages, not behind any feature gate. Same pin as host.
     katex: "^0.16.38",
+    // diff — required at build time by EVERY generated project, not just
+    // docHistory ones. The always-copied host base template
+    // `pages/lib/_doc-history-area.tsx` statically imports the real
+    // `DocHistory` from `@takazudo/zudo-doc/doc-history` (to keep zfb's island
+    // scanner chain page→stub→DocHistory walkable), which pulls
+    // `@takazudo/zudo-doc/dist/doc-history/index.js`'s `await import("diff")`
+    // into the bundle. With packageOwnedRoutes default ON (1.0), a
+    // docHistory-off project still bundles that path, so without `diff` here
+    // `zfb build` fails at esbuild with "Could not resolve 'diff'" (#2342).
+    // `diff` is an *optional* peerDependency of @takazudo/zudo-doc, so a
+    // missing copy produces no `pnpm install` warning — which is why this gap
+    // shipped silently and only surfaced at build time.
+    diff: "^8.0.3",
   };
 
   const devDeps: Record<string, string> = {
@@ -662,7 +675,9 @@ function generatePackageJson(choices: UserChoices) {
   }
 
   if (choices.features.includes("docHistory")) {
-    deps["diff"] = "^8.0.3";
+    // (diff is now an unconditional base dep — see the `deps` block above:
+    // packageOwnedRoutes always bundles the doc-history-area path, so diff is
+    // required regardless of this feature flag.)
     // @takazudo/zudo-doc has @takazudo/zudo-doc-history-server as an optional
     // peer dep. When docHistory is selected the zfb plugin
     // (@takazudo/zudo-doc/plugins/doc-history) eagerly imports
