@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo, useRef, useEffect } from "preact/hooks";
-import { useModalDialog } from "@/hooks/use-modal-dialog";
+import { useModalDialog } from "@takazudo/zudo-doc/use-modal-dialog";
 import {
   FEATURES,
   buildJson,
