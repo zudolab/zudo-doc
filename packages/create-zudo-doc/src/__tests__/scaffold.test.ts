@@ -3607,9 +3607,13 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
    * (next.62) — carries build-time package-owned-routes capability
    * (injectRoute in build, definePreset, presets[], addClientEntry) plus
    * router/build fixes. No consumer-facing breaking change.
+   * Bumped to 0.1.0-next.65: dev-render of injected routes (zfb#1227, next.63)
+   * + islands bundler seeds the host tsconfig `paths` (e.g. `@/*`) into its
+   * synthetic tsconfig (zfb#1238) — fixes silent island hydration failure under
+   * route injection; unblocks packageOwnedRoutes. No consumer-facing change.
    * Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.62", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.65", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -3620,10 +3624,10 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.62");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.62");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.65");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.65");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.62",
+      "0.1.0-next.65",
     );
   });
 });
