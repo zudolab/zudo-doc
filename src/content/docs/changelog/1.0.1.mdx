@@ -1,0 +1,22 @@
+---
+title: 1.0.1
+description: Release notes for 1.0.1.
+sidebar_position: 1035
+---
+
+Released: 2026-06-26
+
+A patch fixing barebone (all-features-off) scaffold builds. Since
+`packageOwnedRoutes` is on by default, the always-copied host base template
+statically pulls `@takazudo/zudo-doc/doc-history` — and its `import("diff")` —
+into every generated bundle, even with doc history disabled. The scaffold only
+declared the `diff` peer when doc history was enabled, so a barebone `zfb build`
+failed at esbuild with `Could not resolve "diff"`.
+
+### Bug Fixes
+
+- Provide the `diff` peer dependency unconditionally in generated projects so a barebone (all-features-off) `zfb build` resolves the always-bundled `@takazudo/zudo-doc/doc-history` import instead of failing at esbuild. (1c777e32, #2342)
+
+### Other Changes
+
+- Add a true-barebone scaffold → install → `zfb build` slow test that locks the regression, with shared install/build plumbing extracted into `slow-build-helpers.ts`; serialize the slow-test tier and clarify the optional-peer comment. (1c777e32, ff2cd958)

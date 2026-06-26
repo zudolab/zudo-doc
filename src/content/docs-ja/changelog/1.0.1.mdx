@@ -1,0 +1,22 @@
+---
+title: 1.0.1
+description: 1.0.1のリリースノート。
+sidebar_position: 1035
+---
+
+リリース日: 2026-06-26
+
+barebone（全機能オフ）構成のスキャフォールドビルドを修正したパッチです。
+`packageOwnedRoutes` がデフォルトでオンのため、常にコピーされるホストの
+ベーステンプレートが `@takazudo/zudo-doc/doc-history`（とその `import("diff")`）を
+ドキュメント履歴を無効にした構成でも全生成バンドルへ静的に取り込みます。
+スキャフォールドはドキュメント履歴が有効なときだけ `diff` ピア依存を宣言していたため、
+barebone な `zfb build` が esbuild の `Could not resolve "diff"` で失敗していました。
+
+### バグ修正
+
+- 生成プロジェクトで `diff` ピア依存を無条件に提供し、barebone（全機能オフ）の `zfb build` が常にバンドルされる `@takazudo/zudo-doc/doc-history` の import を esbuild で失敗させずに解決できるようにしました。(1c777e32, #2342)
+
+### その他の変更
+
+- リグレッションを固定する真の barebone（全機能オフ）スキャフォールド → install → `zfb build` の slow テストを追加し、共有の install/build 処理を `slow-build-helpers.ts` に抽出。あわせて slow テスト層を直列化し、オプショナルピアのコメントを明確化しました。(1c777e32, ff2cd958)
