@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "fs-extra";
 import os from "os";
 import path from "path";
-import { eject, EJECTABLE } from "../eject.js";
-import type { ZudoDocJson } from "../eject.js";
+import { eject, EJECTABLE } from "@takazudo/zudo-doc/eject";
+import type { ZudoDocJson } from "@takazudo/zudo-doc/eject";
 
 const TEMP_PREFIX = "create-zudo-doc-eject-test-";
 
