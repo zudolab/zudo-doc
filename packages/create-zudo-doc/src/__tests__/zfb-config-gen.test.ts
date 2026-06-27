@@ -33,11 +33,17 @@ describe("generateZfbConfig", () => {
     expect(result).toContain(
       'import { buildDocsSchema } from "./src/config/docs-schema"',
     );
+    expect(result).toContain(
+      'import { translations } from "./src/config/i18n"',
+    );
+    expect(result).toContain(
+      'import { colorSchemes } from "./src/config/color-schemes"',
+    );
     expect(result).toContain("export default defineConfig({");
 
-    // Must spread the preset result
+    // Must spread the preset result with translations + colorSchemes forwarded
     expect(result).toContain(
-      "...zudoDocPreset({ settings, buildDocsSchema, directiveVocabulary })",
+      "...zudoDocPreset({ settings, buildDocsSchema, directiveVocabulary, translations, colorSchemes })",
     );
 
     // Host-owned shell fields must be present

@@ -2745,6 +2745,9 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
       // markdown features, codeHighlight, resolveMarkdownLinks, and trailingSlash
       // to zudoDocPreset() from @takazudo/zudo-doc/preset. The generated config
       // spreads the result and keeps only the host-owned shell fields.
+      // S5 (#2408): translations + colorSchemes forwarded unconditionally so
+      // generated projects get the same route-label and color-scheme resolution
+      // on package-owned routes as the host.
       const config = await fs.readFile(
         projectPath("test-zfb-minimal", "zfb.config.ts"),
         "utf-8",
@@ -2753,7 +2756,13 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
         'import { zudoDocPreset } from "@takazudo/zudo-doc/preset"',
       );
       expect(config).toContain(
-        "...zudoDocPreset({ settings, buildDocsSchema, directiveVocabulary })",
+        'import { translations } from "./src/config/i18n"',
+      );
+      expect(config).toContain(
+        'import { colorSchemes } from "./src/config/color-schemes"',
+      );
+      expect(config).toContain(
+        "...zudoDocPreset({ settings, buildDocsSchema, directiveVocabulary, translations, colorSchemes })",
       );
       // The inline boilerplate must NOT appear — it lives inside the preset.
       expect(config).not.toContain("  collections,");
@@ -2882,6 +2891,7 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
       // driven by settings.* at zfb-load time inside zudoDocPreset().
       // No inline locale loops, plugin conditionals, or docHistory/llmsTxt/
       // claudeResources mentions are needed in the generated file.
+      // S5 (#2408): translations + colorSchemes forwarded unconditionally.
       const config = await fs.readFile(
         projectPath("test-zfb-full", "zfb.config.ts"),
         "utf-8",
@@ -2890,7 +2900,13 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
         'import { zudoDocPreset } from "@takazudo/zudo-doc/preset"',
       );
       expect(config).toContain(
-        "...zudoDocPreset({ settings, buildDocsSchema, directiveVocabulary })",
+        'import { translations } from "./src/config/i18n"',
+      );
+      expect(config).toContain(
+        'import { colorSchemes } from "./src/config/color-schemes"',
+      );
+      expect(config).toContain(
+        "...zudoDocPreset({ settings, buildDocsSchema, directiveVocabulary, translations, colorSchemes })",
       );
       // Inline collection loops must NOT appear — they live in the preset.
       expect(config).not.toContain("Object.entries(settings.locales)");
