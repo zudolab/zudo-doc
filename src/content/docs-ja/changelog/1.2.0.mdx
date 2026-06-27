@@ -1,0 +1,23 @@
+---
+title: 1.2.0
+description: 1.2.0のリリースノート。
+sidebar_position: 1038
+---
+
+リリース日: 2026-06-28
+
+### 機能
+
+- ジェネレーターが`translations`と`colorSchemes`を生成する`zfb.config.ts`へ引き渡すようにしました。これにより、スキャフォールドしたプロジェクトのi18n文字列とカラースキームがビルドまで引き継がれます。 (be97f874, #2408)
+- ホスト側の接続で`translations`と`colorSchemes`を`zudoDocPreset()`へ渡すようにし、両方を手動設定ではなくプリセット経由で設定できるようにしました。 (18d3a072, #2407)
+- パッケージ提供のルートが自身のbody-endアイランドを描画するようにしました。これにより、追加のホスト接続なしにパッケージドキュメントルートでインタラクティブアイランドがハイドレートされます。 (92dbf20f, #2406)
+- `colorSchemes`を仮想モジュール経由で引き回し、ホストテーマがビルド時にアクティブなスキームを解決できるようにしました。 (b20bd484, #2405)
+
+### バグ修正
+
+- `zudoDocPreset()`が`packageOwnedRoutes`をデフォルトで有効にし、コンテンツが存在するのに明示的に無効化された場合は警告を出すようにしました。これにより、ドキュメントルートが知らぬ間に空になるのを防ぎます。 (4a3a6473, #2402)
+- `standalone`フロントマターが`hide_sidebar`と`hide_toc`を含意するようにしました。これにより、standaloneページが意図どおりクロームなしで描画されます。 (311be086, #2395)
+
+### その他の変更
+
+- ファーストパーティの`@takazudo/*`ビルドツールチェーンを更新しました。`@takazudo/zfb`、`@takazudo/zfb-runtime`、`@takazudo/zfb-adapter-cloudflare`を`0.1.0-next.69`へ、`@takazudo/zudo-doc-history-server`を`^1.1.0`へ。 (c2ac69f1, 38b5d15a)

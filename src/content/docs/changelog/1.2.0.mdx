@@ -1,0 +1,23 @@
+---
+title: 1.2.0
+description: Release notes for 1.2.0.
+sidebar_position: 1038
+---
+
+Released: 2026-06-28
+
+### Features
+
+- The generator now forwards `translations` and `colorSchemes` into the emitted `zfb.config.ts`, so a scaffolded project carries its i18n strings and color schemes through to the build. (be97f874, #2408)
+- Host wiring passes `translations` and `colorSchemes` through to `zudoDocPreset()`, making both configurable via the preset rather than by hand. (18d3a072, #2407)
+- Package-provided routes now render their own body-end islands, so package docs routes hydrate their interactive islands without extra host wiring. (92dbf20f, #2406)
+- Thread `colorSchemes` through the virtual module so the host theme resolves the active scheme at build time. (b20bd484, #2405)
+
+### Bug Fixes
+
+- `zudoDocPreset()` now defaults `packageOwnedRoutes` on and warns when it is explicitly turned off while content exists, preventing silently-empty doc routes. (4a3a6473, #2402)
+- `standalone` frontmatter now implies `hide_sidebar` and `hide_toc`, so standalone pages render chrome-free as intended. (311be086, #2395)
+
+### Other Changes
+
+- Bump the first-party `@takazudo/*` build toolchain: `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-adapter-cloudflare` to `0.1.0-next.69`, and `@takazudo/zudo-doc-history-server` to `^1.1.0`. (c2ac69f1, 38b5d15a)
