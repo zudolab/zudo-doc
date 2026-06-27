@@ -68,6 +68,7 @@ import { createFooterWithDefaults } from "../footer-with-defaults/index.js";
 import { createSidebarWithDefaults } from "../sidebar-with-defaults/index.js";
 import { createSidebarPrepaint } from "../sidebar-prepaint/index.js";
 import { createDocBodyEnd } from "../doc-body-end/index.js";
+import { createBodyEndIslands } from "../doc-body-end-islands/index.js";
 import { createDocPager } from "../doc-pager/index.js";
 import { createDocPageShell } from "../doc-page-shell/index.js";
 import { createDocContentHeader } from "../doc-content-header/index.js";
@@ -129,12 +130,12 @@ const docHistoryMeta: Record<string, never> = {};
  *  tree. The project `sidebars` config is host-bound (A2). */
 const sidebarsConfig: Record<string, never> = {};
 
-/** Package no-op body-end islands. The host's `BodyEndIslands` wires project
- *  island bootstraps (client-router / design-token-panel) that cannot live in
- *  the package; the package default renders nothing. */
-function BodyEndIslandsStub(_props: { basePath: string }): JSX.Element {
-  return <></>;
-}
+/** Package-default body-end islands — the package-island subset of the host's
+ *  `BodyEndIslands` (AiChatModal / ImageEnlarge / MermaidEnlarge), reconstructed
+ *  from the serializable virtual-module `settings` flags (#2406 / #2401(c)).
+ *  The host-owned bootstraps (client-router / design-token-panel) cannot live
+ *  in the package, so they are NOT included here — A2/S4 re-homes those. */
+const BodyEndIslands = createBodyEndIslands({ settings });
 
 /** Package no-op DocHistory island stub — renders an empty fragment (the
  *  `DocHistoryComponent` contract requires a VNode, not null). */
@@ -297,7 +298,7 @@ export const SidebarWithDefaults = createSidebarWithDefaults({
 });
 
 const SidebarPrepaint = createSidebarPrepaint({ sidebarToggle: settings.sidebarToggle });
-const DocBodyEnd = createDocBodyEnd({ settings, BodyEndIslands: BodyEndIslandsStub });
+const DocBodyEnd = createDocBodyEnd({ settings, BodyEndIslands });
 const DocPager = createDocPager({ t });
 
 // ---------------------------------------------------------------------------
@@ -520,7 +521,7 @@ export const VersionsPageView = createVersionsPageView({
     HeadWithDefaults,
     HeaderWithDefaults,
     FooterWithDefaults,
-    BodyEndIslands: BodyEndIslandsStub,
+    BodyEndIslands,
   },
 });
 
@@ -538,15 +539,16 @@ const tagPages = createTagPages({
     HeadWithDefaults,
     HeaderWithDefaults,
     FooterWithDefaults,
-    BodyEndIslands: BodyEndIslandsStub,
+    BodyEndIslands,
     DocHistoryArea: DocHistoryArea as never,
   },
 });
 
 export const { collectTagMapForLocale, TagDetailPageView, TagsIndexPageView } = tagPages;
 
-// Re-export the locale-aware site-tree wrapper for the index entrypoints.
-export { SiteTreeNavWrapper, BodyEndIslandsStub };
+// Re-export the locale-aware site-tree wrapper + the package-default body-end
+// islands for the index entrypoints.
+export { SiteTreeNavWrapper, BodyEndIslands };
 
 // Bring the doc-route-entries builder + types into the chrome surface so the
 // doc entrypoints import a single module.

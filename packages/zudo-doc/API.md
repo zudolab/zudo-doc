@@ -91,6 +91,7 @@ The full `package.json#exports` keyset is the contract. Any addition or removal 
 | `./doc-page-props` | Doc page props types |
 | `./doc-content-header` | Doc content header (title area) |
 | `./doc-body-end` | Doc body end area |
+| `./doc-body-end-islands` | Package-default body-end islands factory (package-owned routes) |
 | `./doc-metainfo-area` | Doc metadata area (dates, author) |
 | `./doc-history-area` | Doc history dropdown area |
 | `./doc-tags-area` | Doc tags area |

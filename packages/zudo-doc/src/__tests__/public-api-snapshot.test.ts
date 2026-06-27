@@ -56,6 +56,7 @@ describe("package.json exports keyset snapshot", () => {
         "./desktop-sidebar-toggle-island",
         "./details",
         "./doc-body-end",
+        "./doc-body-end-islands",
         "./doc-content-header",
         "./doc-history",
         "./doc-history-area",

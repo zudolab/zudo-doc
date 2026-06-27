@@ -28,7 +28,7 @@ import {
   HeadWithDefaults,
   HeaderWithDefaults,
   FooterWithDefaults,
-  BodyEndIslandsStub,
+  BodyEndIslands,
   composeMetaTitle,
 } from "./_chrome.js";
 
@@ -67,7 +67,7 @@ export default function IndexPage(): JSX.Element {
       sidebarOverride={<></>}
       headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase("/")} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
-      bodyEndComponents={<BodyEndIslandsStub basePath={settings.base ?? "/"} />}
+      bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
       enableClientRouter={settings.dynamicPageTransition}
     >
       <div class="flex justify-center mb-vsp-xl">
