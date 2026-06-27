@@ -55,7 +55,7 @@ export function detectLocaleFromPath(path: string): Locale {
 }
 
 /** UI string translations */
-const translations: Record<string, Record<string, string>> = {
+export const translations: Record<string, Record<string, string>> = {
   en: {
     "search.placeholder": "Type to search...",
     "search.shortcutHint": "to open search from anywhere",
