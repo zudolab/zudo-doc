@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { createRequire } from "node:module";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -333,6 +333,73 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       tagVocabulary: [{ id: "ai" }],
     });
     expect((routes?.options as { settings: { packageOwnedRoutes?: boolean } }).settings.packageOwnedRoutes).toBe(true);
+  });
+
+  // ── default-on gate (#2404) ──────────────────────────────────────────────
+  it("includes the routes plugin when packageOwnedRoutes is omitted (default-on, #2404)", () => {
+    const { packageOwnedRoutes: _omitted, ...settingsWithoutFlag } = fixtureSettings;
+    const r = zudoDocPreset({
+      settings: settingsWithoutFlag,
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    expect(r.plugins.map((p) => p.name)).toContain("@takazudo/zudo-doc/plugins/routes");
+    expect(r.plugins[0]?.name).toBe("@takazudo/zudo-doc/plugins/routes");
+  });
+
+  // ── explicit-false + content configured → diagnostic warning (#2404) ─────
+  describe("explicit false + configured content emits console.warn (#2404)", () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("warns when packageOwnedRoutes is false and docsDir is set", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      zudoDocPreset({
+        settings: { ...fixtureSettings, packageOwnedRoutes: false },
+        buildDocsSchema: buildFixtureSchema,
+        directiveVocabulary: fixtureDirectives,
+      });
+      expect(warnSpy).toHaveBeenCalledOnce();
+      expect(warnSpy.mock.calls[0]?.[0]).toContain("packageOwnedRoutes is off but doc content is configured");
+    });
+
+    it("does NOT warn when packageOwnedRoutes is false and content roots are all empty", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      zudoDocPreset({
+        settings: {
+          ...fixtureSettings,
+          packageOwnedRoutes: false,
+          docsDir: "",
+          locales: {},
+          versions: false,
+        },
+        buildDocsSchema: buildFixtureSchema,
+        directiveVocabulary: fixtureDirectives,
+      });
+      expect(warnSpy).not.toHaveBeenCalled();
+    });
+
+    it("does NOT warn when packageOwnedRoutes is true", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      zudoDocPreset({
+        settings: { ...fixtureSettings, packageOwnedRoutes: true },
+        buildDocsSchema: buildFixtureSchema,
+        directiveVocabulary: fixtureDirectives,
+      });
+      expect(warnSpy).not.toHaveBeenCalled();
+    });
+
+    it("does NOT warn when packageOwnedRoutes is omitted (default-on)", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const { packageOwnedRoutes: _omitted, ...settingsWithoutFlag } = fixtureSettings;
+      zudoDocPreset({
+        settings: settingsWithoutFlag,
+        buildDocsSchema: buildFixtureSchema,
+        directiveVocabulary: fixtureDirectives,
+      });
+      expect(warnSpy).not.toHaveBeenCalled();
+    });
   });
 });
 

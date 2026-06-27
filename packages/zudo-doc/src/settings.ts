@@ -287,17 +287,19 @@ export interface Settings {
   headerRightItems: HeaderRightItem[];
   /**
    * Build-time package-owned route injection (epic Package-First Finale #2356,
-   * ADR `docs/adr/route-injection-seam.md`). When `true`, the preset adds the
-   * `@takazudo/zudo-doc/plugins/routes` plugin, which injects the doc routes
-   * from the package instead of requiring project-shipped `pages/*.tsx` stubs.
+   * ADR `docs/adr/route-injection-seam.md`). When `true` (the **default** when
+   * omitted — #2404), the preset adds the `@takazudo/zudo-doc/plugins/routes`
+   * plugin, which injects the doc routes from the package instead of requiring
+   * project-shipped `pages/*.tsx` stubs.
    *
-   * On by default since the fast-follow (#2372 — upstream zfb dev-render support
-   * landed): the showcase and create-zudo-doc emit `packageOwnedRoutes: true` into
-   * their generated `settings.ts`. The preset reads this value truthily with no
-   * central defaulting, so a hand-written settings object that omits the field is
-   * treated as off. Any injected route whose URL shape collides with a kept
-   * `pages/` stub is silently dropped (user `pages/` wins), so existing stubs
-   * are a harmless no-op.
+   * Set explicitly to `false` only if your project ships its own `pages/*.tsx`
+   * stubs for every doc route. Any injected route whose URL shape collides with
+   * a kept `pages/` stub is silently dropped (user `pages/` wins), so existing
+   * stubs are a harmless no-op if you later re-enable this.
+   *
+   * When `false` AND doc content is configured (`docsDir` non-empty and/or
+   * locales/versions set), a single `console.warn` is emitted per build to
+   * flag a potentially-empty build (#2404). No throw — the build succeeds.
    */
   packageOwnedRoutes?: boolean;
 }

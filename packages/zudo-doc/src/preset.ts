@@ -81,13 +81,15 @@ export interface PresetSettings {
   claudeResources?: PresetClaudeResourcesConfig | false;
   /** "owner/repo" — when set, enables `#123` / SHA autolinks in markdown. Omit to disable entirely. */
   githubAutolinksRepo?: string;
-  /** When `true`, the preset adds the package-owned route-injection plugin
-   *  (`@takazudo/zudo-doc/plugins/routes`). On by default since the fast-follow
-   *  (#2372): the showcase and create-zudo-doc both EMIT `packageOwnedRoutes: true`
-   *  into their generated `settings.ts`. `buildPlugins` reads this value truthily
-   *  and does NO central defaulting — a hand-written settings object that OMITS the
-   *  field is treated as off; set it explicitly to control injection.
-   *  See `docs/adr/route-injection-seam.md`. */
+  /**
+   * When `true` (the **default** when omitted — #2404), the preset adds the
+   * package-owned route-injection plugin (`@takazudo/zudo-doc/plugins/routes`).
+   * Set explicitly to `false` to opt out — only needed for projects shipping
+   * their own `pages/*.tsx` stubs for every doc route. When `false` AND doc
+   * content is configured (`docsDir` non-empty and/or locales/versions set),
+   * a single `console.warn` is emitted per build as a heads-up (the build
+   * succeeds). See `docs/adr/route-injection-seam.md`. (#2404)
+   */
   packageOwnedRoutes?: boolean;
   /** Gate for the `/docs/tags` + `/docs/tags/[tag]` injected routes. */
   docTags?: boolean;
@@ -399,18 +401,40 @@ function buildPlugins(
     Object.entries(settings.locales).map(([code, locale]) => [code, { dir: locale.dir }]),
   );
 
+  // Effective value: default-on (#2404 — fixes the silent empty build). An
+  // omitted field is treated as `true`; explicit `false` stays the opt-out.
+  const effectivePackageOwnedRoutes = settings.packageOwnedRoutes ?? true;
+
+  // Build-time diagnostic (#2404): when routes are explicitly turned off AND
+  // doc content is configured, emit a single actionable warning. Do NOT inspect
+  // the filesystem — this runs inside the config eval; the node-free guard
+  // (preset.test.ts) rejects any reachable `node:*` import.
+  if (!effectivePackageOwnedRoutes) {
+    const contentConfigured =
+      (typeof settings.docsDir === "string" && settings.docsDir.length > 0) ||
+      Object.keys(settings.locales).length > 0 ||
+      (Array.isArray(settings.versions) && settings.versions.length > 0);
+    if (contentConfigured) {
+      console.warn(
+        "zudo-doc: packageOwnedRoutes is off but doc content is configured — " +
+          "no doc routes will be injected; the build will produce only host pages/. " +
+          "Set packageOwnedRoutes: true in settings.",
+      );
+    }
+  }
+
   return [
-    // Package-owned route injection — dormant by default (Decision 4). The
-    // descriptor is a BARE SPECIFIER, never an imported plugin function: the
-    // preset's node-free eval-graph guard (preset.test.ts) bundles this module
-    // under --platform=neutral, and importing the plugin would drag its
+    // Package-owned route injection — default-on (#2404). The descriptor is a
+    // BARE SPECIFIER, never an imported plugin function: the preset's node-free
+    // eval-graph guard (preset.test.ts) bundles this module under
+    // --platform=neutral, and importing the plugin would drag its
     // `injectRoute`/`node:*` graph into the config eval. The plugin's `setup`
     // hook reads `options` to (a) emit the route-context virtual module
     // (serializable settings/translations/tagVocabulary only) and (b) derive
     // the route catalog from `settings.locales` / `settings.versions`. Listed
     // FIRST so an injected route is registered before the other plugins'
     // preBuild work runs (ordering is cosmetic — injection happens in `setup`).
-    ...(settings.packageOwnedRoutes
+    ...(effectivePackageOwnedRoutes
       ? [
           {
             name: "@takazudo/zudo-doc/plugins/routes",
