@@ -2,6 +2,8 @@ import { defineConfig } from "zfb/config";
 import { zudoDocPreset } from "@takazudo/zudo-doc/preset";
 import { settings } from "./src/config/settings";
 import { buildDocsSchema } from "./src/config/docs-schema";
+import { translations } from "./src/config/i18n";
+import { colorSchemes } from "./src/config/color-schemes";
 
 // The canonical seven directives for this showcase. Keys are directive names;
 // values are the JSX component names registered in pages/_mdx-components.ts.
@@ -37,5 +39,5 @@ export default defineConfig({
   adapter: "@takazudo/zfb-adapter-cloudflare",
 
   // ── Preset-owned fields (collections, plugins, markdown, codeHighlight, …) ─
-  ...zudoDocPreset({ settings, buildDocsSchema, directiveVocabulary }),
+  ...zudoDocPreset({ settings, buildDocsSchema, directiveVocabulary, translations, colorSchemes }),
 });
