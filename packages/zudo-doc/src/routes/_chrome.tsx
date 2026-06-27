@@ -52,6 +52,7 @@ import {
   firstRoutedHref,
   collectTags,
   stableDocs,
+  colorSchemes,
 } from "./_context.js";
 import type { CategoryMeta, DocNavNode } from "./_docs-helpers.js";
 
@@ -162,14 +163,38 @@ function SearchWidgetBound(props: {
 
 export const composeMetaTitle = createComposeMetaTitle(settings.siteName);
 
+// Scheme-selection: resolve the active color scheme(s) from the host
+// `colorSchemes` map supplied via the virtual module. Falls back to
+// `DEFAULT_SCHEME` for any missing key or when `colorSchemes` is absent.
+// `generateCssCustomProperties` is called in single-scheme mode
+// (`settings.colorMode` is false); `generateLightDarkCssProperties` in
+// light/dark mode. Both delegate to DEFAULT_SCHEME when `colorSchemes` is null.
+function resolveHostScheme(key: string): ColorScheme {
+  if (!colorSchemes) return DEFAULT_SCHEME;
+  return colorSchemes[key] ?? DEFAULT_SCHEME;
+}
+
 export const HeadWithDefaults = createHeadWithDefaults({
   settings,
   composeMetaTitle,
   withBase,
   absoluteUrl,
-  generateCssCustomProperties: () => generateCssCustomProperties(DEFAULT_SCHEME),
-  generateLightDarkCssProperties: () =>
-    generateLightDarkCssProperties(DEFAULT_SCHEME, DEFAULT_SCHEME),
+  // Called only in single-scheme mode (colorMode false): resolve via settings.colorScheme.
+  generateCssCustomProperties: () =>
+    generateCssCustomProperties(resolveHostScheme(settings.colorScheme)),
+  // Called only in light/dark mode (colorMode truthy): resolve the pair.
+  generateLightDarkCssProperties: () => {
+    const cm = settings.colorMode;
+    if (cm) {
+      return generateLightDarkCssProperties(
+        resolveHostScheme(cm.lightScheme),
+        resolveHostScheme(cm.darkScheme),
+      );
+    }
+    // Should not be reached (head-with-defaults only calls this when colorMode
+    // is truthy), but guard the contract by falling back to DEFAULT_SCHEME.
+    return generateLightDarkCssProperties(DEFAULT_SCHEME, DEFAULT_SCHEME);
+  },
 });
 
 // ---------------------------------------------------------------------------

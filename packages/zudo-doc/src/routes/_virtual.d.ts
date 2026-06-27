@@ -4,12 +4,16 @@
 // — so this declaration gives the package route entrypoints a typed import.
 //
 // The payload is SERIALIZABLE DATA ONLY (ADR Decision 1): `settings`,
-// `translations`, `tagVocabulary`. `_context.ts` narrows it to the concrete
-// `RouteContextPayload` at the seam.
+// `translations`, `tagVocabulary`, `colorSchemes`. `_context.ts` narrows it
+// to the concrete `RouteContextPayload` at the seam.
 declare module "virtual:zudo-doc-route-context" {
   export const routeContext: {
     settings: unknown;
     translations: Record<string, Record<string, string>>;
     tagVocabulary: ReadonlyArray<Record<string, unknown>>;
+    /** Host color-scheme palette map. `null` when the caller did not pass
+     *  `colorSchemes` to `zudoDocPreset` — `_chrome.tsx` falls back to
+     *  `DEFAULT_SCHEME` in that case. */
+    colorSchemes: Record<string, unknown> | null;
   };
 }

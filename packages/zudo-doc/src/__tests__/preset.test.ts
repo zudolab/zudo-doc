@@ -380,26 +380,95 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       expect(warnSpy).not.toHaveBeenCalled();
     });
 
-    it("does NOT warn when packageOwnedRoutes is true", () => {
+    it("does NOT warn (about packageOwnedRoutes=false) when packageOwnedRoutes is true and bindings are supplied", () => {
       const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
       zudoDocPreset({
         settings: { ...fixtureSettings, packageOwnedRoutes: true },
         buildDocsSchema: buildFixtureSchema,
         directiveVocabulary: fixtureDirectives,
+        // Supply both bindings so neither #2404 nor #2405 warning fires.
+        translations: { en: { "doc.allTags": "All Tags" } },
+        colorSchemes: { "Default Dark": { background: "#000", foreground: "#fff", cursor: "#fff", selectionBg: "#444", selectionFg: "#fff", palette: ["#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000"] } },
       });
       expect(warnSpy).not.toHaveBeenCalled();
     });
 
-    it("does NOT warn when packageOwnedRoutes is omitted (default-on)", () => {
+    it("does NOT warn (about packageOwnedRoutes=false) when packageOwnedRoutes is omitted and bindings are supplied (default-on)", () => {
       const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
       const { packageOwnedRoutes: _omitted, ...settingsWithoutFlag } = fixtureSettings;
       zudoDocPreset({
         settings: settingsWithoutFlag,
         buildDocsSchema: buildFixtureSchema,
         directiveVocabulary: fixtureDirectives,
+        // Supply both bindings so neither #2404 nor #2405 warning fires.
+        translations: { en: { "doc.allTags": "All Tags" } },
+        colorSchemes: { "Default Dark": { background: "#000", foreground: "#fff", cursor: "#fff", selectionBg: "#444", selectionFg: "#fff", palette: ["#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000"] } },
       });
       expect(warnSpy).not.toHaveBeenCalled();
     });
+  });
+});
+
+// ── #2405 warning: packageOwnedRoutes on but host bindings missing ────────────
+describe("zudoDocPreset silent-degradation diagnostic (#2405)", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("warns when packageOwnedRoutes is on and colorSchemes is absent", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    zudoDocPreset({
+      settings: { ...fixtureSettings, packageOwnedRoutes: true },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+      translations: { en: { "doc.allTags": "All Tags" } },
+      // colorSchemes intentionally absent
+    });
+    expect(warnSpy).toHaveBeenCalledOnce();
+    expect(warnSpy.mock.calls[0]?.[0]).toContain("colorSchemes");
+    expect(warnSpy.mock.calls[0]?.[0]).toContain("packageOwnedRoutes is on");
+  });
+
+  it("warns when packageOwnedRoutes is on and translations is absent", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    zudoDocPreset({
+      settings: { ...fixtureSettings, packageOwnedRoutes: true },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+      // translations intentionally absent
+      colorSchemes: { "Default Dark": { background: "#000", foreground: "#fff", cursor: "#fff", selectionBg: "#444", selectionFg: "#fff", palette: ["#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000"] } },
+    });
+    expect(warnSpy).toHaveBeenCalledOnce();
+    expect(warnSpy.mock.calls[0]?.[0]).toContain("translations");
+    expect(warnSpy.mock.calls[0]?.[0]).toContain("packageOwnedRoutes is on");
+  });
+
+  it("does NOT warn when packageOwnedRoutes is off (about missing bindings)", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {
+      // suppress the #2404 'packageOwnedRoutes is off' warning
+    });
+    zudoDocPreset({
+      settings: { ...fixtureSettings, packageOwnedRoutes: false },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+      // no colorSchemes, no translations — but routes are off so no binding warning
+    });
+    // The only warn emitted is the #2404 one (packageOwnedRoutes is off + content configured).
+    expect(warnSpy).toHaveBeenCalledOnce();
+    expect(warnSpy.mock.calls[0]?.[0]).toContain("packageOwnedRoutes is off");
+    expect(warnSpy.mock.calls[0]?.[0]).not.toContain("packageOwnedRoutes is on");
+  });
+
+  it("does NOT warn when both translations and colorSchemes are supplied", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    zudoDocPreset({
+      settings: { ...fixtureSettings, packageOwnedRoutes: true },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+      translations: { en: { "doc.allTags": "All Tags" } },
+      colorSchemes: { "Default Dark": { background: "#000", foreground: "#fff", cursor: "#fff", selectionBg: "#444", selectionFg: "#fff", palette: ["#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000"] } },
+    });
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 });
 

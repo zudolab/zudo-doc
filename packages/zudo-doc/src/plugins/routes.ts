@@ -73,6 +73,7 @@ interface RoutesPluginOptions {
   settings: RoutesSettings;
   translations: Record<string, Record<string, string>>;
   tagVocabulary: ReadonlyArray<Record<string, unknown>>;
+  colorSchemes: Record<string, unknown> | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -160,6 +161,7 @@ const plugin = definePlugin({
     const settings = options.settings ?? {};
     const translations = options.translations ?? {};
     const tagVocabulary = options.tagVocabulary ?? [];
+    const colorSchemes = options.colorSchemes ?? null;
 
     // (1) Route-context virtual module — SERIALIZABLE DATA ONLY (Decision 1).
     // `JSON.stringify` is the boundary that enforces "no functions / no
@@ -173,6 +175,7 @@ const plugin = definePlugin({
           settings,
           translations,
           tagVocabulary,
+          colorSchemes,
         })};\n`,
     );
 

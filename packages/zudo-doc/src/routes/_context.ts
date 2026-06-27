@@ -34,6 +34,7 @@
 import { routeContext } from "virtual:zudo-doc-route-context";
 
 import type { Settings } from "../settings.js";
+import type { ColorScheme } from "../color-scheme-utils.js";
 import type { FactoryI18n } from "../factory-context/index.js";
 import { makeUrlHelpers, type UrlHelpers } from "../url-helpers/index.js";
 import {
@@ -84,6 +85,7 @@ export interface RouteContextPayload {
   settings: Settings;
   translations: Record<string, Record<string, string>>;
   tagVocabulary: readonly TagVocabularyEntry[];
+  colorSchemes: Record<string, ColorScheme> | null;
 }
 
 /** The serializable route-context (from the virtual module). */
@@ -91,6 +93,9 @@ export const ctx = routeContext as unknown as RouteContextPayload;
 export const settings: Settings = ctx.settings;
 const translations = ctx.translations;
 const tagVocabulary = ctx.tagVocabulary;
+/** Host color-scheme palette map. `null` when not supplied — `_chrome.tsx`
+ *  falls back to `DEFAULT_SCHEME` in that case. */
+export const colorSchemes: Record<string, ColorScheme> | null = ctx.colorSchemes;
 
 // ---------------------------------------------------------------------------
 // i18n — reconstruct a FactoryI18n from settings + translations (Decision 1).
