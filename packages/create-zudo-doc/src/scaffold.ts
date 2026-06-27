@@ -593,13 +593,13 @@ function generatePackageJson(choices: UserChoices) {
     // (e.g. `@/*`) into its synthetic tsconfig (zfb#1238) — fixes silent island
     // hydration failure under route injection. Unblocks packageOwnedRoutes.
     // No consumer-facing / CLI breaking change.
-    // next.67 (current pin): routine toolchain bump from next.65, adopted in
+    // next.68 (current pin): routine toolchain bump from next.67, adopted in
     // lockstep with the root package.json pins. No consumer-facing / CLI change.
-    "@takazudo/zfb": "0.1.0-next.67",
-    "@takazudo/zfb-runtime": "0.1.0-next.67",
+    "@takazudo/zfb": "0.1.0-next.68",
+    "@takazudo/zfb-runtime": "0.1.0-next.68",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.67",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.68",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
