@@ -194,10 +194,13 @@ Then verify island hydration for each component that was deleted or ejected. The
 check is a grep for the island marker in the built HTML:
 
 ```bash
-# Each interactive island should have a hydration marker in dist/ HTML.
-# zfb emits data-island markers for client-registered components.
-grep -r 'data-island' dist/ | head -20
+# Each interactive island emits a data-zfb-island="<Name>" marker.
+grep -roh 'data-zfb-island="[^"]*"' dist/ | sort -u    # distinct island set
+grep -rl  'data-zfb-island' dist/ | wc -l              # total island-bearing pages
 ```
+
+Compare the distinct-island set before vs after a deletion/eject — a missing island name
+means a silently dead island.
 
 For any island component touched in Steps 3–4, also verify the component is reachable
 in the dev server and interactive — a static HTML render is not the same as a hydrated
@@ -212,7 +215,7 @@ pnpm dev &
 **If any island fails the hydration check:**
 
 1. Stop immediately — do not proceed to Step 6.
-2. Report which component is dead (grep `dist/` for the island marker pattern).
+2. Report which component is dead (compare the distinct-island set: `grep -roh 'data-zfb-island="[^"]*"' dist/ | sort -u`).
 3. Offer to re-eject or restore the file from git: `git checkout -- <path>`.
 
 ---
