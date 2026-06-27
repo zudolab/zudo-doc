@@ -227,7 +227,17 @@ export function createRenderDocPage(
     // both lang (BCP-47 locale string) and navSection (filesystem-derived
     // kebab-case slug) come from controlled, trusted sources.
     const navSection = getNavSectionForSlug(slug);
-    const hideSidebar = props.kind === "entry" ? (props.entry.data as Record<string, unknown>).hide_sidebar as boolean | undefined : undefined;
+    const entryData = props.kind === "entry"
+      ? (props.entry.data as Record<string, unknown>)
+      : undefined;
+    const standalone = entryData?.standalone as boolean | undefined;
+    // Pre-1.0 scaffold derivation: standalone implies hide_sidebar + hide_toc.
+    const hideSidebar = entryData
+      ? ((entryData.hide_sidebar as boolean | undefined) || standalone)
+      : undefined;
+    const hideToc = entryData
+      ? ((entryData.hide_toc as boolean | undefined) || standalone)
+      : undefined;
     const sidebarPersistKey = hideSidebar
       ? undefined
       : `sidebar-${locale}-${navSection ?? "default"}`;
@@ -252,7 +262,7 @@ export function createRenderDocPage(
         navSection={navSection}
         sidebarPersistKey={sidebarPersistKey}
         hideSidebar={hideSidebar}
-        hideToc={props.kind === "entry" ? (props.entry.data as Record<string, unknown>).hide_toc as boolean | undefined : undefined}
+        hideToc={hideToc}
         currentPath={currentPath}
         currentVersion={version?.slug}
         versionSwitcher={buildInlineVersionSwitcher(slug, locale, version?.slug)}
