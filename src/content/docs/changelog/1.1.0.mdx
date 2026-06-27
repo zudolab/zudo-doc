@@ -1,0 +1,22 @@
+---
+title: 1.1.0
+description: Release notes for 1.1.0.
+sidebar_position: 1037
+---
+
+Released: 2026-06-27
+
+### Features
+
+- Wire host-only MDX component overrides into the package-provided docs route, so the package docs route renders content typography consistently with host pages. (37458437, #2390)
+- Add 6 island swizzle points to the `EJECTABLE` map, expanding which interactive islands downstream projects can eject and customize. (2eba7863, #2388)
+- Wire the `cjkFriendly` setting through `zudoDocPreset()`, so CJK-friendly typography is configurable via the preset rather than requiring manual config. (bf0a94c7, #2387)
+
+### Bug Fixes
+
+- Apply the accent-on-hover treatment to card description spans for visual consistency with the rest of the nav-indexing cards. (341b52fa)
+- Bump the scaffolded `zod` floor to `^4.3.6` in generated projects so a fresh scaffold installs a compatible validator. (ff2317f5)
+
+### Other Changes
+
+- Bump the first-party `@takazudo/*` build toolchain: `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-adapter-cloudflare` to `0.1.0-next.67`, and `@takazudo/zudo-doc-history-server` to `^1.0.2`. (30d9e187)

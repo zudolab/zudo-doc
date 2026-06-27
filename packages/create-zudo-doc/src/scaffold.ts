@@ -21,7 +21,7 @@ export { getSecondaryLang };
  *
  * Bumped in lockstep by scripts/release-create-zudo-doc.sh.
  */
-export const ZUDO_DOC_PIN = "^1.0.2";
+export const ZUDO_DOC_PIN = "^1.1.0";
 
 /**
  * Files in `templates/base/**` that must never be copied into a generated
@@ -588,16 +588,18 @@ function generatePackageJson(choices: UserChoices) {
     // multi-valued response headers (e.g. multiple Set-Cookie),
     // supplementary-plane CJK reading-time, plus CLI/server/runtime hardening
     // and render perf passes. No consumer-facing / CLI breaking change.
-    // next.65 (current pin): dev-render of package-injected routes (zfb#1227,
+    // next.65: dev-render of package-injected routes (zfb#1227,
     // landed next.63) + islands bundler now seeds the host tsconfig `paths`
     // (e.g. `@/*`) into its synthetic tsconfig (zfb#1238) — fixes silent island
     // hydration failure under route injection. Unblocks packageOwnedRoutes.
     // No consumer-facing / CLI breaking change.
-    "@takazudo/zfb": "0.1.0-next.65",
-    "@takazudo/zfb-runtime": "0.1.0-next.65",
+    // next.67 (current pin): routine toolchain bump from next.65, adopted in
+    // lockstep with the root package.json pins. No consumer-facing / CLI change.
+    "@takazudo/zfb": "0.1.0-next.67",
+    "@takazudo/zfb-runtime": "0.1.0-next.67",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.65",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.67",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
@@ -684,7 +686,7 @@ function generatePackageJson(choices: UserChoices) {
     // @takazudo/zudo-doc/integrations/doc-history which in turn imports
     // @takazudo/zudo-doc-history-server/git-history. Without this dep the
     // plugin host fails at init with ERR_MODULE_NOT_FOUND — W8A (#1739).
-    deps["@takazudo/zudo-doc-history-server"] = "^1.0.2";
+    deps["@takazudo/zudo-doc-history-server"] = "^1.1.0";
     // tsx is no longer needed here: the relocated package plugin imports the
     // runner directly (no `tsx -e` spawn) since the package ships compiled
     // dist/ — package-first migration #2321 (#2337).
