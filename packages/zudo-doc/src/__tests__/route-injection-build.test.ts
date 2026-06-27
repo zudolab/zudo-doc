@@ -177,6 +177,60 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
     // The MDX source includes this phrase; renderDocPage renders it into the HTML.
     expect(html).toContain("injected-route-render-proof");
   });
+
+  // #2406 / #2401(c): the package-default BodyEndIslands replaces the old no-op
+  // BodyEndIslandsStub. The route-injection fixture ships aiAssistant /
+  // imageEnlarge / mermaid OFF, so NO island marker (and no AI-assistant
+  // landmark) must reach the SSG output — the feature-off gating end-to-end.
+  it("body-end islands: /404 HTML has NO island markers when the flags are off", () => {
+    const html = readBuiltHtml(fixtureDir, "404.html");
+    expect(html).not.toContain("data-zfb-island-skip-ssr");
+    expect(html).not.toContain('data-zfb-island-skip-ssr="AiChatModal"');
+    expect(html).not.toContain('data-zfb-island-skip-ssr="ImageEnlarge"');
+    expect(html).not.toContain('data-zfb-island-skip-ssr="MermaidEnlarge"');
+    expect(html).not.toContain("AI Assistant");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Case A2 — Package-island markers ON: flipping the serializable settings flags
+//           emits the package-default BodyEndIslands island markers in the SSG
+//           HTML of a package-owned route (#2406 / #2401(c)). imageEnlarge +
+//           mermaid are enabled (NOT aiAssistant — that would inject the
+//           /api/ai-chat route, irrelevant here); the focused unit test
+//           (src/doc-body-end-islands/__tests__) covers the aiAssistant marker.
+// ---------------------------------------------------------------------------
+
+/** Flip the package-island flags ON in a fixture's settings.ts (it ships them
+ *  OFF) so the route-context virtual module carries them true. */
+function enablePackageIslands(dir: string): void {
+  const settingsPath = join(dir, "src/config/settings.ts");
+  const src = readFileSync(settingsPath, "utf-8")
+    .replace(/imageEnlarge:\s*false/, "imageEnlarge: true")
+    .replace(/mermaid:\s*false/, "mermaid: true");
+  writeFileSync(settingsPath, src);
+}
+
+describe("A2 islands-on: package route HTML carries island markers when flags ON", () => {
+  let fixtureDir: string;
+
+  it("setup: fixture builds with imageEnlarge + mermaid enabled", { timeout: 180_000 }, () => {
+    fixtureDir = setupFixture({ emptyPages: true });
+    enablePackageIslands(fixtureDir);
+    runZfbBuild(fixtureDir);
+  });
+
+  it("islands: /404 HTML carries the ImageEnlarge skip-ssr marker + dialog shell", () => {
+    const html = readBuiltHtml(fixtureDir, "404.html");
+    expect(html).toContain('data-zfb-island-skip-ssr="ImageEnlarge"');
+    expect(html).toContain("zd-enlarge-dialog");
+  });
+
+  it("islands: /404 HTML carries the MermaidEnlarge skip-ssr marker + dialog shell", () => {
+    const html = readBuiltHtml(fixtureDir, "404.html");
+    expect(html).toContain('data-zfb-island-skip-ssr="MermaidEnlarge"');
+    expect(html).toContain("zd-mermaid-dialog");
+  });
 });
 
 // ---------------------------------------------------------------------------

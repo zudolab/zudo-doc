@@ -31,6 +31,8 @@ export function generateZfbConfig(_choices: UserChoices): string {
   lines.push(`import { zudoDocPreset } from "@takazudo/zudo-doc/preset";`);
   lines.push(`import { settings } from "./src/config/settings";`);
   lines.push(`import { buildDocsSchema } from "./src/config/docs-schema";`);
+  lines.push(`import { translations } from "./src/config/i18n";`);
+  lines.push(`import { colorSchemes } from "./src/config/color-schemes";`);
   lines.push(``);
 
   // --- Directive vocabulary ---
@@ -59,7 +61,7 @@ export function generateZfbConfig(_choices: UserChoices): string {
   lines.push(`  base: settings.base,`);
   lines.push(``);
   lines.push(`  // ── Preset-owned fields (content collections, plugins, markdown, …) ────────`);
-  lines.push(`  ...zudoDocPreset({ settings, buildDocsSchema, directiveVocabulary }),`);
+  lines.push(`  ...zudoDocPreset({ settings, buildDocsSchema, directiveVocabulary, translations, colorSchemes }),`);
   lines.push(`});`);
 
   return lines.join("\n") + "\n";

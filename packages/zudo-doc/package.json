@@ -392,6 +392,10 @@
       "types": "./dist/doc-body-end/index.d.ts",
       "default": "./dist/doc-body-end/index.js"
     },
+    "./doc-body-end-islands": {
+      "types": "./dist/doc-body-end-islands/index.d.ts",
+      "default": "./dist/doc-body-end-islands/index.js"
+    },
     "./doc-history-area": {
       "types": "./dist/doc-history-area/index.d.ts",
       "default": "./dist/doc-history-area/index.js"

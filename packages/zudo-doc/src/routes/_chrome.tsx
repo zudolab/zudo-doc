@@ -52,6 +52,7 @@ import {
   firstRoutedHref,
   collectTags,
   stableDocs,
+  colorSchemes,
 } from "./_context.js";
 import type { CategoryMeta, DocNavNode } from "./_docs-helpers.js";
 
@@ -67,6 +68,7 @@ import { createFooterWithDefaults } from "../footer-with-defaults/index.js";
 import { createSidebarWithDefaults } from "../sidebar-with-defaults/index.js";
 import { createSidebarPrepaint } from "../sidebar-prepaint/index.js";
 import { createDocBodyEnd } from "../doc-body-end/index.js";
+import { createBodyEndIslands } from "../doc-body-end-islands/index.js";
 import { createDocPager } from "../doc-pager/index.js";
 import { createDocPageShell } from "../doc-page-shell/index.js";
 import { createDocContentHeader } from "../doc-content-header/index.js";
@@ -128,12 +130,12 @@ const docHistoryMeta: Record<string, never> = {};
  *  tree. The project `sidebars` config is host-bound (A2). */
 const sidebarsConfig: Record<string, never> = {};
 
-/** Package no-op body-end islands. The host's `BodyEndIslands` wires project
- *  island bootstraps (client-router / design-token-panel) that cannot live in
- *  the package; the package default renders nothing. */
-function BodyEndIslandsStub(_props: { basePath: string }): JSX.Element {
-  return <></>;
-}
+/** Package-default body-end islands — the package-island subset of the host's
+ *  `BodyEndIslands` (AiChatModal / ImageEnlarge / MermaidEnlarge), reconstructed
+ *  from the serializable virtual-module `settings` flags (#2406 / #2401(c)).
+ *  The host-owned bootstraps (client-router / design-token-panel) cannot live
+ *  in the package, so they are NOT included here — A2/S4 re-homes those. */
+const BodyEndIslands = createBodyEndIslands({ settings });
 
 /** Package no-op DocHistory island stub — renders an empty fragment (the
  *  `DocHistoryComponent` contract requires a VNode, not null). */
@@ -162,14 +164,38 @@ function SearchWidgetBound(props: {
 
 export const composeMetaTitle = createComposeMetaTitle(settings.siteName);
 
+// Scheme-selection: resolve the active color scheme(s) from the host
+// `colorSchemes` map supplied via the virtual module. Falls back to
+// `DEFAULT_SCHEME` for any missing key or when `colorSchemes` is absent.
+// `generateCssCustomProperties` is called in single-scheme mode
+// (`settings.colorMode` is false); `generateLightDarkCssProperties` in
+// light/dark mode. Both delegate to DEFAULT_SCHEME when `colorSchemes` is null.
+function resolveHostScheme(key: string): ColorScheme {
+  if (!colorSchemes) return DEFAULT_SCHEME;
+  return colorSchemes[key] ?? DEFAULT_SCHEME;
+}
+
 export const HeadWithDefaults = createHeadWithDefaults({
   settings,
   composeMetaTitle,
   withBase,
   absoluteUrl,
-  generateCssCustomProperties: () => generateCssCustomProperties(DEFAULT_SCHEME),
-  generateLightDarkCssProperties: () =>
-    generateLightDarkCssProperties(DEFAULT_SCHEME, DEFAULT_SCHEME),
+  // Called only in single-scheme mode (colorMode false): resolve via settings.colorScheme.
+  generateCssCustomProperties: () =>
+    generateCssCustomProperties(resolveHostScheme(settings.colorScheme)),
+  // Called only in light/dark mode (colorMode truthy): resolve the pair.
+  generateLightDarkCssProperties: () => {
+    const cm = settings.colorMode;
+    if (cm) {
+      return generateLightDarkCssProperties(
+        resolveHostScheme(cm.lightScheme),
+        resolveHostScheme(cm.darkScheme),
+      );
+    }
+    // Should not be reached (head-with-defaults only calls this when colorMode
+    // is truthy), but guard the contract by falling back to DEFAULT_SCHEME.
+    return generateLightDarkCssProperties(DEFAULT_SCHEME, DEFAULT_SCHEME);
+  },
 });
 
 // ---------------------------------------------------------------------------
@@ -272,7 +298,7 @@ export const SidebarWithDefaults = createSidebarWithDefaults({
 });
 
 const SidebarPrepaint = createSidebarPrepaint({ sidebarToggle: settings.sidebarToggle });
-const DocBodyEnd = createDocBodyEnd({ settings, BodyEndIslands: BodyEndIslandsStub });
+const DocBodyEnd = createDocBodyEnd({ settings, BodyEndIslands });
 const DocPager = createDocPager({ t });
 
 // ---------------------------------------------------------------------------
@@ -495,7 +521,7 @@ export const VersionsPageView = createVersionsPageView({
     HeadWithDefaults,
     HeaderWithDefaults,
     FooterWithDefaults,
-    BodyEndIslands: BodyEndIslandsStub,
+    BodyEndIslands,
   },
 });
 
@@ -513,15 +539,16 @@ const tagPages = createTagPages({
     HeadWithDefaults,
     HeaderWithDefaults,
     FooterWithDefaults,
-    BodyEndIslands: BodyEndIslandsStub,
+    BodyEndIslands,
     DocHistoryArea: DocHistoryArea as never,
   },
 });
 
 export const { collectTagMapForLocale, TagDetailPageView, TagsIndexPageView } = tagPages;
 
-// Re-export the locale-aware site-tree wrapper for the index entrypoints.
-export { SiteTreeNavWrapper, BodyEndIslandsStub };
+// Re-export the locale-aware site-tree wrapper + the package-default body-end
+// islands for the index entrypoints.
+export { SiteTreeNavWrapper, BodyEndIslands };
 
 // Bring the doc-route-entries builder + types into the chrome surface so the
 // doc entrypoints import a single module.

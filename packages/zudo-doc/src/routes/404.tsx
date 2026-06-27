@@ -10,7 +10,7 @@ import {
   HeadWithDefaults,
   HeaderWithDefaults,
   FooterWithDefaults,
-  BodyEndIslandsStub,
+  BodyEndIslands,
   composeMetaTitle,
 } from "./_chrome.js";
 
@@ -31,7 +31,7 @@ export default function NotFoundPage(): JSX.Element {
       sidebarOverride={<></>}
       headerOverride={<HeaderWithDefaults lang={locale} />}
       footerOverride={<FooterWithDefaults lang={locale} />}
-      bodyEndComponents={<BodyEndIslandsStub basePath={settings.base ?? "/"} />}
+      bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
       enableClientRouter={settings.dynamicPageTransition}
     >
       <div class="min-h-[60vh] flex flex-col items-center justify-center px-hsp-2xl py-vsp-xl">
