@@ -12,17 +12,67 @@ const QUIET: { encoding: "utf-8"; stdio: ["pipe", "pipe", "pipe"] } = {
   stdio: ["pipe", "pipe", "pipe"],
 };
 
-/** Cache the repo root to avoid repeated git calls */
+// Cache the repo-root probe (success OR failure) so a non-git project spawns
+// `git rev-parse` exactly once, not once per content file.
 let repoRootCache: string | null = null;
+let repoRootResolved = false;
 
-function getRepoRoot(): string {
-  if (repoRootCache) return repoRootCache;
-  // `rev-parse --show-toplevel` walks up from process.cwd(), so it works from
-  // any CWD (no explicit cwd needed here).
-  repoRootCache = execFileSync("git", ["rev-parse", "--show-toplevel"], {
-    encoding: "utf-8",
-  }).trim();
+/**
+ * Resolve the git repo root, or `null` when the current working tree is not a
+ * git repository (or git is unavailable). Doc history then degrades to empty
+ * instead of crashing the build — e.g. a freshly scaffolded project before its
+ * first `git init`. The probe result (success OR failure) is cached.
+ *
+ * `rev-parse --show-toplevel` walks up from process.cwd(), so it works from any
+ * CWD (no explicit cwd needed here).
+ */
+function getRepoRootOrNull(): string | null {
+  if (repoRootResolved) return repoRootCache;
+  repoRootResolved = true;
+  try {
+    repoRootCache = execFileSync("git", ["rev-parse", "--show-toplevel"], {
+      encoding: "utf-8",
+    }).trim();
+  } catch {
+    // Not a git repository, or git is not installed. Callers guard on
+    // isGitRepo() and degrade to empty history rather than throwing. Emit a
+    // single hint (this catch runs at most once — see the repoRootResolved
+    // gate) so the resulting absence of Created/Updated/Author metadata is
+    // explainable instead of mysterious. This replaces the old hard crash in a
+    // non-git project (e.g. a freshly scaffolded site before `git init`).
+    repoRootCache = null;
+    console.warn(
+      "doc-history-server: not inside a git repository — doc history will be empty. " +
+        "Run `git init` and commit to enable Created/Updated/Author metadata.",
+    );
+  }
   return repoRootCache;
+}
+
+/**
+ * True when the current working tree is inside a git repository. Public entry
+ * points call this first and return empty results when it is false, so no git
+ * command is spawned (and `getRepoRoot()` never throws) outside a repo. This is
+ * what lets `pnpm dev` / `pnpm build` succeed in a project that has not been
+ * `git init`-ed yet, instead of crashing the doc-history preBuild hook.
+ */
+export function isGitRepo(): boolean {
+  return getRepoRootOrNull() != null;
+}
+
+/**
+ * Repo root for internal git invocations. Only reached after a public entry
+ * point has guarded on `isGitRepo()`, so a null here is a programmer error
+ * rather than the expected "no repo" path.
+ */
+function getRepoRoot(): string {
+  const root = getRepoRootOrNull();
+  if (root == null) {
+    throw new Error(
+      "doc-history-server: getRepoRoot() called outside a git repository — guard with isGitRepo() first",
+    );
+  }
+  return root;
 }
 
 /**
@@ -50,6 +100,7 @@ export function getFileCommits(
   filePath: string,
   maxEntries = 50,
 ): string[] {
+  if (!isGitRepo()) return [];
   try {
     const output = execFileSync(
       "git",
@@ -86,6 +137,7 @@ export function getFileCommits(
  * Returns null when the file has no git history (untracked / not yet committed).
  */
 export function getFirstCommit(filePath: string): string | null {
+  if (!isGitRepo()) return null;
   try {
     const output = execFileSync(
       "git",
@@ -117,6 +169,7 @@ export function getCommitInfo(
   hash: string,
   filePath: string,
 ): Omit<DocHistoryEntry, "content"> {
+  if (!isGitRepo()) return { hash, date: "", author: "", message: "" };
   try {
     const output = execFileSync(
       "git",
@@ -391,6 +444,7 @@ export async function getDocHistoryAsync(
   slug: string,
   maxEntries = 50,
 ): Promise<DocHistoryData> {
+  if (!isGitRepo()) return { slug, filePath, entries: [] };
   const relPath = filePath.startsWith("/") ? toRepoRelative(filePath) : filePath;
 
   // Run the two independent git walks in parallel:
@@ -533,6 +587,7 @@ async function getFileAtCommitAsync(
 export function getFileCommitsMeta(
   filePath: string,
 ): Array<Omit<DocHistoryEntry, "content">> {
+  if (!isGitRepo()) return [];
   const relPath = filePath.startsWith("/") ? toRepoRelative(filePath) : filePath;
   try {
     const output = execFileSync(
@@ -579,6 +634,7 @@ export const MAX_BUFFER_BYTES = 32 * 1024 * 1024; // 32 MB
 export async function getFileCommitsMetaAsync(
   filePath: string,
 ): Promise<Array<Omit<DocHistoryEntry, "content">>> {
+  if (!isGitRepo()) return [];
   const relPath = filePath.startsWith("/") ? toRepoRelative(filePath) : filePath;
   try {
     const { stdout } = await execFileAsync(

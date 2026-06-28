@@ -283,3 +283,85 @@ describe("parseHashToPathMap — structured parse (#2293)", () => {
     expect(map.get(HASH_A)).toBe("first-path.mdx");
   });
 });
+
+describe("no git repository — graceful degradation (preBuild crash fix)", () => {
+  // Simulate a freshly scaffolded project that has not been `git init`-ed:
+  // `git rev-parse --show-toplevel` exits non-zero, which execFileSync surfaces
+  // as a thrown error. The public entry points must degrade to empty history
+  // instead of letting that throw escape and crash the doc-history preBuild
+  // hook (which is what killed `pnpm dev` before this fix).
+  beforeEach(() => {
+    mocks.execFileSync.mockImplementation((_cmd: string, args: string[]) => {
+      if (args[0] === "rev-parse") {
+        throw new Error(
+          "fatal: not a git repository (or any of the parent directories): .git",
+        );
+      }
+      return fakeGit(args);
+    });
+  });
+
+  it("isGitRepo() reports false", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { isGitRepo } = await import("../git-history.js");
+    expect(isGitRepo()).toBe(false);
+    warnSpy.mockRestore();
+  });
+
+  it("getFileCommitsMetaAsync returns [], spawns no git, emits the git-init hint (not the data-loss warning)", async () => {
+    const { getFileCommitsMetaAsync } = await import("../git-history.js");
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const result = await getFileCommitsMetaAsync(ABS);
+
+    expect(result).toEqual([]);
+    // The early guard means no per-file `git log` is spawned.
+    expect(mocks.execFile).not.toHaveBeenCalled();
+
+    const messages = warnSpy.mock.calls.map((c) => String(c[0]));
+    // The maxBuffer-style data-loss warning (#2293) must NOT misfire — this is
+    // the expected "no repo" path, not a per-file git failure.
+    expect(messages.some((m) => m.includes("getFileCommitsMetaAsync failed"))).toBe(
+      false,
+    );
+    // The friendly one-time hint IS expected so the empty history is explainable.
+    expect(messages.some((m) => m.includes("not inside a git repository"))).toBe(
+      true,
+    );
+    warnSpy.mockRestore();
+  });
+
+  it("getDocHistoryAsync returns empty entries without spawning git", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { getDocHistoryAsync } = await import("../git-history.js");
+    const result = await getDocHistoryAsync(ABS, "page", 50);
+    expect(result).toEqual({ slug: "page", filePath: ABS, entries: [] });
+    expect(mocks.execFile).not.toHaveBeenCalled();
+    expect(mocks.spawn).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it("getFileCommitsMeta (sync) and getFileCommits return empty", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { getFileCommitsMeta, getFileCommits } = await import(
+      "../git-history.js"
+    );
+    expect(getFileCommitsMeta(ABS)).toEqual([]);
+    expect(getFileCommits(ABS)).toEqual([]);
+    warnSpy.mockRestore();
+  });
+
+  it("probes git exactly once (cached) across many calls", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { isGitRepo, getFileCommitsMetaAsync, getDocHistoryAsync } =
+      await import("../git-history.js");
+    isGitRepo();
+    await getFileCommitsMetaAsync(ABS);
+    await getDocHistoryAsync(ABS, "page", 50);
+    const revParseCalls = mocks.execFileSync.mock.calls.filter(
+      (c) => (c[1] as string[])[0] === "rev-parse",
+    );
+    expect(revParseCalls.length).toBe(1);
+    warnSpy.mockRestore();
+  });
+});
