@@ -1,8 +1,9 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Host thin-stub — see @takazudo/zudo-doc/doc-body-end (epic #2344, S7).
-import { settings } from "@/config/settings";
+// Host shim — see @takazudo/zudo-doc/doc-body-end. The factory now derives its
+// bag from the unified ChromeContext (FACTORIES #2424); the BodyEndIslands block
+// is a host-bound slot supplied through chromeCtx.hostBindings.
 import { createDocBodyEnd } from "@takazudo/zudo-doc/doc-body-end";
-import { BodyEndIslands } from "./_body-end-islands";
+import { chromeCtx } from "./_chrome-context";
 
-export const DocBodyEnd = createDocBodyEnd({ settings, BodyEndIslands });
+export const DocBodyEnd = createDocBodyEnd(chromeCtx);

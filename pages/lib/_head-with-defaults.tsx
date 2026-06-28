@@ -1,22 +1,11 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Host thin-stub — see @takazudo/zudo-doc/head-with-defaults (epic #2344, S5).
-import { settings } from "@/config/settings";
-import { withBase, absoluteUrl } from "@/utils/base";
-import {
-  generateCssCustomProperties,
-  generateLightDarkCssProperties,
-} from "@/config/color-scheme-utils";
-import { composeMetaTitle } from "./_compose-meta-title";
+// Host shim — see @takazudo/zudo-doc/head-with-defaults. The factory now derives
+// its bag from the unified ChromeContext (FACTORIES #2424); this shell wires it
+// from the host chromeCtx.
 import { createHeadWithDefaults } from "@takazudo/zudo-doc/head-with-defaults";
+import { chromeCtx } from "./_chrome-context";
 
 export type { HeadWithDefaultsProps } from "@takazudo/zudo-doc/head-with-defaults";
 
-export const HeadWithDefaults = createHeadWithDefaults({
-  settings,
-  composeMetaTitle,
-  withBase,
-  absoluteUrl,
-  generateCssCustomProperties,
-  generateLightDarkCssProperties,
-});
+export const HeadWithDefaults = createHeadWithDefaults(chromeCtx);
