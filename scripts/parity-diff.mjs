@@ -20,7 +20,7 @@
 
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readdir, readFile, stat } from "node:fs/promises";
 
@@ -44,12 +44,15 @@ for (let i = 0; i < args.length; i++) {
   }
 }
 
+// resolve() handles both absolute args (e.g. an absolute --baseline from
+// parity-build.sh) and relative ones (resolved against cwd). join(cwd, absPath)
+// would wrongly nest the absolute path under cwd, writing to a stray ./home/... tree.
 const BASELINE_DIR = baselineArg
-  ? join(process.cwd(), baselineArg)
+  ? resolve(baselineArg)
   : join(REPO_ROOT, "_temp-resource/2420-collapse-wiring-shells/baseline");
 
 const DIST_DIR = distArg
-  ? join(process.cwd(), distArg)
+  ? resolve(distArg)
   : join(REPO_ROOT, "dist");
 
 // ── Asset hash normalization ─────────────────────────────────────────────────
