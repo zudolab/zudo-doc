@@ -1,0 +1,23 @@
+---
+title: 1.3.0
+description: Release notes for 1.3.0.
+sidebar_position: 1039
+---
+
+Released: 2026-06-29
+
+### Features
+
+- **create-zudo-doc now initializes a git repository** (`git init` + an initial commit) after scaffolding, so the doc-history feature shows real Created/Updated/Author metadata out of the box. It skips automatically when the target is already inside a git repository or when git is unavailable; opt out with `--no-git`. (37ecd2fa)
+
+### Bug Fixes
+
+- **doc-history no longer crashes outside a git repository.** A freshly scaffolded project that had not been `git init`-ed would throw in the doc-history `preBuild` hook (`git rev-parse` ran outside a `try`/`catch`), taking `pnpm dev` / `pnpm build` down with it. Repo-root resolution now degrades to empty history instead, with a one-time hint to run `git init`. (7f3ace71)
+- claude-resources: resolve broken intra-doc links in the mirror generator. (95091add)
+- claude-resources: also protect tilde-fenced code blocks during link downgrade. (8a587df9)
+- content: add inner flow spacing and roomier bottom padding to admonitions. (9c6cc1d2)
+
+### Other Changes
+
+- Bump the @takazudo toolchain — zfb family to `next.70`, history-server pin to `^1.2.0`. (b5489acf)
+- create-zudo-doc: align scaffold zfb pins with the root (`next.70`) and sync the claude-resources template with the mirror-link fix. (c97ad5e2, ba9b2cb9)

@@ -1,0 +1,23 @@
+---
+title: 1.3.0
+description: 1.3.0のリリースノート。
+sidebar_position: 1039
+---
+
+リリース日: 2026-06-29
+
+### 機能
+
+- **create-zudo-doc がスキャフォールド後に git リポジトリを初期化するようになりました**（`git init` ＋ 初回コミット）。これにより doc-history 機能の Created/Updated/Author メタデータが最初から表示されます。対象がすでに git リポジトリ内にある場合や git が利用できない場合は自動的にスキップします。`--no-git` で無効化できます。 (37ecd2fa)
+
+### バグ修正
+
+- **git リポジトリ外で doc-history がクラッシュしなくなりました。** `git init` されていないスキャフォールド直後のプロジェクトでは、doc-history の `preBuild` フックが（`try`/`catch` の外で `git rev-parse` を実行していたため）例外を投げ、`pnpm dev` / `pnpm build` を巻き添えで停止させていました。リポジトリルートの解決は例外を投げる代わりに空の履歴へフォールバックし、`git init` を促す一度きりのヒントを表示します。 (7f3ace71)
+- claude-resources: ミラー生成での壊れたドキュメント内リンクを修正。 (95091add)
+- claude-resources: リンクのダウングレード時にチルダ（`~`）フェンスのコードブロックも保護。 (8a587df9)
+- content: アドモニションの内側のフロー余白と下部パディングを広げて調整。 (9c6cc1d2)
+
+### その他の変更
+
+- @takazudo ツールチェーンを更新 — zfb ファミリーを `next.70`、history-server のピンを `^1.2.0` へ。 (b5489acf)
+- create-zudo-doc: スキャフォールドの zfb ピンをルート（`next.70`）に揃え、claude-resources テンプレートをミラーリンク修正と同期。 (c97ad5e2, ba9b2cb9)
