@@ -32,11 +32,13 @@ import { getCollection } from "zfb/content";
 const mockGetCollection = getCollection as ReturnType<typeof vi.fn>;
 
 // Import modules under test after the mock is established.
-import {
-  enumerateTagsRoutes,
-  enumerateDocsRoutes,
-  enumerateVersionedRoutes,
-} from "../../../pages/lib/route-enumerators";
+// The route enumerators ride on the unified route context now (HOSTCOLLAPSE
+// #2427 removed the `pages/lib/route-enumerators.ts` re-export shim). Destructure
+// them off `routeContext` directly — the same instance the deleted shim exposed.
+import { routeContext } from "../../../pages/lib/_route-context";
+
+const { enumerateTagsRoutes, enumerateDocsRoutes, enumerateVersionedRoutes } =
+  routeContext;
 
 // ---------------------------------------------------------------------------
 // Helpers

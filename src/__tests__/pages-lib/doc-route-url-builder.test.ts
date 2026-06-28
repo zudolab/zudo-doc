@@ -30,7 +30,7 @@ import {
   resolveDocPrevNext,
   rewriteNavHref,
   remapNavChildHrefs,
-} from "../../../pages/lib/_doc-route-paths";
+} from "@takazudo/zudo-doc/doc-route-paths";
 import { buildBreadcrumbs, type NavNode } from "@/utils/docs";
 import { docsUrl, versionedDocsUrl } from "@/utils/base";
 
