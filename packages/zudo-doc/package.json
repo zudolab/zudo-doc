@@ -207,6 +207,14 @@
       "types": "./dist/mdx-components/index.d.ts",
       "default": "./dist/mdx-components/index.js"
     },
+    "./route-context": {
+      "types": "./dist/route-context/index.d.ts",
+      "default": "./dist/route-context/index.js"
+    },
+    "./chrome": {
+      "types": "./dist/chrome/index.d.ts",
+      "default": "./dist/chrome/index.js"
+    },
     "./safelist.css": "./dist/safelist.css",
     "./safelist": "./dist/safelist.css",
     "./content.css": "./dist/content.css",
