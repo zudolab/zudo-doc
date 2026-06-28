@@ -163,9 +163,11 @@ function downgradeRepoRelativeLinks(content: string): string {
   const blockPlaceholder = "\x00CRLINK_BLOCK_";
   const inlinePlaceholder = "\x00CRLINK_INLINE_";
 
-  // Extract fenced code blocks (3+ backticks) so their contents are untouched.
+  // Extract fenced code blocks so their contents are untouched. Both backtick
+  // (```) and tilde (~~~) fences are recognised; the `\1` backreference makes
+  // the closing fence match the same delimiter the block opened with.
   const codeBlocks: string[] = [];
-  const withBlocks = content.replace(/(`{3,})[^\n]*\n[\s\S]*?\1/g, (match) => {
+  const withBlocks = content.replace(/(`{3,}|~{3,})[^\n]*\n[\s\S]*?\1/g, (match) => {
     codeBlocks.push(match);
     return `${blockPlaceholder}${codeBlocks.length - 1}\x00`;
   });

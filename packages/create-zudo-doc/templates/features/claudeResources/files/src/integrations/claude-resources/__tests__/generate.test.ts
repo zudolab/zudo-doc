@@ -594,6 +594,10 @@ describe("generateClaudeResourcesDocs", () => {
       "[code](./should-not-change.md)",
       "```",
       "",
+      "~~~",
+      "[tilde-code](./also-should-not-change.md)",
+      "~~~",
+      "",
     ].join("\n");
 
     function genRoot() {
@@ -637,8 +641,10 @@ describe("generateClaudeResourcesDocs", () => {
       const rootMdx = genRoot();
       // Inline-code span is preserved verbatim.
       expect(rootMdx).toContain("`[x](./y)`");
-      // Fenced code block content is preserved verbatim.
+      // Backtick-fenced code block content is preserved verbatim.
       expect(rootMdx).toContain("[code](./should-not-change.md)");
+      // Tilde-fenced code block content is preserved verbatim too.
+      expect(rootMdx).toContain("[tilde-code](./also-should-not-change.md)");
     });
   });
 });
