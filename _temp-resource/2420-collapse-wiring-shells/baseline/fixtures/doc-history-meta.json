@@ -1,0 +1,1628 @@
+{
+  "changelog/0.1.0": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-16T22:41:36+09:00",
+    "updatedDate": "2026-05-25T22:45:00+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.0-next.1": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-03T08:25:21+09:00",
+    "updatedDate": "2026-06-03T08:25:21+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.0-next.2": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-03T18:08:22+09:00",
+    "updatedDate": "2026-06-03T18:08:22+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.0-next.3": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-05T00:45:26+09:00",
+    "updatedDate": "2026-06-05T00:45:26+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.0-next.4": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-06T04:03:17+09:00",
+    "updatedDate": "2026-06-06T04:03:17+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.0-next.5": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-06T14:38:49+09:00",
+    "updatedDate": "2026-06-06T14:38:49+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.0-next.6": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-06T16:46:04+09:00",
+    "updatedDate": "2026-06-06T16:46:04+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.0-next.7": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-07T17:49:12+09:00",
+    "updatedDate": "2026-06-07T17:49:12+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.0-next.8": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-08T16:31:46+09:00",
+    "updatedDate": "2026-06-08T16:31:46+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.0-next.9": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-08T19:45:16+09:00",
+    "updatedDate": "2026-06-08T19:45:16+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.0": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-09T00:41:36+09:00",
+    "updatedDate": "2026-06-09T00:41:36+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.1": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-11T18:31:08+09:00",
+    "updatedDate": "2026-06-12T08:14:26+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.10": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-17T07:32:23+09:00",
+    "updatedDate": "2026-06-17T07:32:23+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.11": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-17T20:16:08+09:00",
+    "updatedDate": "2026-06-17T20:16:08+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.12": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-18T00:26:05+09:00",
+    "updatedDate": "2026-06-18T00:26:05+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.13": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-18T17:24:36+09:00",
+    "updatedDate": "2026-06-18T17:24:36+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.14": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-19T12:15:38+09:00",
+    "updatedDate": "2026-06-19T12:15:38+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.15": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-20T11:33:56+09:00",
+    "updatedDate": "2026-06-20T11:33:56+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.16": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-21T03:57:44+09:00",
+    "updatedDate": "2026-06-21T03:57:44+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.17": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-21T16:36:58+09:00",
+    "updatedDate": "2026-06-21T16:36:58+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.18": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-21T20:51:21+09:00",
+    "updatedDate": "2026-06-21T20:51:21+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.19": {
+    "author": "Claude",
+    "createdDate": "2026-06-21T16:06:02+00:00",
+    "updatedDate": "2026-06-22T06:33:59+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.2": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-11T22:25:58+09:00",
+    "updatedDate": "2026-06-11T22:25:58+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.20": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-22T16:37:44+09:00",
+    "updatedDate": "2026-06-22T16:37:44+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.21": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-23T06:04:49+09:00",
+    "updatedDate": "2026-06-23T06:04:49+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.22": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-25T18:13:53+09:00",
+    "updatedDate": "2026-06-25T18:13:53+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.3": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-12T19:26:12+09:00",
+    "updatedDate": "2026-06-12T19:26:12+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.4": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-12T23:22:54+09:00",
+    "updatedDate": "2026-06-12T23:22:54+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.5": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-14T01:35:29+09:00",
+    "updatedDate": "2026-06-14T01:35:29+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.6": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-14T07:58:00+09:00",
+    "updatedDate": "2026-06-14T07:58:00+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.7": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-15T12:10:50+09:00",
+    "updatedDate": "2026-06-15T12:10:50+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.8": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-16T00:21:18+09:00",
+    "updatedDate": "2026-06-16T00:21:18+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/0.2.9": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-16T16:49:55+09:00",
+    "updatedDate": "2026-06-16T16:49:55+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/1.0.0": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-26T17:42:39+09:00",
+    "updatedDate": "2026-06-26T17:42:39+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/1.0.1": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-26T19:08:32+09:00",
+    "updatedDate": "2026-06-26T19:08:32+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/1.0.2": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-27T03:33:51+09:00",
+    "updatedDate": "2026-06-27T03:33:51+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/1.1.0": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-27T15:16:12+09:00",
+    "updatedDate": "2026-06-27T15:16:12+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/1.2.0": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-28T02:50:03+09:00",
+    "updatedDate": "2026-06-28T02:50:03+09:00",
+    "ext": ".mdx"
+  },
+  "changelog/1.3.0": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-29T04:24:33+09:00",
+    "updatedDate": "2026-06-29T04:24:33+09:00",
+    "ext": ".mdx"
+  },
+  "changelog": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-16T22:41:36+09:00",
+    "updatedDate": "2026-06-08T00:48:07+09:00",
+    "ext": ".mdx"
+  },
+  "components/admonitions": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-14T21:09:11+09:00",
+    "updatedDate": "2026-05-05T04:46:05+09:00",
+    "ext": ".mdx"
+  },
+  "components/basic-components": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-14T21:09:02+09:00",
+    "updatedDate": "2026-05-10T15:03:28+09:00",
+    "ext": ".mdx"
+  },
+  "components/category-nav": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-14T21:08:33+09:00",
+    "updatedDate": "2026-06-08T16:31:39+09:00",
+    "ext": ".mdx"
+  },
+  "components/category-tree-nav": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-16T22:41:53+09:00",
+    "updatedDate": "2026-06-07T16:19:05+09:00",
+    "ext": ".mdx"
+  },
+  "components/code-blocks": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-05T04:41:24+09:00",
+    "updatedDate": "2026-06-15T12:08:41+00:00",
+    "ext": ".mdx"
+  },
+  "components/details": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-14T21:09:11+09:00",
+    "updatedDate": "2026-05-07T15:58:12+09:00",
+    "ext": ".mdx"
+  },
+  "components/html-preview": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-16T16:24:56+09:00",
+    "updatedDate": "2026-06-11T17:53:54+09:00",
+    "ext": ".mdx"
+  },
+  "components/image-enlarge": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-18T04:45:13+09:00",
+    "updatedDate": "2026-05-30T21:43:39+09:00",
+    "ext": ".mdx"
+  },
+  "components": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-14T21:09:02+09:00",
+    "updatedDate": "2026-03-14T21:09:02+09:00",
+    "ext": ".mdx"
+  },
+  "components/math-equations": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-14T21:08:12+09:00",
+    "updatedDate": "2026-06-07T16:19:05+09:00",
+    "ext": ".mdx"
+  },
+  "components/mermaid-diagrams": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-14T21:08:12+09:00",
+    "updatedDate": "2026-06-16T20:52:15+00:00",
+    "ext": ".mdx"
+  },
+  "components/site-tree-nav": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-14T21:08:33+09:00",
+    "updatedDate": "2026-06-27T04:26:08+09:00",
+    "ext": ".mdx"
+  },
+  "components/tabs": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-14T21:09:11+09:00",
+    "updatedDate": "2026-04-18T05:55:12+09:00",
+    "ext": ".mdx"
+  },
+  "concepts": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-08T00:48:07+09:00",
+    "updatedDate": "2026-06-08T01:00:05+09:00",
+    "ext": ".mdx"
+  },
+  "concepts/routing-conventions": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-28T20:38:07+09:00",
+    "updatedDate": "2026-06-20T07:20:58+00:00",
+    "ext": ".mdx"
+  },
+  "concepts/trailing-slash-policy": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-28T20:41:06+09:00",
+    "updatedDate": "2026-06-20T07:20:58+00:00",
+    "ext": ".mdx"
+  },
+  "develop/generator-cli-testing": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-20T16:35:39+09:00",
+    "updatedDate": "2026-05-01T22:56:43+09:00",
+    "ext": ".mdx"
+  },
+  "develop": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-20T16:35:39+09:00",
+    "updatedDate": "2026-06-08T00:48:07+09:00",
+    "ext": ".mdx"
+  },
+  "develop/link-checker": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-26T23:19:35+09:00",
+    "updatedDate": "2026-06-07T17:11:47+09:00",
+    "ext": ".mdx"
+  },
+  "getting-started/contribution": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-16T23:48:33+09:00",
+    "updatedDate": "2026-06-21T20:25:54+00:00",
+    "ext": ".mdx"
+  },
+  "getting-started": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-11T22:32:04+09:00",
+    "updatedDate": "2026-03-11T22:32:04+09:00",
+    "ext": ".mdx"
+  },
+  "getting-started/installation": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-11T22:32:04+09:00",
+    "updatedDate": "2026-06-20T07:18:27+00:00",
+    "ext": ".mdx"
+  },
+  "getting-started/introduction": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-11T22:32:04+09:00",
+    "updatedDate": "2026-06-20T07:18:27+00:00",
+    "ext": ".mdx"
+  },
+  "getting-started/setup-preset-generator": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-26T20:56:32+09:00",
+    "updatedDate": "2026-06-18T15:19:14+00:00",
+    "ext": ".mdx"
+  },
+  "getting-started/structuring-navigations": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-29T18:09:30+09:00",
+    "updatedDate": "2026-06-18T17:05:23+00:00",
+    "ext": ".mdx"
+  },
+  "getting-started/writing-docs": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-11T22:32:04+09:00",
+    "updatedDate": "2026-06-14T15:45:56+00:00",
+    "ext": ".mdx"
+  },
+  "guides/ai-assistant": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-18T02:25:36+09:00",
+    "updatedDate": "2026-06-07T17:11:47+09:00",
+    "ext": ".mdx"
+  },
+  "guides/avoid-robots-indexing": {
+    "author": "Claude",
+    "createdDate": "2026-06-18T15:19:14+00:00",
+    "updatedDate": "2026-06-18T15:19:14+00:00",
+    "ext": ".mdx"
+  },
+  "guides/body-foot-util-area": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-24T02:08:55+09:00",
+    "updatedDate": "2026-04-24T02:08:55+09:00",
+    "ext": ".mdx"
+  },
+  "guides/changelog": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-16T22:41:36+09:00",
+    "updatedDate": "2026-06-08T00:48:07+09:00",
+    "ext": ".mdx"
+  },
+  "guides/claude-resources": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-14T08:14:41+09:00",
+    "updatedDate": "2026-05-01T22:56:43+09:00",
+    "ext": ".mdx"
+  },
+  "guides/claude-skills": {
+    "author": "Claude",
+    "createdDate": "2026-06-20T14:09:07+00:00",
+    "updatedDate": "2026-06-20T14:09:07+00:00",
+    "ext": ".mdx"
+  },
+  "guides/color-scheme-preview": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-15T20:59:07+09:00",
+    "updatedDate": "2026-06-15T12:08:41+00:00",
+    "ext": ".mdx"
+  },
+  "guides/configuration": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-11T22:32:04+09:00",
+    "updatedDate": "2026-06-20T07:19:34+00:00",
+    "ext": ".mdx"
+  },
+  "guides/deployment": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-13T21:29:34+09:00",
+    "updatedDate": "2026-06-14T15:45:56+00:00",
+    "ext": ".mdx"
+  },
+  "guides/development-workflow": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-13T21:31:38+09:00",
+    "updatedDate": "2026-06-21T20:25:54+00:00",
+    "ext": ".mdx"
+  },
+  "guides/doc-history": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-11T22:32:04+09:00",
+    "updatedDate": "2026-06-08T04:36:59+09:00",
+    "ext": ".mdx"
+  },
+  "guides/doc-skill-symlinker": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-16T22:42:33+09:00",
+    "updatedDate": "2026-03-16T22:42:33+09:00",
+    "ext": ".mdx"
+  },
+  "guides/dynamic-page-transitions": {
+    "author": "Claude",
+    "createdDate": "2026-06-20T14:09:07+00:00",
+    "updatedDate": "2026-06-21T16:13:42+00:00",
+    "ext": ".mdx"
+  },
+  "guides/footer-taglist": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-21T05:26:20+09:00",
+    "updatedDate": "2026-04-21T05:26:20+09:00",
+    "ext": ".mdx"
+  },
+  "guides/footer": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-15T20:57:59+09:00",
+    "updatedDate": "2026-05-26T11:34:25+09:00",
+    "ext": ".mdx"
+  },
+  "guides/frontmatter": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-11T22:32:04+09:00",
+    "updatedDate": "2026-06-27T16:19:45+09:00",
+    "ext": ".mdx"
+  },
+  "guides/header-navigation": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-11T22:32:04+09:00",
+    "updatedDate": "2026-04-24T02:08:55+09:00",
+    "ext": ".mdx"
+  },
+  "guides/header-right-items": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-24T02:08:55+09:00",
+    "updatedDate": "2026-06-16T05:21:15+09:00",
+    "ext": ".mdx"
+  },
+  "guides/i18n": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-11T22:32:04+09:00",
+    "updatedDate": "2026-06-14T00:23:26+00:00",
+    "ext": ".mdx"
+  },
+  "guides": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-11T22:32:04+09:00",
+    "updatedDate": "2026-03-11T22:32:04+09:00",
+    "ext": ".mdx"
+  },
+  "guides/layout-demos/hide-both": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-15T20:58:05+09:00",
+    "updatedDate": "2026-06-07T04:16:15+09:00",
+    "ext": ".mdx"
+  },
+  "guides/layout-demos/hide-sidebar": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-15T20:58:05+09:00",
+    "updatedDate": "2026-06-07T04:16:15+09:00",
+    "ext": ".mdx"
+  },
+  "guides/layout-demos/hide-toc": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-15T20:58:05+09:00",
+    "updatedDate": "2026-06-07T04:16:15+09:00",
+    "ext": ".mdx"
+  },
+  "guides/layout-demos": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-15T21:27:43+09:00",
+    "updatedDate": "2026-03-15T21:27:43+09:00",
+    "ext": ".mdx"
+  },
+  "guides/llms-txt": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-15T02:55:16+09:00",
+    "updatedDate": "2026-06-07T16:20:54+09:00",
+    "ext": ".mdx"
+  },
+  "guides/search": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-11T22:32:04+09:00",
+    "updatedDate": "2026-06-14T15:45:56+00:00",
+    "ext": ".mdx"
+  },
+  "guides/sidebar-filter": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-15T20:59:07+09:00",
+    "updatedDate": "2026-04-20T18:10:22+09:00",
+    "ext": ".mdx"
+  },
+  "guides/sidebar": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-11T22:32:04+09:00",
+    "updatedDate": "2026-06-08T00:48:07+09:00",
+    "ext": ".mdx"
+  },
+  "guides/tag-governance": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-21T05:22:49+09:00",
+    "updatedDate": "2026-04-21T05:22:49+09:00",
+    "ext": ".mdx"
+  },
+  "guides/tags-audit": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-21T05:24:16+09:00",
+    "updatedDate": "2026-04-21T05:24:16+09:00",
+    "ext": ".mdx"
+  },
+  "guides/tags-suggest": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-21T05:25:18+09:00",
+    "updatedDate": "2026-04-21T05:25:18+09:00",
+    "ext": ".mdx"
+  },
+  "guides/tags": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-20T18:09:45+09:00",
+    "updatedDate": "2026-06-07T04:16:15+09:00",
+    "ext": ".mdx"
+  },
+  "guides/tauri-modes": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-22T06:38:53+09:00",
+    "updatedDate": "2026-05-22T07:15:21+09:00",
+    "ext": ".mdx"
+  },
+  "guides/versioning": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-15T02:55:16+09:00",
+    "updatedDate": "2026-06-07T17:11:47+09:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/admonitions-preset": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:46:14+09:00",
+    "updatedDate": "2026-06-14T15:45:56+00:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/cjk-friendly": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:40:39+09:00",
+    "updatedDate": "2026-05-29T01:40:39+09:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/code-enrichment": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:44:41+09:00",
+    "updatedDate": "2026-05-29T01:44:41+09:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/code-tabs": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:44:41+09:00",
+    "updatedDate": "2026-06-14T00:26:32+00:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/code-title": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:40:39+09:00",
+    "updatedDate": "2026-05-29T01:40:39+09:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/directives-registry": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:40:39+09:00",
+    "updatedDate": "2026-06-14T00:26:32+00:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/external-links": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:40:39+09:00",
+    "updatedDate": "2026-05-29T01:40:39+09:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/github-alerts": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:46:14+09:00",
+    "updatedDate": "2026-06-02T19:31:00+09:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/github-autolinks": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:46:14+09:00",
+    "updatedDate": "2026-05-29T01:46:14+09:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/heading-links": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:40:39+09:00",
+    "updatedDate": "2026-06-07T17:11:47+09:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/heading-marker-toc": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:46:14+09:00",
+    "updatedDate": "2026-06-07T04:16:15+09:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/image-dimensions": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:44:41+09:00",
+    "updatedDate": "2026-06-11T17:54:13+09:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/image-enlarge": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:46:14+09:00",
+    "updatedDate": "2026-06-07T17:11:47+09:00",
+    "ext": ".mdx"
+  },
+  "markdown-features": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:18:48+09:00",
+    "updatedDate": "2026-06-11T17:55:32+09:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/link-validation": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:44:41+09:00",
+    "updatedDate": "2026-06-11T17:54:13+09:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/mermaid": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:46:14+09:00",
+    "updatedDate": "2026-06-16T20:52:15+00:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/reading-time": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:46:14+09:00",
+    "updatedDate": "2026-05-29T01:46:14+09:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/resolve-links": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:40:39+09:00",
+    "updatedDate": "2026-06-14T00:23:52+00:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/ruby": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:44:41+09:00",
+    "updatedDate": "2026-05-29T07:34:20+09:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/strip-md-ext": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:40:39+09:00",
+    "updatedDate": "2026-05-29T01:40:39+09:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/syntax-highlighting": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:40:39+09:00",
+    "updatedDate": "2026-06-15T12:08:41+00:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/toc-export": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:44:41+09:00",
+    "updatedDate": "2026-06-07T04:16:15+09:00",
+    "ext": ".mdx"
+  },
+  "markdown-features/transclude": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:44:41+09:00",
+    "updatedDate": "2026-06-07T17:11:47+09:00",
+    "ext": ".mdx"
+  },
+  "reference/ai-assistant-api": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-18T02:25:36+09:00",
+    "updatedDate": "2026-06-11T17:53:54+09:00",
+    "ext": ".mdx"
+  },
+  "reference/cjk-friendly": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-13T03:23:20+09:00",
+    "updatedDate": "2026-06-07T16:32:08+09:00",
+    "ext": ".mdx"
+  },
+  "reference/color": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-11T22:32:04+09:00",
+    "updatedDate": "2026-06-07T16:32:08+09:00",
+    "ext": ".mdx"
+  },
+  "reference/component-first": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-17T01:50:11+09:00",
+    "updatedDate": "2026-05-26T11:34:25+09:00",
+    "ext": ".mdx"
+  },
+  "reference/create-zudo-doc": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-15T19:02:13+09:00",
+    "updatedDate": "2026-06-14T00:23:10+00:00",
+    "ext": ".mdx"
+  },
+  "reference/design-system": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-11T22:32:04+09:00",
+    "updatedDate": "2026-06-07T16:32:08+09:00",
+    "ext": ".mdx"
+  },
+  "reference/design-token-panel": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-23T02:37:52+09:00",
+    "updatedDate": "2026-06-11T13:22:32+09:00",
+    "ext": ".mdx"
+  },
+  "reference/doc-history-server": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-25T23:13:29+09:00",
+    "updatedDate": "2026-06-07T16:23:39+09:00",
+    "ext": ".mdx"
+  },
+  "reference/frontmatter-preview": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-20T04:52:04+09:00",
+    "updatedDate": "2026-06-07T04:16:15+09:00",
+    "ext": ".mdx"
+  },
+  "reference": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-11T22:32:04+09:00",
+    "updatedDate": "2026-03-14T21:09:02+09:00",
+    "ext": ".mdx"
+  },
+  "reference/search-worker": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-25T23:13:29+09:00",
+    "updatedDate": "2026-06-07T17:11:47+09:00",
+    "ext": ".mdx"
+  },
+  "reference/smart-break": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-23T22:38:59+09:00",
+    "updatedDate": "2026-05-01T22:56:43+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.1.0": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-16T22:41:36+09:00",
+    "updatedDate": "2026-05-25T22:45:00+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.0-next.1": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-03T08:25:21+09:00",
+    "updatedDate": "2026-06-03T08:25:21+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.0-next.2": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-03T18:08:22+09:00",
+    "updatedDate": "2026-06-03T18:08:22+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.0-next.3": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-05T00:45:26+09:00",
+    "updatedDate": "2026-06-05T00:45:26+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.0-next.4": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-06T04:03:17+09:00",
+    "updatedDate": "2026-06-06T04:03:17+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.0-next.5": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-06T14:38:49+09:00",
+    "updatedDate": "2026-06-06T14:38:49+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.0-next.6": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-06T16:46:04+09:00",
+    "updatedDate": "2026-06-06T16:46:04+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.0-next.7": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-07T17:49:12+09:00",
+    "updatedDate": "2026-06-07T17:49:12+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.0-next.8": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-08T16:31:46+09:00",
+    "updatedDate": "2026-06-08T16:31:46+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.0-next.9": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-08T19:45:16+09:00",
+    "updatedDate": "2026-06-08T19:45:16+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.0": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-09T00:41:36+09:00",
+    "updatedDate": "2026-06-09T00:41:36+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.1": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-11T18:31:08+09:00",
+    "updatedDate": "2026-06-12T08:14:26+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.10": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-17T07:32:23+09:00",
+    "updatedDate": "2026-06-17T07:32:23+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.11": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-17T20:16:08+09:00",
+    "updatedDate": "2026-06-17T20:16:08+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.12": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-18T00:26:05+09:00",
+    "updatedDate": "2026-06-18T00:26:05+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.13": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-18T17:24:36+09:00",
+    "updatedDate": "2026-06-18T17:24:36+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.14": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-19T12:15:38+09:00",
+    "updatedDate": "2026-06-19T12:15:38+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.15": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-20T11:33:56+09:00",
+    "updatedDate": "2026-06-20T11:33:56+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.16": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-21T03:57:44+09:00",
+    "updatedDate": "2026-06-21T03:57:44+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.17": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-21T16:36:58+09:00",
+    "updatedDate": "2026-06-21T16:36:58+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.18": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-21T20:51:21+09:00",
+    "updatedDate": "2026-06-21T20:51:21+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.19": {
+    "author": "Claude",
+    "createdDate": "2026-06-21T16:06:02+00:00",
+    "updatedDate": "2026-06-22T06:33:59+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.2": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-11T22:25:58+09:00",
+    "updatedDate": "2026-06-11T22:25:58+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.20": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-22T16:37:44+09:00",
+    "updatedDate": "2026-06-22T16:37:44+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.21": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-23T06:04:49+09:00",
+    "updatedDate": "2026-06-23T06:04:49+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.22": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-25T18:13:53+09:00",
+    "updatedDate": "2026-06-25T18:13:53+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.3": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-12T19:26:12+09:00",
+    "updatedDate": "2026-06-12T19:26:12+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.4": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-12T23:22:54+09:00",
+    "updatedDate": "2026-06-12T23:22:54+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.5": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-14T01:35:29+09:00",
+    "updatedDate": "2026-06-14T01:35:29+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.6": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-14T07:58:00+09:00",
+    "updatedDate": "2026-06-14T07:58:00+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.7": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-15T12:10:50+09:00",
+    "updatedDate": "2026-06-15T12:10:50+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.8": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-16T00:21:18+09:00",
+    "updatedDate": "2026-06-16T00:21:18+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/0.2.9": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-16T16:49:55+09:00",
+    "updatedDate": "2026-06-16T16:49:55+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/1.0.0": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-26T17:42:39+09:00",
+    "updatedDate": "2026-06-26T17:42:39+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/1.0.1": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-26T19:08:32+09:00",
+    "updatedDate": "2026-06-26T19:08:32+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/1.0.2": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-27T03:33:51+09:00",
+    "updatedDate": "2026-06-27T03:33:51+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/1.1.0": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-27T15:16:12+09:00",
+    "updatedDate": "2026-06-27T15:16:12+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/1.2.0": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-28T02:50:03+09:00",
+    "updatedDate": "2026-06-28T02:50:03+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog/1.3.0": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-29T04:24:33+09:00",
+    "updatedDate": "2026-06-29T04:24:33+09:00",
+    "ext": ".mdx"
+  },
+  "ja/changelog": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-16T22:41:36+09:00",
+    "updatedDate": "2026-06-08T00:48:07+09:00",
+    "ext": ".mdx"
+  },
+  "ja/claude": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-12T03:34:07+09:00",
+    "updatedDate": "2026-06-14T00:23:22+00:00",
+    "ext": ".mdx"
+  },
+  "ja/components/admonitions": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-14T22:13:04+09:00",
+    "updatedDate": "2026-05-05T04:46:05+09:00",
+    "ext": ".mdx"
+  },
+  "ja/components/basic-components": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-14T22:13:04+09:00",
+    "updatedDate": "2026-05-10T15:03:28+09:00",
+    "ext": ".mdx"
+  },
+  "ja/components/category-nav": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-14T22:11:55+09:00",
+    "updatedDate": "2026-06-08T16:31:39+09:00",
+    "ext": ".mdx"
+  },
+  "ja/components/category-tree-nav": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-16T22:41:53+09:00",
+    "updatedDate": "2026-06-07T16:19:05+09:00",
+    "ext": ".mdx"
+  },
+  "ja/components/code-blocks": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-05T04:41:24+09:00",
+    "updatedDate": "2026-06-15T12:08:41+00:00",
+    "ext": ".mdx"
+  },
+  "ja/components/details": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-14T22:11:01+09:00",
+    "updatedDate": "2026-05-07T15:58:12+09:00",
+    "ext": ".mdx"
+  },
+  "ja/components/html-preview": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-16T16:24:56+09:00",
+    "updatedDate": "2026-06-11T13:10:44+09:00",
+    "ext": ".mdx"
+  },
+  "ja/components/image-enlarge": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-18T04:45:13+09:00",
+    "updatedDate": "2026-05-30T21:43:39+09:00",
+    "ext": ".mdx"
+  },
+  "ja/components": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-14T22:13:04+09:00",
+    "updatedDate": "2026-03-14T22:13:04+09:00",
+    "ext": ".mdx"
+  },
+  "ja/components/math-equations": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-14T22:11:01+09:00",
+    "updatedDate": "2026-06-07T16:19:05+09:00",
+    "ext": ".mdx"
+  },
+  "ja/components/mermaid-diagrams": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-14T22:11:55+09:00",
+    "updatedDate": "2026-06-16T20:52:15+00:00",
+    "ext": ".mdx"
+  },
+  "ja/components/site-tree-nav": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-14T22:11:55+09:00",
+    "updatedDate": "2026-06-27T04:26:08+09:00",
+    "ext": ".mdx"
+  },
+  "ja/components/tabs": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-14T21:09:11+09:00",
+    "updatedDate": "2026-04-18T05:55:12+09:00",
+    "ext": ".mdx"
+  },
+  "ja/concepts": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-06-08T00:48:07+09:00",
+    "updatedDate": "2026-06-08T01:00:05+09:00",
+    "ext": ".mdx"
+  },
+  "ja/concepts/routing-conventions": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-28T20:38:07+09:00",
+    "updatedDate": "2026-06-20T07:20:58+00:00",
+    "ext": ".mdx"
+  },
+  "ja/concepts/trailing-slash-policy": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-28T20:41:06+09:00",
+    "updatedDate": "2026-06-20T07:20:58+00:00",
+    "ext": ".mdx"
+  },
+  "ja/develop/generator-cli-testing": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-20T16:35:39+09:00",
+    "updatedDate": "2026-05-01T22:56:43+09:00",
+    "ext": ".mdx"
+  },
+  "ja/develop": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-20T16:35:39+09:00",
+    "updatedDate": "2026-06-08T00:48:07+09:00",
+    "ext": ".mdx"
+  },
+  "ja/develop/link-checker": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-26T23:19:35+09:00",
+    "updatedDate": "2026-06-07T17:11:47+09:00",
+    "ext": ".mdx"
+  },
+  "ja/getting-started/contribution": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-16T23:48:33+09:00",
+    "updatedDate": "2026-06-21T20:25:54+00:00",
+    "ext": ".mdx"
+  },
+  "ja/getting-started": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-11T22:32:04+09:00",
+    "updatedDate": "2026-03-11T22:32:04+09:00",
+    "ext": ".mdx"
+  },
+  "ja/getting-started/installation": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-11T22:32:04+09:00",
+    "updatedDate": "2026-06-20T07:18:27+00:00",
+    "ext": ".mdx"
+  },
+  "ja/getting-started/introduction": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-11T22:32:04+09:00",
+    "updatedDate": "2026-06-20T07:18:27+00:00",
+    "ext": ".mdx"
+  },
+  "ja/getting-started/setup-preset-generator": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-26T20:56:32+09:00",
+    "updatedDate": "2026-06-18T15:19:14+00:00",
+    "ext": ".mdx"
+  },
+  "ja/getting-started/structuring-navigations": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-29T18:09:30+09:00",
+    "updatedDate": "2026-06-18T17:05:23+00:00",
+    "ext": ".mdx"
+  },
+  "ja/getting-started/writing-docs": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-14T08:07:11+09:00",
+    "updatedDate": "2026-06-14T15:45:56+00:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/ai-assistant": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-10T21:56:58+09:00",
+    "updatedDate": "2026-06-07T17:11:47+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/avoid-robots-indexing": {
+    "author": "Claude",
+    "createdDate": "2026-06-18T15:19:14+00:00",
+    "updatedDate": "2026-06-18T15:19:14+00:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/body-foot-util-area": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-24T02:08:55+09:00",
+    "updatedDate": "2026-04-24T02:08:55+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/changelog": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-16T22:41:36+09:00",
+    "updatedDate": "2026-06-08T00:48:07+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/claude-resources": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-14T08:14:41+09:00",
+    "updatedDate": "2026-05-01T22:56:43+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/claude-skills": {
+    "author": "Claude",
+    "createdDate": "2026-06-20T14:09:07+00:00",
+    "updatedDate": "2026-06-20T14:09:07+00:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/color-scheme-preview": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-15T20:59:07+09:00",
+    "updatedDate": "2026-06-15T12:08:41+00:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/configuration": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-12T03:34:07+09:00",
+    "updatedDate": "2026-06-20T07:19:34+00:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/deployment": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-13T21:29:34+09:00",
+    "updatedDate": "2026-06-14T15:45:56+00:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/development-workflow": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-13T21:31:38+09:00",
+    "updatedDate": "2026-06-21T20:25:54+00:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/doc-history": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-12T03:34:07+09:00",
+    "updatedDate": "2026-06-08T04:36:59+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/doc-skill-symlinker": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-16T22:42:33+09:00",
+    "updatedDate": "2026-06-20T07:19:27+00:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/dynamic-page-transitions": {
+    "author": "Claude",
+    "createdDate": "2026-06-20T14:09:07+00:00",
+    "updatedDate": "2026-06-21T16:13:42+00:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/footer-taglist": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-21T05:26:20+09:00",
+    "updatedDate": "2026-06-07T05:23:37+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/footer": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-15T20:57:59+09:00",
+    "updatedDate": "2026-05-26T11:34:25+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/frontmatter": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-12T03:34:07+09:00",
+    "updatedDate": "2026-06-27T16:19:45+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/header-navigation": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-12T03:34:07+09:00",
+    "updatedDate": "2026-04-24T02:08:55+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/header-right-items": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-24T02:08:55+09:00",
+    "updatedDate": "2026-06-16T05:21:15+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/i18n": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-12T03:34:07+09:00",
+    "updatedDate": "2026-06-14T00:23:26+00:00",
+    "ext": ".mdx"
+  },
+  "ja/guides": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-11T22:32:04+09:00",
+    "updatedDate": "2026-03-11T22:32:04+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/layout-demos/hide-both": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-15T20:58:05+09:00",
+    "updatedDate": "2026-06-07T04:16:15+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/layout-demos/hide-sidebar": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-15T20:58:05+09:00",
+    "updatedDate": "2026-06-07T04:16:15+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/layout-demos/hide-toc": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-15T20:58:05+09:00",
+    "updatedDate": "2026-06-07T04:16:15+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/layout-demos": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-15T21:27:43+09:00",
+    "updatedDate": "2026-03-15T21:27:43+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/llms-txt": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-15T02:55:16+09:00",
+    "updatedDate": "2026-06-07T16:20:54+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/search": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-12T03:34:07+09:00",
+    "updatedDate": "2026-06-14T15:45:56+00:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/sidebar-filter": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-15T20:59:07+09:00",
+    "updatedDate": "2026-04-20T18:10:22+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/sidebar": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-12T03:34:07+09:00",
+    "updatedDate": "2026-06-08T00:48:07+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/tag-governance": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-21T05:22:49+09:00",
+    "updatedDate": "2026-04-21T05:22:49+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/tags-audit": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-21T05:24:16+09:00",
+    "updatedDate": "2026-04-21T05:24:16+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/tags-suggest": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-21T05:25:18+09:00",
+    "updatedDate": "2026-04-21T05:25:18+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/tags": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-20T18:09:45+09:00",
+    "updatedDate": "2026-06-07T04:16:15+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/tauri-modes": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-22T06:38:53+09:00",
+    "updatedDate": "2026-05-22T07:15:21+09:00",
+    "ext": ".mdx"
+  },
+  "ja/guides/versioning": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-15T02:55:16+09:00",
+    "updatedDate": "2026-06-07T17:11:47+09:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/admonitions-preset": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:46:14+09:00",
+    "updatedDate": "2026-06-14T15:45:56+00:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/cjk-friendly": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:40:39+09:00",
+    "updatedDate": "2026-05-29T01:40:39+09:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/code-enrichment": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:44:41+09:00",
+    "updatedDate": "2026-05-29T01:44:41+09:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/code-tabs": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:44:41+09:00",
+    "updatedDate": "2026-06-14T00:26:32+00:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/code-title": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:40:39+09:00",
+    "updatedDate": "2026-05-29T01:40:39+09:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/directives-registry": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:40:39+09:00",
+    "updatedDate": "2026-06-14T00:26:32+00:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/external-links": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:40:39+09:00",
+    "updatedDate": "2026-05-29T01:40:39+09:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/github-alerts": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:46:14+09:00",
+    "updatedDate": "2026-06-02T19:31:00+09:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/github-autolinks": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:46:14+09:00",
+    "updatedDate": "2026-05-29T01:46:14+09:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/heading-links": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:40:39+09:00",
+    "updatedDate": "2026-06-07T17:11:47+09:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/heading-marker-toc": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:46:14+09:00",
+    "updatedDate": "2026-06-07T04:16:15+09:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/image-dimensions": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:44:41+09:00",
+    "updatedDate": "2026-06-11T17:54:13+09:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/image-enlarge": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:46:14+09:00",
+    "updatedDate": "2026-06-07T17:11:47+09:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:18:48+09:00",
+    "updatedDate": "2026-06-11T17:55:32+09:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/link-validation": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:44:41+09:00",
+    "updatedDate": "2026-06-11T17:54:13+09:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/mermaid": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:46:14+09:00",
+    "updatedDate": "2026-06-16T20:52:15+00:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/reading-time": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:46:14+09:00",
+    "updatedDate": "2026-05-29T01:46:14+09:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/resolve-links": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:40:39+09:00",
+    "updatedDate": "2026-06-14T00:23:52+00:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/ruby": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:44:41+09:00",
+    "updatedDate": "2026-05-29T07:34:20+09:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/strip-md-ext": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:40:39+09:00",
+    "updatedDate": "2026-05-29T01:40:39+09:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/syntax-highlighting": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:40:39+09:00",
+    "updatedDate": "2026-06-15T12:08:41+00:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/toc-export": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:44:41+09:00",
+    "updatedDate": "2026-06-07T04:16:15+09:00",
+    "ext": ".mdx"
+  },
+  "ja/markdown-features/transclude": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-29T01:44:41+09:00",
+    "updatedDate": "2026-06-07T17:11:47+09:00",
+    "ext": ".mdx"
+  },
+  "ja/reference/ai-assistant-api": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-05-10T21:56:58+09:00",
+    "updatedDate": "2026-06-11T13:14:41+09:00",
+    "ext": ".mdx"
+  },
+  "ja/reference/cjk-friendly": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-13T03:23:20+09:00",
+    "updatedDate": "2026-06-07T16:32:08+09:00",
+    "ext": ".mdx"
+  },
+  "ja/reference/color": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-11T22:32:04+09:00",
+    "updatedDate": "2026-06-07T16:32:08+09:00",
+    "ext": ".mdx"
+  },
+  "ja/reference/component-first": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-17T01:50:11+09:00",
+    "updatedDate": "2026-06-20T07:19:27+00:00",
+    "ext": ".mdx"
+  },
+  "ja/reference/create-zudo-doc": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-15T19:02:13+09:00",
+    "updatedDate": "2026-06-14T00:23:10+00:00",
+    "ext": ".mdx"
+  },
+  "ja/reference/design-system": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-11T22:32:04+09:00",
+    "updatedDate": "2026-06-07T16:32:08+09:00",
+    "ext": ".mdx"
+  },
+  "ja/reference/design-token-panel": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-23T02:37:52+09:00",
+    "updatedDate": "2026-06-11T13:22:32+09:00",
+    "ext": ".mdx"
+  },
+  "ja/reference/doc-history-server": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-25T23:13:52+09:00",
+    "updatedDate": "2026-06-07T16:23:39+09:00",
+    "ext": ".mdx"
+  },
+  "ja/reference/frontmatter-preview": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-20T04:52:04+09:00",
+    "updatedDate": "2026-06-07T04:16:15+09:00",
+    "ext": ".mdx"
+  },
+  "ja/reference": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-12T03:34:07+09:00",
+    "updatedDate": "2026-03-14T22:19:55+09:00",
+    "ext": ".mdx"
+  },
+  "ja/reference/search-worker": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-03-25T23:13:52+09:00",
+    "updatedDate": "2026-06-07T17:11:47+09:00",
+    "ext": ".mdx"
+  },
+  "ja/reference/smart-break": {
+    "author": "Takeshi Takatsudo",
+    "createdDate": "2026-04-23T22:38:59+09:00",
+    "updatedDate": "2026-05-01T22:56:43+09:00",
+    "ext": ".mdx"
+  }
+}
