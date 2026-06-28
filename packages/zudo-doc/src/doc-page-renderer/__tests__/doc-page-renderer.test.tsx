@@ -10,33 +10,22 @@
 import { describe, expect, it } from "vitest";
 import type { VNode } from "preact";
 import { createRenderDocPage } from "../index.js";
-import type { DocPageRendererDeps, RenderDocPageOptions } from "../index.js";
+import type { RenderDocPageOptions } from "../index.js";
 import type { DocPageBaseProps } from "../../doc-page-props/index.js";
+import type { ChromeContext } from "../../factory-context/index.js";
+import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 
 // ---------------------------------------------------------------------------
 // Minimal fakes factory
 // ---------------------------------------------------------------------------
 
-function makeDeps(overrides: Partial<DocPageRendererDeps> = {}): DocPageRendererDeps {
-  // Passthrough fake — never invoked in these tests; we only inspect the VNode props.
-  const DocPageShell = (_props: Record<string, unknown>) =>
-    null as unknown as ReturnType<DocPageRendererDeps["DocPageShell"]>;
-
-  return {
-    docsUrl: (slug: string) => `/docs/${slug}`,
-    versionedDocsUrl: (slug: string, v: string) => `/v/${v}/docs/${slug}`,
-    absoluteUrl: () => undefined,
-    getNavSectionForSlug: () => undefined,
-    toRouteSlug: (id: string) => id,
-    createMdxComponents: () => ({}),
-    t: (key: string) => key,
-    buildInlineVersionSwitcher: () => undefined,
-    DocPageShell: DocPageShell as unknown as DocPageRendererDeps["DocPageShell"],
-    DocContentHeader: () => null as unknown as ReturnType<DocPageRendererDeps["DocContentHeader"]>,
-    DocMetainfoArea: () => null,
-    DocHistoryArea: () => null,
-    ...overrides,
-  };
+// The refactored createRenderDocPage derives its bag from the unified
+// ChromeContext and rebuilds DocPageShell / DocContentHeader / … from it
+// (FACTORIES #2424). renderDocPage still returns the DocPageShell ELEMENT (the
+// component is not invoked), so the props the test inspects (hideSidebar /
+// hideToc / sidebarPersistKey) ride on the returned vnode unchanged.
+function makeDeps(overrides: Partial<ChromeContext> = {}): ChromeContext {
+  return makeFakeChromeContext({ overrides });
 }
 
 function makeEntryProps(

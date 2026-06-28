@@ -1,17 +1,9 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Host thin-stub — see @takazudo/zudo-doc/doc-content-header (epic #2344, S7).
-import { t } from "@/config/i18n";
-import { frontmatterRenderers } from "@/config/frontmatter-preview-renderers";
+// Host shim — see @takazudo/zudo-doc/doc-content-header. The factory now derives
+// its bag (frontmatter renderers/builder + nested metainfo/tags areas) from the
+// unified ChromeContext (FACTORIES #2424); this shell wires it from chromeCtx.
 import { createDocContentHeader } from "@takazudo/zudo-doc/doc-content-header";
-import { buildFrontmatterPreviewEntries } from "./_frontmatter-preview-data";
-import { DocMetainfoArea } from "./_doc-metainfo-area";
-import { DocTagsArea } from "./_doc-tags-area";
+import { chromeCtx } from "./_chrome-context";
 
-export const DocContentHeader = createDocContentHeader({
-  t,
-  buildFrontmatterPreviewEntries,
-  frontmatterRenderers,
-  DocMetainfoArea,
-  DocTagsArea,
-});
+export const DocContentHeader = createDocContentHeader(chromeCtx);

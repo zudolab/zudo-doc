@@ -9,6 +9,8 @@
 
 import type { JSX } from "preact";
 import { ChevronLeft, ChevronRight } from "../icons/index.js";
+import type { ChromeContext } from "../factory-context/index.js";
+import type { Settings } from "../settings.js";
 
 // NavNode is a superset; we only need the fields the pager uses.
 interface PagerNode {
@@ -25,19 +27,15 @@ export interface DocPagerProps {
   locale: string;
 }
 
-/** Dependencies injected by the host stub. */
-export interface DocPagerDeps {
-  /** Translate a UI string key for a locale. */
-  t: (key: string, locale: string) => string;
-}
-
 /**
- * Create a `DocPager` component bound to the host's injected `t` translator.
+ * Create a `DocPager` component from the unified {@link ChromeContext}
+ * (epic Collapse Wiring Shells #2420, FACTORIES #2424 — breaking signature).
+ * Reads only the `t` translator off the context.
  */
-export function createDocPager(
-  deps: DocPagerDeps,
+export function createDocPager<S extends Settings = Settings>(
+  ctx: ChromeContext<S>,
 ): (props: DocPagerProps) => JSX.Element {
-  const { t } = deps;
+  const t = ctx.t;
 
   /**
    * Prev/next pagination nav shared by all four doc-route page components.

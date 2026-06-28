@@ -1,29 +1,11 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Host thin-stub — see @takazudo/zudo-doc/doc-page-shell (epic #2344, S5).
-import { settings } from "@/config/settings";
+// Host shim — see @takazudo/zudo-doc/doc-page-shell. The factory now rebuilds the
+// Head / Sidebar / Header / Footer / prepaint / body-end / pager sub-tree from
+// the unified ChromeContext (FACTORIES #2424); this shell wires it from chromeCtx.
 import { createDocPageShell } from "@takazudo/zudo-doc/doc-page-shell";
-import { composeMetaTitle } from "./_compose-meta-title";
-import { getTocTitle } from "./_toc-title";
-import { HeadWithDefaults } from "./_head-with-defaults";
-import { SidebarWithDefaults } from "./_sidebar-with-defaults";
-import { HeaderWithDefaults } from "./_header-with-defaults";
-import { FooterWithDefaults } from "./_footer-with-defaults";
-import { SidebarPrepaint } from "./_sidebar-prepaint";
-import { DocBodyEnd } from "./_doc-body-end";
-import { DocPager } from "./_doc-pager";
+import { chromeCtx } from "./_chrome-context";
 
 export type { DocPageShellProps } from "@takazudo/zudo-doc/doc-page-shell";
 
-export const DocPageShell = createDocPageShell({
-  settings,
-  composeMetaTitle,
-  getTocTitle,
-  HeadWithDefaults,
-  SidebarWithDefaults,
-  HeaderWithDefaults,
-  FooterWithDefaults,
-  SidebarPrepaint,
-  DocBodyEnd,
-  DocPager,
-});
+export const DocPageShell = createDocPageShell(chromeCtx);

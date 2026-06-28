@@ -12,6 +12,8 @@
 import type { VNode } from "preact";
 import { Footer } from "../footer/index.js";
 import type { FooterLinkColumn, FooterTagColumn } from "../footer/index.js";
+import type { ChromeContext } from "../factory-context/index.js";
+import type { Settings } from "../settings.js";
 
 /** Tag info returned by the host's `collectTags` (what the factory sees). */
 export interface FooterTagInfo {
@@ -53,33 +55,29 @@ export interface FooterWithDefaultsSettings {
   tagGovernance?: string;
 }
 
-/** Dependencies injected by the host stub. */
-export interface FooterWithDefaultsDeps {
-  settings: FooterWithDefaultsSettings;
-  defaultLocale: string;
-  tagVocabulary: readonly FooterVocabularyEntry[];
-  isExternal: (href: string) => boolean;
-  resolveHref: (href: string) => string;
-  withBase: (path: string) => string;
-  loadTagsForLocale: (lang: string) => FooterTagInfo[];
-}
-
 /**
- * Create a `FooterWithDefaults` component bound to the host's settings
- * and data-prep utilities.
+ * Create a `FooterWithDefaults` component from the unified {@link ChromeContext}
+ * (epic Collapse Wiring Shells #2420, FACTORIES #2424 — breaking signature).
+ *
+ * Derives its old deps bag from the context: `settings`/`defaultLocale` and the
+ * `isExternal`/`resolveHref`/`withBase` URL helpers read directly; the footer
+ * tag vocabulary + `loadTagsForLocale` are HOST-bound slots
+ * (`ctx.hostBindings.tagVocabulary` / `ctx.hostBindings.loadTagsForLocale`) that
+ * default to `[]` / `() => []` — the package stub renders no tag columns,
+ * byte-identical to the pre-collapse injected path.
  */
-export function createFooterWithDefaults(
-  deps: FooterWithDefaultsDeps,
+export function createFooterWithDefaults<S extends Settings = Settings>(
+  ctx: ChromeContext<S>,
 ): (props: { lang?: string }) => VNode {
-  const {
-    settings,
-    defaultLocale,
-    tagVocabulary,
-    isExternal,
-    resolveHref,
-    withBase,
-    loadTagsForLocale,
-  } = deps;
+  const settings = ctx.settings as unknown as FooterWithDefaultsSettings;
+  const defaultLocale = ctx.defaultLocale;
+  const tagVocabulary = (ctx.hostBindings.tagVocabulary ??
+    []) as readonly FooterVocabularyEntry[];
+  const isExternal = ctx.isExternal;
+  const resolveHref = ctx.resolveHref;
+  const withBase = ctx.withBase;
+  const loadTagsForLocale = (ctx.hostBindings.loadTagsForLocale ??
+    (() => [])) as (lang: string) => FooterTagInfo[];
 
   /**
    * Prefix an internal href with the locale path for non-default locales,

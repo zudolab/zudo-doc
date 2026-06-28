@@ -17,6 +17,9 @@ import type { HeadProps } from "../head/types.js";
 import { SIDEBAR_RESIZER_RESTORE_SCRIPT } from "../sidebar-resizer/index.js";
 import ColorSchemeProvider from "../theme/color-scheme-provider.js";
 import type { ColorSchemeProviderColorMode } from "../theme/color-scheme-provider.js";
+import type { ChromeContext } from "../factory-context/index.js";
+import type { Settings } from "../settings.js";
+import { deriveComposeMetaTitle, deriveColorSchemeGenerators } from "../chrome/derive.js";
 
 export interface HeadWithDefaultsProps {
   /** Page title forwarded to og:title. Required. */
@@ -30,7 +33,8 @@ export interface HeadWithDefaultsProps {
   canonical?: string;
 }
 
-/** Settings subset read by {@link createHeadWithDefaults}. */
+/** Settings subset read by {@link createHeadWithDefaults}. Retained for the
+ *  `HeadProps`/`ColorSchemeProviderColorMode` type references it documents. */
 export interface HeadWithDefaultsSettings {
   metaTags: {
     description?: boolean | null;
@@ -46,35 +50,25 @@ export interface HeadWithDefaultsSettings {
   sidebarResizer?: boolean;
 }
 
-/** Factory dependencies injected by the host stub. */
-export interface HeadWithDefaultsDeps {
-  settings: HeadWithDefaultsSettings;
-  composeMetaTitle: (title: string) => string;
-  withBase: (path: string) => string;
-  absoluteUrl: (pageUrl: string) => string | undefined;
-  generateCssCustomProperties: () => string;
-  generateLightDarkCssProperties: () => string;
-}
-
 /**
- * Create a `HeadWithDefaults` component bound to the host's settings and
- * URL helpers.
+ * Create a `HeadWithDefaults` component from the unified {@link ChromeContext}
+ * (epic Collapse Wiring Shells #2420, FACTORIES #2424 — breaking signature).
  *
- * The host stub calls this once with its concrete dependencies and re-exports
- * the result, mirroring the shape of `createComposeMetaTitle` (S1b) and
- * `createBuildFrontmatterPreviewEntries`.
+ * Derives its old `{ settings, composeMetaTitle, withBase, absoluteUrl,
+ * generate* }` bag from the context: `settings`/`withBase`/`absoluteUrl` are
+ * read directly, while `composeMetaTitle` and the color-scheme CSS generators
+ * are reconstructed from the context's `siteName` + `colorSchemes` payload via
+ * the shared `chrome/derive` helpers (identical to the pre-collapse wiring).
  */
-export function createHeadWithDefaults(
-  deps: HeadWithDefaultsDeps,
+export function createHeadWithDefaults<S extends Settings = Settings>(
+  ctx: ChromeContext<S>,
 ): (props: HeadWithDefaultsProps) => JSX.Element {
-  const {
-    settings,
-    composeMetaTitle,
-    withBase,
-    absoluteUrl,
-    generateCssCustomProperties,
-    generateLightDarkCssProperties,
-  } = deps;
+  const settings = ctx.settings as unknown as HeadWithDefaultsSettings;
+  const composeMetaTitle = deriveComposeMetaTitle(ctx);
+  const withBase = ctx.withBase;
+  const absoluteUrl = ctx.absoluteUrl;
+  const { generateCssCustomProperties, generateLightDarkCssProperties } =
+    deriveColorSchemeGenerators(ctx);
 
   /**
    * Default-bearing host wrapper that injects og:title / og:description,

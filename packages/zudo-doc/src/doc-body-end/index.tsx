@@ -14,6 +14,9 @@
 
 import type { JSX } from "preact";
 import { SidebarResizerInit } from "../sidebar-resizer/index.js";
+import type { ChromeContext } from "../factory-context/index.js";
+import type { Settings } from "../settings.js";
+import { deriveBodyEndIslands } from "../chrome/derive.js";
 
 /** Settings subset read by the DocBodyEnd factory. */
 export interface DocBodyEndSettings {
@@ -21,21 +24,21 @@ export interface DocBodyEndSettings {
   sidebarResizer: boolean;
 }
 
-/** Dependencies injected by the host stub. */
-export interface DocBodyEndDeps {
-  settings: DocBodyEndSettings;
-  /** The `BodyEndIslands` component (host-side — reads additional settings). */
-  BodyEndIslands: (props: { basePath: string }) => JSX.Element;
-}
-
 /**
- * Create a `DocBodyEnd` component bound to the host's settings and
- * BodyEndIslands component.
+ * Create a `DocBodyEnd` component from the unified {@link ChromeContext}
+ * (epic Collapse Wiring Shells #2420, FACTORIES #2424 — breaking signature).
+ *
+ * Reads `settings` directly; the `BodyEndIslands` block is a HOST-bound slot
+ * (`ctx.hostBindings.BodyEndIslands`) that defaults to the package-island subset
+ * reconstructed from `settings` (no host-only client-router / token-panel boots).
  */
-export function createDocBodyEnd(
-  deps: DocBodyEndDeps,
+export function createDocBodyEnd<S extends Settings = Settings>(
+  ctx: ChromeContext<S>,
 ): () => JSX.Element {
-  const { settings, BodyEndIslands } = deps;
+  const settings = ctx.settings as unknown as DocBodyEndSettings;
+  const BodyEndIslands = deriveBodyEndIslands(ctx) as (props: {
+    basePath: string;
+  }) => JSX.Element;
 
   /**
    * The `bodyEndComponents` slot content shared by all four doc-route page

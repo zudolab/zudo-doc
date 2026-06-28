@@ -21,6 +21,11 @@
 import type { VNode } from "preact";
 import { Island } from "@takazudo/zfb";
 import { BodyFootUtilArea } from "../body-foot-util/index.js";
+import type { ChromeContext } from "../factory-context/index.js";
+import type { Settings } from "../settings.js";
+import { toHistorySlug } from "../slug/index.js";
+import { buildGitHubSourceUrl as buildGitHubSourceUrlBase } from "../github-helpers/index.js";
+import { deriveDocHistorySlot } from "../chrome/derive.js";
 
 /** Per-entry metadata shape from the doc-history manifest. */
 export interface DocHistoryMetaEntry {
@@ -47,29 +52,6 @@ export type DocHistoryComponent = (props: {
   locale?: string;
   basePath?: string;
 }) => VNode;
-
-/** Dependencies injected by the host stub. */
-export interface DocHistoryAreaDeps {
-  settings: DocHistoryAreaSettings;
-  /** Default locale code (e.g. "en"). */
-  defaultLocale: string;
-  /** The parsed `#doc-history-meta` JSON manifest (host-side import). */
-  docHistoryMeta: Record<string, DocHistoryMetaEntry>;
-  /** Translate a UI string key for a locale. */
-  t: (key: string, locale: string) => string;
-  /** Convert a canonical route slug to a history slug (sentinel: "" → "index"). */
-  toHistorySlug: (slug: string) => string;
-  /**
-   * Build a view-source GitHub URL, or null when githubUrl is not set.
-   * Host passes a partially applied version binding `settings.githubUrl`.
-   */
-  buildGitHubSourceUrl: (contentDir: string, entryId: string) => string | null;
-  /**
-   * The DocHistory island component (host-side — must be imported in the stub so
-   * zfb's scanner walks page → stub → DocHistory).
-   */
-  DocHistory: DocHistoryComponent;
-}
 
 export interface DocHistoryAreaProps {
   /** Page slug, e.g. "getting-started/intro". */
@@ -102,21 +84,31 @@ export interface DocHistoryAreaProps {
 }
 
 /**
- * Create a `DocHistoryArea` component bound to the host's settings and
- * injected dependencies.
+ * Create a `DocHistoryArea` component from the unified {@link ChromeContext}
+ * (epic Collapse Wiring Shells #2420, FACTORIES #2424 — breaking signature).
+ *
+ * Reads `settings`/`defaultLocale`/`t` directly, `toHistorySlug` from the slug
+ * helper, and binds `buildGitHubSourceUrl` to `settings.githubUrl`. The
+ * DocHistory island is a HOST-bound slot (`ctx.hostBindings.DocHistory`,
+ * default: a no-op stub rendering an empty fragment).
  */
-export function createDocHistoryArea(
-  deps: DocHistoryAreaDeps,
+export function createDocHistoryArea<S extends Settings = Settings>(
+  ctx: ChromeContext<S>,
 ): (props: DocHistoryAreaProps) => VNode | null {
-  const {
-    settings,
-    defaultLocale,
-    docHistoryMeta,
-    t,
-    toHistorySlug,
-    buildGitHubSourceUrl,
-    DocHistory,
-  } = deps;
+  const settings = ctx.settings as unknown as DocHistoryAreaSettings;
+  const defaultLocale = ctx.defaultLocale;
+  const docHistoryMeta = (ctx.hostBindings.docHistoryMeta ?? {}) as Record<
+    string,
+    DocHistoryMetaEntry
+  >;
+  const t = ctx.t;
+  const buildGitHubSourceUrl = (contentDir: string, entryId: string): string | null =>
+    buildGitHubSourceUrlBase(
+      (ctx.settings as { githubUrl?: string | false }).githubUrl,
+      contentDir,
+      entryId,
+    );
+  const DocHistory = deriveDocHistorySlot(ctx) as unknown as DocHistoryComponent;
 
   // Set explicit `displayName` on the named-export DocHistory so zfb's
   // `captureComponentName` produces a stable marker even after the SSR

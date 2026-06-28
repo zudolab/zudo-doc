@@ -15,6 +15,9 @@
 
 import type { VNode } from "preact";
 import { DocMetainfo } from "../metainfo/index.js";
+import type { ChromeContext } from "../factory-context/index.js";
+import type { Settings } from "../settings.js";
+import { toHistorySlug } from "../slug/index.js";
 
 // BCP-47 locale tag mapping used by Intl.DateTimeFormat.
 // Originally mirrored from `src/utils/git-info.ts` (removed in S1 #1928).
@@ -47,19 +50,6 @@ export interface DocMetainfoAreaSettings {
   docMetainfo: boolean;
 }
 
-/** Dependencies injected by the host stub. */
-export interface DocMetainfoAreaDeps {
-  settings: DocMetainfoAreaSettings;
-  /** Default locale code (e.g. "en"). */
-  defaultLocale: string;
-  /** The parsed `#doc-history-meta` JSON manifest (host-side import). */
-  docHistoryMeta: Record<string, DocHistoryMetaEntry>;
-  /** Translate a UI string key for a locale. */
-  t: (key: string, locale: string) => string;
-  /** Convert a canonical route slug to a history slug (sentinel: "" → "index"). */
-  toHistorySlug: (slug: string) => string;
-}
-
 export interface DocMetainfoAreaProps {
   /** Page slug, e.g. "getting-started/intro". */
   slug: string;
@@ -78,13 +68,23 @@ export interface DocMetainfoAreaProps {
 }
 
 /**
- * Create a `DocMetainfoArea` component bound to the host's settings and
- * injected dependencies.
+ * Create a `DocMetainfoArea` component from the unified {@link ChromeContext}
+ * (epic Collapse Wiring Shells #2420, FACTORIES #2424 — breaking signature).
+ *
+ * Reads `settings`/`defaultLocale`/`t` directly and `toHistorySlug` from the
+ * package slug helper; the per-page git-history manifest is a HOST-bound slot
+ * (`ctx.hostBindings.docHistoryMeta`, default `{}` → no Created/Updated block).
  */
-export function createDocMetainfoArea(
-  deps: DocMetainfoAreaDeps,
+export function createDocMetainfoArea<S extends Settings = Settings>(
+  ctx: ChromeContext<S>,
 ): (props: DocMetainfoAreaProps) => VNode | null {
-  const { settings, defaultLocale, docHistoryMeta, t, toHistorySlug } = deps;
+  const settings = ctx.settings as unknown as DocMetainfoAreaSettings;
+  const defaultLocale = ctx.defaultLocale;
+  const docHistoryMeta = (ctx.hostBindings.docHistoryMeta ?? {}) as Record<
+    string,
+    DocHistoryMetaEntry
+  >;
+  const t = ctx.t;
 
   function DocMetainfoArea({ slug, locale, isFallback }: DocMetainfoAreaProps): VNode | null {
     if (!settings.docMetainfo) return null;

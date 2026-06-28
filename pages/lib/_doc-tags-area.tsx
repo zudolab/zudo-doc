@@ -1,30 +1,12 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Host thin-stub — see @takazudo/zudo-doc/doc-tags-area (epic #2344, S7).
-import { settings } from "@/config/settings";
-import { defaultLocale, t } from "@/config/i18n";
-import { withBase } from "@/utils/base";
-import { tagVocabulary } from "@/config/tag-vocabulary";
+// Host shim — see @takazudo/zudo-doc/doc-tags-area. The factory now derives its
+// bag from the unified ChromeContext (FACTORIES #2424); the tag vocabulary is a
+// host-bound slot supplied through chromeCtx.hostBindings, and `tagHref` is
+// reconstructed inside the factory.
 import { createDocTagsArea } from "@takazudo/zudo-doc/doc-tags-area";
-
-// Inlined from the original _doc-tags-area.tsx `tagHref` helper.
-// Builds the base-prefixed tag detail page href for the given locale.
-// The tag segment is URL-encoded at the href site only.
-function tagHref(tag: string, locale: string): string {
-  const encoded = encodeURIComponent(tag);
-  const path =
-    locale === defaultLocale
-      ? `/docs/tags/${encoded}`
-      : `/${locale}/docs/tags/${encoded}`;
-  return withBase(path);
-}
+import { chromeCtx } from "./_chrome-context";
 
 export type { DocTagsAreaProps } from "@takazudo/zudo-doc/doc-tags-area";
 
-export const DocTagsArea = createDocTagsArea({
-  settings,
-  defaultLocale,
-  tagVocabularyEntries: tagVocabulary,
-  tagHref,
-  t,
-});
+export const DocTagsArea = createDocTagsArea(chromeCtx);

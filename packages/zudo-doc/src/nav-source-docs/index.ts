@@ -20,9 +20,11 @@
 // the result.
 
 import type { CategoryMeta } from "../sidebar-tree/index.js";
+import { loadCategoryMeta as loadCategoryMetaImpl } from "../sidebar-tree/index.js";
 import type { DocPageEntry } from "../doc-page-props/index.js";
 import { memoizeDerived } from "../nav-source-cache/index.js";
 import { mergeLocaleDocs } from "../locale-merge/index.js";
+import type { Settings } from "../settings.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -76,58 +78,32 @@ export interface VersionConfigEntry {
 }
 
 /**
- * Injected context for `createNavSourceDocs`.
+ * Context slice `createNavSourceDocs` derives its bag from (epic Collapse
+ * Wiring Shells #2420, FACTORIES #2424 — breaking signature). This is a
+ * STRUCTURAL SUBSET of the unified `RouteContext`/`ChromeContext`, so callers
+ * pass the whole context: `docsDir`/`getVersions` are read off `settings`,
+ * `loadCategoryMeta` is imported from the package directly (it is a pure,
+ * `@/`-free helper), and the rest are reconstructed callables on the context.
  *
- * All host-specific singletons are passed in so the package factory never
- * imports `@/` aliases. The host stub calls `createNavSourceDocs(ctx)` once
- * and re-exports the returned resolver functions.
+ * NB: `createRouteContext` builds the route context incrementally and calls
+ * this factory with the partial-but-sufficient base context — every field
+ * below is present before the nav-source resolvers are assembled.
  */
 export interface NavSourceDocsContext {
-  /**
-   * Default locale code (served from the un-prefixed `/docs/...` routes).
-   * E.g. `"en"`.
-   */
+  /** The host's resolved settings object (reads `docsDir` + `versions`). */
+  settings: Settings;
+  /** Default locale code (un-prefixed `/docs/...` routes). E.g. `"en"`. */
   defaultLocale: string;
-  /**
-   * The configured docs content directory (e.g. `"src/content/docs"`).
-   * Used as the base dir for `loadCategoryMeta`.
-   */
-  docsDir: string;
-  /**
-   * Getter for the configured versions list (or false if versioning is not
-   * active). Called on every `resolveNavSource` invocation so test code that
-   * mutates `settings.versions` between calls sees the updated value.
-   * Structural equivalent of a getter for `settings.versions`.
-   *
-   * Pass `() => settings.versions` from the host stub.
-   */
-  getVersions: () => VersionConfigEntry[] | false | undefined;
-  /**
-   * Look up locale-specific config (dir, etc.) for a locale code.
-   * Host passes `getLocaleConfig` from `@/config/i18n`.
-   */
+  /** Per-locale config lookup (reconstructed on the context). */
   getLocaleConfig: (lang: string) => LocaleConfig | undefined;
-  /**
-   * Load category metadata for a content dir.
-   * Host passes `loadCategoryMeta` from `@/utils/docs` (re-exported from
-   * `@takazudo/zudo-doc/sidebar-tree`).
-   */
-  loadCategoryMeta: (dir: string) => Map<string, CategoryMeta>;
-  /**
-   * Filter predicate: true when a doc should appear in navigation.
-   * Host passes `isNavVisible` from `@/utils/docs`.
-   */
+  /** Filter predicate: true when a doc should appear in navigation. */
   isNavVisible: (doc: DocPageEntry) => boolean;
-  /**
-   * Returns true for paths that are only shown in the default locale.
-   * Host passes `isDefaultLocaleOnlyPath` from `@/utils/base`.
-   */
+  /** Returns true for paths that are only shown in the default locale. */
   isDefaultLocaleOnlyPath: (path: string) => boolean;
   /**
-   * Identity-stable, draft-filtered docs array for a collection.
-   * Host passes `stableDocs` from `pages/lib/_nav-source-cache.ts`.
-   * The function must anchor memoization on the zfb snapshot so the SAME
-   * array instance is returned on every call within one build.
+   * Identity-stable, draft-filtered docs array for a collection (the
+   * content-bridge handle). Anchors memoization on the zfb snapshot so the
+   * SAME array instance is returned on every call within one build.
    */
   stableDocs: (collectionName: string) => DocPageEntry[];
 }
@@ -225,29 +201,22 @@ export interface NavSourceDocsAPI {
  *   loadNavSourceDocs,
  *   stableMergeCategoryMeta,
  *   stableNavDocs,
- * } = createNavSourceDocs({
- *   defaultLocale,
- *   docsDir: settings.docsDir,
- *   getVersions: () => settings.versions,
- *   getLocaleConfig,
- *   loadCategoryMeta,
- *   isNavVisible,
- *   isDefaultLocaleOnlyPath,
- *   stableDocs,
- * });
+ * } = createNavSourceDocs(routeContext);
  * ```
  */
 export function createNavSourceDocs(ctx: NavSourceDocsContext): NavSourceDocsAPI {
-  const {
-    defaultLocale,
-    docsDir,
-    getVersions,
-    getLocaleConfig,
-    loadCategoryMeta,
-    isNavVisible,
-    isDefaultLocaleOnlyPath,
-    stableDocs,
-  } = ctx;
+  // Derive the old narrow bag from the unified context: docsDir/getVersions off
+  // `settings`, loadCategoryMeta from the package (pure, `@/`-free helper), and
+  // the rest off the reconstructed context callables.
+  const defaultLocale = ctx.defaultLocale;
+  const docsDir = ctx.settings.docsDir;
+  const getVersions = (): VersionConfigEntry[] | false | undefined =>
+    ctx.settings.versions as VersionConfigEntry[] | false | undefined;
+  const getLocaleConfig = ctx.getLocaleConfig;
+  const loadCategoryMeta = loadCategoryMetaImpl as (dir: string) => Map<string, CategoryMeta>;
+  const isNavVisible = ctx.isNavVisible;
+  const isDefaultLocaleOnlyPath = ctx.isDefaultLocaleOnlyPath;
+  const stableDocs = ctx.stableDocs;
 
   // ---------------------------------------------------------------------------
   // Stable category-meta merge
