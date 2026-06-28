@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { execSync, execFileSync } from "child_process";
 import fs from "fs-extra";
 
 // Project-name grammar (locked by F4 — S4 #2013):
@@ -40,6 +40,85 @@ export function installDependencies(dir: string, pm: string): void {
   const cmd = commands[pm] || "npm install";
   // Use pipe to avoid garbled output when used alongside spinner
   execSync(cmd, { cwd: dir, stdio: "pipe" });
+}
+
+export type GitInitResult =
+  | { status: "ok" }
+  | { status: "skipped-existing-repo" }
+  | { status: "skipped-no-git" }
+  | { status: "failed"; message: string };
+
+/**
+ * Initialize a git repository in `dir` and create an initial commit.
+ *
+ * Why: zudo-doc's doc-history feature reads `git log` for each page's
+ * Created/Updated/Author block. A scaffolded project with no git repo renders
+ * empty history — and on older `@takazudo/zudo-doc-history-server` it crashed
+ * `pnpm dev` outright (the preBuild hook ran `git rev-parse` and threw).
+ * Initializing git here makes the feature work out of the box.
+ *
+ * Safe by construction:
+ * - `skipped-no-git` when git is not installed;
+ * - `skipped-existing-repo` when `dir` is already inside a git work tree (e.g.
+ *   scaffolding into an existing monorepo) — never nest repositories;
+ * - the initial commit only falls back to a neutral identity when the user has
+ *   none configured, so a normal user's commit keeps their own identity.
+ */
+export function initGitRepo(dir: string): GitInitResult {
+  // Is git available at all?
+  try {
+    execFileSync("git", ["--version"], { stdio: "ignore" });
+  } catch {
+    return { status: "skipped-no-git" };
+  }
+
+  // Already inside a git work tree? Don't create a nested repository.
+  try {
+    const inside = execFileSync("git", ["rev-parse", "--is-inside-work-tree"], {
+      cwd: dir,
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+    if (inside === "true") return { status: "skipped-existing-repo" };
+  } catch {
+    // git exits non-zero when `dir` is not inside a repo — the expected case.
+  }
+
+  const COMMIT_MESSAGE = "Initial commit from create-zudo-doc";
+  try {
+    execFileSync("git", ["init", "-q"], { cwd: dir, stdio: "ignore" });
+    execFileSync("git", ["add", "-A"], { cwd: dir, stdio: "ignore" });
+    try {
+      execFileSync("git", ["commit", "-q", "-m", COMMIT_MESSAGE], {
+        cwd: dir,
+        stdio: "ignore",
+      });
+    } catch {
+      // No git identity configured on this machine — retry with a neutral
+      // fallback so the initial commit still succeeds. Users with a configured
+      // identity never reach this branch (their identity is used above).
+      execFileSync(
+        "git",
+        [
+          "-c",
+          "user.name=create-zudo-doc",
+          "-c",
+          "user.email=create-zudo-doc@users.noreply.github.com",
+          "commit",
+          "-q",
+          "-m",
+          COMMIT_MESSAGE,
+        ],
+        { cwd: dir, stdio: "ignore" },
+      );
+    }
+    return { status: "ok" };
+  } catch (err) {
+    return {
+      status: "failed",
+      message: err instanceof Error ? err.message : String(err),
+    };
+  }
 }
 
 export function capitalize(str: string): string {

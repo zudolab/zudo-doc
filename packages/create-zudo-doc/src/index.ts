@@ -6,7 +6,7 @@ import { FEATURES } from "./constants.js";
 import { loadPreset } from "./preset.js";
 import { runPrompts, type PartialChoices } from "./prompts.js";
 import { scaffold } from "./scaffold.js";
-import { installDependencies } from "./utils.js";
+import { installDependencies, initGitRepo } from "./utils.js";
 
 async function main() {
   const args = parseArgs();
@@ -146,6 +146,32 @@ async function main() {
       s2.stop("Dependencies installed!");
     } catch {
       s2.stop("Installation failed. Run install manually.");
+    }
+  }
+
+  // Initialize a git repository (default on; --no-git to opt out). doc-history
+  // reads `git log` for each page's Created/Updated/Author block, so a project
+  // without git renders empty history. Runs after install so the lockfile is
+  // part of the initial commit; auto-skips if the target is already inside a
+  // repo or if git is unavailable.
+  const shouldInitGit = args.git ?? true;
+  if (shouldInitGit) {
+    const s3 = p.spinner();
+    s3.start("Initializing git repository...");
+    const result = initGitRepo(targetDir);
+    switch (result.status) {
+      case "ok":
+        s3.stop("Initialized git repository with an initial commit.");
+        break;
+      case "skipped-existing-repo":
+        s3.stop("Already inside a git repository — skipped git init.");
+        break;
+      case "skipped-no-git":
+        s3.stop("git not found — skipped git init.");
+        break;
+      case "failed":
+        s3.stop("Could not initialize git — continuing without it.");
+        break;
     }
   }
 

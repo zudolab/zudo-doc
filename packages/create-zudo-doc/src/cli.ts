@@ -38,6 +38,8 @@ export interface CliArgs {
   preset?: string;
   pm?: "pnpm" | "npm" | "yarn" | "bun";
   install?: boolean;
+  /** Initialize a git repository + initial commit after scaffolding (default on). */
+  git?: boolean;
   yes?: boolean;
   help?: boolean;
 }
@@ -105,6 +107,7 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
   }
 
   if (wasPassed("install")) args.install = raw["install"] !== false;
+  if (wasPassed("git")) args.git = raw["git"] !== false;
   if (raw.yes || raw.y) args.yes = true;
   if (raw.help || raw.h) args.help = true;
 
@@ -135,6 +138,8 @@ ${featureHelp}
   --preset <path>              Load settings from a JSON preset file (use "-" for stdin)
   --pm <manager>               pnpm | npm | yarn | bun
   --[no-]install               Install dependencies after scaffolding
+  --[no-]git                   Initialize a git repository + initial commit
+                               (default: on; enables doc-history metadata)
   -y, --yes                    Use defaults for unspecified options, skip prompts
   -h, --help                   Show this help message
 

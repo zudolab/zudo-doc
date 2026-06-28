@@ -93,6 +93,20 @@ describe("parseArgs", () => {
     });
   });
 
+  describe("git flag", () => {
+    it("--git sets git true", () => {
+      expect(parseArgs(["--git"]).git).toBe(true);
+    });
+
+    it("--no-git sets git false", () => {
+      expect(parseArgs(["--no-git"]).git).toBe(false);
+    });
+
+    it("git is undefined when not passed (index.ts defaults it on)", () => {
+      expect(parseArgs([]).git).toBeUndefined();
+    });
+  });
+
   describe("shorthand aliases", () => {
     it("-y sets yes", () => {
       expect(parseArgs(["-y"]).yes).toBe(true);

@@ -1,6 +1,6 @@
 import path from "path";
 import { scaffold } from "./scaffold.js";
-import { installDependencies, validateProjectName } from "./utils.js";
+import { initGitRepo, installDependencies, validateProjectName } from "./utils.js";
 
 export type { UserChoices } from "./prompts.js";
 
@@ -21,10 +21,16 @@ export interface CreateOptions {
   packageManager: "pnpm" | "npm" | "yarn" | "bun";
   /** Install dependencies after scaffolding (default: false) */
   install?: boolean;
+  /**
+   * Initialize a git repository + initial commit after scaffolding
+   * (default: false). The CLI defaults this on; the programmatic API defaults
+   * it off so automation / test callers never create unexpected repos.
+   */
+  git?: boolean;
 }
 
 export async function createZudoDoc(options: CreateOptions): Promise<string> {
-  const { install = false, ...rest } = options;
+  const { install = false, git = false, ...rest } = options;
   const nameError = validateProjectName(rest.projectName);
   if (nameError) throw new Error(`Invalid projectName: ${nameError}`);
   const choices = { ...rest, defaultLang: rest.defaultLang ?? "en" };
@@ -32,6 +38,9 @@ export async function createZudoDoc(options: CreateOptions): Promise<string> {
   const targetDir = path.resolve(process.cwd(), choices.projectName);
   if (install) {
     installDependencies(targetDir, choices.packageManager);
+  }
+  if (git) {
+    initGitRepo(targetDir);
   }
   return targetDir;
 }
