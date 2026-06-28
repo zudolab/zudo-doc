@@ -21,6 +21,9 @@
 
 import type { NavSourceDocs } from "../nav-source-docs/index.js";
 import type { DocPageEntry, DocNavNode } from "../doc-page-props/index.js";
+import type { CategoryMeta } from "../sidebar-tree/index.js";
+import type { Settings } from "../settings.js";
+import { mergeLocaleDocs as mergeLocaleDocsImpl } from "../locale-merge/index.js";
 
 export type { DocPageEntry, DocNavNode, NavSourceDocs };
 
@@ -73,78 +76,46 @@ export interface TagInfoForEnum {
 // ---------------------------------------------------------------------------
 
 /**
- * Injected context for `createRouteEnumerators`.
- *
- * All host-specific singletons and utilities are passed in so the package
- * factory never imports `@/` aliases.
+ * Context slice `createRouteEnumerators` derives its bag from (epic Collapse
+ * Wiring Shells #2420, FACTORIES #2424 — breaking signature). STRUCTURAL SUBSET
+ * of the unified `RouteContext`/`ChromeContext`: `getLocaleKeys`/`getVersions`/
+ * `getDocTags` read off `settings`, `loadDocs` is the content-bridge `stableDocs`,
+ * `mergeLocaleDocs` is imported directly, and the rest are reconstructed
+ * callables already on the context (including the nav-source resolvers, which
+ * `createRouteContext` assembles BEFORE the enumerators).
  */
 export interface RouteEnumeratorsContext {
-  /** Default locale code. Host passes `defaultLocale` from `@/config/i18n`. */
+  /** The host's resolved settings object (reads `locales`/`versions`/`docTags`). */
+  settings: Settings;
+  /** Default locale code. */
   defaultLocale: string;
-  /**
-   * Getter for all non-default locale codes.
-   * Host passes `() => Object.keys(settings.locales)`.
-   * Called per invocation so mutations to settings.locales are picked up.
-   */
-  getLocaleKeys: () => readonly string[];
-  /**
-   * Getter for the configured versions list (or false/undefined).
-   * Host passes `() => settings.versions`.
-   * Called per invocation so mutations to settings.versions are picked up.
-   */
-  getVersions: () => VersionConfigForEnum[] | false | undefined;
-  /**
-   * Getter for whether tag pages are enabled.
-   * Host passes `() => settings.docTags`.
-   */
-  getDocTags: () => boolean | undefined;
-  /** `docsUrl(slug, lang)` from `@/utils/base` (resolved with settings). */
+  /** Build a docs URL for the given slug and locale. */
   docsUrl: (slug: string, lang?: string) => string;
-  /** `versionedDocsUrl(slug, versionSlug, lang)` from `@/utils/base`. */
+  /** Build a versioned docs URL. */
   versionedDocsUrl: (slug: string, versionSlug: string, lang?: string) => string;
-  /** `withBase(path)` from `@/utils/base`. */
+  /** Prefix a path with the configured base directory. */
   withBase: (path: string) => string;
-  /**
-   * Load docs from a named collection.
-   * Host passes `loadDocs` from `pages/_data.ts`.
-   */
-  loadDocs: (collectionName: string) => DocsEntryForTags[];
-  /**
-   * Returns true for paths that are only shown in the default locale.
-   * Host passes `isDefaultLocaleOnlyPath` from `@/utils/base`.
-   */
+  /** Identity-stable, draft-filtered docs array for a collection. */
+  stableDocs: (collectionName: string) => DocPageEntry[];
+  /** Returns true for paths that are only shown in the default locale. */
   isDefaultLocaleOnlyPath: (path: string) => boolean;
-  /**
-   * Collect tags from a docs array.
-   * Host passes `collectTags` from `@/utils/tags`.
-   */
+  /** Aggregate a `tag → docs` index from a doc collection. */
   collectTags: (
     docs: DocsEntryForTags[],
     slugFn: (id: string, data: { slug?: string }) => string,
   ) => Map<string, TagInfoForEnum>;
-  /**
-   * Convert a content entry slug to a canonical route slug.
-   * Host passes `toRouteSlug` from `@/utils/slug`.
-   */
+  /** Convert a content entry slug to a canonical route slug. */
   toRouteSlug: (id: string) => string;
-  /**
-   * Build the nav tree for a locale.
-   * Host passes `buildNavTree` from `@/utils/docs`.
-   */
+  /** Build the nav tree for a locale (4-arg form with an explicit href builder). */
   buildNavTree: (
     docs: DocPageEntry[],
     locale: string,
-    categoryMeta: Map<string, unknown>,
+    categoryMeta: Map<string, CategoryMeta> | undefined,
+    buildHref: (slug: string, locale: string) => string,
   ) => DocNavNode[];
-  /**
-   * Collect auto-generated index nodes.
-   * Host passes `collectAutoIndexNodes` from `@/utils/docs`.
-   */
+  /** Collect auto-generated index nodes. */
   collectAutoIndexNodes: (tree: DocNavNode[]) => DocNavNode[];
-  /**
-   * Resolve the identity-stable nav source for an EN/locale context.
-   * Host passes `resolveNavSource` from `pages/lib/_nav-source-docs.ts`.
-   */
+  /** Resolve the identity-stable nav source for an EN/locale context. */
   resolveNavSource: (
     lang: string,
     currentVersion: string | undefined,
@@ -153,11 +124,7 @@ export interface RouteEnumeratorsContext {
       keepUnlisted?: boolean;
     },
   ) => NavSourceDocs;
-  /**
-   * Resolve the identity-stable nav source for a versioned non-default-locale
-   * context.
-   * Host passes `resolveVersionedLocaleSource` from `pages/lib/_nav-source-docs.ts`.
-   */
+  /** Resolve the identity-stable nav source for a versioned non-default-locale context. */
   resolveVersionedLocaleSource: (
     versionSlug: string,
     versionDocsDir: string | undefined,
@@ -168,17 +135,6 @@ export interface RouteEnumeratorsContext {
       keepUnlisted?: boolean;
     },
   ) => NavSourceDocs;
-  /**
-   * Merge locale docs with base-locale fallbacks.
-   * Host passes `mergeLocaleDocs` from `pages/lib/locale-merge.ts`.
-   */
-  mergeLocaleDocs: (options: {
-    baseDocs: DocsEntryForTags[];
-    localeDocs: DocsEntryForTags[];
-    applyDefaultLocaleOnlyFilter?: boolean;
-    keepUnlisted?: boolean;
-    isDefaultLocaleOnlyPath?: (path: string) => boolean;
-  }) => { docs: DocsEntryForTags[]; localeSlugSet: ReadonlySet<string> };
 }
 
 // ---------------------------------------------------------------------------
@@ -270,24 +226,39 @@ export interface RouteEnumeratorsAPI {
  * ```
  */
 export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnumeratorsAPI {
-  const {
-    defaultLocale,
-    getLocaleKeys,
-    getVersions,
-    getDocTags,
-    docsUrl,
-    versionedDocsUrl,
-    withBase,
-    loadDocs,
-    isDefaultLocaleOnlyPath,
-    collectTags,
-    toRouteSlug,
-    buildNavTree,
-    collectAutoIndexNodes,
-    resolveNavSource,
-    resolveVersionedLocaleSource,
-    mergeLocaleDocs,
-  } = ctx;
+  // Derive the old narrow bag from the unified context: the locale/version/tags
+  // getters read off `settings` (re-read per call so mutations are picked up),
+  // `loadDocs` is the content bridge `stableDocs`, `mergeLocaleDocs` is the
+  // package import, and `buildNavTree` binds the 4-arg form to `docsUrl`.
+  const defaultLocale = ctx.defaultLocale;
+  const getLocaleKeys = (): readonly string[] => Object.keys(ctx.settings.locales);
+  const getVersions = (): VersionConfigForEnum[] | false | undefined =>
+    ctx.settings.versions as VersionConfigForEnum[] | false | undefined;
+  const getDocTags = (): boolean | undefined => ctx.settings.docTags;
+  const docsUrl = ctx.docsUrl;
+  const versionedDocsUrl = ctx.versionedDocsUrl;
+  const withBase = ctx.withBase;
+  const loadDocs = (collectionName: string): DocsEntryForTags[] =>
+    ctx.stableDocs(collectionName) as unknown as DocsEntryForTags[];
+  const isDefaultLocaleOnlyPath = ctx.isDefaultLocaleOnlyPath;
+  const collectTags = ctx.collectTags;
+  const toRouteSlug = ctx.toRouteSlug;
+  const buildNavTree = (
+    docs: DocPageEntry[],
+    locale: string,
+    categoryMeta: Map<string, CategoryMeta>,
+  ): DocNavNode[] =>
+    ctx.buildNavTree(docs, locale, categoryMeta, (slug, loc) => ctx.docsUrl(slug, loc));
+  const collectAutoIndexNodes = ctx.collectAutoIndexNodes;
+  const resolveNavSource = ctx.resolveNavSource;
+  const resolveVersionedLocaleSource = ctx.resolveVersionedLocaleSource;
+  const mergeLocaleDocs = mergeLocaleDocsImpl as unknown as (options: {
+    baseDocs: DocsEntryForTags[];
+    localeDocs: DocsEntryForTags[];
+    applyDefaultLocaleOnlyFilter?: boolean;
+    keepUnlisted?: boolean;
+    isDefaultLocaleOnlyPath?: (path: string) => boolean;
+  }) => { docs: DocsEntryForTags[]; localeSlugSet: ReadonlySet<string> };
 
   // ---------------------------------------------------------------------------
   // enumerateDocsRoutes

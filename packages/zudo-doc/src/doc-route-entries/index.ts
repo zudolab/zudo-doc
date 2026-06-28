@@ -19,6 +19,8 @@ import type { NavSourceDocs } from "../nav-source-docs/index.js";
 import { memoizeDerived } from "../nav-source-cache/index.js";
 import type { BreadcrumbItem } from "../breadcrumb/types.js";
 import type { HeadingItem } from "../extract-headings/index.js";
+import type { CategoryMeta } from "../sidebar-tree/index.js";
+import { buildBreadcrumbs as buildBreadcrumbsImpl } from "../routes/_docs-helpers.js";
 import {
   resolveDocPrevNext,
   flattenSubtree,
@@ -78,58 +80,38 @@ export interface BuildDocRouteEntriesArgs {
 export type { BreadcrumbItem, HeadingItem };
 
 /**
- * Injected context for `createDocRouteEntries`.
+ * Context slice `createDocRouteEntries` derives its bag from (epic Collapse
+ * Wiring Shells #2420, FACTORIES #2424 — breaking signature). STRUCTURAL SUBSET
+ * of the unified `RouteContext`/`ChromeContext` — the nav-tree builder is
+ * reconstructed by binding the context's 4-arg `buildNavTree` to `docsUrl`, and
+ * the breadcrumb trail by binding the package `buildBreadcrumbs` to the
+ * locale-prefixed `withBase` base, exactly as the pre-collapse wiring did.
  */
 export interface DocRouteEntriesContext {
-  /**
-   * Build the nav tree for a locale from a flat entry array and category meta.
-   * Host passes `buildNavTree` from `@/utils/docs`.
-   */
+  /** Default locale code (drives the breadcrumb base-prefix selection). */
+  defaultLocale: string;
+  /** Build the nav tree for a locale (4-arg form with an explicit href builder). */
   buildNavTree: (
     docs: DocPageEntry[],
     locale: string,
-    categoryMeta: Map<string, unknown>,
+    categoryMeta: Map<string, CategoryMeta> | undefined,
+    buildHref: (slug: string, locale: string) => string,
   ) => DocNavNode[];
-  /**
-   * Build breadcrumb trail by walking the nav tree.
-   * Host passes `buildBreadcrumbs` from `@/utils/docs`.
-   */
-  buildBreadcrumbs: (
-    tree: DocNavNode[],
-    slug: string,
-    locale: string,
-    urlFor?: (slug: string) => string,
-  ) => BreadcrumbItem[];
-  /**
-   * Collect all auto-generated index nodes (categories without index.mdx).
-   * Host passes `collectAutoIndexNodes` from `@/utils/docs`.
-   */
+  /** Build a docs URL for the given slug and locale. */
+  docsUrl: (slug: string, locale?: string) => string;
+  /** Prefix a path with the configured base directory. */
+  withBase: (path: string) => string;
+  /** Collect all auto-generated index nodes (categories without index.mdx). */
   collectAutoIndexNodes: (tree: DocNavNode[]) => AutoIndexNode[];
-  /**
-   * Determine the nav section (categoryMatch) for a slug.
-   * Host passes `getNavSectionForSlug` from `@/utils/nav-scope`.
-   */
+  /** Determine the nav section (categoryMatch) for a slug. */
   getNavSectionForSlug: (slug: string) => string | undefined;
-  /**
-   * Filter top-level nav nodes by a categoryMatch value.
-   * Host passes `getNavSubtree` from `@/utils/nav-scope`.
-   */
+  /** Filter top-level nav nodes by a categoryMatch value. */
   getNavSubtree: (tree: DocNavNode[], categoryMatch?: string) => DocNavNode[];
-  /**
-   * Convert a content entry slug to a canonical route slug.
-   * Host passes `toRouteSlug` from `@/utils/slug` (or the package's
-   * `@takazudo/zudo-doc/slug`).
-   */
+  /** Convert a content entry slug to a canonical route slug. */
   toRouteSlug: (id: string) => string;
-  /**
-   * Convert a canonical route slug to an optional-catchall params array.
-   * Host passes `toSlugParams` from `@/utils/slug`.
-   */
+  /** Convert a canonical route slug to an optional-catchall params array. */
   toSlugParams: (slug: string) => string[];
-  /**
-   * Extract headings from a raw MDX body.
-   * Host passes the wrapper from `pages/lib/_extract-headings.ts`.
-   */
+  /** Extract headings from a raw MDX body (bound to settings depth/strategy). */
   extractHeadings: (body: string) => HeadingItem[];
 }
 
@@ -163,32 +145,41 @@ export interface DocRouteEntriesAPI {
  * import { toRouteSlug, toSlugParams } from "@/utils/slug";
  * import { extractHeadings } from "./_extract-headings";
  *
- * export const { buildDocRouteEntries } = createDocRouteEntries({
- *   buildNavTree,
- *   buildBreadcrumbs,
- *   collectAutoIndexNodes,
- *   getNavSectionForSlug,
- *   getNavSubtree,
- *   toRouteSlug,
- *   toSlugParams,
- *   extractHeadings,
- * });
+ * export const { buildDocRouteEntries } = createDocRouteEntries(routeContext);
  * export type { DocRouteEntry, BuildDocRouteEntriesArgs };
  * ```
  */
 export function createDocRouteEntries(
   ctx: DocRouteEntriesContext,
 ): DocRouteEntriesAPI {
-  const {
-    buildNavTree,
-    buildBreadcrumbs,
-    collectAutoIndexNodes,
-    getNavSectionForSlug,
-    getNavSubtree,
-    toRouteSlug,
-    toSlugParams,
-    extractHeadings,
-  } = ctx;
+  // Derive the old narrow bag from the unified context: bind the 4-arg
+  // `buildNavTree` to `docsUrl` for the 3-arg form the body uses, and bind the
+  // package `buildBreadcrumbs` to the locale-prefixed `withBase` base.
+  const defaultLocale = ctx.defaultLocale;
+  const buildNavTree = (
+    docs: DocPageEntry[],
+    locale: string,
+    categoryMeta: Map<string, CategoryMeta>,
+  ): DocNavNode[] =>
+    ctx.buildNavTree(docs, locale, categoryMeta, (slug, loc) => ctx.docsUrl(slug, loc));
+  const buildBreadcrumbs = (
+    tree: DocNavNode[],
+    slug: string,
+    locale: string,
+    urlFor?: (slug: string) => string,
+  ): BreadcrumbItem[] =>
+    buildBreadcrumbsImpl(
+      tree,
+      slug,
+      locale === defaultLocale ? ctx.withBase("/") : ctx.withBase(`/${locale}/`),
+      urlFor,
+    );
+  const collectAutoIndexNodes = ctx.collectAutoIndexNodes;
+  const getNavSectionForSlug = ctx.getNavSectionForSlug;
+  const getNavSubtree = ctx.getNavSubtree;
+  const toRouteSlug = ctx.toRouteSlug;
+  const toSlugParams = ctx.toSlugParams;
+  const extractHeadings = ctx.extractHeadings;
 
   function buildDocRouteEntries(args: BuildDocRouteEntriesArgs): DocRouteEntry[] {
     const { source, locale, routeSig, urlFor } = args;

@@ -12,6 +12,10 @@
 import type { JSX } from "preact";
 import { FrontmatterPreview, type FrontmatterCellRenderer } from "../metainfo/index.js";
 import type { DocPageEntry } from "../doc-page-props/index.js";
+import type { ChromeContext } from "../factory-context/index.js";
+import type { Settings } from "../settings.js";
+import { createDocMetainfoArea } from "../doc-metainfo-area/index.js";
+import { createDocTagsArea } from "../doc-tags-area/index.js";
 
 export type { FrontmatterCellRenderer };
 
@@ -79,18 +83,24 @@ interface DocContentHeaderProps {
 }
 
 /**
- * Create a `DocContentHeader` component bound to the host's injected context.
+ * Create a `DocContentHeader` component from the unified {@link ChromeContext}
+ * (epic Collapse Wiring Shells #2420, FACTORIES #2424 — breaking signature).
+ *
+ * Reads `t` directly; the frontmatter-preview entry builder + per-key renderers
+ * are HOST-bound slots (`ctx.hostBindings.buildFrontmatterPreviewEntries` /
+ * `…frontmatterRenderers`, defaulting to `() => []` / `{}`). The nested
+ * `DocMetainfoArea` / `DocTagsArea` are rebuilt from the same context.
  */
-export function createDocContentHeader(
-  deps: DocContentHeaderDeps,
+export function createDocContentHeader<S extends Settings = Settings>(
+  ctx: ChromeContext<S>,
 ): (props: DocContentHeaderProps) => JSX.Element {
-  const {
-    t,
-    buildFrontmatterPreviewEntries,
-    frontmatterRenderers,
-    DocMetainfoArea,
-    DocTagsArea,
-  } = deps;
+  const t = ctx.t;
+  const buildFrontmatterPreviewEntries = (ctx.hostBindings.buildFrontmatterPreviewEntries ??
+    (() => [])) as DocContentHeaderDeps["buildFrontmatterPreviewEntries"];
+  const frontmatterRenderers = (ctx.hostBindings.frontmatterRenderers ??
+    {}) as unknown as Record<string, FrontmatterCellRenderer>;
+  const DocMetainfoArea = createDocMetainfoArea(ctx);
+  const DocTagsArea = createDocTagsArea(ctx);
 
   /**
    * Content header block for entry doc pages: h1, doc-metainfo, tag chips,

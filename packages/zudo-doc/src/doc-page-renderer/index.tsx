@@ -21,6 +21,13 @@
 import type { JSX, VNode } from "preact";
 import type { DocPageBaseProps, DocNavNode, DocPageEntry } from "../doc-page-props/index.js";
 import type { VersionBannerLabels } from "../i18n-version/index.js";
+import type { ChromeContext } from "../factory-context/index.js";
+import type { Settings } from "../settings.js";
+import { createDocPageShell } from "../doc-page-shell/index.js";
+import { createDocContentHeader } from "../doc-content-header/index.js";
+import { createDocMetainfoArea } from "../doc-metainfo-area/index.js";
+import { createDocHistoryArea } from "../doc-history-area/index.js";
+import { deriveMdxComponents, deriveInlineVersionSwitcher } from "../chrome/derive.js";
 
 export type { DocPageBaseProps };
 
@@ -143,25 +150,36 @@ export interface DocPageRendererDeps {
 }
 
 /**
- * Create a `renderDocPage` function bound to the host's injected dependencies.
+ * Create a `renderDocPage` function from the unified {@link ChromeContext}
+ * (epic Collapse Wiring Shells #2420, FACTORIES #2424 — breaking signature).
+ *
+ * Reads the URL/nav/slug/i18n helpers off the context; rebuilds the locale-aware
+ * MDX components factory + inline version-switcher from the shared derive helpers
+ * (the MDX nav wrappers prefer `ctx.components`, content overrides come from
+ * `ctx.hostBindings.mdxExtras`); and rebuilds DocPageShell / DocContentHeader /
+ * DocMetainfoArea / DocHistoryArea from the SAME context.
  */
-export function createRenderDocPage(
-  deps: DocPageRendererDeps,
+export function createRenderDocPage<S extends Settings = Settings>(
+  ctx: ChromeContext<S>,
 ): (props: DocPageBaseProps, opts: RenderDocPageOptions) => JSX.Element {
-  const {
-    docsUrl,
-    versionedDocsUrl,
-    absoluteUrl,
-    getNavSectionForSlug,
-    toRouteSlug,
-    createMdxComponents,
-    t,
-    buildInlineVersionSwitcher,
-    DocPageShell,
-    DocContentHeader,
-    DocMetainfoArea,
-    DocHistoryArea,
-  } = deps;
+  const docsUrl = ctx.docsUrl;
+  const versionedDocsUrl = ctx.versionedDocsUrl;
+  const absoluteUrl = ctx.absoluteUrl;
+  const getNavSectionForSlug = ctx.getNavSectionForSlug;
+  const toRouteSlug = ctx.toRouteSlug;
+  const createMdxComponents = deriveMdxComponents(ctx).createMdxComponentsBound as (
+    locale: string,
+  ) => Record<string, unknown>;
+  const t = ctx.t;
+  const buildInlineVersionSwitcher = deriveInlineVersionSwitcher(
+    ctx,
+  ) as DocPageRendererDeps["buildInlineVersionSwitcher"];
+  const DocPageShell = createDocPageShell(ctx) as DocPageRendererDeps["DocPageShell"];
+  const DocContentHeader = createDocContentHeader(
+    ctx,
+  ) as DocPageRendererDeps["DocContentHeader"];
+  const DocMetainfoArea = createDocMetainfoArea(ctx);
+  const DocHistoryArea = createDocHistoryArea(ctx);
 
   function renderDocPage(
     props: DocPageBaseProps,

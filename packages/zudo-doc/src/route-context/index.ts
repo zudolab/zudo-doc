@@ -35,10 +35,17 @@ import {
   getNavSubtree as getNavSubtreeBase,
 } from "../nav-scope/index.js";
 import { mergeLocaleDocs } from "../locale-merge/index.js";
-import { createNavSourceDocs } from "../nav-source-docs/index.js";
-import { createDocRouteEntries } from "../doc-route-entries/index.js";
+import {
+  createNavSourceDocs,
+  type NavSourceDocsContext,
+} from "../nav-source-docs/index.js";
+import {
+  createDocRouteEntries,
+  type DocRouteEntriesContext,
+} from "../doc-route-entries/index.js";
 import {
   createRouteEnumerators,
+  type RouteEnumeratorsContext,
   type DocsEntryForTags,
   type TagInfoForEnum,
 } from "../route-enumerators/index.js";
@@ -196,93 +203,15 @@ export function createRouteContext<S extends Settings = Settings>(
     return tagMap;
   }
 
-  // ── nav-source resolver ───────────────────────────────────────────────────
-  const navSourceDocs = createNavSourceDocs({
-    defaultLocale,
-    docsDir: settings.docsDir,
-    getVersions: () => settings.versions,
-    getLocaleConfig,
-    loadCategoryMeta: loadCategoryMeta as (dir: string) => Map<string, CategoryMeta>,
-    isNavVisible,
-    isDefaultLocaleOnlyPath,
-    stableDocs,
-  });
-
-  // ── doc-route-entries ─────────────────────────────────────────────────────
-  const docRouteEntries = createDocRouteEntries({
-    buildNavTree: (
-      docs: DocPageEntry[],
-      locale: string,
-      categoryMeta: Map<string, unknown>,
-    ) =>
-      buildNavTree(
-        docs,
-        locale,
-        categoryMeta as Map<string, CategoryMeta>,
-        (slug, loc) => docsUrl(slug, loc),
-      ),
-    buildBreadcrumbs: (
-      tree: DocNavNode[],
-      slug: string,
-      locale: string,
-      urlFor?: (slug: string) => string,
-    ) =>
-      buildBreadcrumbs(
-        tree,
-        slug,
-        locale === defaultLocale ? withBase("/") : withBase(`/${locale}/`),
-        urlFor,
-      ),
-    collectAutoIndexNodes,
-    getNavSectionForSlug,
-    getNavSubtree,
-    toRouteSlug,
-    toSlugParams,
-    extractHeadings,
-  });
-
-  // ── route-enumerators ─────────────────────────────────────────────────────
-  const routeEnumerators = createRouteEnumerators({
-    defaultLocale,
-    getLocaleKeys: () => Object.keys(settings.locales),
-    getVersions: () => settings.versions,
-    getDocTags: () => settings.docTags,
-    docsUrl,
-    versionedDocsUrl,
-    withBase,
-    loadDocs: (collectionName: string) =>
-      stableDocs(collectionName) as unknown as DocsEntryForTags[],
-    isDefaultLocaleOnlyPath,
-    collectTags: (
-      docs: DocsEntryForTags[],
-      slugFn,
-    ): Map<string, TagInfoForEnum> =>
-      collectTags(
-        docs as unknown as Array<{
-          id: string;
-          data: { slug?: string; title?: string; description?: string; tags?: string[] };
-        }>,
-        slugFn,
-      ) as unknown as Map<string, TagInfoForEnum>,
-    toRouteSlug,
-    buildNavTree: (
-      docs: DocPageEntry[],
-      locale: string,
-      categoryMeta: Map<string, unknown>,
-    ) =>
-      buildNavTree(
-        docs,
-        locale,
-        categoryMeta as Map<string, CategoryMeta>,
-        (slug, loc) => docsUrl(slug, loc),
-      ),
-    collectAutoIndexNodes,
-    resolveNavSource: navSourceDocs.resolveNavSource,
-    resolveVersionedLocaleSource: navSourceDocs.resolveVersionedLocaleSource,
-    mergeLocaleDocs: mergeLocaleDocs as RouteEnumeratorsAPIDeps["mergeLocaleDocs"],
-  });
-
-  return {
+  // ── Base context ──────────────────────────────────────────────────────────
+  // The unified context the data factories now DERIVE their bag from (FACTORIES
+  // #2424). It carries settings + i18n + URL helpers + the pure nav/slug helpers
+  // — everything the three data factories read EXCEPT the nav-source resolvers,
+  // which are assembled onto it before the route enumerators run. The factory
+  // results are then spread onto this same object so the returned RouteContext
+  // is byte-for-byte the previous shape (same function instances, same memo
+  // closures, same array identities).
+  const base = {
     settings,
     colorSchemes,
     i18n,
@@ -299,9 +228,6 @@ export function createRouteContext<S extends Settings = Settings>(
     extractHeadings,
     resolveTagBound,
     collectTags,
-    ...navSourceDocs,
-    ...docRouteEntries,
-    ...routeEnumerators,
     buildNavTree,
     groupSatelliteNodes,
     findNode,
@@ -312,4 +238,25 @@ export function createRouteContext<S extends Settings = Settings>(
     toRouteSlug,
     toSlugParams,
   };
+
+  // ── nav-source resolver ───────────────────────────────────────────────────
+  // Derives docsDir/getVersions off settings + imports loadCategoryMeta itself.
+  const navSourceDocs = createNavSourceDocs(base as unknown as NavSourceDocsContext);
+
+  // ── doc-route-entries ─────────────────────────────────────────────────────
+  // Binds the 4-arg buildNavTree → docsUrl + the package buildBreadcrumbs itself.
+  const docRouteEntries = createDocRouteEntries(base as unknown as DocRouteEntriesContext);
+
+  // ── route-enumerators ─────────────────────────────────────────────────────
+  // Needs the nav-source resolvers, so it sees the context WITH them assembled.
+  const baseWithNav = { ...base, ...navSourceDocs };
+  const routeEnumerators = createRouteEnumerators(
+    baseWithNav as unknown as RouteEnumeratorsContext,
+  );
+
+  return {
+    ...baseWithNav,
+    ...docRouteEntries,
+    ...routeEnumerators,
+  } as unknown as RouteContext<S>;
 }

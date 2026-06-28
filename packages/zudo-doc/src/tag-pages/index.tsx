@@ -35,6 +35,13 @@ import type { TagItem, TagNavLabels } from "../nav-indexing/index.js";
 import { memoizeDerived } from "../nav-source-cache/index.js";
 import { mergeLocaleDocs } from "../locale-merge/index.js";
 import { toRouteSlug } from "../slug/index.js";
+import type { ChromeContext } from "../factory-context/index.js";
+import type { Settings } from "../settings.js";
+import { createHeadWithDefaults } from "../head-with-defaults/index.js";
+import { createHeaderWithDefaults } from "../header-with-defaults/index.js";
+import { createFooterWithDefaults } from "../footer-with-defaults/index.js";
+import { createDocHistoryArea } from "../doc-history-area/index.js";
+import { deriveComposeMetaTitle, deriveBodyEndIslands } from "../chrome/derive.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -135,28 +142,37 @@ export interface TagPagesAPI {
 }
 
 /**
- * Create the tag-pages functions bound to the host's settings and
- * component dependencies.
+ * Create the tag-pages functions from the unified {@link ChromeContext}
+ * (epic Collapse Wiring Shells #2420, FACTORIES #2424 — breaking signature).
+ *
+ * Reads `settings`/`defaultLocale`/`t`/`withBase`/`docsUrl`/`collectTags`/
+ * `stableDocs` off the context, derives `composeMetaTitle`, and rebuilds the
+ * Head / Header / Footer / BodyEndIslands / DocHistoryArea chrome from the SAME
+ * context. `isDefaultLocaleOnlyPath` is left `undefined` to reproduce the
+ * pre-collapse injected wiring (`routes/_chrome.tsx` passed `undefined`) — the
+ * frozen baseline's tag pages are rendered through that path BYTE-FOR-BYTE.
  */
-export function createTagPages(deps: TagPagesDeps): TagPagesAPI {
-  const {
-    settings,
-    defaultLocale,
-    t,
-    withBase,
-    docsUrl,
-    composeMetaTitle,
-    collectTags,
-    stableDocs,
-    isDefaultLocaleOnlyPath,
-    components: {
-      HeadWithDefaults,
-      HeaderWithDefaults,
-      FooterWithDefaults,
-      BodyEndIslands,
-      DocHistoryArea,
-    },
-  } = deps;
+export function createTagPages<S extends Settings = Settings>(
+  ctx: ChromeContext<S>,
+): TagPagesAPI {
+  const settings = ctx.settings as unknown as TagPagesSettings;
+  const defaultLocale = ctx.defaultLocale;
+  const t = ctx.t;
+  const withBase = ctx.withBase;
+  const docsUrl = ctx.docsUrl;
+  const composeMetaTitle = deriveComposeMetaTitle(ctx);
+  const collectTags = ctx.collectTags as unknown as TagPagesDeps["collectTags"];
+  const stableDocs = ctx.stableDocs as unknown as TagPagesDeps["stableDocs"];
+  const isDefaultLocaleOnlyPath: ((path: string) => boolean) | undefined = undefined;
+  const HeadWithDefaults = createHeadWithDefaults(ctx) as TagPagesComponents["HeadWithDefaults"];
+  const HeaderWithDefaults = createHeaderWithDefaults(
+    ctx,
+  ) as TagPagesComponents["HeaderWithDefaults"];
+  const FooterWithDefaults = createFooterWithDefaults(
+    ctx,
+  ) as TagPagesComponents["FooterWithDefaults"];
+  const BodyEndIslands = deriveBodyEndIslands(ctx) as TagPagesComponents["BodyEndIslands"];
+  const DocHistoryArea = createDocHistoryArea(ctx) as TagPagesComponents["DocHistoryArea"];
 
   // ---------------------------------------------------------------------------
   // Tag collection

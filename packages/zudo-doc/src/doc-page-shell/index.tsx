@@ -17,10 +17,20 @@
 import type { ComponentChildren, JSX, VNode } from "preact";
 import { Island } from "@takazudo/zfb";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
-import { Toc, MobileToc } from "../toc/index.js";
+import { Toc, MobileToc, getTocTitle } from "../toc/index.js";
 import { Breadcrumb } from "../breadcrumb/index.js";
 import { NavCardGrid } from "../nav-indexing/index.js";
 import type { VersionBannerLabels } from "../i18n-version/index.js";
+import type { ChromeContext } from "../factory-context/index.js";
+import type { Settings } from "../settings.js";
+import { createSidebarPrepaint } from "../sidebar-prepaint/index.js";
+import { createHeadWithDefaults } from "../head-with-defaults/index.js";
+import { createSidebarWithDefaults } from "../sidebar-with-defaults/index.js";
+import { createHeaderWithDefaults } from "../header-with-defaults/index.js";
+import { createFooterWithDefaults } from "../footer-with-defaults/index.js";
+import { createDocBodyEnd } from "../doc-body-end/index.js";
+import { createDocPager } from "../doc-pager/index.js";
+import { deriveComposeMetaTitle } from "../chrome/derive.js";
 
 /** A heading item for the TOC. */
 export interface DocPageHeading {
@@ -154,24 +164,29 @@ export interface DocPageShellDeps {
 }
 
 /**
- * Create a `DocPageShell` component bound to the host's settings and
- * component dependencies.
+ * Create a `DocPageShell` component from the unified {@link ChromeContext}
+ * (epic Collapse Wiring Shells #2420, FACTORIES #2424 — breaking signature).
+ *
+ * Reads `settings` directly, `composeMetaTitle`/`getTocTitle` from the shared
+ * derive helper + the package toc helper, and rebuilds the Head / Sidebar /
+ * Header / Footer / SidebarPrepaint / DocBodyEnd / DocPager sub-components from
+ * the SAME context (so a host-supplied chrome context flows its real bindings
+ * straight through, byte-identical to the pre-collapse wiring).
  */
-export function createDocPageShell(
-  deps: DocPageShellDeps,
+export function createDocPageShell<S extends Settings = Settings>(
+  ctx: ChromeContext<S>,
 ): (props: DocPageShellProps) => JSX.Element {
-  const {
-    settings,
-    composeMetaTitle,
-    getTocTitle,
-    HeadWithDefaults,
-    SidebarWithDefaults,
-    HeaderWithDefaults,
-    FooterWithDefaults,
-    SidebarPrepaint,
-    DocBodyEnd,
-    DocPager,
-  } = deps;
+  const settings = ctx.settings as unknown as DocPageShellSettings;
+  const composeMetaTitle = deriveComposeMetaTitle(ctx);
+  const HeadWithDefaults = createHeadWithDefaults(ctx);
+  const SidebarWithDefaults = createSidebarWithDefaults(ctx);
+  const HeaderWithDefaults = createHeaderWithDefaults(ctx);
+  const FooterWithDefaults = createFooterWithDefaults(ctx);
+  const SidebarPrepaint = createSidebarPrepaint({
+    sidebarToggle: Boolean((ctx.settings as { sidebarToggle?: boolean }).sidebarToggle),
+  });
+  const DocBodyEnd = createDocBodyEnd(ctx);
+  const DocPager = createDocPager(ctx);
 
   /**
    * Render shell shared by all 4 doc-route page components.
