@@ -595,13 +595,17 @@ function generatePackageJson(choices: UserChoices) {
     // No consumer-facing / CLI breaking change.
     // next.68: routine toolchain bump from next.67, adopted in
     // lockstep with the root package.json pins. No consumer-facing / CLI change.
-    // next.69 (current pin): routine toolchain bump from next.68, adopted in
+    // next.69: routine toolchain bump from next.68, adopted in
     // lockstep with the root package.json pins. No consumer-facing / CLI change.
-    "@takazudo/zfb": "0.1.0-next.69",
-    "@takazudo/zfb-runtime": "0.1.0-next.69",
+    // next.70 (current pin): routine toolchain bump from next.69, re-aligned
+    // with the root package.json pins (root was bumped in b5489acf; this
+    // scaffold pin lagged at next.69 and broke check-pin-parity). No
+    // consumer-facing / CLI change.
+    "@takazudo/zfb": "0.1.0-next.70",
+    "@takazudo/zfb-runtime": "0.1.0-next.70",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.69",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.70",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
