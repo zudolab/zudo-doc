@@ -4,11 +4,11 @@
 // context; this module just re-exports them so the sitemap + any other callers
 // keep importing them from here unchanged.
 
-import { chromeCtx } from "./_chrome-context";
+import { routeContext } from "./_route-context";
 
 export const {
   enumerateDocsRoutes,
   enumerateTagsRoutes,
   enumerateVersionedRoutes,
   enumerateAllRoutes,
-} = chromeCtx;
+} = routeContext;

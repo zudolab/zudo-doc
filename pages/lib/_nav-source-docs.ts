@@ -6,7 +6,7 @@
 // route-enumerators) keep importing them from here unchanged.
 
 export type { NavSourceDocs, NavSourceOptions } from "@takazudo/zudo-doc/nav-source-docs";
-import { chromeCtx } from "./_chrome-context";
+import { routeContext } from "./_route-context";
 
 export const {
   resolveNavSource,
@@ -14,4 +14,4 @@ export const {
   loadNavSourceDocs,
   stableMergeCategoryMeta,
   stableNavDocs,
-} = chromeCtx;
+} = routeContext;

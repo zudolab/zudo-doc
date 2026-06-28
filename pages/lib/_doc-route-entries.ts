@@ -5,6 +5,6 @@
 // page files keep importing it from here unchanged.
 
 export type { DocRouteEntry, BuildDocRouteEntriesArgs } from "@takazudo/zudo-doc/doc-route-entries";
-import { chromeCtx } from "./_chrome-context";
+import { routeContext } from "./_route-context";
 
-export const { buildDocRouteEntries } = chromeCtx;
+export const { buildDocRouteEntries } = routeContext;

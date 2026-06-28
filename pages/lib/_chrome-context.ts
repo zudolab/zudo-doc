@@ -22,20 +22,18 @@
 // the raw material HOSTCOLLAPSE (#2427) will dedupe into one adapter.
 
 import type { ComponentChildren, VNode } from "preact";
-import { createRouteContext } from "@takazudo/zudo-doc/route-context";
 import type { ChromeContext, ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
-import type { ColorScheme } from "@takazudo/zudo-doc/color-scheme-utils";
 
 import { settings } from "@/config/settings";
-import { translations, defaultLocale } from "@/config/i18n";
+import { defaultLocale } from "@/config/i18n";
 import { tagVocabulary } from "@/config/tag-vocabulary";
-import { colorSchemes } from "@/config/color-schemes";
 import sidebars from "@/config/sidebars";
 import { frontmatterRenderers } from "@/config/frontmatter-preview-renderers";
 import { collectTags } from "@/utils/tags";
 import { toRouteSlug } from "@/utils/slug";
 import type { DocsEntry } from "@/types/docs-entry";
 
+import { routeContext } from "./_route-context";
 import { stableDocs, memoizeDerived } from "./_nav-source-cache";
 import { mergeLocaleDocs } from "./locale-merge";
 import { SearchWidget } from "./_search-widget";
@@ -113,21 +111,9 @@ const mdxExtras = {
 } as unknown as Record<string, (props: Record<string, unknown>) => unknown>;
 
 // ---------------------------------------------------------------------------
-// The unified ChromeContext.
+// The unified ChromeContext = the reconstructed route context (from
+// _route-context.ts) + the host-bound chrome slots.
 // ---------------------------------------------------------------------------
-
-const routeContext = createRouteContext(
-  {
-    settings,
-    translations,
-    tagVocabulary,
-    colorSchemes: colorSchemes as unknown as Record<string, ColorScheme>,
-  },
-  // Pass the host content bridge so the docs read + nav enumeration match the
-  // project's existing `pages/*` paths() exactly (host `bridgeDocsEntries` over
-  // the `zfb/content` snapshot), not the package default.
-  { stableDocs },
-);
 
 const hostBindings: ChromeHostBindings = {
   SearchWidget: SearchWidget as ChromeHostBindings["SearchWidget"],
