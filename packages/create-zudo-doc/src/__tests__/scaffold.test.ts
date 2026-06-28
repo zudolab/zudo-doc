@@ -246,59 +246,35 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
   });
 
   // #2057/#2067: the doc-page shell mounts the package Toc/MobileToc via the
-  // override props and derives the TOC title from the `_toc-title` helper, which
-  // re-exports `getTocTitle` from "@takazudo/zudo-doc/toc" (exported by the
-  // scaffolded package since 0.2.3 — no local hand-mirror anymore).
+  // override props and derives the TOC title from getTocTitle.
   //
-  // Post-relocation (epic #2344, S5): the Toc/MobileToc mount and the
-  // tocOverride/mobileTocOverride wiring moved OFF the generated
-  // `_doc-page-shell.tsx` stub and INTO the package factory
-  // `@takazudo/zudo-doc/doc-page-shell` (`createDocPageShell`). So we assert the
-  // wiring in the package factory source, while the generated stub must still
-  // pass the host-resolved `getTocTitle` helper into the factory (the locale-aware
-  // TOC title is host config the package can't own). The `_toc-title.ts`
-  // re-export + version-pin guard below are unchanged.
+  // Post-collapse (epic #2420, GENSYNC #2429): `_doc-page-shell.tsx` and
+  // `_toc-title.ts` were removed from the scaffold template — the host collapsed
+  // all per-component chrome shells into `_chrome.ts`. The generated project no
+  // longer emits those files; the behavior lives entirely in the package factory.
+  // The version-pin guard (0.2.3+) remains: `getTocTitle` still ships from the
+  // `@takazudo/zudo-doc/toc` entrypoint the package re-exports.
   it("wires tocOverride/mobileTocOverride in _doc-page-shell with the _toc-title helper (#2057)", async () => {
-    const shellPath = projectPath(
-      "test-minimal",
-      "pages/lib/_doc-page-shell.tsx",
-    );
-    const shell = await fs.readFile(shellPath, "utf-8");
-    // The generated stub delegates to the package factory and injects the
-    // host-resolved getTocTitle helper (the factory uses it to derive tocTitle).
-    expect(shell).toContain(
-      'import { createDocPageShell } from "@takazudo/zudo-doc/doc-page-shell";',
-    );
-    expect(shell).toContain('import { getTocTitle } from "./_toc-title";');
-    expect(shell).toContain("createDocPageShell({");
-    expect(shell).toContain("getTocTitle,");
+    // Scaffold no longer emits these files (collapsed into _chrome.ts, #2420).
+    expect(
+      await fs.pathExists(projectPath("test-minimal", "pages/lib/_doc-page-shell.tsx")),
+    ).toBe(false);
+    expect(
+      await fs.pathExists(projectPath("test-minimal", "pages/lib/_toc-title.ts")),
+    ).toBe(false);
 
-    // The Toc/MobileToc mount + override wiring now lives in the package factory.
+    // The Toc/MobileToc mount + override wiring lives in the package factory.
     const shellFactory = await fs.readFile(
       packageSrcPath("doc-page-shell/index.tsx"),
       "utf-8",
     );
     expect(shellFactory).toContain(
-      'import { Toc, MobileToc } from "../toc/index.js";',
+      'import { Toc, MobileToc, getTocTitle } from "../toc/index.js";',
     );
     expect(shellFactory).toContain("tocOverride={tocOverride}");
     expect(shellFactory).toContain("mobileTocOverride={mobileTocOverride}");
-    // The factory derives the title from the injected getTocTitle dependency
-    // (the host's _toc-title helper), not a re-inlined map.
+    // The factory derives the title from the injected getTocTitle dependency.
     expect(shellFactory).toContain("getTocTitle(locale)");
-
-    const tocTitlePath = projectPath(
-      "test-minimal",
-      "pages/lib/_toc-title.ts",
-    );
-    expect(await fs.pathExists(tocTitlePath)).toBe(true);
-    const tocTitle = await fs.readFile(tocTitlePath, "utf-8");
-    // Re-export, not a hand-mirrored map — and definitely no stale TOC_TITLES.
-    expect(tocTitle).toContain(
-      'export { getTocTitle } from "@takazudo/zudo-doc/toc";',
-    );
-    expect(tocTitle).not.toContain("TOC_TITLES");
-    expect(tocTitle).not.toContain("export function getTocTitle");
 
     // The re-export only resolves because the scaffolded @takazudo/zudo-doc
     // exports ./toc (getTocTitle), which landed in 0.2.3. Guard the pinned
@@ -1347,12 +1323,11 @@ describe("scaffold — footer features", () => {
   //
   // Post-relocation (epic #2344, S5): the metaTags gating + composeMetaTitle
   // call moved OFF the generated `_head-with-defaults.tsx` stub and INTO the
-  // package factory `@takazudo/zudo-doc/head-with-defaults`
-  // (`createHeadWithDefaults`). So the gating logic is asserted against the
-  // package factory source, while the generated stub must still delegate to the
-  // factory and inject the host's `composeMetaTitle` + settings (which carry the
-  // metaTags config). A full scaffold render is not feasible in unit tests —
-  // pnpm build is run by the manager after merge per task spec.
+  // package factory `@takazudo/zudo-doc/head-with-defaults`.
+  //
+  // Post-collapse (epic #2420, GENSYNC #2429): `_head-with-defaults.tsx` was
+  // removed from the scaffold template — chrome wiring collapsed into `_chrome.ts`.
+  // The gating logic is asserted against the package factory source.
   it("_head-with-defaults gates og:image/twitter:card/keywords via settings.metaTags (S4 #2078)", async () => {
     const choices: UserChoices = {
       projectName: "test-head-template-gates",
@@ -1363,22 +1338,11 @@ describe("scaffold — footer features", () => {
       packageManager: "pnpm",
     };
     await scaffold(choices);
-    // The generated stub delegates to the package factory and injects the host
-    // composeMetaTitle + settings (settings carries metaTags); it no longer
-    // contains the gating logic itself.
-    const headStub = await fs.readFile(
-      projectPath(
-        "test-head-template-gates",
-        "pages/lib/_head-with-defaults.tsx",
-      ),
-      "utf-8",
-    );
-    expect(headStub).toContain(
-      'import { createHeadWithDefaults } from "@takazudo/zudo-doc/head-with-defaults"',
-    );
-    expect(headStub).toContain("createHeadWithDefaults({");
-    expect(headStub).toContain("composeMetaTitle,");
-    expect(headStub).toContain("settings,");
+
+    // Scaffold no longer emits _head-with-defaults.tsx (collapsed into _chrome.ts, #2420).
+    expect(
+      await fs.pathExists(projectPath("test-head-template-gates", "pages/lib/_head-with-defaults.tsx")),
+    ).toBe(false);
 
     // The metaTags gating + composeMetaTitle emission now lives in the factory.
     const headSrc = await fs.readFile(
@@ -2298,7 +2262,7 @@ describe("scaffold — imageEnlarge feature", () => {
     expect(config).not.toContain("imageEnlarge:");
   });
 
-  it("pages/_mdx-components.ts uses the factory pattern (imageEnlarge handled inside package)", async () => {
+  it("pages/_mdx-components.ts is absent (MDX wiring collapsed into _chrome.ts, #2420)", async () => {
     const choices: UserChoices = {
       projectName: "test-ie-override-on",
       defaultLang: "en",
@@ -2308,21 +2272,15 @@ describe("scaffold — imageEnlarge feature", () => {
       packageManager: "pnpm",
     };
     await scaffold(choices);
-    const content = await fs.readFile(
-      projectPath("test-ie-override-on", "pages/_mdx-components.ts"),
-      "utf-8",
-    );
-    // S8 / #2360: imageEnlarge p-override is now handled inside the
-    // @takazudo/zudo-doc/mdx-components factory; the generated file only
-    // calls createMdxComponentsBase({ settings, ... }) and the factory reads
-    // settings.imageEnlarge at render time. No EnlargeableParagraph in the
-    // generated file in either case.
-    expect(content).toContain("createMdxComponents");
-    expect(content).toContain("@takazudo/zudo-doc/mdx-components");
-    expect(content).not.toContain("@slot:");
+    // Post-collapse (epic #2420, GENSYNC #2429): _mdx-components.ts was removed
+    // from the template. MDX extras (HtmlPreview, Details, Island, etc.) are now
+    // wired inside _chrome.ts via hostBindings.mdxExtras.
+    expect(
+      await fs.pathExists(projectPath("test-ie-override-on", "pages/_mdx-components.ts")),
+    ).toBe(false);
   });
 
-  it("pages/_mdx-components.ts does NOT contain EnlargeableParagraph when imageEnlarge is disabled", async () => {
+  it("pages/_mdx-components.ts is absent when imageEnlarge is disabled (#2420)", async () => {
     const choices: UserChoices = {
       projectName: "test-ie-override-off",
       defaultLang: "en",
@@ -2332,17 +2290,10 @@ describe("scaffold — imageEnlarge feature", () => {
       packageManager: "pnpm",
     };
     await scaffold(choices);
-    const content = await fs.readFile(
-      projectPath("test-ie-override-off", "pages/_mdx-components.ts"),
-      "utf-8",
-    );
-    // Factory form — EnlargeableParagraph lives inside the package factory,
-    // not in the generated file. Both on and off produce the same factory call;
-    // runtime gating is via settings.imageEnlarge (read by the factory).
-    expect(content).toContain("createMdxComponents");
-    expect(content).toContain("@takazudo/zudo-doc/mdx-components");
-    expect(content).not.toContain("EnlargeableParagraph");
-    expect(content).not.toContain("@slot:");
+    // Post-collapse (epic #2420, GENSYNC #2429): same absence regardless of feature.
+    expect(
+      await fs.pathExists(projectPath("test-ie-override-off", "pages/_mdx-components.ts")),
+    ).toBe(false);
   });
 
 });
@@ -2952,45 +2903,35 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
   });
 });
 
-// W6A (#1734) — page mirror parity assertions. The 26 unconditional pages
-// from the host repo's pages/ tree are mirrored into templates/base/pages/
-// and must show up in every scaffold variant; pages/api/** is excluded as
-// worker-only per spec-lock Decision 5.
-// Note: pages/404.tsx and pages/sitemap.xml.tsx were removed from the
-// template in the Stub-Deletion Fast-Follow (epic #2369) — those routes are
-// now injected by the package (packageOwnedRoutes), not scaffolded. The docs
-// catch-all stub pages/docs/[[...slug]].tsx was removed the same way in #2390
-// (supersedes #2377): generated projects render docs via the package-injected
-// route, whose chrome now wires the Details/HtmlPreview/Island MDX components.
+// W6A (#1734) — page mirror parity assertions. The unconditional pages from
+// the host repo's pages/ tree are mirrored into templates/base/pages/ and must
+// show up in every scaffold variant; pages/api/** is excluded as worker-only
+// per spec-lock Decision 5.
+// Note: pages/404.tsx and pages/sitemap.xml.tsx were removed from the template
+// in the Stub-Deletion Fast-Follow (epic #2369) — those routes are now injected
+// by the package (packageOwnedRoutes), not scaffolded. The docs catch-all stub
+// pages/docs/[[...slug]].tsx was removed the same way in #2390 (supersedes
+// #2377): generated projects render docs via the package-injected route.
+// Post-collapse (epic #2420, GENSYNC #2429): ~23 individual chrome shell files
+// collapsed into `_chrome.ts` + `_route-context.ts`; pages/_mdx-components.ts
+// removed (MDX extras wired via hostBindings.mdxExtras in _chrome.ts).
 describe("scaffold — W6A page mirror (templates/base/pages)", () => {
   const UNCONDITIONAL_PAGES = [
     "pages/index.tsx",
     "pages/_data.ts",
-    "pages/_mdx-components.ts",
     "pages/lib/_body-end-islands.tsx",
-    "pages/lib/_category-nav.tsx",
-    "pages/lib/_category-tree-nav.tsx",
-    "pages/lib/_compose-meta-title.ts",
+    "pages/lib/_chrome.ts",
     "pages/lib/_details.tsx",
-    "pages/lib/_doc-history-area.tsx",
-    "pages/lib/_doc-metainfo-area.tsx",
-    "pages/lib/_doc-tags-area.tsx",
+    "pages/lib/_doc-route-entries.ts",
     "pages/lib/_extract-headings.ts",
-    "pages/lib/_footer-with-defaults.tsx",
     "pages/lib/_frontmatter-preview-data.ts",
-    "pages/lib/_head-with-defaults.tsx",
-    "pages/lib/_header-with-defaults.tsx",
-    "pages/lib/_inline-version-switcher.tsx",
-    "pages/lib/_math-block.tsx",
     "pages/lib/_nav-source-cache.ts",
     "pages/lib/_nav-source-docs.ts",
     "pages/lib/_preset-generator.tsx",
-    "pages/lib/_search-widget-script.ts",
+    "pages/lib/_route-context.ts",
     "pages/lib/_search-widget.tsx",
-    "pages/lib/_sidebar-with-defaults.tsx",
-    "pages/lib/_site-tree-nav.tsx",
+    "pages/lib/doc-page-props.ts",
     "pages/lib/locale-merge.ts",
-    "pages/lib/route-enumerators.ts",
   ];
 
   const BAREBONE: UserChoices = {
@@ -3032,7 +2973,7 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
     packageManager: "pnpm",
   };
 
-  it("emits all 26 unconditional page files in a barebone scaffold", async () => {
+  it("emits all 15 unconditional page files in a barebone scaffold", async () => {
     await scaffold(BAREBONE);
     for (const rel of UNCONDITIONAL_PAGES) {
       expect(
@@ -3042,7 +2983,7 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
     }
   });
 
-  it("emits all 26 unconditional page files in an all-features scaffold", async () => {
+  it("emits all 15 unconditional page files in an all-features scaffold", async () => {
     await scaffold(ALL_FEATURES);
     for (const rel of UNCONDITIONAL_PAGES) {
       expect(
@@ -3701,9 +3642,10 @@ describe("scaffold — W7C cross-feature union (i18n + docTags + versioning) (#1
   // After the Stub-Deletion Fast-Follow (epic #2369) and #2390 (supersedes
   // #2377), every feature-conditional DOC route is now injected by the package
   // (packageOwnedRoutes) — the tags pages, the versions pages, AND the
-  // versioned-docs catch-alls (v/[version]/** ) — so NONE are emitted as
-  // scaffold files. The only feature-conditional page the versioning feature
-  // still ships is the lib renderer pages/lib/_versions-page.tsx.
+  // versioned-docs catch-alls (v/[version]/**) — so NONE are emitted as scaffold
+  // files. Post-collapse (epic #2420, GENSYNC #2429): pages/lib/_versions-page.tsx
+  // and pages/lib/_tag-pages.tsx were also removed from the feature templates —
+  // those renderers now live in the package (injected via packageOwnedRoutes).
   it("emits no feature-conditional doc route stubs as scaffold files; all are package-injected", async () => {
     const choices: UserChoices = {
       projectName: "test-union-all",
@@ -3724,6 +3666,9 @@ describe("scaffold — W7C cross-feature union (i18n + docTags + versioning) (#1
       "pages/[locale]/docs/versions.tsx",
       "pages/v/[version]/docs/[[...slug]].tsx",
       "pages/v/[version]/[locale]/docs/[[...slug]].tsx",
+      // Post-collapse (#2420): lib renderers also removed from feature templates.
+      "pages/lib/_versions-page.tsx",
+      "pages/lib/_tag-pages.tsx",
     ];
     for (const rel of absentExpected) {
       expect(
@@ -3731,13 +3676,6 @@ describe("scaffold — W7C cross-feature union (i18n + docTags + versioning) (#1
         `expected ${rel} to be ABSENT (package-injected, not scaffolded)`,
       ).toBe(false);
     }
-    // The versioning lib renderer IS still scaffolded.
-    expect(
-      await fs.pathExists(
-        projectPath("test-union-all", "pages/lib/_versions-page.tsx"),
-      ),
-      "pages/lib/_versions-page.tsx should still be scaffolded",
-    ).toBe(true);
   });
 });
 
@@ -4134,8 +4072,12 @@ describe("scaffold — designTokenPanel zdtp gating (#2162)", () => {
 // so the imageEnlarge feature must NOT inject a second
 // `import { settings } from "@/config/settings";` line — a duplicate would be
 // an illegal ES-module re-declaration of the same lexical binding.
+//
+// Post-collapse (epic #2420, GENSYNC #2429): pages/_mdx-components.ts is no
+// longer emitted. The duplicate-settings-import guard no longer applies to that
+// file — MDX extras now live in _chrome.ts via hostBindings.mdxExtras.
 describe("scaffold — imageEnlarge does not duplicate the settings import (#2172)", () => {
-  it("pages/_mdx-components.ts imports settings exactly once when imageEnlarge is enabled", async () => {
+  it("pages/_mdx-components.ts is absent when imageEnlarge is enabled (#2420)", async () => {
     const choices: UserChoices = {
       projectName: "test-ie-dup-import",
       defaultLang: "en",
@@ -4145,14 +4087,10 @@ describe("scaffold — imageEnlarge does not duplicate the settings import (#217
       packageManager: "pnpm",
     };
     await scaffold(choices);
-    const content = await fs.readFile(
-      projectPath("test-ie-dup-import", "pages/_mdx-components.ts"),
-      "utf-8",
-    );
-    const matches = content.match(
-      /import\s*\{\s*settings\s*\}\s*from\s*["']@\/config\/settings["'];?/g,
-    );
-    expect(matches).toHaveLength(1);
+    // File no longer emitted; the duplicate-import concern is moot.
+    expect(
+      await fs.pathExists(projectPath("test-ie-dup-import", "pages/_mdx-components.ts")),
+    ).toBe(false);
   });
 });
 
@@ -4281,16 +4219,11 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
   // enableClientRouter={settings.dynamicPageTransition} so the SPA router is
   // gated per-page by the settings flag.
   //
-  // Post-relocation (epic #2344, S5): the doc-page-shell's <DocLayoutWithDefaults>
-  // render moved OFF the generated `_doc-page-shell.tsx` stub and INTO the package
-  // factory `@takazudo/zudo-doc/doc-page-shell` (`createDocPageShell`). So for the
-  // shell render site we assert the `enableClientRouter={settings.dynamicPageTransition}`
-  // prop in the package factory source, while the generated stub must still inject
-  // the host `settings` into the factory (settings carries dynamicPageTransition).
-  // `pages/index.tsx` was NOT relocated and still contains the literal prop
-  // directly. `pages/404.tsx` was removed from the scaffold template in the
-  // Stub-Deletion Fast-Follow (epic #2369) — it is now package-injected.
-  it("feature ON: _doc-page-shell.tsx threads enableClientRouter={settings.dynamicPageTransition} via the package factory", async () => {
+  // Post-collapse (epic #2420, GENSYNC #2429): `_doc-page-shell.tsx` was removed
+  // from the scaffold template — chrome wiring collapsed into `_chrome.ts`. For the
+  // shell render site we assert the prop in the package factory source. The
+  // scaffold no longer emits `_doc-page-shell.tsx` in any variant.
+  it("feature ON: _doc-page-shell.tsx is absent; package factory threads enableClientRouter", async () => {
     const choices: UserChoices = {
       projectName: "test-dpt-on-ecr-shell",
       defaultLang: "en",
@@ -4300,19 +4233,12 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
       packageManager: "pnpm",
     };
     await scaffold(choices);
-    const content = await fs.readFile(
-      projectPath("test-dpt-on-ecr-shell", "pages/lib/_doc-page-shell.tsx"),
-      "utf-8",
-    );
-    // The generated stub delegates to the factory and injects host settings,
-    // which carry the dynamicPageTransition flag the factory reads.
-    expect(content).toContain(
-      'import { createDocPageShell } from "@takazudo/zudo-doc/doc-page-shell";',
-    );
-    expect(content).toContain("createDocPageShell({");
-    expect(content).toContain("settings,");
+    // Post-collapse: file is no longer emitted.
+    expect(
+      await fs.pathExists(projectPath("test-dpt-on-ecr-shell", "pages/lib/_doc-page-shell.tsx")),
+    ).toBe(false);
 
-    // The actual prop on <DocLayoutWithDefaults> now lives in the factory.
+    // The actual prop on <DocLayoutWithDefaults> lives in the package factory.
     const shellFactory = await fs.readFile(
       packageSrcPath("doc-page-shell/index.tsx"),
       "utf-8",
@@ -4322,7 +4248,7 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
     );
   });
 
-  it("feature OFF: _doc-page-shell.tsx threads enableClientRouter={settings.dynamicPageTransition} via the package factory", async () => {
+  it("feature OFF: _doc-page-shell.tsx is absent; package factory threads enableClientRouter", async () => {
     const choices: UserChoices = {
       projectName: "test-dpt-off-ecr-shell",
       defaultLang: "en",
@@ -4332,18 +4258,10 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
       packageManager: "pnpm",
     };
     await scaffold(choices);
-    const content = await fs.readFile(
-      projectPath("test-dpt-off-ecr-shell", "pages/lib/_doc-page-shell.tsx"),
-      "utf-8",
-    );
-    // The stub is feature-agnostic — it always delegates to the factory and
-    // injects settings; the value (settings.dynamicPageTransition) is false at
-    // runtime when the feature is off.
-    expect(content).toContain(
-      'import { createDocPageShell } from "@takazudo/zudo-doc/doc-page-shell";',
-    );
-    expect(content).toContain("createDocPageShell({");
-    expect(content).toContain("settings,");
+    // Post-collapse: file is no longer emitted.
+    expect(
+      await fs.pathExists(projectPath("test-dpt-off-ecr-shell", "pages/lib/_doc-page-shell.tsx")),
+    ).toBe(false);
 
     // The prop must be present in the factory regardless of feature state.
     const shellFactory = await fs.readFile(
