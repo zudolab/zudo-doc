@@ -3673,9 +3673,12 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
    * lockstep with the root package.json pins. No consumer-facing change.
    * Bumped to 0.1.0-next.69: routine upstream prerelease adoption (next.69) in
    * lockstep with the root package.json pins. No consumer-facing change.
+   * Bumped to 0.1.0-next.70: re-aligned with the root package.json pins after
+   * the scaffold pin lagged at next.69 (broke check-pin-parity). No
+   * consumer-facing change.
    * Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.69", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.70", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -3686,10 +3689,10 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.69");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.69");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.70");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.70");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.69",
+      "0.1.0-next.70",
     );
   });
 });
