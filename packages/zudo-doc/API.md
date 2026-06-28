@@ -1,9 +1,23 @@
-# @takazudo/zudo-doc — 1.0 Public API Contract
+# @takazudo/zudo-doc — 2.0 Public API Contract
 
-This document enumerates the **frozen 1.0 stable surface** of `@takazudo/zudo-doc`.
+This document enumerates the **stable surface** of `@takazudo/zudo-doc`.
 
-Decision: **freeze** the current surface — do not restructure or curate exports before the 1.0 tag.
-Post-merge, run `/l-make-release` to publish the lockstep 1.0 release across the workspace.
+> **BREAKING — MAJOR version bump (B4PUSH wave #2431):** The Collapse Wiring
+> Shells epic (#2420) introduced two breaking changes that require a MAJOR version
+> bump:
+>
+> 1. Every public page-chrome factory (`createX`) now takes the unified
+>    `ChromeContext` (from `./factory-context`) instead of a per-factory narrow
+>    context. Sole consumer is the host's wiring shell; downstream projects that
+>    only import UI components or the preset are unaffected.
+> 2. Two new public subpaths (`./route-context`, `./chrome`) are added to the
+>    stable surface.
+>
+> **Do NOT publish here** — version bumping and publishing are handled in the
+> B4PUSH wave (#2431). Run `/l-make-release` there.
+
+Decision: **freeze** the current surface — do not restructure or curate exports before publishing.
+Post-merge in B4PUSH wave (#2431), run `/l-make-release` to publish the lockstep MAJOR release across the workspace.
 
 ## Drift Guards (authoritative)
 
@@ -13,11 +27,11 @@ Several parts of this surface are already protected by existing tooling — do N
 - **Z-index tokens** — `pnpm check:z-index` (`gen-z-index --check`) is the authoritative guard.
 - **`doclayout` slot anchors** — parity between `packages/zudo-doc/src/doclayout/anchors.ts` and the scaffolded doc-layout is enforced by `pnpm check:template-drift`.
 
-New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapshot.test.ts` and `packages/create-zudo-doc/src/__tests__/ejectable-snapshot.test.ts`) cover the previously-unguarded surfaces: the `package.json#exports` keyset, the `PresetSettings`/`Settings` field set, and the ejectable-component list.
+New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapshot.test.ts` and `packages/zudo-doc/src/__tests__/ejectable-snapshot.test.ts`) cover the previously-unguarded surfaces: the `package.json#exports` keyset, the `PresetSettings`/`Settings` field set, and the ejectable-component list.
 
 ---
 
-## 1. Subpath Exports (120 total)
+## 1. Subpath Exports (124 total)
 
 The full `package.json#exports` keyset is the contract. Any addition or removal requires a deliberate, reviewed change that will fail the snapshot guard.
 
@@ -28,7 +42,10 @@ The full `package.json#exports` keyset is the contract. Any addition or removal 
 | `.` | Root re-exports barrel |
 | `./preset` | `zudoDocPreset()` — zfb config preset factory |
 | `./settings` | `Settings` / `PresetSettings` type definitions |
-| `./factory-context` | `FactoryContext` shared type for package factories |
+| `./factory-context` | `FactoryContext` / `ChromeContext` / `RouteContext` / `ChromeHostBindings` — the full shared type surface for package factories and chrome wiring (types only, node-free) |
+| `./route-context` | `createRouteContext(payload, options?)` — reconstructs the full `RouteContext` callable surface from the serializable `RouteContextPayload`; also re-exports `RouteContext` / `RouteContextPayload` / `TagInfo` / `ContentBridge` types |
+| `./chrome` | `createChrome(context, hostBindings?)` — assembles a `ChromeContext` from a `RouteContext` + `ChromeHostBindings` (stub defaults) and wires all page-chrome factories; returns the `Chrome` surface |
+| `./eject` | `EJECTABLE` map + `eject()` function + `ZudoDocJson` type — ejectable component registry for the `zudo-doc eject` CLI |
 
 ### UI Components
 
@@ -355,11 +372,11 @@ Defined in `packages/zudo-doc/src/doclayout/anchors.ts` and exported via `./docl
 
 ---
 
-## 5. Ejectable Component List (12)
+## 5. Ejectable Component List (18)
 
-The eject surface exposed by `create-zudo-doc eject <component>`. Defined in `packages/create-zudo-doc/src/eject.ts` (`EJECTABLE` map). Source files are shipped in the package's `eject/` directory.
+The eject surface exposed by `zudo-doc eject <component>`. Defined in `packages/zudo-doc/src/eject/index.ts` (exported as `@takazudo/zudo-doc/eject`; `EJECTABLE` map). Source files are shipped in the package's `eject/` directory.
 
-**Snapshot guard:** `packages/create-zudo-doc/src/__tests__/ejectable-snapshot.test.ts` locks the list.
+**Snapshot guard:** `packages/zudo-doc/src/__tests__/ejectable-snapshot.test.ts` locks the list.
 
 | CLI name | Package subpath | Default local destination |
 |---|---|---|
@@ -375,17 +392,30 @@ The eject surface exposed by `create-zudo-doc eject <component>`. Defined in `pa
 | `content-admonition` | `@takazudo/zudo-doc/content-admonition` | `src/components/zudo-doc/content-admonition` |
 | `code-group` | `@takazudo/zudo-doc/code-group` | `src/components/zudo-doc/code-group` |
 | `details` | `@takazudo/zudo-doc/details` | `src/components/zudo-doc/details` |
+| `sidebar-tree-island` | `@takazudo/zudo-doc/sidebar-tree-island` | `src/components/zudo-doc/sidebar-tree-island` |
+| `sidebar-toggle-island` | `@takazudo/zudo-doc/sidebar-toggle-island` | `src/components/zudo-doc/sidebar-toggle-island` |
+| `desktop-sidebar-toggle-island` | `@takazudo/zudo-doc/desktop-sidebar-toggle-island` | `src/components/zudo-doc/desktop-sidebar-toggle-island` |
+| `image-enlarge` | `@takazudo/zudo-doc/image-enlarge` | `src/components/zudo-doc/image-enlarge` |
+| `doc-history` | `@takazudo/zudo-doc/doc-history` | `src/components/zudo-doc/doc-history` |
+| `site-tree-nav-island` | `@takazudo/zudo-doc/site-tree-nav-island` | `src/components/zudo-doc/site-tree-nav-island` |
 
 ---
 
 ## Internal / Unstable
 
-The following field is documented here for completeness but is **explicitly excluded from the stable 1.0 contract**:
+The following field is documented here for completeness but is **explicitly excluded from the stable contract**:
 
-- `settings.packageOwnedRoutes` — internal/advanced, dormant by default (`false`). Package-owned route injection seam (epic #2356, ADR `docs/adr/route-injection-seam.md`). With the flag off the capability is fully inert. NOT a user-facing feature for 1.0.
+- `settings.packageOwnedRoutes` — internal/advanced, dormant by default (`false`). Package-owned route injection seam (epic #2356, ADR `docs/adr/route-injection-seam.md`). With the flag off the capability is fully inert. NOT a stable user-facing feature.
 
 ---
 
-## Post-1.0 Note
+## MAJOR Version Intent
 
-After this PR merges into `base/package-first-finale` and then into `main`, run `/l-make-release` to publish the lockstep 1.0 release for `@takazudo/zudo-doc` and `create-zudo-doc`.
+The Collapse Wiring Shells epic (#2420) introduced a breaking API change: every
+public page-chrome factory (`createX`) now takes the unified `ChromeContext`
+(from `./factory-context`) instead of a narrow per-factory context. The new
+public subpaths `./route-context`, `./chrome`, and `./eject` are also part of
+the updated stable surface.
+
+**Version bump and publish are handled by the B4PUSH wave (#2431).** Do NOT run
+`/l-make-release` here — that step belongs to the B4PUSH merge.
