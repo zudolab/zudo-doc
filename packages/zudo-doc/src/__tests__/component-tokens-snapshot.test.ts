@@ -163,12 +163,30 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
           "selector": "nav[data-zd-toc]",
           "surface": "chrome",
         },
+        {
+          "category": "typography",
+          "component": "nav-active",
+          "cssVar": "--zdc-nav-active-indicator-color",
+          "default": "var(--color-fg)",
+          "property": "background-color",
+          "selector": "a[data-nav-active]",
+          "surface": "chrome",
+        },
+        {
+          "category": "typography",
+          "component": "nav-active",
+          "cssVar": "--zdc-nav-active-weight",
+          "default": "var(--font-weight-medium)",
+          "property": "font-weight",
+          "selector": "a[data-nav-active]",
+          "surface": "chrome",
+        },
       ]
     `);
   });
 
-  it("contains exactly 15 tokens in the Wave 5+S4 registry (12 content + 3 chrome)", () => {
-    expect(COMPONENT_TOKENS).toHaveLength(15);
+  it("contains exactly 17 tokens in the Wave 5+S5 registry (12 content + 5 chrome)", () => {
+    expect(COMPONENT_TOKENS).toHaveLength(17);
   });
 
   it("every cssVar follows the --zdc- prefix convention", () => {
@@ -183,11 +201,11 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
     }
   });
 
-  it("12 content tokens and 3 chrome tokens (S4 adds first chrome tokens)", () => {
+  it("12 content tokens and 5 chrome tokens (S5 adds nav-active chrome tokens)", () => {
     const contentTokens = COMPONENT_TOKENS.filter((t) => t.surface === "content");
     const chromeTokens = COMPONENT_TOKENS.filter((t) => t.surface === "chrome");
     expect(contentTokens).toHaveLength(12);
-    expect(chromeTokens).toHaveLength(3);
+    expect(chromeTokens).toHaveLength(5);
   });
 
   it("every default chains to a token or inherit — never a bare literal color/size", () => {

@@ -923,4 +923,9 @@ nav[data-zd-toc] {
   width: var(--zdc-toc-width, 280px);
 }
 
+a[data-nav-active] {
+  background-color: var(--zdc-nav-active-indicator-color, var(--color-fg));
+  font-weight: var(--zdc-nav-active-weight, var(--font-weight-medium));
+}
+
 /* END --zdc-* chrome component tokens */
