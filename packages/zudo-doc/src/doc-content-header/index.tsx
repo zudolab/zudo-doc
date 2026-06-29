@@ -16,6 +16,7 @@ import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { createDocMetainfoArea } from "../doc-metainfo-area/index.js";
 import { createDocTagsArea } from "../doc-tags-area/index.js";
+import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
 export type { FrontmatterCellRenderer };
 
@@ -94,6 +95,7 @@ interface DocContentHeaderProps {
 export function createDocContentHeader<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
 ): (props: DocContentHeaderProps) => JSX.Element {
+  assertChromeContext(ctx, "createDocContentHeader");
   const t = ctx.t;
   const buildFrontmatterPreviewEntries = (ctx.hostBindings.buildFrontmatterPreviewEntries ??
     (() => [])) as DocContentHeaderDeps["buildFrontmatterPreviewEntries"];

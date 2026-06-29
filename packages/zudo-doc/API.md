@@ -411,6 +411,27 @@ The following field is documented here for completeness but is **explicitly excl
 
 ---
 
+## Migration Notes
+
+### 2.0 — page-chrome factories take a single `ChromeContext`
+
+Every public page-chrome factory now takes the unified `ChromeContext` (from `./factory-context`)
+instead of the pre-2.0 per-factory narrow context or deps-bag. This covers both the
+component-level chrome factories (`createFooterWithDefaults`, `createHeaderWithDefaults`,
+`createSidebarWithDefaults`, `createHeadWithDefaults`, `createDocTagsArea`,
+`createDocHistoryArea`, `createDocContentHeader`, `createDocMetainfoArea`,
+`createDocBodyEnd`) and the page-level composition factories (`createRenderDocPage`,
+`createDocPageShell`, `createTagPages`, `createVersionsPageView`, `createDocPager`).
+The `ChromeContext` includes a required `hostBindings` field. Passing a pre-2.0 deps-bag
+compiles under tsc but throws at runtime — the factories now surface a clear actionable
+error (`hostBindings` missing or null) instead of an opaque TypeError.
+
+**Upgrade path:** use `createChrome(routeContext, hostBindings?)` (from `./chrome`)
+to assemble a `ChromeContext` before calling the factories, or import the unified
+type from `./factory-context` and construct it directly.
+
+---
+
 ## MAJOR Version Intent
 
 The Collapse Wiring Shells epic (#2420) introduced a breaking API change: every

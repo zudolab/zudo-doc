@@ -46,10 +46,13 @@ const SCAFFOLD_TS_PATH = resolve(
 const ZUDO_DOC_PKG_PATH = resolve(ROOT_DIR, "packages/zudo-doc/package.json");
 
 // External upstream packages: scaffold pin must equal root dependencies[pkg].
+// @takazudo/zdtp is included here so the scaffold's emitted zdtp pin is
+// parity-checked against root dependencies — same staleness class as #2381 / #2445.
 const PINNED_PACKAGES = [
   "@takazudo/zfb",
   "@takazudo/zfb-runtime",
   "@takazudo/zfb-adapter-cloudflare",
+  "@takazudo/zdtp",
 ];
 
 // Internal packages published from this monorepo: scaffold pin (caret/tilde
@@ -70,6 +73,33 @@ const INTERNAL_PINNED_PACKAGES = [
 //   peerDependencies — ^<root pin> (downstream compatibility range)
 // Note: @takazudo/zfb-adapter-cloudflare is NOT in packages/zudo-doc — only these two.
 const ZUDO_DOC_ZFB_PACKAGES = ["@takazudo/zfb", "@takazudo/zfb-runtime"];
+
+// First-party peer floors in packages/zudo-doc/package.json peerDependencies.
+// These peers were previously unguarded and went stale on the 2.0.1 major bump
+// (#2381 / #2445). Adding them here catches the same staleness class whenever
+// the version or an external pin changes.
+//
+// Source-of-truth distinction:
+//   lockstep  — co-released with this repo; source = root package.json `version`
+//   pinned    — external dep pinned in root `dependencies`; source = that dep string
+//
+// Insurance: both sources are exact strings today (no leading ^/~). The check
+// below rejects a future ranged source value that would produce a malformed `^^…`
+// expected peer, making the breakage loud rather than silently wrong.
+const FIRST_PARTY_PEER_CHECKS = [
+  {
+    pkg: "@takazudo/zudo-doc-history-server",
+    sourceKind: "lockstep (root version)",
+    // Released at the same lockstep version as the root package.
+    getSource: (rootPkg) => rootPkg.version,
+  },
+  {
+    pkg: "@takazudo/zdtp",
+    sourceKind: 'pinned (root dependencies["@takazudo/zdtp"])',
+    // External dependency pinned in root dependencies — NOT lockstep.
+    getSource: (rootPkg) => rootPkg.dependencies?.["@takazudo/zdtp"],
+  },
+];
 
 /**
  * Extract the literal version string for `pkgName` from scaffold.ts.
@@ -242,9 +272,62 @@ function main() {
     }
   }
 
+  // ── First-party peer floors in packages/zudo-doc peerDependencies ────────────
+  // Guards the recurrence class from #2381 / #2445: the zfb ZUDO_DOC_ZFB_PACKAGES
+  // loop above only covers the zfb pair; these two first-party peers were unguarded
+  // and went stale on the 2.0.1 major bump. This block catches the same pattern.
+  for (const { pkg, sourceKind, getSource } of FIRST_PARTY_PEER_CHECKS) {
+    const sourceValue = getSource(rootPkg);
+
+    if (!sourceValue) {
+      mismatches.push({
+        pkg,
+        reason: `Source value not found — ${sourceKind}`,
+        expected: "(could not determine)",
+        actual: zudoDocPkg.peerDependencies?.[pkg] ?? "(missing)",
+        file: ZUDO_DOC_PKG_PATH,
+        field: "peerDependencies",
+        kind: "first-party-peer",
+      });
+      continue;
+    }
+
+    // Insurance: assert source is an exact string with no leading ^/~.
+    // Today both lockstep (root version) and pinned (root dependencies) sources
+    // are bare version strings. A future change that makes one a range would
+    // produce a malformed `^^…` expected peer — fail loudly instead.
+    if (/^[\^~]/.test(sourceValue)) {
+      mismatches.push({
+        pkg,
+        reason: `Source value ${JSON.stringify(sourceValue)} has a leading ^/~ (${sourceKind}) — cannot derive a clean expected peer; fix the source to be an exact string`,
+        expected: `^${sourceValue} (MALFORMED — double-caret)`,
+        actual: zudoDocPkg.peerDependencies?.[pkg] ?? "(missing)",
+        file: ZUDO_DOC_PKG_PATH,
+        field: "peerDependencies",
+        kind: "first-party-peer",
+      });
+      continue;
+    }
+
+    const expectedPeer = `^${sourceValue}`;
+    const actualPeer = zudoDocPkg.peerDependencies?.[pkg];
+
+    if (actualPeer !== expectedPeer) {
+      mismatches.push({
+        pkg,
+        reason: `First-party peer floor drift — stale floor will reject the current ${sourceKind} (#2381 / #2445)`,
+        expected: expectedPeer,
+        actual: actualPeer ?? "(missing)",
+        file: ZUDO_DOC_PKG_PATH,
+        field: "peerDependencies",
+        kind: "first-party-peer",
+      });
+    }
+  }
+
   if (mismatches.length === 0) {
     console.log(
-      `OK — pin parity verified for ${PINNED_PACKAGES.length} external + ${INTERNAL_PINNED_PACKAGES.length} internal + ${ZUDO_DOC_ZFB_PACKAGES.length * 2} workspace-package field(s):`,
+      `OK — pin parity verified for ${PINNED_PACKAGES.length} external + ${INTERNAL_PINNED_PACKAGES.length} internal + ${ZUDO_DOC_ZFB_PACKAGES.length * 2} workspace-package field(s) + ${FIRST_PARTY_PEER_CHECKS.length} first-party peer floor(s):`,
     );
     for (const pkgName of PINNED_PACKAGES) {
       console.log(`  ${pkgName} = ${rootPkg.dependencies[pkgName]}`);
@@ -264,6 +347,12 @@ function main() {
         `  packages/zudo-doc peerDependencies[${pkgName}] = ${zudoDocPkg.peerDependencies?.[pkgName]} (^${rootPin})`,
       );
     }
+    for (const { pkg, getSource } of FIRST_PARTY_PEER_CHECKS) {
+      const sourceValue = getSource(rootPkg);
+      console.log(
+        `  packages/zudo-doc peerDependencies[${pkg}] = ${zudoDocPkg.peerDependencies?.[pkg]} (matched ^${sourceValue})`,
+      );
+    }
     return 0;
   }
 
@@ -281,6 +370,12 @@ function main() {
       console.error(`  [${m.pkg}]  ${m.reason}`);
       console.error(`    expected (release version): ${m.rootPin}`);
       console.error(`    scaffold.ts:                ${m.scaffoldPin ?? "(missing)"}`);
+    } else if (m.kind === "first-party-peer") {
+      console.error(`  [${m.pkg}]  ${m.reason}`);
+      console.error(`    file:     ${m.file}`);
+      console.error(`    field:    ${m.field}`);
+      console.error(`    expected: ${m.expected}`);
+      console.error(`    actual:   ${m.actual}`);
     } else {
       // workspace-package
       console.error(`  [${m.pkg}]  ${m.reason}`);

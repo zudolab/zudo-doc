@@ -13,6 +13,7 @@ import { DocTags } from "../metainfo/index.js";
 import type { TagVocabularyEntry, TagGovernanceMode, Settings } from "../settings.js";
 import { resolvePageTags } from "../tag-helpers/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
+import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
 /** Settings subset read by the DocTagsArea factory. */
 export interface DocTagsAreaSettings {
@@ -41,6 +42,7 @@ export interface DocTagsAreaProps {
 export function createDocTagsArea<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
 ): (props: DocTagsAreaProps) => VNode | null {
+  assertChromeContext(ctx, "createDocTagsArea");
   const settings = ctx.settings as unknown as DocTagsAreaSettings;
   const defaultLocale = ctx.defaultLocale;
   const withBase = ctx.withBase;

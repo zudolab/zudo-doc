@@ -18,6 +18,7 @@ import { DocMetainfo } from "../metainfo/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { toHistorySlug } from "../slug/index.js";
+import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
 // BCP-47 locale tag mapping used by Intl.DateTimeFormat.
 // Originally mirrored from `src/utils/git-info.ts` (removed in S1 #1928).
@@ -78,6 +79,7 @@ export interface DocMetainfoAreaProps {
 export function createDocMetainfoArea<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
 ): (props: DocMetainfoAreaProps) => VNode | null {
+  assertChromeContext(ctx, "createDocMetainfoArea");
   const settings = ctx.settings as unknown as DocMetainfoAreaSettings;
   const defaultLocale = ctx.defaultLocale;
   const docHistoryMeta = (ctx.hostBindings.docHistoryMeta ?? {}) as Record<

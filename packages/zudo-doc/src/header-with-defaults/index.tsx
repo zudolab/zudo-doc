@@ -21,6 +21,7 @@ import { SidebarToggle } from "../sidebar-toggle-island/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { buildGitHubRepoUrl as buildGitHubRepoUrlBase } from "../github-helpers/index.js";
+import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 import { deriveNavDataPrep, deriveSearchWidgetSlot } from "../chrome/derive.js";
 import type { SidebarNavNode, SidebarRootMenuItem } from "../sidebar/types.js";
 import type { LocaleLink } from "../url-helpers/index.js";
@@ -79,6 +80,7 @@ export interface HeaderWithDefaultsSettings {
 export function createHeaderWithDefaults<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
 ): (props: HeaderWithDefaultsProps) => JSX.Element {
+  assertChromeContext(ctx, "createHeaderWithDefaults");
   const settings = ctx.settings as unknown as HeaderWithDefaultsSettings;
   const defaultLocale = ctx.defaultLocale;
   const locales = ctx.locales;

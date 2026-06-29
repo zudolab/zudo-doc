@@ -31,6 +31,7 @@ import { createFooterWithDefaults } from "../footer-with-defaults/index.js";
 import { createDocBodyEnd } from "../doc-body-end/index.js";
 import { createDocPager } from "../doc-pager/index.js";
 import { deriveComposeMetaTitle } from "../chrome/derive.js";
+import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
 /** A heading item for the TOC. */
 export interface DocPageHeading {
@@ -176,6 +177,7 @@ export interface DocPageShellDeps {
 export function createDocPageShell<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
 ): (props: DocPageShellProps) => JSX.Element {
+  assertChromeContext(ctx, "createDocPageShell");
   const settings = ctx.settings as unknown as DocPageShellSettings;
   const composeMetaTitle = deriveComposeMetaTitle(ctx);
   const HeadWithDefaults = createHeadWithDefaults(ctx);

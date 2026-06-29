@@ -42,6 +42,7 @@ import { createHeaderWithDefaults } from "../header-with-defaults/index.js";
 import { createFooterWithDefaults } from "../footer-with-defaults/index.js";
 import { createDocHistoryArea } from "../doc-history-area/index.js";
 import { deriveComposeMetaTitle, deriveBodyEndIslands } from "../chrome/derive.js";
+import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -155,6 +156,7 @@ export interface TagPagesAPI {
 export function createTagPages<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
 ): TagPagesAPI {
+  assertChromeContext(ctx, "createTagPages");
   const settings = ctx.settings as unknown as TagPagesSettings;
   const defaultLocale = ctx.defaultLocale;
   const t = ctx.t;
