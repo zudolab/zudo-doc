@@ -1,0 +1,17 @@
+---
+title: 2.1.1
+description: Release notes for 2.1.1.
+sidebar_position: 1043
+---
+
+Released: 2026-06-30
+
+This patch release fixes a release-pipeline deadlock in the first-party pin-parity guard.
+
+### Bug Fixes
+
+- Relaxed the lockstep peer-floor check to satisfies-based comparison. The `@takazudo/zudo-doc-history-server` peer floor in `@takazudo/zudo-doc` is now judged against the root version with caret/satisfies semantics — a same-major lag (e.g. floor `^2.0.1` at root `2.1.0`) passes with a non-fatal advisory, and only cross-major drift or a floor above root fails — while the pinned `@takazudo/zdtp` peer stays exact. This unblocks the lockstep release and publish workflows, which previously deadlocked because the floor can only name an already-published version under `--frozen-lockfile`. (2bb3ca98, #2470)
+
+### Other Changes
+
+- Documented the intentional prerelease handling in the pin-parity caret comparator: the core-version comparison strips prerelease suffixes by design, so a prerelease lockstep root is treated as in-range — applying strict prerelease semantics would reintroduce the publish-lag deadlock this guard removes. (ee20574b, #2470)
