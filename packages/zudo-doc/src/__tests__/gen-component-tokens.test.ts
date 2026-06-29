@@ -373,9 +373,9 @@ describe("Default-value test — generated content.css block", () => {
     expect(featuresCss).toContain(generated);
   });
 
-  it("12 tokens route to content; 3 chrome tokens added by S4 (#2461)", () => {
+  it("12 tokens route to content; 5 chrome tokens added by S4+S5 (#2461/#2462)", () => {
     expect(contentTokens).toHaveLength(12);
-    expect(chromeTokens).toHaveLength(3);
+    expect(chromeTokens).toHaveLength(5);
   });
 
   // Spot-check each known token in the current registry so regressions in
@@ -389,6 +389,18 @@ describe("Default-value test — generated content.css block", () => {
   it("--zdc-doc-title-weight defaults to var(--font-weight-bold)", () => {
     expect(contentCss).toContain(
       "  font-weight: var(--zdc-doc-title-weight, var(--font-weight-bold));",
+    );
+  });
+
+  it("--zdc-nav-active-indicator-color defaults to var(--color-fg) in features.css", () => {
+    expect(featuresCss).toContain(
+      "  background-color: var(--zdc-nav-active-indicator-color, var(--color-fg));",
+    );
+  });
+
+  it("--zdc-nav-active-weight defaults to var(--font-weight-medium) in features.css", () => {
+    expect(featuresCss).toContain(
+      "  font-weight: var(--zdc-nav-active-weight, var(--font-weight-medium));",
     );
   });
 });

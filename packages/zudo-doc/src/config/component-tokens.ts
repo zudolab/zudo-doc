@@ -104,7 +104,9 @@ export type ComponentTokenName =
   | "--zdc-admonition-border-width"
   | "--zdc-card-radius"
   | "--zdc-content-max-width"
-  | "--zdc-toc-width";
+  | "--zdc-toc-width"
+  | "--zdc-nav-active-indicator-color"
+  | "--zdc-nav-active-weight";
 
 export interface ComponentToken {
   /**
@@ -381,5 +383,41 @@ export const COMPONENT_TOKENS: ComponentToken[] = [
     category: "layout",
     description:
       "Width of the desktop Table of Contents right rail. Defaults to `280px` (byte-identical to the current `w-[280px]` utility in toc.tsx). No fixed-width design token exists — bare literal is the documented exception.",
+  },
+  // ── Sidebar nav active item (a[data-nav-active], chrome, #2462) ───────────
+  // Targets non-root leaf active links in the SSR sidebar-tree island.
+  // `data-nav-active=""` is emitted on the `<a>` when `isActive && !isRoot`
+  // (sidebar-tree-island/index.tsx LeafNode). Root-level and category active
+  // items retain their unconditional `font-semibold` class (not conditional
+  // on active state) — targeting those with a single weight default would
+  // break byte-identity. Non-root leaf active is the canonical "current page"
+  // link: the most brand-identifying nav detail (#2462).
+  //
+  // Selector `a[data-nav-active]` specificity 0,1,1 beats the Tailwind
+  // utilities `bg-fg` (0,1,0) and `font-medium` (0,1,0); unlayered beats
+  // layered (@layer utilities). Defaults match the current classes exactly:
+  //   `bg-fg`      → background-color: var(--color-fg)  (byte-identical)
+  //   `font-medium`→ font-weight: var(--font-weight-medium)  (byte-identical)
+  {
+    cssVar: "--zdc-nav-active-indicator-color",
+    selector: "a[data-nav-active]",
+    property: "background-color",
+    default: "var(--color-fg)",
+    component: "nav-active",
+    surface: "chrome",
+    category: "typography",
+    description:
+      "Background color of the active sidebar nav link (non-root leaf, the current page). Defaults to `var(--color-fg)` (byte-identical to the current `bg-fg` utility — the inversion fill that marks the active item). Redefine in :root to use an accent stripe or custom fill instead.",
+  },
+  {
+    cssVar: "--zdc-nav-active-weight",
+    selector: "a[data-nav-active]",
+    property: "font-weight",
+    default: "var(--font-weight-medium)",
+    component: "nav-active",
+    surface: "chrome",
+    category: "typography",
+    description:
+      "Font weight of the active sidebar nav link (non-root leaf, the current page). Defaults to `var(--font-weight-medium)` (byte-identical to the current `font-medium` utility). Redefine in :root to use semibold or bold for stronger active emphasis.",
   },
 ];

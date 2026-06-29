@@ -564,6 +564,7 @@ const LeafNode = memo(function LeafNode({
         <a
           href={node.href}
           aria-current={isActive ? "page" : undefined}
+          data-nav-active={!isRoot && isActive ? "" : undefined}
           className={isRoot
             ? `flex items-start gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-[4px] text-small font-semibold break-words ${
                 isActive ? "bg-fg text-bg" : "text-fg hover:underline focus:underline"
