@@ -69,6 +69,19 @@
 /** Grouping category for a component token (drives docs/registry sectioning). */
 export type ComponentTokenCategory = "typography";
 
+/**
+ * Union of every `--zdc-*` CSS custom property name in the registry.
+ * Provides autocomplete when a consumer iterates or references individual tokens.
+ * Must be kept in sync with the `cssVar` values in `COMPONENT_TOKENS` below.
+ */
+export type ComponentTokenName =
+  | "--zdc-doc-title-font"
+  | "--zdc-doc-title-weight"
+  | "--zdc-doc-h2-font"
+  | "--zdc-doc-h2-weight"
+  | "--zdc-doc-h3-weight"
+  | "--zdc-doc-h4-weight";
+
 export interface ComponentToken {
   /**
    * The CSS custom-property name the consumer redefines in `:root`, e.g.

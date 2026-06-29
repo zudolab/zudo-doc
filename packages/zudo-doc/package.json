@@ -163,6 +163,10 @@
       "types": "./dist/preset.d.ts",
       "default": "./dist/preset.js"
     },
+    "./component-tokens": {
+      "types": "./dist/config/component-tokens.d.ts",
+      "default": "./dist/config/component-tokens.js"
+    },
     "./plugins/doc-history": {
       "types": "./dist/plugins/doc-history.d.ts",
       "default": "./dist/plugins/doc-history.js"
