@@ -172,6 +172,36 @@ describe("HeadWithDefaults — SiteHeadConfig head extras", () => {
     );
   });
 
+  it("stylesheet (async:true) with media: onload swaps to the configured media and <noscript> carries it", () => {
+    // Regression (review #2435): an async stylesheet that also sets `media`
+    // must swap to THAT media on load (not unconditionally "all"), and the
+    // <noscript> fallback must carry the configured media too.
+    const ctx = makeFakeChromeContext({
+      settings: {
+        head: {
+          stylesheets: [
+            {
+              href: "https://cdn.example.com/print.css",
+              media: "print",
+              async: true,
+            },
+          ],
+        },
+      },
+    });
+    const HeadWithDefaults = createHeadWithDefaults(ctx);
+    const out = render(<HeadWithDefaults title="Test" />);
+    // Initial media stays "print" (the non-render-blocking trick); onload swaps
+    // to the configured media ("print"), NOT "all".
+    expect(out).toContain(
+      '<link rel="stylesheet" href="https://cdn.example.com/print.css" media="print" onload="this.media=\'print\'"/>',
+    );
+    // The <noscript> fallback must include the configured media.
+    expect(out).toContain(
+      '<noscript><link rel="stylesheet" href="https://cdn.example.com/print.css" media="print"></noscript>',
+    );
+  });
+
   it("alternateLinks: emits <link rel={rel} href> with optional type and title", () => {
     const ctx = makeFakeChromeContext({
       settings: {

@@ -190,13 +190,14 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
                     href={s.href}
                     {...(s.crossorigin ? { crossorigin: s.crossorigin } : {})}
                     media="print"
+                    // Swap to the configured media (default "all") once loaded.
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    {...({ onload: "this.media='all'" } as any)}
+                    {...({ onload: `this.media='${s.media ?? "all"}'` } as any)}
                   />
                   <noscript
                     key={`${i}-noscript`}
                     dangerouslySetInnerHTML={{
-                      __html: `<link rel="stylesheet" href="${s.href.replace(/"/g, "&quot;")}"${s.crossorigin ? ` crossorigin="${s.crossorigin}"` : ""}>`,
+                      __html: `<link rel="stylesheet" href="${s.href.replace(/"/g, "&quot;")}"${s.media ? ` media="${s.media}"` : ""}${s.crossorigin ? ` crossorigin="${s.crossorigin}"` : ""}>`,
                     }}
                   />
                 </>
