@@ -489,4 +489,17 @@ h1.text-heading {
   font-weight: var(--zdc-doc-title-weight, var(--font-weight-bold));
 }
 
+h2.text-title {
+  font-family: var(--zdc-doc-h2-font, inherit);
+  font-weight: var(--zdc-doc-h2-weight, var(--font-weight-bold));
+}
+
+h3.text-body.font-bold {
+  font-weight: var(--zdc-doc-h3-weight, var(--font-weight-bold));
+}
+
+h4.text-body.font-semibold {
+  font-weight: var(--zdc-doc-h4-weight, var(--font-weight-semibold));
+}
+
 /* END --zdc-* component tokens */
