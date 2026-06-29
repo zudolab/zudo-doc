@@ -91,3 +91,56 @@ export interface HeadProps {
     crossorigin?: "anonymous" | "use-credentials";
   }>;
 }
+
+// ── Named serializable descriptors for SiteHeadConfig ────────────────────────
+//
+// These reuse the same shapes as the DEAD `HeadProps` link-descriptor fields
+// above (stylesheets / alternateLinks / preload) while adding the two
+// SiteHeadConfig-specific extras: `media?` and `async?` on stylesheets.
+// `HeadProps` / `DocHead` are NOT changed — the descriptors are defined
+// separately so the new config surface and the existing head primitive stay
+// independently evolvable.
+
+/** Stylesheet link descriptor for {@link SiteHeadConfig}. */
+export interface HeadStylesheet {
+  href: string;
+  crossorigin?: "anonymous" | "use-credentials";
+  /** CSS media attribute applied to the `<link media>` attribute. */
+  media?: string;
+  /**
+   * When `true`, loads the stylesheet non-render-blocking via the
+   * `media="print" + onload="this.media='all'"` pattern, plus a
+   * `<noscript><link rel="stylesheet" href>` fallback.
+   * Plain (absent or `false`) emits a normal `<link rel="stylesheet">`.
+   */
+  async?: boolean;
+}
+
+/** Preconnect hint descriptor for {@link SiteHeadConfig}. */
+export interface HeadPreconnect {
+  href: string;
+  crossorigin?: "anonymous" | "use-credentials";
+}
+
+/** Preload hint descriptor for {@link SiteHeadConfig}. */
+export interface HeadPreload {
+  href: string;
+  as: string;
+  type?: string;
+  crossorigin?: "anonymous" | "use-credentials";
+}
+
+/** Meta tag descriptor for {@link SiteHeadConfig}. */
+export interface HeadMeta {
+  name?: string;
+  property?: string;
+  content: string;
+}
+
+/** Alternate link descriptor for {@link SiteHeadConfig}. */
+export interface HeadAlternateLink {
+  rel: string;
+  href: string;
+  type?: string;
+  title?: string;
+}
