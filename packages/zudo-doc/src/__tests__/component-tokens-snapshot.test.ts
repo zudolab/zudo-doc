@@ -136,12 +136,39 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
           "selector": "[data-admonition]",
           "surface": "content",
         },
+        {
+          "category": "shape",
+          "component": "card-grid",
+          "cssVar": "--zdc-card-radius",
+          "default": "var(--zdc-surface-radius, var(--radius-DEFAULT))",
+          "property": "border-radius",
+          "selector": "a.group.block.rounded",
+          "surface": "chrome",
+        },
+        {
+          "category": "layout",
+          "component": "doc-content-band",
+          "cssVar": "--zdc-content-max-width",
+          "default": "clamp(50rem,75vw,90rem)",
+          "property": "max-width",
+          "selector": ".zd-doc-content-band",
+          "surface": "chrome",
+        },
+        {
+          "category": "layout",
+          "component": "toc",
+          "cssVar": "--zdc-toc-width",
+          "default": "280px",
+          "property": "width",
+          "selector": "nav[data-zd-toc]",
+          "surface": "chrome",
+        },
       ]
     `);
   });
 
-  it("contains exactly 12 tokens in the Wave 5 registry", () => {
-    expect(COMPONENT_TOKENS).toHaveLength(12);
+  it("contains exactly 15 tokens in the Wave 5+S4 registry (12 content + 3 chrome)", () => {
+    expect(COMPONENT_TOKENS).toHaveLength(15);
   });
 
   it("every cssVar follows the --zdc- prefix convention", () => {
@@ -156,24 +183,31 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
     }
   });
 
-  it("all current Wave 5 tokens are content-surface", () => {
-    for (const token of COMPONENT_TOKENS) {
-      expect(token.surface).toBe("content");
-    }
+  it("12 content tokens and 3 chrome tokens (S4 adds first chrome tokens)", () => {
+    const contentTokens = COMPONENT_TOKENS.filter((t) => t.surface === "content");
+    const chromeTokens = COMPONENT_TOKENS.filter((t) => t.surface === "chrome");
+    expect(contentTokens).toHaveLength(12);
+    expect(chromeTokens).toHaveLength(3);
   });
 
   it("every default chains to a token or inherit — never a bare literal color/size", () => {
     for (const token of COMPONENT_TOKENS) {
       // Preferred: "inherit" or a var() reference (including multi-value defaults
       // that contain var() like "0 var(--radius-DEFAULT) var(--radius-DEFAULT) 0").
-      // Documented exceptions (#2460): CSS keywords or literals with no token
-      // equivalent — "underline" (no text-decoration scale) and "4px" (no
-      // border-width scale). Bare hex colors and named CSS colors remain forbidden.
+      // Documented exceptions:
+      //   - "underline" (#2460): no text-decoration scale token exists.
+      //   - "4px" (#2460): no border-width scale token exists.
+      //   - "280px" (#2461): no fixed-width token exists for the TOC width.
+      //   - clamp(...) expressions (#2461): no design token for the content band
+      //     clamp expression; bare CSS function is the documented exception.
+      // Bare hex colors and named CSS colors remain forbidden.
       const isAllowed =
         token.default === "inherit" ||
         token.default.includes("var(") ||
         token.default === "underline" ||
-        token.default === "4px";
+        token.default === "4px" ||
+        token.default === "280px" ||
+        token.default.startsWith("clamp(");
       expect(isAllowed).toBe(true);
     }
   });

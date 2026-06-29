@@ -373,9 +373,9 @@ describe("Default-value test — generated content.css block", () => {
     expect(featuresCss).toContain(generated);
   });
 
-  it("all 12 current tokens route to the content surface; chrome is seeded empty", () => {
+  it("12 tokens route to content; 3 chrome tokens added by S4 (#2461)", () => {
     expect(contentTokens).toHaveLength(12);
-    expect(chromeTokens).toHaveLength(0);
+    expect(chromeTokens).toHaveLength(3);
   });
 
   // Spot-check each known token in the current registry so regressions in

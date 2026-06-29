@@ -70,6 +70,7 @@ export function Toc({ headings, title = "On this page" }: TocProps): VNode {
   return (
     <nav
       aria-label="Table of contents"
+      data-zd-toc
       className={cx(
         "hidden xl:flex flex-col",
         "w-[280px] shrink-0",

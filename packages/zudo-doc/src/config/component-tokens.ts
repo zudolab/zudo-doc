@@ -101,7 +101,10 @@ export type ComponentTokenName =
   | "--zdc-doc-prose-font"
   | "--zdc-doc-link-decoration"
   | "--zdc-admonition-radius"
-  | "--zdc-admonition-border-width";
+  | "--zdc-admonition-border-width"
+  | "--zdc-card-radius"
+  | "--zdc-content-max-width"
+  | "--zdc-toc-width";
 
 export interface ComponentToken {
   /**
@@ -312,5 +315,71 @@ export const COMPONENT_TOKENS: ComponentToken[] = [
     category: "shape",
     description:
       "Width of the admonition left accent border. Defaults to `4px` (byte-identical to the current `border-left: 4px solid` rule). No border-width scale token exists — bare literal is the documented exception.",
+  },
+  // ── Card radius (nav-indexing card grids, chrome, #2461) ──────────────────
+  // Selector census: `a.group.block` also appears in search-widget-script
+  // (search result link: `class="group block px-hsp-lg py-vsp-sm ..."`).
+  // Adding `.rounded` (present on all three card anchors — doc-card-grid,
+  // nav-card-grid, category-nav — and absent from the search result link)
+  // makes the selector unique to cards. `a.group.block.rounded` specificity
+  // 0,3,1 beats `.rounded` utility (0,1,0); unlayered beats layered (@layer
+  // utilities). No JSX change needed — cards already emit `rounded`.
+  // `--zdc-surface-radius` is a consumer meta-knob: NOT a registry entry
+  // (no single backing selector); it lives only in this default chain so a
+  // consumer can set `--zdc-surface-radius` in :root to round all surfaces.
+  {
+    cssVar: "--zdc-card-radius",
+    selector: "a.group.block.rounded",
+    property: "border-radius",
+    default: "var(--zdc-surface-radius, var(--radius-DEFAULT))",
+    component: "card-grid",
+    surface: "chrome",
+    category: "shape",
+    description:
+      "Border radius of the nav/doc card anchor (doc-card-grid, nav-card-grid, category-nav). Defaults to `var(--zdc-surface-radius, var(--radius-DEFAULT))` — chains through the meta-knob so setting `--zdc-surface-radius` in :root rounds all surfaces at once.",
+  },
+  // ── Content band max-width (.zd-doc-content-band, chrome, #2461) ──────────
+  // Two widths exist in doc-layout.tsx:
+  //   • showSidebar=true:  max-w-[clamp(50rem,75vw,90rem)] → tokenized here
+  //   • showSidebar=false: max-w-[80rem] → replaced by `data-zd-nosidebar`
+  //     attr on the band div + `.zd-doc-content-band[data-zd-nosidebar]` rule
+  //     in features.css (unlayered, specificity 0,2,0 > token rule 0,1,0).
+  // Token rule is unlayered and beats the Tailwind utility (layered). The
+  // `max-w-[clamp(50rem,75vw,90rem)]` JSX class is removed from the sidebar
+  // branch; default value is the transcribed literal — byte-identical.
+  // JS-toggle (html[data-sidebar-hidden]) remains covered by the existing
+  // `html[data-sidebar-hidden] .zd-doc-content-band` rule (specificity 0,2,1).
+  // Exception: `clamp(50rem,75vw,90rem)` is a bare CSS function expression —
+  // no equivalent design token exists (documented exception to the prefer-var()).
+  {
+    cssVar: "--zdc-content-max-width",
+    selector: ".zd-doc-content-band",
+    property: "max-width",
+    default: "clamp(50rem,75vw,90rem)",
+    component: "doc-content-band",
+    surface: "chrome",
+    category: "layout",
+    description:
+      "Max width of the doc reading column (sidebar-present case). Defaults to `clamp(50rem,75vw,90rem)` (byte-identical to the current utility). The hide_sidebar 80rem variant is handled by `.zd-doc-content-band[data-zd-nosidebar]` in features.css; the JS-toggle variant by `html[data-sidebar-hidden] .zd-doc-content-band`.",
+  },
+  // ── TOC width (nav[data-zd-toc], chrome, #2461) ───────────────────────────
+  // `nav[aria-label="Table of contents"]` has inner quotes so the parseTokens
+  // regex (which matches double-quoted strings) cannot handle it as a bare
+  // double-quoted field. `data-zd-toc` is added to the nav element in
+  // toc.tsx instead, making the selector parser-safe and an explicit anchor.
+  // Specificity 0,1,1 (element + attribute) beats `w-[280px]` (0,1,0);
+  // unlayered beats layered (@layer utilities).
+  // Exception: `280px` is a bare pixel literal — no fixed-width token exists
+  // (documented exception to the prefer-var-() rule).
+  {
+    cssVar: "--zdc-toc-width",
+    selector: "nav[data-zd-toc]",
+    property: "width",
+    default: "280px",
+    component: "toc",
+    surface: "chrome",
+    category: "layout",
+    description:
+      "Width of the desktop Table of Contents right rail. Defaults to `280px` (byte-identical to the current `w-[280px]` utility in toc.tsx). No fixed-width design token exists — bare literal is the documented exception.",
   },
 ];
