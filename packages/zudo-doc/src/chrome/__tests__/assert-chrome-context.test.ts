@@ -65,4 +65,16 @@ describe("assertChromeContext", () => {
       assertChromeContext(ctxWithBindings, "createSidebarWithDefaults"),
     ).not.toThrow();
   });
+
+  it("throws when hostBindings is null (null-safe guard)", () => {
+    const ctxWithNullBindings = {
+      settings: {},
+      i18n: {},
+      components: {},
+      hostBindings: null,
+    };
+    expect(() =>
+      assertChromeContext(ctxWithNullBindings as unknown as { hostBindings?: unknown }, "createDocPageShell"),
+    ).toThrow(/createDocPageShell/);
+  });
 });

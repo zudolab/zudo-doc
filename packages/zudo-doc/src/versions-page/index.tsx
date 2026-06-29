@@ -18,6 +18,7 @@ import { createHeadWithDefaults } from "../head-with-defaults/index.js";
 import { createHeaderWithDefaults } from "../header-with-defaults/index.js";
 import { createFooterWithDefaults } from "../footer-with-defaults/index.js";
 import { deriveComposeMetaTitle, deriveBodyEndIslands } from "../chrome/derive.js";
+import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -78,6 +79,7 @@ export interface VersionsPageViewProps {
 export function createVersionsPageView<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
 ): (props: VersionsPageViewProps) => JSX.Element {
+  assertChromeContext(ctx, "createVersionsPageView");
   const settings = ctx.settings as unknown as VersionsPageSettings;
   const defaultLocale = ctx.defaultLocale;
   const t = ctx.t;

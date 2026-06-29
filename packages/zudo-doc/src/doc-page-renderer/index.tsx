@@ -28,6 +28,7 @@ import { createDocContentHeader } from "../doc-content-header/index.js";
 import { createDocMetainfoArea } from "../doc-metainfo-area/index.js";
 import { createDocHistoryArea } from "../doc-history-area/index.js";
 import { deriveMdxComponents, deriveInlineVersionSwitcher } from "../chrome/derive.js";
+import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
 export type { DocPageBaseProps };
 
@@ -162,6 +163,7 @@ export interface DocPageRendererDeps {
 export function createRenderDocPage<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
 ): (props: DocPageBaseProps, opts: RenderDocPageOptions) => JSX.Element {
+  assertChromeContext(ctx, "createRenderDocPage");
   const docsUrl = ctx.docsUrl;
   const versionedDocsUrl = ctx.versionedDocsUrl;
   const absoluteUrl = ctx.absoluteUrl;

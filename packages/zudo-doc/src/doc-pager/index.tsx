@@ -11,6 +11,7 @@ import type { JSX } from "preact";
 import { ChevronLeft, ChevronRight } from "../icons/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
+import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
 // NavNode is a superset; we only need the fields the pager uses.
 interface PagerNode {
@@ -35,6 +36,7 @@ export interface DocPagerProps {
 export function createDocPager<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
 ): (props: DocPagerProps) => JSX.Element {
+  assertChromeContext(ctx, "createDocPager");
   const t = ctx.t;
 
   /**

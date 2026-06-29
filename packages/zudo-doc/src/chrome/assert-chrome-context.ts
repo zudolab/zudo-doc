@@ -26,7 +26,7 @@ export function assertChromeContext(
   ctx: { hostBindings?: unknown } | null | undefined,
   factoryName: string,
 ): void {
-  if (ctx == null || (ctx as Record<string, unknown>).hostBindings === undefined) {
+  if (ctx == null || (ctx as Record<string, unknown>).hostBindings == null) {
     throw new Error(
       `\`${factoryName}\` received a context without \`hostBindings\` — the 2.0 factories take a single ChromeContext, not the pre-2.0 deps-bag. See packages/zudo-doc/API.md.`,
     );
