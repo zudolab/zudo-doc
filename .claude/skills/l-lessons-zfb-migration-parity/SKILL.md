@@ -800,3 +800,38 @@ Both reinforce the existing "sub-agent verified is not verified" lesson: the hea
 - Reference implementation ported for Mode 2: `$HOME/.claude/doc/src-tauri/` (CCResDoc) and the `zudo-tauri-wisdom` skill
 - zfb source confirming preBuild does not re-run on watcher ticks: `crates/zfb/src/commands/dev.rs:144-181`, `crates/zfb-build/src/plugin_runner.rs:21`
 - Unrelated pre-existing failure raised during the epic: #1683 (migration-check serve-snapshots SIGTERM test)
+
+## 2026-06-29 — Collapse Wiring Shells (epic #2420): parity build discipline + downstream package testing
+
+### What we set out to do
+
+Collapse the six host chrome/nav/route shell modules (`_chrome.ts`, `_nav.tsx`, `_route-*.tsx`) into a single `_chrome.ts` adapter in `packages/zudo-doc/src/`, mirror the collapse into the `create-zudo-doc` generator templates (GENSYNC), and verify byte-identical SSG output (327 HTML / 330 routes) against a frozen baseline.
+
+### Hard-won gotchas
+
+**Parity must be CI-faithful — raw `pnpm build` diverges from CI.**
+
+The dev machine has gitignored, locally-generated content that the build consumes: `.claude/skills/<local-skill>/` symlinks (wired via the `claudeResources` feature) and `src/content/docs/claude*/` MDX files produced by the `.claude/` watcher. Both are picked up by zfb's content collection scan and inject extra routes plus a sidebar entry on EVERY page, diverging the HTML byte-for-byte from CI.
+
+`scripts/parity-build.sh` handles this by temporarily relocating the four gitignored `src/content/docs/claude*` directories out of the content tree before calling `pnpm build`, then trap-restoring them on exit. Never run a parity check with a bare `pnpm build` — the extra routes make every HTML file differ.
+
+**Keep the base branch green every wave — parity must stay verifiable at each merge.**
+
+FACTORIES threaded `ChromeContext` through the host pages inline (verbose but correct) so the parity baseline held at every intermediate wave. HOSTCOLLAPSE then deduped it into the single `_chrome.ts` adapter — both states byte-identical to the frozen baseline. Had the base been broken mid-epic, the final parity gate would not have been trustworthy. Merge waves in order; verify parity before each merge.
+
+**Testing a breaking package version downstream: `link:` causes a dual-Preact SSR crash; use `pnpm pack`.**
+
+When testing an unpublished breaking `@takazudo/zudo-doc` version in a generated project (e.g. for the GENTEST wave), `link:` overrides produce a dual-Preact instance because the generated project and the package resolve `preact` from different `node_modules` trees — SSR crashes with `TypeError: Cannot read properties of undefined (reading '__H')`. The fix: `pnpm pack` the package, then override with `file:<path-to-tgz>` so the tarball lands in the generated project's own virtual store and resolves a single `preact`. Also: pnpm v11 moved workspace overrides from `package.json#pnpm.overrides` to `pnpm-workspace.yaml#overrides` — use the right file or the override is silently ignored.
+
+**Worktree b4push: `setup-doc-skill.sh` creates symlinks pointing at the main worktree, not the worktree root.**
+
+`scripts/setup-doc-skill.sh` uses `git worktree list | head -1` to get the main repo path (so skill symlinks survive worktree removal). Tests in `scripts/__tests__/setup-doc-skill.test.ts` that assert the resolved symlink path must account for this: they should compare against `MAIN_WORKTREE_ROOT` (computed the same way) rather than `PROJECT_ROOT`, or the assertions fail in any worktree context while passing in CI and the main checkout.
+
+### References
+
+- Epic: #2420 (Collapse Wiring Shells)
+- FACTORIES wave: #2421
+- HOSTCOLLAPSE wave: #2427
+- GENSYNC wave: #2429
+- GENTEST wave: #2430
+- B4PUSH wave: #2431
