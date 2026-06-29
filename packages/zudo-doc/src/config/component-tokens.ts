@@ -118,4 +118,58 @@ export const COMPONENT_TOKENS: ComponentToken[] = [
     description:
       "Font weight of the doc-page title <h1> (and the other page-title h1s that share `text-heading`). Defaults to the `--font-weight-bold` token (matching the original `font-bold` utility).",
   },
+  // ── Content heading h2 (HeadingH2 component, selector census: #2449) ───────
+  // `h2.text-title` matches every h2 with the `text-title` size role in the
+  // package: HeadingH2 content override (primary target), plus tag-section
+  // headings on index/locale-index pages, versions-page section headers, and
+  // modal headings (ai-chat, color-tweak-export). All share identical
+  // `text-title font-bold` styling — a semantically-consistent superset
+  // analogous to `h1.text-heading`. Byte-identical defaults produce zero
+  // computed change; a `:root` override rebrands all consistently.
+  {
+    cssVar: "--zdc-doc-h2-font",
+    selector: "h2.text-title",
+    property: "font-family",
+    default: "inherit",
+    component: "heading-h2",
+    category: "typography",
+    description:
+      "Font family of content h2 headings (HeadingH2 component and other h2s sharing `text-title`). Defaults to `inherit` so the heading keeps the host's brand font; redefine in :root to rebrand.",
+  },
+  {
+    cssVar: "--zdc-doc-h2-weight",
+    selector: "h2.text-title",
+    property: "font-weight",
+    default: "var(--font-weight-bold)",
+    component: "heading-h2",
+    category: "typography",
+    description:
+      "Font weight of content h2 headings (HeadingH2 component and other h2s sharing `text-title`). Defaults to the `--font-weight-bold` token (matching the original `font-bold` utility).",
+  },
+  // ── Content heading h3 (HeadingH3 component, selector census: #2449) ───────
+  // `h3.text-body.font-bold` is unique to the HeadingH3 component — no other
+  // h3 in the package emits both `text-body` and `font-bold`.
+  {
+    cssVar: "--zdc-doc-h3-weight",
+    selector: "h3.text-body.font-bold",
+    property: "font-weight",
+    default: "var(--font-weight-bold)",
+    component: "heading-h3",
+    category: "typography",
+    description:
+      "Font weight of content h3 headings (HeadingH3 component). Defaults to the `--font-weight-bold` token (matching the original `font-bold` utility).",
+  },
+  // ── Content heading h4 (HeadingH4 component, selector census: #2449) ───────
+  // `h4.text-body.font-semibold` is unique to the HeadingH4 component — no
+  // other h4 in the package emits both `text-body` and `font-semibold`.
+  {
+    cssVar: "--zdc-doc-h4-weight",
+    selector: "h4.text-body.font-semibold",
+    property: "font-weight",
+    default: "var(--font-weight-semibold)",
+    component: "heading-h4",
+    category: "typography",
+    description:
+      "Font weight of content h4 headings (HeadingH4 component). Defaults to the `--font-weight-semibold` token (matching the original `font-semibold` utility).",
+  },
 ];
