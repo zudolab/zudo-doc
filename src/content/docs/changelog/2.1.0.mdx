@@ -1,0 +1,28 @@
+---
+title: 2.1.0
+description: Release notes for 2.1.0.
+sidebar_position: 1042
+---
+
+Released: 2026-06-30
+
+This release introduces the `--zdc-*` **component-token customization surface** — a new layer of CSS custom properties that lets you retheme zudo-doc's content typography and chrome without ejecting components.
+
+### Features
+
+- `@takazudo/zudo-doc`: new `--zdc-*` component-token surface, exposed at the public `@takazudo/zudo-doc/component-tokens` subpath. Tokens cover content (doc title, h2/h3/h4 typography, admonition shape) and chrome (card radius, content max-width, TOC width, SSR sidebar-tree nav-active identity); codegen routes each token by surface (content vs chrome). (76cb91bf, 17301261, b3ed71bd, 47de0260, f0723040, 35831532, #2447–#2462)
+- `@takazudo/zudo-doc`: added a `--tracking-*` letter-spacing scale to the `@theme`. (615c5732, #2459)
+- `@takazudo/zudo-doc`: new `gen-component-tokens` generator with a build-time drift check that keeps the token registry and emitted CSS in sync. (c940dbc6, #2448)
+- `@takazudo/zudo-doc`: page-level factories now assert they received a real `ChromeContext` at runtime, giving a clear error (instead of a downstream crash) when a 2.0 migration is incomplete. (6b38362a, #2455)
+
+### Bug Fixes
+
+- `@takazudo/zudo-doc`: the `ChromeContext` guard now takes `unknown` and is null-safe across all page-level factories, fixing package `tsc`. (9a0ec16d, f9e95458, #2455)
+- `@takazudo/zudo-doc`: widened the `@takazudo/zudo-doc-history-server` peer floor to `^2.0.1` and added a first-party peer-parity guard. (21a06be7, #2455)
+- `@takazudo/zudo-doc`: made `gen-component-tokens.mjs` executable and fixed the drift guard that was silently no-op'ing via the pnpm bin shim. (f3299413, 6d1d9b85)
+- `@takazudo/zudo-doc`: corrected stale `_chrome-context.ts` comment references. (f6b708e2, #2436)
+
+### Other Changes
+
+- Docs: added a bilingual `--zdc-*` token reference covering all 17 registry tokens, a "Customizing zudo-doc" strategy/ladder page, and a components-doc summary table. (a5ca31f5, 97111cfb, 131132c4, #2451, #2464, #2465)
+- Bumped `@takazudo/zdtp` to 0.4.1. (87fad196, #2444)
