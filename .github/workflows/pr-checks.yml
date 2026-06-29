@@ -241,6 +241,25 @@ jobs:
         run: node packages/zudo-doc/bin/gen-z-index.mjs --check
 
   # ---------------------------------------------------------------------------
+  # Job 0.69: Component-tokens codegen drift check (#2448)
+  # ---------------------------------------------------------------------------
+  # Re-runs the --zdc-* component token codegen into a buffer and fails if
+  # packages/zudo-doc/src/content.css has drifted from
+  # packages/zudo-doc/src/config/component-tokens.ts (the single source of truth).
+  # Pure-Node bin — uses preinstalled Node 22 on the runner image, no pnpm.
+  # The generator ships as the @takazudo/zudo-doc `gen-component-tokens` bin
+  # (#2448); CI invokes the in-repo bin file directly (dependency-free ESM).
+  check-component-tokens:
+    name: Component-Tokens Codegen Drift Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Check component-tokens codegen drift
+        run: node packages/zudo-doc/bin/gen-component-tokens.mjs --check
+
+  # ---------------------------------------------------------------------------
   # Job 0.7: Lint gates (tags audit + design token lint)
   # ---------------------------------------------------------------------------
   # Runs pnpm tags:audit --ci (tsx scripts/tags-audit.ts) and pnpm lint:tokens

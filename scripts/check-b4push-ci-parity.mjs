@@ -113,6 +113,16 @@ const REQUIRED_CI_GUARDS = [
     comment: "Z-index codegen drift check (gen-z-index package bin, S9b #2334)",
   },
   {
+    // Component-tokens codegen drift: node packages/zudo-doc/bin/gen-component-tokens.mjs --check
+    // (CI) / pnpm check:component-tokens (b4push, routes through the same
+    // gen-component-tokens bin). Fails if the --zdc-* BEGIN/END block in
+    // packages/zudo-doc/src/content.css drifts from
+    // packages/zudo-doc/src/config/component-tokens.ts (#2448).
+    ciNeedle: "gen-component-tokens.mjs",
+    b4pushScript: "check:component-tokens",
+    comment: "Component-tokens codegen drift check (gen-component-tokens package bin, #2448)",
+  },
+  {
     // @flaky/@local-only tracking-issue guard: asserts every @flaky and
     // @local-only tagged test has a GitHub issue URL comment on the preceding
     // line(s). Closes the enforcement gap where TESTING.md required the URL but
