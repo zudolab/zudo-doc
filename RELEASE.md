@@ -126,6 +126,35 @@ maintain the order above for any that do change.
 
 ---
 
+## First-party peer floor (publish-lag)
+
+`packages/zudo-doc/package.json` declares `@takazudo/zudo-doc-history-server` as a
+**peerDependency** with a caret floor (e.g. `^2.0.1`). The showcase resolves this
+peer from the **npm registry** (not a workspace link), and every install — local,
+CI, and the publish workflows — runs `pnpm install --frozen-lockfile`. So the floor
+can only ever name an **already-published** version.
+
+**Do NOT bump this floor to the in-flight release version during a release.** The
+release script (`scripts/release-create-zudo-doc.sh`) deliberately does **not**
+touch it: bumping it to the version being released (not yet on npm) makes the frozen
+lockfile unresolvable and deadlocks both main CI and the publish workflows.
+
+Instead the floor **lags by design** and is adopted *after* the version publishes,
+through the normal dependency-bump cycle (`/l-bump-deps`) — exactly like the zfb /
+zdtp pins. A lagging same-major floor is correct: `^2.0.1` is satisfied by a
+`@takazudo/zudo-doc@2.1.0` install.
+
+The pin-parity guard (`scripts/check-pin-parity.mjs`) enforces this with
+**satisfies-semantics** for the lockstep peer: it fails only when the floor would
+**exclude** the root version (a cross-major drift like `^1.x` at root `2.x`, or a
+floor above root like `^2.2.0` at root `2.1.0`), and prints a non-fatal advisory
+when a valid floor lags. A clean linear release therefore needs no interleaving:
+
+> bump versions + scaffold pins → `pnpm b4push` → commit → push → main CI green →
+> tag → publish all three in publish-order.
+
+---
+
 ## Tag namespaces and Draft Release model
 
 Each package has its own tag namespace and its own publish workflow. Publishing a

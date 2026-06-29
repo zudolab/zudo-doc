@@ -31,7 +31,7 @@
 //   - .github/workflows/pr-checks.yml (own lightweight job)
 
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, resolve } from "node:path";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -86,16 +86,31 @@ const ZUDO_DOC_ZFB_PACKAGES = ["@takazudo/zfb", "@takazudo/zfb-runtime"];
 // Insurance: both sources are exact strings today (no leading ^/~). The check
 // below rejects a future ranged source value that would produce a malformed `^^…`
 // expected peer, making the breakage loud rather than silently wrong.
+// `comparison` selects how the actual floor is judged against the source value:
+//   "satisfies" — the root version must fall WITHIN the declared floor range.
+//                 A floor is only stale when it EXCLUDES the root version. This
+//                 permits a benign same-major lag (^2.0.1 at root 2.1.0), which
+//                 the lockstep release REQUIRES: the showcase resolves this peer
+//                 from the npm registry under --frozen-lockfile, so the floor can
+//                 only point at an already-published version and is bumped
+//                 post-publish via the /l-bump-deps cycle (see RELEASE.md
+//                 "publish-lag"). Demanding exact `^<root>` here deadlocked the
+//                 release (the in-flight version isn't on npm yet).
+//   "exact"     — floor must equal `^<sourceValue>`. Used for the pinned (not
+//                 lockstep) zdtp peer: it's an external dep that is always
+//                 already published, so there is no bootstrap reason to lag it.
 const FIRST_PARTY_PEER_CHECKS = [
   {
     pkg: "@takazudo/zudo-doc-history-server",
     sourceKind: "lockstep (root version)",
+    comparison: "satisfies",
     // Released at the same lockstep version as the root package.
     getSource: (rootPkg) => rootPkg.version,
   },
   {
     pkg: "@takazudo/zdtp",
     sourceKind: 'pinned (root dependencies["@takazudo/zdtp"])',
+    comparison: "exact",
     // External dependency pinned in root dependencies — NOT lockstep.
     getSource: (rootPkg) => rootPkg.dependencies?.["@takazudo/zdtp"],
   },
@@ -143,6 +158,127 @@ function readScaffoldPin(scaffoldSrc, pkgName) {
   );
   const constMatch = scaffoldSrc.match(constRe);
   return constMatch ? constMatch[1] : null;
+}
+
+/**
+ * Parse the core "MAJOR.MINOR.PATCH" of a version or caret range into numeric
+ * parts. A single leading `^` is tolerated; a `-prerelease` / `+build` suffix is
+ * dropped (the lockstep first-party peers compared here are clean releases — the
+ * prerelease zfb pins go through a different, exact block). Returns null when the
+ * three numeric segments can't be read, so callers fail loudly rather than
+ * silently mis-judging an unexpected range form.
+ */
+export function parseSemverCore(value) {
+  if (typeof value !== "string") return null;
+  const core = value.trim().replace(/^\^/, "").split(/[-+]/, 1)[0];
+  const m = core.match(/^(\d+)\.(\d+)\.(\d+)$/);
+  if (!m) return null;
+  return { major: Number(m[1]), minor: Number(m[2]), patch: Number(m[3]) };
+}
+
+/**
+ * Does `version` fall within the caret range `caretRange` (e.g. "^2.0.1")?
+ * Implements npm caret semantics without pulling in `semver` (this guard ships
+ * dependency-free — it imports only node builtins):
+ *   ^A.B.C, A>0  → >=A.B.C  <(A+1).0.0
+ *   ^0.B.C, B>0  → >=0.B.C  <0.(B+1).0
+ *   ^0.0.C       → >=0.0.C  <0.0.(C+1)
+ * Returns null when `caretRange` isn't a caret range or either side can't be
+ * parsed (callers treat null as a loud failure, never a silent pass).
+ */
+export function satisfiesCaret(version, caretRange) {
+  if (typeof caretRange !== "string" || !caretRange.trim().startsWith("^")) {
+    return null;
+  }
+  const v = parseSemverCore(version);
+  const lo = parseSemverCore(caretRange);
+  if (!v || !lo) return null;
+  const cmp = (a, b) =>
+    a.major - b.major || a.minor - b.minor || a.patch - b.patch;
+  if (cmp(v, lo) < 0) return false; // below the floor
+  let hi;
+  if (lo.major > 0) hi = { major: lo.major + 1, minor: 0, patch: 0 };
+  else if (lo.minor > 0) hi = { major: 0, minor: lo.minor + 1, patch: 0 };
+  else hi = { major: 0, minor: 0, patch: lo.patch + 1 };
+  return cmp(v, hi) < 0;
+}
+
+/**
+ * @typedef {Object} PeerEvalResult
+ * @property {boolean} ok          Whether the floor is acceptable.
+ * @property {string}  expected    The canonical/expected floor for messaging.
+ * @property {string}  actual      The actual floor (or "(missing)").
+ * @property {string}  [reason]    Failure explanation (present when !ok).
+ * @property {string}  [advisory]  Non-fatal note emitted when a valid
+ *                                 `satisfies` floor lags the root version.
+ */
+
+/**
+ * Evaluate one first-party peer floor against its source-of-truth version.
+ * See FIRST_PARTY_PEER_CHECKS for the `comparison` modes.
+ *
+ * @param {Object} args
+ * @param {string} args.pkg
+ * @param {string} args.sourceKind
+ * @param {string} args.sourceValue   Exact version (no leading ^/~).
+ * @param {"satisfies"|"exact"} args.comparison
+ * @param {string|undefined|null} args.actualPeer
+ * @returns {PeerEvalResult}
+ */
+export function evaluateFirstPartyPeer({
+  pkg,
+  sourceKind,
+  sourceValue,
+  comparison,
+  actualPeer,
+}) {
+  const expectedPeer = `^${sourceValue}`;
+  const actual = actualPeer ?? "(missing)";
+
+  if (actualPeer === undefined || actualPeer === null) {
+    return {
+      ok: false,
+      expected: expectedPeer,
+      actual,
+      reason: `Missing first-party peer floor for ${pkg} (${sourceKind})`,
+    };
+  }
+
+  if (comparison === "exact") {
+    if (actualPeer !== expectedPeer) {
+      return {
+        ok: false,
+        expected: expectedPeer,
+        actual,
+        reason: `First-party peer floor drift — ${sourceKind} requires exactly ${expectedPeer}`,
+      };
+    }
+    return { ok: true, expected: expectedPeer, actual };
+  }
+
+  // comparison === "satisfies": the root version must fall within the floor range.
+  const includesRoot = satisfiesCaret(sourceValue, actualPeer);
+  if (includesRoot === null) {
+    return {
+      ok: false,
+      expected: `a caret range that includes ${sourceValue} (e.g. ${expectedPeer})`,
+      actual,
+      reason: `First-party peer floor ${actual} is not a recognizable caret range — cannot verify it includes the current ${sourceKind} ${sourceValue}`,
+    };
+  }
+  if (!includesRoot) {
+    return {
+      ok: false,
+      expected: `a range that includes ${sourceValue} (e.g. ${expectedPeer})`,
+      actual,
+      reason: `First-party peer floor stale — ${actual} does NOT include the current ${sourceKind} ${sourceValue} (#2381 / #2445)`,
+    };
+  }
+  const result = { ok: true, expected: expectedPeer, actual };
+  if (actualPeer !== expectedPeer) {
+    result.advisory = `${pkg} peer floor ${actual} lags the lockstep version ${sourceValue} (still valid — root is within range). Bump it to ${expectedPeer} when convenient, e.g. via /l-bump-deps after the version publishes.`;
+  }
+  return result;
 }
 
 function main() {
@@ -273,10 +409,19 @@ function main() {
   }
 
   // ── First-party peer floors in packages/zudo-doc peerDependencies ────────────
-  // Guards the recurrence class from #2381 / #2445: the zfb ZUDO_DOC_ZFB_PACKAGES
-  // loop above only covers the zfb pair; these two first-party peers were unguarded
-  // and went stale on the 2.0.1 major bump. This block catches the same pattern.
-  for (const { pkg, sourceKind, getSource } of FIRST_PARTY_PEER_CHECKS) {
+  // Guards the recurrence class from #2381 / #2445: a first-party peer floor that
+  // EXCLUDES the lockstep root version (e.g. ^1.x left behind on a 2.x major bump).
+  // The lockstep peer (history-server) is judged with satisfies-semantics — a
+  // benign same-major lag is allowed (see evaluateFirstPartyPeer + RELEASE.md
+  // "publish-lag"); the pinned peer (zdtp) stays exact.
+  const firstPartyAdvisories = [];
+  const firstPartyOk = [];
+  for (const {
+    pkg,
+    sourceKind,
+    getSource,
+    comparison,
+  } of FIRST_PARTY_PEER_CHECKS) {
     const sourceValue = getSource(rootPkg);
 
     if (!sourceValue) {
@@ -292,10 +437,8 @@ function main() {
       continue;
     }
 
-    // Insurance: assert source is an exact string with no leading ^/~.
-    // Today both lockstep (root version) and pinned (root dependencies) sources
-    // are bare version strings. A future change that makes one a range would
-    // produce a malformed `^^…` expected peer — fail loudly instead.
+    // Insurance: the source-of-truth must be an exact version string with no
+    // leading ^/~ — otherwise `^${sourceValue}` would be a malformed double-caret.
     if (/^[\^~]/.test(sourceValue)) {
       mismatches.push({
         pkg,
@@ -309,20 +452,33 @@ function main() {
       continue;
     }
 
-    const expectedPeer = `^${sourceValue}`;
-    const actualPeer = zudoDocPkg.peerDependencies?.[pkg];
-
-    if (actualPeer !== expectedPeer) {
+    const res = evaluateFirstPartyPeer({
+      pkg,
+      sourceKind,
+      sourceValue,
+      comparison,
+      actualPeer: zudoDocPkg.peerDependencies?.[pkg],
+    });
+    if (!res.ok) {
       mismatches.push({
         pkg,
-        reason: `First-party peer floor drift — stale floor will reject the current ${sourceKind} (#2381 / #2445)`,
-        expected: expectedPeer,
-        actual: actualPeer ?? "(missing)",
+        reason: res.reason,
+        expected: res.expected,
+        actual: res.actual,
         file: ZUDO_DOC_PKG_PATH,
         field: "peerDependencies",
         kind: "first-party-peer",
       });
+    } else {
+      firstPartyOk.push({ pkg, actual: res.actual, expected: res.expected });
+      if (res.advisory) firstPartyAdvisories.push(res.advisory);
     }
+  }
+
+  // Non-fatal advisories (e.g. a valid-but-lagging lockstep floor) — print
+  // regardless of overall pass/fail so the nudge isn't buried on a failing run.
+  for (const note of firstPartyAdvisories) {
+    console.log(`note: ${note}`);
   }
 
   if (mismatches.length === 0) {
@@ -347,10 +503,11 @@ function main() {
         `  packages/zudo-doc peerDependencies[${pkgName}] = ${zudoDocPkg.peerDependencies?.[pkgName]} (^${rootPin})`,
       );
     }
-    for (const { pkg, getSource } of FIRST_PARTY_PEER_CHECKS) {
-      const sourceValue = getSource(rootPkg);
+    for (const { pkg, actual, expected } of firstPartyOk) {
+      const how =
+        actual === expected ? `matched ${expected}` : `includes root (${expected})`;
       console.log(
-        `  packages/zudo-doc peerDependencies[${pkg}] = ${zudoDocPkg.peerDependencies?.[pkg]} (matched ^${sourceValue})`,
+        `  packages/zudo-doc peerDependencies[${pkg}] = ${actual} (${how})`,
       );
     }
     return 0;
@@ -394,10 +551,14 @@ function main() {
   console.error(`  - ${SCAFFOLD_TS_PATH}`);
   console.error(`  - ${ZUDO_DOC_PKG_PATH}`);
   console.error(
-    `      devDependencies must be exact-equal to root pins; peerDependencies must be ^<root pin>`,
+    `      devDependencies must be exact-equal to root pins; the lockstep peer floor must INCLUDE the root version (caret range), the pinned peer floor must be ^<root pin>`,
   );
   console.error("then re-run this check.");
   return 1;
 }
 
-process.exit(main());
+const invokedDirectly =
+  process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (invokedDirectly) {
+  process.exit(main());
+}
