@@ -373,8 +373,8 @@ describe("Default-value test — generated content.css block", () => {
     expect(featuresCss).toContain(generated);
   });
 
-  it("all 6 current tokens route to the content surface; chrome is seeded empty", () => {
-    expect(contentTokens).toHaveLength(6);
+  it("all 12 current tokens route to the content surface; chrome is seeded empty", () => {
+    expect(contentTokens).toHaveLength(12);
     expect(chromeTokens).toHaveLength(0);
   });
 

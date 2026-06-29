@@ -487,11 +487,13 @@
 h1.text-heading {
   font-family: var(--zdc-doc-title-font, inherit);
   font-weight: var(--zdc-doc-title-weight, var(--font-weight-bold));
+  letter-spacing: var(--zdc-doc-title-tracking, var(--tracking-normal));
 }
 
 h2.text-title {
   font-family: var(--zdc-doc-h2-font, inherit);
   font-weight: var(--zdc-doc-h2-weight, var(--font-weight-bold));
+  letter-spacing: var(--zdc-doc-h2-tracking, var(--tracking-normal));
 }
 
 h3.text-body.font-bold {
@@ -500,6 +502,19 @@ h3.text-body.font-bold {
 
 h4.text-body.font-semibold {
   font-weight: var(--zdc-doc-h4-weight, var(--font-weight-semibold));
+}
+
+.zd-content {
+  font-family: var(--zdc-doc-prose-font, var(--font-sans));
+}
+
+a.text-accent.underline {
+  text-decoration: var(--zdc-doc-link-decoration, underline);
+}
+
+[data-admonition] {
+  border-radius: var(--zdc-admonition-radius, 0 var(--radius-DEFAULT) var(--radius-DEFAULT) 0);
+  border-left-width: var(--zdc-admonition-border-width, 4px);
 }
 
 /* END --zdc-* component tokens */
