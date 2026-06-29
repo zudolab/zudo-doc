@@ -1,8 +1,8 @@
 // Snapshot guard for the @takazudo/zudo-doc --zdc-* component token registry.
 //
 // Locks the token keyset (cssVar, selector, property, default, component,
-// category) so adding, removing, or renaming a token breaks this test until
-// the snapshot is intentionally updated with `vitest run --update-snapshots`.
+// surface, category) so adding, removing, or renaming a token breaks this test
+// until the snapshot is intentionally updated with `vitest run --update-snapshots`.
 //
 // This test imports from the compiled dist entry (the public subpath) so it
 // also verifies the ./component-tokens subpath wiring is correct — if the
@@ -22,6 +22,7 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
       property: t.property,
       default: t.default,
       component: t.component,
+      surface: t.surface,
       category: t.category,
     }));
 
@@ -34,6 +35,7 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
           "default": "inherit",
           "property": "font-family",
           "selector": "h1.text-heading",
+          "surface": "content",
         },
         {
           "category": "typography",
@@ -42,6 +44,7 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
           "default": "var(--font-weight-bold)",
           "property": "font-weight",
           "selector": "h1.text-heading",
+          "surface": "content",
         },
         {
           "category": "typography",
@@ -50,6 +53,7 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
           "default": "inherit",
           "property": "font-family",
           "selector": "h2.text-title",
+          "surface": "content",
         },
         {
           "category": "typography",
@@ -58,6 +62,7 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
           "default": "var(--font-weight-bold)",
           "property": "font-weight",
           "selector": "h2.text-title",
+          "surface": "content",
         },
         {
           "category": "typography",
@@ -66,6 +71,7 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
           "default": "var(--font-weight-bold)",
           "property": "font-weight",
           "selector": "h3.text-body.font-bold",
+          "surface": "content",
         },
         {
           "category": "typography",
@@ -74,6 +80,7 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
           "default": "var(--font-weight-semibold)",
           "property": "font-weight",
           "selector": "h4.text-body.font-semibold",
+          "surface": "content",
         },
       ]
     `);
@@ -86,6 +93,18 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
   it("every cssVar follows the --zdc- prefix convention", () => {
     for (const token of COMPONENT_TOKENS) {
       expect(token.cssVar).toMatch(/^--zdc-/);
+    }
+  });
+
+  it("every token declares a valid surface (content or chrome)", () => {
+    for (const token of COMPONENT_TOKENS) {
+      expect(["content", "chrome"]).toContain(token.surface);
+    }
+  });
+
+  it("all current Wave 4 tokens are content-surface", () => {
+    for (const token of COMPONENT_TOKENS) {
+      expect(token.surface).toBe("content");
     }
   });
 
