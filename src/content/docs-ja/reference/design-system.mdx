@@ -112,6 +112,17 @@ zudo-docではスペーシングを**水平（hsp）**と**垂直（vsp）**の2
 | `normal` | `1.5` | `leading-normal` |
 | `relaxed` | `1.625` | `leading-relaxed` |
 
+### 字間（Letter Spacing）
+
+4段階のスケールです。大きな見出しには `tracking-tight` を使うと視覚的に引き締まり、`tracking-normal` はブラウザのデフォルトにリセットします。`tracking-wide` / `tracking-wider` はラベルやスモールキャップスのテキストに適しています。
+
+| トークン | 値 | 使用例 |
+|-------|-------|---------|
+| `tight` | `-0.025em` | `tracking-tight` |
+| `normal` | `normal` | `tracking-normal` |
+| `wide` | `0.05em` | `tracking-wide` |
+| `wider` | `0.1em` | `tracking-wider` |
+
 ### フォントファミリー
 
 | トークン | スタック | 使用例 |

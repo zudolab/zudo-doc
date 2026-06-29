@@ -238,6 +238,12 @@
   --leading-normal: 1.5;
   --leading-relaxed: 1.625;
 
+  /* Letter spacing / tracking (4 steps) */
+  --tracking-tight: -0.025em;   /* headings, display text */
+  --tracking-normal: normal;    /* browser default — resets any inherited tracking */
+  --tracking-wide: 0.05em;      /* labels, UI text */
+  --tracking-wider: 0.1em;      /* small caps, decorative */
+
   /* ========================================
    * Border radius (3 steps)
    * ======================================== */
