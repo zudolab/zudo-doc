@@ -8,6 +8,14 @@ const SCRIPT_PATH = resolve(__dirname, "../setup-doc-skill.sh");
 const PROJECT_ROOT = resolve(__dirname, "../..");
 const TEST_SKILL_NAME = "test-wisdom";
 
+// The script uses `git worktree list | head -1` to get the main worktree path
+// so that symlinks survive worktree removal. In a worktree session this differs
+// from PROJECT_ROOT; in the main repo they are identical.
+const MAIN_WORKTREE_ROOT = execSync(
+  "git worktree list | head -1 | awk '{print $1}'",
+  { cwd: PROJECT_ROOT, encoding: "utf-8" },
+).trim();
+
 /**
  * Run setup-doc-skill.sh in the real project directory with a custom
  * HOME so the global symlink goes to a temp directory instead of ~/.claude/skills/.
@@ -66,7 +74,9 @@ describe("setup-doc-skill.sh", () => {
     expect(existsSync(docsLink)).toBe(true);
 
     const target = realpathSync(docsLink);
-    expect(target).toBe(join(PROJECT_ROOT, "src", "content", "docs"));
+    // The script points at the main worktree so symlinks survive worktree removal.
+    // MAIN_WORKTREE_ROOT == PROJECT_ROOT in the primary checkout; they differ in a worktree.
+    expect(target).toBe(join(MAIN_WORKTREE_ROOT, "src", "content", "docs"));
   });
 
   it("creates docs-ja symlink when Japanese docs exist", () => {
@@ -76,7 +86,8 @@ describe("setup-doc-skill.sh", () => {
     expect(existsSync(docsJaLink)).toBe(true);
 
     const target = realpathSync(docsJaLink);
-    expect(target).toBe(join(PROJECT_ROOT, "src", "content", "docs-ja"));
+    // Same main-worktree logic as the docs symlink above.
+    expect(target).toBe(join(MAIN_WORKTREE_ROOT, "src", "content", "docs-ja"));
   });
 
   it("creates global symlink in HOME/.claude/skills/ pointing to project skill", () => {
