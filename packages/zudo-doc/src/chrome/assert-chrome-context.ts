@@ -22,10 +22,12 @@
  *
  * See packages/zudo-doc/API.md — "Migration Notes" for upgrade instructions.
  */
-export function assertChromeContext(
-  ctx: { hostBindings?: unknown } | null | undefined,
-  factoryName: string,
-): void {
+// `ctx` is typed `unknown` on purpose: this is a runtime validator of
+// *untrusted* input (a consumer may pass the pre-2.0 deps-bag, which TS cannot
+// reject at the call site — that is exactly the failure mode this guard exists
+// to catch). The production factory call sites pass a `ChromeContext`, which is
+// assignable to `unknown`; the narrowing happens inside.
+export function assertChromeContext(ctx: unknown, factoryName: string): void {
   if (ctx == null || (ctx as Record<string, unknown>).hostBindings == null) {
     throw new Error(
       `\`${factoryName}\` received a context without \`hostBindings\` — the 2.0 factories take a single ChromeContext, not the pre-2.0 deps-bag. See packages/zudo-doc/API.md.`,
