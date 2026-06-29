@@ -225,6 +225,28 @@ export interface MetaTagsConfig {
 }
 
 /**
+ * Site-wide custom `<head>` extras injected into every page via
+ * {@link HeadWithDefaults}. All fields are JSON-serializable (no VNodes or
+ * callables) — settings objects are `JSON.stringify`'d in the
+ * route-injection path (`@takazudo/zudo-doc/plugins/routes`), so
+ * non-serializable values would be silently dropped.
+ *
+ * Emit order: preconnect → preload → stylesheets → alternateLinks → meta.
+ *
+ * Note: `HtmlPreviewConfig.head` (a raw-HTML string scoped to the
+ * HTML-preview iframe sandbox, see {@link HtmlPreviewConfig}) is unrelated
+ * to this interface — that field injects content only into the preview
+ * sandbox, not the page `<head>`. This interface is site-wide.
+ */
+export interface SiteHeadConfig {
+  preconnect?: { href: string; crossorigin?: "anonymous" | "use-credentials" }[];
+  stylesheets?: { href: string; crossorigin?: "anonymous" | "use-credentials"; media?: string; async?: boolean }[];
+  preload?: { href: string; as: string; type?: string; crossorigin?: "anonymous" | "use-credentials" }[];
+  meta?: { name?: string; property?: string; content: string }[];
+  alternateLinks?: { rel: string; href: string; type?: string; title?: string }[];
+}
+
+/**
  * The full zudo-doc project settings interface.
  *
  * Consumer projects declare their concrete settings object using `satisfies Settings`
@@ -253,6 +275,17 @@ export interface Settings {
   githubAutolinksRepo?: string;
   siteUrl: string;
   metaTags: MetaTagsConfig;
+  /**
+   * Site-wide custom `<head>` extras — see {@link SiteHeadConfig}.
+   *
+   * Optional. When absent (the common case), no extra elements are emitted and
+   * the page output is byte-identical to the pre-2.0.1 baseline (the #2425
+   * route-injection byte-hashes remain green).
+   *
+   * Note: the iframe-scoped `htmlPreview.head` ({@link HtmlPreviewConfig.head})
+   * is unrelated to this field — it targets only the HTML-preview sandbox.
+   */
+  head?: SiteHeadConfig;
   sitemap: boolean;
   docMetainfo: boolean;
   docTags: boolean;

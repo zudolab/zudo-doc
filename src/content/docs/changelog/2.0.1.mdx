@@ -1,0 +1,17 @@
+---
+title: 2.0.1
+description: Release notes for 2.0.1.
+sidebar_position: 1041
+---
+
+Released: 2026-06-29
+
+This is a **patch** release. It adds the `settings.head` site-`<head>` injection hook — the host-level seam that 2.0.0 "Collapse Wiring Shells" left missing — and bumps the zfb toolchain to `0.1.0-next.71`. With no `settings.head` configured, rendered output is **byte-identical** to 2.0.0.
+
+### Features
+
+- `@takazudo/zudo-doc`: new optional `settings.head: SiteHeadConfig` field that injects custom `<head>` content — `preconnect`, `preload`, `stylesheets`, `alternateLinks`, and `meta` descriptors — on every page type (homepages, doc pages, tags, versions, 404) via the single live head emitter. `stylesheets` entries accept `async: true` for non-render-blocking loading (the `media="print"` + `onload` media-swap pattern with a `<noscript>` fallback). The field is serializable data only, so it also reaches package-injected routes. Absent `settings.head` emits nothing, keeping output byte-identical to 2.0.0. (0c50a080, 32bae945, #2435)
+
+### Other Changes
+
+- Bumped the `@takazudo/zfb` toolchain — `@takazudo/zfb`, `@takazudo/zfb-runtime`, `@takazudo/zfb-adapter-cloudflare` — from `0.1.0-next.70` to `0.1.0-next.71`. (d0fe255f, #2435)

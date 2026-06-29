@@ -147,6 +147,89 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
         <link rel="icon" type="image/png" sizes="32x32" href={withBase("/favicon-32x32.png")} />
         <link rel="icon" type="image/png" sizes="16x16" href={withBase("/favicon-16x16.png")} />
         {canonical !== undefined && <link rel="canonical" href={canonical} />}
+        {/* Site-wide <head> extras from settings.head (SiteHeadConfig).
+            The entire block is gated on ctx.settings.head being present so that
+            the DEFAULT path (no settings.head) emits NOTHING — keeping the
+            page output byte-identical to the pre-2.0.1 baseline (#2425). */}
+        {ctx.settings.head && (
+          <>
+            {/* preconnect → preload → stylesheets → alternateLinks → meta */}
+            {ctx.settings.head.preconnect?.map((p, i) => (
+              <link
+                key={i}
+                rel="preconnect"
+                href={p.href}
+                {...(p.crossorigin ? { crossorigin: p.crossorigin } : {})}
+              />
+            ))}
+            {ctx.settings.head.preload?.map((p, i) => (
+              <link
+                key={i}
+                rel="preload"
+                as={p.as}
+                href={p.href}
+                {...(p.type ? { type: p.type } : {})}
+                {...(p.crossorigin ? { crossorigin: p.crossorigin } : {})}
+              />
+            ))}
+            {ctx.settings.head.stylesheets?.map((s, i) =>
+              s.async ? (
+                // Non-render-blocking async stylesheet:
+                //   <link rel="stylesheet" href media="print" onload="this.media='all'">
+                //   <noscript><link rel="stylesheet" href></noscript>
+                //
+                // SSR note: preact-render-to-string emits string-valued on* props as
+                // literal HTML attributes (only function-valued event handlers are
+                // stripped). We use `as any` to bypass Preact's JSX types, which
+                // expect a function for onload. The new unit test pins the exact
+                // emitted string to guard this contract.
+                <>
+                  <link
+                    key={`${i}-link`}
+                    rel="stylesheet"
+                    href={s.href}
+                    {...(s.crossorigin ? { crossorigin: s.crossorigin } : {})}
+                    media="print"
+                    // Swap to the configured media (default "all") once loaded.
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    {...({ onload: `this.media='${s.media ?? "all"}'` } as any)}
+                  />
+                  <noscript
+                    key={`${i}-noscript`}
+                    dangerouslySetInnerHTML={{
+                      __html: `<link rel="stylesheet" href="${s.href.replace(/"/g, "&quot;")}"${s.media ? ` media="${s.media}"` : ""}${s.crossorigin ? ` crossorigin="${s.crossorigin}"` : ""}>`,
+                    }}
+                  />
+                </>
+              ) : (
+                <link
+                  key={i}
+                  rel="stylesheet"
+                  href={s.href}
+                  {...(s.media ? { media: s.media } : {})}
+                  {...(s.crossorigin ? { crossorigin: s.crossorigin } : {})}
+                />
+              ),
+            )}
+            {ctx.settings.head.alternateLinks?.map((a, i) => (
+              <link
+                key={i}
+                rel={a.rel}
+                href={a.href}
+                {...(a.type ? { type: a.type } : {})}
+                {...(a.title ? { title: a.title } : {})}
+              />
+            ))}
+            {ctx.settings.head.meta?.map((m, i) => (
+              <meta
+                key={i}
+                {...(m.name ? { name: m.name } : {})}
+                {...(m.property ? { property: m.property } : {})}
+                content={m.content}
+              />
+            ))}
+          </>
+        )}
       </>
     );
   }

@@ -232,6 +232,7 @@ describe("Settings public field set snapshot", () => {
         "githubAutolinksRepo",
         "siteUrl",
         "metaTags",
+        "head",
         "sitemap",
         "docMetainfo",
         "docTags",
