@@ -12,6 +12,9 @@ import type { JSX } from "preact";
 import { Island } from "@takazudo/zfb";
 import { SidebarTree } from "../sidebar-tree-island/index.js";
 import type { SidebarNavNode, SidebarRootMenuItem } from "../sidebar/types.js";
+import type { ChromeContext } from "../factory-context/index.js";
+import type { Settings } from "../settings.js";
+import { deriveNavDataPrep } from "../chrome/derive.js";
 import type { LocaleLink } from "../url-helpers/index.js";
 
 export type { SidebarNavNode, SidebarRootMenuItem };
@@ -32,40 +35,22 @@ export interface SidebarWithDefaultsProps {
   currentPath?: string;
 }
 
-/** Dependencies injected by the host stub. */
-export interface SidebarWithDefaultsDeps {
-  defaultLocale: string;
-  localeCount: number;
-  buildRootMenuItems: (lang: string, currentVersion: string | undefined) => SidebarRootMenuItem[];
-  buildLocaleLinksForNav: (currentPath: string, lang: string, localeCount: number) => LocaleLink[] | undefined;
-  buildSidebarNodes: (
-    lang: string,
-    navSection: string | undefined,
-    currentVersion: string | undefined,
-    emptyWhenUnsectioned?: boolean,
-  ) => SidebarNavNode[];
-  getThemeDefaultMode: () => "light" | "dark" | undefined;
-  t: (key: string, lang: string) => string;
-}
-
 /**
- * Create a `SidebarWithDefaults` component bound to the host's nav builders.
+ * Create a `SidebarWithDefaults` component from the unified {@link ChromeContext}
+ * (epic Collapse Wiring Shells #2420, FACTORIES #2424 — breaking signature).
  *
- * The host stub calls this once with its concrete dependencies and re-exports
- * the result.
+ * Derives its old nav-builder bag from the context: `defaultLocale`/`localeCount`
+ * (= `locales.length`)/`t` read directly; the four nav data-prep builders come
+ * from the shared `chrome/derive` helper (identical to the pre-collapse wiring).
  */
-export function createSidebarWithDefaults(
-  deps: SidebarWithDefaultsDeps,
+export function createSidebarWithDefaults<S extends Settings = Settings>(
+  ctx: ChromeContext<S>,
 ): (props: SidebarWithDefaultsProps) => JSX.Element {
-  const {
-    defaultLocale,
-    localeCount,
-    buildRootMenuItems,
-    buildLocaleLinksForNav,
-    buildSidebarNodes,
-    getThemeDefaultMode,
-    t,
-  } = deps;
+  const defaultLocale = ctx.defaultLocale;
+  const localeCount = ctx.locales.length;
+  const t = ctx.t;
+  const { buildRootMenuItems, buildLocaleLinksForNav, buildSidebarNodes, getThemeDefaultMode } =
+    deriveNavDataPrep(ctx);
 
   /**
    * Default-bearing host wrapper that performs sidebar data prep, then wraps

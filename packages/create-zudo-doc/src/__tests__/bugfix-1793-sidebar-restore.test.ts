@@ -64,21 +64,15 @@ describe("bugfix #1793 / #2029 — sidebar restore script imported from dist", (
     expect(factory).toContain("SIDEBAR_RESIZER_RESTORE_SCRIPT }} />");
   });
 
-  it("generated _head-with-defaults.tsx delegates to the package factory and does NOT inline the restore script", async () => {
+  it("generated _head-with-defaults.tsx is absent (chrome collapsed into _chrome.ts, #2420)", async () => {
+    // Post-collapse (epic #2420, GENSYNC #2429): `_head-with-defaults.tsx` was
+    // removed from the scaffold template — chrome wiring collapsed into `_chrome.ts`.
+    // The restore-script behavior remains guarded by the package factory test above.
     await scaffold(choices);
-    const content = await fs.readFile(
-      path.join(tempDir, "test-bugfix-1793", "pages/lib/_head-with-defaults.tsx"),
-      "utf-8",
-    );
-    // The generated stub wires the package factory rather than emitting the
-    // script itself — so the restore behavior comes from the package.
-    expect(content).toContain(
-      'import { createHeadWithDefaults } from "@takazudo/zudo-doc/head-with-defaults"',
-    );
-    expect(content).toContain("createHeadWithDefaults({");
-    // No re-inlined constant, and no re-imported script: the stub must not
-    // reintroduce the pre-0.2.0 workaround the original test guarded against.
-    expect(content).not.toContain("const SIDEBAR_RESIZER_RESTORE_SCRIPT");
-    expect(content).not.toContain("SIDEBAR_RESIZER_RESTORE_SCRIPT");
+    expect(
+      await fs.pathExists(
+        path.join(tempDir, "test-bugfix-1793", "pages/lib/_head-with-defaults.tsx"),
+      ),
+    ).toBe(false);
   });
 });

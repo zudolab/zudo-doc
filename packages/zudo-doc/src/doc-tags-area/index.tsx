@@ -10,30 +10,15 @@
 
 import type { VNode } from "preact";
 import { DocTags } from "../metainfo/index.js";
-import type { TagVocabularyEntry, TagGovernanceMode } from "../settings.js";
+import type { TagVocabularyEntry, TagGovernanceMode, Settings } from "../settings.js";
 import { resolvePageTags } from "../tag-helpers/index.js";
+import type { ChromeContext } from "../factory-context/index.js";
 
 /** Settings subset read by the DocTagsArea factory. */
 export interface DocTagsAreaSettings {
   docTags: boolean;
   tagVocabulary: boolean | readonly TagVocabularyEntry[];
   tagGovernance: TagGovernanceMode;
-}
-
-/** Dependencies injected by the host stub. */
-export interface DocTagsAreaDeps {
-  settings: DocTagsAreaSettings;
-  /** Default locale code (e.g. "en"). */
-  defaultLocale: string;
-  /** Tag vocabulary entries (from the host's `@/config/tag-vocabulary`). */
-  tagVocabularyEntries: readonly TagVocabularyEntry[];
-  /**
-   * Build the base-prefixed tag detail page href for the given tag and locale.
-   * Host passes a pre-bound function using `withBase` and `defaultLocale`.
-   */
-  tagHref: (tag: string, locale: string) => string;
-  /** Translate a UI string key for a locale. */
-  t: (key: string, locale: string) => string;
 }
 
 export interface DocTagsAreaProps {
@@ -46,13 +31,30 @@ export interface DocTagsAreaProps {
 }
 
 /**
- * Create a `DocTagsArea` component bound to the host's settings and
- * injected dependencies.
+ * Create a `DocTagsArea` component from the unified {@link ChromeContext}
+ * (epic Collapse Wiring Shells #2420, FACTORIES #2424 — breaking signature).
+ *
+ * Reads `settings`/`t`/`withBase`/`defaultLocale` off the context; the tag
+ * vocabulary is a HOST-bound slot (`ctx.hostBindings.tagVocabulary`, default
+ * `[]`); `tagHref` is reconstructed inline (identical to the pre-collapse wiring).
  */
-export function createDocTagsArea(
-  deps: DocTagsAreaDeps,
+export function createDocTagsArea<S extends Settings = Settings>(
+  ctx: ChromeContext<S>,
 ): (props: DocTagsAreaProps) => VNode | null {
-  const { settings, tagVocabularyEntries, tagHref, t } = deps;
+  const settings = ctx.settings as unknown as DocTagsAreaSettings;
+  const defaultLocale = ctx.defaultLocale;
+  const withBase = ctx.withBase;
+  const tagVocabularyEntries = (ctx.hostBindings.tagVocabulary ??
+    []) as readonly TagVocabularyEntry[];
+  const tagHref = (tag: string, locale: string): string => {
+    const encoded = encodeURIComponent(tag);
+    return withBase(
+      locale === defaultLocale
+        ? `/docs/tags/${encoded}`
+        : `/${locale}/docs/tags/${encoded}`,
+    );
+  };
+  const t = ctx.t;
 
   function DocTagsArea({ locale, tags }: DocTagsAreaProps): VNode | null {
     if (!settings.docTags) return null;

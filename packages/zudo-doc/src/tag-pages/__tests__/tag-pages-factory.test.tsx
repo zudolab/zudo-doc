@@ -12,8 +12,9 @@
 
 import { describe, expect, it } from "vitest";
 import { createTagPages } from "../index.js";
-import type { TagPagesDeps, TagPagesDocsEntry, TagInfo } from "../index.js";
-import { h } from "preact";
+import type { TagPagesDocsEntry, TagInfo } from "../index.js";
+import type { ChromeContext } from "../../factory-context/index.js";
+import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -57,37 +58,22 @@ function makeCollectTags(
   return tagMap;
 }
 
-const STUB_COMPONENT = () => h("div", null);
-
-interface MakeDepsOptions extends Partial<Omit<TagPagesDeps, "components">> {
+interface MakeDepsOptions {
   /** Docs to use for the "docs" collection. */
   docs?: TagPagesDocsEntry[];
+  /** Locale-specific docs collections (key = collection name, e.g. "docs-ja"). */
+  collections?: Record<string, TagPagesDocsEntry[]>;
 }
 
-function makeDeps({ docs = [], ...overrides }: MakeDepsOptions = {}): TagPagesDeps {
-  return {
-    settings: {
-      noindex: false,
-      dynamicPageTransition: false,
-      docTags: true,
-      base: "/",
-    },
-    defaultLocale: "en",
-    t: (key: string) => key,
-    withBase: (path: string) => path,
-    docsUrl: (slug: string, lang?: string) => `/${lang ?? "en"}/docs/${slug}`,
-    composeMetaTitle: (title: string) => title,
-    collectTags: makeCollectTags,
-    stableDocs: (collectionName: string) => (collectionName === "docs" ? docs : []),
-    components: {
-      HeadWithDefaults: STUB_COMPONENT as unknown as TagPagesDeps["components"]["HeadWithDefaults"],
-      HeaderWithDefaults: STUB_COMPONENT as unknown as TagPagesDeps["components"]["HeaderWithDefaults"],
-      FooterWithDefaults: STUB_COMPONENT as unknown as TagPagesDeps["components"]["FooterWithDefaults"],
-      BodyEndIslands: STUB_COMPONENT as unknown as TagPagesDeps["components"]["BodyEndIslands"],
-      DocHistoryArea: STUB_COMPONENT as unknown as TagPagesDeps["components"]["DocHistoryArea"],
-    },
-    ...overrides,
-  };
+// Builds the unified ChromeContext the refactored createTagPages now derives
+// from (FACTORIES #2424). The chrome sub-components are rebuilt from the context
+// internally, so the fixture supplies stub callables + empty host bindings.
+function makeDeps({ docs = [], collections = {} }: MakeDepsOptions = {}): ChromeContext {
+  return makeFakeChromeContext({
+    settings: { docTags: true },
+    collections: { docs, ...collections },
+    collectTags: makeCollectTags as unknown as ChromeContext["collectTags"],
+  });
 }
 
 // ---------------------------------------------------------------------------

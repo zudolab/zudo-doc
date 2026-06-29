@@ -18,6 +18,10 @@ import {
 } from "../i18n-version/index.js";
 import { ThemeToggle } from "../theme-toggle/index.js";
 import { SidebarToggle } from "../sidebar-toggle-island/index.js";
+import type { ChromeContext } from "../factory-context/index.js";
+import type { Settings } from "../settings.js";
+import { buildGitHubRepoUrl as buildGitHubRepoUrlBase } from "../github-helpers/index.js";
+import { deriveNavDataPrep, deriveSearchWidgetSlot } from "../chrome/derive.js";
 import type { SidebarNavNode, SidebarRootMenuItem } from "../sidebar/types.js";
 import type { LocaleLink } from "../url-helpers/index.js";
 
@@ -63,57 +67,32 @@ export interface HeaderWithDefaultsSettings {
   githubUrl?: string | false;
 }
 
-/** Dependencies injected by the host stub. */
-export interface HeaderWithDefaultsDeps {
-  settings: HeaderWithDefaultsSettings;
-  defaultLocale: string;
-  locales: readonly string[];
-  t: (key: string, lang: string) => string;
-  withBase: (path: string) => string;
-  stripBase: (path: string) => string;
-  docsUrl: (slug: string, lang: string) => string;
-  navHref: (path: string, lang: string | undefined, version: string | undefined) => string;
-  versionedDocsUrl: (slug: string, versionSlug: string, lang: string) => string;
-  buildLocaleLinksForNav: (currentPath: string, lang: string, localeCount: number) => LocaleLink[] | undefined;
-  buildRootMenuItems: (lang: string, currentVersion: string | undefined) => SidebarRootMenuItem[];
-  buildSidebarNodes: (lang: string, navSection: string | undefined, currentVersion: string | undefined) => SidebarNavNode[];
-  getThemeDefaultMode: () => "light" | "dark" | undefined;
-  buildGitHubRepoUrl: () => string | null;
-  SearchWidget: (props: {
-    placeholderText: string;
-    shortcutHint: string;
-    resultCountTemplate: string;
-    searchLabel: string;
-    searchUnavailableText: string;
-    loadingIndexText: string;
-    noResultsText: string;
-  }) => JSX.Element;
-}
-
 /**
- * Create a `HeaderWithDefaults` component bound to the host's settings
- * and data-prep utilities.
+ * Create a `HeaderWithDefaults` component from the unified {@link ChromeContext}
+ * (epic Collapse Wiring Shells #2420, FACTORIES #2424 — breaking signature).
+ *
+ * Derives its old wide deps bag from the context: the URL/i18n helpers
+ * (`t`/`withBase`/`docsUrl`/…) and `locales`/`defaultLocale` are read directly;
+ * the nav data-prep builders + SearchWidget slot come from the shared
+ * `chrome/derive` helpers; `buildGitHubRepoUrl` is bound to `settings.githubUrl`.
  */
-export function createHeaderWithDefaults(
-  deps: HeaderWithDefaultsDeps,
+export function createHeaderWithDefaults<S extends Settings = Settings>(
+  ctx: ChromeContext<S>,
 ): (props: HeaderWithDefaultsProps) => JSX.Element {
-  const {
-    settings,
-    defaultLocale,
-    locales,
-    t,
-    withBase,
-    stripBase,
-    docsUrl,
-    navHref,
-    versionedDocsUrl,
-    buildLocaleLinksForNav,
-    buildRootMenuItems,
-    buildSidebarNodes,
-    getThemeDefaultMode,
-    buildGitHubRepoUrl,
-    SearchWidget,
-  } = deps;
+  const settings = ctx.settings as unknown as HeaderWithDefaultsSettings;
+  const defaultLocale = ctx.defaultLocale;
+  const locales = ctx.locales;
+  const t = ctx.t;
+  const withBase = ctx.withBase;
+  const stripBase = ctx.stripBase;
+  const docsUrl = ctx.docsUrl;
+  const navHref = ctx.navHref;
+  const versionedDocsUrl = ctx.versionedDocsUrl;
+  const { buildRootMenuItems, buildLocaleLinksForNav, buildSidebarNodes, getThemeDefaultMode } =
+    deriveNavDataPrep(ctx);
+  const buildGitHubRepoUrl = (): string | null =>
+    buildGitHubRepoUrlBase((ctx.settings as { githubUrl?: string | false }).githubUrl);
+  const SearchWidget = deriveSearchWidgetSlot(ctx);
 
   /**
    * Default-bearing host wrapper around v2's `<Header>` shell.

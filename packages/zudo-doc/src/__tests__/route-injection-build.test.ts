@@ -25,8 +25,32 @@
 import { describe, it, expect, afterAll } from "vitest";
 import { execSync, type ExecSyncOptions } from "node:child_process";
 import { mkdtempSync, mkdirSync, cpSync, symlinkSync, existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
+
+// ---------------------------------------------------------------------------
+// Parity helpers — mirrors parity-diff.mjs normalization so hash values are
+// stable across refactors that MUST NOT change rendered output. Matches the
+// normalizeHtml + sha256 from scripts/parity-diff.mjs exactly.
+// ---------------------------------------------------------------------------
+
+/** Normalize content-hashed filenames to stable placeholders, matching
+ *  the same substitutions used by scripts/parity-diff.mjs. */
+function normalizeHtml(html: string): string {
+  return html
+    // Main islands bundle: /assets/islands-<hex8>.js
+    .replace(/\/assets\/islands-[a-f0-9]+\.js/g, "/assets/islands-CONTENTHASH.js")
+    // Chunk files: /assets/islands-chunk-<UPPERCASE8+>.js
+    .replace(/\/assets\/islands-chunk-[A-Z0-9]+\.js/g, "/assets/islands-chunk-CHUNKHASH.js")
+    // Styles: /assets/styles-<hex8>.css
+    .replace(/\/assets\/styles-[a-f0-9]+\.css/g, "/assets/styles-CONTENTHASH.css");
+}
+
+/** SHA-256 of normalized HTML — the frozen byte-parity fingerprint. */
+function sha256Html(html: string): string {
+  return createHash("sha256").update(normalizeHtml(html), "utf8").digest("hex");
+}
 
 // ---------------------------------------------------------------------------
 // Paths
@@ -189,6 +213,32 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
     expect(html).not.toContain('data-zfb-island-skip-ssr="ImageEnlarge"');
     expect(html).not.toContain('data-zfb-island-skip-ssr="MermaidEnlarge"');
     expect(html).not.toContain("AI Assistant");
+  });
+
+  // ---------------------------------------------------------------------------
+  // PKGWIRE #2425 — byte-parity: stub-defaults path renders byte-identically.
+  // ---------------------------------------------------------------------------
+  // Locks normalized-HTML SHA-256 fingerprints for the package-owned route path
+  // where `createChrome(context)` is called with stub-default `hostBindings`
+  // (i.e. no host overrides). These hashes guard against accidental regressions
+  // in FACTORIES #2424 or later refactors: any change to rendered output must
+  // produce a visible hash diff and be deliberately reviewed before updating.
+  //
+  // normalization: content-hashed asset filenames are replaced with stable
+  // placeholders (matching scripts/parity-diff.mjs) so the fingerprint survives
+  // refactors that only change build hashes.
+  //
+  // To update: run `vitest run --update-snapshots`, inspect the diff, and
+  // confirm the output delta is intentional before committing.
+
+  it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
+    const html = readBuiltHtml(fixtureDir, "404.html");
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"93883eceb7749d14c01dcc441eee88fa7ada69dc242cdb6e2a9f1273bb91321c"`);
+  });
+
+  it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"ded6dfa7280a9ac4e91a3871e1334dde0175bb131d71a7a868ce47cb4e0f5e57"`);
   });
 });
 

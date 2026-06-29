@@ -12,6 +12,12 @@ import type { ComponentChildren, JSX } from "preact";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
 import { VersionsPageContent } from "../nav-indexing/index.js";
 import type { VersionPageEntry, VersionsPageLabels } from "../nav-indexing/index.js";
+import type { ChromeContext } from "../factory-context/index.js";
+import type { Settings } from "../settings.js";
+import { createHeadWithDefaults } from "../head-with-defaults/index.js";
+import { createHeaderWithDefaults } from "../header-with-defaults/index.js";
+import { createFooterWithDefaults } from "../footer-with-defaults/index.js";
+import { deriveComposeMetaTitle, deriveBodyEndIslands } from "../chrome/derive.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -61,25 +67,30 @@ export interface VersionsPageViewProps {
 }
 
 /**
- * Create a `VersionsPageView` component bound to the host's settings and
- * component dependencies.
+ * Create a `VersionsPageView` component from the unified {@link ChromeContext}
+ * (epic Collapse Wiring Shells #2420, FACTORIES #2424 — breaking signature).
+ *
+ * Reads `settings`/`defaultLocale`/`t`/`withBase` off the context, derives
+ * `composeMetaTitle`, and rebuilds the Head / Header / Footer / BodyEndIslands
+ * chrome from the SAME context (so the injected stub path and a host-bound
+ * context both render byte-identically).
  */
-export function createVersionsPageView(
-  deps: VersionsPageDeps,
+export function createVersionsPageView<S extends Settings = Settings>(
+  ctx: ChromeContext<S>,
 ): (props: VersionsPageViewProps) => JSX.Element {
-  const {
-    settings,
-    defaultLocale,
-    t,
-    withBase,
-    composeMetaTitle,
-    components: {
-      HeadWithDefaults,
-      HeaderWithDefaults,
-      FooterWithDefaults,
-      BodyEndIslands,
-    },
-  } = deps;
+  const settings = ctx.settings as unknown as VersionsPageSettings;
+  const defaultLocale = ctx.defaultLocale;
+  const t = ctx.t;
+  const withBase = ctx.withBase;
+  const composeMetaTitle = deriveComposeMetaTitle(ctx);
+  const HeadWithDefaults = createHeadWithDefaults(ctx) as VersionsPageComponents["HeadWithDefaults"];
+  const HeaderWithDefaults = createHeaderWithDefaults(
+    ctx,
+  ) as VersionsPageComponents["HeaderWithDefaults"];
+  const FooterWithDefaults = createFooterWithDefaults(
+    ctx,
+  ) as VersionsPageComponents["FooterWithDefaults"];
+  const BodyEndIslands = deriveBodyEndIslands(ctx) as VersionsPageComponents["BodyEndIslands"];
 
   /** Versions index page for one locale. Lists the latest version and any past
    *  versions configured in settings.versions. */
