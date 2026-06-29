@@ -10,12 +10,15 @@
 //
 // ── How it ships (mechanism) ───────────────────────────────────────────────
 // This file is the ONE place `--zdc-*` tokens are defined. The CSS rules that
-// back them live in a `BEGIN/END`-marked block in `src/content.css` (shipped
-// to consumers as `@takazudo/zudo-doc/content.css`). Wave 2 (#2448) adds the
-// `gen-component-tokens` generator that READS this list and rewrites that
-// block (mirroring the `z-index-tokens.ts` + `gen-z-index` codegen pattern);
-// until then the block is maintained by hand to match what the generator will
-// emit. Each rule:
+// back them are emitted by the `gen-component-tokens` generator (mirroring the
+// `z-index-tokens.ts` + `gen-z-index` codegen pattern), which READS this list
+// and routes each rule by its `surface`:
+//   - `surface: "content"` → a `BEGIN/END`-marked block in `src/content.css`
+//     (shipped to consumers as `@takazudo/zudo-doc/content.css`).
+//   - `surface: "chrome"`  → a `BEGIN/END`-marked block in `src/features.css`
+//     (shipped as `@takazudo/zudo-doc/features.css`) for app-shell components
+//     (header/footer/sidebar/toc/cards). Seeded empty — no chrome tokens yet.
+// Both blocks stay UNLAYERED, mirroring each other. Each rule:
 //   - targets an ALREADY-RENDERED, component-anchored selector (the classes the
 //     component already emits) so NO JSX/class change is needed;
 //   - has enough specificity to beat the consumer's UNLAYERED Tailwind
@@ -67,7 +70,19 @@
 // intended behavior.
 
 /** Grouping category for a component token (drives docs/registry sectioning). */
-export type ComponentTokenCategory = "typography";
+export type ComponentTokenCategory = "typography" | "shape" | "layout";
+
+/**
+ * Which rendering surface a token's backing rule targets — drives WHERE the
+ * generator emits the rule:
+ *   - `content` → the `.zd-content` typography surface; rule lands in the
+ *     BEGIN/END block in `src/content.css` (shipped as `…/content.css`).
+ *   - `chrome`  → the app shell (header/footer/sidebar/toc/cards); rule lands
+ *     in the BEGIN/END block in `src/features.css` (shipped as `…/features.css`).
+ * The two surfaces ship as separate stylesheets, so a token MUST declare its
+ * surface — the generator routes by it and fails loudly when it is absent.
+ */
+export type ComponentTokenSurface = "content" | "chrome";
 
 /**
  * Union of every `--zdc-*` CSS custom property name in the registry.
@@ -104,6 +119,12 @@ export interface ComponentToken {
   default: string;
   /** The component this token rebrands (e.g. `doc-title`). */
   component: string;
+  /**
+   * Rendering surface the backing rule targets. The generator routes the rule
+   * to `content.css` (`content`) or `features.css` (`chrome`) by this field.
+   * Required — codegen throws if it is missing.
+   */
+  surface: ComponentTokenSurface;
   /** Grouping category. */
   category: ComponentTokenCategory;
   /** Human-readable description for the registry/docs. */
@@ -117,6 +138,7 @@ export const COMPONENT_TOKENS: ComponentToken[] = [
     property: "font-family",
     default: "inherit",
     component: "doc-title",
+    surface: "content",
     category: "typography",
     description:
       "Font family of the doc-page title <h1> (and the other page-title h1s that share `text-heading`). Defaults to `inherit` so the title keeps the host's brand heading font; redefine in :root to rebrand.",
@@ -127,6 +149,7 @@ export const COMPONENT_TOKENS: ComponentToken[] = [
     property: "font-weight",
     default: "var(--font-weight-bold)",
     component: "doc-title",
+    surface: "content",
     category: "typography",
     description:
       "Font weight of the doc-page title <h1> (and the other page-title h1s that share `text-heading`). Defaults to the `--font-weight-bold` token (matching the original `font-bold` utility).",
@@ -145,6 +168,7 @@ export const COMPONENT_TOKENS: ComponentToken[] = [
     property: "font-family",
     default: "inherit",
     component: "heading-h2",
+    surface: "content",
     category: "typography",
     description:
       "Font family of content h2 headings (HeadingH2 component and other h2s sharing `text-title`). Defaults to `inherit` so the heading keeps the host's brand font; redefine in :root to rebrand.",
@@ -155,6 +179,7 @@ export const COMPONENT_TOKENS: ComponentToken[] = [
     property: "font-weight",
     default: "var(--font-weight-bold)",
     component: "heading-h2",
+    surface: "content",
     category: "typography",
     description:
       "Font weight of content h2 headings (HeadingH2 component and other h2s sharing `text-title`). Defaults to the `--font-weight-bold` token (matching the original `font-bold` utility).",
@@ -168,6 +193,7 @@ export const COMPONENT_TOKENS: ComponentToken[] = [
     property: "font-weight",
     default: "var(--font-weight-bold)",
     component: "heading-h3",
+    surface: "content",
     category: "typography",
     description:
       "Font weight of content h3 headings (HeadingH3 component). Defaults to the `--font-weight-bold` token (matching the original `font-bold` utility).",
@@ -181,6 +207,7 @@ export const COMPONENT_TOKENS: ComponentToken[] = [
     property: "font-weight",
     default: "var(--font-weight-semibold)",
     component: "heading-h4",
+    surface: "content",
     category: "typography",
     description:
       "Font weight of content h4 headings (HeadingH4 component). Defaults to the `--font-weight-semibold` token (matching the original `font-semibold` utility).",
