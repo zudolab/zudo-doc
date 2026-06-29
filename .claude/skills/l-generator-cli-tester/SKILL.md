@@ -195,7 +195,7 @@ Check that expected files exist or don't exist in `__inbox/generator-test-<patte
 
 Use these tables to verify. Check each file with `test -e <path>`.
 
-> **Note on `theme-toggle.tsx`**: this component always ships on disk as part of the base template — whether it renders at runtime is gated by the `colorMode` setting. The expectation tables below therefore only assert PRESENT for the `light-dark` and `all-features` patterns and do not assert ABSENT elsewhere.
+> **Note on `theme-toggle.tsx`**: as of the Collapse Wiring Shells change (zudolab/zudo-doc#2420, v2.0.0) the theme toggle is provided by `@takazudo/zudo-doc` — generated projects no longer ship `src/components/theme-toggle.tsx` on disk (it collapsed into the package). The expectation tables below assert ABSENT for it.
 >
 > **Note on file extensions**: all components are `.tsx` — there are no `.astro` files in the generated project. The generator uses zfb/Preact, not Astro.
 
@@ -266,7 +266,7 @@ Use these tables to verify. Check each file with `test -e <path>`.
 
 | File | Expected |
 |------|----------|
-| `src/components/theme-toggle.tsx` | PRESENT |
+| `src/components/theme-toggle.tsx` | ABSENT |
 | `src/integrations/claude-resources/` | ABSENT |
 | `src/config/design-token-panel-config.ts` | ABSENT |
 
@@ -287,17 +287,17 @@ Use these tables to verify. Check each file with `test -e <path>`.
 | `src/content/docs/changelog/index.mdx` | PRESENT |
 | `src/integrations/claude-resources/generate.ts` | PRESENT |
 | `src/integrations/claude-resources/escape-for-mdx.ts` | PRESENT |
-| `src/components/theme-toggle.tsx` | PRESENT |
+| `src/components/theme-toggle.tsx` | ABSENT |
 | `src/config/design-token-panel-config.ts` | PRESENT |
 | `src/lib/design-token-panel-bootstrap.ts` | PRESENT |
 | `src/components/doc-history.tsx` | PRESENT |
 | `src/components/desktop-sidebar-toggle.tsx` | PRESENT |
-| `src/scripts/sidebar-resizer.ts` | PRESENT |
+| `src/scripts/sidebar-resizer.ts` | ABSENT |
 | `src/components/image-enlarge.tsx` | PRESENT |
 | `src/utils/github.ts` | PRESENT |
 | `scripts/tags-audit.ts` | PRESENT |
 | `scripts/tags-suggest.ts` | PRESENT |
-| `pages/docs/tags/index.tsx` | PRESENT |
+| `pages/docs/tags/index.tsx` | ABSENT |
 
 ## Step 7: Verify Settings
 
