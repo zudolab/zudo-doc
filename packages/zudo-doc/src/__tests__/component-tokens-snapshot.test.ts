@@ -48,6 +48,15 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
         },
         {
           "category": "typography",
+          "component": "doc-title",
+          "cssVar": "--zdc-doc-title-tracking",
+          "default": "var(--tracking-normal)",
+          "property": "letter-spacing",
+          "selector": "h1.text-heading",
+          "surface": "content",
+        },
+        {
+          "category": "typography",
           "component": "heading-h2",
           "cssVar": "--zdc-doc-h2-font",
           "default": "inherit",
@@ -61,6 +70,15 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
           "cssVar": "--zdc-doc-h2-weight",
           "default": "var(--font-weight-bold)",
           "property": "font-weight",
+          "selector": "h2.text-title",
+          "surface": "content",
+        },
+        {
+          "category": "typography",
+          "component": "heading-h2",
+          "cssVar": "--zdc-doc-h2-tracking",
+          "default": "var(--tracking-normal)",
+          "property": "letter-spacing",
           "selector": "h2.text-title",
           "surface": "content",
         },
@@ -82,12 +100,48 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
           "selector": "h4.text-body.font-semibold",
           "surface": "content",
         },
+        {
+          "category": "typography",
+          "component": "doc-prose",
+          "cssVar": "--zdc-doc-prose-font",
+          "default": "var(--font-sans)",
+          "property": "font-family",
+          "selector": ".zd-content",
+          "surface": "content",
+        },
+        {
+          "category": "typography",
+          "component": "content-link",
+          "cssVar": "--zdc-doc-link-decoration",
+          "default": "underline",
+          "property": "text-decoration",
+          "selector": "a.text-accent.underline",
+          "surface": "content",
+        },
+        {
+          "category": "shape",
+          "component": "admonition",
+          "cssVar": "--zdc-admonition-radius",
+          "default": "0 var(--radius-DEFAULT) var(--radius-DEFAULT) 0",
+          "property": "border-radius",
+          "selector": "[data-admonition]",
+          "surface": "content",
+        },
+        {
+          "category": "shape",
+          "component": "admonition",
+          "cssVar": "--zdc-admonition-border-width",
+          "default": "4px",
+          "property": "border-left-width",
+          "selector": "[data-admonition]",
+          "surface": "content",
+        },
       ]
     `);
   });
 
-  it("contains exactly 6 tokens in the Wave 4 registry", () => {
-    expect(COMPONENT_TOKENS).toHaveLength(6);
+  it("contains exactly 12 tokens in the Wave 5 registry", () => {
+    expect(COMPONENT_TOKENS).toHaveLength(12);
   });
 
   it("every cssVar follows the --zdc- prefix convention", () => {
@@ -102,7 +156,7 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
     }
   });
 
-  it("all current Wave 4 tokens are content-surface", () => {
+  it("all current Wave 5 tokens are content-surface", () => {
     for (const token of COMPONENT_TOKENS) {
       expect(token.surface).toBe("content");
     }
@@ -110,9 +164,16 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
 
   it("every default chains to a token or inherit — never a bare literal color/size", () => {
     for (const token of COMPONENT_TOKENS) {
-      // Allowed: "inherit" or a var() reference — not a raw hex, px, or named value
+      // Preferred: "inherit" or a var() reference (including multi-value defaults
+      // that contain var() like "0 var(--radius-DEFAULT) var(--radius-DEFAULT) 0").
+      // Documented exceptions (#2460): CSS keywords or literals with no token
+      // equivalent — "underline" (no text-decoration scale) and "4px" (no
+      // border-width scale). Bare hex colors and named CSS colors remain forbidden.
       const isAllowed =
-        token.default === "inherit" || token.default.startsWith("var(");
+        token.default === "inherit" ||
+        token.default.includes("var(") ||
+        token.default === "underline" ||
+        token.default === "4px";
       expect(isAllowed).toBe(true);
     }
   });
