@@ -354,11 +354,8 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
         >
           <div class="flex min-h-[calc(100vh-3.5rem)] justify-center">
             <div
-              class={`zd-doc-content-band flex w-full gap-[clamp(1.5rem,3vw,4rem)] ${
-                showSidebar
-                  ? "max-w-[clamp(50rem,75vw,90rem)]"
-                  : "max-w-[80rem]"
-              }`}
+              class="zd-doc-content-band flex w-full gap-[clamp(1.5rem,3vw,4rem)]"
+              {...(!showSidebar ? { "data-zd-nosidebar": "" } : {})}
             >
               <main class="flex-1 min-w-0 px-hsp-xl py-vsp-xl lg:px-hsp-2xl lg:py-vsp-2xl">
                 {breadcrumb}
