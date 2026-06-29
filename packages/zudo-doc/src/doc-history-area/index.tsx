@@ -26,6 +26,7 @@ import type { Settings } from "../settings.js";
 import { toHistorySlug } from "../slug/index.js";
 import { buildGitHubSourceUrl as buildGitHubSourceUrlBase } from "../github-helpers/index.js";
 import { deriveDocHistorySlot } from "../chrome/derive.js";
+import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
 /** Per-entry metadata shape from the doc-history manifest. */
 export interface DocHistoryMetaEntry {
@@ -95,6 +96,7 @@ export interface DocHistoryAreaProps {
 export function createDocHistoryArea<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
 ): (props: DocHistoryAreaProps) => VNode | null {
+  assertChromeContext(ctx, "createDocHistoryArea");
   const settings = ctx.settings as unknown as DocHistoryAreaSettings;
   const defaultLocale = ctx.defaultLocale;
   const docHistoryMeta = (ctx.hostBindings.docHistoryMeta ?? {}) as Record<

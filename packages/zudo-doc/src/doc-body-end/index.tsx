@@ -17,6 +17,7 @@ import { SidebarResizerInit } from "../sidebar-resizer/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { deriveBodyEndIslands } from "../chrome/derive.js";
+import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
 /** Settings subset read by the DocBodyEnd factory. */
 export interface DocBodyEndSettings {
@@ -35,6 +36,7 @@ export interface DocBodyEndSettings {
 export function createDocBodyEnd<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
 ): () => JSX.Element {
+  assertChromeContext(ctx, "createDocBodyEnd");
   const settings = ctx.settings as unknown as DocBodyEndSettings;
   const BodyEndIslands = deriveBodyEndIslands(ctx) as (props: {
     basePath: string;

@@ -14,6 +14,7 @@ import { Footer } from "../footer/index.js";
 import type { FooterLinkColumn, FooterTagColumn } from "../footer/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
+import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
 /** Tag info returned by the host's `collectTags` (what the factory sees). */
 export interface FooterTagInfo {
@@ -69,6 +70,7 @@ export interface FooterWithDefaultsSettings {
 export function createFooterWithDefaults<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
 ): (props: { lang?: string }) => VNode {
+  assertChromeContext(ctx, "createFooterWithDefaults");
   const settings = ctx.settings as unknown as FooterWithDefaultsSettings;
   const defaultLocale = ctx.defaultLocale;
   const tagVocabulary = (ctx.hostBindings.tagVocabulary ??

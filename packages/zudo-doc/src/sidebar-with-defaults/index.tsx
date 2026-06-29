@@ -15,6 +15,7 @@ import type { SidebarNavNode, SidebarRootMenuItem } from "../sidebar/types.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { deriveNavDataPrep } from "../chrome/derive.js";
+import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 import type { LocaleLink } from "../url-helpers/index.js";
 
 export type { SidebarNavNode, SidebarRootMenuItem };
@@ -46,6 +47,7 @@ export interface SidebarWithDefaultsProps {
 export function createSidebarWithDefaults<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
 ): (props: SidebarWithDefaultsProps) => JSX.Element {
+  assertChromeContext(ctx, "createSidebarWithDefaults");
   const defaultLocale = ctx.defaultLocale;
   const localeCount = ctx.locales.length;
   const t = ctx.t;

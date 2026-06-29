@@ -20,6 +20,7 @@ import type { ColorSchemeProviderColorMode } from "../theme/color-scheme-provide
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { deriveComposeMetaTitle, deriveColorSchemeGenerators } from "../chrome/derive.js";
+import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
 export interface HeadWithDefaultsProps {
   /** Page title forwarded to og:title. Required. */
@@ -63,6 +64,7 @@ export interface HeadWithDefaultsSettings {
 export function createHeadWithDefaults<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
 ): (props: HeadWithDefaultsProps) => JSX.Element {
+  assertChromeContext(ctx, "createHeadWithDefaults");
   const settings = ctx.settings as unknown as HeadWithDefaultsSettings;
   const composeMetaTitle = deriveComposeMetaTitle(ctx);
   const withBase = ctx.withBase;
