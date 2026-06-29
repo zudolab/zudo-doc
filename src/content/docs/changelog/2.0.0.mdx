@@ -1,0 +1,24 @@
+---
+title: 2.0.0
+description: Release notes for 2.0.0.
+sidebar_position: 1040
+---
+
+Released: 2026-06-29
+
+This is a **major** release. The `@takazudo/zudo-doc` host-wiring surface was collapsed onto a unified `ChromeContext`. Rendered HTML/CSS is **byte-identical** to 1.3.0 — the break is in the factory API, not in output.
+
+### Breaking Changes
+
+- `@takazudo/zudo-doc`: the public chrome/render/data factories (`createHeadWithDefaults`, `createHeaderWithDefaults`, `createSidebarWithDefaults`, `createFooterWithDefaults`, `createRenderDocPage`, `createNavSourceDocs`, the `createDoc*` family, …) now take a single unified `ChromeContext` instead of wide parameter bags. Host code that called these factories must build a `ChromeContext` (via the new `createRouteContext` + `createChrome` builders) and pass it. Rendered output is unchanged — see `API.md`. (df2a57f6, #2424)
+
+### Features
+
+- `@takazudo/zudo-doc`: new public builders `createRouteContext(payload)` and `createChrome(context, hostBindings)`, exported at `@takazudo/zudo-doc/route-context` and `@takazudo/zudo-doc/chrome`. The package-side chrome reconstruction is now a shared, public builder consumed by both injected package routes and the host adapter. (9f0ac9a0, b14c3226, #2423)
+- `create-zudo-doc`: generated projects now scaffold a single `pages/lib/_chrome.ts` host adapter (plus a vitest-safe `_route-context.ts` seam) instead of ~34 per-component wiring shells. (791caf87, #2429)
+
+### Other Changes
+
+- Collapsed the host's ~35 factory-wiring shells onto the unified adapter (−648 lines of host code), guarded by a byte-parity + island-reachability gate proving rendered HTML/CSS is identical. (#2427, #2428)
+- Rewrote `@takazudo/zudo-doc` `API.md` for the 2.0 contract; updated public-API and eject snapshots. (5ed727c1, #2425)
+- Removed dead/duplicated files and dedup'd tag-vocabulary types onto `@takazudo/zudo-doc/settings`. (b0f7bf80, 48634b5a, #2422)
