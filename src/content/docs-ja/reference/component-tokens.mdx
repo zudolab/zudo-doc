@@ -1,6 +1,6 @@
 ---
 title: コンポーネントトークン
-description: "--zdc-* という上書きの接合点 — コンポーネントを直接編集せずにタイポグラフィを再ブランディングするための公開API。"
+description: "--zdc-* という上書きの接合点 — コンポーネントを直接編集せずにスタイル（タイポグラフィ・形状・レイアウト）を再ブランディングするための公開API。"
 sidebar_position: 3.5
 tags:
   - design-system
@@ -48,18 +48,56 @@ zudo-docのトークンは3つの層に整理されており、各層は1つ上�
 
 以下の表は、すべての`--zdc-*`トークンの一覧です。レジストリから直接生成しているため、パッケージが配布する内容と常に一致します。
 
+トークンは**レンダリングサーフェス**によって分かれています。コンテンツトークンは`.zd-content`プロズ領域を対象とし（`@takazudo/zudo-doc/content.css`として配布）、クロームトークンはアプリシェル（サイドバーナビゲーション、目次、カードグリッド）を対象とします（`@takazudo/zudo-doc/features.css`として配布）。
+
+### コンテンツトークン
+
 | Token | Component | Default | What it controls |
 | --- | --- | --- | --- |
 | `--zdc-doc-title-font` | `doc-title` | `inherit` | Font family of the page-title `<h1>` (doc-page titles plus the home, tag, and versions page titles that share `text-heading`). |
 | `--zdc-doc-title-weight` | `doc-title` | `var(--font-weight-bold)` | Font weight of the page-title `<h1>`. |
+| `--zdc-doc-title-tracking` | `doc-title` | `var(--tracking-normal)` | Letter spacing of the page-title `<h1>`. Defaults to `var(--tracking-normal)` (resolves to `normal` — byte-identical to the browser default). |
 | `--zdc-doc-h2-font` | `heading-h2` | `inherit` | Font family of content `<h2>` headings. |
 | `--zdc-doc-h2-weight` | `heading-h2` | `var(--font-weight-bold)` | Font weight of content `<h2>` headings. |
+| `--zdc-doc-h2-tracking` | `heading-h2` | `var(--tracking-normal)` | Letter spacing of content `<h2>` headings. |
 | `--zdc-doc-h3-weight` | `heading-h3` | `var(--font-weight-bold)` | Font weight of content `<h3>` headings. |
 | `--zdc-doc-h4-weight` | `heading-h4` | `var(--font-weight-semibold)` | Font weight of content `<h4>` headings. |
+| `--zdc-doc-prose-font` | `doc-prose` | `var(--font-sans)` | Font family of the `.zd-content` prose area. Redefine to use a distinct body font for doc content; headings with `--zdc-doc-*-font: inherit` inherit this value. |
+| `--zdc-doc-link-decoration` | `content-link` | `underline` | Text decoration of styled content links (the `text-accent underline` path in ContentLink; excludes block and hash-link variants). Set to `none` to remove underlines from content links. |
+| `--zdc-admonition-radius` | `admonition` | `0 var(--radius-DEFAULT) var(--radius-DEFAULT) 0` | Border radius of admonition/callout blocks. Defaults to the current value (0 on the left edges, `--radius-DEFAULT` on the right — the flush-left accent look). |
+| `--zdc-admonition-border-width` | `admonition` | `4px` | Width of the admonition left accent border. |
+
+### クロームトークン
+
+| Token | Component | Default | What it controls |
+| --- | --- | --- | --- |
+| `--zdc-card-radius` | `card-grid` | `var(--zdc-surface-radius, var(--radius-DEFAULT))` | Border radius of nav/doc card anchors (doc-card-grid, nav-card-grid, category-nav). Chains through `--zdc-surface-radius` — see below. |
+| `--zdc-content-max-width` | `doc-content-band` | `clamp(50rem,75vw,90rem)` | Max width of the doc reading column (sidebar-present case). The no-sidebar 80 rem variant is handled separately by `[data-zd-nosidebar]` in features.css. |
+| `--zdc-toc-width` | `toc` | `280px` | Width of the desktop Table of Contents right rail. |
+| `--zdc-nav-active-indicator-color` | `nav-active` | `var(--color-fg)` | Background color of the active sidebar nav link (the inversion fill that marks the current page). |
+| `--zdc-nav-active-weight` | `nav-active` | `var(--font-weight-medium)` | Font weight of the active sidebar nav link. |
+
+### `--zdc-surface-radius` メタノブ
+
+`--zdc-surface-radius`は**レジストリのエントリではありません** — それ自体の背後にあるCSSルールは存在しません。`--zdc-card-radius`のデフォルトチェーンの中にリンクとして存在します：
+
+```
+var(--zdc-card-radius, var(--zdc-surface-radius, var(--radius-DEFAULT)))
+```
+
+`:root`で`--zdc-surface-radius`を設定すると、このチェーンに参加しているすべてのサーフェスが一度に角丸になります — 各トークンを個別に上書きする必要がありません：
+
+```css title="src/styles/global.css"
+:root {
+  --zdc-surface-radius: 0.75rem; /* すべてのサーフェスをまとめて角丸にする */
+}
+```
+
+これは「すべてをまとめて角丸にする」ノブです。個別のサーフェスは、それぞれの`--zdc-card-radius`（または将来のサーフェストークン）を直接設定することで個別に上書きできます。メタノブが有効なのは、サーフェスごとのトークンが未設定の場合のみです。
 
 <Tip>
 
-フォントファミリー（`-font`）とフォントウェイト（`-weight`）は、単一の`font`ショートハンドにまとめず、粒度の細かい別々のトークンとして保持しています。CSSの`font`ショートハンドは、明示しなかったサブプロパティ（サイズ、行の高さ、スタイル）をすべてリセットしてしまいます。これではバイト単位で同一のデフォルトが壊れるうえ、制御の幅も狭まります — ファミリーとサイズを書き直さずにウェイトだけを変えることができなくなるのです。独立した2つのつまみは、2つのトークンのままにしてあります。
+フォントファミリー（`-font`）、フォントウェイト（`-weight`）、レタースペーシング（`-tracking`）は、単一の`font`ショートハンドにまとめず、粒度の細かい別々のトークンとして保持しています。CSSの`font`ショートハンドは、明示しなかったサブプロパティ（サイズ、行の高さ、スタイル）をすべてリセットしてしまいます。これではバイト単位で同一のデフォルトが壊れるうえ、制御の幅も狭まります — ファミリーとサイズを書き直さずにウェイトだけを変えることができなくなるのです。独立したつまみは、独立したトークンのままにしてあります。
 
 </Tip>
 
