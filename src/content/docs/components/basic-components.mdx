@@ -20,9 +20,9 @@ Headings from `h2` to `h4` appear in the table of contents sidebar.
 #### Heading 4
 ```
 
-### Overriding Heading Typography
+### Overriding Content Typography
 
-The page-title and content-heading typography above is driven by **component tokens** — `--zdc-*` CSS custom properties the `@takazudo/zudo-doc` package exposes as override seams. Because the components ship from the package (you cannot edit them directly), these tokens are your scope: redefine any of them in your own `:root` to rebrand the headings across every page, with no `!important` and no eject.
+The page-title, content-heading, prose, and link typography above is driven by **component tokens** — `--zdc-*` CSS custom properties the `@takazudo/zudo-doc` package exposes as override seams. Because the components ship from the package (you cannot edit them directly), these tokens are your scope: redefine any of them in your own `:root` to rebrand the content area across every page, with no `!important` and no eject.
 
 ```css title="src/styles/global.css"
 :root {
@@ -35,12 +35,18 @@ The page-title and content-heading typography above is driven by **component tok
 | --- | --- | --- | --- |
 | `--zdc-doc-title-font` | `doc-title` | `inherit` | Font family of the page-title `<h1>`. |
 | `--zdc-doc-title-weight` | `doc-title` | `var(--font-weight-bold)` | Font weight of the page-title `<h1>`. |
+| `--zdc-doc-title-tracking` | `doc-title` | `var(--tracking-normal)` | Letter spacing of the page-title `<h1>`. |
 | `--zdc-doc-h2-font` | `heading-h2` | `inherit` | Font family of content `<h2>` headings. |
 | `--zdc-doc-h2-weight` | `heading-h2` | `var(--font-weight-bold)` | Font weight of content `<h2>` headings. |
+| `--zdc-doc-h2-tracking` | `heading-h2` | `var(--tracking-normal)` | Letter spacing of content `<h2>` headings. |
 | `--zdc-doc-h3-weight` | `heading-h3` | `var(--font-weight-bold)` | Font weight of content `<h3>` headings. |
 | `--zdc-doc-h4-weight` | `heading-h4` | `var(--font-weight-semibold)` | Font weight of content `<h4>` headings. |
+| `--zdc-doc-prose-font` | `doc-prose` | `var(--font-sans)` | Font family of the `.zd-content` prose area. Headings with `--zdc-doc-*-font: inherit` inherit this value. |
+| `--zdc-doc-link-decoration` | `content-link` | `underline` | Text decoration of styled content links. Set to `none` to remove underlines. |
+| `--zdc-admonition-radius` | `admonition` | `0 var(--radius-DEFAULT) var(--radius-DEFAULT) 0` | Border radius of admonition/callout blocks. |
+| `--zdc-admonition-border-width` | `admonition` | `4px` | Width of the admonition left accent border. |
 
-For the full rundown — the ownership-inversion rationale, how these fit the three-tier token story, and why they are not editable in the Design Token Panel — see [Component Tokens](../reference/component-tokens.mdx).
+For the full rundown — the ownership-inversion rationale, how these fit the three-tier token story, chrome tokens (card radius, TOC width, nav active styles), and why they are not editable in the Design Token Panel — see [Component Tokens](../reference/component-tokens.mdx).
 
 ## Text Formatting
 
