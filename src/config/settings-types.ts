@@ -27,5 +27,6 @@ export type {
   TagPlacement,
   VersionConfig,
   MetaTagsConfig,
+  SiteHeadConfig,
   Settings,
 } from "@takazudo/zudo-doc/settings";

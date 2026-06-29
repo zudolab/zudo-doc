@@ -234,6 +234,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `githubAutolinksRepo?` | `string` | `"owner/repo"` for `#123` / SHA autolinks |
 | `siteUrl` | `string` | Canonical site URL (for sitemap, OG) |
 | `metaTags` | `MetaTagsConfig` | `<meta>` tag configuration |
+| `head?` | `SiteHeadConfig` | Site-wide `<head>` extras injected into every page. Supports `preconnect`, `preload`, `stylesheets`, `alternateLinks`, and `meta` descriptors. Stylesheet entries accept `async: true` for non-render-blocking loading via the `media="print" + onload` pattern with a `<noscript>` fallback. Absent (the default) emits nothing — byte-identical to the pre-2.0.1 baseline. |
 | `sitemap` | `boolean` | Enable sitemap generation |
 | `docMetainfo` | `boolean` | Enable doc metadata area (Created/Updated/Author) |
 | `docTags` | `boolean` | Enable doc tags display |
