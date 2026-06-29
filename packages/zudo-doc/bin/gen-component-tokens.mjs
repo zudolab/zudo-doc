@@ -26,7 +26,7 @@
 // of truth), then run `pnpm gen:component-tokens` and commit the regenerated
 // content.css. Never hand-edit the block between the BEGIN/END markers.
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, realpathSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -207,9 +207,26 @@ function main() {
   return 0;
 }
 
-// Run the CLI only when executed directly (node bin/gen-component-tokens.mjs),
-// NOT when imported by tests. Without this guard the import would rewrite
-// content.css as a side effect and break `pnpm test`.
-if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+// Run the CLI only when executed directly, NOT when imported by tests (an
+// import must not rewrite content.css as a side effect — it would break
+// `pnpm test`). Compare REAL paths on both sides: when invoked through the
+// pnpm bin shim (root `pnpm gen:/check:component-tokens`, b4push), argv[1] is
+// the `node_modules/.bin/…` symlink, NOT the real workspace file, so a raw
+// path-equality check is always false and main() would silently no-op — the
+// drift guard would pass even on real drift. realpathSync resolves the shim/
+// symlink to the real file on both sides so direct invocation is detected
+// however the bin is launched.
+function isDirectInvocation() {
+  if (!process.argv[1]) return false;
+  try {
+    return (
+      realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1])
+    );
+  } catch {
+    return false;
+  }
+}
+
+if (isDirectInvocation()) {
   process.exit(main());
 }
