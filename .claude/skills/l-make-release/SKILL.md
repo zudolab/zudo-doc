@@ -214,6 +214,18 @@ pnpm b4push
 
 Fix any failures and recommit before proceeding. Do not tag until b4push is fully green.
 
+> **Do NOT bump the `@takazudo/zudo-doc-history-server` peer floor.** The release
+> script intentionally leaves `packages/zudo-doc/package.json`
+> `peerDependencies["@takazudo/zudo-doc-history-server"]` alone. That floor names
+> an **already-published** version (the showcase resolves the peer from the npm
+> registry under `--frozen-lockfile`), so raising it to the in-flight release
+> version makes the lockfile unresolvable and deadlocks CI **and** the publish
+> workflows. The floor lags by design and is adopted *after* publish via
+> `/l-bump-deps`. The pin-parity guard uses satisfies-semantics for this peer, so a
+> same-major lag (e.g. floor `^2.0.1` at release `2.1.0`) **passes** and only emits
+> a non-fatal advisory — do not "fix" that advisory by editing the floor here. See
+> RELEASE.md → "First-party peer floor (publish-lag)".
+
 ## Step 5 — Commit
 
 Stage and commit all changed files:
