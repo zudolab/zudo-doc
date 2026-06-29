@@ -1,0 +1,17 @@
+---
+title: 2.0.1
+description: 2.0.1のリリースノート。
+sidebar_position: 1041
+---
+
+リリース日: 2026-06-29
+
+これは**パッチ**リリースです。2.0.0「Collapse Wiring Shells」で失われていたホスト側の接続点である `settings.head` の `<head>` 注入フックを追加し、zfb ツールチェーンを `0.1.0-next.71` に更新します。`settings.head` を設定しなければ、出力されるHTMLは 2.0.0 と**バイト単位で同一**です。
+
+### 機能
+
+- `@takazudo/zudo-doc`: カスタム `<head>` コンテンツ（`preconnect`・`preload`・`stylesheets`・`alternateLinks`・`meta` の各ディスクリプタ）を、単一のライブ head エミッタ経由ですべてのページ種別（トップページ・ドキュメントページ・タグ・バージョン・404）に注入する、新しい任意フィールド `settings.head: SiteHeadConfig` を追加しました。`stylesheets` の各エントリは `async: true` を指定でき、レンダリングをブロックしない読み込み（`media="print"` + `onload` によるメディア切り替えパターンと `<noscript>` フォールバック）になります。フィールドはシリアライズ可能なデータのみのため、パッケージ注入ルートにも届きます。`settings.head` が無い場合は何も出力せず、2.0.0 とバイト単位で同一の出力を保ちます。 (0c50a080, 32bae945, #2435)
+
+### その他の変更
+
+- `@takazudo/zfb` ツールチェーン（`@takazudo/zfb`・`@takazudo/zfb-runtime`・`@takazudo/zfb-adapter-cloudflare`）を `0.1.0-next.70` から `0.1.0-next.71` に更新しました。 (d0fe255f, #2435)
