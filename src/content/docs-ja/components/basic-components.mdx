@@ -20,6 +20,28 @@ zudo-docのデザイントークンシステムによってスタイリングさ
 #### 見出し4
 ```
 
+### 見出しタイポグラフィの上書き
+
+上記のページタイトルおよびコンテンツ見出しのタイポグラフィは、**コンポーネントトークン** — `@takazudo/zudo-doc`パッケージが上書きの接合点として公開している`--zdc-*`のCSSカスタムプロパティ — によって制御されています。これらのコンポーネントはパッケージから配布されるため（直接編集はできません）、これらのトークンがあなたの作業範囲になります。自分の`:root`でいずれかを再定義すれば、すべてのページの見出しを再ブランディングできます。`!important`もイジェクトも不要です。
+
+```css title="src/styles/global.css"
+:root {
+  --zdc-doc-title-font: "Georgia", serif;
+  --zdc-doc-title-weight: 800;
+}
+```
+
+| Token | Component | Default | What it controls |
+| --- | --- | --- | --- |
+| `--zdc-doc-title-font` | `doc-title` | `inherit` | Font family of the page-title `<h1>`. |
+| `--zdc-doc-title-weight` | `doc-title` | `var(--font-weight-bold)` | Font weight of the page-title `<h1>`. |
+| `--zdc-doc-h2-font` | `heading-h2` | `inherit` | Font family of content `<h2>` headings. |
+| `--zdc-doc-h2-weight` | `heading-h2` | `var(--font-weight-bold)` | Font weight of content `<h2>` headings. |
+| `--zdc-doc-h3-weight` | `heading-h3` | `var(--font-weight-bold)` | Font weight of content `<h3>` headings. |
+| `--zdc-doc-h4-weight` | `heading-h4` | `var(--font-weight-semibold)` | Font weight of content `<h4>` headings. |
+
+詳しい解説 — 所有権の逆転という考え方、3層トークン戦略における位置づけ、そしてDesign Token Panelで編集できない理由 — は[コンポーネントトークン](../reference/component-tokens.mdx)を参照してください。
+
 ## テキストの書式
 
 **太字テキスト**、*イタリックテキスト*、~~取り消し線~~。組み合わせも可能です：***太字かつイタリック***。
