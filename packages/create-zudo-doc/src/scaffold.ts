@@ -706,7 +706,7 @@ function generatePackageJson(choices: UserChoices) {
   if (choices.features.includes("designTokenPanel")) {
     // @takazudo/zdtp requires preact >= 10.29.1 — see the preact floor comment
     // above (~line 382) for why the floor is set there and the coupling this creates.
-    deps["@takazudo/zdtp"] = "0.3.3";
+    deps["@takazudo/zdtp"] = "0.4.1";
   }
 
   if (choices.features.includes("tagGovernance")) {
