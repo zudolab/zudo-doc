@@ -58,7 +58,7 @@ import docHistoryMeta from "#doc-history-meta";
 
 // ---------------------------------------------------------------------------
 // Footer tag loader (host-side; moved verbatim from the former
-// _chrome-context.ts / _footer-with-defaults.tsx). Reads collections via
+// _footer-with-defaults.tsx). Reads collections via
 // stableDocs / memoizeDerived and aggregates tags per locale. Threaded as
 // hostBindings.loadTagsForLocale.
 // ---------------------------------------------------------------------------
