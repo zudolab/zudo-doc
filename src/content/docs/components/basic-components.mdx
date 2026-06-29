@@ -20,6 +20,28 @@ Headings from `h2` to `h4` appear in the table of contents sidebar.
 #### Heading 4
 ```
 
+### Overriding Heading Typography
+
+The page-title and content-heading typography above is driven by **component tokens** — `--zdc-*` CSS custom properties the `@takazudo/zudo-doc` package exposes as override seams. Because the components ship from the package (you cannot edit them directly), these tokens are your scope: redefine any of them in your own `:root` to rebrand the headings across every page, with no `!important` and no eject.
+
+```css title="src/styles/global.css"
+:root {
+  --zdc-doc-title-font: "Georgia", serif;
+  --zdc-doc-title-weight: 800;
+}
+```
+
+| Token | Component | Default | What it controls |
+| --- | --- | --- | --- |
+| `--zdc-doc-title-font` | `doc-title` | `inherit` | Font family of the page-title `<h1>`. |
+| `--zdc-doc-title-weight` | `doc-title` | `var(--font-weight-bold)` | Font weight of the page-title `<h1>`. |
+| `--zdc-doc-h2-font` | `heading-h2` | `inherit` | Font family of content `<h2>` headings. |
+| `--zdc-doc-h2-weight` | `heading-h2` | `var(--font-weight-bold)` | Font weight of content `<h2>` headings. |
+| `--zdc-doc-h3-weight` | `heading-h3` | `var(--font-weight-bold)` | Font weight of content `<h3>` headings. |
+| `--zdc-doc-h4-weight` | `heading-h4` | `var(--font-weight-semibold)` | Font weight of content `<h4>` headings. |
+
+For the full rundown — the ownership-inversion rationale, how these fit the three-tier token story, and why they are not editable in the Design Token Panel — see [Component Tokens](../reference/component-tokens.mdx).
+
 ## Text Formatting
 
 **Bold text**, *italic text*, and ~~strikethrough~~. Combine them: ***bold and italic***.

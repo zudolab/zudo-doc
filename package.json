@@ -45,6 +45,8 @@
     "setup:zudo-doc-wisdom": "bash scripts/setup-zudo-doc-wisdom.sh",
     "// ── Linting ─────────────────────────────────────": "",
     "lint:tokens": "design-token-lint",
+    "gen:component-tokens": "gen-component-tokens",
+    "check:component-tokens": "gen-component-tokens --check",
     "gen:z-index": "gen-z-index",
     "check:z-index": "gen-z-index --check",
     "check:template-drift": "bash scripts/check-template-drift.sh",

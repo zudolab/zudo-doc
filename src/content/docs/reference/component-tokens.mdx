@@ -1,0 +1,78 @@
+---
+title: Component Tokens
+description: The --zdc-* override seams — a public rebrand API for component typography you cannot reach by editing the component.
+sidebar_position: 3.5
+tags:
+  - design-system
+  - customization
+---
+
+zudo-doc ships its layout and content components from the `@takazudo/zudo-doc` package. Those components hardcode their Tailwind utility classes — the doc-page title is literally `<h1 class="text-heading font-bold">`. That is the right call for a shipped component (see [Component First Strategy](./component-first.mdx)), but it leaves consumers a question: how do you re-style a component you do not own?
+
+The `--zdc-*` **component tokens** are the answer. They are a small, curated set of CSS custom properties that the package exposes as supported override seams — redefine one in your own `:root` and the matching component restyles across every route, with no `!important` and no eject.
+
+## The component-library ownership inversion
+
+The usual component-first guidance is: _the component is the abstraction, so if you want a different look, change the component._ That works when the component is yours. Here it is not — it lives in `node_modules/@takazudo/zudo-doc`. Editing it means forking or ejecting the whole component, and trying to override it from the outside means fighting unlayered Tailwind-utility specificity with `!important`. Both are bad doors.
+
+So the conclusion inverts. When you cannot edit the component file, **the component token becomes your scope.** Instead of reaching into the component, you redefine a value the component already reads. The component-first rule still holds inside the package; the `--zdc-*` surface is simply the seam it exposes outward.
+
+<Info>
+
+This is the opposite of "component-first, so skip component tokens." That shortcut assumes you own the component. For a packaged component you do not own, the component token is the _only_ clean override point — so it is exactly where your customization belongs.
+
+</Info>
+
+## The one-line override
+
+Every `--zdc-*` token is redefined the same way: declare it on `:root`. There is no API to import, no component to wrap, and no build step to run.
+
+```css title="src/styles/global.css"
+:root {
+  --zdc-doc-title-font: "Georgia", serif;
+  --zdc-doc-title-weight: 800;
+}
+```
+
+That single block rebrands the page-title `<h1>` on every page — doc pages, the home page, tag pages, the versions page — because `:root` is global and the backing rule is unlayered with enough specificity to beat the component's own utility class. No `!important` is needed, and you never touch the package source.
+
+The defaults are deliberately invisible. Each token falls back to an existing design token or `inherit` (for example `--zdc-doc-title-weight` defaults to `var(--font-weight-bold)`, matching the original `font-bold` utility), so a project that overrides nothing renders byte-for-byte as before. You only opt in to the tokens you actually want to change.
+
+## How it fits the three-tier token story
+
+zudo-doc's tokens are organized into three tiers, each referencing only the tier above it: raw **palette** values (Tier 1) flow into **semantic** tokens (Tier 2), which feed **component** tokens (Tier 3). See [Design System](./design-system.mdx) and [Color](./color.mdx) for the full model.
+
+`--zdc-*` tokens are Tier 3 — component-scoped. But unlike the internal Tier-3 color variables inside `.zd-content` (which are private implementation details you should not reference), `--zdc-*` tokens are **published as a public API**: stable, documented names you are meant to redefine. They extend the same proven pattern the color system already uses, where redefining a `--zd-*` palette token in `:root` re-themes the whole site. `--zdc-*` brings that one-line `:root` override model to component typography.
+
+## Token reference
+
+The table below lists every `--zdc-*` token. It is sourced directly from the registry, so it always matches what the package ships.
+
+| Token | Component | Default | What it controls |
+| --- | --- | --- | --- |
+| `--zdc-doc-title-font` | `doc-title` | `inherit` | Font family of the page-title `<h1>` (doc-page titles plus the home, tag, and versions page titles that share `text-heading`). |
+| `--zdc-doc-title-weight` | `doc-title` | `var(--font-weight-bold)` | Font weight of the page-title `<h1>`. |
+| `--zdc-doc-h2-font` | `heading-h2` | `inherit` | Font family of content `<h2>` headings. |
+| `--zdc-doc-h2-weight` | `heading-h2` | `var(--font-weight-bold)` | Font weight of content `<h2>` headings. |
+| `--zdc-doc-h3-weight` | `heading-h3` | `var(--font-weight-bold)` | Font weight of content `<h3>` headings. |
+| `--zdc-doc-h4-weight` | `heading-h4` | `var(--font-weight-semibold)` | Font weight of content `<h4>` headings. |
+
+<Tip>
+
+Font family (`-font`) and font weight (`-weight`) are kept as separate, granular tokens rather than a single `font` shorthand. The CSS `font` shorthand resets every sub-property it does not name (size, line-height, style), which would both break the byte-identical default and reduce control — you could not change the weight without restating the family and size. Two independent knobs stay two tokens.
+
+</Tip>
+
+## Not editable in the Design Token Panel
+
+These are **source-level override seams**, not live-tweakable values.
+
+<Note>
+
+The [Design Token Panel](./design-token-panel.mdx) edits the semantic spacing, font, size, and color tokens live in the browser. The `--zdc-*` component tokens are deliberately outside its scope: they are component-owned rebrand seams you set once in `:root` (in `src/styles/global.css`), not knobs you drag at runtime. If you are looking for a token in the panel and cannot find it, it is a component token — set it in your stylesheet instead.
+
+</Note>
+
+## Discovering the full set
+
+The registry that backs the table above is the typed source of truth. It is exported from the package as `@takazudo/zudo-doc/component-tokens` (the `COMPONENT_TOKENS` array), so the complete, current list — token name, component, default, and description — is discoverable and type-checked in code, not just in this page. When the package adds a new component token, it appears in that export, and this reference is regenerated from it.

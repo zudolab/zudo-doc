@@ -35,7 +35,7 @@ set -euo pipefail
 
 START_TIME=$(date +%s)
 FAILURES=()
-TOTAL_STEPS=20
+TOTAL_STEPS=21
 CURRENT_STEP=0
 
 step() {
@@ -53,7 +53,7 @@ skip() { echo "⏭  $1 (skipped)"; }
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 # >>> b4push-ci-parity:guards:begin
-# Steps 1–10 are lightweight guard gates. They are delimited by the markers
+# Steps 1–11 are lightweight guard gates. They are delimited by the markers
 # above/below so check-b4push-ci-parity.mjs can cross-check them against the
 # REQUIRED_CI_GUARDS manifest without brittle full-file parsing.
 
@@ -133,7 +133,20 @@ else
   fail "Z-index codegen drift check"
 fi
 
-# ── Step 9: E2E spec naming guard (#2095) ─────────────
+# ── Step 9: Component-tokens codegen drift check ─────
+# pnpm check:component-tokens routes through the @takazudo/zudo-doc
+# `gen-component-tokens` bin (--check mode, #2448) — re-runs the --zdc-*
+# component token codegen into a buffer and fails if
+# packages/zudo-doc/src/content.css drifts from
+# packages/zudo-doc/src/config/component-tokens.ts (the single source of truth).
+step "Component-tokens codegen drift check (check:component-tokens)"
+if (cd "$ROOT_DIR" && pnpm check:component-tokens); then
+  pass "Component-tokens codegen drift check passed"
+else
+  fail "Component-tokens codegen drift check"
+fi
+
+# ── Step 10: E2E spec naming guard (#2095) ────────────
 # Pure-Node check — asserts (a) every e2e/*.spec.ts starts with a known
 # fixture prefix so Playwright's testMatch glob actually picks it up, and
 # (b) no *.spec.ts files exist outside e2e/ except those allowlisted in
@@ -145,7 +158,7 @@ else
   fail "E2E spec naming guard"
 fi
 
-# ── Step 10: @flaky/@local-only tracking-issue guard ──
+# ── Step 11: @flaky/@local-only tracking-issue guard ──
 # Pure-Node check — asserts every test tagged @flaky or @local-only has a
 # GitHub issue URL in a comment on the line(s) immediately preceding the
 # test() call. Without the URL, quarantine telemetry (report-flaky-lane.mjs)
@@ -157,7 +170,7 @@ else
   fail "@flaky/@local-only tracking-issue guard"
 fi
 
-# ── Step 11: B4push/CI parity check ──────────────────
+# ── Step 12: B4push/CI parity check ──────────────────
 # Pure-Node check — verifies every lightweight guard gate in this file also
 # has a corresponding CI job. See scripts/check-b4push-ci-parity.mjs.
 step "B4push/CI parity check (check:b4push-ci-parity)"
@@ -169,7 +182,7 @@ fi
 
 # <<< b4push-ci-parity:guards:end
 
-# ── Step 12: Type checking ─────────────────────────────
+# ── Step 13: Type checking ─────────────────────────────
 # Prefer `zfb check` (the post-cutover entry point). If it fails to
 # start (e.g. binary not yet built), fall back to `tsc --noEmit` so the
 # typecheck still gates pushes.
@@ -211,7 +224,7 @@ else
   fail "Package typechecks"
 fi
 
-# ── Step 13: Root unit tests ──────────────────────────
+# ── Step 14: Root unit tests ──────────────────────────
 # Root `test:unit` (vitest) guards src/**/__tests__ and scripts/__tests__,
 # which previously ran in no local gate and no CI workflow (#1856). Runs
 # before the expensive site build for fast logic-level feedback.
@@ -220,7 +233,7 @@ fi
 # @takazudo/zudo-doc/theme, whose compiled dist/ does not exist on a fresh
 # clone (`pnpm install` does not run the package's tsup build). CI's package
 # and root test jobs build it for the same reason. Building here also leaves
-# dist/safelist.css ready for the safelist check in step 13.
+# dist/safelist.css ready for the safelist check in step 14.
 step "Root unit tests (test:unit)"
 if (cd "$ROOT_DIR" && pnpm --filter @takazudo/zudo-doc build && pnpm test:unit); then
   pass "Root unit tests passed"
@@ -228,10 +241,10 @@ else
   fail "Root unit tests"
 fi
 
-# ── Step 14: Package tests ────────────────────────────
+# ── Step 15: Package tests ────────────────────────────
 # Runs all workspace package test suites (~993 tests). Closes the local/CI
 # asymmetry where package tests ran in CI but not in b4push (#1851/#1856).
-# dist/ is already built by step 11 — no extra prep needed.
+# dist/ is already built by step 14 — no extra prep needed.
 step "Package tests (test:packages)"
 if (cd "$ROOT_DIR" && pnpm test:packages); then
   pass "Package tests passed"
@@ -239,12 +252,12 @@ else
   fail "Package tests"
 fi
 
-# ── Step 15: Package safelist check ──────────────────
+# ── Step 16: Package safelist check ──────────────────
 # Verifies that the generated dist/safelist.css in packages/zudo-doc/ covers
 # every responsive-variant + arbitrary-value utility class used in
 # packages/zudo-doc/src/**/*.tsx. Catches regressions where gen-safelist.mjs
 # misses a new utility class before it reaches consumers (#1994).
-# Requires dist/safelist.css — produced by the package build in step 13.
+# Requires dist/safelist.css — produced by the package build in step 14.
 step "Package safelist check (check:package-safelist)"
 if (cd "$ROOT_DIR" && pnpm check:package-safelist); then
   pass "Package safelist check passed"
@@ -252,7 +265,7 @@ else
   fail "Package safelist check"
 fi
 
-# ── Step 16: Build ────────────────────────────────────
+# ── Step 17: Build ────────────────────────────────────
 step "Build (zfb build)"
 if (cd "$ROOT_DIR" && pnpm build); then
   pass "Build passed"
@@ -260,7 +273,7 @@ else
   fail "Build"
 fi
 
-# ── Step 17: Link check ───────────────────────────────
+# ── Step 18: Link check ───────────────────────────────
 #
 # Strict on broken links + absolute MDX-source warnings (real 404s
 # / sub-path bypass). Trailing-slash warnings stay warn-only — they
@@ -280,7 +293,7 @@ else
   fail "Link check"
 fi
 
-# ── Step 18: HTML validation ──────────────────────────
+# ── Step 19: HTML validation ──────────────────────────
 step "HTML validation (html-validate)"
 if [[ "${B4PUSH_SKIP_HTML_VALIDATE:-}" == "1" ]]; then
   skip "HTML validation (B4PUSH_SKIP_HTML_VALIDATE=1)"
@@ -292,7 +305,7 @@ else
   fi
 fi
 
-# ── Step 19: Automated preview smoke (blocking) ──────
+# ── Step 20: Automated preview smoke (blocking) ──────
 step "Preview smoke (automated)"
 if [[ "${B4PUSH_SKIP_PREVIEW_SMOKE:-}" == "1" ]]; then
   skip "Preview smoke (B4PUSH_SKIP_PREVIEW_SMOKE=1)"
@@ -304,7 +317,7 @@ else
   fi
 fi
 
-# ── Step 20: Manual interactive smoke ────────────────
+# ── Step 21: Manual interactive smoke ────────────────
 step "Manual interactive smoke"
 if [[ "${B4PUSH_SKIP_MANUAL_SMOKE:-}" == "1" ]]; then
   skip "Manual smoke (B4PUSH_SKIP_MANUAL_SMOKE=1)"
