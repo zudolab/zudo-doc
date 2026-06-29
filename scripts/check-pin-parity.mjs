@@ -163,10 +163,10 @@ function readScaffoldPin(scaffoldSrc, pkgName) {
 /**
  * Parse the core "MAJOR.MINOR.PATCH" of a version or caret range into numeric
  * parts. A single leading `^` is tolerated; a `-prerelease` / `+build` suffix is
- * dropped (the lockstep first-party peers compared here are clean releases — the
- * prerelease zfb pins go through a different, exact block). Returns null when the
- * three numeric segments can't be read, so callers fail loudly rather than
- * silently mis-judging an unexpected range form.
+ * deliberately dropped — see satisfiesCaret() for why this guard compares on the
+ * core triple rather than applying strict npm prerelease semantics. Returns null
+ * when the three numeric segments can't be read, so callers fail loudly rather
+ * than silently mis-judging an unexpected range form.
  */
 export function parseSemverCore(value) {
   if (typeof value !== "string") return null;
@@ -185,6 +185,16 @@ export function parseSemverCore(value) {
  *   ^0.0.C       → >=0.0.C  <0.0.(C+1)
  * Returns null when `caretRange` isn't a caret range or either side can't be
  * parsed (callers treat null as a loud failure, never a silent pass).
+ *
+ * Prerelease handling is INTENTIONALLY non-strict: comparison is on the core
+ * MAJOR.MINOR.PATCH triple, ignoring any `-prerelease` identifier. Strict npm
+ * semantics ("a prerelease only satisfies a range whose comparator carries a
+ * matching prerelease tag") would, for a prerelease lockstep root like
+ * `2.2.0-next.1`, demand the floor name that very prerelease — which is NOT yet
+ * published and would reintroduce the publish-lag deadlock this check exists to
+ * avoid (see RELEASE.md "publish-lag"). Core comparison still catches the case
+ * this guard cares about — cross-major staleness — e.g. `2.0.0-next.1` vs
+ * `^1.5.0` parses to core `2.0.0`, which is excluded by `^1.x` → fail.
  */
 export function satisfiesCaret(version, caretRange) {
   if (typeof caretRange !== "string" || !caretRange.trim().startsWith("^")) {

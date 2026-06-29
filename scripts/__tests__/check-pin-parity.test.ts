@@ -60,6 +60,15 @@ describe("satisfiesCaret", () => {
     expect(satisfiesCaret("2.1.0", "~2.1.0")).toBeNull();
     expect(satisfiesCaret("2.1.0", ">=2.0.0")).toBeNull();
   });
+
+  it("compares a prerelease root on its core triple (intentional — avoids the publish-lag deadlock)", () => {
+    // Strict npm semantics would say `^2.1.0` excludes `2.2.0-next.1`; this guard
+    // deliberately compares cores so a prerelease release isn't forced to name an
+    // unpublished prerelease in the floor. See satisfiesCaret() docs / RELEASE.md.
+    expect(satisfiesCaret("2.2.0-next.1", "^2.1.0")).toBe(true);
+    // Cross-major staleness is still caught even for a prerelease root.
+    expect(satisfiesCaret("2.0.0-next.1", "^1.5.0")).toBe(false);
+  });
 });
 
 describe("evaluateFirstPartyPeer — lockstep (satisfies)", () => {
