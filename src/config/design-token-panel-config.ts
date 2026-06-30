@@ -192,7 +192,7 @@ function buildPaletteTier(): TierConfig {
       cssVar: `--zd-${i}`,
       label: `p${i}`,
       default: initial[i] ?? "#808080",
-      type: { kind: "color" },
+      type: { kind: "color", format: "oklch" },
     });
   }
   return {
