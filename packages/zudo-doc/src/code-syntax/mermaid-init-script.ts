@@ -105,28 +105,41 @@ export function buildMermaidInitScript(cdnUrl: string): string {
    * zudolab/zudo-doc#1458: mermaid 11.4.1 ships khroma 2.1.0, which
    * does not understand the CSS \`light-dark()\` function. CSS custom
    * properties on \`:root\` are written as \`light-dark(#hex-light,
-   * #hex-dark)\` when colorMode is configured (see
-   * \`generateLightDarkCssProperties\` in
-   * \`src/config/color-scheme-utils.ts\`), and \`getPropertyValue\`
-   * returns them as the literal string. The earlier resolveColor
-   * temp-element trick — assigning the value to \`el.style.color\` and
-   * reading \`getComputedStyle\` — was unreliable in production
-   * (depends on browser \`light-dark()\` support and on
-   * \`color-scheme\` propagating to the temp element), so we parse
-   * the function syntactically here.
+   * #hex-dark)\` when colorMode is configured, and may be
+   * \`light-dark(oklch(...), oklch(...))\` after the OKLCH migration
+   * (zudolab/zudo-doc#2474). \`getPropertyValue\` returns the literal string.
    *
-   * Returns the picked hex on success, or \`null\` if the input is not
-   * a \`light-dark(...)\` value (caller falls back to resolveColor for
-   * \`oklch(...)\`, \`rgb(...)\`, etc.). When the theme attribute is
+   * Uses a paren-balance-aware splitter instead of a regex so that nested
+   * function calls (\`oklch()\`, \`color(srgb ...)\`, \`rgb()\`) inside each
+   * arm do not confuse the top-level comma separator.
+   *
+   * Returns the picked value (may be hex, oklch, rgb, etc.) on success,
+   * or \`null\` if the input is not a \`light-dark(...)\` value. Caller
+   * passes the result to \`resolveColor\`. When the theme attribute is
    * missing — first paint before the color-scheme bootstrap runs, or
    * a host that does not configure colorMode — returns the light arg
    * as a deterministic default.
    */
   function parseLightDark(raw, theme) {
     if (!raw) return null;
-    var m = raw.match(/^\\s*light-dark\\s*\\(\\s*([^,]+?)\\s*,\\s*([^)]+?)\\s*\\)\\s*$/);
-    if (!m) return null;
-    return theme === "dark" ? m[2] : m[1];
+    var s = raw.replace(/^\\s+|\\s+$/g, "");
+    var prefix = "light-dark(";
+    if (s.indexOf(prefix) !== 0) return null;
+    if (s.charAt(s.length - 1) !== ")") return null;
+    var inner = s.slice(prefix.length, s.length - 1);
+    var depth = 0;
+    var splitIdx = -1;
+    for (var i = 0; i < inner.length; i++) {
+      var ch = inner.charAt(i);
+      if (ch === "(") { depth++; }
+      else if (ch === ")") { depth--; }
+      else if (ch === "," && depth === 0) { splitIdx = i; break; }
+    }
+    if (splitIdx === -1) return null;
+    var light = inner.slice(0, splitIdx).replace(/^\\s+|\\s+$/g, "");
+    var dark = inner.slice(splitIdx + 1).replace(/^\\s+|\\s+$/g, "");
+    if (!light || !dark) return null;
+    return theme === "dark" ? dark : light;
   }
 
   /**
@@ -134,12 +147,18 @@ export function buildMermaidInitScript(cdnUrl: string): string {
    * CSS custom properties return raw values from getComputedStyle (e.g.
    * "light-dark(#fff, #000)") which mermaid cannot parse. This uses a
    * temporary element so the browser resolves any CSS function to a
-   * concrete rgb() value, then converts it to hex.
+   * concrete color, then converts it to hex.
    *
-   * \`light-dark(...)\` is now handled syntactically in
-   * \`parseLightDark\` above (zudolab/zudo-doc#1458) — this function
-   * remains as a fallback for any other CSS function value
-   * (\`oklch(...)\`, \`rgb(...)\`, named colors, etc.).
+   * After the OKLCH migration (zudolab/zudo-doc#2474) the browser may
+   * serialize computed colors as \`oklch(...)\` or \`color(srgb ...)\`
+   * instead of \`rgb()\`. When the resolved value is not rgb/rgba,
+   * this function falls back to a 1x1 canvas paint-and-read so the
+   * browser converts the wide-gamut value to sRGB bytes — no library
+   * dependency needed.
+   *
+   * \`light-dark(...)\` is handled syntactically in \`parseLightDark\`
+   * above (zudolab/zudo-doc#1458) — this function receives already-picked
+   * arms or raw non-light-dark values.
    */
   function resolveColor(value) {
     if (!value) return value;
@@ -161,9 +180,27 @@ export function buildMermaidInitScript(cdnUrl: string): string {
     } finally {
       el.remove();
     }
-    var m = resolved.match(/(\d+)/g);
-    if (m && m.length >= 3) {
-      return "#" + m.slice(0, 3).map(function (n) { return Number(n).toString(16).padStart(2, "0"); }).join("");
+    // Fast path: rgb() / rgba() — browser serialised the color in sRGB.
+    var m = resolved.match(/^rgba?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)/);
+    if (m) {
+      return "#" + [m[1], m[2], m[3]].map(function (n) { return Number(n).toString(16).padStart(2, "0"); }).join("");
+    }
+    // Wide-gamut fallback: browser serialised oklch()/color(srgb ...) for
+    // a wide-gamut CSS value. Paint onto a 1×1 canvas so the browser
+    // converts to sRGB for us, then read back the RGBA bytes (zudolab/zudo-doc#2474).
+    if (resolved) {
+      try {
+        var canvas = document.createElement("canvas");
+        canvas.width = 1;
+        canvas.height = 1;
+        var ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.fillStyle = resolved;
+          ctx.fillRect(0, 0, 1, 1);
+          var data = ctx.getImageData(0, 0, 1, 1).data;
+          return "#" + [data[0], data[1], data[2]].map(function (n) { return n.toString(16).padStart(2, "0"); }).join("");
+        }
+      } catch (e) {}
     }
     return value;
   }
