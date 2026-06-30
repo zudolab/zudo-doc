@@ -21,7 +21,7 @@ export { getSecondaryLang };
  *
  * Bumped in lockstep by scripts/release-create-zudo-doc.sh.
  */
-export const ZUDO_DOC_PIN = "^2.1.1";
+export const ZUDO_DOC_PIN = "^2.1.2";
 
 /**
  * Files in `templates/base/**` that must never be copied into a generated
@@ -600,13 +600,15 @@ function generatePackageJson(choices: UserChoices) {
     // next.70: routine toolchain bump from next.69, re-aligned with the root
     // package.json pins (root was bumped in b5489acf; this scaffold pin lagged
     // at next.69 and broke check-pin-parity). No consumer-facing / CLI change.
-    // next.71 (current pin): routine toolchain bump from next.70, carrying the
+    // next.71: routine toolchain bump from next.70, carrying the
     // zfb external-@import hoisting work. No consumer-facing / CLI change.
-    "@takazudo/zfb": "0.1.0-next.71",
-    "@takazudo/zfb-runtime": "0.1.0-next.71",
+    // next.72 (current pin): routine toolchain bump from next.71, adopted in
+    // lockstep with the root package.json pins. No consumer-facing / CLI change.
+    "@takazudo/zfb": "0.1.0-next.72",
+    "@takazudo/zfb-runtime": "0.1.0-next.72",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.71",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.72",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
@@ -693,7 +695,7 @@ function generatePackageJson(choices: UserChoices) {
     // @takazudo/zudo-doc/integrations/doc-history which in turn imports
     // @takazudo/zudo-doc-history-server/git-history. Without this dep the
     // plugin host fails at init with ERR_MODULE_NOT_FOUND — W8A (#1739).
-    deps["@takazudo/zudo-doc-history-server"] = "^2.1.1";
+    deps["@takazudo/zudo-doc-history-server"] = "^2.1.2";
     // tsx is no longer needed here: the relocated package plugin imports the
     // runner directly (no `tsx -e` spawn) since the package ships compiled
     // dist/ — package-first migration #2321 (#2337).
