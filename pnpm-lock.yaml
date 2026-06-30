@@ -78,6 +78,9 @@ importers:
       '@takazudo/zudo-design-token-lint':
         specifier: ^1.0.0
         version: 1.0.0(patch_hash=6a157fd850449b055cf64a8a7dd1faed5b1da9eebe6c81cca08488ac0de85182)
+      '@types/culori':
+        specifier: ^4.0.1
+        version: 4.0.1
       '@types/node':
         specifier: ^25.3.5
         version: 25.3.5
@@ -93,6 +96,9 @@ importers:
       chokidar:
         specifier: ^4.0.0
         version: 4.0.3
+      culori:
+        specifier: ^4.0.2
+        version: 4.0.2
       html-validate:
         specifier: ^10.15.0
         version: 10.15.0(vitest@4.1.0(@types/node@25.3.5)(msw@2.12.12(@types/node@25.3.5)(typescript@5.9.3))(vite@7.3.5(@types/node@25.3.5)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)))
@@ -1438,6 +1444,9 @@ packages:
 
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
+
+  '@types/culori@4.0.1':
+    resolution: {integrity: sha512-43M51r/22CjhbOXyGT361GZ9vncSVQ39u62x5eJdBQFviI8zWp2X5jzqg7k4M6PVgDQAClpy2bUe2dtwEgEDVQ==}
 
   '@types/d3-array@3.2.2':
     resolution: {integrity: sha512-hOLWVbm7uRza0BYXpIIW5pxfrKe0W+D5lrFiAEYR+pb6w3N2SwSMaJbXdUfSEv+dT4MfHBLtn5js0LAWaO6otw==}
@@ -4127,6 +4136,8 @@ snapshots:
     dependencies:
       '@types/deep-eql': 4.0.2
       assertion-error: 2.0.1
+
+  '@types/culori@4.0.1': {}
 
   '@types/d3-array@3.2.2': {}
 

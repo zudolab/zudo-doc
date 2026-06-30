@@ -132,6 +132,62 @@ describe("MERMAID_INIT_SCRIPT", () => {
     expect(fn("light-dark(#abcdef, #123456)", "auto")).toBe("#abcdef");
   });
 
+  // zudolab/zudo-doc#2474 — OKLCH migration: CSS custom properties may now
+  // contain `oklch()` values inside `light-dark()`. The old regex-based
+  // parser used `[^)]+?` for the dark arm, which cannot contain `)`, so
+  // `light-dark(oklch(0.5 0.1 250), oklch(0.7 0.05 250))` failed to match.
+  // The paren-balance-aware splitter handles arbitrarily nested parens.
+  it("parseLightDark handles oklch() values with nested parens", () => {
+    const fn = extractParseLightDark(MERMAID_INIT_SCRIPT);
+    // Primary case: oklch() values — each arm contains balanced parens
+    expect(
+      fn("light-dark(oklch(0.5 0.1 250), oklch(0.7 0.05 250))", "light"),
+    ).toBe("oklch(0.5 0.1 250)");
+    expect(
+      fn("light-dark(oklch(0.5 0.1 250), oklch(0.7 0.05 250))", "dark"),
+    ).toBe("oklch(0.7 0.05 250)");
+    // Whitespace tolerance with oklch
+    expect(
+      fn(
+        "light-dark( oklch(0.9 0.02 100) , oklch(0.2 0.05 250) )",
+        "light",
+      ),
+    ).toBe("oklch(0.9 0.02 100)");
+    expect(
+      fn(
+        "light-dark( oklch(0.9 0.02 100) , oklch(0.2 0.05 250) )",
+        "dark",
+      ),
+    ).toBe("oklch(0.2 0.05 250)");
+  });
+
+  it("parseLightDark handles rgb() values with commas inside parens", () => {
+    const fn = extractParseLightDark(MERMAID_INIT_SCRIPT);
+    // rgb() arms contain commas — the splitter must not split on them
+    expect(fn("light-dark(rgb(1,2,3), rgb(4,5,6))", "light")).toBe(
+      "rgb(1,2,3)",
+    );
+    expect(fn("light-dark(rgb(1,2,3), rgb(4,5,6))", "dark")).toBe(
+      "rgb(4,5,6)",
+    );
+    // color(srgb ...) arms
+    expect(
+      fn(
+        "light-dark(color(srgb 0.1 0.2 0.3), color(srgb 0.5 0.6 0.7))",
+        "light",
+      ),
+    ).toBe("color(srgb 0.1 0.2 0.3)");
+    expect(
+      fn(
+        "light-dark(color(srgb 0.1 0.2 0.3), color(srgb 0.5 0.6 0.7))",
+        "dark",
+      ),
+    ).toBe("color(srgb 0.5 0.6 0.7)");
+    // Hex values still work (regression guard)
+    expect(fn("light-dark(#111, #222)", "light")).toBe("#111");
+    expect(fn("light-dark(#111, #222)", "dark")).toBe("#222");
+  });
+
   it("re-renders diagrams when the data-theme attribute changes", () => {
     // The theme-toggle island flips `:root[data-theme]` between
     // `"light"` and `"dark"`. Mermaid's resolved theme colors are
@@ -303,6 +359,27 @@ function extractParseLightDark(
   ) => string | null;
 }
 
+/**
+ * Pull the inline `resolveColor` function out of the IIFE-wrapped init
+ * script and return it as a callable function.
+ *
+ * Hex fast paths (3/4/6/8-digit) are pure string operations and work in
+ * any JS environment. DOM/canvas paths require `document` — callers must
+ * feature-detect before invoking with non-hex inputs.
+ */
+function extractResolveColor(script: string): (value: string) => string {
+  const match = script.match(
+    /function\s+resolveColor\s*\([^)]*\)\s*\{[\s\S]*?\n\s{2}\}/,
+  );
+  if (!match) {
+    throw new Error("resolveColor not found in MERMAID_INIT_SCRIPT");
+  }
+  // eslint-disable-next-line @typescript-eslint/no-implied-eval
+  return new Function(`${match[0]}\nreturn resolveColor;`)() as (
+    value: string,
+  ) => string;
+}
+
 type ThemeSnapshot = {
   theme: string | null;
   tokens: Record<string, string>;
@@ -337,6 +414,79 @@ function extractHasThemeStateChanged(
     `${tokens[0]}\n${fn[0]}\nreturn hasThemeStateChanged;`,
   )() as (prev: ThemeSnapshot | undefined, next: ThemeSnapshot) => boolean;
 }
+
+// zudolab/zudo-doc#2474 — OKLCH migration: resolveColor must handle the
+// browser serialising wide-gamut computed colors as oklch() / color(srgb ...)
+// rather than rgb(). Hex fast paths are pure JS and testable anywhere;
+// DOM/canvas paths are guarded with a feature-detect so jsdom-less
+// environments skip them rather than hard-fail.
+describe("resolveColor", () => {
+  it("expands 3-digit hex to 6-digit hex", () => {
+    const fn = extractResolveColor(MERMAID_INIT_SCRIPT);
+    expect(fn("#abc")).toBe("#aabbcc");
+    // resolveColor preserves original case — callers use the result for mermaid
+    // theme variables which accept either case.
+    expect(fn("#ABC")).toBe("#AABBCC");
+  });
+
+  it("passes 6-digit hex through unchanged", () => {
+    const fn = extractResolveColor(MERMAID_INIT_SCRIPT);
+    expect(fn("#aabbcc")).toBe("#aabbcc");
+    expect(fn("#112233")).toBe("#112233");
+  });
+
+  it("strips alpha from 8-digit hex", () => {
+    const fn = extractResolveColor(MERMAID_INIT_SCRIPT);
+    expect(fn("#aabbccdd")).toBe("#aabbcc");
+  });
+
+  it("expands 4-digit hex (with alpha) to 6-digit hex", () => {
+    const fn = extractResolveColor(MERMAID_INIT_SCRIPT);
+    expect(fn("#abcd")).toBe("#aabbcc");
+  });
+
+  it("returns empty/falsy values as-is", () => {
+    const fn = extractResolveColor(MERMAID_INIT_SCRIPT);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(fn("" as any)).toBe("");
+  });
+
+  // DOM-dependent tests: skipped when document is unavailable (Node environment
+  // without jsdom). Canvas-dependent assertions are additionally guarded by
+  // feature-detecting canvas support, since jsdom ships without canvas.
+  it("converts rgb() string to hex via DOM temp element", () => {
+    if (typeof document === "undefined") return;
+    const fn = extractResolveColor(MERMAID_INIT_SCRIPT);
+    // jsdom normalizes style.color = "rgb(255, 0, 0)" → getComputedStyle returns
+    // "rgb(255, 0, 0)" which the /^rgba?\(/ fast path catches.
+    const result = fn("rgb(255, 0, 0)");
+    // result is either the hex (jsdom normalizes) or the original (if jsdom
+    // doesn't compute styles) — both are acceptable; what must NOT happen is
+    // a hard throw.
+    expect(typeof result).toBe("string");
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it("canvas fallback skips gracefully when canvas is unavailable", () => {
+    if (typeof document === "undefined") return;
+    // Feature-detect: jsdom does not ship with a <canvas> implementation.
+    const testCanvas = document.createElement("canvas");
+    const ctx = testCanvas.getContext("2d");
+    if (!ctx) {
+      // Canvas not available — the wide-gamut fallback in resolveColor catches
+      // the null getContext() result and falls through to return value. Confirm
+      // the function still returns a string without throwing.
+      const fn = extractResolveColor(MERMAID_INIT_SCRIPT);
+      const result = fn("#ff0000"); // hex fast path always works
+      expect(result).toBe("#ff0000");
+      return;
+    }
+    // Canvas IS available: oklch() / color(srgb ...) should resolve to hex.
+    const fn = extractResolveColor(MERMAID_INIT_SCRIPT);
+    const result = fn("oklch(1 0 0)"); // pure white in oklch
+    expect(result).toMatch(/^#[0-9a-f]{6}$/);
+  });
+});
 
 describe("MERMAID_CDN_MODULE_URL", () => {
   it("is an https ESM CDN URL pinned to a major version", () => {

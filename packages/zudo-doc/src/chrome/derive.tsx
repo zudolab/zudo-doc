@@ -60,19 +60,19 @@ import { buildSidebarForSection } from "../sidebar-utils/index.js";
  *  real `colorSchemes` palette map rides in the serializable payload; this is
  *  the fallback when a key is missing or `colorSchemes` is `null`. */
 const GREY_RAMP: ColorScheme["palette"] = [
-  "#000000", "#1a1a1a", "#333333", "#4d4d4d", "#666666", "#808080",
-  "#999999", "#b3b3b3", "#cccccc", "#d9d9d9", "#e6e6e6", "#f2f2f2",
-  "#ff5555", "#50fa7b", "#f1fa8c", "#8be9fd",
+  "oklch(0.000 0.000 0.00)" /* #000000 */, "oklch(0.218 0.000 0.00)" /* #1a1a1a */, "oklch(0.321 0.000 0.00)" /* #333333 */, "oklch(0.420 0.000 0.00)" /* #4d4d4d */, "oklch(0.510 0.000 0.00)" /* #666666 */, "oklch(0.600 0.000 0.00)" /* #808080 */,
+  "oklch(0.683 0.000 0.00)" /* #999999 */, "oklch(0.767 0.000 0.00)" /* #b3b3b3 */, "oklch(0.845 0.000 0.00)" /* #cccccc */, "oklch(0.885 0.000 0.00)" /* #d9d9d9 */, "oklch(0.925 0.000 0.00)" /* #e6e6e6 */, "oklch(0.961 0.000 0.00)" /* #f2f2f2 */,
+  "oklch(0.682 0.206 24.43)" /* #ff5555 */, "oklch(0.871 0.2195 148.02)" /* #50fa7b */, "oklch(0.955 0.134 112.76)" /* #f1fa8c */, "oklch(0.883 0.0934 212.85)" /* #8be9fd */,
 ];
 
 /** Package-default color scheme used when `colorSchemes` is `null` or a key is
  *  missing. Exported so `createChrome` keeps the identical fallback. */
 export const DEFAULT_SCHEME: ColorScheme = {
-  background: "#000000",
-  foreground: "#ffffff",
-  cursor: "#ffffff",
-  selectionBg: "#444444",
-  selectionFg: "#ffffff",
+  background: "oklch(0.000 0.000 0.00)" /* #000000 */,
+  foreground: "oklch(1.000 0.000 0.00)" /* #ffffff */,
+  cursor: "oklch(1.000 0.000 0.00)" /* #ffffff */,
+  selectionBg: "oklch(0.387 0.000 0.00)" /* #444444 */,
+  selectionFg: "oklch(1.000 0.000 0.00)" /* #ffffff */,
   palette: GREY_RAMP,
 };
 
