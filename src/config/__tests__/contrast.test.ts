@@ -19,23 +19,37 @@
  */
 
 import { describe, it, expect } from "vitest";
+import { rgb as culoriRgb } from "culori";
 import { colorSchemes } from "../color-schemes";
 import { colorTweakPresets } from "../color-tweak-presets";
 import { resolveSemanticColors } from "../color-scheme-utils";
 import type { ColorScheme, ColorRef } from "../color-schemes";
 
 // ---------------------------------------------------------------------------
-// WCAG 2.x luminance / contrast math (no dependencies)
+// WCAG 2.x luminance / contrast math — parses any CSS color via culori
 // ---------------------------------------------------------------------------
 
-function relativeLuminance(hex: string): number {
-  const h = hex.replace("#", "");
+/**
+ * Parse any CSS color string (hex, oklch, rgb, hsl, …) and return sRGB
+ * components clamped to [0, 1].  Throws on unparseable input.
+ */
+function parseSrgb(cssColor: string): { r: number; g: number; b: number } {
+  const result = culoriRgb(cssColor);
+  if (!result) throw new Error(`Cannot parse CSS color: "${cssColor}"`);
+  // Clamp to [0, 1]: wide-gamut oklch can produce out-of-gamut sRGB components
+  return {
+    r: Math.max(0, Math.min(1, result.r)),
+    g: Math.max(0, Math.min(1, result.g)),
+    b: Math.max(0, Math.min(1, result.b)),
+  };
+}
+
+function relativeLuminance(cssColor: string): number {
+  const { r, g, b } = parseSrgb(cssColor);
+  // WCAG 2.x linearization: gamma-encoded sRGB → linear light
   const toLinear = (c: number) =>
     c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-  const r = toLinear(parseInt(h.slice(0, 2), 16) / 255);
-  const g = toLinear(parseInt(h.slice(2, 4), 16) / 255);
-  const b = toLinear(parseInt(h.slice(4, 6), 16) / 255);
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
 }
 
 function contrastRatio(a: string, b: string): number {
@@ -46,19 +60,18 @@ function contrastRatio(a: string, b: string): number {
 }
 
 /**
- * Simulate CSS color-mix(in srgb, colorHex N%, bgHex (100-N)%).
- * Returns a hex string for the mixed colour.
+ * Simulate CSS color-mix(in srgb, color N%, bg (100-N)%).
+ * Parses both inputs via culori, mixes in sRGB, returns a hex string.
  */
-function colorMixSrgb(colorHex: string, bgHex: string, pct: number): string {
-  const toBytes = (h: string) => {
-    const s = h.replace("#", "");
-    return [parseInt(s.slice(0, 2), 16), parseInt(s.slice(2, 4), 16), parseInt(s.slice(4, 6), 16)] as const;
-  };
-  const f = toBytes(colorHex);
-  const b = toBytes(bgHex);
+function colorMixSrgb(color: string, bg: string, pct: number): string {
+  const f = parseSrgb(color);
+  const bv = parseSrgb(bg);
   const ratio = pct / 100;
-  const mixed = f.map((c, i) => Math.round(c * ratio + (b[i] as number) * (1 - ratio)));
-  return `#${mixed.map((c) => c.toString(16).padStart(2, "0")).join("")}`;
+  const r = f.r * ratio + bv.r * (1 - ratio);
+  const g = f.g * ratio + bv.g * (1 - ratio);
+  const b = f.b * ratio + bv.b * (1 - ratio);
+  const toHex = (c: number) => Math.round(c * 255).toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -104,7 +117,7 @@ const _allowlistHits = new Set<string>();
 
 const ALLOWLIST: Record<string, string> = {
   // --- fg-vs-bg failures ---
-  // Solarized Light fg p11 (#657b83) on bg p15 (#fdf6e3): ~4.1:1.
+  // Solarized Light fg (p11) on bg (p15): ~4.1:1.
   // Upstream Solarized Light uses muted steel fg on parchment bg by design.
   "Solarized Light:fg-vs-bg": "upstream Solarized Light muted-steel fg on parchment bg is ~4.1:1 by design",
 };
@@ -116,28 +129,28 @@ const ADMONITION_ALLOWLIST: Record<string, string> = {
   // on the two built-in schemes (Default Light / Default Dark), which are
   // project-owned and must pass without allowlisting.
 
-  // Atom One Dark: accent p5 (#c678dd) and danger p1 (#e06c75) on near-black bg
+  // Atom One Dark: accent (p5) and danger (p1) on near-black bg
   "Atom One Dark:admonition-accent": "upstream Atom One Dark purple accent on near-black bg — palette intrinsic",
   "Atom One Dark:admonition-danger": "upstream Atom One Dark salmon danger on near-black bg — palette intrinsic",
 
-  // Catppuccin Frappe: info p4 (#8caaee) and danger p1 (#e78284) on dark bg (#303446)
+  // Catppuccin Frappe: info (p4) and danger (p1) on dark bg
   "Catppuccin Frappe:admonition-info": "upstream Catppuccin Frappe pastel blue on dark bg — palette intrinsic",
   "Catppuccin Frappe:admonition-danger": "upstream Catppuccin Frappe pastel red on dark bg — palette intrinsic",
 
-  // Challenger Deep: accent p5 (#906cff) on dark bg (#1e1c31)
+  // Challenger Deep: accent (p5) on dark indigo bg
   "Challenger Deep:admonition-accent": "upstream Challenger Deep purple accent on dark indigo bg — palette intrinsic",
 
-  // Doom One: accent p5 (#c678dd) on near-black (#282c34) and danger p1 (#ff6c6b)
+  // Doom One: accent (p5) on near-black bg and danger (p1)
   "Doom One:admonition-accent": "upstream Doom One purple accent on near-black bg — palette intrinsic",
   "Doom One:admonition-danger": "upstream Doom One coral danger on near-black bg — palette intrinsic",
 
-  // Dracula: danger p1 (#ff5555) on dark bg (#282a36)
+  // Dracula: danger (p1) on dark bg
   "Dracula:admonition-danger": "upstream Dracula red danger on dark bg — palette intrinsic",
 
-  // Duskfox: info p4 (#569fba) on dark bg (#232136)
+  // Duskfox: info (p4) on dark bg
   "Duskfox:admonition-info": "upstream Duskfox muted teal info on dark bg — palette intrinsic",
 
-  // GitHub Dark Dimmed: all five admonition colours on mid-dark bg (#22272e)
+  // GitHub Dark Dimmed: all five admonition colours on mid-dark bg
   "GitHub Dark Dimmed:admonition-accent": "upstream GitHub Dark Dimmed purple accent on mid-dark bg — palette intrinsic",
   "GitHub Dark Dimmed:admonition-success": "upstream GitHub Dark Dimmed green success on mid-dark bg — palette intrinsic",
   "GitHub Dark Dimmed:admonition-warning": "upstream GitHub Dark Dimmed amber warning on mid-dark bg — palette intrinsic",
@@ -154,148 +167,148 @@ const ADMONITION_ALLOWLIST: Record<string, string> = {
   "Gruvbox Dark Hard:admonition-info": "upstream Gruvbox Dark Hard muted teal on darker bg — palette intrinsic",
   "Gruvbox Dark Hard:admonition-danger": "upstream Gruvbox Dark Hard muted red on darker bg — palette intrinsic",
 
-  // Gruvbox Material Dark: danger p1 (#ea6962)
+  // Gruvbox Material Dark: danger (p1)
   "Gruvbox Material Dark:admonition-danger": "upstream Gruvbox Material Dark muted red on dark bg — palette intrinsic",
 
-  // Kanagawa Dragon: danger p1 (#c4746e)
+  // Kanagawa Dragon: danger (p1)
   "Kanagawa Dragon:admonition-danger": "upstream Kanagawa Dragon muted terracotta on near-black bg — palette intrinsic",
 
-  // Kanagawa Wave: accent p5 (#957fb8), success p2 (#76946a), danger p1 (#c34043)
+  // Kanagawa Wave: accent (p5), success (p2), danger (p1)
   "Kanagawa Wave:admonition-accent": "upstream Kanagawa Wave muted purple accent on dark bg — palette intrinsic",
   "Kanagawa Wave:admonition-success": "upstream Kanagawa Wave muted olive success on dark bg — palette intrinsic",
   "Kanagawa Wave:admonition-danger": "upstream Kanagawa Wave muted red danger on dark bg — palette intrinsic",
 
-  // Material Dark: success p2 (#457b24), info p4 (#134eb2), danger p1 (#b7141f)
+  // Material Dark: success (p2), info (p4), danger (p1)
   "Material Dark:admonition-success": "upstream Material Dark dark-green success on near-black bg — palette intrinsic",
   "Material Dark:admonition-info": "upstream Material Dark dark-blue info on near-black bg — palette intrinsic",
   "Material Dark:admonition-danger": "upstream Material Dark dark-red danger on near-black bg — palette intrinsic",
 
-  // Material Darker: danger p1 (#ff5370) on near-black bg (#212121)
+  // Material Darker: danger (p1) on near-black bg
   "Material Darker:admonition-danger": "upstream Material Darker pink-red danger on near-black bg — palette intrinsic",
 
-  // Monokai Pro: danger p1 (#ff6188)
+  // Monokai Pro: danger (p1)
   "Monokai Pro:admonition-danger": "upstream Monokai Pro salmon danger on dark bg — palette intrinsic",
 
-  // Monokai Remastered: accent p5 (#f4005f), danger p1 (#f4005f) [same color]
+  // Monokai Remastered: accent (p5), danger (p1) [same color]
   "Monokai Remastered:admonition-accent": "upstream Monokai Remastered hot-pink accent on near-black bg — palette intrinsic",
   "Monokai Remastered:admonition-danger": "upstream Monokai Remastered hot-pink danger on near-black bg — palette intrinsic",
 
-  // Monokai Soda: accent p5 (#f4005f), info p4 (#9d65ff), danger p1 (#f4005f)
+  // Monokai Soda: accent (p5), info (p4), danger (p1)
   "Monokai Soda:admonition-accent": "upstream Monokai Soda hot-pink accent on near-black bg — palette intrinsic",
   "Monokai Soda:admonition-info": "upstream Monokai Soda purple info on near-black bg — palette intrinsic",
   "Monokai Soda:admonition-danger": "upstream Monokai Soda hot-pink danger on near-black bg — palette intrinsic",
 
-  // Monokai Vivid: info p4 (#0443ff), danger p1 (#fa2934)
+  // Monokai Vivid: info (p4), danger (p1)
   "Monokai Vivid:admonition-info": "upstream Monokai Vivid deep-blue info on near-black bg — palette intrinsic",
   "Monokai Vivid:admonition-danger": "upstream Monokai Vivid bright-red danger on near-black bg — palette intrinsic",
 
-  // Nightfox: accent p5 (#9d79d6), danger p1 (#c94f6d)
+  // Nightfox: accent (p5), danger (p1)
   "Nightfox:admonition-accent": "upstream Nightfox muted purple accent on dark navy bg — palette intrinsic",
   "Nightfox:admonition-danger": "upstream Nightfox muted rose danger on dark navy bg — palette intrinsic",
 
-  // Nord: accent p5 (#b48ead), info p4 (#81a1c1), danger p1 (#bf616a)
+  // Nord: accent (p5), info (p4), danger (p1)
   "Nord:admonition-accent": "upstream Nord muted mauve accent on polar-night bg — palette intrinsic",
   "Nord:admonition-info": "upstream Nord muted blue info on polar-night bg — palette intrinsic",
   "Nord:admonition-danger": "upstream Nord muted red danger on polar-night bg — palette intrinsic",
 
-  // Poimandres: danger p1 (#d0679d)
+  // Poimandres: danger (p1)
   "Poimandres:admonition-danger": "upstream Poimandres pink danger on dark bg — palette intrinsic",
 
-  // Rose Pine: success p2 (#31748f) on dark bg (#191724)
+  // Rose Pine: success (p2) on dark bg
   "Rose Pine:admonition-success": "upstream Rose Pine teal success on dark purple bg — palette intrinsic",
 
-  // Rose Pine Moon: success p2 (#3e8fb0) on dark bg (#232136)
+  // Rose Pine Moon: success (p2) on dark bg
   "Rose Pine Moon:admonition-success": "upstream Rose Pine Moon teal success on dark purple bg — palette intrinsic",
 
-  // Snazzy: danger p1 (#fc4346)
+  // Snazzy: danger (p1)
   "Snazzy:admonition-danger": "upstream Snazzy bright-red danger on near-black bg — palette intrinsic",
 
-  // Solarized Dark: all five fail on near-black bg (#002b36)
+  // Solarized Dark: all five fail on near-black bg
   "Solarized Dark:admonition-accent": "upstream Solarized Dark p5 (magenta) on deep-teal bg — palette intrinsic",
   "Solarized Dark:admonition-success": "upstream Solarized Dark muted-olive success on deep-teal bg — palette intrinsic",
   "Solarized Dark:admonition-warning": "upstream Solarized Dark amber warning on deep-teal bg — palette intrinsic",
   "Solarized Dark:admonition-info": "upstream Solarized Dark blue info on deep-teal bg — palette intrinsic",
   "Solarized Dark:admonition-danger": "upstream Solarized Dark red danger on deep-teal bg — palette intrinsic",
 
-  // Solarized Light: success p2 (#859900), warning p3 (#b58900) on very-light bg (#fdf6e3)
+  // Solarized Light: success (p2), warning (p3) on very-light bg
   "Solarized Light:admonition-success": "upstream Solarized Light olive-green success on parchment bg — palette intrinsic",
   "Solarized Light:admonition-warning": "upstream Solarized Light amber warning on parchment bg — palette intrinsic",
 
-  // VS Code Dark+: accent p5 (#bc3fbc), info p4 (#2472c8), danger p1 (#cd3131)
+  // VS Code Dark+: accent (p5), info (p4), danger (p1)
   "VS Code Dark+:admonition-accent": "upstream VS Code Dark+ purple accent on near-black bg — palette intrinsic",
   "VS Code Dark+:admonition-info": "upstream VS Code Dark+ dark-blue info on near-black bg — palette intrinsic",
   "VS Code Dark+:admonition-danger": "upstream VS Code Dark+ dark-red danger on near-black bg — palette intrinsic",
 
-  // Atom One Light: near-white bg (#f9f9f9); upstream pastel palette on light bg
+  // Atom One Light: near-white bg; upstream pastel palette on light bg
   "Atom One Light:admonition-success": "upstream Atom One Light olive-green success on near-white bg — palette intrinsic",
   "Atom One Light:admonition-warning": "upstream Atom One Light amber warning on near-white bg — palette intrinsic",
   "Atom One Light:admonition-info": "upstream Atom One Light dark-blue info on near-white bg — palette intrinsic",
   "Atom One Light:admonition-danger": "upstream Atom One Light red danger on near-white bg — palette intrinsic",
 
-  // Ayu Light: very light bg (#f8f9fa); upstream Ayu Light pastel palette
+  // Ayu Light: very light bg; upstream Ayu Light pastel palette
   "Ayu Light:admonition-accent": "upstream Ayu Light neutral-grey accent on near-white bg — palette intrinsic",
   "Ayu Light:admonition-success": "upstream Ayu Light green success on near-white bg — palette intrinsic",
   "Ayu Light:admonition-warning": "upstream Ayu Light amber warning on near-white bg — palette intrinsic",
   "Ayu Light:admonition-info": "upstream Ayu Light blue info on near-white bg — palette intrinsic",
   "Ayu Light:admonition-danger": "upstream Ayu Light salmon danger on near-white bg — palette intrinsic",
 
-  // Catppuccin Latte: off-white bg (#eff1f5); upstream Catppuccin Latte pastel palette
+  // Catppuccin Latte: off-white bg; upstream Catppuccin Latte pastel palette
   "Catppuccin Latte:admonition-accent": "upstream Catppuccin Latte pastel blue accent on off-white bg — palette intrinsic",
   "Catppuccin Latte:admonition-success": "upstream Catppuccin Latte green success on off-white bg — palette intrinsic",
   "Catppuccin Latte:admonition-warning": "upstream Catppuccin Latte yellow warning on off-white bg — palette intrinsic",
   "Catppuccin Latte:admonition-info": "upstream Catppuccin Latte blue info on off-white bg — palette intrinsic",
   "Catppuccin Latte:admonition-danger": "upstream Catppuccin Latte red danger on off-white bg — palette intrinsic",
 
-  // Dawnfox: warm parchment bg (#faf4ed)
+  // Dawnfox: warm parchment bg
   "Dawnfox:admonition-success": "upstream Dawnfox muted-teal success on parchment bg — palette intrinsic",
   "Dawnfox:admonition-warning": "upstream Dawnfox amber warning on parchment bg — palette intrinsic",
   "Dawnfox:admonition-danger": "upstream Dawnfox muted-red danger on parchment bg — palette intrinsic",
 
-  // Dayfox: warm light bg (#f6f2ee)
+  // Dayfox: warm light bg
   "Dayfox:admonition-warning": "upstream Dayfox amber-orange warning on warm bg — palette intrinsic",
 
-  // Everforest Light: warm bg (#efebd4); all five admonition colours
+  // Everforest Light: warm bg; all five admonition colours
   "Everforest Light:admonition-accent": "upstream Everforest Light muted-grey accent on warm bg — palette intrinsic",
   "Everforest Light:admonition-success": "upstream Everforest Light muted-green success on warm bg — palette intrinsic",
   "Everforest Light:admonition-warning": "upstream Everforest Light amber warning on warm bg — palette intrinsic",
   "Everforest Light:admonition-info": "upstream Everforest Light teal info on warm bg — palette intrinsic",
   "Everforest Light:admonition-danger": "upstream Everforest Light muted-red danger on warm bg — palette intrinsic",
 
-  // GitHub Light: white bg (#ffffff)
+  // GitHub Light: white bg
   "GitHub Light:admonition-accent": "upstream GitHub Light purple accent on white bg — palette intrinsic",
   "GitHub Light:admonition-info": "upstream GitHub Light blue info on white bg — palette intrinsic",
   "GitHub Light:admonition-danger": "upstream GitHub Light red danger on white bg — palette intrinsic",
 
-  // Gruvbox Dark / Dark Hard: dark bg; accent p5 (#b16286) purple/mauve
+  // Gruvbox Dark / Dark Hard: dark bg; accent (p5) purple/mauve
   "Gruvbox Dark:admonition-accent": "upstream Gruvbox Dark mauve accent on dark bg — palette intrinsic",
   "Gruvbox Dark Hard:admonition-accent": "upstream Gruvbox Dark Hard mauve accent on darker bg — palette intrinsic",
 
-  // Gruvbox Light: cream bg (#fbf1c7); all five admonition colours are low-saturation
+  // Gruvbox Light: cream bg; all five admonition colours are low-saturation
   "Gruvbox Light:admonition-accent": "upstream Gruvbox Light p5 purple on cream bg — palette intrinsic",
   "Gruvbox Light:admonition-success": "upstream Gruvbox Light olive success on cream bg — palette intrinsic",
   "Gruvbox Light:admonition-warning": "upstream Gruvbox Light amber warning on cream bg — palette intrinsic",
   "Gruvbox Light:admonition-info": "upstream Gruvbox Light teal info on cream bg — palette intrinsic",
   "Gruvbox Light:admonition-danger": "upstream Gruvbox Light red danger on cream bg — palette intrinsic",
 
-  // Gruvbox Material Dark: accent p5 (#d3869b) mauve on dark bg (#282828)
+  // Gruvbox Material Dark: accent (p5) mauve on dark bg
   "Gruvbox Material Dark:admonition-accent": "upstream Gruvbox Material Dark mauve accent on dark bg — palette intrinsic",
 
-  // Material (light): bg (#eaeaea)
+  // Material (light): grey bg
   "Material:admonition-success": "upstream Material dark-green success on grey bg — palette intrinsic",
   "Material:admonition-warning": "upstream Material amber-orange warning on grey bg — palette intrinsic",
 
-  // Rose Pine Dawn: soft parchment bg (#faf4ed)
+  // Rose Pine Dawn: soft parchment bg
   "Rose Pine Dawn:admonition-warning": "upstream Rose Pine Dawn amber warning on parchment bg — palette intrinsic",
   "Rose Pine Dawn:admonition-info": "upstream Rose Pine Dawn teal info on parchment bg — palette intrinsic",
   "Rose Pine Dawn:admonition-danger": "upstream Rose Pine Dawn muted-red danger on parchment bg — palette intrinsic",
 
-  // Solarized Dark Higher Contrast: deep bg (#001e27)
+  // Solarized Dark Higher Contrast: deep bg
   "Solarized Dark Higher Contrast:admonition-accent": "upstream Solarized D-HC magenta accent on near-black bg — palette intrinsic",
   "Solarized Dark Higher Contrast:admonition-warning": "upstream Solarized D-HC amber warning on near-black bg — palette intrinsic",
   "Solarized Dark Higher Contrast:admonition-info": "upstream Solarized D-HC blue info on near-black bg — palette intrinsic",
   "Solarized Dark Higher Contrast:admonition-danger": "upstream Solarized D-HC red danger on near-black bg — palette intrinsic",
 
-  // Solarized Light: parchment bg (#fdf6e3)
+  // Solarized Light: parchment bg
   "Solarized Light:admonition-accent": "upstream Solarized Light magenta accent on parchment bg — palette intrinsic",
   "Solarized Light:admonition-info": "upstream Solarized Light blue info on parchment bg — palette intrinsic",
   "Solarized Light:admonition-danger": "upstream Solarized Light red danger on parchment bg — palette intrinsic",
@@ -311,6 +324,44 @@ function getAllPresets(): Array<{ name: string; scheme: ColorScheme }> {
     ...Object.entries(colorTweakPresets).map(([name, scheme]) => ({ name, scheme })),
   ];
 }
+
+// ---------------------------------------------------------------------------
+// Unit assertions: luminance / contrast math handles oklch strings
+// ---------------------------------------------------------------------------
+
+describe("luminance math — CSS color parsing", () => {
+  it("oklch(0 0 0) parses as black (luminance ≈ 0)", () => {
+    expect(relativeLuminance("oklch(0 0 0)")).toBeCloseTo(0, 5);
+  });
+
+  it("oklch(1 0 0) parses as white (luminance ≈ 1)", () => {
+    expect(relativeLuminance("oklch(1 0 0)")).toBeCloseTo(1, 5);
+  });
+
+  it("black vs white contrast ≈ 21:1", () => {
+    expect(contrastRatio("oklch(0 0 0)", "oklch(1 0 0)")).toBeCloseTo(21, 0);
+  });
+
+  it("mid-tone oklch(0.5 0.05 250) parses to a valid luminance in (0, 1)", () => {
+    const lum = relativeLuminance("oklch(0.5 0.05 250)");
+    expect(lum).toBeGreaterThan(0);
+    expect(lum).toBeLessThan(1);
+  });
+
+  it("hex colors still parse correctly (#ffffff luminance ≈ 1)", () => {
+    expect(relativeLuminance("#ffffff")).toBeCloseTo(1, 5);
+  });
+
+  it("hex colors still parse correctly (#000000 luminance ≈ 0)", () => {
+    expect(relativeLuminance("#000000")).toBeCloseTo(0, 5);
+  });
+
+  it("colorMixSrgb returns a parseable color string", () => {
+    const mixed = colorMixSrgb("oklch(1 0 0)", "oklch(0 0 0)", 50);
+    // 50% mix of white and black in sRGB → near-mid-grey; luminance ≈ 0.212
+    expect(relativeLuminance(mixed)).toBeCloseTo(0.212, 2);
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Test suites
