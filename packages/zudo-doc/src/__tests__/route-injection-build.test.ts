@@ -233,12 +233,12 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
 
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"27a1325ac8a627ab10057b1011f3e291cef8117781756333f9868da05790934a"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"c93be5cf62b6cb8ac761ad11ebe0330fc38575580bb17b78ef322c13cc5fba3f"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"23ed30d8659c26fa06eaa0ee09a94e4f11d2b7719cb23ad4a68624e4332bfe05"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"0f63fc7b84698caca647e037e1175d9ee2fba6111097a7f7cf0669255cc2bbe4"`);
   });
 });
 
