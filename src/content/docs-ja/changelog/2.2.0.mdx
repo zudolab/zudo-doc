@@ -1,0 +1,26 @@
+---
+title: 2.2.0
+description: 2.2.0のリリースノート。
+sidebar_position: 1045
+---
+
+リリース日: 2026-07-01
+
+### 機能
+
+- デザイントークンパネル: zdtp 0.4.2 にアップグレードし、知覚的に均一な OKLCH 色空間で色を編集できる OKLCH カラー調整ツール（color tweaker）を追加しました。(fa27e5ac)
+- カラー: カラー設定を hex から OKLCH へ移行し、hex→OKLCH 変換スクリプトを追加しました。(e64d2963)
+- カラー: パッケージのフォールバックカラースキーム（`chrome/derive.tsx`）を OKLCH に変換しました。(2bb1e7d6)
+
+### バグ修正
+
+- ページ読み込み: `PageLoadingOverlay` をパッケージ所有のルートにもマウントし、それらのページでも読み込みオーバーレイが表示されるようにしました。(c744e4cc)
+- Mermaid: `parseLightDark` と `resolveColor` を OKLCH 対応にし、OKLCH のカラー値に対して図が正しく解決されるようにしました。(918faee3)
+
+### その他の変更
+
+- ページ読み込み: エクスポートする設定サブセット上で `dynamicPageTransition` をオプショナルなまま維持しました。(b18d4442)
+- コントラストテスト: WCAG コントラストテストを culori 経由で OKLCH 対応にしました。(40366382)
+- OKLCH 移行のために `culori` と `@types/culori` の devDependencies を追加しました。(156693ea)
+- テスト: 最終マージ状態でルートインジェクションのバイトハッシュ基準を再取得しました。(5ca3b685)
+- `@takazudo/zudo-doc-history-server` を `^2.1.2` に更新しました。(8e1f1ac1)

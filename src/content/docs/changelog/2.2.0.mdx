@@ -1,0 +1,26 @@
+---
+title: 2.2.0
+description: Release notes for 2.2.0.
+sidebar_position: 1045
+---
+
+Released: 2026-07-01
+
+### Features
+
+- Design Token Panel: upgraded to zdtp 0.4.2 and surfaced the OKLCH color tweaker for editing colors in the perceptually-uniform OKLCH space. (fa27e5ac)
+- Colors: migrated the color configuration from hex to OKLCH and added a hex→OKLCH converter script. (e64d2963)
+- Colors: converted the package fallback color scheme (`chrome/derive.tsx`) to OKLCH. (2bb1e7d6)
+
+### Bug Fixes
+
+- Page loading: mount `PageLoadingOverlay` on package-owned routes so the loading overlay appears on those pages too. (c744e4cc)
+- Mermaid: make `parseLightDark` and `resolveColor` OKLCH-aware so diagrams resolve correctly against OKLCH color values. (918faee3)
+
+### Other Changes
+
+- Page loading: keep `dynamicPageTransition` optional on the exported settings subset. (b18d4442)
+- Contrast test: make the WCAG contrast test OKLCH-aware via culori. (40366382)
+- Add `culori` + `@types/culori` devDependencies for the OKLCH migration. (156693ea)
+- Tests: re-bless the route-injection byte-hash baseline on the final merged state. (5ca3b685)
+- Bump `@takazudo/zudo-doc-history-server` to `^2.1.2`. (8e1f1ac1)
