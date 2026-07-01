@@ -12,13 +12,19 @@
 // the host's `pages/lib/_body-end-islands.tsx` from the serializable `settings`
 // flags the route-context virtual module already carries.
 //
-// SCOPE — package islands ONLY (gated on serializable settings):
-//   - aiAssistant  → `<h2 sr-only>AI Assistant</h2>` + skip-ssr AiChatModal
-//   - imageEnlarge → idle skip-ssr ImageEnlarge   (SSR dialog-shell fallback)
-//   - mermaid      → idle skip-ssr MermaidEnlarge (SSR dialog-shell fallback)
+// SCOPE — package islands + chrome (gated on serializable settings):
+//   - aiAssistant           → `<h2 sr-only>AI Assistant</h2>` + skip-ssr AiChatModal
+//   - imageEnlarge          → idle skip-ssr ImageEnlarge   (SSR dialog-shell fallback)
+//   - mermaid               → idle skip-ssr MermaidEnlarge (SSR dialog-shell fallback)
+//   - dynamicPageTransition → pure-SSR <PageLoadingOverlay/> (zudolab/zudo-doc#2482)
 // It deliberately OMITS the host-owned bootstraps that helper also wires
 // (`ClientRouterBootstrap`, `DesignTokenPanelBootstrap`): those import from
-// `@/components/*` and are NOT reconstructable from package settings.
+// `@/components/*` and are NOT reconstructable from package settings. The page-
+// loading overlay, by contrast, is a pure PACKAGE component (`../page-loading`)
+// with no host coupling, so it CAN be mounted here — and package-owned routes
+// already activate `<ClientRouter/>` via `enableClientRouter` on the same flag,
+// so the overlay only needed its markup mount (zudolab/zudo-doc#2482, the
+// package-owned-routes analog of the #1541 host-mount decision).
 //
 // WHY A FACTORY (and not a component that imports `settings` itself): this
 // module compiles to `dist/`, which a published consumer resolves INSIDE
@@ -43,6 +49,8 @@ import { Island } from "@takazudo/zfb";
 import { AiChatModal } from "../ai-chat-modal/index.js";
 import { ImageEnlarge, ImageEnlargeSsrFallback } from "../image-enlarge/index.js";
 import { MermaidEnlarge, MermaidEnlargeSsrFallback } from "../mermaid-enlarge/index.js";
+// Named export (`page-loading/index.ts` re-exports `{ default as PageLoadingOverlay }`).
+import { PageLoadingOverlay } from "../page-loading/index.js";
 
 /** Default sr-only label rendered as the AiChatModal SSR fallback. Mirrors the
  *  host helper's default verbatim so assistive tech can discover the chat
@@ -56,6 +64,9 @@ export interface BodyEndIslandsSettings {
   aiAssistant: boolean;
   imageEnlarge: boolean;
   mermaid: boolean;
+  /** Gates the pure-SSR `<PageLoadingOverlay/>` mount (zudolab/zudo-doc#2482),
+   *  mirroring the host gate and `enableClientRouter`'s on package-owned routes. */
+  dynamicPageTransition: boolean;
 }
 
 /** Dependencies injected by `_chrome.tsx` (carries the virtual-module settings). */
@@ -134,6 +145,16 @@ export function createBodyEndIslands(
 
     return (
       <>
+        {/* Pure SSR — no <Island> wrap. Gated on `settings.dynamicPageTransition`
+            (zudolab/zudo-doc#2482), mirroring the host mount in
+            `pages/lib/_body-end-islands.tsx`: package-owned routes had the overlay
+            CSS but nothing mounted its markup, so SPA transitions showed no
+            loading spinner. The overlay self-wires its show/hide on
+            zfb:before-preparation / zfb:after-swap via an inline bootstrap script
+            and is intentionally not hydrated. No ClientRouterBootstrap needed
+            here — package routes already activate <ClientRouter/> through
+            `enableClientRouter` on this same flag. */}
+        {settings.dynamicPageTransition ? <PageLoadingOverlay /> : null}
         {aiAssistant}
         {imageEnlarge}
         {mermaidEnlarge}

@@ -62,6 +62,37 @@ test.describe("Loading overlay: SSG shape", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Package-owned route regression (zudolab/zudo-doc#2482).
+//
+// The smoke fixture runs `packageOwnedRoutes: true` + `dynamicPageTransition:
+// true`, so package-owned routes (e.g. `404`) render their body-end via the
+// package default `createBodyEndIslands` — NOT the host `_body-end-islands.tsx`.
+// Before #2482 that default never mounted `<PageLoadingOverlay/>`, so `404.html`
+// (and every pure package-owned page) shipped zero overlay markup while host doc
+// pages had it. The `docs/guides/page-1` case above is a host-rendered page and
+// did NOT catch this gap; `404.html` is the package-owned route that does.
+// ---------------------------------------------------------------------------
+
+test.describe("Loading overlay: package-owned route (404)", () => {
+  let html: string;
+
+  test.beforeAll(() => {
+    html = readDistFile("404.html");
+  });
+
+  test("overlay element is present on the package-owned 404 route", () => {
+    expect(html).toContain(`id="${PAGE_LOADING_OVERLAY_ID}"`);
+    expect(html).toContain('class="page-loading-overlay"');
+  });
+
+  test("nav-lifecycle bootstrap is present on the 404 route", () => {
+    expect(html).toContain("zfb:before-preparation");
+    expect(html).toContain("zfb:after-swap");
+    expect(html).toContain("data-zd-nav-pending");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // 3: pointer-events: none — browser assertion
 // ---------------------------------------------------------------------------
 
