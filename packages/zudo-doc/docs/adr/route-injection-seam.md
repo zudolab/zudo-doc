@@ -155,3 +155,36 @@ while the stubs exist.
   green (descriptor is a bare specifier).
 - Dev rendering of injected routes remains a no-op until the upstream zfb dev
   pipeline lands; verify package routes via `zfb build`.
+
+### Island registration under injected routes (DocHistory) — #2480
+
+zfb registers a client island only when the `"use client"` module is reachable
+from the scanned page/route import graph. Most package islands (BodyEndIslands,
+SearchWidget, enlarge/mermaid) are imported directly by the package factories, so
+the injected route graph reaches them. **DocHistory is the exception**: it is a
+host-bound slot (`ctx.hostBindings.DocHistory`, default a no-op stub in
+`chrome/derive.tsx`), so nothing statically imported the real
+`@takazudo/zudo-doc/doc-history` island on the injected path. `DocHistoryArea`
+still emitted a `data-zfb-island-skip-ssr="DocHistory"` marker → the marker had
+**no matching registry entry** and the History button never hydrated under
+`packageOwnedRoutes: true` + `docHistory: true`.
+
+Fix (#2480): the injected chrome shim `routes/_chrome.tsx` **statically imports**
+the real `DocHistory` island and threads it via `createChrome(routeCtx, { DocHistory })`
+— the same "island-scanner contract" the host `pages/lib/_chrome.ts` documents.
+The import MUST stay static (a dynamic/type-only import stops zfb's scanner from
+walking it). SSR output is unchanged (the island is skip-SSR and `DocHistoryArea`
+gates on `settings.docHistory`), so no host `_register-islands.ts` re-export is
+needed — the package registers the island itself. Regression coverage:
+`__tests__/route-injection-build.test.ts` (Case DH + the published-shape guard in
+the no-src case).
+
+- **`diff` peer implication:** `DocHistory` carries a lazy `import("diff")`.
+  Statically importing it pulls `diff` into the injected chrome scan graph for
+  every `packageOwnedRoutes: true` project — identical to the pre-existing host
+  path. `diff` is already an **optional** `peerDependency` and generated projects
+  ship it; `docHistory: true` consumers need it regardless. A hand-assembled
+  `packageOwnedRoutes` consumer with `docHistory: false` and no `diff` may now
+  need `diff` resolvable at build. This is an accepted tradeoff — you cannot keep
+  the static import (required for scanner reachability) *and* avoid bundling
+  DocHistory when the feature is off.

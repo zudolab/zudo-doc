@@ -118,7 +118,7 @@ function setupFixture(options: { emptyPages?: boolean } = {}): string {
  * version that rejects `injectRoute` during builds; the local binary
  * (0.1.0-next.62+) supports build-time route injection.
  */
-function runZfbBuild(dir: string, outDir = "dist"): void {
+function runZfbBuild(dir: string, outDir = "dist"): string {
   const opts: ExecSyncOptions = {
     cwd: dir,
     env: {
@@ -131,7 +131,12 @@ function runZfbBuild(dir: string, outDir = "dist"): void {
     encoding: "utf-8",
   };
   try {
-    execSync(`./node_modules/.bin/zfb build --outdir ${outDir}`, opts);
+    // Merge stderr into stdout (2>&1) so the returned string carries BOTH streams.
+    // zfb emits the island-registry warning on a SUCCESSFUL build, so callers that
+    // assert on build diagnostics (the docHistory registration case) need stderr
+    // too — plain execSync would drop it on success. Existing callers ignore the
+    // return value, so widening void→string is backward-compatible.
+    return execSync(`./node_modules/.bin/zfb build --outdir ${outDir} 2>&1`, opts) as string;
   } catch (err) {
     const e = err as { stdout?: string; stderr?: string; message?: string };
     throw new Error(
@@ -284,6 +289,79 @@ describe("A2 islands-on: package route HTML carries island markers when flags ON
 });
 
 // ---------------------------------------------------------------------------
+// Case DH — doc-history island registration under package-owned routes
+//           (zudolab/zudo-doc#2480). With `docHistory: true`, the injected doc
+//           route emits a `data-zfb-island-skip-ssr="DocHistory"` marker, but the
+//           real DocHistory client island (`@takazudo/zudo-doc/doc-history`,
+//           `"use client"`) must be reachable from the injected route's scan
+//           graph so zfb REGISTERS a matching client binding — otherwise the
+//           marker has "no matching registry entry" and the History button never
+//           hydrates. `routes/_chrome.tsx` statically imports DocHistory and
+//           threads it via `createChrome(routeCtx, { DocHistory })` to close that
+//           gap. The showcase never caught this because it keeps a
+//           `pages/docs/[[...slug]].tsx` stub (wins per Decision 6) whose host
+//           chrome already imports DocHistory — so only the INJECTED path (empty
+//           `pages/`) exercises the bug, which is exactly what this case builds.
+// ---------------------------------------------------------------------------
+
+/** Flip `docHistory` ON in a fixture's settings.ts (it ships OFF) so the
+ *  route-context virtual module carries it true and the injected doc route
+ *  renders the DocHistoryArea (emitting the island marker). */
+function enableDocHistory(dir: string): void {
+  const settingsPath = join(dir, "src/config/settings.ts");
+  const src = readFileSync(settingsPath, "utf-8").replace(
+    /docHistory:\s*false/,
+    "docHistory: true",
+  );
+  writeFileSync(settingsPath, src);
+}
+
+/** Concatenate every emitted islands JS bundle (main + chunks) so a client
+ *  binding registration can be asserted regardless of chunk splitting. */
+function readIslandsBundles(dir: string): string {
+  const assetsDir = join(dir, "dist", "assets");
+  return readdirSync(assetsDir)
+    .filter((f) => /^islands.*\.js$/.test(f))
+    .map((f) => readFileSync(join(assetsDir, f), "utf-8"))
+    .join("\n");
+}
+
+describe("DH doc-history: injected doc route registers the DocHistory island (packageOwnedRoutes + docHistory)", () => {
+  let fixtureDir: string;
+  let buildOutput: string;
+
+  it("setup: fixture builds with docHistory enabled + empty pages/", { timeout: 180_000 }, () => {
+    fixtureDir = setupFixture({ emptyPages: true });
+    enableDocHistory(fixtureDir);
+    // Captures stdout+stderr — the registry-miss warning (asserted below) is
+    // emitted on a SUCCESSFUL build.
+    buildOutput = runZfbBuild(fixtureDir);
+  });
+
+  it("marker: injected /docs/getting-started/ HTML carries the DocHistory skip-ssr marker", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).toContain('data-zfb-island-skip-ssr="DocHistory"');
+  });
+
+  it("registry: build emits NO 'DocHistory … has no matching registry entry' warning", () => {
+    // The #2480 symptom: the marker is emitted but the real client island is
+    // never in the injected route's scan graph, so zfb warns and the button is
+    // dead. Assert NARROWLY on the co-occurrence (DocHistory + the registry-miss
+    // phrase), not on any warning, so unrelated warnings don't make this brittle.
+    const hasDocHistoryRegistryMiss =
+      buildOutput.includes("has no matching registry entry") &&
+      buildOutput.includes("DocHistory");
+    expect(hasDocHistoryRegistryMiss).toBe(false);
+  });
+
+  it("bundle: the emitted islands client bundle registers DocHistory (marker ↔ registry match ⇒ hydration)", () => {
+    // Marker present (above) + DocHistory in the client bundle = the marker has a
+    // matching registry entry, which is exactly what zfb's hydration requires.
+    expect(readIslandsBundles(fixtureDir)).toContain("DocHistory");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Case B — Precedence: stub wins when pages/404.tsx collides (Decision 6).
 // ---------------------------------------------------------------------------
 
@@ -401,6 +479,20 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
     expect(existsSync(join(pkgDest, "routes-src"))).toBe(true);
     expect(existsSync(join(pkgDest, "routes-src/docs-slug.tsx"))).toBe(true);
     expect(existsSync(join(pkgDest, "routes-src/locale-docs-slug.tsx"))).toBe(true);
+  });
+
+  // #2480 published-shape guard: the injected chrome must statically import the
+  // real DocHistory island so zfb registers it under packageOwnedRoutes. In the
+  // PUBLISHED tree the parent-relative `../doc-history/index.js` is rewritten to
+  // the bare package subpath by copy-routes-src.mjs — prove the rewrite landed in
+  // the packed output, not only in the in-repo `src/` shape.
+  it("registration: published routes-src/_chrome.tsx imports the real DocHistory island (rewritten specifier)", () => {
+    const chromeSrc = readFileSync(join(pkgDest, "routes-src/_chrome.tsx"), "utf-8");
+    expect(chromeSrc).toContain('from "@takazudo/zudo-doc/doc-history"');
+    // …and threads it into the chrome builder (not left as a dead import).
+    expect(chromeSrc).toMatch(/createChrome\(routeCtx,\s*\{/);
+    // No residual parent-relative form survived the rewrite.
+    expect(chromeSrc).not.toContain('from "../doc-history');
   });
 
   it("setup: build succeeds from the published package (no src/)", { timeout: 180_000 }, () => {
