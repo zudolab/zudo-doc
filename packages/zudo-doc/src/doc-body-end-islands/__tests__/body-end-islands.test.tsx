@@ -13,6 +13,10 @@
  *      a feature-off route ships neither a dead marker nor a misleading
  *      landmark, zudolab/zudo-doc#2058).
  *   3. The three flags gate independently.
+ *   4. `dynamicPageTransition` ON emits the pure-SSR `<PageLoadingOverlay/>`
+ *      markup + self-wiring bootstrap; OFF omits it — the package-owned-routes
+ *      fix for zudolab/zudo-doc#2482 (the package default is the only body-end
+ *      mount under packageOwnedRoutes, so it must carry the overlay itself).
  *
  * The skip-ssr marker name is derived by zfb's `captureComponentName` from each
  * island's pinned `displayName` (AiChatModal / ImageEnlarge / MermaidEnlarge).
@@ -24,13 +28,24 @@ import { describe, expect, it } from "vitest";
 import { render } from "preact-render-to-string";
 import { createBodyEndIslands } from "../index.js";
 
-const ALL_ON = { aiAssistant: true, imageEnlarge: true, mermaid: true };
-const ALL_OFF = { aiAssistant: false, imageEnlarge: false, mermaid: false };
+const ALL_ON = {
+  aiAssistant: true,
+  imageEnlarge: true,
+  mermaid: true,
+  dynamicPageTransition: true,
+};
+const ALL_OFF = {
+  aiAssistant: false,
+  imageEnlarge: false,
+  mermaid: false,
+  dynamicPageTransition: false,
+};
 
 function renderIslands(settings: {
   aiAssistant: boolean;
   imageEnlarge: boolean;
   mermaid: boolean;
+  dynamicPageTransition: boolean;
 }): string {
   const BodyEndIslands = createBodyEndIslands({ settings });
   return render(<BodyEndIslands basePath="/" />);
@@ -80,6 +95,7 @@ describe("BodyEndIslands — flags gate independently", () => {
       aiAssistant: false,
       imageEnlarge: true,
       mermaid: false,
+      dynamicPageTransition: false,
     });
     expect(html).toContain('data-zfb-island-skip-ssr="ImageEnlarge"');
     expect(html).not.toContain('data-zfb-island-skip-ssr="AiChatModal"');
@@ -91,10 +107,74 @@ describe("BodyEndIslands — flags gate independently", () => {
       aiAssistant: true,
       imageEnlarge: false,
       mermaid: false,
+      dynamicPageTransition: false,
     });
     expect(html).toContain('data-zfb-island-skip-ssr="AiChatModal"');
     expect(html).toContain("AI Assistant");
     expect(html).not.toContain('data-zfb-island-skip-ssr="ImageEnlarge"');
     expect(html).not.toContain('data-zfb-island-skip-ssr="MermaidEnlarge"');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PageLoadingOverlay gate (zudolab/zudo-doc#2482): under packageOwnedRoutes the
+// package default is the ONLY body-end mount, so it must emit the full-page
+// loading overlay (markup + self-wiring bootstrap script) when
+// `dynamicPageTransition` is on — mirroring the host mount in
+// `pages/lib/_body-end-islands.tsx`. Gated independently of the island flags.
+// ---------------------------------------------------------------------------
+
+describe("BodyEndIslands — page-loading overlay gates on dynamicPageTransition", () => {
+  const OVERLAY_ID = 'id="page-loading-overlay"';
+
+  it("dynamicPageTransition ON emits the overlay markup + nav-lifecycle bootstrap", () => {
+    const html = renderIslands({
+      aiAssistant: false,
+      imageEnlarge: false,
+      mermaid: false,
+      dynamicPageTransition: true,
+    });
+    expect(html).toContain(OVERLAY_ID);
+    expect(html).toContain('class="page-loading-overlay"');
+    // Self-wiring bootstrap: show on before-preparation, hide on after-swap,
+    // and flag the clicked nav link as pending.
+    expect(html).toContain("zfb:before-preparation");
+    expect(html).toContain("zfb:after-swap");
+    expect(html).toContain("data-zd-nav-pending");
+  });
+
+  it("dynamicPageTransition OFF omits the overlay entirely", () => {
+    const html = renderIslands({
+      aiAssistant: false,
+      imageEnlarge: false,
+      mermaid: false,
+      dynamicPageTransition: false,
+    });
+    expect(html).not.toContain(OVERLAY_ID);
+    expect(html).not.toContain('class="page-loading-overlay"');
+    expect(html).not.toContain("zfb:before-preparation");
+  });
+
+  it("gates independently of the island flags (overlay ON, islands OFF)", () => {
+    const html = renderIslands({
+      aiAssistant: false,
+      imageEnlarge: false,
+      mermaid: false,
+      dynamicPageTransition: true,
+    });
+    expect(html).toContain(OVERLAY_ID);
+    expect(html).not.toContain("data-zfb-island-skip-ssr");
+    expect(html).not.toContain("AI Assistant");
+  });
+
+  it("composes with an island flag (overlay ON + imageEnlarge ON)", () => {
+    const html = renderIslands({
+      aiAssistant: false,
+      imageEnlarge: true,
+      mermaid: false,
+      dynamicPageTransition: true,
+    });
+    expect(html).toContain(OVERLAY_ID);
+    expect(html).toContain('data-zfb-island-skip-ssr="ImageEnlarge"');
   });
 });
