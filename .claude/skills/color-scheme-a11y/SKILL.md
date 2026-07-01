@@ -39,6 +39,14 @@ Resolve every pair through the package resolvers (`resolveSemanticColors` /
 uses. Admonition backgrounds are `color-mix(in srgb, <color> 12%, var(--color-bg))`
 (`packages/zudo-doc/src/content.css`).
 
+The **"Default slots"** column is the `SEMANTIC_DEFAULTS` mapping (surface=p0, muted=p8,
+accent=p5, codeBg=p10, codeFg=p11, …). Those defaults assume the **project palette
+convention** (p9=bg, p10=surface, p11=text) documented in `color-schemes.ts`. The 50
+ghostty presets are raw **ANSI 16-color** palettes that DON'T follow it (p10/p11 are bright
+green/yellow, p8–p15 are bright variants), so most of these "default" pairs resolve to
+nonsense for a preset — this is the dominant failure mode. **Read §2.2 first** before
+tweaking any preset.
+
 ### Tier 1 — text, AA ≥ 4.5:1
 
 | Pair (fg / bg) | Default slots | Renders as text — evidence | Threshold |
@@ -46,8 +54,8 @@ uses. Admonition backgrounds are `color-mix(in srgb, <color> 12%, var(--color-bg
 | `fg` / `bg` | fg=p15→resolved, bg=p9/explicit | Body copy; `--zd-fg` on `--zd-bg`. `schemeToCssPairs` → `--zd-fg`/`--zd-bg`. | 4.5 |
 | `fg` / `surface` | surface=p0 (defaults; both built-ins override →p10) | Text on elevated panels: footer `bg-surface` (`packages/zudo-doc/src/footer/footer.tsx:89`), toolbar `bg-surface` (`…/doclayout/doc-layout-with-defaults.tsx:367`), dropdown/dialog panels (`…/i18n-version/version-switcher.tsx:216`, `…/island-types/index.ts:78`). | 4.5 |
 | `muted` / `bg` | muted=p8 | **Secondary body text** — blockquote body `text-muted italic` (`…/content/content-blockquote.tsx:11`), footer text (`footer.tsx:84,116,144`), TOC inactive links (`…/toc/toc.tsx:102`, `…/toc/mobile-toc.tsx:122`), doc-pager labels (`…/doc-pager/index.tsx:59`), `li::marker` (`content.css:163`), code-block title (`features.css:228`). Dual-role — see §3. | 4.5 |
-| `accent` / `bg` | accent=p5 | **Links are body text** — `text-accent underline` (`…/content/content-link.tsx:38`), heading hash-link `#` (`content.css:131`), footnote/UI links (`features.css:507`). **Raised 3.0→4.5** (epic). | 4.5 |
-| `accentHover` / `bg` | accentHover=p14 | Link hover text — `hover:text-accent-hover` (`content-link.tsx:38`, `features.css:512`). | 4.5 |
+| `accent` / `bg` | accent=p5 | **Links are body text** — `text-accent underline` (`…/content/content-link.tsx:41`), heading hash-link `#` (`content.css:131`), footnote/UI links (`features.css:507`). **Raised 3.0→4.5** (epic). | 4.5 |
+| `accentHover` / `bg` | accentHover=p14 | Link hover text — `hover:text-accent-hover` (`content-link.tsx:41`, `features.css:512`). | 4.5 |
 | `codeFg` / `codeBg` | codeFg=p11, codeBg=p10 | Inline code + code-block base text (`features.css:256-257`, `features.css:533-534`). Governs base text only — syntax tokens are out of scope (§6). | 4.5 |
 | admonition **note** = `accent` / mix(accent 12%, bg) | accent=p5 | Title text (`content.css:336`) on tinted bg (`content.css:332`). Semibold `text-small` (16px) — normal-text territory, full 4.5. | 4.5 |
 | admonition **tip** = `success` / mix(success 12%, bg) | success=p2 | Title (`content.css:352`) on tint (`content.css:348`). | 4.5 |
@@ -66,6 +74,7 @@ uses. Admonition backgrounds are `color-mix(in srgb, <color> 12%, var(--color-bg
 |---|---|---|---|
 | `mermaidText` / `mermaidNodeBg` | text=p11, nodeBg=p9 | **Text inside diagram nodes** — text floor applies. | 4.5 |
 | `mermaidText` / `mermaidLabelBg` | text=p11, labelBg=p10 | Text on edge labels — text floor. | 4.5 |
+| `mermaidText` / `mermaidNoteBg` | text=p11, noteBg=p0 | **Text inside diagram note boxes.** `mermaid-init-script.ts:346-347` maps `--zd-mermaid-note-bg`→`noteBkgColor`, `--zd-mermaid-text`→`noteTextColor`. Text floor. *(Beyond the S1 spec — added from usage evidence; e.g. Default Light resolves both to the same dark value → 1:1, unreadable.)* | 4.5 |
 | `mermaidLine` / `bg` | line=p8 | Diagram edges/arrows = non-text graphics. | 3.0 |
 | `imageOverlayFg` / `imageOverlayBg` | fg=p11, bg=p0 | Enlarge/close **icon** buttons over images (`features.css:631,684`; 80% mix) — icon glyphs, not text. | 3.0 |
 
@@ -81,7 +90,19 @@ as text in this product, downgrade it *with the file:line proof inline* — not 
 
 ## 2. Tweak methodology
 
-Adjust the failing color, not the pipeline. Work per scheme, per failing pair.
+Adjust the failing color **in the data files**, not the pipeline. Work per scheme, per
+failing pair.
+
+> **Fix everything data-side. Do NOT change `SEMANTIC_DEFAULTS` or any code in
+> `packages/zudo-doc/src/color-scheme-utils.ts`.** The 2 built-in schemes rely on the
+> current mapping, and a mechanism change ripples to every downstream consumer of the
+> package. Every fix here is a per-scheme edit to `color-schemes.ts` /
+> `color-tweak-presets.ts` (semantic overrides + the raw palette-slot edits called out in
+> §2.3).
+
+> **Most presets (50/52) fail because of an ANSI-palette convention mismatch, not
+> slightly-off colors — §2.2 is the primary recipe for them. §2.1, §2.3–2.5 are the
+> per-value mechanics it builds on.**
 
 ### 2.1 OKLCH hue-preserving minimal move
 
@@ -94,11 +115,59 @@ Adjust the failing color, not the pipeline. Work per scheme, per failing pair.
 4. Re-resolve and confirm the pair (and every *other* pair the same slot feeds — one slot
    often drives multiple pairs).
 
-### 2.2 Semantic-override-first — WITH the raw-p5 exception
+### 2.2 ANSI-palette presets — the dominant failure mode + derivation recipe
+
+**S1's audit: only 1/52 schemes passes the full matrix, and the mass failures are NOT
+palette colors being slightly off — they're a palette-convention mismatch.** The 50 tweak
+presets are raw ANSI 16-color terminal palettes: p8–p15 are *bright* variants (p10/p11 =
+bright green / bright yellow, not surface/text). But `SEMANTIC_DEFAULTS` maps
+`codeBg=p10, codeFg=p11, chatUserText=p9, chatAssistantText=p11, mermaidNodeBg=p9,
+mermaidText=p11, mermaidLabelBg=p10, matchedKeywordBg=p3, matchedKeywordFg=p15, …`
+assuming the project convention (p9=bg, p10=surface, p11=text). For a preset that never
+overrides those slots, they resolve to nonsense pairs — bright-green code bg with
+bright-yellow code text, bright-red mermaid node bg, etc. Audit failure counts:
+`codeFg/codeBg` **50/52**, chat pairs **50/52**, mermaid text pairs **50/52**,
+`matchedKeyword` **49/52**.
+
+**Fix = add explicit `semantic` overrides derived from the scheme's REAL roles**
+(`background`, `foreground`, and any `surface`/`accent`/`muted` the scheme already sets) —
+**never** from the bright ANSI slots. Apply this recipe as a *starting point*, then run
+`contrast:audit` and nudge each value per §2.1 until it clears. ("bg-elevated" = the real
+bg lightened a touch on dark schemes / darkened a touch on light schemes, hue kept.)
+
+| Semantic slot | ANSI-broken default | Derive from | Contrast target |
+|---|---|---|---|
+| `codeBg` | p10 (bright green) | real `bg`, bg-elevated (or existing `surface` override) | base for codeFg |
+| `codeFg` | p11 (bright yellow) | real `fg` | ≥ 4.5 on codeBg |
+| `chatUserBg` | p5 (accent) | `accent` (usually fine — verify) | base for chatUserText |
+| `chatUserText` | p9 | near-black **or** near-white, whichever clears | ≥ 4.5 on chatUserBg |
+| `chatAssistantBg` | p9 (real bg) | surface-like / bg-elevated | base for text |
+| `chatAssistantText` | p11 (bright yellow) | real `fg` | ≥ 4.5 on chatAssistantBg |
+| `mermaidNodeBg` | p9 | bg-elevated | base for mermaidText |
+| `mermaidText` | p11 (bright yellow) | real `fg` | ≥ 4.5 on nodeBg, labelBg **and** noteBg |
+| `mermaidLabelBg` | p10 (bright green) | codeBg-like / bg-elevated | base for mermaidText |
+| `mermaidNoteBg` | p0 | bg-elevated (distinct from node/label) | ≥ 4.5 vs mermaidText |
+| `mermaidLine` | p8 | `muted` | ≥ 3.0 on bg |
+| `matchedKeywordBg` | p3 | `warning`-like (keep highlight semantics) | base for fg |
+| `matchedKeywordFg` | p15 (bright white) | forced dark **or** light | ≥ 4.5 on matchedKeywordBg |
+| `imageOverlayBg` | p0 | near-bg dark | base for fg |
+| `imageOverlayFg` | p11 (bright yellow) | real `fg` | ≥ 3.0 on overlayBg |
+
+Every derived value still goes through the contrast check — the recipe is a starting point,
+not a guarantee. Where a scheme already sets `surface`/`accent`/`muted`, base the
+derivations on those existing overrides rather than re-deriving.
+
+### 2.3 Semantic-override-first — WITH the raw-p5 exception
 
 Prefer fixing via a `semantic.X` override so **raw palettes stay untouched** (zdtp swatches
 and `p*` utilities keep upstream values). E.g. a failing `success` admonition → add/adjust
 `semantic: { success: "oklch(…)" }`, leaving `palette[2]` alone.
+
+**Never repurpose the bright ANSI slots (p8–p15) to satisfy a semantic pair.** Add a
+`semantic` override instead, so the raw ANSI palette stays authentic for the `p*` utilities
+and the zdtp swatches. The palette slots you DO edit in place are only: `p5` (the raw-p5
+`important` admonition, below), and any slot a scheme references for `background`,
+`foreground`, or `selectionBg`/`selectionFg`.
 
 **The one hard exception — accent / p5.** `.admonition-important` reads **raw `--color-p5`**
 (`content.css:411-417`), so accent/p5 failures MUST be fixed at **palette slot 5 itself**.
@@ -120,7 +189,7 @@ Verified by grepping `--color-p[0-9]` / `text-p[0-9]` across `packages/zudo-doc/
 swatch demo in `reference/color.mdx` (documented exception, §6). If you find a new
 raw-palette render path while grepping, document it here and fix at the palette slot.
 
-### 2.3 Comment format — required on every tweaked value
+### 2.4 Comment format — required on every tweaked value
 
 ```
 /* upstream #xxxxxx → L+0.NN for AA (scheme-a11y #2489) */
@@ -131,7 +200,7 @@ Use the real upstream hex and the actual signed ΔL (e.g. `L+0.07`, `L-0.05`; ad
 `color-schemes.ts` (`… — darkened for WCAG AA (#2298)`). Keep the hex so the audit and
 future readers can see the origin.
 
-### 2.4 Allowlist = last resort
+### 2.5 Allowlist = last resort
 
 Only for a pair **provably not user-visible in this product**, with a one-line
 justification naming *why it never renders*. **"Upstream fidelity" / "palette intrinsic"
@@ -195,6 +264,11 @@ default in which case adjust p8 — check whether p8 also feeds anything else fi
    real `content.css` construction (12% srgb mix; `important` title = raw p5), so its ratios
    match the DOM. Open the `--html` preview to eyeball tinted admonitions, links, muted
    text, chat bubbles, selection, `<mark>`, and mermaid samples with their computed ratios.
+
+   > **Availability:** the `contrast:audit` script/bin is delivered by **S1 (#2490)** and
+   > lands on `base/scheme-a11y` in Wave 1 — before the Wave-3 batches consume this skill.
+   > If you're on a checkout where `pnpm contrast:audit` is not yet defined, S1 hasn't
+   > merged; use the unit guard (step 2) meanwhile and re-run the audit once it's present.
 2. **Unit guard:**
    ```sh
    pnpm test:unit   # runs src/config/__tests__/contrast.test.ts (full matrix after S3/#2492)
@@ -215,6 +289,13 @@ default in which case adjust p8 — check whether p8 also feeds anything else fi
    title, `<mark>`). Note: worktree agents do **not** run dev servers/browsers — this step
    is for the S8 confirm sweep and manual checks, not the batch tweak edits.
 
+**Audit interpretation — the two built-ins (Batch C).** Per S1's audit: **Default Dark
+passes every pair**; **Default Light** still fails exactly two — `muted`-vs-`bg` and
+`accentHover`-vs-`bg` — needing only small OKLCH-L nudges (no allowlisting; built-ins must
+pass clean). Default edits must be mirrored into
+`packages/create-zudo-doc/templates/base/src/config/color-schemes.ts`
+(`pnpm check:template-drift`). The 50 presets carry the bulk of the failures (§2.2).
+
 ---
 
 ## 5. New-scheme checklist
@@ -225,8 +306,11 @@ Before a contributed scheme merges, it must:
       p5=accent, p8=muted, p9=bg, p10=surface, p11=text; see `color-schemes.ts` header).
 - [ ] Pass **every Tier-1 pair at ≥ 4.5** and **every Tier-2 pair at its floor** (§1) via
       `pnpm contrast:audit` — zero new allowlist entries.
+- [ ] If it's an ANSI-style terminal palette (bright p8–p15), add explicit `semantic`
+      overrides per §2.2 rather than relying on the `SEMANTIC_DEFAULTS` slots — and do NOT
+      repurpose bright slots to satisfy a pair.
 - [ ] Have accent/p5 fixed **at palette slot 5** if the `important` admonition or a p5-based
-      link fails (§2.2), not via a `semantic.accent` override alone.
+      link fails (§2.3), not via a `semantic.accent` override alone.
 - [ ] Carry a `/* upstream … → L±0.NN for AA (scheme-a11y #2489) */` comment on every
       value moved from its upstream origin.
 - [ ] Keep OKLCH hue fixed on all tweaks; chroma reduced only where noted for gamut.
