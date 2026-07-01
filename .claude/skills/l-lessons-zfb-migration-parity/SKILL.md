@@ -835,3 +835,32 @@ When testing an unpublished breaking `@takazudo/zudo-doc` version in a generated
 - GENSYNC wave: #2429
 - GENTEST wave: #2430
 - B4PUSH wave: #2431
+
+## 2026-07-01 — DocHistory island dead under package-owned routes (injected-path scanner reachability, #2480)
+
+### What we set out to do
+
+Fix a consumer-reported bug: with `settings.packageOwnedRoutes: true` + `settings.docHistory: true`, every doc page warned `island marker "DocHistory" … has no matching registry entry and will not hydrate` and the History button was dead (SSR sr-only fallback only).
+
+### Why it went wrong (root cause)
+
+zfb registers a client island only when its `"use client"` module is reachable from the scanned page/route import graph. The injected doc route builds chrome via `createChrome(routeCtx)` in `packages/zudo-doc/src/routes/_chrome.tsx` with **no** `hostBindings`, so the DocHistory slot resolved to the no-op `DocHistoryStub` — and, critically, **nothing statically imported the real `@takazudo/zudo-doc/doc-history` island** on the injected path. `DocHistoryArea` still emitted the `data-zfb-island-skip-ssr="DocHistory"` marker, so the marker existed with no matching registry entry → no hydration. The showcase masked it entirely because it keeps a `pages/docs/[[...slug]].tsx` stub that WINS over the injected route (Decision 6), and its host `pages/lib/_chrome.ts` already statically imports DocHistory — so `smoke-doc-history` e2e exercised the host path, never the injected one.
+
+### What worked instead
+
+Mirror the host adapter's documented "island-scanner contract" inside the injected shim: `routes/_chrome.tsx` **statically imports** `DocHistory` and threads it via `createChrome(routeCtx, { DocHistory })`. One seam fixes every injected doc route (all share `_chrome.tsx`). SSR output is byte-identical (skip-SSR island + `DocHistoryArea` gates on `settings.docHistory`), so the existing byte-parity hashes held. Proven with a build-based regression case (marker present + registry-miss warning absent + islands bundle registers DocHistory) plus a published-shape guard asserting the packed `routes-src/_chrome.tsx` carries the rewritten `@takazudo/zudo-doc/doc-history` import.
+
+### Watch for next time
+
+- **An island threaded as a stub-by-default host-binding is INVISIBLE to the injected route's scanner unless the real `"use client"` module is statically imported into the injected chrome graph.** Direct-imported package islands (BodyEndIslands, enlarge, search) are fine; the trap is any island whose default is a stub and whose real impl arrives via `hostBindings`. When adding such a slot, wire the real island into `routes/_chrome.tsx` too, not just the host `pages/lib/_chrome.ts`.
+- **The showcase's kept `pages/` stubs mask injected-route bugs.** Because user `pages/` wins over injected routes (Decision 6), the showcase never exercises the injected path for any URL it stubs. Regression coverage for package-owned routes must use an EMPTY-`pages/` build fixture (as `route-injection-build.test.ts` does), not the showcase e2e.
+- **The import MUST stay static.** A dynamic or type-only import stops zfb's island scanner from walking it — the same contract the host `_chrome.ts` header comment spells out.
+- **Static-importing an island drags its lazy deps into the bundle.** DocHistory's lazy `import("diff")` now rides into every `packageOwnedRoutes` build (matching the host path). `diff` is an optional peerDependency; document the requirement rather than trying to conditionally avoid the import (you can't keep scanner reachability AND drop the bundle when the feature is off).
+
+### References
+
+- Issue: #2480
+- Epic: #2486 / Sub: #2487
+- Fix seam: `packages/zudo-doc/src/routes/_chrome.tsx`
+- Regression: `packages/zudo-doc/src/__tests__/route-injection-build.test.ts` (Case DH + no-src published-shape guard)
+- ADR note: `packages/zudo-doc/docs/adr/route-injection-seam.md` ("Island registration under injected routes")
