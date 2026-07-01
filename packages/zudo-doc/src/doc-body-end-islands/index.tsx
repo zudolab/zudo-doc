@@ -65,8 +65,12 @@ export interface BodyEndIslandsSettings {
   imageEnlarge: boolean;
   mermaid: boolean;
   /** Gates the pure-SSR `<PageLoadingOverlay/>` mount (zudolab/zudo-doc#2482),
-   *  mirroring the host gate and `enableClientRouter`'s on package-owned routes. */
-  dynamicPageTransition: boolean;
+   *  mirroring the host gate and `enableClientRouter`'s on package-owned routes.
+   *  Optional so adding it is NOT a breaking change for external callers that
+   *  construct this documented subset — this is an exported package subpath API.
+   *  `undefined` is treated as `false` (no overlay) at the mount site, preserving
+   *  pre-#2482 behavior; internal callers always pass the full `Settings`. */
+  dynamicPageTransition?: boolean;
 }
 
 /** Dependencies injected by `_chrome.tsx` (carries the virtual-module settings). */
