@@ -236,7 +236,7 @@ async function main(): Promise<void> {
     console.log(pc.green("All schemes pass every pair in the matrix."));
   }
 
-  let suggestionFragments: Record<string, string> = {};
+  const suggestionFragments: Record<string, string> = {};
   if (suggest && schemesWithFailures.length > 0) {
     console.log(pc.bold("\n=== Suggested fixes (--suggest) ===\n"));
     const presetByName = new Map(presets.map((p) => [p.name, p.scheme]));
