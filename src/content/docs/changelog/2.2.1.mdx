@@ -1,0 +1,11 @@
+---
+title: 2.2.1
+description: Release notes for 2.2.1.
+sidebar_position: 1046
+---
+
+Released: 2026-07-01
+
+### Bug Fixes
+
+- Register the DocHistory island under package-owned routes so the History button hydrates on injected doc pages. Previously, with `packageOwnedRoutes: true` and `docHistory: true`, the injected doc route resolved the DocHistory slot to a no-op stub, so the History button never hydrated and every doc page emitted a build warning. The injected chrome shim now mirrors the host adapter's island-scanner contract. (6bf10c0a, #2480)
