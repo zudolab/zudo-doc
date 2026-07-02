@@ -3,18 +3,19 @@
 // Package route entrypoint: /[locale] — package-owned equivalent of
 // pages/[locale]/index.tsx (A1 #2361). One route per non-default locale; the
 // locale-prefixed site index (site-map grid + optional tag count).
+//
+// Thin consumer of `HomePageView` (S3 #2502): this file's only job is the
+// locale-specific data prep — `resolveNavSource` with the locale-home filter
+// options, `loadCategoryMeta`, `paths()`, and the locale-config guard all stay
+// HERE (not in the shared factory) because they are locale-routing concerns,
+// not hero-rendering concerns. The prepared tree / tag count are handed to
+// the shared home body factory, same as the default-locale route.
 
-import type { JSX, VNode } from "preact";
-import { Island } from "@takazudo/zfb";
-import { DocLayoutWithDefaults } from "../doclayout/index.js";
-import { SiteTreeNav } from "../site-tree-nav-island/index.js";
-import type { SidebarNavNode } from "../sidebar/types.js";
+import type { JSX } from "preact";
 import { loadCategoryMeta } from "../sidebar-tree/index.js";
 import {
   settings,
   getLocaleConfig,
-  t,
-  withBase,
   resolveNavSource,
   buildNavTree,
   groupSatelliteNodes,
@@ -24,13 +25,7 @@ import {
   toRouteSlug,
 } from "./_context.js";
 import type { CategoryMeta } from "./_docs-helpers.js";
-import {
-  HeadWithDefaults,
-  HeaderWithDefaults,
-  FooterWithDefaults,
-  BodyEndIslands,
-  composeMetaTitle,
-} from "./_chrome.js";
+import { HomePageView } from "./_chrome.js";
 
 export const frontmatter = { title: "Home" };
 
@@ -68,83 +63,12 @@ export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
     (id, data) => data.slug ?? toRouteSlug(id),
   ).size;
 
-  const ctaNav = settings.headerNav[0] ?? null;
-  const overview = ctaNav ? withBase(`/${locale}${ctaNav.path}`) : null;
-  const logoUrl = withBase("/img/logo.svg");
-
   return (
-    <DocLayoutWithDefaults
-      title={composeMetaTitle(settings.siteName)}
-      head={<HeadWithDefaults title={settings.siteName} />}
-      lang={locale}
-      noindex={settings.noindex}
-      hideSidebar={true}
-      hideToc={true}
-      sidebarOverride={<></>}
-      headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase(`/${locale}/`)} />}
-      footerOverride={<FooterWithDefaults lang={locale} />}
-      bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
-      enableClientRouter={settings.dynamicPageTransition}
-    >
-      <div class="flex justify-center mb-vsp-xl">
-        <div class="flex flex-col items-center text-center gap-hsp-md lg:flex-row lg:text-left lg:gap-hsp-xl">
-          <div
-            class="w-[320px] max-w-full aspect-[1200/630] bg-fg shrink-0"
-            style={{
-              WebkitMask: `url(${logoUrl}) center/contain no-repeat`,
-              mask: `url(${logoUrl}) center/contain no-repeat`,
-            }}
-            aria-hidden="true"
-          />
-          <div>
-            <h1 class="text-heading font-bold mb-vsp-2xs">{settings.siteName}</h1>
-            <p class="text-muted text-small mb-vsp-sm">{settings.siteDescription}</p>
-            <div class="flex items-center justify-center lg:justify-start gap-hsp-md text-small">
-              {overview && (
-                <>
-                  <a href={overview} class="text-fg underline hover:text-accent">
-                    {t("nav.overview", locale)}
-                  </a>
-                  <span class="text-muted">/</span>
-                </>
-              )}
-              {settings.githubUrl && (
-                <a
-                  href={settings.githubUrl as string}
-                  class="inline-flex items-center gap-[0.3em] text-fg underline hover:text-accent"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  GitHub
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {Island({
-        when: "idle",
-        children: (
-          <SiteTreeNav
-            tree={groupedTree as unknown as SidebarNavNode[]}
-            categoryOrder={categoryOrder}
-            categoryIgnore={["inbox", "develop"]}
-          />
-        ),
-      }) as unknown as VNode}
-
-      {settings.docTags && tagCount > 0 && (
-        <section class="mt-vsp-xl">
-          <h2 class="text-title font-bold mb-vsp-md">{t("doc.allTags", locale)}</h2>
-          <a
-            href={withBase(`/${locale}/docs/tags`)}
-            class="text-accent underline hover:text-accent-hover"
-          >
-            {t("doc.allTags", locale)}
-          </a>
-        </section>
-      )}
-    </DocLayoutWithDefaults>
+    <HomePageView
+      locale={locale}
+      tree={groupedTree}
+      categoryOrder={categoryOrder}
+      tagCount={tagCount}
+    />
   );
 }
