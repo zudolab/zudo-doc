@@ -178,7 +178,7 @@ Every new E2E test defaults to the CI-safe lane. Tags opt tests into special han
 | (none) | CI-safe default — stable, deterministic | Runs in `test:e2e:ci` (pr-checks) and `test:e2e:ci:json` (exam's CI-safe lane) | None |
 | `@flaky` | Quarantined — **non-deterministic** (intermittent) failure, known root cause | Excluded from `test:e2e:ci`; runs allowed-to-fail in exam's `@flaky` lane | Inline tracking-issue URL comment on the line above the `test()` call; fix/demote/delete deadline in the issue |
 | `@local-only` | **Deterministically environment-dependent** — trustworthy on a real dev machine, not runnable in the CI container | Excluded from `test:e2e:ci` AND the ubuntu exam lane (it would fail there identically); runs in the full local `pnpm test:e2e` | Inline tracking-issue URL comment on the line above the `test()` call, documenting the environmental cause |
-| `@verification` | One-time **"it was done"** proof — not a regression gate, demonstrates a change worked when it landed (test-wisdom's "verification artifact") | Excluded from every lane via the `test:e2e:ci` / `test:e2e:ci:json` `--grep-invert` pattern (`package.json`); never added to the `@flaky` quarantine lane either — it isn't flaky, it simply belongs to no gate | Delete the spec or propose promotion once its one-time purpose is served — see "`@verification` lifecycle" below. Never left indefinitely tagged. |
+| `@verification` | One-time **"it was done"** proof — not a regression gate, demonstrates a change worked when it landed (test-wisdom's "verification artifact") | Excluded from the CI-enforced lanes — `test:e2e:ci` (pr-checks) and `test:e2e:ci:json` (exam CI-safe lane) — via `--grep-invert` (`package.json`); never added to the `@flaky` quarantine lane either, since it isn't flaky. Like `@local-only`, it still runs under the full local `pnpm test:e2e` — useful for the author re-running their own spec while it's still `@verification` | Delete the spec or propose promotion once its one-time purpose is served — see "`@verification` lifecycle" below. Never left indefinitely tagged. |
 | `@heavy` | Slow-but-deterministic (hypothetical) | Would run in CI but in a separate slow lane | N/A — no `@heavy` tests currently exist |
 
 `@flaky` and `@local-only` are **distinct, single-meaning** tags — this is deliberate.
@@ -223,8 +223,10 @@ it to post pass/fail telemetry back to the issue on every exam run.
 Tag an agent-authored one-off proof spec `@verification` when its only job is to
 demonstrate that a specific change worked at the time it landed — not to guard against
 future regressions (test-wisdom's "verification artifact" vs. "regression gate"
-distinction). It is excluded from every lane by the `--grep-invert` pattern in
-`test:e2e:ci` and `test:e2e:ci:json` (`package.json`).
+distinction). It is excluded from the CI-enforced lanes by the `--grep-invert` pattern in
+`test:e2e:ci` and `test:e2e:ci:json` (`package.json`) — the same treatment `@local-only`
+gets. The full local `pnpm test:e2e` still runs it, which is intentional: the author needs
+to run their own `@verification` spec locally while it's still serving its one-time purpose.
 
 ```typescript
 test("banner renders after the CSS fix @verification", async ({ page }) => { ... });
