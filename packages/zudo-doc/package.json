@@ -219,6 +219,10 @@
       "types": "./dist/chrome/index.d.ts",
       "default": "./dist/chrome/index.js"
     },
+    "./home-page": {
+      "types": "./dist/home-page/index.d.ts",
+      "default": "./dist/home-page/index.js"
+    },
     "./safelist.css": "./dist/safelist.css",
     "./safelist": "./dist/safelist.css",
     "./content.css": "./dist/content.css",
