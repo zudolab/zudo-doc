@@ -1,0 +1,23 @@
+---
+title: CJK Friendly Test
+sidebar_position: 22
+description: "A page for L3 golden coverage of CJK-friendly emphasis parsing (zfb's on-by-default CjkFriendlyPlugin)."
+---
+
+{/*
+  This page does not set `cjkFriendly` in settings.ts — CjkFriendlyPlugin is
+  registered by zfb's Pipeline::with_defaults() regardless (see
+  packages/md-plugins/AUDIT.md's remarkCjkFriendly row), so the assertions
+  below exercise the Rust default, not an explicit override. Mirrors
+  packages/md-plugins/__fixtures__/11-cjk.mdx. zudolab/zudo-doc#2539.
+*/}
+
+これは**重要**な機能です。
+
+中文**强调**测试。
+
+한국어 **강조** 테스트.
+
+ASCII baseline for diff comparison: this is **bold** between English words.
+
+Mixed: 日本語の **bold** とテキスト。

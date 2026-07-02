@@ -5,6 +5,16 @@
 <li><a href="./other/#install">With anchor</a></li>
 <li><a href="./other.md?foo=bar">With query</a></li>
 </ul>
+<!--
+  KNOWN DIVERGENCE, kept intentionally (not a bug in this fixture): the JS
+  rehypeStripMdExtension regex /\.mdx?(#.*)?$/ does not match query strings,
+  so "With query" above is pinned unrewritten on purpose. The production
+  Rust pipeline (StripMdExtensionPlugin, reached here via resolveMarkdownLinks)
+  fixes this and correctly resolves the query-string case for real
+  markdown-syntax links — proven end-to-end against a built dist/ by
+  e2e/smoke-markdown-features.spec.ts ("With query" case). See AUDIT.md
+  NOTE-2. zudolab/zudo-doc#2539.
+-->
 <p>External links must be left alone:</p>
 <ul>
 <li><a href="https://example.com/foo.md">External</a></li>
