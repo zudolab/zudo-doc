@@ -18,10 +18,15 @@
  *     anything that returns the SPA-shell HTML means the CF adapter
  *     wrap or worker-runtime wiring is broken)
  *
- * Total wall-clock budget: ≤15s. Exit codes: 0 = pass, non-zero = fail.
+ * Wall-clock budget: a few seconds once bound; boot may take up to ~15s
+ * under polling (see CHOKIDAR_USEPOLLING). Exit codes: 0 = pass, non-zero = fail.
  *
  * Env overrides:
- *   SMOKE_PORT   — port to bind preview on (default 4321).
+ *   SMOKE_PORT          — port to bind preview on (default 4321).
+ *   CHOKIDAR_USEPOLLING — force chokidar polling instead of inotify; defaults
+ *     to "true" here so wrangler's watcher can't exhaust WSL's inotify-instance
+ *     limit at boot. Set "false" to force native watching where it's not needed.
+ *   CHOKIDAR_INTERVAL   — poll interval in ms (default 1000).
  *
  * Caller is expected to populate `dist/` first via `pnpm build` and to
  * hold the port lock at /tmp/x-wt-teams-zudo-doc2-locks/port-<n>.lock
@@ -34,7 +39,11 @@ import process from "node:process";
 
 const PORT = Number(process.env.SMOKE_PORT ?? "4321");
 const BASE = `http://127.0.0.1:${PORT}`;
-const READY_TIMEOUT_MS = 10_000;
+// Polling (see spawn env below) makes chokidar stat the whole dist/ tree once
+// at startup before the server reports ready, which is slower than an inotify
+// registration — 15s absorbs that on colder/CI machines (it's a ceiling, not
+// a fixed wait: waitForReady returns the instant the server binds).
+const READY_TIMEOUT_MS = 15_000;
 const READY_POLL_MS = 250;
 const REQUEST_TIMEOUT_MS = 4_000;
 
@@ -165,9 +174,24 @@ async function main() {
     ["exec", "zfb", "preview", "--port", String(PORT)],
     {
       cwd: process.cwd(),
-      // Wrangler version pin in zfb is ahead of our installed wrangler
-      // for the migration window; bypass the gate so the smoke runs.
-      env: { ...process.env, ZFB_SKIP_WRANGLER_VERSION_CHECK: "1" },
+      env: {
+        ...process.env,
+        // Wrangler version pin in zfb is ahead of our installed wrangler
+        // for the migration window; bypass the gate so the smoke runs.
+        ZFB_SKIP_WRANGLER_VERSION_CHECK: "1",
+        // wrangler's chokidar watcher calls inotify_init() per watched path,
+        // which on WSL (fs.inotify.max_user_instances defaults to 128)
+        // exhausts the instance cap against dist/'s ~700 files: the server
+        // never binds, spewing "EMFILE: too many open files, watch". Polling
+        // (fs.watchFile / stat) uses zero inotify instances, sidestepping it.
+        // wrangler exposes no flag to disable the watcher (--live-reload is
+        // already false and doesn't govern asset watching), so this env is
+        // the only lever. Forced on for determinism across platforms; a
+        // caller can set CHOKIDAR_USEPOLLING=false to force native watching.
+        // The smoke never edits files, so a slow poll keeps CPU near-zero.
+        CHOKIDAR_USEPOLLING: process.env.CHOKIDAR_USEPOLLING ?? "true",
+        CHOKIDAR_INTERVAL: process.env.CHOKIDAR_INTERVAL ?? "1000",
+      },
       stdio: ["ignore", "pipe", "pipe"],
       // detached:true creates a new process group so cleanup() can kill
       // the entire tree (wrangler + workerd) via process.kill(-pid).
