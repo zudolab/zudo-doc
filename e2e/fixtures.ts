@@ -2,7 +2,13 @@
  * Extended Playwright test with a shared consoleErrors fixture.
  *
  * Import `test` and `expect` from this file instead of `@playwright/test`
- * in specs that need console-error / pageerror collection.
+ * in specs that need console-error / pageerror collection. The check is
+ * auto-asserted on teardown for EVERY test in a file that imports this
+ * `test` (see `autoAssertNoConsoleErrors` below) — adopters no longer need
+ * to remember to call anything. `assertNoConsoleErrors()` remains available
+ * to call explicitly mid-test when a spec wants to pinpoint which
+ * interaction produced an error; the teardown assertion still re-runs
+ * afterwards over the (possibly larger, by then) collected list.
  */
 import { test as base, expect } from "@playwright/test";
 
@@ -17,6 +23,12 @@ export type ConsoleErrorsFixture = {
    * Every allowlist entry carries a why-comment — do not add entries without justification.
    */
   assertNoConsoleErrors: () => void;
+  /**
+   * Auto-fixture — not meant to be requested by name in a test signature.
+   * Its sole job is to call assertNoConsoleErrors() during teardown so every
+   * test using this `test` gets the check for free.
+   */
+  autoAssertNoConsoleErrors: void;
 };
 
 /**
@@ -68,4 +80,18 @@ export const test = base.extend<ConsoleErrorsFixture>({
     };
     await use(assert);
   },
+
+  // `auto: true` + no destructuring required: this fixture instantiates
+  // for every test in a file that imports `test` from here, attaching the
+  // console/pageerror listeners (via the consoleErrors -> page fixture
+  // chain) and asserting after the test body runs — teardown code that
+  // throws fails the test it's tearing down, which is what makes this an
+  // enforced auto-assert rather than an opt-in helper.
+  autoAssertNoConsoleErrors: [
+    async ({ assertNoConsoleErrors }, use) => {
+      await use();
+      assertNoConsoleErrors();
+    },
+    { auto: true },
+  ],
 });
