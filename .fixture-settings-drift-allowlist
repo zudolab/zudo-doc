@@ -57,11 +57,11 @@ smoke:tagVocabulary
 versioning:tagVocabulary
 
 # ── llmsTxt ───────────────────────────────────────────────────────────────────
-# reason: llms.txt generation is not exercised in these fixtures
+# reason: llms.txt generation is not exercised in these fixtures; the smoke
+#         fixture now enables it (L3 static coverage, zudolab/zudo-doc#2536)
 sidebar:llmsTxt
 i18n:llmsTxt
 theme:llmsTxt
-smoke:llmsTxt
 
 # ── cjkFriendly ───────────────────────────────────────────────────────────────
 # reason: CJK line-break behaviour is not tested in fixtures

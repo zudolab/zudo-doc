@@ -33,6 +33,7 @@ export const settings = {
   sitemap: false,
   docMetainfo: false,
   docTags: false,
+  llmsTxt: true,
   math: false,
   aiAssistant: true as boolean,
   aiChatDemoMode: true as boolean,
