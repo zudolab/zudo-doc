@@ -188,3 +188,53 @@ the no-src case).
   need `diff` resolvable at build. This is an accepted tradeoff — you cannot keep
   the static import (required for scanner reachability) *and* avoid bundling
   DocHistory when the feature is off.
+
+### Host-callables channel — `chromeBindingsModule` (#2501)
+
+Under `packageOwnedRoutes: true`, hosts had **no way to pass
+`ChromeHostBindings`** at all: the injected chrome shim `routes/_chrome.tsx`
+called `createChrome(routeCtx, { DocHistory })` with everything else at stub
+defaults, and Decision 1 forbids callables in the route-context virtual module.
+So the host-bound slots (`frontmatterRenderers`,
+`buildFrontmatterPreviewEntries`, `SearchWidget`, `loadTagsForLocale`, …)
+silently stayed stranded on injected routes — e.g. the FrontmatterPreview table
+never rendered there (`buildFrontmatterPreviewEntries` defaults to `() => []`).
+
+Decision: a host module **PATH is a string** — serializable — so it rides
+`settings` without violating the data-only rule. New optional setting
+`settings.chromeBindingsModule?: string`, a project-root-relative path (e.g.
+`"./src/chrome-bindings.tsx"`) to a host module with a **named export
+`chromeBindings: ChromeHostBindings`** (type importable from
+`@takazudo/zudo-doc/factory-context`). The routes plugin's `setup(ctx)`
+registers a SECOND virtual module, `virtual:zudo-doc-chrome-bindings`, that
+**re-exports** the host module; the bundler imports the actual callables
+through that re-export. `routes/_chrome.tsx` imports it and spreads the result
+AFTER the `DocHistory` default:
+`createChrome(routeCtx, { DocHistory, ...chromeBindings })` — so a host can
+override every slot, including DocHistory itself.
+
+- **Data-only rule holds.** Only the PATH is serialized into `settings` (and
+  thus into the route-context virtual module); the chrome-bindings virtual
+  module is loader-emitted ESM source (a one-line re-export), not JSON payload.
+- **Registered UNCONDITIONALLY** — the shim always imports the specifier.
+  Setting absent → the loader emits `export const chromeBindings = {};` and
+  behavior is byte-identical to before. Setting present but the resolved file
+  missing → the plugin **throws at setup**, naming the resolved absolute path
+  and the setting name (never a silent empty fallback).
+- **Staging interaction.** The staged `routes-src/` copy
+  (`<projectRoot>/.zudo-doc/routes-src/`, see the STAGING note in
+  `plugins/routes.ts`) lives outside `node_modules`, so this virtual module
+  resolves from the staged shim the same way
+  `virtual:zudo-doc-route-context` already does. The emitted re-export
+  specifier is an absolute path (forward slashes), so it resolves identically
+  from the workspace, staged, and published shapes.
+- **SSR-presentational contract only.** Client islands defined INSIDE the
+  bindings module are NOT guaranteed to register on injected routes — scanner
+  reachability through the virtual re-export is not part of the contract
+  (contrast the #2480 static `DocHistory` import above, which IS on the
+  scanner's static-import graph). Hosts needing a hydrating island on injected
+  routes still need a statically-imported registration path.
+
+Regression coverage: `__tests__/route-injection-build.test.ts` (Case CB — the
+FrontmatterPreview table appears with the setting, stays absent without it, and
+the missing-file error names the resolved path).

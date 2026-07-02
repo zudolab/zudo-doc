@@ -1,6 +1,6 @@
 {
   "name": "@takazudo/zudo-doc",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "type": "module",
   "description": "zudo-doc framework primitives layer that sits on top of zfb's engine — sidebar, theme, TOC, breadcrumb, layouts, head injection, View Transitions, SSR-skip wrappers (per ADR-003).",
   "license": "MIT",
@@ -218,6 +218,10 @@
     "./chrome": {
       "types": "./dist/chrome/index.d.ts",
       "default": "./dist/chrome/index.js"
+    },
+    "./home-page": {
+      "types": "./dist/home-page/index.d.ts",
+      "default": "./dist/home-page/index.js"
     },
     "./safelist.css": "./dist/safelist.css",
     "./safelist": "./dist/safelist.css",
@@ -536,9 +540,9 @@
   ],
   "peerDependencies": {
     "preact": "^10.29.1",
-    "@takazudo/zfb": "^0.1.0-next.72",
-    "@takazudo/zfb-runtime": "^0.1.0-next.72",
-    "@takazudo/zudo-doc-history-server": "^2.1.2",
+    "@takazudo/zfb": "^0.1.0-next.75",
+    "@takazudo/zfb-runtime": "^0.1.0-next.75",
+    "@takazudo/zudo-doc-history-server": "^2.2.1",
     "@takazudo/zdtp": "^0.4.2",
     "shiki": "^4.0.2",
     "zod": "^4.3.6",
@@ -580,7 +584,7 @@
     "typescript": "^5.0.0",
     "vitest": "^4.1.0",
     "zod": "^4.3.6",
-    "@takazudo/zfb": "0.1.0-next.72",
-    "@takazudo/zfb-runtime": "0.1.0-next.72"
+    "@takazudo/zfb": "0.1.0-next.75",
+    "@takazudo/zfb-runtime": "0.1.0-next.75"
   }
 }

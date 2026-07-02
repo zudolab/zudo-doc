@@ -8,7 +8,8 @@
 // (`{ name: "@takazudo/zudo-doc/plugins/routes", options }`), never an imported
 // function, so the preset's node-free config eval-graph guard stays green.
 //
-// The single `setup(ctx)` hook does BOTH (Decision 1):
+// The single `setup(ctx)` hook does THREE things (Decision 1, + the
+// host-callables channel below):
 //
 //   1. addVirtualModule("virtual:zudo-doc-route-context", …) — emits the
 //      route-context as ESM source carrying SERIALIZABLE DATA ONLY: the
@@ -17,7 +18,26 @@
 //      imports ever travel through this module — everything callable is an
 //      importable package subpath that each route entrypoint reconstructs.
 //
-//   2. injectRoute(pattern, entrypoint[, opts]) — the 16-route catalog
+//   2. addVirtualModule("virtual:zudo-doc-chrome-bindings", …) — the
+//      HOST-CALLABLES CHANNEL (#2501, ADR "Host-callables channel —
+//      chromeBindingsModule"). `ChromeHostBindings` slots
+//      (`frontmatterRenderers`, `buildFrontmatterPreviewEntries`,
+//      `SearchWidget`, …) are genuinely host-bound — they cannot be
+//      serialized like `settings` — so instead of carrying the callables
+//      themselves, `settings.chromeBindingsModule` carries a
+//      project-root-relative PATH to a host module exporting a named
+//      `chromeBindings: ChromeHostBindings`. A string path IS serializable
+//      data, so the "virtual module = serializable data only" rule (Decision
+//      1) still holds; only the loader source differs — it RE-EXPORTS the
+//      host module instead of inlining JSON, and the bundler resolves the
+//      actual callables through that re-export. `routes/_chrome.tsx` imports
+//      this virtual module and spreads its export into `createChrome(...)`.
+//      Registered UNCONDITIONALLY (the shim always imports the specifier):
+//      absent setting → `export const chromeBindings = {};` (byte-identical
+//      to today); present-but-missing file → a loud Error at plugin setup
+//      naming the resolved absolute path (never a silent empty fallback).
+//
+//   3. injectRoute(pattern, entrypoint[, opts]) — the 16-route catalog
 //      (Decision 3), patterns derived from `options.settings.locales` /
 //      `options.settings.versions`. Dynamic `[locale]` / `[version]` patterns
 //      are injected ONCE; the entrypoint's `paths()` enumerates the concrete
@@ -65,6 +85,8 @@ interface RoutesSettings {
   versions?: RoutesVersionConfig[] | false;
   docTags?: boolean;
   aiAssistant?: boolean;
+  /** See `settings.ts` — project-root-relative path to a host bindings module. */
+  chromeBindingsModule?: string;
   [key: string]: unknown;
 }
 
@@ -179,7 +201,39 @@ const plugin = definePlugin({
         })};\n`,
     );
 
-    // (2) Inject the derived route catalog (Decision 3). Build-only render
+    // (2) Chrome-bindings virtual module — the host-callables channel (#2501).
+    // `settings.chromeBindingsModule`, when set, is a project-root-relative
+    // path to a host module exporting a named `chromeBindings`. Resolve it
+    // against `ctx.projectRoot` and normalize to forward slashes so the
+    // emitted specifier is stable across platforms. `existsSync`-guard here
+    // (at plugin setup, not inside the loader) so a configured-but-missing
+    // file fails LOUDLY with the resolved path — never a silent empty
+    // fallback. Registered UNCONDITIONALLY: `routes/_chrome.tsx` always
+    // imports this specifier, so the module must exist even when the setting
+    // is absent (loader emits an empty-object export in that case).
+    const chromeBindingsModule =
+      typeof settings.chromeBindingsModule === "string"
+        ? settings.chromeBindingsModule
+        : undefined;
+    let chromeBindingsAbsPath: string | undefined;
+    if (chromeBindingsModule) {
+      const resolved = join(ctx.projectRoot, chromeBindingsModule).split("\\").join("/");
+      if (!existsSync(resolved)) {
+        throw new Error(
+          `zudo-doc: settings.chromeBindingsModule is set to "${chromeBindingsModule}", ` +
+            `which resolves to "${resolved}" — that file does not exist. Create it (must ` +
+            `export a named \`chromeBindings: ChromeHostBindings\`) or remove the setting.`,
+        );
+      }
+      chromeBindingsAbsPath = resolved;
+    }
+    ctx.addVirtualModule("virtual:zudo-doc-chrome-bindings", () =>
+      chromeBindingsAbsPath
+        ? `export { chromeBindings } from ${JSON.stringify(chromeBindingsAbsPath)};\n`
+        : `export const chromeBindings = {};\n`,
+    );
+
+    // (3) Inject the derived route catalog (Decision 3). Build-only render
     // today (dev falls through — upstream #1227); precedence drops collisions
     // with kept user `pages/` routes (Decision 6).
     //

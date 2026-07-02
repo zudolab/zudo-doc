@@ -31,7 +31,7 @@ New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapsh
 
 ---
 
-## 1. Subpath Exports (125 total)
+## 1. Subpath Exports (126 total)
 
 The full `package.json#exports` keyset is the contract. Any addition or removal requires a deliberate, reviewed change that will fail the snapshot guard.
 
@@ -47,6 +47,52 @@ The full `package.json#exports` keyset is the contract. Any addition or removal 
 | `./chrome` | `createChrome(context, hostBindings?)` — assembles a `ChromeContext` from a `RouteContext` + `ChromeHostBindings` (stub defaults) and wires all page-chrome factories; returns the `Chrome` surface |
 | `./eject` | `EJECTABLE` map + `eject()` function + `ZudoDocJson` type — ejectable component registry for the `zudo-doc eject` CLI |
 | `./component-tokens` | `COMPONENT_TOKENS` const + `ComponentToken` / `ComponentTokenCategory` / `ComponentTokenName` types — the `--zdc-*` component-level CSS custom property registry. Consumers read this to discover every rebrand knob; redefine the listed `cssVar`s in `:root` to override defaults. **Snapshot-guarded** (`component-tokens-snapshot.test.ts`). |
+
+### `ChromeHostBindings` Slots (`./factory-context`)
+
+The genuinely host-bound chrome slots — bindings the serializable route-context
+payload deliberately does not carry (host content / project config, not
+serializable settings). Every slot is OPTIONAL; `createChrome` fills any
+omitted slot with a package-default stub that reproduces the pre-host-collapse
+behaviour byte-for-byte.
+
+| Slot | Default when absent |
+|---|---|
+| `SearchWidget` | The package `SearchWidget` bound to the site base |
+| `docHistoryMeta` | `{}` (no Created/Updated block) |
+| `sidebarsConfig` | `{}` (auto-generated tree only) |
+| `frontmatterRenderers` | `{}` |
+| `buildFrontmatterPreviewEntries` | `() => []` |
+| `loadTagsForLocale` | `() => []` |
+| `tagVocabulary` | `[]` |
+| `BodyEndIslands` | The package-island subset derived from `settings` |
+| `DocHistory` | A no-op stub rendering an empty fragment |
+| `mdxExtras` | Package SSR impls + a `PresetGenerator` stub |
+| `docContentHeaderExtras` | Renders nothing. A renderer (not a component) called as `({ entry, slug, locale, isFallback?, version? }) => unknown` for `kind === "entry"` doc pages on all 4 doc routes (including versioned pages — it receives `version` and decides for itself). Renders between the `<h1>` and the metainfo/tags block in `DocContentHeader`. |
+| `homeExtras` | Renders nothing. A renderer called as `({ locale }) => unknown` for the home hero. The `/` home route is never injected by the routes plugin (zfb rejects `/`), so this fires on injected `/[locale]` homes and on any host that threads it through `createChrome`; a `HomePageView` `extras` prop takes precedence when both are present. |
+
+### `createHomePageView(ctx)` (`./home-page`)
+
+Factory for the shared home-page (site index) body: hero (logo mask block,
+`<h1>` siteName, description, overview + GitHub links row), the `SiteTreeNav`
+idle Island, and the optional docTags section. Returns a `HomePageView`
+component with props `{ locale, extras?, tree, categoryOrder, tagCount }`.
+
+`/` is never injected by the routes plugin (zfb rejects `/`), so this factory
+exists so BOTH the package's `routes/index.tsx` / `routes/locale-index.tsx`
+(which prepare the locale-specific nav tree / tag count with their own exact
+data calls, then hand them to `HomePageView`) and host pages can render the
+same body. **Not an eject target** — it is not registered in the `EJECTABLE`
+map and has no `zudo-doc eject` CLI name.
+
+**Extras precedence:** the resolved extra content is `extras ?? ctx.hostBindings.homeExtras?.({ locale })` —
+the `extras` **prop** (an already-rendered value, the host-page path) wins over
+the `hostBindings.homeExtras` **renderer** (the injected/bindings path) when
+both are supplied. This value-vs-renderer split is intentional, not something
+to unify: a host page already has its JSX in hand, while the injected path
+only has a locale string at render time and must derive its own content from
+it. The resolved result renders inside the hero text column, after the links
+row.
 
 ### UI Components
 
@@ -94,6 +140,7 @@ The full `package.json#exports` keyset is the contract. Any addition or removal 
 | `./inline-version-switcher` | Inline version switcher component |
 | `./versions-page` | Versions listing page component |
 | `./tag-pages` | Tag index/detail page components |
+| `./home-page` | `createHomePageView(ctx)` — home-page (site index) view factory; see below |
 | `./category-nav` | Category navigation component |
 | `./category-tree-nav` | Category tree navigation component |
 | `./site-tree-nav` | Site tree navigation component |
@@ -161,7 +208,7 @@ The full `package.json#exports` keyset is the contract. Any addition or removal 
 | `./plugins/llms-txt` | llms.txt generation zfb plugin |
 | `./plugins/search-index` | Search index zfb plugin |
 | `./plugins/claude-resources` | Claude resources generation zfb plugin |
-| `./plugins/routes` | Package-owned route injection zfb plugin |
+| `./plugins/routes` | Package-owned route injection zfb plugin. Registers `virtual:zudo-doc-route-context` (serializable data only) and `virtual:zudo-doc-chrome-bindings` (re-export of the host module named by `settings.chromeBindingsModule`, or an empty-object fallback), then injects the derived route catalog |
 
 ### Integrations (legacy wrappers, still shipped)
 
@@ -269,6 +316,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `headerNav` | `HeaderNavItem[]` | Header navigation items |
 | `headerRightItems` | `HeaderRightItem[]` | Header right side items |
 | `packageOwnedRoutes?` | `boolean` | **Internal/unstable** — dormant flag for package-owned route injection. Default `false`. NOT part of the stable 1.0 user contract; this field is excluded from the snapshot guard. See ADR `docs/adr/route-injection-seam.md`. |
+| `chromeBindingsModule?` | `string` | Project-root-relative path (e.g. `"./src/chrome-bindings.tsx"`) to a host module with a **named export `chromeBindings: ChromeHostBindings`** (type from `./factory-context`). Only consumed under `packageOwnedRoutes`: the routes plugin re-exports the module through `virtual:zudo-doc-chrome-bindings` so the injected chrome shim spreads real host bindings into `createChrome(...)`. Absent → byte-identical stub-defaults behavior; present but file missing → the build fails at plugin setup, naming the resolved absolute path. SSR-presentational only — client islands inside the module are not guaranteed to register on injected routes. See ADR `docs/adr/route-injection-seam.md` ("Host-callables channel — chromeBindingsModule"). |
 
 ---
 

@@ -37,6 +37,7 @@ import { createSidebarWithDefaults } from "../sidebar-with-defaults/index.js";
 import { createRenderDocPage } from "../doc-page-renderer/index.js";
 import { createVersionsPageView } from "../versions-page/index.js";
 import { createTagPages } from "../tag-pages/index.js";
+import { createHomePageView } from "../home-page/index.js";
 import {
   deriveComposeMetaTitle,
   deriveBodyEndIslands,
@@ -69,6 +70,7 @@ export function createChrome<S extends Settings = Settings>(
     createTagPages(ctx);
   const { SiteTreeNavWrapper } = deriveMdxComponents(ctx);
   const BodyEndIslands = deriveBodyEndIslands(ctx);
+  const HomePageView = createHomePageView(ctx);
 
   return {
     composeMetaTitle,
@@ -83,6 +85,7 @@ export function createChrome<S extends Settings = Settings>(
     TagsIndexPageView,
     SiteTreeNavWrapper,
     BodyEndIslands,
+    HomePageView,
   };
 }
 

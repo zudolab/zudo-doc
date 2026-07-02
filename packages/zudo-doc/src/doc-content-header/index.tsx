@@ -9,7 +9,7 @@
 // factory receives those as injected dependencies so the logic lives in the
 // package while the host stub keeps the singleton imports.
 
-import type { JSX } from "preact";
+import type { ComponentChildren, JSX } from "preact";
 import { FrontmatterPreview, type FrontmatterCellRenderer } from "../metainfo/index.js";
 import type { DocPageEntry } from "../doc-page-props/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
@@ -91,6 +91,10 @@ interface DocContentHeaderProps {
  * are HOST-bound slots (`ctx.hostBindings.buildFrontmatterPreviewEntries` /
  * `…frontmatterRenderers`, defaulting to `() => []` / `{}`). The nested
  * `DocMetainfoArea` / `DocTagsArea` are rebuilt from the same context.
+ *
+ * `ctx.hostBindings.docContentHeaderExtras` (default: absent) renders after
+ * the `<h1>` and before `DocMetainfoArea` — see the `ChromeHostBindings`
+ * interface in `./factory-context`.
  */
 export function createDocContentHeader<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
@@ -101,6 +105,7 @@ export function createDocContentHeader<S extends Settings = Settings>(
     (() => [])) as DocContentHeaderDeps["buildFrontmatterPreviewEntries"];
   const frontmatterRenderers = (ctx.hostBindings.frontmatterRenderers ??
     {}) as unknown as Record<string, FrontmatterCellRenderer>;
+  const docContentHeaderExtras = ctx.hostBindings.docContentHeaderExtras;
   const DocMetainfoArea = createDocMetainfoArea(ctx);
   const DocTagsArea = createDocTagsArea(ctx);
 
@@ -124,6 +129,19 @@ export function createDocContentHeader<S extends Settings = Settings>(
     return (
       <>
         <h1 class="text-heading font-bold mb-vsp-xs">{entry.data.title}</h1>
+
+        {/* Host-bound extras slot (ctx.hostBindings.docContentHeaderExtras).
+            Default absent → renders nothing. Fires on versioned pages too —
+            the renderer receives `version` and decides for itself, unlike
+            DocMetainfoArea/DocTagsArea below which are unconditionally
+            hidden on versioned pages. */}
+        {docContentHeaderExtras?.({
+          entry,
+          slug,
+          locale,
+          isFallback,
+          version,
+        }) as ComponentChildren}
 
         {/* Build-time date block (Created / Updated / Author).
             doc-metainfo placement — between <h1> and description.

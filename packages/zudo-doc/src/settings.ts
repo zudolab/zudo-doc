@@ -335,4 +335,35 @@ export interface Settings {
    * flag a potentially-empty build (#2404). No throw — the build succeeds.
    */
   packageOwnedRoutes?: boolean;
+  /**
+   * Project-root-relative path to a host module that exports host-callable
+   * chrome bindings, e.g. `"./src/chrome-bindings.tsx"` (epic #2499, ADR
+   * `docs/adr/route-injection-seam.md`, "Host-callables channel"). Only
+   * consumed when `packageOwnedRoutes` is on: the routes plugin registers a
+   * second virtual module (`virtual:zudo-doc-chrome-bindings`) that
+   * RE-EXPORTS this module, so the injected chrome shim (`routes/_chrome.tsx`)
+   * can import real host callables — un-stranding `ChromeHostBindings` slots
+   * (`frontmatterRenderers`, `buildFrontmatterPreviewEntries`, `SearchWidget`,
+   * …) that today silently stay at stub defaults on injected routes.
+   *
+   * The target module MUST have a named export `chromeBindings` typed
+   * `ChromeHostBindings` (from `@takazudo/zudo-doc/factory-context`).
+   *
+   * - Absent (the default) → the virtual module emits
+   *   `export const chromeBindings = {};` — behavior byte-identical to today.
+   * - Present but the resolved file does not exist → the build fails loudly
+   *   at plugin setup, naming the resolved absolute path (never a silent
+   *   empty fallback).
+   *
+   * Only the PATH travels through `settings` (a string is serializable data,
+   * consistent with the ADR's "virtual module = serializable data only"
+   * rule) — the bundler imports the actual callables from the re-exported
+   * module.
+   *
+   * SSR-presentational contract only: client islands defined inside the
+   * bindings module are NOT guaranteed to register on injected routes (the
+   * virtual re-export is outside zfb's static-import scanner reachability
+   * graph — see the ADR for detail).
+   */
+  chromeBindingsModule?: string;
 }

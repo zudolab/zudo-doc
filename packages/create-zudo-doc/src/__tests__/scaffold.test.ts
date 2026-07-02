@@ -3621,9 +3621,15 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
    * external-@import hoisting work. No consumer-facing change.
    * Bumped to 0.1.0-next.72: routine upstream prerelease adoption (next.72) in
    * lockstep with the root package.json pins. No consumer-facing change.
+   * Bumped to 0.1.0-next.74: routine upstream prerelease adoption (next.74,
+   * next.73 skipped) in lockstep with the root package.json pins. No
+   * consumer-facing change.
+   * Bumped to 0.1.0-next.75: toolchain bump restoring Tailwind class-candidate
+   * scanning through symlinked project trees (zudolab/zudo-doc#2511), in
+   * lockstep with the root package.json pins. No consumer-facing change.
    * Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.72", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.75", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -3634,10 +3640,10 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.72");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.72");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.75");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.75");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.72",
+      "0.1.0-next.75",
     );
   });
 });
@@ -4277,7 +4283,13 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
     );
   });
 
-  it("feature ON: pages/index.tsx contains enableClientRouter={settings.dynamicPageTransition}", async () => {
+  // S4 (#2503): pages/index.tsx adopted the shared HomePageView body (#2502)
+  // and is now a thin data-prep consumer — the <DocLayoutWithDefaults> render
+  // (and its enableClientRouter prop) moved into the package factory
+  // (home-page/index.tsx), same as the doc-page-shell precedent above. The
+  // prop lives in the factory regardless of feature state, so pages/index.tsx
+  // itself no longer threads it.
+  it("feature ON: pages/index.tsx delegates to HomePageView; package factory threads enableClientRouter", async () => {
     const choices: UserChoices = {
       projectName: "test-dpt-on-ecr-index",
       defaultLang: "en",
@@ -4291,10 +4303,19 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
       projectPath("test-dpt-on-ecr-index", "pages/index.tsx"),
       "utf-8",
     );
-    expect(content).toContain("enableClientRouter={settings.dynamicPageTransition}");
+    expect(content).toContain("HomePageView");
+    expect(content).not.toContain("enableClientRouter");
+
+    const homePageFactory = await fs.readFile(
+      packageSrcPath("home-page/index.tsx"),
+      "utf-8",
+    );
+    expect(homePageFactory).toContain(
+      "enableClientRouter={settings.dynamicPageTransition}",
+    );
   });
 
-  it("feature OFF: pages/index.tsx contains enableClientRouter={settings.dynamicPageTransition}", async () => {
+  it("feature OFF: pages/index.tsx delegates to HomePageView; package factory threads enableClientRouter", async () => {
     const choices: UserChoices = {
       projectName: "test-dpt-off-ecr-index",
       defaultLang: "en",
@@ -4308,7 +4329,16 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
       projectPath("test-dpt-off-ecr-index", "pages/index.tsx"),
       "utf-8",
     );
-    expect(content).toContain("enableClientRouter={settings.dynamicPageTransition}");
+    expect(content).toContain("HomePageView");
+    expect(content).not.toContain("enableClientRouter");
+
+    const homePageFactory = await fs.readFile(
+      packageSrcPath("home-page/index.tsx"),
+      "utf-8",
+    );
+    expect(homePageFactory).toContain(
+      "enableClientRouter={settings.dynamicPageTransition}",
+    );
   });
 
   // pages/404.tsx was removed from the scaffold template in the Stub-Deletion

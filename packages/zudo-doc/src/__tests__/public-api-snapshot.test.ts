@@ -83,6 +83,7 @@ describe("package.json exports keyset snapshot", () => {
         "./head-with-defaults",
         "./header",
         "./header-with-defaults",
+        "./home-page",
         "./html-preview-wrapper",
         "./i18n-version",
         "./icons",
@@ -266,6 +267,7 @@ describe("Settings public field set snapshot", () => {
         "footer",
         "headerNav",
         "headerRightItems",
+        "chromeBindingsModule",
       ]
     `);
   });
