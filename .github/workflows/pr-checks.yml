@@ -13,6 +13,7 @@
 #   B4push/CI Parity Check   — pure-Node, no install; scripts/check-b4push-ci-parity.mjs
 #   E2E Spec Naming Guard    — pure-Node, no install; scripts/check-e2e-spec-naming.mjs
 #   Flaky Tracking-Issue Guard — pure-Node, no install; scripts/check-flaky-tracking-issue.mjs
+#   Wait-Debt Guard           — pure-Node, no install; scripts/check-wait-debt.mjs
 #   Lint Gates               — pnpm install; pnpm tags:audit --ci + pnpm lint:tokens
 #   Type Check               — pnpm install; pnpm check (zfb check → tsc --noEmit)
 #   Package Unit Tests       — pnpm install; pnpm test:packages (all 5 package suites)
@@ -215,6 +216,26 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Check @flaky/@local-only tracking-issue URLs
         run: node scripts/check-flaky-tracking-issue.mjs
+
+  # ---------------------------------------------------------------------------
+  # Job 0.695: Wait-debt guard (#2538)
+  # ---------------------------------------------------------------------------
+  # Zero-tolerance enforcement of TESTING.md's Wait-Pattern Rules: every
+  # `waitForTimeout` call in e2e/ (excluding fixtures) must carry a trailing
+  # `// wait-ok: <why>` comment on the same line. Closes the enforcement gap
+  # where the rule was documented but nothing mechanically checked for it —
+  # the same failure mode the @flaky tracking-issue guard above closed for
+  # quarantine telemetry.
+  # Pure-Node script — uses preinstalled Node 22 on the runner image, no pnpm.
+  check-wait-debt:
+    name: Wait-Debt Guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Check wait-debt (waitForTimeout wait-ok annotations)
+        run: node scripts/check-wait-debt.mjs
 
   # ---------------------------------------------------------------------------
   # Job 0.68: Z-index codegen drift check (#2148)

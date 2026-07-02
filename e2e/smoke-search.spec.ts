@@ -211,12 +211,12 @@ test.describe("Search dialog", () => {
     // Type a query (first debounce tick > 150ms). With the bug this replaces the
     // message with "Loading search index…" and refetches.
     await input.fill("alpha");
-    await page.waitForTimeout(SEARCH_DEBOUNCE_SETTLE_MS);
+    await page.waitForTimeout(SEARCH_DEBOUNCE_SETTLE_MS); // wait-ok: sample post-debounce fetch count to prove the buggy refetch didn't fire (see comment above)
     await expect(results.getByText("Search unavailable")).toBeVisible();
 
     // Type again (second debounce tick) — another chance for the buggy refetch.
     await input.fill("alpha beta");
-    await page.waitForTimeout(SEARCH_DEBOUNCE_SETTLE_MS);
+    await page.waitForTimeout(SEARCH_DEBOUNCE_SETTLE_MS); // wait-ok: sample post-debounce fetch count to prove the buggy refetch didn't fire (see comment above)
     await expect(results.getByText("Search unavailable")).toBeVisible();
 
     // "Search unavailable" stays put; "Loading search index…" must never linger.
