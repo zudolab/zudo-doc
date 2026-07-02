@@ -15,6 +15,10 @@ export const settings = {
   defaultLocale: "en" as const,
   locales: {} satisfies Record<string, LocaleConfig>,
   mermaid: false,
+  // Enabled so the SidebarResizerRestore pre-paint <script> mounts in this
+  // fixture — required to exercise the localStorage width-restore regression
+  // deterministically (#2527; see .claude/skills/test-flow-sidebar-width-restore).
+  sidebarResizer: true as boolean,
   // Enabled so the persisted DesktopSidebarToggle island + pre-paint script
   // mount in this fixture — required to exercise the SPA-nav flash regression
   // (#2198), which only reproduces with the toggle island present.
