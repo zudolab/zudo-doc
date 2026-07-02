@@ -1,7 +1,13 @@
 import { test, expect } from "@playwright/test";
+import { readDistFile } from "./smoke-dist-helper";
 
 /**
- * E2E smoke tests for the frontmatter-preview block rendered-vs-hidden behavior.
+ * L3 static dist reads for the frontmatter-preview block rendered-vs-hidden
+ * behavior. Demoted from browser tests (zudolab/zudo-doc#2537, preserving
+ * every prior assertion): the block is SSR-only static markup, so a real
+ * page load + DOM query added zero coverage a dist read doesn't already
+ * give — the fixture wiring these tests also pin (which pages get which
+ * frontmatter) is unchanged, just asserted against `dist/` instead.
  *
  * Three scenarios:
  * 1. System-only frontmatter → block absent.
@@ -15,41 +21,37 @@ import { test, expect } from "@playwright/test";
  */
 
 test.describe("Frontmatter Preview: rendered-vs-hidden behavior", () => {
-  test("system-only frontmatter → block absent", async ({ page }) => {
-    await page.goto("/docs/getting-started", { waitUntil: "load" });
-
-    const block = page.locator('[data-testid="frontmatter-preview"]');
-    await expect(block).not.toBeAttached();
+  test("system-only frontmatter → block absent", () => {
+    const html = readDistFile("docs/getting-started/index.html");
+    expect(html).not.toContain('data-testid="frontmatter-preview"');
   });
 
-  test("custom frontmatter → block visible with correct rows", async ({
-    page,
-  }) => {
-    await page.goto("/docs/guides/frontmatter-preview-test", {
-      waitUntil: "load",
-    });
+  test("custom frontmatter → block visible with correct rows", () => {
+    const html = readDistFile("docs/guides/frontmatter-preview-test/index.html");
 
     // Block must be present
-    const block = page.locator('[data-testid="frontmatter-preview"]');
-    await expect(block).toBeVisible();
+    expect(html).toContain('data-testid="frontmatter-preview"');
+
+    // Scope row assertions to the block's <tbody> — the page also has a
+    // prose paragraph mentioning "author"/"status" outside the block.
+    const blockStart = html.indexOf('data-testid="frontmatter-preview"');
+    const tbodyStart = html.indexOf("<tbody>", blockStart);
+    const tbodyEnd = html.indexOf("</tbody>", tbodyStart);
+    const tbody = html.slice(tbodyStart, tbodyEnd);
 
     // Custom field rows must appear
-    const tbody = block.locator("tbody");
-    await expect(tbody.locator("tr")).toHaveCount(2);
-
-    const keyTexts = await tbody.locator("td:first-child").allTextContents();
-    expect(keyTexts).toContain("author");
-    expect(keyTexts).toContain("status");
+    const rowCount = (tbody.match(/<tr[ >]/g) ?? []).length;
+    expect(rowCount).toBe(2);
+    expect(tbody).toContain(">author<");
+    expect(tbody).toContain(">status<");
 
     // System-managed keys must NOT appear
-    expect(keyTexts).not.toContain("title");
-    expect(keyTexts).not.toContain("sidebar_position");
+    expect(tbody).not.toContain(">title<");
+    expect(tbody).not.toContain(">sidebar_position<");
   });
 
-  test("auto-index category page → block absent", async ({ page }) => {
-    await page.goto("/docs/auto-index-category", { waitUntil: "load" });
-
-    const block = page.locator('[data-testid="frontmatter-preview"]');
-    await expect(block).not.toBeAttached();
+  test("auto-index category page → block absent", () => {
+    const html = readDistFile("docs/auto-index-category/index.html");
+    expect(html).not.toContain('data-testid="frontmatter-preview"');
   });
 });
