@@ -11,10 +11,14 @@
 //
 // `ctx` is a PARAMETER, never imported from `routes/_context.js` — that shim
 // re-exports a payload pulled from `virtual:zudo-doc-route-context`, which
-// only resolves inside the routes plugin. Kept as a separate file from the
-// view factory (`./index.tsx`) so the `node:fs` edge pulled in via
-// sidebar-tree's `loadCategoryMeta` stays out of the view module's import
-// graph and out of any client-island chain.
+// only resolves inside the routes plugin. This lives in its own file (not in
+// the `./index.tsx` view factory) so the view-factory FILE itself carries no
+// `node:fs` edge: a module importing `createHomePageView` from `./index.tsx`
+// by path does not pull in sidebar-tree's `loadCategoryMeta`. The `./index.tsx`
+// barrel DOES re-export `prepareHomeData`, so a barrel importer's graph does
+// gain the static `node:fs` edge — that is acceptable because the barrel is a
+// server-side-only entry (route/page rendering), and `loadCategoryMeta`
+// degrades gracefully under zfb's SSG runtime `node:fs` stub.
 
 import type { RouteContext } from "../factory-context/index.js";
 import type { NavSourceOptions } from "../nav-source-docs/index.js";
@@ -36,9 +40,12 @@ export interface PrepareHomeDataOptions {
    */
   navSourceOptions?: NavSourceOptions;
   /**
-   * Override the category-meta directory. Default: the default locale uses
-   * the categoryMeta `resolveNavSource` returns; non-default locales use
-   * `loadCategoryMeta(getLocaleConfig(locale).dir)` — locale-dir-ONLY.
+   * Override the category-meta directory. When set, category meta is loaded via
+   * `loadCategoryMeta(categoryMetaDir)` on BOTH branches — replacing the default
+   * locale's merged `resolveNavSource` categoryMeta and the non-default locale's
+   * `loadCategoryMeta(getLocaleConfig(locale).dir)`. When unset, the default
+   * locale uses the categoryMeta `resolveNavSource` returns and non-default
+   * locales use `loadCategoryMeta(cfg.dir)` — locale-dir-ONLY.
    */
   categoryMetaDir?: string;
 }
@@ -57,7 +64,9 @@ export interface HomeData {
  * Branches on `locale === ctx.defaultLocale`:
  *
  * - Default locale: `resolveNavSource(locale, undefined, {})` and its
- *   returned `categoryMeta` (the merged base+locale meta).
+ *   returned `categoryMeta` (the merged base+locale meta) — unless
+ *   `options.categoryMetaDir` is set, in which case that dir is loaded via
+ *   `loadCategoryMeta` instead.
  * - Non-default locale: requires `ctx.getLocaleConfig(locale)` — throws if
  *   the locale isn't configured, absorbing the duplicated route/page guard —
  *   then resolves nav source with the locale-home filter and reads category
@@ -79,7 +88,9 @@ export function prepareHomeData(
   if (locale === ctx.defaultLocale) {
     const resolved = ctx.resolveNavSource(locale, undefined, options?.navSourceOptions ?? {});
     navDocs = resolved.navDocs;
-    categoryMeta = resolved.categoryMeta;
+    categoryMeta = options?.categoryMetaDir
+      ? loadCategoryMeta(options.categoryMetaDir)
+      : resolved.categoryMeta;
   } else {
     const cfg = ctx.getLocaleConfig(locale);
     if (!cfg) {

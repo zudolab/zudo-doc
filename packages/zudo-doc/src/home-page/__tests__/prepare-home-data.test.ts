@@ -95,7 +95,7 @@ beforeEach(() => {
 
 describe("prepareHomeData — default-locale branch", () => {
   it("uses resolveNavSource's returned categoryMeta with {} nav-source options", () => {
-    const resolvedCategoryMeta = new Map<string, CategoryMeta>([["guides", { title: "Guides" }]]);
+    const resolvedCategoryMeta = new Map<string, CategoryMeta>([["guides", { label: "Guides" }]]);
     const { ctx, resolveNavSource, buildNavTree } = makeStubRouteContext({
       defaultLocale: "en",
       resolvedCategoryMeta,
@@ -107,7 +107,7 @@ describe("prepareHomeData — default-locale branch", () => {
     expect(loadCategoryMetaMock).not.toHaveBeenCalled();
     // buildNavTree receives resolveNavSource's own categoryMeta, not a
     // locale-dir-loaded one.
-    expect(buildNavTree.mock.calls[0][2]).toBe(resolvedCategoryMeta);
+    expect(buildNavTree.mock.calls[0]![2]).toBe(resolvedCategoryMeta);
   });
 
   it("passes a docsUrl-bound href builder to buildNavTree", () => {
@@ -115,7 +115,7 @@ describe("prepareHomeData — default-locale branch", () => {
 
     prepareHomeData(ctx, "en");
 
-    const hrefBuilder = buildNavTree.mock.calls[0][3];
+    const hrefBuilder = buildNavTree.mock.calls[0]![3];
     hrefBuilder("getting-started", "en");
     expect(docsUrl).toHaveBeenCalledWith("getting-started", "en");
   });
@@ -124,10 +124,10 @@ describe("prepareHomeData — default-locale branch", () => {
 describe("prepareHomeData — non-default-locale branch", () => {
   it("passes the locale-home nav-source filter and reads locale-dir-only categoryMeta", () => {
     const cfg = { label: "Japanese", dir: "src/content/docs-ja" };
-    const localeCategoryMeta = new Map<string, CategoryMeta>([["guides", { title: "ガイド" }]]);
+    const localeCategoryMeta = new Map<string, CategoryMeta>([["guides", { label: "ガイド" }]]);
     loadCategoryMetaMock.mockReturnValue(localeCategoryMeta);
 
-    const mergedCategoryMeta = new Map<string, CategoryMeta>([["guides", { title: "MERGED — must not be used" }]]);
+    const mergedCategoryMeta = new Map<string, CategoryMeta>([["guides", { label: "MERGED — must not be used" }]]);
     const { ctx, resolveNavSource, buildNavTree } = makeStubRouteContext({
       defaultLocale: "en",
       getLocaleConfig: () => cfg,
@@ -143,8 +143,8 @@ describe("prepareHomeData — non-default-locale branch", () => {
     expect(loadCategoryMetaMock).toHaveBeenCalledWith(cfg.dir);
     // CRITICAL semantics: locale-dir-only categoryMeta is used, NOT the
     // merged categoryMeta resolveNavSource returned.
-    expect(buildNavTree.mock.calls[0][2]).toBe(localeCategoryMeta);
-    expect(buildNavTree.mock.calls[0][2]).not.toBe(mergedCategoryMeta);
+    expect(buildNavTree.mock.calls[0]![2]).toBe(localeCategoryMeta);
+    expect(buildNavTree.mock.calls[0]![2]).not.toBe(mergedCategoryMeta);
   });
 
   it("throws for an unconfigured locale", () => {
@@ -172,12 +172,12 @@ describe("prepareHomeData — tagCount", () => {
     prepareHomeData(ctx, "en");
 
     expect(collectTags).toHaveBeenCalledTimes(1);
-    const [filteredDocs, slugFn] = collectTags.mock.calls[0];
-    expect(filteredDocs).toEqual([navDocs[0], navDocs[2]]);
+    const [filteredDocs, slugFn] = collectTags.mock.calls[0]!;
+    expect(filteredDocs).toEqual([navDocs[0]!, navDocs[2]!]);
 
-    slugFn(navDocs[0].id, navDocs[0].data);
+    slugFn(navDocs[0]!.id, navDocs[0]!.data);
     expect(toRouteSlug).not.toHaveBeenCalled(); // slug present — no fallback call
-    slugFn(navDocs[2].id, navDocs[2].data);
+    slugFn(navDocs[2]!.id, navDocs[2]!.data);
     expect(toRouteSlug).toHaveBeenCalledWith("c");
   });
 
@@ -212,6 +212,22 @@ describe("prepareHomeData — overrides", () => {
     expect(resolveNavSource).toHaveBeenCalledWith("ja", undefined, { keepUnlisted: false });
   });
 
+  it("categoryMetaDir is honored on the default-locale branch (loads it instead of resolveNavSource's categoryMeta)", () => {
+    const overrideMeta = new Map<string, CategoryMeta>([["guides", { label: "Override" }]]);
+    loadCategoryMetaMock.mockReturnValue(overrideMeta);
+    const resolvedCategoryMeta = new Map<string, CategoryMeta>([["guides", { label: "resolveNavSource — must not be used" }]]);
+    const { ctx, buildNavTree } = makeStubRouteContext({
+      defaultLocale: "en",
+      resolvedCategoryMeta,
+    });
+
+    prepareHomeData(ctx, "en", { categoryMetaDir: "src/content/docs-v2" });
+
+    expect(loadCategoryMetaMock).toHaveBeenCalledWith("src/content/docs-v2");
+    expect(buildNavTree.mock.calls[0]![2]).toBe(overrideMeta);
+    expect(buildNavTree.mock.calls[0]![2]).not.toBe(resolvedCategoryMeta);
+  });
+
   it("categoryMetaDir overrides the locale-dir passed to loadCategoryMeta", () => {
     const cfg = { label: "Japanese", dir: "src/content/docs-ja" };
     const { ctx } = makeStubRouteContext({
@@ -243,6 +259,6 @@ describe("prepareHomeData — grouping", () => {
 
     expect(groupSatelliteNodes).toHaveBeenCalledWith(rawTree, ["guides"]);
     expect(data.tree).toBe(groupedTree);
-    expect(data.categoryOrder).toBe(getCategoryOrder.mock.results[0].value);
+    expect(data.categoryOrder).toBe(getCategoryOrder.mock.results[0]!.value);
   });
 });

@@ -21,9 +21,12 @@
 // #2519) and is handed to `HomePageView` as PREPARED PROPS by every adapter;
 // this factory only derives the locale-URL prefix (shared logic — `/` for the
 // default locale, `/{locale}` otherwise) from `ctx`. `prepareHomeData` is
-// re-exported from this barrel below but implemented in its own file so the
-// `node:fs` edge it pulls in (via sidebar-tree's `loadCategoryMeta`) stays out
-// of this view module's import graph and out of any client-island chain.
+// implemented in its own file so the view-factory FILE carries no `node:fs`
+// edge (importing `createHomePageView` from this module by path does not pull
+// in sidebar-tree's `loadCategoryMeta`). The barrel re-export below DOES add
+// that static edge for anyone importing through the barrel — acceptable because
+// this barrel is a server-side-only entry and `loadCategoryMeta` degrades
+// gracefully under zfb's SSG runtime `node:fs` stub.
 //
 // NOT an eject target — no `ejectable-snapshot` registration.
 
