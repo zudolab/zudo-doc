@@ -11,7 +11,7 @@ link here rather than duplicating policy.
 | Level | What | Scope | Command |
 |-------|------|-------|---------|
 | L1 | Vitest unit tests | ~1,485 tests: `src/**/__tests__/`, `scripts/__tests__/`, workspace packages | `pnpm test` |
-| L3 | Static dist reads | Read pre-built `dist/` HTML with `readFileSync` — no browser, no server | `E2E_FIXTURES=smoke npx playwright test --project smoke e2e/smoke-html-preview.spec.ts` (or any smoke spec using `e2e/smoke-dist-helper.ts`) |
+| L3 | Static dist reads | Read pre-built `dist/` HTML with `readFileSync` — no browser, no server | `E2E_FIXTURES=<fixture> npx playwright test --project <fixture> e2e/<fixture>-*.spec.ts` (e.g. `E2E_FIXTURES=versioning npx playwright test --project versioning e2e/versioning.spec.ts`) — any spec using `makeDistReader(fixture)` from `e2e/dist-helper.ts` |
 | L4 | Playwright E2E | 5-fixture browser suite — interactive, full-build, full-browser; fixtures: sidebar (4500), i18n (4501), theme (4502), smoke (4503), versioning (4504) | `pnpm test:e2e` (local), `pnpm test:e2e:ci` (CI) |
 | L5 | `/verify-ui` | Computed-style verification, screenshot-level visual assertion | Invoke the `/verify-ui` skill |
 | L6 | Test-flow skills | Final-resort: full user-journey replay with screen observation | `/test-flow-html-preview-hydration`, `/test-flow-sidebar-width-restore` |

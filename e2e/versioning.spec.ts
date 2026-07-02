@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { makeDistReader } from "./dist-helper";
 
 /**
  * E2E tests for documentation versioning feature.
@@ -11,12 +12,51 @@ import { test, expect } from "@playwright/test";
  * Note: The version switcher renders in BOTH the header right rail and an
  * inline `afterBreadcrumb` banner inside `<main>` on doc pages (the inline
  * one was added in the Wave 2 fix for epic #1478 to match the production
- * reference). Selectors are scoped to `getByRole("banner")` so they target
- * the header instance — most of these tests were written before the inline
- * banner existed.
+ * reference). Browser-test selectors are scoped to `getByRole("banner")`
+ * (matched below by `extractHeaderRegion`) so they target the header
+ * instance — most of these tests were written before the inline banner
+ * existed.
+ *
+ * Static-markup assertions below (content text, switcher label, banner
+ * presence/link) were demoted to L3 dist reads (zudolab/zudo-doc#2537) —
+ * they were asserting SSR output a browser load added nothing to. Loads,
+ * visibility (CSS-dependent), and the dropdown interaction tests stay
+ * browser-driven.
  */
 
+const { readDistFile } = makeDistReader("versioning");
+
+/** Same scoping the demoted tests used to get via `getByRole("banner")` —
+ * `<header>` is the only implicit ARIA "banner" landmark on the page,
+ * and the switcher also renders a second, non-header inline instance
+ * (see file-level comment). */
+function extractHeaderRegion(html: string): string {
+  const start = html.indexOf("<header");
+  const end = html.indexOf("</header>", start);
+  return html.slice(start, end);
+}
+
+function extractVersionToggleHtml(headerHtml: string): string {
+  const start = headerHtml.indexOf("data-version-toggle");
+  const end = headerHtml.indexOf("</button>", start);
+  return headerHtml.slice(start, end);
+}
+
+function extractVersionBanner(html: string): string | null {
+  const attrStart = html.indexOf("data-version-banner");
+  if (attrStart === -1) return null;
+  const divStart = html.lastIndexOf("<div", attrStart);
+  const divEnd = html.indexOf("</div>", attrStart);
+  return html.slice(divStart, divEnd);
+}
+
 test.describe("Versioning: latest version pages", () => {
+  let html: string;
+
+  test.beforeAll(() => {
+    html = readDistFile("docs/getting-started/index.html");
+  });
+
   test("latest version page loads correctly", async ({ page }) => {
     const response = await page.goto("/docs/getting-started", {
       waitUntil: "load",
@@ -28,11 +68,9 @@ test.describe("Versioning: latest version pages", () => {
     expect(title).not.toContain("404");
   });
 
-  test("latest version page contains expected content", async ({ page }) => {
-    await page.goto("/docs/getting-started", { waitUntil: "load" });
-    const content = await page.textContent("body");
-    expect(content).toContain("latest version");
-    expect(content).toContain("current release");
+  test("latest version page contains expected content", () => {
+    expect(html).toContain("latest version");
+    expect(html).toContain("current release");
   });
 
   test("version switcher is visible on latest page", async ({ page }) => {
@@ -41,23 +79,23 @@ test.describe("Versioning: latest version pages", () => {
     await expect(switcher).toBeVisible();
   });
 
-  test("version switcher shows 'Latest' as current on latest page", async ({
-    page,
-  }) => {
-    await page.goto("/docs/getting-started", { waitUntil: "load" });
-    const toggle = page.getByRole("banner").locator("[data-version-toggle]");
-    const text = await toggle.textContent();
-    expect(text).toContain("Latest");
+  test("version switcher shows 'Latest' as current on latest page", () => {
+    const toggle = extractVersionToggleHtml(extractHeaderRegion(html));
+    expect(toggle).toContain("Latest");
   });
 
-  test("no version banner on latest page", async ({ page }) => {
-    await page.goto("/docs/getting-started", { waitUntil: "load" });
-    const banner = page.locator("[role='note']");
-    await expect(banner).toHaveCount(0);
+  test("no version banner on latest page", () => {
+    expect(html).not.toContain("data-version-banner");
   });
 });
 
 test.describe("Versioning: versioned pages", () => {
+  let html: string;
+
+  test.beforeAll(() => {
+    html = readDistFile("v/1.0/docs/getting-started/index.html");
+  });
+
   test("versioned page loads correctly", async ({ page }) => {
     const response = await page.goto("/v/1.0/docs/getting-started", {
       waitUntil: "load",
@@ -68,38 +106,36 @@ test.describe("Versioning: versioned pages", () => {
     expect(title).toContain("Getting Started (v1)");
   });
 
-  test("versioned page contains version-specific content", async ({
-    page,
-  }) => {
-    await page.goto("/v/1.0/docs/getting-started", { waitUntil: "load" });
-    const content = await page.textContent("body");
-    expect(content).toContain("version 1.0");
-    expect(content).toContain("older release");
+  test("versioned page contains version-specific content", () => {
+    expect(html).toContain("version 1.0");
+    expect(html).toContain("older release");
   });
 
-  test("version banner is visible on versioned page", async ({ page }) => {
-    await page.goto("/v/1.0/docs/getting-started", { waitUntil: "load" });
-    const banner = page.locator("[role='note']");
-    await expect(banner).toBeVisible();
+  test("version banner is visible on versioned page", () => {
+    // "Visible" here means present + not explicitly hidden via a CSS class.
+    // Unlike the version-switcher (which needs a real browser check because
+    // its host wrapper toggles `.hidden`/`.lg:block` per viewport — see
+    // version-switcher.tsx's VERSION_SWITCHER_VISIBILITY_STYLE comment for
+    // the exact bug class that motivated keeping that one browser-driven),
+    // <VersionBanner> emits no conditional/responsive display class at all,
+    // so SSR presence + absence of a "hidden" class is an adequate static
+    // proxy for the browser's toBeVisible() here.
+    const banner = extractVersionBanner(html);
+    expect(banner).not.toBeNull();
+    expect(banner).not.toMatch(/class="[^"]*\bhidden\b/);
   });
 
-  test("version banner contains link to latest", async ({ page }) => {
-    await page.goto("/v/1.0/docs/getting-started", { waitUntil: "load" });
-    const bannerLink = page.locator("[role='note'] a");
-    await expect(bannerLink).toBeVisible();
-    const href = await bannerLink.getAttribute("href");
-    expect(href).toContain("/docs/getting-started");
+  test("version banner contains link to latest", () => {
+    const banner = extractVersionBanner(html);
+    expect(banner).not.toBeNull();
+    expect(banner).toContain('href="/docs/getting-started"');
     // Should NOT contain /v/1.0 — it links to the latest version
-    expect(href).not.toContain("/v/1.0");
+    expect(banner).not.toContain("/v/1.0");
   });
 
-  test("version switcher shows '1.0.0' as current on versioned page", async ({
-    page,
-  }) => {
-    await page.goto("/v/1.0/docs/getting-started", { waitUntil: "load" });
-    const toggle = page.getByRole("banner").locator("[data-version-toggle]");
-    const text = await toggle.textContent();
-    expect(text).toContain("1.0.0");
+  test("version switcher shows '1.0.0' as current on versioned page", () => {
+    const toggle = extractVersionToggleHtml(extractHeaderRegion(html));
+    expect(toggle).toContain("1.0.0");
   });
 });
 
