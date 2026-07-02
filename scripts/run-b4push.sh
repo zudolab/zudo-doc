@@ -351,6 +351,12 @@ fi
 step "Manual interactive smoke"
 if [[ "${B4PUSH_SKIP_MANUAL_SMOKE:-}" == "1" ]]; then
   skip "Manual smoke (B4PUSH_SKIP_MANUAL_SMOKE=1)"
+elif [[ ! -t 0 ]]; then
+  # No TTY on stdin (backgrounded / piped / agent run): the `read` below would
+  # hit EOF immediately and register a spurious failure. A human visual smoke
+  # can't happen without a terminal anyway, so skip it (neutral, not a failure)
+  # instead of blocking non-interactive runs. Interactive terminals still prompt.
+  skip "Manual smoke (no TTY on stdin — non-interactive run)"
 else
   cat <<'MANUAL'
 Run `pnpm preview` in another terminal and exercise:
