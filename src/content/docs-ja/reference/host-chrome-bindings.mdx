@@ -1,0 +1,172 @@
+---
+title: ホストクロームバインディング
+description: パッケージ所有ルートのドキュメントヘッダーやホームヒーローにホスト側のコンテンツを注入する。単一のchromeBindingsモジュール経由で届けられます。
+sidebar_position: 9
+tags:
+  - customization
+  - advanced
+---
+
+プロジェクトで `packageOwnedRoutes: true` を設定すると、`@takazudo/zudo-doc` がドキュメントルートを自前で注入し、プロジェクト側はほぼ空の `pages/` ディレクトリだけを持つことになります。これは便利な反面、通常であればプロジェクト固有のレンダリングを差し込むホストファイルが失われます。**ホストクロームバインディング**はそれを取り戻すための継ぎ目です。型付けされた小さなスロット群（`ChromeHostBindings`）を通じて、コンポーネントをエジェクトすることなく、パッケージ所有のクロームにホスト独自のコンテンツやコーラブルを注入できます。
+
+このページでは、2つのコンテンツ注入用の継ぎ目 — `docContentHeaderExtras` と `homeExtras` — に加え、それらのバインディングを注入ルートへ届ける配信チャネルである `settings.chromeBindingsModule` を扱います。
+
+<Note>
+
+これらの継ぎ目が主に意味を持つのは `packageOwnedRoutes: true` のときです。自前の `pages/*.tsx` スタブを引き続き持つプロジェクトは、レンダリング先のホストファイルをすでに持っており、`createChrome(context, hostBindings)` を直接呼び出せます。パッケージ所有ルートがどのように列挙されるかは[ルーティング規約](../concepts/routing-conventions.mdx)を参照してください。
+
+</Note>
+
+## `ChromeHostBindings` 型
+
+ここで説明する継ぎ目はすべて `ChromeHostBindings` インターフェースのフィールドで、`@takazudo/zudo-doc/factory-context` からエクスポートされています。
+
+```ts
+import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
+```
+
+すべてのフィールドは任意です。省略したスロットは、継ぎ目導入前の挙動をバイト単位で再現するパッケージデフォルトにフォールバックするため、部分的なバインディングオブジェクトでも常に安全です。
+
+## 配信チャネル: `chromeBindingsModule`
+
+`packageOwnedRoutes: true` ではクロームがパッケージ内部で組み立てられるため、バインディングを渡すためのホスト側の呼び出し地点が存在しません。プラグインがルートへ渡すルートコンテキストは**シリアライズ可能なデータのみ**（settings、translations、タグ語彙）を運ぶため、関数やコンポーネントを運ぶことはできません。このチャネルはその制約を回避します。コーラブルそのものをシリアライズするのではなく、それらをエクスポートするモジュールへの**パス**をシリアライズするのです。
+
+`settings.chromeBindingsModule` に、`ChromeHostBindings` 型の名前付き `chromeBindings` エクスポートを持つモジュールを指すプロジェクトルート相対パスを設定します。
+
+```ts title="src/config/settings.ts"
+export const settings = {
+  packageOwnedRoutes: true,
+  chromeBindingsModule: "./src/chrome-bindings.tsx",
+  // ...
+};
+```
+
+```tsx title="src/chrome-bindings.tsx"
+import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
+
+export const chromeBindings: ChromeHostBindings = {
+  // ...ここに各継ぎ目を記述（後述）
+};
+```
+
+ビルド時にルートプラグインが `chromeBindings` を再エクスポートする仮想モジュールを登録し、注入されたクロームシムがそれをクロームファクトリへスプレッドします。文字列パスはシリアライズ可能なので、「ルートコンテキストはデータのみ」というルールは依然として保たれます — 異なるのはローダーのソースだけです。
+
+### 既存スロットの「取り残し」も解消する
+
+`docContentHeaderExtras` と `homeExtras` は新しい継ぎ目ですが、`ChromeHostBindings` にはこのチャネルが存在する以前から、注入ルートへ**届く手段がなかった**スロットがいくつかありました — それらはスタブのデフォルトのまま黙って据え置かれていました。`chromeBindingsModule` はそれらをまとめて解消します。
+
+| スロット | チャネルなしでのデフォルト |
+| --- | --- |
+| `frontmatterRenderers` | `{}` — カスタム[フロントマタープレビュー](./frontmatter-preview.mdx)レンダラーなし |
+| `buildFrontmatterPreviewEntries` | `() => []` — プレビューテーブルが描画されない |
+| `SearchWidget` | パッケージデフォルトのみ |
+| `loadTagsForLocale` / `tagVocabulary` | 空 — フッターのタグ列なし |
+| `sidebarsConfig` | `{}` — 自動生成ツリーのみ |
+| `docHistoryMeta` | `{}` — Created/Updated ブロックなし |
+
+つまり、`docContentHeaderExtras` のために作成するモジュールは、たとえば以前はホスト所有ルートでしか機能しなかったカスタムフロントマターレンダラーを登録する場所でもあります。
+
+<Warning>
+
+**SSRの表示専用契約のみ**。バインディングモジュールの*内部*で定義したクライアントアイランドは、注入ルートでハイドレートされる保証はありません — 仮想再エクスポートは zfb の静的インポートスキャナーが到達可能なグラフの外側に位置するためです。バインディングモジュールはサーバーレンダリングされるコンテンツとコーラブルに使ってください。注入ルート上でハイドレートするアイランドが必要な場合は、依然として静的にインポートされる登録経路が必要です。
+
+</Warning>
+
+<Info>
+
+**ファイル欠落時の挙動は明示的**。`chromeBindingsModule` が設定されているのに解決先のファイルが存在しない場合、ビルドはプラグインのセットアップ時に、解決された絶対パスを示すエラーで失敗します — 黙って空にフォールバックすることはありません。設定が省略されている場合、チャネルは `export const chromeBindings = {}` を出力し、設定を省略した場合とバイト単位で同一の挙動になります。
+
+</Info>
+
+## `docContentHeaderExtras` — コンテンツヘッダーへの注入
+
+`docContentHeaderExtras` は、ドキュメントのコンテンツヘッダー内、**ページの `<h1>` とメタ情報ブロックの間**に追加コンテンツを描画します。これはページエントリを受け取ってレンダリング可能な出力を返す*レンダラー*であり、プロパティから再導出するのではなく、現在のページのフロントマターを自然にキーとして扱えます。
+
+```ts
+docContentHeaderExtras?: (args: {
+  entry: DocPageEntry;
+  slug: string;
+  locale: string;
+  isFallback?: boolean;
+  version?: string;
+}) => unknown;
+```
+
+よくある用途は、カスタムフロントマターフィールドから導出するティアバッジです。フロントマターで `tier: core` または `tier: opt-in` を宣言するページに対して次のように書けます。
+
+```tsx title="src/chrome-bindings.tsx"
+import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
+
+export const chromeBindings: ChromeHostBindings = {
+  docContentHeaderExtras: ({ entry }) => {
+    const tier = entry.data.tier;
+    if (tier !== "core" && tier !== "opt-in") return null;
+    const label = tier === "core" ? "Core" : "Opt-in";
+    const tone = tier === "core" ? "bg-accent text-bg" : "bg-surface text-fg";
+    return (
+      <span
+        class={`inline-block px-hsp-sm py-vsp-2xs text-caption rounded-full ${tone}`}
+      >
+        {label}
+      </span>
+    );
+  },
+};
+```
+
+デフォルト: 未設定 → 何も描画されず、ヘッダー出力は継ぎ目導入前のヘッダーとバイト単位で同一になります。
+
+<Note title="バージョン付きページ">
+
+このレンダラーは4つのドキュメントルートすべてで `entry` ドキュメントページに対して呼び出され、**バージョン付きページも含みます**。バージョン付きページでは `version` 引数を受け取ります。バージョン付きページではメタ情報ブロックとタグは非表示になります — そこで描画するかどうか、どう描画するかはレンダラー自身が判断します。バージョン付きルートのモデルについては[バージョニング](../guides/versioning.mdx)を参照してください。
+
+</Note>
+
+## `homeExtras` と `HomePageView` — ホームヒーローへの注入
+
+`homeExtras` は、ホームヒーロー内、overview/GitHub のリンク行の後、ヒーローのテキストカラム内に追加コンテンツを描画します — 例えばサイト説明の下にブランドやソーシャルのリンクを置く用途です。
+
+```ts
+homeExtras?: (args: { locale: string }) => unknown;
+```
+
+```tsx title="src/chrome-bindings.tsx"
+export const chromeBindings: ChromeHostBindings = {
+  homeExtras: ({ locale }) => (
+    <p class="mt-vsp-sm text-small">
+      <a
+        href="https://example.com/blog"
+        class="text-fg underline hover:text-accent"
+      >
+        Read the blog
+      </a>
+    </p>
+  ),
+};
+```
+
+### 優先順位: `extras` プロパティが勝つ
+
+共有のホーム本体は `HomePageView` が組み立て、パッケージルートとホストページのどちらもこれを呼び出します。`HomePageView` は `extras` プロパティ — ホストページが直接渡す描画済みの値 — を受け取ります。両方が存在する場合は**プロパティが勝ちます**。
+
+```tsx
+// HomePageView 内で次のように解決される:
+extras ?? hostBindings.homeExtras?.({ locale })
+```
+
+この非対称性は意図的なものです。ホストページは手元に JSX（値）を持っている一方、注入/バインディング経路はレンダリング時に `locale` 文字列しか持たず、そこから自前でコンテンツを導出しなければなりません（レンダラー）。
+
+### `/` ルートのトポロジー
+
+`/` にあるデフォルトホームは、ルートプラグインによって**決して注入されません** — zfb が `/` パターンを拒否するためです（アップストリーム [Takazudo/zudo-front-builder#1227](https://github.com/Takazudo/zudo-front-builder/issues/1227)）。これにより、知っておくべき分岐が生じます。
+
+- **`/` ホーム**は常にホストの薄い `pages/index.tsx` アダプター経由で描画されるため、extras は `HomePageView` の `extras` プロパティ（またはホスト自身の `createChrome` 呼び出し）経由で届きます。
+- **注入された `/[locale]` ホーム**は `chromeBindingsModule` を通じて `hostBindings.homeExtras` を読み取ります。
+
+i18n サイトでは、バインディングモジュールで `homeExtras` を設定し、*かつ* `pages/index.tsx` の `extras` プロパティに同じコンテンツを渡すことが、デフォルトホームとロケールホームを一貫させる方法です。
+
+## 関連ページ
+
+- [zudo-docのカスタマイズ](./customizing.mdx) — パッケージ所有ルートを*使わない*プロジェクト向けの5段階カスタマイズ早見表
+- [フロントマタープレビュー](./frontmatter-preview.mdx) — このチャネルが取り残しを解消する `frontmatterRenderers` スロット
+- [設定](../guides/configuration.mdx) — `settings` の完全なリファレンス
