@@ -120,6 +120,29 @@ describe("parseFirstLastMeta — pure parser + rename reconstruction (#2517)", (
     });
   });
 
+  it("keeps a rename chain's true origin when an unrelated file reused the target path earlier (#2517)", () => {
+    // Reviewer repro. Walking newest→oldest, an unrelated delete+create of the
+    // path `page.mdx` sits BETWEEN the rename (`R other→page`) and the rename
+    // source's own origin (`A other`). That delete must NOT seal the live chain:
+    // by the time it appears the chain has already renamed AWAY from `page.mdx`,
+    // so `page.mdx` is a different, dead file. `git log --follow -- page.mdx`
+    // follows M→R→other and reports Alice @ t1 — NOT Mover @ t4.
+    const out = log(
+      commit("t5", "2024-05-01T00:00:00Z", "Newy", ["M\tpage.mdx"]),
+      commit("t4", "2024-04-01T00:00:00Z", "Mover", ["R100\tother.mdx\tpage.mdx"]),
+      commit("t3", "2024-03-01T00:00:00Z", "Del", ["D\tpage.mdx"]), // unrelated old file deleted
+      commit("t2", "2024-02-01T00:00:00Z", "OldGuy", ["A\tpage.mdx"]), // unrelated old file created
+      commit("t1", "2024-01-01T00:00:00Z", "Alice", ["A\tother.mdx"]), // TRUE origin of the renamed file
+    );
+    const map = parseFirstLastMeta(out);
+    expect(map.get("page.mdx")).toEqual({
+      oldest: { author: "Alice", date: "2024-01-01T00:00:00Z" },
+      newest: { author: "Newy", date: "2024-05-01T00:00:00Z" },
+    });
+    // The dead old file's path-reuse must not surface as any extra key.
+    expect([...map.keys()]).toEqual(["page.mdx"]);
+  });
+
   it("does NOT chain copies (C records) — a docs-ja copy keeps only its own history", () => {
     const out = log(
       commit("c2", "2024-02-01T00:00:00Z", "Copier", ["C100\ten.mdx\tja.mdx"]),

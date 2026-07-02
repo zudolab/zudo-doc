@@ -708,32 +708,47 @@ export interface FirstLastMeta {
  * reconstructs rename chains. Kept separate from the spawn so the pure parser
  * (`parseFirstLastMeta`) and the streaming walk share identical logic.
  *
- * Walk order is git's default newest-first. For each name-status record we
- * resolve its path through `alias` to the CANONICAL current path, then:
- *   - set `newest[key]` on first sight (newest commit that touched it), and
- *   - overwrite `oldest[key]` on every touch (last write wins ⇒ oldest, since
- *     we descend newest→oldest).
+ * Walk order is git's default newest-first. Each LIVE file is a "chain" keyed
+ * by its CURRENT repo-relative path (exactly what git emits for the file as it
+ * exists now) and tracked in `result`. As we descend newest→oldest a chain also
+ * has a CURRENT PHYSICAL PATH — the path the file occupied at the commit we are
+ * visiting. `physicalToKey` maps that physical path → the chain's key. A record
+ * touches a chain ONLY when the record's path equals that chain's current
+ * physical path; records on any other path belong to a dead or unrelated file
+ * and must NOT mutate (or seal) a live chain. For each touching record we:
+ *   - open the chain on first sight (⇒ newest commit that touched it), and
+ *   - overwrite `oldest` on every touch (last write wins ⇒ oldest, since we
+ *     descend newest→oldest).
  *
- * Rename `R old→new`: after attributing to canonical(new), alias `old → key`
- * so still-older records for `old` chain onto the same key.
+ * Rename `R old→new`: attribute to the chain, then re-point its physical path
+ * from `new` to `old` (`physicalToKey.delete(new)` + `set(old, key)`) so still
+ * older records for `old` chain on, while older records for `new` — now a
+ * DIFFERENT file that reused the freed name — no longer reach this chain. This
+ * physical-path scoping is the #2517 fix: previously the delete boundary keyed
+ * on the CANONICAL key, so an unrelated `D new` OLDER than the rename wrongly
+ * sealed a chain that had already renamed AWAY from `new`, truncating it to a
+ * too-recent createdDate/author (matches `git log --follow`, which walks the
+ * current file back through renames and stops at ITS creation).
  *
- * Delete `D path`: SEAL the key WITHOUT attributing. Walking newest-first, a
- * delete is the point where THIS file's life ends going backward — anything
- * older that resolves to the same path is a different, unrelated file that
- * later reused the path, and must NOT inherit its dates (the path-reuse guard).
- * This is the boundary where per-file `--follow` stops.
+ * Delete `D path` on a chain's current physical path: the reuse boundary. In
+ * forward time the chain's file is a RECREATION at `path`; everything older on
+ * `path` is a different file. We drop the physical mapping (so older records on
+ * `path` can't re-attribute) while the surviving `result[key]` entry keeps them
+ * from opening a bogus fresh chain — the walk stops here exactly like per-file
+ * `--follow`.
  *
- * NOTE — why the guard keys on DELETE, not ADD. The issue (#2517) proposed
+ * NOTE — the boundary keys on DELETE, never on ADD. The issue (#2517) proposed
  * sealing on the recreation `A`. On a clean single-root history that is
  * equivalent, but this repo's real history has multiple orphan roots (a
  * `barebone-build-diff` dev tool + squashed bases), so a single unchanged file
  * legitimately appears as `A` on several roots that `--follow` treats as ONE
  * continuous history. Sealing on `A` truncated 261/293 pages to a wrong (newer)
- * createdDate. Sealing on the `D` — the actual reuse boundary, absent from
- * multi-root re-adds — reproduces `git log --follow` byte-for-byte (0 deltas)
- * while still guarding genuine delete→recreate reuse. See the PR parity table.
+ * createdDate; letting `A` keep attributing carries last-write-wins back to the
+ * OLDEST add, reproducing `git log --follow` byte-for-byte (0 deltas) while the
+ * physical-path-scoped `D` boundary still guards genuine delete→recreate reuse.
+ * See the PR parity table.
  *
- * Copy `C old→new`: attribute to canonical(new) but do NOT alias — `--follow`
+ * Copy `C old→new`: attribute to the target but do NOT re-point — `--follow`
  * doesn't track copies, so a docs-ja copy must not inherit EN history.
  */
 function createFirstLastMetaAccumulator(): {
@@ -745,49 +760,73 @@ function createFirstLastMetaAccumulator(): {
   let curDate = "";
   let curAuthor = "";
 
-  const alias = new Map<string, string>();
-  const sealed = new Set<string>();
+  // Live chains only: current physical path → chain key (the file's current
+  // repo-relative path). A path absent from this map is no live chain's current
+  // physical location.
+  const physicalToKey = new Map<string, string>();
   const result = new Map<string, FirstLastMeta>();
 
-  const canonical = (p: string): string => alias.get(p) ?? p;
-
-  function applyRecord(status: string, paths: string[]): void {
-    const code = status[0];
-    let key: string;
-    let oldPath: string | undefined;
-    if (code === "R" || code === "C") {
-      // `R<score>\told\tnew` / `C<score>\told\tnew`.
-      oldPath = paths[0];
-      const newPath = paths[1];
-      if (!newPath) return;
-      key = canonical(newPath);
-    } else {
-      // `A`/`M`/`D`/`T`/… `\tpath`.
-      const p = paths[0];
-      if (!p) return;
-      key = canonical(p);
-    }
-
-    if (sealed.has(key)) return;
-
-    // Delete = reuse boundary: seal the chain (if the file is currently tracked,
-    // i.e. it exists at a newer commit) and never attribute the delete itself.
-    if (code === "D") {
-      if (result.has(key)) sealed.add(key);
-      return;
-    }
-
+  function attribute(key: string): void {
     const commit = { author: curAuthor, date: curDate };
     const existing = result.get(key);
     if (existing) {
       existing.oldest = commit; // last write wins ⇒ oldest
     } else {
-      result.set(key, { oldest: commit, newest: commit });
+      result.set(key, { oldest: commit, newest: commit }); // first sight ⇒ newest
+    }
+  }
+
+  function applyRecord(status: string, paths: string[]): void {
+    const code = status[0];
+
+    if (code === "R" || code === "C") {
+      // `R<score>\told\tnew` / `C<score>\told\tnew`.
+      const oldPath = paths[0];
+      const newPath = paths[1];
+      if (!newPath) return;
+      let key = physicalToKey.get(newPath);
+      if (key === undefined) {
+        // `newPath` reappearing after the live chain renamed off it (or was
+        // sealed) is unrelated path-reuse — leave that chain untouched.
+        if (result.has(newPath)) return;
+        key = newPath; // first sight of a current file's path ⇒ new chain
+      }
+      attribute(key);
+      if (code === "R" && oldPath) {
+        // The chain's physical path moves to `oldPath`; `newPath` is no longer
+        // this chain's location for any older record.
+        physicalToKey.delete(newPath);
+        physicalToKey.set(oldPath, key);
+      } else {
+        // Copy (or a rename missing its old path): the chain stays at newPath.
+        physicalToKey.set(newPath, key);
+      }
+      return;
     }
 
-    if (code === "R" && oldPath) {
-      alias.set(oldPath, key);
+    // `A`/`M`/`D`/`T`/… `\tpath`.
+    const p = paths[0];
+    if (!p) return;
+    const key = physicalToKey.get(p);
+
+    if (key === undefined) {
+      // No live chain occupies `p`. A delete bounds a dead file; an A/M on a
+      // path already claimed by a (moved-away or sealed) chain is path-reuse —
+      // either way, leave existing chains untouched.
+      if (code === "D" || result.has(p)) return;
+      // Otherwise this is the newest record for a current file — open its chain.
+      physicalToKey.set(p, p);
+      attribute(p);
+      return;
     }
+
+    if (code === "D") {
+      // Reuse boundary on the chain's physical path: stop the chain here.
+      physicalToKey.delete(p);
+      return;
+    }
+
+    attribute(key);
   }
 
   function pushLine(line: string): void {
