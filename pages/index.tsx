@@ -56,9 +56,10 @@ export default function IndexPage(): JSX.Element {
       extras={
         // @Takazudo link — established in #1453 (project-specific brand
         // link). Kept out of the shared hero (package HomePageView), threaded
-        // here through the extras seam instead.
-        <>
-          <span class="text-muted">/</span>
+        // here through the extras seam instead. HomePageView renders `extras`
+        // as a standalone line AFTER the links row (not inline within it), so
+        // this is its own small line, not a row continuation.
+        <p class="mt-vsp-2xs text-small">
           <a
             href="https://x.com/Takazudo"
             class="text-fg underline hover:text-accent"
@@ -67,7 +68,7 @@ export default function IndexPage(): JSX.Element {
           >
             @Takazudo
           </a>
-        </>
+        </p>
       }
     />
   );

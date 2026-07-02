@@ -103,9 +103,10 @@ export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
       extras={
         // @Takazudo link — ported from pages/index.tsx (refs #1453).
         // Kept out of the shared hero (package HomePageView), threaded here
-        // through the extras seam instead.
-        <>
-          <span class="text-muted">/</span>
+        // through the extras seam instead. HomePageView renders `extras` as a
+        // standalone line AFTER the links row (not inline within it), so
+        // this is its own small line, not a row continuation.
+        <p class="mt-vsp-2xs text-small">
           <a
             href="https://x.com/Takazudo"
             class="text-fg underline hover:text-accent"
@@ -114,7 +115,7 @@ export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
           >
             @Takazudo
           </a>
-        </>
+        </p>
       }
     />
   );
