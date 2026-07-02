@@ -38,6 +38,13 @@ export default defineConfig({
     : "list",
   use: {
     baseURL: `http://localhost:${BASE_PORT}`,
+    // Trace only the retry attempt (cheap — avoids tracing every green run)
+    // so a CI retry-pass (scripts/report-retry-flakes.mjs) leaves a debuggable
+    // artifact instead of just a triage annotation. Zips land under
+    // `test-results/` (Playwright's `outputDir`), NOT `playwright-report/` —
+    // CI artifact upload steps must include both paths (zudolab/zudo-doc#2535).
+    trace: "on-first-retry",
+    screenshot: "only-on-failure",
   },
   webServer: activeFixtures.map((name) => {
     const i = fixtureIndex(name);

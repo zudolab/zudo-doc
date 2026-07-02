@@ -11,9 +11,16 @@
 #                     npm pack; #2530 — moved out of pnpm test/pr-checks package-tests)
 #
 # Failure reporting:
-#   scripts/file-exam-issue.sh  — deduped failure issue (one open issue per workflow)
+#   scripts/file-exam-issue.sh  — deduped failure issue, scoped per-workflow-job-identity
+#                                  (one open issue per exam job, not shared across jobs
+#                                  despite the common `exam-failure` label); `--green`
+#                                  closes it with a comment on the next passing run
+#                                  (zudolab/zudo-doc#2535)
 #   scripts/report-flaky-lane.mjs — posts pass/fail telemetry to each @flaky test's
 #                                    linked tracking issue
+#   scripts/report-retry-flakes.mjs — CI-safe-suite retry-pass triage signal; files/
+#                                      appends a deduped `retry-flake`-labeled issue
+#                                      per offending test (zudolab/zudo-doc#2535)
 #
 # To run on-demand against any branch:
 #   gh workflow run exam.yml --ref <branch>
@@ -75,6 +82,16 @@ jobs:
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-report/ci-results.json
 
+      - name: Report retry flakes
+        if: always()
+        run: node scripts/report-retry-flakes.mjs playwright-report/ci-results.json
+        env:
+          # Used to file/append a deduped `retry-flake` issue per offending
+          # test; degrades to annotation-only if this ever runs without a
+          # usable token — see scripts/report-retry-flakes.mjs.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
       # Step B: quarantine @flaky lane — zero tests is acceptable; pass-with-no-tests
       # avoids "no tests found" being treated as an error in a currently-empty lane.
       - name: Run quarantine @flaky lane
@@ -111,12 +128,31 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
 
+      # success() here means the CI-safe suite step didn't fail — the
+      # continue-on-error @flaky lane never flips this to false. Closes the
+      # tracking issue (if one is open) the run after a fix lands.
+      - name: Close exam issue on green run (CI-safe suite)
+        if: success()
+        run: |
+          bash scripts/file-exam-issue.sh \
+            --green \
+            --run-url "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --workflow "Nightly Exam / Full E2E Tests"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
       - name: Upload E2E artifacts
         if: always()
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: exam-e2e-reports
-          path: playwright-report/
+          # test-results/ carries the on-first-retry trace zips + failure
+          # screenshots (Playwright's outputDir default); playwright-report/
+          # carries the JSON reports. Neither dir is nested in the other.
+          path: |
+            playwright-report/
+            test-results/
           retention-days: 14
 
   # ---------------------------------------------------------------------------
@@ -153,6 +189,17 @@ jobs:
         if: failure()
         run: |
           bash scripts/file-exam-issue.sh \
+            --run-url "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --workflow "Nightly Exam / create-zudo-doc Slow Tests"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
+      - name: Close exam issue on green run
+        if: success()
+        run: |
+          bash scripts/file-exam-issue.sh \
+            --green \
             --run-url "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             --workflow "Nightly Exam / create-zudo-doc Slow Tests"
         env:
@@ -202,6 +249,17 @@ jobs:
         if: failure()
         run: |
           bash scripts/file-exam-issue.sh \
+            --run-url "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --workflow "Nightly Exam / zudo-doc Slow Tests"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
+      - name: Close exam issue on green run
+        if: success()
+        run: |
+          bash scripts/file-exam-issue.sh \
+            --green \
             --run-url "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             --workflow "Nightly Exam / zudo-doc Slow Tests"
         env:
