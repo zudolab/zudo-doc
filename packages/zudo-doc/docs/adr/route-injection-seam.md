@@ -114,6 +114,9 @@ pattern once, not one per concrete value (matching how the current stubs work).
 
 ### 4. The dormant `settings.packageOwnedRoutes` gate
 
+> **Status update (#2518):** default-on since #2404 — the "dormant" framing
+> below is historical.
+
 Add `settings.packageOwnedRoutes?: boolean` (default **false**) to the package
 `PresetSettings` and the showcase `src/config/settings.ts`. `buildPlugins()` adds
 the routes-plugin descriptor **only when true**. Decision: **internal/advanced —

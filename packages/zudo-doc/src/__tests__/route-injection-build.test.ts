@@ -439,6 +439,17 @@ function enableEmptyChromeBindingsModule(dir: string): void {
   writeFileSync(settingsPath, src);
 }
 
+/** Point `chromeBindingsModule` at a directory (the project root) — used by
+ *  the directory-path error case (#2520). */
+function enableDirectoryChromeBindingsModule(dir: string): void {
+  const settingsPath = join(dir, "src/config/settings.ts");
+  const src = readFileSync(settingsPath, "utf-8").replace(
+    /packageOwnedRoutes:\s*true,/,
+    'packageOwnedRoutes: true,\n  chromeBindingsModule: ".",',
+  );
+  writeFileSync(settingsPath, src);
+}
+
 describe("CB chrome-bindings: chromeBindingsModule wires host bindings into createChrome on injected routes", () => {
   let fixtureDir: string;
 
@@ -537,6 +548,24 @@ describe("CB chrome-bindings empty: build fails loudly when chromeBindingsModule
     expect(thrown).toBeDefined();
     expect(thrown!.message).toContain("chromeBindingsModule");
     expect(thrown!.message).toContain("empty string");
+  });
+});
+
+describe("CB chrome-bindings directory: build fails loudly when chromeBindingsModule points at a directory", () => {
+  it("setup: build throws an error naming chromeBindingsModule and the directory condition", { timeout: 180_000 }, () => {
+    const fixtureDir = setupFixture({ emptyPages: true });
+    enableDirectoryChromeBindingsModule(fixtureDir);
+
+    let thrown: Error | undefined;
+    try {
+      runZfbBuild(fixtureDir);
+    } catch (err) {
+      thrown = err as Error;
+    }
+
+    expect(thrown).toBeDefined();
+    expect(thrown!.message).toContain("chromeBindingsModule");
+    expect(thrown!.message).toContain("directory, not a module file");
   });
 });
 

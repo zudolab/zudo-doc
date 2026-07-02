@@ -355,6 +355,8 @@ export interface Settings {
    * - Present but the resolved file does not exist → the build fails loudly
    *   at plugin setup, naming the resolved absolute path (never a silent
    *   empty fallback).
+   * - Present but the resolved path is a directory (e.g. `"."` or `"./src"`)
+   *   → the build fails loudly at plugin setup, naming the resolved path.
    *
    * Only the PATH travels through `settings` (a string is serializable data,
    * consistent with the ADR's "virtual module = serializable data only"

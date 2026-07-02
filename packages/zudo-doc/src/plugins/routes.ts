@@ -54,7 +54,7 @@
 // sibling `doc-history.ts` for the standalone-module rationale.
 
 import { createRequire } from "node:module";
-import { existsSync, cpSync, rmSync, mkdirSync } from "node:fs";
+import { existsSync, statSync, cpSync, rmSync, mkdirSync } from "node:fs";
 import { dirname, basename, join } from "node:path";
 import { definePlugin, type ZfbSetupContext } from "@takazudo/zfb/plugins";
 
@@ -237,6 +237,16 @@ const plugin = definePlugin({
           `zudo-doc: settings.chromeBindingsModule is set to "${chromeBindingsModule}", ` +
             `which resolves to "${resolved}" — that file does not exist. Create it (must ` +
             `export a named \`chromeBindings: ChromeHostBindings\`) or remove the setting.`,
+        );
+      }
+      // A directory-valued path (e.g. "." or "./src") passes existsSync above
+      // (directories exist too) and would otherwise sail through to the
+      // bundler, which fails later with a confusing non-loud error (#2520).
+      if (!statSync(resolved).isFile()) {
+        throw new Error(
+          `zudo-doc: settings.chromeBindingsModule is set to "${chromeBindingsModule}", ` +
+            `which resolves to "${resolved}" — that path is a directory, not a module file. ` +
+            `Point it at a module file (e.g. "./src/chrome-bindings.tsx") or remove the setting.`,
         );
       }
       chromeBindingsAbsPath = resolved;
