@@ -102,8 +102,9 @@ i18n:designTokenPanel
 versioning:designTokenPanel
 
 # ── sidebarResizer ────────────────────────────────────────────────────────────
-# reason: sidebar resizer feature is not exercised in any fixture
-sidebar:sidebarResizer
+# reason: sidebar resizer width-restore is now exercised in the sidebar
+#         fixture (deterministic e2e coverage, #2527); the remaining fixtures
+#         do not enable it
 i18n:sidebarResizer
 theme:sidebarResizer
 smoke:sidebarResizer
