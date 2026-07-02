@@ -207,6 +207,16 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
     expect(html).toContain("injected-route-render-proof");
   });
 
+  // CB #2501 baseline: `settings.chromeBindingsModule` is unset in this
+  // fixture, so `buildFrontmatterPreviewEntries` stays at its package-default
+  // `() => []` stub and the FrontmatterPreview table stays absent — the
+  // un-stranding only happens when the setting is explicitly configured (see
+  // the "CB chrome-bindings" describe block below).
+  it("bindings (baseline): /docs/getting-started/ HTML has NO FrontmatterPreview table when chromeBindingsModule is unset", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).not.toContain('data-testid="frontmatter-preview"');
+  });
+
   // #2406 / #2401(c): the package-default BodyEndIslands replaces the old no-op
   // BodyEndIslandsStub. The route-injection fixture ships aiAssistant /
   // imageEnlarge / mermaid OFF, so NO island marker (and no AI-assistant
@@ -358,6 +368,94 @@ describe("DH doc-history: injected doc route registers the DocHistory island (pa
     // Marker present (above) + DocHistory in the client bundle = the marker has a
     // matching registry entry, which is exactly what zfb's hydration requires.
     expect(readIslandsBundles(fixtureDir)).toContain("DocHistory");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Case CB — chromeBindingsModule host-callables channel (zudolab/zudo-doc#2501).
+//
+// `settings.chromeBindingsModule` points at a host module exporting a named
+// `chromeBindings: ChromeHostBindings`. The routes plugin re-exports it
+// through `virtual:zudo-doc-chrome-bindings`; `routes/_chrome.tsx` spreads it
+// into `createChrome(routeCtx, { DocHistory, ...chromeBindings })`. This
+// proves the un-stranding: `buildFrontmatterPreviewEntries` — a
+// `ChromeHostBindings` slot that stays at its package-default `() => []` stub
+// on every other injected-route fixture in this file (see the baseline
+// assertion in Case A above) — reaches `DocContentHeader` and renders the
+// FrontmatterPreview table once the host binding is wired in.
+// ---------------------------------------------------------------------------
+
+/** Point `chromeBindingsModule` at the fixture's committed
+ *  `src/chrome-bindings.tsx` — flips ON the CB #2501 host-callables channel. */
+function enableChromeBindingsModule(dir: string): void {
+  const settingsPath = join(dir, "src/config/settings.ts");
+  const src = readFileSync(settingsPath, "utf-8").replace(
+    /packageOwnedRoutes:\s*true,/,
+    'packageOwnedRoutes: true,\n  chromeBindingsModule: "./src/chrome-bindings.tsx",',
+  );
+  writeFileSync(settingsPath, src);
+}
+
+/** Point `chromeBindingsModule` at a path with no file on disk — used by the
+ *  missing-file error case. */
+function enableMissingChromeBindingsModule(dir: string): void {
+  const settingsPath = join(dir, "src/config/settings.ts");
+  const src = readFileSync(settingsPath, "utf-8").replace(
+    /packageOwnedRoutes:\s*true,/,
+    'packageOwnedRoutes: true,\n  chromeBindingsModule: "./src/does-not-exist.tsx",',
+  );
+  writeFileSync(settingsPath, src);
+}
+
+describe("CB chrome-bindings: chromeBindingsModule wires host bindings into createChrome on injected routes", () => {
+  let fixtureDir: string;
+
+  it("setup: fixture builds with chromeBindingsModule set", { timeout: 180_000 }, () => {
+    fixtureDir = setupFixture({ emptyPages: true });
+    enableChromeBindingsModule(fixtureDir);
+    // Should not throw — the resolved file (src/chrome-bindings.tsx) exists.
+    runZfbBuild(fixtureDir);
+  });
+
+  it("bindings: injected /docs/getting-started/ HTML renders the FrontmatterPreview table from the host binding", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    // The table only renders when `entries` is non-empty (FrontmatterPreview
+    // v2 short-circuits to `null` on an empty array) — its presence proves
+    // buildFrontmatterPreviewEntries reached createChrome via the host
+    // bindings spread, not the package-default `() => []` stub.
+    expect(html).toContain('data-testid="frontmatter-preview"');
+    expect(html).toContain("cb-demo-key");
+    expect(html).toContain("CB-DEMO-VALUE-MARKER");
+  });
+
+  // Case DH (DocHistory hydration pairing) regression guard: spreading
+  // `...chromeBindings` AFTER the `DocHistory` default must not disturb the
+  // #2480 island-scanner wiring when the host binding doesn't touch that slot.
+  it("regression: DocHistory island registration (#2480) still works with chromeBindingsModule set", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    // docHistory defaults to false in this fixture, so DocHistoryArea renders
+    // nothing and emits no skip-ssr marker — assert that absence stays intact
+    // (i.e. the chrome-bindings channel didn't accidentally flip it on).
+    expect(html).not.toContain('data-zfb-island-skip-ssr="DocHistory"');
+  });
+});
+
+describe("CB chrome-bindings missing: build fails loudly when chromeBindingsModule points at a nonexistent file", () => {
+  it("setup: build throws an error naming the resolved absolute path (not a silent empty fallback)", { timeout: 180_000 }, () => {
+    const fixtureDir = setupFixture({ emptyPages: true });
+    enableMissingChromeBindingsModule(fixtureDir);
+    const resolvedPath = join(fixtureDir, "src/does-not-exist.tsx");
+
+    let thrown: Error | undefined;
+    try {
+      runZfbBuild(fixtureDir);
+    } catch (err) {
+      thrown = err as Error;
+    }
+
+    expect(thrown).toBeDefined();
+    expect(thrown!.message).toContain("chromeBindingsModule");
+    expect(thrown!.message).toContain(resolvedPath);
   });
 });
 

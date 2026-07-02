@@ -266,6 +266,7 @@ describe("Settings public field set snapshot", () => {
         "footer",
         "headerNav",
         "headerRightItems",
+        "chromeBindingsModule",
       ]
     `);
   });
