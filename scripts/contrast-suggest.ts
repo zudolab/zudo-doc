@@ -255,6 +255,69 @@ function asOklchLiteral(hex: string): string {
   return formatOklch(parseOklch(hex));
 }
 
+/**
+ * Rendered-bg finding (#2510): `muted`/`accent`/`fg` render as text on the
+ * elevated `surface` background (footer, toolbar, dropdown panels), not just on
+ * the page bg. When `surface` is a raw palette slot sitting FAR from bg (e.g.
+ * Catppuccin's light p0), no single `muted` value can clear both the dark page
+ * bg AND that light surface without pushing `muted` to near-white — so the
+ * correct lever is the bg-SIDE one the skill calls out (§2.2/§3): pull `surface`
+ * toward the page bg (a subtler elevation, still separated by its
+ * `border-muted`) until every text color that lands on it clears
+ * `rawThreshold + headroom`.
+ *
+ * Minimal OKLCH move: hue/chroma fixed, lightness stepped from the current
+ * surface toward bg's lightness (never past it). Because `muted`/`accent`/`fg`
+ * are each already tuned to clear bg at `+headroom`, `surface === bg` is a
+ * guaranteed satisfying endpoint, so the search always terminates on a value at
+ * least as elevated as bg.
+ */
+function nudgeBgTowardAnchor(
+  bgSideHex: string,
+  anchorBgHex: string,
+  fgColors: string[],
+  rawThreshold: number,
+  headroom: number = HEADROOM,
+): NudgeResult {
+  const start = parseOklch(bgSideHex);
+  const anchor = parseOklch(anchorBgHex);
+  const upstreamHex = toHex(start);
+  const target = rawThreshold + headroom;
+  const minRatio = (o: Oklch): number => Math.min(...fgColors.map((fc) => contrastRatio(fc, formatOklch(o))));
+
+  const toResult = (candidate: Oklch, ratio: number): NudgeResult => ({
+    value: formatOklch(candidate),
+    ratio,
+    upstreamHex,
+    deltaL: Number((candidate.l - start.l).toFixed(4)),
+    deltaC: Number((candidate.c - start.c).toFixed(4)),
+    ok: ratio >= target,
+    rawThreshold,
+    headroom,
+  });
+
+  const startRatio = minRatio(start);
+  if (startRatio >= target) return toResult(start, startRatio);
+
+  const dir = Math.sign(anchor.l - start.l) || -1;
+  const maxSteps = Math.round(Math.abs(anchor.l - start.l) / L_STEP) + 1;
+  let best = start;
+  let bestRatio = startRatio;
+  for (let i = 1; i <= maxSteps; i++) {
+    const raw = start.l + dir * L_STEP * i;
+    const l = dir < 0 ? Math.max(raw, anchor.l) : Math.min(raw, anchor.l);
+    const candidate = { l, c: start.c, h: start.h };
+    const ratio = minRatio(candidate);
+    if (ratio > bestRatio) {
+      bestRatio = ratio;
+      best = candidate;
+    }
+    if (ratio >= target + SEARCH_MARGIN) return toResult(candidate, ratio);
+    if (l === anchor.l) break;
+  }
+  return toResult(best, bestRatio);
+}
+
 // ---------------------------------------------------------------------------
 // Color-source description — used both by --suggest comments and the S3
 // per-scheme failure inventories (which color feeds the pair).
@@ -341,11 +404,20 @@ export function computeSchemeEdits(scheme: ColorScheme, report: SchemeReport, he
   let warningFinal = sem.warning;
   let codeBgFinal: string | undefined;
 
-  // 1. muted (§3 decision — raise to the 4.5 text floor)
-  if (fails("muted-vs-bg")) {
-    const r = nudgeForThreshold(sem.muted, 4.5, (color) => contrastRatio(color, bg), headroom);
+  // 1. muted (§3 decision + rendered-bg finding #2510). `muted` renders as
+  //    secondary text on the page bg AND on the elevated backgrounds codeBg /
+  //    chatAssistantBg (code-block title, ai-chat loading bubble). One muted
+  //    value must clear its WORST near-bg background at +headroom — tune against
+  //    the min-contrast of all three. `surface` is handled bg-side below (it can
+  //    sit far from bg on some schemes; blowing muted up to clear it would wreck
+  //    muted's character — see nudgeBgTowardAnchor).
+  const mutedNearBgFails = fails("muted-vs-bg") || fails("muted-vs-code-bg") || fails("muted-vs-chat-assistant-bg");
+  if (mutedNearBgFails) {
+    const mutedBgs = [bg, sem.codeBg, sem.chatAssistantBg];
+    const ratioFn = (color: string) => Math.min(...mutedBgs.map((t) => contrastRatio(color, t)));
+    const r = nudgeForThreshold(sem.muted, 4.5, ratioFn, headroom);
     mutedFinal = r.value;
-    semanticEdits.push({ key: "muted", value: r.value, comment: fmtPairComment(r, "muted-vs-bg"), nudge: r });
+    semanticEdits.push({ key: "muted", value: r.value, comment: fmtPairComment(r, "muted-vs-{bg,codeBg,chatAssistantBg}"), nudge: r });
   }
 
   // 2. accent / admonition-accent / admonition-important (raw-p5 exception, §2.3)
@@ -395,7 +467,11 @@ export function computeSchemeEdits(scheme: ColorScheme, report: SchemeReport, he
     }
   }
 
-  // 3. fg-vs-bg / fg-vs-surface
+  // 3. fg-vs-bg / fg-vs-surface. When fg-vs-bg fails we move fg (satisfying
+  //    fg-vs-surface at the same time if it also fails). The fg-vs-surface-only
+  //    case (fg clears bg but not surface) is folded into the surface section
+  //    below, so surface is edited in exactly one place.
+  let fgFinal = fg;
   const fgVsBgFails = fails("fg-vs-bg");
   const fgVsSurfaceFails = fails("fg-vs-surface");
   if (fgVsBgFails) {
@@ -403,10 +479,36 @@ export function computeSchemeEdits(scheme: ColorScheme, report: SchemeReport, he
     if (fgVsSurfaceFails) targets.push(sem.surface);
     const ratioFn = (color: string) => Math.min(...targets.map((t) => contrastRatio(color, t)));
     const r = nudgeForThreshold(fg, 4.5, ratioFn, headroom);
+    fgFinal = r.value;
     topLevelEdits.push({ key: "foreground", value: r.value, comment: fmtPairComment(r, "fg-vs-bg" + (fgVsSurfaceFails ? " + fg-vs-surface" : "")), nudge: r });
-  } else if (fgVsSurfaceFails) {
-    const r = nudgeForThreshold(sem.surface, 4.5, (color) => contrastRatio(fg, color), headroom);
-    semanticEdits.push({ key: "surface", value: r.value, comment: fmtPairComment(r, "fg-vs-surface"), nudge: r });
+  }
+
+  // 3b. surface (rendered-bg finding #2510). `surface` is the elevated chrome bg
+  //     (footer/toolbar/dropdowns); fg/muted/accent all render as text on it.
+  //     Pull surface toward the page bg (minimal L move) until every text color
+  //     landing on it clears +headroom. Handles muted-vs-surface (16 schemes),
+  //     accent-vs-surface (3), and the fg-vs-surface-only case. All surface edits
+  //     go through here — never a second `key:"surface"` push.
+  const surfaceFgColors: string[] = [];
+  if (fgVsSurfaceFails && !fgVsBgFails) surfaceFgColors.push(fgFinal);
+  if (fails("muted-vs-surface")) surfaceFgColors.push(mutedFinal);
+  if (fails("accent-vs-surface")) surfaceFgColors.push(accentFinal);
+  if (surfaceFgColors.length > 0) {
+    const r = nudgeBgTowardAnchor(sem.surface, bg, surfaceFgColors, 4.5, headroom);
+    // Skip a no-op surface override: when raising `muted` above already lifted
+    // muted-vs-surface past the headroom target at the CURRENT surface, surface
+    // needs no move — don't pin an otherwise-default `surface` to an explicit
+    // literal for nothing.
+    if (Math.abs(r.deltaL) > 1e-9) {
+      const pairLabel = [
+        fgVsSurfaceFails && !fgVsBgFails ? "fg" : null,
+        fails("muted-vs-surface") ? "muted" : null,
+        fails("accent-vs-surface") ? "accent" : null,
+      ]
+        .filter(Boolean)
+        .join("/");
+      semanticEdits.push({ key: "surface", value: r.value, comment: fmtPairComment(r, `${pairLabel}-vs-surface (surface→bg)`), nudge: r });
+    }
   }
 
   // 4. accentHover

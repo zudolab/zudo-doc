@@ -20,7 +20,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.811 0.122 307.03)" /* #d6acff */, "oklch(0.799 0.160 339.03)" /* #ff92df */, "oklch(0.943 0.087 195.78)" /* #a4ffff */, "oklch(1.000 0.000 0.00)" /* #ffffff */,
     ],
     semantic: {
-      muted: "oklch(0.662 0.006 274.91)" /* upstream #86878b → L+0.038, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
+      muted: "oklch(0.700 0.006 274.91)" /* upstream #86878b → L+0.076, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.62:1
       codeBg: "oklch(0.328 0.022 277.51)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.977 0.008 106.55)" /* upstream #f8f8f2 → L+0.000 for AA (scheme-a11y #2489) */,
       danger: "oklch(0.782 0.206 24.43)" /* upstream #ff5555 → L+0.100, C-0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
@@ -50,7 +50,8 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.731 0.135 259.63)" /* #74a8fc */, "oklch(0.829 0.100 337.73)" /* #f2aede */, "oklch(0.812 0.102 185.07)" /* #6bd7ca */, "oklch(0.817 0.040 272.86)" /* #bac2de */,
     ],
     semantic: {
-      muted: "oklch(0.628 0.036 275.61)" /* upstream #787d94 → L+0.034, C+0.001 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.63:1
+      muted: "oklch(0.658 0.036 275.61)" /* upstream #787d94 → L+0.064, C+0.001 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.61:1
+      surface: "oklch(0.282 0.032 280.15)" /* upstream #45475a → L-0.122 for AA (scheme-a11y #2489) */, // muted-vs-surface (surface→bg, rendered-bg #2510) → 4.63:1
       codeBg: "oklch(0.283 0.030 283.91)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.879 0.043 272.28)" /* upstream #cdd6f4 → L+0.000 for AA (scheme-a11y #2489) */,
       matchedKeywordBg: "oklch(0.919 0.070 86.53)" /* derived from warning, base for matchedKeywordFg — scheme-a11y #2489 §2.2 */,
@@ -79,7 +80,8 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.697 0.059 248.69)" /* #81a1c1 */, "oklch(0.692 0.062 332.66)" /* #b48ead */, "oklch(0.763 0.048 194.49)" /* #8fbcbb */, "oklch(0.951 0.007 260.73)" /* #eceff4 */,
     ],
     semantic: {
-      muted: "oklch(0.697 0.019 264.44)" /* upstream #8c929e → L+0.038, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.63:1
+      muted: "oklch(0.739 0.019 264.44)" /* upstream #8c929e → L+0.080, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.62:1
+      surface: "oklch(0.365 0.029 266.47)" /* upstream #3b4252 → L-0.014 for AA (scheme-a11y #2489) */, // muted-vs-surface (surface→bg, rendered-bg #2510) → 4.61:1
       codeBg: "oklch(0.364 0.023 264.18)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.899 0.016 262.75)" /* upstream #d8dee9 → L+0.000 for AA (scheme-a11y #2489) */,
       info: "oklch(0.757 0.059 248.69)" /* upstream #81a1c1 → L+0.060, C-0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.62:1
@@ -110,7 +112,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.719 0.132 264.20)" /* #7aa2f7 */, "oklch(0.751 0.134 299.50)" /* #bb9af7 */, "oklch(0.820 0.105 235.72)" /* #7dcfff */, "oklch(0.846 0.061 274.76)" /* #c0caf5 */,
     ],
     semantic: {
-      muted: "oklch(0.618 0.045 275.77)" /* upstream #737996 → L+0.036, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.63:1
+      muted: "oklch(0.646 0.045 275.77)" /* upstream #737996 → L+0.064, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.63:1
       codeBg: "oklch(0.266 0.021 280.49)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.846 0.061 274.76)" /* upstream #c0caf5 → L+0.000 for AA (scheme-a11y #2489) */,
       matchedKeywordBg: "oklch(0.784 0.106 75.43)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
@@ -139,7 +141,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.693 0.042 169.77)" /* #83a598 */, "oklch(0.705 0.098 2.19)" /* #d3869b */, "oklch(0.756 0.108 137.68)" /* #8ec07c */, "oklch(0.894 0.057 89.24)" /* #ebdbb2 */,
     ],
     semantic: {
-      muted: "oklch(0.655 0.029 67.26)" /* upstream #928374 → L+0.036, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
+      muted: "oklch(0.691 0.029 67.26)" /* upstream #928374 → L+0.072, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.62:1
       codeBg: "oklch(0.317 0.000 0.00)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.894 0.057 89.24)" /* upstream #ebdbb2 → L+0.000 for AA (scheme-a11y #2489) */,
       success: "oklch(0.702 0.135 109.12)" /* upstream #98971a → L+0.046, C-0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.63:1
@@ -170,7 +172,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.730 0.121 245.30)" /* #61afef */, "oklch(0.694 0.164 318.21)" /* #c678dd */, "oklch(0.723 0.0916 206.31)" /* #56b6c2 */, "oklch(0.762 0.020 262.99)" /* #abb2bf */,
     ],
     semantic: {
-      muted: "oklch(0.642 0.018 266.20)" /* upstream #7d828d → L+0.036, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
+      muted: "oklch(0.676 0.018 266.20)" /* upstream #7d828d → L+0.070, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.61:1
       codeBg: "oklch(0.303 0.013 258.37)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.762 0.020 262.99)" /* upstream #abb2bf → L+0.000 for AA (scheme-a11y #2489) */,
       danger: "oklch(0.707 0.145 17.00)" /* upstream #e06c75 → L+0.036, C+0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.63:1
@@ -199,7 +201,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.654 0.020 205.26)" /* #839496 */, "oklch(0.582 0.126 279.10)" /* #6c71c4 */, "oklch(0.698 0.016 196.79)" /* #93a1a1 */, "oklch(0.974 0.026 90.10)" /* #fdf6e3 */,
     ],
     semantic: {
-      muted: "oklch(0.647 0.025 207.05)" /* upstream #73888b → L+0.036, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.64:1
+      muted: "oklch(0.659 0.025 207.05)" /* upstream #73888b → L+0.048, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.61:1
       surface: "oklch(0.275 0.052 219.65)" /* upstream #073642 (p0) → L-0.034, C+0.000 for AA (scheme-a11y #2489) */, // fg-vs-surface → 4.62:1
       success: "oklch(0.688 0.151 118.60)" /* upstream #859900 (p2) → L+0.044, C+0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.62:1
       warning: "oklch(0.694 0.134 85.72)" /* upstream #b58900 (p3) → L+0.040 for AA (scheme-a11y #2489) */, // admonition-warning → 4.62:1
@@ -235,7 +237,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.614 0.1294 237.50)" /* #178ec8 */, "oklch(0.642 0.193 357.14)" /* #e24d8e */, "oklch(0.687 0.1243 180.45)" /* #00b39e */, "oklch(0.967 0.033 91.67)" /* #fcf4dc */,
     ],
     semantic: {
-      muted: "oklch(0.609 0.039 207.40)" /* upstream #5d7f84 → L+0.036, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
+      muted: "oklch(0.637 0.039 207.40)" /* upstream #5d7f84 → L+0.065, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.62:1
       warning: "oklch(0.654 0.122 81.11)" /* upstream #a57706 (p3) → L+0.054, C-0.000 for AA (scheme-a11y #2489) */, // admonition-warning → 4.62:1
       info: "oklch(0.657 0.148 251.69)" /* upstream #2176c7 (p4) → L+0.098, C+0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.64:1
       danger: "oklch(0.663 0.211 26.32)" /* upstream #d11c24 (p1) → L+0.112, C+0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
@@ -303,7 +305,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.774 0.136 46.20)" /* #fc9867 */, "oklch(0.741 0.121 290.68)" /* #ab9df2 */, "oklch(0.838 0.095 205.66)" /* #78dce8 */, "oklch(0.991 0.003 106.45)" /* #fcfcfa */,
     ],
     semantic: {
-      muted: "oklch(0.664 0.002 325.60)" /* upstream #898889 → L+0.036, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
+      muted: "oklch(0.702 0.002 325.60)" /* upstream #898889 → L+0.074, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.62:1
       danger: "oklch(0.768 0.194 8.45)" /* upstream #ff6188 (p1) → L+0.062, C+0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
       codeBg: "oklch(0.330 0.008 317.72)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       codeFg: "oklch(0.991 0.003 106.45)" /* derived from real fg (p7) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
@@ -333,7 +335,8 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.642 0.219 296.47)" /* #9d65ff */, "oklch(0.617 0.247 11.21)" /* #f4005f */, "oklch(0.802 0.1127 214.32)" /* #58d1eb */, "oklch(0.971 0.009 106.57)" /* #f6f6ef */,
     ],
     semantic: {
-      muted: "oklch(0.583 0.000 0.00)" /* upstream #717171 (p8) → L+0.034 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.63:1
+      muted: "oklch(0.599 0.000 0.00)" /* upstream #717171 → L+0.050 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.62:1
+      surface: "oklch(0.194 0.000 0.00)" /* upstream #1a1a1a → L-0.024 for AA (scheme-a11y #2489) */, // muted/accent-vs-surface (surface→bg, rendered-bg #2510) → 4.62:1
       danger: "oklch(0.633 0.247 11.21)" /* upstream #f4005f (p1) → L+0.016, C+0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
       codeBg: "oklch(0.194 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       codeFg: "oklch(0.885 0.000 0.00)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
@@ -363,6 +366,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.506 0.277 263.92)" /* #0443ff */, "oklch(0.677 0.3125 327.47)" /* #f200f6 */, "oklch(0.802 0.129 227.84)" /* #51ceff */, "oklch(1.000 0.000 0.00)" /* #ffffff */,
     ],
     semantic: {
+      muted: "oklch(0.614 0.000 0.00)" /* upstream #838383 → L+0.004 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.62:1
       info: "oklch(0.682 0.277 263.92)" /* upstream #0443ff (p4) → L+0.176, C-0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.63:1
       danger: "oklch(0.646 0.238 25.50)" /* upstream #fa2934 (p1) → L+0.012, C-0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
       codeBg: "oklch(0.222 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
@@ -392,7 +396,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.642 0.219 296.47)" /* #9d65ff */, "oklch(0.617 0.247 11.21)" /* #f4005f */, "oklch(0.802 0.1127 214.32)" /* #58d1eb */, "oklch(0.971 0.009 106.57)" /* #f6f6ef */,
     ],
     semantic: {
-      muted: "oklch(0.612 0.012 106.77)" /* upstream #797971 (p8) → L+0.038 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.64:1
+      muted: "oklch(0.638 0.012 106.77)" /* upstream #797971 → L+0.064 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.62:1
       info: "oklch(0.682 0.219 296.47)" /* upstream #9d65ff (p4) → L+0.040, C+0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.61:1
       danger: "oklch(0.719 0.247 11.21)" /* upstream #f4005f (p1) → L+0.102, C+0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.62:1
       codeBg: "oklch(0.258 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
@@ -423,7 +427,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.744 0.131 264.28)" /* #82aaff */, "oklch(0.743 0.135 311.06)" /* #c792ea */, "oklch(0.856 0.094 225.87)" /* #89ddff */, "oklch(1.000 0.000 0.00)" /* #ffffff */,
     ],
     semantic: {
-      muted: "oklch(0.592 0.021 272.10)" /* upstream #707481 → L+0.032, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
+      muted: "oklch(0.608 0.021 272.10)" /* upstream #707481 → L+0.048, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.63:1
       surface: "oklch(0.210 0.018 270.39)" /* #151821 */,
       codeBg: "oklch(0.210 0.018 270.39)" /* derived from surface — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       codeFg: "oklch(0.665 0.023 273.88)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
@@ -452,7 +456,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.744 0.131 264.28)" /* #82aaff */, "oklch(0.743 0.135 311.06)" /* #c792ea */, "oklch(0.856 0.094 225.87)" /* #89ddff */, "oklch(1.000 0.000 0.00)" /* #ffffff */,
     ],
     semantic: {
-      muted: "oklch(0.631 0.010 196.90)" /* upstream #798181 → L+0.034, C+0.001 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.64:1
+      muted: "oklch(0.661 0.010 196.90)" /* upstream #798181 → L+0.064, C+0.001 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.61:1
       danger: "oklch(0.711 0.207 14.79)" /* upstream #ff5370 (p1) → L+0.026, C-0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
       codeBg: "oklch(0.288 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       codeFg: "oklch(0.988 0.018 196.87)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
@@ -482,7 +486,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.703 0.141 250.23)" /* #54a4f3 */, "oklch(0.582 0.185 320.87)" /* #aa4dbc */, "oklch(0.729 0.1194 210.45)" /* #26bbd1 */, "oklch(0.885 0.000 0.00)" /* #d9d9d9 */,
     ],
     semantic: {
-      muted: "oklch(0.637 0.001 106.44)" /* upstream #818180 → L+0.034, C-0.001 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
+      muted: "oklch(0.671 0.001 106.44)" /* upstream #818180 → L+0.068, C-0.001 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.64:1
       accent: 14,
       success: "oklch(0.674 0.132 135.86)" /* upstream #457b24 (p2) → L+0.148, C+0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.62:1
       info: "oklch(0.690 0.170 260.67)" /* upstream #134eb2 (p4) → L+0.238 for AA (scheme-a11y #2489) */, // admonition-info → 4.61:1
@@ -547,7 +551,8 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.822 0.054 209.56)" /* #9ccfd8 */, "oklch(0.776 0.095 304.99)" /* #c4a7e7 */, "oklch(0.836 0.054 21.14)" /* #ebbcba */, "oklch(0.909 0.030 289.97)" /* #e0def4 */,
     ],
     semantic: {
-      muted: "oklch(0.610 0.027 290.61)" /* upstream #787688 → L+0.036, C-0.001 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.63:1
+      muted: "oklch(0.636 0.027 290.61)" /* upstream #787688 → L+0.062, C-0.001 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.63:1
+      surface: "oklch(0.255 0.042 289.23)" /* upstream #26233a → L-0.016, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-surface (surface→bg, rendered-bg #2510) → 4.63:1
       codeBg: "oklch(0.253 0.025 291.13)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.909 0.030 289.97)" /* upstream #e0def4 → L+0.000 for AA (scheme-a11y #2489) */,
       success: "oklch(0.642 0.079 227.72)" /* upstream #31748f → L+0.114, C-0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.62:1
@@ -576,7 +581,8 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.822 0.054 209.56)" /* #9ccfd8 */, "oklch(0.776 0.095 304.99)" /* #c4a7e7 */, "oklch(0.765 0.097 21.92)" /* #ea9a97 */, "oklch(0.909 0.030 289.97)" /* #e0def4 */,
     ],
     semantic: {
-      muted: "oklch(0.641 0.032 289.79)" /* upstream #817f94 → L+0.035, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.64:1
+      muted: "oklch(0.673 0.032 289.79)" /* upstream #817f94 → L+0.068, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.62:1
+      surface: "oklch(0.300 0.050 289.83)" /* upstream #393552 → L-0.046, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-surface (surface→bg, rendered-bg #2510) → 4.63:1
       codeBg: "oklch(0.300 0.039 287.73)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.909 0.030 289.97)" /* upstream #e0def4 → L+0.000 for AA (scheme-a11y #2489) */,
       success: "oklch(0.682 0.093 228.00)" /* upstream #3e8fb0 → L+0.068, C+0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.63:1
@@ -607,7 +613,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.629 0.066 210.12)" /* #56949f */, "oklch(0.617 0.074 305.70)" /* #907aa9 */, "oklch(0.696 0.106 23.03)" /* #d7827e */, "oklch(0.460 0.063 289.56)" /* #575279 */,
     ],
     semantic: {
-      muted: "oklch(0.544 0.043 293.21)" /* upstream #7b7692 → L-0.036, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
+      muted: "oklch(0.516 0.043 293.21)" /* upstream #7b7692 → L-0.064, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.61:1
       accent: 2,
       accentHover: "oklch(0.554 0.106 23.03)" /* upstream #d7827e → L-0.142, C+0.000 for AA (scheme-a11y #2489) */, // accent-hover-vs-bg → 4.61:1
       codeBg: "oklch(0.930 0.011 71.90)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
@@ -676,7 +682,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.716 0.137 258.28)" /* #6ca4f8 */, "oklch(0.662 0.168 349.52)" /* #db61a2 */, "oklch(0.523 0.078 220.34)" /* #2b7489 */, "oklch(1.000 0.000 0.00)" /* #ffffff */,
     ],
     semantic: {
-      muted: "oklch(0.592 0.016 248.11)" /* upstream #6d757d → L+0.034, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
+      muted: "oklch(0.614 0.016 248.11)" /* upstream #6d757d → L+0.056, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.63:1
       accentHover: "oklch(0.587 0.078 220.34)" /* upstream #2b7489 → L+0.064 for AA (scheme-a11y #2489) */, // accent-hover-vs-bg → 4.62:1
       codeBg: "oklch(0.222 0.009 264.33)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.662 0.018 250.92)" /* upstream #8b949e → L+0.000 for AA (scheme-a11y #2489) */,
@@ -706,7 +712,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.758 0.129 249.58)" /* #6cb6ff */, "oklch(0.845 0.091 307.26)" /* #dcbdfb */, "oklch(0.804 0.111 201.78)" /* #56d4dd */, "oklch(0.880 0.021 248.07)" /* #cdd9e5 */,
     ],
     semantic: {
-      muted: "oklch(0.648 0.019 248.14)" /* upstream #7b858f → L+0.036, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
+      muted: "oklch(0.674 0.019 248.14)" /* upstream #7b858f → L+0.062, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.64:1
       surface: "oklch(0.300 0.016 259.79)" /* #292e36 */,
       codeBg: "oklch(0.300 0.016 259.79)" /* derived: reuses existing surface override (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.783 0.023 248.13)" /* upstream #adbac7 → L+0.000 for AA (scheme-a11y #2489) */,
@@ -803,7 +809,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.634 0.112 236.35)" /* #3a94c5 */, "oklch(0.687 0.174 340.99)" /* #df69ba */, "oklch(0.653 0.121 163.88)" /* #35a77c */, "oklch(0.988 0.016 91.55)" /* #fffbef */,
     ],
     semantic: {
-      muted: "oklch(0.517 0.017 222.87)" /* upstream #68757a → L-0.036, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
+      muted: "oklch(0.509 0.017 222.87)" /* upstream #68757a → L-0.044, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.64:1
       accent: "oklch(0.479 0.017 222.87)" /* upstream #68757a → L-0.074, C-0.000 for AA (scheme-a11y #2489) */, // accent-vs-bg + admonition-accent → 4.63:1
       surface: "oklch(0.933 0.028 100.28)" /* upstream #e6e3ce → L+0.020, C-0.000 for AA (scheme-a11y #2489) */, // fg-vs-surface → 4.61:1
       accentHover: "oklch(0.499 0.121 163.88)" /* upstream #35a77c → L-0.154, C+0.000 for AA (scheme-a11y #2489) */, // accent-hover-vs-bg → 4.63:1
@@ -841,7 +847,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.741 0.064 225.72)" /* #7fb4ca */, "oklch(0.652 0.047 298.38)" /* #938aa9 */, "oklch(0.696 0.051 181.30)" /* #7aa89f */, "oklch(0.876 0.039 99.09)" /* #dcd7ba */,
     ],
     semantic: {
-      muted: "oklch(0.626 0.017 98.45)" /* upstream #807e73 → L+0.035, C+0.001 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
+      muted: "oklch(0.658 0.017 98.45)" /* upstream #807e73 → L+0.067, C+0.001 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.63:1
       codeBg: "oklch(0.283 0.017 285.06)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.876 0.039 99.09)" /* upstream #dcd7ba → L+0.000 for AA (scheme-a11y #2489) */,
       success: "oklch(0.666 0.070 136.92)" /* upstream #76946a → L+0.034, C+0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.61:1
@@ -899,7 +905,8 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.732 0.082 255.63)" /* #86abdc */, "oklch(0.754 0.095 301.79)" /* #baa1e2 */, "oklch(0.817 0.087 196.50)" /* #7ad5d6 */, "oklch(0.919 0.001 286.37)" /* #e4e4e5 */,
     ],
     semantic: {
-      muted: "oklch(0.634 0.012 256.72)" /* upstream #7b8087 → L+0.036, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
+      muted: "oklch(0.668 0.012 256.72)" /* upstream #7b8087 → L+0.070, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.63:1
+      surface: "oklch(0.294 0.016 275.64)" /* upstream #393b44 → L-0.060, C+0.000 for AA (scheme-a11y #2489) */, // muted/accent-vs-surface (surface→bg, rendered-bg #2510) → 4.63:1
       codeBg: "oklch(0.293 0.029 255.22)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.851 0.002 247.84)" /* upstream #cdcecf → L+0.000 for AA (scheme-a11y #2489) */,
       danger: "oklch(0.698 0.157 8.04)" /* upstream #c94f6d → L+0.102, C+0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.64:1
@@ -929,7 +936,8 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.775 0.115 261.10)" /* #8cb6ff */, "oklch(0.786 0.130 301.37)" /* #c8a5ff */, "oklch(0.764 0.136 239.26)" /* #52bdff */, "oklch(0.919 0.001 286.37)" /* #e4e4e5 */,
     ],
     semantic: {
-      muted: "oklch(0.601 0.002 247.86)" /* upstream #767778 → L+0.032 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
+      muted: "oklch(0.625 0.002 247.86)" /* upstream #767778 → L+0.056 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.61:1
+      surface: "oklch(0.239 0.000 0.00)" /* upstream #282828 → L-0.038 for AA (scheme-a11y #2489) */, // muted-vs-surface (surface→bg, rendered-bg #2510) → 4.62:1
       codeBg: "oklch(0.240 0.000 0.00)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.967 0.006 264.53)" /* upstream #f2f4f8 → L+0.000 for AA (scheme-a11y #2489) */,
       matchedKeywordBg: "oklch(0.722 0.123 192.75)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
@@ -1021,7 +1029,8 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.722 0.086 224.01)" /* #65b1cd */, "oklch(0.804 0.088 305.02)" /* #ccb1ed */, "oklch(0.855 0.055 209.30)" /* #a6dae3 */, "oklch(0.915 0.031 289.76)" /* #e2e0f7 */,
     ],
     semantic: {
-      muted: "oklch(0.641 0.032 289.79)" /* upstream #817f94 → L+0.035, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.64:1
+      muted: "oklch(0.673 0.032 289.79)" /* upstream #817f94 → L+0.068, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.62:1
+      surface: "oklch(0.300 0.050 289.83)" /* upstream #393552 → L-0.046, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-surface (surface→bg, rendered-bg #2510) → 4.63:1
       codeBg: "oklch(0.300 0.039 287.73)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.909 0.030 289.97)" /* upstream #e0def4 → L+0.000 for AA (scheme-a11y #2489) */,
       info: "oklch(0.682 0.083 224.37)" /* upstream #569fba → L+0.016, C-0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.62:1
@@ -1052,7 +1061,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.594 0.220 267.24)" /* #456eff */, "oklch(0.776 0.175 340.49)" /* #fe85d8 */, "oklch(0.645 0.0984 202.87)" /* #2d9fa8 */, "oklch(0.808 0.017 271.20)" /* #bcc0cc */,
     ],
     semantic: {
-      muted: "oklch(0.533 0.034 279.08)" /* upstream #6c6f85 → L-0.014, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.64:1
+      muted: "oklch(0.513 0.034 279.08)" /* upstream #6c6f85 → L-0.034, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.62:1
       accent: "oklch(0.503 0.226 262.09)" /* upstream #1e66f5 → L-0.056, C+0.001 for AA (scheme-a11y #2489) */, // accent-vs-bg + admonition-accent → 4.63:1
       accentHover: "oklch(0.519 0.098 202.87)" /* upstream #2d9fa8 → L-0.126, C-0.000 for AA (scheme-a11y #2489) */, // accent-hover-vs-bg → 4.61:1
       surface: "oklch(0.928 0.008 271.32)" /* #e5e7ed */,
@@ -1089,7 +1098,8 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.708 0.127 265.71)" /* #7b9ef0 */, "oklch(0.811 0.115 338.12)" /* #f2a4db */, "oklch(0.742 0.096 186.69)" /* #5abfb5 */, "oklch(0.808 0.051 272.68)" /* #b5bfe2 */,
     ],
     semantic: {
-      muted: "oklch(0.702 0.046 273.39)" /* upstream #8a92b0 → L+0.038, C+0.001 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
+      muted: "oklch(0.744 0.046 273.39)" /* upstream #8a92b0 → L+0.080, C+0.001 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.61:1
+      surface: "oklch(0.368 0.037 272.97)" /* upstream #51576d → L-0.092, C+0.000 for AA (scheme-a11y #2489) */, // muted/accent-vs-surface (surface→bg, rendered-bg #2510) → 4.63:1
       codeBg: "oklch(0.369 0.032 274.76)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.862 0.053 273.35)" /* upstream #c6d0f5 → L+0.000 for AA (scheme-a11y #2489) */,
       info: "oklch(0.766 0.104 265.66)" /* upstream #8caaee → L+0.024, C-0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.62:1
@@ -1120,7 +1130,8 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.715 0.133 263.80)" /* #78a1f6 */, "oklch(0.820 0.108 337.62)" /* #f2a9dd */, "oklch(0.777 0.098 186.22)" /* #63cbc0 */, "oklch(0.812 0.046 274.27)" /* #b8c0e0 */,
     ],
     semantic: {
-      muted: "oklch(0.656 0.043 275.59)" /* upstream #7e84a0 → L+0.038, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.63:1
+      muted: "oklch(0.692 0.043 275.59)" /* upstream #7e84a0 → L+0.074, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.63:1
+      surface: "oklch(0.320 0.039 276.95)" /* upstream #494d64 → L-0.106, C+0.001 for AA (scheme-a11y #2489) */, // muted-vs-surface (surface→bg, rendered-bg #2510) → 4.61:1
       codeBg: "oklch(0.319 0.035 276.94)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.871 0.048 273.67)" /* upstream #cad3f5 → L+0.000 for AA (scheme-a11y #2489) */,
       matchedKeywordBg: "oklch(0.879 0.074 84.75)" /* derived from warning, base for matchedKeywordFg — scheme-a11y #2489 §2.2 */,
@@ -1149,7 +1160,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.693 0.042 169.77)" /* #83a598 */, "oklch(0.705 0.098 2.19)" /* #d3869b */, "oklch(0.756 0.108 137.68)" /* #8ec07c */, "oklch(0.894 0.057 89.24)" /* #ebdbb2 */,
     ],
     semantic: {
-      muted: "oklch(0.629 0.029 67.26)" /* upstream #928374 → L+0.010, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.64:1
+      muted: "oklch(0.659 0.029 67.26)" /* upstream #928374 → L+0.040, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.63:1
       codeBg: "oklch(0.281 0.005 219.67)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.894 0.057 89.24)" /* upstream #ebdbb2 → L+0.000 for AA (scheme-a11y #2489) */,
       success: "oklch(0.668 0.135 109.12)" /* upstream #98971a → L+0.012, C-0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.62:1
@@ -1180,7 +1191,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.713 0.055 179.19)" /* #7daea3 */, "oklch(0.705 0.098 2.19)" /* #d3869b */, "oklch(0.726 0.085 141.09)" /* #89b482 */, "oklch(0.839 0.056 81.25)" /* #ddc7a1 */,
     ],
     semantic: {
-      muted: "oklch(0.654 0.037 80.14)" /* upstream #91836c → L+0.038, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
+      muted: "oklch(0.690 0.037 80.14)" /* upstream #91836c → L+0.074, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.61:1
       codeBg: "oklch(0.317 0.000 0.00)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.811 0.057 81.23)" /* upstream #d4be98 → L+0.000 for AA (scheme-a11y #2489) */,
       danger: "oklch(0.723 0.161 25.42)" /* upstream #ea6962 → L+0.046, C-0.001 for AA (scheme-a11y #2489) */, // admonition-danger → 4.63:1
@@ -1210,7 +1221,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.471 0.0816 215.81)" /* #076678 */, "oklch(0.489 0.124 344.28)" /* #8f3f71 */, "oklch(0.534 0.082 155.40)" /* #427b58 */, "oklch(0.344 0.007 48.52)" /* #3c3836 */,
     ],
     semantic: {
-      muted: "oklch(0.532 0.025 92.65)" /* upstream #7b7666 → L-0.034, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
+      muted: "oklch(0.504 0.025 92.65)" /* upstream #7b7666 → L-0.062, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.61:1
       accent: "oklch(0.486 0.066 199.49)" /* upstream #458588 → L-0.090, C+0.000 for AA (scheme-a11y #2489) */, // accent-vs-bg + admonition-accent → 4.62:1
       accentHover: "oklch(0.522 0.082 155.40)" /* upstream #427b58 → L-0.012, C-0.000 for AA (scheme-a11y #2489) */, // accent-hover-vs-bg → 4.63:1
       codeBg: "oklch(0.916 0.056 96.15)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
@@ -1242,7 +1253,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.777 0.130 237.29)" /* #59c2ff */, "oklch(0.797 0.131 306.33)" /* #d2a6ff */, "oklch(0.865 0.088 171.10)" /* #95e6cb */, "oklch(1.000 0.000 0.00)" /* #ffffff */,
     ],
     semantic: {
-      muted: "oklch(0.585 0.003 106.50)" /* upstream #727270 → L+0.034 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
+      muted: "oklch(0.603 0.003 106.50)" /* upstream #727270 → L+0.052 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.62:1
       codeBg: "oklch(0.203 0.014 264.09)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.798 0.010 93.60)" /* upstream #bfbdb6 → L+0.000 for AA (scheme-a11y #2489) */,
       matchedKeywordBg: "oklch(0.808 0.140 70.34)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
@@ -1270,7 +1281,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.818 0.111 232.31)" /* #73d0ff */, "oklch(0.853 0.093 307.24)" /* #dfbfff */, "oklch(0.865 0.088 171.10)" /* #95e6cb */, "oklch(1.000 0.000 0.00)" /* #ffffff */,
     ],
     semantic: {
-      muted: "oklch(0.641 0.002 247.85)" /* upstream #808182 → L+0.038, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.63:1
+      muted: "oklch(0.675 0.002 247.85)" /* upstream #808182 → L+0.072, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.63:1
       codeBg: "oklch(0.301 0.024 267.11)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.838 0.011 95.19)" /* upstream #cccac2 → L+0.000 for AA (scheme-a11y #2489) */,
       matchedKeywordBg: "oklch(0.867 0.124 83.62)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
@@ -1333,7 +1344,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.754 0.1415 239.60)" /* #49baff */, "oklch(0.694 0.232 348.53)" /* #fc4cb4 */, "oklch(0.883 0.094 213.65)" /* #8be9fe */, "oklch(0.946 0.001 106.43)" /* #ededec */,
     ],
     semantic: {
-      muted: "oklch(0.627 0.003 264.53)" /* upstream #7d7e80 → L+0.034, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
+      muted: "oklch(0.659 0.003 264.53)" /* upstream #7d7e80 → L+0.066, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.64:1
       codeBg: "oklch(0.283 0.019 280.40)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.941 0.008 114.23)" /* upstream #ebece6 → L+0.000 for AA (scheme-a11y #2489) */,
       danger: "oklch(0.722 0.221 24.95)" /* upstream #fc4346 → L+0.064, C+0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.62:1
@@ -1363,7 +1374,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.641 0.160 253.50)" /* #3b8eea */, "oklch(0.697 0.179 327.28)" /* #d670d6 */, "oklch(0.726 0.1233 219.34)" /* #29b8db */, "oklch(0.922 0.000 0.00)" /* #e5e5e5 */,
     ],
     semantic: {
-      muted: "oklch(0.622 0.000 0.00)" /* upstream #7d7d7d → L+0.032 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
+      muted: "oklch(0.652 0.000 0.00)" /* upstream #7d7d7d → L+0.062 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.62:1
       info: "oklch(0.665 0.153 254.17)" /* upstream #2472c8 (p4) → L+0.114, C+0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.61:1
       danger: "oklch(0.685 0.193 26.08)" /* upstream #cd3131 (p1) → L+0.126, C+0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.62:1
       codeBg: "oklch(0.275 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
@@ -1394,7 +1405,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.744 0.131 264.28)" /* #82aaff */, "oklch(0.743 0.135 311.06)" /* #c792ea */, "oklch(0.829 0.092 180.70)" /* #7fdbca */, "oklch(1.000 0.000 0.00)" /* #ffffff */,
     ],
     semantic: {
-      muted: "oklch(0.598 0.029 248.35)" /* upstream #687786 → L+0.036, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
+      muted: "oklch(0.620 0.029 248.35)" /* upstream #687786 → L+0.058, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.61:1
       codeBg: "oklch(0.233 0.045 243.97)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       codeFg: "oklch(0.898 0.020 260.17)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       chatUserBg: "oklch(0.743 0.135 311.06)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
@@ -1456,6 +1467,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.775 0.063 296.36)" /* #b9aeda */, "oklch(0.813 0.096 339.49)" /* #ecaad6 */, "oklch(0.770 0.126 359.29)" /* #f591b2 */, "oklch(1.000 0.000 0.00)" /* #ffffff */,
     ],
     semantic: {
+      muted: "oklch(0.609 0.000 0.00)" /* upstream #7e7e7e → L+0.016 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.62:1
       codeBg: "oklch(0.213 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       codeFg: "oklch(1.000 0.000 0.00)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       chatUserBg: "oklch(0.778 0.098 340.59)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
@@ -1483,7 +1495,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.739 0.092 289.68)" /* #a9a1e1 */, "oklch(0.694 0.164 318.21)" /* #c678dd */, "oklch(0.724 0.129 241.46)" /* #51afef */, "oklch(0.805 0.000 0.00)" /* #bfbfbf */,
     ],
     semantic: {
-      muted: "oklch(0.668 0.018 262.72)" /* upstream #848a95 → L+0.036, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.63:1
+      muted: "oklch(0.706 0.018 262.72)" /* upstream #848a95 → L+0.074, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.63:1
       danger: "oklch(0.763 0.180 23.16)" /* upstream #ff6c6b (p1) → L+0.050, C-0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.62:1
       codeBg: "oklch(0.333 0.016 264.30)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       codeFg: "oklch(0.813 0.020 262.99)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
@@ -1513,7 +1525,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.860 0.089 228.04)" /* #91ddff */, "oklch(0.739 0.127 315.37)" /* #c991e1 */, "oklch(0.938 0.091 172.30)" /* #aaffe4 */, "oklch(0.899 0.026 208.75)" /* #cbe3e7 */,
     ],
     semantic: {
-      muted: "oklch(0.623 0.024 259.19)" /* upstream #747d8b → L+0.036 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
+      muted: "oklch(0.653 0.024 259.19)" /* upstream #747d8b → L+0.066 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.61:1
       codeBg: "oklch(0.280 0.040 287.36)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.895 0.025 215.92)" /* upstream #cbe1e7 → L+0.000 for AA (scheme-a11y #2489) */,
       matchedKeywordBg: "oklch(0.827 0.116 58.08)" /* derived from warning, base for matchedKeywordFg — scheme-a11y #2489 §2.2 */,
@@ -1543,7 +1555,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.671 0.142 238.16)" /* #1da0e2 */, "oklch(0.595 0.242 308.06)" /* #a742ea */, "oklch(0.884 0.122 194.52)" /* #63f2f1 */, "oklch(0.765 0.039 263.57)" /* #a6b3cc */,
     ],
     semantic: {
-      muted: "oklch(0.624 0.021 265.88)" /* upstream #767c89 → L+0.038, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
+      muted: "oklch(0.654 0.021 265.88)" /* upstream #767c89 → L+0.068, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.62:1
       codeBg: "oklch(0.280 0.040 287.36)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.988 0.018 196.87)" /* upstream #eeffff → L+0.000 for AA (scheme-a11y #2489) */,
       matchedKeywordBg: "oklch(0.937 0.083 91.06)" /* derived from warning, base for matchedKeywordFg — scheme-a11y #2489 §2.2 */,

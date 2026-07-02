@@ -118,10 +118,10 @@ export const colorSchemes: Record<string, ColorScheme> = {
     ],
     semantic: {
       surface: 0,
-      muted: 8,
+      muted: "oklch(0.657 0.000 0.00)" /* upstream #888888 (p8) → L+0.030 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.62:1
       accent: 12,
       accentHover: 14,
-      codeBg: 10,
+      codeBg: "oklch(0.281 0.000 0.00)" /* upstream #383838 (p10) → L-0.060 toward bg for muted-vs-codeBg AA (rendered-bg #2510) */,
       codeFg: 11,
       success: 2,
       danger: "oklch(0.662 0.143 16.99)" /* upstream #da6871 → L+0.006 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1

@@ -53,8 +53,12 @@ tweaking any preset.
 |---|---|---|---|
 | `fg` / `bg` | fg=p15→resolved, bg=p9/explicit | Body copy; `--zd-fg` on `--zd-bg`. `schemeToCssPairs` → `--zd-fg`/`--zd-bg`. | 4.5 |
 | `fg` / `surface` | surface=p0 (defaults; both built-ins override →p10) | Text on elevated panels: footer `bg-surface` (`packages/zudo-doc/src/footer/footer.tsx:89`), toolbar `bg-surface` (`…/doclayout/doc-layout-with-defaults.tsx:367`), dropdown/dialog panels (`…/i18n-version/version-switcher.tsx:216`, `…/island-types/index.ts:78`). | 4.5 |
-| `muted` / `bg` | muted=p8 | **Secondary body text** — blockquote body `text-muted italic` (`…/content/content-blockquote.tsx:11`), footer text (`footer.tsx:84,116,144`), TOC inactive links (`…/toc/toc.tsx:102`, `…/toc/mobile-toc.tsx:122`), doc-pager labels (`…/doc-pager/index.tsx:59`), `li::marker` (`content.css:163`), code-block title (`features.css:228`). Dual-role — see §3. | 4.5 |
+| `muted` / `bg` | muted=p8 | **Secondary body text** — blockquote body `text-muted italic` (`…/content/content-blockquote.tsx:11`), footer text (`footer.tsx:84,116,144`), TOC inactive links (`…/toc/toc.tsx:102`, `…/toc/mobile-toc.tsx:122`), doc-pager labels (`…/doc-pager/index.tsx:59`), `li::marker` (`content.css:163`), code-block title (`features.css:228`). Dual-role — see §3. **Multi-bg — see the three rows below (#2510).** | 4.5 |
+| `muted` / `surface` | muted=p8, surface=p0 | Muted text on the **elevated surface** chrome: footer link/tag columns `text-muted` on the `<footer bg-surface>` (`footer.tsx:89` + `:116,:144`), toolbar (`…/doclayout/doc-layout-with-defaults.tsx:367`), doc-history trigger (`…/doc-history/index.tsx:561`), html-preview toolbar labels (`…/html-preview-wrapper/preview-base.tsx:142,161`). Added #2510. | 4.5 |
+| `muted` / `codeBg` | muted=p8, codeBg=p10 | `.code-block-title` — `color: var(--color-muted)` on `background: var(--color-code-bg)` (`features.css:225-229`). Added #2510. | 4.5 |
+| `muted` / `chatAssistantBg` | muted=p8, chatAssistantBg=p9 | ai-chat loading bubble — `text-muted` on `bg-chat-assistant-bg` (`…/ai-chat-modal/index.tsx:210-215`, "Thinking…"). Added #2510. | 4.5 |
 | `accent` / `bg` | accent=p5 | **Links are body text** — `text-accent underline` (`…/content/content-link.tsx:41`), heading hash-link `#` (`content.css:131`), footnote/UI links (`features.css:507`). **Raised 3.0→4.5** (epic). | 4.5 |
+| `accent` / `surface` | accent=p5, surface=p0 | Accent text on the **elevated surface** chrome: footer copyright links `[&_a]:text-accent` on `<footer bg-surface>` (`footer.tsx:84-85,89`), footer link `hover:text-accent` (`footer.tsx:116,144`), `<summary bg-surface … hover:text-accent>` (`…/details/details.tsx:28`), preset-generator button `text-accent bg-surface` (`src/components/preset-generator.tsx:792`). Added #2510. | 4.5 |
 | `accentHover` / `bg` | accentHover=p14 | Link hover text — `hover:text-accent-hover` (`content-link.tsx:41`, `features.css:512`). | 4.5 |
 | `codeFg` / `codeBg` | codeFg=p11, codeBg=p10 | Inline code + code-block base text (`features.css:256-257`, `features.css:533-534`). Governs base text only — syntax tokens are out of scope (§6). | 4.5 |
 | admonition **note** = `accent` / mix(accent 12%, bg) | accent=p5 | Title text (`content.css:336`) on tinted bg (`content.css:332`). Semibold `text-small` (16px) — normal-text territory, full 4.5. | 4.5 |
@@ -85,6 +89,26 @@ and `shikiTheme` (highlighting is syntect's, not Shiki). Do not audit or tweak t
 render as text; `mermaidText/*` is nominally "graphics" but carries the 4.5 text floor
 because it labels nodes. If a future audit finds a Tier-1 pair that provably never renders
 as text in this product, downgrade it *with the file:line proof inline* — not on a hunch.
+
+**Rendered-bg audit (#2510) — candidates evaluated, one EXCLUDED.** The deep-review
+finding was that `muted`/`accent` were audited only against page `bg` while they also
+render on the elevated `surface`/`codeBg`/`chatAssistantBg` backgrounds. The four proven
+pairs above (`muted`-vs-`surface`/`codeBg`/`chatAssistantBg`, `accent`-vs-`surface`) were
+added. One candidate was **excluded**:
+
+- **`accentHover` / `surface` — EXCLUDED (never renders).** `--color-accent-hover`
+  (`hover:text-accent-hover`) has no `surface`-background render path: footer link hover is
+  `hover:text-accent` — NOT accent-hover (`footer.tsx:116,144`); the only `hover:text-accent-hover`
+  on a `bg-surface` element also swaps `hover:bg-bg`, so accent-hover paints on `bg`
+  (already covered by `accentHover`/`bg`), not surface (`src/components/preset-generator.tsx:792`);
+  every other `text-accent-hover` renders on page `bg` (`content-link.tsx:41`), a warning
+  tint (`i18n-version/version-banner.tsx:50`), or a chat bubble (`.ai-chat-md a:hover`,
+  `features.css:511-513`). No proof of a surface render → not added.
+
+Other unaudited **text-on-token-bg** combos noticed while grepping (NOT added — evidence is
+narrow / low-severity; listed so a future pass can decide): `accent` and `accentHover` on
+`chatAssistantBg` (ai-chat markdown links, `features.css:506-513`, inside the assistant
+bubble), and `muted` on the `bg-warning/5` version-banner tint (`version-banner.tsx:47`).
 
 ---
 
@@ -169,6 +193,12 @@ bg lightened a touch on dark schemes / darkened a touch on light schemes, hue ke
 Every derived value still goes through the contrast check — the recipe is a starting point,
 not a guarantee. Where a scheme already sets `surface`/`accent`/`muted`, base the
 derivations on those existing overrides rather than re-deriving.
+
+**`surface`/`codeBg`/`chatAssistantBg` are themselves TEXT backgrounds, not just chrome
+fills.** `muted` (and `accent`, on `surface`) render on all of them — so a bg-side value you
+derive here must still let `muted`/`accent` clear 4.5+0.1 as text. When it doesn't, prefer
+pulling the bg-side value toward page bg over lightening `muted` past its character (§3, the
+multi-bg `muted` constraint, #2510).
 
 ### 2.3 Semantic-override-first — WITH the raw-p5 exception
 
@@ -263,6 +293,36 @@ text floor also lightens those borders.
 default in which case adjust p8 — check whether p8 also feeds anything else first) to the
 4.5 floor. Do not add a border token.
 
+### `muted` has MULTIPLE background constraints (#2510) — clear the WORST one
+
+`muted` does not render on the page `bg` alone. It is also secondary text on the elevated
+backgrounds **`surface`** (footer/toolbar/dropdown chrome), **`codeBg`** (`.code-block-title`),
+and **`chatAssistantBg`** (ai-chat loading bubble) — see the four `muted`/`accent` rows in
+§1. **One `muted` value must clear ALL of its backgrounds at threshold+0.1**, so tune it
+against its *worst-contrast* background, not just page bg. Two complementary levers:
+
+1. **Tune `muted` against the worst near-bg background.** `codeBg`/`chatAssistantBg` are
+   this epic's derived bg-elevated values (bg ± ~0.04 L), so they sit close to bg and a
+   `muted` tuned to clear the lightest of `{bg, codeBg, chatAssistantBg}` needs only a small
+   extra L move beyond the muted-vs-bg fix. `contrast-suggest.ts` §1 does exactly this
+   (`min` over those three backgrounds).
+2. **Nudge the bg-SIDE value toward page bg** when a bg is *far* from bg — the
+   character-preserving lever the skill already sanctions (§2.2). This is mandatory for
+   **`surface`**: it is a raw palette slot (p0) on most schemes and can sit far from bg
+   (e.g. Catppuccin's light p0 → muted-vs-surface 2.57). Blowing `muted` up to clear a far
+   light surface would push it to near-white and wreck its character, so instead pull
+   `surface` toward bg (a subtler elevation, still separated by its `border-muted`) until
+   `muted`/`accent` clear +0.1 on it. `contrast-suggest.ts` §3b (`nudgeBgTowardAnchor`) does
+   this — a minimal OKLCH-L move of `surface` toward bg, `surface === bg` being the
+   guaranteed satisfying endpoint. On a dark scheme this also *raises* fg/accent-vs-surface,
+   so it never regresses those.
+
+**Built-in `Default Dark` (raw-p10 `codeBg`).** Its `codeBg` was `p10` (#383838), far above
+bg, so muted-vs-codeBg was 3.31. Fixed with the *combined* lever: a small `muted` +0.030
+(keeping it distinct from fg) **and** a `codeBg` −0.060 toward bg (still clearly elevated
+above bg, and `codeFg` contrast only improves). Pure-muted would have needed +0.088, pushing
+`muted` uncomfortably close to `fg`.
+
 ---
 
 ## 4. Verification workflow
@@ -302,10 +362,12 @@ default in which case adjust p8 — check whether p8 also feeds anything else fi
    title, `<mark>`). Note: worktree agents do **not** run dev servers/browsers — this step
    is for the S8 confirm sweep and manual checks, not the batch tweak edits.
 
-**Audit interpretation — the two built-ins (Batch C).** Per S1's audit: **Default Dark
-passes every pair**; **Default Light** still fails exactly two — `muted`-vs-`bg` and
-`accentHover`-vs-`bg` — needing only small OKLCH-L nudges (no allowlisting; built-ins must
-pass clean). Default edits must be mirrored into
+**Audit interpretation — the two built-ins (Batch C).** Per S1's audit: **Default Dark**
+passed every pair *in the original matrix*; **Default Light** failed exactly two —
+`muted`-vs-`bg` and `accentHover`-vs-`bg` — needing only small OKLCH-L nudges (no
+allowlisting; built-ins must pass clean). **Update (#2510):** the rendered-bg pairs added
+later caught **Default Dark muted-vs-codeBg (3.31)** — fixed with the combined muted +0.030 /
+codeBg −0.060 lever described in §3. Default edits must be mirrored into
 `packages/create-zudo-doc/templates/base/src/config/color-schemes.ts`
 (`pnpm check:template-drift`). The 50 presets carry the bulk of the failures (§2.2).
 
