@@ -47,6 +47,18 @@ The raw SSR DOM (JS disabled) was ALWAYS correct — the breakage appears
 only AFTER hydration. So the test MUST run with JS enabled and MUST scroll
 the page so the `when="visible"` islands actually hydrate before measuring.
 
+## Companion spec
+
+`e2e/smoke-html-preview.spec.ts` (added #2527, "HtmlPreview: post-hydration
+structure") transcribes this same per-block childCount/display/y check into
+a deterministic Playwright assertion, iterating every
+`[data-zfb-island="HtmlPreviewWrapperInner"]` found on the page (counted
+dynamically, not hardcoded) and clicking each "Show code" toggle to force
+hydration before measuring. Prefer that spec for everyday regression
+coverage — this L6 skill is the escalation path for cases the deterministic
+spec can't catch (genuine visual side-by-side mis-render, novel layouts),
+not the primary regression gate.
+
 ## Scenario
 
 Run against the URL in `Inputs.previewUrl` (default
@@ -60,9 +72,12 @@ because this needs scroll-to-hydrate plus per-block DOM-tree walks.
 2. Scroll the full page top→bottom in ~400px steps (≈60ms each), then back
    to top, and wait ~1.2s. This triggers the IntersectionObserver that
    hydrates every `when="visible"` island.
-3. For EVERY `[data-zfb-island="HtmlPreviewWrapperInner"]` element on the page
-   (there are 6 on the default page), locate its outer container
-   (`:scope > div`) and measure (see Measurements).
+3. For EVERY `[data-zfb-island="HtmlPreviewWrapperInner"]` element on the page,
+   locate its outer container (`:scope > div`) and measure (see
+   Measurements). Count the islands with
+   `document.querySelectorAll('[data-zfb-island="HtmlPreviewWrapperInner"]').length`
+   — do NOT hardcode a fixed number, the count changes as the fixture page
+   grows.
 4. Capture a full-page screenshot AND a cropped screenshot of the FIRST
    preview block (`element.screenshot()` on the island).
 
@@ -89,12 +104,13 @@ A block PASSES when ALL of:
 3. `child1.display === "block"` AND `child1.rect.y >= titleBarBottom - 2`
    (preview area sits BELOW the title bar — vertical stack, not beside it).
 
-The overall run PASSES only when **every** preview block passes (6/6 on
-the default page) AND the visual screenshot check confirms: each block
-shows a horizontal title bar on top (title left, Mobile/Tablet/Full pills
-right, "Full" highlighted) with the preview area full-width below it — and
-NONE show the title bar/buttons squished to the left with the iframe on the
-right.
+The overall run PASSES only when **every** preview block passes
+(`blocksPassed === blocksTotal`, whatever `blocksTotal` actually is on the
+page — do not assume a fixed count) AND the visual screenshot check
+confirms: each block shows a horizontal title bar on top (title left,
+Mobile/Tablet/Full pills right, "Full" highlighted) with the preview area
+full-width below it — and NONE show the title bar/buttons squished to the
+left with the iframe on the right.
 
 FAIL if any block has `childCount !== 3`, a tall title bar, a side-by-side
 arrangement, or the screenshot shows the broken left/right split.
@@ -105,7 +121,8 @@ Return a structured result with exactly these fields:
 
 ```
 {
-  blocksTotal: number,            // islands found (expect 6)
+  blocksTotal: number,            // islands actually found on the page —
+                                   // count them, do not hardcode a number
   blocksPassed: number,           // blocks meeting all 3 mechanical criteria
   perBlock: [                     // one entry per island
     { index, childCount, child0Display, child0Height, child1Display, child1Y, titleBarBottom, pass }

@@ -5,13 +5,33 @@
  * more than one result attempt). These are triage signals — not failures — so
  * the script always exits 0.
  *
+ * Beyond the annotation, each flake also gets a consumer (zudolab/zudo-doc#2535):
+ * a deduped `retry-flake`-labeled GitHub issue per offending test (one open
+ * issue per test, reusing the file-exam-issue.sh per-identity dedup pattern —
+ * see scripts/lib/file-retry-flake-issue.mjs). This step degrades gracefully
+ * to annotation-only when GITHUB_TOKEN is absent or read-only (fork PRs) or
+ * `gh` fails for any reason — it never fails the job.
+ *
  * Usage: node scripts/report-retry-flakes.mjs [report-path]
  * Default report path: playwright-report/report.json
  */
 
 import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  RETRY_FLAKE_LABEL,
+  buildRetryFlakeIssueTitle,
+  buildRetryFlakeIssueBody,
+  findMatchingRetryFlakeIssue,
+  dedupeFlakes,
+} from "./lib/file-retry-flake-issue.mjs";
+
+// `gh issue list` defaults to a 30-issue page; without an explicit --limit
+// higher than the expected open-issue count, a matching issue outside the
+// first page reads as "missing" and gets duplicated (codex review finding).
+const GH_ISSUE_LIST_LIMIT = "200";
 
 // Playwright JSON report shape (the part we consume):
 //
@@ -138,6 +158,125 @@ export function findRetryFlakes(report) {
   return flakes;
 }
 
+/**
+ * Builds the `gh --repo` flag array from GH_REPO, mirroring the pattern in
+ * scripts/file-exam-issue.sh (gh auto-detects the repo from the git remote
+ * when unset, so the flag is optional).
+ *
+ * @returns {string[]}
+ */
+function repoFlag() {
+  return process.env.GH_REPO ? ["--repo", process.env.GH_REPO] : [];
+}
+
+/**
+ * Files or appends a deduped `retry-flake`-labeled issue per offending test.
+ * Never throws — every risky step (label creation, listing, filing) is
+ * wrapped so a missing/read-only token, a network hiccup, or an unexpected
+ * `gh` response degrades to "annotations only" instead of failing the job.
+ *
+ * @param {FlakeAnnotation[]} flakes
+ * @param {string} runUrl
+ */
+function fileRetryFlakeIssues(flakes, runUrl) {
+  if (flakes.length === 0) return;
+
+  if (!process.env.GITHUB_TOKEN) {
+    process.stderr.write(
+      "report-retry-flakes: GITHUB_TOKEN not set — skipping issue filing (annotation-only).\n",
+    );
+    return;
+  }
+
+  // Idempotent; failure here (e.g. read-only fork-PR token) is non-fatal —
+  // `gh issue list`/`create` below will fail the same way and get caught.
+  try {
+    execFileSync(
+      "gh",
+      [
+        "label",
+        "create",
+        RETRY_FLAKE_LABEL,
+        "--description",
+        "Auto-filed: a test passed only after a CI retry (scripts/report-retry-flakes.mjs)",
+        "--color",
+        "F9D0C4",
+        ...repoFlag(),
+      ],
+      { stdio: "ignore" },
+    );
+  } catch {
+    // Already exists, or we lack permission to create it — non-fatal.
+  }
+
+  /** @type {Array<{number: number, title: string}>} */
+  let openIssues;
+  try {
+    const raw = execFileSync(
+      "gh",
+      [
+        "issue",
+        "list",
+        "--label",
+        RETRY_FLAKE_LABEL,
+        "--state",
+        "open",
+        "--json",
+        "number,title",
+        "--limit",
+        GH_ISSUE_LIST_LIMIT,
+        ...repoFlag(),
+      ],
+      { encoding: "utf8" },
+    );
+    openIssues = JSON.parse(raw);
+  } catch (err) {
+    process.stderr.write(
+      `report-retry-flakes: could not list existing retry-flake issues (${/** @type {Error} */ (err).message}) — skipping issue filing (annotation-only).\n`,
+    );
+    return;
+  }
+
+  // Collapse duplicate file+title entries (e.g. the same spec flaking under
+  // more than one Playwright project in this run) — openIssues is a
+  // pre-loop snapshot, so a same-titled duplicate later in the raw `flakes`
+  // list wouldn't see the issue an earlier duplicate just created.
+  for (const flake of dedupeFlakes(flakes)) {
+    const title = buildRetryFlakeIssueTitle(flake);
+    const body = buildRetryFlakeIssueBody(flake, runUrl);
+    const existing = findMatchingRetryFlakeIssue(openIssues, flake);
+    try {
+      if (existing) {
+        execFileSync(
+          "gh",
+          ["issue", "comment", String(existing), "--body", body, ...repoFlag()],
+          { stdio: "ignore" },
+        );
+      } else {
+        execFileSync(
+          "gh",
+          [
+            "issue",
+            "create",
+            "--title",
+            title,
+            "--label",
+            RETRY_FLAKE_LABEL,
+            "--body",
+            body,
+            ...repoFlag(),
+          ],
+          { stdio: "ignore" },
+        );
+      }
+    } catch (err) {
+      process.stderr.write(
+        `report-retry-flakes: failed to file/append retry-flake issue for "${flake.title}" (${/** @type {Error} */ (err).message}) — continuing (annotation-only for this test).\n`,
+      );
+    }
+  }
+}
+
 // --- CLI entry point ---
 // Guard against being imported as a module in unit tests.
 const isMain =
@@ -168,6 +307,22 @@ if (isMain) {
     // GitHub Actions warning annotation format.
     process.stdout.write(
       `::warning::flaky: ${file} › ${title} passed on retry ${retryNumber}\n`,
+    );
+  }
+
+  // Give the annotations a consumer — never let issue-filing problems fail
+  // this (informational, always-exit-0) step.
+  try {
+    const runUrl =
+      process.env.GITHUB_SERVER_URL &&
+      process.env.GITHUB_REPOSITORY &&
+      process.env.GITHUB_RUN_ID
+        ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
+        : "(unknown run — GITHUB_SERVER_URL/GITHUB_REPOSITORY/GITHUB_RUN_ID unset)";
+    fileRetryFlakeIssues(flakes, runUrl);
+  } catch (err) {
+    process.stderr.write(
+      `report-retry-flakes: unexpected error while filing retry-flake issues (${/** @type {Error} */ (err).message}) — continuing (annotation-only).\n`,
     );
   }
 

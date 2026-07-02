@@ -16,6 +16,8 @@ import { smartBreakToHtml } from "../smart-break/index.js";
 // After zudolab/zudo-doc#1335 the host components also pull lifecycle event
 // names from the v2 transitions module rather than hard-coding literals.
 import { AFTER_NAVIGATE_EVENT, BEFORE_NAVIGATE_EVENT } from "../transitions/index.js";
+import { filterTree } from "../sidebar-filter/index.js";
+import { findActiveSlug, normalizePath } from "../sidebar-active-slug/index.js";
 
 function ToggleChevron({ isExpanded, className }: { isExpanded: boolean; className?: string }) {
   return (
@@ -49,22 +51,6 @@ function saveOpenSet(set: Set<string>) {
   } catch {
     // ignore
   }
-}
-
-function normalizePath(p: string): string {
-  return p.replace(/\/$/, "") || "/";
-}
-
-/** Find the slug of the node whose href matches the given pathname */
-function findActiveSlug(nodes: SidebarNavNode[], pathname: string): string | undefined {
-  for (const node of nodes) {
-    if (node.href && normalizePath(node.href) === pathname) return node.slug;
-    const found = findActiveSlug(node.children, pathname);
-    // "" is the canonical root-index slug (#1891) — a truthiness check
-    // would discard a legitimate root match.
-    if (found !== undefined) return found;
-  }
-  return undefined;
 }
 
 /**
@@ -137,23 +123,6 @@ function useSidebarScrollPreserve() {
       document.removeEventListener(AFTER_NAVIGATE_EVENT, onAfter);
       if (restoreTimer !== undefined) clearTimeout(restoreTimer);
     };
-  }, []);
-}
-
-function filterTree(nodes: SidebarNavNode[], query: string): SidebarNavNode[] {
-  return nodes.reduce<SidebarNavNode[]>((acc, node) => {
-    const matchesLabel = node.label.toLowerCase().includes(query.toLowerCase());
-    const filteredChildren = node.children.length > 0
-      ? filterTree(node.children, query)
-      : [];
-
-    if (matchesLabel || filteredChildren.length > 0) {
-      acc.push({
-        ...node,
-        children: matchesLabel ? node.children : filteredChildren,
-      });
-    }
-    return acc;
   }, []);
 }
 

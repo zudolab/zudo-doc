@@ -1,0 +1,43 @@
+---
+title: Markdown Links Test
+sidebar_position: 20
+---
+
+{/*
+  L3 golden coverage for markdown-link rewriting against the production
+  zfb Rust pipeline (resolveMarkdownLinks + stripMdExt) — including the
+  query-string case that packages/md-plugins/__fixtures__ pins as a
+  RETIRED JS bug (see packages/md-plugins/AUDIT.md NOTE-2 and
+  expected-html/08-md-links.html line 6: `./other.md?foo=bar` is left
+  unrewritten by the old JS regex `/\.mdx?(#.*)?$/`, which does not match
+  query strings). The production Rust pipeline resolves markdown-syntax
+  `.mdx` links (including the query-string case) to real routes instead.
+  zudolab/zudo-doc#2539.
+*/}
+
+## Markdown-syntax link rewriting (resolveMarkdownLinks)
+
+- [Sibling page](./page-1.mdx)
+- [With anchor](./page-1.mdx#section)
+- [With query](./page-1.mdx?foo=bar)
+- [With anchor and query](./page-1.mdx?foo=bar#section)
+
+## External / non-content links stay untouched
+
+- [External](https://example.com/foo.md)
+- [Mailto](mailto:hi@example.com)
+
+## Pure anchor stays untouched
+
+- [Anchor only](#section)
+
+## Raw HTML anchor (JSX-authored, not a markdown link node)
+
+A JSX-authored `<a>` is compiled straight through — it is not a markdown
+mdast link node, so neither resolveMarkdownLinks nor stripMdExt touch it:
+
+<a href="./page-1.md?foo=bar">raw JSX anchor, left exactly as authored</a>
+
+## Section
+
+Anchor target for the anchor-case links above.

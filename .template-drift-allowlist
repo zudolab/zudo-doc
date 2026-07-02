@@ -7,14 +7,16 @@
 # production has features inlined
 src/styles/global.css
 
-# claude-resources feature — generated projects ship their own copies of the
-# generator/escape helpers; production consumes the same logic re-exported
-# from @takazudo/zudo-doc/integrations/claude-resources, so prod has no
-# matching paths under src/integrations/claude-resources/.
-src/integrations/claude-resources/__tests__/escape-for-mdx.test.ts
-src/integrations/claude-resources/__tests__/generate.test.ts
-src/integrations/claude-resources/escape-for-mdx.ts
-src/integrations/claude-resources/generate.ts
+# claude-resources feature (#2533) — generated projects ship their own copies
+# of the generator/escape helpers; production consumes the same logic
+# re-exported from @takazudo/zudo-doc/integrations/claude-resources. These
+# four files are NOT blanket-exempted here anymore — a real parity guard
+# (CLAUDE_RESOURCES_PARITY_PATHS / check_pair_normalized in
+# scripts/check-template-drift.sh) diffs them with import-extension and
+# comment normalization applied, so the only tolerated difference is the
+# package's Node-ESM-required ".js" import extension (dist/ is consumed
+# directly by Node; the template's bundler-resolved imports don't need it).
+# Any real logic drift still fails the check.
 
 # Showcase-specific renderers — source ships Pill/discount/status/difficulty
 # examples for the zudo-doc showcase only; template ships an empty map so
@@ -38,9 +40,13 @@ src/config/tag-vocabulary.ts
 #
 # i18n.ts: host ships showcase-specific keys (search, nav.markdownFeatures,
 # doc.history) that the template omits; template ships a leaner baseline.
-# sidebar-tree.tsx: intentional divergence — template uses literal preact/compat
-# imports (W8A preact/compat note in the W8A block below) and the URL-derived
-# currentSlug lazy-init is needed only in the host's island setup.
+# sidebar-tree.tsx: the host's dead 639-line duplicate was deleted in #2528
+# (filterTree + active-slug helpers extracted into the real production
+# modules packages/zudo-doc/src/{sidebar-filter,sidebar-active-slug}, which
+# the live sidebar-tree-island now imports). The template's copy is a thin
+# re-export shim (`@takazudo/zudo-doc/sidebar-tree-island`) kept for
+# downstream projects importing `@/components/sidebar-tree` — there is no
+# longer a host counterpart to diff against.
 src/config/i18n.ts
 src/components/sidebar-tree.tsx
 

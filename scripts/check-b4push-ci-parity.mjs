@@ -131,6 +131,15 @@ const REQUIRED_CI_GUARDS = [
     b4pushScript: "check:flaky-tracking-issue",
     comment: "@flaky/@local-only tracking-issue guard (scripts/check-flaky-tracking-issue.mjs, #2292)",
   },
+  {
+    // Wait-debt guard: zero-tolerance check that every waitForTimeout call
+    // site in e2e/ carries a trailing `// wait-ok: <why>` marker. Closes the
+    // enforcement gap where TESTING.md's Wait-Pattern Rules forbade bare
+    // waitForTimeout but nothing mechanically checked for it (#2538).
+    ciNeedle: "check-wait-debt.mjs",
+    b4pushScript: "check:wait-debt",
+    comment: "Wait-debt guard (scripts/check-wait-debt.mjs, #2538)",
+  },
 ];
 
 const ALLOWLIST_PATH = resolve(ROOT, ".b4push-ci-parity-allowlist");

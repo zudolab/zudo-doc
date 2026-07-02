@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractTrackingIssueUrl } from "../report-flaky-lane.mjs";
+import { extractTrackingIssueUrl } from "../lib/extract-tracking-issue-url.mjs";
 
 // ---------------------------------------------------------------------------
 // Synthetic fixtures

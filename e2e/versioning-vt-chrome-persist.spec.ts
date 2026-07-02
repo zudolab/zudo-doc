@@ -29,7 +29,7 @@
  * CI: test:e2e (pnpm test:e2e) and test:e2e:ci (excludes @flaky).
  */
 
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 import { spaClick } from "./nav-helpers";
 
 // Desktop viewport so the header is fully rendered.

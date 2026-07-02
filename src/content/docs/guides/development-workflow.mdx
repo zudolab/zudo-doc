@@ -29,14 +29,14 @@ Use `pnpm dev:stable` when you're adding or removing content files frequently. S
 |---|---|
 | `pnpm build` | Static HTML export to `dist/` |
 | `pnpm check` | TypeScript type checking |
-| `pnpm b4push` | Pre-push validation: 19-step pipeline (format check → ... → build → link check → HTML validation → preview smoke); E2E is parked |
+| `pnpm b4push` | Pre-push validation: ~22-step pipeline (format check → ... → build → link check → HTML validation → preview smoke); `scripts/run-b4push.sh` is authoritative for the current count. E2E runs in CI (pr-checks), not in b4push, for time-budget reasons |
 | `pnpm format` | Format MDX files |
 | `pnpm test:unit` | Run unit tests (Vitest) |
 | `pnpm test:e2e` | Run E2E tests (Playwright) |
 
 <Note>
 
-Run `pnpm b4push` before pushing to verify the full site builds and all links resolve. It runs 19 steps (format check through preview smoke); E2E tests are intentionally parked and not part of this pipeline.
+Run `pnpm b4push` before pushing to verify the full site builds and all links resolve. It runs a bounded pipeline (format check through preview smoke); E2E tests run in CI (pr-checks), not in this pipeline, for time-budget reasons.
 
 The canonical, authoritative b4push step list lives in the header comment of `scripts/run-b4push.sh` — treat that script as the single source of truth, and consult it rather than any inline summary if the steps appear to disagree.
 

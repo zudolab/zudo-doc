@@ -30,7 +30,7 @@ async function applyImageConstraints(page: Page) {
   // after a 150ms setTimeout (RESIZE_DEBOUNCE_BUFFER_MS). Each test's own
   // `expect(btn).toBeVisible()` / `expect(btn).toBeHidden()` assertion then
   // provides the actual deterministic final-state wait with its own timeout.
-  await page.waitForTimeout(RESIZE_DEBOUNCE_BUFFER_MS);
+  await page.waitForTimeout(RESIZE_DEBOUNCE_BUFFER_MS); // wait-ok: settle window for the 150ms ResizeObserver debounce (see comment above)
 }
 
 // ---------------------------------------------------------------------------
@@ -217,7 +217,7 @@ test.describe("Image Enlarge: browser behavior", () => {
     // as applyImageConstraints). The following expect(btn).toBeVisible() provides
     // the final deterministic state assertion.
     await page.evaluate(() => window.dispatchEvent(new Event("resize")));
-    await page.waitForTimeout(RESIZE_DEBOUNCE_BUFFER_MS);
+    await page.waitForTimeout(RESIZE_DEBOUNCE_BUFFER_MS); // wait-ok: settle window for the 150ms ResizeObserver debounce after re-init (see comment above)
 
     const figure = page.locator("figure.zd-enlargeable").first();
     const btn = figure.locator(".zd-enlarge-btn");

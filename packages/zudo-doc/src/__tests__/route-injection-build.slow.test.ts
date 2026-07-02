@@ -21,36 +21,37 @@
 //
 // The test timeout is intentionally generous (180s): a cold `zfb build` including
 // Tailwind compilation runs in ~30s on a warm machine; 180s provides CI headroom.
+//
+// ## Tier
+//
+// This file runs ~11 real `zfb build`s end-to-end (~220s total) plus an
+// `npm pack` round trip — too slow for the default `pnpm test` / pr-checks
+// package-tests lane, so it lives in the slow tier (`*.slow.test.ts`,
+// excluded by packages/zudo-doc/vitest.config.ts, run via
+// `pnpm --filter @takazudo/zudo-doc test:slow`, wired into
+// .github/workflows/exam.yml). Mirrors the create-zudo-doc slow-tier split
+// (packages/create-zudo-doc/vitest.slow.config.ts). See zudolab/zudo-doc#2530.
 
 import { describe, it, expect, afterAll } from "vitest";
 import { execSync, type ExecSyncOptions } from "node:child_process";
 import { mkdtempSync, mkdirSync, cpSync, symlinkSync, existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
-import { createHash } from "node:crypto";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 
 // ---------------------------------------------------------------------------
-// Parity helpers — mirrors parity-diff.mjs normalization so hash values are
-// stable across refactors that MUST NOT change rendered output. Matches the
-// normalizeHtml + sha256 from scripts/parity-diff.mjs exactly.
+// Parity helpers — imported from the shared, side-effect-free module also
+// used by scripts/parity-diff.mjs, so both call sites hash HTML identically
+// (zudolab/zudo-doc#2530; previously hand-copied here). Loaded via dynamic
+// import (not compiled by tsup, not typechecked as part of this package's
+// strict `src/` program) — mirrors the gen-component-tokens.test.ts pattern
+// for reaching a plain-.mjs helper from outside `src/`. `__dirname` here is
+// the ambient CJS-interop global Vite/esbuild injects (used bare elsewhere
+// in this file, e.g. FIXTURE_SRC below) — not a Node ESM built-in.
 // ---------------------------------------------------------------------------
 
-/** Normalize content-hashed filenames to stable placeholders, matching
- *  the same substitutions used by scripts/parity-diff.mjs. */
-function normalizeHtml(html: string): string {
-  return html
-    // Main islands bundle: /assets/islands-<hex8>.js
-    .replace(/\/assets\/islands-[a-f0-9]+\.js/g, "/assets/islands-CONTENTHASH.js")
-    // Chunk files: /assets/islands-chunk-<UPPERCASE8+>.js
-    .replace(/\/assets\/islands-chunk-[A-Z0-9]+\.js/g, "/assets/islands-chunk-CHUNKHASH.js")
-    // Styles: /assets/styles-<hex8>.css
-    .replace(/\/assets\/styles-[a-f0-9]+\.css/g, "/assets/styles-CONTENTHASH.css");
-}
-
-/** SHA-256 of normalized HTML — the frozen byte-parity fingerprint. */
-function sha256Html(html: string): string {
-  return createHash("sha256").update(normalizeHtml(html), "utf8").digest("hex");
-}
+const { sha256Html } = await import(
+  resolve(__dirname, "../../../../scripts/parity-html-normalize.mjs")
+);
 
 // ---------------------------------------------------------------------------
 // Paths

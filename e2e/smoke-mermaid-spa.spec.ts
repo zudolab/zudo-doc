@@ -68,7 +68,7 @@ test.describe("Mermaid: SPA soft-navigation regression (#2181)", () => {
     // ── Step 3b: SVG still present and non-empty AFTER the 300ms debounce ────
     // Wait beyond the debounce window and re-assert.
     // Pre-fix code blanks the SVG at ~360ms; this assertion catches that.
-    await page.waitForTimeout(POST_DEBOUNCE_WAIT_MS);
+    await page.waitForTimeout(POST_DEBOUNCE_WAIT_MS); // wait-ok: sample state past the ~300ms debounce deadline to catch the pre-fix SVG-blanking regression (see comment above)
 
     const svgContent = await page.evaluate(() => {
       const svg = document.querySelector("[data-mermaid-rendered] svg.flowchart");

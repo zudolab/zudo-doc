@@ -1,16 +1,27 @@
 #!/usr/bin/env bash
 # file-exam-issue.sh — Deduped failure issue reporter for exam.yml.
 #
-# One-open-tracking-issue-per-workflow dedup strategy:
-#   - Checks for an existing open issue with label `exam-failure`
-#   - If found: posts a comment with the run URL and failing spec names
-#   - If not found: creates a new issue
+# Per-workflow dedup strategy (zudolab/zudo-doc#2535):
+#   - Three exam jobs (e2e-full / slow-create / slow-zudo-doc) share the
+#     `exam-failure` label, so label-only lookup previously matched
+#     `.[0]` of ANY open exam-failure issue — an e2e-full failure could
+#     append onto an unrelated slow-create issue that happened to be older.
+#   - Dedup now also matches on the issue TITLE, which embeds the workflow
+#     identity (`[exam] Nightly suite failure: <workflow>`), so each job's
+#     open issue is scoped to that job.
+#
+# Modes:
+#   (default) — failure mode. Posts a comment to the open issue scoped to
+#     this workflow, or creates a new one if none is open.
+#   --green   — closes the open issue scoped to this workflow with a
+#     green-run comment. No-op (not an error) if none is open.
 #
 # Usage:
 #   bash scripts/file-exam-issue.sh \
 #     [--report <path-to-playwright-json-report>] \
 #     --run-url <github-actions-run-url> \
-#     --workflow <workflow-job-name>
+#     --workflow <workflow-job-name> \
+#     [--green]
 #
 # Environment:
 #   GITHUB_TOKEN  — required; gh CLI uses this for auth
@@ -24,6 +35,7 @@ set -euo pipefail
 REPORT_PATH=""
 RUN_URL=""
 WORKFLOW=""
+GREEN=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -38,6 +50,10 @@ while [[ $# -gt 0 ]]; do
     --workflow)
       WORKFLOW="$2"
       shift 2
+      ;;
+    --green)
+      GREEN=1
+      shift
       ;;
     *)
       echo "Unknown argument: $1" >&2
@@ -55,15 +71,13 @@ if [[ -z "$WORKFLOW" ]]; then
   WORKFLOW="Nightly Exam"
 fi
 
-# ---------------------------------------------------------------------------
-# Ensure the exam-failure label exists (idempotent)
-# ---------------------------------------------------------------------------
-echo "Ensuring label 'exam-failure' exists..."
-gh label create "exam-failure" \
-  --description "Automated failure report from exam.yml nightly workflow" \
-  --color "D93F0B" \
-  2>/dev/null || true
-echo "Label ready."
+ISSUE_TITLE="[exam] Nightly suite failure: ${WORKFLOW}"
+
+# Build gh --repo flag if GH_REPO is set (falls back to git remote auto-detect)
+REPO_FLAG=()
+if [[ -n "${GH_REPO:-}" ]]; then
+  REPO_FLAG=(--repo "$GH_REPO")
+fi
 
 # ---------------------------------------------------------------------------
 # Parse failing spec names from JSON report (if provided)
@@ -92,9 +106,9 @@ if [[ -n "$REPORT_PATH" && -f "$REPORT_PATH" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Build issue/comment body
+# Build issue/comment bodies
 # ---------------------------------------------------------------------------
-build_body() {
+build_failure_body() {
   local body
   body="## Exam failure: ${WORKFLOW}"$'\n'$'\n'
   body+="**Run:** ${RUN_URL}"$'\n'$'\n'
@@ -111,37 +125,85 @@ build_body() {
   echo "$body"
 }
 
-BODY=$(build_body)
+build_green_body() {
+  local body
+  body="## Exam green run: ${WORKFLOW}"$'\n'$'\n'
+  body+="**Run:** ${RUN_URL}"$'\n'$'\n'
+  body+="All tests passed — closing this tracking issue."$'\n'
+  echo "$body"
+}
 
 # ---------------------------------------------------------------------------
-# Dedup: comment on existing open issue, else create new
+# Dedup lookup: find the open issue (if any) scoped to THIS workflow —
+# matches both the `exam-failure` label and the exact issue title (which
+# embeds the workflow identity). Title matching is done in node rather than
+# `gh --jq` so the workflow name never has to be safely embedded in a jq
+# expression string.
 # ---------------------------------------------------------------------------
-echo "Checking for open exam-failure issues..."
+find_existing_issue() {
+  # --limit: gh defaults to a 30-issue page; there are only 3 exam jobs so
+  # this is defensive rather than a live risk, but matches the fix applied
+  # to the retry-flake lookup in scripts/report-retry-flakes.mjs.
+  gh issue list \
+    "${REPO_FLAG[@]}" \
+    --label "exam-failure" \
+    --state open \
+    --json number,title \
+    --limit 100 \
+    2>/dev/null \
+    | node --eval "
+        const chunks = [];
+        process.stdin.on('data', (c) => chunks.push(c));
+        process.stdin.on('end', () => {
+          const wantTitle = process.argv[1];
+          let issues = [];
+          try { issues = JSON.parse(Buffer.concat(chunks).toString('utf8') || '[]'); } catch { issues = []; }
+          const match = issues.find((i) => i.title === wantTitle);
+          if (match) process.stdout.write(String(match.number));
+        });
+      " -- "$ISSUE_TITLE" \
+    || true
+}
 
-# Build gh --repo flag if GH_REPO is set (falls back to git remote auto-detect)
-REPO_FLAG=()
-if [[ -n "${GH_REPO:-}" ]]; then
-  REPO_FLAG=(--repo "$GH_REPO")
+EXISTING_ISSUE=$(find_existing_issue)
+
+# ---------------------------------------------------------------------------
+# --green mode: close the scoped issue if one is open; no-op otherwise.
+# ---------------------------------------------------------------------------
+if [[ "$GREEN" -eq 1 ]]; then
+  if [[ -n "$EXISTING_ISSUE" ]]; then
+    echo "Found open issue #${EXISTING_ISSUE} for workflow \"${WORKFLOW}\" — closing with a green-run comment..."
+    gh issue close "$EXISTING_ISSUE" "${REPO_FLAG[@]}" \
+      --comment "$(build_green_body)" \
+      --reason "completed"
+    echo "Issue #${EXISTING_ISSUE} closed."
+  else
+    echo "No open exam-failure issue for workflow \"${WORKFLOW}\" — nothing to close."
+  fi
+  exit 0
 fi
 
-EXISTING_ISSUE=$(gh issue list \
-  "${REPO_FLAG[@]}" \
-  --label "exam-failure" \
-  --state open \
-  --json number \
-  --jq '.[0].number' \
-  2>/dev/null || true)
+# ---------------------------------------------------------------------------
+# Failure mode: comment on the scoped open issue, else create a new one.
+# ---------------------------------------------------------------------------
+echo "Ensuring label 'exam-failure' exists..."
+gh label create "exam-failure" \
+  --description "Automated failure report from exam.yml nightly workflow" \
+  --color "D93F0B" \
+  2>/dev/null || true
+echo "Label ready."
+
+BODY=$(build_failure_body)
 
 if [[ -n "$EXISTING_ISSUE" ]]; then
-  echo "Found open issue #${EXISTING_ISSUE} — posting comment..."
+  echo "Found open issue #${EXISTING_ISSUE} for workflow \"${WORKFLOW}\" — posting comment..."
   gh issue comment "$EXISTING_ISSUE" "${REPO_FLAG[@]}" --body "$BODY"
   echo "Comment posted to issue #${EXISTING_ISSUE}"
 else
-  echo "No open exam-failure issue found — creating new issue..."
-  TITLE="[exam] Nightly suite failure: ${WORKFLOW}"
+  echo "No open exam-failure issue for workflow \"${WORKFLOW}\" — creating new issue..."
   gh issue create \
     "${REPO_FLAG[@]}" \
-    --title "$TITLE" \
+    --title "$ISSUE_TITLE" \
     --label "exam-failure" \
     --body "$BODY"
   echo "Issue created."

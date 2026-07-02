@@ -1,0 +1,21 @@
+---
+title: Math Test
+sidebar_position: 23
+description: A page for L3 golden coverage of KaTeX math rendering via the MathBlock JSX component.
+---
+
+{/*
+  The smoke fixture now enables `math: true` (zudolab/zudo-doc#2539) so this
+  page's <MathBlock> usage is exercised end-to-end. `$...$`/`$$...$$` fence
+  syntax is NOT supported by the zfb Rust MDX emitter — <MathBlock latex="…" />
+  is the only supported authoring path (see src/content/docs/components/
+  math-equations.mdx and packages/zudo-doc/src/math-block/index.tsx).
+*/}
+
+## Inline math
+
+The formula <MathBlock latex="E = mc^2" /> is inline.
+
+## Block math
+
+<MathBlock latex="\int_0^{\infty} e^{-x^2} \, dx = \frac{\sqrt{\pi}}{2}" block />

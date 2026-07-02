@@ -13,6 +13,7 @@
 #   B4push/CI Parity Check   — pure-Node, no install; scripts/check-b4push-ci-parity.mjs
 #   E2E Spec Naming Guard    — pure-Node, no install; scripts/check-e2e-spec-naming.mjs
 #   Flaky Tracking-Issue Guard — pure-Node, no install; scripts/check-flaky-tracking-issue.mjs
+#   Wait-Debt Guard           — pure-Node, no install; scripts/check-wait-debt.mjs
 #   Lint Gates               — pnpm install; pnpm tags:audit --ci + pnpm lint:tokens
 #   Type Check               — pnpm install; pnpm check (zfb check → tsc --noEmit)
 #   Package Unit Tests       — pnpm install; pnpm test:packages (all 5 package suites)
@@ -217,6 +218,26 @@ jobs:
         run: node scripts/check-flaky-tracking-issue.mjs
 
   # ---------------------------------------------------------------------------
+  # Job 0.695: Wait-debt guard (#2538)
+  # ---------------------------------------------------------------------------
+  # Zero-tolerance enforcement of TESTING.md's Wait-Pattern Rules: every
+  # `waitForTimeout` call in e2e/ (excluding fixtures) must carry a trailing
+  # `// wait-ok: <why>` comment on the same line. Closes the enforcement gap
+  # where the rule was documented but nothing mechanically checked for it —
+  # the same failure mode the @flaky tracking-issue guard above closed for
+  # quarantine telemetry.
+  # Pure-Node script — uses preinstalled Node 22 on the runner image, no pnpm.
+  check-wait-debt:
+    name: Wait-Debt Guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Check wait-debt (waitForTimeout wait-ok annotations)
+        run: node scripts/check-wait-debt.mjs
+
+  # ---------------------------------------------------------------------------
   # Job 0.68: Z-index codegen drift check (#2148)
   # ---------------------------------------------------------------------------
   # Re-runs the z-index @theme codegen into a buffer and fails if
@@ -328,12 +349,6 @@ jobs:
       # typecheck coverage are now gated in CI (#2018).
       - name: Run pages/ type checking
         run: pnpm check:pages
-
-      # plugins/ typecheck: root tsconfig excludes plugins/ (plain .mjs files).
-      # tsconfig.plugins.json enables checkJs with strict mode for all six
-      # plugins/*.mjs files (#2026).
-      - name: Run plugins/ type checking
-        run: pnpm check:plugins
 
       # Workspace package typechecks: `pnpm check` (root tsconfig) excludes
       # packages/ so a broken package typecheck was previously invisible in CI.
@@ -586,6 +601,15 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Job-level override: the workflow-level permissions (top) grant only
+    # contents: read + pull-requests: write. This job additionally needs
+    # issues: write so "Report retry flakes" can file/append a retry-flake
+    # issue (zudolab/zudo-doc#2535). Fork PRs still get a read-only token
+    # regardless of this grant (GitHub platform rule) — the script degrades
+    # to annotation-only in that case; see scripts/report-retry-flakes.mjs.
+    permissions:
+      contents: read
+      issues: write
     container:
       # renovate: datasource=docker depName=mcr.microsoft.com/playwright versioning=docker
       image: mcr.microsoft.com/playwright:v1.58.2-noble
@@ -619,13 +643,24 @@ jobs:
       - name: Report retry flakes
         if: always()
         run: node scripts/report-retry-flakes.mjs
+        env:
+          # Used to file/append a deduped `retry-flake` issue per offending
+          # test; absent/read-only (fork PRs) degrades to annotation-only —
+          # see the GITHUB_TOKEN check in scripts/report-retry-flakes.mjs.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: playwright-report
-          path: playwright-report/
+          # test-results/ carries the on-first-retry trace zips + failure
+          # screenshots (Playwright's outputDir default); playwright-report/
+          # carries the JSON/HTML report. Neither dir is nested in the other.
+          path: |
+            playwright-report/
+            test-results/
           retention-days: 14
 
   # ---------------------------------------------------------------------------

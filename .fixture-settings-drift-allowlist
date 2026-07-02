@@ -57,14 +57,19 @@ smoke:tagVocabulary
 versioning:tagVocabulary
 
 # ── llmsTxt ───────────────────────────────────────────────────────────────────
-# reason: llms.txt generation is not exercised in these fixtures
+# reason: llms.txt generation is not exercised in these fixtures; the smoke
+#         fixture now enables it (L3 static coverage, zudolab/zudo-doc#2536)
 sidebar:llmsTxt
 i18n:llmsTxt
 theme:llmsTxt
-smoke:llmsTxt
 
 # ── cjkFriendly ───────────────────────────────────────────────────────────────
-# reason: CJK line-break behaviour is not tested in fixtures
+# reason: no fixture sets this key explicitly (all rely on zfb's on-by-default
+#         CjkFriendlyPlugin). The smoke fixture now DOES assert that Rust
+#         default behaviour end-to-end via L3 static reads
+#         (e2e/smoke-markdown-features.spec.ts, zudolab/zudo-doc#2539) —
+#         without setting this key, since the assertion targets the default,
+#         not an explicit override
 sidebar:cjkFriendly
 i18n:cjkFriendly
 theme:cjkFriendly
@@ -102,8 +107,9 @@ i18n:designTokenPanel
 versioning:designTokenPanel
 
 # ── sidebarResizer ────────────────────────────────────────────────────────────
-# reason: sidebar resizer feature is not exercised in any fixture
-sidebar:sidebarResizer
+# reason: sidebar resizer width-restore is now exercised in the sidebar
+#         fixture (deterministic e2e coverage, #2527); the remaining fixtures
+#         do not enable it
 i18n:sidebarResizer
 theme:sidebarResizer
 smoke:sidebarResizer

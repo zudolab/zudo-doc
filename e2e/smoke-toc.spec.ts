@@ -6,6 +6,12 @@ import { test, expect } from "@playwright/test";
  * Uses the toc-test page which has multiple h2/h3 headings with
  * enough body text for scroll spy detection. Desktop TOC is visible
  * at the xl breakpoint (1280px).
+ *
+ * Static markup assertions (heading-link presence, h3 indent class) were
+ * split out to `smoke-toc-markup.spec.ts` as L3 dist reads
+ * (zudolab/zudo-doc#2537) — they don't need a browser. Viewport-visibility
+ * and scroll-spy behavior stay here since they depend on real layout/CSS
+ * and scroll events.
  */
 
 const PAGE = "/docs/guides/toc-test";
@@ -18,59 +24,6 @@ test.describe("TOC: desktop table of contents", () => {
 
     const tocNav = page.locator('[aria-label="Table of contents"]');
     await expect(tocNav).toBeVisible({ timeout: 5000 });
-  });
-
-  test("TOC contains h2 heading links", async ({ page }) => {
-    await page.goto(PAGE, { waitUntil: "load" });
-
-    const tocNav = page.locator('[aria-label="Table of contents"]');
-    await expect(tocNav).toBeVisible({ timeout: 5000 });
-
-    const h2Headings = [
-      "Introduction",
-      "Getting Started",
-      "Configuration",
-      "Content Authoring",
-      "Deployment",
-    ];
-
-    for (const heading of h2Headings) {
-      const link = tocNav.getByRole("link", { name: heading, exact: true });
-      await expect(link).toBeVisible();
-    }
-  });
-
-  test("TOC contains h3 heading links", async ({ page }) => {
-    await page.goto(PAGE, { waitUntil: "load" });
-
-    const tocNav = page.locator('[aria-label="Table of contents"]');
-    await expect(tocNav).toBeVisible({ timeout: 5000 });
-
-    const h3Headings = [
-      "Prerequisites",
-      "Installation",
-      "Basic Settings",
-      "Advanced Options",
-      "Writing MDX",
-      "Using Components",
-    ];
-
-    for (const heading of h3Headings) {
-      const link = tocNav.getByRole("link", { name: heading, exact: true });
-      await expect(link).toBeVisible();
-    }
-  });
-
-  test("h3 list items have ml-hsp-lg class", async ({ page }) => {
-    await page.goto(PAGE, { waitUntil: "load" });
-
-    const tocNav = page.locator('[aria-label="Table of contents"]');
-    await expect(tocNav).toBeVisible({ timeout: 5000 });
-
-    // Find h3 heading links and check their parent li
-    const h3Link = tocNav.getByRole("link", { name: "Prerequisites", exact: true });
-    const parentLi = h3Link.locator("..");
-    await expect(parentLi).toHaveClass(/ml-hsp-lg/);
   });
 
   test("scroll spy sets aria-current on a heading after scrolling", async ({ page }) => {

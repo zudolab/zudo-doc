@@ -139,6 +139,8 @@ describe("package.json exports keyset snapshot", () => {
         "./search-widget-script",
         "./settings",
         "./sidebar",
+        "./sidebar-active-slug",
+        "./sidebar-filter",
         "./sidebar-prepaint",
         "./sidebar-resizer",
         "./sidebar-toggle-island",
