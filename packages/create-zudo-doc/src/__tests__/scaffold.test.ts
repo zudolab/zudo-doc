@@ -4277,7 +4277,13 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
     );
   });
 
-  it("feature ON: pages/index.tsx contains enableClientRouter={settings.dynamicPageTransition}", async () => {
+  // S4 (#2503): pages/index.tsx adopted the shared HomePageView body (#2502)
+  // and is now a thin data-prep consumer — the <DocLayoutWithDefaults> render
+  // (and its enableClientRouter prop) moved into the package factory
+  // (home-page/index.tsx), same as the doc-page-shell precedent above. The
+  // prop lives in the factory regardless of feature state, so pages/index.tsx
+  // itself no longer threads it.
+  it("feature ON: pages/index.tsx delegates to HomePageView; package factory threads enableClientRouter", async () => {
     const choices: UserChoices = {
       projectName: "test-dpt-on-ecr-index",
       defaultLang: "en",
@@ -4291,10 +4297,19 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
       projectPath("test-dpt-on-ecr-index", "pages/index.tsx"),
       "utf-8",
     );
-    expect(content).toContain("enableClientRouter={settings.dynamicPageTransition}");
+    expect(content).toContain("HomePageView");
+    expect(content).not.toContain("enableClientRouter");
+
+    const homePageFactory = await fs.readFile(
+      packageSrcPath("home-page/index.tsx"),
+      "utf-8",
+    );
+    expect(homePageFactory).toContain(
+      "enableClientRouter={settings.dynamicPageTransition}",
+    );
   });
 
-  it("feature OFF: pages/index.tsx contains enableClientRouter={settings.dynamicPageTransition}", async () => {
+  it("feature OFF: pages/index.tsx delegates to HomePageView; package factory threads enableClientRouter", async () => {
     const choices: UserChoices = {
       projectName: "test-dpt-off-ecr-index",
       defaultLang: "en",
@@ -4308,7 +4323,16 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
       projectPath("test-dpt-off-ecr-index", "pages/index.tsx"),
       "utf-8",
     );
-    expect(content).toContain("enableClientRouter={settings.dynamicPageTransition}");
+    expect(content).toContain("HomePageView");
+    expect(content).not.toContain("enableClientRouter");
+
+    const homePageFactory = await fs.readFile(
+      packageSrcPath("home-page/index.tsx"),
+      "utf-8",
+    );
+    expect(homePageFactory).toContain(
+      "enableClientRouter={settings.dynamicPageTransition}",
+    );
   });
 
   // pages/404.tsx was removed from the scaffold template in the Stub-Deletion
