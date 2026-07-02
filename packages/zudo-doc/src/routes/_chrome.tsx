@@ -44,7 +44,7 @@ import { chromeBindings } from "virtual:zudo-doc-chrome-bindings";
 // outside zfb's static-import scanner reachability graph) — see the ADR.
 const chrome = createChrome(routeCtx, {
   DocHistory: DocHistory as unknown as ChromeHostBindings["DocHistory"],
-  ...(chromeBindings as ChromeHostBindings),
+  ...chromeBindings,
 });
 
 export const {

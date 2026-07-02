@@ -26,11 +26,9 @@ declare module "virtual:zudo-doc-route-context" {
 // `docs/adr/route-injection-seam.md` ("Host-callables channel —
 // chromeBindingsModule").
 //
-// Kept import-free (like the declaration above) rather than importing
-// `ChromeHostBindings` from `../factory-context/index.js` — `_context.ts`
-// narrows the sibling `routeContext` export the same way; `_chrome.tsx`
-// (which already imports `ChromeHostBindings`) casts this module's export at
-// the seam.
+// Typed via an INLINE `import(...)` type (not a top-level import, which would
+// break this file's ambient module declarations) — see
+// `../factory-context/index.js` for the `ChromeHostBindings` shape.
 declare module "virtual:zudo-doc-chrome-bindings" {
-  export const chromeBindings: Record<string, unknown>;
+  export const chromeBindings: import("../factory-context/index.js").ChromeHostBindings;
 }

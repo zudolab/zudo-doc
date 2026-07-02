@@ -531,7 +531,7 @@ describe("CB chrome-bindings missing: build fails loudly when chromeBindingsModu
 //   2. `ctx.hostBindings.homeExtras` (wired via `chromeBindingsModule`, same
 //      channel as CB #2501) renders inside the hero text column, after the
 //      links row.
-//   4. The `SiteTreeNav` island wrapper is untouched — `data-zfb-island=
+//   3. The `SiteTreeNav` island wrapper is untouched — `data-zfb-island=
 //      "SiteTreeNav"` still appears in the injected locale-home HTML.
 // ---------------------------------------------------------------------------
 
