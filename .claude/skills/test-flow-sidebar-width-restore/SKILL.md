@@ -1,6 +1,6 @@
 ---
 name: test-flow-sidebar-width-restore
-description: "AI-judged verification that the docs-page sidebar's persisted drag-width is restored on page reload before first paint, with no visible flash to the CSS-default width. Use when /verify-ui-ai dispatches a subagent for sidebar-resizer width-restore verification. Procedure drives the local dev server at http://localhost:3000/docs/guides/i18n/ via /headless-browser playwright-cli, mutates `localStorage[\"zudo-doc-sidebar-width\"]`, reloads, measures `#desktop-sidebar` via `getBoundingClientRect()` plus computed `--zd-sidebar-w`, and visually checks the captured screenshot."
+description: "AI-judged verification that the docs-page sidebar's persisted drag-width is restored on page reload before first paint, with no visible flash to the CSS-default width. Use when /verify-ui-ai dispatches a subagent for sidebar-resizer width-restore verification. Procedure drives the local dev server at http://localhost:4321/docs/guides/i18n/ via /headless-browser playwright-cli, mutates `localStorage[\"zudo-doc-sidebar-width\"]`, reloads, measures `#desktop-sidebar` via `getBoundingClientRect()` plus computed `--zd-sidebar-w`, and visually checks the captured screenshot."
 ---
 
 # Test flow: sidebar-resizer width restore on reload
@@ -21,11 +21,22 @@ showed the CSS-default width (`clamp(14rem, 20vw, 22rem)`) instead of
 the persisted value — the value existed in localStorage but nothing
 applied it.
 
+## Companion spec
+
+`e2e/sidebar-resizer-restore.spec.ts` (added #2527) transcribes
+Scenarios B, C, and D below into deterministic Playwright assertions
+(restore to 400px, clamp to the 448px max, garbage-value fallthrough to
+the CSS default) and runs as part of the ordinary L4 e2e suite. Prefer
+that spec for everyday regression coverage — this L6 skill is the
+escalation path for cases the deterministic spec can't catch (visual
+flash-of-unstyled-width, novel drag interactions), not the primary
+regression gate.
+
 ## Scenario
 
 All steps run against the local dev server at the URL passed in
 `Inputs.previewUrl` (default
-`http://localhost:3000/docs/guides/i18n/`). The page must include the
+`http://localhost:4321/docs/guides/i18n/`). The page must include the
 desktop sidebar (it does on `/docs/...` routes at viewport widths
 ≥ Tailwind `lg` ≥ 1024px). Use viewport `1400 x 900` (or the size in
 `Inputs.viewport`).
@@ -127,7 +138,7 @@ did not apply"`.
 ## Inputs (passed from the parent agent)
 
 - `previewUrl` — full URL to drive (default
-  `http://localhost:3000/docs/guides/i18n/`).
+  `http://localhost:4321/docs/guides/i18n/`).
 - `viewport` — `WxH` (default `1400x900`).
 - `screenshotDir` — directory to write screenshots into (default
   `$HOME/cclogs/zudo-doc/headless-screenshots/`).
