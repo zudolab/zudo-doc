@@ -1,0 +1,34 @@
+---
+title: 2.4.0
+description: Release notes for 2.4.0.
+sidebar_position: 1049
+---
+
+Released: 2026-07-03
+
+An internal **test-strategy sweep** — E2E/CI hardening, wait-pattern guards, shared-fixture
+consolidation, and test retargeting. No user-facing or generated-scaffold behavior changes.
+
+### Features
+
+- Zero-tolerance wait-debt guard for E2E specs (with `wait-ok` markers), wired into b4push alongside per-step timing (2394139a, c5ed932c)
+- Shared E2E fixture now auto-asserts console errors on teardown (dfb4dfea)
+- `makeDistReader(fixture)` helper generalized from the smoke dist helper for L3 dist-read tests (608bc289)
+- Real `claude-resources` template-drift parity guard (91136223)
+- Exam CI hardening: trace-on-first-retry with retry-report/artifact wiring, `file-exam-issue.sh --green` mode, and a pass-on-retry annotation consumer (2b3b3e37, 03589668, 197f3eea)
+
+### Bug Fixes
+
+- `create-zudo-doc`: sync the `claude-resources` template with package source (615b4e0b)
+- Guard a null baseline route-list in parity-diff `diff()` (25de9d73)
+- Recursive E2E spec-naming guard + fixture/config parity check (c64d787a)
+- Retry-flake dedup: gh pagination limit and in-run duplicates (a84ca256)
+- Search refetch guard: replace the absence-window `expect.poll` with a debounce-spanning wait (7d96cffd)
+- Strengthen the version-banner dist-read visibility assertion (756b072d)
+
+### Other Changes
+
+- Migrated E2E specs (sidebar, versioning, header-dropdown, doc-history, design-token-panel, HTML-preview) to the shared console-error fixture; demoted static-markup assertions (versioning, frontmatter-preview, TOC) to L3 dist reads
+- Added coverage: markdown-feature goldens, PresetGenerator hydration, llms.txt static emission, `doc-route-paths`/`nav-data-prep` L1 suites, and deterministic sidebar-resizer width-restore
+- Refactors: extract `filterTree`/active-slug helpers and a shared `normalizeHtml`/`sha256` module, dedupe `extractTrackingIssueUrl`, and retarget mirror tests at real implementations
+- Docs: reconcile TESTING.md / CLAUDE.md / b4push step counts, document the `wait-ok` marker convention, and refresh stale test-flow notes

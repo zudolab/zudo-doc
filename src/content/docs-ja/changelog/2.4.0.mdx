@@ -1,0 +1,33 @@
+---
+title: 2.4.0
+description: 2.4.0のリリースノート。
+sidebar_position: 1049
+---
+
+リリース日: 2026-07-03
+
+内部的な**テスト戦略スイープ**です。E2E/CIの堅牢化、待機パターンのガード、共有フィクスチャの統合、テストのリターゲットが中心で、ユーザー向けの挙動や生成されるスキャフォールドの変更はありません。
+
+### 機能
+
+- E2Eスペック向けのゼロトレランスな wait-debt ガード（`wait-ok` マーカー付き）を追加し、ステップ単位の計測とともに b4push へ組み込み (2394139a, c5ed932c)
+- 共有E2Eフィクスチャがティアダウン時にコンソールエラーを自動アサートするように (dfb4dfea)
+- smoke dist ヘルパーを一般化した `makeDistReader(fixture)` ヘルパーを L3 dist-read テスト向けに追加 (608bc289)
+- `claude-resources` の実効的なテンプレートドリフト・パリティガードを追加 (91136223)
+- Exam CI の堅牢化: 初回リトライ時のトレース取得と retry-report/アーティファクト連携、`file-exam-issue.sh --green` モード、pass-on-retry アノテーションの消費先を追加 (2b3b3e37, 03589668, 197f3eea)
+
+### バグ修正
+
+- `create-zudo-doc`: `claude-resources` テンプレートをパッケージソースと同期 (615b4e0b)
+- parity-diff の `diff()` で null のベースライン route-list をガード (25de9d73)
+- 再帰的なE2Eスペック命名ガードとフィクスチャ/設定のパリティチェック (c64d787a)
+- retry-flake の重複排除: gh のページネーション上限と実行内の重複に対応 (a84ca256)
+- 検索の再フェッチガード: 不在ウィンドウの `expect.poll` をデバウンスをまたぐ待機に置き換え (7d96cffd)
+- version-banner の dist-read 可視性アサーションを強化 (756b072d)
+
+### その他の変更
+
+- E2Eスペック（sidebar、versioning、header-dropdown、doc-history、design-token-panel、HTML-preview）を共有の console-error フィクスチャへ移行。静的マークアップのアサーション（versioning、frontmatter-preview、TOC）を L3 dist read へ降格
+- カバレッジ追加: markdown 機能のゴールデン、PresetGenerator のハイドレーション、llms.txt の静的出力、`doc-route-paths`/`nav-data-prep` の L1 スイート、決定的な sidebar-resizer の幅復元
+- リファクタ: `filterTree`/active-slug ヘルパーと共有の `normalizeHtml`/`sha256` モジュールを抽出、`extractTrackingIssueUrl` を重複排除、ミラーテストを実実装へリターゲット
+- ドキュメント: TESTING.md / CLAUDE.md / b4push のステップ数を整合、`wait-ok` マーカーの規約を明文化、古くなった test-flow の記述を更新
