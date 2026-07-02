@@ -16,12 +16,14 @@
 // routes' output (see the module doc above this factory in the epic issue).
 //
 // Data inputs (nav tree, category order, tag count) differ slightly between
-// the default-locale and locale-prefixed routes (see `routes/locale-index.tsx`
-// — `resolveNavSource(..., { applyDefaultLocaleOnlyFilter: true, keepUnlisted:
-// true })` + `loadCategoryMeta(cfg.dir)`), so those stay PREPARED PROPS the
-// route files compute with their own exact calls; this factory only derives
-// the locale-URL prefix (shared logic — `/` for the default locale, `/{locale}`
-// otherwise) from `ctx`.
+// the default-locale and locale-prefixed routes — that data-prep sequence now
+// lives in the sibling `./prepare-home-data.js` factory (`prepareHomeData`,
+// #2519) and is handed to `HomePageView` as PREPARED PROPS by every adapter;
+// this factory only derives the locale-URL prefix (shared logic — `/` for the
+// default locale, `/{locale}` otherwise) from `ctx`. `prepareHomeData` is
+// re-exported from this barrel below but implemented in its own file so the
+// `node:fs` edge it pulls in (via sidebar-tree's `loadCategoryMeta`) stays out
+// of this view module's import graph and out of any client-island chain.
 //
 // NOT an eject target — no `ejectable-snapshot` registration.
 
@@ -38,6 +40,9 @@ import { createHeaderWithDefaults } from "../header-with-defaults/index.js";
 import { createFooterWithDefaults } from "../footer-with-defaults/index.js";
 import { deriveComposeMetaTitle, deriveBodyEndIslands } from "../chrome/derive.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
+
+export { prepareHomeData } from "./prepare-home-data.js";
+export type { PrepareHomeDataOptions, HomeData } from "./prepare-home-data.js";
 
 /** Props for the `HomePageView` component built by {@link createHomePageView}. */
 export interface HomePageViewProps {
