@@ -18,6 +18,9 @@ function buildDocsSchema() {
     slug: z.string().optional(),
     tags: z.array(z.string()).optional(),
     noindex: z.boolean().optional(),
+    // CB #2505: frontmatter-keyed field read by chrome-bindings.tsx's
+    // docContentHeaderExtras binding (end-to-end proof of the seam).
+    tier: z.string().optional(),
   });
 }
 

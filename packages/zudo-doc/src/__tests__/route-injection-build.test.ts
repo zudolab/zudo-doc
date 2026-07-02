@@ -403,6 +403,20 @@ function enableChromeBindingsModule(dir: string): void {
   writeFileSync(settingsPath, src);
 }
 
+/** Flip `docMetainfo` ON in a fixture's settings.ts (it ships false) so
+ *  `DocMetainfoArea` has a chance to render — paired with the
+ *  `chrome-bindings.tsx` `docHistoryMeta` override (CONFIRM #2505), this gives
+ *  the injected doc route a REAL metainfo block to assert
+ *  `docContentHeaderExtras` renders before. */
+function enableDocMetainfoForCB(dir: string): void {
+  const settingsPath = join(dir, "src/config/settings.ts");
+  const src = readFileSync(settingsPath, "utf-8").replace(
+    /docMetainfo:\s*false/,
+    "docMetainfo: true",
+  );
+  writeFileSync(settingsPath, src);
+}
+
 /** Point `chromeBindingsModule` at a path with no file on disk — used by the
  *  missing-file error case. */
 function enableMissingChromeBindingsModule(dir: string): void {
@@ -420,6 +434,7 @@ describe("CB chrome-bindings: chromeBindingsModule wires host bindings into crea
   it("setup: fixture builds with chromeBindingsModule set", { timeout: 180_000 }, () => {
     fixtureDir = setupFixture({ emptyPages: true });
     enableChromeBindingsModule(fixtureDir);
+    enableDocMetainfoForCB(fixtureDir);
     // Should not throw — the resolved file (src/chrome-bindings.tsx) exists.
     runZfbBuild(fixtureDir);
   });
@@ -433,6 +448,36 @@ describe("CB chrome-bindings: chromeBindingsModule wires host bindings into crea
     expect(html).toContain('data-testid="frontmatter-preview"');
     expect(html).toContain("cb-demo-key");
     expect(html).toContain("CB-DEMO-VALUE-MARKER");
+  });
+
+  // CONFIRM #2505 — end-to-end proof that `ctx.hostBindings.docContentHeaderExtras`
+  // reaches `DocContentHeader` on an injected doc route: renders a
+  // frontmatter-keyed badge sourced from `entry.data.tier` (the fixture's MDX
+  // sets `tier: gold`).
+  it("docContentHeaderExtras: injected /docs/getting-started/ HTML renders the frontmatter-keyed badge", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).toContain('class="doc-content-header-extra-marker"');
+    expect(html).toContain("DOC-HEADER-EXTRA-MARKER: gold");
+  });
+
+  // Positional proof: the badge renders AFTER </h1> and BEFORE the metainfo
+  // block (`DocMetainfoArea` → `DocMetainfo`, identified by its distinctive
+  // wrapper class — see metainfo/doc-metainfo.tsx), matching the documented
+  // placement in doc-content-header/index.tsx. The CB setup flips
+  // `docMetainfo: true` + supplies a `docHistoryMeta` entry (via
+  // chrome-bindings.tsx) so a REAL metainfo block renders here, rather than
+  // relying on the slot's absence to vacuously satisfy the ordering.
+  it("docContentHeaderExtras: badge renders BETWEEN </h1> and the metainfo block", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    const h1CloseIdx = html.indexOf("</h1>");
+    const badgeIdx = html.indexOf('class="doc-content-header-extra-marker"');
+    const metainfoIdx = html.indexOf("border-t border-fg pt-vsp-xs");
+    expect(h1CloseIdx).toBeGreaterThan(-1);
+    expect(badgeIdx).toBeGreaterThan(h1CloseIdx);
+    expect(metainfoIdx).toBeGreaterThan(badgeIdx);
+    // Confirm the metainfo block that renders is actually the one seeded by
+    // chrome-bindings.tsx's docHistoryMeta override (not some other match).
+    expect(html).toContain("CB-AUTHOR-MARKER");
   });
 
   // Case DH (DocHistory hydration pairing) regression guard: spreading
