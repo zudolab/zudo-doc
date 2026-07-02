@@ -2,6 +2,7 @@ import { execFile, execFileSync, spawn } from "node:child_process";
 import { promisify } from "node:util";
 import { readdirSync } from "node:fs";
 import { join, relative } from "node:path";
+import { StringDecoder } from "node:string_decoder";
 import type { DocHistoryEntry, DocHistoryData } from "./types.js";
 
 const execFileAsync = promisify(execFile);
@@ -630,6 +631,11 @@ export const MAX_BUFFER_BYTES = 32 * 1024 * 1024; // 32 MB
  * caused the catch block to swallow the error and return [], dropping the
  * file from the manifest. A warning is now logged on any catch so the
  * failure is visible (#2293).
+ *
+ * Retained as public API for downstream consumers of
+ * `@takazudo/zudo-doc-history-server` — the preBuild meta pass no longer calls
+ * this in-repo (superseded by `getAllFilesFirstLastMetaAsync`, #2517), but it
+ * stays exported for back-compat.
  */
 export async function getFileCommitsMetaAsync(
   filePath: string,
@@ -660,6 +666,260 @@ export async function getFileCommitsMetaAsync(
     );
     return [];
   }
+}
+
+// ---------------------------------------------------------------------------
+// Single-pass first/last metadata walk (#2517)
+//
+// The preBuild meta pass needs only {oldest, newest} author+date per current
+// content file. Doing that as one `git log --follow` per file is O(pages ×
+// history) and blew zfb's 120s plugin-hook budget on large corpora. This walks
+// the whole history ONCE with `--name-status`, reconstructing rename chains in
+// user-space so the result matches what per-file `--follow` would have found.
+// ---------------------------------------------------------------------------
+
+/**
+ * NUL byte prefixing each commit-header line in the single-pass walk's
+ * `--format`. git never emits a literal NUL inside a `--name-status` record
+ * line (paths are emitted raw under `core.quotePath=false` and cannot contain
+ * NUL), so a line starting with this byte is unambiguously a commit header
+ * rather than a status record — no reliance on git's blank-line separators.
+ */
+const WALK_COMMIT_SENTINEL = "\x00";
+
+/**
+ * git `--format` for the walk: `<NUL><hash>\n<isoDate>\n<authorName>`. The
+ * literal token `%x00` (NOT a real NUL) is passed to git — Node's `spawn`
+ * rejects argv strings containing a NUL byte, but git expands `%x00` to a NUL
+ * in its OUTPUT, which the parser then keys on via WALK_COMMIT_SENTINEL.
+ */
+const WALK_FORMAT = "%x00%H%n%aI%n%aN";
+
+/** Oldest + newest author/date for a single current-path key. */
+export interface FirstLastMeta {
+  /** The file's creation-side commit (author = page author, date = createdDate). */
+  oldest: { author: string; date: string };
+  /** The file's most recent commit (date = updatedDate). */
+  newest: { author: string; date: string };
+}
+
+/**
+ * Stateful accumulator that consumes the walk's stdout line-by-line and
+ * reconstructs rename chains. Kept separate from the spawn so the pure parser
+ * (`parseFirstLastMeta`) and the streaming walk share identical logic.
+ *
+ * Walk order is git's default newest-first. For each name-status record we
+ * resolve its path through `alias` to the CANONICAL current path, then:
+ *   - set `newest[key]` on first sight (newest commit that touched it), and
+ *   - overwrite `oldest[key]` on every touch (last write wins ⇒ oldest, since
+ *     we descend newest→oldest).
+ *
+ * Rename `R old→new`: after attributing to canonical(new), alias `old → key`
+ * so still-older records for `old` chain onto the same key.
+ *
+ * Delete `D path`: SEAL the key WITHOUT attributing. Walking newest-first, a
+ * delete is the point where THIS file's life ends going backward — anything
+ * older that resolves to the same path is a different, unrelated file that
+ * later reused the path, and must NOT inherit its dates (the path-reuse guard).
+ * This is the boundary where per-file `--follow` stops.
+ *
+ * NOTE — why the guard keys on DELETE, not ADD. The issue (#2517) proposed
+ * sealing on the recreation `A`. On a clean single-root history that is
+ * equivalent, but this repo's real history has multiple orphan roots (a
+ * `barebone-build-diff` dev tool + squashed bases), so a single unchanged file
+ * legitimately appears as `A` on several roots that `--follow` treats as ONE
+ * continuous history. Sealing on `A` truncated 261/293 pages to a wrong (newer)
+ * createdDate. Sealing on the `D` — the actual reuse boundary, absent from
+ * multi-root re-adds — reproduces `git log --follow` byte-for-byte (0 deltas)
+ * while still guarding genuine delete→recreate reuse. See the PR parity table.
+ *
+ * Copy `C old→new`: attribute to canonical(new) but do NOT alias — `--follow`
+ * doesn't track copies, so a docs-ja copy must not inherit EN history.
+ */
+function createFirstLastMetaAccumulator(): {
+  pushLine(line: string): void;
+  finish(): Map<string, FirstLastMeta>;
+} {
+  type State = "expect_hash" | "expect_date" | "expect_author" | "in_records";
+  let state: State = "expect_hash";
+  let curDate = "";
+  let curAuthor = "";
+
+  const alias = new Map<string, string>();
+  const sealed = new Set<string>();
+  const result = new Map<string, FirstLastMeta>();
+
+  const canonical = (p: string): string => alias.get(p) ?? p;
+
+  function applyRecord(status: string, paths: string[]): void {
+    const code = status[0];
+    let key: string;
+    let oldPath: string | undefined;
+    if (code === "R" || code === "C") {
+      // `R<score>\told\tnew` / `C<score>\told\tnew`.
+      oldPath = paths[0];
+      const newPath = paths[1];
+      if (!newPath) return;
+      key = canonical(newPath);
+    } else {
+      // `A`/`M`/`D`/`T`/… `\tpath`.
+      const p = paths[0];
+      if (!p) return;
+      key = canonical(p);
+    }
+
+    if (sealed.has(key)) return;
+
+    // Delete = reuse boundary: seal the chain (if the file is currently tracked,
+    // i.e. it exists at a newer commit) and never attribute the delete itself.
+    if (code === "D") {
+      if (result.has(key)) sealed.add(key);
+      return;
+    }
+
+    const commit = { author: curAuthor, date: curDate };
+    const existing = result.get(key);
+    if (existing) {
+      existing.oldest = commit; // last write wins ⇒ oldest
+    } else {
+      result.set(key, { oldest: commit, newest: commit });
+    }
+
+    if (code === "R" && oldPath) {
+      alias.set(oldPath, key);
+    }
+  }
+
+  function pushLine(line: string): void {
+    switch (state) {
+      case "expect_hash":
+        // Skip leading blanks / stray lines until the first commit header.
+        if (line.startsWith(WALK_COMMIT_SENTINEL)) state = "expect_date";
+        break;
+      case "expect_date":
+        curDate = line.trim();
+        state = "expect_author";
+        break;
+      case "expect_author":
+        curAuthor = line.trim();
+        state = "in_records";
+        break;
+      case "in_records":
+        if (line.startsWith(WALK_COMMIT_SENTINEL)) {
+          // Next commit begins; its date/author follow.
+          state = "expect_date";
+          break;
+        }
+        if (line === "") break; // git's blank separator before the record block
+        {
+          const fields = line.split("\t");
+          const status = fields[0];
+          if (status) applyRecord(status, fields.slice(1));
+        }
+        break;
+    }
+  }
+
+  return { pushLine, finish: () => result };
+}
+
+/**
+ * Pure parser + rename reconstruction for the single-pass walk's stdout.
+ * Keyed by CURRENT repo-relative path (exactly what git emits). Exported for
+ * unit tests; the streaming walk uses the same accumulator incrementally.
+ */
+export function parseFirstLastMeta(output: string): Map<string, FirstLastMeta> {
+  const acc = createFirstLastMetaAccumulator();
+  if (output.length > 0) {
+    for (const line of output.split("\n")) acc.pushLine(line);
+  }
+  return acc.finish();
+}
+
+/**
+ * Walk the WHOLE git history ONCE and return `{oldest, newest}` author/date for
+ * every current file, keyed by ABSOLUTE path (`<repoRoot>/<relPath>`) so a
+ * consumer whose project root differs from the repo root still matches by the
+ * absolute paths its content walker produced.
+ *
+ * ONE streaming `git log --full-history --name-status --find-renames -l0`
+ * spawn, parsed incrementally (never execFile+maxBuffer — that reintroduced the
+ * #2293 silent-truncation class — and never concat-all-then-parse, since a
+ * full-history buffer can be large in arbitrary consumer repos).
+ *
+ * `-l0` is mandatory: a bulk `--name-status --find-renames` walk runs rename
+ * detection per-commit under the global `diff.renameLimit`; a mass-rename commit
+ * that hits the limit emits `D`+`A` instead of `R`, silently dropping pre-rename
+ * history (wrong createdDate/author) where per-path `--follow` would find it.
+ *
+ * `--full-history` is required to MATCH per-file `--follow`: default history
+ * simplification prunes commits on merged side-branches that are TREESAME to the
+ * first parent, so a bounded directory walk would miss updates that `--follow`
+ * (which effectively sees the full per-file history) reports. Without it, most
+ * pages collapsed updatedDate onto createdDate. Merges still emit header-only
+ * name-status under the default `--diff-merges`, so this does not double-count.
+ *
+ * `pathspecs` bound the walk to the content dirs (absolute or repo-relative;
+ * absolute entries are converted to repo-relative like the other helpers). Pass
+ * `[]` to walk full history.
+ *
+ * cwd = repo root (#1907). Returns an empty Map outside a git repo so callers
+ * degrade to an empty manifest instead of crashing.
+ */
+export function getAllFilesFirstLastMetaAsync(
+  pathspecs: string[] = [],
+): Promise<Map<string, FirstLastMeta>> {
+  if (!isGitRepo()) return Promise.resolve(new Map());
+
+  const repoRoot = getRepoRoot();
+  const relSpecs = pathspecs.map((p) =>
+    p.startsWith("/") ? toRepoRelative(p) : p,
+  );
+  const args = [
+    "-c",
+    "core.quotePath=false", // emit raw UTF-8 paths so keys match content-walker paths
+    "log",
+    "--full-history",
+    "--name-status",
+    "--find-renames",
+    "-l0",
+    `--format=${WALK_FORMAT}`,
+  ];
+  if (relSpecs.length > 0) args.push("--", ...relSpecs);
+
+  return new Promise((resolvePromise) => {
+    const child = spawn("git", args, {
+      stdio: ["ignore", "pipe", "ignore"],
+      cwd: repoRoot,
+    });
+
+    const acc = createFirstLastMetaAccumulator();
+    // StringDecoder buffers incomplete multi-byte UTF-8 sequences that straddle
+    // chunk boundaries, so a Japanese path split across two data events decodes
+    // correctly.
+    const decoder = new StringDecoder("utf-8");
+    let buf = "";
+
+    child.stdout.on("data", (chunk: Buffer) => {
+      buf += decoder.write(chunk);
+      let nl: number;
+      while ((nl = buf.indexOf("\n")) !== -1) {
+        acc.pushLine(buf.slice(0, nl));
+        buf = buf.slice(nl + 1);
+      }
+    });
+    // git missing / spawn failure ⇒ empty map; the caller degrades to an empty
+    // manifest exactly as the old per-file catch→[] did.
+    child.on("error", () => resolvePromise(new Map()));
+    child.on("close", () => {
+      buf += decoder.end();
+      if (buf.length > 0) acc.pushLine(buf); // trailing line without a newline
+      const relMap = acc.finish();
+      const absMap = new Map<string, FirstLastMeta>();
+      for (const [rel, meta] of relMap) absMap.set(join(repoRoot, rel), meta);
+      resolvePromise(absMap);
+    });
+  });
 }
 
 /**
