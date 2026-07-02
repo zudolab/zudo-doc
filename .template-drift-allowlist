@@ -7,14 +7,16 @@
 # production has features inlined
 src/styles/global.css
 
-# claude-resources feature — generated projects ship their own copies of the
-# generator/escape helpers; production consumes the same logic re-exported
-# from @takazudo/zudo-doc/integrations/claude-resources, so prod has no
-# matching paths under src/integrations/claude-resources/.
-src/integrations/claude-resources/__tests__/escape-for-mdx.test.ts
-src/integrations/claude-resources/__tests__/generate.test.ts
-src/integrations/claude-resources/escape-for-mdx.ts
-src/integrations/claude-resources/generate.ts
+# claude-resources feature (#2533) — generated projects ship their own copies
+# of the generator/escape helpers; production consumes the same logic
+# re-exported from @takazudo/zudo-doc/integrations/claude-resources. These
+# four files are NOT blanket-exempted here anymore — a real parity guard
+# (CLAUDE_RESOURCES_PARITY_PATHS / check_pair_normalized in
+# scripts/check-template-drift.sh) diffs them with import-extension and
+# comment normalization applied, so the only tolerated difference is the
+# package's Node-ESM-required ".js" import extension (dist/ is consumed
+# directly by Node; the template's bundler-resolved imports don't need it).
+# Any real logic drift still fails the check.
 
 # Showcase-specific renderers — source ships Pill/discount/status/difficulty
 # examples for the zudo-doc showcase only; template ships an empty map so

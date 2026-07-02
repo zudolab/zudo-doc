@@ -85,9 +85,81 @@ has_use_client() {
 
 DRIFTED=()
 
+# ---------------------------------------------------------------------------
+# claude-resources parity guard (#2533)
+# ---------------------------------------------------------------------------
+# These four prod paths used to be blanket-exempted in .template-drift-
+# allowlist, which meant a real logic drift between the template copy and
+# the package source (e.g. a missing bugfix or a missing regression test)
+# was invisible to CI. They carry exactly one INTENTIONAL, permanent
+# difference: the package source uses explicit ".js" import extensions
+# (dist/ is consumed directly by Node ESM, which requires them on relative
+# imports), while the template is compiled by the host's bundler (zfb/Vite,
+# moduleResolution "Bundler"), which does not need them. So instead of a
+# blanket exemption, these pairs get a NORMALIZED diff — comment lines and
+# the ".js" relative-import extension are stripped from both sides before
+# comparing — so any other difference (a real logic or test-coverage drift)
+# still fails the check.
+#
+# The "canonical" copy these template files sync from is NOT a root-relative
+# host path (the naive BASE_DIR/-stripped prod_path used by every other
+# check_pair() call) — it's the workspace package source at
+# packages/zudo-doc/src/integrations/claude-resources/, re-exported at
+# runtime as @takazudo/zudo-doc/integrations/claude-resources. So the map
+# value is the real comparison path, keyed by the usual stripped prod_path
+# (used only for display / the DRIFTED report).
+declare -A CLAUDE_RESOURCES_PARITY_PATHS=(
+  ["src/integrations/claude-resources/__tests__/escape-for-mdx.test.ts"]="packages/zudo-doc/src/integrations/claude-resources/__tests__/escape-for-mdx.test.ts"
+  ["src/integrations/claude-resources/__tests__/generate.test.ts"]="packages/zudo-doc/src/integrations/claude-resources/__tests__/generate.test.ts"
+  ["src/integrations/claude-resources/escape-for-mdx.ts"]="packages/zudo-doc/src/integrations/claude-resources/escape-for-mdx.ts"
+  ["src/integrations/claude-resources/generate.ts"]="packages/zudo-doc/src/integrations/claude-resources/generate.ts"
+)
+
+# Strips pure comment lines (// line comments and /** ... */ JSDoc blocks,
+# matched whole-line-only so no code line is touched) and drops the ".js"
+# extension from relative-import specifiers, then drops blank lines left
+# behind. Scoped to the narrow claude-resources pair set above — not a
+# general-purpose comment stripper.
+normalize_claude_resources_content() {
+  sed -E \
+    -e '\%^[[:space:]]*(//|/\*|\*)%d' \
+    -e 's#(from "\.\.?/[^"]+)\.js"#\1"#' \
+    -e "s#(from '\.\.?/[^']+)\.js'#\1'#" \
+    "$1" | sed '/^[[:space:]]*$/d'
+}
+
+check_pair_normalized() {
+  local template_file="$1"
+  local prod_path="$2"
+  local prod_file="$ROOT_DIR/${CLAUDE_RESOURCES_PARITY_PATHS[$prod_path]}"
+
+  if [[ ! -f "$prod_file" ]]; then
+    echo "  [MISSING IN PROD] $prod_path"
+    DRIFTED+=("$prod_path")
+    return
+  fi
+
+  local norm_tmpl norm_prod
+  norm_tmpl="$(normalize_claude_resources_content "$template_file")"
+  norm_prod="$(normalize_claude_resources_content "$prod_file")"
+
+  if [[ "$norm_tmpl" != "$norm_prod" ]]; then
+    echo "  [DIFF] $prod_path (claude-resources parity guard, #2533)"
+    DRIFTED+=("$prod_path")
+  fi
+}
+
 check_pair() {
   local template_file="$1"
   local prod_path="$2" # relative to repo root
+
+  # claude-resources pairs use the normalized parity guard above instead of
+  # a raw byte diff (and are never allowlist-exempt — see .template-drift-
+  # allowlist).
+  if [[ -n "${CLAUDE_RESOURCES_PARITY_PATHS[$prod_path]+_}" ]]; then
+    check_pair_normalized "$template_file" "$prod_path"
+    return
+  fi
 
   # Skip if in allowlist
   if [[ -n "${ALLOWED[$prod_path]+_}" ]]; then
