@@ -20,7 +20,7 @@
 // Run `pnpm --filter @takazudo/zudo-doc build` first if missing.
 //
 // Wired into:
-//   - scripts/run-b4push.sh (after package build step — step 10)
+//   - scripts/run-b4push.sh (after the package-build step)
 //   - .github/workflows/pr-checks.yml (after pnpm install + package build)
 
 import { readFileSync, readdirSync, existsSync } from "node:fs";
