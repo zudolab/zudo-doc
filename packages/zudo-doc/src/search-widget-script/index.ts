@@ -10,6 +10,7 @@
 // Pure — no node builtins, no `@/` host alias imports.
 
 import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
+import { prepareLc, scoreEntry } from "./scoring.js";
 
 /**
  * Client-side script string for the SiteSearch custom element.
@@ -63,34 +64,14 @@ export const SEARCH_WIDGET_SCRIPT = /* javascript */ `(function () {
     return query.trim().split(/\\s+/).filter(Boolean);
   }
 
-  // scoreEntry reads pre-lowercased fields (_titleLc, _descLc, _bodyLc)
-  // set by prepareLc() at index-load time. Terms arrive already lowercased
-  // from search() so no per-call toLowerCase() is needed.
-  function scoreEntry(entry, terms) {
-    var score = 0;
-    var titleLc = entry._titleLc;
-    var descLc  = entry._descLc;
-    var bodyLc  = entry._bodyLc;
-    for (var i = 0; i < terms.length; i++) {
-      var t = terms[i];
-      if (titleLc.indexOf(t) !== -1) score += 3;
-      if (descLc.indexOf(t) !== -1)  score += 2;
-      if (bodyLc.indexOf(t) !== -1)  score += 1;
-    }
-    return score;
-  }
+  // scoreEntry / prepareLc: embedded verbatim (via Function.prototype.toString())
+  // from the real, unit-tested implementation in ./scoring.ts — see the module
+  // header comment there and search-widget-script/__tests__/scoring.test.ts.
+  // This keeps the shipped inline script and the tested source identical by
+  // construction instead of relying on a hand-copied mirror staying in sync.
+  ${prepareLc.toString()}
 
-  // Pre-lowercase the searched fields on each entry once at load time so that
-  // scoreEntry() does not re-lowercase the entire ~162 KB index on every
-  // debounced keystroke.  Original-case fields are preserved for display.
-  function prepareLc(entries) {
-    for (var i = 0; i < entries.length; i++) {
-      var e = entries[i];
-      e._titleLc = (e.title       || "").toLowerCase();
-      e._descLc  = (e.description || "").toLowerCase();
-      e._bodyLc  = (e.body        || "").toLowerCase();
-    }
-  }
+  ${scoreEntry.toString()}
 
   function highlightTerms(text, terms) {
     if (!terms.length) return escapeHtml(text);

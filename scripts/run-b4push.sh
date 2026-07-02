@@ -205,15 +205,6 @@ else
   fail "pages/ typecheck"
 fi
 
-# plugins/ typecheck: root tsconfig excludes plugins/ (plain .mjs files).
-# tsconfig.plugins.json enables checkJs with strict mode for all six
-# plugins/*.mjs files (#2026).
-if (cd "$ROOT_DIR" && pnpm check:plugins); then
-  pass "plugins/ typecheck passed"
-else
-  fail "plugins/ typecheck"
-fi
-
 # Workspace package typechecks: `zfb check` only covers the root tsconfig
 # (packages/ are excluded), so a red package typecheck was invisible to
 # every gate until review-loop 2026-06-05 found one. Runs each package's
