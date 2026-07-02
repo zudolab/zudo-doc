@@ -38,9 +38,13 @@ src/config/tag-vocabulary.ts
 #
 # i18n.ts: host ships showcase-specific keys (search, nav.markdownFeatures,
 # doc.history) that the template omits; template ships a leaner baseline.
-# sidebar-tree.tsx: intentional divergence — template uses literal preact/compat
-# imports (W8A preact/compat note in the W8A block below) and the URL-derived
-# currentSlug lazy-init is needed only in the host's island setup.
+# sidebar-tree.tsx: the host's dead 639-line duplicate was deleted in #2528
+# (filterTree + active-slug helpers extracted into the real production
+# modules packages/zudo-doc/src/{sidebar-filter,sidebar-active-slug}, which
+# the live sidebar-tree-island now imports). The template's copy is a thin
+# re-export shim (`@takazudo/zudo-doc/sidebar-tree-island`) kept for
+# downstream projects importing `@/components/sidebar-tree` — there is no
+# longer a host counterpart to diff against.
 src/config/i18n.ts
 src/components/sidebar-tree.tsx
 
