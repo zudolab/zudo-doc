@@ -6,7 +6,8 @@
 // Every test tagged @flaky or @local-only must have a GitHub issue URL in a
 // comment on the line immediately preceding (or within 10 lines before) the
 // `test(...)` call. The URL is extracted using the same backward-walk logic
-// used by `scripts/report-flaky-lane.mjs` (`extractTrackingIssueUrl`).
+// `scripts/report-flaky-lane.mjs` uses, shared via
+// `scripts/lib/extract-tracking-issue-url.mjs` (#2529).
 //
 // This guard closes the enforcement gap: TESTING.md documents the tracking-
 // issue requirement, but nothing previously prevented a @flaky / @local-only
@@ -26,69 +27,10 @@ import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { extractTrackingIssueUrl } from "./lib/extract-tracking-issue-url.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
-
-// ---------------------------------------------------------------------------
-// Tracking-issue URL extraction (mirrors report-flaky-lane.mjs logic)
-//
-// Searches backwards from the test title line for the nearest preceding
-// comment line containing a GitHub issue URL, stopping at a non-blank,
-// non-comment line. Returns the URL or null.
-// ---------------------------------------------------------------------------
-/**
- * @param {string} fileContent - full text of the spec file
- * @param {string} testTitle - the test title string (as it appears in test("..."))
- * @returns {string | null}
- */
-function extractTrackingIssueUrl(fileContent, testTitle) {
-  const lines = fileContent.split("\n");
-
-  // Escape special regex chars in the test title for safe matching
-  const escapedTitle = testTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const titlePattern = new RegExp(
-    `test\\s*\\(\\s*["'\`].*${escapedTitle}.*["'\`]`,
-  );
-
-  // Find the line index where this test is defined
-  let testLineIndex = -1;
-  for (let i = 0; i < lines.length; i++) {
-    if (titlePattern.test(lines[i])) {
-      testLineIndex = i;
-      break;
-    }
-  }
-
-  if (testLineIndex === -1) return null;
-
-  // Walk backwards from the test title line to find a comment with a GitHub URL
-  const githubIssuePattern =
-    /https:\/\/github\.com\/[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+\/issues\/\d+/;
-
-  for (let i = testLineIndex - 1; i >= 0 && i >= testLineIndex - 10; i--) {
-    const line = lines[i].trim();
-    // Only consider comment lines (// or /* style)
-    if (
-      line.startsWith("//") ||
-      line.startsWith("*") ||
-      line.startsWith("/*")
-    ) {
-      const match = line.match(githubIssuePattern);
-      if (match) {
-        return match[0];
-      }
-    } else if (line === "" || line === "*/") {
-      // Allow blank lines and end-of-block-comment between comment and test
-      continue;
-    } else {
-      // Non-comment, non-blank line encountered — stop looking
-      break;
-    }
-  }
-
-  return null;
-}
 
 /**
  * Find all git-TRACKED *.spec.ts files under e2e/.
