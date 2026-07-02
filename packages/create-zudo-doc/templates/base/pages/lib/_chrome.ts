@@ -163,4 +163,5 @@ export const {
   TagsIndexPageView,
   SiteTreeNavWrapper,
   BodyEndIslands,
+  HomePageView,
 } = chrome;
