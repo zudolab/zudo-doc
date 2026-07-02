@@ -1,0 +1,43 @@
+---
+title: 2.3.0
+description: Release notes for 2.3.0.
+sidebar_position: 1048
+---
+
+Released: 2026-07-03
+
+### Features
+
+- **Host chrome-binding seams** — new extension points let a host project inject
+  markup and callables into the framework chrome without forking layout code: a
+  `chromeBindingsModule` host-callables channel (ffedd8f4, #2501), `docContentHeaderExtras`
+  and `homeExtras` binding slots (8e553706, #2500), and a `createHomePageView` factory
+  exposed via the `./home-page` subpath export with its own extras seam (20d728e8 /
+  34dfa5e7, #2502). `HomePageView` is re-exported from the host chrome adapter and adopted
+  across package, showcase, and template home routes (40f88971 / 2f371ba6 / 3b9cea8d, #2503).
+- **Accessibility contrast audit tooling** — a contrast guard that checks the full
+  color-pair matrix, with a `--suggest` mode that proposes OKLCH tweaks to clear WCAG
+  floors (0f9668ad / 29d585e5, #2490, #2492).
+
+### Bug Fixes
+
+- **doc-history:** scope the rename-chain seal to the chain's physical path so unrelated
+  files no longer share history (2520270b, #2517).
+- **home-page:** honor `categoryMetaDir` on the default locale (28da87c4, #2519).
+- **chrome bindings:** raise a loud error for an empty `chromeBindingsModule` and guard
+  against a directory-valued path (8cea6c2b / 86c35b5d, #2518).
+- **accessibility:** burn down contrast failures across the dark presets and light schemes,
+  retune 261 marginal pairs to a threshold+0.1 headroom, and audit muted/accent tokens on
+  their real rendered backgrounds (57a16896 / d518d546 / 87a1d6b1, #2493, #2497, #2510).
+- **e2e:** randomize the workerd inspector port per fixture preview to fix a race under
+  `wrangler dev` (fe9eceb6, #2084), and migrate fixture wrangler configs to Workers
+  static-assets (a1c2f330).
+
+### Other Changes
+
+- **doc-history:** single-pass `--name-status` walk for the preBuild meta generation
+  (07a98c11, #2517).
+- **home-page:** extract `prepareHomeData` and shrink six adapters (c9c4e765, #2519).
+- **deps:** bump the zfb family to `0.1.0-next.75` (9e305f5d, #2511).
+- **docs:** document the host chrome-binding seams (EN + JA) and add the
+  `color-scheme-a11y` project skill (31a69ce5 / 33c04519).
