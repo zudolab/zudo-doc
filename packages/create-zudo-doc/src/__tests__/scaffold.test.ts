@@ -1,4 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+} from "vitest";
 import fs from "fs-extra";
 import os from "os";
 import path from "path";
@@ -55,8 +63,23 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
     packageManager: "pnpm",
   };
 
-  beforeEach(async () => {
+  // Every test below reads the same scaffold output and none mutate the
+  // tree, so `choices` is scaffolded once in beforeAll instead of once per
+  // `it` (#2531 — dedupe scaffold() calls). This shadows the module-level
+  // `projectPath` for this describe only.
+  let sharedDir: string;
+  function projectPath(...segments: string[]): string {
+    return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+  }
+  beforeAll(async () => {
+    const cwdBefore = process.cwd();
+    sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+    process.chdir(sharedDir);
     await scaffold(choices);
+    process.chdir(cwdBefore);
+  });
+  afterAll(async () => {
+    await fs.remove(sharedDir);
   });
 
   it("creates package.json with correct name", async () => {
@@ -339,6 +362,34 @@ describe("scaffold — minimal (no i18n, search only, single dark scheme)", () =
 });
 
 describe("scaffold — sidebarToggle feature", () => {
+  // Both tests below scaffold the identical `search` + `sidebarToggle`
+  // config (only projectName differed) — scaffold once in beforeAll instead
+  // of once per `it` (#2531 — dedupe scaffold() calls). This shadows the
+  // module-level `projectPath` for this describe only; the canonical
+  // projectName is "test-sidebar-toggle-on" (from the first test).
+  const choices: UserChoices = {
+    projectName: "test-sidebar-toggle-on",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "sidebarToggle"],
+    packageManager: "pnpm",
+  };
+  let sharedDir: string;
+  function projectPath(...segments: string[]): string {
+    return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+  }
+  beforeAll(async () => {
+    const cwdBefore = process.cwd();
+    sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+    process.chdir(sharedDir);
+    await scaffold(choices);
+    process.chdir(cwdBefore);
+  });
+  afterAll(async () => {
+    await fs.remove(sharedDir);
+  });
+
   // #2200: the desktop-sidebar-toggle no longer carries a host-side SPA-nav
   // flash guard. zfb-runtime >= 0.1.0-next.52 preserves runtime <html>
   // attributes across swaps via <ClientRouter preserveHtmlAttrs={[…]} /> (mounted
@@ -352,15 +403,6 @@ describe("scaffold — sidebarToggle feature", () => {
   // The generated file is now a thin re-export shim; the sidebar-state logic
   // (`data-sidebar-hidden`, `SIDEBAR_STORAGE_KEY`) lives in the package.
   it("desktop-sidebar-toggle.tsx persists sidebar state without a host-side SPA-nav flash guard (#2200)", async () => {
-    const choices: UserChoices = {
-      projectName: "test-sidebar-toggle-on",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "sidebarToggle"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
       projectPath(
         "test-sidebar-toggle-on",
@@ -392,17 +434,8 @@ describe("scaffold — sidebarToggle feature", () => {
   });
 
   it("generated package.json pins @takazudo/zudo-doc (W4A — runtime dep)", async () => {
-    const choices: UserChoices = {
-      projectName: "test-sidebar-toggle-deps",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "sidebarToggle"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const pkg = await fs.readJson(
-      projectPath("test-sidebar-toggle-deps", "package.json"),
+      projectPath("test-sidebar-toggle-on", "package.json"),
     );
     expect(pkg.dependencies["@takazudo/zudo-doc"]).toBeDefined();
     expect(pkg.dependencies["@takazudo/zudo-doc"]).toMatch(/^\^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/);
@@ -428,8 +461,23 @@ describe("scaffold — full features (i18n, light-dark, all features)", () => {
     packageManager: "pnpm",
   };
 
-  beforeEach(async () => {
+  // Every test below reads the same scaffold output and none mutate the
+  // tree, so `choices` is scaffolded once in beforeAll instead of once per
+  // `it` (#2531 — dedupe scaffold() calls). This shadows the module-level
+  // `projectPath` for this describe only.
+  let sharedDir: string;
+  function projectPath(...segments: string[]): string {
+    return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+  }
+  beforeAll(async () => {
+    const cwdBefore = process.cwd();
+    sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+    process.chdir(sharedDir);
     await scaffold(choices);
+    process.chdir(cwdBefore);
+  });
+  afterAll(async () => {
+    await fs.remove(sharedDir);
   });
 
   it("creates docs-ja starter content", async () => {
@@ -544,8 +592,23 @@ describe("scaffold — generated package.json dependencies", () => {
     packageManager: "pnpm",
   };
 
-  beforeEach(async () => {
+  // Every test below reads the same scaffold output and none mutate the
+  // tree, so `choices` is scaffolded once in beforeAll instead of once per
+  // `it` (#2531 — dedupe scaffold() calls). This shadows the module-level
+  // `projectPath` for this describe only.
+  let sharedDir: string;
+  function projectPath(...segments: string[]): string {
+    return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+  }
+  beforeAll(async () => {
+    const cwdBefore = process.cwd();
+    sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+    process.chdir(sharedDir);
     await scaffold(choices);
+    process.chdir(cwdBefore);
+  });
+  afterAll(async () => {
+    await fs.remove(sharedDir);
   });
 
   it("includes remark-directive in dependencies", async () => {
@@ -589,6 +652,39 @@ describe("scaffold — designTokenPanel package.json wiring", () => {
 });
 
 describe("scaffold — generated settings.ts content", () => {
+  // 5 of the tests below (cjkFriendly default, packageOwnedRoutes,
+  // tagPlacement, toc depth defaults, headingIdStrategy default) all
+  // scaffold the identical bare `search`-only config (only projectName
+  // differed) — scaffold that config once in beforeAll instead of 5 times
+  // (#2531 — dedupe scaffold() calls). The other tests in this describe
+  // each need a genuinely distinct config and keep their own per-test
+  // scaffold via the module-level `projectPath`/ambient tempDir, so this
+  // helper is named `sharedProjectPath` (not `projectPath`) to avoid
+  // shadowing those tests' lookups. Canonical projectName is
+  // "test-cjk-default" (the first test in the duplicate group).
+  const sharedChoices: UserChoices = {
+    projectName: "test-cjk-default",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search"],
+    packageManager: "pnpm",
+  };
+  let sharedDir: string;
+  function sharedProjectPath(...segments: string[]): string {
+    return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+  }
+  beforeAll(async () => {
+    const cwdBefore = process.cwd();
+    sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+    process.chdir(sharedDir);
+    await scaffold(sharedChoices);
+    process.chdir(cwdBefore);
+  });
+  afterAll(async () => {
+    await fs.remove(sharedDir);
+  });
+
   it("single scheme: settings reflect chosen scheme", async () => {
     const choices: UserChoices = {
       projectName: "test-settings-single",
@@ -651,17 +747,8 @@ describe("scaffold — generated settings.ts content", () => {
   });
 
   it("cjkFriendly: defaults to false when not specified", async () => {
-    const choices: UserChoices = {
-      projectName: "test-cjk-default",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
-      projectPath("test-cjk-default", "src/config/settings.ts"),
+      sharedProjectPath("test-cjk-default", "src/config/settings.ts"),
       "utf-8",
     );
     expect(content).toContain("cjkFriendly: false");
@@ -705,34 +792,16 @@ describe("scaffold — generated settings.ts content", () => {
   });
 
   it("packageOwnedRoutes: generated settings always contain packageOwnedRoutes: true", async () => {
-    const choices: UserChoices = {
-      projectName: "test-package-owned-routes",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
-      projectPath("test-package-owned-routes", "src/config/settings.ts"),
+      sharedProjectPath("test-cjk-default", "src/config/settings.ts"),
       "utf-8",
     );
     expect(content).toContain("packageOwnedRoutes: true");
   });
 
   it("tagPlacement: generated settings default to after-title", async () => {
-    const choices: UserChoices = {
-      projectName: "test-settings-tag-placement",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
-      projectPath("test-settings-tag-placement", "src/config/settings.ts"),
+      sharedProjectPath("test-cjk-default", "src/config/settings.ts"),
       "utf-8",
     );
     expect(content).toContain('tagPlacement: "after-title"');
@@ -756,17 +825,8 @@ describe("scaffold — generated settings.ts content", () => {
   });
 
   it("tocMinDepth and tocMaxDepth default to 2 and 4 in generated settings", async () => {
-    const choices: UserChoices = {
-      projectName: "test-toc-depth-defaults",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
-      projectPath("test-toc-depth-defaults", "src/config/settings.ts"),
+      sharedProjectPath("test-cjk-default", "src/config/settings.ts"),
       "utf-8",
     );
     expect(content).toContain("tocMinDepth: 2");
@@ -774,17 +834,8 @@ describe("scaffold — generated settings.ts content", () => {
   });
 
   it("headingIdStrategy defaults to hierarchical in generated settings", async () => {
-    const choices: UserChoices = {
-      projectName: "test-heading-id-strategy-default",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
-      projectPath("test-heading-id-strategy-default", "src/config/settings.ts"),
+      sharedProjectPath("test-cjk-default", "src/config/settings.ts"),
       "utf-8",
     );
     expect(content).toContain(
@@ -794,16 +845,65 @@ describe("scaffold — generated settings.ts content", () => {
 });
 
 describe("scaffold — docHistory feature", () => {
+  // The 9 tests below collapse to 4 distinct configs (only projectName
+  // differed within each group): "search"+"docHistory" (4 tests, canonical
+  // "test-dh-on"), bare "search" (3 tests, canonical "test-dh-no-diff-css"),
+  // plus 2 genuinely unique configs (header-footer-tweak, body-foot-util-auto).
+  // Scaffold each distinct config once in beforeAll instead of once per `it`
+  // (#2531 — dedupe scaffold() calls). This shadows the module-level
+  // `projectPath` for this describe only.
+  const dhOnChoices: UserChoices = {
+    projectName: "test-dh-on",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "docHistory"],
+    packageManager: "pnpm",
+  };
+  const dhOffChoices: UserChoices = {
+    projectName: "test-dh-no-diff-css",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search"],
+    packageManager: "pnpm",
+  };
+  const headerFooterTweakChoices: UserChoices = {
+    projectName: "test-header-footer-tweak",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "docHistory", "designTokenPanel", "bodyFootUtil"],
+    githubUrl: "https://github.com/example/demo",
+    packageManager: "pnpm",
+  };
+  const bodyFootUtilAutoChoices: UserChoices = {
+    projectName: "test-body-foot-util-auto",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "bodyFootUtil"],
+    packageManager: "pnpm",
+  };
+  let sharedDir: string;
+  function projectPath(...segments: string[]): string {
+    return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+  }
+  beforeAll(async () => {
+    const cwdBefore = process.cwd();
+    sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+    process.chdir(sharedDir);
+    await scaffold(dhOnChoices);
+    await scaffold(dhOffChoices);
+    await scaffold(headerFooterTweakChoices);
+    await scaffold(bodyFootUtilAutoChoices);
+    process.chdir(cwdBefore);
+  });
+  afterAll(async () => {
+    await fs.remove(sharedDir);
+  });
+
   it("settings have docHistory: true when enabled", async () => {
-    const choices: UserChoices = {
-      projectName: "test-dh-on",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "docHistory"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
       projectPath("test-dh-on", "src/config/settings.ts"),
       "utf-8",
@@ -812,17 +912,8 @@ describe("scaffold — docHistory feature", () => {
   });
 
   it("injects the diff-viewer CSS into global.css when docHistory is enabled (#2081)", async () => {
-    const choices: UserChoices = {
-      projectName: "test-dh-diff-css",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "docHistory"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const css = await fs.readFile(
-      projectPath("test-dh-diff-css", "src/styles/global.css"),
+      projectPath("test-dh-on", "src/styles/global.css"),
       "utf-8",
     );
     expect(css).toContain(".diff-row {");
@@ -832,15 +923,6 @@ describe("scaffold — docHistory feature", () => {
   });
 
   it("does NOT inject the diff-viewer CSS when docHistory is disabled", async () => {
-    const choices: UserChoices = {
-      projectName: "test-dh-no-diff-css",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const css = await fs.readFile(
       projectPath("test-dh-no-diff-css", "src/styles/global.css"),
       "utf-8",
@@ -849,17 +931,8 @@ describe("scaffold — docHistory feature", () => {
   });
 
   it("includes @takazudo/zudo-doc-history-server dep when docHistory is enabled (W8A — #1739)", async () => {
-    const choices: UserChoices = {
-      projectName: "test-dh-history-server-dep",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "docHistory"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const pkg = await fs.readJson(
-      projectPath("test-dh-history-server-dep", "package.json"),
+      projectPath("test-dh-on", "package.json"),
     );
     // @takazudo/zudo-doc's pre-build integration eagerly imports
     // @takazudo/zudo-doc-history-server/git-history at plugin init; without
@@ -870,49 +943,21 @@ describe("scaffold — docHistory feature", () => {
   });
 
   it("does NOT include @takazudo/zudo-doc-history-server dep when docHistory is disabled", async () => {
-    const choices: UserChoices = {
-      projectName: "test-dh-no-history-server-dep",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const pkg = await fs.readJson(
-      projectPath("test-dh-no-history-server-dep", "package.json"),
+      projectPath("test-dh-no-diff-css", "package.json"),
     );
     expect(pkg.dependencies["@takazudo/zudo-doc-history-server"]).toBeUndefined();
   });
 
   it("settings have docHistory: false when disabled", async () => {
-    const choices: UserChoices = {
-      projectName: "test-dh-off",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
-      projectPath("test-dh-off", "src/config/settings.ts"),
+      projectPath("test-dh-no-diff-css", "src/config/settings.ts"),
       "utf-8",
     );
     expect(content).toContain("docHistory: false");
   });
 
   it("emits bodyFootUtilArea defaults and headerRightItems", async () => {
-    const choices: UserChoices = {
-      projectName: "test-header-footer-tweak",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "docHistory", "designTokenPanel", "bodyFootUtil"],
-      githubUrl: "https://github.com/example/demo",
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
       projectPath("test-header-footer-tweak", "src/config/settings.ts"),
       "utf-8",
@@ -927,17 +972,8 @@ describe("scaffold — docHistory feature", () => {
   });
 
   it("omits bodyFootUtilArea when bodyFootUtil feature is not selected", async () => {
-    const choices: UserChoices = {
-      projectName: "test-no-body-foot-util",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "docHistory"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
-      projectPath("test-no-body-foot-util", "src/config/settings.ts"),
+      projectPath("test-dh-on", "src/config/settings.ts"),
       "utf-8",
     );
     expect(content).toContain("bodyFootUtilArea: false");
@@ -945,15 +981,6 @@ describe("scaffold — docHistory feature", () => {
   });
 
   it("auto-enables docHistory when bodyFootUtil is selected without it", async () => {
-    const choices: UserChoices = {
-      projectName: "test-body-foot-util-auto",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "bodyFootUtil"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
       projectPath("test-body-foot-util-auto", "src/config/settings.ts"),
       "utf-8",
@@ -1231,16 +1258,63 @@ describe("scaffold — llmsTxt feature", () => {
 });
 
 describe("scaffold — footer features", () => {
+  // The last 2 tests below (metaTags defaults, head-template gating) both
+  // scaffold the identical bare `search`-only config (only projectName
+  // differed) — scaffold each of the 3 distinct configs used in this
+  // describe once in beforeAll instead of once per `it` (#2531 — dedupe
+  // scaffold() calls). This shadows the module-level `projectPath` for this
+  // describe only.
+  const footerNavChoices: UserChoices = {
+    projectName: "test-footer-nav",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "footerNavGroup"],
+    packageManager: "pnpm",
+  };
+  const footerCrChoices: UserChoices = {
+    projectName: "test-footer-cr",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "footerCopyright"],
+    packageManager: "pnpm",
+  };
+  const footerBothChoices: UserChoices = {
+    projectName: "test-footer-both",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "footerNavGroup", "footerCopyright"],
+    packageManager: "pnpm",
+  };
+  const metaTagsDefaultsChoices: UserChoices = {
+    projectName: "test-meta-tags-defaults",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search"],
+    packageManager: "pnpm",
+  };
+  let sharedDir: string;
+  function projectPath(...segments: string[]): string {
+    return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+  }
+  beforeAll(async () => {
+    const cwdBefore = process.cwd();
+    sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+    process.chdir(sharedDir);
+    await scaffold(footerNavChoices);
+    await scaffold(footerCrChoices);
+    await scaffold(footerBothChoices);
+    await scaffold(metaTagsDefaultsChoices);
+    process.chdir(cwdBefore);
+  });
+  afterAll(async () => {
+    await fs.remove(sharedDir);
+  });
+
   it("generates footer with links when footerNavGroup is enabled", async () => {
-    const choices: UserChoices = {
-      projectName: "test-footer-nav",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "footerNavGroup"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
       projectPath("test-footer-nav", "src/config/settings.ts"),
       "utf-8",
@@ -1252,15 +1326,6 @@ describe("scaffold — footer features", () => {
   });
 
   it("generates footer with copyright when footerCopyright is enabled", async () => {
-    const choices: UserChoices = {
-      projectName: "test-footer-cr",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "footerCopyright"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
       projectPath("test-footer-cr", "src/config/settings.ts"),
       "utf-8",
@@ -1271,15 +1336,6 @@ describe("scaffold — footer features", () => {
   });
 
   it("generates footer with both links and copyright", async () => {
-    const choices: UserChoices = {
-      projectName: "test-footer-both",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "footerNavGroup", "footerCopyright"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
       projectPath("test-footer-both", "src/config/settings.ts"),
       "utf-8",
@@ -1294,15 +1350,6 @@ describe("scaffold — footer features", () => {
   // _head-with-defaults.tsx template. Choice-driven values (ogImage path,
   // twitterCard type) come in S5.
   it("emits metaTags block unconditionally with scaffold defaults (S4 #2078)", async () => {
-    const choices: UserChoices = {
-      projectName: "test-meta-tags-defaults",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
       projectPath("test-meta-tags-defaults", "src/config/settings.ts"),
       "utf-8",
@@ -1329,19 +1376,9 @@ describe("scaffold — footer features", () => {
   // removed from the scaffold template — chrome wiring collapsed into `_chrome.ts`.
   // The gating logic is asserted against the package factory source.
   it("_head-with-defaults gates og:image/twitter:card/keywords via settings.metaTags (S4 #2078)", async () => {
-    const choices: UserChoices = {
-      projectName: "test-head-template-gates",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
-
     // Scaffold no longer emits _head-with-defaults.tsx (collapsed into _chrome.ts, #2420).
     expect(
-      await fs.pathExists(projectPath("test-head-template-gates", "pages/lib/_head-with-defaults.tsx")),
+      await fs.pathExists(projectPath("test-meta-tags-defaults", "pages/lib/_head-with-defaults.tsx")),
     ).toBe(false);
 
     // The metaTags gating + composeMetaTitle emission now lives in the factory.
@@ -1371,16 +1408,54 @@ describe("scaffold — footer features", () => {
 
 
 describe("scaffold — changelog feature", () => {
+  // "headerNav does NOT include Changelog" and "headerNav does NOT include
+  // Claude" both scaffold the identical bare `search`-only config (only
+  // projectName differed) — scaffold each of the 3 distinct configs used in
+  // this describe once in beforeAll instead of once per `it` (#2531 —
+  // dedupe scaffold() calls). This shadows the module-level `projectPath`
+  // for this describe only.
+  const changelogOnChoices: UserChoices = {
+    projectName: "test-changelog-on",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "changelog"],
+    packageManager: "pnpm",
+  };
+  const noClogChoices: UserChoices = {
+    projectName: "test-no-clog",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search"],
+    packageManager: "pnpm",
+  };
+  const claudeNavOnChoices: UserChoices = {
+    projectName: "test-claude-nav-on",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "claudeResources"],
+    packageManager: "pnpm",
+  };
+  let sharedDir: string;
+  function projectPath(...segments: string[]): string {
+    return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+  }
+  beforeAll(async () => {
+    const cwdBefore = process.cwd();
+    sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+    process.chdir(sharedDir);
+    await scaffold(changelogOnChoices);
+    await scaffold(noClogChoices);
+    await scaffold(claudeNavOnChoices);
+    process.chdir(cwdBefore);
+  });
+  afterAll(async () => {
+    await fs.remove(sharedDir);
+  });
+
   it("headerNav includes Changelog and creates starter content when enabled", async () => {
-    const choices: UserChoices = {
-      projectName: "test-changelog-on",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "changelog"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
       projectPath("test-changelog-on", "src/config/settings.ts"),
       "utf-8",
@@ -1398,15 +1473,6 @@ describe("scaffold — changelog feature", () => {
   });
 
   it("headerNav does NOT include Changelog when disabled", async () => {
-    const choices: UserChoices = {
-      projectName: "test-no-clog",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
       projectPath("test-no-clog", "src/config/settings.ts"),
       "utf-8",
@@ -1415,15 +1481,6 @@ describe("scaffold — changelog feature", () => {
   });
 
   it("headerNav includes Claude when claudeResources enabled", async () => {
-    const choices: UserChoices = {
-      projectName: "test-claude-nav-on",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "claudeResources"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
       projectPath("test-claude-nav-on", "src/config/settings.ts"),
       "utf-8",
@@ -1435,17 +1492,8 @@ describe("scaffold — changelog feature", () => {
   });
 
   it("headerNav does NOT include Claude when claudeResources disabled", async () => {
-    const choices: UserChoices = {
-      projectName: "test-claude-nav-off",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
-      projectPath("test-claude-nav-off", "src/config/settings.ts"),
+      projectPath("test-no-clog", "src/config/settings.ts"),
       "utf-8",
     );
     expect(content).not.toContain('categoryMatch: "claude"');
@@ -1570,16 +1618,50 @@ describe("scaffold — .gitignore skill block (#2173)", () => {
 });
 
 describe("scaffold — claudeSkills feature", () => {
+  // "ships user-facing zudo-doc-* skills" and "emits b4push stub script"
+  // both scaffold the identical `search`+`claudeSkills` config (only
+  // projectName differed); "does NOT ship zudo-doc-* skills" and "does NOT
+  // emit b4push script" both scaffold the identical bare `search`-only
+  // config. Scaffold each of the 2 distinct configs once in beforeAll
+  // instead of once per `it` (#2531 — dedupe scaffold() calls). The
+  // `it.each` below tests 3 genuinely distinct packageManager configs and
+  // keeps its own per-test scaffold via the module-level
+  // `projectPath`/ambient tempDir, so this helper is named
+  // `sharedProjectPath` (not `projectPath`) to avoid shadowing that test's
+  // lookup.
+  const claudeSkillsOnChoices: UserChoices = {
+    projectName: "test-claude-skills-on",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "claudeSkills"],
+    packageManager: "pnpm",
+  };
+  const claudeSkillsOffChoices: UserChoices = {
+    projectName: "test-claude-skills-off",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search"],
+    packageManager: "pnpm",
+  };
+  let sharedDir: string;
+  function sharedProjectPath(...segments: string[]): string {
+    return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+  }
+  beforeAll(async () => {
+    const cwdBefore = process.cwd();
+    sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+    process.chdir(sharedDir);
+    await scaffold(claudeSkillsOnChoices);
+    await scaffold(claudeSkillsOffChoices);
+    process.chdir(cwdBefore);
+  });
+  afterAll(async () => {
+    await fs.remove(sharedDir);
+  });
+
   it("ships user-facing zudo-doc-* skills when enabled", async () => {
-    const choices: UserChoices = {
-      projectName: "test-claude-skills-on",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "claudeSkills"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     // The three user-facing skill dirs are present
     for (const skill of [
       "zudo-doc-design-system",
@@ -1588,24 +1670,15 @@ describe("scaffold — claudeSkills feature", () => {
     ]) {
       expect(
         await fs.pathExists(
-          projectPath("test-claude-skills-on", `.claude/skills/${skill}/SKILL.md`),
+          sharedProjectPath("test-claude-skills-on", `.claude/skills/${skill}/SKILL.md`),
         ),
       ).toBe(true);
     }
   });
 
   it("emits b4push stub script when enabled (sub #414)", async () => {
-    const choices: UserChoices = {
-      projectName: "test-claude-skills-b4push-on",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "claudeSkills"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const pkg = await fs.readJson(
-      projectPath("test-claude-skills-b4push-on", "package.json"),
+      sharedProjectPath("test-claude-skills-on", "package.json"),
     );
     expect(pkg.scripts.b4push).toBe("pnpm check && pnpm build");
   });
@@ -1634,18 +1707,9 @@ describe("scaffold — claudeSkills feature", () => {
   );
 
   it("does NOT ship zudo-doc-* skills when disabled", async () => {
-    const choices: UserChoices = {
-      projectName: "test-claude-skills-off",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     expect(
       await fs.pathExists(
-        projectPath(
+        sharedProjectPath(
           "test-claude-skills-off",
           ".claude/skills/zudo-doc-design-system",
         ),
@@ -1654,34 +1718,53 @@ describe("scaffold — claudeSkills feature", () => {
   });
 
   it("does NOT emit b4push script when disabled (sub #414)", async () => {
-    const choices: UserChoices = {
-      projectName: "test-claude-skills-b4push-off",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const pkg = await fs.readJson(
-      projectPath("test-claude-skills-b4push-off", "package.json"),
+      sharedProjectPath("test-claude-skills-off", "package.json"),
     );
     expect(pkg.scripts.b4push).toBeUndefined();
   });
 });
 
 describe("scaffold — tauri feature", () => {
-  it("does NOT generate src-tauri/ when tauri is disabled", async () => {
-    const choices: UserChoices = {
-      projectName: "test-no-tauri",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
+  // "does NOT generate src-tauri/" and "does NOT reference FindInPageInit"
+  // both scaffold the identical bare `search`-only config (only projectName
+  // differed) — scaffold each of the 2 distinct configs used in this
+  // describe once in beforeAll instead of once per `it` (#2531 — dedupe
+  // scaffold() calls). This shadows the module-level `projectPath` for this
+  // describe only.
+  const noTauriChoices: UserChoices = {
+    projectName: "test-no-tauri",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search"],
+    packageManager: "pnpm",
+  };
+  const tauriOnChoices: UserChoices = {
+    projectName: "test-tauri-find-in-page",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "tauri"],
+    packageManager: "pnpm",
+  };
+  let sharedDir: string;
+  function projectPath(...segments: string[]): string {
+    return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+  }
+  beforeAll(async () => {
+    const cwdBefore = process.cwd();
+    sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+    process.chdir(sharedDir);
+    await scaffold(noTauriChoices);
+    await scaffold(tauriOnChoices);
+    process.chdir(cwdBefore);
+  });
+  afterAll(async () => {
+    await fs.remove(sharedDir);
+  });
 
+  it("does NOT generate src-tauri/ when tauri is disabled", async () => {
     expect(
       await fs.pathExists(
         projectPath("test-no-tauri", "src-tauri/Cargo.toml"),
@@ -1700,16 +1783,6 @@ describe("scaffold — tauri feature", () => {
   });
 
   it("wires the FindInPageInit island into pages/lib/_body-end-islands.tsx when tauri is enabled", async () => {
-    const choices: UserChoices = {
-      projectName: "test-tauri-find-in-page",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "tauri"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
-
     const bodyEnd = await fs.readFile(
       projectPath(
         "test-tauri-find-in-page",
@@ -1743,19 +1816,9 @@ describe("scaffold — tauri feature", () => {
   });
 
   it("does NOT reference FindInPageInit in pages/lib/_body-end-islands.tsx when tauri is disabled", async () => {
-    const choices: UserChoices = {
-      projectName: "test-no-tauri-find-in-page",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
-
     const bodyEnd = await fs.readFile(
       projectPath(
-        "test-no-tauri-find-in-page",
+        "test-no-tauri",
         "pages/lib/_body-end-islands.tsx",
       ),
       "utf-8",
@@ -1903,8 +1966,23 @@ describe("scaffold — plugin copying and settings", () => {
     packageManager: "pnpm",
   };
 
-  beforeEach(async () => {
+  // Every test below reads the same scaffold output and none mutate the
+  // tree, so `choices` is scaffolded once in beforeAll instead of once per
+  // `it` (#2531 — dedupe scaffold() calls). This shadows the module-level
+  // `projectPath` for this describe only.
+  let sharedDir: string;
+  function projectPath(...segments: string[]): string {
+    return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+  }
+  beforeAll(async () => {
+    const cwdBefore = process.cwd();
+    sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+    process.chdir(sharedDir);
     await scaffold(choices);
+    process.chdir(cwdBefore);
+  });
+  afterAll(async () => {
+    await fs.remove(sharedDir);
   });
 
   // F1 (S4 #2013): the 6 Astro/Shiki-era files (docs-source-map, hast-utils,
@@ -2108,16 +2186,35 @@ describe("scaffold — CLAUDE.md generation", () => {
 });
 
 describe("scaffold — frontmatterPreview setting", () => {
-  it("generated settings.ts contains frontmatterPreview: false by default", async () => {
-    const choices: UserChoices = {
-      projectName: "test-fp-default",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
+  // Both tests below scaffold the identical bare `search`-only config (only
+  // projectName differed) — scaffold once in beforeAll instead of once per
+  // `it` (#2531 — dedupe scaffold() calls). This shadows the module-level
+  // `projectPath` for this describe only; the canonical projectName is
+  // "test-fp-default" (from the first test).
+  const choices: UserChoices = {
+    projectName: "test-fp-default",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search"],
+    packageManager: "pnpm",
+  };
+  let sharedDir: string;
+  function projectPath(...segments: string[]): string {
+    return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+  }
+  beforeAll(async () => {
+    const cwdBefore = process.cwd();
+    sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+    process.chdir(sharedDir);
     await scaffold(choices);
+    process.chdir(cwdBefore);
+  });
+  afterAll(async () => {
+    await fs.remove(sharedDir);
+  });
+
+  it("generated settings.ts contains frontmatterPreview: false by default", async () => {
     const content = await fs.readFile(
       projectPath("test-fp-default", "src/config/settings.ts"),
       "utf-8",
@@ -2127,19 +2224,10 @@ describe("scaffold — frontmatterPreview setting", () => {
   });
 
   it("frontmatter-preview-defaults.ts exists in base template", async () => {
-    const choices: UserChoices = {
-      projectName: "test-fp-defaults",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     expect(
       await fs.pathExists(
         projectPath(
-          "test-fp-defaults",
+          "test-fp-default",
           "src/config/frontmatter-preview-defaults.ts",
         ),
       ),
@@ -2148,16 +2236,45 @@ describe("scaffold — frontmatterPreview setting", () => {
 });
 
 describe("scaffold — imageEnlarge feature", () => {
+  // The 8 tests below collapse to 2 distinct configs (only projectName
+  // differed within each group): `search`+`imageEnlarge` (4 tests, canonical
+  // "test-ie-on") and bare `search` (4 tests, canonical "test-ie-off").
+  // Scaffold each once in beforeAll instead of once per `it` (#2531 —
+  // dedupe scaffold() calls). This shadows the module-level `projectPath`
+  // for this describe only.
+  const ieOnChoices: UserChoices = {
+    projectName: "test-ie-on",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "imageEnlarge"],
+    packageManager: "pnpm",
+  };
+  const ieOffChoices: UserChoices = {
+    projectName: "test-ie-off",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search"],
+    packageManager: "pnpm",
+  };
+  let sharedDir: string;
+  function projectPath(...segments: string[]): string {
+    return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+  }
+  beforeAll(async () => {
+    const cwdBefore = process.cwd();
+    sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+    process.chdir(sharedDir);
+    await scaffold(ieOnChoices);
+    await scaffold(ieOffChoices);
+    process.chdir(cwdBefore);
+  });
+  afterAll(async () => {
+    await fs.remove(sharedDir);
+  });
+
   it("settings have imageEnlarge: true when enabled", async () => {
-    const choices: UserChoices = {
-      projectName: "test-ie-on",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "imageEnlarge"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
       projectPath("test-ie-on", "src/config/settings.ts"),
       "utf-8",
@@ -2166,15 +2283,6 @@ describe("scaffold — imageEnlarge feature", () => {
   });
 
   it("settings have imageEnlarge: false when feature not selected", async () => {
-    const choices: UserChoices = {
-      projectName: "test-ie-off",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
       projectPath("test-ie-off", "src/config/settings.ts"),
       "utf-8",
@@ -2183,18 +2291,9 @@ describe("scaffold — imageEnlarge feature", () => {
   });
 
   it("island file src/components/image-enlarge.tsx exists when enabled", async () => {
-    const choices: UserChoices = {
-      projectName: "test-ie-island-on",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "imageEnlarge"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     expect(
       await fs.pathExists(
-        projectPath("test-ie-island-on", "src/components/image-enlarge.tsx"),
+        projectPath("test-ie-on", "src/components/image-enlarge.tsx"),
       ),
     ).toBe(true);
   });
@@ -2204,17 +2303,8 @@ describe("scaffold — imageEnlarge feature", () => {
   // export the body-end Island wrapper imports). The imageEnlarge feature
   // template overwrites the stub with the real island when enabled.
   it("ships image-enlarge as a no-op stub when imageEnlarge feature is off (W6A)", async () => {
-    const choices: UserChoices = {
-      projectName: "test-ie-island-off",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const stubPath = projectPath(
-      "test-ie-island-off",
+      "test-ie-off",
       "src/components/image-enlarge.tsx",
     );
     expect(await fs.pathExists(stubPath)).toBe(true);
@@ -2226,34 +2316,16 @@ describe("scaffold — imageEnlarge feature", () => {
   });
 
   it("rehype-image-enlarge.ts is NOT present (removed in S2 — replaced by MDX p-override)", async () => {
-    const choices: UserChoices = {
-      projectName: "test-ie-no-plugin",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     expect(
       await fs.pathExists(
-        projectPath("test-ie-no-plugin", "src/plugins/rehype-image-enlarge.ts"),
+        projectPath("test-ie-off", "src/plugins/rehype-image-enlarge.ts"),
       ),
     ).toBe(false);
   });
 
   it("zfb.config.ts does not contain Astro-specific rehype symbols (imageEnlarge is a layout island)", async () => {
-    const choices: UserChoices = {
-      projectName: "test-ie-zfb-on",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "imageEnlarge"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const config = await fs.readFile(
-      projectPath("test-ie-zfb-on", "zfb.config.ts"),
+      projectPath("test-ie-on", "zfb.config.ts"),
       "utf-8",
     );
     // imageEnlarge is now a userland p-override — not wired via the zfb config.
@@ -2263,36 +2335,18 @@ describe("scaffold — imageEnlarge feature", () => {
   });
 
   it("pages/_mdx-components.ts is absent (MDX wiring collapsed into _chrome.ts, #2420)", async () => {
-    const choices: UserChoices = {
-      projectName: "test-ie-override-on",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "imageEnlarge"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     // Post-collapse (epic #2420, GENSYNC #2429): _mdx-components.ts was removed
     // from the template. MDX extras (HtmlPreview, Details, Island, etc.) are now
     // wired inside _chrome.ts via hostBindings.mdxExtras.
     expect(
-      await fs.pathExists(projectPath("test-ie-override-on", "pages/_mdx-components.ts")),
+      await fs.pathExists(projectPath("test-ie-on", "pages/_mdx-components.ts")),
     ).toBe(false);
   });
 
   it("pages/_mdx-components.ts is absent when imageEnlarge is disabled (#2420)", async () => {
-    const choices: UserChoices = {
-      projectName: "test-ie-override-off",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     // Post-collapse (epic #2420, GENSYNC #2429): same absence regardless of feature.
     expect(
-      await fs.pathExists(projectPath("test-ie-override-off", "pages/_mdx-components.ts")),
+      await fs.pathExists(projectPath("test-ie-off", "pages/_mdx-components.ts")),
     ).toBe(false);
   });
 
@@ -2668,8 +2722,23 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
       packageManager: "pnpm",
     };
 
-    beforeEach(async () => {
+    // Every test below reads the same scaffold output and none mutate the
+    // tree, so `choices` is scaffolded once in beforeAll instead of once per
+    // `it` (#2531 — dedupe scaffold() calls). This shadows the module-level
+    // `projectPath` for this describe only.
+    let sharedDir: string;
+    function projectPath(...segments: string[]): string {
+      return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+    }
+    beforeAll(async () => {
+      const cwdBefore = process.cwd();
+      sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+      process.chdir(sharedDir);
       await scaffold(choices);
+      process.chdir(cwdBefore);
+    });
+    afterAll(async () => {
+      await fs.remove(sharedDir);
     });
 
     it("creates zfb.config.ts with defineConfig from zfb/config", async () => {
@@ -2778,8 +2847,23 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
       packageManager: "pnpm",
     };
 
-    beforeEach(async () => {
+    // Every test below reads the same scaffold output and none mutate the
+    // tree, so `choices` is scaffolded once in beforeAll instead of once per
+    // `it` (#2531 — dedupe scaffold() calls). This shadows the module-level
+    // `projectPath` for this describe only.
+    let sharedDir: string;
+    function projectPath(...segments: string[]): string {
+      return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+    }
+    beforeAll(async () => {
+      const cwdBefore = process.cwd();
+      sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+      process.chdir(sharedDir);
       await scaffold(choices);
+      process.chdir(cwdBefore);
+    });
+    afterAll(async () => {
+      await fs.remove(sharedDir);
     });
 
     it("zfb.config.ts exists without any optional plugin imports", async () => {
@@ -2832,8 +2916,23 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
       packageManager: "pnpm",
     };
 
-    beforeEach(async () => {
+    // Every test below reads the same scaffold output and none mutate the
+    // tree, so `choices` is scaffolded once in beforeAll instead of once per
+    // `it` (#2531 — dedupe scaffold() calls). This shadows the module-level
+    // `projectPath` for this describe only.
+    let sharedDir: string;
+    function projectPath(...segments: string[]): string {
+      return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+    }
+    beforeAll(async () => {
+      const cwdBefore = process.cwd();
+      sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+      process.chdir(sharedDir);
       await scaffold(choices);
+      process.chdir(cwdBefore);
+    });
+    afterAll(async () => {
+      await fs.remove(sharedDir);
     });
 
     it("zfb.config.ts uses preset (feature data is in settings, not inlined in config)", async () => {
@@ -2973,8 +3072,30 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
     packageManager: "pnpm",
   };
 
-  it("emits all 15 unconditional page files in a barebone scaffold", async () => {
+  // BAREBONE and ALL_FEATURES are each scaffolded exactly once below —
+  // every test in this describe reuses one of these two outputs and none
+  // mutate the tree, so scaffolding used to run once per `it` (and even
+  // twice more per `it` via the `for` loops below) for the *same* two
+  // configs. Scaffold each once in beforeAll instead (#2531 — dedupe
+  // scaffold() calls). This shadows the module-level `projectPath` for
+  // this describe only.
+  let sharedDir: string;
+  function projectPath(...segments: string[]): string {
+    return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+  }
+  beforeAll(async () => {
+    const cwdBefore = process.cwd();
+    sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+    process.chdir(sharedDir);
     await scaffold(BAREBONE);
+    await scaffold(ALL_FEATURES);
+    process.chdir(cwdBefore);
+  });
+  afterAll(async () => {
+    await fs.remove(sharedDir);
+  });
+
+  it("emits all 15 unconditional page files in a barebone scaffold", async () => {
     for (const rel of UNCONDITIONAL_PAGES) {
       expect(
         await fs.pathExists(projectPath("test-pages-barebone", rel)),
@@ -2984,7 +3105,6 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
   });
 
   it("emits all 15 unconditional page files in an all-features scaffold", async () => {
-    await scaffold(ALL_FEATURES);
     for (const rel of UNCONDITIONAL_PAGES) {
       expect(
         await fs.pathExists(projectPath("test-pages-all", rel)),
@@ -2998,7 +3118,6 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
     // in src/scaffold.ts. Asserts both variants: a barebone with no features
     // and an all-features scaffold. Neither should ship pages/api/**.
     for (const choices of [BAREBONE, ALL_FEATURES]) {
-      await scaffold(choices);
       const apiDir = projectPath(choices.projectName, "pages/api");
       expect(
         await fs.pathExists(apiDir),
@@ -3016,7 +3135,6 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
     // chrome wires the Details/HtmlPreview/Island MDX components. Asserts both
     // a barebone and an all-features scaffold.
     for (const choices of [BAREBONE, ALL_FEATURES]) {
-      await scaffold(choices);
       expect(
         await fs.pathExists(
           projectPath(choices.projectName, "pages/docs/[[...slug]].tsx"),
@@ -3032,7 +3150,6 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
     // exactly {} ships in templates/base/.zfb/ so the import resolves
     // even when docHistory is disabled. The doc-history prebuild step
     // overwrites it at build time when the feature is enabled.
-    await scaffold(BAREBONE);
     const seedPath = projectPath(
       "test-pages-barebone",
       ".zfb/doc-history-meta.json",
@@ -3042,7 +3159,6 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
   });
 
   it("tsconfig.json carries the #doc-history-meta path alias", async () => {
-    await scaffold(BAREBONE);
     const tsconfig = await fs.readJson(
       projectPath("test-pages-barebone", "tsconfig.json"),
     );
@@ -3078,7 +3194,6 @@ describe("scaffold — W6A page mirror (templates/base/pages)", () => {
   //    field — adding one breaks `pnpm check`. The host builds with
   //    tsconfig paths only.
   it("tsconfig.json aliases react/react-dom to preact/compat (matches host shape verbatim)", async () => {
-    await scaffold(BAREBONE);
     const tsconfig = await fs.readJson(
       projectPath("test-pages-barebone", "tsconfig.json"),
     );
@@ -3247,8 +3362,27 @@ describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => 
     "templates/features/i18n/files/pages",
   );
 
-  it("emits pages/[locale]/index.tsx when i18n is selected", async () => {
+  // I18N_ON is scaffolded 3x below (identical output each time) and
+  // I18N_OFF once — scaffold each once in beforeAll instead (#2531 —
+  // dedupe scaffold() calls). This shadows the module-level `projectPath`
+  // for this describe only.
+  let sharedDir: string;
+  function projectPath(...segments: string[]): string {
+    return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+  }
+  beforeAll(async () => {
+    const cwdBefore = process.cwd();
+    sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+    process.chdir(sharedDir);
     await scaffold(I18N_ON);
+    await scaffold(I18N_OFF);
+    process.chdir(cwdBefore);
+  });
+  afterAll(async () => {
+    await fs.remove(sharedDir);
+  });
+
+  it("emits pages/[locale]/index.tsx when i18n is selected", async () => {
     for (const rel of I18N_PAGE_FILES) {
       expect(
         await fs.pathExists(projectPath("test-w7b-i18n-on", rel)),
@@ -3258,7 +3392,6 @@ describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => 
   });
 
   it("does NOT emit pages/[locale]/docs/[[...slug]].tsx even when i18n is selected (package-injected, #2390)", async () => {
-    await scaffold(I18N_ON);
     expect(
       await fs.pathExists(
         projectPath("test-w7b-i18n-on", "pages/[locale]/docs/[[...slug]].tsx"),
@@ -3268,7 +3401,6 @@ describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => 
   });
 
   it("does NOT emit any pages/[locale]/** files when i18n is not selected", async () => {
-    await scaffold(I18N_OFF);
     const localeDir = projectPath("test-w7b-i18n-off", "pages/[locale]");
     expect(
       await fs.pathExists(localeDir),
@@ -3277,7 +3409,6 @@ describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => 
   });
 
   it("emitted pages/[locale]/index.tsx is byte-identical to the feature template", async () => {
-    await scaffold(I18N_ON);
     const emitted = await fs.readFile(
       projectPath("test-w7b-i18n-on", "pages/[locale]/index.tsx"),
       "utf-8",
@@ -3301,19 +3432,57 @@ describe("scaffold — W7B i18n feature pages (templates/features/i18n)", () => 
 // ---------------------------------------------------------------------------
 
 describe("scaffold — W7C docTags feature pages (#1738)", () => {
+  // "does NOT emit docs/tags/**" and "strips [locale]/docs/tags/**" both
+  // scaffold the identical `search`+`docTags` config (only projectName
+  // differed) — scaffold each of the 3 distinct configs used in this
+  // describe once in beforeAll instead of once per `it` (#2531 — dedupe
+  // scaffold() calls). This shadows the module-level `projectPath` for this
+  // describe only.
+  const docTagsChoices: UserChoices = {
+    projectName: "test-doctags-only",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "docTags"],
+    packageManager: "pnpm",
+  };
+  const docTagsI18nChoices: UserChoices = {
+    projectName: "test-doctags-i18n",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "i18n", "docTags"],
+    packageManager: "pnpm",
+  };
+  const noDocTagsChoices: UserChoices = {
+    projectName: "test-no-doctags",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "i18n"],
+    packageManager: "pnpm",
+  };
+  let sharedDir: string;
+  function projectPath(...segments: string[]): string {
+    return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+  }
+  beforeAll(async () => {
+    const cwdBefore = process.cwd();
+    sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+    process.chdir(sharedDir);
+    await scaffold(docTagsChoices);
+    await scaffold(docTagsI18nChoices);
+    await scaffold(noDocTagsChoices);
+    process.chdir(cwdBefore);
+  });
+  afterAll(async () => {
+    await fs.remove(sharedDir);
+  });
+
   // Route stubs for tags were removed in the Stub-Deletion Fast-Follow (epic
   // #2369). These routes are now injected by the package (packageOwnedRoutes)
   // so the scaffold must NOT emit them as files.
   it("does NOT emit docs/tags/[tag].tsx + docs/tags/index.tsx as scaffold files (package-injected)", async () => {
-    const choices: UserChoices = {
-      projectName: "test-doctags-only",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "docTags"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     expect(
       await fs.pathExists(
         projectPath("test-doctags-only", "pages/docs/tags/[tag].tsx"),
@@ -3327,32 +3496,14 @@ describe("scaffold — W7C docTags feature pages (#1738)", () => {
   });
 
   it("strips [locale]/docs/tags/** when docTags is selected but i18n is OFF", async () => {
-    const choices: UserChoices = {
-      projectName: "test-doctags-no-i18n",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "docTags"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     expect(
       await fs.pathExists(
-        projectPath("test-doctags-no-i18n", "pages/[locale]/docs/tags"),
+        projectPath("test-doctags-only", "pages/[locale]/docs/tags"),
       ),
     ).toBe(false);
   });
 
   it("does NOT emit [locale]/docs/tags/{[tag].tsx,index.tsx} as scaffold files (package-injected)", async () => {
-    const choices: UserChoices = {
-      projectName: "test-doctags-i18n",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "i18n", "docTags"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     expect(
       await fs.pathExists(
         projectPath(
@@ -3372,15 +3523,6 @@ describe("scaffold — W7C docTags feature pages (#1738)", () => {
   });
 
   it("does NOT emit any docs/tags/** when docTags is not selected", async () => {
-    const choices: UserChoices = {
-      projectName: "test-no-doctags",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "i18n"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     expect(
       await fs.pathExists(projectPath("test-no-doctags", "pages/docs/tags")),
     ).toBe(false);
@@ -3393,6 +3535,53 @@ describe("scaffold — W7C docTags feature pages (#1738)", () => {
 });
 
 describe("scaffold — W7C versioning feature pages (#1738)", () => {
+  // "does NOT emit docs/versions.tsx OR v/[version]/docs/..." and "strips
+  // [locale]/docs/versions.tsx + v/[version]/ja/**" both scaffold the
+  // identical `search`+`versioning` config (only projectName differed) —
+  // scaffold each of the 3 distinct configs used in this describe once in
+  // beforeAll instead of once per `it` (#2531 — dedupe scaffold() calls).
+  // This shadows the module-level `projectPath` for this describe only.
+  const versioningChoices: UserChoices = {
+    projectName: "test-versioning-pages-only",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "versioning"],
+    packageManager: "pnpm",
+  };
+  const versioningI18nChoices: UserChoices = {
+    projectName: "test-versioning-i18n",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "i18n", "versioning"],
+    packageManager: "pnpm",
+  };
+  const noVersioningChoices: UserChoices = {
+    projectName: "test-no-versioning",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "i18n"],
+    packageManager: "pnpm",
+  };
+  let sharedDir: string;
+  function projectPath(...segments: string[]): string {
+    return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+  }
+  beforeAll(async () => {
+    const cwdBefore = process.cwd();
+    sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+    process.chdir(sharedDir);
+    await scaffold(versioningChoices);
+    await scaffold(versioningI18nChoices);
+    await scaffold(noVersioningChoices);
+    process.chdir(cwdBefore);
+  });
+  afterAll(async () => {
+    await fs.remove(sharedDir);
+  });
+
   // pages/docs/versions.tsx was removed in the Stub-Deletion Fast-Follow
   // (epic #2369) — that route is now injected by the package
   // (packageOwnedRoutes). The versioned DOC catch-all routes
@@ -3401,15 +3590,6 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
   // package-injected too, so the scaffold must NOT emit them as files. The
   // versioning feature now ships only pages/lib/_versions-page.tsx.
   it("does NOT emit docs/versions.tsx OR v/[version]/docs/[[...slug]].tsx (both package-injected) when versioning is selected (i18n off)", async () => {
-    const choices: UserChoices = {
-      projectName: "test-versioning-pages-only",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "versioning"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     expect(
       await fs.pathExists(
         projectPath("test-versioning-pages-only", "pages/docs/versions.tsx"),
@@ -3426,40 +3606,22 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
   });
 
   it("strips [locale]/docs/versions.tsx + v/[version]/ja/** when versioning is selected but i18n is OFF", async () => {
-    const choices: UserChoices = {
-      projectName: "test-versioning-no-i18n",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "versioning"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     expect(
       await fs.pathExists(
         projectPath(
-          "test-versioning-no-i18n",
+          "test-versioning-pages-only",
           "pages/[locale]/docs/versions.tsx",
         ),
       ),
     ).toBe(false);
     expect(
       await fs.pathExists(
-        projectPath("test-versioning-no-i18n", "pages/v/[version]/[locale]"),
+        projectPath("test-versioning-pages-only", "pages/v/[version]/[locale]"),
       ),
     ).toBe(false);
   });
 
   it("does NOT emit [locale]/docs/versions.tsx OR v/[version]/[locale]/docs/[[...slug]].tsx (both package-injected) when versioning + i18n are both selected", async () => {
-    const choices: UserChoices = {
-      projectName: "test-versioning-i18n",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "i18n", "versioning"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     expect(
       await fs.pathExists(
         projectPath(
@@ -3479,15 +3641,6 @@ describe("scaffold — W7C versioning feature pages (#1738)", () => {
   });
 
   it("does NOT emit any docs/versions.tsx or v/[version]/** when versioning is not selected", async () => {
-    const choices: UserChoices = {
-      projectName: "test-no-versioning",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "i18n"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     expect(
       await fs.pathExists(
         projectPath("test-no-versioning", "pages/docs/versions.tsx"),
@@ -3937,13 +4090,31 @@ describe("scaffold — designTokenPanel zdtp gating (#2162)", () => {
       packageManager: "pnpm",
     };
 
-    beforeEach(async () => {
+    // The first 4 tests below all read the same `choices` scaffold output and
+    // none mutate the tree, so it is scaffolded once in beforeAll instead of
+    // once per `it` (#2531 — dedupe scaffold() calls). The 5th test uses a
+    // different config (`choicesWithDtpTrigger`) and keeps its own per-test
+    // scaffold via the module-level `projectPath`/ambient tempDir, so this
+    // helper is named `sharedProjectPath` (not `projectPath`) to avoid
+    // shadowing that test's lookup.
+    let sharedDir: string;
+    function sharedProjectPath(...segments: string[]): string {
+      return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+    }
+    beforeAll(async () => {
+      const cwdBefore = process.cwd();
+      sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+      process.chdir(sharedDir);
       await scaffold(choices);
+      process.chdir(cwdBefore);
+    });
+    afterAll(async () => {
+      await fs.remove(sharedDir);
     });
 
     it("_body-end-islands.tsx contains no zdtp import, displayName, or Island", async () => {
       const content = await fs.readFile(
-        projectPath("test-zdtp-off", "pages/lib/_body-end-islands.tsx"),
+        sharedProjectPath("test-zdtp-off", "pages/lib/_body-end-islands.tsx"),
         "utf-8",
       );
       expect(content).not.toContain("zdtp");
@@ -3953,7 +4124,7 @@ describe("scaffold — designTokenPanel zdtp gating (#2162)", () => {
 
     it("settings-types.ts contains no 'design-token-panel' literal", async () => {
       const content = await fs.readFile(
-        projectPath("test-zdtp-off", "src/config/settings-types.ts"),
+        sharedProjectPath("test-zdtp-off", "src/config/settings-types.ts"),
         "utf-8",
       );
       expect(content).not.toContain("design-token-panel");
@@ -3961,7 +4132,7 @@ describe("scaffold — designTokenPanel zdtp gating (#2162)", () => {
 
     it("settings-types.ts still exports HeaderRightTriggerName (ai-chat only)", async () => {
       const content = await fs.readFile(
-        projectPath("test-zdtp-off", "src/config/settings-types.ts"),
+        sharedProjectPath("test-zdtp-off", "src/config/settings-types.ts"),
         "utf-8",
       );
       expect(content).toContain("HeaderRightTriggerName");
@@ -3971,7 +4142,7 @@ describe("scaffold — designTokenPanel zdtp gating (#2162)", () => {
     it("design-token-panel-bootstrap component is NOT copied to feature-off scaffold", async () => {
       expect(
         await fs.pathExists(
-          projectPath(
+          sharedProjectPath(
             "test-zdtp-off",
             "src/components/design-token-panel-bootstrap.tsx",
           ),
@@ -4017,8 +4188,23 @@ describe("scaffold — designTokenPanel zdtp gating (#2162)", () => {
       packageManager: "pnpm",
     };
 
-    beforeEach(async () => {
+    // Every test below reads the same scaffold output and none mutate the
+    // tree, so `choices` is scaffolded once in beforeAll instead of once per
+    // `it` (#2531 — dedupe scaffold() calls). This shadows the module-level
+    // `projectPath` for this describe only.
+    let sharedDir: string;
+    function projectPath(...segments: string[]): string {
+      return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+    }
+    beforeAll(async () => {
+      const cwdBefore = process.cwd();
+      sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+      process.chdir(sharedDir);
       await scaffold(choices);
+      process.chdir(cwdBefore);
+    });
+    afterAll(async () => {
+      await fs.remove(sharedDir);
     });
 
     it("_body-end-islands.tsx contains DesignTokenPanelBootstrap import", async () => {
@@ -4105,16 +4291,46 @@ describe("scaffold — imageEnlarge does not duplicate the settings import (#217
 });
 
 describe("scaffold — dynamicPageTransition feature (#2267)", () => {
+  // The 12 tests below collapse to 2 distinct configs (only projectName
+  // differed within each group): `search`+`dynamicPageTransition` (6
+  // "feature ON" tests, canonical "test-dpt-on-file") and bare `search` (6
+  // "feature OFF" tests, canonical "test-dpt-off-file"). Scaffold each once
+  // in beforeAll instead of once per `it` (#2531 — dedupe scaffold()
+  // calls). This shadows the module-level `projectPath` for this describe
+  // only.
+  const dptOnChoices: UserChoices = {
+    projectName: "test-dpt-on-file",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search", "dynamicPageTransition"],
+    packageManager: "pnpm",
+  };
+  const dptOffChoices: UserChoices = {
+    projectName: "test-dpt-off-file",
+    defaultLang: "en",
+    colorSchemeMode: "single",
+    singleScheme: "Default Dark",
+    features: ["search"],
+    packageManager: "pnpm",
+  };
+  let sharedDir: string;
+  function projectPath(...segments: string[]): string {
+    return path.join(sharedDir, segments[0]!, ...segments.slice(1));
+  }
+  beforeAll(async () => {
+    const cwdBefore = process.cwd();
+    sharedDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+    process.chdir(sharedDir);
+    await scaffold(dptOnChoices);
+    await scaffold(dptOffChoices);
+    process.chdir(cwdBefore);
+  });
+  afterAll(async () => {
+    await fs.remove(sharedDir);
+  });
+
   it("feature ON: generates client-router-bootstrap.tsx", async () => {
-    const choices: UserChoices = {
-      projectName: "test-dpt-on-file",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "dynamicPageTransition"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     expect(
       await fs.pathExists(
         projectPath(
@@ -4126,17 +4342,8 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
   });
 
   it("feature ON: global.css contains page-loading.css import, overlay token, and ::view-transition- rule", async () => {
-    const choices: UserChoices = {
-      projectName: "test-dpt-on-css",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "dynamicPageTransition"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const css = await fs.readFile(
-      projectPath("test-dpt-on-css", "src/styles/global.css"),
+      projectPath("test-dpt-on-file", "src/styles/global.css"),
       "utf-8",
     );
     // Page-loading CSS is now shipped as a package artifact (#2283) — expect
@@ -4150,32 +4357,14 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
   });
 
   it("feature ON: settings.ts contains dynamicPageTransition: true", async () => {
-    const choices: UserChoices = {
-      projectName: "test-dpt-on-settings",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "dynamicPageTransition"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
-      projectPath("test-dpt-on-settings", "src/config/settings.ts"),
+      projectPath("test-dpt-on-file", "src/config/settings.ts"),
       "utf-8",
     );
     expect(content).toContain("dynamicPageTransition: true");
   });
 
   it("feature OFF: does NOT generate client-router-bootstrap.tsx", async () => {
-    const choices: UserChoices = {
-      projectName: "test-dpt-off-file",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     expect(
       await fs.pathExists(
         projectPath(
@@ -4187,17 +4376,8 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
   });
 
   it("feature OFF: global.css does NOT contain page-loading import, overlay token, or ::view-transition- rules; imports anchor is cleaned", async () => {
-    const choices: UserChoices = {
-      projectName: "test-dpt-off-css",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const css = await fs.readFile(
-      projectPath("test-dpt-off-css", "src/styles/global.css"),
+      projectPath("test-dpt-off-file", "src/styles/global.css"),
       "utf-8",
     );
     expect(css).not.toContain("page-loading.css");
@@ -4209,17 +4389,8 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
   });
 
   it("feature OFF: settings.ts contains dynamicPageTransition: false", async () => {
-    const choices: UserChoices = {
-      projectName: "test-dpt-off-settings",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
-      projectPath("test-dpt-off-settings", "src/config/settings.ts"),
+      projectPath("test-dpt-off-file", "src/config/settings.ts"),
       "utf-8",
     );
     expect(content).toContain("dynamicPageTransition: false");
@@ -4234,18 +4405,9 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
   // shell render site we assert the prop in the package factory source. The
   // scaffold no longer emits `_doc-page-shell.tsx` in any variant.
   it("feature ON: _doc-page-shell.tsx is absent; package factory threads enableClientRouter", async () => {
-    const choices: UserChoices = {
-      projectName: "test-dpt-on-ecr-shell",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "dynamicPageTransition"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     // Post-collapse: file is no longer emitted.
     expect(
-      await fs.pathExists(projectPath("test-dpt-on-ecr-shell", "pages/lib/_doc-page-shell.tsx")),
+      await fs.pathExists(projectPath("test-dpt-on-file", "pages/lib/_doc-page-shell.tsx")),
     ).toBe(false);
 
     // The actual prop on <DocLayoutWithDefaults> lives in the package factory.
@@ -4259,18 +4421,9 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
   });
 
   it("feature OFF: _doc-page-shell.tsx is absent; package factory threads enableClientRouter", async () => {
-    const choices: UserChoices = {
-      projectName: "test-dpt-off-ecr-shell",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     // Post-collapse: file is no longer emitted.
     expect(
-      await fs.pathExists(projectPath("test-dpt-off-ecr-shell", "pages/lib/_doc-page-shell.tsx")),
+      await fs.pathExists(projectPath("test-dpt-off-file", "pages/lib/_doc-page-shell.tsx")),
     ).toBe(false);
 
     // The prop must be present in the factory regardless of feature state.
@@ -4290,17 +4443,8 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
   // prop lives in the factory regardless of feature state, so pages/index.tsx
   // itself no longer threads it.
   it("feature ON: pages/index.tsx delegates to HomePageView; package factory threads enableClientRouter", async () => {
-    const choices: UserChoices = {
-      projectName: "test-dpt-on-ecr-index",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "dynamicPageTransition"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
-      projectPath("test-dpt-on-ecr-index", "pages/index.tsx"),
+      projectPath("test-dpt-on-file", "pages/index.tsx"),
       "utf-8",
     );
     expect(content).toContain("HomePageView");
@@ -4316,17 +4460,8 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
   });
 
   it("feature OFF: pages/index.tsx delegates to HomePageView; package factory threads enableClientRouter", async () => {
-    const choices: UserChoices = {
-      projectName: "test-dpt-off-ecr-index",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     const content = await fs.readFile(
-      projectPath("test-dpt-off-ecr-index", "pages/index.tsx"),
+      projectPath("test-dpt-off-file", "pages/index.tsx"),
       "utf-8",
     );
     expect(content).toContain("HomePageView");
@@ -4346,33 +4481,15 @@ describe("scaffold — dynamicPageTransition feature (#2267)", () => {
   // (packageOwnedRoutes). The enableClientRouter prop is handled inside the
   // package factory; no scaffold file needs to thread it for 404.
   it("does NOT emit pages/404.tsx as a scaffold file (package-injected) when dynamicPageTransition is ON", async () => {
-    const choices: UserChoices = {
-      projectName: "test-dpt-on-ecr-404",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search", "dynamicPageTransition"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     expect(
-      await fs.pathExists(projectPath("test-dpt-on-ecr-404", "pages/404.tsx")),
+      await fs.pathExists(projectPath("test-dpt-on-file", "pages/404.tsx")),
     ).toBe(false);
   });
 
   it("does NOT emit pages/404.tsx as a scaffold file (package-injected) when dynamicPageTransition is OFF", async () => {
-    const choices: UserChoices = {
-      projectName: "test-dpt-off-ecr-404",
-      defaultLang: "en",
-      colorSchemeMode: "single",
-      singleScheme: "Default Dark",
-      features: ["search"],
-      packageManager: "pnpm",
-    };
-    await scaffold(choices);
     expect(
       await fs.pathExists(
-        projectPath("test-dpt-off-ecr-404", "pages/404.tsx"),
+        projectPath("test-dpt-off-file", "pages/404.tsx"),
       ),
     ).toBe(false);
   });
