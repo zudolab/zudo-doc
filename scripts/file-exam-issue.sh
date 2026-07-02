@@ -141,11 +141,15 @@ build_green_body() {
 # expression string.
 # ---------------------------------------------------------------------------
 find_existing_issue() {
+  # --limit: gh defaults to a 30-issue page; there are only 3 exam jobs so
+  # this is defensive rather than a live risk, but matches the fix applied
+  # to the retry-flake lookup in scripts/report-retry-flakes.mjs.
   gh issue list \
     "${REPO_FLAG[@]}" \
     --label "exam-failure" \
     --state open \
     --json number,title \
+    --limit 100 \
     2>/dev/null \
     | node --eval "
         const chunks = [];

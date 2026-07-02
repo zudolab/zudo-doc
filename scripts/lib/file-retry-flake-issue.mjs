@@ -73,3 +73,28 @@ export function findMatchingRetryFlakeIssue(openIssues, flake) {
   const match = openIssues.find((issue) => issue?.title === wantTitle);
   return match ? match.number : null;
 }
+
+/**
+ * Collapses a flakes list to one entry per file+title (dedup key —
+ * buildRetryFlakeIssueTitle). A single Playwright run can report the same
+ * spec as flaky under more than one project (e.g. the same test title
+ * flaking in both the "smoke" and "i18n" projects), which would otherwise
+ * file one GitHub issue per duplicate entry — the in-memory `openIssues`
+ * snapshot used by the caller isn't updated mid-loop after a `gh issue
+ * create`, so a later duplicate in the same run wouldn't see the issue the
+ * earlier one just created. Keeps the first occurrence.
+ *
+ * @param {RetryFlake[]} flakes
+ * @returns {RetryFlake[]}
+ */
+export function dedupeFlakes(flakes) {
+  const seen = new Set();
+  const result = [];
+  for (const flake of flakes) {
+    const key = buildRetryFlakeIssueTitle(flake);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(flake);
+  }
+  return result;
+}

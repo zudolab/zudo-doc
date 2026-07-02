@@ -25,7 +25,13 @@ import {
   buildRetryFlakeIssueTitle,
   buildRetryFlakeIssueBody,
   findMatchingRetryFlakeIssue,
+  dedupeFlakes,
 } from "./lib/file-retry-flake-issue.mjs";
+
+// `gh issue list` defaults to a 30-issue page; without an explicit --limit
+// higher than the expected open-issue count, a matching issue outside the
+// first page reads as "missing" and gets duplicated (codex review finding).
+const GH_ISSUE_LIST_LIMIT = "200";
 
 // Playwright JSON report shape (the part we consume):
 //
@@ -217,6 +223,8 @@ function fileRetryFlakeIssues(flakes, runUrl) {
         "open",
         "--json",
         "number,title",
+        "--limit",
+        GH_ISSUE_LIST_LIMIT,
         ...repoFlag(),
       ],
       { encoding: "utf8" },
@@ -229,7 +237,11 @@ function fileRetryFlakeIssues(flakes, runUrl) {
     return;
   }
 
-  for (const flake of flakes) {
+  // Collapse duplicate file+title entries (e.g. the same spec flaking under
+  // more than one Playwright project in this run) — openIssues is a
+  // pre-loop snapshot, so a same-titled duplicate later in the raw `flakes`
+  // list wouldn't see the issue an earlier duplicate just created.
+  for (const flake of dedupeFlakes(flakes)) {
     const title = buildRetryFlakeIssueTitle(flake);
     const body = buildRetryFlakeIssueBody(flake, runUrl);
     const existing = findMatchingRetryFlakeIssue(openIssues, flake);

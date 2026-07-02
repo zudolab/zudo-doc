@@ -4,6 +4,7 @@ import {
   buildRetryFlakeIssueTitle,
   buildRetryFlakeIssueBody,
   findMatchingRetryFlakeIssue,
+  dedupeFlakes,
 } from "../lib/file-retry-flake-issue.mjs";
 
 describe("buildRetryFlakeIssueTitle", () => {
@@ -96,5 +97,35 @@ describe("findMatchingRetryFlakeIssue", () => {
 describe("RETRY_FLAKE_LABEL", () => {
   it("is the fixed label string used for both filing and lookup", () => {
     expect(RETRY_FLAKE_LABEL).toBe("retry-flake");
+  });
+});
+
+describe("dedupeFlakes", () => {
+  it("keeps a single entry per file+title, discarding later duplicates", () => {
+    // Mirrors the real cause: the same spec flaking under two Playwright
+    // projects (e.g. "smoke" and "i18n") produces two flake entries with
+    // identical file+title but different retryNumber.
+    const flakes = [
+      { file: "e2e/smoke.spec.ts", title: "loads the home page", retryNumber: 1 },
+      { file: "e2e/smoke.spec.ts", title: "loads the home page", retryNumber: 2 },
+      { file: "e2e/theme.spec.ts", title: "theme toggles", retryNumber: 1 },
+    ];
+    const result = dedupeFlakes(flakes);
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual(flakes[0]);
+    expect(result[1]).toEqual(flakes[2]);
+  });
+
+  it("does not collapse different tests", () => {
+    const flakes = [
+      { file: "e2e/a.spec.ts", title: "test A", retryNumber: 1 },
+      { file: "e2e/b.spec.ts", title: "test A", retryNumber: 1 },
+      { file: "e2e/a.spec.ts", title: "test B", retryNumber: 1 },
+    ];
+    expect(dedupeFlakes(flakes)).toHaveLength(3);
+  });
+
+  it("returns an empty array for an empty input", () => {
+    expect(dedupeFlakes([])).toEqual([]);
   });
 });
