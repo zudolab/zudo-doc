@@ -235,15 +235,25 @@ async function diff() {
   }
 
   // ── 2. Route list diff ────────────────────────────────────────────────────
-  const addedRoutes = routeList.filter((r) => !baselineRoutes.includes(r));
-  const removedRoutes = baselineRoutes.filter((r) => !routeList.includes(r));
-  if (addedRoutes.length > 0 || removedRoutes.length > 0) {
-    hasChanges = true;
-    console.log(`\n[parity-diff] ROUTE LIST DIFF:`);
-    for (const r of addedRoutes) console.log(`  + ${r}`);
-    for (const r of removedRoutes) console.log(`  - ${r}`);
+  // baselineRoutes is null when the baseline was generated from a dist/ that
+  // lacked dist/__zfb/routes.json (buildRouteList returns null → written as
+  // `null`). Skip the section loudly instead of throwing on `.filter` (#2546).
+  if (baselineRoutes == null) {
+    console.warn(
+      `[parity-diff] Route list: SKIP — baseline route-list.json is null ` +
+        `(baseline was generated without dist/__zfb/routes.json). Regenerate the baseline from a real build.`,
+    );
   } else {
-    console.log(`[parity-diff] Route list: PASS — ${routeList.length} routes unchanged`);
+    const addedRoutes = routeList.filter((r) => !baselineRoutes.includes(r));
+    const removedRoutes = baselineRoutes.filter((r) => !routeList.includes(r));
+    if (addedRoutes.length > 0 || removedRoutes.length > 0) {
+      hasChanges = true;
+      console.log(`\n[parity-diff] ROUTE LIST DIFF:`);
+      for (const r of addedRoutes) console.log(`  + ${r}`);
+      for (const r of removedRoutes) console.log(`  - ${r}`);
+    } else {
+      console.log(`[parity-diff] Route list: PASS — ${routeList.length} routes unchanged`);
+    }
   }
 
   // ── 3. Asset manifest diff ────────────────────────────────────────────────
