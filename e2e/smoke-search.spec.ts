@@ -10,6 +10,13 @@ import { test, expect } from "@playwright/test";
 
 const DOCS_PAGE = "/docs/getting-started";
 
+// wait-ok: the search widget debounces input at 150ms
+// (packages/zudo-doc/src/search-widget-script/index.ts) before calling search().
+// The refetch-loop regression (#2062) only manifests AFTER that debounce tick
+// fires, so the test must span the window rather than poll a predicate that is
+// already true (the message hasn't been replaced yet) at the first sample.
+const SEARCH_DEBOUNCE_SETTLE_MS = 150 + 200;
+
 test.describe("Search dialog", () => {
   test("Ctrl+K opens the search dialog", async ({ page }) => {
     await page.goto(DOCS_PAGE, { waitUntil: "domcontentloaded" });
@@ -197,41 +204,20 @@ test.describe("Search dialog", () => {
     await expect(results.getByText("Search unavailable")).toBeVisible({ timeout: 10000 });
     expect(indexFetches, "open() reload path should fire exactly one index fetch").toBe(1);
 
-    // The search widget debounces input at 150ms before calling search(); each
-    // fill() + poll below waits until the debounce tick has fired and the DOM
-    // has updated, replacing the old fixed waitForTimeout(300) sleeps.
+    // Each fill() below is followed by a sleep that spans the debounce window
+    // (not a poll on a predicate that's already true pre-debounce), so the
+    // fetch-count assertion is sampled provably after search() would have fired.
 
     // Type a query (first debounce tick > 150ms). With the bug this replaces the
     // message with "Loading search index…" and refetches.
     await input.fill("alpha");
-    // Poll until the debounce has fired — "Search unavailable" must remain
-    // visible (not replaced by "Loading search index…").
-    await expect
-      .poll(
-        () => results.getByText("Search unavailable").isVisible(),
-        {
-          // 150ms debounce + margin; polls at short intervals so the test is
-          // fast on CI while still waiting for the debounce to complete.
-          intervals: [50, 100, 100, 200],
-          timeout: 2000,
-          message: "Search unavailable should remain visible after first keystroke",
-        },
-      )
-      .toBe(true);
+    await page.waitForTimeout(SEARCH_DEBOUNCE_SETTLE_MS);
+    await expect(results.getByText("Search unavailable")).toBeVisible();
 
     // Type again (second debounce tick) — another chance for the buggy refetch.
     await input.fill("alpha beta");
-    // Same poll for the second debounce cycle.
-    await expect
-      .poll(
-        () => results.getByText("Search unavailable").isVisible(),
-        {
-          intervals: [50, 100, 100, 200],
-          timeout: 2000,
-          message: "Search unavailable should remain visible after second keystroke",
-        },
-      )
-      .toBe(true);
+    await page.waitForTimeout(SEARCH_DEBOUNCE_SETTLE_MS);
+    await expect(results.getByText("Search unavailable")).toBeVisible();
 
     // "Search unavailable" stays put; "Loading search index…" must never linger.
     await expect(results.getByText("Search unavailable")).toBeVisible();
