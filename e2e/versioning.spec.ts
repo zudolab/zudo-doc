@@ -112,7 +112,17 @@ test.describe("Versioning: versioned pages", () => {
   });
 
   test("version banner is visible on versioned page", () => {
-    expect(html).toContain("data-version-banner");
+    // "Visible" here means present + not explicitly hidden via a CSS class.
+    // Unlike the version-switcher (which needs a real browser check because
+    // its host wrapper toggles `.hidden`/`.lg:block` per viewport — see
+    // version-switcher.tsx's VERSION_SWITCHER_VISIBILITY_STYLE comment for
+    // the exact bug class that motivated keeping that one browser-driven),
+    // <VersionBanner> emits no conditional/responsive display class at all,
+    // so SSR presence + absence of a "hidden" class is an adequate static
+    // proxy for the browser's toBeVisible() here.
+    const banner = extractVersionBanner(html);
+    expect(banner).not.toBeNull();
+    expect(banner).not.toMatch(/class="[^"]*\bhidden\b/);
   });
 
   test("version banner contains link to latest", () => {
