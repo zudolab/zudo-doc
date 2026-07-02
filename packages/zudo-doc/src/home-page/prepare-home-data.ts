@@ -91,7 +91,7 @@ export function prepareHomeData(
       options?.navSourceOptions ?? LOCALE_NAV_SOURCE_OPTIONS,
     );
     navDocs = resolved.navDocs;
-    categoryMeta = loadCategoryMeta(options?.categoryMetaDir ?? cfg.dir) as Map<string, CategoryMeta>;
+    categoryMeta = loadCategoryMeta(options?.categoryMetaDir ?? cfg.dir);
   }
 
   const tree = ctx.buildNavTree(navDocs, locale, categoryMeta, (slug, loc) => ctx.docsUrl(slug, loc));
