@@ -184,7 +184,7 @@ behaviour byte-for-byte.
 | `./plugins/llms-txt` | llms.txt generation zfb plugin |
 | `./plugins/search-index` | Search index zfb plugin |
 | `./plugins/claude-resources` | Claude resources generation zfb plugin |
-| `./plugins/routes` | Package-owned route injection zfb plugin |
+| `./plugins/routes` | Package-owned route injection zfb plugin. Registers `virtual:zudo-doc-route-context` (serializable data only) and `virtual:zudo-doc-chrome-bindings` (re-export of the host module named by `settings.chromeBindingsModule`, or an empty-object fallback), then injects the derived route catalog |
 
 ### Integrations (legacy wrappers, still shipped)
 
@@ -292,6 +292,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `headerNav` | `HeaderNavItem[]` | Header navigation items |
 | `headerRightItems` | `HeaderRightItem[]` | Header right side items |
 | `packageOwnedRoutes?` | `boolean` | **Internal/unstable** — dormant flag for package-owned route injection. Default `false`. NOT part of the stable 1.0 user contract; this field is excluded from the snapshot guard. See ADR `docs/adr/route-injection-seam.md`. |
+| `chromeBindingsModule?` | `string` | Project-root-relative path (e.g. `"./src/chrome-bindings.tsx"`) to a host module with a **named export `chromeBindings: ChromeHostBindings`** (type from `./factory-context`). Only consumed under `packageOwnedRoutes`: the routes plugin re-exports the module through `virtual:zudo-doc-chrome-bindings` so the injected chrome shim spreads real host bindings into `createChrome(...)`. Absent → byte-identical stub-defaults behavior; present but file missing → the build fails at plugin setup, naming the resolved absolute path. SSR-presentational only — client islands inside the module are not guaranteed to register on injected routes. See ADR `docs/adr/route-injection-seam.md` ("Host-callables channel — chromeBindingsModule"). |
 
 ---
 
