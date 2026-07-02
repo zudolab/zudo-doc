@@ -13,25 +13,16 @@
  * Tier-1 pairs (text) require ≥ 4.5:1; Tier-2 pairs (graphics/icons) require
  * ≥ 3.0:1 unless noted otherwise in the matrix (mermaid text pairs keep 4.5).
  *
- * Built-in schemes (Default Light / Default Dark) are NOT special-cased here —
- * per the epic's Wave-3 batch plan, Default Light/Default Dark are Batch C
- * like every other scheme (see `ALLOWLIST`/`ADMONITION_ALLOWLIST` below); the
- * long-term goal (skill §4) is for both to pass clean.
+ * All 52 schemes pass the full matrix with EMPTY allowlists — the scheme-a11y
+ * epic (#2489) burned down every legacy "upstream fidelity" entry by tweaking
+ * the actual colors. Keep it that way: a new entry is a last resort, only for
+ * a pair provably not user-visible, with a one-line justification (skill §2.5).
+ * "Upstream fidelity" is NOT an acceptable reason — tweak the color instead
+ * (skill §2.1/§2.2 has the OKLCH methodology and the ANSI-preset recipe).
  *
- * ALLOWLIST is a TEMPORARY, batch-tagged registry (epic #2489) of every pair
- * currently failing the full matrix. Every entry is tagged
- * `// TODO(scheme-a11y #2489) — remove in Batch {A|B|C|D}` and grouped into
- * four contiguous, clearly-marked batch regions so the four parallel Wave-3
- * batch PRs (#2493–#2496) touch disjoint line ranges. The reason string is
- * the currently-failing ratio/threshold — see the corresponding Wave-3 batch
- * issue for the full per-scheme inventory (colors, sources, `--suggest`
- * fragments). "Upstream fidelity" is NOT an acceptable long-term reason
- * (skill §2.5) — every entry here is scheduled for a real OKLCH tweak in its
- * batch, not permanent allowlisting.
- *
- * Allowlist entries are expected to fire — a spurious entry (key that never
- * matches a real test) is caught by the stale-key audit at the bottom of this
- * file.
+ * Any allowlist entry that IS added must fire — a spurious entry (key that
+ * never matches a real test) is caught by the stale-key audit at the bottom
+ * of this file.
  */
 
 import { describe, it, expect } from "vitest";
