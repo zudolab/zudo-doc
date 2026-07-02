@@ -95,9 +95,13 @@ environment-sensitive failures that don't appear locally. Exam runs three jobs:
 - **slow-zudo-doc** — `@takazudo/zudo-doc` slow route-injection-build test (real `zfb build`s
   + `npm pack`; moved out of the default `pnpm test` / pr-checks package-tests lane, #2530)
 
-Exam failures open a deduped GitHub issue via `scripts/file-exam-issue.sh`. One open
-issue per workflow; the script closes the previous one and opens a fresh one when a new
-failure occurs, so the issue list doesn't accumulate stale entries.
+Exam failures open a deduped GitHub issue via `scripts/file-exam-issue.sh`, scoped
+per exam job (e2e-full / slow-create / slow-zudo-doc) — dedup matches both the shared
+`exam-failure` label AND the issue title, which embeds the job identity, so a failure
+in one job never appends onto another job's open issue. Repeated failures for the same
+job append comments to the same open issue; each job's next green run closes it via
+`--green` (`if: success()` step, added right after the `if: failure()` step in each job)
+with a closing comment, so the issue list doesn't accumulate stale entries (#2535).
 
 ---
 
@@ -162,13 +166,28 @@ exit deadline. The exit path is exactly one of:
 3. **Delete** — if the test covers something the codebase no longer does, delete it.
 
 **Pass-on-retry is a triage signal, not a resolution.** When CI annotations show a
-test passing on retry (via `scripts/report-retry-flakes.mjs` — runs in pr-checks,
-emits `::warning::flaky: <file> › <title> passed on retry N` annotations), that test
-should enter the quarantine pipeline immediately. Do not let retry-passes accumulate
-silently; they mask real intermittency.
+test passing on retry (via `scripts/report-retry-flakes.mjs` — runs in pr-checks and
+in exam's e2e-full job, emits `::warning::flaky: <file> › <title> passed on retry N`
+annotations), that test should enter the quarantine pipeline immediately. Do not let
+retry-passes accumulate silently; they mask real intermittency.
+
+The annotation now has a consumer (#2535): `report-retry-flakes.mjs` also files or
+appends a deduped `retry-flake`-labeled GitHub issue per offending test (one open
+issue per test, matched by file+title — see `scripts/lib/file-retry-flake-issue.mjs`),
+using `GITHUB_TOKEN` (needs `issues: write`; wired as a job-level permission on
+pr-checks' `e2e` job and via exam.yml's workflow-level `issues: write`). On fork PRs
+the platform-issued token is read-only regardless of the requested permission, and if
+the token is absent or `gh` fails for any reason the script degrades to
+annotation-only — it never fails the job.
+
+`playwright.config.ts`'s `trace: "on-first-retry"` + `screenshot: "only-on-failure"`
+(#2535) mean a retry-pass also leaves a debuggable trace zip under `test-results/`
+(Playwright's `outputDir` — a different directory from `playwright-report/`, which
+only holds the list/JSON report output). Both pr-checks' `e2e` job and exam's
+`e2e-full` job upload both directories as artifacts.
 
 Note: two separate scripts handle flakiness signals —
-`report-retry-flakes.mjs` = pr-checks retry annotations;
+`report-retry-flakes.mjs` = pr-checks + exam.yml retry annotations/issues;
 `report-flaky-lane.mjs` = exam.yml quarantine telemetry (posts to the `@flaky` test's
 linked tracking issue).
 
@@ -202,7 +221,9 @@ These require a linked open issue — no exceptions:
 
 **Gate edits need fresh-context review.** Edits to `playwright.config.ts`,
 `e2e/setup-fixtures.sh`, `.github/workflows/pr-checks.yml`, `.github/workflows/exam.yml`,
-and `scripts/run-b4push.sh` change the rules of the gate itself. Route these through a
+`scripts/run-b4push.sh`, `scripts/report-retry-flakes.mjs`, and `scripts/file-exam-issue.sh`
+change the rules of the gate itself — the last two also auto-file/close GitHub issues, so a
+bug in their dedup logic can spam or silently swallow signal. Route these through a
 code review that reads the gate file from scratch — do not rely on the author's summary.
 
 ---
