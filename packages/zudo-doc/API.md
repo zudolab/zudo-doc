@@ -31,7 +31,7 @@ New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapsh
 
 ---
 
-## 1. Subpath Exports (125 total)
+## 1. Subpath Exports (126 total)
 
 The full `package.json#exports` keyset is the contract. Any addition or removal requires a deliberate, reviewed change that will fail the snapshot guard.
 
@@ -70,6 +70,29 @@ behaviour byte-for-byte.
 | `mdxExtras` | Package SSR impls + a `PresetGenerator` stub |
 | `docContentHeaderExtras` | Renders nothing. A renderer (not a component) called as `({ entry, slug, locale, isFallback?, version? }) => unknown` for `kind === "entry"` doc pages on all 4 doc routes (including versioned pages — it receives `version` and decides for itself). Renders between the `<h1>` and the metainfo/tags block in `DocContentHeader`. |
 | `homeExtras` | Renders nothing. A renderer called as `({ locale }) => unknown` for the home hero. The `/` home route is never injected by the routes plugin (zfb rejects `/`), so this fires on injected `/[locale]` homes and on any host that threads it through `createChrome`; a `HomePageView` `extras` prop takes precedence when both are present. |
+
+### `createHomePageView(ctx)` (`./home-page`)
+
+Factory for the shared home-page (site index) body: hero (logo mask block,
+`<h1>` siteName, description, overview + GitHub links row), the `SiteTreeNav`
+idle Island, and the optional docTags section. Returns a `HomePageView`
+component with props `{ locale, extras?, tree, categoryOrder, tagCount }`.
+
+`/` is never injected by the routes plugin (zfb rejects `/`), so this factory
+exists so BOTH the package's `routes/index.tsx` / `routes/locale-index.tsx`
+(which prepare the locale-specific nav tree / tag count with their own exact
+data calls, then hand them to `HomePageView`) and host pages can render the
+same body. **Not an eject target** — it is not registered in the `EJECTABLE`
+map and has no `zudo-doc eject` CLI name.
+
+**Extras precedence:** the resolved extra content is `extras ?? ctx.hostBindings.homeExtras?.({ locale })` —
+the `extras` **prop** (an already-rendered value, the host-page path) wins over
+the `hostBindings.homeExtras` **renderer** (the injected/bindings path) when
+both are supplied. This value-vs-renderer split is intentional, not something
+to unify: a host page already has its JSX in hand, while the injected path
+only has a locale string at render time and must derive its own content from
+it. The resolved result renders inside the hero text column, after the links
+row.
 
 ### UI Components
 
@@ -117,6 +140,7 @@ behaviour byte-for-byte.
 | `./inline-version-switcher` | Inline version switcher component |
 | `./versions-page` | Versions listing page component |
 | `./tag-pages` | Tag index/detail page components |
+| `./home-page` | `createHomePageView(ctx)` — home-page (site index) view factory; see below |
 | `./category-nav` | Category navigation component |
 | `./category-tree-nav` | Category tree navigation component |
 | `./site-tree-nav` | Site tree navigation component |

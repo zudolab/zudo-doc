@@ -60,6 +60,7 @@ export const {
   TagsIndexPageView,
   SiteTreeNavWrapper,
   BodyEndIslands,
+  HomePageView,
 } = chrome;
 
 // The doc-route-entries builder lives on the route context; the doc entrypoints
