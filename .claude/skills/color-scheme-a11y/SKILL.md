@@ -115,6 +115,19 @@ failing pair.
 4. Re-resolve and confirm the pair (and every *other* pair the same slot feeds — one slot
    often drives multiple pairs).
 
+**Never tune to the exact floor — target `threshold + 0.1` headroom.** Live-browser
+verification of this epic (#2489, S8) found colors tuned to EXACTLY the WCAG floor (e.g.
+4.51:1) rendering at 4.47-4.50:1 in the real DOM: browser `color-mix(in srgb, X 12%, bg)`
+compositing and 8-bit sRGB quantization eat up to ~0.03-0.05 of ratio between the computed
+math and what the page actually paints. A pair that statically "passes" at 4.50 can visibly
+fail AA once it's in the browser. The suggest engine (`scripts/contrast-suggest.ts`,
+`HEADROOM = 0.1`) targets `threshold + 0.1` by default for every nudge — not just the raw
+threshold — so a hand-tune should do the same: search until the pair clears `threshold + 0.1`
+(hard minimum `threshold + 0.05` if gamut-clipping genuinely prevents the full 0.1; note it
+when that happens). The PASS/FAIL floors themselves (4.5 / 3.0, in `contrast-pair-matrix.ts`
+and the vitest guard) stay at the raw WCAG thresholds — headroom is a tuning target, not a
+new floor.
+
 ### 2.2 ANSI-palette presets — the dominant failure mode + derivation recipe
 
 **S1's audit: only 1/52 schemes passes the full matrix, and the mass failures are NOT

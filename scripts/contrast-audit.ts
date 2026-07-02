@@ -19,7 +19,9 @@
  *   pnpm contrast:audit             # console table + contrast-audit-out/report.json
  *   pnpm contrast:audit --html      # also writes contrast-audit-out/preview.html
  *   pnpm contrast:audit --suggest   # also prints derived semantic/palette override
- *                                   # fixes for every failing scheme (S3 #2492)
+ *                                   # fixes for every scheme with a pair below
+ *                                   # threshold+HEADROOM (S3 #2492, headroom S8 #2489)
+ *   pnpm contrast:audit --suggest --headroom 0.1   # override the headroom target
  *
  * Output goes to a gitignored directory — not committed. See S2/S3
  * (zudolab/zudo-doc#2489) for matrix refinements: PAIR_MATRIX lives in
@@ -35,7 +37,7 @@ import pc from "picocolors";
 
 import { PAIR_MATRIX, getAllPresets, evaluateScheme } from "./contrast-pair-matrix";
 import type { SchemeReport, PairResult } from "./contrast-pair-matrix";
-import { buildSuggestionFragment } from "./contrast-suggest";
+import { buildSuggestionFragment, HEADROOM } from "./contrast-suggest";
 
 // ---------------------------------------------------------------------------
 // Console report
@@ -207,17 +209,27 @@ function parseCliArgs(argv: string[]) {
       html: { type: "boolean", default: false },
       suggest: { type: "boolean", default: false },
       "out-dir": { type: "string", default: "contrast-audit-out" },
+      headroom: { type: "string", default: String(HEADROOM) },
     },
   });
   return {
     html: Boolean(values.html),
     suggest: Boolean(values.suggest),
     outDir: String(values["out-dir"] ?? "contrast-audit-out"),
+    headroom: Number(values.headroom ?? HEADROOM),
   };
 }
 
+/** True when at least one pair in `report` hasn't reached `threshold + headroom`
+ *  yet — a superset of `!report.allPass` (also flags passing-but-marginal pairs;
+ *  see scheme-a11y skill §2.1, epic #2489 S8). */
+function needsHeadroomWork(report: SchemeReport, headroom: number): boolean {
+  const EPS = 1e-9;
+  return report.pairs.some((p) => p.ratio < p.threshold + headroom - EPS);
+}
+
 async function main(): Promise<void> {
-  const { html, suggest, outDir } = parseCliArgs(process.argv.slice(2));
+  const { html, suggest, outDir, headroom } = parseCliArgs(process.argv.slice(2));
 
   const presets = getAllPresets();
   const reports = presets.map(({ name, scheme, source }) => evaluateScheme(name, scheme, source));
@@ -236,14 +248,15 @@ async function main(): Promise<void> {
     console.log(pc.green("All schemes pass every pair in the matrix."));
   }
 
+  const schemesNeedingWork = reports.filter((r) => needsHeadroomWork(r, headroom));
   const suggestionFragments: Record<string, string> = {};
-  if (suggest && schemesWithFailures.length > 0) {
-    console.log(pc.bold("\n=== Suggested fixes (--suggest) ===\n"));
+  if (suggest && schemesNeedingWork.length > 0) {
+    console.log(pc.bold(`\n=== Suggested fixes (--suggest, headroom +${headroom}) ===\n`));
     const presetByName = new Map(presets.map((p) => [p.name, p.scheme]));
-    for (const report of schemesWithFailures) {
+    for (const report of schemesNeedingWork) {
       const scheme = presetByName.get(report.name);
       if (!scheme) continue;
-      const fragment = buildSuggestionFragment(report.name, scheme, report);
+      const fragment = buildSuggestionFragment(report.name, scheme, report, headroom);
       suggestionFragments[report.name] = fragment;
       console.log(fragment);
       console.log("");

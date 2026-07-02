@@ -88,9 +88,9 @@ export const colorSchemes: Record<string, ColorScheme> = {
     ],
     semantic: {
       surface: 10,
-      muted: "oklch(0.496 0.000 0.00)" /* upstream #6b6b6b (p8) → L-0.032 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.492 0.000 0.00)" /* upstream #6b6b6b (p8) → L-0.036 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
       accent: 5,
-      accentHover: "oklch(0.496 0.027 257.67)" /* upstream #8590a0 (p14) → L-0.154 for AA (scheme-a11y #2489) */,
+      accentHover: "oklch(0.492 0.027 257.67)" /* upstream #8590a0 (p14) → L-0.158, C-0.000 for AA (scheme-a11y #2489) */, // accent-hover-vs-bg → 4.61:1
       codeBg: 10,
       codeFg: 11,
       success: 2,
@@ -124,7 +124,7 @@ export const colorSchemes: Record<string, ColorScheme> = {
       codeBg: 10,
       codeFg: 11,
       success: 2,
-      danger: 1,
+      danger: "oklch(0.662 0.143 16.99)" /* upstream #da6871 → L+0.006 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
       warning: 3,
       info: 4,
       imageOverlayBg: 0,

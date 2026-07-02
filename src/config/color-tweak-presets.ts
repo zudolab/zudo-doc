@@ -20,20 +20,21 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.811 0.122 307.03)" /* #d6acff */, "oklch(0.799 0.160 339.03)" /* #ff92df */, "oklch(0.943 0.087 195.78)" /* #a4ffff */, "oklch(1.000 0.000 0.00)" /* #ffffff */,
     ],
     semantic: {
-      muted: "oklch(0.656 0.006 274.91)" /* upstream #86878b → L+0.032 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.662 0.006 274.91)" /* upstream #86878b → L+0.038, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
       codeBg: "oklch(0.328 0.022 277.51)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.977 0.008 106.55)" /* upstream #f8f8f2 → L+0.000 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.772 0.206 24.43)" /* upstream #ff5555 → L+0.090 for AA (scheme-a11y #2489) */,
+      danger: "oklch(0.782 0.206 24.43)" /* upstream #ff5555 → L+0.100, C-0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
       matchedKeywordBg: "oklch(0.955 0.134 112.76)" /* derived from warning, base for matchedKeywordFg — scheme-a11y #2489 §2.2 */,
       matchedKeywordFg: "oklch(0.150 0.000 0.00)" /* upstream #0b0b0b → L+0.000 for AA (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.755 0.183 346.81)" /* derived from accent, base for chatUserText — scheme-a11y #2489 §2.2 */,
-      chatUserText: "oklch(0.362 0.000 0.00)" /* upstream #eeeeee → L-0.588 for AA (scheme-a11y #2489) */,
+      chatUserBg: "oklch(0.755 0.183 346.81)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.356 0.000 0.00)" /* upstream #eeeeee → L-0.594 for AA (scheme-a11y #2489) */, // chat-user → 4.63:1
       chatAssistantBg: "oklch(0.328 0.022 277.51)" /* derived bg-elevated, base for chatAssistantText — scheme-a11y #2489 §2.2 */,
       chatAssistantText: "oklch(0.977 0.008 106.55)" /* upstream #f8f8f2 → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.328 0.022 277.51)" /* derived bg-elevated — scheme-a11y #2489 §2.2 */,
       mermaidLabelBg: "oklch(0.328 0.022 277.51)" /* derived bg-elevated (codeBg-like) — scheme-a11y #2489 §2.2 */,
       mermaidNoteBg: "oklch(0.368 0.022 277.51)" /* derived bg-elevated ×2, distinct from node/label — scheme-a11y #2489 §2.2 */,
       mermaidText: "oklch(0.977 0.008 106.55)" /* upstream #f8f8f2 → L+0.000 for AA (scheme-a11y #2489) */,
+      mermaidLine: "oklch(0.662 0.006 274.91)" /* upstream #919297 → L+0.000 for AA (scheme-a11y #2489) */, // mermaid-line-vs-bg → 4.61:1
     },
   },
   "Catppuccin Mocha": {
@@ -49,7 +50,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.731 0.135 259.63)" /* #74a8fc */, "oklch(0.829 0.100 337.73)" /* #f2aede */, "oklch(0.812 0.102 185.07)" /* #6bd7ca */, "oklch(0.817 0.040 272.86)" /* #bac2de */,
     ],
     semantic: {
-      muted: "oklch(0.622 0.036 275.61)" /* upstream #787d94 → L+0.028 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.628 0.036 275.61)" /* upstream #787d94 → L+0.034, C+0.001 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.63:1
       codeBg: "oklch(0.283 0.030 283.91)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.879 0.043 272.28)" /* upstream #cdd6f4 → L+0.000 for AA (scheme-a11y #2489) */,
       matchedKeywordBg: "oklch(0.919 0.070 86.53)" /* derived from warning, base for matchedKeywordFg — scheme-a11y #2489 §2.2 */,
@@ -73,20 +74,20 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: "oklch(0.452 0.035 264.13)" /* #4c566a */,
     palette: [
       "oklch(0.379 0.029 266.47)" /* #3b4252 */, "oklch(0.606 0.121 15.34)" /* #bf616a */, "oklch(0.768 0.075 131.06)" /* #a3be8c */, "oklch(0.855 0.089 84.09)" /* #ebcb8b */,
-      "oklch(0.697 0.059 248.69)" /* #81a1c1 */, "oklch(0.758 0.062 332.66)" /* upstream #b48ead → L+0.066 for AA (scheme-a11y #2489) */, "oklch(0.775 0.062 217.47)" /* #88c0d0 */, "oklch(0.933 0.010 261.79)" /* #e5e9f0 */,
+      "oklch(0.697 0.059 248.69)" /* #81a1c1 */, "oklch(0.764 0.062 332.66)" /* upstream #b48ead → L+0.072, C-0.001 for AA (scheme-a11y #2489) */ /* accent-vs-bg AND admonition-important (raw p5) both ≥4.5 → 4.61:1 (binding pair) */, "oklch(0.775 0.062 217.47)" /* #88c0d0 */, "oklch(0.933 0.010 261.79)" /* #e5e9f0 */,
       "oklch(0.499 0.034 264.20)" /* #596377 */, "oklch(0.606 0.121 15.34)" /* #bf616a */, "oklch(0.768 0.075 131.06)" /* #a3be8c */, "oklch(0.855 0.089 84.09)" /* #ebcb8b */,
       "oklch(0.697 0.059 248.69)" /* #81a1c1 */, "oklch(0.692 0.062 332.66)" /* #b48ead */, "oklch(0.763 0.048 194.49)" /* #8fbcbb */, "oklch(0.951 0.007 260.73)" /* #eceff4 */,
     ],
     semantic: {
-      muted: "oklch(0.691 0.019 264.44)" /* upstream #8c929e → L+0.032 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.697 0.019 264.44)" /* upstream #8c929e → L+0.038, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.63:1
       codeBg: "oklch(0.364 0.023 264.18)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.899 0.016 262.75)" /* upstream #d8dee9 → L+0.000 for AA (scheme-a11y #2489) */,
-      info: "oklch(0.751 0.059 248.69)" /* upstream #81a1c1 → L+0.054 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.762 0.121 15.34)" /* upstream #bf616a → L+0.156 for AA (scheme-a11y #2489) */,
+      info: "oklch(0.757 0.059 248.69)" /* upstream #81a1c1 → L+0.060, C-0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.62:1
+      danger: "oklch(0.770 0.121 15.34)" /* upstream #bf616a → L+0.164, C+0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.64:1
       matchedKeywordBg: "oklch(0.855 0.089 84.09)" /* derived from warning, base for matchedKeywordFg — scheme-a11y #2489 §2.2 */,
       matchedKeywordFg: "oklch(0.150 0.000 0.00)" /* upstream #0b0b0b → L+0.000 for AA (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.758 0.062 332.66)" /* derived from accent, base for chatUserText — scheme-a11y #2489 §2.2 */,
-      chatUserText: "oklch(0.380 0.000 0.00)" /* upstream #eeeeee → L-0.570 for AA (scheme-a11y #2489) */,
+      chatUserBg: "oklch(0.764 0.062 332.66)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.378 0.000 0.00)" /* upstream #eeeeee → L-0.572 for AA (scheme-a11y #2489) */, // chat-user → 4.64:1
       chatAssistantBg: "oklch(0.364 0.023 264.18)" /* derived bg-elevated, base for chatAssistantText — scheme-a11y #2489 §2.2 */,
       chatAssistantText: "oklch(0.899 0.016 262.75)" /* upstream #d8dee9 → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.364 0.023 264.18)" /* derived bg-elevated — scheme-a11y #2489 §2.2 */,
@@ -109,13 +110,13 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.719 0.132 264.20)" /* #7aa2f7 */, "oklch(0.751 0.134 299.50)" /* #bb9af7 */, "oklch(0.820 0.105 235.72)" /* #7dcfff */, "oklch(0.846 0.061 274.76)" /* #c0caf5 */,
     ],
     semantic: {
-      muted: "oklch(0.612 0.045 275.77)" /* upstream #737996 → L+0.030 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.618 0.045 275.77)" /* upstream #737996 → L+0.036, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.63:1
       codeBg: "oklch(0.266 0.021 280.49)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.846 0.061 274.76)" /* upstream #c0caf5 → L+0.000 for AA (scheme-a11y #2489) */,
-      matchedKeywordBg: "oklch(0.784 0.106 75.43)" /* derived from warning, base for matchedKeywordFg — scheme-a11y #2489 §2.2 */,
-      matchedKeywordFg: "oklch(0.404 0.000 0.00)" /* upstream #eeeeee → L-0.546 for AA (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.751 0.134 299.50)" /* derived from accent, base for chatUserText — scheme-a11y #2489 §2.2 */,
-      chatUserText: "oklch(0.368 0.000 0.00)" /* upstream #eeeeee → L-0.582 for AA (scheme-a11y #2489) */,
+      matchedKeywordBg: "oklch(0.784 0.106 75.43)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
+      matchedKeywordFg: "oklch(0.400 0.000 0.00)" /* upstream #eeeeee → L-0.550 for AA (scheme-a11y #2489) */, // matched-keyword → 4.61:1
+      chatUserBg: "oklch(0.751 0.134 299.50)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.364 0.000 0.00)" /* upstream #eeeeee → L-0.586 for AA (scheme-a11y #2489) */, // chat-user → 4.61:1
       chatAssistantBg: "oklch(0.266 0.021 280.49)" /* derived bg-elevated, base for chatAssistantText — scheme-a11y #2489 §2.2 */,
       chatAssistantText: "oklch(0.846 0.061 274.76)" /* upstream #c0caf5 → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.266 0.021 280.49)" /* derived bg-elevated — scheme-a11y #2489 §2.2 */,
@@ -133,21 +134,21 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: 15,
     palette: [
       "oklch(0.277 0.000 0.00)" /* #282828 */, "oklch(0.546 0.203 28.66)" /* #cc241d */, "oklch(0.656 0.1354 109.12)" /* #98971a */, "oklch(0.725 0.143 77.71)" /* #d79921 */,
-      "oklch(0.576 0.066 199.49)" /* #458588 */, "oklch(0.713 0.111 352.22)" /* upstream #b16286 → L+0.116 for AA (scheme-a11y #2489) */, "oklch(0.645 0.094 145.27)" /* #689d6a */, "oklch(0.690 0.035 76.31)" /* #a89984 */,
+      "oklch(0.576 0.066 199.49)" /* #458588 */, "oklch(0.719 0.111 352.22)" /* upstream #b16286 → L+0.122, C+0.001 for AA (scheme-a11y #2489) */ /* accent-vs-bg AND admonition-important (raw p5) both ≥4.5 → 4.62:1 (binding pair) */, "oklch(0.645 0.094 145.27)" /* #689d6a */, "oklch(0.690 0.035 76.31)" /* #a89984 */,
       "oklch(0.619 0.029 67.26)" /* #928374 */, "oklch(0.660 0.218 30.39)" /* #fb4934 */, "oklch(0.765 0.158 110.83)" /* #b8bb26 */, "oklch(0.832 0.1595 82.99)" /* #fabd2f */,
       "oklch(0.693 0.042 169.77)" /* #83a598 */, "oklch(0.705 0.098 2.19)" /* #d3869b */, "oklch(0.756 0.108 137.68)" /* #8ec07c */, "oklch(0.894 0.057 89.24)" /* #ebdbb2 */,
     ],
     semantic: {
-      muted: "oklch(0.649 0.029 67.26)" /* upstream #928374 → L+0.030 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.655 0.029 67.26)" /* upstream #928374 → L+0.036, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
       codeBg: "oklch(0.317 0.000 0.00)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.894 0.057 89.24)" /* upstream #ebdbb2 → L+0.000 for AA (scheme-a11y #2489) */,
-      success: "oklch(0.696 0.135 109.12)" /* upstream #98971a → L+0.040 for AA (scheme-a11y #2489) */,
-      info: "oklch(0.692 0.066 199.49)" /* upstream #458588 → L+0.116 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.744 0.203 28.66)" /* upstream #cc241d → L+0.198 for AA (scheme-a11y #2489) */,
-      matchedKeywordBg: "oklch(0.725 0.143 77.71)" /* derived from warning, base for matchedKeywordFg — scheme-a11y #2489 §2.2 */,
-      matchedKeywordFg: "oklch(0.352 0.000 0.00)" /* upstream #eeeeee → L-0.598 for AA (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.713 0.111 352.22)" /* derived from accent, base for chatUserText — scheme-a11y #2489 §2.2 */,
-      chatUserText: "oklch(0.332 0.000 0.00)" /* upstream #eeeeee → L-0.618 for AA (scheme-a11y #2489) */,
+      success: "oklch(0.702 0.135 109.12)" /* upstream #98971a → L+0.046, C-0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.63:1
+      info: "oklch(0.700 0.066 199.49)" /* upstream #458588 → L+0.124, C+0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.62:1
+      danger: "oklch(0.760 0.203 28.66)" /* upstream #cc241d → L+0.214 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
+      matchedKeywordBg: "oklch(0.725 0.143 77.71)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
+      matchedKeywordFg: "oklch(0.346 0.000 0.00)" /* upstream #eeeeee → L-0.604 for AA (scheme-a11y #2489) */, // matched-keyword → 4.63:1
+      chatUserBg: "oklch(0.719 0.111 352.22)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.332 0.000 0.00)" /* upstream #eeeeee → L-0.618 for AA (scheme-a11y #2489) */, // chat-user → 4.62:1
       chatAssistantBg: "oklch(0.317 0.000 0.00)" /* derived bg-elevated, base for chatAssistantText — scheme-a11y #2489 §2.2 */,
       chatAssistantText: "oklch(0.894 0.057 89.24)" /* upstream #ebdbb2 → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.317 0.000 0.00)" /* derived bg-elevated — scheme-a11y #2489 §2.2 */,
@@ -164,19 +165,19 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: 7,
     palette: [
       "oklch(0.263 0.013 258.37)" /* #21252b */, "oklch(0.671 0.145 17.00)" /* #e06c75 */, "oklch(0.768 0.110 133.00)" /* #98c379 */, "oklch(0.825 0.097 82.26)" /* #e5c07b */,
-      "oklch(0.730 0.121 245.30)" /* #61afef */, "oklch(0.702 0.164 318.21)" /* upstream #c678dd → L+0.008 for AA (scheme-a11y #2489) */, "oklch(0.723 0.0916 206.31)" /* #56b6c2 */, "oklch(0.762 0.020 262.99)" /* #abb2bf */,
+      "oklch(0.730 0.121 245.30)" /* #61afef */, "oklch(0.708 0.164 318.21)" /* upstream #c678dd → L+0.014, C+0.001 for AA (scheme-a11y #2489) */ /* accent-vs-bg AND admonition-important (raw p5) both ≥4.5 → 4.61:1 (binding pair) */, "oklch(0.723 0.0916 206.31)" /* #56b6c2 */, "oklch(0.762 0.020 262.99)" /* #abb2bf */,
       "oklch(0.566 0.000 0.00)" /* #767676 */, "oklch(0.671 0.145 17.00)" /* #e06c75 */, "oklch(0.768 0.110 133.00)" /* #98c379 */, "oklch(0.825 0.097 82.26)" /* #e5c07b */,
       "oklch(0.730 0.121 245.30)" /* #61afef */, "oklch(0.694 0.164 318.21)" /* #c678dd */, "oklch(0.723 0.0916 206.31)" /* #56b6c2 */, "oklch(0.762 0.020 262.99)" /* #abb2bf */,
     ],
     semantic: {
-      muted: "oklch(0.638 0.018 266.20)" /* upstream #7d828d → L+0.032 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.642 0.018 266.20)" /* upstream #7d828d → L+0.036, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
       codeBg: "oklch(0.303 0.013 258.37)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.762 0.020 262.99)" /* upstream #abb2bf → L+0.000 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.701 0.145 17.00)" /* upstream #e06c75 → L+0.030 for AA (scheme-a11y #2489) */,
+      danger: "oklch(0.707 0.145 17.00)" /* upstream #e06c75 → L+0.036, C+0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.63:1
       matchedKeywordBg: "oklch(0.825 0.097 82.26)" /* derived from warning, base for matchedKeywordFg — scheme-a11y #2489 §2.2 */,
       matchedKeywordFg: "oklch(0.150 0.000 0.00)" /* upstream #0b0b0b → L+0.000 for AA (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.702 0.164 318.21)" /* derived from accent, base for chatUserText — scheme-a11y #2489 §2.2 */,
-      chatUserText: "oklch(0.316 0.000 0.00)" /* upstream #eeeeee → L-0.634 for AA (scheme-a11y #2489) */,
+      chatUserBg: "oklch(0.708 0.164 318.21)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.316 0.000 0.00)" /* upstream #eeeeee → L-0.634 for AA (scheme-a11y #2489) */, // chat-user → 4.62:1
       chatAssistantBg: "oklch(0.303 0.013 258.37)" /* derived bg-elevated, base for chatAssistantText — scheme-a11y #2489 §2.2 */,
       chatAssistantText: "oklch(0.762 0.020 262.99)" /* upstream #abb2bf → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.303 0.013 258.37)" /* derived bg-elevated — scheme-a11y #2489 §2.2 */,
@@ -193,30 +194,30 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: 14,
     palette: [
       "oklch(0.309 0.052 219.65)" /* #073642 */, "oklch(0.586 0.206 27.12)" /* #dc322f */, "oklch(0.644 0.151 118.60)" /* #859900 */, "oklch(0.654 0.134 85.72)" /* #b58900 */,
-      "oklch(0.615 0.1394 244.93)" /* #268bd2 */, "oklch(0.700 0.202 355.89)" /* upstream #d33682 (p5) → L+0.108 for AA (scheme-a11y #2489) */, "oklch(0.644 0.102 187.38)" /* #2aa198 */, "oklch(0.931 0.026 92.40)" /* #eee8d5 */,
+      "oklch(0.615 0.1394 244.93)" /* #268bd2 */, "oklch(0.706 0.202 355.89)" /* upstream #d33682 (p5) → L+0.114, C-0.001 for AA (scheme-a11y #2489) */ /* accent-vs-bg AND admonition-important (raw p5) both ≥4.5 → 4.62:1 (binding pair) */, "oklch(0.644 0.102 187.38)" /* #2aa198 */, "oklch(0.931 0.026 92.40)" /* #eee8d5 */,
       "oklch(0.455 0.051 216.20)" /* #335e69 */, "oklch(0.581 0.173 39.50)" /* #cb4b16 */, "oklch(0.523 0.028 219.14)" /* #586e75 */, "oklch(0.568 0.029 221.90)" /* #657b83 */,
       "oklch(0.654 0.020 205.26)" /* #839496 */, "oklch(0.582 0.126 279.10)" /* #6c71c4 */, "oklch(0.698 0.016 196.79)" /* #93a1a1 */, "oklch(0.974 0.026 90.10)" /* #fdf6e3 */,
     ],
     semantic: {
-      muted: "oklch(0.641 0.025 207.05)" /* upstream #73888b → L+0.030 for AA (scheme-a11y #2489) */,
-      surface: "oklch(0.283 0.052 219.65)" /* upstream #073642 (p0) → L-0.026 for AA (scheme-a11y #2489) */,
-      success: "oklch(0.680 0.151 118.60)" /* upstream #859900 (p2) → L+0.036 for AA (scheme-a11y #2489) */,
-      warning: "oklch(0.686 0.134 85.72)" /* upstream #b58900 (p3) → L+0.032 for AA (scheme-a11y #2489) */,
-      info: "oklch(0.691 0.139 244.93)" /* upstream #268bd2 (p4) → L+0.076 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.708 0.206 27.12)" /* upstream #dc322f (p1) → L+0.122 for AA (scheme-a11y #2489) */,
-      codeBg: "oklch(0.307 0.049 219.82)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      codeFg: "oklch(0.676 0.020 205.26)" /* derived from real fg (p12) → L+0.022 for AA on codeBg (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.700 0.202 355.89)" /* derived from accent (p5, tweaked) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserText: "oklch(0.306 0.000 0.00)" /* derived: forced near-black for AA on chatUserBg (scheme-a11y #2489) */,
-      chatAssistantBg: "oklch(0.307 0.049 219.82)" /* derived from bg, bg-elevated, same as codeBg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatAssistantText: "oklch(0.676 0.020 205.26)" /* derived from real fg (p12), same as codeFg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      mermaidNodeBg: "oklch(0.307 0.049 219.82)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      mermaidLabelBg: "oklch(0.307 0.049 219.82)" /* derived from bg, codeBg-like — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      mermaidNoteBg: "oklch(0.347 0.049 219.82)" /* derived from bg, bg-elevated ×2 — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      mermaidText: "oklch(0.716 0.020 205.26)" /* derived from real fg (p12) → L+0.062 for AA vs node/label/note bg (scheme-a11y #2489) */,
+      muted: "oklch(0.647 0.025 207.05)" /* upstream #73888b → L+0.036, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.64:1
+      surface: "oklch(0.275 0.052 219.65)" /* upstream #073642 (p0) → L-0.034, C+0.000 for AA (scheme-a11y #2489) */, // fg-vs-surface → 4.62:1
+      success: "oklch(0.688 0.151 118.60)" /* upstream #859900 (p2) → L+0.044, C+0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.62:1
+      warning: "oklch(0.694 0.134 85.72)" /* upstream #b58900 (p3) → L+0.040 for AA (scheme-a11y #2489) */, // admonition-warning → 4.62:1
+      info: "oklch(0.701 0.139 244.93)" /* upstream #268bd2 (p4) → L+0.086, C-0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.63:1
+      danger: "oklch(0.726 0.206 27.12)" /* upstream #dc322f (p1) → L+0.140, C-0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.62:1
+      codeBg: "oklch(0.283 0.052 219.65)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
+      codeFg: "oklch(0.660 0.020 205.26)" /* upstream #839496 → L+0.006 for AA (scheme-a11y #2489) */, // code-fg-vs-code-bg → 4.62:1
+      chatUserBg: "oklch(0.706 0.202 355.89)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.306 0.000 0.00)" /* upstream #eeeeee → L-0.644 for AA (scheme-a11y #2489) */, // chat-user → 4.62:1
+      chatAssistantBg: "oklch(0.283 0.052 219.65)" /* derived: surface/bg-elevated (base for chatAssistantText) — scheme-a11y #2492 §2.2 recipe */,
+      chatAssistantText: "oklch(0.660 0.020 205.26)" /* upstream #839496 → L+0.006 for AA (scheme-a11y #2489) */, // chat-assistant → 4.62:1
+      mermaidNodeBg: "oklch(0.307 0.049 219.82)" /* derived: bg-elevated — scheme-a11y #2492 §2.2 recipe */,
+      mermaidLabelBg: "oklch(0.283 0.052 219.65)" /* derived: codeBg-like/bg-elevated — scheme-a11y #2492 §2.2 recipe */,
+      mermaidNoteBg: "oklch(0.347 0.049 219.82)" /* derived: bg-elevated ×2, distinct from node/label — scheme-a11y #2492 §2.2 recipe */,
+      mermaidText: "oklch(0.722 0.020 205.26)" /* upstream #839496 → L+0.068 for AA (scheme-a11y #2489) */, // mermaid-text-vs-{node,label,note}-bg → 4.61:1
       mermaidLine: "oklch(0.641 0.025 207.05)" /* derived from muted, already AA-fixed — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      matchedKeywordBg: "oklch(0.686 0.134 85.72)" /* derived from warning (tweaked) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      matchedKeywordFg: "oklch(0.316 0.000 0.00)" /* derived: forced near-black for AA on matchedKeywordBg (scheme-a11y #2489) */,
+      matchedKeywordBg: "oklch(0.694 0.134 85.72)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
+      matchedKeywordFg: "oklch(0.318 0.000 0.00)" /* upstream #eeeeee → L-0.632 for AA (scheme-a11y #2489) */, // matched-keyword → 4.64:1
       imageOverlayBg: "oklch(0.150 0.025 219.82)" /* derived: near-bg dark for AA on imageOverlayFg (scheme-a11y #2489) */,
       imageOverlayFg: "oklch(0.654 0.020 205.26)" /* derived from real fg (p12) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
     },
@@ -226,22 +227,22 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     foreground: "oklch(0.787 0.041 198.35)" /* #9cc2c3 */,
     cursor: "oklch(0.646 0.214 37.45)" /* #f34b00 */,
     selectionBg: "oklch(0.314 0.060 225.53)" /* #003748 */,
-    selectionFg: "oklch(0.683 0.024 193.03)" /* upstream #7a8f8e → L+0.050 for AA (scheme-a11y #2489) */,
+    selectionFg: "oklch(0.689 0.024 193.03)" /* upstream #7a8f8e → L+0.056, C-0.000 for AA (scheme-a11y #2489) */, // selection → 4.64:1
     palette: [
       "oklch(0.255 0.046 216.75)" /* #002831 */, "oklch(0.551 0.211 26.32)" /* #d11c24 */, "oklch(0.729 0.141 143.96)" /* #6cbe6c */, "oklch(0.600 0.1224 81.11)" /* #a57706 */,
-      "oklch(0.559 0.148 251.69)" /* #2176c7 */, "oklch(0.660 0.208 358.45)" /* upstream #c61c6f (p5) → L+0.114 for AA (scheme-a11y #2489) */, "oklch(0.598 0.096 184.04)" /* #259286 */, "oklch(0.915 0.033 93.53)" /* #eae3cb */,
+      "oklch(0.559 0.148 251.69)" /* #2176c7 */, "oklch(0.668 0.208 358.45)" /* upstream #c61c6f (p5) → L+0.121, C+0.000 for AA (scheme-a11y #2489) */ /* accent-vs-bg AND admonition-important (raw p5) both ≥4.5 → 4.62:1 (binding pair) */, "oklch(0.598 0.096 184.04)" /* #259286 */, "oklch(0.915 0.033 93.53)" /* #eae3cb */,
       "oklch(0.473 0.0963 231.94)" /* #006488 */, "oklch(0.618 0.242 22.21)" /* #f5163b */, "oklch(0.845 0.198 150.33)" /* #51ef84 */, "oklch(0.631 0.1174 75.47)" /* #b27e28 */,
       "oklch(0.614 0.1294 237.50)" /* #178ec8 */, "oklch(0.642 0.193 357.14)" /* #e24d8e */, "oklch(0.687 0.1243 180.45)" /* #00b39e */, "oklch(0.967 0.033 91.67)" /* #fcf4dc */,
     ],
     semantic: {
-      muted: "oklch(0.605 0.039 207.40)" /* upstream #5d7f84 → L+0.032 for AA (scheme-a11y #2489) */,
-      warning: "oklch(0.646 0.122 81.11)" /* upstream #a57706 (p3) → L+0.046 for AA (scheme-a11y #2489) */,
-      info: "oklch(0.651 0.148 251.69)" /* upstream #2176c7 (p4) → L+0.092 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.655 0.211 26.32)" /* upstream #d11c24 (p1) → L+0.104 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.609 0.039 207.40)" /* upstream #5d7f84 → L+0.036, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
+      warning: "oklch(0.654 0.122 81.11)" /* upstream #a57706 (p3) → L+0.054, C-0.000 for AA (scheme-a11y #2489) */, // admonition-warning → 4.62:1
+      info: "oklch(0.657 0.148 251.69)" /* upstream #2176c7 (p4) → L+0.098, C+0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.64:1
+      danger: "oklch(0.663 0.211 26.32)" /* upstream #d11c24 (p1) → L+0.112, C+0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
       codeBg: "oklch(0.258 0.040 221.11)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       codeFg: "oklch(0.787 0.041 198.35)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.660 0.208 358.45)" /* derived from accent (p5, tweaked) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserText: "oklch(0.258 0.000 0.00)" /* derived: forced near-black for AA on chatUserBg (scheme-a11y #2489) */,
+      chatUserBg: "oklch(0.668 0.208 358.45)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.260 0.000 0.00)" /* upstream #eeeeee → L-0.690 for AA (scheme-a11y #2489) */, // chat-user → 4.63:1
       chatAssistantBg: "oklch(0.258 0.040 221.11)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       chatAssistantText: "oklch(0.787 0.041 198.35)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.258 0.040 221.11)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
@@ -249,8 +250,8 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       mermaidNoteBg: "oklch(0.298 0.040 221.11)" /* derived from bg, bg-elevated ×2 — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       mermaidText: "oklch(0.787 0.041 198.35)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       mermaidLine: "oklch(0.605 0.039 207.40)" /* derived from muted, already AA-fixed — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      matchedKeywordBg: "oklch(0.646 0.122 81.11)" /* derived from warning (tweaked) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      matchedKeywordFg: "oklch(0.270 0.000 0.00)" /* derived: forced near-black for AA on matchedKeywordBg (scheme-a11y #2489) */,
+      matchedKeywordBg: "oklch(0.654 0.122 81.11)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
+      matchedKeywordFg: "oklch(0.274 0.000 0.00)" /* upstream #eeeeee → L-0.676 for AA (scheme-a11y #2489) */, // matched-keyword → 4.61:1
     },
   },
   "Solarized Light": {
@@ -258,33 +259,33 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     foreground: "oklch(0.530 0.029 221.90)" /* upstream #657b83 → L-0.038 for AA (scheme-a11y #2489) */,
     cursor: 11,
     selectionBg: 7,
-    selectionFg: "oklch(0.397 0.028 219.14)" /* upstream #586e75 → L-0.126 for AA (scheme-a11y #2489) */,
+    selectionFg: "oklch(0.391 0.028 219.14)" /* upstream #586e75 → L-0.132, C-0.000 for AA (scheme-a11y #2489) */, // selection → 4.62:1
     palette: [
       "oklch(0.309 0.052 219.65)" /* #073642 */, "oklch(0.586 0.206 27.12)" /* #dc322f */, "oklch(0.644 0.151 118.60)" /* #859900 */, "oklch(0.654 0.134 85.72)" /* #b58900 */,
-      "oklch(0.615 0.1394 244.93)" /* #268bd2 */, "oklch(0.530 0.202 355.89)" /* upstream #d33682 → L-0.062 for AA (scheme-a11y #2489) */, "oklch(0.644 0.102 187.38)" /* #2aa198 */, "oklch(0.773 0.027 92.45)" /* #bbb5a2 */,
+      "oklch(0.615 0.1394 244.93)" /* #268bd2 */, "oklch(0.526 0.202 355.89)" /* upstream #d33682 → L-0.066, C-0.001 for AA (scheme-a11y #2489) */ /* accent-vs-bg AND admonition-important (raw p5) both ≥4.5 → 4.61:1 (binding pair) */, "oklch(0.644 0.102 187.38)" /* #2aa198 */, "oklch(0.773 0.027 92.45)" /* #bbb5a2 */,
       "oklch(0.267 0.049 219.82)" /* #002b36 */, "oklch(0.581 0.173 39.50)" /* #cb4b16 */, "oklch(0.523 0.028 219.14)" /* #586e75 */, "oklch(0.568 0.029 221.90)" /* #657b83 */,
       "oklch(0.654 0.020 205.26)" /* #839496 */, "oklch(0.582 0.126 279.10)" /* #6c71c4 */, "oklch(0.698 0.016 196.79)" /* #93a1a1 */, "oklch(0.974 0.026 90.10)" /* #fdf6e3 */,
     ],
     semantic: {
       accent: 5,
-      accentHover: "oklch(0.556 0.126 279.10)" /* upstream #6c71c4 → L-0.026 for AA (scheme-a11y #2489) */,
-      surface: "oklch(0.951 0.024 94.07)" /* #f4efdd */,
-      codeBg: "oklch(0.951 0.024 94.07)" /* derived: surface (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
-      codeFg: "oklch(0.530 0.029 221.90)" /* upstream #657b83 → L-0.038 for AA (scheme-a11y #2489) */,
-      success: "oklch(0.502 0.151 118.60)" /* upstream #859900 → L-0.142 for AA (scheme-a11y #2489) */,
-      warning: "oklch(0.512 0.134 85.72)" /* upstream #b58900 → L-0.142 for AA (scheme-a11y #2489) */,
-      info: "oklch(0.503 0.139 244.93)" /* upstream #268bd2 → L-0.112 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.526 0.206 27.12)" /* upstream #dc322f → L-0.060 for AA (scheme-a11y #2489) */,
+      accentHover: "oklch(0.552 0.126 279.10)" /* upstream #6c71c4 → L-0.030, C-0.000 for AA (scheme-a11y #2489) */, // accent-hover-vs-bg → 4.62:1
+      surface: "oklch(0.957 0.024 94.07)" /* upstream #f4efdd → L+0.006 for AA (scheme-a11y #2489) */, // fg-vs-surface → 4.62:1
+      codeBg: "oklch(0.951 0.024 94.07)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
+      codeFg: "oklch(0.526 0.029 221.90)" /* upstream #657b83 → L-0.042, C+0.001 for AA (scheme-a11y #2489) */, // code-fg-vs-code-bg → 4.61:1
+      success: "oklch(0.498 0.151 118.60)" /* upstream #859900 → L-0.146, C+0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.61:1
+      warning: "oklch(0.506 0.134 85.72)" /* upstream #b58900 → L-0.148 for AA (scheme-a11y #2489) */, // admonition-warning → 4.64:1
+      info: "oklch(0.499 0.139 244.93)" /* upstream #268bd2 → L-0.116, C-0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.61:1
+      danger: "oklch(0.522 0.206 27.12)" /* upstream #dc322f → L-0.064, C-0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
       matchedKeywordBg: "oklch(0.512 0.134 85.72)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
       matchedKeywordFg: "oklch(0.950 0.000 0.00)" /* upstream #eeeeee → L+0.000 for AA (scheme-a11y #2489) */,
       chatUserBg: "oklch(0.530 0.202 355.89)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
       chatUserText: "oklch(0.950 0.000 0.00)" /* upstream #eeeeee → L+0.000 for AA (scheme-a11y #2489) */,
-      chatAssistantBg: "oklch(0.951 0.024 94.07)" /* derived: surface (base for chatAssistantText) — scheme-a11y #2492 §2.2 recipe */,
-      chatAssistantText: "oklch(0.530 0.029 221.90)" /* upstream #657b83 → L-0.038 for AA (scheme-a11y #2489) */,
+      chatAssistantBg: "oklch(0.951 0.024 94.07)" /* derived: surface/bg-elevated (base for chatAssistantText) — scheme-a11y #2492 §2.2 recipe */,
+      chatAssistantText: "oklch(0.526 0.029 221.90)" /* upstream #657b83 → L-0.042, C+0.001 for AA (scheme-a11y #2489) */, // chat-assistant → 4.61:1
       mermaidNodeBg: "oklch(0.934 0.026 90.10)" /* derived: bg-elevated — scheme-a11y #2492 §2.2 recipe */,
       mermaidLabelBg: "oklch(0.951 0.024 94.07)" /* derived: codeBg-like/bg-elevated — scheme-a11y #2492 §2.2 recipe */,
       mermaidNoteBg: "oklch(0.894 0.026 90.10)" /* derived: bg-elevated ×2, distinct from node/label — scheme-a11y #2492 §2.2 recipe */,
-      mermaidText: "oklch(0.490 0.029 221.90)" /* upstream #657b83 → L-0.078 for AA (scheme-a11y #2489) */,
+      mermaidText: "oklch(0.484 0.029 221.90)" /* upstream #657b83 → L-0.084, C+0.001 for AA (scheme-a11y #2489) */, // mermaid-text-vs-{node,label,note}-bg → 4.64:1
       imageOverlayBg: "oklch(0.150 0.013 90.10)" /* derived: near-bg dark — scheme-a11y #2492 §2.2 recipe */,
       imageOverlayFg: "oklch(0.568 0.029 221.90)" /* upstream #657b83 → L+0.000 for AA (scheme-a11y #2489) */,
     },
@@ -302,12 +303,12 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.774 0.136 46.20)" /* #fc9867 */, "oklch(0.741 0.121 290.68)" /* #ab9df2 */, "oklch(0.838 0.095 205.66)" /* #78dce8 */, "oklch(0.991 0.003 106.45)" /* #fcfcfa */,
     ],
     semantic: {
-      muted: "oklch(0.658 0.002 325.60)" /* upstream #898889 → L+0.030 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.758 0.194 8.45)" /* upstream #ff6188 (p1) → L+0.052 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.664 0.002 325.60)" /* upstream #898889 → L+0.036, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
+      danger: "oklch(0.768 0.194 8.45)" /* upstream #ff6188 (p1) → L+0.062, C+0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
       codeBg: "oklch(0.330 0.008 317.72)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       codeFg: "oklch(0.991 0.003 106.45)" /* derived from real fg (p7) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.741 0.121 290.68)" /* derived from accent (p5) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserText: "oklch(0.362 0.000 0.00)" /* derived: forced near-black for AA on chatUserBg (scheme-a11y #2489) */,
+      chatUserBg: "oklch(0.741 0.121 290.68)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.358 0.000 0.00)" /* upstream #eeeeee → L-0.592 for AA (scheme-a11y #2489) */, // chat-user → 4.61:1
       chatAssistantBg: "oklch(0.330 0.008 317.72)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       chatAssistantText: "oklch(0.991 0.003 106.45)" /* derived from real fg (p7) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.330 0.008 317.72)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
@@ -327,25 +328,26 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: "oklch(1.000 0.000 0.00)" /* #ffffff */,
     palette: [
       "oklch(0.218 0.000 0.00)" /* #1a1a1a */, "oklch(0.617 0.247 11.21)" /* #f4005f */, "oklch(0.828 0.213 129.79)" /* #98e024 */, "oklch(0.767 0.1683 62.37)" /* #fd971f */,
-      "oklch(0.642 0.219 296.47)" /* #9d65ff */, "oklch(0.627 0.247 11.21)" /* upstream #f4005f (p5) → L+0.010 for AA (scheme-a11y #2489) */, "oklch(0.802 0.1127 214.32)" /* #58d1eb */, "oklch(0.818 0.022 109.78)" /* #c4c5b5 */,
+      "oklch(0.642 0.219 296.47)" /* #9d65ff */, "oklch(0.633 0.247 11.21)" /* upstream #f4005f (p5) → L+0.016, C+0.000 for AA (scheme-a11y #2489) */ /* accent-vs-bg AND admonition-important (raw p5) both ≥4.5 → 4.61:1 (binding pair) */, "oklch(0.802 0.1127 214.32)" /* #58d1eb */, "oklch(0.818 0.022 109.78)" /* #c4c5b5 */,
       "oklch(0.480 0.028 96.90)" /* #625e4c */, "oklch(0.617 0.247 11.21)" /* #f4005f */, "oklch(0.828 0.213 129.79)" /* #98e024 */, "oklch(0.859 0.137 103.89)" /* #e0d561 */,
       "oklch(0.642 0.219 296.47)" /* #9d65ff */, "oklch(0.617 0.247 11.21)" /* #f4005f */, "oklch(0.802 0.1127 214.32)" /* #58d1eb */, "oklch(0.971 0.009 106.57)" /* #f6f6ef */,
     ],
     semantic: {
-      muted: "oklch(0.577 0.000 0.00)" /* upstream #717171 (p8) → L+0.028 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.627 0.247 11.21)" /* upstream #f4005f (p1) → L+0.010 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.583 0.000 0.00)" /* upstream #717171 (p8) → L+0.034 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.63:1
+      danger: "oklch(0.633 0.247 11.21)" /* upstream #f4005f (p1) → L+0.016, C+0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
       codeBg: "oklch(0.194 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       codeFg: "oklch(0.885 0.000 0.00)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.627 0.247 11.21)" /* derived from accent (p5, tweaked) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserText: "oklch(0.198 0.000 0.00)" /* derived: forced near-black for AA on chatUserBg (scheme-a11y #2489) */,
+      chatUserBg: "oklch(0.633 0.247 11.21)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.200 0.000 0.00)" /* upstream #eeeeee → L-0.750 for AA (scheme-a11y #2489) */, // chat-user → 4.61:1
       chatAssistantBg: "oklch(0.194 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       chatAssistantText: "oklch(0.885 0.000 0.00)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.194 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       mermaidLabelBg: "oklch(0.194 0.000 0.00)" /* derived from bg, codeBg-like — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       mermaidNoteBg: "oklch(0.234 0.000 0.00)" /* derived from bg, bg-elevated ×2 — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       mermaidText: "oklch(0.885 0.000 0.00)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      matchedKeywordBg: "oklch(0.767 0.168 62.37)" /* derived from warning-like (p3) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      matchedKeywordFg: "oklch(0.384 0.000 0.00)" /* derived: forced near-black for AA on matchedKeywordBg (scheme-a11y #2489) */,
+      matchedKeywordBg: "oklch(0.767 0.168 62.37)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
+      matchedKeywordFg: "oklch(0.378 0.000 0.00)" /* upstream #eeeeee → L-0.572 for AA (scheme-a11y #2489) */, // matched-keyword → 4.63:1
+      mermaidLine: "oklch(0.583 0.000 0.00)" /* upstream #7b7b7b → L+0.000 for AA (scheme-a11y #2489) */, // mermaid-line-vs-bg → 4.63:1
     },
   },
   "Monokai Vivid": {
@@ -361,12 +363,12 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.506 0.277 263.92)" /* #0443ff */, "oklch(0.677 0.3125 327.47)" /* #f200f6 */, "oklch(0.802 0.129 227.84)" /* #51ceff */, "oklch(1.000 0.000 0.00)" /* #ffffff */,
     ],
     semantic: {
-      info: "oklch(0.672 0.277 263.92)" /* upstream #0443ff (p4) → L+0.166 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.642 0.238 25.50)" /* upstream #fa2934 (p1) → L+0.008 for AA (scheme-a11y #2489) */,
+      info: "oklch(0.682 0.277 263.92)" /* upstream #0443ff (p4) → L+0.176, C-0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.63:1
+      danger: "oklch(0.646 0.238 25.50)" /* upstream #fa2934 (p1) → L+0.012, C-0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
       codeBg: "oklch(0.222 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       codeFg: "oklch(0.982 0.000 0.00)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.687 0.316 328.36)" /* derived from accent (p5) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserText: "oklch(0.272 0.000 0.00)" /* derived: forced near-black for AA on chatUserBg (scheme-a11y #2489) */,
+      chatUserBg: "oklch(0.687 0.316 328.36)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.266 0.000 0.00)" /* upstream #eeeeee → L-0.684 for AA (scheme-a11y #2489) */, // chat-user → 4.61:1
       chatAssistantBg: "oklch(0.222 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       chatAssistantText: "oklch(0.982 0.000 0.00)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.222 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
@@ -385,18 +387,18 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: 7,
     palette: [
       "oklch(0.218 0.000 0.00)" /* #1a1a1a */, "oklch(0.617 0.247 11.21)" /* #f4005f */, "oklch(0.828 0.213 129.79)" /* #98e024 */, "oklch(0.732 0.176 54.39)" /* #fa8419 */,
-      "oklch(0.642 0.219 296.47)" /* #9d65ff */, "oklch(0.701 0.247 11.21)" /* upstream #f4005f (p5) → L+0.084 for AA (scheme-a11y #2489) */, "oklch(0.802 0.1127 214.32)" /* #58d1eb */, "oklch(0.818 0.022 109.78)" /* #c4c5b5 */,
+      "oklch(0.642 0.219 296.47)" /* #9d65ff */, "oklch(0.719 0.247 11.21)" /* upstream #f4005f (p5) → L+0.102, C+0.000 for AA (scheme-a11y #2489) */ /* accent-vs-bg AND admonition-important (raw p5) both ≥4.5 → 4.62:1 (binding pair) */, "oklch(0.802 0.1127 214.32)" /* #58d1eb */, "oklch(0.818 0.022 109.78)" /* #c4c5b5 */,
       "oklch(0.480 0.028 96.90)" /* #625e4c */, "oklch(0.617 0.247 11.21)" /* #f4005f */, "oklch(0.828 0.213 129.79)" /* #98e024 */, "oklch(0.859 0.137 103.89)" /* #e0d561 */,
       "oklch(0.642 0.219 296.47)" /* #9d65ff */, "oklch(0.617 0.247 11.21)" /* #f4005f */, "oklch(0.802 0.1127 214.32)" /* #58d1eb */, "oklch(0.971 0.009 106.57)" /* #f6f6ef */,
     ],
     semantic: {
-      muted: "oklch(0.606 0.012 106.77)" /* upstream #797971 (p8) → L+0.032 for AA (scheme-a11y #2489) */,
-      info: "oklch(0.674 0.219 296.47)" /* upstream #9d65ff (p4) → L+0.032 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.701 0.247 11.21)" /* upstream #f4005f (p1) → L+0.084 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.612 0.012 106.77)" /* upstream #797971 (p8) → L+0.038 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.64:1
+      info: "oklch(0.682 0.219 296.47)" /* upstream #9d65ff (p4) → L+0.040, C+0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.61:1
+      danger: "oklch(0.719 0.247 11.21)" /* upstream #f4005f (p1) → L+0.102, C+0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.62:1
       codeBg: "oklch(0.258 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       codeFg: "oklch(0.818 0.022 109.78)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.701 0.247 11.21)" /* derived from accent (p5, tweaked) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserText: "oklch(0.264 0.000 0.00)" /* derived: forced near-black for AA on chatUserBg (scheme-a11y #2489) */,
+      chatUserBg: "oklch(0.719 0.247 11.21)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.266 0.000 0.00)" /* upstream #eeeeee → L-0.684 for AA (scheme-a11y #2489) */, // chat-user → 4.63:1
       chatAssistantBg: "oklch(0.258 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       chatAssistantText: "oklch(0.818 0.022 109.78)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.258 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
@@ -404,8 +406,8 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       mermaidNoteBg: "oklch(0.298 0.000 0.00)" /* derived from bg, bg-elevated ×2 — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       mermaidText: "oklch(0.818 0.022 109.78)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       mermaidLine: "oklch(0.606 0.012 106.77)" /* derived from muted, already AA-fixed — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      matchedKeywordBg: "oklch(0.732 0.176 54.39)" /* derived from warning-like (p3) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      matchedKeywordFg: "oklch(0.350 0.000 0.00)" /* derived: forced near-black for AA on matchedKeywordBg (scheme-a11y #2489) */,
+      matchedKeywordBg: "oklch(0.732 0.176 54.39)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
+      matchedKeywordFg: "oklch(0.344 0.000 0.00)" /* upstream #eeeeee → L-0.606 for AA (scheme-a11y #2489) */, // matched-keyword → 4.62:1
     },
   },
   "Material Ocean": {
@@ -421,12 +423,12 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.744 0.131 264.28)" /* #82aaff */, "oklch(0.743 0.135 311.06)" /* #c792ea */, "oklch(0.856 0.094 225.87)" /* #89ddff */, "oklch(1.000 0.000 0.00)" /* #ffffff */,
     ],
     semantic: {
-      muted: "oklch(0.588 0.021 272.10)" /* upstream #707481 → L+0.028 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.592 0.021 272.10)" /* upstream #707481 → L+0.032, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
       surface: "oklch(0.210 0.018 270.39)" /* #151821 */,
       codeBg: "oklch(0.210 0.018 270.39)" /* derived from surface — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       codeFg: "oklch(0.665 0.023 273.88)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.743 0.135 311.06)" /* derived from accent (p5) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserText: "oklch(0.360 0.000 0.00)" /* derived: forced near-black for AA on chatUserBg (scheme-a11y #2489) */,
+      chatUserBg: "oklch(0.743 0.135 311.06)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.354 0.000 0.00)" /* upstream #eeeeee → L-0.596 for AA (scheme-a11y #2489) */, // chat-user → 4.63:1
       chatAssistantBg: "oklch(0.210 0.018 270.39)" /* derived from surface — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       chatAssistantText: "oklch(0.665 0.023 273.88)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.220 0.019 274.65)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
@@ -450,12 +452,12 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.744 0.131 264.28)" /* #82aaff */, "oklch(0.743 0.135 311.06)" /* #c792ea */, "oklch(0.856 0.094 225.87)" /* #89ddff */, "oklch(1.000 0.000 0.00)" /* #ffffff */,
     ],
     semantic: {
-      muted: "oklch(0.625 0.010 196.90)" /* upstream #798181 → L+0.028 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.695 0.207 14.79)" /* upstream #ff5370 (p1) → L+0.010 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.631 0.010 196.90)" /* upstream #798181 → L+0.034, C+0.001 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.64:1
+      danger: "oklch(0.711 0.207 14.79)" /* upstream #ff5370 (p1) → L+0.026, C-0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
       codeBg: "oklch(0.288 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       codeFg: "oklch(0.988 0.018 196.87)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.743 0.135 311.06)" /* derived from accent (p5) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserText: "oklch(0.360 0.000 0.00)" /* derived: forced near-black for AA on chatUserBg (scheme-a11y #2489) */,
+      chatUserBg: "oklch(0.743 0.135 311.06)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.354 0.000 0.00)" /* upstream #eeeeee → L-0.596 for AA (scheme-a11y #2489) */, // chat-user → 4.63:1
       chatAssistantBg: "oklch(0.288 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       chatAssistantText: "oklch(0.988 0.018 196.87)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.288 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
@@ -475,20 +477,20 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: "oklch(0.360 0.000 0.00)" /* #3d3d3d */,
     palette: [
       "oklch(0.248 0.000 0.00)" /* #212121 */, "oklch(0.498 0.1924 25.76)" /* #b7141f */, "oklch(0.526 0.132 135.86)" /* #457b24 */, "oklch(0.760 0.163 65.24)" /* #f6981e */,
-      "oklch(0.452 0.170 260.67)" /* #134eb2 */, "oklch(0.700 0.200 308.38)" /* upstream #701aa2 (p5) → L+0.266 for AA (scheme-a11y #2489) */, "oklch(0.503 0.083 207.07)" /* #0e717c */, "oklch(0.952 0.000 0.00)" /* #efefef */,
+      "oklch(0.452 0.170 260.67)" /* #134eb2 */, "oklch(0.706 0.200 308.38)" /* upstream #701aa2 (p5) → L+0.272, C+0.000 for AA (scheme-a11y #2489) */ /* admonition-important (raw p5 only — accent is overridden elsewhere) → 4.62:1 */, "oklch(0.503 0.083 207.07)" /* #0e717c */, "oklch(0.952 0.000 0.00)" /* #efefef */,
       "oklch(0.428 0.000 0.00)" /* #4f4f4f */, "oklch(0.616 0.209 24.78)" /* #e83b3f */, "oklch(0.720 0.171 132.31)" /* #7aba3a */, "oklch(0.926 0.185 102.40)" /* #ffea2e */,
       "oklch(0.703 0.141 250.23)" /* #54a4f3 */, "oklch(0.582 0.185 320.87)" /* #aa4dbc */, "oklch(0.729 0.1194 210.45)" /* #26bbd1 */, "oklch(0.885 0.000 0.00)" /* #d9d9d9 */,
     ],
     semantic: {
-      muted: "oklch(0.631 0.001 106.44)" /* upstream #818180 → L+0.028 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.637 0.001 106.44)" /* upstream #818180 → L+0.034, C-0.001 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
       accent: 14,
-      success: "oklch(0.668 0.132 135.86)" /* upstream #457b24 (p2) → L+0.142 for AA (scheme-a11y #2489) */,
-      info: "oklch(0.682 0.170 260.67)" /* upstream #134eb2 (p4) → L+0.230 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.696 0.192 25.76)" /* upstream #b7141f (p1) → L+0.198 for AA (scheme-a11y #2489) */,
+      success: "oklch(0.674 0.132 135.86)" /* upstream #457b24 (p2) → L+0.148, C+0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.62:1
+      info: "oklch(0.690 0.170 260.67)" /* upstream #134eb2 (p4) → L+0.238 for AA (scheme-a11y #2489) */, // admonition-info → 4.61:1
+      danger: "oklch(0.706 0.192 25.76)" /* upstream #b7141f (p1) → L+0.208, C-0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.62:1
       codeBg: "oklch(0.296 0.002 106.53)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       codeFg: "oklch(0.922 0.000 0.00)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.729 0.119 210.45)" /* derived from accent (p14, scheme's override) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserText: "oklch(0.370 0.000 0.00)" /* derived: forced near-black for AA on chatUserBg (scheme-a11y #2489) */,
+      chatUserBg: "oklch(0.729 0.119 210.45)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.366 0.000 0.00)" /* upstream #eeeeee → L-0.584 for AA (scheme-a11y #2489) */, // chat-user → 4.61:1
       chatAssistantBg: "oklch(0.296 0.002 106.53)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       chatAssistantText: "oklch(0.922 0.000 0.00)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.296 0.002 106.53)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
@@ -496,8 +498,8 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       mermaidNoteBg: "oklch(0.336 0.002 106.53)" /* derived from bg, bg-elevated ×2 — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       mermaidText: "oklch(0.922 0.000 0.00)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       mermaidLine: "oklch(0.631 0.001 106.44)" /* derived from muted, already AA-fixed — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      matchedKeywordBg: "oklch(0.760 0.163 65.24)" /* derived from warning-like (p3) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      matchedKeywordFg: "oklch(0.378 0.000 0.00)" /* derived: forced dark for AA on matchedKeywordBg (scheme-a11y #2489) */,
+      matchedKeywordBg: "oklch(0.760 0.163 65.24)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
+      matchedKeywordFg: "oklch(0.374 0.000 0.00)" /* upstream #eeeeee → L-0.576 for AA (scheme-a11y #2489) */, // matched-keyword → 4.61:1
     },
   },
   Material: {
@@ -513,12 +515,12 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.703 0.141 250.23)" /* #54a4f3 */, "oklch(0.582 0.185 320.87)" /* #aa4dbc */, "oklch(0.729 0.1194 210.45)" /* #26bbd1 */, "oklch(0.885 0.000 0.00)" /* #d9d9d9 */,
     ],
     semantic: {
-      accentHover: "oklch(0.546 0.185 320.87)" /* upstream #aa4dbc → L-0.036 for AA (scheme-a11y #2489) */,
+      accentHover: "oklch(0.542 0.185 320.87)" /* upstream #aa4dbc → L-0.040, C+0.000 for AA (scheme-a11y #2489) */, // accent-hover-vs-bg → 4.61:1
       surface: "oklch(0.901 0.000 0.00)" /* #dedede */,
       codeBg: "oklch(0.901 0.000 0.00)" /* derived: surface (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.256 0.002 106.53)" /* upstream #232322 → L+0.000 for AA (scheme-a11y #2489) */,
-      success: "oklch(0.474 0.132 135.86)" /* upstream #457b24 → L-0.052 for AA (scheme-a11y #2489) */,
-      warning: "oklch(0.492 0.163 65.24)" /* upstream #f6981e → L-0.268 for AA (scheme-a11y #2489) */,
+      success: "oklch(0.468 0.132 135.86)" /* upstream #457b24 → L-0.058, C+0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.63:1
+      warning: "oklch(0.486 0.163 65.24)" /* upstream #f6981e → L-0.274 for AA (scheme-a11y #2489) */, // admonition-warning → 4.62:1
       matchedKeywordBg: "oklch(0.492 0.163 65.24)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
       matchedKeywordFg: "oklch(0.950 0.000 0.00)" /* upstream #eeeeee → L+0.000 for AA (scheme-a11y #2489) */,
       chatUserBg: "oklch(0.361 0.187 305.65)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
@@ -529,6 +531,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       mermaidLabelBg: "oklch(0.901 0.000 0.00)" /* derived: codeBg-like/bg-elevated — scheme-a11y #2492 §2.2 recipe */,
       mermaidNoteBg: "oklch(0.857 0.000 0.00)" /* derived: bg-elevated ×2, distinct from node/label — scheme-a11y #2492 §2.2 recipe */,
       mermaidText: "oklch(0.256 0.002 106.53)" /* upstream #232322 → L+0.000 for AA (scheme-a11y #2489) */,
+      danger: "oklch(0.494 0.192 25.76)" /* upstream #b7141f → L-0.004 for AA (scheme-a11y #2489) */, // admonition-danger → 4.62:1
     },
   },
   "Rose Pine": {
@@ -544,14 +547,14 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.822 0.054 209.56)" /* #9ccfd8 */, "oklch(0.776 0.095 304.99)" /* #c4a7e7 */, "oklch(0.836 0.054 21.14)" /* #ebbcba */, "oklch(0.909 0.030 289.97)" /* #e0def4 */,
     ],
     semantic: {
-      muted: "oklch(0.604 0.027 290.61)" /* upstream #787688 → L+0.030 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.610 0.027 290.61)" /* upstream #787688 → L+0.036, C-0.001 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.63:1
       codeBg: "oklch(0.253 0.025 291.13)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.909 0.030 289.97)" /* upstream #e0def4 → L+0.000 for AA (scheme-a11y #2489) */,
-      success: "oklch(0.636 0.079 227.72)" /* upstream #31748f → L+0.108 for AA (scheme-a11y #2489) */,
+      success: "oklch(0.642 0.079 227.72)" /* upstream #31748f → L+0.114, C-0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.62:1
       matchedKeywordBg: "oklch(0.843 0.110 74.60)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
       matchedKeywordFg: "oklch(0.150 0.000 0.00)" /* upstream #0b0b0b → L+0.000 for AA (scheme-a11y #2489) */,
       chatUserBg: "oklch(0.776 0.095 304.99)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
-      chatUserText: "oklch(0.394 0.000 0.00)" /* upstream #eeeeee → L-0.556 for AA (scheme-a11y #2489) */,
+      chatUserText: "oklch(0.388 0.000 0.00)" /* upstream #eeeeee → L-0.562 for AA (scheme-a11y #2489) */, // chat-user → 4.62:1
       chatAssistantBg: "oklch(0.253 0.025 291.13)" /* derived: surface/bg-elevated (base for chatAssistantText) — scheme-a11y #2492 §2.2 recipe */,
       chatAssistantText: "oklch(0.909 0.030 289.97)" /* upstream #e0def4 → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.253 0.025 291.13)" /* derived: bg-elevated — scheme-a11y #2492 §2.2 recipe */,
@@ -573,20 +576,22 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.822 0.054 209.56)" /* #9ccfd8 */, "oklch(0.776 0.095 304.99)" /* #c4a7e7 */, "oklch(0.765 0.097 21.92)" /* #ea9a97 */, "oklch(0.909 0.030 289.97)" /* #e0def4 */,
     ],
     semantic: {
-      muted: "oklch(0.635 0.032 289.79)" /* upstream #817f94 → L+0.030 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.641 0.032 289.79)" /* upstream #817f94 → L+0.035, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.64:1
       codeBg: "oklch(0.300 0.039 287.73)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.909 0.030 289.97)" /* upstream #e0def4 → L+0.000 for AA (scheme-a11y #2489) */,
-      success: "oklch(0.672 0.093 228.00)" /* upstream #3e8fb0 → L+0.058 for AA (scheme-a11y #2489) */,
+      success: "oklch(0.682 0.093 228.00)" /* upstream #3e8fb0 → L+0.068, C+0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.63:1
       matchedKeywordBg: "oklch(0.843 0.110 74.60)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
       matchedKeywordFg: "oklch(0.150 0.000 0.00)" /* upstream #0b0b0b → L+0.000 for AA (scheme-a11y #2489) */,
       chatUserBg: "oklch(0.776 0.095 304.99)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
-      chatUserText: "oklch(0.394 0.000 0.00)" /* upstream #eeeeee → L-0.556 for AA (scheme-a11y #2489) */,
+      chatUserText: "oklch(0.388 0.000 0.00)" /* upstream #eeeeee → L-0.562 for AA (scheme-a11y #2489) */, // chat-user → 4.62:1
       chatAssistantBg: "oklch(0.300 0.039 287.73)" /* derived: surface/bg-elevated (base for chatAssistantText) — scheme-a11y #2492 §2.2 recipe */,
       chatAssistantText: "oklch(0.909 0.030 289.97)" /* upstream #e0def4 → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.300 0.039 287.73)" /* derived: bg-elevated — scheme-a11y #2492 §2.2 recipe */,
       mermaidLabelBg: "oklch(0.300 0.039 287.73)" /* derived: codeBg-like/bg-elevated — scheme-a11y #2492 §2.2 recipe */,
       mermaidNoteBg: "oklch(0.340 0.039 287.73)" /* derived: bg-elevated ×2, distinct from node/label — scheme-a11y #2492 §2.2 recipe */,
       mermaidText: "oklch(0.909 0.030 289.97)" /* upstream #e0def4 → L+0.000 for AA (scheme-a11y #2489) */,
+      danger: "oklch(0.702 0.156 4.22)" /* upstream #eb6f92 → L+0.004 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
+      mermaidLine: "oklch(0.641 0.032 289.79)" /* upstream #8c8a9f → L+0.000 for AA (scheme-a11y #2489) */, // mermaid-line-vs-bg → 4.64:1
     },
   },
   "Rose Pine Dawn": {
@@ -597,19 +602,19 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: 7,
     palette: [
       "oklch(0.939 0.015 64.34)" /* #f2e9e1 */, "oklch(0.599 0.107 2.66)" /* #b4637a */, "oklch(0.491 0.077 228.00)" /* #286983 */, "oklch(0.755 0.146 69.74)" /* #ea9d34 */,
-      "oklch(0.629 0.066 210.12)" /* #56949f */, "oklch(0.517 0.074 305.70)" /* upstream #907aa9 → L-0.100 for AA (scheme-a11y #2489) */, "oklch(0.696 0.106 23.03)" /* #d7827e */, "oklch(0.460 0.063 289.56)" /* #575279 */,
+      "oklch(0.629 0.066 210.12)" /* #56949f */, "oklch(0.511 0.074 305.70)" /* upstream #907aa9 → L-0.106, C+0.000 for AA (scheme-a11y #2489) */ /* admonition-important (raw p5 only — accent is overridden elsewhere) → 4.62:1 */, "oklch(0.696 0.106 23.03)" /* #d7827e */, "oklch(0.460 0.063 289.56)" /* #575279 */,
       "oklch(0.673 0.027 298.37)" /* #9893a5 */, "oklch(0.599 0.107 2.66)" /* #b4637a */, "oklch(0.491 0.077 228.00)" /* #286983 */, "oklch(0.755 0.146 69.74)" /* #ea9d34 */,
       "oklch(0.629 0.066 210.12)" /* #56949f */, "oklch(0.617 0.074 305.70)" /* #907aa9 */, "oklch(0.696 0.106 23.03)" /* #d7827e */, "oklch(0.460 0.063 289.56)" /* #575279 */,
     ],
     semantic: {
-      muted: "oklch(0.548 0.043 293.21)" /* upstream #7b7692 → L-0.032 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.544 0.043 293.21)" /* upstream #7b7692 → L-0.036, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
       accent: 2,
-      accentHover: "oklch(0.558 0.106 23.03)" /* upstream #d7827e → L-0.138 for AA (scheme-a11y #2489) */,
+      accentHover: "oklch(0.554 0.106 23.03)" /* upstream #d7827e → L-0.142, C+0.000 for AA (scheme-a11y #2489) */, // accent-hover-vs-bg → 4.61:1
       codeBg: "oklch(0.930 0.011 71.90)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.460 0.063 289.56)" /* upstream #575279 → L+0.000 for AA (scheme-a11y #2489) */,
-      warning: "oklch(0.513 0.146 69.74)" /* upstream #ea9d34 → L-0.242 for AA (scheme-a11y #2489) */,
-      info: "oklch(0.501 0.066 210.12)" /* upstream #56949f → L-0.128 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.521 0.107 2.66)" /* upstream #b4637a → L-0.078 for AA (scheme-a11y #2489) */,
+      warning: "oklch(0.509 0.146 69.74)" /* upstream #ea9d34 → L-0.246, C+0.000 for AA (scheme-a11y #2489) */, // admonition-warning → 4.61:1
+      info: "oklch(0.497 0.066 210.12)" /* upstream #56949f → L-0.132, C-0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.61:1
+      danger: "oklch(0.517 0.107 2.66)" /* upstream #b4637a → L-0.082, C-0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
       matchedKeywordBg: "oklch(0.513 0.146 69.74)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
       matchedKeywordFg: "oklch(0.950 0.000 0.00)" /* upstream #eeeeee → L+0.000 for AA (scheme-a11y #2489) */,
       chatUserBg: "oklch(0.491 0.077 228.00)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
@@ -622,7 +627,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       mermaidText: "oklch(0.460 0.063 289.56)" /* upstream #575279 → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidLine: "oklch(0.548 0.043 293.21)" /* derived: muted (already ≥3:1 after the muted fix) — scheme-a11y #2492 §2.2 recipe */,
       imageOverlayBg: "oklch(0.150 0.005 71.90)" /* derived: near-bg dark — scheme-a11y #2492 §2.2 recipe */,
-      imageOverlayFg: "oklch(0.486 0.063 289.56)" /* upstream #575279 → L+0.026 for AA (scheme-a11y #2489) */,
+      imageOverlayFg: "oklch(0.492 0.063 289.56)" /* upstream #575279 → L+0.032 for AA (scheme-a11y #2489) */, // image-overlay → 3.11:1
     },
   },
   "Atom One Light": {
@@ -639,13 +644,13 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     ],
     semantic: {
       surface: "oklch(0.946 0.000 0.00)" /* #ededed */,
-      accentHover: "oklch(0.539 0.153 142.47)" /* upstream #3f953a → L-0.058 for AA (scheme-a11y #2489) */,
+      accentHover: "oklch(0.535 0.153 142.47)" /* upstream #3f953a → L-0.061, C+0.000 for AA (scheme-a11y #2489) */, // accent-hover-vs-bg → 4.61:1
       codeBg: "oklch(0.946 0.000 0.00)" /* derived: surface (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.294 0.013 272.93)" /* upstream #2a2c33 → L+0.000 for AA (scheme-a11y #2489) */,
-      success: "oklch(0.499 0.153 142.47)" /* upstream #3f953a → L-0.098 for AA (scheme-a11y #2489) */,
-      warning: "oklch(0.517 0.082 84.85)" /* upstream #d2b67c → L-0.270 for AA (scheme-a11y #2489) */,
-      info: "oklch(0.531 0.233 266.12)" /* upstream #2f5af3 → L-0.008 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.533 0.198 27.98)" /* upstream #de3e35 → L-0.068 for AA (scheme-a11y #2489) */,
+      success: "oklch(0.495 0.153 142.47)" /* upstream #3f953a → L-0.102, C+0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.61:1
+      warning: "oklch(0.513 0.082 84.85)" /* upstream #d2b67c → L-0.274, C-0.000 for AA (scheme-a11y #2489) */, // admonition-warning → 4.62:1
+      info: "oklch(0.523 0.233 266.12)" /* upstream #2f5af3 → L-0.017, C-0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.64:1
+      danger: "oklch(0.527 0.198 27.98)" /* upstream #de3e35 → L-0.074, C-0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.63:1
       matchedKeywordBg: "oklch(0.517 0.082 84.85)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
       matchedKeywordFg: "oklch(0.950 0.000 0.00)" /* upstream #eeeeee → L+0.000 for AA (scheme-a11y #2489) */,
       chatUserBg: "oklch(0.470 0.216 328.36)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
@@ -671,14 +676,14 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.716 0.137 258.28)" /* #6ca4f8 */, "oklch(0.662 0.168 349.52)" /* #db61a2 */, "oklch(0.523 0.078 220.34)" /* #2b7489 */, "oklch(1.000 0.000 0.00)" /* #ffffff */,
     ],
     semantic: {
-      muted: "oklch(0.588 0.016 248.11)" /* upstream #6d757d → L+0.030 for AA (scheme-a11y #2489) */,
-      accentHover: "oklch(0.581 0.078 220.34)" /* upstream #2b7489 → L+0.058 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.592 0.016 248.11)" /* upstream #6d757d → L+0.034, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
+      accentHover: "oklch(0.587 0.078 220.34)" /* upstream #2b7489 → L+0.064 for AA (scheme-a11y #2489) */, // accent-hover-vs-bg → 4.62:1
       codeBg: "oklch(0.222 0.009 264.33)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.662 0.018 250.92)" /* upstream #8b949e → L+0.000 for AA (scheme-a11y #2489) */,
       matchedKeywordBg: "oklch(0.790 0.139 85.24)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
-      matchedKeywordFg: "oklch(0.410 0.000 0.00)" /* upstream #eeeeee → L-0.540 for AA (scheme-a11y #2489) */,
+      matchedKeywordFg: "oklch(0.406 0.000 0.00)" /* upstream #eeeeee → L-0.544 for AA (scheme-a11y #2489) */, // matched-keyword → 4.61:1
       chatUserBg: "oklch(0.662 0.168 349.52)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
-      chatUserText: "oklch(0.268 0.000 0.00)" /* upstream #eeeeee → L-0.682 for AA (scheme-a11y #2489) */,
+      chatUserText: "oklch(0.260 0.000 0.00)" /* upstream #eeeeee → L-0.690 for AA (scheme-a11y #2489) */, // chat-user → 4.62:1
       chatAssistantBg: "oklch(0.222 0.009 264.33)" /* derived: surface/bg-elevated (base for chatAssistantText) — scheme-a11y #2492 §2.2 recipe */,
       chatAssistantText: "oklch(0.662 0.018 250.92)" /* upstream #8b949e → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.222 0.009 264.33)" /* derived: bg-elevated — scheme-a11y #2492 §2.2 recipe */,
@@ -696,23 +701,23 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: "oklch(0.271 0.015 256.80)" /* #22272e */,
     palette: [
       "oklch(0.475 0.021 253.48)" /* #545d68 */, "oklch(0.702 0.164 26.07)" /* #f47067 */, "oklch(0.669 0.142 144.47)" /* #57ab5a */, "oklch(0.689 0.1313 79.12)" /* #c69026 */,
-      "oklch(0.684 0.152 255.12)" /* #539bf5 */, "oklch(0.708 0.160 301.44)" /* upstream #b083f0 → L+0.010 for AA (scheme-a11y #2489) — raw p5, drives accent-vs-bg + admonition-important */, "oklch(0.755 0.1155 202.14)" /* #39c5cf */, "oklch(0.690 0.025 250.17)" /* #909dab */,
+      "oklch(0.684 0.152 255.12)" /* #539bf5 */, "oklch(0.716 0.160 301.44)" /* upstream #b083f0 → L+0.018, C+0.000 for AA (scheme-a11y #2489) */ /* accent-vs-bg AND admonition-important (raw p5) both ≥4.5 → 4.61:1 (binding pair) */, "oklch(0.755 0.1155 202.14)" /* #39c5cf */, "oklch(0.690 0.025 250.17)" /* #909dab */,
       "oklch(0.534 0.024 252.64)" /* #636e7b */, "oklch(0.775 0.132 25.58)" /* #ff938a */, "oklch(0.744 0.149 144.34)" /* #6bc46d */, "oklch(0.763 0.133 83.89)" /* #daaa3f */,
       "oklch(0.758 0.129 249.58)" /* #6cb6ff */, "oklch(0.845 0.091 307.26)" /* #dcbdfb */, "oklch(0.804 0.111 201.78)" /* #56d4dd */, "oklch(0.880 0.021 248.07)" /* #cdd9e5 */,
     ],
     semantic: {
-      muted: "oklch(0.642 0.019 248.14)" /* upstream #7b858f → L+0.030 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.648 0.019 248.14)" /* upstream #7b858f → L+0.036, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
       surface: "oklch(0.300 0.016 259.79)" /* #292e36 */,
       codeBg: "oklch(0.300 0.016 259.79)" /* derived: reuses existing surface override (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.783 0.023 248.13)" /* upstream #adbac7 → L+0.000 for AA (scheme-a11y #2489) */,
-      success: "oklch(0.679 0.142 144.47)" /* upstream #57ab5a → L+0.010 for AA (scheme-a11y #2489) */,
-      warning: "oklch(0.697 0.131 79.12)" /* upstream #c69026 → L+0.008 for AA (scheme-a11y #2489) */,
-      info: "oklch(0.694 0.152 255.12)" /* upstream #539bf5 → L+0.010 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.706 0.164 26.07)" /* upstream #f47067 → L+0.004 for AA (scheme-a11y #2489) */,
-      matchedKeywordBg: "oklch(0.697 0.131 79.12)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
-      matchedKeywordFg: "oklch(0.326 0.000 0.00)" /* upstream #eeeeee → L-0.624 for AA (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.708 0.160 301.44)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
-      chatUserText: "oklch(0.326 0.000 0.00)" /* upstream #eeeeee → L-0.624 for AA (scheme-a11y #2489) */,
+      success: "oklch(0.683 0.142 144.47)" /* upstream #57ab5a → L+0.014, C-0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.61:1
+      warning: "oklch(0.703 0.131 79.12)" /* upstream #c69026 → L+0.014, C-0.000 for AA (scheme-a11y #2489) */, // admonition-warning → 4.64:1
+      info: "oklch(0.702 0.152 255.12)" /* upstream #539bf5 → L+0.018 for AA (scheme-a11y #2489) */, // admonition-info → 4.61:1
+      danger: "oklch(0.714 0.164 26.07)" /* upstream #f47067 → L+0.012, C-0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.63:1
+      matchedKeywordBg: "oklch(0.703 0.131 79.12)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
+      matchedKeywordFg: "oklch(0.326 0.000 0.00)" /* upstream #eeeeee → L-0.624 for AA (scheme-a11y #2489) */, // matched-keyword → 4.62:1
+      chatUserBg: "oklch(0.716 0.160 301.44)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.328 0.000 0.00)" /* upstream #eeeeee → L-0.622 for AA (scheme-a11y #2489) */, // chat-user → 4.61:1
       chatAssistantBg: "oklch(0.300 0.016 259.79)" /* derived: reuses existing surface override (base for chatAssistantText) — scheme-a11y #2492 §2.2 recipe */,
       chatAssistantText: "oklch(0.783 0.023 248.13)" /* upstream #adbac7 → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.311 0.015 256.80)" /* derived: bg-elevated — scheme-a11y #2492 §2.2 recipe */,
@@ -730,21 +735,21 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: "oklch(1.000 0.000 0.00)" /* #ffffff */,
     palette: [
       "oklch(0.279 0.013 253.04)" /* #24292f */, "oklch(0.552 0.205 24.53)" /* #cf222e */, "oklch(0.439 0.118 148.07)" /* #116329 */, "oklch(0.330 0.072 68.31)" /* #4d2d00 */,
-      "oklch(0.540 0.1906 257.48)" /* #0969da */, "oklch(0.551 0.207 294.97)" /* upstream #8250df → L-0.012 for AA (scheme-a11y #2489) */, "oklch(0.537 0.0845 202.40)" /* #1b7c83 */, "oklch(0.565 0.019 250.97)" /* #6e7781 */,
+      "oklch(0.540 0.1906 257.48)" /* #0969da */, "oklch(0.543 0.207 294.97)" /* upstream #8250df → L-0.020, C+0.000 for AA (scheme-a11y #2489) */ /* accent-vs-bg AND admonition-important (raw p5) both ≥4.5 → 4.64:1 (binding pair) */, "oklch(0.537 0.0845 202.40)" /* #1b7c83 */, "oklch(0.565 0.019 250.97)" /* #6e7781 */,
       "oklch(0.485 0.020 251.02)" /* #57606a */, "oklch(0.459 0.1777 21.87)" /* #a40e26 */, "oklch(0.524 0.140 148.04)" /* #1a7f37 */, "oklch(0.394 0.0852 68.93)" /* #633c01 */,
       "oklch(0.642 0.195 254.98)" /* #218bff */, "oklch(0.669 0.190 297.44)" /* #a475f9 */, "oklch(0.614 0.0945 217.77)" /* #3192aa */, "oklch(0.666 0.018 250.92)" /* #8c959f */,
     ],
     semantic: {
       surface: "oklch(0.961 0.000 0.00)" /* #f2f2f2 */,
-      accentHover: "oklch(0.558 0.095 217.77)" /* upstream #3192aa → L-0.056 for AA (scheme-a11y #2489) */,
+      accentHover: "oklch(0.554 0.095 217.77)" /* upstream #3192aa → L-0.060, C+0.001 for AA (scheme-a11y #2489) */, // accent-hover-vs-bg → 4.62:1
       codeBg: "oklch(0.961 0.000 0.00)" /* derived: surface (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.254 0.011 254.04)" /* upstream #1f2328 → L+0.000 for AA (scheme-a11y #2489) */,
-      info: "oklch(0.532 0.191 257.48)" /* upstream #0969da → L-0.008 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.546 0.205 24.53)" /* upstream #cf222e → L-0.006 for AA (scheme-a11y #2489) */,
+      info: "oklch(0.526 0.191 257.48)" /* upstream #0969da → L-0.014, C+0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.61:1
+      danger: "oklch(0.540 0.205 24.53)" /* upstream #cf222e → L-0.012, C-0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.63:1
       matchedKeywordBg: "oklch(0.330 0.072 68.31)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
       matchedKeywordFg: "oklch(0.950 0.000 0.00)" /* upstream #eeeeee → L+0.000 for AA (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.551 0.207 294.97)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
-      chatUserText: "oklch(0.950 0.000 0.00)" /* upstream #eeeeee → L+0.000 for AA (scheme-a11y #2489) */,
+      chatUserBg: "oklch(0.543 0.207 294.97)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.950 0.000 0.00)" /* upstream #eeeeee → L+0.000 for AA (scheme-a11y #2489) */, // chat-user → 4.76:1
       chatAssistantBg: "oklch(0.961 0.000 0.00)" /* derived: surface (base for chatAssistantText) — scheme-a11y #2492 §2.2 recipe */,
       chatAssistantText: "oklch(0.254 0.011 254.04)" /* upstream #1f2328 → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.960 0.000 0.00)" /* derived: bg-elevated — scheme-a11y #2492 §2.2 recipe */,
@@ -752,7 +757,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       mermaidNoteBg: "oklch(0.920 0.000 0.00)" /* derived: bg-elevated ×2, distinct from node/label — scheme-a11y #2492 §2.2 recipe */,
       mermaidText: "oklch(0.254 0.011 254.04)" /* upstream #1f2328 → L+0.000 for AA (scheme-a11y #2489) */,
       imageOverlayBg: "oklch(0.150 0.000 0.00)" /* derived: near-bg dark — scheme-a11y #2492 §2.2 recipe */,
-      imageOverlayFg: "oklch(0.480 0.011 254.04)" /* upstream #1f2328 → L+0.226 for AA (scheme-a11y #2489) */,
+      imageOverlayFg: "oklch(0.488 0.011 254.04)" /* upstream #1f2328 → L+0.234 for AA (scheme-a11y #2489) */, // image-overlay → 3.12:1
     },
   },
   "Everforest Dark": {
@@ -774,7 +779,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       matchedKeywordBg: "oklch(0.808 0.086 83.70)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
       matchedKeywordFg: "oklch(0.150 0.000 0.00)" /* upstream #0b0b0b → L+0.000 for AA (scheme-a11y #2489) */,
       chatUserBg: "oklch(0.750 0.082 349.18)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
-      chatUserText: "oklch(0.370 0.000 0.00)" /* upstream #eeeeee → L-0.580 for AA (scheme-a11y #2489) */,
+      chatUserText: "oklch(0.364 0.000 0.00)" /* upstream #eeeeee → L-0.586 for AA (scheme-a11y #2489) */, // chat-user → 4.62:1
       chatAssistantBg: "oklch(0.286 0.007 229.08)" /* derived: reuses existing surface override (base for chatAssistantText) — scheme-a11y #2492 §2.2 recipe */,
       chatAssistantText: "oklch(0.830 0.041 86.05)" /* upstream #d3c6aa → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.292 0.009 234.10)" /* derived: bg-elevated — scheme-a11y #2492 §2.2 recipe */,
@@ -793,31 +798,31 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: "oklch(0.515 0.021 232.87)" /* #5c6a72 */,
     palette: [
       "oklch(0.601 0.021 140.48)" /* #7a8478 */, "oklch(0.709 0.128 19.62)" /* #e67e80 */, "oklch(0.732 0.091 125.92)" /* #9ab373 */, "oklch(0.727 0.086 83.08)" /* #c1a266 */,
-      "oklch(0.749 0.063 185.50)" /* #7fbbb3 */, "oklch(0.496 0.082 349.18)" /* upstream #d699b6 → L-0.254 for AA (scheme-a11y #2489) */, "oklch(0.754 0.091 151.45)" /* #83c092 */, "oklch(0.752 0.023 98.21)" /* #b2af9f */,
+      "oklch(0.749 0.063 185.50)" /* #7fbbb3 */, "oklch(0.492 0.082 349.18)" /* upstream #d699b6 → L-0.258, C+0.000 for AA (scheme-a11y #2489) */ /* admonition-important (raw p5 only — accent is overridden elsewhere) → 4.61:1 */, "oklch(0.754 0.091 151.45)" /* #83c092 */, "oklch(0.752 0.023 98.21)" /* #b2af9f */,
       "oklch(0.745 0.025 133.52)" /* #a6b0a0 */, "oklch(0.671 0.200 25.20)" /* #f85552 */, "oklch(0.670 0.156 118.23)" /* #8da101 */, "oklch(0.747 0.155 80.27)" /* #dfa000 */,
       "oklch(0.634 0.112 236.35)" /* #3a94c5 */, "oklch(0.687 0.174 340.99)" /* #df69ba */, "oklch(0.653 0.121 163.88)" /* #35a77c */, "oklch(0.988 0.016 91.55)" /* #fffbef */,
     ],
     semantic: {
-      muted: "oklch(0.523 0.017 222.87)" /* upstream #68757a → L-0.030 for AA (scheme-a11y #2489) */,
-      accent: "oklch(0.487 0.017 222.87)" /* upstream #68757a → L-0.066 for AA (scheme-a11y #2489) */,
-      surface: "oklch(0.927 0.028 100.28)" /* upstream #e6e3ce → L+0.014 for AA (scheme-a11y #2489) */,
-      accentHover: "oklch(0.505 0.121 163.88)" /* upstream #35a77c → L-0.148 for AA (scheme-a11y #2489) */,
-      codeBg: "oklch(0.913 0.028 100.28)" /* derived: surface (pre-tweak base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
-      codeFg: "oklch(0.505 0.021 232.87)" /* upstream #5c6a72 → L-0.010 for AA (scheme-a11y #2489) */,
-      success: "oklch(0.480 0.091 125.92)" /* upstream #9ab373 → L-0.252 for AA (scheme-a11y #2489) */,
-      warning: "oklch(0.489 0.086 83.08)" /* upstream #c1a266 → L-0.238 for AA (scheme-a11y #2489) */,
-      info: "oklch(0.477 0.063 185.50)" /* upstream #7fbbb3 → L-0.272 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.499 0.128 19.62)" /* upstream #e67e80 → L-0.210 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.517 0.017 222.87)" /* upstream #68757a → L-0.036, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
+      accent: "oklch(0.479 0.017 222.87)" /* upstream #68757a → L-0.074, C-0.000 for AA (scheme-a11y #2489) */, // accent-vs-bg + admonition-accent → 4.63:1
+      surface: "oklch(0.933 0.028 100.28)" /* upstream #e6e3ce → L+0.020, C-0.000 for AA (scheme-a11y #2489) */, // fg-vs-surface → 4.61:1
+      accentHover: "oklch(0.499 0.121 163.88)" /* upstream #35a77c → L-0.154, C+0.000 for AA (scheme-a11y #2489) */, // accent-hover-vs-bg → 4.63:1
+      codeBg: "oklch(0.927 0.028 100.28)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
+      codeFg: "oklch(0.509 0.021 232.87)" /* upstream #5c6a72 → L-0.006 for AA (scheme-a11y #2489) */, // code-fg-vs-code-bg → 4.64:1
+      success: "oklch(0.474 0.091 125.92)" /* upstream #9ab373 → L-0.258, C-0.001 for AA (scheme-a11y #2489) */, // admonition-success → 4.64:1
+      warning: "oklch(0.483 0.086 83.08)" /* upstream #c1a266 → L-0.243, C-0.000 for AA (scheme-a11y #2489) */, // admonition-warning → 4.63:1
+      info: "oklch(0.473 0.063 185.50)" /* upstream #7fbbb3 → L-0.276, C-0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.61:1
+      danger: "oklch(0.493 0.128 19.62)" /* upstream #e67e80 → L-0.216, C-0.001 for AA (scheme-a11y #2489) */, // admonition-danger → 4.64:1
       matchedKeywordBg: "oklch(0.489 0.086 83.08)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
       matchedKeywordFg: "oklch(0.950 0.000 0.00)" /* upstream #eeeeee → L+0.000 for AA (scheme-a11y #2489) */,
       chatUserBg: "oklch(0.487 0.017 222.87)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
       chatUserText: "oklch(0.950 0.000 0.00)" /* upstream #eeeeee → L+0.000 for AA (scheme-a11y #2489) */,
-      chatAssistantBg: "oklch(0.913 0.028 100.28)" /* derived: surface (pre-tweak, base for chatAssistantText) — scheme-a11y #2492 §2.2 recipe */,
-      chatAssistantText: "oklch(0.505 0.021 232.87)" /* upstream #5c6a72 → L-0.010 for AA (scheme-a11y #2489) */,
+      chatAssistantBg: "oklch(0.927 0.028 100.28)" /* derived: surface/bg-elevated (base for chatAssistantText) — scheme-a11y #2492 §2.2 recipe */,
+      chatAssistantText: "oklch(0.509 0.021 232.87)" /* upstream #5c6a72 → L-0.006 for AA (scheme-a11y #2489) */, // chat-assistant → 4.64:1
       mermaidNodeBg: "oklch(0.897 0.031 98.87)" /* derived: bg-elevated — scheme-a11y #2492 §2.2 recipe */,
-      mermaidLabelBg: "oklch(0.913 0.028 100.28)" /* derived: codeBg-like/bg-elevated — scheme-a11y #2492 §2.2 recipe */,
+      mermaidLabelBg: "oklch(0.927 0.028 100.28)" /* derived: codeBg-like/bg-elevated — scheme-a11y #2492 §2.2 recipe */,
       mermaidNoteBg: "oklch(0.857 0.031 98.87)" /* derived: bg-elevated ×2, distinct from node/label — scheme-a11y #2492 §2.2 recipe */,
-      mermaidText: "oklch(0.463 0.021 232.87)" /* upstream #5c6a72 → L-0.052 for AA (scheme-a11y #2489) */,
+      mermaidText: "oklch(0.459 0.021 232.87)" /* upstream #5c6a72 → L-0.056 for AA (scheme-a11y #2489) */, // mermaid-text-vs-{node,label,note}-bg → 4.62:1
       mermaidLine: "oklch(0.523 0.017 222.87)" /* derived: muted (already ≥3:1 after the muted fix) — scheme-a11y #2492 §2.2 recipe */,
       imageOverlayBg: "oklch(0.150 0.015 98.87)" /* derived: near-bg dark — scheme-a11y #2492 §2.2 recipe */,
       imageOverlayFg: "oklch(0.515 0.021 232.87)" /* upstream #5c6a72 → L+0.000 for AA (scheme-a11y #2489) */,
@@ -831,20 +836,20 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: "oklch(0.243 0.017 285.06)" /* #1f1f28 */,
     palette: [
       "oklch(0.140 0.039 289.14)" /* #090618 */, "oklch(0.559 0.167 23.09)" /* #c34043 */, "oklch(0.632 0.070 136.92)" /* #76946a */, "oklch(0.729 0.078 82.02)" /* #c0a36e */,
-      "oklch(0.694 0.095 263.66)" /* #7e9cd8 */, "oklch(0.676 0.087 301.70)" /* upstream #957fb8 → L+0.038 for AA (scheme-a11y #2489) — raw p5, drives accent-vs-bg + admonition-important */, "oklch(0.635 0.050 175.42)" /* #6a9589 */, "oklch(0.803 0.061 99.15)" /* #c8c093 */,
+      "oklch(0.694 0.095 263.66)" /* #7e9cd8 */, "oklch(0.682 0.087 301.70)" /* upstream #957fb8 → L+0.044 for AA (scheme-a11y #2489) */ /* accent-vs-bg AND admonition-important (raw p5) both ≥4.5 → 4.62:1 (binding pair) */, "oklch(0.635 0.050 175.42)" /* #6a9589 */, "oklch(0.803 0.061 99.15)" /* #c8c093 */,
       "oklch(0.547 0.012 100.99)" /* #727169 */, "oklch(0.598 0.227 27.65)" /* #e82424 */, "oklch(0.748 0.112 128.36)" /* #98bb6c */, "oklch(0.833 0.090 81.64)" /* #e6c384 */,
       "oklch(0.741 0.064 225.72)" /* #7fb4ca */, "oklch(0.652 0.047 298.38)" /* #938aa9 */, "oklch(0.696 0.051 181.30)" /* #7aa89f */, "oklch(0.876 0.039 99.09)" /* #dcd7ba */,
     ],
     semantic: {
-      muted: "oklch(0.622 0.017 98.45)" /* upstream #807e73 → L+0.030 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.626 0.017 98.45)" /* upstream #807e73 → L+0.035, C+0.001 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
       codeBg: "oklch(0.283 0.017 285.06)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.876 0.039 99.09)" /* upstream #dcd7ba → L+0.000 for AA (scheme-a11y #2489) */,
-      success: "oklch(0.660 0.070 136.92)" /* upstream #76946a → L+0.028 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.683 0.167 23.09)" /* upstream #c34043 → L+0.124 for AA (scheme-a11y #2489) */,
+      success: "oklch(0.666 0.070 136.92)" /* upstream #76946a → L+0.034, C+0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.61:1
+      danger: "oklch(0.689 0.167 23.09)" /* upstream #c34043 → L+0.130 for AA (scheme-a11y #2489) */, // admonition-danger → 4.62:1
       matchedKeywordBg: "oklch(0.729 0.078 82.02)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
-      matchedKeywordFg: "oklch(0.358 0.000 0.00)" /* upstream #eeeeee → L-0.592 for AA (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.676 0.087 301.70)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
-      chatUserText: "oklch(0.300 0.000 0.00)" /* upstream #eeeeee → L-0.650 for AA (scheme-a11y #2489) */,
+      matchedKeywordFg: "oklch(0.354 0.000 0.00)" /* upstream #eeeeee → L-0.596 for AA (scheme-a11y #2489) */, // matched-keyword → 4.61:1
+      chatUserBg: "oklch(0.682 0.087 301.70)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.300 0.000 0.00)" /* upstream #eeeeee → L-0.650 for AA (scheme-a11y #2489) */, // chat-user → 4.63:1
       chatAssistantBg: "oklch(0.283 0.017 285.06)" /* derived: surface/bg-elevated (base for chatAssistantText) — scheme-a11y #2492 §2.2 recipe */,
       chatAssistantText: "oklch(0.876 0.039 99.09)" /* upstream #dcd7ba → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.283 0.017 285.06)" /* derived: bg-elevated — scheme-a11y #2492 §2.2 recipe */,
@@ -868,11 +873,11 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     semantic: {
       codeBg: "oklch(0.243 0.003 17.42)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.832 0.007 145.51)" /* upstream #c5c9c5 → L+0.000 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.647 0.102 24.86)" /* upstream #c4746e → L+0.002 for AA (scheme-a11y #2489) */,
+      danger: "oklch(0.653 0.102 24.86)" /* upstream #c4746e → L+0.008, C+0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
       matchedKeywordBg: "oklch(0.769 0.058 86.58)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
-      matchedKeywordFg: "oklch(0.394 0.000 0.00)" /* upstream #eeeeee → L-0.556 for AA (scheme-a11y #2489) */,
+      matchedKeywordFg: "oklch(0.390 0.000 0.00)" /* upstream #eeeeee → L-0.560 for AA (scheme-a11y #2489) */, // matched-keyword → 4.61:1
       chatUserBg: "oklch(0.679 0.031 324.11)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
-      chatUserText: "oklch(0.308 0.000 0.00)" /* upstream #eeeeee → L-0.642 for AA (scheme-a11y #2489) */,
+      chatUserText: "oklch(0.302 0.000 0.00)" /* upstream #eeeeee → L-0.648 for AA (scheme-a11y #2489) */, // chat-user → 4.62:1
       chatAssistantBg: "oklch(0.243 0.003 17.42)" /* derived: surface/bg-elevated (base for chatAssistantText) — scheme-a11y #2492 §2.2 recipe */,
       chatAssistantText: "oklch(0.832 0.007 145.51)" /* upstream #c5c9c5 → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.243 0.003 17.42)" /* derived: bg-elevated — scheme-a11y #2492 §2.2 recipe */,
@@ -889,19 +894,19 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: "oklch(0.851 0.002 247.84)" /* #cdcecf */,
     palette: [
       "oklch(0.354 0.016 275.64)" /* #393b44 */, "oklch(0.596 0.157 8.04)" /* #c94f6d */, "oklch(0.722 0.063 163.10)" /* #81b29a */, "oklch(0.814 0.100 90.51)" /* #dbc074 */,
-      "oklch(0.685 0.098 256.11)" /* #719cd6 */, "oklch(0.691 0.139 300.44)" /* upstream #9d79d6 → L+0.042 for AA (scheme-a11y #2489) — raw p5, drives accent-vs-bg + admonition-important */, "oklch(0.787 0.098 197.01)" /* #63cdcf */, "oklch(0.904 0.001 286.37)" /* #dfdfe0 */,
+      "oklch(0.685 0.098 256.11)" /* #719cd6 */, "oklch(0.695 0.139 300.44)" /* upstream #9d79d6 → L+0.046, C+0.000 for AA (scheme-a11y #2489) */ /* accent-vs-bg AND admonition-important (raw p5) both ≥4.5 → 4.61:1 (binding pair) */, "oklch(0.787 0.098 197.01)" /* #63cdcf */, "oklch(0.904 0.001 286.37)" /* #dfdfe0 */,
       "oklch(0.462 0.013 280.20)" /* #575860 */, "oklch(0.650 0.133 5.66)" /* #d16983 */, "oklch(0.751 0.057 162.98)" /* #8ebaa4 */, "oklch(0.841 0.086 90.52)" /* #e0c989 */,
       "oklch(0.732 0.082 255.63)" /* #86abdc */, "oklch(0.754 0.095 301.79)" /* #baa1e2 */, "oklch(0.817 0.087 196.50)" /* #7ad5d6 */, "oklch(0.919 0.001 286.37)" /* #e4e4e5 */,
     ],
     semantic: {
-      muted: "oklch(0.630 0.012 256.72)" /* upstream #7b8087 → L+0.032 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.634 0.012 256.72)" /* upstream #7b8087 → L+0.036, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
       codeBg: "oklch(0.293 0.029 255.22)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.851 0.002 247.84)" /* upstream #cdcecf → L+0.000 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.692 0.157 8.04)" /* upstream #c94f6d → L+0.096 for AA (scheme-a11y #2489) */,
+      danger: "oklch(0.698 0.157 8.04)" /* upstream #c94f6d → L+0.102, C+0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.64:1
       matchedKeywordBg: "oklch(0.814 0.100 90.51)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
       matchedKeywordFg: "oklch(0.150 0.000 0.00)" /* upstream #0b0b0b → L+0.000 for AA (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.691 0.139 300.44)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
-      chatUserText: "oklch(0.310 0.000 0.00)" /* upstream #eeeeee → L-0.640 for AA (scheme-a11y #2489) */,
+      chatUserBg: "oklch(0.695 0.139 300.44)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.308 0.000 0.00)" /* upstream #eeeeee → L-0.642 for AA (scheme-a11y #2489) */, // chat-user → 4.63:1
       chatAssistantBg: "oklch(0.293 0.029 255.22)" /* derived: surface/bg-elevated (base for chatAssistantText) — scheme-a11y #2492 §2.2 recipe */,
       chatAssistantText: "oklch(0.851 0.002 247.84)" /* upstream #cdcecf → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.293 0.029 255.22)" /* derived: bg-elevated — scheme-a11y #2492 §2.2 recipe */,
@@ -924,13 +929,13 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.775 0.115 261.10)" /* #8cb6ff */, "oklch(0.786 0.130 301.37)" /* #c8a5ff */, "oklch(0.764 0.136 239.26)" /* #52bdff */, "oklch(0.919 0.001 286.37)" /* #e4e4e5 */,
     ],
     semantic: {
-      muted: "oklch(0.597 0.002 247.86)" /* upstream #767778 → L+0.028 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.601 0.002 247.86)" /* upstream #767778 → L+0.032 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
       codeBg: "oklch(0.240 0.000 0.00)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.967 0.006 264.53)" /* upstream #f2f4f8 → L+0.000 for AA (scheme-a11y #2489) */,
       matchedKeywordBg: "oklch(0.722 0.123 192.75)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
-      matchedKeywordFg: "oklch(0.366 0.000 0.00)" /* upstream #eeeeee → L-0.584 for AA (scheme-a11y #2489) */,
+      matchedKeywordFg: "oklch(0.362 0.000 0.00)" /* upstream #eeeeee → L-0.588 for AA (scheme-a11y #2489) */, // matched-keyword → 4.61:1
       chatUserBg: "oklch(0.749 0.153 300.59)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
-      chatUserText: "oklch(0.364 0.000 0.00)" /* upstream #eeeeee → L-0.586 for AA (scheme-a11y #2489) */,
+      chatUserText: "oklch(0.360 0.000 0.00)" /* upstream #eeeeee → L-0.590 for AA (scheme-a11y #2489) */, // chat-user → 4.62:1
       chatAssistantBg: "oklch(0.240 0.000 0.00)" /* derived: surface/bg-elevated (base for chatAssistantText) — scheme-a11y #2492 §2.2 recipe */,
       chatAssistantText: "oklch(0.967 0.006 264.53)" /* upstream #f2f4f8 → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.240 0.000 0.00)" /* derived: bg-elevated — scheme-a11y #2492 §2.2 recipe */,
@@ -948,19 +953,19 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: 0,
     palette: [
       "oklch(0.460 0.063 289.56)" /* #575279 */, "oklch(0.599 0.107 2.66)" /* #b4637a */, "oklch(0.589 0.052 162.58)" /* #618774 */, "oklch(0.755 0.146 69.74)" /* #ea9d34 */,
-      "oklch(0.491 0.077 228.00)" /* #286983 */, "oklch(0.517 0.074 305.70)" /* upstream #907aa9 → L-0.100 for AA (scheme-a11y #2489) */, "oklch(0.629 0.066 210.12)" /* #56949f */, "oklch(0.775 0.011 261.78)" /* #b2b6bd */,
+      "oklch(0.491 0.077 228.00)" /* #286983 */, "oklch(0.511 0.074 305.70)" /* upstream #907aa9 → L-0.106, C+0.000 for AA (scheme-a11y #2489) */ /* admonition-important (raw p5 only — accent is overridden elsewhere) → 4.62:1 */, "oklch(0.629 0.066 210.12)" /* #56949f */, "oklch(0.775 0.011 261.78)" /* #b2b6bd */,
       "oklch(0.490 0.099 288.75)" /* #5f5695 */, "oklch(0.637 0.111 2.61)" /* #c26d85 */, "oklch(0.652 0.078 161.81)" /* #629f81 */, "oklch(0.782 0.1385 72.06)" /* #eea846 */,
       "oklch(0.568 0.094 228.98)" /* #2d81a3 */, "oklch(0.645 0.088 304.93)" /* #9a80b9 */, "oklch(0.685 0.077 209.96)" /* #5ca7b4 */, "oklch(0.939 0.012 259.82)" /* #e6ebf3 */,
     ],
     semantic: {
       accent: 4,
-      accentHover: "oklch(0.539 0.077 209.96)" /* upstream #5ca7b4 → L-0.146 for AA (scheme-a11y #2489) */,
+      accentHover: "oklch(0.533 0.077 209.96)" /* upstream #5ca7b4 → L-0.152, C+0.000 for AA (scheme-a11y #2489) */, // accent-hover-vs-bg → 4.63:1
       surface: "oklch(0.941 0.008 56.31)" /* #f0eae6 */,
       codeBg: "oklch(0.941 0.008 56.31)" /* derived: surface (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.460 0.063 289.56)" /* upstream #575279 → L+0.000 for AA (scheme-a11y #2489) */,
-      success: "oklch(0.503 0.052 162.58)" /* upstream #618774 → L-0.086 for AA (scheme-a11y #2489) */,
-      warning: "oklch(0.513 0.146 69.74)" /* upstream #ea9d34 → L-0.242 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.521 0.107 2.66)" /* upstream #b4637a → L-0.078 for AA (scheme-a11y #2489) */,
+      success: "oklch(0.497 0.052 162.58)" /* upstream #618774 → L-0.092, C+0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.63:1
+      warning: "oklch(0.509 0.146 69.74)" /* upstream #ea9d34 → L-0.246, C+0.000 for AA (scheme-a11y #2489) */, // admonition-warning → 4.61:1
+      danger: "oklch(0.517 0.107 2.66)" /* upstream #b4637a → L-0.082, C-0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
       matchedKeywordBg: "oklch(0.513 0.146 69.74)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
       matchedKeywordFg: "oklch(0.950 0.000 0.00)" /* upstream #eeeeee → L+0.000 for AA (scheme-a11y #2489) */,
       chatUserBg: "oklch(0.491 0.077 228.00)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
@@ -987,10 +992,10 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     ],
     semantic: {
       surface: "oklch(0.929 0.006 31.05)" /* #ebe6e5 */,
-      accentHover: "oklch(0.533 0.070 202.92)" /* upstream #488d93 → L-0.068 for AA (scheme-a11y #2489) */,
+      accentHover: "oklch(0.529 0.070 202.92)" /* upstream #488d93 → L-0.072, C-0.000 for AA (scheme-a11y #2489) */, // accent-hover-vs-bg → 4.61:1
       codeBg: "oklch(0.929 0.006 31.05)" /* derived: surface (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.334 0.082 299.63)" /* upstream #3d2b5a → L+0.000 for AA (scheme-a11y #2489) */,
-      warning: "oklch(0.513 0.138 52.65)" /* upstream #ac5402 → L-0.032 for AA (scheme-a11y #2489) */,
+      warning: "oklch(0.507 0.138 52.65)" /* upstream #ac5402 → L-0.038, C-0.000 for AA (scheme-a11y #2489) */, // admonition-warning → 4.64:1
       matchedKeywordBg: "oklch(0.513 0.138 52.65)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
       matchedKeywordFg: "oklch(0.950 0.000 0.00)" /* upstream #eeeeee → L+0.000 for AA (scheme-a11y #2489) */,
       chatUserBg: "oklch(0.492 0.220 294.04)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
@@ -1016,14 +1021,14 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.722 0.086 224.01)" /* #65b1cd */, "oklch(0.804 0.088 305.02)" /* #ccb1ed */, "oklch(0.855 0.055 209.30)" /* #a6dae3 */, "oklch(0.915 0.031 289.76)" /* #e2e0f7 */,
     ],
     semantic: {
-      muted: "oklch(0.635 0.032 289.79)" /* upstream #817f94 → L+0.030 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.641 0.032 289.79)" /* upstream #817f94 → L+0.035, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.64:1
       codeBg: "oklch(0.300 0.039 287.73)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.909 0.030 289.97)" /* upstream #e0def4 → L+0.000 for AA (scheme-a11y #2489) */,
-      info: "oklch(0.672 0.083 224.37)" /* upstream #569fba → L+0.006 for AA (scheme-a11y #2489) */,
+      info: "oklch(0.682 0.083 224.37)" /* upstream #569fba → L+0.016, C-0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.62:1
       matchedKeywordBg: "oklch(0.843 0.110 74.60)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
       matchedKeywordFg: "oklch(0.150 0.000 0.00)" /* upstream #0b0b0b → L+0.000 for AA (scheme-a11y #2489) */,
       chatUserBg: "oklch(0.776 0.095 304.99)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
-      chatUserText: "oklch(0.394 0.000 0.00)" /* upstream #eeeeee → L-0.556 for AA (scheme-a11y #2489) */,
+      chatUserText: "oklch(0.388 0.000 0.00)" /* upstream #eeeeee → L-0.562 for AA (scheme-a11y #2489) */, // chat-user → 4.62:1
       chatAssistantBg: "oklch(0.300 0.039 287.73)" /* derived: surface/bg-elevated (base for chatAssistantText) — scheme-a11y #2492 §2.2 recipe */,
       chatAssistantText: "oklch(0.909 0.030 289.97)" /* upstream #e0def4 → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.300 0.039 287.73)" /* derived: bg-elevated — scheme-a11y #2492 §2.2 recipe */,
@@ -1031,6 +1036,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       mermaidNoteBg: "oklch(0.340 0.039 287.73)" /* derived: bg-elevated ×2, distinct from node/label — scheme-a11y #2492 §2.2 recipe */,
       mermaidText: "oklch(0.909 0.030 289.97)" /* upstream #e0def4 → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidLine: "oklch(0.635 0.032 289.79)" /* upstream #8a889d → L+0.000 for AA (scheme-a11y #2489) */,
+      danger: "oklch(0.702 0.156 4.22)" /* upstream #eb6f92 → L+0.004 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
     },
   },
   "Catppuccin Latte": {
@@ -1038,24 +1044,24 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     foreground: "oklch(0.435 0.043 279.33)" /* #4c4f69 */,
     cursor: "oklch(0.714 0.105 33.10)" /* #dc8a78 */,
     selectionBg: 7,
-    selectionFg: "oklch(0.387 0.043 279.33)" /* upstream #4c4f69 → L-0.048 for AA (scheme-a11y #2489) */,
+    selectionFg: "oklch(0.381 0.043 279.33)" /* upstream #4c4f69 → L-0.054 for AA (scheme-a11y #2489) */, // selection → 4.64:1
     palette: [
       "oklch(0.492 0.038 279.30)" /* #5c5f77 */, "oklch(0.550 0.2155 19.81)" /* #d20f39 */, "oklch(0.625 0.177 140.44)" /* #40a02b */, "oklch(0.714 0.1494 67.78)" /* #df8e1d */,
-      "oklch(0.559 0.226 262.09)" /* #1e66f5 */, "oklch(0.518 0.174 338.43)" /* upstream #ea76cb → L-0.208 for AA (scheme-a11y #2489) */, "oklch(0.602 0.098 201.10)" /* #179299 */, "oklch(0.758 0.020 273.15)" /* #acb0be */,
+      "oklch(0.559 0.226 262.09)" /* #1e66f5 */, "oklch(0.514 0.174 338.43)" /* upstream #ea76cb → L-0.212, C+0.000 for AA (scheme-a11y #2489) */ /* admonition-important (raw p5 only — accent is overridden elsewhere) → 4.62:1 */, "oklch(0.602 0.098 201.10)" /* #179299 */, "oklch(0.758 0.020 273.15)" /* #acb0be */,
       "oklch(0.547 0.034 279.08)" /* #6c6f85 */, "oklch(0.585 0.213 21.71)" /* #de293e */, "oklch(0.670 0.179 141.60)" /* #49af3d */, "oklch(0.765 0.151 71.06)" /* #eea02d */,
       "oklch(0.594 0.220 267.24)" /* #456eff */, "oklch(0.776 0.175 340.49)" /* #fe85d8 */, "oklch(0.645 0.0984 202.87)" /* #2d9fa8 */, "oklch(0.808 0.017 271.20)" /* #bcc0cc */,
     ],
     semantic: {
-      muted: "oklch(0.539 0.034 279.08)" /* upstream #6c6f85 → L-0.008 for AA (scheme-a11y #2489) */,
-      accent: "oklch(0.509 0.226 262.09)" /* upstream #1e66f5 → L-0.050 for AA (scheme-a11y #2489) */,
-      accentHover: "oklch(0.523 0.098 202.87)" /* upstream #2d9fa8 → L-0.122 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.533 0.034 279.08)" /* upstream #6c6f85 → L-0.014, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.64:1
+      accent: "oklch(0.503 0.226 262.09)" /* upstream #1e66f5 → L-0.056, C+0.001 for AA (scheme-a11y #2489) */, // accent-vs-bg + admonition-accent → 4.63:1
+      accentHover: "oklch(0.519 0.098 202.87)" /* upstream #2d9fa8 → L-0.126, C-0.000 for AA (scheme-a11y #2489) */, // accent-hover-vs-bg → 4.61:1
       surface: "oklch(0.928 0.008 271.32)" /* #e5e7ed */,
       codeBg: "oklch(0.928 0.008 271.32)" /* derived: surface (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.435 0.043 279.33)" /* upstream #4c4f69 → L+0.000 for AA (scheme-a11y #2489) */,
-      success: "oklch(0.479 0.177 140.44)" /* upstream #40a02b → L-0.146 for AA (scheme-a11y #2489) */,
-      warning: "oklch(0.506 0.149 67.78)" /* upstream #df8e1d → L-0.208 for AA (scheme-a11y #2489) */,
-      info: "oklch(0.509 0.226 262.09)" /* upstream #1e66f5 → L-0.050 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.504 0.215 19.81)" /* upstream #d20f39 → L-0.046 for AA (scheme-a11y #2489) */,
+      success: "oklch(0.475 0.177 140.44)" /* upstream #40a02b → L-0.150, C-0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.61:1
+      warning: "oklch(0.500 0.149 67.78)" /* upstream #df8e1d → L-0.214, C-0.000 for AA (scheme-a11y #2489) */, // admonition-warning → 4.61:1
+      info: "oklch(0.503 0.226 262.09)" /* upstream #1e66f5 → L-0.056, C+0.001 for AA (scheme-a11y #2489) */, // admonition-info → 4.63:1
+      danger: "oklch(0.496 0.215 19.81)" /* upstream #d20f39 → L-0.054, C-0.001 for AA (scheme-a11y #2489) */, // admonition-danger → 4.63:1
       matchedKeywordBg: "oklch(0.506 0.149 67.78)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
       matchedKeywordFg: "oklch(0.950 0.000 0.00)" /* upstream #eeeeee → L+0.000 for AA (scheme-a11y #2489) */,
       chatUserBg: "oklch(0.509 0.226 262.09)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
@@ -1067,7 +1073,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       mermaidNoteBg: "oklch(0.878 0.006 264.53)" /* derived: bg-elevated ×2, distinct from node/label — scheme-a11y #2492 §2.2 recipe */,
       mermaidText: "oklch(0.435 0.043 279.33)" /* upstream #4c4f69 → L+0.000 for AA (scheme-a11y #2489) */,
       imageOverlayBg: "oklch(0.150 0.003 264.53)" /* derived: near-bg dark — scheme-a11y #2492 §2.2 recipe */,
-      imageOverlayFg: "oklch(0.483 0.043 279.33)" /* upstream #4c4f69 → L+0.048 for AA (scheme-a11y #2489) */,
+      imageOverlayFg: "oklch(0.491 0.043 279.33)" /* upstream #4c4f69 → L+0.056 for AA (scheme-a11y #2489) */, // image-overlay → 3.13:1
     },
   },
   "Catppuccin Frappe": {
@@ -1075,7 +1081,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     foreground: "oklch(0.862 0.053 273.35)" /* #c6d0f5 */,
     cursor: "oklch(0.895 0.034 31.60)" /* #f2d5cf */,
     selectionBg: 8,
-    selectionFg: "oklch(0.938 0.053 273.35)" /* upstream #c6d0f5 → L+0.076 for AA (scheme-a11y #2489) */,
+    selectionFg: "oklch(0.946 0.053 273.35)" /* upstream #c6d0f5 → L+0.084, C+0.000 for AA (scheme-a11y #2489) */, // selection → 4.62:1
     palette: [
       "oklch(0.460 0.037 272.97)" /* #51576d */, "oklch(0.717 0.124 19.39)" /* #e78284 */, "oklch(0.812 0.107 133.39)" /* #a6d189 */, "oklch(0.844 0.080 83.47)" /* #e5c890 */,
       "oklch(0.742 0.104 265.66)" /* #8caaee */, "oklch(0.850 0.089 336.26)" /* #f4b8e4 */, "oklch(0.783 0.073 184.64)" /* #81c8be */, "oklch(0.752 0.048 274.47)" /* #a5adce */,
@@ -1083,11 +1089,11 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.708 0.127 265.71)" /* #7b9ef0 */, "oklch(0.811 0.115 338.12)" /* #f2a4db */, "oklch(0.742 0.096 186.69)" /* #5abfb5 */, "oklch(0.808 0.051 272.68)" /* #b5bfe2 */,
     ],
     semantic: {
-      muted: "oklch(0.696 0.046 273.39)" /* upstream #8a92b0 → L+0.032 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.702 0.046 273.39)" /* upstream #8a92b0 → L+0.038, C+0.001 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
       codeBg: "oklch(0.369 0.032 274.76)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.862 0.053 273.35)" /* upstream #c6d0f5 → L+0.000 for AA (scheme-a11y #2489) */,
-      info: "oklch(0.760 0.104 265.66)" /* upstream #8caaee → L+0.018 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.767 0.124 19.39)" /* upstream #e78284 → L+0.050 for AA (scheme-a11y #2489) */,
+      info: "oklch(0.766 0.104 265.66)" /* upstream #8caaee → L+0.024, C-0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.62:1
+      danger: "oklch(0.773 0.124 19.39)" /* upstream #e78284 → L+0.056, C-0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.63:1
       matchedKeywordBg: "oklch(0.844 0.080 83.47)" /* derived from warning, base for matchedKeywordFg — scheme-a11y #2489 §2.2 */,
       matchedKeywordFg: "oklch(0.150 0.000 0.00)" /* upstream #0b0b0b → L+0.000 for AA (scheme-a11y #2489) */,
       chatUserBg: "oklch(0.850 0.089 336.26)" /* derived from accent, base for chatUserText — scheme-a11y #2489 §2.2 */,
@@ -1106,7 +1112,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     foreground: "oklch(0.871 0.048 273.67)" /* #cad3f5 */,
     cursor: "oklch(0.911 0.029 31.13)" /* #f4dbd6 */,
     selectionBg: 8,
-    selectionFg: "oklch(0.897 0.048 273.67)" /* upstream #cad3f5 → L+0.026 for AA (scheme-a11y #2489) */,
+    selectionFg: "oklch(0.903 0.048 273.67)" /* upstream #cad3f5 → L+0.032, C-0.000 for AA (scheme-a11y #2489) */, // selection → 4.62:1
     palette: [
       "oklch(0.426 0.039 276.95)" /* #494d64 */, "oklch(0.737 0.125 11.19)" /* #ed8796 */, "oklch(0.835 0.108 138.15)" /* #a6da95 */, "oklch(0.879 0.074 84.75)" /* #eed49f */,
       "oklch(0.750 0.110 263.81)" /* #8aadf4 */, "oklch(0.861 0.083 336.18)" /* #f5bde6 */, "oklch(0.821 0.0755 184.10)" /* #8bd5ca */, "oklch(0.751 0.044 273.53)" /* #a5adcb */,
@@ -1114,7 +1120,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.715 0.133 263.80)" /* #78a1f6 */, "oklch(0.820 0.108 337.62)" /* #f2a9dd */, "oklch(0.777 0.098 186.22)" /* #63cbc0 */, "oklch(0.812 0.046 274.27)" /* #b8c0e0 */,
     ],
     semantic: {
-      muted: "oklch(0.650 0.043 275.59)" /* upstream #7e84a0 → L+0.032 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.656 0.043 275.59)" /* upstream #7e84a0 → L+0.038, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.63:1
       codeBg: "oklch(0.319 0.035 276.94)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.871 0.048 273.67)" /* upstream #cad3f5 → L+0.000 for AA (scheme-a11y #2489) */,
       matchedKeywordBg: "oklch(0.879 0.074 84.75)" /* derived from warning, base for matchedKeywordFg — scheme-a11y #2489 §2.2 */,
@@ -1138,21 +1144,21 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: 15,
     palette: [
       "oklch(0.241 0.005 219.67)" /* #1d2021 */, "oklch(0.546 0.203 28.66)" /* #cc241d */, "oklch(0.656 0.1354 109.12)" /* #98971a */, "oklch(0.725 0.143 77.71)" /* #d79921 */,
-      "oklch(0.576 0.066 199.49)" /* #458588 */, "oklch(0.679 0.111 352.22)" /* upstream #b16286 → L+0.082 for AA (scheme-a11y #2489) */, "oklch(0.645 0.094 145.27)" /* #689d6a */, "oklch(0.690 0.035 76.31)" /* #a89984 */,
+      "oklch(0.576 0.066 199.49)" /* #458588 */, "oklch(0.685 0.111 352.22)" /* upstream #b16286 → L+0.088, C+0.001 for AA (scheme-a11y #2489) */ /* accent-vs-bg AND admonition-important (raw p5) both ≥4.5 → 4.61:1 (binding pair) */, "oklch(0.645 0.094 145.27)" /* #689d6a */, "oklch(0.690 0.035 76.31)" /* #a89984 */,
       "oklch(0.619 0.029 67.26)" /* #928374 */, "oklch(0.660 0.218 30.39)" /* #fb4934 */, "oklch(0.765 0.158 110.83)" /* #b8bb26 */, "oklch(0.832 0.1595 82.99)" /* #fabd2f */,
       "oklch(0.693 0.042 169.77)" /* #83a598 */, "oklch(0.705 0.098 2.19)" /* #d3869b */, "oklch(0.756 0.108 137.68)" /* #8ec07c */, "oklch(0.894 0.057 89.24)" /* #ebdbb2 */,
     ],
     semantic: {
-      muted: "oklch(0.623 0.029 67.26)" /* upstream #928374 → L+0.004 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.629 0.029 67.26)" /* upstream #928374 → L+0.010, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.64:1
       codeBg: "oklch(0.281 0.005 219.67)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.894 0.057 89.24)" /* upstream #ebdbb2 → L+0.000 for AA (scheme-a11y #2489) */,
-      success: "oklch(0.660 0.135 109.12)" /* upstream #98971a → L+0.004 for AA (scheme-a11y #2489) */,
-      info: "oklch(0.658 0.066 199.49)" /* upstream #458588 → L+0.082 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.682 0.203 28.66)" /* upstream #cc241d → L+0.136 for AA (scheme-a11y #2489) */,
-      matchedKeywordBg: "oklch(0.725 0.143 77.71)" /* derived from warning, base for matchedKeywordFg — scheme-a11y #2489 §2.2 */,
-      matchedKeywordFg: "oklch(0.352 0.000 0.00)" /* upstream #eeeeee → L-0.598 for AA (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.679 0.111 352.22)" /* derived from accent, base for chatUserText — scheme-a11y #2489 §2.2 */,
-      chatUserText: "oklch(0.296 0.000 0.00)" /* upstream #eeeeee → L-0.654 for AA (scheme-a11y #2489) */,
+      success: "oklch(0.668 0.135 109.12)" /* upstream #98971a → L+0.012, C-0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.62:1
+      info: "oklch(0.664 0.066 199.49)" /* upstream #458588 → L+0.088, C+0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.61:1
+      danger: "oklch(0.690 0.203 28.66)" /* upstream #cc241d → L+0.144 for AA (scheme-a11y #2489) */, // admonition-danger → 4.62:1
+      matchedKeywordBg: "oklch(0.725 0.143 77.71)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
+      matchedKeywordFg: "oklch(0.346 0.000 0.00)" /* upstream #eeeeee → L-0.604 for AA (scheme-a11y #2489) */, // matched-keyword → 4.63:1
+      chatUserBg: "oklch(0.685 0.111 352.22)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.296 0.000 0.00)" /* upstream #eeeeee → L-0.654 for AA (scheme-a11y #2489) */, // chat-user → 4.63:1
       chatAssistantBg: "oklch(0.281 0.005 219.67)" /* derived bg-elevated, base for chatAssistantText — scheme-a11y #2489 §2.2 */,
       chatAssistantText: "oklch(0.894 0.057 89.24)" /* upstream #ebdbb2 → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.281 0.005 219.67)" /* derived bg-elevated — scheme-a11y #2489 §2.2 */,
@@ -1169,25 +1175,26 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: 0,
     palette: [
       "oklch(0.277 0.000 0.00)" /* #282828 */, "oklch(0.677 0.161 25.42)" /* #ea6962 */, "oklch(0.748 0.107 116.53)" /* #a9b665 */, "oklch(0.756 0.113 77.04)" /* #d8a657 */,
-      "oklch(0.713 0.055 179.19)" /* #7daea3 */, "oklch(0.713 0.098 2.19)" /* upstream #d3869b → L+0.008 for AA (scheme-a11y #2489) */, "oklch(0.726 0.085 141.09)" /* #89b482 */, "oklch(0.811 0.057 81.23)" /* #d4be98 */,
+      "oklch(0.713 0.055 179.19)" /* #7daea3 */, "oklch(0.719 0.098 2.19)" /* upstream #d3869b → L+0.014, C+0.000 for AA (scheme-a11y #2489) */ /* accent-vs-bg AND admonition-important (raw p5) both ≥4.5 → 4.62:1 (binding pair) */, "oklch(0.726 0.085 141.09)" /* #89b482 */, "oklch(0.811 0.057 81.23)" /* #d4be98 */,
       "oklch(0.550 0.023 62.57)" /* #7c6f64 */, "oklch(0.677 0.161 25.42)" /* #ea6962 */, "oklch(0.748 0.107 116.53)" /* #a9b665 */, "oklch(0.756 0.113 77.04)" /* #d8a657 */,
       "oklch(0.713 0.055 179.19)" /* #7daea3 */, "oklch(0.705 0.098 2.19)" /* #d3869b */, "oklch(0.726 0.085 141.09)" /* #89b482 */, "oklch(0.839 0.056 81.25)" /* #ddc7a1 */,
     ],
     semantic: {
-      muted: "oklch(0.648 0.037 80.14)" /* upstream #91836c → L+0.032 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.654 0.037 80.14)" /* upstream #91836c → L+0.038, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
       codeBg: "oklch(0.317 0.000 0.00)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.811 0.057 81.23)" /* upstream #d4be98 → L+0.000 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.713 0.161 25.42)" /* upstream #ea6962 → L+0.036 for AA (scheme-a11y #2489) */,
-      matchedKeywordBg: "oklch(0.756 0.113 77.04)" /* derived from warning, base for matchedKeywordFg — scheme-a11y #2489 §2.2 */,
-      matchedKeywordFg: "oklch(0.380 0.000 0.00)" /* upstream #eeeeee → L-0.570 for AA (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.713 0.098 2.19)" /* derived from accent, base for chatUserText — scheme-a11y #2489 §2.2 */,
-      chatUserText: "oklch(0.334 0.000 0.00)" /* upstream #eeeeee → L-0.616 for AA (scheme-a11y #2489) */,
+      danger: "oklch(0.723 0.161 25.42)" /* upstream #ea6962 → L+0.046, C-0.001 for AA (scheme-a11y #2489) */, // admonition-danger → 4.63:1
+      matchedKeywordBg: "oklch(0.756 0.113 77.04)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
+      matchedKeywordFg: "oklch(0.376 0.000 0.00)" /* upstream #eeeeee → L-0.574 for AA (scheme-a11y #2489) */, // matched-keyword → 4.61:1
+      chatUserBg: "oklch(0.719 0.098 2.19)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.334 0.000 0.00)" /* upstream #eeeeee → L-0.616 for AA (scheme-a11y #2489) */, // chat-user → 4.61:1
       chatAssistantBg: "oklch(0.317 0.000 0.00)" /* derived bg-elevated, base for chatAssistantText — scheme-a11y #2489 §2.2 */,
       chatAssistantText: "oklch(0.811 0.057 81.23)" /* upstream #d4be98 → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.317 0.000 0.00)" /* derived bg-elevated — scheme-a11y #2489 §2.2 */,
       mermaidLabelBg: "oklch(0.317 0.000 0.00)" /* derived bg-elevated (codeBg-like) — scheme-a11y #2489 §2.2 */,
       mermaidNoteBg: "oklch(0.357 0.000 0.00)" /* derived bg-elevated ×2, distinct from node/label — scheme-a11y #2489 §2.2 */,
       mermaidText: "oklch(0.811 0.057 81.23)" /* upstream #d4be98 → L+0.000 for AA (scheme-a11y #2489) */,
+      mermaidLine: "oklch(0.654 0.037 80.14)" /* upstream #9c8e77 → L+0.000 for AA (scheme-a11y #2489) */, // mermaid-line-vs-bg → 4.62:1
     },
   },
   "Gruvbox Light": {
@@ -1198,20 +1205,20 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: 0,
     palette: [
       "oklch(0.956 0.0555 96.15)" /* #fbf1c7 */, "oklch(0.546 0.203 28.66)" /* #cc241d */, "oklch(0.656 0.1354 109.12)" /* #98971a */, "oklch(0.725 0.143 77.71)" /* #d79921 */,
-      "oklch(0.576 0.066 199.49)" /* #458588 */, "oklch(0.513 0.111 352.22)" /* upstream #b16286 → L-0.084 for AA (scheme-a11y #2489) */, "oklch(0.645 0.094 145.27)" /* #689d6a */, "oklch(0.550 0.023 62.57)" /* #7c6f64 */,
+      "oklch(0.576 0.066 199.49)" /* #458588 */, "oklch(0.507 0.111 352.22)" /* upstream #b16286 → L-0.090, C+0.001 for AA (scheme-a11y #2489) */ /* admonition-important (raw p5 only — accent is overridden elsewhere) → 4.64:1 */, "oklch(0.645 0.094 145.27)" /* #689d6a */, "oklch(0.550 0.023 62.57)" /* #7c6f64 */,
       "oklch(0.619 0.029 67.26)" /* #928374 */, "oklch(0.437 0.179 28.26)" /* #9d0006 */, "oklch(0.546 0.1124 106.46)" /* #79740e */, "oklch(0.618 0.1277 70.67)" /* #b57614 */,
       "oklch(0.471 0.0816 215.81)" /* #076678 */, "oklch(0.489 0.124 344.28)" /* #8f3f71 */, "oklch(0.534 0.082 155.40)" /* #427b58 */, "oklch(0.344 0.007 48.52)" /* #3c3836 */,
     ],
     semantic: {
-      muted: "oklch(0.536 0.025 92.65)" /* upstream #7b7666 → L-0.030 for AA (scheme-a11y #2489) */,
-      accent: "oklch(0.492 0.066 199.49)" /* upstream #458588 → L-0.084 for AA (scheme-a11y #2489) */,
-      accentHover: "oklch(0.528 0.082 155.40)" /* upstream #427b58 → L-0.006 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.532 0.025 92.65)" /* upstream #7b7666 → L-0.034, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
+      accent: "oklch(0.486 0.066 199.49)" /* upstream #458588 → L-0.090, C+0.000 for AA (scheme-a11y #2489) */, // accent-vs-bg + admonition-accent → 4.62:1
+      accentHover: "oklch(0.522 0.082 155.40)" /* upstream #427b58 → L-0.012, C-0.000 for AA (scheme-a11y #2489) */, // accent-hover-vs-bg → 4.63:1
       codeBg: "oklch(0.916 0.056 96.15)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.344 0.007 48.52)" /* upstream #3c3836 → L+0.000 for AA (scheme-a11y #2489) */,
-      success: "oklch(0.494 0.135 109.12)" /* upstream #98971a → L-0.162 for AA (scheme-a11y #2489) */,
-      warning: "oklch(0.501 0.143 77.71)" /* upstream #d79921 → L-0.224 for AA (scheme-a11y #2489) */,
-      info: "oklch(0.492 0.066 199.49)" /* upstream #458588 → L-0.084 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.514 0.203 28.66)" /* upstream #cc241d → L-0.032 for AA (scheme-a11y #2489) */,
+      success: "oklch(0.488 0.135 109.12)" /* upstream #98971a → L-0.168, C-0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.62:1
+      warning: "oklch(0.497 0.143 77.71)" /* upstream #d79921 → L-0.228, C+0.000 for AA (scheme-a11y #2489) */, // admonition-warning → 4.61:1
+      info: "oklch(0.486 0.066 199.49)" /* upstream #458588 → L-0.090, C+0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.62:1
+      danger: "oklch(0.508 0.203 28.66)" /* upstream #cc241d → L-0.038 for AA (scheme-a11y #2489) */, // admonition-danger → 4.63:1
       chatUserBg: "oklch(0.492 0.066 199.49)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
       chatUserText: "oklch(0.950 0.000 0.00)" /* upstream #eeeeee → L+0.000 for AA (scheme-a11y #2489) */,
       chatAssistantBg: "oklch(0.916 0.056 96.15)" /* derived: bg-elevated (base for chatAssistantText) — scheme-a11y #2492 §2.2 recipe */,
@@ -1235,13 +1242,13 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.777 0.130 237.29)" /* #59c2ff */, "oklch(0.797 0.131 306.33)" /* #d2a6ff */, "oklch(0.865 0.088 171.10)" /* #95e6cb */, "oklch(1.000 0.000 0.00)" /* #ffffff */,
     ],
     semantic: {
-      muted: "oklch(0.581 0.003 106.50)" /* upstream #727270 → L+0.030 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.585 0.003 106.50)" /* upstream #727270 → L+0.034 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
       codeBg: "oklch(0.203 0.014 264.09)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.798 0.010 93.60)" /* upstream #bfbdb6 → L+0.000 for AA (scheme-a11y #2489) */,
       matchedKeywordBg: "oklch(0.808 0.140 70.34)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
       matchedKeywordFg: "oklch(0.150 0.000 0.00)" /* upstream #0b0b0b → L+0.000 for AA (scheme-a11y #2489) */,
       chatUserBg: "oklch(0.781 0.131 306.28)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
-      chatUserText: "oklch(0.394 0.000 0.00)" /* upstream #eeeeee → L-0.556 for AA (scheme-a11y #2489) */,
+      chatUserText: "oklch(0.388 0.000 0.00)" /* upstream #eeeeee → L-0.562 for AA (scheme-a11y #2489) */, // chat-user → 4.64:1
       chatAssistantBg: "oklch(0.203 0.014 264.09)" /* derived: surface/bg-elevated (base for chatAssistantText) — scheme-a11y #2492 §2.2 recipe */,
       chatAssistantText: "oklch(0.798 0.010 93.60)" /* upstream #bfbdb6 → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.203 0.014 264.09)" /* derived: bg-elevated — scheme-a11y #2492 §2.2 recipe */,
@@ -1263,7 +1270,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.818 0.111 232.31)" /* #73d0ff */, "oklch(0.853 0.093 307.24)" /* #dfbfff */, "oklch(0.865 0.088 171.10)" /* #95e6cb */, "oklch(1.000 0.000 0.00)" /* #ffffff */,
     ],
     semantic: {
-      muted: "oklch(0.635 0.002 247.85)" /* upstream #808182 → L+0.032 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.641 0.002 247.85)" /* upstream #808182 → L+0.038, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.63:1
       codeBg: "oklch(0.301 0.024 267.11)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.838 0.011 95.19)" /* upstream #cccac2 → L+0.000 for AA (scheme-a11y #2489) */,
       matchedKeywordBg: "oklch(0.867 0.124 83.62)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
@@ -1287,20 +1294,20 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: "oklch(0.982 0.002 247.84)" /* #f8f9fa */,
     palette: [
       "oklch(0.000 0.000 0.00)" /* #000000 */, "oklch(0.683 0.157 21.62)" /* #ea6c6d */, "oklch(0.726 0.179 136.92)" /* #6cbf43 */, "oklch(0.781 0.1385 73.98)" /* #eca944 */,
-      "oklch(0.658 0.1416 243.88)" /* #3199e1 */, "oklch(0.531 0.127 306.14)" /* upstream #9e75c7 → L-0.104 for AA (scheme-a11y #2489) */, "oklch(0.713 0.119 167.92)" /* #46ba94 */, "oklch(0.789 0.000 0.00)" /* #bababa */,
+      "oklch(0.658 0.1416 243.88)" /* #3199e1 */, "oklch(0.525 0.127 306.14)" /* upstream #9e75c7 → L-0.110, C+0.001 for AA (scheme-a11y #2489) */ /* admonition-important (raw p5 only — accent is overridden elsewhere) → 4.61:1 */, "oklch(0.713 0.119 167.92)" /* #46ba94 */, "oklch(0.789 0.000 0.00)" /* #bababa */,
       "oklch(0.517 0.000 0.00)" /* #686868 */, "oklch(0.699 0.157 21.96)" /* #f07171 */, "oklch(0.708 0.1793 125.62)" /* #86b300 */, "oklch(0.797 0.139 73.81)" /* #f2ae49 */,
       "oklch(0.674 0.141 244.03)" /* #399ee6 */, "oklch(0.652 0.126 306.22)" /* #a37acc */, "oklch(0.729 0.119 168.04)" /* #4cbf99 */, "oklch(0.861 0.000 0.00)" /* #d1d1d1 */,
     ],
     semantic: {
-      accent: "oklch(0.518 0.008 247.96)" /* upstream #787c80 → L-0.066 for AA (scheme-a11y #2489) */,
-      accentHover: "oklch(0.550 0.141 244.03)" /* upstream #399ee6 → L-0.124 for AA (scheme-a11y #2489) */,
+      accent: "oklch(0.512 0.008 247.96)" /* upstream #787c80 → L-0.072, C+0.000 for AA (scheme-a11y #2489) */, // accent-vs-bg + admonition-accent → 4.63:1
+      accentHover: "oklch(0.546 0.141 244.03)" /* upstream #399ee6 → L-0.128, C+0.000 for AA (scheme-a11y #2489) */, // accent-hover-vs-bg → 4.61:1
       surface: "oklch(0.955 0.002 247.84)" /* #eff0f1 */,
       codeBg: "oklch(0.955 0.002 247.84)" /* derived: surface (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.490 0.010 248.04)" /* upstream #5c6166 → L+0.000 for AA (scheme-a11y #2489) */,
-      success: "oklch(0.500 0.179 136.92)" /* upstream #6cbf43 → L-0.226 for AA (scheme-a11y #2489) */,
-      warning: "oklch(0.521 0.139 73.98)" /* upstream #eca944 → L-0.260 for AA (scheme-a11y #2489) */,
-      info: "oklch(0.508 0.142 243.88)" /* upstream #3199e1 → L-0.150 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.531 0.157 21.62)" /* upstream #ea6c6d → L-0.152 for AA (scheme-a11y #2489) */,
+      success: "oklch(0.492 0.179 136.92)" /* upstream #6cbf43 → L-0.234, C+0.000 for AA (scheme-a11y #2489) */, // admonition-success → 4.63:1
+      warning: "oklch(0.515 0.139 73.98)" /* upstream #eca944 → L-0.266, C+0.001 for AA (scheme-a11y #2489) */, // admonition-warning → 4.63:1
+      info: "oklch(0.502 0.142 243.88)" /* upstream #3199e1 → L-0.156, C+0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.63:1
+      danger: "oklch(0.527 0.157 21.62)" /* upstream #ea6c6d → L-0.156, C+0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
       matchedKeywordBg: "oklch(0.521 0.139 73.98)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
       matchedKeywordFg: "oklch(0.950 0.000 0.00)" /* upstream #eeeeee → L+0.000 for AA (scheme-a11y #2489) */,
       chatUserBg: "oklch(0.518 0.008 247.96)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
@@ -1321,19 +1328,19 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: "oklch(0.000 0.000 0.00)" /* #000000 */,
     palette: [
       "oklch(0.000 0.000 0.00)" /* #000000 */, "oklch(0.658 0.221 24.95)" /* #fc4346 */, "oklch(0.874 0.220 148.13)" /* #50fb7c */, "oklch(0.957 0.136 113.62)" /* #f0fb8c */,
-      "oklch(0.754 0.1415 239.60)" /* #49baff */, "oklch(0.694 0.232 348.53)" /* #fc4cb4 */, "oklch(0.883 0.094 213.65)" /* #8be9fe */, "oklch(0.946 0.001 106.43)" /* #ededec */,
+      "oklch(0.754 0.1415 239.60)" /* #49baff */, "oklch(0.698 0.232 348.53)" /* upstream #fc4cb4 → L+0.004 for AA (scheme-a11y #2489) */ /* accent-vs-bg AND admonition-important (raw p5) both ≥4.5 → 4.63:1 (binding pair) */, "oklch(0.883 0.094 213.65)" /* #8be9fe */, "oklch(0.946 0.001 106.43)" /* #ededec */,
       "oklch(0.450 0.000 0.00)" /* #555555 */, "oklch(0.658 0.221 24.95)" /* #fc4346 */, "oklch(0.874 0.220 148.13)" /* #50fb7c */, "oklch(0.957 0.136 113.62)" /* #f0fb8c */,
       "oklch(0.754 0.1415 239.60)" /* #49baff */, "oklch(0.694 0.232 348.53)" /* #fc4cb4 */, "oklch(0.883 0.094 213.65)" /* #8be9fe */, "oklch(0.946 0.001 106.43)" /* #ededec */,
     ],
     semantic: {
-      muted: "oklch(0.621 0.003 264.53)" /* upstream #7d7e80 → L+0.028 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.627 0.003 264.53)" /* upstream #7d7e80 → L+0.034, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
       codeBg: "oklch(0.283 0.019 280.40)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.941 0.008 114.23)" /* upstream #ebece6 → L+0.000 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.704 0.221 24.95)" /* upstream #fc4346 → L+0.046 for AA (scheme-a11y #2489) */,
+      danger: "oklch(0.722 0.221 24.95)" /* upstream #fc4346 → L+0.064, C+0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.62:1
       matchedKeywordBg: "oklch(0.957 0.136 113.62)" /* derived from warning, base for matchedKeywordFg — scheme-a11y #2489 §2.2 */,
       matchedKeywordFg: "oklch(0.150 0.000 0.00)" /* upstream #0b0b0b → L+0.000 for AA (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.694 0.232 348.53)" /* derived from accent, base for chatUserText — scheme-a11y #2489 §2.2 */,
-      chatUserText: "oklch(0.294 0.000 0.00)" /* upstream #eeeeee → L-0.656 for AA (scheme-a11y #2489) */,
+      chatUserBg: "oklch(0.698 0.232 348.53)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.292 0.000 0.00)" /* upstream #eeeeee → L-0.658 for AA (scheme-a11y #2489) */, // chat-user → 4.64:1
       chatAssistantBg: "oklch(0.283 0.019 280.40)" /* derived bg-elevated, base for chatAssistantText — scheme-a11y #2489 §2.2 */,
       chatAssistantText: "oklch(0.941 0.008 114.23)" /* upstream #ebece6 → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.283 0.019 280.40)" /* derived bg-elevated — scheme-a11y #2489 §2.2 */,
@@ -1351,18 +1358,18 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: "oklch(0.907 0.000 0.00)" /* #e0e0e0 */,
     palette: [
       "oklch(0.000 0.000 0.00)" /* #000000 */, "oklch(0.559 0.193 26.08)" /* #cd3131 */, "oklch(0.702 0.160 158.77)" /* #0dbc79 */, "oklch(0.893 0.1926 109.74)" /* #e5e510 */,
-      "oklch(0.551 0.153 254.17)" /* #2472c8 */, "oklch(0.685 0.213 327.86)" /* upstream #bc3fbc (p5) → L+0.094 for AA (scheme-a11y #2489) */, "oklch(0.678 0.122357 221.434)" /* #11a8cd */, "oklch(0.922 0.000 0.00)" /* #e5e5e5 */,
+      "oklch(0.551 0.153 254.17)" /* #2472c8 */, "oklch(0.691 0.213 327.86)" /* upstream #bc3fbc (p5) → L+0.100, C+0.000 for AA (scheme-a11y #2489) */ /* accent-vs-bg AND admonition-important (raw p5) both ≥4.5 → 4.63:1 (binding pair) */, "oklch(0.678 0.122357 221.434)" /* #11a8cd */, "oklch(0.922 0.000 0.00)" /* #e5e5e5 */,
       "oklch(0.510 0.000 0.00)" /* #666666 */, "oklch(0.649 0.202 24.74)" /* #f14c4c */, "oklch(0.762 0.167 159.47)" /* #23d18b */, "oklch(0.941 0.186 109.50)" /* #f5f543 */,
       "oklch(0.641 0.160 253.50)" /* #3b8eea */, "oklch(0.697 0.179 327.28)" /* #d670d6 */, "oklch(0.726 0.1233 219.34)" /* #29b8db */, "oklch(0.922 0.000 0.00)" /* #e5e5e5 */,
     ],
     semantic: {
-      muted: "oklch(0.616 0.000 0.00)" /* upstream #7d7d7d → L+0.026 for AA (scheme-a11y #2489) */,
-      info: "oklch(0.659 0.153 254.17)" /* upstream #2472c8 (p4) → L+0.108 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.677 0.193 26.08)" /* upstream #cd3131 (p1) → L+0.118 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.622 0.000 0.00)" /* upstream #7d7d7d → L+0.032 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
+      info: "oklch(0.665 0.153 254.17)" /* upstream #2472c8 (p4) → L+0.114, C+0.000 for AA (scheme-a11y #2489) */, // admonition-info → 4.61:1
+      danger: "oklch(0.685 0.193 26.08)" /* upstream #cd3131 (p1) → L+0.126, C+0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.62:1
       codeBg: "oklch(0.275 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       codeFg: "oklch(0.845 0.000 0.00)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.685 0.213 327.86)" /* derived from accent (p5, tweaked) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserText: "oklch(0.288 0.000 0.00)" /* derived: forced near-black for AA on chatUserBg (scheme-a11y #2489) */,
+      chatUserBg: "oklch(0.691 0.213 327.86)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.288 0.000 0.00)" /* upstream #eeeeee → L-0.662 for AA (scheme-a11y #2489) */, // chat-user → 4.63:1
       chatAssistantBg: "oklch(0.275 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       chatAssistantText: "oklch(0.845 0.000 0.00)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.275 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
@@ -1379,7 +1386,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     foreground: "oklch(0.898 0.020 260.17)" /* #d6deeb */,
     cursor: "oklch(0.549 0.162 297.66)" /* #7e57c2 */,
     selectionBg: "oklch(0.579 0.052 243.13)" /* #5f7e97 */,
-    selectionFg: "oklch(0.166 0.014 258.35)" /* upstream #dfe5ee → L-0.754 for AA (scheme-a11y #2489) */,
+    selectionFg: "oklch(0.150 0.014 258.35)" /* upstream #dfe5ee → L-0.770, C+0.000 for AA (scheme-a11y #2489) */, // selection → 4.61:1
     palette: [
       "oklch(0.193 0.045 243.97)" /* #011627 */, "oklch(0.654 0.193 25.14)" /* #ef5350 */, "oklch(0.780 0.2035 150.74)" /* #22da6e */, "oklch(0.834 0.153 127.38)" /* #addb67 */,
       "oklch(0.744 0.131 264.28)" /* #82aaff */, "oklch(0.743 0.135 311.06)" /* #c792ea */, "oklch(0.744 0.1341 175.56)" /* #21c7a8 */, "oklch(1.000 0.000 0.00)" /* #ffffff */,
@@ -1387,11 +1394,11 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.744 0.131 264.28)" /* #82aaff */, "oklch(0.743 0.135 311.06)" /* #c792ea */, "oklch(0.829 0.092 180.70)" /* #7fdbca */, "oklch(1.000 0.000 0.00)" /* #ffffff */,
     ],
     semantic: {
-      muted: "oklch(0.592 0.029 248.35)" /* upstream #687786 → L+0.030 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.598 0.029 248.35)" /* upstream #687786 → L+0.036, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
       codeBg: "oklch(0.233 0.045 243.97)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       codeFg: "oklch(0.898 0.020 260.17)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.743 0.135 311.06)" /* derived from accent (p5) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserText: "oklch(0.360 0.000 0.00)" /* derived: forced near-black for AA on chatUserBg (scheme-a11y #2489) */,
+      chatUserBg: "oklch(0.743 0.135 311.06)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.354 0.000 0.00)" /* upstream #eeeeee → L-0.596 for AA (scheme-a11y #2489) */, // chat-user → 4.63:1
       chatAssistantBg: "oklch(0.233 0.045 243.97)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       chatAssistantText: "oklch(0.898 0.020 260.17)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.233 0.045 243.97)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
@@ -1413,7 +1420,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     // exactly at the L=1 boundary and its boundary-break short-circuits before
     // marching — verified manually that L=0.378 is the smallest move clearing
     // 4.5:1 (4.53:1) against selectionBg (p8/#a6accd)
-    selectionFg: "oklch(0.378 0.000 0.00)",
+    selectionFg: "oklch(0.372 0.000 0.00)" /* upstream #424242 → L-0.006 for AA (scheme-a11y #2489) */, // selection → 4.64:1
     palette: [
       "oklch(0.236 0.020 267.80)" /* #1a1e28 */, "oklch(0.654 0.146 349.78)" /* #d0679d */, "oklch(0.837 0.1253 176.45)" /* #5de4c7 */, "oklch(0.975 0.072 103.38)" /* #fffac2 */,
       "oklch(0.856 0.094 225.87)" /* #89ddff */, "oklch(0.883 0.078 339.51)" /* #fcc5e9 */, "oklch(0.863 0.071 247.40)" /* #add7ff */, "oklch(1.000 0.000 0.00)" /* #ffffff */,
@@ -1423,7 +1430,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     semantic: {
       codeBg: "oklch(0.276 0.020 267.80)" /* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */,
       codeFg: "oklch(0.751 0.048 277.08)" /* upstream #a6accd → L+0.000 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.678 0.146 349.78)" /* upstream #d0679d → L+0.024 for AA (scheme-a11y #2489) */,
+      danger: "oklch(0.684 0.146 349.78)" /* upstream #d0679d → L+0.030, C+0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.62:1
       matchedKeywordBg: "oklch(0.975 0.072 103.38)" /* derived: warning (base for matchedKeywordFg) — scheme-a11y #2492 §2.2 recipe */,
       matchedKeywordFg: "oklch(0.150 0.000 0.00)" /* upstream #0b0b0b → L+0.000 for AA (scheme-a11y #2489) */,
       chatUserBg: "oklch(0.883 0.078 339.51)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
@@ -1441,7 +1448,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     foreground: 15,
     cursor: "oklch(0.755 0.010 140.51)" /* #acb1ab */,
     selectionBg: "oklch(0.610 0.079 86.48)" /* #988049 */,
-    selectionFg: "oklch(0.222 0.010 140.51)" /* upstream #b9beb8 → L-0.574 for AA (scheme-a11y #2489) */,
+    selectionFg: "oklch(0.214 0.010 140.51)" /* upstream #b9beb8 → L-0.582 for AA (scheme-a11y #2489) */, // selection → 4.61:1
     palette: [
       "oklch(0.173 0.000 0.00)" /* #101010 */, "oklch(0.788 0.103 31.30)" /* #f5a191 */, "oklch(0.749 0.058 156.89)" /* #90b99f */, "oklch(0.819 0.065 53.46)" /* #e6b99d */,
       "oklch(0.734 0.067 295.68)" /* #aca1cf */, "oklch(0.778 0.098 340.59)" /* #e29eca */, "oklch(0.731 0.131 359.75)" /* #ea83a5 */, "oklch(0.706 0.000 0.00)" /* #a0a0a0 */,
@@ -1451,8 +1458,8 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     semantic: {
       codeBg: "oklch(0.213 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       codeFg: "oklch(1.000 0.000 0.00)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.778 0.098 340.59)" /* derived from accent (p5) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserText: "oklch(0.392 0.000 0.00)" /* derived: forced near-black for AA on chatUserBg (scheme-a11y #2489) */,
+      chatUserBg: "oklch(0.778 0.098 340.59)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.386 0.000 0.00)" /* upstream #eeeeee → L-0.564 for AA (scheme-a11y #2489) */, // chat-user → 4.64:1
       chatAssistantBg: "oklch(0.213 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       chatAssistantText: "oklch(1.000 0.000 0.00)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.213 0.000 0.00)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
@@ -1471,17 +1478,17 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: 7,
     palette: [
       "oklch(0.000 0.000 0.00)" /* #000000 */, "oklch(0.713 0.180 23.16)" /* #ff6c6b */, "oklch(0.754 0.124 128.06)" /* #98be65 */, "oklch(0.828 0.100 76.05)" /* #ecbe7b */,
-      "oklch(0.739 0.092 289.68)" /* #a9a1e1 */, "oklch(0.736 0.164 318.21)" /* upstream #c678dd (p5) → L+0.042 for AA (scheme-a11y #2489) */, "oklch(0.724 0.129 241.46)" /* #51afef */, "oklch(0.813 0.020 262.99)" /* #bbc2cf */,
+      "oklch(0.739 0.092 289.68)" /* #a9a1e1 */, "oklch(0.740 0.164 318.21)" /* upstream #c678dd (p5) → L+0.046, C+0.001 for AA (scheme-a11y #2489) */ /* accent-vs-bg AND admonition-important (raw p5) both ≥4.5 → 4.61:1 (binding pair) */, "oklch(0.724 0.129 241.46)" /* #51afef */, "oklch(0.813 0.020 262.99)" /* #bbc2cf */,
       "oklch(0.464 0.000 0.00)" /* #595959 */, "oklch(0.702 0.190 29.08)" /* #ff6655 */, "oklch(0.747 0.118 126.93)" /* #99bb66 */, "oklch(0.828 0.100 76.05)" /* #ecbe7b */,
       "oklch(0.739 0.092 289.68)" /* #a9a1e1 */, "oklch(0.694 0.164 318.21)" /* #c678dd */, "oklch(0.724 0.129 241.46)" /* #51afef */, "oklch(0.805 0.000 0.00)" /* #bfbfbf */,
     ],
     semantic: {
-      muted: "oklch(0.662 0.018 262.72)" /* upstream #848a95 → L+0.030 for AA (scheme-a11y #2489) */,
-      danger: "oklch(0.747 0.180 23.16)" /* upstream #ff6c6b (p1) → L+0.034 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.668 0.018 262.72)" /* upstream #848a95 → L+0.036, C+0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.63:1
+      danger: "oklch(0.763 0.180 23.16)" /* upstream #ff6c6b (p1) → L+0.050, C-0.000 for AA (scheme-a11y #2489) */, // admonition-danger → 4.62:1
       codeBg: "oklch(0.333 0.016 264.30)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       codeFg: "oklch(0.813 0.020 262.99)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.736 0.164 318.21)" /* derived from accent (p5, tweaked) — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
-      chatUserText: "oklch(0.348 0.000 0.00)" /* derived: forced near-black for AA on chatUserBg (scheme-a11y #2489) */,
+      chatUserBg: "oklch(0.740 0.164 318.21)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.348 0.000 0.00)" /* upstream #eeeeee → L-0.602 for AA (scheme-a11y #2489) */, // chat-user → 4.61:1
       chatAssistantBg: "oklch(0.333 0.016 264.30)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       chatAssistantText: "oklch(0.813 0.020 262.99)" /* derived from real fg — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.333 0.016 264.30)" /* derived from bg, bg-elevated — ANSI-preset default mismatch fix (scheme-a11y #2489) */,
@@ -1501,18 +1508,18 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
     selectionFg: "oklch(0.240 0.040 287.36)" /* #1e1c31 */,
     palette: [
       "oklch(0.198 0.043 285.86)" /* #141228 */, "oklch(0.682 0.207 23.25)" /* #ff5458 */, "oklch(0.780 0.134 157.87)" /* #62d196 */, "oklch(0.827 0.116 58.08)" /* #ffb378 */,
-      "oklch(0.746 0.136 250.10)" /* #65b2ff */, "oklch(0.694 0.209 290.56)" /* upstream #906cff → L+0.054 for AA (scheme-a11y #2489) */, "oklch(0.884 0.122 194.52)" /* #63f2f1 */, "oklch(0.765 0.039 263.57)" /* #a6b3cc */,
+      "oklch(0.746 0.136 250.10)" /* #65b2ff */, "oklch(0.700 0.209 290.56)" /* upstream #906cff → L+0.060 for AA (scheme-a11y #2489) */ /* accent-vs-bg AND admonition-important (raw p5) both ≥4.5 → 4.62:1 (binding pair) */, "oklch(0.884 0.122 194.52)" /* #63f2f1 */, "oklch(0.765 0.039 263.57)" /* #a6b3cc */,
       "oklch(0.463 0.052 285.63)" /* #565575 */, "oklch(0.744 0.155 21.50)" /* #ff8080 */, "oklch(0.914 0.158 147.42)" /* #95ffa4 */, "oklch(0.937 0.083 91.06)" /* #ffe9aa */,
       "oklch(0.860 0.089 228.04)" /* #91ddff */, "oklch(0.739 0.127 315.37)" /* #c991e1 */, "oklch(0.938 0.091 172.30)" /* #aaffe4 */, "oklch(0.899 0.026 208.75)" /* #cbe3e7 */,
     ],
     semantic: {
-      muted: "oklch(0.619 0.024 259.19)" /* upstream #747d8b → L+0.032 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.623 0.024 259.19)" /* upstream #747d8b → L+0.036 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
       codeBg: "oklch(0.280 0.040 287.36)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.895 0.025 215.92)" /* upstream #cbe1e7 → L+0.000 for AA (scheme-a11y #2489) */,
       matchedKeywordBg: "oklch(0.827 0.116 58.08)" /* derived from warning, base for matchedKeywordFg — scheme-a11y #2489 §2.2 */,
       matchedKeywordFg: "oklch(0.150 0.000 0.00)" /* upstream #0b0b0b → L+0.000 for AA (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.694 0.209 290.56)" /* derived from accent, base for chatUserText — scheme-a11y #2489 §2.2 */,
-      chatUserText: "oklch(0.296 0.000 0.00)" /* upstream #eeeeee → L-0.654 for AA (scheme-a11y #2489) */,
+      chatUserBg: "oklch(0.700 0.209 290.56)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.296 0.000 0.00)" /* upstream #eeeeee → L-0.654 for AA (scheme-a11y #2489) */, // chat-user → 4.62:1
       chatAssistantBg: "oklch(0.280 0.040 287.36)" /* derived bg-elevated, base for chatAssistantText — scheme-a11y #2489 §2.2 */,
       chatAssistantText: "oklch(0.895 0.025 215.92)" /* upstream #cbe1e7 → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.280 0.040 287.36)" /* derived bg-elevated — scheme-a11y #2489 §2.2 */,
@@ -1520,6 +1527,7 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       mermaidNoteBg: "oklch(0.320 0.040 287.36)" /* derived bg-elevated ×2, distinct from node/label — scheme-a11y #2489 §2.2 */,
       mermaidText: "oklch(0.895 0.025 215.92)" /* upstream #cbe1e7 → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidLine: "oklch(0.619 0.024 259.19)" /* derived from muted (was raw p8 #7d8695) — scheme-a11y #2489 §2.2 */,
+      danger: "oklch(0.690 0.207 23.25)" /* upstream #ff5458 → L+0.008 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
     },
   },
   Embark: {
@@ -1535,13 +1543,13 @@ export const colorTweakPresets: Record<string, ColorScheme> = {
       "oklch(0.671 0.142 238.16)" /* #1da0e2 */, "oklch(0.595 0.242 308.06)" /* #a742ea */, "oklch(0.884 0.122 194.52)" /* #63f2f1 */, "oklch(0.765 0.039 263.57)" /* #a6b3cc */,
     ],
     semantic: {
-      muted: "oklch(0.618 0.021 265.88)" /* upstream #767c89 → L+0.032 for AA (scheme-a11y #2489) */,
+      muted: "oklch(0.624 0.021 265.88)" /* upstream #767c89 → L+0.038, C-0.000 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.62:1
       codeBg: "oklch(0.280 0.040 287.36)" /* derived bg-elevated, base for codeFg — scheme-a11y #2489 §2.2 */,
       codeFg: "oklch(0.988 0.018 196.87)" /* upstream #eeffff → L+0.000 for AA (scheme-a11y #2489) */,
       matchedKeywordBg: "oklch(0.937 0.083 91.06)" /* derived from warning, base for matchedKeywordFg — scheme-a11y #2489 §2.2 */,
       matchedKeywordFg: "oklch(0.150 0.000 0.00)" /* upstream #0b0b0b → L+0.000 for AA (scheme-a11y #2489) */,
-      chatUserBg: "oklch(0.743 0.135 311.06)" /* derived from accent, base for chatUserText — scheme-a11y #2489 §2.2 */,
-      chatUserText: "oklch(0.360 0.000 0.00)" /* upstream #eeeeee → L-0.590 for AA (scheme-a11y #2489) */,
+      chatUserBg: "oklch(0.743 0.135 311.06)" /* derived: accent (base for chatUserText) — scheme-a11y #2492 §2.2 recipe */,
+      chatUserText: "oklch(0.354 0.000 0.00)" /* upstream #eeeeee → L-0.596 for AA (scheme-a11y #2489) */, // chat-user → 4.63:1
       chatAssistantBg: "oklch(0.280 0.040 287.36)" /* derived bg-elevated, base for chatAssistantText — scheme-a11y #2489 §2.2 */,
       chatAssistantText: "oklch(0.988 0.018 196.87)" /* upstream #eeffff → L+0.000 for AA (scheme-a11y #2489) */,
       mermaidNodeBg: "oklch(0.280 0.040 287.36)" /* derived bg-elevated — scheme-a11y #2489 §2.2 */,
