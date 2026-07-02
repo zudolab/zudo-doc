@@ -94,7 +94,7 @@ Legend:
 | JS plugin | zfb counterpart | Status | Notes |
 | --- | --- | --- | --- |
 | `remarkAdmonitions` | `AdmonitionsPlugin` | ⚠️ | JS handles 5 directives (note/tip/info/warning/danger). zfb handles 6 (adds `details`) and ships a runtime-extensible `DirectiveRegistry`. Output JSX node names match for the 5 shared directives. JS plugin currently silently passes `:::details` through as a raw container directive. Recommend aligning JS to zfb (add details) before final cutover, or relying on zfb defaults post-cutover. |
-| `remarkResolveMarkdownLinks` | `ResolveLinksPlugin` | ⚠️ divergence (T4, 2026-05-01) | zfb #103 added extensionless candidate probing inside `ResolveLinksPlugin` itself, so the Rust plugin and the JS shim are now feature-equivalent at the unit level (probe order matches: `.mdx` → `.md` → `.../index.mdx` → `.../index.md`). HOWEVER: the zfb orchestrator (zfb-build / zfb-render) does NOT currently instantiate `ResolveLinksPlugin` at all — the JS shim has been unwired alongside the Astro removal, but no zfb-side replacement was added. As of this commit, both explicit `.mdx`/`.md` links AND extensionless candidates pass through the production build unresolved (e.g. `dist/docs/getting-started/writing-docs/index.html` contains a literal `href="../guides/frontmatter.mdx"` from the inline prose link on line 38 of the source mdx). The JS shim file at `packages/md-plugins/src/remark-resolve-markdown-links.ts` is therefore intentionally left in place (dead code in the consumer, but still authoritative for fixture / unit coverage) until the orchestrator wires `ResolveLinksPlugin` with a real source map. Tracking: needs a follow-up zfb-side issue (orchestrator wiring of `ResolveLinksPlugin` + project-level source-map provider). |
+| `remarkResolveMarkdownLinks` | `ResolveLinksPlugin` | ✅ resolved (zudo-doc#2325, 2026-06-24; re-verified zudo-doc#2539) | **STALE NOTE CORRECTED (was: "orchestrator does not instantiate ResolveLinksPlugin").** The zudo-doc#2321 package-first migration wired `resolveMarkdownLinks: buildResolveMarkdownLinks(settings)` into `packages/zudo-doc/src/preset.ts` (`zudoDocPreset()`, landed in #2325), so every `zudoDocPreset()` consumer — including this repo's own `zfb.config.ts` — now passes a real per-collection source map (`{ dir, routePrefix }` for the default docs dir, each locale, and each version) to the Rust `ResolveLinksPlugin`. Re-verified end-to-end against a built smoke-fixture `dist/` for zudo-doc#2539: `[Sibling page](./page-1.mdx)` resolves to `href="/docs/guides/page-1/"`, including the query-string case (`[With query](./page-1.mdx?foo=bar)` → `href="/docs/guides/page-1/?foo=bar"`) — see `e2e/smoke-markdown-features.spec.ts`. The JS shim file (`packages/md-plugins/src/remark-resolve-markdown-links.ts`) is no longer a "dead code in the consumer" placeholder describing an unwired plugin; it remains solely as fixture/parity-test reference per this package's stated purpose. |
 | `remarkMath` (3rd-party) | — | ❌ | Not in zfb defaults. Either port, add a Rust crate (e.g. `markdown-rs` math support), or run as a JS shim. Currently feature-flagged via `settings.math`. |
 | `remarkCjkFriendly` (3rd-party) | `CjkFriendlyPlugin` | ✅ retired (zfb #102, T4, 2026-05-01) | zfb #102 ported the CJK-aware emphasis/strong tokenisation as `CjkFriendlyPlugin`, which `Pipeline::with_defaults()` registers as the first mdast visitor (see `crates/zfb-content/src/pipeline.rs:227`). Verified end-to-end against the production build at this commit: `dist/ja/docs/reference/cjk-friendly/index.html` renders `<strong class="font-bold text-fg">扱わない</strong>` from the source `**扱わない**`-pattern in `src/content/docs-ja/reference/cjk-friendly.mdx`, and 10+ other JA pages contain CJK runs wrapped in `<strong>`. There is no separate JS shim file for CJK in this repo — `remark-cjk-friendly` is a 3rd-party npm package consumed only by `__tests__/fixtures.test.ts` for parity diffing, so the dependency stays as-is until the fixture corpus itself is retired. The `settings.cjkFriendly` flag is now dead code on the JS side and is preserved purely for downstream-template back-compat. |
 | `remarkDirective` (3rd-party) | (handled inside `AdmonitionsPlugin`) | ✅ | zfb's directives are parsed natively by the Rust admonitions / directive registry. No counterpart needed in zfb config. |
@@ -107,7 +107,7 @@ Legend:
 | `rehypeHeadingLinks` | `HeadingLinksPlugin` | ✅ retired (zfb #104) | zfb appends `<a href="#id" class="hash-link" aria-label="Direct link to …"></a>` (empty body, `#` glyph rendered via CSS `::after`) with the same github-slugger-equivalent dedup. JS shim deleted; `__fixtures__/02-headings.{mdx,html}` retired. |
 | `rehypeImageEnlarge` | `ImageEnlargePlugin` | ✅ retired (zfb #104) | zfb selector and shape match the JS shim verbatim — any `<p>` whose only non-whitespace child is `<img>` is replaced with `<figure class="zd-enlargeable"><img><button class="zd-enlarge-btn" hidden>…4-polygon SVG…</button></figure>`, `title="no-enlarge"` opt-out preserved, idempotent over already-wrapped figures. JS shim deleted; `__fixtures__/07-image-enlarge.{mdx,html}` retired. |
 | `rehypeMermaid` | `MermaidPlugin` | ✅ retired (zfb #104) | zfb keys on `<pre><code class="language-mermaid">` directly (no Shiki dependency) and emits `<div class="mermaid" data-mermaid>{body text}</div>` — same output shape as the JS shim, even though the upstream selector differs. Client-side renderer is unchanged. JS shim deleted; `__fixtures__/06-mermaid.{mdx,html}` retired. |
-| `rehypeStripMdExtension` | `StripMdExtensionPlugin` | ⚠️ divergence pending zfb follow-up | zfb's `with_trailing_slash` mode matches the JS shim for the common `.md`/`.mdx` → `/` and extensionless-relative cases. **Divergence:** the JS regex `/\.mdx?(#.*)?$/` does not handle query strings — `./other.md?foo=bar` is left as-is in the JS pipeline (`__fixtures__/expected-html/08-md-links.html` line 6). The zfb port intentionally fixes this bug and emits `./other/?foo=bar`. JS shim is kept (and the fixture preserved) until the manager files an upstream zfb follow-up clarifying that the bug fix is the documented behaviour. |
+| `rehypeStripMdExtension` | `StripMdExtensionPlugin` | ⚠️ intentional divergence — pinned + covered (zudo-doc#2539) | zfb's `with_trailing_slash` mode matches the JS shim for the common `.md`/`.mdx` → `/` and extensionless-relative cases. **Divergence:** the JS regex `/\.mdx?(#.*)?$/` does not handle query strings — `./other.md?foo=bar` is left as-is in the JS pipeline (`__fixtures__/expected-html/08-md-links.html` line 6, now annotated in-fixture with an HTML comment explaining this is a pinned retired-bug reference, not a live regression). The zfb port intentionally fixes this bug: for real markdown-syntax links reaching `StripMdExtensionPlugin` via `resolveMarkdownLinks`, the query string is preserved and the path is still resolved/slash-terminated (e.g. `./other.mdx?foo=bar` → `/docs/.../other/?foo=bar`). This is no longer just documented here — it is proven end-to-end against a built `dist/` by `e2e/smoke-markdown-features.spec.ts` (zudo-doc#2539). Note the JS-side and Rust-side coverage differ in shape: the JS fixture exercises raw HTML `<a href>` attributes as well as markdown-syntax links (both go through `rehype-raw` in this package's driver), whereas in the production MDX pipeline a JSX-authored `<a href="...">` bypasses `StripMdExtensionPlugin`/`resolveMarkdownLinks` entirely (it is not a markdown mdast link node) and is emitted byte-for-byte as authored — also asserted by the new e2e spec. JS shim and fixture are kept as the historical/retired-bug reference; see AUDIT NOTE-2 below. |
 | `rehypeKatex` (3rd-party) | — | ❌ | Not in zfb defaults. Either port, find a Rust KaTeX renderer, or shim in JS post-zfb. Feature-flagged via `settings.math`. |
 
 ## Plugins that need zfb-side work
@@ -126,63 +126,70 @@ These are tracked as follow-up GitHub issues against this repo
 7. **rehypeStripMdExtension** — zfb #104 added trailing-slash behaviour and
    fixed the `\.mdx?(#.*)?$` query-string bug; the bug fix is a documented
    divergence from the JS fixture (`./other.md?foo=bar` → `./other/?foo=bar`
-   in zfb vs. unchanged in JS). Filed as a follow-up so downstream
-   contracts state the fix is intentional. JS shim kept until the
-   follow-up lands.
-8. **remarkResolveMarkdownLinks** — zfb #103 ported the extensionless
-   probe into `ResolveLinksPlugin` itself, BUT the zfb orchestrator does
-   not yet instantiate `ResolveLinksPlugin` for the production build, so
-   `.md`/`.mdx` and extensionless link rewriting are absent at the dist
-   level (verified by T4 on 2026-05-01: `../guides/frontmatter.mdx`
-   passes through unchanged into `dist/docs/getting-started/writing-docs/index.html`).
-   Follow-up needed on the zfb side: orchestrator wiring +
-   project-level source-map provider. JS shim retained until then.
+   in zfb vs. unchanged in JS). ~~Filed as a follow-up so downstream
+   contracts state the fix is intentional.~~ **Superseded (zudo-doc#2539):**
+   the fix is proven end-to-end against production `dist/` by
+   `e2e/smoke-markdown-features.spec.ts` — no upstream zfb issue is needed to
+   "clarify" the contract, the L3 golden IS the contract now. JS shim + the
+   `08-md-links` fixture stay as the retired-bug reference (see NOTE-2).
+8. ~~**remarkResolveMarkdownLinks**~~ — **resolved (zudo-doc#2325,
+   2026-06-24).** zfb #103 ported the extensionless probe into
+   `ResolveLinksPlugin` itself, AND the zudo-doc#2321 package-first migration
+   wired the orchestrator side: `packages/zudo-doc/src/preset.ts`
+   (`zudoDocPreset()`) now passes `resolveMarkdownLinks:
+   buildResolveMarkdownLinks(settings)` — a real per-collection source map —
+   into every consumer's zfb config, including this repo's own
+   `zfb.config.ts`. `.md`/`.mdx` links now resolve at the dist level
+   (re-verified for zudo-doc#2539 against a built smoke-fixture `dist/`; see
+   NOTE-1). JS shim retained as fixture/parity-test reference only (this
+   package's stated purpose — see the package-status note at the top of this
+   file).
 9. **remarkAdmonitions** — JS implementation does not handle
    `:::details`; zfb does. Align before cutover.
 
 ## NOTE — pending upstream zfb follow-ups (out of scope for this repo)
 
-The two items below require changes to `Takazudo/zudo-front-builder` (the
-upstream zfb repository) and are tracked here so the status is visible when
-reviewing this package. No action in `zudolab/zudo-doc` is needed until the
-upstream issues land.
+**Both NOTEs below are now RESOLVED at the zudo-doc consumer level** — kept
+for history (they explain why the JS shims and fixture corpus still exist
+even though production no longer exhibits either gap) rather than deleted.
 
-### NOTE-1: `ResolveLinksPlugin` orchestrator wiring
+### NOTE-1: `ResolveLinksPlugin` orchestrator wiring — RESOLVED (zudo-doc#2325)
 
-**Status:** JS shim retained; production build unresolved (see item 8 above).
+**Status:** wired in production; JS shim retained only as fixture/parity-test
+reference (see item 8 above).
 
 The zfb port of `remarkResolveMarkdownLinks` lives in
-`crates/zfb-content/src/plugins/resolve_links.rs` and was added in zfb #103.
-However, the zfb **orchestrator** (`zfb-build` / `zfb-render`) does not yet
-instantiate `ResolveLinksPlugin` for the production build — no project-level
-source-map provider is wired. Until the orchestrator is updated:
+`crates/zfb-content/src/plugins/resolve_links.rs` (zfb #103). At the time this
+note was first written (2026-05-01), the zfb **orchestrator** did not yet
+instantiate `ResolveLinksPlugin` for the production build. That gap closed
+with the zudo-doc#2321 package-first migration (#2325, 2026-06-24):
+`zudoDocPreset()` now builds and passes a real project-level source map
+(`buildResolveMarkdownLinks()` — one `{ dir, routePrefix }` entry per content
+collection: default docs dir, each locale, each version) to
+`ResolveLinksPlugin`. Re-verified for zudo-doc#2539 against a built
+smoke-fixture `dist/`: `[Sibling page](./page-1.mdx)` → `href="/docs/guides/page-1/"`.
+See `e2e/smoke-markdown-features.spec.ts` for the standing L3 regression
+coverage — no upstream `Takazudo/zudo-front-builder` action is needed here.
 
-- `.md`/`.mdx` explicit links and extensionless candidates pass through
-  unresolved in `dist/`.
-- The JS shim (`remark-resolve-markdown-links.ts`) remains the reference
-  implementation for the fixture corpus and unit tests.
+### NOTE-2: `rehypeStripMdExtension` query-string divergence — RESOLVED at the consumer level (zudo-doc#2539)
 
-Upstream follow-up needed: add orchestrator wiring for `ResolveLinksPlugin`
-plus a project-level source-map provider API to `Takazudo/zudo-front-builder`.
-When the follow-up lands, file a consumer-side adoption issue in
-`zudolab/zudo-doc` and update item 8 above.
-
-### NOTE-2: `rehypeStripMdExtension` query-string divergence
-
-**Status:** JS shim retained; divergence documented in fixture
-`__fixtures__/expected-html/08-md-links.html` line 6.
+**Status:** intentionally pinned in the JS fixture (annotated in-fixture with
+an HTML comment) + proven fixed in production by an L3 golden.
 
 The JS regex `/\.mdx?(#.*)?$/` does not match query strings, so
-`./other.md?foo=bar` is left unchanged in the JS pipeline. The zfb port
-(`StripMdExtensionPlugin`, zfb #104) intentionally fixes this bug and emits
-`./other/?foo=bar` instead.
+`./other.md?foo=bar` is left unchanged in the JS pipeline
+(`__fixtures__/expected-html/08-md-links.html` line 6 — the source `.mdx`
+fixture now carries an HTML comment directly below this case explaining it is
+a deliberately pinned retired-bug reference, not a live regression). The zfb
+port (`StripMdExtensionPlugin`, zfb #104) intentionally fixes this bug.
 
-The fix is the correct behaviour. A follow-up issue against
-`Takazudo/zudo-front-builder` should formally document that the query-string
-rewrite is the defined contract (not an accidental divergence), so downstream
-consumers who relied on the JS bug-behaviour know to update. Until the
-upstream issue explicitly closes this, the JS fixture preserves the old output
-as the divergence reference.
+Rather than waiting on an upstream `Takazudo/zudo-front-builder` issue to
+"formally document" the fix as the defined contract, zudo-doc#2539 added a
+standing L3 assertion against production `dist/`
+(`e2e/smoke-markdown-features.spec.ts`, "With query" case) that fails if this
+regresses. The JS fixture is unchanged (still pins the old JS-only bug
+behaviour on purpose, per the package's stated fixture/parity-test purpose)
+— only the production contract needed proving, and it now is.
 
 ## Fixture corpus
 
@@ -200,12 +207,23 @@ zfb crate's per-plugin Rust unit tests.
 | `01-basic-prose.mdx` | Paragraphs, inline marks, links, ul/ol nesting |
 | `03-admonitions-directive.mdx` | `:::note/tip/info/warning/danger` directive form |
 | `04-admonitions-jsx.mdx` | JSX-form admonitions (`<Note>`, `<Tip>`, …) |
-| `08-md-links.mdx` | `.md`/`.mdx` link rewriting incl. anchors and queries |
+| `08-md-links.mdx` | `.md`/`.mdx` link rewriting incl. anchors and queries — the query-string case (line 6 of the expected HTML) intentionally pins the retired JS `rehypeStripMdExtension` bug and carries an in-fixture comment saying so; the production Rust fix is proven separately by `e2e/smoke-markdown-features.spec.ts` (see NOTE-2) |
 | `09-tables.mdx` | GFM tables with inline marks, code, and links |
 | `10-math.mdx` | `remarkMath` + `rehypeKatex` (inline and display) |
 | `11-cjk.mdx` | `remarkCjkFriendly` (Japanese, Chinese, Korean) |
 | `12-blockquote-and-rule.mdx` | Blockquotes, `<hr>`, GFM strikethrough |
 | `13-strip-md-extension.mdx` | Raw HTML `<a>` links exercising `rehypeStripMdExtension` |
+
+Production (zfb Rust) coverage for the behaviour clusters this corpus
+represents — admonitions/directives, CJK-friendly emphasis, `.md`/`.mdx` link
+rewriting (incl. the query-string case), and GFM tables — now also has L3
+golden coverage against a built `dist/` in `e2e/smoke-markdown-features.spec.ts`
+plus the pre-existing `e2e/smoke-admonitions.spec.ts` /
+`e2e/smoke-directives.spec.ts` (zudolab/zudo-doc#2539). That is genuinely new
+coverage, not a duplicate of this corpus: this corpus proves the **JS shim's**
+own behaviour (useful for the parity-diffing purpose stated at the top of
+this file); the e2e specs prove the **shipping Rust pipeline's** behaviour,
+which no automated test asserted before #2539.
 
 ### What the captured HTML proves — and what it does not
 

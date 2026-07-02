@@ -9,6 +9,17 @@ Authors often link with .md/.mdx extensions:
 - [With anchor](./other.mdx#install)
 - [With query](./other.md?foo=bar)
 
+<!--
+  KNOWN DIVERGENCE, kept intentionally (not a bug in this fixture): the JS
+  rehypeStripMdExtension regex /\.mdx?(#.*)?$/ does not match query strings,
+  so "With query" above is pinned unrewritten on purpose. The production
+  Rust pipeline (StripMdExtensionPlugin, reached here via resolveMarkdownLinks)
+  fixes this and correctly resolves the query-string case for real
+  markdown-syntax links — proven end-to-end against a built dist/ by
+  e2e/smoke-markdown-features.spec.ts ("With query" case). See AUDIT.md
+  NOTE-2. zudolab/zudo-doc#2539.
+-->
+
 External links must be left alone:
 
 - [External](https://example.com/foo.md)
