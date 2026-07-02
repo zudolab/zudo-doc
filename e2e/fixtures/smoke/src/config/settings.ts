@@ -34,7 +34,7 @@ export const settings = {
   docMetainfo: false,
   docTags: false,
   llmsTxt: true,
-  math: false,
+  math: true,
   aiAssistant: true as boolean,
   aiChatDemoMode: true as boolean,
   aiChatAllowedOrigins: [] as string[],

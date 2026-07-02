@@ -64,7 +64,12 @@ i18n:llmsTxt
 theme:llmsTxt
 
 # ── cjkFriendly ───────────────────────────────────────────────────────────────
-# reason: CJK line-break behaviour is not tested in fixtures
+# reason: no fixture sets this key explicitly (all rely on zfb's on-by-default
+#         CjkFriendlyPlugin). The smoke fixture now DOES assert that Rust
+#         default behaviour end-to-end via L3 static reads
+#         (e2e/smoke-markdown-features.spec.ts, zudolab/zudo-doc#2539) —
+#         without setting this key, since the assertion targets the default,
+#         not an explicit override
 sidebar:cjkFriendly
 i18n:cjkFriendly
 theme:cjkFriendly
