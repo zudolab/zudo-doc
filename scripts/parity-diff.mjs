@@ -18,11 +18,11 @@
  *   1  diff found (or fatal error)
  */
 
-import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readdir, readFile, stat } from "node:fs/promises";
+import { normalizeHtml, sha256 } from "./parity-html-normalize.mjs";
 
 const __dir = fileURLToPath(new URL(".", import.meta.url));
 const REPO_ROOT = join(__dir, "..");
@@ -61,24 +61,9 @@ const DIST_DIR = distArg
 // We normalize them to stable placeholders so the per-page HTML sha256s
 // are stable across refactor builds.
 //
-// Patterns (from `dist/assets/`):
-//   islands-<hex8>.js             → islands-CONTENTHASH.js
-//   islands-chunk-<UPPERCASE8+>.js → islands-chunk-CHUNKHASH.js
-//   styles-<hex8>.css             → styles-CONTENTHASH.css
-
-function normalizeHtml(html) {
-  return html
-    // Main islands bundle: /assets/islands-<hex8>.js
-    .replace(/\/assets\/islands-[a-f0-9]+\.js/g, "/assets/islands-CONTENTHASH.js")
-    // Chunk files: /assets/islands-chunk-<UPPERCASE8+>.js
-    .replace(/\/assets\/islands-chunk-[A-Z0-9]+\.js/g, "/assets/islands-chunk-CHUNKHASH.js")
-    // Styles: /assets/styles-<hex8>.css
-    .replace(/\/assets\/styles-[a-f0-9]+\.css/g, "/assets/styles-CONTENTHASH.css");
-}
-
-function sha256(str) {
-  return createHash("sha256").update(str, "utf8").digest("hex");
-}
+// normalizeHtml/sha256 live in ./parity-html-normalize.mjs — shared with
+// packages/zudo-doc/src/__tests__/route-injection-build.slow.test.ts so both
+// call sites hash HTML identically (zudolab/zudo-doc#2530).
 
 // ── File collection ──────────────────────────────────────────────────────────
 
