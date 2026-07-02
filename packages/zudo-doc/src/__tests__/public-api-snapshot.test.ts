@@ -8,9 +8,9 @@
 // existing tooling (check:template-drift and design-token-lint respectively)
 // and are NOT duplicated here — see packages/zudo-doc/API.md for references.
 //
-// packageOwnedRoutes is explicitly marked internal/unstable and excluded from
-// the stable field-set snapshot — it is a dormant, advanced flag and should
-// NOT silently become a broad 1.0 user contract.
+// packageOwnedRoutes is a stable, default-on field (#2404 made it the default;
+// create-zudo-doc always emits it) and is included in the field-set snapshot
+// below like every other public Settings field.
 
 import { describe, it, expect } from "vitest";
 import { createRequire } from "node:module";
@@ -178,12 +178,11 @@ describe("package.json exports keyset snapshot", () => {
 // avoids any coupling to tsup output format while staying robust against
 // accidental field additions or removals.
 //
-// packageOwnedRoutes is EXCLUDED: it is marked internal/unstable in the
-// source file and in API.md. Adding it to this snapshot would silently make
-// it a broad 1.0 user contract.
+// packageOwnedRoutes is INCLUDED: it is a stable, default-on field (#2404)
+// documented in API.md alongside every other public Settings field.
 
 describe("Settings public field set snapshot", () => {
-  it("matches the frozen 1.0 stable field set (packageOwnedRoutes excluded as internal)", async () => {
+  it("matches the frozen 1.0 stable field set", async () => {
     const fs = await import("node:fs/promises");
     const settingsSrc = await fs.readFile(
       resolve(pkgRoot, "src/settings.ts"),
@@ -209,11 +208,7 @@ describe("Settings public field set snapshot", () => {
     let m: RegExpExecArray | null;
     while ((m = fieldRe.exec(interfaceBody)) !== null) {
       const name = m[1]!;
-      // Exclude packageOwnedRoutes — internal/unstable, NOT part of 1.0 contract.
-      // See API.md § "Internal / Unstable" and the JSDoc comment in settings.ts.
-      if (name !== "packageOwnedRoutes") {
-        fields.push(name);
-      }
+      fields.push(name);
     }
 
     expect(fields).toMatchInlineSnapshot(`
@@ -267,6 +262,7 @@ describe("Settings public field set snapshot", () => {
         "footer",
         "headerNav",
         "headerRightItems",
+        "packageOwnedRoutes",
         "chromeBindingsModule",
       ]
     `);

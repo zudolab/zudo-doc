@@ -74,7 +74,7 @@ So the same module you create for `docContentHeaderExtras` is also where you wou
 
 <Info>
 
-**Missing-file behavior is loud.** If `chromeBindingsModule` is set but the resolved file does not exist, the build fails at plugin setup with an error naming the resolved absolute path — never a silent empty fallback. When the setting is absent, the channel emits `export const chromeBindings = {}` and behavior is byte-identical to omitting it.
+**Missing-file and empty-string behavior are both loud.** If `chromeBindingsModule` is set but the resolved file does not exist, the build fails at plugin setup with an error naming the resolved absolute path — never a silent empty fallback. If `chromeBindingsModule` is set to an empty or blank string, the build also fails at plugin setup, naming the setting. When the setting is absent (not set at all), the channel emits `export const chromeBindings = {}` and behavior is byte-identical to omitting it.
 
 </Info>
 

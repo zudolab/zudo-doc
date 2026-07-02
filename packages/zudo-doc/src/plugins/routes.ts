@@ -211,6 +211,20 @@ const plugin = definePlugin({
     // fallback. Registered UNCONDITIONALLY: `routes/_chrome.tsx` always
     // imports this specifier, so the module must exist even when the setting
     // is absent (loader emits an empty-object export in that case).
+    //
+    // An explicitly empty/blank string must throw BEFORE path resolution:
+    // `join(ctx.projectRoot, "")` resolves to the project root itself, and
+    // `existsSync(projectRoot)` is true (it's a directory), so "" would
+    // otherwise sail past the missing-file check below (#2518).
+    if (
+      typeof settings.chromeBindingsModule === "string" &&
+      settings.chromeBindingsModule.trim() === ""
+    ) {
+      throw new Error(
+        "zudo-doc: settings.chromeBindingsModule is set to an empty string — set it to a " +
+          'project-root-relative module path (e.g. "./src/chrome-bindings.tsx") or remove the setting.',
+      );
+    }
     const chromeBindingsModule =
       typeof settings.chromeBindingsModule === "string"
         ? settings.chromeBindingsModule
