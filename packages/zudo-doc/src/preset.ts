@@ -92,6 +92,15 @@ export interface PresetSettings {
    * succeeds). See `docs/adr/route-injection-seam.md`. (#2404)
    */
   packageOwnedRoutes?: boolean;
+  /**
+   * Project-root-relative path to a host module exporting a named
+   * `chromeBindings: ChromeHostBindings` (from `@takazudo/zudo-doc/factory-context`).
+   * Only consumed when `packageOwnedRoutes` is on — see `settings.ts` and
+   * `docs/adr/route-injection-seam.md` ("Host-callables channel") for the
+   * full contract. Omit to keep the injected chrome shim's bindings at their
+   * package-default stubs (byte-identical to today).
+   */
+  chromeBindingsModule?: string;
   /** Gate for the `/docs/tags` + `/docs/tags/[tag]` injected routes. */
   docTags?: boolean;
   /** Gate for the SSR `/api/ai-chat` injected route (`prerender: false`). */
