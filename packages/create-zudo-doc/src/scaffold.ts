@@ -604,14 +604,18 @@ function generatePackageJson(choices: UserChoices) {
     // zfb external-@import hoisting work. No consumer-facing / CLI change.
     // next.72: routine toolchain bump from next.71, adopted in
     // lockstep with the root package.json pins. No consumer-facing / CLI change.
-    // next.74 (current pin): routine toolchain bump from next.72 (next.73
+    // next.74: routine toolchain bump from next.72 (next.73
     // skipped), adopted in lockstep with the root package.json pins. No
     // consumer-facing / CLI change.
-    "@takazudo/zfb": "0.1.0-next.74",
-    "@takazudo/zfb-runtime": "0.1.0-next.74",
+    // next.75 (current pin): toolchain bump from next.74 restoring Tailwind
+    // class-candidate scanning through symlinked project trees
+    // (zudolab/zudo-doc#2511), adopted in lockstep with the root package.json
+    // pins. No consumer-facing / CLI change.
+    "@takazudo/zfb": "0.1.0-next.75",
+    "@takazudo/zfb-runtime": "0.1.0-next.75",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.74",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.75",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's

@@ -3624,9 +3624,12 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
    * Bumped to 0.1.0-next.74: routine upstream prerelease adoption (next.74,
    * next.73 skipped) in lockstep with the root package.json pins. No
    * consumer-facing change.
+   * Bumped to 0.1.0-next.75: toolchain bump restoring Tailwind class-candidate
+   * scanning through symlinked project trees (zudolab/zudo-doc#2511), in
+   * lockstep with the root package.json pins. No consumer-facing change.
    * Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.74", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.75", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -3637,10 +3640,10 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.74");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.74");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.75");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.75");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.74",
+      "0.1.0-next.75",
     );
   });
 });
