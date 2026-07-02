@@ -1,76 +1,70 @@
 /**
  * Unit tests for the sidebar active-slug derivation helpers.
  *
- * These cover the pure logic that drives `<SidebarTree>`'s hydration-time
- * fallback: when the parent island wrapper does not forward the SSR-supplied
- * `currentSlug` through its prop boundary, the hook seeds initial state by
- * matching the current URL pathname against the in-tree node hrefs. The
- * helpers themselves live in `src/components/sidebar-tree.tsx`; we mirror
- * them here as small re-implementations rather than importing from the
- * `.tsx` host (which pulls in JSX/Preact and is not configured under the
- * root vitest config). The mirror is intentionally tiny and exists so a
- * future refactor in sidebar-tree.tsx that breaks the matcher invariant is
- * caught by a fast `pnpm test:unit` run instead of a full e2e cycle.
+ * Imports the real `findActiveSlug()` / `normalizePath()` production
+ * implementation (extracted from `sidebar-tree-island/index.tsx` in
+ * zudolab/zudo-doc#2528). These cover the pure logic that drives
+ * `<SidebarTree>`'s hydration-time fallback: when the parent island wrapper
+ * does not forward the SSR-supplied `currentSlug` through its prop boundary,
+ * the hook seeds initial state by matching the current URL pathname against
+ * the in-tree node hrefs.
  *
- * If the helpers in sidebar-tree.tsx evolve, update the mirror to match —
- * the test exists to lock the behaviour, not the source location.
+ * The suite used to mirror these helpers by hand against a dead
+ * `src/components/sidebar-tree.tsx` host component; both the dead component
+ * and the hand-rolled mirror are gone now that the real functions are
+ * importable without pulling in JSX/Preact.
  */
 
 import { describe, it, expect } from "vitest";
+import type { SidebarNavNode } from "../../sidebar/types.js";
+import { findActiveSlug, normalizePath } from "../index.js";
 
-interface NavNodeLike {
-  slug: string;
-  href?: string;
-  children: NavNodeLike[];
-}
-
-function normalizePath(p: string): string {
-  return p.replace(/\/$/, "") || "/";
-}
-
-function findActiveSlug(
-  nodes: NavNodeLike[],
-  pathname: string,
-): string | undefined {
-  for (const node of nodes) {
-    if (node.href && normalizePath(node.href) === pathname) return node.slug;
-    const found = findActiveSlug(node.children, pathname);
-    if (found) return found;
-  }
-  return undefined;
-}
-
-const tree: NavNodeLike[] = [
+const tree: SidebarNavNode[] = [
   {
     slug: "guides",
+    label: "Guides",
+    position: 0,
     href: "/ja/docs/guides",
+    hasPage: true,
     children: [
       {
         slug: "guides/sub-a",
+        label: "Sub A",
+        position: 0,
         href: "/ja/docs/guides/sub-a",
+        hasPage: true,
         children: [
           {
             slug: "guides/sub-a/page-1",
+            label: "Page 1",
+            position: 0,
             href: "/ja/docs/guides/sub-a/page-1",
+            hasPage: true,
             children: [],
           },
           {
             slug: "guides/sub-a/page-2",
+            label: "Page 2",
+            position: 1,
             href: "/ja/docs/guides/sub-a/page-2",
+            hasPage: true,
             children: [],
           },
         ],
       },
       {
         slug: "guides/sub-b",
+        label: "Sub B",
+        position: 1,
         href: "/ja/docs/guides/sub-b",
+        hasPage: true,
         children: [],
       },
     ],
   },
 ];
 
-describe("findActiveSlug (mirror of sidebar-tree.tsx helper)", () => {
+describe("findActiveSlug", () => {
   it("returns the slug for an exact pathname match on a leaf", () => {
     expect(findActiveSlug(tree, "/ja/docs/guides/sub-a/page-1")).toBe(
       "guides/sub-a/page-1",
