@@ -4,7 +4,7 @@ description: Inject host-owned content into the doc-content header and home hero
 sidebar_position: 9
 tags:
   - customization
-  - advanced
+  - level:advanced
 ---
 
 When a project sets `packageOwnedRoutes: true`, `@takazudo/zudo-doc` injects the doc routes itself and the project ships an almost-empty `pages/` directory. That is convenient, but it removes the host files where you would normally hang project-specific rendering. **Host chrome bindings** are the seam that gives it back: a small, typed set of slots (`ChromeHostBindings`) that let the host inject its own content and callables into the package-owned chrome without ejecting anything.

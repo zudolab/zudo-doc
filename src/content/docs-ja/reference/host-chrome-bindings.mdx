@@ -4,7 +4,7 @@ description: パッケージ所有ルートのドキュメントヘッダーや�
 sidebar_position: 9
 tags:
   - customization
-  - advanced
+  - level:advanced
 ---
 
 プロジェクトで `packageOwnedRoutes: true` を設定すると、`@takazudo/zudo-doc` がドキュメントルートを自前で注入し、プロジェクト側はほぼ空の `pages/` ディレクトリだけを持つことになります。これは便利な反面、通常であればプロジェクト固有のレンダリングを差し込むホストファイルが失われます。**ホストクロームバインディング**はそれを取り戻すための継ぎ目です。型付けされた小さなスロット群（`ChromeHostBindings`）を通じて、コンポーネントをエジェクトすることなく、パッケージ所有のクロームにホスト独自のコンテンツやコーラブルを注入できます。
