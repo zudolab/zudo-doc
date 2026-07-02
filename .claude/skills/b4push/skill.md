@@ -22,7 +22,7 @@ Run `pnpm b4push` from the project root. This executes `scripts/run-b4push.sh`.
 5. **Tags audit** — `pnpm tags:audit --ci` (validates tag vocabulary)
 6. **Design token lint** — `pnpm lint:tokens`
 7. **B4push/CI parity check** — `pnpm check:b4push-ci-parity` (guard manifest meta-check)
-8. **Type checking** — `pnpm check` (zfb check) + `pnpm check:pages` + `pnpm check:plugins` + workspace package typechecks
+8. **Type checking** — `pnpm check` (zfb check) + `pnpm check:pages` + workspace package typechecks
 9. **Root unit tests** — `pnpm --filter @takazudo/zudo-doc build && pnpm test:unit` (builds dist/ first; required for import resolution)
 10. **Package tests** — `pnpm test:packages` (~993 suite tests across workspace packages; dist/ already built by step 9)
 11. **Package safelist check** — `pnpm check:package-safelist` (requires dist/safelist.css from step 9)

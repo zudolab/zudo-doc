@@ -329,12 +329,6 @@ jobs:
       - name: Run pages/ type checking
         run: pnpm check:pages
 
-      # plugins/ typecheck: root tsconfig excludes plugins/ (plain .mjs files).
-      # tsconfig.plugins.json enables checkJs with strict mode for all six
-      # plugins/*.mjs files (#2026).
-      - name: Run plugins/ type checking
-        run: pnpm check:plugins
-
       # Workspace package typechecks: `pnpm check` (root tsconfig) excludes
       # packages/ so a broken package typecheck was previously invisible in CI.
       # Mirrors the per-package typecheck step that local b4push already runs.

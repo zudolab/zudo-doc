@@ -7,9 +7,12 @@
  * After the package-first migration (#2321) and cleanup (#2337), the host-side
  * plugin .mjs wrappers (doc-history, search-index, llms-txt, claude-resources)
  * were deleted. Plugins now live in @takazudo/zudo-doc/plugins/* and are referenced
- * by the preset at zfb config-eval time. The connect-adapter.mjs in this repo's
- * plugins/ is the project-local copy used by the host's own zfb config; the
- * canonical source lives in packages/zudo-doc/src/plugins/connect-adapter.ts.
+ * by the preset at zfb config-eval time. This repo's own plugins/connect-adapter.mjs
+ * (a project-local copy of the package's connect-adapter) had zero non-test
+ * importers — zfb.config.ts never referenced it — and was deleted (#2529). The
+ * connectToZfbHandler behavioral suite now lives at
+ * packages/zudo-doc/src/plugins/__tests__/connect-adapter.test.ts, targeting the
+ * real @takazudo/zudo-doc/plugins/connect-adapter source directly.
  *
  * Per-plugin accounting:
  *
@@ -32,12 +35,6 @@
  *   business logic layer; the only interesting behavior is the ENOENT guard
  *   (treat missing publicDir as a no-op) which is an fs error path, not a
  *   pure transform. Testing would require a real or mocked filesystem.
- *
- * connect-adapter.mjs (host-local copy, mirrors package source)
- *   Pure adapter: connectToZfbHandler wraps Connect middleware into the zfb
- *   devMiddleware shape. Tested below — covers: next() passthrough, res.end()
- *   capture, next(err) rejection, binary body base64 encoding, header
- *   normalisation.
  *
  * @takazudo/zudo-doc/integrations/claude-resources
  *   No pure-function surface for the plugin hooks. The escapeForMdx helper
@@ -198,166 +195,6 @@ describe("generateLlmsFullTxt", () => {
   it("returns a string ending with a newline", () => {
     const result = generateLlmsFullTxt(SAMPLE_ENTRIES_FULL, SAMPLE_META);
     expect(result.endsWith("\n")).toBe(true);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// connect-adapter.mjs: connectToZfbHandler
-// ---------------------------------------------------------------------------
-
-import { connectToZfbHandler } from "../../../plugins/connect-adapter.mjs";
-import { Buffer } from "node:buffer";
-
-const SAMPLE_ZFB_REQ = {
-  method: "GET",
-  url: "/doc-history/foo.json",
-  headers: { accept: "application/json" },
-};
-
-describe("connectToZfbHandler — next() passthrough", () => {
-  it("resolves with undefined when middleware calls next() without an error", async () => {
-    const middleware = (_req: unknown, _res: unknown, next: (err?: unknown) => void) => {
-      next();
-    };
-    const handler = connectToZfbHandler(middleware);
-    const result = await handler(SAMPLE_ZFB_REQ);
-    expect(result).toBeUndefined();
-  });
-});
-
-describe("connectToZfbHandler — res.end() response capture", () => {
-  it("resolves with { status, headers, body, bodyEncoding } on res.end(body)", async () => {
-    const middleware = (_req: unknown, res: { end: (body: string) => void }, _next: unknown) => {
-      res.end("hello");
-    };
-    const handler = connectToZfbHandler(middleware);
-    const result = await handler(SAMPLE_ZFB_REQ);
-    expect(result).not.toBeUndefined();
-    expect(result!.status).toBe(200);
-    expect(result!.body).toBe("hello");
-    expect(result!.bodyEncoding).toBe("utf8");
-  });
-
-  it("captures statusCode set before res.end()", async () => {
-    const middleware = (
-      _req: unknown,
-      res: { statusCode: number; end: (body: string) => void },
-      _next: unknown,
-    ) => {
-      res.statusCode = 404;
-      res.end("not found");
-    };
-    const handler = connectToZfbHandler(middleware);
-    const result = await handler(SAMPLE_ZFB_REQ);
-    expect(result!.status).toBe(404);
-    expect(result!.body).toBe("not found");
-  });
-
-  it("normalises header names to lowercase", async () => {
-    const middleware = (
-      _req: unknown,
-      res: { setHeader: (name: string, value: string) => void; end: (body: string) => void },
-      _next: unknown,
-    ) => {
-      res.setHeader("Content-Type", "application/json");
-      res.end("{}");
-    };
-    const handler = connectToZfbHandler(middleware);
-    const result = await handler(SAMPLE_ZFB_REQ);
-    expect(result!.headers).toHaveProperty("content-type", "application/json");
-    expect(result!.headers).not.toHaveProperty("Content-Type");
-  });
-
-  it("resolves with empty string body when res.end() is called with no argument", async () => {
-    const middleware = (_req: unknown, res: { end: () => void }, _next: unknown) => {
-      res.end();
-    };
-    const handler = connectToZfbHandler(middleware);
-    const result = await handler(SAMPLE_ZFB_REQ);
-    expect(result!.body).toBe("");
-  });
-});
-
-describe("connectToZfbHandler — binary body (base64 encoding)", () => {
-  it("encodes Buffer body as base64 with bodyEncoding='base64'", async () => {
-    const binaryData = Buffer.from([0x89, 0x50, 0x4e, 0x47]); // PNG magic bytes
-    const middleware = (
-      _req: unknown,
-      res: { end: (body: Buffer) => void },
-      _next: unknown,
-    ) => {
-      res.end(binaryData);
-    };
-    const handler = connectToZfbHandler(middleware);
-    const result = await handler(SAMPLE_ZFB_REQ);
-    expect(result!.bodyEncoding).toBe("base64");
-    expect(result!.body).toBe(binaryData.toString("base64"));
-  });
-
-  it("encodes Uint8Array body as base64", async () => {
-    const bytes = new Uint8Array([1, 2, 3, 4]);
-    const middleware = (
-      _req: unknown,
-      res: { end: (body: Uint8Array) => void },
-      _next: unknown,
-    ) => {
-      res.end(bytes);
-    };
-    const handler = connectToZfbHandler(middleware);
-    const result = await handler(SAMPLE_ZFB_REQ);
-    expect(result!.bodyEncoding).toBe("base64");
-  });
-});
-
-describe("connectToZfbHandler — next(err) rejection", () => {
-  it("rejects the promise when next() is called with an Error", async () => {
-    const middleware = (
-      _req: unknown,
-      _res: unknown,
-      next: (err?: unknown) => void,
-    ) => {
-      next(new Error("middleware error"));
-    };
-    const handler = connectToZfbHandler(middleware);
-    await expect(handler(SAMPLE_ZFB_REQ)).rejects.toThrow("middleware error");
-  });
-
-  it("wraps a non-Error next(err) in an Error", async () => {
-    const middleware = (
-      _req: unknown,
-      _res: unknown,
-      next: (err?: unknown) => void,
-    ) => {
-      next("string error");
-    };
-    const handler = connectToZfbHandler(middleware);
-    await expect(handler(SAMPLE_ZFB_REQ)).rejects.toBeInstanceOf(Error);
-  });
-});
-
-describe("connectToZfbHandler — thrown error inside middleware", () => {
-  it("rejects the promise when the middleware body throws", async () => {
-    const middleware = () => {
-      throw new Error("sync throw");
-    };
-    const handler = connectToZfbHandler(middleware);
-    await expect(handler(SAMPLE_ZFB_REQ)).rejects.toThrow("sync throw");
-  });
-});
-
-describe("connectToZfbHandler — request shim passthrough", () => {
-  it("passes method and url from zfbReq to the middleware req object", async () => {
-    let capturedMethod: string | undefined;
-    let capturedUrl: string | undefined;
-    const middleware = (req: { method: string; url: string }, res: { end: () => void }) => {
-      capturedMethod = req.method;
-      capturedUrl = req.url;
-      res.end();
-    };
-    const handler = connectToZfbHandler(middleware);
-    await handler({ method: "GET", url: "/test/path", headers: {} });
-    expect(capturedMethod).toBe("GET");
-    expect(capturedUrl).toBe("/test/path");
   });
 });
 
