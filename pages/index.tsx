@@ -3,54 +3,38 @@
 // Page module for the site index route.
 //
 // Default-locale (EN) site index. Static route — no paths() export needed.
-// Collects the EN docs tree and hands it to the shared HomePageView body
-// (epic #2499, S4 #2503).
+// Hands the resolved locale to the shared `prepareHomeData` factory (#2519)
+// — which now owns the nav-tree / tag-count data-prep sequence — and passes
+// the result to the shared HomePageView body (epic #2499, S4 #2503).
 //
 // Data flow:
-//   getCollection("docs")   [sync, zfb ADR-004]
-//   → buildNavTree()        builds the nav tree for the sitemap grid
-//   → collectTags()         counts unique tags for the tag section header
-//   → HomePageView          renders hero + SiteTreeNav grid + tag section
+//   routeContext              host RouteContext (settings + i18n + nav helpers)
+//   → prepareHomeData()       nav tree, category order, tag count
+//   → HomePageView            renders hero + SiteTreeNav grid + tag section
 //
-// Thin consumer of `HomePageView` (S3 #2502, adopted here in S4 #2503): this
-// file's only job is preparing the default-locale nav tree / tag count with
-// its exact data calls, then handing them to the shared home body factory —
-// mirroring the package route's shape (`packages/zudo-doc/src/routes/index.tsx`).
-// The `@Takazudo` brand link is showcase-specific (#1453) and is threaded via
-// the `extras` prop rather than baked into the shared hero.
+// Thin consumer of `HomePageView` (S3 #2502) and `prepareHomeData` (#2519):
+// this file's only job is resolving the default locale and threading the
+// showcase-specific `extras` — mirroring the package route's shape
+// (`packages/zudo-doc/src/routes/index.tsx`). The `@Takazudo` brand link is
+// showcase-specific (#1453) and is threaded via the `extras` prop rather than
+// baked into the shared hero.
 
-import { defaultLocale } from "@/config/i18n";
-import { buildNavTree, groupSatelliteNodes } from "@/utils/docs";
-import { resolveNavSource } from "./lib/_nav-source-docs";
-import { getCategoryOrder } from "@/utils/nav-scope";
-import { collectTags } from "@/utils/tags";
-import { toRouteSlug } from "@/utils/slug";
+import { routeContext } from "./lib/_route-context";
+import { prepareHomeData } from "@takazudo/zudo-doc/home-page";
 import type { JSX } from "preact";
 import { HomePageView } from "./lib/_chrome";
 
 export const frontmatter = { title: "Home" };
 
 export default function IndexPage(): JSX.Element {
-  const locale = defaultLocale;
+  const locale = routeContext.defaultLocale;
 
-  // Identity-stable nav source (draft-filtered, unlisted retained). navDocs is
-  // pre-filtered (isNavVisible) and shared with the nav-tree fast-path.
-  const { navDocs, categoryMeta } = resolveNavSource(locale, undefined);
-  const tree = buildNavTree(navDocs, locale, categoryMeta);
-  const categoryOrder = getCategoryOrder();
-  const groupedTree = groupSatelliteNodes(tree, categoryOrder);
-
-  // Drop category_no_page index files so the count matches the number of tag
-  // pages actually built (the tag routes exclude them too).
-  const tagCount = collectTags(
-    navDocs.filter((d) => !d.data.category_no_page),
-    (id, data) => data.slug ?? toRouteSlug(id),
-  ).size;
+  const { tree, categoryOrder, tagCount } = prepareHomeData(routeContext, locale);
 
   return (
     <HomePageView
       locale={locale}
-      tree={groupedTree}
+      tree={tree}
       categoryOrder={categoryOrder}
       tagCount={tagCount}
       extras={

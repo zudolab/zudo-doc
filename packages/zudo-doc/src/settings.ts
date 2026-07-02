@@ -351,6 +351,7 @@ export interface Settings {
    *
    * - Absent (the default) → the virtual module emits
    *   `export const chromeBindings = {};` — behavior byte-identical to today.
+   * - Explicitly empty string → build fails loudly at plugin setup.
    * - Present but the resolved file does not exist → the build fails loudly
    *   at plugin setup, naming the resolved absolute path (never a silent
    *   empty fallback).

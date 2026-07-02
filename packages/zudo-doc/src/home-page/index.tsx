@@ -16,12 +16,17 @@
 // routes' output (see the module doc above this factory in the epic issue).
 //
 // Data inputs (nav tree, category order, tag count) differ slightly between
-// the default-locale and locale-prefixed routes (see `routes/locale-index.tsx`
-// — `resolveNavSource(..., { applyDefaultLocaleOnlyFilter: true, keepUnlisted:
-// true })` + `loadCategoryMeta(cfg.dir)`), so those stay PREPARED PROPS the
-// route files compute with their own exact calls; this factory only derives
-// the locale-URL prefix (shared logic — `/` for the default locale, `/{locale}`
-// otherwise) from `ctx`.
+// the default-locale and locale-prefixed routes — that data-prep sequence now
+// lives in the sibling `./prepare-home-data.js` factory (`prepareHomeData`,
+// #2519) and is handed to `HomePageView` as PREPARED PROPS by every adapter;
+// this factory only derives the locale-URL prefix (shared logic — `/` for the
+// default locale, `/{locale}` otherwise) from `ctx`. `prepareHomeData` is
+// implemented in its own file so the view-factory FILE carries no `node:fs`
+// edge (importing `createHomePageView` from this module by path does not pull
+// in sidebar-tree's `loadCategoryMeta`). The barrel re-export below DOES add
+// that static edge for anyone importing through the barrel — acceptable because
+// this barrel is a server-side-only entry and `loadCategoryMeta` degrades
+// gracefully under zfb's SSG runtime `node:fs` stub.
 //
 // NOT an eject target — no `ejectable-snapshot` registration.
 
@@ -38,6 +43,9 @@ import { createHeaderWithDefaults } from "../header-with-defaults/index.js";
 import { createFooterWithDefaults } from "../footer-with-defaults/index.js";
 import { deriveComposeMetaTitle, deriveBodyEndIslands } from "../chrome/derive.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
+
+export { prepareHomeData } from "./prepare-home-data.js";
+export type { PrepareHomeDataOptions, HomeData } from "./prepare-home-data.js";
 
 /** Props for the `HomePageView` component built by {@link createHomePageView}. */
 export interface HomePageViewProps {

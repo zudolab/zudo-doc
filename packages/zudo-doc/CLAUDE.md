@@ -151,8 +151,8 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
   already supplies zod (it owns `buildDocsSchema`), so a required peer shares
   that single instance — avoiding a dual-zod hazard for `toJSONSchema` and a
   `Cannot find package 'zod'` at config-eval time in generated projects.
-- **Package-owned route injection** (dormant, `settings.packageOwnedRoutes`,
-  default off) is pinned in `docs/adr/route-injection-seam.md` — the authoritative
+- **Package-owned route injection** (`settings.packageOwnedRoutes`, default
+  `true` since #2404) is pinned in `docs/adr/route-injection-seam.md` — the authoritative
   seam spec for the `@takazudo/zudo-doc/plugins/routes` plugin + `routes/*`
   entrypoints (virtual module carries serializable `settings`/`translations`/
   `tagVocabulary`; everything callable is an importable package subpath; package

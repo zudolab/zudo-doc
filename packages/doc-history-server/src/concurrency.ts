@@ -35,8 +35,10 @@ export function makeSemaphore(concurrency: number) {
 
 /**
  * Default concurrency for git-history tasks: CPU count clamped to [2, 8].
- * Each getFileCommitsMetaAsync / getDocHistoryAsync issues one git process,
- * so this saturates git without spawning excessively on many-core machines.
+ * Each getDocHistoryAsync call issues one git process, so this saturates git
+ * without spawning excessively on many-core machines. Load-bearing for the CLI
+ * / postBuild per-file fan-out; the preBuild meta pass no longer uses it — it
+ * walks history once via getAllFilesFirstLastMetaAsync (#2517).
  */
 export function defaultGitConcurrency(): number {
   return Math.min(8, Math.max(2, cpus().length));

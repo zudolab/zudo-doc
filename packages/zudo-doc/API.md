@@ -315,8 +315,8 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `footer` | `FooterConfig \| false` | Footer config |
 | `headerNav` | `HeaderNavItem[]` | Header navigation items |
 | `headerRightItems` | `HeaderRightItem[]` | Header right side items |
-| `packageOwnedRoutes?` | `boolean` | **Internal/unstable** — dormant flag for package-owned route injection. Default `false`. NOT part of the stable 1.0 user contract; this field is excluded from the snapshot guard. See ADR `docs/adr/route-injection-seam.md`. |
-| `chromeBindingsModule?` | `string` | Project-root-relative path (e.g. `"./src/chrome-bindings.tsx"`) to a host module with a **named export `chromeBindings: ChromeHostBindings`** (type from `./factory-context`). Only consumed under `packageOwnedRoutes`: the routes plugin re-exports the module through `virtual:zudo-doc-chrome-bindings` so the injected chrome shim spreads real host bindings into `createChrome(...)`. Absent → byte-identical stub-defaults behavior; present but file missing → the build fails at plugin setup, naming the resolved absolute path. SSR-presentational only — client islands inside the module are not guaranteed to register on injected routes. See ADR `docs/adr/route-injection-seam.md` ("Host-callables channel — chromeBindingsModule"). |
+| `packageOwnedRoutes?` | `boolean` | Package-owned route injection seam. Default `true` (#2404). See ADR `docs/adr/route-injection-seam.md`. |
+| `chromeBindingsModule?` | `string` | Project-root-relative path (e.g. `"./src/chrome-bindings.tsx"`) to a host module with a **named export `chromeBindings: ChromeHostBindings`** (type from `./factory-context`). Only consumed under `packageOwnedRoutes`: the routes plugin re-exports the module through `virtual:zudo-doc-chrome-bindings` so the injected chrome shim spreads real host bindings into `createChrome(...)`. Absent → byte-identical stub-defaults behavior; explicitly empty string → the build fails loudly at plugin setup; present but file missing → the build fails at plugin setup, naming the resolved absolute path. SSR-presentational only — client islands inside the module are not guaranteed to register on injected routes. See ADR `docs/adr/route-injection-seam.md` ("Host-callables channel — chromeBindingsModule"). |
 
 ---
 
@@ -448,14 +448,6 @@ The eject surface exposed by `zudo-doc eject <component>`. Defined in `packages/
 | `image-enlarge` | `@takazudo/zudo-doc/image-enlarge` | `src/components/zudo-doc/image-enlarge` |
 | `doc-history` | `@takazudo/zudo-doc/doc-history` | `src/components/zudo-doc/doc-history` |
 | `site-tree-nav-island` | `@takazudo/zudo-doc/site-tree-nav-island` | `src/components/zudo-doc/site-tree-nav-island` |
-
----
-
-## Internal / Unstable
-
-The following field is documented here for completeness but is **explicitly excluded from the stable contract**:
-
-- `settings.packageOwnedRoutes` — internal/advanced, dormant by default (`false`). Package-owned route injection seam (epic #2356, ADR `docs/adr/route-injection-seam.md`). With the flag off the capability is fully inert. NOT a stable user-facing feature.
 
 ---
 

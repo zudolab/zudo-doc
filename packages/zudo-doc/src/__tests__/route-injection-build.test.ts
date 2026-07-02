@@ -428,6 +428,17 @@ function enableMissingChromeBindingsModule(dir: string): void {
   writeFileSync(settingsPath, src);
 }
 
+/** Set `chromeBindingsModule` to an empty string — used by the empty-string
+ *  error case (#2518). */
+function enableEmptyChromeBindingsModule(dir: string): void {
+  const settingsPath = join(dir, "src/config/settings.ts");
+  const src = readFileSync(settingsPath, "utf-8").replace(
+    /packageOwnedRoutes:\s*true,/,
+    'packageOwnedRoutes: true,\n  chromeBindingsModule: "",',
+  );
+  writeFileSync(settingsPath, src);
+}
+
 describe("CB chrome-bindings: chromeBindingsModule wires host bindings into createChrome on injected routes", () => {
   let fixtureDir: string;
 
@@ -496,7 +507,7 @@ describe("CB chrome-bindings missing: build fails loudly when chromeBindingsModu
   it("setup: build throws an error naming the resolved absolute path (not a silent empty fallback)", { timeout: 180_000 }, () => {
     const fixtureDir = setupFixture({ emptyPages: true });
     enableMissingChromeBindingsModule(fixtureDir);
-    const resolvedPath = join(fixtureDir, "src/does-not-exist.tsx");
+    const resolvedPath = join(fixtureDir, "src/does-not-exist.tsx").split("\\").join("/");
 
     let thrown: Error | undefined;
     try {
@@ -508,6 +519,24 @@ describe("CB chrome-bindings missing: build fails loudly when chromeBindingsModu
     expect(thrown).toBeDefined();
     expect(thrown!.message).toContain("chromeBindingsModule");
     expect(thrown!.message).toContain(resolvedPath);
+  });
+});
+
+describe("CB chrome-bindings empty: build fails loudly when chromeBindingsModule is an empty string", () => {
+  it("setup: build throws an error naming chromeBindingsModule and the empty-string condition", { timeout: 180_000 }, () => {
+    const fixtureDir = setupFixture({ emptyPages: true });
+    enableEmptyChromeBindingsModule(fixtureDir);
+
+    let thrown: Error | undefined;
+    try {
+      runZfbBuild(fixtureDir);
+    } catch (err) {
+      thrown = err as Error;
+    }
+
+    expect(thrown).toBeDefined();
+    expect(thrown!.message).toContain("chromeBindingsModule");
+    expect(thrown!.message).toContain("empty string");
   });
 });
 

@@ -264,9 +264,6 @@ importers:
       '@takazudo/zdtp':
         specifier: ^0.4.2
         version: 0.4.2(preact@10.29.2)
-      '@takazudo/zudo-doc-history-server':
-        specifier: ^2.2.1
-        version: 2.2.1
       diff:
         specifier: ^8.0.0
         version: 8.0.3
@@ -292,6 +289,9 @@ importers:
       '@takazudo/zfb-runtime':
         specifier: 0.1.0-next.75
         version: 0.1.0-next.75(@takazudo/zfb@0.1.0-next.75)
+      '@takazudo/zudo-doc-history-server':
+        specifier: workspace:*
+        version: link:../doc-history-server
       '@types/fs-extra':
         specifier: ^11.0.4
         version: 11.0.4
@@ -1436,10 +1436,6 @@ packages:
   '@takazudo/zudo-design-token-lint@1.0.0':
     resolution: {integrity: sha512-/v82OdkGRH+2f3Y0d0haBIE6iVNbpYByYEra2DivbnNANpI27FWmqswkvBTfm/3nMeEWUW4MIW175B/djTfu3A==}
     engines: {node: '>=18'}
-    hasBin: true
-
-  '@takazudo/zudo-doc-history-server@2.2.1':
-    resolution: {integrity: sha512-49wVF8fZMkRC9JukeM3eaJX5hS53oH8YrTpe8svLKCVYPCrRSS8koKdbUbpSYphU41L/AujjRzSaY9Sz3ttn7Q==}
     hasBin: true
 
   '@types/chai@5.2.3':
@@ -4129,8 +4125,6 @@ snapshots:
     dependencies:
       chalk: 5.6.2
       glob: 10.5.0
-
-  '@takazudo/zudo-doc-history-server@2.2.1': {}
 
   '@types/chai@5.2.3':
     dependencies:
