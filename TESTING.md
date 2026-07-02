@@ -88,10 +88,12 @@ gh workflow run exam.yml --ref <branch>
 ```
 
 Use the `--ref` dispatch to validate a branch before merging when you suspect
-environment-sensitive failures that don't appear locally. Exam runs two jobs:
+environment-sensitive failures that don't appear locally. Exam runs three jobs:
 
 - **e2e-full** — CI-safe lane + `@flaky` quarantine lane (allowed to fail)
 - **slow-create** — `create-zudo-doc` slow integration tests (real `pnpm install` + `zfb build`)
+- **slow-zudo-doc** — `@takazudo/zudo-doc` slow route-injection-build test (real `zfb build`s
+  + `npm pack`; moved out of the default `pnpm test` / pr-checks package-tests lane, #2530)
 
 Exam failures open a deduped GitHub issue via `scripts/file-exam-issue.sh`. One open
 issue per workflow; the script closes the previous one and opens a fresh one when a new

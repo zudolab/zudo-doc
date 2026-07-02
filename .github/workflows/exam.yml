@@ -5,8 +5,10 @@
 # they accumulate.
 #
 # Jobs:
-#   e2e-full     — full e2e suite (CI-safe lane) + quarantine @flaky lane
-#   slow-create  — create-zudo-doc slow integration tests (real npm install + zfb build)
+#   e2e-full        — full e2e suite (CI-safe lane) + quarantine @flaky lane
+#   slow-create     — create-zudo-doc slow integration tests (real npm install + zfb build)
+#   slow-zudo-doc   — @takazudo/zudo-doc slow route-injection-build test (real zfb builds +
+#                     npm pack; #2530 — moved out of pnpm test/pr-checks package-tests)
 #
 # Failure reporting:
 #   scripts/file-exam-issue.sh  — deduped failure issue (one open issue per workflow)
@@ -153,6 +155,55 @@ jobs:
           bash scripts/file-exam-issue.sh \
             --run-url "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             --workflow "Nightly Exam / create-zudo-doc Slow Tests"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
+  # ---------------------------------------------------------------------------
+  # Job 3: @takazudo/zudo-doc slow route-injection-build test
+  # ---------------------------------------------------------------------------
+  # Runs `test:slow`, which exercises ~11 real `zfb build`s (the injected-route
+  # byte-parity proof, PKGWIRE #2425 / A2 #2363) plus an `npm pack` round trip —
+  # ~220s total, previously part of the default `pnpm test` / pr-checks
+  # package-tests lane. Moved to the slow tier and this nightly job so that
+  # lane stays fast (#2530).
+  slow-zudo-doc:
+    name: zudo-doc Slow Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Clean-runner parity: the suite builds a fixture against this package's
+      # dist/, which does not exist on a fresh runner (mirrors pr-checks'
+      # package-tests job).
+      - name: Build @takazudo/zudo-doc
+        run: pnpm --filter @takazudo/zudo-doc build
+
+      - name: Run @takazudo/zudo-doc slow tests
+        run: pnpm --filter @takazudo/zudo-doc test:slow
+
+      - name: File failure issue
+        if: failure()
+        run: |
+          bash scripts/file-exam-issue.sh \
+            --run-url "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --workflow "Nightly Exam / zudo-doc Slow Tests"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
