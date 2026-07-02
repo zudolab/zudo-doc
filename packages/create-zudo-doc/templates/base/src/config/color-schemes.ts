@@ -88,15 +88,16 @@ export const colorSchemes: Record<string, ColorScheme> = {
     ],
     semantic: {
       surface: 10,
-      muted: 8,
+      muted: "oklch(0.492 0.000 0.00)" /* upstream #6b6b6b (p8) → L-0.036 for AA (scheme-a11y #2489) */, // muted-vs-bg → 4.61:1
       accent: 5,
-      accentHover: 14,
+      accentHover: "oklch(0.492 0.027 257.67)" /* upstream #8590a0 (p14) → L-0.158, C-0.000 for AA (scheme-a11y #2489) */, // accent-hover-vs-bg → 4.61:1
       codeBg: 10,
       codeFg: 11,
       success: 2,
       danger: 1,
       warning: 3,
       info: 4,
+      mermaidNoteBg: "oklch(0.821 0.007 53.44)" /* derived bg-elevated from bg (p9) — default (p0) collided 1:1 with mermaidText/p11 (scheme-a11y #2489) */,
       imageOverlayBg: 11,
       imageOverlayFg: 10,
       matchedKeywordBg: "oklch(0.959 0.109 102.63)" /* #fff59d */,
@@ -117,13 +118,13 @@ export const colorSchemes: Record<string, ColorScheme> = {
     ],
     semantic: {
       surface: 0,
-      muted: 8,
+      muted: "oklch(0.657 0.000 0.00)" /* upstream #888888 (p8) → L+0.030 for AA (scheme-a11y #2489) */, // muted-vs-{bg,codeBg,chatAssistantBg} → 4.62:1
       accent: 12,
       accentHover: 14,
-      codeBg: 10,
+      codeBg: "oklch(0.281 0.000 0.00)" /* upstream #383838 (p10) → L-0.060 toward bg for muted-vs-codeBg AA (rendered-bg #2510) */,
       codeFg: 11,
       success: 2,
-      danger: 1,
+      danger: "oklch(0.662 0.143 16.99)" /* upstream #da6871 → L+0.006 for AA (scheme-a11y #2489) */, // admonition-danger → 4.61:1
       warning: 3,
       info: 4,
       imageOverlayBg: 0,

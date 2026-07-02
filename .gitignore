@@ -38,6 +38,9 @@ test-results/
 # tags:suggest --batch output (developer-opt-in, not committed)
 .tag-suggestions.jsonl
 
+# contrast:audit output (JSON report + optional HTML preview, not committed)
+contrast-audit-out/
+
 # Generated zudo-doc-wisdom skill (machine-specific symlinks)
 .claude/skills/zudo-doc-wisdom/SKILL.md
 .claude/skills/zudo-doc-wisdom/docs
