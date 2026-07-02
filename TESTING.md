@@ -56,14 +56,17 @@ its Playwright webServer. Repeated runs skip the build when inputs are unchanged
 **pr-checks e2e** is the authoritative pass/fail gate for E2E. It runs the full
 5-fixture suite with `pnpm test:e2e:ci` (excluding `@flaky` tests).
 
-**b4push** (`pnpm b4push`) is the bounded local convenience pass — a 19-step suite
-(format → template drift → pin parity → fixture drift → tags audit → token lint →
-z-index drift → e2e spec naming guard → @flaky tracking-issue guard → b4push/CI parity →
-typecheck → unit tests → package tests → safelist check → build → link check →
-HTML validation → preview smoke → manual smoke).
+**b4push** (`pnpm b4push`) is the bounded local convenience pass — a 22-step suite
+(format → template drift → no-host-alias guard → pin parity → fixture drift → tags audit →
+token lint → z-index drift → component-tokens drift → e2e spec naming guard →
+@flaky tracking-issue guard → wait-debt guard → b4push/CI parity → typecheck → unit tests →
+package tests → safelist check → build → link check → HTML validation → preview smoke →
+manual smoke). Each step's elapsed time is recorded and printed as a breakdown in the final
+SUMMARY block, so budget creep in any one step is visible instead of only the aggregate run
+duration.
 
-**b4push/CI parity scope.** The `check:b4push-ci-parity` guard (step 10) only cross-checks
-the lightweight guard steps 1–10 (the `# >>> b4push-ci-parity:guards:begin` / `:end` region).
+**b4push/CI parity scope.** The `check:b4push-ci-parity` guard (step 13) only cross-checks
+the lightweight guard steps 1–13 (the `# >>> b4push-ci-parity:guards:begin` / `:end` region).
 The heavy steps — typecheck, unit tests, package tests, safelist check, build, link check,
 HTML validation, preview smoke — are intentionally outside this region and outside the parity
 manifest. They run in CI as separate full-install jobs (not redundant pure-Node scripts), so
@@ -234,12 +237,24 @@ All waits in E2E tests must be deterministic. Use state/event waits; never time 
 
 | Pattern | Rule |
 |---------|------|
-| `waitForTimeout` | Forbidden unless the constant has a name (e.g. `DEBOUNCE_MS`) and a why-comment. Even then, prefer an event or state wait. |
+| `waitForTimeout` | Forbidden unless annotated with a trailing `// wait-ok: <why>` comment on the SAME line, on a constant with a name (e.g. `DEBOUNCE_MS`). Even then, prefer an event or state wait. Mechanically enforced, zero-tolerance — see "Mechanical enforcement" below. |
 | `waitForLoadState("networkidle")` | Forbidden. SPA navigations do not trigger new network requests; `networkidle` is inherently racy. |
 | SPA navigation | Use `spaClick` / `spaClickSelector` from `e2e/nav-helpers.ts`. These install the `zfb:after-swap` listener and click atomically — no race window between listener registration and the click. |
 | Sidebar hydration | Use `waitForSidebarHydration(page)` from `e2e/sidebar-helpers.ts` (desktop) or `waitForSidebarNav(page)` from `e2e/nav-helpers.ts` (i18n fixture). |
 | Console errors | Use the extended `test` from `e2e/fixtures.ts` and call `assertNoConsoleErrors()`. Allowlist entries in `fixtures.ts` must have a `reason` string. |
 | Arbitrary locator waits | Use Playwright's built-in locator assertions (`await expect(locator).toBeVisible()`, `locator.waitFor({ state: "attached" })`). These use Playwright's configured timeout, not an arbitrary in-page delay. |
+
+### Mechanical enforcement (`scripts/check-wait-debt.mjs`)
+
+`scripts/check-wait-debt.mjs` scans every git-tracked `.ts` file under `e2e/` (excluding
+`e2e/fixtures/`, which is fixture content, not spec/helper code) for `waitForTimeout(` call
+sites. Any call site without a `// wait-ok: <why>` comment on the same line fails the guard —
+zero-tolerance, no ratchet/baseline file, since current debt is zero. Wired into `pnpm b4push`
+(step 12) and its own pr-checks job (Wait-Debt Guard). Example:
+
+```typescript
+await page.waitForTimeout(RESIZE_DEBOUNCE_BUFFER_MS); // wait-ok: settle window for the 150ms ResizeObserver debounce (see comment above)
+```
 
 ### The key invariant
 
