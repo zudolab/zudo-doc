@@ -13,7 +13,7 @@ test.describe("Code blocks: copy and wrap buttons", () => {
   test("copy button is present on code blocks", async ({ page }) => {
     await page.goto(PAGE, { waitUntil: "load" });
 
-    // Buttons are created dynamically after astro:page-load
+    // Buttons are created dynamically after zfb:after-swap
     const copyBtn = page.locator('[aria-label="Copy code"]').first();
     await copyBtn.waitFor({ state: "attached", timeout: 10_000 });
 

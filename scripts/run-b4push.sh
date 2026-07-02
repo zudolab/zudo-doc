@@ -19,7 +19,7 @@ set -euo pipefail
 #  13. B4push/CI parity check (guard manifest meta-check — #1967)
 #  14. Type checking (zfb check + workspace package typechecks)
 #  15. Root unit tests (test:unit) — builds @takazudo/zudo-doc as a side-effect
-#  16. Package tests (test:packages) — ~993 suite tests across workspace packages
+#  16. Package tests (test:packages) — ~1,535 suite tests across workspace packages (as of 2026-07)
 #  17. Package safelist check (#1994) — requires dist/safelist.css from step 15
 #  18. Build (zfb build)
 #  19. Link check
@@ -272,7 +272,7 @@ else
 fi
 
 # ── Step 16: Package tests ────────────────────────────
-# Runs all workspace package test suites (~993 tests). Closes the local/CI
+# Runs all workspace package test suites (~1,535 tests as of 2026-07). Closes the local/CI
 # asymmetry where package tests ran in CI but not in b4push (#1851/#1856).
 # dist/ is already built by step 15 — no extra prep needed.
 step "Package tests (test:packages)"
