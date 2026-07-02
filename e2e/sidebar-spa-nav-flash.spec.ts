@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 import { spaClick } from "./nav-helpers";
 import { desktopSidebar, waitForSidebarHydration } from "./sidebar-helpers";
 
