@@ -25,7 +25,7 @@ export type ConsoleErrorsFixture = {
  */
 const ALLOWLIST: Array<{ pattern: string | RegExp; reason: string }> = [
   {
-    // The preview server (zfb preview → wrangler pages dev) never serves
+    // The preview server (zfb preview → wrangler dev) never serves
     // /favicon.ico, so browsers always log a 404 for it.  This is a dev/
     // preview infrastructure gap, not a product bug.
     pattern: "favicon",
