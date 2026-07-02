@@ -219,6 +219,10 @@
       "types": "./dist/chrome/index.d.ts",
       "default": "./dist/chrome/index.js"
     },
+    "./home-page": {
+      "types": "./dist/home-page/index.d.ts",
+      "default": "./dist/home-page/index.js"
+    },
     "./safelist.css": "./dist/safelist.css",
     "./safelist": "./dist/safelist.css",
     "./content.css": "./dist/content.css",
@@ -536,8 +540,8 @@
   ],
   "peerDependencies": {
     "preact": "^10.29.1",
-    "@takazudo/zfb": "^0.1.0-next.74",
-    "@takazudo/zfb-runtime": "^0.1.0-next.74",
+    "@takazudo/zfb": "^0.1.0-next.75",
+    "@takazudo/zfb-runtime": "^0.1.0-next.75",
     "@takazudo/zudo-doc-history-server": "^2.2.1",
     "@takazudo/zdtp": "^0.4.2",
     "shiki": "^4.0.2",
@@ -580,7 +584,7 @@
     "typescript": "^5.0.0",
     "vitest": "^4.1.0",
     "zod": "^4.3.6",
-    "@takazudo/zfb": "0.1.0-next.74",
-    "@takazudo/zfb-runtime": "0.1.0-next.74"
+    "@takazudo/zfb": "0.1.0-next.75",
+    "@takazudo/zfb-runtime": "0.1.0-next.75"
   }
 }

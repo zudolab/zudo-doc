@@ -234,3 +234,15 @@ src/utils/git-info.ts
 # @takazudo/zudo-doc/site-tree-nav-island now), and the base template's shim was
 # likewise removed — both index pages import the package island directly, so there
 # is no longer a local site-tree-nav file in either tree to drift-check.
+
+# S4 (#2503 / package-first-migration epic #2499) — pages/index.tsx and
+# pages/[locale]/index.tsx now both adopt the shared HomePageView body
+# (#2502) and pass a project-specific `extras` prop for the `@Takazudo`
+# brand link (established in #1453 — project-specific, not part of the
+# shared hero). The link is showcase-only, same category as the
+# frontmatter-preview-renderers/tag-vocabulary entries above: production
+# ships the extra content, the template ships none so downstream projects
+# don't inherit an unrelated personal brand link. Both files are otherwise
+# thin `HomePageView` consumers, byte-identical apart from the `extras` prop.
+pages/index.tsx
+pages/[locale]/index.tsx

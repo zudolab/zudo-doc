@@ -83,13 +83,20 @@ const tempDirs: string[] = [];
 
 /** Create a temporary copy of the fixture, set up node_modules + pages symlinks,
  *  and write an empty `.zfb/doc-history-meta.json` seed so zfb can resolve the
- *  `#doc-history-meta` import on the first run. Returns the temp dir path. */
-function setupFixture(options: { emptyPages?: boolean } = {}): string {
+ *  `#doc-history-meta` import on the first run. Returns the temp dir path.
+ *  `fixtureSrc` defaults to the single-locale `FIXTURE_SRC`; the HOME describe
+ *  block below passes `FIXTURE_I18N_SRC` (symlink method, NOT `npm pack` — this
+ *  stays cheap unlike the Case C `setupNoSrcFixture` helper) to exercise the
+ *  `/[locale]` home route, which only exists when a locale is configured. */
+function setupFixture(
+  options: { emptyPages?: boolean; fixtureSrc?: string } = {},
+): string {
   const dir = mkdtempSync(join(tmpdir(), "zudo-doc-route-proof-"));
   tempDirs.push(dir);
+  const fixtureSrc = options.fixtureSrc ?? FIXTURE_SRC;
 
   // Copy committed fixture source (config, content, zfb.config.ts, tsconfig.json).
-  cpSync(FIXTURE_SRC, dir, { recursive: true });
+  cpSync(fixtureSrc, dir, { recursive: true });
 
   // node_modules: symlink to the workspace root so @takazudo/zudo-doc resolves.
   symlinkSync(join(WORKSPACE_ROOT, "node_modules"), join(dir, "node_modules"));
@@ -100,7 +107,7 @@ function setupFixture(options: { emptyPages?: boolean } = {}): string {
     mkdirSync(join(dir, "pages"));
   } else {
     // Precedence case: copy pages-stubs/ as pages/ so the 404 stub collides.
-    cpSync(join(FIXTURE_SRC, "pages-stubs"), join(dir, "pages"), { recursive: true });
+    cpSync(join(fixtureSrc, "pages-stubs"), join(dir, "pages"), { recursive: true });
   }
 
   // .zfb/doc-history-meta.json seed (required by #doc-history-meta import in the
@@ -205,6 +212,16 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
     // The MDX source includes this phrase; renderDocPage renders it into the HTML.
     expect(html).toContain("injected-route-render-proof");
+  });
+
+  // CB #2501 baseline: `settings.chromeBindingsModule` is unset in this
+  // fixture, so `buildFrontmatterPreviewEntries` stays at its package-default
+  // `() => []` stub and the FrontmatterPreview table stays absent — the
+  // un-stranding only happens when the setting is explicitly configured (see
+  // the "CB chrome-bindings" describe block below).
+  it("bindings (baseline): /docs/getting-started/ HTML has NO FrontmatterPreview table when chromeBindingsModule is unset", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).not.toContain('data-testid="frontmatter-preview"');
   });
 
   // #2406 / #2401(c): the package-default BodyEndIslands replaces the old no-op
@@ -358,6 +375,226 @@ describe("DH doc-history: injected doc route registers the DocHistory island (pa
     // Marker present (above) + DocHistory in the client bundle = the marker has a
     // matching registry entry, which is exactly what zfb's hydration requires.
     expect(readIslandsBundles(fixtureDir)).toContain("DocHistory");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Case CB — chromeBindingsModule host-callables channel (zudolab/zudo-doc#2501).
+//
+// `settings.chromeBindingsModule` points at a host module exporting a named
+// `chromeBindings: ChromeHostBindings`. The routes plugin re-exports it
+// through `virtual:zudo-doc-chrome-bindings`; `routes/_chrome.tsx` spreads it
+// into `createChrome(routeCtx, { DocHistory, ...chromeBindings })`. This
+// proves the un-stranding: `buildFrontmatterPreviewEntries` — a
+// `ChromeHostBindings` slot that stays at its package-default `() => []` stub
+// on every other injected-route fixture in this file (see the baseline
+// assertion in Case A above) — reaches `DocContentHeader` and renders the
+// FrontmatterPreview table once the host binding is wired in.
+// ---------------------------------------------------------------------------
+
+/** Point `chromeBindingsModule` at the fixture's committed
+ *  `src/chrome-bindings.tsx` — flips ON the CB #2501 host-callables channel. */
+function enableChromeBindingsModule(dir: string): void {
+  const settingsPath = join(dir, "src/config/settings.ts");
+  const src = readFileSync(settingsPath, "utf-8").replace(
+    /packageOwnedRoutes:\s*true,/,
+    'packageOwnedRoutes: true,\n  chromeBindingsModule: "./src/chrome-bindings.tsx",',
+  );
+  writeFileSync(settingsPath, src);
+}
+
+/** Flip `docMetainfo` ON in a fixture's settings.ts (it ships false) so
+ *  `DocMetainfoArea` has a chance to render — paired with the
+ *  `chrome-bindings.tsx` `docHistoryMeta` override (CONFIRM #2505), this gives
+ *  the injected doc route a REAL metainfo block to assert
+ *  `docContentHeaderExtras` renders before. */
+function enableDocMetainfoForCB(dir: string): void {
+  const settingsPath = join(dir, "src/config/settings.ts");
+  const src = readFileSync(settingsPath, "utf-8").replace(
+    /docMetainfo:\s*false/,
+    "docMetainfo: true",
+  );
+  writeFileSync(settingsPath, src);
+}
+
+/** Point `chromeBindingsModule` at a path with no file on disk — used by the
+ *  missing-file error case. */
+function enableMissingChromeBindingsModule(dir: string): void {
+  const settingsPath = join(dir, "src/config/settings.ts");
+  const src = readFileSync(settingsPath, "utf-8").replace(
+    /packageOwnedRoutes:\s*true,/,
+    'packageOwnedRoutes: true,\n  chromeBindingsModule: "./src/does-not-exist.tsx",',
+  );
+  writeFileSync(settingsPath, src);
+}
+
+describe("CB chrome-bindings: chromeBindingsModule wires host bindings into createChrome on injected routes", () => {
+  let fixtureDir: string;
+
+  it("setup: fixture builds with chromeBindingsModule set", { timeout: 180_000 }, () => {
+    fixtureDir = setupFixture({ emptyPages: true });
+    enableChromeBindingsModule(fixtureDir);
+    enableDocMetainfoForCB(fixtureDir);
+    // Should not throw — the resolved file (src/chrome-bindings.tsx) exists.
+    runZfbBuild(fixtureDir);
+  });
+
+  it("bindings: injected /docs/getting-started/ HTML renders the FrontmatterPreview table from the host binding", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    // The table only renders when `entries` is non-empty (FrontmatterPreview
+    // v2 short-circuits to `null` on an empty array) — its presence proves
+    // buildFrontmatterPreviewEntries reached createChrome via the host
+    // bindings spread, not the package-default `() => []` stub.
+    expect(html).toContain('data-testid="frontmatter-preview"');
+    expect(html).toContain("cb-demo-key");
+    expect(html).toContain("CB-DEMO-VALUE-MARKER");
+  });
+
+  // CONFIRM #2505 — end-to-end proof that `ctx.hostBindings.docContentHeaderExtras`
+  // reaches `DocContentHeader` on an injected doc route: renders a
+  // frontmatter-keyed badge sourced from `entry.data.tier` (the fixture's MDX
+  // sets `tier: gold`).
+  it("docContentHeaderExtras: injected /docs/getting-started/ HTML renders the frontmatter-keyed badge", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).toContain('class="doc-content-header-extra-marker"');
+    expect(html).toContain("DOC-HEADER-EXTRA-MARKER: gold");
+  });
+
+  // Positional proof: the badge renders AFTER </h1> and BEFORE the metainfo
+  // block (`DocMetainfoArea` → `DocMetainfo`, identified by its distinctive
+  // wrapper class — see metainfo/doc-metainfo.tsx), matching the documented
+  // placement in doc-content-header/index.tsx. The CB setup flips
+  // `docMetainfo: true` + supplies a `docHistoryMeta` entry (via
+  // chrome-bindings.tsx) so a REAL metainfo block renders here, rather than
+  // relying on the slot's absence to vacuously satisfy the ordering.
+  it("docContentHeaderExtras: badge renders BETWEEN </h1> and the metainfo block", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    const h1CloseIdx = html.indexOf("</h1>");
+    const badgeIdx = html.indexOf('class="doc-content-header-extra-marker"');
+    const metainfoIdx = html.indexOf("border-t border-fg pt-vsp-xs");
+    expect(h1CloseIdx).toBeGreaterThan(-1);
+    expect(badgeIdx).toBeGreaterThan(h1CloseIdx);
+    expect(metainfoIdx).toBeGreaterThan(badgeIdx);
+    // Confirm the metainfo block that renders is actually the one seeded by
+    // chrome-bindings.tsx's docHistoryMeta override (not some other match).
+    expect(html).toContain("CB-AUTHOR-MARKER");
+  });
+
+  // Case DH (DocHistory hydration pairing) regression guard: spreading
+  // `...chromeBindings` AFTER the `DocHistory` default must not disturb the
+  // #2480 island-scanner wiring when the host binding doesn't touch that slot.
+  it("regression: DocHistory island registration (#2480) still works with chromeBindingsModule set", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    // docHistory defaults to false in this fixture, so DocHistoryArea renders
+    // nothing and emits no skip-ssr marker — assert that absence stays intact
+    // (i.e. the chrome-bindings channel didn't accidentally flip it on).
+    expect(html).not.toContain('data-zfb-island-skip-ssr="DocHistory"');
+  });
+});
+
+describe("CB chrome-bindings missing: build fails loudly when chromeBindingsModule points at a nonexistent file", () => {
+  it("setup: build throws an error naming the resolved absolute path (not a silent empty fallback)", { timeout: 180_000 }, () => {
+    const fixtureDir = setupFixture({ emptyPages: true });
+    enableMissingChromeBindingsModule(fixtureDir);
+    const resolvedPath = join(fixtureDir, "src/does-not-exist.tsx");
+
+    let thrown: Error | undefined;
+    try {
+      runZfbBuild(fixtureDir);
+    } catch (err) {
+      thrown = err as Error;
+    }
+
+    expect(thrown).toBeDefined();
+    expect(thrown!.message).toContain("chromeBindingsModule");
+    expect(thrown!.message).toContain(resolvedPath);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Case HOME — `createHomePageView` adoption on the injected `/[locale]` home
+// (S3 #2502, epic #2499). Uses the i18n fixture (symlink method, cheap — NOT
+// `npm pack`) because the `/[locale]` home route only exists when a locale is
+// configured; the plain `route-injection` fixture has `locales: {}`.
+//
+// Proves:
+//   1. The ONLY intentional output diff from the pre-#2502 `locale-index.tsx`
+//      is the richer GitHub link (inline SVG icon instead of plain text) —
+//      every other element (hero copy, overview link, SiteTreeNav grid) is
+//      unchanged. Reasoning: `locale-index.tsx` before this extraction never
+//      rendered a trailing separator after the GitHub link (unlike the
+//      default-locale `routes/index.tsx`, which had a stray dangling
+//      `<span>/</span>` — an inconsistency this extraction incidentally fixed
+//      on the `/` route, which is never injected/tested), so the shared
+//      `HomePageView` body reproduces the `/[locale]` markup exactly aside
+//      from the SVG.
+//   2. `ctx.hostBindings.homeExtras` (wired via `chromeBindingsModule`, same
+//      channel as CB #2501) renders inside the hero text column, after the
+//      links row.
+//   3. The `SiteTreeNav` island wrapper is untouched — `data-zfb-island=
+//      "SiteTreeNav"` still appears in the injected locale-home HTML.
+// ---------------------------------------------------------------------------
+
+/** Flip `githubUrl` from `false` to a real URL in the i18n fixture's
+ *  settings.ts (it ships `false`) so the home hero renders the GitHub link. */
+function enableGithubUrl(dir: string): void {
+  const settingsPath = join(dir, "src/config/settings.ts");
+  const src = readFileSync(settingsPath, "utf-8").replace(
+    "githubUrl: false,",
+    'githubUrl: "https://github.com/example/example",',
+  );
+  writeFileSync(settingsPath, src);
+}
+
+/** Point `chromeBindingsModule` at the i18n fixture's committed
+ *  `src/chrome-bindings.tsx` (extended for S3 #2502 with a `homeExtras`
+ *  binding) — flips ON the CB #2501 host-callables channel. */
+function enableI18nChromeBindingsModule(dir: string): void {
+  const settingsPath = join(dir, "src/config/settings.ts");
+  const src = readFileSync(settingsPath, "utf-8").replace(
+    /packageOwnedRoutes:\s*true,/,
+    'packageOwnedRoutes: true,\n  chromeBindingsModule: "./src/chrome-bindings.tsx",',
+  );
+  writeFileSync(settingsPath, src);
+}
+
+describe("HOME home-page: createHomePageView adoption on the injected /[locale] home (S3 #2502)", () => {
+  let fixtureDir: string;
+
+  it("setup: i18n fixture builds with githubUrl + chromeBindingsModule (homeExtras) enabled", { timeout: 180_000 }, () => {
+    fixtureDir = setupFixture({ emptyPages: true, fixtureSrc: FIXTURE_I18N_SRC });
+    enableGithubUrl(fixtureDir);
+    enableI18nChromeBindingsModule(fixtureDir);
+    runZfbBuild(fixtureDir);
+  });
+
+  it("diff-only-SVG: injected /ja/ home renders the GitHub link with the inline SVG icon", () => {
+    const html = readBuiltHtml(fixtureDir, "ja/index.html");
+    expect(html).toContain('href="https://github.com/example/example"');
+    // The exact showcase path data (pages/index.tsx) — the reviewed,
+    // intentional diff this extraction introduces on the package routes.
+    expect(html).toContain("M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59");
+    expect(html).toContain(">GitHub</a>");
+  });
+
+  it("unchanged: hero <h1>/description and hero structure still render for the locale home", () => {
+    const html = readBuiltHtml(fixtureDir, "ja/index.html");
+    expect(html).toContain('<h1 class="text-heading font-bold mb-vsp-2xs">Route Injection i18n Proof</h1>');
+    expect(html).toContain("aspect-[1200/630] bg-fg");
+  });
+
+  it("island: SiteTreeNav still hydrates via the real Island(when: idle) wrapper", () => {
+    const html = readBuiltHtml(fixtureDir, "ja/index.html");
+    expect(html).toContain('data-zfb-island="SiteTreeNav"');
+  });
+
+  it("homeExtras: hostBindings.homeExtras renders inside the hero, after the links row", () => {
+    const html = readBuiltHtml(fixtureDir, "ja/index.html");
+    expect(html).toContain('<div class="home-extra-marker">HOME-EXTRA-MARKER: ja</div>');
+    const linksIdx = html.indexOf(">GitHub</a>");
+    const extraIdx = html.indexOf('<div class="home-extra-marker">');
+    expect(linksIdx).toBeGreaterThan(-1);
+    expect(extraIdx).toBeGreaterThan(linksIdx);
   });
 });
 

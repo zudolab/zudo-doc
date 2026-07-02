@@ -267,6 +267,30 @@ export interface ChromeHostBindings {
   /** MDX content-component overrides (Details / HtmlPreview / Island /
    *  PresetGenerator). Default: package SSR impls + a `PresetGenerator` stub. */
   mdxExtras?: Record<string, FactoryComponent>;
+  /**
+   * Extra content rendered inside the doc content header, between the `<h1>`
+   * and the metainfo block. A RENDERER (not a component) so it is naturally
+   * keyed on the page entry/frontmatter rather than re-deriving them from
+   * props. Default: absent → renders nothing (byte-identical output to the
+   * pre-seam header). Called for `kind === "entry"` doc pages on all 4 doc
+   * routes, INCLUDING versioned pages — it receives `version` and decides for
+   * itself whether/how to render on a versioned page.
+   */
+  docContentHeaderExtras?: (args: {
+    entry: DocPageEntry;
+    slug: string;
+    locale: string;
+    isFallback?: boolean;
+    version?: string;
+  }) => unknown;
+  /**
+   * Extra content rendered in the home hero. A RENDERER (not a component).
+   * Default: absent → renders nothing. The `/` home route is never injected
+   * by the routes plugin (zfb rejects `/`), so this binding fires on injected
+   * `/[locale]` homes and on any host that threads it through `createChrome`.
+   * A `HomePageView` `extras` prop (added in a later task) takes precedence.
+   */
+  homeExtras?: (args: { locale: string }) => unknown;
 }
 
 /**

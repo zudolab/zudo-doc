@@ -14,31 +14,26 @@
 //   getCollection(`docs-${locale}`)  + base fallback merge
 //   → buildNavTree()   → groupSatelliteNodes()
 //   → collectTags()    → tag section
+//   → HomePageView      renders hero + SiteTreeNav grid + tag section
+//
+// Thin consumer of `HomePageView` (S3 #2502, adopted here in S4 #2503): this
+// file's only job is the locale-specific data prep — `resolveNavSource` with
+// the locale-home filter options, `loadCategoryMeta`, `paths()`, and the
+// locale-config guard all stay HERE (locale-routing concerns, not
+// hero-rendering concerns) — mirroring the package route's shape
+// (`packages/zudo-doc/src/routes/locale-index.tsx`). The `@Takazudo` brand
+// link is showcase-specific (#1453) and is threaded via the `extras` prop
+// rather than baked into the shared hero.
 
 import { settings } from "@/config/settings";
-import { t, getLocaleConfig, type Locale } from "@/config/i18n";
-import { withBase } from "@/utils/base";
-import {
-  buildNavTree,
-  groupSatelliteNodes,
-  loadCategoryMeta,
-} from "@/utils/docs";
+import { getLocaleConfig, type Locale } from "@/config/i18n";
+import { buildNavTree, groupSatelliteNodes, loadCategoryMeta } from "@/utils/docs";
 import { getCategoryOrder } from "@/utils/nav-scope";
 import { collectTags } from "@/utils/tags";
 import { toRouteSlug } from "@/utils/slug";
-import { DocLayoutWithDefaults } from "@takazudo/zudo-doc/doclayout";
 import type { JSX } from "preact";
-import type { VNode } from "preact";
-import { Island } from "@takazudo/zfb";
-import { SiteTreeNav } from "@takazudo/zudo-doc/site-tree-nav-island";
 import { resolveNavSource } from "../lib/_nav-source-docs";
-import {
-  FooterWithDefaults,
-  HeaderWithDefaults,
-  HeadWithDefaults,
-  composeMetaTitle,
-} from "../lib/_chrome";
-import { BodyEndIslands } from "../lib/_body-end-islands";
+import { HomePageView } from "../lib/_chrome";
 
 export const frontmatter = { title: "Home" };
 
@@ -99,117 +94,29 @@ export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
     (id, data) => data.slug ?? toRouteSlug(id),
   ).size;
 
-  const ctaNav = settings.headerNav[0] ?? null;
-  const overview = ctaNav ? withBase(`/${locale}${ctaNav.path}`) : null;
-  const logoUrl = withBase("/img/logo.svg");
-
   return (
-    <DocLayoutWithDefaults
-      title={composeMetaTitle(settings.siteName)}
-      head={<HeadWithDefaults title={settings.siteName} />}
-      lang={locale}
-      noindex={settings.noindex}
-      hideSidebar={true}
-      hideToc={true}
-      // Empty fragment suppresses DocLayoutWithDefaults' empty-data default
-      // Sidebar island — its marker never hydrates for published-package
-      // consumers (zfb#999) and zfb >= next.38 warns about it; the sidebar is
-      // hidden on this page anyway (zudolab/zudo-doc#2057).
-      sidebarOverride={<></>}
-      headerOverride={<HeaderWithDefaults lang={locale as Locale} currentPath={withBase(`/${locale}/`)} />}
-      footerOverride={<FooterWithDefaults lang={locale} />}
-      bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
-      enableClientRouter={settings.dynamicPageTransition}
-    >
-      {/* Hero: logo left, title+desc+links right, block centered */}
-      <div class="flex justify-center mb-vsp-xl">
-        <div class="flex flex-col items-center text-center gap-hsp-md lg:flex-row lg:text-left lg:gap-hsp-xl">
-          {/* Theme-adaptive logo: SVG used as a CSS mask over `bg-fg` so the
-              foreground color follows the active theme (white on dark, black on
-              light). The neighboring <h1>{settings.siteName}</h1> provides the
-              accessible name; mirrors zudolab/zudo-design-token-lint#65. */}
-          <div
-            class="w-[320px] max-w-full aspect-[1200/630] bg-fg shrink-0"
-            style={{
-              WebkitMask: `url(${logoUrl}) center/contain no-repeat`,
-              mask: `url(${logoUrl}) center/contain no-repeat`,
-            }}
-            aria-hidden="true"
-          />
-          <div>
-            <h1 class="text-heading font-bold mb-vsp-2xs">{settings.siteName}</h1>
-            <p class="text-muted text-small mb-vsp-sm">{settings.siteDescription}</p>
-            <div class="flex items-center justify-center lg:justify-start gap-hsp-md text-small">
-              {overview && (
-                <>
-                  <a href={overview} class="text-fg underline hover:text-accent">
-                    {t("nav.overview", locale)}
-                  </a>
-                  <span class="text-muted">/</span>
-                </>
-              )}
-              {settings.githubUrl && (
-                <>
-                  <a
-                    href={settings.githubUrl as string}
-                    class="inline-flex items-center gap-[0.3em] text-fg underline hover:text-accent"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <svg viewBox="0 0 16 16" aria-hidden="true" class="w-[1em] h-[1em] shrink-0">
-                      <path
-                        fill="currentColor"
-                        d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
-                      />
-                    </svg>
-                    GitHub
-                  </a>
-                  <span class="text-muted">/</span>
-                </>
-              )}
-              {/* @Takazudo link — ported from pages/index.tsx (refs #1453).
-                  The locale home was missing this trailing item, leaving a
-                  dangling "/" separator after GitHub. */}
-              <a
-                href="https://x.com/Takazudo"
-                class="text-fg underline hover:text-accent"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                @Takazudo
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Sitemap grid — SiteTreeNav island mirrors the EN home (refs #1453).
-          The locale home was using DocsSitemap (vertical <details> list);
-          replaced with the same SiteTreeNav island used by pages/index.tsx. */}
-      {Island({
-        when: "idle",
-        children: (
-          <SiteTreeNav
-            tree={groupedTree}
-            categoryOrder={categoryOrder}
-            categoryIgnore={["inbox", "develop"]}
-          />
-        ),
-      }) as unknown as VNode}
-
-      {settings.docTags && tagCount > 0 && (
-        <section class="mt-vsp-xl">
-          <h2 class="text-title font-bold mb-vsp-md">
-            {t("doc.allTags", locale)}
-          </h2>
+    <HomePageView
+      locale={locale}
+      tree={groupedTree}
+      categoryOrder={categoryOrder}
+      tagCount={tagCount}
+      extras={
+        // @Takazudo link — ported from pages/index.tsx (refs #1453).
+        // Kept out of the shared hero (package HomePageView), threaded here
+        // through the extras seam instead. HomePageView renders `extras` as a
+        // standalone line AFTER the links row (not inline within it), so
+        // this is its own small line, not a row continuation.
+        <p class="mt-vsp-2xs text-small">
           <a
-            href={withBase(`/${locale}/docs/tags`)}
-            class="text-accent underline hover:text-accent-hover"
+            href="https://x.com/Takazudo"
+            class="text-fg underline hover:text-accent"
+            target="_blank"
+            rel="noopener noreferrer"
           >
-            {t("doc.allTags", locale)}
+            @Takazudo
           </a>
-        </section>
-      )}
-    </DocLayoutWithDefaults>
+        </p>
+      }
+    />
   );
 }

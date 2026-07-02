@@ -17,3 +17,18 @@ declare module "virtual:zudo-doc-route-context" {
     colorSchemes: Record<string, unknown> | null;
   };
 }
+
+// Ambient typing for the chrome-bindings virtual module emitted by the routes
+// plugin (`addVirtualModule("virtual:zudo-doc-chrome-bindings", …)`, #2501).
+// No on-disk source — materialised at build, either as a re-export of the
+// host's `settings.chromeBindingsModule` file or as an empty-object fallback
+// when the setting is absent. See `plugins/routes.ts` and
+// `docs/adr/route-injection-seam.md` ("Host-callables channel —
+// chromeBindingsModule").
+//
+// Typed via an INLINE `import(...)` type (not a top-level import, which would
+// break this file's ambient module declarations) — see
+// `../factory-context/index.js` for the `ChromeHostBindings` shape.
+declare module "virtual:zudo-doc-chrome-bindings" {
+  export const chromeBindings: import("../factory-context/index.js").ChromeHostBindings;
+}
