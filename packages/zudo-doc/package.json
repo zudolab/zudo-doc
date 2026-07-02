@@ -515,6 +515,14 @@
     "./eject": {
       "types": "./dist/eject/index.d.ts",
       "default": "./dist/eject/index.js"
+    },
+    "./sidebar-filter": {
+      "types": "./dist/sidebar-filter/index.d.ts",
+      "default": "./dist/sidebar-filter/index.js"
+    },
+    "./sidebar-active-slug": {
+      "types": "./dist/sidebar-active-slug/index.d.ts",
+      "default": "./dist/sidebar-active-slug/index.js"
     }
   },
   "bin": {

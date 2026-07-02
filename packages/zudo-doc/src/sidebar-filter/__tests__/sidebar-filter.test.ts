@@ -1,11 +1,11 @@
 /**
  * Unit tests for the sidebar filter logic.
  *
- * Mirrors `filterTree()` in `src/components/sidebar-tree.tsx`. We re-implement
- * the helper here rather than importing from the `.tsx` host so the suite runs
- * under the root vitest config (which is not JSX/Preact-aware). If the helper
- * in sidebar-tree.tsx evolves, update the mirror to match — the test exists
- * to lock the behaviour, not the source location.
+ * Imports the real `filterTree()` production implementation (extracted from
+ * `sidebar-tree-island/index.tsx` in zudolab/zudo-doc#2528 — the tests used to
+ * mirror this helper by hand against a dead `src/components/sidebar-tree.tsx`
+ * host component; both the dead component and the hand-rolled mirror are gone
+ * now that the real function is importable and JSX-free).
  *
  * Context: zudolab/zudo-doc#1459 — Wave 1 #1445 wired the filter input but
  * typing had no DOM effect on the deployed preview because the v2 Sidebar
@@ -17,54 +17,39 @@
  */
 
 import { describe, it, expect } from "vitest";
+import type { SidebarNavNode } from "../../sidebar/types.js";
+import { filterTree } from "../index.js";
 
-interface NavNodeLike {
-  slug: string;
-  label: string;
-  href?: string;
-  children: NavNodeLike[];
-}
-
-function filterTree(nodes: NavNodeLike[], query: string): NavNodeLike[] {
-  return nodes.reduce<NavNodeLike[]>((acc, node) => {
-    const matchesLabel = node.label
-      .toLowerCase()
-      .includes(query.toLowerCase());
-    const filteredChildren =
-      node.children.length > 0 ? filterTree(node.children, query) : [];
-
-    if (matchesLabel || filteredChildren.length > 0) {
-      acc.push({
-        ...node,
-        children: matchesLabel ? node.children : filteredChildren,
-      });
-    }
-    return acc;
-  }, []);
-}
-
-const tree: NavNodeLike[] = [
+const tree: SidebarNavNode[] = [
   {
     slug: "components",
     label: "Components",
+    position: 0,
     href: "/docs/components",
+    hasPage: true,
     children: [
       {
         slug: "components/admonitions",
         label: "Admonitions",
+        position: 0,
         href: "/docs/components/admonitions",
+        hasPage: true,
         children: [],
       },
       {
         slug: "components/code-blocks",
         label: "Code Blocks",
+        position: 1,
         href: "/docs/components/code-blocks",
+        hasPage: true,
         children: [],
       },
       {
         slug: "components/tabs",
         label: "Tabs",
+        position: 2,
         href: "/docs/components/tabs",
+        hasPage: true,
         children: [],
       },
     ],
@@ -72,19 +57,23 @@ const tree: NavNodeLike[] = [
   {
     slug: "guides",
     label: "Guides",
+    position: 1,
     href: "/docs/guides",
+    hasPage: true,
     children: [
       {
         slug: "guides/sidebar-filter",
         label: "Sidebar Filter",
+        position: 0,
         href: "/docs/guides/sidebar-filter",
+        hasPage: true,
         children: [],
       },
     ],
   },
 ];
 
-describe("filterTree (mirror of sidebar-tree.tsx helper)", () => {
+describe("filterTree", () => {
   it("returns the full tree unchanged when the query is empty", () => {
     // The component avoids calling filterTree with an empty query (it short-
     // circuits in the `useMemo`), but lock the contract anyway so a future
