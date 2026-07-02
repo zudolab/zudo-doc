@@ -42,15 +42,17 @@ export default defineConfig({
   webServer: activeFixtures.map((name) => {
     const i = fixtureIndex(name);
     // Single-fixture mode: no stagger needed (one server, no race surface).
-    // Multi-fixture mode: preserve the sleep ${i*3} stagger that works around
-    // the workerd inspector-port race (zudolab/zudo-doc#2084): `zfb preview`
-    // hands off to `wrangler pages dev`, and every wrangler instance probes
-    // inspector port 9230. Booting all five simultaneously makes several
-    // instances probe the same free port and race the bind — losers die with
-    // "Address already in use (127.0.0.1:9230)" and the webServer wait times
-    // out. A staggered start means each later instance sees the port already
-    // held and falls back cleanly (verified manually; wrangler does not honor
-    // WRANGLER_INSPECTOR_PORT to pin distinct ports per instance).
+    // Multi-fixture mode: keep the sleep ${i*3} stagger as belt-and-suspenders
+    // against the workerd inspector-port bind race (zudolab/zudo-doc#2084):
+    // `zfb preview` hands off to `wrangler dev` (Workers mode, zfb >= next.74),
+    // and every workerd instance opens a devtools inspector socket. Booting all
+    // five simultaneously used to make several instances race the same inspector
+    // port — losers died with "Address already in use (127.0.0.1:92xx)" and the
+    // webServer wait timed out. The primary fix now lives in the fixture
+    // wrangler.toml (`[dev] inspector_port = 0` → a random free port per
+    // instance, emitted by setup-fixtures.sh); this stagger is retained as a
+    // cheap extra margin (under `wrangler dev` the stagger alone was verified
+    // NOT reliable — a 3s-staggered boot still hit a collision).
     const stagger =
       activeFixtures.length > 1 ? `sleep ${i * 3} && ` : "";
     return {
