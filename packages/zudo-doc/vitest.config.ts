@@ -70,6 +70,11 @@ export default defineConfig({
   test: {
     root: pkgRoot,
     include: ["src/**/__tests__/**/*.test.{ts,tsx}"],
+    // Slow integration tests (real `zfb build`s) live in `*.slow.test.ts`
+    // files and run via `pnpm --filter @takazudo/zudo-doc test:slow` with a
+    // separate config (vitest.slow.config.ts). Mirrors
+    // packages/create-zudo-doc/vitest.config.ts (zudolab/zudo-doc#2530).
+    exclude: ["**/node_modules/**", "**/*.slow.test.ts"],
     server: {
       deps: {
         // Inline the zfb island runtime so vite transforms it through the
