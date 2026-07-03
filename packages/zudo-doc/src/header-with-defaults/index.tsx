@@ -48,6 +48,10 @@ export interface HeaderVersionEntry {
 /** Settings subset read by {@link createHeaderWithDefaults}. */
 export interface HeaderWithDefaultsSettings {
   siteName: string;
+  /** Site base path — fed to the language-switcher SPA re-wire config. */
+  base: string;
+  /** Trailing-slash policy — fed to the language-switcher SPA re-wire config. */
+  trailingSlash: boolean;
   headerNav: Array<{
     label: string;
     labelKey?: string;
@@ -197,6 +201,12 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
       localeLinks != null ? (
         <LanguageSwitcher
           links={localeLinks}
+          config={{
+            base: settings.base.replace(/\/+$/, ""),
+            defaultLocale,
+            trailingSlash: settings.trailingSlash,
+          }}
+          currentLocale={lang}
         />
       ) as unknown as VNode : undefined;
 
