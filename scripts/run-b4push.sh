@@ -265,7 +265,9 @@ fi
 # and root test jobs build it for the same reason. Building here also leaves
 # dist/safelist.css ready for the safelist check in step 17.
 step "Root unit tests (test:unit)"
-if (cd "$ROOT_DIR" && pnpm --filter @takazudo/zudo-doc build && pnpm test:unit); then
+# --maxWorkers=4 caps vitest parallelism for reliability under host CPU
+# contention over wall-clock, not speed (issue #2563).
+if (cd "$ROOT_DIR" && pnpm --filter @takazudo/zudo-doc build && pnpm test:unit --maxWorkers=4); then
   pass "Root unit tests passed"
 else
   fail "Root unit tests"
