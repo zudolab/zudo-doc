@@ -43,16 +43,20 @@ describe("DesktopSidebarToggle — SSG HTML presence", () => {
   });
 });
 
-// Behaviour test for the mount-time reconcile (bug zudolab/zudo-doc#2571):
-// when localStorage has the collapsed preference, a freshly-mounted toggle
-// must reconcile to hidden on INITIAL LOAD — independent of the SPA
-// AFTER_NAVIGATE_EVENT. The package vitest config runs in a plain Node env
-// (no jsdom), so — mirroring the sibling ThemeToggle's color-scheme-sync
-// tests — the browser globals the mount effect touches are stubbed with
-// minimal fakes and the two helpers the effect uses (`readState` to reconcile
-// `visible`, `setDataAttribute` to apply `<html data-sidebar-hidden>`) are
-// exercised directly. No AFTER_NAVIGATE_EVENT is ever dispatched here, so the
-// reconcile is proven to happen on load alone.
+// Reconcile-helper contract (bug zudolab/zudo-doc#2571). The island's mount
+// effect reconciles the persisted preference on initial load via exactly two
+// helpers: `readState()` (reads localStorage → the `visible` value) and
+// `setDataAttribute(visible)` (applies/removes `<html data-sidebar-hidden>`).
+// These tests pin that helper contract — the units the mount effect composes.
+//
+// SCOPE NOTE (honest about what this does NOT cover): the package vitest runs
+// in a plain Node env (no jsdom/happy-dom), so these exercise the helpers
+// DIRECTLY — they do NOT mount the component or run its `useEffect`, and would
+// still pass if the mount effect itself were deleted. The load-bearing #2571
+// fix (the pre-paint `<script>` hoisted into `<head>` before `<aside>`) is
+// guarded end-to-end by `sidebar-prepaint/__tests__/sidebar-prepaint-ssg.test`;
+// the mount effect's actual firing is a browser-only behaviour outside this
+// node test env's reach.
 function makeFakeDocument() {
   const attrs = new Map<string, string>();
   return {
@@ -82,7 +86,7 @@ function makeFakeStorage() {
   };
 }
 
-describe("DesktopSidebarToggle — mount reconcile (hard-reload, no SPA nav)", () => {
+describe("DesktopSidebarToggle — reconcile helpers (readState / setDataAttribute)", () => {
   let fakeDocument: ReturnType<typeof makeFakeDocument>;
   let fakeStorage: ReturnType<typeof makeFakeStorage>;
 

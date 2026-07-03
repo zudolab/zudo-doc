@@ -228,9 +228,19 @@ export function makeUrlHelpers(
 
   /** Build a versioned docs URL for the given slug, version, and lang. */
   function versionedDocsUrl(slug: string, versionSlug: string, lang: string = defaultLocale): string {
-    const path = lang === defaultLocale
-      ? `/v/${versionSlug}/docs/${slug}`
-      : `/v/${versionSlug}/${lang}/docs/${slug}`;
+    // A defaultLocaleOnly doc (settings.defaultLocaleOnlyPrefixes, #1592/#2569)
+    // has no non-default-locale route, so keep it in the default-locale URL
+    // space even on a non-default-locale surface — mirroring docsUrl/navHref.
+    // Matched on the plain `/docs/` shape (version prefix excluded), so the
+    // version is always preserved. (Currently unreachable for these docs because
+    // the versioned sidebar drops them via applyDefaultLocaleOnlyFilter, but the
+    // guard keeps every href seam consistent so a future caller can't mint a
+    // `/v/{ver}/{lang}/docs/...` 404.)
+    const localePrefixed =
+      lang !== defaultLocale && !isDefaultLocaleOnlyPath(`/docs/${slug}`);
+    const path = localePrefixed
+      ? `/v/${versionSlug}/${lang}/docs/${slug}`
+      : `/v/${versionSlug}/docs/${slug}`;
     return withBase(path);
   }
 

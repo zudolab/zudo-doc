@@ -47,6 +47,20 @@ export interface SidebarPrepaintSettings {
 }
 
 /**
+ * Shared gate for BOTH sidebar-prepaint factories: the head pre-paint `<script>`
+ * and the `afterSidebar` toggle Island must appear on exactly the same pages, so
+ * they read the same predicate here rather than each inlining
+ * `settings.sidebarToggle && !hideSidebar` (a one-sided edit could otherwise let
+ * the script and the button desync — #2571).
+ */
+function sidebarPrepaintActive(
+  settings: SidebarPrepaintSettings,
+  hideSidebar?: boolean,
+): boolean {
+  return Boolean(settings.sidebarToggle) && !hideSidebar;
+}
+
+/**
  * Pre-paint inline script body: restore persisted sidebar visibility to
  * `<html data-sidebar-hidden>` before first paint to avoid a hard-reload flash.
  *
@@ -80,7 +94,7 @@ export function createSidebarVisibilityPrepaint(
   function SidebarVisibilityPrepaint({
     hideSidebar,
   }: SidebarPrepaintProps): JSX.Element | undefined {
-    if (!settings.sidebarToggle || hideSidebar) return undefined;
+    if (!sidebarPrepaintActive(settings, hideSidebar)) return undefined;
 
     return (
       <script
@@ -114,7 +128,7 @@ export function createSidebarPrepaint(
   function SidebarPrepaint({
     hideSidebar,
   }: SidebarPrepaintProps): JSX.Element | undefined {
-    if (!settings.sidebarToggle || hideSidebar) return undefined;
+    if (!sidebarPrepaintActive(settings, hideSidebar)) return undefined;
 
     return (
       <>

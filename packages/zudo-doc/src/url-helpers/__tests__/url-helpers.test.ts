@@ -119,6 +119,14 @@ describe("docsUrl / versionedDocsUrl / absoluteUrl / resolveHref", () => {
   it("versionedDocsUrl nests locale after version", () => {
     expect(h.versionedDocsUrl("guides", "1.0", "ja")).toBe("/v/1.0/ja/docs/guides/");
   });
+  it("versionedDocsUrl drops the locale for a defaultLocaleOnly slug but keeps the version (#2569)", () => {
+    // Mirrors docsUrl/navHref: a defaultLocaleOnly doc has no non-default-locale
+    // route, so a ja versioned surface must not mint /v/1.0/ja/docs/claude-md/... (404).
+    expect(h.versionedDocsUrl("claude-md/setup", "1.0", "ja")).toBe("/v/1.0/docs/claude-md/setup/");
+    // en and non-defaultLocaleOnly ja are unchanged.
+    expect(h.versionedDocsUrl("claude-md/setup", "1.0", "en")).toBe("/v/1.0/docs/claude-md/setup/");
+    expect(h.versionedDocsUrl("guides/intro", "1.0", "ja")).toBe("/v/1.0/ja/docs/guides/intro/");
+  });
   it("absoluteUrl joins siteUrl, undefined when empty", () => {
     expect(h.absoluteUrl("/docs/x/")).toBe("https://example.com/docs/x/");
     expect(helpers({ siteUrl: "" }).absoluteUrl("/docs/x/")).toBeUndefined();

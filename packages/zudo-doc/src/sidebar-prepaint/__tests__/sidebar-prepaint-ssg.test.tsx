@@ -19,12 +19,15 @@
  */
 
 import { describe, expect, it } from "vitest";
+import type { VNode } from "preact";
 import { render } from "preact-render-to-string";
 import {
   createSidebarPrepaint,
   createSidebarVisibilityPrepaint,
 } from "../index.js";
 import { DocLayout } from "../../doclayout/doc-layout.js";
+import { createRenderDocPage } from "../../doc-page-renderer/index.js";
+import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 
 // Distinctive substrings of the pre-paint script body.
 const SCRIPT_STORAGE_READ = `localStorage.getItem("zudo-doc-sidebar-visible")`;
@@ -89,6 +92,49 @@ describe("sidebar-visibility pre-paint — placement/ordering in <head>", () => 
     // The script executes before the <aside> is parsed/painted — the whole
     // point of the fix. Also confirm it lives inside <head> (before </head>).
     expect(scriptIdx).toBeLessThan(asideIdx);
+    expect(scriptIdx).toBeLessThan(headCloseIdx);
+    expect(headCloseIdx).toBeLessThan(asideIdx);
+  });
+});
+
+describe("doc-page-shell wiring — visibility script actually reaches <head>", () => {
+  // The ordering test above hardcodes the script into DocLayout's `head` prop, so
+  // it proves DocLayout's slot order but NOT that doc-page-shell wires the factory
+  // in. This renders the REAL shell (via createRenderDocPage + a fake ChromeContext
+  // with sidebarToggle on), so a regression that dropped <SidebarVisibilityPrepaint>
+  // from doc-page-shell's head slot (the actual #2571 fix site) is caught.
+  const ctx = makeFakeChromeContext({ settings: { sidebarToggle: true } });
+  const renderDocPage = createRenderDocPage(ctx);
+
+  it("emits the pre-paint script inside <head>, before the <aside> desktop sidebar", () => {
+    const vnode = renderDocPage(
+      {
+        kind: "entry",
+        entry: {
+          slug: "getting-started",
+          id: "getting-started",
+          collection: "docs",
+          data: { title: "Getting Started" },
+          module_specifier: "getting-started.mdx",
+          Content: () => null,
+        },
+        breadcrumbs: [],
+        prev: null,
+        next: null,
+        headings: [],
+      } as unknown as Parameters<typeof renderDocPage>[0],
+      { locale: "en" },
+    ) as VNode;
+
+    const html = render(vnode);
+    const scriptIdx = html.indexOf(SCRIPT_SET_ATTR);
+    const headCloseIdx = html.indexOf("</head>");
+    const asideIdx = html.indexOf('<aside id="desktop-sidebar"');
+
+    expect(scriptIdx).toBeGreaterThan(-1);
+    expect(headCloseIdx).toBeGreaterThan(-1);
+    expect(asideIdx).toBeGreaterThan(-1);
+    // Wired into <head> (before </head>) and therefore before the <aside>.
     expect(scriptIdx).toBeLessThan(headCloseIdx);
     expect(headCloseIdx).toBeLessThan(asideIdx);
   });
