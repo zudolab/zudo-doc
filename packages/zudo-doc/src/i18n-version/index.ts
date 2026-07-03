@@ -30,9 +30,15 @@ export type {
 export {
   VersionSwitcher,
   VERSION_SWITCHER_INIT_SCRIPT,
+  VERSION_SWITCHER_REWIRE_SCRIPT,
   VERSION_SWITCHER_VISIBILITY_STYLE,
+  computeVersionSwitcherState,
 } from "./version-switcher.js";
-export type { VersionSwitcherProps } from "./version-switcher.js";
+export type {
+  VersionSwitcherProps,
+  VersionSwitcherRewireConfig,
+  VersionSwitcherState,
+} from "./version-switcher.js";
 
 export { VersionBanner } from "./version-banner.js";
 export type { VersionBannerProps, VersionBannerLabels } from "./version-banner.js";

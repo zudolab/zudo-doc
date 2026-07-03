@@ -110,6 +110,150 @@ export interface VersionSwitcherProps {
    * unique.
    */
   idSuffix?: string;
+
+  /**
+   * When provided, the switcher container emits `data-version-rewire` plus its
+   * config as `data-*`, and the menu anchors / trigger label carry the marker
+   * attributes {@link VERSION_SWITCHER_REWIRE_SCRIPT} needs. This lets the
+   * script recompute the per-page menu hrefs + active state + trigger label
+   * from the live pathname after a same-locale SPA navigation — the header is
+   * persisted (`data-zfb-transition-persist="header-${lang}"`), so its SSR menu
+   * values would otherwise go stale (zudolab/zudo-doc#2553).
+   *
+   * Omit for a static / no-JS render, e.g. the inline breadcrumb switcher,
+   * which lives in swapped content and is re-rendered fresh on every swap.
+   */
+  rewireConfig?: VersionSwitcherRewireConfig;
+}
+
+/**
+ * The minimal project config the client re-wire needs to reproduce the header
+ * factory's per-page menu URLs from the live pathname. Emitted as `data-*`
+ * attributes on the switcher container so {@link VERSION_SWITCHER_REWIRE_SCRIPT}
+ * can read it without any serialized props.
+ */
+export interface VersionSwitcherRewireConfig {
+  /** Normalized site base with no trailing slash (`""` for a root site). */
+  base: string;
+  /** The project's default locale (rendered without a locale prefix). */
+  defaultLocale: string;
+  /** Whether the project appends trailing slashes to page URLs. */
+  trailingSlash: boolean;
+  /**
+   * The active locale code — constant within a `header-${lang}` persist window,
+   * so it can be read once from the SSR container rather than re-derived.
+   */
+  currentLocale: string;
+}
+
+/** The re-computed per-page menu state {@link computeVersionSwitcherState} returns. */
+export interface VersionSwitcherState {
+  /** Href for the "Latest" entry, matching the SSR `latestUrl`. */
+  latestHref: string;
+  /** version slug → href for that version of the current page (SSR `versionUrls`). */
+  versionHrefs: Record<string, string>;
+  /** Active version slug, or `null` when the current page is on "latest". */
+  activeVersion: string | null;
+}
+
+/**
+ * Client-side re-computation of the version-switcher's per-page menu state from
+ * the *current* pathname. This is a self-contained port of the header factory's
+ * URL logic (`createHeaderWithDefaults`'s `latestUrl` / `versionUrls` block, in
+ * turn `docsUrl` / `versionedDocsUrl` / `withBase` from `url-helpers`). It MUST
+ * stay behaviourally identical to that SSR path — pinned by the drift-guard test
+ * in `__tests__/version-switcher.test.tsx`, which asserts equality against the
+ * real `makeUrlHelpers` output across a case table.
+ *
+ * It is deliberately self-contained (no references to module-scope helpers)
+ * because {@link VERSION_SWITCHER_REWIRE_SCRIPT} embeds it verbatim via
+ * `.toString()`, so it must be valid as a standalone function in the browser.
+ *
+ * The `/docs/versions` listing is a standalone package route (`currentSlug`
+ * `undefined` on the SSR side), so — like the SSR factory — every menu href
+ * there collapses to `versionsPageUrl`; the exact-path check below mirrors that.
+ */
+export function computeVersionSwitcherState(
+  pathname: string,
+  config: VersionSwitcherRewireConfig,
+  versionSlugs: string[],
+): VersionSwitcherState {
+  const normalizedBase = config.base;
+  const defaultLocale = config.defaultLocale;
+  const currentLocale = config.currentLocale;
+  const trailingSlash = config.trailingSlash;
+
+  const stripBase = (path: string): string => {
+    if (normalizedBase === "") return path;
+    if (path === normalizedBase) return "/";
+    return path.indexOf(normalizedBase + "/") === 0
+      ? path.slice(normalizedBase.length)
+      : path;
+  };
+
+  const applyTrailingSlash = (url: string): string => {
+    if (!trailingSlash) return url;
+    if (url.charAt(url.length - 1) === "/") return url;
+    const suffixIdx = url.search(/[?#]/);
+    const pathPart = suffixIdx >= 0 ? url.slice(0, suffixIdx) : url;
+    const suffix = suffixIdx >= 0 ? url.slice(suffixIdx) : "";
+    if (pathPart.charAt(pathPart.length - 1) === "/") return url;
+    const segments = pathPart.split("/");
+    const lastSegment = segments[segments.length - 1] || "";
+    if (/\.[a-zA-Z]\w*$/.test(lastSegment)) return url;
+    return pathPart + "/" + suffix;
+  };
+
+  const withBase = (path: string): string => {
+    const raw =
+      normalizedBase === ""
+        ? path
+        : normalizedBase + (path.charAt(0) === "/" ? path : "/" + path);
+    return applyTrailingSlash(raw);
+  };
+
+  const versionsPageUrl = withBase(
+    currentLocale === defaultLocale
+      ? "/docs/versions"
+      : "/" + currentLocale + "/docs/versions",
+  );
+
+  const stripped = stripBase(pathname);
+  const versionMatch = stripped.match(/^\/v\/([^/]+)(\/.*|$)/);
+  const rest = versionMatch ? versionMatch[2] || "/" : stripped;
+
+  let localeStripped = rest;
+  if (currentLocale !== defaultLocale) {
+    localeStripped = rest.replace(
+      new RegExp("^/" + currentLocale + "(?:/|$)"),
+      "/",
+    );
+  }
+  // A page carries a `currentSlug` (and thus per-page menu URLs) iff it is one
+  // of the doc-collection catch-all routes — every `/docs/...` path EXCEPT the
+  // standalone `/docs/versions` listing, which has no `currentSlug`.
+  const isVersionsIndex =
+    localeStripped === "/docs/versions" || localeStripped === "/docs/versions/";
+  const isDocPage = /^\/docs(\/|$)/.test(localeStripped) && !isVersionsIndex;
+  const activeVersion = isDocPage && versionMatch ? versionMatch[1] || null : null;
+
+  const versionHrefs: Record<string, string> = {};
+  let latestHref: string;
+  if (isDocPage) {
+    latestHref = withBase(rest);
+    for (let i = 0; i < versionSlugs.length; i++) {
+      const slug = versionSlugs[i];
+      if (slug) versionHrefs[slug] = withBase("/v/" + slug + rest);
+    }
+  } else {
+    latestHref = versionsPageUrl;
+    for (let i = 0; i < versionSlugs.length; i++) {
+      const slug = versionSlugs[i];
+      if (slug) versionHrefs[slug] = versionsPageUrl;
+    }
+  }
+
+  return { latestHref, versionHrefs, activeVersion };
 }
 
 /** Concatenate Tailwind class strings, dropping falsy entries. */
@@ -189,6 +333,7 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
     unavailableVersions,
     labels,
     idSuffix = "",
+    rewireConfig,
   } = props;
 
   const menuId = `version-menu${idSuffix ? `-${idSuffix}` : ""}`;
@@ -197,8 +342,22 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
     ? labels.latest
     : (versions.find((v) => v.slug === currentVersion)?.label ?? currentVersion);
 
+  // Config attributes + anchor markers drive the SPA re-wire script; omitted
+  // when no config is supplied so static / inline callers render exactly as
+  // before (zudolab/zudo-doc#2553).
+  const rewire = rewireConfig != null;
+  const rewireAttrs = rewireConfig
+    ? {
+        "data-version-rewire": true,
+        "data-base": rewireConfig.base,
+        "data-default-locale": rewireConfig.defaultLocale,
+        "data-trailing-slash": String(rewireConfig.trailingSlash),
+        "data-current-locale": rewireConfig.currentLocale,
+      }
+    : {};
+
   return (
-    <div class="version-switcher relative" data-version-switcher>
+    <div class="version-switcher relative" data-version-switcher {...rewireAttrs}>
       <button
         type="button"
         class="flex items-center gap-hsp-2xs border border-muted rounded px-hsp-sm py-vsp-3xs text-small text-muted hover:border-accent hover:text-accent transition-colors cursor-pointer whitespace-nowrap"
@@ -207,7 +366,12 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
         data-version-toggle
       >
         <span class="text-caption">{labels.switcher}:</span>
-        <span class="font-medium">{triggerLabel}</span>
+        <span
+          class="font-medium"
+          data-version-trigger-label={rewire ? true : undefined}
+        >
+          {triggerLabel}
+        </span>
         <ChevronDownIcon />
       </button>
 
@@ -224,6 +388,7 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
               "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 hover:underline focus-visible:underline",
               isLatest ? "font-bold text-accent" : "text-fg",
             )}
+            data-version-latest={rewire ? true : undefined}
           >
             {labels.latest}
           </a>
@@ -246,6 +411,7 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
                     "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 hover:underline focus-visible:underline",
                     isActive ? "font-bold text-accent" : "text-fg",
                   )}
+                  data-version-slug={rewire ? v.slug : undefined}
                 >
                   {v.label}
                 </a>
@@ -256,6 +422,7 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
                   tabindex={-1}
                   class="block px-hsp-md py-vsp-2xs text-small text-muted/50 cursor-not-allowed pointer-events-none"
                   title={labels.unavailable}
+                  data-version-slug={rewire ? v.slug : undefined}
                 >
                   {v.label}
                 </a>
@@ -324,6 +491,76 @@ toggle.focus();
 }
 initVersionSwitcher();
 document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)},initVersionSwitcher);
+})();`;
+
+/**
+ * Inline script that keeps the switcher's per-page menu correct inside a
+ * persisted header. Mounted once wherever a header renders a re-wireable
+ * VersionSwitcher (see `header.tsx`, gated on `hasVersions`), it recomputes each
+ * menu anchor's href, the active row, and the trigger label from the live
+ * pathname on first load and on `zfb:after-swap` — the same rebind-on-navigate
+ * contract `LANGUAGE_SWITCHER_INIT_SCRIPT` uses (zudolab/zudo-doc#2553).
+ *
+ * It only touches switchers carrying `data-version-rewire` (emitted when a
+ * {@link VersionSwitcherRewireConfig} is passed), so the inline breadcrumb
+ * switcher — re-rendered fresh on every swap — is left alone.
+ *
+ * `window[FLAG]` makes it idempotent: the tag may re-execute on a hard reload or
+ * a cross-locale header repaint, but the listener registers exactly once per
+ * page lifetime.
+ */
+export const VERSION_SWITCHER_REWIRE_SCRIPT = `(function(){
+var FLAG="__zdVersionSwitcherRewire";
+if(window[FLAG])return;
+window[FLAG]=true;
+var computeVersionSwitcherState=${computeVersionSwitcherState.toString()};
+function setActive(a,active){
+a.classList.toggle("font-bold",active);
+a.classList.toggle("text-accent",active);
+a.classList.toggle("text-fg",!active);
+if(active){a.setAttribute("aria-current","page");}else{a.removeAttribute("aria-current");}
+}
+function rewire(){
+var containers=document.querySelectorAll("[data-version-rewire]");
+for(var i=0;i<containers.length;i++){
+var c=containers[i];
+var config={base:c.getAttribute("data-base")||"",defaultLocale:c.getAttribute("data-default-locale")||"",trailingSlash:c.getAttribute("data-trailing-slash")==="true",currentLocale:c.getAttribute("data-current-locale")||""};
+var versionAnchors=c.querySelectorAll("[data-version-slug]");
+var slugs=[];
+for(var j=0;j<versionAnchors.length;j++){
+var s=versionAnchors[j].getAttribute("data-version-slug");
+if(s)slugs.push(s);
+}
+var state=computeVersionSwitcherState(window.location.pathname,config,slugs);
+var latest=c.querySelector("[data-version-latest]");
+if(latest){
+latest.setAttribute("href",state.latestHref);
+setActive(latest,state.activeVersion===null);
+}
+for(var k=0;k<versionAnchors.length;k++){
+var a=versionAnchors[k];
+var slug=a.getAttribute("data-version-slug");
+if(!slug)continue;
+var href=state.versionHrefs[slug];
+if(href!=null)a.setAttribute("href",href);
+if(!a.hasAttribute("aria-disabled"))setActive(a,state.activeVersion===slug);
+}
+var label=c.querySelector("[data-version-trigger-label]");
+if(label){
+if(state.activeVersion===null){
+if(latest)label.textContent=latest.textContent;
+}else{
+var activeLabel=null;
+for(var m=0;m<versionAnchors.length;m++){
+if(versionAnchors[m].getAttribute("data-version-slug")===state.activeVersion){activeLabel=versionAnchors[m].textContent;break;}
+}
+label.textContent=activeLabel!=null?activeLabel:state.activeVersion;
+}
+}
+}
+}
+rewire();
+document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)},rewire);
 })();`;
 
 // Re-export the data types so consumers can import everything they need

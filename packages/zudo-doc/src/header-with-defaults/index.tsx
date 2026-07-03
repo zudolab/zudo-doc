@@ -193,6 +193,15 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
           versionUrls={versionUrls}
           labels={labels}
           idSuffix="header"
+          // Persisted-header re-wire (#2553): the menu's per-page hrefs / active
+          // row / trigger label are recomputed from the live pathname on
+          // zfb:after-swap, mirroring the LanguageSwitcher config above.
+          rewireConfig={{
+            base: settings.base.replace(/\/+$/, ""),
+            defaultLocale,
+            trailingSlash: settings.trailingSlash,
+            currentLocale: lang,
+          }}
         />
       ) as unknown as VNode;
     }

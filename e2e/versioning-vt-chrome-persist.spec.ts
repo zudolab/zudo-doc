@@ -127,3 +127,80 @@ test.describe("VT Chrome Persist: version-switcher state on versioned routes", (
     ).toMatch(/1\.0/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// #2553: the persisted header's version-switcher MENU (anchor hrefs, active
+// row, trigger label) must be recomputed from the live pathname on
+// zfb:after-swap — not just the toggle open/close behaviour. These assert the
+// stale-menu regression that the tests above deliberately left uncovered.
+//
+// The fixture emits slashless hrefs (trailingSlash off), so href assertions
+// tolerate an optional trailing slash.
+// ---------------------------------------------------------------------------
+test.describe("VT Chrome Persist: version-switcher menu re-wire (#2553)", () => {
+  test("menu anchor hrefs re-wire after a same-version SPA swap", async ({ page }) => {
+    await page.goto(VERSIONED_PAGE, { waitUntil: "domcontentloaded" });
+
+    // Scope to the persisted-header switcher (the only one carrying the
+    // re-wire config); the inline breadcrumb switcher lives in <main> and is
+    // re-rendered fresh on every swap, so it is intentionally not re-wired.
+    const sw = page.getByRole("banner").locator("[data-version-rewire]");
+    await expect(sw, "header version-switcher must opt into SPA re-wire").toBeAttached();
+
+    const latestAnchor = sw.locator("[data-version-latest]");
+    const v1Anchor = sw.locator('[data-version-slug="1.0"]');
+
+    // Baseline: on the getting-started page the menu points there.
+    await expect(v1Anchor).toHaveAttribute("href", /\/v\/1\.0\/docs\/getting-started\/?$/);
+    await expect(latestAnchor).toHaveAttribute("href", /^\/docs\/getting-started\/?$/);
+
+    // Tag the switcher DOM node so we can prove it persisted (a re-wire) rather
+    // than being re-rendered by the router.
+    await sw.evaluate((el) => el.setAttribute("data-persist-marker", "v1"));
+
+    const swapFired = await spaClick(page, VERSIONED_PAGE_2);
+    expect(swapFired, "zfb:after-swap should fire for the same-version SPA swap").toBe(true);
+    await page.waitForURL(/\/v\/1\.0\/docs\/installation\/?$/);
+
+    // Same DOM node → header genuinely persisted, so the hrefs below only
+    // update because of the client re-wire (they would be stale pre-fix).
+    await expect(
+      sw,
+      "the header switcher must be the same persisted DOM node after the swap",
+    ).toHaveAttribute("data-persist-marker", "v1");
+
+    await expect(v1Anchor).toHaveAttribute("href", /\/v\/1\.0\/docs\/installation\/?$/);
+    await expect(latestAnchor).toHaveAttribute("href", /^\/docs\/installation\/?$/);
+  });
+
+  test("active row + trigger label re-wire on a cross-version SPA swap", async ({ page }) => {
+    await page.goto(VERSIONED_PAGE, { waitUntil: "domcontentloaded" });
+
+    const sw = page.getByRole("banner").locator("[data-version-rewire]");
+    await expect(sw).toBeAttached();
+
+    const triggerLabel = sw.locator("[data-version-trigger-label]");
+    const latestAnchor = sw.locator("[data-version-latest]");
+    const v1Anchor = sw.locator('[data-version-slug="1.0"]');
+
+    // Baseline on the versioned page: label "1.0.0", the 1.0 row is active.
+    await expect(triggerLabel).toHaveText(/1\.0/);
+    await expect(v1Anchor).toHaveAttribute("aria-current", "page");
+
+    await sw.evaluate((el) => el.setAttribute("data-persist-marker", "vc"));
+
+    // SPA-navigate to the latest page via the switcher's own "Latest" menu
+    // link — a cross-version swap under the shared header-en persist key.
+    const swapFired = await spaClick(page, LATEST_PAGE);
+    expect(swapFired, "zfb:after-swap should fire for the cross-version SPA swap").toBe(true);
+    await page.waitForURL(/\/docs\/getting-started\/?$/);
+
+    await expect(sw).toHaveAttribute("data-persist-marker", "vc");
+
+    // Post-nav the active row + label must follow the latest page (would stay
+    // stale on "1.0.0" pre-fix).
+    await expect(triggerLabel).toHaveText(/Latest/);
+    await expect(latestAnchor).toHaveAttribute("aria-current", "page");
+    await expect(v1Anchor).not.toHaveAttribute("aria-current", "page");
+  });
+});
