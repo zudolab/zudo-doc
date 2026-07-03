@@ -23,9 +23,27 @@ import {
 
 | Field | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `claudeDir` | `string` | required | Path to `.claude/`. Resolved against `projectRoot` when relative. |
-| `projectRoot` | `string` | `process.cwd()` | Search root for `CLAUDE.md` discovery and the anchor for relative paths. |
+| `claudeDir` | `string` | required | Path to `.claude/` (source of commands/skills/agents). Resolved against `projectRoot` when relative. |
+| `projectRoot` | `string` | `process.cwd()` | Anchor for the relative `claudeDir`, `docsDir`, and `scanRoot` paths, and the default value of `scanRoot`. |
+| `scanRoot` | `string` | `projectRoot` | Root for **`CLAUDE.md` discovery** and the base for generated pages' relative-path titles/slugs. Resolved against `projectRoot` when relative (absolute allowed). Governs `CLAUDE.md` discovery **only** — commands/skills/agents always come from `claudeDir`. |
 | `docsDir` | `string` | `src/content/docs` | Output directory for generated MDX. Resolved against `projectRoot` when relative. |
+
+#### Anchor precedence
+
+All three relative inputs (`claudeDir`, `docsDir`, `scanRoot`) resolve against `projectRoot`. `scanRoot` then becomes the walk / relative-path base for `CLAUDE.md` discovery, decoupled from the output base (`docsDir`). When `scanRoot` is unset it equals `projectRoot`, so single-root projects behave exactly as before.
+
+#### Subdirectory-monorepo doc sites (`scanRoot`)
+
+When the doc site lives in a **subdirectory** of the repo but should surface `CLAUDE.md` files from the repo root and sibling packages, set `scanRoot` to widen discovery without moving the generated output out of the doc package:
+
+```ts
+// settings.claudeResources — doc site in <repo>/docs-site, .claude at repo root
+claudeResources: { claudeDir: "../.claude", scanRoot: ".." }
+```
+
+- Output still lands in the doc site's own `docsDir` (anchored to `projectRoot`, which in the preset/plugin path defaults to `ctx.projectRoot` — the doc-site root). Omitting `projectRoot` as above is the most robust form; the imperative `runClaudeResourcesPreStep` runner instead defaults `projectRoot` to `process.cwd()`.
+- `scanRoot: ".."` makes the `CLAUDE.md` walk start at the repo root, so repo-root and sibling-package `CLAUDE.md` files are discovered and titled relative to the repo root (e.g. `/CLAUDE.md`, `/app/CLAUDE.md`).
+- Note: with `scanRoot` at the repo root the discovery walk's exclude list (`.git`, `node_modules`, `dist`, `out`, `public`, `worktrees`, `__inbox`, `test-results`, `e2e/fixtures`, and the `docsDir` itself) re-anchors there, so a per-subdirectory build output in another package is no longer excluded from the walk. In practice this is negligible — only files literally named `CLAUDE.md` are collected and dotdirs/`node_modules` are always skipped — but repo-wide scanning is heavier and will surface sibling-package `CLAUDE.md` files, which is the intended aggregation.
 
 ## Registration in zfb.config.ts
 

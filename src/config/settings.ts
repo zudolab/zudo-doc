@@ -209,7 +209,7 @@ export const settings = {
   ] satisfies VersionConfig[] as VersionConfig[] | false,
   claudeResources: {
     claudeDir: ".claude",
-  } as { claudeDir: string; projectRoot?: string } | false,
+  } as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,
   defaultLocaleOnlyPrefixes: [
     "/docs/claude-md/",
     "/docs/claude-skills/",

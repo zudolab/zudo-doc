@@ -58,6 +58,11 @@ export interface PresetVersionConfig {
 export interface PresetClaudeResourcesConfig {
   claudeDir: string;
   projectRoot?: string;
+  /**
+   * Root for `CLAUDE.md` discovery; defaults to `projectRoot`. Decouples
+   * repo-wide scanning from the output base for subdirectory doc sites (#2558).
+   */
+  scanRoot?: string;
 }
 
 /**
@@ -509,6 +514,7 @@ function buildPlugins(
             options: {
               claudeDir: settings.claudeResources.claudeDir,
               projectRoot: settings.claudeResources.projectRoot,
+              scanRoot: settings.claudeResources.scanRoot,
               docsDir: settings.docsDir,
             },
           },

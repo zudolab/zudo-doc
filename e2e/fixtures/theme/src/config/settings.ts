@@ -38,7 +38,7 @@ export const settings = {
   designTokenPanel: true as boolean,
   dynamicPageTransition: true as boolean,
   docHistory: false,
-  claudeResources: false as { claudeDir: string; projectRoot?: string } | false,
+  claudeResources: false as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,
   defaultLocaleOnlyPrefixes: [] as string[],
   tocMinDepth: 2 as number,
   tocMaxDepth: 4 as number,

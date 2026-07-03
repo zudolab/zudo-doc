@@ -43,10 +43,27 @@ export interface ClaudeResourcesPluginOptions {
    */
   claudeDir: string;
   /**
-   * Project root used both as the search root for `CLAUDE.md` discovery
-   * and to anchor relative paths. Defaults to `process.cwd()`.
+   * Anchor for resolving the relative `claudeDir`, `docsDir`, and `scanRoot`
+   * paths, and the default value of `scanRoot`. Defaults to `process.cwd()`.
+   *
+   * Note: this does NOT itself decide where `CLAUDE.md` discovery walks — that
+   * is `scanRoot` (which defaults to this). Set `scanRoot` to widen discovery
+   * (e.g. a subdirectory doc site scanning its repo root) without moving the
+   * output base, which stays anchored here.
    */
   projectRoot?: string;
+  /**
+   * Root for `CLAUDE.md` discovery and the base for the generated pages'
+   * relative-path titles/slugs. Defaults to `projectRoot`. Resolved against
+   * `projectRoot` when relative (absolute allowed).
+   *
+   * Scope: governs `CLAUDE.md` discovery ONLY. Commands, skills, and agents
+   * always come from `claudeDir` and are unaffected by `scanRoot`. Decoupling
+   * this from `projectRoot` lets a doc site in a repo subdirectory scan
+   * repo-wide `CLAUDE.md` files while still writing generated pages into its
+   * own content collection (see #2558).
+   */
+  scanRoot?: string;
   /**
    * Output directory for generated MDX pages, resolved against
    * `projectRoot` when relative. Defaults to `src/content/docs` to
@@ -86,12 +103,24 @@ export function runClaudeResourcesPreStep(
   const claudeDir = path.isAbsolute(options.claudeDir)
     ? options.claudeDir
     : path.resolve(projectRoot, options.claudeDir);
+  // scanRoot decouples CLAUDE.md discovery (and the generated pages' relPath
+  // base) from the output base. Defaults to projectRoot, so an unset scanRoot
+  // reproduces the pre-#2558 behaviour byte-for-byte.
+  const scanRoot =
+    options.scanRoot === undefined
+      ? projectRoot
+      : path.isAbsolute(options.scanRoot)
+        ? options.scanRoot
+        : path.resolve(projectRoot, options.scanRoot);
   const docsDirInput = options.docsDir ?? "src/content/docs";
   const docsDir = path.isAbsolute(docsDirInput)
     ? docsDirInput
     : path.resolve(projectRoot, docsDirInput);
 
-  return generateClaudeResourcesDocs({ claudeDir, projectRoot, docsDir });
+  // The generator's `projectRoot` param IS the CLAUDE.md scan root + relPath
+  // base (it never touches output — output is always `docsDir`), so pass the
+  // resolved scanRoot there while docsDir stays anchored to the real projectRoot.
+  return generateClaudeResourcesDocs({ claudeDir, projectRoot: scanRoot, docsDir });
 }
 
 export {
