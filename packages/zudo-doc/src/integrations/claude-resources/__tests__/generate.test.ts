@@ -147,6 +147,26 @@ describe("generateClaudeResourcesDocs", () => {
       expect(overview).toContain('<CategoryNav categories={');
     });
 
+    it("overview body has no prose line duplicating the frontmatter description", () => {
+      // Regression test for #2568: the body used to repeat the frontmatter
+      // `description` verbatim as a standalone prose line right below `---`.
+      generateClaudeResourcesDocs({
+        claudeDir,
+        projectRoot: tmpDir,
+        docsDir,
+      });
+
+      const overview = fs.readFileSync(
+        path.join(docsDir, "claude", "index.mdx"),
+        "utf8",
+      );
+      const parsed = matter(overview);
+      const description = parsed.data.description as string;
+      const bodyLines = parsed.content.split("\n");
+
+      expect(bodyLines).not.toContain(description);
+    });
+
     it("skill page has correct frontmatter", () => {
       generateClaudeResourcesDocs({
         claudeDir,
