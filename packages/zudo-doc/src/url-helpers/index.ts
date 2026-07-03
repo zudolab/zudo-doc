@@ -116,7 +116,14 @@ export function makeUrlHelpers(
 
   /** Build a docs URL for the given slug and lang. */
   function docsUrl(slug: string, lang: string = defaultLocale): string {
-    const path = lang === defaultLocale ? `/docs/${slug}` : `/${lang}/docs/${slug}`;
+    const defaultPath = `/docs/${slug}`;
+    // defaultLocaleOnly docs (settings.defaultLocaleOnlyPrefixes, epic #1592) ship
+    // ONLY default-locale routes, so a non-default locale must still resolve into the
+    // default-locale URL space — a `/${lang}/docs/...` href would 404 (#2569).
+    const path =
+      lang === defaultLocale || isDefaultLocaleOnlyPath(defaultPath)
+        ? defaultPath
+        : `/${lang}/docs/${slug}`;
     return withBase(path);
   }
 
@@ -141,7 +148,13 @@ export function makeUrlHelpers(
     lang: string | undefined,
     currentVersion: string | undefined,
   ): string {
-    const isNonDefaultLocale = lang != null && lang !== defaultLocale;
+    // A defaultLocaleOnly path (settings.defaultLocaleOnlyPrefixes, #1592/#2569)
+    // has no non-default-locale route, so keep it in the default-locale URL space
+    // even on a non-default-locale surface. The version prefix is applied
+    // separately below, so this preserves `/v/{version}/docs/...`
+    // (isDefaultLocaleOnlyPath matches the plain `/docs/` shape only).
+    const isNonDefaultLocale =
+      lang != null && lang !== defaultLocale && !isDefaultLocaleOnlyPath(path);
     const versionPrefix = currentVersion ? `/v/${currentVersion}` : "";
     return withBase(
       isNonDefaultLocale
