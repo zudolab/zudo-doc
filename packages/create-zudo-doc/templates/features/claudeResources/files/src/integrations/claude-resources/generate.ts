@@ -214,11 +214,19 @@ function findClaudeMdFiles(dir: string, excludeDirs: string[]): string[] {
   const results: string[] = [];
   if (!fs.existsSync(dir)) return results;
 
+  // Strip trailing separators (path.join preserves one on e.g. "docs/") so the
+  // boundary compare below stays exact for such entries too.
+  const excludes = excludeDirs.map((d) =>
+    d.endsWith(path.sep) ? d.slice(0, -path.sep.length) : d,
+  );
+
   for (const item of fs.readdirSync(dir)) {
     if (item === "node_modules") continue;
     if (item.startsWith(".")) continue;
     const itemPath = path.join(dir, item);
-    if (excludeDirs.some((d) => itemPath.startsWith(d))) continue;
+    // Path-segment-boundary-aware: a raw startsWith(d) would also match a
+    // sibling like "dist-extra" against an excluded "dist" (#2561).
+    if (excludes.some((d) => itemPath === d || itemPath.startsWith(d + path.sep))) continue;
 
     // lstat (not stat) so symlinks aren't followed — a symlinked dir can point
     // back into the project (e.g. e2e fixtures linking to packages/) or out to
@@ -231,7 +239,7 @@ function findClaudeMdFiles(dir: string, excludeDirs: string[]): string[] {
       continue;
     }
     if (stat.isDirectory()) {
-      results.push(...findClaudeMdFiles(itemPath, excludeDirs));
+      results.push(...findClaudeMdFiles(itemPath, excludes));
     } else if (stat.isFile() && item === "CLAUDE.md") {
       results.push(itemPath);
     }
