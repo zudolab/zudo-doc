@@ -131,16 +131,20 @@ describe("runClaudeResourcesPreStep — scanRoot decoupling", () => {
     expect(counts.commands).toBe(1);
   });
 
-  it("(e) does not re-scan its own output when scanRoot and output overlap", () => {
+  it("(e) excludes its own output dir from the scan even when it lives under scanRoot", () => {
     const first = runClaudeResourcesPreStep({
       claudeDir,
       projectRoot: docsSite,
       scanRoot: repoRoot,
     });
-    const firstTitles = claudeMdTitles();
+    expect(first.claudemd).toBe(3);
 
-    // Re-run: the generated pages live under scanRoot (docs-site/src/content/docs)
-    // but are excluded from the walk, so the result is stable — no feedback loop.
+    // Drop a decoy file literally named CLAUDE.md INSIDE the output dir (which
+    // lives under scanRoot). It must NOT be collected — the walk excludes
+    // docsDir — so generated output can never feed back into the next run.
+    // Without the docsDir exclude this decoy would push the count to 4.
+    fs.writeFileSync(path.join(outDir, "CLAUDE.md"), "# Decoy\n\nShould be excluded.");
+
     const second = runClaudeResourcesPreStep({
       claudeDir,
       projectRoot: docsSite,
@@ -148,7 +152,10 @@ describe("runClaudeResourcesPreStep — scanRoot decoupling", () => {
     });
 
     expect(second.claudemd).toBe(3);
-    expect(second.claudemd).toBe(first.claudemd);
-    expect(claudeMdTitles()).toEqual(firstTitles);
+    expect(claudeMdTitles()).toEqual([
+      "/CLAUDE.md",
+      "/app/CLAUDE.md",
+      "/docs-site/CLAUDE.md",
+    ]);
   });
 });
