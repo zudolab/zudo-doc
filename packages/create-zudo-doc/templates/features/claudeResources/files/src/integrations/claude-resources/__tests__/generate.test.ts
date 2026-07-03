@@ -576,6 +576,69 @@ describe("generateClaudeResourcesDocs", () => {
   });
 
   // ---------------------------------------------------------------------------
+  // excludeDirs boundary matching (#2561)
+  // ---------------------------------------------------------------------------
+
+  describe("excludeDirs boundary matching", () => {
+    it("discovers CLAUDE.md in a prefix-colliding sibling of an excluded dir (dist-extra vs dist)", () => {
+      fs.mkdirSync(path.join(tmpDir, "dist-extra"), { recursive: true });
+      fs.writeFileSync(
+        path.join(tmpDir, "dist-extra", "CLAUDE.md"),
+        "# dist-extra instructions",
+      );
+
+      const result = generateClaudeResourcesDocs({
+        claudeDir,
+        projectRoot: tmpDir,
+        docsDir,
+      });
+
+      // root/CLAUDE.md (from the fixture) + dist-extra/CLAUDE.md
+      expect(result.claudemd).toBe(2);
+      const decoyPage = path.join(docsDir, "claude-md", "dist-extra.mdx");
+      expect(fs.existsSync(decoyPage)).toBe(true);
+      expect(fs.readFileSync(decoyPage, "utf8")).toContain("dist-extra instructions");
+    });
+
+    it("still excludes CLAUDE.md directly inside the excluded dist directory", () => {
+      fs.mkdirSync(path.join(tmpDir, "dist"), { recursive: true });
+      fs.writeFileSync(
+        path.join(tmpDir, "dist", "CLAUDE.md"),
+        "# dist instructions — should be excluded",
+      );
+
+      const result = generateClaudeResourcesDocs({
+        claudeDir,
+        projectRoot: tmpDir,
+        docsDir,
+      });
+
+      // Only root/CLAUDE.md (from the fixture) — dist/CLAUDE.md is excluded.
+      expect(result.claudemd).toBe(1);
+      expect(fs.existsSync(path.join(docsDir, "claude-md", "dist.mdx"))).toBe(false);
+    });
+
+    it("still excludes nested CLAUDE.md files under the excluded dist directory (exact-match boundary holds)", () => {
+      fs.mkdirSync(path.join(tmpDir, "dist", "nested"), { recursive: true });
+      fs.writeFileSync(
+        path.join(tmpDir, "dist", "nested", "CLAUDE.md"),
+        "# nested dist instructions — should be excluded",
+      );
+
+      const result = generateClaudeResourcesDocs({
+        claudeDir,
+        projectRoot: tmpDir,
+        docsDir,
+      });
+
+      // Only root/CLAUDE.md (from the fixture) — the whole dist/ subtree,
+      // including nested dirs, is excluded once the top-level dist match hits.
+      expect(result.claudemd).toBe(1);
+      expect(fs.existsSync(path.join(docsDir, "claude-md", "dist--nested.mdx"))).toBe(false);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // CLAUDE.md repo-relative link downgrade (#2411, Class B)
   // ---------------------------------------------------------------------------
 
