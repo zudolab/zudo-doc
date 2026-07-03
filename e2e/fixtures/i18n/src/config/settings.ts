@@ -1,5 +1,6 @@
 import type {
   HeaderNavItem,
+  HeaderRightItem,
   ColorModeConfig,
   LocaleConfig,
   MetaTagsConfig,
@@ -47,5 +48,10 @@ export const settings = {
     },
     { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
   ] satisfies HeaderNavItem[] as HeaderNavItem[],
+  // Render the desktop header language switcher so the #2551 SPA-nav re-wire
+  // regression (i18n-vt-chrome-persist.spec.ts) can exercise it.
+  headerRightItems: [
+    { type: "component", component: "language-switcher" },
+  ] satisfies HeaderRightItem[] as HeaderRightItem[],
   packageOwnedRoutes: true,
 };

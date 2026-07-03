@@ -45,6 +45,7 @@ import {
   pathForMatch,
 } from "./nav-active.js";
 import { NAV_OVERFLOW_SCRIPT } from "./nav-overflow-script.js";
+import { LANGUAGE_SWITCHER_INIT_SCRIPT } from "../i18n-version/language-switcher.js";
 import type {
   HeaderNavItem,
   HeaderRightItem,
@@ -290,9 +291,12 @@ export function Header(props: HeaderProps): JSX.Element {
       //     Island re-hydrates with correct nodes on mount)
       //   - Header nav + aria-current: NAV_OVERFLOW_SCRIPT re-runs on
       //     AFTER_NAVIGATE_EVENT (nav-overflow-script.ts:198, verified (a))
-      //   - LanguageSwitcher: SSR'd locale links are locale-static within
-      //     a same-locale persist window — no per-page fields go stale
-      //     (verified (a) — locale does not change during same-locale nav)
+      //   - LanguageSwitcher: its target hrefs ARE per-page (the equivalent
+      //     page in each other locale), so within a same-locale persist window
+      //     they WOULD go stale — the locale is constant but the path is not.
+      //     LANGUAGE_SWITCHER_INIT_SCRIPT recomputes each anchor's href from
+      //     window.location on AFTER_NAVIGATE_EVENT, same as the controls above
+      //     (zudolab/zudo-doc#2551).
       // Omit persistKey to fall back to the old repaint-on-every-swap path.
       data-zfb-transition-persist={persistKey}
     >
@@ -365,6 +369,15 @@ export function Header(props: HeaderProps): JSX.Element {
       </div>
 
       <script dangerouslySetInnerHTML={{ __html: NAV_OVERFLOW_SCRIPT }} />
+      {hasLocales ? (
+        // Keeps the persisted header's language-switcher hrefs pointing at the
+        // current page's equivalent in each other locale across same-locale SPA
+        // navigation (#2551). Registers a document-level AFTER_NAVIGATE_EVENT
+        // listener once; idempotent across re-execution.
+        <script
+          dangerouslySetInnerHTML={{ __html: LANGUAGE_SWITCHER_INIT_SCRIPT }}
+        />
+      ) : null}
     </header>
   );
 }

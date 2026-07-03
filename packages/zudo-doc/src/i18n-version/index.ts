@@ -17,8 +17,15 @@
 // layout's body-end scripts slot) — it idempotently re-binds after
 // View Transitions navigation.
 
-export { LanguageSwitcher } from "./language-switcher.js";
-export type { LanguageSwitcherProps } from "./language-switcher.js";
+export {
+  LanguageSwitcher,
+  LANGUAGE_SWITCHER_INIT_SCRIPT,
+  switchLocaleHref,
+} from "./language-switcher.js";
+export type {
+  LanguageSwitcherProps,
+  LanguageSwitcherConfig,
+} from "./language-switcher.js";
 
 export {
   VersionSwitcher,

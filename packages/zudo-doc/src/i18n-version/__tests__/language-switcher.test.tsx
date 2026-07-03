@@ -3,8 +3,14 @@
 
 import { describe, expect, it } from "vitest";
 import type { ComponentChildren, VNode } from "preact";
-import { LanguageSwitcher } from "../language-switcher.js";
+import {
+  LanguageSwitcher,
+  LANGUAGE_SWITCHER_INIT_SCRIPT,
+  switchLocaleHref,
+} from "../language-switcher.js";
 import type { LocaleLink } from "../types.js";
+import { makeUrlHelpers } from "../../url-helpers/index.js";
+import { AFTER_NAVIGATE_EVENT } from "../../transitions/index.js";
 
 // Minimal VNode → HTML serializer (mirrors the helper used in
 // breadcrumb.test.tsx — kept inline so the test runs without a render
@@ -96,5 +102,99 @@ describe("LanguageSwitcher", () => {
     // Two separators for three links.
     const slashCount = (html.match(/<span class="text-muted">\/<\/span>/g) ?? []).length;
     expect(slashCount).toBe(2);
+  });
+
+  it("emits data-* config on the container when config is provided", () => {
+    const html = serialize(
+      <LanguageSwitcher
+        links={enJa}
+        config={{ base: "", defaultLocale: "en", trailingSlash: true }}
+        currentLocale="ja"
+      />,
+    );
+    expect(html).toContain("data-language-switcher");
+    expect(html).toContain('data-current-locale="ja"');
+    expect(html).toContain('data-default-locale="en"');
+    expect(html).toContain('data-trailing-slash="true"');
+  });
+
+  it("omits config attributes for a static render (no config)", () => {
+    const html = serialize(<LanguageSwitcher links={enJa} />);
+    expect(html).not.toContain("data-language-switcher");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SPA re-wire (#2551): the client transform must reproduce the SSR-baked
+// hrefs exactly, so a persisted header's switcher stays correct after
+// same-locale navigation.
+// ---------------------------------------------------------------------------
+describe("switchLocaleHref (client re-wire) matches SSR buildLocaleLinks", () => {
+  const i18n = {
+    defaultLocale: "en",
+    locales: ["en", "ja", "de"],
+    getLocaleLabel: (c: string) => c.toUpperCase(),
+  };
+
+  const cases: Array<{
+    label: string;
+    base: string;
+    trailingSlash: boolean;
+    pathname: string;
+    currentLang: string;
+  }> = [
+    { label: "non-default → default (ja deep page)", base: "/", trailingSlash: true, pathname: "/ja/docs/guides/sidebar-filter/", currentLang: "ja" },
+    { label: "default → non-default (en deep page)", base: "/", trailingSlash: true, pathname: "/docs/guides/sidebar-filter/", currentLang: "en" },
+    { label: "locale index (ja root)", base: "/", trailingSlash: true, pathname: "/ja/docs/", currentLang: "ja" },
+    { label: "versioned non-default", base: "/", trailingSlash: true, pathname: "/v/1.0/ja/docs/intro/", currentLang: "ja" },
+    { label: "versioned default", base: "/", trailingSlash: true, pathname: "/v/1.0/docs/intro/", currentLang: "en" },
+    { label: "with base prefix", base: "/app", trailingSlash: true, pathname: "/app/ja/docs/x/", currentLang: "ja" },
+    { label: "trailingSlash off", base: "/", trailingSlash: false, pathname: "/ja/docs/x", currentLang: "ja" },
+  ];
+
+  for (const tc of cases) {
+    it(`reproduces SSR hrefs: ${tc.label}`, () => {
+      const helpers = makeUrlHelpers(
+        { base: tc.base, trailingSlash: tc.trailingSlash, siteUrl: "", defaultLocaleOnlyPrefixes: [] },
+        i18n,
+      );
+      const config = {
+        base: tc.base.replace(/\/+$/, ""),
+        defaultLocale: "en",
+        trailingSlash: tc.trailingSlash,
+      };
+      const links = helpers.buildLocaleLinks(tc.pathname, tc.currentLang);
+      // Need >1 rendered link so there are inactive anchors to re-wire.
+      expect(links.length).toBeGreaterThan(1);
+      for (const link of links) {
+        if (link.active) continue;
+        expect(
+          switchLocaleHref(tc.pathname, config, tc.currentLang, link.code),
+          `${tc.label} → ${link.code}`,
+        ).toBe(link.href);
+      }
+    });
+  }
+
+  it("default-locale-only pages render one (active) link — nothing to re-wire", () => {
+    const helpers = makeUrlHelpers(
+      { base: "/", trailingSlash: true, siteUrl: "", defaultLocaleOnlyPrefixes: ["/docs/versions/"] },
+      i18n,
+    );
+    const links = helpers.buildLocaleLinks("/ja/docs/versions/", "ja");
+    expect(links.length).toBe(1);
+    expect(links[0]?.active).toBe(true);
+  });
+});
+
+describe("LANGUAGE_SWITCHER_INIT_SCRIPT", () => {
+  it("is non-empty, rebinds on after-navigate, and is idempotent", () => {
+    expect(LANGUAGE_SWITCHER_INIT_SCRIPT.length).toBeGreaterThan(0);
+    expect(LANGUAGE_SWITCHER_INIT_SCRIPT).toContain(JSON.stringify(AFTER_NAVIGATE_EVENT));
+    expect(LANGUAGE_SWITCHER_INIT_SCRIPT).toContain("data-language-switcher");
+    expect(LANGUAGE_SWITCHER_INIT_SCRIPT).toContain("switchLocaleHref");
+    expect(LANGUAGE_SWITCHER_INIT_SCRIPT).toContain("window.location.pathname");
+    // idempotency guard (single document-level listener per page lifetime)
+    expect(LANGUAGE_SWITCHER_INIT_SCRIPT).toContain("__zdLanguageSwitcherInit");
   });
 });

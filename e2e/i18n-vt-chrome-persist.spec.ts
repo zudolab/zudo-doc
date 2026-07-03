@@ -194,3 +194,95 @@ test.describe("VT Chrome Persist: locale-toggle clickability post-EN→JA (W7A)"
     ).not.toContain("/ja/");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Test 6: language switcher href stays correct across SAME-locale SPA nav
+// (#2551 — the persisted header's switcher hrefs must not go stale)
+// ---------------------------------------------------------------------------
+test.describe("VT Chrome Persist: language switcher href after same-locale nav (#2551)", () => {
+  test("EN switcher link tracks the current page after a same-locale JA→JA swap", async ({
+    page,
+  }) => {
+    // Hard-load a JA page. The persisted header (persistKey header-ja) survives
+    // subsequent same-locale navigations, so its switcher hrefs must be
+    // re-wired on zfb:after-swap rather than left frozen at this page.
+    await page.goto("/ja/docs/getting-started/", { waitUntil: "domcontentloaded" });
+    await waitForSidebarNav(page);
+
+    // Normalize trailing slash so the assertion is agnostic to the fixture's
+    // trailingSlash setting — the exact-page path is what matters here.
+    const norm = (s: string | null) => (s ?? "").replace(/\/$/, "");
+    // Target the desktop header switcher specifically (the `[data-language-switcher]`
+    // container is the #2551 re-wire surface), not the mobile sidebar-footer switcher.
+    const enHref = async () =>
+      norm(
+        await page.evaluate(
+          () =>
+            document
+              .querySelector<HTMLAnchorElement>(
+                'header [data-language-switcher] a[lang="en"]',
+              )
+              ?.getAttribute("href") ?? null,
+        ),
+      );
+
+    // On the JA getting-started page, EN points at the EN equivalent.
+    expect(await enHref(), "initial EN switcher href on the JA getting-started page").toBe(
+      "/docs/getting-started",
+    );
+
+    // Tag the header node so we can prove it is the SAME (persisted) node after
+    // the same-locale swap — i.e. the fix is a re-wire, not a re-render.
+    await page.evaluate(() => {
+      const header = document.querySelector("header");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (header) (header as any).__sameLocaleMarker__ = 2551;
+    });
+
+    // Same-locale SPA navigation to a different JA section via the header nav.
+    const swapFired = await spaClick(page, "/ja/docs/guides/");
+    expect(swapFired, "same-locale JA→JA swap should fire zfb:after-swap").toBe(true);
+    await page.waitForURL((url) => url.pathname.includes("/ja/docs/guides"), {
+      timeout: 5000,
+    });
+
+    const post = await page.evaluate(() => {
+      const header = document.querySelector("header");
+      return {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        markerPreserved: (header as any)?.__sameLocaleMarker__ === 2551,
+        enHref:
+          document
+            .querySelector<HTMLAnchorElement>(
+              'header [data-language-switcher] a[lang="en"]',
+            )
+            ?.getAttribute("href") ?? null,
+      };
+    });
+
+    // Same-locale nav preserves the header DOM node (persist), so this really
+    // exercises the stale-href path the re-wire script fixes.
+    expect(
+      post.markerPreserved,
+      "header node should be preserved across same-locale nav (persisted header)",
+    ).toBe(true);
+
+    // The load-bearing assertion (#2551): the EN link now points at the CURRENT
+    // page's EN equivalent, not the stale getting-started target.
+    expect(
+      norm(post.enHref),
+      "EN switcher href must track the current JA page after same-locale nav",
+    ).toBe("/docs/guides");
+
+    // And clicking it actually lands on that exact EN page.
+    const enSwap = await spaClick(page, "/docs/guides/");
+    expect(enSwap, "clicking the re-wired EN link should fire an SPA swap").toBe(true);
+    await page.waitForURL((url) => /\/docs\/guides\/?$/.test(url.pathname), {
+      timeout: 5000,
+    });
+    expect(page.url(), "should land on the exact EN equivalent page").toContain(
+      "/docs/guides/",
+    );
+    expect(page.url()).not.toContain("/ja/");
+  });
+});
