@@ -1,0 +1,26 @@
+---
+title: 2.5.0
+description: Release notes for 2.5.0.
+sidebar_position: 1051
+---
+
+Released: 2026-07-04
+
+A feature release for the `claudeResources` integration: it can now scan CLAUDE.md
+files from a wider repo root while writing generated output into its own content
+collection, plus a boundary-matching fix for `excludeDirs` and a test-suite
+reliability improvement.
+
+### Features
+
+- `claudeResources`: add an optional `scanRoot` setting that decouples the CLAUDE.md discovery root from the generated-output base. Previously a single `projectRoot` controlled both, which conflicted when a doc site lives in a repo subdirectory — `scanRoot` (defaults to `projectRoot`) now governs CLAUDE.md discovery and relative-path resolution independently, so a subdirectory doc site can scan repo-wide while still writing into its own collection. Unset `scanRoot` is byte-identical to before (ff425ef8, zudolab/zudo-doc#2558, #2559, #2560)
+
+### Bug Fixes
+
+- `claudeResources`: `excludeDirs` matching is now path-boundary-aware — an exclude entry for `dist` no longer wrongly matches a prefix-colliding sibling like `dist-extra`. Applied identically to both the package and the `create-zudo-doc` template copy (2036ba79, zudolab/zudo-doc#2561)
+- `claudeResources`: fix a follow-up edge case where a trailing-separator `excludeDirs` entry (e.g. a `docsDir` passed as `"docs/"`) could bypass the new boundary-aware compare; entries are now normalized before comparison (3c860181)
+
+### Other Changes
+
+- Strengthen `claudeResources` test coverage: the runner's no-self-rescan test now drops a decoy CLAUDE.md inside the output dir to directly exercise the `docsDir` exclude (previously only asserted idempotency, which passed vacuously), and the `scanRoot` field is mirrored into all five e2e fixtures' settings casts (0f9ef5a4, zudolab/zudo-doc#2560)
+- Deflake subprocess-heavy root unit tests under CPU load: `scripts/__tests__/**` now runs as a dedicated vitest project with a 60s per-test budget (previously rode vitest's 5s default, which could time out under host contention), and `pnpm b4push`'s root-unit-tests step caps vitest workers to reduce self-inflicted contention (7daa6260, zudolab/zudo-doc#2563, #2565)
