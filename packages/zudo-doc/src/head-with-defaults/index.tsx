@@ -141,8 +141,10 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
         {/* Pre-paint inline script: restore persisted sidebar width to
             --zd-sidebar-w on :root before first paint, so a reload after
             drag-resizing the sidebar doesn't snap back to the CSS default
-            clamp() width. Mirrors the sibling sidebar-toggle restore
-            script emitted from the page's afterSidebar slot. */}
+            clamp() width. Mirrors the sibling sidebar-toggle visibility
+            restore script, which is likewise hoisted into <head> (emitted
+            from doc-page-shell's head slot via createSidebarVisibilityPrepaint,
+            zudolab/zudo-doc#2571). */}
         {settings.sidebarResizer && <script dangerouslySetInnerHTML={{ __html: SIDEBAR_RESIZER_RESTORE_SCRIPT }} />}
         {/* favicon set — withBase() handles the configured base path prefix */}
         <link rel="icon" href={withBase("/favicon.ico")} sizes="any" />

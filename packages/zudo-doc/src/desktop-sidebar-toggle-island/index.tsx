@@ -8,7 +8,12 @@ import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
 
 export const SIDEBAR_STORAGE_KEY = "zudo-doc-sidebar-visible";
 
-function readState(): boolean {
+// Exported for unit testing the mount-reconcile logic in a plain Node env
+// (no jsdom in the package vitest config) — the same convention the sibling
+// ThemeToggle uses via color-scheme-sync.ts. `readState` is the localStorage
+// reader the mount effect uses to reconcile `visible` on initial load;
+// `setDataAttribute` is the `<html data-sidebar-hidden>` writer.
+export function readState(): boolean {
   if (typeof window === "undefined") return true;
   try {
     return localStorage.getItem(SIDEBAR_STORAGE_KEY) !== "false";
@@ -17,7 +22,7 @@ function readState(): boolean {
   }
 }
 
-function setDataAttribute(isVisible: boolean) {
+export function setDataAttribute(isVisible: boolean) {
   if (isVisible) {
     document.documentElement.removeAttribute("data-sidebar-hidden");
   } else {
