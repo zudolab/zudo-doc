@@ -1,0 +1,21 @@
+---
+title: 2.4.1
+description: Release notes for 2.4.1.
+sidebar_position: 1050
+---
+
+Released: 2026-07-04
+
+A bug-fix release focused on keeping the persisted header's switchers correct
+across SPA / view-transition navigation, plus two developer-workflow smoke fixes.
+
+### Bug Fixes
+
+- Re-wire the persisted-header VersionSwitcher menu (anchor hrefs, active row, and trigger label) on every SPA / view-transition swap, so it no longer serves stale per-page SSR targets after client-side navigation (4b58f4f9)
+- Re-wire the header language switcher hrefs across SPA navigation so they always point to the equivalent page in each other locale instead of going stale (bb93457a, zudolab/zudo-doc#2551)
+- `b4push`: skip the manual visual smoke step (neutral) instead of failing when stdin has no TTY, so non-interactive / agent-driven runs no longer register a spurious "Manual smoke (aborted)" failure (42cb4ae6)
+- `smoke-preview`: force chokidar polling (`CHOKIDAR_USEPOLLING`) so the preview server boots under low inotify limits (WSL `EMFILE: too many open files`), with a longer ready timeout to absorb the startup stat-sweep (466241df)
+
+### Other Changes
+
+- Bump the `@takazudo/zfb` stack (`@takazudo/zfb`, `@takazudo/zfb-runtime`, `@takazudo/zfb-adapter-cloudflare`) to `0.1.0-next.76`; routine toolchain bump with no upstream API/config change (e60134d8)

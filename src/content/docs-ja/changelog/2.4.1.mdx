@@ -1,0 +1,20 @@
+---
+title: 2.4.1
+description: 2.4.1のリリースノート。
+sidebar_position: 1050
+---
+
+リリース日: 2026-07-04
+
+永続化ヘッダーのスイッチャーを SPA / ビュー・トランジション遷移をまたいで正しく保つことに主眼を置いたバグ修正リリースです。加えて、開発ワークフローの smoke に関する2件の修正を含みます。
+
+### バグ修正
+
+- 永続化ヘッダーの VersionSwitcher メニュー（アンカーの href、アクティブ行、トリガーのラベル）を SPA / ビュー・トランジションのスワップごとに再計算するように。クライアントサイド遷移後にページ単位の古い SSR ターゲットを返さなくなりました (4b58f4f9)
+- ヘッダーの言語スイッチャーの href を SPA 遷移をまたいで再計算するように。常に各ロケールの対応ページを指すようになり、古いリンクにならなくなりました (bb93457a, zudolab/zudo-doc#2551)
+- `b4push`: stdin に TTY がない場合、手動ビジュアル smoke ステップを失敗ではなくスキップ（ニュートラル）するように。非対話 / エージェント駆動の実行で「Manual smoke (aborted)」の誤った失敗が記録されなくなりました (42cb4ae6)
+- `smoke-preview`: inotify の上限が低い環境（WSL の `EMFILE: too many open files`）でもプレビューサーバーが起動するよう chokidar のポーリング（`CHOKIDAR_USEPOLLING`）を強制。起動時の stat スイープを吸収するため ready タイムアウトも延長 (466241df)
+
+### その他の変更
+
+- `@takazudo/zfb` スタック（`@takazudo/zfb`、`@takazudo/zfb-runtime`、`@takazudo/zfb-adapter-cloudflare`）を `0.1.0-next.76` へ更新。上流の API/設定変更を伴わない定常的なツールチェーンの更新です (e60134d8)
