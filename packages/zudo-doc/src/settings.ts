@@ -313,7 +313,7 @@ export interface Settings {
   bodyFootUtilArea: BodyFootUtilAreaConfig | false;
   htmlPreview: HtmlPreviewConfig | undefined;
   versions: VersionConfig[] | false;
-  claudeResources: { claudeDir: string; projectRoot?: string } | false;
+  claudeResources: { claudeDir: string; projectRoot?: string; scanRoot?: string } | false;
   defaultLocaleOnlyPrefixes: string[];
   footer: FooterConfig | false;
   headerNav: HeaderNavItem[];

@@ -245,11 +245,11 @@ export function generateSettingsFile(choices: UserChoices): string {
     lines.push(`  claudeResources: {`);
     lines.push(`    claudeDir: ".claude",`);
     lines.push(
-      `  } as { claudeDir: string; projectRoot?: string } | false,`,
+      `  } as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,`,
     );
   } else {
     lines.push(
-      `  claudeResources: false as { claudeDir: string; projectRoot?: string } | false,`,
+      `  claudeResources: false as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,`,
     );
   }
 

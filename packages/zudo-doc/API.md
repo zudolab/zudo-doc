@@ -310,7 +310,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `bodyFootUtilArea` | `BodyFootUtilAreaConfig \| false` | Body footer utility area config |
 | `htmlPreview` | `HtmlPreviewConfig \| undefined` | HTML preview sandbox config |
 | `versions` | `VersionConfig[] \| false` | Multi-version config |
-| `claudeResources` | `{ claudeDir: string; projectRoot?: string } \| false` | Claude resources generation config |
+| `claudeResources` | `{ claudeDir: string; projectRoot?: string; scanRoot?: string } \| false` | Claude resources generation config (`scanRoot` — CLAUDE.md discovery root, defaults to `projectRoot`; #2558) |
 | `defaultLocaleOnlyPrefixes` | `string[]` | URL prefixes that only render for the default locale |
 | `footer` | `FooterConfig \| false` | Footer config |
 | `headerNav` | `HeaderNavItem[]` | Header navigation items |

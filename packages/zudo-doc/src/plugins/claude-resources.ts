@@ -27,11 +27,13 @@ const plugin: ZfbPlugin = {
       );
     }
     const projectRootOpt = ctx.options["projectRoot"];
+    const scanRootOpt = ctx.options["scanRoot"];
     const docsDirOpt = ctx.options["docsDir"];
     const result = await runClaudeResourcesPreStep({
       claudeDir,
       projectRoot:
         typeof projectRootOpt === "string" ? projectRootOpt : ctx.projectRoot,
+      scanRoot: typeof scanRootOpt === "string" ? scanRootOpt : undefined,
       docsDir: typeof docsDirOpt === "string" ? docsDirOpt : "src/content/docs",
     });
     // Surface a one-line summary so build logs make the generation
