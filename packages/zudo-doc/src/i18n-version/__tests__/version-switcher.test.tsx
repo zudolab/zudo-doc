@@ -6,10 +6,17 @@ import type { ComponentChildren, VNode } from "preact";
 import {
   VersionSwitcher,
   VERSION_SWITCHER_INIT_SCRIPT,
+  VERSION_SWITCHER_REWIRE_SCRIPT,
   VERSION_SWITCHER_VISIBILITY_STYLE,
+  computeVersionSwitcherState,
 } from "../version-switcher.js";
-import type { VersionEntry, VersionSwitcherLabels } from "../types.js";
+import type {
+  VersionEntry,
+  VersionSwitcherLabels,
+} from "../types.js";
+import type { VersionSwitcherRewireConfig } from "../version-switcher.js";
 import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events.js";
+import { makeUrlHelpers } from "../../url-helpers/index.js";
 
 type AnyVNode = VNode<{ children?: ComponentChildren; [key: string]: unknown }>;
 
@@ -224,5 +231,221 @@ describe("VersionSwitcher", () => {
     // bundle: it would force `display:none` on any wrapping element
     // a consumer chose, regardless of intent.
     expect(VERSION_SWITCHER_VISIBILITY_STYLE).not.toContain("*:has(");
+  });
+
+  it("emits data-* rewire config + anchor markers when rewireConfig is provided", () => {
+    const html = serialize(
+      <VersionSwitcher
+        versions={versions}
+        currentVersion="v1"
+        latestUrl="/docs/intro/"
+        versionsPageUrl="/docs/versions/"
+        versionUrls={versionUrls}
+        labels={labels}
+        idSuffix="header"
+        rewireConfig={{
+          base: "",
+          defaultLocale: "en",
+          trailingSlash: true,
+          currentLocale: "en",
+        }}
+      />,
+    );
+    expect(html).toContain("data-version-rewire");
+    expect(html).toContain('data-default-locale="en"');
+    expect(html).toContain('data-trailing-slash="true"');
+    expect(html).toContain('data-current-locale="en"');
+    expect(html).toContain("data-version-latest");
+    expect(html).toContain("data-version-trigger-label");
+    expect(html).toContain('data-version-slug="v1"');
+    expect(html).toContain('data-version-slug="v2"');
+  });
+
+  it("omits rewire markers for a static render (no rewireConfig)", () => {
+    const html = serialize(
+      <VersionSwitcher
+        versions={versions}
+        latestUrl="/docs/intro/"
+        versionsPageUrl="/docs/versions/"
+        versionUrls={versionUrls}
+        labels={labels}
+      />,
+    );
+    expect(html).not.toContain("data-version-rewire");
+    expect(html).not.toContain("data-version-latest");
+    expect(html).not.toContain("data-version-slug");
+    expect(html).not.toContain("data-version-trigger-label");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SPA re-wire (#2553): the client transform must reproduce the SSR-baked
+// header menu (latestUrl / versionUrls / active version) exactly, so a
+// persisted header's version switcher stays correct after same-locale
+// navigation. This pins computeVersionSwitcherState to the header factory's
+// URL logic (createHeaderWithDefaults's latestUrl/versionUrls block, in turn
+// makeUrlHelpers' docsUrl / versionedDocsUrl / withBase).
+// ---------------------------------------------------------------------------
+describe("computeVersionSwitcherState (client re-wire) matches SSR header menu", () => {
+  const i18n = {
+    defaultLocale: "en",
+    locales: ["en", "ja"],
+    getLocaleLabel: (c: string) => c.toUpperCase(),
+  };
+
+  const versionSlugs = ["1.0", "2.0"];
+
+  /**
+   * Reproduce the exact per-page menu the header factory builds
+   * (header-with-defaults/index.tsx) from (currentSlug, currentVersion, lang).
+   */
+  function ssrHeaderMenu(
+    helpers: ReturnType<typeof makeUrlHelpers>,
+    lang: string,
+    currentSlug: string | undefined,
+    currentVersion: string | undefined,
+  ) {
+    const isNonDefaultLocale = lang !== i18n.defaultLocale;
+    const versionsPageUrl = helpers.withBase(
+      isNonDefaultLocale ? `/${lang}/docs/versions` : "/docs/versions",
+    );
+    const latestUrl =
+      currentSlug != null ? helpers.docsUrl(currentSlug, lang) : versionsPageUrl;
+    const versionUrls: Record<string, string> = {};
+    for (const v of versionSlugs) {
+      versionUrls[v] =
+        currentSlug != null
+          ? helpers.versionedDocsUrl(currentSlug, v, lang)
+          : versionsPageUrl;
+    }
+    return { latestUrl, versionUrls, activeVersion: currentVersion ?? null };
+  }
+
+  const cases: Array<{
+    label: string;
+    base: string;
+    trailingSlash: boolean;
+    lang: string;
+    // A doc page carries currentSlug; the /docs/versions listing + non-doc
+    // pages pass currentSlug undefined (all links collapse to versionsPageUrl).
+    currentSlug: string | undefined;
+    currentVersion: string | undefined;
+    // How the SSR router builds this page's own pathname.
+    pathnameFor: (h: ReturnType<typeof makeUrlHelpers>) => string;
+  }> = [
+    {
+      label: "latest, default locale, deep slug",
+      base: "/",
+      trailingSlash: true,
+      lang: "en",
+      currentSlug: "guides/getting-started",
+      currentVersion: undefined,
+      pathnameFor: (h) => h.docsUrl("guides/getting-started", "en"),
+    },
+    {
+      label: "versioned, default locale",
+      base: "/",
+      trailingSlash: true,
+      lang: "en",
+      currentSlug: "getting-started",
+      currentVersion: "1.0",
+      pathnameFor: (h) => h.versionedDocsUrl("getting-started", "1.0", "en"),
+    },
+    {
+      label: "versioned, non-default locale",
+      base: "/",
+      trailingSlash: true,
+      lang: "ja",
+      currentSlug: "guide/intro",
+      currentVersion: "2.0",
+      pathnameFor: (h) => h.versionedDocsUrl("guide/intro", "2.0", "ja"),
+    },
+    {
+      label: "latest, non-default locale, docs root (empty slug)",
+      base: "/",
+      trailingSlash: true,
+      lang: "ja",
+      currentSlug: "",
+      currentVersion: undefined,
+      pathnameFor: (h) => h.docsUrl("", "ja"),
+    },
+    {
+      label: "versions index, default locale (no currentSlug)",
+      base: "/",
+      trailingSlash: true,
+      lang: "en",
+      currentSlug: undefined,
+      currentVersion: undefined,
+      pathnameFor: (h) => h.withBase("/docs/versions"),
+    },
+    {
+      label: "versions index, non-default locale (no currentSlug)",
+      base: "/",
+      trailingSlash: true,
+      lang: "ja",
+      currentSlug: undefined,
+      currentVersion: undefined,
+      pathnameFor: (h) => h.withBase("/ja/docs/versions"),
+    },
+    {
+      label: "with base prefix, versioned",
+      base: "/app",
+      trailingSlash: true,
+      lang: "en",
+      currentSlug: "x",
+      currentVersion: "2.0",
+      pathnameFor: (h) => h.versionedDocsUrl("x", "2.0", "en"),
+    },
+    {
+      label: "trailingSlash off, latest",
+      base: "/",
+      trailingSlash: false,
+      lang: "en",
+      currentSlug: "x",
+      currentVersion: undefined,
+      pathnameFor: (h) => h.docsUrl("x", "en"),
+    },
+  ];
+
+  for (const tc of cases) {
+    it(`reproduces SSR menu: ${tc.label}`, () => {
+      const helpers = makeUrlHelpers(
+        {
+          base: tc.base,
+          trailingSlash: tc.trailingSlash,
+          siteUrl: "",
+          defaultLocaleOnlyPrefixes: [],
+        },
+        i18n,
+      );
+      const pathname = tc.pathnameFor(helpers);
+      const ssr = ssrHeaderMenu(helpers, tc.lang, tc.currentSlug, tc.currentVersion);
+
+      const config: VersionSwitcherRewireConfig = {
+        base: tc.base.replace(/\/+$/, ""),
+        defaultLocale: i18n.defaultLocale,
+        trailingSlash: tc.trailingSlash,
+        currentLocale: tc.lang,
+      };
+      const client = computeVersionSwitcherState(pathname, config, versionSlugs);
+
+      expect(client.latestHref, `${tc.label} → latest`).toBe(ssr.latestUrl);
+      for (const v of versionSlugs) {
+        expect(client.versionHrefs[v], `${tc.label} → ${v}`).toBe(ssr.versionUrls[v]);
+      }
+      expect(client.activeVersion, `${tc.label} → active`).toBe(ssr.activeVersion);
+    });
+  }
+});
+
+describe("VERSION_SWITCHER_REWIRE_SCRIPT", () => {
+  it("is non-empty, rebinds on after-navigate, embeds the state fn, and is idempotent", () => {
+    expect(VERSION_SWITCHER_REWIRE_SCRIPT.length).toBeGreaterThan(0);
+    expect(VERSION_SWITCHER_REWIRE_SCRIPT).toContain(JSON.stringify(AFTER_NAVIGATE_EVENT));
+    expect(VERSION_SWITCHER_REWIRE_SCRIPT).toContain("data-version-rewire");
+    expect(VERSION_SWITCHER_REWIRE_SCRIPT).toContain("computeVersionSwitcherState");
+    expect(VERSION_SWITCHER_REWIRE_SCRIPT).toContain("window.location.pathname");
+    // idempotency guard (single document-level listener per page lifetime)
+    expect(VERSION_SWITCHER_REWIRE_SCRIPT).toContain("__zdVersionSwitcherRewire");
   });
 });

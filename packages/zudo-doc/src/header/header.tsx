@@ -46,6 +46,7 @@ import {
 } from "./nav-active.js";
 import { NAV_OVERFLOW_SCRIPT } from "./nav-overflow-script.js";
 import { LANGUAGE_SWITCHER_INIT_SCRIPT } from "../i18n-version/language-switcher.js";
+import { VERSION_SWITCHER_REWIRE_SCRIPT } from "../i18n-version/version-switcher.js";
 import type {
   HeaderNavItem,
   HeaderRightItem,
@@ -254,6 +255,7 @@ export function Header(props: HeaderProps): JSX.Element {
     headerRightItems,
     colorModeEnabled,
     hasLocales,
+    hasVersions,
     githubRepoUrl,
     githubLabel,
     urlHelpers,
@@ -280,8 +282,12 @@ export function Header(props: HeaderProps): JSX.Element {
       // AFTER_NAVIGATE_EVENT or URL derivation:
       //   - ThemeToggle: re-applies from localStorage on AFTER_NAVIGATE_EVENT
       //     (color-scheme-provider.tsx bootstrap script, #1546 verified (a))
-      //   - VersionSwitcher: VERSION_SWITCHER_INIT_SCRIPT re-wires toggle on
-      //     AFTER_NAVIGATE_EVENT (version-switcher.tsx:340, verified (a))
+      //   - VersionSwitcher: its menu hrefs, active row, and trigger label ARE
+      //     per-page (derived from currentSlug/currentVersion), so within a
+      //     same-locale persist window they WOULD go stale. VERSION_SWITCHER_INIT_SCRIPT
+      //     re-binds the dropdown toggle on AFTER_NAVIGATE_EVENT, and
+      //     VERSION_SWITCHER_REWIRE_SCRIPT recomputes the menu from
+      //     window.location on the same event (zudolab/zudo-doc#2553).
       //   - Search: <site-search> custom element re-registers on
       //     AFTER_NAVIGATE_EVENT (_search-widget-script.ts:184, verified (a))
       //   - SidebarToggle (mobile): closes on AFTER_NAVIGATE_EVENT
@@ -376,6 +382,15 @@ export function Header(props: HeaderProps): JSX.Element {
         // listener once; idempotent across re-execution.
         <script
           dangerouslySetInnerHTML={{ __html: LANGUAGE_SWITCHER_INIT_SCRIPT }}
+        />
+      ) : null}
+      {hasVersions ? (
+        // Keeps the persisted header's version-switcher menu hrefs / active row /
+        // trigger label tracking the current page across same-locale SPA
+        // navigation (#2553). Registers a document-level AFTER_NAVIGATE_EVENT
+        // listener once; idempotent across re-execution.
+        <script
+          dangerouslySetInnerHTML={{ __html: VERSION_SWITCHER_REWIRE_SCRIPT }}
         />
       ) : null}
     </header>
