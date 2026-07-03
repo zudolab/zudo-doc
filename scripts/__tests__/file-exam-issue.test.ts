@@ -1,6 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync, chmodSync, readFileSync, existsSync } from "node:fs";
+import {
+  mkdtempSync,
+  mkdirSync,
+  rmSync,
+  writeFileSync,
+  chmodSync,
+  readFileSync,
+  existsSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -34,7 +42,7 @@ describe("file-exam-issue.sh", () => {
   beforeEach(() => {
     workDir = mkdtempSync(join(tmpdir(), "file-exam-issue-test-"));
     fakeBinDir = join(workDir, "bin");
-    execFileSync("mkdir", ["-p", fakeBinDir]);
+    mkdirSync(fakeBinDir, { recursive: true });
     const ghPath = join(fakeBinDir, "gh");
     writeFileSync(ghPath, FAKE_GH_SCRIPT);
     chmodSync(ghPath, 0o755);

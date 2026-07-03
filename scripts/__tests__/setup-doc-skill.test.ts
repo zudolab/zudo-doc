@@ -11,9 +11,11 @@ const TEST_SKILL_NAME = "test-wisdom";
 // The script uses `git worktree list | head -1` to get the main worktree path
 // so that symlinks survive worktree removal. In a worktree session this differs
 // from PROJECT_ROOT; in the main repo they are identical.
+// Module-level eval runs before vitest's per-test timeout applies, so this
+// needs its own explicit child-level timeout (#2563).
 const MAIN_WORKTREE_ROOT = execSync(
   "git worktree list | head -1 | awk '{print $1}'",
-  { cwd: PROJECT_ROOT, encoding: "utf-8" },
+  { cwd: PROJECT_ROOT, encoding: "utf-8", timeout: 30_000 },
 ).trim();
 
 /**

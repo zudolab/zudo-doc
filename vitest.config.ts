@@ -21,10 +21,6 @@ export default defineConfig({
     },
   },
   test: {
-    include: [
-      "src/**/__tests__/**/*.test.ts",
-      "scripts/__tests__/**/*.test.ts",
-    ],
     server: {
       deps: {
         // Inline the zfb island runtime so vite transforms it through the
@@ -36,5 +32,29 @@ export default defineConfig({
         inline: [/@takazudo\/zfb/],
       },
     },
+    // Split into projects so scripts/__tests__ (subprocess-heavy) can get a
+    // longer per-test timeout without loosening the default for src/__tests__
+    // (pure unit tests). `extends: true` is required on both — vitest project
+    // configs do NOT inherit the root config by default, so without it the
+    // resolve.alias and server.deps.inline settings above would not apply.
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "unit",
+          include: ["src/**/__tests__/**/*.test.ts"],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "scripts",
+          include: ["scripts/__tests__/**/*.test.ts"],
+          // Subprocess-heavy integration-flavored tests; 2x the largest 30s
+          // child budget for load headroom under host CPU contention (#2563).
+          testTimeout: 60_000,
+        },
+      },
+    ],
   },
 });
