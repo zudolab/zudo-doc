@@ -636,6 +636,25 @@ describe("generateClaudeResourcesDocs", () => {
       expect(result.claudemd).toBe(1);
       expect(fs.existsSync(path.join(docsDir, "claude-md", "dist--nested.mdx"))).toBe(false);
     });
+
+    it("still excludes docsDir contents when docsDir carries a trailing separator", () => {
+      // path.join preserves a trailing separator on a single argument, so the
+      // docsDir exclude entry keeps it — the boundary compare must not break.
+      fs.writeFileSync(
+        path.join(docsDir, "CLAUDE.md"),
+        "# decoy inside docsDir — should be excluded",
+      );
+
+      const result = generateClaudeResourcesDocs({
+        claudeDir,
+        projectRoot: tmpDir,
+        docsDir: docsDir + path.sep,
+      });
+
+      // Only root/CLAUDE.md (from the fixture) — docs/CLAUDE.md is excluded.
+      expect(result.claudemd).toBe(1);
+      expect(fs.existsSync(path.join(docsDir, "claude-md", "docs.mdx"))).toBe(false);
+    });
   });
 
   // ---------------------------------------------------------------------------
