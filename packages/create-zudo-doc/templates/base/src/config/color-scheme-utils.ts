@@ -1,21 +1,30 @@
 /**
  * Project-side color-scheme helpers.
  *
- * The MECHANISM (palette→CSS injection logic) now lives in the package:
+ * The MECHANISM (ramp→CSS injection logic) now lives in the package:
  * `@takazudo/zudo-doc/color-scheme-utils`. This file re-exports those
  * mechanism symbols and adds project-specific thin wrappers that read from
- * this project's `colorSchemes` map and `settings`. The DATA (palette values,
+ * this project's `colorSchemes` map and `settings`. The DATA (ramp values,
  * scheme names) stays in `./color-schemes` and `./settings`.
  *
  * S9a package-first migration — zudolab/zudo-doc#2333.
+ * Ramp-native rewrite — zudolab/zudo-doc#2585/#2586.
  */
 
 export {
-  type ColorRef,
+  type OKLCH,
+  type StateRole,
+  type SemanticKey,
+  type RampRef,
+  type Ramps,
+  type ModeMap,
   type ColorScheme,
-  SEMANTIC_DEFAULTS,
+  type CssEmitScope,
+  STATE_ROLES,
+  SEMANTIC_KEYS,
+  SEMANTIC_RAMP_DEFAULTS,
   SEMANTIC_CSS_NAMES,
-  resolveColor,
+  resolveRampRef,
   resolveSemanticColors,
   schemeToCssPairs,
   generateCssCustomProperties as generateCssCustomPropertiesFromScheme,
