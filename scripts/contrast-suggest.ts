@@ -9,8 +9,13 @@
  * imageOverlayBg) from the scheme's REAL roles (bg/fg/accent/muted), then
  * OKLCH-nudge the paired text-side slot (§2.1: hue/chroma fixed, lightness
  * moved by the smallest step that clears the threshold) until every pair the
- * slot feeds passes. The raw-p5 exception (§2.3) is handled as a dedicated
- * dual-constraint search on palette slot 5 rather than a semantic override.
+ * slot feeds passes.
+ *
+ * Ramp-native model (Color Ramp Restructure — zudolab/zudo-doc#2584): the old
+ * raw-p5 exception (§2.3, a dedicated dual-constraint search on palette slot
+ * 5) no longer exists — there is no raw-slot bypass of `map.semantic` in the
+ * new model, so `accent` / `admonition-accent` / `admonition-important` are
+ * all just the single `sem.accent` value and move together (#2590).
  *
  * Every suggested value is re-verified against the real math in
  * `contrast-utils.ts` before being emitted — this is a starting point for
@@ -21,12 +26,12 @@
 import { oklch as toOklch, formatHex } from "culori";
 
 import {
-  resolveColor,
+  resolveRampRef,
   resolveSemanticColors,
-  SEMANTIC_DEFAULTS,
+  SEMANTIC_RAMP_DEFAULTS,
   SEMANTIC_CSS_NAMES,
 } from "../src/config/color-scheme-utils";
-import type { ColorScheme, ColorRef } from "../src/config/color-schemes";
+import type { ColorScheme, RampRef, SemanticKey } from "../src/config/color-scheme-utils";
 import { contrastRatio, colorMixSrgb, relativeLuminance, resolveBg, resolveFg, ADMONITION_TINT_PCT } from "../src/config/contrast-utils";
 import type { SchemeReport } from "./contrast-pair-matrix";
 
@@ -328,29 +333,34 @@ const CSS_NAME_TO_SEMANTIC_KEY: Record<string, string> = Object.fromEntries(
 );
 
 export function describeVarSource(scheme: ColorScheme, varName: string): string {
-  if (varName === "--zd-bg") return describeTopLevel("bg", scheme.background);
-  if (varName === "--zd-fg") return describeTopLevel("fg", scheme.foreground);
-  if (varName === "--zd-sel-bg") return describeTopLevel("selectionBg", scheme.selectionBg);
-  if (varName === "--zd-sel-fg") return describeTopLevel("selectionFg", scheme.selectionFg);
+  if (varName === "--zd-bg") return describeRampRef("bg", scheme.map.bg);
+  if (varName === "--zd-fg") return describeRampRef("fg", scheme.map.fg);
+  if (varName === "--zd-selection-bg") return describeRampRef("selectionBg", scheme.map.selectionBg);
+  if (varName === "--zd-selection-fg") return describeRampRef("selectionFg", scheme.map.selectionFg);
 
-  const paletteMatch = /^--zd-(\d{1,2})$/.exec(varName);
-  if (paletteMatch) return `p${paletteMatch[1]} (raw)`;
-
-  const semanticKey = CSS_NAME_TO_SEMANTIC_KEY[varName];
+  const semanticKey = CSS_NAME_TO_SEMANTIC_KEY[varName] as SemanticKey | undefined;
   if (semanticKey) {
-    const override = (scheme.semantic as Record<string, ColorRef | undefined> | undefined)?.[semanticKey];
-    if (override !== undefined) {
-      return typeof override === "number" ? `semantic.${semanticKey}→p${override}` : `semantic.${semanticKey} (explicit)`;
-    }
-    const defaultSlot = SEMANTIC_DEFAULTS[semanticKey];
-    return `default→p${defaultSlot} (${semanticKey})`;
+    const ref = scheme.map.semantic[semanticKey];
+    const isDefault = rampRefEquals(ref, SEMANTIC_RAMP_DEFAULTS[semanticKey]);
+    return `${describeRampRef(semanticKey, ref)} (${isDefault ? "default" : "custom"})`;
   }
 
   return varName;
 }
 
-function describeTopLevel(field: string, value: ColorRef): string {
-  return typeof value === "number" ? `${field}→p${value}` : `${field} (explicit)`;
+function describeRampRef(field: string, ref: RampRef): string {
+  if (typeof ref === "string") return `${field} (literal)`;
+  if ("base" in ref) return `${field}→base[${ref.base}]`;
+  if ("accent" in ref) return `${field}→accent[${ref.accent}]`;
+  return `${field}→state.${ref.state}`;
+}
+
+function rampRefEquals(a: RampRef, b: RampRef): boolean {
+  if (typeof a === "string" || typeof b === "string") return a === b;
+  if ("base" in a && "base" in b) return a.base === b.base;
+  if ("accent" in a && "accent" in b) return a.accent === b.accent;
+  if ("state" in a && "state" in b) return a.state === b.state;
+  return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -369,7 +379,6 @@ export interface Edit {
 }
 
 export interface SchemeEdits {
-  paletteEdits: Edit[];
   topLevelEdits: Edit[];
   semanticEdits: Edit[];
 }
@@ -395,7 +404,6 @@ export function computeSchemeEdits(scheme: ColorScheme, report: SchemeReport, he
   const bgIsDark = relativeLuminance(bg) < 0.5;
   const sem = resolveSemanticColors(scheme);
 
-  const paletteEdits: Edit[] = [];
   const topLevelEdits: Edit[] = [];
   const semanticEdits: Edit[] = [];
 
@@ -420,51 +428,23 @@ export function computeSchemeEdits(scheme: ColorScheme, report: SchemeReport, he
     semanticEdits.push({ key: "muted", value: r.value, comment: fmtPairComment(r, "muted-vs-{bg,codeBg,chatAssistantBg}"), nudge: r });
   }
 
-  // 2. accent / admonition-accent / admonition-important (raw-p5 exception, §2.3)
-  const accentIsRawP5 = sem.accent === scheme.palette[5];
+  // 2. accent / admonition-accent / admonition-important. The ramp-native
+  //    model has no raw-slot bypass of `map.semantic` (the old raw-p5
+  //    exception, §2.3) — admonition-important now pairs against
+  //    `--zd-accent` too (contrast-pair-matrix.ts), so all three targets are
+  //    just `sem.accent` and move together.
   const accentVsBgFails = fails("accent-vs-bg");
   const admonitionAccentFails = fails("admonition-accent");
   const importantFails = fails("admonition-important");
-
-  if (accentIsRawP5) {
-    if (accentVsBgFails || admonitionAccentFails || importantFails) {
-      const p5 = scheme.palette[5];
-      const ratioFn = (color: string) => {
-        const plain = contrastRatio(color, bg);
-        const tinted = contrastRatio(color, colorMixSrgb(color, bg, ADMONITION_TINT_PCT));
-        return Math.min(plain, tinted);
-      };
-      const r = nudgeForThreshold(p5, 4.5, ratioFn, headroom);
-      accentFinal = r.value;
-      paletteEdits.push({
-        key: "5",
-        value: r.value,
-        comment: `/* ${fmtUpstreamComment(r)} */ // accent-vs-bg AND admonition-important (raw p5) both ≥4.5 → ${r.ratio.toFixed(2)}:1 (binding pair)`,
-        nudge: r,
-      });
-    }
-  } else {
-    if (accentVsBgFails || admonitionAccentFails) {
-      const ratioFn = (color: string) => {
-        const plain = contrastRatio(color, bg);
-        const tinted = contrastRatio(color, colorMixSrgb(color, bg, ADMONITION_TINT_PCT));
-        return Math.min(plain, tinted);
-      };
-      const r = nudgeForThreshold(sem.accent, 4.5, ratioFn, headroom);
-      accentFinal = r.value;
-      semanticEdits.push({ key: "accent", value: r.value, comment: fmtPairComment(r, "accent-vs-bg + admonition-accent"), nudge: r });
-    }
-    if (importantFails) {
-      const p5 = scheme.palette[5];
-      const ratioFn = (color: string) => contrastRatio(color, colorMixSrgb(color, bg, ADMONITION_TINT_PCT));
-      const r = nudgeForThreshold(p5, 4.5, ratioFn, headroom);
-      paletteEdits.push({
-        key: "5",
-        value: r.value,
-        comment: `/* ${fmtUpstreamComment(r)} */ // admonition-important (raw p5 only — accent is overridden elsewhere) → ${r.ratio.toFixed(2)}:1`,
-        nudge: r,
-      });
-    }
+  if (accentVsBgFails || admonitionAccentFails || importantFails) {
+    const ratioFn = (color: string) => {
+      const plain = contrastRatio(color, bg);
+      const tinted = contrastRatio(color, colorMixSrgb(color, bg, ADMONITION_TINT_PCT));
+      return Math.min(plain, tinted);
+    };
+    const r = nudgeForThreshold(sem.accent, 4.5, ratioFn, headroom);
+    accentFinal = r.value;
+    semanticEdits.push({ key: "accent", value: r.value, comment: fmtPairComment(r, "accent-vs-bg + admonition-accent + admonition-important"), nudge: r });
   }
 
   // 3. fg-vs-bg / fg-vs-surface. When fg-vs-bg fails we move fg (satisfying
@@ -517,9 +497,11 @@ export function computeSchemeEdits(scheme: ColorScheme, report: SchemeReport, he
     semanticEdits.push({ key: "accentHover", value: r.value, comment: fmtPairComment(r, "accent-hover-vs-bg"), nudge: r });
   }
 
-  // 5. codeBg / codeFg
+  // 5. codeBg / codeFg. `map.semantic.surface` is always populated in the
+  //    ramp-native model (no optional-override distinction), so codeBg is
+  //    simply derived from the scheme's real surface color.
   if (fails("code-fg-vs-code-bg")) {
-    const codeBg = scheme.semantic?.surface !== undefined ? sem.surface : bgElevated(bg, bgIsDark, 1);
+    const codeBg = sem.surface;
     codeBgFinal = codeBg;
     const r = nudgeForThreshold(fg, 4.5, (color) => contrastRatio(color, codeBg), headroom);
     semanticEdits.push({ key: "codeBg", value: asOklchLiteral(codeBg), comment: "/* derived: bg-elevated (base for codeFg) — scheme-a11y #2492 §2.2 recipe */" });
@@ -539,8 +521,8 @@ export function computeSchemeEdits(scheme: ColorScheme, report: SchemeReport, he
 
   // 7. selection
   if (fails("selection")) {
-    const selBg = resolveColor(scheme.selectionBg, scheme.palette, bg);
-    const selFg = resolveColor(scheme.selectionFg, scheme.palette, fg);
+    const selBg = resolveRampRef(scheme.map.selectionBg, scheme.ramps);
+    const selFg = resolveRampRef(scheme.map.selectionFg, scheme.ramps);
     const r = nudgeForThreshold(selFg, 4.5, (color) => contrastRatio(color, selBg), headroom);
     topLevelEdits.push({ key: "selectionFg", value: r.value, comment: fmtPairComment(r, "selection"), nudge: r });
   }
@@ -563,11 +545,11 @@ export function computeSchemeEdits(scheme: ColorScheme, report: SchemeReport, he
     semanticEdits.push({ key: "chatUserText", value: r.value, comment: fmtPairComment(r, "chat-user"), nudge: r });
   }
 
-  // 10. chatAssistant — bg derived from surface/bg-elevated, fg derived from real fg
+  // 10. chatAssistant — bg derived from the scheme's real surface color, fg derived from real fg
   if (fails("chat-assistant")) {
-    const bgBase = scheme.semantic?.surface !== undefined ? sem.surface : bgElevated(bg, bgIsDark, 1);
+    const bgBase = sem.surface;
     const r = nudgeForThreshold(fg, 4.5, (color) => contrastRatio(color, bgBase), headroom);
-    semanticEdits.push({ key: "chatAssistantBg", value: asOklchLiteral(bgBase), comment: "/* derived: surface/bg-elevated (base for chatAssistantText) — scheme-a11y #2492 §2.2 recipe */" });
+    semanticEdits.push({ key: "chatAssistantBg", value: asOklchLiteral(bgBase), comment: "/* derived: surface — scheme-a11y #2492 §2.2 recipe */" });
     semanticEdits.push({ key: "chatAssistantText", value: r.value, comment: fmtPairComment(r, "chat-assistant"), nudge: r });
   }
 
@@ -601,7 +583,7 @@ export function computeSchemeEdits(scheme: ColorScheme, report: SchemeReport, he
     semanticEdits.push({ key: "imageOverlayFg", value: r.value, comment: fmtPairComment(r, "image-overlay"), nudge: r });
   }
 
-  return { paletteEdits, topLevelEdits, semanticEdits };
+  return { topLevelEdits, semanticEdits };
 }
 
 /** Number of pairs in `report` that haven't reached `threshold + headroom` yet
@@ -613,13 +595,9 @@ function countNeedingWork(report: SchemeReport, headroom: number): number {
 
 /** Text-rendering wrapper around `computeSchemeEdits`, used by `contrast:audit --suggest`. */
 export function buildSuggestionFragment(name: string, scheme: ColorScheme, report: SchemeReport, headroom: number = HEADROOM): string {
-  const { paletteEdits, topLevelEdits, semanticEdits } = computeSchemeEdits(scheme, report, headroom);
+  const { topLevelEdits, semanticEdits } = computeSchemeEdits(scheme, report, headroom);
 
   const lines: string[] = [`=== "${name}" — ${countNeedingWork(report, headroom)} pair(s) below threshold+${headroom} (${report.failCount} raw failure(s)) ===`];
-  if (paletteEdits.length > 0) {
-    lines.push("// palette-slot tweaks (raw-p5 exception — edit palette[] directly, NOT semantic.accent):");
-    for (const e of paletteEdits) lines.push(`palette[${e.key}]: ${e.value}, ${e.comment}`);
-  }
   if (topLevelEdits.length > 0) {
     lines.push("// top-level field tweaks:");
     for (const e of topLevelEdits) lines.push(`${e.key}: ${e.value}, ${e.comment}`);
