@@ -15,7 +15,6 @@
  */
 
 import type { ColorScheme, Ramps, ModeMap } from "./color-scheme-utils";
-import { SEMANTIC_RAMP_DEFAULTS } from "./color-scheme-utils";
 
 export type { ColorScheme } from "./color-scheme-utils";
 
@@ -106,16 +105,80 @@ const darkMap: ModeMap = {
   },
 };
 
-// PLACEHOLDER Default Light — real AA-tuned values authored in #2594 (Wave 5).
-// Shares ramps with Default Dark. Only directionally correct (light bg / dark
-// fg) so the app stays usable in light mode between waves; do NOT rely on these
-// values passing a11y.
+/**
+ * Default Light — the authored light-mode scheme (epic #2584 / #2594 / #2595).
+ * Shares `ramps` with Default Dark; only the `map` inverts (light bg = high-L
+ * near-white end of the base ramp, dark fg = low-L end). AA-tuned in the Light
+ * a11y gate (#2595): the base-ramp neutrals reindex, and the accent/state
+ * colors — authored for a dark bg — need darker per-mode literals to clear AA
+ * on a near-white bg. Every deviation from #2594's starting-point map carries a
+ * provenance line. Full WCAG matrix passes at threshold+0.1; ramps untouched so
+ * Default Dark is unaffected.
+ */
 const lightMap: ModeMap = {
-  bg: { base: 0 },
-  fg: { base: 11 },
-  selectionBg: { base: 2 },
-  selectionFg: { base: 11 },
-  semantic: { ...SEMANTIC_RAMP_DEFAULTS },
+  bg: { base: 1 },
+  fg: { base: 10 },
+  // Light: was { base: 7 } (#2594) — dark selectionFg only reached 2.93:1 on that
+  // mid-grey fill; base:4 (.795) is a clearly-visible neutral highlight that gives
+  // selectionFg 7.80 (mirrors Default Dark's mid-grey selection). contrast:audit #2595.
+  selectionBg: { base: 4 },
+  selectionFg: { base: 10 },
+  semantic: {
+    surface: { base: 3 },
+    // Light: reindexed { base: 7 }→{ base: 8 } (#2594) — muted at base:7 fails AA on
+    // the light surface (3.36:1); base:8 (.450) clears muted-vs-surface/codeBg/
+    // chatAssistantBg at threshold+0.1. contrast:audit #2595.
+    muted: { base: 8 },
+    // Light: reindexed { accent: 3 }→{ accent: 6 } — the dark end of the shared accent
+    // ramp. The light-amber accent:3 only reached 1.85:1 on surface; accent:6
+    // (oklch(.470 .120 56)) clears accent-vs-bg/surface and the note/important
+    // admonitions at threshold+0.1. contrast:audit #2595.
+    accent: { accent: 6 },
+    // Light: per-mode literal — the accent ramp has no stop darker than accent:6, so
+    // the link-hover state darkens further (hover-darkens-on-light convention).
+    // L .400, C fitted to the sRGB gamut edge at that L; accent-hover-vs-bg 8.46.
+    // contrast:audit #2595.
+    accentHover: "oklch(.400 .096 56)",
+    codeBg: { base: 2 },
+    codeFg: { base: 10 },
+    // Light: per-mode literal — shared state.success oklch(.680 .145 145) is too light
+    // for the 12%-tint success admonition on a light bg (2.19:1). L→.470 (H fixed,
+    // C at gamut max) → admonition-success 4.79. contrast:audit #2595.
+    success: "oklch(.470 .140 145)",
+    // Light: per-mode literal — shared state.danger oklch(.640 .170 25) fails on the
+    // light danger tint (2.83:1). L→.505 (H/C fixed) → admonition-danger 4.76.
+    // contrast:audit #2595.
+    danger: "oklch(.505 .170 25)",
+    // Light: per-mode literal — shared state.warning oklch(.760 .135 82) fails on the
+    // light warning tint (1.79:1). L→.490; C .135→.100 (gamut-clips at this L) →
+    // admonition-warning 4.77. contrast:audit #2595.
+    warning: "oklch(.490 .100 82)",
+    // Light: per-mode literal — shared state.info oklch(.680 .130 245) fails on the
+    // light info tint (2.28:1). L→.485; C→gamut max .122 → admonition-info 4.73.
+    // contrast:audit #2595.
+    info: "oklch(.485 .122 245)",
+    mermaidNodeBg: { base: 3 },
+    mermaidText: { base: 10 },
+    mermaidLine: { base: 7 },
+    mermaidLabelBg: { base: 2 },
+    mermaidNoteBg: { base: 4 },
+    chatUserBg: { accent: 3 },
+    // Light: reindexed { base: 1 }→{ base: 11 } (#2594) — dark text on the amber user
+    // bubble (matches Default Dark); the light text of #2594's starting point only
+    // reached 2.48:1. chat-user 6.64. contrast:audit #2595.
+    chatUserText: { base: 11 },
+    chatAssistantBg: { base: 3 },
+    chatAssistantText: { base: 10 },
+    imageOverlayBg: { base: 11 },
+    imageOverlayFg: { base: 1 },
+    // Search-result <mark>: amber highlighter fill with dark text — same look as
+    // Default Dark (an amber-on-white highlight reads identically in both modes).
+    matchedKeywordBg: "oklch(.700 .158 62)",
+    // Light: dark text on the amber highlight (matches Default Dark) — #2594's
+    // light-on-amber placeholder only reached 2.66:1. matched-keyword 4.90.
+    // contrast:audit #2595.
+    matchedKeywordFg: "oklch(.300 .003 65)",
+  },
 };
 
 export const colorSchemes: Record<string, ColorScheme> = {
