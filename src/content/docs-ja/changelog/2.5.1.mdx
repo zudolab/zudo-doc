@@ -1,0 +1,19 @@
+---
+title: 2.5.1
+description: 2.5.1のリリースノート。
+sidebar_position: 1052
+---
+
+リリース日: 2026-07-04
+
+### バグ修正
+
+- サイドバー表示制御のプリペイントスクリプトを `<head>` へ移動し、ハードリロード時のちらつきを解消 (591ae6ad)
+- `defaultLocaleOnly` なドキュメントに対してデフォルトロケールの href を正しく生成するよう修正 (958fda0f)
+- claude-resources のオーバービュー本文から、frontmatter の description と重複するプロローグを削除 (4cd097ac)
+
+### その他の変更
+
+- サイドバーのハードリロードちらつき修正に対するフレームサンプリング e2e テストを追加し、パース前フレームに対する rAF プローブの null ガードを追加 (86b072fd, 6517d619)
+- create-zudo-doc のテンプレート claude-resources テストをデフォルトの vitest 実行に組み込み (cc972f12)
+- バグトリアージ修正に対する deep-review の指摘事項を解消 (251ee7e4)

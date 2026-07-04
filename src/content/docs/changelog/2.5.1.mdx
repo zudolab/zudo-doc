@@ -1,0 +1,19 @@
+---
+title: 2.5.1
+description: Release notes for 2.5.1.
+sidebar_position: 1052
+---
+
+Released: 2026-07-04
+
+### Bug Fixes
+
+- Hoist the sidebar visibility pre-paint script to `<head>` to kill the hard-reload flash (591ae6ad)
+- Mint default-locale hrefs for `defaultLocaleOnly` docs (958fda0f)
+- Drop overview body prose duplicating the frontmatter description in claude-resources (4cd097ac)
+
+### Other Changes
+
+- Harden test coverage for the sidebar hard-reload no-flash fix with a frame-sampling e2e spec, plus a null-guard for the rAF probe against pre-parse frames (86b072fd, 6517d619)
+- Run template claude-resources tests in the default vitest run for create-zudo-doc (cc972f12)
+- Close deep-review findings on the bug-triage fixes (251ee7e4)
