@@ -90,7 +90,7 @@
     }
   },
   "dependencies": {
-    "@takazudo/zdtp": "0.4.2",
+    "@takazudo/zdtp": "0.4.3",
     "@takazudo/zfb": "0.1.0-next.76",
     "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.76",
     "@takazudo/zfb-runtime": "0.1.0-next.76",
