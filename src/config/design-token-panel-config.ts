@@ -51,7 +51,6 @@ import {
 import { colorSchemes } from "./color-schemes";
 import type { ColorScheme as LocalColorScheme } from "./color-schemes";
 import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "./color-scheme-utils";
-import { colorTweakPresets } from "./color-tweak-presets";
 import { settings } from "./settings";
 import { DESIGN_TOKEN_SCHEMA } from "@takazudo/zudo-doc/theme";
 
@@ -358,6 +357,4 @@ export const designTokenPanelConfig: PanelConfig = {
   schemaId: DESIGN_TOKEN_SCHEMA,
   exportFilenameBase: "zudo-doc-design-tokens",
   tabs: [COLOR_TAB, FONT_TAB, SPACING_TAB, SIZE_TAB],
-  // colorTweakPresets also lacks shikiTheme; normalized the same way.
-  colorPresets: toZdtpColorSchemes(colorTweakPresets),
 };
