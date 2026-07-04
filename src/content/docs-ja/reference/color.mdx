@@ -1,6 +1,6 @@
 ---
 title: カラー
-description: zudo-docの3層カラー戦略、パレットシステム、カラースキーム、カスタマイズ。
+description: zudo-docの3層カラー戦略、ランプネイティブなカラーモデル、カラースキーム、カスタマイズ。
 sidebar_position: 3
 tags:
   - design-system
@@ -14,71 +14,83 @@ zudo-docは**3層カラー戦略**を採用し、サイト上のすべての色�
 
 | 層 | 名前 | 目的 | 定義場所 |
 |----|------|------|----------|
-| 1 | **パレット** | カラースキームから取得した生のカラー値 | `ColorSchemeProvider` → `:root` |
+| 1 | **ランプ** | スキームの土台となる、共有される OKLCH カラーランプ | `src/config/color-schemes.ts` → `ColorSchemeProvider` → `:root` |
 | 2 | **セマンティック** | デザイン上の意味 — 各色がUIで何を表すか | `src/styles/global.css` `@theme` |
-| 3 | **コンポーネント** | 特定コンポーネント向けのスコープ付きオーバーライド | `.zd-content`（`global.css`内） |
+| 3 | **コンポーネント** | 特定コンポーネント向けのスコープ付きオーバーライド | `.zd-content`（共有 `content.css`） |
 
 この階層構造により：
 
-- **パレットの差し替え**（カラースキーム変更）→ サイト全体が更新
-- **セマンティックトークンの再マッピング**（例：`accent`をシアンから青に変更）→ `accent`を使用するすべてのコンポーネントが更新
+- **ランプストップの再調整**（`src/config/color-schemes.ts`を編集）→ それを土台とするすべてのセマンティックロールが更新
+- **セマンティックロールの再マッピング**（例：`accent`を別のランプストップに向ける）→ `accent`を使用するすべてのコンポーネントが更新
 - **コンポーネントトークンのオーバーライド** → 他のコンポーネントに影響なし
 
-## Tier 1：16色パレット
+## Tier 1：ランプ
 
-zudo-docのカラーシステムは**16色パレット**を採用しています。各カラースキームは16のインデックスカラースロットに加え、背景、前景、選択色の値を提供します。
+zudo-docのカラーエンジンは**ランプネイティブ**です。`ColorScheme`は`{ ramps, map }`です（`src/config/color-schemes.ts`を参照）。
 
-### パレットインデックス規約
+- **`ramps`** — 共有されるソースオブトゥルース：暖色ニュートラルな**base**ランプ（5 ストップ、インデックス`0`が最も明るい）、**accent**ランプ（3 ストップ）、4 つの**state**カラー（`danger`、`success`、`warning`、`info`）。ライトモードとダークモードはこれらのランプ値を**共有**します。
+- **`map`** — モードごとの紐付け：各 UI ロールがどのランプストップ（またはリテラル OKLCH オーバーライド）を指すか。
 
-すべてのカラースキームはこの標準的なインデックスマッピングに従う必要があります。これにより、コンポーネントとセマンティックトークンがすべてのテーマで一貫して動作します：
+### 共有ランプ
 
-| インデックス | 役割 | 説明 |
-|-------------|------|------|
-| p0 | ダークサーフェス | 最も深いサーフェス（コードブロック、オーバーレイ） |
-| p1 | 危険 | 赤系 — エラー、破壊的アクション |
-| p2 | 成功 | 緑系 — 確認、ヒント |
-| p3 | 警告 | 黄/琥珀系 — 注意メッセージ |
-| p4 | 情報 | 青系 — 情報ハイライト |
-| p5 | アクセント | 主要なインタラクティブカラー（リンク、CTA） |
-| p6 | ニュートラル | スレート/シアン — ボーダー、セカンダリ要素 |
-| p7 | セカンダリ | ミュートアクセントまたはセカンダリニュートラル |
-| p8 | ミュート | グレー — ボーダー、セカンダリテキスト、コメント |
-| p9 | 背景 | ページ背景 |
-| p10 | サーフェス | 浮上サーフェス（パネル、サイドバー） |
-| p11 | テキストプライマリ | 本文テキスト |
-| p12 | アクセントバリアント | より明るい、または代替のアクセント |
-| p13 | デコラティブ | 紫/ラベンダー — 非セマンティックな装飾 |
-| p14 | アクセントホバー | インタラクティブ要素のホバー状態 |
-| p15 | テキストセカンダリ | セカンダリテキストまたはミュートフォアグラウンド |
+| ランプ | ストップ | CSS カスタムプロパティ |
+|---|---|---|
+| `base` | 5 — インデックス`0`（最も明るい）→ `4`（最も暗い） | `--palette-base-0` … `--palette-base-4` |
+| `accent` | 3 | `--palette-accent-0` … `--palette-accent-2` |
+| `state` | 4 つの名前付きロール | `--palette-state-danger`、`--palette-state-success`、`--palette-state-warning`、`--palette-state-info` |
+
+**Default Light**と**Default Dark** — 同梱されるスキームはこの 2 つだけ — は、まったく同じ`base`/`accent`/`state`のランプ値（`src/config/color-schemes.ts`内の 1 つの`ramps`オブジェクト）を共有し、両者の違いはモードごとの`map`だけです。
 
 <Note>
 
-実際の16進数値はライトスキームとダークスキームで異なりますが、各インデックスの**役割**は同じです。たとえば、p1は常に危険/赤系のカラーで、ライトモードでは`#dd3131`、ダークモードでは`#da6871`です。この一貫性により、パレットトークンを直接使用しても安全で、新しいスキームの作成も容易になります。
+ランプサイズの最小化は意図的なものです。5 つの base ストップと 3 つの accent ストップには、「予備」となるニアホワイトやニアブラックのフィラートーンを置く余地がありません。いくつかのセマンティックロールは、それぞれ独自のストップを持つのではなく、意図的に**同じストップにマージ**されています — 後述の[ロールマージの設計思想](#ロールマージの設計思想)を参照してください。
 
 </Note>
 
-### パレットカラーの注入方法
+### `RampRef` — ロールがランプストップを指す仕組み
 
-`ColorSchemeProvider`コンポーネント（`packages/zudo-doc/src/theme/color-scheme-provider.tsx`）がアクティブなカラースキームを読み取り、ビルド時に`:root`にCSSカスタムプロパティを注入します：
+```ts
+type RampRef =
+  | { base: number }     // ramps.base[n]
+  | { accent: number }   // ramps.accent[n]
+  | { state: StateRole } // ramps.state[role]
+  | string;              // リテラル OKLCH 値、そのまま使用
+```
+
+スキームの`map`は、4 つの base ロール（`bg`、`fg`、`selectionBg`、`selectionFg`）と 23 のセマンティックロールすべてに`RampRef`を使用します。ほとんどのロールは共有ランプストップを参照しますが、一部は代わりに**リテラル OKLCH 文字列**を持ちます — これは、共有ストップでは作り出せない色をロールが必要とする場合（通常はモードごとの AA コントラスト調整）に使われます。[モードごとのリテラルオーバーライド](#モードごとのリテラルオーバーライド)を参照してください。
+
+### ランプの注入方法
+
+`ColorSchemeProvider`コンポーネント（`packages/zudo-doc/src/theme/color-scheme-provider.tsx`）がアクティブなスキームを読み取り、ビルド時に`:root`へ CSS カスタムプロパティ — 解決済みの base ロール、素のランプストップ、解決済みの 23 のセマンティックロール — を注入します：
 
 ```css
 :root {
-  --zd-bg: #282a36;
-  --zd-fg: #f8f8f2;
-  --zd-cursor: #f8f8f2;
-  --zd-sel-bg: #44475a;
-  --zd-sel-fg: #ffffff;
-  --zd-0: #21222c;   /* パレットスロット 0（Black） */
-  --zd-1: #ff5555;   /* パレットスロット 1（Red） */
-  /* ... --zd-15 まで続く */
+  --zd-bg: oklch(.185 .005 65);
+  --zd-fg: oklch(.965 .004 65);
+  --zd-selection-bg: oklch(.480 .008 65);
+  --zd-selection-fg: oklch(.965 .004 65);
+
+  --palette-base-0: oklch(.965 .004 65);
+  --palette-base-1: oklch(.705 .008 65);
+  /* ... --palette-base-4 まで続く */
+  --palette-accent-0: oklch(.755 .130 64);
+  /* ... --palette-accent-2 まで続く */
+  --palette-state-danger: oklch(.640 .170 25);
+  --palette-state-success: oklch(.680 .145 145);
+  --palette-state-warning: oklch(.760 .135 82);
+  --palette-state-info: oklch(.680 .130 245);
+
+  --zd-accent: oklch(.700 .158 62);
+  --zd-code-bg: oklch(.300 .006 65);
+  /* ... さらに 21 個の --zd-{role} セマンティックプロパティ */
 }
 ```
 
-これらの`--zd-*`プロパティがすべての基準値です。セマンティックトークン、コンポーネントトークン、Tailwindユーティリティ — すべてがこれらに帰結します。
+`--zd-*`プロパティ（base ロール + セマンティックロール）は、下流のすべてが帰結するソースオブトゥルースです。素の`--palette-*`ランププロパティは、[Design Token Panel](./design-token-panel.mdx)の**Palette**タブとスキーム作者のために存在します — コンテンツとコンポーネントはセマンティックな`--zd-*`トークンを参照します。生のランプストップ用の Tailwind ユーティリティはありません（[生のランプストップへのアクセス](#生のランプストップへのアクセス)を参照）。
 
 ## Tier 2：セマンティックトークン
 
-`src/styles/global.css`の`@theme`ブロックが、パレットプロパティをデザイン上の意味を持つTailwind互換トークンにマッピングします：
+23 のセマンティックロールが、コンポーネントが実際に使用するカラーの面です。`src/styles/global.css`の`@theme`ブロックが、それら（および 4 つの base ロール）を Tailwind 互換トークンにマッピングします：
 
 ```css
 @theme {
@@ -87,13 +99,8 @@ zudo-docのカラーシステムは**16色パレット**を採用しています
   /* ベース */
   --color-bg: var(--zd-bg);
   --color-fg: var(--zd-fg);
-  --color-sel-bg: var(--zd-sel-bg);
-  --color-sel-fg: var(--zd-sel-fg);
-
-  /* パレット直接アクセス（p0–p15） */
-  --color-p0: var(--zd-0);
-  --color-p1: var(--zd-1);
-  /* ... --color-p15 まで続く */
+  --color-sel-bg: var(--zd-selection-bg);
+  --color-sel-fg: var(--zd-selection-fg);
 
   /* セマンティックエイリアス */
   --color-surface: var(--zd-surface);
@@ -107,7 +114,7 @@ zudo-docのカラーシステムは**16色パレット**を採用しています
   --color-warning: var(--zd-warning);
   --color-info: var(--zd-info);
 
-  /* 検索ハイライト（専用トークン、デザイントークンパネルでライブ編集可能） */
+  /* 検索ハイライト（専用トークン、Design Token Panel でライブ編集可能） */
   --color-matched-keyword-bg: var(--zd-matched-keyword-bg);
   --color-matched-keyword-fg: var(--zd-matched-keyword-fg);
 }
@@ -115,67 +122,77 @@ zudo-docのカラーシステムは**16色パレット**を採用しています
 
 `@theme`に登録されると、標準のTailwindユーティリティクラスとして使用できます：`bg-surface`、`text-accent`、`border-muted`など。
 
-### セマンティックトークンリファレンス
+### セマンティックトークンリファレンス（Default Dark の紐付け）
 
-| トークン | デフォルトパレットスロット | 用途 |
-|---------|--------------------------|------|
-| `bg` | `--zd-bg`（p9） | ページ背景 |
-| `fg` | `--zd-fg`（p11） | メインテキスト |
-| `surface` | `p0`（ダークサーフェス） | パネル/サイドバーのサーフェス |
-| `muted` | `p8`（ミュート） | ミュートテキスト、ボーダー、コメント |
-| `accent` | `p5`（アクセント） | リンク、アクティブ状態、CTA |
-| `accent-hover` | `p14`（アクセントホバー） | accentのホバー状態 |
-| `sel-bg` | `--zd-sel-bg` | 選択時の背景 |
-| `sel-fg` | `--zd-sel-fg` | 選択時の前景 |
-| `code-bg` | `p10`（サーフェス） | コードブロック背景 |
-| `code-fg` | `p11`（テキストプライマリ） | インラインコードテキスト |
-| `success` | `p2`（成功） | 成功状態、確認 |
-| `danger` | `p1`（危険） | エラー、破壊的操作 |
-| `warning` | `p3`（警告） | 警告メッセージ、Admonition、find-in-pageハイライト |
-| `info` | `p4`（情報） | 情報ハイライト |
-| `matched-keyword-bg` | `p3`（警告ファミリー） | 検索結果の`<mark>`背景 — 専用トークン、デザイントークンパネルでライブ編集可能 |
-| `matched-keyword-fg` | `p11`（テキストプライマリ） | 検索結果の`<mark>`前景 — `matched-keyword-bg`とペアで使用 |
+どちらのスキームも 23 のロールすべてを紐付けます。下の表は Default Dark の`map.semantic` — `src/config/color-schemes.ts`で作り込まれたリファレンススキーム — を示します。Default Light はこれらのいくつかを別のランプストップやモードごとのリテラルに再度向けます。[モードごとのリテラルオーバーライド](#モードごとのリテラルオーバーライド)を参照してください。
 
-### スキームごとのセマンティックオーバーライド
+| トークン | デフォルトのランプ参照 | 用途 |
+|-------|------|-------|
+| `bg` | `{ base: 4 }` | ページ背景 |
+| `fg` | `{ base: 0 }` | メインテキスト |
+| `surface` | `{ base: 4 }`（= `bg`） | パネル/サイドバーのサーフェス — `bg`にマージ、[ロールマージの設計思想](#ロールマージの設計思想)を参照 |
+| `muted` | `{ base: 1 }` | ミュートテキスト、ボーダー、コメント |
+| `accent` | `{ accent: 1 }` | リンク、アクティブ状態、CTA |
+| `accentHover` | `{ accent: 0 }` | accentのホバー状態 |
+| `codeBg` | `{ base: 3 }` | コードブロック背景 |
+| `codeFg` | `{ base: 0 }` | インラインコードテキスト |
+| `success` | `{ state: "success" }` | 成功状態、確認 |
+| `danger` | モードごとのリテラル | エラー、破壊的操作 |
+| `warning` | `{ state: "warning" }` | 警告メッセージ、Admonition、find-in-pageハイライト |
+| `info` | `{ state: "info" }` | 情報ハイライト |
+| `mermaidNodeBg` / `mermaidText` / `mermaidLine` / `mermaidLabelBg` / `mermaidNoteBg` | `color-schemes.ts`を参照 | Mermaid ダイアグラムの色 |
+| `chatUserBg` / `chatUserText` | `{ accent: 1 }` / `{ base: 4 }` | AI チャットのユーザーバブル |
+| `chatAssistantBg` / `chatAssistantText` | `{ base: 4 }`（= `bg`） / `{ base: 0 }` | AI チャットのアシスタントバブル — `bg`にマージ |
+| `imageOverlayBg` / `imageOverlayFg` | `{ base: 4 }` / `{ base: 0 }` | 画像拡大オーバーレイ — `bg`にマージ |
+| `matchedKeywordBg` / `matchedKeywordFg` | 共有リテラル | 検索結果の`<mark>` — 専用トークン、Design Token Panel でライブ編集可能 |
 
-各カラースキームは`src/config/color-schemes.ts`の`semantic`プロパティを通じて、デフォルトのパレットスロットマッピングをオーバーライドできます。値は**パレットインデックス**（数値）または**直接のカラー文字列**のいずれかです：
+## ロールマージの設計思想
+
+パレットは、区別すべきトーンの数を小さく保つために意図的に最小化されています。いくつかのロールは、それぞれ独自のトーンを持つ代わりに、共有ストップにマージされています：
+
+- **`surface`、`codeBg`（ライトモード）、`chatAssistantBg`は`bg`に統合されます。** ヘッダーのバージョンボックス、ドキュメントカード、チャットアシスタントのバブルは、**ページ背景 + ボーダーのみ**でレンダリングされ、別途のグレーの塗りはありません。
+- **5 つの base ストップには、繊細なニアホワイト（ライトモード）やニアブラック（ダークモード）のフィラートーンを置く余地がありません。** それを作り出すためにランプを引き伸ばすのではなく、浮上サーフェスは設計上ボーダーのみとしています。
+- 結果として、同期を保つべきトーンが減り、パネル・カード・チャットバブル全体でよりフラットで一貫したビジュアル言語になります。
+
+## モードごとのリテラルオーバーライド
+
+すべてのロールが両モードで共有ランプストップだけで満たせるわけではありません。accent と state のカラーはダーク背景を前提に作り込まれています。ライト背景では、いくつかは WCAG AA をクリアするために**より暗い、そのモード専用のリテラル**を必要とします — 共有ランプストップはそのまま維持されるため、Default Dark は影響を受けません：
+
+- **Default Dark** — `danger`は、共有される`state.danger`のランプ値よりわずかに明るく調整したリテラル（`oklch(.655 .170 25)`）を使用し、danger アドモニションのタイトルが 12% ティントの背景上で AA をクリアします。
+- **Default Light** — `accentHover`、`success`、`danger`、`warning`、`info`はすべて、ニアホワイトのページ背景に対して AA をクリアするために、モードごとのリテラル（共有ランプ/state カラーを暗くしたもの）を使用します。
+- **両モード** — `matchedKeywordBg` / `matchedKeywordFg`（検索結果のハイライト）はランプ参照ではなく共有リテラルのため、琥珀色のハイライトは両モードで同一に見えます。
+
+これらのリテラルの背後にある完全なコントラストペアマトリクス、しきい値、調整手法については、`color-scheme-a11y`スキル（`.claude/skills/color-scheme-a11y/SKILL.md`）を参照してください。
+
+### スキームのセマンティック紐付けの調整
+
+`src/config/color-schemes.ts`の`map.semantic`を編集します。ロールは共有ランプストップまたはリテラル OKLCH 文字列を指すことができます：
 
 ```ts
-"My Custom Scheme": {
-  // ...palette, background, foreground...
+const darkMap: ModeMap = {
+  bg: { base: 4 },
+  fg: { base: 0 },
+  selectionBg: { base: 2 },
+  selectionFg: { base: 0 },
   semantic: {
-    accent: 6,              // palette[6]を使用 — カラー値の重複なし
-    accentHover: 14,         // palette[14]を使用
-    surface: "#f4efdd",      // 直接のカラー文字列（パレットにない色）
+    accent: { accent: 1 },
+    // モードごとに AA 調整したリテラル — 共有の state.danger は、
+    // 12% ティントのダーク背景上の danger アドモニションタイトルには暗すぎる。
+    danger: "oklch(.655 .170 25)",
+    // ...
   },
-},
+};
 ```
 
-カラー文字列を繰り返す代わりにパレットインデックスを使用することで、重複を排除し、パレットカラーが変更された際（例：[Design Token Panel](./design-token-panel.mdx)経由）にセマンティックカラーが同期されるようになります。
+## 生のランプストップへのアクセス
 
-同じ`number | string`型（`ColorRef`と呼ばれます）は`cursor`、`selectionBg`、`selectionFg`でもサポートされています：
+生の`--palette-*`ランプストップ用の Tailwind ユーティリティはありません — セマンティックトークンが Tailwind に露出する唯一のカラー面です。一度きりのスタイルがどうしても生のランプストップを必要とする場合（まれ）は、CSS カスタムプロパティを直接参照します：
 
-```ts
-"My Theme": {
-  background: "#1a1a2e",
-  foreground: "#e0e0e0",
-  cursor: 6,            // カラーを重複させる代わりにpalette[6]を使用
-  selectionBg: "#3a3a5e",
-  selectionFg: 15,       // palette[15]を使用
-  palette: [...],
-},
+```html
+<div style="background: var(--palette-accent-1)">...</div>
 ```
 
-解決ロジックは`src/config/color-scheme-utils.ts`にあり、各プロパティは明示的に設定されていない場合、デフォルトのパレットスロットにフォールバックします。
-
-### 検索とハイライトのトークン（役割を分離）
-
-ハイライトの役割は意図的に専用セマンティックトークンに分離されています。無関係なハイライトUI間でひとつのトークンを使い回すのはアンチパターンです。
-
-- `matched-keyword-bg` / `matched-keyword-fg` は検索パネルの`<mark>`要素に使われます。別の役割の`color-mix()`ではなく専用トークンのため、[デザイントークンパネル](./design-token-panel.mdx)のスウォッチがハイライト色の唯一のソースになります。パネルで見えている色＝実際のハイライト色です。
-- `warning` はAdmonition（`:::warning`）、find-in-page（`.find-match`、`.find-match-active`）など、意味的に _警告_ にあたるUIで使います。**新しいUIクロム向けのハイライトに`warning`を使い回してはいけません**。
-
-新しいハイライトの役割が出てきたとき（新種の`<mark>`、新しいピル、新しいコールアウト）は、既存の役割過多なトークンに載せるのではなく、専用のセマンティックトークンを追加してください。プロダクトに現れるハイライト色はどれも、パネルのスウォッチに1対1で対応するべきです。
+これはまれなケースであるべきです。既存のセマンティックトークンを優先するか、同じ生のストップが複数箇所で必要な場合は新しいセマンティックロールを追加してください。
 
 ## Tier 3：コンポーネントトークン
 
@@ -209,13 +226,11 @@ zudo-docのカラーシステムは**16色パレット**を採用しています
 
 <Info>
 
-Tier 3のトークンはコンポーネント内部のものです。独自のUIを構築する際は、Tier 2のセマンティックトークンまたはTier 1のパレットトークンを直接使用してください。
+Tier 3のトークンはコンポーネント内部のものです。独自のUIを構築する際は、Tier 2のセマンティックトークンを直接使用してください。
 
 </Info>
 
 ## カラートークンの使い方
-
-### セマンティックトークンを優先
 
 標準的なUIパターンにはセマンティックトークンを使用します：
 
@@ -233,16 +248,14 @@ Tier 3のトークンはコンポーネント内部のものです。独自のUI
 <div class="border border-muted">ボーダー付き要素</div>
 ```
 
-### 必要に応じてパレットトークンにフォールバック
+### 検索とハイライトのトークン（役割を分離）
 
-適切なセマンティックトークンがない場合は`p0`〜`p15`を使用します — バッジ、装飾要素、ステータスインジケーターなどに：
+ハイライトの役割は意図的に専用セマンティックトークンに分離されています。無関係なハイライトUI間でひとつのトークンを使い回すのはアンチパターンです。
 
-```html
-<span class="text-p1">エラーテキスト（赤）</span>
-<span class="text-p2">成功テキスト（緑）</span>
-<span class="text-p3">警告テキスト（黄）</span>
-<span class="text-p4">情報テキスト（青）</span>
-```
+- `matched-keyword-bg` / `matched-keyword-fg`は検索パネルの`<mark>`要素に使われます。別の役割の`color-mix()`ではなく専用トークンのため、[Design Token Panel](./design-token-panel.mdx)のスウォッチがハイライト色の唯一のソースになります。パネルで見えている色＝実際のハイライト色です。
+- `warning`はAdmonition（`:::warning`）、find-in-page（`.find-match`、`.find-match-active`）など、意味的に _警告_ にあたるUIで使います。**新しいUIクロム向けのハイライトに`warning`を使い回してはいけません**。
+
+新しいハイライトの役割が出てきたとき（新種の`<mark>`、新しいピル、新しいコールアウト）は、既存の役割過多なトークンに載せるのではなく、専用のセマンティックトークンを追加してください。プロダクトに現れるハイライト色はどれも、パネルのスウォッチに1対1で対応するべきです。
 
 ## カラースキーム
 
@@ -258,39 +271,60 @@ export const settings = {
 
 ### デフォルトテーマ
 
-zudo-docにはライトテーマとダークテーマのデフォルトが含まれています。利用可能なスキームは`src/config/color-schemes.ts`を参照してください。
+zudo-docはちょうど 2 つのカラースキーム — **Default Light**と**Default Dark** — を同梱しており、1 セットのランプを共有します（`src/config/color-schemes.ts`を参照）。どちらも手作業で作り込まれ、その場で AA 調整されています。選べるコミュニティ製やターミナル由来のプリセットカタログはバンドルされていません。以前の Design Token Panel には 50 種類以上のバンドルプリセットをブラウズするための "Scheme…" ドロップダウンがありましたが、ランプネイティブなモデルではこれを廃止しました — [Design Token Panel](./design-token-panel.mdx)を参照してください。
 
 ## カスタムカラースキームの追加
 
-`src/config/color-schemes.ts`の`colorSchemes`オブジェクトに新しいエントリを追加します：
+`src/config/color-schemes.ts`の`colorSchemes`オブジェクトに新しいエントリを追加します。新しいスキームには独自の`ramps`と、必要な各モードの`map`が必要です（`SEMANTIC_RAMP_DEFAULTS`をスプレッドし、異なる必要のあるものだけを上書きします）：
 
 ```ts
-"My Theme": {
-  background: "#1a1a2e",
-  foreground: "#e0e0e0",
-  cursor: "#e0e0e0",
-  selectionBg: "#3a3a5e",
-  selectionFg: "#e0e0e0",
-  palette: [
-    "#16213e", "#e74c3c", "#2ecc71", "#f39c12",  // 0-3: Black, Red, Green, Yellow
-    "#3498db", "#9b59b6", "#1abc9c", "#ecf0f1",  // 4-7: Blue, Magenta, Cyan, White
-    "#2c3e50", "#e67e73", "#55d98d", "#f5b041",  // 8-11: Bright Black–Yellow
-    "#5dade2", "#bb8fce", "#48c9b0", "#fdfefe",  // 12-15: Bright Blue–White
+import { SEMANTIC_RAMP_DEFAULTS } from "@takazudo/zudo-doc/color-scheme-utils";
+import type { ColorScheme, ModeMap, Ramps } from "./color-scheme-utils";
+
+const myRamps: Ramps = {
+  base: [
+    "oklch(.97 .01 250)", // 0 — 最も明るい
+    "oklch(.72 .02 250)", // 1
+    "oklch(.48 .03 250)", // 2
+    "oklch(.28 .03 250)", // 3
+    "oklch(.15 .02 250)", // 4 — 最も暗い
   ],
-  // オプション：セマンティックのデフォルトをオーバーライド
-  semantic: {
-    muted: "#7f8c8d",
-    surface: "#1f1f3a",
+  accent: [
+    "oklch(.78 .12 30)", // 0
+    "oklch(.68 .18 30)", // 1
+    "oklch(.48 .16 30)", // 2
+  ],
+  state: {
+    danger: "oklch(.62 .18 25)",
+    success: "oklch(.66 .15 145)",
+    warning: "oklch(.75 .14 82)",
+    info: "oklch(.66 .13 245)",
   },
-},
+};
+
+const myMap: ModeMap = {
+  bg: { base: 4 },
+  fg: { base: 0 },
+  selectionBg: { base: 2 },
+  selectionFg: { base: 0 },
+  semantic: {
+    ...SEMANTIC_RAMP_DEFAULTS,
+    accent: { accent: 1 }, // 異なる必要のあるロールだけを上書き
+  },
+};
+
+export const colorSchemes: Record<string, ColorScheme> = {
+  "Default Light": { ramps, map: lightMap },
+  "Default Dark": { ramps, map: darkMap },
+  "My Theme": { ramps: myRamps, map: myMap },
+};
 ```
 
-`ColorScheme`インターフェースに必要なプロパティ：
+<Tip>
 
-- `background`、`foreground` — `ColorRef`（パレットインデックスまたはカラー文字列）
-- `cursor`、`selectionBg`、`selectionFg` — `ColorRef`（パレットインデックスまたはカラー文字列）
-- `palette` — 16要素のタプル（カラースロット 0〜15）
-- `semantic`（オプション）— `ColorRef`値（パレットインデックスまたはカラー文字列）によるデフォルトパレットスロットマッピングのオーバーライド
+スキームを追加または調整した後は、`pnpm contrast:audit`を実行して WCAG コントラストマトリクスのすべてのペアをチェックしてください — 完全な手法としきい値については`color-scheme-a11y`スキルを参照してください。
+
+</Tip>
 
 ## やってはいけないこと
 
@@ -313,7 +347,7 @@ zudo-docにはライトテーマとダークテーマのデフォルトが含ま
 <div class="bg-[#1e1e2e]">テーマ切り替えで壊れる</div>
 
 <!-- OK -->
-<div class="bg-p0">どのテーマにも適応する</div>
+<div class="bg-surface">どのテーマにも適応する</div>
 ```
 
 **Tier 3の変数を自分のコンポーネントで参照しない**：

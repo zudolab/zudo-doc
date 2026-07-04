@@ -797,11 +797,10 @@ export default defineConfig({
 
 ## カラースキーム設定
 
-カラースキームは`src/config/color-schemes.ts`で定義されます。各スキームは21のカラープロパティを提供します：
+カラースキームは`src/config/color-schemes.ts`で定義されます。`ColorScheme`は`{ ramps, map }`です：
 
-- `background`、`foreground`、`cursor`、`selectionBg`、`selectionFg`
-- `palette` — 16色スロット（`palette[0]`から`palette[15]`）
-- `semantic`（オプション）— `surface`、`muted`、`accent`、`accentHover`などのオーバーライド
+- `ramps` — 共有される`base`（5 ストップ）、`accent`（3 ストップ）、`state`（4 つの名前付きカラー）の OKLCH ランプ
+- `map` — 4 つの base ロール（`bg`、`fg`、`selectionBg`、`selectionFg`）と 23 のセマンティックロール（`surface`、`muted`、`accent`、`accentHover`など）を、それぞれランプストップまたはリテラル OKLCH オーバーライドへ紐付けます
 
 <Info>
 
