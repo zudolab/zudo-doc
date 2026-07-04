@@ -11,15 +11,15 @@ import { z } from "zod";
 // concrete color values are irrelevant, so the ramps are all-black stubs.
 const fixtureColorScheme: ColorScheme = {
   ramps: {
-    base: Array.from({ length: 12 }, () => "#000"),
-    accent: Array.from({ length: 7 }, () => "#000"),
+    base: Array.from({ length: 5 }, () => "#000"),
+    accent: Array.from({ length: 3 }, () => "#000"),
     state: { danger: "#000", success: "#000", warning: "#000", info: "#000" },
   },
   map: {
-    bg: { base: 11 },
-    fg: { base: 1 },
-    selectionBg: { base: 8 },
-    selectionFg: { base: 1 },
+    bg: { base: 4 },
+    fg: { base: 0 },
+    selectionBg: { base: 2 },
+    selectionFg: { base: 0 },
     semantic: { ...SEMANTIC_RAMP_DEFAULTS },
   },
 };

@@ -14,11 +14,12 @@ import {
 } from "../color-scheme-utils.js";
 
 // A synthetic ramp set with easily-distinguishable stop values so tests can
-// assert exactly which stop a role resolved to.
+// assert exactly which stop a role resolved to. Lengths track the minimized
+// 5-base / 3-accent ramp (#2602).
 function makeRamps(): Ramps {
   return {
-    base: Array.from({ length: 12 }, (_, i) => `base-${i}`),
-    accent: Array.from({ length: 7 }, (_, i) => `accent-${i}`),
+    base: Array.from({ length: 5 }, (_, i) => `base-${i}`),
+    accent: Array.from({ length: 3 }, (_, i) => `accent-${i}`),
     state: {
       danger: "state-danger",
       success: "state-success",
@@ -32,10 +33,10 @@ function makeScheme(): ColorScheme {
   return {
     ramps: makeRamps(),
     map: {
-      bg: { base: 11 },
-      fg: { base: 1 },
-      selectionBg: { base: 8 },
-      selectionFg: { base: 1 },
+      bg: { base: 4 },
+      fg: { base: 0 },
+      selectionBg: { base: 2 },
+      selectionFg: { base: 0 },
       semantic: { ...SEMANTIC_RAMP_DEFAULTS },
     },
   };
@@ -46,12 +47,12 @@ describe("resolveRampRef", () => {
 
   it("resolves {base:N} to ramps.base[N]", () => {
     expect(resolveRampRef({ base: 0 }, ramps)).toBe("base-0");
-    expect(resolveRampRef({ base: 11 }, ramps)).toBe("base-11");
+    expect(resolveRampRef({ base: 4 }, ramps)).toBe("base-4");
   });
 
   it("resolves {accent:N} to ramps.accent[N]", () => {
     expect(resolveRampRef({ accent: 0 }, ramps)).toBe("accent-0");
-    expect(resolveRampRef({ accent: 6 }, ramps)).toBe("accent-6");
+    expect(resolveRampRef({ accent: 2 }, ramps)).toBe("accent-2");
   });
 
   it("resolves {state:role} to ramps.state[role]", () => {
@@ -66,11 +67,11 @@ describe("resolveRampRef", () => {
   });
 
   it("throws RangeError on an out-of-range base index", () => {
-    expect(() => resolveRampRef({ base: 12 }, ramps)).toThrow(RangeError);
+    expect(() => resolveRampRef({ base: 5 }, ramps)).toThrow(RangeError);
   });
 
   it("throws RangeError on an out-of-range accent index", () => {
-    expect(() => resolveRampRef({ accent: 7 }, ramps)).toThrow(RangeError);
+    expect(() => resolveRampRef({ accent: 3 }, ramps)).toThrow(RangeError);
   });
 });
 
@@ -86,14 +87,14 @@ describe("resolveSemanticColors", () => {
 
   it("resolves each role through its map RampRef against the ramps", () => {
     const sem = resolveSemanticColors(makeScheme());
-    // Sample the defaults table: surface={base:9}, accent={accent:3},
+    // Sample the minimized defaults table: surface={base:4}, accent={accent:1},
     // danger={state:danger}, matchedKeywordBg=literal.
-    expect(sem.surface).toBe("base-9");
-    expect(sem.muted).toBe("base-6");
-    expect(sem.accent).toBe("accent-3");
-    expect(sem.accentHover).toBe("accent-2");
-    expect(sem.codeBg).toBe("base-10");
-    expect(sem.codeFg).toBe("base-2");
+    expect(sem.surface).toBe("base-4");
+    expect(sem.muted).toBe("base-1");
+    expect(sem.accent).toBe("accent-1");
+    expect(sem.accentHover).toBe("accent-0");
+    expect(sem.codeBg).toBe("base-3");
+    expect(sem.codeFg).toBe("base-0");
     expect(sem.danger).toBe("state-danger");
     expect(sem.success).toBe("state-success");
     expect(sem.matchedKeywordBg).toBe(SEMANTIC_RAMP_DEFAULTS.matchedKeywordBg);
@@ -111,19 +112,19 @@ describe("schemeToCssPairs — emit contract", () => {
       "--zd-fg",
       "--zd-selection-bg",
       "--zd-selection-fg",
-      // --palette-base-0..11
-      ...Array.from({ length: 12 }, (_, i) => `--palette-base-${i}`),
-      // --palette-accent-0..6
-      ...Array.from({ length: 7 }, (_, i) => `--palette-accent-${i}`),
+      // --palette-base-0..4
+      ...Array.from({ length: 5 }, (_, i) => `--palette-base-${i}`),
+      // --palette-accent-0..2
+      ...Array.from({ length: 3 }, (_, i) => `--palette-accent-${i}`),
       // --palette-state-*
       ...STATE_ROLES.map((r) => `--palette-state-${r}`),
       // 23 --zd-{role}
       ...SEMANTIC_KEYS.map((k) => SEMANTIC_CSS_NAMES[k]),
     ];
     expect(keys.slice().sort()).toEqual(expected.slice().sort());
-    // 4 + 12 + 7 + 4 + 23 = 50, and no duplicate keys.
-    expect(keys.length).toBe(50);
-    expect(new Set(keys).size).toBe(50);
+    // 4 + 5 + 3 + 4 + 23 = 39, and no duplicate keys.
+    expect(keys.length).toBe(39);
+    expect(new Set(keys).size).toBe(39);
   });
 
   it("does NOT emit the retired --zd-0..15 slots", () => {
@@ -137,15 +138,15 @@ describe("schemeToCssPairs — emit contract", () => {
   });
 
   it("resolves base roles through the map", () => {
-    expect(emitted.get("--zd-bg")).toBe("base-11");
-    expect(emitted.get("--zd-fg")).toBe("base-1");
-    expect(emitted.get("--zd-selection-bg")).toBe("base-8");
-    expect(emitted.get("--zd-selection-fg")).toBe("base-1");
+    expect(emitted.get("--zd-bg")).toBe("base-4");
+    expect(emitted.get("--zd-fg")).toBe("base-0");
+    expect(emitted.get("--zd-selection-bg")).toBe("base-2");
+    expect(emitted.get("--zd-selection-fg")).toBe("base-0");
   });
 
   it("emits Tier-1 ramps verbatim", () => {
     expect(emitted.get("--palette-base-0")).toBe("base-0");
-    expect(emitted.get("--palette-accent-6")).toBe("accent-6");
+    expect(emitted.get("--palette-accent-2")).toBe("accent-2");
     expect(emitted.get("--palette-state-danger")).toBe("state-danger");
   });
 });
@@ -153,9 +154,9 @@ describe("schemeToCssPairs — emit contract", () => {
 describe("schemeToCssPairs — scopes", () => {
   const scheme = makeScheme();
 
-  it('"palette" scope emits only the 23 --palette-* pairs', () => {
+  it('"palette" scope emits only the 12 --palette-* pairs', () => {
     const keys = schemeToCssPairs(scheme, "palette").map(([k]) => k);
-    expect(keys.length).toBe(23); // 12 + 7 + 4
+    expect(keys.length).toBe(12); // 5 + 3 + 4
     expect(keys.every((k) => k.startsWith("--palette-"))).toBe(true);
   });
 
@@ -172,9 +173,9 @@ describe("generateCssCustomProperties", () => {
     const css = generateCssCustomProperties(makeScheme());
     expect(css.startsWith(":root {")).toBe(true);
     expect(css.trimEnd().endsWith("}")).toBe(true);
-    expect(css).toContain("--zd-bg: base-11;");
+    expect(css).toContain("--zd-bg: base-4;");
     expect(css).toContain("--palette-base-0: base-0;");
-    expect(css).toContain("--zd-surface: base-9;");
+    expect(css).toContain("--zd-surface: base-4;");
     expect(css).not.toContain("--zd-cursor");
     expect(css).not.toMatch(/--zd-\d+:/);
   });
@@ -199,9 +200,9 @@ describe("generateLightDarkCssProperties", () => {
   });
 
   it("wraps --zd-* roles in light-dark(L, D)", () => {
-    // light bg = base-11, dark bg = base-0
-    expect(css).toContain("--zd-bg: light-dark(base-11, base-0);");
-    expect(css).toContain("--zd-surface: light-dark(base-9, base-9);");
+    // light bg = base-4, dark bg = base-0
+    expect(css).toContain("--zd-bg: light-dark(base-4, base-0);");
+    expect(css).toContain("--zd-surface: light-dark(base-4, base-4);");
   });
 
   it("does not emit retired slots or cursor", () => {
