@@ -132,13 +132,19 @@ test.describe("Desktop sidebar hard-reload flash (#2571 / #2575 / #2577)", () =>
     await page.addInitScript(() => {
       const probe: HardReloadProbe = { samples: [], done: false };
       window.__hardReloadProbe__ = probe;
-      const html = document.documentElement;
 
       let framesAfterLoad = 0;
       const sample = () => {
+        // `addInitScript` runs at document-creation, BEFORE `<html>` is parsed,
+        // so `document.documentElement` can be null on the earliest rAF frames
+        // (and `#desktop-sidebar` even longer). Read both per-frame and
+        // null-guard — a frame with no sidebar element can't paint a flash, so
+        // it's simply recorded as `transform: null` and excluded from the
+        // per-frame assertions below (which key off sidebar-present frames).
+        const html = document.documentElement;
         const el = document.querySelector("#desktop-sidebar");
         probe.samples.push({
-          hidden: html.hasAttribute("data-sidebar-hidden"),
+          hidden: !!html && html.hasAttribute("data-sidebar-hidden"),
           transform: el ? getComputedStyle(el).transform : null,
         });
         if (probe.samples.length > 2000) {
@@ -189,12 +195,16 @@ test.describe("Desktop sidebar hard-reload flash (#2571 / #2575 / #2577)", () =>
     const presentSamples = samples.filter((s) => s.transform !== null);
     expect(presentSamples.length).toBeGreaterThan(0);
 
-    // EVERY sampled frame — from the earliest possible rAF callback through
-    // well past `load` — must show `data-sidebar-hidden` present on <html>.
-    expect(samples.every((s) => s.hidden)).toBe(true);
+    // The flash is specifically the collapsed sidebar being PAINTED OPEN, so
+    // the guarantee is anchored on frames where the `<aside>` actually exists
+    // in the DOM. The moment `#desktop-sidebar` is first present, the pre-paint
+    // script (emitted in `<head>`, ahead of the aside markup) has provably run,
+    // so on EVERY sidebar-present frame `<html>` must already carry
+    // `data-sidebar-hidden`...
+    expect(presentSamples.every((s) => s.hidden)).toBe(true);
 
-    // EVERY sampled frame where the sidebar element existed must show the
-    // exact settled hidden transform — never an identity/intermediate value.
+    // ...and the aside must be at the exact settled hidden transform — never an
+    // identity/intermediate value (which would be a visible open frame / slide).
     expect(
       presentSamples.every((s) => s.transform === hiddenTransform),
     ).toBe(true);
