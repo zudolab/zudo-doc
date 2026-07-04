@@ -10,8 +10,8 @@
  * `src/config/color-schemes.ts`). The panel surfaces it through two tabs:
  *
  *  - **Palette tab** (reserved id `palette`): three `kind:'color'` OKLCH tiers —
- *    `base` (12 stops → `--palette-base-0..11`), `accent` (7 stops →
- *    `--palette-accent-0..6`), and `state` (4 roles → `--palette-state-{role}`).
+ *    `base` (5 stops → `--palette-base-0..4`), `accent` (3 stops →
+ *    `--palette-accent-0..2`), and `state` (4 roles → `--palette-state-{role}`).
  *    zdtp's native L/C/H curve editor renders these. Per zdtp's palette-tab
  *    contract, a tab carrying MULTIPLE `kind:'color'` tiers MUST omit
  *    `colorExtras` (otherwise `resolveColorClusterFromTab` cannot pick a single
