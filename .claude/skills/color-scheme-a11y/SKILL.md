@@ -180,7 +180,7 @@ directly, bypassing the semantic layer — that was the ONE such path, and it's 
 
 If you ever find a NEW component that reads a raw `--palette-*` custom property directly
 (bypassing the semantic `--zd-*` layer), treat that as a design smell worth flagging, not a
-pattern to replicate — see [Reaching a raw ramp stop](../../../src/content/docs/reference/color.mdx#reaching-a-raw-ramp-stop-rare)
+pattern to replicate — see [Reaching a raw ramp stop](../../reference/color.mdx#reaching-a-raw-ramp-stop-rare)
 in the Color reference doc.
 
 ### 2.4 Comment format — required on every tweaked value
