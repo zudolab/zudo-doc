@@ -1,37 +1,43 @@
 /**
  * zdtp (zudo-design-token-panel) PanelConfig for zudo-doc.
  *
- * This config object is the single source of truth that will be passed to
- * `configurePanel(designTokenPanelConfig)` in the host adapter.
+ * Single source of truth passed to `configurePanel(designTokenPanelConfig)` in
+ * `src/lib/design-token-panel-bootstrap.ts`.
  *
- * Migration note (Wave 1 / zdtp b288293)
- * --------------------------------------
- * zdtp dropped the legacy `tokens: TokenManifest` + `colorCluster` shape in
- * favor of a flat `tabs: TabConfig[]` array, plus `colorExtras` (carrying
- * non-tier cluster metadata) on the color tab. The cluster's palette and
- * semantic data now live as `TierItem` entries inside the color tab:
+ * Ramp-native model (Color Ramp Restructure — zudolab/zudo-doc#2584 / #2592)
+ * -------------------------------------------------------------------------
+ * The color model is now ramp-native (`ColorScheme = { ramps, map }`, see
+ * `src/config/color-schemes.ts`). The panel surfaces it through two tabs:
  *
- *  - Palette tier: 16 items with `kind: 'color'`, cssVars `--zd-0`..`--zd-15`.
- *    The bridge in zdtp's `resolveColorClusterFromTab` derives
- *    `paletteCssVarTemplate` by replacing the trailing digit run on the first
- *    item's cssVar with `{n}` (`--zd-0` → `--zd-{n}`).
- *  - Semantic tier: items with `kind: 'color'` and `referencesTier` pointing
- *    at the palette tier; each item's `default` is the palette item id it
- *    refers to (which the bridge looks up to materialise the index).
+ *  - **Palette tab** (reserved id `palette`): three `kind:'color'` OKLCH tiers —
+ *    `base` (12 stops → `--palette-base-0..11`), `accent` (7 stops →
+ *    `--palette-accent-0..6`), and `state` (4 roles → `--palette-state-{role}`).
+ *    zdtp's native L/C/H curve editor renders these. Per zdtp's palette-tab
+ *    contract, a tab carrying MULTIPLE `kind:'color'` tiers MUST omit
+ *    `colorExtras` (otherwise `resolveColorClusterFromTab` cannot pick a single
+ *    palette tier). Token defaults are read from the shared `ramps` (via the
+ *    active scheme) so the panel stays in sync with `color-schemes.ts`. The
+ *    cssVars match the `--palette-*` custom properties the ColorSchemeProvider
+ *    emits (`schemeToCssPairs`).
  *
- * Type notes:
- * - zdtp's `ColorScheme.shikiTheme` is OPTIONAL as of zdtp 0.2.3 (upstream
- *   Takazudo/zudo-design-token-panel#342 — it was previously required, which is
- *   the reason `toZdtpColorSchemes()` below exists). The field is vestigial:
- *   zdtp's Shiki integration is a no-op stub and page code highlighting is done
- *   by syntect (dual-theme, via `codeHighlight` in zfb.config.ts), not Shiki.
- *   With #342 landed, local schemes are now directly assignable, so the helper
- *   is no longer strictly required; it is kept only so every scheme handed to
- *   zdtp carries an explicit `DEFAULT_SHIKI_THEME` instead of `undefined`.
- *   See zudo-doc#2037.
- * - Do NOT add `legacyIdRenameMap` here. The upstream typography-id rename
- *   map maps zudo-doc's canonical ids (text-caption, text-body, …) to
- *   non-existent keys. Omit the field so zdtp keeps its empty rename map.
+ *  - **Color tab** (reserved id `color`): a single `semantic` tier holding all
+ *    23 `--zd-*` semantic roles as direct `kind:'color'` OKLCH swatches. Per
+ *    #2589 (Option b), zdtp resolves tier references INTRA-tab only, so a
+ *    cross-tab ramp reference is impossible — the semantic tier therefore has
+ *    NO `referencesTier`; each role instead carries a concrete OKLCH `default`
+ *    resolved from the active scheme's ramp wiring (`resolveSemanticColors`).
+ *    zdtp's color tab renders the first all-`kind:'color'` tier as directly
+ *    editable OKLCH swatches, which is exactly this semantic tier.
+ *
+ * The legacy ghostty 16-slot palette (`--zd-0..15`), the numeric palette-index
+ * `semanticDefaults`, `cursor`, `shikiTheme`, and the bundled scheme presets are
+ * all gone (dropped in the ramp restructure). The color cluster is now
+ * **scheme-less**: `colorExtras.colorSchemes = {}` (zdtp's documented
+ * scheme-less cluster shape) — the ramps ARE the editable source of truth,
+ * surfaced by the Palette tab, so a bundled scheme-preset registry no longer
+ * applies. Note: zdtp 0.4.3's `ColorClusterExtras.colorSchemes` is still typed
+ * to the legacy flat `ColorScheme`, which the ramp-native `{ ramps, map }`
+ * schemes cannot populate; `{}` is the correct, type-safe shape here.
  */
 
 import type {
@@ -40,7 +46,6 @@ import type {
   TierConfig,
   TierItem,
   ColorClusterExtras,
-  ColorScheme as ZdtpColorScheme,
   TokenDef,
 } from "@takazudo/zdtp";
 import {
@@ -48,75 +53,31 @@ import {
   FONT_TOKENS,
   SIZE_TOKENS,
 } from "./design-tokens-manifest";
-import { colorSchemes } from "./color-schemes";
-import type { ColorScheme as LocalColorScheme } from "./color-schemes";
-import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "./color-scheme-utils";
+import {
+  getActiveScheme,
+  resolveSemanticColors,
+  SEMANTIC_KEYS,
+  SEMANTIC_CSS_NAMES,
+  STATE_ROLES,
+} from "./color-scheme-utils";
 import { settings } from "./settings";
 import { DESIGN_TOKEN_SCHEMA } from "@takazudo/zudo-doc/theme";
 
 /**
- * Base-role fallback indices derived from the legacy `initColorFromSchemeData`
- * in zdtp's `state/tweak-state.ts`. Hard-coded palette-index defaults used
- * when a scheme's ColorRef is not a number.
- */
-const BASE_DEFAULTS = {
-  background: 0,
-  foreground: 15,
-  cursor: 6,
-  selectionBg: 0,
-  selectionFg: 15,
-} as const;
-
-/**
- * Fallback value for zdtp's still-required `ColorClusterExtras.defaultShikiTheme`
- * and for `toZdtpColorSchemes()` below. The value is inert — zdtp's Shiki
- * integration is a no-op stub and page highlighting is syntect's (see the type
- * note above) — but the cluster field is typed `string`, so a value is required.
+ * Inert fallback for the still-REQUIRED `ColorClusterExtras.defaultShikiTheme`.
+ * zdtp's Shiki integration is a no-op stub and page code highlighting is
+ * syntect's (dual-theme, via `codeHighlight` in zfb.config.ts), so this value
+ * has no visible effect — but the field is typed `string`, so a value is
+ * required. See zudo-doc#2037.
  */
 const DEFAULT_SHIKI_THEME = "github-dark";
-
-/**
- * Normalize zudo-doc's local `ColorScheme` records into zdtp's `ColorScheme`
- * shape by filling `DEFAULT_SHIKI_THEME` when a scheme omits `shikiTheme`.
- * Since zdtp 0.2.3 made `shikiTheme` optional (#342), local schemes are already
- * assignable and this helper is no longer strictly required; it is kept so the
- * schemes handed to zdtp carry an explicit value rather than `undefined`.
- */
-function toZdtpColorSchemes(
-  schemes: Record<string, LocalColorScheme>,
-): Record<string, ZdtpColorScheme> {
-  const normalized: Record<string, ZdtpColorScheme> = {};
-  for (const [name, scheme] of Object.entries(schemes)) {
-    normalized[name] = {
-      ...scheme,
-      shikiTheme: scheme.shikiTheme ?? DEFAULT_SHIKI_THEME,
-    };
-  }
-  return normalized;
-}
-
-/**
- * Initial palette taken from the configured active scheme. The 16 colors
- * are surfaced as palette items in the color tab so the bridge can build a
- * 16-slot `ColorClusterDataConfig`. Live tweaks still flow through zdtp's
- * tweak-state — these defaults are only the seed.
- */
-function getInitialPalette(): readonly string[] {
-  const scheme = colorSchemes[settings.colorScheme];
-  if (!scheme) {
-    throw new Error(
-      `Unknown color scheme: "${settings.colorScheme}". Available: ${Object.keys(colorSchemes).join(", ")}`,
-    );
-  }
-  return scheme.palette;
-}
 
 // ---------------------------------------------------------------------------
 // Helpers — partition flat manifest arrays into TabConfig.tiers by group.
 // ---------------------------------------------------------------------------
 
 /**
- * Convert a flat `TokenDef` to a `TierItem` (the new zdtp tier-model shape).
+ * Convert a flat `TokenDef` to a `TierItem` (the zdtp tier-model shape).
  *
  * The mapping rules:
  *  - `control: "select"` → `type: { kind: 'select', options }`
@@ -171,96 +132,118 @@ function tierFromGroup(
 }
 
 // ---------------------------------------------------------------------------
-// Color tab — palette and semantic tiers + colorExtras for cluster metadata.
+// Palette tab — three ramp tiers (base / accent / state), OKLCH curve editor.
 // ---------------------------------------------------------------------------
 
-const PALETTE_TIER_ID = "palette";
-
 /**
- * 16 palette items. The bridge in zdtp's `resolveColorClusterFromTab` reads
- * the first item's `cssVar` and replaces the trailing digit run with `{n}`
- * (`--zd-0` → `--zd-{n}`), reconstructing the legacy
- * `paletteCssVarTemplate` for the apply pipeline.
+ * Build the three ramp tiers from the active scheme's shared `ramps`. Default
+ * Light and Default Dark share the same Tier-1 ramps, so the active scheme's
+ * ramps are the single source of truth — read from here rather than hardcoding
+ * a second copy of the values.
  */
-function buildPaletteTier(): TierConfig {
-  const initial = getInitialPalette();
-  const items: TierItem[] = [];
-  for (let i = 0; i < 16; i++) {
-    items.push({
-      id: `p${i}`,
-      cssVar: `--zd-${i}`,
-      label: `p${i}`,
-      default: initial[i] ?? "#808080",
+function buildRampTiers(): TierConfig[] {
+  const { ramps } = getActiveScheme();
+
+  const baseTier: TierConfig = {
+    id: "base",
+    label: "Base",
+    items: ramps.base.map((color, i): TierItem => ({
+      id: `base-${i}`,
+      cssVar: `--palette-base-${i}`,
+      label: String(i),
+      default: color,
       type: { kind: "color", format: "oklch" },
-    });
-  }
-  return {
-    id: PALETTE_TIER_ID,
-    label: "Palette",
-    items,
+    })),
   };
+
+  const accentTier: TierConfig = {
+    id: "accent",
+    label: "Accent",
+    items: ramps.accent.map((color, i): TierItem => ({
+      id: `accent-${i}`,
+      cssVar: `--palette-accent-${i}`,
+      label: String(i),
+      default: color,
+      type: { kind: "color", format: "oklch" },
+    })),
+  };
+
+  const stateTier: TierConfig = {
+    id: "state",
+    label: "State",
+    items: STATE_ROLES.map((role): TierItem => ({
+      id: `state-${role}`,
+      cssVar: `--palette-state-${role}`,
+      label: role,
+      default: ramps.state[role],
+      type: { kind: "color", format: "oklch" },
+    })),
+  };
+
+  return [baseTier, accentTier, stateTier];
 }
 
+const PALETTE_TAB: TabConfig = {
+  id: "palette",
+  label: "Palette",
+  tiers: buildRampTiers(),
+  // No colorExtras: a tab with multiple kind:'color' tiers MUST omit it so
+  // resolveColorClusterFromTab is not invoked and zdtp renders the ramps with
+  // its native curve editor (zdtp palette-tab contract).
+};
+
+// ---------------------------------------------------------------------------
+// Color tab — semantic tokens as direct OKLCH swatches (Option b, #2589).
+// ---------------------------------------------------------------------------
+
 /**
- * Semantic tier — items that reference the palette tier. Each item's
- * `default` is a palette item id (e.g. `"p0"`); the bridge looks the id up
- * and emits `paletteIdToIndex[id]` as the numeric default for
- * `semanticDefaults`. cssVars come straight from `SEMANTIC_CSS_NAMES` so
- * the apply pipeline keeps writing the same `--zd-*` custom properties.
+ * Semantic tier — all 23 `--zd-*` roles as direct `kind:'color'` OKLCH swatches.
+ * Per #2589 (Option b) there is NO `referencesTier`: zdtp resolves references
+ * intra-tab only, so cross-tab ramp references aren't possible. Each role
+ * carries a concrete OKLCH `default` resolved from the active scheme's ramp
+ * wiring (`resolveSemanticColors`), keeping the panel in sync with
+ * `color-schemes.ts`. cssVars come from `SEMANTIC_CSS_NAMES` so the apply
+ * pipeline keeps writing the same `--zd-*` custom properties.
  */
 function buildSemanticTier(): TierConfig {
-  const items: TierItem[] = [];
-  for (const [key, cssVar] of Object.entries(SEMANTIC_CSS_NAMES)) {
-    const idx = SEMANTIC_DEFAULTS[key];
-    if (idx === undefined) continue;
-    items.push({
-      id: key,
-      cssVar,
-      label: key,
-      default: `p${idx}`,
-      type: { kind: "color" },
-    });
-  }
-  return {
-    id: "semantic",
-    label: "Semantic",
-    items,
-    referencesTier: PALETTE_TIER_ID,
-  };
+  const resolved = resolveSemanticColors(getActiveScheme());
+  const items: TierItem[] = SEMANTIC_KEYS.map((key): TierItem => ({
+    id: key,
+    cssVar: SEMANTIC_CSS_NAMES[key],
+    label: key,
+    default: resolved[key],
+    type: { kind: "color", format: "oklch" },
+  }));
+  return { id: "semantic", label: "Semantic", items };
 }
 
 const COLOR_EXTRAS: ColorClusterExtras = {
   id: "zudo-doc",
   label: "Zudo Doc",
-  baseRoles: {
-    background: "--zd-bg",
-    foreground: "--zd-fg",
-    cursor: "--zd-cursor",
-    selectionBg: "--zd-sel-bg",
-    selectionFg: "--zd-sel-fg",
-  },
-  baseDefaults: BASE_DEFAULTS,
+  // No base-role editors in the ramp model — the Palette tab owns the ramps and
+  // the semantic tier owns the roles. baseRoles/baseDefaults are empty (allowed:
+  // ColorClusterExtras types both as Partial<Record<...>>).
+  baseRoles: {},
+  baseDefaults: {},
   defaultShikiTheme: DEFAULT_SHIKI_THEME,
-  // Local ColorScheme lacks shikiTheme; toZdtpColorSchemes fills the fallback
-  // so this is a type-checked assignment rather than an unsafe cast.
-  colorSchemes: toZdtpColorSchemes(colorSchemes),
+  // Scheme-less cluster: the ramps ARE the editable source of truth (Palette
+  // tab), so there is no bundled scheme-preset registry. zdtp documents `{}`
+  // for clusters that don't use the Scheme… dropdown.
+  colorSchemes: {},
   panelSettings: {
     colorScheme: settings.colorScheme,
-    // colorMode: strip off respectPrefersColorScheme (not in zdtp's shape).
-    colorMode: settings.colorMode
-      ? {
-          defaultMode: settings.colorMode.defaultMode,
-          lightScheme: settings.colorMode.lightScheme,
-          darkScheme: settings.colorMode.darkScheme,
-        }
-      : false,
+    // Stub for the scheme-less cluster (colorSchemes is empty): zdtp only
+    // resolves a light/dark pair against the scheme registry, which no longer
+    // applies. The live light/dark swap is driven by the `--zd-*` custom
+    // properties on `:root` (ColorSchemeProvider), not the panel registry.
+    colorMode: false,
   },
 };
 
 const COLOR_TAB: TabConfig = {
   id: "color",
   label: "Color",
-  tiers: [buildPaletteTier(), buildSemanticTier()],
+  tiers: [buildSemanticTier()],
   colorExtras: COLOR_EXTRAS,
 };
 
@@ -353,8 +336,8 @@ export const designTokenPanelConfig: PanelConfig = {
   consoleNamespace: "zudoDoc",
   modalClassPrefix: "zudo-doc-design-token-panel-modal",
   // Must match DESIGN_TOKEN_SCHEMA in @takazudo/zudo-doc/theme so that
-  // JSON files exported by the legacy panel remain importable after migration.
+  // JSON files exported by the panel remain importable.
   schemaId: DESIGN_TOKEN_SCHEMA,
   exportFilenameBase: "zudo-doc-design-tokens",
-  tabs: [COLOR_TAB, FONT_TAB, SPACING_TAB, SIZE_TAB],
+  tabs: [PALETTE_TAB, COLOR_TAB, FONT_TAB, SPACING_TAB, SIZE_TAB],
 };
