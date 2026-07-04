@@ -31,7 +31,6 @@ export {
   serialize,
   type DesignTokenJson,
   type DesignTokenJsonColor,
-  type DesignTokenJsonColorBase,
   type DesignTokenJsonOverrides,
   type DesignTokenManifest,
   type DeserializeOptions,
