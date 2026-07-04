@@ -72,18 +72,10 @@
  * Tight token strategy: import preflight + utilities only (no default theme).
  * Only project-specific tokens are available.
  *
- * Raw palette: --zd-0 to --zd-15 + bg/fg/sel (injected by ColorSchemeProvider)
+ * Base roles: --zd-bg/--zd-fg/--zd-selection-bg/--zd-selection-fg + ramps
+ * (--palette-base-0..11 / --palette-accent-0..6 / --palette-state-*) +
+ * 23 --zd-{role} semantic tokens, all injected by ColorSchemeProvider.
  * Tailwind tokens: registered below via @theme
- *
- * Palette slots:
- *   0/8:  black / bright-black (surfaces, muted text, borders)
- *   1/9:  red / bright-red
- *   2/10: green / bright-green
- *   3/11: yellow / bright-yellow
- *   4/12: blue / bright-blue
- *   5/13: magenta / bright-magenta
- *   6/14: cyan / bright-cyan
- *   7/15: white / bright-white
  * ======================================== */
 
 @theme {
@@ -115,26 +107,8 @@
   /* ── Base ── */
   --color-bg: var(--zd-bg);
   --color-fg: var(--zd-fg);
-  --color-sel-bg: var(--zd-sel-bg);
-  --color-sel-fg: var(--zd-sel-fg);
-
-  /* ── Raw palette (p0–p15) ── */
-  --color-p0: var(--zd-0);
-  --color-p1: var(--zd-1);
-  --color-p2: var(--zd-2);
-  --color-p3: var(--zd-3);
-  --color-p4: var(--zd-4);
-  --color-p5: var(--zd-5);
-  --color-p6: var(--zd-6);
-  --color-p7: var(--zd-7);
-  --color-p8: var(--zd-8);
-  --color-p9: var(--zd-9);
-  --color-p10: var(--zd-10);
-  --color-p11: var(--zd-11);
-  --color-p12: var(--zd-12);
-  --color-p13: var(--zd-13);
-  --color-p14: var(--zd-14);
-  --color-p15: var(--zd-15);
+  --color-sel-bg: var(--zd-selection-bg);
+  --color-sel-fg: var(--zd-selection-fg);
 
   /* ── Semantic aliases ── */
   --color-surface: var(--zd-surface);

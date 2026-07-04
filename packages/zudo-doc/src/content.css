@@ -28,7 +28,7 @@
  * 2. DESIGN TOKENS — the consumer's `@theme` MUST define every custom property
  *    consumed below:
  *      --color-{fg,bg,muted,accent,accent-hover,code-bg,code-fg,info,success,
- *               warning,danger,p5}
+ *               warning,danger}
  *      --spacing-{vsp-2xs,vsp-xs,vsp-sm,vsp-md,vsp-lg,vsp-xl,vsp-2xl,
  *                 hsp-2xs,hsp-xs,hsp-sm,hsp-md,hsp-lg,hsp-xl}
  *      --text-{body,small}   --font-mono   --font-weight-{medium,semibold}
@@ -405,16 +405,16 @@
   content: "🚨";
 }
 
-/* github-alerts [!IMPORTANT] → magenta/accent-adjacent (p5 = magenta palette slot) */
+/* github-alerts [!IMPORTANT] → shares the orange accent (--color-accent → --zd-accent → {accent:3}); ❗ icon differentiates it from other admonitions */
 [data-admonition="important"],
 .admonition-important {
-  border-left-color: var(--color-p5);
-  background-color: color-mix(in srgb, var(--color-p5) 12%, var(--color-bg));
+  border-left-color: var(--color-accent);
+  background-color: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg));
 }
 
 [data-admonition="important"] .admonition-title,
 .admonition-important .admonition-title {
-  color: var(--color-p5);
+  color: var(--color-accent);
 }
 
 [data-admonition="important"] .admonition-title::before,
