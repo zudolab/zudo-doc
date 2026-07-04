@@ -64,14 +64,11 @@ The right overlay color depends on the content photos, which vary between sites.
 
 ```ts
 // src/config/color-schemes.ts
-"My Scheme": {
-  // ...palette, background, foreground, ...
-  semantic: {
-    imageOverlayBg: 0,    // palette index — deep surface
-    imageOverlayFg: 11,   // palette index — light text
-    // or a direct color string: imageOverlayBg: "#222"
-  },
+semantic: {
+  imageOverlayBg: { base: 4 },   // ramp stop — deep surface
+  imageOverlayFg: { base: 0 },  // ramp stop — light text
+  // or a literal OKLCH string: imageOverlayBg: "oklch(.185 .005 65)"
 },
 ```
 
-The Color Tweak Panel (when enabled) exposes these tokens for live tweaking without editing code.
+The Design Token Panel's Color tab (when enabled) exposes these tokens for live tweaking without editing code.

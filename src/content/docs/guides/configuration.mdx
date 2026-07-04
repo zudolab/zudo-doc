@@ -797,11 +797,10 @@ Because the banner is rendered as a plain `<img>` element, there are no constrai
 
 ## Color Scheme Config
 
-Color schemes are defined in `src/config/color-schemes.ts`. Each scheme provides 21 color properties:
+Color schemes are defined in `src/config/color-schemes.ts`. A `ColorScheme` is `{ ramps, map }`:
 
-- `background`, `foreground`, `cursor`, `selectionBg`, `selectionFg`
-- `palette` — 16 color slots (`palette[0]` through `palette[15]`)
-- `semantic` (optional) — overrides for `surface`, `muted`, `accent`, `accentHover`, and more
+- `ramps` — the shared `base` (5-stop), `accent` (3-stop), and `state` (4 named colors) OKLCH ramps
+- `map` — the 4 base roles (`bg`, `fg`, `selectionBg`, `selectionFg`) and the 23 semantic roles (`surface`, `muted`, `accent`, `accentHover`, and more), each wired to a ramp stop or a literal OKLCH override
 
 <Info>
 

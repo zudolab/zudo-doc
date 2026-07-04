@@ -6,7 +6,7 @@ tags:
   - design-system
 ---
 
-The Design Token Panel is an in-page editor for every design token the theme ships with. It replaces the old single-purpose Color Tweak Panel with a tabbed UI that covers the four token families — **Spacing**, **Font**, **Size**, and **Color** — and adds a unified JSON export/import workflow so you can round-trip a whole design through an AI assistant and back.
+The Design Token Panel is an in-page editor for every design token the theme ships with. It replaces the old single-purpose Color Tweak Panel with a tabbed UI that covers five token families — **Palette**, **Color**, **Font**, **Spacing**, and **Size** — and adds a unified JSON export/import workflow so you can round-trip a whole design through an AI assistant and back.
 
 ## Enabling the Panel
 
@@ -27,9 +27,30 @@ The setting key is `designTokenPanel` — set it to `true` to enable the panel.
 
 </Note>
 
-## The Four Tabs
+## The Five Tabs
 
-The panel is divided into four tabs, each focused on a single token family. Tabs expose nothing but the tokens they own — you never have to scroll past colors to reach spacing.
+The panel is divided into five tabs, each focused on a single token family. Tabs expose nothing but the tokens they own — you never have to scroll past colors to reach spacing.
+
+### Palette
+
+The Palette tab surfaces the three shared OKLCH ramps that every color scheme is built from (see [Color](./color.mdx)):
+
+- **Base** — 5 stops (`--palette-base-0` … `--palette-base-4`), index 0 = lightest
+- **Accent** — 3 stops (`--palette-accent-0` … `--palette-accent-2`)
+- **State** — 4 named roles: `danger`, `success`, `warning`, `info` (`--palette-state-{role}`)
+
+Each stop renders as a swatch on zdtp's native OKLCH lightness/chroma/hue curve editor. Dragging a stop updates every semantic role built from it live — there is no separate "Scheme…" preset dropdown; the ramps themselves are the editable source of truth. See [Color Scheme Preview](../guides/color-scheme-preview.mdx) for a walkthrough.
+
+### Color
+
+The Color tab shows the 23 resolved semantic roles (`accent`, `codeBg`, `success`, `danger`, `mermaidText`, `chatAssistantBg`, …) as direct OKLCH swatches — one per `--zd-*` custom property. Editing a swatch here overrides that role directly, independent of which ramp stop it normally resolves to.
+
+#### Matched-keyword tokens
+
+Two semantic color tokens drive how matched keywords are highlighted. They live alongside the other semantic swatches in the Color tab and are consumed by the search widget at `pages/lib/_search-widget.tsx` to style hits in the search UI.
+
+- `matchedKeywordBg` — background color painted behind a matched keyword.
+- `matchedKeywordFg` — foreground (text) color of the matched keyword on top of that background.
 
 ### Spacing
 
@@ -48,22 +69,6 @@ The font family input accepts any valid CSS `font-family` value, including multi
 ### Size
 
 Pill-style sliders for the semantic icon-size tokens (`icon-xs` → `icon-lg`) and any component dimensions that graduated from arbitrary values to semantic tokens. Each slider snaps to the px value expected by the two-tier size strategy.
-
-### Color
-
-The Color tab is the previous Color Tweak Panel, now scoped to its own tab. It contains:
-
-- The 16-color palette (`p0`–`p15`)
-- Base theme colors (`bg`, `fg`, `cursor`, `sel-bg`, `sel-fg`)
-- Semantic token overrides (`accent`, `code-bg`, `success`, `danger`, …)
-- The **Scheme…** dropdown that loads any of the 50+ bundled presets
-
-#### Matched-keyword tokens
-
-Two semantic color tokens drive how matched keywords are highlighted. They live alongside the other semantic overrides in the Color tab and are consumed by the search widget at `pages/lib/_search-widget.tsx` to style hits in the search UI.
-
-- `matchedKeywordBg` — background color painted behind a matched keyword.
-- `matchedKeywordFg` — foreground (text) color of the matched keyword on top of that background.
 
 ## Keyboard Accessibility
 
@@ -90,13 +95,11 @@ By default the export is a **diff against the defaults** — only tokens you hav
   "spacing": {
     "hsp": { "md": "1.25rem" }
   },
+  "palette": {
+    "accent": { "1": "oklch(0.700 0.158 62)" }
+  },
   "color": {
-    "palette": {
-      "6": "#7aa2f7"
-    },
-    "semanticMappings": {
-      "accent": 6
-    }
+    "semantic": { "matchedKeywordBg": "oklch(0.700 0.158 62)" }
   }
 }
 ```
