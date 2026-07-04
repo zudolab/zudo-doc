@@ -3,7 +3,26 @@ import { createRequire } from "node:module";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { zudoDocPreset, type PresetSettings, type DirectiveVocabulary } from "../preset.js";
+import { SEMANTIC_RAMP_DEFAULTS, type ColorScheme } from "../color-scheme-utils.js";
 import { z } from "zod";
+
+// Minimal valid ramp-native ColorScheme fixture. These preset tests only assert
+// that a `colorSchemes` value is present (host-binding warning logic) — the
+// concrete color values are irrelevant, so the ramps are all-black stubs.
+const fixtureColorScheme: ColorScheme = {
+  ramps: {
+    base: Array.from({ length: 12 }, () => "#000"),
+    accent: Array.from({ length: 7 }, () => "#000"),
+    state: { danger: "#000", success: "#000", warning: "#000", info: "#000" },
+  },
+  map: {
+    bg: { base: 11 },
+    fg: { base: 1 },
+    selectionBg: { base: 8 },
+    selectionFg: { base: 1 },
+    semantic: { ...SEMANTIC_RAMP_DEFAULTS },
+  },
+};
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const presetSrc = resolve(__dirname, "../preset.ts");
@@ -388,7 +407,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
         directiveVocabulary: fixtureDirectives,
         // Supply both bindings so neither #2404 nor #2405 warning fires.
         translations: { en: { "doc.allTags": "All Tags" } },
-        colorSchemes: { "Default Dark": { background: "#000", foreground: "#fff", cursor: "#fff", selectionBg: "#444", selectionFg: "#fff", palette: ["#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000"] } },
+        colorSchemes: { "Default Dark": fixtureColorScheme },
       });
       expect(warnSpy).not.toHaveBeenCalled();
     });
@@ -402,7 +421,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
         directiveVocabulary: fixtureDirectives,
         // Supply both bindings so neither #2404 nor #2405 warning fires.
         translations: { en: { "doc.allTags": "All Tags" } },
-        colorSchemes: { "Default Dark": { background: "#000", foreground: "#fff", cursor: "#fff", selectionBg: "#444", selectionFg: "#fff", palette: ["#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000"] } },
+        colorSchemes: { "Default Dark": fixtureColorScheme },
       });
       expect(warnSpy).not.toHaveBeenCalled();
     });
@@ -436,7 +455,7 @@ describe("zudoDocPreset silent-degradation diagnostic (#2405)", () => {
       buildDocsSchema: buildFixtureSchema,
       directiveVocabulary: fixtureDirectives,
       // translations intentionally absent
-      colorSchemes: { "Default Dark": { background: "#000", foreground: "#fff", cursor: "#fff", selectionBg: "#444", selectionFg: "#fff", palette: ["#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000"] } },
+      colorSchemes: { "Default Dark": fixtureColorScheme },
     });
     expect(warnSpy).toHaveBeenCalledOnce();
     expect(warnSpy.mock.calls[0]?.[0]).toContain("translations");
@@ -466,7 +485,7 @@ describe("zudoDocPreset silent-degradation diagnostic (#2405)", () => {
       buildDocsSchema: buildFixtureSchema,
       directiveVocabulary: fixtureDirectives,
       translations: { en: { "doc.allTags": "All Tags" } },
-      colorSchemes: { "Default Dark": { background: "#000", foreground: "#fff", cursor: "#fff", selectionBg: "#444", selectionFg: "#fff", palette: ["#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000","#000"] } },
+      colorSchemes: { "Default Dark": fixtureColorScheme },
     });
     expect(warnSpy).not.toHaveBeenCalled();
   });
