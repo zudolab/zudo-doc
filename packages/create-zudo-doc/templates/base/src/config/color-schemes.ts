@@ -62,14 +62,24 @@ const darkMap: ModeMap = {
   selectionBg: { base: 8 },
   selectionFg: { base: 1 },
   semantic: {
-    surface: { base: 9 },
-    muted: { base: 6 },
+    // Per-mode AA-tuned literal — was { base: 9 } oklch(.360 .007 65); the base-9
+    // stop is too light for muted/accent text to clear AA on it. L .360→.308
+    // (H/C fixed) — muted-vs-surface, accent-vs-surface at threshold+0.1; contrast:audit #2593.
+    surface: "oklch(.308 .007 65)",
+    // Per-mode AA-tuned literal — was { base: 6 } oklch(.630 .009 65); lifted so
+    // secondary text clears AA on the (now darker) elevated backgrounds. L .630→.685
+    // (H/C fixed) — muted-vs-surface/codeBg/chatAssistantBg at threshold+0.1; contrast:audit #2593.
+    muted: "oklch(.685 .009 65)",
     accent: { accent: 3 },
     accentHover: { accent: 2 },
     codeBg: { base: 10 },
     codeFg: { base: 2 },
     success: { state: "success" },
-    danger: { state: "danger" },
+    // Per-mode AA-tuned literal — was { state: "danger" } oklch(.640 .170 25); the
+    // shared state red is too dark for the danger-admonition title on its 12%-tint
+    // dark bg. L .640→.655 (H/C fixed) — admonition-danger at threshold+0.1; contrast:audit #2593.
+    // (Kept mode-local so the shared state ramp stays canonical for Light, Wave 5.)
+    danger: "oklch(.655 .170 25)",
     warning: { state: "warning" },
     info: { state: "info" },
     mermaidNodeBg: { base: 9 },
@@ -79,14 +89,20 @@ const darkMap: ModeMap = {
     mermaidNoteBg: { base: 8 },
     chatUserBg: { accent: 3 },
     chatUserText: { base: 11 },
-    chatAssistantBg: { base: 9 },
+    // Per-mode AA-tuned literal — was { base: 9 } oklch(.360 .007 65); mirrors the
+    // surface literal (both are elevated panels) so the "Thinking…" loading text
+    // (text-muted on bg-chat-assistant-bg) clears AA. L .360→.308 (H/C fixed) —
+    // muted-vs-chatAssistantBg at threshold+0.1; contrast:audit #2593.
+    chatAssistantBg: "oklch(.308 .007 65)",
     chatAssistantText: { base: 2 },
     imageOverlayBg: { base: 11 },
     imageOverlayFg: { base: 2 },
-    // Literal placeholders — the search-result <mark> highlight is AA-tuned in
-    // a later wave (epic #2584, Default Dark a11y gate #2593).
+    // Search-result <mark> highlight: an amber (accent-hue) fill with dark text —
+    // the classic highlighter look. matchedKeywordFg tuned L .985→.300 (H/C fixed)
+    // so dark text clears AA on the amber bg — matched-keyword at threshold+0.1;
+    // contrast:audit #2593. (Was a light-on-amber literal placeholder at 2.66:1.)
     matchedKeywordBg: "oklch(.700 .158 62)",
-    matchedKeywordFg: "oklch(.985 .003 65)",
+    matchedKeywordFg: "oklch(.300 .003 65)",
   },
 };
 
