@@ -14,7 +14,6 @@
  */
 
 import { colorSchemes } from "../src/config/color-schemes";
-import { colorTweakPresets } from "../src/config/color-tweak-presets";
 import { schemeToCssPairs } from "../src/config/color-scheme-utils";
 import type { ColorScheme } from "../src/config/color-schemes";
 import { contrastRatio, colorMixSrgb, ADMONITION_TINT_PCT } from "../src/config/contrast-utils";
@@ -46,8 +45,8 @@ export const PAIR_MATRIX: PairSpec[] = [
   { key: "admonition-warning", label: "admonition title (warning, 12% tint)", tier: 1, threshold: 4.5, fgVar: "--zd-warning", bgVar: "--zd-bg", tintBg: true },
   { key: "admonition-info", label: "admonition title (info, 12% tint)", tier: 1, threshold: 4.5, fgVar: "--zd-info", bgVar: "--zd-bg", tintBg: true },
   { key: "admonition-danger", label: "admonition title (danger, 12% tint)", tier: 1, threshold: 4.5, fgVar: "--zd-danger", bgVar: "--zd-bg", tintBg: true },
-  { key: "admonition-important", label: "admonition title (important, raw p5, 12% tint)", tier: 1, threshold: 4.5, fgVar: "--zd-5", bgVar: "--zd-bg", tintBg: true },
-  { key: "selection", label: "selectionFg / selectionBg", tier: 1, threshold: 4.5, fgVar: "--zd-sel-fg", bgVar: "--zd-sel-bg" },
+  { key: "admonition-important", label: "admonition title (important, accent, 12% tint)", tier: 1, threshold: 4.5, fgVar: "--zd-accent", bgVar: "--zd-bg", tintBg: true },
+  { key: "selection", label: "selectionFg / selectionBg", tier: 1, threshold: 4.5, fgVar: "--zd-selection-fg", bgVar: "--zd-selection-bg" },
   { key: "matched-keyword", label: "matchedKeywordFg / matchedKeywordBg", tier: 1, threshold: 4.5, fgVar: "--zd-matched-keyword-fg", bgVar: "--zd-matched-keyword-bg" },
   { key: "chat-user", label: "chatUserText / chatUserBg", tier: 1, threshold: 4.5, fgVar: "--zd-chat-user-text", bgVar: "--zd-chat-user-bg" },
   { key: "chat-assistant", label: "chatAssistantText / chatAssistantBg", tier: 1, threshold: 4.5, fgVar: "--zd-chat-assistant-text", bgVar: "--zd-chat-assistant-bg" },
@@ -64,7 +63,7 @@ export const PAIR_MATRIX: PairSpec[] = [
 // Evaluation
 // ---------------------------------------------------------------------------
 
-export type PresetSource = "colorSchemes" | "colorTweakPresets";
+export type PresetSource = "colorSchemes";
 
 export interface PairResult {
   key: string;
@@ -87,10 +86,7 @@ export interface SchemeReport {
 }
 
 export function getAllPresets(): Array<{ name: string; scheme: ColorScheme; source: PresetSource }> {
-  return [
-    ...Object.entries(colorSchemes).map(([name, scheme]) => ({ name, scheme, source: "colorSchemes" as const })),
-    ...Object.entries(colorTweakPresets).map(([name, scheme]) => ({ name, scheme, source: "colorTweakPresets" as const })),
-  ];
+  return Object.entries(colorSchemes).map(([name, scheme]) => ({ name, scheme, source: "colorSchemes" as const }));
 }
 
 export function evaluateScheme(name: string, scheme: ColorScheme, source: PresetSource): SchemeReport {
