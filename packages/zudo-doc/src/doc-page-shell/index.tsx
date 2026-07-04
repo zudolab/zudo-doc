@@ -23,7 +23,10 @@ import { NavCardGrid } from "../nav-indexing/index.js";
 import type { VersionBannerLabels } from "../i18n-version/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
-import { createSidebarPrepaint } from "../sidebar-prepaint/index.js";
+import {
+  createSidebarPrepaint,
+  createSidebarVisibilityPrepaint,
+} from "../sidebar-prepaint/index.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
 import { createSidebarWithDefaults } from "../sidebar-with-defaults/index.js";
 import { createHeaderWithDefaults } from "../header-with-defaults/index.js";
@@ -184,8 +187,16 @@ export function createDocPageShell<S extends Settings = Settings>(
   const SidebarWithDefaults = createSidebarWithDefaults(ctx);
   const HeaderWithDefaults = createHeaderWithDefaults(ctx);
   const FooterWithDefaults = createFooterWithDefaults(ctx);
+  const sidebarToggleEnabled = Boolean(
+    (ctx.settings as { sidebarToggle?: boolean }).sidebarToggle,
+  );
   const SidebarPrepaint = createSidebarPrepaint({
-    sidebarToggle: Boolean((ctx.settings as { sidebarToggle?: boolean }).sidebarToggle),
+    sidebarToggle: sidebarToggleEnabled,
+  });
+  // Pre-paint visibility script — emitted into the page <head> (below) so it
+  // runs before the <aside> paints, killing the hard-reload flash (#2571).
+  const SidebarVisibilityPrepaint = createSidebarVisibilityPrepaint({
+    sidebarToggle: sidebarToggleEnabled,
   });
   const DocBodyEnd = createDocBodyEnd(ctx);
   const DocPager = createDocPager(ctx);
@@ -245,7 +256,15 @@ export function createDocPageShell<S extends Settings = Settings>(
       <DocLayoutWithDefaults
         title={composeMetaTitle(title)}
         description={settings.metaTags.description ? description : undefined}
-        head={<HeadWithDefaults title={title} description={description} canonical={canonical} />}
+        head={
+          <>
+            <HeadWithDefaults title={title} description={description} canonical={canonical} />
+            {/* Pre-paint sidebar-visibility restore — must sit in <head> so it
+                runs before the <aside> desktop sidebar is painted (#2571).
+                Gated identically to the afterSidebar toggle Island below. */}
+            <SidebarVisibilityPrepaint hideSidebar={hideSidebar} />
+          </>
+        }
         lang={locale}
         noindex={settings.noindex}
         hideSidebar={hideSidebar}

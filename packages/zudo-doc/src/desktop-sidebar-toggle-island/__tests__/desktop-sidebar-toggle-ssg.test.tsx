@@ -8,11 +8,16 @@
  * hidden states with the correct aria attributes.
  */
 
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { VNode } from "preact";
 import { render } from "preact-render-to-string";
 import { Island } from "@takazudo/zfb";
-import { DesktopSidebarToggle } from "../index.js";
+import {
+  DesktopSidebarToggle,
+  SIDEBAR_STORAGE_KEY,
+  readState,
+  setDataAttribute,
+} from "../index.js";
 
 describe("DesktopSidebarToggle — SSG HTML presence", () => {
   it("renders a button element in static HTML", () => {
@@ -35,6 +40,100 @@ describe("DesktopSidebarToggle — SSG HTML presence", () => {
   it("renders the transition-persist data attribute", () => {
     const html = render(<DesktopSidebarToggle />);
     expect(html).toContain('data-zfb-transition-persist="desktop-sidebar-toggle"');
+  });
+});
+
+// Reconcile-helper contract (bug zudolab/zudo-doc#2571). The island's mount
+// effect reconciles the persisted preference on initial load via exactly two
+// helpers: `readState()` (reads localStorage → the `visible` value) and
+// `setDataAttribute(visible)` (applies/removes `<html data-sidebar-hidden>`).
+// These tests pin that helper contract — the units the mount effect composes.
+//
+// SCOPE NOTE (honest about what this does NOT cover): the package vitest runs
+// in a plain Node env (no jsdom/happy-dom), so these exercise the helpers
+// DIRECTLY — they do NOT mount the component or run its `useEffect`, and would
+// still pass if the mount effect itself were deleted. The load-bearing #2571
+// fix (the pre-paint `<script>` hoisted into `<head>` before `<aside>`) is
+// guarded end-to-end by `sidebar-prepaint/__tests__/sidebar-prepaint-ssg.test`;
+// the mount effect's actual firing is a browser-only behaviour outside this
+// node test env's reach.
+function makeFakeDocument() {
+  const attrs = new Map<string, string>();
+  return {
+    documentElement: {
+      getAttribute: (name: string) => attrs.get(name) ?? null,
+      hasAttribute: (name: string) => attrs.has(name),
+      setAttribute: (name: string, value: string) => {
+        attrs.set(name, value);
+      },
+      removeAttribute: (name: string) => {
+        attrs.delete(name);
+      },
+    },
+  };
+}
+
+function makeFakeStorage() {
+  const store = new Map<string, string>();
+  return {
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      store.set(key, value);
+    },
+    removeItem: (key: string) => {
+      store.delete(key);
+    },
+  };
+}
+
+describe("DesktopSidebarToggle — reconcile helpers (readState / setDataAttribute)", () => {
+  let fakeDocument: ReturnType<typeof makeFakeDocument>;
+  let fakeStorage: ReturnType<typeof makeFakeStorage>;
+
+  beforeEach(() => {
+    fakeDocument = makeFakeDocument();
+    fakeStorage = makeFakeStorage();
+    // `window` must be defined for readState() to consult localStorage
+    // (it short-circuits to `true` when window is undefined, i.e. during SSR).
+    vi.stubGlobal("window", new EventTarget());
+    vi.stubGlobal("document", fakeDocument);
+    vi.stubGlobal("localStorage", fakeStorage);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("reconciles to hidden when localStorage says 'false'", () => {
+    fakeStorage.setItem(SIDEBAR_STORAGE_KEY, "false");
+
+    // This is exactly what the island's mount effect computes on initial load.
+    const visible = readState();
+    expect(visible).toBe(false);
+
+    // ...and applies to <html> via setDataAttribute — no SPA nav involved.
+    setDataAttribute(visible);
+    expect(fakeDocument.documentElement.hasAttribute("data-sidebar-hidden")).toBe(
+      true,
+    );
+    expect(fakeDocument.documentElement.getAttribute("data-sidebar-hidden")).toBe(
+      "",
+    );
+  });
+
+  it("reconciles to visible (attribute removed) when no preference is stored", () => {
+    const visible = readState();
+    expect(visible).toBe(true);
+
+    setDataAttribute(visible);
+    expect(fakeDocument.documentElement.hasAttribute("data-sidebar-hidden")).toBe(
+      false,
+    );
+  });
+
+  it("treats an explicit 'true' preference as visible", () => {
+    fakeStorage.setItem(SIDEBAR_STORAGE_KEY, "true");
+    expect(readState()).toBe(true);
   });
 });
 

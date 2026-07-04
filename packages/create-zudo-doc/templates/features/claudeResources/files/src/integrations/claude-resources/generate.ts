@@ -706,8 +706,6 @@ sidebar_position: 899
 generated: true
 ---
 
-Claude Code configuration reference.
-
 ## Resources
 
 <CategoryNav categories={${categoriesAttr}} />

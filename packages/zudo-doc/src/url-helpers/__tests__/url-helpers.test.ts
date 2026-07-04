@@ -55,6 +55,12 @@ describe("navHref", () => {
   it("undefined lang is treated as default locale", () => {
     expect(h.navHref("/docs/guides", undefined, "1.0")).toBe("/v/1.0/docs/guides/");
   });
+  it("defaultLocaleOnly path on a ja surface drops the locale prefix (#2569)", () => {
+    expect(h.navHref("/docs/claude-md/setup", "ja", undefined)).toBe("/docs/claude-md/setup/");
+  });
+  it("versioned defaultLocaleOnly path preserves the version and drops the locale (#2569)", () => {
+    expect(h.navHref("/docs/claude-md/setup", "ja", "1.0")).toBe("/v/1.0/docs/claude-md/setup/");
+  });
 });
 
 describe("getPathForLocale", () => {
@@ -102,8 +108,24 @@ describe("docsUrl / versionedDocsUrl / absoluteUrl / resolveHref", () => {
     expect(h.docsUrl("guides", "en")).toBe("/docs/guides/");
     expect(h.docsUrl("guides", "ja")).toBe("/ja/docs/guides/");
   });
+  it("docsUrl remints a defaultLocaleOnly slug to the default-locale URL on ja (#2569)", () => {
+    // defaultLocaleOnly docs only ship default-locale routes, so a ja nav surface
+    // must link into the default-locale space instead of minting a /ja 404 href.
+    expect(h.docsUrl("claude-md/setup", "ja")).toBe("/docs/claude-md/setup/");
+    // en and non-defaultLocaleOnly ja hrefs are unchanged.
+    expect(h.docsUrl("claude-md/setup", "en")).toBe("/docs/claude-md/setup/");
+    expect(h.docsUrl("guides/intro", "ja")).toBe("/ja/docs/guides/intro/");
+  });
   it("versionedDocsUrl nests locale after version", () => {
     expect(h.versionedDocsUrl("guides", "1.0", "ja")).toBe("/v/1.0/ja/docs/guides/");
+  });
+  it("versionedDocsUrl drops the locale for a defaultLocaleOnly slug but keeps the version (#2569)", () => {
+    // Mirrors docsUrl/navHref: a defaultLocaleOnly doc has no non-default-locale
+    // route, so a ja versioned surface must not mint /v/1.0/ja/docs/claude-md/... (404).
+    expect(h.versionedDocsUrl("claude-md/setup", "1.0", "ja")).toBe("/v/1.0/docs/claude-md/setup/");
+    // en and non-defaultLocaleOnly ja are unchanged.
+    expect(h.versionedDocsUrl("claude-md/setup", "1.0", "en")).toBe("/v/1.0/docs/claude-md/setup/");
+    expect(h.versionedDocsUrl("guides/intro", "1.0", "ja")).toBe("/v/1.0/ja/docs/guides/intro/");
   });
   it("absoluteUrl joins siteUrl, undefined when empty", () => {
     expect(h.absoluteUrl("/docs/x/")).toBe("https://example.com/docs/x/");
