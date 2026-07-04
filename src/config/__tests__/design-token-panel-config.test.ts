@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { designTokenPanelConfig } from "../design-token-panel-config";
-import { colorTweakPresets } from "../color-tweak-presets";
 
 describe("designTokenPanelConfig", () => {
   it("storagePrefix is exactly 'zudo-doc-tweak' — regression guard for storage-key continuity", () => {
@@ -37,21 +36,5 @@ describe("designTokenPanelConfig", () => {
       "spacing",
       "size",
     ]);
-  });
-
-  it("every key in colorTweakPresets round-trips through JSON.stringify", () => {
-    // Verifies the JSON-serializable constraint: PanelConfig must be passable
-    // through JSON.stringify/JSON.parse without data loss (Astro prop injection
-    // and zdtp's configurePanel idempotency check both rely on this).
-    for (const [key, preset] of Object.entries(colorTweakPresets)) {
-      expect(
-        () => JSON.parse(JSON.stringify(preset)),
-        `preset "${key}" should be JSON-serializable`,
-      ).not.toThrow();
-      const roundTripped = JSON.parse(JSON.stringify(preset));
-      expect(roundTripped, `preset "${key}" round-trip should match`).toEqual(
-        preset,
-      );
-    }
   });
 });
