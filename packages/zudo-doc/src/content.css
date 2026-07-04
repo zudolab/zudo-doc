@@ -405,7 +405,7 @@
   content: "🚨";
 }
 
-/* github-alerts [!IMPORTANT] → shares the orange accent (--color-accent → --zd-accent → {accent:3}); ❗ icon differentiates it from other admonitions */
+/* github-alerts [!IMPORTANT] → shares the orange accent (--color-accent → --zd-accent → accent ramp); ❗ icon differentiates it from other admonitions */
 [data-admonition="important"],
 .admonition-important {
   border-left-color: var(--color-accent);

@@ -10,7 +10,7 @@
 //
 // Color Ramp Restructure (#2591): the color slice is now the ramp-native
 // `ColorScheme` ({ ramps, map }). The fixtures below build a synthetic-but-valid
-// scheme (12 base stops, 7 accent, 4 state, full map) so a leak of the wrong
+// scheme (5 base stops, 3 accent, 4 state, full map) so a leak of the wrong
 // scheme is spottable at a glance.
 import { describe, it, expect, vi, afterEach } from "vitest";
 // Local fixture type: a superset of the serde-module's narrower TokenDef that
