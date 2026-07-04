@@ -1,6 +1,6 @@
 ---
 title: カラースキームプレビュー
-description: Design Token PanelのColorタブを使ってカラースキームをブラウズ・プレビューする方法。
+description: Design Token Panel の Palette タブを使って zudo-doc のカラーランプをプレビュー・調整する方法。
 sidebar_position: 12
 tags:
   - design-system
@@ -8,18 +8,23 @@ tags:
 
 ## 概要
 
-カラースキームプレビューは、50種類以上のプリセットカラースキームをブラウズし、リアルタイムでサイトに適用できる機能です。この機能は[Design Token Panel](../reference/design-token-panel.mdx)の**Color**タブにあり、タブヘッダーの "Scheme..." ドロップダウンから呼び出します。
+zudo-doc はちょうど 2 つのカラースキーム — **Default Light** と **Default Dark** — を同梱しており、両者は 1 セットの OKLCH ランプを共有しています（[Color](../reference/color.mdx) を参照）。ブラウズできるコミュニティ製やターミナル由来のプリセットカタログはバンドルされていません。
+
+<Note>
+
+以前の Design Token Panel には、50 種類以上のバンドルプリセット（Dracula、Nord、Solarized など）を読み込むための **"Scheme…" ドロップダウン**がありました。ランプネイティブなカラーモデルではこのドロップダウンは廃止され、いまはランプそのものが編集可能なソースオブトゥルースとなり、後述の **Palette** タブで公開されています。
+
+</Note>
 
 ## 動作の仕組み
 
-Design Token Panelが有効な状態で **Color** タブを開くと、**"Scheme..."** ドロップダウンが表示され、利用可能なすべてのプリセットが一覧されます。スキームを選択すると:
+[Design Token Panel](../reference/design-token-panel.mdx) が有効な状態で **Palette** タブを開くと、共有される 3 つのランプ — **Base**（5 ストップ）、**Accent**（3 ストップ）、**State**（`danger`/`success`/`warning`/`info`）— が zdtp ネイティブの OKLCH 明度/彩度/色相のカーブエディタで表示されます。ストップをドラッグすると:
 
-- プリセットのパレット・ベースカラー・セマンティックカラーをすべて tweak state に読み込む
-- 即座にページに反映する
-- `localStorage` に保持されるため、ページリロードやナビゲーションを越えて維持される
+- 新しい色が即座にページへ反映される（そのストップから構築されたすべてのセマンティックロールがライブで更新される）
+- 変更が `localStorage` に保持されるため、ページリロードやナビゲーションを越えて維持される
 - ソースファイルは一切変更されず、変更はクライアント側のみに留まる
 
-プリセット読み込み後は、タブのカラーピッカーで個別の色をさらに調整できます。
+**Color** タブは、解決済みの 23 のセマンティックロール（`accent`、`codeBg`、`success`、`mermaidText`、…）を直接の OKLCH スウォッチとして表示するため、各ランプストップがどのロールに供給されているかを正確に確認できます。
 
 ## Design Token Panelの有効化
 
@@ -32,22 +37,15 @@ export const settings = {
 };
 ```
 
-有効になるとヘッダーバーにパレットアイコンが表示されます。クリックするとパネルが開閉し、**Color** タブ内に "Scheme..." ドロップダウンが現れます。
-
-## 利用可能なカラースキーム
-
-パネルには Dracula、Nord、Solarized Dark、Solarized Light、Catppuccin Mocha、Catppuccin Latte、Tokyo Night、Gruvbox Dark、GitHub Dark、GitHub Light など、50種類以上のプリセットカラースキームが含まれています。
-
-プロジェクトの `color-schemes.ts` にバンドルされているスキームが先頭に表示され、セパレーターを挟んで残りのプリセットが続きます。
-
-各スキームは16色のパレット、背景・前景色、選択色、任意のセマンティックカラー上書き、および任意の `shikiTheme`（レンダリングには影響しない名残りのフィールド。コードハイライトは syntect が担当します。[Syntax Highlighting](../markdown-features/syntax-highlighting.mdx) を参照）を指定します。
+有効になるとヘッダーバーにパレットアイコンが表示されます。クリックするとパネルが開閉します。ランプのカーブエディタは **Palette** タブにあります。
 
 <Tip>
 
-スキームプレビューは、最終的なスキームを決定する前にコンテンツがさまざまなテーマでどのように見えるかを素早く評価できるため、開発中に特に便利です。
+ランプをライブで調整する機能は、明度や色相の変更がサイト全体にどう波及するかを `src/config/color-schemes.ts` にコミットする前に素早く評価できるため、開発中に特に便利です。
 
 </Tip>
 
 ## 関連項目
 
+- [Color](../reference/color.mdx) — ランプネイティブなカラーモデル、セマンティックトークン、カスタムスキームの追加方法
 - [Design Token Panel](../reference/design-token-panel.mdx) — スペーシング・フォント・サイズ・カラー各トークンのインタラクティブなタブ型エディタ
