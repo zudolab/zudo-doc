@@ -56,10 +56,10 @@ const SIZE: readonly TokenDef[] = [
 
 const MANIFEST: DesignTokenManifest = { spacing: SPACING, font: FONT, size: SIZE };
 
-/** Synthetic-but-valid 12-stop base ramp; distinct values so a leak is obvious. */
-const BASE_RAMP = Array.from({ length: 12 }, (_, i) => `oklch(0.${900 - i * 60} 0.005 65)`);
-/** Synthetic-but-valid 7-stop accent ramp. */
-const ACCENT_RAMP = Array.from({ length: 7 }, (_, i) => `oklch(0.${800 - i * 70} 0.120 60)`);
+/** Synthetic-but-valid 5-stop base ramp; distinct values so a leak is obvious. */
+const BASE_RAMP = Array.from({ length: 5 }, (_, i) => `oklch(0.${900 - i * 60} 0.005 65)`);
+/** Synthetic-but-valid 3-stop accent ramp. */
+const ACCENT_RAMP = Array.from({ length: 3 }, (_, i) => `oklch(0.${800 - i * 70} 0.120 60)`);
 
 const COLOR_BASELINE: ColorScheme = {
   ramps: {
@@ -73,10 +73,10 @@ const COLOR_BASELINE: ColorScheme = {
     },
   },
   map: {
-    bg: { base: 11 },
-    fg: { base: 1 },
-    selectionBg: { base: 8 },
-    selectionFg: { base: 1 },
+    bg: { base: 4 },
+    fg: { base: 0 },
+    selectionBg: { base: 2 },
+    selectionFg: { base: 0 },
     semantic: { ...SEMANTIC_RAMP_DEFAULTS },
   },
 };
@@ -137,9 +137,9 @@ describe("serialize", () => {
       includeDefaults: true,
     });
     expect(json.color).toBeDefined();
-    expect(json.color?.ramps?.base).toHaveLength(12);
-    expect(json.color?.ramps?.accent).toHaveLength(7);
-    expect(json.color?.map?.bg).toEqual({ base: 11 });
+    expect(json.color?.ramps?.base).toHaveLength(5);
+    expect(json.color?.ramps?.accent).toHaveLength(3);
+    expect(json.color?.map?.bg).toEqual({ base: 4 });
     expect(json.spacing?.["--spacing-hsp-md"]).toBe("0.75rem");
     expect(json.font?.["--text-body"]).toBe("1.2rem");
     expect(json.size?.["--radius-DEFAULT"]).toBe("4px");
@@ -147,13 +147,13 @@ describe("serialize", () => {
 
   it("emits the whole ramps block when any stop differs (and omits an unchanged map)", () => {
     const color = cloneBaseline();
-    color.ramps.base[5] = "oklch(0.500 0.300 300)";
+    color.ramps.base[2] = "oklch(0.500 0.300 300)";
     const json = serialize(makeState({ color }), {
       manifest: MANIFEST,
       colorDefaults: COLOR_BASELINE,
     });
-    expect(json.color?.ramps?.base).toHaveLength(12);
-    expect(json.color?.ramps?.base?.[5]).toBe("oklch(0.500 0.300 300)");
+    expect(json.color?.ramps?.base).toHaveLength(5);
+    expect(json.color?.ramps?.base?.[2]).toBe("oklch(0.500 0.300 300)");
     // Map didn't change, so it stays out of the diff-only output.
     expect(json.color?.map).toBeUndefined();
   });
@@ -211,7 +211,7 @@ describe("deserialize", () => {
     // then re-import that string and expect an identical state.
     const color = cloneBaseline();
     color.ramps.base[0] = "oklch(0.995 0.010 20)";
-    color.map.bg = { base: 10 };
+    color.map.bg = { base: 3 };
     color.map.semantic.danger = "oklch(0.600 0.200 25)"; // literal OKLCH ref
     color.map.semantic.info = { state: "info" };
     const original = makeState({

@@ -66,26 +66,15 @@ import { buildSidebarForSection } from "../sidebar-utils/index.js";
  *  Default Dark ramp values land in #2586 (DEFAULT_SCHEME + host wrappers). */
 const GREY_RAMPS: Ramps = {
   base: [
-    "oklch(0.985 0.000 0)",
-    "oklch(0.960 0.000 0)",
-    "oklch(0.920 0.000 0)",
-    "oklch(0.865 0.000 0)",
-    "oklch(0.795 0.000 0)",
-    "oklch(0.715 0.000 0)",
-    "oklch(0.630 0.000 0)",
-    "oklch(0.540 0.000 0)",
-    "oklch(0.450 0.000 0)",
-    "oklch(0.360 0.000 0)",
-    "oklch(0.275 0.000 0)",
-    "oklch(0.190 0.000 0)",
+    "oklch(0.965 0.000 0)",
+    "oklch(0.705 0.000 0)",
+    "oklch(0.480 0.000 0)",
+    "oklch(0.300 0.000 0)",
+    "oklch(0.185 0.000 0)",
   ],
   accent: [
-    "oklch(0.905 0.000 0)",
-    "oklch(0.830 0.000 0)",
     "oklch(0.755 0.000 0)",
     "oklch(0.700 0.000 0)",
-    "oklch(0.635 0.000 0)",
-    "oklch(0.560 0.000 0)",
     "oklch(0.470 0.000 0)",
   ],
   state: {
@@ -98,15 +87,16 @@ const GREY_RAMPS: Ramps = {
 
 /** Package-default color scheme used when `colorSchemes` is `null` or a key is
  *  missing. Exported so `createChrome` keeps the identical fallback. Base roles
- *  follow the epic's Default Dark defaults (bg={base:11}, fg={base:1},
- *  selBg={base:8}, selFg={base:1}); semantics use `SEMANTIC_RAMP_DEFAULTS`. */
+ *  follow the epic's Default Dark defaults on the minimized 5-base ramp
+ *  (bg={base:4}, fg={base:0}, selBg={base:2}, selFg={base:0}); semantics use
+ *  `SEMANTIC_RAMP_DEFAULTS`. */
 export const DEFAULT_SCHEME: ColorScheme = {
   ramps: GREY_RAMPS,
   map: {
-    bg: { base: 11 },
-    fg: { base: 1 },
-    selectionBg: { base: 8 },
-    selectionFg: { base: 1 },
+    bg: { base: 4 },
+    fg: { base: 0 },
+    selectionBg: { base: 2 },
+    selectionFg: { base: 0 },
     semantic: { ...SEMANTIC_RAMP_DEFAULTS },
   },
 };

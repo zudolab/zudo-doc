@@ -8,10 +8,11 @@
  *
  * Format: `$schema = "zudo-doc-design-tokens/v2"`.
  *
- * v2 color slice — ramp-native (Color Ramp Restructure, zudolab/zudo-doc#2584 / #2591)
+ * v2 color slice — ramp-native (Color Ramp Restructure, zudolab/zudo-doc#2584 /
+ * #2591; minimized to 5/3 in #2602)
  * -----------------------------------------------------------------------------------
  * The color block is the ramp-native `ColorScheme` from `color-scheme-utils.ts`:
- *   - `ramps` — the shared Tier-1 source of truth (`base[12]`, `accent[7]`,
+ *   - `ramps` — the shared Tier-1 source of truth (`base[5]`, `accent[3]`,
  *     `state{danger,success,warning,info}`), emitted verbatim as OKLCH strings.
  *   - `map`   — the per-mode Tier-2 wiring (`bg`/`fg`/`selectionBg`/`selectionFg`
  *     + 23 `semantic` roles), each a `RampRef` (`{base:n}` / `{accent:n}` /
@@ -26,7 +27,7 @@
  * A persisted v1 payload (detected by `$schema === "…/v1"`, a `palette` array,
  * or a numeric `base` block) has NO faithful mapping to the new model: the old
  * 16-slot ghostty palette + numeric semantic indices do not correspond to the
- * 12-base / 7-accent / 4-state ramps + `RampRef` wiring. Any remap would invent
+ * 5-base / 3-accent / 4-state ramps + `RampRef` wiring. Any remap would invent
  * colors and mislead the user, so `deserialize` RESETS the color slice to the
  * caller-supplied baseline (the current default scheme) and emits a
  * `console.warn` + a `warnings[]` entry — no throw, no blank screen. The
@@ -100,9 +101,10 @@ export const DESIGN_TOKEN_SCHEMA = "zudo-doc-design-tokens/v2" as const;
  *  is migrated (color reset to baseline) rather than rejected. */
 const LEGACY_SCHEMA_V1 = "zudo-doc-design-tokens/v1" as const;
 
-/** Expected ramp lengths — a v2 color block must carry exactly these. */
-const BASE_RAMP_LENGTH = 12;
-const ACCENT_RAMP_LENGTH = 7;
+/** Expected ramp lengths — a v2 color block must carry exactly these
+ *  (minimized to 5 base / 3 accent in #2602). */
+const BASE_RAMP_LENGTH = 5;
+const ACCENT_RAMP_LENGTH = 3;
 
 /** External JSON color block — a (possibly diff-only) serialized `ColorScheme`.
  *  Both sub-blocks are optional: in diff-only output an unchanged `ramps` or
@@ -613,26 +615,15 @@ function deepEqual(a: unknown, b: unknown): boolean {
  */
 function neutralColorDefaults(): ColorScheme {
   const base: OKLCH[] = [
-    "oklch(0.985 0 0)",
-    "oklch(0.960 0 0)",
-    "oklch(0.920 0 0)",
-    "oklch(0.865 0 0)",
-    "oklch(0.795 0 0)",
-    "oklch(0.715 0 0)",
-    "oklch(0.630 0 0)",
-    "oklch(0.540 0 0)",
-    "oklch(0.450 0 0)",
-    "oklch(0.360 0 0)",
-    "oklch(0.275 0 0)",
-    "oklch(0.190 0 0)",
+    "oklch(0.965 0 0)",
+    "oklch(0.705 0 0)",
+    "oklch(0.480 0 0)",
+    "oklch(0.300 0 0)",
+    "oklch(0.185 0 0)",
   ];
   const accent: OKLCH[] = [
-    "oklch(0.905 0 0)",
-    "oklch(0.830 0 0)",
     "oklch(0.755 0 0)",
     "oklch(0.700 0 0)",
-    "oklch(0.635 0 0)",
-    "oklch(0.560 0 0)",
     "oklch(0.470 0 0)",
   ];
   return {
@@ -647,10 +638,10 @@ function neutralColorDefaults(): ColorScheme {
       },
     },
     map: {
-      bg: { base: 11 },
-      fg: { base: 1 },
-      selectionBg: { base: 8 },
-      selectionFg: { base: 1 },
+      bg: { base: 4 },
+      fg: { base: 0 },
+      selectionBg: { base: 2 },
+      selectionFg: { base: 0 },
       semantic: { ...SEMANTIC_RAMP_DEFAULTS },
     },
   };

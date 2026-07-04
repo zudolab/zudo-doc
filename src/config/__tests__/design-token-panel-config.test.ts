@@ -35,21 +35,21 @@ describe("designTokenPanelConfig", () => {
       expect(paletteTab!.colorExtras).toBeUndefined();
     });
 
-    it("base tier has 12 tokens --palette-base-0..11, all kind:'color' oklch", () => {
+    it("base tier has 5 tokens --palette-base-0..4, all kind:'color' oklch", () => {
       const base = paletteTab!.tiers.find((t) => t.id === "base")!;
-      expect(base.items).toHaveLength(12);
+      expect(base.items).toHaveLength(5);
       expect(base.items[0].cssVar).toBe("--palette-base-0");
-      expect(base.items[11].cssVar).toBe("--palette-base-11");
+      expect(base.items[4].cssVar).toBe("--palette-base-4");
       for (const item of base.items) {
         expect(item.type).toEqual({ kind: "color", format: "oklch" });
       }
     });
 
-    it("accent tier has 7 tokens --palette-accent-0..6, all kind:'color' oklch", () => {
+    it("accent tier has 3 tokens --palette-accent-0..2, all kind:'color' oklch", () => {
       const accent = paletteTab!.tiers.find((t) => t.id === "accent")!;
-      expect(accent.items).toHaveLength(7);
+      expect(accent.items).toHaveLength(3);
       expect(accent.items[0].cssVar).toBe("--palette-accent-0");
-      expect(accent.items[6].cssVar).toBe("--palette-accent-6");
+      expect(accent.items[2].cssVar).toBe("--palette-accent-2");
       for (const item of accent.items) {
         expect(item.type).toEqual({ kind: "color", format: "oklch" });
       }

@@ -6,10 +6,10 @@
  * builds on @takazudo/zudo-doc. It is DATA-free: callers pass in their own
  * color-scheme manifest and settings.
  *
- * Ramp-native model (Color Ramp Restructure — zudolab/zudo-doc#2584). A
- * `ColorScheme` is `{ ramps, map }`:
+ * Ramp-native model (Color Ramp Restructure — zudolab/zudo-doc#2584; minimized
+ * to 5/3 in #2602). A `ColorScheme` is `{ ramps, map }`:
  *   - `ramps` — the shared Tier-1 source of truth: a warm-neutral `base` ramp
- *     (12 stops, index 0 = lightest), an `accent` ramp (7 stops), and 4 `state`
+ *     (5 stops, index 0 = lightest), an `accent` ramp (3 stops), and 4 `state`
  *     colors. Emitted verbatim as `--palette-{group}-{n}`.
  *   - `map` — the per-mode Tier-2 wiring: which ramp stop (or literal OKLCH)
  *     each UI role (`--zd-*`) points at, via a `RampRef`.
@@ -43,9 +43,9 @@ export type RampRef = { base: number } | { accent: number } | { state: StateRole
 /** The shared Tier-1 ramps. Values are identical across light/dark modes; the
  *  per-mode differences live in `ModeMap`, not here. */
 export interface Ramps {
-  /** Warm-neutral base ramp — 12 entries, index 0 = lightest. */
+  /** Warm-neutral base ramp — 5 entries, index 0 = lightest. */
   base: OKLCH[];
-  /** Accent ramp — 7 entries. */
+  /** Accent ramp — 3 entries. */
   accent: OKLCH[];
   /** The four state colors. */
   state: Record<StateRole, OKLCH>;
@@ -125,31 +125,34 @@ export interface ColorScheme {
  *  Scheme authors spread this into `map.semantic` and override individual roles
  *  where a mode needs a different stop (or a per-mode AA-tuned literal). */
 export const SEMANTIC_RAMP_DEFAULTS: Record<SemanticKey, RampRef> = {
-  surface: { base: 9 },
-  muted: { base: 6 },
-  accent: { accent: 3 },
-  accentHover: { accent: 2 },
-  codeBg: { base: 10 },
-  codeFg: { base: 2 },
+  // Re-pointed for the 5-base / 3-accent minimized ramp (#2602); mirrors the
+  // Default Dark reference wiring (surface/chatAssistantBg/imageOverlayBg merged
+  // onto bg=b4). Every index is < 5 (base) / < 3 (accent).
+  surface: { base: 4 },
+  muted: { base: 1 },
+  accent: { accent: 1 },
+  accentHover: { accent: 0 },
+  codeBg: { base: 3 },
+  codeFg: { base: 0 },
   success: { state: "success" },
   danger: { state: "danger" },
   warning: { state: "warning" },
   info: { state: "info" },
-  mermaidNodeBg: { base: 9 },
-  mermaidText: { base: 2 },
-  mermaidLine: { base: 6 },
-  mermaidLabelBg: { base: 10 },
-  mermaidNoteBg: { base: 8 },
-  chatUserBg: { accent: 3 },
-  chatUserText: { base: 11 },
-  chatAssistantBg: { base: 9 },
-  chatAssistantText: { base: 2 },
-  imageOverlayBg: { base: 11 },
-  imageOverlayFg: { base: 2 },
-  // Literal placeholders — the search-result <mark> highlight is tuned for AA
-  // in a later wave (epic #2584 Wave 4/5). Kept as raw OKLCH, not ramp refs.
-  matchedKeywordBg: "oklch(0.900 0.120 95)",
-  matchedKeywordFg: "oklch(0.250 0.010 95)",
+  mermaidNodeBg: { base: 3 },
+  mermaidText: { base: 0 },
+  mermaidLine: { base: 1 },
+  mermaidLabelBg: { base: 3 },
+  mermaidNoteBg: { base: 2 },
+  chatUserBg: { accent: 1 },
+  chatUserText: { base: 4 },
+  chatAssistantBg: { base: 4 },
+  chatAssistantText: { base: 0 },
+  imageOverlayBg: { base: 4 },
+  imageOverlayFg: { base: 0 },
+  // Search-result <mark> highlight — amber fill with dark text (the classic
+  // highlighter look, matching the shipped schemes). Kept as raw OKLCH literals.
+  matchedKeywordBg: "oklch(0.700 0.158 62)",
+  matchedKeywordFg: "oklch(0.300 0.003 65)",
 };
 
 export const SEMANTIC_CSS_NAMES: Record<SemanticKey, string> = {
@@ -236,7 +239,7 @@ export type CssEmitScope = "all" | "palette" | "roles";
  * The full (`"all"`) set is the exact set of custom properties the
  * ColorSchemeProvider emits onto `:root`:
  *   - base roles: `--zd-bg`, `--zd-fg`, `--zd-selection-bg`, `--zd-selection-fg`
- *   - Tier-1 ramps: `--palette-base-0..11`, `--palette-accent-0..6`,
+ *   - Tier-1 ramps: `--palette-base-0..4`, `--palette-accent-0..2`,
  *     `--palette-state-{danger,success,warning,info}`
  *   - the 23 Tier-2 `--zd-{role}` semantic tokens
  *
