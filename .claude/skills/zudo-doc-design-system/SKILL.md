@@ -40,12 +40,10 @@ Read ONLY the file relevant to your task. Apply its rules strictly.
 
 ### Color Tokens (three-tier system)
 
-- **Tier 1** (palette): `p0`–`p15` — raw colors, use only when no semantic token fits
-- **Tier 2** (semantic): `text-fg`, `bg-surface`, `border-muted`, `text-accent` — prefer these
+- **Tier 1** (ramps): shared `base` (5 stops), `accent` (3 stops), and `state` (`danger`/`success`/`warning`/`info`) OKLCH ramps — no Tailwind utility reaches these directly (no `p0`–`p15`-style classes); they only feed Tier 2
+- **Tier 2** (semantic): `text-fg`, `bg-surface`, `border-muted`, `text-accent` — the only Tailwind-facing color tokens; prefer these always
 - **NEVER** use hardcoded hex values in components
-- Palette index convention (consistent across all themes):
-  - p1=danger, p2=success, p3=warning, p4=info, p5=accent
-  - p8=muted, p9=background, p10=surface, p11=text primary
+- Both bundled schemes (`Default Light`, `Default Dark`) share the same ramps; only their per-mode wiring (`map`) differs — see `src/config/color-schemes.ts`
 
 ### Search & highlight tokens (role-split)
 

@@ -11,18 +11,18 @@
 
 ## Design Token System
 
-Uses a 16-color palette system.
+Uses a ramp-native color system: a `ColorScheme` is `{ ramps, map }` (see `src/config/color-schemes.ts`). Minimized to **base 5 / accent 3 / state 4** (#2602) — see the `color-scheme-a11y` skill and `src/content/docs/reference/color.mdx` for the full model.
 
 ### Three-Tier Color Strategy
 
-**Tier 1 — Palette** (injected by `ColorSchemeProvider` on `:root`):
+**Tier 1 — Ramps** (injected by `ColorSchemeProvider` on `:root`):
 
-- `--zd-bg`, `--zd-fg`, `--zd-sel-bg`, `--zd-sel-fg`, `--zd-cursor`
-- `--zd-0` through `--zd-15` (16 palette slots)
+- `--zd-bg`, `--zd-fg`, `--zd-selection-bg`, `--zd-selection-fg`
+- `--palette-base-0` … `--palette-base-4` (5 stops), `--palette-accent-0` … `--palette-accent-2` (3 stops), `--palette-state-{danger,success,warning,info}`
+- No raw-palette Tailwind utilities exist (no `bg-p0`-style classes) — the ramps feed Tier 2 only.
 
 **Tier 2 — Semantic tokens** (in `global.css` `@theme`, resolved per scheme):
 
-- Palette access: `p0`–`p15` → `bg-p0`, `text-p8`, `border-p1`, etc.
 - Base: `bg`, `fg` → `bg-bg`, `text-fg`
 - UI: `surface`, `muted`, `accent`, `accent-hover`, `sel-bg`, `sel-fg`
 - Content: `code-bg`, `code-fg`, `success`, `danger`, `warning`, `info`
@@ -39,7 +39,7 @@ Each tier only references the tier above it.
 - **NEVER** use hardcoded color values (`rgba()`, `#hex`, `rgb()`) — use semantic tokens or `color-mix()` with tokens
 - **ALWAYS** use project tokens: `text-fg`, `bg-surface`, `border-muted`, `text-accent`, etc.
 - Prefer semantic tokens (`text-accent`, `bg-code-bg`, `text-danger`) for standard UI
-- Use palette tokens (`p0`–`p15`) only when no semantic token fits
+- There is no Tailwind utility for a raw ramp stop (no `p0`–`p15`-style classes) — semantic tokens are the only Tailwind-facing color surface. A one-off style that genuinely needs a raw ramp stop references `var(--palette-*)` directly (rare — see `reference/color.mdx`)
 - For overlays/backdrops: use `bg-overlay/{opacity}` (e.g., `bg-overlay/50`) or `color-mix(in oklch, var(--color-overlay) 50%, transparent)` in CSS
 - For highlights (search, find-in-page): use `color-mix()` with `var(--color-warning)` at varying opacity levels
 - Acceptable exceptions: CSS fallback values (`var(--color-fg, #fff)`), color manipulation code (e.g., color-tweak-panel), intentional theme-independent colors (e.g., white iframe canvas with a comment explaining why)
@@ -47,9 +47,9 @@ Each tier only references the tier above it.
 ### Changing Scheme
 
 - Edit `colorScheme` in `src/config/settings.ts`
-- Available: Dracula, Catppuccin Mocha, Nord, TokyoNight, Gruvbox Dark, Atom One Dark
-- Add schemes in `src/config/color-schemes.ts` (22 color props + an optional, vestigial `shikiTheme` — no effect on rendering; highlighting is syntect's, configured via `codeHighlight` in `zfb.config.ts`)
-- `ColorRef` type: `background`, `foreground`, `cursor`, `selectionBg`, `selectionFg`, and semantic overrides accept `number | string` — number = palette index, string = direct color
+- Available: `Default Light`, `Default Dark` — the only two bundled schemes, sharing one set of ramps. There is no bundled catalog of community/terminal presets (a legacy 50+ preset "Scheme…" dropdown was dropped in the ramp restructure)
+- Add schemes in `src/config/color-schemes.ts`: each is `{ ramps, map }` — `ramps` (base 5-stop + accent 3-stop + 4 state colors) plus a per-mode `map` wiring the 4 base roles and 23 semantic roles to a ramp stop or literal OKLCH
+- `RampRef` type: `{ base: n } | { accent: n } | { state: role } | string` — a shared ramp stop, or a literal OKLCH string used as-is (typically a per-mode AA tune)
 - **Accessibility:** any scheme add/edit/tweak must clear WCAG contrast floors — consult the `color-scheme-a11y` skill (`.claude/skills/color-scheme-a11y/SKILL.md`) for the pair matrix, thresholds, OKLCH tweak methodology, and the new-scheme checklist
 
 ### Design Token Panel (zdtp)

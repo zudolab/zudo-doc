@@ -332,7 +332,6 @@ Defined in `src/styles/global.css`. Consumers must define these tokens in their 
 |---|---|
 | `--color-bg`, `--color-fg` | Base background and foreground |
 | `--color-sel-bg`, `--color-sel-fg` | Selection colors |
-| `--color-p0`–`--color-p15` | Raw 16-slot palette |
 | `--color-surface`, `--color-muted` | UI surface colors |
 | `--color-accent`, `--color-accent-hover` | Accent / interactive |
 | `--color-code-bg`, `--color-code-fg` | Code block colors |
