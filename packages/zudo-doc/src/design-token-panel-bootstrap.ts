@@ -62,11 +62,16 @@ export type PanelConfigBuilder = (mode: ColorSchemeMode) => PanelConfig;
 const COLOR_SCHEME_CHANGED_EVENT = "color-scheme-changed";
 
 /**
- * The panel's own open-state key (`${storagePrefix}-open`, value `"1"` when
- * open). This is the PUBLIC open-state mirror, not a private zdtp storage key —
- * we read it (never write it) to decide whether to re-mount after a reconfigure.
+ * The panel's own open-state key for a given instance (`${storagePrefix}-open`,
+ * value `"1"` when open). This is the PUBLIC open-state mirror, not a private
+ * zdtp storage key — we read it (never write it) to decide whether to re-mount
+ * after a reconfigure. Derived from the active instance's prefix
+ * (`handle.instanceId`, which equals its `storagePrefix`) so ANY host prefix
+ * works, not just the showcase's `zudo-doc-tweak`.
  */
-const OPEN_STATE_KEY = "zudo-doc-tweak-open";
+function openStateKey(instancePrefix: string): string {
+  return `${instancePrefix}-open`;
+}
 
 /** Read the active mode from `<html data-theme>`, defaulting to `light`. */
 function readMode(): ColorSchemeMode {
@@ -125,8 +130,10 @@ export function bootstrapDesignTokenPanel(
       timer = setTimeout(() => {
         timer = null;
         const mode = pendingMode;
-        // Read the open state BEFORE destroy (destroy keeps localStorage).
-        const wasOpen = localStorage.getItem(OPEN_STATE_KEY) === "1";
+        // Read the open state BEFORE destroy (destroy keeps localStorage),
+        // keyed off the CURRENT instance's prefix so a non-showcase host prefix
+        // still round-trips correctly.
+        const wasOpen = localStorage.getItem(openStateKey(handle.instanceId)) === "1";
         // MACROTASK (setTimeout 0), NOT a microtask: zdtp flushes its own
         // mount-time `color-scheme-changed` handler (clear applied vars +
         // reseed) on microtasks/rAF, so a macrotask guarantees that settled
