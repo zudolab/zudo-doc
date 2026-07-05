@@ -52,9 +52,14 @@ export function readColorSchemeFromDom(
  * spacing/typography/size tweaks, contradicting the documented carry-over
  * guarantee. So the host no longer touches zdtp's private storage keys.
  *
- * Whether palette tweaks should instead persist per-scheme (so a light/dark
- * round-trip keeps them) is a zdtp design question tracked upstream at
- * Takazudo/zudo-design-token-panel#343. See zudo-doc#2037.
+ * The design-token-panel bootstrap ALSO listens for this event and, on toggle,
+ * destroys + reconfigures the panel with the new mode's mode-scoped semantic
+ * DEFAULTS (see `design-token-panel-bootstrap.ts` + the host's
+ * `buildDesignTokenPanelConfig`, #2610). That keeps the panel's per-mode
+ * defaults faithful. A *saved* color OVERRIDE is still mode-agnostic, though:
+ * zdtp 0.4.4 persists the whole semantic map flat (not scheme-keyed), so it
+ * repaints both modes until Reset. Making overrides per-scheme is the upstream
+ * ask tracked at Takazudo/zudo-design-token-panel#343. See zudo-doc#2037 / #2610.
  */
 export function applyColorScheme(next: ColorSchemeMode): void {
   document.documentElement.setAttribute("data-theme", next);
