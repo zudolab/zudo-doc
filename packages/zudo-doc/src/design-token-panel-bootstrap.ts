@@ -143,21 +143,21 @@ export function bootstrapDesignTokenPanel(
         // configurePanel with a structurally-different config after destroy is
         // the ONLY sanctioned swap (a same-prefix reconfigure otherwise throws).
         if (wasOpen) showDesignTokenPanel();
-        // Re-assert the inline color-scheme ThemeToggle set. Remounting the
-        // panel (showDesignTokenPanel, only when it was open) runs zdtp's
-        // mount-time "clear applied inline styles" pass, which also wipes
+        // Re-assert the inline color-scheme ThemeToggle set. zdtp's
+        // "clear applied inline styles" pass also wipes
         // `<html style="color-scheme">`. With it cleared, every `light-dark()`
         // token falls back to the stylesheet's `color-scheme: light dark` and
-        // renders its LIGHT arm regardless of `data-theme`, so a panel-open
-        // theme toggle leaves the page un-repainted (zudolab/zudo-doc#2610
-        // follow-up). Deferred to a trailing macrotask so it wins over zdtp's
-        // own microtask/rAF-scheduled clear. Panel-closed toggles never
-        // remount, so they are unaffected either way.
-        if (wasOpen) {
-          setTimeout(() => {
-            document.documentElement.style.colorScheme = mode;
-          }, 0);
-        }
+        // renders its LIGHT arm regardless of `data-theme`, leaving the page
+        // un-repainted (zudolab/zudo-doc#2610 follow-up). The clear runs in
+        // TWO cases: the remount above (panel was open), and the still-mounted
+        // hidden root's own scheme-change listener (panel opened once, then
+        // closed) — so the re-assert must be UNCONDITIONAL, not gated on
+        // `wasOpen`. Harmless when the panel never mounted (idempotent with
+        // what ThemeToggle already set). Deferred to a trailing macrotask so
+        // it wins over zdtp's own microtask/rAF-scheduled clear.
+        setTimeout(() => {
+          document.documentElement.style.colorScheme = mode;
+        }, 0);
       }, 0);
     });
   }
