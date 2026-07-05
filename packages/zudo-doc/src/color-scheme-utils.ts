@@ -222,6 +222,101 @@ export function resolveSemanticColors(scheme: ColorScheme): Record<SemanticKey, 
   return out;
 }
 
+// Structural copy of @takazudo/zdtp's TierItem — keeps the optional peer out of
+// the emitted public .d.ts (mirrors the TokenDef copy in
+// ./theme/design-token-serde.ts, #2138). Only the fields this module emits are
+// included (id, cssVar, label, default, type); the full upstream interface adds
+// optional `pill`/`readonly` fields this builder never sets. Structurally
+// compatible: every value returned here satisfies zdtp's real `TierItem`, so
+// callers passing these into a real `TierConfig.items` still type-check.
+export interface TierItem {
+  /** Stable id used as the Record key in persisted state (e.g. `surface`). */
+  id: string;
+  /** CSS custom property name written to `:root` (e.g. `--zd-surface`). */
+  cssVar: string;
+  /** Display label in the panel UI. */
+  label: string;
+  /** Default value — a panel-encoded ramp reference or literal OKLCH string. */
+  default: string;
+  /** Always the OKLCH color picker for semantic-tier rows. */
+  type: { kind: "color"; format: "oklch" };
+}
+
+/**
+ * Encode a `RampRef` to the explicit `tierId:itemId` form the design-token
+ * panel's grouped ramp picker (`referencesRamps`) expects as an item default:
+ *   - `{ base: n }`   → `'base:base-n'`
+ *   - `{ accent: n }` → `'accent:accent-n'`
+ *   - `{ state: r }`  → `'state:state-r'`
+ *   - a bare string   → returned as-is (a literal OKLCH/hex passthrough)
+ *
+ * Always the explicit form (independent of `referencesRamps` declaration
+ * order) — see item-id contract in `buildRampTiers`
+ * (`src/config/design-token-panel-config.ts`): tier ids `base`/`accent`/`state`,
+ * item ids `base-0..4`/`accent-0..2`/`state-{danger,success,warning,info}`.
+ */
+export function rampRefToPanelDefault(ref: RampRef): string {
+  if (typeof ref === "string") return ref;
+  if ("base" in ref) return `base:base-${ref.base}`;
+  if ("accent" in ref) return `accent:accent-${ref.accent}`;
+  return `state:state-${ref.state}`;
+}
+
+/**
+ * Build the 27-row mode-scoped semantic tier's `items` for the design-token
+ * panel, from a single (already mode-resolved) `ColorScheme`: 4 base roles
+ * (`bg`, `fg`, `selection-bg`, `selection-fg`) followed by the 23
+ * `SEMANTIC_KEYS` rows, in that order. Every row's `default` is
+ * `rampRefToPanelDefault` of the scheme's `map` entry for that role — never a
+ * resolved literal color — so the panel's grouped ramp dropdown can decode it
+ * back to a ramp reference (the no-snapping guarantee: a scheme with no
+ * persisted override always round-trips through the panel to the exact same
+ * ramp stop, not a resolved color that happens to match).
+ */
+export function buildSemanticTierItems(scheme: ColorScheme): TierItem[] {
+  const { map } = scheme;
+  const items: TierItem[] = [
+    {
+      id: "bg",
+      cssVar: "--zd-bg",
+      label: "bg",
+      default: rampRefToPanelDefault(map.bg),
+      type: { kind: "color", format: "oklch" },
+    },
+    {
+      id: "fg",
+      cssVar: "--zd-fg",
+      label: "fg",
+      default: rampRefToPanelDefault(map.fg),
+      type: { kind: "color", format: "oklch" },
+    },
+    {
+      id: "selection-bg",
+      cssVar: "--zd-selection-bg",
+      label: "selection-bg",
+      default: rampRefToPanelDefault(map.selectionBg),
+      type: { kind: "color", format: "oklch" },
+    },
+    {
+      id: "selection-fg",
+      cssVar: "--zd-selection-fg",
+      label: "selection-fg",
+      default: rampRefToPanelDefault(map.selectionFg),
+      type: { kind: "color", format: "oklch" },
+    },
+  ];
+  for (const key of SEMANTIC_KEYS) {
+    items.push({
+      id: key,
+      cssVar: SEMANTIC_CSS_NAMES[key],
+      label: key,
+      default: rampRefToPanelDefault(map.semantic[key]),
+      type: { kind: "color", format: "oklch" },
+    });
+  }
+  return items;
+}
+
 /** Which tiers a `schemeToCssPairs` call emits:
  *   - `"all"` (default) — base roles + `--palette-*` + `--zd-*` semantic
  *   - `"palette"`       — only the bare Tier-1 `--palette-*` pairs

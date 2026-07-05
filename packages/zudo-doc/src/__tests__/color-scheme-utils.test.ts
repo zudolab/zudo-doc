@@ -5,12 +5,16 @@ import {
   schemeToCssPairs,
   generateCssCustomProperties,
   generateLightDarkCssProperties,
+  rampRefToPanelDefault,
+  buildSemanticTierItems,
   SEMANTIC_RAMP_DEFAULTS,
   SEMANTIC_CSS_NAMES,
   SEMANTIC_KEYS,
   STATE_ROLES,
   type ColorScheme,
   type Ramps,
+  type RampRef,
+  type StateRole,
 } from "../color-scheme-utils.js";
 
 // A synthetic ramp set with easily-distinguishable stop values so tests can
@@ -209,4 +213,229 @@ describe("generateLightDarkCssProperties", () => {
     expect(css).not.toContain("--zd-cursor");
     expect(css).not.toMatch(/--zd-\d+:/);
   });
+});
+
+describe("rampRefToPanelDefault", () => {
+  it("encodes {base:N} to 'base:base-N'", () => {
+    expect(rampRefToPanelDefault({ base: 0 })).toBe("base:base-0");
+    expect(rampRefToPanelDefault({ base: 4 })).toBe("base:base-4");
+  });
+
+  it("encodes {accent:N} to 'accent:accent-N'", () => {
+    expect(rampRefToPanelDefault({ accent: 0 })).toBe("accent:accent-0");
+    expect(rampRefToPanelDefault({ accent: 2 })).toBe("accent:accent-2");
+  });
+
+  it("encodes {state:role} to 'state:state-role'", () => {
+    expect(rampRefToPanelDefault({ state: "danger" })).toBe("state:state-danger");
+    expect(rampRefToPanelDefault({ state: "success" })).toBe("state:state-success");
+    expect(rampRefToPanelDefault({ state: "warning" })).toBe("state:state-warning");
+    expect(rampRefToPanelDefault({ state: "info" })).toBe("state:state-info");
+  });
+
+  it("passes a literal OKLCH/hex string through unchanged", () => {
+    expect(rampRefToPanelDefault("oklch(0.5 0.1 200)")).toBe("oklch(0.5 0.1 200)");
+    expect(rampRefToPanelDefault("#ff0000")).toBe("#ff0000");
+  });
+});
+
+describe("buildSemanticTierItems", () => {
+  const scheme = makeScheme();
+  const items = buildSemanticTierItems(scheme);
+
+  it("returns exactly 27 rows: 4 base roles + 23 semantic keys", () => {
+    expect(items.length).toBe(27);
+  });
+
+  it("orders the 4 base-role rows first, then the 23 SEMANTIC_KEYS rows", () => {
+    const ids = items.map((item) => item.id);
+    expect(ids.slice(0, 4)).toEqual(["bg", "fg", "selection-bg", "selection-fg"]);
+    expect(ids.slice(4)).toEqual([...SEMANTIC_KEYS]);
+  });
+
+  it("wires base-role cssVars and defaults from map.bg/fg/selectionBg/selectionFg", () => {
+    const byId = new Map(items.map((item) => [item.id, item]));
+    expect(byId.get("bg")).toMatchObject({
+      cssVar: "--zd-bg",
+      default: rampRefToPanelDefault(scheme.map.bg),
+      type: { kind: "color", format: "oklch" },
+    });
+    expect(byId.get("fg")).toMatchObject({
+      cssVar: "--zd-fg",
+      default: rampRefToPanelDefault(scheme.map.fg),
+    });
+    expect(byId.get("selection-bg")).toMatchObject({
+      cssVar: "--zd-selection-bg",
+      default: rampRefToPanelDefault(scheme.map.selectionBg),
+    });
+    expect(byId.get("selection-fg")).toMatchObject({
+      cssVar: "--zd-selection-fg",
+      default: rampRefToPanelDefault(scheme.map.selectionFg),
+    });
+  });
+
+  it("wires the 23 semantic rows' cssVars and defaults from SEMANTIC_CSS_NAMES / map.semantic", () => {
+    const byId = new Map(items.map((item) => [item.id, item]));
+    for (const key of SEMANTIC_KEYS) {
+      const item = byId.get(key);
+      expect(item).toBeDefined();
+      expect(item?.cssVar).toBe(SEMANTIC_CSS_NAMES[key]);
+      expect(item?.default).toBe(rampRefToPanelDefault(scheme.map.semantic[key]));
+      expect(item?.type).toEqual({ kind: "color", format: "oklch" });
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Parity property (no-snapping guard) — replicated Default Light / Default
+// Dark fixtures.
+//
+// Package tests must not import host files (src/config/color-schemes.ts), so
+// the two shipped schemes are copied here VERBATIM (ramps + both ModeMaps).
+// These mirror src/config/color-schemes.ts exactly — if that file's ramps or
+// maps change, keep this fixture in sync so the parity guarantee stays honest.
+// ---------------------------------------------------------------------------
+
+const HOST_RAMPS: Ramps = {
+  base: [
+    "oklch(.965 .004 65)",
+    "oklch(.705 .008 65)",
+    "oklch(.480 .008 65)",
+    "oklch(.300 .006 65)",
+    "oklch(.185 .005 65)",
+  ],
+  accent: ["oklch(.755 .130 64)", "oklch(.700 .158 62)", "oklch(.470 .120 56)"],
+  state: {
+    danger: "oklch(.640 .170 25)",
+    success: "oklch(.680 .145 145)",
+    warning: "oklch(.760 .135 82)",
+    info: "oklch(.680 .130 245)",
+  },
+};
+
+const HOST_DARK_MAP: ColorScheme["map"] = {
+  bg: { base: 4 },
+  fg: { base: 0 },
+  selectionBg: { base: 2 },
+  selectionFg: { base: 0 },
+  semantic: {
+    surface: { base: 4 },
+    muted: { base: 1 },
+    accent: { accent: 1 },
+    accentHover: { accent: 0 },
+    codeBg: { base: 3 },
+    codeFg: { base: 0 },
+    success: { state: "success" },
+    danger: "oklch(.655 .170 25)",
+    warning: { state: "warning" },
+    info: { state: "info" },
+    mermaidNodeBg: { base: 3 },
+    mermaidText: { base: 0 },
+    mermaidLine: { base: 1 },
+    mermaidLabelBg: { base: 3 },
+    mermaidNoteBg: { base: 2 },
+    chatUserBg: { accent: 1 },
+    chatUserText: { base: 4 },
+    chatAssistantBg: { base: 4 },
+    chatAssistantText: { base: 0 },
+    imageOverlayBg: { base: 4 },
+    imageOverlayFg: { base: 0 },
+    matchedKeywordBg: "oklch(.700 .158 62)",
+    matchedKeywordFg: "oklch(.300 .003 65)",
+  },
+};
+
+const HOST_LIGHT_MAP: ColorScheme["map"] = {
+  bg: { base: 0 },
+  fg: { base: 4 },
+  selectionBg: { base: 1 },
+  selectionFg: { base: 4 },
+  semantic: {
+    surface: { base: 0 },
+    muted: { base: 2 },
+    accent: { accent: 2 },
+    accentHover: "oklch(.400 .096 56)",
+    codeBg: { base: 0 },
+    codeFg: { base: 4 },
+    success: "oklch(.470 .140 145)",
+    danger: "oklch(.505 .170 25)",
+    warning: "oklch(.490 .100 82)",
+    info: "oklch(.485 .122 245)",
+    mermaidNodeBg: { base: 1 },
+    mermaidText: { base: 4 },
+    mermaidLine: { base: 2 },
+    mermaidLabelBg: { base: 1 },
+    mermaidNoteBg: { base: 1 },
+    chatUserBg: { accent: 1 },
+    chatUserText: { base: 4 },
+    chatAssistantBg: { base: 0 },
+    chatAssistantText: { base: 4 },
+    imageOverlayBg: { base: 4 },
+    imageOverlayFg: { base: 0 },
+    matchedKeywordBg: "oklch(.700 .158 62)",
+    matchedKeywordFg: "oklch(.300 .003 65)",
+  },
+};
+
+const HOST_SCHEMES: Record<"Default Light" | "Default Dark", ColorScheme> = {
+  "Default Light": { ramps: HOST_RAMPS, map: HOST_LIGHT_MAP },
+  "Default Dark": { ramps: HOST_RAMPS, map: HOST_DARK_MAP },
+};
+
+/** Decode a panel-encoded default (`rampRefToPanelDefault` output) back into a
+ *  `RampRef`, mirroring how the panel's grouped ramp dropdown would resolve a
+ *  `tierId:itemId` selection back to a ramp stop. A bare literal (no `:`
+ *  prefix matching a known tier) passes through unchanged. */
+function decodePanelDefault(encoded: string): RampRef {
+  const baseMatch = /^base:base-(\d+)$/.exec(encoded);
+  if (baseMatch) return { base: Number(baseMatch[1]) };
+  const accentMatch = /^accent:accent-(\d+)$/.exec(encoded);
+  if (accentMatch) return { accent: Number(accentMatch[1]) };
+  const stateMatch = /^state:state-(danger|success|warning|info)$/.exec(encoded);
+  if (stateMatch) return { state: stateMatch[1] as StateRole };
+  return encoded;
+}
+
+describe("parity property — no-snapping guard (Default Light / Default Dark)", () => {
+  for (const [name, scheme] of Object.entries(HOST_SCHEMES) as [string, ColorScheme][]) {
+    describe(name, () => {
+      const items = buildSemanticTierItems(scheme);
+      const resolvedSemantic = resolveSemanticColors(scheme);
+
+      it("every base-role row's default decodes+resolves to the exact scheme value", () => {
+        const byId = new Map(items.map((item) => [item.id, item]));
+        const cases: [string, RampRef][] = [
+          ["bg", scheme.map.bg],
+          ["fg", scheme.map.fg],
+          ["selection-bg", scheme.map.selectionBg],
+          ["selection-fg", scheme.map.selectionFg],
+        ];
+        for (const [id, ref] of cases) {
+          const item = byId.get(id);
+          expect(item).toBeDefined();
+          const decoded = decodePanelDefault(item!.default);
+          expect(resolveRampRef(decoded, scheme.ramps)).toBe(resolveRampRef(ref, scheme.ramps));
+        }
+      });
+
+      it("every semantic row's default decodes+resolves to resolveSemanticColors' EXACT value", () => {
+        const byId = new Map(items.map((item) => [item.id, item]));
+        for (const key of SEMANTIC_KEYS) {
+          const item = byId.get(key);
+          expect(item).toBeDefined();
+          const decoded = decodePanelDefault(item!.default);
+          expect(resolveRampRef(decoded, scheme.ramps)).toBe(resolvedSemantic[key]);
+        }
+      });
+
+      it("guards the AA-tuned literals against drift", () => {
+        if (name === "Default Dark") {
+          expect(resolvedSemantic.danger).toBe("oklch(.655 .170 25)");
+        }
+        if (name === "Default Light") {
+          expect(resolvedSemantic.accentHover).toBe("oklch(.400 .096 56)");
+        }
+      });
+    });
+  }
 });
