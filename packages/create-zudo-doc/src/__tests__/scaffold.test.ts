@@ -690,7 +690,7 @@ describe("scaffold — generated settings.ts content", () => {
       projectName: "test-settings-single",
       defaultLang: "en",
       colorSchemeMode: "single",
-      singleScheme: "Dracula",
+      singleScheme: "Default Dark",
       features: ["search"],
       packageManager: "pnpm",
     };
@@ -699,7 +699,7 @@ describe("scaffold — generated settings.ts content", () => {
       projectPath("test-settings-single", "src/config/settings.ts"),
       "utf-8",
     );
-    expect(content).toContain('"Dracula"');
+    expect(content).toContain('"Default Dark"');
     expect(content).toContain("colorMode: false");
     expect(content).toContain('"Test Settings Single"');
   });
@@ -709,8 +709,8 @@ describe("scaffold — generated settings.ts content", () => {
       projectName: "test-settings-ld",
       defaultLang: "en",
       colorSchemeMode: "light-dark",
-      lightScheme: "GitHub Light",
-      darkScheme: "GitHub Dark",
+      lightScheme: "Default Light",
+      darkScheme: "Default Dark",
       respectPrefersColorScheme: true,
       defaultMode: "dark",
       features: ["search"],
@@ -721,8 +721,8 @@ describe("scaffold — generated settings.ts content", () => {
       projectPath("test-settings-ld", "src/config/settings.ts"),
       "utf-8",
     );
-    expect(content).toContain('"GitHub Light"');
-    expect(content).toContain('"GitHub Dark"');
+    expect(content).toContain('"Default Light"');
+    expect(content).toContain('"Default Dark"');
     expect(content).toContain('defaultMode: "dark"');
     expect(content).toContain("respectPrefersColorScheme: true");
   });

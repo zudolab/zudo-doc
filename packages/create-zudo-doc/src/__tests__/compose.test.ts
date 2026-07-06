@@ -224,7 +224,7 @@ describe("resolveSelectedFeatures", () => {
     projectName: "test",
     defaultLang: "en",
     colorSchemeMode: "single",
-    singleScheme: "Dracula",
+    singleScheme: "Default Dark",
     features: [],
     packageManager: "pnpm",
   };

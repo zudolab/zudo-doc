@@ -41,22 +41,22 @@ export function generateSettingsFile(choices: UserChoices): string {
 
   if (choices.colorSchemeMode === "single") {
     lines.push(
-      `  colorScheme: ${JSON.stringify(choices.singleScheme ?? "Dracula")},`,
+      `  colorScheme: ${JSON.stringify(choices.singleScheme ?? "Default Dark")},`,
     );
     lines.push(`  colorMode: false as ColorModeConfig | false,`);
   } else {
     lines.push(
-      `  colorScheme: ${JSON.stringify(choices.darkScheme ?? "GitHub Dark")},`,
+      `  colorScheme: ${JSON.stringify(choices.darkScheme ?? "Default Dark")},`,
     );
     lines.push(`  colorMode: {`);
     lines.push(
       `    defaultMode: ${JSON.stringify(choices.defaultMode ?? "dark")},`,
     );
     lines.push(
-      `    lightScheme: ${JSON.stringify(choices.lightScheme ?? "GitHub Light")},`,
+      `    lightScheme: ${JSON.stringify(choices.lightScheme ?? "Default Light")},`,
     );
     lines.push(
-      `    darkScheme: ${JSON.stringify(choices.darkScheme ?? "GitHub Dark")},`,
+      `    darkScheme: ${JSON.stringify(choices.darkScheme ?? "Default Dark")},`,
     );
     lines.push(
       `    respectPrefersColorScheme: ${choices.respectPrefersColorScheme ?? true},`,

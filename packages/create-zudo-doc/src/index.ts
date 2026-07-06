@@ -89,7 +89,7 @@ async function main() {
       prefilled.defaultMode ??= "dark";
       prefilled.respectPrefersColorScheme ??= true;
     } else {
-      prefilled.singleScheme ??= "Dracula";
+      prefilled.singleScheme ??= "Default Dark";
     }
     prefilled.packageManager ??= "pnpm";
     prefilled.githubUrl ??= "";

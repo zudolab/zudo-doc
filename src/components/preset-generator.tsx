@@ -379,47 +379,6 @@ export default function PresetGenerator() {
           </select>
         ) : (
           <div className="flex flex-col gap-y-vsp-xs">
-            <div>
-              <label className="mb-vsp-2xs block text-caption text-muted">
-                Light scheme
-              </label>
-              <select
-                value={state.lightScheme}
-                aria-label="Light scheme"
-                onChange={(e) =>
-                  update(
-                    "lightScheme",
-                    (e.target as HTMLSelectElement).value,
-                  )
-                }
-                className={inputClass}
-              >
-                {LIGHT_SCHEMES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-vsp-2xs block text-caption text-muted">
-                Dark scheme
-              </label>
-              <select
-                value={state.darkScheme}
-                aria-label="Dark scheme"
-                onChange={(e) =>
-                  update("darkScheme", (e.target as HTMLSelectElement).value)
-                }
-                className={inputClass}
-              >
-                {DARK_SCHEMES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </div>
             <div className="flex flex-wrap gap-x-hsp-lg gap-y-vsp-2xs">
               <div>
                 <label className="mb-vsp-2xs block text-caption text-muted">
