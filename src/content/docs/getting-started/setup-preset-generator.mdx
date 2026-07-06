@@ -8,6 +8,12 @@ Use this interactive tool to configure your zudo-doc project options and generat
 
 <PresetGenerator />
 
+## Color Scheme
+
+The generator ships exactly two bundled color schemes — `Default Light` and `Default Dark` — sharing one set of OKLCH ramps. In **Single scheme** mode, the dropdown lets you pick either one. In **Light & Dark (toggle)** mode, the pairing is fixed to `Default Light` / `Default Dark` — there is no scheme dropdown to pick a different pairing, only the default-mode and respect-system-preference options.
+
+To customize the palette beyond these two starting points, edit the ramps and semantic map in `src/config/color-schemes.ts` after scaffolding — see [Color](../reference/color.mdx#adding-a-custom-color-scheme) and preview changes live with the [Design Token Panel](../reference/design-token-panel.mdx)'s Palette tab (see [Color Scheme Preview](../guides/color-scheme-preview.mdx)).
+
 ## Header right items
 
 The "Header right items" section configures `settings.headerRightItems` — the right-side cluster of the site header (theme toggle, language switcher, version switcher, GitHub link, and the Design Token Panel / AI Chat triggers). Toggle each item on or off, and use the up/down buttons to change render order.
