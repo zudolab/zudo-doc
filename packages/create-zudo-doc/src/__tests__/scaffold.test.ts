@@ -647,7 +647,7 @@ describe("scaffold — designTokenPanel package.json wiring", () => {
     const pkg = await fs.readJson(
       projectPath("test-zdtp-deps", "package.json"),
     );
-    expect(pkg.dependencies["@takazudo/zdtp"]).toBe("0.4.2");
+    expect(pkg.dependencies["@takazudo/zdtp"]).toBe("0.4.5");
   });
 });
 
@@ -690,7 +690,7 @@ describe("scaffold — generated settings.ts content", () => {
       projectName: "test-settings-single",
       defaultLang: "en",
       colorSchemeMode: "single",
-      singleScheme: "Dracula",
+      singleScheme: "Default Dark",
       features: ["search"],
       packageManager: "pnpm",
     };
@@ -699,7 +699,7 @@ describe("scaffold — generated settings.ts content", () => {
       projectPath("test-settings-single", "src/config/settings.ts"),
       "utf-8",
     );
-    expect(content).toContain('"Dracula"');
+    expect(content).toContain('"Default Dark"');
     expect(content).toContain("colorMode: false");
     expect(content).toContain('"Test Settings Single"');
   });
@@ -709,8 +709,8 @@ describe("scaffold — generated settings.ts content", () => {
       projectName: "test-settings-ld",
       defaultLang: "en",
       colorSchemeMode: "light-dark",
-      lightScheme: "GitHub Light",
-      darkScheme: "GitHub Dark",
+      lightScheme: "Default Light",
+      darkScheme: "Default Dark",
       respectPrefersColorScheme: true,
       defaultMode: "dark",
       features: ["search"],
@@ -721,8 +721,8 @@ describe("scaffold — generated settings.ts content", () => {
       projectPath("test-settings-ld", "src/config/settings.ts"),
       "utf-8",
     );
-    expect(content).toContain('"GitHub Light"');
-    expect(content).toContain('"GitHub Dark"');
+    expect(content).toContain('"Default Light"');
+    expect(content).toContain('"Default Dark"');
     expect(content).toContain('defaultMode: "dark"');
     expect(content).toContain("respectPrefersColorScheme: true");
   });
@@ -3997,6 +3997,48 @@ describe("scaffold — programmatic API rejects invalid project names (F4 #2013)
         packageManager: "pnpm",
       }),
     ).rejects.toThrow(/Invalid projectName/);
+  });
+
+  // Post-catalog-drop (#2619) only Default Light/Dark exist. The API must reject
+  // a removed scheme name (e.g. "Dracula") like the CLI/preset paths — otherwise
+  // it writes the dead name into settings.ts and the generated site throws
+  // "Unknown color scheme" at build.
+  it("createZudoDoc() throws for a removed single scheme name", async () => {
+    await expect(
+      createZudoDoc({
+        projectName: "valid-name",
+        colorSchemeMode: "single",
+        singleScheme: "Dracula",
+        features: [],
+        packageManager: "pnpm",
+      }),
+    ).rejects.toThrow(/Unknown color scheme "Dracula"/);
+  });
+
+  it("createZudoDoc() throws for a removed light scheme name", async () => {
+    await expect(
+      createZudoDoc({
+        projectName: "valid-name",
+        colorSchemeMode: "light-dark",
+        lightScheme: "GitHub Light",
+        darkScheme: "Default Dark",
+        features: [],
+        packageManager: "pnpm",
+      }),
+    ).rejects.toThrow(/Unknown light scheme "GitHub Light"/);
+  });
+
+  it("createZudoDoc() throws for a removed dark scheme name", async () => {
+    await expect(
+      createZudoDoc({
+        projectName: "valid-name",
+        colorSchemeMode: "light-dark",
+        lightScheme: "Default Light",
+        darkScheme: "Nord",
+        features: [],
+        packageManager: "pnpm",
+      }),
+    ).rejects.toThrow(/Unknown dark scheme "Nord"/);
   });
 });
 

@@ -101,7 +101,7 @@ The key files to examine:
 | `packages/create-zudo-doc/src/features/*.ts` | Per-feature injection specs + post-processing (additive architecture) |
 | `packages/create-zudo-doc/src/settings-gen.ts` | Generates `settings.ts` |
 | `packages/create-zudo-doc/src/zfb-config-gen.ts` | Generates `zfb.config.ts` |
-| `packages/create-zudo-doc/src/constants.ts` | Feature definitions and color schemes |
+| `packages/create-zudo-doc/src/constants.ts` | Feature definitions, supported langs, header-right labels, and the two Default color schemes (single Default light/dark pairing — the legacy multi-scheme catalog was dropped) |
 | `packages/create-zudo-doc/src/cli.ts` | CLI argument parsing |
 | `packages/create-zudo-doc/src/api.ts` | Programmatic API |
 

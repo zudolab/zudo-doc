@@ -6,7 +6,7 @@ const baseChoices: UserChoices = {
   projectName: "test-doc",
   defaultLang: "en",
   colorSchemeMode: "single",
-  singleScheme: "Dracula",
+  singleScheme: "Default Dark",
   features: [],
   packageManager: "pnpm",
 };

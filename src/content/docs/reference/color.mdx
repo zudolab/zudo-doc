@@ -1,6 +1,6 @@
 ---
 title: Color
-description: "zudo-doc's three-tier color strategy, palette system, color schemes, and customization."
+description: "zudo-doc's three-tier color strategy, ramp-native color model, color schemes, and customization."
 sidebar_position: 3
 tags:
   - design-system
@@ -14,71 +14,83 @@ Colors are organized into three tiers. Each tier only references the tier above 
 
 | Tier | Name | Purpose | Defined In |
 |------|------|---------|------------|
-| 1 | **Palette** | Raw color values from the active color scheme | `ColorSchemeProvider` → `:root` |
+| 1 | **Ramps** | Shared OKLCH color ramps a scheme is built from | `src/config/color-schemes.ts` → `ColorSchemeProvider` → `:root` |
 | 2 | **Semantic** | Design meaning — what each color represents | `src/styles/global.css` `@theme` |
-| 3 | **Component** | Scoped overrides for specific components | `.zd-content` in `global.css` |
+| 3 | **Component** | Scoped overrides for specific components | `.zd-content` (shared `content.css`) |
 
 This layering means you can:
 
-- **Swap the palette** (change color scheme) → entire site updates
-- **Remap a semantic token** (e.g. make `accent` blue instead of cyan) → every component using `accent` updates
+- **Retune a ramp stop** (edit `src/config/color-schemes.ts`) → every semantic role built from it updates
+- **Remap a semantic role** (e.g. point `accent` at a different ramp stop) → every component using `accent` updates
 - **Override a component token** without affecting other components
 
-## Tier 1: The 16-Color Palette
+## Tier 1: Ramps
 
-zudo-doc's color system uses a **16-color palette**. Each color scheme provides values for 16 indexed color slots plus background, foreground, and selection colors.
+zudo-doc's color engine is **ramp-native**: a `ColorScheme` is `{ ramps, map }` (see `src/config/color-schemes.ts`).
 
-### Palette Index Convention
+- **`ramps`** — the shared source of truth: a warm-neutral **base** ramp (5 stops, index `0` = lightest), an **accent** ramp (3 stops), and 4 **state** colors (`danger`, `success`, `warning`, `info`). Light and dark modes **share** these ramp values.
+- **`map`** — the per-mode wiring: which ramp stop (or literal OKLCH override) each UI role points at.
 
-Every color scheme must follow this standard index mapping. This ensures components and semantic tokens work consistently across all themes:
+### The shared ramps
 
-| Index | Role | Description |
-|-------|------|-------------|
-| p0 | Dark surface | Deepest surface (code blocks, overlays) |
-| p1 | Danger | Red family — errors, destructive actions |
-| p2 | Success | Green family — confirmations, tips |
-| p3 | Warning | Yellow/amber — caution messages |
-| p4 | Info | Blue family — informational highlights |
-| p5 | Accent | Primary interactive color (links, CTA) |
-| p6 | Neutral | Slate/cyan — borders, secondary elements |
-| p7 | Secondary | Muted accent or secondary neutral |
-| p8 | Muted | Gray — borders, secondary text, comments |
-| p9 | Background | Page background |
-| p10 | Surface | Elevated surface (panels, sidebars) |
-| p11 | Text primary | Main body text |
-| p12 | Accent variant | Brighter or alternate accent |
-| p13 | Decorative | Purple/lavender — non-semantic decoration |
-| p14 | Accent hover | Hover state for interactive elements |
-| p15 | Text secondary | Secondary text or muted foreground |
+| Ramp | Stops | CSS custom properties |
+|---|---|---|
+| `base` | 5 — index `0` (lightest) → `4` (darkest) | `--palette-base-0` … `--palette-base-4` |
+| `accent` | 3 | `--palette-accent-0` … `--palette-accent-2` |
+| `state` | 4 named roles | `--palette-state-danger`, `--palette-state-success`, `--palette-state-warning`, `--palette-state-info` |
+
+**Default Light** and **Default Dark** — the only two bundled schemes — share the exact same `base`/`accent`/`state` ramp values (one `ramps` object in `src/config/color-schemes.ts`); only the per-mode `map` differs between them.
 
 <Note>
 
-The actual hex values differ between light and dark schemes, but the **role** of each index stays the same. For example, p1 is always a danger/red color — `#dd3131` in light mode, `#da6871` in dark mode. This consistency is what makes it safe to use palette tokens directly and easy to create new schemes.
+Minimizing the ramp size is deliberate: 5 base stops and 3 accent stops leave no room for a "spare" near-white or near-black filler tone. Several semantic roles are intentionally **merged onto the same stop** instead of each getting their own — see [Role-merge philosophy](#role-merge-philosophy) below.
 
 </Note>
 
-### How Palette Colors Are Injected
+### `RampRef` — how a role points at a ramp stop
 
-The `ColorSchemeProvider` component (`packages/zudo-doc/src/theme/color-scheme-provider.tsx`) reads the active color scheme and injects CSS custom properties on `:root` at build time:
+```ts
+type RampRef =
+  | { base: number }     // ramps.base[n]
+  | { accent: number }   // ramps.accent[n]
+  | { state: StateRole } // ramps.state[role]
+  | string;              // a literal OKLCH value, used as-is
+```
+
+A scheme's `map` uses a `RampRef` for its 4 base roles (`bg`, `fg`, `selectionBg`, `selectionFg`) and all 23 semantic roles. Most roles reference a shared ramp stop; a handful carry a **literal OKLCH string** instead — used when a role needs a color no shared stop can produce, typically a per-mode AA-contrast tune. See [Per-mode literal overrides](#per-mode-literal-overrides).
+
+### How ramps are injected
+
+The `ColorSchemeProvider` component (`packages/zudo-doc/src/theme/color-scheme-provider.tsx`) reads the active scheme and injects CSS custom properties on `:root` at build time — the resolved base roles, the bare ramp stops, and the 23 resolved semantic roles:
 
 ```css
 :root {
-  --zd-bg: #282a36;
-  --zd-fg: #f8f8f2;
-  --zd-cursor: #f8f8f2;
-  --zd-sel-bg: #44475a;
-  --zd-sel-fg: #ffffff;
-  --zd-0: #21222c;   /* palette slot 0 (Black) */
-  --zd-1: #ff5555;   /* palette slot 1 (Red) */
-  /* ... through --zd-15 */
+  --zd-bg: oklch(.185 .005 65);
+  --zd-fg: oklch(.965 .004 65);
+  --zd-selection-bg: oklch(.480 .008 65);
+  --zd-selection-fg: oklch(.965 .004 65);
+
+  --palette-base-0: oklch(.965 .004 65);
+  --palette-base-1: oklch(.705 .008 65);
+  /* ... through --palette-base-4 */
+  --palette-accent-0: oklch(.755 .130 64);
+  /* ... through --palette-accent-2 */
+  --palette-state-danger: oklch(.640 .170 25);
+  --palette-state-success: oklch(.680 .145 145);
+  --palette-state-warning: oklch(.760 .135 82);
+  --palette-state-info: oklch(.680 .130 245);
+
+  --zd-accent: oklch(.700 .158 62);
+  --zd-code-bg: oklch(.300 .006 65);
+  /* ... 21 more --zd-{role} semantic properties */
 }
 ```
 
-These `--zd-*` properties are the source of truth. Everything downstream — semantic tokens, component tokens, Tailwind utilities — resolves back to them.
+The `--zd-*` properties (base roles + semantic roles) are the source of truth everything downstream resolves back to. The bare `--palette-*` ramp properties exist for the [Design Token Panel](./design-token-panel.mdx)'s **Palette** tab and for scheme authors — content and components consume the semantic `--zd-*` tokens; there is no Tailwind utility for a raw ramp stop (see [Reaching a raw ramp stop](#reaching-a-raw-ramp-stop-rare)).
 
 ## Tier 2: Semantic Tokens
 
-In `src/styles/global.css`, the `@theme` block maps palette properties into Tailwind-compatible tokens with design meaning:
+The 23 semantic roles are the color surface components actually use. In `src/styles/global.css`, the `@theme` block maps them (plus the 4 base roles) into Tailwind-compatible tokens:
 
 ```css
 @theme {
@@ -87,13 +99,8 @@ In `src/styles/global.css`, the `@theme` block maps palette properties into Tail
   /* Base */
   --color-bg: var(--zd-bg);
   --color-fg: var(--zd-fg);
-  --color-sel-bg: var(--zd-sel-bg);
-  --color-sel-fg: var(--zd-sel-fg);
-
-  /* Raw palette access (p0–p15) */
-  --color-p0: var(--zd-0);
-  --color-p1: var(--zd-1);
-  /* ... through --color-p15 */
+  --color-sel-bg: var(--zd-selection-bg);
+  --color-sel-fg: var(--zd-selection-fg);
 
   /* Semantic aliases */
   --color-surface: var(--zd-surface);
@@ -115,67 +122,77 @@ In `src/styles/global.css`, the `@theme` block maps palette properties into Tail
 
 Once registered in `@theme`, these become standard Tailwind utility classes: `bg-surface`, `text-accent`, `border-muted`, etc.
 
-### Semantic Token Reference
+### Semantic Token Reference (Default Dark wiring)
 
-| Token | Default Palette Slot | Usage |
-|-------|---------------------|-------|
-| `bg` | `--zd-bg` (p9) | Page background |
-| `fg` | `--zd-fg` (p11) | Primary text |
-| `surface` | `p0` (Dark surface) | Panel/sidebar surfaces |
-| `muted` | `p8` (Muted) | Muted text, borders, comments |
-| `accent` | `p5` (Accent) | Links, active states, CTA |
-| `accent-hover` | `p14` (Accent hover) | Hover state for accent |
-| `sel-bg` | `--zd-sel-bg` | Selection background |
-| `sel-fg` | `--zd-sel-fg` | Selection foreground |
-| `code-bg` | `p10` (Surface) | Code block background |
-| `code-fg` | `p11` (Text primary) | Inline code text |
-| `success` | `p2` (Success) | Success states, confirmations |
-| `danger` | `p1` (Danger) | Errors, destructive actions |
-| `warning` | `p3` (Warning) | Warning messages, admonitions, find-in-page highlight |
-| `info` | `p4` (Info) | Informational highlights |
-| `matched-keyword-bg` | `p3` (Warning family) | Search result `<mark>` background — dedicated token, live-editable in Design Token Panel |
-| `matched-keyword-fg` | `p11` (Text primary) | Search result `<mark>` foreground — paired with `matched-keyword-bg` |
+Both schemes wire all 23 roles; the table below shows Default Dark's `map.semantic` — the authored reference scheme in `src/config/color-schemes.ts`. Default Light re-points several of these to different ramp stops or per-mode literals; see [Per-mode literal overrides](#per-mode-literal-overrides).
 
-### Per-Scheme Semantic Overrides
+| Token | Default ramp ref | Usage |
+|-------|------|-------|
+| `bg` | `{ base: 4 }` | Page background |
+| `fg` | `{ base: 0 }` | Primary text |
+| `surface` | `{ base: 4 }` (= `bg`) | Panel/sidebar surfaces — merged onto `bg`, see [Role-merge philosophy](#role-merge-philosophy) |
+| `muted` | `{ base: 1 }` | Muted text, borders, comments |
+| `accent` | `{ accent: 1 }` | Links, active states, CTA |
+| `accentHover` | `{ accent: 0 }` | Hover state for accent |
+| `codeBg` | `{ base: 3 }` | Code block background |
+| `codeFg` | `{ base: 0 }` | Inline code text |
+| `success` | `{ state: "success" }` | Success states, confirmations |
+| `danger` | per-mode literal | Errors, destructive actions |
+| `warning` | `{ state: "warning" }` | Warning messages, admonitions, find-in-page highlight |
+| `info` | `{ state: "info" }` | Informational highlights |
+| `mermaidNodeBg` / `mermaidText` / `mermaidLine` / `mermaidLabelBg` / `mermaidNoteBg` | see `color-schemes.ts` | Mermaid diagram colors |
+| `chatUserBg` / `chatUserText` | `{ accent: 1 }` / `{ base: 4 }` | AI chat user bubble |
+| `chatAssistantBg` / `chatAssistantText` | `{ base: 4 }` (= `bg`) / `{ base: 0 }` | AI chat assistant bubble — merged onto `bg` |
+| `imageOverlayBg` / `imageOverlayFg` | `{ base: 4 }` / `{ base: 0 }` | Image enlarge overlay — merged onto `bg` |
+| `matchedKeywordBg` / `matchedKeywordFg` | shared literal | Search result `<mark>` — dedicated tokens, live-editable in the Design Token Panel |
 
-Each color scheme can override the default palette-slot mapping via the `semantic` property in `src/config/color-schemes.ts`. Values can be either a **palette index** (number) or a **direct color string**:
+## Role-merge philosophy
+
+The palette was deliberately minimized to keep the number of distinct tones small. Several roles are merged onto a shared stop instead of each carrying their own:
+
+- **`surface`, `codeBg` (light mode), and `chatAssistantBg` collapse onto `bg`.** Header version boxes, doc cards, and the chat-assistant bubble render as **page background + border only** — no separate gray fill.
+- **5 base stops leave no subtle near-white (light mode) or near-black (dark mode) filler tone.** Rather than stretch the ramp to manufacture one, elevated surfaces are border-only by design.
+- The result: fewer tones to keep in sync, and a flatter, more consistent visual language across panels, cards, and chat bubbles.
+
+## Per-mode literal overrides
+
+Not every role can be satisfied by a shared ramp stop in both modes. The accent and state colors are authored against a dark background; on a light background several need a **darker, per-mode-only literal** to clear WCAG AA — the shared ramp stop stays untouched so Default Dark is unaffected:
+
+- **Default Dark** — `danger` uses a literal (`oklch(.655 .170 25)`) tuned slightly lighter than the shared `state.danger` ramp value, so the danger-admonition title clears AA on its 12%-tint background.
+- **Default Light** — `accentHover`, `success`, `danger`, `warning`, and `info` all use per-mode literals (darkened versions of the shared ramp/state colors) to clear AA against the near-white page background.
+- **Both modes** — `matchedKeywordBg` / `matchedKeywordFg` (the search-result highlight) are shared literals, not ramp refs, so the amber highlight looks identical in both modes.
+
+See the `color-scheme-a11y` skill (`.claude/skills/color-scheme-a11y/SKILL.md`) for the full contrast-pair matrix, thresholds, and tuning methodology behind these literals.
+
+### Adjusting a scheme's semantic wiring
+
+Edit `map.semantic` in `src/config/color-schemes.ts`. A role can point at a shared ramp stop or a literal OKLCH string:
 
 ```ts
-"My Custom Scheme": {
-  // ...palette, background, foreground...
+const darkMap: ModeMap = {
+  bg: { base: 4 },
+  fg: { base: 0 },
+  selectionBg: { base: 2 },
+  selectionFg: { base: 0 },
   semantic: {
-    accent: 6,              // use palette[6] — no color duplication
-    accentHover: 14,         // use palette[14]
-    surface: "#f4efdd",      // direct color string (not in palette)
+    accent: { accent: 1 },
+    // Per-mode AA-tuned literal — shared state.danger is too dark for the
+    // danger-admonition title on its 12%-tint dark bg.
+    danger: "oklch(.655 .170 25)",
+    // ...
   },
-},
+};
 ```
 
-Using palette indices instead of repeating color strings eliminates duplication and ensures semantic colors stay in sync when palette colors change (e.g., via the [Design Token Panel](./design-token-panel.mdx)).
+## Reaching a raw ramp stop (rare)
 
-The same `number | string` type (called `ColorRef`) is also supported for `cursor`, `selectionBg`, and `selectionFg`:
+There is no Tailwind utility for the raw `--palette-*` ramp stops — semantic tokens are the only Tailwind-facing color surface. If a one-off style genuinely needs a raw ramp stop, reference the CSS custom property directly:
 
-```ts
-"My Theme": {
-  background: "#1a1a2e",
-  foreground: "#e0e0e0",
-  cursor: 6,            // use palette[6] instead of duplicating the color
-  selectionBg: "#3a3a5e",
-  selectionFg: 15,       // use palette[15]
-  palette: [...],
-},
+```html
+<div style="background: var(--palette-accent-1)">...</div>
 ```
 
-The resolution logic lives in `src/config/color-scheme-utils.ts` — each property falls back to its default palette slot when not explicitly set.
-
-### Search & highlight tokens (role-split)
-
-Highlight roles are deliberately split across dedicated semantic tokens — reusing one token across unrelated highlight UIs is an anti-pattern.
-
-- `matched-keyword-bg` / `matched-keyword-fg` drive the search panel `<mark>` element. Because they are dedicated tokens (not a `color-mix()` of another role), the [Design Token Panel](./design-token-panel.mdx) swatch is the single source of truth for the highlight color — what you see on the swatch is what the highlight renders as.
-- `warning` drives admonitions (`:::warning`), find-in-page (`.find-match`, `.find-match-active`), and any UI that is semantically a _warning_. Do **not** reuse `warning` for new UI-chrome highlights.
-
-When a new highlight role appears (new kind of `<mark>`, new pill, new callout), add a dedicated semantic token rather than bolting another responsibility onto an existing role-overloaded token. Each visible highlight color in the product should map to exactly one panel swatch.
+This should be uncommon. Prefer an existing semantic token, or add a new semantic role if the same raw stop is needed in more than one place.
 
 ## Tier 3: Component Tokens
 
@@ -209,13 +226,11 @@ The `.zd-content` class provides direct element styling using semantic tokens �
 
 <Info>
 
-Tier 3 tokens are internal to their components. When building your own UI, use Tier 2 semantic tokens or Tier 1 palette tokens directly.
+Tier 3 tokens are internal to their components. When building your own UI, use Tier 2 semantic tokens directly.
 
 </Info>
 
 ## Using Color Tokens
-
-### Prefer semantic tokens
 
 Use semantic tokens for standard UI patterns:
 
@@ -233,16 +248,14 @@ Use semantic tokens for standard UI patterns:
 <div class="border border-muted">Bordered element</div>
 ```
 
-### Fall back to palette tokens when needed
+### Search & highlight tokens (role-split)
 
-Use `p0`–`p15` when no semantic token fits — for badges, decorative elements, or status indicators:
+Highlight roles are deliberately split across dedicated semantic tokens — reusing one token across unrelated highlight UIs is an anti-pattern.
 
-```html
-<span class="text-p1">Error text (red)</span>
-<span class="text-p2">Success text (green)</span>
-<span class="text-p3">Warning text (yellow)</span>
-<span class="text-p4">Info text (blue)</span>
-```
+- `matched-keyword-bg` / `matched-keyword-fg` drive the search panel `<mark>` element. Because they are dedicated tokens (not a `color-mix()` of another role), the [Design Token Panel](./design-token-panel.mdx) swatch is the single source of truth for the highlight color — what you see on the swatch is what the highlight renders as.
+- `warning` drives admonitions (`:::warning`), find-in-page (`.find-match`, `.find-match-active`), and any UI that is semantically a _warning_. Do **not** reuse `warning` for new UI-chrome highlights.
+
+When a new highlight role appears (new kind of `<mark>`, new pill, new callout), add a dedicated semantic token rather than bolting another responsibility onto an existing role-overloaded token. Each visible highlight color in the product should map to exactly one panel swatch.
 
 ## Color Schemes
 
@@ -258,39 +271,60 @@ export const settings = {
 
 ### Default Themes
 
-zudo-doc includes a light and dark default theme. See `src/config/color-schemes.ts` for available schemes.
+zudo-doc ships exactly two color schemes — **Default Light** and **Default Dark** — sharing one set of ramps (see `src/config/color-schemes.ts`). Both are hand-authored and AA-tuned in place. There is no bundled catalog of community or terminal presets to pick from; an earlier iteration of the Design Token Panel had a "Scheme…" dropdown for browsing 50+ bundled presets, but the ramp-native model dropped it — see [Design Token Panel](./design-token-panel.mdx).
 
 ## Adding a Custom Color Scheme
 
-Add a new entry to the `colorSchemes` object in `src/config/color-schemes.ts`:
+Add a new entry to the `colorSchemes` object in `src/config/color-schemes.ts`. A new scheme needs its own `ramps` and a `map` for each mode you want (spread `SEMANTIC_RAMP_DEFAULTS` and override only what needs to differ):
 
 ```ts
-"My Theme": {
-  background: 9,
-  foreground: 11,
-  cursor: 6,
-  selectionBg: 10,
-  selectionFg: 11,
-  palette: [
-    "#16213e", "#e74c3c", "#2ecc71", "#f39c12",  // p0-3: dark surface, danger, success, warning
-    "#3498db", "#9b59b6", "#1abc9c", "#ecf0f1",  // p4-7: info, accent, neutral, secondary
-    "#2c3e50", "#1a1a2e", "#2a2a4e", "#e0e0e0",  // p8-11: muted, background, surface, text
-    "#5dade2", "#bb8fce", "#48c9b0", "#c0c0c0",  // p12-15: accent variant, decorative, hover, text secondary
+import { SEMANTIC_RAMP_DEFAULTS } from "@takazudo/zudo-doc/color-scheme-utils";
+import type { ColorScheme, ModeMap, Ramps } from "./color-scheme-utils";
+
+const myRamps: Ramps = {
+  base: [
+    "oklch(.97 .01 250)", // 0 — lightest
+    "oklch(.72 .02 250)", // 1
+    "oklch(.48 .03 250)", // 2
+    "oklch(.28 .03 250)", // 3
+    "oklch(.15 .02 250)", // 4 — darkest
   ],
-  // Optional: override semantic defaults
-  semantic: {
-    accent: 12,       // use p12 as accent instead of default p5
-    surface: "#1f1f3a", // direct color string also works
+  accent: [
+    "oklch(.78 .12 30)", // 0
+    "oklch(.68 .18 30)", // 1
+    "oklch(.48 .16 30)", // 2
+  ],
+  state: {
+    danger: "oklch(.62 .18 25)",
+    success: "oklch(.66 .15 145)",
+    warning: "oklch(.75 .14 82)",
+    info: "oklch(.66 .13 245)",
   },
-},
+};
+
+const myMap: ModeMap = {
+  bg: { base: 4 },
+  fg: { base: 0 },
+  selectionBg: { base: 2 },
+  selectionFg: { base: 0 },
+  semantic: {
+    ...SEMANTIC_RAMP_DEFAULTS,
+    accent: { accent: 1 }, // only override the roles that need to differ
+  },
+};
+
+export const colorSchemes: Record<string, ColorScheme> = {
+  "Default Light": { ramps, map: lightMap },
+  "Default Dark": { ramps, map: darkMap },
+  "My Theme": { ramps: myRamps, map: myMap },
+};
 ```
 
-The `ColorScheme` interface requires:
+<Tip>
 
-- `background`, `foreground` — `ColorRef` (palette index or color string, typically p9 and p11)
-- `cursor`, `selectionBg`, `selectionFg` — `ColorRef` (palette index or color string)
-- `palette` — 16-element tuple (color slots 0–15)
-- `semantic` (optional) — override default palette-slot mappings using `ColorRef` values (palette index or color string)
+After adding or tweaking a scheme, run `pnpm contrast:audit` to check every pair in the WCAG contrast matrix — see the `color-scheme-a11y` skill for the full methodology and thresholds.
+
+</Tip>
 
 ## What NOT to Do
 
@@ -313,7 +347,7 @@ The `ColorScheme` interface requires:
 <div class="bg-[#1e1e2e]">Breaks on theme switch</div>
 
 <!-- RIGHT -->
-<div class="bg-p0">Adapts to any theme</div>
+<div class="bg-surface">Adapts to any theme</div>
 ```
 
 **Don't reference component-scoped variables** in your own components:

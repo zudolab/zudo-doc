@@ -1,6 +1,6 @@
 {
   "name": "zudo-doc",
-  "version": "2.5.1",
+  "version": "3.0.0",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -90,7 +90,7 @@
     }
   },
   "dependencies": {
-    "@takazudo/zdtp": "0.4.2",
+    "@takazudo/zdtp": "0.4.5",
     "@takazudo/zfb": "0.1.0-next.76",
     "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.76",
     "@takazudo/zfb-runtime": "0.1.0-next.76",

@@ -1,90 +1,161 @@
 /**
- * Color-scheme MECHANISM — palette → `--zd-*` CSS custom-property injection.
+ * Color-scheme MECHANISM — ramp → `--palette-*` / `--zd-*` CSS custom-property
+ * injection.
  *
  * This module ships the pure computation layer used by every project that
  * builds on @takazudo/zudo-doc. It is DATA-free: callers pass in their own
  * color-scheme manifest and settings.
  *
+ * Ramp-native model (Color Ramp Restructure — zudolab/zudo-doc#2584; minimized
+ * to 5/3 in #2602). A `ColorScheme` is `{ ramps, map }`:
+ *   - `ramps` — the shared Tier-1 source of truth: a warm-neutral `base` ramp
+ *     (5 stops, index 0 = lightest), an `accent` ramp (3 stops), and 4 `state`
+ *     colors. Emitted verbatim as `--palette-{group}-{n}`.
+ *   - `map` — the per-mode Tier-2 wiring: which ramp stop (or literal OKLCH)
+ *     each UI role (`--zd-*`) points at, via a `RampRef`.
+ *
+ * The legacy ghostty 16-slot palette (`--zd-0..15`), `cursor`, `shikiTheme`,
+ * and the numeric `ColorRef` were dropped in that epic.
+ *
  * Moved from the host's `src/config/color-scheme-utils.ts` as part of the
- * package-first migration (S9a zudolab/zudo-doc#2333). The DATA (palette
- * values, scheme names, `colorMode` settings) stays project-side.
+ * package-first migration (S9a zudolab/zudo-doc#2333). The DATA (ramp values,
+ * scheme names, `colorMode` settings) stays project-side.
  */
 
-/** A color reference: palette index (number) or direct color value (string) */
-export type ColorRef = number | string;
+/** A color literal — an `oklch(…)` (or any valid CSS color) string. */
+export type OKLCH = string;
 
-export interface ColorScheme {
-  background: ColorRef;
-  foreground: ColorRef;
-  cursor: ColorRef;
-  selectionBg: ColorRef;
-  selectionFg: ColorRef;
-  palette: [
-    string, string, string, string, string, string, string, string,
-    string, string, string, string, string, string, string, string,
-  ];
-  /** Optional, vestigial — no visible effect on rendering; carried only for
-   *  the zdtp design-token panel config envelope. See project CLAUDE.md. */
-  shikiTheme?: string;
-  /** Optional semantic overrides. When omitted, defaults from
-   *  `SEMANTIC_DEFAULTS` are used (surface=p0, muted=p8, accent=p5, …). */
-  semantic?: {
-    surface?: ColorRef;
-    muted?: ColorRef;
-    accent?: ColorRef;
-    accentHover?: ColorRef;
-    codeBg?: ColorRef;
-    codeFg?: ColorRef;
-    success?: ColorRef;
-    danger?: ColorRef;
-    warning?: ColorRef;
-    info?: ColorRef;
-    mermaidNodeBg?: ColorRef;
-    mermaidText?: ColorRef;
-    mermaidLine?: ColorRef;
-    mermaidLabelBg?: ColorRef;
-    mermaidNoteBg?: ColorRef;
-    chatUserBg?: ColorRef;
-    chatUserText?: ColorRef;
-    chatAssistantBg?: ColorRef;
-    chatAssistantText?: ColorRef;
-    /** UI chrome over user images — enlarge/close overlay buttons */
-    imageOverlayBg?: ColorRef;
-    imageOverlayFg?: ColorRef;
-    /** <mark> highlight for matched keywords in search results */
-    matchedKeywordBg?: ColorRef;
-    matchedKeywordFg?: ColorRef;
-  };
+/** The four semantic state colors that live on their own ramp. */
+export type StateRole = "danger" | "success" | "warning" | "info";
+
+/** Canonical order of the state ramp — used for `--palette-state-*` emit. */
+export const STATE_ROLES: readonly StateRole[] = ["danger", "success", "warning", "info"];
+
+/**
+ * A reference into the shared ramps, resolved by `resolveRampRef`:
+ *   - `{ base: n }`   → `ramps.base[n]`
+ *   - `{ accent: n }` → `ramps.accent[n]`
+ *   - `{ state: r }`  → `ramps.state[r]`
+ *   - a bare string   → a literal OKLCH value, returned as-is
+ */
+export type RampRef = { base: number } | { accent: number } | { state: StateRole } | OKLCH;
+
+/** The shared Tier-1 ramps. Values are identical across light/dark modes; the
+ *  per-mode differences live in `ModeMap`, not here. */
+export interface Ramps {
+  /** Warm-neutral base ramp — 5 entries, index 0 = lightest. */
+  base: OKLCH[];
+  /** Accent ramp — 3 entries. */
+  accent: OKLCH[];
+  /** The four state colors. */
+  state: Record<StateRole, OKLCH>;
 }
 
-/** Default mapping: semantic token name → palette index */
-export const SEMANTIC_DEFAULTS: Record<string, number> = {
-  surface: 0,
-  muted: 8,
-  accent: 5,
-  accentHover: 14,
-  codeBg: 10,
-  codeFg: 11,
-  success: 2,
-  danger: 1,
-  warning: 3,
-  info: 4,
-  mermaidNodeBg: 9,
-  mermaidText: 11,
-  mermaidLine: 8,
-  mermaidLabelBg: 10,
-  mermaidNoteBg: 0,
-  chatUserBg: 5,
-  chatUserText: 9,
-  chatAssistantBg: 9,
-  chatAssistantText: 11,
-  imageOverlayBg: 0,
-  imageOverlayFg: 11,
-  matchedKeywordBg: 3,
-  matchedKeywordFg: 15,
+/** The 23 semantic roles that map onto `--zd-*` custom properties. */
+export type SemanticKey =
+  | "surface"
+  | "muted"
+  | "accent"
+  | "accentHover"
+  | "codeBg"
+  | "codeFg"
+  | "success"
+  | "danger"
+  | "warning"
+  | "info"
+  | "mermaidNodeBg"
+  | "mermaidText"
+  | "mermaidLine"
+  | "mermaidLabelBg"
+  | "mermaidNoteBg"
+  | "chatUserBg"
+  | "chatUserText"
+  | "chatAssistantBg"
+  | "chatAssistantText"
+  | "imageOverlayBg"
+  | "imageOverlayFg"
+  | "matchedKeywordBg"
+  | "matchedKeywordFg";
+
+/** Canonical order of the 23 semantic roles — used for `--zd-*` emit. */
+export const SEMANTIC_KEYS: readonly SemanticKey[] = [
+  "surface",
+  "muted",
+  "accent",
+  "accentHover",
+  "codeBg",
+  "codeFg",
+  "success",
+  "danger",
+  "warning",
+  "info",
+  "mermaidNodeBg",
+  "mermaidText",
+  "mermaidLine",
+  "mermaidLabelBg",
+  "mermaidNoteBg",
+  "chatUserBg",
+  "chatUserText",
+  "chatAssistantBg",
+  "chatAssistantText",
+  "imageOverlayBg",
+  "imageOverlayFg",
+  "matchedKeywordBg",
+  "matchedKeywordFg",
+];
+
+/** The per-mode wiring: each UI role points at a ramp stop (or literal OKLCH)
+ *  via a `RampRef`. Two `ColorScheme`s (light + dark) share `ramps` but carry
+ *  their own `ModeMap`. */
+export interface ModeMap {
+  bg: RampRef;
+  fg: RampRef;
+  selectionBg: RampRef;
+  selectionFg: RampRef;
+  semantic: Record<SemanticKey, RampRef>;
+}
+
+/** A complete color scheme — shared Tier-1 ramps + per-mode Tier-2 wiring. */
+export interface ColorScheme {
+  ramps: Ramps;
+  map: ModeMap;
+}
+
+/** Default per-mode semantic wiring (Default Dark reference — see epic #2584).
+ *  Scheme authors spread this into `map.semantic` and override individual roles
+ *  where a mode needs a different stop (or a per-mode AA-tuned literal). */
+export const SEMANTIC_RAMP_DEFAULTS: Record<SemanticKey, RampRef> = {
+  // Re-pointed for the 5-base / 3-accent minimized ramp (#2602); mirrors the
+  // Default Dark reference wiring (surface/chatAssistantBg/imageOverlayBg merged
+  // onto bg=b4). Every index is < 5 (base) / < 3 (accent).
+  surface: { base: 4 },
+  muted: { base: 1 },
+  accent: { accent: 1 },
+  accentHover: { accent: 0 },
+  codeBg: { base: 3 },
+  codeFg: { base: 0 },
+  success: { state: "success" },
+  danger: { state: "danger" },
+  warning: { state: "warning" },
+  info: { state: "info" },
+  mermaidNodeBg: { base: 3 },
+  mermaidText: { base: 0 },
+  mermaidLine: { base: 1 },
+  mermaidLabelBg: { base: 3 },
+  mermaidNoteBg: { base: 2 },
+  chatUserBg: { accent: 1 },
+  chatUserText: { base: 4 },
+  chatAssistantBg: { base: 4 },
+  chatAssistantText: { base: 0 },
+  imageOverlayBg: { base: 4 },
+  imageOverlayFg: { base: 0 },
+  // Search-result <mark> highlight — amber fill with dark text (the classic
+  // highlighter look, matching the shipped schemes). Kept as raw OKLCH literals.
+  matchedKeywordBg: "oklch(0.700 0.158 62)",
+  matchedKeywordFg: "oklch(0.300 0.003 65)",
 };
 
-export const SEMANTIC_CSS_NAMES: Record<string, string> = {
+export const SEMANTIC_CSS_NAMES: Record<SemanticKey, string> = {
   surface: "--zd-surface",
   muted: "--zd-muted",
   accent: "--zd-accent",
@@ -110,91 +181,198 @@ export const SEMANTIC_CSS_NAMES: Record<string, string> = {
   matchedKeywordFg: "--zd-matched-keyword-fg",
 };
 
-/** Resolve a ColorRef to a concrete color string.
- *  - number → palette[value]
- *  - string → used as-is
- *  - undefined → fallback */
-export function resolveColor(
-  value: ColorRef | undefined,
-  palette: string[],
-  fallback: string,
-): string {
-  if (value === undefined) return fallback;
-  if (typeof value === "number") return palette[value] ?? fallback;
-  return value;
+/**
+ * Resolve a `RampRef` to a concrete color string against the given `ramps`.
+ *   - `{ base: n }`   → `ramps.base[n]`
+ *   - `{ accent: n }` → `ramps.accent[n]`
+ *   - `{ state: r }`  → `ramps.state[r]`
+ *   - a bare string   → the literal OKLCH value, returned as-is
+ *
+ * Throws on an out-of-range ramp index — a ramp reference to a stop that does
+ * not exist is a programming/authoring error and must fail loud rather than
+ * silently emit an invalid CSS value.
+ */
+export function resolveRampRef(ref: RampRef, ramps: Ramps): string {
+  if (typeof ref === "string") return ref;
+  if ("base" in ref) {
+    const color = ramps.base[ref.base];
+    if (color === undefined) {
+      throw new RangeError(`RampRef {base:${ref.base}} out of range (base ramp has ${ramps.base.length} stops)`);
+    }
+    return color;
+  }
+  if ("accent" in ref) {
+    const color = ramps.accent[ref.accent];
+    if (color === undefined) {
+      throw new RangeError(`RampRef {accent:${ref.accent}} out of range (accent ramp has ${ramps.accent.length} stops)`);
+    }
+    return color;
+  }
+  return ramps.state[ref.state];
 }
 
-/** Resolve semantic colors with fallbacks to default palette slots */
-export function resolveSemanticColors(scheme: ColorScheme) {
-  const p = scheme.palette;
-  return {
-    surface: resolveColor(scheme.semantic?.surface, p, p[0]),
-    muted: resolveColor(scheme.semantic?.muted, p, p[8]),
-    accent: resolveColor(scheme.semantic?.accent, p, p[5]),
-    accentHover: resolveColor(scheme.semantic?.accentHover, p, p[14]),
-    codeBg: resolveColor(scheme.semantic?.codeBg, p, p[10]),
-    codeFg: resolveColor(scheme.semantic?.codeFg, p, p[11]),
-    success: resolveColor(scheme.semantic?.success, p, p[2]),
-    danger: resolveColor(scheme.semantic?.danger, p, p[1]),
-    warning: resolveColor(scheme.semantic?.warning, p, p[3]),
-    info: resolveColor(scheme.semantic?.info, p, p[4]),
-    mermaidNodeBg: resolveColor(scheme.semantic?.mermaidNodeBg, p, p[9]),
-    mermaidText: resolveColor(scheme.semantic?.mermaidText, p, p[11]),
-    mermaidLine: resolveColor(scheme.semantic?.mermaidLine, p, p[8]),
-    mermaidLabelBg: resolveColor(scheme.semantic?.mermaidLabelBg, p, p[10]),
-    mermaidNoteBg: resolveColor(scheme.semantic?.mermaidNoteBg, p, p[0]),
-    chatUserBg: resolveColor(scheme.semantic?.chatUserBg, p, p[5]),
-    chatUserText: resolveColor(scheme.semantic?.chatUserText, p, p[9]),
-    chatAssistantBg: resolveColor(scheme.semantic?.chatAssistantBg, p, p[9]),
-    chatAssistantText: resolveColor(scheme.semantic?.chatAssistantText, p, p[11]),
-    imageOverlayBg: resolveColor(scheme.semantic?.imageOverlayBg, p, p[0]),
-    imageOverlayFg: resolveColor(scheme.semantic?.imageOverlayFg, p, p[11]),
-    matchedKeywordBg: resolveColor(scheme.semantic?.matchedKeywordBg, p, p[3]),
-    matchedKeywordFg: resolveColor(scheme.semantic?.matchedKeywordFg, p, p[15]),
-  };
+/** Resolve every semantic role to a concrete color string via the scheme's
+ *  per-mode `map.semantic` wiring. Returns all 23 keys. */
+export function resolveSemanticColors(scheme: ColorScheme): Record<SemanticKey, string> {
+  const { ramps, map } = scheme;
+  const out = {} as Record<SemanticKey, string>;
+  for (const key of SEMANTIC_KEYS) {
+    out[key] = resolveRampRef(map.semantic[key], ramps);
+  }
+  return out;
 }
 
-/** Convert a ColorScheme to a flat list of [cssProperty, value] pairs.
- *  The result is the exact set of `--zd-*` custom properties that the
- *  ColorSchemeProvider emits onto `:root`. */
-export function schemeToCssPairs(scheme: ColorScheme): [string, string][] {
-  const p = scheme.palette;
-  const sem = resolveSemanticColors(scheme);
-  return [
-    ["--zd-bg", resolveColor(scheme.background, p, p[0])],
-    ["--zd-fg", resolveColor(scheme.foreground, p, p[15])],
-    ["--zd-cursor", resolveColor(scheme.cursor, p, p[6])], // intentionally inert/vestigial: exposed in the design-token panel but no CSS rule consumes it (no caret-color wiring); mirrors shikiTheme's status
-    ["--zd-sel-bg", resolveColor(scheme.selectionBg, p, resolveColor(scheme.background, p, p[0]))],
-    ["--zd-sel-fg", resolveColor(scheme.selectionFg, p, resolveColor(scheme.foreground, p, p[15]))],
-    ...p.map((color, i) => [`--zd-${i}`, color] as [string, string]),
-    ["--zd-surface", sem.surface],
-    ["--zd-muted", sem.muted],
-    ["--zd-accent", sem.accent],
-    ["--zd-accent-hover", sem.accentHover],
-    ["--zd-code-bg", sem.codeBg],
-    ["--zd-code-fg", sem.codeFg],
-    ["--zd-success", sem.success],
-    ["--zd-danger", sem.danger],
-    ["--zd-warning", sem.warning],
-    ["--zd-info", sem.info],
-    ["--zd-mermaid-node-bg", sem.mermaidNodeBg],
-    ["--zd-mermaid-text", sem.mermaidText],
-    ["--zd-mermaid-line", sem.mermaidLine],
-    ["--zd-mermaid-label-bg", sem.mermaidLabelBg],
-    ["--zd-mermaid-note-bg", sem.mermaidNoteBg],
-    ["--zd-chat-user-bg", sem.chatUserBg],
-    ["--zd-chat-user-text", sem.chatUserText],
-    ["--zd-chat-assistant-bg", sem.chatAssistantBg],
-    ["--zd-chat-assistant-text", sem.chatAssistantText],
-    ["--zd-image-overlay-bg", sem.imageOverlayBg],
-    ["--zd-image-overlay-fg", sem.imageOverlayFg],
-    ["--zd-matched-keyword-bg", sem.matchedKeywordBg],
-    ["--zd-matched-keyword-fg", sem.matchedKeywordFg],
-  ];
+// Structural copy of @takazudo/zdtp's TierItem — keeps the optional peer out of
+// the emitted public .d.ts (mirrors the TokenDef copy in
+// ./theme/design-token-serde.ts, #2138). Only the fields this module emits are
+// included (id, cssVar, label, default, type); the full upstream interface adds
+// optional `pill`/`readonly` fields this builder never sets. Structurally
+// compatible: every value returned here satisfies zdtp's real `TierItem`, so
+// callers passing these into a real `TierConfig.items` still type-check.
+export interface TierItem {
+  /** Stable id used as the Record key in persisted state (e.g. `surface`). */
+  id: string;
+  /** CSS custom property name written to `:root` (e.g. `--zd-surface`). */
+  cssVar: string;
+  /** Display label in the panel UI. */
+  label: string;
+  /** Default value — a panel-encoded ramp reference or literal OKLCH string. */
+  default: string;
+  /** Always the OKLCH color picker for semantic-tier rows. */
+  type: { kind: "color"; format: "oklch" };
 }
 
 /**
- * Generate the `:root { --zd-* }` CSS block for a single active color scheme.
+ * Encode a `RampRef` to the explicit `tierId:itemId` form the design-token
+ * panel's grouped ramp picker (`referencesRamps`) expects as an item default:
+ *   - `{ base: n }`   → `'base:base-n'`
+ *   - `{ accent: n }` → `'accent:accent-n'`
+ *   - `{ state: r }`  → `'state:state-r'`
+ *   - a bare string   → returned as-is (a literal OKLCH/hex passthrough)
+ *
+ * Always the explicit form (independent of `referencesRamps` declaration
+ * order) — see item-id contract in `buildRampTiers`
+ * (`src/config/design-token-panel-config.ts`): tier ids `base`/`accent`/`state`,
+ * item ids `base-0..4`/`accent-0..2`/`state-{danger,success,warning,info}`.
+ */
+export function rampRefToPanelDefault(ref: RampRef): string {
+  if (typeof ref === "string") return ref;
+  if ("base" in ref) return `base:base-${ref.base}`;
+  if ("accent" in ref) return `accent:accent-${ref.accent}`;
+  return `state:state-${ref.state}`;
+}
+
+/**
+ * Build the 27-row mode-scoped semantic tier's `items` for the design-token
+ * panel, from a single (already mode-resolved) `ColorScheme`: 4 base roles
+ * (`bg`, `fg`, `selection-bg`, `selection-fg`) followed by the 23
+ * `SEMANTIC_KEYS` rows, in that order. Every row's `default` is
+ * `rampRefToPanelDefault` of the scheme's `map` entry for that role — never a
+ * resolved literal color — so the panel's grouped ramp dropdown can decode it
+ * back to a ramp reference (the no-snapping guarantee: a scheme with no
+ * persisted override always round-trips through the panel to the exact same
+ * ramp stop, not a resolved color that happens to match).
+ */
+export function buildSemanticTierItems(scheme: ColorScheme): TierItem[] {
+  const { map } = scheme;
+  const items: TierItem[] = [
+    {
+      id: "bg",
+      cssVar: "--zd-bg",
+      label: "bg",
+      default: rampRefToPanelDefault(map.bg),
+      type: { kind: "color", format: "oklch" },
+    },
+    {
+      id: "fg",
+      cssVar: "--zd-fg",
+      label: "fg",
+      default: rampRefToPanelDefault(map.fg),
+      type: { kind: "color", format: "oklch" },
+    },
+    {
+      id: "selection-bg",
+      cssVar: "--zd-selection-bg",
+      label: "selection-bg",
+      default: rampRefToPanelDefault(map.selectionBg),
+      type: { kind: "color", format: "oklch" },
+    },
+    {
+      id: "selection-fg",
+      cssVar: "--zd-selection-fg",
+      label: "selection-fg",
+      default: rampRefToPanelDefault(map.selectionFg),
+      type: { kind: "color", format: "oklch" },
+    },
+  ];
+  for (const key of SEMANTIC_KEYS) {
+    items.push({
+      id: key,
+      cssVar: SEMANTIC_CSS_NAMES[key],
+      label: key,
+      default: rampRefToPanelDefault(map.semantic[key]),
+      type: { kind: "color", format: "oklch" },
+    });
+  }
+  return items;
+}
+
+/** Which tiers a `schemeToCssPairs` call emits:
+ *   - `"all"` (default) — base roles + `--palette-*` + `--zd-*` semantic
+ *   - `"palette"`       — only the bare Tier-1 `--palette-*` pairs
+ *   - `"roles"`         — base roles + the 23 `--zd-*` semantic pairs
+ *
+ * The split lets `generateLightDarkCssProperties` emit the shared `--palette-*`
+ * once (bare) while wrapping the per-mode `--zd-*` roles in `light-dark(…)`.
+ * (A literal `"light"|"dark"` param would be inert here — each `ColorScheme`'s
+ * own `map` already encodes its mode.) */
+export type CssEmitScope = "all" | "palette" | "roles";
+
+/**
+ * Convert a `ColorScheme` to a flat list of `[cssProperty, value]` pairs.
+ *
+ * The full (`"all"`) set is the exact set of custom properties the
+ * ColorSchemeProvider emits onto `:root`:
+ *   - base roles: `--zd-bg`, `--zd-fg`, `--zd-selection-bg`, `--zd-selection-fg`
+ *   - Tier-1 ramps: `--palette-base-0..4`, `--palette-accent-0..2`,
+ *     `--palette-state-{danger,success,warning,info}`
+ *   - the 23 Tier-2 `--zd-{role}` semantic tokens
+ *
+ * It intentionally does NOT emit the retired `--zd-0..15` slots or `--zd-cursor`.
+ */
+export function schemeToCssPairs(scheme: ColorScheme, scope: CssEmitScope = "all"): [string, string][] {
+  const { ramps, map } = scheme;
+  const pairs: [string, string][] = [];
+
+  if (scope === "all" || scope === "roles") {
+    pairs.push(
+      ["--zd-bg", resolveRampRef(map.bg, ramps)],
+      ["--zd-fg", resolveRampRef(map.fg, ramps)],
+      ["--zd-selection-bg", resolveRampRef(map.selectionBg, ramps)],
+      ["--zd-selection-fg", resolveRampRef(map.selectionFg, ramps)],
+    );
+  }
+
+  if (scope === "all" || scope === "palette") {
+    ramps.base.forEach((color, i) => pairs.push([`--palette-base-${i}`, color]));
+    ramps.accent.forEach((color, i) => pairs.push([`--palette-accent-${i}`, color]));
+    for (const role of STATE_ROLES) {
+      pairs.push([`--palette-state-${role}`, ramps.state[role]]);
+    }
+  }
+
+  if (scope === "all" || scope === "roles") {
+    const sem = resolveSemanticColors(scheme);
+    for (const key of SEMANTIC_KEYS) {
+      pairs.push([SEMANTIC_CSS_NAMES[key], sem[key]]);
+    }
+  }
+
+  return pairs;
+}
+
+/**
+ * Generate the `:root { … }` CSS block for a single active color scheme.
  *
  * The caller passes in the active `ColorScheme` object — resolved from the
  * project's `colorSchemes` map and `settings.colorScheme`. This function is
@@ -207,28 +385,33 @@ export function generateCssCustomProperties(scheme: ColorScheme): string {
 }
 
 /**
- * Generate the `:root { --zd-*: light-dark(…, …); }` CSS block for a
- * light/dark pair.
+ * Generate the `:root { … }` CSS block for a light/dark pair.
+ *
+ * Tier-1 `--palette-*` properties are shared across modes (the ramps carry the
+ * same values in both schemes), so they are emitted ONCE, bare. The per-mode
+ * `--zd-*` roles (base roles + semantic) are wrapped in `light-dark(L, D)`.
  *
  * The caller passes in the `light` and `dark` `ColorScheme` objects — resolved
- * from the project's `colorSchemes` map and `settings.colorMode`. This
- * function is DATA-free.
+ * from the project's `colorSchemes` map and `settings.colorMode`. This function
+ * is DATA-free.
  */
-export function generateLightDarkCssProperties(
-  light: ColorScheme,
-  dark: ColorScheme,
-): string {
-  const lightPairs = schemeToCssPairs(light);
-  const darkPairs = schemeToCssPairs(dark);
+export function generateLightDarkCssProperties(light: ColorScheme, dark: ColorScheme): string {
+  // Shared Tier-1 ramps: emit once, bare, from the light scheme.
+  const palettePairs = schemeToCssPairs(light, "palette");
+  const lightRoles = schemeToCssPairs(light, "roles");
+  const darkRoles = schemeToCssPairs(dark, "roles");
 
-  if (lightPairs.length !== darkPairs.length) {
-    throw new Error(`Light scheme has ${lightPairs.length} properties but dark scheme has ${darkPairs.length}`);
+  if (lightRoles.length !== darkRoles.length) {
+    throw new Error(`Light scheme has ${lightRoles.length} role properties but dark scheme has ${darkRoles.length}`);
   }
 
   const lines = [":root {", "  color-scheme: light dark;"];
-  for (let i = 0; i < lightPairs.length; i++) {
-    const lightPair = lightPairs[i];
-    const darkPair = darkPairs[i];
+  for (const [prop, value] of palettePairs) {
+    lines.push(`  ${prop}: ${value};`);
+  }
+  for (let i = 0; i < lightRoles.length; i++) {
+    const lightPair = lightRoles[i];
+    const darkPair = darkRoles[i];
     if (!lightPair || !darkPair) continue;
     const [prop, lightVal] = lightPair;
     const darkVal = darkPair[1];

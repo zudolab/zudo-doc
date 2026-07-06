@@ -4,7 +4,12 @@
 # scripts/check-template-drift.sh, keyed by template-relative path.
 
 # Slot-based files — templates use @slot: injection anchors,
-# production has features inlined
+# production has features inlined. Content parity is manual-review-only for
+# this file, but a separate, unconditional guard (check_global_css_legacy_tokens
+# in scripts/check-template-drift.sh, #2621) still catches the one class of
+# drift that matters most here: the template regressing to a pre-ramp-restructure
+# legacy token (--zd-sel-bg/fg, --color-p0..15, --zd-0..15). That guard is NOT
+# exempted by this allowlist entry.
 src/styles/global.css
 
 # claude-resources feature (#2533) — generated projects ship their own copies
@@ -89,23 +94,26 @@ src/components/find-in-page-init.tsx
 src/components/mermaid-enlarge.tsx
 
 # zdtp panel template variants — intentionally differ from production in the
-# following ways:
-#  1. design-token-panel-config.ts: template uses generic placeholder IDs/storage
-#     keys ("my-doc-tweak", "myDoc", etc.) and an empty colorPresets map, while
-#     production has zudo-doc-specific values and imports colorTweakPresets. The
-#     generator injects project-name-specific values via the feature module.
-#  2. design-token-panel-bootstrap.ts: template inlines literal zfb lifecycle
-#     event strings ("zfb:before-preparation", "zfb:after-swap") because
-#     downstream scaffolds do not depend on @takazudo/zudo-doc as a runtime
-#     dep. Production imports BEFORE_NAVIGATE_EVENT / AFTER_NAVIGATE_EVENT from
-#     @takazudo/zudo-doc/transitions. Both template and production use
-#     setLifecycleAdapter() (zdtp 0.2.0-next.2+). Both omit the JS-side CSS
-#     import (moved to global.css @slot injection in #1629).
-#  3. design-token-types.ts: template has fewer comments (zudo-doc-specific
-#     migration context stripped; upstream issue notes retained).
+# following ways (re-authored for the ramp-native / mode-scoped Color tab
+# shape in zudolab/zudo-doc#2613; the old "colorTweakPresets" / palette-index
+# rationale below is retired — that concept was dropped entirely in the color
+# ramp restructure, not merely renamed):
+#  1. design-token-panel-config.ts: template uses generic placeholder identity
+#     values throughout ("my-doc-tweak" storagePrefix, "myDoc" consoleNamespace,
+#     "my-doc-design-token-panel-modal" modalClassPrefix, "my-doc-design-tokens"
+#     exportFilenameBase, "my-doc" / "My Doc" colorExtras id/label) so multiple
+#     zudo-doc-based projects don't collide on localStorage keys in the same
+#     browser, while production uses its own "zudo-doc" / "Zudo Doc" identity.
+#     All other structure (ramp-native Palette tab, mode-scoped semantic Color
+#     tab, Font/Spacing/Size tabs) is mirrored 1:1 from production.
+#  2. design-token-panel-bootstrap.ts: both template and production are thin
+#     one-line callers of the package's `bootstrapDesignTokenPanel` mechanism
+#     (@takazudo/zudo-doc/design-token-panel-bootstrap) passing the
+#     `buildDesignTokenPanelConfig` builder; the only remaining difference is
+#     docstring wording (template keeps its phrasing generic for downstream
+#     projects and omits the internal PORTABLE-CONTRACT.md pointer).
 src/config/design-token-panel-config.ts
 src/lib/design-token-panel-bootstrap.ts
-src/utils/design-token-types.ts
 
 # W4A (#1732) — desktop-sidebar-toggle.tsx was briefly de-allowlisted here.
 # At the time, @takazudo/zudo-doc had just been published and pinned in the

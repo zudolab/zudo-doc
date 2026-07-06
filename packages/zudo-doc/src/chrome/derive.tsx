@@ -29,7 +29,9 @@ import { createComposeMetaTitle } from "../compose-meta-title/index.js";
 import {
   generateCssCustomProperties,
   generateLightDarkCssProperties,
+  SEMANTIC_RAMP_DEFAULTS,
   type ColorScheme,
+  type Ramps,
 } from "../color-scheme-utils.js";
 import { createBodyEndIslands } from "../doc-body-end-islands/index.js";
 import { SearchWidget } from "../search-widget/index.js";
@@ -56,24 +58,47 @@ import { buildSidebarForSection } from "../sidebar-utils/index.js";
 // the pre-collapse `routes/_chrome.tsx`).
 // ---------------------------------------------------------------------------
 
-/** Package-default color scheme — a neutral 16-step grey ramp. The project's
- *  real `colorSchemes` palette map rides in the serializable payload; this is
- *  the fallback when a key is missing or `colorSchemes` is `null`. */
-const GREY_RAMP: ColorScheme["palette"] = [
-  "oklch(0.000 0.000 0.00)" /* #000000 */, "oklch(0.218 0.000 0.00)" /* #1a1a1a */, "oklch(0.321 0.000 0.00)" /* #333333 */, "oklch(0.420 0.000 0.00)" /* #4d4d4d */, "oklch(0.510 0.000 0.00)" /* #666666 */, "oklch(0.600 0.000 0.00)" /* #808080 */,
-  "oklch(0.683 0.000 0.00)" /* #999999 */, "oklch(0.767 0.000 0.00)" /* #b3b3b3 */, "oklch(0.845 0.000 0.00)" /* #cccccc */, "oklch(0.885 0.000 0.00)" /* #d9d9d9 */, "oklch(0.925 0.000 0.00)" /* #e6e6e6 */, "oklch(0.961 0.000 0.00)" /* #f2f2f2 */,
-  "oklch(0.682 0.206 24.43)" /* #ff5555 */, "oklch(0.871 0.2195 148.02)" /* #50fa7b */, "oklch(0.955 0.134 112.76)" /* #f1fa8c */, "oklch(0.883 0.0934 212.85)" /* #8be9fd */,
-];
+/** Package-default ramps — a neutral warm-grey fallback used when the project's
+ *  real `colorSchemes` payload is `null` or a key is missing. The state ramp
+ *  keeps real hues so danger/success/etc. read correctly even on the fallback.
+ *
+ *  NOTE: placeholder authored during the engine rewrite (#2585); the real
+ *  Default Dark ramp values land in #2586 (DEFAULT_SCHEME + host wrappers). */
+const GREY_RAMPS: Ramps = {
+  base: [
+    "oklch(0.965 0.000 0)",
+    "oklch(0.705 0.000 0)",
+    "oklch(0.480 0.000 0)",
+    "oklch(0.300 0.000 0)",
+    "oklch(0.185 0.000 0)",
+  ],
+  accent: [
+    "oklch(0.755 0.000 0)",
+    "oklch(0.700 0.000 0)",
+    "oklch(0.470 0.000 0)",
+  ],
+  state: {
+    danger: "oklch(0.640 0.170 25)",
+    success: "oklch(0.680 0.145 145)",
+    warning: "oklch(0.760 0.135 82)",
+    info: "oklch(0.680 0.130 245)",
+  },
+};
 
 /** Package-default color scheme used when `colorSchemes` is `null` or a key is
- *  missing. Exported so `createChrome` keeps the identical fallback. */
+ *  missing. Exported so `createChrome` keeps the identical fallback. Base roles
+ *  follow the epic's Default Dark defaults on the minimized 5-base ramp
+ *  (bg={base:4}, fg={base:0}, selBg={base:2}, selFg={base:0}); semantics use
+ *  `SEMANTIC_RAMP_DEFAULTS`. */
 export const DEFAULT_SCHEME: ColorScheme = {
-  background: "oklch(0.000 0.000 0.00)" /* #000000 */,
-  foreground: "oklch(1.000 0.000 0.00)" /* #ffffff */,
-  cursor: "oklch(1.000 0.000 0.00)" /* #ffffff */,
-  selectionBg: "oklch(0.387 0.000 0.00)" /* #444444 */,
-  selectionFg: "oklch(1.000 0.000 0.00)" /* #ffffff */,
-  palette: GREY_RAMP,
+  ramps: GREY_RAMPS,
+  map: {
+    bg: { base: 4 },
+    fg: { base: 0 },
+    selectionBg: { base: 2 },
+    selectionFg: { base: 0 },
+    semantic: { ...SEMANTIC_RAMP_DEFAULTS },
+  },
 };
 
 /** Package no-op DocHistory island stub — renders an empty fragment (the

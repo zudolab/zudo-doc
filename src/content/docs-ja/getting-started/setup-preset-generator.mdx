@@ -8,6 +8,12 @@ sidebar_position: 2.5
 
 <PresetGenerator />
 
+## カラースキーム
+
+ジェネレーターが同梱するカラースキームは `Default Light` と `Default Dark` の 2 つだけで、1 セットの OKLCH ランプを共有しています。**Single scheme** モードでは、ドロップダウンでどちらか一方を選べます。**Light & Dark（トグル）** モードでは、ペアリングは `Default Light` / `Default Dark` に固定されており、別のペアリングを選ぶスキームのドロップダウンはありません — あるのはデフォルトモードとシステム設定を尊重するかどうかのオプションだけです。
+
+この 2 つの出発点を超えてパレットをカスタマイズするには、スキャフォールド後に `src/config/color-schemes.ts` でランプとセマンティックマップを編集します — [Color](../reference/color.mdx#カスタムカラースキームの追加) を参照し、[Design Token Panel](../reference/design-token-panel.mdx) の Palette タブで変更をライブプレビューできます（[カラースキームプレビュー](../guides/color-scheme-preview.mdx)を参照）。
+
 ## ヘッダー右側アイテム
 
 「Header right items」セクションは `settings.headerRightItems` — サイトヘッダー右側のクラスタ(テーマ切替、言語スイッチャー、バージョンスイッチャー、GitHub リンク、Design Token Panel / AI Chat トリガー)を構成します。各アイテムのオン・オフを切り替え、上下ボタンで描画順を変更できます。

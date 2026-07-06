@@ -11,63 +11,9 @@ export interface SupportedLang {
   label: string;
 }
 
-export const SINGLE_SCHEMES = [
-  "Default Dark",
-  "Dracula",
-  "Catppuccin Mocha",
-  "GitHub Dark",
-  "Nord",
-  "TokyoNight",
-  "Gruvbox Dark",
-  "Atom One Dark",
-  "Rose Pine",
-  "Solarized Dark",
-  "Material Ocean",
-  "Monokai Pro",
-  "Everforest Dark",
-  "Kanagawa Wave",
-  "Night Owl",
-  "Ayu Dark",
-  "VS Code Dark+",
-  "Doom One",
-  "Challenger Deep",
-  "Catppuccin Frappe",
-  "Catppuccin Macchiato",
-  "Gruvbox Dark Hard",
-  "Rose Pine Moon",
-  "GitHub Dark Dimmed",
-  "Ayu Mirage",
-  "Material Darker",
-  "Material Dark",
-  "Monokai Remastered",
-  "Monokai Vivid",
-  "Monokai Soda",
-  "Solarized Dark Higher Contrast",
-  "Gruvbox Material Dark",
-  "Kanagawa Dragon",
-  // Light schemes
-  "Default Light",
-  "GitHub Light",
-  "Catppuccin Latte",
-  "Solarized Light",
-  "Rose Pine Dawn",
-  "Atom One Light",
-  "Everforest Light",
-  "Gruvbox Light",
-  "Ayu Light",
-];
+export const SINGLE_SCHEMES = ["Default Dark", "Default Light"];
 
-export const LIGHT_SCHEMES = [
-  "Default Light",
-  "GitHub Light",
-  "Catppuccin Latte",
-  "Solarized Light",
-  "Rose Pine Dawn",
-  "Atom One Light",
-  "Everforest Light",
-  "Gruvbox Light",
-  "Ayu Light",
-];
+export const LIGHT_SCHEMES = ["Default Light"];
 
 export const SUPPORTED_LANGS: SupportedLang[] = [
   { value: "en", label: "English" },

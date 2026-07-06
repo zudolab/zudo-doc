@@ -149,6 +149,48 @@ check_pair_normalized() {
   fi
 }
 
+# ---------------------------------------------------------------------------
+# global.css legacy-token guard (#2621)
+# ---------------------------------------------------------------------------
+# packages/create-zudo-doc/templates/base/src/styles/global.css is allowlisted
+# in .template-drift-allowlist (~120 lines of intentional slot/feature/@source
+# delta make byte parity with the showcase impossible), so check_pair() above
+# never inspects it. That blind spot let it drift to the pre-ramp-restructure
+# legacy 16-slot token set (--zd-sel-bg/fg, --color-p0..15, --zd-0..15) even
+# after the ramp-native engine stopped emitting those vars — scaffolded
+# projects would reference dead CSS custom properties. This guard runs
+# UNCONDITIONALLY (the allowlist does not exempt it): it fails on any legacy-
+# token reference, and separately asserts the ramp-native --zd-selection-bg
+# marker is present so the file can't silently regress to pre-migration
+# wording either.
+#
+# Pattern is deliberately exact — do NOT loosen to `--zd-sel` / `--zd-sel-`:
+# that substring false-positives on the correctly-migrated --zd-selection-bg/
+# -fg (which contain "--zd-sel" as a prefix). The surviving Tailwind token
+# --color-sel-bg (Tier 2, not a legacy raw-palette var) must also not match.
+GLOBAL_CSS_LEGACY_TOKEN_RE='--zd-sel-(bg|fg)|--color-p[0-9]|--zd-[0-9]'
+
+check_global_css_legacy_tokens() {
+  local global_css="$BASE_DIR/src/styles/global.css"
+
+  if [[ ! -f "$global_css" ]]; then
+    echo "  [MISSING] base/src/styles/global.css"
+    DRIFTED+=("base/src/styles/global.css (missing)")
+    return
+  fi
+
+  if grep -E -n -- "$GLOBAL_CSS_LEGACY_TOKEN_RE" "$global_css" >/dev/null; then
+    echo "  [LEGACY TOKEN] base/src/styles/global.css references a pre-ramp-restructure token:"
+    grep -E -n -- "$GLOBAL_CSS_LEGACY_TOKEN_RE" "$global_css" | sed 's/^/    /'
+    DRIFTED+=("base/src/styles/global.css (legacy token)")
+  fi
+
+  if ! grep -qF -- '--zd-selection-bg' "$global_css"; then
+    echo "  [MISSING MARKER] base/src/styles/global.css does not reference --zd-selection-bg (ramp-native marker)"
+    DRIFTED+=("base/src/styles/global.css (missing ramp-native marker)")
+  fi
+}
+
 check_pair() {
   local template_file="$1"
   local prod_path="$2" # relative to repo root
@@ -236,6 +278,9 @@ while IFS= read -r -d '' template_file; do
   check_pair "$template_file" "$prod_path"
   check_directive_parity "$template_file" "$prod_path"
 done < <(find "$BASE_DIR" -type f -print0 | sort -z)
+
+echo "Checking global.css legacy-token guard..."
+check_global_css_legacy_tokens
 
 echo "Checking feature template files..."
 

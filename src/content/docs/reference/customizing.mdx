@@ -116,7 +116,7 @@ Notable knobs:
 
 ```ts title="src/config/settings.ts"
 export const settings = {
-  colorScheme: "Catppuccin Mocha",     // swap the active color scheme
+  colorScheme: "Default Light",        // pick Default Light or Default Dark
   colorMode: { defaultMode: "light" }, // override the default light/dark mode
 
   designTokenPanel: true,              // enable the live Design Token Panel
@@ -138,9 +138,9 @@ export const settings = {
 };
 ```
 
-**Use when:** you want to toggle a feature on or off, or configure behavior (TOC depth, navigation structure, locale setup, color scheme selection).
+**Use when:** you want to toggle a feature on or off, or configure behavior (TOC depth, navigation structure, locale setup, which of the two bundled schemes is active).
 
-**Limit:** settings control what exists, not how existing components look. Swapping `colorScheme` re-themes the palette but does not let you redesign the header layout.
+**Limit:** settings control what exists, not how existing components look. `colorScheme` picks between the two bundled schemes (`Default Light` / `Default Dark`) — it is not a catalog switch, and swapping it does not let you redesign the header layout. The actual color story lives one level deeper: edit the shared OKLCH ramps and the semantic map in `src/config/color-schemes.ts` (see [Color](./color.mdx#adding-a-custom-color-scheme) — "Adding a Custom Color Scheme"), preview ramp edits live via the Design Token Panel's Palette tab (see [Color Scheme Preview](../guides/color-scheme-preview.mdx#how-it-works)), and round-trip tweaks with an AI assistant using the panel's JSON diff workflow (see [Design Token Panel](./design-token-panel.mdx#ai-workflow)).
 
 <Info>
 

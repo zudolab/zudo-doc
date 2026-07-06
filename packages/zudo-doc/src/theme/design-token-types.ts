@@ -4,23 +4,26 @@
 //
 // W3B (#1730 — Generator Pages Migration): moved wholesale from
 // `src/utils/design-token-types.ts` so the v2 theme exports can stand
-// alone without a host-side `@/utils/*` dependency. Shape preserved
-// verbatim — every importer in this PR rewires its import path only.
+// alone without a host-side `@/utils/*` dependency.
+//
+// Color Ramp Restructure (zudolab/zudo-doc#2584 / #2591): the color slice is now
+// the ramp-native `ColorScheme` ({ ramps, map }) from `color-scheme-utils.ts`.
+// The legacy 16-slot `{ palette, background, foreground, cursor, selectionBg,
+// selectionFg, semanticMappings }` shape is gone. `ColorTweakState` is kept as a
+// name alias for `ColorScheme` so the existing importers (export modal, theme
+// barrel) need no rename.
 
-export interface ColorTweakState {
-  palette: string[];
-  background: number;
-  foreground: number;
-  cursor: number;
-  selectionBg: number;
-  selectionFg: number;
-  semanticMappings: Record<string, number | "bg" | "fg">;
-}
+import type { ColorScheme } from "../color-scheme-utils.js";
+
+/** The per-scheme color state the design-token panel edits — a ramp-native
+ *  `ColorScheme`. Retained as a named alias so call sites reading
+ *  `ColorTweakState` keep compiling after the ramp restructure. */
+export type ColorTweakState = ColorScheme;
 
 export type TokenOverrides = Record<string, string>;
 
 export interface TweakState {
-  color: ColorTweakState;
+  color: ColorScheme;
   spacing: TokenOverrides;
   font: TokenOverrides;
   size: TokenOverrides;

@@ -21,7 +21,7 @@ export { getSecondaryLang };
  *
  * Bumped in lockstep by scripts/release-create-zudo-doc.sh.
  */
-export const ZUDO_DOC_PIN = "^2.5.1";
+export const ZUDO_DOC_PIN = "^3.0.0";
 
 /**
  * Files in `templates/base/**` that must never be copied into a generated
@@ -704,7 +704,7 @@ function generatePackageJson(choices: UserChoices) {
     // @takazudo/zudo-doc/integrations/doc-history which in turn imports
     // @takazudo/zudo-doc-history-server/git-history. Without this dep the
     // plugin host fails at init with ERR_MODULE_NOT_FOUND — W8A (#1739).
-    deps["@takazudo/zudo-doc-history-server"] = "^2.5.1";
+    deps["@takazudo/zudo-doc-history-server"] = "^3.0.0";
     // tsx is no longer needed here: the relocated package plugin imports the
     // runner directly (no `tsx -e` spawn) since the package ships compiled
     // dist/ — package-first migration #2321 (#2337).
@@ -717,7 +717,7 @@ function generatePackageJson(choices: UserChoices) {
   if (choices.features.includes("designTokenPanel")) {
     // @takazudo/zdtp requires preact >= 10.29.1 — see the preact floor comment
     // above (~line 382) for why the floor is set there and the coupling this creates.
-    deps["@takazudo/zdtp"] = "0.4.2";
+    deps["@takazudo/zdtp"] = "0.4.5";
   }
 
   if (choices.features.includes("tagGovernance")) {

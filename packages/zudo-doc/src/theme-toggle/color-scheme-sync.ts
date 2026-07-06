@@ -42,19 +42,29 @@ export function readColorSchemeFromDom(
  *
  * Tweak-state reconciliation is intentionally NOT done here (#2037). The zdtp
  * panel owns its own storage lifecycle: it persists the unified tweak envelope
- * under `zudo-doc-tweak-state-v3` (auto-migrating the legacy
- * `zudo-doc-tweak-state-v2` / `zudo-doc-tweak-state` keys into it), and its own
- * `color-scheme-changed` listener clears applied inline styles and re-seeds the
- * color slice from the newly active scheme. An earlier version of this function
- * deleted `zudo-doc-tweak-state` + `-v2` on every toggle, which (a) targeted
- * stale keys after zdtp moved to v3 — so it no longer did anything — and
- * (b) when it did fire, wiped the whole envelope including scheme-independent
- * spacing/typography/size tweaks, contradicting the documented carry-over
- * guarantee. So the host no longer touches zdtp's private storage keys.
+ * under `zudo-doc-tweak-state-v4` (auto-migrating the legacy
+ * `zudo-doc-tweak-state-v3` / `-v2` / `zudo-doc-tweak-state` (v1) keys into
+ * it), and its own `color-scheme-changed` listener clears applied inline
+ * styles and re-seeds the color slice from the newly active scheme. An
+ * earlier version of this function deleted `zudo-doc-tweak-state` + `-v2` on
+ * every toggle, which (a) targeted stale keys after zdtp moved to v3 — so it
+ * no longer did anything — and (b) when it did fire, wiped the whole envelope
+ * including scheme-independent spacing/typography/size tweaks, contradicting
+ * the documented carry-over guarantee. So the host no longer touches zdtp's
+ * private storage keys.
  *
- * Whether palette tweaks should instead persist per-scheme (so a light/dark
- * round-trip keeps them) is a zdtp design question tracked upstream at
- * Takazudo/zudo-design-token-panel#343. See zudo-doc#2037.
+ * The design-token-panel bootstrap ALSO listens for this event and, on toggle,
+ * destroys + reconfigures the panel with the new mode's mode-scoped semantic
+ * DEFAULTS (see `design-token-panel-bootstrap.ts` + the host's
+ * `buildDesignTokenPanelConfig`, #2610). That keeps the panel's per-mode
+ * defaults faithful. A *saved* color OVERRIDE is still mode-agnostic here,
+ * though — not because zdtp can't key it per scheme (zdtp 0.4.5 ships
+ * per-scheme/per-mode keyed color persistence, v4 envelope,
+ * Takazudo/zudo-design-token-panel#500 / #509) but because THIS host's color
+ * cluster is scheme-less and switches modes externally (destroy + reconfigure
+ * above, not zdtp's own `colorMode` field), so zdtp always resolves the same
+ * single scheme identity and an override repaints both modes until Reset.
+ * See zudo-doc#2037 / #2610.
  */
 export function applyColorScheme(next: ColorSchemeMode): void {
   document.documentElement.setAttribute("data-theme", next);

@@ -35,7 +35,7 @@ bunx create-zudo-doc
 
 ```bash
 pnpm create zudo-doc my-docs --yes
-pnpm create zudo-doc my-docs --lang ja --scheme Dracula --no-i18n --pm pnpm --install
+pnpm create zudo-doc my-docs --lang ja --scheme "Default Dark" --no-i18n --pm pnpm --install
 ```
 
 すべてのフラグについては [CLI リファレンス](../reference/create-zudo-doc.mdx) を参照してください。
@@ -54,10 +54,12 @@ CLI では以下のオプションを順番に設定します。
 
 サイトのカラースキーム設定を選択します。
 
-- **Light & Dark（トグル）** — ユーザーがライトとダークテーマを切り替え可能。事前設定されたペアリング（GitHub、Catppuccin、Solarized、Rosé Pine、Atom One、Everforest、Gruvbox、Ayu）から選択するか、ライトとダークのスキームを個別に選べます。
-- **Single scheme** — サイト全体で1つの固定カラースキーム。Dracula、Nord、TokyoNight など40のスキームが利用できます。
+- **Light & Dark（トグル）** — ユーザーがライトとダークテーマを切り替え可能。同梱の `Default Light` / `Default Dark` ペアを使用します。
+- **Single scheme** — サイト全体で1つの固定カラースキーム。`Default Light` または `Default Dark` のいずれかです。
 
 Light/Dark モードでは、デフォルトモード（ライトまたはダーク）の設定や、ユーザーのシステムカラースキーム設定を尊重するかどうかも選択できます。
+
+zudo-doc が同梱するのはこの 2 つのスキームだけで、両者は 1 セットの OKLCH ランプを共有しています。ブラウズできるコミュニティ製やターミナル由来のプリセットカタログはありません。パレットをカスタマイズするには、`src/config/color-schemes.ts` でランプとセマンティックマップを編集し（[カラーガイド](../reference/color.mdx#カスタムカラースキームの追加)を参照）、[Design Token Panel](../reference/design-token-panel.mdx) の Palette タブで変更をライブプレビューできます（[カラースキームプレビュー](../guides/color-scheme-preview.mdx)を参照）。
 
 ### 機能選択
 
@@ -69,7 +71,6 @@ Light/Dark モードでは、デフォルトモード（ライトまたはダー
 | [Pagefind 検索](../guides/search.mdx) | オン | ドキュメント全体の全文検索 |
 | [サイドバーフィルター](../guides/sidebar-filter.mdx) | オン | サイドバーナビゲーションのリアルタイムフィルタリング |
 | [Claude Resources](../guides/claude-resources.mdx) | オフ | Claude Code コンポーネントの自動生成ドキュメント |
-| [カラースキームプレビュー](../guides/color-scheme-preview.mdx) | オフ | カラー調整パネルで50以上のプリセットカラースキームを閲覧 |
 
 ### パッケージマネージャー
 
@@ -143,7 +144,7 @@ src/
 │   └── admonitions/     # Note, Tip, Info, Warning, Danger
 ├── config/
 │   ├── settings.ts      # サイト名、アクティブなカラースキーム
-│   ├── color-schemes.ts # 利用可能なカラープリセット
+│   ├── color-schemes.ts # ランプネイティブなカラースキーム定義
 │   └── color-scheme-utils.ts
 ├── content/
 │   ├── docs/            # 英語 MDX コンテンツ

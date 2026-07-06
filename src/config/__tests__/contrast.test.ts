@@ -1,24 +1,31 @@
 /**
- * WCAG 2.x contrast guard for color schemes/presets — full pair matrix.
+ * WCAG 2.x contrast guard for color schemes — full pair matrix.
  *
  * Enforces the finalized pair matrix from
- * `.claude/skills/color-scheme-a11y/SKILL.md` §1 across all 52 schemes
- * (2 built-ins in `color-schemes.ts` + 50 presets in
- * `color-tweak-presets.ts`). The matrix itself (pairs, thresholds, which
- * `--zd-*` vars feed each pair) lives in `../../../scripts/contrast-pair-matrix.ts`
- * — shared with `scripts/contrast-audit.ts` (the `pnpm contrast:audit` CLI) so
- * this guard and the audit tool can never diverge (S3, zudolab/zudo-doc#2489).
+ * `.claude/skills/color-scheme-a11y/SKILL.md` §1 across the 2 ramp-native
+ * schemes in `color-schemes.ts` (Default Light + Default Dark — Color Ramp
+ * Restructure, zudolab/zudo-doc#2584). The matrix itself (pairs, thresholds,
+ * which `--zd-*` vars feed each pair) lives in
+ * `../../../scripts/contrast-pair-matrix.ts` — shared with
+ * `scripts/contrast-audit.ts` (the `pnpm contrast:audit` CLI) so this guard
+ * and the audit tool can never diverge (S3, zudolab/zudo-doc#2489).
  *
  * Admonition backgrounds are CSS color-mix(in srgb, semanticColor 12%, --color-bg).
  * Tier-1 pairs (text) require ≥ 4.5:1; Tier-2 pairs (graphics/icons) require
  * ≥ 3.0:1 unless noted otherwise in the matrix (mermaid text pairs keep 4.5).
  *
- * All 52 schemes pass the full matrix with EMPTY allowlists — the scheme-a11y
- * epic (#2489) burned down every legacy "upstream fidelity" entry by tweaking
- * the actual colors. Keep it that way: a new entry is a last resort, only for
- * a pair provably not user-visible, with a one-line justification (skill §2.5).
- * "Upstream fidelity" is NOT an acceptable reason — tweak the color instead
- * (skill §2.1/§2.2 has the OKLCH methodology and the ANSI-preset recipe).
+ * NOTE (#2590): Default Dark is not yet a11y-tuned (Wave 4 #2593) and Default
+ * Light is a rough placeholder (Wave 5 #2594) — this port only makes the
+ * guard compile and run against the new `ColorScheme` shape; AA failures
+ * here are expected until those waves land, not a regression.
+ *
+ * Once both schemes are tuned, they should pass the full matrix with EMPTY
+ * allowlists — the scheme-a11y epic (#2489) burned down every legacy
+ * "upstream fidelity" entry by tweaking the actual colors. Keep it that way:
+ * a new entry is a last resort, only for a pair provably not user-visible,
+ * with a one-line justification (skill §2.5). "Upstream fidelity" is NOT an
+ * acceptable reason — tweak the color instead (skill §2.1/§2.2 has the OKLCH
+ * methodology and the ANSI-preset recipe).
  *
  * Any allowlist entry that IS added must fire — a spurious entry (key that
  * never matches a real test) is caught by the stale-key audit at the bottom

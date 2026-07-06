@@ -2,10 +2,9 @@
 /**
  * scripts/contrast-audit.ts
  *
- * WCAG contrast audit for every built-in color scheme + tweak preset
- * (`colorSchemes` + `colorTweakPresets` — 52 total). Evaluates a
- * data-driven pair matrix (Tier 1 text pairs ≥ 4.5:1, Tier 2 graphics
- * pairs ≥ 3.0:1 unless noted), prints a per-scheme PASS/FAIL table,
+ * WCAG contrast audit for every built-in color scheme (`colorSchemes`).
+ * Evaluates a data-driven pair matrix (Tier 1 text pairs ≥ 4.5:1, Tier 2
+ * graphics pairs ≥ 3.0:1 unless noted), prints a per-scheme PASS/FAIL table,
  * and writes a machine-readable JSON report.
  *
  * All colors are resolved via `schemeToCssPairs` — the SAME function

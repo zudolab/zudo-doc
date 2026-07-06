@@ -31,87 +31,17 @@ You can also use the [Setup Preset Generator](../getting-started/setup-preset-ge
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--color-scheme-mode <mode>` | `single` or `light-dark` | `light-dark` |
-| `--scheme <name>` | Color scheme (single mode) | `Dracula` |
+| `--scheme <name>` | Color scheme (single mode) | `Default Dark` |
 | `--light-scheme <name>` | Light scheme (light-dark mode) | `Default Light` |
 | `--dark-scheme <name>` | Dark scheme (light-dark mode) | `Default Dark` |
 | `--default-mode <mode>` | `light` or `dark` (light-dark mode) | `dark` |
 | `--[no-]respect-system-preference` | Respect OS color scheme preference | `true` |
 
-## Available Color Schemes
+## Color Schemes
 
-### Single-mode schemes (`--color-scheme-mode single`)
+zudo-doc ships exactly two color schemes — `Default Light` and `Default Dark` — sharing one set of OKLCH ramps. There is no bundled catalog of community or terminal presets to pick a `--scheme` value from.
 
-Used with `--scheme <name>`. The default is `Dracula`.
-
-**Dark schemes:**
-
-| Name |
-|------|
-| Default Dark |
-| Dracula |
-| Catppuccin Mocha |
-| GitHub Dark |
-| Nord |
-| TokyoNight |
-| Gruvbox Dark |
-| Atom One Dark |
-| Rose Pine |
-| Solarized Dark |
-| Material Ocean |
-| Monokai Pro |
-| Everforest Dark |
-| Kanagawa Wave |
-| Night Owl |
-| Ayu Dark |
-| VS Code Dark+ |
-| Doom One |
-| Challenger Deep |
-| Catppuccin Frappe |
-| Catppuccin Macchiato |
-| Gruvbox Dark Hard |
-| Rose Pine Moon |
-| GitHub Dark Dimmed |
-| Ayu Mirage |
-| Material Darker |
-| Material Dark |
-| Monokai Remastered |
-| Monokai Vivid |
-| Monokai Soda |
-| Solarized Dark Higher Contrast |
-| Gruvbox Material Dark |
-| Kanagawa Dragon |
-
-**Light schemes:**
-
-| Name |
-|------|
-| Default Light |
-| GitHub Light |
-| Catppuccin Latte |
-| Solarized Light |
-| Rose Pine Dawn |
-| Atom One Light |
-| Everforest Light |
-| Gruvbox Light |
-| Ayu Light |
-
-### Light-dark pairings (`--color-scheme-mode light-dark`)
-
-Used with `--light-scheme` and `--dark-scheme`. The defaults are `Default Light` (light) and `Default Dark` (dark).
-
-| Pairing label | Light scheme | Dark scheme |
-|---------------|-------------|------------|
-| Default | Default Light | Default Dark |
-| GitHub | GitHub Light | GitHub Dark |
-| Catppuccin | Catppuccin Latte | Catppuccin Mocha |
-| Solarized | Solarized Light | Solarized Dark |
-| Rosé Pine | Rose Pine Dawn | Rose Pine |
-| Atom One | Atom One Light | Atom One Dark |
-| Everforest | Everforest Light | Everforest Dark |
-| Gruvbox | Gruvbox Light | Gruvbox Dark |
-| Ayu | Ayu Light | Ayu Dark |
-
-The pairing label is used in the interactive wizard and the Setup Preset Generator. When using CLI flags directly, specify the individual light and dark scheme names.
+Customization happens one level deeper: edit the shared ramps and the semantic map in `src/config/color-schemes.ts` (see [Color](./color.mdx#adding-a-custom-color-scheme) — "Adding a Custom Color Scheme") and preview the result live in the [Design Token Panel](./design-token-panel.mdx#ai-workflow)'s Palette tab (see [Color Scheme Preview](../guides/color-scheme-preview.mdx)) before committing it to source.
 
 ### Features
 
@@ -187,20 +117,19 @@ pnpm create zudo-doc
 pnpm create zudo-doc my-docs --yes
 ```
 
-### Japanese site with Dracula theme
+### Japanese site, single dark scheme
 
 ```bash
-pnpm create zudo-doc my-docs --lang ja --scheme Dracula --no-i18n --pm pnpm --install
+pnpm create zudo-doc my-docs --lang ja --scheme "Default Dark" --no-i18n --pm pnpm --install
 ```
 
-### Light/dark mode with custom schemes
+### Light/dark mode with an explicit default mode
 
 ```bash
 pnpm create zudo-doc my-docs \
   --color-scheme-mode light-dark \
-  --light-scheme "GitHub Light" \
-  --dark-scheme "GitHub Dark" \
-  --default-mode dark \
+  --default-mode light \
+  --no-respect-system-preference \
   --yes
 ```
 
@@ -223,7 +152,7 @@ cat setup.json | pnpm create zudo-doc --preset - --install
 ```bash
 pnpm create zudo-doc my-docs \
   --lang en \
-  --scheme Nord \
+  --scheme "Default Dark" \
   --no-i18n \
   --search \
   --no-claude-resources \
@@ -243,8 +172,8 @@ await createZudoDoc({
   projectName: "my-docs",
   defaultLang: "en",
   colorSchemeMode: "light-dark",
-  lightScheme: "GitHub Light",
-  darkScheme: "GitHub Dark",
+  lightScheme: "Default Light",
+  darkScheme: "Default Dark",
   defaultMode: "dark",
   respectPrefersColorScheme: true,
   features: [

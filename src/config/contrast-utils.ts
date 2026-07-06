@@ -12,7 +12,7 @@
  */
 
 import { rgb as culoriRgb } from "culori";
-import { resolveColor } from "./color-scheme-utils";
+import { resolveRampRef } from "./color-scheme-utils";
 import type { ColorScheme } from "./color-schemes";
 
 // ---------------------------------------------------------------------------
@@ -65,18 +65,17 @@ export function colorMixSrgb(color: string, bg: string, pct: number): string {
 }
 
 // ---------------------------------------------------------------------------
-// Color resolution — delegates to the SAME `resolveColor` path production
+// Color resolution — delegates to the SAME `resolveRampRef` path production
 // uses (`schemeToCssPairs` in `@takazudo/zudo-doc/color-scheme-utils`), so
-// the audit can never silently diverge from what actually renders. Fallback
-// slots (bg→p0, fg→p15) mirror `--zd-bg`/`--zd-fg` in `schemeToCssPairs`.
+// the audit can never silently diverge from what actually renders.
 // ---------------------------------------------------------------------------
 
 export function resolveBg(scheme: ColorScheme): string {
-  return resolveColor(scheme.background, scheme.palette, scheme.palette[0] ?? "#000");
+  return resolveRampRef(scheme.map.bg, scheme.ramps);
 }
 
 export function resolveFg(scheme: ColorScheme): string {
-  return resolveColor(scheme.foreground, scheme.palette, scheme.palette[15] ?? "#fff");
+  return resolveRampRef(scheme.map.fg, scheme.ramps);
 }
 
 // ---------------------------------------------------------------------------

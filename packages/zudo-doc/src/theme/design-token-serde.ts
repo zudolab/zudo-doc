@@ -6,7 +6,50 @@
  * spacing, font, size) so an AI assistant can consume or emit a whole
  * design-token tweak in one round-trip.
  *
- * Format: `$schema = "zudo-doc-design-tokens/v1"`.
+ * Format: `$schema = "zudo-doc-design-tokens/v3"`.
+ *
+ * v3 color slice — ramp-native, minimized (Color Ramp Restructure,
+ * zudolab/zudo-doc#2584 / #2591; minimized to 5/3 in #2602)
+ * -----------------------------------------------------------------------------------
+ * The color block is the ramp-native `ColorScheme` from `color-scheme-utils.ts`:
+ *   - `ramps` — the shared Tier-1 source of truth (`base[5]`, `accent[3]`,
+ *     `state{danger,success,warning,info}`), emitted verbatim as OKLCH strings.
+ *   - `map`   — the per-mode Tier-2 wiring (`bg`/`fg`/`selectionBg`/`selectionFg`
+ *     + 23 `semantic` roles), each a `RampRef` (`{base:n}` / `{accent:n}` /
+ *     `{state:role}` / a literal OKLCH string).
+ *
+ * The legacy v1 color slice (`palette: string[16]`, numeric `base`, `cursor`,
+ * `semanticMappings`) is gone. Both `ramps` and `map` are plain JSON data, so
+ * the color block is essentially a serialized `ColorScheme`.
+ *
+ * v1 → v3 migration (RESET, not remap)
+ * ------------------------------------
+ * A persisted v1 payload (detected by `$schema === "…/v1"`, a `palette` array,
+ * or a numeric `base` block) has NO faithful mapping to the new model: the old
+ * 16-slot ghostty palette + numeric semantic indices do not correspond to the
+ * 5-base / 3-accent / 4-state ramps + `RampRef` wiring. Any remap would invent
+ * colors and mislead the user, so `deserialize` RESETS the color slice to the
+ * caller-supplied baseline (the current default scheme) and emits a
+ * `console.warn` + a `warnings[]` entry — no throw, no blank screen. The
+ * spacing/font/size slices are format-compatible across v1/v3 and are preserved.
+ *
+ * v2 → v3 migration (RESET, schema-label-only — zudolab/zudo-doc#2599)
+ * ---------------------------------------------------------------------
+ * `v2` was the ramp-native label BEFORE the base-12/accent-7 → base-5/accent-3
+ * minimize (#2602); the shape (`ramps` + `map` of `RampRef`s) never changed, only
+ * the ramp lengths did. That means a `v2`-labeled payload is ambiguous in a way
+ * `v1` never was: `parseRamps` catches a wrong-length `ramps.base`/`ramps.accent`
+ * array and falls back to baseline, but `parseMap`'s `RampRef` parser only
+ * shape-checks a numeric index (`{base:11}`) — it does NOT range-check it against
+ * the ramp length, because that tolerance is also relied on by legitimate
+ * already-5/3 round-trip exports (see the `{accent:5}`-style fixtures in the test
+ * file). So an out-of-range ref alone can't tell a genuinely-stale pre-5/3 export
+ * apart from an intentionally-tolerated current-shape ref — both look identical
+ * once parsed. Rather than guess from ref values, `v2` is retired as a whole:
+ * ANY payload still carrying the `v2` label (regardless of whether its arrays
+ * happen to already be 5/3-shaped) is treated as legacy and RESET to baseline,
+ * exactly like v1. Only payloads relabeled `v3` are trusted to resolve cleanly
+ * against the current ramp lengths.
  *
  * Diff-only by default
  * --------------------
@@ -14,7 +57,11 @@
  * the provided `colorDefaults` (for the color block) and the manifest defaults
  * (for spacing / font / size). Pass `includeDefaults: true` to dump the full
  * state instead. The whole-category keys (`color`, `spacing`, `font`, `size`)
- * are omitted entirely when nothing in them differs.
+ * are omitted entirely when nothing in them differs. For the color block the
+ * `ramps` and `map` sub-blocks are each emitted whole (not per-stop / per-role
+ * diffed) when they differ from the baseline — the ramp-native shape has no
+ * stable per-slot index to diff against, and a whole-block emit round-trips
+ * cleanly against the same baseline.
  *
  * Spacing / font / size keys use CSS variable names (`"--spacing-hsp-md"`) —
  * the external schema — rather than the internal token id (`"hsp-md"`). This
@@ -51,30 +98,44 @@ interface TokenDef {
 }
 import {
   emptyOverrides,
-  type ColorTweakState,
   type TokenOverrides,
   type TweakState,
 } from "./design-token-types.js";
+import {
+  SEMANTIC_KEYS,
+  SEMANTIC_RAMP_DEFAULTS,
+  STATE_ROLES,
+  type ColorScheme,
+  type ModeMap,
+  type OKLCH,
+  type RampRef,
+  type Ramps,
+  type SemanticKey,
+} from "../color-scheme-utils.js";
 
-export const DESIGN_TOKEN_SCHEMA = "zudo-doc-design-tokens/v1" as const;
+export const DESIGN_TOKEN_SCHEMA = "zudo-doc-design-tokens/v3" as const;
 
-/** External JSON value for a base-color / semantic-color entry. */
-type ColorSlotValue = number | "bg" | "fg";
+/** The palette-based schema version (pre-#2584). A payload carrying this value
+ *  is migrated (color reset to baseline) rather than rejected. */
+const LEGACY_SCHEMA_V1 = "zudo-doc-design-tokens/v1" as const;
 
-export interface DesignTokenJsonColorBase {
-  bg?: number;
-  fg?: number;
-  cursor?: number;
-  /** Dashed keys mirror the external docs; they are quoted in source. */
-  "sel-bg"?: number;
-  "sel-fg"?: number;
-}
+/** The ramp-native-but-pre-minimize schema version (pre-#2602, base-12/accent-7).
+ *  Retired schema-label-only (not shape-detected) because an out-of-range map
+ *  ref can't be distinguished from an intentionally-tolerated one once parsed —
+ *  see the "v2 → v3 migration" note above. Any `v2`-labeled payload resets. */
+const LEGACY_SCHEMA_V2 = "zudo-doc-design-tokens/v2" as const;
 
+/** Expected ramp lengths — a v2 color block must carry exactly these
+ *  (minimized to 5 base / 3 accent in #2602). */
+const BASE_RAMP_LENGTH = 5;
+const ACCENT_RAMP_LENGTH = 3;
+
+/** External JSON color block — a (possibly diff-only) serialized `ColorScheme`.
+ *  Both sub-blocks are optional: in diff-only output an unchanged `ramps` or
+ *  `map` is omitted and filled from the baseline on deserialize. */
 export interface DesignTokenJsonColor {
-  palette?: string[];
-  base?: DesignTokenJsonColorBase;
-  /** Palette-index (or "bg"/"fg") mappings, same keys as `SEMANTIC_DEFAULTS`. */
-  semantic?: Record<string, ColorSlotValue>;
+  ramps?: Ramps;
+  map?: ModeMap;
 }
 
 /** External token map keyed by CSS var name. */
@@ -105,14 +166,14 @@ export interface SerializeOptions {
   /** Token manifest (spacing / font / size arrays) used to compute
    *  diff-only output and resolve CSS-var names. Required. */
   manifest: DesignTokenManifest;
-  /** When true, dump full state (all palette entries, all token manifest
+  /** When true, dump full state (whole `ramps` + `map`, all token manifest
    *  defaults merged in). Default: diff-only. */
   includeDefaults?: boolean;
-  /** Color baseline to diff against — typically the current scheme's initial
-   *  state. Required for meaningful color-diff output; callers that don't have
-   *  it available (e.g. tests without DOM) can omit it and we'll treat the
-   *  whole color block as changed. */
-  colorDefaults?: ColorTweakState;
+  /** Color baseline to diff against — typically the active scheme's initial
+   *  `ColorScheme`. Required for meaningful color-diff output; callers that
+   *  don't have it available (e.g. tests without DOM) can omit it and we'll
+   *  treat the whole color block as changed. */
+  colorDefaults?: ColorScheme;
   /** Override the `exportedAt` stamp (test-only). */
   now?: () => Date;
 }
@@ -123,7 +184,7 @@ export interface DeserializeResult {
   /** CSS var names present in the payload that don't match any known token. */
   unknownTokens: string[];
   /** Human-readable errors that did not prevent a state from being produced
-   *  (e.g. "semantic mapping dropped because value isn't a number"). */
+   *  (e.g. "v1 payload detected; color reset to default"). */
   warnings: string[];
 }
 
@@ -132,13 +193,14 @@ export interface DeserializeOptions {
    *  names back to internal token ids. Required. */
   manifest: DesignTokenManifest;
   /** Color baseline used to fill in fields absent from the payload (diff-only
-   *  exports are missing most fields by design). Typically the current
-   *  scheme's initial state. */
-  colorDefaults?: ColorTweakState;
+   *  exports are missing most fields by design) and as the reset target for a
+   *  v1 migration. Typically the active scheme's initial `ColorScheme`. */
+  colorDefaults?: ColorScheme;
 }
 
-/** Thrown when the payload is not a v1 schema object. The error `.reason`
- *  helps the UI render a precise inline message. */
+/** Thrown when the payload is not a recognized schema object. The error
+ *  `.reason` helps the UI render a precise inline message. A v1 payload is NOT
+ *  thrown for — it is migrated (see `deserialize`). */
 export class DesignTokenSchemaError extends Error {
   readonly reason: "not-object" | "schema-missing" | "schema-mismatch";
   readonly actualSchema?: unknown;
@@ -190,7 +252,7 @@ export function serialize(
 }
 
 function serializeColor(
-  color: ColorTweakState,
+  color: ColorScheme,
   opts: SerializeOptions,
 ): DesignTokenJsonColor | undefined {
   const baseline = opts.colorDefaults;
@@ -199,57 +261,17 @@ function serializeColor(
   const out: DesignTokenJsonColor = {};
   let changed = false;
 
-  // Palette — include the full 16-array if any slot differs (or always when
-  // showing defaults). Keeping the array length stable preserves index stability.
-  const paletteChanged =
-    full ||
-    !baseline ||
-    baseline.palette.length !== color.palette.length ||
-    color.palette.some((c, i) => c !== baseline.palette[i]);
-  if (paletteChanged) {
-    out.palette = [...color.palette];
+  // Ramps — emit the whole block when any stop differs (or in full mode / when
+  // no baseline is available). The ramp-native shape has no stable per-slot
+  // index to diff against, so a whole-block emit is both simpler and lossless.
+  if (full || !baseline || !deepEqual(color.ramps, baseline.ramps)) {
+    out.ramps = cloneRamps(color.ramps);
     changed = true;
   }
 
-  // Base — include only differing fields (or all, in full mode).
-  const base: DesignTokenJsonColorBase = {};
-  let baseChanged = false;
-  const baseEntries: ReadonlyArray<readonly [keyof DesignTokenJsonColorBase, number, number | undefined]> = [
-    ["bg", color.background, baseline?.background],
-    ["fg", color.foreground, baseline?.foreground],
-    ["cursor", color.cursor, baseline?.cursor],
-    ["sel-bg", color.selectionBg, baseline?.selectionBg],
-    ["sel-fg", color.selectionFg, baseline?.selectionFg],
-  ];
-  for (const [key, value, baselineValue] of baseEntries) {
-    if (full || baseline === undefined || value !== baselineValue) {
-      base[key] = value;
-      baseChanged = true;
-    }
-  }
-  if (baseChanged) {
-    out.base = base;
-    changed = true;
-  }
-
-  // Semantic — include only differing mappings.
-  const semantic: Record<string, ColorSlotValue> = {};
-  let semanticChanged = false;
-  const semKeys = new Set<string>([
-    ...Object.keys(color.semanticMappings),
-    ...(baseline ? Object.keys(baseline.semanticMappings) : []),
-  ]);
-  for (const key of semKeys) {
-    const cur = color.semanticMappings[key];
-    if (cur === undefined) continue;
-    const base = baseline?.semanticMappings[key];
-    if (full || base === undefined || cur !== base) {
-      semantic[key] = cur;
-      semanticChanged = true;
-    }
-  }
-  if (semanticChanged) {
-    out.semantic = semantic;
+  // Map — same whole-block rule for the per-mode wiring.
+  if (full || !baseline || !deepEqual(color.map, baseline.map)) {
+    out.map = cloneMap(color.map);
     changed = true;
   }
 
@@ -295,9 +317,10 @@ function serializeOverrides(
 /**
  * Parse a design-token JSON document and lift it back into a tweak state.
  *
- * Throws `DesignTokenSchemaError` on schema mismatch / non-object input. Any
- * CSS var name that doesn't match a known manifest entry is collected into
- * `unknownTokens` (the caller can surface these as a warning).
+ * Throws `DesignTokenSchemaError` on schema mismatch / non-object input. A v1
+ * (palette-based) payload is NOT thrown for — its color slice is reset to the
+ * baseline default (see the v1→v2 migration note at the top). Any CSS var name
+ * that doesn't match a known manifest entry is collected into `unknownTokens`.
  *
  * Missing fields fall back to `opts.colorDefaults` (or, absent that, a
  * minimal neutral default) so the result is always a valid `TweakState`.
@@ -321,7 +344,11 @@ export function deserialize(
       `Missing "$schema" key. Expected "${DESIGN_TOKEN_SCHEMA}".`,
     );
   }
-  if (schema !== DESIGN_TOKEN_SCHEMA) {
+  // v1 and v2 are known-but-legacy schemas: accept them so their color slice
+  // can be reset (migration), rather than rejecting the whole document.
+  const legacyV1 = schema === LEGACY_SCHEMA_V1;
+  const legacyV2 = schema === LEGACY_SCHEMA_V2;
+  if (schema !== DESIGN_TOKEN_SCHEMA && !legacyV1 && !legacyV2) {
     throw new DesignTokenSchemaError(
       "schema-mismatch",
       `Unsupported "$schema" value: ${JSON.stringify(schema)}. Expected "${DESIGN_TOKEN_SCHEMA}".`,
@@ -333,7 +360,7 @@ export function deserialize(
   const unknownTokens: string[] = [];
   const baseline = opts.colorDefaults ?? neutralColorDefaults();
 
-  const color = deserializeColor(obj.color, baseline, warnings);
+  const color = deserializeColor(obj.color, baseline, warnings, legacyV1, legacyV2);
   const spacing = deserializeOverrides(
     obj.spacing,
     opts.manifest.spacing,
@@ -363,73 +390,175 @@ export function deserialize(
   };
 }
 
+/** True when the color block carries a legacy v1 marker: a 16-slot `palette`
+ *  array or the old numeric `base` block. The v2 shape has neither. */
+function isLegacyColorPayload(raw: unknown): boolean {
+  if (!raw || typeof raw !== "object") return false;
+  const c = raw as Record<string, unknown>;
+  return Array.isArray(c.palette) || c.base !== undefined;
+}
+
 function deserializeColor(
   raw: unknown,
-  baseline: ColorTweakState,
+  baseline: ColorScheme,
   warnings: string[],
-): ColorTweakState {
+  legacyV1: boolean,
+  legacyV2: boolean,
+): ColorScheme {
+  // v1 migration: a legacy schema OR a legacy-shaped color block resets to the
+  // baseline default. The old 16-slot palette / numeric semantic indices have
+  // no faithful mapping onto ramps + RampRefs, so we reset rather than invent
+  // colors. Warn (console + warnings[]) so the reset is visible, never silent.
+  if (legacyV1 || isLegacyColorPayload(raw)) {
+    const msg =
+      "Legacy v1 design-token color state detected; color was reset to the " +
+      "default scheme (the old 16-slot palette has no faithful ramp mapping).";
+    warnings.push(msg);
+    // eslint-disable-next-line no-console -- intentional user-facing migration notice
+    console.warn(`[zudo-doc] ${msg}`);
+    return cloneScheme(baseline);
+  }
+
+  // v2 migration: schema-label-only reset (see the "v2 → v3 migration" file
+  // header note). A v2-labeled color block predates the base-5/accent-3
+  // minimize (#2602); its map refs may carry out-of-range indices
+  // (`{base:11}`, `{accent:6}`) that would crash `resolveRampRef` against the
+  // current baseline's shorter ramps. Unlike v1, this is NOT shape-detected —
+  // an out-of-range ref is structurally identical to an intentionally-tolerated
+  // one, so the schema label alone is the trigger.
+  if (legacyV2) {
+    const msg =
+      "Legacy v2 design-token color state detected (pre-5/3-minimize ramps); " +
+      "color was reset to the default scheme.";
+    warnings.push(msg);
+    // eslint-disable-next-line no-console -- intentional user-facing migration notice
+    console.warn(`[zudo-doc] ${msg}`);
+    return cloneScheme(baseline);
+  }
+
   if (!raw || typeof raw !== "object") {
     // No color block at all — user probably diffed only spacing/font/size.
-    return { ...baseline, palette: [...baseline.palette], semanticMappings: { ...baseline.semanticMappings } };
+    return cloneScheme(baseline);
   }
   const c = raw as Record<string, unknown>;
 
-  // Palette
-  let palette = [...baseline.palette];
-  if (Array.isArray(c.palette)) {
-    const parsed = c.palette.filter((v): v is string => typeof v === "string");
-    if (parsed.length === 16 && parsed.length === c.palette.length) {
-      palette = parsed;
-    } else if (c.palette.length > 0) {
-      // Either the wrong array length OR 16 entries but some weren't strings.
-      const detail =
-        parsed.length < c.palette.length
-          ? `${c.palette.length - parsed.length} non-string entries dropped, leaving ${parsed.length}`
-          : `${c.palette.length} entries`;
-      warnings.push(
-        `color.palette: expected 16 string entries; got ${detail}. Palette ignored.`,
-      );
-    }
+  const ramps = parseRamps(c.ramps, baseline.ramps, warnings);
+  const map = parseMap(c.map, baseline.map, warnings);
+  return { ramps, map };
+}
+
+/** Parse the `ramps` sub-block. Absent → baseline (diff-only omission). Each of
+ *  `base` / `accent` / `state` falls back independently to the baseline when
+ *  malformed, so a partial hand-edit never crashes. */
+function parseRamps(raw: unknown, baseline: Ramps, warnings: string[]): Ramps {
+  if (raw === undefined) return cloneRamps(baseline);
+  if (!raw || typeof raw !== "object") {
+    warnings.push("color.ramps is not an object; kept baseline ramps.");
+    return cloneRamps(baseline);
   }
+  const r = raw as Record<string, unknown>;
+  const base = parseOklchArray(r.base, BASE_RAMP_LENGTH, "color.ramps.base", warnings) ?? [...baseline.base];
+  const accent = parseOklchArray(r.accent, ACCENT_RAMP_LENGTH, "color.ramps.accent", warnings) ?? [...baseline.accent];
+  const state = parseState(r.state, baseline.state, warnings);
+  return { base, accent, state };
+}
 
-  // Base colors
-  const base = (c.base && typeof c.base === "object")
-    ? (c.base as Record<string, unknown>)
-    : {};
-  const background = numOr(base.bg, baseline.background);
-  const foreground = numOr(base.fg, baseline.foreground);
-  const cursor = numOr(base.cursor, baseline.cursor);
-  const selectionBg = numOr(base["sel-bg"], baseline.selectionBg);
-  const selectionFg = numOr(base["sel-fg"], baseline.selectionFg);
+/** Validate a fixed-length OKLCH-string array; returns null (caller falls back
+ *  to baseline) with a warning if the shape is wrong. */
+function parseOklchArray(
+  raw: unknown,
+  expectedLength: number,
+  label: string,
+  warnings: string[],
+): OKLCH[] | null {
+  if (!Array.isArray(raw)) {
+    warnings.push(`${label}: expected an array of ${expectedLength} strings; kept baseline.`);
+    return null;
+  }
+  const strings = raw.filter((v): v is string => typeof v === "string" && v.length > 0);
+  if (strings.length !== expectedLength || strings.length !== raw.length) {
+    warnings.push(
+      `${label}: expected ${expectedLength} non-empty string entries; got ${raw.length} (${strings.length} valid). Kept baseline.`,
+    );
+    return null;
+  }
+  return strings;
+}
 
-  // Semantic mappings — merge over baseline so diff-only exports still produce
-  // a complete map.
-  const semanticMappings: Record<string, number | "bg" | "fg"> = {
-    ...baseline.semanticMappings,
-  };
-  if (c.semantic && typeof c.semantic === "object") {
-    for (const [key, val] of Object.entries(c.semantic as Record<string, unknown>)) {
-      if (typeof val === "number") {
-        semanticMappings[key] = val;
-      } else if (val === "bg" || val === "fg") {
-        semanticMappings[key] = val;
-      } else {
-        warnings.push(
-          `color.semantic.${key} has unsupported value ${JSON.stringify(val)}; kept baseline.`,
-        );
+function parseState(
+  raw: unknown,
+  baseline: Ramps["state"],
+  warnings: string[],
+): Ramps["state"] {
+  const src = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  const out = {} as Ramps["state"];
+  for (const role of STATE_ROLES) {
+    const v = src[role];
+    if (typeof v === "string" && v.length > 0) {
+      out[role] = v;
+    } else {
+      if (v !== undefined) {
+        warnings.push(`color.ramps.state.${role} is not a non-empty string; kept baseline.`);
       }
+      out[role] = baseline[role];
     }
   }
+  return out;
+}
 
+/** Parse the `map` sub-block. Absent → baseline. Each role is validated as a
+ *  `RampRef`; an invalid or absent role falls back to the baseline value. */
+function parseMap(raw: unknown, baseline: ModeMap, warnings: string[]): ModeMap {
+  if (raw === undefined) return cloneMap(baseline);
+  if (!raw || typeof raw !== "object") {
+    warnings.push("color.map is not an object; kept baseline map.");
+    return cloneMap(baseline);
+  }
+  const m = raw as Record<string, unknown>;
+  const semRaw = m.semantic && typeof m.semantic === "object"
+    ? (m.semantic as Record<string, unknown>)
+    : {};
+  const semantic = {} as Record<SemanticKey, RampRef>;
+  for (const key of SEMANTIC_KEYS) {
+    semantic[key] = parseRef(semRaw[key], baseline.semantic[key], `color.map.semantic.${key}`, warnings);
+  }
   return {
-    palette,
-    background,
-    foreground,
-    cursor,
-    selectionBg,
-    selectionFg,
-    semanticMappings,
+    bg: parseRef(m.bg, baseline.bg, "color.map.bg", warnings),
+    fg: parseRef(m.fg, baseline.fg, "color.map.fg", warnings),
+    selectionBg: parseRef(m.selectionBg, baseline.selectionBg, "color.map.selectionBg", warnings),
+    selectionFg: parseRef(m.selectionFg, baseline.selectionFg, "color.map.selectionFg", warnings),
+    semantic,
   };
+}
+
+function parseRef(
+  raw: unknown,
+  fallback: RampRef,
+  label: string,
+  warnings: string[],
+): RampRef {
+  if (raw === undefined) return cloneRef(fallback);
+  if (isValidRampRef(raw)) return cloneRef(raw);
+  warnings.push(`${label} is not a valid RampRef (${JSON.stringify(raw)}); kept baseline.`);
+  return cloneRef(fallback);
+}
+
+/** A `RampRef` is a non-empty OKLCH string, or one of `{base:n}` / `{accent:n}`
+ *  (non-negative integer) / `{state:role}`. */
+function isValidRampRef(v: unknown): v is RampRef {
+  if (typeof v === "string") return v.length > 0;
+  if (!v || typeof v !== "object") return false;
+  const o = v as Record<string, unknown>;
+  if ("base" in o) return isRampIndex(o.base);
+  if ("accent" in o) return isRampIndex(o.accent);
+  if ("state" in o) {
+    return typeof o.state === "string" && (STATE_ROLES as readonly string[]).includes(o.state);
+  }
+  return false;
+}
+
+function isRampIndex(v: unknown): boolean {
+  return typeof v === "number" && Number.isInteger(v) && v >= 0;
 }
 
 function deserializeOverrides(
@@ -466,26 +595,97 @@ function deserializeOverrides(
   return out;
 }
 
-function numOr(v: unknown, fallback: number): number {
-  return typeof v === "number" && Number.isFinite(v) ? v : fallback;
+// ---------------------------------------------------------------------------
+// Clone / equality helpers (plain JSON data, no functions)
+// ---------------------------------------------------------------------------
+
+function cloneRef(ref: RampRef): RampRef {
+  return typeof ref === "string" ? ref : { ...ref };
+}
+
+function cloneRamps(ramps: Ramps): Ramps {
+  return {
+    base: [...ramps.base],
+    accent: [...ramps.accent],
+    state: { ...ramps.state },
+  };
+}
+
+function cloneMap(map: ModeMap): ModeMap {
+  const semantic = {} as Record<SemanticKey, RampRef>;
+  for (const key of SEMANTIC_KEYS) {
+    semantic[key] = cloneRef(map.semantic[key]);
+  }
+  return {
+    bg: cloneRef(map.bg),
+    fg: cloneRef(map.fg),
+    selectionBg: cloneRef(map.selectionBg),
+    selectionFg: cloneRef(map.selectionFg),
+    semantic,
+  };
+}
+
+function cloneScheme(scheme: ColorScheme): ColorScheme {
+  return { ramps: cloneRamps(scheme.ramps), map: cloneMap(scheme.map) };
+}
+
+/** Structural deep-equality for plain JSON values (strings, numbers, arrays,
+ *  and objects). Sufficient for `Ramps` / `ModeMap` diff — key order is
+ *  irrelevant since we compare by key membership, not stringified order. */
+function deepEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (typeof a !== typeof b) return false;
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+    return a.every((v, i) => deepEqual(v, b[i]));
+  }
+  if (a && b && typeof a === "object" && typeof b === "object") {
+    const ao = a as Record<string, unknown>;
+    const bo = b as Record<string, unknown>;
+    const aKeys = Object.keys(ao);
+    const bKeys = Object.keys(bo);
+    if (aKeys.length !== bKeys.length) return false;
+    return aKeys.every((k) => Object.prototype.hasOwnProperty.call(bo, k) && deepEqual(ao[k], bo[k]));
+  }
+  return false;
 }
 
 /**
- * Minimal color state used as the last-resort baseline when the caller can't
- * provide one (e.g. unit tests without a DOM). Matches the default palette
- * fallback in `tweak-state.ts`.
+ * Minimal color scheme used as the last-resort baseline when the caller can't
+ * provide one (e.g. unit tests without a DOM). A neutral warm-grey `ColorScheme`
+ * with real state hues and `SEMANTIC_RAMP_DEFAULTS` wiring — structurally valid
+ * so downstream resolvers never see a missing ramp stop or role.
  */
-function neutralColorDefaults(): ColorTweakState {
-  const palette = Array.from({ length: 16 }, (_, i) =>
-    i === 0 ? "#000000" : i === 15 ? "#ffffff" : "#808080",
-  );
+function neutralColorDefaults(): ColorScheme {
+  const base: OKLCH[] = [
+    "oklch(0.965 0 0)",
+    "oklch(0.705 0 0)",
+    "oklch(0.480 0 0)",
+    "oklch(0.300 0 0)",
+    "oklch(0.185 0 0)",
+  ];
+  const accent: OKLCH[] = [
+    "oklch(0.755 0 0)",
+    "oklch(0.700 0 0)",
+    "oklch(0.470 0 0)",
+  ];
   return {
-    palette,
-    background: 0,
-    foreground: 15,
-    cursor: 6,
-    selectionBg: 0,
-    selectionFg: 15,
-    semanticMappings: {},
+    ramps: {
+      base,
+      accent,
+      state: {
+        danger: "oklch(0.640 0.170 25)",
+        success: "oklch(0.680 0.145 145)",
+        warning: "oklch(0.760 0.135 82)",
+        info: "oklch(0.680 0.130 245)",
+      },
+    },
+    map: {
+      bg: { base: 4 },
+      fg: { base: 0 },
+      selectionBg: { base: 2 },
+      selectionFg: { base: 0 },
+      semantic: { ...SEMANTIC_RAMP_DEFAULTS },
+    },
   };
 }

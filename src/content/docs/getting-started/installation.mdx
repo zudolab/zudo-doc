@@ -35,7 +35,7 @@ For non-interactive usage (CI, automation, AI agents), use `--yes` to accept def
 
 ```bash
 pnpm create zudo-doc my-docs --yes
-pnpm create zudo-doc my-docs --lang ja --scheme Dracula --no-i18n --pm pnpm --install
+pnpm create zudo-doc my-docs --lang ja --scheme "Default Dark" --no-i18n --pm pnpm --install
 ```
 
 See the [CLI reference](../reference/create-zudo-doc.mdx) for all available flags.
@@ -54,10 +54,12 @@ Choose the default language for your documentation site. Supported languages inc
 
 Choose how your site handles color schemes:
 
-- **Light & Dark (toggle)** — users can switch between light and dark themes. Pick from pre-configured pairings (GitHub, Catppuccin, Solarized, Rosé Pine, Atom One, Everforest, Gruvbox, Ayu) or choose light and dark schemes individually.
-- **Single scheme** — one fixed color scheme for the entire site. 40 schemes are available, including Dracula, Nord, TokyoNight, and more.
+- **Light & Dark (toggle)** — users can switch between light and dark themes. Uses the bundled `Default Light` / `Default Dark` pair.
+- **Single scheme** — one fixed color scheme for the entire site, either `Default Light` or `Default Dark`.
 
 When using light/dark mode, you can also set the default mode (light or dark) and whether to respect the user's system color scheme preference.
+
+zudo-doc ships exactly these two schemes, sharing one set of OKLCH ramps — there is no catalog of community or terminal presets to browse. To customize the palette, edit the ramps and semantic map in `src/config/color-schemes.ts` (see the [Color guide](../reference/color.mdx#adding-a-custom-color-scheme)), and preview changes live with the [Design Token Panel](../reference/design-token-panel.mdx)'s Palette tab (see [Color Scheme Preview](../guides/color-scheme-preview.mdx)).
 
 ### Features
 
@@ -69,7 +71,6 @@ Select which optional features to include:
 | [Pagefind search](../guides/search.mdx) | On | Full-text search across all documentation |
 | [Sidebar filter](../guides/sidebar-filter.mdx) | On | Real-time filtering of sidebar navigation items |
 | [Claude Resources](../guides/claude-resources.mdx) | Off | Auto-generated documentation for Claude Code components |
-| [Color scheme preview](../guides/color-scheme-preview.mdx) | Off | Browse 50+ preset color schemes via the Color Tweak Panel |
 
 ### Package Manager
 
@@ -143,7 +144,7 @@ src/
 │   └── admonitions/     # Note, Tip, Info, Warning, Danger
 ├── config/
 │   ├── settings.ts      # Site name, active color scheme
-│   ├── color-schemes.ts # All available color presets
+│   ├── color-schemes.ts # Ramp-native color scheme definitions
 │   └── color-scheme-utils.ts
 ├── content/
 │   ├── docs/            # English MDX content
