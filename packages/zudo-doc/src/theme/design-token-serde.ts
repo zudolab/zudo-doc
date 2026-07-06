@@ -6,10 +6,10 @@
  * spacing, font, size) so an AI assistant can consume or emit a whole
  * design-token tweak in one round-trip.
  *
- * Format: `$schema = "zudo-doc-design-tokens/v2"`.
+ * Format: `$schema = "zudo-doc-design-tokens/v3"`.
  *
- * v2 color slice — ramp-native (Color Ramp Restructure, zudolab/zudo-doc#2584 /
- * #2591; minimized to 5/3 in #2602)
+ * v3 color slice — ramp-native, minimized (Color Ramp Restructure,
+ * zudolab/zudo-doc#2584 / #2591; minimized to 5/3 in #2602)
  * -----------------------------------------------------------------------------------
  * The color block is the ramp-native `ColorScheme` from `color-scheme-utils.ts`:
  *   - `ramps` — the shared Tier-1 source of truth (`base[5]`, `accent[3]`,
@@ -22,7 +22,7 @@
  * `semanticMappings`) is gone. Both `ramps` and `map` are plain JSON data, so
  * the color block is essentially a serialized `ColorScheme`.
  *
- * v1 → v2 migration (RESET, not remap)
+ * v1 → v3 migration (RESET, not remap)
  * ------------------------------------
  * A persisted v1 payload (detected by `$schema === "…/v1"`, a `palette` array,
  * or a numeric `base` block) has NO faithful mapping to the new model: the old
@@ -31,7 +31,25 @@
  * colors and mislead the user, so `deserialize` RESETS the color slice to the
  * caller-supplied baseline (the current default scheme) and emits a
  * `console.warn` + a `warnings[]` entry — no throw, no blank screen. The
- * spacing/font/size slices are format-compatible across v1/v2 and are preserved.
+ * spacing/font/size slices are format-compatible across v1/v3 and are preserved.
+ *
+ * v2 → v3 migration (RESET, schema-label-only — zudolab/zudo-doc#2599)
+ * ---------------------------------------------------------------------
+ * `v2` was the ramp-native label BEFORE the base-12/accent-7 → base-5/accent-3
+ * minimize (#2602); the shape (`ramps` + `map` of `RampRef`s) never changed, only
+ * the ramp lengths did. That means a `v2`-labeled payload is ambiguous in a way
+ * `v1` never was: `parseRamps` catches a wrong-length `ramps.base`/`ramps.accent`
+ * array and falls back to baseline, but `parseMap`'s `RampRef` parser only
+ * shape-checks a numeric index (`{base:11}`) — it does NOT range-check it against
+ * the ramp length, because that tolerance is also relied on by legitimate
+ * already-5/3 round-trip exports (see the `{accent:5}`-style fixtures in the test
+ * file). So an out-of-range ref alone can't tell a genuinely-stale pre-5/3 export
+ * apart from an intentionally-tolerated current-shape ref — both look identical
+ * once parsed. Rather than guess from ref values, `v2` is retired as a whole:
+ * ANY payload still carrying the `v2` label (regardless of whether its arrays
+ * happen to already be 5/3-shaped) is treated as legacy and RESET to baseline,
+ * exactly like v1. Only payloads relabeled `v3` are trusted to resolve cleanly
+ * against the current ramp lengths.
  *
  * Diff-only by default
  * --------------------
@@ -95,11 +113,17 @@ import {
   type SemanticKey,
 } from "../color-scheme-utils.js";
 
-export const DESIGN_TOKEN_SCHEMA = "zudo-doc-design-tokens/v2" as const;
+export const DESIGN_TOKEN_SCHEMA = "zudo-doc-design-tokens/v3" as const;
 
-/** The previous (palette-based) schema version. A payload carrying this value
+/** The palette-based schema version (pre-#2584). A payload carrying this value
  *  is migrated (color reset to baseline) rather than rejected. */
 const LEGACY_SCHEMA_V1 = "zudo-doc-design-tokens/v1" as const;
+
+/** The ramp-native-but-pre-minimize schema version (pre-#2602, base-12/accent-7).
+ *  Retired schema-label-only (not shape-detected) because an out-of-range map
+ *  ref can't be distinguished from an intentionally-tolerated one once parsed —
+ *  see the "v2 → v3 migration" note above. Any `v2`-labeled payload resets. */
+const LEGACY_SCHEMA_V2 = "zudo-doc-design-tokens/v2" as const;
 
 /** Expected ramp lengths — a v2 color block must carry exactly these
  *  (minimized to 5 base / 3 accent in #2602). */
@@ -320,10 +344,11 @@ export function deserialize(
       `Missing "$schema" key. Expected "${DESIGN_TOKEN_SCHEMA}".`,
     );
   }
-  // v1 is a known-but-legacy schema: accept it so its color slice can be reset
-  // (migration), rather than rejecting the whole document.
+  // v1 and v2 are known-but-legacy schemas: accept them so their color slice
+  // can be reset (migration), rather than rejecting the whole document.
   const legacyV1 = schema === LEGACY_SCHEMA_V1;
-  if (schema !== DESIGN_TOKEN_SCHEMA && !legacyV1) {
+  const legacyV2 = schema === LEGACY_SCHEMA_V2;
+  if (schema !== DESIGN_TOKEN_SCHEMA && !legacyV1 && !legacyV2) {
     throw new DesignTokenSchemaError(
       "schema-mismatch",
       `Unsupported "$schema" value: ${JSON.stringify(schema)}. Expected "${DESIGN_TOKEN_SCHEMA}".`,
@@ -335,7 +360,7 @@ export function deserialize(
   const unknownTokens: string[] = [];
   const baseline = opts.colorDefaults ?? neutralColorDefaults();
 
-  const color = deserializeColor(obj.color, baseline, warnings, legacyV1);
+  const color = deserializeColor(obj.color, baseline, warnings, legacyV1, legacyV2);
   const spacing = deserializeOverrides(
     obj.spacing,
     opts.manifest.spacing,
@@ -378,6 +403,7 @@ function deserializeColor(
   baseline: ColorScheme,
   warnings: string[],
   legacyV1: boolean,
+  legacyV2: boolean,
 ): ColorScheme {
   // v1 migration: a legacy schema OR a legacy-shaped color block resets to the
   // baseline default. The old 16-slot palette / numeric semantic indices have
@@ -387,6 +413,23 @@ function deserializeColor(
     const msg =
       "Legacy v1 design-token color state detected; color was reset to the " +
       "default scheme (the old 16-slot palette has no faithful ramp mapping).";
+    warnings.push(msg);
+    // eslint-disable-next-line no-console -- intentional user-facing migration notice
+    console.warn(`[zudo-doc] ${msg}`);
+    return cloneScheme(baseline);
+  }
+
+  // v2 migration: schema-label-only reset (see the "v2 → v3 migration" file
+  // header note). A v2-labeled color block predates the base-5/accent-3
+  // minimize (#2602); its map refs may carry out-of-range indices
+  // (`{base:11}`, `{accent:6}`) that would crash `resolveRampRef` against the
+  // current baseline's shorter ramps. Unlike v1, this is NOT shape-detected —
+  // an out-of-range ref is structurally identical to an intentionally-tolerated
+  // one, so the schema label alone is the trigger.
+  if (legacyV2) {
+    const msg =
+      "Legacy v2 design-token color state detected (pre-5/3-minimize ramps); " +
+      "color was reset to the default scheme.";
     warnings.push(msg);
     // eslint-disable-next-line no-console -- intentional user-facing migration notice
     console.warn(`[zudo-doc] ${msg}`);

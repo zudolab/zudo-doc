@@ -347,7 +347,7 @@ describe("deserialize", () => {
   });
 });
 
-describe("v1 → v2 migration", () => {
+describe("v1 migration (reset to baseline)", () => {
   it("resets the color slice to baseline for a legacy v1 payload (palette array) without crashing", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const v1Payload = {
@@ -411,5 +411,80 @@ describe("v1 → v2 migration", () => {
     });
     expect(state.color).toEqual(COLOR_BASELINE);
     expect(warn).toHaveBeenCalled();
+  });
+});
+
+describe("v2 migration (reset to baseline, schema-label-only — #2599)", () => {
+  it("resets the color slice for a legacy v2 payload carrying old 12/7-length ramps + out-of-range refs, without crashing", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const v2Payload = {
+      $schema: "zudo-doc-design-tokens/v2",
+      exportedAt: new Date().toISOString(),
+      color: {
+        ramps: {
+          base: Array.from({ length: 12 }, (_, i) => `oklch(0.${900 - i * 60} 0.005 65)`),
+          accent: Array.from({ length: 7 }, (_, i) => `oklch(0.${800 - i * 70} 0.120 60)`),
+          state: COLOR_BASELINE.ramps.state,
+        },
+        map: { ...COLOR_BASELINE.map, bg: { base: 11 }, semantic: { ...COLOR_BASELINE.map.semantic, accent: { accent: 6 } } },
+      },
+      spacing: { "--spacing-hsp-md": "1.5rem" },
+      font: { "--text-body": "1.4rem" },
+    };
+
+    const { state, warnings } = deserialize(v2Payload, {
+      manifest: MANIFEST,
+      colorDefaults: COLOR_BASELINE,
+    });
+
+    // Color reset to the default (current 5/3) scheme; no crash, no out-of-range ref survives.
+    expect(state.color).toEqual(COLOR_BASELINE);
+    // Non-color slices survive the migration.
+    expect(state.spacing).toEqual({ "hsp-md": "1.5rem" });
+    expect(state.font).toEqual({ "text-body": "1.4rem" });
+    // Reset is surfaced, not silent.
+    expect(warnings.some((w) => w.toLowerCase().includes("legacy v2"))).toBe(true);
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it("resets a v2-labeled payload even when its ramps are already 5/3-shaped (schema label alone triggers reset, not array length)", () => {
+    // This is exactly the ambiguity the file-header note describes: a v2-labeled
+    // document with already-5/3 arrays and a tolerated-looking out-of-range ref
+    // is indistinguishable, by shape alone, from a genuinely-stale export. The
+    // fix resets on the label regardless — only `v3` payloads are trusted.
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const color = cloneBaseline();
+    color.map.semantic.accent = { accent: 5 }; // out-of-range for a 3-stop accent ramp
+    const v2Payload = {
+      $schema: "zudo-doc-design-tokens/v2",
+      exportedAt: new Date().toISOString(),
+      color: { ramps: color.ramps, map: color.map },
+    };
+
+    const { state, warnings } = deserialize(v2Payload, {
+      manifest: MANIFEST,
+      colorDefaults: COLOR_BASELINE,
+    });
+
+    expect(state.color).toEqual(COLOR_BASELINE);
+    expect(warnings.some((w) => w.toLowerCase().includes("legacy v2"))).toBe(true);
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it("does NOT reset the same out-of-range ref under the current v3 schema (intentional round-trip tolerance is preserved)", () => {
+    // Companion to the two tests above: identical `{accent:5}` ref, but labeled
+    // with the CURRENT schema, must survive verbatim — proving the reset is
+    // schema-label-driven, not a blanket range-check on RampRef indices.
+    const payload: DesignTokenJson = {
+      $schema: DESIGN_TOKEN_SCHEMA,
+      exportedAt: new Date().toISOString(),
+      color: { map: { semantic: { accent: { accent: 5 } } } as never },
+    };
+    const { state, warnings } = deserialize(payload, {
+      manifest: MANIFEST,
+      colorDefaults: COLOR_BASELINE,
+    });
+    expect(state.color.map.semantic.accent).toEqual({ accent: 5 });
+    expect(warnings.some((w) => w.toLowerCase().includes("legacy"))).toBe(false);
   });
 });

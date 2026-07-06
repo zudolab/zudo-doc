@@ -421,7 +421,9 @@ export function buildDesignTokenPanelConfig(mode: PanelMode): PanelConfig {
     // zdtp's fixed internal schema strings, unrelated to this field. Set to v3
     // (a literal, not one of those constants) so the hint matches what exports
     // actually carry. Distinct from the host serde's `DESIGN_TOKEN_SCHEMA`
-    // (`zudo-doc-design-tokens/v2`), which governs a separate round-trip.
+    // (`zudo-doc-design-tokens/v3` — bumped from v2 in #2599 so a stale
+    // pre-5/3-minimize export resets instead of crashing on import), which
+    // governs a separate round-trip.
     schemaId: "zudo-design-tokens/v3",
     exportFilenameBase: "zudo-doc-design-tokens",
     tabs: [PALETTE_TAB, buildColorTab(mode), FONT_TAB, SPACING_TAB, SIZE_TAB],

@@ -1,6 +1,6 @@
 {
   "name": "@takazudo/zudo-doc-history-server",
-  "version": "2.5.1",
+  "version": "3.0.0",
   "type": "module",
   "description": "Standalone doc git-history service for zudo-doc — HTTP server + CLI batch generator. Decouples expensive `git log --follow` calls from the main build pipeline.",
   "license": "MIT",

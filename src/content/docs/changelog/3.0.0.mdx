@@ -1,0 +1,34 @@
+---
+title: 3.0.0
+description: Release notes for 3.0.0.
+sidebar_position: 1053
+---
+
+Released: 2026-07-07
+
+This is a **major** release. The color-scheme system was rewritten from the legacy 16-slot ghostty ANSI palette to a purpose-built ramp-native model, then minimized to **base 5 / accent 3** stops with aggressive semantic-role merging, and the ~40-name preset catalog was dropped entirely in favor of a direct ramp + semantic-tweak customization story via the zdtp Design Token Panel.
+
+### Breaking Changes
+
+- `@takazudo/zudo-doc`: color-scheme engine rewritten onto a ramp-native model — `ColorScheme = { ramps, map }` replaces the legacy `palette[16]` / numeric `ColorRef` / `cursor` shape. `resolveColor` → `resolveRampRef`, `SEMANTIC_DEFAULTS` → `SEMANTIC_RAMP_DEFAULTS`. (47a7fb5f, ca61a9c5, #2585, #2586)
+- Design-token JSON export/import serde rewritten to the ramp-native shape; a persisted legacy payload has its color slice reset (not remapped) to the default scheme. (364d626f, #2591)
+- Palette minimized from base 12 / accent 7 to **base 5 / accent 3** (state unchanged at 4), with semantic roles aggressively merged onto shared stops (`surface`, `codeBg` (light), `chatAssistantBg`, `imageOverlayBg` → `bg`). Both `Default Light` / `Default Dark` re-authored and re-gated to WCAG threshold+0.1. (04c64685, #2601, #2602)
+- The ~40-name legacy scheme preset catalog (Dracula, Nord, Catppuccin, …) is removed entirely — `create-zudo-doc` now scaffolds only `Default Light` / `Default Dark`. The CLI flag surface (`--color-scheme-mode`, `--scheme`, `--light-scheme`, `--dark-scheme`) survives with a 2-value validation set. (b71d702b, #2619, #2620)
+- Design-token JSON schema bumped `v2` → `v3`: a `v2`-labeled export (pre-5/3-minimize) now resets its color slice to the default scheme on import instead of crashing — the schema label alone triggers the reset, since an out-of-range ramp ref can't otherwise be distinguished from an intentionally-tolerated one. (#2599)
+
+### Features
+
+- zdtp Design Token Panel: new **Palette** (curve-editor) tab for live ramp editing, and a mode-scoped semantic Color tab reflecting the ramp-native `RampRef` model. (cf534f27, 97916fc5, 9d487b4c, 95fea60c, d6d73c49, #2592)
+- Bumped `@takazudo/zdtp` 0.4.3 → 0.4.5 across the release, adopting per-instance color-scheme ownership and removing the host's inline `color-scheme` re-assert workaround for the panel-open toggle-repaint bug. (2fbc8659, 869c7d2a, #2617, #2626)
+
+### Bug Fixes
+
+- `createZudoDoc()` programmatic API now validates scheme names instead of accepting anything silently. (b67a3c58)
+- Panel open-state key now derives from the panel instance prefix. (c285e89e)
+- Ported contrast/a11y audit tooling off the retired numeric palette API onto the ramp-native resolver. (e75a73f7, #2590)
+
+### Other Changes
+
+- e2e regression guard for the panel-open toggle-repaint fix (#2617), proven RED against 0.4.4 without the host workaround and GREEN on 0.4.5 with it removed. (f7fc58a6)
+- CSS consumers repointed off retired palette slots; `create-zudo-doc`'s template `global.css` migrated to ramp-native with a legacy-token drift guard in `check-template-drift.sh`. (01fb960f, c00339bf)
+- EN + JA docs, skills, and `CLAUDE.md` rewritten from the "scheme catalog" story to the ramp + semantic-tweak customization model. (0e42abc5, 80c84179, b6b46e97, 4168c708, 3139405e, #2596, #2597, #2619)
