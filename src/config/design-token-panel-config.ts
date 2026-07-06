@@ -43,13 +43,18 @@
  * live light/dark mode — the panel-side mirror of
  * `generateLightDarkCssProperties`'s per-mode `--zd-*` wiring.
  *
- * Caveat (zdtp 0.4.4 limitation): a *saved* color OVERRIDE is mode-AGNOSTIC.
- * zdtp persists the whole 27-key semantic map flat (not scheme-keyed), and the
- * reconfigure remount rehydrates it across modes, so an override repaints both
- * modes until Reset. Only the DEFAULTS are mode-faithful. A per-mode
- * (scheme-keyed) color-persistence model is an upstream ask
- * (Takazudo/zudo-design-token-panel#343). Do NOT work around it by reaching into
- * zdtp's private storage keys.
+ * Caveat: a *saved* color OVERRIDE is still mode-AGNOSTIC here — but this is
+ * this host's config-shape choice, not a zdtp limitation. zdtp 0.4.5 ships
+ * per-scheme/per-mode keyed color persistence (v4 envelope,
+ * Takazudo/zudo-design-token-panel#500 / #509): the color slice is keyed by
+ * the cluster's resolved scheme identity (`panelSettings.colorScheme` /
+ * `colorMode`). This host's color cluster is scheme-less
+ * (`colorExtras.colorSchemes = {}`, no `colorMode`) and switches modes
+ * externally via the destroy+reconfigure dance above rather than zdtp's own
+ * `colorMode` field, so zdtp always resolves the same single (stub) scheme
+ * identity and an override repaints both modes until Reset. Only the
+ * DEFAULTS are mode-faithful. Do NOT work around this by reaching into zdtp's
+ * private storage keys.
  *
  * The color cluster is **scheme-less**: `colorExtras.colorSchemes = {}` (zdtp's
  * documented scheme-less cluster shape) — the ramps ARE the editable source of
@@ -407,13 +412,15 @@ export function buildDesignTokenPanelConfig(mode: PanelMode): PanelConfig {
     storagePrefix: "zudo-doc-tweak",
     consoleNamespace: "zudoDoc",
     modalClassPrefix: "zudo-doc-design-token-panel-modal",
-    // DISPLAY-ONLY in zdtp 0.4.4: the panel's export hard-codes
+    // DISPLAY-ONLY in zdtp 0.4.5: the panel's export hard-codes
     // `zudo-design-tokens/v2` and auto-upgrades to `.../v3` when object leaves
     // ({ref}/{literal}/per-mode) are present — which the semantic tier's ramp
     // refs always are, so real exports carry v3. `schemaId` does NOT gate
-    // import; it only labels the Import-modal hint. Set to v3 (a literal — zdtp
-    // exports no schema constant) so the hint matches what exports actually
-    // carry. Distinct from the host serde's `DESIGN_TOKEN_SCHEMA`
+    // import; it only labels the Import-modal hint. zdtp DOES export its own
+    // `SCHEMA_V1`/`SCHEMA_V2`/`SCHEMA_V3` constants (#498/#505), but those are
+    // zdtp's fixed internal schema strings, unrelated to this field. Set to v3
+    // (a literal, not one of those constants) so the hint matches what exports
+    // actually carry. Distinct from the host serde's `DESIGN_TOKEN_SCHEMA`
     // (`zudo-doc-design-tokens/v2`), which governs a separate round-trip.
     schemaId: "zudo-design-tokens/v3",
     exportFilenameBase: "zudo-doc-design-tokens",
