@@ -5,22 +5,22 @@ import { test, expect } from "./fixtures";
  * Regression guard for #2617 ("Panel-open theme toggle wiped inline
  * color-scheme").
  *
- * Bug: with the design token panel OPEN, toggling light<->dark left the
- * page un-repainted. zdtp's panel-remount "clear applied inline styles"
- * pass also wiped `<html style="color-scheme">` (which ThemeToggle's
- * `applyColorScheme` had just set) — every `light-dark()` token then fell
- * back to the stylesheet's `:root { color-scheme: light dark; }` and
- * rendered its LIGHT arm regardless of `data-theme`.
+ * Bug (zdtp <= 0.4.4): with the design token panel OPEN, toggling
+ * light<->dark left the page un-repainted. zdtp's panel-remount "clear
+ * applied inline styles" pass also wiped `<html style="color-scheme">`
+ * (which ThemeToggle's `applyColorScheme` had just set) — every
+ * `light-dark()` token then fell back to the stylesheet's
+ * `:root { color-scheme: light dark; }` and rendered its LIGHT arm
+ * regardless of `data-theme`.
  *
- * Host mitigation (packages/zudo-doc/src/design-token-panel-bootstrap.ts,
- * the `color-scheme-changed` listener around lines 146-160): after a
- * mode-scoped panel reconfigure, the inline `color-scheme` is re-asserted
- * from a TRAILING macrotask (`setTimeout(0)` nested inside the coalescing
- * `setTimeout(0)`) so it wins over zdtp's own microtask/rAF clear. The
- * re-assert is UNCONDITIONAL (not gated on the panel having been open) —
- * the still-mounted HIDDEN root's own scheme-change listener clears the
- * inline style too, so a panel that was opened-then-closed needs the same
- * fix.
+ * Fix: zdtp 0.4.5 (#506) scopes its color-scheme clearing to panel-written
+ * values via per-instance ownership, so it no longer wipes the host-owned
+ * inline `color-scheme`. The former host mitigation — an unconditional
+ * re-assert of the inline `color-scheme` from a trailing macrotask in the
+ * `color-scheme-changed` listener of
+ * packages/zudo-doc/src/design-token-panel-bootstrap.ts — was removed once
+ * 0.4.5 was adopted (zudolab/zudo-doc#2628). The #2610 mode-scoped
+ * destroy->configurePanel->show rebuild stays; only the re-assert is gone.
  *
  * The `smoke` fixture is single-scheme (`colorMode: false`), so it has no
  * `light-dark()` token to repaint and cannot catch this class of bug — this
@@ -28,11 +28,12 @@ import { test, expect } from "./fixtures";
  * `designTokenPanel: true`) via the `theme-*` filename prefix (testMatch
  * convention, see e2e/CLAUDE.md).
  *
- * On the current tree (zdtp 0.4.4 + the host workaround above) this guard
- * is EXPECTED TO PASS — the workaround masks the bug. It exists to catch a
- * regression if the workaround is ever removed/broken, and (per the zdtp
- * 0.4.5 adoption epic) to be re-verified once the workaround itself is
- * removed in favor of an upstream fix.
+ * On the adopted tree (zdtp 0.4.5, host workaround removed) this guard
+ * PASSES: the toggle repaints in both the panel-OPEN and opened-then-CLOSED
+ * cases, in both directions. It exists to catch a regression if a future
+ * zdtp bump or host change re-breaks the panel-open repaint. (A teeth-check
+ * on 0.4.4 with the workaround removed goes RED, confirming the guard
+ * genuinely catches #2617 rather than passing trivially.)
  */
 
 const HOME = "/";
@@ -91,9 +92,10 @@ async function readColorSchemeState(page: Page) {
 
 /**
  * Click the toggle and wait until the inline `color-scheme` settles on
- * `targetMode`. The host workaround re-asserts this value from a trailing
- * macrotask, so a bare post-click read would race it — poll instead of
- * sleeping a fixed duration.
+ * `targetMode`. The panel bootstrap coalesces the `color-scheme-changed`
+ * toggle onto a trailing macrotask (destroy->reconfigure->show), so a bare
+ * post-click read could race the resettle — poll instead of sleeping a
+ * fixed duration.
  */
 async function toggleAndWaitForRepaint(page: Page, targetMode: Mode) {
   await page.locator(DESKTOP_TOGGLE_SELECTOR).click();

@@ -26,7 +26,7 @@
  *    semantic roles, each rendered as a grouped ramp dropdown. The tier declares
  *    `referencesRamps` pointing at the Palette tab's `base`/`accent`/`state`
  *    tiers, so — contrary to the old #2589 "Option b" note that cross-tab
- *    references were impossible — under zdtp 0.4.4 they DO resolve: each row's
+ *    references were impossible — in the installed zdtp they DO resolve: each row's
  *    `default` is the encoded `tierId:itemId` ramp reference
  *    (`buildSemanticTierItems` / `rampRefToPanelDefault`, S3 #2609), the picker
  *    renders grouped `<optgroup>` dropdowns, and editing emits live
