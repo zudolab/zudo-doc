@@ -27,8 +27,8 @@ importers:
   .:
     dependencies:
       '@takazudo/zdtp':
-        specifier: 0.4.4
-        version: 0.4.4(preact@10.29.2)
+        specifier: 0.4.5
+        version: 0.4.5(preact@10.29.2)
       '@takazudo/zfb':
         specifier: 0.1.0-next.76
         version: 0.1.0-next.76
@@ -265,8 +265,8 @@ importers:
   packages/zudo-doc:
     dependencies:
       '@takazudo/zdtp':
-        specifier: ^0.4.4
-        version: 0.4.4(preact@10.29.2)
+        specifier: ^0.4.5
+        version: 0.4.5(preact@10.29.2)
       diff:
         specifier: ^8.0.0
         version: 8.0.3
@@ -1379,8 +1379,8 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7
 
-  '@takazudo/zdtp@0.4.4':
-    resolution: {integrity: sha512-dikqsU5NzBeQ9uL8R5vjSsMS1xFvIM2jGiq1PWe+YJR6UJMzvi1PEoXQq2I2T/4bFvJB0EE8Z79Ie439nmAsWg==}
+  '@takazudo/zdtp@0.4.5':
+    resolution: {integrity: sha512-SdR+aN6Cbmf5WFgpHgNKjOJ1KONpDzi0CLbckYsnYGSh48974TSlaFnhlrMRSb+aIAipVdAr85EA6kH5Xu+AjA==}
     engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
     hasBin: true
     peerDependencies:
@@ -4089,7 +4089,7 @@ snapshots:
       tailwindcss: 4.2.1
       vite: 7.3.5(@types/node@25.3.5)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)
 
-  '@takazudo/zdtp@0.4.4(preact@10.29.2)':
+  '@takazudo/zdtp@0.4.5(preact@10.29.2)':
     dependencies:
       culori: 4.0.2
       preact: 10.29.2
