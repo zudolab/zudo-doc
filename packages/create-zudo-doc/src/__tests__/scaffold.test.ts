@@ -3998,6 +3998,48 @@ describe("scaffold — programmatic API rejects invalid project names (F4 #2013)
       }),
     ).rejects.toThrow(/Invalid projectName/);
   });
+
+  // Post-catalog-drop (#2619) only Default Light/Dark exist. The API must reject
+  // a removed scheme name (e.g. "Dracula") like the CLI/preset paths — otherwise
+  // it writes the dead name into settings.ts and the generated site throws
+  // "Unknown color scheme" at build.
+  it("createZudoDoc() throws for a removed single scheme name", async () => {
+    await expect(
+      createZudoDoc({
+        projectName: "valid-name",
+        colorSchemeMode: "single",
+        singleScheme: "Dracula",
+        features: [],
+        packageManager: "pnpm",
+      }),
+    ).rejects.toThrow(/Unknown color scheme "Dracula"/);
+  });
+
+  it("createZudoDoc() throws for a removed light scheme name", async () => {
+    await expect(
+      createZudoDoc({
+        projectName: "valid-name",
+        colorSchemeMode: "light-dark",
+        lightScheme: "GitHub Light",
+        darkScheme: "Default Dark",
+        features: [],
+        packageManager: "pnpm",
+      }),
+    ).rejects.toThrow(/Unknown light scheme "GitHub Light"/);
+  });
+
+  it("createZudoDoc() throws for a removed dark scheme name", async () => {
+    await expect(
+      createZudoDoc({
+        projectName: "valid-name",
+        colorSchemeMode: "light-dark",
+        lightScheme: "Default Light",
+        darkScheme: "Nord",
+        features: [],
+        packageManager: "pnpm",
+      }),
+    ).rejects.toThrow(/Unknown dark scheme "Nord"/);
+  });
 });
 
 describe("scaffold — metaTags preset override (S5 #2079)", () => {
