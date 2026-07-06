@@ -1,6 +1,6 @@
 # create-zudo-doc
 
-CLI scaffold tool for creating new zudo-doc documentation sites. Generates a project with configurable features, color schemes, and i18n support.
+CLI scaffold tool for creating new zudo-doc documentation sites. Generates a project with configurable features, a Default light/dark color scheme, and i18n support.
 
 > **Eject CLI contract:** the per-component `zudo-doc eject <component>` swizzle CLI + `.zudo-doc.json` provenance marker are specified in `docs/eject-contract.md` (C0 #2359; implemented by C1 #2362; Decision 5 revised by S4 #2373 — the `zudo-doc` bin now ships from `@takazudo/zudo-doc`, not `create-zudo-doc`, so it is reachable in generated projects).
 
@@ -26,11 +26,11 @@ This replaces the old "copy everything then strip" approach. Features are added,
 | `src/settings-gen.ts` | Generates `src/config/settings.ts` with user-chosen options |
 | `src/claude-md-gen.ts` | Generates the per-project `CLAUDE.md` for the scaffolded site |
 | `src/preset.ts` | Resolves the user-chosen preset into a concrete feature set |
-| `src/constants.ts` | Feature definitions, color scheme lists, light-dark pairings |
+| `src/constants.ts` | Feature definitions, supported langs, header-right labels, and the two Default color schemes (single Default light/dark pairing — the legacy multi-scheme catalog was dropped) |
 | `src/utils.ts` | Shared utilities (patchFile, patchDefaultLang, getSecondaryLang) |
-| `src/cli.ts` | CLI argument parsing (commander) |
+| `src/cli.ts` | CLI argument parsing (minimist) |
 | `src/api.ts` | Programmatic API (`createZudoDoc()`) |
-| `src/prompts.ts` | Interactive prompts (inquirer) |
+| `src/prompts.ts` | Interactive prompts (@clack/prompts) |
 | `src/index.ts` | Entry point |
 
 ### Template Directories
@@ -79,7 +79,7 @@ Two Claude Code skills test the full scaffold-build-run cycle:
 | `i18n` | Only i18n enabled |
 | `sidebar-filter` | Only sidebar filter enabled |
 | `claude-resources` | Only Claude Resources enabled |
-| `design-token-panel` | Only design token panel enabled (API only, no CLI flag) |
+| `design-token-panel` | Only design token panel enabled (uses `--design-token-panel` CLI flag) |
 | `light-dark` | Light-dark color scheme mode |
 | `lang-ja` | Japanese as default language |
 | `all-features` | Everything ON |
