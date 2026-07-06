@@ -5,9 +5,16 @@
  * settings.designTokenPanel is truthy. The dynamic import is gated there so
  * this module is only bundled when the feature is enabled.
  *
- * The wiring MECHANISM (configurePanel + setLifecycleAdapter) now lives in the
- * package at `@takazudo/zudo-doc/design-token-panel-bootstrap`. This file
- * passes the project's PanelConfig DATA to that mechanism.
+ * The wiring MECHANISM (configurePanel + setLifecycleAdapter + the mode-scoped
+ * reconfigure) lives in the package at
+ * `@takazudo/zudo-doc/design-token-panel-bootstrap`. This file passes the
+ * project's PanelConfig DATA to that mechanism.
+ *
+ * We pass the `buildDesignTokenPanelConfig` BUILDER (not the plain
+ * `designTokenPanelConfig` object) so the bootstrap rebuilds the panel per
+ * light/dark mode on every `color-scheme-changed` toggle — keeping the Color
+ * tab's semantic defaults mode-faithful. A plain-config caller also works (see
+ * `bootstrapDesignTokenPanel`'s JSDoc) but gets no toggle listener.
  *
  * S9a package-first migration — zudolab/zudo-doc#2333.
  *
@@ -18,6 +25,6 @@
  */
 
 import { bootstrapDesignTokenPanel } from "@takazudo/zudo-doc/design-token-panel-bootstrap";
-import { designTokenPanelConfig } from "@/config/design-token-panel-config";
+import { buildDesignTokenPanelConfig } from "@/config/design-token-panel-config";
 
-bootstrapDesignTokenPanel(designTokenPanelConfig);
+bootstrapDesignTokenPanel(buildDesignTokenPanelConfig);

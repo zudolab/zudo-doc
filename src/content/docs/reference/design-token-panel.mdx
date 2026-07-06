@@ -43,14 +43,42 @@ Each stop renders as a swatch on zdtp's native OKLCH lightness/chroma/hue curve 
 
 ### Color
 
-The Color tab shows the 23 resolved semantic roles (`accent`, `codeBg`, `success`, `danger`, `mermaidText`, `chatAssistantBg`, …) as direct OKLCH swatches — one per `--zd-*` custom property. Editing a swatch here overrides that role directly, independent of which ramp stop it normally resolves to.
+The Color tab is a **semantic→ramp editor**: 27 rows — the 4 base roles (`bg`, `fg`, `selection-bg`, `selection-fg`) plus the 23 `--zd-*` semantic roles — each wired to a stop on the Palette tab's ramps, or, for a handful of roles, a literal OKLCH override. The tab carries no ramp of its own; it references the Palette tab's **Base** / **Accent** / **State** tiers, so editing a ramp stop there recolors every row that points at it.
+
+#### Ref rows — grouped ramp dropdowns
+
+Most rows render as a `<select>` with **Base** / **Accent** / **State** `<optgroup>`s, one option per stop on the Palette tab's ramps. Picking an option wires the row's `--zd-*` custom property to `var(--palette-{tier}-{n})` — a live CSS variable reference, not a resolved color — so dragging the referenced stop's L/C/H curve on the Palette tab updates the page immediately, with no need to re-pick anything on the Color tab.
+
+Every ref row also carries a **"Literal…"** entry at the bottom of its dropdown, for detaching the row from the ramp and pinning a one-off color instead.
+
+#### Literal rows — per-mode AA-tuned overrides
+
+A handful of roles can't be satisfied by a shared ramp stop in both modes (see [Per-mode literal overrides](./color.mdx#per-mode-literal-overrides)) and render as literal rows by default: a `Literal…`-selected `<select>` plus an editable OKLCH swatch. Which roles start as literal is scheme-defined — Default Light currently has 7 (`accentHover`, `success`, `danger`, `warning`, `info`, `matchedKeywordBg`, `matchedKeywordFg`), Default Dark has 3 (`danger`, `matchedKeywordBg`, `matchedKeywordFg`); `danger` is literal in both.
+
+A literal row's swatch has a **Per-mode** checkbox. Turning it on reveals two independent OKLCH fields (Light / Dark) instead of one; the applied value becomes `light-dark(<light-value>, <dark-value>)` and the panel sets `color-scheme: light dark` on the applied root so the browser resolves the correct arm for the active mode.
 
 #### Matched-keyword tokens
 
-Two semantic color tokens drive how matched keywords are highlighted. They live alongside the other semantic swatches in the Color tab and are consumed by the search widget at `pages/lib/_search-widget.tsx` to style hits in the search UI.
+Two semantic color tokens drive how matched keywords are highlighted, rendered as literal rows (shared between light and dark — see [Per-mode literal overrides](./color.mdx#per-mode-literal-overrides)) and consumed by the search widget at `pages/lib/_search-widget.tsx` to style hits in the search UI.
 
 - `matchedKeywordBg` — background color painted behind a matched keyword.
 - `matchedKeywordFg` — foreground (text) color of the matched keyword on top of that background.
+
+#### Mode-scoped editing model
+
+The Color tab always edits the wiring for whichever mode — light or dark — is currently active, seeded from that mode's `ColorScheme.map` in `src/config/color-schemes.ts`.
+
+- **Toggling light/dark re-seeds the tab's ref/literal defaults** to the new mode's wiring (e.g. `bg` flips `base-0` ↔ `base-4`) — see [Implementation](#implementation) for the destroy+reconfigure mechanism behind this.
+- **Palette, Spacing, Font, and Size tweaks carry over the toggle untouched.** Those tabs are mode-independent, so a ramp-curve edit or a spacing-slider change survives light↔dark exactly as before.
+- **A saved Color-tab override is mode-agnostic, not mode-scoped.** zdtp persists the whole 27-role semantic map as one flat block rather than keying it per scheme, so an override made in one mode repaints in the *other* mode too, until you click **Reset all**. This is a documented interim limitation, not a bug — per-mode (scheme-keyed) persistence is tracked upstream as [zdtp#500](https://github.com/Takazudo/zudo-design-token-panel/issues/500) (relates to [zdtp#343](https://github.com/Takazudo/zudo-design-token-panel/issues/343)).
+
+<Note title="Known limitations">
+
+- **Config-level per-mode literal defaults aren't possible yet.** A row's manifest default is a single string, so AA-tuned per-mode literals (like `danger`) are seeded from whichever mode is active at reconfigure time rather than declared as a `{light, dark}` pair up front. Runtime per-mode editing (the **Per-mode** checkbox above) is unaffected — this only limits what a *config* can declare as a starting default. Tracked upstream as [zdtp#499](https://github.com/Takazudo/zudo-design-token-panel/issues/499).
+- **Ramp-option previews in the grouped dropdowns are static.** Each `<option>` shows the ramp stop's manifest-default color, not a live-updated swatch — if you've tweaked a stop on the Palette tab, the dropdown list still shows its original color next to the label. The *applied* color is still correct; only the picker's preview lags.
+- **A pre-3.0 saved envelope may render broken.** Before this ramp-native rewire, saved Color-tab overrides were stored as palette-index integers. Loaded against the current config, an index mapping resolves through a zdtp hydration path that currently falls back to solid black rather than the new defaults (upstream bug [zdtp#497](https://github.com/Takazudo/zudo-design-token-panel/issues/497)). If any semantic tokens render black after this update, click **Reset all** once to clear the stale mapping.
+
+</Note>
 
 ### Spacing
 
@@ -85,26 +113,38 @@ Tabs use automatic activation — moving focus with the arrow keys also switches
 
 ## JSON Export — diff-only by default
 
-Click **Export** in the panel header to open the export modal. The modal shows a single JSON document describing every tab's current state.
+Click **Export** in the panel header to open the export modal. The modal shows a single JSON document describing every tab's current state, wrapped in a `tabs` object keyed by tab id.
 
-By default the export is a **diff against the defaults** — only tokens you have actually changed are included. Untouched families are omitted entirely, and within a changed family only the individual tokens you edited are kept. The result is small, easy to diff, and stable enough to paste into a commit.
+By default the export is a **diff against the defaults** — only tokens you have actually changed are included. Untouched tabs are omitted entirely, and within a changed tab only the individual tokens you edited are kept. The result is small, easy to diff, and stable enough to paste into a commit.
 
 ```json
 {
-  "version": 2,
-  "spacing": {
-    "hsp": { "md": "1.25rem" }
-  },
-  "palette": {
-    "accent": { "1": "oklch(0.700 0.158 62)" }
-  },
-  "color": {
-    "semantic": { "matchedKeywordBg": "oklch(0.700 0.158 62)" }
+  "$schema": "zudo-design-tokens/v3",
+  "exportedAt": "2026-07-05T12:00:00.000Z",
+  "tabs": {
+    "palette": {
+      "raw": {
+        "--palette-accent-1": "oklch(0.700 0.158 62)"
+      }
+    },
+    "color": {
+      "semantic": {
+        "--zd-bg": { "ref": { "tab": "palette", "tier": "base", "item": "base-3" } },
+        "--zd-danger": {
+          "literal": { "light": "oklch(.505 .170 25)", "dark": "oklch(.655 .170 25)" }
+        }
+      }
+    },
+    "spacing": {
+      "raw": { "--spacing-hsp-md": "1.25rem" }
+    }
   }
 }
 ```
 
-Flip the **Show defaults too** toggle in the modal header to emit the full token tree (every family, every token, including untouched defaults). Use this form when you want a complete snapshot to hand to a designer or AI that does not know your theme.
+`$schema` is `zudo-design-tokens/v2` while every changed value is a plain string or palette-index number, and upgrades automatically to `/v3` the moment any Color-tab row holds a `{ref}` or `{literal}` object — which, under the mode-scoped model, is normal for a real zudo-doc export. `ref` points at a Palette-tab ramp stop (`{tab, tier, item}`); `literal` is either a single OKLCH string or, for a **Per-mode** row, a `{light, dark}` pair. Re-importing via **Load…** round-trips both shapes cleanly.
+
+Flip the **Show defaults too** toggle in the modal header to emit the full token tree (every tab, every token, including untouched defaults). Use this form when you want a complete snapshot to hand to a designer or AI that does not know your theme.
 
 ## Load-from-JSON
 
@@ -142,7 +182,7 @@ Older projects that persisted an earlier format — `zudo-doc-tweak-state-v2` (v
 - The FOUC-prevention script injected into `<head>` by the doc layout (`@takazudo/zudo-doc/doclayout`) performs the same lookup so saved tokens apply before first paint on old devices too.
 - Clicking **Reset all** in the panel header clears the v3 envelope (and any lingering legacy keys), restoring the color scheme declared in `src/config/settings.ts`.
 
-Switching the light/dark theme does **not** delete your saved tweaks. The theme toggle dispatches a `color-scheme-changed` event; the panel responds by re-seeding the color palette from the newly active scheme (so the new scheme's colors take effect) while leaving the persisted envelope — including your spacing, typography, and size tweaks — intact.
+Switching the light/dark theme does **not** delete your saved tweaks, and an open panel stays open across the toggle. The theme toggle dispatches a `color-scheme-changed` event; the host destroys and reconfigures the panel for the new mode (see [Implementation](#implementation)) rather than patching it in place, so the Color tab's ref/literal *defaults* follow the newly active mode while every tweak on Palette, Spacing, Font, and Size — plus any saved Color-tab *override* — carries over untouched. See [Mode-scoped editing model](#the-five-tabs-color-mode-scoped-editing-model) for the override-carries-across-modes caveat.
 
 <Note title="Storage prefix continuity guarantee">
 
@@ -152,7 +192,9 @@ The storage prefix `zudo-doc-tweak` is locked in `src/config/design-token-panel-
 
 ## Implementation
 
-The panel UI is provided by the `@takazudo/zdtp` (zdtp) npm package. zudo-doc wires it via `configurePanel(designTokenPanelConfig)` in `src/lib/design-token-panel-bootstrap.ts`. The panel self-mounts as a side-effect of that call — there is no Preact island registration for it.
+The panel UI is provided by the `@takazudo/zdtp` (zdtp) npm package. The wiring mechanism — calling `configurePanel`, hooking zfb's navigation lifecycle, and the mode-scoped destroy+reconfigure described below — lives in `@takazudo/zudo-doc/design-token-panel-bootstrap`. The project's `src/lib/design-token-panel-bootstrap.ts` passes that mechanism the project's config *data* by calling `bootstrapDesignTokenPanel(buildDesignTokenPanelConfig)`, where `buildDesignTokenPanelConfig` (`src/config/design-token-panel-config.ts`) is a `(mode) => PanelConfig` builder, not a plain config object — this is what lets the Color tab follow light/dark. The panel self-mounts as a side-effect of that call — there is no Preact island registration for it.
+
+On every `color-scheme-changed` event (dispatched by the theme toggle), the bootstrap reads the new mode and coalesces rapid toggles onto a single macrotask, then calls `handle.destroy()` followed by `configurePanel(buildDesignTokenPanelConfig(mode))` — zdtp's `configurePanel` throws if re-run in place with a structurally different config, so destroy-then-reconfigure is the only supported way to swap the Color tab's mode-scoped defaults. If the panel was open, it's re-mounted open.
 
 The header trigger button dispatches the `toggle-design-token-panel` custom event on `window`. zdtp listens for this event natively, so no additional wiring is needed when the trigger is customised through `settings.headerRightItems`.
 
