@@ -27,15 +27,15 @@ describe("parseArgs", () => {
     });
 
     it("--scheme", () => {
-      expect(parseArgs(["--scheme", "Dracula"]).scheme).toBe("Dracula");
+      expect(parseArgs(["--scheme", "Default Dark"]).scheme).toBe("Default Dark");
     });
 
     it("--light-scheme", () => {
-      expect(parseArgs(["--light-scheme", "GitHub Light"]).lightScheme).toBe("GitHub Light");
+      expect(parseArgs(["--light-scheme", "Default Light"]).lightScheme).toBe("Default Light");
     });
 
     it("--dark-scheme", () => {
-      expect(parseArgs(["--dark-scheme", "GitHub Dark"]).darkScheme).toBe("GitHub Dark");
+      expect(parseArgs(["--dark-scheme", "Default Dark"]).darkScheme).toBe("Default Dark");
     });
 
     it("--default-mode", () => {
@@ -123,7 +123,7 @@ describe("parseArgs", () => {
         "my-docs",
         "--lang", "ja",
         "--color-scheme-mode", "single",
-        "--scheme", "Dracula",
+        "--scheme", "Default Dark",
         "--search",
         "--no-i18n",
         "--sidebar-toggle",
@@ -134,7 +134,7 @@ describe("parseArgs", () => {
       expect(result.name).toBe("my-docs");
       expect(result.lang).toBe("ja");
       expect(result.colorSchemeMode).toBe("single");
-      expect(result.scheme).toBe("Dracula");
+      expect(result.scheme).toBe("Default Dark");
       expect(result.search).toBe(true);
       expect(result.i18n).toBe(false);
       expect(result.sidebarToggle).toBe(true);

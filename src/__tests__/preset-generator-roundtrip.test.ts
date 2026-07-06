@@ -97,7 +97,7 @@ describe("roundtrip: buildCliCommand → parseArgs", () => {
     verifyRoundtrip(makeState({
       features: FEATURES.map((f) => f.value),
       colorSchemeMode: "single",
-      singleScheme: "Dracula",
+      singleScheme: "Default Light",
     }));
   });
 
@@ -105,8 +105,8 @@ describe("roundtrip: buildCliCommand → parseArgs", () => {
     verifyRoundtrip(makeState({
       features: [],
       colorSchemeMode: "light-dark",
-      lightScheme: "GitHub Light",
-      darkScheme: "GitHub Dark",
+      lightScheme: "Default Light",
+      darkScheme: "Default Dark",
     }));
   });
 
@@ -119,18 +119,11 @@ describe("roundtrip: buildCliCommand → parseArgs", () => {
     verifyRoundtrip(makeState({ projectName: "my cool docs" }));
   });
 
-  it("scheme name with special characters (VS Code Dark+)", () => {
-    verifyRoundtrip(makeState({
-      colorSchemeMode: "single",
-      singleScheme: "VS Code Dark+",
-    }));
-  });
-
   it("light-dark scheme names with spaces roundtrip correctly", () => {
     verifyRoundtrip(makeState({
       colorSchemeMode: "light-dark",
-      lightScheme: "Solarized Light",
-      darkScheme: "Solarized Dark Higher Contrast",
+      lightScheme: "Default Light",
+      darkScheme: "Default Dark",
       respectPrefersColorScheme: false,
     }));
   });

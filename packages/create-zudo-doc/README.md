@@ -31,7 +31,7 @@ pnpm create zudo-doc my-docs --yes
 # Fully specified, non-interactive
 pnpm create zudo-doc my-docs \
   --lang ja \
-  --scheme Dracula \
+  --scheme "Default Dark" \
   --no-i18n \
   --search \
   --pm pnpm \
@@ -109,11 +109,11 @@ pnpm create zudo-doc my-docs \
   --install \
   --yes
 
-# Light/dark color scheme with Catppuccin pairings
+# Light/dark color scheme with the Default pairing
 pnpm create zudo-doc my-docs \
   --color-scheme-mode light-dark \
-  --light-scheme "Catppuccin Latte" \
-  --dark-scheme "Catppuccin Mocha" \
+  --light-scheme "Default Light" \
+  --dark-scheme "Default Dark" \
   --default-mode dark \
   --yes
 
@@ -130,7 +130,7 @@ await createZudoDoc({
   projectName: "my-docs",
   defaultLang: "en",
   colorSchemeMode: "single",
-  singleScheme: "Dracula",
+  singleScheme: "Default Dark",
   features: ["search", "sidebarFilter", "tagGovernance"],
   packageManager: "pnpm",
   install: true,

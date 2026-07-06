@@ -1,5 +1,5 @@
 import * as p from "@clack/prompts";
-import { LIGHT_DARK_PAIRINGS, SINGLE_SCHEMES, FEATURES, SUPPORTED_LANGS } from "./constants.js";
+import { SINGLE_SCHEMES, FEATURES, SUPPORTED_LANGS } from "./constants.js";
 import type { PresetHeaderRightItem, PresetMetaTagsConfig } from "./preset.js";
 import { validateProjectName } from "./utils.js";
 
@@ -142,53 +142,9 @@ export async function runPrompts(
       lightScheme = prefilled.lightScheme;
       darkScheme = prefilled.darkScheme;
     } else {
-      const pairingChoice = await p.select({
-        message: "Choose a light/dark pairing:",
-        options: [
-          ...LIGHT_DARK_PAIRINGS.map((pair) => ({
-            value: pair.label,
-            label: `${pair.light} + ${pair.dark}`,
-            hint: pair.label,
-          })),
-          {
-            value: "custom",
-            label: "Pick individually",
-            hint: "Choose light and dark schemes separately",
-          },
-        ],
-      });
-      if (p.isCancel(pairingChoice)) process.exit(0);
-
-      if (pairingChoice === "custom") {
-        const lightSchemes = SINGLE_SCHEMES.filter((s) =>
-          ["Light", "Latte", "Dawn"].some((k) => s.includes(k)),
-        );
-        const darkSchemes = SINGLE_SCHEMES.filter(
-          (s) => !["Light", "Latte", "Dawn"].some((k) => s.includes(k)),
-        );
-
-        const light = await p.select({
-          message: "Choose light scheme:",
-          options: lightSchemes.map((s) => ({ value: s, label: s })),
-        });
-        if (p.isCancel(light)) process.exit(0);
-        lightScheme = light;
-
-        const dark = await p.select({
-          message: "Choose dark scheme:",
-          options: darkSchemes.map((s) => ({ value: s, label: s })),
-        });
-        if (p.isCancel(dark)) process.exit(0);
-        darkScheme = dark;
-      } else {
-        const pairing = LIGHT_DARK_PAIRINGS.find(
-          (pair) => pair.label === pairingChoice,
-        );
-        if (pairing) {
-          lightScheme = pairing.light;
-          darkScheme = pairing.dark;
-        }
-      }
+      // Only the Default pairing exists — auto-assign, no prompt.
+      lightScheme = "Default Light";
+      darkScheme = "Default Dark";
     }
 
     // Default mode

@@ -44,8 +44,8 @@ describe("buildJson", () => {
   });
 
   it("single scheme includes singleScheme, excludes light-dark fields", () => {
-    const json = buildJson(makeState({ colorSchemeMode: "single", singleScheme: "Dracula" }));
-    expect(json).toHaveProperty("singleScheme", "Dracula");
+    const json = buildJson(makeState({ colorSchemeMode: "single", singleScheme: "Default Light" }));
+    expect(json).toHaveProperty("singleScheme", "Default Light");
     expect(json).not.toHaveProperty("lightScheme");
     expect(json).not.toHaveProperty("darkScheme");
     expect(json).not.toHaveProperty("defaultMode");
@@ -55,13 +55,13 @@ describe("buildJson", () => {
   it("light-dark mode includes scheme fields, excludes singleScheme", () => {
     const json = buildJson(makeState({
       colorSchemeMode: "light-dark",
-      lightScheme: "GitHub Light",
-      darkScheme: "GitHub Dark",
+      lightScheme: "Default Light",
+      darkScheme: "Default Dark",
       defaultMode: "dark",
       respectPrefersColorScheme: false,
     }));
-    expect(json).toHaveProperty("lightScheme", "GitHub Light");
-    expect(json).toHaveProperty("darkScheme", "GitHub Dark");
+    expect(json).toHaveProperty("lightScheme", "Default Light");
+    expect(json).toHaveProperty("darkScheme", "Default Dark");
     expect(json).toHaveProperty("defaultMode", "dark");
     expect(json).toHaveProperty("respectPrefersColorScheme", false);
     expect(json).not.toHaveProperty("singleScheme");
@@ -103,9 +103,9 @@ describe("buildCliCommand", () => {
   });
 
   it("single scheme includes --scheme, no light/dark flags", () => {
-    const cmd = buildCliCommand(makeState({ colorSchemeMode: "single", singleScheme: "Dracula" }));
+    const cmd = buildCliCommand(makeState({ colorSchemeMode: "single", singleScheme: "Default Light" }));
     expect(cmd).toContain('--color-scheme-mode single');
-    expect(cmd).toContain('--scheme "Dracula"');
+    expect(cmd).toContain('--scheme "Default Light"');
     expect(cmd).not.toContain("--light-scheme");
     expect(cmd).not.toContain("--dark-scheme");
     expect(cmd).not.toContain("--default-mode");
@@ -116,14 +116,14 @@ describe("buildCliCommand", () => {
   it("light-dark mode includes scheme flags", () => {
     const cmd = buildCliCommand(makeState({
       colorSchemeMode: "light-dark",
-      lightScheme: "GitHub Light",
-      darkScheme: "GitHub Dark",
+      lightScheme: "Default Light",
+      darkScheme: "Default Dark",
       defaultMode: "dark",
       respectPrefersColorScheme: true,
     }));
     expect(cmd).toContain('--color-scheme-mode light-dark');
-    expect(cmd).toContain('--light-scheme "GitHub Light"');
-    expect(cmd).toContain('--dark-scheme "GitHub Dark"');
+    expect(cmd).toContain('--light-scheme "Default Light"');
+    expect(cmd).toContain('--dark-scheme "Default Dark"');
     expect(cmd).toContain("--default-mode dark");
     expect(cmd).toContain("--respect-system-preference");
   });

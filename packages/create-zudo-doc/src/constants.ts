@@ -6,76 +6,15 @@ export interface LightDarkPairing {
 
 export const LIGHT_DARK_PAIRINGS: LightDarkPairing[] = [
   { light: "Default Light", dark: "Default Dark", label: "Default" },
-  { light: "GitHub Light", dark: "GitHub Dark", label: "GitHub" },
-  { light: "Catppuccin Latte", dark: "Catppuccin Mocha", label: "Catppuccin" },
-  { light: "Solarized Light", dark: "Solarized Dark", label: "Solarized" },
-  { light: "Rose Pine Dawn", dark: "Rose Pine", label: "Rosé Pine" },
-  { light: "Atom One Light", dark: "Atom One Dark", label: "Atom One" },
-  { light: "Everforest Light", dark: "Everforest Dark", label: "Everforest" },
-  { light: "Gruvbox Light", dark: "Gruvbox Dark", label: "Gruvbox" },
-  { light: "Ayu Light", dark: "Ayu Dark", label: "Ayu" },
 ];
 
-// All available single schemes (dark ones most popular first)
-export const SINGLE_SCHEMES = [
-  "Default Dark",
-  "Dracula",
-  "Catppuccin Mocha",
-  "GitHub Dark",
-  "Nord",
-  "TokyoNight",
-  "Gruvbox Dark",
-  "Atom One Dark",
-  "Rose Pine",
-  "Solarized Dark",
-  "Material Ocean",
-  "Monokai Pro",
-  "Everforest Dark",
-  "Kanagawa Wave",
-  "Night Owl",
-  "Ayu Dark",
-  "VS Code Dark+",
-  "Doom One",
-  "Challenger Deep",
-  "Catppuccin Frappe",
-  "Catppuccin Macchiato",
-  "Gruvbox Dark Hard",
-  "Rose Pine Moon",
-  "GitHub Dark Dimmed",
-  "Ayu Mirage",
-  "Material Darker",
-  "Material Dark",
-  "Monokai Remastered",
-  "Monokai Vivid",
-  "Monokai Soda",
-  "Solarized Dark Higher Contrast",
-  "Gruvbox Material Dark",
-  "Kanagawa Dragon",
-  // Light schemes
-  "Default Light",
-  "GitHub Light",
-  "Catppuccin Latte",
-  "Solarized Light",
-  "Rose Pine Dawn",
-  "Atom One Light",
-  "Everforest Light",
-  "Gruvbox Light",
-  "Ayu Light",
-];
+// All available single schemes (dark-first ordering — asserted by the host
+// sync test).
+export const SINGLE_SCHEMES = ["Default Dark", "Default Light"];
 
 // Light-only subset of SINGLE_SCHEMES. Used by the preset generator to populate
 // the "Light scheme" dropdown (dark schemes are derived as SINGLE_SCHEMES minus these).
-export const LIGHT_SCHEMES = [
-  "Default Light",
-  "GitHub Light",
-  "Catppuccin Latte",
-  "Solarized Light",
-  "Rose Pine Dawn",
-  "Atom One Light",
-  "Everforest Light",
-  "Gruvbox Light",
-  "Ayu Light",
-];
+export const LIGHT_SCHEMES = ["Default Light"];
 
 export interface SupportedLang {
   value: string;

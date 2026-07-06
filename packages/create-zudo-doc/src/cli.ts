@@ -151,12 +151,7 @@ ${pc.bold("Examples:")}
   create-zudo-doc my-docs --yes
 
   ${pc.dim("# Fully specified")}
-  create-zudo-doc my-docs --lang ja --scheme Dracula --no-i18n --pm pnpm --install
-
-  ${pc.dim("# Light/dark mode with custom schemes")}
-  create-zudo-doc my-docs --color-scheme-mode light-dark \\
-    --light-scheme "GitHub Light" --dark-scheme "GitHub Dark" \\
-    --default-mode dark --yes
+  create-zudo-doc my-docs --lang ja --scheme "Default Dark" --no-i18n --pm pnpm --install
 `);
 }
 
