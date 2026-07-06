@@ -115,7 +115,7 @@ Inline markdown links within MDX content (e.g., `[link text](/docs/some-page)`) 
 
 ### trailingSlash
 
-Controls whether URLs end with a trailing slash. When `true`, all internal links are generated with a trailing slash (e.g., `/docs/guides/` instead of `/docs/guides`). The build-time URL helpers in `@takazudo/zudo-doc/url-normalizer` enforce this policy across every emitted route — see [Trailing-Slash Policy](../concepts/trailing-slash-policy.mdx) for how the rule splits between build time and the deployment host.
+Controls whether URLs end with a trailing slash. When `true`, all internal links are generated with a trailing slash (e.g., `/docs/guides/` instead of `/docs/guides`). The build-time URL helpers in `@takazudo/zudo-doc/url-normalizer` enforce this policy across every emitted route — see [Trailing-Slash Policy](../develop/trailing-slash-policy.mdx) for how the rule splits between build time and the deployment host.
 
 Default: `true` (the showcase sets this to `true`; `create-zudo-doc` scaffolded projects also default to `true`)
 
