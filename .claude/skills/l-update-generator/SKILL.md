@@ -86,7 +86,7 @@ Check that non-feature-specific files in the base template reflect the latest ch
 
 **Automated first check**: Run `pnpm check:template-drift` before doing manual analysis. This runs `scripts/check-template-drift.sh` and quickly identifies files that differ between the main project and the base template.
 
-**Allowlist note**: Some files are listed in `.template-drift-allowlist` (e.g., `global.css`) and are skipped entirely by the automated script because they contain slot sections that intentionally differ. These files **still require manual review** — check that any non-slot-section changes in the main project are reflected in the template counterpart.
+**Allowlist note**: Some files are listed in `.template-drift-allowlist` (e.g., `global.css`) and are skipped entirely by the automated script's whole-file content check because they contain slot sections that intentionally differ. These files **still require manual review** — check that any non-slot-section changes in the main project are reflected in the template counterpart. For `global.css` specifically, a separate legacy-token guard (`check_global_css_legacy_tokens` in `scripts/check-template-drift.sh`, #2621) runs unconditionally regardless of the allowlist — it fails if the template regresses to a pre-ramp-restructure token (`--zd-sel-bg/fg`, `--color-p0..15`, `--zd-0..15`), so that one drift class is still automated even though the rest of the file needs manual review.
 
 ## Step 2: Report Findings
 

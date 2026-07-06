@@ -4,7 +4,12 @@
 # scripts/check-template-drift.sh, keyed by template-relative path.
 
 # Slot-based files — templates use @slot: injection anchors,
-# production has features inlined
+# production has features inlined. Content parity is manual-review-only for
+# this file, but a separate, unconditional guard (check_global_css_legacy_tokens
+# in scripts/check-template-drift.sh, #2621) still catches the one class of
+# drift that matters most here: the template regressing to a pre-ramp-restructure
+# legacy token (--zd-sel-bg/fg, --color-p0..15, --zd-0..15). That guard is NOT
+# exempted by this allowlist entry.
 src/styles/global.css
 
 # claude-resources feature (#2533) — generated projects ship their own copies
