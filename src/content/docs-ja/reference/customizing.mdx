@@ -116,7 +116,7 @@ zudo-docはクローズドなパッケージとして提供されます。コン
 
 ```ts title="src/config/settings.ts"
 export const settings = {
-  colorScheme: "Default Light",        // アクティブなカラースキームを変更
+  colorScheme: "Default Light",        // Default Light または Default Dark を選択
   colorMode: { defaultMode: "light" }, // デフォルトのライト/ダークモードを変更
 
   designTokenPanel: true,              // ライブデザイントークンパネルを有効化
@@ -138,9 +138,9 @@ export const settings = {
 };
 ```
 
-**使う場面:** 機能をオンまたはオフにしたい場合、あるいは動作の設定（TOCの深さ、ナビゲーション構造、ロケール設定、カラースキームの選択）を調整したい場合。
+**使う場面:** 機能をオンまたはオフにしたい場合、あるいは動作の設定（TOCの深さ、ナビゲーション構造、ロケール設定、2つのバンドルスキームのどちらをアクティブにするか）を調整したい場合。
 
-**制限:** 設定は何が「存在するか」を制御しますが、既存コンポーネントの見た目は変えられません。`colorScheme`を変えるとパレット全体が再テーマ化されますが、ヘッダーのレイアウトを再設計することはできません。
+**制限:** 設定は何が「存在するか」を制御しますが、既存コンポーネントの見た目は変えられません。`colorScheme`は2つのバンドルスキーム（`Default Light` / `Default Dark`）を切り替えるだけで、カタログの切り替えスイッチではなく、変えてもヘッダーのレイアウトを再設計することはできません。実際のカラーストーリーはもう一段深いレイヤーにあります。共有 OKLCH ランプとセマンティックマップを `src/config/color-schemes.ts` で編集し（[Color](./color.mdx#カスタムカラースキームの追加) の「カスタムカラースキームの追加」を参照）、Design Token Panel の Palette タブでランプ編集をライブプレビューし（[カラースキームプレビュー](../guides/color-scheme-preview.mdx#動作の仕組み)を参照）、パネルの JSON 差分ワークフローで AI アシスタントとともに調整をラウンドトリップできます（[Design Token Panel](./design-token-panel.mdx#aiワークフロー)を参照）。
 
 <Info>
 
