@@ -1,29 +1,29 @@
 ---
 title: Documentation Skill Symlinker
-description: Turn your zudo-doc documentation into a Claude Code knowledge base via a symlinked skill.
+description: Turn your zudo-doc documentation into a Claude Code or Codex knowledge base via a symlinked skill.
 sidebar_position: 9
 ---
 
 ## Overview
 
-The **doc skill symlinker** creates a [Claude Code skill](https://docs.anthropic.com/en/docs/claude-code/skills) from your documentation content. Once set up, you can invoke the skill inside any Claude Code session to look up your docs — making all your written documentation available as AI context.
+The **doc skill symlinker** creates an agent skill from your documentation content. Once set up, Claude Code or Codex can load the skill to look up your docs, making all your written documentation available as AI context.
 
 This is especially useful when:
 
 - Working on another project that depends on this one
 - Answering questions about configuration, components, or usage patterns
-- Sharing institutional knowledge with your team through Claude Code
+- Sharing institutional knowledge with your team through Claude Code or Codex
 
 ## How It Works
 
 The setup script:
 
-1. Creates a `.claude/skills/<skill-name>/` directory in your project
-2. Generates a `SKILL.md` that tells Claude how to use your docs
+1. Creates a `.claude/skills/<skill-name>/` or `.codex/skills/<skill-name>/` directory in your project
+2. Generates a `SKILL.md` that tells the agent how to use your docs
 3. Symlinks the `src/content/docs/` directory into the skill folder
-4. Symlinks the skill into `~/.claude/skills/` so it's available globally
+4. Symlinks the skill into `~/.claude/skills/` and/or `~/.codex/skills/` so it's available globally
 
-After setup, the skill appears as a slash command in any Claude Code session.
+By default, the script auto-detects your agent home directories. It uses Codex when only `~/.codex/` exists, Claude Code when only `~/.claude/` exists, both when both exist, and Claude Code as the fallback for a fresh machine.
 
 ## Setup
 
@@ -33,17 +33,27 @@ Run the setup script:
 pnpm run setup:doc-skill
 ```
 
-You'll be prompted for a skill name. The default is `<project-name>-wisdom` (e.g., `zudo-doc-wisdom`).
+The skill name is deterministic: `<project-name>-wisdom` (for example, `zudo-doc-wisdom`). You can override it with the first positional argument or the `SKILL_NAME` environment variable.
 
 ```
 === zudo-doc Skill Setup ===
 
-Skill name [zudo-doc-wisdom]:
-  Created docs symlink: ...
-  Created docs-ja symlink: ...
-  Generated SKILL.md
+Target: auto -> claude codex
+
+  [claude] Created docs symlink -> ...
+  [claude] Generated SKILL.md
+  [codex] Created docs symlink -> ...
+  [codex] Generated SKILL.md
 
 Done! Skill 'zudo-doc-wisdom' is ready.
+```
+
+To force a target, pass `--target`:
+
+```bash
+pnpm run setup:doc-skill:claude
+pnpm run setup:doc-skill:codex
+pnpm run setup:doc-skill:both
 ```
 
 ## Using the Skill
@@ -54,7 +64,7 @@ Once set up, use the skill in any Claude Code session:
 /zudo-doc-wisdom sidebar
 ```
 
-Claude will look up the relevant documentation article and use it to answer your question. This works from any project directory — the skill is symlinked globally.
+Claude will look up the relevant documentation article and use it to answer your question. In Codex, mention the skill by name when asking about this documentation. This works from any project directory because the skill is symlinked globally.
 
 ### Example Workflow
 
@@ -77,15 +87,18 @@ After running the setup script, the following files are created:
 └── docs-ja -> src/content/docs-ja/   # Symlink to Japanese docs (if present)
 ```
 
+For Codex targets, the same layout is created under `.codex/skills/<skill-name>/`.
+
 And a global symlink:
 
 ```
 ~/.claude/skills/<skill-name> -> .claude/skills/<skill-name>
+~/.codex/skills/<skill-name> -> .codex/skills/<skill-name>
 ```
 
 <Note>
 
-The `.claude/skills/<skill-name>/` directory contains symlinks and a generated `SKILL.md`. It is safe to add to `.gitignore` if you prefer, or commit it to share the skill definition with your team.
+The `.claude/skills/<skill-name>/` and `.codex/skills/<skill-name>/` directories contain symlinks and generated `SKILL.md` files. It is safe to add them to `.gitignore` if you prefer, or commit the generated skill definition to share it with your team.
 
 </Note>
 

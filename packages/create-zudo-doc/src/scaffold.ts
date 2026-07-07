@@ -433,17 +433,22 @@ export async function scaffold(choices: UserChoices): Promise<void> {
   // skill a user later installs under a matching name. The skill name is
   // deterministic (always `<projectName>-wisdom`, matching DEFAULT_SKILL_NAME
   // in scripts/setup-doc-skill.sh and the package name), so these entries match
-  // the directory the script creates. The docs-ja symlink only exists for i18n
-  // projects (the script creates it conditionally), so gate that line on i18n.
+  // the directory the script creates. The setup script can target either
+  // .claude or .codex, so ignore both possible generated directories. The
+  // docs-ja symlink only exists for i18n projects (the script creates it
+  // conditionally), so gate those lines on i18n.
   if (choices.features.includes("skillSymlinker")) {
     gitignoreLines.push(
       "# Generated doc-lookup skill",
       `.claude/skills/${choices.projectName}-wisdom/SKILL.md`,
       `.claude/skills/${choices.projectName}-wisdom/docs`,
+      `.codex/skills/${choices.projectName}-wisdom/SKILL.md`,
+      `.codex/skills/${choices.projectName}-wisdom/docs`,
     );
     if (choices.features.includes("i18n")) {
       gitignoreLines.push(
         `.claude/skills/${choices.projectName}-wisdom/docs-ja`,
+        `.codex/skills/${choices.projectName}-wisdom/docs-ja`,
       );
     }
     gitignoreLines.push("");
@@ -763,6 +768,12 @@ function generatePackageJson(choices: UserChoices) {
     scripts["setup:doc-skill"] = "bash scripts/setup-doc-skill.sh";
     scripts["setup:doc-skill-silent"] =
       "bash scripts/setup-doc-skill.sh --silent";
+    scripts["setup:doc-skill:claude"] =
+      "bash scripts/setup-doc-skill.sh --target claude";
+    scripts["setup:doc-skill:codex"] =
+      "bash scripts/setup-doc-skill.sh --target codex";
+    scripts["setup:doc-skill:both"] =
+      "bash scripts/setup-doc-skill.sh --target both";
   }
 
   const runCmd = choices.packageManager === "npm" || choices.packageManager === "bun" ? `${choices.packageManager} run` : choices.packageManager;
@@ -795,4 +806,3 @@ function generatePackageJson(choices: UserChoices) {
     devDependencies: devDeps,
   };
 }
-

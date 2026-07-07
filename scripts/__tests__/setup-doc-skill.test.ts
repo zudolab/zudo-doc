@@ -24,9 +24,10 @@ const MAIN_WORKTREE_ROOT = execSync(
  * The skill name is passed as the first CLI arg — the script is non-interactive
  * (deterministic name) since #2173, so it no longer reads the name from stdin.
  */
-function runScript(skillName: string, fakeHome: string): string {
+function runScript(skillName: string, fakeHome: string, args: string[] = []): string {
+  const quotedArgs = args.map((arg) => `"${arg.replace(/"/g, '\\"')}"`).join(" ");
   return execSync(
-    `bash "${SCRIPT_PATH}" "${skillName}"`,
+    `bash "${SCRIPT_PATH}" ${quotedArgs} "${skillName}"`,
     {
       cwd: PROJECT_ROOT,
       encoding: "utf-8",
@@ -47,9 +48,11 @@ describe("setup-doc-skill.sh", () => {
   });
 
   afterEach(() => {
-    const skillDir = join(PROJECT_ROOT, ".claude", "skills", TEST_SKILL_NAME);
-    if (existsSync(skillDir)) {
-      rmSync(skillDir, { recursive: true });
+    for (const agentDir of [".claude", ".codex"]) {
+      const skillDir = join(PROJECT_ROOT, agentDir, "skills", TEST_SKILL_NAME);
+      if (existsSync(skillDir)) {
+        rmSync(skillDir, { recursive: true });
+      }
     }
     if (existsSync(fakeHome)) {
       rmSync(fakeHome, { recursive: true });
@@ -103,6 +106,50 @@ describe("setup-doc-skill.sh", () => {
     expect(target).toBe(realpathSync(projectSkill));
   });
 
+  it("auto-selects Codex when HOME has .codex but no .claude", () => {
+    execSync(`mkdir -p "${join(fakeHome, ".codex")}"`);
+
+    const output = runScript(TEST_SKILL_NAME, fakeHome);
+
+    expect(output).toContain("Target: auto -> codex");
+    const globalLink = join(fakeHome, ".codex", "skills", TEST_SKILL_NAME);
+    expect(existsSync(globalLink)).toBe(true);
+    expect(
+      existsSync(join(fakeHome, ".claude", "skills", TEST_SKILL_NAME)),
+    ).toBe(false);
+
+    const target = realpathSync(globalLink);
+    const projectSkill = join(PROJECT_ROOT, ".codex", "skills", TEST_SKILL_NAME);
+    expect(target).toBe(realpathSync(projectSkill));
+  });
+
+  it("auto-selects both when HOME has both agent directories", () => {
+    execSync(`mkdir -p "${join(fakeHome, ".claude")}" "${join(fakeHome, ".codex")}"`);
+
+    const output = runScript(TEST_SKILL_NAME, fakeHome);
+
+    expect(output).toContain("Target: auto -> claude codex");
+    expect(
+      existsSync(join(fakeHome, ".claude", "skills", TEST_SKILL_NAME)),
+    ).toBe(true);
+    expect(
+      existsSync(join(fakeHome, ".codex", "skills", TEST_SKILL_NAME)),
+    ).toBe(true);
+  });
+
+  it("creates both Claude and Codex symlinks when explicitly requested", () => {
+    const output = runScript(TEST_SKILL_NAME, fakeHome, ["--target", "both"]);
+
+    expect(output).toContain("Target: both -> claude codex");
+    for (const agentDir of [".claude", ".codex"]) {
+      const globalLink = join(fakeHome, agentDir, "skills", TEST_SKILL_NAME);
+      expect(existsSync(globalLink)).toBe(true);
+      expect(realpathSync(globalLink)).toBe(
+        realpathSync(join(PROJECT_ROOT, agentDir, "skills", TEST_SKILL_NAME)),
+      );
+    }
+  });
+
   it("includes doc category tree in SKILL.md", () => {
     runScript(TEST_SKILL_NAME, fakeHome);
 
@@ -146,6 +193,17 @@ describe("setup-doc-skill.sh", () => {
     ).toBe(true);
     expect(
       existsSync(join(PROJECT_ROOT, ".claude", "skills", "--silent")),
+    ).toBe(false);
+  });
+
+  it("accepts --target=codex", () => {
+    runScript(TEST_SKILL_NAME, fakeHome, ["--target=codex"]);
+
+    expect(
+      existsSync(join(fakeHome, ".codex", "skills", TEST_SKILL_NAME)),
+    ).toBe(true);
+    expect(
+      existsSync(join(fakeHome, ".claude", "skills", TEST_SKILL_NAME)),
     ).toBe(false);
   });
 });
