@@ -32,6 +32,7 @@ export const settings = {
   sitemap: false,
   docMetainfo: false,
   docTags: false,
+  changelogs: false,
   math: false,
   docHistory: false,
   dynamicPageTransition: true as boolean,
