@@ -6,12 +6,15 @@ import {
   generateChangelogMarkdown,
   loadChangelogEntries,
 } from "../../packages/zudo-doc/src/integrations/changelog/index.js";
+import type { ChangelogConfig } from "../../packages/zudo-doc/src/integrations/changelog/index.js";
 import { settings } from "../../src/config/settings.js";
 
 const ROOT = resolve(__dirname, "../..");
 
 describe("real changelog corpus -> generated CHANGELOG.md", () => {
-  const changelogs = Array.isArray(settings.changelogs) ? settings.changelogs : [];
+  const changelogs: ChangelogConfig[] = Array.isArray(settings.changelogs)
+    ? settings.changelogs
+    : [];
 
   it("has at least one changelog output configured", () => {
     expect(changelogs.length).toBeGreaterThan(0);
