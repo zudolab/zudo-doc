@@ -37,6 +37,10 @@ export default function IndexPage(): JSX.Element {
       tree={tree}
       categoryOrder={categoryOrder}
       tagCount={tagCount}
+      // Showcase opts into the wide layout so the category grid fills the
+      // viewport (better readability for the multi-column sitemap). Downstream
+      // projects keep the narrower default unless they pass `wide` too.
+      wide={true}
       extras={
         // @Takazudo link — established in #1453 (project-specific brand
         // link). Kept out of the shared hero (package HomePageView), threaded

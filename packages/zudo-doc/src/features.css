@@ -335,6 +335,25 @@ pre[class^="syntect-"] .line .highlighted-word {
   max-width: 80rem;
 }
 
+/* Wide band — opt-in full-width content layout (the `wide` frontmatter flag or
+ * the `contentWide` DocLayout prop set `data-zd-wide` on the band). Widens the
+ * reading column past the standard cap so grid-heavy / dashboard pages (e.g. the
+ * site home page) fill most of the viewport. Must beat BOTH capped variants:
+ *   • the static hide_sidebar cap `.zd-doc-content-band[data-zd-nosidebar]`
+ *     (specificity 0,2,0) — the first selector below is also 0,2,0 and wins by
+ *     source order (it is placed after that rule);
+ *   • the JS-toggle cap `html[data-sidebar-hidden] .zd-doc-content-band`
+ *     (specificity 0,2,1) — the second selector below is 0,3,1 and wins on
+ *     specificity.
+ * The literal clamp mirrors the established band-width pattern (see the
+ * `[data-zd-nosidebar]` 80rem literal and the `--zdc-content-max-width`
+ * default): fills up to ~92.5vw, floored at 50rem, capped at 120rem so
+ * ultra-wide monitors stay readable. Unlayered, so it beats Tailwind utilities. */
+.zd-doc-content-band[data-zd-wide],
+html[data-sidebar-hidden] .zd-doc-content-band[data-zd-wide] {
+  max-width: clamp(50rem, 92.5vw, 120rem);
+}
+
 /* Sidebar toggle button — left position uses CSS variable, needs global rule */
 @media (min-width: 1024px) {
   .zd-desktop-sidebar-toggle {

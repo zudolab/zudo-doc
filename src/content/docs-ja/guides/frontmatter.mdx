@@ -49,6 +49,7 @@ title: Quick Start
 | `unlisted` | boolean | いいえ | `false` | ビルドされるがサイドバー、検索、検索エンジンから非表示 |
 | `hide_sidebar` | boolean | いいえ | `false` | 左サイドバーを非表示にし、コンテンツを狭いコンテナに中央揃え |
 | `hide_toc` | boolean | いいえ | `false` | 右側の目次を非表示 |
+| `wide` | boolean | いいえ | `false` | コンテンツバンドを広げてビューポートの大部分を埋める（全幅レイアウト） |
 | `doc_history` | boolean | いいえ | 自動 | doc-historyボタンの表示を上書き（自動：`*/index`ページは非表示、詳細ページは表示） |
 | `standalone` | boolean | いいえ | `false` | サイドバーナビゲーションから非表示だがインデックスされる（`unlisted`とは異なる） |
 | `slug` | string | いいえ | ファイルパスから導出 | カスタムURLスラグのオーバーライド |
@@ -297,6 +298,28 @@ hide_toc: true
 両方のオプションを組み合わせた[ライブデモ](./layout-demos/hide-both.mdx)もご覧ください。
 
 </Tip>
+
+### `wide`
+
+- **型：** `boolean`
+- **必須：** いいえ
+- **デフォルト：** `false`
+
+`true`に設定すると、コンテンツバンドが標準の読書幅の上限ではなく、ビューポートの大部分を埋めるように広がります。グリッド中心のページやダッシュボード的なページ（たとえばカテゴリーグリッドを全幅に広げたほうが読みやすいトップページなど）に適しています。`hide_sidebar`と自然に組み合わせられます。`hide_sidebar`ページではコンテンツが通常は固定の読書幅で中央揃えされますが、`wide: true`を加えるとそのコンテンツがビューポート全体に広がります。
+
+```mdx
+---
+title: Overview
+hide_sidebar: true
+wide: true
+---
+```
+
+<Info>
+
+このレイアウトオプションの動作は[ライブデモ](./layout-demos/wide.mdx)でご確認いただけます。
+
+</Info>
 
 ### `standalone`
 

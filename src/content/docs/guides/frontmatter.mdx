@@ -49,6 +49,7 @@ title: Quick Start
 | `unlisted` | boolean | No | `false` | Built but hidden from sidebar, search, and search engines |
 | `hide_sidebar` | boolean | No | `false` | Hide the left sidebar, center content in a narrower container |
 | `hide_toc` | boolean | No | `false` | Hide the right-side table of contents |
+| `wide` | boolean | No | `false` | Widen the content band to fill most of the viewport (full-width layout) |
 | `doc_history` | boolean | No | Auto | Override doc-history button visibility (auto: hidden on `*/index` pages, shown on detail pages) |
 | `standalone` | boolean | No | `false` | Hidden from sidebar nav but still indexed (unlike `unlisted`) |
 | `slug` | string | No | Derived from file path | Custom URL slug override |
@@ -297,6 +298,28 @@ hide_toc: true
 See the [live demo](./layout-demos/hide-both.mdx) to see both options combined.
 
 </Tip>
+
+### `wide`
+
+- **Type:** `boolean`
+- **Required:** No
+- **Default:** `false`
+
+When set to `true`, the content band widens to fill most of the viewport instead of the standard capped reading column. This suits grid-heavy or dashboard-style pages — for example a home page whose category grid reads better spread across the full width. It pairs naturally with `hide_sidebar`: on a `hide_sidebar` page the content is normally centered at a fixed reading width, and adding `wide: true` lets that content span the viewport.
+
+```mdx
+---
+title: Overview
+hide_sidebar: true
+wide: true
+---
+```
+
+<Info>
+
+See the [live demo](./layout-demos/wide.mdx) to experience this layout option in action.
+
+</Info>
 
 ### `standalone`
 

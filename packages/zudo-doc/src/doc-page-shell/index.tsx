@@ -88,6 +88,8 @@ export interface DocPageShellProps {
   hideSidebar?: boolean;
   /** Whether to hide the TOC (entry frontmatter). */
   hideToc?: boolean;
+  /** Whether to widen the content band to the wide layout (entry frontmatter `wide`). */
+  contentWide?: boolean;
 
   /** Path of THIS page used by Header/Sidebar to mark the active item. */
   currentPath: string;
@@ -219,6 +221,7 @@ export function createDocPageShell<S extends Settings = Settings>(
       sidebarPersistKey,
       hideSidebar,
       hideToc,
+      contentWide,
       currentPath,
       currentVersion,
       versionSwitcher,
@@ -269,6 +272,7 @@ export function createDocPageShell<S extends Settings = Settings>(
         noindex={settings.noindex}
         hideSidebar={hideSidebar}
         hideToc={hideToc}
+        contentWide={contentWide}
         headings={headings}
         canonical={canonical}
         sidebarPersistKey={sidebarPersistKey}
