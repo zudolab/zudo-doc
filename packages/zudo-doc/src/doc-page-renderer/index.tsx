@@ -107,6 +107,7 @@ export interface DocPageRendererDeps {
     sidebarPersistKey: string | undefined;
     hideSidebar?: boolean;
     hideToc?: boolean;
+    contentWide?: boolean;
     currentPath: string;
     currentVersion?: string;
     versionSwitcher: JSX.Element | undefined;
@@ -258,6 +259,10 @@ export function createRenderDocPage<S extends Settings = Settings>(
     const hideToc = entryData
       ? ((entryData.hide_toc as boolean | undefined) || standalone)
       : undefined;
+    // `wide` frontmatter opts the content band into the full-width layout.
+    const contentWide = entryData
+      ? (entryData.wide as boolean | undefined)
+      : undefined;
     const sidebarPersistKey = hideSidebar
       ? undefined
       : `sidebar-${locale}-${navSection ?? "default"}`;
@@ -283,6 +288,7 @@ export function createRenderDocPage<S extends Settings = Settings>(
         sidebarPersistKey={sidebarPersistKey}
         hideSidebar={hideSidebar}
         hideToc={hideToc}
+        contentWide={contentWide}
         currentPath={currentPath}
         currentVersion={version?.slug}
         versionSwitcher={buildInlineVersionSwitcher(slug, locale, version?.slug)}

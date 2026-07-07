@@ -1,0 +1,41 @@
+---
+title: "Demo: Wide Layout"
+sidebar_label: Wide Layout
+description: Live demonstration of the wide frontmatter option for a full-width content band.
+sidebar_position: 4
+hide_sidebar: true
+hide_toc: false
+wide: true
+---
+
+This page demonstrates the `wide: true` frontmatter option. The sidebar is hidden and, instead of centering the content in the usual reading column, `wide` lets the content band spread across most of the viewport.
+
+## What's Happening
+
+The content band is widened to fill the viewport. Here is the frontmatter used:
+
+```yaml
+---
+title: "Demo: Wide Layout"
+hide_sidebar: true
+wide: true
+---
+```
+
+## Compared to Hide Sidebar
+
+The [Hide Sidebar](./hide-sidebar.mdx) demo also hides the sidebar, but it keeps the content centered in a fixed-width reading column. The only difference here is the added `wide: true` — which removes that cap and lets the content fill the available width. Resize your browser wide and compare the two pages side by side.
+
+## When to Use
+
+Use `wide: true` for grid-heavy or dashboard-style pages where content reads better spread across the full width — for example a landing or overview page with a multi-column card grid. It pairs naturally with `hide_sidebar`, and it is the layout the site home page uses.
+
+For ordinary prose, the standard capped reading column is easier to read — reach for `wide` only when the content genuinely benefits from the extra width.
+
+See the [Frontmatter reference](../frontmatter.mdx#fields-wide) for full documentation.
+
+## See Also
+
+- [Hide Sidebar](./hide-sidebar.mdx) — hides the left sidebar, content stays centered
+- [Hide Table of Contents](./hide-toc.mdx) — hides the right-side TOC
+- [Hide Sidebar & Table of Contents](./hide-both.mdx) — hides both panels

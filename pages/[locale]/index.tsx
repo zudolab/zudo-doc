@@ -68,6 +68,9 @@ export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
       tree={tree}
       categoryOrder={categoryOrder}
       tagCount={tagCount}
+      // Showcase opts into the wide layout (mirrors pages/index.tsx) so the
+      // locale-prefixed home page also fills the viewport.
+      wide={true}
       extras={
         // @Takazudo link — ported from pages/index.tsx (refs #1453).
         // Kept out of the shared hero (package HomePageView), threaded here

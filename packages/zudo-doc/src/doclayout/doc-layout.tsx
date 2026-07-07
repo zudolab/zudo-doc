@@ -164,6 +164,16 @@ export interface DocLayoutProps extends DocLayoutHtmlAttrs {
   /** Hide the TOC (both desktop and mobile) regardless of slot value. */
   hideToc?: boolean;
 
+  /**
+   * Opt the content band into the **wide** layout. Sets `data-zd-wide` on
+   * `.zd-doc-content-band`, letting the reading column fill most of the
+   * viewport instead of the standard capped width (see the
+   * `.zd-doc-content-band[data-zd-wide]` rule in `features.css`). Mirrors the
+   * `wide` page frontmatter flag; also passed directly by route components
+   * (home page, etc.) that want a full-width grid. Defaults to `false`.
+   */
+  contentWide?: boolean;
+
   /** Optional footer rendered below the content. */
   footer?: ComponentChildren;
 
@@ -228,6 +238,7 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
     afterContent,
     toc,
     hideToc = false,
+    contentWide = false,
     footer,
     bodyEndComponents,
     bodyEndScripts,
@@ -356,6 +367,7 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
             <div
               class="zd-doc-content-band flex w-full gap-[clamp(1.5rem,3vw,4rem)]"
               {...(!showSidebar ? { "data-zd-nosidebar": "" } : {})}
+              {...(contentWide ? { "data-zd-wide": "" } : {})}
             >
               <main class="flex-1 min-w-0 px-hsp-xl py-vsp-xl lg:px-hsp-2xl lg:py-vsp-2xl">
                 {breadcrumb}

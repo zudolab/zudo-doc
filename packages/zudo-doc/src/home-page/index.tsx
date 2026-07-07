@@ -74,6 +74,14 @@ export interface HomePageViewProps {
   /** Unique tag count for the current locale — gates the "all tags" section
    *  together with `settings.docTags`. */
   tagCount: number;
+  /**
+   * Opt the home page into the **wide** content layout (full-viewport
+   * category grid instead of the standard capped reading column). Threaded to
+   * the underlying `DocLayoutWithDefaults` as `contentWide`. Defaults to
+   * `false` so downstream projects keep the narrower grid unless they opt in;
+   * this showcase passes `wide` from `pages/index.tsx`.
+   */
+  wide?: boolean;
 }
 
 /**
@@ -112,6 +120,7 @@ export function createHomePageView<S extends Settings = Settings>(
     tree,
     categoryOrder,
     tagCount,
+    wide,
   }: HomePageViewProps): JSX.Element {
     const prefix = locale === defaultLocale ? "" : `/${locale}`;
     const ctaNav = settings.headerNav[0] ?? null;
@@ -127,6 +136,7 @@ export function createHomePageView<S extends Settings = Settings>(
         noindex={settings.noindex}
         hideSidebar={true}
         hideToc={true}
+        contentWide={wide}
         sidebarOverride={<></>}
         headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase(`${prefix}/`)} />}
         footerOverride={<FooterWithDefaults lang={locale} />}
