@@ -155,6 +155,7 @@ export function generateSettingsFile(choices: UserChoices): string {
   } else {
     lines.push(`  llmsTxt: false,`);
   }
+  lines.push(`  changelogs: false,`);
   lines.push(`  math: false,`);
   lines.push(`  cjkFriendly: ${choices.cjkFriendly ?? false} as boolean,`);
   lines.push(`  onBrokenMarkdownLinks: "warn" as "warn" | "error" | "ignore",`);
