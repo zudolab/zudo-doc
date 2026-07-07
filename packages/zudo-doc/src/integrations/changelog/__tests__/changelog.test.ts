@@ -61,6 +61,33 @@ describe("changelog integration", () => {
     expect(sanitized).not.toContain("{/*");
   });
 
+  it("preserves import/export/JSX syntax inside fenced code blocks", () => {
+    const sanitized = sanitizeChangelogMarkdown(
+      [
+        "Wrap the toggle so the scanner sees a local binding:",
+        "",
+        "```tsx",
+        'import { ThemeToggle as PackageThemeToggle } from "@takazudo/zudo-doc/theme-toggle";',
+        "",
+        "export function ThemeToggle(props) {",
+        "  return <PackageThemeToggle {...props} />;",
+        "}",
+        "```",
+        "",
+        "### Fixed",
+        "",
+        "- A bug.",
+      ].join("\n"),
+    );
+
+    expect(sanitized).toContain(
+      'import { ThemeToggle as PackageThemeToggle } from "@takazudo/zudo-doc/theme-toggle";',
+    );
+    expect(sanitized).toContain("export function ThemeToggle(props) {");
+    expect(sanitized).toContain("return <PackageThemeToggle {...props} />;");
+    expect(sanitized).toContain("### Fixed");
+  });
+
   it("generates Keep a Changelog-style markdown with date headings", () => {
     const markdown = generateChangelogMarkdown(
       [

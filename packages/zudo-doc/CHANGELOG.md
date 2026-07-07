@@ -734,11 +734,13 @@ Workaround until you are on a zfb release with the forward fix (below): keep a l
 ```tsx
 // src/components/theme-toggle.tsx
 "use client";
+import type { ComponentProps } from "preact";
+import { ThemeToggle as PackageThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
 
 // Local wrapper (not a bare re-export) so the next.38 island scanner sees a
 // component binding it can register; displayName names the island marker.
-
-  return ;
+export function ThemeToggle(props: ComponentProps<typeof PackageThemeToggle>) {
+  return <PackageThemeToggle {...props} />;
 }
 ThemeToggle.displayName = "ThemeToggle";
 ```
