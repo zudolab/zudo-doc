@@ -207,6 +207,17 @@ export interface VersionConfig {
   banner?: "unmaintained" | "unreleased" | false;
 }
 
+export interface ChangelogConfig {
+  /** Directory containing one MDX/MD changelog page per released version. */
+  sourceDir: string;
+  /** File to overwrite with the generated CommonMark changelog. */
+  outputFile: string;
+  /** Optional package/project label used in the generated preamble. */
+  packageName?: string;
+  /** Document heading. Defaults to "Changelog". */
+  title?: string;
+}
+
 export interface MetaTagsConfig {
   /** Emit <meta name="description">. Default true. */
   description: boolean;
@@ -293,6 +304,7 @@ export interface Settings {
   tagGovernance: TagGovernanceMode;
   tagVocabulary: boolean;
   llmsTxt: boolean;
+  changelogs?: ChangelogConfig[] | false;
   math: boolean;
   cjkFriendly: boolean;
   onBrokenMarkdownLinks: "warn" | "error" | "ignore";

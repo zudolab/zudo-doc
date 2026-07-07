@@ -29,6 +29,7 @@ export type {
   FrontmatterPreviewConfig,
   TagPlacement,
   VersionConfig,
+  ChangelogConfig,
   MetaTagsConfig,
   SiteHeadConfig,
   Settings,

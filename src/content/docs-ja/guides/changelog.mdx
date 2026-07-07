@@ -67,13 +67,32 @@ sidebar_position: 2
 
 ## エントリのフォーマット
 
-各変更履歴エントリは標準的なMDXファイルです。推奨される構造：
+各変更履歴エントリは標準的なMDXファイルです。zudo-docは[Keep a Changelog](https://keepachangelog.com/)スタイルの構造を推奨しています。このスタイルであれば、エントリをパッケージ向けの`CHANGELOG.md`に変換できるためです：
 
 - **タイトル**：バージョン番号（例：`"0.2.0"`）
 - **説明**：リリースの簡単な概要
-- **コンテンツセクション**：機能、バグ修正、破壊的変更など
+- **リリース日**：リリース日が判明している場合は、冒頭付近に`Released: YYYY-MM-DD`の行を記載
+- **コンテンツセクション**：Added、Changed、Deprecated、Removed、Fixed、Security、Breaking Changes、Features、Bug Fixesなど、人間が書いたグループ化された変更内容
 
-強制的なフォーマットはありません。プロジェクトに合った構造を使用してください。上記の例は[Keep a Changelog](https://keepachangelog.com/)に似た一般的な規約に従っています。
+エントリは人間向けに書いてください。生のgitログをそのまま変更履歴ページに貼り付けず、ユーザーに関係する注目すべき変更を短い箇条書きにまとめてください。
+
+## 生成されるパッケージ変更履歴
+
+プロジェクトでは、`settings.changelogs`で生成される変更履歴の出力先を設定できます。各項目はソースディレクトリと出力ファイルを指定します：
+
+```ts title="src/config/settings.ts"
+changelogs: [
+  {
+    sourceDir: "src/content/docs/changelog",
+    outputFile: "packages/zudo-doc/CHANGELOG.md",
+    packageName: "@takazudo/zudo-doc",
+  },
+],
+```
+
+MDXファイルは引き続き正とするソースです。生成される`CHANGELOG.md`はそれらのページから上書き生成されるため、手動で編集しないでください。zudo-docはフロントマター、import、export、JSXタグ／コンポーネント、MDXコメントを取り除き、`node_modules`内でも読みやすいCommonMarkとして出力します。
+
+配列に項目を追加することで、複数の出力先を設定できます。モノレポで複数パッケージそれぞれに独自の変更履歴を持たせたい場合に便利です。
 
 ## バージョンバンプスクリプト
 

@@ -67,13 +67,41 @@ Use incrementing `sidebar_position` values for each new version. Combined with `
 
 ## Entry Format
 
-Each changelog entry is a standard MDX file. A recommended structure:
+Each changelog entry is a standard MDX file. zudo-doc recommends a
+[Keep a Changelog](https://keepachangelog.com/)-style structure because those
+entries can be converted into package-friendly `CHANGELOG.md` files:
 
 - **Title**: The version number (e.g., `"0.2.0"`)
 - **Description**: A brief summary of the release
-- **Content sections**: Features, Bug Fixes, Breaking Changes, etc.
+- **Release date**: A `Released: YYYY-MM-DD` line near the top when the release date is known
+- **Content sections**: grouped human-written notes such as Added, Changed, Deprecated, Removed, Fixed, Security, Breaking Changes, Features, and Bug Fixes
 
-There is no enforced format — use whatever structure fits your project. The examples above follow a common convention similar to [Keep a Changelog](https://keepachangelog.com/).
+Write entries for humans. Do not dump raw git logs into changelog pages; group
+notable user-facing changes into short bullets.
+
+## Generated Package Changelogs
+
+Projects can configure generated changelog outputs with `settings.changelogs`.
+Each item points at a source directory and an output file:
+
+```ts title="src/config/settings.ts"
+changelogs: [
+  {
+    sourceDir: "src/content/docs/changelog",
+    outputFile: "packages/zudo-doc/CHANGELOG.md",
+    packageName: "@takazudo/zudo-doc",
+  },
+],
+```
+
+The MDX files remain the source of truth. The generated `CHANGELOG.md` is
+overwritten from those pages and should not be edited by hand. zudo-doc strips
+frontmatter, imports, exports, JSX tags/components, and MDX comments so the
+output stays readable as CommonMark in `node_modules`.
+
+Multiple outputs can be configured by adding more items to the array. This is
+useful when a monorepo wants separate package changelogs, each generated from
+its own changelog source directory.
 
 ## Version Bump Script
 

@@ -34,6 +34,7 @@ export const settings = {
   sitemap: false,
   docMetainfo: false,
   docTags: false,
+  changelogs: false,
   math: false,
   designTokenPanel: true as boolean,
   dynamicPageTransition: true as boolean,

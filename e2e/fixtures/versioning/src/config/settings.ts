@@ -31,6 +31,7 @@ export const settings = {
   docMetainfo: false,
   docTags: false,
   llmsTxt: false,
+  changelogs: false,
   math: false,
   docHistory: false,
   dynamicPageTransition: true as boolean,

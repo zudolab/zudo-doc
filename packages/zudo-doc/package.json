@@ -115,6 +115,10 @@
       "types": "./dist/integrations/llms-txt/index.d.ts",
       "default": "./dist/integrations/llms-txt/index.js"
     },
+    "./integrations/changelog": {
+      "types": "./dist/integrations/changelog/index.d.ts",
+      "default": "./dist/integrations/changelog/index.js"
+    },
     "./integrations/search-index": {
       "types": "./dist/integrations/search-index/index.d.ts",
       "default": "./dist/integrations/search-index/index.js"
@@ -174,6 +178,10 @@
     "./plugins/llms-txt": {
       "types": "./dist/plugins/llms-txt.d.ts",
       "default": "./dist/plugins/llms-txt.js"
+    },
+    "./plugins/changelog": {
+      "types": "./dist/plugins/changelog.d.ts",
+      "default": "./dist/plugins/changelog.js"
     },
     "./plugins/search-index": {
       "types": "./dist/plugins/search-index.d.ts",
@@ -535,7 +543,7 @@
     "build": "tsup && tsc -p tsconfig.build.json",
     "dev": "tsup --watch",
     "prepare": "tsup --silent && tsc -p tsconfig.build.json",
-    "prepack": "node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs && node scripts/check-features-css.mjs && node scripts/check-plugins.mjs && node scripts/check-eject-sources.mjs && node scripts/check-routes-src.mjs && node bin/gen-component-tokens.mjs --check",
+    "prepack": "pnpm --dir ../.. gen:changelog && node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs && node scripts/check-features-css.mjs && node scripts/check-plugins.mjs && node scripts/check-eject-sources.mjs && node scripts/check-routes-src.mjs && node bin/gen-component-tokens.mjs --check",
     "test": "vitest run --config vitest.config.ts",
     "test:slow": "vitest run --config vitest.slow.config.ts",
     "typecheck": "tsc --noEmit"
@@ -545,7 +553,8 @@
     "bin",
     "eject",
     "routes-src",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
   ],
   "peerDependencies": {
     "preact": "^10.29.1",

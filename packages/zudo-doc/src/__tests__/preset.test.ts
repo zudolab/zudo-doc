@@ -201,6 +201,13 @@ const fixtureSettings: PresetSettings = {
   onBrokenMarkdownLinks: "warn",
   headingIdStrategy: "hierarchical",
   llmsTxt: true,
+  changelogs: [
+    {
+      sourceDir: "src/content/docs/changelog",
+      outputFile: "packages/zudo-doc/CHANGELOG.md",
+      packageName: "@takazudo/zudo-doc",
+    },
+  ],
   docHistory: true,
   claudeResources: { claudeDir: ".claude" },
   githubAutolinksRepo: "zudolab/zudo-doc",
@@ -281,6 +288,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       "@takazudo/zudo-doc/plugins/doc-history",
       "@takazudo/zudo-doc/plugins/search-index",
       "@takazudo/zudo-doc/plugins/llms-txt",
+      "@takazudo/zudo-doc/plugins/changelog",
     ]);
   });
 
@@ -309,12 +317,21 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       defaultLocaleDir: "src/content/docs",
       locales: [{ code: "ja", dir: "src/content/docs-ja" }],
     });
+    expect(byName["@takazudo/zudo-doc/plugins/changelog"]).toEqual({
+      changelogs: [
+        {
+          sourceDir: "src/content/docs/changelog",
+          outputFile: "packages/zudo-doc/CHANGELOG.md",
+          packageName: "@takazudo/zudo-doc",
+        },
+      ],
+    });
     // copy-public-plugin.mjs was removed in #2358; no project-relative plugin expected.
   });
 
-  it("omits claude-resources / doc-history / llms-txt when their settings are falsy", () => {
+  it("omits claude-resources / doc-history / llms-txt / changelog when their settings are falsy", () => {
     const r = zudoDocPreset({
-      settings: { ...fixtureSettings, claudeResources: false, docHistory: false, llmsTxt: false, packageOwnedRoutes: false },
+      settings: { ...fixtureSettings, claudeResources: false, docHistory: false, llmsTxt: false, changelogs: false, packageOwnedRoutes: false },
       buildDocsSchema: buildFixtureSchema,
       directiveVocabulary: fixtureDirectives,
     });
