@@ -129,7 +129,7 @@ export const FEATURES: Feature[] = [
   {
     value: "skillSymlinker",
     label: "Skill symlinker",
-    hint: "Symlink documentation skills",
+    hint: "Symlink documentation skills into Claude Code or Codex",
     default: false,
     cliFlag: "skill-symlinker",
   },

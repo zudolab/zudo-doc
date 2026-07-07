@@ -48,6 +48,9 @@ contrast-audit-out/
 .claude/skills/zudo-doc-wisdom/skill-writing-rules.md
 .claude/skills/zudo-doc-wisdom/skill-design-system.md
 .claude/skills/zudo-doc-wisdom/skill-navigation-design.md
+.codex/skills/zudo-doc-wisdom/SKILL.md
+.codex/skills/zudo-doc-wisdom/docs
+.codex/skills/zudo-doc-wisdom/docs-ja
 
 # E2E fixture symlinks and generated files (zfb topology — see e2e/setup-fixtures.sh)
 # Top-level symlinks back to repo root

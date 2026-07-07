@@ -1,29 +1,29 @@
 ---
 title: ドキュメントスキルシムリンカー
-description: zudo-docのドキュメントをClaude Codeのナレッジベースとしてシムリンクで利用可能にします。
+description: zudo-docのドキュメントをClaude CodeまたはCodexのナレッジベースとしてシムリンクで利用可能にします。
 sidebar_position: 9
 ---
 
 ## 概要
 
-**ドキュメントスキルシムリンカー**は、ドキュメントコンテンツから[Claude Codeスキル](https://docs.anthropic.com/en/docs/claude-code/skills)を作成します。セットアップ後、任意のClaude Codeセッション内でスキルを呼び出してドキュメントを参照できます。これにより、書き留めたすべてのドキュメントがAIのコンテキストとして利用可能になります。
+**ドキュメントスキルシムリンカー**は、ドキュメントコンテンツからエージェント用スキルを作成します。セットアップ後、Claude CodeまたはCodexがそのスキルを読み込み、ドキュメントを参照できます。これにより、書き留めたすべてのドキュメントがAIのコンテキストとして利用可能になります。
 
 これは特に次のような場合に便利です：
 
 - このプロジェクトに依存する別のプロジェクトで作業しているとき
 - 設定、コンポーネント、使用パターンに関する質問に答えるとき
-- Claude Codeを通じてチームと組織のナレッジを共有するとき
+- Claude CodeやCodexを通じてチームと組織のナレッジを共有するとき
 
 ## 仕組み
 
 セットアップスクリプトは次のことを行います：
 
-1. プロジェクト内に`.claude/skills/<skill-name>/`ディレクトリを作成
-2. Claudeにドキュメントの使い方を伝える`SKILL.md`を生成
+1. プロジェクト内に`.claude/skills/<skill-name>/`または`.codex/skills/<skill-name>/`ディレクトリを作成
+2. エージェントにドキュメントの使い方を伝える`SKILL.md`を生成
 3. `src/content/docs/`ディレクトリをスキルフォルダにシムリンク
-4. スキルを`~/.claude/skills/`にシムリンクし、グローバルに利用可能にする
+4. スキルを`~/.claude/skills/`または`~/.codex/skills/`にシムリンクし、グローバルに利用可能にする
 
-セットアップ後、スキルは任意のClaude Codeセッションでスラッシュコマンドとして表示されます。
+デフォルトでは、スクリプトがエージェントのホームディレクトリを自動判定します。`~/.codex/`だけがある場合はCodex、`~/.claude/`だけがある場合はClaude Code、両方ある場合は両方、どちらもない新しい環境では従来どおりClaude Codeを選びます。
 
 ## セットアップ
 
@@ -33,7 +33,15 @@ sidebar_position: 9
 pnpm run setup:doc-skill
 ```
 
-スキル名の入力を求められます。デフォルトは `<プロジェクト名>-wisdom`（例: `zudo-doc-wisdom`）です。
+スキル名は決定的に`<プロジェクト名>-wisdom`になります（例: `zudo-doc-wisdom`）。先頭の位置引数または`SKILL_NAME`環境変数で上書きできます。
+
+対象を明示したい場合は、`--target`つきのスクリプトを使います:
+
+```bash
+pnpm run setup:doc-skill:claude
+pnpm run setup:doc-skill:codex
+pnpm run setup:doc-skill:both
+```
 
 ## 使い方
 
@@ -43,7 +51,7 @@ pnpm run setup:doc-skill
 /zudo-doc-wisdom sidebar
 ```
 
-Claudeが関連するドキュメント記事を検索し、回答に利用します。スキルはグローバルにシムリンクされているため、どのプロジェクトディレクトリからでも動作します。
+Claudeが関連するドキュメント記事を検索し、回答に利用します。Codexでは、このドキュメントについて質問するときにスキル名を指定してください。スキルはグローバルにシムリンクされているため、どのプロジェクトディレクトリからでも動作します。
 
 ### ワークフローの例
 
@@ -66,15 +74,18 @@ Claudeはドキュメントからフッターガイドを読み取り、ドキ�
 └── docs-ja -> src/content/docs-ja/   # 日本語ドキュメントへのシムリンク
 ```
 
+Codex対象では、同じ構成が`.codex/skills/<skill-name>/`配下に作成されます。
+
 グローバルシムリンク:
 
 ```
 ~/.claude/skills/<skill-name> -> .claude/skills/<skill-name>
+~/.codex/skills/<skill-name> -> .codex/skills/<skill-name>
 ```
 
 <Note>
 
-`.claude/skills/<skill-name>/`ディレクトリには、シムリンクと生成された`SKILL.md`が含まれます。お好みで`.gitignore`に追加しても安全ですし、スキル定義をチームと共有するためにコミットしても構いません。
+`.claude/skills/<skill-name>/`と`.codex/skills/<skill-name>/`ディレクトリには、シムリンクと生成された`SKILL.md`が含まれます。お好みで`.gitignore`に追加しても安全ですし、スキル定義をチームと共有するためにコミットしても構いません。
 
 </Note>
 

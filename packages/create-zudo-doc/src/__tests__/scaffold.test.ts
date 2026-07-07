@@ -1525,6 +1525,15 @@ describe("scaffold — skillSymlinker feature", () => {
     expect(pkg.scripts["setup:doc-skill-silent"]).toBe(
       "bash scripts/setup-doc-skill.sh --silent",
     );
+    expect(pkg.scripts["setup:doc-skill:claude"]).toBe(
+      "bash scripts/setup-doc-skill.sh --target claude",
+    );
+    expect(pkg.scripts["setup:doc-skill:codex"]).toBe(
+      "bash scripts/setup-doc-skill.sh --target codex",
+    );
+    expect(pkg.scripts["setup:doc-skill:both"]).toBe(
+      "bash scripts/setup-doc-skill.sh --target both",
+    );
   });
 
   it("does NOT include setup-doc-skill.sh when disabled", async () => {
@@ -1547,6 +1556,7 @@ describe("scaffold — skillSymlinker feature", () => {
     );
     expect(pkg.scripts["setup:doc-skill"]).toBeUndefined();
     expect(pkg.scripts["setup:doc-skill-silent"]).toBeUndefined();
+    expect(pkg.scripts["setup:doc-skill:codex"]).toBeUndefined();
   });
 });
 
@@ -1571,9 +1581,18 @@ describe("scaffold — .gitignore skill block (#2173)", () => {
     expect(gitignore).toContain(
       ".claude/skills/gitignore-skill-proj-wisdom/docs",
     );
+    expect(gitignore).toContain(
+      ".codex/skills/gitignore-skill-proj-wisdom/SKILL.md",
+    );
+    expect(gitignore).toContain(
+      ".codex/skills/gitignore-skill-proj-wisdom/docs",
+    );
     // No i18n → the script never creates a docs-ja symlink, so no ignore entry.
     expect(gitignore).not.toContain(
       ".claude/skills/gitignore-skill-proj-wisdom/docs-ja",
+    );
+    expect(gitignore).not.toContain(
+      ".codex/skills/gitignore-skill-proj-wisdom/docs-ja",
     );
   });
 
@@ -1593,6 +1612,9 @@ describe("scaffold — .gitignore skill block (#2173)", () => {
     );
     expect(gitignore).toContain(
       ".claude/skills/gitignore-skill-ja-wisdom/docs-ja",
+    );
+    expect(gitignore).toContain(
+      ".codex/skills/gitignore-skill-ja-wisdom/docs-ja",
     );
   });
 
