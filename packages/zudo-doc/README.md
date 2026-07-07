@@ -2,6 +2,10 @@
 
 Framework primitives that sit on top of zfb's engine — the framework layer that zfb deliberately doesn't ship (per ADR-003).
 
+Release history is shipped as `CHANGELOG.md` in the npm package. The file is
+generated from the repository's changelog MDX pages; edit those source pages
+instead of editing the generated markdown directly.
+
 This package provides the missing-by-design framework concerns:
 
 - **Sidebar tree builder** (`./sidebar-tree`) — turns collection entries + `_category_.json` into a sidebar `SidebarNode[]`.

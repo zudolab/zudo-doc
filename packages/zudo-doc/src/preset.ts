@@ -65,6 +65,13 @@ export interface PresetClaudeResourcesConfig {
   scanRoot?: string;
 }
 
+export interface PresetChangelogConfig {
+  sourceDir: string;
+  outputFile: string;
+  packageName?: string;
+  title?: string;
+}
+
 /**
  * The subset of `settings` the preset reads. Any concrete `typeof settings`
  * (this repo's or a generated project's) is assignable to this — the preset
@@ -83,6 +90,7 @@ export interface PresetSettings {
   onBrokenMarkdownLinks: "warn" | "error" | "ignore";
   headingIdStrategy: "flat" | "hierarchical";
   llmsTxt?: boolean;
+  changelogs?: PresetChangelogConfig[] | false;
   docHistory?: boolean;
   claudeResources?: PresetClaudeResourcesConfig | false;
   /** "owner/repo" — when set, enables `#123` / SHA autolinks in markdown. Omit to disable entirely. */
@@ -551,6 +559,16 @@ function buildPlugins(
               siteUrl: settings.siteUrl,
               defaultLocaleDir: settings.docsDir,
               locales: localeArray,
+            },
+          },
+        ]
+      : []),
+    ...(Array.isArray(settings.changelogs) && settings.changelogs.length > 0
+      ? [
+          {
+            name: "@takazudo/zudo-doc/plugins/changelog",
+            options: {
+              changelogs: settings.changelogs.map((changelog) => ({ ...changelog })),
             },
           },
         ]

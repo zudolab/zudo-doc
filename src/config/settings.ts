@@ -93,6 +93,13 @@ export const settings = {
    */
   tagVocabulary: true as boolean,
   llmsTxt: true,
+  changelogs: [
+    {
+      sourceDir: "src/content/docs/changelog",
+      outputFile: "packages/zudo-doc/CHANGELOG.md",
+      packageName: "@takazudo/zudo-doc",
+    },
+  ],
   // Reserved: not yet consumed by the zfb pipeline; wiring site TBD (#2140).
   math: true,
   cjkFriendly: true as boolean,
