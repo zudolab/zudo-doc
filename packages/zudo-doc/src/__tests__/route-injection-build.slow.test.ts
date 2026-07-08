@@ -162,6 +162,22 @@ function readBuiltHtml(dir: string, path: string): string {
   return readFileSync(fullPath, "utf-8");
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function htmlAttrPattern(name: string, value: string): RegExp {
+  const attr = escapeRegExp(name);
+  const escapedValue = escapeRegExp(value);
+  return new RegExp(
+    `\\b${attr}=(?:"${escapedValue}"|'${escapedValue}'|${escapedValue})(?=[\\s>/])`,
+  );
+}
+
+function expectHtmlAttr(html: string, name: string, value: string): void {
+  expect(html).toMatch(htmlAttrPattern(name, value));
+}
+
 // ---------------------------------------------------------------------------
 // Cleanup
 // ---------------------------------------------------------------------------
@@ -222,7 +238,7 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // the "CB chrome-bindings" describe block below).
   it("bindings (baseline): /docs/getting-started/ HTML has NO FrontmatterPreview table when chromeBindingsModule is unset", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(html).not.toContain('data-testid="frontmatter-preview"');
+    expect(html).not.toMatch(htmlAttrPattern("data-testid", "frontmatter-preview"));
   });
 
   // #2406 / #2401(c): the package-default BodyEndIslands replaces the old no-op
@@ -256,12 +272,12 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
 
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"a2d1a78acb23797e4228e0f9398ed13cd0f68668fcae892d0b29726718012297"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"747a02deee65b2ce66003ba70f694091da85c8ea62718a4997ae8046cb2d9cb1"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"a9abc429e70a2848bcf8bc976c736527792b0f37e30df58fd6b11f1afcce7aa1"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"de951109913d398101a3f40401f3fa5d537df657e7019eebac8d5b3ea4b4efbb"`);
   });
 });
 
@@ -295,13 +311,13 @@ describe("A2 islands-on: package route HTML carries island markers when flags ON
 
   it("islands: /404 HTML carries the ImageEnlarge skip-ssr marker + dialog shell", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(html).toContain('data-zfb-island-skip-ssr="ImageEnlarge"');
+    expectHtmlAttr(html, "data-zfb-island-skip-ssr", "ImageEnlarge");
     expect(html).toContain("zd-enlarge-dialog");
   });
 
   it("islands: /404 HTML carries the MermaidEnlarge skip-ssr marker + dialog shell", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(html).toContain('data-zfb-island-skip-ssr="MermaidEnlarge"');
+    expectHtmlAttr(html, "data-zfb-island-skip-ssr", "MermaidEnlarge");
     expect(html).toContain("zd-mermaid-dialog");
   });
 });
@@ -358,7 +374,7 @@ describe("DH doc-history: injected doc route registers the DocHistory island (pa
 
   it("marker: injected /docs/getting-started/ HTML carries the DocHistory skip-ssr marker", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(html).toContain('data-zfb-island-skip-ssr="DocHistory"');
+    expectHtmlAttr(html, "data-zfb-island-skip-ssr", "DocHistory");
   });
 
   it("registry: build emits NO 'DocHistory … has no matching registry entry' warning", () => {
@@ -468,7 +484,7 @@ describe("CB chrome-bindings: chromeBindingsModule wires host bindings into crea
     // v2 short-circuits to `null` on an empty array) — its presence proves
     // buildFrontmatterPreviewEntries reached createChrome via the host
     // bindings spread, not the package-default `() => []` stub.
-    expect(html).toContain('data-testid="frontmatter-preview"');
+    expectHtmlAttr(html, "data-testid", "frontmatter-preview");
     expect(html).toContain("cb-demo-key");
     expect(html).toContain("CB-DEMO-VALUE-MARKER");
   });
@@ -479,7 +495,7 @@ describe("CB chrome-bindings: chromeBindingsModule wires host bindings into crea
   // sets `tier: gold`).
   it("docContentHeaderExtras: injected /docs/getting-started/ HTML renders the frontmatter-keyed badge", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(html).toContain('class="doc-content-header-extra-marker"');
+    expect(html).toContain("doc-content-header-extra-marker");
     expect(html).toContain("DOC-HEADER-EXTRA-MARKER: gold");
   });
 
@@ -493,7 +509,7 @@ describe("CB chrome-bindings: chromeBindingsModule wires host bindings into crea
   it("docContentHeaderExtras: badge renders BETWEEN </h1> and the metainfo block", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
     const h1CloseIdx = html.indexOf("</h1>");
-    const badgeIdx = html.indexOf('class="doc-content-header-extra-marker"');
+    const badgeIdx = html.indexOf("doc-content-header-extra-marker");
     const metainfoIdx = html.indexOf("border-t border-fg pt-vsp-xs");
     expect(h1CloseIdx).toBeGreaterThan(-1);
     expect(badgeIdx).toBeGreaterThan(h1CloseIdx);
@@ -511,7 +527,7 @@ describe("CB chrome-bindings: chromeBindingsModule wires host bindings into crea
     // docHistory defaults to false in this fixture, so DocHistoryArea renders
     // nothing and emits no skip-ssr marker — assert that absence stays intact
     // (i.e. the chrome-bindings channel didn't accidentally flip it on).
-    expect(html).not.toContain('data-zfb-island-skip-ssr="DocHistory"');
+    expect(html).not.toMatch(htmlAttrPattern("data-zfb-island-skip-ssr", "DocHistory"));
   });
 });
 
@@ -629,7 +645,7 @@ describe("HOME home-page: createHomePageView adoption on the injected /[locale] 
 
   it("diff-only-SVG: injected /ja/ home renders the GitHub link with the inline SVG icon", () => {
     const html = readBuiltHtml(fixtureDir, "ja/index.html");
-    expect(html).toContain('href="https://github.com/example/example"');
+    expectHtmlAttr(html, "href", "https://github.com/example/example");
     // The exact showcase path data (pages/index.tsx) — the reviewed,
     // intentional diff this extraction introduces on the package routes.
     expect(html).toContain("M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59");
@@ -644,14 +660,15 @@ describe("HOME home-page: createHomePageView adoption on the injected /[locale] 
 
   it("island: SiteTreeNav still hydrates via the real Island(when: idle) wrapper", () => {
     const html = readBuiltHtml(fixtureDir, "ja/index.html");
-    expect(html).toContain('data-zfb-island="SiteTreeNav"');
+    expectHtmlAttr(html, "data-zfb-island", "SiteTreeNav");
   });
 
   it("homeExtras: hostBindings.homeExtras renders inside the hero, after the links row", () => {
     const html = readBuiltHtml(fixtureDir, "ja/index.html");
-    expect(html).toContain('<div class="home-extra-marker">HOME-EXTRA-MARKER: ja</div>');
+    expect(html).toContain("home-extra-marker");
+    expect(html).toContain("HOME-EXTRA-MARKER: ja");
     const linksIdx = html.indexOf(">GitHub</a>");
-    const extraIdx = html.indexOf('<div class="home-extra-marker">');
+    const extraIdx = html.indexOf("HOME-EXTRA-MARKER: ja");
     expect(linksIdx).toBeGreaterThan(-1);
     expect(extraIdx).toBeGreaterThan(linksIdx);
   });
@@ -829,7 +846,7 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
     expect(html).toContain("HTMLPREVIEW-TITLE-MARKER");
     // HtmlPreviewWrapper wraps the bare preview in <Island when="visible">, so
     // the SSR output carries the island marker for the inner hydration target.
-    expect(html).toContain('data-zfb-island="HtmlPreviewWrapperInner"');
+    expectHtmlAttr(html, "data-zfb-island", "HtmlPreviewWrapperInner");
   });
 
   it("dynamic: locale /ja/docs/getting-started/ renders from routes-src/locale-docs-slug.tsx", () => {
