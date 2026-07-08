@@ -53,6 +53,14 @@ function packageSrcPath(...segments: string[]): string {
   );
 }
 
+function packageTemplatePath(...segments: string[]): string {
+  return path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "../../templates",
+    ...segments,
+  );
+}
+
 describe("scaffold — minimal (no i18n, search only, single dark scheme)", () => {
   const choices: UserChoices = {
     projectName: "test-minimal",
@@ -1501,6 +1509,20 @@ describe("scaffold — changelog feature", () => {
 });
 
 describe("scaffold — skillSymlinker feature", () => {
+  it("keeps the packaged setup-doc-skill.sh template in sync with the root script", async () => {
+    const rootScript = path.resolve(
+      path.dirname(fileURLToPath(import.meta.url)),
+      "../../../../scripts/setup-doc-skill.sh",
+    );
+    const packagedScript = packageTemplatePath(
+      "base/scripts/setup-doc-skill.sh",
+    );
+
+    expect(await fs.readFile(packagedScript, "utf-8")).toBe(
+      await fs.readFile(rootScript, "utf-8"),
+    );
+  });
+
   it("copies setup-doc-skill.sh and adds npm script when enabled", async () => {
     const choices: UserChoices = {
       projectName: "test-symlinker-on",
@@ -1516,6 +1538,17 @@ describe("scaffold — skillSymlinker feature", () => {
         projectPath("test-symlinker-on", "scripts/setup-doc-skill.sh"),
       ),
     ).toBe(true);
+    expect(
+      await fs.readFile(
+        projectPath("test-symlinker-on", "scripts/setup-doc-skill.sh"),
+        "utf-8",
+      ),
+    ).toBe(
+      await fs.readFile(
+        packageTemplatePath("base/scripts/setup-doc-skill.sh"),
+        "utf-8",
+      ),
+    );
     const pkg = await fs.readJson(
       projectPath("test-symlinker-on", "package.json"),
     );
