@@ -3801,9 +3801,12 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
    * consumer-facing change.
    * Bumped to 0.1.0-next.76: routine toolchain bump from next.75, in
    * lockstep with the root package.json pins. No consumer-facing change.
+   * Bumped to 0.1.0-next.77: router persistence/history fixes and runtime
+   * island remount support, in lockstep with the root package.json pins. No
+   * scaffold API change.
    * Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.76", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.77", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -3814,10 +3817,10 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.76");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.76");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.77");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.77");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.76",
+      "0.1.0-next.77",
     );
   });
 });
