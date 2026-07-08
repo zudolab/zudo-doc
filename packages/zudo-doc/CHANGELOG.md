@@ -4,6 +4,27 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [3.1.0] - 2026-07-08
+
+### Features
+
+- Generate package changelog entries from the authored MDX release notes, with real-corpus coverage for the generated output. (e2b2e499, cda16169)
+- Add a `"wide"` full-width content layout option for documentation pages. (4678f945)
+- Add a Codex target to the doc skill symlinker. (4f019b1e)
+
+### Bug Fixes
+
+- Align `create-zudo-doc`'s generated zfb pins with the next-77 dependency line. (5faade5c, a28a2d32)
+- Preserve code-fence syntax in the generated changelog sanitizer and mirror the related Japanese docs. (33a41543)
+- Include the changelog setting in generated scaffolds. (02b2e499)
+
+### Other Changes
+
+- Type the real-corpus changelog test config against `ChangelogConfig`. (ed12dd40)
+- Mirror the changelog setting in fixtures. (9859713d)
+- Rebless route-injection parity hashes for the nightly zudo-doc slow-hash path. (4fac7851)
+- Merge the concepts docs into the develop section and remove the standalone concepts category. (b70f86f8)
+
 ## [3.0.0] - 2026-07-07
 
 This is a **major** release. The color-scheme system was rewritten from the legacy 16-slot ghostty ANSI palette to a purpose-built ramp-native model, then minimized to **base 5 / accent 3** stops with aggressive semantic-role merging, and the ~40-name preset catalog was dropped entirely in favor of a direct ramp + semantic-tweak customization story via the zdtp Design Token Panel.

@@ -1,0 +1,26 @@
+---
+title: 3.1.0
+description: 3.1.0のリリースノート。
+sidebar_position: 1054
+---
+
+リリース日: 2026-07-08
+
+### 機能
+
+- 作成済みの MDX リリースノートから package changelog エントリを生成し、実際の MDX コーパスで生成結果を検証するカバレッジを追加しました。(e2b2e499, cda16169)
+- ドキュメントページ向けに、コンテンツを全幅で表示できる `"wide"` レイアウトオプションを追加しました。(4678f945)
+- doc skill symlinker に Codex ターゲットを追加しました。(4f019b1e)
+
+### バグ修正
+
+- `create-zudo-doc` が生成する zfb ピンを next-77 の依存関係ラインに合わせました。(5faade5c, a28a2d32)
+- 生成 changelog sanitizer で code fence の言語指定を保持し、関連する日本語ドキュメントも反映しました。(33a41543)
+- 生成される scaffold に changelog 設定を含めるようにしました。(02b2e499)
+
+### その他の変更
+
+- 実コーパス changelog テストの config を `ChangelogConfig` に対して型付けしました。(ed12dd40)
+- changelog 設定を fixtures にも反映しました。(9859713d)
+- nightly zudo-doc の slow-hash 経路に対して、route-injection parity hash を再生成しました。(4fac7851)
+- concepts ドキュメントを develop セクションへ統合し、独立した concepts カテゴリを削除しました。(b70f86f8)
