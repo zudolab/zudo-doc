@@ -153,6 +153,11 @@ declare module "zfb/config" {
      */
     trailingSlash?: boolean;
     /**
+     * Minify production HTML output from `zfb build`.
+     * Mirrors `Config::minify_html` in crates/zfb/src/config.rs.
+     */
+    minifyHtml?: boolean;
+    /**
      * Markdown / MDX pipeline options. Mirrors `Config::markdown` →
      * `MarkdownConfig` in crates/zfb/src/config.rs. zfb next.12 moved the
      * former-Core features under `markdown.features` and next.13 ships the

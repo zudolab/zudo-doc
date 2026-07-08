@@ -275,6 +275,8 @@ export interface Settings {
   siteDescription: string;
   base: string;
   trailingSlash: boolean;
+  /** Minify production HTML output from `zfb build`. Defaults to `true` when omitted. */
+  minifyHtml?: boolean;
   docsDir: string;
   defaultLocale: string;
   locales: Record<string, LocaleConfig>;

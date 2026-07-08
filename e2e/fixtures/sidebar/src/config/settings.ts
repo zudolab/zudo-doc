@@ -11,6 +11,7 @@ export const settings = {
   siteName: "Sidebar Test",
   siteDescription: "Test fixture for sidebar E2E tests" as string,
   base: "/",
+  minifyHtml: true as boolean,
   docsDir: "src/content/docs",
   defaultLocale: "en" as const,
   locales: {} satisfies Record<string, LocaleConfig>,

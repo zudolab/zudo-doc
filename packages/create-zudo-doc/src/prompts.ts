@@ -26,6 +26,9 @@ export interface UserChoices {
   // Enable remark-cjk-friendly plugin (intelligent spacing around CJK text).
   // Preset-only for now — no interactive prompt.
   cjkFriendly?: boolean;
+  // Minify production HTML output. Preset-only for now; generated projects
+  // default to true and can flip src/config/settings.ts later.
+  minifyHtml?: boolean;
   // Package manager
   packageManager: "pnpm" | "npm" | "yarn" | "bun";
   // Header-right items override. Preset-only — no interactive prompt because
@@ -53,6 +56,7 @@ export interface PartialChoices {
   explicitlyDisabledFeatures?: string[];
   githubUrl?: string;
   cjkFriendly?: boolean;
+  minifyHtml?: boolean;
   packageManager?: "pnpm" | "npm" | "yarn" | "bun";
   headerRightItems?: PresetHeaderRightItem[];
   // Meta tags config. Preset-only — no interactive prompt.
@@ -252,6 +256,7 @@ export async function runPrompts(
     explicitlyDisabledFeatures: prefilled.explicitlyDisabledFeatures,
     githubUrl,
     cjkFriendly: prefilled.cjkFriendly,
+    minifyHtml: prefilled.minifyHtml,
     packageManager,
     headerRightItems: prefilled.headerRightItems,
     metaTags: prefilled.metaTags,

@@ -70,6 +70,7 @@ export interface PresetJson {
   features?: string[];
   githubUrl?: string;
   cjkFriendly?: boolean;
+  minifyHtml?: boolean;
   packageManager?: "pnpm" | "npm" | "yarn" | "bun";
   headerRightItems?: PresetHeaderRightItem[];
   metaTags?: PresetMetaTagsConfig;
@@ -135,6 +136,9 @@ export function validatePreset(json: unknown): string | null {
   }
   if (p.cjkFriendly !== undefined && typeof p.cjkFriendly !== "boolean") {
     return `"cjkFriendly" must be a boolean in preset`;
+  }
+  if (p.minifyHtml !== undefined && typeof p.minifyHtml !== "boolean") {
+    return `"minifyHtml" must be a boolean in preset`;
   }
   if (p.headerRightItems !== undefined) {
     if (!Array.isArray(p.headerRightItems)) {
@@ -238,6 +242,7 @@ export function presetToChoices(json: PresetJson): PartialChoices {
   if (json.packageManager) choices.packageManager = json.packageManager;
   if (json.githubUrl !== undefined) choices.githubUrl = json.githubUrl;
   if (json.cjkFriendly !== undefined) choices.cjkFriendly = json.cjkFriendly;
+  if (json.minifyHtml !== undefined) choices.minifyHtml = json.minifyHtml;
   if (json.headerRightItems !== undefined) {
     choices.headerRightItems = json.headerRightItems;
   }

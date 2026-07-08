@@ -272,6 +272,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `siteDescription` | `string` | Default site description |
 | `base` | `string` | Base URL path prefix |
 | `trailingSlash` | `boolean` | Whether to add trailing slashes to URLs |
+| `minifyHtml?` | `boolean` | Minify production HTML output from `zfb build`; defaults to `true` when omitted |
 | `docsDir` | `string` | Path to English docs content directory |
 | `defaultLocale` | `string` | Default locale code (e.g. `"en"`) |
 | `locales` | `Record<string, LocaleConfig>` | Locale configuration map |

@@ -183,7 +183,7 @@ describe("preset eval-graph is node-builtin-free (--platform=neutral)", () => {
 // ───────────────────────────────────────────────────────────────────────────
 // Behavioral parity — the returned fragment reproduces the hand-written
 // `zfb.config.ts` pipeline (collections loop, plugins, markdown.features,
-// codeHighlight, resolveMarkdownLinks, stripMdExt, trailingSlash).
+// codeHighlight, resolveMarkdownLinks, stripMdExt, trailingSlash, minifyHtml).
 // ───────────────────────────────────────────────────────────────────────────
 
 // A fixture mirroring the showcase `settings` shape (the subset the preset
@@ -197,6 +197,7 @@ const fixtureSettings: PresetSettings = {
   siteDescription: "Documentation base framework.",
   siteUrl: "https://zudo-doc.takazudomodular.com",
   trailingSlash: true,
+  minifyHtml: true,
   mermaid: true,
   onBrokenMarkdownLinks: "warn",
   headingIdStrategy: "hierarchical",
@@ -577,7 +578,7 @@ describe("zudoDocPreset markdown.features", () => {
 });
 
 describe("zudoDocPreset top-level pipeline fields", () => {
-  it("emits dual-theme codeHighlight, stripMdExt, and trailingSlash", () => {
+  it("emits dual-theme codeHighlight, stripMdExt, trailingSlash, and minifyHtml", () => {
     const r = preset();
     expect(r.codeHighlight).toEqual({
       themeLight: "base16-ocean.light",
@@ -585,6 +586,7 @@ describe("zudoDocPreset top-level pipeline fields", () => {
     });
     expect(r.stripMdExt).toBe(true);
     expect(r.trailingSlash).toBe(true);
+    expect(r.minifyHtml).toBe(true);
   });
 
   it("mirrors settings.trailingSlash", () => {
@@ -594,6 +596,25 @@ describe("zudoDocPreset top-level pipeline fields", () => {
       directiveVocabulary: fixtureDirectives,
     });
     expect(r.trailingSlash).toBe(false);
+  });
+
+  it("defaults minifyHtml to true when the setting is omitted", () => {
+    const { minifyHtml: _omitted, ...settingsWithoutMinifyHtml } = fixtureSettings;
+    const r = zudoDocPreset({
+      settings: settingsWithoutMinifyHtml,
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    expect(r.minifyHtml).toBe(true);
+  });
+
+  it("mirrors settings.minifyHtml when explicitly false", () => {
+    const r = zudoDocPreset({
+      settings: { ...fixtureSettings, minifyHtml: false },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    expect(r.minifyHtml).toBe(false);
   });
 
   it("builds resolveMarkdownLinks dirs for docs + locales + versions", () => {

@@ -42,6 +42,7 @@ export const settings = {
   siteDescription: "Documentation base framework built with zfb, MDX, and Tailwind CSS v4." as string,
   base: "/",
   trailingSlash: true as boolean,
+  minifyHtml: true as boolean,
   docsDir: "src/content/docs",
   defaultLocale: "en" as const,
   locales: {

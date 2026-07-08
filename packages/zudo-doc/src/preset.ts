@@ -4,7 +4,7 @@
  * `zudoDocPreset()` returns the zfb config fragment that every zudo-doc
  * project previously hand-wrote in its `zfb.config.ts` (collections loop,
  * markdown.features, dual-theme codeHighlight, resolveMarkdownLinks,
- * stripMdExt, trailingSlash, and the integration plugins array). The host
+ * stripMdExt, trailingSlash, minifyHtml, and the integration plugins array). The host
  * config spreads this fragment into `defineConfig` and supplies only the
  * project-specific shell fields it still owns (`framework`, `port`,
  * `tailwind`, `bundle`, `base`, `adapter`).
@@ -86,6 +86,7 @@ export interface PresetSettings {
   siteDescription: string;
   siteUrl: string;
   trailingSlash: boolean;
+  minifyHtml?: boolean;
   mermaid: boolean;
   onBrokenMarkdownLinks: "warn" | "error" | "ignore";
   headingIdStrategy: "flat" | "hierarchical";
@@ -240,6 +241,7 @@ export interface ZudoDocPresetResult {
   resolveMarkdownLinks: PresetResolveMarkdownLinks;
   stripMdExt: boolean;
   trailingSlash: boolean;
+  minifyHtml: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -296,6 +298,7 @@ export function zudoDocPreset({
     // `[label](./other.mdx)` references resolve to the rendered route URL.
     stripMdExt: true,
     trailingSlash: settings.trailingSlash,
+    minifyHtml: settings.minifyHtml ?? true,
   };
 }
 

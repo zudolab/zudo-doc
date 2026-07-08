@@ -652,8 +652,8 @@ describe("scaffold — designTokenPanel package.json wiring", () => {
 });
 
 describe("scaffold — generated settings.ts content", () => {
-  // 5 of the tests below (cjkFriendly default, packageOwnedRoutes,
-  // tagPlacement, toc depth defaults, headingIdStrategy default) all
+  // 6 of the tests below (cjkFriendly default, minifyHtml default,
+  // packageOwnedRoutes, tagPlacement, toc depth defaults, headingIdStrategy default) all
   // scaffold the identical bare `search`-only config (only projectName
   // differed) — scaffold that config once in beforeAll instead of 5 times
   // (#2531 — dedupe scaffold() calls). The other tests in this describe
@@ -752,6 +752,32 @@ describe("scaffold — generated settings.ts content", () => {
       "utf-8",
     );
     expect(content).toContain("cjkFriendly: false");
+  });
+
+  it("minifyHtml: defaults to true when not specified", async () => {
+    const content = await fs.readFile(
+      sharedProjectPath("test-cjk-default", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("minifyHtml: true");
+  });
+
+  it("minifyHtml: false from preset emits false in generated settings.ts", async () => {
+    const choices: UserChoices = {
+      projectName: "test-minify-html-off",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["search"],
+      minifyHtml: false,
+      packageManager: "pnpm",
+    };
+    await scaffold(choices);
+    const content = await fs.readFile(
+      projectPath("test-minify-html-off", "src/config/settings.ts"),
+      "utf-8",
+    );
+    expect(content).toContain("minifyHtml: false");
   });
 
   it("cjkFriendly: true flows through from preset into generated settings.ts", async () => {
@@ -2784,7 +2810,8 @@ describe("scaffold — zfb.config.ts shape (topic-config-generators)", () => {
 
     it("zfb.config.ts uses zudoDocPreset (S5b — collections/plugins/markdown delegated to preset)", async () => {
       // S5b (#2329): the thin preset-based shape delegates collections, plugins,
-      // markdown features, codeHighlight, resolveMarkdownLinks, and trailingSlash
+      // markdown features, codeHighlight, resolveMarkdownLinks, trailingSlash,
+      // and minifyHtml
       // to zudoDocPreset() from @takazudo/zudo-doc/preset. The generated config
       // spreads the result and keeps only the host-owned shell fields.
       // S5 (#2408): translations + colorSchemes forwarded unconditionally so
@@ -3802,11 +3829,12 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
    * Bumped to 0.1.0-next.76: routine toolchain bump from next.75, in
    * lockstep with the root package.json pins. No consumer-facing change.
    * Bumped to 0.1.0-next.77: router persistence/history fixes and runtime
-   * island remount support, in lockstep with the root package.json pins. No
-   * scaffold API change.
+   * island remount support, in lockstep with the root package.json pins.
+   * Bumped to 0.1.0-next.78: zfb production HTML minification support, wired
+   * through settings.minifyHtml as zudo-doc's default-on option.
    * Generated package.json must pin all three.
    */
-  it("pins @takazudo/zfb at 0.1.0-next.77", async () => {
+  it("pins @takazudo/zfb at 0.1.0-next.78", async () => {
     const choices: UserChoices = {
       projectName: "test-pin-bump",
       defaultLang: "en",
@@ -3817,10 +3845,10 @@ describe("scaffold — zfb next.30 pin bump (PR #1910)", () => {
     };
     await scaffold(choices);
     const pkg = await fs.readJson(projectPath("test-pin-bump", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.77");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.77");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.78");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.78");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
-      "0.1.0-next.77",
+      "0.1.0-next.78",
     );
   });
 });
