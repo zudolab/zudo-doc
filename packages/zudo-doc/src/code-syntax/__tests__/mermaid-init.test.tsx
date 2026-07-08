@@ -212,10 +212,68 @@ describe("MERMAID_INIT_SCRIPT", () => {
   // node.
   it("caches the diagram source into data-mermaid-src before running", () => {
     expect(MERMAID_INIT_SCRIPT).toContain("data-mermaid-src");
+    expect(MERMAID_INIT_SCRIPT).toContain("normalizeCollapsedMermaidSource");
     // Must cache via textContent (decoded) — NOT innerHTML, which would
     // re-encode entities and corrupt `-->` / `&` diagrams.
     expect(MERMAID_INIT_SCRIPT).toContain("el.textContent");
     expect(MERMAID_INIT_SCRIPT).not.toContain("el.innerHTML");
+  });
+
+  it("leaves authored multiline mermaid source unchanged", () => {
+    const fn = extractNormalizeCollapsedMermaidSource(MERMAID_INIT_SCRIPT);
+    const source = "graph LR\n  A[Start] --> B[Process]\n  B --> C[End]";
+    expect(fn(source)).toBe(source);
+  });
+
+  it("restores statement boundaries for minified flowchart source", () => {
+    const fn = extractNormalizeCollapsedMermaidSource(MERMAID_INIT_SCRIPT);
+    expect(
+      fn("graph LR A[Start] --> B[Process] B --> C[End]"),
+    ).toBe("graph LR\nA[Start] --> B[Process];\nB --> C[End]");
+  });
+
+  it("restores statement boundaries for minified flowchart source with labels", () => {
+    const fn = extractNormalizeCollapsedMermaidSource(MERMAID_INIT_SCRIPT);
+    expect(
+      fn(
+        "graph LR A[Start] --> B{Decision} B -->|Yes| C[Action] B -->|No| D[Other Action] C --> E[End] D --> E",
+      ),
+    ).toBe(
+      "graph LR\nA[Start] --> B{Decision};\nB -->|Yes| C[Action];\nB -->|No| D[Other Action];\nC --> E[End];\nD --> E",
+    );
+  });
+
+  it("restores statement boundaries for minified sequence diagrams", () => {
+    const fn = extractNormalizeCollapsedMermaidSource(MERMAID_INIT_SCRIPT);
+    expect(
+      fn(
+        "sequenceDiagram participant User participant App participant API User->>App: Click button App->>API: Fetch data API-->>App: JSON response App-->>User: Render result",
+      ),
+    ).toBe(
+      "sequenceDiagram\nparticipant User;\nparticipant App;\nparticipant API;\nUser->>App: Click button;\nApp->>API: Fetch data;\nAPI-->>App: JSON response;\nApp-->>User: Render result",
+    );
+  });
+
+  it("restores statement boundaries for minified state diagrams", () => {
+    const fn = extractNormalizeCollapsedMermaidSource(MERMAID_INIT_SCRIPT);
+    expect(
+      fn(
+        "stateDiagram-v2 [*] --> Draft Draft --> Review : Submit Review --> Published : Approve Review --> Draft : Request Changes Published --> Archived : Archive Archived --> [*]",
+      ),
+    ).toBe(
+      "stateDiagram-v2\n[*] --> Draft;\nDraft --> Review : Submit;\nReview --> Published : Approve;\nReview --> Draft : Request Changes;\nPublished --> Archived : Archive;\nArchived --> [*]",
+    );
+  });
+
+  it("restores statement boundaries for minified subgraph flowcharts", () => {
+    const fn = extractNormalizeCollapsedMermaidSource(MERMAID_INIT_SCRIPT);
+    expect(
+      fn(
+        "flowchart TB subgraph Build A[MDX source] --> B[Mermaid pass] B --> C[Wrapper div] end subgraph Runtime C --> D[Client island] D --> E[Rendered SVG] E --> F[Enlarge button] end F --> G((Dialog\\n+ / - / pan))",
+      ),
+    ).toBe(
+      "flowchart TB\nsubgraph Build;\nA[MDX source] --> B[Mermaid pass];\nB --> C[Wrapper div];\nend;\nsubgraph Runtime;\nC --> D[Client island];\nD --> E[Rendered SVG];\nE --> F[Enlarge button];\nend;\nF --> G((Dialog\\n+ / - / pan))",
+    );
   });
 
   it("reinitMermaid restores the cached source and removes data-processed", () => {
@@ -413,6 +471,23 @@ function extractHasThemeStateChanged(
   return new Function(
     `${tokens[0]}\n${fn[0]}\nreturn hasThemeStateChanged;`,
   )() as (prev: ThemeSnapshot | undefined, next: ThemeSnapshot) => boolean;
+}
+
+function extractNormalizeCollapsedMermaidSource(
+  script: string,
+): (raw: string) => string {
+  const match = script.match(
+    /function\s+normalizeCollapsedMermaidSource\s*\([^)]*\)\s*\{[\s\S]*?\n\s{2}\}/,
+  );
+  if (!match) {
+    throw new Error(
+      "normalizeCollapsedMermaidSource not found in MERMAID_INIT_SCRIPT",
+    );
+  }
+  // eslint-disable-next-line @typescript-eslint/no-implied-eval
+  return new Function(
+    `${match[0]}\nreturn normalizeCollapsedMermaidSource;`,
+  )() as (raw: string) => string;
 }
 
 // zudolab/zudo-doc#2474 — OKLCH migration: resolveColor must handle the

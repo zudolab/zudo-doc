@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { expectHtmlAttr } from "./html-assertions";
 import { readDistFile } from "./smoke-dist-helper";
 
 /**
@@ -23,11 +24,11 @@ test.describe("View source link: renders correctly", () => {
   });
 
   test("view-source link opens in a new tab", () => {
-    expect(html).toContain('target="_blank"');
+    expectHtmlAttr(html, "target", "_blank");
   });
 
   test("view-source link has noopener noreferrer rel attribute", () => {
-    expect(html).toContain('rel="noopener noreferrer"');
+    expectHtmlAttr(html, "rel", "noopener noreferrer");
   });
 
   test("view-source link text is 'View source on GitHub'", () => {

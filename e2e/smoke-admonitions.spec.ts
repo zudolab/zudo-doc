@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { expectHtmlAttr } from "./html-assertions";
 import { readDistFile } from "./smoke-dist-helper";
 
 /**
@@ -56,10 +57,10 @@ test.describe("Admonitions: directive syntax renders correctly", () => {
 
   test("admonition HTML structure is present", () => {
     // Each admonition type should produce a data-admonition attribute
-    expect(html).toContain('data-admonition="note"');
-    expect(html).toContain('data-admonition="tip"');
-    expect(html).toContain('data-admonition="info"');
-    expect(html).toContain('data-admonition="warning"');
-    expect(html).toContain('data-admonition="danger"');
+    expectHtmlAttr(html, "data-admonition", "note");
+    expectHtmlAttr(html, "data-admonition", "tip");
+    expectHtmlAttr(html, "data-admonition", "info");
+    expectHtmlAttr(html, "data-admonition", "warning");
+    expectHtmlAttr(html, "data-admonition", "danger");
   });
 });

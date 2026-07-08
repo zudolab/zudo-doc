@@ -1,5 +1,6 @@
 import { test, expect } from "./fixtures";
 import { makeDistReader } from "./dist-helper";
+import { classAttrSource, expectHtmlAttr } from "./html-assertions";
 
 /**
  * E2E tests for documentation versioning feature.
@@ -122,13 +123,13 @@ test.describe("Versioning: versioned pages", () => {
     // proxy for the browser's toBeVisible() here.
     const banner = extractVersionBanner(html);
     expect(banner).not.toBeNull();
-    expect(banner).not.toMatch(/class="[^"]*\bhidden\b/);
+    expect(banner).not.toMatch(new RegExp(classAttrSource("hidden")));
   });
 
   test("version banner contains link to latest", () => {
     const banner = extractVersionBanner(html);
     expect(banner).not.toBeNull();
-    expect(banner).toContain('href="/docs/getting-started"');
+    expectHtmlAttr(banner!, "href", "/docs/getting-started");
     // Should NOT contain /v/1.0 — it links to the latest version
     expect(banner).not.toContain("/v/1.0");
   });

@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures";
+import { expectHtmlAttr, expectHtmlClass } from "./html-assertions";
 import { readDistFile } from "./smoke-dist-helper";
 
 /**
@@ -25,11 +26,11 @@ test.describe("PresetGenerator: SSR fallback shape", () => {
   });
 
   test("SSR emits the skip-ssr island marker for PresetGenerator", () => {
-    expect(html).toContain('data-zfb-island-skip-ssr="PresetGenerator"');
+    expectHtmlAttr(html, "data-zfb-island-skip-ssr", "PresetGenerator");
   });
 
   test("SSR fallback renders the static section-heading shell", () => {
-    expect(html).toContain('class="zd-preset-gen-fallback"');
+    expectHtmlClass(html, "zd-preset-gen-fallback");
     expect(html).toContain("Project Name");
     expect(html).toContain("Header right items");
   });

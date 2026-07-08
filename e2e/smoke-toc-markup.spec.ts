@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { attrSource, classAttrSource } from "./html-assertions";
 import { readDistFile } from "./smoke-dist-helper";
 
 /**
@@ -62,8 +63,10 @@ test.describe("TOC: desktop table of contents markup", () => {
   test("h3 list items have ml-hsp-lg class", () => {
     // Mirrors the original browser test's spot check: the "Prerequisites"
     // h3 link's parent <li> carries the indent class.
-    expect(toc).toContain(
-      '<li class="ml-hsp-lg"><a href="#getting-started-prerequisites"',
+    expect(toc).toMatch(
+      new RegExp(
+        `<li\\b(?=[^>]*${classAttrSource("ml-hsp-lg")})[^>]*>\\s*<a\\b(?=[^>]*${attrSource("href", "#getting-started-prerequisites")})`,
+      ),
     );
   });
 });

@@ -32,10 +32,16 @@ test.describe("TOC: desktop table of contents", () => {
     const tocNav = page.locator('[aria-label="Table of contents"]');
     await expect(tocNav).toBeVisible({ timeout: 5000 });
 
-    // Scroll to the Introduction heading to ensure it enters the active zone.
-    // The scroll spy uses a debounce and position-based detection, so we need
-    // the heading to be near the top of the viewport.
-    await page.locator("#introduction").scrollIntoViewIfNeeded();
+    // Scroll the Introduction heading to the top of the viewport so it enters
+    // the scroll spy's active zone (top < viewportHeight / 2). Do not use
+    // scrollIntoViewIfNeeded(): the heading can already be visible but still
+    // sit below the active threshold after production HTML minification.
+    await page.evaluate(() => {
+      const el = document.getElementById("introduction");
+      if (el) {
+        el.scrollIntoView({ behavior: "instant", block: "start" });
+      }
+    });
 
     // Wait for the scroll spy debounce (200ms) to settle and mark a heading active
     const activeLink = tocNav.locator('a[aria-current="true"]');
@@ -50,8 +56,13 @@ test.describe("TOC: desktop table of contents", () => {
     const tocNav = page.locator('[aria-label="Table of contents"]');
     await expect(tocNav).toBeVisible({ timeout: 5000 });
 
-    // Scroll to Introduction first to activate scroll spy
-    await page.locator("#introduction").scrollIntoViewIfNeeded();
+    // Scroll to Introduction first to activate scroll spy.
+    await page.evaluate(() => {
+      const el = document.getElementById("introduction");
+      if (el) {
+        el.scrollIntoView({ behavior: "instant", block: "start" });
+      }
+    });
     const activeLink = tocNav.locator('a[aria-current="true"]');
     await expect(activeLink).toHaveCount(1, { timeout: 5000 });
 
