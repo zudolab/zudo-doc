@@ -1,0 +1,19 @@
+---
+title: 3.2.0
+description: 3.2.0のリリースノート。
+sidebar_position: 1055
+---
+
+リリース日: 2026-07-08
+
+### 機能
+
+- `minifyHtml` 設定、プリセット対応、ジェネレーター出力、ドキュメントを追加し、zudo-doc プロジェクトの本番 HTML がデフォルトで minify されるようにしました (4201484d)。
+
+### バグ修正
+
+- `setup-doc-skill.sh` を create-zudo-doc テンプレートに同梱し、公開 npm パッケージから scaffold した `skillSymlinker` プロジェクトでもコピーされるようにしました (9797f2d0)。
+
+### その他の変更
+
+- minify された HTML 出力に対応するよう CI と e2e アサーションを更新し、minification のカバレッジを強化しました (24b2a1eb, 379da331, abe41685)。

@@ -4,6 +4,20 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [3.2.0] - 2026-07-08
+
+### Features
+
+- Added the `minifyHtml` setting, preset support, generator output, and documentation so zudo-doc projects minify production HTML by default (4201484d).
+
+### Bug Fixes
+
+- Packaged `setup-doc-skill.sh` inside the create-zudo-doc template and copied it from the published package, so scaffolded `skillSymlinker` projects work from npm installs (9797f2d0).
+
+### Other Changes
+
+- Updated CI and e2e assertions for minified HTML output and hardened minification coverage (24b2a1eb, 379da331, abe41685).
+
 ## [3.1.0] - 2026-07-08
 
 ### Features
