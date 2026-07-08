@@ -24,9 +24,9 @@ export { getSecondaryLang };
 export const ZUDO_DOC_PIN = "^3.1.0";
 
 /**
- * Files in `templates/base/**` that must never be copied into a generated
- * project. Each entry is matched against the path relative to `templates/base/`
- * (POSIX-style, forward slashes).
+ * Files in `templates/base/**` that must not be copied by the unconditional
+ * base mirror. Each entry is matched against the path relative to
+ * `templates/base/` (POSIX-style, forward slashes).
  *
  * W2 spec-lock Decision 5 (#1728) — `pages/api/**` is worker-only SSR
  * (uses `@takazudo/zfb-adapter-cloudflare`, `prerender = false`) and is
@@ -36,6 +36,7 @@ export const ZUDO_DOC_PIN = "^3.1.0";
  */
 const EXCLUDE_FROM_MIRROR: RegExp[] = [
   /^pages\/api(\/|$)/,
+  /^scripts\/setup-doc-skill\.sh$/,
 ];
 
 /**
@@ -226,7 +227,7 @@ export async function scaffold(choices: UserChoices): Promise<void> {
   const baseDir = path.join(templatesDir, "base");
   const featuresDir = path.join(templatesDir, "features");
 
-  // For skillSymlinker, we still need the monorepo root for the script
+  // Still needed for source-checkout-only assets such as Claude skills.
   const monorepoRoot = path.resolve(pkgRoot, "../..");
 
   await fs.ensureDir(targetDir);
@@ -242,11 +243,9 @@ export async function scaffold(choices: UserChoices): Promise<void> {
 
   // 2. Copy skill symlinker script when enabled
   if (choices.features.includes("skillSymlinker")) {
-    const scriptSrc = path.join(monorepoRoot, "scripts/setup-doc-skill.sh");
+    const scriptSrc = path.join(baseDir, "scripts/setup-doc-skill.sh");
     const scriptDest = path.join(targetDir, "scripts/setup-doc-skill.sh");
-    if (await fs.pathExists(scriptSrc)) {
-      await fs.copy(scriptSrc, scriptDest);
-    }
+    await fs.copy(scriptSrc, scriptDest);
   }
 
   // 2b. Copy user-facing Claude Code skills when enabled
