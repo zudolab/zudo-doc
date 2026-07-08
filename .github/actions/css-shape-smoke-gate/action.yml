@@ -25,7 +25,7 @@ runs:
         # hashed styles-<hash>.css before that asset has propagated, so an immediate
         # curl 404s. --retry-all-errors retries HTTP 4xx too (plain --retry does not).
         # Propagation race, not a real failure (#2236).
-        CSS_PATH=$(curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors "$DEPLOY_URL/" | grep -oE 'href="[^"]*assets/styles-[^"]*\.css"' | head -1 | sed 's/href="//;s/"$//')
+        CSS_PATH=$(curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors "$DEPLOY_URL/" | grep -oE "href=[\"']?[^\"' >]*assets/styles-[^\"' >]*\.css" | head -1 | sed -E "s/^href=[\"']?//")
         [ -n "$CSS_PATH" ] || { echo "::error::no CSS link found in $DEPLOY_URL/"; exit 1; }
         curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors "${DEPLOY_URL}${CSS_PATH}" -o /tmp/deployed-css.css
 

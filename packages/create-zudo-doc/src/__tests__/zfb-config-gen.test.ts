@@ -14,7 +14,7 @@ const baseChoices: UserChoices = {
 describe("generateZfbConfig", () => {
   // S5b (#2329): collapsed to the thin preset-based shape — all collection
   // wiring, plugin descriptors, markdown features, codeHighlight,
-  // resolveMarkdownLinks, and trailingSlash are now delegated to
+  // resolveMarkdownLinks, trailingSlash, and minifyHtml are now delegated to
   // `zudoDocPreset()` from `@takazudo/zudo-doc/preset`. The generated config
   // spreads the preset result into `defineConfig` and keeps only the
   // project-owned shell fields (framework, port, tailwind, base).
@@ -61,6 +61,7 @@ describe("generateZfbConfig", () => {
     expect(result).not.toContain("resolveMarkdownLinks: {");
     expect(result).not.toContain("stripMdExt:");
     expect(result).not.toContain("trailingSlash: settings.trailingSlash,");
+    expect(result).not.toContain("minifyHtml: settings.minifyHtml,");
 
     // migration guards: generated package.json must never include Astro deps
     expect(result).not.toContain("astro/config");

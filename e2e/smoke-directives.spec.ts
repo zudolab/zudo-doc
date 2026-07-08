@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { expectHtmlAttr } from "./html-assertions";
 import { readDistFile } from "./smoke-dist-helper";
 
 /**
@@ -34,12 +35,12 @@ test.describe("Directives map: ::: syntax renders correctly", () => {
   test(":::note[Custom Title] renders with data-admonition and title text", () => {
     // Verifies that the directives map resolves `note` → Note component and
     // that titleFromLabel defaults true so the bracketed label becomes the title.
-    expect(html).toContain('data-admonition="note"');
+    expectHtmlAttr(html, "data-admonition", "note");
     expect(html).toContain("Custom Title");
   });
 
   test(":::caution renders with data-admonition", () => {
-    expect(html).toContain('data-admonition="caution"');
+    expectHtmlAttr(html, "data-admonition", "caution");
   });
 
   test(":::details renders as a <details> element, not a data-admonition", () => {

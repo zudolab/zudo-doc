@@ -5,8 +5,8 @@ import type { UserChoices } from "./prompts.js";
  *
  * S5b (#2329): collapsed to the thin preset-based shape that mirrors the
  * showcase `zfb.config.ts` after S5a. All collection wiring, plugin
- * descriptors, markdown features, codeHighlight, resolveMarkdownLinks, and
- * trailingSlash are now owned by `zudoDocPreset()` in
+ * descriptors, markdown features, codeHighlight, resolveMarkdownLinks,
+ * trailingSlash, and minifyHtml are now owned by `zudoDocPreset()` in
  * `@takazudo/zudo-doc/preset`. The generated config spreads the preset
  * result into `defineConfig` and keeps only the project-owned shell fields
  * (`framework`, `port`, `tailwind`, `base`).

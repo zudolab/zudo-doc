@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { expectHtmlAttr, expectHtmlTagWithAttrs } from "./html-assertions";
 import { readDistFile } from "./smoke-dist-helper";
 
 test.describe("404 page: renders correctly", () => {
@@ -18,13 +19,16 @@ test.describe("404 page: renders correctly", () => {
   });
 
   test("contains a link back to home", () => {
-    expect(html).toContain('href="/"');
+    expectHtmlAttr(html, "href", "/");
   });
 
   test("has noindex robots meta tag", () => {
     // Match `noindex` as the leading directive; the renderer emits the
     // full `noindex, nofollow` form so we drop the literal closing quote
     // (matches the same prefix-only shape used in smoke-seo.spec.ts).
-    expect(html).toContain('<meta name="robots" content="noindex');
+    expectHtmlTagWithAttrs(html, "meta", [
+      ["name", "robots"],
+      ["content", "noindex, nofollow"],
+    ]);
   });
 });

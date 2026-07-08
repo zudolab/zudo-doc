@@ -1,4 +1,9 @@
 import { test, expect } from "@playwright/test";
+import {
+  expectHtmlLink,
+  expectHtmlTagWithAttr,
+  expectHtmlTagWithClass,
+} from "./html-assertions";
 import { readDistFile } from "./smoke-dist-helper";
 
 /**
@@ -40,15 +45,11 @@ test.describe("Markdown links: resolveMarkdownLinks + stripMdExt", () => {
   });
 
   test("markdown-syntax link to a sibling .mdx file resolves to its real route", () => {
-    expect(html).toContain(
-      '<a href="/docs/guides/page-1/" class="text-accent underline hover:text-accent-hover">Sibling page</a>',
-    );
+    expectHtmlLink(html, "/docs/guides/page-1/", "Sibling page");
   });
 
   test("markdown-syntax link with an anchor resolves and keeps the anchor", () => {
-    expect(html).toContain(
-      '<a href="/docs/guides/page-1/#section" class="text-accent underline hover:text-accent-hover">With anchor</a>',
-    );
+    expectHtmlLink(html, "/docs/guides/page-1/#section", "With anchor");
   });
 
   test("markdown-syntax link with a query string resolves AND keeps the query string (the retired JS bug does not reproduce in production)", () => {
@@ -57,36 +58,30 @@ test.describe("Markdown links: resolveMarkdownLinks + stripMdExt", () => {
     // live regression: the JS regex /\.mdx?(#.*)?$/ never matched query
     // strings, so `./other.md?foo=bar` stayed unrewritten there. The Rust
     // pipeline resolves the link to its real route AND preserves `?foo=bar`.
-    expect(html).toContain(
-      '<a href="/docs/guides/page-1/?foo=bar" class="text-accent underline hover:text-accent-hover">With query</a>',
-    );
+    expectHtmlLink(html, "/docs/guides/page-1/?foo=bar", "With query");
   });
 
   test("markdown-syntax link with both an anchor and a query string resolves correctly", () => {
-    expect(html).toContain(
-      '<a href="/docs/guides/page-1/?foo=bar#section" class="text-accent underline hover:text-accent-hover">With anchor and query</a>',
+    expectHtmlLink(
+      html,
+      "/docs/guides/page-1/?foo=bar#section",
+      "With anchor and query",
     );
   });
 
   test("external .md link is left untouched", () => {
-    expect(html).toContain(
-      '<a href="https://example.com/foo.md" class="text-accent underline hover:text-accent-hover">External</a>',
-    );
+    expectHtmlLink(html, "https://example.com/foo.md", "External");
   });
 
   test("mailto link is left untouched", () => {
-    expect(html).toContain(
-      '<a href="mailto:hi@example.com" class="text-accent underline hover:text-accent-hover">Mailto</a>',
-    );
+    expectHtmlLink(html, "mailto:hi@example.com", "Mailto");
   });
 
   test("pure in-page anchor link is left untouched", () => {
-    expect(html).toContain(
-      '<a href="#section" class="text-accent underline hover:text-accent-hover">Anchor only</a>',
-    );
+    expectHtmlLink(html, "#section", "Anchor only");
   });
 
-  test("a JSX-authored raw <a> is emitted byte-for-byte (not a markdown link node, so resolveMarkdownLinks/stripMdExt never see it)", () => {
+  test("a JSX-authored raw <a> keeps its authored href (not a markdown link node, so resolveMarkdownLinks/stripMdExt never see it)", () => {
     // Documents a genuine divergence from the JS pipeline: the JS driver
     // parses raw HTML via rehype-raw into the same hast tree markdown
     // links flow through, so rehypeStripMdExtension touches BOTH forms
@@ -94,8 +89,10 @@ test.describe("Markdown links: resolveMarkdownLinks + stripMdExt", () => {
     // the production MDX pipeline, JSX-authored <a> compiles straight to
     // JSX and never becomes a markdown mdast link node, so neither
     // resolveMarkdownLinks nor StripMdExtensionPlugin process it.
-    expect(html).toContain(
-      '<a href="./page-1.md?foo=bar" class="text-accent underline hover:text-accent-hover">raw JSX anchor, left exactly as authored</a>',
+    expectHtmlLink(
+      html,
+      "./page-1.md?foo=bar",
+      "raw JSX anchor, left exactly as authored",
     );
   });
 });
@@ -119,13 +116,13 @@ test.describe("Tables: GFM table rendering", () => {
 
   test("table cells render inline marks (code, bold) correctly", () => {
     expect(html).toContain("<td><code>key</code></td>");
-    expect(html).toContain('<td>An <strong class="font-bold text-fg">important</strong> value</td>');
+    expect(html).toMatch(/<td>An <strong\b[^>]*>important<\/strong> value<\/td>/);
+    expectHtmlTagWithClass(html, "strong", "font-bold");
+    expectHtmlTagWithClass(html, "strong", "text-fg");
   });
 
   test("table cells render links, resolved the same as prose links", () => {
-    expect(html).toContain(
-      '<a href="/docs/guides/page-1/" class="text-accent underline hover:text-accent-hover">Writing Docs</a>',
-    );
+    expectHtmlLink(html, "/docs/guides/page-1/", "Writing Docs");
   });
 
   test("no raw GFM table pipe syntax remains in output", () => {
@@ -151,25 +148,25 @@ test.describe("CJK-friendly: emphasis markers adjacent to CJK characters", () =>
   // by Pipeline::with_defaults(), on regardless of the setting being unset).
 
   test("Japanese: bold marker immediately adjacent to kanji parses as emphasis", () => {
-    expect(html).toContain('これは<strong class="font-bold text-fg">重要</strong>な機能です。');
+    expect(html).toMatch(/これは<strong\b[^>]*>重要<\/strong>な機能です。/);
   });
 
   test("Chinese: bold marker immediately adjacent to hanzi parses as emphasis", () => {
-    expect(html).toContain('中文<strong class="font-bold text-fg">强调</strong>测试。');
+    expect(html).toMatch(/中文<strong\b[^>]*>强调<\/strong>测试。/);
   });
 
   test("Korean: bold marker adjacent to hangul parses as emphasis", () => {
-    expect(html).toContain('한국어 <strong class="font-bold text-fg">강조</strong> 테스트.');
+    expect(html).toMatch(/한국어 <strong\b[^>]*>강조<\/strong> 테스트\./);
   });
 
   test("ASCII baseline (ordinary CommonMark emphasis between English words) is unaffected", () => {
-    expect(html).toContain(
-      'this is <strong class="font-bold text-fg">bold</strong> between English words',
+    expect(html).toMatch(
+      /this is <strong\b[^>]*>bold<\/strong> between English words/,
     );
   });
 
   test("mixed CJK + ASCII line renders emphasis correctly on both sides", () => {
-    expect(html).toContain('日本語の <strong class="font-bold text-fg">bold</strong> とテキスト。');
+    expect(html).toMatch(/日本語の <strong\b[^>]*>bold<\/strong> とテキスト。/);
   });
 
   test("no literal, unparsed ** markers remain in the article content", () => {
@@ -204,18 +201,26 @@ test.describe("Math: KaTeX rendering via <MathBlock>", () => {
   });
 
   test("inline math renders a KaTeX span with the correct source annotation", () => {
-    expect(html).toContain('<span class="math math-inline"><span class="katex">');
-    expect(html).toContain('<annotation encoding="application/x-tex">E = mc^2</annotation>');
+    expectHtmlTagWithClass(html, "span", "math-inline");
+    expectHtmlTagWithClass(html, "span", "katex");
+    expectHtmlTagWithAttr(html, "annotation", "encoding", "application/x-tex");
+    expect(html).toContain(">E = mc^2</annotation>");
   });
 
   test("block math renders a KaTeX display div with the correct source annotation", () => {
-    expect(html).toContain('<div class="math math-display">');
+    expectHtmlTagWithClass(html, "div", "math-display");
+    expectHtmlTagWithAttr(html, "annotation", "encoding", "application/x-tex");
     expect(html).toContain(
-      '<annotation encoding="application/x-tex">\\int_0^{\\infty} e^{-x^2} \\, dx = \\frac{\\sqrt{\\pi}}{2}</annotation>',
+      ">\\int_0^{\\infty} e^{-x^2} \\, dx = \\frac{\\sqrt{\\pi}}{2}</annotation>",
     );
   });
 
   test("KaTeX MathML fallback is present for accessibility", () => {
-    expect(html).toContain('<math xmlns="http://www.w3.org/1998/Math/MathML">');
+    expectHtmlTagWithAttr(
+      html,
+      "math",
+      "xmlns",
+      "http://www.w3.org/1998/Math/MathML",
+    );
   });
 });

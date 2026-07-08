@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures";
+import { expectHtmlAttr, getAttrValue } from "./html-assertions";
 import { readDistFile } from "./smoke-dist-helper";
 
 /**
@@ -12,19 +13,18 @@ test.describe("Header dropdown navigation (static)", () => {
   test("dropdown markup is present in built HTML", () => {
     const html = readDistFile("docs/getting-started/index.html");
     expect(html).toContain("data-nav-item-dropdown");
-    expect(html).toContain('aria-haspopup="true"');
-    expect(html).toContain('aria-expanded="false"');
+    expectHtmlAttr(html, "aria-haspopup", "true");
+    expectHtmlAttr(html, "aria-expanded", "false");
   });
 
   test("dropdown trigger has correct label and href", () => {
     const html = readDistFile("docs/getting-started/index.html");
     // The dropdown trigger link should contain "Learn" and point to /docs/guides
-    const dropdownMatch = html.match(
-      /data-nav-item-dropdown[\s\S]*?<a[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/,
-    );
-    expect(dropdownMatch).toBeTruthy();
-    expect(dropdownMatch![1]).toContain("/docs/guides");
-    expect(dropdownMatch![2]).toContain("Learn");
+    const dropdownHtml = html.slice(html.indexOf("data-nav-item-dropdown"));
+    const anchorMatch = dropdownHtml.match(/<a\b[^>]*>([\s\S]*?)<\/a>/);
+    expect(anchorMatch).toBeTruthy();
+    expect(getAttrValue(anchorMatch![0], "href")).toContain("/docs/guides");
+    expect(anchorMatch![1]).toContain("Learn");
   });
 
   test("dropdown panel contains child links", () => {

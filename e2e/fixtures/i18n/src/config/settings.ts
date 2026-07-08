@@ -12,6 +12,7 @@ export const settings = {
   siteName: "i18n Test",
   siteDescription: "Test fixture for i18n E2E tests" as string,
   base: "/",
+  minifyHtml: true as boolean,
   docsDir: "src/content/docs",
   defaultLocale: "en" as const,
   locales: {

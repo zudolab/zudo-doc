@@ -255,6 +255,49 @@ export function buildMermaidInitScript(cdnUrl: string): string {
     return false;
   }
 
+  /**
+   * zfb 0.1.0-next.78's HTML minifier collapses text inside
+   * <div data-mermaid>, but Mermaid's DSL uses line/statement boundaries
+   * as syntax. Only repair single-line sources; already-multiline source
+   * keeps its authored layout.
+   */
+  function normalizeCollapsedMermaidSource(raw) {
+    var source = (raw || "").replace(/\\r\\n?/g, "\\n");
+    if (source.indexOf("\\n") !== -1) return source;
+    source = source.replace(/^\\s+|\\s+$/g, "").replace(/\\s+/g, " ");
+    if (!source) return source;
+
+    var out = source
+      .replace(/^(graph|flowchart)\\s+(TB|TD|BT|RL|LR)\\s+/i, "$1 $2\\n")
+      .replace(/^(sequenceDiagram|stateDiagram(?:-v2)?|classDiagram|erDiagram|journey|gantt|gitGraph|mindmap|timeline|quadrantChart|requirementDiagram)\\s+/i, "$1\\n");
+
+    if (/^(graph|flowchart)\\b/i.test(out)) {
+      out = out
+        .replace(/\\bend\\s+subgraph\\b/gi, "end;\\nsubgraph")
+        .replace(/\\bsubgraph\\s+([A-Za-z0-9_-]+)\\s+(?=(?:[A-Za-z0-9_][\\w-]*|\\[\\*\\])[\\[{(]?)/gi, "subgraph $1;\\n")
+        .replace(/([\\]\\)\\}])\\s+\\bend\\b/gi, "$1;\\nend")
+        .replace(/\\bend\\s+((?:[A-Za-z0-9_][\\w-]*|\\[\\*\\])\\s*(?:[-=.xo<~]+|--?>))/gi, "end;\\n$1")
+        .replace(/([\\]\\)\\}])\\s+((?:[A-Za-z0-9_][\\w-]*|\\[\\*\\])\\s*(?:[-=.xo<~]+|--?>))/g, "$1;\\n$2");
+    } else if (/^sequenceDiagram\\b/i.test(out)) {
+      out = out
+        .replace(/\\s+(create\\s+(?:participant|actor)|participant|actor)\\s+/gi, ";\\n$1 ")
+        .replace(/\\s+([A-Za-z][\\w.-]*\\s*(?:-+>>\\+?|-+>\\+?|-+\\)\\+?|-+x\\+?))/g, ";\\n$1")
+        .replace(/\\s+(Note\\s+(?:left|right|over)\\s+of\\s+)/gi, ";\\n$1")
+        .replace(/\\s+(loop|alt|else|opt|par|and|rect|critical|break|end)\\b/gi, ";\\n$1");
+    } else if (/^stateDiagram(?:-v2)?\\b/i.test(out)) {
+      out = out.replace(
+        /([A-Za-z0-9_*\\]\\)\\}])\\s+((?:\\[\\*\\]|[A-Za-z0-9_][\\w-]*)\\s*--?>)/g,
+        "$1;\\n$2",
+      );
+    }
+
+    return out
+      .replace(/\\n\\s*;\\s*\\n/g, "\\n")
+      .replace(/^(sequenceDiagram|stateDiagram(?:-v2)?);\\n/i, "$1\\n")
+      .replace(/;{2,}/g, ";")
+      .replace(/^\\s+|\\s+$/g, "");
+  }
+
   async function initMermaid() {
     var els = document.querySelectorAll("[data-mermaid]:not([data-mermaid-rendered])");
     if (els.length === 0) return;
@@ -359,8 +402,10 @@ export function buildMermaidInitScript(cdnUrl: string): string {
       // Only set when absent so repeated reinits keep the ORIGINAL
       // source (zudolab/zudo-doc#2181).
       els.forEach(function (el) {
+        var source = normalizeCollapsedMermaidSource(el.textContent);
+        el.textContent = source;
         if (!el.hasAttribute("data-mermaid-src")) {
-          el.setAttribute("data-mermaid-src", el.textContent);
+          el.setAttribute("data-mermaid-src", source);
         }
       });
       await mermaid.run({ nodes: Array.from(els) });

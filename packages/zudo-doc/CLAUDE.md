@@ -122,7 +122,7 @@ unchanged). `buildNavTree(entries, lang, categoryMeta, { buildHref })` in
 `src/preset.ts` (exported as `@takazudo/zudo-doc/preset`) returns the zfb config
 fragment every project used to hand-write in `zfb.config.ts` — collections loop,
 `markdown.features`, dual-theme `codeHighlight`, `resolveMarkdownLinks`,
-`stripMdExt`, `trailingSlash`, and the integration `plugins` array. The host
+`stripMdExt`, `trailingSlash`, `minifyHtml`, and the integration `plugins` array. The host
 spreads it into `defineConfig` and keeps only the shell fields it still owns
 (`framework`, `port`, `tailwind`, `bundle`, `base`, `adapter`).
 

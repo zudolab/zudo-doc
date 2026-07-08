@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { expectHtmlAttr } from "./html-assertions";
 import { readDistFile } from "./smoke-dist-helper";
 
 /**
@@ -23,18 +24,18 @@ import { readDistFile } from "./smoke-dist-helper";
 test.describe("Frontmatter Preview: rendered-vs-hidden behavior", () => {
   test("system-only frontmatter → block absent", () => {
     const html = readDistFile("docs/getting-started/index.html");
-    expect(html).not.toContain('data-testid="frontmatter-preview"');
+    expect(html).not.toMatch(/data-testid\s*=\s*["']?frontmatter-preview/);
   });
 
   test("custom frontmatter → block visible with correct rows", () => {
     const html = readDistFile("docs/guides/frontmatter-preview-test/index.html");
 
     // Block must be present
-    expect(html).toContain('data-testid="frontmatter-preview"');
+    expectHtmlAttr(html, "data-testid", "frontmatter-preview");
 
     // Scope row assertions to the block's <tbody> — the page also has a
     // prose paragraph mentioning "author"/"status" outside the block.
-    const blockStart = html.indexOf('data-testid="frontmatter-preview"');
+    const blockStart = html.search(/data-testid\s*=\s*["']?frontmatter-preview/);
     const tbodyStart = html.indexOf("<tbody>", blockStart);
     const tbodyEnd = html.indexOf("</tbody>", tbodyStart);
     const tbody = html.slice(tbodyStart, tbodyEnd);
@@ -52,6 +53,6 @@ test.describe("Frontmatter Preview: rendered-vs-hidden behavior", () => {
 
   test("auto-index category page → block absent", () => {
     const html = readDistFile("docs/auto-index-category/index.html");
-    expect(html).not.toContain('data-testid="frontmatter-preview"');
+    expect(html).not.toMatch(/data-testid\s*=\s*["']?frontmatter-preview/);
   });
 });

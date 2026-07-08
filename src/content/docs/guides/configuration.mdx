@@ -23,6 +23,7 @@ export const settings = {
   siteDescription: "Documentation base framework...",
   base: "/",
   trailingSlash: true,
+  minifyHtml: true,
   docsDir: "src/content/docs",
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },
@@ -136,6 +137,16 @@ When enabled, the dev server automatically redirects URLs without a trailing sla
 Earlier versions of this doc referenced `/_astro/` and `/_image` as additional redirect exclusions. Those are legacy Astro-era paths; zfb does not emit them. They are preserved in the redirect skip-list only for backward compatibility with existing cached links.
 
 </Note>
+
+### minifyHtml
+
+Controls whether `zfb build` minifies generated `.html` files.
+
+Default: `true` in zudo-doc projects. Set it to `false` if you need readable production HTML while debugging build output.
+
+```ts
+minifyHtml: true,
+```
 
 ### onBrokenMarkdownLinks
 

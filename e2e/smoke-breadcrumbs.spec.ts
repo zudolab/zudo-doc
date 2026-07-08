@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { expectHtmlAttr } from "./html-assertions";
 import { readDistFile } from "./smoke-dist-helper";
 
 test.describe("Breadcrumbs: navigation trail renders correctly", () => {
@@ -10,7 +11,7 @@ test.describe("Breadcrumbs: navigation trail renders correctly", () => {
 
   test("breadcrumb nav element exists with correct aria-label", () => {
     expect(html).toContain('<nav');
-    expect(html).toContain('aria-label="Breadcrumb"');
+    expectHtmlAttr(html, "aria-label", "Breadcrumb");
   });
 
   test("breadcrumb trail contains Guides link", () => {
@@ -24,7 +25,7 @@ test.describe("Breadcrumbs: navigation trail renders correctly", () => {
 
   test("home icon link is present", () => {
     // The first breadcrumb item is a home icon link pointing to "/"
-    expect(html).toContain('href="/"');
+    expectHtmlAttr(html, "href", "/");
     // It contains an SVG with the house icon path
     expect(html).toContain("M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3");
   });

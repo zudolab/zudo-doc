@@ -23,6 +23,7 @@ export const settings = {
   siteDescription: "Documentation base framework...",
   base: "/",
   trailingSlash: true,
+  minifyHtml: true,
   docsDir: "src/content/docs",
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },
@@ -136,6 +137,16 @@ trailingSlash: true,
 このドキュメントの以前のバージョンでは`/_astro/`と`/_image`もリダイレクト除外対象として記載されていました。これらはAstro時代のレガシーパスであり、zfbはこれらのプレフィックスを出力しません。既存のキャッシュ済みリンクとの後方互換性のためにリダイレクトスキップリストに残されています。
 
 </Note>
+
+### minifyHtml
+
+`zfb build`が生成する`.html`ファイルをminifyするかどうかを制御します。
+
+デフォルト：zudo-docプロジェクトでは`true`です。ビルド出力のHTMLを読みやすい形でデバッグしたい場合は`false`に設定します。
+
+```ts
+minifyHtml: true,
+```
 
 ### onBrokenMarkdownLinks
 

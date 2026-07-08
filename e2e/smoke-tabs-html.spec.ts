@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { expectHtmlAttr } from "./html-assertions";
 import { readDistFile } from "./smoke-dist-helper";
 
 test.describe("Tabs component: HTML structure renders correctly", () => {
@@ -17,14 +18,14 @@ test.describe("Tabs component: HTML structure renders correctly", () => {
   });
 
   test("data-tab-value attributes present for js, py, and rust", () => {
-    expect(html).toContain('data-tab-value="js"');
-    expect(html).toContain('data-tab-value="py"');
-    expect(html).toContain('data-tab-value="rust"');
+    expectHtmlAttr(html, "data-tab-value", "js");
+    expectHtmlAttr(html, "data-tab-value", "py");
+    expectHtmlAttr(html, "data-tab-value", "rust");
   });
 
   test("data-tab-label attributes present for JavaScript, Python, and Rust", () => {
-    expect(html).toContain('data-tab-label="JavaScript"');
-    expect(html).toContain('data-tab-label="Python"');
-    expect(html).toContain('data-tab-label="Rust"');
+    expectHtmlAttr(html, "data-tab-label", "JavaScript");
+    expectHtmlAttr(html, "data-tab-label", "Python");
+    expectHtmlAttr(html, "data-tab-label", "Rust");
   });
 });

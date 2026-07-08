@@ -15,6 +15,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { expectHtmlAttr, expectHtmlClass } from "./html-assertions";
 import { readDistFile } from "./smoke-dist-helper";
 
 const PAGE_LOADING_OVERLAY_ID = "page-loading-overlay";
@@ -32,9 +33,9 @@ test.describe("Loading overlay: SSG shape", () => {
   });
 
   test("overlay element is present in built HTML", () => {
-    expect(html).toContain(`id="${PAGE_LOADING_OVERLAY_ID}"`);
-    expect(html).toContain('class="page-loading-overlay"');
-    expect(html).toContain('aria-hidden="true"');
+    expectHtmlAttr(html, "id", PAGE_LOADING_OVERLAY_ID);
+    expectHtmlClass(html, "page-loading-overlay");
+    expectHtmlAttr(html, "aria-hidden", "true");
   });
 
   test("bootstrap script is present with nav-event listeners", () => {
@@ -81,8 +82,8 @@ test.describe("Loading overlay: package-owned route (404)", () => {
   });
 
   test("overlay element is present on the package-owned 404 route", () => {
-    expect(html).toContain(`id="${PAGE_LOADING_OVERLAY_ID}"`);
-    expect(html).toContain('class="page-loading-overlay"');
+    expectHtmlAttr(html, "id", PAGE_LOADING_OVERLAY_ID);
+    expectHtmlClass(html, "page-loading-overlay");
   });
 
   test("nav-lifecycle bootstrap is present on the 404 route", () => {
@@ -117,4 +118,3 @@ test(
     expect(pointerEvents).toBe("none");
   },
 );
-

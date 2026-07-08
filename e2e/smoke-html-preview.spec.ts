@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures";
+import { expectHtmlAttr } from "./html-assertions";
 import { readDistFile } from "./smoke-dist-helper";
 
 /**
@@ -29,9 +30,9 @@ test.describe("HtmlPreview: SSG shape", () => {
 
   test("iframes carry the resolveSandbox contract sandbox attributes", () => {
     // No-script preview: allow-same-origin (kept for auto-height measurement).
-    expect(html).toContain('sandbox="allow-same-origin"');
+    expectHtmlAttr(html, "sandbox", "allow-same-origin");
     // Script-bearing preview: allow-scripts allow-same-origin.
-    expect(html).toContain('sandbox="allow-scripts allow-same-origin"');
+    expectHtmlAttr(html, "sandbox", "allow-scripts allow-same-origin");
   });
 });
 

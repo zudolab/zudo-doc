@@ -223,6 +223,7 @@ describe("Settings public field set snapshot", () => {
         "siteDescription",
         "base",
         "trailingSlash",
+        "minifyHtml",
         "docsDir",
         "defaultLocale",
         "locales",

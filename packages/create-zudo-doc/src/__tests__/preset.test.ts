@@ -19,6 +19,23 @@ describe("presetToChoices — cjkFriendly", () => {
   });
 });
 
+describe("presetToChoices — minifyHtml", () => {
+  it("forwards minifyHtml: true", () => {
+    const choices = presetToChoices({ minifyHtml: true });
+    expect(choices.minifyHtml).toBe(true);
+  });
+
+  it("forwards minifyHtml: false", () => {
+    const choices = presetToChoices({ minifyHtml: false });
+    expect(choices.minifyHtml).toBe(false);
+  });
+
+  it("leaves minifyHtml undefined when omitted", () => {
+    const choices = presetToChoices({});
+    expect(choices.minifyHtml).toBeUndefined();
+  });
+});
+
 describe("validatePreset — cjkFriendly", () => {
   it("accepts boolean true", () => {
     expect(validatePreset({ cjkFriendly: true })).toBeNull();
@@ -31,6 +48,22 @@ describe("validatePreset — cjkFriendly", () => {
   it("rejects non-boolean values", () => {
     expect(validatePreset({ cjkFriendly: "yes" })).toMatch(
       /cjkFriendly.*must be a boolean/,
+    );
+  });
+});
+
+describe("validatePreset — minifyHtml", () => {
+  it("accepts boolean true", () => {
+    expect(validatePreset({ minifyHtml: true })).toBeNull();
+  });
+
+  it("accepts boolean false", () => {
+    expect(validatePreset({ minifyHtml: false })).toBeNull();
+  });
+
+  it("rejects non-boolean values", () => {
+    expect(validatePreset({ minifyHtml: "yes" })).toMatch(
+      /minifyHtml.*must be a boolean/,
     );
   });
 });

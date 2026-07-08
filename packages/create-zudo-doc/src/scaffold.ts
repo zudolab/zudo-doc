@@ -617,14 +617,15 @@ function generatePackageJson(choices: UserChoices) {
     // pins. No consumer-facing / CLI change.
     // next.76: routine toolchain bump from next.75, adopted in
     // lockstep with the root package.json pins. No consumer-facing / CLI change.
-    // next.77 (current pin): router persistence/history fixes and runtime
-    // island remount support, adopted in lockstep with the root package.json
-    // pins. No scaffold API change.
-    "@takazudo/zfb": "0.1.0-next.77",
-    "@takazudo/zfb-runtime": "0.1.0-next.77",
+    // next.77: router persistence/history fixes and runtime island remount
+    // support, adopted in lockstep with the root package.json pins. No
+    // scaffold API change. next.78 (current pin): production HTML minification
+    // support via minifyHtml, adopted as a zudo-doc default through settings.
+    "@takazudo/zfb": "0.1.0-next.78",
+    "@takazudo/zfb-runtime": "0.1.0-next.78",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.77",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.78",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's

@@ -755,9 +755,9 @@ jobs:
           HTML=$(curl -fsSL "$PREVIEW_URL")
           # Use here-strings (not echo|grep) so grep -q exiting early on a
           # match cannot SIGPIPE upstream echo + flip pipefail.
-          grep -qE 'href="/assets/' <<<"$HTML" \
+          grep -qE "href=[\"']?/assets/" <<<"$HTML" \
             || { echo "::error::Preview HTML missing root stylesheet href"; exit 1; }
-          grep -qE 'src="/assets/' <<<"$HTML" \
+          grep -qE "src=[\"']?/assets/" <<<"$HTML" \
             || { echo "::error::Preview HTML missing root islands script src"; exit 1; }
           echo "OK: deployed PR preview has root asset URLs"
 

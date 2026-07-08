@@ -1,4 +1,11 @@
 import { test, expect, type Page } from "@playwright/test";
+import {
+  attrSource,
+  booleanAttrSource,
+  classAttrSource,
+  expectHtmlClass,
+  findTagWithAttr,
+} from "./html-assertions";
 import { readDistFile } from "./smoke-dist-helper";
 
 const PAGE = "/docs/guides/image-enlarge-test";
@@ -45,32 +52,49 @@ test.describe("Image Enlarge: static HTML structure", () => {
   });
 
   test("oversized image is wrapped in figure.zd-enlargeable", () => {
-    expect(html).toContain('class="zd-enlargeable"');
+    expectHtmlClass(html, "zd-enlargeable");
   });
 
   test("hidden enlarge button follows img inside figure", () => {
-    expect(html).toMatch(/class="zd-enlarge-btn"[^>]*hidden|hidden[^>]*class="zd-enlarge-btn"/);
+    expect(html).toMatch(
+      new RegExp(
+        `<button\\b(?=[^>]*${classAttrSource("zd-enlarge-btn")})(?=[^>]*${booleanAttrSource("hidden")})[^>]*>`,
+      ),
+    );
   });
 
   test("opt-out: figure.zd-enlargeable does NOT wrap the opt-out image", () => {
-    expect(html).not.toMatch(/class="zd-enlargeable"[^<]*<img[^>]*alt="opt-out"/);
+    expect(html).not.toMatch(
+      new RegExp(
+        `<figure\\b(?=[^>]*${classAttrSource("zd-enlargeable")})[^>]*>[\\s\\S]*?<img\\b(?=[^>]*${attrSource("alt", "opt-out")})[\\s\\S]*?</figure>`,
+      ),
+    );
   });
 
   test("opt-out: no zd-enlarge-btn follows the opt-out image", () => {
-    const optoutSection = html.match(/<img[^>]*alt="opt-out"[^>]*>[\s\S]{0,200}/);
-    expect(optoutSection).not.toBeNull();
-    expect(optoutSection![0]).not.toContain("zd-enlarge-btn");
+    const optoutImg = findTagWithAttr(html, "img", "alt", "opt-out");
+    expect(optoutImg).not.toBeNull();
+    const optoutSection = html.slice(html.indexOf(optoutImg!), html.indexOf(optoutImg!) + 200);
+    expect(optoutSection).not.toContain("zd-enlarge-btn");
   });
 
   test("opt-out: img tag for opt-out image has NO title attribute (plugin stripped it)", () => {
-    const imgTag = html.match(/<img[^>]*alt="opt-out"[^>]*>/)?.[0] ?? "";
+    const imgTag = findTagWithAttr(html, "img", "alt", "opt-out") ?? "";
     expect(imgTag).toBeTruthy();
     expect(imgTag).not.toContain("title=");
   });
 
   test("inline image inside paragraph is NOT wrapped in figure", () => {
-    expect(html).toMatch(/<p[^>]*>[^<]*<img[^>]*alt="inline image"[^>]*>[^<]*<\/p>/);
-    expect(html).not.toMatch(/class="zd-enlargeable"[^<]*<img[^>]*alt="inline image"/);
+    expect(html).toMatch(
+      new RegExp(
+        `<p\\b[^>]*>[^<]*<img\\b(?=[^>]*${attrSource("alt", "inline image")})[^>]*>[^<]*</p>`,
+      ),
+    );
+    expect(html).not.toMatch(
+      new RegExp(
+        `<figure\\b(?=[^>]*${classAttrSource("zd-enlargeable")})[^>]*>[\\s\\S]*?<img\\b(?=[^>]*${attrSource("alt", "inline image")})[\\s\\S]*?</figure>`,
+      ),
+    );
   });
 
   test("page has exactly one zd-enlarge-dialog element", () => {
