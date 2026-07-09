@@ -56,6 +56,7 @@ describe("package.json exports keyset snapshot", () => {
         "./content-admonition",
         "./content.css",
         "./design-token-panel-bootstrap",
+        "./design-token-panel-config",
         "./desktop-sidebar-toggle-island",
         "./details",
         "./directive-vocabulary-defaults",
@@ -280,6 +281,7 @@ describe("Settings public field set snapshot", () => {
         "headerRightItems",
         "packageOwnedRoutes",
         "chromeBindingsModule",
+        "designTokenPanelConfigModule",
       ]
     `);
   });

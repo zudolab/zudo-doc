@@ -47,3 +47,20 @@ declare module "virtual:zudo-doc-route-context" {
 declare module "virtual:zudo-doc-chrome-bindings" {
   export const chromeBindings: import("../factory-context/index.js").ChromeHostBindings;
 }
+
+// Ambient typing for the design-token-panel-config virtual module emitted by
+// the routes plugin (`addVirtualModule("virtual:zudo-doc-design-token-panel-config",
+// …)`, #2658). No on-disk source — materialised at build, either as a
+// re-export of the host's `settings.designTokenPanelConfigModule` file or as
+// a re-export of the package default (`@takazudo/zudo-doc/design-token-panel-config`)
+// when the setting is absent. See `plugins/routes.ts` and this package's
+// `design-token-panel-bootstrap.tsx` for the full contract.
+//
+// Typed via an inline `import(...)` type (not a top-level import, for the
+// same ambient-module-declaration reason as `chromeBindings` above) — see
+// `@takazudo/zdtp`'s `PanelConfig`.
+declare module "virtual:zudo-doc-design-token-panel-config" {
+  export const buildDesignTokenPanelConfig: (
+    mode: "light" | "dark",
+  ) => import("@takazudo/zdtp").PanelConfig;
+}

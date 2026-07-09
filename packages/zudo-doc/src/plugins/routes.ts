@@ -8,8 +8,8 @@
 // (`{ name: "@takazudo/zudo-doc/plugins/routes", options }`), never an imported
 // function, so the preset's node-free config eval-graph guard stays green.
 //
-// The single `setup(ctx)` hook does THREE things (Decision 1, + the
-// host-callables channel below):
+// The single `setup(ctx)` hook does FOUR things (Decision 1, + the
+// host-callables channels below):
 //
 //   1. addVirtualModule("virtual:zudo-doc-route-context", …) — emits the
 //      route-context as ESM source carrying SERIALIZABLE DATA ONLY: the
@@ -37,7 +37,18 @@
 //      to today); present-but-missing file → a loud Error at plugin setup
 //      naming the resolved absolute path (never a silent empty fallback).
 //
-//   3. injectRoute(pattern, entrypoint[, opts]) — the 16-route catalog
+//   3. addVirtualModule("virtual:zudo-doc-design-token-panel-config", …) — a
+//      SECOND host-callables channel, identical mechanics to #2 above (#2658).
+//      `settings.designTokenPanelConfigModule` carries a project-root-relative
+//      PATH to a host module exporting a named `buildDesignTokenPanelConfig`.
+//      `design-token-panel-bootstrap.tsx`'s `DesignTokenPanelBootstrap` island
+//      imports this virtual module. Registered UNCONDITIONALLY: absent setting
+//      → re-exports the PACKAGE DEFAULT (`@takazudo/zudo-doc/design-token-panel-config`,
+//      not an empty fallback — there is no meaningful "empty" builder);
+//      present-but-missing file → a loud Error at plugin setup naming the
+//      resolved absolute path (never a silent fallback to the package default).
+//
+//   4. injectRoute(pattern, entrypoint[, opts]) — the 16-route catalog
 //      (Decision 3), patterns derived from `options.settings.locales` /
 //      `options.settings.versions`. Dynamic `[locale]` / `[version]` patterns
 //      are injected ONCE; the entrypoint's `paths()` enumerates the concrete
@@ -87,6 +98,9 @@ interface RoutesSettings {
   aiAssistant?: boolean;
   /** See `settings.ts` — project-root-relative path to a host bindings module. */
   chromeBindingsModule?: string;
+  /** See `settings.ts` — project-root-relative path to a host design-token
+   *  panel config module (#2658). */
+  designTokenPanelConfigModule?: string;
   [key: string]: unknown;
 }
 
@@ -257,7 +271,60 @@ const plugin = definePlugin({
         : `export const chromeBindings = {};\n`,
     );
 
-    // (3) Inject the derived route catalog (Decision 3). Build-only render
+    // (2b) Design-token-panel-config virtual module — the THIRD virtual module
+    // (#2658, mirrors the chromeBindingsModule contract above exactly).
+    // `settings.designTokenPanelConfigModule`, when set, is a project-root-
+    // relative path to a host module exporting a named
+    // `buildDesignTokenPanelConfig`. Resolved the same way as
+    // `chromeBindingsModule`: `existsSync`-guarded here at plugin setup (never
+    // inside the loader), empty-string checked BEFORE path resolution for the
+    // same `join(projectRoot, "")` reason as #2518 above, and a
+    // directory-valued path rejected for the same #2520 reason. Registered
+    // UNCONDITIONALLY: `design-token-panel-bootstrap.tsx`'s
+    // `DesignTokenPanelBootstrap` island always imports this specifier, so the
+    // module must exist even when the setting is absent — in that case the
+    // loader re-exports the PACKAGE DEFAULT builder
+    // (`@takazudo/zudo-doc/design-token-panel-config`) instead of an empty
+    // fallback (there is no meaningful "empty" PanelConfigBuilder).
+    if (
+      typeof settings.designTokenPanelConfigModule === "string" &&
+      settings.designTokenPanelConfigModule.trim() === ""
+    ) {
+      throw new Error(
+        "zudo-doc: settings.designTokenPanelConfigModule is set to an empty string — set it to a " +
+          'project-root-relative module path (e.g. "./src/design-token-panel-config.ts") or remove the setting.',
+      );
+    }
+    const designTokenPanelConfigModule =
+      typeof settings.designTokenPanelConfigModule === "string"
+        ? settings.designTokenPanelConfigModule
+        : undefined;
+    let designTokenPanelConfigAbsPath: string | undefined;
+    if (designTokenPanelConfigModule) {
+      const resolved = join(ctx.projectRoot, designTokenPanelConfigModule).split("\\").join("/");
+      if (!existsSync(resolved)) {
+        throw new Error(
+          `zudo-doc: settings.designTokenPanelConfigModule is set to "${designTokenPanelConfigModule}", ` +
+            `which resolves to "${resolved}" — that file does not exist. Create it (must ` +
+            `export a named \`buildDesignTokenPanelConfig(mode: "light" | "dark")\`) or remove the setting.`,
+        );
+      }
+      if (!statSync(resolved).isFile()) {
+        throw new Error(
+          `zudo-doc: settings.designTokenPanelConfigModule is set to "${designTokenPanelConfigModule}", ` +
+            `which resolves to "${resolved}" — that path is a directory, not a module file. ` +
+            `Point it at a module file (e.g. "./src/design-token-panel-config.ts") or remove the setting.`,
+        );
+      }
+      designTokenPanelConfigAbsPath = resolved;
+    }
+    ctx.addVirtualModule("virtual:zudo-doc-design-token-panel-config", () =>
+      designTokenPanelConfigAbsPath
+        ? `export { buildDesignTokenPanelConfig } from ${JSON.stringify(designTokenPanelConfigAbsPath)};\n`
+        : `export { buildDesignTokenPanelConfig } from "@takazudo/zudo-doc/design-token-panel-config";\n`,
+    );
+
+    // (4) Inject the derived route catalog (Decision 3). Build-only render
     // today (dev falls through — upstream #1227); precedence drops collisions
     // with kept user `pages/` routes (Decision 6).
     //

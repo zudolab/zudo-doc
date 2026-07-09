@@ -41,15 +41,27 @@ const ALL_OFF = {
   dynamicPageTransition: false,
 };
 
-function renderIslands(settings: {
-  aiAssistant: boolean;
-  imageEnlarge: boolean;
-  mermaid: boolean;
-  dynamicPageTransition: boolean;
-}): string {
-  const BodyEndIslands = createBodyEndIslands({ settings });
+function renderIslands(
+  settings: {
+    aiAssistant: boolean;
+    imageEnlarge: boolean;
+    mermaid: boolean;
+    dynamicPageTransition: boolean;
+    designTokenPanel?: boolean;
+  },
+  deps: { DesignTokenPanelBootstrap?: typeof FakeDesignTokenPanelBootstrap } = {},
+): string {
+  const BodyEndIslands = createBodyEndIslands({ settings, ...deps });
   return render(<BodyEndIslands basePath="/" />);
 }
+
+/** A fake `DesignTokenPanelBootstrap` — structurally what `_chrome.tsx` injects
+ *  in production (the real package component), swapped for a marker function
+ *  here so this stays a fast, build-free unit test. */
+function FakeDesignTokenPanelBootstrap() {
+  return null;
+}
+FakeDesignTokenPanelBootstrap.displayName = "DesignTokenPanelBootstrap";
 
 describe("BodyEndIslands — all package-island flags ON", () => {
   const html = renderIslands(ALL_ON);
@@ -175,6 +187,67 @@ describe("BodyEndIslands — page-loading overlay gates on dynamicPageTransition
       dynamicPageTransition: true,
     });
     expect(html).toContain(OVERLAY_ID);
+    expect(html).toContain('data-zfb-island-skip-ssr="ImageEnlarge"');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// DesignTokenPanelBootstrap island gate (#2658, Minimal Scaffold epic #2651).
+// Unlike AiChatModal/ImageEnlarge/MermaidEnlarge, the real component is a
+// genuinely host-bound dependency (`deps.DesignTokenPanelBootstrap` — see the
+// module header note in `../index.tsx` for why it isn't imported directly
+// here), so this factory must gate on BOTH `settings.designTokenPanel` AND
+// the dep having been supplied. `_chrome.tsx` always supplies the real
+// component in production; these tests use a marker-only fake so the SSR
+// island marker is fast to assert without a full zfb build.
+// ---------------------------------------------------------------------------
+
+describe("BodyEndIslands — DesignTokenPanelBootstrap island gate (#2658)", () => {
+  const MARKER = 'data-zfb-island="DesignTokenPanelBootstrap"';
+
+  it("designTokenPanel ON + dep supplied: emits the (non-skip-ssr) island marker + toggle shim script", () => {
+    const html = renderIslands(
+      { ...ALL_OFF, designTokenPanel: true },
+      { DesignTokenPanelBootstrap: FakeDesignTokenPanelBootstrap },
+    );
+    expect(html).toContain(MARKER);
+    // Not the skip-ssr variant — the component has no SSR fallback to skip.
+    expect(html).not.toContain("data-zfb-island-skip-ssr=\"DesignTokenPanelBootstrap\"");
+    // Pre-hydration toggle shim (zudolab/zudo-doc#1627 Part B).
+    expect(html).toContain("__zdtpToggleShimInstalled");
+    expect(html).toContain("__zdtpReadyClicks");
+    expect(html).toContain("toggle-design-token-panel");
+  });
+
+  it("designTokenPanel OFF + dep supplied: emits no marker and no shim script", () => {
+    const html = renderIslands(
+      { ...ALL_OFF, designTokenPanel: false },
+      { DesignTokenPanelBootstrap: FakeDesignTokenPanelBootstrap },
+    );
+    expect(html).not.toContain(MARKER);
+    expect(html).not.toContain("__zdtpToggleShimInstalled");
+  });
+
+  it("designTokenPanel ON but dep OMITTED: safe no-op — no marker, no crash (mirrors DocHistory's stub-default precedent)", () => {
+    expect(() => renderIslands({ ...ALL_OFF, designTokenPanel: true })).not.toThrow();
+    const html = renderIslands({ ...ALL_OFF, designTokenPanel: true });
+    expect(html).not.toContain(MARKER);
+  });
+
+  it("designTokenPanel undefined (external caller compat, mirrors dynamicPageTransition): treated as OFF", () => {
+    // ALL_ON/ALL_OFF (used throughout this file) never set `designTokenPanel` —
+    // this asserts that omission stays backward compatible for external
+    // callers constructing the documented `BodyEndIslandsSettings` subset.
+    const html = renderIslands(ALL_ON, { DesignTokenPanelBootstrap: FakeDesignTokenPanelBootstrap });
+    expect(html).not.toContain(MARKER);
+  });
+
+  it("gates independently of the other island flags (panel ON + imageEnlarge ON)", () => {
+    const html = renderIslands(
+      { ...ALL_OFF, imageEnlarge: true, designTokenPanel: true },
+      { DesignTokenPanelBootstrap: FakeDesignTokenPanelBootstrap },
+    );
+    expect(html).toContain(MARKER);
     expect(html).toContain('data-zfb-island-skip-ssr="ImageEnlarge"');
   });
 });

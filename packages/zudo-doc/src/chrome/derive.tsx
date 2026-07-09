@@ -249,10 +249,16 @@ export function deriveSearchWidgetSlot(ctx: ChromeContext) {
 // ---------------------------------------------------------------------------
 
 /** Derive the body-end islands: `ctx.hostBindings.BodyEndIslands` when supplied,
- *  else the package-island subset reconstructed from `settings`. */
+ *  else the package-island subset reconstructed from `settings`. The design-
+ *  token-panel bootstrap (#2658) is a genuinely host-bound slot (it is not
+ *  reconstructable from `settings` alone — see `ChromeHostBindings.DesignTokenPanelBootstrap`),
+ *  so it is threaded through separately from `ctx.hostBindings`. */
 export function deriveBodyEndIslands(ctx: ChromeContext) {
   return (ctx.hostBindings.BodyEndIslands ??
-    createBodyEndIslands({ settings: ctx.settings })) as ReturnType<typeof createBodyEndIslands>;
+    createBodyEndIslands({
+      settings: ctx.settings,
+      DesignTokenPanelBootstrap: ctx.hostBindings.DesignTokenPanelBootstrap,
+    })) as ReturnType<typeof createBodyEndIslands>;
 }
 
 // ---------------------------------------------------------------------------
