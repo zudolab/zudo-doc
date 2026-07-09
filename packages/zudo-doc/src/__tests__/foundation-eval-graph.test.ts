@@ -69,6 +69,19 @@ const NODE_FREE_MODULES = [
   "island-types/index.ts",
   "url-helpers/index.ts",
   "factory-context/index.ts",
+  // Package-default data modules (epic #2651, S4 #2654) — importable from the
+  // config eval path via zudoDoc() (#2657), so they must stay node-free the
+  // same way preset.ts does. Extends the guard per #2654's hard acceptance
+  // gate ("extend the esbuild --platform=neutral guard ... to cover every
+  // new module"); added here rather than duplicated into preset.test.ts
+  // because this file's NODE_FREE_MODULES list is the existing generalized
+  // multi-module version of that same guard mechanism.
+  "i18n-defaults/index.ts",
+  "color-schemes-defaults/index.ts",
+  "docs-schema/index.ts",
+  "z-index-defaults/index.ts",
+  "frontmatter-preview-defaults/index.ts",
+  "directive-vocabulary-defaults/index.ts",
 ] as const;
 
 describe("S1a foundation primitives are node-builtin-free (--platform=neutral)", () => {

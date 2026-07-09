@@ -1,0 +1,200 @@
+/**
+ * Default UI-string translation table.
+ *
+ * Ported verbatim from the `create-zudo-doc` base template's
+ * `src/config/i18n.ts` `translations` export (epic zudolab/zudo-doc#2651,
+ * S4 #2654) so a generated project needs no i18n config file of its own.
+ *
+ * Locale code → key → translated string. Fully populated for `en`, `ja`, and
+ * `de`; the other locales in the generator's `SUPPORTED_LANGS` list
+ * (zh-cn/zh-tw/ko/es/fr/pt) fall back to `en` at lookup time (the template's
+ * `t()` helper does `translations[locale]?.[key] ?? translations[defaultLocale]?.[key] ?? key`)
+ * rather than shipping their own fully-translated table here.
+ *
+ * Locale label/derivation (mapping a locale code to its display label,
+ * detecting the active locale from a URL, etc.) stays settings-driven and is
+ * reconstructed by `route-context`/`url-helpers` — this module is DATA only.
+ * A project's `ZudoDocConfig.translations` override is merged over this
+ * default by `zudoDoc()` (#2657); the merge/lookup helper itself is not part
+ * of this module.
+ */
+
+import type { PresetTranslations } from "../preset.js";
+
+export const defaultTranslations: PresetTranslations = {
+  en: {
+    "nav.gettingStarted": "Getting Started",
+    "nav.learn": "Learn",
+    "nav.guides": "Guides",
+    "nav.components": "Components",
+    "nav.reference": "Reference",
+    "nav.claude": "Claude",
+    "nav.changelog": "Changelog",
+    "nav.develop": "Develop",
+    "nav.previous": "Previous",
+    "nav.next": "Next",
+    "nav.overview": "Overview",
+    "toc.title": "On this page",
+    "docs.browseAll": "Browse all documentation sections.",
+    "search.label": "Search",
+    "search.placeholder": "Type to search...",
+    "search.shortcutHint": "to open search from anywhere",
+    "search.resultCount": "{count} results",
+    "search.unavailable": "Search unavailable",
+    "search.loadingIndex": "Loading search index…",
+    "search.noResults": "No results found.",
+    "code.copy": "Copy code",
+    "code.copied": "Copied!",
+    "code.wrapToggle": "Toggle word wrap",
+    "doc.editPage": "Edit this page",
+    "doc.viewSource": "View source on GitHub",
+    "header.github": "GitHub repository",
+    "doc.tags": "Tags",
+    "doc.taggedWith": "Pages tagged with",
+    "doc.allTags": "All Tags",
+    "doc.created": "Created",
+    "doc.updated": "Updated",
+    "doc.noTags": "No tags found.",
+    "doc.pageCount": "{count} pages",
+    "doc.pageCountSingle": "{count} page",
+    "nav.backToMenu": "Back to main menu",
+    "doc.fallbackNotice":
+      "This page has not been translated yet and is shown in the original language.",
+    "frontmatter.preview.title": "Frontmatter",
+    "frontmatter.preview.keyCol": "Key",
+    "frontmatter.preview.valueCol": "Value",
+    "version.latest": "Latest",
+    "version.switcher.label": "Version",
+    "version.banner.unmaintained":
+      "You are viewing documentation for an older version.",
+    "version.banner.unreleased":
+      "You are viewing unreleased documentation.",
+    "version.banner.latestLink": "View the latest version",
+    "version.switcher.unavailable": "Not available in this version",
+    "version.switcher.allVersions": "All versions",
+    "version.page.title": "Documentation Versions",
+    "version.page.latest.title": "Latest Version (Current)",
+    "version.page.latest.description":
+      "The most up-to-date documentation for the latest stable release.",
+    "version.page.latest.link": "View latest docs",
+    "version.page.past.title": "Past Versions",
+    "version.page.past.description":
+      "Documentation for previously released versions.",
+    "version.page.unmaintained": "Unmaintained",
+    "version.page.unreleased": "Unreleased",
+    "version.page.status": "Status",
+    "version.page.docs": "Docs",
+  },
+  ja: {
+    "nav.gettingStarted": "はじめに",
+    "nav.learn": "学ぶ",
+    "nav.guides": "ガイド",
+    "nav.components": "コンポーネント",
+    "nav.reference": "リファレンス",
+    "nav.claude": "Claude",
+    "nav.changelog": "変更履歴",
+    "nav.develop": "開発",
+    "nav.previous": "前へ",
+    "nav.next": "次へ",
+    "nav.overview": "概要",
+    "toc.title": "目次",
+    "docs.browseAll": "すべてのドキュメントセクションを閲覧",
+    "search.label": "検索",
+    "search.placeholder": "検索したい単語を入力",
+    "search.shortcutHint": "いつでも検索バーを開ける",
+    "search.resultCount": "{count} 件",
+    "search.unavailable": "検索を利用できません",
+    "search.loadingIndex": "検索インデックスを読み込み中…",
+    "search.noResults": "検索結果が見つかりませんでした。",
+    "code.copy": "コードをコピー",
+    "code.copied": "コピーしました！",
+    "code.wrapToggle": "折り返し切替",
+    "doc.editPage": "このページを編集",
+    "doc.viewSource": "GitHub でソースを見る",
+    "header.github": "GitHub リポジトリ",
+    "doc.tags": "タグ",
+    "doc.taggedWith": "タグ付きページ",
+    "doc.allTags": "すべてのタグ",
+    "doc.created": "作成",
+    "doc.updated": "更新",
+    "doc.noTags": "タグが見つかりません。",
+    "doc.pageCount": "{count}ページ",
+    "doc.pageCountSingle": "{count}ページ",
+    "nav.backToMenu": "メインメニューに戻る",
+    "doc.fallbackNotice":
+      "このページはまだ翻訳されていません。原文のまま表示しています。",
+    "frontmatter.preview.title": "フロントマター",
+    "frontmatter.preview.keyCol": "キー",
+    "frontmatter.preview.valueCol": "値",
+    "version.latest": "最新",
+    "version.switcher.label": "バージョン",
+    "version.banner.unmaintained":
+      "これは旧バージョンのドキュメントです。",
+    "version.banner.unreleased":
+      "これは未リリースのドキュメントです。",
+    "version.banner.latestLink": "最新バージョンを見る",
+    "version.switcher.unavailable": "このバージョンでは利用できません",
+    "version.switcher.allVersions": "すべてのバージョン",
+    "version.page.title": "ドキュメントバージョン",
+    "version.page.latest.title": "最新バージョン（現在）",
+    "version.page.latest.description":
+      "最新の安定版リリースのドキュメントです。",
+    "version.page.latest.link": "最新ドキュメントを見る",
+    "version.page.past.title": "過去のバージョン",
+    "version.page.past.description":
+      "以前にリリースされたバージョンのドキュメントです。",
+    "version.page.unmaintained": "メンテナンス終了",
+    "version.page.unreleased": "未リリース",
+    "version.page.status": "ステータス",
+    "version.page.docs": "ドキュメント",
+  },
+  de: {
+    "nav.gettingStarted": "Erste Schritte",
+    "nav.learn": "Lernen",
+    "nav.guides": "Anleitungen",
+    "nav.components": "Komponenten",
+    "nav.reference": "Referenz",
+    "nav.claude": "Claude",
+    "nav.changelog": "Changelog",
+    "nav.develop": "Entwicklung",
+    "nav.previous": "Zurück",
+    "nav.next": "Weiter",
+    "nav.overview": "Überblick",
+    "toc.title": "Auf dieser Seite",
+    "docs.browseAll": "Alle Dokumentationsabschnitte durchsuchen.",
+    "search.label": "Suche",
+    "search.placeholder": "Suchbegriff eingeben...",
+    "search.shortcutHint": "Suche von überall öffnen",
+    "search.resultCount": "{count} Ergebnisse",
+    "search.unavailable": "Suche nicht verfügbar",
+    "search.loadingIndex": "Suchindex wird geladen…",
+    "search.noResults": "Keine Ergebnisse gefunden.",
+    "code.copy": "Code kopieren",
+    "code.copied": "Kopiert!",
+    "code.wrapToggle": "Zeilenumbruch umschalten",
+    "nav.backToMenu": "Zurück zum Hauptmenü",
+    "doc.editPage": "Diese Seite bearbeiten",
+    "doc.viewSource": "Quellcode auf GitHub ansehen",
+    "header.github": "GitHub-Repository",
+    "doc.tags": "Tags",
+    "doc.taggedWith": "Seiten mit Tag",
+    "doc.allTags": "Alle Tags",
+    "doc.created": "Erstellt",
+    "doc.updated": "Aktualisiert",
+    "doc.noTags": "Keine Tags gefunden.",
+    "doc.pageCount": "{count} Seiten",
+    "doc.pageCountSingle": "{count} Seite",
+    "doc.fallbackNotice":
+      "Diese Seite wurde noch nicht übersetzt und wird in der Originalsprache angezeigt.",
+    "frontmatter.preview.title": "Frontmatter",
+    "frontmatter.preview.keyCol": "Schlüssel",
+    "frontmatter.preview.valueCol": "Wert",
+    "version.latest": "Neueste",
+    "version.switcher.label": "Version",
+    "version.banner.unmaintained":
+      "Sie sehen die Dokumentation einer älteren Version.",
+    "version.banner.unreleased":
+      "Sie sehen unveröffentlichte Dokumentation.",
+    "version.banner.latestLink": "Neueste Version anzeigen",
+  },
+};

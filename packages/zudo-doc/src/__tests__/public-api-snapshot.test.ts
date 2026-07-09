@@ -49,6 +49,7 @@ describe("package.json exports keyset snapshot", () => {
         "./code-group",
         "./code-syntax",
         "./color-scheme-utils",
+        "./color-schemes-defaults",
         "./component-tokens",
         "./compose-meta-title",
         "./content",
@@ -57,6 +58,7 @@ describe("package.json exports keyset snapshot", () => {
         "./design-token-panel-bootstrap",
         "./desktop-sidebar-toggle-island",
         "./details",
+        "./directive-vocabulary-defaults",
         "./doc-body-end",
         "./doc-body-end-islands",
         "./doc-content-header",
@@ -71,6 +73,7 @@ describe("package.json exports keyset snapshot", () => {
         "./doc-route-paths",
         "./doc-tags-area",
         "./doclayout",
+        "./docs-schema",
         "./eject",
         "./extract-headings",
         "./factory-context",
@@ -78,6 +81,7 @@ describe("package.json exports keyset snapshot", () => {
         "./footer",
         "./footer-with-defaults",
         "./frontmatter-preview-data",
+        "./frontmatter-preview-defaults",
         "./github-helpers",
         "./head",
         "./head-with-defaults",
@@ -85,6 +89,7 @@ describe("package.json exports keyset snapshot", () => {
         "./header-with-defaults",
         "./home-page",
         "./html-preview-wrapper",
+        "./i18n-defaults",
         "./i18n-version",
         "./icons",
         "./image-enlarge",
@@ -169,6 +174,7 @@ describe("package.json exports keyset snapshot", () => {
         "./url-normalizer",
         "./use-modal-dialog",
         "./versions-page",
+        "./z-index-defaults",
       ]
     `);
   });

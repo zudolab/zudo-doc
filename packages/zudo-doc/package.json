@@ -531,6 +531,30 @@
     "./sidebar-active-slug": {
       "types": "./dist/sidebar-active-slug/index.d.ts",
       "default": "./dist/sidebar-active-slug/index.js"
+    },
+    "./i18n-defaults": {
+      "types": "./dist/i18n-defaults/index.d.ts",
+      "default": "./dist/i18n-defaults/index.js"
+    },
+    "./color-schemes-defaults": {
+      "types": "./dist/color-schemes-defaults/index.d.ts",
+      "default": "./dist/color-schemes-defaults/index.js"
+    },
+    "./docs-schema": {
+      "types": "./dist/docs-schema/index.d.ts",
+      "default": "./dist/docs-schema/index.js"
+    },
+    "./z-index-defaults": {
+      "types": "./dist/z-index-defaults/index.d.ts",
+      "default": "./dist/z-index-defaults/index.js"
+    },
+    "./frontmatter-preview-defaults": {
+      "types": "./dist/frontmatter-preview-defaults/index.d.ts",
+      "default": "./dist/frontmatter-preview-defaults/index.js"
+    },
+    "./directive-vocabulary-defaults": {
+      "types": "./dist/directive-vocabulary-defaults/index.d.ts",
+      "default": "./dist/directive-vocabulary-defaults/index.js"
     }
   },
   "bin": {
