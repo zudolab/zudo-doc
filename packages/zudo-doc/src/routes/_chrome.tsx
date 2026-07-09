@@ -13,6 +13,17 @@
 import { routeCtx } from "./_context.js";
 import { createChrome } from "../chrome/index.js";
 import { DocHistory } from "../doc-history/index.js";
+// Island-scanner contract (load-bearing, #2658 — mirrors the DocHistory chain
+// directly below): the injected routes reach the real DesignTokenPanelBootstrap
+// client island ONLY through this static import → `createChrome` hostBindings
+// chain (docs-slug.tsx → _chrome.tsx → design-token-panel-bootstrap.tsx). This
+// import MUST stay static for the same reason as DocHistory's below — see that
+// comment. `DesignTokenPanelBootstrap` also carries its own top-level import of
+// `virtual:zudo-doc-design-token-panel-config` (the routes plugin's third
+// virtual module, `plugins/routes.ts`), which is why the component lives in a
+// dedicated module rather than being reconstructed inline in
+// `doc-body-end-islands/index.tsx` — see that module's header note.
+import { DesignTokenPanelBootstrap } from "../design-token-panel-bootstrap.js";
 import type { ChromeHostBindings } from "../factory-context/index.js";
 import type { DocNavNode } from "./_docs-helpers.js";
 // Host-callables channel (#2501): re-exports `settings.chromeBindingsModule`
@@ -44,6 +55,8 @@ import { chromeBindings } from "virtual:zudo-doc-chrome-bindings";
 // outside zfb's static-import scanner reachability graph) — see the ADR.
 const chrome = createChrome(routeCtx, {
   DocHistory: DocHistory as unknown as ChromeHostBindings["DocHistory"],
+  DesignTokenPanelBootstrap:
+    DesignTokenPanelBootstrap as unknown as ChromeHostBindings["DesignTokenPanelBootstrap"],
   ...chromeBindings,
 });
 

@@ -587,6 +587,169 @@ describe("CB chrome-bindings directory: build fails loudly when chromeBindingsMo
 });
 
 // ---------------------------------------------------------------------------
+// Case DTP — DesignTokenPanelBootstrap package-default island (#2658, epic
+// Minimal Scaffold #2651). Mirrors the DH (DocHistory) island-registration
+// proof + the CB missing-file-throws pattern, applied to the THIRD virtual
+// module (`virtual:zudo-doc-design-token-panel-config`, mirrors
+// `chromeBindingsModule` exactly).
+//
+//   1. designTokenPanel: true, NO designTokenPanelConfigModule → the injected
+//      doc route emits the `data-zfb-island="DesignTokenPanelBootstrap"`
+//      marker AND the emitted islands client bundle registers the real
+//      component (marker <-> registry match => hydration, the same
+//      structural proof DH established for DocHistory) AND carries the
+//      PACKAGE-DEFAULT builder's `storagePrefix: "zudo-doc-tweak"` (HARD GATE
+//      #4: unchanged) all the way into the built bundle.
+//   2. designTokenPanel: true + designTokenPanelConfigModule set → the host's
+//      builder (not the package default) reaches the bundle: asserts a
+//      host-only token label appears (HARD GATE #2).
+//   3. designTokenPanel: true + designTokenPanelConfigModule pointing at a
+//      missing file → the build throws, naming the resolved absolute path
+//      (mirrors CB's missing-chromeBindingsModule case exactly, HARD GATE #2).
+//   4. designTokenPanel: false → no island marker reaches the SSR HTML (HARD
+//      GATE #3). NOTE: like the pre-existing aiAssistant/imageEnlarge gating
+//      (see `doc-body-end-islands/index.tsx`'s "KNOWN CAVEAT" comment), the
+//      island's CODE may still be present in the emitted JS bundle even when
+//      its marker/render is gated off — zfb's scanner walks the STATIC
+//      "use client" import chain (`_chrome.tsx` always imports
+//      `DesignTokenPanelBootstrap` so it can thread it into `createChrome`),
+//      and bundle-stripping a statically-imported-but-conditionally-rendered
+//      island is explicitly out of scope for that established pattern. This
+//      case therefore asserts the SSR-HTML-page-level guarantee only (no
+//      marker, no toggle-shim script), matching the existing OFF-case
+//      assertions in `doc-body-end-islands/__tests__/body-end-islands.test.tsx`.
+// ---------------------------------------------------------------------------
+
+/** Flip `designTokenPanel` ON in a fixture's settings.ts (it ships OFF). */
+function enableDesignTokenPanel(dir: string): void {
+  const settingsPath = join(dir, "src/config/settings.ts");
+  const src = readFileSync(settingsPath, "utf-8").replace(
+    /designTokenPanel:\s*false/,
+    "designTokenPanel: true",
+  );
+  writeFileSync(settingsPath, src);
+}
+
+/** Point `designTokenPanelConfigModule` at the fixture's committed
+ *  `src/design-token-panel-config.ts` — flips ON the #2658 host-callables
+ *  channel (mirrors `enableChromeBindingsModule`). */
+function enableDesignTokenPanelConfigModule(dir: string): void {
+  const settingsPath = join(dir, "src/config/settings.ts");
+  const src = readFileSync(settingsPath, "utf-8").replace(
+    /packageOwnedRoutes:\s*true,/,
+    'packageOwnedRoutes: true,\n  designTokenPanelConfigModule: "./src/design-token-panel-config.ts",',
+  );
+  writeFileSync(settingsPath, src);
+}
+
+/** Point `designTokenPanelConfigModule` at a path with no file on disk —
+ *  used by the missing-file error case (mirrors
+ *  `enableMissingChromeBindingsModule`). */
+function enableMissingDesignTokenPanelConfigModule(dir: string): void {
+  const settingsPath = join(dir, "src/config/settings.ts");
+  const src = readFileSync(settingsPath, "utf-8").replace(
+    /packageOwnedRoutes:\s*true,/,
+    'packageOwnedRoutes: true,\n  designTokenPanelConfigModule: "./src/does-not-exist-dtp.ts",',
+  );
+  writeFileSync(settingsPath, src);
+}
+
+describe("DTP design-token-panel: injected doc route registers the DesignTokenPanelBootstrap island (packageOwnedRoutes + designTokenPanel)", () => {
+  let fixtureDir: string;
+
+  it("setup: fixture builds with designTokenPanel enabled + empty pages/", { timeout: 180_000 }, () => {
+    fixtureDir = setupFixture({ emptyPages: true });
+    enableDesignTokenPanel(fixtureDir);
+    runZfbBuild(fixtureDir);
+  });
+
+  it("marker: injected /docs/getting-started/ HTML carries the DesignTokenPanelBootstrap island marker (non-skip-ssr)", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expectHtmlAttr(html, "data-zfb-island", "DesignTokenPanelBootstrap");
+  });
+
+  it("shim: injected /docs/getting-started/ HTML carries the pre-hydration toggle-shim script", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).toContain("__zdtpToggleShimInstalled");
+    expect(html).toContain("toggle-design-token-panel");
+  });
+
+  it("bundle: the emitted islands client bundle registers DesignTokenPanelBootstrap (marker <-> registry match => hydration)", () => {
+    // Marker present (above) + DesignTokenPanelBootstrap in the client bundle
+    // = the marker has a matching registry entry, which is exactly what
+    // zfb's hydration requires (same structural proof as Case DH).
+    expect(readIslandsBundles(fixtureDir)).toContain("DesignTokenPanelBootstrap");
+  });
+
+  it("package-default builder: the bundle carries the unchanged storagePrefix 'zudo-doc-tweak' (HARD GATE #4)", () => {
+    expect(readIslandsBundles(fixtureDir)).toContain("zudo-doc-tweak");
+  });
+});
+
+describe("DTP host override: designTokenPanelConfigModule wires the host's builder into the bundle", () => {
+  let fixtureDir: string;
+
+  it("setup: fixture builds with designTokenPanel + designTokenPanelConfigModule set", { timeout: 180_000 }, () => {
+    fixtureDir = setupFixture({ emptyPages: true });
+    enableDesignTokenPanel(fixtureDir);
+    enableDesignTokenPanelConfigModule(fixtureDir);
+    // Should not throw — the resolved file (src/design-token-panel-config.ts) exists.
+    runZfbBuild(fixtureDir);
+  });
+
+  it("bindings: the emitted islands client bundle carries the host-only token label (not the package default)", () => {
+    const bundle = readIslandsBundles(fixtureDir);
+    expect(bundle).toContain("DTP-HOST-CONFIG-MODULE-MARKER");
+  });
+
+  it("marker: injected /docs/getting-started/ HTML still carries the DesignTokenPanelBootstrap island marker", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expectHtmlAttr(html, "data-zfb-island", "DesignTokenPanelBootstrap");
+  });
+});
+
+describe("DTP host override missing: build fails loudly when designTokenPanelConfigModule points at a nonexistent file", () => {
+  it("setup: build throws an error naming the resolved absolute path (not a silent fallback to the package default)", { timeout: 180_000 }, () => {
+    const fixtureDir = setupFixture({ emptyPages: true });
+    enableDesignTokenPanel(fixtureDir);
+    enableMissingDesignTokenPanelConfigModule(fixtureDir);
+    const resolvedPath = join(fixtureDir, "src/does-not-exist-dtp.ts").split("\\").join("/");
+
+    let thrown: Error | undefined;
+    try {
+      runZfbBuild(fixtureDir);
+    } catch (err) {
+      thrown = err as Error;
+    }
+
+    expect(thrown).toBeDefined();
+    expect(thrown!.message).toContain("designTokenPanelConfigModule");
+    expect(thrown!.message).toContain(resolvedPath);
+  });
+});
+
+describe("DTP off: designTokenPanel false emits no island marker on the page (HARD GATE #3)", () => {
+  let fixtureDir: string;
+
+  it("setup: fixture builds with designTokenPanel left at its default (false) + empty pages/", { timeout: 180_000 }, () => {
+    fixtureDir = setupFixture({ emptyPages: true });
+    // designTokenPanel already ships `false` in the fixture — no mutation needed.
+    runZfbBuild(fixtureDir);
+  });
+
+  it("no marker: injected /docs/getting-started/ HTML carries no DesignTokenPanelBootstrap marker", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).not.toMatch(htmlAttrPattern("data-zfb-island", "DesignTokenPanelBootstrap"));
+  });
+
+  it("no shim: injected /docs/getting-started/ HTML carries no toggle-shim script", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).not.toContain("__zdtpToggleShimInstalled");
+    expect(html).not.toContain("toggle-design-token-panel");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Case HOME — `createHomePageView` adoption on the injected `/[locale]` home
 // (S3 #2502, epic #2499). Uses the i18n fixture (symlink method, cheap — NOT
 // `npm pack`) because the `/[locale]` home route only exists when a locale is

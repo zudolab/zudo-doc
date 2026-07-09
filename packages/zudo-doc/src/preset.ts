@@ -115,6 +115,15 @@ export interface PresetSettings {
    * package-default stubs (byte-identical to today).
    */
   chromeBindingsModule?: string;
+  /**
+   * Project-root-relative path to a host module exporting a named
+   * `buildDesignTokenPanelConfig(mode: "light" | "dark")` (#2658). Only
+   * consumed when `packageOwnedRoutes` is on and `designTokenPanel` is true
+   * — see `settings.ts` for the full contract. Omit to use the package
+   * default design-token-panel config (derived from the shipped token
+   * manifest + bundled color schemes).
+   */
+  designTokenPanelConfigModule?: string;
   /** Gate for the `/docs/tags` + `/docs/tags/[tag]` injected routes. */
   docTags?: boolean;
   /** Gate for the SSR `/api/ai-chat` injected route (`prerender: false`). */

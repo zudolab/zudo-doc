@@ -8,8 +8,8 @@
 // (`{ name: "@takazudo/zudo-doc/plugins/routes", options }`), never an imported
 // function, so the preset's node-free config eval-graph guard stays green.
 //
-// The single `setup(ctx)` hook does THREE things (Decision 1, + the
-// host-callables channel below):
+// The single `setup(ctx)` hook does FOUR things (Decision 1, + the
+// host-callables channels below):
 //
 //   1. addVirtualModule("virtual:zudo-doc-route-context", …) — emits the
 //      route-context as ESM source carrying SERIALIZABLE DATA ONLY: the
@@ -37,7 +37,18 @@
 //      to today); present-but-missing file → a loud Error at plugin setup
 //      naming the resolved absolute path (never a silent empty fallback).
 //
-//   3. injectRoute(pattern, entrypoint[, opts]) — the 16-route catalog
+//   3. addVirtualModule("virtual:zudo-doc-design-token-panel-config", …) — a
+//      SECOND host-callables channel, identical mechanics to #2 above (#2658).
+//      `settings.designTokenPanelConfigModule` carries a project-root-relative
+//      PATH to a host module exporting a named `buildDesignTokenPanelConfig`.
+//      `design-token-panel-bootstrap.tsx`'s `DesignTokenPanelBootstrap` island
+//      imports this virtual module. Registered UNCONDITIONALLY: absent setting
+//      → re-exports the PACKAGE DEFAULT (`@takazudo/zudo-doc/design-token-panel-config`,
+//      not an empty fallback — there is no meaningful "empty" builder);
+//      present-but-missing file → a loud Error at plugin setup naming the
+//      resolved absolute path (never a silent fallback to the package default).
+//
+//   4. injectRoute(pattern, entrypoint[, opts]) — the 16-route catalog
 //      (Decision 3), patterns derived from `options.settings.locales` /
 //      `options.settings.versions`. Dynamic `[locale]` / `[version]` patterns
 //      are injected ONCE; the entrypoint's `paths()` enumerates the concrete
@@ -87,6 +98,9 @@ interface RoutesSettings {
   aiAssistant?: boolean;
   /** See `settings.ts` — project-root-relative path to a host bindings module. */
   chromeBindingsModule?: string;
+  /** See `settings.ts` — project-root-relative path to a host design-token
+   *  panel config module (#2658). */
+  designTokenPanelConfigModule?: string;
   [key: string]: unknown;
 }
 
@@ -175,6 +189,62 @@ function deriveRoutes(settings: RoutesSettings): RouteSpec[] {
   return routes;
 }
 
+// ---------------------------------------------------------------------------
+// Host-callables channel helper — shared guard/resolve logic for the
+// module-path settings (`chromeBindingsModule` #2501,
+// `designTokenPanelConfigModule` #2658, and any future channel).
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve an optional host-module-override setting (a project-root-relative
+ * module path) to its absolute, forward-slash-normalized path — or
+ * `undefined` when the setting is absent. Fails LOUDLY at plugin setup (never
+ * a silent fallback) on the three misconfiguration shapes:
+ *
+ *  - An explicitly empty/blank string throws BEFORE path resolution:
+ *    `join(projectRoot, "")` resolves to the project root itself, and
+ *    `existsSync(projectRoot)` is true (it's a directory), so "" would
+ *    otherwise sail past the missing-file check (#2518).
+ *  - A path whose resolved file does not exist throws, naming the resolved
+ *    absolute path.
+ *  - A directory-valued path (e.g. "." or "./src") passes `existsSync`
+ *    (directories exist too) and would otherwise sail through to the bundler,
+ *    which fails later with a confusing non-loud error — so it throws here
+ *    naming the resolved path (#2520).
+ */
+function resolveHostModuleOverride(
+  projectRoot: string,
+  settingName: string,
+  settingValue: unknown,
+  hints: { examplePath: string; mustExport: string },
+): string | undefined {
+  if (typeof settingValue === "string" && settingValue.trim() === "") {
+    throw new Error(
+      `zudo-doc: settings.${settingName} is set to an empty string — set it to a ` +
+        `project-root-relative module path (e.g. "${hints.examplePath}") or remove the setting.`,
+    );
+  }
+  const modulePath = typeof settingValue === "string" ? settingValue : undefined;
+  if (!modulePath) return undefined;
+
+  const resolved = join(projectRoot, modulePath).split("\\").join("/");
+  if (!existsSync(resolved)) {
+    throw new Error(
+      `zudo-doc: settings.${settingName} is set to "${modulePath}", ` +
+        `which resolves to "${resolved}" — that file does not exist. Create it (must ` +
+        `export a named \`${hints.mustExport}\`) or remove the setting.`,
+    );
+  }
+  if (!statSync(resolved).isFile()) {
+    throw new Error(
+      `zudo-doc: settings.${settingName} is set to "${modulePath}", ` +
+        `which resolves to "${resolved}" — that path is a directory, not a module file. ` +
+        `Point it at a module file (e.g. "${hints.examplePath}") or remove the setting.`,
+    );
+  }
+  return resolved;
+}
+
 const plugin = definePlugin({
   name: "@takazudo/zudo-doc/plugins/routes",
 
@@ -203,61 +273,52 @@ const plugin = definePlugin({
 
     // (2) Chrome-bindings virtual module — the host-callables channel (#2501).
     // `settings.chromeBindingsModule`, when set, is a project-root-relative
-    // path to a host module exporting a named `chromeBindings`. Resolve it
-    // against `ctx.projectRoot` and normalize to forward slashes so the
-    // emitted specifier is stable across platforms. `existsSync`-guard here
-    // (at plugin setup, not inside the loader) so a configured-but-missing
-    // file fails LOUDLY with the resolved path — never a silent empty
-    // fallback. Registered UNCONDITIONALLY: `routes/_chrome.tsx` always
-    // imports this specifier, so the module must exist even when the setting
-    // is absent (loader emits an empty-object export in that case).
-    //
-    // An explicitly empty/blank string must throw BEFORE path resolution:
-    // `join(ctx.projectRoot, "")` resolves to the project root itself, and
-    // `existsSync(projectRoot)` is true (it's a directory), so "" would
-    // otherwise sail past the missing-file check below (#2518).
-    if (
-      typeof settings.chromeBindingsModule === "string" &&
-      settings.chromeBindingsModule.trim() === ""
-    ) {
-      throw new Error(
-        "zudo-doc: settings.chromeBindingsModule is set to an empty string — set it to a " +
-          'project-root-relative module path (e.g. "./src/chrome-bindings.tsx") or remove the setting.',
-      );
-    }
-    const chromeBindingsModule =
-      typeof settings.chromeBindingsModule === "string"
-        ? settings.chromeBindingsModule
-        : undefined;
-    let chromeBindingsAbsPath: string | undefined;
-    if (chromeBindingsModule) {
-      const resolved = join(ctx.projectRoot, chromeBindingsModule).split("\\").join("/");
-      if (!existsSync(resolved)) {
-        throw new Error(
-          `zudo-doc: settings.chromeBindingsModule is set to "${chromeBindingsModule}", ` +
-            `which resolves to "${resolved}" — that file does not exist. Create it (must ` +
-            `export a named \`chromeBindings: ChromeHostBindings\`) or remove the setting.`,
-        );
-      }
-      // A directory-valued path (e.g. "." or "./src") passes existsSync above
-      // (directories exist too) and would otherwise sail through to the
-      // bundler, which fails later with a confusing non-loud error (#2520).
-      if (!statSync(resolved).isFile()) {
-        throw new Error(
-          `zudo-doc: settings.chromeBindingsModule is set to "${chromeBindingsModule}", ` +
-            `which resolves to "${resolved}" — that path is a directory, not a module file. ` +
-            `Point it at a module file (e.g. "./src/chrome-bindings.tsx") or remove the setting.`,
-        );
-      }
-      chromeBindingsAbsPath = resolved;
-    }
+    // path to a host module exporting a named `chromeBindings`. Resolved +
+    // guarded by `resolveHostModuleOverride` (at plugin setup, not inside the
+    // loader) so a misconfigured path fails LOUDLY naming the resolved path —
+    // never a silent empty fallback. Registered UNCONDITIONALLY:
+    // `routes/_chrome.tsx` always imports this specifier, so the module must
+    // exist even when the setting is absent (loader emits an empty-object
+    // export in that case).
+    const chromeBindingsAbsPath = resolveHostModuleOverride(
+      ctx.projectRoot,
+      "chromeBindingsModule",
+      settings.chromeBindingsModule,
+      {
+        examplePath: "./src/chrome-bindings.tsx",
+        mustExport: "chromeBindings: ChromeHostBindings",
+      },
+    );
     ctx.addVirtualModule("virtual:zudo-doc-chrome-bindings", () =>
       chromeBindingsAbsPath
         ? `export { chromeBindings } from ${JSON.stringify(chromeBindingsAbsPath)};\n`
         : `export const chromeBindings = {};\n`,
     );
 
-    // (3) Inject the derived route catalog (Decision 3). Build-only render
+    // (3) Design-token-panel-config virtual module — the THIRD virtual module
+    // (#2658, mirrors the chromeBindingsModule contract above exactly, via the
+    // same `resolveHostModuleOverride` guards). Registered UNCONDITIONALLY:
+    // `design-token-panel-bootstrap.tsx`'s `DesignTokenPanelBootstrap` island
+    // always imports this specifier, so the module must exist even when the
+    // setting is absent — in that case the loader re-exports the PACKAGE
+    // DEFAULT builder (`@takazudo/zudo-doc/design-token-panel-config`) instead
+    // of an empty fallback (there is no meaningful "empty" PanelConfigBuilder).
+    const designTokenPanelConfigAbsPath = resolveHostModuleOverride(
+      ctx.projectRoot,
+      "designTokenPanelConfigModule",
+      settings.designTokenPanelConfigModule,
+      {
+        examplePath: "./src/design-token-panel-config.ts",
+        mustExport: 'buildDesignTokenPanelConfig(mode: "light" | "dark")',
+      },
+    );
+    ctx.addVirtualModule("virtual:zudo-doc-design-token-panel-config", () =>
+      designTokenPanelConfigAbsPath
+        ? `export { buildDesignTokenPanelConfig } from ${JSON.stringify(designTokenPanelConfigAbsPath)};\n`
+        : `export { buildDesignTokenPanelConfig } from "@takazudo/zudo-doc/design-token-panel-config";\n`,
+    );
+
+    // (4) Inject the derived route catalog (Decision 3). Build-only render
     // today (dev falls through — upstream #1227); precedence drops collisions
     // with kept user `pages/` routes (Decision 6).
     //
