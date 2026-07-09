@@ -105,15 +105,6 @@ describe("routes plugin — virtual:zudo-doc-design-token-panel-config (#2658)",
     const projectRoot = makeProjectRoot();
     const resolved = join(projectRoot, "src", "does-not-exist.ts").split("\\").join("/");
 
-    await expect(
-      emittedSource(projectRoot, {
-        packageOwnedRoutes: true,
-        designTokenPanelConfigModule: "./src/does-not-exist.ts",
-      }),
-    ).rejects.toThrow();
-
-    // Re-run to inspect the actual thrown Error message (rejects.toThrow above
-    // only proves *something* threw).
     let thrown: Error | undefined;
     try {
       await emittedSource(projectRoot, {

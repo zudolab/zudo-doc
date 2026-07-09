@@ -1,14 +1,22 @@
+"use client";
+
+/** @jsxRuntime automatic */
+/** @jsxImportSource preact */
+
 /**
- * Design-token panel (zdtp) WIRING MECHANISM.
+ * Design-token panel (zdtp) WIRING MECHANISM + PACKAGE-DEFAULT ISLAND (#2658,
+ * epic Minimal Scaffold #2651).
  *
- * A side-effect module that configures zdtp's panel and wires its lifecycle
- * hooks to zfb's navigation events via `setLifecycleAdapter()`. Projects import
- * this with their own PanelConfig DATA — which stays project-side.
+ * `bootstrapDesignTokenPanel` is a callable that configures zdtp's panel and
+ * wires its lifecycle hooks to zfb's navigation events via
+ * `setLifecycleAdapter()`. Projects import it with their own PanelConfig
+ * DATA — which stays project-side (or, since #2658, the PACKAGE-DEFAULT data
+ * from `@takazudo/zudo-doc/design-token-panel-config`).
  *
  * Two calling shapes (both supported):
  *
- *   // Mode-scoped builder (showcase host) — rebuilds the panel per light/dark
- *   // mode on every `color-scheme-changed` toggle:
+ *   // Mode-scoped builder — rebuilds the panel per light/dark mode on every
+ *   // `color-scheme-changed` toggle:
  *   import { bootstrapDesignTokenPanel } from "@takazudo/zudo-doc/design-token-panel-bootstrap";
  *   import { buildDesignTokenPanelConfig } from "@/config/design-token-panel-config";
  *   bootstrapDesignTokenPanel(buildDesignTokenPanelConfig);
@@ -20,9 +28,34 @@
  * A plain-config caller gets NO toggle listener (a static config has nothing to
  * rebuild), so existing generated projects keep working with zero changes.
  *
+ * `DesignTokenPanelBootstrap` (below) is the PACKAGE-OWNED island component
+ * that wires the mode-scoped builder for package-owned routes with no host
+ * config file — the #2658 "Approach (a)" package default. It resolves its
+ * builder from the `virtual:zudo-doc-design-token-panel-config` virtual
+ * module the routes plugin registers (`../plugins/routes.ts`): absent a host
+ * `designTokenPanelConfigModule` override, that resolves to
+ * `@takazudo/zudo-doc/design-token-panel-config`'s `buildDesignTokenPanelConfig`.
+ * `packages/zudo-doc/src/routes/_chrome.tsx` statically imports it so zfb's
+ * island scanner walks route → `_chrome` → here (mirrors the DocHistory
+ * #2480 static-import chain). A host that ejects entirely (its own
+ * `src/lib/*` + `src/components/*`, like the pre-#2658 showcase) never
+ * reaches this component — it only calls `bootstrapDesignTokenPanel` itself,
+ * same as always.
+ *
+ * KNOWN COUPLING: `DesignTokenPanelBootstrap`'s top-level import of
+ * `virtual:zudo-doc-design-token-panel-config` requires the routes plugin
+ * (`settings.packageOwnedRoutes`, default `true`) to be active in the
+ * consuming project, since that plugin is what registers the virtual module.
+ * A project that explicitly sets `packageOwnedRoutes: false` AND wants to
+ * reuse the bare `bootstrapDesignTokenPanel` export for its own hand-wired
+ * component (as every current consumer's `src/lib/design-token-panel-bootstrap.ts`
+ * does) is unaffected — that import graph never reaches `DesignTokenPanelBootstrap`
+ * — but a `packageOwnedRoutes: false` project must not import
+ * `DesignTokenPanelBootstrap` itself.
+ *
  * Moved from the host's `src/lib/design-token-panel-bootstrap.ts` as part of
  * the package-first migration (S9a zudolab/zudo-doc#2333); mode-scoped rebuild
- * wiring added in zudolab/zudo-doc#2610.
+ * wiring added in zudolab/zudo-doc#2610; package-default island added in #2658.
  *
  * CSS is pulled via `@import "@takazudo/zdtp/styles.css"` in the project's
  * `src/styles/global.css` so the panel chrome lands in the main page CSS
@@ -31,6 +64,7 @@
  * required pull point. See @takazudo/zdtp PORTABLE-CONTRACT.md §7.
  */
 
+import type { JSX } from "preact";
 import {
   configurePanel,
   setLifecycleAdapter,
@@ -43,6 +77,14 @@ import {
   BEFORE_NAVIGATE_EVENT,
   AFTER_NAVIGATE_EVENT,
 } from "./transitions/page-events.js";
+// Host-callables channel, third virtual module (#2658, mirrors #2501's
+// chromeBindingsModule): absent `settings.designTokenPanelConfigModule` →
+// re-exports the package default (`@takazudo/zudo-doc/design-token-panel-config`);
+// present → re-exports the host's module. Registered unconditionally by the
+// routes plugin (`../plugins/routes.ts`) whenever `packageOwnedRoutes` is on.
+// Not present on disk; the package ships ambient typings for it
+// (`routes/_virtual.d.ts`).
+import { buildDesignTokenPanelConfig } from "virtual:zudo-doc-design-token-panel-config";
 
 /** Active color-scheme mode, read from `<html data-theme>`. */
 type ColorSchemeMode = "light" | "dark";
@@ -169,3 +211,42 @@ export function bootstrapDesignTokenPanel(
   };
   setLifecycleAdapter(adapter);
 }
+
+// ---------------------------------------------------------------------------
+// DesignTokenPanelBootstrap — package-default island component (#2658).
+// ---------------------------------------------------------------------------
+
+/**
+ * Guards the bootstrap call to run at most once per module instance — the
+ * component itself may run during SSR (harmless no-op: `bootstrapDesignTokenPanel`
+ * bails out on its own `typeof window === "undefined"` guard) as well as on
+ * client hydration, and re-running `configurePanel` on every render would
+ * re-mount the panel each time. Module-scoped rather than `useRef`/`useEffect`
+ * so the guard is cheap and framework-lifecycle-independent (this component
+ * has no children to schedule effects around).
+ */
+let bootstrapped = false;
+
+/**
+ * The package-default `<DesignTokenPanelBootstrap/>` island: mounted (via
+ * `Island({ when: "load" })`, no `ssrFallback` — it renders nothing on either
+ * side) by `../doc-body-end-islands/index.tsx` when `settings.designTokenPanel`
+ * is on, gated the same way `AiChatModal`/`ImageEnlarge`/`MermaidEnlarge` are.
+ * On first render, calls `bootstrapDesignTokenPanel` with the mode-scoped
+ * `buildDesignTokenPanelConfig` builder resolved from
+ * `virtual:zudo-doc-design-token-panel-config` (package default, or the
+ * host's `designTokenPanelConfigModule` override).
+ *
+ * `displayName` pinned explicitly (belt-and-braces, matching
+ * `AiChatModal`/`ImageEnlarge`/`MermaidEnlarge`/`DocHistory`) so zfb's
+ * `captureComponentName` emits a stable `data-zfb-island="DesignTokenPanelBootstrap"`
+ * marker independent of minification.
+ */
+export function DesignTokenPanelBootstrap(): JSX.Element | null {
+  if (!bootstrapped) {
+    bootstrapped = true;
+    bootstrapDesignTokenPanel(buildDesignTokenPanelConfig);
+  }
+  return null;
+}
+DesignTokenPanelBootstrap.displayName = "DesignTokenPanelBootstrap";

@@ -17,7 +17,7 @@
 //   - imageEnlarge          → idle skip-ssr ImageEnlarge   (SSR dialog-shell fallback)
 //   - mermaid               → idle skip-ssr MermaidEnlarge (SSR dialog-shell fallback)
 //   - dynamicPageTransition → pure-SSR <PageLoadingOverlay/> (zudolab/zudo-doc#2482)
-//   - designTokenPanel      → load skip-ssr* DesignTokenPanelBootstrap (see below, #2658)
+//   - designTokenPanel      → load (non-skip-ssr*) DesignTokenPanelBootstrap (see below, #2658)
 // It deliberately OMITS the host-owned `ClientRouterBootstrap`: it imports from
 // `@/components/*` and is NOT reconstructable from package settings. The page-
 // loading overlay, by contrast, is a pure PACKAGE component (`../page-loading`)
