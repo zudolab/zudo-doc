@@ -1,0 +1,319 @@
+/* ============================================================================
+ * @takazudo/zudo-doc — default design tokens + project-agnostic base rules
+ *
+ * Shipped to consumers as `@takazudo/zudo-doc/theme.css` (copied to
+ * `dist/theme.css` by scripts/copy-theme-css.mjs on build). Single source of
+ * truth for the default `@theme` token block (colors, spacing, icon sizes,
+ * elevation, typography, radius, breakpoints, z-index) plus the small set of
+ * project-agnostic base rules (scroll-margin, selection color, focus ring,
+ * search / find-in-page highlight, version-switcher visibility) every
+ * zudo-doc project needs. See zudolab/zudo-doc#2655.
+ *
+ * ── @import order (load-bearing) ────────────────────────────────────────────
+ * The consumer's global.css MUST import this file:
+ *   1. AFTER `@layer zd-preflight, zd-flow;` and the two Tailwind imports
+ *      (`tailwindcss/preflight` layer(zd-preflight), `tailwindcss/utilities`).
+ *      Those three lines stay project-side — path-relative `@source`/`@layer`
+ *      resolution requires them to live in the consumer's own CSS file (see
+ *      packages/create-zudo-doc/templates/base/src/styles/global.css).
+ *   2. BEFORE `@takazudo/zudo-doc/safelist.css`, `content.css`,
+ *      `page-loading.css`, and `features.css` — all four consume the
+ *      `@theme` tokens defined here (colors, spacing, typography, z-index),
+ *      and `content.css`'s `@layer zd-flow` rule depends on the cascade
+ *      layer order already being established by the time it loads.
+ *   3. BEFORE the project's own token-override `@theme { … }` block — Tailwind
+ *      v4 `@theme` resolution is last-declaration-wins per custom property,
+ *      so a later project block can redefine any default declared here.
+ *
+ * ── Consumer contract ────────────────────────────────────────────────────────
+ * The consumer must inject the `--zd-*` ramp/role custom properties this file
+ * aliases into `--color-*` tokens (`ColorSchemeProvider`, see
+ * `@takazudo/zudo-doc/theme`). Without them every `--color-*` token below
+ * resolves to nothing (the tight-token guardrail below wipes Tailwind's
+ * default palette; only `--zd-*`-backed aliases repopulate it).
+ *
+ * Deliberately NOT shipped here: `--color-page-loading-overlay`. That scrim
+ * token stays feature-injected by a project's `dynamicPageTransition` wiring
+ * (its default depends on `--color-overlay`, which IS defined below) — do
+ * not add it to this base block.
+ *
+ * ── Z-index defaults ─────────────────────────────────────────────────────────
+ * The 13 `--z-index-*` entries below are the package DEFAULT tiers (mirrors
+ * `defaultZIndexTiers` from `@takazudo/zudo-doc/z-index-defaults`, #2654).
+ * A project only needs its own `src/config/z-index-tokens.ts` +
+ * `gen:z-index`/`check:z-index` codegen wiring if it OVERRIDES a tier — its
+ * own `@theme` block (declared after this file's import) simply redefines
+ * the specific `--z-index-<name>` it wants to change.
+ * ============================================================================ */
+
+@theme {
+  /* ========================================
+   * Tight-token color reset
+   *
+   * Wipes all Tailwind default color tokens (`--color-*`) so only
+   * project-defined palette and semantic tokens remain. This enforces
+   * zudo-doc's tight-token policy: "NEVER use Tailwind default colors"
+   * (documented per-project in src/CLAUDE.md's Color Rules). Semantic color
+   * tokens (defined below) are added back after this reset.
+   *
+   * The upstream split-import fix (zfb#159 / 9e37551, shipped in f68a9ba)
+   * eliminated the original leak cause (zfb no longer prepends the full
+   * @import "tailwindcss" bundle). The reset is retained as an explicit
+   * design guardrail — it prevents accidental default palette bleed from any
+   * future upstream change and keeps the color surface intentional.
+   *
+   * NOT reset: `--spacing` (the base spacing scale, default 0.25rem).
+   * Tailwind spacing utilities compute as calc(var(--spacing) * N); wiping
+   * `--spacing` collapses them to zero (observed in Wave 4 Sub-7 #1403).
+   * This guardrail resets ONLY the color namespace — never widen it.
+   * ======================================== */
+  --color-*: initial;
+
+  /* ========================================
+   * Colors — Three-tier token system
+   * ======================================== */
+
+  /* ── Base ── */
+  --color-bg: var(--zd-bg);
+  --color-fg: var(--zd-fg);
+  --color-sel-bg: var(--zd-selection-bg);
+  --color-sel-fg: var(--zd-selection-fg);
+
+  /* ── Semantic aliases ── */
+  --color-surface: var(--zd-surface);
+  --color-muted: var(--zd-muted);
+  --color-accent: var(--zd-accent);
+  --color-accent-hover: var(--zd-accent-hover);
+  --color-code-bg: var(--zd-code-bg);
+  --color-code-fg: var(--zd-code-fg);
+  --color-success: var(--zd-success);
+  --color-danger: var(--zd-danger);
+  --color-warning: var(--zd-warning);
+  --color-info: var(--zd-info);
+  /* Overlay is intentionally theme-independent (always dark, not scheme-driven) */
+  --color-overlay: #000;
+  --color-image-overlay-bg: var(--zd-image-overlay-bg);
+  --color-image-overlay-fg: var(--zd-image-overlay-fg);
+  --color-chat-user-bg: var(--zd-chat-user-bg);
+  --color-chat-user-text: var(--zd-chat-user-text);
+  --color-chat-assistant-bg: var(--zd-chat-assistant-bg);
+  --color-chat-assistant-text: var(--zd-chat-assistant-text);
+  --color-matched-keyword-bg: var(--zd-matched-keyword-bg);
+  --color-matched-keyword-fg: var(--zd-matched-keyword-fg);
+
+  /* ========================================
+   * Spacing — hsp (horizontal) + vsp (vertical)
+   * ======================================== */
+  --spacing-0: 0;
+  --spacing-px: 1px;
+
+  /* Horizontal spacing (7 steps) */
+  --spacing-hsp-2xs: 0.125rem;   /* 2px  — tight inline */
+  --spacing-hsp-xs: 0.375rem;   /* 6px  — compact inline */
+  --spacing-hsp-sm: 0.5rem;     /* 8px  — small padding */
+  --spacing-hsp-md: 0.75rem;    /* 12px — default gaps */
+  --spacing-hsp-lg: 1rem;       /* 16px — standard padding */
+  --spacing-hsp-xl: 1.5rem;     /* 24px — generous padding */
+  --spacing-hsp-2xl: 2rem;      /* 32px — large padding */
+
+  /* Vertical spacing (8 steps) */
+  --spacing-vsp-3xs: 0.25rem;     /* 4px — hairline gap */
+  --spacing-vsp-2xs: 0.4375rem;   /* 7px — tight gap */
+  --spacing-vsp-xs: 0.875rem;    /* 14px — small gap */
+  --spacing-vsp-sm: 1.25rem;     /* 20px — compact gap */
+  --spacing-vsp-md: 1.5rem;      /* 24px — standard gap */
+  --spacing-vsp-lg: 1.75rem;     /* 28px — section gap */
+  --spacing-vsp-xl: 2.5rem;      /* 40px — large section gap */
+  --spacing-vsp-2xl: 3.5rem;     /* 56px — page-level gap */
+
+  /* ========================================
+   * Element sizes — semantic icon dimensions
+   * ======================================== */
+  --spacing-icon-xs: 0.75rem;    /* 12px — inline meta icons, chevrons */
+  --spacing-icon-sm: 1rem;       /* 16px — standard UI icons */
+  --spacing-icon-md: 1.25rem;    /* 20px — medium emphasis icons */
+  --spacing-icon-lg: 1.5rem;     /* 24px — large / mobile icons */
+
+  /* Image overlay button chrome */
+  --spacing-image-overlay-inset: 0.5rem;  /* 8px — overlay button corner inset + internal padding */
+
+  /* ========================================
+   * Elevation — the tight `@import "tailwindcss/utilities"` (no default
+   * @theme) drops Tailwind's default shadow scale, so `shadow-*` utilities
+   * generate nothing. Re-add the one elevation the components use: header
+   * and version-switcher dropdown panels apply `shadow-lg`. Value is
+   * Tailwind v4's default shadow-lg; the black is intentionally
+   * theme-independent (a drop shadow is absence of light, not a themed color).
+   * ======================================== */
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* ========================================
+   * Typography
+   * ======================================== */
+
+  /* ── Tier 2: Semantic font-size tokens (reference Tier 1 scale only) ── */
+  --text-micro:      var(--text-scale-2xs);  /* 12px — compact panel labels, color swatch annotations */
+  --text-caption:    var(--text-scale-xs);   /* labels, timestamps */
+  --text-small:      var(--text-scale-sm);   /* secondary text, nav items */
+  --text-body:       var(--text-scale-md);   /* paragraphs, default */
+  --text-title:      var(--text-scale-lg);   /* card titles, section labels */
+  --text-heading:    var(--text-scale-xl);   /* page headings */
+  --text-display:    var(--text-scale-2xl);  /* hero text */
+
+  /* Font families */
+  --font-sans: system-ui, sans-serif;
+  --font-mono: ui-monospace, monospace;
+
+  /* Font weights (4 steps) */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Line heights (4 steps) */
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+
+  /* Letter spacing / tracking (4 steps) */
+  --tracking-tight: -0.025em;   /* headings, display text */
+  --tracking-normal: normal;    /* browser default — resets any inherited tracking */
+  --tracking-wide: 0.05em;      /* labels, UI text */
+  --tracking-wider: 0.1em;      /* small caps, decorative */
+
+  /* ========================================
+   * Border radius (3 steps)
+   * ======================================== */
+  --radius-DEFAULT: 0.25rem;    /* 4px — rounded */
+  --radius-lg: 0.5rem;          /* 8px — rounded-lg */
+  --radius-full: 9999px;        /* rounded-full */
+
+  /* ========================================
+   * Breakpoints (3 steps)
+   * ======================================== */
+  --breakpoint-sm: 640px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+}
+
+/* ========================================
+ * Z-index tiers — semantic, single-namespace default scale.
+ *
+ * The 13 tokens below are the package DEFAULTS (mirrors defaultZIndexTiers
+ * from @takazudo/zudo-doc/z-index-defaults, #2654). Tailwind v4 reads each
+ * --z-index-<name> theme key and generates a `z-<name>` utility, so e.g.
+ * --z-index-toolbar: 20 produces `.z-toolbar { z-index: 20 }`; raw CSS can
+ * also reference `z-index: var(--z-index-<name>)`.
+ *
+ * A project only needs its own src/config/z-index-tokens.ts +
+ * gen:z-index/check:z-index codegen if it OVERRIDES a tier — the
+ * GENERATED:Z_INDEX block that used to live in every project's global.css is
+ * now opt-in customization only, not a mandatory per-project artifact.
+ * ======================================== */
+@theme {
+  --z-index-content: 0;
+  --z-index-local-1: 1;
+  --z-index-local-2: 2;
+  --z-index-local-3: 3;
+  --z-index-sidebar: 10;
+  --z-index-toolbar: 20;
+  --z-index-dropdown: 30;
+  --z-index-popover: 40;
+  --z-index-modal-backdrop: 50;
+  --z-index-modal: 60;
+  --z-index-toast: 70;
+  --z-index-tooltip: 80;
+  --z-index-drag: 90;
+}
+
+:root {
+  /* Default responsive range; sidebar-resizer.ts allows 192–448px for explicit resizing. */
+  --zd-sidebar-w: clamp(14rem, 20vw, 22rem);
+
+  /* ── Tier 1: Abstract font-size scale (raw values — NOT for direct component use) ── */
+  /* Used only as a source of truth for Tier 2 semantic tokens above. */
+  --text-scale-2xs: 0.75rem;    /* 12px */
+  --text-scale-xs:  0.875rem;   /* 14px */
+  --text-scale-sm:  1rem;       /* 16px */
+  --text-scale-md:  1.2rem;     /* 19.2px */
+  --text-scale-lg:  1.4rem;     /* 22.4px */
+  --text-scale-xl:  3rem;       /* 48px */
+  --text-scale-2xl: 3.75rem;    /* 60px */
+
+  --default-transition-duration: 150ms; /* consumed by image-enlarge and hash-link opacity fade */
+  --zd-transition-slow: 200ms;          /* sidebar transform/visibility and content-band max-width */
+  --zd-transition-slower: 300ms;        /* view-transition fade-in (contentFadeIn animation) */
+  --zd-header-h: 80px;                  /* sticky header height; consumed by scroll-margin-top on [id] anchors */
+}
+
+/* ========================================
+ * Base styles
+ * ======================================== */
+
+[id] {
+  scroll-margin-top: var(--zd-header-h);
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+}
+
+::selection {
+  background-color: var(--color-sel-bg);
+  color: var(--color-sel-fg);
+}
+
+@layer base {
+  a {
+    text-underline-offset: 4px;
+  }
+  button {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+/* ── Search highlight ── */
+[data-search-results] mark {
+  background-color: var(--color-matched-keyword-bg);
+  color: var(--color-matched-keyword-fg);
+  padding: 0;
+  border-radius: 2px;
+}
+
+/* Version-switcher responsive visibility (was an inline <style> child of
+ * the data-version-switcher <div>; moved to global.css to avoid the
+ * <style>-inside-<div> HTML5 content-model violation flagged by
+ * html-validate — see zudolab/zudo-doc#1505).
+ *
+ * Pins onto the `.hidden` baseline that Tailwind always generates so
+ * consumers wrapping <VersionSwitcher> in `<div class="hidden lg:block">`
+ * still get the desktop override even when the content scanner did not
+ * generate `.lg:block`. Mobile (<64rem) falls through to `.hidden`'s
+ * `display: none`. Inert when no version-switcher is on the page. */
+@media (min-width: 64rem) {
+  .hidden:has(> [data-version-switcher]) {
+    display: block;
+  }
+}
+
+/* ── Find-in-page highlight ── */
+/* Deliberate ephemeral-vs-persistent split: find-in-page uses color-mix(warning)
+ * because it is a transient browser-controlled overlay that appears and disappears
+ * without page navigation. Search results use --color-matched-keyword-bg/fg because
+ * they are persistent semantic highlights tied to the current query state.
+ * Do NOT unify these two highlight strategies — the visual distinction is intentional. */
+.find-match {
+  background-color: color-mix(in oklch, var(--color-warning) 40%, transparent);
+  border-radius: 2px;
+}
+.find-match-active {
+  background-color: color-mix(in oklch, var(--color-warning) 70%, transparent);
+  border-radius: 2px;
+  outline: 2px solid color-mix(in oklch, var(--color-warning) 90%, transparent);
+}
