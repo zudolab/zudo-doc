@@ -230,3 +230,151 @@ onSuccess: "node scripts/copy-content-css.mjs && node scripts/copy-page-loading-
 `prepack` guards all four (`check-safelist.mjs && check-content-css.mjs && check-page-loading-css.mjs && check-features-css.mjs`)
 so a build that skipped the `onSuccess` step fails loudly instead of publishing a package
 whose `./content.css` / `./safelist.css` / `./page-loading.css` / `./features.css` export 404s for consumers.
+
+## Shipped ambient type shims + tsconfig base (#2656, minimal-scaffold epic #2651)
+
+Three files ship from the **package root** (not `dist/`) so a downstream
+project's tsconfig can pull them in with almost no boilerplate of its own.
+Two are hand-authored and checked into git (`tsconfig.base.json`,
+`zfb-config-shim.d.ts`); the third (`virtual-modules.d.ts`) is **generated**
+at build time. Consumer-level regression proof (running tsc/`zfb check`
+against a real fixture project that extends the base) is deliberately NOT
+duplicated here — it is the Wave-5 central confirm case (#2659), which must
+exercise the self-referencing `import("@takazudo/zudo-doc/factory-context")`
+specifier end-to-end.
+
+1. **`tsconfig.base.json`** — exported as `@takazudo/zudo-doc/tsconfig.base.json`.
+   A project extends it (`"extends": "@takazudo/zudo-doc/tsconfig.base.json"`)
+   and keeps only `include` (+ a tiny `paths` block — see the GOTCHA below).
+   Carries every `compilerOptions` flag the pre-package-first project template
+   (`packages/create-zudo-doc/templates/base/tsconfig.json`) hand-rolled
+   (strict + `noImplicit*` set, `target`/`module`/`moduleResolution`, `jsx:
+   "preserve"`, …), **plus** a top-level `files: ["./zfb-config-shim.d.ts",
+   "./virtual-modules.d.ts"]` to pull in the two ambient shims below.
+   - **MUST ship the shims via `files`, never `include`.** `files`/`include`/
+     `exclude` are all **override-only across `extends`** (the inheriting
+     config's value replaces the base's; a base value applies only when the
+     project declares none of its own). That makes a base-level `include`
+     wrong in BOTH directions — spike #2652 Q5: an extends-only project
+     tsconfig inherits ONLY the base's shim-`include`, so the project's own
+     files are silently never typechecked (a planted error passed `zfb
+     check`); conversely a project that declares its own `include` silently
+     discards the base's, dropping the shims. Shipping via base `files` works
+     because the project tsconfig declares `include` (its own file set) but
+     no top-level `files`, so the base's `files` is inherited intact
+     alongside it.
+   - **Consumer caveat (same override rule): a project extending the base
+     must NOT declare its own top-level `files`** — doing so replaces the
+     base's and silently drops both shims from the program (surfacing later
+     as confusing TS2307s on `zfb/config` / `virtual:*` imports). The
+     documented project-tsconfig shape (below) uses only
+     `extends`/`include`/`compilerOptions.paths`.
+   - **Deliberately carries NO `paths`.** See the GOTCHA below.
+   - `scripts/check-shim-artifacts.mjs` (prepack) asserts this shape (no
+     `include`/`exclude`, `files` at the top level — not nested in
+     compilerOptions, TS5023 — and exactly these two entries) so the traps
+     above can't silently regress.
+
+2. **`zfb-config-shim.d.ts`** — exported as `@takazudo/zudo-doc/zfb-config-shim.d.ts`.
+   The ambient `declare module "zfb/config"` a project previously had to
+   copy-paste as a local `zfb-shim.d.ts` (183 lines). **Hand-sync duty**: this
+   is the type source of truth `zfb check` binds `zfb.config.ts` against, and
+   it must be kept in sync BY HAND with the published `@takazudo/zfb/config`
+   (`dist/config.d.ts`) — a lagging shim fails valid config fields with TS2353
+   (see Takazudo/zudo-front-builder#678 / zudolab/zudo-doc#1834, where
+   `bundle` was missing here and blocked next.22's `bundle.exclude`). When
+   bumping the pinned `@takazudo/zfb` version, diff its `dist/config.d.ts`
+   against this file. The pre-#2656 per-project copy (root `zfb-shim.d.ts`,
+   `packages/create-zudo-doc/templates/base/zfb-shim.d.ts`) is untouched by
+   this wave — those cut over to the package-shipped copy in a later wave
+   (showcase migrates in Wave 6 of epic #2651); until then, edits to the
+   `declare module "zfb/config"` body must land in BOTH the old per-project
+   copies and this file, or `zfb check` drifts between consumers on the old
+   vs. new path.
+
+3. **`virtual-modules.d.ts`** — exported as `@takazudo/zudo-doc/virtual-modules.d.ts`.
+   Ambient declarations for `virtual:zudo-doc-route-context` and
+   `virtual:zudo-doc-chrome-bindings` — the two zfb virtual modules the routes
+   plugin injects at build time (no on-disk source, so an importing HOST file
+   needs an ambient `declare module` or `zfb check` fails TS2307). Needed once
+   a project's tsconfig `include` covers `pages/` (the minimal-scaffold floor
+   does this on purpose, unlike the pre-#2656 template which excludes
+   `pages/` and so never typechecked it) and `pages/` contains a file that
+   imports one of these virtuals directly (e.g. a `pages/index.tsx` re-export
+   stub calling `createRouteContext(routeContext)`).
+   - **GENERATED, not hand-authored — no sync duty.** Built from the single
+     source of truth `src/routes/_virtual.d.ts` by
+     `scripts/copy-virtual-modules.mjs` (tsup `onSuccess`), which prepends a
+     do-not-edit banner and rewrites the parent-relative `import(...)` type
+     specifier to the bare `@takazudo/zudo-doc/factory-context` subpath —
+     the same rewrite `copy-routes-src.mjs` applies, for the same reason (the
+     shipped copy resolves types from a consumer's node_modules). Gitignored
+     like `routes-src/`, published via `files[]`/`exports`. To change the
+     virtual-module contract, edit `src/routes/_virtual.d.ts` and rebuild —
+     never edit the generated file. `scripts/check-virtual-modules.mjs`
+     (prepack) guards presence + the rewritten specifier.
+
+### GOTCHA — preact/compat `paths` stay in the PROJECT tsconfig, not the base
+
+The pre-package-first template mapped `react` / `react-dom` /
+`react/jsx-runtime` to `./node_modules/preact/compat/…` — a path relative to
+the **consumer project's** `node_modules`. TS resolves a relative `baseUrl`/
+`paths` value relative to the tsconfig FILE IT ORIGINATED IN, not the file
+that (transitively) extends it. So if that `paths` block lived in
+`tsconfig.base.json`, `./node_modules/preact/compat/` would resolve inside
+`node_modules/@takazudo/zudo-doc/node_modules/…` — wrong, and generally
+absent (preact is hoisted to the consumer's own top-level `node_modules`).
+This matters because the project template's `jsx: "preserve"` mode still
+needs JSX-namespace types resolved through the `"react"` specifier for every
+`.tsx` file — without a correct mapping, `zfb check` fails to resolve
+`"react"` on ANY JSX file (there's no real `react` package installed; this is
+a preact-only project).
+
+**Resolution (locked, verified empirically against the base tsconfig in a
+scratch fixture): keep the `react*`/`@/*` `paths` block in the PROJECT's own
+tsconfig, alongside its OWN `baseUrl: "."`.** A project extending the base
+must declare both:
+
+```jsonc
+{
+  "extends": "@takazudo/zudo-doc/tsconfig.base.json",
+  "include": ["src", "pages", "zfb.config.ts"],
+  "compilerOptions": {
+    // Re-declaring baseUrl here is REQUIRED, not cosmetic: the inherited
+    // baseUrl from the base ("." resolved against the base file's own
+    // directory, i.e. inside node_modules) would otherwise anchor these
+    // paths in the wrong place. A project-local baseUrl makes "." resolve
+    // against THIS file's directory (the project root) instead.
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "react": ["./node_modules/preact/compat/"],
+      "react/jsx-runtime": ["./node_modules/preact/jsx-runtime"],
+      "react-dom": ["./node_modules/preact/compat/"]
+    }
+  }
+}
+```
+
+The `#doc-history-meta` path alias is intentionally NOT part of this block —
+per spike Q6, nothing in the minimal floor imports `#doc-history-meta`
+(package-owned routes get `docHistoryMeta` via the optional
+`chromeBindingsModule` channel, defaulting to `{}`); a project that keeps a
+host `pages/lib/_chrome.ts` stub importing the alias adds its own `paths`
+entry pointing at `.zfb/doc-history-meta.json`, same as before.
+
+### Doc-history self-seed (`.zfb/doc-history-meta.json`)
+
+`plugins/doc-history`'s `preBuild` hook (`runDocHistoryMetaStep`, in
+`src/integrations/doc-history/pre-build.ts`) already unconditionally writes
+`.zfb/doc-history-meta.json` — creating the `.zfb/` directory if absent —
+before every build, whether populated from git history or short-circuited to
+`{}` under `SKIP_DOC_HISTORY=1`. No code change was needed for #2656: this
+was already a "self-seed when absent" behavior (confirmed by spike #2652 Q6
+and pinned by the existing `pre-build-manifest.test.ts` suite, whose
+`beforeEach` always starts from a fresh temp dir with no `.zfb/`). The
+scaffold-floor implication is that a project can stop committing
+`.zfb/doc-history-meta.json` and its `.gitignore` un-ignore lines outright —
+the plugin recreates it on every build. `SKIP_DOC_HISTORY=1` and CI
+full-manifest behavior are unaffected (see the repo root `CLAUDE.md` "Doc
+History Architecture" decision table — this wave changes none of it).
