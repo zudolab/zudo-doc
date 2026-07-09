@@ -166,6 +166,7 @@ describe("package.json exports keyset snapshot", () => {
         "./tags-audit",
         "./theme",
         "./theme-toggle",
+        "./theme.css",
         "./theme/color-scheme-provider",
         "./toc",
         "./transitions",

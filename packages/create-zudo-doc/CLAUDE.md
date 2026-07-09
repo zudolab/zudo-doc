@@ -44,10 +44,11 @@ This replaces the old "copy everything then strip" approach. Features are added,
 
 The files shipped with anchors in `templates/base/` today are:
 
-- `src/styles/global.css` — 3 anchors (`@slot:global-css:imports`, `@slot:global-css:theme-tokens`, `@slot:global-css:feature-styles`)
 - `pages/_mdx-components.ts` — anchors consumed by the imageEnlarge feature
 - `pages/lib/_body-end-islands.tsx` — anchors consumed by the tauri and designTokenPanel features
 - `src/config/settings-types.ts` — replace-range anchors (`@slot:settings-types:trigger-names:start`/`:end`) consumed by the designTokenPanel feature to inject `"design-token-panel"` into `HeaderRightTriggerName`
+
+`src/styles/global.css` no longer carries `@slot:global-css:*` anchors (zudolab/zudo-doc#2655, epic #2651 Wave 3): the file shrank to a fixed ~22-line `@import`-chain + token-override contract, and the boilerplate `@theme` block it used to hand-carry now ships from `@takazudo/zudo-doc/theme.css`. The now-dead CSS injections in `src/features/design-token-panel.ts` (zdtp `@import`), `src/features/doc-history.ts` (diff-viewer CSS), and `src/features/dynamic-page-transition.ts` (page-loading `@theme` token + view-transition CSS) silently no-op (`applyInjections` skips an anchor it can't find) — removal of that dead code, and conditional stripping of the now-unconditional zdtp `@import` line for non-`designTokenPanel` projects, is tracked separately in the generator-rewrite sub-issue (#2660). Until #2660 lands, do not rely on those three feature modules' CSS injections; `features.css` already ships the diff-viewer and view-transition CSS unconditionally (epic #2344 S4), and the zdtp import ships as the always-present (pending #2660's gating) literal line in the template.
 
 The `ANCHOR_FILES` list in `src/compose.ts` is the source of truth for which files are anchor-cleaned after composition. Feature-specific files are copied wholesale from `templates/features/<name>/files/`; no anchor injection into doc-layout/header is required post-zfb-cutover.
 
