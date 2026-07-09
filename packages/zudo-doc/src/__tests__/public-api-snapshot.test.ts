@@ -171,11 +171,14 @@ describe("package.json exports keyset snapshot", () => {
         "./toc",
         "./transitions",
         "./tree-nav-shared",
+        "./tsconfig.base.json",
         "./url-helpers",
         "./url-normalizer",
         "./use-modal-dialog",
         "./versions-page",
+        "./virtual-modules.d.ts",
         "./z-index-defaults",
+        "./zfb-config-shim.d.ts",
       ]
     `);
   });
