@@ -82,6 +82,14 @@ const NODE_FREE_MODULES = [
   "z-index-defaults/index.ts",
   "frontmatter-preview-defaults/index.ts",
   "directive-vocabulary-defaults/index.ts",
+  // The single-entry config API (epic #2651, Wave 4 #2657). `zudoDoc()` is the
+  // new central node in the config eval graph — it transitively pulls in
+  // `preset.ts` plus all six #2654 default modules above — so it must stay
+  // node-builtin-free the same way. Its only non-type imports on this path are
+  // those already-guarded modules; the `@takazudo/zfb/config` (ZfbConfig/
+  // BundleConfig) and `zod` (ZodType) imports are type-only and erased before
+  // esbuild resolution.
+  "config.ts",
 ] as const;
 
 describe("S1a foundation primitives are node-builtin-free (--platform=neutral)", () => {

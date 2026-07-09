@@ -31,7 +31,7 @@ New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapsh
 
 ---
 
-## 1. Subpath Exports (136 total)
+## 1. Subpath Exports (137 total)
 
 The full `package.json#exports` keyset is the contract. Any addition or removal requires a deliberate, reviewed change that will fail the snapshot guard.
 
@@ -40,7 +40,8 @@ The full `package.json#exports` keyset is the contract. Any addition or removal 
 | Subpath | Description |
 |---|---|
 | `.` | Root re-exports barrel |
-| `./preset` | `zudoDocPreset()` — zfb config preset factory |
+| `./config` | `zudoDoc(userConfig?)` — the single-entry config API. Merges user fields over documented defaults for every settings field, auto-supplies the Wave-3 package defaults, and returns a complete `ZfbConfig`. Also exports `ZudoDocConfig` (the JSDoc-documented user-facing settings reference) + `DEFAULT_SETTINGS`. THE documented config API (epic #2651, Wave 4 #2657) — `zudoDocPreset()` remains the internal fragment builder it calls |
+| `./preset` | `zudoDocPreset()` — zfb config preset factory (internal fragment builder; `./config` is the documented API) |
 | `./settings` | `Settings` / `PresetSettings` type definitions |
 | `./factory-context` | `FactoryContext` / `ChromeContext` / `RouteContext` / `ChromeHostBindings` — the full shared type surface for package factories and chrome wiring (types only, node-free) |
 | `./route-context` | `createRouteContext(payload, options?)` — reconstructs the full `RouteContext` callable surface from the serializable `RouteContextPayload`; also re-exports `RouteContext` / `RouteContextPayload` / `TagInfo` / `ContentBridge` types |

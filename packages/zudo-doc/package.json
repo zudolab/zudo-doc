@@ -559,6 +559,10 @@
     "./directive-vocabulary-defaults": {
       "types": "./dist/directive-vocabulary-defaults/index.d.ts",
       "default": "./dist/directive-vocabulary-defaults/index.js"
+    },
+    "./config": {
+      "types": "./dist/config.d.ts",
+      "default": "./dist/config.js"
     }
   },
   "bin": {
