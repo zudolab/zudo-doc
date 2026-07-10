@@ -93,31 +93,48 @@ Use only when you genuinely need to push from a worktree (rare). Never set this 
 
 ## Key Directories
 
+Package-first migration (epic #2321) + the minimal-scaffold cutover (epic
+#2651) moved engine plugins, chrome/routes/islands, and most host wiring into
+`@takazudo/zudo-doc` — there is no root-level `plugins/` directory anymore
+(plugins resolve as `@takazudo/zudo-doc/plugins/*` bare specifiers), and most
+of what a *fresh* `create-zudo-doc` scaffold ships lives in `node_modules`,
+not the project tree. This repo's own showcase still keeps a handful of real,
+project-specific files (`src/chrome-bindings.tsx`, `pages/lib/*`,
+`src/config/*`) because it demonstrates every feature with real data — a
+fresh scaffold has none of them by default. See the Feature Change Checklist
+below for the generated-project shape.
+
 ```
-zfb.config.ts            # zfb engine config (content collections, MDX pipeline, plugins)
-plugins/                 # zfb engine plugins (doc-history, llms-txt, search-index, ...)
-pages/                   # File-routed pages (.tsx) — zfb resolves these
-├── docs/[...slug]       # English doc routes
-├── [locale]/docs/[...slug] # Locale-prefixed doc routes (e.g. /ja/docs/...)
-├── api/                 # API routes (e.g. ai-chat)
-└── sitemap.xml.tsx      # Sitemap generator
+zfb.config.ts             # zfb engine config — zudoDoc({ ...settings, chromeBindingsModule })
+                           # single-entry API (@takazudo/zudo-doc/config); collections/plugins/
+                           # markdown logic is package-owned (zudoDocPreset(), which zudoDoc() calls)
+pages/                    # File-routed pages (.tsx) — zfb resolves these
+├── docs/[[...slug]].tsx        # English doc route (self-contained stub)
+├── [locale]/docs/[[...slug]].tsx # Locale-prefixed doc route (e.g. /ja/docs/...)
+├── v/                     # Versioned doc routes
+├── api/                   # API routes (e.g. ai-chat)
+└── lib/                   # Showcase-only real host bindings (SearchWidget, DocHistory data,
+                            # frontmatter renderers, ...) — threaded into zfb.config.ts via
+                            # src/chrome-bindings.tsx + the chromeBindingsModule setting.
+                            # NOT present in a fresh create-zudo-doc scaffold (package-owned there).
 packages/
 ├── md-plugins/           # Legacy JS remark/rehype plugins (superseded by zfb Rust pipeline; kept for fixture/unit-test coverage)
 ├── search-worker/        # CF Worker for search API
 ├── doc-history-server/   # Doc history REST API + CLI generator
-├── zudo-doc/          # Shared layout + integration package (header, doc-layout, ...)
-└── create-zudo-doc/      # CLI scaffold tool
+├── zudo-doc/             # Shared layout + integration package — owns chrome/routes/islands/plugins/preset (@takazudo/zudo-doc)
+└── create-zudo-doc/      # CLI scaffold tool — emits the locked ~12-file minimal manifest
 
 src/
-├── components/          # Preact components (.tsx) — islands and server-rendered overrides
-│   └── content/         # MDX element overrides (server-rendered, no client JS)
-├── config/              # Settings, color schemes, tag vocabulary
+├── chrome-bindings.tsx   # Real ChromeHostBindings implementation, wired via zfb.config.ts's chromeBindingsModule
+├── components/           # Preact components (.tsx) — the showcase's own remaining islands/overrides
+│   └── content/          # MDX element overrides (server-rendered, no client JS)
+├── config/               # Settings, tag vocabulary, sidebars, i18n (showcase-owned — see Feature Change Checklist; color schemes moved to the package, see src/CLAUDE.md)
 ├── content/
-│   ├── docs/            # English MDX content
-│   └── docs-ja/         # Japanese MDX content (mirrors docs/)
+│   ├── docs/             # English MDX content
+│   └── docs-ja/          # Japanese MDX content (mirrors docs/)
 └── styles/
-    └── global.css       # @theme tokens, feature styles, slots; @imports the
-                         # shared content stylesheet @takazudo/zudo-doc/content.css
+    └── global.css        # @theme tokens, feature styles, slots; @imports the
+                          # shared @takazudo/zudo-doc/theme.css + content.css
 ```
 
 ## Content Collections
@@ -246,21 +263,51 @@ The legacy `zudo-doc` Cloudflare Pages project and its `zudo-doc.pages.dev` subd
 
 ## Feature Change Checklist
 
-When adding or removing a feature from zudo-doc, update the `create-zudo-doc` generator to stay in sync:
+Since the minimal-scaffold cutover (epic zudolab/zudo-doc#2651), a feature's
+field census lives in ONE place (`packages/zudo-doc/src/config.ts`) and a
+generated project's config is a SINGLE file (`zfb.config.ts`, diff-from-defaults
+`zudoDoc({...})`). The old `settings-gen.ts` + `zfb-config-gen.ts` two-file
+split, and the per-project `src/config/settings.ts` a fresh scaffold used to
+ship, are both gone from the generator's output — this repo's own showcase
+still has a real `src/config/settings.ts` (spread into `zudoDoc({...settings})`)
+because it demonstrates every feature with real data, but that's a showcase
+choice, not something a fresh scaffold gets. When adding or removing a
+feature from zudo-doc, update these in order:
 
-1. **`src/config/settings.ts`** — Add/remove the setting field (this repo's own showcase settings)
-2. **`packages/zudo-doc/src/config.ts`** — Add/remove the field on `ZudoDocConfig` (with a `@default` JSDoc) and `DEFAULT_SETTINGS` — this is the generated-project field census
-3. **`packages/create-zudo-doc/src/zfb-config-gen.ts`** — Add/remove the field in `DEFAULT_MIRROR` + `buildDesiredConfig()` + `FIELD_ORDER` (epic zudolab/zudo-doc#2651 minimal-scaffold cutover: `settings-gen.ts` is gone — a generated project's `zfb.config.ts` is the only config file, `zudoDoc({...})` diff-from-defaults)
-5. **`packages/create-zudo-doc/src/features/<name>.ts`** — Create/update feature module (usually just settings-field emission now — see step 3; only add injections/postProcess if the feature genuinely has no package-owned equivalent)
-6. **`packages/create-zudo-doc/templates/features/<name>/files/`** — Add/remove feature-specific files (only when there's a genuine gap — most features ship zero files now)
-7. **`packages/zudo-doc/src/preset.ts`** — If the feature introduces a new plugin or collection, update `zudoDocPreset()` to wire it from `settings.*`. The generated `zfb.config.ts` is now `zudoDoc({...})` (S9 #2660) — it delegates all plugin/collection/markdown logic to the preset via `zudoDoc()` and passes through the settings field you added in step 2.
-8. **`packages/create-zudo-doc/src/scaffold.ts`** — Add/remove dependencies in `generatePackageJson()`
-9. **`packages/create-zudo-doc/src/__tests__/scaffold.test.ts`** — Update tests
-10. Run `/l-update-generator` to verify no drift remains
+1. **`packages/zudo-doc/src/config.ts`** — Add/remove the field on `ZudoDocConfig` (with a `@default` JSDoc — enforced by `config-jsdoc.test.ts`) and `DEFAULT_SETTINGS`. This is the ONE census every other step reads against.
+2. **`packages/zudo-doc/src/preset.ts`** — If the feature introduces a new plugin or collection, update `zudoDocPreset()` to wire it from the settings field you just added. `zudoDoc()` (step 1's `config.ts`) calls this internally — a generated project's `zfb.config.ts` never wires plugins directly.
+3. **`packages/create-zudo-doc/src/zfb-config-gen.ts`** — Add/remove the field in `DEFAULT_MIRROR` (a hand-kept local copy of step 1's `DEFAULT_SETTINGS` — the generator can't `import` the package, see the file's header comment) + `buildDesiredConfig()` (user-choice → field mapping) + `FIELD_ORDER` (cosmetic emission order).
+4. **`packages/create-zudo-doc/src/features/<name>.ts`** — Create/update the feature module. Register a new module in `packages/create-zudo-doc/src/features/index.ts`. Most features need ONLY step 3's field mapping (leave `injections: []`, no `postProcess`) — only add a `postProcess` patch or `templates/features/<name>/files/` copy if the feature genuinely has no package-owned equivalent (rare; see `docHistory`/`designTokenPanel`/`tagGovernance`/`tauri`/`tauriDev` for the current examples and why each one needs it).
+5. **`packages/create-zudo-doc/templates/features/<name>/files/`** — Add/remove feature-specific files (only when there's a genuine gap — most features ship zero files now; only `i18n`, `tagGovernance`, `tauri`, `tauriDev` currently do).
+6. **`packages/create-zudo-doc/src/scaffold.ts`** — Add/remove dependencies in `generatePackageJson()`.
+7. **`packages/create-zudo-doc/src/__tests__/scaffold.test.ts`** — Update the manifest-shape assertions (`BAREBONE_MANIFEST`/`ALL_FEATURES`/`NEVER_RESURRECTED`) and the settings-drift guard.
+8. **This repo's own `src/config/settings.ts`** — Add/remove the field so the showcase demonstrates it (optional relative to the generator, but keep it in sync so the showcase stays a faithful reference).
+9. Run `/l-update-generator` to verify no drift remains.
 
-**e2e fixture sync**: Adding a field to `src/config/settings.ts` also requires mirroring it into all five `e2e/fixtures/*/src/config/settings.ts` files — or adding an allowlist entry in `.fixture-settings-drift-allowlist` with a `# reason:` comment. This is now enforced in CI by the `Fixture Settings Drift Check` job.
+**Template counterpart rule**: this checklist also applies to incremental
+improvements (CSS token migrations, icon sizing, spacing changes, etc.) — not
+just new features. The rule now covers far fewer files than before the
+minimal-scaffold cutover: only the ~5 files in
+`packages/create-zudo-doc/templates/base/` (`pages/index.tsx`,
+`pages/docs/[[...slug]].tsx`, `src/styles/global.css`, `tsconfig.json`,
+`scripts/setup-doc-skill.sh`) have a showcase counterpart to keep in sync —
+if you change one of the showcase's matching files, update the template too.
+Run `pnpm check:template-drift` to verify (allowlisted files in
+`.template-drift-allowlist` — `global.css`, `tsconfig.json`, `pages/index.tsx`,
+the two doc-route stubs, and the `tauri` feature's orphaned find-in-page
+files — are excluded from the automated whole-file check and need manual
+review instead).
 
-**Important**: This checklist also applies to incremental improvements (CSS token migrations, icon sizing, spacing changes, etc.) — not just new features. If you change a file that has a template counterpart, update the template too. Run `pnpm check:template-drift` to verify (note: allowlisted files such as `src/styles/global.css`, plugin re-exports, and other slot-based files listed in `.template-drift-allowlist` are excluded from automated checks and need manual review).
+**e2e fixture sync**: adding a field to `src/config/settings.ts` also
+requires mirroring it into all five `e2e/fixtures/*/src/config/settings.ts`
+files — or adding an allowlist entry in `.fixture-settings-drift-allowlist`
+with a `# reason:` comment. This is enforced in CI by the `Fixture Settings
+Drift Check` job (`scripts/check-fixture-settings-drift.mjs`). The check's
+`CANONICAL_PATH` deliberately stays `src/config/settings.ts`, not
+`zfb.config.ts` — every fixture's (and the host's) `zfb.config.ts` is a
+byte-identical `zudoDoc({ ...settings, chromeBindingsModule, ... })` shell
+carrying no field names, so `settings.ts` remains the only place individual
+field names appear as literal keys to diff.
 
 **Content typography (`.zd-content`) is NOT per-project — it ships from the package.** The content/markdown stylesheet lives once at `packages/zudo-doc/src/content.css` (shipped as `@takazudo/zudo-doc/content.css`) and is `@import`ed by both `src/styles/global.css` and the generator template. Change content typography there — do NOT re-inline `.zd-content` rules into either `global.css` (that copy-drift is exactly what zudolab/zudo-doc#2188 retired). Both `global.css` files keep only `@theme` tokens, feature styles, and slots. When editing `content.css`, rebuild the package (`pnpm --filter @takazudo/zudo-doc build`) so `dist/content.css` updates for consumers. Note: generated projects only pick up `content.css` changes after a new `@takazudo/zudo-doc` version is published and `create-zudo-doc`'s pinned dependency is bumped (the lockstep release handles this).
 

@@ -43,7 +43,7 @@ Read ONLY the file relevant to your task. Apply its rules strictly.
 - **Tier 1** (ramps): shared `base` (5 stops), `accent` (3 stops), and `state` (`danger`/`success`/`warning`/`info`) OKLCH ramps — no Tailwind utility reaches these directly (no `p0`–`p15`-style classes); they only feed Tier 2
 - **Tier 2** (semantic): `text-fg`, `bg-surface`, `border-muted`, `text-accent` — the only Tailwind-facing color tokens; prefer these always
 - **NEVER** use hardcoded hex values in components
-- Both bundled schemes (`Default Light`, `Default Dark`) share the same ramps; only their per-mode wiring (`map`) differs — see `src/config/color-schemes.ts`
+- Both bundled schemes (`Default Light`, `Default Dark`) share the same ramps; only their per-mode wiring (`map`) differs — see `packages/zudo-doc/src/color-schemes-defaults/index.ts` (package-owned; the former host copy, `src/config/color-schemes.ts`, was deleted as byte-identical dead weight in the minimal-scaffold cutover, epic #2651)
 
 ### Search & highlight tokens (role-split)
 

@@ -56,7 +56,7 @@ The URL slug is derived from the filename, so kebab-case also keeps URLs clean.
 
 ## Frontmatter Schema
 
-The schema is defined in `src/content.config.ts` (Zod validation). Required and key optional fields:
+The schema is package-owned (`@takazudo/zudo-doc/docs-schema`, source `packages/zudo-doc/src/docs-schema/index.ts` — the default `buildDocsSchema`, wired in via `zudoDoc()`; there is no more host `src/content.config.ts`). Zod validation. Required and key optional fields:
 
 | Field | Type | Required? | Notes |
 |---|---|---|---|

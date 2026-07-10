@@ -1,6 +1,6 @@
 ---
 name: color-scheme-a11y
-description: "WCAG-baseline contrast rules for zudo-doc's two ramp-native color schemes (Default Light, Default Dark — sharing one set of base/accent/state ramps). MUST be consulted before adding a new scheme, or editing/tweaking the shared ramps or a scheme's per-mode `map` in src/config/color-schemes.ts, for accessibility. Covers the finalized fg/bg pair matrix + thresholds, the OKLCH hue-preserving tweak methodology, the muted dual-role decision, the verification workflow, and the new-scheme checklist. Triggered by 'color scheme', 'contrast', 'WCAG', 'a11y color', 'ramp tweak', 'scheme accessibility'."
+description: "WCAG-baseline contrast rules for zudo-doc's two ramp-native color schemes (Default Light, Default Dark — sharing one set of base/accent/state ramps). MUST be consulted before adding a new scheme, or editing/tweaking the shared ramps or a scheme's per-mode `map` in packages/zudo-doc/src/color-schemes-defaults/index.ts, for accessibility. Covers the finalized fg/bg pair matrix + thresholds, the OKLCH hue-preserving tweak methodology, the muted dual-role decision, the verification workflow, and the new-scheme checklist. Triggered by 'color scheme', 'contrast', 'WCAG', 'a11y color', 'ramp tweak', 'scheme accessibility'."
 ---
 
 # Color-Scheme Accessibility Rules (scheme-a11y, epic #2489; re-grounded for the Color Ramp Restructure #2584/#2602)
@@ -10,7 +10,11 @@ must be able to produce correct edits from **this document + `pnpm contrast:audi
 alone**. Every rule here is concrete. When in doubt, the AA text floor wins.
 
 zudo-doc ships **two color schemes** — `Default Light` and `Default Dark` — defined in
-`src/config/color-schemes.ts`. A `ColorScheme` is `{ ramps, map }`: both schemes **share**
+`packages/zudo-doc/src/color-schemes-defaults/index.ts` (package-owned since the
+minimal-scaffold cutover, epic zudolab/zudo-doc#2651, Wave 6 #2661 — the former host copy,
+`src/config/color-schemes.ts`, was byte-identical to this and deleted; both the showcase and
+every `create-zudo-doc` project ride this package default unless they pass a `colorSchemes`
+override to `zudoDoc({...})`). A `ColorScheme` is `{ ramps, map }`: both schemes **share**
 one set of Tier-1 ramps (`base` — 5 stops, `accent` — 3 stops, `state` — 4 named colors:
 `danger`/`success`/`warning`/`info`) and differ only in their per-mode `map` (which ramp
 stop, or literal OKLCH override, each of the 4 base roles + 23 semantic roles points at).
@@ -119,8 +123,8 @@ light mode to clear AA:
 - **Both modes**: `matchedKeywordBg` / `matchedKeywordFg` are shared literals (not ramp
   refs) — the amber search-highlight is deliberately identical in both modes.
 
-These are documented per-value in `src/config/color-schemes.ts` (search for "per-mode
-AA-tuned literal" / "carried from #2593"/"#2595"). When retuning one, keep it a literal
+These are documented per-value in `packages/zudo-doc/src/color-schemes-defaults/index.ts`
+(search for "per-mode AA-tuned literal" / "carried from #2593"/"#2595"). When retuning one, keep it a literal
 (don't try to force it back onto a shared ramp stop) unless the retune is meant to move the
 *shared* ramp value for both modes at once.
 
@@ -136,7 +140,7 @@ failing pair.
 > mapping, and a mechanism change ripples to every downstream consumer of the package.
 > Every fix here is a per-scheme edit to `map.semantic` (or, for a change that should apply
 > to both modes at once, a shared `ramps.base`/`ramps.accent`/`ramps.state` stop) in
-> `src/config/color-schemes.ts`.
+> `packages/zudo-doc/src/color-schemes-defaults/index.ts`.
 
 ### 2.1 OKLCH hue-preserving minimal move
 
@@ -191,8 +195,8 @@ in the Color reference doc.
 
 State *why* the value is a literal (which pair it clears, and against which background) so
 a future reader doesn't try to collapse it back onto a shared ramp stop. This mirrors the
-comment style already in `color-schemes.ts` (e.g. "carried from #2593", "carried from
-#2595").
+comment style already in `color-schemes-defaults/index.ts` (e.g. "carried from #2593",
+"carried from #2595").
 
 ### 2.5 Allowlist = last resort
 
@@ -294,7 +298,8 @@ the `min` over these backgrounds automatically.
 
 ## 5. New-scheme checklist
 
-Before adding a new entry to `colorSchemes` in `src/config/color-schemes.ts`, it must:
+Before adding a new entry to `colorSchemes` in
+`packages/zudo-doc/src/color-schemes-defaults/index.ts`, it must:
 
 - [ ] Define its own `ramps` (or explicitly reuse an existing `Ramps` object, as Default
       Light/Dark do) and a `map` covering the 4 base roles + all 23 semantic roles — spread
@@ -306,9 +311,12 @@ Before adding a new entry to `colorSchemes` in `src/config/color-schemes.ts`, it
       clear AA at any of its ramp's existing stops (§1.1) — document why with the §2.4
       comment format.
 - [ ] Keep OKLCH hue fixed on all tweaks; reduce chroma only where noted for gamut.
-- [ ] If it's a Default scheme edit, mirror into
-      `packages/create-zudo-doc/templates/base/src/config/color-schemes.ts`
-      (`pnpm check:template-drift`).
+- [ ] No template-mirror step needed anymore — since the minimal-scaffold cutover (epic
+      #2651), both this showcase and every `create-zudo-doc` project source `colorSchemes`
+      from this SAME package file unless they pass their own `colorSchemes` override to
+      `zudoDoc({...})`, so a package-side edit here reaches both automatically. If a project
+      DOES carry its own `colorSchemes` override (an escape-hatch field on `ZudoDocConfig`,
+      not a file), that project owns its own contrast audit independently.
 - [ ] NOT touch e2e fixtures.
 
 ---
