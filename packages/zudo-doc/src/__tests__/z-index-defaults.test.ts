@@ -1,4 +1,7 @@
 import { describe, it, expect } from "vitest";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { readFileSync } from "node:fs";
 import { defaultZIndexTiers } from "../z-index-defaults/index.js";
 
 // Formerly also parity-checked against the `create-zudo-doc` base template's
@@ -37,5 +40,34 @@ describe("defaultZIndexTiers", () => {
 
   it("is plain serializable JSON", () => {
     expect(() => JSON.parse(JSON.stringify(defaultZIndexTiers))).not.toThrow();
+  });
+});
+
+// The shipped `@theme` z-index block in theme.css is documented as "mirrors
+// defaultZIndexTiers" but that mirror was never machine-enforced (#2651 review
+// fix). Parse the `--z-index-<name>: <value>;` declarations out of theme.css
+// and assert they match this module 1:1 — same names, same values, same order.
+describe("theme.css --z-index-* block mirrors defaultZIndexTiers", () => {
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const themeCss = readFileSync(resolve(__dirname, "../theme.css"), "utf8");
+
+  // Only real declarations: a trimmed line of exactly `--z-index-NAME: N;`.
+  // Comment lines (which start with `*` or contain prose like
+  // "--z-index-toolbar: 20 produces …") never match this anchored pattern.
+  const declRe = /^--z-index-([a-z0-9-]+):\s*(\d+);$/;
+  const cssTiers = themeCss
+    .split("\n")
+    .map((line) => line.trim().match(declRe))
+    .filter((m): m is RegExpMatchArray => m !== null)
+    .map((m) => ({ name: m[1]!, value: Number(m[2]!) }));
+
+  it("parsed a non-trivial number of declarations from theme.css", () => {
+    expect(cssTiers.length).toBe(defaultZIndexTiers.length);
+  });
+
+  it("matches defaultZIndexTiers exactly (name, value, and order)", () => {
+    expect(cssTiers).toEqual(
+      defaultZIndexTiers.map((t) => ({ name: t.name, value: t.value })),
+    );
   });
 });
