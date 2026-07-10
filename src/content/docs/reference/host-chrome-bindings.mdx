@@ -189,7 +189,7 @@ The routes plugin registers a third virtual module (`virtual:zudo-doc-design-tok
 
 <Note>
 
-`designTokenPanelConfigModule` is a package `Settings` field. Unlike `chromeBindingsModule`, it is not (yet) surfaced on the inline `ZudoDocConfig` type, so it is reached through a spread `settings` object rather than as a first-class inline `zudoDoc({ … })` key — the pattern this showcase uses. Enabling the panel (`designTokenPanel: true`) works inline as usual.
+`designTokenPanelConfigModule` is a first-class `ZudoDocConfig` field, just like `chromeBindingsModule` — pass it directly as an inline `zudoDoc({ … })` key. Enabling the panel (`designTokenPanel: true`) works inline as usual.
 
 </Note>
 

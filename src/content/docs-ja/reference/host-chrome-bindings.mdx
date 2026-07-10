@@ -189,7 +189,7 @@ export function buildDesignTokenPanelConfig(mode: PanelMode): PanelConfig {
 
 <Note>
 
-`designTokenPanelConfigModule` はパッケージの `Settings` フィールドです。`chromeBindingsModule` と異なり、インラインの `ZudoDocConfig` 型にはまだ露出していないため、インラインの `zudoDoc({ … })` キーとしてではなく、スプレッドされた `settings` オブジェクト経由で到達します — このショーケースが使うパターンです。パネルの有効化（`designTokenPanel: true`）は従来どおりインラインで動作します。
+`designTokenPanelConfigModule` は `chromeBindingsModule` と同様、`ZudoDocConfig` の第一級フィールドです — インラインの `zudoDoc({ … })` キーとしてそのまま渡せます。パネルの有効化（`designTokenPanel: true`）は従来どおりインラインで動作します。
 
 </Note>
 
