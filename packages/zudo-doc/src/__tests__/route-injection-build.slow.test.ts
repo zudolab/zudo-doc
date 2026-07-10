@@ -33,7 +33,7 @@
 // (packages/create-zudo-doc/vitest.slow.config.ts). See zudolab/zudo-doc#2530.
 
 import { describe, it, expect, afterAll } from "vitest";
-import { execSync, type ExecSyncOptions } from "node:child_process";
+import { execSync, spawn, type ExecSyncOptions, type ChildProcess } from "node:child_process";
 import { mkdtempSync, mkdirSync, cpSync, symlinkSync, existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
@@ -64,6 +64,10 @@ const FIXTURE_SRC = resolve(__dirname, "fixtures/route-injection");
  *  to exercise the locale-prefixed injected route (`/[locale]/docs/[[...slug]]`). */
 const FIXTURE_I18N_SRC = resolve(__dirname, "fixtures/route-injection-i18n");
 
+/** The locked 12-file target-manifest fixture (epic zudolab/zudo-doc#2651 Wave
+ *  5, #2659) — see the "Case TM" section near the end of this file. */
+const TARGET_MANIFEST_FIXTURE_SRC = resolve(__dirname, "fixtures/target-manifest");
+
 /** The `@takazudo/zudo-doc` package root (…/packages/zudo-doc). */
 const PKG_ROOT = resolve(__dirname, "../..");
 
@@ -77,6 +81,11 @@ const WORKSPACE_ROOT = resolve(__dirname, "../../../../");
 
 /** All temp build dirs created by this test — cleaned up in afterAll. */
 const tempDirs: string[] = [];
+
+/** All `zfb dev` child processes spawned by the Case TM dev probes — killed in
+ *  afterAll as a safety net even if a test throws mid-way (confirm-gate brief:
+ *  "kill every server"). */
+const devServers: ChildProcess[] = [];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -183,6 +192,11 @@ function expectHtmlAttr(html: string, name: string, value: string): void {
 // ---------------------------------------------------------------------------
 
 afterAll(() => {
+  for (const child of devServers) {
+    if (child.exitCode === null && child.signalCode === null) {
+      child.kill();
+    }
+  }
   for (const dir of tempDirs) {
     if (existsSync(dir)) {
       rmSync(dir, { recursive: true, force: true });
@@ -1019,5 +1033,481 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
     const html = readBuiltHtml(fixtureDir, "ja/docs/getting-started/index.html");
     expect(html).toContain("はじめに");
     expect(html).toContain("locale-injected-route-render-proof");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Case TM — target-manifest confirm (epic zudolab/zudo-doc#2651 Wave 5, #2659).
+//
+// The locked 12-file minimal-scaffold manifest (#2653 decision wave):
+//
+//   zfb.config.ts  package.json  tsconfig.json  CLAUDE.md  .gitignore  .npmrc
+//   pages/index.tsx                       — 1-line re-export
+//   pages/docs/[[...slug]].tsx            — self-contained doc stub (REQUIRED)
+//   src/content/docs/getting-started/{index,introduction,installation}.mdx
+//   src/styles/global.css                 — ~22 ln
+//
+// committed verbatim at fixtures/target-manifest/ (12 files, guarded by the
+// "group 6" file-count test below). Built from the NPM-PACKED package (mirrors
+// Case S1's `packPackage()`/tarball-extraction flow, not the cheap workspace
+// symlink `setupFixture()` used by Cases A–DTP/HOME/B) so the confirm proof
+// exercises the PUBLISHED shape a real `create-zudo-doc` consumer gets —
+// including the #2656 consumer-level regression proof this section owns per
+// packages/zudo-doc/CLAUDE.md ("Shipped ambient type shims" section): the
+// self-referencing `import("@takazudo/zudo-doc/factory-context")` specifier in
+// the generated `virtual-modules.d.ts`, resolved from inside a consumer's
+// node_modules.
+//
+// Six assertion groups (see #2659):
+//   1. `zfb build` succeeds; real HTML for /, /docs/getting-started/, /404,
+//      /sitemap.xml.
+//   2. Island-set diff: the self-contained doc stub vs. the SAME fixture with
+//      the stub removed (injected route owns the URL) — isolates exactly one
+//      variable (stub vs. no-stub) under IDENTICAL settings, unlike diffing
+//      against the unrelated route-injection fixture (which ships different
+//      feature flags, e.g. mermaid:false vs. zudoDoc()'s mermaid:true default).
+//   3. `zfb check` (tsc) passes with the 5-line tsconfig + pages/ included.
+//   4. `zfb dev` renders / and /docs/getting-started/ (200 + content marker).
+//   5. Computed-token smoke on built CSS (theme.css contract).
+//   6. Fixture file count == 12 (guards floor creep).
+// ---------------------------------------------------------------------------
+
+/** Set up a target-manifest fixture instance: copy the locked-manifest fixture
+ *  source verbatim, extract the packed tarball into a REAL
+ *  `node_modules/@takazudo/zudo-doc` (published shape — no `src/`, WITH
+ *  `routes-src/`), and symlink every other workspace dep (mirrors
+ *  `setupNoSrcFixture` above, but preserves the fixture's own `pages/`
+ *  content instead of forcing it empty — the locked manifest's `pages/` IS
+ *  the thing under test). `options.removeDocStub` strips
+ *  `pages/docs/[[...slug]].tsx` — the negative-guard / apples-to-apples
+ *  island-diff baseline variant, proving the stub (not just
+ *  `packageOwnedRoutes`) is what's under test. Returns the temp fixture dir. */
+function setupTargetManifestFixture(
+  tarballPath: string,
+  options: { removeDocStub?: boolean } = {},
+): string {
+  const dir = mkdtempSync(join(tmpdir(), "zudo-doc-target-manifest-"));
+  tempDirs.push(dir);
+  cpSync(TARGET_MANIFEST_FIXTURE_SRC, dir, { recursive: true });
+
+  const wsNm = join(WORKSPACE_ROOT, "node_modules");
+  const nm = join(dir, "node_modules");
+  mkdirSync(nm);
+  // readdirSync includes dotfiles (e.g. `.bin`) by default — unlike a bare
+  // shell glob, no `dotglob` equivalent needed here.
+  for (const entry of readdirSync(wsNm)) {
+    if (entry === "@takazudo") continue;
+    symlinkSync(join(wsNm, entry), join(nm, entry));
+  }
+  const scopeDir = join(nm, "@takazudo");
+  mkdirSync(scopeDir);
+  for (const entry of readdirSync(join(wsNm, "@takazudo"))) {
+    if (entry === "zudo-doc") continue;
+    symlinkSync(join(wsNm, "@takazudo", entry), join(scopeDir, entry));
+  }
+  // @takazudo/zudo-doc: REAL directory extracted from the tarball — the
+  // published file set (no `src/`, with `routes-src/`), same as Case S1.
+  const pkgDest = join(scopeDir, "zudo-doc");
+  mkdirSync(pkgDest);
+  execSync(`tar -xzf "${tarballPath}" -C "${pkgDest}" --strip-components=1`, {
+    stdio: "pipe",
+  });
+
+  if (options.removeDocStub) {
+    rmSync(join(dir, "pages/docs"), { recursive: true, force: true });
+  }
+
+  return dir;
+}
+
+/** Run `zfb check` in `dir`, throwing (with the combined output) on non-zero
+ *  exit — assertion group 3's `tsc --noEmit` + content-schema gate. */
+function runZfbCheck(dir: string): string {
+  const opts: ExecSyncOptions = {
+    cwd: dir,
+    env: { ...process.env, SKIP_DOC_HISTORY: "1" },
+    stdio: "pipe",
+    encoding: "utf-8",
+  };
+  try {
+    return execSync(`./node_modules/.bin/zfb check 2>&1`, opts) as string;
+  } catch (err) {
+    const e = err as { stdout?: string; stderr?: string; message?: string };
+    throw new Error(
+      `zfb check failed in ${dir}:\n${e.stdout ?? ""}\n${e.stderr ?? ""}\n${e.message ?? ""}`,
+    );
+  }
+}
+
+/** Boot `zfb dev` in `dir` on `port`, polling combined stdout/stderr for the
+ *  "ready on" banner (or the process exiting early) before resolving. Removes
+ *  any stale `dist/` first — `zfb dev` serves a stale `dist/` statically
+ *  instead of live-rendering (spike #2652 finding; load-bearing for every dev
+ *  probe in this section). Ports 4615–4625 per the confirm-gate brief. Returns
+ *  a `{ port, kill }` controller; callers call `kill()` explicitly, with
+ *  `afterAll`'s sweep as a safety net. */
+async function startZfbDev(dir: string, port: number): Promise<{ port: number; kill: () => void }> {
+  rmSync(join(dir, "dist"), { recursive: true, force: true });
+
+  let output = "";
+  const child = spawn("./node_modules/.bin/zfb", ["dev", "--port", String(port)], {
+    cwd: dir,
+    env: { ...process.env, SKIP_DOC_HISTORY: "1" },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  devServers.push(child);
+  child.stdout?.on("data", (d: Buffer) => {
+    output += d.toString();
+  });
+  child.stderr?.on("data", (d: Buffer) => {
+    output += d.toString();
+  });
+
+  const deadline = Date.now() + 30_000;
+  while (!/ready on/.test(output)) {
+    if (child.exitCode !== null) {
+      throw new Error(`zfb dev exited early (code ${child.exitCode}) in ${dir}:\n${output}`);
+    }
+    if (Date.now() > deadline) {
+      child.kill();
+      throw new Error(`zfb dev did not report ready within 30s in ${dir}:\n${output}`);
+    }
+    await new Promise((r) => setTimeout(r, 200));
+  }
+
+  return {
+    port,
+    kill: () => {
+      if (child.exitCode === null && child.signalCode === null) child.kill();
+    },
+  };
+}
+
+/** curl a dev-server path, returning the HTTP status code. Per the
+ *  confirm-gate brief ("Dev probes via curl only"), not `fetch`. */
+function curlStatus(port: number, path: string): number {
+  const out = execSync(
+    `curl -s -o /dev/null -w "%{http_code}" "http://localhost:${port}${path}"`,
+    { encoding: "utf-8" },
+  );
+  return Number(out.trim());
+}
+
+/** Poll `path` on a freshly-booted dev server until it returns `wantStatus`
+ *  (or the attempt budget is exhausted, in which case it just returns
+ *  whatever the last attempt saw). `zfb dev`'s lazy renderer compiles each
+ *  route on its FIRST request — the server's "ready on" banner fires before
+ *  that per-route compile necessarily settles, so a probe issued immediately
+ *  after boot can transiently see a stale/000/wrong status under heavy system
+ *  load (observed empirically: reliable in isolation, occasionally flaky when
+ *  this file's ~85 other tests already saturated the machine beforehand).
+ *  This is a warm-up for the dev PROCESS, not a retry-until-pass on the
+ *  assertion under test — callers still assert the final returned status
+ *  explicitly. */
+function waitForDevStatus(port: number, path: string, wantStatus: number, attempts = 10): number {
+  let status = -1;
+  for (let i = 0; i < attempts; i++) {
+    status = curlStatus(port, path);
+    if (status === wantStatus) return status;
+    execSync("sleep 0.5");
+  }
+  return status;
+}
+
+/** curl a dev-server path, returning the response body. */
+function curlBody(port: number, path: string): string {
+  return execSync(`curl -s "http://localhost:${port}${path}"`, { encoding: "utf-8" });
+}
+
+/** Extract every `data-zfb-island`/`data-zfb-island-skip-ssr` marker from HTML
+ *  as a normalized, quote-insensitive `"data-zfb-island[-skip-ssr]=NAME"`
+ *  string — minifyHtml strips attribute quotes in build output
+ *  (`data-zfb-island=SiteTreeNav`), so a plain `toContain('="X"')` check would
+ *  miss minified matches; this regex accepts quoted, single-quoted, and bare
+ *  attribute values uniformly. */
+function extractIslandMarkers(html: string): string[] {
+  const re = /data-zfb-island(-skip-ssr)?=(?:"([^"]*)"|'([^']*)'|([^\s>]*))/g;
+  const out: string[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html))) {
+    const suffix = m[1] ?? "";
+    const value = m[2] ?? m[3] ?? m[4] ?? "";
+    out.push(`data-zfb-island${suffix}=${value}`);
+  }
+  return out;
+}
+
+/** Recursively count files under `dir` (fixture file-count guard, group 6). */
+function countFilesRecursive(dir: string): number {
+  let count = 0;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      count += countFilesRecursive(full);
+    } else {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+// ---------------------------------------------------------------------------
+// Group 6 — fixture file count == the locked 12-file manifest.
+// ---------------------------------------------------------------------------
+
+describe("TM group 6: fixture file count matches the locked 12-file manifest exactly", () => {
+  it("fixtures/target-manifest/ contains exactly 12 files (guards floor creep)", () => {
+    expect(countFilesRecursive(TARGET_MANIFEST_FIXTURE_SRC)).toBe(12);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Groups 1, 3, 5 — build, typecheck, computed-CSS-token smoke.
+// ---------------------------------------------------------------------------
+
+describe("TM build+check+css: the locked manifest builds, typechecks, and ships the theme.css token contract", () => {
+  let fixtureDir: string;
+
+  it("setup: pack the package and build the target-manifest fixture (with the doc stub)", { timeout: 180_000 }, () => {
+    const tarballPath = packPackage();
+    fixtureDir = setupTargetManifestFixture(tarballPath);
+    runZfbBuild(fixtureDir);
+  });
+
+  // ---- Group 1 ----
+
+  it("group 1: / (home) renders real HTML via the 1-line re-export of routes/index", () => {
+    const html = readBuiltHtml(fixtureDir, "index.html");
+    expect(html).toContain("<title>Target Manifest Confirm</title>");
+  });
+
+  it("group 1: /docs/getting-started/ renders real HTML via the self-contained doc stub", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).toContain("Getting Started");
+    expect(html).toContain("TM-INDEX-MARKER: target-manifest-render-proof");
+  });
+
+  it("group 1: the two other starter pages (introduction/installation) also render", () => {
+    const introHtml = readBuiltHtml(fixtureDir, "docs/getting-started/introduction/index.html");
+    expect(introHtml).toContain("TM-INTRODUCTION-MARKER: target-manifest-render-proof");
+    const installHtml = readBuiltHtml(fixtureDir, "docs/getting-started/installation/index.html");
+    expect(installHtml).toContain("TM-INSTALLATION-MARKER: target-manifest-render-proof");
+  });
+
+  it("group 1: /404 renders the package-default 404 (injected static route)", () => {
+    const html = readBuiltHtml(fixtureDir, "404.html");
+    expect(html).toContain("Page Not Found");
+  });
+
+  it("group 1: /sitemap.xml is emitted and lists the doc routes (injected static route, sitemap:true)", () => {
+    const xml = readBuiltHtml(fixtureDir, "sitemap.xml");
+    expect(xml).toContain("<loc>/</loc>");
+    expect(xml).toContain("<loc>/docs/getting-started</loc>");
+  });
+
+  // ---- Group 3 ----
+
+  it("group 3: zfb check passes cleanly — 5-line tsconfig extending tsconfig.base.json, pages/ included, no local shim (#2656 consumer proof)", { timeout: 60_000 }, () => {
+    const output = runZfbCheck(fixtureDir);
+    expect(output).toContain("no errors");
+    // Incidental bug flagged on #2653's decision comment: today's OLD
+    // generator output fails `zfb check` with a `changelogs` TS2322 — assert
+    // zudoDoc()'s DEFAULT_SETTINGS.changelogs (typed `false`, not `boolean`)
+    // does NOT resurface it now that `pages/` is actually typechecked.
+    expect(output).not.toContain("TS2322");
+    expect(output).not.toContain("changelogs");
+  });
+
+  // ---- Group 5 ----
+
+  function readBuiltCss(dir: string): string {
+    const assetsDir = join(dir, "dist", "assets");
+    const cssFile = readdirSync(assetsDir).find((f) => f.endsWith(".css"));
+    if (!cssFile) throw new Error(`No built CSS asset found in ${assetsDir}`);
+    return readFileSync(join(assetsDir, cssFile), "utf-8");
+  }
+
+  it("group 5: built CSS resolves --color-bg / --text-body / --z-index-modal to theme.css's default values", () => {
+    const css = readBuiltCss(fixtureDir);
+    // theme.css: --color-bg: var(--zd-bg); --text-body: var(--text-scale-md);
+    // --z-index-modal: 60; (packages/zudo-doc/src/theme.css).
+    expect(css).toContain("--color-bg: var(--zd-bg)");
+    expect(css).toContain("--text-body: var(--text-scale-md)");
+    expect(css).toContain("--z-index-modal: 60");
+    expect(css).toContain("--text-scale-md: 1.2rem");
+  });
+
+  it("group 5: the --color-*: initial tight-token guardrail is effective (no default Tailwind color utilities leak in)", () => {
+    const css = readBuiltCss(fixtureDir);
+    // Tailwind's built-in red-500 swatch must NOT survive the guardrail —
+    // neither as a --color-red-500 custom property nor a .bg-red-500 utility.
+    expect(css).not.toContain("--color-red-500");
+    expect(css).not.toContain(".bg-red-500");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Group 2 — island-set diff: self-contained doc stub vs. the SAME fixture
+// with the stub removed (injected route owns /docs/getting-started/). Both
+// variants share IDENTICAL zfb.config.ts / settings (zudoDoc() defaults +
+// designTokenPanel: true) — isolating exactly one variable (stub present vs.
+// absent) for a fair diff, unlike comparing against the unrelated
+// route-injection fixture (different feature-flag profile, e.g.
+// mermaid:false there vs. zudoDoc()'s mermaid:true default here).
+//
+// *** BLOCKING FINDING (posted to #2658, summarized on #2659) ***
+// The locked-spec (#2653) self-contained doc stub imports ONLY
+// `virtual:zudo-doc-route-context` + `@takazudo/zudo-doc/route-context` +
+// `@takazudo/zudo-doc/chrome` — it calls `createChrome(routeCtx)` with NO
+// `hostBindings`, unlike the package's own `routes/_chrome.tsx` (which
+// statically imports `DesignTokenPanelBootstrap` and threads it in). Per
+// `chrome/derive.tsx`'s `deriveBodyEndIslands`, an omitted
+// `hostBindings.DesignTokenPanelBootstrap` is a SAFE NO-OP — so
+// `designTokenPanel: true` produces **no marker at all** on any page rendered
+// through the stub (not a "marker with no matching registry" dead island —
+// the marker itself never emits). Confirmed by direct build: `/index.html`
+// (1-line re-export → the real `_chrome.tsx`) DOES carry the marker + a
+// matching client-bundle registry entry; `/docs/getting-started/index.html`
+// (self-contained stub) does NOT. This is exactly the "dead islands are
+// silent" failure mode the confirm-gate brief warns about, except here the
+// island isn't dead — it just never mounts.
+// ---------------------------------------------------------------------------
+
+describe("TM group 2: island-set diff — self-contained doc stub vs. injected-route baseline (designTokenPanel: true)", () => {
+  let stubDir: string;
+  let baselineDir: string;
+
+  it("setup: build BOTH variants from the same packed tarball (with-stub, no-stub baseline)", { timeout: 180_000 }, () => {
+    const tarballPath = packPackage();
+    stubDir = setupTargetManifestFixture(tarballPath);
+    runZfbBuild(stubDir);
+    baselineDir = setupTargetManifestFixture(tarballPath, { removeDocStub: true });
+    runZfbBuild(baselineDir);
+  });
+
+  it("baseline sanity: no-stub /docs/getting-started/ is rendered by the injected route (not a 404 page)", () => {
+    const html = readBuiltHtml(baselineDir, "docs/getting-started/index.html");
+    expect(html).toContain("Getting Started");
+    expect(html).toContain("TM-INDEX-MARKER: target-manifest-render-proof");
+  });
+
+  it("baseline: injected /docs/getting-started/ carries the DesignTokenPanelBootstrap marker + a matching client-bundle registry entry", () => {
+    const html = readBuiltHtml(baselineDir, "docs/getting-started/index.html");
+    expectHtmlAttr(html, "data-zfb-island", "DesignTokenPanelBootstrap");
+    expect(readIslandsBundles(baselineDir)).toContain("DesignTokenPanelBootstrap");
+  });
+
+  it("home route (both variants): / carries the DesignTokenPanelBootstrap marker via the re-export — unaffected by the doc-stub gap", () => {
+    for (const dir of [stubDir, baselineDir]) {
+      const html = readBuiltHtml(dir, "index.html");
+      expectHtmlAttr(html, "data-zfb-island", "DesignTokenPanelBootstrap");
+    }
+    expect(readIslandsBundles(stubDir)).toContain("DesignTokenPanelBootstrap");
+  });
+
+  it("island-set diff: the ONLY marker difference between the self-contained stub and the injected baseline is the missing DesignTokenPanelBootstrap", () => {
+    const baselineMarkers = new Set(
+      extractIslandMarkers(readBuiltHtml(baselineDir, "docs/getting-started/index.html")),
+    );
+    const stubMarkers = new Set(
+      extractIslandMarkers(readBuiltHtml(stubDir, "docs/getting-started/index.html")),
+    );
+    const missingFromStub = [...baselineMarkers].filter((m) => !stubMarkers.has(m)).sort();
+    const extraInStub = [...stubMarkers].filter((m) => !baselineMarkers.has(m)).sort();
+    // Pinpoints the gap precisely (nothing ELSE regressed) and doubles as a
+    // regression guard: any additional drift (extra OR missing markers) fails
+    // this test loudly.
+    expect(extraInStub).toEqual([]);
+    expect(missingFromStub).toEqual(["data-zfb-island=DesignTokenPanelBootstrap"]);
+  });
+
+  // BLOCKING — see the module-header note above. `it.fails` documents the
+  // CURRENTLY-BROKEN state on purpose: this assertion is assertion group 2's
+  // literal requirement ("distinct marker set equals the baseline… including
+  // the designTokenPanel bootstrap island"). It starts FAILING (i.e. this
+  // wrapped assertion starts passing) once the self-contained stub threads
+  // `DesignTokenPanelBootstrap` into `createChrome`'s `hostBindings` — which
+  // is the maintainers' signal to flip this back to a plain `it`.
+  it.fails(
+    "doc route SHOULD carry the DesignTokenPanelBootstrap marker, matching the baseline (BLOCKED — see #2658)",
+    () => {
+      const html = readBuiltHtml(stubDir, "docs/getting-started/index.html");
+      expectHtmlAttr(html, "data-zfb-island", "DesignTokenPanelBootstrap");
+    },
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Group 4 — `zfb dev` renders / and /docs/getting-started/ via the locked
+// manifest, plus the negative guard the locked spec (#2653) mandates.
+// ---------------------------------------------------------------------------
+
+describe("TM group 4: zfb dev renders / and /docs/getting-started/ via the locked manifest", () => {
+  let fixtureDir: string;
+  let dev: { port: number; kill: () => void } | undefined;
+
+  it("setup: pack + fixture with the doc stub present", { timeout: 180_000 }, () => {
+    const tarballPath = packPackage();
+    fixtureDir = setupTargetManifestFixture(tarballPath);
+  });
+
+  it("dev: boots and / returns 200 via the 1-line re-export stub", { timeout: 60_000 }, async () => {
+    dev = await startZfbDev(fixtureDir, 4615);
+    // First-hit warm-up (see waitForDevStatus) — the lazy dev renderer
+    // compiles each route on its first request, so a probe issued the
+    // instant "ready on" appears can transiently race it under load.
+    expect(waitForDevStatus(dev.port, "/", 200)).toBe(200);
+  });
+
+  it("dev: /docs/getting-started/ returns 200 + content marker via the self-contained doc stub (the load-bearing case)", () => {
+    expect(dev).toBeDefined();
+    expect(waitForDevStatus(dev!.port, "/docs/getting-started/", 200)).toBe(200);
+    expect(curlBody(dev!.port, "/docs/getting-started/")).toContain(
+      "TM-INDEX-MARKER: target-manifest-render-proof",
+    );
+  });
+
+  it("dev: an injected STATIC route (/404) also returns 200 (sanity — static injection was never in question)", () => {
+    expect(dev).toBeDefined();
+    expect(waitForDevStatus(dev!.port, "/404", 200)).toBe(200);
+  });
+
+  it("teardown: kill the dev server", () => {
+    dev?.kill();
+  });
+});
+
+describe("TM group 4 negative guard: the locked spec's dev-mode 404 claim, re-verified against the current Wave-3/4 state", () => {
+  let fixtureDir: string;
+  let dev: { port: number; kill: () => void } | undefined;
+
+  it("setup: pack + fixture WITHOUT the doc stub (pages/docs/ removed)", { timeout: 180_000 }, () => {
+    const tarballPath = packPackage();
+    fixtureDir = setupTargetManifestFixture(tarballPath, { removeDocStub: true });
+  });
+
+  it("dev: boots and / still returns 200 (only the doc stub was removed)", { timeout: 60_000 }, async () => {
+    dev = await startZfbDev(fixtureDir, 4616);
+    expect(waitForDevStatus(dev.port, "/", 200)).toBe(200);
+  });
+
+  // Confirms the locked spec's (#2653) empirical basis for REQUIRING the doc
+  // stub: without it, the injected DYNAMIC /docs/[[...slug]] route 404s in
+  // `zfb dev` ("✗ lazy render failed … status 404") even though the SAME
+  // route renders fine in `zfb build` (group 1) and in dev via the
+  // self-contained stub (the previous describe block). Reproduced reliably
+  // across repeated isolated runs with a genuinely fresh tarball extraction +
+  // temp dir each time (an earlier manual smoke-test pass that REUSED a
+  // fixture directory across repeated `zfb dev` boots saw 200 — almost
+  // certainly stale-cache contamination from the shared dir, not a real
+  // discrepancy; the automated, isolated run below is the trustworthy one).
+  // This is the proof that the stub is load-bearing, not vacuous.
+  it("dev negative guard: /docs/getting-started/ 404s in zfb dev without the doc stub (proves the stub is load-bearing)", () => {
+    expect(dev).toBeDefined();
+    expect(waitForDevStatus(dev!.port, "/docs/getting-started/", 404)).toBe(404);
+  });
+
+  it("teardown: kill the dev server", () => {
+    dev?.kill();
   });
 });
