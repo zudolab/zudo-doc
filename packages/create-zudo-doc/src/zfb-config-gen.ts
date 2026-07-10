@@ -28,7 +28,7 @@ import { capitalize, getSecondaryLang, getLangLabel } from "./utils.js";
 // set need an entry; anything else is simply never emitted.
 // ---------------------------------------------------------------------------
 
-const DEFAULT_MIRROR: Record<string, unknown> = {
+export const DEFAULT_MIRROR: Record<string, unknown> = {
   colorScheme: "Default Dark",
   colorMode: {
     defaultMode: "dark",
@@ -350,7 +350,9 @@ function buildDesiredConfig(choices: UserChoices): Record<string, unknown> {
 // Field order — purely cosmetic (mirrors ZudoDocConfig's declaration order
 // in packages/zudo-doc/src/config.ts so the emitted file reads like the
 // documented reference). Any key produced by buildDesiredConfig() that is
-// missing here is appended at the end (defensive — should never happen).
+// missing here is appended AFTER the ordered ones in ALPHABETICAL order (see
+// orderDesiredKeys) — defensive: a newly-added desired key someone forgot to
+// list here still emits deterministically instead of being silently dropped.
 // ---------------------------------------------------------------------------
 
 const FIELD_ORDER = [
@@ -385,6 +387,22 @@ const FIELD_ORDER = [
 ];
 
 /**
+ * Deterministic emission order for the keys of a `desired` config object:
+ * the keys present in `FIELD_ORDER` first (cosmetic reference order), then any
+ * leftover keys NOT in `FIELD_ORDER` appended in ALPHABETICAL order. The
+ * leftover branch exists so a key `buildDesiredConfig()` produces but nobody
+ * added to `FIELD_ORDER` is still emitted (deterministically) rather than
+ * silently dropped — matching what the `FIELD_ORDER` comment promises.
+ */
+export function orderDesiredKeys(desiredKeys: readonly string[]): string[] {
+  const inOrder = FIELD_ORDER.filter((k) => desiredKeys.includes(k));
+  const leftover = desiredKeys
+    .filter((k) => !FIELD_ORDER.includes(k))
+    .sort();
+  return [...inOrder, ...leftover];
+}
+
+/**
  * Generate the full `zfb.config.ts` source: `defineConfig(zudoDoc({ ... }))`
  * with only the diff-from-defaults fields.
  */
@@ -392,10 +410,11 @@ export function generateZfbConfig(choices: UserChoices): string {
   const desired = buildDesiredConfig(choices);
 
   const emittedEntries: Array<[string, unknown]> = [];
-  for (const key of FIELD_ORDER) {
-    if (!(key in desired)) continue;
+  for (const key of orderDesiredKeys(Object.keys(desired))) {
     const value = desired[key];
     // siteName always emitted (locked spec); everything else diff-from-default.
+    // A leftover key not in DEFAULT_MIRROR has `DEFAULT_MIRROR[key] ===
+    // undefined`, so it never deep-equals a real value and always emits.
     if (key !== "siteName" && deepEqual(value, DEFAULT_MIRROR[key])) continue;
     emittedEntries.push([key, value]);
   }

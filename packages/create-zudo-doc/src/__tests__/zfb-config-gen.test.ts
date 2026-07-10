@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generateZfbConfig } from "../zfb-config-gen.js";
+import { generateZfbConfig, orderDesiredKeys } from "../zfb-config-gen.js";
 import type { UserChoices } from "../prompts.js";
 
 // Minimal-scaffold cutover (epic zudolab/zudo-doc#2651, Wave 6 #2660 / Wave 7
@@ -549,6 +549,31 @@ describe("generateZfbConfig — never emits escape-hatch / shell / package-only 
     for (const token of forbidden) {
       expect(result, `must not contain "${token}"`).not.toContain(token);
     }
+  });
+});
+
+describe("orderDesiredKeys — leftover keys are appended, never dropped", () => {
+  it("orders FIELD_ORDER keys first (declaration order), then the rest", () => {
+    // siteName (idx 2) declared after colorScheme (idx 0) in FIELD_ORDER, so
+    // it must come out in that order regardless of input order.
+    const ordered = orderDesiredKeys(["siteName", "colorScheme"]);
+    expect(ordered.indexOf("colorScheme")).toBeLessThan(
+      ordered.indexOf("siteName"),
+    );
+  });
+
+  it("appends a key NOT in FIELD_ORDER at the end (proves it is emitted, not silently dropped)", () => {
+    const ordered = orderDesiredKeys(["zzzUnlisted", "colorScheme", "siteName"]);
+    // The unlisted key survives...
+    expect(ordered).toContain("zzzUnlisted");
+    // ...and lands after every FIELD_ORDER key.
+    expect(ordered[ordered.length - 1]).toBe("zzzUnlisted");
+  });
+
+  it("appends multiple leftover keys in alphabetical (deterministic) order", () => {
+    const ordered = orderDesiredKeys(["yyy", "siteName", "aaa"]);
+    const leftover = ordered.filter((k) => k === "aaa" || k === "yyy");
+    expect(leftover).toEqual(["aaa", "yyy"]);
   });
 });
 
