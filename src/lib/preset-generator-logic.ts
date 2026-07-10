@@ -41,7 +41,7 @@ import type {
   HeaderRightComponentName,
   HeaderRightTriggerName,
   HeaderRightItem,
-} from "../config/settings-types";
+} from "@takazudo/zudo-doc/settings";
 
 export type { HeaderRightComponentName, HeaderRightTriggerName };
 
@@ -50,7 +50,7 @@ export type { HeaderRightComponentName, HeaderRightTriggerName };
  * benefits from a uniform `{ kind, name }` handle while the user is reordering
  * and toggling rows, but the JSON output uses the canonical `HeaderRightItem`
  * discriminated union (`type` + `trigger | component`) from
- * `src/config/settings-types.ts`. v1 of preset support intentionally rejects
+ * `@takazudo/zudo-doc/settings`. v1 of preset support intentionally rejects
  * `link`/`html` items (they need free-text fields).
  */
 export type HeaderRightItemSpec =
@@ -128,7 +128,7 @@ export type FeatureEntry = {
 
 export type ColorSchemeMode = "single" | "light-dark";
 
-/** Mirrors MetaTagsConfig from src/config/settings-types.ts for preset-generator form state. */
+/** Mirrors MetaTagsConfig from @takazudo/zudo-doc/settings for preset-generator form state. */
 export interface MetaTagsFormState {
   description: boolean;
   keywordsEnabled: boolean;

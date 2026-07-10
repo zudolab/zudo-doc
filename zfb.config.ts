@@ -1,43 +1,48 @@
+// The single config entry file (epic zudolab/zudo-doc#2651 Minimal Scaffold,
+// Wave 6 #2661) — the showcase dogfoods the same `zudoDoc()` single-entry API
+// (`@takazudo/zudo-doc/config`, #2657) generated projects use, instead of the
+// old `zudoDocPreset()` + manual `ZfbConfig` assembly. `settings` (project
+// data, `src/config/settings.ts`) is spread straight into `zudoDoc()`; large
+// genuinely-showcase-specific data blocks (tag vocabulary, custom translation
+// additions) stay as separate modules imported in below — same escape hatch
+// generated projects get via `ZudoDocConfig`. `buildDocsSchema`/`directives`/
+// `colorSchemes` are intentionally OMITTED — the showcase's former overrides
+// for all three were byte-identical to the package defaults, so this project
+// now rides the package default for each (zudolab/zudo-doc#2661).
 import { defineConfig } from "zfb/config";
-import { zudoDocPreset } from "@takazudo/zudo-doc/preset";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
 import { settings } from "./src/config/settings";
-import { buildDocsSchema } from "./src/config/docs-schema";
+import { tagVocabulary } from "./src/config/tag-vocabulary";
 import { translations } from "./src/config/i18n";
-import { colorSchemes } from "./src/config/color-schemes";
 
-// The canonical seven directives for this showcase. Keys are directive names;
-// values are the JSX component names registered in pages/_mdx-components.ts.
-// "details" routes to DetailsWrapper — a collapsible, NOT an admonition.
-const directiveVocabulary = {
-  note: "Note",
-  tip: "Tip",
-  info: "Info",
-  warning: "Warning",
-  danger: "Danger",
-  caution: "Caution",
-  details: "Details",
-};
+export default defineConfig(
+  zudoDoc({
+    // ── Project settings (src/config/settings.ts) ──────────────────────────
+    ...settings,
 
-export default defineConfig({
-  // ── Host-owned shell fields (not delegated to the preset) ──────────────────
-  framework: "preact",
-  // Pin the dev/preview port — zfb defaults to 3000, but CLAUDE.md, the
-  // EADDRINUSE guidance, and the Tauri Mode-1 devUrl all assume 4321 (#2043).
-  port: 4321,
-  tailwind: { enabled: true },
-  // Keep the md-plugins test fixtures and e2e fixtures out of the bundler's
-  // shadow-tree walk. bundle.exclude (zfb next.22) is the intended escape
-  // hatch; adopted with next.23 after the stale ambient-type fix (#1834).
-  bundle: {
-    exclude: ["packages/md-plugins/__fixtures__/**", "e2e/fixtures/**", "_temp-resource/**"],
-  },
-  // Public URL prefix for `<link rel="stylesheet">` and `<script>` tags.
-  // Currently "/" (root) for the Workers static assets deploy.
-  base: settings.base,
-  // Cloudflare adapter — required for routes with `prerender = false`
-  // (currently pages/api/ai-chat.tsx). Bindings via wrangler.toml.
-  adapter: "@takazudo/zfb-adapter-cloudflare",
+    // ── Escape hatches: genuinely showcase-specific data blocks ────────────
+    tagVocabularyEntries: tagVocabulary,
+    translations,
 
-  // ── Preset-owned fields (collections, plugins, markdown, codeHighlight, …) ─
-  ...zudoDocPreset({ settings, buildDocsSchema, directiveVocabulary, translations, colorSchemes }),
-});
+    // ── Host-callables channel (ADR "Host-callables channel", #2501) ───────
+    // The showcase's real host-bound chrome slots (SearchWidget, frontmatter
+    // renderers, PresetGenerator, DocHistory, …) — see src/chrome-bindings.tsx.
+    // Consumed by the self-contained doc-route stubs (pages/docs/[[...slug]].tsx
+    // and its [locale]/v/** variants) via `virtual:zudo-doc-chrome-bindings`.
+    chromeBindingsModule: "./src/chrome-bindings.tsx",
+
+    // ── Shell passthrough fields (not part of `Settings`) ───────────────────
+    // Pin the dev/preview port — zfb defaults to 3000, but CLAUDE.md, the
+    // EADDRINUSE guidance, and the Tauri Mode-1 devUrl all assume 4321 (#2043).
+    port: 4321,
+    // Cloudflare adapter — required for routes with `prerender = false`
+    // (currently pages/api/ai-chat.tsx). Bindings via wrangler.toml.
+    adapter: "@takazudo/zfb-adapter-cloudflare",
+    // Keep the md-plugins test fixtures and e2e fixtures out of the bundler's
+    // shadow-tree walk. bundle.exclude (zfb next.22) is the intended escape
+    // hatch; adopted with next.23 after the stale ambient-type fix (#1834).
+    bundle: {
+      exclude: ["packages/md-plugins/__fixtures__/**", "e2e/fixtures/**", "_temp-resource/**"],
+    },
+  }),
+);

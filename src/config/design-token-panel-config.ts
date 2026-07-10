@@ -8,7 +8,9 @@
  * mode-scoped Color tab — #2606 / #2610)
  * -------------------------------------------------------------------------
  * The color model is ramp-native (`ColorScheme = { ramps, map }`, see
- * `src/config/color-schemes.ts`). The panel surfaces it through two tabs:
+ * `@takazudo/zudo-doc/color-schemes-defaults` — the showcase does not
+ * customize beyond the package default, zudolab/zudo-doc#2661). The panel
+ * surfaces it through two tabs:
  *
  *  - **Palette tab** (reserved id `palette`): three `kind:'color'` OKLCH tiers —
  *    `base` (5 stops → `--palette-base-0..4`), `accent` (3 stops →
@@ -78,13 +80,29 @@ import {
   SIZE_TOKENS,
 } from "./design-tokens-manifest";
 import {
-  getActiveScheme,
   STATE_ROLES,
+  buildSemanticTierItems,
   type ColorScheme,
-} from "./color-scheme-utils";
-import { buildSemanticTierItems } from "@takazudo/zudo-doc/color-scheme-utils";
-import { colorSchemes } from "./color-schemes";
+} from "@takazudo/zudo-doc/color-scheme-utils";
+import { defaultColorSchemes as colorSchemes } from "@takazudo/zudo-doc/color-schemes-defaults";
 import { settings } from "./settings";
+
+/**
+ * Resolve the project's currently active scheme (`settings.colorScheme`) from
+ * the (unmodified-from-default) `colorSchemes` map. Inlined here — this was
+ * formerly `./color-scheme-utils`'s `getActiveScheme`, the only real consumer
+ * of that host shim, retired when the showcase's color-schemes data collapsed
+ * onto the package default (zudolab/zudo-doc#2661).
+ */
+function getActiveScheme(): ColorScheme {
+  const scheme = colorSchemes[settings.colorScheme];
+  if (!scheme) {
+    throw new Error(
+      `Unknown color scheme: "${settings.colorScheme}". Available: ${Object.keys(colorSchemes).join(", ")}`,
+    );
+  }
+  return scheme;
+}
 
 /**
  * Inert fallback for the still-REQUIRED `ColorClusterExtras.defaultShikiTheme`.

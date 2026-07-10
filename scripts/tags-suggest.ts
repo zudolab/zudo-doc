@@ -16,7 +16,7 @@ import { parseArgs } from "node:util";
 import matter from "gray-matter";
 
 import { tagVocabulary } from "../src/config/tag-vocabulary";
-import type { TagVocabularyEntry } from "../src/config/tag-vocabulary-types";
+import type { TagVocabularyEntry } from "@takazudo/zudo-doc/settings";
 
 const DEFAULT_HOST = "http://localhost:11434";
 const DEFAULT_MODEL = "qwen2.5:7b";
