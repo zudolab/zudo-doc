@@ -10,12 +10,16 @@ zudo-doc can automatically generate documentation pages from your project's Clau
 
 ## Enabling Claude Resources
 
-Set `claudeResources` in `src/config/settings.ts`:
+Set `claudeResources` in `zfb.config.ts`:
 
-```ts
-claudeResources: {
-  claudeDir: ".claude",
-},
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    claudeResources: {
+      claudeDir: ".claude",
+    },
+  }),
+);
 ```
 
 Set to `false` to disable:
@@ -39,7 +43,7 @@ Each resource type gets its own index page with a list of all items, plus indivi
 
 ## How It Works
 
-The integration runs at build time as a zfb plugin (`./plugins/claude-resources-plugin.mjs`) wired in `zfb.config.ts`. Its `preBuild` hook:
+The integration runs at build time as a zfb plugin (`@takazudo/zudo-doc/plugins/claude-resources`), wired in automatically by `zudoDoc()` whenever `claudeResources` is set. Its `preBuild` hook:
 
 1. Scans the configured `.claude/` directory
 2. Discovers CLAUDE.md files, commands, skills (with references), and agents

@@ -44,12 +44,12 @@ const SNAPSHOT = {
   } as Record<string, readonly unknown[]>,
 };
 
-vi.mock("zfb/content", () => ({
+vi.mock("@takazudo/zfb/content", () => ({
   getCollection: vi.fn((_name: string) => []),
   getContentSnapshot: vi.fn(() => SNAPSHOT),
 }));
 
-import { getCollection } from "zfb/content";
+import { getCollection } from "@takazudo/zfb/content";
 const mockGetCollection = getCollection as ReturnType<typeof vi.fn>;
 
 import { settings } from "@/config/settings";

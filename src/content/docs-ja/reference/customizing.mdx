@@ -1,228 +1,226 @@
 ---
-title: zudo-docのカスタマイズ
-description: 最も軽量なものから最も大規模なものまで — 5段階のカスタマイズレバー早見表。
+title: zudo-doc のカスタマイズ
+description: 最小→拡張のエスカレーションはしご — 1行の設定フィールドから完全なソース制御まで、手を伸ばす順番で。
 sidebar_position: 0.5
 tags:
   - design-system
   - customization
 ---
 
-zudo-docはクローズドなパッケージとして提供されます。コンポーネントは`node_modules`内に存在し、スタイルシートはコンパイル済みで、レンダリングパイプラインは固定されています。しかし、zudo-docを使って構築されるプロジェクトは、ちょっとした色の調整からフルカスタムのヘッダーまで、さまざまなブランディングニーズを持っています。このページでは、利用可能なすべてのカスタマイズレバーを軽量なものから侵襲的なものの順に並べて示します。変更をエンジニアリングしすぎることも、足りなすぎることもなく、適切なツールを選べるようにするためです。
+スキャフォールドされた zudo-doc プロジェクトは意図的に最小限です。1つの設定ファイル、コンテンツ、スタイルシート、そして2つの薄いルートスタブ（[インストール](../getting-started/installation.mdx#プロジェクト構成)を参照）。それ以外のすべて — レイアウト、クローム、スキーマ、トークン — は `@takazudo/zudo-doc` から出荷され、`node_modules` から消費されます。
 
-## 判断フロー表
+その「唯一の設定ファイル」という理想は、よくあるケースをカバーします。このページは、それでは足りないときのための**エスカレーションはしご**です。各段は前の段より侵襲的で、変更が実際に必要とする分だけ登るべきです。段は、実際のプロジェクトがそこに到達しがちな早さで並んでいます。
 
-| レバー | スコープ | 使うとき | 制限 |
-| --- | --- | --- | --- |
-| **1. グローバル `@theme` トークン** | サイト全体 | 変更がすべての場所に適用される場合（全カラー、全テキスト、全スペーシング） | 特定のコンポーネントだけを変えることはできない |
-| **2. `--zdc-*` コンポーネントトークン** | コンポーネント単位 | グローバルなデフォルト値とは異なる、見出し・プロのフォントやレイアウト寸法が必要な場合 | サポートされているトークンセットのみ |
-| **3. 設定（Settings）** | 機能のオン/オフと設定値 | 機能を有効・無効にする場合。TOCの深さやサイドバーの動作、ナビゲーション構造を調整する場合 | 設定が公開している範囲を超えて視覚的なレンダリングを変更することはできない |
-| **4. `doclayout` スロット** | マークアップ/スクリプト挿入 | レイアウトの特定位置にクロム（バナー、アナリティクス、追加のナビアイテム、カスタムスクリプト）を追加する場合 | レイアウトに追加するのみ。既存コンポーネントの再スタイリングはできない |
-| **5. コンポーネントイジェクション** | ソース全体の制御 | 特定コンポーネントの完全な視覚的コントロールが必要な場合 | イジェクトしたコピーはご自身で管理する必要がある — パッケージは以降更新しない |
+## はしご
 
----
-
-## レバー1 — グローバル `@theme` トークン
-
-`src/styles/global.css`には、サイトが参照するすべてのデザイントークンを定義する`@theme`ブロックが含まれています。カラー、スペーシング、タイポグラフィ、ボーダー半径、そしてレタースペーシングが含まれます。このブロックでトークンを再定義すると、そのトークンを参照しているすべてのコンポーネントとコンテンツ要素が再テーマ化されます。
-
-```css title="src/styles/global.css"
-@theme {
-  /* サイト全体のsansスタックを変更 */
-  --font-sans: "Inter", system-ui, sans-serif;
-
-  /* 見出しのレタースペーシングを詰める */
-  --tracking-tight: -0.04em;
-
-  /* アクセントカラーを変更 */
-  --color-accent: oklch(60% 0.22 250);
-}
-```
-
-レタースペーシングのスケール（`--tracking-tight`、`--tracking-normal`、`--tracking-wide`、`--tracking-wider`）はコンポーネントトークンの整備に伴って追加された、ファーストクラスのグローバルトークンです。ここで`--tracking-tight`を変更すると、`var(--tracking-tight)`を通じて参照しているすべてのコンポーネントに反映されます。
-
-**使う場面:** サイト全体に均一に適用される変更。
-
-**制限:** グローバルトークンはコンポーネントごとに差異を設けることができません。`--font-sans`は本文テキストに適用したいが、見出しには別のフォントを使いたい場合は、そのターゲティングにレバー2が必要です。
-
-パレット/セマンティックトークンのモデルについては[カラー](./color.mdx)を、スペーシング・タイポグラフィ・サイズのトークン一覧については[デザインシステム](./design-system.mdx)を参照してください。
+| 段 | 手を伸ばすとき | コスト |
+| --- | --- | --- |
+| **1. `buildDocsSchema` の上書き** | カスタムの検証付きフロントマターキーが必要 | 関数を1つ置き換え、スキーマを所有する |
+| **2. 設定フィールド** | 機能のオン/オフや挙動の調整 | なし — ただのフィールド |
+| **3. トークンの上書き** | 色・スペーシング・タイポグラフィの再テーマ | `global.css` の `@theme` ブロック |
+| **4. `zudo-doc eject`** | コンポーネントのマークアップ自体を変える必要 | eject したコピーを所有する |
+| **5. `chromeBindingsModule`** | 注入ルートにホストのコンテンツ/コーラブルを差し込む | ホストモジュール1つ |
+| **6. 自前の `pages/*.tsx`** | ルート全体を自分のものにする必要 | そのルートを所有する |
+| **7. デプロイ経路** | 本番公開（特に SSR 機能を伴う場合） | アダプター + `wrangler.toml` + シークレット |
+| **8. pre-push / HTML チェックの復元** | ショーケースの検証ゲートを取り戻したい | スクリプトのコピー + 依存追加 |
 
 ---
 
-## レバー2 — `--zdc-*` コンポーネントトークン
+## 第1段 — カスタムフロントマターキー（`buildDocsSchema`）
 
-パッケージのコンポーネントはTailwindユーティリティクラスをハードコードしています（例: `<h1 class="text-heading font-bold">`）。上書きの接合点がなければ、変更する手段は`!important`かイジェクションしかなく、どちらもクリーンではありません。`--zdc-*`トークンはその接合点です。パッケージが公開する、サポート対象のリブランドAPIとして厳選されたCSSカスタムプロパティのセットです。
+これは**唯一の設定という理想が最初に崩れる場所**なので、はしごの先頭に置きます。
 
-`:root`でいずれかのトークンを一度設定するだけで、すべてのルートで対象コンポーネントに適用されます。`!important`もイジェクションも不要です。
+他のあらゆる機能は `zudoDoc()` のフィールドです。フロントマターの検証はそうではありません。ドキュメントコレクションは Zod スキーマで検証されますが、「`tier` キーも許可する」と伝える設定フィールドは存在しません。スキーマは**あなたが置き換える関数** — `buildDocsSchema` エスケープハッチです。
 
-```css title="src/styles/global.css"
-:root {
-  /* すべてのページタイトルh1にディスプレイフォントを適用 */
-  --zdc-doc-title-font: "Futura", "Century Gothic", sans-serif;
-  --zdc-doc-title-weight: 700;
-  --zdc-doc-title-tracking: var(--tracking-tight);
+デフォルトでは `zudoDoc()` があなたのためにパッケージスキーマを構築します（ガバナンス対応。`tagGovernance` + `tagVocabularyEntries` から導出）。独自のキーを追加するには、デフォルトビルダーをインポートし、その結果を拡張して、新しいビルダーを返します:
 
-  /* プロフォントを見出しフォントから切り離す */
-  --zdc-doc-prose-font: "Georgia", serif;
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+import { buildDocsSchema } from "@takazudo/zudo-doc/docs-schema";
+import { z } from "zod";
 
-  /* すべてのサーフェスを一括で角丸にする */
-  --zdc-surface-radius: var(--radius-lg);
-}
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    // Replace the schema builder entirely. Start from the package default,
+    // then extend it with your own validated frontmatter keys.
+    buildDocsSchema: () =>
+      buildDocsSchema({ tagGovernance: "off" }).extend({
+        tier: z.enum(["core", "opt-in"]).optional(),
+        reviewed_by: z.string().optional(),
+      }),
+  }),
+);
 ```
 
-**`--font-sans`を再定義するのではなく`--zdc-*`を使う理由は?** Futuraでディスプレイ見出しを表示しつつ、本文テキストはシステムsansで読みやすくしたいプロジェクトを考えてみてください。`--font-sans`を再定義するのは誤りです。ナビアイテム、サイドバーのテキスト、コードラベル、そしてグローバルsansトークンを参照しているその他のあらゆるUI要素にも影響してしまいます。`--zdc-doc-title-font`はページタイトルの`<h1>`のみを対象とし、`--zdc-doc-prose-font`はコンテンツのプロエリアのみを対象とします。どちらも他の要素には影響しません。
-
-### 利用可能なトークン
-
-| トークン | 制御対象 |
-| --- | --- |
-| `--zdc-doc-title-font` | ページタイトル `<h1>` のフォントファミリー |
-| `--zdc-doc-title-weight` | ページタイトル `<h1>` のフォントウェイト |
-| `--zdc-doc-title-tracking` | ページタイトル `<h1>` のレタースペーシング |
-| `--zdc-doc-h2-font` | コンテンツ `<h2>` のフォントファミリー |
-| `--zdc-doc-h2-weight` | コンテンツ `<h2>` のフォントウェイト |
-| `--zdc-doc-h2-tracking` | コンテンツ `<h2>` のレタースペーシング |
-| `--zdc-doc-h3-weight` | コンテンツ `<h3>` のフォントウェイト |
-| `--zdc-doc-h4-weight` | コンテンツ `<h4>` のフォントウェイト |
-| `--zdc-doc-prose-font` | コンテンツプロエリア（`.zd-content`）のフォントファミリー |
-| `--zdc-doc-link-decoration` | コンテンツリンクのテキスト装飾 |
-| `--zdc-admonition-radius` | アドモニションブロックのボーダー半径 |
-| `--zdc-admonition-border-width` | アドモニションの左アクセントボーダー幅 |
-| `--zdc-card-radius` | ナビ/ドキュメントカードのボーダー半径 |
-| `--zdc-content-max-width` | ドキュメント読書カラムの最大幅 |
-| `--zdc-toc-width` | デスクトップTOC右レールの幅 |
-| `--zdc-nav-active-indicator-color` | アクティブなサイドバーナビリンクの背景色 |
-| `--zdc-nav-active-weight` | アクティブなサイドバーナビリンクのフォントウェイト |
-| `--zdc-surface-radius` | メタノブ: `--zdc-card-radius`と今後のサーフェストークンにチェーンします。`:root`の1行ですべての対応サーフェスを角丸にできます |
+これでページは `tier: core` をフロントマターで宣言でき、ビルド時に検証されます。これを [`docContentHeaderExtras`](./host-chrome-bindings.mdx)（第5段）と組み合わせると、そのキーから実際にバッジをレンダリングできます。
 
 <Note>
 
-[デザイントークンパネル](./design-token-panel.mdx)では、セマンティックなスペーシング、フォント、サイズ、カラートークンをブラウザ上でリアルタイムに編集できます。`--zdc-*`コンポーネントトークンはそのスコープ外です。これらは`src/styles/global.css`内の`:root`に一度設定するソースレベルのリブランド接合点であり、実行時にドラッグするノブではありません。
+`buildDocsSchema` は `ZudoDocConfig` の非シリアライズ可能な**エスケープハッチフィールド**の1つで、`colorSchemes`、`translations`、`directives`、`tagVocabularyEntries` と並びます。これらはインポートグラフを通じて移動する（JSON シリアライズされない）ため、関数や Zod 型を運べます。[設定](../guides/configuration.mdx)を参照してください。
 
 </Note>
 
-**使う場面:** グローバルなデフォルト値とは異なる外観をコンポーネントに持たせたい場合（例: 本文とは異なる見出しフォント、ディスプレイテキストのみにタイトなレタースペーシング、角丸カード、幅の狭いTOC）。
+---
 
-**制限:** 上記のトークンのみがサポートされています。パッケージがトークン化していないプロパティを変更する必要がある場合は、レバー4（スロット）またはレバー5（イジェクション）が次のステップです。
+## 第2段 — 設定フィールド
 
-全レジストリと各トークンの背景については[コンポーネントトークン](./component-tokens.mdx)を参照してください。
+それ以外のほとんどは**フィールドです**。`zudoDoc()` はすべての設定をデフォルト化するので、`zfb.config.ts` には差分だけを並べます:
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    docHistory: true,
+    sidebarToggle: true,
+    tocMaxDepth: 3,
+    headerNav: [
+      { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
+    ],
+    footer: { copyright: "© 2026 Me" },
+  }),
+);
+```
+
+**手を伸ばすとき:** 機能をオン/オフにしたり、挙動（TOC の深さ、ナビゲーション、カラーモード、ロケール）を調整するとき。
+
+**限界:** 設定フィールドは*何が存在し、どう振る舞うか*を制御しますが、コンポーネントのピクセルレベルのレンダリングは制御しません。それには第3段や第4段へ登ります。
+
+デフォルトを含むフィールドの完全な一覧は [設定](../guides/configuration.mdx) リファレンスで、`ZudoDocConfig` 型自身の JSDoc を反映しています。
 
 ---
 
-## レバー3 — 設定（Settings）
+## 第3段 — トークンの上書き
 
-`src/config/settings.ts`は、サイトの機能セットと動作を制御します。これらは視覚的なスタイルのノブではなく、構造的な設定です。どの機能が有効か、TOCの深さ、ヘッダーに表示されるアイテム、フッターリンクのリンク先などが該当します。
+スキャフォールドの `src/styles/global.css` は短い `@import` チェーンで、パッケージの `theme.css`（すべての `@theme` デザイントークン）、`content.css`、`features.css` を取り込み、その後にあなた用の空の `@theme { … }` ブロックが続きます。これはパッケージのインポートの**後**に来るため、そこで再定義したものはカスケードで勝ちます:
 
-主な設定項目:
+```css title="src/styles/global.css"
+/* ...package @imports above... */
 
-```ts title="src/config/settings.ts"
-export const settings = {
-  colorScheme: "Default Light",        // Default Light または Default Dark を選択
-  colorMode: { defaultMode: "light" }, // デフォルトのライト/ダークモードを変更
+@theme {
+  --color-accent: oklch(0.6 0.2 250);
+  --font-sans: "Inter", system-ui, sans-serif;
+  --z-index-modal: 200; /* override a single default z-index tier */
+}
+```
 
-  designTokenPanel: true,              // ライブデザイントークンパネルを有効化
-  sidebarResizer: true,                // ドラッグ可能なサイドバー幅ハンドル
-  sidebarToggle: true,                 // モバイルサイドバートグル
-  imageEnlarge: true,                  // 画像クリックで拡大
-  dynamicPageTransition: true,         // View Transitions API
-  cjkFriendly: true,                   // CJK対応の改行
-  mermaid: true,                       // Mermaidダイアグラムのサポート
-  aiAssistant: true,                   // AIチャットアシスタントモーダル
+グローバルトークンを読むすべての要素に触れずにコンポーネント単位で再ブランディングするために、パッケージは `--zdc-*` コンポーネントトークン（見出しフォント、本文フォント、カード角丸、TOC 幅など）も公開しています。`:root` で一度設定します。
 
-  tocMinDepth: 2,                      // TOCに含める最小見出し深さ
-  tocMaxDepth: 4,                      // TOCに含める最大見出し深さ
-  headingIdStrategy: "hierarchical",   // アンカー生成戦略
+**手を伸ばすとき:** 変更が再テーマ — 色、スペーシング、タイポグラフィ、角丸 — であるとき。
 
-  headerNav: [ /* ... */ ],            // トップナビゲーションアイテム
-  headerRightItems: [ /* ... */ ],     // ヘッダー右側のコントロール
-  footer: { /* ... */ },               // フッターリンクとコピーライト
+**限界:** トークンは再スタイルしますが、マークアップは再構成しません。[デザインシステム](./design-system.mdx)、[Color](./color.mdx)、[コンポーネントトークン](./component-tokens.mdx)を参照してください。
+
+---
+
+## 第4段 — コンポーネントのエジェクト
+
+どのトークンでも変更に届かない — マークアップ自体があなたに合わない — 場合は、コンポーネントをエジェクトします。エジェクトはそのソースをパッケージからプロジェクトへコピーし、ファイルを直接所有できるようにします:
+
+```sh
+# eject a component (run via your package manager's bin runner)
+pnpm exec zudo-doc eject header
+# → copies source into your project and rewrites imports to resolve locally
+
+# see the full list
+pnpm exec zudo-doc --help
+```
+
+エジェクト可能な18コンポーネント:
+
+`header`, `footer`, `breadcrumb`, `toc`, `sidebar`, `theme-toggle`, `page-loading`, `tab-item`, `doc-pager`, `content-admonition`, `code-group`, `details`, `sidebar-tree-island`, `sidebar-toggle-island`, `desktop-sidebar-toggle-island`, `image-enlarge`, `doc-history`, `site-tree-nav-island`
+
+エジェクト後は、ローカルコピーを編集します。変更は `pnpm dev` で即座に反映されます。
+
+<Note>
+
+エジェクトは、どのコンポーネントを所有しているかを記録するプロベナンスを `.zudo-doc.json` ファイルに書き込みます。このファイルは**最初のエジェクト時に遅延生成**されます — 新しいスキャフォールドには存在しないため、エジェクトしていないプロジェクトは説明不能な設定ファイルを持ちません。コンポーネントのディレクトリと `.zudo-doc.json` のエントリを削除すれば、パッケージ版に戻ります。
+
+</Note>
+
+**限界:** エジェクトしたコピーは、そのコンポーネントのパッケージ更新をもう受け取りません — メンテナンスを引き受けることになります。
+
+---
+
+## 第5段 — `chromeBindingsModule`（ホストコーラブル）
+
+`packageOwnedRoutes: true`（デフォルト）では、ドキュメントのクロームがパッケージ内部で組み立てられるため、プロジェクト固有のコンテンツをレンダリングするホストファイルがありません。`chromeBindingsModule` はそれを取り戻す継ぎ目です。`chromeBindings` オブジェクトをエクスポートするホストモジュールを指すと、注入ルートがあなたのスロットを拾います — コンテンツヘッダーレンダラー、ホームヒーローの追加要素、カスタムフロントマタープレビューレンダラー、フッタータグローダーなど。
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    chromeBindingsModule: "./src/chrome-bindings.tsx",
+  }),
+);
+```
+
+```tsx title="src/chrome-bindings.tsx"
+import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
+
+export const chromeBindings: ChromeHostBindings = {
+  docContentHeaderExtras: ({ entry }) =>
+    entry.data.tier === "core" ? <span class="...">Core</span> : null,
 };
 ```
 
-**使う場面:** 機能をオンまたはオフにしたい場合、あるいは動作の設定（TOCの深さ、ナビゲーション構造、ロケール設定、2つのバンドルスキームのどちらをアクティブにするか）を調整したい場合。
-
-**制限:** 設定は何が「存在するか」を制御しますが、既存コンポーネントの見た目は変えられません。`colorScheme`は2つのバンドルスキーム（`Default Light` / `Default Dark`）を切り替えるだけで、カタログの切り替えスイッチではなく、変えてもヘッダーのレイアウトを再設計することはできません。実際のカラーストーリーはもう一段深いレイヤーにあります。共有 OKLCH ランプとセマンティックマップを `src/config/color-schemes.ts` で編集し（[Color](./color.mdx#カスタムカラースキームの追加) の「カスタムカラースキームの追加」を参照）、Design Token Panel の Palette タブでランプ編集をライブプレビューし（[カラースキームプレビュー](../guides/color-scheme-preview.mdx#動作の仕組み)を参照）、パネルの JSON 差分ワークフローで AI アシスタントとともに調整をラウンドトリップできます（[Design Token Panel](./design-token-panel.mdx#aiワークフロー)を参照）。
-
-<Info>
-
-レシピスタイルのプリセット（例: 「シャープコーナー」や「セリフ見出し」を一行で適用するもの）は将来的な方向性として検討されています。現時点では、上記のレバー（グローバルトークンと`--zdc-*`）がビルディングブロックであり、プリセットが自動的に適用するものはありません。
-
-</Info>
+Design Token Panel には並行チャネル `designTokenPanelConfigModule` があります。パッケージデフォルトのパネルはゼロコンフィグ（`designTokenPanel: true` だけ）で動作し、完全にカスタマイズするには、その設定を `buildDesignTokenPanelConfig(mode)` をエクスポートするホストモジュールに向けます。両チャネルは — ファイルが無いときの大きな声での失敗挙動も含め — [ホストクロームバインディング](./host-chrome-bindings.mdx)で詳しく説明されています。
 
 ---
 
-## レバー4 — `doclayout` スロット
+## 第6段 — 自前の `pages/*.tsx`
 
-生成された`pages/[...slug].tsx`（ドキュメントレイアウトファイル）には、16箇所のスロットアンカーコメントが含まれています。各コメントは、パッケージファイルを変更することなくマークアップ、スクリプト、またはコンポーネント呼び出しを追加できる、サポートされている挿入ポイントです。
+ルート全体を自分のものにする必要があるなら、対応するパスの `.tsx` ファイルを `pages/` に追加します。**同じパスに対して、プロジェクト所有のページは常にパッケージ注入ルートに勝ちます** — ホストファイルが注入をシャドウします。これがホームページの置き換え、完全にカスタムなランディングルートの追加、特定のドキュメントパスの引き取りの方法です。
 
-```tsx title="pages/[...slug].tsx（抜粋）"
-{/* @slot:doc-layout:after-breadcrumb */}
-<AnnouncementBanner />  {/* ← あなたの追加 */}
-
-{/* @slot:doc-layout:body-end-scripts */}
-<script src="/analytics.js" defer />  {/* ← あなたの追加 */}
-```
-
-利用可能な16のアンカー:
-
-| アンカー | 種別 | 位置 |
-| --- | --- | --- |
-| `imports` | frontmatter | ファイル先頭のインポート文 |
-| `frontmatter` | frontmatter | スクリプトセクション内の変数と式 |
-| `head-scripts` | body | `<head>`内、閉じタグの直前 |
-| `head-links` | body | `<head>`内のlink/preloadタグ |
-| `header-call:start` | body | ヘッダーコンポーネント呼び出しの直前 |
-| `header-call:end` | body | ヘッダーコンポーネント呼び出しの直後 |
-| `after-sidebar` | body | サイドバーの後、コンテンツカラムの前 |
-| `content-wrapper:start` | body | コンテンツラッパーの開始部分 |
-| `content-wrapper:end` | body | コンテンツラッパーの終了部分 |
-| `breadcrumb:start` | body | パンくずリストの前 |
-| `breadcrumb:end` | body | パンくずリストの後 |
-| `after-breadcrumb` | body | パンくずリストとドキュメントコンテンツの間 |
-| `after-content` | body | ドキュメントコンテンツエリアの下 |
-| `footer` | body | フッターエリア |
-| `body-end-components` | body | `</body>`閉じタグの前（アイランドマウント用） |
-| `body-end-scripts` | body | `</body>`末尾のスクリプトタグ |
-
-**使う場面:** レイアウトの特定位置にクロムを追加したい場合（バナー、アナリティクス用スニペット、追加ナビ要素、クッキー通知など）。
-
-**制限:** スロットはコンテンツを追加します。既存コンポーネントの再スタイリングはできません。既存コンポーネントを再スタイリングするには、グローバルトークン（レバー1）、コンポーネントトークン（レバー2）、またはコンポーネントのイジェクション（レバー5）を使用してください。
+2つのスキャフォールドスタブ（`pages/index.tsx`、`pages/docs/[[...slug]].tsx`）自体が、この優先順位を使う普通のホストページです。拡張したり兄弟を追加したりできます。ルートがどのように列挙されシャドウされるかは[ルーティング規約](../develop/routing-conventions.mdx)を参照してください。
 
 ---
 
-## レバー5 — コンポーネントイジェクション
+## 第7段 — デプロイ経路（明示的な拡張ステップ）
 
-コンポーネントをイジェクトすると、そのソースがパッケージからプロジェクトにコピーされ、ファイルを直接所有できます。イジェクト後は、ローカルのコピーがサイトによってレンダリングされます。そのコンポーネントについては、パッケージのバージョンは無視されます。
+最小スキャフォールドは**純粋な静的サイト**をビルドします — `pnpm build` が `dist/` を出力し、任意の静的ホストに置けます。設計上、**アダプターも `wrangler.toml` も出荷しません**。静的エクスポートを超えることは意図的な拡張ステップです:
 
-```sh
-# イジェクト可能なコンポーネントを一覧表示
-zudo-doc eject --list
+1. **デプロイアダプターを追加する。** Cloudflare Workers なら、`adapter` シェルフィールドを設定します:
 
-# 特定のコンポーネントをイジェクト
-zudo-doc eject header
-# → src/components/zudo-doc/header/ にソースがコピーされます
-```
+   ```ts title="zfb.config.ts"
+   zudoDoc({
+     siteName: "My Docs",
+     adapter: "@takazudo/zfb-adapter-cloudflare",
+   });
+   ```
 
-イジェクト可能な18コンポーネント:
+   アダプターは、プリレンダリングをオプトアウトするルート（`prerender = false`）に**必須**です — これがまさに AI アシスタントのエンドポイントの挙動です。
 
-`header`、`footer`、`breadcrumb`、`toc`、`sidebar`、`theme-toggle`、`page-loading`、`tab-item`、`doc-pager`、`content-admonition`、`code-group`、`details`、`sidebar-tree-island`、`sidebar-toggle-island`、`desktop-sidebar-toggle-island`、`image-enlarge`、`doc-history`、`site-tree-nav-island`
+2. **`wrangler.toml` を追加する。** Worker 名、カスタムドメインルート、各種バインディングを宣言します。このファイルは新しいスキャフォールドには存在しません — デプロイを決めたときに作成します。
 
-イジェクト後はローカルのコピーを編集します。変更は`pnpm dev`でHMR経由ですぐに反映されます。マークアップの再スタイリング、再構造化、または置き換えを自由に行えます。
+3. **AI アシスタントを有効化する場合は配線する。** `aiAssistant: true` は SSR の `/api/ai-chat` ルートをマウントします。デフォルトでは**デモモード**で出荷されます（`aiChatDemoMode` は設定上デフォルト `false` ですが、ライブバックエンドに切り替えるまでスキャフォールドのチャットは静的デモです）。本物の Claude 対応アシスタントには次が必要です:
+   - `aiChatDemoMode: false` に設定する;
+   - `RATE_LIMIT` KV 名前空間を作成し（`wrangler kv namespace create RATE_LIMIT`）、`wrangler.toml` でバインドする;
+   - `ANTHROPIC_API_KEY` シークレットを追加する（`wrangler secret put ANTHROPIC_API_KEY`）;
+   - `aiChatAllowedOrigins` をサイトのオリジンに設定する。
 
-**使う場面:** トークンやスロットで必要な変更に届かず、特定コンポーネントの完全なコントロールが必要な場合。
-
-**制限:** イジェクトしたコピーは、パッケージが新しいバージョンをリリースしても更新されません。そのコンポーネントのメンテナンス責任はご自身で負うことになります。将来のAPI変更、バグ修正、パッケージの新機能は自動的には反映されません。
+完全なランブック（シークレット、KV、CORS、レート制限）は[デプロイガイド](../guides/deployment.mdx)と [AI Assistant API リファレンス](./ai-assistant-api.mdx)を参照してください。
 
 ---
 
-## エスケープハッチ — なぜ `!important` だけでは不十分なのか
+## 第8段 — pre-push と HTML バリデーションの復元
 
-zudo-docのパッケージコンポーネントはJSXからTailwindユーティリティクラスを出力します。これらのユーティリティクラスはレイヤーなしのスタイルシートに生成されます — `@layer`ラッパーがないため、カスケードにおいて詳細度が高くなります。独自のスタイルシートで追加したプレーンなCSSルールは、レイヤーなしのユーティリティよりも低い詳細度になるため、無効になってしまいます。
+最小スキャフォールドは、ショーケースが実行する**検証ゲートを削除**しています — 小さなドキュメントセットには重荷だったためです。プロジェクトが成長して取り戻したくなったら、明示的に追加します:
 
-これが`--zdc-*`トークンが存在する正確な理由です。パッケージが出力するバッキングルールはレイヤーなしであり、自身のユーティリティに勝つためのセレクター詳細度を持っています。あなたはトークンの値を再定義し、パッケージのルールがその値を適用します。詳細度の競争も、`!important`も不要です。
+- **pre-push 検証（`b4push`）。** スキャフォールドは `scripts/run-b4push.sh` も `b4push` の package スクリプトも出荷しなくなりました。before-push スイートを復元するには、自前のスクリプト（format → typecheck → build → link check）を追加し、`package.json` スクリプトとして配線します。ショーケースの `scripts/run-b4push.sh` が参照実装です。
+- **HTML バリデーション。** 生成される `package.json` には `check:html` / `html-validate` ステップ（および `.htmlvalidate.json`）が含まれなくなりました。ビルド済み HTML を検証するには、`html-validate` を dev 依存として追加し、`.htmlvalidate.json` を復元し、`dist/` に対して実行する `check:html` スクリプトを追加します。
 
-`--zdc-*`トークンがないプロパティを上書きする必要がある場合、現時点でのクリーンな選択肢は:
+<Note>
 
-1. ルールに`!important`を追加する（脆弱であり、さらなる上書きを妨げます）。
-2. コンポーネントをイジェクトする（レバー5）ことでソースを直接制御する。
+`gen:z-index` / `check:z-index` のコードジェネレーションも同様に生成プロジェクトから削除されました — 13 のデフォルト z-index ティアは `@takazudo/zudo-doc/theme.css` から無条件に出荷されるため、プロジェクトが*カスタム*ティアセットを保守する場合にのみそのコードジェネレーションを再追加します。単一ティアの上書きは 1 行の `@theme` 変更（第3段）であり、コードジェネレーションの問題ではありません。
 
-カスケードレイヤーの再レイヤリング（パッケージのユーティリティを`@layer`に入れることで、レイヤーなしのコンシューマールールがそれに勝てるようにする）は将来的な方向性として検討されていますが、現時点では利用できません。
+</Note>
+
+---
+
+## 関連ページ
+
+- [設定](../guides/configuration.mdx) — すべての `zudoDoc()` フィールドとそのデフォルト
+- [ホストクロームバインディング](./host-chrome-bindings.mdx) — `chromeBindingsModule` と `designTokenPanelConfigModule` の詳細
+- [create-zudo-doc CLI](./create-zudo-doc.mdx) — スキャフォールドが出力するもの
+- [v3 からの移行](../getting-started/migrating-from-v3.mdx) — 既存の生成プロジェクトをこの形状へ移す

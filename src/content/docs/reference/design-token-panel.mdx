@@ -10,22 +10,41 @@ The Design Token Panel is an in-page editor for every design token the theme shi
 
 ## Enabling the Panel
 
-Set `designTokenPanel` to `true` in `src/config/settings.ts`:
+Set `designTokenPanel` to `true` in `zfb.config.ts`:
 
-```ts title="src/config/settings.ts"
-export const settings = {
-  designTokenPanel: true,
-  // ...
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    designTokenPanel: true,
+    // ...
+  }),
+);
 ```
 
 When enabled, a palette icon appears in the header (to the left of the search icon). Clicking it toggles the panel open/closed; the same keyboard shortcut that opened the old Color Tweak Panel still works.
 
 <Note>
 
-The setting key is `designTokenPanel` — set it to `true` to enable the panel.
+The config field is `designTokenPanel` — set it to `true` to enable the panel. No host config file is required: the panel uses the package-default builder (`@takazudo/zudo-doc/design-token-panel-config`), derived from the shipped token manifest and the bundled color schemes, unless you point `designTokenPanelConfigModule` at your own (see [Customizing the panel](#customizing-the-panel) below).
 
 </Note>
+
+### Customizing the panel
+
+By default `designTokenPanel: true` needs no host config file — the injected panel uses the package-default builder (`@takazudo/zudo-doc/design-token-panel-config`), which derives the Palette/Color tabs from the bundled color schemes and the Font/Spacing/Size tabs from the shipped token manifest.
+
+To ship a fully custom panel (your own token manifest, your own color schemes), write a module exporting a named `buildDesignTokenPanelConfig(mode: "light" | "dark")` builder and point `designTokenPanelConfigModule` at it — a project-root-relative path, mirroring the `chromeBindingsModule` contract:
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    designTokenPanel: true,
+    designTokenPanelConfigModule: "./src/config/design-token-panel-config.ts",
+  }),
+);
+```
+
+This showcase keeps its own `src/config/design-token-panel-config.ts` as a legitimate data module (it currently mirrors the package default) — but wires it directly through its own bootstrap island (`src/components/design-token-panel-bootstrap.tsx` → `src/lib/design-token-panel-bootstrap.ts`, see [Implementation](#implementation)) rather than through `designTokenPanelConfigModule`. Use `designTokenPanelConfigModule` when you want the package's own auto-injected bootstrap (the default body-end island under `packageOwnedRoutes`) to pick up your custom builder instead of hand-rolling a bootstrap island of your own.
 
 ## The Five Tabs
 
@@ -66,7 +85,7 @@ Two semantic color tokens drive how matched keywords are highlighted, rendered a
 
 #### Mode-scoped editing model
 
-The Color tab always edits the wiring for whichever mode — light or dark — is currently active, seeded from that mode's `ColorScheme.map` in `src/config/color-schemes.ts`.
+The Color tab always edits the wiring for whichever mode — light or dark — is currently active, seeded from that mode's `ColorScheme.map` in the package's `@takazudo/zudo-doc/color-schemes-defaults` (or your own `colorSchemes` override, if set — see [Color](./color.mdx)).
 
 - **Toggling light/dark re-seeds the tab's ref/literal defaults** to the new mode's wiring (e.g. `bg` flips `base-0` ↔ `base-4`) — see [Implementation](#implementation) for the destroy+reconfigure mechanism behind this.
 - **Palette, Spacing, Font, and Size tweaks carry over the toggle untouched.** Those tabs are mode-independent, so a ramp-curve edit or a spacing-slider change survives light↔dark exactly as before.
@@ -180,13 +199,13 @@ Older projects that persisted an earlier format — `zudo-doc-tweak-state-v2` (v
 
 - On load, the panel reads v3 first. If absent, it falls back to the v2 envelope, then the v1 color-only state, promotes whichever it finds into the v3 envelope, writes the v3 key, and removes the legacy key.
 - The FOUC-prevention script injected into `<head>` by the doc layout (`@takazudo/zudo-doc/doclayout`) performs the same lookup so saved tokens apply before first paint on old devices too.
-- Clicking **Reset all** in the panel header clears the v3 envelope (and any lingering legacy keys), restoring the color scheme declared in `src/config/settings.ts`.
+- Clicking **Reset all** in the panel header clears the v3 envelope (and any lingering legacy keys), restoring the color scheme declared by the `colorScheme` field in `zfb.config.ts`.
 
 Switching the light/dark theme does **not** delete your saved tweaks, and an open panel stays open across the toggle. The theme toggle dispatches a `color-scheme-changed` event; the host destroys and reconfigures the panel for the new mode (see [Implementation](#implementation)) rather than patching it in place, so the Color tab's ref/literal *defaults* follow the newly active mode while every tweak on Palette, Spacing, Font, and Size — plus any saved Color-tab *override* — carries over untouched. See [Mode-scoped editing model](#the-five-tabs-color-mode-scoped-editing-model) for the override-carries-across-modes caveat.
 
 <Note title="Storage prefix continuity guarantee">
 
-The storage prefix `zudo-doc-tweak` is locked in `src/config/design-token-panel-config.ts` and will not change. Any tokens a user saved under an older key version continue to load automatically — they are migrated into the current `zudo-doc-tweak-state-v3` envelope on first load, with no manual migration step needed.
+The storage prefix `zudo-doc-tweak` is locked in the package-default builder (`@takazudo/zudo-doc/design-token-panel-config`) — and in this showcase's own copy (`src/config/design-token-panel-config.ts`, kept in lockstep) — and will not change. Any tokens a user saved under an older key version continue to load automatically — they are migrated into the current `zudo-doc-tweak-state-v3` envelope on first load, with no manual migration step needed.
 
 </Note>
 
@@ -203,8 +222,9 @@ The header trigger button dispatches the `toggle-design-token-panel` custom even
 | Setting | Type | Description |
 |---|---|---|
 | `designTokenPanel` | `boolean` | Enables the panel. Default `false`. |
+| `designTokenPanelConfigModule` | `string` | Project-root-relative path to a module exporting `buildDesignTokenPanelConfig(mode)` for a fully custom panel. Default `undefined` (package-default builder is used). |
 
-The tokens themselves — spacing scale, font scale, icon sizes, palette — are still configured in `src/styles/global.css` (`@theme`) and `src/config/color-schemes.ts`. The panel only tweaks the in-browser copy of those tokens; it never writes to source files.
+The tokens themselves — spacing scale, font scale, icon sizes, palette — are still configured in `src/styles/global.css` (`@theme`) and, for the color palette, either the package's `@takazudo/zudo-doc/color-schemes-defaults` or your own `colorSchemes` override (see [Color](./color.mdx)). The panel only tweaks the in-browser copy of those tokens; it never writes to source files.
 
 <Tip>
 

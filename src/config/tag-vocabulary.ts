@@ -1,4 +1,4 @@
-import type { TagVocabularyEntry } from "./tag-vocabulary-types";
+import type { TagVocabularyEntry } from "@takazudo/zudo-doc/settings";
 
 /**
  * Canonical tag vocabulary for this documentation base.

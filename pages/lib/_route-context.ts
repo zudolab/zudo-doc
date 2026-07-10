@@ -11,14 +11,18 @@
 //
 // The host content bridge (`stableDocs`) is injected so the docs read + nav
 // enumeration match the project's existing `pages/*` paths() exactly (host
-// `bridgeDocsEntries` over the `zfb/content` snapshot), not the package default.
+// `bridgeDocsEntries` over the `@takazudo/zfb/content` snapshot), not the
+// package default. `colorSchemes` is the package default
+// (`@takazudo/zudo-doc/color-schemes-defaults`) — the showcase's former
+// `src/config/color-schemes.ts` override was byte-identical to it and was
+// retired in zudolab/zudo-doc#2661.
 
 import { createRouteContext } from "@takazudo/zudo-doc/route-context";
 import type { ColorScheme } from "@takazudo/zudo-doc/color-scheme-utils";
+import { defaultColorSchemes as colorSchemes } from "@takazudo/zudo-doc/color-schemes-defaults";
 import { settings } from "@/config/settings";
 import { translations } from "@/config/i18n";
 import { tagVocabulary } from "@/config/tag-vocabulary";
-import { colorSchemes } from "@/config/color-schemes";
 import { stableDocs } from "./_nav-source-cache";
 
 export const routeContext = createRouteContext(

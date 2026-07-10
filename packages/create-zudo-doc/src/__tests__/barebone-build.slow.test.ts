@@ -22,6 +22,18 @@
  * that `diff` is in the generated deps would NOT catch the next hidden peer
  * (we add a cheap dep-presence assertion too, but the build is the gate).
  *
+ * ## Minimal-scaffold addendum (epic zudolab/zudo-doc#2651, Wave 7 #2662)
+ *
+ * Also asserts that `dist/docs/getting-started/index.html` renders — proof
+ * that the locked manifest's self-contained doc-route stub
+ * (`pages/docs/[[...slug]].tsx`) actually builds the doc route, not just the
+ * home page. This is a BUILD-time check only. The authoritative `zfb dev`
+ * `/docs/*` 200 assertion (proving the stub is required because the
+ * package-injected dynamic route 404s in dev mode) lives in #2659's confirm
+ * gate (`target-manifest` slow test) — do not duplicate that heavy dev-server
+ * probe here, and do not "simplify" this stub away assuming route injection
+ * alone covers dev-mode rendering. It does not (#2653).
+ *
  * ## Tier
  *
  * Scaffolds a real project, `pnpm install`s against the public registry, and
@@ -35,7 +47,11 @@ import os from "node:os";
 import path from "node:path";
 import { scaffold } from "../scaffold.js";
 import type { UserChoices } from "../prompts.js";
-import { runOrThrow, installScaffoldedDeps } from "./slow-build-helpers.js";
+import {
+  runOrThrow,
+  installScaffoldedDeps,
+  overrideWithLocalZudoDoc,
+} from "./slow-build-helpers.js";
 
 const TEMP_PREFIX = "create-zudo-doc-barebone-build-";
 const PROJECT_NAME = "barebone-build-test";
@@ -69,6 +85,10 @@ beforeAll(async () => {
   //    always-bundled peer) makes `zfb build` exit non-zero, which throws here
   //    and fails the suite — that failure IS the regression signal.
   installScaffoldedDeps(projectDir);
+  // Publish-lag workaround — see overrideWithLocalZudoDoc()'s doc comment:
+  // the published @takazudo/zudo-doc doesn't ship ./config /
+  // ./tsconfig.base.json yet (epic zudolab/zudo-doc#2651 waves not released).
+  overrideWithLocalZudoDoc(projectDir);
   runOrThrow("pnpm build", projectDir, { SKIP_DOC_HISTORY: "1" });
 }, 5 * 60 * 1000);
 
@@ -92,5 +112,19 @@ describe("barebone (all features off) generated project", () => {
     // the suite. Assert the static output was emitted as the success signal.
     const indexHtml = path.join(projectDir, "dist", "index.html");
     expect(await fs.pathExists(indexHtml)).toBe(true);
+  });
+
+  it("renders the doc route via the locked-manifest self-contained stub (dist/docs/getting-started/index.html)", async () => {
+    // Proves pages/docs/[[...slug]].tsx actually builds the doc route — see
+    // the file header's "Minimal-scaffold addendum" for why this is a
+    // build-only check, not a substitute for the #2659 dev-mode 200 gate.
+    const docHtml = path.join(
+      projectDir,
+      "dist",
+      "docs",
+      "getting-started",
+      "index.html",
+    );
+    expect(await fs.pathExists(docHtml)).toBe(true);
   });
 });

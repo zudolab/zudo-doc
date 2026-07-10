@@ -241,3 +241,77 @@ override every slot, including DocHistory itself.
 Regression coverage: `__tests__/route-injection-build.test.ts` (Case CB — the
 FrontmatterPreview table appears with the setting, stays absent without it, and
 the missing-file error names the resolved path).
+
+### Design-token-panel config channel — `designTokenPanelConfigModule` (#2658)
+
+Closes the last feature-island gap on injected routes: package-owned routes
+had no `DesignTokenPanelBootstrap` mount at all (the pre-#2658 `doc-body-end-
+islands/index.tsx` deliberately omitted it — the zdtp `PanelConfig` was a
+441-line host-owned file with no package-side equivalent), so
+`designTokenPanel: true` did nothing under `packageOwnedRoutes`.
+
+Decision (decision wave #2653, "Approach (a)"): ship a **package-default**
+`PanelConfig` builder (`@takazudo/zudo-doc/design-token-panel-config`,
+`buildDesignTokenPanelConfig(mode)`) derived from the shipped token manifest
+and the bundled `defaultColorSchemes`, so the panel works with **no host
+config file**. A host that wants full customization still can, via a THIRD
+optional setting, `settings.designTokenPanelConfigModule?: string` — the
+**exact same mechanics** as `chromeBindingsModule` above: a project-root-
+relative path to a host module with a named export
+`buildDesignTokenPanelConfig`, re-exported through a THIRD virtual module,
+`virtual:zudo-doc-design-token-panel-config`, registered unconditionally by
+the same `setup(ctx)` hook.
+
+- **Data-only rule holds**, same as `chromeBindingsModule` — only the PATH
+  travels through `settings`.
+- **Registered UNCONDITIONALLY.** Setting absent → the loader re-exports the
+  PACKAGE DEFAULT (`export { buildDesignTokenPanelConfig } from
+  "@takazudo/zudo-doc/design-token-panel-config";` — NOT an empty fallback,
+  since there is no meaningful "empty" `PanelConfigBuilder`). Setting present
+  but the resolved file missing/empty-string/a-directory → the plugin
+  **throws at setup**, naming the resolved absolute path and the setting name
+  (never a silent fallback to the package default) — all three guard cases
+  mirror `chromeBindingsModule`'s exactly.
+- **Different from `chromeBindingsModule` in one important way: scanner
+  reachability IS part of this contract.** Unlike the chrome-bindings channel
+  (SSR-presentational only — see the caveat above), the real
+  `DesignTokenPanelBootstrap` **island component** is NOT itself carried
+  through the config virtual module — it is a separate, statically-imported
+  component (`@takazudo/zudo-doc/design-token-panel-bootstrap`). Only the
+  PanelConfig *data* (mode-scoped builder) travels through the
+  `designTokenPanelConfigModule` re-export; the component itself is always
+  reachable by zfb's island scanner regardless of whether a host configured
+  this setting.
+- **Slot default lives at the chrome seam (gate-2 fix, Wave-5 confirm
+  #2659).** The static import + slot wiring sit in `chrome/derive.tsx`'s
+  `deriveBodyEndIslands` — `hostBindings.DesignTokenPanelBootstrap` DEFAULTS
+  to the package island — not in `routes/_chrome.tsx`. Originally the wiring
+  mirrored the #2480 `DocHistory` shape (explicit threading in
+  `routes/_chrome.tsx` only), which left any OTHER `createChrome` caller —
+  specifically the locked-manifest self-contained doc stub (#2653), which
+  calls `createChrome(routeCtx)` with no `hostBindings` — silently emitting
+  NO panel island under `designTokenPanel: true` (the confirm gate's blocking
+  finding on #2658). Defaulting at the seam gives every consumer the
+  settings-gated island with zero explicit wiring, while the slot still
+  accepts a host override. Consequence: `@takazudo/zudo-doc/chrome` now
+  transitively imports `virtual:zudo-doc-design-token-panel-config`, so a
+  `packageOwnedRoutes: false` host that bundles chrome must register/alias
+  that module itself (the package vitest config aliases it to the package
+  default for fast tests).
+- **Mode-scoped BUILDER, not a resolved config** (#2610): the virtual module
+  re-exports a `(mode: "light" | "dark") => PanelConfig` function, never a
+  plain object — `@takazudo/zudo-doc/design-token-panel-bootstrap`'s
+  `DesignTokenPanelBootstrap` island passes it straight to
+  `bootstrapDesignTokenPanel`, which rebuilds the panel per light/dark mode on
+  every `color-scheme-changed` toggle.
+- `storagePrefix: "zudo-doc-tweak"` is preserved unchanged in the package
+  default (the existing user-save carry-over guarantee) — a host overriding
+  via `designTokenPanelConfigModule` may choose its own prefix if desired.
+
+Regression coverage: `__tests__/route-injection-build.slow.test.ts` (Case DTP
+— the island marker + client-bundle registry match with no host module, the
+host's builder reaching the bundle with the setting, and the missing-file
+error naming the resolved path); `plugins/__tests__/routes.test.ts` (fast,
+isolated `setup()` coverage of all three guard cases without a full build);
+`design-token-panel-config/__tests__/index.test.ts` (the package-default
+builder's tab structure, mode-scoping, and the unchanged `storagePrefix`).

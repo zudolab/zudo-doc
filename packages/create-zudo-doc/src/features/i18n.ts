@@ -6,16 +6,21 @@ import type { FeatureModule } from "../compose.js";
 /**
  * i18n feature — gates the locale-prefixed page set.
  *
- * Page templates are shipped under `templates/features/i18n/files/pages/`
- * and copied by `composeFeatures → copyFeatureFiles` whenever `i18n` is in
- * the selected feature set.
+ * Locked manifest (#2653 Decision 4, i18n addendum): "i18n ON adds
+ * `pages/[locale]/docs/[[...slug]].tsx` (a second doc stub, locale variant)
+ * … No other pages." That ONE self-contained stub — required for the same
+ * injected-DYNAMIC-route dev-mode 404 gap the default-locale stub fixes —
+ * is shipped under `templates/features/i18n/files/pages/[locale]/docs/`
+ * and copied by `composeFeatures → copyFeatureFiles` whenever `i18n` is
+ * selected. The old `pages/[locale]/index.tsx` home-route template is GONE
+ * (the locked manifest doesn't want it — the package-owned `/` route
+ * already handles every locale via `[[locale]]`-style resolution inside
+ * `routes/index.tsx`'s own logic).
  *
- * No injections: header / language-switcher wiring was retired with the
- * Astro cutover (#1736 / W7A) — `pages/lib/_header-with-defaults.tsx` now
- * gates `LanguageSwitcher` on `Object.keys(settings.locales).length > 0`.
- * The pages are locale-agnostic — they iterate `settings.locales` at build
+ * No injections: the stub iterates `settings.locales` at build/request
  * time, so no postProcess regex patching is required for non-default
- * languages.
+ * languages. Secondary-language content mirrors under
+ * `src/content/docs-<lang>/` are seeded by `scaffold.ts`.
  *
  * Loud-failure check: per spec-lock Decision 8 (#1737), abort scaffolding
  * if the feature template dir is missing or empty. Without this guard,
@@ -37,7 +42,7 @@ export const i18nFeature: FeatureModule = (_choices) => {
   if (!stat || !stat.isDirectory() || fs.readdirSync(pagesDir).length === 0) {
     throw new Error(
       `i18n feature template dir is missing or empty: ${pagesDir}\n` +
-        `Expected to find [locale]/index.tsx.\n` +
+        `Expected to find [locale]/docs/[[...slug]].tsx.\n` +
         `This is a generator bug — please file an issue.`,
     );
   }

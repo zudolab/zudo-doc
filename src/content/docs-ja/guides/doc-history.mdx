@@ -24,13 +24,15 @@ zudo-docは各ドキュメントページのgitリビジョン履歴を表示で
 
 ## ドキュメント履歴の有効化
 
-`src/config/settings.ts`で`docHistory`を`true`に設定します：
+`zfb.config.ts`で`docHistory`を`true`に設定します：
 
-```ts
-export const settings = {
-  // ...
-  docHistory: true,
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    docHistory: true,
+  }),
+);
 ```
 
 この機能はビルドを高速に保つため、**デフォルトでは無効**です。

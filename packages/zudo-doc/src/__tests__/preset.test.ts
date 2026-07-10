@@ -102,6 +102,14 @@ function nodeSpecifiersInDiagnostics(text: string): string[] {
 //   (2) success path — defense-in-depth: scan the emitted bundle for a literal
 //       `node:*` specifier in case a future esbuild/config passes one through.
 // This is the guard against the eval-graph footgun — NOT discipline.
+//
+// The package-default data modules that will be threaded into this eval graph
+// via `zudoDoc()` (#2657) — `i18n-defaults`, `color-schemes-defaults`,
+// `docs-schema`, `z-index-defaults`, `frontmatter-preview-defaults`,
+// `directive-vocabulary-defaults` (epic #2651, S4 #2654) — are covered by the
+// same mechanism in `foundation-eval-graph.test.ts`'s `NODE_FREE_MODULES`
+// list, which already generalizes this single-entry-point guard to a list of
+// modules. Extended there instead of duplicated here.
 // ───────────────────────────────────────────────────────────────────────────
 describe("preset eval-graph is node-builtin-free (--platform=neutral)", () => {
   it("bundles under platform=neutral with no reachable node:* builtin", async () => {

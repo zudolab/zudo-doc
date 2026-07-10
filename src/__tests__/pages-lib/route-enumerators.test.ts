@@ -20,7 +20,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Provide a controllable stub so enumerators can be tested in isolation.
 // ---------------------------------------------------------------------------
 
-vi.mock("zfb/content", () => ({
+vi.mock("@takazudo/zfb/content", () => ({
   getCollection: vi.fn((_name: string) => []),
   // No installed snapshot in unit tests — the nav-source cache uses its
   // fresh-each-call fallback path so the per-test mock swaps take effect.
@@ -28,7 +28,7 @@ vi.mock("zfb/content", () => ({
 }));
 
 // Import the mock handle after vi.mock so it is the mocked version.
-import { getCollection } from "zfb/content";
+import { getCollection } from "@takazudo/zfb/content";
 const mockGetCollection = getCollection as ReturnType<typeof vi.fn>;
 
 // Import modules under test after the mock is established.

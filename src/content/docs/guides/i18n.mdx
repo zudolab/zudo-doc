@@ -17,15 +17,17 @@ The language switcher in the site header lets users toggle between available lan
 
 ## Settings-Based Locale Configuration
 
-Locales are configured in `src/config/settings.ts`:
+Locales are configured in `zfb.config.ts`:
 
-```ts
-export const settings = {
-  // ...
-  locales: {
-    ja: { label: "JA", dir: "src/content/docs-ja" },
-  },
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    locales: {
+      ja: { label: "JA", dir: "src/content/docs-ja" },
+    },
+  }),
+);
 ```
 
 For each locale entry, zudo-doc automatically:
@@ -75,11 +77,11 @@ These keys allow the entire UI (not just content) to be localized across all con
 
 ## zfb Configuration
 
-The locale list flows through `zfb.config.ts`. Each entry in `settings.locales` becomes a `docs-{code}` content collection automatically — there is no separate `i18n` block to maintain. Page routes under `pages/[locale]/docs/[...slug].tsx` enumerate locales via their `paths()` export, so English pages are served without a language prefix (`/docs/...`) while non-default locales use their code as the prefix (`/ja/docs/...`).
+The locale list flows through `zfb.config.ts`. Each entry in the `locales` field you pass to `zudoDoc({...})` becomes a `docs-{code}` content collection automatically — there is no separate `i18n` block to maintain. Page routes under `pages/[locale]/docs/[...slug].tsx` enumerate locales via their `paths()` export, so English pages are served without a language prefix (`/docs/...`) while non-default locales use their code as the prefix (`/ja/docs/...`).
 
 <Note>
 
-The locale list in `zfb.config.ts` is automatically derived from `settings.locales`, so you only need to maintain locales in one place.
+The locale list used throughout `zfb.config.ts` is automatically derived from the `locales` field, so you only need to maintain locales in one place.
 
 </Note>
 
@@ -87,7 +89,7 @@ The locale list in `zfb.config.ts` is automatically derived from `settings.local
 
 To add a new language (e.g., Korean):
 
-1. Add the locale to `settings.ts`:
+1. Add the locale in `zfb.config.ts`:
 
    ```ts
    locales: {
@@ -102,7 +104,7 @@ To add a new language (e.g., Korean):
 
 <Tip>
 
-Step 1 is the key step — adding the locale to `settings.ts` automatically creates the content collection and registers the i18n routing. No per-locale page route file is needed; the parameterized route at `pages/[locale]/docs/[[...slug]].tsx` handles every locale automatically.
+Step 1 is the key step — adding the locale in `zfb.config.ts` automatically creates the content collection and registers the i18n routing. No per-locale page route file is needed; the parameterized route at `pages/[locale]/docs/[[...slug]].tsx` handles every locale automatically.
 
 </Tip>
 
@@ -110,32 +112,36 @@ Step 1 is the key step — adding the locale to `settings.ts` automatically crea
 
 `defaultLocale` identifies which locale is served without a URL prefix. It defaults to `"en"` and must match one of the keys that zfb uses for its default-locale routing:
 
-```ts
-export const settings = {
-  // ...
-  defaultLocale: "en" as const,
-  locales: {
-    ja: { label: "JA", dir: "src/content/docs-ja" },
-  },
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    defaultLocale: "en",
+    locales: {
+      ja: { label: "JA", dir: "src/content/docs-ja" },
+    },
+  }),
+);
 ```
 
 With `prefixDefaultLocale: false` (configured in `zfb.config.ts`), the default locale is served at `/docs/...` with no language code in the path, while every other locale uses its key as a prefix — `/ja/docs/...` for Japanese. Changing `defaultLocale` requires updating the corresponding routing and collection wiring in `zfb.config.ts`.
 
 ## Default-locale-only prefixes
 
-Some content is intentionally only available in the default locale. These routes are called **default-locale-only prefixes** and are controlled by the `defaultLocaleOnlyPrefixes` setting in `src/config/settings.ts`:
+Some content is intentionally only available in the default locale. These routes are called **default-locale-only prefixes** and are controlled by the `defaultLocaleOnlyPrefixes` field in `zfb.config.ts`:
 
-```ts
-export const settings = {
-  // ...
-  defaultLocaleOnlyPrefixes: [
-    "/docs/claude-md/",
-    "/docs/claude-skills/",
-    "/docs/claude-agents/",
-    "/docs/claude-commands/",
-  ] as string[],
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    defaultLocaleOnlyPrefixes: [
+      "/docs/claude-md/",
+      "/docs/claude-skills/",
+      "/docs/claude-agents/",
+      "/docs/claude-commands/",
+    ],
+  }),
+);
 ```
 
 ### What it means

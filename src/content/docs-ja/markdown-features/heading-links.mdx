@@ -18,10 +18,10 @@ sidebar_position: 3
 
 ## ID 方式
 
-`id` の生成方式は `zfb.config.ts` の `markdown.features.headingIds.strategy` で選択します。zudo-doc ではこれを単一の設定 `src/config/settings.ts` の `headingIdStrategy` に紐付けており、レンダリングされる ID と右側 TOC のアンカーが 1 つの設定値で駆動されます。
+`id` の生成方式は、生成される `zfb.config.ts` の `markdown.features.headingIds.strategy` で選択します。zudo-doc ではこれを単一の設定、`zudoDoc({...})` に渡す `headingIdStrategy` フィールドに紐付けており、レンダリングされる ID と右側 TOC のアンカーが 1 つの設定値で駆動されます。
 
 ```ts
-// zfb.config.ts
+// zudoDoc() が内部的に配線する内容（headingIdStrategy フィールドから）
 markdown: {
   features: {
     headingIds: { strategy: settings.headingIdStrategy }, // "flat" | "hierarchical"

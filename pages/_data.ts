@@ -1,6 +1,6 @@
 // pages/_data.ts — zfb-compatible data helpers for doc page modules.
 //
-// Provides the bridge between zfb's CollectionEntry (from "zfb/content") and
+// Provides the bridge between zfb's CollectionEntry (from "@takazudo/zfb/content") and
 // the utility functions in @/utils/docs that expect DocsEntry (which carries
 // an `id` field mirroring Astro's collection entry id).
 //
@@ -10,9 +10,9 @@
 //   wrapper on the type is a v0 artefact — the synchronous snapshot path is
 //   the production contract.
 
-import { getCollection } from "zfb/content";
-import type { CollectionEntry } from "zfb/content";
-import type { DocsData } from "@/config/docs-schema";
+import { getCollection } from "@takazudo/zfb/content";
+import type { CollectionEntry } from "@takazudo/zfb/content";
+import type { DocsData } from "@takazudo/zudo-doc/docs-schema";
 import type { DocsEntry } from "@/types/docs-entry";
 import type { DocPageEntry } from "./lib/doc-page-props";
 import { toRouteSlug } from "@/utils/slug";
@@ -25,8 +25,9 @@ import { toRouteSlug } from "@/utils/slug";
  * Frontmatter shape shared by all docs collections (EN, locale, versioned).
  *
  * Re-exported alias for `DocsData` (the `z.infer`-derived type from
- * `src/config/docs-schema.ts`) so call sites that import `ZfbDocsData` from
- * `pages/_data` continue to work without changes.
+ * `@takazudo/zudo-doc/docs-schema` — the showcase does not override
+ * `buildDocsSchema`, zudolab/zudo-doc#2661) so call sites that import
+ * `ZfbDocsData` from `pages/_data` continue to work without changes.
  *
  * The `[key: string]: unknown` index signature comes from `.passthrough()` on
  * the zod schema — custom frontmatter keys remain accessible downstream (e.g.

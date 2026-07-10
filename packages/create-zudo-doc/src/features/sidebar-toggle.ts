@@ -3,13 +3,13 @@ import type { FeatureModule } from "../compose.js";
 /**
  * Sidebar-toggle feature.
  *
- * W7A (#1736): post-cutover, the sidebar-toggle is hosted by the pages/lib
- * wrappers which runtime-gate on `settings.sidebarToggle`. The supporting
- * CSS (toggle button positioning, sidebar transitions, `[data-sidebar-hidden]`
- * styles) lives unconditionally in `templates/base/src/styles/global.css`
- * — the selectors only match when the runtime attaches the
- * `data-sidebar-hidden` attribute or mounts the toggle button, so the cost
- * to scaffolds without the feature is one inert rule block.
+ * Purely a `zudoDoc({ sidebarToggle: true })` field (see `zfb-config-gen.ts`).
+ * `DesktopSidebarToggle` is fully package-owned
+ * (`@takazudo/zudo-doc/desktop-sidebar-toggle-island`, wired into
+ * Header/Sidebar directly) and its CSS ships unconditionally from
+ * `@takazudo/zudo-doc/features.css` — the old host re-export shim
+ * (`src/components/desktop-sidebar-toggle.tsx`) is gone; nothing to inject
+ * or copy.
  */
 export const sidebarToggleFeature: FeatureModule = () => ({
   name: "sidebarToggle",

@@ -264,6 +264,20 @@ export interface ChromeHostBindings {
   BodyEndIslands?: FactoryComponent;
   /** DocHistory island. Default: a no-op stub rendering an empty fragment. */
   DocHistory?: FactoryComponent;
+  /**
+   * Design-token panel bootstrap island (#2658). Default: the PACKAGE-DEFAULT
+   * `DesignTokenPanelBootstrap` from
+   * `@takazudo/zudo-doc/design-token-panel-bootstrap`, statically imported by
+   * `chrome/derive.tsx` (`deriveBodyEndIslands`) so EVERY `createChrome`
+   * consumer — the injected `routes/_chrome.tsx` path and the locked-manifest
+   * self-contained doc stub alike — gets the settings-gated panel island with
+   * no explicit wiring (#2659 gate-2 fix; scanner reachability holds through
+   * the static route → chrome → derive → bootstrap chain, the #2480
+   * contract). Supply this slot only to REPLACE the island with a host's own
+   * bootstrap component. Mounting is still gated on
+   * `settings.designTokenPanel` inside `createBodyEndIslands` either way.
+   */
+  DesignTokenPanelBootstrap?: FactoryComponent;
   /** MDX content-component overrides (Details / HtmlPreview / Island /
    *  PresetGenerator). Default: package SSR impls + a `PresetGenerator` stub. */
   mdxExtras?: Record<string, FactoryComponent>;

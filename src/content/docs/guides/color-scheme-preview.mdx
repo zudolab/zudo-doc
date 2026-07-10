@@ -28,20 +28,22 @@ The **Color** tab shows the 23 resolved semantic roles (`accent`, `codeBg`, `suc
 
 ## Enabling the Design Token Panel
 
-Set `designTokenPanel` to `true` in `src/config/settings.ts`:
+Set `designTokenPanel` to `true` in `zfb.config.ts`:
 
-```ts title="src/config/settings.ts"
-export const settings = {
-  designTokenPanel: true,
-  // ...
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    designTokenPanel: true,
+    // ...
+  }),
+);
 ```
 
 When enabled, a palette icon appears in the header bar. Clicking it toggles the panel open/closed. The ramp curve editor is on the **Palette** tab.
 
 <Tip>
 
-Tweaking the ramps live is particularly useful during development to quickly evaluate how a lightness or hue change ripples across the whole site before committing it to `src/config/color-schemes.ts`.
+Tweaking the ramps live is particularly useful during development to quickly evaluate how a lightness or hue change ripples across the whole site before committing it to your own `colorSchemes` override module (see [Adding a Custom Color Scheme](../reference/color.mdx#adding-a-custom-color-scheme)).
 
 </Tip>
 

@@ -4,7 +4,7 @@ import type {
   ColorModeConfig,
   LocaleConfig,
   MetaTagsConfig,
-} from "./settings-types";
+} from "@takazudo/zudo-doc/settings";
 
 export const settings = {
   colorScheme: "Default Dark",

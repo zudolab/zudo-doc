@@ -5,6 +5,29 @@
 // is either present in each e2e fixture's settings.ts or explicitly listed
 // in .fixture-settings-drift-allowlist.
 //
+// Minimal-scaffold cutover (epic zudolab/zudo-doc#2651, Wave 7 #2663):
+// `zfb.config.ts` now assembles config via the single `zudoDoc({...})` entry
+// point (`@takazudo/zudo-doc/config`) instead of hand-building a `ZfbConfig`.
+// The naive re-point implied by that shape change — parse the object literal
+// passed to `zudoDoc(...)` in zfb.config.ts — does NOT work here: both the
+// host's and every fixture's `zudoDoc({...})` call spreads an IMPORTED
+// `settings` object (`...settings,`) plus a handful of shell-only fields that
+// are not part of `Settings` at all (`chromeBindingsModule`, `port`,
+// `adapter`, `bundle`, `tagVocabularyEntries`, `translations`). Those shell
+// fields are copied byte-for-byte into every fixture's `zfb.config.ts` by
+// `e2e/setup-fixtures.sh`, so diffing zfb.config.ts text would compare two
+// always-identical files and catch nothing; the actual per-fixture Settings
+// field names never appear as literal object keys in zfb.config.ts — they
+// live behind the spread, in `settings.ts`. `src/config/settings.ts` SURVIVED
+// the Wave 6 (#2661) minimal-scaffold cutover as a real showcase-owned data
+// module (unlike the sibling shims it deleted — `settings-types.ts` et al. —
+// which were byte-identical to package defaults); it is still spread
+// wholesale into `zudoDoc({ ...settings, ... })`, so it remains the one place
+// where individual Settings field names are literal object keys, in both the
+// host and every fixture. So per the "pick the mechanically simplest faithful
+// check" instruction, this script's canonical source stays
+// `src/config/settings.ts` — unchanged, not a stale leftover.
+//
 // Usage: node scripts/check-fixture-settings-drift.mjs
 // Exit 0 = no unallowlisted drift. Exit 1 = drift detected.
 

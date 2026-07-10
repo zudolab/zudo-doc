@@ -1,69 +1,61 @@
+import fs from "fs-extra";
+import path from "path";
 import type { FeatureModule } from "../compose.js";
 
 /**
  * Doc-history feature.
  *
- * W7A (#1736): post-cutover, `pages/lib/_doc-history-area.tsx` is mounted
- * unconditionally and self-gates on `settings.docHistory`. The plugin entry
- * is wired by `zfb-config-gen.ts`.
+ * Minimal-scaffold cutover (epic zudolab/zudo-doc#2651, Wave 6 #2660):
+ * `settings.docHistory` is a plain zudoDoc() field now (see zfb-config-gen.ts)
+ * and the diff-viewer CSS (`.diff-row`/`.diff-line-*`) ships unconditionally
+ * from `@takazudo/zudo-doc/features.css` (epic #2344 S4) — the old
+ * `@slot:global-css:feature-styles` CSS injection this module used to carry
+ * is DEAD (the anchor no longer exists in the ~20-line `global.css`) and has
+ * been removed.
+ *
+ * What's left to wire: the self-contained doc-route stub(s)
+ * (`pages/docs/[[...slug]].tsx`, and its i18n locale sibling when i18n is
+ * also selected) call `createChrome(routeCtx)` with NO hostBindings — unlike
+ * `DesignTokenPanelBootstrap` (auto-defaulted at the chrome-derive seam,
+ * #2658 gate-2 fix), `DocHistory`'s derive-level default is a deliberate
+ * no-op stub (see `routes/_chrome.tsx`'s comment on why — its own island
+ * needs the REAL host binding to hydrate). So when docHistory is selected,
+ * this feature patches the stub(s) to statically import the real
+ * `DocHistory` component and thread it through — the same #2480 chain
+ * `routes/_chrome.tsx` uses for the package's own routes.
  */
 export const docHistoryFeature: FeatureModule = () => ({
   name: "docHistory",
-  injections: [
-    {
-      // Diff-viewer CSS — the DocHistory island's side-by-side diff markup
-      // (.diff-row / .diff-line-*) is styled only here; without this block
-      // scaffolded projects render the diff viewer unstyled (#2081). Values
-      // mirror the showcase src/styles/global.css (per-line separators at
-      // the 15% muted mix, #2077).
-      file: "src/styles/global.css",
-      anchor: "/* @slot:global-css:feature-styles */",
-      content: `/* ========================================
- * Doc History Diff Viewer (side-by-side)
- * ======================================== */
+  injections: [],
+  postProcess: async (targetDir) => {
+    const stubPaths = [
+      path.join(targetDir, "pages", "docs", "[[...slug]].tsx"),
+      path.join(targetDir, "pages", "[locale]", "docs", "[[...slug]].tsx"),
+    ];
+    for (const stubPath of stubPaths) {
+      if (!(await fs.pathExists(stubPath))) continue;
+      let content = await fs.readFile(stubPath, "utf-8");
+      // Idempotency guard: check for the actual inserted import statement,
+      // NOT a bare `.includes("DocHistory")` — this file's own header
+      // comment (explaining WHY this patch exists) mentions "DocHistory" in
+      // prose, which would false-positive a weaker check and skip patching
+      // on every run.
+      const importMarker = `import { DocHistory } from "@takazudo/zudo-doc/doc-history";`;
+      if (content.includes(importMarker)) continue; // already patched
 
-.diff-row {
-  border-bottom: 1px solid color-mix(in oklch, var(--color-muted) 15%, transparent);
-}
-
-.diff-line-num {
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: var(--text-caption);
-  line-height: 1.5;
-  padding: 0 var(--spacing-hsp-xs);
-  text-align: right;
-  color: var(--color-muted);
-  user-select: none;
-  vertical-align: top;
-  border-right: 1px solid color-mix(in oklch, var(--color-muted) 15%, transparent);
-}
-
-.diff-line-content {
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: var(--text-caption);
-  line-height: 1.5;
-  padding: 0 var(--spacing-hsp-sm);
-  white-space: pre-wrap;
-  word-break: break-all;
-  vertical-align: top;
-}
-
-/* Left column right border to separate the two sides */
-.diff-row td:nth-child(2) {
-  border-right: 2px solid var(--color-muted);
-}
-
-.diff-line-added {
-  background-color: color-mix(in oklch, var(--color-success) 15%, transparent);
-}
-
-.diff-line-removed {
-  background-color: color-mix(in oklch, var(--color-danger) 15%, transparent);
-}
-
-.diff-line-empty {
-  background-color: color-mix(in oklch, var(--color-muted) 8%, transparent);
-}`,
-    },
-  ],
+      content = content.replace(
+        `import { createChrome } from "@takazudo/zudo-doc/chrome";`,
+        `import { createChrome } from "@takazudo/zudo-doc/chrome";
+${importMarker}
+import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";`,
+      );
+      content = content.replace(
+        `const { renderDocPage } = createChrome(routeCtx);`,
+        `const { renderDocPage } = createChrome(routeCtx, {
+  DocHistory: DocHistory as unknown as ChromeHostBindings["DocHistory"],
+});`,
+      );
+      await fs.writeFile(stubPath, content);
+    }
+  },
 });

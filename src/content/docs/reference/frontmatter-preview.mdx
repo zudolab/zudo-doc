@@ -18,7 +18,7 @@ This very page demonstrates the feature: the `author` and `status` fields you se
 
 The block appears only when at least one frontmatter key survives filtering. Framework-managed keys (`title`, `description`, `sidebar_position`, `tags`, etc.) are stripped by default. If every key is on the ignore list, nothing is rendered.
 
-Set `frontmatterPreview: false` in `src/config/settings.ts` to disable the feature entirely for all pages.
+Set `frontmatterPreview: false` in `zfb.config.ts` (the `zudoDoc({...})` call) to disable the feature entirely for all pages.
 
 ## Default Ignore List
 
@@ -47,7 +47,7 @@ Any key not in this list will be shown automatically.
 
 ## Customizing the Ignore List
 
-The `frontmatterPreview` setting in `src/config/settings.ts` accepts two mutually exclusive knobs.
+The `frontmatterPreview` field in `zudoDoc({...})` (set in `zfb.config.ts`) accepts two mutually exclusive knobs.
 
 ### `extraIgnoreKeys` — extend the defaults
 
@@ -142,7 +142,7 @@ This page's own frontmatter includes `discount: true`, `status: "stable"`, and `
 
 A renderer registered for an ignored key has no effect. The ignore list is applied _before_ renderer lookup — if a key is suppressed, the row is never rendered and the renderer is never called.
 
-To surface a framework-managed key (such as `draft`) with a custom renderer, first remove it from the ignore list in `src/config/settings.ts`:
+To surface a framework-managed key (such as `draft`) with a custom renderer, first remove it from the ignore list in your `frontmatterPreview` config (set in `zfb.config.ts`):
 
 ```ts
 frontmatterPreview: {

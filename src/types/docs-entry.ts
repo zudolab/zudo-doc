@@ -1,4 +1,4 @@
-import type { DocsData } from "@/config/docs-schema";
+import type { DocsData } from "@takazudo/zudo-doc/docs-schema";
 
 /**
  * Concrete entry type for docs collections.
@@ -10,7 +10,9 @@ import type { DocsData } from "@/config/docs-schema";
  * pages cast collection entries to this shape via `pages/_data.ts`.
  *
  * `data` is typed as `DocsData` — the `z.infer`-derived type from
- * `src/config/docs-schema.ts` — so the field set is maintained in one place.
+ * `@takazudo/zudo-doc/docs-schema` (the showcase does not override
+ * `buildDocsSchema`, so the package default is the single source of truth) —
+ * so the field set is maintained in one place.
  */
 // Structural shape of zfb's optional rendered-content payload for a doc
 // entry (kept loose to stay engine-agnostic — pages do not rely on the

@@ -43,12 +43,14 @@ sidebar_position: 10
 
 ## 設定
 
-画像拡大表示は `src/config/settings.ts` で有効にします。
+画像拡大表示は `zfb.config.ts` の `imageEnlarge` フィールドで有効にします。
 
-```ts
-export const settings = {
-  imageEnlarge: true,
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    imageEnlarge: true,
+  }),
+);
 ```
 
 `imageEnlarge: false` に設定すると、機能全体を無効にできます。
@@ -63,7 +65,7 @@ export const settings = {
 適切なオーバーレイ色はコンテンツ画像に依存し、サイトによって異なります。デフォルト値はほとんどのケースで機能しますが、3 層カラー戦略（[Color](../reference/color.mdx) を参照）に従い、任意のカラースキームで上書きできます。
 
 ```ts
-// src/config/color-schemes.ts
+// zfb.config.ts の colorSchemes フィールドに渡す、自作の colorSchemes 上書きモジュール
 semantic: {
   imageOverlayBg: { base: 4 },   // ramp stop — deep surface
   imageOverlayFg: { base: 0 },  // ramp stop — light text

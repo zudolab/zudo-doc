@@ -6,7 +6,7 @@ import { FEATURES } from "./constants.js";
 import { loadPreset } from "./preset.js";
 import { runPrompts, type PartialChoices } from "./prompts.js";
 import { scaffold } from "./scaffold.js";
-import { installDependencies, initGitRepo } from "./utils.js";
+import { installDependencies, initGitRepo, pmRunCommand } from "./utils.js";
 
 async function main() {
   const args = parseArgs();
@@ -182,9 +182,7 @@ async function main() {
   console.log();
   console.log(`  ${pc.bold("Next steps:")}`);
   console.log(`  cd ${choices.projectName}`);
-  const runCmd =
-    choices.packageManager === "npm" ? "npm run" : choices.packageManager;
-  console.log(`  ${runCmd} dev`);
+  console.log(`  ${pmRunCommand(choices.packageManager, "dev")}`);
   console.log();
 }
 

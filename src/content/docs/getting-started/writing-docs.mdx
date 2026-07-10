@@ -185,6 +185,8 @@ See the [i18n guide](../guides/i18n.mdx) for detailed instructions on managing t
 
 You can use Preact components in your documentation. Interactive components hydrate on the client via zfb's island runtime — the rest ships as pure HTML with zero JavaScript.
 
+A fresh scaffold has no `src/components/` directory — you create one when you want custom components. The `@/*` path alias maps to `src/*`, so a file at `src/components/my-component.tsx` imports as:
+
 ```mdx
 import MyComponent from "@/components/my-component";
 

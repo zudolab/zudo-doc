@@ -103,16 +103,6 @@ const REQUIRED_CI_GUARDS = [
     comment: "E2E spec naming guard (scripts/check-e2e-spec-naming.mjs, #2095)",
   },
   {
-    // Z-index codegen drift: node packages/zudo-doc/bin/gen-z-index.mjs --check
-    // (CI) / pnpm check:z-index (b4push, routes through the same gen-z-index
-    // bin). Fails if the generated @theme block in src/styles/global.css drifts
-    // from src/config/z-index-tokens.ts (#2148). The generator ships as the
-    // @takazudo/zudo-doc `gen-z-index` bin (S9b #2334).
-    ciNeedle: "gen-z-index.mjs",
-    b4pushScript: "check:z-index",
-    comment: "Z-index codegen drift check (gen-z-index package bin, S9b #2334)",
-  },
-  {
     // Component-tokens codegen drift: node packages/zudo-doc/bin/gen-component-tokens.mjs --check
     // (CI) / pnpm check:component-tokens (b4push, routes through the same
     // gen-component-tokens bin). Fails if the --zdc-* BEGIN/END block in

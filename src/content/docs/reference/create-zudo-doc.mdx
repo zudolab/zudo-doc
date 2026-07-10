@@ -14,6 +14,24 @@ When run without flags, the CLI launches an interactive wizard. All options can 
 
 You can also use the [Setup Preset Generator](../getting-started/setup-preset-generator.mdx) to interactively build a configuration and copy it as a JSON preset or CLI command.
 
+## What the CLI generates
+
+The scaffold is minimal — roughly a dozen files (see [Project Structure](../getting-started/installation.mdx#project-structure)). The layout, chrome, and schema all ship from `@takazudo/zudo-doc` and are consumed from `node_modules`, so the generated project holds only what is genuinely its own.
+
+Your feature choices are written into a **single `zfb.config.ts`** as a `zudoDoc({ … })` call containing only the fields that differ from the defaults (`siteName` is always emitted). There is no separate `src/config/settings.ts` — the one config file is the whole configuration surface. See [Configuration](../guides/configuration.mdx) for every field.
+
+A few things a fresh scaffold intentionally does **not** include:
+
+- **No `.zudo-doc.json`** — the eject provenance file is lazy-created on your first `zudo-doc eject`, so an un-ejected project never carries it.
+- **No `check:html` / HTML-validation** step and **no `gen:z-index` / `check:z-index`** codegen — both were pruned from generated projects. The default z-index tiers ship from the package; HTML validation and pre-push suites are opt-in add-backs (see [Customizing → Restoring pre-push and HTML validation](./customizing.mdx#rung-8-—-restoring-pre-push-and-html-validation)).
+- **No deploy adapter or `wrangler.toml`** — the default build is a pure static export. Deploying (or enabling SSR features like the AI assistant) is an explicit extend step.
+
+<Note>
+
+`@takazudo/zdtp` is added as an **unconditional dependency** of every generated project — not only those enabling `designTokenPanel`. The package's chrome imports the panel bootstrap at module scope, so the dependency must resolve at build time regardless of the setting.
+
+</Note>
+
 ## Options
 
 ### Project
@@ -41,7 +59,7 @@ You can also use the [Setup Preset Generator](../getting-started/setup-preset-ge
 
 zudo-doc ships exactly two color schemes — `Default Light` and `Default Dark` — sharing one set of OKLCH ramps. There is no bundled catalog of community or terminal presets to pick a `--scheme` value from.
 
-Customization happens one level deeper: edit the shared ramps and the semantic map in `src/config/color-schemes.ts` (see [Color](./color.mdx#adding-a-custom-color-scheme) — "Adding a Custom Color Scheme") and preview the result live in the [Design Token Panel](./design-token-panel.mdx#ai-workflow)'s Palette tab (see [Color Scheme Preview](../guides/color-scheme-preview.mdx)) before committing it to source.
+Customization happens one level deeper, through the `colorSchemes` escape-hatch field in `zfb.config.ts`: pass your own `{ ramps, map }` palette map to `zudoDoc({ colorSchemes: { … } })` (see [Color](./color.mdx#adding-a-custom-color-scheme) — "Adding a Custom Color Scheme"). Preview the result live in the [Design Token Panel](./design-token-panel.mdx#ai-workflow)'s Palette tab (see [Color Scheme Preview](../guides/color-scheme-preview.mdx)) before committing it to source.
 
 ### Features
 

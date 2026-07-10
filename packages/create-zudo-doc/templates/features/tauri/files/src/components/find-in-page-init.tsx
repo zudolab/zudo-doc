@@ -1,5 +1,16 @@
 "use client";
 
+// NOT auto-mounted (epic zudolab/zudo-doc#2651 minimal-scaffold cutover):
+// the old host `pages/lib/_body-end-islands.tsx` that used to statically
+// import + mount this island no longer exists — the package now owns the
+// entire chrome (see `pages/docs/[[...slug]].tsx`, `createChrome(routeCtx)`).
+// To wire Cmd/Ctrl+F back in, add a `settings.chromeBindingsModule` host
+// file that overrides the `BodyEndIslands` chrome slot (wrapping
+// `@takazudo/zudo-doc/doc-body-end-islands`'s `createBodyEndIslands` and
+// mounting `<FindInPageInit />` alongside it) — see
+// `docs/adr/route-injection-seam.md` ("Host-callables channel") in
+// @takazudo/zudo-doc. This file (and find-bar.tsx / ../utils/find-in-page.ts)
+// ship as ready-to-wire reference material either way.
 import { useState, useEffect, useRef } from "preact/compat";
 import { FindBar } from "./find-bar";
 import { createFindInPage } from "@/utils/find-in-page";

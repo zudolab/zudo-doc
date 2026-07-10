@@ -14,6 +14,24 @@ create-zudo-doc [project-name] [options]
 
 [セットアッププリセットジェネレーター](../getting-started/setup-preset-generator.mdx)を使って、対話的に設定を構成し、JSON プリセットまたは CLI コマンドとしてコピーすることもできます。
 
+## CLI が生成するもの
+
+スキャフォールドは最小限で、ファイル数はおよそ12個です（[プロジェクト構成](../getting-started/installation.mdx#プロジェクト構成)を参照）。レイアウト、クローム、スキーマはすべて `@takazudo/zudo-doc` から出荷され、`node_modules` から消費されるため、生成されるプロジェクトが持つのは本当に固有のものだけです。
+
+機能の選択は**単一の `zfb.config.ts`** に `zudoDoc({ … })` 呼び出しとして書き込まれ、デフォルトと異なるフィールドだけを含みます（`siteName` は常に出力されます）。別個の `src/config/settings.ts` はありません — 唯一の設定ファイルが設定サーフェス全体です。各フィールドについては [設定](../guides/configuration.mdx) を参照してください。
+
+新しいスキャフォールドが意図的に**含まない**ものがいくつかあります:
+
+- **`.zudo-doc.json` なし** — eject のプロベナンスファイルは最初の `zudo-doc eject` 時に遅延生成されるため、eject していないプロジェクトはこれを持ちません。
+- **`check:html` / HTML バリデーション**ステップと **`gen:z-index` / `check:z-index`** コードジェネレーションなし — どちらも生成プロジェクトから削除されました。デフォルトの z-index ティアはパッケージから出荷され、HTML バリデーションと pre-push スイートはオプトインの追加項目です（[カスタマイズ](./customizing.mdx)の pre-push / HTML バリデーション復元の節を参照）。
+- **デプロイアダプターや `wrangler.toml` なし** — デフォルトのビルドは純粋な静的エクスポートです。デプロイ（や AI アシスタントのような SSR 機能の有効化）は明示的な拡張ステップです。
+
+<Note>
+
+`@takazudo/zdtp` は、`designTokenPanel` を有効化したプロジェクトだけでなく、**すべての生成プロジェクトの無条件の依存関係**として追加されます。パッケージのクロームがモジュールスコープでパネルのブートストラップをインポートするため、設定に関係なくビルド時にこの依存関係が解決される必要があります。
+
+</Note>
+
 ## オプション
 
 ### プロジェクト
@@ -41,7 +59,7 @@ create-zudo-doc [project-name] [options]
 
 zudo-doc が同梱するカラースキームは `Default Light` と `Default Dark` の 2 つだけで、両者は 1 セットの OKLCH ランプを共有しています。`--scheme` の値として選べる、コミュニティ製やターミナル由来のプリセットカタログはバンドルされていません。
 
-カスタマイズはもう一段深いレイヤーで行います。共有ランプとセマンティックマップを `src/config/color-schemes.ts` で編集し（[Color](./color.mdx#カスタムカラースキームの追加) の「カスタムカラースキームの追加」を参照）、ソースにコミットする前に [Design Token Panel](./design-token-panel.mdx#aiワークフロー) の Palette タブで結果をライブプレビューできます（[カラースキームプレビュー](../guides/color-scheme-preview.mdx)を参照）。
+カスタマイズはもう一段深いレイヤー、`zfb.config.ts` の `colorSchemes` エスケープハッチフィールドで行います。独自の `{ ramps, map }` パレットマップを `zudoDoc({ colorSchemes: { … } })` に渡します（[Color](./color.mdx#カスタムカラースキームの追加) の「カスタムカラースキームの追加」を参照）。ソースにコミットする前に [Design Token Panel](./design-token-panel.mdx#aiワークフロー) の Palette タブで結果をライブプレビューできます（[カラースキームプレビュー](../guides/color-scheme-preview.mdx)を参照）。
 
 ### 機能
 

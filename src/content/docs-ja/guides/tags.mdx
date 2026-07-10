@@ -85,7 +85,7 @@ tags: [deployment, hosting]
 
 ## 設定
 
-タグの表示は `src/config/settings.ts` の `docTags` 設定で制御します。有効（デフォルト）のときは、ページ下部のタグバッジ列とホームページの「All Tags」セクションが描画されます。`false` にするとこれらの表示は非表示になりますが、`/ja/docs/tags/` のインデックスや `/ja/docs/tags/[tag]` のページはビルドされ、URL から直接アクセスすればそのまま到達できます。
+タグの表示は `zfb.config.ts` の `docTags` フィールドで制御します。有効（デフォルト）のときは、ページ下部のタグバッジ列とホームページの「All Tags」セクションが描画されます。`false` にするとこれらの表示は非表示になりますが、`/ja/docs/tags/` のインデックスや `/ja/docs/tags/[tag]` のページはビルドされ、URL から直接アクセスすればそのまま到達できます。
 
 詳細は[Configuration](./configuration.mdx)を参照してください。
 

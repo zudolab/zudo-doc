@@ -1,30 +1,23 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@takazudo/zudo-doc/tsconfig.base.json",
+  // "scripts" is a showcase-specific addition beyond the minimal-scaffold
+  // floor's `["src", "pages", "zfb.config.ts"]` — the pre-migration tsconfig
+  // (no explicit `include`, i.e. "typecheck everything not excluded") covered
+  // scripts/**/*.ts too (contrast audit, tags audit/suggest, …); keeping it
+  // here preserves that coverage instead of silently dropping it.
+  "include": ["src", "pages", "scripts", "zfb.config.ts"],
+  "exclude": ["src/**/__tests__"],
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "forceConsistentCasingInFileNames": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "allowJs": true,
-    "jsx": "preserve",
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
-    "noImplicitThis": true,
-    "useUnknownInCatchVariables": true,
-    "alwaysStrict": true,
-    "noUncheckedIndexedAccess": true,
+    // Re-declaring baseUrl here is REQUIRED, not cosmetic — see the GOTCHA in
+    // packages/zudo-doc/CLAUDE.md: the base's own baseUrl resolves relative to
+    // the base file's directory (inside node_modules), so a project-local
+    // baseUrl is needed to anchor "." at the project root.
     "baseUrl": ".",
+    // Stricter than the base — a deliberate project choice (see this file's
+    // "TypeScript" note in the repo-root CLAUDE.md); not part of the shared
+    // base since it is not universally desired by every generated project.
+    "noUncheckedIndexedAccess": true,
     "paths": {
       "@/*": ["src/*"],
       "#doc-history-meta": [".zfb/doc-history-meta.json"],
@@ -32,6 +25,5 @@
       "react/jsx-runtime": ["./node_modules/preact/jsx-runtime"],
       "react-dom": ["./node_modules/preact/compat/"]
     }
-  },
-  "exclude": ["dist", "e2e/fixtures", "packages", "pages", "worktrees", "vendor", "__inbox", "src/**/__tests__", "vitest.config.ts"]
+  }
 }

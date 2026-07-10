@@ -20,30 +20,32 @@ This page covers the **left-side tabs**. The right-side cluster (theme toggle, G
 
 ## Configuration
 
-Define header navigation items in `src/config/settings.ts`. Items can be flat links or dropdown parents with nested children:
+Define header navigation items in `zfb.config.ts`. Items can be flat links or dropdown parents with nested children:
 
-```ts
-export const settings = {
-  // ...
-  headerNav: [
-    // Flat link (no dropdown)
-    { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    headerNav: [
+      // Flat link (no dropdown)
+      { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
 
-    // Dropdown parent with children
-    {
-      label: "Learn",
-      labelKey: "nav.learn",
-      path: "/docs/guides",
-      categoryMatch: "guides",
-      children: [
-        { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
-        { label: "Components", labelKey: "nav.components", path: "/docs/components", categoryMatch: "components" },
-      ],
-    },
+      // Dropdown parent with children
+      {
+        label: "Learn",
+        labelKey: "nav.learn",
+        path: "/docs/guides",
+        categoryMatch: "guides",
+        children: [
+          { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
+          { label: "Components", labelKey: "nav.components", path: "/docs/components", categoryMatch: "components" },
+        ],
+      },
 
-    { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
-  ],
-};
+      { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
+    ],
+  }),
+);
 ```
 
 ## Properties

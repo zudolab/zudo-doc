@@ -35,37 +35,19 @@ fi
 # allowlist entries, keyed by prod path, do NOT exempt a file here; this list
 # is keyed by TEMPLATE-relative path and gates the directive check only).
 #
-# The exempted files are deliberate no-op base stubs whose host counterparts
-# are real "use client" islands. They ship WITHOUT the directive because the
-# stub never emits an island marker in a generated project:
-# - desktop-sidebar-toggle: the real, directive-carrying implementation is a
-#   feature overlay (sidebarToggle) that replaces the stub when the feature is
-#   enabled; the base stub serves feature-disabled scaffolds, where it renders
-#   nothing. The overlay copy has a different template-relative key and stays
-#   checked.
-# - design-token-panel-bootstrap: base stub was DELETED in #2162 (gating zdtp
-#   scaffolding behind the designTokenPanel feature). The real implementation
-#   now lives only in the designTokenPanel feature overlay and is NOT in the
-#   base template at all.
-# - preset-generator: renders null and is only reachable through the MDX
-#   component map when a doc page uses it; downstream projects replace the
-#   stub to wire a real implementation (see the stub's header comment).
-# Contrast ai-chat-modal: its base copy is Island-wrapped unconditionally in
-# pages/lib/_body-end-islands.tsx, so even as a minimal component it MUST
-# carry the directive — that is why it is NOT exempt (zudolab/zudo-doc#2047).
-declare -A DIRECTIVE_EXEMPT=(
-  ["base/src/components/desktop-sidebar-toggle.tsx"]=1
-  ["base/src/components/preset-generator.tsx"]=1
-  # S2 (#2344) — sidebar-tree.tsx, sidebar-toggle.tsx (base)
-  # and desktop-sidebar-toggle.tsx (sidebarToggle feature overlay) are thin
-  # re-export stubs.  "use client" lives in the package island source;
-  # the local shim does not need to repeat it. (site-tree-nav.tsx's shim was
-  # removed in the #2371/#2374 fast-follow — both index pages import the
-  # package island @takazudo/zudo-doc/site-tree-nav-island directly now.)
-  ["base/src/components/sidebar-tree.tsx"]=1
-  ["base/src/components/sidebar-toggle.tsx"]=1
-  ["features/sidebarToggle/files/src/components/desktop-sidebar-toggle.tsx"]=1
-)
+# Minimal-scaffold cutover (epic zudolab/zudo-doc#2651, Wave 6 #2660 / Wave 7
+# #2663): the base template's `src/components/**` directory — every entry this
+# map used to reference — is GONE. The locked ~12-file manifest ships no
+# component overrides at all; the package owns chrome/islands entirely (see
+# packages/create-zudo-doc/CLAUDE.md's "Template Directories" table). The
+# `sidebarToggle` feature (whose overlay was the map's other entry) is now
+# pure settings-field emission too — its `templates/features/sidebarToggle/`
+# directory is deleted. This map is therefore EMPTY today. It is kept (not
+# deleted outright) as live infrastructure for the day a future feature
+# genuinely needs a directive-exempt stub again — the "guard against
+# exemption rot" loop below fails loudly the moment a stale entry is added
+# back without a real template file to match, so an empty map costs nothing.
+declare -A DIRECTIVE_EXEMPT=()
 
 TEMPLATES_DIR="$ROOT_DIR/packages/create-zudo-doc/templates"
 
@@ -88,32 +70,26 @@ DRIFTED=()
 # ---------------------------------------------------------------------------
 # claude-resources parity guard (#2533)
 # ---------------------------------------------------------------------------
-# These four prod paths used to be blanket-exempted in .template-drift-
-# allowlist, which meant a real logic drift between the template copy and
-# the package source (e.g. a missing bugfix or a missing regression test)
-# was invisible to CI. They carry exactly one INTENTIONAL, permanent
-# difference: the package source uses explicit ".js" import extensions
-# (dist/ is consumed directly by Node ESM, which requires them on relative
-# imports), while the template is compiled by the host's bundler (zfb/Vite,
-# moduleResolution "Bundler"), which does not need them. So instead of a
-# blanket exemption, these pairs get a NORMALIZED diff — comment lines and
-# the ".js" relative-import extension are stripped from both sides before
-# comparing — so any other difference (a real logic or test-coverage drift)
-# still fails the check.
+# Historically these four prod paths got a NORMALIZED diff (comment lines and
+# the package's Node-ESM-required ".js" relative-import extension stripped
+# from both sides) instead of a blanket allowlist exemption, so a real logic
+# drift between the template copy and the package source stayed visible.
 #
-# The "canonical" copy these template files sync from is NOT a root-relative
-# host path (the naive BASE_DIR/-stripped prod_path used by every other
-# check_pair() call) — it's the workspace package source at
-# packages/zudo-doc/src/integrations/claude-resources/, re-exported at
-# runtime as @takazudo/zudo-doc/integrations/claude-resources. So the map
-# value is the real comparison path, keyed by the usual stripped prod_path
-# (used only for display / the DRIFTED report).
-declare -A CLAUDE_RESOURCES_PARITY_PATHS=(
-  ["src/integrations/claude-resources/__tests__/escape-for-mdx.test.ts"]="packages/zudo-doc/src/integrations/claude-resources/__tests__/escape-for-mdx.test.ts"
-  ["src/integrations/claude-resources/__tests__/generate.test.ts"]="packages/zudo-doc/src/integrations/claude-resources/__tests__/generate.test.ts"
-  ["src/integrations/claude-resources/escape-for-mdx.ts"]="packages/zudo-doc/src/integrations/claude-resources/escape-for-mdx.ts"
-  ["src/integrations/claude-resources/generate.ts"]="packages/zudo-doc/src/integrations/claude-resources/generate.ts"
-)
+# Minimal-scaffold cutover (epic zudolab/zudo-doc#2651, Wave 6 #2660): the
+# `claudeResources` feature's template directory
+# (templates/features/claudeResources/files/src/integrations/claude-resources/)
+# was deleted entirely — empirically verified dead (nothing imported it; the
+# package already ships the same generator/escape-helper logic re-exported as
+# @takazudo/zudo-doc/integrations/claude-resources, and the feature is now
+# pure settings-field emission, same as most other features post package-first
+# migration). There is no template-side claude-resources file left to diff, so
+# this map is EMPTY. Kept (not deleted) as live infrastructure — should a
+# future feature need a real, Node-ESM-vs-bundler-import-extension-normalized
+# file copy again, the normalize_claude_resources_content /
+# check_pair_normalized machinery below is ready to reuse; an empty map costs
+# nothing since check_pair() only routes through it for a prod_path that is
+# actually a key here.
+declare -A CLAUDE_RESOURCES_PARITY_PATHS=()
 
 # Strips pure comment lines (// line comments and /** ... */ JSDoc blocks,
 # matched whole-line-only so no code line is touched) and drops the ".js"
@@ -150,19 +126,29 @@ check_pair_normalized() {
 }
 
 # ---------------------------------------------------------------------------
-# global.css legacy-token guard (#2621)
+# global.css legacy-token guard (#2621, rewritten for the ~29-line minimal
+# form by #2663)
 # ---------------------------------------------------------------------------
 # packages/create-zudo-doc/templates/base/src/styles/global.css is allowlisted
-# in .template-drift-allowlist (~120 lines of intentional slot/feature/@source
-# delta make byte parity with the showcase impossible), so check_pair() above
-# never inspects it. That blind spot let it drift to the pre-ramp-restructure
-# legacy 16-slot token set (--zd-sel-bg/fg, --color-p0..15, --zd-0..15) even
-# after the ramp-native engine stopped emitting those vars — scaffolded
-# projects would reference dead CSS custom properties. This guard runs
+# in .template-drift-allowlist (the showcase's global.css carries ~300 lines
+# of its OWN @theme token block that the minimal template intentionally does
+# not — see the allowlist entry), so check_pair() above never inspects it.
+# That blind spot originally let it drift to the pre-ramp-restructure legacy
+# 16-slot token set (--zd-sel-bg/fg, --color-p0..15, --zd-0..15) even after
+# the ramp-native engine stopped emitting those vars. This guard runs
 # UNCONDITIONALLY (the allowlist does not exempt it): it fails on any legacy-
-# token reference, and separately asserts the ramp-native --zd-selection-bg
-# marker is present so the file can't silently regress to pre-migration
-# wording either.
+# token reference.
+#
+# Minimal-scaffold cutover (epic zudolab/zudo-doc#2651, Wave 6 #2655/#2660):
+# the template's global.css no longer declares ANY `@theme` tokens itself —
+# it ships a fixed `@import` chain and pulls the full token set (including
+# the ramp-native --zd-selection-bg/-fg marker this guard used to grep for
+# directly) from `@takazudo/zudo-doc/theme.css`. So the "hasn't silently
+# regressed" marker is no longer the ramp-native CSS custom property itself
+# (the template file never contains it) — it is the `@import
+# "@takazudo/zudo-doc/theme.css";` line: if that import is ever removed, the
+# scaffolded project loses its entire default token set (not just the
+# selection-color pair), which is the failure this guard exists to catch.
 #
 # Pattern is deliberately exact — do NOT loosen to `--zd-sel` / `--zd-sel-`:
 # that substring false-positives on the correctly-migrated --zd-selection-bg/
@@ -185,9 +171,9 @@ check_global_css_legacy_tokens() {
     DRIFTED+=("base/src/styles/global.css (legacy token)")
   fi
 
-  if ! grep -qF -- '--zd-selection-bg' "$global_css"; then
-    echo "  [MISSING MARKER] base/src/styles/global.css does not reference --zd-selection-bg (ramp-native marker)"
-    DRIFTED+=("base/src/styles/global.css (missing ramp-native marker)")
+  if ! grep -qF -- '@takazudo/zudo-doc/theme.css' "$global_css"; then
+    echo "  [MISSING MARKER] base/src/styles/global.css does not import @takazudo/zudo-doc/theme.css (default token-set marker)"
+    DRIFTED+=("base/src/styles/global.css (missing default token-set import)")
   fi
 }
 

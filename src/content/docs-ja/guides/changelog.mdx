@@ -78,16 +78,20 @@ sidebar_position: 2
 
 ## 生成されるパッケージ変更履歴
 
-プロジェクトでは、`settings.changelogs`で生成される変更履歴の出力先を設定できます。各項目はソースディレクトリと出力ファイルを指定します：
+プロジェクトでは、`changelogs`フィールドで生成される変更履歴の出力先を設定できます。各項目はソースディレクトリと出力ファイルを指定します：
 
-```ts title="src/config/settings.ts"
-changelogs: [
-  {
-    sourceDir: "src/content/docs/changelog",
-    outputFile: "packages/zudo-doc/CHANGELOG.md",
-    packageName: "@takazudo/zudo-doc",
-  },
-],
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    changelogs: [
+      {
+        sourceDir: "src/content/docs/changelog",
+        outputFile: "packages/zudo-doc/CHANGELOG.md",
+        packageName: "@takazudo/zudo-doc",
+      },
+    ],
+  }),
+);
 ```
 
 MDXファイルは引き続き正とするソースです。生成される`CHANGELOG.md`はそれらのページから上書き生成されるため、手動で編集しないでください。zudo-docはフロントマター、import、export、JSXタグ／コンポーネント、MDXコメントを取り除き、`node_modules`内でも読みやすいCommonMarkとして出力します。
@@ -155,7 +159,7 @@ zudo-docにはバージョン管理を自動化する`scripts/version-bump.sh`�
 
 ## ヘッダーナビゲーション
 
-変更履歴セクションはヘッダーナビゲーションからリンクされています。これは`src/config/settings.ts`で設定されます：
+変更履歴セクションはヘッダーナビゲーションからリンクされています。これは`zfb.config.ts`の`headerNav`で設定されます：
 
 ```ts
 headerNav: [

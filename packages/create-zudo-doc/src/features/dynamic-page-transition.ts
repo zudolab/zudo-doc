@@ -3,216 +3,28 @@ import type { FeatureModule } from "../compose.js";
 /**
  * Dynamic page transition feature.
  *
- * When enabled:
- * - Sets `enableClientRouter={settings.dynamicPageTransition}` on every
- *   `<DocLayoutWithDefaults>` render site — the SSR `<ClientRouter />` render
- *   self-activates the SPA router on the client as a top-level module side
- *   effect (primary activation path).
- * - Wires the ClientRouterBootstrap island and the PageLoadingOverlay (pure
- *   SSR) into body-end-islands — the island is now a redundant fallback;
- *   PageLoadingOverlay provides the loading spinner UI.
- * - Injects `@import "@takazudo/zudo-doc/page-loading.css"` at the
- *   `@slot:global-css:imports` anchor (top of global.css, before rule blocks).
- * - Injects the `--color-page-loading-overlay` token into `@theme` at the
- *   `@slot:global-css:theme-tokens` anchor.
- * - Injects the View-Transitions CSS into global.css at
- *   `@slot:global-css:feature-styles`.
+ * Minimal-scaffold cutover (epic zudolab/zudo-doc#2651, Wave 6 #2660):
+ * purely a `zudoDoc({ dynamicPageTransition: true })` field now (see
+ * `zfb-config-gen.ts`). The primary activation path —
+ * `<ClientRouter enableClientRouter={settings.dynamicPageTransition} />`
+ * rendered by the package's own `doc-page-shell`/`doclayout` — and the
+ * pure-SSR `<PageLoadingOverlay/>` mount are BOTH already handled inside
+ * `doc-body-end-islands/index.tsx`, gated on the same flag; the View-
+ * Transitions CSS ships unconditionally from `@takazudo/zudo-doc/features.css`.
  *
- * Bug fix (#2265): the page-loading overlay CSS (.page-loading-overlay /
- * .page-loading-spinner / @keyframes page-loading-spin / [data-zd-nav-pending])
- * was never reaching scaffolded projects because it lived unconditionally in
- * the host global.css but had no corresponding injection for the template.
- * Gating this feature makes both the JS island and the CSS land together.
- *
- * The page-loading CSS now ships as a package artifact
- * `@takazudo/zudo-doc/page-loading.css` (Topic A, #2283) — the generator
- * injects a gated `@import` instead of inline rule bodies. The
- * `--color-page-loading-overlay` token is defined inline (inside `@theme`) so
- * it lives alongside the other project tokens and can be overridden per-project.
- *
- * The ClientRouterBootstrap component lives in
- * templates/features/dynamicPageTransition/files/src/components/ and is
- * byte-identical to the host src/components/client-router-bootstrap.tsx.
- * The feature-template drift checker enforces this parity automatically.
+ * DROPPED: the host `ClientRouterBootstrap` island
+ * (`templates/features/dynamicPageTransition/files/src/components/`) —
+ * its old host-owned mount point (`pages/lib/_body-end-islands.tsx`) no
+ * longer exists, and the package's own doc-body-end-islands header comment
+ * already calls it "a redundant fallback" once PageLoadingOverlay covers the
+ * loading UI. Known gap (documented, out of this generator's scope): the
+ * package's SSR-only `<ClientRouter/>` import may still need a "use client"
+ * bootstrap to guarantee the click-intercept ships to the browser bundle —
+ * same class of issue as tauri's find-in-page island (see tauri.ts). If a
+ * project needs it restored, wire a custom island through
+ * `settings.chromeBindingsModule`'s `BodyEndIslands` slot.
  */
 export const dynamicPageTransitionFeature: FeatureModule = () => ({
   name: "dynamicPageTransition",
-  injections: [
-    // 1. Import ClientRouterBootstrap and PageLoadingOverlay.
-    //    Inserted AFTER the `// @slot:body-end-islands:imports` anchor.
-    {
-      file: "pages/lib/_body-end-islands.tsx",
-      anchor: "// @slot:body-end-islands:imports",
-      position: "after",
-      content: `import ClientRouterBootstrap from "@/components/client-router-bootstrap";
-import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";`,
-    },
-    // 2. Stable island marker name for ClientRouterBootstrap.
-    //    Inserted AFTER the `// @slot:body-end-islands:display-names` anchor.
-    {
-      file: "pages/lib/_body-end-islands.tsx",
-      anchor: "// @slot:body-end-islands:display-names",
-      position: "after",
-      content: `(ClientRouterBootstrap as { displayName?: string }).displayName =
-  "ClientRouterBootstrap";`,
-    },
-    // 3. Gated island mount + PageLoadingOverlay.
-    //    Inserted AFTER the `{/* @slot:body-end-islands:extra-islands */}` anchor.
-    //    Gated on `settings.dynamicPageTransition` — mirrors the designTokenPanel
-    //    and aiAssistant gating patterns in the same file.
-    //    ClientRouterBootstrap: hydrates on "load" so the SPA-router click
-    //    intercept is registered as soon as the islands runtime mounts the marker
-    //    (zudolab/zudo-doc#1524 W7A fix). PageLoadingOverlay: pure SSR — the
-    //    component emits its overlay div and the inline script that wires
-    //    zfb:before-preparation / zfb:after-swap listeners at runtime.
-    {
-      file: "pages/lib/_body-end-islands.tsx",
-      anchor: "{/* @slot:body-end-islands:extra-islands */}",
-      position: "after",
-      content: `      {settings.dynamicPageTransition ? (
-        <>
-          {/* Pure SSR — no Island wrap. The component emits its overlay div,
-              inline styles, and a small inline script that self-wires
-              zfb:before-preparation / zfb:after-swap listeners at runtime. */}
-          <PageLoadingOverlay />
-          {Island({
-            when: "load",
-            children: <ClientRouterBootstrap />,
-          }) as unknown as VNode}
-        </>
-      ) : null}`,
-    },
-    // 4. Page-loading CSS import — gated at the top-of-file imports anchor.
-    //    `@import` must precede rule blocks in CSS; the `@slot:global-css:imports`
-    //    anchor sits immediately after the content.css import line so this lands
-    //    in a legal position. The CSS itself (overlay, spinner, keyframes) now
-    //    ships as a package artifact `@takazudo/zudo-doc/page-loading.css`
-    //    (see #2283 — Topic A) instead of being duplicated inline here.
-    {
-      file: "src/styles/global.css",
-      anchor: "/* @slot:global-css:imports */",
-      position: "after",
-      content: `@import "@takazudo/zudo-doc/page-loading.css";`,
-    },
-    // 5. `--color-page-loading-overlay` token — injected inside `@theme`.
-    //    Defined here so each scaffolded project can override it per-project.
-    //    Uses the same `--color-overlay` base token as the dialog backdrops.
-    {
-      file: "src/styles/global.css",
-      anchor: "/* @slot:global-css:theme-tokens */",
-      position: "after",
-      content: `--color-page-loading-overlay: color-mix(in oklch, var(--color-overlay) 60%, transparent);`,
-    },
-    // 6. View-Transitions CSS (chrome extraction + cross-fade + reduced motion).
-    //    Injected AFTER `/* @slot:global-css:feature-styles */` in global.css.
-    //    These rules are required for SPA page transitions via ClientRouter.
-    {
-      file: "src/styles/global.css",
-      anchor: "/* @slot:global-css:feature-styles */",
-      position: "after",
-      content: `/* Root cross-fade for same-document View Transitions (Strategy B).
- *
- * @view-transition { navigation: auto; } (Strategy A, cross-document) is
- * deleted — Strategy B uses <ClientRouter /> which drives same-document
- * transitions via document.startViewTransition on each navigation.
- *
- * Chrome extraction via view-transition-name (Strategy B+, zudolab/zudo-doc#1558):
- * <header>, <aside id="desktop-sidebar">, <footer>, and the desktop-sidebar-toggle
- * button each carry a data-zfb-transition-persist attribute whose value is keyed
- * by locale and nav-section. The four attribute selectors below assign a stable
- * view-transition-name based on the attribute value prefix, extracting those
- * elements from the root snapshot into their own named layers:
- *   - header-{lang}          → zfb-header
- *   - sidebar-{locale}-…     → zfb-sidebar
- *   - footer-{lang}          → zfb-footer
- *   - desktop-sidebar-toggle → zfb-sidebar-toggle
- *
- * Once extracted, the root cross-fade animates only non-chrome content (main,
- * article, TOC, etc.). The twelve ::view-transition-{old,new,group}(<name>)
- * rules disable animation for all four chrome layers. The group pseudo must be
- * neutralised too — even when old/new are static the group container can still
- * produce a geometry-morph animation when snapshot size/position differs.
- *
- * Entry/exit cross-fade (zudolab/zudo-doc#2072): animation: none is only
- * correct when the chrome element exists on BOTH pages of a navigation.
- * When it exists on one side only (docs page with sidebar → top page
- * without), the named group holds a single snapshot — frozen at full
- * opacity for the whole transition, then dropped abruptly at finish. The
- * :only-child rules below detect that one-sided case and cross-fade the
- * lone snapshot in sync with the root content fade (spec-standard
- * entry/exit pattern; :only-child outranks the animation: none rules via
- * the extra pseudo-class specificity). */
-
-/* Chrome extraction — assign view-transition-name from data-zfb-transition-persist */
-[data-zfb-transition-persist^="header-"]               { view-transition-name: zfb-header; }
-[data-zfb-transition-persist^="sidebar-"]              { view-transition-name: zfb-sidebar; }
-[data-zfb-transition-persist^="footer-"]               { view-transition-name: zfb-footer; }
-[data-zfb-transition-persist="desktop-sidebar-toggle"] { view-transition-name: zfb-sidebar-toggle; }
-
-/* Disable animation for all four chrome layers (old, new, and group) */
-::view-transition-old(zfb-header),
-::view-transition-new(zfb-header),
-::view-transition-group(zfb-header),
-::view-transition-old(zfb-sidebar),
-::view-transition-new(zfb-sidebar),
-::view-transition-group(zfb-sidebar),
-::view-transition-old(zfb-footer),
-::view-transition-new(zfb-footer),
-::view-transition-group(zfb-footer),
-::view-transition-old(zfb-sidebar-toggle),
-::view-transition-new(zfb-sidebar-toggle),
-::view-transition-group(zfb-sidebar-toggle) { animation: none; }
-
-/* Entry/exit: chrome element present on one side only (#2072).
- * Exit — lone old snapshot fades out with the content cross-fade. */
-::view-transition-old(zfb-header):only-child,
-::view-transition-old(zfb-sidebar):only-child,
-::view-transition-old(zfb-footer):only-child,
-::view-transition-old(zfb-sidebar-toggle):only-child {
-  animation: 150ms ease-in both contentFadeOut;
-}
-/* Entry — lone new snapshot fades in with the content cross-fade. */
-::view-transition-new(zfb-header):only-child,
-::view-transition-new(zfb-sidebar):only-child,
-::view-transition-new(zfb-footer):only-child,
-::view-transition-new(zfb-sidebar-toggle):only-child {
-  animation: 300ms ease-out both contentFadeIn;
-}
-
-/* Root cross-fade rules — animate only the non-chrome snapshot */
-::view-transition-old(root) {
-  animation: 150ms ease-in both contentFadeOut;
-}
-::view-transition-new(root) {
-  animation: 300ms ease-out both contentFadeIn;
-}
-
-/* Reduced motion: collapse all view-transition animation to an instant
- * swap (zudolab/zudo-doc#2086). With every snapshot animation at none the
- * transition settles immediately — no cross-fade, no translateY slide.
- * Covers the root cross-fade and the #2072 :only-child entry/exit rules;
- * the both-sides chrome layers are already animation: none above. Equal
- * specificity per selector, but later in source order, so these win.
- * ::view-transition-group(root) must be neutralized too (zudolab/zzmod#845):
- * the UA animates the root group for its full duration even when the old/new
- * root snapshots are at animation: none, leaving a brief frozen,
- * non-interactive frame. The chrome groups are already animation: none in the
- * unconditional chrome block above, so only the root group is added here. */
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(root),
-  ::view-transition-new(root),
-  ::view-transition-group(root),
-  ::view-transition-old(zfb-header):only-child,
-  ::view-transition-old(zfb-sidebar):only-child,
-  ::view-transition-old(zfb-footer):only-child,
-  ::view-transition-old(zfb-sidebar-toggle):only-child,
-  ::view-transition-new(zfb-header):only-child,
-  ::view-transition-new(zfb-sidebar):only-child,
-  ::view-transition-new(zfb-footer):only-child,
-  ::view-transition-new(zfb-sidebar-toggle):only-child {
-    animation: none;
-  }
-}`,
-    },
-  ],
+  injections: [],
 });

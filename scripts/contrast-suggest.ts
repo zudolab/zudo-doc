@@ -30,8 +30,8 @@ import {
   resolveSemanticColors,
   SEMANTIC_RAMP_DEFAULTS,
   SEMANTIC_CSS_NAMES,
-} from "../src/config/color-scheme-utils";
-import type { ColorScheme, RampRef, SemanticKey } from "../src/config/color-scheme-utils";
+} from "@takazudo/zudo-doc/color-scheme-utils";
+import type { ColorScheme, RampRef, SemanticKey } from "@takazudo/zudo-doc/color-scheme-utils";
 import { contrastRatio, colorMixSrgb, relativeLuminance, resolveBg, resolveFg, ADMONITION_TINT_PCT } from "../src/config/contrast-utils";
 import type { SchemeReport } from "./contrast-pair-matrix";
 

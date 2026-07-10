@@ -31,14 +31,15 @@ All fields are optional. Any slot you omit falls back to the package default tha
 
 Under `packageOwnedRoutes: true` the chrome is wired inside the package, so there is no host call site to pass bindings into. The route context that the plugin hands to the routes carries **serializable data only** (settings, translations, tag vocabulary) — it cannot carry functions or components. The channel works around this: instead of serializing the callables, the host serializes a **path** to a module that exports them.
 
-Set `settings.chromeBindingsModule` to a project-root-relative path pointing at a module with a named `chromeBindings` export typed `ChromeHostBindings`:
+Set `chromeBindingsModule` in your `zudoDoc()` config to a project-root-relative path pointing at a module with a named `chromeBindings` export typed `ChromeHostBindings`:
 
-```ts title="src/config/settings.ts"
-export const settings = {
-  packageOwnedRoutes: true,
-  chromeBindingsModule: "./src/chrome-bindings.tsx",
-  // ...
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // packageOwnedRoutes defaults to true
+    chromeBindingsModule: "./src/chrome-bindings.tsx",
+  }),
+);
 ```
 
 ```tsx title="src/chrome-bindings.tsx"
@@ -165,8 +166,43 @@ The default home at `/` is **never injected** by the routes plugin — zfb rejec
 
 For an i18n site, setting `homeExtras` in your bindings module — *and* passing the same content as the `extras` prop in `pages/index.tsx` — is what keeps the default home and the locale homes consistent.
 
+## The Design Token Panel channel (`designTokenPanelConfigModule`)
+
+The Design Token Panel has its own host-module channel that works **exactly like `chromeBindingsModule`** — same mechanics, same loud missing-file behavior — but carries the panel's config builder instead of chrome bindings.
+
+The panel needs **no host config file** to work. With `designTokenPanel: true`, the injected `DesignTokenPanelBootstrap` island uses a **package-default builder** (`@takazudo/zudo-doc/design-token-panel-config`) derived from the shipped token manifest and the bundled Default Light / Default Dark schemes. That is the zero-config path.
+
+To fully customize the panel, set `designTokenPanelConfigModule` to a project-root-relative path pointing at a host module that exports a named `buildDesignTokenPanelConfig(mode)`:
+
+```ts title="src/design-token-panel-config.ts"
+import type { PanelConfig } from "@takazudo/zdtp";
+
+type PanelMode = "light" | "dark";
+
+export function buildDesignTokenPanelConfig(mode: PanelMode): PanelConfig {
+  // return a mode-scoped panel config (spacing/font/size/color tiers)
+  // ...
+}
+```
+
+The routes plugin registers a third virtual module (`virtual:zudo-doc-design-token-panel-config`) that re-exports your builder. As with `chromeBindingsModule`, only the **path** travels through config; the builder is imported via the module graph.
+
+<Note>
+
+`designTokenPanelConfigModule` is a first-class `ZudoDocConfig` field, just like `chromeBindingsModule` — pass it directly as an inline `zudoDoc({ … })` key. Enabling the panel (`designTokenPanel: true`) works inline as usual.
+
+</Note>
+
+Two differences from `chromeBindingsModule` are worth knowing:
+
+- **The default is the package builder, not an empty object.** When the setting is absent the loader re-exports the package default (a fully working panel) — there is no meaningful "empty" builder to fall back to.
+- **Scanner reachability is part of this contract.** The real `DesignTokenPanelBootstrap` island is statically imported by the package chrome (not carried through the config virtual module), so it is always reachable by zfb's island scanner. Only the panel-config *data* (the mode-scoped builder) travels through the channel — which is why a customized panel hydrates on injected routes where a chrome-bindings island would not.
+
+The same guard rules apply: an explicitly empty string, a missing file, or a directory path fails loudly at plugin setup, naming the resolved path. `storagePrefix: "zudo-doc-tweak"` is preserved by the package default so existing user saves carry over.
+
 ## See also
 
-- [Customizing zudo-doc](./customizing.mdx) — the five-lever customization map for projects that are *not* using package-owned routes
+- [Customizing zudo-doc](./customizing.mdx) — the minimal→extend ladder, of which `chromeBindingsModule` is rung 5
 - [Frontmatter Preview](./frontmatter-preview.mdx) — the `frontmatterRenderers` slot this channel also un-strands
-- [Configuration](../guides/configuration.mdx) — the full `settings` reference
+- [Configuration](../guides/configuration.mdx) — the full `zudoDoc()` field reference
+- [Design Token Panel](./design-token-panel.mdx) — the panel UI this channel configures

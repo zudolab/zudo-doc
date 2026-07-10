@@ -1,5 +1,5 @@
 import { settings } from "./settings";
-import type { LocaleConfig } from "./settings-types";
+import type { LocaleConfig } from "@takazudo/zudo-doc/settings";
 
 // Collection name string used by zfb's content engine (`getCollection(...)`).
 // Kept as a structural string-literal alias so callers don't have to redeclare

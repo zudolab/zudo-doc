@@ -383,4 +383,35 @@ export interface Settings {
    * graph — see the ADR for detail).
    */
   chromeBindingsModule?: string;
+  /**
+   * Project-root-relative path to a host module that exports a named
+   * `buildDesignTokenPanelConfig(mode: "light" | "dark")` zdtp PanelConfig
+   * builder (#2658, epic Minimal Scaffold #2651). Only consumed when
+   * `packageOwnedRoutes` is on: the routes plugin registers a third virtual
+   * module (`virtual:zudo-doc-design-token-panel-config`) that RE-EXPORTS
+   * this module — identical mechanics to {@link chromeBindingsModule}
+   * (mirrors the `chromeBindingsModule` contract exactly).
+   *
+   * When `designTokenPanel` is `true` and this setting is omitted (the
+   * default), the injected `DesignTokenPanelBootstrap` island uses the
+   * PACKAGE-DEFAULT builder (`@takazudo/zudo-doc/design-token-panel-config`)
+   * — derived from the shipped token manifest (`@takazudo/zudo-doc/theme.css`)
+   * and the bundled "Default Light"/"Default Dark" color schemes — so the
+   * panel works with NO host config file.
+   *
+   * - Absent (the default) → the virtual module re-exports the package
+   *   default builder — behavior is a fully working panel with the shipped
+   *   defaults.
+   * - Explicitly empty string → build fails loudly at plugin setup.
+   * - Present but the resolved file does not exist → the build fails loudly
+   *   at plugin setup, naming the resolved absolute path (never a silent
+   *   fallback to the package default).
+   * - Present but the resolved path is a directory → the build fails loudly
+   *   at plugin setup, naming the resolved path.
+   *
+   * Only the PATH travels through `settings` (a string is serializable
+   * data) — the bundler imports the actual builder from the re-exported
+   * module. Irrelevant when `designTokenPanel` is `false`.
+   */
+  designTokenPanelConfigModule?: string;
 }

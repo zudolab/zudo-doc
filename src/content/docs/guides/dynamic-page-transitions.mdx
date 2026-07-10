@@ -57,13 +57,15 @@ The navigation itself still works the same way (same-document swap, history hand
 
 Dynamic page transition is controlled by the `dynamicPageTransition` setting, and it is **enabled by default**.
 
-### In `settings.ts`
+### In zfb.config.ts
 
-```ts
-export const settings = {
-  // ...
-  dynamicPageTransition: true,
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    dynamicPageTransition: true,
+  }),
+);
 ```
 
 Set it to `false` to disable dynamic transitions entirely.

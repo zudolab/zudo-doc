@@ -28,20 +28,22 @@ zudo-doc はちょうど 2 つのカラースキーム — **Default Light** と
 
 ## Design Token Panelの有効化
 
-`src/config/settings.ts` で `designTokenPanel` を `true` に設定します:
+`zfb.config.ts` で `designTokenPanel` を `true` に設定します:
 
-```ts title="src/config/settings.ts"
-export const settings = {
-  designTokenPanel: true,
-  // ...
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    designTokenPanel: true,
+    // ...
+  }),
+);
 ```
 
 有効になるとヘッダーバーにパレットアイコンが表示されます。クリックするとパネルが開閉します。ランプのカーブエディタは **Palette** タブにあります。
 
 <Tip>
 
-ランプをライブで調整する機能は、明度や色相の変更がサイト全体にどう波及するかを `src/config/color-schemes.ts` にコミットする前に素早く評価できるため、開発中に特に便利です。
+ランプをライブで調整する機能は、明度や色相の変更がサイト全体にどう波及するかを、自作の `colorSchemes` 上書きモジュール（[カスタムカラースキームの追加](../reference/color.mdx#カスタムカラースキームの追加)を参照）にコミットする前に素早く評価できるため、開発中に特に便利です。
 
 </Tip>
 

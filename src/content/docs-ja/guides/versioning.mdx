@@ -17,23 +17,25 @@ zudo-docは、ドキュメントの複数バージョンを並行して管理す
 
 ## バージョニングの有効化
 
-バージョニングは**デフォルトで無効**です。有効にするには、`src/config/settings.ts`に`versions`配列を追加します：
+バージョニングは**デフォルトで無効**です。有効にするには、`zfb.config.ts`の`zudoDoc({...})`に`versions`配列を追加します：
 
-```ts
-export const settings = {
-  // ...
-  versions: [
-    {
-      slug: "1.0",
-      label: "1.0.0",
-      docsDir: "src/content/docs-v1",
-      locales: {
-        ja: { dir: "src/content/docs-v1-ja" },
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    versions: [
+      {
+        slug: "1.0",
+        label: "1.0.0",
+        docsDir: "src/content/docs-v1",
+        locales: {
+          ja: { dir: "src/content/docs-v1-ja" },
+        },
+        banner: "unmaintained",
       },
-      banner: "unmaintained",
-    },
-  ],
-};
+    ],
+  }),
+);
 ```
 
 バージョニングを無効にするには`versions`を`false`に設定（または省略）します：
@@ -101,7 +103,7 @@ src/content/
 
 `/docs/versions/`（日本語は`/ja/docs/versions/`）に専用のバージョン一覧ページが自動生成されます。このページには、設定されたすべてのバージョンがラベル、ステータスバッジ、ドキュメントリンクとともに一覧表示されます。[Docusaurusのバージョンページ](https://docusaurus.io/versions)と同様の構成です。
 
-このページは`settings.ts`の`versions`配列から自動生成されます。手動でのメンテナンスは不要で、設定でバージョンを追加・削除すると一覧ページも自動的に更新されます。
+このページは`zudoDoc({...})`に渡す`versions`配列から自動生成されます。手動でのメンテナンスは不要で、設定でバージョンを追加・削除すると一覧ページも自動的に更新されます。
 
 ## バージョンバナー
 

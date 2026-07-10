@@ -231,11 +231,15 @@
       "types": "./dist/home-page/index.d.ts",
       "default": "./dist/home-page/index.js"
     },
+    "./theme.css": "./dist/theme.css",
     "./safelist.css": "./dist/safelist.css",
     "./safelist": "./dist/safelist.css",
     "./content.css": "./dist/content.css",
     "./page-loading.css": "./dist/page-loading.css",
     "./features.css": "./dist/features.css",
+    "./tsconfig.base.json": "./tsconfig.base.json",
+    "./zfb-config-shim.d.ts": "./zfb-config-shim.d.ts",
+    "./virtual-modules.d.ts": "./virtual-modules.d.ts",
     "./tags-audit": {
       "types": "./dist/tags-audit.d.ts",
       "default": "./dist/tags-audit.js"
@@ -247,6 +251,10 @@
     "./design-token-panel-bootstrap": {
       "types": "./dist/design-token-panel-bootstrap.d.ts",
       "default": "./dist/design-token-panel-bootstrap.js"
+    },
+    "./design-token-panel-config": {
+      "types": "./dist/design-token-panel-config/index.d.ts",
+      "default": "./dist/design-token-panel-config/index.js"
     },
     "./render-markdown": {
       "types": "./dist/render-markdown/index.d.ts",
@@ -531,6 +539,34 @@
     "./sidebar-active-slug": {
       "types": "./dist/sidebar-active-slug/index.d.ts",
       "default": "./dist/sidebar-active-slug/index.js"
+    },
+    "./i18n-defaults": {
+      "types": "./dist/i18n-defaults/index.d.ts",
+      "default": "./dist/i18n-defaults/index.js"
+    },
+    "./color-schemes-defaults": {
+      "types": "./dist/color-schemes-defaults/index.d.ts",
+      "default": "./dist/color-schemes-defaults/index.js"
+    },
+    "./docs-schema": {
+      "types": "./dist/docs-schema/index.d.ts",
+      "default": "./dist/docs-schema/index.js"
+    },
+    "./z-index-defaults": {
+      "types": "./dist/z-index-defaults/index.d.ts",
+      "default": "./dist/z-index-defaults/index.js"
+    },
+    "./frontmatter-preview-defaults": {
+      "types": "./dist/frontmatter-preview-defaults/index.d.ts",
+      "default": "./dist/frontmatter-preview-defaults/index.js"
+    },
+    "./directive-vocabulary-defaults": {
+      "types": "./dist/directive-vocabulary-defaults/index.d.ts",
+      "default": "./dist/directive-vocabulary-defaults/index.js"
+    },
+    "./config": {
+      "types": "./dist/config.d.ts",
+      "default": "./dist/config.js"
     }
   },
   "bin": {
@@ -543,7 +579,7 @@
     "build": "tsup && tsc -p tsconfig.build.json",
     "dev": "tsup --watch",
     "prepare": "tsup --silent && tsc -p tsconfig.build.json",
-    "prepack": "pnpm --dir ../.. gen:changelog && node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs && node scripts/check-features-css.mjs && node scripts/check-plugins.mjs && node scripts/check-eject-sources.mjs && node scripts/check-routes-src.mjs && node bin/gen-component-tokens.mjs --check",
+    "prepack": "pnpm --dir ../.. gen:changelog && node scripts/check-theme-css.mjs && node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs && node scripts/check-features-css.mjs && node scripts/check-plugins.mjs && node scripts/check-eject-sources.mjs && node scripts/check-routes-src.mjs && node scripts/check-shim-artifacts.mjs && node scripts/check-virtual-modules.mjs && node bin/gen-component-tokens.mjs --check",
     "test": "vitest run --config vitest.config.ts",
     "test:slow": "vitest run --config vitest.slow.config.ts",
     "typecheck": "tsc --noEmit"
@@ -553,6 +589,9 @@
     "bin",
     "eject",
     "routes-src",
+    "tsconfig.base.json",
+    "zfb-config-shim.d.ts",
+    "virtual-modules.d.ts",
     "README.md",
     "CHANGELOG.md"
   ],

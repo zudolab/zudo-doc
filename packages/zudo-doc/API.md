@@ -31,7 +31,7 @@ New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapsh
 
 ---
 
-## 1. Subpath Exports (126 total)
+## 1. Subpath Exports (137 total)
 
 The full `package.json#exports` keyset is the contract. Any addition or removal requires a deliberate, reviewed change that will fail the snapshot guard.
 
@@ -40,7 +40,8 @@ The full `package.json#exports` keyset is the contract. Any addition or removal 
 | Subpath | Description |
 |---|---|
 | `.` | Root re-exports barrel |
-| `./preset` | `zudoDocPreset()` — zfb config preset factory |
+| `./config` | `zudoDoc(userConfig?)` — the single-entry config API. Merges user fields over documented defaults for every settings field, auto-supplies the Wave-3 package defaults, and returns a complete `ZfbConfig`. Also exports `ZudoDocConfig` (the JSDoc-documented user-facing settings reference) + `DEFAULT_SETTINGS`. THE documented config API (epic #2651, Wave 4 #2657) — `zudoDocPreset()` remains the internal fragment builder it calls |
+| `./preset` | `zudoDocPreset()` — zfb config preset factory (internal fragment builder; `./config` is the documented API) |
 | `./settings` | `Settings` / `PresetSettings` type definitions |
 | `./factory-context` | `FactoryContext` / `ChromeContext` / `RouteContext` / `ChromeHostBindings` — the full shared type surface for package factories and chrome wiring (types only, node-free) |
 | `./route-context` | `createRouteContext(payload, options?)` — reconstructs the full `RouteContext` callable surface from the serializable `RouteContextPayload`; also re-exports `RouteContext` / `RouteContextPayload` / `TagInfo` / `ContentBridge` types |
@@ -241,6 +242,22 @@ row.
 | `./compose-meta-title` | Meta title composition utilities |
 | `./frontmatter-preview-data` | Frontmatter preview data extraction |
 | `./extract-headings` | Heading extraction utilities |
+
+### Package Defaults (epic #2651, S4 #2654)
+
+Overridable default data/builder modules, each moved from a `create-zudo-doc`-scaffolded
+`src/config/*` singleton into the package. Node-free; `zudoDoc()` (#2657) merges a
+project's `ZudoDocConfig` override over each default before threading it into
+`zudoDocPreset()`.
+
+| Subpath | Description |
+|---|---|
+| `./i18n-defaults` | `defaultTranslations` — the default UI-string translation table (`en`/`ja`/`de`, matches `PresetTranslations`) |
+| `./color-schemes-defaults` | `defaultColorSchemes` — the default `Default Light` / `Default Dark` `{ ramps, map }` color schemes (`ColorScheme` from `./color-scheme-utils`) |
+| `./docs-schema` | `buildDocsSchema(opts?)` — the default governance-aware docs-frontmatter zod schema builder; parameterized by `{ tagGovernance?, tagVocabulary? }`, never imports host singletons |
+| `./z-index-defaults` | `defaultZIndexTiers` — the default 13-tier z-index scale (`content`=0 … `drag`=90) |
+| `./frontmatter-preview-defaults` | `defaultFrontmatterPreviewIgnoreKeys` — the default frontmatter-preview ignore-key list (mirrors the default docs schema's field set) |
+| `./directive-vocabulary-defaults` | `defaultDirectiveVocabulary` — the canonical seven MDX directives (`note`/`tip`/`info`/`warning`/`danger`/`caution`/`details`) |
 
 ### CSS Artifacts
 

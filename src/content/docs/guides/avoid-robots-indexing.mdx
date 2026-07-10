@@ -10,7 +10,7 @@ When you are running a staging site, an internal documentation portal, or a work
 
 ## What the setting does
 
-Setting `noindex: true` in `src/config/settings.ts` triggers two complementary behaviors at build time:
+Setting `noindex: true` in `zfb.config.ts` triggers two complementary behaviors at build time:
 
 1. **Robots meta tag** — every rendered page receives:
    ```html
@@ -31,7 +31,7 @@ Setting `noindex: true` in `src/config/settings.ts` triggers two complementary b
 
 ### Via the preset generator (recommended for new projects)
 
-When scaffolding a new project with `create-zudo-doc`, check the **"Avoid robots indexing"** checkbox in the interactive [Setup Preset Generator](../getting-started/setup-preset-generator.mdx). This emits `noindex: true` in the generated `settings.ts`.
+When scaffolding a new project with `create-zudo-doc`, check the **"Avoid robots indexing"** checkbox in the interactive [Setup Preset Generator](../getting-started/setup-preset-generator.mdx). This emits `noindex: true` in the generated `zfb.config.ts`.
 
 ### Via the CLI flag
 
@@ -41,15 +41,17 @@ Pass `--noindex` to the `create-zudo-doc` CLI:
 npx create-zudo-doc@latest --noindex
 ```
 
-### Directly in settings.ts
+### Directly in zfb.config.ts
 
-Open `src/config/settings.ts` and set:
+Open `zfb.config.ts` and set:
 
-```ts
-export const settings = {
-  // ...
-  noindex: true,
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    noindex: true,
+  }),
+);
 ```
 
 The default is `false`, meaning crawlers are allowed.

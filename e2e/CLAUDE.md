@@ -52,10 +52,26 @@ test("feature works", async ({ page }) => {
 Each fixture shares the project tree from repo root via **symlinks**, but has its own content and settings.
 
 - **Symlinked at fixture root**: `pages/`, `plugins/`, `packages/`, `node_modules/`
-- **Symlinked under `src/`**: `components/`, `hooks/`, `lib/`, `mocks/`, `plugins/`, `scripts/`, `styles/`, `types/`, `utils/`
-- **Copied** (relative imports): `zfb.config.ts`, `zfb-shim.d.ts`, `tsconfig.json`, and every `src/config/*.ts | *.tsx` *except* `settings.ts`
+- **Symlinked under `src/`**: `components/`, `lib/`, `styles/`, `types/`, `utils/`
+- **Copied** (relative imports): `zfb.config.ts`, `tsconfig.json`, `src/chrome-bindings.tsx`, and every `src/config/*.ts | *.tsx` *except* `settings.ts`
 - **Fixture-specific** (kept in git per fixture): `src/config/settings.ts`, `src/content/`, optionally `public/<fixture-only-files>/`
 - **Seed file**: `.zfb/doc-history-meta.json` is created as `{}` so the bundler's static `#doc-history-meta` import resolves on the first run; the doc-history plugin's preBuild hook overwrites it on subsequent builds.
+
+Minimal-scaffold cutover (epic zudolab/zudo-doc#2651, Wave 7 #2663): `zfb-shim.d.ts`
+is gone from the copy list — the ambient `zfb/config` types now ship from
+`@takazudo/zudo-doc/zfb-config-shim.d.ts`, pulled in transitively via the copied
+`tsconfig.json`'s `extends: "@takazudo/zudo-doc/tsconfig.base.json"`. `src/hooks/`,
+`src/mocks/`, `src/plugins/`, `src/scripts/` are gone from the symlink list — the
+host's own `src/` no longer has those subdirectories. Fixture `settings.ts` files
+import their types from `@takazudo/zudo-doc/settings` directly (the local
+`./settings-types` shim they used to import from was deleted — byte-identical to
+the package export). `src/chrome-bindings.tsx` is the host's real chrome-bindings
+module (SearchWidget, DocHistory, frontmatter renderers, …), wired via the
+`chromeBindingsModule` setting in the copied `zfb.config.ts`; each fixture gets its
+own copy so the doc-route stubs under the symlinked `pages/` (which all call
+`createChrome(routeCtx, chromeBindings)`) resolve real bindings instead of the
+package's empty-object default — this is what makes the smoke fixture's
+doc-history specs work.
 
 All fixtures are pre-built sequentially with `zfb build` (with `SKIP_DOC_HISTORY=1` for non-smoke fixtures) before Playwright runs; the runner then only spawns `zfb preview` per fixture. The smoke fixture also initialises a git repo for doc-history specs (2 commits) and is built with `GEN_DOC_HISTORY=1` so the per-page JSON manifests land in `dist/doc-history/` — the postBuild JSON generation is opt-in for local builds (#1986), so the smoke fixture requests it explicitly.
 

@@ -2,22 +2,28 @@ import fs from "fs-extra";
 import path from "path";
 import { fileURLToPath } from "url";
 import type { UserChoices } from "./prompts.js";
-import { generateSettingsFile } from "./settings-gen.js";
 import { generateZfbConfig } from "./zfb-config-gen.js";
 import { generateCLAUDEFile } from "./claude-md-gen.js";
 import { composeFeatures } from "./compose.js";
 import { featureModules } from "./features/index.js";
-import { capitalize, getSecondaryLang } from "./utils.js";
+import { capitalize, getSecondaryLang, pmRunCommand } from "./utils.js";
 
 export { getSecondaryLang };
 
 /**
- * Pinned `@takazudo/zudo-doc` version used in both `generatePackageJson()`
- * and the `.zudo-doc.json` seed written by `scaffold()`. Hoisted as a shared
- * constant so the dep pin and the provenance seed can never drift.
+ * Pinned `@takazudo/zudo-doc` version used by `generatePackageJson()`.
+ * Hoisted as a shared constant (kept even though it now has a single
+ * call site) because `scripts/check-pin-parity.mjs` resolves this exact
+ * declaration below via its constant-reference regex form (see that
+ * script's `readScaffoldPin()`) — keep the declaration line's shape
+ * parseable (const name, `=`, a quoted literal) and do NOT repeat that
+ * exact pattern anywhere earlier in this file (a comment containing the
+ * literal text would false-match the same regex, since it isn't anchored
+ * to a real `export const` statement).
  *
- * Strip the caret from this string to get the bare version for provenance:
- *   ZUDO_DOC_PIN.replace(/^\^/, "")   →  "1.0.0"
+ * `.zudo-doc.json` is NO LONGER seeded here (locked decision #2653 #6 —
+ * lazy-create on first `zudo-doc eject`; `packages/zudo-doc/src/eject/index.ts`
+ * already tolerates its absence and writes the file on first successful eject).
  *
  * Bumped in lockstep by scripts/release-create-zudo-doc.sh.
  */
@@ -362,13 +368,9 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     }
   }
 
-  // 3. Generate programmatic files
-  const settingsContent = generateSettingsFile(choices);
-  await fs.outputFile(
-    path.join(targetDir, "src/config/settings.ts"),
-    settingsContent,
-  );
-
+  // 3. Generate the one config file. There is no more src/config/settings.ts —
+  // every user choice rides straight into zudoDoc({...}) in zfb.config.ts
+  // (locked decision #2653 #2 — diff-from-defaults single config).
   const zfbConfigContent = generateZfbConfig(choices);
   await fs.outputFile(
     path.join(targetDir, "zfb.config.ts"),
@@ -381,21 +383,10 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     JSON.stringify(pkg, null, 2) + "\n",
   );
 
-  // Seed .zudo-doc.json — provenance marker for `zudo-doc eject <component>`.
-  // packageVersion is the bare version string (caret stripped from ZUDO_DOC_PIN)
-  // so it records the concrete version the scaffold targets; the eject CLI
-  // records the actually-installed version on first eject.
-  await fs.outputFile(
-    path.join(targetDir, ".zudo-doc.json"),
-    JSON.stringify(
-      {
-        packageVersion: ZUDO_DOC_PIN.replace(/^\^/, ""),
-        ejected: {},
-      },
-      null,
-      2,
-    ) + "\n",
-  );
+  // .zudo-doc.json is intentionally NOT seeded (locked decision #2653 #6 —
+  // lazy-create on first `zudo-doc eject`). `packages/zudo-doc/src/eject/index.ts`
+  // already tolerates its absence (defaults to `{ packageVersion: "unknown",
+  // ejected: {} }`) and writes the file itself on first successful eject.
 
   const gitignoreLines = [
     "# Build output",
@@ -685,6 +676,24 @@ function generatePackageJson(choices: UserChoices) {
     // missing copy produces no `pnpm install` warning — which is why this gap
     // shipped silently and only surfaced at build time.
     diff: "^8.0.3",
+    // @takazudo/zdtp — SAME "unconditional at build time despite being an
+    // optional peer" class as `diff` above, discovered empirically while
+    // verifying this generator's own barebone (designTokenPanel: OFF) output
+    // (epic zudolab/zudo-doc#2651, #2660 self-review — a genuine package-level
+    // coupling, not a generator bug; flagged loudly on #2660's completion
+    // comment for a package-side follow-up). Since the #2658 gate-2 fix,
+    // `chrome/derive.tsx`'s `deriveBodyEndIslands` statically imports the REAL
+    // `DesignTokenPanelBootstrap` as the default for EVERY `createChrome`
+    // consumer (so the island auto-mounts with zero host wiring when the
+    // setting is on) — and that component imports `@takazudo/zdtp` at module
+    // scope. So every page that goes through `createChrome` — which is every
+    // page in this project — pulls the zdtp import into the esbuild bundle
+    // graph, `designTokenPanel` setting or not; only RENDERING is gated on
+    // the setting, not the import. Without this dep, `zfb build` fails with
+    // "Could not resolve '@takazudo/zdtp'" even on a fully barebone project.
+    // `preact ^10.29.1` (see the floor comment above) is required for the
+    // same reason.
+    "@takazudo/zdtp": "0.4.5",
   };
 
   const devDeps: Record<string, string> = {
@@ -694,7 +703,8 @@ function generatePackageJson(choices: UserChoices) {
     typescript: "^5.9.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.2.0", // needed for preact/compat type resolution
-    "html-validate": "^10.0.0",
+    // html-validate dropped — check:html is no longer a default script
+    // (see the scripts block below; `.htmlvalidate.json` no longer ships).
   };
 
   if (choices.features.includes("search")) {
@@ -722,12 +732,6 @@ function generatePackageJson(choices: UserChoices) {
   // (@takazudo/zudo-doc/plugins/claude-resources) imports the runner directly
   // since the package ships compiled dist/ — package-first migration #2321 (#2337).
 
-  if (choices.features.includes("designTokenPanel")) {
-    // @takazudo/zdtp requires preact >= 10.29.1 — see the preact floor comment
-    // above (~line 382) for why the floor is set there and the coupling this creates.
-    deps["@takazudo/zdtp"] = "0.4.5";
-  }
-
   if (choices.features.includes("tagGovernance")) {
     // gray-matter is already in `deps` unconditionally (base template uses it),
     // so we only add the tooling deps specific to tags:audit / tags:suggest.
@@ -740,23 +744,19 @@ function generatePackageJson(choices: UserChoices) {
     devDeps["tsx"] = "^4.21.0";
   }
 
+  // check:html and gen:z-index/check:z-index are DROPPED from the default
+  // scaffold (locked decision, epic #2651 #2660 work item 6):
+  //   - `.htmlvalidate.json` no longer ships — html-validate becomes an
+  //     opt-in extend step (documented in #2664).
+  //   - z-index tokens ship unconditionally from `@takazudo/zudo-doc/theme.css`
+  //     (13 default tiers, epic #2655) — a project only needs its own
+  //     `src/config/z-index-tokens.ts` + codegen scripts when it overrides a
+  //     tier, which is an eject-time decision, not a scaffold-time one.
   const scripts: Record<string, string> = {
     dev: "zfb dev",
     build: "zfb build",
     preview: "zfb preview",
     check: "zfb check",
-    // NOTE: no `check:pages` here — the host repo's pages/ typecheck
-    // (tsconfig.pages.json, #2018) is host-only for now. The base template's
-    // no-op feature stubs (e.g. doc-history.tsx) are not type-clean against
-    // the pages/lib call sites, so emitting the script would fail on a fresh
-    // scaffold. Revisit once the template stubs carry typed props.
-    "check:html": "html-validate \"dist/**/*.html\"",
-    // Z-index token codegen (#2148): regenerate the GENERATED:Z_INDEX @theme
-    // block in src/styles/global.css from src/config/z-index-tokens.ts, and a
-    // drift check for pre-push/CI. Both ship in base — the z-index token system
-    // is part of every scaffold. Bin provided by @takazudo/zudo-doc (S9b #2334).
-    "gen:z-index": "gen-z-index",
-    "check:z-index": "gen-z-index --check",
   };
 
   if (choices.features.includes("tagGovernance")) {
@@ -779,19 +779,19 @@ function generatePackageJson(choices: UserChoices) {
       "bash scripts/setup-doc-skill.sh --target both";
   }
 
-  const runCmd = choices.packageManager === "npm" || choices.packageManager === "bun" ? `${choices.packageManager} run` : choices.packageManager;
+  const pm = choices.packageManager;
 
   // claudeSkills ships the zudo-doc-version-bump skill, whose release workflow
   // calls `<pm> b4push`. Emit a minimal stub so the skill does not hit a
   // "script not found" error on freshly scaffolded projects. Consumers are
   // free to expand this into a richer pre-push pipeline later.
   if (choices.features.includes("claudeSkills")) {
-    scripts["b4push"] = `${runCmd} check && ${runCmd} build`;
+    scripts["b4push"] = `${pmRunCommand(pm, "check")} && ${pmRunCommand(pm, "build")}`;
   }
 
   if (choices.features.includes("tauri")) {
     scripts["dev:tauri"] = "cargo tauri dev";
-    scripts["build:tauri"] = `${runCmd} build && cargo tauri build`;
+    scripts["build:tauri"] = `${pmRunCommand(pm, "build")} && cargo tauri build`;
   }
 
   if (choices.features.includes("tauriDev")) {

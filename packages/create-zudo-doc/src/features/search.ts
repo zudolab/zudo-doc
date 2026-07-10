@@ -3,9 +3,13 @@ import type { FeatureModule } from "../compose.js";
 /**
  * Search feature.
  *
- * W7A (#1736): post-cutover, `pages/lib/_header-with-defaults.tsx` includes
- * the search widget unconditionally — no header injection is required.
- * The search-index plugin is still wired by `zfb-config-gen.ts`.
+ * The `@takazudo/zudo-doc/plugins/search-index` plugin runs unconditionally
+ * (every project gets a `search-index.json`) — `zudoDocPreset()` always
+ * wires it. This feature only controls whether the header shows the search
+ * trigger (`{ type: "component", component: "search" }` in
+ * `headerRightItems`, see `zfb-config-gen.ts`) — the widget itself is
+ * package-owned (`chrome/derive.tsx`'s `SearchWidget`), so there is nothing
+ * left to inject.
  */
 export const searchFeature: FeatureModule = () => ({
   name: "search",

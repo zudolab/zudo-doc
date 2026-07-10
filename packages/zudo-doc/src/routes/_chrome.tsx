@@ -42,6 +42,15 @@ import { chromeBindings } from "virtual:zudo-doc-chrome-bindings";
 // INSIDE the bindings module is not guaranteed to register on injected routes
 // the way the static `DocHistory` import above is (the virtual re-export sits
 // outside zfb's static-import scanner reachability graph) — see the ADR.
+//
+// `DesignTokenPanelBootstrap` (#2658) is NOT threaded here: unlike DocHistory
+// (whose derive-level default is a no-op stub), the package-default island IS
+// the derive-level default (`chrome/derive.tsx`'s `deriveBodyEndIslands`,
+// gate-2 fix from the Wave-5 confirm #2659) — so this shim, the locked-manifest
+// self-contained doc stub (#2653), and every other bare `createChrome` caller
+// all get it without explicit wiring. Scanner reachability holds through the
+// static chain route → this shim → `createChrome` → `chrome/derive` →
+// `design-token-panel-bootstrap`.
 const chrome = createChrome(routeCtx, {
   DocHistory: DocHistory as unknown as ChromeHostBindings["DocHistory"],
   ...chromeBindings,

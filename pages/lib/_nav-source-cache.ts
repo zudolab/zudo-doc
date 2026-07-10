@@ -37,10 +37,10 @@
 //   `memoizeDerived` — the generic two-level WeakMap memo — is now in the
 //   package at @takazudo/zudo-doc/nav-source-cache (no zfb imports needed).
 //   `stableDocs` stays here because it imports `getCollection` /
-//   `getContentSnapshot` from "zfb/content", which is a virtual module
+//   `getContentSnapshot` from "@takazudo/zfb/content", which is a virtual module
 //   provided by the zfb SSG build system at compile time — not an npm package.
 
-import { getCollection, getContentSnapshot } from "zfb/content";
+import { getCollection, getContentSnapshot } from "@takazudo/zfb/content";
 import { bridgeDocsEntries, type ZfbDocsData } from "../_data";
 import type { DocPageEntry } from "./doc-page-props";
 

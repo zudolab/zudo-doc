@@ -233,33 +233,23 @@ export function validateDependencies(
   }
 }
 
-/** Files that may contain injection anchors and need cleaning.
+/**
+ * Files that may contain injection anchors and need cleaning.
  *
- * The anchor targets today are:
- * - `global.css` — design-token-panel.ts injects
- *   `@import "@takazudo/zdtp/styles.css";` at `@slot:global-css:feature-styles`.
- *   The sibling `@slot:global-css:theme-tokens` anchor is consumed by the
- *   color-scheme palette generator and must remain.
- * - `pages/lib/_body-end-islands.tsx` — tauri.ts injects the FindInPageInit
- *   island (import, displayName, Island mount) when tauri is enabled.
- *   design-token-panel.ts injects the DesignTokenPanelBootstrap island
- *   (import, displayName, Island mount + toggle shim) when designTokenPanel
- *   is enabled.
- * - `src/config/settings-types.ts` — design-token-panel.ts injects the
- *   `"design-token-panel"` member into `HeaderRightTriggerName` when the
- *   feature is enabled (replace-range between the :start/:end anchors).
- *
- * NOTE: `pages/_mdx-components.ts` was removed (#2360 / E2). The imageEnlarge
- * p-override injections (ENLARGE_SVG, EnlargeableParagraph, p: entry) are now
- * handled inside the @takazudo/zudo-doc/mdx-components factory — the template
- * no longer carries @slot anchors for this file and the feature module's
- * injections are a no-op (the factory reads settings.imageEnlarge at render time).
+ * EMPTY as of the minimal-scaffold cutover (epic zudolab/zudo-doc#2651,
+ * Wave 6 #2660). Every anchor target this list used to name —
+ * `src/styles/global.css`'s `@slot:global-css:*` comments,
+ * `pages/lib/_body-end-islands.tsx`, `src/config/settings-types.ts` — is
+ * GONE from `templates/base/` (the package now owns chrome/islands/settings
+ * types entirely; see `templates/base/src/styles/global.css`'s fixed
+ * ~20-line `@import` chain). Feature modules are pure settings-field
+ * emission + genuine file copies now (see `src/features/*.ts`) — none of
+ * them call `applyInjections` with a real anchor anymore. The
+ * `Injection`/`applyInjections`/`cleanAnchors` machinery below is kept as
+ * infrastructure for a future feature that genuinely needs it (e.g. an
+ * eventual host-side extension point), not because anything uses it today.
  */
-export const ANCHOR_FILES = [
-  "src/styles/global.css",
-  "pages/lib/_body-end-islands.tsx",
-  "src/config/settings-types.ts",
-];
+export const ANCHOR_FILES: string[] = [];
 
 /**
  * Main composition entry point. Orchestrates the full feature composition

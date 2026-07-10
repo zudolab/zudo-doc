@@ -1,228 +1,226 @@
 ---
 title: Customizing zudo-doc
-description: A five-lever map from lightest to heaviest customization — which tool to reach for and when.
+description: The minimal→extend escalation ladder — from a one-line config field to full source control, in the order you reach for them.
 sidebar_position: 0.5
 tags:
   - design-system
   - customization
 ---
 
-zudo-doc ships as a closed package: components live in `node_modules`, stylesheets are compiled, and the rendering pipeline is fixed. Yet projects built on it have widely different branding needs — from a minor color tweak to a fully custom header. This page maps every customization lever available, ranked from the lightest to the most invasive, so you can reach for the right tool without over- or under-engineering the change.
+A scaffolded zudo-doc project is intentionally minimal: one config file, your content, a stylesheet, and two thin route stubs (see [Installation](../getting-started/installation.mdx#project-structure)). Everything else — layout, chrome, schema, tokens — ships from `@takazudo/zudo-doc` and is consumed from `node_modules`.
 
-## Decision table
+That "one config file" ideal covers the common cases. This page is the **escalation ladder** for when it does not: each rung is more invasive than the last, and you should climb only as far as the change actually requires. The rungs are ordered by how soon a real project tends to hit them.
 
-| Lever | Scope | Use when | Limit |
-| --- | --- | --- | --- |
-| **1. Global `@theme` tokens** | Site-wide | The change applies everywhere (all colors, all text, all spacing) | Cannot diverge one component from the rest |
-| **2. `--zdc-*` component tokens** | One component at a time | You want heading/prose typography or layout dimensions that differ from the global defaults, without touching every element that inherits the global token | Only the curated token set is supported |
-| **3. Settings** | Feature on/off and configuration | Enabling or disabling features; tweaking TOC depth, sidebar behavior, navigation structure | Cannot change visual rendering beyond what the settings expose |
-| **4. `doclayout` slots** | Markup/script injection | Adding chrome (banners, analytics, extra nav items, custom scripts) to specific layout positions | Adds to the layout; does not restyle existing components |
-| **5. Component ejection** | Full source control | Total visual control over a specific component | You own the ejected copy — the package no longer updates it |
+## The ladder
 
----
-
-## Lever 1 — Global `@theme` tokens
-
-`src/styles/global.css` contains an `@theme` block that defines every design token the site reads: colors, spacing, typography, border radius, and letter spacing. Redefining a token in this block re-themes every component and content element that reads it.
-
-```css title="src/styles/global.css"
-@theme {
-  /* swap the sans stack site-wide */
-  --font-sans: "Inter", system-ui, sans-serif;
-
-  /* tighten letter spacing for headings */
-  --tracking-tight: -0.04em;
-
-  /* shift the accent color */
-  --color-accent: oklch(60% 0.22 250);
-}
-```
-
-The letter-spacing scale (`--tracking-tight`, `--tracking-normal`, `--tracking-wide`, `--tracking-wider`) was added as part of the component-token work and is now a first-class global token — tighten `--tracking-tight` here and every component that chains through `var(--tracking-tight)` picks it up.
-
-**Use when:** the change is consistent across the entire site.
-
-**Limit:** a global token cannot diverge by component. If you want `--font-sans` to apply to body text but a different font for headings, that targeting requires Lever 2.
-
-See [Color](./color.mdx) for the palette/semantic token model and [Design System](./design-system.mdx) for the full spacing, typography, and size token tables.
+| Rung | Reach for it when | Cost |
+| --- | --- | --- |
+| **1. `buildDocsSchema` override** | You need a custom, validated frontmatter key | Replace one function; own the schema |
+| **2. Config fields** | Toggling a feature or tuning behavior | None — it is just a field |
+| **3. Token overrides** | Re-theming colors, spacing, typography | A `@theme` block in `global.css` |
+| **4. `zudo-doc eject`** | A component's markup itself must change | You own the ejected copy |
+| **5. `chromeBindingsModule`** | Injecting host content/callables into injected routes | One host module |
+| **6. Your own `pages/*.tsx`** | A whole route must be yours | You own that route |
+| **7. Deploy path** | Going live (especially with SSR features) | Adapter + `wrangler.toml` + secrets |
+| **8. Restoring pre-push / HTML checks** | You want the showcase's validation gates | Copy a script + add deps |
 
 ---
 
-## Lever 2 — `--zdc-*` component tokens
+## Rung 1 — Custom frontmatter keys (`buildDocsSchema`)
 
-The package components hardcode Tailwind utility classes (e.g. `<h1 class="text-heading font-bold">`). Without an override seam, the only way to change them would be `!important` or ejection — neither is clean. The `--zdc-*` tokens are that seam: a curated set of CSS custom properties the package exposes as a supported rebrand API.
+This is the **first place the one-config ideal breaks**, so it leads the ladder.
 
-Set any token once in `:root` and it applies to the matching component across every route — no `!important`, no ejection required.
+Every other feature is a field on `zudoDoc()`. Frontmatter validation is not: the docs collection is validated by a Zod schema, and there is no config field that says "also allow a `tier` key." The schema is a **function you replace** — the `buildDocsSchema` escape hatch.
 
-```css title="src/styles/global.css"
-:root {
-  /* display font on all page-title h1s */
-  --zdc-doc-title-font: "Futura", "Century Gothic", sans-serif;
-  --zdc-doc-title-weight: 700;
-  --zdc-doc-title-tracking: var(--tracking-tight);
+By default `zudoDoc()` builds the package schema for you (governance-aware, derived from `tagGovernance` + `tagVocabularyEntries`). To add your own key, import the default builder, extend its result, and hand the new builder back:
 
-  /* separate prose font from heading font */
-  --zdc-doc-prose-font: "Georgia", serif;
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+import { buildDocsSchema } from "@takazudo/zudo-doc/docs-schema";
+import { z } from "zod";
 
-  /* round all surfaces at once */
-  --zdc-surface-radius: var(--radius-lg);
-}
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    // Replace the schema builder entirely. Start from the package default,
+    // then extend it with your own validated frontmatter keys.
+    buildDocsSchema: () =>
+      buildDocsSchema({ tagGovernance: "off" }).extend({
+        tier: z.enum(["core", "opt-in"]).optional(),
+        reviewed_by: z.string().optional(),
+      }),
+  }),
+);
 ```
 
-**Why `--zdc-*` instead of redefining `--font-sans`?** Consider a project that wants display headings in Futura but readable body text in a system sans. Redefining `--font-sans` is wrong: it also changes nav items, sidebar text, code labels, and every other UI element that reads the global sans token. `--zdc-doc-title-font` targets only the page-title `<h1>`, and `--zdc-doc-prose-font` targets only the content prose area — both without touching anything else.
-
-### Available tokens
-
-| Token | Controls |
-| --- | --- |
-| `--zdc-doc-title-font` | Page-title `<h1>` font family |
-| `--zdc-doc-title-weight` | Page-title `<h1>` font weight |
-| `--zdc-doc-title-tracking` | Page-title `<h1>` letter spacing |
-| `--zdc-doc-h2-font` | Content `<h2>` font family |
-| `--zdc-doc-h2-weight` | Content `<h2>` font weight |
-| `--zdc-doc-h2-tracking` | Content `<h2>` letter spacing |
-| `--zdc-doc-h3-weight` | Content `<h3>` font weight |
-| `--zdc-doc-h4-weight` | Content `<h4>` font weight |
-| `--zdc-doc-prose-font` | Content prose area (`.zd-content`) font family |
-| `--zdc-doc-link-decoration` | Content link text-decoration |
-| `--zdc-admonition-radius` | Admonition block border radius |
-| `--zdc-admonition-border-width` | Admonition left accent border width |
-| `--zdc-card-radius` | Nav/doc card border radius |
-| `--zdc-content-max-width` | Doc reading column max-width |
-| `--zdc-toc-width` | Desktop TOC right-rail width |
-| `--zdc-nav-active-indicator-color` | Active sidebar nav link background color |
-| `--zdc-nav-active-weight` | Active sidebar nav link font weight |
-| `--zdc-surface-radius` | Meta-knob: chains into `--zdc-card-radius` and future surface tokens; one `:root` line rounds all opted-in surfaces |
+Now pages can declare `tier: core` in frontmatter and it validates at build time. Combine this with [`docContentHeaderExtras`](./host-chrome-bindings.mdx) (rung 5) to actually render a badge from that key.
 
 <Note>
 
-The [Design Token Panel](./design-token-panel.mdx) edits the semantic spacing, font, size, and color tokens live in the browser. The `--zdc-*` component tokens are outside its scope — they are source-level rebrand seams you set once in `src/styles/global.css`, not knobs you drag at runtime.
+`buildDocsSchema` is one of the non-serializable **escape-hatch fields** on `ZudoDocConfig` — alongside `colorSchemes`, `translations`, `directives`, and `tagVocabularyEntries`. They travel the import graph (never JSON-serialized), which is exactly why they can carry functions and Zod types. See [Configuration](../guides/configuration.mdx#escape-hatch-fields).
 
 </Note>
 
-**Use when:** you want a component to differ from the global defaults (e.g. a different font for headings vs. body, tight letter spacing on display text only, rounded cards, a narrower TOC).
-
-**Limit:** only the tokens listed above are supported. If you need to change a property the package has not tokenized, Lever 4 (slots) or Lever 5 (ejection) is the next step.
-
-See [Component Tokens](./component-tokens.mdx) for the full registry and the motivation behind each token.
-
 ---
 
-## Lever 3 — Settings
+## Rung 2 — Config fields
 
-`src/config/settings.ts` controls the feature set and behavior of the site. These are not visual style knobs but structural configuration: what features are enabled, how deep the TOC goes, what items appear in the header, where the footer links point.
+Almost everything else **is** a field. `zudoDoc()` defaults every setting, so your `zfb.config.ts` lists only what differs:
 
-Notable knobs:
-
-```ts title="src/config/settings.ts"
-export const settings = {
-  colorScheme: "Default Light",        // pick Default Light or Default Dark
-  colorMode: { defaultMode: "light" }, // override the default light/dark mode
-
-  designTokenPanel: true,              // enable the live Design Token Panel
-  sidebarResizer: true,                // draggable sidebar width handle
-  sidebarToggle: true,                 // mobile sidebar toggle
-  imageEnlarge: true,                  // click-to-enlarge for images
-  dynamicPageTransition: true,         // View Transitions API
-  cjkFriendly: true,                   // CJK-aware line breaking
-  mermaid: true,                       // Mermaid diagram support
-  aiAssistant: true,                   // AI chat assistant modal
-
-  tocMinDepth: 2,                      // min heading depth in the TOC
-  tocMaxDepth: 4,                      // max heading depth in the TOC
-  headingIdStrategy: "hierarchical",   // anchor strategy
-
-  headerNav: [ /* ... */ ],            // top navigation items
-  headerRightItems: [ /* ... */ ],     // header right-side controls
-  footer: { /* ... */ },               // footer links and copyright
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    docHistory: true,
+    sidebarToggle: true,
+    tocMaxDepth: 3,
+    headerNav: [
+      { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
+    ],
+    footer: { copyright: "© 2026 Me" },
+  }),
+);
 ```
 
-**Use when:** you want to toggle a feature on or off, or configure behavior (TOC depth, navigation structure, locale setup, which of the two bundled schemes is active).
+**Reach for it when:** you are turning a feature on/off or tuning behavior (TOC depth, navigation, color mode, locales).
 
-**Limit:** settings control what exists, not how existing components look. `colorScheme` picks between the two bundled schemes (`Default Light` / `Default Dark`) — it is not a catalog switch, and swapping it does not let you redesign the header layout. The actual color story lives one level deeper: edit the shared OKLCH ramps and the semantic map in `src/config/color-schemes.ts` (see [Color](./color.mdx#adding-a-custom-color-scheme) — "Adding a Custom Color Scheme"), preview ramp edits live via the Design Token Panel's Palette tab (see [Color Scheme Preview](../guides/color-scheme-preview.mdx#how-it-works)), and round-trip tweaks with an AI assistant using the panel's JSON diff workflow (see [Design Token Panel](./design-token-panel.mdx#ai-workflow)).
+**Limit:** config fields control *what exists and how it behaves*, not the pixel-level rendering of a component. For that, climb to rung 3 or 4.
 
-<Info>
-
-Recipe-style presets (e.g. a "sharp corners" or "serif headings" one-liner) are a possible future direction. Today, the individual levers above (global tokens and `--zdc-*`) are the building blocks — no preset applies them automatically.
-
-</Info>
+The full field list — with the default for every one — is the [Configuration](../guides/configuration.mdx) reference, which mirrors the `ZudoDocConfig` type's own JSDoc.
 
 ---
 
-## Lever 4 — `doclayout` slots
+## Rung 3 — Token overrides
 
-The generated `pages/[...slug].tsx` (the doc-layout file) contains 16 slot anchor comments. Each comment is a supported injection point where you can add markup, scripts, or component calls without modifying any package file.
+The scaffold's `src/styles/global.css` is a short `@import` chain that pulls the package's `theme.css` (all the `@theme` design tokens), `content.css`, and `features.css` — followed by an empty `@theme { … }` block reserved for you. Because it comes **after** the package imports, anything you redefine there wins the cascade:
 
-```tsx title="pages/[...slug].tsx (excerpt)"
-{/* @slot:doc-layout:after-breadcrumb */}
-<AnnouncementBanner />  {/* ← your addition */}
+```css title="src/styles/global.css"
+/* ...package @imports above... */
 
-{/* @slot:doc-layout:body-end-scripts */}
-<script src="/analytics.js" defer />  {/* ← your addition */}
+@theme {
+  --color-accent: oklch(0.6 0.2 250);
+  --font-sans: "Inter", system-ui, sans-serif;
+  --z-index-modal: 200; /* override a single default z-index tier */
+}
 ```
 
-The 16 available anchors:
+For per-component rebranding without touching every element that reads a global token, the package also exposes `--zdc-*` component tokens (heading font, prose font, card radius, TOC width, …). Set them once in `:root`.
 
-| Anchor | Kind | Position |
-| --- | --- | --- |
-| `imports` | frontmatter | Import statements at the top of the file |
-| `frontmatter` | frontmatter | Variables and expressions in the script section |
-| `head-scripts` | body | Inside `<head>`, before closing |
-| `head-links` | body | Link/preload tags in `<head>` |
-| `header-call:start` | body | Immediately before the header component call |
-| `header-call:end` | body | Immediately after the header component call |
-| `after-sidebar` | body | After the sidebar, before the content column |
-| `content-wrapper:start` | body | Opening of the content wrapper |
-| `content-wrapper:end` | body | Closing of the content wrapper |
-| `breadcrumb:start` | body | Before the breadcrumb |
-| `breadcrumb:end` | body | After the breadcrumb |
-| `after-breadcrumb` | body | Between the breadcrumb and the doc content |
-| `after-content` | body | Below the doc content area |
-| `footer` | body | Footer area |
-| `body-end-components` | body | Before the closing `</body>`, for island mounts |
-| `body-end-scripts` | body | Script tags at the very end of `</body>` |
+**Reach for it when:** the change is a re-theme — colors, spacing, typography, radii.
 
-**Use when:** you want to add chrome (a banner, an analytics snippet, an extra nav element, a cookie notice) to a specific position in the layout.
-
-**Limit:** slots add content; they do not restyle the components that already exist. To restyle an existing component, use a global token (Lever 1), a component token (Lever 2), or eject the component (Lever 5).
+**Limit:** tokens restyle; they do not restructure markup. See [Design System](./design-system.mdx), [Color](./color.mdx), and [Component Tokens](./component-tokens.mdx).
 
 ---
 
-## Lever 5 — Component ejection
+## Rung 4 — Ejecting a component
 
-Ejecting a component copies its source from the package into your project so you own the file directly. After ejection, your local copy is what the site renders — the package version is ignored for that component.
+When no token can reach the change — the markup itself is wrong for you — eject the component. Ejection copies its source out of the package into your project so you own the file directly:
 
 ```sh
-# list ejectable components
-zudo-doc eject --list
+# eject a component (run via your package manager's bin runner)
+pnpm exec zudo-doc eject header
+# → copies source into your project and rewrites imports to resolve locally
 
-# eject a specific component
-zudo-doc eject header
-# → copies source to src/components/zudo-doc/header/
+# see the full list
+pnpm exec zudo-doc --help
 ```
 
 The 18 ejectable components:
 
 `header`, `footer`, `breadcrumb`, `toc`, `sidebar`, `theme-toggle`, `page-loading`, `tab-item`, `doc-pager`, `content-admonition`, `code-group`, `details`, `sidebar-tree-island`, `sidebar-toggle-island`, `desktop-sidebar-toggle-island`, `image-enlarge`, `doc-history`, `site-tree-nav-island`
 
-After ejection, edit the local copy. Changes take effect immediately in `pnpm dev` (via HMR). You can restyle, restructure, or replace markup freely.
+After ejecting, edit the local copy — changes take effect immediately under `pnpm dev`.
 
-**Use when:** no token or slot can reach the change you need, and total control over a component is required.
+<Note>
 
-**Limit:** the ejected copy is no longer updated when the package releases a new version. You take on the maintenance responsibility for that component — future API changes, bug fixes, and new features in the package are not automatically reflected.
+Eject writes provenance into a `.zudo-doc.json` file recording which components you own. That file is **lazy-created on the first eject** — a fresh scaffold does not ship it, so an un-ejected project never carries an unexplained config file. Remove a component's directory and its `.zudo-doc.json` entry to go back to the package version.
+
+</Note>
+
+**Limit:** an ejected copy no longer receives package updates for that component — you take on its maintenance.
 
 ---
 
-## Escape hatch: why `!important` alone does not work
+## Rung 5 — `chromeBindingsModule` (host-callables)
 
-zudo-doc's package components emit Tailwind utility classes from JSX. Those utility classes are generated into an unlayered stylesheet — they have no `@layer` wrapper, which gives them high specificity in the cascade. A plain CSS rule you add in your own stylesheet sits at lower specificity than an unlayered utility, so it loses.
+Under `packageOwnedRoutes: true` (the default) the doc chrome is wired inside the package, so there is no host file to render project-specific content into. `chromeBindingsModule` is the seam that gives it back: point it at a host module that exports a `chromeBindings` object, and the injected routes pick up your slots — a content-header renderer, home-hero extras, custom frontmatter-preview renderers, a footer tag loader, and more.
 
-This is the exact reason `--zdc-*` tokens exist: the backing rule emitted by the package is unlayered and has the selector specificity to beat its own utility. You redefine the token value; the package rule applies the value. No specificity fight, no `!important`.
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    chromeBindingsModule: "./src/chrome-bindings.tsx",
+  }),
+);
+```
 
-If you need to override a property that has no `--zdc-*` token, the only clean options today are:
+```tsx title="src/chrome-bindings.tsx"
+import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
 
-1. Adding `!important` to your rule (fragile, inhibits further overriding).
-2. Ejecting the component (Lever 5) so you control the source directly.
+export const chromeBindings: ChromeHostBindings = {
+  docContentHeaderExtras: ({ entry }) =>
+    entry.data.tier === "core" ? <span class="...">Core</span> : null,
+};
+```
 
-Cascade-layer relayering (moving package utilities into a `@layer` so plain unlayered consumer rules beat them) is a possible future direction, but it is not available today.
+The Design Token Panel has a parallel channel, `designTokenPanelConfigModule`: the package-default panel works with zero config (just `designTokenPanel: true`), and to fully customize it you point that setting at a host module exporting `buildDesignTokenPanelConfig(mode)`. Both channels are documented in full — including their loud missing-file behavior — on [Host Chrome Bindings](./host-chrome-bindings.mdx).
+
+---
+
+## Rung 6 — Your own `pages/*.tsx`
+
+If a whole route needs to be yours, add the `.tsx` file to `pages/` at the matching path. **A project-owned page always wins over the package-injected route for the same path** — the host file shadows the injection. This is how you replace the home page, add an entirely custom landing route, or take over a specific doc path.
+
+The two scaffold stubs (`pages/index.tsx`, `pages/docs/[[...slug]].tsx`) are themselves ordinary host pages using this precedence; you can expand them or add siblings. See [Routing Conventions](../develop/routing-conventions.mdx) for how routes are enumerated and shadowed.
+
+---
+
+## Rung 7 — The deploy path (an explicit extend step)
+
+The minimal scaffold builds a **pure static site** — `pnpm build` emits `dist/`, which you can drop on any static host. It ships **no adapter and no `wrangler.toml`** by design. Going beyond a static export is a deliberate extend step:
+
+1. **Add a deploy adapter.** For Cloudflare Workers, set the `adapter` shell field:
+
+   ```ts title="zfb.config.ts"
+   zudoDoc({
+     siteName: "My Docs",
+     adapter: "@takazudo/zfb-adapter-cloudflare",
+   });
+   ```
+
+   An adapter is **required** for any route that opts out of prerendering (`prerender = false`) — which is exactly what the AI assistant endpoint does.
+
+2. **Add `wrangler.toml`.** Declare the Worker name, the custom domain route, and any bindings. This file does not exist in a fresh scaffold — you author it when you decide to deploy.
+
+3. **Wire the AI assistant, if you enable it.** `aiAssistant: true` mounts an SSR `/api/ai-chat` route. It ships in **demo mode by default** (`aiChatDemoMode` defaults to `false` in config, but the scaffold's chat is a static demo until you flip it to a live backend). For a real, Claude-backed assistant you must:
+   - set `aiChatDemoMode: false`;
+   - create a `RATE_LIMIT` KV namespace (`wrangler kv namespace create RATE_LIMIT`) and bind it in `wrangler.toml`;
+   - add the `ANTHROPIC_API_KEY` secret (`wrangler secret put ANTHROPIC_API_KEY`);
+   - set `aiChatAllowedOrigins` to your site origin.
+
+See the [Deployment guide](../guides/deployment.mdx) and the [AI Assistant API reference](./ai-assistant-api.mdx) for the full runbook (secrets, KV, CORS, rate limiting).
+
+---
+
+## Rung 8 — Restoring pre-push and HTML validation
+
+The minimal scaffold **drops the validation gates** the showcase runs — they were dead weight for a small doc set. If your project grows to want them back, add them explicitly:
+
+- **Pre-push validation (`b4push`).** The scaffold no longer ships `scripts/run-b4push.sh` or a `b4push` package script. To restore a before-push suite, add your own script (format → typecheck → build → link check) and wire it as a `package.json` script. The showcase's `scripts/run-b4push.sh` is a reference implementation.
+- **HTML validation.** The generated `package.json` no longer includes the `check:html` / `html-validate` step (nor `.htmlvalidate.json`). To validate built HTML, add `html-validate` as a dev dependency, restore a `.htmlvalidate.json`, and add a `check:html` script that runs it over `dist/`.
+
+<Note>
+
+The `gen:z-index` / `check:z-index` codegen was likewise removed from generated projects — the 13 default z-index tiers now ship unconditionally from `@takazudo/zudo-doc/theme.css`, so a project only re-adds that codegen if it maintains a *custom* tier set. Overriding a single tier is a one-line `@theme` change (rung 3), not a codegen concern.
+
+</Note>
+
+---
+
+## See also
+
+- [Configuration](../guides/configuration.mdx) — every `zudoDoc()` field and its default
+- [Host Chrome Bindings](./host-chrome-bindings.mdx) — `chromeBindingsModule` and `designTokenPanelConfigModule` in depth
+- [create-zudo-doc CLI](./create-zudo-doc.mdx) — what the scaffold emits
+- [Migrating from v3](../getting-started/migrating-from-v3.mdx) — moving an existing generated project onto this shape
