@@ -1,10 +1,5 @@
 import type { UserChoices } from "./prompts.js";
-import { capitalize } from "./utils.js";
-
-function runCmd(pm: string, script: string): string {
-  if (pm === "npm") return `npm run ${script}`;
-  return `${pm} ${script}`;
-}
+import { capitalize, pmRunCommand } from "./utils.js";
 
 /**
  * Generate the per-project `CLAUDE.md` (minimal-scaffold shape, epic
@@ -46,10 +41,10 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   lines.push(`## Commands`);
   lines.push(``);
   const pm = choices.packageManager;
-  lines.push(`- \`${runCmd(pm, "dev")}\` — zfb dev server (port 4321)`);
-  lines.push(`- \`${runCmd(pm, "build")}\` — static HTML export to \`dist/\``);
-  lines.push(`- \`${runCmd(pm, "check")}\` — TypeScript type checking`);
-  lines.push(`- \`${runCmd(pm, "preview")}\` — serve the built \`dist/\``);
+  lines.push(`- \`${pmRunCommand(pm, "dev")}\` — zfb dev server (port 4321)`);
+  lines.push(`- \`${pmRunCommand(pm, "build")}\` — static HTML export to \`dist/\``);
+  lines.push(`- \`${pmRunCommand(pm, "check")}\` — TypeScript type checking`);
+  lines.push(`- \`${pmRunCommand(pm, "preview")}\` — serve the built \`dist/\``);
   lines.push(``);
 
   // Key directories

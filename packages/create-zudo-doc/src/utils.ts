@@ -130,6 +130,24 @@ export function getLangLabel(langCode: string): string {
   return langCode.toUpperCase();
 }
 
+/**
+ * Build the command that runs a package.json script under `pm`.
+ *
+ * npm and bun BOTH require the `run` verb — `bun build` invokes Bun's bundler,
+ * NOT the package.json `build` script (a real footgun), so bun must emit
+ * `bun run build`. pnpm and yarn accept the bare script name (`pnpm build`).
+ * The single source of truth for this rule across claude-md-gen.ts,
+ * scaffold.ts, and features/tauri.ts.
+ */
+export function pmRunCommand(
+  pm: "pnpm" | "npm" | "yarn" | "bun",
+  script: string,
+): string {
+  return pm === "npm" || pm === "bun"
+    ? `${pm} run ${script}`
+    : `${pm} ${script}`;
+}
+
 /** Determine the secondary language code when i18n is enabled. */
 export function getSecondaryLang(defaultLang: string): string {
   return defaultLang === "en" ? "ja" : "en";

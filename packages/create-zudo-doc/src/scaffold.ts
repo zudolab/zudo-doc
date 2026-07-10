@@ -6,7 +6,7 @@ import { generateZfbConfig } from "./zfb-config-gen.js";
 import { generateCLAUDEFile } from "./claude-md-gen.js";
 import { composeFeatures } from "./compose.js";
 import { featureModules } from "./features/index.js";
-import { capitalize, getSecondaryLang } from "./utils.js";
+import { capitalize, getSecondaryLang, pmRunCommand } from "./utils.js";
 
 export { getSecondaryLang };
 
@@ -779,19 +779,19 @@ function generatePackageJson(choices: UserChoices) {
       "bash scripts/setup-doc-skill.sh --target both";
   }
 
-  const runCmd = choices.packageManager === "npm" || choices.packageManager === "bun" ? `${choices.packageManager} run` : choices.packageManager;
+  const pm = choices.packageManager;
 
   // claudeSkills ships the zudo-doc-version-bump skill, whose release workflow
   // calls `<pm> b4push`. Emit a minimal stub so the skill does not hit a
   // "script not found" error on freshly scaffolded projects. Consumers are
   // free to expand this into a richer pre-push pipeline later.
   if (choices.features.includes("claudeSkills")) {
-    scripts["b4push"] = `${runCmd} check && ${runCmd} build`;
+    scripts["b4push"] = `${pmRunCommand(pm, "check")} && ${pmRunCommand(pm, "build")}`;
   }
 
   if (choices.features.includes("tauri")) {
     scripts["dev:tauri"] = "cargo tauri dev";
-    scripts["build:tauri"] = `${runCmd} build && cargo tauri build`;
+    scripts["build:tauri"] = `${pmRunCommand(pm, "build")} && cargo tauri build`;
   }
 
   if (choices.features.includes("tauriDev")) {
