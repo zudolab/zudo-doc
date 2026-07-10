@@ -1,264 +1,100 @@
 # NOTE: entries here exempt files from the whole-file CONTENT check only.
 # "use client" directive parity is checked separately and is NOT exempted by
 # this list — its exemptions live in DIRECTIVE_EXEMPT inside
-# scripts/check-template-drift.sh, keyed by template-relative path.
+# scripts/check-template-drift.sh, keyed by template-relative path (currently
+# empty — see that file's header comment for why).
+#
+# Minimal-scaffold cutover (epic zudolab/zudo-doc#2651, Wave 6 #2660/#2661,
+# Wave 7 #2663): the base template shrank from 54 files to the locked ~12-file
+# manifest (packages/create-zudo-doc/CLAUDE.md's "Template Directories"
+# table). Every entry below was rewritten from scratch against the current
+# `find packages/create-zudo-doc/templates -type f` walk — this is NOT an
+# incremental edit of the pre-#2660 265-line list (which referenced ~250
+# now-deleted files; none of that history is preserved here, see git log for
+# the prior form). Six entries remain, matched 1:1 against the six template↔
+# host pairs that genuinely differ once the walk is this small.
 
-# Slot-based files — templates use @slot: injection anchors,
-# production has features inlined. Content parity is manual-review-only for
-# this file, but a separate, unconditional guard (check_global_css_legacy_tokens
-# in scripts/check-template-drift.sh, #2621) still catches the one class of
-# drift that matters most here: the template regressing to a pre-ramp-restructure
-# legacy token (--zd-sel-bg/fg, --color-p0..15, --zd-0..15). That guard is NOT
-# exempted by this allowlist entry.
+# ── src/styles/global.css ───────────────────────────────────────────────────
+# The template ships a fixed ~29-line @import chain (Tailwind preflight +
+# utilities, the five @takazudo/zudo-doc/*.css artifacts, three @source scan
+# roots, and an empty @theme token-override slot) — see #2655/#2660. The
+# showcase's own global.css additionally declares ~300 lines of its OWN
+# @theme token block (the full three-tier color/spacing/typography system
+# documented in src/CLAUDE.md) plus extra @source roots for
+# packages/zudo-doc/**, packages/create-zudo-doc/templates/**, src/hooks/**,
+# src/utils/** (paths the minimal template's own scan roots don't need to
+# cover) and several project-specific base-style rules (find-in-page/search
+# highlight colors, version-switcher responsive visibility). Byte parity is
+# neither expected nor desired; the separate, unconditional
+# check_global_css_legacy_tokens() guard in scripts/check-template-drift.sh
+# (#2621, rewritten for the minimal form by #2663) still catches the drift
+# classes that matter: a legacy pre-ramp-restructure token reference, or the
+# template losing its `@import "@takazudo/zudo-doc/theme.css"` default
+# token-set import.
 src/styles/global.css
 
-# claude-resources feature (#2533) — generated projects ship their own copies
-# of the generator/escape helpers; production consumes the same logic
-# re-exported from @takazudo/zudo-doc/integrations/claude-resources. These
-# four files are NOT blanket-exempted here anymore — a real parity guard
-# (CLAUDE_RESOURCES_PARITY_PATHS / check_pair_normalized in
-# scripts/check-template-drift.sh) diffs them with import-extension and
-# comment normalization applied, so the only tolerated difference is the
-# package's Node-ESM-required ".js" import extension (dist/ is consumed
-# directly by Node; the template's bundler-resolved imports don't need it).
-# Any real logic drift still fails the check.
-
-# Showcase-specific renderers — source ships Pill/discount/status/difficulty
-# examples for the zudo-doc showcase only; template ships an empty map so
-# downstream users can add their own renderers without inheriting unrelated
-# examples. Both import the canonical types (FrontmatterCellRenderer +
-# FrontmatterCellRendererProps) from @takazudo/zudo-doc/metainfo since W4A
-# (#1732) — the legacy preact/compat ComponentType<FrontmatterRendererProps>
-# shape was replaced to match host.
-src/config/frontmatter-preview-renderers.tsx
-
-# Showcase-specific tag vocabulary — source ships the starter vocabulary for
-# the zudo-doc showcase docs; template ships an empty array so downstream
-# projects define their own taxonomy without inheriting unrelated ids
-src/config/tag-vocabulary.ts
-
-# In-flight super-epic drift (zfb migration parity #663) — production code on
-# `base/zfb-migration-parity` and child epic bases has drifted from the
-# create-zudo-doc templates while the migration parity work is in progress.
-# These will be reconciled via /l-update-generator post super-epic merge
-# (Phase D follow-up). Allowlisting here keeps PR-checks green on epic-PRs.
-#
-# i18n.ts: host ships showcase-specific keys (search, nav.markdownFeatures,
-# doc.history) that the template omits; template ships a leaner baseline.
-# sidebar-tree.tsx: the host's dead 639-line duplicate was deleted in #2528
-# (filterTree + active-slug helpers extracted into the real production
-# modules packages/zudo-doc/src/{sidebar-filter,sidebar-active-slug}, which
-# the live sidebar-tree-island now imports). The template's copy is a thin
-# re-export shim (`@takazudo/zudo-doc/sidebar-tree-island`) kept for
-# downstream projects importing `@/components/sidebar-tree` — there is no
-# longer a host counterpart to diff against.
-src/config/i18n.ts
-src/components/sidebar-tree.tsx
-
-# Phase B-11-2 — new TS path alias `#doc-history-meta` -> .zfb/doc-history-meta.json
-# enables the host wrapper to import the build-time manifest without dragging
-# Node-only utilities into the page tree. The generator will gain a parallel
-# alias under the docHistory feature once the super-epic lands.
+# ── tsconfig.json ───────────────────────────────────────────────────────────
+# The template ships the minimal 5-field extends form documented in
+# packages/zudo-doc/CLAUDE.md's "Shipped ambient type shims + tsconfig base"
+# section: `extends: "@takazudo/zudo-doc/tsconfig.base.json"`, `include:
+# ["src", "pages", "zfb.config.ts"]`, and a `compilerOptions` block carrying
+# only `baseUrl` + the `@/*`/react-compat `paths` (see that file's GOTCHA for
+# why those two must live in the PROJECT tsconfig, not the shared base). The
+# showcase's own tsconfig.json is a genuine superset, not accidental drift:
+# `$schema`, an `include` that adds `scripts` (typechecks the contrast/tags
+# audit CLIs) plus an `exclude` for `src/**/__tests__`, `noUncheckedIndexedAccess`
+# (a deliberate project-only strictness choice — see the root CLAUDE.md's
+# "TypeScript" note), and a `#doc-history-meta` path alias (needed only by a
+# project whose `chromeBindingsModule` target statically imports
+# `#doc-history-meta` — the showcase's `src/chrome-bindings.tsx` does; the
+# minimal floor's default doc-route stubs do not, per spike #2652 Q6). These
+# additions are showcase-specific project choices, not something the template
+# should inherit.
 tsconfig.json
 
-# W3B (#1498) — template run-b4push.sh is a lean downstream variant (4 steps:
-# typecheck, build, html-validate, manual smoke). The main project's version
-# has 10 steps including tags audit, template drift check, link check, and
-# automated preview smoke that are showcase-specific. Template version
-# intentionally omits those; both include the html-validate step.
-scripts/run-b4push.sh
-
-# E2 task 2 (zfb migration finalisation #1335) — production showcase files in
-# src/components/ now import lifecycle event names from
-# `@takazudo/zudo-doc/transitions` (the v2 module owns the vocabulary so
-# only one file changes if zfb later supplies router events). The matching
-# create-zudo-doc templates remain self-contained and inline literal
-# "DOMContentLoaded" / "pagehide" because downstream scaffolds do not depend
-# on @takazudo/zudo-doc as a runtime dep. Reconcile if/when create-zudo-doc
-# migrates onto the v2 transitions module.
-#
-# Wave 11 (#1355 / PR #1356) added an exported `ImageEnlargeSsrFallback`
-# component to image-enlarge.tsx and hoisted shared `DIALOG_CLASS` /
-# `DIALOG_STYLE` constants so the SSR fallback cannot drift from the live
-# component. The template counterpart is allowlisted here too — the
-# post-super-epic /l-update-generator pass is the single reconciliation
-# point.
-src/components/design-token-tweak/index.tsx
-src/components/doc-history.tsx
-src/components/image-enlarge.tsx
-src/components/find-in-page-init.tsx
-# mermaid-enlarge.tsx: host imports @/hooks/use-modal-dialog (which does not
-# exist in template projects — no src/hooks/ directory) and uses it to inline
-# dialog open/close sync. The template version inlines the same logic directly
-# without the hook so no src/hooks/ dependency is required downstream.
-src/components/mermaid-enlarge.tsx
-
-# zdtp panel template variants — intentionally differ from production in the
-# following ways (re-authored for the ramp-native / mode-scoped Color tab
-# shape in zudolab/zudo-doc#2613; the old "colorTweakPresets" / palette-index
-# rationale below is retired — that concept was dropped entirely in the color
-# ramp restructure, not merely renamed):
-#  1. design-token-panel-config.ts: template uses generic placeholder identity
-#     values throughout ("my-doc-tweak" storagePrefix, "myDoc" consoleNamespace,
-#     "my-doc-design-token-panel-modal" modalClassPrefix, "my-doc-design-tokens"
-#     exportFilenameBase, "my-doc" / "My Doc" colorExtras id/label) so multiple
-#     zudo-doc-based projects don't collide on localStorage keys in the same
-#     browser, while production uses its own "zudo-doc" / "Zudo Doc" identity.
-#     All other structure (ramp-native Palette tab, mode-scoped semantic Color
-#     tab, Font/Spacing/Size tabs) is mirrored 1:1 from production.
-#  2. design-token-panel-bootstrap.ts: both template and production are thin
-#     one-line callers of the package's `bootstrapDesignTokenPanel` mechanism
-#     (@takazudo/zudo-doc/design-token-panel-bootstrap) passing the
-#     `buildDesignTokenPanelConfig` builder; the only remaining difference is
-#     docstring wording (template keeps its phrasing generic for downstream
-#     projects and omits the internal PORTABLE-CONTRACT.md pointer).
-src/config/design-token-panel-config.ts
-src/lib/design-token-panel-bootstrap.ts
-
-# W4A (#1732) — desktop-sidebar-toggle.tsx was briefly de-allowlisted here.
-# At the time, @takazudo/zudo-doc had just been published and pinned in the
-# generated package.json, so the single template copy imported
-# BEFORE_NAVIGATE_EVENT / AFTER_NAVIGATE_EVENT from @takazudo/zudo-doc/transitions
-# directly (was: inlined literals) and matched the host byte-for-byte, so the
-# entry was removed.
-#
-# SUPERSEDED by W6A (#1734; reconciled in #2209): the base template now ships a
-# no-op stub (templates/base/src/components/desktop-sidebar-toggle.tsx returns
-# null) while the host ships the real island (imports ChevronRight / ChevronLeft
-# from @takazudo/zudo-doc/icons), and the real implementation moved into the
-# sidebarToggle feature overlay (templates/features/sidebarToggle/, which inlines
-# its own chevron SVG). The drift-checked pair — base stub vs host — legitimately
-# differs again, so the entry is RE-allowlisted in the W6A block below (search:
-# src/components/desktop-sidebar-toggle.tsx). The "byte-identical / entry removed"
-# claim above describes the short-lived W4A state only and no longer holds today.
-
-# W3A (#1729 / generator-pages-migration Wave 3) — header-right-items moved into
-# @takazudo/zudo-doc/header for production. The host (this repo) imports
-# filterHeaderRightItems from the v2 package directly and the source-of-truth
-# lives in packages/zudo-doc/src/header/right-items.ts. The template's copy
-# (templates/base/src/utils/header-right-items.ts) was deleted in #2162 as
-# part of gating zdtp scaffolding behind the designTokenPanel feature — the file
-# was orphaned (nothing in the base template imported it), and deleting it was
-# the cleanest path to removing the "design-token-panel" literal from
-# feature-off scaffolds. This entry is retained to document the history.
-# src/utils/header-right-items.ts — DELETED from template in #2162 (orphaned)
-
-# #2162 / #2360 — src/config/settings-types.ts template carries @slot: replace-range
-# anchors around the HeaderRightTriggerName union so the designTokenPanel feature
-# can inject "design-token-panel" | only when the feature is enabled. The host
-# unconditionally re-exports HeaderRightTriggerName (both trigger names) from
-# @takazudo/zudo-doc/settings; the template ships "ai-chat" only as the base
-# (with the @slot anchor) and the feature overlay adds "design-token-panel" via
-# injection. All other types are now forwarded from the package; the file is now
-# minimal and only differs due to the @slot anchor. These will never be byte-identical.
-src/config/settings-types.ts
-
-# W6A (#1734 / generator-pages-migration Wave 6A) — missing-src stubs landed
-# in templates/base/src/components/ so the mirrored unconditional pages
-# (templates/base/pages/lib/_body-end-islands.tsx and friends) resolve their
-# @/components/* imports without dragging full feature implementations into
-# every scaffold. The four files below have no feature template to swap them
-# out — they ship as permanent no-ops in base; a future PR can introduce a
-# feature flag if downstream consumers ask. The other two stubs
-# (doc-history.tsx, image-enlarge.tsx) are already allowlisted above via the
-# Wave-11 / E2-task-2 entries; the imageEnlarge feature now also ships the
-# ImageEnlargeSsrFallback named export to mirror the host shape.
-# Spec-lock §1.5 + Decision 5 — see #1728.
-#
-# client-router-bootstrap.tsx was REMOVED from this list (#1991): the no-op
-# stub silently disabled SPA page transitions in fresh scaffolds (the island
-# marker + <ClientRouter/> SSR meta + view-transition CSS were all present,
-# but the bundle shipped zero client-router code, so every internal link was
-# a full page reload). It now ships the REAL bootstrap, byte-identical to the
-# host src/components/client-router-bootstrap.tsx, so the drift checker
-# enforces parity going forward — same principle the W4A block describes
-# (de-allowlist once the template matches the host byte-for-byte). Unlike
-# desktop-sidebar-toggle (which W6A later re-allowlisted, see above),
-# client-router-bootstrap has stayed byte-identical and remains de-allowlisted.
-#
-# (#2265): client-router-bootstrap.tsx MOVED from templates/base/src/components/
-# to templates/features/dynamicPageTransition/files/src/components/ as part of
-# gating the SPA router behind the dynamicPageTransition feature. The file
-# remains byte-identical to the host and is now enforced by the feature-template
-# loop in check-template-drift.sh (which maps templates/features/*/files/<path>
-# → host <path>). Do NOT add it to the allowlist — drift enforcement continues.
-#
-# design-token-panel-bootstrap.tsx stub was REMOVED from this list (#2162):
-# the base stub (a no-op that never carried "use client") was deleted as part
-# of gating zdtp scaffolding behind the designTokenPanel feature. The real,
-# directive-carrying implementation lives only in the designTokenPanel feature
-# overlay (templates/features/designTokenPanel/files/src/components/) and is
-# copied only when the feature is on.
-src/components/ai-chat-modal.tsx
-src/components/desktop-sidebar-toggle.tsx
-src/components/preset-generator.tsx
-
-# W6A (#1734) — empty seed JSON for the `#doc-history-meta` tsconfig alias.
-# The host gitignores .zfb/ wholesale so there is no matching prod file; the
-# template ships {} so freshly-scaffolded barebone projects (no docHistory)
-# can resolve the alias at typecheck. The doc-history prebuild step
-# overwrites this file at build time when the feature is enabled.
-.zfb/doc-history-meta.json
-
-# pages/_mdx-components.ts — REMOVED from allowlist in #2360 (E2 reconciliation):
-# the template now adopts createMdxComponents() from @takazudo/zudo-doc/mdx-components
-# (S8 #2332); the factory handles imageEnlarge runtime-gating internally (via
-# settings.imageEnlarge), so the old @slot injection anchors are no longer needed.
-# The template is now byte-identical to the host.
-
-# #2052 / #2162 — pages/lib/_body-end-islands.tsx template carries @slot:
-# injection anchors (imports / display-names / extra-islands) so the tauri
-# and designTokenPanel features can inject their islands (FindInPageInit and
-# DesignTokenPanelBootstrap respectively). The host inlines zdtp unconditionally
-# (always-on) while the template uses anchors so the compose framework can
-# inject or omit the zdtp island based on the designTokenPanel feature toggle.
-# These will never be byte-identical.
-pages/lib/_body-end-islands.tsx
-
-# W8A (#1739) entries for src/components/content/heading-h3.tsx and
-# src/hooks/use-active-heading.ts were REMOVED in #2012 (S3 package-boundary
-# cleanup): heading-h3 is de-duplicated into @takazudo/zudo-doc/content and
-# use-active-heading was dead in both host and templates (the package keeps
-# its own internal copy under packages/zudo-doc/src/toc/). Both the host
-# files and their template counterparts are deleted.
-
-# S1 (#1928) — orphaned host-side Astro→zfb migration files deleted from the
-# host; their template counterparts remain as live generator assets.
-#
-# find-bar.tsx / find-in-page.ts: host no longer uses find-in-page; the
-# tauri feature template still ships them to generated tauri projects.
-# find-in-page-init.tsx: already allowlisted above (W8A preact/compat entry).
-#
-# content-files.ts / git-info.ts: host no longer uses these Node-only utils
-# (see pages/lib/_doc-metainfo-area.tsx B-11 lesson); base template keeps
-# them because generated projects still need both files.
-src/components/find-bar.tsx
-src/utils/find-in-page.ts
-src/utils/content-files.ts
-src/utils/git-info.ts
-
-# S4 (#2327 / package-first-migration epic #2321) content components — REMOVED from
-# allowlist in #2360 (E2 reconciliation): @takazudo/zudo-doc 0.2.22 published the
-# subpaths (code-group, content-admonition, math-block, extract-headings), and
-# create-zudo-doc's pin is now ≥ 0.2.22. The four template files now use the same
-# re-export form as the host and are byte-identical.
-
-# S2 (#2347) SiteTreeNav island re-export shim removed in #2371/#2374 fast-follow:
-# the host src/components/site-tree-nav.tsx was deleted (it imports directly from
-# @takazudo/zudo-doc/site-tree-nav-island now), and the base template's shim was
-# likewise removed — both index pages import the package island directly, so there
-# is no longer a local site-tree-nav file in either tree to drift-check.
-
-# S4 (#2503 / package-first-migration epic #2499), thinned further by #2519 —
-# pages/index.tsx and pages/[locale]/index.tsx now both adopt the shared
-# HomePageView body (#2502) AND the shared `prepareHomeData` data-prep factory
-# (`@takazudo/zudo-doc/home-page`, #2519), and pass a project-specific
-# `extras` prop for the `@Takazudo` brand link (established in #1453 —
-# project-specific, not part of the shared hero). The link is showcase-only,
-# same category as the frontmatter-preview-renderers/tag-vocabulary entries
-# above: production ships the extra content, the template ships none so
-# downstream projects don't inherit an unrelated personal brand link. Both
-# files are otherwise thin `routeContext` + `prepareHomeData` +
-# `HomePageView` consumers, byte-identical apart from the `extras` prop.
+# ── pages/index.tsx ─────────────────────────────────────────────────────────
+# The template ships a 1-line re-export of the package-owned static index
+# route (`export { default } from "@takazudo/zudo-doc/routes/index";` —
+# #2503/#2519/#2660). The showcase overrides it with its own brand home: it
+# threads `wide={true}` (wider category grid) and an `extras` prop rendering
+# the `@Takazudo` link (project-specific, established in #1453) through the
+# shared `HomePageView` body's `extras` seam. Both are otherwise thin
+# `routeContext` + `prepareHomeData` + `HomePageView` consumers — this is a
+# showcase-specific opt-in, not drift.
 pages/index.tsx
-pages/[locale]/index.tsx
+
+# ── pages/docs/[[...slug]].tsx ──────────────────────────────────────────────
+# ── pages/[locale]/docs/[[...slug]].tsx ─────────────────────────────────────
+# Both are self-contained doc-route stubs (#2653 Decision 4; locked form
+# #2660) — REQUIRED because the injected DYNAMIC `/docs/[[...slug]]` route
+# 404s in `zfb dev` (see each file's own header comment for the full
+# rationale). The template's copies use only the three sanctioned package
+# entrypoints (virtual:zudo-doc-route-context, @takazudo/zudo-doc/route-context,
+# @takazudo/zudo-doc/routes/_chrome's createChrome) with no fourth argument —
+# `createChrome(routeCtx)`. The showcase's copies additionally import
+# `virtual:zudo-doc-chrome-bindings` and call `createChrome(routeCtx,
+# chromeBindings)`, threading the showcase's real host-bound slots (search,
+# doc history, frontmatter renderers, PresetGenerator, MDX overrides — see
+# src/chrome-bindings.tsx) through the `chromeBindingsModule` host-callables
+# channel (ADR "Host-callables channel", #2501), plus locale-specific extra
+# fallback-tracking props on the [locale] variant. A project that sets its own
+# `chromeBindingsModule` diverges from the template the same way — this is
+# the documented escape hatch, not drift.
+pages/docs/[[...slug]].tsx
+pages/[locale]/docs/[[...slug]].tsx
+
+# ── tauri feature: src/components/find-bar.tsx, find-in-page-init.tsx, ─────
+# ── src/utils/find-in-page.ts ───────────────────────────────────────────────
+# The `tauri` feature (templates/features/tauri/files/) still ships real find-
+# in-page island files for generated Tauri projects — genuinely no package-
+# owned equivalent exists (find-in-page is a desktop-only, non-web feature).
+# The showcase itself no longer uses these: per the Wave 6 (#2661) completion
+# notes, `pages/lib/_body-end-islands.tsx` (their old mount point) is gone —
+# "tauri's find-in-page island ships unwired" is a documented, intentional gap
+# in the showcase, restorable via `chromeBindingsModule`'s `BodyEndIslands`
+# slot if the showcase ever wants it back. There is no host prod file left to
+# diff against (check_pair() reports [MISSING IN PROD] for all three without
+# this entry).
+src/components/find-bar.tsx
+src/components/find-in-page-init.tsx
+src/utils/find-in-page.ts

@@ -7,7 +7,7 @@ import type {
   FrontmatterPreviewConfig,
   BodyFootUtilAreaConfig,
   MetaTagsConfig,
-} from "./settings-types";
+} from "@takazudo/zudo-doc/settings";
 
 export const settings = {
   colorScheme: "Default Dark",

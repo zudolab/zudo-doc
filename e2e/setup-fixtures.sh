@@ -14,12 +14,33 @@
 # That topology is gone now — pages are file-routed under `pages/` and the
 # engine config lives at the project root as `zfb.config.ts`.
 #
+# Minimal-scaffold cutover (epic zudolab/zudo-doc#2651, Wave 6 #2661 / Wave 7
+# #2663): the host dropped `zfb-shim.d.ts` (ambient `zfb/config` types now
+# ship from `@takazudo/zudo-doc/zfb-config-shim.d.ts`, pulled in transitively
+# via `tsconfig.json`'s `extends: "@takazudo/zudo-doc/tsconfig.base.json"`)
+# and several `src/config/*.ts` shims that were byte-identical to package
+# defaults (`settings-types.ts`, `tag-vocabulary-types.ts`, `color-schemes.ts`,
+# `color-scheme-utils.ts`, …) — fixtures' `settings.ts` files now import their
+# types straight from `@takazudo/zudo-doc/settings` instead of a local
+# `./settings-types`. The host's real chrome bindings (SearchWidget,
+# DocHistory, frontmatter renderers, …) moved from the deleted
+# `pages/lib/_chrome.ts` into a single root file, `src/chrome-bindings.tsx`,
+# wired via the `chromeBindingsModule` setting in the copied `zfb.config.ts` —
+# so that one file is now copied per fixture too. Without it,
+# `virtual:zudo-doc-chrome-bindings` still resolves (the routes plugin
+# registers it unconditionally, defaulting to `export const chromeBindings =
+# {};`), so a fixture would still BUILD, but host-bound slots with no package
+# default (DocHistory) would silently render as no-ops — the smoke fixture's
+# doc-history specs need the real binding.
+#
 # Topology emitted per fixture:
 #
 #   <fixture>/
-#     zfb.config.ts          (copied — relative `./src/config/settings`)
-#     zfb-shim.d.ts          (copied — same reason)
-#     tsconfig.json          (copied — `@/*` + `#doc-history-meta` paths)
+#     zfb.config.ts          (copied — relative `./src/config/settings`
+#                             import + the `chromeBindingsModule` setting)
+#     tsconfig.json          (copied — `@/*` path; extends the package's
+#                             `tsconfig.base.json`, which ships the ambient
+#                             `zfb/config` + virtual-module shims)
 #     pages/                 → ../../../pages
 #     plugins/               → ../../../plugins
 #     packages/              → ../../../packages
@@ -30,23 +51,22 @@
 #                             follow symlinks)
 #     .zfb/doc-history-meta.json   (always-empty — preBuild contract)
 #     src/
+#       chrome-bindings.tsx  (copied — the `chromeBindingsModule` target;
+#                             relative imports of `../pages/lib/*` resolve
+#                             against the fixture's own symlinked `pages/`)
 #       config/
-#         settings.ts        (fixture-specific, kept in git)
-#         tag-vocabulary.ts        (copied from root — was committed
-#         tag-vocabulary-types.ts   per-fixture historically; auto-overwrite
-#         settings-types.ts         keeps drift in check)
-#         color-schemes.ts          (and any other src/config/*.ts | *.tsx
-#         color-scheme-utils.ts     except settings.ts)
-#         frontmatter-preview-*
-#         i18n.ts
-#         sidebars.ts
+#         settings.ts        (fixture-specific, kept in git; types import
+#                             from `@takazudo/zudo-doc/settings` directly)
+#         tag-vocabulary.ts        (copied from root — the rest of
+#         i18n.ts                   src/config/*.ts | *.tsx except
+#         sidebars.ts               settings.ts; auto-overwrite keeps
+#         contrast-utils.ts         drift in check)
+#         design-token-panel-config.ts
+#         frontmatter-preview-renderers.tsx
+#         design-tokens-manifest.ts
 #       content/             (fixture-specific, kept in git)
 #       components/          → ../../../../src/components
-#       hooks/               → ../../../../src/hooks
 #       lib/                 → ../../../../src/lib
-#       mocks/               → ../../../../src/mocks
-#       plugins/             → ../../../../src/plugins
-#       scripts/             → ../../../../src/scripts
 #       styles/              → ../../../../src/styles
 #       types/               → ../../../../src/types
 #       utils/               → ../../../../src/utils
@@ -106,24 +126,37 @@ fi
 # Source dirs under repo-root `src/` that fixtures consume verbatim.
 # `config` is intentionally NOT here — fixtures supply their own
 # `settings.ts`; the rest of `src/config/` is copied below.
+#
+# Minimal-scaffold cutover (#2663): `hooks`, `mocks`, `plugins`, `scripts`
+# were dropped — the host's `src/` no longer has those subdirectories (their
+# former contents are either package-owned now or never existed post-#2661).
 SRC_SHARED_DIRS=(
   components
-  hooks
   lib
-  mocks
-  plugins
-  scripts
   styles
   types
   utils
 )
 
 # Project-root files copied (not symlinked) into each fixture so their
-# relative imports resolve from the fixture directory.
+# relative imports resolve from the fixture directory. `zfb-shim.d.ts` was
+# dropped in #2661 — the ambient `zfb/config` types now ship from
+# `@takazudo/zudo-doc/zfb-config-shim.d.ts`, pulled in transitively via
+# tsconfig.json's `extends`.
 ROOT_COPIED_FILES=(
   zfb.config.ts
-  zfb-shim.d.ts
   tsconfig.json
+)
+
+# Single files under repo-root `src/` copied (not symlinked, and not part of
+# a SRC_SHARED_DIRS directory) because they have relative imports that must
+# resolve from the fixture directory. `chrome-bindings.tsx` is the
+# `chromeBindingsModule` target zfb.config.ts points at (#2663) — its
+# `../pages/lib/*` imports resolve against the fixture's own symlinked
+# `pages/`, and its `@/config/*` / `@/utils/*` imports resolve against the
+# fixture's own settings + the shared dirs above.
+SRC_SINGLE_FILES=(
+  chrome-bindings.tsx
 )
 
 # Project-root directories symlinked at fixture root.
@@ -178,7 +211,7 @@ compute_build_hash() {
     fi
 
     # --- Shared inputs (git-tracked file LIST, working-tree CONTENT) ---
-    # pages/, plugins/, src/{components,hooks,...}, packages/zudo-doc/
+    # pages/, plugins/, src/{components,lib,...}, packages/zudo-doc/
     #
     # `git ls-files` gives the tracked path list (respecting .gitignore, so
     # build output / nested node_modules never enter the hash); piping those
@@ -194,19 +227,15 @@ compute_build_hash() {
         pages/ \
         plugins/ \
         src/components/ \
-        src/hooks/ \
         src/lib/ \
-        src/mocks/ \
-        src/plugins/ \
-        src/scripts/ \
         src/styles/ \
         src/types/ \
         src/utils/ \
         src/config/ \
+        src/chrome-bindings.tsx \
         packages/zudo-doc/ \
         pnpm-lock.yaml \
         zfb.config.ts \
-        zfb-shim.d.ts \
         tsconfig.json \
         2>/dev/null | sort -z | xargs -0 shasum 2>/dev/null || true
     )
@@ -290,7 +319,7 @@ setup_fixture() {
 
   # ----- Copy src/config/* (except settings.ts) -----
   # Each fixture provides its own settings.ts; the rest of src/config/
-  # is copied so relative imports inside i18n.ts / color-schemes.ts /
+  # is copied so relative imports inside i18n.ts / design-token-panel-config.ts /
   # etc. resolve against the fixture's settings.ts (which differs from
   # the repo-root one).
   for file in "$REPO_ROOT"/src/config/*.ts "$REPO_ROOT"/src/config/*.tsx; do
@@ -303,10 +332,20 @@ setup_fixture() {
     cp -f "$file" "$fixture_dir/src/config/$basename"
   done
 
-  # ----- Copy zfb.config.ts / zfb-shim.d.ts / tsconfig.json -----
-  # zfb.config.ts has `import { settings } from "./src/config/settings"`,
-  # tsconfig.json has `"paths": { "@/*": ["src/*"], "#doc-history-meta": [...] }`,
-  # both must resolve from the fixture root.
+  # ----- Copy single src/ files (SRC_SINGLE_FILES) -----
+  # chrome-bindings.tsx is the `chromeBindingsModule` target — copied (not
+  # symlinked) alongside the config files above, same relative-import
+  # reasoning.
+  for file in "${SRC_SINGLE_FILES[@]}"; do
+    [ -e "$REPO_ROOT/src/$file" ] || continue
+    cp -f "$REPO_ROOT/src/$file" "$fixture_dir/src/$file"
+  done
+
+  # ----- Copy zfb.config.ts / tsconfig.json -----
+  # zfb.config.ts has `import { settings } from "./src/config/settings"` (plus
+  # the `chromeBindingsModule: "./src/chrome-bindings.tsx"` setting),
+  # tsconfig.json has `"paths": { "@/*": ["src/*"] }` — both must resolve
+  # from the fixture root.
   for file in "${ROOT_COPIED_FILES[@]}"; do
     [ -e "$REPO_ROOT/$file" ] || continue
     cp -f "$REPO_ROOT/$file" "$fixture_dir/$file"
