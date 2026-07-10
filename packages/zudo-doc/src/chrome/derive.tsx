@@ -34,6 +34,25 @@ import {
   type Ramps,
 } from "../color-scheme-utils.js";
 import { createBodyEndIslands } from "../doc-body-end-islands/index.js";
+// Island-scanner contract (load-bearing, #2658 gate-2 fix from the Wave-5
+// confirm #2659): the PACKAGE-DEFAULT DesignTokenPanelBootstrap island is the
+// DEFAULT for the `hostBindings.DesignTokenPanelBootstrap` slot, so ANY
+// `createChrome` consumer — the injected `routes/_chrome.tsx` path AND the
+// locked-manifest self-contained doc stub (#2653), which calls
+// `createChrome(routeCtx)` with NO hostBindings — gets the settings-gated
+// panel island without threading it explicitly. The import MUST stay static
+// (route → chrome → derive → bootstrap is the scanner-reachability chain; a
+// dynamic/type-only import silently kills island registration — #2480 lesson).
+//
+// COUPLING NOTE: this module (and therefore `@takazudo/zudo-doc/chrome`) now
+// transitively imports `virtual:zudo-doc-design-token-panel-config`, which
+// only the routes plugin registers (`settings.packageOwnedRoutes`, default
+// on). A `packageOwnedRoutes: false` host that bundles chrome must register
+// that virtual module (or alias it to
+// `@takazudo/zudo-doc/design-token-panel-config`) itself — see the KNOWN
+// COUPLING note in `../design-token-panel-bootstrap.tsx`. The package's own
+// vitest config aliases it for fast tests (vitest.config.ts).
+import { DesignTokenPanelBootstrap } from "../design-token-panel-bootstrap.js";
 import { SearchWidget } from "../search-widget/index.js";
 import { createMdxComponents } from "../mdx-components/index.js";
 import { createCategoryNavWrapper } from "../category-nav/index.js";
@@ -250,14 +269,19 @@ export function deriveSearchWidgetSlot(ctx: ChromeContext) {
 
 /** Derive the body-end islands: `ctx.hostBindings.BodyEndIslands` when supplied,
  *  else the package-island subset reconstructed from `settings`. The design-
- *  token-panel bootstrap (#2658) is a genuinely host-bound slot (it is not
- *  reconstructable from `settings` alone — see `ChromeHostBindings.DesignTokenPanelBootstrap`),
- *  so it is threaded through separately from `ctx.hostBindings`. */
+ *  token-panel bootstrap slot defaults to the PACKAGE-DEFAULT
+ *  `DesignTokenPanelBootstrap` island (statically imported above — #2658
+ *  gate-2 fix, Wave-5 confirm #2659) so a bare `createChrome(routeCtx)` call
+ *  (the locked-manifest self-contained doc stub, #2653) still mounts the
+ *  settings-gated panel; `ctx.hostBindings.DesignTokenPanelBootstrap`
+ *  overrides it when a host supplies its own. */
 export function deriveBodyEndIslands(ctx: ChromeContext) {
   return (ctx.hostBindings.BodyEndIslands ??
     createBodyEndIslands({
       settings: ctx.settings,
-      DesignTokenPanelBootstrap: ctx.hostBindings.DesignTokenPanelBootstrap,
+      DesignTokenPanelBootstrap:
+        ctx.hostBindings.DesignTokenPanelBootstrap ??
+        (DesignTokenPanelBootstrap as unknown as FactoryComponent),
     })) as ReturnType<typeof createBodyEndIslands>;
 }
 

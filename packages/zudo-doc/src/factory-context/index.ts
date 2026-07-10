@@ -265,16 +265,17 @@ export interface ChromeHostBindings {
   /** DocHistory island. Default: a no-op stub rendering an empty fragment. */
   DocHistory?: FactoryComponent;
   /**
-   * Design-token panel bootstrap island (#2658). Default: absent — when no
-   * caller supplies this slot, `createBodyEndIslands` renders no panel
-   * island at all, regardless of `settings.designTokenPanel` (mirrors
-   * `DocHistory`'s no-op-stub default: an omitted host slot never crashes,
-   * it just mounts nothing). `routes/_chrome.tsx` is the caller that DOES
-   * supply it — a static import of the real `DesignTokenPanelBootstrap`
-   * from `@takazudo/zudo-doc/design-token-panel-bootstrap` (mirrors the
-   * `DocHistory` #2480 static-import chain so zfb's island scanner registers
-   * it), so the injected package-routes path gets a working panel with no
-   * host config file.
+   * Design-token panel bootstrap island (#2658). Default: the PACKAGE-DEFAULT
+   * `DesignTokenPanelBootstrap` from
+   * `@takazudo/zudo-doc/design-token-panel-bootstrap`, statically imported by
+   * `chrome/derive.tsx` (`deriveBodyEndIslands`) so EVERY `createChrome`
+   * consumer — the injected `routes/_chrome.tsx` path and the locked-manifest
+   * self-contained doc stub alike — gets the settings-gated panel island with
+   * no explicit wiring (#2659 gate-2 fix; scanner reachability holds through
+   * the static route → chrome → derive → bootstrap chain, the #2480
+   * contract). Supply this slot only to REPLACE the island with a host's own
+   * bootstrap component. Mounting is still gated on
+   * `settings.designTokenPanel` inside `createBodyEndIslands` either way.
    */
   DesignTokenPanelBootstrap?: FactoryComponent;
   /** MDX content-component overrides (Details / HtmlPreview / Island /

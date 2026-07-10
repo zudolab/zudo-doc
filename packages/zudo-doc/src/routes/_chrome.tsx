@@ -13,17 +13,6 @@
 import { routeCtx } from "./_context.js";
 import { createChrome } from "../chrome/index.js";
 import { DocHistory } from "../doc-history/index.js";
-// Island-scanner contract (load-bearing, #2658 — mirrors the DocHistory chain
-// directly below): the injected routes reach the real DesignTokenPanelBootstrap
-// client island ONLY through this static import → `createChrome` hostBindings
-// chain (docs-slug.tsx → _chrome.tsx → design-token-panel-bootstrap.tsx). This
-// import MUST stay static for the same reason as DocHistory's below — see that
-// comment. `DesignTokenPanelBootstrap` also carries its own top-level import of
-// `virtual:zudo-doc-design-token-panel-config` (the routes plugin's third
-// virtual module, `plugins/routes.ts`), which is why the component lives in a
-// dedicated module rather than being reconstructed inline in
-// `doc-body-end-islands/index.tsx` — see that module's header note.
-import { DesignTokenPanelBootstrap } from "../design-token-panel-bootstrap.js";
 import type { ChromeHostBindings } from "../factory-context/index.js";
 import type { DocNavNode } from "./_docs-helpers.js";
 // Host-callables channel (#2501): re-exports `settings.chromeBindingsModule`
@@ -53,10 +42,17 @@ import { chromeBindings } from "virtual:zudo-doc-chrome-bindings";
 // INSIDE the bindings module is not guaranteed to register on injected routes
 // the way the static `DocHistory` import above is (the virtual re-export sits
 // outside zfb's static-import scanner reachability graph) — see the ADR.
+//
+// `DesignTokenPanelBootstrap` (#2658) is NOT threaded here: unlike DocHistory
+// (whose derive-level default is a no-op stub), the package-default island IS
+// the derive-level default (`chrome/derive.tsx`'s `deriveBodyEndIslands`,
+// gate-2 fix from the Wave-5 confirm #2659) — so this shim, the locked-manifest
+// self-contained doc stub (#2653), and every other bare `createChrome` caller
+// all get it without explicit wiring. Scanner reachability holds through the
+// static chain route → this shim → `createChrome` → `chrome/derive` →
+// `design-token-panel-bootstrap`.
 const chrome = createChrome(routeCtx, {
   DocHistory: DocHistory as unknown as ChromeHostBindings["DocHistory"],
-  DesignTokenPanelBootstrap:
-    DesignTokenPanelBootstrap as unknown as ChromeHostBindings["DesignTokenPanelBootstrap"],
   ...chromeBindings,
 });
 

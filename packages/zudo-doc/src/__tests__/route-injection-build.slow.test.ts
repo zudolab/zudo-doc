@@ -1355,22 +1355,20 @@ describe("TM build+check+css: the locked manifest builds, typechecks, and ships 
 // route-injection fixture (different feature-flag profile, e.g.
 // mermaid:false there vs. zudoDoc()'s mermaid:true default here).
 //
-// *** BLOCKING FINDING (posted to #2658, summarized on #2659) ***
+// *** GATE-2 FINDING — FIXED (#2658 blocking comment → gate-2 fix) ***
 // The locked-spec (#2653) self-contained doc stub imports ONLY
 // `virtual:zudo-doc-route-context` + `@takazudo/zudo-doc/route-context` +
 // `@takazudo/zudo-doc/chrome` — it calls `createChrome(routeCtx)` with NO
-// `hostBindings`, unlike the package's own `routes/_chrome.tsx` (which
-// statically imports `DesignTokenPanelBootstrap` and threads it in). Per
-// `chrome/derive.tsx`'s `deriveBodyEndIslands`, an omitted
-// `hostBindings.DesignTokenPanelBootstrap` is a SAFE NO-OP — so
-// `designTokenPanel: true` produces **no marker at all** on any page rendered
-// through the stub (not a "marker with no matching registry" dead island —
-// the marker itself never emits). Confirmed by direct build: `/index.html`
-// (1-line re-export → the real `_chrome.tsx`) DOES carry the marker + a
-// matching client-bundle registry entry; `/docs/getting-started/index.html`
-// (self-contained stub) does NOT. This is exactly the "dead islands are
-// silent" failure mode the confirm-gate brief warns about, except here the
-// island isn't dead — it just never mounts.
+// `hostBindings`. Originally, an omitted
+// `hostBindings.DesignTokenPanelBootstrap` was a safe no-op in
+// `chrome/derive.tsx`'s `deriveBodyEndIslands`, so `designTokenPanel: true`
+// produced NO marker at all on stub-rendered pages (the silent-missing-island
+// failure mode). FIXED at the package seam: `deriveBodyEndIslands` now
+// defaults the slot to the statically-imported package
+// `DesignTokenPanelBootstrap`, so EVERY `createChrome` consumer — the stub
+// included — mounts the settings-gated island with no explicit wiring. The
+// cases below are the regression guard: the stub's island-marker set must
+// stay IDENTICAL to the injected-route baseline.
 // ---------------------------------------------------------------------------
 
 describe("TM group 2: island-set diff — self-contained doc stub vs. injected-route baseline (designTokenPanel: true)", () => {
@@ -1405,7 +1403,7 @@ describe("TM group 2: island-set diff — self-contained doc stub vs. injected-r
     expect(readIslandsBundles(stubDir)).toContain("DesignTokenPanelBootstrap");
   });
 
-  it("island-set diff: the ONLY marker difference between the self-contained stub and the injected baseline is the missing DesignTokenPanelBootstrap", () => {
+  it("island-set diff: the self-contained stub's marker set is IDENTICAL to the injected baseline (gate-2 fix: incl. DesignTokenPanelBootstrap)", () => {
     const baselineMarkers = new Set(
       extractIslandMarkers(readBuiltHtml(baselineDir, "docs/getting-started/index.html")),
     );
@@ -1414,27 +1412,22 @@ describe("TM group 2: island-set diff — self-contained doc stub vs. injected-r
     );
     const missingFromStub = [...baselineMarkers].filter((m) => !stubMarkers.has(m)).sort();
     const extraInStub = [...stubMarkers].filter((m) => !baselineMarkers.has(m)).sort();
-    // Pinpoints the gap precisely (nothing ELSE regressed) and doubles as a
-    // regression guard: any additional drift (extra OR missing markers) fails
-    // this test loudly.
+    // Assertion group 2's literal requirement: the stub's distinct marker set
+    // equals the baseline's — any drift in EITHER direction fails loudly.
+    // (Pre-fix, missingFromStub was exactly
+    // ["data-zfb-island=DesignTokenPanelBootstrap"] — the #2658 gate-2 gap.)
     expect(extraInStub).toEqual([]);
-    expect(missingFromStub).toEqual(["data-zfb-island=DesignTokenPanelBootstrap"]);
+    expect(missingFromStub).toEqual([]);
   });
 
-  // BLOCKING — see the module-header note above. `it.fails` documents the
-  // CURRENTLY-BROKEN state on purpose: this assertion is assertion group 2's
-  // literal requirement ("distinct marker set equals the baseline… including
-  // the designTokenPanel bootstrap island"). It starts FAILING (i.e. this
-  // wrapped assertion starts passing) once the self-contained stub threads
-  // `DesignTokenPanelBootstrap` into `createChrome`'s `hostBindings` — which
-  // is the maintainers' signal to flip this back to a plain `it`.
-  it.fails(
-    "doc route SHOULD carry the DesignTokenPanelBootstrap marker, matching the baseline (BLOCKED — see #2658)",
-    () => {
-      const html = readBuiltHtml(stubDir, "docs/getting-started/index.html");
-      expectHtmlAttr(html, "data-zfb-island", "DesignTokenPanelBootstrap");
-    },
-  );
+  // Was `it.fails` while the gate-2 gap was open (see the module-header note
+  // above); flipped to a plain `it` by the #2658 gate-2 fix, per the marker's
+  // own instruction. The registry pairing lives in the "home route" case above
+  // (shared islands bundle) — this asserts the stub page's own marker.
+  it("doc route carries the DesignTokenPanelBootstrap marker, matching the baseline (#2658 gate-2 fix)", () => {
+    const html = readBuiltHtml(stubDir, "docs/getting-started/index.html");
+    expectHtmlAttr(html, "data-zfb-island", "DesignTokenPanelBootstrap");
+  });
 });
 
 // ---------------------------------------------------------------------------

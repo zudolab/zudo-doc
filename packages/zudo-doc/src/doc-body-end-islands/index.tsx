@@ -35,12 +35,12 @@
 // reachability graph (this factory is also called by `chrome/derive.tsx` for a
 // FUTURE host calling `createChrome` directly, without `packageOwnedRoutes`).
 // So it is injected as an explicit `DesignTokenPanelBootstrap` dependency
-// (`BodyEndIslandsDeps`) instead of imported at module top-level — `_chrome.tsx`
-// is the ONE caller that both statically imports the real component (so the
-// island scanner walks route → _chrome → component, mirroring the DocHistory
-// #2480 chain) AND is only ever reached when the routes plugin (and therefore
-// the virtual module) is active. See `../design-token-panel-bootstrap.tsx` for
-// the full coupling note. *Not skip-ssr in the zfb-marker sense — it renders
+// (`BodyEndIslandsDeps`) instead of imported at module top-level —
+// `chrome/derive.tsx`'s `deriveBodyEndIslands` statically imports the real
+// component and supplies it as the slot DEFAULT for every `createChrome`
+// consumer (#2659 gate-2 fix; the scanner walks route → chrome → derive →
+// component, mirroring the DocHistory #2480 chain). See
+// `../design-token-panel-bootstrap.tsx` for the full coupling note. *Not skip-ssr in the zfb-marker sense — it renders
 // `null` on both SSR and client, so it uses `Island({ when })` with no
 // `ssrFallback` (matches `ClientRouterBootstrap`'s host-side precedent), which
 // zfb marks `data-zfb-island` (no `-skip-ssr` suffix).
@@ -139,13 +139,16 @@ export interface BodyEndIslandsSettings {
 export interface BodyEndIslandsDeps {
   settings: BodyEndIslandsSettings;
   /**
-   * The real `DesignTokenPanelBootstrap` component (#2658). Genuinely
-   * host-bound — see the module header note above for why it is NOT imported
-   * directly here. `_chrome.tsx` supplies
-   * `@takazudo/zudo-doc/design-token-panel-bootstrap`'s `DesignTokenPanelBootstrap`;
-   * omitted (e.g. a bare `createBodyEndIslands({ settings })` call, as this
-   * factory's own unit tests do) means no panel island mounts even when
-   * `settings.designTokenPanel` is `true` — a safe no-op, not a crash.
+   * The real `DesignTokenPanelBootstrap` component (#2658) — see the module
+   * header note above for why it is NOT imported directly here.
+   * `chrome/derive.tsx`'s `deriveBodyEndIslands` supplies
+   * `@takazudo/zudo-doc/design-token-panel-bootstrap`'s
+   * `DesignTokenPanelBootstrap` as the default for every `createChrome`
+   * consumer (#2659 gate-2 fix), so chrome-derived callers always carry it.
+   * Omitted (a bare `createBodyEndIslands({ settings })` call outside the
+   * chrome path, as this factory's own unit tests do) means no panel island
+   * mounts even when `settings.designTokenPanel` is `true` — a safe no-op,
+   * not a crash.
    */
   DesignTokenPanelBootstrap?: FactoryComponent;
 }

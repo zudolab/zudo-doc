@@ -277,12 +277,27 @@ the same `setup(ctx)` hook.
   (SSR-presentational only — see the caveat above), the real
   `DesignTokenPanelBootstrap` **island component** is NOT itself carried
   through the config virtual module — it is a separate, statically-imported
-  component (`@takazudo/zudo-doc/design-token-panel-bootstrap`), wired into
-  `routes/_chrome.tsx` the same way the #2480 `DocHistory` static import is.
-  Only the PanelConfig *data* (mode-scoped builder) travels through the
+  component (`@takazudo/zudo-doc/design-token-panel-bootstrap`). Only the
+  PanelConfig *data* (mode-scoped builder) travels through the
   `designTokenPanelConfigModule` re-export; the component itself is always
   reachable by zfb's island scanner regardless of whether a host configured
   this setting.
+- **Slot default lives at the chrome seam (gate-2 fix, Wave-5 confirm
+  #2659).** The static import + slot wiring sit in `chrome/derive.tsx`'s
+  `deriveBodyEndIslands` — `hostBindings.DesignTokenPanelBootstrap` DEFAULTS
+  to the package island — not in `routes/_chrome.tsx`. Originally the wiring
+  mirrored the #2480 `DocHistory` shape (explicit threading in
+  `routes/_chrome.tsx` only), which left any OTHER `createChrome` caller —
+  specifically the locked-manifest self-contained doc stub (#2653), which
+  calls `createChrome(routeCtx)` with no `hostBindings` — silently emitting
+  NO panel island under `designTokenPanel: true` (the confirm gate's blocking
+  finding on #2658). Defaulting at the seam gives every consumer the
+  settings-gated island with zero explicit wiring, while the slot still
+  accepts a host override. Consequence: `@takazudo/zudo-doc/chrome` now
+  transitively imports `virtual:zudo-doc-design-token-panel-config`, so a
+  `packageOwnedRoutes: false` host that bundles chrome must register/alias
+  that module itself (the package vitest config aliases it to the package
+  default for fast tests).
 - **Mode-scoped BUILDER, not a resolved config** (#2610): the virtual module
   re-exports a `(mode: "light" | "dark") => PanelConfig` function, never a
   plain object — `@takazudo/zudo-doc/design-token-panel-bootstrap`'s
