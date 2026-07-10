@@ -10,22 +10,41 @@ Design Token Panelは、テーマが提供するすべてのデザイントー�
 
 ## パネルを有効にする
 
-`src/config/settings.ts` で `designTokenPanel` を `true` に設定します:
+`zfb.config.ts` で `designTokenPanel` を `true` に設定します:
 
-```ts title="src/config/settings.ts"
-export const settings = {
-  designTokenPanel: true,
-  // ...
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    designTokenPanel: true,
+    // ...
+  }),
+);
 ```
 
 有効になると、ヘッダーに（検索アイコンの左側に）パレットアイコンが表示されます。クリックするとパネルが開閉し、以前のColor Tweak Panelと同じキーボードショートカットも引き続き利用できます。
 
 <Note>
 
-設定キーは `designTokenPanel` です。`true` に設定するとパネルが有効になります。
+設定フィールドは `designTokenPanel` です。`true` に設定するとパネルが有効になります。ホスト側の設定ファイルは不要です — `designTokenPanelConfigModule` で独自のビルダーを指定しない限り、パネルはパッケージのデフォルトビルダー（`@takazudo/zudo-doc/design-token-panel-config`）を使用します（詳しくは下記の[パネルのカスタマイズ](#パネルのカスタマイズ)を参照）。
 
 </Note>
+
+### パネルのカスタマイズ
+
+デフォルトでは `designTokenPanel: true` にホスト側の設定ファイルは不要です — 注入されるパネルはパッケージのデフォルトビルダー（`@takazudo/zudo-doc/design-token-panel-config`）を使用し、バンドルされたカラースキームから Palette／Color タブを、同梱のトークンマニフェストから Font／Spacing／Size タブを導出します。
+
+完全にカスタムなパネル（独自のトークンマニフェスト、独自のカラースキーム）を用意するには、`buildDesignTokenPanelConfig(mode: "light" | "dark")` という名前付きビルダーをエクスポートするモジュールを作成し、`designTokenPanelConfigModule` にそのパスを指定します — プロジェクトルートからの相対パスで、`chromeBindingsModule` の契約をそのまま踏襲します:
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    designTokenPanel: true,
+    designTokenPanelConfigModule: "./src/config/design-token-panel-config.ts",
+  }),
+);
+```
+
+このショーケースは独自の `src/config/design-token-panel-config.ts` を正当なデータモジュールとして保持していますが（現状はパッケージのデフォルトをそのままミラーしています）、`designTokenPanelConfigModule` を指すのではなく、独自のブートストラップアイランド（`src/components/design-token-panel-bootstrap.tsx` → `src/lib/design-token-panel-bootstrap.ts`、[実装](#実装)を参照）を通して直接配線しています。`designTokenPanelConfigModule` は、独自のブートストラップアイランドを自作する代わりに、パッケージが自動注入するブートストラップ（`packageOwnedRoutes` 使用時のデフォルトの body-end アイランド）に自作のビルダーを読み込ませたい場合に使用します。
 
 ## 5つのタブ
 
@@ -66,7 +85,7 @@ Colorタブは**セマンティック→ランプのエディタ**です。27 �
 
 #### モードスコープの編集モデル
 
-Colorタブは常に、現在アクティブなモード（ライトまたはダーク）の紐付けを編集し、`src/config/color-schemes.ts` のそのモードの `ColorScheme.map` からシードされます。
+Colorタブは常に、現在アクティブなモード（ライトまたはダーク）の紐付けを編集し、パッケージの `@takazudo/zudo-doc/color-schemes-defaults`（または設定済みなら自作の `colorSchemes` 上書き — [Color](./color.mdx) を参照）のそのモードの `ColorScheme.map` からシードされます。
 
 - **ライト/ダークの切り替えで、タブの ref/literal のデフォルトが再シードされます** — 新しいモードの紐付けに切り替わります（例：`bg` が `base-0` ↔ `base-4` と入れ替わる）。この背後にある destroy+reconfigure の仕組みは[実装](#実装)を参照してください。
 - **Palette・Spacing・Font・Size の編集は、切り替えをまたいでそのまま引き継がれます。** これらのタブはモードに依存しないため、ランプカーブの編集やスペーシングスライダーの変更は、これまでと同様にライト↔ダークをまたいで保持されます。
@@ -180,13 +199,13 @@ Colorタブは常に、現在アクティブなモード（ライトまたはダ
 
 - パネルは読み込み時にまずv3を参照します。v3が無ければ、v2エンベロープ、続いてv1のカラーのみの状態へとフォールバックし、見つかったものをv3エンベロープへ昇格させ、v3キーを書き込み、レガシーキーを削除します。
 - doc レイアウト（`@takazudo/zudo-doc/doclayout`）が `<head>` に注入するFOUC防止スクリプトも同じ順で参照します。これにより、古いデバイスでも最初のペイント前に保存済みのトークンが適用されます。
-- ヘッダーの **Reset all** をクリックすると、v3エンベロープ（および残存するレガシーキー）がクリアされ、`src/config/settings.ts` で宣言されたカラースキームに戻ります。
+- ヘッダーの **Reset all** をクリックすると、v3エンベロープ（および残存するレガシーキー）がクリアされ、`zfb.config.ts` の `colorScheme` フィールドで宣言されたカラースキームに戻ります。
 
 ライト/ダークテーマの切り替えで保存済みの編集が消えることは**なく**、開いているパネルは切り替えをまたいで開いたままになります。テーマトグルは `color-scheme-changed` イベントをディスパッチし、ホストはパネルをその場でパッチするのではなく、新しいモード用に destroy して再構成します（[実装](#実装)を参照）。そのため、Color タブの ref/literal の*デフォルト*は新しくアクティブになったモードに追従する一方で、Palette・Spacing・Font・Size のすべての編集 — および保存された Color タブの*オーバーライド* — はそのまま引き継がれます。オーバーライドがモードをまたいで反映される点の注意については、[モードスコープの編集モデル](#5つのタブ-color-モードスコープの編集モデル)を参照してください。
 
 <Note title="ストレージプレフィックスの継続性保証">
 
-ストレージプレフィックス `zudo-doc-tweak` は `src/config/design-token-panel-config.ts` に固定されており、変わりません。古いバージョンのキーで保存されたトークンも自動的に読み込まれ、初回ロード時に現在の `zudo-doc-tweak-state-v3` エンベロープへとマイグレーションされるため、手動のマイグレーション作業は不要です。
+ストレージプレフィックス `zudo-doc-tweak` は、パッケージのデフォルトビルダー（`@takazudo/zudo-doc/design-token-panel-config`）— そしてこのショーケース自身のコピー（`src/config/design-token-panel-config.ts`、両者は同期されています）— に固定されており、変わりません。古いバージョンのキーで保存されたトークンも自動的に読み込まれ、初回ロード時に現在の `zudo-doc-tweak-state-v3` エンベロープへとマイグレーションされるため、手動のマイグレーション作業は不要です。
 
 </Note>
 
@@ -196,15 +215,16 @@ Colorタブは常に、現在アクティブなモード（ライトまたはダ
 
 （テーマトグルがディスパッチする）`color-scheme-changed` イベントのたびに、ブートストラップは新しいモードを読み取り、素早い連続トグルを 1 つのマクロタスクにまとめてから、`handle.destroy()` に続けて `configurePanel(buildDesignTokenPanelConfig(mode))` を呼び出します — zdtp の `configurePanel` は、構造的に異なる設定でその場で再実行すると例外を投げるため、destroy してから再構成することが、Color タブのモードスコープなデフォルトを差し替える唯一のサポートされた方法です。パネルが開いていた場合は、開いた状態で再マウントされます。
 
-ヘッダーのトリガーボタンは `window` に `toggle-design-token-panel` カスタムイベントをディスパッチします。zdtpはこのイベントをネイティブに受け取るため、`settings.headerRightItems` でトリガーをカスタマイズしても追加の配線は必要ありません。
+ヘッダーのトリガーボタンは `window` に `toggle-design-token-panel` カスタムイベントをディスパッチします。zdtpはこのイベントをネイティブに受け取るため、`headerRightItems` フィールドでトリガーをカスタマイズしても追加の配線は必要ありません。
 
 ## 設定リファレンス
 
 | 設定 | 型 | 説明 |
 |---|---|---|
 | `designTokenPanel` | `boolean` | パネルを有効にします。デフォルトは `false`。 |
+| `designTokenPanelConfigModule` | `string` | 完全にカスタムなパネル用に `buildDesignTokenPanelConfig(mode)` をエクスポートするモジュールへの、プロジェクトルート相対パス。デフォルトは `undefined`（パッケージのデフォルトビルダーを使用）。 |
 
-トークンそのもの（スペーシングスケール・フォントスケール・アイコンサイズ・パレット）は、引き続き `src/styles/global.css` の `@theme` と `src/config/color-schemes.ts` で設定します。パネルはブラウザ内のコピーを編集するだけで、ソースファイルに書き戻すことはありません。
+トークンそのもの（スペーシングスケール・フォントスケール・アイコンサイズ・パレット）は、引き続き `src/styles/global.css` の `@theme` と、カラーパレットについてはパッケージの `@takazudo/zudo-doc/color-schemes-defaults` または自作の `colorSchemes` 上書き（[Color](./color.mdx) を参照）で設定します。パネルはブラウザ内のコピーを編集するだけで、ソースファイルに書き戻すことはありません。
 
 <Tip>
 

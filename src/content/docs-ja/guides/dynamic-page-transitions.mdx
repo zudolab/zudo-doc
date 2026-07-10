@@ -57,13 +57,15 @@ zudo-docはユーザーの`prefers-reduced-motion`設定を尊重します。訪
 
 ダイナミックページトランジションは`dynamicPageTransition`設定で制御され、**デフォルトで有効**です。
 
-### `settings.ts`で
+### zfb.config.tsで
 
-```ts
-export const settings = {
-  // ...
-  dynamicPageTransition: true,
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    dynamicPageTransition: true,
+  }),
+);
 ```
 
 `false`に設定すると、ダイナミックトランジションが完全に無効になります。

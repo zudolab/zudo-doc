@@ -14,19 +14,19 @@ zudo-docは**3層カラー戦略**を採用し、サイト上のすべての色�
 
 | 層 | 名前 | 目的 | 定義場所 |
 |----|------|------|----------|
-| 1 | **ランプ** | スキームの土台となる、共有される OKLCH カラーランプ | `src/config/color-schemes.ts` → `ColorSchemeProvider` → `:root` |
+| 1 | **ランプ** | スキームの土台となる、共有される OKLCH カラーランプ | `zfb.config.ts` の自作 `colorSchemes` 上書き（任意 — 未設定ならパッケージのデフォルト）→ `ColorSchemeProvider` → `:root` |
 | 2 | **セマンティック** | デザイン上の意味 — 各色がUIで何を表すか | `src/styles/global.css` `@theme` |
 | 3 | **コンポーネント** | 特定コンポーネント向けのスコープ付きオーバーライド | `.zd-content`（共有 `content.css`） |
 
 この階層構造により：
 
-- **ランプストップの再調整**（`src/config/color-schemes.ts`を編集）→ それを土台とするすべてのセマンティックロールが更新
+- **ランプストップの再調整**（`zfb.config.ts` の `colorSchemes` フィールドを上書き）→ それを土台とするすべてのセマンティックロールが更新
 - **セマンティックロールの再マッピング**（例：`accent`を別のランプストップに向ける）→ `accent`を使用するすべてのコンポーネントが更新
 - **コンポーネントトークンのオーバーライド** → 他のコンポーネントに影響なし
 
 ## Tier 1：ランプ
 
-zudo-docのカラーエンジンは**ランプネイティブ**です。`ColorScheme`は`{ ramps, map }`です（`src/config/color-schemes.ts`を参照）。
+zudo-docのカラーエンジンは**ランプネイティブ**です。`ColorScheme`は`{ ramps, map }`です — この型は`@takazudo/zudo-doc/color-scheme-utils`から提供されます。
 
 - **`ramps`** — 共有されるソースオブトゥルース：暖色ニュートラルな**base**ランプ（5 ストップ、インデックス`0`が最も明るい）、**accent**ランプ（3 ストップ）、4 つの**state**カラー（`danger`、`success`、`warning`、`info`）。ライトモードとダークモードはこれらのランプ値を**共有**します。
 - **`map`** — モードごとの紐付け：各 UI ロールがどのランプストップ（またはリテラル OKLCH オーバーライド）を指すか。
@@ -39,7 +39,7 @@ zudo-docのカラーエンジンは**ランプネイティブ**です。`ColorSc
 | `accent` | 3 | `--palette-accent-0` … `--palette-accent-2` |
 | `state` | 4 つの名前付きロール | `--palette-state-danger`、`--palette-state-success`、`--palette-state-warning`、`--palette-state-info` |
 
-**Default Light**と**Default Dark** — 同梱されるスキームはこの 2 つだけ — は、まったく同じ`base`/`accent`/`state`のランプ値（`src/config/color-schemes.ts`内の 1 つの`ramps`オブジェクト）を共有し、両者の違いはモードごとの`map`だけです。
+**Default Light**と**Default Dark** — 同梱されるスキームはこの 2 つだけ — は、まったく同じ`base`/`accent`/`state`のランプ値（パッケージの`@takazudo/zudo-doc/color-schemes-defaults`内の 1 つの`ramps`オブジェクト）を共有し、両者の違いはモードごとの`map`だけです。
 
 <Note>
 
@@ -124,7 +124,7 @@ type RampRef =
 
 ### セマンティックトークンリファレンス（Default Dark の紐付け）
 
-どちらのスキームも 23 のロールすべてを紐付けます。下の表は Default Dark の`map.semantic` — `src/config/color-schemes.ts`で作り込まれたリファレンススキーム — を示します。Default Light はこれらのいくつかを別のランプストップやモードごとのリテラルに再度向けます。[モードごとのリテラルオーバーライド](#モードごとのリテラルオーバーライド)を参照してください。
+どちらのスキームも 23 のロールすべてを紐付けます。下の表は Default Dark の`map.semantic` — パッケージの`@takazudo/zudo-doc/color-schemes-defaults`で提供される、作り込まれたリファレンススキーム — を示します。Default Light はこれらのいくつかを別のランプストップやモードごとのリテラルに再度向けます。[モードごとのリテラルオーバーライド](#モードごとのリテラルオーバーライド)を参照してください。
 
 | トークン | デフォルトのランプ参照 | 用途 |
 |-------|------|-------|
@@ -140,7 +140,7 @@ type RampRef =
 | `danger` | モードごとのリテラル | エラー、破壊的操作 |
 | `warning` | `{ state: "warning" }` | 警告メッセージ、Admonition、find-in-pageハイライト |
 | `info` | `{ state: "info" }` | 情報ハイライト |
-| `mermaidNodeBg` / `mermaidText` / `mermaidLine` / `mermaidLabelBg` / `mermaidNoteBg` | `color-schemes.ts`を参照 | Mermaid ダイアグラムの色 |
+| `mermaidNodeBg` / `mermaidText` / `mermaidLine` / `mermaidLabelBg` / `mermaidNoteBg` | `@takazudo/zudo-doc/color-schemes-defaults`を参照 | Mermaid ダイアグラムの色 |
 | `chatUserBg` / `chatUserText` | `{ accent: 1 }` / `{ base: 4 }` | AI チャットのユーザーバブル |
 | `chatAssistantBg` / `chatAssistantText` | `{ base: 4 }`（= `bg`） / `{ base: 0 }` | AI チャットのアシスタントバブル — `bg`にマージ |
 | `imageOverlayBg` / `imageOverlayFg` | `{ base: 4 }` / `{ base: 0 }` | 画像拡大オーバーレイ — `bg`にマージ |
@@ -166,7 +166,7 @@ type RampRef =
 
 ### スキームのセマンティック紐付けの調整
 
-`src/config/color-schemes.ts`の`map.semantic`を編集します。ロールは共有ランプストップまたはリテラル OKLCH 文字列を指すことができます：
+自作の`colorSchemes`上書きモジュール（`zfb.config.ts`の`colorSchemes`フィールドで渡す）の`map.semantic`を編集します。ロールは共有ランプストップまたはリテラル OKLCH 文字列を指すことができます：
 
 ```ts
 const darkMap: ModeMap = {
@@ -259,27 +259,33 @@ Tier 3のトークンはコンポーネント内部のものです。独自のUI
 
 ## カラースキーム
 
-アクティブなカラースキームを変更するには、`src/config/settings.ts`を編集します：
+アクティブなカラースキームを変更するには、`zfb.config.ts`の`colorScheme`を設定します：
 
-```ts
-export const settings = {
-  colorScheme: "Default Dark",  // ここを変更
-  siteName: "zudo-doc",
-  // ...
-};
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    colorScheme: "Default Dark", // ここを変更
+    siteName: "My Docs",
+    // ...
+  }),
+);
 ```
 
 ### デフォルトテーマ
 
-zudo-docはちょうど 2 つのカラースキーム — **Default Light**と**Default Dark** — を同梱しており、1 セットのランプを共有します（`src/config/color-schemes.ts`を参照）。どちらも手作業で作り込まれ、その場で AA 調整されています。選べるコミュニティ製やターミナル由来のプリセットカタログはバンドルされていません。以前の Design Token Panel には 50 種類以上のバンドルプリセットをブラウズするための "Scheme…" ドロップダウンがありましたが、ランプネイティブなモデルではこれを廃止しました — [Design Token Panel](./design-token-panel.mdx)を参照してください。
+zudo-docはちょうど 2 つのカラースキーム — **Default Light**と**Default Dark** — を同梱しており、1 セットのランプを共有します（パッケージの`@takazudo/zudo-doc/color-schemes-defaults`を参照）。どちらも手作業で作り込まれ、その場で AA 調整されています。選べるコミュニティ製やターミナル由来のプリセットカタログはバンドルされていません。以前の Design Token Panel には 50 種類以上のバンドルプリセットをブラウズするための "Scheme…" ドロップダウンがありましたが、ランプネイティブなモデルではこれを廃止しました — [Design Token Panel](./design-token-panel.mdx)を参照してください。
 
 ## カスタムカラースキームの追加
 
-`src/config/color-schemes.ts`の`colorSchemes`オブジェクトに新しいエントリを追加します。新しいスキームには独自の`ramps`と、必要な各モードの`map`が必要です（`SEMANTIC_RAMP_DEFAULTS`をスプレッドし、異なる必要のあるものだけを上書きします）：
+`colorSchemes`は`zudoDoc()`のエスケープハッチの1つです — 省略した場合は上記の2つの同梱スキームがそのまま使われます。スキームを追加または置き換えるには、独自のモジュール（例：`src/config/color-schemes.ts`）を作成して`Record<string, ColorScheme>`を組み立て、`zfb.config.ts`の`colorSchemes`フィールドで渡します。新しいスキームには独自の`ramps`と、必要な各モードの`map`が必要です（`SEMANTIC_RAMP_DEFAULTS`をスプレッドし、異なる必要のあるものだけを上書きします）。2つの同梱スキームも一緒に残したい場合は`defaultColorSchemes`もスプレッドしてください：
 
-```ts
+```ts title="src/config/color-schemes.ts"
 import { SEMANTIC_RAMP_DEFAULTS } from "@takazudo/zudo-doc/color-scheme-utils";
-import type { ColorScheme, ModeMap, Ramps } from "./color-scheme-utils";
+import { defaultColorSchemes } from "@takazudo/zudo-doc/color-schemes-defaults";
+import type { ColorScheme, ModeMap, Ramps } from "@takazudo/zudo-doc/color-scheme-utils";
 
 const myRamps: Ramps = {
   base: [
@@ -314,10 +320,21 @@ const myMap: ModeMap = {
 };
 
 export const colorSchemes: Record<string, ColorScheme> = {
-  "Default Light": { ramps, map: lightMap },
-  "Default Dark": { ramps, map: darkMap },
+  ...defaultColorSchemes, // "Default Light" / "Default Dark" を維持
   "My Theme": { ramps: myRamps, map: myMap },
 };
+```
+
+```ts title="zfb.config.ts"
+import { colorSchemes } from "./src/config/color-schemes";
+
+export default defineConfig(
+  zudoDoc({
+    colorScheme: "My Theme",
+    colorSchemes,
+    // ...
+  }),
+);
 ```
 
 <Tip>

@@ -116,7 +116,7 @@ Each entry shows the file path, line number, and the problematic href.
 
 ## Configuration
 
-The link checker reads its configuration from `src/config/settings.ts`:
+The link checker reads its configuration from the resolved config (the fields you pass to `zudoDoc({...})` in `zfb.config.ts`):
 
 - **`base`** — The site's base path, used to strip prefixes when resolving links
 - **`docsDir`** — Primary content directory for MDX source scanning

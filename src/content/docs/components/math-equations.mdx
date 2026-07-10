@@ -8,7 +8,7 @@ When `math` is enabled in settings (default: `true`), you can render mathematica
 
 <Info>
 
-`$...$`, `$$...$$`, and `` ```math `` fences are **not supported** in zfb. The zfb Rust MDX emitter does not process those syntaxes — use `<MathBlock latex="..." />` instead (see [`pages/lib/_math-block.tsx`](https://github.com/zudolab/zudo-doc/blob/main/pages/lib/_math-block.tsx)).
+`$...$`, `$$...$$`, and `` ```math `` fences are **not supported** in zfb. The zfb Rust MDX emitter does not process those syntaxes — use `<MathBlock latex="..." />` instead (shipped as [`@takazudo/zudo-doc/math-block`](https://github.com/zudolab/zudo-doc/blob/main/packages/zudo-doc/src/math-block)).
 
 </Info>
 
@@ -34,13 +34,15 @@ Add the `block` prop to render a centered display equation.
 
 ## Configuration
 
-Math support is controlled by the `math` setting in `src/config/settings.ts`:
+Math support is controlled by the `math` field in `zfb.config.ts`:
 
-```ts
-export const settings = {
-  // ...
-  math: true, // enabled by default
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    math: true, // enabled by default
+  }),
+);
 ```
 
 ## More Examples

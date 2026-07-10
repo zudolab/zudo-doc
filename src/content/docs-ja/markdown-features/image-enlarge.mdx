@@ -8,20 +8,21 @@ sidebar_position: 12
 
 :::note Opt-in 機能
 
-`src/config/settings.ts` の `imageEnlarge` キーで有効化します。
+`zfb.config.ts` の `imageEnlarge` フィールドで有効化します。
 
-```ts
-// src/config/settings.ts
-export const settings = {
-  imageEnlarge: true,
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    imageEnlarge: true,
+  }),
+);
 ```
 
 :::
 
-:::note `markdown.features.*` キーではなく `settings.*` で設定する理由
+:::note `markdown.features.*` キーではなく設定フィールドで設定する理由
 
-他のオプトイン Markdown 機能とは異なり、Image Enlarge は `zfb.config.ts` の `markdown.features` 配下では設定しません。zfb は組み込みの `markdown.features.imageEnlarge` 機能を `0.1.0-next.18` で完全に削除しており、今これを設定すると **Rust の設定ローダーが失敗する未知のキー**になります。zudo-doc はこの挙動を、`pages/_mdx-components.ts` にある MDX の段落（`p`）コンポーネントのオーバーライドとしてユーザーランドで再実装しており、条件を満たすブロック画像に対して `<figure class="zd-enlargeable">` マークアップを出力します。このオーバーライドは `settings.imageEnlarge` を参照するため、この画像機能だけが Markdown パイプライン設定ではなく `src/config/settings.ts` で切り替える唯一の機能になっています。
+他のオプトイン Markdown 機能とは異なり、Image Enlarge は `zfb.config.ts` の `markdown.features` 配下では設定しません。zfb は組み込みの `markdown.features.imageEnlarge` 機能を `0.1.0-next.18` で完全に削除しており、今これを設定すると **Rust の設定ローダーが失敗する未知のキー**になります。zudo-doc はこの挙動を、パッケージの `@takazudo/zudo-doc/mdx-components` ファクトリに組み込まれた MDX の段落（`p`）コンポーネントのオーバーライドとしてユーザーランドで再実装しており、条件を満たすブロック画像に対して `<figure class="zd-enlargeable">` マークアップを出力します。このオーバーライドは解決済みの `imageEnlarge` 設定値を参照するため、この画像機能だけが Markdown パイプライン設定ではなくトップレベルの設定フィールドで切り替える唯一の機能になっています。
 
 :::
 

@@ -6,31 +6,35 @@ tags:
   - customization
 ---
 
-The footer appears at the bottom of every page and is configurable through `src/config/settings.ts` under the `footer` property. It supports a multi-column link layout and optional copyright text.
+The footer appears at the bottom of every page and is configurable through the `footer` field passed to `zudoDoc({...})` in `zfb.config.ts`. It supports a multi-column link layout and optional copyright text.
 
 ## Configuration
 
-The `footer` property in `src/config/settings.ts` accepts a `FooterConfig` object:
+The `footer` field accepts a `FooterConfig` object:
 
-```ts
-footer: {
-  links: [
-    {
-      title: "Docs",
-      items: [
-        { label: "Getting Started", href: "/docs/getting-started" },
-        { label: "Guides", href: "/docs/guides" },
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    footer: {
+      links: [
+        {
+          title: "Docs",
+          items: [
+            { label: "Getting Started", href: "/docs/getting-started" },
+            { label: "Guides", href: "/docs/guides" },
+          ],
+        },
+        {
+          title: "Community",
+          items: [
+            { label: "GitHub", href: "https://github.com/zudolab/zudo-doc" },
+          ],
+        },
       ],
+      copyright: `Copyright © ${new Date().getFullYear()} <a href="https://example.com">Your Name</a>. Built with <a href="https://zudo-doc.takazudomodular.com/">zudo-doc</a>.`,
     },
-    {
-      title: "Community",
-      items: [
-        { label: "GitHub", href: "https://github.com/zudolab/zudo-doc" },
-      ],
-    },
-  ],
-  copyright: `Copyright © ${new Date().getFullYear()} <a href="https://example.com">Your Name</a>. Built with <a href="https://zudo-doc.takazudomodular.com/">zudo-doc</a>.`,
-} satisfies FooterConfig as FooterConfig | false,
+  }),
+);
 ```
 
 ### links
@@ -106,7 +110,7 @@ The grid layout uses `repeat(auto-fit, minmax(12rem, 1fr))` on large screens, so
 
 ## Disabling the Footer
 
-To remove the footer entirely, set `footer` to `false` in settings:
+To remove the footer entirely, set `footer` to `false` in `zfb.config.ts`:
 
 ```ts
 footer: false as FooterConfig | false,
@@ -151,7 +155,7 @@ External links are never locale-prefixed — only internal hrefs (those that don
 
 ## TypeScript Types
 
-The footer configuration uses these interfaces defined in `src/config/settings-types.ts`:
+The footer configuration uses these interfaces, exported from `@takazudo/zudo-doc/settings`:
 
 ```ts
 interface FooterLinkItem {
@@ -172,7 +176,7 @@ interface FooterConfig {
 }
 ```
 
-The `footer` property in settings is typed as `FooterConfig | false`, allowing it to be either a configuration object or `false` to disable.
+The `footer` field on `ZudoDocConfig` is typed as `FooterConfig | false`, allowing it to be either a configuration object or `false` to disable.
 
 ## Styling
 

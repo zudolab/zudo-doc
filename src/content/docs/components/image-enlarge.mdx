@@ -43,12 +43,14 @@ On high-DPI displays (e.g. 2× retina), eligibility accounts for device pixel ra
 
 ## Settings
 
-Image enlarge is enabled in `src/config/settings.ts`:
+Image enlarge is enabled via the `imageEnlarge` field in `zfb.config.ts`:
 
-```ts
-export const settings = {
-  imageEnlarge: true,
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    imageEnlarge: true,
+  }),
+);
 ```
 
 Set `imageEnlarge: false` to disable the feature entirely.
@@ -63,7 +65,7 @@ The enlarge button and the dialog's close button share a single token pair that 
 The right overlay color depends on the content photos, which vary between sites. The default values work for most cases, but any color scheme can override them per the three-tier color strategy (see [Color](../reference/color.mdx)):
 
 ```ts
-// src/config/color-schemes.ts
+// your colorSchemes override module, passed via the `colorSchemes` field in zfb.config.ts
 semantic: {
   imageOverlayBg: { base: 4 },   // ramp stop — deep surface
   imageOverlayFg: { base: 0 },  // ramp stop — light text

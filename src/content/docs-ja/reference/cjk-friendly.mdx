@@ -55,15 +55,17 @@ CommonMark の仕様では、強調のパースにおいて特定の文字を「
 
 ## 有効化・無効化
 
-プラグインは `src/config/settings.ts` の `cjkFriendly` 設定で制御します：
+プラグインは `zfb.config.ts` の `cjkFriendly` フィールドで制御します：
 
-```ts
-export const settings = {
-  // ...
-  cjkFriendly: true,   // false に設定すると無効
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    cjkFriendly: true, // パッケージのデフォルトは false
+  }),
+);
 ```
 
-`cjkFriendly` が `true`（デフォルト）の場合、`remark-cjk-friendly` が MDX の remark プラグインチェーンに自動的に追加されます。コンテンツが英語のみで、標準の CommonMark 動作を使いたい場合は `false` に設定してください。
+`cjkFriendly` が `true`（このショーケースでの設定 — パッケージのデフォルトは `false`）の場合、`remark-cjk-friendly` が MDX の remark プラグインチェーンに自動的に追加されます。コンテンツが英語のみで、標準の CommonMark 動作を使いたい場合は `false`（または省略）にしてください。
 
-[create-zudo-doc CLI](./create-zudo-doc.mdx) でプロジェクトを作成する際は、`--preset` フラグでプリセット JSON を渡すか、[セットアッププリセットジェネレーター](../getting-started/setup-preset-generator.mdx)でプリセットを生成することでこの設定を指定できます。`--cjk-friendly` / `--no-cjk-friendly` という専用のCLIフラグは存在しません。`cjkFriendly` はプリセット/`settings.ts` のフィールドとしてのみ設定可能です。
+[create-zudo-doc CLI](./create-zudo-doc.mdx) でプロジェクトを作成する際は、`--preset` フラグでプリセット JSON を渡すか、[セットアッププリセットジェネレーター](../getting-started/setup-preset-generator.mdx)でプリセットを生成することでこの設定を指定できます。`--cjk-friendly` / `--no-cjk-friendly` という専用のCLIフラグは存在しません。`cjkFriendly` はプリセット/設定フィールドとしてのみ設定可能です。

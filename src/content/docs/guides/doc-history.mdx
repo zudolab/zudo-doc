@@ -24,13 +24,15 @@ This feature requires that your documentation is tracked in a git repository. Hi
 
 ## Enabling Document History
 
-Set `docHistory` to `true` in `src/config/settings.ts`:
+Set `docHistory` to `true` in `zfb.config.ts`:
 
-```ts
-export const settings = {
-  // ...
-  docHistory: true,
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    docHistory: true,
+  }),
+);
 ```
 
 The feature is **disabled by default** to keep builds fast for projects that don't need it.

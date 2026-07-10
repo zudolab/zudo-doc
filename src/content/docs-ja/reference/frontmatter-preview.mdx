@@ -18,7 +18,7 @@ tags:
 
 フィルタリングを経て少なくとも1つのフロントマターキーが残った場合のみブロックが表示されます。フレームワーク管理のキー（`title`、`description`、`sidebar_position`、`tags` など）はデフォルトで除外されます。すべてのキーが無視リストに含まれている場合は何も表示されません。
 
-`src/config/settings.ts` で `frontmatterPreview: false` を設定すると、すべてのページでこの機能を無効にできます。
+`zfb.config.ts`（`zudoDoc({...})` の呼び出し）で `frontmatterPreview: false` を設定すると、すべてのページでこの機能を無効にできます。
 
 ## デフォルト無視リスト
 
@@ -47,7 +47,7 @@ tags:
 
 ## 無視リストのカスタマイズ
 
-`src/config/settings.ts` の `frontmatterPreview` 設定には、互いに排他的な2つの設定があります。
+`zudoDoc({...})`（`zfb.config.ts` に設定）の `frontmatterPreview` フィールドには、互いに排他的な2つの設定があります。
 
 ### `extraIgnoreKeys` — デフォルトを拡張する
 
@@ -142,7 +142,7 @@ discount: ({ value }) => {
 
 無視リストに登録されているキーのレンダラーは効果がありません。無視リストはレンダラーの検索より _前_ に適用されます。キーが抑制されている場合、行はレンダリングされず、レンダラーも呼び出されません。
 
-フレームワーク管理のキー（`draft` など）をカスタムレンダラーで表示するには、まず `src/config/settings.ts` の無視リストからそのキーを削除してください：
+フレームワーク管理のキー（`draft` など）をカスタムレンダラーで表示するには、まず `zfb.config.ts` に設定した `frontmatterPreview` の無視リストからそのキーを削除してください：
 
 ```ts
 frontmatterPreview: {

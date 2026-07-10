@@ -6,31 +6,35 @@ tags:
   - customization
 ---
 
-フッターはすべてのページの下部に表示され、`src/config/settings.ts`の`footer`プロパティで設定できます。複数カラムのリンクレイアウトとオプションの著作権テキストをサポートしています。
+フッターはすべてのページの下部に表示され、`zfb.config.ts`で`zudoDoc({...})`に渡す`footer`フィールドで設定できます。複数カラムのリンクレイアウトとオプションの著作権テキストをサポートしています。
 
 ## 設定
 
-`src/config/settings.ts`の`footer`プロパティは`FooterConfig`オブジェクトを受け入れます：
+`footer`フィールドは`FooterConfig`オブジェクトを受け入れます：
 
-```ts
-footer: {
-  links: [
-    {
-      title: "Docs",
-      items: [
-        { label: "Getting Started", href: "/docs/getting-started" },
-        { label: "Guides", href: "/docs/guides" },
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    footer: {
+      links: [
+        {
+          title: "Docs",
+          items: [
+            { label: "Getting Started", href: "/docs/getting-started" },
+            { label: "Guides", href: "/docs/guides" },
+          ],
+        },
+        {
+          title: "Community",
+          items: [
+            { label: "GitHub", href: "https://github.com/zudolab/zudo-doc" },
+          ],
+        },
       ],
+      copyright: `Copyright © ${new Date().getFullYear()} <a href="https://example.com">Your Name</a>. Built with <a href="https://zudo-doc.takazudomodular.com/">zudo-doc</a>.`,
     },
-    {
-      title: "Community",
-      items: [
-        { label: "GitHub", href: "https://github.com/zudolab/zudo-doc" },
-      ],
-    },
-  ],
-  copyright: `Copyright © ${new Date().getFullYear()} <a href="https://example.com">Your Name</a>. Built with <a href="https://zudo-doc.takazudomodular.com/">zudo-doc</a>.`,
-} satisfies FooterConfig as FooterConfig | false,
+  }),
+);
 ```
 
 ### links
@@ -106,7 +110,7 @@ footer: {
 
 ## フッターの無効化
 
-フッターを完全に削除するには、設定で`footer`を`false`に設定します：
+フッターを完全に削除するには、`zfb.config.ts`で`footer`を`false`に設定します：
 
 ```ts
 footer: false as FooterConfig | false,
@@ -151,7 +155,7 @@ footer: {
 
 ## TypeScript型
 
-フッターの設定は`src/config/settings-types.ts`で定義されている以下のインターフェースを使用します：
+フッターの設定は、`@takazudo/zudo-doc/settings`からエクスポートされている以下のインターフェースを使用します：
 
 ```ts
 interface FooterLinkItem {
@@ -172,7 +176,7 @@ interface FooterConfig {
 }
 ```
 
-設定の`footer`プロパティは`FooterConfig | false`として型付けされており、設定オブジェクトまたは無効化のための`false`のいずれかを指定できます。
+`ZudoDocConfig`の`footer`フィールドは`FooterConfig | false`として型付けされており、設定オブジェクトまたは無効化のための`false`のいずれかを指定できます。
 
 ## スタイリング
 

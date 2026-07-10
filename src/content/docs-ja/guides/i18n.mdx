@@ -17,15 +17,17 @@ zudo-docはzfbのi18nルーティングを使用して複数の言語をサポ�
 
 ## 設定ベースのロケール構成
 
-ロケールは`src/config/settings.ts`で設定します：
+ロケールは`zfb.config.ts`で設定します：
 
-```ts
-export const settings = {
-  // ...
-  locales: {
-    ja: { label: "JA", dir: "src/content/docs-ja" },
-  },
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    locales: {
+      ja: { label: "JA", dir: "src/content/docs-ja" },
+    },
+  }),
+);
 ```
 
 各ロケールエントリに対して、zudo-docは自動的に：
@@ -75,11 +77,11 @@ zudo-docは組み込みUI文字列に翻訳キーシステムを使用してい�
 
 ## zfb設定
 
-ロケールリストは`zfb.config.ts`を経由します。`settings.locales`の各エントリは自動的に`docs-{code}`コンテンツコレクションになります — 別途維持する`i18n`ブロックはありません。`pages/[locale]/docs/[...slug].tsx`配下のページルートが`paths()`エクスポートでロケールを列挙するため、英語ページは言語プレフィックスなし（`/docs/...`）で配信され、デフォルト以外のロケールはコードをプレフィックスとして使用します（`/ja/docs/...`）。
+ロケールリストは`zfb.config.ts`を経由します。`zudoDoc({...})`に渡す`locales`フィールドの各エントリは自動的に`docs-{code}`コンテンツコレクションになります — 別途維持する`i18n`ブロックはありません。`pages/[locale]/docs/[...slug].tsx`配下のページルートが`paths()`エクスポートでロケールを列挙するため、英語ページは言語プレフィックスなし（`/docs/...`）で配信され、デフォルト以外のロケールはコードをプレフィックスとして使用します（`/ja/docs/...`）。
 
 <Note>
 
-`zfb.config.ts`のロケールリストは`settings.locales`から自動的に導出されるため、ロケールの管理は一箇所のみで行えます。
+`zfb.config.ts`全体で使われるロケールリストは`locales`フィールドから自動的に導出されるため、ロケールの管理は一箇所のみで行えます。
 
 </Note>
 
@@ -87,7 +89,7 @@ zudo-docは組み込みUI文字列に翻訳キーシステムを使用してい�
 
 新しい言語（例：韓国語）を追加するには：
 
-1. `settings.ts`にロケールを追加：
+1. `zfb.config.ts`にロケールを追加：
 
    ```ts
    locales: {
@@ -102,7 +104,7 @@ zudo-docは組み込みUI文字列に翻訳キーシステムを使用してい�
 
 <Tip>
 
-ステップ1が最も重要です — `settings.ts`にロケールを追加すると、コンテンツコレクションの作成とi18nルーティングの登録が自動的に行われます。ロケールごとのページルートファイルを作成する必要はありません。`pages/[locale]/docs/[[...slug]].tsx` のパラメーター化されたルートがすべてのロケールを自動的に処理します。
+ステップ1が最も重要です — `zfb.config.ts`にロケールを追加すると、コンテンツコレクションの作成とi18nルーティングの登録が自動的に行われます。ロケールごとのページルートファイルを作成する必要はありません。`pages/[locale]/docs/[[...slug]].tsx` のパラメーター化されたルートがすべてのロケールを自動的に処理します。
 
 </Tip>
 
@@ -110,32 +112,36 @@ zudo-docは組み込みUI文字列に翻訳キーシステムを使用してい�
 
 `defaultLocale`はURLプレフィックスなしで配信されるロケールを指定します。デフォルトは`"en"`で、zfbのデフォルトロケールルーティングに使用するキーと一致している必要があります：
 
-```ts
-export const settings = {
-  // ...
-  defaultLocale: "en" as const,
-  locales: {
-    ja: { label: "JA", dir: "src/content/docs-ja" },
-  },
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    defaultLocale: "en",
+    locales: {
+      ja: { label: "JA", dir: "src/content/docs-ja" },
+    },
+  }),
+);
 ```
 
 `zfb.config.ts`で設定された`prefixDefaultLocale: false`により、デフォルトロケールはパスに言語コードを含まない`/docs/...`で配信され、他のすべてのロケールはキーをプレフィックスとして使用します（日本語の場合は`/ja/docs/...`）。`defaultLocale`を変更する場合は、`zfb.config.ts`内の対応するルーティングとコレクションの設定も更新する必要があります。
 
 ## Default-locale-only prefixes
 
-一部のコンテンツはデフォルトロケールでのみ提供されるよう意図的に設計されています。これらのルートは**デフォルトロケール専用プレフィックス**と呼ばれ、`src/config/settings.ts`の`defaultLocaleOnlyPrefixes`設定で管理されます：
+一部のコンテンツはデフォルトロケールでのみ提供されるよう意図的に設計されています。これらのルートは**デフォルトロケール専用プレフィックス**と呼ばれ、`zfb.config.ts`の`defaultLocaleOnlyPrefixes`フィールドで管理されます：
 
-```ts
-export const settings = {
-  // ...
-  defaultLocaleOnlyPrefixes: [
-    "/docs/claude-md/",
-    "/docs/claude-skills/",
-    "/docs/claude-agents/",
-    "/docs/claude-commands/",
-  ] as string[],
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    defaultLocaleOnlyPrefixes: [
+      "/docs/claude-md/",
+      "/docs/claude-skills/",
+      "/docs/claude-agents/",
+      "/docs/claude-commands/",
+    ],
+  }),
+);
 ```
 
 ### 意味するところ
