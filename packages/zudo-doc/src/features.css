@@ -14,6 +14,7 @@
  *   --spacing-{hsp-sm,hsp-2xs,hsp-lg,hsp-md,hsp-xl,vsp-xs,vsp-2xs,vsp-md,
  *              icon-sm}
  *   --z-index-local-1
+ *   --z-index-toolbar
  *   --radius-{DEFAULT,lg}
  *   --font-{mono,sans}
  *   --text-{small,caption}
@@ -27,6 +28,15 @@
  * All of these are defined by the project's @theme block (which is a
  * pre-condition before @importing this file).
  * ─────────────────────────────────────────────────────────────────────────── */
+
+/* ========================================
+ * Shared chrome defaults
+ * ======================================== */
+
+header[data-header] {
+  background-color: var(--color-surface, var(--color-bg));
+  z-index: var(--z-index-toolbar, 20);
+}
 
 /* ========================================
  * Code block buttons (copy + word wrap)
