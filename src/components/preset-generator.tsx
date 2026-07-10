@@ -1,5 +1,6 @@
 "use client";
 
+import type { ComponentChildren, JSX } from "preact";
 import { useState, useCallback, useMemo, useRef, useEffect } from "preact/hooks";
 import { useModalDialog } from "@takazudo/zudo-doc/use-modal-dialog";
 import {
@@ -33,7 +34,7 @@ function headerRightItemKey(item: HeaderRightItemSpec): string {
 
 // ── Sub-components ──
 
-function SectionHeading({ children }: { children: React.ReactNode }) {
+function SectionHeading({ children }: { children: ComponentChildren }) {
   return (
     <HeadingH3 className="mb-vsp-xs">
       {children}
@@ -50,7 +51,7 @@ function HeaderRightItemRow({
   spec: HeaderRightItemSpec;
   checked: boolean;
   onToggle: () => void;
-  moveControls?: React.ReactNode;
+  moveControls?: ComponentChildren;
 }) {
   const label = HEADER_RIGHT_LABELS[spec.name] ?? spec.name;
   const isAiChat = spec.name === "ai-chat";
@@ -109,6 +110,10 @@ function PresetModal({
     onClose,
     backdropClickClose: true,
   });
+  // The package hook's handler is typed via preact/compat (React-flavored
+  // MouseEvent); this file compiles preact-native under tsconfig.pages.json.
+  // Same runtime event either way — bridge the two typing flavors here.
+  const onDialogClick = handleBackdropClick as unknown as JSX.MouseEventHandler<HTMLDialogElement>;
 
   useEffect(() => {
     return () => {
@@ -151,7 +156,7 @@ function PresetModal({
   return (
     <dialog
       ref={dialogRef}
-      onClick={handleBackdropClick}
+      onClick={onDialogClick}
       className="mx-auto max-h-[80vh] w-full max-w-[40rem] overflow-y-auto border border-muted bg-surface p-hsp-xl backdrop:bg-bg/80"
       style={{
         color: "var(--color-fg)",
