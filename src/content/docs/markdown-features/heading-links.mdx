@@ -18,10 +18,10 @@ Every heading at `h2` and below automatically receives:
 
 ## ID strategy
 
-The scheme used to build the `id` is selected by `markdown.features.headingIds.strategy` in `zfb.config.ts`. zudo-doc wires this to a single setting, `headingIdStrategy` in `src/config/settings.ts`, so the rendered IDs and the right-hand TOC anchors are driven by one source of truth.
+The scheme used to build the `id` is selected by `markdown.features.headingIds.strategy` in the generated `zfb.config.ts`. zudo-doc wires this to a single setting, the `headingIdStrategy` field you pass to `zudoDoc({...})`, so the rendered IDs and the right-hand TOC anchors are driven by one source of truth.
 
 ```ts
-// zfb.config.ts
+// what zudoDoc() wires internally, from your headingIdStrategy field
 markdown: {
   features: {
     headingIds: { strategy: settings.headingIdStrategy }, // "flat" | "hierarchical"

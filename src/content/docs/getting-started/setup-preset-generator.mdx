@@ -12,17 +12,17 @@ Use this interactive tool to configure your zudo-doc project options and generat
 
 The generator ships exactly two bundled color schemes — `Default Light` and `Default Dark` — sharing one set of OKLCH ramps. In **Single scheme** mode, the dropdown lets you pick either one. In **Light & Dark (toggle)** mode, the pairing is fixed to `Default Light` / `Default Dark` — there is no scheme dropdown to pick a different pairing, only the default-mode and respect-system-preference options.
 
-To customize the palette beyond these two starting points, edit the ramps and semantic map in `src/config/color-schemes.ts` after scaffolding — see [Color](../reference/color.mdx#adding-a-custom-color-scheme) and preview changes live with the [Design Token Panel](../reference/design-token-panel.mdx)'s Palette tab (see [Color Scheme Preview](../guides/color-scheme-preview.mdx)).
+To customize the palette beyond these two starting points, write your own `colorSchemes` override module (with your own ramps and semantic map) after scaffolding and pass it via the `colorSchemes` field in `zfb.config.ts` — see [Adding a Custom Color Scheme](../reference/color.mdx#adding-a-custom-color-scheme) and preview changes live with the [Design Token Panel](../reference/design-token-panel.mdx)'s Palette tab (see [Color Scheme Preview](../guides/color-scheme-preview.mdx)).
 
 ## Header right items
 
-The "Header right items" section configures `settings.headerRightItems` — the right-side cluster of the site header (theme toggle, language switcher, version switcher, GitHub link, and the Design Token Panel / AI Chat triggers). Toggle each item on or off, and use the up/down buttons to change render order.
+The "Header right items" section configures the `headerRightItems` field — the right-side cluster of the site header (theme toggle, language switcher, version switcher, GitHub link, and the Design Token Panel / AI Chat triggers). Toggle each item on or off, and use the up/down buttons to change render order.
 
-Two item kinds — `link` (custom external link) and `html` (raw HTML) — are intentionally not exposed in the UI. Add those by editing `settings.ts` directly after scaffolding. See [Header Right Items](../guides/header-right-items.mdx) for the full discriminated-union schema and examples.
+Two item kinds — `link` (custom external link) and `html` (raw HTML) — are intentionally not exposed in the UI. Add those by editing `zfb.config.ts` directly after scaffolding. See [Header Right Items](../guides/header-right-items.mdx) for the full discriminated-union schema and examples.
 
 ## Meta tags
 
-The "Meta tags" section configures `settings.metaTags` — which meta tags are emitted in each page's `<head>`. The available options are:
+The "Meta tags" section configures the `metaTags` field — which meta tags are emitted in each page's `<head>`. The available options are:
 
 - **SEO description meta** — emit `<meta name="description">`. On by default.
 - **Keywords** — emit `<meta name="keywords">` with a comma-separated list you provide. Off by default; enabling it reveals a text input.

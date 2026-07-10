@@ -55,15 +55,17 @@ The same fix applies to italic markers and all affected CJK punctuation characte
 
 ## Enabling and Disabling
 
-The plugin is controlled by the `cjkFriendly` setting in `src/config/settings.ts`:
+The plugin is controlled by the `cjkFriendly` field in `zfb.config.ts`:
 
-```ts
-export const settings = {
-  // ...
-  cjkFriendly: true,   // set to false to disable
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    cjkFriendly: true, // package default is false
+  }),
+);
 ```
 
-When `cjkFriendly` is `true` (the default), `remark-cjk-friendly` is added to the MDX remark plugin chain automatically. Set it to `false` if your content is English-only and you prefer the standard CommonMark behavior.
+When `cjkFriendly` is `true` (as this showcase sets it — the package default is `false`), `remark-cjk-friendly` is added to the MDX remark plugin chain automatically. Set it to `false` (or omit it) if your content is English-only and you prefer the standard CommonMark behavior.
 
 You can also configure this option when scaffolding a new project by passing a preset JSON file to the [create-zudo-doc CLI](./create-zudo-doc.mdx) with the `--preset` flag, or by generating one with the [Setup Preset Generator](../getting-started/setup-preset-generator.mdx). There is no dedicated `--cjk-friendly` / `--no-cjk-friendly` CLI flag — `cjkFriendly` is a preset/settings field only.

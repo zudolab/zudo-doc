@@ -20,30 +20,32 @@ zudo-docはDocusaurusにインスパイアされたナビゲーション階層�
 
 ## 設定
 
-`src/config/settings.ts`でヘッダーナビゲーションアイテムを定義します。アイテムはフラットリンクまたはネストされた子を持つドロップダウン親のいずれかです：
+`zfb.config.ts`でヘッダーナビゲーションアイテムを定義します。アイテムはフラットリンクまたはネストされた子を持つドロップダウン親のいずれかです：
 
-```ts
-export const settings = {
-  // ...
-  headerNav: [
-    // フラットリンク（ドロップダウンなし）
-    { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    headerNav: [
+      // フラットリンク（ドロップダウンなし）
+      { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
 
-    // 子を持つドロップダウン親
-    {
-      label: "Learn",
-      labelKey: "nav.learn",
-      path: "/docs/guides",
-      categoryMatch: "guides",
-      children: [
-        { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
-        { label: "Components", labelKey: "nav.components", path: "/docs/components", categoryMatch: "components" },
-      ],
-    },
+      // 子を持つドロップダウン親
+      {
+        label: "Learn",
+        labelKey: "nav.learn",
+        path: "/docs/guides",
+        categoryMatch: "guides",
+        children: [
+          { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
+          { label: "Components", labelKey: "nav.components", path: "/docs/components", categoryMatch: "components" },
+        ],
+      },
 
-    { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
-  ],
-};
+      { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
+    ],
+  }),
+);
 ```
 
 ## プロパティ

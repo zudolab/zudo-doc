@@ -8,7 +8,7 @@ sidebar_position: 5
 
 <Info>
 
-`$...$`、`$$...$$`、および `` ```math `` フェンスは **zfb では非対応です**。zfb の Rust MDX エミッタはこれらの構文を処理しません — 代わりに `<MathBlock latex="..." />` を使用してください（[`pages/lib/_math-block.tsx`](https://github.com/zudolab/zudo-doc/blob/main/pages/lib/_math-block.tsx) を参照）。
+`$...$`、`$$...$$`、および `` ```math `` フェンスは **zfb では非対応です**。zfb の Rust MDX エミッタはこれらの構文を処理しません — 代わりに `<MathBlock latex="..." />` を使用してください（パッケージが公開する [`@takazudo/zudo-doc/math-block`](https://github.com/zudolab/zudo-doc/blob/main/packages/zudo-doc/src/math-block) を参照）。
 
 </Info>
 
@@ -34,13 +34,15 @@ sidebar_position: 5
 
 ## 設定
 
-数式サポートは `src/config/settings.ts` の `math` 設定で制御されます：
+数式サポートは `zfb.config.ts` の `math` フィールドで制御されます：
 
-```ts
-export const settings = {
-  // ...
-  math: true, // デフォルトで有効
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    math: true, // デフォルトで有効
+  }),
+);
 ```
 
 ## その他の例

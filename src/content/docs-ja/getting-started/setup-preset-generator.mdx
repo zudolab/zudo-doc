@@ -12,17 +12,17 @@ sidebar_position: 2.5
 
 ジェネレーターが同梱するカラースキームは `Default Light` と `Default Dark` の 2 つだけで、1 セットの OKLCH ランプを共有しています。**Single scheme** モードでは、ドロップダウンでどちらか一方を選べます。**Light & Dark（トグル）** モードでは、ペアリングは `Default Light` / `Default Dark` に固定されており、別のペアリングを選ぶスキームのドロップダウンはありません — あるのはデフォルトモードとシステム設定を尊重するかどうかのオプションだけです。
 
-この 2 つの出発点を超えてパレットをカスタマイズするには、スキャフォールド後に `src/config/color-schemes.ts` でランプとセマンティックマップを編集します — [Color](../reference/color.mdx#カスタムカラースキームの追加) を参照し、[Design Token Panel](../reference/design-token-panel.mdx) の Palette タブで変更をライブプレビューできます（[カラースキームプレビュー](../guides/color-scheme-preview.mdx)を参照）。
+この 2 つの出発点を超えてパレットをカスタマイズするには、スキャフォールド後に自作の `colorSchemes` 上書きモジュール（独自のランプとセマンティックマップを持つ）を作成し、`zfb.config.ts` の `colorSchemes` フィールドで渡します — [カスタムカラースキームの追加](../reference/color.mdx#カスタムカラースキームの追加) を参照し、[Design Token Panel](../reference/design-token-panel.mdx) の Palette タブで変更をライブプレビューできます（[カラースキームプレビュー](../guides/color-scheme-preview.mdx)を参照）。
 
 ## ヘッダー右側アイテム
 
-「Header right items」セクションは `settings.headerRightItems` — サイトヘッダー右側のクラスタ(テーマ切替、言語スイッチャー、バージョンスイッチャー、GitHub リンク、Design Token Panel / AI Chat トリガー)を構成します。各アイテムのオン・オフを切り替え、上下ボタンで描画順を変更できます。
+「Header right items」セクションは `headerRightItems` フィールド — サイトヘッダー右側のクラスタ(テーマ切替、言語スイッチャー、バージョンスイッチャー、GitHub リンク、Design Token Panel / AI Chat トリガー)を構成します。各アイテムのオン・オフを切り替え、上下ボタンで描画順を変更できます。
 
-2 種類のアイテム — `link`(任意の外部リンク)と `html`(生 HTML)— は、意図的に UI に出していません。これらを使う場合はスキャフォールド後に `settings.ts` を直接編集してください。discriminated union のスキーマと使用例は [ヘッダー右側アイテム](../guides/header-right-items.mdx) を参照してください。
+2 種類のアイテム — `link`(任意の外部リンク)と `html`(生 HTML)— は、意図的に UI に出していません。これらを使う場合はスキャフォールド後に `zfb.config.ts` を直接編集してください。discriminated union のスキーマと使用例は [ヘッダー右側アイテム](../guides/header-right-items.mdx) を参照してください。
 
 ## メタタグ
 
-「Meta tags」セクションは `settings.metaTags` — 各ページの `<head>` に出力されるメタタグを設定します。設定できる項目は以下のとおりです。
+「Meta tags」セクションは `metaTags` フィールド — 各ページの `<head>` に出力されるメタタグを設定します。設定できる項目は以下のとおりです。
 
 - **SEO description meta** — `<meta name="description">` を出力します。デフォルトでオン。
 - **Keywords** — カンマ区切りのキーワードリストを持つ `<meta name="keywords">` を出力します。デフォルトでオフ。有効にするとテキスト入力欄が表示されます。

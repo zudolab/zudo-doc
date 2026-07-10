@@ -8,20 +8,21 @@ The **Image Enlarge** feature wraps standalone block-level images in a `<figure>
 
 :::note Opt-in feature
 
-Enable it with the `imageEnlarge` key in `src/config/settings.ts`:
+Enable it with the `imageEnlarge` field in `zfb.config.ts`:
 
-```ts
-// src/config/settings.ts
-export const settings = {
-  imageEnlarge: true,
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    imageEnlarge: true,
+  }),
+);
 ```
 
 :::
 
-:::note Why it's a `settings.*` knob and not a `markdown.features.*` key
+:::note Why it's a config knob and not a `markdown.features.*` key
 
-Unlike the other opt-in markdown features, Image Enlarge is not configured under `markdown.features` in `zfb.config.ts`. zfb hard-removed the built-in `markdown.features.imageEnlarge` feature at `0.1.0-next.18` — setting it now produces an **unknown key that fails the Rust config loader**. zudo-doc re-implements the behavior in userland as an MDX paragraph (`p`) component override in `pages/_mdx-components.ts`, which emits the `<figure class="zd-enlargeable">` markup for qualifying block images. That override reads `settings.imageEnlarge`, which is why this is the only image feature toggled via `src/config/settings.ts` rather than the markdown pipeline config.
+Unlike the other opt-in markdown features, Image Enlarge is not configured under `markdown.features` in `zfb.config.ts`. zfb hard-removed the built-in `markdown.features.imageEnlarge` feature at `0.1.0-next.18` — setting it now produces an **unknown key that fails the Rust config loader**. zudo-doc re-implements the behavior in userland as an MDX paragraph (`p`) component override baked into the package's `@takazudo/zudo-doc/mdx-components` factory, which emits the `<figure class="zd-enlargeable">` markup for qualifying block images. That override reads the resolved `imageEnlarge` setting, which is why this is the only image feature toggled via a top-level config field rather than the markdown pipeline config.
 
 :::
 

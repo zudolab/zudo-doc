@@ -25,13 +25,15 @@ zudo-docは`llms.txt`と`llms-full.txt`ファイルを自動生成し、AIツー
 
 ## llms.txtの有効化
 
-この機能は**デフォルトで有効**です。明示的に制御するには、`src/config/settings.ts`で`llmsTxt`を設定します：
+この機能は**デフォルトで有効**です。明示的に制御するには、`zfb.config.ts`で`llmsTxt`を設定します：
 
-```ts
-export const settings = {
-  // ...
-  llmsTxt: true,  // デフォルトで有効
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    llmsTxt: true, // デフォルトで有効
+  }),
+);
 ```
 
 無効にするには：

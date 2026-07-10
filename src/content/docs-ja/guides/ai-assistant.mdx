@@ -14,13 +14,15 @@ AIアシスタントは、ドキュメントサイトにチャットダイアロ
 
 ## アシスタントの有効化
 
-`src/config/settings.ts`で`aiAssistant`を`true`に設定します：
+`zfb.config.ts`で`aiAssistant`を`true`に設定します：
 
-```ts title="src/config/settings.ts"
-export const settings = {
-  aiAssistant: true,
-  // ...
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    aiAssistant: true,
+    // ...
+  }),
+);
 ```
 
 有効にすると：
@@ -48,15 +50,17 @@ KVが障害を起こすとリクエストを通過させる代わりにHTTP 429�
 
 </Warning>
 
-```ts title="src/config/settings.ts"
-export const settings = {
-  aiChatDemoMode: false,
-  // クロスオリジンリクエストを許可するオリジンを限定する。
-  aiChatAllowedOrigins: ["https://your-docs-site.example.com"],
-  // コスト上限として1日のグローバルリクエスト数を制限する（false = 上限なし）。
-  aiChatGlobalDailyLimit: 500,
-  // ...
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    aiChatDemoMode: false,
+    // クロスオリジンリクエストを許可するオリジンを限定する。
+    aiChatAllowedOrigins: ["https://your-docs-site.example.com"],
+    // コスト上限として1日のグローバルリクエスト数を制限する（false = 上限なし）。
+    aiChatGlobalDailyLimit: 500,
+    // ...
+  }),
+);
 ```
 
 ## 環境設定
@@ -132,7 +136,7 @@ wrangler kv namespace create RATE_LIMIT
 
 <Note>
 
-MSWを使うには設定で`aiAssistant: true`である必要があります。生成される`public/mockServiceWorker.js`ファイルはgitignore対象です — 各開発者がローカルで生成します。
+MSWを使うには`zfb.config.ts`で`aiAssistant: true`である必要があります。生成される`public/mockServiceWorker.js`ファイルはgitignore対象です — 各開発者がローカルで生成します。
 
 </Note>
 

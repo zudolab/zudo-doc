@@ -113,13 +113,15 @@ flowchart LR
 
 ## Configuration
 
-Mermaid support is controlled by the `mermaid` setting in `src/config/settings.ts`:
+Mermaid support is controlled by the `mermaid` field in `zfb.config.ts`:
 
-```ts
-export const settings = {
-  // ...
-  mermaid: true, // enabled by default
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    mermaid: true, // enabled by default
+  }),
+);
 ```
 
 See the [Mermaid documentation](https://mermaid.js.org/) for all supported diagram types.

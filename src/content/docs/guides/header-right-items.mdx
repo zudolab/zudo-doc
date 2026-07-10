@@ -6,29 +6,31 @@ tags:
   - customization
 ---
 
-The right side of the header — search, theme toggle, language switcher, version switcher, GitHub link, and the Design Token / AI Chat triggers — is rendered from a single array: `settings.headerRightItems`. Each entry is a discriminated-union item rendered in order.
+The right side of the header — search, theme toggle, language switcher, version switcher, GitHub link, and the Design Token / AI Chat triggers — is rendered from a single array: the `headerRightItems` field. Each entry is a discriminated-union item rendered in order.
 
 <Note>
 
-This complements [Header Navigation](./header-navigation.mdx), which configures the **left-side tabs**. Both live in `src/config/settings.ts` and are independent of each other.
+This complements [Header Navigation](./header-navigation.mdx), which configures the **left-side tabs**. Both are configured in `zfb.config.ts` and are independent of each other.
 
 </Note>
 
 ## Default configuration
 
-```ts
-export const settings = {
-  // ...
-  githubUrl: "https://github.com/zudolab/zudo-doc",
-  headerRightItems: [
-    { type: "trigger", trigger: "design-token-panel" },
-    { type: "trigger", trigger: "ai-chat" },
-    { type: "component", component: "version-switcher" },
-    { type: "component", component: "github-link" },
-    { type: "component", component: "theme-toggle" },
-    { type: "component", component: "language-switcher" },
-  ],
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    githubUrl: "https://github.com/zudolab/zudo-doc",
+    headerRightItems: [
+      { type: "trigger", trigger: "design-token-panel" },
+      { type: "trigger", trigger: "ai-chat" },
+      { type: "component", component: "version-switcher" },
+      { type: "component", component: "github-link" },
+      { type: "component", component: "theme-toggle" },
+      { type: "component", component: "language-switcher" },
+    ],
+  }),
+);
 ```
 
 The built-in `Search` component is always rendered at the end of the cluster and is not configured through this array.
@@ -96,12 +98,14 @@ Use sparingly — the html string is rendered verbatim.
 
 ### Point the GitHub icon at your repo
 
-Set `githubUrl` at the top level of `settings.ts`. The `github-link` component reads that value, so you don't duplicate the URL inside `headerRightItems`.
+Set `githubUrl` at the top level of `zudoDoc({...})` in `zfb.config.ts`. The `github-link` component reads that value, so you don't duplicate the URL inside `headerRightItems`.
 
-```ts
-export const settings = {
-  githubUrl: "https://github.com/your-org/your-repo",
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    githubUrl: "https://github.com/your-org/your-repo",
+  }),
+);
 ```
 
 Setting `githubUrl: false` removes the icon without having to edit the array.

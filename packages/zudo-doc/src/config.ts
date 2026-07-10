@@ -457,6 +457,19 @@ export interface ZudoDocConfig {
    * @default undefined
    */
   chromeBindingsModule?: string;
+  /**
+   * Project-root-relative path to a host module exporting a named
+   * `buildDesignTokenPanelConfig(mode: "light" | "dark")` zdtp `PanelConfig`
+   * builder (only consumed when `packageOwnedRoutes` is on, and only relevant
+   * when `designTokenPanel` is `true`). When omitted, the panel uses the
+   * package-default builder (`@takazudo/zudo-doc/design-token-panel-config`)
+   * — derived from the shipped token manifest and the bundled color schemes —
+   * so `designTokenPanel: true` works with no host config file. Point this at
+   * your own module only when you need a fully custom panel (your own token
+   * manifest, your own color schemes).
+   * @default undefined (package-default builder is used)
+   */
+  designTokenPanelConfigModule?: string;
 
   // ── Escape hatches (non-serializable / data overrides) ───────────────────
 

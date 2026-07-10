@@ -10,12 +10,16 @@ zudo-docはプロジェクトのClaude Codeリソース — CLAUDE.mdファイ�
 
 ## Claude Resourcesの有効化
 
-`src/config/settings.ts`で`claudeResources`を設定します：
+`zfb.config.ts`で`claudeResources`を設定します：
 
-```ts
-claudeResources: {
-  claudeDir: ".claude",
-},
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    claudeResources: {
+      claudeDir: ".claude",
+    },
+  }),
+);
 ```
 
 無効にするには`false`に設定します：
@@ -39,7 +43,7 @@ claudeResources: false,
 
 ## 仕組み
 
-インテグレーションは`zfb.config.ts`に登録されたzfbプラグイン（`./plugins/claude-resources-plugin.mjs`）として、ビルド時に動作します。`preBuild`フックで以下を行います：
+インテグレーションはzfbプラグイン（`@takazudo/zudo-doc/plugins/claude-resources`）として、ビルド時に動作します。このプラグインは`claudeResources`が設定されていれば`zudoDoc()`が自動的に組み込みます。`preBuild`フックで以下を行います：
 
 1. 設定された`.claude/`ディレクトリをスキャン
 2. CLAUDE.mdファイル、コマンド、スキル（リファレンス付き）、エージェントを検出

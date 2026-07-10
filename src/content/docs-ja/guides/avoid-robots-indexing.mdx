@@ -10,7 +10,7 @@ tags:
 
 ## この設定が行うこと
 
-`src/config/settings.ts`で`noindex: true`を設定すると、ビルド時に2つの補完的な動作が有効になります。
+`zfb.config.ts`で`noindex: true`を設定すると、ビルド時に2つの補完的な動作が有効になります。
 
 1. **robots メタタグ** — すべてのレンダリングされたページに以下が追加されます：
    ```html
@@ -31,7 +31,7 @@ tags:
 
 ### プリセットジェネレーター経由（新規プロジェクトへの推奨）
 
-`create-zudo-doc`で新しいプロジェクトをスキャフォールドする際、インタラクティブな[セットアッププリセットジェネレーター](../getting-started/setup-preset-generator.mdx)で **"Avoid robots indexing"** チェックボックスを選択してください。これにより、生成された`settings.ts`に`noindex: true`が出力されます。
+`create-zudo-doc`で新しいプロジェクトをスキャフォールドする際、インタラクティブな[セットアッププリセットジェネレーター](../getting-started/setup-preset-generator.mdx)で **"Avoid robots indexing"** チェックボックスを選択してください。これにより、生成された`zfb.config.ts`に`noindex: true`が出力されます。
 
 ### CLIフラグ経由
 
@@ -41,15 +41,17 @@ tags:
 npx create-zudo-doc@latest --noindex
 ```
 
-### settings.ts を直接編集
+### zfb.config.ts を直接編集
 
-`src/config/settings.ts`を開いて以下を設定します：
+`zfb.config.ts`を開いて以下を設定します：
 
-```ts
-export const settings = {
-  // ...
-  noindex: true,
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    noindex: true,
+  }),
+);
 ```
 
 デフォルトは`false`で、クローラーは許可されます。

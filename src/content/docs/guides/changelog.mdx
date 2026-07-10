@@ -81,17 +81,21 @@ notable user-facing changes into short bullets.
 
 ## Generated Package Changelogs
 
-Projects can configure generated changelog outputs with `settings.changelogs`.
+Projects can configure generated changelog outputs with the `changelogs` field.
 Each item points at a source directory and an output file:
 
-```ts title="src/config/settings.ts"
-changelogs: [
-  {
-    sourceDir: "src/content/docs/changelog",
-    outputFile: "packages/zudo-doc/CHANGELOG.md",
-    packageName: "@takazudo/zudo-doc",
-  },
-],
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    changelogs: [
+      {
+        sourceDir: "src/content/docs/changelog",
+        outputFile: "packages/zudo-doc/CHANGELOG.md",
+        packageName: "@takazudo/zudo-doc",
+      },
+    ],
+  }),
+);
 ```
 
 The MDX files remain the source of truth. The generated `CHANGELOG.md` is
@@ -164,7 +168,7 @@ The skill requires at least one `v*` tag to exist. If this is the first release,
 
 ## Header Navigation
 
-The changelog section is linked from the header navigation. This is configured in `src/config/settings.ts`:
+The changelog section is linked from the header navigation. This is configured via `headerNav` in `zfb.config.ts`:
 
 ```ts
 headerNav: [

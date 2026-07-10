@@ -14,19 +14,19 @@ Colors are organized into three tiers. Each tier only references the tier above 
 
 | Tier | Name | Purpose | Defined In |
 |------|------|---------|------------|
-| 1 | **Ramps** | Shared OKLCH color ramps a scheme is built from | `src/config/color-schemes.ts` → `ColorSchemeProvider` → `:root` |
+| 1 | **Ramps** | Shared OKLCH color ramps a scheme is built from | your `colorSchemes` override in `zfb.config.ts` (optional — packaged defaults otherwise) → `ColorSchemeProvider` → `:root` |
 | 2 | **Semantic** | Design meaning — what each color represents | `src/styles/global.css` `@theme` |
 | 3 | **Component** | Scoped overrides for specific components | `.zd-content` (shared `content.css`) |
 
 This layering means you can:
 
-- **Retune a ramp stop** (edit `src/config/color-schemes.ts`) → every semantic role built from it updates
+- **Retune a ramp stop** (override the `colorSchemes` field in `zfb.config.ts`) → every semantic role built from it updates
 - **Remap a semantic role** (e.g. point `accent` at a different ramp stop) → every component using `accent` updates
 - **Override a component token** without affecting other components
 
 ## Tier 1: Ramps
 
-zudo-doc's color engine is **ramp-native**: a `ColorScheme` is `{ ramps, map }` (see `src/config/color-schemes.ts`).
+zudo-doc's color engine is **ramp-native**: a `ColorScheme` is `{ ramps, map }` — the type ships from `@takazudo/zudo-doc/color-scheme-utils`.
 
 - **`ramps`** — the shared source of truth: a warm-neutral **base** ramp (5 stops, index `0` = lightest), an **accent** ramp (3 stops), and 4 **state** colors (`danger`, `success`, `warning`, `info`). Light and dark modes **share** these ramp values.
 - **`map`** — the per-mode wiring: which ramp stop (or literal OKLCH override) each UI role points at.
@@ -39,7 +39,7 @@ zudo-doc's color engine is **ramp-native**: a `ColorScheme` is `{ ramps, map }` 
 | `accent` | 3 | `--palette-accent-0` … `--palette-accent-2` |
 | `state` | 4 named roles | `--palette-state-danger`, `--palette-state-success`, `--palette-state-warning`, `--palette-state-info` |
 
-**Default Light** and **Default Dark** — the only two bundled schemes — share the exact same `base`/`accent`/`state` ramp values (one `ramps` object in `src/config/color-schemes.ts`); only the per-mode `map` differs between them.
+**Default Light** and **Default Dark** — the only two bundled schemes — share the exact same `base`/`accent`/`state` ramp values (one `ramps` object in the package's `@takazudo/zudo-doc/color-schemes-defaults`); only the per-mode `map` differs between them.
 
 <Note>
 
@@ -124,7 +124,7 @@ Once registered in `@theme`, these become standard Tailwind utility classes: `bg
 
 ### Semantic Token Reference (Default Dark wiring)
 
-Both schemes wire all 23 roles; the table below shows Default Dark's `map.semantic` — the authored reference scheme in `src/config/color-schemes.ts`. Default Light re-points several of these to different ramp stops or per-mode literals; see [Per-mode literal overrides](#per-mode-literal-overrides).
+Both schemes wire all 23 roles; the table below shows Default Dark's `map.semantic` — the authored reference scheme shipped from `@takazudo/zudo-doc/color-schemes-defaults`. Default Light re-points several of these to different ramp stops or per-mode literals; see [Per-mode literal overrides](#per-mode-literal-overrides).
 
 | Token | Default ramp ref | Usage |
 |-------|------|-------|
@@ -140,7 +140,7 @@ Both schemes wire all 23 roles; the table below shows Default Dark's `map.semant
 | `danger` | per-mode literal | Errors, destructive actions |
 | `warning` | `{ state: "warning" }` | Warning messages, admonitions, find-in-page highlight |
 | `info` | `{ state: "info" }` | Informational highlights |
-| `mermaidNodeBg` / `mermaidText` / `mermaidLine` / `mermaidLabelBg` / `mermaidNoteBg` | see `color-schemes.ts` | Mermaid diagram colors |
+| `mermaidNodeBg` / `mermaidText` / `mermaidLine` / `mermaidLabelBg` / `mermaidNoteBg` | see `@takazudo/zudo-doc/color-schemes-defaults` | Mermaid diagram colors |
 | `chatUserBg` / `chatUserText` | `{ accent: 1 }` / `{ base: 4 }` | AI chat user bubble |
 | `chatAssistantBg` / `chatAssistantText` | `{ base: 4 }` (= `bg`) / `{ base: 0 }` | AI chat assistant bubble — merged onto `bg` |
 | `imageOverlayBg` / `imageOverlayFg` | `{ base: 4 }` / `{ base: 0 }` | Image enlarge overlay — merged onto `bg` |
@@ -166,7 +166,7 @@ See the `color-scheme-a11y` skill (`.claude/skills/color-scheme-a11y/SKILL.md`) 
 
 ### Adjusting a scheme's semantic wiring
 
-Edit `map.semantic` in `src/config/color-schemes.ts`. A role can point at a shared ramp stop or a literal OKLCH string:
+Edit `map.semantic` in your own `colorSchemes` override module, passed via the `colorSchemes` field in `zfb.config.ts`. A role can point at a shared ramp stop or a literal OKLCH string:
 
 ```ts
 const darkMap: ModeMap = {
@@ -259,27 +259,33 @@ When a new highlight role appears (new kind of `<mark>`, new pill, new callout),
 
 ## Color Schemes
 
-To change the active color scheme, edit `src/config/settings.ts`:
+To change the active color scheme, set `colorScheme` in `zfb.config.ts`:
 
-```ts
-export const settings = {
-  colorScheme: "Default Dark",  // Change this
-  siteName: "zudo-doc",
-  // ...
-};
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    colorScheme: "Default Dark", // Change this
+    siteName: "My Docs",
+    // ...
+  }),
+);
 ```
 
 ### Default Themes
 
-zudo-doc ships exactly two color schemes — **Default Light** and **Default Dark** — sharing one set of ramps (see `src/config/color-schemes.ts`). Both are hand-authored and AA-tuned in place. There is no bundled catalog of community or terminal presets to pick from; an earlier iteration of the Design Token Panel had a "Scheme…" dropdown for browsing 50+ bundled presets, but the ramp-native model dropped it — see [Design Token Panel](./design-token-panel.mdx).
+zudo-doc ships exactly two color schemes — **Default Light** and **Default Dark** — sharing one set of ramps (see the package's `@takazudo/zudo-doc/color-schemes-defaults`). Both are hand-authored and AA-tuned in place. There is no bundled catalog of community or terminal presets to pick from; an earlier iteration of the Design Token Panel had a "Scheme…" dropdown for browsing 50+ bundled presets, but the ramp-native model dropped it — see [Design Token Panel](./design-token-panel.mdx).
 
 ## Adding a Custom Color Scheme
 
-Add a new entry to the `colorSchemes` object in `src/config/color-schemes.ts`. A new scheme needs its own `ramps` and a `map` for each mode you want (spread `SEMANTIC_RAMP_DEFAULTS` and override only what needs to differ):
+`colorSchemes` is one of `zudoDoc()`'s escape hatches — when omitted, the two packaged schemes above are used as-is. To add or replace a scheme, write your own module (e.g. `src/config/color-schemes.ts`) building a `Record<string, ColorScheme>`, then pass it through the `colorSchemes` field in `zfb.config.ts`. A new scheme needs its own `ramps` and a `map` for each mode you want (spread `SEMANTIC_RAMP_DEFAULTS` and override only what needs to differ). Spread in `defaultColorSchemes` too if you want to keep the two packaged schemes alongside your own:
 
-```ts
+```ts title="src/config/color-schemes.ts"
 import { SEMANTIC_RAMP_DEFAULTS } from "@takazudo/zudo-doc/color-scheme-utils";
-import type { ColorScheme, ModeMap, Ramps } from "./color-scheme-utils";
+import { defaultColorSchemes } from "@takazudo/zudo-doc/color-schemes-defaults";
+import type { ColorScheme, ModeMap, Ramps } from "@takazudo/zudo-doc/color-scheme-utils";
 
 const myRamps: Ramps = {
   base: [
@@ -314,10 +320,21 @@ const myMap: ModeMap = {
 };
 
 export const colorSchemes: Record<string, ColorScheme> = {
-  "Default Light": { ramps, map: lightMap },
-  "Default Dark": { ramps, map: darkMap },
+  ...defaultColorSchemes, // keep "Default Light" / "Default Dark"
   "My Theme": { ramps: myRamps, map: myMap },
 };
+```
+
+```ts title="zfb.config.ts"
+import { colorSchemes } from "./src/config/color-schemes";
+
+export default defineConfig(
+  zudoDoc({
+    colorScheme: "My Theme",
+    colorSchemes,
+    // ...
+  }),
+);
 ```
 
 <Tip>
