@@ -1,27 +1,16 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import { defaultDirectiveVocabulary } from "../directive-vocabulary-defaults/index.js";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(__dirname, "../../../..");
-
-/** Extract the `key: "Value",` pairs from a `const directiveVocabulary = { ... };`
- *  block, wherever it appears in the given source text. */
-function extractDirectiveVocabulary(src: string): Record<string, string> {
-  const blockStart = src.indexOf("directiveVocabulary = {");
-  const blockEnd = src.indexOf("};", blockStart);
-  const block = src.slice(blockStart, blockEnd);
-  const out: Record<string, string> = {};
-  for (const m of block.matchAll(/(\w+):\s*"([^"]+)",/g)) {
-    const key = m[1];
-    const value = m[2];
-    if (key && value) out[key] = value;
-  }
-  return out;
-}
-
+// Formerly also parity-checked against a hardcoded `directiveVocabulary`
+// block that used to live in both the showcase's root `zfb.config.ts` and
+// the generator's `zfb-config-gen.ts`. The minimal-scaffold cutover (epic
+// #2651: Wave 4 #2657's `zudoDoc()` API + Wave 6 #2660/#2661) made
+// directiveVocabulary a pure package default consumed automatically — no
+// host file hardcodes it anymore, so a text-extraction parity test against
+// either file finds nothing to compare (found stale during the #2667
+// final-confirm gate — see the same note in i18n-defaults.test.ts for why
+// no earlier wave caught this). The canonical-seven-directives test below
+// already pins the actual default value.
 describe("defaultDirectiveVocabulary", () => {
   it("is the canonical seven directives", () => {
     expect(defaultDirectiveVocabulary).toEqual({
@@ -33,19 +22,6 @@ describe("defaultDirectiveVocabulary", () => {
       caution: "Caution",
       details: "Details",
     });
-  });
-
-  it("matches the showcase's hardcoded zfb.config.ts directiveVocabulary", () => {
-    const src = readFileSync(resolve(repoRoot, "zfb.config.ts"), "utf8");
-    expect(defaultDirectiveVocabulary).toEqual(extractDirectiveVocabulary(src));
-  });
-
-  it("matches the generator's hardcoded zfb-config-gen.ts directiveVocabulary", () => {
-    const src = readFileSync(
-      resolve(repoRoot, "packages/create-zudo-doc/src/zfb-config-gen.ts"),
-      "utf8",
-    );
-    expect(defaultDirectiveVocabulary).toEqual(extractDirectiveVocabulary(src));
   });
 
   it("is a plain serializable Record<string, string>", () => {

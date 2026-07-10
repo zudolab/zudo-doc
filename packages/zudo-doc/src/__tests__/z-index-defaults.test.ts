@@ -1,31 +1,17 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import { defaultZIndexTiers } from "../z-index-defaults/index.js";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(__dirname, "../../../..");
-const templatePath = resolve(
-  repoRoot,
-  "packages/create-zudo-doc/templates/base/src/config/z-index-tokens.ts",
-);
-
-/** Extract ordered `{ name, value }` pairs from the template's `Z_INDEX_TIERS`
- *  literal array via static text parsing (name/value always appear together,
- *  name first, in each tier object). */
-function extractTemplateTiers(): Array<{ name: string; value: number }> {
-  const src = readFileSync(templatePath, "utf8");
-  const re = /name:\s*"([\w-]+)",\s*\n\s*value:\s*(-?\d+),/g;
-  return [...src.matchAll(re)].map((m) => ({
-    name: m[1] as string,
-    value: Number(m[2]),
-  }));
-}
-
+// Formerly also parity-checked against the `create-zudo-doc` base template's
+// `z-index-tokens.ts` (#2654's port source). That template file was deleted
+// by the minimal-scaffold cutover (epic #2651, Wave 6 #2660) — z-index
+// tokens now ship unconditionally from `@takazudo/zudo-doc/theme.css`, so a
+// project only needs its own copy when it overrides a tier (an eject-time
+// decision, not a scaffold-time one). This module is now the sole source of
+// truth; the exact-13-tiers boundary check below plus the ordering check
+// give equivalent regression coverage without a deleted-file dependency
+// (found stale during the #2667 final-confirm gate — see the same note in
+// i18n-defaults.test.ts for why no earlier wave caught this).
 describe("defaultZIndexTiers", () => {
-  const templateTiers = extractTemplateTiers();
-
   it("has 13 tiers (content=0 … drag=90)", () => {
     expect(defaultZIndexTiers).toHaveLength(13);
     expect(defaultZIndexTiers[0]).toEqual({ name: "content", value: 0 });
@@ -33,11 +19,6 @@ describe("defaultZIndexTiers", () => {
       name: "drag",
       value: 90,
     });
-  });
-
-  it("matches the template's tier name+value list exactly, in order", () => {
-    expect(templateTiers.length).toBeGreaterThan(0);
-    expect([...defaultZIndexTiers]).toEqual(templateTiers);
   });
 
   it("every tier name is unique", () => {

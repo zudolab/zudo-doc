@@ -1,29 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import { defaultFrontmatterPreviewIgnoreKeys } from "../frontmatter-preview-defaults/index.js";
 import { buildDocsSchema } from "../docs-schema/index.js";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(__dirname, "../../../..");
-const templatePath = resolve(
-  repoRoot,
-  "packages/create-zudo-doc/templates/base/src/config/frontmatter-preview-defaults.ts",
-);
-
-function extractTemplateKeys(): string[] {
-  const src = readFileSync(templatePath, "utf8");
-  const blockStart = src.indexOf("DEFAULT_FRONTMATTER_IGNORE_KEYS");
-  const block = src.slice(blockStart);
-  return [...block.matchAll(/"([a-zA-Z0-9_]+)",/g)].map((m) => m[1] as string);
-}
-
+// Formerly also parity-checked against the `create-zudo-doc` base
+// template's `frontmatter-preview-defaults.ts` (#2654's port source). That
+// template file was deleted by the minimal-scaffold cutover (epic #2651,
+// Wave 6 #2660) — this module is now the sole source of truth, so a
+// template-comparison test no longer has anything meaningful to compare
+// against (found stale during the #2667 final-confirm gate — see the same
+// note in i18n-defaults.test.ts for why no earlier wave caught this). The
+// two schema cross-checks below (subset + superset against
+// buildDocsSchema()) already constrain this list to exactly the schema's
+// field set, which is a stronger guarantee than a static template snapshot.
 describe("defaultFrontmatterPreviewIgnoreKeys", () => {
-  it("matches the template's DEFAULT_FRONTMATTER_IGNORE_KEYS exactly, in order", () => {
-    expect([...defaultFrontmatterPreviewIgnoreKeys]).toEqual(extractTemplateKeys());
-  });
-
   it("has no duplicate keys", () => {
     expect(new Set(defaultFrontmatterPreviewIgnoreKeys).size).toBe(
       defaultFrontmatterPreviewIgnoreKeys.length,

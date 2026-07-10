@@ -166,8 +166,20 @@ cd __inbox/generator-test-light-dark && \
   node $REPO_ROOT/packages/create-zudo-doc/dist/index.js test-project --yes \
   --no-search --no-sidebar-filter --no-i18n --no-claude-resources \
   --color-scheme-mode light-dark --light-scheme "Default Light" --dark-scheme "Default Dark" \
-  --no-install
+  --default-mode light --no-install
 ```
+
+> `--default-mode light` is deliberate, not optional: `"Default Light"` /
+> `"Default Dark"` / `defaultMode: "dark"` / `respectPrefersColorScheme: true`
+> is the exact `ZudoDocConfig` package default for `colorMode` (see
+> `DEFAULT_SETTINGS.colorMode` in `packages/zudo-doc/src/config.ts`, mirrored
+> by `DEFAULT_MIRROR` in `zfb-config-gen.ts`). Diff-from-defaults (locked
+> #2653 Decision 2, verified by `zfb-config-gen.test.ts`'s "packageDefaultChoices
+> resolves colorMode/colorScheme to the exact default" case) correctly OMITS
+> `colorMode` when every sub-field matches the default — dropping
+> `--default-mode light` here silently degenerates this pattern into a no-op
+> that never demonstrates the `colorMode` object at all (found empirically
+> during the #2667 final-confirm gate).
 
 **lang-ja:**
 
@@ -189,9 +201,16 @@ cd __inbox/generator-test-all-features && \
   --footer-nav-group --image-enlarge --footer-copyright --changelog \
   --tag-governance --doc-tags --footer-taglist \
   --color-scheme-mode light-dark --light-scheme "Default Light" \
-  --dark-scheme "Default Dark" --default-mode dark \
+  --dark-scheme "Default Dark" --default-mode light \
   --github-url "https://github.com/example/test-project" --no-install
 ```
+
+> `--default-mode light` (not `dark`): same reason as the light-dark
+> pattern's callout above — `Default Light`/`Default Dark`/`dark`/
+> `respectPrefersColorScheme: true` is the exact package default, and
+> diff-from-defaults omits `colorMode` entirely when every sub-field matches
+> it. Using `dark` here would silently drop `colorMode` from this pattern's
+> `zfb.config.ts` too (found empirically during the #2667 final-confirm gate).
 
 ## Step 3: Install Dependencies
 
@@ -330,7 +349,7 @@ Confirm the 5 directories above (`pages/lib`, `src/components`, `src/utils`, `sr
 | File | Expected |
 |------|----------|
 | (baseline unchanged) | — |
-| `zfb.config.ts` `colorMode` | an object: `{ defaultMode: "dark", lightScheme: "Default Light", darkScheme: "Default Dark", respectPrefersColorScheme: true }` |
+| `zfb.config.ts` `colorMode` | an object: `{ defaultMode: "light", lightScheme: "Default Light", darkScheme: "Default Dark", respectPrefersColorScheme: true }` (note the non-default `defaultMode: "light"` — see the CLI command's callout above) |
 
 **lang-ja:**
 
@@ -397,7 +416,7 @@ There is no more `src/config/settings.ts` to read in a fresh scaffold (except th
 
 **light-dark:**
 
-- `colorMode` is an object with `defaultMode`, `lightScheme: "Default Light"`, `darkScheme: "Default Dark"`
+- `colorMode` is an object with `defaultMode: "light"` (non-default — required for the field to emit at all, see the CLI command's callout), `lightScheme: "Default Light"`, `darkScheme: "Default Dark"`
 
 **lang-ja:**
 
@@ -405,7 +424,7 @@ There is no more `src/config/settings.ts` to read in a fresh scaffold (except th
 
 **all-features:**
 
-- `colorMode` is an object (light-dark mode)
+- `colorMode` is an object (light-dark mode, `defaultMode: "light"` — non-default, required to emit)
 - `locales` contains a `ja` entry
 - `claudeResources: { claudeDir: ".claude" }`
 - `designTokenPanel: true`

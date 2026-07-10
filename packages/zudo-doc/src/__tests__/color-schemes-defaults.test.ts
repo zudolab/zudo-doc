@@ -1,38 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import { defaultColorSchemes } from "../color-schemes-defaults/index.js";
 import { resolveSemanticColors, SEMANTIC_KEYS } from "../color-scheme-utils.js";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(__dirname, "../../../..");
-const templatePath = resolve(
-  repoRoot,
-  "packages/create-zudo-doc/templates/base/src/config/color-schemes.ts",
-);
-const modulePath = resolve(__dirname, "../color-schemes-defaults/index.ts");
-
-const OKLCH_RE = /oklch\([^)]*\)/g;
-
-function extractOklchTokens(path: string): string[] {
-  const src = readFileSync(path, "utf8");
-  return [...src.matchAll(OKLCH_RE)].map((m) => m[0]);
-}
-
+// Formerly also parity-checked its oklch(...) literals against the
+// `create-zudo-doc` base template's `color-schemes.ts` (#2654's port
+// source). That template file was deleted by the minimal-scaffold cutover
+// (epic #2651, Wave 6 #2660) — this module is now the sole source of truth
+// for the default color schemes, so a template-comparison test no longer
+// has anything meaningful to compare against (found stale during the #2667
+// final-confirm gate — see the same note in i18n-defaults.test.ts for why
+// no earlier wave caught this).
 describe("defaultColorSchemes", () => {
-  it("ships exactly Default Light + Default Dark (matches the template)", () => {
+  it("ships exactly Default Light + Default Dark", () => {
     expect(Object.keys(defaultColorSchemes)).toEqual(["Default Light", "Default Dark"]);
-  });
-
-  it("carries the same ordered set of oklch(...) literals as the template source (no value drift)", () => {
-    // Both files author the ramps + per-mode overrides in the same structural
-    // order (ramps, dark map, light map), so a straight ordered diff of every
-    // oklch(...) occurrence in each source file is a strong, low-maintenance
-    // parity check against the template this default was ported from (#2654).
-    const templateTokens = extractOklchTokens(templatePath);
-    const moduleTokens = extractOklchTokens(modulePath);
-    expect(moduleTokens).toEqual(templateTokens);
   });
 
   it("Default Light and Default Dark share identical ramp values (Tier-1 source of truth)", () => {

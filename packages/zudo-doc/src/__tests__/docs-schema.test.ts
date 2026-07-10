@@ -1,16 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import { buildDocsSchema } from "../docs-schema/index.js";
 import type { PresetTagVocabularyEntry } from "../preset.js";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(__dirname, "../../../..");
-const templatePath = resolve(
-  repoRoot,
-  "packages/create-zudo-doc/templates/base/src/config/docs-schema.ts",
-);
 
 const vocabulary: PresetTagVocabularyEntry[] = [
   { id: "type:guide", aliases: ["guide", "guides"] },
@@ -102,14 +92,14 @@ describe("buildDocsSchema", () => {
     });
   });
 
-  it("matches the template's field list exactly (moved data parity, #2654)", () => {
-    const src = readFileSync(templatePath, "utf8");
-    const blockStart = src.indexOf(".object({");
-    const blockEnd = src.indexOf("\n    })", blockStart);
-    const block = src.slice(blockStart, blockEnd);
-    const templateFields = [...block.matchAll(/^\s{6}(\w+):/gm)].map((m) => m[1] as string);
-
-    const schemaKeys = Object.keys(buildDocsSchema().shape);
-    expect(schemaKeys.sort()).toEqual(templateFields.sort());
-  });
+  // Formerly also parity-checked against the `create-zudo-doc` base
+  // template's `docs-schema.ts` (#2654's port source). That template file
+  // was deleted by the minimal-scaffold cutover (epic #2651, Wave 6
+  // #2660) — this module is now the sole source of truth for the schema
+  // field list, so a template-comparison test no longer has anything
+  // meaningful to compare against (found stale during the #2667
+  // final-confirm gate — see the same note in i18n-defaults.test.ts for why
+  // no earlier wave caught this). The behavioral tests above already cover
+  // every documented field via "accepts every documented optional field
+  // with a representative value".
 });
