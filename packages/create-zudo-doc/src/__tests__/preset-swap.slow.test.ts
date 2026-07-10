@@ -1,23 +1,30 @@
 /**
  * Preset-swap acceptance test (Sub #423 of epic #419).
  *
- * Regression guard for the locale-layout refactor (Subs #421, #422). The
- * scenario:
+ * Regression guard for the locale-layout refactor (Subs #421, #422),
+ * re-targeted for the minimal-scaffold cutover (epic zudolab/zudo-doc#2651,
+ * Wave 7 #2662) — the "one configuration knob" is now `zfb.config.ts`'s
+ * `zudoDoc({...})` call, not a separate `src/config/settings.ts` (deleted in
+ * Wave 6 #2660). The scenario:
  *
  *   1. Scaffold a project with `defaultLang: "ja"` and the i18n feature on.
  *      The scaffolder writes JA primary content under `src/content/docs/`,
  *      EN secondary content under `src/content/docs-en/`, and emits
- *      `settings.defaultLocale = "ja"` + `settings.locales = { en: ... }`.
+ *      `zudoDoc({ defaultLocale: "ja", locales: { en: {...} }, ... })` in
+ *      `zfb.config.ts`.
  *   2. Programmatically flip the *configuration knob only* — change
- *      `settings.defaultLocale` to `"en"` and rewrite `settings.locales` to
- *      `{ ja: { dir: "src/content/docs-ja" } }`. (We rename the secondary
- *      content directory to keep `dir` honest, but no `src/pages/` files and
- *      no `src/utils/docs.ts` files are touched.)
+ *      `defaultLocale` to `"en"` and rewrite `locales` to
+ *      `{ ja: { label: "JA", dir: "src/content/docs-ja" } }` inside
+ *      `zfb.config.ts`. (We rename the secondary content directory to keep
+ *      `dir` honest, but no `pages/**` files are touched — the locked
+ *      manifest's self-contained doc-route stubs read locale/route data at
+ *      request time from `virtual:zudo-doc-route-context`, which is itself
+ *      derived from `zfb.config.ts` at build time.)
  *   3. Run `pnpm install` + `pnpm build`.
  *   4. Assert the emitted URLs are `/docs/<slug>/` (new EN default, no
  *      prefix) and `/ja/docs/<slug>/` (JA, additional locale) — proving the
- *      runtime-driven `[locale]/` catch-all picks up the new default with
- *      zero hand-edits to page templates.
+ *      package-owned locale routing picks up the new default with zero
+ *      hand-edits to the scaffolded `pages/**` stubs.
  *
  * ## Tier
  *
@@ -26,7 +33,7 @@
  * runtime is on the order of 60–120 seconds, well past the default unit
  * test budget. It therefore lives in the **slow tier** (`pnpm test:slow`)
  * and is excluded from `pnpm test` and `pnpm b4push`. Run it manually
- * before merging changes that touch locale routing or settings wiring.
+ * before merging changes that touch locale routing or config wiring.
  */
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
@@ -37,7 +44,11 @@ import { scaffold } from "../scaffold.js";
 import type { UserChoices } from "../prompts.js";
 // Robust scaffold→install→build plumbing (with transient-flake install retry)
 // is shared with barebone-build.slow.test.ts — see ./slow-build-helpers.ts.
-import { runOrThrow, installScaffoldedDeps } from "./slow-build-helpers.js";
+import {
+  runOrThrow,
+  installScaffoldedDeps,
+  overrideWithLocalZudoDoc,
+} from "./slow-build-helpers.js";
 
 const TEMP_PREFIX = "create-zudo-doc-preset-swap-";
 
@@ -68,19 +79,22 @@ beforeAll(async () => {
   await scaffold(choices);
   projectDir = path.join(tempDir, PROJECT_NAME);
 
-  // 2. Sanity-check the as-scaffolded state (defaultLang=ja, locales=en).
-  const settingsPath = path.join(projectDir, "src/config/settings.ts");
-  const settingsBefore = await fs.readFile(settingsPath, "utf-8");
-  if (!/defaultLocale:\s*"ja"/.test(settingsBefore)) {
+  // 2. Sanity-check the as-scaffolded state (defaultLocale=ja, locales=en)
+  //    inside zfb.config.ts — the ONE config file in the locked manifest.
+  const configPath = path.join(projectDir, "zfb.config.ts");
+  const configBefore = await fs.readFile(configPath, "utf-8");
+  if (!/defaultLocale:\s*"ja"/.test(configBefore)) {
     throw new Error(
-      "Pre-flip sanity check failed: settings.defaultLocale was not 'ja'",
+      "Pre-flip sanity check failed: zfb.config.ts's defaultLocale was not 'ja'",
     );
   }
-  if (!/en:\s*\{\s*label:\s*"EN",\s*dir:\s*"src\/content\/docs-en"/.test(
-    settingsBefore,
-  )) {
+  if (
+    !/en:\s*\{\s*label:\s*"EN",\s*dir:\s*"src\/content\/docs-en",?\s*\}/.test(
+      configBefore,
+    )
+  ) {
     throw new Error(
-      "Pre-flip sanity check failed: settings.locales did not contain expected en entry",
+      "Pre-flip sanity check failed: zfb.config.ts's locales did not contain the expected en entry",
     );
   }
 
@@ -93,23 +107,26 @@ beforeAll(async () => {
     await fs.move(oldSecondary, newSecondary);
   }
 
-  // 4. Flip settings.ts — the *only* configuration knob the user touches:
+  // 4. Flip zfb.config.ts — the *only* configuration knob the user touches:
   //      defaultLocale: "ja" -> "en"
   //      locales: { en: {...docs-en} } -> { ja: {...docs-ja} }
-  //    No edits to src/pages/ or src/utils/docs.ts. The runtime-driven
-  // The runtime-driven [locale]/ catch-all and the derived i18n block in zfb.config.ts pick up the change automatically.
-  const settingsAfter = settingsBefore
+  //    No edits to pages/**. The self-contained doc-route stubs
+  //    (pages/docs/[[...slug]].tsx, pages/[locale]/docs/[[...slug]].tsx) read
+  //    locale/route data from virtual:zudo-doc-route-context at request
+  //    time, which is derived from this same zfb.config.ts at build time —
+  //    so the swap propagates with zero page-level hand-edits.
+  const configAfter = configBefore
     .replace(/defaultLocale:\s*"ja"/, 'defaultLocale: "en"')
     .replace(
-      /en:\s*\{\s*label:\s*"EN",\s*dir:\s*"src\/content\/docs-en"\s*\}/,
+      /en:\s*\{\s*label:\s*"EN",\s*dir:\s*"src\/content\/docs-en",?\s*\}/,
       'ja: { label: "JA", dir: "src/content/docs-ja" }',
     );
-  if (settingsAfter === settingsBefore) {
+  if (configAfter === configBefore) {
     throw new Error(
-      "Flip step failed: settings.ts content did not change after substitutions",
+      "Flip step failed: zfb.config.ts content did not change after substitutions",
     );
   }
-  await fs.writeFile(settingsPath, settingsAfter);
+  await fs.writeFile(configPath, configAfter);
 
   // 5. Install + build. We use pnpm because that is the package manager the
   //    scaffolder defaults to and the dev environment guarantees.
@@ -120,6 +137,10 @@ beforeAll(async () => {
   //    the final failure so diagnosing a broken scaffold/build does not
   //    require re-running.
   installScaffoldedDeps(projectDir);
+  // Publish-lag workaround — see overrideWithLocalZudoDoc()'s doc comment:
+  // the published @takazudo/zudo-doc doesn't ship ./config /
+  // ./tsconfig.base.json yet (epic zudolab/zudo-doc#2651 waves not released).
+  overrideWithLocalZudoDoc(projectDir);
   runOrThrow("pnpm build", projectDir, { SKIP_DOC_HISTORY: "1" });
 }, 5 * 60 * 1000);
 
@@ -157,38 +178,24 @@ describe("preset-swap: scaffold ja then flip defaultLocale to en", () => {
     expect(await fs.pathExists(enPrefixed)).toBe(false);
   });
 
-  it("did not require any hand-edits to src/pages/ or src/utils/docs.ts", async () => {
-    // Compare the post-build pages and utils with a freshly scaffolded copy:
-    // they must be byte-identical, proving the swap was config-only.
+  it("did not require any hand-edits to the locked-manifest pages/** stubs", async () => {
+    // Compare the post-build page stubs with a freshly scaffolded reference
+    // copy: they must be byte-identical, proving the swap was config-only.
     const referenceDir = path.join(tempDir, `${PROJECT_NAME}-reference`);
     await scaffold({ ...choices, projectName: `${PROJECT_NAME}-reference` });
 
     const checkPaths = [
       "pages/index.tsx",
-      "pages/404.tsx",
-      "pages/docs/[...slug].tsx",
-      "pages/[locale]/index.tsx",
-      "pages/[locale]/docs/[...slug].tsx",
+      "pages/docs/[[...slug]].tsx",
+      "pages/[locale]/docs/[[...slug]].tsx",
     ];
 
     for (const rel of checkPaths) {
       const ours = path.join(projectDir, rel);
       const ref = path.join(referenceDir, rel);
-      if (!(await fs.pathExists(ref))) continue;
-      const oursContent = await fs.readFile(ours, "utf-8");
-      const refContent = await fs.readFile(ref, "utf-8");
-      expect(
-        oursContent,
-        `${rel} differs from reference scaffold — preset swap should be config-only`,
-      ).toBe(refContent);
-    }
-
-    // src/utils/docs.ts may live under a different name; check the common one.
-    const utilsCandidates = ["src/utils/docs.ts"];
-    for (const rel of utilsCandidates) {
-      const ours = path.join(projectDir, rel);
-      const ref = path.join(referenceDir, rel);
-      if (!(await fs.pathExists(ref))) continue;
+      expect(await fs.pathExists(ref), `reference is missing ${rel}`).toBe(
+        true,
+      );
       const oursContent = await fs.readFile(ours, "utf-8");
       const refContent = await fs.readFile(ref, "utf-8");
       expect(
