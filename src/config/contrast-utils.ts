@@ -12,8 +12,7 @@
  */
 
 import { rgb as culoriRgb } from "culori";
-import { resolveRampRef } from "./color-scheme-utils";
-import type { ColorScheme } from "./color-schemes";
+import { resolveRampRef, type ColorScheme } from "@takazudo/zudo-doc/color-scheme-utils";
 
 // ---------------------------------------------------------------------------
 // WCAG 2.x luminance / contrast math — parses any CSS color via culori

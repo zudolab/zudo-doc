@@ -13,7 +13,7 @@ export type {
   TagGovernanceMode,
   TagVocabularyEntry,
   MetaTagsConfig,
-} from "./settings-types";
+} from "@takazudo/zudo-doc/settings";
 import type {
   HeaderNavItem,
   HeaderRightItem,
@@ -28,7 +28,7 @@ import type {
   TagGovernanceMode,
   MetaTagsConfig,
   Settings,
-} from "./settings-types";
+} from "@takazudo/zudo-doc/settings";
 
 export const settings = {
   colorScheme: "Default Dark",

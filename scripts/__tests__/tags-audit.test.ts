@@ -15,7 +15,7 @@ import {
 } from "../tags-audit";
 import { settings } from "@/config/settings";
 import { tagVocabulary } from "@/config/tag-vocabulary";
-import type { TagVocabularyEntry } from "@/config/tag-vocabulary-types";
+import type { TagVocabularyEntry } from "@takazudo/zudo-doc/settings";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..", "..");

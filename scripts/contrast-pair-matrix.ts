@@ -13,9 +13,8 @@
  * place pairs/thresholds live.
  */
 
-import { colorSchemes } from "../src/config/color-schemes";
-import { schemeToCssPairs } from "../src/config/color-scheme-utils";
-import type { ColorScheme } from "../src/config/color-schemes";
+import { defaultColorSchemes as colorSchemes } from "@takazudo/zudo-doc/color-schemes-defaults";
+import { schemeToCssPairs, type ColorScheme } from "@takazudo/zudo-doc/color-scheme-utils";
 import { contrastRatio, colorMixSrgb, ADMONITION_TINT_PCT } from "../src/config/contrast-utils";
 
 export interface PairSpec {

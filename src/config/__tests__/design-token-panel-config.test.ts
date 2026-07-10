@@ -10,8 +10,8 @@ import {
   resolveSemanticColors,
   type Ramps,
   type StateRole,
-} from "../color-scheme-utils";
-import { colorSchemes } from "../color-schemes";
+} from "@takazudo/zudo-doc/color-scheme-utils";
+import { defaultColorSchemes as colorSchemes } from "@takazudo/zudo-doc/color-schemes-defaults";
 import { settings } from "../settings";
 
 /**
@@ -51,9 +51,9 @@ const BASE_ROLE_ROWS = [
 ] as const;
 
 // Per-mode expected panel-encoded defaults for all 27 rows, derived from
-// src/config/color-schemes.ts's darkMap/lightMap (NOT copied from the issue
-// text — recomputed against the landed ramps/map so a future ramp edit that
-// forgets to update this table fails loud).
+// @takazudo/zudo-doc/color-schemes-defaults's darkMap/lightMap (NOT copied
+// from the issue text — recomputed against the landed ramps/map so a future
+// ramp edit that forgets to update this table fails loud).
 const EXPECTED_DEFAULTS: Record<"light" | "dark", Record<string, string>> = {
   dark: {
     bg: "base:base-4",
