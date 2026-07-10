@@ -168,6 +168,56 @@ describe("scaffold — i18n manifest (+1 file, #2653 i18n addendum)", () => {
   });
 });
 
+describe("scaffold — i18n locale doc stub threads isFallback + per-locale content dir (#2651 review fix)", () => {
+  // Regression guard for two real bugs in the emitted locale stub: (1) it
+  // never threaded `isFallback` into renderDocPage, so untranslated fallback
+  // pages lost the "not translated yet" notice; (2) it hardcoded the EN
+  // docsDir as `docHistoryContentDir` for EVERY locale, so translated pages
+  // read doc-history from the wrong directory. The correct logic is ported
+  // from packages/zudo-doc/src/routes/locale-docs-slug.tsx and the showcase's
+  // own migrated stub.
+  let stub: string;
+
+  beforeAll(async () => {
+    const cwdBefore = process.cwd();
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+    process.chdir(dir);
+    await scaffold({ ...baseChoices, projectName: "i18n-stub", features: ["i18n"] });
+    process.chdir(cwdBefore);
+    stub = await fs.readFile(
+      path.join(dir, "i18n-stub", "pages/[locale]/docs/[[...slug]].tsx"),
+      "utf-8",
+    );
+    await fs.remove(dir);
+  });
+
+  it("threads isFallback into renderDocPage", () => {
+    expect(stub).toContain("isFallback: props.isFallback");
+  });
+
+  it("threads the per-locale content dir (not a hardcoded docsDir) into docHistoryContentDir", () => {
+    expect(stub).toContain("docHistoryContentDir: props.contentDir");
+    // Must resolve the locale's own dir, falling back to docsDir only for
+    // fallback pages — NOT hardcode docsDir for every locale.
+    expect(stub).toContain("routeCtx.getLocaleConfig(locale)?.dir");
+    expect(stub).toContain(
+      "item.isFallback ? routeCtx.settings.docsDir : contentDir",
+    );
+    // The old bug: docHistoryContentDir hardcoded to routeCtx.settings.docsDir
+    // in the default export. That exact hardcode must be gone.
+    expect(stub).not.toContain(
+      "docHistoryContentDir: routeCtx.settings.docsDir",
+    );
+  });
+
+  it("keeps the two docHistory-patch anchor lines intact (so the docHistory postProcess still applies)", () => {
+    expect(stub).toContain(
+      'import { createChrome } from "@takazudo/zudo-doc/chrome";',
+    );
+    expect(stub).toContain("const { renderDocPage } = createChrome(routeCtx);");
+  });
+});
+
 describe("scaffold — absence assertions (deleted legacy files never resurrected)", () => {
   // Enumerated from the #2653 locked spec + the #2660 completion comment's
   // delete list. Exercised against a barebone AND an every-feature-except-

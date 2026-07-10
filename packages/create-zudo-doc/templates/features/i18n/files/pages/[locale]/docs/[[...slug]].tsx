@@ -7,6 +7,17 @@
 // the package's own `routes/locale-docs-slug.tsx` shape, rebuilt from the
 // route-context payload instead of the package-internal `_context.js`.
 //
+// Per-locale content dir + fallback notice (ported from
+// packages/zudo-doc/src/routes/locale-docs-slug.tsx and the showcase's
+// pages/[locale]/docs/[[...slug]].tsx): each route carries the locale's own
+// content directory (`getLocaleConfig(locale).dir`) and an `isFallback` flag.
+// A page that only exists in the default locale is served as an untranslated
+// FALLBACK — it must (a) read doc-history from the DEFAULT-locale content dir
+// (not the translated one, which has no such file), and (b) thread
+// `isFallback` so the chrome renders the "not translated yet" notice. Dropping
+// either — as this stub previously did by hardcoding `docsDir` for every
+// locale and never passing `isFallback` — silently breaks translated pages.
+//
 // docHistory note: same as the default-locale stub — when docHistory is
 // selected, the generator patches this file too.
 
@@ -34,6 +45,8 @@ export function paths(): Array<{
   }> = [];
 
   for (const locale of Object.keys(routeCtx.settings.locales)) {
+    const contentDir =
+      routeCtx.getLocaleConfig(locale)?.dir ?? routeCtx.settings.docsDir;
     const source = routeCtx.resolveNavSource(locale, undefined, {
       applyDefaultLocaleOnlyFilter: true,
       keepUnlisted: true,
@@ -43,19 +56,33 @@ export function paths(): Array<{
       locale,
       routeSig: `locale-docs;${locale}`,
     })) {
-      result.push({ params: { locale, slug: item.slugParams }, props: item.props });
+      result.push({
+        params: { locale, slug: item.slugParams },
+        props: {
+          ...(item.props as Record<string, unknown>),
+          // Fallback pages exist only in the default locale, so their
+          // doc-history lives under the EN docsDir; translated pages read
+          // their own locale dir.
+          contentDir: item.isFallback ? routeCtx.settings.docsDir : contentDir,
+          isFallback: item.isFallback,
+        },
+      });
     }
   }
 
   return result;
 }
 
-type PageArgs = { params: { locale: string; slug: string[] } } &
-  Record<string, unknown>;
+type PageArgs = {
+  params: { locale: string; slug: string[] };
+  contentDir: string;
+  isFallback: boolean;
+} & Record<string, unknown>;
 
 export default function LocaleDocsPage(props: PageArgs): JSX.Element {
   return renderDocPage(props as never, {
     locale: props.params.locale,
-    docHistoryContentDir: routeCtx.settings.docsDir,
+    isFallback: props.isFallback,
+    docHistoryContentDir: props.contentDir,
   });
 }
