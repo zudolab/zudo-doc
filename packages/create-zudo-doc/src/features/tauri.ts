@@ -5,58 +5,24 @@ import type { FeatureModule } from "../compose.js";
 /**
  * Tauri feature.
  *
- * #2052: the FindInPageInit island (Cmd/Ctrl+F find bar for the Tauri
- * WebView, where the browser-native find UI is unavailable) is wired into
- * `pages/lib/_body-end-islands.tsx` via the three injections below — import,
- * displayName, and Island mount. zfb's island scanner only registers
- * components reachable through static import chains (page → wrapper →
- * component), so without this injection the feature-copied component files
- * are orphaned dead code that never hydrates. The find-match highlight CSS
- * is unconditional in `templates/base/src/styles/global.css` (matches host);
- * the component runtime-gates itself (renders null unless
- * `window.__TAURI_INTERNALS__` exists), so no settings field is needed.
+ * Minimal-scaffold cutover (epic zudolab/zudo-doc#2651, Wave 6 #2660): the
+ * `src-tauri/**` Rust shell is a genuine, unconditional file copy (no
+ * package equivalent — kept exactly as before). The FindInPageInit island
+ * (Cmd/Ctrl+F find bar, #2052) is ALSO still copied
+ * (`src/components/find-bar.tsx`, `src/components/find-in-page-init.tsx`,
+ * `src/utils/find-in-page.ts`) but is NO LONGER auto-mounted: its old mount
+ * point (`pages/lib/_body-end-islands.tsx`) doesn't exist anymore — the
+ * package now owns the entire chrome for both the home route and the
+ * self-contained doc stub. See the loud note in
+ * `find-in-page-init.tsx` for the `chromeBindingsModule` wiring path that
+ * restores it. The find-match highlight CSS still ships unconditionally
+ * from `@takazudo/zudo-doc/features.css`; the component itself
+ * runtime-gates on `window.__TAURI_INTERNALS__`, so it's inert either way
+ * in a plain browser build.
  */
 export const tauriFeature: FeatureModule = (choices) => ({
   name: "tauri",
-  injections: [
-    // 1. Import the island entry. Inserted AFTER the
-    //    `// @slot:body-end-islands:imports` anchor.
-    {
-      file: "pages/lib/_body-end-islands.tsx",
-      anchor: "// @slot:body-end-islands:imports",
-      position: "after",
-      content: `import FindInPageInit from "@/components/find-in-page-init";`,
-    },
-    // 2. Stable island marker name (same belt-and-braces guard as the
-    //    sibling islands in the file). Inserted AFTER the
-    //    `// @slot:body-end-islands:display-names` anchor.
-    {
-      file: "pages/lib/_body-end-islands.tsx",
-      anchor: "// @slot:body-end-islands:display-names",
-      position: "after",
-      content: `(FindInPageInit as { displayName?: string }).displayName = "FindInPageInit";`,
-    },
-    // 3. Island mount. Inserted AFTER the
-    //    `{/* @slot:body-end-islands:extra-islands */}` anchor.
-    //    when="load" (not "idle"): the island's job is to intercept
-    //    Cmd/Ctrl+F via a keydown listener, so it must hydrate as soon as
-    //    the islands runtime mounts — same rationale as the
-    //    clientRouterBootstrap click intercept above it. Deferring to idle
-    //    would leave a post-load window where Cmd+F does nothing, which is
-    //    the very bug this injection fixes.
-    {
-      file: "pages/lib/_body-end-islands.tsx",
-      anchor: "{/* @slot:body-end-islands:extra-islands */}",
-      position: "after",
-      content: `      {/* Tauri-only find-in-page (Cmd/Ctrl+F) bar. Renders null outside
-          a Tauri WebView, so the island is inert in plain browser builds
-          of the same scaffold. */}
-      {Island({
-        when: "load",
-        children: <FindInPageInit />,
-      }) as unknown as VNode}`,
-    },
-  ],
+  injections: [],
   postProcess: async (targetDir) => {
     // Patch Cargo.toml package name
     const cargoPath = path.join(targetDir, "src-tauri/Cargo.toml");

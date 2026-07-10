@@ -6,6 +6,14 @@ function runCmd(pm: string, script: string): string {
   return `${pm} ${script}`;
 }
 
+/**
+ * Generate the per-project `CLAUDE.md` (minimal-scaffold shape, epic
+ * zudolab/zudo-doc#2651, Wave 6 #2660). Rewritten from scratch — the old
+ * generator described a 64-file project (`src/components/admonitions/`,
+ * `src/layouts/`, `src/utils/`, per-page `pages/lib/*` wiring) that no
+ * longer exists. The scaffolded project is now ~12 files; almost
+ * everything referenced here lives in `node_modules/@takazudo/zudo-doc`.
+ */
 export function generateCLAUDEFile(choices: UserChoices): string {
   const siteName = capitalize(choices.projectName.replace(/-/g, " "));
   const lines: string[] = [];
@@ -13,7 +21,7 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   lines.push(`# ${siteName}`);
   lines.push(``);
   lines.push(
-    `Documentation site built with [zudo-doc](https://github.com/zudolab/zudo-doc) — a zfb-based documentation framework with MDX, Tailwind CSS v4, and Preact islands.`,
+    `Documentation site built with [zudo-doc](https://github.com/zudolab/zudo-doc) — a zfb-based documentation framework with MDX, Tailwind CSS v4, and Preact islands. This project is intentionally minimal: one config file (\`zfb.config.ts\`) plus markdown content — layout, chrome, and islands all ship from \`@takazudo/zudo-doc\` in \`node_modules\`.`,
   );
   lines.push(``);
 
@@ -21,15 +29,16 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   lines.push(`## Tech Stack`);
   lines.push(``);
   lines.push(`- **zfb** — documentation build framework`);
-  lines.push(`- **MDX** — content format`);
-  lines.push(
-    `- **Tailwind CSS v4** — via \`@tailwindcss/vite\``,
-  );
+  lines.push(`- **MDX** — content format, authored under \`src/content/\``);
+  lines.push(`- **Tailwind CSS v4** — via \`@tailwindcss/vite\``);
   lines.push(
     `- **Preact** — for interactive islands only (with compat mode for React API)`,
   );
   lines.push(
-    `- **syntect** — built-in code highlighting, run by zfb's Rust pipeline at build time (single fixed theme: \`base16-ocean-dark\`)`,
+    `- **syntect** — built-in code highlighting, run by zfb's Rust pipeline at build time (dual light/dark theme, follows the site's color-mode toggle)`,
+  );
+  lines.push(
+    `- **@takazudo/zudo-doc** — the package that owns everything: layout, chrome, islands, default \`@theme\` design tokens, and (via \`packageOwnedRoutes\`, on by default) the doc routes themselves`,
   );
   lines.push(``);
 
@@ -40,18 +49,23 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   lines.push(`- \`${runCmd(pm, "dev")}\` — zfb dev server (port 4321)`);
   lines.push(`- \`${runCmd(pm, "build")}\` — static HTML export to \`dist/\``);
   lines.push(`- \`${runCmd(pm, "check")}\` — TypeScript type checking`);
+  lines.push(`- \`${runCmd(pm, "preview")}\` — serve the built \`dist/\``);
   lines.push(``);
 
   // Key directories
   lines.push(`## Key Directories`);
   lines.push(``);
   lines.push("```");
+  lines.push(`zfb.config.ts             # THE one config file — zudoDoc({ ...only fields you chose })`);
+  lines.push(`pages/`);
+  lines.push(`├── index.tsx             # 1-line re-export of the package home route`);
+  lines.push(`└── docs/[[...slug]].tsx  # self-contained doc-route stub (required for \`${pm} dev\`)`);
+  if (choices.features.includes("i18n")) {
+    lines.push(`  [locale]/docs/[[...slug]].tsx  # same, for non-default locales`);
+  }
   lines.push(`src/`);
-  lines.push(`├── components/          # JSX + Preact components`);
-  lines.push(`│   └── admonitions/     # Note, Tip, Info, Warning, Danger`);
-  lines.push(`├── config/              # Settings, color schemes`);
   lines.push(`├── content/`);
-  lines.push(`│   └── docs/            # MDX content`);
+  lines.push(`│   └── docs/             # MDX content (this project's showcase docs)`);
 
   if (choices.features.includes("i18n")) {
     const secondaryLang = choices.defaultLang === "ja" ? "en" : "ja";
@@ -60,11 +74,13 @@ export function generateCLAUDEFile(choices: UserChoices): string {
     );
   }
 
-  lines.push(`├── layouts/             # JSX layouts`);
-  lines.push(`├── pages/               # File-based routing`);
   lines.push(`└── styles/`);
-  lines.push(`    └── global.css       # Design tokens & Tailwind config`);
+  lines.push(`    └── global.css        # @import chain + a token-override slot — that's it`);
   lines.push("```");
+  lines.push(``);
+  lines.push(
+    `Everything else — layout, header, sidebar, footer, doc chrome, islands, and the default design tokens — lives in \`node_modules/@takazudo/zudo-doc\`. To customize a specific piece, use the eject CLI: \`npx zudo-doc eject <component>\` copies one package component into this project so you can edit it (see \`@takazudo/zudo-doc\`'s eject-contract docs). Settings you didn't set explicitly in \`zfb.config.ts\` use the package's documented defaults — hover \`zudoDoc\`'s \`ZudoDocConfig\` argument in your editor to see every field and its \`@default\`.`,
+  );
   lines.push(``);
 
   // Content conventions
@@ -81,25 +97,13 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   lines.push(`### Admonitions`);
   lines.push(``);
   lines.push(
-    `Available in all MDX files without imports: \`<Note>\`, \`<Tip>\`, \`<Info>\`, \`<Warning>\`, \`<Danger>\``,
+    `Available in all MDX files without imports, via directive syntax: \`:::note\`, \`:::tip\`, \`:::info\`, \`:::warning\`, \`:::danger\`, \`:::caution\`, \`:::details\`. Each accepts an optional \`{title="..."}\` attribute.`,
   );
-  lines.push(`Each accepts an optional \`title\` prop.`);
   lines.push(``);
   lines.push(`### Headings`);
   lines.push(``);
   lines.push(
     `Do NOT use h1 (\`#\`) in doc content — the page title from frontmatter is rendered as h1. Start content headings from h2 (\`##\`).`,
-  );
-  lines.push(``);
-
-  // Components
-  lines.push(`## Components`);
-  lines.push(``);
-  lines.push(
-    `- Default to **server-rendered JSX components** (\`.tsx\`) — zero JS, server-rendered`,
-  );
-  lines.push(
-    `- Use **Preact islands** (\`client:load\`) only when client-side interactivity is needed`,
   );
   lines.push(``);
 
@@ -121,14 +125,17 @@ export function generateCLAUDEFile(choices: UserChoices): string {
     lines.push(
       `- ${secondaryLabel} docs should mirror the ${defaultLabel} directory structure`,
     );
+    lines.push(
+      `- Both \`pages/docs/[[...slug]].tsx\` and \`pages/[locale]/docs/[[...slug]].tsx\` are self-contained doc-route stubs shipped by the generator — required so \`${pm} dev\` doesn't 404 on doc pages (a zfb dev-mode limitation on package-injected dynamic routes). Don't delete them.`,
+    );
     lines.push(``);
   }
 
   // Enabled features
   const featureDescriptions: Record<string, string> = {
     search: "Full-text search via Pagefind",
-    sidebarFilter: "Real-time sidebar filtering",
-    designTokenPanel: "Interactive tabbed panel for tweaking spacing, font, size, and color tokens",
+    designTokenPanel:
+      "Interactive tabbed panel for tweaking spacing, font, size, and color tokens",
     sidebarResizer: "Draggable sidebar width",
     sidebarToggle: "Show/hide desktop sidebar",
     versioning: "Multi-version documentation support",
@@ -136,6 +143,10 @@ export function generateCLAUDEFile(choices: UserChoices): string {
     llmsTxt: "Generates llms.txt for LLM consumption",
     claudeResources: "Auto-generated docs for Claude Code resources",
     changelog: "Changelog page at `/docs/changelog`",
+    tauri:
+      "Desktop app wrapper (`cargo tauri dev` / `cargo tauri build`) — Cmd/Ctrl+F find bar ships unwired; see `src/components/find-in-page-init.tsx`",
+    tagGovernance:
+      "Vocabulary-aware tag audit (`tags:audit`) / suggest (`tags:suggest`) scripts",
   };
 
   const enabledFeatures = choices.features.filter(

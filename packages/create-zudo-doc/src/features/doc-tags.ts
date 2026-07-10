@@ -1,35 +1,19 @@
-import fs from "fs-extra";
-import path from "path";
 import type { FeatureModule } from "../compose.js";
 
 /**
- * docTags feature (W7C — #1738).
+ * docTags feature.
  *
- * Settings gate: `settings.docTags === true`.
+ * Purely a `zudoDoc({ docTags: true })` field (see `zfb-config-gen.ts`) —
+ * the `/docs/tags` + `/docs/tags/[tag]` routes are PACKAGE-INJECTED
+ * (`routes/docs-tags-index.tsx` / `routes/docs-tags-tag.tsx`), gated on
+ * `settings.docTags`. `templates/features/docTags/files/` has been empty
+ * since the host catch-all stubs were retired in favor of package
+ * injection — there is nothing left to copy or postProcess.
  *
- * Ships feature-conditional pages from
- * `templates/features/docTags/files/pages/`:
- *
- *   docs/tags/[tag].tsx
- *   docs/tags/index.tsx
- *   [locale]/docs/tags/[tag].tsx    — only when i18n ALSO selected
- *   [locale]/docs/tags/index.tsx    — only when i18n ALSO selected
- *
- * `copyFeatureFiles` (compose.ts) auto-emits every file under
- * `files/`; postProcess removes the `[locale]/**` subset when i18n
- * is NOT selected. See W2 spec-lock §Cross-feature interaction.
+ * Known limitation: same injected-DYNAMIC-route dev-mode gap noted on the
+ * versioning feature — the tag routes may 404 in `zfb dev` (build is fine).
  */
-export const docTagsFeature: FeatureModule = (choices) => ({
+export const docTagsFeature: FeatureModule = () => ({
   name: "docTags",
   injections: [],
-  postProcess: async (targetDir) => {
-    if (!choices.features.includes("i18n")) {
-      // i18n is OFF — strip the locale-scoped tag pages that were
-      // copied unconditionally by copyFeatureFiles.
-      const localeTagsDir = path.join(targetDir, "pages", "[locale]", "docs", "tags");
-      if (await fs.pathExists(localeTagsDir)) {
-        await fs.remove(localeTagsDir);
-      }
-    }
-  },
 });

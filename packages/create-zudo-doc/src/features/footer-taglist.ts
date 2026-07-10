@@ -3,7 +3,7 @@ import type { FeatureModule } from "../compose.js";
 /**
  * Footer taglist feature.
  *
- * Purely a settings toggle: `settings-gen.ts` emits
+ * Purely a settings toggle: `zfb-config-gen.ts` emits
  * `footer.taglist = { enabled: true, groupBy: "group" }` when selected,
  * and the footer component (part of the footer pseudo-feature) reads
  * `settings.footer.taglist` to decide whether to render the column(s).

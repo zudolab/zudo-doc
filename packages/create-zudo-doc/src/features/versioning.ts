@@ -1,61 +1,23 @@
-import fs from "fs-extra";
-import path from "path";
 import type { FeatureModule } from "../compose.js";
 
 /**
  * Versioning feature.
  *
- * The pages/lib wrappers gate `VersionSwitcher` and `VersionBanner` on
- * `settings.versions`. Doc-layout flow is handled by route enumerators +
- * `_inline-version-switcher.tsx`. This feature copies versioning page
- * templates from `templates/features/versioning/files/` via
- * `copyFeatureFiles` (compose.ts), and injects nothing into `global.css`.
+ * Purely a `zudoDoc({ versions: [] })` field (see `zfb-config-gen.ts`) — the
+ * versioned doc routes (`/docs/versions`, `/v/[version]/docs/[[...slug]]`,
+ * and their i18n counterparts) are PACKAGE-INJECTED
+ * (`settings.packageOwnedRoutes`, default on) and render through the shared
+ * `renderDocPage` chrome. `templates/features/versioning/files/` has been
+ * empty since #2390 — there is no host stub left to copy or postProcess.
  *
- * W7C (#1738): the versioning feature ships pages under
- * `templates/features/versioning/files/pages/`:
- *
- *   lib/_versions-page.tsx                  (always — versions-listing renderer)
- *
- * The versioned DOC routes — `/docs/versions`, `/v/[version]/docs/[[...slug]]`,
- * and `/v/[version]/[locale]/docs/[[...slug]]` — are now PACKAGE-INJECTED
- * (packageOwnedRoutes); their host catch-all stubs were deleted from the
- * template in #2390 (supersedes #2377) so generated projects render them via
- * injection through `@takazudo/zudo-doc`'s `_chrome` chrome (which wires the
- * MDX content components). The package route is the functional equivalent of
- * the old stub (it enumerates `settings.versions` and renders via the shared
- * `renderDocPage`).
- *
- * `copyFeatureFiles` (compose.ts) auto-copies everything under `files/`.
- * postProcess is now a defensive no-op: the i18n-gated stubs it strips
- * (`[locale]/docs/versions.tsx`, `v/[version]/[locale]/**`) no longer ship in
- * the template, but the cleanup is kept so a re-added stub can never leak an
- * orphan locale route into a single-locale project.
+ * Known limitation (pre-existing, not introduced by the minimal-scaffold
+ * cutover — inherited from the same injected-DYNAMIC-route dev-mode gap the
+ * locked manifest's `pages/docs/[[...slug]].tsx` stub exists to fix for the
+ * primary doc route, tracked as a #2667 follow-up): the versioned doc
+ * routes may still 404 in `zfb dev` since versioning has no stub of its own
+ * in the locked manifest. `zfb build` is unaffected.
  */
-export const versioningFeature: FeatureModule = (choices) => ({
+export const versioningFeature: FeatureModule = () => ({
   name: "versioning",
-  postProcess: async (targetDir) => {
-    if (!choices.features.includes("i18n")) {
-      const localeVersions = path.join(
-        targetDir,
-        "pages",
-        "[locale]",
-        "docs",
-        "versions.tsx",
-      );
-      if (await fs.pathExists(localeVersions)) {
-        await fs.remove(localeVersions);
-      }
-      const localeVersionedDocs = path.join(
-        targetDir,
-        "pages",
-        "v",
-        "[version]",
-        "[locale]",
-      );
-      if (await fs.pathExists(localeVersionedDocs)) {
-        await fs.remove(localeVersionedDocs);
-      }
-    }
-  },
   injections: [],
 });

@@ -1,7 +1,10 @@
 /* Cascade layers: preflight → flow → (unlayered utilities). Tokens/base rules
-   ship from @takazudo/zudo-doc/theme.css. */
+   ship from @takazudo/zudo-doc/theme.css.
+   NOTE: the `@takazudo/zdtp/styles.css` import is intentionally NOT here —
+   it is inserted right after the @layer line above, ONLY when
+   designTokenPanel is selected (see features/design-token-panel.ts). It
+   can't ship unconditionally because it pulls in zdtp's own bytes. */
 @layer zd-preflight, zd-flow;
-@import "@takazudo/zdtp/styles.css";            /* only when designTokenPanel: true */
 @import "tailwindcss/preflight" layer(zd-preflight);
 @import "tailwindcss/utilities";
 

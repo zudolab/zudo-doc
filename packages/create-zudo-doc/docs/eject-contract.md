@@ -69,10 +69,14 @@ integrations, `*-with-defaults` host-wiring shells, type-only subpaths, `.css` a
 ```
 
 - **Location:** `<projectRoot>/.zudo-doc.json`.
-- **Seeded at scaffold time** in `packages/create-zudo-doc/src/scaffold.ts`:
-  `{ packageVersion: <pinned @takazudo/zudo-doc version>, ejected: {} }`, written
-  next to the generated `package.json`. The pinned version comes from the same literal
-  `generatePackageJson()` already uses (`"^0.2.22"` → strip the caret).
+- **Superseded by the minimal-scaffold decision (epic zudolab/zudo-doc#2651
+  #2653 Decision 6):** `scaffold.ts` no longer seeds this file — it is
+  **lazy-created on first successful eject** instead.
+  `packages/zudo-doc/src/eject/index.ts` tolerates its absence (defaults to
+  `{ packageVersion: "unknown", ejected: {} }` in memory) and writes the real
+  file, with the actually-installed package version, on the first `zudo-doc
+  eject <component>` call. A freshly scaffolded project therefore has NO
+  `.zudo-doc.json` until the user ejects something.
 
 ### 4. Import-rewiring strategy
 

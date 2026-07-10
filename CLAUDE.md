@@ -248,14 +248,15 @@ The legacy `zudo-doc` Cloudflare Pages project and its `zudo-doc.pages.dev` subd
 
 When adding or removing a feature from zudo-doc, update the `create-zudo-doc` generator to stay in sync:
 
-1. **`src/config/settings.ts`** — Add/remove the setting field
-2. **`packages/create-zudo-doc/src/settings-gen.ts`** — Add/remove the setting in generated output
-3. **`packages/create-zudo-doc/src/features/<name>.ts`** — Create/update feature module with injections
-4. **`packages/create-zudo-doc/templates/features/<name>/files/`** — Add/remove feature-specific files
-5. **`packages/zudo-doc/src/preset.ts`** — If the feature introduces a new plugin or collection, update `zudoDocPreset()` to wire it from `settings.*`. The generated `zfb.config.ts` is now a thin preset-based file (S5b #2329) — it delegates all plugin/collection/markdown logic to the preset and reads the settings field you added in step 1. `packages/create-zudo-doc/src/zfb-config-gen.ts` does NOT need updating for features that are settings-driven (the preset handles them).
-6. **`packages/create-zudo-doc/src/scaffold.ts`** — Add/remove dependencies in `generatePackageJson()`
-7. **`packages/create-zudo-doc/src/__tests__/scaffold.test.ts`** — Update tests
-8. Run `/l-update-generator` to verify no drift remains
+1. **`src/config/settings.ts`** — Add/remove the setting field (this repo's own showcase settings)
+2. **`packages/zudo-doc/src/config.ts`** — Add/remove the field on `ZudoDocConfig` (with a `@default` JSDoc) and `DEFAULT_SETTINGS` — this is the generated-project field census
+3. **`packages/create-zudo-doc/src/zfb-config-gen.ts`** — Add/remove the field in `DEFAULT_MIRROR` + `buildDesiredConfig()` + `FIELD_ORDER` (epic zudolab/zudo-doc#2651 minimal-scaffold cutover: `settings-gen.ts` is gone — a generated project's `zfb.config.ts` is the only config file, `zudoDoc({...})` diff-from-defaults)
+5. **`packages/create-zudo-doc/src/features/<name>.ts`** — Create/update feature module (usually just settings-field emission now — see step 3; only add injections/postProcess if the feature genuinely has no package-owned equivalent)
+6. **`packages/create-zudo-doc/templates/features/<name>/files/`** — Add/remove feature-specific files (only when there's a genuine gap — most features ship zero files now)
+7. **`packages/zudo-doc/src/preset.ts`** — If the feature introduces a new plugin or collection, update `zudoDocPreset()` to wire it from `settings.*`. The generated `zfb.config.ts` is now `zudoDoc({...})` (S9 #2660) — it delegates all plugin/collection/markdown logic to the preset via `zudoDoc()` and passes through the settings field you added in step 2.
+8. **`packages/create-zudo-doc/src/scaffold.ts`** — Add/remove dependencies in `generatePackageJson()`
+9. **`packages/create-zudo-doc/src/__tests__/scaffold.test.ts`** — Update tests
+10. Run `/l-update-generator` to verify no drift remains
 
 **e2e fixture sync**: Adding a field to `src/config/settings.ts` also requires mirroring it into all five `e2e/fixtures/*/src/config/settings.ts` files — or adding an allowlist entry in `.fixture-settings-drift-allowlist` with a `# reason:` comment. This is now enforced in CI by the `Fixture Settings Drift Check` job.
 
