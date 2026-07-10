@@ -5,6 +5,14 @@ import path from "path";
 import type { UserChoices } from "../prompts.js";
 import { scaffold } from "../scaffold.js";
 
+// Re-targeted for the minimal-scaffold cutover (epic zudolab/zudo-doc#2651,
+// Wave 7 #2662): the original regression asserted `docHistory: true` inside
+// `src/config/settings.ts`, which no longer exists. `docHistory` is now a
+// `zudoDoc({...})` field written straight into `zfb.config.ts`. The
+// auto-enable + warn behavior itself (in scaffold.ts, ahead of any file
+// generation) is unchanged by the minimal-scaffold cutover — only the
+// assertion target moved.
+
 const TEMP_PREFIX = "create-zudo-doc-test-1795-";
 
 let tempDir: string;
@@ -45,9 +53,10 @@ describe("bugfix #1795 — body-foot-util warns when --no-doc-history was explic
       "body-foot-util requires doc-history",
     );
 
-    // Auto-enable must still be applied — docHistory ends up in generated settings
+    // Auto-enable must still be applied — docHistory ends up in the
+    // generated zfb.config.ts (zudoDoc({...}) field, not settings.ts).
     const content = await fs.readFile(
-      path.join(tempDir, "test-1795-warn", "src/config/settings.ts"),
+      path.join(tempDir, "test-1795-warn", "zfb.config.ts"),
       "utf-8",
     );
     expect(content).toContain("docHistory: true");
@@ -73,7 +82,7 @@ describe("bugfix #1795 — body-foot-util warns when --no-doc-history was explic
 
     // Auto-enable still applied silently
     const content = await fs.readFile(
-      path.join(tempDir, "test-1795-no-warn", "src/config/settings.ts"),
+      path.join(tempDir, "test-1795-no-warn", "zfb.config.ts"),
       "utf-8",
     );
     expect(content).toContain("docHistory: true");
