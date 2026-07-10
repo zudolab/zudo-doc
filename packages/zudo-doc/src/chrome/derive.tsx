@@ -150,8 +150,23 @@ export function deriveComposeMetaTitle(ctx: ChromeContext): (title: string) => s
 // ---------------------------------------------------------------------------
 
 function resolveHostScheme(ctx: ChromeContext, key: string): ColorScheme {
+  // No colorSchemes payload at all → legitimately use the neutral default
+  // (injected package path with no host schemes wired). Silent by design.
   if (!ctx.colorSchemes) return DEFAULT_SCHEME;
-  return ctx.colorSchemes[key] ?? DEFAULT_SCHEME;
+  const scheme = ctx.colorSchemes[key];
+  if (!scheme) {
+    // A scheme WAS wired but the requested key is missing — almost always a
+    // typo in `colorScheme` / `colorMode.lightScheme` / `darkScheme`. Silently
+    // falling back to the neutral grey scheme hides the misconfiguration, so
+    // warn loudly (non-fatal) naming the missing key and the available ones.
+    console.warn(
+      `[zudo-doc] color scheme "${key}" not found in the configured ` +
+        `colorSchemes — falling back to the neutral default scheme. ` +
+        `Available schemes: ${Object.keys(ctx.colorSchemes).join(", ") || "(none)"}`,
+    );
+    return DEFAULT_SCHEME;
+  }
+  return scheme;
 }
 
 /** Derive the single-scheme / light-dark CSS-property generators bound to the

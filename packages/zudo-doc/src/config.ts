@@ -15,8 +15,12 @@
  * }));
  * ```
  *
- * `zudoDoc()` merges the user's fields over {@link DEFAULT_SETTINGS} per-field
- * (user wins), supplies the Wave-3 package defaults
+ * `zudoDoc()` SHALLOW-merges the user's fields over {@link DEFAULT_SETTINGS} —
+ * top-level fields only (`{ ...DEFAULT_SETTINGS, ...user }`). A supplied nested
+ * object (e.g. `colorMode`, `metaTags`) REPLACES the default wholesale; it is
+ * NOT deep-merged key-by-key. This is safe because every nested config type is
+ * all-required-fields, so a caller supplying one supplies all of its fields.
+ * `zudoDoc()` also supplies the Wave-3 package defaults
  * (`buildDocsSchema`/`directiveVocabulary`/`translations`/`colorSchemes`/tag
  * vocabulary) unless overridden, and returns a **complete `ZfbConfig`** — the
  * host spreads nothing.
@@ -563,7 +567,10 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
     ...settingsOverrides
   } = user;
 
-  // Per-field merge, user wins. `settingsOverrides` is a Partial<Settings>.
+  // Shallow (top-level) merge, user wins. A supplied nested object (colorMode,
+  // metaTags, footer, …) replaces the default wholesale — not deep-merged.
+  // Safe because nested config types are all-required-field. `settingsOverrides`
+  // is a Partial<Settings>.
   const settings: Settings = { ...DEFAULT_SETTINGS, ...settingsOverrides };
 
   const fragment = zudoDocPreset({
