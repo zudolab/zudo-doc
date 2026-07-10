@@ -50,23 +50,27 @@ For configuration details, see [Header Navigation](../guides/header-navigation.m
 
 ### Example Header Config
 
+Header navigation is the `headerNav` field of your single `zudoDoc()` config in `zfb.config.ts`:
+
 ```ts
-// src/config/settings.ts
-export const settings = {
-  headerNav: [
-    { label: "Getting Started", path: "/docs/getting-started", categoryMatch: "getting-started" },
-    {
-      label: "Learn",
-      path: "/docs/guides",
-      categoryMatch: "guides",
-      children: [
-        { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
-        { label: "Components", path: "/docs/components", categoryMatch: "components" },
-      ],
-    },
-    { label: "Reference", path: "/docs/reference", categoryMatch: "reference" },
-  ],
-};
+// zfb.config.ts
+export default defineConfig(
+  zudoDoc({
+    headerNav: [
+      { label: "Getting Started", path: "/docs/getting-started", categoryMatch: "getting-started" },
+      {
+        label: "Learn",
+        path: "/docs/guides",
+        categoryMatch: "guides",
+        children: [
+          { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
+          { label: "Components", path: "/docs/components", categoryMatch: "components" },
+        ],
+      },
+      { label: "Reference", path: "/docs/reference", categoryMatch: "reference" },
+    ],
+  }),
+);
 ```
 
 ## Sidebar Structure Rules
@@ -156,33 +160,35 @@ Sidebar (Xbox section):
 Each `categoryMatch` value must be a **single top-level directory name** — the framework resolves active state by matching only the first path segment of the current URL.
 
 ```ts
-// src/config/settings.ts
-export const settings = {
-  headerNav: [
-    { label: "Home", path: "/docs/home", categoryMatch: "home" },
-    {
-      label: "Platforms",
-      path: "/docs/xbox",
-      categoryMatch: "xbox",
-      children: [
-        { label: "Xbox", path: "/docs/xbox", categoryMatch: "xbox" },
-        { label: "PlayStation", path: "/docs/playstation", categoryMatch: "playstation" },
-        { label: "Nintendo", path: "/docs/nintendo", categoryMatch: "nintendo" },
-      ],
-    },
-    {
-      label: "Genres",
-      path: "/docs/rpg",
-      categoryMatch: "rpg",
-      children: [
-        { label: "RPG", path: "/docs/rpg", categoryMatch: "rpg" },
-        { label: "Action", path: "/docs/action", categoryMatch: "action" },
-        { label: "Strategy", path: "/docs/strategy", categoryMatch: "strategy" },
-      ],
-    },
-    { label: "Community", path: "/docs/community", categoryMatch: "community" },
-  ],
-};
+// zfb.config.ts
+export default defineConfig(
+  zudoDoc({
+    headerNav: [
+      { label: "Home", path: "/docs/home", categoryMatch: "home" },
+      {
+        label: "Platforms",
+        path: "/docs/xbox",
+        categoryMatch: "xbox",
+        children: [
+          { label: "Xbox", path: "/docs/xbox", categoryMatch: "xbox" },
+          { label: "PlayStation", path: "/docs/playstation", categoryMatch: "playstation" },
+          { label: "Nintendo", path: "/docs/nintendo", categoryMatch: "nintendo" },
+        ],
+      },
+      {
+        label: "Genres",
+        path: "/docs/rpg",
+        categoryMatch: "rpg",
+        children: [
+          { label: "RPG", path: "/docs/rpg", categoryMatch: "rpg" },
+          { label: "Action", path: "/docs/action", categoryMatch: "action" },
+          { label: "Strategy", path: "/docs/strategy", categoryMatch: "strategy" },
+        ],
+      },
+      { label: "Community", path: "/docs/community", categoryMatch: "community" },
+    ],
+  }),
+);
 ```
 
 ### Directory Structure for Gaming Wiki

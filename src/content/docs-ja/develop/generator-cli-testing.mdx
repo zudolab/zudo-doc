@@ -4,8 +4,6 @@ description: Claude Codeスキルを使ったcreate-zudo-docジェネレータ�
 sidebar_position: 2
 ---
 
-# ジェネレーターCLIテスト
-
 `create-zudo-doc`ジェネレーターCLIは、さまざまな機能の組み合わせで新しいzudo-docプロジェクトを生成します。テストでは、各組み合わせがビルド・実行でき、正しいファイルと設定が生成されることを検証します。
 
 2つのClaude Codeスキルでこのワークフローを自動化しています：
@@ -65,7 +63,7 @@ sidebar_position: 2
 3. **ビルド** — `pnpm build`で静的エクスポートの成功を検証
 4. **開発サーバー** — `pnpm dev`を起動し、8秒待ってプロセスがまだ実行中か確認
 5. **ファイル検証** — 有効な機能に基づいて、期待されるファイルの存在/不在を確認
-6. **設定検証** — 生成された`settings.ts`を読み、正しい値を確認
+6. **設定検証** — 生成された`zfb.config.ts`を読み、`zudoDoc({ … })`呼び出しが期待されるフィールドを持つことを確認（デフォルトとの差分。別個の`settings.ts`はありません）
 7. **ショーケース比較** — 生成されたコードをメインのzudo-docショーケースと比較
 8. **ヘッドレスブラウザ**（`--headless`使用時） — 実際のブラウザでページをレンダリングし、JSエラーを確認、視覚要素（検索アイコン、言語切り替え、テーマトグルなど）を検証
 
@@ -83,10 +81,10 @@ sidebar_position: 2
 | 失敗内容 | 原因 | 修正対象 |
 |----------|------|----------|
 | ビルド時にモジュールが見つからない | 生成された`package.json`に依存関係がない | `scaffold.ts` — `generatePackageJson()` |
-| zfb.configでインポートが見つからない | 機能のインテグレーションが含まれていない | `zfb-config-gen.ts` |
-| settings.tsの型エラー | 設定フィールドが不足または不正 | `settings-gen.ts` |
-| 機能コンポーネントが見つからない | 機能モジュールのファイルコピーまたはアンカー不一致 | `features/*.ts`または`templates/features/*/files/` |
-| アンカーが出力に残っている | injectionアンカーが未クリーンアップ | `compose.ts` — `cleanAnchors()` |
+| `zfb.config.ts`のフィールドが誤り/不足 | `zudoDoc()`のデフォルト差分が正しく出力されていない | `zfb-config-gen.ts` |
+| 生成された設定の型エラー | フィールドが`ZudoDocConfig`と不一致 | `zfb-config-gen.ts` |
+| 機能ファイルが見つからない | 機能モジュールがファイルをコピーしていない（今もファイルを出荷する少数の機能のみ） | `features/*.ts`または`templates/features/*/files/` |
+| アンカーが出力に残っている | injectionアンカーが未クリーンアップ（`ANCHOR_FILES`は現在空） | `compose.ts` — `cleanAnchors()` |
 
 ## 主要なジェネレーターファイル
 
@@ -94,9 +92,10 @@ sidebar_position: 2
 |----------|------|
 | `packages/create-zudo-doc/src/scaffold.ts` | パイプライン統括: ベースコピー、設定生成、機能合成 |
 | `packages/create-zudo-doc/src/compose.ts` | 合成エンジン: injection、アンカークリーンアップ、機能解決 |
-| `packages/create-zudo-doc/src/features/*.ts` | 各機能のinjection定義モジュール |
-| `packages/create-zudo-doc/src/zfb-config-gen.ts` | `zfb.config.ts`のプログラマティック生成 |
-| `packages/create-zudo-doc/src/settings-gen.ts` | `settings.ts`の生成 |
+| `packages/create-zudo-doc/src/features/*.ts` | 機能モジュール — 現在はほぼ設定フィールドの出力のみ。ファイルをコピーするのは一部だけ |
+| `packages/create-zudo-doc/src/zfb-config-gen.ts` | **唯一**の設定ジェネレーター — `zfb.config.ts`を`zudoDoc({ … })`のデフォルト差分呼び出しとして出力（旧`settings-gen.ts`は廃止） |
+| `packages/create-zudo-doc/src/preset.ts` | CLIとAPIで共有される機能プリセットの解決 |
+| `packages/create-zudo-doc/src/claude-md-gen.ts` | 新しいプロジェクト形状向けのプロジェクト`CLAUDE.md`を生成 |
 | `packages/create-zudo-doc/src/constants.ts` | 機能定義、カラースキームリスト |
 | `packages/create-zudo-doc/src/cli.ts` | CLI引数のパース |
 | `packages/create-zudo-doc/src/api.ts` | プログラマティックAPI |

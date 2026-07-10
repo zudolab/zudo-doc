@@ -78,7 +78,7 @@ Choose your preferred package manager: pnpm (recommended), npm, yarn, or bun. Af
 
 <Tip>
 
-The installer generates a `src/config/settings.ts` file with your choices. You can change these settings at any time after project creation.
+The installer writes your choices into a single `zfb.config.ts` — a `zudoDoc({ … })` call holding only the fields that differ from the defaults. You can change these settings at any time after project creation. See [Configuration](../guides/configuration.mdx) for the full field reference.
 
 </Tip>
 
@@ -136,24 +136,57 @@ Never commit the `dist/` directory to source control. It is already excluded via
 
 ## Project Structure
 
-After installation, your project looks like this:
+A freshly scaffolded project is deliberately small — around a dozen files:
 
 ```
-src/
-├── components/          # Preact components (server-rendered + client islands)
-│   └── admonitions/     # Note, Tip, Info, Warning, Danger
-├── config/
-│   ├── settings.ts      # Site name, active color scheme
-│   ├── color-schemes.ts # Ramp-native color scheme definitions
-│   └── color-scheme-utils.ts
-├── content/
-│   ├── docs/            # English MDX content
-│   └── docs-ja/         # Japanese MDX content
-└── styles/
-    └── global.css       # Design tokens & Tailwind config
-
-pages/                   # zfb file-based routing (.tsx page modules)
-zfb.config.ts            # zfb engine entry-point config
+my-docs/
+├── .gitignore              # node_modules, dist, .zfb
+├── .npmrc                  # engine-strict=true
+├── CLAUDE.md               # project notes for Claude Code
+├── package.json            # deps + dev/build/preview/check scripts
+├── tsconfig.json           # 5-line extends of the package base config
+├── zfb.config.ts           # the ONE config file — a zudoDoc({ … }) call
+├── pages/
+│   ├── index.tsx           # home route (1-line re-export)
+│   └── docs/
+│       └── [[...slug]].tsx # doc-route stub (see the callout below)
+└── src/
+    ├── content/
+    │   └── docs/           # your MDX content (seeded getting-started pages)
+    └── styles/
+        └── global.css      # ~20-line @import chain + your token overrides
 ```
 
-See the [Writing Docs](./writing-docs.mdx) guide for how to create and organize your documentation pages.
+| File | Purpose |
+| --- | --- |
+| `zfb.config.ts` | Your entire configuration. Imports `zudoDoc` from `@takazudo/zudo-doc/config` and passes the fields you chose; everything else falls back to a documented default. |
+| `tsconfig.json` | Extends `@takazudo/zudo-doc/tsconfig.base.json`; adds only `include` and the preact-compat `paths`. |
+| `src/styles/global.css` | `@import`s the package's `theme.css` / `content.css` / `features.css` and leaves you a `@theme { … }` block for token overrides. |
+| `src/content/docs/` | Your documentation, authored as MDX. The scaffold seeds a few `getting-started/` pages to replace. |
+| `pages/index.tsx`, `pages/docs/[[...slug]].tsx` | Thin route stubs — see below. |
+
+### Why so little?
+
+Everything a project used to copy into itself — the layout, header, sidebar, TOC, nav builders, URL helpers, color-scheme utilities, and the frontmatter schema — now ships from `@takazudo/zudo-doc` and is consumed straight from `node_modules`. Doc routes are injected by the package (`packageOwnedRoutes` defaults to `true`), so your `pages/` directory carries only the two stubs below rather than a full set of layout files. A fresh project holds just what is genuinely its own: config, content, and a couple of route seams.
+
+<Note title="Why pages/index.tsx exists">
+
+The home route is a one-line re-export of the package-owned static index route:
+
+```tsx title="pages/index.tsx"
+export { default } from "@takazudo/zudo-doc/routes/index";
+```
+
+A re-export works here because the static `/` route needs no build-time `paths()` extraction.
+
+</Note>
+
+<Note title="Why pages/docs/[[...slug]].tsx exists">
+
+Package route injection renders your doc pages at **build** time, but injected **dynamic** routes currently return 404 in `zfb dev` (`pnpm dev`). To keep the dev authoring loop working, a small self-contained stub ships that reconstructs the doc route from the package's sanctioned entrypoints (`@takazudo/zudo-doc/route-context` + `/chrome` + the `virtual:zudo-doc-route-context` module). It makes `/docs/…` return 200 in both `zfb dev` and `zfb build`.
+
+This is the one interim file in the scaffold that will disappear once the upstream dev-render gap closes ([follow-up #2667](https://github.com/zudolab/zudo-doc/issues/2667)).
+
+</Note>
+
+See the [Writing Docs](./writing-docs.mdx) guide for how to create and organize your documentation pages, and [Customizing zudo-doc](../reference/customizing.mdx) for the ladder from a config tweak to full source control.

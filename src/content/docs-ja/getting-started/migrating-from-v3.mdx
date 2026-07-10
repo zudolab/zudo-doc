@@ -1,0 +1,203 @@
+---
+title: v3 からの移行
+description: 既存の生成プロジェクトを最小スキャフォールドの形状へ移す — ボイラープレートを削除し、設定を zudoDoc() へマージし、tsconfig を差し替え、ルートスタブを戻す。
+sidebar_position: 5
+tags:
+  - customization
+  - level:advanced
+---
+
+**最小スキャフォールド**への切り替え以前にスキャフォールドされたプロジェクトは、いまや `@takazudo/zudo-doc` が所有し `node_modules` から消費される約60個のファイルを抱えています。レイアウト、ヘッダー、サイドバー、TOC、ナビゲーションビルダー、URL ヘルパー、カラースキームユーティリティ、フロントマタースキーマなどです。このページは、現在の形状 — 唯一の `zudoDoc()` 設定、コンテンツ、2つの薄いルートスタブ — への手動移行を案内します。
+
+<Info>
+
+ここでの「v3」とは、最小スキャフォールド以前の生成形状（`src/config/settings.ts` + 手書きの `zfb.config.ts` + フルの `pages/lib/` と `src/{components,utils,types}` ツリーの時代）を指します。プロジェクトがすでに `zfb.config.ts` で `zudoDoc()` を使っているなら、現在の形状であり、このページは不要です。
+
+</Info>
+
+## 自動化された経路
+
+機械的な作業のほとんど — ボイラープレートの削除、設定の再配置、tsconfig の書き換え、スタブの投入 — は `/l-migrate-to-preset-style` という Claude Code スキルによって自動化されます。まずプロジェクトに対して実行し、その後は以下の手動ステップをチェックリストとして、また自動化がフラグしたプロジェクト固有の事項の処理に使ってください。このページの残りは同じ操作を手作業で説明します。
+
+## ステップ1 — パッケージ所有のボイラープレートを削除
+
+設定をマージしたら（ステップ2）、以下はすべてパッケージが提供するため削除できます:
+
+```
+pages/lib/*                 # nav-source cache, chrome seam, search widget, islands wiring
+src/components/*            # layout/content components now shipped by the package
+src/utils/*                 # base URL helpers, slug, tags, docs nav builders
+src/types/*                 # shared type shims
+src/config/*                # settings.ts and friends — see Step 2 for custom data
+zfb-shim.d.ts              # the local `declare module "zfb/config"` shim
+.htmlvalidate.json         # HTML validation config (no longer a default gate)
+scripts/run-b4push.sh      # pre-push suite (no longer shipped by default)
+.zfb/                      # doc-history-meta.json is self-seeded on every build
+.zudo-doc.json             # eject provenance is now lazy-created on first eject
+```
+
+<Warning>
+
+`src/config/*` は、真にカスタムなデータ（カスタムカラースキーム、タグ語彙、翻訳、カスタム `buildDocsSchema`）を再配置した**後**に削除してください。それらはボイラープレートではありません — ステップ2 でそれらを設定のエスケープハッチに移します。パッケージデフォルトとバイト一致するものはそのまま削除して安全です。
+
+</Warning>
+
+<Note>
+
+`.zfb/doc-history-meta.json` のコミットをやめ、その un-ignore 行を `.gitignore` から削除することもできます — doc-history プラグインが毎ビルドで再生成します。
+
+</Note>
+
+## ステップ2 — 設定を `zudoDoc()` へマージ
+
+旧来の2部構成の設定（`settings` オブジェクトをエクスポートする `src/config/settings.ts` と、手組みの `zfb.config.ts`）は、単一の `zudoDoc()` 呼び出しに集約されます。
+
+**シリアライズ可能な設定**はインラインに移します。旧 `settings` オブジェクトの各フィールドを `zudoDoc({ … })` にコピーし、旧デフォルトと一致したものは省きます。`zudoDoc()` がすべてのフィールドをデフォルト化するためです:
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    docHistory: true,
+    sidebarToggle: true,
+    // ...only the fields that differ from the defaults
+  }),
+);
+```
+
+**カスタムデータ**はエスケープハッチフィールドに移します。プロジェクトが以下のいずれかを実際にカスタマイズしていたなら、そのデータを独自モジュールとして保ち、対応するフィールドで渡します（このショーケースが行っているのとまったく同じです）:
+
+| 旧来の場所 | 新しいエスケープハッチフィールド |
+| --- | --- |
+| `src/config/tag-vocabulary.ts` | `tagVocabularyEntries` |
+| `src/config/i18n.ts`（カスタム翻訳） | `translations` |
+| `src/config/color-schemes.ts`（カスタムパレット） | `colorSchemes` |
+| `src/config/docs-schema.ts`（カスタムフロントマターキー） | `buildDocsSchema` |
+
+```ts title="zfb.config.ts (with custom data)"
+import { tagVocabulary } from "./src/config/tag-vocabulary";
+import { translations } from "./src/config/i18n";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    tagVocabularyEntries: tagVocabulary,
+    translations,
+  }),
+);
+```
+
+<Warning title="tagVocabulary と tagVocabularyEntries">
+
+これらは別の2つのフィールドです — 混同しないでください。`tagVocabulary` は**ブールゲート**（語彙がランタイムで参照されるか）です。`tagVocabularyEntries` は**エントリ配列**（何を参照するか）です。旧来の形状では単一の `tagVocabulary` という名前が両方の役割を担うことがありましたが、現在の形状では分割されています。ブールを `tagVocabulary` へ、配列を `tagVocabularyEntries` へ移行してください。
+
+</Warning>
+
+**シェルフィールド**（`port`、`adapter`、`bundle`）は同じ `zudoDoc()` オブジェクトに載せます — これらは設定ではなくホスト所有の `ZfbConfig` フィールドです。[拡張プロジェクトの例](../guides/configuration.mdx)を参照してください。
+
+## ステップ3 — tsconfig を差し替え
+
+手組みの `tsconfig.json` を、パッケージベースを extends する5行の形に置き換えます。ベースがすべての strict フラグとアンビエントシムを担い、あなたは `include` と preact-compat の `paths` だけを保持します:
+
+```jsonc title="tsconfig.json"
+{
+  "extends": "@takazudo/zudo-doc/tsconfig.base.json",
+  "include": ["src", "pages", "zfb.config.ts"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "react": ["./node_modules/preact/compat/"],
+      "react/jsx-runtime": ["./node_modules/preact/jsx-runtime"],
+      "react-dom": ["./node_modules/preact/compat/"]
+    }
+  }
+}
+```
+
+<Warning>
+
+トップレベルの `files` キーは**追加しないでください** — ベースの `files` を上書きしてしまい、アンビエントシム（`zfb-config-shim.d.ts`、`virtual-modules.d.ts`）を静かにプログラムから落とし、後で `zfb/config` / `virtual:*` インポートの `TS2307` として現れます。preact-compat の `paths` は（ベースではなく）プロジェクト tsconfig に置いて、`./node_modules/preact/compat/` がプロジェクトルートに対して解決されるようにしてください。
+
+</Warning>
+
+## ステップ4 — ルートスタブを戻す
+
+パッケージ所有ルートはビルドをカバーしますが、2つの薄いスタブが dev のオーサリングループを機能させます（注入された動的ルートは `zfb dev` で 404 になります）。両方を追加します。
+
+ホームルートは1行の re-export です:
+
+```tsx title="pages/index.tsx"
+export { default } from "@takazudo/zudo-doc/routes/index";
+```
+
+ドキュメントルートは、パッケージの認可されたエントリーポイントからルートを再構築する、小さな自己完結型スタブです:
+
+```tsx title="pages/docs/[[...slug]].tsx"
+/** @jsxRuntime automatic */
+/** @jsxImportSource preact */
+import type { JSX } from "preact";
+import { routeContext } from "virtual:zudo-doc-route-context";
+import {
+  createRouteContext,
+  type RouteContextPayload,
+} from "@takazudo/zudo-doc/route-context";
+import { createChrome } from "@takazudo/zudo-doc/chrome";
+
+const ctx = routeContext as unknown as RouteContextPayload;
+const routeCtx = createRouteContext(ctx);
+const { renderDocPage } = createChrome(routeCtx);
+
+export const frontmatter = { title: "Docs" };
+
+export function paths(): Array<{ params: { slug: string[] }; props: unknown }> {
+  const locale = routeCtx.defaultLocale;
+  const source = routeCtx.resolveNavSource(locale, undefined);
+  return routeCtx.buildDocRouteEntries({
+    source,
+    locale,
+    routeSig: `docs;${locale}`,
+  }).map((item) => ({
+    params: { slug: item.slugParams },
+    props: item.props,
+  }));
+}
+
+type PageArgs = { params: { slug: string[] } } & Record<string, unknown>;
+
+export default function DocsPage(props: PageArgs): JSX.Element {
+  return renderDocPage(props as never, {
+    locale: routeCtx.defaultLocale,
+    docHistoryContentDir: routeCtx.settings.docsDir,
+  });
+}
+```
+
+<Note>
+
+プロジェクトがホストクロームバインディングを使う場合は、それを渡します: `createChrome(routeCtx, chromeBindings)`（`virtual:zudo-doc-chrome-bindings` からインポート）とし、設定で `chromeBindingsModule` を設定します。[ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照してください。i18n やバージョン付きプロジェクトは、並行する `[locale]/…` と `v/…` のスタブ変種を追加します。
+
+</Note>
+
+## ステップ5 — `package.json` と `global.css` を整理
+
+- **`package.json`** — 最小スキャフォールド以前の形状から、`check:html` / `html-validate` のスクリプトと依存、および `gen:z-index` / `check:z-index` のスクリプトを削除します（どちらも生成プロジェクトで廃止されました）。まだ無ければ `@takazudo/zudo-doc` の依存として `@takazudo/zdtp` を追加します — パッケージのクロームがパネルのブートストラップを無条件にインポートするため、`designTokenPanel` に関係なくビルド時に解決される必要があります。
+- **`src/styles/global.css`** — パッケージの `@import` チェーンと自前の `@theme { … }` 上書きブロックだけに縮小します（[スキャフォールドの `global.css`](./installation.mdx#プロジェクト構成)を参照）。デフォルトの z-index ティア、コンテンツタイポグラフィ、機能 CSS はすべていまやパッケージから出荷されます。それらを再インライン化することは、まさにこの移行が取り除くコピードリフトです。
+
+## ステップ6 — 検証
+
+```bash
+pnpm check   # content collections + tsc against the package base tsconfig
+pnpm build   # static export through the package-owned routes
+```
+
+`pnpm check` が `zfb/config` や `virtual:*` インポートで `TS2307` を報告する場合は、ステップ3 を再確認してください — トップレベルの余分な `files` キーが通例の原因です。`pnpm dev` でドキュメントルートが 404 になる場合は、ステップ4 のスタブがあることを確認してください。
+
+## 関連ページ
+
+- [zudo-doc のカスタマイズ](../reference/customizing.mdx) — 移行先の形状に向けた最小→拡張のはしご
+- [設定](../guides/configuration.mdx) — すべての `zudoDoc()` フィールドとそのデフォルト
+- [create-zudo-doc CLI](../reference/create-zudo-doc.mdx) — 新規スキャフォールドが出力するもの
