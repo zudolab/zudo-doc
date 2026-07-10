@@ -1,0 +1,203 @@
+---
+title: Migrating from v3
+description: Move an existing generated project onto the minimal-scaffold shape — delete boilerplate, merge config into zudoDoc(), swap the tsconfig, add back the route stubs.
+sidebar_position: 5
+tags:
+  - customization
+  - level:advanced
+---
+
+Projects scaffolded before the **Minimal Scaffold** cutover carry ~60 files that are now owned by `@takazudo/zudo-doc` and consumed from `node_modules`: the layout, header, sidebar, TOC, nav builders, URL helpers, color-scheme utilities, and the frontmatter schema. This page walks the manual migration to the current shape — a single `zudoDoc()` config, your content, and two thin route stubs.
+
+<Info>
+
+"v3" here means the pre-minimal-scaffold generated shape (the era of `src/config/settings.ts` + a hand-written `zfb.config.ts` + a full `pages/lib/` and `src/{components,utils,types}` tree). If your project already uses `zudoDoc()` in `zfb.config.ts`, you are on the current shape and do not need this page.
+
+</Info>
+
+## Automated path
+
+Most of the mechanical work — deleting boilerplate, relocating config, rewriting the tsconfig, dropping in the stubs — is automated by the `/l-migrate-to-preset-style` Claude Code skill. Run it against your project first, then use the manual steps below as a checklist and to handle anything project-specific it flags. The rest of this page documents the same moves by hand.
+
+## Step 1 — Delete package-owned boilerplate
+
+Once your config is merged (Step 2), the following are all provided by the package and can be removed:
+
+```
+pages/lib/*                 # nav-source cache, chrome seam, search widget, islands wiring
+src/components/*            # layout/content components now shipped by the package
+src/utils/*                 # base URL helpers, slug, tags, docs nav builders
+src/types/*                 # shared type shims
+src/config/*                # settings.ts and friends — see Step 2 for custom data
+zfb-shim.d.ts              # the local `declare module "zfb/config"` shim
+.htmlvalidate.json         # HTML validation config (no longer a default gate)
+scripts/run-b4push.sh      # pre-push suite (no longer shipped by default)
+.zfb/                      # doc-history-meta.json is self-seeded on every build
+.zudo-doc.json             # eject provenance is now lazy-created on first eject
+```
+
+<Warning>
+
+Delete `src/config/*` **after** you have relocated any genuinely custom data (custom color schemes, tag vocabulary, translations, a custom `buildDocsSchema`). Those are not boilerplate — Step 2 moves them into config escape hatches. Anything byte-identical to a package default is safe to drop outright.
+
+</Warning>
+
+<Note>
+
+You can also stop committing `.zfb/doc-history-meta.json` and remove its un-ignore lines from `.gitignore` — the doc-history plugin recreates it on every build.
+
+</Note>
+
+## Step 2 — Merge config into `zudoDoc()`
+
+The old two-part config (`src/config/settings.ts` exporting a `settings` object, plus a hand-assembled `zfb.config.ts`) collapses into a single `zudoDoc()` call.
+
+**Serializable settings** move inline. Copy each field from your old `settings` object into `zudoDoc({ … })` — drop any that matched the old default, since `zudoDoc()` defaults every field:
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    docHistory: true,
+    sidebarToggle: true,
+    // ...only the fields that differ from the defaults
+  }),
+);
+```
+
+**Custom data** moves into the escape-hatch fields. If your project genuinely customized any of these, keep the data as its own module and pass it through the matching field (exactly as this showcase does):
+
+| Old location | New escape-hatch field |
+| --- | --- |
+| `src/config/tag-vocabulary.ts` | `tagVocabularyEntries` |
+| `src/config/i18n.ts` (custom translations) | `translations` |
+| `src/config/color-schemes.ts` (custom palette) | `colorSchemes` |
+| `src/config/docs-schema.ts` (custom frontmatter keys) | `buildDocsSchema` |
+
+```ts title="zfb.config.ts (with custom data)"
+import { tagVocabulary } from "./src/config/tag-vocabulary";
+import { translations } from "./src/config/i18n";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    tagVocabularyEntries: tagVocabulary,
+    translations,
+  }),
+);
+```
+
+<Warning title="tagVocabulary vs tagVocabularyEntries">
+
+These are two different fields — do not conflate them. `tagVocabulary` is a **boolean gate** (whether the vocabulary is consulted at runtime). `tagVocabularyEntries` is the **entries array** (what it consults). In the old shape a single `tagVocabulary` name sometimes carried both roles; on the current shape they are split. Migrate the boolean to `tagVocabulary` and the array to `tagVocabularyEntries`.
+
+</Warning>
+
+**Shell fields** (`port`, `adapter`, `bundle`) go on the same `zudoDoc()` object — they are host-owned `ZfbConfig` fields, not settings. See the [extended-project example](../guides/configuration.mdx#an-extended-project-as-reference).
+
+## Step 3 — Swap the tsconfig
+
+Replace the hand-rolled `tsconfig.json` with the 5-line form that extends the package base. The base carries every strict flag and the ambient shims; you keep only `include` and the preact-compat `paths`:
+
+```jsonc title="tsconfig.json"
+{
+  "extends": "@takazudo/zudo-doc/tsconfig.base.json",
+  "include": ["src", "pages", "zfb.config.ts"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "react": ["./node_modules/preact/compat/"],
+      "react/jsx-runtime": ["./node_modules/preact/jsx-runtime"],
+      "react-dom": ["./node_modules/preact/compat/"]
+    }
+  }
+}
+```
+
+<Warning>
+
+Do **not** add a top-level `files` key — it would override the base's `files` and silently drop the ambient shims (`zfb-config-shim.d.ts`, `virtual-modules.d.ts`), surfacing later as `TS2307` on `zfb/config` / `virtual:*` imports. Keep the preact-compat `paths` in the project tsconfig (not the base) so `./node_modules/preact/compat/` resolves against your project root.
+
+</Warning>
+
+## Step 4 — Add back the route stubs
+
+Package-owned routes cover the build, but two thin stubs keep the dev authoring loop working (injected dynamic routes 404 in `zfb dev`). Add both.
+
+The home route is a one-line re-export:
+
+```tsx title="pages/index.tsx"
+export { default } from "@takazudo/zudo-doc/routes/index";
+```
+
+The doc route is a small self-contained stub that reconstructs the route from the package's sanctioned entrypoints:
+
+```tsx title="pages/docs/[[...slug]].tsx"
+/** @jsxRuntime automatic */
+/** @jsxImportSource preact */
+import type { JSX } from "preact";
+import { routeContext } from "virtual:zudo-doc-route-context";
+import {
+  createRouteContext,
+  type RouteContextPayload,
+} from "@takazudo/zudo-doc/route-context";
+import { createChrome } from "@takazudo/zudo-doc/chrome";
+
+const ctx = routeContext as unknown as RouteContextPayload;
+const routeCtx = createRouteContext(ctx);
+const { renderDocPage } = createChrome(routeCtx);
+
+export const frontmatter = { title: "Docs" };
+
+export function paths(): Array<{ params: { slug: string[] }; props: unknown }> {
+  const locale = routeCtx.defaultLocale;
+  const source = routeCtx.resolveNavSource(locale, undefined);
+  return routeCtx.buildDocRouteEntries({
+    source,
+    locale,
+    routeSig: `docs;${locale}`,
+  }).map((item) => ({
+    params: { slug: item.slugParams },
+    props: item.props,
+  }));
+}
+
+type PageArgs = { params: { slug: string[] } } & Record<string, unknown>;
+
+export default function DocsPage(props: PageArgs): JSX.Element {
+  return renderDocPage(props as never, {
+    locale: routeCtx.defaultLocale,
+    docHistoryContentDir: routeCtx.settings.docsDir,
+  });
+}
+```
+
+<Note>
+
+If your project uses host chrome bindings, pass them: `createChrome(routeCtx, chromeBindings)` (imported from `virtual:zudo-doc-chrome-bindings`), and set `chromeBindingsModule` in your config. See [Host Chrome Bindings](../reference/host-chrome-bindings.mdx). i18n or versioned projects add the parallel `[locale]/…` and `v/…` stub variants.
+
+</Note>
+
+## Step 5 — Trim `package.json` and `global.css`
+
+- **`package.json`** — drop the `check:html` / `html-validate` scripts and dependency, and the `gen:z-index` / `check:z-index` scripts, from the pre-minimal shape (both were retired for generated projects). Add `@takazudo/zdtp` as a dependency if it is not already present — the package chrome imports the panel bootstrap unconditionally, so it must resolve at build time regardless of `designTokenPanel`.
+- **`src/styles/global.css`** — reduce it to the package `@import` chain plus your own `@theme { … }` override block (see the [scaffold's `global.css`](./installation.mdx#project-structure)). The default z-index tiers, content typography, and feature CSS all ship from the package now; re-inlining them is exactly the copy-drift the migration removes.
+
+## Step 6 — Verify
+
+```bash
+pnpm check   # content collections + tsc against the package base tsconfig
+pnpm build   # static export through the package-owned routes
+```
+
+If `pnpm check` reports `TS2307` on `zfb/config` or a `virtual:*` import, re-check Step 3 — a stray top-level `files` key is the usual cause. If a doc route 404s under `pnpm dev`, confirm the Step 4 stubs are present.
+
+## See also
+
+- [Customizing zudo-doc](../reference/customizing.mdx) — the minimal→extend ladder for the target shape
+- [Configuration](../guides/configuration.mdx) — every `zudoDoc()` field and its default
+- [create-zudo-doc CLI](../reference/create-zudo-doc.mdx) — what a fresh scaffold emits

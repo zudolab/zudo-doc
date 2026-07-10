@@ -185,6 +185,8 @@ zudo-docは英語と日本語をすぐに使える状態でサポートしてい
 
 ドキュメント内でPreactコンポーネントを使用できます。インタラクティブなコンポーネントはzfbのアイランドランタイムを介してクライアント側でハイドレートされ、残りは純粋なHTMLとしてJavaScriptゼロで配信されます。
 
+新しくスキャフォールドされたプロジェクトには `src/components/` ディレクトリはありません — カスタムコンポーネントが必要になったら自分で作成します。`@/*` パスエイリアスは `src/*` にマップされるので、`src/components/my-component.tsx` のファイルは次のようにインポートします:
+
 ```mdx
 import MyComponent from "@/components/my-component";
 

@@ -1,820 +1,574 @@
 ---
 title: 設定
-description: zudo-docのグローバル設定と構成リファレンス。
+description: 唯一の zudoDoc() 設定リファレンス — 全フィールドとそのデフォルト。
 sidebar_position: 1
 ---
 
-zudo-docは`src/config/`ディレクトリ内の少数のファイルとルートの`zfb.config.ts`で設定を行います。
+zudo-doc プロジェクトは1つのファイルで設定します。ルートの **`zfb.config.ts`** です。変更したいフィールドを付けて `zudoDoc()` を呼び出し、それ以外の設定はすべて文書化されたデフォルトにフォールバックします。
 
-## サイト設定
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
 
-メインの設定ファイルは`src/config/settings.ts`です：
-
-```ts
-export const settings = {
-  colorScheme: "Default Dark",
-  colorMode: {
-    defaultMode: "dark",
-    lightScheme: "Default Light",
-    darkScheme: "Default Dark",
-    respectPrefersColorScheme: true,
-  },
-  siteName: "zudo-doc",
-  siteDescription: "Documentation base framework...",
-  base: "/",
-  trailingSlash: true,
-  minifyHtml: true,
-  docsDir: "src/content/docs",
-  locales: {
-    ja: { label: "JA", dir: "src/content/docs-ja" },
-  },
-  mermaid: true,
-  noindex: false,
-  editUrl: false,
-  githubUrl: "https://github.com/zudolab/zudo-doc",
-  siteUrl: "https://zudo-doc.takazudomodular.com",
-  sitemap: true,
-  designTokenPanel: true,
-  docMetainfo: true,
-  docTags: true,
-  frontmatterPreview: {},
-  math: true,
-  docHistory: true,
-  claudeResources: {
-    claudeDir: ".claude",
-  },
-  headerNav: [
-    { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
-    { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
-    { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
-    { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude" },
-  ],
-};
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    // …only the fields you chose; everything has a documented @default.
+  }),
+);
 ```
+
+`zudoDoc()` はあなたのフィールドをパッケージデフォルトの上にフィールド単位でマージし（あなたが勝つ）、上書きしない限りパッケージのデータデフォルト（フロントマタースキーマ、ディレクティブ語彙、翻訳、カラースキーム、タグ語彙）を供給し、**完全な `ZfbConfig`** を返します — あなたは何もスプレッドしません。
 
 <Note>
 
-ここに示すデフォルト値は、すべての機能を見せるためにほとんどの機能を有効にしている**このショーケース**の`settings.ts`を反映したものです。`create-zudo-doc`で新規にスキャフォールドしたプロジェクトはもっとミニマルな状態から始まり、多くの機能（例：`docHistory`、`designTokenPanel`、`sidebarToggle`、`sidebarResizer`、`llmsTxt`、`githubUrl`）はデフォルトで無効になっており、スキャフォールドのプロンプトで個別に有効化します。デフォルト値に迷ったときは、上流のスキャフォールドをベースラインとして、このページを「すべて有効にした」リファレンスとして扱ってください。
+`ZudoDocConfig` 型がこのリファレンスの唯一の情報源です。すべてのフィールドは `@default` の JSDoc 注釈を持ち、IDE のホバーで表示されます。以下の表はそのデフォルトをそのまま反映しています。このページと型が食い違う場合は、型が正しいです。
 
 </Note>
 
-### colorScheme
+<Info>
 
-アクティブなカラースキーム名。`src/config/color-schemes.ts`のキーと一致する必要があります。
+ここでのデフォルトは、新規の `create-zudo-doc` プロジェクトが継承する**パッケージデフォルト**です。このショーケースはそれらのフィールドを明示的に渡すことで、はるかに多くを有効化しています（ほとんどの機能オン、i18n、フルのヘッダーナビ）。ショーケースのリッチな設定をデフォルトのベースラインとして読まないでください。
 
-利用可能な組み込みスキーム：**Default Light**、**Default Dark**。`src/config/color-schemes.ts`でカスタムスキームを追加できます。
+</Info>
 
-<Tip>
+## アイデンティティと URL
 
-ランプネイティブなカラーモデルとカスタムスキームの追加手順については[カラーガイド](../reference/color.mdx#カスタムカラースキームの追加)を参照してください。
+### siteName
 
-</Tip>
+ヘッダーとメタデータに表示されるサイト名。ページタイトルは `{page title} | {siteName}` としてレンダリングされます。ほぼ必ず設定する唯一のフィールドです。
 
-### colorMode
+デフォルト: `"Docs"`
 
-ライト/ダークモードの動作を設定します。カラーモード切り替えを完全に無効にして`colorScheme`で指定されたスキームのみを使用するには`false`に設定します。
+### siteDescription
 
-有効にすると、`ColorModeConfig`オブジェクトを受け入れます：
+メタデータ（`<meta name="description">`、llms.txt）で使われるサイト説明。
 
-| プロパティ | 型 | 説明 |
-|----------|------|-------------|
-| `defaultMode` | `"light"` \| `"dark"` | ユーザー設定が適用される前の初期カラーモード |
-| `lightScheme` | string | ライトモードで使用するカラースキーム名 |
-| `darkScheme` | string | ダークモードで使用するカラースキーム名 |
-| `respectPrefersColorScheme` | boolean | `true`の場合、ユーザーのOS設定のライト/ダーク設定に自動的に一致 |
+デフォルト: `""`
 
-```ts
-colorMode: {
-  defaultMode: "light",
-  lightScheme: "Default Light",
-  darkScheme: "Default Dark",
-  respectPrefersColorScheme: true,
-},
-// またはカラーモード切り替えを無効化:
-colorMode: false,
-```
+### siteUrl
+
+サイトマップ / canonical / `og:url` のための正規サイトオリジン（例 `"https://example.com"`）。空 = 未設定。
+
+デフォルト: `""`
 
 ### base
 
-サブディレクトリにデプロイする際のベースパス。サイトがルートドメインではなくサブパスから配信される場合に設定します。
+すべての絶対アセット URL の前にマウントされる公開 URL サブパスプレフィックス（例 `"/pj/my-site/"`）。`"/"` = ルートマウント。すべての内部リンク（サイドバー、ナビ、prev/next、検索）は自動的にプレフィックスされます。
 
-デフォルト：`"/"`
-
-例えば、サイトを`https://example.com/my-docs/`で配信する場合：
-
-```ts
-base: "/my-docs",
-```
-
-すべての内部リンク（サイドバー、ナビゲーション、前後ページ、検索）にはベースパスが自動的にプレフィックスされます。この値はzfbのビルドパイプラインを通じて、出力されるアセットURLとルートパスに同じプレフィックスが適用されます。
+デフォルト: `"/"`
 
 <Note>
 
-MDXコンテンツ内のインラインMarkdownリンク（例：`[リンクテキスト](/docs/some-page)`）は自動的に書き換えられません。ルート以外のbaseを使用する場合は、コンテンツファイル内で相対リンクを使用してください。
+MDX 内のインラインマークダウンリンク（例 `[text](/docs/some-page)`）は非ルート base 向けに**書き換えられません** — 代わりにコンテンツでは相対リンクを使ってください。
 
 </Note>
 
 ### trailingSlash
 
-URLの末尾にトレイリングスラッシュを付けるかどうかを制御します。`true`の場合、すべての内部リンクがトレイリングスラッシュ付きで生成されます（例：`/docs/guides`ではなく`/docs/guides/`）。`@takazudo/zudo-doc/url-normalizer`のビルド時URLヘルパーが、このポリシーを発行されるすべてのルートで強制します — ビルド時とデプロイホスト間でのルール分担については[トレイリングスラッシュポリシー](../develop/trailing-slash-policy.mdx)を参照してください。
+拡張子なしの内部 href に末尾の `/` を付けます。
 
-デフォルト：`true`（ショーケースは`true`を設定しており、`create-zudo-doc`でスキャフォールドしたプロジェクトもデフォルトで`true`です）
+デフォルト: `false`
 
-```ts
-trailingSlash: true,
-```
-
-<Note>
-
-一部のホスティングプラットフォーム（AWS Amplify、Cloudflare Pagesなど）ではトレイリングスラッシュを有効にした方がうまく動作します。ページ遷移時に404エラーが発生する場合は、`true`に設定してみてください。
-
-</Note>
-
-有効にすると、開発サーバーがトレイリングスラッシュなしのURLをトレイリングスラッシュ付きのURLへ**301リダイレクト**します（例：`/docs/guides` → `/docs/guides/`）。これにより、ローカルでも本番と同じナビゲーション挙動になります。静的アセット（`.js`、`.css`、`.png`などの拡張子を持つファイル）はリダイレクトの対象外です。
-
-<Note>
-
-このドキュメントの以前のバージョンでは`/_astro/`と`/_image`もリダイレクト除外対象として記載されていました。これらはAstro時代のレガシーパスであり、zfbはこれらのプレフィックスを出力しません。既存のキャッシュ済みリンクとの後方互換性のためにリダイレクトスキップリストに残されています。
-
-</Note>
+このルールがビルド時とデプロイホストの間でどう分かれるかは[末尾スラッシュポリシー](../develop/trailing-slash-policy.mdx)を参照してください。
 
 ### minifyHtml
 
-`zfb build`が生成する`.html`ファイルをminifyするかどうかを制御します。
+`zfb build` の本番 HTML 出力をミニファイします。デバッグ時に読める出力にするには `false` にします。
 
-デフォルト：zudo-docプロジェクトでは`true`です。ビルド出力のHTMLを読みやすい形でデバッグしたい場合は`false`に設定します。
+デフォルト: `true`
 
-```ts
-minifyHtml: true,
-```
+### githubUrl
+
+ヘッダーに表示される GitHub リポジトリ URL（`github-link` ヘッダー項目経由）、または省略するなら `false`。
+
+型: `string | false` · デフォルト: `false`
+
+### githubAutolinksRepo
+
+`"owner/repo"` — マークダウン内の `#123` / SHA 自動リンクを有効化します。無効にするなら省略。
+
+デフォルト: `undefined`
+
+### editUrl
+
+「このページを編集」リンクのベース、または省略するなら `false`。完全な URL は `editUrl + contentDir + "/" + entryId` です。
+
+型: `string | false` · デフォルト: `false`
+
+### noindex
+
+すべてのページに `noindex,nofollow` を付けます（内部ドキュメント向け）。
+
+デフォルト: `false`
+
+[検索エンジンのインデックス回避](./avoid-robots-indexing.mdx)を参照してください。
+
+### head
+
+サイト全体のカスタム `<head>` 追加要素（preconnect / preload / stylesheets / meta / alternateLinks）。追加を出力しないなら省略。
+
+型: `SiteHeadConfig` · デフォルト: `undefined`
+
+### metaTags
+
+`<meta>` / OpenGraph / Twitter カードの出力トグル。
+
+デフォルト: `{ description: true, keywords: false, ogImage: false, ogSiteName: true, twitterCard: false }`
+
+| プロパティ | 型 | 説明 |
+|----------|------|-------------|
+| `description` | `boolean` | `<meta name="description">` を出力 |
+| `keywords` | `string \| false` | `<meta name="keywords">` の値、または省略 |
+| `ogImage` | `string \| false` | `og:image` / `twitter:image` のパス、または省略 |
+| `ogSiteName` | `boolean` | `og:site_name` を出力 |
+| `twitterCard` | `"summary" \| "summary_large_image" \| false` | Twitter カードの種類、またはブロックを省略 |
+| `twitterSite` | `string`（任意） | `twitter:site` ハンドル |
+| `twitterCreator` | `string`（任意） | `twitter:creator` ハンドル |
+
+### sitemap
+
+サイトマップルートを出力します。
+
+デフォルト: `false`
 
 ### onBrokenMarkdownLinks
 
-ビルド中に壊れた内部マークダウンリンクをどのように処理するかを制御します。zudo-docのリンクリゾルバープラグインが解決する相対 `[テキスト](./page.mdx)` リンクに適用されます。
+`.md`/`.mdx` リンクが解決できないときの挙動: `"warn"` はログして続行、`"error"` はビルドを失敗、`"ignore"` は無音。
 
-- `"warn"` — 警告をログに出力しますが、ビルドは継続します
-- `"error"` — エラーをスローしてビルドを失敗させます
-- `"ignore"` — 壊れたリンクを出力なしで無視します
+型: `"warn" | "error" | "ignore"` · デフォルト: `"warn"`
 
-型：`"warn" | "error" | "ignore"`
+## カラー
 
-デフォルト：`"warn"`
+### colorScheme
+
+アクティブなカラースキーム名（`colorSchemes` に存在する必要があります）。バンドルされる2つのスキームは `Default Light` と `Default Dark` です。
+
+デフォルト: `"Default Dark"`
+
+### colorMode
+
+ライト/ダークモードの配線、または単一固定スキームなら `false`。
+
+デフォルト: `{ defaultMode: "dark", lightScheme: "Default Light", darkScheme: "Default Dark", respectPrefersColorScheme: true }`
+
+| プロパティ | 型 | 説明 |
+|----------|------|-------------|
+| `defaultMode` | `"light" \| "dark"` | ユーザー設定適用前の初期モード |
+| `lightScheme` | `string` | ライトモードで使うスキーム |
+| `darkScheme` | `string` | ダークモードで使うスキーム |
+| `respectPrefersColorScheme` | `boolean` | OS レベルのライト/ダーク設定に合わせる |
 
 ```ts
-onBrokenMarkdownLinks: "error", // 壊れたリンクでビルドを失敗させる
+colorMode: false, // single fixed scheme (colorScheme only)
 ```
+
+ランプネイティブなモデルとカスタムスキームの追加（下記の `colorSchemes` エスケープハッチ経由）については [Color リファレンス](../reference/color.mdx)を参照してください。
+
+## コンテンツと i18n
 
 ### docsDir
 
-英語ドキュメントのMDXファイルが格納されるディレクトリパス（プロジェクトルートからの相対パス）。zfbのコンテンツエンジンがこのディレクトリをglobするため、プロジェクト内の任意の場所を指定できます。
+デフォルトロケールのドキュメントを保持するディレクトリ（プロジェクトルート相対）。
 
-デフォルト：`"src/content/docs"`
-
-```ts
-docsDir: "docs",  // プロジェクトルートの./docs/にコンテンツを配置
-```
-
-これはDocusaurusの`docs.path`オプションに似ています — zudo-docをドキュメントがプロジェクトルートレベルにある大規模プロジェクトのドキュメントツールとして使用する場合に便利です。
+デフォルト: `"src/content/docs"`
 
 ### defaultLocale
 
-デフォルト（プレフィックスなし）ロケールのBCP 47コード。zfbのi18nルーターがルートの`/docs/...`ルートをマッピングするために使用します。
+デフォルトロケールコード（プレフィックスなしのルート）。
 
-型：`string`
-
-デフォルト：`"en"`
-
-```ts
-defaultLocale: "en",
-```
+デフォルト: `"en"`
 
 ### locales
 
-追加ロケール設定のマップ。各キーはロケールコードで、値は`label`（言語切り替えの表示名）と`dir`（コンテンツディレクトリパス）を持つオブジェクトです。
+追加ロケール: コード → `{ label, dir }`。それぞれが `/<code>/docs/…` ルートツリーと `docs-<code>` コレクションになります。
 
-デフォルト：`{}`
+デフォルト: `{}`
 
 ```ts
 locales: {
   ja: { label: "JA", dir: "src/content/docs-ja" },
-  ko: { label: "KO", dir: "src/content/docs-ko" },
 },
 ```
-
-各ロケールエントリに対して、zudo-docは自動的に：
-
-- zfbコンテンツコレクション（`docs-{code}`）を作成
-- zfbのi18nルーティングにロケールを登録
-- 言語切り替えに追加
 
 ### defaultLocaleOnlyPrefixes
 
-デフォルトロケールにのみ存在するURLプレフィックスの配列。これらのプレフィックス下のページは翻訳されず、どのロケールプレフィックス下にもミラーを持つべきではありません。該当ページでは言語切り替えがそれらを省略します。
+デフォルトロケールのみで提供されるルートプレフィックス（ロケールプレフィックスされない）。言語切り替えは該当ページでこれらを省略します。
 
-型：`string[]`
+デフォルト: `[]`
 
-デフォルト：`[]`
-
-```ts
-defaultLocaleOnlyPrefixes: [
-  "/docs/claude-md/",
-  "/docs/claude-skills/",
-],
-```
-
-オーサリングワークフローの詳細については[デフォルトロケール専用プレフィックス](./i18n.mdx#default-locale-only-prefixes)を参照してください。
+[デフォルトロケール限定プレフィックス](./i18n.mdx#default-locale-only-prefixes)を参照してください。
 
 ### versions
 
-マルチバージョンドキュメントを設定します。`VersionConfig`オブジェクトの配列を設定すると、zudo-docはバージョン管理されたコンテンツコレクションを作成し、サイドバーにバージョン切り替えを追加します。各バージョンのセクションは`/v/{slug}/docs/`でアクセスできます。バージョン管理を無効にするには`false`を設定します。
+ドキュメントのバージョン、または単一（バージョンなし）のドキュメントセットなら `false`。各バージョンセクションは `/v/{slug}/docs/` で提供されます。
 
-型：`VersionConfig[] | false`
-
-デフォルト：`false`
-
-各`VersionConfig`オブジェクトは以下のプロパティを受け入れます：
+型: `VersionConfig[] | false` · デフォルト: `false`
 
 | プロパティ | 型 | 説明 |
 |----------|------|-------------|
-| `slug` | string | URLパスに使用するバージョン識別子（例：`"1.0"`、`"v1"`） |
-| `label` | string | バージョン切り替えに表示されるラベル（例：`"1.0.0"`） |
-| `docsDir` | string | このバージョンの英語ドキュメントのコンテンツディレクトリパス |
-| `locales` | Record（オプション） | このバージョンのロケール別コンテンツディレクトリ（`{ ja: { dir: "..." } }`） |
-| `banner` | `"unmaintained"` \| `"unreleased"` \| `false`（オプション） | このバージョンのすべてのページに表示されるバナー |
+| `slug` | `string` | URL パス内のバージョン識別子 |
+| `label` | `string` | バージョン切り替えの表示ラベル |
+| `docsDir` | `string` | このバージョンのデフォルトロケールドキュメントのディレクトリ |
+| `locales` | `Record`（任意） | このバージョンのロケール別コンテンツディレクトリ |
+| `banner` | `"unmaintained" \| "unreleased" \| false`（任意） | このバージョンのページに表示するバナー |
 
-```ts
-versions: [
-  {
-    slug: "1.0",
-    label: "1.0.0",
-    docsDir: "src/content/docs-v1",
-    banner: "unmaintained",
-  },
-],
-// またはバージョン管理を無効化:
-versions: false,
-```
-
-<Tip>
-
-バージョン切り替えの仕組みやメンテナンス終了・未リリースバージョンのバナー設定については[バージョン管理ガイド](./versioning.mdx)を参照してください。
-
-</Tip>
-
-### siteName
-
-ヘッダーに表示され、ページタイトルに使用されるサイト名。ページタイトルは`{ページタイトル} | {siteName}`の形式になります。
-
-### siteDescription
-
-サイトの短い説明。SEOやソーシャルシェアリングのメタタグに使用されます。
-
-デフォルト：`""`
-
-### siteUrl
-
-サイトの完全なベースURL（例：`"https://example.com"`）。サイトマップでの絶対URL生成に必要です。
-
-デフォルト：`""`
-
-### metaTags
-
-出力される`<meta>`タグを細かく制御します。個々のサブフィールドを`false`に設定するとそのタグが省略されます。
-
-型：`MetaTagsConfig`
-
-| プロパティ | 型 | 説明 |
-|----------|------|-------------|
-| `description` | `boolean` | `<meta name="description">`を出力。デフォルト `true` |
-| `keywords` | `string \| false` | この値で`<meta name="keywords">`を出力。`false` = 省略。デフォルト `false` |
-| `ogImage` | `string \| false` | `og:image`（および`twitter:image`）のパス。`false` = 省略。デフォルト `false` |
-| `ogSiteName` | `boolean` | `og:site_name`を出力。デフォルト `true` |
-| `twitterCard` | `"summary" \| "summary_large_image" \| false` | Twitter Cardの種類。`false` = ブロック全体を省略。デフォルト `false` |
-| `twitterSite` | `string`（オプション） | `twitter:site`ハンドル（例：`"@yourbrand"`） |
-| `twitterCreator` | `string`（オプション） | `twitter:creator`ハンドル |
-
-```ts
-metaTags: {
-  description: true,
-  keywords: false,
-  ogImage: "/img/ogp.png",
-  ogSiteName: true,
-  twitterCard: "summary_large_image",
-  twitterSite: "@yourbrand",
-},
-```
-
-### noindex
-
-`true`の場合、すべてのページに`noindex`と`nofollow`メタタグを追加します。検索エンジンにインデックスされるべきでない内部ドキュメントサイトに便利です。
-
-デフォルト：`false`
-
-この設定が有効にする2つの補完的な動作（`<meta name="robots">`と`robots.txt`）の詳細については、[ロボットインデックス回避](./avoid-robots-indexing.mdx)を参照してください。
+[バージョニングガイド](./versioning.mdx)を参照してください。
 
 ### mermaid
 
-Mermaidダイアグラムのサポートを有効にします。`true`の場合、`mermaid`言語識別子を持つフェンスコードブロックがダイアグラムとしてレンダリングされます。`false`の場合、mermaidコードブロックはプレーンコードとして表示されます。
+マークダウンでの mermaid ダイアグラムレンダリングを有効化します。
 
-デフォルト：`true`
+デフォルト: `true`
 
 ### math
 
-KaTeX数式レンダリングを有効にします。`true`の場合、インライン数式（`$...$`）、ブロック数式（`$$...$$`）、およびフェンス`math`コードブロックが数式としてレンダリングされます。
+KaTeX 数式レンダリング（`$…$`、`$$…$$`、フェンス `math`）を有効化します。
 
-デフォルト：`true`
+デフォルト: `false`
 
 ### cjkFriendly
 
-CJKフレンドリーなタイポグラフィ調整を有効にします。`true`の場合、ドキュメント全体の中国語、日本語、韓国語テキストに対して改善された改行およびワードラップの動作を適用します。
+zfb の CJK フレンドリーな改行 / 強調処理を有効化します。
 
-型：`boolean`
+デフォルト: `false`
 
-デフォルト：`false`
+## タグ
 
-```ts
-cjkFriendly: true,
-```
-
-### editUrl
-
-「このページを編集」リンクのベースURL。完全なURLは`editUrl + contentDir + "/" + entryId`として構築されます。編集リンクを無効にするには`false`に設定します。
-
-デフォルト：`false`（無効）
-
-```ts
-editUrl: "https://github.com/my-org/my-repo/edit/main/",
-// または無効化:
-editUrl: false,
-```
-
-### githubUrl
-
-サイトヘッダーにGitHubリンクとして表示されるリポジトリURL。文字列を設定すると、そのURLへのGitHubアイコンリンクがヘッダー右側のアイテム（`headerRightItems`内で`github-link`コンポーネントが配置された位置）に表示されます。ヘッダーのGitHubリンクを表示しないようにするには`false`を設定します。
-
-型：`string | false`
-
-デフォルト：`false`（`create-zudo-doc`のスキャフォールドでは無効。このショーケースではリポジトリURLを設定）
-
-```ts
-githubUrl: "https://github.com/my-org/my-repo",
-// またはヘッダーのGitHubリンクを表示しない:
-githubUrl: false,
-```
-
-### sitemap
-
-ビルド時に自動`sitemap.xml`生成を有効にします。サイトマップには404を除くすべてのビルド済みHTMLページが含まれます。
-
-デフォルト：`true`
-
-### llmsTxt
-
-ビルド時に自動`llms.txt`生成を有効にします。`true`の場合、すべてのドキュメントページをタイトルと説明とともにリスト化した`llms.txt`ファイルがサイトルートに生成されます。このファイルは[llms.txt仕様](https://llmstxt.org/)に従っており、AIアシスタントがドキュメントコンテンツを発見・インデックス化するのに役立ちます。
-
-型：`boolean`
-
-デフォルト：`false`
-
-```ts
-llmsTxt: true,
-```
-
-### docMetainfo
-
-ページタイトルの下にメタデータ（作成日、最終更新日、著者）を表示します。日付と著者はビルド時にgit履歴から抽出されます。
-
-デフォルト：`true`
+`tagVocabulary` と `tagGovernance` は**直交**しています — 一方はランタイムのゲート、もう一方は強制レベルです。語彙の*エントリ*は [`tagVocabularyEntries`](#エスケープハッチフィールド) エスケープハッチで別途供給します。
 
 ### docTags
 
-ドキュメントページのタグサポートを有効にします。`true`の場合、ページは`tags`フロントマターフィールドを使用でき、タグインデックスページが`/docs/tags/`に生成されます。
+`/docs/tags` + `/docs/tags/[tag]` タグインデックスルートを有効化します。
 
-詳しい使い方は[タグガイド](./tags.mdx)を参照してください。
-
-デフォルト：`true`
+デフォルト: `false`
 
 ### tagPlacement
 
-ドキュメントページに表示されるタグバッジ列の位置を制御します。
+コンテンツに対してページ単位のタグをどこにレンダリングするか。
 
-型：`"after-title" | "before-pager"`
-
-デフォルト：`"after-title"`
-
-- `"after-title"` — ページタイトルの直下、本文の上にバッジ列を表示します。
-- `"before-pager"` — コンテンツの末尾、前後ページャーのすぐ上にバッジ列を表示します。
-
-```ts
-tagPlacement: "before-pager",
-```
-
-`docTags` が `false` の場合、またはページにタグが付いていない場合は効果がありません。
+型: `"after-title" | "before-pager"` · デフォルト: `"after-title"`
 
 ### tagGovernance
 
-タグボキャブラリーが有効な場合に適用される強制レベル。詳細なリファレンスは[タグガバナンス](./tag-governance.mdx)を参照してください。
+語彙が参照されるときのタグガバナンス強制レベル（`"off"` / `"warn"` / `"strict"`）。
 
-型：`"off" | "warn" | "strict"`
-
-デフォルト：`"warn"`
+デフォルト: `"off"`
 
 ### tagVocabulary
 
-`tag-vocabulary.ts`を実行時に参照するかどうか（エイリアス解決、非推奨フィルタリング、グループ化フッター）。`false`に設定すると`tagGovernance`に関わらずファイルを完全に無視します。詳細は[タグガバナンス](./tag-governance.mdx)を参照してください。
+タグ語彙がランタイムで参照されるか（エイリアス解決、非推奨フィルタリング、グループ化フッター）。**`tagGovernance` と直交**。これはブールゲートで、エントリ自体は `tagVocabularyEntries` から来ます。
 
-型：`boolean`
+デフォルト: `false`
 
-デフォルト：`true`
+[タグガバナンス](./tag-governance.mdx)を参照してください。
 
-### frontmatterPreview
-
-カスタムフロントマターフィールドをページタイトルの直下にコンパクトなキー/値テーブルとして表示します。フレームワーク管理のキー（`title`、`description`、`sidebar_position` など）はデフォルトで非表示になるため、プロジェクト固有のメタデータのみが表示されます。すべてのページでブロックを無効にするには `false` を設定します。
-
-型：`FrontmatterPreviewConfig | false`
-
-デフォルト：`{}`（組み込み無視リストで有効）
-
-`FrontmatterPreviewConfig` オブジェクトは以下を受け入れます：
-
-| プロパティ | 型 | 説明 |
-|----------|------|-------------|
-| `ignoreKeys` | `string[]`（オプション） | デフォルトの無視リストを完全に置き換えます。設定すると `extraIgnoreKeys` は無視されます |
-| `extraIgnoreKeys` | `string[]`（オプション） | デフォルトに加えて無視する追加キーです。`ignoreKeys` が設定されている場合は効果がありません |
-
-```ts
-// Extend the default list:
-frontmatterPreview: {
-  extraIgnoreKeys: ["reviewed_by", "internal_id"],
-},
-// Replace the default list entirely:
-frontmatterPreview: {
-  ignoreKeys: ["title", "description", "sidebar_position"],
-},
-// Disable:
-frontmatterPreview: false,
-```
-
-<Tip>
-
-完全なデフォルト無視リストとライブデモについては、[フロントマタープレビューリファレンス](../reference/frontmatter-preview.mdx) を参照してください。
-
-</Tip>
-
-### designTokenPanel
-
-インタラクティブなDesign Token Panelを有効にします。`true`の場合、ヘッダーにパレットアイコンが表示され、タブ型のパネルを開いてスペーシング・フォント・サイズ・カラーの各トークンをリアルタイムで編集できます。変更は`localStorage`に保存され、JSONとしてエクスポート／インポートできます。
-
-デフォルト：`false`（`true`に設定して有効化）
-
-<Tip>
-
-5つのタブ構成やJSONエクスポートワークフローについては[Design Token Panelリファレンス](../reference/design-token-panel.mdx)を参照してください。
-
-</Tip>
-
-### aiAssistant
-
-AIアシスタントチャットウィジェットを有効にします。`true`の場合、ページにチャットボタンが表示され、ドキュメントに関する質問に答えるAI搭載のアシスタントが開きます。チャットAPIはCloudflare Workers SSRエンドポイント（`pages/api/ai-chat.tsx`）として動作します。`wrangler.toml`に`ANTHROPIC_API_KEY`、`DOCS_SITE_URL`、および`RATE_LIMIT` KV名前空間の設定が必要です。
-
-型：`boolean`
-
-デフォルト：`false`
-
-```ts
-aiAssistant: true,
-```
-
-### aiChatDemoMode
-
-`true`の場合、`POST /api/ai-chat`エンドポイントはAPIキー、KV名前空間、レートリミッターに触れることなく固定の「デモでは無効」返答を返します。実際のClaudeバックエンドを有効にする場合は、`ANTHROPIC_API_KEY`を設定した上で`false`に変更してください。
-
-型：`boolean`
-
-デフォルト：`true`
-
-### aiChatAllowedOrigins
-
-`aiChatDemoMode`が`false`の場合に`POST /api/ai-chat`へのCORSを許可するオリジン一覧。一致しないオリジンは`Access-Control-Allow-Origin`ヘッダーを受け取らないため、ブラウザがリクエストをブロックします。空配列（デフォルト）はすべてのクロスオリジンブラウザリクエストをブロックし、同一オリジンからのリクエストは常に許可されます。
-
-型：`string[]`
-
-デフォルト：`[]`
-
-```ts
-aiChatAllowedOrigins: ["https://your-docs-site.example.com"],
-```
-
-### aiChatGlobalDailyLimit
-
-コスト抑制のためのグローバル日次リクエスト上限（オプション）。`false`（デフォルト）は上限なし。正の整数（例：`500`）を設定すると、その日のUTC日付内でその件数のリクエストが処理された時点でHTTP 429を返します。デモモードでは無効です。
-
-型：`number | false`
-
-デフォルト：`false`
-
-```ts
-aiChatGlobalDailyLimit: 500,
-```
-
-### sidebarToggle
-
-サイドバー折り畳みトグルを有効にします。`true`の場合、サイドバーヘッダーのボタンでユーザーがサイドバーを完全に折り畳むことができ、コンテンツの水平スペースが広がります。折り畳み状態は`localStorage`に保存されます。
-
-型：`boolean`
-
-デフォルト：`false`
-
-```ts
-sidebarToggle: true,
-```
-
-### sidebarResizer
-
-サイドバー幅のリサイズを有効にします。`true`の場合、サイドバーの右端にドラッグハンドルが表示され、ユーザーがサイドバー幅をドラッグして調整できます。リサイズ後の幅は`localStorage`に保存されます。
-
-型：`boolean`
-
-デフォルト：`false`
-
-```ts
-sidebarResizer: true,
-```
-
-### docHistory
-
-ドキュメントごとのgitリビジョン履歴ビューアを有効にします。`true`の場合、各ドキュメントページに**History**ボタンが表示され、ドキュメントのgitコミット履歴と行単位のdiffビューアを備えたサイドパネルが開きます。
-
-開発モードでは、履歴はポート4322で動作するスタンドアロンの`@takazudo/zudo-doc-history-server`パッケージが配信します。本番環境では、CLIジェネレーターがCI中に静的JSONファイルを生成します。サーバーとCLIの詳細については[Doc History Serverリファレンス](../reference/doc-history-server.mdx)を参照してください。
-
-デフォルト：`false`（`true`に設定して有効化）
-
-<Tip>
-
-使用方法の詳細、キーボードショートカット、技術情報については[ドキュメント履歴ガイド](./doc-history.mdx)を参照してください。
-
-</Tip>
-
-### bodyFootUtilArea
-
-各ドキュメントページのボディ末尾のユーティリティアクションエリアに表示する項目を制御します。エリアを完全に非表示にするには`false`を設定します。
-
-型：`BodyFootUtilAreaConfig | false`
-
-デフォルト：`false`
-
-| プロパティ | 型 | 説明 |
-|----------|------|-------------|
-| `docHistory` | `boolean`（オプション） | **History**ボタンを表示（`docHistory: true`が必要） |
-| `viewSourceLink` | `boolean`（オプション） | ソースファイルへのリンクを表示（`editUrl`が必要） |
-
-```ts
-bodyFootUtilArea: {
-  docHistory: true,
-  viewSourceLink: true,
-},
-// またはエリアを非表示:
-bodyFootUtilArea: false,
-```
+## 目次と見出し
 
 ### tocMinDepth
 
-目次に含める最小見出し深さ（制限のみ：2〜4、デフォルト2）。3または4に上げると、より浅い見出しを目次から非表示にできます。2（h1は常にページタイトル）を下回ることも`tocMaxDepth`を超えることもできません。
+TOC に含まれる最小見出し深度（2〜4）。
 
-型：`number`
-
-デフォルト：`2`
-
-```ts
-tocMinDepth: 3, // h2見出しを目次から非表示にする
-```
+デフォルト: `2`
 
 ### tocMaxDepth
 
-目次に含める最大見出し深さ（制限のみ：2〜4、デフォルト4）。2または3に下げると、より深い見出しを目次から非表示にできます。4を超えることも`tocMinDepth`を下回ることもできません。
+TOC に含まれる最大見出し深度（2〜4）。
 
-型：`number`
-
-デフォルト：`4`
-
-```ts
-tocMaxDepth: 3, // h4見出しを目次から非表示にする
-```
+デフォルト: `4`
 
 ### headingIdStrategy
 
-見出しアンカーIDの生成方法を制御します。
+見出し ID（アンカー）戦略。`"hierarchical"` は各アンカーに祖先チェーンをプレフィックスします。`"flat"` は zfb のレガシー github-slugger スキームです。切り替えは既存のディープリンクに対してアンカー破壊的です。
 
-- `"flat"`（zfbのデフォルト）— h2〜h6で共有する1つの重複カウンターを使ったgithub-sluggerスラグ（例：`overview`、`overview-1`）。
-- `"hierarchical"` — 各見出しのスラグに祖先チェーンのプレフィックスを付けます（例：`## Foo` / `### Bar` → `foo`、`foo-bar`）。フルパスで重複排除するため、アンカーの衝突が大幅に減少します。
+型: `"flat" | "hierarchical"` · デフォルト: `"hierarchical"`
 
-`"flat"`から`"hierarchical"`への切り替えは、ネストされた見出しへの既存のディープリンクを破壊する変更です。
+## クロームと UI 機能
 
-型：`"flat" | "hierarchical"`
+### designTokenPanel
 
-デフォルト：`"hierarchical"`
+スペーシング・フォント・サイズ・カラートークンをライブ編集するインタラクティブな Design Token Panel（zdtp）を有効化します。
 
-```ts
-headingIdStrategy: "flat",
-```
+デフォルト: `false`
+
+パネルは追加設定なしで動作します。完全にカスタマイズするには、`designTokenPanelConfigModule` をホストモジュールに向けます — [ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照してください。
+
+### sidebarResizer
+
+ドラッグ可能なサイドバーリサイザーを有効化します。
+
+デフォルト: `false`
+
+### sidebarToggle
+
+デスクトップのサイドバー折りたたみトグルを有効化します。
+
+デフォルト: `false`
+
+### imageEnlarge
+
+コンテンツ画像のクリック拡大を有効化します。
+
+デフォルト: `false`
+
+### dynamicPageTransition
+
+動的（ビュートランジション）ページ読み込みオーバーレイを有効化します。
+
+デフォルト: `false`
+
+### frontmatterPreview
+
+フロントマタープレビュー設定（無視キーの上書き）、またはプレビューパネルを無効化するなら `false`。
+
+型: `FrontmatterPreviewConfig | false` · デフォルト: `false`
+
+| プロパティ | 型 | 説明 |
+|----------|------|-------------|
+| `ignoreKeys` | `string[]`（任意） | デフォルトの無視リストを置き換える |
+| `extraIgnoreKeys` | `string[]`（任意） | デフォルトに追加（`ignoreKeys` があると無視される） |
+
+[フロントマタープレビューリファレンス](../reference/frontmatter-preview.mdx)を参照してください。
+
+### docHistory
+
+ページ単位の git 履歴（Created/Updated + ドロップダウン）を有効化します。dev では `@takazudo/zudo-doc-history-server` がポート 4322 で履歴を提供し、CI ではジェネレーターが静的 JSON を出力します。
+
+デフォルト: `false`
+
+[ドキュメント履歴ガイド](./doc-history.mdx)を参照してください。
+
+### docMetainfo
+
+ドキュメントページに Created/Updated/Author メタブロックを表示します（ビルド時に git 履歴から抽出）。
+
+デフォルト: `false`
+
+### bodyFootUtilArea
+
+body-foot ユーティリティエリア（doc-history / view-source）、または無効化するなら `false`。
+
+型: `BodyFootUtilAreaConfig | false` · デフォルト: `false`
+
+| プロパティ | 型 | 説明 |
+|----------|------|-------------|
+| `docHistory` | `boolean`（任意） | History ボタンを表示（`docHistory: true` が必要） |
+| `viewSourceLink` | `boolean`（任意） | 生ソースリンクを表示（`editUrl` が必要） |
 
 ### htmlPreview
 
-`<HtmlPreview>`コンポーネントのグローバル設定です。設定すると、指定した`head`、`css`、`js`がサイト上のすべての`<HtmlPreview>` iframeに注入されます。共有フォント、デザインシステムのスタイルシート、ユーティリティスクリプトを各コンポーネントデモで繰り返すことなく読み込む際に便利です。
+グローバルな HTML プレビューサンドボックス設定、または各 `<HtmlPreview>` iframe へのグローバル注入を無効化するなら `undefined`。
 
-グローバル注入を無効にするには`undefined`（デフォルト）に設定します。
-
-型：`HtmlPreviewConfig | undefined`
-
-デフォルト：`undefined`
-
-`HtmlPreviewConfig`オブジェクトは以下のプロパティを受け入れます：
+型: `HtmlPreviewConfig | undefined` · デフォルト: `undefined`
 
 | プロパティ | 型 | 説明 |
 |----------|------|-------------|
-| `head` | string（オプション） | `<head>`に注入される生のHTML（例：フォントやアイコンライブラリの`<link>`タグ） |
-| `css` | string（オプション） | プリフライトリセット後に`<style>`ブロックとして注入されるCSS |
-| `js` | string（オプション） | `</body>`の前に`<script>`ブロックとして注入されるJavaScript |
-
-```ts
-htmlPreview: {
-  head: `<link rel="stylesheet" href="https://example.com/design-system.css">`,
-  css: `body { font-family: sans-serif; }`,
-  js: `console.log("HtmlPreview loaded")`,
-},
-// またはグローバル注入を無効化:
-htmlPreview: undefined,
-```
-
-<Tip>
-
-個々の`<HtmlPreview>`ブロックは、独自の`head`、`css`、または`js`プロパティを渡すことでグローバル設定を拡張できます — 値はグローバル設定に上書きではなく追加されます。
-
-</Tip>
-
-### claudeResources
-
-Claude Codeリソースビューアを設定します。`.claude/`ディレクトリからドキュメントページを自動生成します。無効にするには`false`に設定します。
-
-| プロパティ | 型 | 説明 |
-|----------|------|-------------|
-| `claudeDir` | string | `.claude`ディレクトリへのパス（プロジェクトルートからの相対パス） |
-| `projectRoot` | string（オプション） | モノレポ設定用のプロジェクトルートオーバーライド |
-
-```ts
-claudeResources: {
-  claudeDir: ".claude",
-},
-// または無効化:
-claudeResources: false,
-```
-
-<Tip>
-
-生成される内容と仕組みの詳細については[Claude Codeリソースガイド](./claude-resources.mdx)を参照してください。
-
-</Tip>
+| `head` | `string`（任意） | `<head>` に注入する生 HTML |
+| `css` | `string`（任意） | `<style>` ブロックとして注入する CSS |
+| `js` | `string`（任意） | `</body>` の前に注入する JS |
 
 ### footer
 
-サイトフッターを設定します。`FooterConfig`オブジェクトを設定すると、リンク列とオプションの著作権テキストを含むフッターがレンダリングされます。フッターを完全に無効にするには`false`を設定します。
+フッター設定（リンクカラム / コピーライト / タグリスト）、またはフッターなしなら `false`。
 
-型：`FooterConfig | false`
-
-デフォルト：`false`
-
-`FooterConfig`オブジェクトは以下を受け入れます：
+型: `FooterConfig | false` · デフォルト: `false`
 
 | プロパティ | 型 | 説明 |
 |----------|------|-------------|
-| `links` | `FooterLinkColumn[]` | フッターに表示されるリンク列の配列 |
-| `copyright` | string（オプション） | 下部に表示される著作権テキスト。HTMLをサポート |
+| `links` | `FooterLinkColumn[]` | リンクカラム |
+| `copyright` | `string`（任意） | コピーライトテキスト（HTML 可） |
 
-各`FooterLinkColumn`：
-
-| プロパティ | 型 | 説明 |
-|----------|------|-------------|
-| `title` | string | 列の見出し |
-| `items` | `FooterLinkItem[]` | この列のリンクの配列 |
-| `locales` | Record（オプション） | ロケール別タイトルのオーバーライド（例：`{ ja: { title: "ドキュメント" } }`） |
-
-各`FooterLinkItem`：
-
-| プロパティ | 型 | 説明 |
-|----------|------|-------------|
-| `label` | string | リンクの表示テキスト |
-| `href` | string | リンクURL |
-| `locales` | Record（オプション） | ロケール別ラベルのオーバーライド（例：`{ ja: { label: "はじめに" } }`） |
-
-```ts
-footer: {
-  links: [
-    {
-      title: "Docs",
-      locales: { ja: { title: "ドキュメント" } },
-      items: [
-        { label: "Getting Started", href: "/docs/getting-started", locales: { ja: { label: "はじめに" } } },
-      ],
-    },
-    {
-      title: "Community",
-      items: [{ label: "GitHub", href: "https://github.com/my-org/my-repo" }],
-    },
-  ],
-  copyright: `Copyright © ${new Date().getFullYear()} Your Name.`,
-},
-// またはフッターを無効化:
-footer: false,
-```
+各 `FooterLinkColumn` は `title`、`items`（`{ label, href }[]`）、および任意のロケール別上書きを持ちます。
 
 ### headerNav
 
-サイトヘッダーバーにレンダリングされるナビゲーションリンクの配列。各アイテムは以下のプロパティをサポートします：
+ヘッダーの主要ナビゲーション項目。
+
+デフォルト: `[]`
 
 | プロパティ | 型 | 説明 |
 |----------|------|-------------|
-| `label` | string | ヘッダーに表示されるテキスト |
-| `labelKey` | string（オプション） | 翻訳が利用可能な場合に`label`を上書きするi18n翻訳キー |
-| `path` | string | リンク先のURLパス |
-| `categoryMatch` | string（オプション） | このヘッダータブをサイドバーカテゴリにリンク |
+| `label` | `string` | 表示テキスト |
+| `labelKey` | `string`（任意） | i18n 翻訳キー（`label` を上書き） |
+| `path` | `string` | 遷移先パス |
+| `categoryMatch` | `string`（任意） | このタブをサイドバーカテゴリにリンク |
 
 ```ts
 headerNav: [
-  { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
-  { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
-  { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
-  { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude" },
+  { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
+  { label: "Reference", path: "/docs/reference", categoryMatch: "reference" },
 ],
 ```
+
+[ナビゲーションの構成方法](../getting-started/structuring-navigations.mdx)を参照してください。
 
 ### headerRightItems
 
-サイトヘッダーの右側にレンダリングされる項目を順番に制御します。各項目は`type`フィールドによる直和型です。
+ヘッダー右側の項目（トグル、スイッチャー、リンク）を順に。
 
-型：`HeaderRightItem[]`
+デフォルト: `[{ type: "component", component: "theme-toggle" }]`
 
 | `type` | 追加フィールド | 説明 |
-|--------|-------------------|-------------|
-| `"component"` | `component` — `"theme-toggle"`, `"language-switcher"`, `"version-switcher"`, `"github-link"`, `"search"` のいずれか | 組み込みヘッダーコンポーネントをレンダリング |
-| `"trigger"` | `trigger` — `"design-token-panel"`, `"ai-chat"` のいずれか | パネルを開くボタンをレンダリング（対応する機能の有効化が必要） |
-| `"link"` | `href`（string）、`label?`（string）、`ariaLabel?`（string）、`icon?`（`"github"`） | カスタムリンクをレンダリング |
-| `"html"` | `html`（string） | 生のHTMLをレンダリング |
+|--------|--------------|-------------|
+| `"component"` | `component` — `"theme-toggle"`, `"language-switcher"`, `"version-switcher"`, `"github-link"`, `"search"` | 組み込みヘッダーコンポーネント |
+| `"trigger"` | `trigger` — `"design-token-panel"`, `"ai-chat"` | パネルを開く（機能が必要） |
+| `"link"` | `href`, `label?`, `ariaLabel?`, `icon?` | カスタムリンク |
+| `"html"` | `html` | 生 HTML |
+
+## AI アシスタント
+
+### aiAssistant
+
+AI チャットアシスタントルート（`/api/ai-chat`、SSR）を有効化します。
+
+デフォルト: `false`
+
+ライブアシスタントの実行にはデプロイアダプター、KV、シークレットが必要です — [カスタマイズ → デプロイ経路](../reference/customizing.mdx)と [AI Assistant API](../reference/ai-assistant-api.mdx)を参照してください。
+
+### aiChatDemoMode
+
+`/api/ai-chat` を固定の「無効」応答でショートサーキットします（API キー / KV / レートリミッターに触れません）。ライブの Claude 対応チャットを有効化するには `false` にします。
+
+デフォルト: `false`
+
+### aiChatAllowedOrigins
+
+デモモードでないときの `/api/ai-chat` の許可 CORS オリジン。空 = すべてのクロスオリジンブラウザリクエストをブロック。
+
+デフォルト: `[]`
+
+### aiChatGlobalDailyLimit
+
+`/api/ai-chat` の全 IP を通じたグローバルな1日あたりリクエスト上限、または上限を無効化するなら `false`。
+
+型: `number | false` · デフォルト: `false`
+
+## 生成とインテグレーション
+
+### llmsTxt
+
+ドキュメントを要約する `llms.txt` ルートを出力します。
+
+デフォルト: `false`
+
+[llms.txt](./llms-txt.mdx)を参照してください。
+
+### changelogs
+
+Changelog 生成設定、または無効化するなら `false`。
+
+デフォルト: `false`
+
+[Changelog ガイド](./changelog.mdx)を参照してください。
+
+### claudeResources
+
+Claude リソースの取り込み設定、または無効化するなら `false`。
+
+型: `{ claudeDir; projectRoot?; scanRoot? } | false` · デフォルト: `false`
 
 ```ts
-headerRightItems: [
-  { type: "component", component: "version-switcher" },
-  { type: "trigger", trigger: "design-token-panel" },
-  { type: "trigger", trigger: "ai-chat" },
-  { type: "component", component: "github-link" },
-  { type: "component", component: "theme-toggle" },
-  { type: "component", component: "search" },
-  { type: "component", component: "language-switcher" },
-  // カスタム外部リンク:
-  { type: "link", href: "https://example.com", label: "Blog", ariaLabel: "Blog" },
-],
+claudeResources: { claudeDir: ".claude" },
 ```
 
-## zfb設定
+[Claude Resources ガイド](./claude-resources.mdx)を参照してください。
 
-ルートの`zfb.config.ts`がビルドパイプラインを制御します：
+## ルーティングの継ぎ目
 
-```ts
-export default defineConfig({
-  framework: "preact",
-  tailwind: { enabled: true },
-  collections,                  // settings.docsDir + settings.localesから導出
-  adapter: "@takazudo/zfb-adapter-cloudflare",
-  plugins: integrationPlugins,  // doc-history / search-index / llms-txt / claude-resources
-});
+### packageOwnedRoutes
+
+ビルド時のパッケージ所有ルート注入。`true` のとき、ドキュメントルートはパッケージから注入されます（プロジェクト側の `pages/*.tsx` レイアウトスタブは不要）。プロジェクトが自前のドキュメントルートスタブを出荷する場合のみ `false` にします。
+
+デフォルト: `true`
+
+### chromeBindingsModule
+
+`chromeBindings: ChromeHostBindings` をエクスポートするホストモジュールへのプロジェクトルート相対パス（`packageOwnedRoutes` がオンのときのみ消費）。注入されたクロームシムをパッケージデフォルトのスタブのままにするなら省略。
+
+デフォルト: `undefined`
+
+[ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照してください。
+
+## エスケープハッチフィールド
+
+これらは非シリアライズ可能 / データデフォルトを上書きします。JSON シリアライズではなくインポートグラフを通じて移動するため、関数、Zod 型、コンポーネントマップを運べます。
+
+### buildDocsSchema
+
+デフォルトのドキュメントフロントマター Zod スキーマビルダーを完全に置き換えます。省略時、`zudoDoc()` はパッケージデフォルト（`@takazudo/zudo-doc/docs-schema`）を構築します（ガバナンス対応。`tagGovernance` + `tagVocabularyEntries` から導出）。
+
+型: `() => ZodType` · デフォルト: `undefined`（パッケージデフォルトを使用）
+
+これがカスタムフロントマターキーを追加する方法です — [カスタマイズ → 第1段](../reference/customizing.mdx)を参照してください。
+
+### colorSchemes
+
+カラースキームのパレットマップを上書きします。省略時、出荷済みの2スキーム（Default Light / Default Dark）を使います。
+
+型: `Record<string, ColorScheme>` · デフォルト: `undefined`
+
+### translations
+
+UI 文字列の翻訳テーブルを上書きします。省略時、出荷済みの en/ja/de デフォルトを使います。
+
+型: `PresetTranslations` · デフォルト: `undefined`
+
+### directives
+
+ディレクティブ → JSX コンポーネント名マップを上書きします。省略時、標準の7つを使います。
+
+型: `DirectiveVocabulary` · デフォルト: `undefined`
+
+### tagVocabularyEntries
+
+タグ語彙の**エントリ**配列（ブールの `tagVocabulary` ゲートとは別物）。ルートコンテキスト仮想モジュールに通され、ガバナンス対応デフォルトスキーマビルダーが参照します。
+
+型: `readonly PresetTagVocabularyEntry[]` · デフォルト: `[]`
+
+<Warning>
+
+`tagVocabulary`（`boolean` ゲート）と `tagVocabularyEntries`（エントリ配列）を混同しないでください。これらは別のフィールドです — ゲートは語彙を*参照するかどうか*を決め、エントリは*何を参照するか*です。
+
+</Warning>
+
+## シェルのパススルーフィールド
+
+これらはホスト所有の `ZfbConfig` シェルフィールドで、`Settings` の一部ではありません。
+
+### port
+
+dev/preview サーバーのポート。
+
+デフォルト: `4321`
+
+### adapter
+
+デプロイターゲットのアダプターパッケージ名（例 `"@takazudo/zfb-adapter-cloudflare"`）。純粋な静的ビルドなら省略。
+
+デフォルト: `undefined`（純粋な静的ビルド）
+
+### bundle
+
+zfb バンドラーオプション（`exclude` / `mainFields` / `external`）。設定時にそのまま渡されます。
+
+デフォルト: `undefined`
+
+## リファレンスとしての拡張プロジェクト
+
+このショーケース自身の `zfb.config.ts` が標準的な「拡張プロジェクト」の例です — 型付き `settings` オブジェクトをスプレッドし、真にショーケース固有のデータブロック（タグ語彙、カスタム翻訳）をエスケープハッチフィールド経由で渡し、そしてシェルフィールド（`port`、`adapter`、`bundle`）を足します:
+
+```ts title="zfb.config.ts (this showcase)"
+export default defineConfig(
+  zudoDoc({
+    ...settings,
+    tagVocabularyEntries: tagVocabulary,
+    translations,
+    chromeBindingsModule: "./src/chrome-bindings.tsx",
+    port: 4321,
+    adapter: "@takazudo/zfb-adapter-cloudflare",
+    bundle: { exclude: ["e2e/fixtures/**"] },
+  }),
+);
 ```
 
-主なポイント：
-
-- **framework**：Preact — すべてのコンポーネントは`.tsx`ファイル（デフォルトでサーバーレンダリング、クライアントアイランドはzfbのランタイムでハイドレート）
-- **tailwind**：Tailwind CSS v4のファーストクラスインテグレーション
-- **collections**：`settings.docsDir`と`settings.locales`から生成され、同じファイル内のzodスキーマで検証
-- **adapter**：Cloudflare Workers — SSRバンドルを`dist/_worker.js`にラップします。`prerender = false`をエクスポートするルートに必須
-- **plugins**：各インテグレーション（doc-history、search-index、llms-txt、claude-resources）は、`./plugins/`配下の小さなラッパーモジュールで、デフォルトエクスポートが`ZfbPlugin`
-- **i18nルーティング**：英語（デフォルト、`/docs/...`）と`settings.locales`で宣言された追加ロケール。デフォルトロケールにはURLプレフィックスなし
-- **ビルド時ハイライト**：syntect（zfbのRustパイプライン）による固定テーマ（`base16-ocean-dark`）で処理。`colorScheme`の設定からは導出されません
-
-## ロゴ
-
-サイトロゴはランディングページにフルカラーのバナー画像として表示されます。ファイルは`public/img/logo.svg`にあります。
-
-デフォルトのバナーは背景が埋め込まれた1200×630のSVGで、CSSマスクなしでライト・ダーク両テーマで正しく表示されます。ロゴを更新するには、`public/img/logo.svg`を任意のSVGファイルに置き換えてください。
-
-バナーは通常の`<img>`要素としてレンダリングされるため、背景色やアルファチャンネルに制約はありません — どんなSVGでもそのまま表示されます。
-
-## カラースキーム設定
-
-カラースキームは`src/config/color-schemes.ts`で定義されます。`ColorScheme`は`{ ramps, map }`です：
-
-- `ramps` — 共有される`base`（5 ストップ）、`accent`（3 ストップ）、`state`（4 つの名前付きカラー）の OKLCH ランプ
-- `map` — 4 つの base ロール（`bg`、`fg`、`selectionBg`、`selectionFg`）と 23 のセマンティックロール（`surface`、`muted`、`accent`、`accentHover`など）を、それぞれランプストップまたはリテラル OKLCH オーバーライドへ紐付けます
-
-<Info>
-
-カラースキームの追加やカスタマイズの詳細については[カラーガイド](../reference/color.mdx)を参照してください。
-
-</Info>
+最小プロジェクトにはそれらは一切不要です — 変更する少数のフィールドだけで済みます。

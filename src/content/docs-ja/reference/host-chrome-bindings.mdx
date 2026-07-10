@@ -31,14 +31,15 @@ import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
 
 `packageOwnedRoutes: true` ではクロームがパッケージ内部で組み立てられるため、バインディングを渡すためのホスト側の呼び出し地点が存在しません。プラグインがルートへ渡すルートコンテキストは**シリアライズ可能なデータのみ**（settings、translations、タグ語彙）を運ぶため、関数やコンポーネントを運ぶことはできません。このチャネルはその制約を回避します。コーラブルそのものをシリアライズするのではなく、それらをエクスポートするモジュールへの**パス**をシリアライズするのです。
 
-`settings.chromeBindingsModule` に、`ChromeHostBindings` 型の名前付き `chromeBindings` エクスポートを持つモジュールを指すプロジェクトルート相対パスを設定します。
+`zudoDoc()` 設定の `chromeBindingsModule` に、`ChromeHostBindings` 型の名前付き `chromeBindings` エクスポートを持つモジュールを指すプロジェクトルート相対パスを設定します。
 
-```ts title="src/config/settings.ts"
-export const settings = {
-  packageOwnedRoutes: true,
-  chromeBindingsModule: "./src/chrome-bindings.tsx",
-  // ...
-};
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // packageOwnedRoutes はデフォルトで true
+    chromeBindingsModule: "./src/chrome-bindings.tsx",
+  }),
+);
 ```
 
 ```tsx title="src/chrome-bindings.tsx"
@@ -165,8 +166,43 @@ extras ?? hostBindings.homeExtras?.({ locale })
 
 i18n サイトでは、バインディングモジュールで `homeExtras` を設定し、*かつ* `pages/index.tsx` の `extras` プロパティに同じコンテンツを渡すことが、デフォルトホームとロケールホームを一貫させる方法です。
 
+## Design Token Panel チャネル（`designTokenPanelConfigModule`）
+
+Design Token Panel には独自のホストモジュールチャネルがあり、**`chromeBindingsModule` とまったく同じ仕組み**で動作します — 同じメカニクス、同じ「ファイルが無ければ大きな声で失敗する」挙動 — ただしクロームバインディングの代わりにパネルの設定ビルダーを運びます。
+
+パネルは動作にホスト設定ファイルを**必要としません**。`designTokenPanel: true` にすると、注入された `DesignTokenPanelBootstrap` アイランドは、出荷済みのトークンマニフェストとバンドルされた Default Light / Default Dark スキームから導出された**パッケージデフォルトのビルダー**（`@takazudo/zudo-doc/design-token-panel-config`）を使います。これがゼロコンフィグの経路です。
+
+パネルを完全にカスタマイズするには、`designTokenPanelConfigModule` に、名前付きの `buildDesignTokenPanelConfig(mode)` をエクスポートするホストモジュールを指すプロジェクトルート相対パスを設定します:
+
+```ts title="src/design-token-panel-config.ts"
+import type { PanelConfig } from "@takazudo/zdtp";
+
+type PanelMode = "light" | "dark";
+
+export function buildDesignTokenPanelConfig(mode: PanelMode): PanelConfig {
+  // モードスコープのパネル設定（spacing/font/size/color ティア）を返す
+  // ...
+}
+```
+
+ルートプラグインは3番目の仮想モジュール（`virtual:zudo-doc-design-token-panel-config`）を登録し、あなたのビルダーを re-export します。`chromeBindingsModule` と同様、設定を通じて移動するのは**パス**だけで、ビルダー自体はモジュールグラフ経由でインポートされます。
+
+<Note>
+
+`designTokenPanelConfigModule` はパッケージの `Settings` フィールドです。`chromeBindingsModule` と異なり、インラインの `ZudoDocConfig` 型にはまだ露出していないため、インラインの `zudoDoc({ … })` キーとしてではなく、スプレッドされた `settings` オブジェクト経由で到達します — このショーケースが使うパターンです。パネルの有効化（`designTokenPanel: true`）は従来どおりインラインで動作します。
+
+</Note>
+
+`chromeBindingsModule` との違いで知っておくべき点が2つあります:
+
+- **デフォルトは空オブジェクトではなくパッケージビルダーです。** 設定が無い場合、ローダーはパッケージデフォルト（完全に動作するパネル）を re-export します — フォールバックすべき意味のある「空の」ビルダーは存在しません。
+- **スキャナー到達可能性がこのコントラクトの一部です。** 実際の `DesignTokenPanelBootstrap` アイランドは（設定仮想モジュールを経由せず）パッケージのクロームによって静的にインポートされるため、常に zfb のアイランドスキャナーから到達可能です。チャネルを通じて移動するのはパネル設定の*データ*（モードスコープのビルダー）だけであり、これがクロームバインディングのアイランドがハイドレートしない注入ルート上でも、カスタマイズされたパネルがハイドレートする理由です。
+
+同じガード規則が適用されます: 明示的な空文字列、存在しないファイル、ディレクトリパスは、プラグインのセットアップ時に解決済みパスを明示して大きな声で失敗します。`storagePrefix: "zudo-doc-tweak"` はパッケージデフォルトで維持されるため、既存のユーザー保存は引き継がれます。
+
 ## 関連ページ
 
-- [zudo-docのカスタマイズ](./customizing.mdx) — パッケージ所有ルートを*使わない*プロジェクト向けの5段階カスタマイズ早見表
+- [zudo-docのカスタマイズ](./customizing.mdx) — 最小→拡張のはしご。`chromeBindingsModule` はその5段目
 - [フロントマタープレビュー](./frontmatter-preview.mdx) — このチャネルが取り残しを解消する `frontmatterRenderers` スロット
-- [設定](../guides/configuration.mdx) — `settings` の完全なリファレンス
+- [設定](../guides/configuration.mdx) — `zudoDoc()` の完全なフィールドリファレンス
+- [Design Token Panel](./design-token-panel.mdx) — このチャネルが設定するパネル UI

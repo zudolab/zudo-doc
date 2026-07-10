@@ -78,7 +78,7 @@ zudo-doc が同梱するのはこの 2 つのスキームだけで、両者は 1
 
 <Tip>
 
-インストーラーは選択内容に基づいて `src/config/settings.ts` を生成します。プロジェクト作成後にいつでも設定を変更できます。
+インストーラーは選択内容を単一の `zfb.config.ts` に書き込みます。これはデフォルトと異なるフィールドだけを持つ `zudoDoc({ … })` 呼び出しです。プロジェクト作成後にいつでも設定を変更できます。全フィールドのリファレンスは [設定](../guides/configuration.mdx) を参照してください。
 
 </Tip>
 
@@ -136,24 +136,57 @@ pnpm check
 
 ## プロジェクト構成
 
-インストール後のプロジェクト構成は以下の通りです:
+新しくスキャフォールドされたプロジェクトは意図的に小さく、ファイル数はおよそ12個です:
 
 ```
-src/
-├── components/          # Preactコンポーネント（サーバーレンダリング + クライアントアイランド）
-│   └── admonitions/     # Note, Tip, Info, Warning, Danger
-├── config/
-│   ├── settings.ts      # サイト名、アクティブなカラースキーム
-│   ├── color-schemes.ts # ランプネイティブなカラースキーム定義
-│   └── color-scheme-utils.ts
-├── content/
-│   ├── docs/            # 英語 MDX コンテンツ
-│   └── docs-ja/         # 日本語 MDX コンテンツ
-└── styles/
-    └── global.css       # デザイントークン & Tailwind 設定
-
-pages/                   # zfbのファイルベースルーティング（.tsxページモジュール）
-zfb.config.ts            # zfbエンジンのエントリーポイント設定
+my-docs/
+├── .gitignore              # node_modules, dist, .zfb
+├── .npmrc                  # engine-strict=true
+├── CLAUDE.md               # Claude Code 向けのプロジェクトメモ
+├── package.json            # 依存関係 + dev/build/preview/check スクリプト
+├── tsconfig.json           # パッケージのベース設定を5行で extends
+├── zfb.config.ts           # 唯一の設定ファイル — zudoDoc({ … }) 呼び出し
+├── pages/
+│   ├── index.tsx           # ホームルート（1行の re-export）
+│   └── docs/
+│       └── [[...slug]].tsx # ドキュメントルートのスタブ（下記の注記を参照）
+└── src/
+    ├── content/
+    │   └── docs/           # MDX コンテンツ（getting-started ページがシード済み）
+    └── styles/
+        └── global.css      # 約20行の @import チェーン + トークン上書き用ブロック
 ```
 
-ドキュメントページの作成と整理方法については、[ドキュメントの書き方](./writing-docs.mdx) ガイドを参照してください。
+| ファイル | 役割 |
+| --- | --- |
+| `zfb.config.ts` | プロジェクト全体の設定。`@takazudo/zudo-doc/config` から `zudoDoc` をインポートし、選んだフィールドを渡します。それ以外はすべて文書化されたデフォルトにフォールバックします。 |
+| `tsconfig.json` | `@takazudo/zudo-doc/tsconfig.base.json` を extends し、`include` と preact-compat の `paths` だけを足します。 |
+| `src/styles/global.css` | パッケージの `theme.css` / `content.css` / `features.css` を `@import` し、トークン上書き用に `@theme { … }` ブロックを残します。 |
+| `src/content/docs/` | MDX で書くドキュメント本体。スキャフォールドは差し替え用に `getting-started/` ページをいくつかシードします。 |
+| `pages/index.tsx`, `pages/docs/[[...slug]].tsx` | 薄いルートスタブ — 下記を参照。 |
+
+### なぜこんなに少ないのか
+
+プロジェクトが以前は自身にコピーしていたもの — レイアウト、ヘッダー、サイドバー、TOC、ナビゲーションビルダー、URL ヘルパー、カラースキームユーティリティ、フロントマタースキーマ — は、いまや `@takazudo/zudo-doc` から出荷され、`node_modules` から直接消費されます。ドキュメントルートはパッケージによって注入され（`packageOwnedRoutes` はデフォルトで `true`）、そのため `pages/` ディレクトリには一式のレイアウトファイルではなく下記の2つのスタブだけが残ります。新しいプロジェクトが持つのは、本当に固有のものだけ — 設定、コンテンツ、そしていくつかのルートシームです。
+
+<Note title="なぜ pages/index.tsx があるのか">
+
+ホームルートは、パッケージ所有の静的インデックスルートを1行で re-export したものです:
+
+```tsx title="pages/index.tsx"
+export { default } from "@takazudo/zudo-doc/routes/index";
+```
+
+静的な `/` ルートはビルド時の `paths()` 抽出を必要としないため、この re-export 形式が使えます。
+
+</Note>
+
+<Note title="なぜ pages/docs/[[...slug]].tsx があるのか">
+
+パッケージのルート注入は**ビルド**時にドキュメントページをレンダリングしますが、注入された**動的**ルートは現在 `zfb dev`（`pnpm dev`）で 404 を返します。dev のオーサリングループを機能させ続けるため、パッケージの認可されたエントリーポイント（`@takazudo/zudo-doc/route-context` + `/chrome` + `virtual:zudo-doc-route-context` モジュール）からルートを再構築する小さな自己完結型スタブが出荷されます。これにより `/docs/…` は `zfb dev` と `zfb build` の両方で 200 を返します。
+
+これはスキャフォールドの中で唯一の暫定ファイルであり、アップストリームの dev レンダリングギャップが解消され次第なくなります（[フォローアップ #2667](https://github.com/zudolab/zudo-doc/issues/2667)）。
+
+</Note>
+
+ドキュメントページの作成と整理方法については [ドキュメントの書き方](./writing-docs.mdx) ガイドを、設定の微調整から完全なソース制御までのはしごについては [zudo-doc のカスタマイズ](../reference/customizing.mdx) を参照してください。

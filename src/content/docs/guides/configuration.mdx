@@ -1,820 +1,574 @@
 ---
 title: Configuration
-description: Global settings and configuration reference for zudo-doc.
+description: The single zudoDoc() config reference — every field and its default.
 sidebar_position: 1
 ---
 
-zudo-doc is configured through a small set of files in the `src/config/` directory and the root `zfb.config.ts`.
+A zudo-doc project is configured through one file: the root **`zfb.config.ts`**. It calls `zudoDoc()` with the fields you want to change; every other setting falls back to a documented default.
 
-## Site Settings
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
 
-The main settings file is `src/config/settings.ts`:
-
-```ts
-export const settings = {
-  colorScheme: "Default Dark",
-  colorMode: {
-    defaultMode: "dark",
-    lightScheme: "Default Light",
-    darkScheme: "Default Dark",
-    respectPrefersColorScheme: true,
-  },
-  siteName: "zudo-doc",
-  siteDescription: "Documentation base framework...",
-  base: "/",
-  trailingSlash: true,
-  minifyHtml: true,
-  docsDir: "src/content/docs",
-  locales: {
-    ja: { label: "JA", dir: "src/content/docs-ja" },
-  },
-  mermaid: true,
-  noindex: false,
-  editUrl: false,
-  githubUrl: "https://github.com/zudolab/zudo-doc",
-  siteUrl: "https://zudo-doc.takazudomodular.com",
-  sitemap: true,
-  designTokenPanel: true,
-  docMetainfo: true,
-  docTags: true,
-  frontmatterPreview: {},
-  math: true,
-  docHistory: true,
-  claudeResources: {
-    claudeDir: ".claude",
-  },
-  headerNav: [
-    { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
-    { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
-    { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
-    { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude" },
-  ],
-};
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    // …only the fields you chose; everything has a documented @default.
+  }),
+);
 ```
+
+`zudoDoc()` merges your fields over the package defaults per field (you win), supplies the package data defaults (frontmatter schema, directive vocabulary, translations, color schemes, tag vocabulary) unless you override them, and returns a **complete `ZfbConfig`** — you spread nothing.
 
 <Note>
 
-The defaults shown here reflect **this showcase's** `settings.ts`, which enables most features so every capability is on display. A fresh project scaffolded with `create-zudo-doc` starts more minimal — many features (for example `docHistory`, `designTokenPanel`, `sidebarToggle`, `sidebarResizer`, `llmsTxt`, and `githubUrl`) default to off/disabled and are opted in during the scaffold prompts. When in doubt about a default, treat the upstream scaffold as the baseline and this page as the "everything enabled" reference.
+The `ZudoDocConfig` type is the single source of truth for this reference. Every field carries a `@default` JSDoc annotation that shows on IDE hover; the tables below mirror those defaults verbatim. When this page and the type disagree, the type wins.
 
 </Note>
 
-### colorScheme
+<Info>
 
-The active color scheme name. Must match a key in `src/config/color-schemes.ts`.
+The defaults here are the **package defaults** a fresh `create-zudo-doc` project inherits. This showcase enables far more (most features on, i18n, a full header nav) by passing those fields explicitly — do not read the showcase's rich config as the default baseline.
 
-Available built-in schemes: **Default Light** and **Default Dark**. You can add custom schemes in `src/config/color-schemes.ts`.
+</Info>
 
-<Tip>
+## Identity and URLs
 
-See the [Color guide](../reference/color.mdx#adding-a-custom-color-scheme) for the ramp-native color model and instructions on adding a custom scheme.
+### siteName
 
-</Tip>
+Site name shown in the header and metadata. Page titles render as `{page title} | {siteName}`. The one field you almost always set.
 
-### colorMode
+Default: `"Docs"`
 
-Configures light/dark mode behavior. Set to `false` to disable color mode switching entirely and use only the scheme specified in `colorScheme`.
+### siteDescription
 
-When enabled, accepts a `ColorModeConfig` object:
+Site description used in metadata (`<meta name="description">`, llms.txt).
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `defaultMode` | `"light"` \| `"dark"` | The initial color mode before any user preference is applied |
-| `lightScheme` | string | Color scheme name to use in light mode |
-| `darkScheme` | string | Color scheme name to use in dark mode |
-| `respectPrefersColorScheme` | boolean | When `true`, automatically matches the user's OS-level light/dark preference |
+Default: `""`
 
-```ts
-colorMode: {
-  defaultMode: "light",
-  lightScheme: "Default Light",
-  darkScheme: "Default Dark",
-  respectPrefersColorScheme: true,
-},
-// or disable color mode switching:
-colorMode: false,
-```
+### siteUrl
+
+Canonical site origin (e.g. `"https://example.com"`) for sitemap / canonical / `og:url`. Empty = not set.
+
+Default: `""`
 
 ### base
 
-The base path for deploying to a subdirectory. Set this when your site is served from a subpath rather than the root domain.
+Public URL sub-path prefix mounted in front of every absolute asset URL (e.g. `"/pj/my-site/"`). `"/"` = root-mounted. All internal links (sidebar, nav, prev/next, search) are prefixed automatically.
 
 Default: `"/"`
 
-For example, to serve the site at `https://example.com/my-docs/`:
-
-```ts
-base: "/my-docs",
-```
-
-All internal links (sidebar, navigation, prev/next, search) are automatically prefixed with the base path. The value flows through to zfb's build pipeline so emitted asset URLs and route paths share the same prefix.
-
 <Note>
 
-Inline markdown links within MDX content (e.g., `[link text](/docs/some-page)`) are **not** automatically rewritten. When using a non-root base, use relative links in content files instead.
+Inline markdown links in MDX (e.g. `[text](/docs/some-page)`) are **not** rewritten for a non-root base — use relative links in content instead.
 
 </Note>
 
 ### trailingSlash
 
-Controls whether URLs end with a trailing slash. When `true`, all internal links are generated with a trailing slash (e.g., `/docs/guides/` instead of `/docs/guides`). The build-time URL helpers in `@takazudo/zudo-doc/url-normalizer` enforce this policy across every emitted route — see [Trailing-Slash Policy](../develop/trailing-slash-policy.mdx) for how the rule splits between build time and the deployment host.
+Append a trailing `/` to extensionless internal hrefs.
 
-Default: `true` (the showcase sets this to `true`; `create-zudo-doc` scaffolded projects also default to `true`)
+Default: `false`
 
-```ts
-trailingSlash: true,
-```
-
-<Note>
-
-Some hosting platforms (e.g., AWS Amplify, Cloudflare Pages) work better with trailing slashes enabled. If you experience 404 errors on page navigation, try setting this to `true`.
-
-</Note>
-
-When enabled, the dev server automatically redirects URLs without a trailing slash to their trailing-slash version with a **301 redirect** (e.g., `/docs/guides` → `/docs/guides/`) so navigation behaves the same way locally as on production. Static assets (files with extensions like `.js`, `.css`, `.png`) are excluded from the redirect.
-
-<Note>
-
-Earlier versions of this doc referenced `/_astro/` and `/_image` as additional redirect exclusions. Those are legacy Astro-era paths; zfb does not emit them. They are preserved in the redirect skip-list only for backward compatibility with existing cached links.
-
-</Note>
+See [Trailing-Slash Policy](../develop/trailing-slash-policy.mdx) for how the rule splits between build time and the deployment host.
 
 ### minifyHtml
 
-Controls whether `zfb build` minifies generated `.html` files.
+Minify production HTML output from `zfb build`. Set `false` for readable output while debugging.
 
-Default: `true` in zudo-doc projects. Set it to `false` if you need readable production HTML while debugging build output.
+Default: `true`
 
-```ts
-minifyHtml: true,
-```
+### githubUrl
+
+GitHub repository URL shown in the header (via the `github-link` header item), or `false` to omit.
+
+Type: `string | false` · Default: `false`
+
+### githubAutolinksRepo
+
+`"owner/repo"` — enables `#123` / SHA autolinks in markdown. Omit to disable.
+
+Default: `undefined`
+
+### editUrl
+
+"Edit this page" link base, or `false` to omit. The full URL is `editUrl + contentDir + "/" + entryId`.
+
+Type: `string | false` · Default: `false`
+
+### noindex
+
+Add `noindex,nofollow` to every page (for internal docs).
+
+Default: `false`
+
+See [Avoid Robots Indexing](./avoid-robots-indexing.mdx).
+
+### head
+
+Site-wide custom `<head>` extras (preconnect / preload / stylesheets / meta / alternateLinks). Omit to emit nothing extra.
+
+Type: `SiteHeadConfig` · Default: `undefined`
+
+### metaTags
+
+`<meta>` / OpenGraph / Twitter-card emission toggles.
+
+Default: `{ description: true, keywords: false, ogImage: false, ogSiteName: true, twitterCard: false }`
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `description` | `boolean` | Emit `<meta name="description">` |
+| `keywords` | `string \| false` | `<meta name="keywords">` value, or omit |
+| `ogImage` | `string \| false` | Path for `og:image` / `twitter:image`, or omit |
+| `ogSiteName` | `boolean` | Emit `og:site_name` |
+| `twitterCard` | `"summary" \| "summary_large_image" \| false` | Twitter Card type, or omit the block |
+| `twitterSite` | `string` (optional) | `twitter:site` handle |
+| `twitterCreator` | `string` (optional) | `twitter:creator` handle |
+
+### sitemap
+
+Emit a sitemap route.
+
+Default: `false`
 
 ### onBrokenMarkdownLinks
 
-Controls how broken internal markdown links are handled during the build. This applies to relative `[text](./page.mdx)` links resolved by zudo-doc's link resolver plugin.
+What to do when a `.md`/`.mdx` link cannot be resolved: `"warn"` logs and continues, `"error"` fails the build, `"ignore"` is silent.
 
-- `"warn"` — logs a warning but continues the build
-- `"error"` — throws an error and fails the build
-- `"ignore"` — silently skips broken links without any output
+Type: `"warn" | "error" | "ignore"` · Default: `"warn"`
 
-Type: `"warn" | "error" | "ignore"`
+## Color
 
-Default: `"warn"`
+### colorScheme
+
+Active color scheme name (must exist in `colorSchemes`). The two bundled schemes are `Default Light` and `Default Dark`.
+
+Default: `"Default Dark"`
+
+### colorMode
+
+Light/dark mode wiring, or `false` for a single fixed scheme.
+
+Default: `{ defaultMode: "dark", lightScheme: "Default Light", darkScheme: "Default Dark", respectPrefersColorScheme: true }`
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `defaultMode` | `"light" \| "dark"` | Initial mode before any user preference |
+| `lightScheme` | `string` | Scheme used in light mode |
+| `darkScheme` | `string` | Scheme used in dark mode |
+| `respectPrefersColorScheme` | `boolean` | Match the OS-level light/dark preference |
 
 ```ts
-onBrokenMarkdownLinks: "error", // fail the build on broken links
+colorMode: false, // single fixed scheme (colorScheme only)
 ```
+
+See the [Color reference](../reference/color.mdx) for the ramp-native model and adding a custom scheme (via the `colorSchemes` escape hatch below).
+
+## Content and i18n
 
 ### docsDir
 
-The directory path (relative to the project root) where English documentation MDX files are stored. zfb's content engine globs this directory, so it can point to any location inside the project.
+Directory (project-root-relative) holding the default-locale docs.
 
 Default: `"src/content/docs"`
 
-```ts
-docsDir: "docs",  // content in ./docs/ at project root
-```
-
-This is similar to Docusaurus' `docs.path` option — useful when using zudo-doc as a documentation tool for a larger project where docs live at the project root level.
-
 ### defaultLocale
 
-The BCP 47 code for the default (prefix-less) locale. Used by zfb's i18n router to map the root `/docs/...` routes.
-
-Type: `string`
+Default locale code (unprefixed routes).
 
 Default: `"en"`
 
-```ts
-defaultLocale: "en",
-```
-
 ### locales
 
-A map of additional locale configurations. Each key is a locale code, and the value is an object with `label` (display name for the language switcher) and `dir` (content directory path).
+Additional locales: code → `{ label, dir }`. Each becomes a `/<code>/docs/…` route tree and a `docs-<code>` collection.
 
 Default: `{}`
 
 ```ts
 locales: {
   ja: { label: "JA", dir: "src/content/docs-ja" },
-  ko: { label: "KO", dir: "src/content/docs-ko" },
 },
 ```
-
-For each locale entry, zudo-doc automatically:
-
-- Creates a zfb content collection (`docs-{code}`)
-- Registers the locale in zfb's i18n routing
-- Adds it to the language switcher
 
 ### defaultLocaleOnlyPrefixes
 
-An array of URL prefixes that exist only in the default locale. Pages under these prefixes are not translated and should have no mirror under any locale prefix. The language switcher omits them when on an affected page.
-
-Type: `string[]`
+Route prefixes served only in the default locale (never locale-prefixed). The language switcher omits them on affected pages.
 
 Default: `[]`
 
-```ts
-defaultLocaleOnlyPrefixes: [
-  "/docs/claude-md/",
-  "/docs/claude-skills/",
-],
-```
-
-See [Default-locale-only prefixes](./i18n.mdx#default-locale-only-prefixes) for the full authoring workflow.
+See [Default-locale-only prefixes](./i18n.mdx#default-locale-only-prefixes).
 
 ### versions
 
-Configures multi-version documentation. When set to an array of `VersionConfig` objects, zudo-doc creates versioned content collections and adds a version switcher to the sidebar. Each versioned section is accessible at `/v/{slug}/docs/`. Set to `false` to disable versioning.
+Docs versions, or `false` for a single (unversioned) doc set. Each versioned section is served at `/v/{slug}/docs/`.
 
-Type: `VersionConfig[] | false`
-
-Default: `false`
-
-Each `VersionConfig` object accepts:
+Type: `VersionConfig[] | false` · Default: `false`
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `slug` | string | Version identifier used in the URL path (e.g., `"1.0"`, `"v1"`) |
-| `label` | string | Display label shown in the version switcher (e.g., `"1.0.0"`) |
-| `docsDir` | string | Content directory path for this version's English docs |
-| `locales` | Record (optional) | Per-locale content directories for this version (`{ ja: { dir: "..." } }`) |
-| `banner` | `"unmaintained"` \| `"unreleased"` \| `false` (optional) | Banner shown on all pages in this version |
+| `slug` | `string` | Version identifier in the URL path |
+| `label` | `string` | Version-switcher display label |
+| `docsDir` | `string` | Content directory for this version's default-locale docs |
+| `locales` | `Record` (optional) | Per-locale content dirs for this version |
+| `banner` | `"unmaintained" \| "unreleased" \| false` (optional) | Banner shown on this version's pages |
 
-```ts
-versions: [
-  {
-    slug: "1.0",
-    label: "1.0.0",
-    docsDir: "src/content/docs-v1",
-    banner: "unmaintained",
-  },
-],
-// or disable versioning:
-versions: false,
-```
-
-<Tip>
-
-See the [Versioning guide](./versioning.mdx) for details on how version switching works and how to configure banners for unmaintained or unreleased versions.
-
-</Tip>
-
-### siteName
-
-The site name displayed in the header and used in page titles. Page titles are formatted as `{page title} | {siteName}`.
-
-### siteDescription
-
-A short description of the site. Used in meta tags for SEO and social sharing.
-
-Default: `""`
-
-### siteUrl
-
-The full base URL of your site (e.g., `"https://example.com"`). Required for generating absolute URLs in the sitemap.
-
-Default: `""`
-
-### metaTags
-
-Fine-grained control over which `<meta>` tags are emitted. Set individual sub-fields to `false` to omit a tag entirely.
-
-Type: `MetaTagsConfig`
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `description` | `boolean` | Emit `<meta name="description">`. Default `true` |
-| `keywords` | `string \| false` | Emit `<meta name="keywords">` with this value. `false` = omit. Default `false` |
-| `ogImage` | `string \| false` | Path for `og:image` (and `twitter:image`). `false` = omit. Default `false` |
-| `ogSiteName` | `boolean` | Emit `og:site_name`. Default `true` |
-| `twitterCard` | `"summary" \| "summary_large_image" \| false` | Twitter Card type. `false` = omit entire block. Default `false` |
-| `twitterSite` | `string` (optional) | `twitter:site` handle (e.g. `"@yourbrand"`) |
-| `twitterCreator` | `string` (optional) | `twitter:creator` handle |
-
-```ts
-metaTags: {
-  description: true,
-  keywords: false,
-  ogImage: "/img/ogp.png",
-  ogSiteName: true,
-  twitterCard: "summary_large_image",
-  twitterSite: "@yourbrand",
-},
-```
-
-### noindex
-
-When `true`, adds `noindex` and `nofollow` meta tags to all pages. Useful for internal documentation sites that should not be indexed by search engines.
-
-Default: `false`
-
-See [Avoid Robots Indexing](./avoid-robots-indexing.mdx) for a full explanation of the two complementary behaviors this setting activates (`<meta name="robots">` and `robots.txt`).
+See the [Versioning guide](./versioning.mdx).
 
 ### mermaid
 
-Enables Mermaid diagram support. When `true`, fenced code blocks with the `mermaid` language identifier are rendered as diagrams. When `false`, mermaid code blocks are displayed as plain code.
+Enable mermaid diagram rendering in markdown.
 
 Default: `true`
 
 ### math
 
-Enables KaTeX math equation rendering. When `true`, inline math (`$...$`), block math (`$$...$$`), and fenced `math` code blocks are rendered as equations.
+Enable KaTeX math rendering (`$…$`, `$$…$$`, fenced `math`).
 
-Default: `true`
+Default: `false`
 
 ### cjkFriendly
 
-Enables CJK-friendly typography adjustments. When `true`, applies improved line-breaking and word-wrap behavior for Chinese, Japanese, and Korean text throughout the documentation.
-
-Type: `boolean`
+Enable zfb's CJK-friendly line-break / emphasis handling.
 
 Default: `false`
 
-```ts
-cjkFriendly: true,
-```
+## Tags
 
-### editUrl
-
-Base URL for "Edit this page" links. The full URL is constructed as `editUrl + contentDir + "/" + entryId`. Set to `false` to disable edit links.
-
-Default: `false` (disabled)
-
-```ts
-editUrl: "https://github.com/my-org/my-repo/edit/main/",
-// or disable:
-editUrl: false,
-```
-
-### githubUrl
-
-The repository URL shown as the GitHub link in the site header. When set to a string, a GitHub icon link to that URL appears in the header's right-side items (wherever the `github-link` component is placed in `headerRightItems`). Set to `false` to omit the header GitHub link.
-
-Type: `string | false`
-
-Default: `false` (the `create-zudo-doc` scaffold leaves it off; this showcase sets the repo URL)
-
-```ts
-githubUrl: "https://github.com/my-org/my-repo",
-// or omit the header GitHub link:
-githubUrl: false,
-```
-
-### sitemap
-
-Enables automatic `sitemap.xml` generation during build. The sitemap includes all built HTML pages except 404.
-
-Default: `true`
-
-### llmsTxt
-
-Enables automatic `llms.txt` generation during build. When `true`, an `llms.txt` file is generated at the site root listing all documentation pages with their titles and descriptions. This file follows the [llms.txt specification](https://llmstxt.org/) and helps AI assistants discover and index your documentation content.
-
-Type: `boolean`
-
-Default: `false`
-
-```ts
-llmsTxt: true,
-```
-
-### docMetainfo
-
-Shows metadata (created date, last updated date, author) under the page title. Dates and author are extracted from git history at build time.
-
-Default: `true`
+`tagVocabulary` and `tagGovernance` are **orthogonal** — one is the runtime gate, the other the enforcement level. The vocabulary *entries* are supplied separately via the [`tagVocabularyEntries`](#escape-hatch-fields) escape hatch.
 
 ### docTags
 
-Enables tag support for documentation pages. When `true`, pages can use the `tags` frontmatter field, and tag index pages are generated at `/docs/tags/`.
+Enable the `/docs/tags` + `/docs/tags/[tag]` tag index routes.
 
-See the [Tags guide](./tags.mdx) for a full walkthrough.
-
-Default: `true`
+Default: `false`
 
 ### tagPlacement
 
-Controls where the per-page tag badge row renders on doc pages.
+Where per-page tags render relative to the content.
 
-Type: `"after-title" | "before-pager"`
-
-Default: `"after-title"`
-
-- `"after-title"` — the badge row appears directly below the page title, above the main content.
-- `"before-pager"` — the badge row appears at the bottom of the content, immediately above the previous/next pager.
-
-```ts
-tagPlacement: "before-pager",
-```
-
-Has no effect when `docTags` is `false` or when a page carries no tags.
+Type: `"after-title" | "before-pager"` · Default: `"after-title"`
 
 ### tagGovernance
 
-Enforcement level applied when the tag vocabulary is active. See [Tag governance](./tag-governance.mdx) for the full reference.
+Tag-governance enforcement level when the vocabulary is consulted (`"off"` / `"warn"` / `"strict"`).
 
-Type: `"off" | "warn" | "strict"`
-
-Default: `"warn"`
+Default: `"off"`
 
 ### tagVocabulary
 
-Whether `tag-vocabulary.ts` is consulted at runtime (alias resolution, deprecation filtering, grouped footer). Set to `false` to ignore the file entirely regardless of `tagGovernance`. See [Tag governance](./tag-governance.mdx) for details.
-
-Type: `boolean`
-
-Default: `true`
-
-### frontmatterPreview
-
-Displays custom frontmatter fields as a compact key/value table directly beneath the page title. Framework-managed keys (`title`, `description`, `sidebar_position`, etc.) are hidden by default so only project-specific metadata is shown. Set to `false` to disable the block on all pages.
-
-Type: `FrontmatterPreviewConfig | false`
-
-Default: `{}` (enabled with built-in ignore list)
-
-The `FrontmatterPreviewConfig` object accepts:
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `ignoreKeys` | `string[]` (optional) | Completely replaces the default ignore list. When set, `extraIgnoreKeys` is ignored |
-| `extraIgnoreKeys` | `string[]` (optional) | Additional keys to ignore on top of the defaults. Has no effect when `ignoreKeys` is also set |
-
-```ts
-// Extend the default list:
-frontmatterPreview: {
-  extraIgnoreKeys: ["reviewed_by", "internal_id"],
-},
-// Replace the default list entirely:
-frontmatterPreview: {
-  ignoreKeys: ["title", "description", "sidebar_position"],
-},
-// Disable:
-frontmatterPreview: false,
-```
-
-<Tip>
-
-See the [Frontmatter Preview reference](../reference/frontmatter-preview.mdx) for the full default ignore list and a live demo.
-
-</Tip>
-
-### designTokenPanel
-
-Enables the interactive Design Token Panel. When `true`, a palette icon appears in the header and users can open a tabbed panel to tweak spacing, font, size, and color tokens in real-time. Changes are persisted in `localStorage` and can be exported/imported as JSON.
-
-Default: `false` (set to `true` to enable)
-
-<Tip>
-
-See the [Design Token Panel reference](../reference/design-token-panel.mdx) for a full tour of the five tabs and the JSON export workflow.
-
-</Tip>
-
-### aiAssistant
-
-Enables the AI assistant chat widget. When `true`, a chat button appears in the page that opens an AI-powered assistant for answering questions about your documentation. The chat API runs as a Cloudflare Workers SSR endpoint (`pages/api/ai-chat.tsx`) — requires `ANTHROPIC_API_KEY`, `DOCS_SITE_URL`, and a `RATE_LIMIT` KV namespace configured in `wrangler.toml`.
-
-Type: `boolean`
+Whether the tag vocabulary is consulted at runtime (alias resolution, deprecation filtering, grouped footer). **Orthogonal to `tagGovernance`.** This is the boolean gate — the entries themselves come from `tagVocabularyEntries`.
 
 Default: `false`
 
-```ts
-aiAssistant: true,
-```
+See [Tag governance](./tag-governance.mdx).
 
-### aiChatDemoMode
-
-When `true`, the `POST /api/ai-chat` endpoint returns a fixed "disabled on this demo" reply without touching any API key, KV namespace, or rate limiter. Set to `false` in downstream projects that wire up a real `ANTHROPIC_API_KEY` to enable live Claude-backed chat.
-
-Type: `boolean`
-
-Default: `true`
-
-### aiChatAllowedOrigins
-
-Allowed CORS origins for `POST /api/ai-chat` when `aiChatDemoMode` is `false`. Non-matching origins receive no `Access-Control-Allow-Origin` header, so browsers block the request. An empty array (default) blocks all cross-origin browser requests while still allowing same-origin requests.
-
-Type: `string[]`
-
-Default: `[]`
-
-```ts
-aiChatAllowedOrigins: ["https://your-docs-site.example.com"],
-```
-
-### aiChatGlobalDailyLimit
-
-Optional global daily request ceiling across all IPs as a cost backstop. `false` (default) disables the ceiling. When set to a positive integer (e.g. `500`), the endpoint returns HTTP 429 once that many requests have been served in the current UTC day. Has no effect in demo mode.
-
-Type: `number | false`
-
-Default: `false`
-
-```ts
-aiChatGlobalDailyLimit: 500,
-```
-
-### sidebarToggle
-
-Enables the sidebar collapse toggle. When `true`, a button in the sidebar header allows users to collapse the sidebar entirely, giving more horizontal space for content. The collapsed state is persisted in `localStorage`.
-
-Type: `boolean`
-
-Default: `false`
-
-```ts
-sidebarToggle: true,
-```
-
-### sidebarResizer
-
-Enables sidebar width resizing. When `true`, a drag handle appears at the sidebar's right edge, allowing users to drag and resize the sidebar width. The resized width is persisted in `localStorage`.
-
-Type: `boolean`
-
-Default: `false`
-
-```ts
-sidebarResizer: true,
-```
-
-### docHistory
-
-Enables per-document git revision history viewer. When `true`, each doc page shows a **History** button that opens a side panel with the document's git commit history and a line-by-line diff viewer for comparing revisions.
-
-In dev mode, history is served by the standalone `@takazudo/zudo-doc-history-server` package running on port 4322. In production, a CLI generator creates static JSON files during CI. See the [Doc History Server reference](../reference/doc-history-server.mdx) for details on the server and CLI.
-
-Default: `false` (set to `true` to enable)
-
-<Tip>
-
-See the [Document History guide](./doc-history.mdx) for usage details, keyboard shortcuts, and technical information.
-
-</Tip>
-
-### bodyFootUtilArea
-
-Controls which utility items appear in the bottom-of-body action area on every doc page. Set to `false` to hide the area entirely.
-
-Type: `BodyFootUtilAreaConfig | false`
-
-Default: `false`
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `docHistory` | `boolean` (optional) | Show the **History** button (requires `docHistory: true`) |
-| `viewSourceLink` | `boolean` (optional) | Show a link to the raw source file (requires `editUrl`) |
-
-```ts
-bodyFootUtilArea: {
-  docHistory: true,
-  viewSourceLink: true,
-},
-// or hide entirely:
-bodyFootUtilArea: false,
-```
+## Table of contents and headings
 
 ### tocMinDepth
 
-Minimum heading depth included in the table of contents (restriction-only: 2–4, default 2). Raise to 3 or 4 to hide shallower headings from the TOC. Cannot go below 2 (h1 is always the page title) or above `tocMaxDepth`.
-
-Type: `number`
+Minimum heading depth included in the TOC (2–4).
 
 Default: `2`
 
-```ts
-tocMinDepth: 3, // hide h2 headings from the TOC
-```
-
 ### tocMaxDepth
 
-Maximum heading depth included in the table of contents (restriction-only: 2–4, default 4). Lower to 2 or 3 to hide deeper headings from the TOC. Cannot exceed 4 or go below `tocMinDepth`.
-
-Type: `number`
+Maximum heading depth included in the TOC (2–4).
 
 Default: `4`
 
-```ts
-tocMaxDepth: 3, // hide h4 headings from the TOC
-```
-
 ### headingIdStrategy
 
-Controls how heading anchor IDs are generated.
+Heading-ID (anchor) strategy. `"hierarchical"` prefixes each anchor with its ancestor chain; `"flat"` is zfb's legacy github-slugger scheme. Switching is anchor-breaking for existing deep links.
 
-- `"flat"` (zfb default) — github-slugger slugs with one dedup counter shared across h2–h6 (e.g., `overview`, `overview-1`).
-- `"hierarchical"` — each heading's slug is prefixed with its ancestor chain (e.g., `## Foo` / `### Bar` → `foo`, `foo-bar`), deduped on the full path so anchors collide far less often.
+Type: `"flat" | "hierarchical"` · Default: `"hierarchical"`
 
-Switching from `"flat"` to `"hierarchical"` is anchor-breaking for existing deep links to nested headings.
+## Chrome and UI features
 
-Type: `"flat" | "hierarchical"`
+### designTokenPanel
 
-Default: `"hierarchical"`
-
-```ts
-headingIdStrategy: "flat",
-```
-
-### htmlPreview
-
-Global configuration for the `<HtmlPreview>` component. When set, the provided `head`, `css`, and `js` are injected into every `<HtmlPreview>` iframe on the site — useful for loading shared fonts, a design system stylesheet, or utility scripts without repeating them on each component demo.
-
-Set to `undefined` (the default) to disable global injection.
-
-Type: `HtmlPreviewConfig | undefined`
-
-Default: `undefined`
-
-The `HtmlPreviewConfig` object accepts:
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `head` | string (optional) | Raw HTML injected into `<head>` (e.g., `<link>` tags for fonts or icon libraries) |
-| `css` | string (optional) | CSS injected as a `<style>` block after preflight reset |
-| `js` | string (optional) | JavaScript injected as a `<script>` block before `</body>` |
-
-```ts
-htmlPreview: {
-  head: `<link rel="stylesheet" href="https://example.com/design-system.css">`,
-  css: `body { font-family: sans-serif; }`,
-  js: `console.log("HtmlPreview loaded")`,
-},
-// or disable global injection:
-htmlPreview: undefined,
-```
-
-<Tip>
-
-Individual `<HtmlPreview>` blocks can extend the global config by passing their own `head`, `css`, or `js` props — they are appended to the global values, not replaced.
-
-</Tip>
-
-### claudeResources
-
-Configures the Claude Code Resources Viewer, which auto-generates documentation pages from your `.claude/` directory. Set to `false` to disable.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `claudeDir` | string | Path to the `.claude` directory (relative to project root) |
-| `projectRoot` | string (optional) | Project root override for monorepo setups |
-
-```ts
-claudeResources: {
-  claudeDir: ".claude",
-},
-// or disable:
-claudeResources: false,
-```
-
-<Tip>
-
-See the [Claude Resources guide](./claude-resources.mdx) for details on what gets generated and how it works.
-
-</Tip>
-
-### footer
-
-Configures the site footer. When set to a `FooterConfig` object, renders a footer with link columns and optional copyright text. Set to `false` to disable the footer entirely.
-
-Type: `FooterConfig | false`
+Enable the interactive Design Token Panel (zdtp) for live editing of spacing, font, size, and color tokens.
 
 Default: `false`
 
-The `FooterConfig` object accepts:
+The panel works with zero extra config. To fully customize it, point `designTokenPanelConfigModule` at a host module — see [Host Chrome Bindings](../reference/host-chrome-bindings.mdx#the-design-token-panel-channel-designtokenpanelconfigmodule).
+
+### sidebarResizer
+
+Enable the draggable sidebar resizer.
+
+Default: `false`
+
+### sidebarToggle
+
+Enable the desktop sidebar collapse toggle.
+
+Default: `false`
+
+### imageEnlarge
+
+Enable click-to-enlarge for content images.
+
+Default: `false`
+
+### dynamicPageTransition
+
+Enable the dynamic (view-transition) page-loading overlay.
+
+Default: `false`
+
+### frontmatterPreview
+
+Frontmatter-preview config (ignore-key overrides), or `false` to disable the preview panel.
+
+Type: `FrontmatterPreviewConfig | false` · Default: `false`
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `links` | `FooterLinkColumn[]` | Array of link columns displayed in the footer |
-| `copyright` | string (optional) | Copyright text shown at the bottom. HTML is supported |
+| `ignoreKeys` | `string[]` (optional) | Replaces the default ignore list |
+| `extraIgnoreKeys` | `string[]` (optional) | Adds to the defaults (ignored if `ignoreKeys` is set) |
 
-Each `FooterLinkColumn`:
+See the [Frontmatter Preview reference](../reference/frontmatter-preview.mdx).
+
+### docHistory
+
+Enable per-page git history (Created/Updated + dropdown). In dev, history is served by `@takazudo/zudo-doc-history-server` on port 4322; in CI a generator emits static JSON.
+
+Default: `false`
+
+See the [Document History guide](./doc-history.mdx).
+
+### docMetainfo
+
+Show the Created/Updated/Author meta block on doc pages (extracted from git history at build).
+
+Default: `false`
+
+### bodyFootUtilArea
+
+Body-foot utility area (doc-history / view-source), or `false` to disable.
+
+Type: `BodyFootUtilAreaConfig | false` · Default: `false`
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `title` | string | Column heading |
-| `items` | `FooterLinkItem[]` | Array of links in this column |
-| `locales` | Record (optional) | Per-locale title overrides (e.g., `{ ja: { title: "ドキュメント" } }`) |
+| `docHistory` | `boolean` (optional) | Show the History button (requires `docHistory: true`) |
+| `viewSourceLink` | `boolean` (optional) | Show a raw-source link (requires `editUrl`) |
 
-Each `FooterLinkItem`:
+### htmlPreview
+
+Global HTML-preview sandbox config, or `undefined` to disable global injection into every `<HtmlPreview>` iframe.
+
+Type: `HtmlPreviewConfig | undefined` · Default: `undefined`
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `label` | string | Link display text |
-| `href` | string | Link URL |
-| `locales` | Record (optional) | Per-locale label overrides (e.g., `{ ja: { label: "はじめに" } }`) |
+| `head` | `string` (optional) | Raw HTML injected into `<head>` |
+| `css` | `string` (optional) | CSS injected as a `<style>` block |
+| `js` | `string` (optional) | JS injected before `</body>` |
 
-```ts
-footer: {
-  links: [
-    {
-      title: "Docs",
-      locales: { ja: { title: "ドキュメント" } },
-      items: [
-        { label: "Getting Started", href: "/docs/getting-started", locales: { ja: { label: "はじめに" } } },
-      ],
-    },
-    {
-      title: "Community",
-      items: [{ label: "GitHub", href: "https://github.com/my-org/my-repo" }],
-    },
-  ],
-  copyright: `Copyright © ${new Date().getFullYear()} Your Name.`,
-},
-// or disable footer:
-footer: false,
-```
+### footer
+
+Footer config (link columns / copyright / taglist), or `false` for no footer.
+
+Type: `FooterConfig | false` · Default: `false`
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `links` | `FooterLinkColumn[]` | Link columns |
+| `copyright` | `string` (optional) | Copyright text (HTML allowed) |
+
+Each `FooterLinkColumn` has `title`, `items` (`{ label, href }[]`), and optional per-locale overrides.
 
 ### headerNav
 
-An array of navigation links rendered in the site header bar. Each item supports the following properties:
+Primary header navigation items.
+
+Default: `[]`
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `label` | string | Display text shown in the header |
-| `labelKey` | string (optional) | i18n translation key (e.g., `"nav.gettingStarted"`) — overrides `label` when a translation is available |
-| `path` | string | URL path the link navigates to |
-| `categoryMatch` | string (optional) | Links this header tab to a sidebar category. When active, only the matched category's sidebar is shown |
+| `label` | `string` | Display text |
+| `labelKey` | `string` (optional) | i18n translation key (overrides `label`) |
+| `path` | `string` | Target path |
+| `categoryMatch` | `string` (optional) | Links this tab to a sidebar category |
 
 ```ts
 headerNav: [
-  { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
-  { label: "Guides", labelKey: "nav.guides", path: "/docs/guides", categoryMatch: "guides" },
-  { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
-  { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude" },
+  { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
+  { label: "Reference", path: "/docs/reference", categoryMatch: "reference" },
 ],
 ```
+
+See [How to Structure Navigations](../getting-started/structuring-navigations.mdx).
 
 ### headerRightItems
 
-Controls the items rendered in the right side of the site header, in order. Each item is a discriminated union on the `type` field.
+Header right-hand-side items (toggles, switchers, links), in order.
 
-Type: `HeaderRightItem[]`
+Default: `[{ type: "component", component: "theme-toggle" }]`
 
-| `type` | Additional fields | Description |
-|--------|-------------------|-------------|
-| `"component"` | `component` — one of `"theme-toggle"`, `"language-switcher"`, `"version-switcher"`, `"github-link"`, `"search"` | Renders a built-in header component |
-| `"trigger"` | `trigger` — one of `"design-token-panel"`, `"ai-chat"` | Renders a button that opens a panel (requires the matching feature to be enabled) |
-| `"link"` | `href` (string), `label?` (string), `ariaLabel?` (string), `icon?` (`"github"`) | Renders a custom link |
-| `"html"` | `html` (string) | Renders raw HTML |
+| `type` | Extra fields | Description |
+|--------|--------------|-------------|
+| `"component"` | `component` — `"theme-toggle"`, `"language-switcher"`, `"version-switcher"`, `"github-link"`, `"search"` | Built-in header component |
+| `"trigger"` | `trigger` — `"design-token-panel"`, `"ai-chat"` | Opens a panel (requires the feature) |
+| `"link"` | `href`, `label?`, `ariaLabel?`, `icon?` | Custom link |
+| `"html"` | `html` | Raw HTML |
+
+## AI assistant
+
+### aiAssistant
+
+Enable the AI-chat assistant route (`/api/ai-chat`, SSR).
+
+Default: `false`
+
+Running a live assistant requires a deploy adapter, KV, and secrets — see [Customizing → Deploy path](../reference/customizing.mdx#rung-7-—-the-deploy-path-an-explicit-extend-step) and the [AI Assistant API](../reference/ai-assistant-api.mdx).
+
+### aiChatDemoMode
+
+Short-circuit `/api/ai-chat` with a fixed "disabled" reply (no API key / KV / rate limiter touched). Set `false` to enable live Claude-backed chat.
+
+Default: `false`
+
+### aiChatAllowedOrigins
+
+Allowed CORS origins for `/api/ai-chat` when not in demo mode. Empty = block all cross-origin browser requests.
+
+Default: `[]`
+
+### aiChatGlobalDailyLimit
+
+Global daily request ceiling across all IPs for `/api/ai-chat`, or `false` to disable the ceiling.
+
+Type: `number | false` · Default: `false`
+
+## Generation and integrations
+
+### llmsTxt
+
+Emit an `llms.txt` route summarising the docs.
+
+Default: `false`
+
+See [llms.txt](./llms-txt.mdx).
+
+### changelogs
+
+Changelog generation config(s), or `false` to disable.
+
+Default: `false`
+
+See the [Changelog guide](./changelog.mdx).
+
+### claudeResources
+
+Claude-resources ingestion config, or `false` to disable.
+
+Type: `{ claudeDir; projectRoot?; scanRoot? } | false` · Default: `false`
 
 ```ts
-headerRightItems: [
-  { type: "component", component: "version-switcher" },
-  { type: "trigger", trigger: "design-token-panel" },
-  { type: "trigger", trigger: "ai-chat" },
-  { type: "component", component: "github-link" },
-  { type: "component", component: "theme-toggle" },
-  { type: "component", component: "search" },
-  { type: "component", component: "language-switcher" },
-  // custom external link:
-  { type: "link", href: "https://example.com", label: "Blog", ariaLabel: "Blog" },
-],
+claudeResources: { claudeDir: ".claude" },
 ```
 
-## zfb Configuration
+See the [Claude Resources guide](./claude-resources.mdx).
 
-The root `zfb.config.ts` controls the build pipeline:
+## Routing seams
 
-```ts
-export default defineConfig({
-  framework: "preact",
-  tailwind: { enabled: true },
-  collections,                  // derived from settings.docsDir + settings.locales
-  adapter: "@takazudo/zfb-adapter-cloudflare",
-  plugins: integrationPlugins,  // doc-history / search-index / llms-txt / claude-resources
-});
+### packageOwnedRoutes
+
+Build-time package-owned route injection. When `true`, doc routes are injected from the package (no project-shipped `pages/*.tsx` layout stubs needed). Set `false` only if your project ships its own doc-route stubs.
+
+Default: `true`
+
+### chromeBindingsModule
+
+Project-root-relative path to a host module exporting `chromeBindings: ChromeHostBindings` (only consumed when `packageOwnedRoutes` is on). Omit to keep the injected chrome shim at its package-default stubs.
+
+Default: `undefined`
+
+See [Host Chrome Bindings](../reference/host-chrome-bindings.mdx).
+
+## Escape-hatch fields
+
+These override non-serializable / data defaults. They travel the import graph rather than being JSON-serialized, so they can carry functions, Zod types, and component maps.
+
+### buildDocsSchema
+
+Replace the default docs-frontmatter Zod schema builder entirely. When omitted, `zudoDoc()` builds the package default (`@takazudo/zudo-doc/docs-schema`), governance-aware from `tagGovernance` + `tagVocabularyEntries`.
+
+Type: `() => ZodType` · Default: `undefined` (package default used)
+
+This is how you add custom frontmatter keys — see [Customizing → Rung 1](../reference/customizing.mdx#rung-1-—-custom-frontmatter-keys-builddocsschema).
+
+### colorSchemes
+
+Override the color-scheme palette map. When omitted, the two shipped schemes (Default Light / Default Dark) are used.
+
+Type: `Record<string, ColorScheme>` · Default: `undefined`
+
+### translations
+
+Override the UI-string translation table. When omitted, the shipped en/ja/de defaults are used.
+
+Type: `PresetTranslations` · Default: `undefined`
+
+### directives
+
+Override the directive → JSX-component-name map. When omitted, the canonical seven are used.
+
+Type: `DirectiveVocabulary` · Default: `undefined`
+
+### tagVocabularyEntries
+
+The tag-vocabulary **entries** array (distinct from the boolean `tagVocabulary` gate). Threaded into the route-context virtual module and consulted by the governance-aware default schema builder.
+
+Type: `readonly PresetTagVocabularyEntry[]` · Default: `[]`
+
+<Warning>
+
+Do not conflate `tagVocabulary` (a `boolean` gate) with `tagVocabularyEntries` (the entries array). They are separate fields — the gate decides *whether* the vocabulary is consulted; the entries are *what* it consults.
+
+</Warning>
+
+## Shell passthrough fields
+
+These are host-owned `ZfbConfig` shell fields, not part of `Settings`.
+
+### port
+
+Dev/preview server port.
+
+Default: `4321`
+
+### adapter
+
+Deploy-target adapter package name (e.g. `"@takazudo/zfb-adapter-cloudflare"`). Omit for a pure static build.
+
+Default: `undefined` (pure static build)
+
+### bundle
+
+zfb bundler options (`exclude` / `mainFields` / `external`), passed through verbatim when set.
+
+Default: `undefined`
+
+## An extended project as reference
+
+This showcase's own `zfb.config.ts` is the canonical "extended project" example — it spreads a typed `settings` object and passes genuinely showcase-specific data blocks (tag vocabulary, custom translations) through the escape-hatch fields, then adds the shell fields (`port`, `adapter`, `bundle`):
+
+```ts title="zfb.config.ts (this showcase)"
+export default defineConfig(
+  zudoDoc({
+    ...settings,
+    tagVocabularyEntries: tagVocabulary,
+    translations,
+    chromeBindingsModule: "./src/chrome-bindings.tsx",
+    port: 4321,
+    adapter: "@takazudo/zfb-adapter-cloudflare",
+    bundle: { exclude: ["e2e/fixtures/**"] },
+  }),
+);
 ```
 
-Key aspects:
-
-- **framework**: Preact — every component is a `.tsx` file (server-rendered by default; client islands hydrate via zfb's runtime)
-- **tailwind**: First-class Tailwind CSS v4 integration
-- **collections**: Generated from `settings.docsDir` and `settings.locales`, validated by zod schemas defined in the same file
-- **adapter**: Cloudflare Workers — wraps the SSR bundle into `dist/_worker.js`, required for any route exporting `prerender = false`
-- **plugins**: Each integration (doc-history, search-index, llms-txt, claude-resources) is a small wrapper module under `./plugins/` whose default export is a `ZfbPlugin`
-- **i18n routing**: English (default at `/docs/...`) and additional locales declared in `settings.locales`. Default locale has no URL prefix
-- **Build-time highlighting**: Powered by syntect (zfb's Rust pipeline) with a single fixed theme (`base16-ocean-dark`); not derived from `colorScheme`
-
-## Logo
-
-The site logo is displayed on the landing page as a full-color banner image. The file is located at `public/img/logo.svg`.
-
-The default banner is a 1200×630 SVG with the background baked in, so it renders correctly on both light and dark themes without any CSS masking. To update the logo, replace `public/img/logo.svg` with your own SVG file.
-
-Because the banner is rendered as a plain `<img>` element, there are no constraints on background color or alpha channel — any SVG will display as-is.
-
-## Color Scheme Config
-
-Color schemes are defined in `src/config/color-schemes.ts`. A `ColorScheme` is `{ ramps, map }`:
-
-- `ramps` — the shared `base` (5-stop), `accent` (3-stop), and `state` (4 named colors) OKLCH ramps
-- `map` — the 4 base roles (`bg`, `fg`, `selectionBg`, `selectionFg`) and the 23 semantic roles (`surface`, `muted`, `accent`, `accentHover`, and more), each wired to a ramp stop or a literal OKLCH override
-
-<Info>
-
-For details on adding or customizing color schemes, see the [Color guide](../reference/color.mdx).
-
-</Info>
+A minimal project needs none of that — just the handful of fields it changes.
