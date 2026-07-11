@@ -6,10 +6,10 @@ description: "A page for L3 golden coverage of CJK-friendly emphasis parsing (zf
 
 {/*
   This page does not set `cjkFriendly` in settings.ts — CjkFriendlyPlugin is
-  registered by zfb's Pipeline::with_defaults() regardless (see
-  packages/md-plugins/AUDIT.md's remarkCjkFriendly row), so the assertions
-  below exercise the Rust default, not an explicit override. Mirrors
-  packages/md-plugins/__fixtures__/11-cjk.mdx. zudolab/zudo-doc#2539.
+  registered by zfb's Pipeline::with_defaults() regardless, so the
+  assertions below exercise the Rust default, not an explicit override.
+  Mirrors the retired-JS-pipeline's remarkCjkFriendly fixture coverage
+  (packages/md-plugins/, deleted #2683). zudolab/zudo-doc#2539.
 */}
 
 これは**重要**な機能です。

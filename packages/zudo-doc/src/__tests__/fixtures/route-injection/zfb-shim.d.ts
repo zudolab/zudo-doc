@@ -85,9 +85,9 @@ declare module "zfb/config" {
     tailwind?: TailwindConfig;
     /**
      * Bundler options. `bundle.exclude` keeps project-relative globs out of
-     * the esbuild graph — used here to skip `packages/md-plugins/__fixtures__/**`
-     * so the MDX link resolver no longer walks the test fixtures (silences
-     * ~15 pre-existing broken-link warnings). Mirrors `Config::bundle`.
+     * the esbuild graph — used e.g. to skip `e2e/fixtures/**` so the MDX link
+     * resolver doesn't walk generated test-fixture trees (silences spurious
+     * broken-link warnings). Mirrors `Config::bundle`.
      */
     bundle?: BundleConfig;
     plugins?: PluginConfig[];
