@@ -4,15 +4,34 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
-## [3.3.0] - 2026-07-11
+## [3.3.0] - 2026-07-12
 
 ### Features
 
-- Absorbed the Tauri find-in-page island (Cmd/Ctrl+F find bar) into `@takazudo/zudo-doc/find-in-page`, mounted from the package's body-end islands behind a new `findInPage` setting (default `false`). The island self-gates on `window.__TAURI_INTERNALS__`, so it stays a safe no-op outside a Tauri shell. `create-zudo-doc`'s tauri feature now emits `findInPage: true` for generated Tauri scaffolds (auto-enabling the find bar); this ships with the next `create-zudo-doc` release.
+- **Minimal Scaffold (epic #2651).** `create-zudo-doc` now emits a locked ~12-file minimal manifest — a generated project is one config file (`zfb.config.ts` using the diff-from-defaults `zudoDoc({...})`) plus Markdown content, extended via eject. The package now owns the defaults that were previously copied into every scaffold: default `@theme` tokens ship as `@takazudo/zudo-doc/theme.css`, and i18n, color schemes, docs schema, z-index, frontmatter-preview, and directives ship as package-default data modules. (98a56931, 257fa9aa, 5f45bf15, 2056824f)
+- Added the `zudoDoc()` single-entry config API returning a full `ZfbConfig`; the showcase and generated scaffolds migrate their `zfb.config.ts` and the four doc-route stubs to the self-contained form. (a06f5990, 1fc470f0, 6e4a6d08)
+- Added the `defineChromeBindings` widening adapter — a typed helper that replaces chrome-binding casts; the generator now injects it instead of a `DocHistory` cast. (5915707b, aa29e479, 0e49a6ad)
+- Absorbed the Tauri find-in-page island (Cmd/Ctrl+F find bar) into `@takazudo/zudo-doc/find-in-page`, mounted from the package's body-end islands behind a new `findInPage` setting (default `false`). The island self-gates on `window.__TAURI_INTERNALS__`, so it stays a safe no-op outside a Tauri shell. `create-zudo-doc`'s tauri feature now emits `findInPage: true` for generated Tauri scaffolds. (97885c5d, cc1bc846, f5e4c953)
+- Added a package-owned `DesignTokenPanelBootstrap` island, mounted from the package's routes. (5f75a9ed, 105a3b40)
+- The package now ships `tsconfig.base`, a `zfb-config` shim, and generated virtual-module types. (3de2b209)
+
+### Bug Fixes
+
+- Corrected the `create-zudo-doc` Node engine floor and documented the built-in MDX components (#2702, #2703). (edf5cc4f)
+- Exported the `./find-in-page` subpath so hosts can mount `FindInPageInit`. (a4c4f8e5)
+- Stopped the generator dropping unlisted config keys and guarded `DEFAULT_MIRROR` drift. (ac0c6afa)
+- The i18n locale doc stub now threads `isFallback` and a per-locale content directory. (8355e537)
+- Routed package-manager script commands through a single `pmRunCommand` helper. (cb88bde6)
+- Made the `pages` typecheck project Preact-native. (a24dfef4)
+- Warn on a missing color scheme, and clarified the `zudoDoc` shallow-merge docs. (8f913319)
+- Tightened `frontmatterRenderers`/`buildFrontmatterPreviewEntries` slot types so drift is detected for real. (d9d9b828)
+- Fixed the default header chrome background. (f0245086)
 
 ### Other Changes
 
-- Added the `findInPage` setting to the showcase and e2e fixture settings, plus a configuration guide entry, for census parity with the package `Settings` type.
+- Retired `packages/md-plugins` and dropped the showcase Design Token Panel config copy in favor of the package default. (e99ebe7d, c74c481a)
+- Patched transitive security advisories via pnpm overrides and bumped `@takazudo/zdtp` 0.4.5 → 0.4.6. (24013cd1, 731c8677)
+- Rewrote the core structure docs for the minimal→extend model (EN + JA). (f57d092e)
 
 ## [3.2.0] - 2026-07-08
 

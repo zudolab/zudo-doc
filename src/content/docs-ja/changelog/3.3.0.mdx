@@ -4,12 +4,31 @@ description: 3.3.0のリリースノート。
 sidebar_position: 1056
 ---
 
-リリース日: 2026-07-11
+リリース日: 2026-07-12
 
 ### 機能
 
-- Tauri の find-in-page アイランド（Cmd/Ctrl+F 検索バー）を `@takazudo/zudo-doc/find-in-page` に取り込み、パッケージの body-end islands から新しい `findInPage` 設定（デフォルト `false`）でマウントするようにしました。アイランドは `window.__TAURI_INTERNALS__` で自己ゲートするため、Tauri シェル外では安全に何もしません。`create-zudo-doc` の tauri フィーチャーは、生成された Tauri スキャフォールドに対して `findInPage: true` を出力するようになりました（検索バーを自動的に有効化）。これは次回の `create-zudo-doc` リリースで反映されます。
+- **Minimal Scaffold（エピック #2651）。** `create-zudo-doc` が、固定された約12ファイルのミニマルなマニフェストを出力するようになりました。生成プロジェクトは、1つの設定ファイル（デフォルトからの差分だけを書く `zudoDoc({...})` を使った `zfb.config.ts`）と Markdown コンテンツで構成され、eject で拡張します。従来は各スキャフォールドにコピーされていたデフォルト群をパッケージが所有するようになりました。デフォルトの `@theme` トークンは `@takazudo/zudo-doc/theme.css` として提供され、i18n・カラースキーム・docs スキーマ・z-index・frontmatter-preview・directives はパッケージ既定のデータモジュールとして提供されます。(98a56931, 257fa9aa, 5f45bf15, 2056824f)
+- 完全な `ZfbConfig` を返す `zudoDoc()` 単一エントリの設定 API を追加しました。ショーケースと生成スキャフォールドは、`zfb.config.ts` と4つの doc-route スタブを自己完結型の形式に移行しました。(a06f5990, 1fc470f0, 6e4a6d08)
+- `defineChromeBindings` 拡張アダプターを追加しました。chrome バインディングのキャストを置き換える型付きヘルパーで、ジェネレーターは `DocHistory` のキャストの代わりにこれを注入するようになりました。(5915707b, aa29e479, 0e49a6ad)
+- Tauri の find-in-page アイランド（Cmd/Ctrl+F 検索バー）を `@takazudo/zudo-doc/find-in-page` に取り込み、パッケージの body-end islands から新しい `findInPage` 設定（デフォルト `false`）でマウントするようにしました。アイランドは `window.__TAURI_INTERNALS__` で自己ゲートするため、Tauri シェル外では安全に何もしません。`create-zudo-doc` の tauri フィーチャーは、生成された Tauri スキャフォールドに対して `findInPage: true` を出力するようになりました。(97885c5d, cc1bc846, f5e4c953)
+- パッケージが所有する `DesignTokenPanelBootstrap` アイランドを追加し、パッケージのルートからマウントするようにしました。(5f75a9ed, 105a3b40)
+- パッケージが `tsconfig.base`、`zfb-config` シム、生成された仮想モジュールの型を同梱するようになりました。(3de2b209)
+
+### バグ修正
+
+- `create-zudo-doc` の Node エンジン下限値を修正し、組み込みの MDX コンポーネントを文書化しました（#2702, #2703）。(edf5cc4f)
+- ホストが `FindInPageInit` をマウントできるよう、`./find-in-page` サブパスをエクスポートしました。(a4c4f8e5)
+- ジェネレーターが未リストの設定キーを取りこぼす問題を修正し、`DEFAULT_MIRROR` のドリフトをガードしました。(ac0c6afa)
+- i18n のロケール doc スタブが `isFallback` とロケールごとのコンテンツディレクトリを引き回すようにしました。(8355e537)
+- パッケージマネージャーのスクリプトコマンドを単一の `pmRunCommand` ヘルパー経由に集約しました。(cb88bde6)
+- `pages` の typecheck プロジェクトを Preact ネイティブにしました。(a24dfef4)
+- カラースキームが欠落している場合に警告を出すようにし、`zudoDoc` の浅いマージに関するドキュメントを明確化しました。(8f913319)
+- ドリフトを実際に検出できるよう、`frontmatterRenderers`／`buildFrontmatterPreviewEntries` のスロット型を厳格化しました。(d9d9b828)
+- デフォルトのヘッダー chrome の背景を修正しました。(f0245086)
 
 ### その他の変更
 
-- パッケージの `Settings` 型とのセンサスパリティのため、`findInPage` 設定をショーケースと e2e フィクスチャの設定、および設定ガイドのエントリに追加しました。
+- `packages/md-plugins` を廃止し、ショーケースの Design Token Panel 設定コピーを削除してパッケージ既定を利用するようにしました。(e99ebe7d, c74c481a)
+- pnpm overrides で推移的なセキュリティ勧告にパッチを当て、`@takazudo/zdtp` を 0.4.5 → 0.4.6 に更新しました。(24013cd1, 731c8677)
+- minimal→extend モデルに合わせてコア構造ドキュメントを書き直しました（EN + JA）。(f57d092e)
