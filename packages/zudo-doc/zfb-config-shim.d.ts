@@ -91,7 +91,7 @@ declare module "zfb/config" {
     /**
      * Bundler options. `bundle.exclude` keeps project-relative globs out of
      * the esbuild graph — used e.g. to skip `e2e/fixtures/**` so the MDX link
-     * resolver doesn't walk generated test-fixture trees (silences spurious
+     * resolver doesn't walk committed test-fixture trees (silences spurious
      * broken-link warnings). Mirrors `Config::bundle`.
      */
     bundle?: BundleConfig;
