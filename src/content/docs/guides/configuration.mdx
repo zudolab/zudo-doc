@@ -317,7 +317,7 @@ Mount the `FindInPageInit` island (Cmd/Ctrl+F find bar) in the body-end islands.
 
 Default: `false`
 
-Intended to be auto-enabled by `create-zudo-doc`'s tauri feature for generated Tauri scaffolds (that generator wiring is tracked separately and not yet shipped). Self-gates on `window.__TAURI_INTERNALS__`, so it is a safe no-op outside a Tauri shell even when `true`. A host that overrides the `BodyEndIslands` chrome-bindings slot (part of `ChromeHostBindings` — see [Host Chrome Bindings](../reference/host-chrome-bindings.mdx) for the general seam) must mount the island itself — the package default only applies when the slot is left unset.
+Auto-enabled by `create-zudo-doc`'s tauri feature for generated Tauri scaffolds (the generator emits `findInPage: true` when the tauri feature is selected; it ships with the next `create-zudo-doc` release). Self-gates on `window.__TAURI_INTERNALS__`, so it is a safe no-op outside a Tauri shell even when `true`. A host that overrides the `BodyEndIslands` chrome-bindings slot (part of `ChromeHostBindings` — see [Host Chrome Bindings](../reference/host-chrome-bindings.mdx) for the general seam) must mount the island itself — the package default only applies when the slot is left unset.
 
 ### dynamicPageTransition
 

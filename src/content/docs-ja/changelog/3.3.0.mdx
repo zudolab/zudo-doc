@@ -8,7 +8,7 @@ sidebar_position: 1056
 
 ### 機能
 
-- Tauri の find-in-page アイランド（Cmd/Ctrl+F 検索バー）を `@takazudo/zudo-doc/find-in-page` に取り込み、パッケージの body-end islands から新しい `findInPage` 設定（デフォルト `false`）でマウントするようにしました。アイランドは `window.__TAURI_INTERNALS__` で自己ゲートするため、Tauri シェル外では安全に何もしません。`create-zudo-doc` の tauri フィーチャーがこの設定を自動的に有効化するよう配線するのはフォローアップとして別途トラッキングしています (97885c5d)。
+- Tauri の find-in-page アイランド（Cmd/Ctrl+F 検索バー）を `@takazudo/zudo-doc/find-in-page` に取り込み、パッケージの body-end islands から新しい `findInPage` 設定（デフォルト `false`）でマウントするようにしました。アイランドは `window.__TAURI_INTERNALS__` で自己ゲートするため、Tauri シェル外では安全に何もしません。`create-zudo-doc` の tauri フィーチャーは、生成された Tauri スキャフォールドに対して `findInPage: true` を出力するようになりました（検索バーを自動的に有効化）。これは次回の `create-zudo-doc` リリースで反映されます。
 
 ### その他の変更
 

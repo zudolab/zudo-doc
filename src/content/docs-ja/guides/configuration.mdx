@@ -317,7 +317,7 @@ body-end islands に `FindInPageInit` アイランド（Cmd/Ctrl+F 検索バー�
 
 デフォルト: `false`
 
-生成された Tauri スキャフォールドに対して `create-zudo-doc` の tauri フィーチャーが自動的に有効化する予定です(このジェネレーター側の配線は別トラッキングで、まだ未実装です)。`window.__TAURI_INTERNALS__` で自己ゲートするため、`true` の場合でも Tauri シェル外では安全に何もしません（no-op）。`BodyEndIslands` クロームバインディングスロット(`ChromeHostBindings` の一部 — この仕組み全般については[ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照)を上書きするホストは、アイランド自体をマウントする必要があります — パッケージのデフォルトはスロットが未設定の場合にのみ適用されます。
+生成された Tauri スキャフォールドに対して `create-zudo-doc` の tauri フィーチャーが自動的に有効化します(tauri フィーチャー選択時にジェネレーターが `findInPage: true` を出力します。次回の `create-zudo-doc` リリースで反映されます)。`window.__TAURI_INTERNALS__` で自己ゲートするため、`true` の場合でも Tauri シェル外では安全に何もしません（no-op）。`BodyEndIslands` クロームバインディングスロット(`ChromeHostBindings` の一部 — この仕組み全般については[ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照)を上書きするホストは、アイランド自体をマウントする必要があります — パッケージのデフォルトはスロットが未設定の場合にのみ適用されます。
 
 ### dynamicPageTransition
 
