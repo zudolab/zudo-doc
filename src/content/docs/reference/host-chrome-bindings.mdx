@@ -27,11 +27,15 @@ import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
 
 All fields are optional. Any slot you omit falls back to the package default that reproduces the pre-seam behavior byte-for-byte, so a partial bindings object is always safe.
 
+`ChromeHostBindings` types every slot with the wide structural shape the chrome's own call sites need internally. Assigning a real, narrowly-typed component or callable to it directly — or reaching for an `as`/`as unknown as` cast to make the assignment compile — erases the one check that matters: whether the value you provide actually accepts the props the chrome passes it. Build bindings with `defineChromeBindings` instead (below); it keeps that check at compile time.
+
 ## The delivery channel: `chromeBindingsModule`
 
 Under `packageOwnedRoutes: true` the chrome is wired inside the package, so there is no host call site to pass bindings into. The route context that the plugin hands to the routes carries **serializable data only** (settings, translations, tag vocabulary) — it cannot carry functions or components. The channel works around this: instead of serializing the callables, the host serializes a **path** to a module that exports them.
 
-Set `chromeBindingsModule` in your `zudoDoc()` config to a project-root-relative path pointing at a module with a named `chromeBindings` export typed `ChromeHostBindings`:
+That module's `chromeBindings` export should be built with `defineChromeBindings`, exported from `@takazudo/zudo-doc/chrome-bindings`, rather than a plain object literal typed `ChromeHostBindings`. Its input type — `ChromeBindingsInput` — declares the exact props or args each slot's real call site passes, so a component that requires a prop the chrome never provides is a compile error (the drift-detection check from #2674); the wide `ChromeHostBindings` shape the routes plugin needs is produced by one internal widening step you never have to reason about.
+
+Set `chromeBindingsModule` in your `zudoDoc()` config to a project-root-relative path pointing at a module with a named `chromeBindings` export built with `defineChromeBindings`:
 
 ```ts title="zfb.config.ts"
 export default defineConfig(
@@ -43,11 +47,11 @@ export default defineConfig(
 ```
 
 ```tsx title="src/chrome-bindings.tsx"
-import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
 
-export const chromeBindings: ChromeHostBindings = {
+export const chromeBindings = defineChromeBindings({
   // ...seams go here (see below)
-};
+});
 ```
 
 At build time the routes plugin registers a virtual module that re-exports your `chromeBindings`, and the injected chrome shim spreads it into the chrome factory. A string path is serializable, so the "route context is data only" rule still holds — only the loader source differs.
@@ -96,9 +100,9 @@ docContentHeaderExtras?: (args: {
 A common use is a tier badge derived from a custom frontmatter field. Given pages that declare `tier: core` or `tier: opt-in` in their frontmatter:
 
 ```tsx title="src/chrome-bindings.tsx"
-import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
 
-export const chromeBindings: ChromeHostBindings = {
+export const chromeBindings = defineChromeBindings({
   docContentHeaderExtras: ({ entry }) => {
     const tier = entry.data.tier;
     if (tier !== "core" && tier !== "opt-in") return null;
@@ -112,7 +116,7 @@ export const chromeBindings: ChromeHostBindings = {
       </span>
     );
   },
-};
+});
 ```
 
 Default: absent → nothing renders, and the header output is byte-identical to the pre-seam header.
@@ -132,7 +136,7 @@ homeExtras?: (args: { locale: string }) => unknown;
 ```
 
 ```tsx title="src/chrome-bindings.tsx"
-export const chromeBindings: ChromeHostBindings = {
+export const chromeBindings = defineChromeBindings({
   homeExtras: ({ locale }) => (
     <p class="mt-vsp-sm text-small">
       <a
@@ -143,7 +147,7 @@ export const chromeBindings: ChromeHostBindings = {
       </a>
     </p>
   ),
-};
+});
 ```
 
 ### Precedence: `extras` prop wins
