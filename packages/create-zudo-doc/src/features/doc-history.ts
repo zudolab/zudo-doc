@@ -47,13 +47,11 @@ export const docHistoryFeature: FeatureModule = () => ({
         `import { createChrome } from "@takazudo/zudo-doc/chrome";`,
         `import { createChrome } from "@takazudo/zudo-doc/chrome";
 ${importMarker}
-import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";`,
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";`,
       );
       content = content.replace(
         `const { renderDocPage } = createChrome(routeCtx);`,
-        `const { renderDocPage } = createChrome(routeCtx, {
-  DocHistory: DocHistory as unknown as ChromeHostBindings["DocHistory"],
-});`,
+        `const { renderDocPage } = createChrome(routeCtx, defineChromeBindings({ DocHistory }));`,
       );
       await fs.writeFile(stubPath, content);
     }

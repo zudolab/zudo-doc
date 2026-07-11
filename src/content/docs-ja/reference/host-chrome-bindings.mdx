@@ -27,11 +27,13 @@ import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
 
 すべてのフィールドは任意です。省略したスロットは、継ぎ目導入前の挙動をバイト単位で再現するパッケージデフォルトにフォールバックするため、部分的なバインディングオブジェクトでも常に安全です。
 
+`ChromeHostBindings` は、クローム自身の呼び出し地点が内部で必要とする広い構造的な形状で各スロットを型付けします。実際の狭い型を持つコンポーネントやコーラブルをそのまま直接代入する — あるいは代入をコンパイル可能にするために `as`／`as unknown as` キャストに頼る — と、本当に重要なチェック、すなわち「渡した値がクロームから渡されるプロパティを実際に受け取れるかどうか」が消えてしまいます。代わりに `@takazudo/zudo-doc/chrome-bindings` からエクスポートされる `defineChromeBindings` でバインディングを組み立ててください。その入力型 `ChromeBindingsInput` は、各スロットの実際の呼び出し地点が渡す正確なプロパティや引数を宣言しているため、クロームが決して渡さないプロパティをコンポーネントが要求している場合はコンパイルエラーになります（#2674 のドリフト検出チェック）。広い `ChromeHostBindings` 形状は、あなたが気にする必要のない内部の単一のワイドニングステップによって生成されます。
+
 ## 配信チャネル: `chromeBindingsModule`
 
 `packageOwnedRoutes: true` ではクロームがパッケージ内部で組み立てられるため、バインディングを渡すためのホスト側の呼び出し地点が存在しません。プラグインがルートへ渡すルートコンテキストは**シリアライズ可能なデータのみ**（settings、translations、タグ語彙）を運ぶため、関数やコンポーネントを運ぶことはできません。このチャネルはその制約を回避します。コーラブルそのものをシリアライズするのではなく、それらをエクスポートするモジュールへの**パス**をシリアライズするのです。
 
-`zudoDoc()` 設定の `chromeBindingsModule` に、`ChromeHostBindings` 型の名前付き `chromeBindings` エクスポートを持つモジュールを指すプロジェクトルート相対パスを設定します。
+`zudoDoc()` 設定の `chromeBindingsModule` に、`defineChromeBindings` で組み立てた名前付き `chromeBindings` エクスポートを持つモジュールを指すプロジェクトルート相対パスを設定します。
 
 ```ts title="zfb.config.ts"
 export default defineConfig(
@@ -43,11 +45,11 @@ export default defineConfig(
 ```
 
 ```tsx title="src/chrome-bindings.tsx"
-import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
 
-export const chromeBindings: ChromeHostBindings = {
+export const chromeBindings = defineChromeBindings({
   // ...ここに各継ぎ目を記述（後述）
-};
+});
 ```
 
 ビルド時にルートプラグインが `chromeBindings` を再エクスポートする仮想モジュールを登録し、注入されたクロームシムがそれをクロームファクトリへスプレッドします。文字列パスはシリアライズ可能なので、「ルートコンテキストはデータのみ」というルールは依然として保たれます — 異なるのはローダーのソースだけです。
@@ -96,9 +98,9 @@ docContentHeaderExtras?: (args: {
 よくある用途は、カスタムフロントマターフィールドから導出するティアバッジです。フロントマターで `tier: core` または `tier: opt-in` を宣言するページに対して次のように書けます。
 
 ```tsx title="src/chrome-bindings.tsx"
-import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
 
-export const chromeBindings: ChromeHostBindings = {
+export const chromeBindings = defineChromeBindings({
   docContentHeaderExtras: ({ entry }) => {
     const tier = entry.data.tier;
     if (tier !== "core" && tier !== "opt-in") return null;
@@ -112,7 +114,7 @@ export const chromeBindings: ChromeHostBindings = {
       </span>
     );
   },
-};
+});
 ```
 
 デフォルト: 未設定 → 何も描画されず、ヘッダー出力は継ぎ目導入前のヘッダーとバイト単位で同一になります。
@@ -132,7 +134,7 @@ homeExtras?: (args: { locale: string }) => unknown;
 ```
 
 ```tsx title="src/chrome-bindings.tsx"
-export const chromeBindings: ChromeHostBindings = {
+export const chromeBindings = defineChromeBindings({
   homeExtras: ({ locale }) => (
     <p class="mt-vsp-sm text-small">
       <a
@@ -143,7 +145,7 @@ export const chromeBindings: ChromeHostBindings = {
       </a>
     </p>
   ),
-};
+});
 ```
 
 ### 優先順位: `extras` プロパティが勝つ

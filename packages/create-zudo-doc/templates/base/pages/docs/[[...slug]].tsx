@@ -16,10 +16,11 @@
 //
 // docHistory note: when the docHistory feature is selected, the generator
 // patches this file to statically import DocHistory from
-// "@takazudo/zudo-doc/doc-history" and pass it to createChrome as a fourth
-// hostBindings arg — DocHistory's chrome-derive default is a no-op stub
-// (unlike DesignTokenPanelBootstrap, which the package auto-defaults), so
-// without that patch the doc-history button never hydrates on this route.
+// "@takazudo/zudo-doc/doc-history" and pass it to createChrome's hostBindings
+// (second) argument via defineChromeBindings({ DocHistory }) —
+// DocHistory's chrome-derive default is a no-op stub (unlike
+// DesignTokenPanelBootstrap, which the package auto-defaults), so without
+// that patch the doc-history button never hydrates on this route.
 
 import type { JSX } from "preact";
 import { routeContext } from "virtual:zudo-doc-route-context";

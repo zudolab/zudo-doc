@@ -20,7 +20,7 @@
 // the locked self-contained-stub shape — #2653 decision wave).
 
 import type { ComponentChildren } from "preact";
-import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
 
 import { settings } from "@/config/settings";
 import { defaultLocale } from "@/config/i18n";
@@ -120,22 +120,24 @@ const mdxExtras = {
   Card: MdxStub,
   MyComponent: MdxStub,
   PageLayout: MdxStub,
-} as unknown as Record<string, (props: Record<string, unknown>) => unknown>;
-
-// ---------------------------------------------------------------------------
-// The host's real bindings (the 10 ChromeHostBindings slots).
-// ---------------------------------------------------------------------------
-
-export const chromeBindings: ChromeHostBindings = {
-  SearchWidget: SearchWidget as ChromeHostBindings["SearchWidget"],
-  docHistoryMeta: docHistoryMeta as Record<string, unknown>,
-  sidebarsConfig: sidebars as unknown as Record<string, unknown>,
-  frontmatterRenderers: frontmatterRenderers as unknown as ChromeHostBindings["frontmatterRenderers"],
-  buildFrontmatterPreviewEntries:
-    buildFrontmatterPreviewEntries as unknown as ChromeHostBindings["buildFrontmatterPreviewEntries"],
-  loadTagsForLocale: loadTagsForLocale as unknown as ChromeHostBindings["loadTagsForLocale"],
-  tagVocabulary,
-  BodyEndIslands: BodyEndIslandsSeam as unknown as ChromeHostBindings["BodyEndIslands"],
-  DocHistory: DocHistory as unknown as ChromeHostBindings["DocHistory"],
-  mdxExtras: mdxExtras as ChromeHostBindings["mdxExtras"],
 };
+
+// ---------------------------------------------------------------------------
+// The host's real bindings (the 10 ChromeHostBindings slots). Built via
+// `defineChromeBindings` (#2694/#2695) so each slot is checked against its
+// real call-side prop contract at compile time — see
+// `packages/zudo-doc/src/chrome-bindings.ts` for the rationale.
+// ---------------------------------------------------------------------------
+
+export const chromeBindings = defineChromeBindings({
+  SearchWidget,
+  docHistoryMeta,
+  sidebarsConfig: sidebars,
+  frontmatterRenderers,
+  buildFrontmatterPreviewEntries,
+  loadTagsForLocale,
+  tagVocabulary,
+  BodyEndIslands: BodyEndIslandsSeam,
+  DocHistory,
+  mdxExtras,
+});

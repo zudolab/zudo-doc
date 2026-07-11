@@ -491,7 +491,7 @@ claudeResources: { claudeDir: ".claude" },
 
 ### chromeBindingsModule
 
-`chromeBindings: ChromeHostBindings` をエクスポートするホストモジュールへのプロジェクトルート相対パス（`packageOwnedRoutes` がオンのときのみ消費）。注入されたクロームシムをパッケージデフォルトのスタブのままにするなら省略。
+`defineChromeBindings`（`@takazudo/zudo-doc/chrome-bindings`）で構築した `chromeBindings` オブジェクトをエクスポートするホストモジュールへのプロジェクトルート相対パス（`packageOwnedRoutes` がオンのときのみ消費）。注入されたクロームシムをパッケージデフォルトのスタブのままにするなら省略。
 
 デフォルト: `undefined`
 
